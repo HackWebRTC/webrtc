@@ -404,165 +404,167 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
 //  AudioDeviceWindowsCore() - ctor
 // ----------------------------------------------------------------------------
 
-AudioDeviceWindowsCore::AudioDeviceWindowsCore(const int32_t id) :
-    _comInit(ScopedCOMInitializer::kMTA),
-    _id(id),
-    _ptrAudioBuffer(NULL),
-    _ptrEnumerator(NULL),
-    _ptrRenderCollection(NULL),
-    _ptrCaptureCollection(NULL),
-    _ptrDeviceOut(NULL),
-    _ptrDeviceIn(NULL),
-    _ptrClientOut(NULL),
-    _ptrClientIn(NULL),
-    _ptrRenderClient(NULL),
-    _ptrCaptureClient(NULL),
-    _ptrCaptureVolume(NULL),
-    _ptrRenderSimpleVolume(NULL),
-    _dmo(NULL),
-    _mediaBuffer(NULL),
-    _builtInAecEnabled(false),
-    _playAudioFrameSize(0),
-    _playSampleRate(0),
-    _playBlockSizePerChannel(0),
-    _playBlockSize(0),
-    _playChannels(2),
-    _sndCardPlayDelay(0),
-    _sndCardRecDelay(0),
-    _writtenSamples(0),
-    _readSamples(0),
-    _playAcc(0),
-    _recAudioFrameSize(0),
-    _recSampleRate(0),
-    _recBlockSize(0),
-    _recChannels(2),
-    _avrtLibrary(NULL),
-    _winSupportAvrt(false),
-    _hRenderSamplesReadyEvent(NULL),
-    _hPlayThread(NULL),
-    _hCaptureSamplesReadyEvent(NULL),
-    _hRecThread(NULL),
-    _hShutdownRenderEvent(NULL),
-    _hShutdownCaptureEvent(NULL),
-    _hRenderStartedEvent(NULL),
-    _hCaptureStartedEvent(NULL),
-    _hGetCaptureVolumeThread(NULL),
-    _hSetCaptureVolumeThread(NULL),
-    _hSetCaptureVolumeEvent(NULL),
-    _hMmTask(NULL),
-    _initialized(false),
-    _recording(false),
-    _playing(false),
-    _recIsInitialized(false),
-    _playIsInitialized(false),
-    _speakerIsInitialized(false),
-    _microphoneIsInitialized(false),
-    _AGC(false),
-    _playWarning(0),
-    _playError(0),
-    _recWarning(0),
-    _recError(0),
-    _playBufType(AudioDeviceModule::kAdaptiveBufferSize),
-    _playBufDelay(80),
-    _playBufDelayFixed(80),
-    _usingInputDeviceIndex(false),
-    _usingOutputDeviceIndex(false),
-    _inputDevice(AudioDeviceModule::kDefaultCommunicationDevice),
-    _outputDevice(AudioDeviceModule::kDefaultCommunicationDevice),
-    _inputDeviceIndex(0),
-    _outputDeviceIndex(0),
-    _newMicLevel(0)
-{
-    WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id, "%s created", __FUNCTION__);
-    assert(_comInit.succeeded());
+AudioDeviceWindowsCore::AudioDeviceWindowsCore(const int32_t id)
+    : _comInit(ScopedCOMInitializer::kMTA),
+      _id(id),
+      _ptrAudioBuffer(NULL),
+      _ptrEnumerator(NULL),
+      _ptrRenderCollection(NULL),
+      _ptrCaptureCollection(NULL),
+      _ptrDeviceOut(NULL),
+      _ptrDeviceIn(NULL),
+      _ptrClientOut(NULL),
+      _ptrClientIn(NULL),
+      _ptrRenderClient(NULL),
+      _ptrCaptureClient(NULL),
+      _ptrCaptureVolume(NULL),
+      _ptrRenderSimpleVolume(NULL),
+      _dmo(NULL),
+      _mediaBuffer(NULL),
+      _builtInAecEnabled(false),
+      _playAudioFrameSize(0),
+      _playSampleRate(0),
+      _playBlockSizeInFrames(0),
+      _playBlockSizeInSamples(0),
+      _playChannels(2),
+      _sndCardPlayDelay(0),
+      _sndCardRecDelay(0),
+      _writtenSamples(0),
+      _readSamples(0),
+      _playAcc(0),
+      _recAudioFrameSize(0),
+      _recSampleRate(0),
+      _recBlockSize(0),
+      _recChannels(2),
+      _avrtLibrary(NULL),
+      _winSupportAvrt(false),
+      _hRenderSamplesReadyEvent(NULL),
+      _hPlayThread(NULL),
+      _hCaptureSamplesReadyEvent(NULL),
+      _hRecThread(NULL),
+      _hShutdownRenderEvent(NULL),
+      _hShutdownCaptureEvent(NULL),
+      _hRenderStartedEvent(NULL),
+      _hCaptureStartedEvent(NULL),
+      _hGetCaptureVolumeThread(NULL),
+      _hSetCaptureVolumeThread(NULL),
+      _hSetCaptureVolumeEvent(NULL),
+      _hMmTask(NULL),
+      _initialized(false),
+      _recording(false),
+      _playing(false),
+      _recIsInitialized(false),
+      _playIsInitialized(false),
+      _speakerIsInitialized(false),
+      _microphoneIsInitialized(false),
+      _AGC(false),
+      _playWarning(0),
+      _playError(0),
+      _recWarning(0),
+      _recError(0),
+      _playBufType(AudioDeviceModule::kAdaptiveBufferSize),
+      _playBufDelay(80),
+      _playBufDelayFixed(80),
+      _usingInputDeviceIndex(false),
+      _usingOutputDeviceIndex(false),
+      _inputDevice(AudioDeviceModule::kDefaultCommunicationDevice),
+      _outputDevice(AudioDeviceModule::kDefaultCommunicationDevice),
+      _inputDeviceIndex(0),
+      _outputDeviceIndex(0),
+      _newMicLevel(0) {
+  WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id, "%s created", __FUNCTION__);
+  assert(_comInit.succeeded());
 
-    // Try to load the Avrt DLL
-    if (!_avrtLibrary)
-    {
-        // Get handle to the Avrt DLL module.
-        _avrtLibrary = LoadLibrary(TEXT("Avrt.dll"));
-        if (_avrtLibrary)
-        {
-            // Handle is valid (should only happen if OS larger than vista & win7).
-            // Try to get the function addresses.
-            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "AudioDeviceWindowsCore::AudioDeviceWindowsCore() The Avrt DLL module is now loaded");
+  // Try to load the Avrt DLL
+  if (!_avrtLibrary) {
+    // Get handle to the Avrt DLL module.
+    _avrtLibrary = LoadLibrary(TEXT("Avrt.dll"));
+    if (_avrtLibrary) {
+      // Handle is valid (should only happen if OS larger than vista & win7).
+      // Try to get the function addresses.
+      WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                   "AudioDeviceWindowsCore::AudioDeviceWindowsCore() The Avrt "
+                   "DLL module is now loaded");
 
-            _PAvRevertMmThreadCharacteristics = (PAvRevertMmThreadCharacteristics)GetProcAddress(_avrtLibrary, "AvRevertMmThreadCharacteristics");
-            _PAvSetMmThreadCharacteristicsA = (PAvSetMmThreadCharacteristicsA)GetProcAddress(_avrtLibrary, "AvSetMmThreadCharacteristicsA");
-            _PAvSetMmThreadPriority = (PAvSetMmThreadPriority)GetProcAddress(_avrtLibrary, "AvSetMmThreadPriority");
+      _PAvRevertMmThreadCharacteristics =
+          (PAvRevertMmThreadCharacteristics)GetProcAddress(
+              _avrtLibrary, "AvRevertMmThreadCharacteristics");
+      _PAvSetMmThreadCharacteristicsA =
+          (PAvSetMmThreadCharacteristicsA)GetProcAddress(
+              _avrtLibrary, "AvSetMmThreadCharacteristicsA");
+      _PAvSetMmThreadPriority = (PAvSetMmThreadPriority)GetProcAddress(
+          _avrtLibrary, "AvSetMmThreadPriority");
 
-            if ( _PAvRevertMmThreadCharacteristics &&
-                 _PAvSetMmThreadCharacteristicsA &&
-                 _PAvSetMmThreadPriority)
-            {
-                WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "AudioDeviceWindowsCore::AudioDeviceWindowsCore() AvRevertMmThreadCharacteristics() is OK");
-                WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "AudioDeviceWindowsCore::AudioDeviceWindowsCore() AvSetMmThreadCharacteristicsA() is OK");
-                WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "AudioDeviceWindowsCore::AudioDeviceWindowsCore() AvSetMmThreadPriority() is OK");
-                _winSupportAvrt = true;
-            }
-        }
+      if (_PAvRevertMmThreadCharacteristics &&
+          _PAvSetMmThreadCharacteristicsA && _PAvSetMmThreadPriority) {
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "AudioDeviceWindowsCore::AudioDeviceWindowsCore() "
+                     "AvRevertMmThreadCharacteristics() is OK");
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "AudioDeviceWindowsCore::AudioDeviceWindowsCore() "
+                     "AvSetMmThreadCharacteristicsA() is OK");
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "AudioDeviceWindowsCore::AudioDeviceWindowsCore() "
+                     "AvSetMmThreadPriority() is OK");
+        _winSupportAvrt = true;
+      }
     }
+  }
 
-    // Create our samples ready events - we want auto reset events that start in the not-signaled state.
-    // The state of an auto-reset event object remains signaled until a single waiting thread is released,
-    // at which time the system automatically sets the state to nonsignaled. If no threads are waiting,
-    // the event object's state remains signaled.
-    // (Except for _hShutdownCaptureEvent, which is used to shutdown multiple threads).
-    _hRenderSamplesReadyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    _hCaptureSamplesReadyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    _hShutdownRenderEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    _hShutdownCaptureEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    _hRenderStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    _hCaptureStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    _hSetCaptureVolumeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+  // Create our samples ready events - we want auto reset events that start in
+  // the not-signaled state. The state of an auto-reset event object remains
+  // signaled until a single waiting thread is released, at which time the
+  // system automatically sets the state to nonsignaled. If no threads are
+  // waiting, the event object's state remains signaled. (Except for
+  // _hShutdownCaptureEvent, which is used to shutdown multiple threads).
+  _hRenderSamplesReadyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+  _hCaptureSamplesReadyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+  _hShutdownRenderEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+  _hShutdownCaptureEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+  _hRenderStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+  _hCaptureStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+  _hSetCaptureVolumeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-    _perfCounterFreq.QuadPart = 1;
-    _perfCounterFactor = 0.0;
-    _avgCPULoad = 0.0;
+  _perfCounterFreq.QuadPart = 1;
+  _perfCounterFactor = 0.0;
+  _avgCPULoad = 0.0;
 
-    // list of number of channels to use on recording side
-    _recChannelsPrioList[0] = 2;    // stereo is prio 1
-    _recChannelsPrioList[1] = 1;    // mono is prio 2
-    _recChannelsPrioList[2] = 4;    // quad is prio 3
+  // list of number of channels to use on recording side
+  _recChannelsPrioList[0] = 2;  // stereo is prio 1
+  _recChannelsPrioList[1] = 1;  // mono is prio 2
+  _recChannelsPrioList[2] = 4;  // quad is prio 3
 
-    // list of number of channels to use on playout side
-    _playChannelsPrioList[0] = 2;    // stereo is prio 1
-    _playChannelsPrioList[1] = 1;    // mono is prio 2
+  // list of number of channels to use on playout side
+  _playChannelsPrioList[0] = 2;  // stereo is prio 1
+  _playChannelsPrioList[1] = 1;  // mono is prio 2
 
-    HRESULT hr;
+  HRESULT hr;
 
-    // We know that this API will work since it has already been verified in
-    // CoreAudioIsSupported, hence no need to check for errors here as well.
+  // We know that this API will work since it has already been verified in
+  // CoreAudioIsSupported, hence no need to check for errors here as well.
 
-    // Retrive the IMMDeviceEnumerator API (should load the MMDevAPI.dll)
-    // TODO(henrika): we should probably move this allocation to Init() instead
-    // and deallocate in Terminate() to make the implementation more symmetric.
-    CoCreateInstance(
-      __uuidof(MMDeviceEnumerator),
-      NULL,
-      CLSCTX_ALL,
-      __uuidof(IMMDeviceEnumerator),
-      reinterpret_cast<void**>(&_ptrEnumerator));
-    assert(NULL != _ptrEnumerator);
+  // Retrive the IMMDeviceEnumerator API (should load the MMDevAPI.dll)
+  // TODO(henrika): we should probably move this allocation to Init() instead
+  // and deallocate in Terminate() to make the implementation more symmetric.
+  CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
+                   __uuidof(IMMDeviceEnumerator),
+                   reinterpret_cast<void**>(&_ptrEnumerator));
+  assert(NULL != _ptrEnumerator);
 
-    // DMO initialization for built-in WASAPI AEC.
-    {
-        IMediaObject* ptrDMO = NULL;
-        hr = CoCreateInstance(CLSID_CWMAudioAEC,
-                              NULL,
-                              CLSCTX_INPROC_SERVER,
-                              IID_IMediaObject,
-                              reinterpret_cast<void**>(&ptrDMO));
-        if (FAILED(hr) || ptrDMO == NULL)
-        {
-            // Since we check that _dmo is non-NULL in EnableBuiltInAEC(), the
-            // feature is prevented from being enabled.
-            _builtInAecEnabled = false;
-            _TraceCOMError(hr);
-        }
-        _dmo = ptrDMO;
-        SAFE_RELEASE(ptrDMO);
+  // DMO initialization for built-in WASAPI AEC.
+  {
+    IMediaObject* ptrDMO = NULL;
+    hr = CoCreateInstance(CLSID_CWMAudioAEC, NULL, CLSCTX_INPROC_SERVER,
+                          IID_IMediaObject, reinterpret_cast<void**>(&ptrDMO));
+    if (FAILED(hr) || ptrDMO == NULL) {
+      // Since we check that _dmo is non-NULL in EnableBuiltInAEC(), the
+      // feature is prevented from being enabled.
+      _builtInAecEnabled = false;
+      _TraceCOMError(hr);
     }
+    _dmo = ptrDMO;
+    SAFE_RELEASE(ptrDMO);
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -2283,8 +2285,11 @@ int32_t AudioDeviceWindowsCore::InitPlayout()
     if (hr == S_OK)
     {
         _playAudioFrameSize = Wfx.nBlockAlign;
-        _playBlockSizePerChannel = Wfx.nSamplesPerSec/100;
-        _playBlockSize = _playBlockSizePerChannel*Wfx.nChannels;
+        // Block size in frames is the number of samples each channel in 10ms.
+        _playBlockSizeInFrames = Wfx.nSamplesPerSec / 100;
+        // Block size in samples is block size in frames times number of
+        // channels.
+        _playBlockSizeInSamples = _playBlockSizeInFrames * Wfx.nChannels;
         _playSampleRate = Wfx.nSamplesPerSec;
         _devicePlaySampleRate = Wfx.nSamplesPerSec; // The device itself continues to run at 44.1 kHz.
         _devicePlayBlockSize = Wfx.nSamplesPerSec/100;
@@ -2300,7 +2305,8 @@ int32_t AudioDeviceWindowsCore::InitPlayout()
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "cbSize             : %d", Wfx.cbSize);
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Additional settings:");
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "_playAudioFrameSize: %d", _playAudioFrameSize);
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "_playBlockSize     : %d", _playBlockSize);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "_playBlockSizeInFrames     : %d", _playBlockSizeInFrames);
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "_playChannels      : %d", _playChannels);
     }
 
@@ -3463,8 +3469,8 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
     // Derive initial rendering delay.
     // Example: 10*(960/480) + 15 = 20 + 15 = 35ms
     //
-    int playout_delay = 10 * (bufferLength / _playBlockSize) +
-        (int)((latency + devPeriod) / 10000);
+    int playout_delay = 10 * (bufferLength / _playBlockSizeInFrames) +
+                        (int)((latency + devPeriod) / 10000);
     _sndCardPlayDelay = playout_delay;
     _writtenSamples = 0;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
@@ -3545,38 +3551,38 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
             // WEBRTC_TRACE(kTraceStream, kTraceAudioDevice, _id, "#avaliable audio frames = %u", framesAvailable);
 
             // Do we have 10 ms available in the render buffer?
-            if (framesAvailable < _playBlockSize)
-            {
-                // Not enough space in render buffer to store next render packet.
-                _UnLock();
-                break;
+            if (framesAvailable < _playBlockSizeInFrames) {
+              // Not enough space in render buffer to store next render packet.
+              _UnLock();
+              break;
             }
 
             // Write n*10ms buffers to the render buffer
-            const uint32_t n10msBuffers = (framesAvailable / _playBlockSize);
+            const uint32_t n10msBuffers =
+                (framesAvailable / _playBlockSizeInFrames);
             for (uint32_t n = 0; n < n10msBuffers; n++)
             {
                 // Get pointer (i.e., grab the buffer) to next space in the shared render buffer.
-                hr = _ptrRenderClient->GetBuffer(_playBlockSize, &pData);
+                hr =
+                    _ptrRenderClient->GetBuffer(_playBlockSizeInFrames, &pData);
                 EXIT_ON_ERROR(hr);
 
                 QueryPerformanceCounter(&t1);    // measure time: START
 
                 if (_ptrAudioBuffer)
                 {
-                    // Request data to be played out (#bytes = _playBlockSize*_audioFrameSize)
-                    _UnLock();
-                    int32_t nSamples =
-                    _ptrAudioBuffer->RequestPlayoutData(
-                        _playBlockSizePerChannel);
-                    _Lock();
+                  // Request data to be played out (#bytes =
+                  // _playBlockSizeInFrames*_audioFrameSize)
+                  _UnLock();
+                  int32_t nSamples = _ptrAudioBuffer->RequestPlayoutData(
+                      _playBlockSizeInFrames);
+                  _Lock();
 
-                    if (nSamples == -1)
-                    {
-                        _UnLock();
-                        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                                     "failed to read data from render client");
-                        goto Exit;
+                  if (nSamples == -1) {
+                    _UnLock();
+                    WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                                 "failed to read data from render client");
+                    goto Exit;
                     }
 
                     // Sanity check to ensure that essential states are not modified during the unlocked period
@@ -3586,9 +3592,12 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
                         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id, "output state has been modified during unlocked period");
                         goto Exit;
                     }
-                    if (nSamples != static_cast<int32_t>(_playBlockSize))
-                    {
-                        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "nSamples(%d) != _playBlockSize(%d)", nSamples, _playBlockSize);
+                    if (nSamples !=
+                        static_cast<int32_t>(_playBlockSizeInSamples)) {
+                      WEBRTC_TRACE(
+                          kTraceWarning, kTraceAudioDevice, _id,
+                          "nSamples(%d) != _playBlockSizeInSamples(%d)",
+                          nSamples, _playBlockSizeInSamples);
                     }
 
                     // Get the actual (stored) data
@@ -3600,12 +3609,13 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
                 _playAcc += time;
 
                 DWORD dwFlags(0);
-                hr = _ptrRenderClient->ReleaseBuffer(_playBlockSize, dwFlags);
+                hr = _ptrRenderClient->ReleaseBuffer(_playBlockSizeInFrames,
+                                                     dwFlags);
                 // See http://msdn.microsoft.com/en-us/library/dd316605(VS.85).aspx
                 // for more details regarding AUDCLNT_E_DEVICE_INVALIDATED.
                 EXIT_ON_ERROR(hr);
 
-                _writtenSamples += _playBlockSize;
+                _writtenSamples += _playBlockSizeInFrames;
             }
 
             // Check the current delay on the playout side.
