@@ -110,7 +110,6 @@ rtc_static_library("rtp_rtcp") {
     "source/rtp_format_vp8.h",
     "source/rtp_format_vp9.cc",
     "source/rtp_format_vp9.h",
-    "source/rtp_header_extension.h",
     "source/rtp_header_extension_map.cc",
     "source/rtp_header_extensions.cc",
     "source/rtp_header_extensions.h",
