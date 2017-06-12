@@ -480,6 +480,7 @@ rtc_source_set("test_common") {
     "../audio",
     "../base:rtc_base_approved",
     "../base:rtc_task_queue",
+    "../base:sequenced_task_checker",
     "../call",
     "../common_video",
     "../logging:rtc_event_log_api",

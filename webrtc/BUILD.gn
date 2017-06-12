@@ -407,6 +407,8 @@ if (rtc_include_tests) {
       "base:rtc_base_unittests",
       "base:rtc_numerics_unittests",
       "base:rtc_task_queue_unittests",
+      "base:sequenced_task_checker_unittests",
+      "base:weak_ptr_unittests",
       "p2p:libstunprober_unittests",
       "p2p:rtc_p2p_unittests",
       "system_wrappers:metrics_default",

@@ -75,6 +75,8 @@ rtc_static_library("libjingle_peerconnection_jni") {
     "../../base:rtc_base",
     "../../base:rtc_base_approved",
     "../../base:rtc_task_queue",
+    "../../base:sequenced_task_checker",
+    "../../base:weak_ptr",
     "../../common_video:common_video",
     "../../media:rtc_media",
     "../../media:rtc_media_base",

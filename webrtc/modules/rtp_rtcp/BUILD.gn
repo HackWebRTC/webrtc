@@ -173,7 +173,7 @@ rtc_static_library("rtp_rtcp") {
     "../../api/audio_codecs:audio_codecs_api",
     "../../base:gtest_prod",
     "../../base:rtc_base_approved",
-    "../../base:rtc_task_queue",
+    "../../base:sequenced_task_checker",
     "../../common_video",
     "../../logging:rtc_event_log_api",
     "../../system_wrappers",

@@ -43,6 +43,7 @@ if (rtc_enable_protobuf) {
       ":network_tester_packet_proto",
       "../../base:protobuf_utils",
       "../../base:rtc_task_queue",
+      "../../base:sequenced_task_checker",
       "../../p2p",
     ]
 

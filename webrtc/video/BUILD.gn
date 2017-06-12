@@ -61,6 +61,8 @@ rtc_static_library("video") {
     "../base:rtc_base_approved",
     "../base:rtc_numerics",
     "../base:rtc_task_queue",
+    "../base:sequenced_task_checker",
+    "../base:weak_ptr",
     "../call:call_interfaces",
     "../call:rtp_interfaces",
     "../common_video",
