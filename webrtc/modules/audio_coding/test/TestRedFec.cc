@@ -464,7 +464,7 @@ void TestRedFec::Run() {
     bool muted;
     EXPECT_EQ(0, _acmB->PlayoutData10Ms(outFreqHzB, &audioFrame, &muted));
     ASSERT_FALSE(muted);
-    _outFileB.Write10MsData(audioFrame.data_, audioFrame.samples_per_channel_);
+    _outFileB.Write10MsData(audioFrame.data(), audioFrame.samples_per_channel_);
   }
   _inFileA.Rewind();
 }

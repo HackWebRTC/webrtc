@@ -30,7 +30,7 @@ void CopyFromAudioFrame(const AudioFrame& src, ChannelBuffer<float>* dest) {
   RTC_CHECK_EQ(src.samples_per_channel_, dest->num_frames());
   // Copy the data from the input buffer.
   std::vector<float> tmp(src.samples_per_channel_ * src.num_channels_);
-  S16ToFloat(src.data_, tmp.size(), tmp.data());
+  S16ToFloat(src.data(), tmp.size(), tmp.data());
   Deinterleave(tmp.data(), src.samples_per_channel_, src.num_channels_,
                dest->channels());
 }
@@ -68,9 +68,10 @@ SimulationSettings::~SimulationSettings() = default;
 void CopyToAudioFrame(const ChannelBuffer<float>& src, AudioFrame* dest) {
   RTC_CHECK_EQ(src.num_channels(), dest->num_channels_);
   RTC_CHECK_EQ(src.num_frames(), dest->samples_per_channel_);
+  int16_t* dest_data = dest->mutable_data();
   for (size_t ch = 0; ch < dest->num_channels_; ++ch) {
     for (size_t sample = 0; sample < dest->samples_per_channel_; ++sample) {
-      dest->data_[sample * dest->num_channels_ + ch] =
+      dest_data[sample * dest->num_channels_ + ch] =
           src.channels()[ch][sample] * 32767;
     }
   }

@@ -1160,7 +1160,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
     const size_t data_size =
         sizeof(int16_t) * frame->samples_per_channel_ * frame->num_channels_;
-    msg->set_input_data(frame->data_, data_size);
+    msg->set_input_data(frame->data(), data_size);
   }
 #endif
 
@@ -1178,7 +1178,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
     const size_t data_size =
         sizeof(int16_t) * frame->samples_per_channel_ * frame->num_channels_;
-    msg->set_output_data(frame->data_, data_size);
+    msg->set_output_data(frame->data(), data_size);
     RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
                                           &debug_dump_.num_bytes_left_for_log_,
                                           &crit_debug_, &debug_dump_.capture));
@@ -1514,7 +1514,7 @@ int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
         debug_dump_.render.event_msg->mutable_reverse_stream();
     const size_t data_size =
         sizeof(int16_t) * frame->samples_per_channel_ * frame->num_channels_;
-    msg->set_data(frame->data_, data_size);
+    msg->set_data(frame->data(), data_size);
     RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
                                           &debug_dump_.num_bytes_left_for_log_,
                                           &crit_debug_, &debug_dump_.render));

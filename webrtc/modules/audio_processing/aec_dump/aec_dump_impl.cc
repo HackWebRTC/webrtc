@@ -130,7 +130,7 @@ void AecDumpImpl::WriteRenderStreamMessage(const AudioFrame& frame) {
   audioproc::ReverseStream* msg = event->mutable_reverse_stream();
   const size_t data_size =
       sizeof(int16_t) * frame.samples_per_channel_ * frame.num_channels_;
-  msg->set_data(frame.data_, data_size);
+  msg->set_data(frame.data(), data_size);
 
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(std::move(task)));
 }

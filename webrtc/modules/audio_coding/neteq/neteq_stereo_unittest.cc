@@ -165,10 +165,12 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
   }
 
   virtual void VerifyOutput(size_t num_samples) {
+    const int16_t* output_data = output_.data();
+    const int16_t* output_multi_channel_data = output_multi_channel_.data();
     for (size_t i = 0; i < num_samples; ++i) {
       for (size_t j = 0; j < num_channels_; ++j) {
-        ASSERT_EQ(output_.data_[i],
-                  output_multi_channel_.data_[i * num_channels_ + j])
+        ASSERT_EQ(output_data[i],
+                  output_multi_channel_data[i * num_channels_ + j])
             << "Diff in sample " << i << ", channel " << j << ".";
       }
     }
@@ -359,16 +361,18 @@ class NetEqStereoTestLosses : public NetEqStereoTest {
   // TODO(hlundin): NetEq is not giving bitexact results for these cases.
   virtual void VerifyOutput(size_t num_samples) {
     for (size_t i = 0; i < num_samples; ++i) {
+      const int16_t* output_data = output_.data();
+      const int16_t* output_multi_channel_data = output_multi_channel_.data();
       auto first_channel_sample =
-          output_multi_channel_.data_[i * num_channels_];
+          output_multi_channel_data[i * num_channels_];
       for (size_t j = 0; j < num_channels_; ++j) {
         const int kErrorMargin = 200;
-        EXPECT_NEAR(output_.data_[i],
-                    output_multi_channel_.data_[i * num_channels_ + j],
+        EXPECT_NEAR(output_data[i],
+                    output_multi_channel_data[i * num_channels_ + j],
                     kErrorMargin)
             << "Diff in sample " << i << ", channel " << j << ".";
         EXPECT_EQ(first_channel_sample,
-                  output_multi_channel_.data_[i * num_channels_ + j]);
+                  output_multi_channel_data[i * num_channels_ + j]);
       }
     }
   }

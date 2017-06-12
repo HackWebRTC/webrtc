@@ -112,9 +112,11 @@ TEST(FrameCombiner, CombiningZeroFramesShouldProduceSilence) {
       combiner.Combine(frames_to_combine, number_of_channels, rate,
                        frames_to_combine.size(), &audio_frame_for_mixing);
 
+      const int16_t* audio_frame_for_mixing_data =
+          audio_frame_for_mixing.data();
       const std::vector<int16_t> mixed_data(
-          audio_frame_for_mixing.data_,
-          audio_frame_for_mixing.data_ + number_of_channels * rate / 100);
+          audio_frame_for_mixing_data,
+          audio_frame_for_mixing_data + number_of_channels * rate / 100);
 
       const std::vector<int16_t> expected(number_of_channels * rate / 100, 0);
       EXPECT_EQ(mixed_data, expected);
@@ -129,15 +131,17 @@ TEST(FrameCombiner, CombiningOneFrameShouldNotChangeFrame) {
       SCOPED_TRACE(ProduceDebugText(rate, number_of_channels, 1));
 
       SetUpFrames(rate, number_of_channels);
-      std::iota(frame1.data_, frame1.data_ + number_of_channels * rate / 100,
-                0);
+      int16_t* frame1_data = frame1.mutable_data();
+      std::iota(frame1_data, frame1_data + number_of_channels * rate / 100, 0);
       const std::vector<AudioFrame*> frames_to_combine = {&frame1};
       combiner.Combine(frames_to_combine, number_of_channels, rate,
                        frames_to_combine.size(), &audio_frame_for_mixing);
 
+      const int16_t* audio_frame_for_mixing_data =
+          audio_frame_for_mixing.data();
       const std::vector<int16_t> mixed_data(
-          audio_frame_for_mixing.data_,
-          audio_frame_for_mixing.data_ + number_of_channels * rate / 100);
+          audio_frame_for_mixing_data,
+          audio_frame_for_mixing_data + number_of_channels * rate / 100);
 
       std::vector<int16_t> expected(number_of_channels * rate / 100);
       std::iota(expected.begin(), expected.end(), 0);
@@ -190,8 +194,8 @@ TEST(FrameCombiner, GainCurveIsSmoothForAlternatingNumberOfStreams) {
           combiner.Combine(frames_to_combine, number_of_channels, rate,
                            number_of_streams, &audio_frame_for_mixing);
           cumulative_change += change_calculator.CalculateGainChange(
-              rtc::ArrayView<const int16_t>(frame1.data_, number_of_samples),
-              rtc::ArrayView<const int16_t>(audio_frame_for_mixing.data_,
+              rtc::ArrayView<const int16_t>(frame1.data(), number_of_samples),
+              rtc::ArrayView<const int16_t>(audio_frame_for_mixing.data(),
                                             number_of_samples));
         }
         RTC_DCHECK_LT(cumulative_change, 10);

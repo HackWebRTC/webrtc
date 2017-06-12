@@ -154,10 +154,11 @@ int AcmReceiver::GetAudio(int desired_freq_hz,
   // TODO(henrik.lundin) Glitches in the output may appear if the output rate
   // from NetEq changes. See WebRTC issue 3923.
   if (need_resampling) {
+    // TODO(yujo): handle this more efficiently for muted frames.
     int samples_per_channel_int = resampler_.Resample10Msec(
-        audio_frame->data_, current_sample_rate_hz, desired_freq_hz,
+        audio_frame->data(), current_sample_rate_hz, desired_freq_hz,
         audio_frame->num_channels_, AudioFrame::kMaxDataSizeSamples,
-        audio_frame->data_);
+        audio_frame->mutable_data());
     if (samples_per_channel_int < 0) {
       LOG(LERROR) << "AcmReceiver::GetAudio - Resampling audio_buffer_ failed.";
       return -1;
@@ -175,7 +176,7 @@ int AcmReceiver::GetAudio(int desired_freq_hz,
   }
 
   // Store current audio in |last_audio_buffer_| for next time.
-  memcpy(last_audio_buffer_.get(), audio_frame->data_,
+  memcpy(last_audio_buffer_.get(), audio_frame->data(),
          sizeof(int16_t) * audio_frame->samples_per_channel_ *
              audio_frame->num_channels_);
 

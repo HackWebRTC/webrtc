@@ -200,8 +200,10 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
     // Get audio from external decoder instance.
     GetOutputAudio(&output_);
 
+    const int16_t* output_data = output_.data();
+    const int16_t* output_internal_data = output_internal_.data();
     for (size_t i = 0; i < output_.samples_per_channel_; ++i) {
-      ASSERT_EQ(output_.data_[i], output_internal_.data_[i])
+      ASSERT_EQ(output_data[i], output_internal_data[i])
           << "Diff in sample " << i << ".";
     }
   }
@@ -298,8 +300,9 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
     }
 
     ASSERT_EQ(1u, output.num_channels_);
+    const int16_t* output_data = output.data();
     for (size_t i = 0; i < output.samples_per_channel_; ++i) {
-      if (output.data_[i] != 0)
+      if (output_data[i] != 0)
         return;
     }
     EXPECT_TRUE(false)

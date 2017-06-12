@@ -325,24 +325,37 @@ void UpdateCodecTypeHistogram(size_t codec_type) {
 int DownMix(const AudioFrame& frame,
             size_t length_out_buff,
             int16_t* out_buff) {
-  if (length_out_buff < frame.samples_per_channel_) {
-    return -1;
+  RTC_DCHECK_EQ(frame.num_channels_, 2);
+  RTC_DCHECK_GE(length_out_buff, frame.samples_per_channel_);
+
+  if (!frame.muted()) {
+    const int16_t* frame_data = frame.data();
+    for (size_t n = 0; n < frame.samples_per_channel_; ++n) {
+      out_buff[n] = static_cast<int16_t>(
+          (static_cast<int32_t>(frame_data[2 * n]) +
+           static_cast<int32_t>(frame_data[2 * n + 1])) >> 1);
+    }
+  } else {
+    memset(out_buff, 0, frame.samples_per_channel_);
   }
-  for (size_t n = 0; n < frame.samples_per_channel_; ++n)
-    out_buff[n] = (frame.data_[2 * n] + frame.data_[2 * n + 1]) >> 1;
   return 0;
 }
 
 // Mono-to-stereo can be used as in-place.
 int UpMix(const AudioFrame& frame, size_t length_out_buff, int16_t* out_buff) {
-  if (length_out_buff < frame.samples_per_channel_) {
-    return -1;
-  }
-  for (size_t n = frame.samples_per_channel_; n != 0; --n) {
-    size_t i = n - 1;
-    int16_t sample = frame.data_[i];
-    out_buff[2 * i + 1] = sample;
-    out_buff[2 * i] = sample;
+  RTC_DCHECK_EQ(frame.num_channels_, 1);
+  RTC_DCHECK_GE(length_out_buff, 2 * frame.samples_per_channel_);
+
+  if (!frame.muted()) {
+    const int16_t* frame_data = frame.data();
+    for (size_t n = frame.samples_per_channel_; n != 0; --n) {
+      size_t i = n - 1;
+      int16_t sample = frame_data[i];
+      out_buff[2 * i + 1] = sample;
+      out_buff[2 * i] = sample;
+    }
+  } else {
+    memset(out_buff, 0, 2 * frame.samples_per_channel_);
   }
   return 0;
 }
@@ -725,12 +738,13 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
 
   // When adding data to encoders this pointer is pointing to an audio buffer
   // with correct number of channels.
-  const int16_t* ptr_audio = ptr_frame->data_;
+  const int16_t* ptr_audio = ptr_frame->data();
 
   // For pushing data to primary, point the |ptr_audio| to correct buffer.
   if (!same_num_channels)
     ptr_audio = input_data->buffer;
 
+  // TODO(yujo): Skip encode of muted frames.
   input_data->input_timestamp = ptr_frame->timestamp_;
   input_data->audio = ptr_audio;
   input_data->length_per_channel = ptr_frame->samples_per_channel_;
@@ -744,6 +758,7 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
 // encoders has to be mono for down-mix to take place.
 // |*ptr_out| will point to the pre-processed audio-frame. If no pre-processing
 // is required, |*ptr_out| points to |in_frame|.
+// TODO(yujo): Make this more efficient for muted frames.
 int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
                                                const AudioFrame** ptr_out) {
   const bool resample =
@@ -793,13 +808,12 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
   *ptr_out = &preprocess_frame_;
   preprocess_frame_.num_channels_ = in_frame.num_channels_;
   int16_t audio[WEBRTC_10MS_PCM_AUDIO];
-  const int16_t* src_ptr_audio = in_frame.data_;
-  int16_t* dest_ptr_audio = preprocess_frame_.data_;
+  const int16_t* src_ptr_audio = in_frame.data();
   if (down_mix) {
     // If a resampling is required the output of a down-mix is written into a
     // local buffer, otherwise, it will be written to the output frame.
-    if (resample)
-      dest_ptr_audio = audio;
+    int16_t* dest_ptr_audio = resample ?
+        audio : preprocess_frame_.mutable_data();
     if (DownMix(in_frame, WEBRTC_10MS_PCM_AUDIO, dest_ptr_audio) < 0)
       return -1;
     preprocess_frame_.num_channels_ = 1;
@@ -813,7 +827,7 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
   // If it is required, we have to do a resampling.
   if (resample) {
     // The result of the resampler is written to output frame.
-    dest_ptr_audio = preprocess_frame_.data_;
+    int16_t* dest_ptr_audio = preprocess_frame_.mutable_data();
 
     int samples_per_channel = resampler_.Resample10Msec(
         src_ptr_audio, in_frame.sample_rate_hz_, encoder_stack_->SampleRateHz(),

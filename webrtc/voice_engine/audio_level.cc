@@ -50,9 +50,10 @@ void AudioLevel::Clear() {
 
 void AudioLevel::ComputeLevel(const AudioFrame& audioFrame) {
   // Check speech level (works for 2 channels as well)
-  int16_t abs_value = WebRtcSpl_MaxAbsValueW16(
-      audioFrame.data_,
-      audioFrame.samples_per_channel_ * audioFrame.num_channels_);
+  int16_t abs_value = audioFrame.muted() ? 0 :
+      WebRtcSpl_MaxAbsValueW16(
+          audioFrame.data(),
+          audioFrame.samples_per_channel_ * audioFrame.num_channels_);
 
   // Protect member access using a lock since this method is called on a
   // dedicated audio thread in the RecordedDataIsAvailable() callback.

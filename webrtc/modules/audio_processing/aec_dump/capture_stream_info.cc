@@ -46,7 +46,7 @@ void CaptureStreamInfo::AddInput(const AudioFrame& frame) {
   auto* stream = task_->GetEvent()->mutable_stream();
   const size_t data_size =
       sizeof(int16_t) * frame.samples_per_channel_ * frame.num_channels_;
-  stream->set_input_data(frame.data_, data_size);
+  stream->set_input_data(frame.data(), data_size);
 }
 
 void CaptureStreamInfo::AddOutput(const AudioFrame& frame) {
@@ -54,7 +54,7 @@ void CaptureStreamInfo::AddOutput(const AudioFrame& frame) {
   auto* stream = task_->GetEvent()->mutable_stream();
   const size_t data_size =
       sizeof(int16_t) * frame.samples_per_channel_ * frame.num_channels_;
-  stream->set_output_data(frame.data_, data_size);
+  stream->set_output_data(frame.data(), data_size);
 }
 
 void CaptureStreamInfo::AddAudioProcessingState(

@@ -175,9 +175,7 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
     input_frame_.samples_per_channel_ = kSampleRateHz * 10 / 1000;  // 10 ms.
     static_assert(kSampleRateHz * 10 / 1000 <= AudioFrame::kMaxDataSizeSamples,
                   "audio frame too small");
-    memset(input_frame_.data_,
-           0,
-           input_frame_.samples_per_channel_ * sizeof(input_frame_.data_[0]));
+    input_frame_.Mute();
 
     ASSERT_EQ(0, acm_->RegisterTransportCallback(&packet_cb_));
 
@@ -698,7 +696,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
     // TODO(kwiberg): Use std::copy here. Might be complications because AFAICS
     // this call confuses the number of samples with the number of bytes, and
     // ends up copying only half of what it should.
-    memcpy(input_frame_.data_, audio_loop_.GetNextBlock().data(),
+    memcpy(input_frame_.mutable_data(), audio_loop_.GetNextBlock().data(),
            kNumSamples10ms);
     AudioCodingModuleTestOldApi::InsertAudio();
   }

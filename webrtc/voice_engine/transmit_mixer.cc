@@ -936,7 +936,7 @@ int32_t TransmitMixer::MixOrReplaceAudioWithFile(
     {
         // Currently file stream is always mono.
         // TODO(xians): Change the code when FilePlayer supports real stereo.
-        MixWithSat(_audioFrame.data_,
+        MixWithSat(_audioFrame.mutable_data(),
                    _audioFrame.num_channels_,
                    fileBuffer.get(),
                    1,

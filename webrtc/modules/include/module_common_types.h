@@ -271,11 +271,8 @@ class CallStatsObserver {
  * states.
  *
  * Notes
- * - The total number of samples in |data_| is
- *   samples_per_channel_ * num_channels_
- *
+ * - The total number of samples is samples_per_channel_ * num_channels_
  * - Stereo data is interleaved starting with the left channel.
- *
  */
 class AudioFrame {
  public:
@@ -306,8 +303,7 @@ class AudioFrame {
 
   AudioFrame();
 
-  // Resets all members to their default state (except does not modify the
-  // contents of |data_|).
+  // Resets all members to their default state.
   void Reset();
 
   void UpdateFrame(int id, uint32_t timestamp, const int16_t* data,
@@ -317,16 +313,21 @@ class AudioFrame {
 
   void CopyFrom(const AudioFrame& src);
 
-  // TODO(yujo): upcoming API update. Currently, both of these just return
-  // data_.
+  // data() returns a zeroed static buffer if the frame is muted.
+  // mutable_frame() always returns a non-static buffer; the first call to
+  // mutable_frame() zeros the non-static buffer and marks the frame unmuted.
   const int16_t* data() const;
   int16_t* mutable_data();
+
+  // Prefer to mute frames using AudioFrameOperations::Mute.
+  void Mute();
+  // Frame is muted by default.
+  bool muted() const;
 
   // These methods are deprecated. Use the functions in
   // webrtc/audio/utility instead. These methods will exists for a
   // short period of time until webrtc clients have updated. See
   // webrtc:6548 for details.
-  RTC_DEPRECATED void Mute();
   RTC_DEPRECATED AudioFrame& operator>>=(const int rhs);
   RTC_DEPRECATED AudioFrame& operator+=(const AudioFrame& rhs);
 
@@ -339,7 +340,6 @@ class AudioFrame {
   // NTP time of the estimated capture time in local timebase in milliseconds.
   // -1 represents an uninitialized value.
   int64_t ntp_time_ms_ = -1;
-  int16_t data_[kMaxDataSizeSamples];
   size_t samples_per_channel_ = 0;
   int sample_rate_hz_ = 0;
   size_t num_channels_ = 0;
@@ -347,13 +347,24 @@ class AudioFrame {
   VADActivity vad_activity_ = kVadUnknown;
 
  private:
+  // A permamently zeroed out buffer to represent muted frames. This is a
+  // header-only class, so the only way to avoid creating a separate empty
+  // buffer per translation unit is to wrap a static in an inline function.
+  static const int16_t* empty_data() {
+    static const int16_t kEmptyData[kMaxDataSizeSamples] = {0};
+    static_assert(sizeof(kEmptyData) == kMaxDataSizeBytes, "kMaxDataSizeBytes");
+    return kEmptyData;
+  }
+
+  int16_t data_[kMaxDataSizeSamples];
+  bool muted_ = true;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioFrame);
 };
 
-// TODO(henrik.lundin) Can we remove the call to data_()?
-// See https://bugs.chromium.org/p/webrtc/issues/detail?id=5647.
-inline AudioFrame::AudioFrame()
-    : data_() {
+inline AudioFrame::AudioFrame() {
+  // Visual Studio doesn't like this in the class definition.
+  static_assert(sizeof(data_) == kMaxDataSizeBytes, "kMaxDataSizeBytes");
 }
 
 inline void AudioFrame::Reset() {
@@ -363,6 +374,7 @@ inline void AudioFrame::Reset() {
   timestamp_ = 0;
   elapsed_time_ms_ = -1;
   ntp_time_ms_ = -1;
+  muted_ = true;
   samples_per_channel_ = 0;
   sample_rate_hz_ = 0;
   num_channels_ = 0;
@@ -388,10 +400,11 @@ inline void AudioFrame::UpdateFrame(int id,
 
   const size_t length = samples_per_channel * num_channels;
   assert(length <= kMaxDataSizeSamples);
-  if (data != NULL) {
+  if (data != nullptr) {
     memcpy(data_, data, sizeof(int16_t) * length);
+    muted_ = false;
   } else {
-    memset(data_, 0, sizeof(int16_t) * length);
+    muted_ = true;
   }
 }
 
@@ -402,6 +415,7 @@ inline void AudioFrame::CopyFrom(const AudioFrame& src) {
   timestamp_ = src.timestamp_;
   elapsed_time_ms_ = src.elapsed_time_ms_;
   ntp_time_ms_ = src.ntp_time_ms_;
+  muted_ = src.muted();
   samples_per_channel_ = src.samples_per_channel_;
   sample_rate_hz_ = src.sample_rate_hz_;
   speech_type_ = src.speech_type_;
@@ -410,24 +424,36 @@ inline void AudioFrame::CopyFrom(const AudioFrame& src) {
 
   const size_t length = samples_per_channel_ * num_channels_;
   assert(length <= kMaxDataSizeSamples);
-  memcpy(data_, src.data_, sizeof(int16_t) * length);
+  if (!src.muted()) {
+    memcpy(data_, src.data(), sizeof(int16_t) * length);
+    muted_ = false;
+  }
 }
 
 inline const int16_t* AudioFrame::data() const {
-  return data_;
+  return muted_ ? empty_data() : data_;
 }
 
+// TODO(henrik.lundin) Can we skip zeroing the buffer?
+// See https://bugs.chromium.org/p/webrtc/issues/detail?id=5647.
 inline int16_t* AudioFrame::mutable_data() {
+  if (muted_) {
+    memset(data_, 0, kMaxDataSizeBytes);
+    muted_ = false;
+  }
   return data_;
 }
 
 inline void AudioFrame::Mute() {
-  memset(data_, 0, samples_per_channel_ * num_channels_ * sizeof(int16_t));
+  muted_ = true;
 }
+
+inline bool AudioFrame::muted() const { return muted_; }
 
 inline AudioFrame& AudioFrame::operator>>=(const int rhs) {
   assert((num_channels_ > 0) && (num_channels_ < 3));
   if ((num_channels_ > 2) || (num_channels_ < 1)) return *this;
+  if (muted_) return *this;
 
   for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
     data_[i] = static_cast<int16_t>(data_[i] >> rhs);
@@ -441,7 +467,7 @@ inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
   if ((num_channels_ > 2) || (num_channels_ < 1)) return *this;
   if (num_channels_ != rhs.num_channels_) return *this;
 
-  bool noPrevData = false;
+  bool noPrevData = muted_;
   if (samples_per_channel_ != rhs.samples_per_channel_) {
     if (samples_per_channel_ == 0) {
       // special case we have no data to start with
@@ -460,17 +486,21 @@ inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
 
   if (speech_type_ != rhs.speech_type_) speech_type_ = kUndefined;
 
-  if (noPrevData) {
-    memcpy(data_, rhs.data_,
-           sizeof(int16_t) * rhs.samples_per_channel_ * num_channels_);
-  } else {
-    // IMPROVEMENT this can be done very fast in assembly
-    for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
-      int32_t wrap_guard =
-          static_cast<int32_t>(data_[i]) + static_cast<int32_t>(rhs.data_[i]);
-      data_[i] = rtc::saturated_cast<int16_t>(wrap_guard);
+  if (!rhs.muted()) {
+    muted_ = false;
+    if (noPrevData) {
+      memcpy(data_, rhs.data(),
+             sizeof(int16_t) * rhs.samples_per_channel_ * num_channels_);
+    } else {
+      // IMPROVEMENT this can be done very fast in assembly
+      for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
+        int32_t wrap_guard =
+            static_cast<int32_t>(data_[i]) + static_cast<int32_t>(rhs.data_[i]);
+        data_[i] = rtc::saturated_cast<int16_t>(wrap_guard);
+      }
     }
   }
+
   return *this;
 }
 

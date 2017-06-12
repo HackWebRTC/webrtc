@@ -11,7 +11,6 @@
 #include "webrtc/modules/audio_coding/neteq/neteq_impl.h"
 
 #include <assert.h>
-#include <memory.h>  // memset
 
 #include <algorithm>
 #include <utility>
@@ -1063,16 +1062,17 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
                   << ") != output_size_samples_ (" << output_size_samples_
                   << ")";
     // TODO(minyue): treatment of under-run, filling zeros
-    memset(audio_frame->data_, 0, num_output_samples * sizeof(int16_t));
+    audio_frame->Mute();
     return kSampleUnderrun;
   }
 
   // Should always have overlap samples left in the |sync_buffer_|.
   RTC_DCHECK_GE(sync_buffer_->FutureLength(), expand_->overlap_length());
 
+  // TODO(yujo): For muted frames, this can be a copy rather than an addition.
   if (play_dtmf) {
-    return_value =
-        DtmfOverdub(dtmf_event, sync_buffer_->Channels(), audio_frame->data_);
+    return_value = DtmfOverdub(dtmf_event, sync_buffer_->Channels(),
+                               audio_frame->mutable_data());
   }
 
   // Update the background noise parameters if last operation wrote data

@@ -64,11 +64,12 @@ static void DitherSilence(AudioFrame* frame) {
   const double sum_squared_silence = kRmsSilence * kRmsSilence *
       frame->samples_per_channel_;
   double sum_squared = 0;
+  int16_t* frame_data = frame->mutable_data();
   for (size_t n = 0; n < frame->samples_per_channel_; n++)
-    sum_squared += frame->data_[n] * frame->data_[n];
+    sum_squared += frame_data[n] * frame_data[n];
   if (sum_squared <= sum_squared_silence) {
     for (size_t n = 0; n < frame->samples_per_channel_; n++)
-      frame->data_[n] = (rand() & 0xF) - 8;  // NOLINT: ignore non-threadsafe.
+      frame_data[n] = (rand() & 0xF) - 8;  // NOLINT: ignore non-threadsafe.
   }
 }
 
@@ -105,10 +106,11 @@ class AgcStat {
       return -1;
     video_vad_[video_index_++] = p_video;
     AudioFeatures features;
+    const int16_t* frame_data = frame.data();
     audio_processing_->ExtractFeatures(
-        frame.data_, frame.samples_per_channel_, &features);
+        frame_data, frame.samples_per_channel_, &features);
     if (FLAG_standalone_vad) {
-      standalone_vad_->AddAudio(frame.data_,
+      standalone_vad_->AddAudio(frame_data,
                                 frame.samples_per_channel_);
     }
     if (features.num_frames > 0) {
@@ -251,7 +253,7 @@ void void_main(int argc, char* argv[]) {
   bool in_false_positive_region = false;
   int total_false_positive_duration = 0;
   bool video_adapted = false;
-  while (kSamplesToRead == fread(frame.data_, sizeof(int16_t),
+  while (kSamplesToRead == fread(frame.mutable_data(), sizeof(int16_t),
                                  kSamplesToRead, pcm_fid)) {
     assert(true_vad_index < kMaxNumFrames);
     ASSERT_EQ(1u, fread(&true_vad[true_vad_index], sizeof(*true_vad), 1,

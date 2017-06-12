@@ -87,7 +87,7 @@ void ConvertToFloat(const int16_t* int_data, ChannelBuffer<float>* cb) {
 }
 
 void ConvertToFloat(const AudioFrame& frame, ChannelBuffer<float>* cb) {
-  ConvertToFloat(frame.data_, cb);
+  ConvertToFloat(frame.data(), cb);
 }
 
 // Number of channels including the keyboard channel.
@@ -127,31 +127,34 @@ void CopyLeftToRightChannel(int16_t* stereo, size_t samples_per_channel) {
   }
 }
 
-void VerifyChannelsAreEqual(int16_t* stereo, size_t samples_per_channel) {
+void VerifyChannelsAreEqual(const int16_t* stereo, size_t samples_per_channel) {
   for (size_t i = 0; i < samples_per_channel; i++) {
     EXPECT_EQ(stereo[i * 2 + 1], stereo[i * 2]);
   }
 }
 
 void SetFrameTo(AudioFrame* frame, int16_t value) {
+  int16_t* frame_data = frame->mutable_data();
   for (size_t i = 0; i < frame->samples_per_channel_ * frame->num_channels_;
        ++i) {
-    frame->data_[i] = value;
+    frame_data[i] = value;
   }
 }
 
 void SetFrameTo(AudioFrame* frame, int16_t left, int16_t right) {
   ASSERT_EQ(2u, frame->num_channels_);
+  int16_t* frame_data = frame->mutable_data();
   for (size_t i = 0; i < frame->samples_per_channel_ * 2; i += 2) {
-    frame->data_[i] = left;
-    frame->data_[i + 1] = right;
+    frame_data[i] = left;
+    frame_data[i + 1] = right;
   }
 }
 
 void ScaleFrame(AudioFrame* frame, float scale) {
+  int16_t* frame_data = frame->mutable_data();
   for (size_t i = 0; i < frame->samples_per_channel_ * frame->num_channels_;
        ++i) {
-    frame->data_[i] = FloatS16ToS16(frame->data_[i] * scale);
+    frame_data[i] = FloatS16ToS16(frame_data[i] * scale);
   }
 }
 
@@ -162,7 +165,7 @@ bool FrameDataAreEqual(const AudioFrame& frame1, const AudioFrame& frame2) {
   if (frame1.num_channels_ != frame2.num_channels_) {
     return false;
   }
-  if (memcmp(frame1.data_, frame2.data_,
+  if (memcmp(frame1.data(), frame2.data(),
              frame1.samples_per_channel_ * frame1.num_channels_ *
                  sizeof(int16_t))) {
     return false;
@@ -205,9 +208,10 @@ T AbsValue(T a) {
 
 int16_t MaxAudioFrame(const AudioFrame& frame) {
   const size_t length = frame.samples_per_channel_ * frame.num_channels_;
-  int16_t max_data = AbsValue(frame.data_[0]);
+  const int16_t* frame_data = frame.data();
+  int16_t max_data = AbsValue(frame_data[0]);
   for (size_t i = 1; i < length; i++) {
-    max_data = std::max(max_data, AbsValue(frame.data_[i]));
+    max_data = std::max(max_data, AbsValue(frame_data[i]));
   }
 
   return max_data;
@@ -534,7 +538,7 @@ bool ApmTest::ReadFrame(FILE* file, AudioFrame* frame,
                         ChannelBuffer<float>* cb) {
   // The files always contain stereo audio.
   size_t frame_size = frame->samples_per_channel_ * 2;
-  size_t read_count = fread(frame->data_,
+  size_t read_count = fread(frame->mutable_data(),
                             sizeof(int16_t),
                             frame_size,
                             file);
@@ -545,7 +549,7 @@ bool ApmTest::ReadFrame(FILE* file, AudioFrame* frame,
   }
 
   if (frame->num_channels_ == 1) {
-    MixStereoToMono(frame->data_, frame->data_,
+    MixStereoToMono(frame->data(), frame->mutable_data(),
                     frame->samples_per_channel_);
   }
 
@@ -1601,11 +1605,13 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
     ASSERT_EQ(0, feof(far_file_));
     ASSERT_EQ(0, feof(near_file_));
     while (ReadFrame(far_file_, revframe_) && ReadFrame(near_file_, frame_)) {
-      CopyLeftToRightChannel(revframe_->data_, revframe_->samples_per_channel_);
+      CopyLeftToRightChannel(revframe_->mutable_data(),
+                             revframe_->samples_per_channel_);
 
       ASSERT_EQ(kNoErr, apm_->ProcessReverseStream(revframe_));
 
-      CopyLeftToRightChannel(frame_->data_, frame_->samples_per_channel_);
+      CopyLeftToRightChannel(frame_->mutable_data(),
+                             frame_->samples_per_channel_);
       frame_->vad_activity_ = AudioFrame::kVadUnknown;
 
       ASSERT_EQ(kNoErr, apm_->set_stream_delay_ms(0));
@@ -1615,7 +1621,7 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
       ASSERT_EQ(kNoErr, apm_->ProcessStream(frame_));
       analog_level = apm_->gain_control()->stream_analog_level();
 
-      VerifyChannelsAreEqual(frame_->data_, frame_->samples_per_channel_);
+      VerifyChannelsAreEqual(frame_->data(), frame_->samples_per_channel_);
     }
     rewind(far_file_);
     rewind(near_file_);
@@ -1747,7 +1753,7 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
                   msg.channel(i).size());
         }
       } else {
-        memcpy(revframe_->data_, msg.data().data(), msg.data().size());
+        memcpy(revframe_->mutable_data(), msg.data().data(), msg.data().size());
         if (format == kFloatFormat) {
           // We're using an int16 input file; convert to float.
           ConvertToFloat(*revframe_, revfloat_cb_.get());
@@ -1778,7 +1784,8 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
                   msg.input_channel(i).size());
         }
       } else {
-        memcpy(frame_->data_, msg.input_data().data(), msg.input_data().size());
+        memcpy(frame_->mutable_data(), msg.input_data().data(),
+               msg.input_data().size());
         if (format == kFloatFormat) {
           // We're using an int16 input file; convert to float.
           ConvertToFloat(*frame_, float_cb_.get());
@@ -1987,7 +1994,7 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
       EXPECT_NOERR(fapm->gain_control()->set_stream_analog_level(analog_level));
 
       EXPECT_NOERR(apm_->ProcessStream(frame_));
-      Deinterleave(frame_->data_, samples_per_channel, num_output_channels,
+      Deinterleave(frame_->data(), samples_per_channel, num_output_channels,
                    output_int16.channels());
 
       EXPECT_NOERR(fapm->ProcessStream(
@@ -2151,7 +2158,7 @@ TEST_F(ApmTest, Process) {
       ns_speech_prob_average += apm_->noise_suppression()->speech_probability();
 
       size_t frame_size = frame_->samples_per_channel_ * frame_->num_channels_;
-      size_t write_count = fwrite(frame_->data_,
+      size_t write_count = fwrite(frame_->data(),
                                   sizeof(int16_t),
                                   frame_size,
                                   out_file_);

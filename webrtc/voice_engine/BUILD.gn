@@ -57,6 +57,7 @@ rtc_static_library("file_recorder") {
   deps = [
     ":audio_coder",
     "..:webrtc_common",
+    "../audio/utility:audio_frame_operations",
     "../base:rtc_base_approved",
     "../common_audio",
     "../modules:module_api",

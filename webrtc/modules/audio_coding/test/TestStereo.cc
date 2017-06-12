@@ -806,7 +806,7 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
 
     // Write output speech to file
     out_file_.Write10MsData(
-        audio_frame.data_,
+        audio_frame.data(),
         audio_frame.samples_per_channel_ * audio_frame.num_channels_);
   }
 

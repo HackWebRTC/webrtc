@@ -103,7 +103,7 @@ int64_t NetEqTest::Run() {
 
       if (output_) {
         RTC_CHECK(output_->WriteArray(
-            out_frame.data_,
+            out_frame.data(),
             out_frame.samples_per_channel_ * out_frame.num_channels_));
       }
 

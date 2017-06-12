@@ -216,7 +216,7 @@ class NetEqImplTest : public ::testing::Test {
         1512, 2378, 2828, 2674, 1877, 568, -986, -2446, -3482, -3864, -3516,
         -2534, -1163 });
     ASSERT_GE(kMaxOutputSize, kOutput.size());
-    EXPECT_TRUE(std::equal(kOutput.begin(), kOutput.end(), output.data_));
+    EXPECT_TRUE(std::equal(kOutput.begin(), kOutput.end(), output.data()));
   }
 
   std::unique_ptr<NetEqImpl> neteq_;
@@ -525,7 +525,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // Wrap the expected value in an rtc::Optional to compare them as such.
   EXPECT_EQ(
       rtc::Optional<uint32_t>(rtp_header.timestamp +
-                              output.data_[output.samples_per_channel_ - 1]),
+                              output.data()[output.samples_per_channel_ - 1]),
       neteq_->GetPlayoutTimestamp());
 
   // Check the timestamp for the last value in the sync buffer. This should
@@ -538,7 +538,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // Check that the number of samples still to play from the sync buffer add
   // up with what was already played out.
   EXPECT_EQ(
-      kPayloadLengthSamples - output.data_[output.samples_per_channel_ - 1],
+      kPayloadLengthSamples - output.data()[output.samples_per_channel_ - 1],
       sync_buffer->FutureLength());
 }
 

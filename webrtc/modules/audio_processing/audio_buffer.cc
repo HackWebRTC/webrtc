@@ -394,13 +394,14 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   } else {
     deinterleaved = input_buffer_->ibuf()->channels();
   }
+  // TODO(yujo): handle muted frames more efficiently.
   if (num_proc_channels_ == 1) {
     // Downmix and deinterleave simultaneously.
-    DownmixInterleavedToMono(frame->data_, input_num_frames_,
+    DownmixInterleavedToMono(frame->data(), input_num_frames_,
                              num_input_channels_, deinterleaved[0]);
   } else {
     RTC_DCHECK_EQ(num_proc_channels_, num_input_channels_);
-    Deinterleave(frame->data_,
+    Deinterleave(frame->data(),
                  input_num_frames_,
                  num_proc_channels_,
                  deinterleaved);
@@ -437,12 +438,13 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
     data_ptr = output_buffer_.get();
   }
 
+  // TODO(yujo): handle muted frames more efficiently.
   if (frame->num_channels_ == num_channels_) {
     Interleave(data_ptr->ibuf()->channels(), output_num_frames_, num_channels_,
-               frame->data_);
+               frame->mutable_data());
   } else {
     UpmixMonoToInterleaved(data_ptr->ibuf()->channels()[0], output_num_frames_,
-                           frame->num_channels_, frame->data_);
+                           frame->num_channels_, frame->mutable_data());
   }
 }
 

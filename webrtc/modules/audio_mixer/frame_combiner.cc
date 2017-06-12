@@ -50,10 +50,11 @@ void CombineOneFrame(const AudioFrame* input_frame,
                      AudioFrame* audio_frame_for_mixing) {
   audio_frame_for_mixing->timestamp_ = input_frame->timestamp_;
   audio_frame_for_mixing->elapsed_time_ms_ = input_frame->elapsed_time_ms_;
-  std::copy(input_frame->data_,
-            input_frame->data_ +
+  // TODO(yujo): can we optimize muted frames?
+  std::copy(input_frame->data(),
+            input_frame->data() +
                 input_frame->num_channels_ * input_frame->samples_per_channel_,
-            audio_frame_for_mixing->data_);
+            audio_frame_for_mixing->mutable_data());
   if (use_limiter) {
     AudioFrameOperations::ApplyHalfGain(audio_frame_for_mixing);
     RTC_DCHECK(limiter);
@@ -95,6 +96,7 @@ void CombineMultipleFrames(
   add_buffer.fill(0);
 
   for (const auto& frame : input_frames) {
+    // TODO(yujo): skip this for muted frames.
     std::transform(frame.begin(), frame.end(), add_buffer.begin(),
                    add_buffer.begin(), std::plus<int32_t>());
   }
@@ -102,7 +104,7 @@ void CombineMultipleFrames(
   if (use_limiter) {
     // Halve all samples to avoid saturation before limiting.
     std::transform(add_buffer.begin(), add_buffer.begin() + frame_length,
-                   audio_frame_for_mixing->data_, [](int32_t a) {
+                   audio_frame_for_mixing->mutable_data(), [](int32_t a) {
                      return rtc::saturated_cast<int16_t>(a / 2);
                    });
 
@@ -127,7 +129,7 @@ void CombineMultipleFrames(
     AudioFrameOperations::Add(*audio_frame_for_mixing, audio_frame_for_mixing);
   } else {
     std::transform(add_buffer.begin(), add_buffer.begin() + frame_length,
-                   audio_frame_for_mixing->data_,
+                   audio_frame_for_mixing->mutable_data(),
                    [](int32_t a) { return rtc::saturated_cast<int16_t>(a); });
   }
 }
@@ -206,10 +208,11 @@ void FrameCombiner::Combine(const std::vector<AudioFrame*>& mix_list,
     std::vector<rtc::ArrayView<const int16_t>> input_frames;
     for (size_t i = 0; i < mix_list.size(); ++i) {
       input_frames.push_back(rtc::ArrayView<const int16_t>(
-          mix_list[i]->data_, samples_per_channel * number_of_channels));
+          mix_list[i]->data(), samples_per_channel * number_of_channels));
     }
     CombineMultipleFrames(input_frames, use_limiter_this_round, limiter_.get(),
                           audio_frame_for_mixing);
   }
 }
+
 }  // namespace webrtc

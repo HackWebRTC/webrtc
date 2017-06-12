@@ -660,7 +660,7 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
     rtc::CritScope cs(&_callbackCritSect);
     if (audio_sink_) {
       AudioSinkInterface::Data data(
-          &audioFrame->data_[0], audioFrame->samples_per_channel_,
+          audioFrame->data(), audioFrame->samples_per_channel_,
           audioFrame->sample_rate_hz_, audioFrame->num_channels_,
           audioFrame->timestamp_);
       audio_sink_->OnData(data);
@@ -2786,12 +2786,12 @@ void Channel::ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input) {
   if (_includeAudioLevelIndication) {
     size_t length =
         audio_input->samples_per_channel_ * audio_input->num_channels_;
-    RTC_CHECK_LE(length, sizeof(audio_input->data_));
+    RTC_CHECK_LE(length, AudioFrame::kMaxDataSizeBytes);
     if (is_muted && previous_frame_muted_) {
       rms_level_.AnalyzeMuted(length);
     } else {
       rms_level_.Analyze(
-          rtc::ArrayView<const int16_t>(audio_input->data_, length));
+          rtc::ArrayView<const int16_t>(audio_input->data(), length));
     }
   }
   previous_frame_muted_ = is_muted;
@@ -2951,8 +2951,8 @@ int32_t Channel::MixOrReplaceAudioWithFile(AudioFrame* audio_input) {
   if (_mixFileWithMicrophone) {
     // Currently file stream is always mono.
     // TODO(xians): Change the code when FilePlayer supports real stereo.
-    MixWithSat(audio_input->data_, audio_input->num_channels_, fileBuffer.get(),
-               1, fileSamples);
+    MixWithSat(audio_input->mutable_data(), audio_input->num_channels_,
+               fileBuffer.get(), 1, fileSamples);
   } else {
     // Replace ACM audio with file.
     // Currently file stream is always mono.
@@ -2991,8 +2991,8 @@ int32_t Channel::MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency) {
   if (audioFrame.samples_per_channel_ == fileSamples) {
     // Currently file stream is always mono.
     // TODO(xians): Change the code when FilePlayer supports real stereo.
-    MixWithSat(audioFrame.data_, audioFrame.num_channels_, fileBuffer.get(), 1,
-               fileSamples);
+    MixWithSat(audioFrame.mutable_data(), audioFrame.num_channels_,
+               fileBuffer.get(), 1, fileSamples);
   } else {
     WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::MixAudioWithFile() samples_per_channel_(%" PRIuS

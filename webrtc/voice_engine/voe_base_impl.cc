@@ -716,7 +716,7 @@ void VoEBaseImpl::GetPlayoutData(int sample_rate, size_t number_of_channels,
   assert(sample_rate == audioFrame_.sample_rate_hz_);
 
   // Deliver audio (PCM) samples to the ADM
-  memcpy(audio_data, audioFrame_.data_,
+  memcpy(audio_data, audioFrame_.data(),
          sizeof(int16_t) * number_of_frames * number_of_channels);
 
   *elapsed_time_ms = audioFrame_.elapsed_time_ms_;
