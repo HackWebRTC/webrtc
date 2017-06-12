@@ -33,7 +33,7 @@ class TransportFeedbackObserver;
 //
 // This should also have a reference to the underlying
 // webrtc::Transport(s). Currently, webrtc::Transport is implemented by
-// WebRtcVideoChannel2 and WebRtcVoiceMediaChannel, and owned by
+// WebRtcVideoChannel and WebRtcVoiceMediaChannel, and owned by
 // WebrtcSession. Video and audio always uses different transport
 // objects, even in the common case where they are bundled over the
 // same underlying transport.

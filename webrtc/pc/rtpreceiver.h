@@ -35,7 +35,7 @@ class RtpReceiverInternal : public RtpReceiverInterface {
  public:
   virtual void Stop() = 0;
   // This SSRC is used as an identifier for the receiver between the API layer
-  // and the WebRtcVideoEngine2, WebRtcVoiceEngine layer.
+  // and the WebRtcVideoEngine, WebRtcVoiceEngine layer.
   virtual uint32_t ssrc() const = 0;
 };
 

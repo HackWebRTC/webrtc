@@ -22,7 +22,7 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/media/engine/webrtcvideoengine2.h"
+#include "webrtc/media/engine/webrtcvideoengine.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/pc/mediasession.h"

@@ -140,8 +140,8 @@ rtc_static_library("rtc_media") {
     "engine/webrtcvideocapturerfactory.h",
     "engine/webrtcvideodecoderfactory.h",
     "engine/webrtcvideoencoderfactory.h",
-    "engine/webrtcvideoengine2.cc",
-    "engine/webrtcvideoengine2.h",
+    "engine/webrtcvideoengine.cc",
+    "engine/webrtcvideoengine.h",
     "engine/webrtcvoe.h",
     "engine/webrtcvoiceengine.cc",
     "engine/webrtcvoiceengine.h",
@@ -381,7 +381,7 @@ if (rtc_include_tests) {
       "engine/webrtcmediaengine_unittest.cc",
       "engine/webrtcvideocapturer_unittest.cc",
       "engine/webrtcvideoencoderfactory_unittest.cc",
-      "engine/webrtcvideoengine2_unittest.cc",
+      "engine/webrtcvideoengine_unittest.cc",
       "engine/webrtcvoiceengine_unittest.cc",
     ]
 

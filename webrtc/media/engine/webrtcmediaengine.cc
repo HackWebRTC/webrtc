@@ -17,7 +17,7 @@
 #include "webrtc/media/engine/webrtcvoiceengine.h"
 
 #ifdef HAVE_WEBRTC_VIDEO
-#include "webrtc/media/engine/webrtcvideoengine2.h"
+#include "webrtc/media/engine/webrtcvideoengine.h"
 #else
 #include "webrtc/media/engine/nullwebrtcvideoengine.h"
 #endif
@@ -26,7 +26,7 @@ namespace cricket {
 
 class WebRtcMediaEngine2
 #ifdef HAVE_WEBRTC_VIDEO
-    : public CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2> {
+    : public CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine> {
 #else
     : public CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine> {
 #endif
@@ -40,7 +40,7 @@ class WebRtcMediaEngine2
                      WebRtcVideoDecoderFactory* video_decoder_factory,
                      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer)
 #ifdef HAVE_WEBRTC_VIDEO
-      : CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2>(
+      : CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine>(
             adm,
             audio_encoder_factory,
             audio_decoder_factory,
