@@ -9,8 +9,10 @@
  */
 
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
+#include <utility>  // pair
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
@@ -439,14 +441,13 @@ int main(int argc, char* argv[]) {
       size_t total_length;
       uint8_t header[IP_PACKET_SIZE];
       webrtc::PacketDirection direction;
-
-      parsed_stream.GetRtpHeader(i, &direction, header, &header_length,
-                                 &total_length);
+      webrtc::RtpHeaderExtensionMap* extension_map = parsed_stream.GetRtpHeader(
+          i, &direction, header, &header_length, &total_length);
 
       // Parse header to get SSRC and RTP time.
       webrtc::RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
       webrtc::RTPHeader parsed_header;
-      rtp_parser.Parse(&parsed_header);
+      rtp_parser.Parse(&parsed_header, extension_map);
       MediaType media_type =
           parsed_stream.GetMediaType(parsed_header.ssrc, direction);
 
@@ -456,7 +457,31 @@ int main(int argc, char* argv[]) {
       std::cout << parsed_stream.GetTimestamp(i) << "\tRTP"
                 << StreamInfo(direction, media_type)
                 << "\tssrc=" << parsed_header.ssrc
-                << "\ttimestamp=" << parsed_header.timestamp << std::endl;
+                << "\ttimestamp=" << parsed_header.timestamp;
+      if (parsed_header.extension.hasAbsoluteSendTime) {
+        std::cout << "\tAbsSendTime="
+                  << parsed_header.extension.absoluteSendTime;
+      }
+      if (parsed_header.extension.hasVideoContentType) {
+        std::cout << "\tContentType="
+                  << static_cast<int>(parsed_header.extension.videoContentType);
+      }
+      if (parsed_header.extension.hasVideoRotation) {
+        std::cout << "\tRotation="
+                  << static_cast<int>(parsed_header.extension.videoRotation);
+      }
+      if (parsed_header.extension.hasTransportSequenceNumber) {
+        std::cout << "\tTransportSeq="
+                  << parsed_header.extension.transportSequenceNumber;
+      }
+      if (parsed_header.extension.hasTransmissionTimeOffset) {
+        std::cout << "\tTransmTimeOffset="
+                  << parsed_header.extension.transmissionTimeOffset;
+      }
+      if (parsed_header.extension.hasAudioLevel) {
+        std::cout << "\tAudioLevel=" << parsed_header.extension.audioLevel;
+      }
+      std::cout << std::endl;
     }
     if (!FLAGS_nortcp &&
         parsed_stream.GetEventType(i) ==

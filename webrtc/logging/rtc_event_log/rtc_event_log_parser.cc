@@ -158,6 +158,12 @@ bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
     // Check whether we have reached end of file.
     stream.peek();
     if (stream.eof()) {
+      // Process all extensions maps for faster look-up later.
+      for (auto& event_stream : streams_) {
+        rtp_extensions_maps_[StreamId(event_stream.ssrc,
+                                      event_stream.direction)] =
+            &event_stream.rtp_extensions_map;
+      }
       return true;
     }
 
@@ -204,34 +210,41 @@ bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
       case VIDEO_RECEIVER_CONFIG_EVENT: {
         rtclog::StreamConfig config = GetVideoReceiveConfig(event);
         streams_.emplace_back(config.remote_ssrc, MediaType::VIDEO,
-                              kIncomingPacket);
+                              kIncomingPacket,
+                              RtpHeaderExtensionMap(config.rtp_extensions));
         streams_.emplace_back(config.local_ssrc, MediaType::VIDEO,
-                              kOutgoingPacket);
+                              kOutgoingPacket,
+                              RtpHeaderExtensionMap(config.rtp_extensions));
         break;
       }
       case VIDEO_SENDER_CONFIG_EVENT: {
         std::vector<rtclog::StreamConfig> configs = GetVideoSendConfig(event);
         for (size_t i = 0; i < configs.size(); i++) {
-          streams_.emplace_back(configs[i].local_ssrc, MediaType::VIDEO,
-                                kOutgoingPacket);
+          streams_.emplace_back(
+              configs[i].local_ssrc, MediaType::VIDEO, kOutgoingPacket,
+              RtpHeaderExtensionMap(configs[i].rtp_extensions));
 
-          streams_.emplace_back(configs[i].rtx_ssrc, MediaType::VIDEO,
-                                kOutgoingPacket);
+          streams_.emplace_back(
+              configs[i].rtx_ssrc, MediaType::VIDEO, kOutgoingPacket,
+              RtpHeaderExtensionMap(configs[i].rtp_extensions));
         }
         break;
       }
       case AUDIO_RECEIVER_CONFIG_EVENT: {
         rtclog::StreamConfig config = GetAudioReceiveConfig(event);
         streams_.emplace_back(config.remote_ssrc, MediaType::AUDIO,
-                              kIncomingPacket);
+                              kIncomingPacket,
+                              RtpHeaderExtensionMap(config.rtp_extensions));
         streams_.emplace_back(config.local_ssrc, MediaType::AUDIO,
-                              kOutgoingPacket);
+                              kOutgoingPacket,
+                              RtpHeaderExtensionMap(config.rtp_extensions));
         break;
       }
       case AUDIO_SENDER_CONFIG_EVENT: {
         rtclog::StreamConfig config = GetAudioSendConfig(event);
         streams_.emplace_back(config.local_ssrc, MediaType::AUDIO,
-                              kOutgoingPacket);
+                              kOutgoingPacket,
+                              RtpHeaderExtensionMap(config.rtp_extensions));
         break;
       }
       default:
@@ -262,11 +275,12 @@ ParsedRtcEventLog::EventType ParsedRtcEventLog::GetEventType(
 }
 
 // The header must have space for at least IP_PACKET_SIZE bytes.
-void ParsedRtcEventLog::GetRtpHeader(size_t index,
-                                     PacketDirection* incoming,
-                                     uint8_t* header,
-                                     size_t* header_length,
-                                     size_t* total_length) const {
+webrtc::RtpHeaderExtensionMap* ParsedRtcEventLog::GetRtpHeader(
+    size_t index,
+    PacketDirection* incoming,
+    uint8_t* header,
+    size_t* header_length,
+    size_t* total_length) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
   const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());
@@ -295,7 +309,15 @@ void ParsedRtcEventLog::GetRtpHeader(size_t index,
     RTC_CHECK_LE(rtp_packet.header().size(),
                  static_cast<size_t>(IP_PACKET_SIZE));
     memcpy(header, rtp_packet.header().data(), rtp_packet.header().size());
+    uint32_t ssrc = ByteReader<uint32_t>::ReadBigEndian(header + 8);
+    StreamId stream_id(
+        ssrc, rtp_packet.incoming() ? kIncomingPacket : kOutgoingPacket);
+    auto it = rtp_extensions_maps_.find(stream_id);
+    if (it != rtp_extensions_maps_.end()) {
+      return it->second;
+    }
   }
+  return nullptr;
 }
 
 // The packet must have space for at least IP_PACKET_SIZE bytes.

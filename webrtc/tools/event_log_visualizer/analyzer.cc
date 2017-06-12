@@ -289,10 +289,6 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
   uint64_t first_timestamp = std::numeric_limits<uint64_t>::max();
   uint64_t last_timestamp = std::numeric_limits<uint64_t>::min();
 
-  // Maps a stream identifier consisting of ssrc and direction
-  // to the header extensions used by that stream,
-  std::map<StreamId, RtpHeaderExtensionMap> extension_maps;
-
   PacketDirection direction;
   uint8_t header[IP_PACKET_SIZE];
   size_t header_length;
@@ -323,11 +319,8 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
       case ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT: {
         rtclog::StreamConfig config = parsed_log_.GetVideoReceiveConfig(i);
         StreamId stream(config.remote_ssrc, kIncomingPacket);
-        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp_extensions);
         video_ssrcs_.insert(stream);
         StreamId rtx_stream(config.rtx_ssrc, kIncomingPacket);
-        extension_maps[rtx_stream] =
-            RtpHeaderExtensionMap(config.rtp_extensions);
         video_ssrcs_.insert(rtx_stream);
         rtx_ssrcs_.insert(rtx_stream);
         break;
@@ -337,12 +330,8 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
             parsed_log_.GetVideoSendConfig(i);
         for (const auto& config : configs) {
           StreamId stream(config.local_ssrc, kOutgoingPacket);
-          extension_maps[stream] =
-              RtpHeaderExtensionMap(config.rtp_extensions);
           video_ssrcs_.insert(stream);
           StreamId rtx_stream(config.rtx_ssrc, kOutgoingPacket);
-          extension_maps[rtx_stream] =
-              RtpHeaderExtensionMap(config.rtp_extensions);
           video_ssrcs_.insert(rtx_stream);
           rtx_ssrcs_.insert(rtx_stream);
         }
@@ -351,28 +340,21 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
       case ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT: {
         rtclog::StreamConfig config = parsed_log_.GetAudioReceiveConfig(i);
         StreamId stream(config.remote_ssrc, kIncomingPacket);
-        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp_extensions);
         audio_ssrcs_.insert(stream);
         break;
       }
       case ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT: {
         rtclog::StreamConfig config = parsed_log_.GetAudioSendConfig(i);
         StreamId stream(config.local_ssrc, kOutgoingPacket);
-        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp_extensions);
         audio_ssrcs_.insert(stream);
         break;
       }
       case ParsedRtcEventLog::RTP_EVENT: {
-        parsed_log_.GetRtpHeader(i, &direction, header, &header_length,
-                                 &total_length);
-        // Parse header to get SSRC.
+        RtpHeaderExtensionMap* extension_map = parsed_log_.GetRtpHeader(
+            i, &direction, header, &header_length, &total_length);
         RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
         RTPHeader parsed_header;
-        rtp_parser.Parse(&parsed_header);
-        StreamId stream(parsed_header.ssrc, direction);
-        // Look up the extension_map and parse it again to get the extensions.
-        if (extension_maps.count(stream) == 1) {
-          RtpHeaderExtensionMap* extension_map = &extension_maps[stream];
+        if (extension_map != nullptr) {
           rtp_parser.Parse(&parsed_header, extension_map);
         } else {
           // Use the default extension map.
@@ -382,6 +364,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
           rtp_parser.Parse(&parsed_header, &default_extension_map);
         }
         uint64_t timestamp = parsed_log_.GetTimestamp(i);
+        StreamId stream(parsed_header.ssrc, direction);
         rtp_packets_[stream].push_back(
             LoggedRtpPacket(timestamp, parsed_header, total_length));
         break;

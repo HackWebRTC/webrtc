@@ -10,11 +10,15 @@
 #ifndef WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_PARSER_H_
 #define WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_PARSER_H_
 
+#include <map>
 #include <string>
+#include <utility>  // pair
 #include <vector>
 
 #include "webrtc/base/ignore_wundef.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -99,11 +103,15 @@ class ParsedRtcEventLog {
   // parameters. Each output parameter can be set to nullptr if that value
   // isn't needed.
   // NB: The header must have space for at least IP_PACKET_SIZE bytes.
-  void GetRtpHeader(size_t index,
-                    PacketDirection* incoming,
-                    uint8_t* header,
-                    size_t* header_length,
-                    size_t* total_length) const;
+  // Returns: a pointer to a header extensions map acquired from parsing
+  // corresponding Audio/Video Sender/Receiver config events.
+  // Warning: if the same SSRC is reused by both video and audio streams during
+  // call, extensions maps may be incorrect (the last one would be returned).
+  webrtc::RtpHeaderExtensionMap* GetRtpHeader(size_t index,
+                                              PacketDirection* incoming,
+                                              uint8_t* header,
+                                              size_t* header_length,
+                                              size_t* total_length) const;
 
   // Reads packet, direction and packet length from the RTCP event at |index|,
   // and stores the values in the corresponding output parameters.
@@ -178,15 +186,25 @@ class ParsedRtcEventLog {
   struct Stream {
     Stream(uint32_t ssrc,
            MediaType media_type,
-           webrtc::PacketDirection direction)
-        : ssrc(ssrc), media_type(media_type), direction(direction) {}
+           webrtc::PacketDirection direction,
+           webrtc::RtpHeaderExtensionMap map)
+        : ssrc(ssrc),
+          media_type(media_type),
+          direction(direction),
+          rtp_extensions_map(map) {}
     uint32_t ssrc;
     MediaType media_type;
     webrtc::PacketDirection direction;
+    webrtc::RtpHeaderExtensionMap rtp_extensions_map;
   };
 
   // All configured streams found in the event log.
   std::vector<Stream> streams_;
+
+  // To find configured extensions map for given stream, what are needed to
+  // parse a header.
+  typedef std::pair<uint32_t, webrtc::PacketDirection> StreamId;
+  std::map<StreamId, webrtc::RtpHeaderExtensionMap*> rtp_extensions_maps_;
 };
 
 }  // namespace webrtc
