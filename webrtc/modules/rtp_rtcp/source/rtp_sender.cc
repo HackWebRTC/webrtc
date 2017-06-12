@@ -559,7 +559,8 @@ size_t RTPSender::SendPadData(size_t bytes,
       padding_packet.SetExtension<TransmissionOffset>(
           (now_ms - capture_time_ms) * kTimestampTicksPerMs);
     }
-    padding_packet.SetExtension<AbsoluteSendTime>(now_ms);
+    padding_packet.SetExtension<AbsoluteSendTime>(
+        AbsoluteSendTime::MsTo24Bits(now_ms));
     PacketOptions options;
     bool has_transport_seq_num =
         UpdateTransportSequenceNumber(&padding_packet, &options.packet_id);
@@ -739,7 +740,8 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
   int64_t diff_ms = now_ms - capture_time_ms;
   packet_to_send->SetExtension<TransmissionOffset>(kTimestampTicksPerMs *
                                                    diff_ms);
-  packet_to_send->SetExtension<AbsoluteSendTime>(now_ms);
+  packet_to_send->SetExtension<AbsoluteSendTime>(
+      AbsoluteSendTime::MsTo24Bits(now_ms));
 
   PacketOptions options;
   if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id)) {
@@ -829,7 +831,7 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
     packet->SetExtension<TransmissionOffset>(
         kTimestampTicksPerMs * (now_ms - packet->capture_time_ms()));
   }
-  packet->SetExtension<AbsoluteSendTime>(now_ms);
+  packet->SetExtension<AbsoluteSendTime>(AbsoluteSendTime::MsTo24Bits(now_ms));
 
   if (video_) {
     BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoTotBitrate_kbps", now_ms,

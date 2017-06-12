@@ -43,8 +43,9 @@ bool AbsoluteSendTime::Parse(rtc::ArrayView<const uint8_t> data,
   return true;
 }
 
-bool AbsoluteSendTime::Write(uint8_t* data, int64_t time_ms) {
-  ByteWriter<uint32_t, 3>::WriteBigEndian(data, MsTo24Bits(time_ms));
+bool AbsoluteSendTime::Write(uint8_t* data, uint32_t time_24bits) {
+  RTC_DCHECK_LE(time_24bits, 0x00FFFFFF);
+  ByteWriter<uint32_t, 3>::WriteBigEndian(data, time_24bits);
   return true;
 }
 

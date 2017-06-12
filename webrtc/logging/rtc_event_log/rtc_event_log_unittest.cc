@@ -126,7 +126,7 @@ RtpPacketToSend GenerateRtpPacket(const RtpHeaderExtensionMap* extensions,
 
   rtp_packet.SetExtension<TransmissionOffset>(prng->Rand(0x00ffffff));
   rtp_packet.SetExtension<AudioLevel>(prng->Rand<bool>(), prng->Rand(127));
-  rtp_packet.SetExtension<AbsoluteSendTime>(prng->Rand<int32_t>());
+  rtp_packet.SetExtension<AbsoluteSendTime>(prng->Rand(0x00ffffff));
   rtp_packet.SetExtension<VideoOrientation>(prng->Rand(2));
   rtp_packet.SetExtension<TransportSequenceNumber>(prng->Rand<uint16_t>());
 

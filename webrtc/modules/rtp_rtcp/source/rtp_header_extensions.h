@@ -28,8 +28,8 @@ class AbsoluteSendTime {
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 
   static bool Parse(rtc::ArrayView<const uint8_t> data, uint32_t* time_24bits);
-  static size_t ValueSize(int64_t time_ms) { return kValueSizeBytes; }
-  static bool Write(uint8_t* data, int64_t time_ms);
+  static size_t ValueSize(uint32_t time_24bits) { return kValueSizeBytes; }
+  static bool Write(uint8_t* data, uint32_t time_24bits);
 
   static constexpr uint32_t MsTo24Bits(int64_t time_ms) {
     return static_cast<uint32_t>(((time_ms << 18) + 500) / 1000) & 0x00FFFFFF;
