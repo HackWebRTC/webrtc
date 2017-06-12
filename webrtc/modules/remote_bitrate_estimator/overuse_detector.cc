@@ -19,6 +19,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -144,11 +145,7 @@ void OveruseDetector::UpdateThreshold(double modified_offset, int64_t now_ms) {
   int64_t time_delta_ms = std::min(now_ms - last_update_ms_, kMaxTimeDeltaMs);
   threshold_ +=
       k * (fabs(modified_offset) - threshold_) * time_delta_ms;
-
-  const double kMinThreshold = 6;
-  const double kMaxThreshold = 600;
-  threshold_ = std::min(std::max(threshold_, kMinThreshold), kMaxThreshold);
-
+  threshold_ = rtc::SafeClamp(threshold_, 6.f, 600.f);
   last_update_ms_ = now_ms;
 }
 

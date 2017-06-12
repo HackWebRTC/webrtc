@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "webrtc/base/flags.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/modules/audio_processing/agc/agc.h"
 #include "webrtc/modules/audio_processing/agc/loudness_histogram.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"
@@ -121,9 +122,7 @@ class AgcStat {
       for (size_t n = 0; n < features.num_frames; n++) {
         double p_active = p[n] * video_vad_[n];
         double p_passive = (1 - p[n]) * (1 - video_vad_[n]);
-        p[n]  = p_active / (p_active + p_passive);
-        // Limit probabilities.
-        p[n] = std::min(std::max(p[n], 0.01), 0.99);
+        p[n] = rtc::SafeClamp(p_active / (p_active + p_passive), 0.01, 0.99);
       }
       if (vad_->VoicingProbability(features, p) < 0)
         return -1;

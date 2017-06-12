@@ -15,6 +15,7 @@
 #include <sstream>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/safe_minmax.h"
 
 namespace webrtc {
 namespace testing {
@@ -406,8 +407,8 @@ namespace {
 inline int64_t TruncatedNSigmaGaussian(Random* const random,
                                        int64_t mean,
                                        int64_t std_dev) {
-  int64_t gaussian_random = random->Gaussian(mean, std_dev);
-  return std::max(std::min(gaussian_random, kN * std_dev), -kN * std_dev);
+  const int64_t gaussian_random = random->Gaussian(mean, std_dev);
+  return rtc::SafeClamp(gaussian_random, -kN * std_dev, kN * std_dev);
 }
 }
 

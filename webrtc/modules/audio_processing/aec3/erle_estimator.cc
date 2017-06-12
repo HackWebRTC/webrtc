@@ -12,6 +12,8 @@
 
 #include <algorithm>
 
+#include "webrtc/base/safe_minmax.h"
+
 namespace webrtc {
 
 namespace {
@@ -48,7 +50,7 @@ void ErleEstimator::Update(
         if (new_erle > erle_[k]) {
           hold_counters_[k - 1] = 100;
           erle_[k] += 0.1f * (new_erle - erle_[k]);
-          erle_[k] = std::max(kMinErle, std::min(erle_[k], max_erle));
+          erle_[k] = rtc::SafeClamp(erle_[k], kMinErle, max_erle);
         }
       }
     }

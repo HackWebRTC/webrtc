@@ -20,6 +20,7 @@
 #endif
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/random.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
 #include "webrtc/modules/audio_processing/aec3/cascaded_biquad_filter.h"
@@ -350,9 +351,8 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
       fft.Ifft(S, &s);
       std::transform(y.begin(), y.end(), s.begin() + kFftLengthBy2, e.begin(),
                      [&](float a, float b) { return a - b * kScale; });
-      std::for_each(e.begin(), e.end(), [](float& a) {
-        a = std::max(std::min(a, 32767.0f), -32768.0f);
-      });
+      std::for_each(e.begin(), e.end(),
+                    [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
       fft.ZeroPaddedFft(e, &E);
 
       gain.Compute(render_buffer, render_signal_analyzer, E,

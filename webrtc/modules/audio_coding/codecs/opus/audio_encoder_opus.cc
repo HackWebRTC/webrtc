@@ -20,6 +20,7 @@
 #include "webrtc/base/numerics/exp_filter.h"
 #include "webrtc/base/protobuf_utils.h"
 #include "webrtc/base/safe_conversions.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/base/string_to_number.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
@@ -690,8 +691,8 @@ void AudioEncoderOpus::SetProjectedPacketLossRate(float fraction) {
 }
 
 void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
-  config_.bitrate_bps = rtc::Optional<int>(std::max(
-      std::min(bits_per_second, kOpusMaxBitrateBps), kOpusMinBitrateBps));
+  config_.bitrate_bps = rtc::Optional<int>(rtc::SafeClamp<int>(
+      bits_per_second, kOpusMinBitrateBps, kOpusMaxBitrateBps));
   RTC_DCHECK(config_.IsOk());
   RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config_.GetBitrateBps()));
   const auto new_complexity = config_.GetNewComplexity();

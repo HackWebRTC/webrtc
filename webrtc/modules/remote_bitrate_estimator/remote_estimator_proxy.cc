@@ -15,10 +15,11 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/modules/pacing/packet_router.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -104,8 +105,9 @@ void RemoteEstimatorProxy::OnBitrateChanged(int bitrate_bps) {
 
   // Let TWCC reports occupy 5% of total bandwidth.
   rtc::CritScope cs(&lock_);
-  send_interval_ms_ = static_cast<int>(0.5 + kTwccReportSize * 8.0 * 1000.0 /
-      (std::max(std::min(0.05 * bitrate_bps, kMaxTwccRate), kMinTwccRate)));
+  send_interval_ms_ = static_cast<int>(
+      0.5 + kTwccReportSize * 8.0 * 1000.0 /
+                rtc::SafeClamp(0.05 * bitrate_bps, kMinTwccRate, kMaxTwccRate));
 }
 
 void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,

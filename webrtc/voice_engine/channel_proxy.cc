@@ -15,6 +15,7 @@
 #include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/call/rtp_transport_controller_send_interface.h"
 #include "webrtc/voice_engine/channel.h"
 
@@ -290,7 +291,7 @@ void ChannelProxy::SetMinimumPlayoutDelay(int delay_ms) {
   RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
   // Limit to range accepted by both VoE and ACM, so we're at least getting as
   // close as possible, instead of failing.
-  delay_ms = std::max(0, std::min(delay_ms, 10000));
+  delay_ms = rtc::SafeClamp(delay_ms, 0, 10000);
   int error = channel()->SetMinimumPlayoutDelay(delay_ms);
   if (0 != error) {
     LOG(LS_WARNING) << "Error setting minimum playout delay.";

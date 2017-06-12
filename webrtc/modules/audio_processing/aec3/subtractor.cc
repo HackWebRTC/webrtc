@@ -14,6 +14,7 @@
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 
 namespace webrtc {
@@ -30,9 +31,8 @@ void PredictionError(const Aec3Fft& fft,
   constexpr float kScale = 1.0f / kFftLengthBy2;
   std::transform(y.begin(), y.end(), s.begin() + kFftLengthBy2, e->begin(),
                  [&](float a, float b) { return a - b * kScale; });
-  std::for_each(e->begin(), e->end(), [](float& a) {
-    a = std::max(std::min(a, 32767.0f), -32768.0f);
-  });
+  std::for_each(e->begin(), e->end(),
+                [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
   fft.ZeroPaddedFft(*e, E);
 }
 }  // namespace

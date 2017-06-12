@@ -21,6 +21,7 @@
 #include "webrtc/base/messagedigest.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/ptr_util.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/p2p/base/common.h"
@@ -69,7 +70,7 @@ const int DEFAULT_RTT = 3000;  // 3 seconds
 
 // Computes our estimate of the RTT given the current estimate.
 inline int ConservativeRTTEstimate(int rtt) {
-  return std::max(MINIMUM_RTT, std::min(MAXIMUM_RTT, 2 * rtt));
+  return rtc::SafeClamp(2 * rtt, MINIMUM_RTT, MAXIMUM_RTT);
 }
 
 // Weighting of the old rtt value to new data.

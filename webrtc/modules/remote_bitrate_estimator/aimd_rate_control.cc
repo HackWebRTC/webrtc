@@ -62,11 +62,11 @@ int64_t AimdRateControl::GetFeedbackInterval() const {
   // Estimate how often we can send RTCP if we allocate up to 5% of bandwidth
   // to feedback.
   static const int kRtcpSize = 80;
-  int64_t interval = static_cast<int64_t>(
+  const int64_t interval = static_cast<int64_t>(
       kRtcpSize * 8.0 * 1000.0 / (0.05 * current_bitrate_bps_) + 0.5);
   const int64_t kMinFeedbackIntervalMs = 200;
-  return std::min(std::max(interval, kMinFeedbackIntervalMs),
-                  kMaxFeedbackIntervalMs);
+  return rtc::SafeClamp(interval, kMinFeedbackIntervalMs,
+                        kMaxFeedbackIntervalMs);
 }
 
 bool AimdRateControl::TimeToReduceFurther(int64_t time_now,

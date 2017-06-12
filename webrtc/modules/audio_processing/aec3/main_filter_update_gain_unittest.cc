@@ -15,6 +15,7 @@
 #include <string>
 
 #include "webrtc/base/random.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/modules/audio_processing/aec3/adaptive_fir_filter.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
@@ -99,9 +100,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     std::transform(y.begin(), y.end(), s.begin() + kFftLengthBy2,
                    e_main.begin(),
                    [&](float a, float b) { return a - b * kScale; });
-    std::for_each(e_main.begin(), e_main.end(), [](float& a) {
-      a = std::max(std::min(a, 32767.0f), -32768.0f);
-    });
+    std::for_each(e_main.begin(), e_main.end(),
+                  [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
     fft.ZeroPaddedFft(e_main, &E_main);
 
     // Apply the shadow filter.
@@ -110,9 +110,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     std::transform(y.begin(), y.end(), s.begin() + kFftLengthBy2,
                    e_shadow.begin(),
                    [&](float a, float b) { return a - b * kScale; });
-    std::for_each(e_shadow.begin(), e_shadow.end(), [](float& a) {
-      a = std::max(std::min(a, 32767.0f), -32768.0f);
-    });
+    std::for_each(e_shadow.begin(), e_shadow.end(),
+                  [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
     fft.ZeroPaddedFft(e_shadow, &E_shadow);
 
     // Compute spectra for future use.

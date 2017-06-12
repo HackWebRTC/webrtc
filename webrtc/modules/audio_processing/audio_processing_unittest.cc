@@ -680,15 +680,13 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
   // limit them w.r.t. AEC delay estimation support.
   const size_t samples_per_ms =
       rtc::SafeMin<size_t>(16u, frame_->samples_per_channel_ / 10);
-  int expected_median = std::min(std::max(delay_ms - system_delay_ms,
-                                          delay_min), delay_max);
-  int expected_median_high = std::min(
-      std::max(expected_median + static_cast<int>(96 / samples_per_ms),
-               delay_min),
+  const int expected_median =
+      rtc::SafeClamp<int>(delay_ms - system_delay_ms, delay_min, delay_max);
+  const int expected_median_high = rtc::SafeClamp<int>(
+      expected_median + rtc::dchecked_cast<int>(96 / samples_per_ms), delay_min,
       delay_max);
-  int expected_median_low = std::min(
-      std::max(expected_median - static_cast<int>(96 / samples_per_ms),
-               delay_min),
+  const int expected_median_low = rtc::SafeClamp<int>(
+      expected_median - rtc::dchecked_cast<int>(96 / samples_per_ms), delay_min,
       delay_max);
   // Verify delay metrics.
   int median;

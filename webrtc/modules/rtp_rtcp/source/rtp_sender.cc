@@ -17,8 +17,9 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/rate_limiter.h"
-#include "webrtc/base/trace_event.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
@@ -467,16 +468,16 @@ size_t RTPSender::SendPadData(size_t bytes,
 
   if (audio_configured_) {
     // Allow smaller padding packets for audio.
-    padding_bytes_in_packet =
-        std::min(std::max(bytes, kMinAudioPaddingLength), max_payload_size);
-    if (padding_bytes_in_packet > kMaxPaddingLength)
-      padding_bytes_in_packet = kMaxPaddingLength;
+    padding_bytes_in_packet = rtc::SafeClamp<size_t>(
+        bytes, kMinAudioPaddingLength,
+        rtc::SafeMin(max_payload_size, kMaxPaddingLength));
   } else {
     // Always send full padding packets. This is accounted for by the
     // RtpPacketSender, which will make sure we don't send too much padding even
     // if a single packet is larger than requested.
     // We do this to avoid frequently sending small packets on higher bitrates.
-    padding_bytes_in_packet = std::min(max_payload_size, kMaxPaddingLength);
+    padding_bytes_in_packet =
+        rtc::SafeMin<size_t>(max_payload_size, kMaxPaddingLength);
   }
   size_t bytes_sent = 0;
   while (bytes_sent < bytes) {
