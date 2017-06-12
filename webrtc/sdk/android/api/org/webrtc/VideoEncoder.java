@@ -18,9 +18,17 @@ public interface VideoEncoder {
   /** Settings passed to the encoder by WebRTC. */
   public class Settings {
     public final int numberOfCores;
+    public final int width;
+    public final int height;
+    public final int startBitrate; // Kilobits per second.
+    public final int maxFramerate;
 
-    public Settings(int numberOfCores) {
+    public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate) {
       this.numberOfCores = numberOfCores;
+      this.width = width;
+      this.height = height;
+      this.startBitrate = startBitrate;
+      this.maxFramerate = maxFramerate;
     }
   }
 
@@ -49,23 +57,23 @@ public interface VideoEncoder {
    */
   public class BitrateAllocation {
     // First index is the spatial layer and second the temporal layer.
-    public final long[][] bitratesBbs;
+    public final int[][] bitratesBbs;
 
     /**
      * Initializes the allocation with a two dimensional array of bitrates. The first index of the
      * array is the spatial layer and the second index in the temporal layer.
      */
-    public BitrateAllocation(long[][] bitratesBbs) {
+    public BitrateAllocation(int[][] bitratesBbs) {
       this.bitratesBbs = bitratesBbs;
     }
 
     /**
      * Gets the total bitrate allocated for all layers.
      */
-    public long getSum() {
-      long sum = 0;
-      for (long[] spatialLayer : bitratesBbs) {
-        for (long bitrate : spatialLayer) {
+    public int getSum() {
+      int sum = 0;
+      for (int[] spatialLayer : bitratesBbs) {
+        for (int bitrate : spatialLayer) {
           sum += bitrate;
         }
       }
@@ -101,24 +109,24 @@ public interface VideoEncoder {
   /**
    * Initializes the encoding process. Call before any calls to encode.
    */
-  void initEncode(Settings settings, Callback encodeCallback);
+  VideoCodecStatus initEncode(Settings settings, Callback encodeCallback);
   /**
    * Releases the encoder. No more calls to encode will be made after this call.
    */
-  void release();
+  VideoCodecStatus release();
   /**
    * Requests the encoder to encode a frame.
    */
-  void encode(VideoFrame frame, EncodeInfo info);
+  VideoCodecStatus encode(VideoFrame frame, EncodeInfo info);
   /**
    * Informs the encoder of the packet loss and the round-trip time of the network.
    *
    * @param packetLoss How many packets are lost on average per 255 packets.
    * @param roundTripTimeMs Round-trip time of the network in milliseconds.
    */
-  void setChannelParameters(short packetLoss, long roundTripTimeMs);
+  VideoCodecStatus setChannelParameters(short packetLoss, long roundTripTimeMs);
   /** Sets the bitrate allocation and the target framerate for the encoder. */
-  void setRateAllocation(BitrateAllocation allocation, long framerate);
+  VideoCodecStatus setRateAllocation(BitrateAllocation allocation, int framerate);
   /** Any encoder that wants to use WebRTC provided quality scaler must implement this method. */
   ScalingSettings getScalingSettings();
   /** Should return a descriptive name for the implementation. */

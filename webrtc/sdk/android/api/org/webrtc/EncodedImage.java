@@ -46,11 +46,11 @@ public class EncodedImage {
     this.qp = qp;
   }
 
-  public Builder builder() {
+  public static Builder builder() {
     return new Builder();
   }
 
-  public class Builder {
+  public static class Builder {
     private ByteBuffer buffer;
     private int encodedWidth;
     private int encodedHeight;
