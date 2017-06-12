@@ -15,8 +15,6 @@
 #ifndef WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
 #define WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
 
-#include <map>
-
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/pacing/paced_sender.h"
@@ -42,7 +40,8 @@ class BitrateObserver {
   virtual ~BitrateObserver() {}
 };
 
-class BitrateController : public Module {
+class BitrateController : public Module,
+                          public RtcpBandwidthObserver {
   // This class collects feedback from all streams sent to a peer (via
   // RTCPBandwidthObservers). It does one  aggregated send side bandwidth
   // estimation and divide the available bitrate between all its registered
@@ -62,6 +61,7 @@ class BitrateController : public Module {
 
   virtual ~BitrateController() {}
 
+  // Creates RtcpBandwidthObserver caller responsible to delete.
   virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() = 0;
 
   // Deprecated
