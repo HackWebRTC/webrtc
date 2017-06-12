@@ -13,5 +13,5 @@
 
 NS_AVAILABLE_MAC(10.11)
 @interface RTCMTLNSVideoView : NSView<RTCVideoRenderer>
-
++ (BOOL)isMetalAvailable;
 @end

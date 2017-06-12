@@ -50,7 +50,7 @@
 #pragma mark - Private
 
 + (BOOL)isMetalAvailable {
-  return YES;
+  return [MTLCopyAllDevices() count] > 0;
 }
 
 - (void)configure {

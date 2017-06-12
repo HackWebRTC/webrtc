@@ -221,10 +221,12 @@ static NSUInteger const kBottomViewHeight = 200;
 // If not we're providing sensible default.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpartial-availability"
-  if ([RTCMTLNSVideoView class]) {
+  if ([RTCMTLNSVideoView class] && [RTCMTLNSVideoView isMetalAvailable]) {
     _remoteVideoView = [[RTCMTLNSVideoView alloc] initWithFrame:NSZeroRect];
     _localVideoView = [[RTCMTLNSVideoView alloc] initWithFrame:NSZeroRect];
-  } else {
+  }
+#pragma clang diagnostic pop
+  if (_remoteVideoView == nil) {
     NSOpenGLPixelFormatAttribute attributes[] = {
       NSOpenGLPFADoubleBuffer,
       NSOpenGLPFADepthSize, 24,
@@ -245,7 +247,6 @@ static NSUInteger const kBottomViewHeight = 200;
     local.delegate = self;
     _localVideoView = local;
   }
-#pragma clang diagnostic pop
 
   [_remoteVideoView setTranslatesAutoresizingMaskIntoConstraints:NO];
   [self addSubview:_remoteVideoView];
