@@ -17,6 +17,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/event.h"
+#include "webrtc/base/fakeclock.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/socketserver.h"
 
@@ -33,6 +34,10 @@ class SocketAddressPair;
 class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
  public:
   VirtualSocketServer();
+  // This constructor needs to be used if the test uses a fake clock and
+  // ProcessMessagesUntilIdle, since ProcessMessagesUntilIdle needs a way of
+  // advancing time.
+  explicit VirtualSocketServer(FakeClock* fake_clock);
   ~VirtualSocketServer() override;
 
   // The default route indicates which local address to use when a socket is
@@ -241,6 +246,10 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
 
   typedef std::map<SocketAddress, VirtualSocket*> AddressMap;
   typedef std::map<SocketAddressPair, VirtualSocket*> ConnectionMap;
+
+  // May be null if the test doesn't use a fake clock, or it does but doesn't
+  // use ProcessMessagesUntilIdle.
+  FakeClock* fake_clock_ = nullptr;
 
   // Used to implement Wait/WakeUp.
   Event wakeup_;

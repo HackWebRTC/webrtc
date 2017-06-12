@@ -9,6 +9,8 @@
  */
 
 #include "webrtc/base/testclient.h"
+
+#include "webrtc/base/gunit.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
@@ -20,7 +22,13 @@ namespace rtc {
 //         NextPacket.
 
 TestClient::TestClient(std::unique_ptr<AsyncPacketSocket> socket)
-    : socket_(std::move(socket)), prev_packet_timestamp_(-1) {
+    : TestClient(std::move(socket), nullptr) {}
+
+TestClient::TestClient(std::unique_ptr<AsyncPacketSocket> socket,
+                       FakeClock* fake_clock)
+    : fake_clock_(fake_clock),
+      socket_(std::move(socket)),
+      prev_packet_timestamp_(-1) {
   socket_->SignalReadPacket.connect(this, &TestClient::OnPacket);
   socket_->SignalReadyToSend.connect(this, &TestClient::OnReadyToSend);
 }
@@ -31,7 +39,7 @@ bool TestClient::CheckConnState(AsyncPacketSocket::State state) {
   // Wait for our timeout value until the socket reaches the desired state.
   int64_t end = TimeAfter(kTimeoutMs);
   while (socket_->GetState() != state && TimeUntil(end) > 0) {
-    Thread::Current()->ProcessMessages(1);
+    AdvanceTime(1);
   }
   return (socket_->GetState() == state);
 }
@@ -67,7 +75,7 @@ std::unique_ptr<TestClient::Packet> TestClient::NextPacket(int timeout_ms) {
         break;
       }
     }
-    Thread::Current()->ProcessMessages(1);
+    AdvanceTime(1);
   }
 
   // Return the first packet placed in the queue.
@@ -106,6 +114,16 @@ bool TestClient::CheckTimestamp(int64_t packet_timestamp) {
   }
   prev_packet_timestamp_ = packet_timestamp;
   return res;
+}
+
+void TestClient::AdvanceTime(int ms) {
+  // If the test is using a fake clock, we must advance the fake clock to
+  // advance time. Otherwise, ProcessMessages will work.
+  if (fake_clock_) {
+    SIMULATED_WAIT(false, ms, *fake_clock_);
+  } else {
+    Thread::Current()->ProcessMessages(1);
+  }
 }
 
 bool TestClient::CheckNoPacket() {

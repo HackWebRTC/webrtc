@@ -532,9 +532,6 @@ rtc_static_library("rtc_base") {
       "optionsfile.h",
       "rollingaccumulator.h",
       "sslroots.h",
-      "testbase64.h",
-      "testclient.cc",
-      "testclient.h",
       "transformadapter.cc",
       "transformadapter.h",
       "window.h",
@@ -707,6 +704,8 @@ rtc_source_set("rtc_base_tests_utils") {
     "sigslottester.h",
     "sigslottester.h.pump",
     "testbase64.h",
+    "testclient.cc",
+    "testclient.h",
     "testechoserver.h",
     "testutils.h",
     "timedelta.h",
@@ -774,7 +773,6 @@ if (rtc_include_tests) {
       "socket_unittest.cc",
       "socket_unittest.h",
       "socketaddress_unittest.cc",
-      "virtualsocket_unittest.cc",
     ]
     deps = [
       ":rtc_base",
@@ -843,6 +841,7 @@ if (rtc_include_tests) {
       "thread_checker_unittest.cc",
       "timestampaligner_unittest.cc",
       "timeutils_unittest.cc",
+      "virtualsocket_unittest.cc",
     ]
     deps = [
       ":rtc_base",

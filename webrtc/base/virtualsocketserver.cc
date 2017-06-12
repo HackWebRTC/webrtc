@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/socketaddresspair.h"
@@ -528,8 +529,11 @@ void VirtualSocket::OnSocketServerReadyToSend() {
   }
 }
 
-VirtualSocketServer::VirtualSocketServer()
-    : wakeup_(/*manual_reset=*/false, /*initially_signaled=*/false),
+VirtualSocketServer::VirtualSocketServer() : VirtualSocketServer(nullptr) {}
+
+VirtualSocketServer::VirtualSocketServer(FakeClock* fake_clock)
+    : fake_clock_(fake_clock),
+      wakeup_(/*manual_reset=*/false, /*initially_signaled=*/false),
       msg_queue_(nullptr),
       stop_on_idle_(false),
       next_ipv4_(kInitialNextIPv4),
@@ -642,9 +646,17 @@ bool VirtualSocketServer::ProcessMessagesUntilIdle() {
   RTC_DCHECK(msg_queue_ == Thread::Current());
   stop_on_idle_ = true;
   while (!msg_queue_->empty()) {
-    Message msg;
-    if (msg_queue_->Get(&msg, Thread::kForever)) {
-      msg_queue_->Dispatch(&msg);
+    if (fake_clock_) {
+      // If using a fake clock, advance it in millisecond increments until the
+      // queue is empty (the SIMULATED_WAIT macro ensures the queue processes
+      // all possible messages each time it's called).
+      SIMULATED_WAIT(false, 1, *fake_clock_);
+    } else {
+      // Otherwise, run a normal message loop.
+      Message msg;
+      if (msg_queue_->Get(&msg, Thread::kForever)) {
+        msg_queue_->Dispatch(&msg);
+      }
     }
   }
   stop_on_idle_ = false;

@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/fakeclock.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ptr_util.h"
@@ -143,10 +144,12 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
   uint32_t samples;
 };
 
+// Note: This test uses a fake clock in addition to a virtual network.
 class VirtualSocketServerTest : public testing::Test {
  public:
   VirtualSocketServerTest()
-      : thread_(&ss_),
+      : ss_(&fake_clock_),
+        thread_(&ss_),
         kIPv4AnyAddress(IPAddress(INADDR_ANY), 0),
         kIPv6AnyAddress(IPAddress(in6addr_any), 0) {}
 
@@ -181,7 +184,8 @@ class VirtualSocketServerTest : public testing::Test {
     socket->Bind(EmptySocketAddressWithFamily(default_route.family()));
     SocketAddress client1_any_addr = socket->GetLocalAddress();
     EXPECT_TRUE(client1_any_addr.IsAnyIP());
-    auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket));
+    auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket),
+                                          &fake_clock_);
 
     // Create client2 bound to the default route.
     AsyncSocket* socket2 =
@@ -189,7 +193,8 @@ class VirtualSocketServerTest : public testing::Test {
     socket2->Bind(SocketAddress(default_route, 0));
     SocketAddress client2_addr = socket2->GetLocalAddress();
     EXPECT_FALSE(client2_addr.IsAnyIP());
-    auto client2 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket2));
+    auto client2 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket2),
+                                          &fake_clock_);
 
     // Client1 sends to client2, client2 should see the default route as
     // client1's address.
@@ -212,10 +217,12 @@ class VirtualSocketServerTest : public testing::Test {
     // Make sure VSS didn't switch families on us.
     EXPECT_EQ(server_addr.family(), initial_addr.family());
 
-    auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket));
+    auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket),
+                                          &fake_clock_);
     AsyncSocket* socket2 =
         ss_.CreateAsyncSocket(initial_addr.family(), SOCK_DGRAM);
-    auto client2 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket2));
+    auto client2 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket2),
+                                          &fake_clock_);
 
     SocketAddress client2_addr;
     EXPECT_EQ(3, client2->SendTo("foo", 3, server_addr));
@@ -229,7 +236,7 @@ class VirtualSocketServerTest : public testing::Test {
     SocketAddress empty = EmptySocketAddressWithFamily(initial_addr.family());
     for (int i = 0; i < 10; i++) {
       client2 = MakeUnique<TestClient>(
-          WrapUnique(AsyncUDPSocket::Create(&ss_, empty)));
+          WrapUnique(AsyncUDPSocket::Create(&ss_, empty)), &fake_clock_);
 
       SocketAddress next_client2_addr;
       EXPECT_EQ(3, client2->SendTo("foo", 3, server_addr));
@@ -684,12 +691,15 @@ class VirtualSocketServerTest : public testing::Test {
     Sender sender(pthMain, send_socket, 80 * 1024);
     Receiver receiver(pthMain, recv_socket, bandwidth);
 
-    pthMain->ProcessMessages(5000);
+    // Allow the sender to run for 5 (simulated) seconds, then be stopped for 5
+    // seconds.
+    SIMULATED_WAIT(false, 5000, fake_clock_);
     sender.done = true;
-    pthMain->ProcessMessages(5000);
+    SIMULATED_WAIT(false, 5000, fake_clock_);
 
-    ASSERT_TRUE(receiver.count >= 5 * 3 * bandwidth / 4);
-    ASSERT_TRUE(receiver.count <= 6 * bandwidth);  // queue could drain for 1s
+    // Ensure the observed bandwidth fell within a reasonable margin of error.
+    EXPECT_TRUE(receiver.count >= 5 * 3 * bandwidth / 4);
+    EXPECT_TRUE(receiver.count <= 6 * bandwidth);  // queue could drain for 1s
 
     ss_.set_bandwidth(0);
   }
@@ -725,7 +735,9 @@ class VirtualSocketServerTest : public testing::Test {
     Sender sender(pthMain, send_socket, 100 * 2 * 1024);
     Receiver receiver(pthMain, recv_socket, 0);
 
-    pthMain->ProcessMessages(10000);
+    // Simulate 10 seconds of packets being sent, then check the observed delay
+    // distribution.
+    SIMULATED_WAIT(false, 10000, fake_clock_);
     sender.done = receiver.done = true;
     ss_.ProcessMessagesUntilIdle();
 
@@ -807,11 +819,13 @@ class VirtualSocketServerTest : public testing::Test {
     AsyncSocket* socket = ss_.CreateAsyncSocket(SOCK_DGRAM);
     socket->Bind(server_addr);
     SocketAddress bound_server_addr = socket->GetLocalAddress();
-    auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket));
+    auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket),
+                                          &fake_clock_);
 
     AsyncSocket* socket2 = ss_.CreateAsyncSocket(SOCK_DGRAM);
     socket2->Bind(client_addr);
-    auto client2 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket2));
+    auto client2 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket2),
+                                          &fake_clock_);
     SocketAddress client2_addr;
 
     if (shouldSucceed) {
@@ -828,6 +842,7 @@ class VirtualSocketServerTest : public testing::Test {
   }
 
  protected:
+  rtc::ScopedFakeClock fake_clock_;
   VirtualSocketServer ss_;
   AutoSocketServerThread thread_;
   const SocketAddress kIPv4AnyAddress;
@@ -912,20 +927,11 @@ TEST_F(VirtualSocketServerTest, bandwidth_v6) {
   BandwidthTest(kIPv6AnyAddress);
 }
 
-// Disabled on iOS simulator since it's a test that relies on being able to
-// process packets fast enough in real time, which isn't the case in the
-// simulator.
-#if defined(TARGET_IPHONE_SIMULATOR)
-#define MAYBE_delay_v4 DISABLED_delay_v4
-#else
-#define MAYBE_delay_v4 delay_v4
-#endif
-TEST_F(VirtualSocketServerTest, MAYBE_delay_v4) {
+TEST_F(VirtualSocketServerTest, delay_v4) {
   DelayTest(kIPv4AnyAddress);
 }
 
-// See: https://code.google.com/p/webrtc/issues/detail?id=2409
-TEST_F(VirtualSocketServerTest, DISABLED_delay_v6) {
+TEST_F(VirtualSocketServerTest, delay_v6) {
   DelayTest(kIPv6AnyAddress);
 }
 
@@ -1040,7 +1046,8 @@ TEST_F(VirtualSocketServerTest, SetSendingBlockedWithUdpSocket) {
       WrapUnique(ss_.CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_DGRAM));
   socket1->Bind(kIPv4AnyAddress);
   socket2->Bind(kIPv4AnyAddress);
-  auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket1));
+  auto client1 =
+      MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket1), &fake_clock_);
 
   ss_.SetSendingBlocked(true);
   EXPECT_EQ(-1, client1->SendTo("foo", 3, socket2->GetLocalAddress()));

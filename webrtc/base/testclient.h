@@ -16,6 +16,7 @@
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/fakeclock.h"
 
 namespace rtc {
 
@@ -44,6 +45,10 @@ class TestClient : public sigslot::has_slots<> {
   // Creates a client that will send and receive with the given socket and
   // will post itself messages with the given thread.
   explicit TestClient(std::unique_ptr<AsyncPacketSocket> socket);
+  // Create a test client that will use a fake clock. NextPacket needs to wait
+  // for a packet to be received, and thus it needs to advance the fake clock
+  // if the test is using one, rather than just sleeping.
+  TestClient(std::unique_ptr<AsyncPacketSocket> socket, FakeClock* fake_clock);
   ~TestClient() override;
 
   SocketAddress address() const { return socket_->GetLocalAddress(); }
@@ -93,7 +98,9 @@ class TestClient : public sigslot::has_slots<> {
                 const PacketTime& packet_time);
   void OnReadyToSend(AsyncPacketSocket* socket);
   bool CheckTimestamp(int64_t packet_timestamp);
+  void AdvanceTime(int ms);
 
+  FakeClock* fake_clock_ = nullptr;
   CriticalSection crit_;
   std::unique_ptr<AsyncPacketSocket> socket_;
   std::vector<std::unique_ptr<Packet>> packets_;
