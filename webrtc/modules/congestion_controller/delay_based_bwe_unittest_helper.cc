@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 
 namespace webrtc {
@@ -149,6 +150,8 @@ int64_t StreamGenerator::GenerateFrame(std::vector<PacketFeedback>* packets,
 
 DelayBasedBweTest::DelayBasedBweTest()
     : clock_(100000000),
+      acknowledged_bitrate_estimator_(
+          rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
       bitrate_estimator_(new DelayBasedBwe(nullptr, &clock_)),
       stream_generator_(new test::StreamGenerator(1e6,  // Capacity.
                                                   clock_.TimeInMicroseconds())),
@@ -181,8 +184,10 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
                         sequence_number, payload_size, pacing_info);
   std::vector<PacketFeedback> packets;
   packets.push_back(packet);
+  acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   DelayBasedBwe::Result result =
-      bitrate_estimator_->IncomingPacketFeedbackVector(packets);
+      bitrate_estimator_->IncomingPacketFeedbackVector(
+          packets, acknowledged_bitrate_estimator_->bitrate_bps());
   const uint32_t kDummySsrc = 0;
   if (result.updated) {
     bitrate_observer_.OnReceiveBitrateChanged({kDummySsrc},
@@ -213,8 +218,11 @@ bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
     RTC_CHECK_GE(packet.arrival_time_ms + arrival_time_offset_ms_, 0);
     packet.arrival_time_ms += arrival_time_offset_ms_;
   }
+
+  acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   DelayBasedBwe::Result result =
-      bitrate_estimator_->IncomingPacketFeedbackVector(packets);
+      bitrate_estimator_->IncomingPacketFeedbackVector(
+          packets, acknowledged_bitrate_estimator_->bitrate_bps());
   const uint32_t kDummySsrc = 0;
   if (result.updated) {
     bitrate_observer_.OnReceiveBitrateChanged({kDummySsrc},
