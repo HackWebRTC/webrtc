@@ -28,8 +28,7 @@ bool IsHighProfileEnabled() {
 
 // VideoToolboxVideoEncoderFactory
 
-VideoToolboxVideoEncoderFactory::VideoToolboxVideoEncoderFactory() {
-}
+VideoToolboxVideoEncoderFactory::VideoToolboxVideoEncoderFactory() {}
 
 VideoToolboxVideoEncoderFactory::~VideoToolboxVideoEncoderFactory() {}
 
@@ -43,14 +42,12 @@ VideoEncoder* VideoToolboxVideoEncoderFactory::CreateVideoEncoder(
   return nullptr;
 }
 
-void VideoToolboxVideoEncoderFactory::DestroyVideoEncoder(
-    VideoEncoder* encoder) {
+void VideoToolboxVideoEncoderFactory::DestroyVideoEncoder(VideoEncoder* encoder) {
   delete encoder;
   encoder = nullptr;
 }
 
-const std::vector<cricket::VideoCodec>&
-VideoToolboxVideoEncoderFactory::supported_codecs() const {
+const std::vector<cricket::VideoCodec>& VideoToolboxVideoEncoderFactory::supported_codecs() const {
   supported_codecs_.clear();
 
   // TODO(magjed): Enumerate actual level instead of using hardcoded level 3.1.
@@ -59,22 +56,18 @@ VideoToolboxVideoEncoderFactory::supported_codecs() const {
 
   if (IsHighProfileEnabled()) {
     cricket::VideoCodec constrained_high(cricket::kH264CodecName);
-    const H264::ProfileLevelId constrained_high_profile(
-        H264::kProfileConstrainedHigh, level);
-    constrained_high.SetParam(
-        cricket::kH264FmtpProfileLevelId,
-        *H264::ProfileLevelIdToString(constrained_high_profile));
+    const H264::ProfileLevelId constrained_high_profile(H264::kProfileConstrainedHigh, level);
+    constrained_high.SetParam(cricket::kH264FmtpProfileLevelId,
+                              *H264::ProfileLevelIdToString(constrained_high_profile));
     constrained_high.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
     constrained_high.SetParam(cricket::kH264FmtpPacketizationMode, "1");
     supported_codecs_.push_back(constrained_high);
   }
 
   cricket::VideoCodec constrained_baseline(cricket::kH264CodecName);
-  const H264::ProfileLevelId constrained_baseline_profile(
-      H264::kProfileConstrainedBaseline, level);
-  constrained_baseline.SetParam(
-      cricket::kH264FmtpProfileLevelId,
-      *H264::ProfileLevelIdToString(constrained_baseline_profile));
+  const H264::ProfileLevelId constrained_baseline_profile(H264::kProfileConstrainedBaseline, level);
+  constrained_baseline.SetParam(cricket::kH264FmtpProfileLevelId,
+                                *H264::ProfileLevelIdToString(constrained_baseline_profile));
   constrained_baseline.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
   constrained_baseline.SetParam(cricket::kH264FmtpPacketizationMode, "1");
   supported_codecs_.push_back(constrained_baseline);
@@ -90,8 +83,7 @@ VideoToolboxVideoDecoderFactory::VideoToolboxVideoDecoderFactory() {
 
 VideoToolboxVideoDecoderFactory::~VideoToolboxVideoDecoderFactory() {}
 
-VideoDecoder* VideoToolboxVideoDecoderFactory::CreateVideoDecoder(
-    VideoCodecType type) {
+VideoDecoder* VideoToolboxVideoDecoderFactory::CreateVideoDecoder(VideoCodecType type) {
   const rtc::Optional<const char*> codec_name = CodecTypeToPayloadName(type);
   if (!codec_name) {
     LOG(LS_ERROR) << "Invalid codec type: " << type;
@@ -106,8 +98,7 @@ VideoDecoder* VideoToolboxVideoDecoderFactory::CreateVideoDecoder(
   return nullptr;
 }
 
-void VideoToolboxVideoDecoderFactory::DestroyVideoDecoder(
-    VideoDecoder* decoder) {
+void VideoToolboxVideoDecoderFactory::DestroyVideoDecoder(VideoDecoder* decoder) {
   delete decoder;
   decoder = nullptr;
 }

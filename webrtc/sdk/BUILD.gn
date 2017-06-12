@@ -47,8 +47,8 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/Common/RTCDispatcher.m",
       "objc/Framework/Classes/Common/RTCFieldTrials.mm",
       "objc/Framework/Classes/Common/RTCLogging.mm",
-      "objc/Framework/Classes/Common/RTCUIApplication.h",
-      "objc/Framework/Classes/Common/RTCUIApplication.mm",
+      "objc/Framework/Classes/Common/RTCUIApplicationStatusObserver.h",
+      "objc/Framework/Classes/Common/RTCUIApplicationStatusObserver.m",
       "objc/Framework/Classes/Common/helpers.h",
       "objc/Framework/Classes/Common/helpers.mm",
       "objc/Framework/Headers/WebRTC/RTCDispatcher.h",
@@ -546,8 +546,8 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/VideoToolbox/encoder.mm",
         "objc/Framework/Classes/VideoToolbox/nalu_rewriter.cc",
         "objc/Framework/Classes/VideoToolbox/nalu_rewriter.h",
-        "objc/Framework/Classes/VideoToolbox/videocodecfactory.cc",
         "objc/Framework/Classes/VideoToolbox/videocodecfactory.h",
+        "objc/Framework/Classes/VideoToolbox/videocodecfactory.mm",
       ]
 
       configs += [ "..:common_objc" ]

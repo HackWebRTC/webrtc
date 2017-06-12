@@ -16,8 +16,8 @@
 #include <vector>
 
 #if defined(WEBRTC_IOS)
+#import "Common/RTCUIApplicationStatusObserver.h"
 #import "WebRTC/UIDevice+RTCDevice.h"
-#include "Common/RTCUIApplication.h"
 #endif
 #include "libyuv/convert_from.h"
 #include "webrtc/base/checks.h"
@@ -386,7 +386,7 @@ int H264VideoToolboxEncoder::Encode(
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 #if defined(WEBRTC_IOS)
-  if (!RTCIsUIApplicationActive()) {
+  if (![[RTCUIApplicationStatusObserver sharedInstance] isApplicationActive]) {
     // Ignore all encode requests when app isn't active. In this state, the
     // hardware encoder has been invalidated by the OS.
     return WEBRTC_VIDEO_CODEC_OK;

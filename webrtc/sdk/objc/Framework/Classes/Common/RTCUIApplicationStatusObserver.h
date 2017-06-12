@@ -8,14 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_UI_RTCUIAPPLICATION_H_
-#define WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_UI_RTCUIAPPLICATION_H_
-
-#include "WebRTC/RTCMacros.h"
-
 #if defined(WEBRTC_IOS)
-/** Convenience function to get UIApplicationState from C++. */
-RTC_EXTERN bool RTCIsUIApplicationActive();
-#endif  // WEBRTC_IOS
 
-#endif  // WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_UI_RTCUIAPPLICATION_H_
+#import <Foundation/Foundation.h>
+
+@interface RTCUIApplicationStatusObserver : NSObject
+
++ (instancetype)sharedInstance;
+
+- (BOOL)isApplicationActive;
+
+@end
+
+#endif  // WEBRTC_IOS
