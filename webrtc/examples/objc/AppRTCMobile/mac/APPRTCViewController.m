@@ -63,10 +63,12 @@ static NSUInteger const kBottomViewHeight = 200;
 
 
 - (void)displayLogMessage:(NSString *)message {
-  _logView.string =
-      [NSString stringWithFormat:@"%@%@\n", _logView.string, message];
-  NSRange range = NSMakeRange(_logView.string.length, 0);
-  [_logView scrollRangeToVisible:range];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    _logView.string =
+        [NSString stringWithFormat:@"%@%@\n", _logView.string, message];
+    NSRange range = NSMakeRange(_logView.string.length, 0);
+    [_logView scrollRangeToVisible:range];
+  });
 }
 
 #pragma mark - Private
@@ -414,9 +416,11 @@ static NSUInteger const kBottomViewHeight = 200;
 }
 
 - (void)showAlertWithMessage:(NSString*)message {
-  NSAlert* alert = [[NSAlert alloc] init];
-  [alert setMessageText:message];
-  [alert runModal];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSAlert* alert = [[NSAlert alloc] init];
+    [alert setMessageText:message];
+    [alert runModal];
+  });
 }
 
 - (void)resetUI {
