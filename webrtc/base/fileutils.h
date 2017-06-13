@@ -118,27 +118,6 @@ class FilesystemInterface {
   // Determines a timestamp associated with the file indicated by path.
   virtual bool GetFileTime(const Pathname& path, FileTimeType which,
                            time_t* time) = 0;
-
-  // Note: These might go into some shared config section later, but they're
-  // used by some methods in this interface, so we're leaving them here for now.
-  void SetOrganizationName(const std::string& organization) {
-    organization_name_ = organization;
-  }
-  void GetOrganizationName(std::string* organization) {
-    RTC_DCHECK(organization);
-    *organization = organization_name_;
-  }
-  void SetApplicationName(const std::string& application) {
-    application_name_ = application;
-  }
-  void GetApplicationName(std::string* application) {
-    RTC_DCHECK(application);
-    *application = application_name_;
-  }
-
- protected:
-  std::string organization_name_;
-  std::string application_name_;
 };
 
 class Filesystem {
@@ -200,22 +179,6 @@ class Filesystem {
   static bool GetFileTime(const Pathname& path, FileTimeType which,
                           time_t* time) {
     return EnsureDefaultFilesystem()->GetFileTime(path, which, time);
-  }
-
-  static void SetOrganizationName(const std::string& organization) {
-    EnsureDefaultFilesystem()->SetOrganizationName(organization);
-  }
-
-  static void GetOrganizationName(std::string* organization) {
-    EnsureDefaultFilesystem()->GetOrganizationName(organization);
-  }
-
-  static void SetApplicationName(const std::string& application) {
-    EnsureDefaultFilesystem()->SetApplicationName(application);
-  }
-
-  static void GetApplicationName(std::string* application) {
-    EnsureDefaultFilesystem()->GetApplicationName(application);
   }
 
  private:

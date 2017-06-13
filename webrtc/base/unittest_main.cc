@@ -93,9 +93,6 @@ int main(int argc, char** argv) {
 #endif
 #endif  // WEBRTC_WIN
 
-  rtc::Filesystem::SetOrganizationName("google");
-  rtc::Filesystem::SetApplicationName("unittest");
-
   // By default, log timestamps. Allow overrides by used of a --log flag.
   rtc::LogMessage::LogTimestamps();
   if (*FLAG_log != '\0') {
