@@ -60,10 +60,6 @@ class Win32Filesystem : public FilesystemInterface {
   bool GetTemporaryFolder(Pathname& path,
                           bool create,
                           const std::string* append) override;
-
- private:
-  // Returns the path to the running application.
-  bool GetAppPathname(Pathname* path);
 };
 
 }  // namespace rtc

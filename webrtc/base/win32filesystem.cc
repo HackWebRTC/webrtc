@@ -174,12 +174,4 @@ bool Win32Filesystem::GetFileTime(const Pathname& path, FileTimeType which,
   return true;
 }
 
-bool Win32Filesystem::GetAppPathname(Pathname* path) {
-  TCHAR buffer[MAX_PATH + 1];
-  if (0 == ::GetModuleFileName(nullptr, buffer, arraysize(buffer)))
-    return false;
-  path->SetPathname(ToUtf8(buffer));
-  return true;
-}
-
 }  // namespace rtc
