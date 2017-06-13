@@ -933,7 +933,6 @@ rtc_static_library("audio_network_adaptor") {
       ":ana_config_proto",
       ":ana_debug_dump_proto",
     ]
-    defines = [ "WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP" ]
   }
 
   if (!build_with_chromium && is_clang) {
@@ -2178,10 +2177,7 @@ if (rtc_include_tests) {
     defines = audio_coding_defines
 
     if (rtc_enable_protobuf) {
-      defines += [
-        "WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP",
-        "WEBRTC_NETEQ_UNITTEST_BITEXACT",
-      ]
+      defines += [ "WEBRTC_NETEQ_UNITTEST_BITEXACT" ]
       deps += [
         ":ana_config_proto",
         ":neteq_unittest_proto",

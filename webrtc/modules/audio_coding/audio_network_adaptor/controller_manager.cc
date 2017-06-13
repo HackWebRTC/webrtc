@@ -23,7 +23,7 @@
 #include "webrtc/modules/audio_coding/audio_network_adaptor/frame_length_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/util/threshold_curve.h"
 
-#ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#if WEBRTC_ENABLE_PROTOBUF
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/config.pb.h"
@@ -37,7 +37,7 @@ namespace webrtc {
 
 namespace {
 
-#ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#if WEBRTC_ENABLE_PROTOBUF
 
 std::unique_ptr<FecControllerPlrBased> CreateFecControllerPlrBased(
     const audio_network_adaptor::config::FecController& config,
@@ -180,7 +180,7 @@ std::unique_ptr<BitrateController> CreateBitrateController(
   return std::unique_ptr<BitrateController>(new BitrateController(
       BitrateController::Config(initial_bitrate_bps, initial_frame_length_ms)));
 }
-#endif  // WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#endif  // WEBRTC_ENABLE_PROTOBUF
 
 }  // namespace
 
@@ -201,7 +201,7 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
     int initial_bitrate_bps,
     bool initial_fec_enabled,
     bool initial_dtx_enabled) {
-#ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#if WEBRTC_ENABLE_PROTOBUF
   audio_network_adaptor::config::ControllerManager controller_manager_config;
   controller_manager_config.ParseFromString(config_string);
 
@@ -270,7 +270,7 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
 #else
   RTC_NOTREACHED();
   return nullptr;
-#endif  // WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#endif  // WEBRTC_ENABLE_PROTOBUF
 }
 
 ControllerManagerImpl::ControllerManagerImpl(const Config& config)

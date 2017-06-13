@@ -14,7 +14,7 @@
 #include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/protobuf_utils.h"
 
-#ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#if WEBRTC_ENABLE_PROTOBUF
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/debug_dump.pb.h"
@@ -26,7 +26,7 @@ RTC_POP_IGNORING_WUNDEF()
 
 namespace webrtc {
 
-#ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#if WEBRTC_ENABLE_PROTOBUF
 namespace {
 
 using audio_network_adaptor::debug_dump::Event;
@@ -43,7 +43,7 @@ void DumpEventToFile(const Event& event, FileWrapper* dump_file) {
 }
 
 }  // namespace
-#endif  // WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#endif  // WEBRTC_ENABLE_PROTOBUF
 
 class DebugDumpWriterImpl final : public DebugDumpWriter {
  public:
@@ -62,17 +62,18 @@ class DebugDumpWriterImpl final : public DebugDumpWriter {
 
 DebugDumpWriterImpl::DebugDumpWriterImpl(FILE* file_handle)
     : dump_file_(FileWrapper::Create()) {
-#ifndef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
-  RTC_NOTREACHED();
-#endif
+#if WEBRTC_ENABLE_PROTOBUF
   dump_file_->OpenFromFileHandle(file_handle);
   RTC_CHECK(dump_file_->is_open());
+#else
+  RTC_NOTREACHED();
+#endif
 }
 
 void DebugDumpWriterImpl::DumpNetworkMetrics(
     const Controller::NetworkMetrics& metrics,
     int64_t timestamp) {
-#ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#if WEBRTC_ENABLE_PROTOBUF
   Event event;
   event.set_timestamp(timestamp);
   event.set_type(Event::NETWORK_METRICS);
@@ -100,13 +101,13 @@ void DebugDumpWriterImpl::DumpNetworkMetrics(
   }
 
   DumpEventToFile(event, dump_file_.get());
-#endif  // WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#endif  // WEBRTC_ENABLE_PROTOBUF
 }
 
 void DebugDumpWriterImpl::DumpEncoderRuntimeConfig(
     const AudioEncoderRuntimeConfig& config,
     int64_t timestamp) {
-#ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#if WEBRTC_ENABLE_PROTOBUF
   Event event;
   event.set_timestamp(timestamp);
   event.set_type(Event::ENCODER_RUNTIME_CONFIG);
@@ -133,7 +134,7 @@ void DebugDumpWriterImpl::DumpEncoderRuntimeConfig(
     dump_config->set_num_channels(*config.num_channels);
 
   DumpEventToFile(event, dump_file_.get());
-#endif  // WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#endif  // WEBRTC_ENABLE_PROTOBUF
 }
 
 std::unique_ptr<DebugDumpWriter> DebugDumpWriter::Create(FILE* file_handle) {

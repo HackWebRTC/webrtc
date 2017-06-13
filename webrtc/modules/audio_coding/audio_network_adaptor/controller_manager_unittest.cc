@@ -17,7 +17,7 @@
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"
 #include "webrtc/test/gtest.h"
 
-#ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#if WEBRTC_ENABLE_PROTOBUF
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/config.pb.h"
@@ -203,7 +203,7 @@ TEST(ControllerManagerTest, DoNotReorderIfNetworkMetricsChangeTooSmall) {
       {kNumControllers - 2, kNumControllers - 1, 0, 1});
 }
 
-#ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#if WEBRTC_ENABLE_PROTOBUF
 
 namespace {
 
@@ -439,6 +439,6 @@ TEST(ControllerManagerTest, CreateFromConfigStringAndCheckReordering) {
                             ControllerType::CHANNEL, ControllerType::DTX,
                             ControllerType::BIT_RATE});
 }
-#endif  // WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+#endif  // WEBRTC_ENABLE_PROTOBUF
 
 }  // namespace webrtc
