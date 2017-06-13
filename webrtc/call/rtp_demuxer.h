@@ -70,6 +70,9 @@ class RtpDemuxer {
   // check RSIDs for the first packet on each incoming SSRC stream.
   // (If RSID associations are added later, we check again.)
   std::set<uint32_t> processed_ssrcs_;
+
+  // Avoid an attack that would create excessive logging.
+  bool logged_max_processed_ssrcs_exceeded_ = false;
 };
 
 }  // namespace webrtc

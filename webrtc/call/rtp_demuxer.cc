@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/checks.h"
 #include "webrtc/call/rtp_demuxer.h"
+
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/call/rtp_packet_sink_interface.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
@@ -118,6 +120,10 @@ void RtpDemuxer::FindSsrcAssociations(const RtpPacketReceived& packet) {
 
   if (processed_ssrcs_.size() < kMaxProcessedSsrcs) {  // Prevent memory overuse
     processed_ssrcs_.insert(packet.Ssrc());  // Avoid re-examining in-depth.
+  } else if (!logged_max_processed_ssrcs_exceeded_) {
+    LOG(LS_WARNING) << "More than " << kMaxProcessedSsrcs
+                    << " different SSRCs seen.";
+    logged_max_processed_ssrcs_exceeded_ = true;
   }
 }
 
