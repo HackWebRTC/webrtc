@@ -27,9 +27,6 @@ include_rules = [
 
 # The below rules will be removed when webrtc:4243 is fixed.
 specific_include_rules = {
-  "video_frame\.h": [
-    "+webrtc/common_video",
-  ],
   "video_receive_stream\.h": [
     "+webrtc/common_video/include",
     "+webrtc/media/base",
