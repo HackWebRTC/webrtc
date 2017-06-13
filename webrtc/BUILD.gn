@@ -370,9 +370,6 @@ rtc_static_library("webrtc_common") {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
-  deps = [
-    "base:rtc_base_approved",
-  ]
 }
 
 if (use_libfuzzer || use_drfuzz || use_afl) {

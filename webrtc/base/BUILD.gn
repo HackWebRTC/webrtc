@@ -185,6 +185,8 @@ rtc_static_library("rtc_base_approved") {
     "type_traits.h",
   ]
 
+  deps += [ "..:webrtc_common" ]
+
   if (is_android) {
     libs += [ "log" ]
   }
