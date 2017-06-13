@@ -31,27 +31,27 @@
 }
 
 - (const uint8_t *)dataY {
-  return _videoBuffer->GetI420()->DataY();
+  return _videoBuffer->DataY();
 }
 
 - (const uint8_t *)dataU {
-  return _videoBuffer->GetI420()->DataU();
+  return _videoBuffer->DataU();
 }
 
 - (const uint8_t *)dataV {
-  return _videoBuffer->GetI420()->DataV();
+  return _videoBuffer->DataV();
 }
 
 - (int)strideY {
-  return _videoBuffer->GetI420()->StrideY();
+  return _videoBuffer->StrideY();
 }
 
 - (int)strideU {
-  return _videoBuffer->GetI420()->StrideU();
+  return _videoBuffer->StrideU();
 }
 
 - (int)strideV {
-  return _videoBuffer->GetI420()->StrideV();
+  return _videoBuffer->StrideV();
 }
 
 - (int64_t)timeStampNs {
@@ -59,14 +59,12 @@
 }
 
 - (CVPixelBufferRef)nativeHandle {
-  return (_videoBuffer->type() == webrtc::VideoFrameBuffer::Type::kNative) ?
-      static_cast<webrtc::CoreVideoFrameBuffer *>(_videoBuffer.get())->pixel_buffer() :
-      nil;
+  return static_cast<CVPixelBufferRef>(_videoBuffer->native_handle());
 }
 
 - (RTCVideoFrame *)newI420VideoFrame {
   return [[RTCVideoFrame alloc]
-      initWithVideoBuffer:_videoBuffer->ToI420()
+      initWithVideoBuffer:_videoBuffer->NativeToI420Buffer()
                  rotation:_rotation
               timeStampNs:_timeStampNs];
 }

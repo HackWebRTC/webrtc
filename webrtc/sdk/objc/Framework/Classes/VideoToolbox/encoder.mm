@@ -155,8 +155,9 @@ struct FrameEncodeParams {
 // We receive I420Frames as input, but we need to feed CVPixelBuffers into the
 // encoder. This performs the copy and format conversion.
 // TODO(tkchin): See if encoder will accept i420 frames and compare performance.
-bool CopyVideoFrameToPixelBuffer(const rtc::scoped_refptr<webrtc::I420BufferInterface>& frame,
-                                 CVPixelBufferRef pixel_buffer) {
+bool CopyVideoFrameToPixelBuffer(
+    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& frame,
+    CVPixelBufferRef pixel_buffer) {
   RTC_DCHECK(pixel_buffer);
   RTC_DCHECK_EQ(CVPixelBufferGetPixelFormatType(pixel_buffer),
                 kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
@@ -411,12 +412,13 @@ int H264VideoToolboxEncoder::Encode(
   }
 #endif
 
-  CVPixelBufferRef pixel_buffer;
-  if (frame.video_frame_buffer()->type() == VideoFrameBuffer::Type::kNative) {
+  CVPixelBufferRef pixel_buffer = static_cast<CVPixelBufferRef>(
+      frame.video_frame_buffer()->native_handle());
+  if (pixel_buffer) {
+    // Native frame.
     rtc::scoped_refptr<CoreVideoFrameBuffer> core_video_frame_buffer(
         static_cast<CoreVideoFrameBuffer*>(frame.video_frame_buffer().get()));
     if (!core_video_frame_buffer->RequiresCropping()) {
-      pixel_buffer = core_video_frame_buffer->pixel_buffer();
       // This pixel buffer might have a higher resolution than what the
       // compression session is configured to. The compression session can
       // handle that and will output encoded frames in the configured
@@ -439,7 +441,7 @@ int H264VideoToolboxEncoder::Encode(
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
     RTC_DCHECK(pixel_buffer);
-    if (!internal::CopyVideoFrameToPixelBuffer(frame.video_frame_buffer()->ToI420(),
+    if (!internal::CopyVideoFrameToPixelBuffer(frame.video_frame_buffer(),
                                                pixel_buffer)) {
       LOG(LS_ERROR) << "Failed to copy frame data.";
       CVBufferRelease(pixel_buffer);
