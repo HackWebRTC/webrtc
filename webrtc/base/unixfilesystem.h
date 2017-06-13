@@ -38,11 +38,6 @@ class UnixFilesystem : public FilesystemInterface {
   // It will fail with VERIY if you pass it a non-existant file, or a directory.
   bool DeleteFile(const Pathname& filename) override;
 
-  // This will attempt to delete the folder located at 'folder'
-  // It DCHECKs and returns false if you pass it a non-existant folder or a
-  // plain file.
-  bool DeleteEmptyFolder(const Pathname& folder) override;
-
   // Creates a directory. This will call itself recursively to create /foo/bar
   // even if /foo does not exist. All created directories are created with the
   // given mode.

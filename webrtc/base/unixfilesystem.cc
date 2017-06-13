@@ -133,17 +133,6 @@ bool UnixFilesystem::DeleteFile(const Pathname &filename) {
   return ::unlink(filename.pathname().c_str()) == 0;
 }
 
-bool UnixFilesystem::DeleteEmptyFolder(const Pathname &folder) {
-  LOG(LS_INFO) << "Deleting folder" << folder.pathname();
-
-  if (!IsFolder(folder)) {
-    RTC_DCHECK(IsFolder(folder));
-    return false;
-  }
-  std::string no_slash(folder.pathname(), 0, folder.pathname().length()-1);
-  return ::rmdir(no_slash.c_str()) == 0;
-}
-
 bool UnixFilesystem::GetTemporaryFolder(Pathname &pathname, bool create,
                                         const std::string *append) {
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)

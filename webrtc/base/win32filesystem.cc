@@ -72,13 +72,6 @@ bool Win32Filesystem::DeleteFile(const Pathname &filename) {
   return ::DeleteFile(ToUtf16(filename.pathname()).c_str()) != 0;
 }
 
-bool Win32Filesystem::DeleteEmptyFolder(const Pathname &folder) {
-  LOG(LS_INFO) << "Deleting folder " << folder.pathname();
-
-  std::string no_slash(folder.pathname(), 0, folder.pathname().length()-1);
-  return ::RemoveDirectory(ToUtf16(no_slash).c_str()) != 0;
-}
-
 bool Win32Filesystem::GetTemporaryFolder(Pathname &pathname, bool create,
                                          const std::string *append) {
   wchar_t buffer[MAX_PATH + 1];

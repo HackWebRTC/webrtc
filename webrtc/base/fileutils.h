@@ -85,12 +85,6 @@ class FilesystemInterface {
   // non-existent file.
   virtual bool DeleteFile(const Pathname &filename) = 0;
 
-  // This will attempt to delete the empty folder located at 'folder'
-  // It DCHECKs and returns false if the path points to a file or a non-existent
-  // folder. It fails normally if the folder is not empty or can otherwise
-  // not be deleted.
-  virtual bool DeleteEmptyFolder(const Pathname &folder) = 0;
-
   // Creates a directory. This will call itself recursively to create /foo/bar
   // even if /foo does not exist. Returns true if the function succeeds.
   virtual bool CreateFolder(const Pathname &pathname) = 0;
