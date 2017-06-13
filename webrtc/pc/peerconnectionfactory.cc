@@ -374,7 +374,6 @@ rtc::Thread* PeerConnectionFactory::signaling_thread() {
 }
 
 rtc::Thread* PeerConnectionFactory::worker_thread() {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
   return worker_thread_;
 }
 
