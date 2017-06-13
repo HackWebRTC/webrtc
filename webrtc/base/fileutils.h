@@ -74,8 +74,6 @@ class DirectoryIterator {
 #endif
 };
 
-enum FileTimeType { FTT_CREATED, FTT_MODIFIED, FTT_ACCESSED };
-
 class FilesystemInterface {
  public:
   virtual ~FilesystemInterface() {}
@@ -114,10 +112,6 @@ class FilesystemInterface {
 
   // Determines the size of the file indicated by path.
   virtual bool GetFileSize(const Pathname& path, size_t* size) = 0;
-
-  // Determines a timestamp associated with the file indicated by path.
-  virtual bool GetFileTime(const Pathname& path, FileTimeType which,
-                           time_t* time) = 0;
 };
 
 class Filesystem {
@@ -174,11 +168,6 @@ class Filesystem {
 
   static bool GetFileSize(const Pathname& path, size_t* size) {
     return EnsureDefaultFilesystem()->GetFileSize(path, size);
-  }
-
-  static bool GetFileTime(const Pathname& path, FileTimeType which,
-                          time_t* time) {
-    return EnsureDefaultFilesystem()->GetFileTime(path, which, time);
   }
 
  private:

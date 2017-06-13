@@ -72,9 +72,6 @@ class UnixFilesystem : public FilesystemInterface {
                           const std::string* append) override;
 
   bool GetFileSize(const Pathname& path, size_t* size) override;
-  bool GetFileTime(const Pathname& path,
-                   FileTimeType which,
-                   time_t* time) override;
 
  private:
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)

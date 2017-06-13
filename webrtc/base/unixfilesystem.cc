@@ -218,27 +218,6 @@ bool UnixFilesystem::GetFileSize(const Pathname& pathname, size_t *size) {
   return true;
 }
 
-bool UnixFilesystem::GetFileTime(const Pathname& path, FileTimeType which,
-                                 time_t* time) {
-  struct stat st;
-  if (::stat(path.pathname().c_str(), &st) != 0)
-    return false;
-  switch (which) {
-  case FTT_CREATED:
-    *time = st.st_ctime;
-    break;
-  case FTT_MODIFIED:
-    *time = st.st_mtime;
-    break;
-  case FTT_ACCESSED:
-    *time = st.st_atime;
-    break;
-  default:
-    return false;
-  }
-  return true;
-}
-
 char* UnixFilesystem::CopyString(const std::string& str) {
   size_t size = str.length() + 1;
 

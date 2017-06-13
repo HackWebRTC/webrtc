@@ -51,9 +51,6 @@ class Win32Filesystem : public FilesystemInterface {
                            const std::string& prefix) override;
 
   bool GetFileSize(const Pathname& path, size_t* size) override;
-  bool GetFileTime(const Pathname& path,
-                   FileTimeType which,
-                   time_t* time) override;
 
   // A folder appropriate for storing temporary files (Contents are
   // automatically deleted when the program exists)

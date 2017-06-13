@@ -152,26 +152,4 @@ bool Win32Filesystem::GetFileSize(const Pathname &pathname, size_t *size) {
   return true;
 }
 
-bool Win32Filesystem::GetFileTime(const Pathname& path, FileTimeType which,
-                                  time_t* time) {
-  WIN32_FILE_ATTRIBUTE_DATA data = {0};
-  if (::GetFileAttributesEx(ToUtf16(path.pathname()).c_str(),
-                            GetFileExInfoStandard, &data) == 0)
-    return false;
-  switch (which) {
-  case FTT_CREATED:
-    FileTimeToUnixTime(data.ftCreationTime, time);
-    break;
-  case FTT_MODIFIED:
-    FileTimeToUnixTime(data.ftLastWriteTime, time);
-    break;
-  case FTT_ACCESSED:
-    FileTimeToUnixTime(data.ftLastAccessTime, time);
-    break;
-  default:
-    return false;
-  }
-  return true;
-}
-
 }  // namespace rtc
