@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "webrtc/base/random.h"
+#include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/packet_buffer.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -41,6 +42,7 @@ class TestPacketBuffer : public ::testing::Test,
                     << first_seq_num << ".";
       return;
     }
+
     frames_from_callback_.insert(
         std::make_pair(frame->first_seq_num(), std::move(frame)));
   }
@@ -60,6 +62,27 @@ class TestPacketBuffer : public ::testing::Test,
     packet.seqNum = seq_num;
     packet.frameType =
         keyframe == kKeyFrame ? kVideoFrameKey : kVideoFrameDelta;
+    packet.is_first_packet_in_frame = first == kFirst;
+    packet.markerBit = last == kLast;
+    packet.sizeBytes = data_size;
+    packet.dataPtr = data;
+
+    return packet_buffer_->InsertPacket(&packet);
+  }
+
+  bool InsertH264(uint16_t seq_num,           // packet sequence number
+                  IsKeyFrame keyframe,        // is keyframe
+                  IsFirst first,              // is first packet of frame
+                  IsLast last,                // is last packet of frame
+                  uint32_t timestamp,         // rtp timestamp
+                  int data_size = 0,          // size of data
+                  uint8_t* data = nullptr) {  // data pointer
+    VCMPacket packet;
+    packet.codec = kVideoCodecH264;
+    packet.seqNum = seq_num;
+    packet.timestamp = timestamp;
+    packet.video_header.codecHeader.H264.nalus[0].type = H264::NaluType::kIdr;
+    packet.video_header.codecHeader.H264.nalus_length = keyframe == kKeyFrame;
     packet.is_first_packet_in_frame = first == kFirst;
     packet.markerBit = last == kLast;
     packet.sizeBytes = data_size;
@@ -366,6 +389,8 @@ TEST_F(TestPacketBuffer, GetBitstreamH264BufferPadding) {
       new uint8_t[sizeof(data_data) + EncodedImage::kBufferPaddingBytesH264]);
 
   VCMPacket packet;
+  packet.video_header.codecHeader.H264.nalus_length = 1;
+  packet.video_header.codecHeader.H264.nalus[0].type = H264::NaluType::kIdr;
   packet.seqNum = seq_num;
   packet.codec = kVideoCodecH264;
   packet.insertStartCode = true;
@@ -478,49 +503,6 @@ TEST_F(TestPacketBuffer, ContinuousSeqNumDoubleMarkerBit) {
   EXPECT_EQ(0UL, frames_from_callback_.size());
 }
 
-TEST_F(TestPacketBuffer, OneH264FrameFillBuffer) {
-  VCMPacket packet;
-  packet.seqNum = 0;
-  packet.codec = kVideoCodecH264;
-  packet.dataPtr = nullptr;
-  packet.sizeBytes = 0;
-  packet.is_first_packet_in_frame = true;
-  packet.markerBit = false;
-  packet_buffer_->InsertPacket(&packet);
-
-  packet.is_first_packet_in_frame = false;
-  for (int i = 1; i < kStartSize - 1; ++i) {
-    packet.seqNum = i;
-    packet_buffer_->InsertPacket(&packet);
-  }
-
-  packet.seqNum = kStartSize - 1;
-  packet.markerBit = true;
-  packet_buffer_->InsertPacket(&packet);
-
-  EXPECT_EQ(1UL, frames_from_callback_.size());
-  CheckFrame(0);
-}
-
-TEST_F(TestPacketBuffer, OneH264FrameMaxSeqNum) {
-  VCMPacket packet;
-  packet.seqNum = 65534;
-  packet.codec = kVideoCodecH264;
-  packet.dataPtr = nullptr;
-  packet.sizeBytes = 0;
-  packet.is_first_packet_in_frame = true;
-  packet.markerBit = false;
-  packet_buffer_->InsertPacket(&packet);
-
-  packet.is_first_packet_in_frame = false;
-  packet.seqNum = 65535;
-  packet.markerBit = true;
-  packet_buffer_->InsertPacket(&packet);
-
-  EXPECT_EQ(1UL, frames_from_callback_.size());
-  CheckFrame(65534);
-}
-
 TEST_F(TestPacketBuffer, PacketTimestamps) {
   rtc::Optional<int64_t> packet_ms;
   rtc::Optional<int64_t> packet_keyframe_ms;
@@ -554,6 +536,52 @@ TEST_F(TestPacketBuffer, PacketTimestamps) {
   packet_keyframe_ms = packet_buffer_->LastReceivedKeyframePacketMs();
   EXPECT_FALSE(packet_ms);
   EXPECT_FALSE(packet_keyframe_ms);
+}
+
+TEST_F(TestPacketBuffer, OneFrameFillBufferH264) {
+  InsertH264(0, kKeyFrame, kFirst, kNotLast, 1000);
+  for (int i = 1; i < kStartSize - 1; ++i)
+    InsertH264(i, kKeyFrame, kNotFirst, kNotLast, 1000);
+  InsertH264(kStartSize - 1, kKeyFrame, kNotFirst, kLast, 1000);
+
+  EXPECT_EQ(1UL, frames_from_callback_.size());
+  CheckFrame(0);
+}
+
+TEST_F(TestPacketBuffer, OneFrameMaxSeqNumH264) {
+  InsertH264(65534, kKeyFrame, kFirst, kNotLast, 1000);
+  InsertH264(65535, kKeyFrame, kNotFirst, kLast, 1000);
+
+  EXPECT_EQ(1UL, frames_from_callback_.size());
+  CheckFrame(65534);
+}
+
+TEST_F(TestPacketBuffer, ClearMissingPacketsOnKeyframeH264) {
+  InsertH264(0, kKeyFrame, kFirst, kLast, 1000);
+  InsertH264(2, kKeyFrame, kFirst, kLast, 3000);
+  InsertH264(3, kDeltaFrame, kFirst, kNotLast, 4000);
+  InsertH264(4, kDeltaFrame, kNotFirst, kLast, 4000);
+
+  ASSERT_EQ(3UL, frames_from_callback_.size());
+
+  InsertH264(kStartSize + 1, kKeyFrame, kFirst, kLast, 18000);
+
+  ASSERT_EQ(4UL, frames_from_callback_.size());
+  CheckFrame(0);
+  CheckFrame(2);
+  CheckFrame(3);
+  CheckFrame(kStartSize + 1);
+}
+
+TEST_F(TestPacketBuffer, FindFramesOnPaddingH264) {
+  InsertH264(0, kKeyFrame, kFirst, kLast, 1000);
+  InsertH264(2, kDeltaFrame, kFirst, kLast, 1000);
+
+  ASSERT_EQ(1UL, frames_from_callback_.size());
+  packet_buffer_->PaddingReceived(1);
+  ASSERT_EQ(2UL, frames_from_callback_.size());
+  CheckFrame(0);
+  CheckFrame(2);
 }
 
 }  // namespace video_coding

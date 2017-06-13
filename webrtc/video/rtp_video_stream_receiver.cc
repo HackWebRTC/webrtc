@@ -245,6 +245,7 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
   // correctly calculate frame references.
   if (packet.sizeBytes == 0) {
     reference_finder_->PaddingReceived(packet.seqNum);
+    packet_buffer_->PaddingReceived(packet.seqNum);
     return 0;
   }
 
