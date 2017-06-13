@@ -1057,6 +1057,7 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
         }
         break;
       default:
+        RTC_NOTREACHED();
         break;
     }
   }
@@ -1563,6 +1564,32 @@ TEST_F(P2PTransportChannelTest, IncomingOnlyOpen) {
           ep2_ch1()->writable(),
       kMediumTimeout, clock);
 
+  DestroyChannels();
+}
+
+// Test that two peers can connect when one can only make outgoing TCP
+// connections. This has been observed in some scenarios involving
+// VPNs/firewalls.
+TEST_F(P2PTransportChannelTest, CanOnlyMakeOutgoingTcpConnections) {
+  // The PORTALLOCATOR_ENABLE_ANY_ADDRESS_PORTS flag is required if the
+  // application needs this use case to work, since the application must accept
+  // the tradeoff that more candidates need to be allocated.
+  //
+  // TODO(deadbeef): Later, make this flag the default, and do more elegant
+  // things to ensure extra candidates don't waste resources?
+  ConfigureEndpoints(
+      OPEN, OPEN,
+      kDefaultPortAllocatorFlags | PORTALLOCATOR_ENABLE_ANY_ADDRESS_PORTS,
+      kDefaultPortAllocatorFlags);
+  // In order to simulate nothing working but outgoing TCP connections, prevent
+  // the endpoint from binding to its interface's address as well as the
+  // "any" addresses. It can then only make a connection by using "Connect()".
+  fw()->SetUnbindableIps({rtc::GetAnyIP(AF_INET), rtc::GetAnyIP(AF_INET6),
+                          kPublicAddrs[0].ipaddr()});
+  CreateChannels();
+  // Expect a "prflx" candidate on the side that can only make outgoing
+  // connections, endpoint 0.
+  Test(kPrflxTcpToLocalTcp);
   DestroyChannels();
 }
 

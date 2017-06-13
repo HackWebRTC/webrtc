@@ -555,8 +555,9 @@ std::vector<rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
     network_manager->GetNetworks(&networks);
     // If network enumeration fails, use the ANY address as a fallback, so we
     // can at least try gathering candidates using the default route chosen by
-    // the OS.
-    if (networks.empty()) {
+    // the OS. Or, if the PORTALLOCATOR_ENABLE_ANY_ADDRESS_PORTS flag is
+    // set, we'll use ANY address candidates either way.
+    if (networks.empty() || flags() & PORTALLOCATOR_ENABLE_ANY_ADDRESS_PORTS) {
       network_manager->GetAnyAddressNetworks(&networks);
     }
   }
