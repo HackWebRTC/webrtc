@@ -43,7 +43,7 @@ static const int kHighVp8QpThreshold = 95;
 // bitstream range of [0, 255] and not the user-level range of [0,63].
 // Current VP9 settings are mapped from VP8 thresholds above.
 static const int kLowVp9QpThreshold = 96;
-static const int kHighVp9QpThreshold = 208;
+static const int kHighVp9QpThreshold = 185;
 static const int kMinFramesNeededToScale = 2 * 30;
 
 static VideoEncoder::QpThresholds CodecTypeToDefaultThresholds(
