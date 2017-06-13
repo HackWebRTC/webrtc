@@ -147,6 +147,12 @@ declare_args() {
   # use file-based audio playout and record.
   rtc_use_dummy_audio_file_devices = false
 
+  # When set to true, replace the audio output with a sinus tone at 440Hz.
+  # The ADM will ask for audio data from WebRTC but instead of reading real
+  # audio samples from NetEQ, a sinus tone will be generated and replace the
+  # real audio samples.
+  rtc_audio_device_plays_sinus_tone = false
+
   # When set to true, test targets will declare the files needed to run memcheck
   # as data dependencies. This is to enable memcheck execution on swarming bots.
   rtc_use_memcheck = false

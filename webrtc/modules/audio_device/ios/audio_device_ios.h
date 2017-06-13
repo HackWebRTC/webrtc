@@ -189,6 +189,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   void HandleValidRouteChange();
   void HandleCanPlayOrRecordChange(bool can_play_or_record);
   void HandleSampleRateChange(float sample_rate);
+  void HandlePlayoutGlitchDetected();
 
   // Uses current |playout_parameters_| and |record_parameters_| to inform the
   // audio device buffer (ADB) about our internal audio parameters.
@@ -289,6 +290,13 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   // Set to true if we've activated the audio session.
   bool has_configured_session_;
+
+  // Counts number of detected audio glitches on the playout side.
+  int64_t num_detected_playout_glitches_;
+  int64_t last_playout_time_;
+
+  // Counts number of playout callbacks per call.
+  int64_t num_playout_callbacks_;
 
   // Exposes private members for testing purposes only.
   FRIEND_TEST_ALL_PREFIXES(AudioDeviceTest, testInterruptedAudioSession);

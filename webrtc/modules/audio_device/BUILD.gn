@@ -92,6 +92,9 @@ rtc_static_library("audio_device") {
   }
   defines = []
   cflags = []
+  if (rtc_audio_device_plays_sinus_tone) {
+    defines += [ "AUDIO_DEVICE_PLAYS_SINUS_TONE" ]
+  }
   if (rtc_include_internal_audio_device) {
     sources += [
       "audio_device_data_observer.cc",
