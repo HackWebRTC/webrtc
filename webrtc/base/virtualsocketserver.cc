@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/gunit.h"
+#include "webrtc/base/fakeclock.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/socketaddresspair.h"
@@ -648,9 +648,8 @@ bool VirtualSocketServer::ProcessMessagesUntilIdle() {
   while (!msg_queue_->empty()) {
     if (fake_clock_) {
       // If using a fake clock, advance it in millisecond increments until the
-      // queue is empty (the SIMULATED_WAIT macro ensures the queue processes
-      // all possible messages each time it's called).
-      SIMULATED_WAIT(false, 1, *fake_clock_);
+      // queue is empty.
+      fake_clock_->AdvanceTime(rtc::TimeDelta::FromMilliseconds(1));
     } else {
       // Otherwise, run a normal message loop.
       Message msg;
