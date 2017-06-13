@@ -63,6 +63,7 @@ class LicenseBuilder(object):
     # The `sum` function flattens the 2d list.
     third_party_libs = sum([GetThirdPartyLibraries(buildfile, self.target_name)
                             for buildfile in self.buildfile_dirs], [])
+    assert len(third_party_libs) > 0
 
     # Generate amalgamated list of libraries. Will exit with error if a
     # lib is unrecognized.

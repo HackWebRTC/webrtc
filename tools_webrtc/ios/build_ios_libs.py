@@ -90,9 +90,9 @@ def _CleanTemporary(output_dir, architectures):
         shutil.rmtree(arch_lib_path)
 
 
-def BuildWebRTC(output_dir, target_arch, flavor, build_type,
+def BuildWebRTC(output_dir, target_arch, flavor, gn_target_name,
                 ios_deployment_target, libvpx_build_vp9, use_bitcode,
-                use_goma, extra_gn_args):
+                use_goma, extra_gn_args, static_only):
   output_dir = os.path.join(output_dir, target_arch + '_libs')
   gn_args = ['target_os="ios"', 'ios_enable_code_signing=false',
              'use_xcode_clang=true', 'is_component_build=false']
@@ -116,17 +116,6 @@ def BuildWebRTC(output_dir, target_arch, flavor, build_type,
                  ('true' if use_bitcode else 'false'))
   gn_args.append('use_goma=' + ('true' if use_goma else 'false'))
 
-  # Generate static or dynamic.
-  if build_type == 'static_only':
-    gn_target_name = 'rtc_sdk_objc'
-  elif build_type == 'framework':
-    gn_target_name = 'objc_framework'
-    if not use_bitcode:
-      gn_args.append('enable_dsyms=true')
-    gn_args.append('enable_stripping=true')
-  else:
-    raise ValueError('Build type "%s" is not supported.' % build_type)
-
   args_string = ' '.join(gn_args + extra_gn_args)
   logging.info('Building WebRTC with args: %s', args_string)
 
@@ -140,7 +129,7 @@ def BuildWebRTC(output_dir, target_arch, flavor, build_type,
   _RunCommand(cmd)
 
   # Strip debug symbols to reduce size.
-  if build_type == 'static_only':
+  if static_only:
     gn_target_path = os.path.join(output_dir, 'obj', 'webrtc', 'sdk',
                                   'lib%s.a' % gn_target_name)
     cmd = ['strip', '-S', gn_target_path, '-o',
@@ -158,6 +147,7 @@ def main():
     return 0
 
   architectures = list(args.arch)
+  gn_args = args.extra_gn_args
 
   if args.purify:
     _CleanTemporary(args.output_dir, architectures)
@@ -168,11 +158,23 @@ def main():
   if 'x86' in architectures and args.build_type != 'static_only':
     architectures.remove('x86')
 
+  # Generate static or dynamic.
+  if args.build_type == 'static_only':
+    gn_target_name = 'rtc_sdk_objc'
+  elif args.build_type == 'framework':
+    gn_target_name = 'objc_framework'
+    if not args.bitcode:
+      gn_args.append('enable_dsyms=true')
+    gn_args.append('enable_stripping=true')
+  else:
+    raise ValueError('Build type "%s" is not supported.' % args.build_type)
+
+
   # Build all architectures.
   for arch in architectures:
-    BuildWebRTC(args.output_dir, arch, args.build_config, args.build_type,
+    BuildWebRTC(args.output_dir, arch, args.build_config, gn_target_name,
                 IOS_DEPLOYMENT_TARGET, LIBVPX_BUILD_VP9, args.bitcode,
-                args.use_goma, args.extra_gn_args)
+                args.use_goma, gn_args, args.build_type == 'static_only')
 
   # Create FAT archive.
   if args.build_type == 'static_only':
@@ -225,7 +227,7 @@ def main():
     license_script_path = os.path.join(SCRIPT_DIR, 'generate_licenses.py')
     ninja_dirs = [os.path.join(args.output_dir, arch + '_libs')
                   for arch in architectures]
-    gn_target_full_name = '//webrtc/sdk:rtc_sdk_framework_objc'
+    gn_target_full_name = '//webrtc/sdk:' + gn_target_name
     cmd = [sys.executable, license_script_path, gn_target_full_name,
            os.path.join(args.output_dir, SDK_FRAMEWORK_NAME)] + ninja_dirs
     _RunCommand(cmd)
