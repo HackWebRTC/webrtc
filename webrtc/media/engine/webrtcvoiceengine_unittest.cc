@@ -39,7 +39,7 @@ using testing::StrictMock;
 
 namespace {
 
-constexpr uint32_t kMaxUnsignaledRecvStreams = 1;
+constexpr uint32_t kMaxUnsignaledRecvStreams = 4;
 
 const cricket::AudioCodec kPcmuCodec(0, "PCMU", 8000, 64000, 1);
 const cricket::AudioCodec kIsacCodec(103, "ISAC", 16000, 32000, 1);
