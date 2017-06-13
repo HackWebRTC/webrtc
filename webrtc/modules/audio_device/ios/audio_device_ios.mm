@@ -13,6 +13,8 @@
 
 #include "webrtc/modules/audio_device/ios/audio_device_ios.h"
 
+#include <cmath>
+
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/bind.h"
@@ -21,10 +23,8 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_device/fine_audio_buffer.h"
 #include "webrtc/sdk/objc/Framework/Classes/Common/helpers.h"
-#include "webrtc/system_wrappers/include/metrics.h"
 
 #import "WebRTC/RTCLogging.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionDelegateAdapter.h"
@@ -66,7 +66,6 @@ enum AudioDeviceMessageType : uint32_t {
   kMessageTypeInterruptionEnd,
   kMessageTypeValidRouteChange,
   kMessageTypeCanPlayOrRecordChange,
-  kMessageTypePlayoutGlitchDetected,
 };
 
 using ios::CheckAndLogError;
@@ -110,10 +109,7 @@ AudioDeviceIOS::AudioDeviceIOS()
       initialized_(false),
       audio_is_initialized_(false),
       is_interrupted_(false),
-      has_configured_session_(false),
-      num_detected_playout_glitches_(0),
-      last_playout_time_(0),
-      num_playout_callbacks_(0) {
+      has_configured_session_(false) {
   LOGI() << "ctor" << ios::GetCurrentThreadDescription();
   thread_ = rtc::Thread::Current();
   audio_session_observer_ =
@@ -224,7 +220,6 @@ int32_t AudioDeviceIOS::StartPlayout() {
     LOG(LS_INFO) << "Voice-Processing I/O audio unit is now started";
   }
   rtc::AtomicOps::ReleaseStore(&playing_, 1);
-  num_playout_callbacks_ = 0;
   return 0;
 }
 
@@ -239,19 +234,6 @@ int32_t AudioDeviceIOS::StopPlayout() {
     audio_is_initialized_ = false;
   }
   rtc::AtomicOps::ReleaseStore(&playing_, 0);
-
-  // Derive average number of calls to OnGetPlayoutData() between detected
-  // audio glitches and add the result to a histogram.
-  int average_number_of_playout_callbacks_between_glitches = 100000;
-  if (num_detected_playout_glitches_ > 0) {
-    average_number_of_playout_callbacks_between_glitches =
-        num_playout_callbacks_ / num_detected_playout_glitches_;
-  }
-  RTC_HISTOGRAM_COUNTS_100000(
-      "WebRTC.Audio.AveragePlayoutCallbacksBetweenGlitches",
-      average_number_of_playout_callbacks_between_glitches);
-  RTCLog(@"Average number of playout callbacks between glitches: %d",
-         average_number_of_playout_callbacks_between_glitches);
   return 0;
 }
 
@@ -437,7 +419,6 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
   RTC_DCHECK_EQ(1, io_data->mNumberBuffers);
   AudioBuffer* audio_buffer = &io_data->mBuffers[0];
   RTC_DCHECK_EQ(1, audio_buffer->mNumberChannels);
-
   // Get pointer to internal audio buffer to which new audio data shall be
   // written.
   const size_t size_in_bytes = audio_buffer->mDataByteSize;
@@ -452,30 +433,10 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
     return noErr;
   }
 
-  // Measure time since last call to OnGetPlayoutData() and see if it is larger
-  // than a well defined threshold. If so, we have a clear indication of a
-  // glitch in the output audio since the core audio layer will most likely run
-  // dry in this state.
-  ++num_playout_callbacks_;
-  const int64_t now_time = rtc::TimeMillis();
-  if (time_stamp->mSampleTime != num_frames) {
-    const int64_t delta_time = now_time - last_playout_time_;
-    const int glitch_threshold =
-        1.5 * playout_parameters_.GetBufferSizeInMilliseconds() - 1;
-    if (delta_time > glitch_threshold) {
-      RTCLogWarning(@"Playout audio glitch detected.\n"
-                     "  Time since last OnGetPlayoutData was %lld ms.",
-                    delta_time);
-      thread_->Post(RTC_FROM_HERE, this, kMessageTypePlayoutGlitchDetected);
-    }
-  }
-  last_playout_time_ = now_time;
-
   // Read decoded 16-bit PCM samples from WebRTC (using a size that matches
   // the native I/O audio unit) and copy the result to the audio buffer in the
   // |io_data| destination.
-  fine_audio_buffer_->GetPlayoutData(
-      rtc::ArrayView<int8_t>(destination, size_in_bytes));
+  fine_audio_buffer_->GetPlayoutData(rtc::ArrayView<int8_t>(destination, size_in_bytes));
   return noErr;
 }
 
@@ -497,9 +458,6 @@ void AudioDeviceIOS::OnMessage(rtc::Message *msg) {
       delete data;
       break;
     }
-    case kMessageTypePlayoutGlitchDetected:
-      HandlePlayoutGlitchDetected();
-      break;
   }
 }
 
@@ -572,10 +530,8 @@ void AudioDeviceIOS::HandleSampleRateChange(float sample_rate) {
           "  Session sample rate: %f frames_per_buffer: %lu\n"
           "  ADM sample rate: %f frames_per_buffer: %lu",
          sample_rate,
-         session_sample_rate,
-         (unsigned long)session_frames_per_buffer,
-         current_sample_rate,
-         (unsigned long)current_frames_per_buffer);
+         session_sample_rate, (unsigned long)session_frames_per_buffer,
+         current_sample_rate, (unsigned long)current_frames_per_buffer);;
 
   // Sample rate and buffer size are the same, no work to do.
   if (std::abs(current_sample_rate - session_sample_rate) <= DBL_EPSILON &&
@@ -614,13 +570,6 @@ void AudioDeviceIOS::HandleSampleRateChange(float sample_rate) {
     return;
   }
   RTCLog(@"Successfully handled sample rate change.");
-}
-
-void AudioDeviceIOS::HandlePlayoutGlitchDetected() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  num_detected_playout_glitches_++;
-  RTCLog(@"Number of detected playout glitches: %lld",
-         num_detected_playout_glitches_);
 }
 
 void AudioDeviceIOS::UpdateAudioDeviceBuffer() {

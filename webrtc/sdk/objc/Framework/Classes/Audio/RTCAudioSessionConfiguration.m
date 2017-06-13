@@ -41,8 +41,8 @@ const double kRTCAudioSessionLowComplexitySampleRate = 16000.0;
 // ~10.6667ms or 512 audio frames per buffer. The FineAudioBuffer instance will
 // take care of any buffering required to convert between native buffers and
 // buffers used by WebRTC. It is beneficial for the performance if the native
-// size is as an even multiple of 10ms as possible since it results in "clean"
-// callback sequence without bursts of callbacks back to back.
+// size is as close to 10ms as possible since it results in "clean" callback
+// sequence without bursts of callbacks back to back.
 const double kRTCAudioSessionHighPerformanceIOBufferDuration = 0.01;
 
 // Use a larger buffer size on devices with only one core (e.g. iPhone 4).
