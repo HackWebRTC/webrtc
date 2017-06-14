@@ -212,6 +212,7 @@ if (rtc_enable_protobuf) {
       "../logging:rtc_event_log_parser",
       "../modules:module_api",
       "../modules/audio_coding:ana_debug_dump_proto",
+      "../modules/audio_coding:neteq_tools",
 
       # TODO(kwiberg): Remove this dependency.
       "../api/audio_codecs:audio_codecs_api",
@@ -246,6 +247,7 @@ if (rtc_include_tests) {
         ":event_log_visualizer_utils",
         "../base:rtc_base_approved",
         "../test:field_trial",
+        "../test:test_support",
       ]
     }
   }

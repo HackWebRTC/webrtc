@@ -13,6 +13,7 @@
 #include "webrtc/base/flags.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/test/field_trial.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/tools/event_log_visualizer/analyzer.h"
 #include "webrtc/tools/event_log_visualizer/plot_base.h"
 #include "webrtc/tools/event_log_visualizer/plot_python.h"
@@ -77,6 +78,9 @@ DEFINE_bool(audio_encoder_dtx, false, "Plot the audio encoder DTX.");
 DEFINE_bool(audio_encoder_num_channels,
             false,
             "Plot the audio encoder number of channels.");
+DEFINE_bool(plot_audio_jitter_buffer,
+            false,
+            "Plot the audio jitter buffer delay profile.");
 DEFINE_string(
     force_fieldtrials,
     "",
@@ -105,6 +109,7 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
+  webrtc::test::SetExecutablePath(argv[0]);
   webrtc::test::InitFieldTrialsFromString(FLAG_force_fieldtrials);
 
   std::string filename = argv[1];
@@ -229,6 +234,14 @@ int main(int argc, char* argv[]) {
 
   if (FLAG_plot_all || FLAG_audio_encoder_num_channels) {
     analyzer.CreateAudioEncoderNumChannelsGraph(collection->AppendNewPlot());
+  }
+
+  if (FLAG_plot_all || FLAG_plot_audio_jitter_buffer) {
+    analyzer.CreateAudioJitterBufferGraph(
+        webrtc::test::ResourcePath(
+            "audio_processing/conversational_speech/EN_script2_F_sp2_B1",
+            "wav"),
+        48000, collection->AppendNewPlot());
   }
 
   collection->Draw();

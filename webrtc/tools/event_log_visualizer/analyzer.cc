@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/base/rate_statistics.h"
@@ -25,6 +26,12 @@
 #include "webrtc/call/audio_send_stream.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
+#include "webrtc/modules/audio_coding/neteq/tools/fake_decode_from_file.h"
+#include "webrtc/modules/audio_coding/neteq/tools/neteq_delay_analyzer.h"
+#include "webrtc/modules/audio_coding/neteq/tools/neteq_replacement_input.h"
+#include "webrtc/modules/audio_coding/neteq/tools/neteq_test.h"
+#include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -302,6 +309,8 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
   //             this can be removed. Tracking bug: webrtc:6399
   RtpHeaderExtensionMap default_extension_map = GetDefaultHeaderExtensionMap();
 
+  rtc::Optional<uint64_t> last_log_start;
+
   for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
     ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
     if (event_type != ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT &&
@@ -437,12 +446,26 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         break;
       }
       case ParsedRtcEventLog::LOG_START: {
+        if (last_log_start) {
+          // A LOG_END event was missing. Use last_timestamp.
+          RTC_DCHECK_GE(last_timestamp, *last_log_start);
+          log_segments_.push_back(
+            std::make_pair(*last_log_start, last_timestamp));
+        }
+        last_log_start = rtc::Optional<uint64_t>(parsed_log_.GetTimestamp(i));
         break;
       }
       case ParsedRtcEventLog::LOG_END: {
+        RTC_DCHECK(last_log_start);
+        log_segments_.push_back(
+            std::make_pair(*last_log_start, parsed_log_.GetTimestamp(i)));
+        last_log_start.reset();
         break;
       }
       case ParsedRtcEventLog::AUDIO_PLAYOUT_EVENT: {
+        uint32_t this_ssrc;
+        parsed_log_.GetAudioPlayout(i, &this_ssrc);
+        audio_playout_events_[this_ssrc].push_back(parsed_log_.GetTimestamp(i));
         break;
       }
       case ParsedRtcEventLog::LOSS_BASED_BWE_UPDATE: {
@@ -487,6 +510,10 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
   begin_time_ = first_timestamp;
   end_time_ = last_timestamp;
   call_duration_s_ = static_cast<float>(end_time_ - begin_time_) / 1000000;
+  if (last_log_start) {
+    // The log was missing the last LOG_END event. Fake it.
+    log_segments_.push_back(std::make_pair(*last_log_start, end_time_));
+  }
 }
 
 class BitrateObserver : public CongestionController::Observer,
@@ -1405,6 +1432,247 @@ void EventLogAnalyzer::CreateAudioEncoderNumChannelsGraph(Plot* plot) {
   plot->SetSuggestedYAxis(0, 1, "Number of channels (1 (mono)/2 (stereo))",
                           kBottomMargin, kTopMargin);
   plot->SetTitle("Reported audio encoder number of channels");
+}
+
+class NetEqStreamInput : public test::NetEqInput {
+ public:
+  // Does not take any ownership, and all pointers must refer to valid objects
+  // that outlive the one constructed.
+  NetEqStreamInput(const std::vector<LoggedRtpPacket>* packet_stream,
+                   const std::vector<uint64_t>* output_events_us,
+                   rtc::Optional<uint64_t> end_time_us)
+      : packet_stream_(*packet_stream),
+        packet_stream_it_(packet_stream_.begin()),
+        output_events_us_it_(output_events_us->begin()),
+        output_events_us_end_(output_events_us->end()),
+        end_time_us_(end_time_us) {
+    RTC_DCHECK(packet_stream);
+    RTC_DCHECK(output_events_us);
+  }
+
+  rtc::Optional<int64_t> NextPacketTime() const override {
+    if (packet_stream_it_ == packet_stream_.end()) {
+      return rtc::Optional<int64_t>();
+    }
+    if (end_time_us_ && packet_stream_it_->timestamp > *end_time_us_) {
+      return rtc::Optional<int64_t>();
+    }
+    // Convert from us to ms.
+    return rtc::Optional<int64_t>(packet_stream_it_->timestamp / 1000);
+  }
+
+  rtc::Optional<int64_t> NextOutputEventTime() const override {
+    if (output_events_us_it_ == output_events_us_end_) {
+      return rtc::Optional<int64_t>();
+    }
+    if (end_time_us_ && *output_events_us_it_ > *end_time_us_) {
+      return rtc::Optional<int64_t>();
+    }
+    // Convert from us to ms.
+    return rtc::Optional<int64_t>(
+        rtc::checked_cast<int64_t>(*output_events_us_it_ / 1000));
+  }
+
+  std::unique_ptr<PacketData> PopPacket() override {
+    if (packet_stream_it_ == packet_stream_.end()) {
+      return std::unique_ptr<PacketData>();
+    }
+    std::unique_ptr<PacketData> packet_data(new PacketData());
+    packet_data->header = packet_stream_it_->header;
+    // Convert from us to ms.
+    packet_data->time_ms = packet_stream_it_->timestamp / 1000.0;
+
+    // This is a header-only "dummy" packet. Set the payload to all zeros, with
+    // length according to the virtual length.
+    packet_data->payload.SetSize(packet_stream_it_->total_length);
+    std::fill_n(packet_data->payload.data(), packet_data->payload.size(), 0);
+
+    ++packet_stream_it_;
+    return packet_data;
+  }
+
+  void AdvanceOutputEvent() override {
+    if (output_events_us_it_ != output_events_us_end_) {
+      ++output_events_us_it_;
+    }
+  }
+
+  bool ended() const override { return !NextEventTime(); }
+
+  rtc::Optional<RTPHeader> NextHeader() const override {
+    if (packet_stream_it_ == packet_stream_.end()) {
+      return rtc::Optional<RTPHeader>();
+    }
+    return rtc::Optional<RTPHeader>(packet_stream_it_->header);
+  }
+
+ private:
+  const std::vector<LoggedRtpPacket>& packet_stream_;
+  std::vector<LoggedRtpPacket>::const_iterator packet_stream_it_;
+  std::vector<uint64_t>::const_iterator output_events_us_it_;
+  const std::vector<uint64_t>::const_iterator output_events_us_end_;
+  const rtc::Optional<uint64_t> end_time_us_;
+};
+
+namespace {
+// Creates a NetEq test object and all necessary input and output helpers. Runs
+// the test and returns the NetEqDelayAnalyzer object that was used to
+// instrument the test.
+std::unique_ptr<test::NetEqDelayAnalyzer> CreateNetEqTestAndRun(
+    const std::vector<LoggedRtpPacket>* packet_stream,
+    const std::vector<uint64_t>* output_events_us,
+    rtc::Optional<uint64_t> end_time_us,
+    const std::string& replacement_file_name,
+    int file_sample_rate_hz) {
+  std::unique_ptr<test::NetEqInput> input(
+      new NetEqStreamInput(packet_stream, output_events_us, end_time_us));
+
+  constexpr int kReplacementPt = 127;
+  std::set<uint8_t> cn_types;
+  std::set<uint8_t> forbidden_types;
+  input.reset(new test::NetEqReplacementInput(std::move(input), kReplacementPt,
+                                              cn_types, forbidden_types));
+
+  NetEq::Config config;
+  config.max_packets_in_buffer = 200;
+  config.enable_fast_accelerate = true;
+
+  std::unique_ptr<test::VoidAudioSink> output(new test::VoidAudioSink());
+
+  test::NetEqTest::DecoderMap codecs;
+
+  // Create a "replacement decoder" that produces the decoded audio by reading
+  // from a file rather than from the encoded payloads.
+  std::unique_ptr<test::ResampleInputAudioFile> replacement_file(
+      new test::ResampleInputAudioFile(replacement_file_name,
+                                       file_sample_rate_hz));
+  replacement_file->set_output_rate_hz(48000);
+  std::unique_ptr<AudioDecoder> replacement_decoder(
+      new test::FakeDecodeFromFile(std::move(replacement_file), 48000, false));
+  test::NetEqTest::ExtDecoderMap ext_codecs;
+  ext_codecs[kReplacementPt] = {replacement_decoder.get(),
+                                NetEqDecoder::kDecoderArbitrary,
+                                "replacement codec"};
+
+  std::unique_ptr<test::NetEqDelayAnalyzer> delay_cb(
+      new test::NetEqDelayAnalyzer);
+  test::DefaultNetEqTestErrorCallback error_cb;
+  test::NetEqTest::Callbacks callbacks;
+  callbacks.error_callback = &error_cb;
+  callbacks.post_insert_packet = delay_cb.get();
+  callbacks.get_audio_callback = delay_cb.get();
+
+  test::NetEqTest test(config, codecs, ext_codecs, std::move(input),
+                       std::move(output), callbacks);
+  test.Run();
+  return delay_cb;
+}
+}  // namespace
+
+// Plots the jitter buffer delay profile. This will plot only for the first
+// incoming audio SSRC. If the stream contains more than one incoming audio
+// SSRC, all but the first will be ignored.
+void EventLogAnalyzer::CreateAudioJitterBufferGraph(
+    const std::string& replacement_file_name,
+    int file_sample_rate_hz,
+    Plot* plot) {
+  const auto& incoming_audio_kv = std::find_if(
+      rtp_packets_.begin(), rtp_packets_.end(),
+      [this](std::pair<StreamId, std::vector<LoggedRtpPacket>> kv) {
+        return kv.first.GetDirection() == kIncomingPacket &&
+               this->IsAudioSsrc(kv.first);
+      });
+  if (incoming_audio_kv == rtp_packets_.end()) {
+    // No incoming audio stream found.
+    return;
+  }
+
+  const uint32_t ssrc = incoming_audio_kv->first.GetSsrc();
+
+  std::map<uint32_t, std::vector<uint64_t>>::const_iterator output_events_it =
+      audio_playout_events_.find(ssrc);
+  if (output_events_it == audio_playout_events_.end()) {
+    // Could not find output events with SSRC matching the input audio stream.
+    // Using the first available stream of output events.
+    output_events_it = audio_playout_events_.cbegin();
+  }
+
+  rtc::Optional<uint64_t> end_time_us =
+      log_segments_.empty()
+          ? rtc::Optional<uint64_t>()
+          : rtc::Optional<uint64_t>(log_segments_.front().second);
+
+  auto delay_cb = CreateNetEqTestAndRun(
+      &incoming_audio_kv->second, &output_events_it->second, end_time_us,
+      replacement_file_name, file_sample_rate_hz);
+
+  std::vector<float> send_times_s;
+  std::vector<float> arrival_delay_ms;
+  std::vector<float> corrected_arrival_delay_ms;
+  std::vector<rtc::Optional<float>> playout_delay_ms;
+  std::vector<rtc::Optional<float>> target_delay_ms;
+  delay_cb->CreateGraphs(&send_times_s, &arrival_delay_ms,
+                         &corrected_arrival_delay_ms, &playout_delay_ms,
+                         &target_delay_ms);
+  RTC_DCHECK_EQ(send_times_s.size(), arrival_delay_ms.size());
+  RTC_DCHECK_EQ(send_times_s.size(), corrected_arrival_delay_ms.size());
+  RTC_DCHECK_EQ(send_times_s.size(), playout_delay_ms.size());
+  RTC_DCHECK_EQ(send_times_s.size(), target_delay_ms.size());
+
+  std::map<StreamId, TimeSeries> time_series_packet_arrival;
+  std::map<StreamId, TimeSeries> time_series_relative_packet_arrival;
+  std::map<StreamId, TimeSeries> time_series_play_time;
+  std::map<StreamId, TimeSeries> time_series_target_time;
+  float min_y_axis = 0.f;
+  float max_y_axis = 0.f;
+  const StreamId stream_id = incoming_audio_kv->first;
+  for (size_t i = 0; i < send_times_s.size(); ++i) {
+    time_series_packet_arrival[stream_id].points.emplace_back(
+        TimeSeriesPoint(send_times_s[i], arrival_delay_ms[i]));
+    time_series_relative_packet_arrival[stream_id].points.emplace_back(
+        TimeSeriesPoint(send_times_s[i], corrected_arrival_delay_ms[i]));
+    min_y_axis = std::min(min_y_axis, corrected_arrival_delay_ms[i]);
+    max_y_axis = std::max(max_y_axis, corrected_arrival_delay_ms[i]);
+    if (playout_delay_ms[i]) {
+      time_series_play_time[stream_id].points.emplace_back(
+          TimeSeriesPoint(send_times_s[i], *playout_delay_ms[i]));
+      min_y_axis = std::min(min_y_axis, *playout_delay_ms[i]);
+      max_y_axis = std::max(max_y_axis, *playout_delay_ms[i]);
+    }
+    if (target_delay_ms[i]) {
+      time_series_target_time[stream_id].points.emplace_back(
+          TimeSeriesPoint(send_times_s[i], *target_delay_ms[i]));
+      min_y_axis = std::min(min_y_axis, *target_delay_ms[i]);
+      max_y_axis = std::max(max_y_axis, *target_delay_ms[i]);
+    }
+  }
+
+  // This code is adapted for a single stream. The creation of the streams above
+  // guarantee that no more than one steam is included. If multiple streams are
+  // to be plotted, they should likely be given distinct labels below.
+  RTC_DCHECK_EQ(time_series_relative_packet_arrival.size(), 1);
+  for (auto& series : time_series_relative_packet_arrival) {
+    series.second.label = "Relative packet arrival delay";
+    series.second.style = LINE_GRAPH;
+    plot->AppendTimeSeries(std::move(series.second));
+  }
+  RTC_DCHECK_EQ(time_series_play_time.size(), 1);
+  for (auto& series : time_series_play_time) {
+    series.second.label = "Playout delay";
+    series.second.style = LINE_GRAPH;
+    plot->AppendTimeSeries(std::move(series.second));
+  }
+  RTC_DCHECK_EQ(time_series_target_time.size(), 1);
+  for (auto& series : time_series_target_time) {
+    series.second.label = "Target delay";
+    series.second.style = LINE_DOT_GRAPH;
+    plot->AppendTimeSeries(std::move(series.second));
+  }
+
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetYAxis(min_y_axis, max_y_axis, "Relative delay (ms)", kBottomMargin,
+                 kTopMargin);
+  plot->SetTitle("NetEq timing");
 }
 }  // namespace plotting
 }  // namespace webrtc
