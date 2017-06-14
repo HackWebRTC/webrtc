@@ -125,8 +125,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
 };
 
 void VideoEncoderSoftwareFallbackWrapperTest::EncodeFrame() {
-  rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
-      kWidth, kHeight, kWidth, (kWidth + 1) / 2, (kWidth + 1) / 2);
+  rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(kWidth, kHeight);
   I420Buffer::SetBlack(buffer);
   std::vector<FrameType> types(1, kVideoFrameKey);
 

@@ -362,15 +362,14 @@ class VideoCaptureExternalTest : public testing::Test {
     capability.maxFPS = kTestFramerate;
     capture_callback_.SetExpectedCapability(capability);
 
-    rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
-        kTestWidth, kTestHeight,
-        kTestWidth, ((kTestWidth + 1) / 2), (kTestWidth + 1) / 2);
+    rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+        webrtc::I420Buffer::Create(kTestWidth, kTestHeight);
 
-    memset(buffer->MutableDataY(), 127, kTestWidth * kTestHeight);
+    memset(buffer->MutableDataY(), 127, buffer->height() * buffer->StrideY());
     memset(buffer->MutableDataU(), 127,
-           ((kTestWidth + 1) / 2) * ((kTestHeight + 1) / 2));
+           buffer->ChromaHeight() * buffer->StrideU());
     memset(buffer->MutableDataV(), 127,
-           ((kTestWidth + 1) / 2) * ((kTestHeight + 1) / 2));
+           buffer->ChromaHeight() * buffer->StrideV());
     test_frame_.reset(
         new webrtc::VideoFrame(buffer, 0, 0, webrtc::kVideoRotation_0));
 
