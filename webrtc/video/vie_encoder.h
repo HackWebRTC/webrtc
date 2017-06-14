@@ -189,13 +189,15 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
     std::string ToString() const;
 
-    void IncrementFramerate(int reason, int delta);
-    void IncrementResolution(int reason, int delta);
+    void IncrementFramerate(int reason);
+    void IncrementResolution(int reason);
+    void DecrementFramerate(int reason);
+    void DecrementResolution(int reason);
+    void DecrementFramerate(int reason, int cur_fps);
 
     // Gets the total number of downgrades (for all adapt reasons).
     int FramerateCount() const;
     int ResolutionCount() const;
-    int TotalCount() const;
 
     // Gets the total number of downgrades for |reason|.
     int FramerateCount(int reason) const;
@@ -205,6 +207,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
    private:
     std::string ToString(const std::vector<int>& counters) const;
     int Count(const std::vector<int>& counters) const;
+    void MoveCount(std::vector<int>* counters, int from_reason);
 
     // Degradation counters holding number of framerate/resolution reductions
     // per adapt reason.

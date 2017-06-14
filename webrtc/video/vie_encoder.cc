@@ -73,6 +73,29 @@ uint32_t MaximumFrameSizeForBitrate(uint32_t kbps) {
   return std::numeric_limits<uint32_t>::max();
 }
 
+// Initial limits for kBalanced degradation preference.
+int MinFps(int pixels) {
+  if (pixels <= 320 * 240) {
+    return 7;
+  } else if (pixels <= 480 * 270) {
+    return 10;
+  } else if (pixels <= 640 * 480) {
+    return 15;
+  } else {
+    return std::numeric_limits<int>::max();
+  }
+}
+
+int MaxFps(int pixels) {
+  if (pixels <= 320 * 240) {
+    return 10;
+  } else if (pixels <= 480 * 270) {
+    return 15;
+  } else {
+    return std::numeric_limits<int>::max();
+  }
+}
+
 bool IsResolutionScalingEnabled(
     VideoSendStream::DegradationPreference degradation_preference) {
   return degradation_preference ==
@@ -211,7 +234,7 @@ class ViEEncoder::VideoSourceProxy {
     // the used degradation_preference.
     switch (degradation_preference_) {
       case VideoSendStream::DegradationPreference::kBalanced:
-        FALLTHROUGH();
+        break;
       case VideoSendStream::DegradationPreference::kMaintainFramerate:
         wants.max_framerate_fps = std::numeric_limits<int>::max();
         break;
@@ -225,6 +248,15 @@ class ViEEncoder::VideoSourceProxy {
         wants.max_framerate_fps = std::numeric_limits<int>::max();
     }
     return wants;
+  }
+
+  void ResetPixelFpsCount() {
+    rtc::CritScope lock(&crit_);
+    sink_wants_.max_pixel_count = std::numeric_limits<int>::max();
+    sink_wants_.target_pixel_count.reset();
+    sink_wants_.max_framerate_fps = std::numeric_limits<int>::max();
+    if (source_)
+      source_->AddOrUpdateSink(vie_encoder_, sink_wants_);
   }
 
   bool RequestResolutionLowerThan(int pixel_count) {
@@ -447,6 +479,15 @@ void ViEEncoder::SetSource(
       // Reset adaptation state, so that we're not tricked into thinking there's
       // an already pending request of the same type.
       last_adaptation_request_.reset();
+      if (degradation_preference ==
+              VideoSendStream::DegradationPreference::kBalanced ||
+          degradation_preference_ ==
+              VideoSendStream::DegradationPreference::kBalanced) {
+        // TODO(asapersson): Consider removing |adapt_counters_| map and use one
+        // AdaptCounter for all modes.
+        source_proxy_->ResetPixelFpsCount();
+        adapt_counters_.clear();
+      }
     }
     degradation_preference_ = degradation_preference;
     bool allow_scaling = IsResolutionScalingEnabled(degradation_preference_);
@@ -803,12 +844,10 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
       last_adaptation_request_ &&
       last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptDown;
 
-  int max_downgrades = 0;
   switch (degradation_preference_) {
     case VideoSendStream::DegradationPreference::kBalanced:
-      FALLTHROUGH();
+      break;
     case VideoSendStream::DegradationPreference::kMaintainFramerate:
-      max_downgrades = kMaxCpuResolutionDowngrades;
       if (downgrade_requested &&
           adaptation_request.input_pixel_count_ >=
               last_adaptation_request_->input_pixel_count_) {
@@ -818,7 +857,6 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
       }
       break;
     case VideoSendStream::DegradationPreference::kMaintainResolution:
-      max_downgrades = kMaxCpuFramerateDowngrades;
       if (adaptation_request.framerate_fps_ <= 0 ||
           (downgrade_requested &&
            adaptation_request.framerate_fps_ < kMinFramerateFps)) {
@@ -836,20 +874,32 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
   }
 
   if (reason == kCpu) {
-    if (GetConstAdaptCounter().TotalCount(kCpu) >= max_downgrades)
+    if (GetConstAdaptCounter().ResolutionCount(kCpu) >=
+            kMaxCpuResolutionDowngrades ||
+        GetConstAdaptCounter().FramerateCount(kCpu) >=
+            kMaxCpuFramerateDowngrades) {
       return;
+    }
   }
 
   switch (degradation_preference_) {
-    case VideoSendStream::DegradationPreference::kBalanced:
+    case VideoSendStream::DegradationPreference::kBalanced: {
+      // Try scale down framerate, if lower.
+      int fps = MinFps(last_frame_info_->pixel_count());
+      if (source_proxy_->RestrictFramerate(fps)) {
+        GetAdaptCounter().IncrementFramerate(reason);
+        break;
+      }
+      // Scale down resolution.
       FALLTHROUGH();
+    }
     case VideoSendStream::DegradationPreference::kMaintainFramerate:
       // Scale down resolution.
       if (!source_proxy_->RequestResolutionLowerThan(
               adaptation_request.input_pixel_count_)) {
         return;
       }
-      GetAdaptCounter().IncrementResolution(reason, 1);
+      GetAdaptCounter().IncrementResolution(reason);
       break;
     case VideoSendStream::DegradationPreference::kMaintainResolution:
       // Scale down framerate.
@@ -857,7 +907,7 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
               adaptation_request.framerate_fps_)) {
         return;
       }
-      GetAdaptCounter().IncrementFramerate(reason, 1);
+      GetAdaptCounter().IncrementFramerate(reason);
       break;
     case VideoSendStream::DegradationPreference::kDegradationDisabled:
       RTC_NOTREACHED();
@@ -888,29 +938,34 @@ void ViEEncoder::AdaptUp(AdaptReason reason) {
       last_adaptation_request_ &&
       last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptUp;
 
-  switch (degradation_preference_) {
-    case VideoSendStream::DegradationPreference::kBalanced:
-      FALLTHROUGH();
-    case VideoSendStream::DegradationPreference::kMaintainFramerate:
-      if (adapt_up_requested &&
-          adaptation_request.input_pixel_count_ <=
-              last_adaptation_request_->input_pixel_count_) {
-        // Don't request higher resolution if the current resolution is not
-        // higher than the last time we asked for the resolution to be higher.
-        return;
-      }
-      break;
-    case VideoSendStream::DegradationPreference::kMaintainResolution:
-      // TODO(sprang): Don't request higher framerate if we are already at
-      // max requested fps?
-      break;
-    case VideoSendStream::DegradationPreference::kDegradationDisabled:
+  if (degradation_preference_ ==
+      VideoSendStream::DegradationPreference::kMaintainFramerate) {
+    if (adapt_up_requested &&
+        adaptation_request.input_pixel_count_ <=
+            last_adaptation_request_->input_pixel_count_) {
+      // Don't request higher resolution if the current resolution is not
+      // higher than the last time we asked for the resolution to be higher.
       return;
+    }
   }
 
   switch (degradation_preference_) {
-    case VideoSendStream::DegradationPreference::kBalanced:
+    case VideoSendStream::DegradationPreference::kBalanced: {
+      // Try scale up framerate, if higher.
+      int fps = MaxFps(last_frame_info_->pixel_count());
+      if (source_proxy_->IncreaseFramerate(fps)) {
+        GetAdaptCounter().DecrementFramerate(reason, fps);
+        // Reset framerate in case of fewer fps steps down than up.
+        if (adapt_counter.FramerateCount() == 0 &&
+            fps != std::numeric_limits<int>::max()) {
+          LOG(LS_INFO) << "Removing framerate down-scaling setting.";
+          source_proxy_->IncreaseFramerate(std::numeric_limits<int>::max());
+        }
+        break;
+      }
+      // Scale up resolution.
       FALLTHROUGH();
+    }
     case VideoSendStream::DegradationPreference::kMaintainFramerate: {
       // Scale up resolution.
       int pixel_count = adaptation_request.input_pixel_count_;
@@ -920,7 +975,7 @@ void ViEEncoder::AdaptUp(AdaptReason reason) {
       }
       if (!source_proxy_->RequestHigherResolutionThan(pixel_count))
         return;
-      GetAdaptCounter().IncrementResolution(reason, -1);
+      GetAdaptCounter().DecrementResolution(reason);
       break;
     }
     case VideoSendStream::DegradationPreference::kMaintainResolution: {
@@ -932,11 +987,11 @@ void ViEEncoder::AdaptUp(AdaptReason reason) {
       }
       if (!source_proxy_->RequestHigherFramerateThan(fps))
         return;
-      GetAdaptCounter().IncrementFramerate(reason, -1);
+      GetAdaptCounter().DecrementFramerate(reason);
       break;
     }
     case VideoSendStream::DegradationPreference::kDegradationDisabled:
-      RTC_NOTREACHED();
+      return;
   }
 
   last_adaptation_request_.emplace(adaptation_request);
@@ -994,6 +1049,7 @@ const ViEEncoder::AdaptCounter& ViEEncoder::GetConstAdaptCounter() {
 ViEEncoder::AdaptCounter::AdaptCounter() {
   fps_counters_.resize(kScaleReasonSize);
   resolution_counters_.resize(kScaleReasonSize);
+  static_assert(kScaleReasonSize == 2, "Update MoveCount.");
 }
 
 ViEEncoder::AdaptCounter::~AdaptCounter() {}
@@ -1012,12 +1068,48 @@ ViEEncoder::AdaptCounts ViEEncoder::AdaptCounter::Counts(int reason) const {
   return counts;
 }
 
-void ViEEncoder::AdaptCounter::IncrementFramerate(int reason, int delta) {
-  fps_counters_[reason] += delta;
+void ViEEncoder::AdaptCounter::IncrementFramerate(int reason) {
+  ++(fps_counters_[reason]);
 }
 
-void ViEEncoder::AdaptCounter::IncrementResolution(int reason, int delta) {
-  resolution_counters_[reason] += delta;
+void ViEEncoder::AdaptCounter::IncrementResolution(int reason) {
+  ++(resolution_counters_[reason]);
+}
+
+void ViEEncoder::AdaptCounter::DecrementFramerate(int reason) {
+  if (fps_counters_[reason] == 0) {
+    // Balanced mode: Adapt up is in a different order, switch reason.
+    // E.g. framerate adapt down: quality (2), framerate adapt up: cpu (3).
+    // 1. Down resolution (cpu):   res={quality:0,cpu:1}, fps={quality:0,cpu:0}
+    // 2. Down fps (quality):      res={quality:0,cpu:1}, fps={quality:1,cpu:0}
+    // 3. Up fps (cpu):            res={quality:1,cpu:0}, fps={quality:0,cpu:0}
+    // 4. Up resolution (quality): res={quality:0,cpu:0}, fps={quality:0,cpu:0}
+    RTC_DCHECK_GT(TotalCount(reason), 0) << "No downgrade for reason.";
+    RTC_DCHECK_GT(FramerateCount(), 0) << "Framerate not downgraded.";
+    MoveCount(&resolution_counters_, reason);
+    MoveCount(&fps_counters_, (reason + 1) % kScaleReasonSize);
+  }
+  --(fps_counters_[reason]);
+  RTC_DCHECK_GE(fps_counters_[reason], 0);
+}
+
+void ViEEncoder::AdaptCounter::DecrementResolution(int reason) {
+  if (resolution_counters_[reason] == 0) {
+    // Balanced mode: Adapt up is in a different order, switch reason.
+    RTC_DCHECK_GT(TotalCount(reason), 0) << "No downgrade for reason.";
+    RTC_DCHECK_GT(ResolutionCount(), 0) << "Resolution not downgraded.";
+    MoveCount(&fps_counters_, reason);
+    MoveCount(&resolution_counters_, (reason + 1) % kScaleReasonSize);
+  }
+  --(resolution_counters_[reason]);
+  RTC_DCHECK_GE(resolution_counters_[reason], 0);
+}
+
+void ViEEncoder::AdaptCounter::DecrementFramerate(int reason, int cur_fps) {
+  DecrementFramerate(reason);
+  // Reset if at max fps (i.e. in case of fewer steps up than down).
+  if (cur_fps == std::numeric_limits<int>::max())
+    std::fill(fps_counters_.begin(), fps_counters_.end(), 0);
 }
 
 int ViEEncoder::AdaptCounter::FramerateCount() const {
@@ -1026,10 +1118,6 @@ int ViEEncoder::AdaptCounter::FramerateCount() const {
 
 int ViEEncoder::AdaptCounter::ResolutionCount() const {
   return Count(resolution_counters_);
-}
-
-int ViEEncoder::AdaptCounter::TotalCount() const {
-  return FramerateCount() + ResolutionCount();
 }
 
 int ViEEncoder::AdaptCounter::FramerateCount(int reason) const {
@@ -1046,6 +1134,13 @@ int ViEEncoder::AdaptCounter::TotalCount(int reason) const {
 
 int ViEEncoder::AdaptCounter::Count(const std::vector<int>& counters) const {
   return std::accumulate(counters.begin(), counters.end(), 0);
+}
+
+void ViEEncoder::AdaptCounter::MoveCount(std::vector<int>* counters,
+                                         int from_reason) {
+  int to_reason = (from_reason + 1) % kScaleReasonSize;
+  ++((*counters)[to_reason]);
+  --((*counters)[from_reason]);
 }
 
 std::string ViEEncoder::AdaptCounter::ToString(
