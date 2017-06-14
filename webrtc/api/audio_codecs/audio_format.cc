@@ -108,4 +108,23 @@ AudioCodecInfo::AudioCodecInfo(int sample_rate_hz,
   RTC_DCHECK_GE(max_bitrate_bps, default_bitrate_bps);
 }
 
+std::ostream& operator<<(std::ostream& os, const AudioCodecInfo& aci) {
+  os << "{sample_rate_hz: " << aci.sample_rate_hz;
+  os << ", num_channels: " << aci.num_channels;
+  os << ", default_bitrate_bps: " << aci.default_bitrate_bps;
+  os << ", min_bitrate_bps: " << aci.min_bitrate_bps;
+  os << ", max_bitrate_bps: " << aci.max_bitrate_bps;
+  os << ", allow_comfort_noise: " << aci.allow_comfort_noise;
+  os << ", supports_network_adaption: " << aci.supports_network_adaption;
+  os << "}";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const AudioCodecSpec& acs) {
+  os << "{format: " << acs.format;
+  os << ", info: " << acs.info;
+  os << "}";
+  return os;
+}
+
 }  // namespace webrtc

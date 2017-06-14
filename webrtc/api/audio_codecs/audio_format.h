@@ -120,6 +120,8 @@ struct AudioCodecInfo {
                                            // network conditions.
 };
 
+std::ostream& operator<<(std::ostream& os, const AudioCodecInfo& aci);
+
 // AudioCodecSpec ties an audio format to specific information about the codec
 // and its implementation.
 struct AudioCodecSpec {
@@ -132,6 +134,8 @@ struct AudioCodecSpec {
   SdpAudioFormat format;
   AudioCodecInfo info;
 };
+
+std::ostream& operator<<(std::ostream& os, const AudioCodecSpec& acs);
 
 }  // namespace webrtc
 
