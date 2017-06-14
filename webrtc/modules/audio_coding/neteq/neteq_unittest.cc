@@ -830,7 +830,6 @@ TEST_F(NetEqDecodingTest, UnknownPayloadType) {
   PopulateRtpInfo(0, 0, &rtp_info);
   rtp_info.payloadType = 1;  // Not registered as a decoder.
   EXPECT_EQ(NetEq::kFail, neteq_->InsertPacket(rtp_info, payload, 0));
-  EXPECT_EQ(NetEq::kUnknownRtpPayloadType, neteq_->LastError());
 }
 
 #if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
@@ -855,18 +854,7 @@ TEST_F(NetEqDecodingTest, MAYBE_DecoderError) {
   bool muted;
   EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(&out_frame_, &muted));
   ASSERT_FALSE(muted);
-  // Verify that there is a decoder error to check.
-  EXPECT_EQ(NetEq::kDecoderErrorCode, neteq_->LastError());
 
-  enum NetEqDecoderError {
-    ISAC_LENGTH_MISMATCH = 6730,
-    ISAC_RANGE_ERROR_DECODE_FRAME_LENGTH = 6640
-  };
-#if defined(WEBRTC_CODEC_ISAC)
-  EXPECT_EQ(ISAC_LENGTH_MISMATCH, neteq_->LastDecoderError());
-#elif defined(WEBRTC_CODEC_ISACFX)
-  EXPECT_EQ(ISAC_RANGE_ERROR_DECODE_FRAME_LENGTH, neteq_->LastDecoderError());
-#endif
   // Verify that the first 160 samples are set to 0.
   static const int kExpectedOutputLength = 160;  // 10 ms at 16 kHz sample rate.
   const int16_t* const_out_frame_data = out_frame_.data();

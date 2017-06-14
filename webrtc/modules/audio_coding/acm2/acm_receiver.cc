@@ -219,8 +219,7 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
     return 0;
   }
 
-  if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK &&
-      neteq_->LastError() != NetEq::kDecoderNotFound) {
+  if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK) {
     LOG(LERROR) << "Cannot remove payload " << static_cast<int>(payload_type);
     return -1;
   }
@@ -249,8 +248,7 @@ bool AcmReceiver::AddCodec(int rtp_payload_type,
     return true;
   }
 
-  if (neteq_->RemovePayloadType(rtp_payload_type) != NetEq::kOK &&
-      neteq_->LastError() != NetEq::kDecoderNotFound) {
+  if (neteq_->RemovePayloadType(rtp_payload_type) != NetEq::kOK) {
     LOG(LERROR) << "AcmReceiver::AddCodec: Could not remove existing decoder"
                    " for payload type "
                 << rtp_payload_type;
@@ -280,9 +278,9 @@ void AcmReceiver::RemoveAllCodecs() {
 
 int AcmReceiver::RemoveCodec(uint8_t payload_type) {
   rtc::CritScope lock(&crit_sect_);
-  if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK &&
-      neteq_->LastError() != NetEq::kDecoderNotFound) {
-    LOG(LERROR) << "AcmReceiver::RemoveCodec" << static_cast<int>(payload_type);
+  if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK) {
+    LOG(LERROR) << "AcmReceiver::RemoveCodec "
+                << static_cast<int>(payload_type);
     return -1;
   }
   if (last_audio_decoder_ && payload_type == last_audio_decoder_->pltype) {

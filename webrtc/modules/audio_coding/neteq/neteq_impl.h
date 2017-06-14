@@ -68,6 +68,26 @@ class NetEqImpl : public webrtc::NetEq {
     kVadPassive
   };
 
+  enum ErrorCodes {
+    kNoError = 0,
+    kOtherError,
+    kUnknownRtpPayloadType,
+    kDecoderNotFound,
+    kInvalidPointer,
+    kAccelerateError,
+    kPreemptiveExpandError,
+    kComfortNoiseErrorCode,
+    kDecoderErrorCode,
+    kOtherDecoderError,
+    kInvalidOperation,
+    kDtmfParsingError,
+    kDtmfInsertError,
+    kSampleUnderrun,
+    kDecodedTooMuch,
+    kRedundancySplitError,
+    kPacketBufferCorruption
+  };
+
   struct Dependencies {
     // The constructor populates the Dependencies struct with the default
     // implementations of the objects. They can all be replaced by the user
@@ -187,15 +207,6 @@ class NetEqImpl : public webrtc::NetEq {
   int SetTargetNumberOfChannels() override;
 
   int SetTargetSampleRate() override;
-
-  // Returns the error code for the last occurred error. If no error has
-  // occurred, 0 is returned.
-  int LastError() const override;
-
-  // Returns the error code last returned by a decoder (audio or comfort noise).
-  // When LastError() returns kDecoderErrorCode or kComfortNoiseErrorCode, check
-  // this method to get the decoder's error code.
-  int LastDecoderError() override;
 
   // Flushes both the packet buffer and the sync buffer.
   void FlushBuffers() override;
@@ -408,8 +419,6 @@ class NetEqImpl : public webrtc::NetEq {
   rtc::Optional<uint8_t> current_cng_rtp_payload_type_ GUARDED_BY(crit_sect_);
   uint32_t ssrc_ GUARDED_BY(crit_sect_);
   bool first_packet_ GUARDED_BY(crit_sect_);
-  int error_code_ GUARDED_BY(crit_sect_);  // Store last error code.
-  int decoder_error_code_ GUARDED_BY(crit_sect_);
   const BackgroundNoiseMode background_noise_mode_ GUARDED_BY(crit_sect_);
   NetEqPlayoutMode playout_mode_ GUARDED_BY(crit_sect_);
   bool enable_fast_accelerate_ GUARDED_BY(crit_sect_);

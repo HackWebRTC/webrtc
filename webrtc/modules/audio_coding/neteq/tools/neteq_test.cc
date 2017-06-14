@@ -18,21 +18,14 @@ namespace webrtc {
 namespace test {
 
 void DefaultNetEqTestErrorCallback::OnInsertPacketError(
-    int error_code,
     const NetEqInput::PacketData& packet) {
-  if (error_code == NetEq::kUnknownRtpPayloadType) {
-    std::cerr << "RTP Payload type "
-              << static_cast<int>(packet.header.payloadType) << " is unknown."
-              << std::endl;
-  } else {
-    std::cerr << "InsertPacket returned error code " << error_code << std::endl;
-  }
+  std::cerr << "InsertPacket returned an error." << std::endl;
   std::cerr << "Packet data: " << packet.ToString() << std::endl;
   FATAL();
 }
 
-void DefaultNetEqTestErrorCallback::OnGetAudioError(int error_code) {
-  std::cerr << "GetAudio returned error code " << error_code << std::endl;
+void DefaultNetEqTestErrorCallback::OnGetAudioError() {
+  std::cerr << "GetAudio returned an error." << std::endl;
   FATAL();
 }
 
@@ -70,8 +63,7 @@ int64_t NetEqTest::Run() {
           rtc::ArrayView<const uint8_t>(packet_data->payload),
           static_cast<uint32_t>(packet_data->time_ms * sample_rate_hz_ / 1000));
       if (error != NetEq::kOK && callbacks_.error_callback) {
-        callbacks_.error_callback->OnInsertPacketError(neteq_->LastError(),
-                                                       *packet_data);
+        callbacks_.error_callback->OnInsertPacketError(*packet_data);
       }
       if (callbacks_.post_insert_packet) {
         callbacks_.post_insert_packet->AfterInsertPacket(*packet_data,
@@ -91,7 +83,7 @@ int64_t NetEqTest::Run() {
       RTC_CHECK(!muted) << "The code does not handle enable_muted_state";
       if (error != NetEq::kOK) {
         if (callbacks_.error_callback) {
-          callbacks_.error_callback->OnGetAudioError(neteq_->LastError());
+          callbacks_.error_callback->OnGetAudioError();
         }
       } else {
         sample_rate_hz_ = out_frame.sample_rate_hz_;

@@ -98,8 +98,6 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       reset_decoder_(false),
       ssrc_(0),
       first_packet_(true),
-      error_code_(0),
-      decoder_error_code_(0),
       background_noise_mode_(config.background_noise_mode),
       playout_mode_(config.playout_mode),
       enable_fast_accelerate_(config.enable_fast_accelerate),
@@ -136,10 +134,7 @@ int NetEqImpl::InsertPacket(const RTPHeader& rtp_header,
   rtc::MsanCheckInitialized(payload);
   TRACE_EVENT0("webrtc", "NetEqImpl::InsertPacket");
   rtc::CritScope lock(&crit_sect_);
-  int error =
-      InsertPacketInternal(rtp_header, payload, receive_timestamp);
-  if (error != 0) {
-    error_code_ = error;
+  if (InsertPacketInternal(rtp_header, payload, receive_timestamp) != 0) {
     return kFail;
   }
   return kOK;
@@ -199,9 +194,7 @@ void SetAudioFrameActivityAndType(bool vad_enabled,
 int NetEqImpl::GetAudio(AudioFrame* audio_frame, bool* muted) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
   rtc::CritScope lock(&crit_sect_);
-  int error = GetAudioInternal(audio_frame, muted);
-  if (error != 0) {
-    error_code_ = error;
+  if (GetAudioInternal(audio_frame, muted) != 0) {
     return kFail;
   }
   RTC_DCHECK_EQ(
@@ -235,21 +228,8 @@ int NetEqImpl::RegisterPayloadType(NetEqDecoder codec,
   LOG(LS_VERBOSE) << "RegisterPayloadType "
                   << static_cast<int>(rtp_payload_type) << " "
                   << static_cast<int>(codec);
-  int ret = decoder_database_->RegisterPayload(rtp_payload_type, codec, name);
-  if (ret != DecoderDatabase::kOK) {
-    switch (ret) {
-      case DecoderDatabase::kInvalidRtpPayloadType:
-        error_code_ = kInvalidRtpPayloadType;
-        break;
-      case DecoderDatabase::kCodecNotSupported:
-        error_code_ = kCodecNotSupported;
-        break;
-      case DecoderDatabase::kDecoderExists:
-        error_code_ = kDecoderExists;
-        break;
-      default:
-        error_code_ = kOtherError;
-    }
+  if (decoder_database_->RegisterPayload(rtp_payload_type, codec, name) !=
+      DecoderDatabase::kOK) {
     return kFail;
   }
   return kOK;
@@ -268,28 +248,8 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
     assert(false);
     return kFail;
   }
-  int ret = decoder_database_->InsertExternal(rtp_payload_type, codec,
-                                              codec_name, decoder);
-  if (ret != DecoderDatabase::kOK) {
-    switch (ret) {
-      case DecoderDatabase::kInvalidRtpPayloadType:
-        error_code_ = kInvalidRtpPayloadType;
-        break;
-      case DecoderDatabase::kCodecNotSupported:
-        error_code_ = kCodecNotSupported;
-        break;
-      case DecoderDatabase::kDecoderExists:
-        error_code_ = kDecoderExists;
-        break;
-      case DecoderDatabase::kInvalidSampleRate:
-        error_code_ = kInvalidSampleRate;
-        break;
-      case DecoderDatabase::kInvalidPointer:
-        error_code_ = kInvalidPointer;
-        break;
-      default:
-        error_code_ = kOtherError;
-    }
+  if (decoder_database_->InsertExternal(rtp_payload_type, codec, codec_name,
+                                        decoder) != DecoderDatabase::kOK) {
     return kFail;
   }
   return kOK;
@@ -300,40 +260,16 @@ bool NetEqImpl::RegisterPayloadType(int rtp_payload_type,
   LOG(LS_VERBOSE) << "NetEqImpl::RegisterPayloadType: payload type "
                   << rtp_payload_type << ", codec " << audio_format;
   rtc::CritScope lock(&crit_sect_);
-  switch (decoder_database_->RegisterPayload(rtp_payload_type, audio_format)) {
-    case DecoderDatabase::kOK:
-      return true;
-    case DecoderDatabase::kInvalidRtpPayloadType:
-      error_code_ = kInvalidRtpPayloadType;
-      return false;
-    case DecoderDatabase::kCodecNotSupported:
-      error_code_ = kCodecNotSupported;
-      return false;
-    case DecoderDatabase::kDecoderExists:
-      error_code_ = kDecoderExists;
-      return false;
-    case DecoderDatabase::kInvalidSampleRate:
-      error_code_ = kInvalidSampleRate;
-      return false;
-    case DecoderDatabase::kInvalidPointer:
-      error_code_ = kInvalidPointer;
-      return false;
-    default:
-      error_code_ = kOtherError;
-      return false;
-  }
+  return decoder_database_->RegisterPayload(rtp_payload_type, audio_format) ==
+         DecoderDatabase::kOK;
 }
 
 int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
   rtc::CritScope lock(&crit_sect_);
   int ret = decoder_database_->Remove(rtp_payload_type);
-  if (ret == DecoderDatabase::kOK) {
+  if (ret == DecoderDatabase::kOK || ret == DecoderDatabase::kDecoderNotFound) {
     packet_buffer_->DiscardPacketsWithPayloadType(rtp_payload_type);
     return kOK;
-  } else if (ret == DecoderDatabase::kDecoderNotFound) {
-    error_code_ = kDecoderNotFound;
-  } else {
-    error_code_ = kOtherError;
   }
   return kFail;
 }
@@ -525,16 +461,6 @@ int NetEqImpl::SetTargetNumberOfChannels() {
 
 int NetEqImpl::SetTargetSampleRate() {
   return kNotImplemented;
-}
-
-int NetEqImpl::LastError() const {
-  rtc::CritScope lock(&crit_sect_);
-  return error_code_;
-}
-
-int NetEqImpl::LastDecoderError() {
-  rtc::CritScope lock(&crit_sect_);
-  return decoder_error_code_;
 }
 
 void NetEqImpl::FlushBuffers() {
@@ -1469,7 +1395,6 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
       error_code = decoder->ErrorCode();
     if (error_code != 0) {
       // Got some error code from the decoder.
-      decoder_error_code_ = error_code;
       return_value = kDecoderErrorCode;
       LOG(LS_WARNING) << "Decoder returned error code: " << error_code;
     } else {
@@ -1835,7 +1760,8 @@ int NetEqImpl::DoRfc3389Cng(PacketList* packet_list, bool play_dtmf) {
     dtmf_tone_generator_->Reset();
   }
   if (cn_return == ComfortNoise::kInternalError) {
-    decoder_error_code_ = comfort_noise_->internal_error_code();
+    LOG(LS_WARNING) << "Comfort noise generator returned error code: "
+                    << comfort_noise_->internal_error_code();
     return kComfortNoiseErrorCode;
   } else if (cn_return == ComfortNoise::kUnknownPayloadType) {
     return kUnknownRtpPayloadType;

@@ -102,32 +102,6 @@ class NetEq {
     kNotImplemented = -2
   };
 
-  enum ErrorCodes {
-    kNoError = 0,
-    kOtherError,
-    kInvalidRtpPayloadType,
-    kUnknownRtpPayloadType,
-    kCodecNotSupported,
-    kDecoderExists,
-    kDecoderNotFound,
-    kInvalidSampleRate,
-    kInvalidPointer,
-    kAccelerateError,
-    kPreemptiveExpandError,
-    kComfortNoiseErrorCode,
-    kDecoderErrorCode,
-    kOtherDecoderError,
-    kInvalidOperation,
-    kDtmfParameterError,
-    kDtmfParsingError,
-    kDtmfInsertError,
-    kStereoNotSupported,
-    kSampleUnderrun,
-    kDecodedTooMuch,
-    kRedundancySplitError,
-    kPacketBufferCorruption
-  };
-
   // Creates a new NetEq object, with parameters set in |config|. The |config|
   // object will only have to be valid for the duration of the call to this
   // method.
@@ -191,7 +165,8 @@ class NetEq {
                                    const SdpAudioFormat& audio_format) = 0;
 
   // Removes |rtp_payload_type| from the codec database. Returns 0 on success,
-  // -1 on failure.
+  // -1 on failure. Removing a payload type that is not registered is ok and
+  // will not result in an error.
   virtual int RemovePayloadType(uint8_t rtp_payload_type) = 0;
 
   // Removes all payload types from the codec database.
@@ -281,15 +256,6 @@ class NetEq {
 
   // Not implemented.
   virtual int SetTargetSampleRate() = 0;
-
-  // Returns the error code for the last occurred error. If no error has
-  // occurred, 0 is returned.
-  virtual int LastError() const = 0;
-
-  // Returns the error code last returned by a decoder (audio or comfort noise).
-  // When LastError() returns kDecoderErrorCode or kComfortNoiseErrorCode, check
-  // this method to get the decoder's error code.
-  virtual int LastDecoderError() = 0;
 
   // Flushes both the packet buffer and the sync buffer.
   virtual void FlushBuffers() = 0;

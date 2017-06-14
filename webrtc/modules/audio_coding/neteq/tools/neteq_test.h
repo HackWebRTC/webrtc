@@ -26,15 +26,13 @@ namespace test {
 class NetEqTestErrorCallback {
  public:
   virtual ~NetEqTestErrorCallback() = default;
-  virtual void OnInsertPacketError(int error_code,
-                                   const NetEqInput::PacketData& packet) {}
-  virtual void OnGetAudioError(int error_code) {}
+  virtual void OnInsertPacketError(const NetEqInput::PacketData& packet) {}
+  virtual void OnGetAudioError() {}
 };
 
 class DefaultNetEqTestErrorCallback : public NetEqTestErrorCallback {
-  void OnInsertPacketError(int error_code,
-                           const NetEqInput::PacketData& packet) override;
-  void OnGetAudioError(int error_code) override;
+  void OnInsertPacketError(const NetEqInput::PacketData& packet) override;
+  void OnGetAudioError() override;
 };
 
 class NetEqPostInsertPacket {
