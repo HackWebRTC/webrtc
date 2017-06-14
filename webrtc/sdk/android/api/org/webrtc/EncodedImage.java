@@ -26,19 +26,17 @@ public class EncodedImage {
   public final ByteBuffer buffer;
   public final int encodedWidth;
   public final int encodedHeight;
-  public final long timeStampMs;
   public final long captureTimeMs;
   public final FrameType frameType;
   public final int rotation;
   public final boolean completeFrame;
   public final Integer qp;
 
-  private EncodedImage(ByteBuffer buffer, int encodedWidth, int encodedHeight, long timeStampMs,
-      long captureTimeMs, FrameType frameType, int rotation, boolean completeFrame, Integer qp) {
+  private EncodedImage(ByteBuffer buffer, int encodedWidth, int encodedHeight, long captureTimeMs,
+      FrameType frameType, int rotation, boolean completeFrame, Integer qp) {
     this.buffer = buffer;
     this.encodedWidth = encodedWidth;
     this.encodedHeight = encodedHeight;
-    this.timeStampMs = timeStampMs;
     this.captureTimeMs = captureTimeMs;
     this.frameType = frameType;
     this.rotation = rotation;
@@ -54,7 +52,6 @@ public class EncodedImage {
     private ByteBuffer buffer;
     private int encodedWidth;
     private int encodedHeight;
-    private long timeStampMs;
     private long captureTimeMs;
     private EncodedImage.FrameType frameType;
     private int rotation;
@@ -75,11 +72,6 @@ public class EncodedImage {
 
     public Builder setEncodedHeight(int encodedHeight) {
       this.encodedHeight = encodedHeight;
-      return this;
-    }
-
-    public Builder setTimeStampMs(long timeStampMs) {
-      this.timeStampMs = timeStampMs;
       return this;
     }
 
@@ -109,8 +101,8 @@ public class EncodedImage {
     }
 
     public EncodedImage createEncodedImage() {
-      return new EncodedImage(buffer, encodedWidth, encodedHeight, timeStampMs, captureTimeMs,
-          frameType, rotation, completeFrame, qp);
+      return new EncodedImage(buffer, encodedWidth, encodedHeight, captureTimeMs, frameType,
+          rotation, completeFrame, qp);
     }
   }
 }

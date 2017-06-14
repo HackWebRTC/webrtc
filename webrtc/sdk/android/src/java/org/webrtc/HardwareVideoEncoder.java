@@ -18,8 +18,8 @@ import android.os.Bundle;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -259,7 +259,6 @@ class HardwareVideoEncoder implements VideoEncoder {
     // subsampled at one byte per four pixels.
     int bufferSize = videoFrame.getBuffer().getHeight() * videoFrame.getBuffer().getWidth() * 3 / 2;
     EncodedImage.Builder builder = EncodedImage.builder()
-                                       .setTimeStampMs(presentationTimestampMs)
                                        .setCaptureTimeMs(presentationTimestampMs)
                                        .setCompleteFrame(true)
                                        .setEncodedWidth(videoFrame.getWidth())
