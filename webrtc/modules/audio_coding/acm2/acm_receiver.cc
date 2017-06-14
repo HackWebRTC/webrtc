@@ -41,9 +41,7 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
   memset(last_audio_buffer_.get(), 0, AudioFrame::kMaxDataSizeSamples);
 }
 
-AcmReceiver::~AcmReceiver() {
-  delete neteq_;
-}
+AcmReceiver::~AcmReceiver() = default;
 
 int AcmReceiver::SetMinimumDelay(int delay_ms) {
   if (neteq_->SetMinimumDelay(delay_ms))
