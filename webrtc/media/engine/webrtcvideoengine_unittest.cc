@@ -1215,6 +1215,9 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
               send_stream->GetConfig().rtp.extensions[0].uri);
   }
 
+  void TestDegradationPreference(bool resolution_scaling_enabled,
+                                 bool fps_scaling_enabled);
+
   void TestCpuAdaptation(bool enable_overuse, bool is_screenshare);
   void TestReceiverLocalSsrcConfiguration(bool receiver_first);
   void TestReceiveUnsignaledSsrcPacket(uint8_t payload_type,
@@ -2097,6 +2100,24 @@ TEST_F(Vp9SettingsTestWith2SL3TLFlag, VerifySettings) {
   VerifySettings(kNumSpatialLayers, kNumTemporalLayers);
 }
 
+TEST_F(WebRtcVideoChannelTest,
+       BalancedDegradationPreferenceNotSupportedWithoutFieldtrial) {
+  webrtc::test::ScopedFieldTrials override_field_trials_(
+      "WebRTC-Video-BalancedDegradation/Disabled/");
+  const bool kResolutionScalingEnabled = true;
+  const bool kFpsScalingEnabled = false;
+  TestDegradationPreference(kResolutionScalingEnabled, kFpsScalingEnabled);
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       BalancedDegradationPreferenceSupportedBehindFieldtrial) {
+  webrtc::test::ScopedFieldTrials override_field_trials_(
+      "WebRTC-Video-BalancedDegradation/Enabled/");
+  const bool kResolutionScalingEnabled = true;
+  const bool kFpsScalingEnabled = true;
+  TestDegradationPreference(kResolutionScalingEnabled, kFpsScalingEnabled);
+}
+
 TEST_F(WebRtcVideoChannelTest, AdaptsOnOveruse) {
   TestCpuAdaptation(true, false);
 }
@@ -2259,6 +2280,40 @@ TEST_F(WebRtcVideoChannelTest, PreviousAdaptationDoesNotApplyToScreenshare) {
   EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1280 * 3 / 4, send_stream->GetLastWidth());
   EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
+
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, nullptr));
+}
+
+// TODO(asapersson): Remove this test when the balanced field trial is removed.
+void WebRtcVideoChannelTest::TestDegradationPreference(
+    bool resolution_scaling_enabled,
+    bool fps_scaling_enabled) {
+  cricket::VideoCodec codec = GetEngineCodec("VP8");
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(codec);
+
+  MediaConfig media_config = GetMediaConfig();
+  media_config.video.enable_cpu_overuse_detection = true;
+  channel_.reset(
+      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+  channel_->OnReadyToSend(true);
+
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+
+  AddSendStream();
+
+  cricket::FakeVideoCapturer capturer;
+  VideoOptions options;
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
+  cricket::VideoFormat capture_format = capturer.GetSupportedFormats()->front();
+  EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(capture_format));
+
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
+  EXPECT_EQ(resolution_scaling_enabled,
+            send_stream->resolution_scaling_enabled());
+  EXPECT_EQ(fps_scaling_enabled, send_stream->framerate_scaling_enabled());
 
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, nullptr));
 }

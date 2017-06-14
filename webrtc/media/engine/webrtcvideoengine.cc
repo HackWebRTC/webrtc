@@ -1742,6 +1742,9 @@ WebRtcVideoChannel::WebRtcVideoSendStream::GetDegradationPreference() const {
   } else {
     if (parameters_.options.is_screencast.value_or(false)) {
       degradation_preference = DegradationPreference::kMaintainResolution;
+    } else if (webrtc::field_trial::IsEnabled(
+                   "WebRTC-Video-BalancedDegradation")) {
+      degradation_preference = DegradationPreference::kBalanced;
     } else {
       degradation_preference = DegradationPreference::kMaintainFramerate;
     }
