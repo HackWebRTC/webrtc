@@ -46,6 +46,8 @@ rtc_static_library("libjingle_peerconnection_jni") {
     "src/jni/rtcstatscollectorcallbackwrapper.h",
     "src/jni/surfacetexturehelper_jni.cc",
     "src/jni/surfacetexturehelper_jni.h",
+    "src/jni/wrapped_native_i420_buffer.cc",
+    "src/jni/wrapped_native_i420_buffer.h",
   ]
 
   configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
@@ -214,6 +216,7 @@ android_library("libjingle_peerconnection_java") {
     "src/java/org/webrtc/FramerateBitrateAdjuster.java",
     "src/java/org/webrtc/HardwareVideoEncoder.java",
     "src/java/org/webrtc/Histogram.java",
+    "src/java/org/webrtc/WrappedNativeI420Buffer.java",
     "src/java/org/webrtc/YuvConverter.java",
   ]
 
