@@ -389,6 +389,7 @@ if (rtc_include_tests) {
       "../media:rtc_media_tests_utils",
       "../pc:rtc_pc",
       "../system_wrappers:metrics_default",
+      "../test:audio_codec_mocks",
       "//testing/gmock",
     ]
 

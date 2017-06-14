@@ -18,8 +18,8 @@ namespace webrtc {
 
 class MockAudioDecoder : public AudioDecoder {
  public:
-  MockAudioDecoder() {}
-  virtual ~MockAudioDecoder() { Die(); }
+  MockAudioDecoder();
+  ~MockAudioDecoder();
   MOCK_METHOD0(Die, void());
   MOCK_METHOD5(DecodeInternal,
                int(const uint8_t*, size_t, int, int16_t*, SpeechType*));
