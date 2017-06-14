@@ -12,6 +12,7 @@
 
 #include <cmath>
 
+#include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
@@ -73,6 +74,8 @@ void AcknowledgedBitrateEstimator::Update(int64_t now_ms, int bytes) {
                       (sample_var + pred_bitrate_estimate_var);
   bitrate_estimate_var_ = sample_var * pred_bitrate_estimate_var /
                           (sample_var + pred_bitrate_estimate_var);
+  BWE_TEST_LOGGING_PLOT(1, "acknowledged_bitrate", now_ms,
+                        bitrate_estimate_ * 1000);
 }
 
 float AcknowledgedBitrateEstimator::UpdateWindow(int64_t now_ms,

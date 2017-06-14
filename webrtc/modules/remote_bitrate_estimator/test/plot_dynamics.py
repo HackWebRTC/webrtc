@@ -137,8 +137,7 @@ def main():
   kalman_state.AddSubplot(['var_noise'], "Time (s)", "Var noise")
 
   detector_state = Figure("DetectorState")
-  detector_state.AddSubplot(['offset_ms'], "Time (s)", "Offset")
-  detector_state.AddSubplot(['gamma_ms'], "Time (s)", "Gamma")
+  detector_state.AddSubplot(['T', 'threshold'], "Time (s)", "Offset")
 
   trendline_state = Figure("TrendlineState")
   trendline_state.AddSubplot(["accumulated_delay_ms", "smoothed_delay_ms"],
@@ -146,7 +145,8 @@ def main():
   trendline_state.AddSubplot(["trendline_slope"], "Time (s)", "Slope")
 
   target_bitrate = Figure("TargetBitrate")
-  target_bitrate.AddSubplot(['target_bitrate_bps'], "Time (s)", "Bitrate (bps)")
+  target_bitrate.AddSubplot(['target_bitrate_bps', 'acknowledged_bitrate'],
+                            "Time (s)", "Bitrate (bps)")
 
   # Select which figures to plot here.
   figures = [receiver, detector_state, trendline_state, target_bitrate]
