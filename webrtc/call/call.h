@@ -10,6 +10,7 @@
 #ifndef WEBRTC_CALL_CALL_H_
 #define WEBRTC_CALL_CALL_H_
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -38,6 +39,19 @@ enum class MediaType {
   VIDEO,
   DATA
 };
+
+// Like std::min, but considers non-positive values to be unset.
+// TODO(zstein): Remove once all callers use rtc::Optional.
+template <typename T>
+static T MinPositive(T a, T b) {
+  if (a <= 0) {
+    return b;
+  }
+  if (b <= 0) {
+    return a;
+  }
+  return std::min(a, b);
+}
 
 class PacketReceiver {
  public:

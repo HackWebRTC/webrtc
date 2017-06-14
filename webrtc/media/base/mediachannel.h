@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MEDIA_BASE_MEDIACHANNEL_H_
 #define WEBRTC_MEDIA_BASE_MEDIACHANNEL_H_
 
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -79,17 +78,6 @@ static std::string VectorToString(const std::vector<T>& vals) {
     }
     ost << "]";
     return ost.str();
-}
-
-template <typename T>
-static T MinPositive(T a, T b) {
-  if (a <= 0) {
-    return b;
-  }
-  if (b <= 0) {
-    return a;
-  }
-  return std::min(a, b);
 }
 
 // Construction-time settings, passed on when creating

@@ -181,9 +181,10 @@ rtc::Optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
                                       const webrtc::AudioCodecSpec& spec) {
   // If application-configured bitrate is set, take minimum of that and SDP
   // bitrate.
-  const int bps = rtp_max_bitrate_bps
-                      ? MinPositive(max_send_bitrate_bps, *rtp_max_bitrate_bps)
-                      : max_send_bitrate_bps;
+  const int bps =
+      rtp_max_bitrate_bps
+          ? webrtc::MinPositive(max_send_bitrate_bps, *rtp_max_bitrate_bps)
+          : max_send_bitrate_bps;
   if (bps <= 0) {
     return rtc::Optional<int>(spec.info.default_bitrate_bps);
   }

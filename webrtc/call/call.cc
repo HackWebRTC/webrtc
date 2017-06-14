@@ -949,20 +949,6 @@ void Call::SetBitrateConfigMask(
   UpdateCurrentBitrateConfig(mask.start_bitrate_bps);
 }
 
-namespace {
-
-static int MinPositive(int a, int b) {
-  if (a <= 0) {
-    return b;
-  }
-  if (b <= 0) {
-    return a;
-  }
-  return std::min(a, b);
-}
-
-}  // namespace
-
 void Call::UpdateCurrentBitrateConfig(const rtc::Optional<int>& new_start) {
   Config::BitrateConfig updated;
   updated.min_bitrate_bps =

@@ -1984,8 +1984,8 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   int stream_max_bitrate = parameters_.max_bitrate_bps;
   if (rtp_parameters_.encodings[0].max_bitrate_bps) {
     stream_max_bitrate =
-        MinPositive(*(rtp_parameters_.encodings[0].max_bitrate_bps),
-                    parameters_.max_bitrate_bps);
+        webrtc::MinPositive(*(rtp_parameters_.encodings[0].max_bitrate_bps),
+                            parameters_.max_bitrate_bps);
   }
 
   int codec_max_bitrate_kbps;
