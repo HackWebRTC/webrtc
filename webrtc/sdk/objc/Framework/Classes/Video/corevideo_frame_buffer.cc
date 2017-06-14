@@ -25,24 +25,29 @@ CoreVideoFrameBuffer::CoreVideoFrameBuffer(CVPixelBufferRef pixel_buffer,
                                            int crop_height,
                                            int crop_x,
                                            int crop_y)
-    : NativeHandleBuffer(pixel_buffer, adapted_width, adapted_height),
-      pixel_buffer_(pixel_buffer),
+    : pixel_buffer_(pixel_buffer),
+      width_(adapted_width),
+      height_(adapted_height),
       buffer_width_(CVPixelBufferGetWidth(pixel_buffer)),
       buffer_height_(CVPixelBufferGetHeight(pixel_buffer)),
-      crop_width_(crop_width), crop_height_(crop_height),
+      crop_width_(crop_width),
+      crop_height_(crop_height),
       // Can only crop at even pixels.
-      crop_x_(crop_x & ~1), crop_y_(crop_y & ~1) {
+      crop_x_(crop_x & ~1),
+      crop_y_(crop_y & ~1) {
   CVBufferRetain(pixel_buffer_);
 }
 
 CoreVideoFrameBuffer::CoreVideoFrameBuffer(CVPixelBufferRef pixel_buffer)
-    : NativeHandleBuffer(pixel_buffer,
-                         CVPixelBufferGetWidth(pixel_buffer),
-                         CVPixelBufferGetHeight(pixel_buffer)),
-      pixel_buffer_(pixel_buffer),
-      buffer_width_(width_), buffer_height_(height_),
-      crop_width_(width_), crop_height_(height_),
-      crop_x_(0), crop_y_(0) {
+    : pixel_buffer_(pixel_buffer),
+      width_(CVPixelBufferGetWidth(pixel_buffer)),
+      height_(CVPixelBufferGetHeight(pixel_buffer)),
+      buffer_width_(width_),
+      buffer_height_(height_),
+      crop_width_(width_),
+      crop_height_(height_),
+      crop_x_(0),
+      crop_y_(0) {
   CVBufferRetain(pixel_buffer_);
 }
 
@@ -50,8 +55,19 @@ CoreVideoFrameBuffer::~CoreVideoFrameBuffer() {
   CVBufferRelease(pixel_buffer_);
 }
 
-rtc::scoped_refptr<VideoFrameBuffer>
-CoreVideoFrameBuffer::NativeToI420Buffer() {
+VideoFrameBuffer::Type CoreVideoFrameBuffer::type() const {
+  return Type::kNative;
+}
+
+int CoreVideoFrameBuffer::width() const {
+  return width_;
+}
+
+int CoreVideoFrameBuffer::height() const {
+  return height_;
+}
+
+rtc::scoped_refptr<I420BufferInterface> CoreVideoFrameBuffer::ToI420() {
   const OSType pixel_format = CVPixelBufferGetPixelFormatType(pixel_buffer_);
   RTC_DCHECK(pixel_format == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange ||
              pixel_format == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange);

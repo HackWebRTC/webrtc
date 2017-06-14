@@ -19,7 +19,7 @@
 
 namespace webrtc {
 
-class CoreVideoFrameBuffer : public NativeHandleBuffer {
+class CoreVideoFrameBuffer : public VideoFrameBuffer {
  public:
   explicit CoreVideoFrameBuffer(CVPixelBufferRef pixel_buffer);
   CoreVideoFrameBuffer(CVPixelBufferRef pixel_buffer,
@@ -31,7 +31,8 @@ class CoreVideoFrameBuffer : public NativeHandleBuffer {
                        int crop_y);
   ~CoreVideoFrameBuffer() override;
 
-  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
+  CVPixelBufferRef pixel_buffer() { return pixel_buffer_; }
+
   // Returns true if the internal pixel buffer needs to be cropped.
   bool RequiresCropping() const;
   // Crop and scales the internal pixel buffer to the output pixel buffer. The
@@ -41,11 +42,17 @@ class CoreVideoFrameBuffer : public NativeHandleBuffer {
                       CVPixelBufferRef output_pixel_buffer) const;
 
  private:
+  Type type() const override;
+  int width() const override;
+  int height() const override;
+  rtc::scoped_refptr<I420BufferInterface> ToI420() override;
+
   CVPixelBufferRef pixel_buffer_;
-  // buffer_width/height is the actual pixel buffer resolution. The width/height
-  // in NativeHandleBuffer, i.e. width()/height(), is the resolution we will
-  // scale to in NativeToI420Buffer(). Cropping happens before scaling, so:
-  // buffer_width >= crop_width >= width().
+  // buffer_width/height is the actual pixel buffer resolution. The
+  // width_/height_ is the resolution we will scale to in ToI420(). Cropping
+  // happens before scaling, so: buffer_width >= crop_width >= width().
+  const int width_;
+  const int height_;
   const int buffer_width_;
   const int buffer_height_;
   const int crop_width_;
