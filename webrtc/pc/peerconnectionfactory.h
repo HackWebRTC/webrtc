@@ -121,8 +121,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   virtual ~PeerConnectionFactory();
 
  private:
-  std::unique_ptr<cricket::MediaEngineInterface> CreateMediaEngine_w();
-
   bool owns_ptrs_;
   bool wraps_current_thread_;
   rtc::Thread* network_thread_;

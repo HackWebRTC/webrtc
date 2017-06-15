@@ -32,6 +32,10 @@ namespace cricket {
 
 class WebRtcMediaEngineFactory {
  public:
+  // These Create methods may be called on any thread, though the engine is
+  // only expected to be used on one thread, internally called the "worker
+  // thread". This is the thread Init must be called on.
+
   // TODO(ossu): Backwards-compatible interface. Will be deprecated once the
   // audio decoder factory is fully plumbed and used throughout WebRTC.
   // See: crbug.com/webrtc/6000

@@ -67,6 +67,9 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
       VoEWrapper* voe_wrapper);
   ~WebRtcVoiceEngine() override;
 
+  // Does initialization that needs to occur on the worker thread.
+  void Init();
+
   rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const;
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                    const MediaConfig& config,
@@ -112,7 +115,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   void StartAecDump(const std::string& filename);
   int CreateVoEChannel();
 
-  rtc::TaskQueue low_priority_worker_queue_;
+  std::unique_ptr<rtc::TaskQueue> low_priority_worker_queue_;
 
   webrtc::AudioDeviceModule* adm();
   webrtc::AudioProcessing* apm();
@@ -128,6 +131,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   rtc::scoped_refptr<webrtc::AudioDeviceModule> adm_;
   rtc::scoped_refptr<webrtc::AudioEncoderFactory> encoder_factory_;
   rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory_;
+  rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer_;
   // Reference to the APM, owned by VoE.
   webrtc::AudioProcessing* apm_ = nullptr;
   // Reference to the TransmitMixer, owned by VoE.
@@ -140,6 +144,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   std::vector<WebRtcVoiceMediaChannel*> channels_;
   webrtc::VoEBase::ChannelConfig channel_config_;
   bool is_dumping_aec_ = false;
+  bool initialized_ = false;
 
   webrtc::AgcConfig default_agc_config_;
   // Cache received extended_filter_aec, delay_agnostic_aec, experimental_ns

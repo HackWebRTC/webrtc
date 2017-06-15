@@ -775,6 +775,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
     // sanity checks against that.
     codecs_.push_back(AudioCodec(101, "fake_audio_codec", 0, 0, 1));
   }
+  void Init() {}
   rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const {
     return rtc::scoped_refptr<webrtc::AudioState>();
   }

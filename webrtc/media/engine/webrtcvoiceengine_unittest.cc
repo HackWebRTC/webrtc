@@ -135,6 +135,7 @@ TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
         &adm, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
         webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr,
         new FakeVoEWrapper(&voe));
+    engine.Init();
     EXPECT_TRUE(voe.IsInited());
   }
   EXPECT_FALSE(voe.IsInited());
@@ -187,6 +188,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     engine_.reset(new cricket::WebRtcVoiceEngine(&adm_, encoder_factory,
                                                  decoder_factory, nullptr,
                                                  new FakeVoEWrapper(&voe_)));
+    engine_->Init();
     send_parameters_.codecs.push_back(kPcmuCodec);
     recv_parameters_.codecs.push_back(kPcmuCodec);
     // Default Options.
@@ -3263,6 +3265,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   cricket::WebRtcVoiceEngine engine(
       nullptr, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
       webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
+  engine.Init();
   webrtc::RtcEventLogNullImpl event_log;
   std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config(&event_log)));
@@ -3284,6 +3287,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
     cricket::WebRtcVoiceEngine engine(
         &adm, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
         webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
+    engine.Init();
     webrtc::RtcEventLogNullImpl event_log;
     std::unique_ptr<webrtc::Call> call(
         webrtc::Call::Create(webrtc::Call::Config(&event_log)));
@@ -3301,6 +3305,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectPayloadTypeMapping) {
   cricket::WebRtcVoiceEngine engine(
       nullptr, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
       webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
+  engine.Init();
   for (const cricket::AudioCodec& codec : engine.send_codecs()) {
     auto is_codec = [&codec](const char* name, int clockrate = 0) {
       return STR_CASE_CMP(codec.name.c_str(), name) == 0 &&
@@ -3342,6 +3347,7 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
   cricket::WebRtcVoiceEngine engine(
       nullptr, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
       webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
+  engine.Init();
   webrtc::RtcEventLogNullImpl event_log;
   std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config(&event_log)));
@@ -3376,6 +3382,7 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
   cricket::WebRtcVoiceEngine engine(
       nullptr, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
       webrtc::CreateBuiltinAudioDecoderFactory(), nullptr);
+  engine.Init();
   webrtc::RtcEventLogNullImpl event_log;
   std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config(&event_log)));
@@ -3413,6 +3420,7 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
 
   cricket::WebRtcVoiceEngine engine(nullptr, unused_encoder_factory,
                                     mock_decoder_factory, nullptr);
+  engine.Init();
   auto codecs = engine.recv_codecs();
   EXPECT_EQ(11, codecs.size());
 

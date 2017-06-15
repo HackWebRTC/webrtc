@@ -122,6 +122,7 @@ class CompositeMediaEngine : public MediaEngineInterface {
   }
   virtual ~CompositeMediaEngine() {}
   virtual bool Init() {
+    voice_.Init();
     video_.Init();
     return true;
   }

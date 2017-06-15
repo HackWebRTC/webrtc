@@ -219,10 +219,7 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
                         encoder_factory,
                         decoder_factory,
                         audio_mixer,
-                        new VoEWrapper()) {
-  audio_state_ =
-      webrtc::AudioState::Create(MakeAudioStateConfig(voe(), audio_mixer));
-}
+                        nullptr) {}
 
 WebRtcVoiceEngine::WebRtcVoiceEngine(
     webrtc::AudioDeviceModule* adm,
@@ -230,17 +227,43 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
     VoEWrapper* voe_wrapper)
-    : low_priority_worker_queue_("rtc-low-prio", rtc::TaskQueue::Priority::LOW),
-      adm_(adm),
+    : adm_(adm),
       encoder_factory_(encoder_factory),
       decoder_factory_(decoder_factory),
+      audio_mixer_(audio_mixer),
       voe_wrapper_(voe_wrapper) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  LOG(LS_INFO) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
-  RTC_DCHECK(voe_wrapper);
-  RTC_DCHECK(decoder_factory);
-
+  // This may be called from any thread, so detach thread checkers.
+  worker_thread_checker_.DetachFromThread();
   signal_thread_checker_.DetachFromThread();
+  LOG(LS_INFO) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
+  RTC_DCHECK(decoder_factory);
+  RTC_DCHECK(encoder_factory);
+  // The rest of our initialization will happen in Init.
+}
+
+WebRtcVoiceEngine::~WebRtcVoiceEngine() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  LOG(LS_INFO) << "WebRtcVoiceEngine::~WebRtcVoiceEngine";
+  if (initialized_) {
+    StopAecDump();
+    voe_wrapper_->base()->Terminate();
+    webrtc::Trace::SetTraceCallback(nullptr);
+  }
+}
+
+void WebRtcVoiceEngine::Init() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  LOG(LS_INFO) << "WebRtcVoiceEngine::Init";
+
+  // TaskQueue expects to be created/destroyed on the same thread.
+  low_priority_worker_queue_.reset(
+      new rtc::TaskQueue("rtc-low-prio", rtc::TaskQueue::Priority::LOW));
+
+  // VoEWrapper needs to be created on the worker thread. It's expected to be
+  // null here unless it's being injected for testing.
+  if (!voe_wrapper_) {
+    voe_wrapper_.reset(new VoEWrapper());
+  }
 
   // Load our audio codec lists.
   LOG(LS_INFO) << "Supported send codecs in order of preference:";
@@ -310,14 +333,14 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
   apm()->Initialize();
   webrtc::adm_helpers::SetPlayoutDevice(adm_);
 #endif  // !WEBRTC_IOS
-}
 
-WebRtcVoiceEngine::~WebRtcVoiceEngine() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  LOG(LS_INFO) << "WebRtcVoiceEngine::~WebRtcVoiceEngine";
-  StopAecDump();
-  voe_wrapper_->base()->Terminate();
-  webrtc::Trace::SetTraceCallback(nullptr);
+  // May be null for VoE injected for testing.
+  if (voe()->engine()) {
+    audio_state_ =
+        webrtc::AudioState::Create(MakeAudioStateConfig(voe(), audio_mixer_));
+  }
+
+  initialized_ = true;
 }
 
 rtc::scoped_refptr<webrtc::AudioState>
@@ -690,8 +713,8 @@ void WebRtcVoiceEngine::UnregisterChannel(WebRtcVoiceMediaChannel* channel) {
 bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file,
                                      int64_t max_size_bytes) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  auto aec_dump = webrtc::AecDumpFactory::Create(file, max_size_bytes,
-                                                 &low_priority_worker_queue_);
+  auto aec_dump = webrtc::AecDumpFactory::Create(
+      file, max_size_bytes, low_priority_worker_queue_.get());
   if (!aec_dump) {
     return false;
   }
@@ -702,8 +725,8 @@ bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file,
 void WebRtcVoiceEngine::StartAecDump(const std::string& filename) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 
-  auto aec_dump =
-      webrtc::AecDumpFactory::Create(filename, -1, &low_priority_worker_queue_);
+  auto aec_dump = webrtc::AecDumpFactory::Create(
+      filename, -1, low_priority_worker_queue_.get());
   if (aec_dump) {
     apm()->AttachAecDump(std::move(aec_dump));
   }

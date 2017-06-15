@@ -210,10 +210,11 @@ bool PeerConnectionFactory::Initialize() {
     return false;
   }
 
-  std::unique_ptr<cricket::MediaEngineInterface> media_engine =
-      worker_thread_->Invoke<std::unique_ptr<cricket::MediaEngineInterface>>(
-          RTC_FROM_HERE,
-          rtc::Bind(&PeerConnectionFactory::CreateMediaEngine_w, this));
+  std::unique_ptr<cricket::MediaEngineInterface> media_engine(
+      cricket::WebRtcMediaEngineFactory::Create(
+          default_adm_.get(), audio_encoder_factory_, audio_decoder_factory_,
+          video_encoder_factory_.get(), video_decoder_factory_.get(),
+          external_audio_mixer_));
 
   channel_manager_.reset(new cricket::ChannelManager(
       std::move(media_engine), worker_thread_, network_thread_));
@@ -379,17 +380,6 @@ rtc::Thread* PeerConnectionFactory::worker_thread() {
 
 rtc::Thread* PeerConnectionFactory::network_thread() {
   return network_thread_;
-}
-
-std::unique_ptr<cricket::MediaEngineInterface>
-PeerConnectionFactory::CreateMediaEngine_w() {
-  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
-  return std::unique_ptr<cricket::MediaEngineInterface>(
-      cricket::WebRtcMediaEngineFactory::Create(
-          default_adm_.get(), audio_encoder_factory_,
-          audio_decoder_factory_,
-          video_encoder_factory_.get(), video_decoder_factory_.get(),
-          external_audio_mixer_));
 }
 
 }  // namespace webrtc
