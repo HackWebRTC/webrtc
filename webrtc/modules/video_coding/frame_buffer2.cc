@@ -238,6 +238,22 @@ void FrameBuffer::Stop() {
   new_continuous_frame_event_.Set();
 }
 
+bool FrameBuffer::ValidReferences(const FrameObject& frame) const {
+  for (size_t i = 0; i < frame.num_references; ++i) {
+    if (AheadOrAt(frame.references[i], frame.picture_id))
+      return false;
+    for (size_t j = i + 1; j < frame.num_references; ++j) {
+      if (frame.references[i] == frame.references[j])
+        return false;
+    }
+  }
+
+  if (frame.inter_layer_predicted && frame.spatial_layer == 0)
+    return false;
+
+  return true;
+}
+
 void FrameBuffer::UpdatePlayoutDelays(const FrameObject& frame) {
   TRACE_EVENT0("webrtc", "FrameBuffer::UpdatePlayoutDelays");
   PlayoutDelay playout_delay = frame.EncodedImage().playout_delay_;
@@ -262,18 +278,18 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
           ? -1
           : last_continuous_frame_it_->first.picture_id;
 
+  if (!ValidReferences(*frame)) {
+    LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) (" << key.picture_id
+                    << ":" << static_cast<int>(key.spatial_layer)
+                    << ") has invalid frame references, dropping frame.";
+    return last_continuous_picture_id;
+  }
+
   if (num_frames_buffered_ >= kMaxFramesBuffered) {
     LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) (" << key.picture_id
                     << ":" << static_cast<int>(key.spatial_layer)
                     << ") could not be inserted due to the frame "
                     << "buffer being full, dropping frame.";
-    return last_continuous_picture_id;
-  }
-
-  if (frame->inter_layer_predicted && frame->spatial_layer == 0) {
-    LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) (" << key.picture_id
-                    << ":" << static_cast<int>(key.spatial_layer)
-                    << ") is marked as inter layer predicted, dropping frame.";
     return last_continuous_picture_id;
   }
 
@@ -363,11 +379,15 @@ void FrameBuffer::PropagateContinuity(FrameMap::iterator start) {
     // any unfulfilled dependencies then that frame is continuous as well.
     for (size_t d = 0; d < frame->second.num_dependent_frames; ++d) {
       auto frame_ref = frames_.find(frame->second.dependent_frames[d]);
-      --frame_ref->second.num_missing_continuous;
+      RTC_DCHECK(frame_ref != frames_.end());
 
-      if (frame_ref->second.num_missing_continuous == 0) {
-        frame_ref->second.continuous = true;
-        continuous_frames.push(frame_ref);
+      // TODO(philipel): Look into why we've seen this happen.
+      if (frame_ref != frames_.end()) {
+        --frame_ref->second.num_missing_continuous;
+        if (frame_ref->second.num_missing_continuous == 0) {
+          frame_ref->second.continuous = true;
+          continuous_frames.push(frame_ref);
+        }
       }
     }
   }
