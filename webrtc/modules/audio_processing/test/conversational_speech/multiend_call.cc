@@ -24,35 +24,14 @@ MultiEndCall::MultiEndCall(
     rtc::ArrayView<const Turn> timing, const std::string& audiotracks_path,
     std::unique_ptr<WavReaderAbstractFactory> wavreader_abstract_factory)
         : timing_(timing), audiotracks_path_(audiotracks_path),
-          wavreader_abstract_factory_(std::move(wavreader_abstract_factory)) {
+          wavreader_abstract_factory_(std::move(wavreader_abstract_factory)),
+          valid_(false) {
   FindSpeakerNames();
-  CreateAudioTrackReaders();
-  valid_ = CheckTiming();
+  if (CreateAudioTrackReaders())
+    valid_ = CheckTiming();
 }
 
 MultiEndCall::~MultiEndCall() = default;
-
-const std::set<std::string>& MultiEndCall::speaker_names() const {
-  return speaker_names_;
-}
-
-const std::map<std::string, std::unique_ptr<WavReaderInterface>>&
-    MultiEndCall::audiotrack_readers() const {
-  return audiotrack_readers_;
-}
-
-bool MultiEndCall::valid() const {
-  return valid_;
-}
-
-size_t MultiEndCall::total_duration_samples() const {
-  return total_duration_samples_;
-}
-
-const std::vector<MultiEndCall::SpeakingTurn>& MultiEndCall::speaking_turns()
-    const {
-  return speaking_turns_;
-}
 
 void MultiEndCall::FindSpeakerNames() {
   RTC_DCHECK(speaker_names_.empty());
@@ -61,8 +40,9 @@ void MultiEndCall::FindSpeakerNames() {
   }
 }
 
-void MultiEndCall::CreateAudioTrackReaders() {
+bool MultiEndCall::CreateAudioTrackReaders() {
   RTC_DCHECK(audiotrack_readers_.empty());
+  sample_rate_hz_ = 0;  // Sample rate will be set when reading the first track.
   for (const Turn& turn : timing_) {
     auto it = audiotrack_readers_.find(turn.audiotrack_file_name);
     if (it != audiotrack_readers_.end())
@@ -75,9 +55,24 @@ void MultiEndCall::CreateAudioTrackReaders() {
     // Map the audiotrack file name to a new instance of WavReaderInterface.
     std::unique_ptr<WavReaderInterface> wavreader =
         wavreader_abstract_factory_->Create(audiotrack_file_path.pathname());
+
+    if (sample_rate_hz_ == 0) {
+      sample_rate_hz_ = wavreader->SampleRate();
+    } else if (sample_rate_hz_ != wavreader->SampleRate()) {
+      LOG(LS_ERROR) << "All the audio tracks should have the same sample rate.";
+      return false;
+    }
+
+    if (wavreader->NumChannels() != 1) {
+      LOG(LS_ERROR) << "Only mono audio tracks supported.";
+      return false;
+    }
+
     audiotrack_readers_.emplace(
         turn.audiotrack_file_name, std::move(wavreader));
   }
+
+  return true;
 }
 
 bool MultiEndCall::CheckTiming() {

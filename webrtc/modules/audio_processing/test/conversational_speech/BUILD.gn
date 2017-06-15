@@ -35,6 +35,8 @@ rtc_static_library("lib") {
     "config.h",
     "multiend_call.cc",
     "multiend_call.h",
+    "simulator.cc",
+    "simulator.h",
     "timing.cc",
     "timing.h",
     "wavreader_abstract_factory.h",
