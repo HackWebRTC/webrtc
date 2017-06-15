@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "webrtc/api/rtpparameters.h"
+#include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/copyonwritebuffer.h"
@@ -1000,6 +1001,8 @@ class VoiceMediaChannel : public MediaChannel {
   virtual void SetRawAudioSink(
       uint32_t ssrc,
       std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
+
+  virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const = 0;
 };
 
 // TODO(deadbeef): Rename to VideoSenderParameters, since they're intended to

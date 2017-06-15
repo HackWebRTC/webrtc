@@ -189,7 +189,9 @@ class RtcEventLogNullImpl : public RtcEventLog {
     return false;
   }
   bool StartLogging(rtc::PlatformFile platform_file,
-                    int64_t max_size_bytes) override;
+                    int64_t max_size_bytes) override {
+    return false;
+  }
   void StopLogging() override {}
   void LogVideoReceiveStreamConfig(
       const rtclog::StreamConfig& config) override {}

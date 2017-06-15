@@ -28,6 +28,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/media/base/fakevideocapturer.h"
+#include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/pc/audiotrack.h"
@@ -641,10 +642,54 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
 // exercised by these unittest.
 class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
  public:
-  PeerConnectionFactoryForTest()
-      : webrtc::PeerConnectionFactory(
-            webrtc::CreateBuiltinAudioEncoderFactory(),
-            webrtc::CreateBuiltinAudioDecoderFactory()) {}
+  static rtc::scoped_refptr<PeerConnectionFactoryForTest>
+  CreatePeerConnectionFactoryForTest() {
+    auto audio_encoder_factory = webrtc::CreateBuiltinAudioEncoderFactory();
+    auto audio_decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
+
+    auto media_engine = std::unique_ptr<cricket::MediaEngineInterface>(
+        cricket::WebRtcMediaEngineFactory::Create(
+            nullptr, audio_encoder_factory, audio_decoder_factory, nullptr,
+            nullptr, nullptr));
+
+    std::unique_ptr<webrtc::CallFactoryInterface> call_factory =
+        webrtc::CreateCallFactory();
+
+    std::unique_ptr<webrtc::RtcEventLogFactoryInterface> event_log_factory =
+        webrtc::CreateRtcEventLogFactory();
+
+    return new rtc::RefCountedObject<PeerConnectionFactoryForTest>(
+        rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
+        nullptr, audio_encoder_factory, audio_decoder_factory, nullptr, nullptr,
+        nullptr, std::move(media_engine), std::move(call_factory),
+        std::move(event_log_factory));
+  }
+
+  PeerConnectionFactoryForTest(
+      rtc::Thread* network_thread,
+      rtc::Thread* worker_thread,
+      rtc::Thread* signaling_thread,
+      webrtc::AudioDeviceModule* default_adm,
+      rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
+      rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
+      cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+      cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
+      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+      std::unique_ptr<cricket::MediaEngineInterface> media_engine,
+      std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
+      std::unique_ptr<webrtc::RtcEventLogFactoryInterface> event_log_factory)
+      : webrtc::PeerConnectionFactory(network_thread,
+                                      worker_thread,
+                                      signaling_thread,
+                                      default_adm,
+                                      audio_encoder_factory,
+                                      audio_decoder_factory,
+                                      video_encoder_factory,
+                                      video_decoder_factory,
+                                      audio_mixer,
+                                      std::move(media_engine),
+                                      std::move(call_factory),
+                                      std::move(event_log_factory)) {}
 
   cricket::TransportController* CreateTransportController(
       cricket::PortAllocator* port_allocator,
@@ -673,7 +718,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
         nullptr, nullptr, nullptr);
     ASSERT_TRUE(pc_factory_);
     pc_factory_for_test_ =
-        new rtc::RefCountedObject<PeerConnectionFactoryForTest>();
+        PeerConnectionFactoryForTest::CreatePeerConnectionFactoryForTest();
     pc_factory_for_test_->Initialize();
   }
 
@@ -3367,7 +3412,7 @@ TEST_F(PeerConnectionInterfaceTest, SetBitrateCurrentLessThanImplicitMin) {
 class PeerConnectionMediaConfigTest : public testing::Test {
  protected:
   void SetUp() override {
-    pcf_ = new rtc::RefCountedObject<PeerConnectionFactoryForTest>();
+    pcf_ = PeerConnectionFactoryForTest::CreatePeerConnectionFactoryForTest();
     pcf_->Initialize();
   }
   const cricket::MediaConfig TestCreatePeerConnection(

@@ -424,6 +424,10 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     sink_ = std::move(sink);
   }
 
+  virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const {
+    return std::vector<webrtc::RtpSource>();
+  }
+
  private:
   class VoiceChannelAudioSink : public AudioSource::Sink {
    public:

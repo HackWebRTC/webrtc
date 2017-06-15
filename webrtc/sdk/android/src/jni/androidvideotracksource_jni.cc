@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/api/videosourceproxy.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/sdk/android/src/jni/androidvideotracksource.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 

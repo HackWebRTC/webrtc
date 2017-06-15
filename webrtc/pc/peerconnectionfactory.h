@@ -106,9 +106,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
  protected:
   PeerConnectionFactory(
-      rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
-      rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory);
-  PeerConnectionFactory(
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread,
       rtc::Thread* signaling_thread,
@@ -117,15 +114,21 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
       cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
       cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-      rtc::scoped_refptr<AudioMixer> audio_mixer);
+      rtc::scoped_refptr<AudioMixer> audio_mixer,
+      std::unique_ptr<cricket::MediaEngineInterface> media_engine,
+      std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
+      std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory);
   virtual ~PeerConnectionFactory();
 
  private:
-  bool owns_ptrs_;
+  std::unique_ptr<Call> CreateCall_w(RtcEventLog* event_log);
+
   bool wraps_current_thread_;
   rtc::Thread* network_thread_;
   rtc::Thread* worker_thread_;
   rtc::Thread* signaling_thread_;
+  std::unique_ptr<rtc::Thread> owned_network_thread_;
+  std::unique_ptr<rtc::Thread> owned_worker_thread_;
   Options options_;
   // External Audio device used for audio playback.
   rtc::scoped_refptr<AudioDeviceModule> default_adm_;
@@ -143,6 +146,9 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   // External audio mixer. This can be NULL. In that case, internal audio mixer
   // will be created and used.
   rtc::scoped_refptr<AudioMixer> external_audio_mixer_;
+  std::unique_ptr<cricket::MediaEngineInterface> media_engine_;
+  std::unique_ptr<webrtc::CallFactoryInterface> call_factory_;
+  std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory_;
 };
 
 }  // namespace webrtc

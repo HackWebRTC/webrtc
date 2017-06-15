@@ -60,8 +60,6 @@
 
 namespace webrtc {
 
-const int Call::Config::kDefaultStartBitrateBps = 300000;
-
 namespace {
 
 // TODO(nisse): This really begs for a shared context struct.

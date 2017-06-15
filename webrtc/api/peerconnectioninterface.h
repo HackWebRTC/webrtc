@@ -90,6 +90,8 @@
 #include "webrtc/base/rtccertificategenerator.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/call/callfactoryinterface.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/p2p/base/portallocator.h"
@@ -100,6 +102,7 @@ class Thread;
 }
 
 namespace cricket {
+class MediaEngineInterface;
 class WebRtcVideoDecoderFactory;
 class WebRtcVideoEncoderFactory;
 }
@@ -107,6 +110,7 @@ class WebRtcVideoEncoderFactory;
 namespace webrtc {
 class AudioDeviceModule;
 class AudioMixer;
+class CallFactoryInterface;
 class MediaConstraintsInterface;
 
 // MediaStream container interface.
@@ -1125,6 +1129,51 @@ CreatePeerConnectionFactory(
       worker_and_network_thread, worker_and_network_thread, signaling_thread,
       default_adm, encoder_factory, decoder_factory);
 }
+
+// This is a lower-level version of the CreatePeerConnectionFactory functions
+// above. It's implemented in the "peerconnection" build target, whereas the
+// above methods are only implemented in the broader "libjingle_peerconnection"
+// build target, which pulls in the implementations of every module webrtc may
+// use.
+//
+// If an application knows it will only require certain modules, it can reduce
+// webrtc's impact on its binary size by depending only on the "peerconnection"
+// target and the modules the application requires, using
+// CreateModularPeerConnectionFactory instead of one of the
+// CreatePeerConnectionFactory methods above. For example, if an application
+// only uses WebRTC for audio, it can pass in null pointers for the
+// video-specific interfaces, and omit the corresponding modules from its
+// build.
+//
+// If |network_thread| or |worker_thread| are null, the PeerConnectionFactory
+// will create the necessary thread internally. If |signaling_thread| is null,
+// the PeerConnectionFactory will use the thread on which this method is called
+// as the signaling thread, wrapping it in an rtc::Thread object if needed.
+//
+// If non-null, a reference is added to |default_adm|, and ownership of
+// |video_encoder_factory| and |video_decoder_factory| is transferred to the
+// returned factory.
+//
+// TODO(deadbeef): Use rtc::scoped_refptr<> and std::unique_ptr<> to make this
+// ownership transfer and ref counting more obvious.
+//
+// TODO(deadbeef): Encapsulate these modules in a struct, so that when a new
+// module is inevitably exposed, we can just add a field to the struct instead
+// of adding a whole new CreateModularPeerConnectionFactory overload.
+rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreateModularPeerConnectionFactory(
+    rtc::Thread* network_thread,
+    rtc::Thread* worker_thread,
+    rtc::Thread* signaling_thread,
+    AudioDeviceModule* default_adm,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
+    rtc::scoped_refptr<AudioMixer> audio_mixer,
+    std::unique_ptr<cricket::MediaEngineInterface> media_engine,
+    std::unique_ptr<CallFactoryInterface> call_factory,
+    std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory);
 
 }  // namespace webrtc
 

@@ -222,7 +222,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
       uint32_t ssrc,
       std::unique_ptr<webrtc::AudioSinkInterface> sink) override;
 
-  std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const;
+  std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const override;
 
   // implements Transport interface
   bool SendRtp(const uint8_t* data,

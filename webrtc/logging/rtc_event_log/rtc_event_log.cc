@@ -580,15 +580,6 @@ bool RtcEventLog::ParseRtcEventLog(const std::string& file_name,
 
 #endif  // ENABLE_RTC_EVENT_LOG
 
-bool RtcEventLogNullImpl::StartLogging(rtc::PlatformFile platform_file,
-                                       int64_t max_size_bytes) {
-  // The platform_file is open and needs to be closed.
-  if (!rtc::ClosePlatformFile(platform_file)) {
-    LOG(LS_ERROR) << "Can't close file.";
-  }
-  return false;
-}
-
 // RtcEventLog member functions.
 std::unique_ptr<RtcEventLog> RtcEventLog::Create() {
 #ifdef ENABLE_RTC_EVENT_LOG

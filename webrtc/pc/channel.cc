@@ -23,7 +23,9 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
-#include "webrtc/media/engine/webrtcvoiceengine.h"
+// Adding 'nogncheck' to disable the gn include headers check to support modular
+// WebRTC build targets.
+#include "webrtc/media/engine/webrtcvoiceengine.h"  // nogncheck
 #include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/pc/channelmanager.h"
 
@@ -1575,9 +1577,12 @@ bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {
 
 std::vector<webrtc::RtpSource> VoiceChannel::GetSources(uint32_t ssrc) const {
   return worker_thread()->Invoke<std::vector<webrtc::RtpSource>>(
-      RTC_FROM_HERE,
-      Bind(&WebRtcVoiceMediaChannel::GetSources,
-           static_cast<WebRtcVoiceMediaChannel*>(media_channel()), ssrc));
+      RTC_FROM_HERE, Bind(&VoiceChannel::GetSources_w, this, ssrc));
+}
+
+std::vector<webrtc::RtpSource> VoiceChannel::GetSources_w(uint32_t ssrc) const {
+  RTC_DCHECK(worker_thread()->IsCurrent());
+  return media_channel()->GetSources(ssrc);
 }
 
 void VoiceChannel::StartMediaMonitor(int cms) {

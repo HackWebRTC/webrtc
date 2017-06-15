@@ -23,12 +23,21 @@ config("rtc_media_defines_config") {
   ]
 }
 
-rtc_static_library("rtc_media_base") {
+config("rtc_media_warnings_config") {
+  # GN orders flags on a target before flags from configs. The default config
+  # adds these flags so to cancel them out they need to come from a config and
+  # cannot be on the target directly.
+  if (!is_win) {
+    cflags = [ "-Wno-deprecated-declarations" ]
+  }
+}
+
+rtc_source_set("rtc_media_base") {
   # TODO(kjellander): Remove (bugs.webrtc.org/6828)
   # Enabling GN check triggers cyclic dependency error:
   #   //webrtc/media:rtc_media_base ->
-  #   //webrtc/pc:rtc_pc ->
-  #   //webrtc/media:media ->
+  #   //webrtc/pc:rtc_pc_base ->
+  #   //webrtc/media:rtc_data ->
   #   //webrtc/media:rtc_media_base
   check_includes = false
   defines = []
@@ -42,6 +51,8 @@ rtc_static_library("rtc_media_base") {
     "base/codec.h",
     "base/cryptoparams.h",
     "base/device.h",
+    "base/h264_profile_level_id.cc",
+    "base/h264_profile_level_id.h",
     "base/mediachannel.h",
     "base/mediaconstants.cc",
     "base/mediaconstants.h",
@@ -87,13 +98,8 @@ rtc_static_library("rtc_media_base") {
   deps += [
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
-    "../api:video_frame_api",
-    "../api/audio_codecs:audio_codecs_api",
-    "../api/audio_codecs:builtin_audio_encoder_factory",
     "../base:rtc_base",
     "../base:rtc_base_approved",
-    "../call:call_interfaces",
-    "../common_video:common_video",
     "../p2p",
   ]
 
@@ -102,14 +108,7 @@ rtc_static_library("rtc_media_base") {
   }
 }
 
-rtc_static_library("rtc_media") {
-  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
-  # Enabling GN check triggers cyclic dependency error:
-  #   //webrtc/media:media ->
-  #   //webrtc/media:rtc_media ->
-  #   //webrtc/pc:rtc_pc ->
-  #   //webrtc/media:media
-  check_includes = false
+rtc_static_library("rtc_audio_video") {
   defines = []
   libs = []
   deps = []
@@ -145,15 +144,9 @@ rtc_static_library("rtc_media") {
     "engine/webrtcvoe.h",
     "engine/webrtcvoiceengine.cc",
     "engine/webrtcvoiceengine.h",
-    "sctp/sctptransportinternal.h",
   ]
 
-  if (rtc_enable_sctp) {
-    sources += [
-      "sctp/sctptransport.cc",
-      "sctp/sctptransport.h",
-    ]
-  }
+  configs += [ ":rtc_media_warnings_config" ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -191,15 +184,6 @@ rtc_static_library("rtc_media") {
     include_dirs += [ "$rtc_libyuv_dir/include" ]
   }
 
-  if (rtc_enable_sctp && rtc_build_usrsctp) {
-    include_dirs += [
-      # TODO(jiayl): move this into the public_configs of
-      # //third_party/usrsctp/BUILD.gn.
-      "//third_party/usrsctp/usrsctplib",
-    ]
-    deps += [ "//third_party/usrsctp" ]
-  }
-
   public_configs = []
   if (build_with_chromium) {
     deps += [ "../modules/video_capture:video_capture" ]
@@ -214,15 +198,19 @@ rtc_static_library("rtc_media") {
   }
   deps += [
     ":rtc_media_base",
+    "..:video_stream_api",
     "..:webrtc_common",
     "../api:call_api",
+    "../api:libjingle_peerconnection_api",
     "../api:transport_api",
     "../api:video_frame_api",
     "../api/audio_codecs:audio_codecs_api",
     "../api/audio_codecs:builtin_audio_decoder_factory",
+    "../api/audio_codecs:builtin_audio_encoder_factory",
     "../api/video_codecs:video_codecs_api",
     "../base:rtc_base",
     "../base:rtc_base_approved",
+    "../base:rtc_task_queue",
     "../call",
     "../common_video:common_video",
     "../modules/audio_coding:rent_a_codec",
@@ -236,9 +224,65 @@ rtc_static_library("rtc_media") {
     "../modules/video_coding:webrtc_vp8",
     "../modules/video_coding:webrtc_vp9",
     "../p2p:rtc_p2p",
+    "../pc:rtc_pc_base",
     "../system_wrappers",
     "../video",
     "../voice_engine",
+  ]
+}
+
+rtc_static_library("rtc_data") {
+  defines = []
+  deps = []
+
+  if (rtc_enable_sctp) {
+    sources = [
+      "sctp/sctptransport.cc",
+      "sctp/sctptransport.h",
+      "sctp/sctptransportinternal.h",
+    ]
+  }
+
+  configs += [ ":rtc_media_warnings_config" ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  if (is_win) {
+    cflags = [
+      "/wd4245",  # conversion from "int" to "size_t", signed/unsigned mismatch.
+      "/wd4267",  # conversion from "size_t" to "int", possible loss of data.
+      "/wd4389",  # signed/unsigned mismatch.
+    ]
+  }
+
+  if (rtc_enable_sctp && rtc_build_usrsctp) {
+    include_dirs = [
+      # TODO(jiayl): move this into the public_configs of
+      # //third_party/usrsctp/BUILD.gn.
+      "//third_party/usrsctp/usrsctplib",
+    ]
+    deps += [ "//third_party/usrsctp" ]
+  }
+
+  deps += [
+    ":rtc_media_base",
+    "..:webrtc_common",
+    "../api:call_api",
+    "../api:transport_api",
+    "../base:rtc_base",
+    "../base:rtc_base_approved",
+    "../p2p:rtc_p2p",
+    "../system_wrappers",
+  ]
+}
+
+rtc_source_set("rtc_media") {
+  public_deps = [
+    ":rtc_audio_video",
+    ":rtc_data",
   ]
 }
 

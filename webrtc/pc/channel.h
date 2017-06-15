@@ -471,6 +471,7 @@ class VoiceChannel : public BaseChannel {
   bool GetStats(VoiceMediaInfo* stats);
 
   std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const;
+  std::vector<webrtc::RtpSource> GetSources_w(uint32_t ssrc) const;
 
   // Monitoring functions
   sigslot::signal2<VoiceChannel*, const std::vector<ConnectionInfo>&>

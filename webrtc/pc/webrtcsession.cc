@@ -1901,7 +1901,8 @@ Call::Stats WebRtcSession::GetCallStats() {
     return worker_thread()->Invoke<Call::Stats>(
         RTC_FROM_HERE, rtc::Bind(&WebRtcSession::GetCallStats, this));
   }
-  RTC_DCHECK(call_);
+  if (!call_)
+    return Call::Stats();
   return call_->GetStats();
 }
 

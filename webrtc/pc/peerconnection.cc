@@ -391,17 +391,20 @@ bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
   return mandatory_constraints_satisfied == constraints->GetMandatory().size();
 }
 
-PeerConnection::PeerConnection(PeerConnectionFactory* factory)
+PeerConnection::PeerConnection(PeerConnectionFactory* factory,
+                               std::unique_ptr<RtcEventLog> event_log,
+                               std::unique_ptr<Call> call)
     : factory_(factory),
       observer_(NULL),
       uma_observer_(NULL),
-      event_log_(RtcEventLog::Create()),
+      event_log_(std::move(event_log)),
       signaling_state_(kStable),
       ice_connection_state_(kIceConnectionNew),
       ice_gathering_state_(kIceGatheringNew),
       rtcp_cname_(GenerateRtcpCname()),
       local_streams_(StreamCollection::Create()),
-      remote_streams_(StreamCollection::Create()) {}
+      remote_streams_(StreamCollection::Create()),
+      call_(std::move(call)) {}
 
 PeerConnection::~PeerConnection() {
   TRACE_EVENT0("webrtc", "PeerConnection::~PeerConnection");
@@ -460,10 +463,6 @@ bool PeerConnection::Initialize(
     return false;
   }
 
-  // Call must be constructed on the worker thread.
-  factory_->worker_thread()->Invoke<void>(
-      RTC_FROM_HERE, rtc::Bind(&PeerConnection::CreateCall_w,
-                               this));
 
   session_.reset(new WebRtcSession(
       call_.get(), factory_->channel_manager(), configuration.media_config,
@@ -2373,23 +2372,6 @@ void PeerConnection::StopRtcEventLog_w() {
   if (event_log_) {
     event_log_->StopLogging();
   }
-}
-
-void PeerConnection::CreateCall_w() {
-  RTC_DCHECK(!call_);
-
-  const int kMinBandwidthBps = 30000;
-  const int kStartBandwidthBps = 300000;
-  const int kMaxBandwidthBps = 2000000;
-
-  webrtc::Call::Config call_config(event_log_.get());
-  call_config.audio_state =
-      factory_->channel_manager() ->media_engine()->GetAudioState();
-  call_config.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
-  call_config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
-  call_config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
-
-  call_.reset(webrtc::Call::Create(call_config));
 }
 
 }  // namespace webrtc

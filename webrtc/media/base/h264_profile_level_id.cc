@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_video/h264/profile_level_id.h"
+#include "webrtc/media/base/h264_profile_level_id.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -33,14 +33,9 @@ const uint8_t kConstraintSet3Flag = 0x10;
 // will return 0b10110000. constexpr is used so that the pattern table in
 // kProfilePatterns is statically initialized.
 constexpr uint8_t ByteMaskString(char c, const char (&str)[9]) {
-  return (str[0] == c) << 7
-      | (str[1] == c) << 6
-      | (str[2] == c) << 5
-      | (str[3] == c) << 4
-      | (str[4] == c) << 3
-      | (str[5] == c) << 2
-      | (str[6] == c) << 1
-      | (str[7] == c) << 0;
+  return (str[0] == c) << 7 | (str[1] == c) << 6 | (str[2] == c) << 5 |
+         (str[3] == c) << 4 | (str[4] == c) << 3 | (str[5] == c) << 2 |
+         (str[6] == c) << 1 | (str[7] == c) << 0;
 }
 
 // Class for matching bit patterns such as "x1xx0000" where 'x' is allowed to be

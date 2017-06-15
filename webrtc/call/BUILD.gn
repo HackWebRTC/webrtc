@@ -15,6 +15,7 @@ rtc_source_set("call_interfaces") {
     "audio_send_stream.h",
     "audio_state.h",
     "call.h",
+    "callfactoryinterface.h",
     "flexfec_receive_stream.h",
     "syncable.cc",
     "syncable.h",
@@ -71,6 +72,8 @@ rtc_static_library("call") {
   sources = [
     "bitrate_allocator.cc",
     "call.cc",
+    "callfactory.cc",
+    "callfactory.h",
     "flexfec_receive_stream_impl.cc",
     "flexfec_receive_stream_impl.h",
   ]

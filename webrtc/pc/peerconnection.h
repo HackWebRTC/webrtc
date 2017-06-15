@@ -61,7 +61,9 @@ class PeerConnection : public PeerConnectionInterface,
                        public rtc::MessageHandler,
                        public sigslot::has_slots<> {
  public:
-  explicit PeerConnection(PeerConnectionFactory* factory);
+  explicit PeerConnection(PeerConnectionFactory* factory,
+                          std::unique_ptr<RtcEventLog> event_log,
+                          std::unique_ptr<Call> call);
 
   bool Initialize(
       const PeerConnectionInterface::RTCConfiguration& configuration,
@@ -391,9 +393,6 @@ class PeerConnection : public PeerConnectionInterface,
   // Starts recording an Rtc EventLog using the supplied platform file.
   // This function should only be called from the worker thread.
   void StopRtcEventLog_w();
-
-  // Creates the |*call_| object. Must only be called from the worker thread.
-  void CreateCall_w();
 
   // Storing the factory as a scoped reference pointer ensures that the memory
   // in the PeerConnectionFactoryImpl remains available as long as the
