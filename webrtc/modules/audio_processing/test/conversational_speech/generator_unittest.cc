@@ -12,7 +12,7 @@
 // members. Part of them focus on accepting or rejecting different
 // conversational speech setups. A setup is defined by a set of audio tracks and
 // timing information).
-// The docstring at the beginning of each TEST_F(ConversationalSpeechTest,
+// The docstring at the beginning of each TEST(ConversationalSpeechTest,
 // MultiEndCallSetup*) function looks like the drawing below and indicates which
 // setup is tested.
 //
@@ -174,16 +174,7 @@ void DeleteFolderAndContents(const std::string& dir) {
 
 using testing::_;
 
-// TODO(alessiob): Remove fixture once conversational_speech fully implemented
-// and replace TEST_F with TEST.
-class ConversationalSpeechTest : public testing::Test {
- public:
-  ConversationalSpeechTest() {
-    rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
-  }
-};
-
-TEST_F(ConversationalSpeechTest, Settings) {
+TEST(ConversationalSpeechTest, Settings) {
   const conversational_speech::Config config(
       audiotracks_path, timing_filepath, output_path);
 
@@ -193,7 +184,7 @@ TEST_F(ConversationalSpeechTest, Settings) {
   EXPECT_EQ(output_path, config.output_path());
 }
 
-TEST_F(ConversationalSpeechTest, TimingSaveLoad) {
+TEST(ConversationalSpeechTest, TimingSaveLoad) {
   // Save test timing.
   const std::string temporary_filepath = TempFilename(
       OutputPath(), "TempTimingTestFile");
@@ -213,7 +204,7 @@ TEST_F(ConversationalSpeechTest, TimingSaveLoad) {
   }
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallCreate) {
+TEST(ConversationalSpeechTest, MultiEndCallCreate) {
   auto mock_wavreader_factory = CreateMockWavReaderFactory();
 
   // There are 5 unique audio tracks to read.
@@ -230,7 +221,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallCreate) {
   EXPECT_EQ(6u, multiend_call.speaking_turns().size());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupDifferentSampleRates) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupDifferentSampleRates) {
   const std::vector<Turn> timing = {
       {"A", "sr8000", 0},
       {"B", "sr16000", 0},
@@ -245,7 +236,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupDifferentSampleRates) {
   EXPECT_FALSE(multiend_call.valid());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupMultipleChannels) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupMultipleChannels) {
   const std::vector<Turn> timing = {
       {"A", "sr16000_stereo", 0},
       {"B", "sr16000_stereo", 0},
@@ -260,7 +251,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupMultipleChannels) {
   EXPECT_FALSE(multiend_call.valid());
 }
 
-TEST_F(ConversationalSpeechTest,
+TEST(ConversationalSpeechTest,
        MultiEndCallSetupDifferentSampleRatesAndMultipleNumChannels) {
   const std::vector<Turn> timing = {
       {"A", "sr8000", 0},
@@ -276,7 +267,7 @@ TEST_F(ConversationalSpeechTest,
   EXPECT_FALSE(multiend_call.valid());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupFirstOffsetNegative) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupFirstOffsetNegative) {
   const std::vector<Turn> timing = {
       {"A", "t500", -100},
       {"B", "t500", 0},
@@ -291,7 +282,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupFirstOffsetNegative) {
   EXPECT_FALSE(multiend_call.valid());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupSimple) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupSimple) {
   // Accept:
   // A 0****.....
   // B .....1****
@@ -316,7 +307,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupSimple) {
   EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupPause) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupPause) {
   // Accept:
   // A 0****.......
   // B .......1****
@@ -341,7 +332,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupPause) {
   EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalk) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupCrossTalk) {
   // Accept:
   // A 0****....
   // B ....1****
@@ -366,7 +357,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalk) {
   EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupInvalidOrder) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupInvalidOrder) {
   // Reject:
   // A ..0****
   // B .1****.  The n-th turn cannot start before the (n-1)-th one.
@@ -384,7 +375,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupInvalidOrder) {
   EXPECT_FALSE(multiend_call.valid());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkThree) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupCrossTalkThree) {
   // Accept:
   // A 0****2****...
   // B ...1*********
@@ -410,7 +401,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkThree) {
   EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupSelfCrossTalkNearInvalid) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupSelfCrossTalkNearInvalid) {
   // Reject:
   // A 0****......
   // A ...1****...
@@ -431,7 +422,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupSelfCrossTalkNearInvalid) {
   EXPECT_FALSE(multiend_call.valid());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupSelfCrossTalkFarInvalid) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupSelfCrossTalkFarInvalid) {
   // Reject:
   // A 0*********
   // B 1**.......
@@ -454,7 +445,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupSelfCrossTalkFarInvalid) {
   EXPECT_FALSE(multiend_call.valid());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleValid) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleValid) {
   // Accept:
   // A 0*********..
   // B ..1****.....
@@ -481,7 +472,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleValid) {
   EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleInvalid) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleInvalid) {
   // Reject:
   // A 0*********
   // B ..1****...
@@ -503,7 +494,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleInvalid) {
   EXPECT_FALSE(multiend_call.valid());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleAndPause) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleAndPause) {
   // Accept:
   // A 0*********..
   // B .2****......
@@ -530,7 +521,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleAndPause) {
   EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkFullOverlapValid) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupCrossTalkFullOverlapValid) {
   // Accept:
   // A 0****
   // B 1****
@@ -553,7 +544,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkFullOverlapValid) {
   EXPECT_EQ(2u, multiend_call.speaking_turns().size());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupLongSequence) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupLongSequence) {
   // Accept:
   // A 0****....3****.5**.
   // B .....1****...4**...
@@ -586,7 +577,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupLongSequence) {
   EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallSetupLongSequenceInvalid) {
+TEST(ConversationalSpeechTest, MultiEndCallSetupLongSequenceInvalid) {
   // Reject:
   // A 0****....3****.6**
   // B .....1****...4**..
@@ -614,7 +605,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupLongSequenceInvalid) {
   EXPECT_FALSE(multiend_call.valid());
 }
 
-TEST_F(ConversationalSpeechTest, MultiEndCallWavReaderAdaptorSine) {
+TEST(ConversationalSpeechTest, MultiEndCallWavReaderAdaptorSine) {
   // Parameters with which wav files are created.
   constexpr int duration_seconds = 5;
   const int sample_rates[] = {8000, 11025, 16000, 22050, 32000, 44100, 48000};
@@ -641,7 +632,7 @@ TEST_F(ConversationalSpeechTest, MultiEndCallWavReaderAdaptorSine) {
   }
 }
 
-TEST_F(ConversationalSpeechTest, DISABLED_MultiEndCallSimulator) {
+TEST(ConversationalSpeechTest, DISABLED_MultiEndCallSimulator) {
   // Simulated call (one character corresponding to 500 ms):
   // A 0*********...........2*********.....
   // B ...........1*********.....3*********

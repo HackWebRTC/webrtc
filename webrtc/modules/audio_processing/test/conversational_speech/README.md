@@ -17,9 +17,7 @@ For instance, echo cancellation in the APM module can be evaluated using two-end
 audio tracks as input and reverse input.
 
 By indicating negative and positive time offsets, one can reproduce cross-talk
-and silence in the conversation.
-
-IMPORTANT: **the whole code has not been landed yet.**
+(aka double-talk) and silence in the conversation.
 
 ### Example
 

@@ -11,8 +11,12 @@
 #include <iostream>
 
 #include "gflags/gflags.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/config.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/timing.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_factory.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/multiend_call.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/simulator.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -48,14 +52,31 @@ DEFINE_validator(o, dir_exists);
 int main(int argc, char* argv[]) {
   google::SetUsageMessage(kUsageDescription);
   google::ParseCommandLineFlags(&argc, &argv, true);
-
   conversational_speech::Config config(FLAGS_i, FLAGS_t, FLAGS_o);
 
-  // TODO(alessiob): remove line below once debugged.
-  rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
-  LOG(LS_VERBOSE) << "i = " << config.audiotracks_path();
-  LOG(LS_VERBOSE) << "t = " << config.timing_filepath();
-  LOG(LS_VERBOSE) << "o = " << config.output_path();
+  // Load timing.
+  std::vector<conversational_speech::Turn> timing =
+      conversational_speech::LoadTiming(config.timing_filepath());
+
+  // Parse timing and audio tracks.
+  auto wavreader_factory = rtc::MakeUnique<
+      conversational_speech::WavReaderFactory>();
+  conversational_speech::MultiEndCall multiend_call(
+      timing, config.audiotracks_path(), std::move(wavreader_factory));
+
+  // Generate output audio tracks.
+  auto generated_audiotrack_pairs = conversational_speech::Simulate(
+      multiend_call, config.output_path());
+
+  // Show paths to created audio tracks.
+  std::cout << "Output files:" << std::endl;
+  for (const auto& output_paths_entry : *generated_audiotrack_pairs) {
+    std::cout << "  speaker: " << output_paths_entry.first << std::endl;
+    std::cout << "    near end: " << output_paths_entry.second.near_end
+        << std::endl;
+    std::cout << "    far end: " << output_paths_entry.second.far_end
+        << std::endl;
+  }
 
   return 0;
 }
