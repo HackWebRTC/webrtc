@@ -19,6 +19,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/common_audio/include/audio_util.h"
+#include "webrtc/modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
@@ -79,7 +80,7 @@ void CopyToAudioFrame(const ChannelBuffer<float>& src, AudioFrame* dest) {
 
 AudioProcessingSimulator::AudioProcessingSimulator(
     const SimulationSettings& settings)
-    : settings_(settings) {
+    : settings_(settings), worker_queue_("file_writer_task_queue") {
   if (settings_.ed_graph_output_filename &&
       settings_.ed_graph_output_filename->size() > 0) {
     residual_echo_likelihood_graph_writer_.open(
@@ -249,7 +250,7 @@ void AudioProcessingSimulator::SetupOutput() {
 
 void AudioProcessingSimulator::DestroyAudioProcessor() {
   if (settings_.aec_dump_output_filename) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError, ap_->StopDebugRecording());
+    ap_->DetachAecDump();
   }
 }
 
@@ -389,11 +390,8 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   }
 
   if (settings_.aec_dump_output_filename) {
-    size_t kMaxFilenameSize = AudioProcessing::kMaxFilenameSize;
-    RTC_CHECK_LE(settings_.aec_dump_output_filename->size(), kMaxFilenameSize);
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->StartDebugRecording(
-                     settings_.aec_dump_output_filename->c_str(), -1));
+    ap_->AttachAecDump(AecDumpFactory::Create(
+        *settings_.aec_dump_output_filename, -1, &worker_queue_));
   }
 }
 

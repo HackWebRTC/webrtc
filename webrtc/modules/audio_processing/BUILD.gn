@@ -595,6 +595,9 @@ if (rtc_include_tests) {
         ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",
         ":audioproc_unittest_proto",
+        "../../base:rtc_task_queue",
+        "aec_dump",
+        "aec_dump:aec_dump_unittests",
       ]
       sources += [
         "aec3/adaptive_fir_filter_unittest.cc",
@@ -745,10 +748,13 @@ if (rtc_include_tests) {
         ":audioproc_test_utils",
         "../../base:protobuf_utils",
         "../../base:rtc_base_approved",
+        "../../base:rtc_task_queue",
         "../../common_audio:common_audio",
         "../../system_wrappers",
         "../../system_wrappers:system_wrappers_default",
         "../../test:test_support",
+        "aec_dump",
+        "aec_dump:aec_dump_impl",
         "//testing/gtest",
         "//third_party/gflags:gflags",
       ]

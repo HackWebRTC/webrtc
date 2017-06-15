@@ -17,9 +17,10 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/timeutils.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
@@ -176,6 +177,8 @@ class AudioProcessingSimulator {
   std::unique_ptr<ChannelBufferWavWriter> reverse_buffer_writer_;
   TickIntervalStats proc_time_;
   std::ofstream residual_echo_likelihood_graph_writer_;
+
+  rtc::TaskQueue worker_queue_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioProcessingSimulator);
 };

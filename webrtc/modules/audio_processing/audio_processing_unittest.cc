@@ -22,10 +22,13 @@
 #include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/protobuf_utils.h"
 #include "webrtc/base/safe_minmax.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "webrtc/modules/audio_processing/audio_processing_impl.h"
 #include "webrtc/modules/audio_processing/beamformer/mock_nonlinear_beamformer.h"
 #include "webrtc/modules/audio_processing/common.h"
@@ -1709,6 +1712,7 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
                                const std::string& out_filename,
                                Format format,
                                int max_size_bytes) {
+  rtc::TaskQueue worker_queue("ApmTest_worker_queue");
   FILE* in_file = fopen(in_filename.c_str(), "rb");
   ASSERT_TRUE(in_file != NULL);
   audioproc::Event event_msg;
@@ -1734,10 +1738,12 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
            msg.num_reverse_channels(),
            false);
       if (first_init) {
-        // StartDebugRecording() writes an additional init message. Don't start
+        // AttachAecDump() writes an additional init message. Don't start
         // recording until after the first init to avoid the extra message.
-        EXPECT_NOERR(
-            apm_->StartDebugRecording(out_filename.c_str(), max_size_bytes));
+        auto aec_dump =
+            AecDumpFactory::Create(out_filename, max_size_bytes, &worker_queue);
+        EXPECT_TRUE(aec_dump);
+        apm_->AttachAecDump(std::move(aec_dump));
         first_init = false;
       }
 
@@ -1794,7 +1800,7 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
       ProcessStreamChooser(format);
     }
   }
-  EXPECT_NOERR(apm_->StopDebugRecording());
+  apm_->DetachAecDump();
   fclose(in_file);
 }
 
@@ -1874,19 +1880,24 @@ TEST_F(ApmTest, VerifyDebugDumpFloat) {
 
 // TODO(andrew): expand test to verify output.
 TEST_F(ApmTest, DebugDump) {
+  rtc::TaskQueue worker_queue("ApmTest_worker_queue");
   const std::string filename =
       test::TempFilename(test::OutputPath(), "debug_aec");
-  EXPECT_EQ(apm_->kNullPointerError,
-            apm_->StartDebugRecording(static_cast<const char*>(NULL), -1));
+  {
+    auto aec_dump = AecDumpFactory::Create("", -1, &worker_queue);
+    EXPECT_FALSE(aec_dump);
+  }
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // Stopping without having started should be OK.
-  EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
+  apm_->DetachAecDump();
 
-  EXPECT_EQ(apm_->kNoError, apm_->StartDebugRecording(filename.c_str(), -1));
+  auto aec_dump = AecDumpFactory::Create(filename, -1, &worker_queue);
+  EXPECT_TRUE(aec_dump);
+  apm_->AttachAecDump(std::move(aec_dump));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessReverseStream(revframe_));
-  EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
+  apm_->DetachAecDump();
 
   // Verify the file has been written.
   FILE* fid = fopen(filename.c_str(), "r");
@@ -1896,10 +1907,6 @@ TEST_F(ApmTest, DebugDump) {
   ASSERT_EQ(0, fclose(fid));
   ASSERT_EQ(0, remove(filename.c_str()));
 #else
-  EXPECT_EQ(apm_->kUnsupportedFunctionError,
-            apm_->StartDebugRecording(filename.c_str(), -1));
-  EXPECT_EQ(apm_->kUnsupportedFunctionError, apm_->StopDebugRecording());
-
   // Verify the file has NOT been written.
   ASSERT_TRUE(fopen(filename.c_str(), "r") == NULL);
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
@@ -1907,21 +1914,23 @@ TEST_F(ApmTest, DebugDump) {
 
 // TODO(andrew): expand test to verify output.
 TEST_F(ApmTest, DebugDumpFromFileHandle) {
-  FILE* fid = NULL;
-  EXPECT_EQ(apm_->kNullPointerError, apm_->StartDebugRecording(fid, -1));
+  rtc::TaskQueue worker_queue("ApmTest_worker_queue");
+
   const std::string filename =
       test::TempFilename(test::OutputPath(), "debug_aec");
-  fid = fopen(filename.c_str(), "w");
+  FILE* fid = fopen(filename.c_str(), "w");
   ASSERT_TRUE(fid);
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // Stopping without having started should be OK.
-  EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
+  apm_->DetachAecDump();
 
-  EXPECT_EQ(apm_->kNoError, apm_->StartDebugRecording(fid, -1));
+  auto aec_dump = AecDumpFactory::Create(fid, -1, &worker_queue);
+  EXPECT_TRUE(aec_dump);
+  apm_->AttachAecDump(std::move(aec_dump));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessReverseStream(revframe_));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
-  EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
+  apm_->DetachAecDump();
 
   // Verify the file has been written.
   fid = fopen(filename.c_str(), "r");
@@ -1931,10 +1940,6 @@ TEST_F(ApmTest, DebugDumpFromFileHandle) {
   ASSERT_EQ(0, fclose(fid));
   ASSERT_EQ(0, remove(filename.c_str()));
 #else
-  EXPECT_EQ(apm_->kUnsupportedFunctionError,
-            apm_->StartDebugRecording(fid, -1));
-  EXPECT_EQ(apm_->kUnsupportedFunctionError, apm_->StopDebugRecording());
-
   ASSERT_EQ(0, fclose(fid));
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
