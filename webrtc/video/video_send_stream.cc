@@ -632,9 +632,10 @@ VideoSendStream::VideoSendStream(
                    encoder_config.content_type),
       config_(std::move(config)),
       content_type_(encoder_config.content_type) {
-  vie_encoder_.reset(new ViEEncoder(
-      num_cpu_cores, &stats_proxy_, config_.encoder_settings,
-      config_.pre_encode_callback, config_.post_encode_callback));
+  vie_encoder_.reset(
+      new ViEEncoder(num_cpu_cores, &stats_proxy_, config_.encoder_settings,
+                     config_.pre_encode_callback, config_.post_encode_callback,
+                     std::unique_ptr<OveruseFrameDetector>()));
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
       &send_stream_, &thread_sync_event_, &stats_proxy_, vie_encoder_.get(),
       module_process_thread, call_stats, transport, bitrate_allocator,

@@ -10,6 +10,8 @@
 
 #include "webrtc/video/encoder_rtcp_feedback.h"
 
+#include <memory>
+
 #include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
@@ -27,7 +29,8 @@ class MockVieEncoder : public ViEEncoder {
                    send_stats_proxy,
                    VideoSendStream::Config::EncoderSettings("fake", 0, nullptr),
                    nullptr,
-                   nullptr) {}
+                   nullptr,
+                   std::unique_ptr<OveruseFrameDetector>()) {}
   ~MockVieEncoder() { Stop(); }
 
   MOCK_METHOD1(OnReceivedIntraFrameRequest, void(size_t));

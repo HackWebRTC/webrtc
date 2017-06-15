@@ -48,6 +48,7 @@ const size_t kMaxPayloadLength = 1440;
 const int kTargetBitrateBps = 1000000;
 const int kLowTargetBitrateBps = kTargetBitrateBps / 10;
 const int kMaxInitialFramedrop = 4;
+const int kDefaultFramerate = 30;
 
 class TestBuffer : public webrtc::I420Buffer {
  public:
@@ -63,6 +64,35 @@ class TestBuffer : public webrtc::I420Buffer {
   rtc::Event* const event_;
 };
 
+class CpuOveruseDetectorProxy : public OveruseFrameDetector {
+ public:
+  CpuOveruseDetectorProxy(const CpuOveruseOptions& options,
+                          AdaptationObserverInterface* overuse_observer,
+                          EncodedFrameObserver* encoder_timing_,
+                          CpuOveruseMetricsObserver* metrics_observer)
+      : OveruseFrameDetector(options,
+                             overuse_observer,
+                             encoder_timing_,
+                             metrics_observer),
+        last_target_framerate_fps_(-1) {}
+  virtual ~CpuOveruseDetectorProxy() {}
+
+  void OnTargetFramerateUpdated(int framerate_fps) override {
+    rtc::CritScope cs(&lock_);
+    last_target_framerate_fps_ = framerate_fps;
+    OveruseFrameDetector::OnTargetFramerateUpdated(framerate_fps);
+  }
+
+  int GetLastTargetFramerate() {
+    rtc::CritScope cs(&lock_);
+    return last_target_framerate_fps_;
+  }
+
+ private:
+  rtc::CriticalSection lock_;
+  int last_target_framerate_fps_ GUARDED_BY(lock_);
+};
+
 class ViEEncoderUnderTest : public ViEEncoder {
  public:
   ViEEncoderUnderTest(SendStatisticsProxy* stats_proxy,
@@ -71,7 +101,13 @@ class ViEEncoderUnderTest : public ViEEncoder {
                    stats_proxy,
                    settings,
                    nullptr /* pre_encode_callback */,
-                   nullptr /* encoder_timing */) {}
+                   nullptr /* encoder_timing */,
+                   std::unique_ptr<OveruseFrameDetector>(
+                       overuse_detector_proxy_ = new CpuOveruseDetectorProxy(
+                           GetCpuOveruseOptions(settings.full_overuse_time),
+                           this,
+                           nullptr,
+                           stats_proxy))) {}
 
   void PostTaskAndWait(bool down, AdaptReason reason) {
     rtc::Event event(false, false);
@@ -99,14 +135,17 @@ class ViEEncoderUnderTest : public ViEEncoder {
   void TriggerQualityLow() { PostTaskAndWait(true, AdaptReason::kQuality); }
 
   void TriggerQualityHigh() { PostTaskAndWait(false, AdaptReason::kQuality); }
+
+  CpuOveruseDetectorProxy* overuse_detector_proxy_;
 };
 
 class VideoStreamFactory
     : public VideoEncoderConfig::VideoStreamFactoryInterface {
  public:
-  explicit VideoStreamFactory(size_t num_temporal_layers)
-      : num_temporal_layers_(num_temporal_layers) {
+  explicit VideoStreamFactory(size_t num_temporal_layers, int framerate)
+      : num_temporal_layers_(num_temporal_layers), framerate_(framerate) {
     EXPECT_GT(num_temporal_layers, 0u);
+    EXPECT_GT(framerate, 0);
   }
 
  private:
@@ -118,10 +157,13 @@ class VideoStreamFactory
         test::CreateVideoStreams(width, height, encoder_config);
     for (VideoStream& stream : streams) {
       stream.temporal_layer_thresholds_bps.resize(num_temporal_layers_ - 1);
+      stream.max_framerate = framerate_;
     }
     return streams;
   }
+
   const size_t num_temporal_layers_;
+  const int framerate_;
 };
 
 class AdaptingFrameForwarder : public test::FrameForwarder {
@@ -264,7 +306,8 @@ class ViEEncoderTest : public ::testing::Test {
     video_encoder_config.number_of_streams = num_streams;
     video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
     video_encoder_config.video_stream_factory =
-        new rtc::RefCountedObject<VideoStreamFactory>(num_temporal_layers);
+        new rtc::RefCountedObject<VideoStreamFactory>(num_temporal_layers,
+                                                      kDefaultFramerate);
     ConfigureEncoder(std::move(video_encoder_config), nack_enabled);
   }
 
@@ -2023,6 +2066,164 @@ TEST_F(ViEEncoderTest, CallsBitrateObserver) {
   video_source_.IncomingCapturedFrame(CreateFrame(
       kStartTimeMs + kProcessIntervalMs, codec_width_, codec_height_));
   sink_.WaitForEncodedFrame(kStartTimeMs + kProcessIntervalMs);
+
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, OveruseDetectorUpdatedOnReconfigureAndAdaption) {
+  const int kFrameWidth = 1280;
+  const int kFrameHeight = 720;
+  const int kFramerate = 24;
+
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+  test::FrameForwarder source;
+  vie_encoder_->SetSource(
+      &source, VideoSendStream::DegradationPreference::kMaintainResolution);
+
+  // Insert a single frame, triggering initial configuration.
+  source.IncomingCapturedFrame(CreateFrame(1, kFrameWidth, kFrameHeight));
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+
+  EXPECT_EQ(vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
+            kDefaultFramerate);
+
+  // Trigger reconfigure encoder (without resetting the entire instance).
+  VideoEncoderConfig video_encoder_config;
+  video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
+  video_encoder_config.number_of_streams = 1;
+  video_encoder_config.video_stream_factory =
+      new rtc::RefCountedObject<VideoStreamFactory>(1, kFramerate);
+  vie_encoder_->ConfigureEncoder(std::move(video_encoder_config),
+                                 kMaxPayloadLength, false);
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+
+  // Detector should be updated with fps limit from codec config.
+  EXPECT_EQ(vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
+            kFramerate);
+
+  // Trigger overuse, max framerate should be reduced.
+  VideoSendStream::Stats stats = stats_proxy_->GetStats();
+  stats.input_frame_rate = kFramerate;
+  stats_proxy_->SetMockStats(stats);
+  vie_encoder_->TriggerCpuOveruse();
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+  int adapted_framerate =
+      vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate();
+  EXPECT_LT(adapted_framerate, kFramerate);
+
+  // Trigger underuse, max framerate should go back to codec configured fps.
+  // Set extra low fps, to make sure it's actually reset, not just incremented.
+  stats = stats_proxy_->GetStats();
+  stats.input_frame_rate = adapted_framerate / 2;
+  stats_proxy_->SetMockStats(stats);
+  vie_encoder_->TriggerCpuNormalUsage();
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+  EXPECT_EQ(vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
+            kFramerate);
+
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, OveruseDetectorUpdatedRespectsFramerateAfterUnderuse) {
+  const int kFrameWidth = 1280;
+  const int kFrameHeight = 720;
+  const int kLowFramerate = 15;
+  const int kHighFramerate = 25;
+
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+  test::FrameForwarder source;
+  vie_encoder_->SetSource(
+      &source, VideoSendStream::DegradationPreference::kMaintainResolution);
+
+  // Trigger initial configuration.
+  VideoEncoderConfig video_encoder_config;
+  video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
+  video_encoder_config.number_of_streams = 1;
+  video_encoder_config.video_stream_factory =
+      new rtc::RefCountedObject<VideoStreamFactory>(1, kLowFramerate);
+  source.IncomingCapturedFrame(CreateFrame(1, kFrameWidth, kFrameHeight));
+  vie_encoder_->ConfigureEncoder(std::move(video_encoder_config),
+                                 kMaxPayloadLength, false);
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+
+  EXPECT_EQ(vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
+            kLowFramerate);
+
+  // Trigger overuse, max framerate should be reduced.
+  VideoSendStream::Stats stats = stats_proxy_->GetStats();
+  stats.input_frame_rate = kLowFramerate;
+  stats_proxy_->SetMockStats(stats);
+  vie_encoder_->TriggerCpuOveruse();
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+  int adapted_framerate =
+      vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate();
+  EXPECT_LT(adapted_framerate, kLowFramerate);
+
+  // Reconfigure the encoder with a new (higher max framerate), max fps should
+  // still respect the adaptation.
+  video_encoder_config.video_stream_factory =
+      new rtc::RefCountedObject<VideoStreamFactory>(1, kHighFramerate);
+  source.IncomingCapturedFrame(CreateFrame(1, kFrameWidth, kFrameHeight));
+  vie_encoder_->ConfigureEncoder(std::move(video_encoder_config),
+                                 kMaxPayloadLength, false);
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+
+  EXPECT_EQ(vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
+            adapted_framerate);
+
+  // Trigger underuse, max framerate should go back to codec configured fps.
+  stats = stats_proxy_->GetStats();
+  stats.input_frame_rate = adapted_framerate;
+  stats_proxy_->SetMockStats(stats);
+  vie_encoder_->TriggerCpuNormalUsage();
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+  EXPECT_EQ(vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
+            kHighFramerate);
+
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, OveruseDetectorUpdatedOnDegradationPreferenceChange) {
+  const int kFrameWidth = 1280;
+  const int kFrameHeight = 720;
+  const int kFramerate = 24;
+
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+  test::FrameForwarder source;
+  vie_encoder_->SetSource(
+      &source, VideoSendStream::DegradationPreference::kMaintainResolution);
+
+  // Trigger initial configuration.
+  VideoEncoderConfig video_encoder_config;
+  video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
+  video_encoder_config.number_of_streams = 1;
+  video_encoder_config.video_stream_factory =
+      new rtc::RefCountedObject<VideoStreamFactory>(1, kFramerate);
+  source.IncomingCapturedFrame(CreateFrame(1, kFrameWidth, kFrameHeight));
+  vie_encoder_->ConfigureEncoder(std::move(video_encoder_config),
+                                 kMaxPayloadLength, false);
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+
+  EXPECT_EQ(vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
+            kFramerate);
+
+  // Trigger overuse, max framerate should be reduced.
+  VideoSendStream::Stats stats = stats_proxy_->GetStats();
+  stats.input_frame_rate = kFramerate;
+  stats_proxy_->SetMockStats(stats);
+  vie_encoder_->TriggerCpuOveruse();
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+  int adapted_framerate =
+      vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate();
+  EXPECT_LT(adapted_framerate, kFramerate);
+
+  // Change degradation preference to not enable framerate scaling. Target
+  // framerate should be changed to codec defined limit.
+  vie_encoder_->SetSource(
+      &source, VideoSendStream::DegradationPreference::kMaintainFramerate);
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+  EXPECT_EQ(vie_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
+            kFramerate);
 
   vie_encoder_->Stop();
 }

@@ -49,8 +49,20 @@ const double kRampUpBackoffFactor = 2.0;
 const int kMaxOverusesBeforeApplyRampupDelay = 4;
 
 // The maximum exponent to use in VCMExpFilter.
-const float kSampleDiffMs = 33.0f;
 const float kMaxExp = 7.0f;
+// Default value used before first reconfiguration.
+const int kDefaultFrameRate = 30;
+// Default sample diff, default frame rate.
+const float kDefaultSampleDiffMs = 1000.0f / kDefaultFrameRate;
+// A factor applied to the sample diff on OnTargetFramerateUpdated to determine
+// a max limit for the sample diff. For instance, with a framerate of 30fps,
+// the sample diff is capped to (1000 / 30) * 1.35 = 45ms. This prevents
+// triggering too soon if there are individual very large outliers.
+const float kMaxSampleDiffMarginFactor = 1.35f;
+// Minimum framerate allowed for usage calculation. This prevents crazy long
+// encode times from being accepted if the frame rate happens to be low.
+const int kMinFramerate = 7;
+const int kMaxFramerate = 30;
 
 const auto kScaleReasonCpu = AdaptationObserverInterface::AdaptReason::kCpu;
 }  // namespace
@@ -113,9 +125,9 @@ class OveruseFrameDetector::SendProcessingUsage {
       : kWeightFactorFrameDiff(0.998f),
         kWeightFactorProcessing(0.995f),
         kInitialSampleDiffMs(40.0f),
-        kMaxSampleDiffMs(45.0f),
         count_(0),
         options_(options),
+        max_sample_diff_ms_(kDefaultSampleDiffMs * kMaxSampleDiffMarginFactor),
         filtered_processing_ms_(new rtc::ExpFilter(kWeightFactorProcessing)),
         filtered_frame_diff_ms_(new rtc::ExpFilter(kWeightFactorFrameDiff)) {
     Reset();
@@ -124,21 +136,24 @@ class OveruseFrameDetector::SendProcessingUsage {
 
   void Reset() {
     count_ = 0;
+    max_sample_diff_ms_ = kDefaultSampleDiffMs * kMaxSampleDiffMarginFactor;
     filtered_frame_diff_ms_->Reset(kWeightFactorFrameDiff);
     filtered_frame_diff_ms_->Apply(1.0f, kInitialSampleDiffMs);
     filtered_processing_ms_->Reset(kWeightFactorProcessing);
     filtered_processing_ms_->Apply(1.0f, InitialProcessingMs());
   }
 
+  void SetMaxSampleDiffMs(float diff_ms) { max_sample_diff_ms_ = diff_ms; }
+
   void AddCaptureSample(float sample_ms) {
-    float exp = sample_ms / kSampleDiffMs;
+    float exp = sample_ms / kDefaultSampleDiffMs;
     exp = std::min(exp, kMaxExp);
     filtered_frame_diff_ms_->Apply(exp, sample_ms);
   }
 
   void AddSample(float processing_ms, int64_t diff_last_sample_ms) {
     ++count_;
-    float exp = diff_last_sample_ms / kSampleDiffMs;
+    float exp = diff_last_sample_ms / kDefaultSampleDiffMs;
     exp = std::min(exp, kMaxExp);
     filtered_processing_ms_->Apply(exp, processing_ms);
   }
@@ -148,7 +163,7 @@ class OveruseFrameDetector::SendProcessingUsage {
       return static_cast<int>(InitialUsageInPercent() + 0.5f);
     }
     float frame_diff_ms = std::max(filtered_frame_diff_ms_->filtered(), 1.0f);
-    frame_diff_ms = std::min(frame_diff_ms, kMaxSampleDiffMs);
+    frame_diff_ms = std::min(frame_diff_ms, max_sample_diff_ms_);
     float encode_usage_percent =
         100.0f * filtered_processing_ms_->filtered() / frame_diff_ms;
     return static_cast<int>(encode_usage_percent + 0.5);
@@ -168,9 +183,9 @@ class OveruseFrameDetector::SendProcessingUsage {
   const float kWeightFactorFrameDiff;
   const float kWeightFactorProcessing;
   const float kInitialSampleDiffMs;
-  const float kMaxSampleDiffMs;
   uint64_t count_;
   const CpuOveruseOptions options_;
+  float max_sample_diff_ms_;
   std::unique_ptr<rtc::ExpFilter> filtered_processing_ms_;
   std::unique_ptr<rtc::ExpFilter> filtered_frame_diff_ms_;
 };
@@ -331,6 +346,7 @@ OveruseFrameDetector::OveruseFrameDetector(
       last_capture_time_us_(-1),
       last_processed_capture_time_us_(-1),
       num_pixels_(0),
+      max_framerate_(kDefaultFrameRate),
       last_overuse_time_ms_(-1),
       checks_above_threshold_(0),
       num_overuse_detections_(0),
@@ -382,6 +398,8 @@ bool OveruseFrameDetector::FrameTimeoutDetected(int64_t now_us) const {
 }
 
 void OveruseFrameDetector::ResetAll(int num_pixels) {
+  // Reset state, as a result resolution being changed. Do not however change
+  // the current frame rate back to the default.
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   num_pixels_ = num_pixels;
   usage_->Reset();
@@ -390,6 +408,15 @@ void OveruseFrameDetector::ResetAll(int num_pixels) {
   last_processed_capture_time_us_ = -1;
   num_process_times_ = 0;
   metrics_ = rtc::Optional<CpuOveruseMetrics>();
+  OnTargetFramerateUpdated(max_framerate_);
+}
+
+void OveruseFrameDetector::OnTargetFramerateUpdated(int framerate_fps) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_GE(framerate_fps, 0);
+  max_framerate_ = std::min(kMaxFramerate, framerate_fps);
+  usage_->SetMaxSampleDiffMs((1000 / std::max(kMinFramerate, max_framerate_)) *
+                             kMaxSampleDiffMarginFactor);
 }
 
 void OveruseFrameDetector::FrameCaptured(const VideoFrame& frame,

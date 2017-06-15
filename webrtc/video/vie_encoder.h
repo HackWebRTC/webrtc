@@ -77,7 +77,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
              SendStatisticsProxy* stats_proxy,
              const VideoSendStream::Config::EncoderSettings& settings,
              rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
-             EncodedFrameObserver* encoder_timing);
+             EncodedFrameObserver* encoder_timing,
+             std::unique_ptr<OveruseFrameDetector> overuse_detector);
   ~ViEEncoder();
   // RegisterProcessThread register |module_process_thread| with those objects
   // that use it. Registration has to happen on the thread where
@@ -129,6 +130,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // These methods are protected for easier testing.
   void AdaptUp(AdaptReason reason) override;
   void AdaptDown(AdaptReason reason) override;
+  static CpuOveruseOptions GetCpuOveruseOptions(bool full_overuse_time);
 
  private:
   class ConfigureEncoderTask;
@@ -232,7 +234,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   const VideoCodecType codec_type_;
 
   vcm::VideoSender video_sender_ ACCESS_ON(&encoder_queue_);
-  OveruseFrameDetector overuse_detector_ ACCESS_ON(&encoder_queue_);
+  std::unique_ptr<OveruseFrameDetector> overuse_detector_
+      ACCESS_ON(&encoder_queue_);
   std::unique_ptr<QualityScaler> quality_scaler_ ACCESS_ON(&encoder_queue_);
 
   SendStatisticsProxy* const stats_proxy_;
@@ -246,6 +249,9 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   VideoEncoderConfig encoder_config_ ACCESS_ON(&encoder_queue_);
   std::unique_ptr<VideoBitrateAllocator> rate_allocator_
       ACCESS_ON(&encoder_queue_);
+  // The maximum frame rate of the current codec configuration, as determined
+  // at the last ReconfigureEncoder() call.
+  int max_framerate_ ACCESS_ON(&encoder_queue_);
 
   // Set when ConfigureEncoder has been called in order to lazy reconfigure the
   // encoder on the next frame.

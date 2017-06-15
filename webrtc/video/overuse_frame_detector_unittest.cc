@@ -139,6 +139,20 @@ class OveruseFrameDetectorTest : public ::testing::Test,
 
   int UsagePercent() { return metrics_.encode_usage_percent; }
 
+  int64_t OveruseProcessingTimeLimitForFramerate(int fps) const {
+    int64_t frame_interval = rtc::kNumMicrosecsPerSec / fps;
+    int64_t max_processing_time_us =
+        (frame_interval * options_.high_encode_usage_threshold_percent) / 100;
+    return max_processing_time_us;
+  }
+
+  int64_t UnderuseProcessingTimeLimitForFramerate(int fps) const {
+    int64_t frame_interval = rtc::kNumMicrosecsPerSec / fps;
+    int64_t max_processing_time_us =
+        (frame_interval * options_.low_encode_usage_threshold_percent) / 100;
+    return max_processing_time_us;
+  }
+
   CpuOveruseOptions options_;
   rtc::ScopedFakeClock clock_;
   std::unique_ptr<MockCpuOveruseObserver> observer_;
@@ -353,6 +367,117 @@ TEST_F(OveruseFrameDetectorTest, RunOnTqNormalUsage) {
   });
 
   EXPECT_TRUE(event.Wait(10000));
+}
+
+TEST_F(OveruseFrameDetectorTest, MaxIntervalScalesWithFramerate) {
+  const int kCapturerMaxFrameRate = 30;
+  const int kEncodeMaxFrameRate = 20;  // Maximum fps the encoder can sustain.
+
+  // Trigger overuse.
+  int64_t frame_interval_us = rtc::kNumMicrosecsPerSec / kCapturerMaxFrameRate;
+  // Processing time just below over use limit given kEncodeMaxFrameRate.
+  int64_t processing_time_us =
+      (98 * OveruseProcessingTimeLimitForFramerate(kEncodeMaxFrameRate)) / 100;
+  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(1);
+  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
+    InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
+                                    processing_time_us);
+    overuse_detector_->CheckForOveruse();
+  }
+
+  // Simulate frame rate reduction and normal usage.
+  frame_interval_us = rtc::kNumMicrosecsPerSec / kEncodeMaxFrameRate;
+  overuse_detector_->OnTargetFramerateUpdated(kEncodeMaxFrameRate);
+  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(0);
+  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
+    InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
+                                    processing_time_us);
+    overuse_detector_->CheckForOveruse();
+  }
+
+  // Reduce processing time to trigger underuse.
+  processing_time_us =
+      (98 * UnderuseProcessingTimeLimitForFramerate(kEncodeMaxFrameRate)) / 100;
+  EXPECT_CALL(*(observer_.get()), AdaptUp(reason_)).Times(1);
+  InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
+                                  processing_time_us);
+  overuse_detector_->CheckForOveruse();
+}
+
+TEST_F(OveruseFrameDetectorTest, RespectsMinFramerate) {
+  const int kMinFrameRate = 7;  // Minimum fps allowed by current detector impl.
+  overuse_detector_->OnTargetFramerateUpdated(kMinFrameRate);
+
+  // Normal usage just at the limit.
+  int64_t frame_interval_us = rtc::kNumMicrosecsPerSec / kMinFrameRate;
+  // Processing time just below over use limit given kEncodeMaxFrameRate.
+  int64_t processing_time_us =
+      (98 * OveruseProcessingTimeLimitForFramerate(kMinFrameRate)) / 100;
+  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(0);
+  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
+    InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
+                                    processing_time_us);
+    overuse_detector_->CheckForOveruse();
+  }
+
+  // Over the limit to overuse.
+  processing_time_us =
+      (102 * OveruseProcessingTimeLimitForFramerate(kMinFrameRate)) / 100;
+  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(1);
+  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
+    InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
+                                    processing_time_us);
+    overuse_detector_->CheckForOveruse();
+  }
+
+  // Reduce input frame rate. Should still trigger overuse.
+  overuse_detector_->OnTargetFramerateUpdated(kMinFrameRate - 1);
+  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(1);
+  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
+    InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
+                                    processing_time_us);
+    overuse_detector_->CheckForOveruse();
+  }
+}
+
+TEST_F(OveruseFrameDetectorTest, LimitsMaxFrameInterval) {
+  const int kMaxFrameRate = 20;
+  overuse_detector_->OnTargetFramerateUpdated(kMaxFrameRate);
+  int64_t frame_interval_us = rtc::kNumMicrosecsPerSec / kMaxFrameRate;
+  // Maximum frame interval allowed is 35% above ideal.
+  int64_t max_frame_interval_us = (135 * frame_interval_us) / 100;
+  // Maximum processing time, without triggering overuse, allowed with the above
+  // frame interval.
+  int64_t max_processing_time_us =
+      (max_frame_interval_us * options_.high_encode_usage_threshold_percent) /
+      100;
+
+  // Processing time just below overuse limit given kMaxFrameRate.
+  int64_t processing_time_us = (98 * max_processing_time_us) / 100;
+  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(0);
+  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
+    InsertAndSendFramesWithInterval(1200, max_frame_interval_us, kWidth,
+                                    kHeight, processing_time_us);
+    overuse_detector_->CheckForOveruse();
+  }
+
+  // Go above limit, trigger overuse.
+  processing_time_us = (102 * max_processing_time_us) / 100;
+  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(1);
+  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
+    InsertAndSendFramesWithInterval(1200, max_frame_interval_us, kWidth,
+                                    kHeight, processing_time_us);
+    overuse_detector_->CheckForOveruse();
+  }
+
+  // Increase frame interval, should still trigger overuse.
+  max_frame_interval_us *= 2;
+  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(1);
+  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
+    InsertAndSendFramesWithInterval(1200, max_frame_interval_us, kWidth,
+                                    kHeight, processing_time_us);
+    overuse_detector_->CheckForOveruse();
+  }
 }
 
 }  // namespace webrtc
