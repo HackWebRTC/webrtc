@@ -402,10 +402,7 @@ static NSUInteger const kBottomViewHeight = 200;
   ARDAppClient* client = [[ARDAppClient alloc] initWithDelegate:self];
   [client connectToRoomWithId:roomId
                      settings:[[ARDSettingsModel alloc] init]  // Use default settings.
-                   isLoopback:isLoopback
-                  isAudioOnly:NO
-            shouldMakeAecDump:NO
-        shouldUseLevelControl:NO];
+                   isLoopback:isLoopback];
   _client = client;
 }
 

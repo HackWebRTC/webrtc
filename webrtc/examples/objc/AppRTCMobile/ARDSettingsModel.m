@@ -56,13 +56,8 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
 }
 
 - (NSString *)currentVideoResolutionSettingFromStore {
-  NSString *resolution = [[self settingsStore] videoResolution];
-  if (!resolution) {
-    resolution = [self defaultVideoResolutionSetting];
-    // To ensure consistency add the default to the store.
-    [[self settingsStore] setVideoResolution:resolution];
-  }
-  return resolution;
+  [self registerStoreDefaults];
+  return [[self settingsStore] videoResolution];
 }
 
 - (BOOL)storeVideoResolutionSetting:(NSString *)resolution {
@@ -78,12 +73,8 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
 }
 
 - (NSString *)currentVideoCodecSettingFromStore {
-  NSString *videoCodec = [[self settingsStore] videoCodec];
-  if (!videoCodec) {
-    videoCodec = [self defaultVideoCodecSetting];
-    [[self settingsStore] setVideoCodec:videoCodec];
-  }
-  return videoCodec;
+  [self registerStoreDefaults];
+  return [[self settingsStore] videoCodec];
 }
 
 - (BOOL)storeVideoCodecSetting:(NSString *)videoCodec {
@@ -95,6 +86,7 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
 }
 
 - (nullable NSNumber *)currentMaxBitrateSettingFromStore {
+  [self registerStoreDefaults];
   return [[self settingsStore] maxBitrate];
 }
 
@@ -102,11 +94,44 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
   [[self settingsStore] setMaxBitrate:bitrate];
 }
 
+- (BOOL)currentAudioOnlySettingFromStore {
+  return [[self settingsStore] audioOnly];
+}
+
+- (void)storeAudioOnlySetting:(BOOL)audioOnly {
+  [[self settingsStore] setAudioOnly:audioOnly];
+}
+
+- (BOOL)currentCreateAecDumpSettingFromStore {
+  return [[self settingsStore] createAecDump];
+}
+
+- (void)storeCreateAecDumpSetting:(BOOL)createAecDump {
+  [[self settingsStore] setCreateAecDump:createAecDump];
+}
+
+- (BOOL)currentUseLevelControllerSettingFromStore {
+  return [[self settingsStore] useLevelController];
+}
+
+- (void)storeUseLevelControllerSetting:(BOOL)useLevelController {
+  [[self settingsStore] setUseLevelController:useLevelController];
+}
+
+- (BOOL)currentUseManualAudioConfigSettingFromStore {
+  return [[self settingsStore] useManualAudioConfig];
+}
+
+- (void)storeUseManualAudioConfigSetting:(BOOL)useManualAudioConfig {
+  [[self settingsStore] setUseManualAudioConfig:useManualAudioConfig];
+}
+
 #pragma mark - Testable
 
 - (ARDSettingsStore *)settingsStore {
   if (!_settingsStore) {
     _settingsStore = [[ARDSettingsStore alloc] init];
+    [self registerStoreDefaults];
   }
   return _settingsStore;
 }
@@ -128,6 +153,10 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
   return [self availableVideoResolutions][0];
 }
 
+- (NSString *)defaultVideoCodecSetting {
+  return videoCodecsStaticValues()[0];
+}
+
 - (int)videoResolutionComponentAtIndex:(int)index inString:(NSString *)resolution {
   if (index != 0 && index != 1) {
     return 0;
@@ -139,8 +168,14 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
   return components[index].intValue;
 }
 
-- (NSString *)defaultVideoCodecSetting {
-  return videoCodecsStaticValues()[0];
+- (void)registerStoreDefaults {
+  [ARDSettingsStore setDefaultsForVideoResolution:[self defaultVideoResolutionSetting]
+                                       videoCodec:[self defaultVideoCodecSetting]
+                                          bitrate:nil
+                                        audioOnly:NO
+                                    createAecDump:NO
+                               useLevelController:NO
+                             useManualAudioConfig:YES];
 }
 
 @end

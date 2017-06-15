@@ -126,9 +126,6 @@ static int const kKbpsMultiplier = 1000;
 @synthesize defaultPeerConnectionConstraints =
     _defaultPeerConnectionConstraints;
 @synthesize isLoopback = _isLoopback;
-@synthesize isAudioOnly = _isAudioOnly;
-@synthesize shouldMakeAecDump = _shouldMakeAecDump;
-@synthesize shouldUseLevelControl = _shouldUseLevelControl;
 
 - (instancetype)init {
   return [self initWithDelegate:nil];
@@ -214,17 +211,11 @@ static int const kKbpsMultiplier = 1000;
 
 - (void)connectToRoomWithId:(NSString *)roomId
                    settings:(ARDSettingsModel *)settings
-                 isLoopback:(BOOL)isLoopback
-                isAudioOnly:(BOOL)isAudioOnly
-          shouldMakeAecDump:(BOOL)shouldMakeAecDump
-      shouldUseLevelControl:(BOOL)shouldUseLevelControl {
+                 isLoopback:(BOOL)isLoopback {
   NSParameterAssert(roomId.length);
   NSParameterAssert(_state == kARDAppClientStateDisconnected);
   _settings = settings;
   _isLoopback = isLoopback;
-  _isAudioOnly = isAudioOnly;
-  _shouldMakeAecDump = shouldMakeAecDump;
-  _shouldUseLevelControl = shouldUseLevelControl;
   self.state = kARDAppClientStateConnecting;
 
 #if defined(WEBRTC_IOS)
@@ -569,7 +560,7 @@ static int const kKbpsMultiplier = 1000;
   }
 
   // Start aecdump diagnostic recording.
-  if (_shouldMakeAecDump) {
+  if ([_settings currentCreateAecDumpSettingFromStore]) {
     NSString *filePath = [self documentsFilePathForFileName:@"webrtc-audio.aecdump"];
     if (![_factory startAecDumpWithFilePath:filePath
                              maxSizeInBytes:kARDAppClientAecDumpMaxSizeInBytes]) {
@@ -719,7 +710,7 @@ static int const kKbpsMultiplier = 1000;
   // support or emulation (http://goo.gl/rHAnC1) so don't bother
   // trying to open a local stream.
 #if !TARGET_IPHONE_SIMULATOR
-  if (!_isAudioOnly) {
+  if (![_settings currentAudioOnlySettingFromStore]) {
     RTCVideoSource *source = [_factory videoSource];
     RTCCameraVideoCapturer *capturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:source];
     [_delegate appClient:self didCreateLocalCapturer:capturer];
@@ -758,8 +749,9 @@ static int const kKbpsMultiplier = 1000;
 #pragma mark - Defaults
 
  - (RTCMediaConstraints *)defaultMediaAudioConstraints {
-   NSString *valueLevelControl = _shouldUseLevelControl ?
-       kRTCMediaConstraintsValueTrue : kRTCMediaConstraintsValueFalse;
+   NSString *valueLevelControl = [_settings currentUseLevelControllerSettingFromStore] ?
+       kRTCMediaConstraintsValueTrue :
+       kRTCMediaConstraintsValueFalse;
    NSDictionary *mandatoryConstraints = @{ kRTCMediaConstraintsLevelControl : valueLevelControl };
    RTCMediaConstraints *constraints =
        [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatoryConstraints

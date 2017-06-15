@@ -70,16 +70,9 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 // Establishes a connection with the AppRTC servers for the given room id.
 // |settings| is an object containing settings such as video codec for the call.
 // If |isLoopback| is true, the call will connect to itself.
-// If |isAudioOnly| is true, video will be disabled for the call.
-// If |shouldMakeAecDump| is true, an aecdump will be created for the call.
-// If |shouldUseLevelControl| is true, the level controller will be used
-// in the call.
 - (void)connectToRoomWithId:(NSString *)roomId
                    settings:(ARDSettingsModel *)settings
-                 isLoopback:(BOOL)isLoopback
-                isAudioOnly:(BOOL)isAudioOnly
-          shouldMakeAecDump:(BOOL)shouldMakeAecDump
-      shouldUseLevelControl:(BOOL)shouldUseLevelControl;
+                 isLoopback:(BOOL)isLoopback;
 
 // Disconnects from the AppRTC servers and any connected clients.
 - (void)disconnect;

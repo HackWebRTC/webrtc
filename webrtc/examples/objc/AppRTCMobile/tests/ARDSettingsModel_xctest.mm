@@ -25,9 +25,8 @@
 
 @implementation ARDSettingsModelTests
 
-- (id)setupMockStoreWithVideoResolution:(NSString *)videoResolution {
+- (id)setupMockStore {
   id storeMock = [OCMockObject mockForClass:[ARDSettingsStore class]];
-  [([[storeMock stub] andReturn:videoResolution])videoResolution];
 
   id partialMock = [OCMockObject partialMockForObject:_model];
   [[[partialMock stub] andReturn:storeMock] settingsStore];
@@ -41,39 +40,57 @@
   _model = [[ARDSettingsModel alloc] init];
 }
 
-- (void)testDefaultMediaFromStore {
-  id storeMock = [self setupMockStoreWithVideoResolution:nil];
-  [[storeMock expect] setVideoResolution:@"640x480"];
-
+- (void)testRetrievingSetting {
+  id storeMock = [self setupMockStore];
+  [[[storeMock expect] andReturn:@"640x480"] videoResolution];
   NSString *string = [_model currentVideoResolutionSettingFromStore];
 
   XCTAssertEqualObjects(string, @"640x480");
-  [storeMock verify];
 }
 
 - (void)testStoringInvalidConstraintReturnsNo {
-  __unused id storeMock = [self setupMockStoreWithVideoResolution:@"960x480"];
+  id storeMock = [self setupMockStore];
+  [([[storeMock stub] andReturn:@"960x480"])videoResolution];
   XCTAssertFalse([_model storeVideoResolutionSetting:@"960x480"]);
 }
 
 - (void)testWidthConstraintFromStore {
-  [self setupMockStoreWithVideoResolution:@"1270x480"];
+  id storeMock = [self setupMockStore];
+  [([[storeMock stub] andReturn:@"1270x480"])videoResolution];
   int width = [_model currentVideoResolutionWidthFromStore];
 
   XCTAssertEqual(width, 1270);
 }
 
 - (void)testHeightConstraintFromStore {
-  [self setupMockStoreWithVideoResolution:@"960x540"];
+  id storeMock = [self setupMockStore];
+  [([[storeMock stub] andReturn:@"960x540"])videoResolution];
   int height = [_model currentVideoResolutionHeightFromStore];
 
   XCTAssertEqual(height, 540);
 }
 
 - (void)testConstraintComponentIsNilWhenInvalidConstraintString {
-  [self setupMockStoreWithVideoResolution:@"invalid"];
+  id storeMock = [self setupMockStore];
+  [([[storeMock stub] andReturn:@"invalid"])videoResolution];
   int width = [_model currentVideoResolutionWidthFromStore];
 
   XCTAssertEqual(width, 0);
 }
+
+- (void)testStoringAudioSetting {
+  id storeMock = [self setupMockStore];
+  [[storeMock expect] setAudioOnly:YES];
+
+  [_model storeAudioOnlySetting:YES];
+  [storeMock verify];
+}
+
+- (void)testReturningDefaultCallOption {
+  id storeMock = [self setupMockStore];
+  [[[storeMock stub] andReturnValue:@YES] useManualAudioConfig];
+
+  XCTAssertTrue([_model currentUseManualAudioConfigSettingFromStore]);
+}
+
 @end

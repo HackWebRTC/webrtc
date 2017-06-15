@@ -19,6 +19,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface ARDSettingsStore : NSObject
 
+/**
+ * Set fallback values in case the setting has not been written by the user.
+ * @param dictionary of values to store
+ */
++ (void)setDefaultsForVideoResolution:(NSString *)videoResolution
+                           videoCodec:(NSString *)videoCodec
+                              bitrate:(nullable NSNumber *)bitrate
+                            audioOnly:(BOOL)audioOnly
+                        createAecDump:(BOOL)createAecDump
+                   useLevelController:(BOOL)useLevelController
+                 useManualAudioConfig:(BOOL)useManualAudioConfig;
+
 @property(nonatomic) NSString *videoResolution;
 @property(nonatomic) NSString *videoCodec;
 
@@ -32,6 +44,11 @@ NS_ASSUME_NONNULL_BEGIN
  * @param value the number to be stored
  */
 - (void)setMaxBitrate:(nullable NSNumber *)value;
+
+@property(nonatomic) BOOL audioOnly;
+@property(nonatomic) BOOL createAecDump;
+@property(nonatomic) BOOL useLevelController;
+@property(nonatomic) BOOL useManualAudioConfig;
 
 @end
 NS_ASSUME_NONNULL_END

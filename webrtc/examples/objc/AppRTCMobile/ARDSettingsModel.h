@@ -11,6 +11,7 @@
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
 /**
  * Model class for user defined settings.
  *
@@ -78,6 +79,56 @@ NS_ASSUME_NONNULL_BEGIN
  * @param bitrate NSNumber representation of the max bitrate value.
  */
 - (void)storeMaxBitrateSetting:(nullable NSNumber *)bitrate;
+
+/**
+ * Returns current audio only setting from store if present or default (NO) otherwise.
+ */
+- (BOOL)currentAudioOnlySettingFromStore;
+
+/**
+ * Stores the provided audio only setting into the store.
+ *
+ * @param setting the boolean value to be stored.
+ */
+- (void)storeAudioOnlySetting:(BOOL)audioOnly;
+
+/**
+ * Returns current create AecDump setting from store if present or default (NO) otherwise.
+ */
+- (BOOL)currentCreateAecDumpSettingFromStore;
+
+/**
+ * Stores the provided create AecDump setting into the store.
+ *
+ * @param setting the boolean value to be stored.
+ */
+- (void)storeCreateAecDumpSetting:(BOOL)createAecDump;
+
+/**
+ * Returns current setting whether to use level controller from store if present or default (NO)
+ * otherwise.
+ */
+- (BOOL)currentUseLevelControllerSettingFromStore;
+
+/**
+ * Stores the provided use level controller setting into the store.
+ *
+ * @param setting the boolean value to be stored.
+ */
+- (void)storeUseLevelControllerSetting:(BOOL)useLevelController;
+
+/**
+ * Returns current setting whether to use manual audio config from store if present or default (YES)
+ * otherwise.
+ */
+- (BOOL)currentUseManualAudioConfigSettingFromStore;
+
+/**
+ * Stores the provided use manual audio config setting into the store.
+ *
+ * @param setting the boolean value to be stored.
+ */
+- (void)storeUseManualAudioConfigSetting:(BOOL)useManualAudioConfig;
 
 @end
 NS_ASSUME_NONNULL_END

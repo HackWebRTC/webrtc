@@ -40,21 +40,13 @@
 
 - (instancetype)initForRoom:(NSString *)room
                  isLoopback:(BOOL)isLoopback
-                isAudioOnly:(BOOL)isAudioOnly
-          shouldMakeAecDump:(BOOL)shouldMakeAecDump
-      shouldUseLevelControl:(BOOL)shouldUseLevelControl
                    delegate:(id<ARDVideoCallViewControllerDelegate>)delegate {
   if (self = [super init]) {
     ARDSettingsModel *settingsModel = [[ARDSettingsModel alloc] init];
     _delegate = delegate;
 
     _client = [[ARDAppClient alloc] initWithDelegate:self];
-    [_client connectToRoomWithId:room
-                        settings:settingsModel
-                      isLoopback:isLoopback
-                     isAudioOnly:isAudioOnly
-               shouldMakeAecDump:shouldMakeAecDump
-           shouldUseLevelControl:shouldUseLevelControl];
+    [_client connectToRoomWithId:room settings:settingsModel isLoopback:isLoopback];
   }
   return self;
 }
