@@ -187,6 +187,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     ADAPTREASON_BANDWIDTH = 2,
   };
 
+  static constexpr int kDefaultQpMax = 56;
+
  private:
   class WebRtcVideoReceiveStream;
   struct VideoCodecSettings {

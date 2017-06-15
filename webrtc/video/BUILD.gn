@@ -98,6 +98,7 @@ if (rtc_include_tests) {
       "../call:call_interfaces",
       "../common_video",
       "../logging:rtc_event_log_api",
+      "../media:rtc_media",
       "../media:rtc_media_base",
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/rtp_rtcp",

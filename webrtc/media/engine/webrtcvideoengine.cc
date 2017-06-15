@@ -362,8 +362,6 @@ const int kVideoRtpBufferSize = 65536;
 // duration hasn't been implemented.
 static const int kNackHistoryMs = 1000;
 
-static const int kDefaultQpMax = 56;
-
 static const int kDefaultRtcpReceiverReportSsrc = 1;
 
 // Minimum time interval for logging stats.

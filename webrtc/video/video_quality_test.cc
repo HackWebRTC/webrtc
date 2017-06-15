@@ -29,6 +29,7 @@
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/media/engine/webrtcvideoengine.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
@@ -1170,7 +1171,7 @@ VideoStream VideoQualityTest::DefaultVideoStream(const Params& params) {
   stream.min_bitrate_bps = params.video.min_bitrate_bps;
   stream.target_bitrate_bps = params.video.target_bitrate_bps;
   stream.max_bitrate_bps = params.video.max_bitrate_bps;
-  stream.max_qp = 52;
+  stream.max_qp = cricket::WebRtcVideoChannel::kDefaultQpMax;
   // TODO(sprang): Can we make this less of a hack?
   if (params.video.num_temporal_layers == 2) {
     stream.temporal_layer_thresholds_bps.push_back(stream.target_bitrate_bps);
@@ -1190,7 +1191,7 @@ VideoStream VideoQualityTest::DefaultThumbnailStream() {
   stream.min_bitrate_bps = 7500;
   stream.target_bitrate_bps = 37500;
   stream.max_bitrate_bps = 50000;
-  stream.max_qp = 52;
+  stream.max_qp = cricket::WebRtcVideoChannel::kDefaultQpMax;
   return stream;
 }
 
