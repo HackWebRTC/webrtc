@@ -274,6 +274,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder {
   // value and the next Encode() call being ignored.
   bool drop_next_input_frame_;
   bool scale_;
+  webrtc::H264::Profile profile_;
   // Global references; must be deleted in Release().
   std::vector<jobject> input_buffers_;
   webrtc::H264BitstreamParser h264_bitstream_parser_;
@@ -335,12 +336,10 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
 
   jclass j_output_buffer_info_class =
       FindClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
-  j_init_encode_method_ = GetMethodID(
-      jni,
-      *j_media_codec_video_encoder_class_,
-      "initEncode",
-      "(Lorg/webrtc/MediaCodecVideoEncoder$VideoCodecType;"
-      "IIIILorg/webrtc/EglBase14$Context;)Z");
+  j_init_encode_method_ =
+      GetMethodID(jni, *j_media_codec_video_encoder_class_, "initEncode",
+                  "(Lorg/webrtc/MediaCodecVideoEncoder$VideoCodecType;"
+                  "IIIIILorg/webrtc/EglBase14$Context;)Z");
   j_get_input_buffers_method_ = GetMethodID(
       jni,
       *j_media_codec_video_encoder_class_,
@@ -418,6 +417,16 @@ int32_t MediaCodecVideoEncoder::InitEncode(
 
   ALOGD << "InitEncode request: " << init_width << " x " << init_height;
   ALOGD << "Encoder automatic resize " << (scale_ ? "enabled" : "disabled");
+
+  // Check allowed H.264 profile
+  profile_ = webrtc::H264::Profile::kProfileBaseline;
+  if (codec_type == kVideoCodecH264) {
+    const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
+        webrtc::H264::ParseSdpProfileLevelId(codec_.params);
+    RTC_DCHECK(profile_level_id);
+    profile_ = profile_level_id->profile;
+    ALOGD << "H.264 profile: " << profile_;
+  }
 
   return InitEncodeInternal(
       init_width, init_height, codec_settings->startBitrate,
@@ -531,7 +540,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   const VideoCodecType codec_type = GetCodecType();
   ALOGD << "InitEncodeInternal Type: " << static_cast<int>(codec_type) << ", "
         << width << " x " << height << ". Bitrate: " << kbps
-        << " kbps. Fps: " << fps;
+        << " kbps. Fps: " << fps << ". Profile: " << profile_ << ".";
   if (kbps == 0) {
     kbps = last_set_bitrate_kbps_;
   }
@@ -570,8 +579,8 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   jobject j_video_codec_enum = JavaEnumFromIndexAndClassName(
       jni, "MediaCodecVideoEncoder$VideoCodecType", codec_type);
   const bool encode_status = jni->CallBooleanMethod(
-      *j_media_codec_video_encoder_, j_init_encode_method_,
-      j_video_codec_enum, width, height, kbps, fps,
+      *j_media_codec_video_encoder_, j_init_encode_method_, j_video_codec_enum,
+      profile_, width, height, kbps, fps,
       (use_surface ? egl_context_ : nullptr));
   if (!encode_status) {
     ALOGE << "Failed to configure encoder.";
@@ -1252,7 +1261,7 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
   CHECK_EXCEPTION(jni);
   if (is_vp8_hw_supported) {
     ALOGD << "VP8 HW Encoder supported.";
-    supported_codecs_.push_back(cricket::VideoCodec("VP8"));
+    supported_codecs_.push_back(cricket::VideoCodec(cricket::kVp8CodecName));
   }
 
   bool is_vp9_hw_supported = jni->CallStaticBooleanMethod(
@@ -1261,7 +1270,7 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
   CHECK_EXCEPTION(jni);
   if (is_vp9_hw_supported) {
     ALOGD << "VP9 HW Encoder supported.";
-    supported_codecs_.push_back(cricket::VideoCodec("VP9"));
+    supported_codecs_.push_back(cricket::VideoCodec(cricket::kVp9CodecName));
   }
   supported_codecs_with_h264_hp_ = supported_codecs_;
 

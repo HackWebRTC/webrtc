@@ -70,6 +70,7 @@ public class MediaCodecVideoEncoder {
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
   private EglBase14 eglBase;
+  private int profile;
   private int width;
   private int height;
   private Surface inputSurface;
@@ -78,6 +79,9 @@ public class MediaCodecVideoEncoder {
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
   private static final String VP9_MIME_TYPE = "video/x-vnd.on2.vp9";
   private static final String H264_MIME_TYPE = "video/avc";
+
+  private static final int VIDEO_AVCProfileHigh = 8;
+  private static final int VIDEO_AVCLevel3 = 0x100;
 
   // Type of bitrate adjustment for video encoder.
   public enum BitrateAdjustmentType {
@@ -90,6 +94,25 @@ public class MediaCodecVideoEncoder {
     // Dynamic bitrate adjustment is required - HW encoder used frame timestamps, but actual
     // bitrate deviates too much from the target value.
     DYNAMIC_ADJUSTMENT
+  }
+
+  // Should be in sync with webrtc::H264::Profile.
+  public static enum H264Profile {
+    CONSTRAINED_BASELINE(0),
+    BASELINE(1),
+    MAIN(2),
+    CONSTRAINED_HIGH(3),
+    HIGH(4);
+
+    private final int value;
+
+    H264Profile(int value) {
+      this.value = value;
+    }
+
+    public int getValue() {
+      return value;
+    }
   }
 
   // Class describing supported media codec properties.
@@ -142,6 +165,13 @@ public class MediaCodecVideoEncoder {
       "OMX.Exynos.", Build.VERSION_CODES.LOLLIPOP, BitrateAdjustmentType.FRAMERATE_ADJUSTMENT);
   private static final MediaCodecProperties[] h264HwList =
       new MediaCodecProperties[] {qcomH264HwProperties, exynosH264HwProperties};
+
+  // List of supported HW H.264 high profile encoders.
+  private static final MediaCodecProperties exynosH264HighProfileHwProperties =
+      new MediaCodecProperties(
+          "OMX.Exynos.", Build.VERSION_CODES.M, BitrateAdjustmentType.FRAMERATE_ADJUSTMENT);
+  private static final MediaCodecProperties[] h264HighProfileHwList =
+      new MediaCodecProperties[] {exynosH264HighProfileHwProperties};
 
   // List of devices with poor H.264 encoder quality.
   // HW H.264 encoder on below devices has poor bitrate control - actual
@@ -232,6 +262,11 @@ public class MediaCodecVideoEncoder {
   public static boolean isH264HwSupported() {
     return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE)
         && (findHwEncoder(H264_MIME_TYPE, h264HwList, supportedColorList) != null);
+  }
+
+  public static boolean isH264HighProfileHwSupported() {
+    return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE)
+        && (findHwEncoder(H264_MIME_TYPE, h264HighProfileHwList, supportedColorList) != null);
   }
 
   public static boolean isVp8HwSupportedUsingTextures() {
@@ -380,12 +415,14 @@ public class MediaCodecVideoEncoder {
     }
   }
 
-  boolean initEncode(VideoCodecType type, int width, int height, int kbps, int fps,
+  boolean initEncode(VideoCodecType type, int profile, int width, int height, int kbps, int fps,
       EglBase14.Context sharedContext) {
     final boolean useSurface = sharedContext != null;
-    Logging.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height + ". @ " + kbps
-            + " kbps. Fps: " + fps + ". Encode from texture : " + useSurface);
+    Logging.d(TAG,
+        "Java initEncode: " + type + ". Profile: " + profile + " : " + width + " x " + height
+            + ". @ " + kbps + " kbps. Fps: " + fps + ". Encode from texture : " + useSurface);
 
+    this.profile = profile;
     this.width = width;
     this.height = height;
     if (mediaCodecThread != null) {
@@ -394,6 +431,7 @@ public class MediaCodecVideoEncoder {
     EncoderProperties properties = null;
     String mime = null;
     int keyFrameIntervalSec = 0;
+    boolean configureH264HighProfile = false;
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
       properties = findHwEncoder(
@@ -408,6 +446,16 @@ public class MediaCodecVideoEncoder {
       mime = H264_MIME_TYPE;
       properties = findHwEncoder(
           H264_MIME_TYPE, h264HwList, useSurface ? supportedSurfaceColorList : supportedColorList);
+      if (profile == H264Profile.CONSTRAINED_HIGH.getValue()) {
+        EncoderProperties h264HighProfileProperties = findHwEncoder(H264_MIME_TYPE,
+            h264HighProfileHwList, useSurface ? supportedSurfaceColorList : supportedColorList);
+        if (h264HighProfileProperties != null) {
+          Logging.d(TAG, "High profile H.264 encoder supported.");
+          configureH264HighProfile = true;
+        } else {
+          Logging.d(TAG, "High profile H.264 encoder requested, but not supported. Use baseline.");
+        }
+      }
       keyFrameIntervalSec = 20;
     }
     if (properties == null) {
@@ -453,6 +501,10 @@ public class MediaCodecVideoEncoder {
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       format.setInteger(MediaFormat.KEY_FRAME_RATE, targetFps);
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, keyFrameIntervalSec);
+      if (configureH264HighProfile) {
+        format.setInteger("profile", VIDEO_AVCProfileHigh);
+        format.setInteger("level", VIDEO_AVCLevel3);
+      }
       Logging.d(TAG, "  Format: " + format);
       mediaCodec = createByCodecName(properties.codecName);
       this.type = type;
@@ -711,6 +763,12 @@ public class MediaCodecVideoEncoder {
           outputBuffers[result].position(info.offset);
           outputBuffers[result].limit(info.offset + info.size);
           configData.put(outputBuffers[result]);
+          // Log few SPS header bytes to check profile and level.
+          String spsData = "";
+          for (int i = 0; i < (info.size < 8 ? info.size : 8); i++) {
+            spsData += Integer.toHexString(configData.get(i) & 0xff) + " ";
+          }
+          Logging.d(TAG, spsData);
           // Release buffer back.
           mediaCodec.releaseOutputBuffer(result, false);
           // Query next output.
