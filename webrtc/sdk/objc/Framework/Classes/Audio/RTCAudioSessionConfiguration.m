@@ -43,7 +43,7 @@ const double kRTCAudioSessionLowComplexitySampleRate = 16000.0;
 // buffers used by WebRTC. It is beneficial for the performance if the native
 // size is as an even multiple of 10ms as possible since it results in "clean"
 // callback sequence without bursts of callbacks back to back.
-const double kRTCAudioSessionHighPerformanceIOBufferDuration = 0.01;
+const double kRTCAudioSessionHighPerformanceIOBufferDuration = 0.02;
 
 // Use a larger buffer size on devices with only one core (e.g. iPhone 4).
 // It will result in a lower CPU consumption at the cost of a larger latency.
