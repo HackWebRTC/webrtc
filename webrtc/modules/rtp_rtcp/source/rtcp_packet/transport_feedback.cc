@@ -545,6 +545,11 @@ bool TransportFeedback::IsConsistent() const {
   return true;
 }
 
+size_t TransportFeedback::BlockLength() const {
+  // Round size_bytes_ up to multiple of 32bits.
+  return (size_bytes_ + 3) & (~static_cast<size_t>(3));
+}
+
 // Serialize packet.
 bool TransportFeedback::Create(uint8_t* packet,
                                size_t* position,
@@ -600,11 +605,6 @@ bool TransportFeedback::Create(uint8_t* packet,
 
   RTC_DCHECK_EQ(*position, position_end);
   return true;
-}
-
-size_t TransportFeedback::BlockLength() const {
-  // Round size_bytes_ up to multiple of 32bits.
-  return (size_bytes_ + 3) & (~static_cast<size_t>(3));
 }
 
 void TransportFeedback::Clear() {

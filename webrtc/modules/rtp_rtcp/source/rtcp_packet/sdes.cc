@@ -155,6 +155,10 @@ bool Sdes::AddCName(uint32_t ssrc, std::string cname) {
   return true;
 }
 
+size_t Sdes::BlockLength() const {
+  return block_length_;
+}
+
 bool Sdes::Create(uint8_t* packet,
                   size_t* index,
                   size_t max_length,
