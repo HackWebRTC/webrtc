@@ -113,14 +113,10 @@ bool SrtpFilter::SetRtcpParams(int send_cs,
   }
 
   send_rtcp_session_.reset(new SrtpSession());
-  SignalSrtpError.repeat(send_rtcp_session_->SignalSrtpError);
-  send_rtcp_session_->set_signal_silent_time(signal_silent_time_in_ms_);
   if (!send_rtcp_session_->SetRecv(send_cs, send_key, send_key_len))
     return false;
 
   recv_rtcp_session_.reset(new SrtpSession());
-  SignalSrtpError.repeat(recv_rtcp_session_->SignalSrtpError);
-  recv_rtcp_session_->set_signal_silent_time(signal_silent_time_in_ms_);
   if (!recv_rtcp_session_->SetRecv(recv_cs, recv_key, recv_key_len))
     return false;
 
@@ -228,20 +224,6 @@ bool SrtpFilter::IsExternalAuthActive() const {
   return send_session_->IsExternalAuthActive();
 }
 
-void SrtpFilter::set_signal_silent_time(int signal_silent_time_in_ms) {
-  signal_silent_time_in_ms_ = signal_silent_time_in_ms;
-  if (IsActive()) {
-    RTC_CHECK(send_session_);
-    send_session_->set_signal_silent_time(signal_silent_time_in_ms);
-    RTC_CHECK(recv_session_);
-    recv_session_->set_signal_silent_time(signal_silent_time_in_ms);
-    if (send_rtcp_session_)
-      send_rtcp_session_->set_signal_silent_time(signal_silent_time_in_ms);
-    if (recv_rtcp_session_)
-      recv_rtcp_session_->set_signal_silent_time(signal_silent_time_in_ms);
-  }
-}
-
 bool SrtpFilter::ExpectOffer(ContentSource source) {
   return ((state_ == ST_INIT) ||
           (state_ == ST_ACTIVE) ||
@@ -323,11 +305,6 @@ void SrtpFilter::CreateSrtpSessions() {
   recv_session_.reset(new SrtpSession());
   applied_recv_params_ = CryptoParams();
 
-  SignalSrtpError.repeat(send_session_->SignalSrtpError);
-  SignalSrtpError.repeat(recv_session_->SignalSrtpError);
-
-  send_session_->set_signal_silent_time(signal_silent_time_in_ms_);
-  recv_session_->set_signal_silent_time(signal_silent_time_in_ms_);
   if (external_auth_enabled_) {
     send_session_->EnableExternalAuth();
   }
@@ -466,9 +443,7 @@ bool SrtpSession::inited_ = false;
 // This lock protects SrtpSession::inited_.
 rtc::GlobalLockPod SrtpSession::lock_;
 
-SrtpSession::SrtpSession() : srtp_stat_(new SrtpStat()) {
-  SignalSrtpError.repeat(srtp_stat_->SignalSrtpError);
-}
+SrtpSession::SrtpSession() {}
 
 SrtpSession::~SrtpSession() {
   if (session_) {
@@ -501,10 +476,6 @@ bool SrtpSession::ProtectRtp(void* p, int in_len, int max_len, int* out_len) {
 
   *out_len = in_len;
   int err = srtp_protect(session_, p, out_len);
-  uint32_t ssrc;
-  if (GetRtpSsrc(p, in_len, &ssrc)) {
-    srtp_stat_->AddProtectRtpResult(ssrc, err);
-  }
   int seq_num;
   GetRtpSeqNum(p, in_len, &seq_num);
   if (err != srtp_err_status_ok) {
@@ -544,7 +515,6 @@ bool SrtpSession::ProtectRtcp(void* p, int in_len, int max_len, int* out_len) {
 
   *out_len = in_len;
   int err = srtp_protect_rtcp(session_, p, out_len);
-  srtp_stat_->AddProtectRtcpResult(err);
   if (err != srtp_err_status_ok) {
     LOG(LS_WARNING) << "Failed to protect SRTCP packet, err=" << err;
     return false;
@@ -561,10 +531,6 @@ bool SrtpSession::UnprotectRtp(void* p, int in_len, int* out_len) {
 
   *out_len = in_len;
   int err = srtp_unprotect(session_, p, out_len);
-  uint32_t ssrc;
-  if (GetRtpSsrc(p, in_len, &ssrc)) {
-    srtp_stat_->AddUnprotectRtpResult(ssrc, err);
-  }
   if (err != srtp_err_status_ok) {
     LOG(LS_WARNING) << "Failed to unprotect SRTP packet, err=" << err;
     return false;
@@ -581,7 +547,6 @@ bool SrtpSession::UnprotectRtcp(void* p, int in_len, int* out_len) {
 
   *out_len = in_len;
   int err = srtp_unprotect_rtcp(session_, p, out_len);
-  srtp_stat_->AddUnprotectRtcpResult(err);
   if (err != srtp_err_status_ok) {
     LOG(LS_WARNING) << "Failed to unprotect SRTCP packet, err=" << err;
     return false;
@@ -648,10 +613,6 @@ bool SrtpSession::GetSendStreamPacketIndex(void* p,
       rtc::NetworkToHost64(
           srtp_rdbx_get_packet_index(&stream->rtp_rdbx) << 16));
   return true;
-}
-
-void SrtpSession::set_signal_silent_time(int signal_silent_time_in_ms) {
-  srtp_stat_->set_signal_silent_time(signal_silent_time_in_ms);
 }
 
 bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
@@ -804,76 +765,6 @@ void SrtpSession::HandleEventThunk(srtp_event_data_t* ev) {
       srtp_get_user_data(ev->session));
   if (session) {
     session->HandleEvent(ev);
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// SrtpStat
-
-SrtpStat::SrtpStat()
-    : signal_silent_time_(1000) {
-}
-
-void SrtpStat::AddProtectRtpResult(uint32_t ssrc, int result) {
-  FailureKey key;
-  key.ssrc = ssrc;
-  key.mode = SrtpFilter::PROTECT;
-  switch (result) {
-    case srtp_err_status_ok:
-      key.error = SrtpFilter::ERROR_NONE;
-      break;
-    case srtp_err_status_auth_fail:
-      key.error = SrtpFilter::ERROR_AUTH;
-      break;
-    default:
-      key.error = SrtpFilter::ERROR_FAIL;
-  }
-  HandleSrtpResult(key);
-}
-
-void SrtpStat::AddUnprotectRtpResult(uint32_t ssrc, int result) {
-  FailureKey key;
-  key.ssrc = ssrc;
-  key.mode = SrtpFilter::UNPROTECT;
-  switch (result) {
-    case srtp_err_status_ok:
-      key.error = SrtpFilter::ERROR_NONE;
-      break;
-    case srtp_err_status_auth_fail:
-      key.error = SrtpFilter::ERROR_AUTH;
-      break;
-    case srtp_err_status_replay_fail:
-    case srtp_err_status_replay_old:
-      key.error = SrtpFilter::ERROR_REPLAY;
-      break;
-    default:
-      key.error = SrtpFilter::ERROR_FAIL;
-  }
-  HandleSrtpResult(key);
-}
-
-void SrtpStat::AddProtectRtcpResult(int result) {
-  AddProtectRtpResult(0U, result);
-}
-
-void SrtpStat::AddUnprotectRtcpResult(int result) {
-  AddUnprotectRtpResult(0U, result);
-}
-
-void SrtpStat::HandleSrtpResult(const SrtpStat::FailureKey& key) {
-  // Handle some cases where error should be signalled right away. For other
-  // errors, trigger error for the first time seeing it.  After that, silent
-  // the same error for a certain amount of time (default 1 sec).
-  if (key.error != SrtpFilter::ERROR_NONE) {
-    // For errors, signal first time and wait for 1 sec.
-    FailureStat* stat = &(failures_[key]);
-    int64_t current_time = rtc::TimeMillis();
-    if (stat->last_signal_time == 0 ||
-        rtc::TimeDiff(current_time, stat->last_signal_time) >
-            signal_silent_time_) {
-      SignalSrtpError(key.ssrc, key.mode, key.error);
-      stat->last_signal_time = current_time;
-    }
   }
 }
 

@@ -1756,94 +1756,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckRtcp2());
   }
 
-  void TestSrtpError(int pl_type) {
-    struct SrtpErrorHandler : public sigslot::has_slots<> {
-      SrtpErrorHandler() :
-          mode_(cricket::SrtpFilter::UNPROTECT),
-          error_(cricket::SrtpFilter::ERROR_NONE) {}
-      void OnSrtpError(uint32 ssrc, cricket::SrtpFilter::Mode mode,
-                       cricket::SrtpFilter::Error error) {
-        mode_ = mode;
-        error_ = error;
-      }
-      cricket::SrtpFilter::Mode mode_;
-      cricket::SrtpFilter::Error error_;
-    } error_handler;
-
-    // For Audio, only pl_type 0 is added to the bundle filter.
-    // For Video, only pl_type 97 is added to the bundle filter.
-    // So we need to pass in pl_type so that the packet can pass through
-    // the bundle filter before it can be processed by the srtp filter.
-    // The packet is not a valid srtp packet because it is too short.
-    static unsigned const char kBadPacket[] = {
-        0x84, static_cast<unsigned char>(pl_type),
-        0x00, 0x01,
-        0x00, 0x00,
-        0x00, 0x00,
-        0x00, 0x00,
-        0x00, 0x01};
-
-    // Using fake clock because this tests that SRTP errors are signaled at
-    // specific times based on set_signal_silent_time.
-    rtc::ScopedFakeClock fake_clock;
-
-    CreateChannels(SECURE, SECURE);
-    // Some code uses a time of 0 as a special value, so we must start with
-    // a non-zero time.
-    // TODO(deadbeef): Fix this.
-    fake_clock.AdvanceTime(rtc::TimeDelta::FromSeconds(1));
-
-    EXPECT_FALSE(channel1_->secure());
-    EXPECT_FALSE(channel2_->secure());
-    EXPECT_TRUE(SendInitiate());
-    EXPECT_TRUE(SendAccept());
-    EXPECT_TRUE(channel1_->secure());
-    EXPECT_TRUE(channel2_->secure());
-    channel2_->srtp_filter()->set_signal_silent_time(250);
-    channel2_->srtp_filter()->SignalSrtpError.connect(
-        &error_handler, &SrtpErrorHandler::OnSrtpError);
-
-    // Testing failures in sending packets.
-    media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket),
-                             rtc::PacketOptions());
-    WaitForThreads();
-    // The first failure will trigger an error.
-    EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_);
-    EXPECT_EQ(cricket::SrtpFilter::PROTECT, error_handler.mode_);
-    error_handler.error_ = cricket::SrtpFilter::ERROR_NONE;
-    error_handler.mode_ = cricket::SrtpFilter::UNPROTECT;
-    // The next 250 ms failures will not trigger an error.
-    media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket),
-                             rtc::PacketOptions());
-    // Wait for a while to ensure no message comes in.
-    WaitForThreads();
-    fake_clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(200));
-    EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_handler.error_);
-    EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, error_handler.mode_);
-    // Wait for a little more - the error will be triggered again.
-    fake_clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(200));
-    media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket),
-                             rtc::PacketOptions());
-    WaitForThreads();
-    EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_);
-    EXPECT_EQ(cricket::SrtpFilter::PROTECT, error_handler.mode_);
-
-    // Testing failures in receiving packets.
-    error_handler.error_ = cricket::SrtpFilter::ERROR_NONE;
-    error_handler.mode_ = cricket::SrtpFilter::UNPROTECT;
-
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
-      fake_rtp_dtls_transport2_->SignalReadPacket(
-          fake_rtp_dtls_transport2_.get(),
-          reinterpret_cast<const char*>(kBadPacket), sizeof(kBadPacket),
-          rtc::PacketTime(), 0);
-    });
-    EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_);
-    EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, error_handler.mode_);
-    // Terminate channels/threads before the fake clock is destroyed.
-    EXPECT_TRUE(Terminate());
-  }
-
   void TestOnTransportReadyToSend() {
     CreateChannels(0, 0);
     EXPECT_FALSE(media_channel1_->ready_to_send());
@@ -2355,10 +2267,6 @@ TEST_F(VoiceChannelSingleThreadTest, TestFlushRtcp) {
   Base::TestFlushRtcp();
 }
 
-TEST_F(VoiceChannelSingleThreadTest, TestSrtpError) {
-  Base::TestSrtpError(kAudioPts[0]);
-}
-
 TEST_F(VoiceChannelSingleThreadTest, TestOnTransportReadyToSend) {
   Base::TestOnTransportReadyToSend();
 }
@@ -2676,10 +2584,6 @@ TEST_F(VoiceChannelDoubleThreadTest, TestFlushRtcp) {
   Base::TestFlushRtcp();
 }
 
-TEST_F(VoiceChannelDoubleThreadTest, TestSrtpError) {
-  Base::TestSrtpError(kAudioPts[0]);
-}
-
 TEST_F(VoiceChannelDoubleThreadTest, TestOnTransportReadyToSend) {
   Base::TestOnTransportReadyToSend();
 }
@@ -2989,10 +2893,6 @@ TEST_F(VideoChannelSingleThreadTest, SendBundleToBundleWithRtcpMuxSecure) {
   Base::SendBundleToBundle(kVideoPts, arraysize(kVideoPts), true, true);
 }
 
-TEST_F(VideoChannelSingleThreadTest, TestSrtpError) {
-  Base::TestSrtpError(kVideoPts[0]);
-}
-
 TEST_F(VideoChannelSingleThreadTest, TestOnTransportReadyToSend) {
   Base::TestOnTransportReadyToSend();
 }
@@ -3222,10 +3122,6 @@ TEST_F(VideoChannelDoubleThreadTest, SendBundleToBundleWithRtcpMux) {
 
 TEST_F(VideoChannelDoubleThreadTest, SendBundleToBundleWithRtcpMuxSecure) {
   Base::SendBundleToBundle(kVideoPts, arraysize(kVideoPts), true, true);
-}
-
-TEST_F(VideoChannelDoubleThreadTest, TestSrtpError) {
-  Base::TestSrtpError(kVideoPts[0]);
 }
 
 TEST_F(VideoChannelDoubleThreadTest, TestOnTransportReadyToSend) {

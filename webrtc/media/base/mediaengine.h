@@ -22,7 +22,6 @@
 #include "webrtc/api/audio_codecs/audio_encoder_factory.h"
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/base/fileutils.h"
-#include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediachannel.h"
