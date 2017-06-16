@@ -433,20 +433,20 @@ TEST_F(BitrateControllerTest, TimeoutsWithoutFeedback) {
         report_blocks, 50, clock_.TimeInMilliseconds());
     expected_bitrate_bps = expected_bitrate_bps * 1.08 + 1000;
     EXPECT_EQ(expected_bitrate_bps, bitrate_observer_.last_bitrate_);
-    clock_.AdvanceTimeMilliseconds(1000);
+    clock_.AdvanceTimeMilliseconds(4000);
 
-    // 1 seconds since feedback, expect increase.
+    // 4 seconds since feedback, expect increase.
     controller_->Process();
     expected_bitrate_bps = expected_bitrate_bps * 1.08 + 1000;
     EXPECT_EQ(expected_bitrate_bps, bitrate_observer_.last_bitrate_);
-    clock_.AdvanceTimeMilliseconds(800);
+    clock_.AdvanceTimeMilliseconds(2000);
 
-    // 1.8 seconds since feedback, expect no increase.
+    // 6 seconds since feedback, expect no increase.
     controller_->Process();
     EXPECT_EQ(expected_bitrate_bps, bitrate_observer_.last_bitrate_);
-    clock_.AdvanceTimeMilliseconds(3701);
+    clock_.AdvanceTimeMilliseconds(9001);
 
-    // More than 4.5 seconds since feedback, expect decrease.
+    // More than 15 seconds since feedback, expect decrease.
     controller_->Process();
     expected_bitrate_bps *= 0.8;
     EXPECT_EQ(expected_bitrate_bps, bitrate_observer_.last_bitrate_);

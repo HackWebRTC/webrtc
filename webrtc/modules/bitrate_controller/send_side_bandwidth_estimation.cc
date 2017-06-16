@@ -33,7 +33,7 @@ const int kDefaultMaxBitrateBps = 1000000000;
 const int64_t kLowBitrateLogPeriodMs = 10000;
 const int64_t kRtcEventLogPeriodMs = 5000;
 // Expecting that RTCP feedback is sent uniformly within [0.5, 1.5]s intervals.
-const int64_t kFeedbackIntervalMs = 1500;
+const int64_t kFeedbackIntervalMs = 5000;
 const int64_t kFeedbackTimeoutIntervals = 3;
 const int64_t kTimeoutIntervalMs = 1000;
 
