@@ -48,15 +48,8 @@ class HardwareVideoEncoder implements VideoEncoder {
   private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000;
   private static final int DEQUEUE_OUTPUT_BUFFER_TIMEOUT_US = 100000;
 
-  // TODO(mellem):  Maybe move mime types to the factory or a common location.
-  private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
-  private static final String VP9_MIME_TYPE = "video/x-vnd.on2.vp9";
-  private static final String H264_MIME_TYPE = "video/avc";
-  private static final Set<String> SUPPORTED_MIME_TYPES =
-      new HashSet<>(Arrays.asList(VP8_MIME_TYPE, VP9_MIME_TYPE, H264_MIME_TYPE));
-
   private final String codecName;
-  private final String mimeType;
+  private final VideoCodecType codecType;
   private final int colorFormat;
   private final ColorFormat inputColorFormat;
   // Base interval for generating key frames.
@@ -94,27 +87,23 @@ class HardwareVideoEncoder implements VideoEncoder {
   private ByteBuffer configBuffer = null;
 
   /**
-   * Creates a new HardwareVideoEncoder with the given codecName, mimeType, colorFormat, key frame
+   * Creates a new HardwareVideoEncoder with the given codecName, codecType, colorFormat, key frame
    * intervals, and bitrateAdjuster.
    *
    * @param codecName the hardware codec implementation to use
-   * @param mimeType MIME type of the codec's output; must be one of "video/x-vnd.on2.vp8",
-   *     "video/x-vnd.on2.vp9", or "video/avc"
+   * @param codecType the type of the given video codec (eg. VP8, VP9, or H264)
    * @param colorFormat color format used by the input buffer
    * @param keyFrameIntervalSec interval in seconds between key frames; used to initialize the codec
    * @param forceKeyFrameIntervalMs interval at which to force a key frame if one is not requested;
    *     used to reduce distortion caused by some codec implementations
    * @param bitrateAdjuster algorithm used to correct codec implementations that do not produce the
    *     desired bitrates
-   * @throws IllegalArgumentException if either mimeType or colorFormat is unsupported
+   * @throws IllegalArgumentException if colorFormat is unsupported
    */
-  public HardwareVideoEncoder(String codecName, String mimeType, int colorFormat,
+  public HardwareVideoEncoder(String codecName, VideoCodecType codecType, int colorFormat,
       int keyFrameIntervalSec, int forceKeyFrameIntervalMs, BitrateAdjuster bitrateAdjuster) {
-    if (!SUPPORTED_MIME_TYPES.contains(mimeType)) {
-      throw new IllegalArgumentException("Unsupported MIME type: " + mimeType);
-    }
     this.codecName = codecName;
-    this.mimeType = mimeType;
+    this.codecType = codecType;
     this.colorFormat = colorFormat;
     this.inputColorFormat = ColorFormat.valueOf(colorFormat);
     this.keyFrameIntervalSec = keyFrameIntervalSec;
@@ -150,7 +139,7 @@ class HardwareVideoEncoder implements VideoEncoder {
       return VideoCodecStatus.ERROR;
     }
     try {
-      MediaFormat format = MediaFormat.createVideoFormat(mimeType, width, height);
+      MediaFormat format = MediaFormat.createVideoFormat(codecType.mimeType(), width, height);
       format.setInteger(MediaFormat.KEY_BIT_RATE, adjustedBitrate);
       format.setInteger(KEY_BITRATE_MODE, VIDEO_ControlRateConstant);
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat);
@@ -369,7 +358,7 @@ class HardwareVideoEncoder implements VideoEncoder {
 
         ByteBuffer frameBuffer;
         boolean isKeyFrame = (info.flags & MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
-        if (isKeyFrame && mimeType.equals(H264_MIME_TYPE)) {
+        if (isKeyFrame && codecType == VideoCodecType.H264) {
           Logging.d(TAG,
               "Prepending config frame of size " + configBuffer.capacity()
                   + " to output buffer with offset " + info.offset + ", size " + info.size);
