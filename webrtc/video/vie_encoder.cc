@@ -15,6 +15,7 @@
 #include <numeric>
 #include <utility>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/location.h"
@@ -575,6 +576,20 @@ void ViEEncoder::ReconfigureEncoder() {
       encoder_config_.video_stream_factory->CreateEncoderStreams(
           last_frame_info_->width, last_frame_info_->height, encoder_config_);
 
+  // TODO(ilnik): If configured resolution is significantly less than provided,
+  // e.g. because there are not enough SSRCs for all simulcast streams,
+  // signal new resolutions via SinkWants to video source.
+
+  // Stream dimensions may be not equal to given because of a simulcast
+  // restrictions.
+  int highest_stream_width = static_cast<int>(streams.back().width);
+  int highest_stream_height = static_cast<int>(streams.back().height);
+  // Dimension may be reduced to be, e.g. divisible by 4.
+  RTC_CHECK_GE(last_frame_info_->width, highest_stream_width);
+  RTC_CHECK_GE(last_frame_info_->height, highest_stream_height);
+  crop_width_ = last_frame_info_->width - highest_stream_width;
+  crop_height_ = last_frame_info_->height - highest_stream_height;
+
   VideoCodec codec;
   if (!VideoCodecInitializer::SetupCodec(encoder_config_, settings_, streams,
                                          nack_enabled_, &codec,
@@ -770,12 +785,35 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   }
   TraceFrameDropEnd();
 
+  VideoFrame out_frame(video_frame);
+  // Crop frame if needed.
+  if (crop_width_ > 0 || crop_height_ > 0) {
+    int cropped_width = video_frame.width() - crop_width_;
+    int cropped_height = video_frame.height() - crop_height_;
+    rtc::scoped_refptr<I420Buffer> cropped_buffer =
+        I420Buffer::Create(cropped_width, cropped_height);
+    // TODO(ilnik): Remove scaling if cropping is too big, as it should never
+    // happen after SinkWants signaled correctly from ReconfigureEncoder.
+    if (crop_width_ < 4 && crop_height_ < 4) {
+      cropped_buffer->CropAndScaleFrom(
+          *video_frame.video_frame_buffer()->ToI420(), crop_width_ / 2,
+          crop_height_ / 2, cropped_width, cropped_height);
+    } else {
+      cropped_buffer->ScaleFrom(
+          *video_frame.video_frame_buffer()->ToI420().get());
+    }
+    out_frame =
+        VideoFrame(cropped_buffer, video_frame.timestamp(),
+                   video_frame.render_time_ms(), video_frame.rotation());
+    out_frame.set_ntp_time_ms(video_frame.ntp_time_ms());
+  }
+
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");
 
-  overuse_detector_->FrameCaptured(video_frame, time_when_posted_us);
+  overuse_detector_->FrameCaptured(out_frame, time_when_posted_us);
 
-  video_sender_.AddVideoFrame(video_frame, nullptr);
+  video_sender_.AddVideoFrame(out_frame, nullptr);
 }
 
 void ViEEncoder::SendKeyFrame() {

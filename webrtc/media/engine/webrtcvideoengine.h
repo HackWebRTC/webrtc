@@ -525,6 +525,28 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   int64_t last_stats_log_ms_;
 };
 
+class EncoderStreamFactory
+    : public webrtc::VideoEncoderConfig::VideoStreamFactoryInterface {
+ public:
+  EncoderStreamFactory(std::string codec_name,
+                       int max_qp,
+                       int max_framerate,
+                       bool is_screencast,
+                       bool conference_mode);
+
+ private:
+  std::vector<webrtc::VideoStream> CreateEncoderStreams(
+      int width,
+      int height,
+      const webrtc::VideoEncoderConfig& encoder_config) override;
+
+  const std::string codec_name_;
+  const int max_qp_;
+  const int max_framerate_;
+  const bool is_screencast_;
+  const bool conference_mode_;
+};
+
 }  // namespace cricket
 
 #endif  // WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOENGINE_H_

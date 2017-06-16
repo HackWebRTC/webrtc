@@ -286,69 +286,6 @@ int GetDefaultVp9TemporalLayers() {
   }
   return 1;
 }
-
-class EncoderStreamFactory
-    : public webrtc::VideoEncoderConfig::VideoStreamFactoryInterface {
- public:
-  EncoderStreamFactory(std::string codec_name,
-                       int max_qp,
-                       int max_framerate,
-                       bool is_screencast,
-                       bool conference_mode)
-      : codec_name_(codec_name),
-        max_qp_(max_qp),
-        max_framerate_(max_framerate),
-        is_screencast_(is_screencast),
-        conference_mode_(conference_mode) {}
-
- private:
-  std::vector<webrtc::VideoStream> CreateEncoderStreams(
-      int width,
-      int height,
-      const webrtc::VideoEncoderConfig& encoder_config) override {
-    if (is_screencast_ &&
-        (!conference_mode_ || !cricket::UseSimulcastScreenshare())) {
-      RTC_DCHECK_EQ(1, encoder_config.number_of_streams);
-    }
-    if (encoder_config.number_of_streams > 1 ||
-        (CodecNamesEq(codec_name_, kVp8CodecName) && is_screencast_ &&
-         conference_mode_)) {
-      return GetSimulcastConfig(encoder_config.number_of_streams, width, height,
-                                encoder_config.max_bitrate_bps, max_qp_,
-                                max_framerate_, is_screencast_);
-    }
-
-    // For unset max bitrates set default bitrate for non-simulcast.
-    int max_bitrate_bps =
-        (encoder_config.max_bitrate_bps > 0)
-            ? encoder_config.max_bitrate_bps
-            : GetMaxDefaultVideoBitrateKbps(width, height) * 1000;
-
-    webrtc::VideoStream stream;
-    stream.width = width;
-    stream.height = height;
-    stream.max_framerate = max_framerate_;
-    stream.min_bitrate_bps = kMinVideoBitrateKbps * 1000;
-    stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate_bps;
-    stream.max_qp = max_qp_;
-
-    if (CodecNamesEq(codec_name_, kVp9CodecName) && !is_screencast_) {
-      stream.temporal_layer_thresholds_bps.resize(
-          GetDefaultVp9TemporalLayers() - 1);
-    }
-
-    std::vector<webrtc::VideoStream> streams;
-    streams.push_back(stream);
-    return streams;
-  }
-
-  const std::string codec_name_;
-  const int max_qp_;
-  const int max_framerate_;
-  const bool is_screencast_;
-  const bool conference_mode_;
-};
-
 }  // namespace
 
 // Constants defined in webrtc/media/engine/constants.h
@@ -2674,6 +2611,57 @@ WebRtcVideoChannel::MapCodecs(const std::vector<VideoCodec>& codecs) {
   }
 
   return video_codecs;
+}
+
+EncoderStreamFactory::EncoderStreamFactory(std::string codec_name,
+                                           int max_qp,
+                                           int max_framerate,
+                                           bool is_screencast,
+                                           bool conference_mode)
+    : codec_name_(codec_name),
+      max_qp_(max_qp),
+      max_framerate_(max_framerate),
+      is_screencast_(is_screencast),
+      conference_mode_(conference_mode) {}
+
+std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
+    int width,
+    int height,
+    const webrtc::VideoEncoderConfig& encoder_config) {
+  if (is_screencast_ &&
+      (!conference_mode_ || !cricket::UseSimulcastScreenshare())) {
+    RTC_DCHECK_EQ(1, encoder_config.number_of_streams);
+  }
+  if (encoder_config.number_of_streams > 1 ||
+      (CodecNamesEq(codec_name_, kVp8CodecName) && is_screencast_ &&
+       conference_mode_)) {
+    return GetSimulcastConfig(encoder_config.number_of_streams, width, height,
+                              encoder_config.max_bitrate_bps, max_qp_,
+                              max_framerate_, is_screencast_);
+  }
+
+  // For unset max bitrates set default bitrate for non-simulcast.
+  int max_bitrate_bps =
+      (encoder_config.max_bitrate_bps > 0)
+          ? encoder_config.max_bitrate_bps
+          : GetMaxDefaultVideoBitrateKbps(width, height) * 1000;
+
+  webrtc::VideoStream stream;
+  stream.width = width;
+  stream.height = height;
+  stream.max_framerate = max_framerate_;
+  stream.min_bitrate_bps = kMinVideoBitrateKbps * 1000;
+  stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate_bps;
+  stream.max_qp = max_qp_;
+
+  if (CodecNamesEq(codec_name_, kVp9CodecName) && !is_screencast_) {
+    stream.temporal_layer_thresholds_bps.resize(GetDefaultVp9TemporalLayers() -
+                                                1);
+  }
+
+  std::vector<webrtc::VideoStream> streams;
+  streams.push_back(stream);
+  return streams;
 }
 
 }  // namespace cricket

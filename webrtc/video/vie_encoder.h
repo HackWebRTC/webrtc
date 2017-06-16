@@ -257,6 +257,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // encoder on the next frame.
   bool pending_encoder_reconfiguration_ ACCESS_ON(&encoder_queue_);
   rtc::Optional<VideoFrameInfo> last_frame_info_ ACCESS_ON(&encoder_queue_);
+  int crop_width_ ACCESS_ON(&encoder_queue_);
+  int crop_height_ ACCESS_ON(&encoder_queue_);
   uint32_t encoder_start_bitrate_bps_ ACCESS_ON(&encoder_queue_);
   size_t max_data_payload_length_ ACCESS_ON(&encoder_queue_);
   bool nack_enabled_ ACCESS_ON(&encoder_queue_);

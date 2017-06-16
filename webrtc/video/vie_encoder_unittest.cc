@@ -166,6 +166,7 @@ class VideoStreamFactory
   const int framerate_;
 };
 
+
 class AdaptingFrameForwarder : public test::FrameForwarder {
  public:
   AdaptingFrameForwarder() : adaptation_enabled_(false) {}
@@ -2943,5 +2944,72 @@ TEST_F(ViEEncoderTest, AdaptWithTwoReasonsAndDifferentOrder_Resolution) {
 
   vie_encoder_->Stop();
 }
+
+TEST_F(ViEEncoderTest, AcceptsFullHdAdaptedDownSimulcastFrames) {
+  // Simulates simulcast behavior and makes highest stream resolutions divisible
+  // by 4.
+  class CroppingVideoStreamFactory
+      : public VideoEncoderConfig::VideoStreamFactoryInterface {
+   public:
+    explicit CroppingVideoStreamFactory(size_t num_temporal_layers,
+                                        int framerate)
+        : num_temporal_layers_(num_temporal_layers), framerate_(framerate) {
+      EXPECT_GT(num_temporal_layers, 0u);
+      EXPECT_GT(framerate, 0);
+    }
+
+   private:
+    std::vector<VideoStream> CreateEncoderStreams(
+        int width,
+        int height,
+        const VideoEncoderConfig& encoder_config) override {
+      std::vector<VideoStream> streams =
+          test::CreateVideoStreams(width - width % 4, height - height % 4,
+                                   encoder_config);
+      for (VideoStream& stream : streams) {
+        stream.temporal_layer_thresholds_bps.resize(num_temporal_layers_ - 1);
+        stream.max_framerate = framerate_;
+      }
+      return streams;
+    }
+
+    const size_t num_temporal_layers_;
+    const int framerate_;
+  };
+
+  const int kFrameWidth = 1920;
+  const int kFrameHeight = 1080;
+  // 3/4 of 1920.
+  const int kAdaptedFrameWidth = 1440;
+  // 3/4 of 1080 rounded down to multiple of 4.
+  const int kAdaptedFrameHeight = 808;
+  const int kFramerate = 24;
+
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+  // Trigger reconfigure encoder (without resetting the entire instance).
+  VideoEncoderConfig video_encoder_config;
+  video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
+  video_encoder_config.number_of_streams = 1;
+  video_encoder_config.video_stream_factory =
+      new rtc::RefCountedObject<CroppingVideoStreamFactory>(1, kFramerate);
+  vie_encoder_->ConfigureEncoder(std::move(video_encoder_config),
+                                   kMaxPayloadLength, false);
+  vie_encoder_->WaitUntilTaskQueueIsIdle();
+
+  video_source_.set_adaptation_enabled(true);
+
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(kFrameWidth, kFrameHeight);
+
+  // Trigger CPU overuse, downscale by 3/4.
+  vie_encoder_->TriggerCpuOveruse();
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(2, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(kAdaptedFrameWidth, kAdaptedFrameHeight);
+
+  vie_encoder_->Stop();
+}
+
 
 }  // namespace webrtc
