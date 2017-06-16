@@ -138,14 +138,23 @@ typedef std::vector<ProtocolAddress> PortList;
 struct RelayServerConfig {
   RelayServerConfig(RelayType type) : type(type) {}
 
+  RelayServerConfig(const rtc::SocketAddress& address,
+                    const std::string& username,
+                    const std::string& password,
+                    ProtocolType proto)
+      : type(RELAY_TURN), credentials(username, password) {
+    ports.push_back(ProtocolAddress(address, proto));
+  }
+
   RelayServerConfig(const std::string& address,
                     int port,
                     const std::string& username,
                     const std::string& password,
                     ProtocolType proto)
-      : type(RELAY_TURN), credentials(username, password) {
-    ports.push_back(ProtocolAddress(rtc::SocketAddress(address, port), proto));
-  }
+      : RelayServerConfig(rtc::SocketAddress(address, port),
+                          username,
+                          password,
+                          proto) {}
 
   // Legacy constructor where "secure" and PROTO_TCP implies PROTO_TLS.
   RelayServerConfig(const std::string& address,

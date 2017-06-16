@@ -40,6 +40,14 @@ class IceServerParsingTest : public testing::Test {
                 const std::string& username,
                 const std::string& password,
                 PeerConnectionInterface::TlsCertPolicy tls_certificate_policy) {
+    return ParseUrl(url, username, password, tls_certificate_policy, "");
+  }
+
+  bool ParseUrl(const std::string& url,
+                const std::string& username,
+                const std::string& password,
+                PeerConnectionInterface::TlsCertPolicy tls_certificate_policy,
+                const std::string& hostname) {
     stun_servers_.clear();
     turn_servers_.clear();
     PeerConnectionInterface::IceServers servers;
@@ -48,6 +56,7 @@ class IceServerParsingTest : public testing::Test {
     server.username = username;
     server.password = password;
     server.tls_cert_policy = tls_certificate_policy;
+    server.hostname = hostname;
     servers.push_back(server);
     return webrtc::ParseIceServers(servers, &stun_servers_, &turn_servers_) ==
            webrtc::RTCErrorType::NONE;
@@ -147,6 +156,18 @@ TEST_F(IceServerParsingTest, ParseHostnameAndPort) {
   EXPECT_EQ(1U, stun_servers_.size());
   EXPECT_EQ("hostname", stun_servers_.begin()->hostname());
   EXPECT_EQ(3478, stun_servers_.begin()->port());
+
+  // Both TURN IP and host exist
+  EXPECT_TRUE(
+      ParseUrl("turn:1.2.3.4:1234", "username", "password",
+               PeerConnectionInterface::TlsCertPolicy::kTlsCertPolicySecure,
+               "hostname"));
+  EXPECT_EQ(1U, turn_servers_.size());
+  rtc::SocketAddress address = turn_servers_[0].ports[0].address;
+  EXPECT_EQ("hostname", address.hostname());
+  EXPECT_EQ(1234, address.port());
+  EXPECT_FALSE(address.IsUnresolvedIP());
+  EXPECT_EQ("1.2.3.4", address.ipaddr().ToString());
 
   // Try some invalid hostname:port strings.
   EXPECT_FALSE(ParseUrl("stun:hostname:99a99"));

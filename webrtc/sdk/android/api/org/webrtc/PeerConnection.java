@@ -96,10 +96,19 @@ public class PeerConnection {
 
   /** Java version of PeerConnectionInterface.IceServer. */
   public static class IceServer {
+    // List of URIs associated with this server. Valid formats are described
+    // in RFC7064 and RFC7065, and more may be added in the future. The "host"
+    // part of the URI may contain either an IP address or a hostname.
     public final String uri;
     public final String username;
     public final String password;
     public final TlsCertPolicy tlsCertPolicy;
+
+    // If the URIs in |urls| only contain IP addresses, this field can be used
+    // to indicate the hostname, which may be necessary for TLS (using the SNI
+    // extension). If |urls| itself contains the hostname, this isn't
+    // necessary.
+    public final String hostname;
 
     /** Convenience constructor for STUN servers. */
     public IceServer(String uri) {
@@ -111,14 +120,21 @@ public class PeerConnection {
     }
 
     public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy) {
+      this(uri, username, password, tlsCertPolicy, "");
+    }
+
+    public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy,
+        String hostname) {
       this.uri = uri;
       this.username = username;
       this.password = password;
       this.tlsCertPolicy = tlsCertPolicy;
+      this.hostname = hostname;
     }
 
     public String toString() {
-      return uri + " [" + username + ":" + password + "] [" + tlsCertPolicy + "]";
+      return uri + " [" + username + ":" + password + "] [" + tlsCertPolicy + "] [" + hostname
+          + "]";
     }
   }
 

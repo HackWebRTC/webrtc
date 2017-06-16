@@ -233,8 +233,25 @@ static RTCErrorType ParseIceServerUrl(
         // or credential are ommitted; this is the native equivalent.
         return RTCErrorType::INVALID_PARAMETER;
       }
+      // If the hostname field is not empty, then the server address must be
+      // the resolved IP for that host, the hostname is needed later for TLS
+      // handshake (SNI and Certificate verification).
+      const std::string& hostname =
+          server.hostname.empty() ? address : server.hostname;
+      rtc::SocketAddress socket_address(hostname, port);
+      if (!server.hostname.empty()) {
+        rtc::IPAddress ip;
+        if (!IPFromString(address, &ip)) {
+          // When hostname is set, the server address must be a
+          // resolved ip address.
+          LOG(LS_ERROR) << "IceServer has hostname field set, but URI does not "
+                           "contain an IP address.";
+          return RTCErrorType::INVALID_PARAMETER;
+        }
+        socket_address.SetResolvedIP(ip);
+      }
       cricket::RelayServerConfig config = cricket::RelayServerConfig(
-          address, port, username, server.password, turn_transport_type);
+          socket_address, username, server.password, turn_transport_type);
       if (server.tls_cert_policy ==
           PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck) {
         config.tls_cert_policy =
