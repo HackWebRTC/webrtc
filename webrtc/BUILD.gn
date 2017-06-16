@@ -386,6 +386,7 @@ if (rtc_include_tests) {
     testonly = true
     deps = [
       "api:rtc_api_unittests",
+      "api/audio_codecs/test:audio_codecs_api_unittests",
       "base:rtc_base_approved_unittests",
       "base:rtc_base_unittests",
       "base:rtc_numerics_unittests",
