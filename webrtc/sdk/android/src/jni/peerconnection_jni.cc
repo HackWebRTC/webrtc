@@ -871,10 +871,29 @@ class JavaVideoRendererWrapper
 
   void OnFrame(const webrtc::VideoFrame& video_frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    jobject j_frame = (video_frame.video_frame_buffer()->type() ==
-                       webrtc::VideoFrameBuffer::Type::kNative)
-                          ? ToJavaTextureFrame(&video_frame)
-                          : ToJavaI420Frame(&video_frame);
+
+    jobject j_frame;
+    if (video_frame.video_frame_buffer()->type() ==
+        webrtc::VideoFrameBuffer::Type::kNative) {
+      AndroidVideoFrameBuffer* android_buffer =
+          static_cast<AndroidVideoFrameBuffer*>(
+              video_frame.video_frame_buffer().get());
+      switch (android_buffer->android_type()) {
+        case AndroidVideoFrameBuffer::AndroidType::kTextureBuffer:
+          j_frame = ToJavaTextureFrame(&video_frame);
+          break;
+        case AndroidVideoFrameBuffer::AndroidType::kJavaBuffer:
+          j_frame = static_cast<AndroidVideoBuffer*>(android_buffer)
+                        ->ToJavaI420Frame(jni(), video_frame.width(),
+                                          video_frame.height(),
+                                          video_frame.rotation());
+          break;
+        default:
+          RTC_NOTREACHED();
+      }
+    } else {
+      j_frame = ToJavaI420Frame(&video_frame);
+    }
     // |j_callbacks_| is responsible for releasing |j_frame| with
     // VideoRenderer.renderFrameDone().
     jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
