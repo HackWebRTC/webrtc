@@ -17,7 +17,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/networkroute.h"
-#include "webrtc/base/thread_checker.h"
+#include "webrtc/base/race_checker.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/congestion_controller/transport_feedback_adapter.h"
@@ -155,7 +155,7 @@ class SendSideCongestionController : public CallStatsObserver,
   int min_bitrate_bps_ GUARDED_BY(bwe_lock_);
   std::unique_ptr<DelayBasedBwe> delay_based_bwe_ GUARDED_BY(bwe_lock_);
 
-  rtc::ThreadChecker worker_thread_checker_;
+  rtc::RaceChecker worker_race_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendSideCongestionController);
 };

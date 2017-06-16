@@ -17,7 +17,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/thread_checker.h"
+#include "webrtc/base/race_checker.h"
 #include "webrtc/modules/congestion_controller/median_slope_estimator.h"
 #include "webrtc/modules/congestion_controller/probe_bitrate_estimator.h"
 #include "webrtc/modules/congestion_controller/trendline_estimator.h"
@@ -70,7 +70,7 @@ class DelayBasedBwe {
                       bool overusing,
                       uint32_t* target_bitrate_bps);
 
-  rtc::ThreadChecker network_thread_;
+  rtc::RaceChecker network_race_;
   RtcEventLog* const event_log_;
   const Clock* const clock_;
   std::unique_ptr<InterArrival> inter_arrival_;

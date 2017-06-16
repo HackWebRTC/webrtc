@@ -74,7 +74,6 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
       last_logged_state_(BandwidthUsage::kBwNormal),
       in_sparse_update_experiment_(BweSparseUpdateExperimentIsEnabled()) {
   LOG(LS_INFO) << "Using Trendline filter for delay change estimation.";
-  network_thread_.DetachFromThread();
 }
 
 DelayBasedBwe::~DelayBasedBwe() {}
@@ -85,7 +84,7 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
   RTC_DCHECK(std::is_sorted(packet_feedback_vector.begin(),
                             packet_feedback_vector.end(),
                             PacketFeedbackComparator()));
-  RTC_DCHECK(network_thread_.CalledOnValidThread());
+  RTC_DCHECK_RUNS_SERIALIZED(&network_race_);
 
   // TOOD(holmer): An empty feedback vector here likely means that
   // all acks were too late and that the send time history had

@@ -101,7 +101,6 @@ SendSideCongestionController::SendSideCongestionController(
       min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       delay_based_bwe_(new DelayBasedBwe(event_log_, clock_)) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
-  worker_thread_checker_.DetachFromThread();
 }
 
 SendSideCongestionController::~SendSideCongestionController() {}
@@ -273,7 +272,7 @@ void SendSideCongestionController::AddPacket(
 
 void SendSideCongestionController::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUNS_SERIALIZED(&worker_race_);
   transport_feedback_adapter_.OnTransportFeedback(feedback);
   std::vector<PacketFeedback> feedback_vector = ReceivedPacketFeedbackVector(
       transport_feedback_adapter_.GetTransportFeedbackVector());
@@ -292,7 +291,7 @@ void SendSideCongestionController::OnTransportFeedback(
 
 std::vector<PacketFeedback>
 SendSideCongestionController::GetTransportFeedbackVector() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUNS_SERIALIZED(&worker_race_);
   return transport_feedback_adapter_.GetTransportFeedbackVector();
 }
 

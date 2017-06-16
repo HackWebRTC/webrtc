@@ -17,7 +17,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/base/thread_checker.h"
+#include "webrtc/base/race_checker.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -84,7 +84,7 @@ class PacketRouter : public PacedSender::PacketSender,
   virtual bool SendTransportFeedback(rtcp::TransportFeedback* packet);
 
  private:
-  rtc::ThreadChecker pacer_thread_checker_;
+  rtc::RaceChecker pacer_race_;
   rtc::CriticalSection modules_crit_;
   std::list<RtpRtcp*> rtp_send_modules_ GUARDED_BY(modules_crit_);
   std::vector<RtpRtcp*> rtp_receive_modules_ GUARDED_BY(modules_crit_);
