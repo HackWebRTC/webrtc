@@ -435,11 +435,13 @@ void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
 void StatsCollector::RemoveLocalAudioTrack(AudioTrackInterface* audio_track,
                                            uint32_t ssrc) {
   RTC_DCHECK(audio_track != NULL);
-  local_audio_tracks_.erase(std::remove_if(local_audio_tracks_.begin(),
-      local_audio_tracks_.end(),
-      [audio_track, ssrc](const LocalAudioTrackVector::value_type& track) {
-        return track.first == audio_track && track.second == ssrc;
-      }));
+  local_audio_tracks_.erase(
+      std::remove_if(
+          local_audio_tracks_.begin(), local_audio_tracks_.end(),
+          [audio_track, ssrc](const LocalAudioTrackVector::value_type& track) {
+            return track.first == audio_track && track.second == ssrc;
+          }),
+      local_audio_tracks_.end());
 }
 
 void StatsCollector::GetStats(MediaStreamTrackInterface* track,
