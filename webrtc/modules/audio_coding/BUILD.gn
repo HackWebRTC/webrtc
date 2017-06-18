@@ -828,7 +828,6 @@ rtc_static_library("webrtc_opus") {
     ":audio_network_adaptor",
     "../..:webrtc_common",
     "../../api/audio_codecs:audio_codecs_api",
-    "../../api/audio_codecs/opus:audio_encoder_opus_config",
     "../../base:protobuf_utils",
     "../../base:rtc_base_approved",
     "../../base:rtc_numerics",
@@ -840,6 +839,11 @@ rtc_static_library("webrtc_opus") {
   ]
 
   defines = audio_codec_defines
+  if (rtc_opus_variable_complexity) {
+    defines += [ "WEBRTC_OPUS_VARIABLE_COMPLEXITY=1" ]
+  } else {
+    defines += [ "WEBRTC_OPUS_VARIABLE_COMPLEXITY=0" ]
+  }
 
   if (rtc_build_opus) {
     public_deps += [ rtc_opus_dir ]
@@ -1480,7 +1484,6 @@ if (rtc_include_tests) {
       ":neteq",
       ":neteq_tools",
       "../../api/audio_codecs:audio_codecs_api",
-      "../../api/audio_codecs/opus:audio_encoder_opus",
       "../../base:protobuf_utils",
       "../../common_audio",
       "../../test:test_main",

@@ -163,7 +163,7 @@ std::unique_ptr<AudioEncoder> CreateEncoder(
 #endif
 #ifdef WEBRTC_CODEC_OPUS
   if (STR_CASE_CMP(speech_inst.plname, "opus") == 0)
-    return std::unique_ptr<AudioEncoder>(new AudioEncoderOpusImpl(speech_inst));
+    return std::unique_ptr<AudioEncoder>(new AudioEncoderOpus(speech_inst));
 #endif
   if (STR_CASE_CMP(speech_inst.plname, "pcmu") == 0)
     return std::unique_ptr<AudioEncoder>(new AudioEncoderPcmU(speech_inst));

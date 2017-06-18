@@ -19,10 +19,9 @@
 namespace webrtc {
 
 namespace {
-int64_t RunComplexityTest(const AudioEncoderOpusConfig& config) {
+int64_t RunComplexityTest(const AudioEncoderOpus::Config& config) {
   // Create encoder.
-  constexpr int payload_type = 17;
-  AudioEncoderOpusImpl encoder(config, payload_type);
+  AudioEncoderOpus encoder(config);
   // Open speech file.
   const std::string kInputFileName =
       webrtc::test::ResourcePath("audio_coding/speech_mono_32_48kHz", "pcm");
@@ -61,14 +60,14 @@ int64_t RunComplexityTest(const AudioEncoderOpusConfig& config) {
 // the lower rate.
 TEST(AudioEncoderOpusComplexityAdaptationTest, AdaptationOn) {
   // Create config.
-  AudioEncoderOpusConfig config;
+  AudioEncoderOpus::Config config;
   // The limit -- including the hysteresis window -- at which the complexity
   // shuold be increased.
-  config.bitrate_bps = 11000 - 1;
+  config.bitrate_bps = rtc::Optional<int>(11000 - 1);
   config.low_rate_complexity = 9;
   int64_t runtime_10999bps = RunComplexityTest(config);
 
-  config.bitrate_bps = 15500;
+  config.bitrate_bps = rtc::Optional<int>(15500);
   int64_t runtime_15500bps = RunComplexityTest(config);
 
   test::PrintResult("opus_encoding_complexity_ratio", "", "adaptation_on",
@@ -81,14 +80,14 @@ TEST(AudioEncoderOpusComplexityAdaptationTest, AdaptationOn) {
 // that the resulting ratio is less than 100% at all times.
 TEST(AudioEncoderOpusComplexityAdaptationTest, AdaptationOff) {
   // Create config.
-  AudioEncoderOpusConfig config;
+  AudioEncoderOpus::Config config;
   // The limit -- including the hysteresis window -- at which the complexity
   // shuold be increased (but not in this test since complexity adaptation is
   // disabled).
-  config.bitrate_bps = 11000 - 1;
+  config.bitrate_bps = rtc::Optional<int>(11000 - 1);
   int64_t runtime_10999bps = RunComplexityTest(config);
 
-  config.bitrate_bps = 15500;
+  config.bitrate_bps = rtc::Optional<int>(15500);
   int64_t runtime_15500bps = RunComplexityTest(config);
 
   test::PrintResult("opus_encoding_complexity_ratio", "", "adaptation_off",

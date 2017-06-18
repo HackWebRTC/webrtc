@@ -1501,7 +1501,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms) {
 
 TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms) {
   const SdpAudioFormat kOpusFormat("opus", 48000, 2, {{"stereo", "1"}});
-  AudioEncoderOpusImpl encoder(120, kOpusFormat);
+  AudioEncoderOpus encoder(120, kOpusFormat);
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(&encoder, 120));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "855041f2490b887302bce9d544731849",
@@ -1547,7 +1547,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms_voip) {
 
 TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms_voip) {
   const SdpAudioFormat kOpusFormat("opus", 48000, 2, {{"stereo", "1"}});
-  AudioEncoderOpusImpl encoder(120, kOpusFormat);
+  AudioEncoderOpus encoder(120, kOpusFormat);
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(&encoder, 120));
   // If not set, default will be kAudio in case of stereo.
   EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
@@ -1664,7 +1664,7 @@ TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_10kbps) {
 }
 
 TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_10kbps) {
-  AudioEncoderOpusImpl encoder(
+  AudioEncoderOpus encoder(
       107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "10000"}}));
   ASSERT_TRUE(SetUpSender());
   ASSERT_TRUE(RegisterExternalSendCodec(&encoder, 107));
@@ -1693,7 +1693,7 @@ TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_50kbps) {
 }
 
 TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_50kbps) {
-  AudioEncoderOpusImpl encoder(
+  AudioEncoderOpus encoder(
       107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "50000"}}));
   ASSERT_TRUE(SetUpSender());
   ASSERT_TRUE(RegisterExternalSendCodec(&encoder, 107));
@@ -1721,7 +1721,7 @@ TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_100kbps) {
 }
 
 TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_100kbps) {
-  AudioEncoderOpusImpl encoder(
+  AudioEncoderOpus encoder(
       107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "100000"}}));
   ASSERT_TRUE(SetUpSender());
   ASSERT_TRUE(RegisterExternalSendCodec(&encoder, 107));

@@ -74,7 +74,7 @@ NamedEncoderFactory encoder_factories[] = {
 #endif
 
 #ifdef WEBRTC_CODEC_OPUS
-    NamedEncoderFactory::ForEncoder<AudioEncoderOpusImpl>(),
+    NamedEncoderFactory::ForEncoder<AudioEncoderOpus>(),
 #endif
     NamedEncoderFactory::ForEncoder<AudioEncoderPcm16B>(),
     NamedEncoderFactory::ForEncoder<AudioEncoderPcmA>(),

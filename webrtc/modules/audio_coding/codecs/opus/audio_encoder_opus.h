@@ -18,7 +18,6 @@
 
 #include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/audio_codecs/audio_format.h"
-#include "webrtc/api/audio_codecs/opus/audio_encoder_opus_config.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/protobuf_utils.h"
@@ -32,31 +31,70 @@ class RtcEventLog;
 
 struct CodecInst;
 
-class AudioEncoderOpusImpl final : public AudioEncoder {
+class AudioEncoderOpus final : public AudioEncoder {
  public:
-  static AudioEncoderOpusConfig CreateConfig(const CodecInst& codec_inst);
-  static rtc::Optional<AudioEncoderOpusConfig> SdpToConfig(
-      const SdpAudioFormat& format);
+  enum ApplicationMode {
+    kVoip = 0,
+    kAudio = 1,
+  };
 
-  // Returns empty if the current bitrate falls within the hysteresis window,
-  // defined by complexity_threshold_bps +/- complexity_threshold_window_bps.
-  // Otherwise, returns the current complexity depending on whether the current
-  // bitrate is above or below complexity_threshold_bps.
-  static rtc::Optional<int> GetNewComplexity(
-      const AudioEncoderOpusConfig& config);
+  struct Config {
+    Config();
+    Config(const Config&);
+    ~Config();
+    Config& operator=(const Config&);
+
+    bool IsOk() const;
+    int GetBitrateBps() const;
+    // Returns empty if the current bitrate falls within the hysteresis window,
+    // defined by complexity_threshold_bps +/- complexity_threshold_window_bps.
+    // Otherwise, returns the current complexity depending on whether the
+    // current bitrate is above or below complexity_threshold_bps.
+    rtc::Optional<int> GetNewComplexity() const;
+
+    static constexpr int kDefaultFrameSizeMs = 20;
+    int frame_size_ms = kDefaultFrameSizeMs;
+    size_t num_channels = 1;
+    int payload_type = 120;
+    ApplicationMode application = kVoip;
+    rtc::Optional<int> bitrate_bps;  // Unset means to use default value.
+    bool fec_enabled = false;
+    bool cbr_enabled = false;
+    int max_playback_rate_hz = 48000;
+    int complexity = kDefaultComplexity;
+    // This value may change in the struct's constructor.
+    int low_rate_complexity = kDefaultComplexity;
+    // low_rate_complexity is used when the bitrate is below this threshold.
+    int complexity_threshold_bps = 12500;
+    int complexity_threshold_window_bps = 1500;
+    bool dtx_enabled = false;
+    std::vector<int> supported_frame_lengths_ms;
+    int uplink_bandwidth_update_interval_ms = 200;
+
+   private:
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_ARCH_ARM)
+    // If we are on Android, iOS and/or ARM, use a lower complexity setting as
+    // default, to save encoder complexity.
+    static const int kDefaultComplexity = 5;
+#else
+    static const int kDefaultComplexity = 9;
+#endif
+  };
+
+  static Config CreateConfig(int payload_type, const SdpAudioFormat& format);
+  static Config CreateConfig(const CodecInst& codec_inst);
 
   using AudioNetworkAdaptorCreator =
       std::function<std::unique_ptr<AudioNetworkAdaptor>(const std::string&,
                                                          RtcEventLog*)>;
-  AudioEncoderOpusImpl(
-      const AudioEncoderOpusConfig& config,
-      int payload_type,
+  AudioEncoderOpus(
+      const Config& config,
       AudioNetworkAdaptorCreator&& audio_network_adaptor_creator = nullptr,
       std::unique_ptr<SmoothingFilter> bitrate_smoother = nullptr);
 
-  explicit AudioEncoderOpusImpl(const CodecInst& codec_inst);
-  AudioEncoderOpusImpl(int payload_type, const SdpAudioFormat& format);
-  ~AudioEncoderOpusImpl() override;
+  explicit AudioEncoderOpus(const CodecInst& codec_inst);
+  AudioEncoderOpus(int payload_type, const SdpAudioFormat& format);
+  ~AudioEncoderOpus() override;
 
   // Static interface for use by BuiltinAudioEncoderFactory.
   static constexpr const char* GetPayloadName() { return "opus"; }
@@ -100,9 +138,7 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
 
   // Getters for testing.
   float packet_loss_rate() const { return packet_loss_rate_; }
-  AudioEncoderOpusConfig::ApplicationMode application() const {
-    return config_.application;
-  }
+  ApplicationMode application() const { return config_.application; }
   bool fec_enabled() const { return config_.fec_enabled; }
   size_t num_channels_to_encode() const { return num_channels_to_encode_; }
   int next_frame_length_ms() const { return next_frame_length_ms_; }
@@ -118,7 +154,7 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
   size_t Num10msFramesPerPacket() const;
   size_t SamplesPer10msFrame() const;
   size_t SufficientOutputBufferSize() const;
-  bool RecreateEncoderInstance(const AudioEncoderOpusConfig& config);
+  bool RecreateEncoderInstance(const Config& config);
   void SetFrameLength(int frame_length_ms);
   void SetNumChannelsToEncode(size_t num_channels_to_encode);
   void SetProjectedPacketLossRate(float fraction);
@@ -134,8 +170,7 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
 
   void MaybeUpdateUplinkBandwidth();
 
-  AudioEncoderOpusConfig config_;
-  const int payload_type_;
+  Config config_;
   const bool send_side_bwe_with_overhead_;
   float packet_loss_rate_;
   std::vector<int16_t> input_buffer_;
@@ -151,7 +186,7 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
   const std::unique_ptr<SmoothingFilter> bitrate_smoother_;
   rtc::Optional<int64_t> bitrate_smoother_last_update_time_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderOpusImpl);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderOpus);
 };
 
 }  // namespace webrtc

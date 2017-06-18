@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/audio_codecs/opus/audio_encoder_opus.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g722/audio_decoder_g722.h"
@@ -29,6 +28,7 @@
 #include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_decoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/opus/audio_decoder_opus.h"
+#include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/audio_decoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
@@ -434,10 +434,11 @@ class AudioDecoderOpusTest : public AudioDecoderTest {
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderOpus(1);
-    AudioEncoderOpusConfig config;
+    AudioEncoderOpus::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_) / 48;
-    config.application = AudioEncoderOpusConfig::ApplicationMode::kVoip;
-    audio_encoder_ = AudioEncoderOpus::MakeAudioEncoder(config, payload_type_);
+    config.payload_type = payload_type_;
+    config.application = AudioEncoderOpus::kVoip;
+    audio_encoder_.reset(new AudioEncoderOpus(config));
   }
 };
 
@@ -447,11 +448,12 @@ class AudioDecoderOpusStereoTest : public AudioDecoderOpusTest {
     channels_ = 2;
     delete decoder_;
     decoder_ = new AudioDecoderOpus(2);
-    AudioEncoderOpusConfig config;
+    AudioEncoderOpus::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_) / 48;
     config.num_channels = 2;
-    config.application = AudioEncoderOpusConfig::ApplicationMode::kAudio;
-    audio_encoder_ = AudioEncoderOpus::MakeAudioEncoder(config, payload_type_);
+    config.payload_type = payload_type_;
+    config.application = AudioEncoderOpus::kAudio;
+    audio_encoder_.reset(new AudioEncoderOpus(config));
   }
 };
 
