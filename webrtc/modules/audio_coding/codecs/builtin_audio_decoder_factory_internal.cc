@@ -130,7 +130,7 @@ NamedDecoderConstructor decoder_constructors[] = {
        if (format.clockrate_hz == 8000) {
          if (format.num_channels == 1) {
            if (out) {
-             out->reset(new AudioDecoderG722);
+             out->reset(new AudioDecoderG722Impl);
            }
            return true;
          } else if (format.num_channels == 2) {
