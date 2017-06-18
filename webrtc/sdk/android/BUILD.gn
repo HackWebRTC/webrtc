@@ -22,30 +22,77 @@ config("libjingle_peerconnection_jni_warnings_config") {
   }
 }
 
-rtc_static_library("libjingle_peerconnection_jni") {
+rtc_source_set("base_jni") {
   sources = [
-    "src/jni/androidhistogram_jni.cc",
     "src/jni/androidmediacodeccommon.h",
-    "src/jni/androidmediadecoder_jni.cc",
-    "src/jni/androidmediadecoder_jni.h",
-    "src/jni/androidmediaencoder_jni.cc",
-    "src/jni/androidmediaencoder_jni.h",
-    "src/jni/androidnetworkmonitor_jni.cc",
-    "src/jni/androidnetworkmonitor_jni.h",
-    "src/jni/androidvideotracksource.cc",
-    "src/jni/androidvideotracksource.h",
-    "src/jni/androidvideotracksource_jni.cc",
+    "src/jni/audio_jni.h",
     "src/jni/classreferenceholder.cc",
     "src/jni/classreferenceholder.h",
     "src/jni/jni_helpers.cc",
     "src/jni/jni_helpers.h",
+    "src/jni/media_jni.h",
+    "src/jni/ownedfactoryandthreads.cc",
+    "src/jni/ownedfactoryandthreads.h",
+    "src/jni/video_jni.h",
+  ]
+
+  deps = [
+    "//webrtc/api:libjingle_peerconnection_api",
+    "//webrtc/base:rtc_base",
+    "//webrtc/base:rtc_base_approved",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [
+      "//build/config/clang:extra_warnings",
+      "//build/config/clang:find_bad_constructs",
+    ]
+  }
+}
+
+rtc_static_library("audio_jni") {
+  sources = [
+    "src/jni/audio_jni.cc",
+  ]
+
+  deps = [
+    ":base_jni",
+    "//webrtc/api/audio_codecs:builtin_audio_decoder_factory",
+    "//webrtc/api/audio_codecs:builtin_audio_encoder_factory",
+    "//webrtc/voice_engine:voice_engine",
+  ]
+}
+
+rtc_static_library("null_audio_jni") {
+  sources = [
+    "src/jni/null_audio_jni.cc",
+  ]
+
+  deps = [
+    ":base_jni",
+    "//webrtc/api:libjingle_peerconnection_api",
+    "//webrtc/base:rtc_base",
+    "//webrtc/base:rtc_base_approved",
+  ]
+}
+
+rtc_static_library("video_jni") {
+  sources = [
+    "src/jni/androidhistogram_jni.cc",
+    "src/jni/androidmediadecoder_jni.cc",
+    "src/jni/androidmediadecoder_jni.h",
+    "src/jni/androidmediaencoder_jni.cc",
+    "src/jni/androidmediaencoder_jni.h",
+    "src/jni/androidvideotracksource.cc",
+    "src/jni/androidvideotracksource.h",
+    "src/jni/androidvideotracksource_jni.cc",
     "src/jni/native_handle_impl.cc",
     "src/jni/native_handle_impl.h",
-    "src/jni/peerconnection_jni.cc",
-    "src/jni/rtcstatscollectorcallbackwrapper.cc",
-    "src/jni/rtcstatscollectorcallbackwrapper.h",
     "src/jni/surfacetexturehelper_jni.cc",
     "src/jni/surfacetexturehelper_jni.h",
+    "src/jni/video_jni.cc",
+    "src/jni/video_renderer_jni.cc",
     "src/jni/wrapped_native_i420_buffer.cc",
     "src/jni/wrapped_native_i420_buffer.h",
   ]
@@ -71,22 +118,22 @@ rtc_static_library("libjingle_peerconnection_jni") {
   }
 
   deps = [
-    "../..:webrtc_common",
-    "../../api:video_frame_api",
-    "../../api/video_codecs:video_codecs_api",
-    "../../base:rtc_base",
-    "../../base:rtc_base_approved",
-    "../../base:rtc_task_queue",
-    "../../base:sequenced_task_checker",
-    "../../base:weak_ptr",
-    "../../common_video:common_video",
-    "../../media:rtc_media",
-    "../../media:rtc_media_base",
-    "../../modules/utility:utility",
-    "../../modules/video_coding:video_coding_utility",
-    "../../system_wrappers:system_wrappers",
-    "../../voice_engine:voice_engine",
-    "//webrtc/pc:libjingle_peerconnection",
+    ":base_jni",
+    "//webrtc:webrtc_common",
+    "//webrtc/api:libjingle_peerconnection_api",
+    "//webrtc/api:video_frame_api",
+    "//webrtc/api/video_codecs:video_codecs_api",
+    "//webrtc/base:rtc_base",
+    "//webrtc/base:rtc_base_approved",
+    "//webrtc/base:rtc_task_queue",
+    "//webrtc/base:sequenced_task_checker",
+    "//webrtc/base:weak_ptr",
+    "//webrtc/common_video:common_video",
+    "//webrtc/media:rtc_audio_video",
+    "//webrtc/media:rtc_media_base",
+    "//webrtc/modules/utility:utility",
+    "//webrtc/modules/video_coding:video_coding_utility",
+    "//webrtc/system_wrappers:system_wrappers",
   ]
 
   if (rtc_build_libyuv) {
@@ -100,6 +147,124 @@ rtc_static_library("libjingle_peerconnection_jni") {
   }
 }
 
+rtc_static_library("null_video_jni") {
+  sources = [
+    "src/jni/null_video_jni.cc",
+  ]
+
+  deps = [
+    ":base_jni",
+    "//webrtc/base:rtc_base_approved",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [
+      "//build/config/clang:extra_warnings",
+      "//build/config/clang:find_bad_constructs",
+    ]
+  }
+}
+
+rtc_static_library("media_jni") {
+  sources = [
+    "src/jni/media_jni.cc",
+  ]
+
+  deps = [
+    ":base_jni",
+    "//webrtc/api:libjingle_peerconnection_api",
+    "//webrtc/api/audio_codecs:audio_codecs_api",
+    "//webrtc/base:rtc_base_approved",
+    "//webrtc/media:rtc_audio_video",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [
+      "//build/config/clang:extra_warnings",
+      "//build/config/clang:find_bad_constructs",
+    ]
+  }
+}
+
+rtc_static_library("null_media_jni") {
+  sources = [
+    "src/jni/null_media_jni.cc",
+  ]
+
+  deps = [
+    ":base_jni",
+    "//webrtc/api:libjingle_peerconnection_api",
+    "//webrtc/base:rtc_base",
+    "//webrtc/base:rtc_base_approved",
+    "//webrtc/call:call_interfaces",
+    "//webrtc/logging:rtc_event_log_api",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [
+      "//build/config/clang:extra_warnings",
+      "//build/config/clang:find_bad_constructs",
+    ]
+  }
+}
+
+rtc_static_library("peerconnection_jni") {
+  sources = [
+    "src/jni/androidnetworkmonitor_jni.cc",
+    "src/jni/androidnetworkmonitor_jni.h",
+    "src/jni/peerconnection_jni.cc",
+    "src/jni/rtcstatscollectorcallbackwrapper.cc",
+    "src/jni/rtcstatscollectorcallbackwrapper.h",
+  ]
+
+  configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
+
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [
+      "//build/config/clang:extra_warnings",
+      "//build/config/clang:find_bad_constructs",
+    ]
+  }
+
+  # TODO(jschuh): Bug 1348: fix this warning.
+  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+
+  if (is_win) {
+    cflags += [
+      "/wd4245",  # conversion from "int" to "size_t", signed/unsigned mismatch.
+      "/wd4389",  # signed/unsigned mismatch.
+    ]
+  }
+
+  deps = [
+    ":base_jni",
+    "../..:webrtc_common",
+    "//webrtc/base:rtc_base",
+    "//webrtc/base:rtc_base_approved",
+    "//webrtc/base:rtc_task_queue",
+    "//webrtc/media:rtc_data",
+    "//webrtc/media:rtc_media_base",
+    "//webrtc/modules/utility:utility",
+    "//webrtc/pc:peerconnection",
+    "//webrtc/system_wrappers:system_wrappers",
+  ]
+}
+
+rtc_static_library("libjingle_peerconnection_jni") {
+  public_deps = [
+    ":audio_jni",
+    ":base_jni",
+    ":media_jni",
+    ":peerconnection_jni",
+    ":video_jni",
+    "//webrtc/pc:create_pc_factory",
+  ]
+}
+
 rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
   sources = [
     "src/jni/androidmetrics_jni.cc",
@@ -108,13 +273,43 @@ rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
   configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
 
   deps = [
-    ":libjingle_peerconnection_jni",
-    "../../system_wrappers",
-    "//webrtc/pc:libjingle_peerconnection",
+    ":base_jni",
+    ":peerconnection_jni",
+    "//webrtc/pc:peerconnection",
+    "//webrtc/system_wrappers",
     "//webrtc/system_wrappers:field_trial_default",
     "//webrtc/system_wrappers:metrics_default",
   ]
 }
+
+# The modular build targets can be used to build WebRTC with different
+# functionalities. The users can choose either the real implemenation or the
+# null implementation of the audio/video modules based on their requirments.
+#
+# For example, to build WebRTC with datachannel support only, we would need the
+# the peerconnection and the null implementation of the audio, video and media
+# module.
+# rtc_shared_library("libjingle_peerconnection_datachannelonly_so") {
+#  sources = [
+#    "src/jni/jni_onload.cc",
+#  ]
+#
+#  suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
+#  configs += [ "//build/config/android:hide_all_but_jni" ]
+#
+#  deps = [
+#    ":base_jni",
+#    ":libjingle_peerconnection_metrics_default_jni",
+#    ":null_audio_jni",
+#    ":null_media_jni",
+#    ":null_video_jni",
+#    ":peerconnection_jni",
+#    "//webrtc/base:rtc_base",
+#    "//webrtc/base:rtc_base_approved",
+#    "//webrtc/pc:peerconnection",
+#  ]
+#  output_extension = "so"
+# }
 
 rtc_shared_library("libjingle_peerconnection_so") {
   sources = [
@@ -127,7 +322,7 @@ rtc_shared_library("libjingle_peerconnection_so") {
   deps = [
     ":libjingle_peerconnection_jni",
     ":libjingle_peerconnection_metrics_default_jni",
-    "../../base:rtc_base",
+    "//webrtc/base:rtc_base",
     "//webrtc/pc:libjingle_peerconnection",
   ]
   output_extension = "so"
