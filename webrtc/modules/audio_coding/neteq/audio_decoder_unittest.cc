@@ -433,7 +433,7 @@ class AudioDecoderOpusTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 48000;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderOpusImpl(1);
+    decoder_ = new AudioDecoderOpus(1);
     AudioEncoderOpusConfig config;
     config.frame_size_ms = static_cast<int>(frame_size_) / 48;
     config.application = AudioEncoderOpusConfig::ApplicationMode::kVoip;
@@ -446,7 +446,7 @@ class AudioDecoderOpusStereoTest : public AudioDecoderOpusTest {
   AudioDecoderOpusStereoTest() : AudioDecoderOpusTest() {
     channels_ = 2;
     delete decoder_;
-    decoder_ = new AudioDecoderOpusImpl(2);
+    decoder_ = new AudioDecoderOpus(2);
     AudioEncoderOpusConfig config;
     config.frame_size_ms = static_cast<int>(frame_size_) / 48;
     config.num_channels = 2;

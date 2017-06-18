@@ -162,7 +162,7 @@ NamedDecoderConstructor decoder_constructors[] = {
        if (format.clockrate_hz == 48000 && format.num_channels == 2 &&
            num_channels) {
          if (out) {
-           out->reset(new AudioDecoderOpusImpl(*num_channels));
+           out->reset(new AudioDecoderOpus(*num_channels));
          }
          return true;
        } else {
