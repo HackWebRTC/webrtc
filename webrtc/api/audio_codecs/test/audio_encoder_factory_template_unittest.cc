@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/api/audio_codecs/audio_encoder_factory_template.h"
+#include "webrtc/api/audio_codecs/g722/audio_encoder_g722.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
@@ -115,6 +116,21 @@ TEST(AudioEncoderFactoryTemplateTest, TwoEncoderTypes) {
       factory->MakeAudioEncoder(17, {"sham", 16000, 2, {{"param", "value"}}});
   ASSERT_NE(nullptr, enc2);
   EXPECT_EQ(16000, enc2->SampleRateHz());
+}
+
+TEST(AudioEncoderFactoryTemplateTest, G722) {
+  auto factory = CreateAudioEncoderFactory<AudioEncoderG722>();
+  EXPECT_THAT(factory->GetSupportedEncoders(),
+              testing::ElementsAre(
+                  AudioCodecSpec{{"g722", 8000, 1}, {16000, 1, 64000}}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>(),
+            factory->QueryAudioEncoder({"foo", 8000, 1}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>({16000, 1, 64000}),
+            factory->QueryAudioEncoder({"g722", 8000, 1}));
+  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"bar", 16000, 1}));
+  auto enc = factory->MakeAudioEncoder(17, {"g722", 8000, 1});
+  ASSERT_NE(nullptr, enc);
+  EXPECT_EQ(16000, enc->SampleRateHz());
 }
 
 }  // namespace webrtc

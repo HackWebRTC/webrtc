@@ -25,6 +25,7 @@ if (rtc_include_tests) {
       "../../../test:audio_codec_mocks",
       "../../../test:test_support",
       "../g722:audio_decoder_g722",
+      "../g722:audio_encoder_g722",
       "//testing/gmock",
     ]
   }

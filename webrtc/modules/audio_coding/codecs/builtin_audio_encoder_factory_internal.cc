@@ -62,7 +62,7 @@ struct NamedEncoderFactory {
 
 NamedEncoderFactory encoder_factories[] = {
 #ifdef WEBRTC_CODEC_G722
-    NamedEncoderFactory::ForEncoder<AudioEncoderG722>(),
+    NamedEncoderFactory::ForEncoder<AudioEncoderG722Impl>(),
 #endif
 #ifdef WEBRTC_CODEC_ILBC
     NamedEncoderFactory::ForEncoder<AudioEncoderIlbc>(),

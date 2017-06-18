@@ -279,6 +279,7 @@ rtc_static_library("g722") {
     ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../api/audio_codecs/g722:audio_encoder_g722_config",
     "../../base:rtc_base_approved",
   ]
   public_deps = [

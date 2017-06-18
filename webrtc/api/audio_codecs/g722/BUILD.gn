@@ -12,6 +12,25 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
+rtc_source_set("audio_encoder_g722_config") {
+  sources = [
+    "audio_encoder_g722_config.h",
+  ]
+}
+
+rtc_static_library("audio_encoder_g722") {
+  sources = [
+    "audio_encoder_g722.cc",
+    "audio_encoder_g722.h",
+  ]
+  deps = [
+    ":audio_encoder_g722_config",
+    "..:audio_codecs_api",
+    "../../../base:rtc_base_approved",
+    "../../../modules/audio_coding:g722",
+  ]
+}
+
 rtc_static_library("audio_decoder_g722") {
   sources = [
     "audio_decoder_g722.cc",
