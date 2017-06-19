@@ -21,6 +21,8 @@
 
 namespace webrtc {
 
+class DebugDumpWriter;
+
 class ControllerManager {
  public:
   virtual ~ControllerManager() = default;
@@ -54,6 +56,18 @@ class ControllerManagerImpl final : public ControllerManager {
       int initial_bitrate_bps,
       bool initial_fec_enabled,
       bool initial_dtx_enabled);
+
+  static std::unique_ptr<ControllerManager> Create(
+      const ProtoString& config_string,
+      size_t num_encoder_channels,
+      rtc::ArrayView<const int> encoder_frame_lengths_ms,
+      int min_encoder_bitrate_bps,
+      size_t intial_channels_to_encode,
+      int initial_frame_length_ms,
+      int initial_bitrate_bps,
+      bool initial_fec_enabled,
+      bool initial_dtx_enabled,
+      DebugDumpWriter* debug_dump_writer);
 
   explicit ControllerManagerImpl(const Config& config);
 
