@@ -138,7 +138,6 @@
 
 - (void)setSize:(CGSize)size {
   self.metalView.drawableSize = size;
-  [self.metalView draw];
 }
 
 - (void)renderFrame:(nullable RTCVideoFrame *)frame {
