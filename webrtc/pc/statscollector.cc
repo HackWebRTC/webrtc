@@ -782,10 +782,9 @@ void StatsCollector::ExtractBweInfo() {
   bwe_info.bucket_delay = call_stats.pacer_delay_ms;
   // Fill in target encoder bitrate, actual encoder bitrate, rtx bitrate, etc.
   // TODO(holmer): Also fill this in for audio.
-  if (!pc_->session()->video_channel()) {
-    return;
+  if (pc_->session()->video_channel()) {
+    pc_->session()->video_channel()->FillBitrateInfo(&bwe_info);
   }
-  pc_->session()->video_channel()->FillBitrateInfo(&bwe_info);
   StatsReport::Id report_id(StatsReport::NewBandwidthEstimationId());
   StatsReport* report = reports_.FindOrAddNew(report_id);
   ExtractStats(bwe_info, stats_gathering_started_, report);
