@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'e438353b8b9ecd93216aca5313dc5446c4095102',
+  'chromium_revision': 'ed82d45fc05e256857f07ff4f29adea19adb8495',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -33,15 +33,15 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + '12890c2e8666116d65262849c3ce3595b664eea5',
+    Var('chromium_git') + '/chromium/src/base' + '@' + '9e5d77dd602a37fdf3f84f4dd74593d5bb85780e',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '9ec24027abe46339fe15cbe91513c7262e00caea',
+    Var('chromium_git') + '/chromium/src/build' + '@' + 'bf51d5681adb7adbb2ce74514ed7a76349fa698e',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + 'ee9c3a70889f452fb0cf10792ba3cb26de2d071e',
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + '1f3a1393a1dafd033837e41900d04ed5ff682f72',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '733d9dc5c96b7633746d5125770d1253d9ca4901',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '4eefc3bafaaadbf86c8d7074194b17d9c95eaac3',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -116,7 +116,7 @@ deps_os = {
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + '50158a755da3b24684fe62b7acbb4b37ecf2ff41',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + 'b1b7289d20b0889b3b09e059aa1c14b7449d9050',
   },
   'unix': {
     'src/third_party/lss':
