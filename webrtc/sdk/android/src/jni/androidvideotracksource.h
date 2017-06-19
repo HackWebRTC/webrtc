@@ -50,12 +50,12 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
                                  int length,
                                  int width,
                                  int height,
-                                 int rotation,
+                                 VideoRotation rotation,
                                  int64_t timestamp_ns);
 
   void OnTextureFrameCaptured(int width,
                               int height,
-                              int rotation,
+                              VideoRotation rotation,
                               int64_t timestamp_ns,
                               const webrtc_jni::NativeHandleImpl& handle);
 
@@ -73,8 +73,8 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   SourceState state_;
   rtc::VideoBroadcaster broadcaster_;
   rtc::TimestampAligner timestamp_aligner_;
-  webrtc::NV12ToI420Scaler nv12toi420_scaler_;
-  webrtc::I420BufferPool buffer_pool_;
+  NV12ToI420Scaler nv12toi420_scaler_;
+  I420BufferPool buffer_pool_;
   rtc::scoped_refptr<webrtc_jni::SurfaceTextureHelper> surface_texture_helper_;
   const bool is_screencast_;
 };

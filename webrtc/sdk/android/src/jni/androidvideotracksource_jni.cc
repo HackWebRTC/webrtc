@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/api/videosourceproxy.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/sdk/android/src/jni/androidvideotracksource.h"
@@ -17,6 +18,12 @@
 // line.
 #define JOW_OBSERVER_METHOD(rettype, name) \
   JOW(rettype, AndroidVideoTrackSourceObserver_##name)
+
+static webrtc::VideoRotation jintToVideoRotation(jint rotation) {
+  RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
+             rotation == 270);
+  return static_cast<webrtc::VideoRotation>(rotation);
+}
 
 namespace webrtc_jni {
 
@@ -40,8 +47,8 @@ JOW_OBSERVER_METHOD(void, nativeOnByteBufferFrameCaptured)
   webrtc::AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
   jbyte* bytes = jni->GetByteArrayElements(j_frame, nullptr);
-  source->OnByteBufferFrameCaptured(bytes, length, width, height, rotation,
-                                    timestamp);
+  source->OnByteBufferFrameCaptured(bytes, length, width, height,
+                                    jintToVideoRotation(rotation), timestamp);
   jni->ReleaseByteArrayElements(j_frame, bytes, JNI_ABORT);
 }
 
@@ -58,7 +65,7 @@ JOW_OBSERVER_METHOD(void, nativeOnTextureFrameCaptured)
   webrtc::AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
   source->OnTextureFrameCaptured(
-      j_width, j_height, j_rotation, j_timestamp,
+      j_width, j_height, jintToVideoRotation(j_rotation), j_timestamp,
       NativeHandleImpl(jni, j_oes_texture_id, j_transform_matrix));
 }
 

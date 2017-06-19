@@ -169,9 +169,9 @@ int AndroidTextureBuffer::height() const {
 }
 
 rtc::scoped_refptr<webrtc::I420BufferInterface> AndroidTextureBuffer::ToI420() {
-  int uv_width = (width()+7) / 8;
+  int uv_width = (width() + 7) / 8;
   int stride = 8 * uv_width;
-  int uv_height = (height()+1)/2;
+  int uv_height = (height() + 1) / 2;
   size_t size = stride * (height() + uv_height);
   // The data is owned by the frame, and the normal case is that the
   // data is deleted by the frame's destructor callback.
