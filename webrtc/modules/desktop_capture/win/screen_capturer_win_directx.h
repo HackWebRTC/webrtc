@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
@@ -43,10 +44,11 @@ class ScreenCapturerWinDirectx : public DesktopCapturer {
   // consumers should not cache the result returned by this function.
   static bool RetrieveD3dInfo(D3dInfo* info);
 
-  explicit ScreenCapturerWinDirectx(const DesktopCaptureOptions& options);
+  explicit ScreenCapturerWinDirectx();
 
   ~ScreenCapturerWinDirectx() override;
 
+  // DesktopCapturer implementation.
   void Start(Callback* callback) override;
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
@@ -55,6 +57,7 @@ class ScreenCapturerWinDirectx : public DesktopCapturer {
   bool SelectSource(SourceId id) override;
 
  private:
+  const rtc::scoped_refptr<DxgiDuplicatorController> controller_;
   ScreenCaptureFrameQueue<DxgiFrame> frames_;
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
   Callback* callback_ = nullptr;

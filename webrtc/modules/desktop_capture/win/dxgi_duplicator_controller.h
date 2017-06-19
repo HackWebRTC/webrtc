@@ -13,10 +13,11 @@
 
 #include <D3DCommon.h>
 
-#include <memory>
+#include <atomic>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/resolution_change_detector.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
@@ -66,12 +67,7 @@ class DxgiDuplicatorController {
   };
 
   // Returns the singleton instance of DxgiDuplicatorController.
-  static DxgiDuplicatorController* Instance();
-
-  // Destructs current instance. We need to make sure COM components and their
-  // containers are destructed in correct order. This function calls
-  // Deinitialize() to do the real work.
-  ~DxgiDuplicatorController();
+  static rtc::scoped_refptr<DxgiDuplicatorController> Instance();
 
   // All the following public functions implicitly call Initialize() function.
 
@@ -107,15 +103,31 @@ class DxgiDuplicatorController {
   // destructing.
   friend DxgiFrameContext::~DxgiFrameContext();
 
+  // scoped_refptr<DxgiDuplicatorController> accesses private AddRef() and
+  // Release() functions.
+  friend class rtc::scoped_refptr<DxgiDuplicatorController>;
+
   // A private constructor to ensure consumers to use
   // DxgiDuplicatorController::Instance().
   DxgiDuplicatorController();
+
+  // Not implemented: The singleton DxgiDuplicatorController instance should not
+  // be deleted.
+  ~DxgiDuplicatorController();
+
+  // RefCountedInterface implementations.
+  void AddRef();
+  void Release();
 
   // Does the real duplication work. Setting |monitor_id| < 0 to capture entire
   // screen. This function calls Initialize(). And if the duplication failed,
   // this function calls Deinitialize() to ensure the Dxgi components can be
   // reinitialized next time.
   Result DoDuplicate(DxgiFrame* frame, int monitor_id);
+
+  // Unload all the DXGI components and releases the resources. This function
+  // wraps Deinitialize() with |lock_|.
+  void Unload();
 
   // Unregisters Context from this instance and all DxgiAdapterDuplicator(s)
   // it owns.
@@ -184,6 +196,9 @@ class DxgiDuplicatorController {
   // may return negative coordinates. Called from DoInitialize() after all
   // DxgiAdapterDuplicator and DxgiOutputDuplicator instances are initialized.
   void TranslateRect();
+
+  // The count of references which are now "living".
+  std::atomic_int refcount_;
 
   // This lock must be locked whenever accessing any of the following objects.
   rtc::CriticalSection lock_;

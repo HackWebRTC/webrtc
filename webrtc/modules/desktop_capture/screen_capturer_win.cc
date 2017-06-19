@@ -24,10 +24,9 @@ namespace webrtc {
 
 namespace {
 
-std::unique_ptr<DesktopCapturer> CreateScreenCapturerWinDirectx(
-    const DesktopCaptureOptions& options) {
+std::unique_ptr<DesktopCapturer> CreateScreenCapturerWinDirectx() {
   std::unique_ptr<DesktopCapturer> capturer(
-      new ScreenCapturerWinDirectx(options));
+      new ScreenCapturerWinDirectx());
   capturer.reset(new BlankDetectorDesktopCapturerWrapper(
       std::move(capturer), RgbaColor(0, 0, 0, 0)));
   return capturer;
@@ -39,10 +38,14 @@ std::unique_ptr<DesktopCapturer> CreateScreenCapturerWinDirectx(
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
     const DesktopCaptureOptions& options) {
   std::unique_ptr<DesktopCapturer> capturer(new ScreenCapturerWinGdi(options));
-  if (options.allow_directx_capturer() &&
-      ScreenCapturerWinDirectx::IsSupported()) {
-    capturer.reset(new FallbackDesktopCapturerWrapper(
-        CreateScreenCapturerWinDirectx(options), std::move(capturer)));
+  if (options.allow_directx_capturer()) {
+    // |dxgi_duplicator_controller| should be alive in this scope to ensure it
+    // won't unload DxgiDuplicatorController.
+    auto dxgi_duplicator_controller = DxgiDuplicatorController::Instance();
+    if (ScreenCapturerWinDirectx::IsSupported()) {
+      capturer.reset(new FallbackDesktopCapturerWrapper(
+          CreateScreenCapturerWinDirectx(), std::move(capturer)));
+    }
   }
 
   if (options.allow_use_magnification_api()) {
