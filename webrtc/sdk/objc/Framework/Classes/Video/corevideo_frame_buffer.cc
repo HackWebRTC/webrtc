@@ -148,7 +148,20 @@ bool CoreVideoFrameBuffer::CropAndScaleTo(
   src_y += src_y_stride * crop_y_ + crop_x_;
   src_uv += src_uv_stride * (crop_y_ / 2) + crop_x_;
 
-  NV12Scale(tmp_buffer,
+  if (crop_width_ == dst_width && crop_height_ == dst_height) {
+    tmp_buffer->clear();
+    tmp_buffer->shrink_to_fit();
+  } else {
+    const int src_chroma_width = (crop_width_ + 1) / 2;
+    const int src_chroma_height = (crop_height_ + 1) / 2;
+    const int dst_chroma_width = (dst_width + 1) / 2;
+    const int dst_chroma_height = (dst_height + 1) / 2;
+    tmp_buffer->resize(src_chroma_width * src_chroma_height * 2 +
+                       dst_chroma_width * dst_chroma_height * 2);
+    tmp_buffer->shrink_to_fit();
+  }
+
+  NV12Scale(tmp_buffer->data(),
             src_y, src_y_stride,
             src_uv, src_uv_stride,
             crop_width_, crop_height_,

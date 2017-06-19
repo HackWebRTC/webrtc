@@ -307,7 +307,7 @@ double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
                   *test_frame->video_frame_buffer()->ToI420());
 }
 
-void NV12Scale(std::vector<uint8_t>* tmp_buffer,
+void NV12Scale(uint8_t* tmp_buffer,
                const uint8_t* src_y, int src_stride_y,
                const uint8_t* src_uv, int src_stride_uv,
                int src_width, int src_height,
@@ -319,8 +319,6 @@ void NV12Scale(std::vector<uint8_t>* tmp_buffer,
 
   if (src_width == dst_width && src_height == dst_height) {
     // No scaling.
-    tmp_buffer->clear();
-    tmp_buffer->shrink_to_fit();
     libyuv::CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, src_width,
                       src_height);
     libyuv::CopyPlane(src_uv, src_stride_uv, dst_uv, dst_stride_uv,
@@ -332,11 +330,8 @@ void NV12Scale(std::vector<uint8_t>* tmp_buffer,
   // Allocate temporary memory for spitting UV planes and scaling them.
   const int dst_chroma_width = (dst_width + 1) / 2;
   const int dst_chroma_height = (dst_height + 1) / 2;
-  tmp_buffer->resize(src_chroma_width * src_chroma_height * 2 +
-                     dst_chroma_width * dst_chroma_height * 2);
-  tmp_buffer->shrink_to_fit();
 
-  uint8_t* const src_u = tmp_buffer->data();
+  uint8_t* const src_u = tmp_buffer;
   uint8_t* const src_v = src_u + src_chroma_width * src_chroma_height;
   uint8_t* const dst_u = src_v + src_chroma_width * src_chroma_height;
   uint8_t* const dst_v = dst_u + dst_chroma_width * dst_chroma_height;

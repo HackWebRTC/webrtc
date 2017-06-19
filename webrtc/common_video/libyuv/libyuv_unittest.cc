@@ -277,8 +277,9 @@ TEST_F(TestLibYuv, NV12Scale2x2to2x2) {
   std::vector<uint8_t> dst_y(4);
   std::vector<uint8_t> dst_uv(2);
 
-  std::vector<uint8_t> tmp_buffer;
-  NV12Scale(&tmp_buffer,
+  uint8_t* tmp_buffer = nullptr;
+
+  NV12Scale(tmp_buffer,
             src_y.data(), 2,
             src_uv.data(), 2,
             2, 2,
@@ -301,7 +302,15 @@ TEST_F(TestLibYuv, NV12Scale4x4to2x2) {
   std::vector<uint8_t> dst_uv(2);
 
   std::vector<uint8_t> tmp_buffer;
-  NV12Scale(&tmp_buffer,
+  const int src_chroma_width = (4 + 1) / 2;
+  const int src_chroma_height = (4 + 1) / 2;
+  const int dst_chroma_width = (2 + 1) / 2;
+  const int dst_chroma_height = (2 + 1) / 2;
+  tmp_buffer.resize(src_chroma_width * src_chroma_height * 2 +
+                    dst_chroma_width * dst_chroma_height * 2);
+  tmp_buffer.shrink_to_fit();
+
+  NV12Scale(tmp_buffer.data(),
             src_y, 4,
             src_uv, 4,
             4, 4,
