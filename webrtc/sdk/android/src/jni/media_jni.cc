@@ -9,27 +9,32 @@
  */
 #include "webrtc/sdk/android/src/jni/media_jni.h"
 
-#include "webrtc/api/audio_codecs/audio_decoder_factory.h"
-#include "webrtc/api/audio_codecs/audio_encoder_factory.h"
-#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
+#include "webrtc/call/callfactoryinterface.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log_factory_interface.h"
+#include "webrtc/media/engine/webrtcmediaengine.h"
 
 namespace webrtc_jni {
 
-rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-CreateNativePeerConnectionFactory(
-    rtc::Thread* network_thread,
-    rtc::Thread* worker_thread,
-    rtc::Thread* signaling_thread,
-    webrtc::AudioDeviceModule* default_adm,
-    rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
-    rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
+webrtc::CallFactoryInterface* CreateCallFactory() {
+  return webrtc::CreateCallFactory().release();
+}
+
+webrtc::RtcEventLogFactoryInterface* CreateRtcEventLogFactory() {
+  return webrtc::CreateRtcEventLogFactory().release();
+}
+
+cricket::MediaEngineInterface* CreateMediaEngine(
+    webrtc::AudioDeviceModule* adm,
+    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
+        audio_encoder_factory,
+    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+        audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* video_decoder_factory) {
-  return webrtc::CreatePeerConnectionFactory(
-      network_thread, worker_thread, signaling_thread, default_adm,
-      audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory);
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
+    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
+  return cricket::WebRtcMediaEngineFactory::Create(
+      adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
+      video_decoder_factory, audio_mixer);
 }
 
 }  // namespace webrtc_jni

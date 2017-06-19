@@ -12,11 +12,11 @@
 namespace webrtc_jni {
 
 rtc::scoped_refptr<webrtc::AudioDecoderFactory> CreateAudioDecoderFactory() {
-  return rtc::scoped_refptr<webrtc::AudioDecoderFactory>();
+  return nullptr;
 }
 
 rtc::scoped_refptr<webrtc::AudioEncoderFactory> CreateAudioEncoderFactory() {
-  return rtc::scoped_refptr<webrtc::AudioEncoderFactory>();
+  return nullptr;
 }
 
 }  // namespace webrtc_jni

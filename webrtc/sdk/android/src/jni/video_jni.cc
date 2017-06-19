@@ -21,25 +21,18 @@
 #include "webrtc/sdk/android/src/jni/ownedfactoryandthreads.h"
 #include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
 
-using cricket::WebRtcVideoDecoderFactory;
-using cricket::WebRtcVideoEncoderFactory;
-using webrtc::AndroidVideoTrackSource;
-using webrtc::AudioSourceInterface;
-using webrtc::VideoTrackSourceInterface;
-using webrtc::VideoTrackInterface;
-
 namespace webrtc_jni {
 
-WebRtcVideoEncoderFactory* CreateVideoEncoderFactory() {
+cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory() {
   return new MediaCodecVideoEncoderFactory();
 }
 
-WebRtcVideoDecoderFactory* CreateVideoDecoderFactory() {
+cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory() {
   return new MediaCodecVideoDecoderFactory();
 }
 
 jobject GetJavaSurfaceTextureHelper(
-    rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper) {
+    const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper) {
   return surface_texture_helper
              ? surface_texture_helper->GetJavaSurfaceTextureHelper()
              : nullptr;
@@ -69,9 +62,10 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoTrack)
 (JNIEnv* jni, jclass, jlong native_factory, jstring id, jlong native_source) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  rtc::scoped_refptr<VideoTrackInterface> track(factory->CreateVideoTrack(
-      JavaToStdString(jni, id),
-      reinterpret_cast<VideoTrackSourceInterface*>(native_source)));
+  rtc::scoped_refptr<webrtc::VideoTrackInterface> track(
+      factory->CreateVideoTrack(
+          JavaToStdString(jni, id),
+          reinterpret_cast<webrtc::VideoTrackSourceInterface*>(native_source)));
   return (jlong)track.release();
 }
 

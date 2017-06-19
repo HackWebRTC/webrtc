@@ -9,8 +9,6 @@
  */
 
 #include <jni.h>
-#undef JNIEXPORT
-#define JNIEXPORT __attribute__((visibility("default")))
 
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/media/base/videosinkinterface.h"

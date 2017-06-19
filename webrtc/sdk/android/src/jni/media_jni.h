@@ -11,22 +11,37 @@
 #ifndef WEBRTC_SDK_ANDROID_SRC_JNI_MEDIA_JNI_H_
 #define WEBRTC_SDK_ANDROID_SRC_JNI_MEDIA_JNI_H_
 
-#include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/thread.h"
+
+namespace webrtc {
+class AudioDeviceModule;
+class CallFactoryInterface;
+class AudioEncoderFactory;
+class AudioDecoderFactory;
+class RtcEventLogFactoryInterface;
+class AudioMixer;
+}  // namespace webrtc
+
+namespace cricket {
+class MediaEngineInterface;
+class WebRtcVideoEncoderFactory;
+class WebRtcVideoDecoderFactory;
+}  // namespace cricket
 
 namespace webrtc_jni {
 
-rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-CreateNativePeerConnectionFactory(
-    rtc::Thread* network_thread,
-    rtc::Thread* worker_thread,
-    rtc::Thread* signaling_thread,
-    webrtc::AudioDeviceModule* default_adm,
-    rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
-    rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
+webrtc::CallFactoryInterface* CreateCallFactory();
+webrtc::RtcEventLogFactoryInterface* CreateRtcEventLogFactory();
+
+cricket::MediaEngineInterface* CreateMediaEngine(
+    webrtc::AudioDeviceModule* adm,
+    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
+        audio_encoder_factory,
+    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+        audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* video_decoder_factory);
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
+    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
 
 }  // namespace webrtc_jni
 

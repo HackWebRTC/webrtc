@@ -8,21 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <jni.h>
-
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-
-namespace cricket {
-class WebRtcVideoEncoderFactory;
-class WebRtcVideoDecoderFactory;
-}  // namespace cricket
+#include "webrtc/sdk/android/src/jni/video_jni.h"
 
 namespace webrtc_jni {
-
-class MediaCodecVideoEncoderFactory;
-class MediaCodecVideoDecoderFactory;
-class SurfaceTextureHelper;
 
 cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory() {
   return nullptr;
@@ -33,7 +21,7 @@ cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory() {
 }
 
 jobject GetJavaSurfaceTextureHelper(
-    rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper) {
+    const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper) {
   return nullptr;
 }
 

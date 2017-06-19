@@ -14,18 +14,22 @@
 #include <jni.h>
 
 #include "webrtc/base/scoped_ref_ptr.h"
-// Adding 'nogncheck' to disable the gn include headers check.
-// We don't want this target depend on video related targets
-#include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"  // nogncheck
+
+namespace cricket {
+class WebRtcVideoEncoderFactory;
+class WebRtcVideoDecoderFactory;
+}  // namespace cricket
 
 namespace webrtc_jni {
 
-WebRtcVideoEncoderFactory* CreateVideoEncoderFactory();
+class SurfaceTextureHelper;
 
-WebRtcVideoDecoderFactory* CreateVideoDecoderFactory();
+cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory();
+
+cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory();
 
 jobject GetJavaSurfaceTextureHelper(
-    rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper);
+    const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper);
 
 }  // namespace webrtc_jni
 
