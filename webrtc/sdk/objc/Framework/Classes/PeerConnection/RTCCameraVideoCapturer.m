@@ -129,18 +129,16 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
                       _currentDevice = device;
 
                       NSError *error = nil;
-                      if ([_currentDevice lockForConfiguration:&error]) {
-                        [self updateDeviceCaptureFormat:format fps:fps];
-                      } else {
-                        RTCLogError(@"Failed to lock device %@. Error: %@", _currentDevice,
-                                    error.userInfo);
+                      if (![_currentDevice lockForConfiguration:&error]) {
+                        RTCLogError(
+                            @"Failed to lock device %@. Error: %@", _currentDevice, error.userInfo);
                         return;
                       }
 
                       [self reconfigureCaptureSessionInput];
                       [self updateOrientation];
                       [_captureSession startRunning];
-
+                      [self updateDeviceCaptureFormat:format fps:fps];
                       [_currentDevice unlockForConfiguration];
                       _isRunning = true;
                     }];
@@ -366,6 +364,7 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
   @try {
     _currentDevice.activeFormat = format;
     _currentDevice.activeVideoMinFrameDuration = CMTimeMake(1, fps);
+    _currentDevice.activeVideoMaxFrameDuration = CMTimeMake(1, fps);
   } @catch (NSException *exception) {
     RTCLogError(@"Failed to set active format!\n User info:%@", exception.userInfo);
     return;
