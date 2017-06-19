@@ -304,6 +304,7 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
   auto last_packet = rtc::MakeUnique<RtpPacketToSend>(*rtp_header);
 
   size_t fec_packet_overhead;
+  bool is_timing_frame = false;
   bool red_enabled;
   int32_t retransmission_settings;
   {
@@ -331,6 +332,11 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
           video_header->content_type != VideoContentType::UNSPECIFIED) {
         last_packet->SetExtension<VideoContentTypeExtension>(
             video_header->content_type);
+      }
+      if (video_header->video_timing.is_timing_frame) {
+        last_packet->SetExtension<VideoTimingExtension>(
+            video_header->video_timing);
+        is_timing_frame = true;
       }
     }
 
@@ -387,6 +393,11 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
                        : max_data_payload_length);
     if (!rtp_sender_->AssignSequenceNumber(packet.get()))
       return false;
+
+    // Put packetization finish timestamp into extension.
+    if (last && is_timing_frame) {
+      packet->set_packetization_finish_time_ms(clock_->TimeInMilliseconds());
+    }
 
     const bool protect_packet =
         (packetizer->GetProtectionType() == kProtectedPacket);

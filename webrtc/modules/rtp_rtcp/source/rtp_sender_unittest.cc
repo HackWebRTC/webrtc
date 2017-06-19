@@ -38,6 +38,7 @@ namespace {
 const int kTransmissionTimeOffsetExtensionId = 1;
 const int kAbsoluteSendTimeExtensionId = 14;
 const int kTransportSequenceNumberExtensionId = 13;
+const int kVideoTimingExtensionId = 12;
 const int kPayload = 100;
 const int kRtxPayload = 98;
 const uint32_t kTimestamp = 10;
@@ -74,6 +75,8 @@ class LoopbackTransportTest : public webrtc::Transport {
                                    kVideoRotationExtensionId);
     receivers_extensions_.Register(kRtpExtensionAudioLevel,
                                    kAudioLevelExtensionId);
+    receivers_extensions_.Register(kRtpExtensionVideoTiming,
+                                   kVideoTimingExtensionId);
   }
 
   bool SendRtp(const uint8_t* data,
@@ -458,6 +461,51 @@ TEST_P(RtpSenderTest, SendsPacketsWithTransportSequenceNumber) {
   EXPECT_TRUE(packet.GetExtension<TransportSequenceNumber>(&transport_seq_no));
   EXPECT_EQ(kTransportSequenceNumber, transport_seq_no);
   EXPECT_EQ(transport_.last_packet_id_, transport_seq_no);
+}
+
+TEST_P(RtpSenderTestWithoutPacer, WritesTimestampToTimingExtension) {
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoTiming, kVideoTimingExtensionId));
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+  auto packet = rtp_sender_->AllocatePacket();
+  packet->SetPayloadType(kPayload);
+  packet->SetMarker(true);
+  packet->SetTimestamp(kTimestamp);
+  packet->set_capture_time_ms(capture_time_ms);
+  const VideoTiming kVideoTiming = {0u, 0u, 0u, 0u, 0u, 0u, true};
+  packet->SetExtension<VideoTimingExtension>(kVideoTiming);
+  EXPECT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
+  size_t packet_size = packet->size();
+  webrtc::RTPHeader rtp_header;
+
+  packet->GetHeader(&rtp_header);
+
+  const int kStoredTimeInMs = 100;
+  fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
+
+  EXPECT_TRUE(rtp_sender_->SendToNetwork(std::move(packet),
+                                         kAllowRetransmission,
+                                         RtpPacketSender::kNormalPriority));
+  EXPECT_EQ(1, transport_.packets_sent());
+  EXPECT_EQ(packet_size, transport_.last_sent_packet().size());
+
+  transport_.last_sent_packet().GetHeader(&rtp_header);
+  EXPECT_TRUE(rtp_header.extension.has_video_timing);
+  EXPECT_EQ(kStoredTimeInMs,
+            rtp_header.extension.video_timing.pacer_exit_delta_ms);
+
+  fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
+  rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum, capture_time_ms, false,
+                                PacedPacketInfo());
+
+  EXPECT_EQ(2, transport_.packets_sent());
+  EXPECT_EQ(packet_size, transport_.last_sent_packet().size());
+
+  transport_.last_sent_packet().GetHeader(&rtp_header);
+  EXPECT_TRUE(rtp_header.extension.has_video_timing);
+  EXPECT_EQ(kStoredTimeInMs * 2,
+            rtp_header.extension.video_timing.pacer_exit_delta_ms);
 }
 
 TEST_P(RtpSenderTest, TrafficSmoothingWithExtensions) {
@@ -1408,6 +1456,33 @@ TEST_P(RtpSenderVideoTest, KeyFrameHasCVO) {
   EXPECT_TRUE(
       transport_.last_sent_packet().GetExtension<VideoOrientation>(&rotation));
   EXPECT_EQ(kVideoRotation_0, rotation);
+}
+
+TEST_P(RtpSenderVideoTest, TimingFrameHasPacketizationTimstampSet) {
+  uint8_t kFrame[kMaxPacketLength];
+  const int64_t kPacketizationTimeMs = 100;
+  const int64_t kEncodeStartDeltaMs = 10;
+  const int64_t kEncodeFinishDeltaMs = 50;
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoTiming, kVideoTimingExtensionId));
+
+  const int64_t kCaptureTimestamp = fake_clock_.TimeInMilliseconds();
+
+  RTPVideoHeader hdr = {0};
+  hdr.video_timing.is_timing_frame = true;
+  hdr.video_timing.encode_start_delta_ms = kEncodeStartDeltaMs;
+  hdr.video_timing.encode_finish_delta_ms = kEncodeFinishDeltaMs;
+
+  fake_clock_.AdvanceTimeMilliseconds(kPacketizationTimeMs);
+  rtp_sender_video_->SendVideo(kRtpVideoGeneric, kVideoFrameKey, kPayload,
+                               kTimestamp, kCaptureTimestamp, kFrame,
+                               sizeof(kFrame), nullptr, &hdr);
+  VideoTiming timing;
+  EXPECT_TRUE(transport_.last_sent_packet().GetExtension<VideoTimingExtension>(
+      &timing));
+  EXPECT_EQ(kPacketizationTimeMs, timing.packetization_finish_delta_ms);
+  EXPECT_EQ(kEncodeStartDeltaMs, timing.encode_start_delta_ms);
+  EXPECT_EQ(kEncodeFinishDeltaMs, timing.encode_finish_delta_ms);
 }
 
 TEST_P(RtpSenderVideoTest, DeltaFrameHasCVOWhenChanged) {

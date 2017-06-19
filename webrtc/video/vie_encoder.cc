@@ -675,7 +675,14 @@ void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
   VideoFrame incoming_frame = video_frame;
 
   // Local time in webrtc time base.
-  int64_t current_time_ms = clock_->TimeInMilliseconds();
+  int64_t current_time_us = clock_->TimeInMicroseconds();
+  int64_t current_time_ms = current_time_us / rtc::kNumMicrosecsPerMillisec;
+  // In some cases, e.g., when the frame from decoder is fed to encoder,
+  // the timestamp may be set to the future. As the encoding pipeline assumes
+  // capture time to be less than present time, we should reset the capture
+  // timestamps here. Otherwise there may be issues with RTP send stream.
+  if (incoming_frame.timestamp_us() > current_time_us)
+    incoming_frame.set_timestamp_us(current_time_us);
 
   // Capture time may come from clock with an offset and drift from clock_.
   int64_t capture_ntp_time_ms;

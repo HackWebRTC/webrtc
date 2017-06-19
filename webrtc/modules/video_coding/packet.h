@@ -47,6 +47,8 @@ class VCMPacket {
   int height;
   RTPVideoHeader video_header;
 
+  int64_t receive_time_ms;
+
  protected:
   void CopyCodecSpecifics(const RTPVideoHeader& videoHeader);
 };

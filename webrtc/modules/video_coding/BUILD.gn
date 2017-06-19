@@ -513,6 +513,7 @@ if (rtc_include_tests) {
       "codecs/vp8/simulcast_unittest.h",
       "decoding_state_unittest.cc",
       "frame_buffer2_unittest.cc",
+      "generic_encoder_unittest.cc",
       "h264_sprop_parameter_sets_unittest.cc",
       "h264_sps_pps_tracker_unittest.cc",
       "histogram_unittest.cc",

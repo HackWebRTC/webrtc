@@ -15,6 +15,7 @@
 
 #include "webrtc/api/video/video_content_type.h"
 #include "webrtc/api/video/video_rotation.h"
+#include "webrtc/api/video/video_timing.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
@@ -124,6 +125,24 @@ class VideoContentTypeExtension {
     return kValueSizeBytes;
   }
   static bool Write(uint8_t* data, VideoContentType content_type);
+};
+
+class VideoTimingExtension {
+ public:
+  static constexpr RTPExtensionType kId = kRtpExtensionVideoTiming;
+  static constexpr uint8_t kValueSizeBytes = 12;
+  static constexpr const char* kUri =
+      "http://www.webrtc.org/experiments/rtp-hdrext/video-timing";
+
+  static bool Parse(rtc::ArrayView<const uint8_t> data, VideoTiming* timing);
+  static size_t ValueSize(const VideoTiming&) { return kValueSizeBytes; }
+  static bool Write(uint8_t* data, const VideoTiming& timing);
+
+  static size_t ValueSize(uint16_t time_delta_ms, uint8_t idx) {
+    return kValueSizeBytes;
+  }
+  // Writes only single time delta to position idx.
+  static bool Write(uint8_t* data, uint16_t time_delta_ms, uint8_t idx);
 };
 
 class RtpStreamId {

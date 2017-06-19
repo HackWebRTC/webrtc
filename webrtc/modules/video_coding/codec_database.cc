@@ -127,6 +127,9 @@ void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
       settings->height = VCM_DEFAULT_CODEC_HEIGHT;
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
+      settings->timing_frame_thresholds = {
+          kDefaultTimingFramesDelayMs, kDefaultOutlierFrameSizePercent,
+      };
       *(settings->VP8()) = VideoEncoder::GetDefaultVp8Settings();
       return;
     case kVideoCodecVP9:
@@ -142,6 +145,9 @@ void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
       settings->height = VCM_DEFAULT_CODEC_HEIGHT;
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
+      settings->timing_frame_thresholds = {
+          kDefaultTimingFramesDelayMs, kDefaultOutlierFrameSizePercent,
+      };
       *(settings->VP9()) = VideoEncoder::GetDefaultVp9Settings();
       return;
     case kVideoCodecH264:
@@ -157,6 +163,9 @@ void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
       settings->height = VCM_DEFAULT_CODEC_HEIGHT;
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
+      settings->timing_frame_thresholds = {
+          kDefaultTimingFramesDelayMs, kDefaultOutlierFrameSizePercent,
+      };
       *(settings->H264()) = VideoEncoder::GetDefaultH264Settings();
       return;
     case kVideoCodecI420:

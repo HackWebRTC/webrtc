@@ -24,7 +24,10 @@ VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming* timing,
     : _clock(clock),
       _timing(timing),
       _timestampMap(kDecoderFrameMemoryLength),
-      _lastReceivedPictureID(0) {}
+      _lastReceivedPictureID(0) {
+  ntp_offset_ =
+      _clock->CurrentNtpInMilliseconds() - _clock->TimeInMilliseconds();
+}
 
 VCMDecodedFrameCallback::~VCMDecodedFrameCallback() {
 }
@@ -84,6 +87,30 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   }
   _timing->StopDecodeTimer(decodedImage.timestamp(), *decode_time_ms, now_ms,
                            frameInfo->renderTimeMs);
+
+  // Report timing information.
+  if (frameInfo->timing.is_timing_frame) {
+    // Convert remote timestamps to local time from ntp timestamps.
+    frameInfo->timing.encode_start_ms -= ntp_offset_;
+    frameInfo->timing.encode_finish_ms -= ntp_offset_;
+    frameInfo->timing.packetization_finish_ms -= ntp_offset_;
+    frameInfo->timing.pacer_exit_ms -= ntp_offset_;
+    frameInfo->timing.network_timestamp_ms -= ntp_offset_;
+    frameInfo->timing.network2_timestamp_ms -= ntp_offset_;
+    // TODO(ilnik): Report timing information here.
+    // Capture time: decodedImage.ntp_time_ms() - ntp_offset
+    // Encode start: frameInfo->timing.encode_start_ms
+    // Encode finish: frameInfo->timing.encode_finish_ms
+    // Packetization done: frameInfo->timing.packetization_finish_ms
+    // Pacer exit: frameInfo->timing.pacer_exit_ms
+    // Network timestamp: frameInfo->timing.network_timestamp_ms
+    // Network2 timestamp: frameInfo->timing.network2_timestamp_ms
+    // Receive start: frameInfo->timing.receive_start_ms
+    // Receive finish: frameInfo->timing.receive_finish_ms
+    // Decode start: frameInfo->decodeStartTimeMs
+    // Decode finish: now_ms
+    // Render time: frameInfo->renderTimeMs
+  }
 
   decodedImage.set_timestamp_us(
       frameInfo->renderTimeMs * rtc::kNumMicrosecsPerMillisec);
@@ -151,6 +178,7 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
     _frameInfos[_nextFrameInfoIdx].decodeStartTimeMs = nowMs;
     _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
     _frameInfos[_nextFrameInfoIdx].rotation = frame.rotation();
+    _frameInfos[_nextFrameInfoIdx].timing = frame.video_timing();
     // Set correctly only for key frames. Thus, use latest key frame
     // content type. If the corresponding key frame was lost, decode will fail
     // and content type will be ignored.

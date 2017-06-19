@@ -720,9 +720,9 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
   frame.capture_time_ms_ = render_time_ms;
   frame._timeStamp = timestamp;
   frame.rotation_ = rotation;
-
   frame.content_type_ =
       (mode_ == kScreensharing) ? VideoContentType::SCREENSHARE : VideoContentType::UNSPECIFIED;
+  frame.timing_.is_timing_frame = false;
 
   h264_bitstream_parser_.ParseBitstream(buffer->data(), buffer->size());
   h264_bitstream_parser_.GetLastSliceQp(&frame.qp_);

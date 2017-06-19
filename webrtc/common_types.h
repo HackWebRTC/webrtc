@@ -20,6 +20,7 @@
 
 #include "webrtc/api/video/video_content_type.h"
 #include "webrtc/api/video/video_rotation.h"
+#include "webrtc/api/video/video_timing.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/optional.h"
@@ -588,6 +589,19 @@ class VideoCodec {
   VideoCodecMode mode;
   bool expect_encode_from_texture;
 
+  // Timing frames configuration. There is delay of delay_ms between two
+  // consequent timing frames, excluding outliers. Frame is always made a
+  // timing frame if it's at least outlier_ratio in percent of "ideal" average
+  // frame given bitrate and framerate, i.e. if it's bigger than
+  // |outlier_ratio / 100.0 * bitrate_bps / fps| in bits. This way, timing
+  // frames will not be sent too often usually. Yet large frames will always
+  // have timing information for debug purposes because they are more likely to
+  // cause extra delays.
+  struct TimingFrameTriggerThresholds {
+    int64_t delay_ms;
+    uint16_t outlier_ratio_percent;
+  } timing_frame_thresholds;
+
   bool operator==(const VideoCodec& other) const = delete;
   bool operator!=(const VideoCodec& other) const = delete;
 
@@ -762,6 +776,9 @@ struct RTPHeaderExtension {
   // a corresponding bool flag.
   bool hasVideoContentType;
   VideoContentType videoContentType;
+
+  bool has_video_timing;
+  VideoTiming video_timing;
 
   PlayoutDelay playout_delay = {-1, -1};
 

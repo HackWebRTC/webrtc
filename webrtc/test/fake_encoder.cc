@@ -148,6 +148,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
                                 ? VideoContentType::SCREENSHARE
                                 : VideoContentType::UNSPECIFIED;
     specifics.codec_name = ImplementationName();
+    specifics.codecSpecific.generic.simulcast_idx = i;
     RTC_DCHECK(callback);
     if (callback->OnEncodedImage(encoded, &specifics, nullptr).error !=
         EncodedImageCallback::Result::OK) {

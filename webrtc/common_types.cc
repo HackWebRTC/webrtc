@@ -54,7 +54,8 @@ RTPHeaderExtension::RTPHeaderExtension()
       hasVideoRotation(false),
       videoRotation(kVideoRotation_0),
       hasVideoContentType(false),
-      videoContentType(VideoContentType::UNSPECIFIED) {}
+      videoContentType(VideoContentType::UNSPECIFIED),
+      has_video_timing(false) {}
 
 RTPHeader::RTPHeader()
     : markerBit(false),
@@ -86,6 +87,7 @@ VideoCodec::VideoCodec()
       spatialLayers(),
       mode(kRealtimeVideo),
       expect_encode_from_texture(false),
+      timing_frame_thresholds({0, 0}),
       codec_specific_() {}
 
 VideoCodecVP8* VideoCodec::VP8() {

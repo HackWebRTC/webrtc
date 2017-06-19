@@ -21,8 +21,8 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -370,6 +370,7 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
   encoded_image_.content_type_ = (mode_ == kScreensharing)
                                      ? VideoContentType::SCREENSHARE
                                      : VideoContentType::UNSPECIFIED;
+  encoded_image_.timing_.is_timing_frame = false;
   encoded_image_._frameType = ConvertToVideoFrameType(info.eFrameType);
 
   // Split encoded image up into fragments. This also updates |encoded_image_|.

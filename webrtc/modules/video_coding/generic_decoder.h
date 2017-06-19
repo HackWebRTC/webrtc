@@ -31,6 +31,7 @@ struct VCMFrameInformation {
   void* userData;
   VideoRotation rotation;
   VideoContentType content_type;
+  EncodedImage::Timing timing;
 };
 
 class VCMDecodedFrameCallback : public DecodedImageCallback {
@@ -68,6 +69,7 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
   rtc::CriticalSection lock_;
   VCMTimestampMap _timestampMap GUARDED_BY(lock_);
   uint64_t _lastReceivedPictureID;
+  int64_t ntp_offset_;
 };
 
 class VCMGenericDecoder {

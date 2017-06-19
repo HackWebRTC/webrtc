@@ -86,6 +86,10 @@ class VCMEncodedFrame : protected EncodedImage {
    */
   VideoContentType contentType() const { return content_type_; }
   /**
+   * Get video timing
+   */
+  EncodedImage::Timing video_timing() const { return timing_; }
+  /**
    *   True if this frame is complete, false otherwise
    */
   bool Complete() const { return _completeFrame; }

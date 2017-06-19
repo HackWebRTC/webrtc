@@ -10,8 +10,8 @@
 
 #include "webrtc/video/rtp_video_stream_receiver.h"
 
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/location.h"
@@ -239,6 +239,7 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
   VCMPacket packet(payload_data, payload_size, rtp_header_with_ntp);
   packet.timesNacked =
       nack_module_ ? nack_module_->OnReceivedPacket(packet) : -1;
+  packet.receive_time_ms = clock_->TimeInMilliseconds();
 
   // In the case of a video stream without picture ids and no rtx the
   // RtpFrameReferenceFinder will need to know about padding to
@@ -519,6 +520,11 @@ void RtpVideoStreamReceiver::NotifyReceiverOfFecPacket(
   rtp_header.type.Video.content_type = VideoContentType::UNSPECIFIED;
   if (header.extension.hasVideoContentType) {
     rtp_header.type.Video.content_type = header.extension.videoContentType;
+  }
+  rtp_header.type.Video.video_timing = {0u, 0u, 0u, 0u, 0u, 0u, false};
+  if (header.extension.has_video_timing) {
+    rtp_header.type.Video.video_timing = header.extension.video_timing;
+    rtp_header.type.Video.video_timing.is_timing_frame = true;
   }
   rtp_header.type.Video.playout_delay = header.extension.playout_delay;
 

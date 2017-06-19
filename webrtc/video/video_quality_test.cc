@@ -1327,6 +1327,8 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   }
   video_send_config_.rtp.extensions.push_back(RtpExtension(
       RtpExtension::kVideoContentTypeUri, test::kVideoContentTypeExtensionId));
+  video_send_config_.rtp.extensions.push_back(RtpExtension(
+      RtpExtension::kVideoTimingUri, test::kVideoTimingExtensionId));
 
   video_encoder_config_.min_transmit_bitrate_bps =
       params_.video.min_transmit_bps;

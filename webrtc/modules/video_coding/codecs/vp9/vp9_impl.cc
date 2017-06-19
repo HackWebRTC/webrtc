@@ -29,7 +29,6 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp9/screenshare_layers.h"
 
 namespace webrtc {
@@ -710,9 +709,11 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
                                        : VideoContentType::UNSPECIFIED;
     encoded_image_._encodedHeight = raw_->d_h;
     encoded_image_._encodedWidth = raw_->d_w;
+    encoded_image_.timing_.is_timing_frame = false;
     int qp = -1;
     vpx_codec_control(encoder_, VP8E_GET_LAST_QUANTIZER, &qp);
     encoded_image_.qp_ = qp;
+
     encoded_complete_callback_->OnEncodedImage(encoded_image_, &codec_specific,
                                                &frag_info);
   }

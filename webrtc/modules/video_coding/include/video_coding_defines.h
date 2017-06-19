@@ -39,7 +39,14 @@ namespace webrtc {
 #define VCM_NO_FRAME_DECODED -11
 #define VCM_NOT_IMPLEMENTED -20
 
-enum { kDefaultStartBitrateKbps = 300 };
+enum {
+  kDefaultStartBitrateKbps = 300,
+  // Timing frames settings. Timing frames are sent every
+  // |kDefaultTimingFramesDelayMs|, or if the frame is at least
+  // |kDefaultOutliserFrameSizePercent| in size of average frame.
+  kDefaultTimingFramesDelayMs = 200,
+  kDefaultOutlierFrameSizePercent = 250,
+};
 
 enum VCMVideoProtection {
   kProtectionNone,

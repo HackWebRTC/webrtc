@@ -245,6 +245,72 @@ bool VideoContentTypeExtension::Write(uint8_t* data,
   return true;
 }
 
+// Video Timing.
+// 6 timestamps in milliseconds counted from capture time stored in rtp header:
+// encode start/finish, packetization complete, pacer exit and reserved for
+// modification by the network modification.
+//    0                   1                   2                   3
+//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |  ID   | len=11|  encode start ms delta          | encode finish |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   | ms delta      |  packetizer finish ms delta     | pacer exit    |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   | ms delta      |  network timestamp ms delta     | network2 time-|
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   | stamp ms delta|
+//   +-+-+-+-+-+-+-+-+
+
+constexpr RTPExtensionType VideoTimingExtension::kId;
+constexpr uint8_t VideoTimingExtension::kValueSizeBytes;
+constexpr const char* VideoTimingExtension::kUri;
+
+bool VideoTimingExtension::Parse(rtc::ArrayView<const uint8_t> data,
+                                 VideoTiming* timing) {
+  RTC_DCHECK(timing);
+  if (data.size() != kValueSizeBytes)
+    return false;
+  timing->encode_start_delta_ms =
+      ByteReader<uint16_t>::ReadBigEndian(data.data());
+  timing->encode_finish_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
+      data.data() + 2 * VideoTiming::kEncodeFinishDeltaIdx);
+  timing->packetization_finish_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
+      data.data() + 2 * VideoTiming::kPacketizationFinishDeltaIdx);
+  timing->pacer_exit_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
+      data.data() + 2 * VideoTiming::kPacerExitDeltaIdx);
+  timing->network_timstamp_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
+      data.data() + 2 * VideoTiming::kNetworkTimestampDeltaIdx);
+  timing->network2_timstamp_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
+      data.data() + 2 * VideoTiming::kNetwork2TimestampDeltaIdx);
+  timing->is_timing_frame = true;
+  return true;
+}
+
+bool VideoTimingExtension::Write(uint8_t* data, const VideoTiming& timing) {
+  ByteWriter<uint16_t>::WriteBigEndian(data, timing.encode_start_delta_ms);
+  ByteWriter<uint16_t>::WriteBigEndian(
+      data + 2 * VideoTiming::kEncodeFinishDeltaIdx,
+      timing.encode_finish_delta_ms);
+  ByteWriter<uint16_t>::WriteBigEndian(
+      data + 2 * VideoTiming::kPacketizationFinishDeltaIdx,
+      timing.packetization_finish_delta_ms);
+  ByteWriter<uint16_t>::WriteBigEndian(
+      data + 2 * VideoTiming::kPacerExitDeltaIdx, timing.pacer_exit_delta_ms);
+  ByteWriter<uint16_t>::WriteBigEndian(
+      data + 2 * VideoTiming::kNetworkTimestampDeltaIdx, 0);  // reserved
+  ByteWriter<uint16_t>::WriteBigEndian(
+      data + 2 * VideoTiming::kNetwork2TimestampDeltaIdx, 0);  // reserved
+  return true;
+}
+
+bool VideoTimingExtension::Write(uint8_t* data,
+                                 uint16_t time_delta_ms,
+                                 uint8_t idx) {
+  RTC_DCHECK_LT(idx, 6);
+  ByteWriter<uint16_t>::WriteBigEndian(data + 2 * idx, time_delta_ms);
+  return true;
+}
+
 // RtpStreamId.
 constexpr RTPExtensionType RtpStreamId::kId;
 constexpr const char* RtpStreamId::kUri;

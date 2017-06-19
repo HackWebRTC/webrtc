@@ -1057,6 +1057,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
           (codec_mode_ == webrtc::VideoCodecMode::kScreensharing)
               ? webrtc::VideoContentType::SCREENSHARE
               : webrtc::VideoContentType::UNSPECIFIED;
+      image->timing_.is_timing_frame = false;
       image->_frameType =
           (key_frame ? webrtc::kVideoFrameKey : webrtc::kVideoFrameDelta);
       image->_completeFrame = true;

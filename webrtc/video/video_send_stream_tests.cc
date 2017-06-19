@@ -337,6 +337,40 @@ TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
   RunBaseTest(&test);
 }
 
+TEST_F(VideoSendStreamTest, SupportsVideoTimingFrames) {
+  class VideoRotationObserver : public test::SendTest {
+   public:
+    VideoRotationObserver() : SendTest(kDefaultTimeoutMs) {
+      EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionVideoTiming, test::kVideoTimingExtensionId));
+    }
+
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+      if (header.extension.has_video_timing) {
+        observation_complete_.Set();
+      }
+      return SEND_PACKET;
+    }
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.extensions.clear();
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kVideoTimingUri, test::kVideoTimingExtensionId));
+    }
+
+    void PerformTest() override {
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for timing frames.";
+    }
+  } test;
+
+  RunBaseTest(&test);
+}
+
 class FakeReceiveStatistics : public NullReceiveStatistics {
  public:
   FakeReceiveStatistics(uint32_t send_ssrc,

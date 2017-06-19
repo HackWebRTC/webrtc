@@ -159,7 +159,7 @@ void FrameGeneratorCapturer::InsertFrame() {
   rtc::CritScope cs(&lock_);
   if (sending_) {
     VideoFrame* frame = frame_generator_->NextFrame();
-    frame->set_timestamp_us(rtc::TimeMicros());
+    frame->set_timestamp_us(clock_->TimeInMicroseconds());
     frame->set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
     frame->set_rotation(fake_rotation_);
     if (first_frame_capture_time_ == -1) {

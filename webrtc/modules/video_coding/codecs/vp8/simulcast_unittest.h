@@ -25,6 +25,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/test/gtest.h"
 
 using ::testing::_;
@@ -206,6 +207,8 @@ class TestVp8Simulcast : public ::testing::Test {
     settings->height = kDefaultHeight;
     settings->numberOfSimulcastStreams = kNumberOfSimulcastStreams;
     ASSERT_EQ(3, kNumberOfSimulcastStreams);
+    settings->timing_frame_thresholds = {kDefaultTimingFramesDelayMs,
+                                         kDefaultOutlierFrameSizePercent};
     ConfigureStream(kDefaultWidth / 4, kDefaultHeight / 4, kMaxBitrates[0],
                     kMinBitrates[0], kTargetBitrates[0],
                     &settings->simulcastStream[0], temporal_layer_profile[0]);

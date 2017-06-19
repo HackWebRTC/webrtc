@@ -35,6 +35,12 @@ class EncodedImage {
   EncodedImage(uint8_t* buffer, size_t length, size_t size)
       : _buffer(buffer), _length(length), _size(size) {}
 
+  void SetEncodeTime(int64_t encode_start_ms, int64_t encode_finish_ms) const {
+    timing_.is_timing_frame = true;
+    timing_.encode_start_ms = encode_start_ms;
+    timing_.encode_finish_ms = encode_finish_ms;
+  }
+
   // TODO(kthelgason): get rid of this struct as it only has a single member
   // remaining.
   struct AdaptReason {
@@ -63,6 +69,19 @@ class EncodedImage {
   // indication that all future frames will be constrained with those limits
   // until the application indicates a change again.
   PlayoutDelay playout_delay_ = {-1, -1};
+
+  // Timing information should be updatable on const instances.
+  mutable struct Timing {
+    bool is_timing_frame = false;
+    int64_t encode_start_ms = 0;
+    int64_t encode_finish_ms = 0;
+    int64_t packetization_finish_ms = 0;
+    int64_t pacer_exit_ms = 0;
+    int64_t network_timestamp_ms = 0;
+    int64_t network2_timestamp_ms = 0;
+    int64_t receive_start_ms = 0;
+    int64_t receive_finish_ms = 0;
+  } timing_;
 };
 
 }  // namespace webrtc

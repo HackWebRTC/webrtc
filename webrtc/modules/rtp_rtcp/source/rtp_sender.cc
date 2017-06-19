@@ -743,6 +743,9 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
   packet_to_send->SetExtension<AbsoluteSendTime>(
       AbsoluteSendTime::MsTo24Bits(now_ms));
 
+  if (packet_to_send->HasExtension<VideoTimingExtension>())
+    packet_to_send->set_pacer_exit_time_ms(now_ms);
+
   PacketOptions options;
   if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id)) {
     AddPacketToTransportFeedback(options.packet_id, *packet_to_send,
@@ -830,6 +833,8 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   if (packet->capture_time_ms() > 0) {
     packet->SetExtension<TransmissionOffset>(
         kTimestampTicksPerMs * (now_ms - packet->capture_time_ms()));
+    if (packet->HasExtension<VideoTimingExtension>())
+      packet->set_pacer_exit_time_ms(now_ms);
   }
   packet->SetExtension<AbsoluteSendTime>(AbsoluteSendTime::MsTo24Bits(now_ms));
 

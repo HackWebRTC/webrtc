@@ -10,8 +10,6 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
-#include <string.h>
-
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -253,6 +251,9 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
   header->extension.hasVideoContentType = false;
   header->extension.videoContentType = VideoContentType::UNSPECIFIED;
 
+  header->extension.has_video_timing = false;
+  header->extension.video_timing = {0u, 0u, 0u, 0u, 0u, 0u, false};
+
   if (X) {
     /* RTP header extension, RFC 3550.
      0                   1                   2                   3
@@ -462,6 +463,16 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
             header->extension.videoContentType =
                 static_cast<VideoContentType>(ptr[0]);
           }
+          break;
+        }
+        case kRtpExtensionVideoTiming: {
+          if (len != VideoTimingExtension::kValueSizeBytes - 1) {
+            LOG(LS_WARNING) << "Incorrect video timing len: " << len;
+            return;
+          }
+          header->extension.has_video_timing = true;
+          VideoTimingExtension::Parse(rtc::MakeArrayView(ptr, len + 1),
+                                      &header->extension.video_timing);
           break;
         }
         case kRtpExtensionRtpStreamId: {

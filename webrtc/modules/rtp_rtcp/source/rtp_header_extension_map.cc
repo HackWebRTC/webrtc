@@ -39,6 +39,7 @@ constexpr ExtensionInfo kExtensions[] = {
     CreateExtensionInfo<TransportSequenceNumber>(),
     CreateExtensionInfo<PlayoutDelayLimits>(),
     CreateExtensionInfo<VideoContentTypeExtension>(),
+    CreateExtensionInfo<VideoTimingExtension>(),
     CreateExtensionInfo<RtpStreamId>(),
     CreateExtensionInfo<RepairedRtpStreamId>(),
 };
