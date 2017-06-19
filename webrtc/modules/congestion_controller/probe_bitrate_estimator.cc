@@ -139,7 +139,7 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
   float res = std::min(send_bps, receive_bps);
   if (event_log_)
     event_log_->LogProbeResultSuccess(cluster_id, res);
-  estimated_bitrate_bps_ = rtc::Optional<int>(std::min(send_bps, res));
+  estimated_bitrate_bps_ = rtc::Optional<int>(res);
   return *estimated_bitrate_bps_;
 }
 
