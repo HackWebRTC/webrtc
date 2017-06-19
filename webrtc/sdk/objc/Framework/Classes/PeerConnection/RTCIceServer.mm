@@ -42,7 +42,7 @@
   return [self initWithURLStrings:urlStrings
                          username:username
                        credential:credential
-                    tlsCertPolicy:RTCTlsCertPolicySecure
+                    tlsCertPolicy:tlsCertPolicy
                          hostname:nil];
 }
 
