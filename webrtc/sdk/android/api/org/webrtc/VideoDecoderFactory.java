@@ -10,11 +10,11 @@
 
 package org.webrtc;
 
-/** Factory for creating VideoEncoders. */
-public interface VideoEncoderFactory {
-  /** Creates an encoder for the given video codec. */
-  public VideoEncoder createEncoder(VideoCodecInfo info);
-
-  /** Enumerates the list of supported video codecs. */
-  public VideoCodecInfo[] getSupportedCodecs();
+/** Factory for creating VideoDecoders. */
+public interface VideoDecoderFactory {
+  /**
+   * Creates a VideoDecoder for the given codec. Supports the same codecs supported by
+   * VideoEncoderFactory.
+   */
+  public VideoDecoder createDecoder(String codecType);
 }

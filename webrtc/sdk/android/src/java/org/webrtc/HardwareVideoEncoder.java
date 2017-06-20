@@ -36,10 +36,6 @@ class HardwareVideoEncoder implements VideoEncoder {
   // constant until API level 21.
   private static final String KEY_BITRATE_MODE = "bitrate-mode";
 
-  // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
-  // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
-  private static final int COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m = 0x7FA30C04;
-
   private static final int MAX_VIDEO_FRAMERATE = 30;
 
   // See MAX_ENCODER_Q_SIZE in androidmediaencoder_jni.cc.
@@ -133,8 +129,9 @@ class HardwareVideoEncoder implements VideoEncoder {
 
     lastKeyFrameMs = -1;
 
-    codec = createCodecByName(codecName);
-    if (codec == null) {
+    try {
+      codec = MediaCodec.createByCodecName(codecName);
+    } catch (IOException | IllegalArgumentException e) {
       Logging.e(TAG, "Cannot create media encoder " + codecName);
       return VideoCodecStatus.ERROR;
     }
@@ -418,15 +415,6 @@ class HardwareVideoEncoder implements VideoEncoder {
     }
   }
 
-  private static MediaCodec createCodecByName(String codecName) {
-    try {
-      return MediaCodec.createByCodecName(codecName);
-    } catch (IOException | IllegalArgumentException e) {
-      Logging.e(TAG, "createCodecByName failed", e);
-      return null;
-    }
-  }
-
   /**
    * Enumeration of supported color formats used for MediaCodec's input.
    */
@@ -463,7 +451,7 @@ class HardwareVideoEncoder implements VideoEncoder {
           return I420;
         case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar:
         case MediaCodecInfo.CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar:
-        case COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m:
+        case MediaCodecUtils.COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m:
           return NV12;
         default:
           throw new IllegalArgumentException("Unsupported colorFormat: " + colorFormat);

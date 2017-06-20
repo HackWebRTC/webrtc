@@ -38,13 +38,6 @@ class HardwareVideoDecoder implements VideoDecoder {
   private static final String MEDIA_FORMAT_KEY_CROP_TOP = "crop-top";
   private static final String MEDIA_FORMAT_KEY_CROP_BOTTOM = "crop-bottom";
 
-  // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
-  // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
-  private static final int COLOR_QCOM_FORMATYVU420PackedSemiPlanar32m4ka = 0x7FA30C01;
-  private static final int COLOR_QCOM_FORMATYVU420PackedSemiPlanar16m4ka = 0x7FA30C02;
-  private static final int COLOR_QCOM_FORMATYVU420PackedSemiPlanar64x32Tile2m8ka = 0x7FA30C03;
-  private static final int COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m = 0x7FA30C04;
-
   // MediaCodec.release() occasionally hangs.  Release stops waiting and reports failure after
   // this timeout.
   private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000;
@@ -132,7 +125,7 @@ class HardwareVideoDecoder implements VideoDecoder {
     try {
       codec = MediaCodec.createByCodecName(codecName);
     } catch (IOException | IllegalArgumentException e) {
-      Logging.e(TAG, "Cannot create media decoder");
+      Logging.e(TAG, "Cannot create media decoder " + codecName);
       return VideoCodecStatus.ERROR;
     }
     try {
@@ -168,8 +161,8 @@ class HardwareVideoDecoder implements VideoDecoder {
 
     int size = frame.buffer.remaining();
     if (size == 0) {
-      Logging.e(TAG, "decode() - input buffer empty");
-      return VideoCodecStatus.ERR_PARAMETER;
+      Logging.e(TAG, "decode() - no input data");
+      return VideoCodecStatus.ERROR;
     }
 
     // Load dimensions from shared memory under the dimension lock.
@@ -215,13 +208,13 @@ class HardwareVideoDecoder implements VideoDecoder {
       index = codec.dequeueInputBuffer(0 /* timeout */);
     } catch (IllegalStateException e) {
       Logging.e(TAG, "dequeueInputBuffer failed", e);
-      return VideoCodecStatus.ERROR;
+      return VideoCodecStatus.FALLBACK_SOFTWARE;
     }
     if (index < 0) {
       // Decoder is falling behind.  No input buffers available.
       // The decoder can't simply drop frames; it might lose a key frame.
       Logging.e(TAG, "decode() - no HW buffers available; decoder falling behind");
-      return VideoCodecStatus.ERROR;
+      return VideoCodecStatus.FALLBACK_SOFTWARE;
     }
 
     ByteBuffer buffer;
@@ -229,12 +222,12 @@ class HardwareVideoDecoder implements VideoDecoder {
       buffer = codec.getInputBuffers()[index];
     } catch (IllegalStateException e) {
       Logging.e(TAG, "getInputBuffers failed", e);
-      return VideoCodecStatus.ERROR;
+      return VideoCodecStatus.FALLBACK_SOFTWARE;
     }
 
     if (buffer.capacity() < size) {
       Logging.e(TAG, "decode() - HW buffer too small");
-      return VideoCodecStatus.ERROR;
+      return VideoCodecStatus.FALLBACK_SOFTWARE;
     }
     buffer.put(frame.buffer);
 
@@ -245,7 +238,7 @@ class HardwareVideoDecoder implements VideoDecoder {
     } catch (IllegalStateException e) {
       Logging.e(TAG, "queueInputBuffer failed", e);
       decodeStartTimes.pollLast();
-      return VideoCodecStatus.ERROR;
+      return VideoCodecStatus.FALLBACK_SOFTWARE;
     }
     if (keyFrameRequired) {
       keyFrameRequired = false;
@@ -472,18 +465,12 @@ class HardwareVideoDecoder implements VideoDecoder {
   }
 
   private boolean isSupportedColorFormat(int colorFormat) {
-    switch (colorFormat) {
-      case CodecCapabilities.COLOR_FormatYUV420Planar:
-      case CodecCapabilities.COLOR_FormatYUV420SemiPlanar:
-      case CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar:
-      case COLOR_QCOM_FORMATYVU420PackedSemiPlanar32m4ka:
-      case COLOR_QCOM_FORMATYVU420PackedSemiPlanar16m4ka:
-      case COLOR_QCOM_FORMATYVU420PackedSemiPlanar64x32Tile2m8ka:
-      case COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m:
+    for (int supported : MediaCodecUtils.DECODER_COLOR_FORMATS) {
+      if (supported == colorFormat) {
         return true;
-      default:
-        return false;
+      }
     }
+    return false;
   }
 
   private static void copyI420(ByteBuffer src, int offset, VideoFrame.I420Buffer frameBuffer,
@@ -505,15 +492,14 @@ class HardwareVideoDecoder implements VideoDecoder {
     copyPlane(src, vPos, uvStride, frameBuffer.getDataV(), 0, frameBuffer.getStrideV(), chromaWidth,
         chromaHeight);
 
-    // If the sliceHeight is odd, duplicate the last rows of chroma.  Copy the last row of the U and
-    // V channels and append them at the end of each channel.
+    // If the sliceHeight is odd, duplicate the last rows of chroma.
     if (sliceHeight % 2 != 0) {
       int strideU = frameBuffer.getStrideU();
-      int endU = chromaHeight * strideU;
-      copyRow(frameBuffer.getDataU(), endU - strideU, frameBuffer.getDataU(), endU, chromaWidth);
+      uPos = chromaHeight * strideU;
+      copyRow(frameBuffer.getDataU(), uPos - strideU, frameBuffer.getDataU(), uPos, chromaWidth);
       int strideV = frameBuffer.getStrideV();
-      int endV = chromaHeight * strideV;
-      copyRow(frameBuffer.getDataV(), endV - strideV, frameBuffer.getDataV(), endV, chromaWidth);
+      vPos = chromaHeight * strideV;
+      copyRow(frameBuffer.getDataV(), vPos - strideV, frameBuffer.getDataV(), vPos, chromaWidth);
     }
   }
 

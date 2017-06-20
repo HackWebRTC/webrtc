@@ -10,6 +10,10 @@
 
 package org.webrtc;
 
+import static org.webrtc.MediaCodecUtils.EXYNOS_PREFIX;
+import static org.webrtc.MediaCodecUtils.INTEL_PREFIX;
+import static org.webrtc.MediaCodecUtils.QCOM_PREFIX;
+
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
@@ -26,11 +30,6 @@ import java.util.Map;
 public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   private static final String TAG = "HardwareVideoEncoderFactory";
 
-  // Prefixes for supported hardware encoder component names.
-  private static final String QCOM_PREFIX = "OMX.qcom.";
-  private static final String EXYNOS_PREFIX = "OMX.Exynos.";
-  private static final String INTEL_PREFIX = "OMX.Intel.";
-
   // Forced key frame interval - used to reduce color distortions on Qualcomm platforms.
   private static final int QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_L_MS = 15000;
   private static final int QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_M_MS = 20000;
@@ -41,17 +40,6 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   // bitrates deviates a lot from the target value.
   private static final List<String> H264_HW_EXCEPTION_MODELS =
       Arrays.asList("SAMSUNG-SGH-I337", "Nexus 7", "Nexus 4");
-
-  // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
-  // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
-  private static final int COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m = 0x7FA30C04;
-
-  // Supported color formats, in order of preference.
-  private static final int[] SUPPORTED_COLOR_FORMATS = {
-      MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar,
-      MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
-      MediaCodecInfo.CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar,
-      COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m};
 
   // Keys for H264 VideoCodecInfo properties.
   private static final String H264_FMTP_PROFILE_LEVEL_ID = "profile-level-id";
@@ -86,7 +74,8 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
 
     String codecName = info.getName();
     String mime = type.mimeType();
-    int colorFormat = selectColorFormat(SUPPORTED_COLOR_FORMATS, info.getCapabilitiesForType(mime));
+    int colorFormat = MediaCodecUtils.selectColorFormat(
+        MediaCodecUtils.ENCODER_COLOR_FORMATS, info.getCapabilitiesForType(mime));
 
     return new HardwareVideoEncoder(codecName, type, colorFormat, getKeyFrameIntervalSec(type),
         getForcedKeyFrameIntervalMs(type, codecName), createBitrateAdjuster(type, codecName));
@@ -134,35 +123,16 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
 
   // Returns true if the given MediaCodecInfo indicates a supported encoder for the given type.
   private boolean isSupportedCodec(MediaCodecInfo info, VideoCodecType type) {
-    if (!codecSupportsType(info, type)) {
+    if (!MediaCodecUtils.codecSupportsType(info, type)) {
       return false;
     }
     // Check for a supported color format.
-    if (selectColorFormat(SUPPORTED_COLOR_FORMATS, info.getCapabilitiesForType(type.mimeType()))
+    if (MediaCodecUtils.selectColorFormat(
+            MediaCodecUtils.ENCODER_COLOR_FORMATS, info.getCapabilitiesForType(type.mimeType()))
         == null) {
       return false;
     }
     return isHardwareSupportedInCurrentSdk(info, type);
-  }
-
-  private Integer selectColorFormat(int[] supportedColorFormats, CodecCapabilities capabilities) {
-    for (int supportedColorFormat : supportedColorFormats) {
-      for (int codecColorFormat : capabilities.colorFormats) {
-        if (codecColorFormat == supportedColorFormat) {
-          return codecColorFormat;
-        }
-      }
-    }
-    return null;
-  }
-
-  private boolean codecSupportsType(MediaCodecInfo info, VideoCodecType type) {
-    for (String mimeType : info.getSupportedTypes()) {
-      if (type.mimeType().equals(mimeType)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   // Returns true if the given MediaCodecInfo indicates a hardware module that is supported on the
