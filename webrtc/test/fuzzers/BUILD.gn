@@ -358,3 +358,16 @@ webrtc_fuzzer_test("transport_feedback_packet_loss_tracker_fuzzer") {
     "../../voice_engine",
   ]
 }
+
+webrtc_fuzzer_test("audio_processing_fuzzer") {
+  sources = [
+    "audio_processing_fuzzer.cc",
+    "audio_processing_fuzzer.h",
+    "audio_processing_fuzzer_configs.cc",
+  ]
+  deps = [
+    "../../base:rtc_base_approved",
+    "../../modules:module_api",
+    "../../modules/audio_processing",
+  ]
+}
