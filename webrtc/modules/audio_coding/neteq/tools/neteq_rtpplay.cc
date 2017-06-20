@@ -18,6 +18,7 @@
 #include <ios>
 #include <iostream>
 #include <memory>
+#include <numeric>
 #include <string>
 
 #include "gflags/gflags.h"
@@ -319,10 +320,11 @@ class SsrcSwitchDetector : public NetEqPostInsertPacket {
   // Takes a pointer to another callback object, which will be invoked after
   // this object finishes. This does not transfer ownership, and null is a
   // valid value.
-  SsrcSwitchDetector(NetEqPostInsertPacket* other_callback)
+  explicit SsrcSwitchDetector(NetEqPostInsertPacket* other_callback)
       : other_callback_(other_callback) {}
 
-  void AfterInsertPacket(const NetEqInput::PacketData& packet, NetEq* neteq) {
+  void AfterInsertPacket(const NetEqInput::PacketData& packet,
+                         NetEq* neteq) override {
     if (last_ssrc_ && packet.header.ssrc != *last_ssrc_) {
       std::cout << "Changing streams from 0x" << std::hex << *last_ssrc_
                 << " to 0x" << std::hex << packet.header.ssrc
@@ -339,6 +341,114 @@ class SsrcSwitchDetector : public NetEqPostInsertPacket {
  private:
   NetEqPostInsertPacket* other_callback_;
   rtc::Optional<uint32_t> last_ssrc_;
+};
+
+class StatsGetter : public NetEqGetAudioCallback {
+ public:
+  // This struct is a replica of webrtc::NetEqNetworkStatistics, but with all
+  // values stored in double precision.
+  struct Stats {
+    double current_buffer_size_ms = 0.0;
+    double preferred_buffer_size_ms = 0.0;
+    double jitter_peaks_found = 0.0;
+    double packet_loss_rate = 0.0;
+    double packet_discard_rate = 0.0;
+    double expand_rate = 0.0;
+    double speech_expand_rate = 0.0;
+    double preemptive_rate = 0.0;
+    double accelerate_rate = 0.0;
+    double secondary_decoded_rate = 0.0;
+    double clockdrift_ppm = 0.0;
+    double added_zero_samples = 0.0;
+    double mean_waiting_time_ms = 0.0;
+    double median_waiting_time_ms = 0.0;
+    double min_waiting_time_ms = 0.0;
+    double max_waiting_time_ms = 0.0;
+  };
+
+  // Takes a pointer to another callback object, which will be invoked after
+  // this object finishes. This does not transfer ownership, and null is a
+  // valid value.
+  explicit StatsGetter(NetEqGetAudioCallback* other_callback)
+      : other_callback_(other_callback) {}
+
+  void BeforeGetAudio(NetEq* neteq) override {
+    if (other_callback_) {
+      other_callback_->BeforeGetAudio(neteq);
+    }
+  }
+
+  void AfterGetAudio(int64_t time_now_ms,
+                     const AudioFrame& audio_frame,
+                     bool muted,
+                     NetEq* neteq) override {
+    if (++counter_ >= 100) {
+      counter_ = 0;
+      NetEqNetworkStatistics stats;
+      RTC_CHECK_EQ(neteq->NetworkStatistics(&stats), 0);
+      stats_.push_back(stats);
+    }
+    if (other_callback_) {
+      other_callback_->BeforeGetAudio(neteq);
+    }
+  }
+
+  double AverageSpeechExpandRate() const {
+    double sum_speech_expand =
+        std::accumulate(stats_.begin(), stats_.end(), double{0.0},
+                        [](double a, NetEqNetworkStatistics b) {
+                          return a + static_cast<double>(b.speech_expand_rate);
+                        });
+    return sum_speech_expand / 16384.0 / stats_.size();
+  }
+
+  Stats AverageStats() const {
+    Stats sum_stats = std::accumulate(
+        stats_.begin(), stats_.end(), Stats(),
+        [](Stats a, NetEqNetworkStatistics b) {
+          a.current_buffer_size_ms += b.current_buffer_size_ms;
+          a.preferred_buffer_size_ms += b.preferred_buffer_size_ms;
+          a.jitter_peaks_found += b.jitter_peaks_found;
+          a.packet_loss_rate += b.packet_loss_rate / 16384.0;
+          a.packet_discard_rate += b.packet_discard_rate / 16384.0;
+          a.expand_rate += b.expand_rate / 16384.0;
+          a.speech_expand_rate += b.speech_expand_rate / 16384.0;
+          a.preemptive_rate += b.preemptive_rate / 16384.0;
+          a.accelerate_rate += b.accelerate_rate / 16384.0;
+          a.secondary_decoded_rate += b.secondary_decoded_rate / 16384.0;
+          a.clockdrift_ppm += b.clockdrift_ppm;
+          a.added_zero_samples += b.added_zero_samples;
+          a.mean_waiting_time_ms += b.mean_waiting_time_ms;
+          a.median_waiting_time_ms += b.median_waiting_time_ms;
+          a.min_waiting_time_ms += b.min_waiting_time_ms;
+          a.max_waiting_time_ms += b.max_waiting_time_ms;
+          return a;
+        });
+
+    sum_stats.current_buffer_size_ms /= stats_.size();
+    sum_stats.preferred_buffer_size_ms /= stats_.size();
+    sum_stats.jitter_peaks_found /= stats_.size();
+    sum_stats.packet_loss_rate /= stats_.size();
+    sum_stats.packet_discard_rate /= stats_.size();
+    sum_stats.expand_rate /= stats_.size();
+    sum_stats.speech_expand_rate /= stats_.size();
+    sum_stats.preemptive_rate /= stats_.size();
+    sum_stats.accelerate_rate /= stats_.size();
+    sum_stats.secondary_decoded_rate /= stats_.size();
+    sum_stats.clockdrift_ppm /= stats_.size();
+    sum_stats.added_zero_samples /= stats_.size();
+    sum_stats.mean_waiting_time_ms /= stats_.size();
+    sum_stats.median_waiting_time_ms /= stats_.size();
+    sum_stats.min_waiting_time_ms /= stats_.size();
+    sum_stats.max_waiting_time_ms /= stats_.size();
+
+    return sum_stats;
+  }
+
+ private:
+  NetEqGetAudioCallback* other_callback_;
+  size_t counter_ = 0;
+  std::vector<NetEqNetworkStatistics> stats_;
 };
 
 int RunTest(int argc, char* argv[]) {
@@ -515,14 +625,14 @@ int RunTest(int argc, char* argv[]) {
 
   SsrcSwitchDetector ssrc_switch_detector(delay_analyzer.get());
   callbacks.post_insert_packet = &ssrc_switch_detector;
-  callbacks.get_audio_callback = delay_analyzer.get();
+  StatsGetter stats_getter(delay_analyzer.get());
+  callbacks.get_audio_callback = &stats_getter;
   NetEq::Config config;
   config.sample_rate_hz = *sample_rate_hz;
   NetEqTest test(config, codecs, ext_codecs, std::move(input),
                  std::move(output), callbacks);
 
   int64_t test_duration_ms = test.Run();
-  NetEqNetworkStatistics stats = test.SimulationStats();
 
   if (FLAGS_matlabplot) {
     std::cout << "Creating Matlab plot script " << output_file_name + ".m"
@@ -532,22 +642,20 @@ int RunTest(int argc, char* argv[]) {
 
   printf("Simulation statistics:\n");
   printf("  output duration: %" PRId64 " ms\n", test_duration_ms);
-  printf("  packet_loss_rate: %f %%\n",
-         100.0 * stats.packet_loss_rate / 16384.0);
-  printf("  packet_discard_rate: %f %%\n",
-         100.0 * stats.packet_discard_rate / 16384.0);
-  printf("  expand_rate: %f %%\n", 100.0 * stats.expand_rate / 16384.0);
-  printf("  speech_expand_rate: %f %%\n",
-         100.0 * stats.speech_expand_rate / 16384.0);
-  printf("  preemptive_rate: %f %%\n", 100.0 * stats.preemptive_rate / 16384.0);
-  printf("  accelerate_rate: %f %%\n", 100.0 * stats.accelerate_rate / 16384.0);
+  auto stats = stats_getter.AverageStats();
+  printf("  packet_loss_rate: %f %%\n", 100.0 * stats.packet_loss_rate);
+  printf("  packet_discard_rate: %f %%\n", 100.0 * stats.packet_discard_rate);
+  printf("  expand_rate: %f %%\n", 100.0 * stats.expand_rate);
+  printf("  speech_expand_rate: %f %%\n", 100.0 * stats.speech_expand_rate);
+  printf("  preemptive_rate: %f %%\n", 100.0 * stats.preemptive_rate);
+  printf("  accelerate_rate: %f %%\n", 100.0 * stats.accelerate_rate);
   printf("  secondary_decoded_rate: %f %%\n",
-         100.0 * stats.secondary_decoded_rate / 16384.0);
-  printf("  clockdrift_ppm: %d ppm\n", stats.clockdrift_ppm);
-  printf("  mean_waiting_time_ms: %d ms\n", stats.mean_waiting_time_ms);
-  printf("  median_waiting_time_ms: %d ms\n", stats.median_waiting_time_ms);
-  printf("  min_waiting_time_ms: %d ms\n", stats.min_waiting_time_ms);
-  printf("  max_waiting_time_ms: %d ms\n", stats.max_waiting_time_ms);
+         100.0 * stats.secondary_decoded_rate);
+  printf("  clockdrift_ppm: %f ppm\n", stats.clockdrift_ppm);
+  printf("  mean_waiting_time_ms: %f ms\n", stats.mean_waiting_time_ms);
+  printf("  median_waiting_time_ms: %f ms\n", stats.median_waiting_time_ms);
+  printf("  min_waiting_time_ms: %f ms\n", stats.min_waiting_time_ms);
+  printf("  max_waiting_time_ms: %f ms\n", stats.max_waiting_time_ms);
 
   return 0;
 }
