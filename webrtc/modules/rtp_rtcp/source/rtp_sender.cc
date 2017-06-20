@@ -743,8 +743,11 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
   packet_to_send->SetExtension<AbsoluteSendTime>(
       AbsoluteSendTime::MsTo24Bits(now_ms));
 
-  if (packet_to_send->HasExtension<VideoTimingExtension>())
-    packet_to_send->set_pacer_exit_time_ms(now_ms);
+  // TODO(ilnik): (webrtc:7859) For now we can't modify pacer exit timestamp in
+  // video timing extension because only some packets have it and it will break
+  // FEC recovered packets, which will lead to corruptions. Ideally, here
+  // |packet->set_pacer_exit_time_ms(now_ms)| should be called if
+  // |VideoTimingExtension| is present.
 
   PacketOptions options;
   if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id)) {
@@ -833,8 +836,11 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   if (packet->capture_time_ms() > 0) {
     packet->SetExtension<TransmissionOffset>(
         kTimestampTicksPerMs * (now_ms - packet->capture_time_ms()));
-    if (packet->HasExtension<VideoTimingExtension>())
-      packet->set_pacer_exit_time_ms(now_ms);
+    // TODO(ilnik): (webrtc:7859) For now we can't modify pacer exit timestamp
+    // in video timing extension because only some packets have it an it will
+    // break FEC recovered packets, which will lead to corruptions. Ideally,
+    // here |packet->set_pacer_exit_time_ms(now_ms)| should be called if
+    // |VideoTimingExtension| is present.
   }
   packet->SetExtension<AbsoluteSendTime>(AbsoluteSendTime::MsTo24Bits(now_ms));
 
