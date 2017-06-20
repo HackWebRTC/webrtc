@@ -389,6 +389,7 @@ android_library("libjingle_peerconnection_java") {
     "src/java/org/webrtc/EglBase10.java",
     "src/java/org/webrtc/EglBase14.java",
     "src/java/org/webrtc/FramerateBitrateAdjuster.java",
+    "src/java/org/webrtc/HardwareVideoDecoder.java",
     "src/java/org/webrtc/HardwareVideoEncoder.java",
     "src/java/org/webrtc/Histogram.java",
     "src/java/org/webrtc/I420BufferImpl.java",
