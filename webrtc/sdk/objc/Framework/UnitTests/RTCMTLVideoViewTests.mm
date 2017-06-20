@@ -15,6 +15,7 @@
 
 #include <Metal/RTCMTLNV12Renderer.h>
 #include <WebRTC/RTCMTLVideoView.h>
+#include <WebRTC/RTCVideoFrameBuffer.h>
 
 // Extension of RTCMTLVideoView for testing purposes.
 @interface RTCMTLVideoView (Testing)
@@ -59,12 +60,14 @@
   self.frameMock = nil;
 }
 
-- (id)frameMockWithNativeHandle:(BOOL)hasNativeHandle {
+- (id)frameMockWithCVPixelBuffer:(BOOL)hasCVPixelBuffer {
   id frameMock = OCMClassMock([RTCVideoFrame class]);
-  if (hasNativeHandle) {
-    OCMStub([frameMock nativeHandle]).andReturn((CVPixelBufferRef)[OCMArg anyPointer]);
+  if (hasCVPixelBuffer) {
+    OCMStub([frameMock buffer])
+        .andReturn(
+            [[RTCCVPixelBuffer alloc] initWithPixelBuffer:(CVPixelBufferRef)[OCMArg anyPointer]]);
   } else {
-    OCMStub([frameMock nativeHandle]).andReturn((CVPixelBufferRef) nullptr);
+    OCMStub([frameMock buffer]).andReturn([[RTCI420Buffer alloc] initWithWidth:200 height:200]);
   }
   return frameMock;
 }
@@ -99,7 +102,7 @@
   RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] init];
   self.frameMock = OCMClassMock([RTCVideoFrame class]);
 
-  [[self.frameMock reject] nativeHandle];
+  [[self.frameMock reject] buffer];
   [[self.classMock reject] createNV12Renderer];
   [[self.classMock reject] createI420Renderer];
 
@@ -116,7 +119,7 @@
   // given
   OCMStub([self.classMock isMetalAvailable]).andReturn(YES);
   self.rendererI420Mock = [self rendererMockWithSuccessfulSetup:YES];
-  self.frameMock = [self frameMockWithNativeHandle:NO];
+  self.frameMock = [self frameMockWithCVPixelBuffer:NO];
 
   OCMExpect([self.rendererI420Mock drawFrame:self.frameMock]);
   OCMExpect([self.classMock createI420Renderer]).andReturn(self.rendererI420Mock);
@@ -137,7 +140,7 @@
   // given
   OCMStub([self.classMock isMetalAvailable]).andReturn(YES);
   self.rendererNV12Mock = [self rendererMockWithSuccessfulSetup:YES];
-  self.frameMock = [self frameMockWithNativeHandle:YES];
+  self.frameMock = [self frameMockWithCVPixelBuffer:YES];
 
   OCMExpect([self.rendererNV12Mock drawFrame:self.frameMock]);
   OCMExpect([self.classMock createNV12Renderer]).andReturn(self.rendererNV12Mock);
