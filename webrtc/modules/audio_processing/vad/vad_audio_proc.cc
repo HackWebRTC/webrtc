@@ -33,9 +33,9 @@ namespace webrtc {
 struct VadAudioProc::PitchAnalysisStruct : public ::PitchAnalysisStruct {};
 struct VadAudioProc::PreFiltBankstr : public ::PreFiltBankstr {};
 
-static const float kFrequencyResolution =
+static constexpr float kFrequencyResolution =
     kSampleRateHz / static_cast<float>(VadAudioProc::kDftSize);
-static const int kSilenceRms = 5;
+static constexpr int kSilenceRms = 5;
 
 // TODO(turajs): Make a Create or Init for VadAudioProc.
 VadAudioProc::VadAudioProc()
