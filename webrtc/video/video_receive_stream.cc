@@ -168,18 +168,20 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 
 namespace internal {
 
-VideoReceiveStream::VideoReceiveStream(
-    int num_cpu_cores,
-    PacketRouter* packet_router,
-    VideoReceiveStream::Config config,
-    ProcessThread* process_thread,
-    CallStats* call_stats)
+VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
+                                       PacketRouter* packet_router,
+                                       VideoReceiveStream::Config config,
+                                       ProcessThread* process_thread,
+                                       CallStats* call_stats)
     : transport_adapter_(config.rtcp_send_transport),
       config_(std::move(config)),
       num_cpu_cores_(num_cpu_cores),
       process_thread_(process_thread),
       clock_(Clock::GetRealTimeClock()),
-      decode_thread_(DecodeThreadFunction, this, "DecodingThread"),
+      decode_thread_(&DecodeThreadFunction,
+                     this,
+                     "DecodingThread",
+                     rtc::kHighestPriority),
       call_stats_(call_stats),
       timing_(new VCMTiming(clock_)),
       video_receiver_(clock_, nullptr, this, timing_.get(), this, this),
@@ -219,7 +221,6 @@ VideoReceiveStream::VideoReceiveStream(
   frame_buffer_.reset(new video_coding::FrameBuffer(
       clock_, jitter_estimator_.get(), timing_.get(), &stats_proxy_));
 
-  process_thread_->RegisterModule(&video_receiver_, RTC_FROM_HERE);
   process_thread_->RegisterModule(&rtp_stream_sync_, RTC_FROM_HERE);
 }
 
@@ -229,14 +230,12 @@ VideoReceiveStream::~VideoReceiveStream() {
   Stop();
 
   process_thread_->DeRegisterModule(&rtp_stream_sync_);
-  process_thread_->DeRegisterModule(&video_receiver_);
 }
 
 void VideoReceiveStream::SignalNetworkState(NetworkState state) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtp_video_stream_receiver_.SignalNetworkState(state);
 }
-
 
 bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return rtp_video_stream_receiver_.DeliverRtcp(packet, length);
@@ -297,24 +296,28 @@ void VideoReceiveStream::Start() {
       &stats_proxy_, renderer));
   // Register the channel to receive stats updates.
   call_stats_->RegisterStatsObserver(video_stream_decoder_.get());
+
+  process_thread_->RegisterModule(&video_receiver_, RTC_FROM_HERE);
+
   // Start the decode thread
   decode_thread_.Start();
-  decode_thread_.SetPriority(rtc::kHighestPriority);
   rtp_video_stream_receiver_.StartReceive();
 }
 
 void VideoReceiveStream::Stop() {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtp_video_stream_receiver_.StopReceive();
-  // TriggerDecoderShutdown will release any waiting decoder thread and make it
-  // stop immediately, instead of waiting for a timeout. Needs to be called
-  // before joining the decoder thread thread.
-  video_receiver_.TriggerDecoderShutdown();
 
   frame_buffer_->Stop();
   call_stats_->DeregisterStatsObserver(&rtp_video_stream_receiver_);
+  process_thread_->DeRegisterModule(&video_receiver_);
 
   if (decode_thread_.IsRunning()) {
+    // TriggerDecoderShutdown will release any waiting decoder thread and make
+    // it stop immediately, instead of waiting for a timeout. Needs to be called
+    // before joining the decoder thread.
+    video_receiver_.TriggerDecoderShutdown();
+
     decode_thread_.Stop();
     // Deregister external decoders so they are no longer running during
     // destruction. This effectively stops the VCM since the decoder thread is
@@ -459,8 +462,9 @@ void VideoReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
   video_receiver_.SetMinimumPlayoutDelay(delay_ms);
 }
 
-bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
-  return static_cast<VideoReceiveStream*>(ptr)->Decode();
+void VideoReceiveStream::DecodeThreadFunction(void* ptr) {
+  while (static_cast<VideoReceiveStream*>(ptr)->Decode()) {
+  }
 }
 
 bool VideoReceiveStream::Decode() {
@@ -476,9 +480,11 @@ bool VideoReceiveStream::Decode() {
   }
 
   if (frame) {
+    RTC_DCHECK_EQ(res, video_coding::FrameBuffer::ReturnReason::kFrameFound);
     if (video_receiver_.Decode(frame.get()) == VCM_OK)
       rtp_video_stream_receiver_.FrameDecoded(frame->picture_id);
   } else {
+    RTC_DCHECK_EQ(res, video_coding::FrameBuffer::ReturnReason::kTimeout);
     int64_t now_ms = clock_->TimeInMilliseconds();
     rtc::Optional<int64_t> last_packet_ms =
         rtp_video_stream_receiver_.LastReceivedPacketMs();
