@@ -25,6 +25,7 @@
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/fake_decode_from_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
+#include "webrtc/modules/audio_coding/neteq/tools/neteq_delay_analyzer.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_packet_source_input.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_replacement_input.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_test.h"
@@ -159,6 +160,9 @@ const bool audio_level_dummy =
 DEFINE_int32(abs_send_time, 3, "Extension ID for absolute sender time");
 const bool abs_send_time_dummy =
     google::RegisterFlagValidator(&FLAGS_abs_send_time, &ValidateExtensionId);
+DEFINE_bool(matlabplot,
+            false,
+            "Generates a matlab script for plotting the delay profile");
 
 // Maps a codec type to a printable name string.
 std::string CodecName(NetEqDecoder codec) {
@@ -238,24 +242,24 @@ void PrintCodecMapping() {
   PrintCodecMappingEntry(NetEqDecoder::kDecoderCNGswb48kHz, FLAGS_cn_swb48);
 }
 
-int CodecSampleRate(uint8_t payload_type) {
+rtc::Optional<int> CodecSampleRate(uint8_t payload_type) {
   if (payload_type == FLAGS_pcmu || payload_type == FLAGS_pcma ||
       payload_type == FLAGS_ilbc || payload_type == FLAGS_pcm16b ||
       payload_type == FLAGS_cn_nb || payload_type == FLAGS_avt)
-    return 8000;
+    return rtc::Optional<int>(8000);
   if (payload_type == FLAGS_isac || payload_type == FLAGS_pcm16b_wb ||
       payload_type == FLAGS_g722 || payload_type == FLAGS_cn_wb ||
       payload_type == FLAGS_avt_16)
-    return 16000;
+    return rtc::Optional<int>(16000);
   if (payload_type == FLAGS_isac_swb || payload_type == FLAGS_pcm16b_swb32 ||
       payload_type == FLAGS_cn_swb32 || payload_type == FLAGS_avt_32)
-    return 32000;
+    return rtc::Optional<int>(32000);
   if (payload_type == FLAGS_opus || payload_type == FLAGS_pcm16b_swb48 ||
       payload_type == FLAGS_cn_swb48 || payload_type == FLAGS_avt_48)
-    return 48000;
+    return rtc::Optional<int>(48000);
   if (payload_type == FLAGS_red)
-    return 0;
-  return -1;
+    return rtc::Optional<int>(0);
+  return rtc::Optional<int>();
 }
 
 // Class to let through only the packets with a given SSRC. Should be used as an
@@ -308,6 +312,35 @@ class FilterSsrcInput : public NetEqInput {
   uint32_t ssrc_;
 };
 
+// A callback class which prints whenver the inserted packet stream changes
+// the SSRC.
+class SsrcSwitchDetector : public NetEqPostInsertPacket {
+ public:
+  // Takes a pointer to another callback object, which will be invoked after
+  // this object finishes. This does not transfer ownership, and null is a
+  // valid value.
+  SsrcSwitchDetector(NetEqPostInsertPacket* other_callback)
+      : other_callback_(other_callback) {}
+
+  void AfterInsertPacket(const NetEqInput::PacketData& packet, NetEq* neteq) {
+    if (last_ssrc_ && packet.header.ssrc != *last_ssrc_) {
+      std::cout << "Changing streams from 0x" << std::hex << *last_ssrc_
+                << " to 0x" << std::hex << packet.header.ssrc
+                << std::dec << " (payload type "
+                << static_cast<int>(packet.header.payloadType) << ")"
+                << std::endl;
+    }
+    last_ssrc_ = rtc::Optional<uint32_t>(packet.header.ssrc);
+    if (other_callback_) {
+      other_callback_->AfterInsertPacket(packet, neteq);
+    }
+  }
+
+ private:
+  NetEqPostInsertPacket* other_callback_;
+  rtc::Optional<uint32_t> last_ssrc_;
+};
+
 int RunTest(int argc, char* argv[]) {
   std::string program_name = argv[0];
   std::string usage = "Tool for decoding an RTP dump file using NetEq.\n"
@@ -357,10 +390,39 @@ int RunTest(int argc, char* argv[]) {
   }
 
   // Check the sample rate.
-  rtc::Optional<RTPHeader> first_rtp_header = input->NextHeader();
-  RTC_CHECK(first_rtp_header);
-  const int sample_rate_hz = CodecSampleRate(first_rtp_header->payloadType);
-  RTC_CHECK_GT(sample_rate_hz, 0);
+  rtc::Optional<int> sample_rate_hz;
+  std::set<std::pair<int, uint32_t>> discarded_pt_and_ssrc;
+  while (input->NextHeader()) {
+    rtc::Optional<RTPHeader> first_rtp_header = input->NextHeader();
+    RTC_DCHECK(first_rtp_header);
+    sample_rate_hz = CodecSampleRate(first_rtp_header->payloadType);
+    if (sample_rate_hz) {
+      std::cout << "Found valid packet with payload type "
+                << static_cast<int>(first_rtp_header->payloadType)
+                << " and SSRC 0x" << std::hex << first_rtp_header->ssrc
+                << std::dec << std::endl;
+      break;
+    }
+    // Discard this packet and move to the next. Keep track of discarded payload
+    // types and SSRCs.
+    discarded_pt_and_ssrc.emplace(first_rtp_header->payloadType,
+                                  first_rtp_header->ssrc);
+    input->PopPacket();
+  }
+  if (!discarded_pt_and_ssrc.empty()) {
+    std::cout << "Discarded initial packets with the following payload types "
+                 "and SSRCs:"
+              << std::endl;
+    for (const auto& d : discarded_pt_and_ssrc) {
+      std::cout << "PT " << d.first << "; SSRC 0x" << std::hex
+                << static_cast<int>(d.second) << std::dec << std::endl;
+    }
+  }
+  if (!sample_rate_hz) {
+    std::cout << "Cannot find any packets with known payload types"
+              << std::endl;
+    RTC_NOTREACHED();
+  }
 
   // Open the output file now that we know the sample rate. (Rate is only needed
   // for wav files.)
@@ -369,7 +431,7 @@ int RunTest(int argc, char* argv[]) {
   if (output_file_name.size() >= 4 &&
       output_file_name.substr(output_file_name.size() - 4) == ".wav") {
     // Open a wav file.
-    output.reset(new OutputWavFile(output_file_name, sample_rate_hz));
+    output.reset(new OutputWavFile(output_file_name, *sample_rate_hz));
   } else {
     // Open a pcm file.
     output.reset(new OutputAudioFile(output_file_name));
@@ -446,13 +508,27 @@ int RunTest(int argc, char* argv[]) {
   }
 
   NetEqTest::Callbacks callbacks;
+  std::unique_ptr<NetEqDelayAnalyzer> delay_analyzer;
+  if (FLAGS_matlabplot) {
+    delay_analyzer.reset(new NetEqDelayAnalyzer);
+  }
+
+  SsrcSwitchDetector ssrc_switch_detector(delay_analyzer.get());
+  callbacks.post_insert_packet = &ssrc_switch_detector;
+  callbacks.get_audio_callback = delay_analyzer.get();
   NetEq::Config config;
-  config.sample_rate_hz = sample_rate_hz;
+  config.sample_rate_hz = *sample_rate_hz;
   NetEqTest test(config, codecs, ext_codecs, std::move(input),
                  std::move(output), callbacks);
 
   int64_t test_duration_ms = test.Run();
   NetEqNetworkStatistics stats = test.SimulationStats();
+
+  if (FLAGS_matlabplot) {
+    std::cout << "Creating Matlab plot script " << output_file_name + ".m"
+              << std::endl;
+    delay_analyzer->CreateMatlabScript(output_file_name + ".m");
+  }
 
   printf("Simulation statistics:\n");
   printf("  output duration: %" PRId64 " ms\n", test_duration_ms);

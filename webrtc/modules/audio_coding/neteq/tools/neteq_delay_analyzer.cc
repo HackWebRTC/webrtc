@@ -11,10 +11,13 @@
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_delay_analyzer.h"
 
 #include <algorithm>
+#include <fstream>
+#include <ios>
+#include <iterator>
 #include <limits>
 #include <utility>
 
-#include <webrtc/base/checks.h>
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 namespace test {
@@ -57,6 +60,8 @@ void NetEqDelayAnalyzer::AfterInsertPacket(
     NetEq* neteq) {
   data_.insert(
       std::make_pair(packet.header.timestamp, TimingData(packet.time_ms)));
+  ssrcs_.insert(packet.header.ssrc);
+  payload_types_.insert(packet.header.payloadType);
 }
 
 void NetEqDelayAnalyzer::BeforeGetAudio(NetEq* neteq) {
@@ -170,6 +175,82 @@ void NetEqDelayAnalyzer::CreateGraphs(
   RTC_DCHECK_EQ(send_time_s->size(), corrected_arrival_delay_ms->size());
   RTC_DCHECK_EQ(send_time_s->size(), playout_delay_ms->size());
   RTC_DCHECK_EQ(send_time_s->size(), target_delay_ms->size());
+}
+
+void NetEqDelayAnalyzer::CreateMatlabScript(
+    const std::string& script_name) const {
+  std::vector<float> send_time_s;
+  std::vector<float> arrival_delay_ms;
+  std::vector<float> corrected_arrival_delay_ms;
+  std::vector<rtc::Optional<float>> playout_delay_ms;
+  std::vector<rtc::Optional<float>> target_delay_ms;
+  CreateGraphs(&send_time_s, &arrival_delay_ms, &corrected_arrival_delay_ms,
+               &playout_delay_ms, &target_delay_ms);
+
+  // Create an output file stream to Matlab script file.
+  std::ofstream output(script_name);
+  // The iterator is used to batch-output comma-separated values from vectors.
+  std::ostream_iterator<float> output_iterator(output, ",");
+
+  output << "send_time_s = [ ";
+  std::copy(send_time_s.begin(), send_time_s.end(), output_iterator);
+  output << "];" << std::endl;
+
+  output << "arrival_delay_ms = [ ";
+  std::copy(arrival_delay_ms.begin(), arrival_delay_ms.end(), output_iterator);
+  output << "];" << std::endl;
+
+  output << "corrected_arrival_delay_ms = [ ";
+  std::copy(corrected_arrival_delay_ms.begin(),
+            corrected_arrival_delay_ms.end(), output_iterator);
+  output << "];" << std::endl;
+
+  output << "playout_delay_ms = [ ";
+  for (const auto& v : playout_delay_ms) {
+    if (!v) {
+      output << "nan, ";
+    } else {
+      output << *v << ", ";
+    }
+  }
+  output << "];" << std::endl;
+
+  output << "target_delay_ms = [ ";
+  for (const auto& v : target_delay_ms) {
+    if (!v) {
+      output << "nan, ";
+    } else {
+      output << *v << ", ";
+    }
+  }
+  output << "];" << std::endl;
+
+  output << "h=plot(send_time_s, arrival_delay_ms, "
+         << "send_time_s, target_delay_ms, 'g.', "
+         << "send_time_s, playout_delay_ms);" << std::endl;
+  output << "set(h(1),'color',0.75*[1 1 1]);" << std::endl;
+  output << "set(h(2),'markersize',6);" << std::endl;
+  output << "set(h(3),'linew',1.5);" << std::endl;
+  output << "ax1=axis;" << std::endl;
+  output << "axis tight" << std::endl;
+  output << "ax2=axis;" << std::endl;
+  output << "axis([ax2(1:3) ax1(4)])" << std::endl;
+  output << "xlabel('send time [s]');" << std::endl;
+  output << "ylabel('relative delay [ms]');" << std::endl;
+  if (!ssrcs_.empty()) {
+    auto ssrc_it = ssrcs_.cbegin();
+    output << "title('SSRC: 0x" << std::hex << static_cast<int64_t>(*ssrc_it++);
+    while (ssrc_it != ssrcs_.end()) {
+      output << ", 0x" << std::hex << static_cast<int64_t>(*ssrc_it++);
+    }
+    output << std::dec;
+    auto pt_it = payload_types_.cbegin();
+    output << "; Payload Types: " << *pt_it++;
+    while (pt_it != payload_types_.end()) {
+      output << ", " << *pt_it++;
+    }
+    output << "');" << std::endl;
+  }
 }
 
 }  // namespace test
