@@ -263,6 +263,7 @@ if (!build_with_chromium) {
       "ortc",
       "p2p",
       "pc",
+      "rtc_base",
       "sdk",
       "stats",
       "system_wrappers:system_wrappers_default",
