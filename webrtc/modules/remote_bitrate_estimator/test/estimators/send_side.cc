@@ -78,7 +78,7 @@ void SendSideBweSender::GiveFeedback(const FeedbackPacket& feedback) {
   std::sort(packet_feedback_vector.begin(), packet_feedback_vector.end(),
             PacketFeedbackComparator());
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
-      packet_feedback_vector);
+      packet_feedback_vector, false);
   DelayBasedBwe::Result result = bwe_->IncomingPacketFeedbackVector(
       packet_feedback_vector, acknowledged_bitrate_estimator_->bitrate_bps());
   if (result.updated)
