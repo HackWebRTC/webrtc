@@ -154,6 +154,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video_quality_test",
+      "../base:rtc_base_approved",
       "../system_wrappers:metrics_default",
       "../test:field_trial",
       "../test:run_test",

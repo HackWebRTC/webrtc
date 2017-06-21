@@ -95,6 +95,7 @@ class VideoQualityTest : public test::CallTest {
   static void FillScalabilitySettings(
       Params* params,
       const std::vector<std::string>& stream_descriptors,
+      int num_streams,
       size_t selected_stream,
       int num_spatial_layers,
       int selected_sl,
@@ -125,7 +126,6 @@ class VideoQualityTest : public test::CallTest {
   void SetupScreenshareOrSVC();
   void SetupAudio(int send_channel_id,
                   int receive_channel_id,
-                  Call* call,
                   Transport* transport,
                   AudioReceiveStream** audio_receive_stream);
 
