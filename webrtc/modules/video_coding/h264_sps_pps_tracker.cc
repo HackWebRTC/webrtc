@@ -37,30 +37,20 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
   const RTPVideoHeader& video_header = packet->video_header;
   const RTPVideoHeaderH264& codec_header = video_header.codecHeader.H264;
 
-  int pps_id = -1;
-  int sps_id = -1;
-  bool append_sps_pps = codec_header.nalus_length == 0;
-  size_t required_size = 0;
+  bool append_sps_pps = false;
+  auto sps = sps_data_.end();
+  auto pps = pps_data_.end();
+
   for (size_t i = 0; i < codec_header.nalus_length; ++i) {
     const NaluInfo& nalu = codec_header.nalus[i];
     switch (nalu.type) {
       case H264::NaluType::kSps: {
-        // Save SPS.
-        sps_data_[nalu.sps_id].size = nalu.size;
-        sps_data_[nalu.sps_id].data.reset(new uint8_t[nalu.size]);
-        memcpy(sps_data_[nalu.sps_id].data.get(), data + nalu.offset,
-               nalu.size);
         sps_data_[nalu.sps_id].width = packet->width;
         sps_data_[nalu.sps_id].height = packet->height;
         break;
       }
       case H264::NaluType::kPps: {
-        // Save PPS.
         pps_data_[nalu.pps_id].sps_id = nalu.sps_id;
-        pps_data_[nalu.pps_id].size = nalu.size;
-        pps_data_[nalu.pps_id].data.reset(new uint8_t[nalu.size]);
-        memcpy(pps_data_[nalu.pps_id].data.get(), data + nalu.offset,
-               nalu.size);
         break;
       }
       case H264::NaluType::kIdr: {
@@ -73,52 +63,52 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
             return kRequestKeyframe;
           }
 
-          auto pps = pps_data_.find(nalu.pps_id);
+          pps = pps_data_.find(nalu.pps_id);
           if (pps == pps_data_.end()) {
             LOG(LS_WARNING) << "No PPS with id << " << nalu.pps_id
                             << " received";
             return kRequestKeyframe;
           }
 
-          sps_id = pps->second.sps_id;
-          auto sps = sps_data_.find(sps_id);
+          sps = sps_data_.find(pps->second.sps_id);
           if (sps == sps_data_.end()) {
-            LOG(LS_WARNING) << "No SPS with id << "
-                            << pps_data_[nalu.pps_id].sps_id << " received";
+            LOG(LS_WARNING)
+                << "No SPS with id << " << pps->second.sps_id << " received";
             return kRequestKeyframe;
           }
 
-          pps_id = nalu.pps_id;
-          required_size += pps->second.size + sizeof(start_code_h264);
-          required_size += sps->second.size + sizeof(start_code_h264);
+          // Since the first packet of every keyframe should have its width and
+          // height set we set it here in the case of it being supplied out of
+          // band.
+          packet->width = sps->second.width;
+          packet->height = sps->second.height;
+
+          // If the SPS/PPS was supplied out of band then we will have saved
+          // the actual bitstream in |data|.
+          if (sps->second.data && pps->second.data) {
+            RTC_DCHECK_GT(sps->second.size, 0);
+            RTC_DCHECK_GT(pps->second.size, 0);
+            append_sps_pps = true;
+          }
         }
-        FALLTHROUGH();
+        break;
       }
-      default: {
-        // Something other than an SPS/PPS nalu in this packet, then the SPS/PPS
-        // should be appended.
-        append_sps_pps = true;
-      }
+      default:
+        break;
     }
   }
 
-  if (!append_sps_pps) {
-    // Two things: Firstly, when we receive a packet the data pointed at by
-    // |dataPtr| is volatile, meaning we have to copy the data into our own
-    // buffer if we want to use it at a later stage. Secondly, when a packet is
-    // inserted into the PacketBuffer it expects the packet to own its own
-    // buffer, and this function copies (and fix) the bitstream of the packet
-    // into its own buffer.
-    //
-    // SPS/PPS packets is a special case. Since we save the SPS/PPS NALU and
-    // append it to the first packet of every IDR frame the SPS/PPS packet
-    // doesn't actually need to contain any bitstream data.
-    packet->dataPtr = nullptr;
-    packet->sizeBytes = 0;
-    return kInsert;
-  }
+  RTC_CHECK(!append_sps_pps ||
+            (sps != sps_data_.end() && pps != pps_data_.end()));
 
   // Calculate how much space we need for the rest of the bitstream.
+  size_t required_size = 0;
+
+  if (append_sps_pps) {
+    required_size += sps->second.size + sizeof(start_code_h264);
+    required_size += pps->second.size + sizeof(start_code_h264);
+  }
+
   if (codec_header.packetization_type == kH264StapA) {
     const uint8_t* nalu_ptr = data + 1;
     while (nalu_ptr < data + data_size) {
@@ -142,21 +132,18 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
   uint8_t* buffer = new uint8_t[required_size];
   uint8_t* insert_at = buffer;
 
-  // If pps_id != -1 then we have the SPS/PPS and they should be prepended
-  // to the bitstream with start codes inserted.
-  if (pps_id != -1) {
+  if (append_sps_pps) {
     // Insert SPS.
     memcpy(insert_at, start_code_h264, sizeof(start_code_h264));
     insert_at += sizeof(start_code_h264);
-    memcpy(insert_at, sps_data_[pps_data_[pps_id].sps_id].data.get(),
-           sps_data_[pps_data_[pps_id].sps_id].size);
-    insert_at += sps_data_[pps_data_[pps_id].sps_id].size;
+    memcpy(insert_at, sps->second.data.get(), sps->second.size);
+    insert_at += sps->second.size;
 
     // Insert PPS.
     memcpy(insert_at, start_code_h264, sizeof(start_code_h264));
     insert_at += sizeof(start_code_h264);
-    memcpy(insert_at, pps_data_[pps_id].data.get(), pps_data_[pps_id].size);
-    insert_at += pps_data_[pps_id].size;
+    memcpy(insert_at, pps->second.data.get(), pps->second.size);
+    insert_at += pps->second.size;
   }
 
   // Copy the rest of the bitstream and insert start codes.
@@ -186,11 +173,6 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
       insert_at += sizeof(start_code_h264);
     }
     memcpy(insert_at, data, data_size);
-  }
-
-  if (sps_id != -1) {
-    packet->width = sps_data_[sps_id].width;
-    packet->height = sps_data_[sps_id].height;
   }
 
   packet->dataPtr = buffer;

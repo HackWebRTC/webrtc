@@ -57,10 +57,6 @@ struct NaluInfo {
   uint8_t type;
   int sps_id;
   int pps_id;
-
-  // Offset and size are only valid for non-FuA packets.
-  size_t offset;
-  size_t size;
 };
 
 const size_t kMaxNalusPerPacket = 10;

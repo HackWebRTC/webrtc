@@ -488,8 +488,6 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
 
     NaluInfo nalu;
     nalu.type = payload_data[start_offset] & kTypeMask;
-    nalu.offset = start_offset;
-    nalu.size = end_offset - start_offset;
     nalu.sps_id = -1;
     nalu.pps_id = -1;
     start_offset += H264::kNaluTypeSize;

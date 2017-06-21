@@ -35,13 +35,11 @@ class TestH264SpsPpsTracker : public ::testing::Test {
     return packet;
   }
 
-  void AddSps(VCMPacket* packet, int sps_id, std::vector<uint8_t>* data) {
+  void AddSps(VCMPacket* packet, uint8_t sps_id, std::vector<uint8_t>* data) {
     NaluInfo info;
     info.type = H264::NaluType::kSps;
     info.sps_id = sps_id;
     info.pps_id = -1;
-    info.offset = data->size();
-    info.size = 2;
     data->push_back(H264::NaluType::kSps);
     data->push_back(sps_id);  // The sps data, just a single byte.
 
@@ -50,15 +48,13 @@ class TestH264SpsPpsTracker : public ::testing::Test {
   }
 
   void AddPps(VCMPacket* packet,
-              int sps_id,
-              int pps_id,
+              uint8_t sps_id,
+              uint8_t pps_id,
               std::vector<uint8_t>* data) {
     NaluInfo info;
     info.type = H264::NaluType::kPps;
     info.sps_id = sps_id;
     info.pps_id = pps_id;
-    info.offset = data->size();
-    info.size = 2;
     data->push_back(H264::NaluType::kPps);
     data->push_back(pps_id);  // The pps data, just a single byte.
 
@@ -200,6 +196,7 @@ TEST_F(TestH264SpsPpsTracker, SpsPpsPacketThenIdrFirstPacket) {
   sps_pps_packet.sizeBytes = data.size();
   EXPECT_EQ(H264SpsPpsTracker::kInsert,
             tracker_.CopyAndFixBitstream(&sps_pps_packet));
+  delete[] sps_pps_packet.dataPtr;
   data.clear();
 
   // Insert first packet of the IDR
@@ -213,10 +210,6 @@ TEST_F(TestH264SpsPpsTracker, SpsPpsPacketThenIdrFirstPacket) {
             tracker_.CopyAndFixBitstream(&idr_packet));
 
   std::vector<uint8_t> expected;
-  expected.insert(expected.end(), start_code, start_code + sizeof(start_code));
-  expected.insert(expected.end(), {H264::NaluType::kSps, 0});
-  expected.insert(expected.end(), start_code, start_code + sizeof(start_code));
-  expected.insert(expected.end(), {H264::NaluType::kPps, 1});
   expected.insert(expected.end(), start_code, start_code + sizeof(start_code));
   expected.insert(expected.end(), {1, 2, 3});
   EXPECT_EQ(memcmp(idr_packet.dataPtr, expected.data(), expected.size()), 0);
@@ -243,13 +236,6 @@ TEST_F(TestH264SpsPpsTracker, SpsPpsIdrInStapA) {
   EXPECT_EQ(H264SpsPpsTracker::kInsert, tracker_.CopyAndFixBitstream(&packet));
 
   std::vector<uint8_t> expected;
-  // The SPS/PPS is repeated because this packet both contains the SPS/PPS
-  // and it is the first packet of an IDR, which will cause the SPS/PPS to be
-  // prepended to the bitstream.
-  expected.insert(expected.end(), start_code, start_code + sizeof(start_code));
-  expected.insert(expected.end(), {H264::NaluType::kSps, 13});
-  expected.insert(expected.end(), start_code, start_code + sizeof(start_code));
-  expected.insert(expected.end(), {H264::NaluType::kPps, 27});
   expected.insert(expected.end(), start_code, start_code + sizeof(start_code));
   expected.insert(expected.end(), {H264::NaluType::kSps, 13});
   expected.insert(expected.end(), start_code, start_code + sizeof(start_code));
@@ -344,6 +330,7 @@ TEST_F(TestH264SpsPpsTracker, SaveRestoreWidthHeight) {
   sps_pps_packet.height = 240;
   EXPECT_EQ(H264SpsPpsTracker::kInsert,
             tracker_.CopyAndFixBitstream(&sps_pps_packet));
+  delete[] sps_pps_packet.dataPtr;
 
   VCMPacket idr_packet = GetDefaultPacket();
   idr_packet.video_header.is_first_packet_in_frame = true;
