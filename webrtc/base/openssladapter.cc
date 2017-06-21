@@ -982,8 +982,17 @@ bool OpenSSLAdapter::ConfigureTrustedRootCertificates(SSL_CTX* ctx) {
 
 SSL_CTX*
 OpenSSLAdapter::SetupSSLContext() {
-  SSL_CTX* ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ?
-      DTLSv1_client_method() : TLSv1_client_method());
+  // Use (D)TLS 1.2.
+  // Note: BoringSSL supports a range of versions by setting max/min version
+  // (Default V1.0 to V1.2). However (D)TLSv1_2_client_method functions used
+  // below in OpenSSL only support V1.2.
+  SSL_CTX* ctx = nullptr;
+#ifdef OPENSSL_IS_BORINGSSL
+  ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ? DTLS_method() : TLS_method());
+#else
+  ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ? DTLSv1_2_client_method()
+                                               : TLSv1_2_client_method());
+#endif  // OPENSSL_IS_BORINGSSL
   if (ctx == nullptr) {
     unsigned long error = ERR_get_error();  // NOLINT: type used by OpenSSL.
     LOG(LS_WARNING) << "SSL_CTX creation failed: "
@@ -1002,7 +1011,12 @@ OpenSSLAdapter::SetupSSLContext() {
 
   SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, SSLVerifyCallback);
   SSL_CTX_set_verify_depth(ctx, 4);
-  SSL_CTX_set_cipher_list(ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+  // Use defaults, but disable HMAC-SHA256 and HMAC-SHA384 ciphers
+  // (note that SHA256 and SHA384 only select legacy CBC ciphers).
+  // Additionally disable HMAC-SHA1 ciphers in ECDSA. These are the remaining
+  // CBC-mode ECDSA ciphers.
+  SSL_CTX_set_cipher_list(
+      ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
 
   if (ssl_mode_ == SSL_MODE_DTLS) {
     SSL_CTX_set_read_ahead(ctx, 1);
