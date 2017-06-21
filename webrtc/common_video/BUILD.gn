@@ -59,7 +59,7 @@ rtc_static_library("common_video") {
     "..:webrtc_common",
     "../base:rtc_base",
     "../base:rtc_task_queue",
-    "../media:rtc_media_base",
+    "../media:rtc_h264_profile_id",
     "../modules:module_api",
     "../system_wrappers",
   ]
