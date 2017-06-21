@@ -8,22 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCVideoFrame+Private.h"
-
-#include "webrtc/sdk/objc/Framework/Classes/Video/corevideo_frame_buffer.h"
+#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCVideoFrame.h"
+#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCVideoFrameBuffer.h"
 
 @implementation RTCVideoFrame {
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> _videoBuffer;
   RTCVideoRotation _rotation;
   int64_t _timeStampNs;
 }
 
+@synthesize buffer = _buffer;
+
 - (int)width {
-  return _videoBuffer->width();
+  return _buffer.width;
 }
 
 - (int)height {
-  return _videoBuffer->height();
+  return _buffer.height;
 }
 
 - (RTCVideoRotation)rotation {
@@ -31,27 +31,51 @@
 }
 
 - (const uint8_t *)dataY {
-  return _videoBuffer->GetI420()->DataY();
+  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
+    return ((id<RTCI420Buffer>)_buffer).dataY;
+  } else {
+    return nullptr;
+  }
 }
 
 - (const uint8_t *)dataU {
-  return _videoBuffer->GetI420()->DataU();
+  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
+    return ((id<RTCI420Buffer>)_buffer).dataU;
+  } else {
+    return nullptr;
+  }
 }
 
 - (const uint8_t *)dataV {
-  return _videoBuffer->GetI420()->DataV();
+  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
+    return ((id<RTCI420Buffer>)_buffer).dataV;
+  } else {
+    return nullptr;
+  }
 }
 
 - (int)strideY {
-  return _videoBuffer->GetI420()->StrideY();
+  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
+    return ((id<RTCI420Buffer>)_buffer).strideY;
+  } else {
+    return 0;
+  }
 }
 
 - (int)strideU {
-  return _videoBuffer->GetI420()->StrideU();
+  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
+    return ((id<RTCI420Buffer>)_buffer).strideU;
+  } else {
+    return 0;
+  }
 }
 
 - (int)strideV {
-  return _videoBuffer->GetI420()->StrideV();
+  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
+    return ((id<RTCI420Buffer>)_buffer).strideV;
+  } else {
+    return 0;
+  }
 }
 
 - (int64_t)timeStampNs {
@@ -59,26 +83,25 @@
 }
 
 - (CVPixelBufferRef)nativeHandle {
-  return (_videoBuffer->type() == webrtc::VideoFrameBuffer::Type::kNative) ?
-      static_cast<webrtc::CoreVideoFrameBuffer *>(_videoBuffer.get())->pixel_buffer() :
-      nil;
+  if ([_buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+    return ((RTCCVPixelBuffer *)_buffer).pixelBuffer;
+  } else {
+    return nullptr;
+  }
 }
 
 - (RTCVideoFrame *)newI420VideoFrame {
-  return [[RTCVideoFrame alloc]
-      initWithVideoBuffer:_videoBuffer->ToI420()
-                 rotation:_rotation
-              timeStampNs:_timeStampNs];
+  return [[RTCVideoFrame alloc] initWithBuffer:[_buffer toI420]
+                                      rotation:_rotation
+                                   timeStampNs:_timeStampNs];
 }
 
 - (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
                            rotation:(RTCVideoRotation)rotation
                         timeStampNs:(int64_t)timeStampNs {
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> videoBuffer(
-      new rtc::RefCountedObject<webrtc::CoreVideoFrameBuffer>(pixelBuffer));
-  return [self initWithVideoBuffer:videoBuffer
-                          rotation:rotation
-                       timeStampNs:timeStampNs];
+  return [self initWithBuffer:[[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBuffer]
+                     rotation:rotation
+                  timeStampNs:timeStampNs];
 }
 
 - (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
@@ -90,33 +113,26 @@
                               cropY:(int)cropY
                            rotation:(RTCVideoRotation)rotation
                         timeStampNs:(int64_t)timeStampNs {
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> videoBuffer(
-      new rtc::RefCountedObject<webrtc::CoreVideoFrameBuffer>(
-          pixelBuffer,
-          scaledWidth, scaledHeight,
-          cropWidth, cropHeight,
-          cropX, cropY));
-  return [self initWithVideoBuffer:videoBuffer
-                          rotation:rotation
-                       timeStampNs:timeStampNs];
+  RTCCVPixelBuffer *rtcPixelBuffer = [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBuffer
+                                                                      adaptedWidth:scaledWidth
+                                                                     adaptedHeight:scaledHeight
+                                                                         cropWidth:cropWidth
+                                                                        cropHeight:cropHeight
+                                                                             cropX:cropX
+                                                                             cropY:cropY];
+  return [self initWithBuffer:rtcPixelBuffer rotation:rotation timeStampNs:timeStampNs];
 }
 
-#pragma mark - Private
-
-- (instancetype)initWithVideoBuffer:
-                    (rtc::scoped_refptr<webrtc::VideoFrameBuffer>)videoBuffer
-                           rotation:(RTCVideoRotation)rotation
-                        timeStampNs:(int64_t)timeStampNs {
+- (instancetype)initWithBuffer:(id<RTCVideoFrameBuffer>)buffer
+                      rotation:(RTCVideoRotation)rotation
+                   timeStampNs:(int64_t)timeStampNs {
   if (self = [super init]) {
-    _videoBuffer = videoBuffer;
+    _buffer = buffer;
     _rotation = rotation;
     _timeStampNs = timeStampNs;
   }
-  return self;
-}
 
-- (rtc::scoped_refptr<webrtc::VideoFrameBuffer>)videoBuffer {
-  return _videoBuffer;
+  return self;
 }
 
 @end
