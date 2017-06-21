@@ -736,6 +736,14 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
     packet_to_send = packet_rtx.get();
   }
 
+  // Bug webrtc:7859. While FEC is invoked from rtp_sender_video, and not after
+  // the pacer, these modifications of the header below are happening after the
+  // FEC protection packets are calculated. This will corrupt recovered packets
+  // at the same place. It's not an issue for extensions, which are present in
+  // all the packets (their content just may be incorrect on recovered packets).
+  // In case of VideoTimingExtension, since it's present not in every packet,
+  // data after rtp header may be corrupted if these packets are protected by
+  // the FEC.
   int64_t now_ms = clock_->TimeInMilliseconds();
   int64_t diff_ms = now_ms - capture_time_ms;
   packet_to_send->SetExtension<TransmissionOffset>(kTimestampTicksPerMs *
@@ -743,11 +751,8 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
   packet_to_send->SetExtension<AbsoluteSendTime>(
       AbsoluteSendTime::MsTo24Bits(now_ms));
 
-  // TODO(ilnik): (webrtc:7859) For now we can't modify pacer exit timestamp in
-  // video timing extension because only some packets have it and it will break
-  // FEC recovered packets, which will lead to corruptions. Ideally, here
-  // |packet->set_pacer_exit_time_ms(now_ms)| should be called if
-  // |VideoTimingExtension| is present.
+  if (packet_to_send->HasExtension<VideoTimingExtension>())
+    packet_to_send->set_pacer_exit_time_ms(now_ms);
 
   PacketOptions options;
   if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id)) {
@@ -836,11 +841,8 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   if (packet->capture_time_ms() > 0) {
     packet->SetExtension<TransmissionOffset>(
         kTimestampTicksPerMs * (now_ms - packet->capture_time_ms()));
-    // TODO(ilnik): (webrtc:7859) For now we can't modify pacer exit timestamp
-    // in video timing extension because only some packets have it an it will
-    // break FEC recovered packets, which will lead to corruptions. Ideally,
-    // here |packet->set_pacer_exit_time_ms(now_ms)| should be called if
-    // |VideoTimingExtension| is present.
+    if (packet->HasExtension<VideoTimingExtension>())
+      packet->set_pacer_exit_time_ms(now_ms);
   }
   packet->SetExtension<AbsoluteSendTime>(AbsoluteSendTime::MsTo24Bits(now_ms));
 

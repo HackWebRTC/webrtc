@@ -394,13 +394,19 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
     if (!rtp_sender_->AssignSequenceNumber(packet.get()))
       return false;
 
+    bool protect_packet = (packetizer->GetProtectionType() == kProtectedPacket);
     // Put packetization finish timestamp into extension.
     if (last && is_timing_frame) {
       packet->set_packetization_finish_time_ms(clock_->TimeInMilliseconds());
+      // TODO(ilnik): Due to webrtc:7859, packets with timing extensions are not
+      // protected by FEC. It reduces FEC efficiency a bit. When FEC is moved
+      // below the pacer, it can be re-enabled for these packets.
+      // NOTE: Any RTP stream processor in the network, modifying 'network'
+      // timestamps in the timing frames extension have to be an end-point for
+      // FEC, otherwise recovered by FEC packets will be corrupted.
+      protect_packet = false;
     }
 
-    const bool protect_packet =
-        (packetizer->GetProtectionType() == kProtectedPacket);
     if (flexfec_enabled()) {
       // TODO(brandtr): Remove the FlexFEC code path when FlexfecSender
       // is wired up to PacedSender instead.

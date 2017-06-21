@@ -463,9 +463,7 @@ TEST_P(RtpSenderTest, SendsPacketsWithTransportSequenceNumber) {
   EXPECT_EQ(transport_.last_packet_id_, transport_seq_no);
 }
 
-// Disabled due to webrtc:7859. Until issues with FEC resolved, pacer exit
-// timstamp is not updated in the pacer.
-TEST_P(RtpSenderTestWithoutPacer, DISABLED_WritesTimestampToTimingExtension) {
+TEST_P(RtpSenderTestWithoutPacer, WritesTimestampToTimingExtension) {
   rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoTiming, kVideoTimingExtensionId));
@@ -939,6 +937,102 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   EXPECT_EQ(kSeqNum, media_packet.SequenceNumber());
   EXPECT_EQ(kMediaSsrc, media_packet.Ssrc());
   const RtpPacketReceived& flexfec_packet = transport_.sent_packets_[1];
+  EXPECT_EQ(kFlexfecPayloadType, flexfec_packet.PayloadType());
+  EXPECT_EQ(flexfec_seq_num, flexfec_packet.SequenceNumber());
+  EXPECT_EQ(kFlexfecSsrc, flexfec_packet.Ssrc());
+}
+
+// TODO(ilnik): because of webrtc:7859. Once FEC moved below pacer, this test
+// should be removed.
+TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
+  constexpr int kMediaPayloadType = 127;
+  constexpr int kFlexfecPayloadType = 118;
+  constexpr uint32_t kMediaSsrc = 1234;
+  constexpr uint32_t kFlexfecSsrc = 5678;
+  const std::vector<RtpExtension> kNoRtpExtensions;
+  const std::vector<RtpExtensionSize> kNoRtpExtensionSizes;
+  FlexfecSender flexfec_sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc,
+                               kNoRtpExtensions, kNoRtpExtensionSizes,
+                               nullptr /* rtp_state */, &fake_clock_);
+
+  // Reset |rtp_sender_| to use FlexFEC.
+  rtp_sender_.reset(new RTPSender(
+      false, &fake_clock_, &transport_, &mock_paced_sender_, &flexfec_sender,
+      &seq_num_allocator_, nullptr, nullptr, nullptr, nullptr,
+      &mock_rtc_event_log_, &send_packet_observer_,
+      &retransmission_rate_limiter_, nullptr));
+  rtp_sender_->SetSSRC(kMediaSsrc);
+  rtp_sender_->SetSequenceNumber(kSeqNum);
+  rtp_sender_->SetSendPayloadType(kMediaPayloadType);
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+
+  // Parameters selected to generate a single FEC packet per media packet.
+  FecProtectionParams params;
+  params.fec_rate = 15;
+  params.max_fec_frames = 1;
+  params.fec_mask_type = kFecMaskRandom;
+  rtp_sender_->SetFecParameters(params, params);
+
+  EXPECT_CALL(mock_paced_sender_,
+              InsertPacket(RtpPacketSender::kLowPriority, kMediaSsrc, kSeqNum,
+                           _, _, false));
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kLowPriority,
+                                               kFlexfecSsrc, _, _, _, false))
+      .Times(0);  // Not called because packet should not be protected.
+
+  const uint32_t kTimestamp = 1234;
+  const uint8_t kPayloadType = 127;
+  const int64_t kCaptureTimeMs = fake_clock_.TimeInMilliseconds();
+  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  EXPECT_EQ(0, rtp_sender_->RegisterPayload(payload_name, kPayloadType, 90000,
+                                            0, 1500));
+  RTPVideoHeader video_header;
+  memset(&video_header, 0, sizeof(RTPVideoHeader));
+  video_header.video_timing.is_timing_frame = true;
+  EXPECT_TRUE(rtp_sender_->SendOutgoingData(
+      kVideoFrameKey, kPayloadType, kTimestamp, kCaptureTimeMs, kPayloadData,
+      sizeof(kPayloadData), nullptr, &video_header, nullptr));
+
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogRtpHeader(PacketDirection::kOutgoingPacket, _, _, _))
+      .Times(1);
+  EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum,
+                                            fake_clock_.TimeInMilliseconds(),
+                                            false, PacedPacketInfo()));
+  ASSERT_EQ(1, transport_.packets_sent());
+  const RtpPacketReceived& media_packet = transport_.sent_packets_[0];
+  EXPECT_EQ(kMediaPayloadType, media_packet.PayloadType());
+  EXPECT_EQ(kSeqNum, media_packet.SequenceNumber());
+  EXPECT_EQ(kMediaSsrc, media_packet.Ssrc());
+
+  // Now try to send not a timing frame.
+  uint16_t flexfec_seq_num;
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kLowPriority,
+                                               kFlexfecSsrc, _, _, _, false))
+      .WillOnce(testing::SaveArg<2>(&flexfec_seq_num));
+  EXPECT_CALL(mock_paced_sender_,
+              InsertPacket(RtpPacketSender::kLowPriority, kMediaSsrc,
+                           kSeqNum + 1, _, _, false));
+  video_header.video_timing.is_timing_frame = false;
+  EXPECT_TRUE(rtp_sender_->SendOutgoingData(
+      kVideoFrameKey, kPayloadType, kTimestamp + 1, kCaptureTimeMs + 1,
+      kPayloadData, sizeof(kPayloadData), nullptr, &video_header, nullptr));
+
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogRtpHeader(PacketDirection::kOutgoingPacket, _, _, _))
+      .Times(2);
+  EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum + 1,
+                                            fake_clock_.TimeInMilliseconds(),
+                                            false, PacedPacketInfo()));
+  EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kFlexfecSsrc, flexfec_seq_num,
+                                            fake_clock_.TimeInMilliseconds(),
+                                            false, PacedPacketInfo()));
+  ASSERT_EQ(3, transport_.packets_sent());
+  const RtpPacketReceived& media_packet2 = transport_.sent_packets_[1];
+  EXPECT_EQ(kMediaPayloadType, media_packet2.PayloadType());
+  EXPECT_EQ(kSeqNum + 1, media_packet2.SequenceNumber());
+  EXPECT_EQ(kMediaSsrc, media_packet2.Ssrc());
+  const RtpPacketReceived& flexfec_packet = transport_.sent_packets_[2];
   EXPECT_EQ(kFlexfecPayloadType, flexfec_packet.PayloadType());
   EXPECT_EQ(flexfec_seq_num, flexfec_packet.SequenceNumber());
   EXPECT_EQ(kFlexfecSsrc, flexfec_packet.Ssrc());

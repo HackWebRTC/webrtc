@@ -296,9 +296,9 @@ TEST_F(VideoSendStreamTest, SupportsVideoRotation) {
 }
 
 TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
-  class VideoRotationObserver : public test::SendTest {
+  class VideoContentTypeObserver : public test::SendTest {
    public:
-    VideoRotationObserver() : SendTest(kDefaultTimeoutMs) {
+    VideoContentTypeObserver() : SendTest(kDefaultTimeoutMs) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
           kRtpExtensionVideoContentType, test::kVideoContentTypeExtensionId));
     }
@@ -338,9 +338,9 @@ TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
 }
 
 TEST_F(VideoSendStreamTest, SupportsVideoTimingFrames) {
-  class VideoRotationObserver : public test::SendTest {
+  class VideoTimingObserver : public test::SendTest {
    public:
-    VideoRotationObserver() : SendTest(kDefaultTimeoutMs) {
+    VideoTimingObserver() : SendTest(kDefaultTimeoutMs) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
           kRtpExtensionVideoTiming, test::kVideoTimingExtensionId));
     }
@@ -348,9 +348,11 @@ TEST_F(VideoSendStreamTest, SupportsVideoTimingFrames) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
-      if (header.extension.has_video_timing) {
-        observation_complete_.Set();
-      }
+      // Only the last packet of the frame must have extension.
+      if (!header.markerBit)
+        return SEND_PACKET;
+      EXPECT_TRUE(header.extension.has_video_timing);
+      observation_complete_.Set();
       return SEND_PACKET;
     }
 
