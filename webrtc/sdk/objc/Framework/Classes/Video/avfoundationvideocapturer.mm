@@ -15,7 +15,6 @@
 #import "RTCAVFoundationVideoCapturerInternal.h"
 #import "RTCDispatcher+Private.h"
 #import "WebRTC/RTCLogging.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
 
 #include "avfoundationformatmapper.h"
 
@@ -24,7 +23,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
+#include "webrtc/sdk/objc/Framework/Classes/Video/corevideo_frame_buffer.h"
 
 namespace webrtc {
 
@@ -151,15 +150,12 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
     return;
   }
 
-  RTCCVPixelBuffer* rtcPixelBuffer = [[RTCCVPixelBuffer alloc] initWithPixelBuffer:image_buffer
-                                                                      adaptedWidth:adapted_width
-                                                                     adaptedHeight:adapted_height
-                                                                         cropWidth:crop_width
-                                                                        cropHeight:crop_height
-                                                                             cropX:crop_x
-                                                                             cropY:crop_y];
   rtc::scoped_refptr<VideoFrameBuffer> buffer =
-      new rtc::RefCountedObject<ObjCFrameBuffer>(rtcPixelBuffer);
+      new rtc::RefCountedObject<CoreVideoFrameBuffer>(
+          image_buffer,
+          adapted_width, adapted_height,
+          crop_width, crop_height,
+          crop_x, crop_y);
 
   // Applying rotation is only supported for legacy reasons and performance is
   // not critical here.

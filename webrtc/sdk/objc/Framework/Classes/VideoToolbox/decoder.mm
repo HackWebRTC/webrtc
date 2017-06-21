@@ -18,10 +18,8 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/include/video_frame.h"
-#include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
+#include "webrtc/sdk/objc/Framework/Classes/Video/corevideo_frame_buffer.h"
 #include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
-
-#import "WebRTC/RTCVideoFrameBuffer.h"
 
 #if defined(WEBRTC_IOS)
 #import "Common/RTCUIApplicationStatusObserver.h"
@@ -66,8 +64,8 @@ void VTDecompressionOutputCallback(void* decoder,
     return;
   }
   // TODO(tkchin): Handle CVO properly.
-  rtc::scoped_refptr<VideoFrameBuffer> buffer = new rtc::RefCountedObject<ObjCFrameBuffer>(
-      [[RTCCVPixelBuffer alloc] initWithPixelBuffer:image_buffer]);
+  rtc::scoped_refptr<VideoFrameBuffer> buffer =
+      new rtc::RefCountedObject<CoreVideoFrameBuffer>(image_buffer);
   VideoFrame decoded_frame(buffer, decode_params->timestamp,
                            CMTimeGetSeconds(timestamp) * kMsPerSec,
                            kVideoRotation_0);
