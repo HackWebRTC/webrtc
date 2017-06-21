@@ -17,6 +17,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/race_checker.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/call/rtp_packet_sink_interface.h"
 #include "webrtc/voice_engine/channel_manager.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 
@@ -50,7 +51,7 @@ class Channel;
 //     voe::Channel class.
 //  2. Provide a refined interface for the stream classes, including assumptions
 //     on return values and input adaptation.
-class ChannelProxy {
+class ChannelProxy : public RtpPacketSinkInterface {
  public:
   ChannelProxy();
   explicit ChannelProxy(const ChannelOwner& channel_owner);
@@ -94,7 +95,9 @@ class ChannelProxy {
   virtual void SetInputMute(bool muted);
   virtual void RegisterExternalTransport(Transport* transport);
   virtual void DeRegisterExternalTransport();
-  virtual void OnRtpPacket(const RtpPacketReceived& packet);
+
+  // Implements RtpPacketSinkInterface
+  void OnRtpPacket(const RtpPacketReceived& packet) override;
   virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length);
   virtual const rtc::scoped_refptr<AudioDecoderFactory>&
       GetAudioDecoderFactory() const;

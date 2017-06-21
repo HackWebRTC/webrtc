@@ -21,6 +21,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/call/rtp_stream_receiver_controller_interface.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -168,11 +169,13 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 
 namespace internal {
 
-VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
-                                       PacketRouter* packet_router,
-                                       VideoReceiveStream::Config config,
-                                       ProcessThread* process_thread,
-                                       CallStats* call_stats)
+VideoReceiveStream::VideoReceiveStream(
+    RtpStreamReceiverControllerInterface* receiver_controller,
+    int num_cpu_cores,
+    PacketRouter* packet_router,
+    VideoReceiveStream::Config config,
+    ProcessThread* process_thread,
+    CallStats* call_stats)
     : transport_adapter_(config.rtcp_send_transport),
       config_(std::move(config)),
       num_cpu_cores_(num_cpu_cores),
@@ -222,6 +225,14 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       clock_, jitter_estimator_.get(), timing_.get(), &stats_proxy_));
 
   process_thread_->RegisterModule(&rtp_stream_sync_, RTC_FROM_HERE);
+
+  // Register with RtpStreamReceiverController.
+  media_receiver_ = receiver_controller->CreateReceiver(
+      config_.rtp.remote_ssrc, &rtp_video_stream_receiver_);
+  if (config.rtp.rtx_ssrc) {
+    rtx_receiver_ = receiver_controller->CreateReceiver(
+        config_.rtp.rtx_ssrc, &rtp_video_stream_receiver_);
+  }
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
@@ -239,10 +250,6 @@ void VideoReceiveStream::SignalNetworkState(NetworkState state) {
 
 bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return rtp_video_stream_receiver_.DeliverRtcp(packet, length);
-}
-
-void VideoReceiveStream::OnRtpPacket(const RtpPacketReceived& packet) {
-  rtp_video_stream_receiver_.OnRtpPacket(packet);
 }
 
 void VideoReceiveStream::SetSync(Syncable* audio_syncable) {

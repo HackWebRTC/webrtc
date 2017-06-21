@@ -79,6 +79,7 @@ if (rtc_include_tests) {
       "../api:mock_audio_mixer",
       "../base:rtc_base_approved",
       "../base:rtc_task_queue",
+      "../call:rtp_receiver",
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/congestion_controller:congestion_controller",

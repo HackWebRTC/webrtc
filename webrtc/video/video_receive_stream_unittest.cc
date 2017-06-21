@@ -16,6 +16,7 @@
 #include "webrtc/api/video_codecs/video_decoder.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
+#include "webrtc/call/rtp_stream_receiver_controller.h"
 #include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
@@ -25,14 +26,13 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/field_trial.h"
 
+namespace webrtc {
+namespace {
+
 using testing::_;
 using testing::Invoke;
 
 constexpr int kDefaultTimeOutMs = 50;
-
-namespace webrtc {
-
-namespace {
 
 const char kNewJitterBufferFieldTrialEnabled[] =
     "WebRTC-NewVideoJitterBuffer/Enabled/";
@@ -91,7 +91,7 @@ class VideoReceiveStreamTest : public testing::Test {
     config_.decoders.push_back(null_decoder);
 
     video_receive_stream_.reset(new webrtc::internal::VideoReceiveStream(
-        kDefaultNumCpuCores,
+        &rtp_stream_receiver_controller_, kDefaultNumCpuCores,
         &packet_router_, config_.Copy(), process_thread_.get(), &call_stats_));
   }
 
@@ -105,6 +105,7 @@ class VideoReceiveStreamTest : public testing::Test {
   MockTransport mock_transport_;
   PacketRouter packet_router_;
   std::unique_ptr<ProcessThread> process_thread_;
+  RtpStreamReceiverController rtp_stream_receiver_controller_;
   std::unique_ptr<webrtc::internal::VideoReceiveStream> video_receive_stream_;
 };
 
@@ -130,9 +131,10 @@ TEST_F(VideoReceiveStreamTest, CreateFrameFromH264FmtpSpropAndIdr) {
   EXPECT_CALL(mock_h264_video_decoder_, Decode(_, false, _, _, _));
   RtpPacketReceived parsed_packet;
   ASSERT_TRUE(parsed_packet.Parse(rtppacket.data(), rtppacket.size()));
-  video_receive_stream_->OnRtpPacket(parsed_packet);
+  rtp_stream_receiver_controller_.OnRtpPacket(parsed_packet);
   EXPECT_CALL(mock_h264_video_decoder_, Release());
   // Make sure the decoder thread had a chance to run.
   init_decode_event_.Wait(kDefaultTimeOutMs);
 }
+
 }  // namespace webrtc

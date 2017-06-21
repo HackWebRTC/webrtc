@@ -26,6 +26,8 @@ namespace webrtc {
 class PacketRouter;
 class RtcEventLog;
 class RtpPacketReceived;
+class RtpStreamReceiverControllerInterface;
+class RtpStreamReceiverInterface;
 
 namespace voe {
 class ChannelProxy;
@@ -36,10 +38,10 @@ class AudioSendStream;
 
 class AudioReceiveStream final : public webrtc::AudioReceiveStream,
                                  public AudioMixer::Source,
-                                 public Syncable,
-                                 public RtpPacketSinkInterface {
+                                 public Syncable {
  public:
-  AudioReceiveStream(PacketRouter* packet_router,
+  AudioReceiveStream(RtpStreamReceiverControllerInterface* receiver_controller,
+                     PacketRouter* packet_router,
                      const webrtc::AudioReceiveStream::Config& config,
                      const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
                      webrtc::RtcEventLog* event_log);
@@ -54,8 +56,11 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   void SetGain(float gain) override;
   std::vector<webrtc::RtpSource> GetSources() const override;
 
-  // RtpPacketSinkInterface.
-  void OnRtpPacket(const RtpPacketReceived& packet) override;
+  // TODO(nisse): We don't formally implement RtpPacketSinkInterface, and this
+  // method shouldn't be needed. But it's currently used by the
+  // AudioReceiveStreamTest.ReceiveRtpPacket unittest. Figure out if that test
+  // shuld be refactored or deleted, and then delete this method.
+  void OnRtpPacket(const RtpPacketReceived& packet);
 
   // AudioMixer::Source
   AudioFrameInfo GetAudioFrameWithInfo(int sample_rate_hz,
@@ -86,6 +91,8 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
 
   bool playing_ ACCESS_ON(worker_thread_checker_) = false;
+
+  std::unique_ptr<RtpStreamReceiverInterface> rtp_stream_receiver_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioReceiveStream);
 };

@@ -15,6 +15,7 @@
 #include "webrtc/api/test/mock_audio_mixer.h"
 #include "webrtc/audio/audio_receive_stream.h"
 #include "webrtc/audio/conversion.h"
+#include "webrtc/call/rtp_stream_receiver_controller.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
@@ -137,6 +138,9 @@ struct ConfigHelper {
   rtc::scoped_refptr<MockAudioMixer> audio_mixer() { return audio_mixer_; }
   MockVoiceEngine& voice_engine() { return voice_engine_; }
   MockVoEChannelProxy* channel_proxy() { return channel_proxy_; }
+  RtpStreamReceiverControllerInterface* rtp_stream_receiver_controller() {
+    return &rtp_stream_receiver_controller_;
+  }
 
   void SetupMockForGetStats() {
     using testing::DoAll;
@@ -166,6 +170,7 @@ struct ConfigHelper {
   rtc::scoped_refptr<MockAudioMixer> audio_mixer_;
   AudioReceiveStream::Config stream_config_;
   testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
+  RtpStreamReceiverController rtp_stream_receiver_controller_;
 };
 
 void BuildOneByteExtension(std::vector<uint8_t>::iterator it,
@@ -238,6 +243,7 @@ TEST(AudioReceiveStreamTest, ConfigToString) {
 TEST(AudioReceiveStreamTest, ConstructDestruct) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
+      helper.rtp_stream_receiver_controller(),
       helper.packet_router(),
       helper.config(), helper.audio_state(), helper.event_log());
 }
@@ -246,6 +252,7 @@ TEST(AudioReceiveStreamTest, ReceiveRtpPacket) {
   ConfigHelper helper;
   helper.config().rtp.transport_cc = true;
   internal::AudioReceiveStream recv_stream(
+      helper.rtp_stream_receiver_controller(),
       helper.packet_router(),
       helper.config(), helper.audio_state(), helper.event_log());
   const int kTransportSequenceNumberValue = 1234;
@@ -267,6 +274,7 @@ TEST(AudioReceiveStreamTest, ReceiveRtcpPacket) {
   ConfigHelper helper;
   helper.config().rtp.transport_cc = true;
   internal::AudioReceiveStream recv_stream(
+      helper.rtp_stream_receiver_controller(),
       helper.packet_router(),
       helper.config(), helper.audio_state(), helper.event_log());
 
@@ -280,6 +288,7 @@ TEST(AudioReceiveStreamTest, ReceiveRtcpPacket) {
 TEST(AudioReceiveStreamTest, GetStats) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
+      helper.rtp_stream_receiver_controller(),
       helper.packet_router(),
       helper.config(), helper.audio_state(), helper.event_log());
   helper.SetupMockForGetStats();
@@ -325,6 +334,7 @@ TEST(AudioReceiveStreamTest, GetStats) {
 TEST(AudioReceiveStreamTest, SetGain) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
+      helper.rtp_stream_receiver_controller(),
       helper.packet_router(),
       helper.config(), helper.audio_state(), helper.event_log());
   EXPECT_CALL(*helper.channel_proxy(),
@@ -335,6 +345,7 @@ TEST(AudioReceiveStreamTest, SetGain) {
 TEST(AudioReceiveStreamTest, StreamShouldNotBeAddedToMixerWhenVoEReturnsError) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
+      helper.rtp_stream_receiver_controller(),
       helper.packet_router(),
       helper.config(), helper.audio_state(), helper.event_log());
 
@@ -347,6 +358,7 @@ TEST(AudioReceiveStreamTest, StreamShouldNotBeAddedToMixerWhenVoEReturnsError) {
 TEST(AudioReceiveStreamTest, StreamShouldBeAddedToMixerOnStart) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
+      helper.rtp_stream_receiver_controller(),
       helper.packet_router(),
       helper.config(), helper.audio_state(), helper.event_log());
 

@@ -260,6 +260,7 @@ if (rtc_include_tests) {
       "../base:rtc_base_approved",
       "../base:rtc_base_tests_utils",
       "../call:call_interfaces",
+      "../call:rtp_receiver",
       "../common_video",
       "../logging:rtc_event_log_api",
       "../media:rtc_media",

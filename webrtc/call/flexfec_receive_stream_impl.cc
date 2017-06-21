@@ -15,6 +15,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/call/rtp_stream_receiver_controller_interface.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -122,6 +123,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
 }  // namespace
 
 FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
+    RtpStreamReceiverControllerInterface* receiver_controller,
     const Config& config,
     RecoveredPacketReceiver* recovered_packet_receiver,
     RtcpRttStats* rtt_stats,
@@ -141,6 +143,22 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
   rtp_rtcp_->SetRTCPStatus(config_.rtcp_mode);
   rtp_rtcp_->SetSSRC(config_.local_ssrc);
   process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
+
+  // Register with transport.
+  // TODO(nisse): OnRtpPacket in this class delegates all real work to
+  // |receiver_|. So maybe we don't need to implement RtpPacketSinkInterface
+  // here at all, we'd then delete the OnRtpPacket method and instead register
+  // |receiver_| as the RtpPacketSinkInterface for this stream.
+  // TODO(nisse): Passing |this| from the constructor to the RtpDemuxer, before
+  // the object is fully initialized, is risky. But it works in this case
+  // because locking in our caller, Call::CreateFlexfecReceiveStream, ensures
+  // that the demuxer doesn't call OnRtpPacket before this object is fully
+  // constructed. Registering |receiver_| instead of |this| would solve this
+  // problem too.
+  rtp_stream_receiver_ =
+      receiver_controller->CreateReceiver(config_.remote_ssrc, this);
+  for (uint32_t ssrc : config.protected_media_ssrcs)
+    receiver_controller->AddSink(ssrc, this);
 }
 
 FlexfecReceiveStreamImpl::~FlexfecReceiveStreamImpl() {

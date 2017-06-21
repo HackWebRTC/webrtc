@@ -34,7 +34,7 @@
 #include "webrtc/call/bitrate_allocator.h"
 #include "webrtc/call/call.h"
 #include "webrtc/call/flexfec_receive_stream_impl.h"
-#include "webrtc/call/rtp_demuxer.h"
+#include "webrtc/call/rtp_stream_receiver_controller.h"
 #include "webrtc/call/rtp_transport_controller_send.h"
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
@@ -275,10 +275,10 @@ class Call : public webrtc::Call,
   std::map<std::string, AudioReceiveStream*> sync_stream_mapping_
       GUARDED_BY(receive_crit_);
 
-  // TODO(nisse): Should eventually be part of injected
-  // RtpTransportControllerReceive, with a single demuxer in the bundled case.
-  RtpDemuxer audio_rtp_demuxer_ GUARDED_BY(receive_crit_);
-  RtpDemuxer video_rtp_demuxer_ GUARDED_BY(receive_crit_);
+  // TODO(nisse): Should eventually be injected at creation,
+  // with a single object in the bundled case.
+  RtpStreamReceiverController audio_receiver_controller;
+  RtpStreamReceiverController video_receiver_controller;
 
   // This extra map is used for receive processing which is
   // independent of media type.
@@ -486,10 +486,6 @@ rtc::Optional<RtpPacketReceived> Call::ParseRtpPacket(
   if (!parsed_packet.Parse(packet, length))
     return rtc::Optional<RtpPacketReceived>();
 
-  auto it = receive_rtp_config_.find(parsed_packet.Ssrc());
-  if (it != receive_rtp_config_.end())
-    parsed_packet.IdentifyExtensions(it->second.extensions);
-
   int64_t arrival_time_ms;
   if (packet_time && packet_time->timestamp != -1) {
     arrival_time_ms = (packet_time->timestamp + 500) / 1000;
@@ -646,12 +642,11 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK_RUN_ON(&configuration_thread_checker_);
   event_log_->LogAudioReceiveStreamConfig(CreateRtcLogStreamConfig(config));
-  AudioReceiveStream* receive_stream =
-      new AudioReceiveStream(transport_send_->packet_router(), config,
-                             config_.audio_state, event_log_);
+  AudioReceiveStream* receive_stream = new AudioReceiveStream(
+      &audio_receiver_controller, transport_send_->packet_router(), config,
+      config_.audio_state, event_log_);
   {
     WriteLockScoped write_lock(*receive_crit_);
-    audio_rtp_demuxer_.AddSink(config.rtp.remote_ssrc, receive_stream);
     receive_rtp_config_[config.rtp.remote_ssrc] =
         ReceiveRtpConfig(config.rtp.extensions, UseSendSideBwe(config));
     audio_receive_streams_.insert(receive_stream);
@@ -683,8 +678,6 @@ void Call::DestroyAudioReceiveStream(
     uint32_t ssrc = config.rtp.remote_ssrc;
     receive_side_cc_.GetRemoteBitrateEstimator(UseSendSideBwe(config))
         ->RemoveStream(ssrc);
-    size_t num_deleted = audio_rtp_demuxer_.RemoveSink(audio_receive_stream);
-    RTC_DCHECK(num_deleted == 1);
     audio_receive_streams_.erase(audio_receive_stream);
     const std::string& sync_group = audio_receive_stream->config().sync_group;
     const auto it = sync_stream_mapping_.find(sync_group);
@@ -776,19 +769,17 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   RTC_DCHECK_RUN_ON(&configuration_thread_checker_);
 
-  VideoReceiveStream* receive_stream =
-      new VideoReceiveStream(num_cpu_cores_, transport_send_->packet_router(),
-                             std::move(configuration),
-                             module_process_thread_.get(), call_stats_.get());
+  VideoReceiveStream* receive_stream = new VideoReceiveStream(
+      &video_receiver_controller, num_cpu_cores_,
+      transport_send_->packet_router(), std::move(configuration),
+      module_process_thread_.get(), call_stats_.get());
 
   const webrtc::VideoReceiveStream::Config& config = receive_stream->config();
   ReceiveRtpConfig receive_config(config.rtp.extensions,
                                   UseSendSideBwe(config));
   {
     WriteLockScoped write_lock(*receive_crit_);
-    video_rtp_demuxer_.AddSink(config.rtp.remote_ssrc, receive_stream);
     if (config.rtp.rtx_ssrc) {
-      video_rtp_demuxer_.AddSink(config.rtp.rtx_ssrc, receive_stream);
       // We record identical config for the rtx stream as for the main
       // stream. Since the transport_send_cc negotiation is per payload
       // type, we may get an incorrect value for the rtx stream, but
@@ -817,8 +808,6 @@ void Call::DestroyVideoReceiveStream(
     WriteLockScoped write_lock(*receive_crit_);
     // Remove all ssrcs pointing to a receive stream. As RTX retransmits on a
     // separate SSRC there can be either one or two.
-    size_t num_deleted = video_rtp_demuxer_.RemoveSink(receive_stream_impl);
-    RTC_DCHECK_GE(num_deleted, 1);
     receive_rtp_config_.erase(config.rtp.remote_ssrc);
     if (config.rtp.rtx_ssrc) {
       receive_rtp_config_.erase(config.rtp.rtx_ssrc);
@@ -840,16 +829,22 @@ FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
   RTC_DCHECK_RUN_ON(&configuration_thread_checker_);
 
   RecoveredPacketReceiver* recovered_packet_receiver = this;
-  FlexfecReceiveStreamImpl* receive_stream = new FlexfecReceiveStreamImpl(
-      config, recovered_packet_receiver, call_stats_->rtcp_rtt_stats(),
-      module_process_thread_.get());
 
+  FlexfecReceiveStreamImpl* receive_stream;
   {
     WriteLockScoped write_lock(*receive_crit_);
-    video_rtp_demuxer_.AddSink(config.remote_ssrc, receive_stream);
-
-    for (auto ssrc : config.protected_media_ssrcs)
-      video_rtp_demuxer_.AddSink(ssrc, receive_stream);
+    // Unlike the video and audio receive streams,
+    // FlexfecReceiveStream implements RtpPacketSinkInterface itself,
+    // and hence its constructor passes its |this| pointer to
+    // video_receiver_controller->CreateStream(). Calling the
+    // constructor while holding |receive_crit_| ensures that we don't
+    // call OnRtpPacket until the constructor is finished and the
+    // object is in a valid state.
+    // TODO(nisse): Fix constructor so that it can be moved outside of
+    // this locked scope.
+    receive_stream = new FlexfecReceiveStreamImpl(
+        &video_receiver_controller, config, recovered_packet_receiver,
+        call_stats_->rtcp_rtt_stats(), module_process_thread_.get());
 
     RTC_DCHECK(receive_rtp_config_.find(config.remote_ssrc) ==
                receive_rtp_config_.end());
@@ -881,7 +876,6 @@ void Call::DestroyFlexfecReceiveStream(FlexfecReceiveStream* receive_stream) {
 
     // Remove all SSRCs pointing to the FlexfecReceiveStreamImpl to be
     // destroyed.
-    video_rtp_demuxer_.RemoveSink(receive_stream_impl);
     receive_side_cc_.GetRemoteBitrateEstimator(UseSendSideBwe(config))
         ->RemoveStream(ssrc);
   }
@@ -1302,17 +1296,31 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
   if (!parsed_packet)
     return DELIVERY_PACKET_ERROR;
 
+  auto it = receive_rtp_config_.find(parsed_packet->Ssrc());
+  if (it == receive_rtp_config_.end()) {
+    LOG(LS_ERROR) << "receive_rtp_config_ lookup failed for ssrc "
+                  << parsed_packet->Ssrc();
+    // Destruction of the receive stream, including deregistering from the
+    // RtpDemuxer, is not protected by the |receive_crit_| lock. But
+    // deregistering in the |receive_rtp_config_| map is protected by that lock.
+    // So by not passing the packet on to demuxing in this case, we prevent
+    // incoming packets to be passed on via the demuxer to a receive stream
+    // which is being torned down.
+    return DELIVERY_UNKNOWN_SSRC;
+  }
+  parsed_packet->IdentifyExtensions(it->second.extensions);
+
   NotifyBweOfReceivedPacket(*parsed_packet, media_type);
 
   if (media_type == MediaType::AUDIO) {
-    if (audio_rtp_demuxer_.OnRtpPacket(*parsed_packet)) {
+    if (audio_receiver_controller.OnRtpPacket(*parsed_packet)) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_audio_bytes_per_second_counter_.Add(static_cast<int>(length));
       event_log_->LogRtpHeader(kIncomingPacket, packet, length);
       return DELIVERY_OK;
     }
   } else if (media_type == MediaType::VIDEO) {
-    if (video_rtp_demuxer_.OnRtpPacket(*parsed_packet)) {
+    if (video_receiver_controller.OnRtpPacket(*parsed_packet)) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_video_bytes_per_second_counter_.Add(static_cast<int>(length));
       event_log_->LogRtpHeader(kIncomingPacket, packet, length);
@@ -1348,7 +1356,7 @@ void Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
 
   parsed_packet->set_recovered(true);
 
-  video_rtp_demuxer_.OnRtpPacket(*parsed_packet);
+  video_receiver_controller.OnRtpPacket(*parsed_packet);
 }
 
 void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,

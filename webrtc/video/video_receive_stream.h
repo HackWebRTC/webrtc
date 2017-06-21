@@ -36,6 +36,8 @@ class CallStats;
 class IvfFileWriter;
 class ProcessThread;
 class RTPFragmentationHeader;
+class RtpStreamReceiverInterface;
+class RtpStreamReceiverControllerInterface;
 class VCMTiming;
 class VCMJitterEstimator;
 
@@ -47,10 +49,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public NackSender,
                            public KeyFrameRequestSender,
                            public video_coding::OnCompleteFrameCallback,
-                           public Syncable,
-                           public RtpPacketSinkInterface {
+                           public Syncable {
  public:
-  VideoReceiveStream(int num_cpu_cores,
+  VideoReceiveStream(RtpStreamReceiverControllerInterface* receiver_controller,
+                     int num_cpu_cores,
                      PacketRouter* packet_router,
                      VideoReceiveStream::Config config,
                      ProcessThread* process_thread,
@@ -77,9 +79,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // the log is closed and finalized. A |byte_limit| of 0 means no limit.
   void EnableEncodedFrameRecording(rtc::PlatformFile file,
                                    size_t byte_limit) override;
-
-  // RtpPacketSinkInterface.
-  void OnRtpPacket(const RtpPacketReceived& packet) override;
 
   // Implements rtc::VideoSinkInterface<VideoFrame>.
   void OnFrame(const VideoFrame& video_frame) override;
@@ -137,6 +136,9 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // Members for the new jitter buffer experiment.
   std::unique_ptr<VCMJitterEstimator> jitter_estimator_;
   std::unique_ptr<video_coding::FrameBuffer> frame_buffer_;
+
+  std::unique_ptr<RtpStreamReceiverInterface> media_receiver_;
+  std::unique_ptr<RtpStreamReceiverInterface> rtx_receiver_;
 };
 }  // namespace internal
 }  // namespace webrtc

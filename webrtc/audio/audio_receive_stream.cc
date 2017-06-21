@@ -20,6 +20,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/call/rtp_stream_receiver_controller_interface.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -62,12 +63,12 @@ std::string AudioReceiveStream::Config::ToString() const {
 
 namespace internal {
 AudioReceiveStream::AudioReceiveStream(
+    RtpStreamReceiverControllerInterface* receiver_controller,
     PacketRouter* packet_router,
     const webrtc::AudioReceiveStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     webrtc::RtcEventLog* event_log)
-    : config_(config),
-      audio_state_(audio_state) {
+    : config_(config), audio_state_(audio_state) {
   LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
@@ -107,6 +108,11 @@ AudioReceiveStream::AudioReceiveStream(
   }
   // Configure bandwidth estimation.
   channel_proxy_->RegisterReceiverCongestionControlObjects(packet_router);
+
+  // Register with transport.
+  rtp_stream_receiver_ =
+      receiver_controller->CreateReceiver(config_.rtp.remote_ssrc,
+                                          channel_proxy_.get());
 }
 
 AudioReceiveStream::~AudioReceiveStream() {
