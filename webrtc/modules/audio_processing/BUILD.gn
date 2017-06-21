@@ -494,7 +494,6 @@ if (rtc_include_tests) {
         ":audioproc_f",
         ":audioproc_unittest_proto",
         ":unpack_aecdump",
-        "aec_dump:aec_dump_unittests",
         "test/conversational_speech",
         "test/py_quality_assessment",
       ]
