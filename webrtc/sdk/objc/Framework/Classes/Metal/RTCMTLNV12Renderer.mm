@@ -15,6 +15,7 @@
 
 #import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
+#import "WebRTC/RTCVideoFrameBuffer.h"
 
 #import "RTCMTLRenderer+Private.h"
 
@@ -85,7 +86,7 @@ static NSString *const shaderSource = MTL_STRINGIFY(
 
 - (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame {
   [super setupTexturesForFrame:frame];
-  CVPixelBufferRef pixelBuffer = frame.nativeHandle;
+  CVPixelBufferRef pixelBuffer = ((RTCCVPixelBuffer *)frame.buffer).pixelBuffer;
 
   id<MTLTexture> lumaTexture = nil;
   id<MTLTexture> chromaTexture = nil;
