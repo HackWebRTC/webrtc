@@ -58,7 +58,7 @@ void FuzzAudioProcessing(const uint8_t* data,
                          bool is_float,
                          AudioProcessing* apm) {
   AudioFrame fixed_frame;
-  std::array<float, 480> float_frame;
+  std::array<float, 480> float_frame{};
   float* const first_channel = &float_frame[0];
 
   while (size > 0) {
