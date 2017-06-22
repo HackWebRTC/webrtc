@@ -149,6 +149,7 @@
       'linux32_arm_dbg': 'debug_bot_arm',
       'linux32_arm_rel': 'release_bot_arm',
       'linux_asan': 'asan_lsan_clang_release_bot_x64',
+      'linux_gcc': 'gcc_release_bot_x64',
       'linux_memcheck': 'memcheck_release_bot_x64',
       'linux_msan': 'msan_clang_release_bot_x64',
       'linux_tsan2': 'tsan_clang_release_bot_x64',
@@ -199,7 +200,7 @@
   'configs': {
     # Linux, Mac and Windows
     'gcc_release_bot_x64': [
-      'gn', 'gcc', 'release_bot', 'x64'
+      'gn', 'gcc', 'release_bot', 'x64', 'no_rtc_tests'
     ],
     # TOOD(kjellander): Restore Goma for this when crbug.com/726706 is fixed.
     'debug_bot_arm': [
@@ -385,7 +386,8 @@
     },
 
     'gcc': {
-      'gn_args': 'is_clang=false use_sysroot=false',
+      'gn_args': ('is_clang=false use_sysroot=false '
+                  'treat_warnings_as_errors=false'),
     },
 
     'gn': {'type': 'gn'},
