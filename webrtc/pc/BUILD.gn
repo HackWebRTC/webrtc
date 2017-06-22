@@ -351,7 +351,6 @@ if (rtc_include_tests) {
         # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6267
         # for -Wno-sign-compare
         "-Wno-sign-compare",
-        "-Wno-unused-function",
       ]
     }
 
