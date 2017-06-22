@@ -185,7 +185,7 @@ rtc_static_library("peerconnection") {
 # need should use CreateModularCreatePeerConnectionFactory instead, using the
 # "peerconnection" build target and other targets specific to their
 # requrements. See comment in peerconnectionfactoryinterface.h.
-rtc_source_set("create_pc_factory") {
+rtc_static_library("create_pc_factory") {
   sources = [
     "createpeerconnectionfactory.cc",
   ]
