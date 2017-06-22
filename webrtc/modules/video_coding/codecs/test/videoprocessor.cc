@@ -135,11 +135,9 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
       config_(config),
       analysis_frame_reader_(analysis_frame_reader),
       analysis_frame_writer_(analysis_frame_writer),
-      num_frames_(analysis_frame_reader->NumberOfFrames()),
       source_frame_writer_(source_frame_writer),
       encoded_frame_writer_(encoded_frame_writer),
       decoded_frame_writer_(decoded_frame_writer),
-      bit_rate_factor_(config.codec_settings->maxFramerate * 0.001 * 8),
       initialized_(false),
       last_encoded_frame_num_(-1),
       last_decoded_frame_num_(-1),
@@ -154,13 +152,12 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
   RTC_DCHECK(analysis_frame_reader);
   RTC_DCHECK(analysis_frame_writer);
   RTC_DCHECK(stats);
-
-  frame_infos_.reserve(num_frames_);
+  frame_infos_.reserve(analysis_frame_reader->NumberOfFrames());
 }
 
-bool VideoProcessorImpl::Init() {
-  RTC_DCHECK(!initialized_)
-      << "This VideoProcessor has already been initialized.";
+void VideoProcessorImpl::Init() {
+  RTC_DCHECK(!initialized_) << "VideoProcessor already initialized.";
+  initialized_ = true;
 
   // Setup required callbacks for the encoder/decoder.
   RTC_CHECK_EQ(encoder_->RegisterEncodeCompleteCallback(encode_callback_.get()),
@@ -186,7 +183,8 @@ bool VideoProcessorImpl::Init() {
   if (config_.verbose) {
     printf("Video Processor:\n");
     printf("  #CPU cores used  : %d\n", num_cores);
-    printf("  Total # of frames: %d\n", num_frames_);
+    printf("  Total # of frames: %d\n",
+           analysis_frame_reader_->NumberOfFrames());
     printf("  Codec settings:\n");
     printf("    Encoder implementation name: %s\n",
            encoder_->ImplementationName());
@@ -201,10 +199,6 @@ bool VideoProcessorImpl::Init() {
     }
     PrintCodecSettings(config_.codec_settings);
   }
-
-  initialized_ = true;
-
-  return true;
 }
 
 VideoProcessorImpl::~VideoProcessorImpl() {
@@ -254,7 +248,7 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
   RTC_DCHECK_GE(frame_number, 0);
   RTC_DCHECK_LE(frame_number, frame_infos_.size())
       << "Must process frames without gaps.";
-  RTC_DCHECK(initialized_) << "Attempting to use uninitialized VideoProcessor";
+  RTC_DCHECK(initialized_) << "VideoProcessor not initialized.";
 
   rtc::scoped_refptr<I420BufferInterface> buffer(
       analysis_frame_reader_->ReadFrame());
@@ -373,7 +367,8 @@ void VideoProcessorImpl::FrameEncoded(
   frame_stat->frame_number = frame_number;
   frame_stat->frame_type = encoded_image._frameType;
   frame_stat->qp = encoded_image.qp_;
-  frame_stat->bit_rate_in_kbps = encoded_image._length * bit_rate_factor_;
+  frame_stat->bit_rate_in_kbps = static_cast<int>(
+      encoded_image._length * config_.codec_settings->maxFramerate * 8 / 1000);
   frame_stat->total_packets =
       encoded_image._length / config_.networking_config.packet_size_in_bytes +
       1;

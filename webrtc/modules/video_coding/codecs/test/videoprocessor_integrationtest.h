@@ -349,7 +349,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
         analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
         &stats_, source_frame_writer_.get(), encoded_frame_writer_.get(),
         decoded_frame_writer_.get()));
-    RTC_CHECK(processor_->Init());
+    processor_->Init();
   }
 
   // Reset quantities after each encoder update, update the target

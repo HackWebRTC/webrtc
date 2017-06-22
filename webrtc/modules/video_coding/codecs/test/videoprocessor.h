@@ -136,9 +136,8 @@ class VideoProcessor {
  public:
   virtual ~VideoProcessor() {}
 
-  // Performs initial calculations about frame size, sets up callbacks etc.
-  // Returns false if an error has occurred, in addition to printing to stderr.
-  virtual bool Init() = 0;
+  // Sets up callbacks and initializes the encoder and decoder.
+  virtual void Init() = 0;
 
   // Processes a single frame. Returns true as long as there's more frames
   // available in the source clip.
@@ -181,7 +180,7 @@ class VideoProcessorImpl : public VideoProcessor {
                      IvfFileWriter* encoded_frame_writer,
                      FrameWriter* decoded_frame_writer);
   virtual ~VideoProcessorImpl();
-  bool Init() override;
+  void Init() override;
   bool ProcessFrame(int frame_number) override;
 
  private:
@@ -304,7 +303,6 @@ class VideoProcessorImpl : public VideoProcessor {
   // SSIM calculations at the end of a test run.
   FrameReader* const analysis_frame_reader_;
   FrameWriter* const analysis_frame_writer_;
-  const int num_frames_;
 
   // These (optional) file writers are used for persistently storing the output
   // of the coding pipeline at different stages: pre encode (source), post
@@ -315,9 +313,6 @@ class VideoProcessorImpl : public VideoProcessor {
   FrameWriter* const source_frame_writer_;
   IvfFileWriter* const encoded_frame_writer_;
   FrameWriter* const decoded_frame_writer_;
-
-  // Multiply frame length with this to get bit rate.
-  const double bit_rate_factor_;
 
   bool initialized_;
 
