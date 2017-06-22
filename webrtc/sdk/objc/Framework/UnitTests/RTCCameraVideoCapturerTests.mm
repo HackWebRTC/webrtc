@@ -217,42 +217,50 @@ CMSampleBufferRef createTestSampleBufferRef() {
 
 @end
 
-TEST(RTCCameraVideoCapturerTests, SetupSession) {
+// TODO(kthelgason): Reenable these tests on simulator.
+// See bugs.webrtc.org/7813
+#if TARGET_IPHONE_SIMULATOR
+#define MAYBE_TEST(f, name) TEST(f, DISABLED_##name)
+#else
+#define MAYBE_TEST TEST
+#endif
+
+MAYBE_TEST(RTCCameraVideoCapturerTests, SetupSession) {
   RTCCameraVideoCapturerTests *test = [[RTCCameraVideoCapturerTests alloc] init];
   [test setup];
   [test testSetupSession];
   [test tearDown];
 }
 
-TEST(RTCCameraVideoCapturerTests, SetupSessionOutput) {
+MAYBE_TEST(RTCCameraVideoCapturerTests, SetupSessionOutput) {
   RTCCameraVideoCapturerTests *test = [[RTCCameraVideoCapturerTests alloc] init];
   [test setup];
   [test testSetupSessionOutput];
   [test tearDown];
 }
 
-TEST(RTCCameraVideoCapturerTests, SupportedFormatsForDevice) {
+MAYBE_TEST(RTCCameraVideoCapturerTests, SupportedFormatsForDevice) {
   RTCCameraVideoCapturerTests *test = [[RTCCameraVideoCapturerTests alloc] init];
   [test setup];
   [test testSupportedFormatsForDevice];
   [test tearDown];
 }
 
-TEST(RTCCameraVideoCapturerTests, CaptureDevices) {
+MAYBE_TEST(RTCCameraVideoCapturerTests, CaptureDevices) {
   RTCCameraVideoCapturerTests *test = [[RTCCameraVideoCapturerTests alloc] init];
   [test setup];
   [test testCaptureDevices];
   [test tearDown];
 }
 
-TEST(RTCCameraVideoCapturerTests, DelegateCallbackNotCalledWhenInvalidBuffer) {
+MAYBE_TEST(RTCCameraVideoCapturerTests, DelegateCallbackNotCalledWhenInvalidBuffer) {
   RTCCameraVideoCapturerTests *test = [[RTCCameraVideoCapturerTests alloc] init];
   [test setup];
   [test testDelegateCallbackNotCalledWhenInvalidBuffer];
   [test tearDown];
 }
 
-TEST(RTCCameraVideoCapturerTests, DelegateCallbackWithValidBufferAndOrientationUpdate) {
+MAYBE_TEST(RTCCameraVideoCapturerTests, DelegateCallbackWithValidBufferAndOrientationUpdate) {
   RTCCameraVideoCapturerTests *test = [[RTCCameraVideoCapturerTests alloc] init];
   [test setup];
   [test testDelegateCallbackWithValidBufferAndOrientationUpdate];

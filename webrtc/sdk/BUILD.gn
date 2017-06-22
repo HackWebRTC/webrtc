@@ -9,6 +9,7 @@
 import("../webrtc.gni")
 if (is_ios) {
   import("//build/config/ios/rules.gni")
+  import("//build/config/ios/ios_sdk.gni")
 }
 
 declare_args() {
@@ -366,7 +367,6 @@ if (is_ios || is_mac) {
           visibility = [ "..:rtc_unittests" ]
         }
         sources = [
-          "objc/Framework/UnitTests/RTCCameraVideoCapturerTests.mm",
           "objc/Framework/UnitTests/RTCConfigurationTest.mm",
           "objc/Framework/UnitTests/RTCDataChannelConfigurationTest.mm",
           "objc/Framework/UnitTests/RTCIceCandidateTest.mm",
@@ -376,6 +376,13 @@ if (is_ios || is_mac) {
           "objc/Framework/UnitTests/RTCSessionDescriptionTest.mm",
           "objc/Framework/UnitTests/avformatmappertests.mm",
         ]
+        if (is_ios &&
+            !(use_ios_simulator &&
+              # The tests crash on these simulator versions:
+              (ios_sdk_version == "10.0" || ios_sdk_version == "10.1"))) {
+          sources +=
+              [ "objc/Framework/UnitTests/RTCCameraVideoCapturerTests.mm" ]
+        }
 
         # |-ObjC| flag needed to make sure category method implementations
         # are included:

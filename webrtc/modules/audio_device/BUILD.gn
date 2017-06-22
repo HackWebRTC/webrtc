@@ -307,7 +307,9 @@ if (rtc_include_tests) {
         "//webrtc/sdk/android:libjingle_peerconnection_java",
       ]
     }
-    if (is_ios) {
+    if (is_ios && !use_ios_simulator) {
+      # TODO(kthelgason): Reenable these tests on simulator.
+      # See bugs.webrtc.org/7812
       sources += [ "ios/audio_device_unittest_ios.mm" ]
       deps += [ "//third_party/ocmock" ]
     }

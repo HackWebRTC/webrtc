@@ -443,8 +443,13 @@ if (rtc_include_tests) {
       "engine/webrtcvideocapturer_unittest.cc",
       "engine/webrtcvideoencoderfactory_unittest.cc",
       "engine/webrtcvideoengine_unittest.cc",
-      "engine/webrtcvoiceengine_unittest.cc",
     ]
+
+    # TODO(kthelgason): Reenable this test on iOS.
+    # See bugs.webrtc.org/5569
+    if (!is_ios) {
+      sources += [ "engine/webrtcvoiceengine_unittest.cc" ]
+    }
 
     if (rtc_enable_sctp) {
       sources += [ "sctp/sctptransport_unittest.cc" ]

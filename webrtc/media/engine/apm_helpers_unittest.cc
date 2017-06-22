@@ -110,7 +110,10 @@ TEST(ApmHelpersTest, AgcConfig_GetAndSet) {
 TEST(ApmHelpersTest, AgcStatus_DefaultMode) {
   TestHelper helper;
   GainControl* gc = helper.apm()->gain_control();
-#if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
+#if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
+  EXPECT_FALSE(gc->is_enabled());
+  EXPECT_EQ(GainControl::kAdaptiveDigital, gc->mode());
+#elif defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
   EXPECT_FALSE(gc->is_enabled());
   EXPECT_EQ(GainControl::kFixedDigital, gc->mode());
 #else
@@ -249,7 +252,14 @@ TEST(ApmHelpersTest, TypingDetectionStatus_DefaultMode) {
   EXPECT_FALSE(vd->is_enabled());
 }
 
-TEST(ApmHelpersTest, TypingDetectionStatus_EnableDisable) {
+// TODO(kthelgason): Reenable this test on simulator.
+// See bugs.webrtc.org/5569
+#if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
+#define MAYBE_TypingDetectionStatus_EnableDisable DISABLED_TypingDetectionStatus_EnableDisable
+#else
+#define MAYBE_TypingDetectionStatus_EnableDisable TypingDetectionStatus_EnableDisable
+#endif
+TEST(ApmHelpersTest, MAYBE_TypingDetectionStatus_EnableDisable) {
   TestHelper helper;
   VoiceDetection* vd = helper.apm()->voice_detection();
   apm_helpers::SetTypingDetectionStatus(helper.apm(), true);

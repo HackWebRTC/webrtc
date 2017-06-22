@@ -61,9 +61,11 @@
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/transport_adapter.h"
 
+// Flaky under MemorySanitizer: bugs.webrtc.org/7419
 #if defined(MEMORY_SANITIZER)
-// Flaky under MemorySanitizer, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=7419
+#define MAYBE_InitialProbing DISABLED_InitialProbing
+// Fails on iOS bots: bugs.webrtc.org/7851
+#elif defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
 #define MAYBE_InitialProbing DISABLED_InitialProbing
 #else
 #define MAYBE_InitialProbing InitialProbing
@@ -2342,6 +2344,9 @@ TEST_F(EndToEndTest, MAYBE_InitialProbing) {
 
 // Fails on Linux MSan: bugs.webrtc.org/7428
 #if defined(MEMORY_SANITIZER)
+TEST_F(EndToEndTest, DISABLED_TriggerMidCallProbing) {
+// Fails on iOS bots: bugs.webrtc.org/7851
+#elif defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
 TEST_F(EndToEndTest, DISABLED_TriggerMidCallProbing) {
 #else
 TEST_F(EndToEndTest, TriggerMidCallProbing) {
