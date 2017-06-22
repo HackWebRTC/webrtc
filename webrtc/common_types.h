@@ -646,6 +646,10 @@ class BitrateAllocation {
     return !(*this == other);
   }
 
+  // Expensive, please use only in tests.
+  std::string ToString() const;
+  std::ostream& operator<<(std::ostream& os) const;
+
  private:
   uint32_t sum_;
   uint32_t bitrates_[kMaxSpatialLayers][kMaxTemporalStreams];

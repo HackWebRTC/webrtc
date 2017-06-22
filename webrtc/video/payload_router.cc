@@ -171,6 +171,10 @@ void PayloadRouter::OnBitrateAllocationUpdated(
       // Simulcast is in use, split the BitrateAllocation into one struct per
       // rtp stream, moving over the temporal layer allocation.
       for (size_t si = 0; si < rtp_modules_.size(); ++si) {
+        // Don't send empty TargetBitrate messages on streams not being relayed.
+        if (bitrate.GetSpatialLayerSum(si) == 0)
+          break;
+
         BitrateAllocation layer_bitrate;
         for (int tl = 0; tl < kMaxTemporalStreams; ++tl)
           layer_bitrate.SetBitrate(0, tl, bitrate.GetBitrate(si, tl));

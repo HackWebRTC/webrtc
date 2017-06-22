@@ -204,9 +204,8 @@ void ExtendedReports::ParseVoipMetricBlock(const uint8_t* block,
 
 void ExtendedReports::ParseTargetBitrateBlock(const uint8_t* block,
                                               uint16_t block_length) {
-  target_bitrate_ = rtc::Optional<TargetBitrate>(TargetBitrate());
-  if (!target_bitrate_->Parse(block, block_length))
-    target_bitrate_ = rtc::Optional<TargetBitrate>();
+  target_bitrate_.emplace();
+  target_bitrate_->Parse(block, block_length);
 }
 }  // namespace rtcp
 }  // namespace webrtc

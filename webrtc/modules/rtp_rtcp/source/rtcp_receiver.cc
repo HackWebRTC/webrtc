@@ -121,6 +121,7 @@ RTCPReceiver::RTCPReceiver(
       remote_ssrc_(0),
       xr_rrtr_status_(false),
       xr_rr_rtt_ms_(0),
+      oldest_tmmbr_info_ms_(0),
       last_received_rr_ms_(0),
       last_increased_sequence_number_ms_(0),
       stats_callback_(nullptr),

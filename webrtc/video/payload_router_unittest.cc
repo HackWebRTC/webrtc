@@ -178,6 +178,29 @@ TEST(PayloadRouterTest, SimulcastTargetBitrate) {
   payload_router.OnBitrateAllocationUpdated(bitrate);
 }
 
+TEST(PayloadRouterTest, SimulcastTargetBitrateWithInactiveStream) {
+  // Set up two active rtp modules.
+  NiceMock<MockRtpRtcp> rtp_1;
+  NiceMock<MockRtpRtcp> rtp_2;
+  std::vector<RtpRtcp*> modules;
+  modules.push_back(&rtp_1);
+  modules.push_back(&rtp_2);
+  PayloadRouter payload_router(modules, 42);
+  payload_router.SetActive(true);
+
+  // Create bitrate allocation with bitrate only for the first stream.
+  BitrateAllocation bitrate;
+  bitrate.SetBitrate(0, 0, 10000);
+  bitrate.SetBitrate(0, 1, 20000);
+
+  // Expect only the first rtp module to be asked to send a TargetBitrate
+  // message. (No target bitrate with 0bps sent from the second one.)
+  EXPECT_CALL(rtp_1, SetVideoBitrateAllocation(bitrate)).Times(1);
+  EXPECT_CALL(rtp_2, SetVideoBitrateAllocation(_)).Times(0);
+
+  payload_router.OnBitrateAllocationUpdated(bitrate);
+}
+
 TEST(PayloadRouterTest, SvcTargetBitrate) {
   NiceMock<MockRtpRtcp> rtp_1;
   std::vector<RtpRtcp*> modules;

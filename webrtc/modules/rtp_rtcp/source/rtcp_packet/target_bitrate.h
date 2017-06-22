@@ -45,7 +45,7 @@ class TargetBitrate {
 
   const std::vector<BitrateItem>& GetTargetBitrates() const;
 
-  bool Parse(const uint8_t* block, uint16_t block_length);
+  void Parse(const uint8_t* block, uint16_t block_length);
 
   size_t BlockLength() const;
 

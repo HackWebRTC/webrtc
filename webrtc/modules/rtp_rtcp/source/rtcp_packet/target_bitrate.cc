@@ -11,7 +11,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/target_bitrate.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
 namespace webrtc {
@@ -65,15 +64,7 @@ TargetBitrate::BitrateItem::BitrateItem(uint8_t spatial_layer,
 TargetBitrate::TargetBitrate() {}
 TargetBitrate::~TargetBitrate() {}
 
-bool TargetBitrate::Parse(const uint8_t* block, uint16_t block_length) {
-  if (block_length < 1) {
-    LOG(LS_WARNING)
-        << "Cannot parse TargetBitrate RTCP packet: Too little payload data ("
-        << kTargetBitrateHeaderSizeBytes << " bytes needed, got "
-        << block_length * 4 << ").";
-    return false;
-  }
-
+void TargetBitrate::Parse(const uint8_t* block, uint16_t block_length) {
   // Validate block header (should already have been parsed and checked).
   RTC_DCHECK_EQ(block[0], kBlockType);
   RTC_DCHECK_EQ(block_length, ByteReader<uint16_t>::ReadBigEndian(&block[2]));
@@ -91,8 +82,6 @@ bool TargetBitrate::Parse(const uint8_t* block, uint16_t block_length) {
     index += kBitrateItemSizeBytes;
     AddTargetBitrate((layers >> 4) & 0x0F, layers & 0x0F, bitrate_kbps);
   }
-
-  return true;
 }
 
 void TargetBitrate::AddTargetBitrate(uint8_t spatial_layer,
