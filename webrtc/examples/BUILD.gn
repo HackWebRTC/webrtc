@@ -271,10 +271,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         ":AppRTCMobile_ios_frameworks",
         ":apprtc_common",
         ":apprtc_signaling",
-
-        # TODO(kthelgason): Remove this dep when audio_device has been
-        # moved to sdk.
-        "//webrtc/modules/audio_device:audio_device",
       ]
     }
 
