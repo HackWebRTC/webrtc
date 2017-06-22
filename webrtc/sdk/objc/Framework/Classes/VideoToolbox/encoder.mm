@@ -19,12 +19,11 @@
 #import "Common/RTCUIApplicationStatusObserver.h"
 #import "WebRTC/UIDevice+RTCDevice.h"
 #endif
-#import "WebRTC/RTCVideoFrameBuffer.h"
 #include "libyuv/convert_from.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
-#include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
+#include "webrtc/sdk/objc/Framework/Classes/Video/corevideo_frame_buffer.h"
 #include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -412,49 +411,29 @@ int H264VideoToolboxEncoder::Encode(
   }
 #endif
 
-  CVPixelBufferRef pixel_buffer = nullptr;
+  CVPixelBufferRef pixel_buffer;
   if (frame.video_frame_buffer()->type() == VideoFrameBuffer::Type::kNative) {
-    // Native frame.
-    rtc::scoped_refptr<ObjCFrameBuffer> objc_frame_buffer(
-        static_cast<ObjCFrameBuffer*>(frame.video_frame_buffer().get()));
-    id<RTCVideoFrameBuffer> wrapped_frame_buffer =
-        (id<RTCVideoFrameBuffer>)objc_frame_buffer->wrapped_frame_buffer();
-
-    if ([wrapped_frame_buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
-      RTCCVPixelBuffer* rtc_pixel_buffer = (RTCCVPixelBuffer*)wrapped_frame_buffer;
-      if (![rtc_pixel_buffer requiresCropping]) {
-        // This pixel buffer might have a higher resolution than what the
-        // compression session is configured to. The compression session can
-        // handle that and will output encoded frames in the configured
-        // resolution regardless of the input pixel buffer resolution.
-        pixel_buffer = rtc_pixel_buffer.pixelBuffer;
-        CVBufferRetain(pixel_buffer);
-      } else {
-        // Cropping required, we need to crop and scale to a new pixel buffer.
-        pixel_buffer = internal::CreatePixelBuffer(pixel_buffer_pool);
-        if (!pixel_buffer) {
-          return WEBRTC_VIDEO_CODEC_ERROR;
-        }
-        int dst_width = CVPixelBufferGetWidth(pixel_buffer);
-        int dst_height = CVPixelBufferGetHeight(pixel_buffer);
-        if ([rtc_pixel_buffer requiresScalingToWidth:dst_width height:dst_height]) {
-          int size =
-              [rtc_pixel_buffer bufferSizeForCroppingAndScalingToWidth:dst_width height:dst_height];
-          nv12_scale_buffer_.resize(size);
-        } else {
-          nv12_scale_buffer_.clear();
-        }
-        nv12_scale_buffer_.shrink_to_fit();
-        if (![rtc_pixel_buffer cropAndScaleTo:pixel_buffer
-                               withTempBuffer:nv12_scale_buffer_.data()]) {
-          return WEBRTC_VIDEO_CODEC_ERROR;
-        }
+    rtc::scoped_refptr<CoreVideoFrameBuffer> core_video_frame_buffer(
+        static_cast<CoreVideoFrameBuffer*>(frame.video_frame_buffer().get()));
+    if (!core_video_frame_buffer->RequiresCropping()) {
+      pixel_buffer = core_video_frame_buffer->pixel_buffer();
+      // This pixel buffer might have a higher resolution than what the
+      // compression session is configured to. The compression session can
+      // handle that and will output encoded frames in the configured
+      // resolution regardless of the input pixel buffer resolution.
+      CVBufferRetain(pixel_buffer);
+    } else {
+      // Cropping required, we need to crop and scale to a new pixel buffer.
+      pixel_buffer = internal::CreatePixelBuffer(pixel_buffer_pool);
+      if (!pixel_buffer) {
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
+      if (!core_video_frame_buffer->CropAndScaleTo(&nv12_scale_buffer_,
+                                                   pixel_buffer)) {
+        return WEBRTC_VIDEO_CODEC_ERROR;
       }
     }
-  }
-
-  if (!pixel_buffer) {
-    // We did not have a native frame, or the ObjCVideoFrame wrapped a non-native frame
+  } else {
     pixel_buffer = internal::CreatePixelBuffer(pixel_buffer_pool);
     if (!pixel_buffer) {
       return WEBRTC_VIDEO_CODEC_ERROR;

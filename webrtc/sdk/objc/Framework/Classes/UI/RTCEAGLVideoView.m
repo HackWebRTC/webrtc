@@ -17,7 +17,6 @@
 #import "RTCNV12TextureCache.h"
 #import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
 
 // RTCDisplayLinkTimer wraps a CADisplayLink and is set to fire every two screen
 // refreshes, which should be 30fps. We wrap the display link in order to avoid
@@ -221,7 +220,7 @@
   }
   [self ensureGLContext];
   glClear(GL_COLOR_BUFFER_BIT);
-  if ([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+  if (frame.nativeHandle) {
     if (!_nv12TextureCache) {
       _nv12TextureCache = [[RTCNV12TextureCache alloc] initWithContext:_glContext];
     }

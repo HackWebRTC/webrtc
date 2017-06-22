@@ -11,7 +11,6 @@
 #import "RTCFileVideoCapturer.h"
 
 #import "WebRTC/RTCLogging.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
 
 @implementation RTCFileVideoCapturer {
   AVAssetReader *_reader;
@@ -134,11 +133,10 @@
       return;
     }
 
-    RTCCVPixelBuffer *rtcPixelBuffer = [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBuffer];
     NSTimeInterval timeStampSeconds = CACurrentMediaTime();
     int64_t timeStampNs = lroundf(timeStampSeconds * NSEC_PER_SEC);
     RTCVideoFrame *videoFrame =
-        [[RTCVideoFrame alloc] initWithBuffer:rtcPixelBuffer rotation:0 timeStampNs:timeStampNs];
+        [[RTCVideoFrame alloc] initWithPixelBuffer:pixelBuffer rotation:0 timeStampNs:timeStampNs];
     CFRelease(sampleBuffer);
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{

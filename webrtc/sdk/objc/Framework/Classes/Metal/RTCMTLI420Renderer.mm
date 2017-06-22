@@ -9,7 +9,6 @@
  */
 
 #import "RTCMTLI420Renderer.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
 
 #import <Metal/Metal.h>
 #import <MetalKit/MetalKit.h>
@@ -97,8 +96,6 @@ static NSString *const shaderSource = MTL_STRINGIFY(
     return NO;
   }
 
-  id<RTCI420Buffer> buffer = [frame.buffer toI420];
-
   // Luma (y) texture.
   if (!_descriptor || (_width != frame.width && _height != frame.height)) {
     _width = frame.width;
@@ -114,8 +111,8 @@ static NSString *const shaderSource = MTL_STRINGIFY(
   // Chroma (u,v) textures
   [_yTexture replaceRegion:MTLRegionMake2D(0, 0, _width, _height)
                mipmapLevel:0
-                 withBytes:buffer.dataY
-               bytesPerRow:buffer.strideY];
+                 withBytes:frame.dataY
+               bytesPerRow:frame.strideY];
 
   if (!_chromaDescriptor ||
       (_chromaWidth != frame.width / 2 && _chromaHeight != frame.height / 2)) {
@@ -133,12 +130,12 @@ static NSString *const shaderSource = MTL_STRINGIFY(
 
   [_uTexture replaceRegion:MTLRegionMake2D(0, 0, _chromaWidth, _chromaHeight)
                mipmapLevel:0
-                 withBytes:buffer.dataU
-               bytesPerRow:buffer.strideU];
+                 withBytes:frame.dataU
+               bytesPerRow:frame.strideU];
   [_vTexture replaceRegion:MTLRegionMake2D(0, 0, _chromaWidth, _chromaHeight)
                mipmapLevel:0
-                 withBytes:buffer.dataV
-               bytesPerRow:buffer.strideV];
+                 withBytes:frame.dataV
+               bytesPerRow:frame.strideV];
 
   return (_uTexture != nil) && (_yTexture != nil) && (_vTexture != nil);
 }

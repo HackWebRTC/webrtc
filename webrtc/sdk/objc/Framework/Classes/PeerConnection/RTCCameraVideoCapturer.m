@@ -12,7 +12,6 @@
 
 #import "WebRTC/RTCCameraVideoCapturer.h"
 #import "WebRTC/RTCLogging.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
 
 #if TARGET_OS_IPHONE
 #import "WebRTC/UIDevice+RTCDevice.h"
@@ -192,12 +191,11 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
     return;
   }
 
-  RTCCVPixelBuffer *rtcPixelBuffer = [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBuffer];
   int64_t timeStampNs = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer)) *
                         kNanosecondsPerSecond;
-  RTCVideoFrame *videoFrame = [[RTCVideoFrame alloc] initWithBuffer:rtcPixelBuffer
-                                                           rotation:_rotation
-                                                        timeStampNs:timeStampNs];
+  RTCVideoFrame *videoFrame = [[RTCVideoFrame alloc] initWithPixelBuffer:pixelBuffer
+                                                                rotation:_rotation
+                                                             timeStampNs:timeStampNs];
   [self.delegate capturer:self didCaptureVideoFrame:videoFrame];
 }
 

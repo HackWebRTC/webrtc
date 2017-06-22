@@ -15,7 +15,6 @@
 
 #import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
 
 #import "RTCMTLI420Renderer.h"
 #import "RTCMTLNV12Renderer.h"
@@ -109,7 +108,7 @@
   }
 
   id<RTCMTLRenderer> renderer = nil;
-  if ([self.videoFrame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+  if (self.videoFrame.nativeHandle) {
     if (!self.rendererNV12) {
       self.rendererNV12 = [RTCMTLVideoView createNV12Renderer];
       if (![self.rendererNV12 addRenderingDestination:self.metalView]) {

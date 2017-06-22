@@ -10,11 +10,10 @@
 
 #include "webrtc/sdk/objc/Framework/Classes/Video/objcvideotracksource.h"
 
-#import "WebRTC/RTCVideoFrame.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
+#import "RTCVideoFrame+Private.h"
 
 #include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
+#include "webrtc/sdk/objc/Framework/Classes/Video/corevideo_frame_buffer.h"
 
 namespace webrtc {
 
@@ -44,24 +43,18 @@ void ObjcVideoTrackSource::OnCapturedFrame(RTCVideoFrame* frame) {
   rtc::scoped_refptr<VideoFrameBuffer> buffer;
   if (adapted_width == frame.width && adapted_height == frame.height) {
     // No adaption - optimized path.
-    buffer = new rtc::RefCountedObject<ObjCFrameBuffer>(frame.buffer);
-  } else if ([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+    buffer = frame.videoBuffer;
+  } else if (frame.nativeHandle) {
     // Adapted CVPixelBuffer frame.
-    RTCCVPixelBuffer *rtcPixelBuffer = (RTCCVPixelBuffer *)frame.buffer;
-    buffer = new rtc::RefCountedObject<ObjCFrameBuffer>([[RTCCVPixelBuffer alloc]
-        initWithPixelBuffer:rtcPixelBuffer.pixelBuffer
-               adaptedWidth:adapted_width
-              adaptedHeight:adapted_height
-                  cropWidth:crop_width
-                 cropHeight:crop_height
-                      cropX:crop_x
-                      cropY:crop_y]);
+    buffer = new rtc::RefCountedObject<CoreVideoFrameBuffer>(
+        static_cast<CVPixelBufferRef>(frame.nativeHandle), adapted_width, adapted_height,
+        crop_width, crop_height, crop_x, crop_y);
   } else {
     // Adapted I420 frame.
     // TODO(magjed): Optimize this I420 path.
     rtc::scoped_refptr<I420Buffer> i420_buffer = I420Buffer::Create(adapted_width, adapted_height);
-    buffer = new rtc::RefCountedObject<ObjCFrameBuffer>(frame.buffer);
-    i420_buffer->CropAndScaleFrom(*buffer->ToI420(), crop_x, crop_y, crop_width, crop_height);
+    i420_buffer->CropAndScaleFrom(
+        *frame.videoBuffer->ToI420(), crop_x, crop_y, crop_width, crop_height);
     buffer = i420_buffer;
   }
 
