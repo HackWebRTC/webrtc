@@ -189,10 +189,9 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> AndroidTextureBuffer::ToI420() {
   uint8_t* u_data = y_data + height() * stride;
   uint8_t* v_data = u_data + stride/2;
 
-  rtc::scoped_refptr<webrtc::I420BufferInterface> copy =
-      new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
-          width(), height(), y_data, stride, u_data, stride, v_data, stride,
-          rtc::Bind(&webrtc::AlignedFree, yuv_data.release()));
+  rtc::scoped_refptr<webrtc::I420BufferInterface> copy = webrtc::WrapI420Buffer(
+      width(), height(), y_data, stride, u_data, stride, v_data, stride,
+      rtc::Bind(&webrtc::AlignedFree, yuv_data.release()));
 
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);

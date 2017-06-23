@@ -45,6 +45,7 @@ class NativeHandleBuffer : public VideoFrameBuffer {
   const int height_;
 };
 
+// Deprecated. Please use WrapI420Buffer(...) instead.
 class WrappedI420Buffer : public I420BufferInterface {
  public:
   WrappedI420Buffer(int width,
@@ -80,6 +81,40 @@ class WrappedI420Buffer : public I420BufferInterface {
   const int v_stride_;
   rtc::Callback0<void> no_longer_used_cb_;
 };
+
+rtc::scoped_refptr<I420BufferInterface> WrapI420Buffer(
+    int width,
+    int height,
+    const uint8_t* y_plane,
+    int y_stride,
+    const uint8_t* u_plane,
+    int u_stride,
+    const uint8_t* v_plane,
+    int v_stride,
+    const rtc::Callback0<void>& no_longer_used);
+
+rtc::scoped_refptr<I444BufferInterface> WrapI444Buffer(
+    int width,
+    int height,
+    const uint8_t* y_plane,
+    int y_stride,
+    const uint8_t* u_plane,
+    int u_stride,
+    const uint8_t* v_plane,
+    int v_stride,
+    const rtc::Callback0<void>& no_longer_used);
+
+rtc::scoped_refptr<PlanarYuvBuffer> WrapYuvBuffer(
+    VideoFrameBuffer::Type type,
+    int width,
+    int height,
+    const uint8_t* y_plane,
+    int y_stride,
+    const uint8_t* u_plane,
+    int u_stride,
+    const uint8_t* v_plane,
+    int v_stride,
+    const rtc::Callback0<void>& no_longer_used);
 
 }  // namespace webrtc
 
