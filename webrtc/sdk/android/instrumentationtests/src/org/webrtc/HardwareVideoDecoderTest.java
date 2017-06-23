@@ -67,6 +67,7 @@ public final class HardwareVideoDecoderTest {
     VideoDecoder decoder = decoderFactory.createDecoder(supportedCodecs[0].name);
 
     final long presentationTimestampUs = 20000;
+    final int rotation = 270;
 
     final CountDownLatch decodeDone = new CountDownLatch(1);
     final AtomicReference<VideoFrame> decoded = new AtomicReference<>();
@@ -98,7 +99,7 @@ public final class HardwareVideoDecoderTest {
     // First, encode a frame.
     VideoFrame.I420Buffer buffer = new I420BufferImpl(SETTINGS.width, SETTINGS.height);
     VideoFrame frame =
-        new VideoFrame(buffer, 0 /* rotation */, presentationTimestampUs * 1000, new Matrix());
+        new VideoFrame(buffer, rotation, presentationTimestampUs * 1000, new Matrix());
     VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
         new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
 
@@ -113,11 +114,11 @@ public final class HardwareVideoDecoderTest {
     ThreadUtils.awaitUninterruptibly(decodeDone);
 
     frame = decoded.get();
-    assertEquals(frame.getRotation(), 0);
+    assertEquals(frame.getRotation(), rotation);
     assertEquals(frame.getTimestampNs(), presentationTimestampUs * 1000);
     assertEquals(frame.getTransformMatrix(), new Matrix());
-    assertEquals(frame.getBuffer().getWidth(), SETTINGS.width);
-    assertEquals(frame.getBuffer().getHeight(), SETTINGS.height);
+    assertEquals(frame.getWidth(), SETTINGS.width);
+    assertEquals(frame.getHeight(), SETTINGS.height);
 
     assertEquals(decoder.release(), VideoCodecStatus.OK);
     assertEquals(encoder.release(), VideoCodecStatus.OK);

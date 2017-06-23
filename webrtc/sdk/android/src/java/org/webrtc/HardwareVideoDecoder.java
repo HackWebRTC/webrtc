@@ -50,7 +50,18 @@ class HardwareVideoDecoder implements VideoDecoder {
 
   private final String codecName;
   private final VideoCodecType codecType;
-  private final Deque<Long> decodeStartTimes;
+
+  private static class FrameInfo {
+    final long decodeStartTimeMs;
+    final int rotation;
+
+    FrameInfo(long decodeStartTimeMs, int rotation) {
+      this.decodeStartTimeMs = decodeStartTimeMs;
+      this.rotation = rotation;
+    }
+  }
+
+  private final Deque<FrameInfo> frameInfos;
   private int colorFormat;
 
   // Output thread runs a loop which polls MediaCodec for decoded output buffers.  It reformats
@@ -95,7 +106,7 @@ class HardwareVideoDecoder implements VideoDecoder {
     this.codecName = codecName;
     this.codecType = codecType;
     this.colorFormat = colorFormat;
-    this.decodeStartTimes = new LinkedBlockingDeque<>();
+    this.frameInfos = new LinkedBlockingDeque<>();
   }
 
   @Override
@@ -161,8 +172,8 @@ class HardwareVideoDecoder implements VideoDecoder {
 
     int size = frame.buffer.remaining();
     if (size == 0) {
-      Logging.e(TAG, "decode() - no input data");
-      return VideoCodecStatus.ERROR;
+      Logging.e(TAG, "decode() - input buffer empty");
+      return VideoCodecStatus.ERR_PARAMETER;
     }
 
     // Load dimensions from shared memory under the dimension lock.
@@ -177,7 +188,7 @@ class HardwareVideoDecoder implements VideoDecoder {
         && (frame.encodedWidth != width || frame.encodedHeight != height)) {
       VideoCodecStatus status = reinitDecode(frame.encodedWidth, frame.encodedHeight);
       if (status != VideoCodecStatus.OK) {
-        return VideoCodecStatus.FALLBACK_SOFTWARE;
+        return status;
       }
     }
 
@@ -208,13 +219,13 @@ class HardwareVideoDecoder implements VideoDecoder {
       index = codec.dequeueInputBuffer(0 /* timeout */);
     } catch (IllegalStateException e) {
       Logging.e(TAG, "dequeueInputBuffer failed", e);
-      return VideoCodecStatus.FALLBACK_SOFTWARE;
+      return VideoCodecStatus.ERROR;
     }
     if (index < 0) {
       // Decoder is falling behind.  No input buffers available.
       // The decoder can't simply drop frames; it might lose a key frame.
       Logging.e(TAG, "decode() - no HW buffers available; decoder falling behind");
-      return VideoCodecStatus.FALLBACK_SOFTWARE;
+      return VideoCodecStatus.ERROR;
     }
 
     ByteBuffer buffer;
@@ -222,23 +233,23 @@ class HardwareVideoDecoder implements VideoDecoder {
       buffer = codec.getInputBuffers()[index];
     } catch (IllegalStateException e) {
       Logging.e(TAG, "getInputBuffers failed", e);
-      return VideoCodecStatus.FALLBACK_SOFTWARE;
+      return VideoCodecStatus.ERROR;
     }
 
     if (buffer.capacity() < size) {
       Logging.e(TAG, "decode() - HW buffer too small");
-      return VideoCodecStatus.FALLBACK_SOFTWARE;
+      return VideoCodecStatus.ERROR;
     }
     buffer.put(frame.buffer);
 
-    decodeStartTimes.offer(SystemClock.elapsedRealtime());
+    frameInfos.offer(new FrameInfo(SystemClock.elapsedRealtime(), frame.rotation));
     try {
       codec.queueInputBuffer(
           index, 0 /* offset */, size, frame.captureTimeMs * 1000, 0 /* flags */);
     } catch (IllegalStateException e) {
       Logging.e(TAG, "queueInputBuffer failed", e);
-      decodeStartTimes.pollLast();
-      return VideoCodecStatus.FALLBACK_SOFTWARE;
+      frameInfos.pollLast();
+      return VideoCodecStatus.ERROR;
     }
     if (keyFrameRequired) {
       keyFrameRequired = false;
@@ -278,7 +289,7 @@ class HardwareVideoDecoder implements VideoDecoder {
       codec = null;
       callback = null;
       outputThread = null;
-      decodeStartTimes.clear();
+      frameInfos.clear();
     }
     return VideoCodecStatus.OK;
   }
@@ -325,10 +336,12 @@ class HardwareVideoDecoder implements VideoDecoder {
         return;
       }
 
-      Long decodeStartTimeMs = decodeStartTimes.poll();
+      FrameInfo frameInfo = frameInfos.poll();
       Integer decodeTimeMs = null;
-      if (decodeStartTimeMs != null) {
-        decodeTimeMs = (int) (SystemClock.elapsedRealtime() - decodeStartTimeMs);
+      int rotation = 0;
+      if (frameInfo != null) {
+        decodeTimeMs = (int) (SystemClock.elapsedRealtime() - frameInfo.decodeStartTimeMs);
+        rotation = frameInfo.rotation;
       }
 
       hasDecodedFirstFrame = true;
@@ -374,8 +387,7 @@ class HardwareVideoDecoder implements VideoDecoder {
       codec.releaseOutputBuffer(result, false);
 
       long presentationTimeNs = info.presentationTimeUs * 1000;
-      VideoFrame frame =
-          new VideoFrame(frameBuffer, 0 /* rotation */, presentationTimeNs, new Matrix());
+      VideoFrame frame = new VideoFrame(frameBuffer, rotation, presentationTimeNs, new Matrix());
 
       // Note that qp is parsed on the C++ side.
       callback.onDecodedFrame(frame, decodeTimeMs, null /* qp */);
@@ -454,7 +466,7 @@ class HardwareVideoDecoder implements VideoDecoder {
     codec = null;
     callback = null;
     outputThread = null;
-    decodeStartTimes.clear();
+    frameInfos.clear();
     Logging.d(TAG, "Release on output thread done");
   }
 
@@ -492,14 +504,15 @@ class HardwareVideoDecoder implements VideoDecoder {
     copyPlane(src, vPos, uvStride, frameBuffer.getDataV(), 0, frameBuffer.getStrideV(), chromaWidth,
         chromaHeight);
 
-    // If the sliceHeight is odd, duplicate the last rows of chroma.
+    // If the sliceHeight is odd, duplicate the last rows of chroma.  Copy the last row of the U and
+    // V channels and append them at the end of each channel.
     if (sliceHeight % 2 != 0) {
       int strideU = frameBuffer.getStrideU();
-      uPos = chromaHeight * strideU;
-      copyRow(frameBuffer.getDataU(), uPos - strideU, frameBuffer.getDataU(), uPos, chromaWidth);
+      int endU = chromaHeight * strideU;
+      copyRow(frameBuffer.getDataU(), endU - strideU, frameBuffer.getDataU(), endU, chromaWidth);
       int strideV = frameBuffer.getStrideV();
-      vPos = chromaHeight * strideV;
-      copyRow(frameBuffer.getDataV(), vPos - strideV, frameBuffer.getDataV(), vPos, chromaWidth);
+      int endV = chromaHeight * strideV;
+      copyRow(frameBuffer.getDataV(), endV - strideV, frameBuffer.getDataV(), endV, chromaWidth);
     }
   }
 
