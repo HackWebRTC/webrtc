@@ -18,7 +18,6 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-enum RateControlRegion;
 
 bool AdaptiveThresholdExperimentIsDisabled();
 
