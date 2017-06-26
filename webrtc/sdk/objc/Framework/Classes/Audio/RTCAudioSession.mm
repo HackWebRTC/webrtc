@@ -914,4 +914,13 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
   }
 }
 
+- (void)notifyDidDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches {
+  for (auto delegate : self.delegates) {
+    SEL sel = @selector(audioSession:didDetectPlayoutGlitch:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSession:self didDetectPlayoutGlitch:totalNumberOfGlitches];
+    }
+  }
+}
+
 @end

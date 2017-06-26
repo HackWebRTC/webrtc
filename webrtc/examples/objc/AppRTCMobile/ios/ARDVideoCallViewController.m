@@ -22,7 +22,8 @@
 #import "WebRTC/RTCMediaConstraints.h"
 
 @interface ARDVideoCallViewController () <ARDAppClientDelegate,
-    ARDVideoCallViewDelegate>
+                                          ARDVideoCallViewDelegate,
+                                          RTCAudioSessionDelegate>
 @property(nonatomic, strong) RTCVideoTrack *remoteVideoTrack;
 @property(nonatomic, readonly) ARDVideoCallView *videoCallView;
 @end
@@ -57,6 +58,9 @@
   _videoCallView.statusLabel.text =
       [self statusTextForState:RTCIceConnectionStateNew];
   self.view = _videoCallView;
+
+  RTCAudioSession *session = [RTCAudioSession sharedInstance];
+  [session addDelegate:self];
 }
 
 #pragma mark - ARDAppClientDelegate
@@ -156,6 +160,13 @@
 - (void)videoCallViewDidEnableStats:(ARDVideoCallView *)view {
   _client.shouldGetStats = YES;
   _videoCallView.statsView.hidden = NO;
+}
+
+#pragma mark - RTCAudioSessionDelegate
+
+- (void)audioSession:(RTCAudioSession *)audioSession
+    didDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches {
+  RTCLog(@"Audio session detected glitch, total: %lld", totalNumberOfGlitches);
 }
 
 #pragma mark - Private

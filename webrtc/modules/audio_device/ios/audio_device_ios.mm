@@ -672,6 +672,12 @@ void AudioDeviceIOS::HandlePlayoutGlitchDetected() {
   num_detected_playout_glitches_++;
   RTCLog(@"Number of detected playout glitches: %lld",
          num_detected_playout_glitches_);
+
+  int64_t glitch_count = num_detected_playout_glitches_;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    RTCAudioSession* session = [RTCAudioSession sharedInstance];
+    [session notifyDidDetectPlayoutGlitch:glitch_count];
+  });
 }
 
 void AudioDeviceIOS::HandleOutputVolumeChange() {

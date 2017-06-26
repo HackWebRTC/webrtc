@@ -78,6 +78,12 @@ RTC_EXPORT
 - (void)audioSession:(RTCAudioSession *)audioSession
     didChangeOutputVolume:(float)outputVolume;
 
+/** Called when the audio device detects a playout glitch. The argument is the
+ *  number of glitches detected so far in the current audio playout session.
+ */
+- (void)audioSession:(RTCAudioSession *)audioSession
+    didDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches;
+
 @end
 
 /** This is a protocol used to inform RTCAudioSession when the audio session

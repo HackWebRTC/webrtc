@@ -90,6 +90,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)notifyDidChangeCanPlayOrRecord:(BOOL)canPlayOrRecord;
 - (void)notifyDidStartPlayOrRecord;
 - (void)notifyDidStopPlayOrRecord;
+- (void)notifyDidDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches;
 
 @end
 
