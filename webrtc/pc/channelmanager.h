@@ -217,8 +217,6 @@ class ChannelManager {
   RtpDataChannels data_channels_;
 
   bool enable_rtx_;
-  rtc::CryptoOptions crypto_options_;
-
   bool capturing_;
 };
 

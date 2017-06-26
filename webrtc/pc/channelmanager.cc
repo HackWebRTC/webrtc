@@ -53,7 +53,6 @@ void ChannelManager::Construct(std::unique_ptr<MediaEngineInterface> me,
   network_thread_ = network_thread;
   capturing_ = false;
   enable_rtx_ = false;
-  crypto_options_ = rtc::CryptoOptions::NoGcm();
 }
 
 ChannelManager::~ChannelManager() {
