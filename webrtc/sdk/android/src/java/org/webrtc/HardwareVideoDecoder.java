@@ -42,6 +42,10 @@ class HardwareVideoDecoder implements VideoDecoder {
   // this timeout.
   private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000;
 
+  // WebRTC queues input frames quickly in the beginning on the call. Wait for input buffers with a
+  // long timeout (500 ms) to prevent this from causing the codec to return an error.
+  private static final int DEQUEUE_INPUT_TIMEOUT_US = 500000;
+
   // Dequeuing an output buffer will block until a buffer is available (up to 100 milliseconds).
   // If this timeout is exceeded, the output thread will unblock and check if the decoder is still
   // running.  If it is, it will block on dequeue again.  Otherwise, it will stop and release the
@@ -77,8 +81,6 @@ class HardwareVideoDecoder implements VideoDecoder {
 
   private volatile boolean running = false;
   private volatile Exception shutdownException = null;
-
-  private CountDownLatch ouputDequeuedSignal;
 
   // Dimensions (width, height, stride, and sliceHeight) may be accessed by either the decode thread
   // or the output thread.  Accesses should be protected with this lock.
@@ -151,7 +153,6 @@ class HardwareVideoDecoder implements VideoDecoder {
     }
 
     running = true;
-    ouputDequeuedSignal = new CountDownLatch(1);
     outputThread = createOutputThread();
     outputThread.start();
 
@@ -202,21 +203,12 @@ class HardwareVideoDecoder implements VideoDecoder {
         Logging.e(TAG, "decode() - complete frame required first");
         return VideoCodecStatus.ERROR;
       }
-
-      // Wait for the output thread to dequeue a buffer containing format information.  Otherwise,
-      // the decoder may drop the key frame and fail.
-      try {
-        ouputDequeuedSignal.await();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        return VideoCodecStatus.ERROR;
-      }
     }
 
     // TODO(mellem):  Support textures.
     int index;
     try {
-      index = codec.dequeueInputBuffer(0 /* timeout */);
+      index = codec.dequeueInputBuffer(DEQUEUE_INPUT_TIMEOUT_US);
     } catch (IllegalStateException e) {
       Logging.e(TAG, "dequeueInputBuffer failed", e);
       return VideoCodecStatus.ERROR;
@@ -327,7 +319,6 @@ class HardwareVideoDecoder implements VideoDecoder {
       // thread's loop.  Blocking here prevents the output thread from busy-waiting while the codec
       // is idle.
       int result = codec.dequeueOutputBuffer(info, DEQUEUE_OUTPUT_BUFFER_TIMEOUT_US);
-      ouputDequeuedSignal.countDown();
       if (result == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
         reformat(codec.getOutputFormat());
         return;
