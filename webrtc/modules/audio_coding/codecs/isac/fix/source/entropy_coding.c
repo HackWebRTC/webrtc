@@ -193,16 +193,16 @@ static void CalcCorrelation(int32_t *PSpecQ12, int32_t *CorrQ7)
 // undefined behavior, so not a good idea; this just makes UBSan ignore the
 // violations, so that our old code can continue to do what it's always been
 // doing.)
-static inline int32_t OverflowingMulS16S32ToS32(int16_t a, int32_t b)
-    RTC_NO_SANITIZE("signed-integer-overflow") {
+static inline int32_t RTC_NO_SANITIZE("signed-integer-overflow")
+    OverflowingMulS16S32ToS32(int16_t a, int32_t b) {
   return a * b;
 }
-static inline int32_t OverflowingAddS32S32ToS32(int32_t a, int32_t b)
-    RTC_NO_SANITIZE("signed-integer-overflow") {
+static inline int32_t RTC_NO_SANITIZE("signed-integer-overflow")
+    OverflowingAddS32S32ToS32(int32_t a, int32_t b) {
   return a + b;
 }
-static inline int32_t OverflowingSubS32S32ToS32(int32_t a, int32_t b)
-    RTC_NO_SANITIZE("signed-integer-overflow") {
+static inline int32_t RTC_NO_SANITIZE("signed-integer-overflow")
+    OverflowingSubS32S32ToS32(int32_t a, int32_t b) {
   return a - b;
 }
 
