@@ -142,13 +142,12 @@ struct MType<T1, T2, true, true> {
   // the lowest maximum value. In case that too is a tie, the types have the
   // same range, and we arbitrarily pick T1.
   using min_t = typename std::conditional<
-      safe_cmp::Lt(Limits<T1>::lowest, Limits<T2>::lowest),
+      SafeLt(Limits<T1>::lowest, Limits<T2>::lowest),
       T1,
       typename std::conditional<
-          safe_cmp::Gt(Limits<T1>::lowest, Limits<T2>::lowest),
+          SafeGt(Limits<T1>::lowest, Limits<T2>::lowest),
           T2,
-          typename std::conditional<safe_cmp::Le(Limits<T1>::max,
-                                                 Limits<T2>::max),
+          typename std::conditional<SafeLe(Limits<T1>::max, Limits<T2>::max),
                                     T1,
                                     T2>::type>::type>::type;
   static_assert(std::is_same<min_t, T1>::value ||
@@ -158,11 +157,11 @@ struct MType<T1, T2, true, true> {
   // The type with the highest maximum value. In case of a tie, the types have
   // the same range (because in C++, integer types with the same maximum also
   // have the same minimum).
-  static_assert(safe_cmp::Ne(Limits<T1>::max, Limits<T2>::max) ||
-                    safe_cmp::Eq(Limits<T1>::lowest, Limits<T2>::lowest),
+  static_assert(SafeNe(Limits<T1>::max, Limits<T2>::max) ||
+                    SafeEq(Limits<T1>::lowest, Limits<T2>::lowest),
                 "integer types with the same max should have the same min");
   using max_t = typename std::
-      conditional<safe_cmp::Ge(Limits<T1>::max, Limits<T2>::max), T1, T2>::type;
+      conditional<SafeGe(Limits<T1>::max, Limits<T2>::max), T1, T2>::type;
   static_assert(std::is_same<max_t, T1>::value ||
                     std::is_same<max_t, T2>::value,
                 "");
@@ -178,8 +177,8 @@ template <typename A, typename B>
 struct TypeOr {
   using type = typename std::
       conditional<std::is_same<A, DefaultType>::value, B, A>::type;
-  static_assert(safe_cmp::Le(Limits<type>::lowest, Limits<B>::lowest) &&
-                    safe_cmp::Ge(Limits<type>::max, Limits<B>::max),
+  static_assert(SafeLe(Limits<type>::lowest, Limits<B>::lowest) &&
+                    SafeGe(Limits<type>::max, Limits<B>::max),
                 "The specified type isn't large enough");
   static_assert(IsIntlike<type>::value == IsIntlike<B>::value &&
                     std::is_floating_point<type>::value ==
@@ -203,7 +202,7 @@ constexpr R2 SafeMin(T1 a, T2 b) {
                 "The first argument must be integral or floating-point");
   static_assert(IsIntlike<T2>::value || std::is_floating_point<T2>::value,
                 "The second argument must be integral or floating-point");
-  return safe_cmp::Lt(a, b) ? static_cast<R2>(a) : static_cast<R2>(b);
+  return SafeLt(a, b) ? static_cast<R2>(a) : static_cast<R2>(b);
 }
 
 template <
@@ -220,7 +219,7 @@ constexpr R2 SafeMax(T1 a, T2 b) {
                 "The first argument must be integral or floating-point");
   static_assert(IsIntlike<T2>::value || std::is_floating_point<T2>::value,
                 "The second argument must be integral or floating-point");
-  return safe_cmp::Gt(a, b) ? static_cast<R2>(a) : static_cast<R2>(b);
+  return SafeGt(a, b) ? static_cast<R2>(a) : static_cast<R2>(b);
 }
 
 namespace safe_minmax_impl {
@@ -265,8 +264,7 @@ struct ClampType<T, L, H, true, true, true> {
                                           sizeof(A) <= sizeof(H) ||
                                           sizeof(A) <= sizeof(T);
     static constexpr bool range_contained =
-        safe_cmp::Le(Limits<A>::lowest, r_min) &&
-        safe_cmp::Le(r_max, Limits<A>::max);
+        SafeLe(Limits<A>::lowest, r_min) && SafeLe(r_max, Limits<A>::max);
 
    public:
     static constexpr bool value = not_too_large && range_contained;
@@ -327,9 +325,9 @@ R2 SafeClamp(T x, L min, H max) {
   static_assert(IsIntlike<L>::value || std::is_floating_point<L>::value,
                 "The third argument must be integral or floating-point");
   RTC_DCHECK_LE(min, max);
-  return safe_cmp::Le(x, min)
+  return SafeLe(x, min)
              ? static_cast<R2>(min)
-             : safe_cmp::Ge(x, max) ? static_cast<R2>(max) : static_cast<R2>(x);
+             : SafeGe(x, max) ? static_cast<R2>(max) : static_cast<R2>(x);
 }
 
 }  // namespace rtc

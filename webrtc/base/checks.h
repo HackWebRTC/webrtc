@@ -99,7 +99,7 @@ namespace rtc {
 // values of the same types as |a| and |b| can't be compared with the given
 // operation, and that would evaluate |a| and |b| if evaluated.
 #define RTC_EAT_STREAM_PARAMETERS_OP(op, a, b) \
-  RTC_EAT_STREAM_PARAMETERS(((void)rtc::safe_cmp::op(a, b)))
+  RTC_EAT_STREAM_PARAMETERS(((void)rtc::Safe##op(a, b)))
 
 // RTC_CHECK dies with a fatal error if condition is not true. It is *not*
 // controlled by NDEBUG or anything else, so the check will be executed
@@ -162,13 +162,13 @@ std::string* MakeCheckOpString<std::string, std::string>(
   template <class t1, class t2>                                              \
   inline std::string* Check##name##Impl(const t1& v1, const t2& v2,          \
                                         const char* names) {                 \
-    if (rtc::safe_cmp::name(v1, v2))                                         \
+    if (rtc::Safe##name(v1, v2))                                             \
       return nullptr;                                                        \
     else                                                                     \
       return rtc::MakeCheckOpString(v1, v2, names);                          \
   }                                                                          \
   inline std::string* Check##name##Impl(int v1, int v2, const char* names) { \
-    if (rtc::safe_cmp::name(v1, v2))                                         \
+    if (rtc::Safe##name(v1, v2))                                             \
       return nullptr;                                                        \
     else                                                                     \
       return rtc::MakeCheckOpString(v1, v2, names);                          \

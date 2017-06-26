@@ -10,12 +10,12 @@
 
 // This file defines six constexpr functions:
 //
-//   rtc::safe_cmp::Eq  // ==
-//   rtc::safe_cmp::Ne  // !=
-//   rtc::safe_cmp::Lt  // <
-//   rtc::safe_cmp::Le  // <=
-//   rtc::safe_cmp::Gt  // >
-//   rtc::safe_cmp::Ge  // >=
+//   rtc::SafeEq  // ==
+//   rtc::SafeNe  // !=
+//   rtc::SafeLt  // <
+//   rtc::SafeLe  // <=
+//   rtc::SafeGt  // >
+//   rtc::SafeGe  // >=
 //
 // They each accept two arguments of arbitrary types, and in almost all cases,
 // they simply call the appropriate comparison operator. However, if both
@@ -40,7 +40,6 @@
 #include "webrtc/base/type_traits.h"
 
 namespace rtc {
-namespace safe_cmp {
 
 namespace safe_cmp_impl {
 
@@ -153,16 +152,15 @@ RTC_SAFECMP_MAKE_OP(GeOp, >=)
   template <typename T1, typename T2>                                         \
   constexpr                                                                   \
       typename std::enable_if<IsIntlike<T1>::value && IsIntlike<T2>::value,   \
-                              bool>::type                                     \
-      name(T1 a, T2 b) {                                                      \
+                              bool>::type Safe##name(T1 a, T2 b) {            \
     /* Unary plus here turns enums into real integral types. */               \
     return safe_cmp_impl::Cmp<safe_cmp_impl::name##Op>(+a, +b);               \
   }                                                                           \
   template <typename T1, typename T2>                                         \
   constexpr                                                                   \
       typename std::enable_if<!IsIntlike<T1>::value || !IsIntlike<T2>::value, \
-                              bool>::type                                     \
-      name(const T1& a, const T2& b) {                                        \
+                              bool>::type Safe##name(const T1& a,             \
+                                                     const T2& b) {           \
     return safe_cmp_impl::name##Op::Op(a, b);                                 \
   }
 RTC_SAFECMP_MAKE_FUN(Eq)
@@ -173,7 +171,6 @@ RTC_SAFECMP_MAKE_FUN(Gt)
 RTC_SAFECMP_MAKE_FUN(Ge)
 #undef RTC_SAFECMP_MAKE_FUN
 
-}  // namespace safe_cmp
 }  // namespace rtc
 
 #endif  // WEBRTC_BASE_SAFE_COMPARE_H_
