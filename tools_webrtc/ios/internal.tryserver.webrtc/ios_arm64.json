@@ -20,7 +20,7 @@
   "bucket": "chromium-webrtc",
   "tests": [
     {
-      "app": "modules_unittests",
+      "include": "real_device_tests.json",
       "device type": "iPhone 6s",
       "os": "10.0.1"
     }
