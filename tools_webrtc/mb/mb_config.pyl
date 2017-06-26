@@ -43,6 +43,7 @@
       'Linux64 Release': 'release_bot_x64',
       'Linux64 Debug (ARM)': 'debug_bot_arm64',
       'Linux64 Release (ARM)': 'release_bot_arm64',
+      'Linux64 Release (GCC)': 'gcc_release_bot_x64',
       'Linux Asan': 'asan_lsan_clang_release_bot_x64',
       'Linux Memcheck': 'memcheck_release_bot_x64',
       'Linux MSan': 'msan_clang_release_bot_x64',
@@ -94,7 +95,6 @@
       'Mac (swarming)': 'release_bot_x64',
 
       # Linux
-      'Linux64 GCC': 'gcc_release_bot_x64',
       'Linux (swarming)': 'release_bot_x64',
 
       # Android
@@ -149,7 +149,7 @@
       'linux32_arm_dbg': 'debug_bot_arm',
       'linux32_arm_rel': 'release_bot_arm',
       'linux_asan': 'asan_lsan_clang_release_bot_x64',
-      'linux_gcc': 'gcc_release_bot_x64',
+      'linux_gcc_rel': 'gcc_release_bot_x64',
       'linux_memcheck': 'memcheck_release_bot_x64',
       'linux_msan': 'msan_clang_release_bot_x64',
       'linux_tsan2': 'tsan_clang_release_bot_x64',
