@@ -14,10 +14,10 @@ namespace webrtc {
 
 class RtpPacketReceived;
 
-// This class represents a receiver of already parsed RTP packets.
+// This class represents a receiver of an already parsed RTP packets.
 class RtpPacketSinkInterface {
  public:
-  virtual ~RtpPacketSinkInterface() = default;
+  virtual ~RtpPacketSinkInterface() {}
   virtual void OnRtpPacket(const RtpPacketReceived& packet) = 0;
 };
 
