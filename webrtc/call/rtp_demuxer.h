@@ -14,9 +14,11 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 namespace webrtc {
 
+class RsidResolutionObserver;
 class RtpPacketReceived;
 class RtpPacketSinkInterface;
 
@@ -41,8 +43,15 @@ class RtpDemuxer {
   // Null pointer is not allowed.
   bool RemoveSink(const RtpPacketSinkInterface* sink);
 
-  // Returns true if at least one matching sink was found, otherwise false.
+  // Returns true if at least one matching sink was found.
   bool OnRtpPacket(const RtpPacketReceived& packet);
+
+  // Allows other objects to be notified when RSID-SSRC associations are
+  // resolved by this object.
+  void RegisterRsidResolutionObserver(RsidResolutionObserver* observer);
+
+  // Undo a previous RegisterRsidResolutionObserver().
+  void DeregisterRsidResolutionObserver(const RsidResolutionObserver* observer);
 
  private:
   // Records a sink<->SSRC association. This can happen by explicit
@@ -51,9 +60,14 @@ class RtpDemuxer {
   // packet reception.
   void RecordSsrcToSinkAssociation(uint32_t ssrc, RtpPacketSinkInterface* sink);
 
-  // When a new packet arrives, we attempt to resolve extra associations,
-  // such as which RSIDs are associated with which SSRCs.
-  void FindSsrcAssociations(const RtpPacketReceived& packet);
+  // When a new packet arrives, we attempt to resolve extra associations.
+  void ResolveAssociations(const RtpPacketReceived& packet);
+
+  // Find the associations of RSID to SSRCs.
+  void ResolveRsidToSsrcAssociations(const RtpPacketReceived& packet);
+
+  // Notify observers of the resolution of an RSID to an SSRC.
+  void NotifyObserversOfRsidResolution(const std::string& rsid, uint32_t ssrc);
 
   // This records the association SSRCs to sinks. Other associations, such
   // as by RSID, also end up here once the RSID, etc., is resolved to an SSRC.
@@ -73,6 +87,10 @@ class RtpDemuxer {
 
   // Avoid an attack that would create excessive logging.
   bool logged_max_processed_ssrcs_exceeded_ = false;
+
+  // Observers which will be notified when an RSID association to an SSRC is
+  // resolved by this object.
+  std::vector<RsidResolutionObserver*> rsid_resolution_observers_;
 };
 
 }  // namespace webrtc
