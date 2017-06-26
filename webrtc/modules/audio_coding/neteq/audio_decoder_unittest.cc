@@ -418,7 +418,7 @@ class AudioDecoderG722StereoTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 16000;
     frame_size_ = 160;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderG722Stereo;
+    decoder_ = new AudioDecoderG722StereoImpl;
     assert(decoder_);
     AudioEncoderG722Config config;
     config.frame_size_ms = 10;

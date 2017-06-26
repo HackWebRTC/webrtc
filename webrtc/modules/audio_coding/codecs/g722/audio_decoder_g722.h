@@ -42,10 +42,10 @@ class AudioDecoderG722Impl final : public AudioDecoder {
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722Impl);
 };
 
-class AudioDecoderG722Stereo final : public AudioDecoder {
+class AudioDecoderG722StereoImpl final : public AudioDecoder {
  public:
-  AudioDecoderG722Stereo();
-  ~AudioDecoderG722Stereo() override;
+  AudioDecoderG722StereoImpl();
+  ~AudioDecoderG722StereoImpl() override;
   void Reset() override;
   std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
                                         uint32_t timestamp) override;
@@ -71,7 +71,7 @@ class AudioDecoderG722Stereo final : public AudioDecoder {
 
   G722DecInst* dec_state_left_;
   G722DecInst* dec_state_right_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722Stereo);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722StereoImpl);
 };
 
 }  // namespace webrtc

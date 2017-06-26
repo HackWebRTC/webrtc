@@ -119,9 +119,16 @@ TEST(AudioDecoderFactoryTemplateTest, G722) {
   EXPECT_FALSE(factory->IsSupportedDecoder({"foo", 8000, 1}));
   EXPECT_TRUE(factory->IsSupportedDecoder({"g722", 8000, 1}));
   EXPECT_EQ(nullptr, factory->MakeAudioDecoder({"bar", 16000, 1}));
-  auto dec = factory->MakeAudioDecoder({"g722", 8000, 1});
-  ASSERT_NE(nullptr, dec);
-  EXPECT_EQ(16000, dec->SampleRateHz());
+  auto dec1 = factory->MakeAudioDecoder({"g722", 8000, 1});
+  ASSERT_NE(nullptr, dec1);
+  EXPECT_EQ(16000, dec1->SampleRateHz());
+  EXPECT_EQ(1u, dec1->Channels());
+  auto dec2 = factory->MakeAudioDecoder({"g722", 8000, 2});
+  ASSERT_NE(nullptr, dec2);
+  EXPECT_EQ(16000, dec2->SampleRateHz());
+  EXPECT_EQ(2u, dec2->Channels());
+  auto dec3 = factory->MakeAudioDecoder({"g722", 8000, 3});
+  ASSERT_EQ(nullptr, dec3);
 }
 
 }  // namespace webrtc

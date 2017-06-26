@@ -135,7 +135,7 @@ NamedDecoderConstructor decoder_constructors[] = {
            return true;
          } else if (format.num_channels == 2) {
            if (out) {
-             out->reset(new AudioDecoderG722Stereo);
+             out->reset(new AudioDecoderG722StereoImpl);
            }
            return true;
          }
