@@ -187,8 +187,7 @@ TEST(RTCMTLVideoViewTests, RTCVideoRenderFrameCallbackI420) {
   [test tearDown];
 }
 
-// The test is disabled because of frequent crashes. See bugs.webrtc.org/7863
-TEST(RTCMTLVideoViewTests, DISABLED_RTCVideoRenderFrameCallbackNV12) {
+TEST(RTCMTLVideoViewTests, RTCVideoRenderFrameCallbackNV12) {
   RTCMTLVideoViewTests *test = [[RTCMTLVideoViewTests alloc] init];
   [test setup];
 
