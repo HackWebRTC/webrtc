@@ -12,11 +12,15 @@
 
 namespace webrtc_jni {
 
-cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory() {
+cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory(
+    JNIEnv* jni,
+    jobject j_encoder_factory) {
   return nullptr;
 }
 
-cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory() {
+cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory(
+    JNIEnv* jni,
+    jobject j_decoder_factory) {
   return nullptr;
 }
 

@@ -24,9 +24,13 @@ namespace webrtc_jni {
 
 class SurfaceTextureHelper;
 
-cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory();
+cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory(
+    JNIEnv* jni,
+    jobject j_encoder_factory);
 
-cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory();
+cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory(
+    JNIEnv* jni,
+    jobject j_decoder_factory);
 
 jobject GetJavaSurfaceTextureHelper(
     const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper);

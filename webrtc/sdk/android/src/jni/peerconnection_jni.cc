@@ -1121,8 +1121,12 @@ PeerConnectionFactoryInterface::Options ParseOptionsFromJava(JNIEnv* jni,
   return native_options;
 }
 
-JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
-    JNIEnv* jni, jclass, jobject joptions) {
+JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)
+(JNIEnv* jni,
+ jclass,
+ jobject joptions,
+ jobject jencoder_factory,
+ jobject jdecoder_factory) {
   // talk/ assumes pretty widely that the current Thread is ThreadManager'd, but
   // ThreadManager only WrapCurrentThread()s the thread where it is first
   // created.  Since the semantics around when auto-wrapping happens in
@@ -1157,8 +1161,8 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   }
 
   if (video_hw_acceleration_enabled) {
-    video_encoder_factory = CreateVideoEncoderFactory();
-    video_decoder_factory = CreateVideoDecoderFactory();
+    video_encoder_factory = CreateVideoEncoderFactory(jni, jencoder_factory);
+    video_decoder_factory = CreateVideoDecoderFactory(jni, jdecoder_factory);
   }
   // Do not create network_monitor_factory only if the options are
   // provided and disable_network_monitor therein is set to true.

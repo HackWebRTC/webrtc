@@ -20,15 +20,34 @@
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/ownedfactoryandthreads.h"
 #include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
+#include "webrtc/sdk/android/src/jni/videodecoderfactorywrapper.h"
 
 namespace webrtc_jni {
 
-cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory() {
+// TODO(sakal): Remove this once MediaCodecVideoDecoder/Encoder are no longer
+// used and all applications inject their own codecs.
+// This is semi broken if someone wants to create multiple peerconnection
+// factories.
+static MediaCodecVideoDecoderFactory* media_codec_decoder_factory;
+
+cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory(
+    JNIEnv* jni,
+    jobject j_encoder_factory) {
+  RTC_DCHECK(j_encoder_factory == nullptr)
+      << "Injectable video encoders are not supported yet.";
   return new MediaCodecVideoEncoderFactory();
 }
 
-cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory() {
-  return new MediaCodecVideoDecoderFactory();
+cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory(
+    JNIEnv* jni,
+    jobject j_decoder_factory) {
+  if (j_decoder_factory != nullptr) {
+    media_codec_decoder_factory = nullptr;
+    return new VideoDecoderFactoryWrapper(jni, j_decoder_factory);
+  } else {
+    media_codec_decoder_factory = new MediaCodecVideoDecoderFactory();
+    return media_codec_decoder_factory;
+  }
 }
 
 jobject GetJavaSurfaceTextureHelper(
@@ -90,12 +109,9 @@ JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)
     encoder_factory->SetEGLContext(jni, local_egl_context);
   }
 
-  MediaCodecVideoDecoderFactory* decoder_factory =
-      static_cast<MediaCodecVideoDecoderFactory*>(
-          owned_factory->decoder_factory());
-  if (decoder_factory) {
+  if (media_codec_decoder_factory) {
     LOG(LS_INFO) << "Set EGL context for HW decoding.";
-    decoder_factory->SetEGLContext(jni, remote_egl_context);
+    media_codec_decoder_factory->SetEGLContext(jni, remote_egl_context);
   }
 }
 

@@ -103,7 +103,12 @@ public class PeerConnectionFactory {
   // Note: initializeAndroidGlobals must be called at least once before
   // constructing a PeerConnectionFactory.
   public PeerConnectionFactory(Options options) {
-    nativeFactory = nativeCreatePeerConnectionFactory(options);
+    this(options, null /* encoderFactory */, null /* decoderFactory */);
+  }
+
+  public PeerConnectionFactory(
+      Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory) {
+    nativeFactory = nativeCreatePeerConnectionFactory(options, encoderFactory, decoderFactory);
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
@@ -247,7 +252,8 @@ public class PeerConnectionFactory {
     Logging.d(TAG, "onSignalingThreadReady");
   }
 
-  private static native long nativeCreatePeerConnectionFactory(Options options);
+  private static native long nativeCreatePeerConnectionFactory(
+      Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory);
 
   private static native long nativeCreateObserver(PeerConnection.Observer observer);
 
