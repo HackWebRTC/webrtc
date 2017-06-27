@@ -204,11 +204,14 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
     }
   } else {
     if (probe_bitrate_bps) {
-      rate_control_.SetEstimate(*probe_bitrate_bps, now_ms);
       result.probe = true;
+      result.updated = true;
+      result.target_bitrate_bps = *probe_bitrate_bps;
+      rate_control_.SetEstimate(*probe_bitrate_bps, now_ms);
+    } else {
+      result.updated = UpdateEstimate(now_ms, acked_bitrate_bps, overusing,
+                                      &result.target_bitrate_bps);
     }
-    result.updated = UpdateEstimate(now_ms, acked_bitrate_bps, overusing,
-                                    &result.target_bitrate_bps);
   }
   if (result.updated) {
     BWE_TEST_LOGGING_PLOT(1, "target_bitrate_bps", now_ms,
@@ -233,8 +236,10 @@ bool DelayBasedBwe::UpdateEstimate(int64_t now_ms,
   const RateControlInput input(
       overusing ? BandwidthUsage::kBwOverusing : detector_.State(),
       acked_bitrate_bps, 0);
+  uint32_t prev_target_bitrate_bps = rate_control_.LatestEstimate();
   *target_bitrate_bps = rate_control_.Update(&input, now_ms);
-  return rate_control_.ValidEstimate();
+  return rate_control_.ValidEstimate() &&
+         prev_target_bitrate_bps != *target_bitrate_bps;
 }
 
 void DelayBasedBwe::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {

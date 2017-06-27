@@ -25,8 +25,18 @@ constexpr int kMinReceivedProbesPercent = 80;
 // in order to have a valid estimate.
 constexpr int kMinReceivedBytesPercent = 80;
 
-// The maximum (receive rate)/(send rate) ratio for a valid estimate.
-constexpr float kValidRatio = 2.0f;
+// The maximum |receive rate| / |send rate| ratio for a valid estimate.
+constexpr float kMaxValidRatio = 2.0f;
+
+// The minimum |receive rate| / |send rate| ratio assuming that the link is
+// not saturated, i.e. we assume that we will receive at least
+// kMinRatioForUnsaturatedLink * |send rate| if |send rate| is less than the
+// link capacity.
+constexpr float kMinRatioForUnsaturatedLink = 0.9f;
+
+// The target utilization of the link. If we know true link capacity
+// we'd like to send at 95% of that rate.
+constexpr float kTargetUtilizationFraction = 0.95f;
 
 // The maximum time period over which the cluster history is retained.
 // This is also the maximum time period beyond which a probing burst is not
@@ -113,7 +123,7 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
   float receive_bps = receive_size / receive_interval_ms * 1000;
 
   float ratio = receive_bps / send_bps;
-  if (ratio > kValidRatio) {
+  if (ratio > kMaxValidRatio) {
     LOG(LS_INFO) << "Probing unsuccessful, receive/send ratio too high"
                  << " [cluster id: " << cluster_id << "] [send: " << send_size
                  << " bytes / " << send_interval_ms
@@ -122,8 +132,8 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                  << receive_interval_ms << " ms = " << receive_bps / 1000
                  << " kb/s]"
                  << " [ratio: " << receive_bps / 1000 << " / "
-                 << send_bps / 1000 << " = " << ratio << " > kValidRatio ("
-                 << kValidRatio << ")]";
+                 << send_bps / 1000 << " = " << ratio << " > kMaxValidRatio ("
+                 << kMaxValidRatio << ")]";
     if (event_log_)
       event_log_->LogProbeResultFailure(cluster_id, kInvalidSendReceiveRatio);
     return -1;
@@ -137,6 +147,13 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                << " kb/s]";
 
   float res = std::min(send_bps, receive_bps);
+  // If we're receiving at significantly lower bitrate than we were sending at,
+  // it suggests that we've found the true capacity of the link. In this case,
+  // set the target bitrate slightly lower to not immediately overuse.
+  if (receive_bps < kMinRatioForUnsaturatedLink * send_bps) {
+    RTC_DCHECK_GT(send_bps, receive_bps);
+    res = kTargetUtilizationFraction * receive_bps;
+  }
   if (event_log_)
     event_log_->LogProbeResultSuccess(cluster_id, res);
   estimated_bitrate_bps_ = rtc::Optional<int>(res);

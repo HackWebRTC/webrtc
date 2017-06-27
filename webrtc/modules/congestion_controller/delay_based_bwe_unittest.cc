@@ -23,6 +23,7 @@ constexpr int kNumProbesCluster0 = 5;
 constexpr int kNumProbesCluster1 = 8;
 const PacedPacketInfo kPacingInfo0(0, kNumProbesCluster0, 2000);
 const PacedPacketInfo kPacingInfo1(1, kNumProbesCluster1, 4000);
+constexpr float kTargetUtilizationFraction = 0.95f;
 }  // namespace
 
 TEST_F(DelayBasedBweTest, NoCrashEmptyFeedback) {
@@ -103,6 +104,8 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
   uint16_t seq_num = 0;
   // First burst sent at 8 * 1000 / 5 = 1600 kbps.
   // Arriving at 8 * 1000 / 7 = 1142 kbps.
+  // Since the receive rate is significantly below the send rate, we expect to
+  // use 95% of the estimated capacity.
   int64_t send_time_ms = 0;
   for (int i = 0; i < kNumProbesCluster1; ++i) {
     clock_.AdvanceTimeMilliseconds(7);
@@ -112,7 +115,8 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());
-  EXPECT_NEAR(bitrate_observer_.latest_bitrate(), 1140000u, 10000u);
+  EXPECT_NEAR(bitrate_observer_.latest_bitrate(),
+              kTargetUtilizationFraction * 1140000u, 10000u);
 }
 
 TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
@@ -120,6 +124,8 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
   uint16_t seq_num = 0;
   // Burst sent at 8 * 1000 / 1 = 8000 kbps.
   // Arriving at 8 * 1000 / 2 = 4000 kbps.
+  // Since the receive rate is significantly below the send rate, we expect to
+  // use 95% of the estimated capacity.
   int64_t send_time_ms = 0;
   for (int i = 0; i < kNumProbesCluster1; ++i) {
     clock_.AdvanceTimeMilliseconds(2);
@@ -129,7 +135,8 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());
-  EXPECT_NEAR(bitrate_observer_.latest_bitrate(), 4000000u, 10000u);
+  EXPECT_NEAR(bitrate_observer_.latest_bitrate(),
+              kTargetUtilizationFraction * 4000000u, 10000u);
 }
 
 TEST_F(DelayBasedBweTest, GetExpectedBwePeriodMs) {
