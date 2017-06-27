@@ -45,8 +45,7 @@ TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
   // Call with the default parameters; there should be an init.
   frame.num_channels_ = 1;
   SetFrameSampleRate(&frame, 16000);
-  EXPECT_CALL(mock, InitializeLocked())
-      .Times(1);
+  EXPECT_CALL(mock, InitializeLocked()).Times(0);
   EXPECT_NOERR(mock.ProcessStream(&frame));
   EXPECT_NOERR(mock.ProcessReverseStream(&frame));
 

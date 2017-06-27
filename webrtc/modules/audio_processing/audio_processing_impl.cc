@@ -470,6 +470,8 @@ int AudioProcessingImpl::MaybeInitialize(
 }
 
 int AudioProcessingImpl::InitializeLocked() {
+  UpdateActiveSubmoduleStates();
+
   const int capture_audiobuffer_num_channels =
       capture_nonlocked_.beamformer_enabled
           ? formats_.api_format.input_stream().num_channels()
@@ -565,6 +567,8 @@ int AudioProcessingImpl::InitializeLocked() {
 }
 
 int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
+  UpdateActiveSubmoduleStates();
+
   for (const auto& stream : config.streams) {
     if (stream.num_channels() > 0 && stream.sample_rate_hz() <= 0) {
       return kBadSampleRateError;
