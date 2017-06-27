@@ -47,7 +47,7 @@ const int PHASE_SSLTCP = 3;
 
 const int kNumPhases = 4;
 
-// Gets protocol priority: UDP > TCP > SSLTCP.
+// Gets protocol priority: UDP > TCP > SSLTCP == TLS.
 int GetProtocolPriority(cricket::ProtocolType protocol) {
   switch (protocol) {
     case cricket::PROTO_UDP:
@@ -55,6 +55,7 @@ int GetProtocolPriority(cricket::ProtocolType protocol) {
     case cricket::PROTO_TCP:
       return 1;
     case cricket::PROTO_SSLTCP:
+    case cricket::PROTO_TLS:
       return 0;
     default:
       RTC_NOTREACHED();
