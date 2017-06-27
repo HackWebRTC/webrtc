@@ -10,6 +10,17 @@ import("//webrtc/webrtc.gni")
 import("//build/config/android/config.gni")
 import("//build/config/android/rules.gni")
 
+group("android") {
+  if (!build_with_chromium && is_android) {
+    public_deps = [
+      ":libjingle_peerconnection_datachannelonly_so",
+      ":libjingle_peerconnection_jni",
+      ":libjingle_peerconnection_so",
+      ":libwebrtc",
+    ]
+  }
+}
+
 config("libjingle_peerconnection_jni_warnings_config") {
   # The warnings below are enabled by default. Since GN orders compiler flags
   # for a target before flags from configs, the only way to disable such
@@ -267,31 +278,27 @@ rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
 # The modular build targets can be used to build WebRTC with different
 # functionalities. The users can choose either the real implemenation or the
 # null implementation of the audio/video modules based on their requirments.
-#
-# For example, to build WebRTC with datachannel support only, we would need the
-# the peerconnection and the null implementation of the audio, video and media
-# module.
-# rtc_shared_library("libjingle_peerconnection_datachannelonly_so") {
-#  sources = [
-#    "src/jni/jni_onload.cc",
-#  ]
-#
-#  suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
-#  configs += [ "//build/config/android:hide_all_but_jni" ]
-#
-#  deps = [
-#    ":base_jni",
-#    ":libjingle_peerconnection_metrics_default_jni",
-#    ":null_audio_jni",
-#    ":null_media_jni",
-#    ":null_video_jni",
-#    ":peerconnection_jni",
-#    "//webrtc/base:rtc_base",
-#    "//webrtc/base:rtc_base_approved",
-#    "//webrtc/pc:peerconnection",
-#  ]
-#  output_extension = "so"
-# }
+rtc_shared_library("libjingle_peerconnection_datachannelonly_so") {
+  sources = [
+    "src/jni/jni_onload.cc",
+  ]
+
+  suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
+  configs += [ "//build/config/android:hide_all_but_jni" ]
+
+  deps = [
+    ":base_jni",
+    ":libjingle_peerconnection_metrics_default_jni",
+    ":null_audio_jni",
+    ":null_media_jni",
+    ":null_video_jni",
+    ":peerconnection_jni",
+    "//webrtc/base:rtc_base",
+    "//webrtc/base:rtc_base_approved",
+    "//webrtc/pc:peerconnection",
+  ]
+  output_extension = "so"
+}
 
 rtc_shared_library("libjingle_peerconnection_so") {
   sources = [

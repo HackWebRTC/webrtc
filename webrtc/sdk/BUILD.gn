@@ -18,10 +18,14 @@ declare_args() {
 }
 
 group("sdk") {
-  if (!build_with_chromium && is_ios) {
-    public_deps = [
-      ":objc_framework",
-    ]
+  public_deps = []
+  if (!build_with_chromium) {
+    if (is_android) {
+      public_deps += [ "android" ]
+    }
+    if (is_ios) {
+      public_deps += [ ":objc_framework" ]
+    }
   }
 }
 
