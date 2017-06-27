@@ -269,9 +269,7 @@ class HardwareVideoDecoder implements VideoDecoder {
 
   @Override
   public VideoCodecStatus release() {
-    // TODO(sakal): This is not called on the correct thread but is still called synchronously.
-    // Re-enable the check once this is called on the correct thread.
-    // decoderThreadChecker.checkIsOnValidThread();
+    decoderThreadChecker.checkIsOnValidThread();
     try {
       // The outputThread actually stops and releases the codec once running is false.
       running = false;

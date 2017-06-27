@@ -65,8 +65,6 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/EglBase");
   LoadClass(jni, "org/webrtc/EglBase$Context");
   LoadClass(jni, "org/webrtc/EglBase14$Context");
-  LoadClass(jni, "org/webrtc/EncodedImage");
-  LoadClass(jni, "org/webrtc/EncodedImage$FrameType");
   LoadClass(jni, "org/webrtc/IceCandidate");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecodedOutputBuffer");
@@ -105,9 +103,6 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/StatsReport$Value");
   LoadClass(jni, "org/webrtc/SurfaceTextureHelper");
   LoadClass(jni, "org/webrtc/VideoCapturer");
-  LoadClass(jni, "org/webrtc/VideoCodecStatus");
-  LoadClass(jni, "org/webrtc/VideoDecoder$Settings");
-  LoadClass(jni, "org/webrtc/VideoDecoderWrapperCallback");
   LoadClass(jni, "org/webrtc/VideoFrame");
   LoadClass(jni, "org/webrtc/VideoFrame$Buffer");
   LoadClass(jni, "org/webrtc/VideoFrame$I420Buffer");

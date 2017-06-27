@@ -8,7 +8,6 @@ include_rules = [
   "+webrtc/media/base",
   "+webrtc/media/engine",
   "+webrtc/modules/utility/include/jvm_android.h",
-  "+webrtc/modules/video_coding/include/video_codec_interface.h",
   "+webrtc/modules/video_coding/utility/vp8_header_parser.h",
   "+webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h",
   "+webrtc/pc",
