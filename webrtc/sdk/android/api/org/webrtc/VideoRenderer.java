@@ -61,13 +61,7 @@ public class VideoRenderer {
       // top-left corner of the image, but in glTexImage2D() the first element corresponds to the
       // bottom-left corner. This discrepancy is corrected by setting a vertical flip as sampling
       // matrix.
-      // clang-format off
-      samplingMatrix = new float[] {
-          1,  0, 0, 0,
-          0, -1, 0, 0,
-          0,  0, 1, 0,
-          0,  1, 0, 1};
-      // clang-format on
+      samplingMatrix = RendererCommon.verticalFlipMatrix();
     }
 
     /**
@@ -100,11 +94,11 @@ public class VideoRenderer {
       if (rotationDegree % 90 != 0) {
         throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
       }
-      this.samplingMatrix = samplingMatrix;
       if (buffer instanceof VideoFrame.TextureBuffer) {
         VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) buffer;
         this.yuvFrame = false;
         this.textureId = textureBuffer.getTextureId();
+        this.samplingMatrix = samplingMatrix;
 
         this.yuvStrides = null;
         this.yuvPlanes = null;
@@ -115,6 +109,12 @@ public class VideoRenderer {
             new int[] {i420Buffer.getStrideY(), i420Buffer.getStrideU(), i420Buffer.getStrideV()};
         this.yuvPlanes =
             new ByteBuffer[] {i420Buffer.getDataY(), i420Buffer.getDataU(), i420Buffer.getDataV()};
+        // The convention in WebRTC is that the first element in a ByteBuffer corresponds to the
+        // top-left corner of the image, but in glTexImage2D() the first element corresponds to the
+        // bottom-left corner. This discrepancy is corrected by multiplying the sampling matrix with
+        // a vertical flip matrix.
+        this.samplingMatrix =
+            RendererCommon.multiplyMatrices(samplingMatrix, RendererCommon.verticalFlipMatrix());
 
         this.textureId = 0;
       }
