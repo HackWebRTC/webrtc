@@ -48,6 +48,7 @@ public class WebRtcAudioRecord {
   private static final long AUDIO_RECORD_THREAD_JOIN_TIMEOUT_MS = 2000;
 
   private final long nativeAudioRecord;
+  private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
 
   private WebRtcAudioEffects effects = null;
 
@@ -140,6 +141,7 @@ public class WebRtcAudioRecord {
   }
 
   WebRtcAudioRecord(long nativeAudioRecord) {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.nativeAudioRecord = nativeAudioRecord;
     if (DEBUG) {
@@ -149,6 +151,7 @@ public class WebRtcAudioRecord {
   }
 
   private boolean enableBuiltInAEC(boolean enable) {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "enableBuiltInAEC(" + enable + ')');
     if (effects == null) {
       Logging.e(TAG, "Built-in AEC is not supported on this platform");
@@ -158,6 +161,7 @@ public class WebRtcAudioRecord {
   }
 
   private boolean enableBuiltInNS(boolean enable) {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "enableBuiltInNS(" + enable + ')');
     if (effects == null) {
       Logging.e(TAG, "Built-in NS is not supported on this platform");
@@ -167,6 +171,7 @@ public class WebRtcAudioRecord {
   }
 
   private int initRecording(int sampleRate, int channels) {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" + channels + ")");
     if (!WebRtcAudioUtils.hasPermission(
             ContextUtils.getApplicationContext(), android.Manifest.permission.RECORD_AUDIO)) {
@@ -226,15 +231,26 @@ public class WebRtcAudioRecord {
   }
 
   private boolean startRecording() {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "startRecording");
     assertTrue(audioRecord != null);
     assertTrue(audioThread == null);
+
+    // Starts recording from the AudioRecord instance.
     try {
       audioRecord.startRecording();
     } catch (IllegalStateException e) {
       reportWebRtcAudioRecordStartError(AudioRecordStartErrorCode.AUDIO_RECORD_START_EXCEPTION,
           "AudioRecord.startRecording failed: " + e.getMessage());
       return false;
+    }
+
+    // Verify the recording state up to two times (with a sleep in between)
+    // before returning false and reporting an error.
+    int numberOfStateChecks = 0;
+    while (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING &&
+           ++numberOfStateChecks < 2) {
+      threadSleep(200);
     }
     if (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
       reportWebRtcAudioRecordStartError(
@@ -243,12 +259,17 @@ public class WebRtcAudioRecord {
           + audioRecord.getRecordingState());
       return false;
     }
+
+    // Create and start new high-priority thread which calls AudioRecord.read()
+    // and where we also call the native DataIsRecorded() callback to feed
+    // WebRTC with recorded audio.
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();
     return true;
   }
 
   private boolean stopRecording() {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
     audioThread.stopThread();
@@ -328,6 +349,16 @@ public class WebRtcAudioRecord {
     Logging.e(TAG, "Run-time recording error: " + errorMessage);
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioRecordError(errorMessage);
+    }
+  }
+
+  // Causes the currently executing thread to sleep for the specified number
+  // of milliseconds.
+  private void threadSleep(long millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException e) {
+      Logging.e(TAG, "Thread.sleep failed: " + e.getMessage());
     }
   }
 }
