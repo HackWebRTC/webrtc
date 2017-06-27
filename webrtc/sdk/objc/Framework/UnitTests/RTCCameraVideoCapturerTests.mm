@@ -64,16 +64,19 @@ CMSampleBufferRef createTestSampleBufferRef() {
 @interface RTCCameraVideoCapturerTests : NSObject
 @property(nonatomic, strong) id delegateMock;
 @property(nonatomic, strong) id deviceMock;
+@property(nonatomic, strong) id captureConnectionMock;
 @property(nonatomic, strong) RTCCameraVideoCapturer *capturer;
 @end
 
 @implementation RTCCameraVideoCapturerTests
 @synthesize delegateMock = _delegateMock;
+@synthesize captureConnectionMock = _captureConnectionMock;
 @synthesize capturer = _capturer;
 @synthesize deviceMock = _deviceMock;
 
 - (void)setup {
   self.delegateMock = OCMProtocolMock(@protocol(RTCVideoCapturerDelegate));
+  self.captureConnectionMock = OCMClassMock([AVCaptureConnection class]);
   self.capturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:self.delegateMock];
   self.deviceMock = [self createDeviceMock];
 }
@@ -169,7 +172,7 @@ CMSampleBufferRef createTestSampleBufferRef() {
   // when
   [self.capturer captureOutput:self.capturer.captureSession.outputs[0]
          didOutputSampleBuffer:sampleBuffer
-                fromConnection:nil];
+                fromConnection:self.captureConnectionMock];
 
   // then
   [self.delegateMock verify];
@@ -203,7 +206,7 @@ CMSampleBufferRef createTestSampleBufferRef() {
 
   [self.capturer captureOutput:self.capturer.captureSession.outputs[0]
          didOutputSampleBuffer:sampleBuffer
-                fromConnection:nil];
+                fromConnection:self.captureConnectionMock];
 
   [self.delegateMock verify];
 
