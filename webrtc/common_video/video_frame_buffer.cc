@@ -21,57 +21,6 @@
 
 namespace webrtc {
 
-NativeHandleBuffer::NativeHandleBuffer(void* native_handle,
-                                       int width,
-                                       int height)
-    : native_handle_(native_handle), width_(width), height_(height) {
-  RTC_DCHECK(native_handle != nullptr);
-  RTC_DCHECK_GT(width, 0);
-  RTC_DCHECK_GT(height, 0);
-}
-
-VideoFrameBuffer::Type NativeHandleBuffer::type() const {
-  return Type::kNative;
-}
-
-int NativeHandleBuffer::width() const {
-  return width_;
-}
-
-int NativeHandleBuffer::height() const {
-  return height_;
-}
-
-const uint8_t* NativeHandleBuffer::DataY() const {
-  RTC_NOTREACHED();  // Should not be called.
-  return nullptr;
-}
-const uint8_t* NativeHandleBuffer::DataU() const {
-  RTC_NOTREACHED();  // Should not be called.
-  return nullptr;
-}
-const uint8_t* NativeHandleBuffer::DataV() const {
-  RTC_NOTREACHED();  // Should not be called.
-  return nullptr;
-}
-
-int NativeHandleBuffer::StrideY() const {
-  RTC_NOTREACHED();  // Should not be called.
-  return 0;
-}
-int NativeHandleBuffer::StrideU() const {
-  RTC_NOTREACHED();  // Should not be called.
-  return 0;
-}
-int NativeHandleBuffer::StrideV() const {
-  RTC_NOTREACHED();  // Should not be called.
-  return 0;
-}
-
-void* NativeHandleBuffer::native_handle() const {
-  return native_handle_;
-}
-
 WrappedI420Buffer::WrappedI420Buffer(int width,
                                      int height,
                                      const uint8_t* y_plane,

@@ -19,32 +19,6 @@
 
 namespace webrtc {
 
-// Base class for native-handle buffer is a wrapper around a |native_handle|.
-// This is used for convenience as most native-handle implementations can share
-// many VideoFrame implementations, but need to implement a few others (such
-// as their own destructors or conversion methods back to software I420).
-class NativeHandleBuffer : public VideoFrameBuffer {
- public:
-  NativeHandleBuffer(void* native_handle, int width, int height);
-
-  Type type() const override;
-  int width() const override;
-  int height() const override;
-  const uint8_t* DataY() const override;
-  const uint8_t* DataU() const override;
-  const uint8_t* DataV() const override;
-  int StrideY() const override;
-  int StrideU() const override;
-  int StrideV() const override;
-
-  void* native_handle() const override;
-
- protected:
-  void* native_handle_;
-  const int width_;
-  const int height_;
-};
-
 // Deprecated. Please use WrapI420Buffer(...) instead.
 class WrappedI420Buffer : public I420BufferInterface {
  public:
