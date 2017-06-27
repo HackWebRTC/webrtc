@@ -105,20 +105,20 @@ size_t RenderDelayControllerImpl::GetDelay(
   rtc::Optional<size_t> echo_path_delay_samples =
       delay_estimator_.EstimateDelay(render_buffer, capture);
   if (echo_path_delay_samples) {
+    blocks_since_last_delay_estimate_ = 0;
     echo_path_delay_samples_ = *echo_path_delay_samples;
 
     // Compute and set new render delay buffer delay.
     const size_t new_delay =
         ComputeNewBufferDelay(delay_, echo_path_delay_samples_);
-    if (new_delay != delay_ && align_call_counter_ > kNumBlocksPerSecond) {
+    if (align_call_counter_ > kNumBlocksPerSecond) {
       delay_ = new_delay;
-    }
 
-    // Update render delay buffer headroom.
-    blocks_since_last_delay_estimate_ = 0;
-    const int headroom = echo_path_delay_samples_ - delay_ * kBlockSize;
-    RTC_DCHECK_LE(0, headroom);
-    headroom_samples_ = rtc::Optional<size_t>(headroom);
+      // Update render delay buffer headroom.
+      const int headroom = echo_path_delay_samples_ - delay_ * kBlockSize;
+      RTC_DCHECK_LE(0, headroom);
+      headroom_samples_ = rtc::Optional<size_t>(headroom);
+    }
   } else if (++blocks_since_last_delay_estimate_ > 20 * kNumBlocksPerSecond) {
     headroom_samples_ = rtc::Optional<size_t>();
   }
