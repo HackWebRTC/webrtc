@@ -939,9 +939,11 @@ class VideoAnalyzer : public PacketReceiver,
     // Called when |send_stream_.SetSource()| is called.
     void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                          const rtc::VideoSinkWants& wants) override {
-      rtc::CritScope lock(&crit_);
-      RTC_DCHECK(!send_stream_input_ || send_stream_input_ == sink);
-      send_stream_input_ = sink;
+      {
+        rtc::CritScope lock(&crit_);
+        RTC_DCHECK(!send_stream_input_ || send_stream_input_ == sink);
+        send_stream_input_ = sink;
+      }
       if (video_capturer_) {
         video_capturer_->AddOrUpdateSink(this, wants);
       }

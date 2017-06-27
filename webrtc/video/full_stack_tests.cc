@@ -465,8 +465,7 @@ TEST_F(FullStackTest, VP9SVC_3SL_Low) {
 #endif  // !defined(RTC_DISABLE_VP9)
 
 // Android bots can't handle FullHD, so disable the test.
-// Test is not working correctly on Mac: webrtc:7870.
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
+#if defined(WEBRTC_ANDROID)
 #define MAYBE_SimulcastFullHdOveruse DISABLED_SimulcastFullHdOveruse
 #else
 #define MAYBE_SimulcastFullHdOveruse SimulcastFullHdOveruse
