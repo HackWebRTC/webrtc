@@ -778,13 +778,14 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   int64_t now_ms = clock_->TimeInMilliseconds();
   if (pending_encoder_reconfiguration_) {
     ReconfigureEncoder();
+    last_parameters_update_ms_.emplace(now_ms);
   } else if (!last_parameters_update_ms_ ||
              now_ms - *last_parameters_update_ms_ >=
                  vcm::VCMProcessTimer::kDefaultProcessIntervalMs) {
     video_sender_.UpdateChannelParemeters(rate_allocator_.get(),
                                           bitrate_observer_);
+    last_parameters_update_ms_.emplace(now_ms);
   }
-  last_parameters_update_ms_.emplace(now_ms);
 
   if (EncoderPaused()) {
     TraceFrameDropStart();

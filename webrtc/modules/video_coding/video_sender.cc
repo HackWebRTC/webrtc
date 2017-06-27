@@ -103,6 +103,11 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
     numLayers = sendCodec->VP8().numberOfTemporalLayers;
   } else if (sendCodec->codecType == kVideoCodecVP9) {
     numLayers = sendCodec->VP9().numberOfTemporalLayers;
+  } else if (sendCodec->codecType == kVideoCodecGeneric &&
+             sendCodec->numberOfSimulcastStreams > 0) {
+    // This is mainly for unit testing, disabling frame dropping.
+    // TODO(sprang): Add a better way to disable frame dropping.
+    numLayers = sendCodec->simulcastStream[0].numberOfTemporalLayers;
   } else {
     numLayers = 1;
   }
@@ -197,13 +202,17 @@ EncoderParameters VideoSender::UpdateEncoderParameters(
     input_frame_rate = current_codec_.maxFramerate;
 
   BitrateAllocation bitrate_allocation;
-  if (bitrate_allocator) {
-    bitrate_allocation = bitrate_allocator->GetAllocation(video_target_rate_bps,
-                                                          input_frame_rate);
-  } else {
-    DefaultVideoBitrateAllocator default_allocator(current_codec_);
-    bitrate_allocation = default_allocator.GetAllocation(video_target_rate_bps,
-                                                         input_frame_rate);
+  // Only call allocators if bitrate > 0 (ie, not suspended), otherwise they
+  // might cap the bitrate to the min bitrate configured.
+  if (target_bitrate_bps > 0) {
+    if (bitrate_allocator) {
+      bitrate_allocation = bitrate_allocator->GetAllocation(
+          video_target_rate_bps, input_frame_rate);
+    } else {
+      DefaultVideoBitrateAllocator default_allocator(current_codec_);
+      bitrate_allocation = default_allocator.GetAllocation(
+          video_target_rate_bps, input_frame_rate);
+    }
   }
   EncoderParameters new_encoder_params = {bitrate_allocation, params.loss_rate,
                                           params.rtt, input_frame_rate};
@@ -221,7 +230,7 @@ void VideoSender::UpdateChannelParemeters(
                                 encoder_params_.target_bitrate.get_sum_bps());
     target_rate = encoder_params_.target_bitrate;
   }
-  if (bitrate_updated_callback)
+  if (bitrate_updated_callback && target_rate.get_sum_bps() > 0)
     bitrate_updated_callback->OnBitrateAllocationUpdated(target_rate);
 }
 
@@ -236,7 +245,7 @@ int32_t VideoSender::SetChannelParameters(
   encoder_params.rtt = rtt;
   encoder_params = UpdateEncoderParameters(encoder_params, bitrate_allocator,
                                            target_bitrate_bps);
-  if (bitrate_updated_callback) {
+  if (bitrate_updated_callback && target_bitrate_bps > 0) {
     bitrate_updated_callback->OnBitrateAllocationUpdated(
         encoder_params.target_bitrate);
   }
