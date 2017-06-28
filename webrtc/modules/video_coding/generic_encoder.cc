@@ -233,39 +233,55 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
 
   {
     rtc::CritScope crit(&timing_params_lock_);
-    RTC_CHECK_LT(simulcast_svc_idx, timing_frames_info_.size());
+    // TODO(ilnik): Workaround for hardware encoders, which do not call
+    // |OnEncodeStarted| correctly. Once fixed, remove conditional check.
+    if (simulcast_svc_idx < timing_frames_info_.size()) {
+      RTC_CHECK_LT(simulcast_svc_idx, timing_frames_info_.size());
 
-    auto encode_start_map =
-        &timing_frames_info_[simulcast_svc_idx].encode_start_time_ms;
-    auto it = encode_start_map->find(encoded_image.capture_time_ms_);
-    if (it != encode_start_map->end()) {
-      encode_start_ms = it->second;
-      // Assuming all encoders do not reorder frames within single stream,
-      // there may be some dropped frames with smaller timestamps. These should
-      // be purged.
-      encode_start_map->erase(encode_start_map->begin(), it);
-      encode_start_map->erase(it);
+      auto encode_start_map =
+          &timing_frames_info_[simulcast_svc_idx].encode_start_time_ms;
+      auto it = encode_start_map->find(encoded_image.capture_time_ms_);
+      if (it != encode_start_map->end()) {
+        encode_start_ms = it->second;
+        // Assuming all encoders do not reorder frames within single stream,
+        // there may be some dropped frames with smaller timestamps. These
+        // should be purged.
+        encode_start_map->erase(encode_start_map->begin(), it);
+        encode_start_map->erase(it);
+      } else {
+        // Some chromium remoting unittests use generic encoder incorrectly
+        // If timestamps do not match, purge them all.
+        encode_start_map->erase(encode_start_map->begin(),
+                                encode_start_map->end());
+      }
+
+      int64_t timing_frame_delay_ms =
+          encoded_image.capture_time_ms_ - last_timing_frame_time_ms_;
+      if (last_timing_frame_time_ms_ == -1 ||
+          timing_frame_delay_ms >= timing_frames_thresholds_.delay_ms ||
+          timing_frame_delay_ms == 0) {
+        is_timing_frame = true;
+        last_timing_frame_time_ms_ = encoded_image.capture_time_ms_;
+      }
+      // TODO(ilnik): Once OnFramerateChanged is called correctly by hardware
+      // encoders, remove the conditional check below.
+      if (framerate_ > 0) {
+        RTC_CHECK_GT(framerate_, 0);
+        size_t average_frame_size =
+            timing_frames_info_[simulcast_svc_idx].target_bitrate_bytes_per_sec
+            / framerate_;
+        outlier_frame_size = average_frame_size *
+            timing_frames_thresholds_.outlier_ratio_percent /
+            100;
+      } else {
+        outlier_frame_size = encoded_image._length + 1;
+      }
     } else {
-      // Some chromium remoting unittests use generic encoder incorrectly
-      // If timestamps do not match, purge them all.
-      encode_start_map->erase(encode_start_map->begin(),
-                              encode_start_map->end());
+      // We don't have any information prior to encode start, thus we can't
+      // reliably detect outliers. Set outlier size to anything larger than
+      // current frame size.
+      outlier_frame_size = encoded_image._length + 1;
     }
-
-    int64_t timing_frame_delay_ms =
-        encoded_image.capture_time_ms_ - last_timing_frame_time_ms_;
-    if (last_timing_frame_time_ms_ == -1 ||
-        timing_frame_delay_ms >= timing_frames_thresholds_.delay_ms ||
-        timing_frame_delay_ms == 0) {
-      is_timing_frame = true;
-      last_timing_frame_time_ms_ = encoded_image.capture_time_ms_;
-    }
-    RTC_CHECK_GT(framerate_, 0);
-    size_t average_frame_size =
-        timing_frames_info_[simulcast_svc_idx].target_bitrate_bytes_per_sec /
-        framerate_;
-    outlier_frame_size = average_frame_size *
-                         timing_frames_thresholds_.outlier_ratio_percent / 100;
   }
 
   if (encoded_image._length >= outlier_frame_size) {
