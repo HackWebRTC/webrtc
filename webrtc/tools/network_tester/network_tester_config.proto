@@ -11,3 +11,4 @@ message NetworkTesterConfig {
 message NetworkTesterAllConfigs {
   repeated NetworkTesterConfig configs = 1;
 }
+
