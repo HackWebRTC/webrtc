@@ -928,6 +928,10 @@ void AudioDeviceIOS::ShutdownPlayOrRecord() {
   // Close and delete the voice-processing I/O unit.
   audio_unit_.reset();
 
+  // Detach thread checker for the AURemoteIO::IOThread to ensure that the
+  // next session uses a fresh thread id.
+  io_thread_checker_.DetachFromThread();
+
   // Remove audio session notification observers.
   RTCAudioSession* session = [RTCAudioSession sharedInstance];
   [session removeDelegate:audio_session_observer_];
