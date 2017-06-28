@@ -71,12 +71,12 @@ class RtpDemuxer {
 
   // This records the association SSRCs to sinks. Other associations, such
   // as by RSID, also end up here once the RSID, etc., is resolved to an SSRC.
-  std::multimap<uint32_t, RtpPacketSinkInterface*> sinks_;
+  std::multimap<uint32_t, RtpPacketSinkInterface*> ssrc_sinks_;
 
   // A sink may be associated with an RSID - RTP Stream ID. This tag has a
   // one-to-one association with an SSRC, but that SSRC is not yet known.
   // When it becomes known, the association of the sink to the RSID is deleted
-  // from this container, and moved into |sinks_|.
+  // from this container, and moved into |ssrc_sinks_|.
   std::multimap<std::string, RtpPacketSinkInterface*> rsid_sinks_;
 
   // Iterating over |rsid_sinks_| for each incoming and performing multiple

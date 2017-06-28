@@ -27,7 +27,7 @@ constexpr size_t kMaxProcessedSsrcs = 1000;  // Prevent memory overuse.
 RtpDemuxer::RtpDemuxer() = default;
 
 RtpDemuxer::~RtpDemuxer() {
-  RTC_DCHECK(sinks_.empty());
+  RTC_DCHECK(ssrc_sinks_.empty());
   RTC_DCHECK(rsid_sinks_.empty());
 }
 
@@ -50,7 +50,7 @@ void RtpDemuxer::AddSink(const std::string& rsid,
 
 bool RtpDemuxer::RemoveSink(const RtpPacketSinkInterface* sink) {
   RTC_DCHECK(sink);
-  return (RemoveFromMultimapByValue(&sinks_, sink) +
+  return (RemoveFromMultimapByValue(&ssrc_sinks_, sink) +
           RemoveFromMultimapByValue(&rsid_sinks_, sink)) > 0;
 }
 
@@ -59,14 +59,14 @@ void RtpDemuxer::RecordSsrcToSinkAssociation(uint32_t ssrc,
   RTC_DCHECK(sink);
   // The association might already have been set by a different
   // configuration source.
-  if (!MultimapAssociationExists(sinks_, ssrc, sink)) {
-    sinks_.emplace(ssrc, sink);
+  if (!MultimapAssociationExists(ssrc_sinks_, ssrc, sink)) {
+    ssrc_sinks_.emplace(ssrc, sink);
   }
 }
 
 bool RtpDemuxer::OnRtpPacket(const RtpPacketReceived& packet) {
   ResolveAssociations(packet);
-  auto it_range = sinks_.equal_range(packet.Ssrc());
+  auto it_range = ssrc_sinks_.equal_range(packet.Ssrc());
   for (auto it = it_range.first; it != it_range.second; ++it) {
     it->second->OnRtpPacket(packet);
   }
