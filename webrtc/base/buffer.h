@@ -57,6 +57,8 @@ class BufferT {
   static_assert(!std::is_const<T>::value, "T may not be const");
 
  public:
+  using value_type = T;
+
   // An empty BufferT.
   BufferT() : size_(0), capacity_(0), data_(nullptr) {
     RTC_DCHECK(IsConsistent());
