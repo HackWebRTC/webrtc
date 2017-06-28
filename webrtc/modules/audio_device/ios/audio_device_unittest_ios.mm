@@ -605,8 +605,6 @@ TEST_F(AudioDeviceTest, DISABLED_StartStopPlayout) {
 TEST_F(AudioDeviceTest, StartStopRecording) {
   StartRecording();
   StopRecording();
-  StartRecording();
-  StopRecording();
 }
 
 // Verify that calling StopPlayout() will leave us in an uninitialized state
