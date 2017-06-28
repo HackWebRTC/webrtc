@@ -355,7 +355,7 @@ if (!build_with_chromium && is_android) {
       "android/java/src/org/webrtc/voiceengine/WebRtcAudioUtils.java",
     ]
     deps = [
-      "//webrtc/base:base_java",
+      "//webrtc/rtc_base:base_java",
     ]
   }
 }

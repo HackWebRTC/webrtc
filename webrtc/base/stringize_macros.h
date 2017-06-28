@@ -18,21 +18,9 @@
 #ifndef WEBRTC_BASE_STRINGIZE_MACROS_H_
 #define WEBRTC_BASE_STRINGIZE_MACROS_H_
 
-// This is not very useful as it does not expand defined symbols if
-// called directly. Use its counterpart without the _NO_EXPANSION
-// suffix, below.
-#define STRINGIZE_NO_EXPANSION(x) #x
 
-// Use this to quote the provided parameter, first expanding it if it
-// is a preprocessor symbol.
-//
-// For example, if:
-//   #define A FOO
-//   #define B(x) myobj->FunctionCall(x)
-//
-// Then:
-//   STRINGIZE(A) produces "FOO"
-//   STRINGIZE(B(y)) produces "myobj->FunctionCall(y)"
-#define STRINGIZE(x) STRINGIZE_NO_EXPANSION(x)
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/stringize_macros.h"
 
 #endif  // WEBRTC_BASE_STRINGIZE_MACROS_H_

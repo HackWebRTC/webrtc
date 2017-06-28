@@ -8,40 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_BASE_NATTYPE_H__
-#define WEBRTC_BASE_NATTYPE_H__
+#ifndef WEBRTC_BASE_NATTYPES_H_
+#define WEBRTC_BASE_NATTYPES_H_
 
-namespace rtc {
 
-/* Identifies each type of NAT that can be simulated. */
-enum NATType {
-  NAT_OPEN_CONE,
-  NAT_ADDR_RESTRICTED,
-  NAT_PORT_RESTRICTED,
-  NAT_SYMMETRIC
-};
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/nattypes.h"
 
-// Implements the rules for each specific type of NAT.
-class NAT {
-public:
-  virtual ~NAT() { }
-
-  // Determines whether this NAT uses both source and destination address when
-  // checking whether a mapping already exists.
-  virtual bool IsSymmetric() = 0;
-
-  // Determines whether this NAT drops packets received from a different IP
-  // the one last sent to.
-  virtual bool FiltersIP() = 0;
-
-  // Determines whether this NAT drops packets received from a different port
-  // the one last sent to.
-  virtual bool FiltersPort() = 0;
-
-  // Returns an implementation of the given type of NAT.
-  static NAT* Create(NATType type);
-};
-
-} // namespace rtc
-
-#endif // WEBRTC_BASE_NATTYPE_H__
+#endif // WEBRTC_BASE_NATTYPES_H_

@@ -11,33 +11,9 @@
 #ifndef WEBRTC_BASE_KEEP_REF_UNTIL_DONE_H_
 #define WEBRTC_BASE_KEEP_REF_UNTIL_DONE_H_
 
-#include "webrtc/base/bind.h"
-#include "webrtc/base/callback.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
 
-namespace rtc {
-
-namespace impl {
-template <class T>
-static inline void DoNothing(const scoped_refptr<T>& object) {}
-}  // namespace impl
-
-// KeepRefUntilDone keeps a reference to |object| until the returned
-// callback goes out of scope. If the returned callback is copied, the
-// reference will be released when the last callback goes out of scope.
-template <class ObjectT>
-static inline Callback0<void> KeepRefUntilDone(ObjectT* object) {
-  return rtc::Bind(&impl::DoNothing<ObjectT>, scoped_refptr<ObjectT>(object));
-}
-
-template <class ObjectT>
-static inline Callback0<void> KeepRefUntilDone(
-    const scoped_refptr<ObjectT>& object) {
-  return rtc::Bind(&impl::DoNothing<ObjectT>, object);
-}
-
-}  // namespace rtc
-
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/keep_ref_until_done.h"
 
 #endif  // WEBRTC_BASE_KEEP_REF_UNTIL_DONE_H_

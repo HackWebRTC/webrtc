@@ -8,47 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_BASE_EVENT_H__
-#define WEBRTC_BASE_EVENT_H__
+#ifndef WEBRTC_BASE_EVENT_H_
+#define WEBRTC_BASE_EVENT_H_
 
-#include "webrtc/base/constructormagic.h"
-#if defined(WEBRTC_WIN)
-#include "webrtc/base/win32.h"  // NOLINT: consider this a system header.
-#elif defined(WEBRTC_POSIX)
-#include <pthread.h>
-#else
-#error "Must define either WEBRTC_WIN or WEBRTC_POSIX."
-#endif
 
-namespace rtc {
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/event.h"
 
-class Event {
- public:
-  static const int kForever = -1;
-
-  Event(bool manual_reset, bool initially_signaled);
-  ~Event();
-
-  void Set();
-  void Reset();
-
-  // Wait for the event to become signaled, for the specified number of
-  // |milliseconds|.  To wait indefinetly, pass kForever.
-  bool Wait(int milliseconds);
-
- private:
-#if defined(WEBRTC_WIN)
-  HANDLE event_handle_;
-#elif defined(WEBRTC_POSIX)
-  pthread_mutex_t event_mutex_;
-  pthread_cond_t event_cond_;
-  const bool is_manual_reset_;
-  bool event_status_;
-#endif
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Event);
-};
-
-}  // namespace rtc
-
-#endif  // WEBRTC_BASE_EVENT_H__
+#endif  // WEBRTC_BASE_EVENT_H_

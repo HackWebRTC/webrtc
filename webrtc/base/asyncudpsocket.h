@@ -11,57 +11,9 @@
 #ifndef WEBRTC_BASE_ASYNCUDPSOCKET_H_
 #define WEBRTC_BASE_ASYNCUDPSOCKET_H_
 
-#include <memory>
 
-#include "webrtc/base/asyncpacketsocket.h"
-#include "webrtc/base/socketfactory.h"
-
-namespace rtc {
-
-// Provides the ability to receive packets asynchronously.  Sends are not
-// buffered since it is acceptable to drop packets under high load.
-class AsyncUDPSocket : public AsyncPacketSocket {
- public:
-  // Binds |socket| and creates AsyncUDPSocket for it. Takes ownership
-  // of |socket|. Returns null if bind() fails (|socket| is destroyed
-  // in that case).
-  static AsyncUDPSocket* Create(AsyncSocket* socket,
-                                const SocketAddress& bind_address);
-  // Creates a new socket for sending asynchronous UDP packets using an
-  // asynchronous socket from the given factory.
-  static AsyncUDPSocket* Create(SocketFactory* factory,
-                                const SocketAddress& bind_address);
-  explicit AsyncUDPSocket(AsyncSocket* socket);
-  ~AsyncUDPSocket() override;
-
-  SocketAddress GetLocalAddress() const override;
-  SocketAddress GetRemoteAddress() const override;
-  int Send(const void* pv,
-           size_t cb,
-           const rtc::PacketOptions& options) override;
-  int SendTo(const void* pv,
-             size_t cb,
-             const SocketAddress& addr,
-             const rtc::PacketOptions& options) override;
-  int Close() override;
-
-  State GetState() const override;
-  int GetOption(Socket::Option opt, int* value) override;
-  int SetOption(Socket::Option opt, int value) override;
-  int GetError() const override;
-  void SetError(int error) override;
-
- private:
-  // Called when the underlying socket is ready to be read from.
-  void OnReadEvent(AsyncSocket* socket);
-  // Called when the underlying socket is ready to send.
-  void OnWriteEvent(AsyncSocket* socket);
-
-  std::unique_ptr<AsyncSocket> socket_;
-  char* buf_;
-  size_t size_;
-};
-
-}  // namespace rtc
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/asyncudpsocket.h"
 
 #endif  // WEBRTC_BASE_ASYNCUDPSOCKET_H_

@@ -11,46 +11,9 @@
 #ifndef WEBRTC_BASE_RATE_LIMITER_H_
 #define WEBRTC_BASE_RATE_LIMITER_H_
 
-#include <limits>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/rate_statistics.h"
-
-namespace webrtc {
-
-class Clock;
-
-// Class used to limit a bitrate, making sure the average does not exceed a
-// maximum as measured over a sliding window. This class is thread safe; all
-// methods will acquire (the same) lock befeore executing.
-class RateLimiter {
- public:
-  RateLimiter(const Clock* clock, int64_t max_window_ms);
-  ~RateLimiter();
-
-  // Try to use rate to send bytes. Returns true on success and if so updates
-  // current rate.
-  bool TryUseRate(size_t packet_size_bytes);
-
-  // Set the maximum bitrate, in bps, that this limiter allows to send.
-  void SetMaxRate(uint32_t max_rate_bps);
-
-  // Set the window size over which to measure the current bitrate.
-  // For example, irt retransmissions, this is typically the RTT.
-  // Returns true on success and false if window_size_ms is out of range.
-  bool SetWindowSize(int64_t window_size_ms);
-
- private:
-  const Clock* const clock_;
-  rtc::CriticalSection lock_;
-  RateStatistics current_rate_ GUARDED_BY(lock_);
-  int64_t window_size_ms_ GUARDED_BY(lock_);
-  uint32_t max_rate_bps_ GUARDED_BY(lock_);
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RateLimiter);
-};
-
-}  // namespace webrtc
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/rate_limiter.h"
 
 #endif  // WEBRTC_BASE_RATE_LIMITER_H_

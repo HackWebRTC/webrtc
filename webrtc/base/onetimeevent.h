@@ -11,51 +11,9 @@
 #ifndef WEBRTC_BASE_ONETIMEEVENT_H_
 #define WEBRTC_BASE_ONETIMEEVENT_H_
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/typedefs.h"
 
-namespace webrtc {
-// Provides a simple way to perform an operation (such as logging) one
-// time in a certain scope.
-// Example:
-//   OneTimeEvent firstFrame;
-//   ...
-//   if (firstFrame()) {
-//     LOG(LS_INFO) << "This is the first frame".
-//   }
-class OneTimeEvent {
- public:
-  OneTimeEvent() {}
-  bool operator()() {
-    rtc::CritScope cs(&critsect_);
-    if (happened_) {
-      return false;
-    }
-    happened_ = true;
-    return true;
-  }
-
- private:
-  bool happened_ = false;
-  rtc::CriticalSection critsect_;
-};
-
-// A non-thread-safe, ligher-weight version of the OneTimeEvent class.
-class ThreadUnsafeOneTimeEvent {
- public:
-  ThreadUnsafeOneTimeEvent() {}
-  bool operator()() {
-    if (happened_) {
-      return false;
-    }
-    happened_ = true;
-    return true;
-  }
-
- private:
-  bool happened_ = false;
-};
-
-}  // namespace webrtc
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/onetimeevent.h"
 
 #endif  // WEBRTC_BASE_ONETIMEEVENT_H_

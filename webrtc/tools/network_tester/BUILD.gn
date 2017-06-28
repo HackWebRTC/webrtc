@@ -131,7 +131,7 @@ if (is_android) {
       ":NetworkTesterMobile_javalib",
       ":NetworkTesterMobile_resources",
       "//base:base_java",
-      "//webrtc/base:base_java",
+      "//webrtc/rtc_base:base_java",
     ]
 
     shared_libraries = [ "//webrtc/tools/network_tester:network_tester_so" ]
@@ -148,7 +148,7 @@ if (is_android) {
 
     deps = [
       ":NetworkTesterMobile_resources",
-      "//webrtc/base:base_java",
+      "//webrtc/rtc_base:base_java",
     ]
   }
 

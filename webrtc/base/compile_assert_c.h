@@ -11,11 +11,8 @@
 #ifndef WEBRTC_BASE_COMPILE_ASSERT_C_H_
 #define WEBRTC_BASE_COMPILE_ASSERT_C_H_
 
-// Use this macro to verify at compile time that certain restrictions are met.
-// The argument is the boolean expression to evaluate.
-// Example:
-//   RTC_COMPILE_ASSERT(sizeof(foo) < 128);
-// Note: In C++, use static_assert instead!
-#define RTC_COMPILE_ASSERT(expression) switch (0) {case 0: case expression:;}
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/compile_assert_c.h"
 
 #endif  // WEBRTC_BASE_COMPILE_ASSERT_C_H_

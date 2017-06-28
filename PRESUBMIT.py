@@ -32,6 +32,7 @@ CPPLINT_BLACKLIST = [
   'webrtc/modules/video_capture',
   'webrtc/p2p',
   'webrtc/pc',
+  'webrtc/rtc_base',
   'webrtc/sdk/android/src/jni',
   'webrtc/sdk/objc',
   'webrtc/system_wrappers',

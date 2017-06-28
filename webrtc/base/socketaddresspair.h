@@ -8,34 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_BASE_SOCKETADDRESSPAIR_H__
-#define WEBRTC_BASE_SOCKETADDRESSPAIR_H__
+#ifndef WEBRTC_BASE_SOCKETADDRESSPAIR_H_
+#define WEBRTC_BASE_SOCKETADDRESSPAIR_H_
 
-#include "webrtc/base/socketaddress.h"
 
-namespace rtc {
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/socketaddresspair.h"
 
-// Records a pair (source,destination) of socket addresses.  The two addresses
-// identify a connection between two machines.  (For UDP, this "connection" is
-// not maintained explicitly in a socket.)
-class SocketAddressPair {
-public:
-  SocketAddressPair() {}
-  SocketAddressPair(const SocketAddress& srs, const SocketAddress& dest);
-
-  const SocketAddress& source() const { return src_; }
-  const SocketAddress& destination() const { return dest_; }
-
-  bool operator ==(const SocketAddressPair& r) const;
-  bool operator <(const SocketAddressPair& r) const;
-
-  size_t Hash() const;
-
-private:
-  SocketAddress src_;
-  SocketAddress dest_;
-};
-
-} // namespace rtc
-
-#endif // WEBRTC_BASE_SOCKETADDRESSPAIR_H__
+#endif // WEBRTC_BASE_SOCKETADDRESSPAIR_H_

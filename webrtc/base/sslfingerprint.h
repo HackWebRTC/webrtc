@@ -11,47 +11,9 @@
 #ifndef WEBRTC_BASE_SSLFINGERPRINT_H_
 #define WEBRTC_BASE_SSLFINGERPRINT_H_
 
-#include <string>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/rtccertificate.h"
-#include "webrtc/base/sslidentity.h"
-
-namespace rtc {
-
-class SSLCertificate;
-
-struct SSLFingerprint {
-  static SSLFingerprint* Create(const std::string& algorithm,
-                                const rtc::SSLIdentity* identity);
-
-  static SSLFingerprint* Create(const std::string& algorithm,
-                                const rtc::SSLCertificate* cert);
-
-  static SSLFingerprint* CreateFromRfc4572(const std::string& algorithm,
-                                           const std::string& fingerprint);
-
-  // Creates a fingerprint from a certificate, using the same digest algorithm
-  // as the certificate's signature.
-  static SSLFingerprint* CreateFromCertificate(const RTCCertificate* cert);
-
-  SSLFingerprint(const std::string& algorithm,
-                 const uint8_t* digest_in,
-                 size_t digest_len);
-
-  SSLFingerprint(const SSLFingerprint& from);
-
-  bool operator==(const SSLFingerprint& other) const;
-
-  std::string GetRfc4572Fingerprint() const;
-
-  std::string ToString() const;
-
-  std::string algorithm;
-  rtc::CopyOnWriteBuffer digest;
-};
-
-}  // namespace rtc
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/sslfingerprint.h"
 
 #endif  // WEBRTC_BASE_SSLFINGERPRINT_H_

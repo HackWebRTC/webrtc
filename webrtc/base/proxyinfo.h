@@ -8,36 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_BASE_PROXYINFO_H__
-#define WEBRTC_BASE_PROXYINFO_H__
+#ifndef WEBRTC_BASE_PROXYINFO_H_
+#define WEBRTC_BASE_PROXYINFO_H_
 
-#include <string>
-#include "webrtc/base/socketaddress.h"
-#include "webrtc/base/cryptstring.h"
 
-namespace rtc {
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/proxyinfo.h"
 
-enum ProxyType {
-  PROXY_NONE,
-  PROXY_HTTPS,
-  PROXY_SOCKS5,
-  PROXY_UNKNOWN
-};
-const char * ProxyToString(ProxyType proxy);
-
-struct ProxyInfo {
-  ProxyType type;
-  SocketAddress address;
-  std::string autoconfig_url;
-  bool autodetect;
-  std::string bypass_list;
-  std::string username;
-  CryptString password;
-
-  ProxyInfo();
-  ~ProxyInfo();
-};
-
-} // namespace rtc
-
-#endif // WEBRTC_BASE_PROXYINFO_H__
+#endif // WEBRTC_BASE_PROXYINFO_H_

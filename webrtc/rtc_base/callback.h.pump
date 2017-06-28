@@ -54,8 +54,8 @@
 //   my_callback = Callback1<int, int>();
 //   cout << my_callback.empty() << endl;  // true
 
-#ifndef WEBRTC_BASE_CALLBACK_H_
-#define WEBRTC_BASE_CALLBACK_H_
+#ifndef WEBRTC_RTC_BASE_CALLBACK_H_
+#define WEBRTC_RTC_BASE_CALLBACK_H_
 
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -100,4 +100,4 @@ class Callback$i {
 ]]
 }  // namespace rtc
 
-#endif  // WEBRTC_BASE_CALLBACK_H_
+#endif  // WEBRTC_RTC_BASE_CALLBACK_H_

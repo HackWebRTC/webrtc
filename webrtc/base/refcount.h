@@ -10,20 +10,9 @@
 #ifndef WEBRTC_BASE_REFCOUNT_H_
 #define WEBRTC_BASE_REFCOUNT_H_
 
-#include "webrtc/base/refcountedobject.h"
 
-namespace rtc {
-
-// Reference count interface.
-class RefCountInterface {
- public:
-  virtual int AddRef() const = 0;
-  virtual int Release() const = 0;
-
- protected:
-  virtual ~RefCountInterface() {}
-};
-
-}  // namespace rtc
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/refcount.h"
 
 #endif  // WEBRTC_BASE_REFCOUNT_H_

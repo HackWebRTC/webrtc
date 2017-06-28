@@ -607,7 +607,7 @@ if (!build_with_chromium && is_android) {
     ]
     deps = [
       "//testing/android/native_test:native_test_java",
-      "//webrtc/base:base_java",
+      "//webrtc/rtc_base:base_java",
     ]
   }
 }

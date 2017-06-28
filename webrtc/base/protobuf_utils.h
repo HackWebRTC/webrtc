@@ -13,24 +13,9 @@
 #ifndef WEBRTC_BASE_PROTOBUF_UTILS_H_
 #define WEBRTC_BASE_PROTOBUF_UTILS_H_
 
-namespace webrtc {
 
-using ProtoString = std::string;
-
-}  // namespace webrtc
-
-#if WEBRTC_ENABLE_PROTOBUF
-
-#include "third_party/protobuf/src/google/protobuf/message_lite.h"
-#include "third_party/protobuf/src/google/protobuf/repeated_field.h"
-
-namespace webrtc {
-
-using google::protobuf::MessageLite;
-using google::protobuf::RepeatedPtrField;
-
-}  // namespace webrtc
-
-#endif  // WEBRTC_ENABLE_PROTOBUF
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/protobuf_utils.h"
 
 #endif  // WEBRTC_BASE_PROTOBUF_UTILS_H_

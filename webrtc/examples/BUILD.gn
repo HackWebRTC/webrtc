@@ -58,7 +58,7 @@ if (is_android) {
       ":AppRTCMobile_javalib",
       ":AppRTCMobile_resources",
       "//base:base_java",
-      "//webrtc/base:base_java",
+      "//webrtc/rtc_base:base_java",
     ]
 
     shared_libraries = [ "//webrtc/sdk/android:libjingle_peerconnection_so" ]
@@ -94,9 +94,9 @@ if (is_android) {
 
     deps = [
       ":AppRTCMobile_resources",
-      "//webrtc/base:base_java",
       "//webrtc/examples/androidapp/third_party/autobanh:autobanh_java",
       "//webrtc/modules/audio_device:audio_device_java",
+      "//webrtc/rtc_base:base_java",
       "//webrtc/sdk/android:libjingle_peerconnection_java",
       "//webrtc/sdk/android:libjingle_peerconnection_metrics_default_java",
     ]

@@ -11,26 +11,9 @@
 #ifndef WEBRTC_BASE_MD5DIGEST_H_
 #define WEBRTC_BASE_MD5DIGEST_H_
 
-#include "webrtc/base/md5.h"
-#include "webrtc/base/messagedigest.h"
 
-namespace rtc {
-
-// A simple wrapper for our MD5 implementation.
-class Md5Digest : public MessageDigest {
- public:
-  enum { kSize = 16 };
-  Md5Digest() {
-    MD5Init(&ctx_);
-  }
-  size_t Size() const override;
-  void Update(const void* buf, size_t len) override;
-  size_t Finish(void* buf, size_t len) override;
-
- private:
-  MD5Context ctx_;
-};
-
-}  // namespace rtc
+// This header is deprecated and is just left here temporarily during
+// refactoring. See https://bugs.webrtc.org/7634 for more details.
+#include "webrtc/rtc_base/md5digest.h"
 
 #endif  // WEBRTC_BASE_MD5DIGEST_H_
