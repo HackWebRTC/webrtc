@@ -565,10 +565,21 @@ bool SrtpSession::GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len) {
   // stream_template will be the reference context for other streams.
   // Let's use it for getting the keys.
   srtp_stream_ctx_t* srtp_context = session_->stream_template;
+#if defined(SRTP_MAX_MKI_LEN)
+  // libsrtp 2.1.0
+  if (srtp_context && srtp_context->session_keys &&
+      srtp_context->session_keys->rtp_auth) {
+    external_hmac = reinterpret_cast<ExternalHmacContext*>(
+        srtp_context->session_keys->rtp_auth->state);
+  }
+#else
+  // libsrtp 2.0.0
+  // TODO(jbauch): Remove after switching to libsrtp 2.1.0
   if (srtp_context && srtp_context->rtp_auth) {
     external_hmac = reinterpret_cast<ExternalHmacContext*>(
         srtp_context->rtp_auth->state);
   }
+#endif
 
   if (!external_hmac) {
     LOG(LS_ERROR) << "Failed to get auth keys from libsrtp!.";
