@@ -379,6 +379,8 @@ class RTCStatsReportVerifier {
     if (is_selected_pair) {
       verifier.TestMemberIsNonNegative<double>(
           candidate_pair.available_outgoing_bitrate);
+      // A pair should be nominated in order to be selected.
+      EXPECT_TRUE(*candidate_pair.nominated);
     } else {
       verifier.TestMemberIsUndefined(candidate_pair.available_outgoing_bitrate);
     }

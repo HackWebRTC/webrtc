@@ -1251,7 +1251,14 @@ void Connection::UpdateState(int64_t now) {
 void Connection::Ping(int64_t now) {
   last_ping_sent_ = now;
   ConnectionRequest *req = new ConnectionRequest(this);
-  pings_since_last_response_.push_back(SentPing(req->id(), now, nomination_));
+  // If not using renomination, we use "1" to mean "nominated" and "0" to mean
+  // "not nominated". If using renomination, values greater than 1 are used for
+  // re-nominated pairs.
+  int nomination = use_candidate_attr_ ? 1 : 0;
+  if (nomination_ > 0) {
+    nomination = nomination_;
+  }
+  pings_since_last_response_.push_back(SentPing(req->id(), now, nomination));
   packet_loss_estimator_.ExpectResponse(req->id(), now);
   LOG_J(LS_VERBOSE, this) << "Sending STUN ping "
                           << ", id=" << rtc::hex_encode(req->id())
