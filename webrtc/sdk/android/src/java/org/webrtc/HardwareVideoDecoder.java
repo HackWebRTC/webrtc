@@ -82,6 +82,10 @@ class HardwareVideoDecoder implements VideoDecoder {
   private volatile boolean running = false;
   private volatile Exception shutdownException = null;
 
+  // Prevents the decoder from being released before all output buffers have been released.
+  private final Object activeOutputBuffersLock = new Object();
+  private int activeOutputBuffers = 0; // Guarded by activeOutputBuffersLock
+
   // Dimensions (width, height, stride, and sliceHeight) may be accessed by either the decode thread
   // or the output thread.  Accesses should be protected with this lock.
   private final Object dimensionLock = new Object();
@@ -366,18 +370,25 @@ class HardwareVideoDecoder implements VideoDecoder {
       buffer.position(info.offset);
       buffer.limit(info.size);
 
-      VideoFrame.I420Buffer frameBuffer = new I420BufferImpl(width, height);
+      final VideoFrame.I420Buffer frameBuffer;
 
-      // TODO(mellem):  As an optimization, avoid copying data here.  Wrap the output buffers into
-      // the frame buffer without copying or reformatting.
       // TODO(mellem):  As an optimization, use libyuv via JNI to copy/reformatting data.
       if (colorFormat == CodecCapabilities.COLOR_FormatYUV420Planar) {
-        copyI420(buffer, info.offset, frameBuffer, stride, sliceHeight, width, height);
+        if (sliceHeight % 2 == 0) {
+          frameBuffer =
+              createBufferFromI420(buffer, result, info.offset, stride, sliceHeight, width, height);
+        } else {
+          frameBuffer = new I420BufferImpl(width, height);
+          // Optimal path is not possible because we have to copy the last rows of U- and V-planes.
+          copyI420(buffer, info.offset, frameBuffer, stride, sliceHeight, width, height);
+          codec.releaseOutputBuffer(result, false);
+        }
       } else {
+        frameBuffer = new I420BufferImpl(width, height);
         // All other supported color formats are NV12.
         nv12ToI420(buffer, info.offset, frameBuffer, stride, sliceHeight, width, height);
+        codec.releaseOutputBuffer(result, false);
       }
-      codec.releaseOutputBuffer(result, false);
 
       long presentationTimeNs = info.presentationTimeUs * 1000;
       VideoFrame frame = new VideoFrame(frameBuffer, rotation, presentationTimeNs, new Matrix());
@@ -444,6 +455,7 @@ class HardwareVideoDecoder implements VideoDecoder {
   private void releaseCodecOnOutputThread() {
     outputThreadChecker.checkIsOnValidThread();
     Logging.d(TAG, "Releasing MediaCodec on output thread");
+    waitOutputBuffersReleasedOnOutputThread();
     try {
       codec.stop();
     } catch (Exception e) {
@@ -463,6 +475,21 @@ class HardwareVideoDecoder implements VideoDecoder {
     Logging.d(TAG, "Release on output thread done");
   }
 
+  private void waitOutputBuffersReleasedOnOutputThread() {
+    outputThreadChecker.checkIsOnValidThread();
+    synchronized (activeOutputBuffersLock) {
+      while (activeOutputBuffers > 0) {
+        Logging.d(TAG, "Waiting for all frames to be released.");
+        try {
+          activeOutputBuffersLock.wait();
+        } catch (InterruptedException e) {
+          Logging.e(TAG, "Interrupted while waiting for output buffers to be released.", e);
+          return;
+        }
+      }
+    }
+  }
+
   private void stopOnOutputThread(Exception e) {
     outputThreadChecker.checkIsOnValidThread();
     running = false;
@@ -476,6 +503,97 @@ class HardwareVideoDecoder implements VideoDecoder {
       }
     }
     return false;
+  }
+
+  private VideoFrame.I420Buffer createBufferFromI420(final ByteBuffer buffer,
+      final int outputBufferIndex, final int offset, final int stride, final int sliceHeight,
+      final int width, final int height) {
+    final int uvStride = stride / 2;
+    final int chromaWidth = (width + 1) / 2;
+    final int chromaHeight = (height + 1) / 2;
+
+    final int yPos = offset;
+    final int uPos = yPos + stride * sliceHeight;
+    final int vPos = uPos + uvStride * sliceHeight / 2;
+
+    synchronized (activeOutputBuffersLock) {
+      activeOutputBuffers++;
+    }
+    return new VideoFrame.I420Buffer() {
+      private int refCount = 1;
+
+      @Override
+      public ByteBuffer getDataY() {
+        ByteBuffer data = buffer.slice();
+        data.position(yPos);
+        data.limit(yPos + getStrideY() * height);
+        return data;
+      }
+
+      @Override
+      public ByteBuffer getDataU() {
+        ByteBuffer data = buffer.slice();
+        data.position(uPos);
+        data.limit(uPos + getStrideU() * chromaHeight);
+        return data;
+      }
+
+      @Override
+      public ByteBuffer getDataV() {
+        ByteBuffer data = buffer.slice();
+        data.position(vPos);
+        data.limit(vPos + getStrideV() * chromaHeight);
+        return data;
+      }
+
+      @Override
+      public int getStrideY() {
+        return stride;
+      }
+
+      @Override
+      public int getStrideU() {
+        return uvStride;
+      }
+
+      @Override
+      public int getStrideV() {
+        return uvStride;
+      }
+
+      @Override
+      public int getWidth() {
+        return width;
+      }
+
+      @Override
+      public int getHeight() {
+        return height;
+      }
+
+      @Override
+      public VideoFrame.I420Buffer toI420() {
+        return this;
+      }
+
+      @Override
+      public void retain() {
+        refCount++;
+      }
+
+      @Override
+      public void release() {
+        refCount--;
+
+        if (refCount == 0) {
+          codec.releaseOutputBuffer(outputBufferIndex, false);
+          synchronized (activeOutputBuffersLock) {
+            activeOutputBuffers--;
+            activeOutputBuffersLock.notifyAll();
+          }
+        }
+      }
+    };
   }
 
   private static void copyI420(ByteBuffer src, int offset, VideoFrame.I420Buffer frameBuffer,
