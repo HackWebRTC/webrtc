@@ -60,6 +60,7 @@ class DxgiDuplicatorController {
 
   enum class Result {
     SUCCEEDED,
+    UNSUPPORTED_SESSION,
     FRAME_PREPARE_FAILED,
     INITIALIZATION_FAILED,
     DUPLICATION_FAILED,
@@ -74,7 +75,9 @@ class DxgiDuplicatorController {
   // Detects whether the system supports DXGI based capturer.
   bool IsSupported();
 
-  // Returns a copy of D3dInfo composed by last Initialize() function call.
+  // Returns a copy of D3dInfo composed by last Initialize() function call. This
+  // function always copies the latest information into |info|. But once the
+  // function returns false, the information in |info| may not accurate.
   bool RetrieveD3dInfo(D3dInfo* info);
 
   // Captures current screen and writes into |frame|.
@@ -211,6 +214,8 @@ class DxgiDuplicatorController {
   std::vector<DxgiAdapterDuplicator> duplicators_;
   D3dInfo d3d_info_;
   ResolutionChangeDetector resolution_change_detector_;
+  // A number to indicate how many succeeded duplications have been performed.
+  uint32_t succeeded_duplications_ = 0;
 };
 
 }  // namespace webrtc

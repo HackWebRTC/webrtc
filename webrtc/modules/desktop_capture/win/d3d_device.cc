@@ -69,6 +69,7 @@ std::vector<D3dDevice> D3dDevice::EnumDevices() {
   _com_error error = CreateDXGIFactory1(__uuidof(IDXGIFactory1),
       reinterpret_cast<void**>(factory.GetAddressOf()));
   if (error.Error() != S_OK || !factory) {
+    LOG(LS_WARNING) << "Cannot create IDXGIFactory1.";
     return std::vector<D3dDevice>();
   }
 
@@ -78,17 +79,15 @@ std::vector<D3dDevice> D3dDevice::EnumDevices() {
     error = factory->EnumAdapters(i, adapter.GetAddressOf());
     if (error.Error() == S_OK) {
       D3dDevice device;
-      if (!device.Initialize(adapter)) {
-        return std::vector<D3dDevice>();
+      if (device.Initialize(adapter)) {
+        result.push_back(std::move(device));
       }
-      result.push_back(std::move(device));
     } else if (error.Error() == DXGI_ERROR_NOT_FOUND) {
       break;
     } else {
       LOG(LS_WARNING) << "IDXGIFactory1::EnumAdapters returns an unexpected "
                          "error "
                       << error.ErrorMessage() << " with code " << error.Error();
-      return std::vector<D3dDevice>();
     }
   }
   return result;

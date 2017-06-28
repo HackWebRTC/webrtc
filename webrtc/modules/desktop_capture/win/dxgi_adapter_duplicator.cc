@@ -52,12 +52,19 @@ bool DxgiAdapterDuplicator::DoInitialize() {
       break;
     }
 
+    if (error.Error() == DXGI_ERROR_NOT_CURRENTLY_AVAILABLE) {
+      LOG(LS_WARNING) << "IDXGIAdapter::EnumOutputs returns "
+                         "NOT_CURRENTLY_AVAILABLE. This may happen when "
+                         "running in session 0.";
+      break;
+    }
+
     if (error.Error() != S_OK || !output) {
       LOG(LS_WARNING) << "IDXGIAdapter::EnumOutputs returns an unexpected "
                          "result "
                       << error.ErrorMessage() << " with error code"
                       << error.Error();
-      return false;
+      continue;
     }
 
     DXGI_OUTPUT_DESC desc;
@@ -70,12 +77,17 @@ bool DxgiAdapterDuplicator::DoInitialize() {
           LOG(LS_WARNING) << "Failed to convert IDXGIOutput to IDXGIOutput1, "
                              "this usually means the system does not support "
                              "DirectX 11";
-          return false;
+          continue;
         }
-        duplicators_.emplace_back(device_, output1, desc);
-        if (!duplicators_.back().Initialize()) {
-          return false;
+        DxgiOutputDuplicator duplicator(device_, output1, desc);
+        if (!duplicator.Initialize()) {
+          LOG(LS_WARNING) << "Failed to initialize DxgiOutputDuplicator on "
+                             "output "
+                          << i;
+          continue;
         }
+
+        duplicators_.push_back(std::move(duplicator));
         desktop_rect_.UnionWith(duplicators_.back().desktop_rect());
       }
     } else {
@@ -83,7 +95,12 @@ bool DxgiAdapterDuplicator::DoInitialize() {
                       << ", ignore.";
     }
   }
-  return true;
+
+  if (duplicators_.empty()) {
+    LOG(LS_WARNING) << "Cannot initialize any DxgiOutputDuplicator instance.";
+  }
+
+  return !duplicators_.empty();
 }
 
 void DxgiAdapterDuplicator::Setup(Context* context) {

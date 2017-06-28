@@ -25,6 +25,22 @@
 
 namespace webrtc {
 
+namespace {
+
+// TODO(zijiehe): This function should be public as
+// static bool DxgiDuplicatorController::IsSessionUnsupported()
+bool IsRunningInSession0() {
+  DWORD session_id = 0;
+  if (!::ProcessIdToSessionId(::GetCurrentProcessId(), &session_id)) {
+    LOG(LS_WARNING) << "Failed to retrieve current session Id, current binary "
+                       "may not have required priviledge.";
+    return true;
+  }
+  return session_id == 0;
+}
+
+}  // namespace
+
 // static
 rtc::scoped_refptr<DxgiDuplicatorController>
 DxgiDuplicatorController::Instance() {
@@ -58,12 +74,17 @@ bool DxgiDuplicatorController::IsSupported() {
 }
 
 bool DxgiDuplicatorController::RetrieveD3dInfo(D3dInfo* info) {
-  rtc::CritScope lock(&lock_);
-  if (!Initialize()) {
-    return false;
+  bool result = false;
+  {
+    rtc::CritScope lock(&lock_);
+    result = Initialize();
+    *info = d3d_info_;
   }
-  *info = d3d_info_;
-  return true;
+  if (!result) {
+    LOG(LS_WARNING) << "Failed to initialize DXGI components, the D3dInfo "
+                       "retrieved may not accurate or out of date.";
+  }
+  return result;
 }
 
 DxgiDuplicatorController::Result
@@ -117,6 +138,12 @@ DxgiDuplicatorController::DoDuplicate(DxgiFrame* frame, int monitor_id) {
   }
 
   if (!Initialize()) {
+    if (succeeded_duplications_ == 0 && IsRunningInSession0()) {
+      LOG(LS_WARNING) << "Current binary is running in session 0. DXGI "
+                         "components cannot be initialized.";
+      return Result::UNSUPPORTED_SESSION;
+    }
+
     // Cannot initialize COM components now, display mode may be changing.
     return Result::INITIALIZATION_FAILED;
   }
@@ -128,6 +155,7 @@ DxgiDuplicatorController::DoDuplicate(DxgiFrame* frame, int monitor_id) {
   frame->frame()->mutable_updated_region()->Clear();
 
   if (DoDuplicateUnlocked(frame->context(), monitor_id, frame->frame())) {
+    succeeded_duplications_++;
     return Result::SUCCEEDED;
   }
   if (monitor_id >= ScreenCountUnlocked()) {
@@ -180,15 +208,11 @@ bool DxgiDuplicatorController::DoInitialize() {
 
   std::vector<D3dDevice> devices = D3dDevice::EnumDevices();
   if (devices.empty()) {
+    LOG(LS_WARNING) << "No D3dDevice found.";
     return false;
   }
 
   for (size_t i = 0; i < devices.size(); i++) {
-    duplicators_.emplace_back(devices[i]);
-    if (!duplicators_.back().Initialize()) {
-      return false;
-    }
-
     D3D_FEATURE_LEVEL feature_level =
         devices[i].d3d_device()->GetFeatureLevel();
     if (d3d_info_.max_feature_level == 0 ||
@@ -199,6 +223,20 @@ bool DxgiDuplicatorController::DoInitialize() {
         feature_level < d3d_info_.min_feature_level) {
       d3d_info_.min_feature_level = feature_level;
     }
+
+    DxgiAdapterDuplicator duplicator(devices[i]);
+    // There may be several video cards on the system, some of them may not
+    // support IDXGOutputDuplication. But they should not impact others from
+    // taking effect, so we should continually try other adapters. This usually
+    // happens when a non-official virtual adapter is installed on the system.
+    if (!duplicator.Initialize()) {
+      LOG(LS_WARNING) << "Failed to initialize DxgiAdapterDuplicator on "
+                         "adapter "
+                      << i;
+      continue;
+    }
+    RTC_DCHECK(!duplicator.desktop_rect().is_empty());
+    duplicators_.push_back(std::move(duplicator));
 
     desktop_rect_.UnionWith(duplicators_.back().desktop_rect());
   }
@@ -212,7 +250,12 @@ bool DxgiDuplicatorController::DoInitialize() {
   }
 
   identity_++;
-  return true;
+
+  if (duplicators_.empty()) {
+    LOG(LS_WARNING) << "Cannot initialize any DxgiAdapterDuplicator instance.";
+  }
+
+  return !duplicators_.empty();
 }
 
 void DxgiDuplicatorController::Deinitialize() {

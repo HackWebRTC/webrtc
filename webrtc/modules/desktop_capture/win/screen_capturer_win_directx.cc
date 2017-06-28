@@ -74,6 +74,12 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
 
   using DuplicateResult = DxgiDuplicatorController::Result;
   switch (result) {
+    case DuplicateResult::UNSUPPORTED_SESSION: {
+      LOG(LS_ERROR) << "Current binary is running on a session not supported "
+                       "by DirectX screen capturer.";
+      callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
+      break;
+    }
     case DuplicateResult::FRAME_PREPARE_FAILED: {
       LOG(LS_ERROR) << "Failed to allocate a new DesktopFrame.";
       // This usually means we do not have enough memory or SharedMemoryFactory
