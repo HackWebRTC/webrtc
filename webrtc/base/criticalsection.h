@@ -14,8 +14,9 @@
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/platform_thread_types.h"
+#include "webrtc/base/thread_annotations.h"
+#include "webrtc/typedefs.h"
 
 #if defined(WEBRTC_WIN)
 // Include winsock2.h before including <windows.h> to maintain consistency with
@@ -67,7 +68,7 @@ class LOCKABLE CriticalSection {
 #if defined(WEBRTC_WIN)
   mutable CRITICAL_SECTION crit_;
 #elif defined(WEBRTC_POSIX)
-#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+# if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
   // Number of times the lock has been locked + number of threads waiting.
   // TODO(tommi): We could use this number and subtract the recursion count
   // to find places where we have multiple threads contending on the same lock.
@@ -79,11 +80,13 @@ class LOCKABLE CriticalSection {
   mutable dispatch_semaphore_t semaphore_;
   // The thread that currently holds the lock. Required to handle recursion.
   mutable PlatformThreadRef owning_thread_;
-#else
+# else
   mutable pthread_mutex_t mutex_;
-#endif
-  CS_DEBUG_CODE(mutable PlatformThreadRef thread_);
-  CS_DEBUG_CODE(mutable int recursion_count_);
+# endif
+  mutable PlatformThreadRef thread_;  // Only used by RTC_DCHECKs.
+  mutable int recursion_count_;       // Only used by RTC_DCHECKs.
+#else  // !defined(WEBRTC_WIN) && !defined(WEBRTC_POSIX)
+# error Unsupported platform.
 #endif
 };
 
@@ -110,13 +113,15 @@ class TryCritScope {
   ~TryCritScope();
 #if defined(WEBRTC_WIN)
   _Check_return_ bool locked() const;
-#else
+#elif defined(WEBRTC_POSIX)
   bool locked() const __attribute__ ((__warn_unused_result__));
+#else  // !defined(WEBRTC_WIN) && !defined(WEBRTC_POSIX)
+# error Unsupported platform.
 #endif
  private:
   const CriticalSection* const cs_;
   const bool locked_;
-  CS_DEBUG_CODE(mutable bool lock_was_called_);
+  mutable bool lock_was_called_;  // Only used by RTC_DCHECKs.
   RTC_DISALLOW_COPY_AND_ASSIGN(TryCritScope);
 };
 
