@@ -13,7 +13,7 @@
 
 namespace webrtc {
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  AudioDecoderIlbc dec;
+  AudioDecoderIlbcImpl dec;
   static const int kSampleRateHz = 8000;
   static const size_t kAllocatedOuputSizeSamples = kSampleRateHz / 10;
   int16_t output[kAllocatedOuputSizeSamples];

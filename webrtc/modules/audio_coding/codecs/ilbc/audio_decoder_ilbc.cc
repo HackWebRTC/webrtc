@@ -19,20 +19,20 @@
 
 namespace webrtc {
 
-AudioDecoderIlbc::AudioDecoderIlbc() {
+AudioDecoderIlbcImpl::AudioDecoderIlbcImpl() {
   WebRtcIlbcfix_DecoderCreate(&dec_state_);
   WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
 }
 
-AudioDecoderIlbc::~AudioDecoderIlbc() {
+AudioDecoderIlbcImpl::~AudioDecoderIlbcImpl() {
   WebRtcIlbcfix_DecoderFree(dec_state_);
 }
 
-bool AudioDecoderIlbc::HasDecodePlc() const {
+bool AudioDecoderIlbcImpl::HasDecodePlc() const {
   return true;
 }
 
-int AudioDecoderIlbc::DecodeInternal(const uint8_t* encoded,
+int AudioDecoderIlbcImpl::DecodeInternal(const uint8_t* encoded,
                                      size_t encoded_len,
                                      int sample_rate_hz,
                                      int16_t* decoded,
@@ -45,22 +45,22 @@ int AudioDecoderIlbc::DecodeInternal(const uint8_t* encoded,
   return ret;
 }
 
-size_t AudioDecoderIlbc::DecodePlc(size_t num_frames, int16_t* decoded) {
+size_t AudioDecoderIlbcImpl::DecodePlc(size_t num_frames, int16_t* decoded) {
   return WebRtcIlbcfix_NetEqPlc(dec_state_, decoded, num_frames);
 }
 
-void AudioDecoderIlbc::Reset() {
+void AudioDecoderIlbcImpl::Reset() {
   WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
 }
 
-std::vector<AudioDecoder::ParseResult> AudioDecoderIlbc::ParsePayload(
+std::vector<AudioDecoder::ParseResult> AudioDecoderIlbcImpl::ParsePayload(
     rtc::Buffer&& payload,
     uint32_t timestamp) {
   std::vector<ParseResult> results;
   size_t bytes_per_frame;
   int timestamps_per_frame;
   if (payload.size() >= 950) {
-    LOG(LS_WARNING) << "AudioDecoderIlbc::ParsePayload: Payload too large";
+    LOG(LS_WARNING) << "AudioDecoderIlbcImpl::ParsePayload: Payload too large";
     return results;
   }
   if (payload.size() % 38 == 0) {
@@ -72,7 +72,7 @@ std::vector<AudioDecoder::ParseResult> AudioDecoderIlbc::ParsePayload(
     bytes_per_frame = 50;
     timestamps_per_frame = 240;
   } else {
-    LOG(LS_WARNING) << "AudioDecoderIlbc::ParsePayload: Invalid payload";
+    LOG(LS_WARNING) << "AudioDecoderIlbcImpl::ParsePayload: Invalid payload";
     return results;
   }
 
@@ -97,11 +97,11 @@ std::vector<AudioDecoder::ParseResult> AudioDecoderIlbc::ParsePayload(
   return results;
 }
 
-int AudioDecoderIlbc::SampleRateHz() const {
+int AudioDecoderIlbcImpl::SampleRateHz() const {
   return 8000;
 }
 
-size_t AudioDecoderIlbc::Channels() const {
+size_t AudioDecoderIlbcImpl::Channels() const {
   return 1;
 }
 

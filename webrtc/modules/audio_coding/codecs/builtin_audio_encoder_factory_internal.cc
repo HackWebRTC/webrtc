@@ -65,7 +65,7 @@ NamedEncoderFactory encoder_factories[] = {
     NamedEncoderFactory::ForEncoder<AudioEncoderG722Impl>(),
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-    NamedEncoderFactory::ForEncoder<AudioEncoderIlbc>(),
+    NamedEncoderFactory::ForEncoder<AudioEncoderIlbcImpl>(),
 #endif
 #if defined(WEBRTC_CODEC_ISACFX)
     NamedEncoderFactory::ForEncoder<AudioEncoderIsacFix>(),

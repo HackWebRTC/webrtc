@@ -315,12 +315,11 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 8000;
     frame_size_ = 240;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderIlbc;
+    decoder_ = new AudioDecoderIlbcImpl;
     assert(decoder_);
-    AudioEncoderIlbc::Config config;
+    AudioEncoderIlbcConfig config;
     config.frame_size_ms = 30;
-    config.payload_type = payload_type_;
-    audio_encoder_.reset(new AudioEncoderIlbc(config));
+    audio_encoder_.reset(new AudioEncoderIlbcImpl(config, payload_type_));
   }
 
   // Overload the default test since iLBC's function WebRtcIlbcfix_NetEqPlc does

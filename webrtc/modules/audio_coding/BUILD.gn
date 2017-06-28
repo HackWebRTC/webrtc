@@ -322,6 +322,7 @@ rtc_static_library("ilbc") {
     ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../api/audio_codecs/ilbc:audio_encoder_ilbc_config",
     "../../base:rtc_base_approved",
     "../../common_audio",
   ]

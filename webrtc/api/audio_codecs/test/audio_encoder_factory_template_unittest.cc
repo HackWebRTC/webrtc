@@ -10,6 +10,7 @@
 
 #include "webrtc/api/audio_codecs/audio_encoder_factory_template.h"
 #include "webrtc/api/audio_codecs/g722/audio_encoder_g722.h"
+#include "webrtc/api/audio_codecs/ilbc/audio_encoder_ilbc.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
@@ -131,6 +132,21 @@ TEST(AudioEncoderFactoryTemplateTest, G722) {
   auto enc = factory->MakeAudioEncoder(17, {"g722", 8000, 1});
   ASSERT_NE(nullptr, enc);
   EXPECT_EQ(16000, enc->SampleRateHz());
+}
+
+TEST(AudioEncoderFactoryTemplateTest, Ilbc) {
+  auto factory = CreateAudioEncoderFactory<AudioEncoderIlbc>();
+  EXPECT_THAT(factory->GetSupportedEncoders(),
+              testing::ElementsAre(
+                  AudioCodecSpec{{"ILBC", 8000, 1}, {8000, 1, 13333}}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>(),
+            factory->QueryAudioEncoder({"foo", 8000, 1}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>({8000, 1, 13333}),
+            factory->QueryAudioEncoder({"ilbc", 8000, 1}));
+  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"bar", 8000, 1}));
+  auto enc = factory->MakeAudioEncoder(17, {"ilbc", 8000, 1});
+  ASSERT_NE(nullptr, enc);
+  EXPECT_EQ(8000, enc->SampleRateHz());
 }
 
 }  // namespace webrtc

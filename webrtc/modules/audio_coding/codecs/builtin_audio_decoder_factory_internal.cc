@@ -78,7 +78,7 @@ NamedDecoderConstructor decoder_constructors[] = {
      [](const SdpAudioFormat& format, std::unique_ptr<AudioDecoder>* out) {
        if (format.clockrate_hz == 8000 && format.num_channels == 1) {
          if (out) {
-           out->reset(new AudioDecoderIlbc);
+           out->reset(new AudioDecoderIlbcImpl);
          }
          return true;
        } else {

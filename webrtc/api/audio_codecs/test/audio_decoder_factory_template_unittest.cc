@@ -10,6 +10,7 @@
 
 #include "webrtc/api/audio_codecs/audio_decoder_factory_template.h"
 #include "webrtc/api/audio_codecs/g722/audio_decoder_g722.h"
+#include "webrtc/api/audio_codecs/ilbc/audio_decoder_ilbc.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
@@ -129,6 +130,19 @@ TEST(AudioDecoderFactoryTemplateTest, G722) {
   EXPECT_EQ(2u, dec2->Channels());
   auto dec3 = factory->MakeAudioDecoder({"g722", 8000, 3});
   ASSERT_EQ(nullptr, dec3);
+}
+
+TEST(AudioDecoderFactoryTemplateTest, Ilbc) {
+  auto factory = CreateAudioDecoderFactory<AudioDecoderIlbc>();
+  EXPECT_THAT(factory->GetSupportedDecoders(),
+              testing::ElementsAre(
+                  AudioCodecSpec{{"ILBC", 8000, 1}, {8000, 1, 13300}}));
+  EXPECT_FALSE(factory->IsSupportedDecoder({"foo", 8000, 1}));
+  EXPECT_TRUE(factory->IsSupportedDecoder({"ilbc", 8000, 1}));
+  EXPECT_EQ(nullptr, factory->MakeAudioDecoder({"bar", 8000, 1}));
+  auto dec = factory->MakeAudioDecoder({"ilbc", 8000, 1});
+  ASSERT_NE(nullptr, dec);
+  EXPECT_EQ(8000, dec->SampleRateHz());
 }
 
 }  // namespace webrtc

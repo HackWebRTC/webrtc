@@ -173,7 +173,7 @@ std::unique_ptr<AudioEncoder> CreateEncoder(
     return std::unique_ptr<AudioEncoder>(new AudioEncoderPcm16B(speech_inst));
 #ifdef WEBRTC_CODEC_ILBC
   if (STR_CASE_CMP(speech_inst.plname, "ilbc") == 0)
-    return std::unique_ptr<AudioEncoder>(new AudioEncoderIlbc(speech_inst));
+    return std::unique_ptr<AudioEncoder>(new AudioEncoderIlbcImpl(speech_inst));
 #endif
 #ifdef WEBRTC_CODEC_G722
   if (STR_CASE_CMP(speech_inst.plname, "g722") == 0)
