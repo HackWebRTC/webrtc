@@ -455,13 +455,7 @@
    fun:_Znw*
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsSsESt10_Select1stIS2_EN3rtc5ilessESaIS2_EE15_M_insert_equalIS2_EESt17_Rb_tree_iteratorIS2_EOT_
    fun:_ZN3rtc8HttpData12changeHeaderERKSsS2_NS0_13HeaderCombineE
-   fun:_ZN3rtc16HttpResponseData9set_errorEj
-   fun:_ZN3rtc12_GLOBAL__N_117HttpServerMonitor9OnRequestEPNS_10HttpServerEPNS_21HttpServerTransactionE
-   fun:_ZN3rtc10HttpServer10Connection14onHttpCompleteENS_8HttpModeENS_9HttpErrorE
-   fun:_ZN3rtc8HttpBase10OnCompleteENS_9HttpErrorE
-   fun:_ZN3rtc8HttpBase17OnHttpStreamEventEPNS_15StreamInterfaceEii
-   fun:_ZN7testing12StreamSource11QueueStringEPKc
-   fun:_ZN3rtc12_GLOBAL__N_122CreateClientConnectionERNS_10HttpServerERNS0_17HttpServerMonitorEb
+   ...
    fun:_ZN3rtc47HttpServer_SignalsCloseAfterForcedCloseAll_Test8TestBodyEv
 }
 {
