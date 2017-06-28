@@ -29,7 +29,7 @@ DONT_AUTOROLL_THESE = [
 
 # Run these CQ trybots in addition to the default ones in infra/config/cq.cfg.
 EXTRA_TRYBOTS = (
-    'master.internal.tryserver.corp.webrtc:linux_internal;'
+    'master.internal.tryserver.corp.webrtc:linux_internal'
 )
 
 WEBRTC_URL = 'https://chromium.googlesource.com/external/webrtc'
