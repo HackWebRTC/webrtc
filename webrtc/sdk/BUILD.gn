@@ -102,19 +102,50 @@ if (is_ios || is_mac) {
       ]
 
       if (is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        # Suppress warnings from the Chromium Clang plugin
+        # (bugs.webrtc.org/163).
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
     }
+
+    # Keep videotracksource related code in a separate target so that we can
+    # build PeerConnectionFactory without audio/video support when that's called
+    # for.
+    rtc_static_library("objc_videotracksource") {
+      sources = [
+        "objc/Framework/Classes/Video/RTCCVPixelBuffer.mm",
+        "objc/Framework/Classes/Video/RTCI420Buffer+Private.h",
+        "objc/Framework/Classes/Video/RTCI420Buffer.mm",
+        "objc/Framework/Classes/Video/objc_frame_buffer.h",
+        "objc/Framework/Classes/Video/objc_frame_buffer.mm",
+        "objc/Framework/Classes/Video/objcvideotracksource.h",
+        "objc/Framework/Classes/Video/objcvideotracksource.mm",
+        "objc/Framework/Headers/WebRTC/RTCVideoFrameBuffer.h",
+      ]
+
+      deps = [
+        ":objc_common",
+        "../api:libjingle_peerconnection_api",
+        "../api:video_frame_api",
+        "../base:rtc_base",
+        "../common_video",
+        "../media:rtc_media_base",
+      ]
+
+      configs += [ "..:common_objc" ]
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin
+        # (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+    }
+
     rtc_static_library("objc_video") {
       sources = [
         "objc/Framework/Classes/Video/RTCAVFoundationVideoCapturerInternal.h",
         "objc/Framework/Classes/Video/RTCAVFoundationVideoCapturerInternal.mm",
-        "objc/Framework/Classes/Video/RTCCVPixelBuffer.mm",
         "objc/Framework/Classes/Video/RTCDefaultShader.h",
         "objc/Framework/Classes/Video/RTCDefaultShader.mm",
-        "objc/Framework/Classes/Video/RTCI420Buffer+Private.h",
-        "objc/Framework/Classes/Video/RTCI420Buffer.mm",
         "objc/Framework/Classes/Video/RTCI420TextureCache.h",
         "objc/Framework/Classes/Video/RTCI420TextureCache.mm",
         "objc/Framework/Classes/Video/RTCOpenGLDefines.h",
@@ -124,11 +155,6 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/Video/avfoundationformatmapper.mm",
         "objc/Framework/Classes/Video/avfoundationvideocapturer.h",
         "objc/Framework/Classes/Video/avfoundationvideocapturer.mm",
-        "objc/Framework/Classes/Video/objc_frame_buffer.h",
-        "objc/Framework/Classes/Video/objc_frame_buffer.mm",
-        "objc/Framework/Classes/Video/objcvideotracksource.h",
-        "objc/Framework/Classes/Video/objcvideotracksource.mm",
-        "objc/Framework/Headers/WebRTC/RTCVideoFrameBuffer.h",
       ]
       libs = []
       if (is_ios) {
@@ -153,6 +179,7 @@ if (is_ios || is_mac) {
 
       deps = [
         ":objc_common",
+        ":objc_videotracksource",
         "../api:libjingle_peerconnection_api",
         "../base:rtc_base",
         "../common_video",
@@ -161,7 +188,8 @@ if (is_ios || is_mac) {
 
       configs += [ "..:common_objc" ]
       if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        # Suppress warnings from the Chromium Clang plugin
+        # (bugs.webrtc.org/163).
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
     }
@@ -230,11 +258,119 @@ if (is_ios || is_mac) {
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCAVFoundationVideoSource+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCAVFoundationVideoSource.mm",
+        "objc/Framework/Classes/PeerConnection/RTCCameraVideoCapturer.m",
+        "objc/Framework/Headers/WebRTC/RTCCameraVideoCapturer.h",
+      ]
+      if (is_ios) {
+        sources += [
+          "objc/Framework/Classes/PeerConnection/RTCFileVideoCapturer.h",
+          "objc/Framework/Classes/PeerConnection/RTCFileVideoCapturer.m",
+        ]
+      }
+      libs = [ "AVFoundation.framework" ]
+
+      if (is_ios) {
+        libs += [ "CoreGraphics.framework" ]
+      }
+
+      configs += [ "..:common_objc" ]
+
+      public_configs = [ ":objc_common_config" ]
+
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin
+        # (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+
+      deps = [
+        ":objc_common",
+        ":objc_corevideoframebuffer",
+        ":objc_peerconnectionfactory",
+        ":objc_video",
+        "../api:video_frame_api",
+        "../base:rtc_base",
+        "../media:rtc_media_base",
+        "../pc:libjingle_peerconnection",
+      ]
+
+      if (rtc_use_metal_rendering) {
+        deps += [ ":objc_metal" ]
+      }
+
+      if (rtc_build_libyuv) {
+        deps += [ "$rtc_libyuv_dir" ]
+        public_deps = [
+          "$rtc_libyuv_dir",
+        ]
+      }
+    }
+
+    rtc_static_library("objc_peerconnectionfactory") {
+      sources = [
+        "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory+Private.h",
+        "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory.mm",
+      ]
+
+      public_configs = [ ":objc_common_config" ]
+
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin
+        # (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+
+      deps = [
+        ":objc_common",
+        ":objc_corevideoframebuffer",
+        ":objc_peerconnectionfactory_base",
+        ":objc_video",
+        ":objc_videotoolbox",
+        "../api:video_frame_api",
+        "../base:rtc_base",
+        "../media:rtc_media_base",
+        "../pc:create_pc_factory",
+        "../pc:peerconnection",
+      ]
+    }
+
+    # Build the PeerConnectionFactory without audio/video support.
+    # This target depends on the objc_peeerconnectionfactory_base which still
+    # includes some audio/video related objects such as RTCAudioSource because
+    # these objects are just thin wrappers of native C++ interfaces required
+    # when implementing webrtc::PeerConnectionFactoryInterface and
+    # webrtc::PeerConnectionInterface.
+    # The applications which only use WebRTC DataChannel can depend on this
+    # target instead of rtc_sdk_objc.
+    rtc_static_library("objc_peerconnectionfactory_no_media") {
+      defines = [ "HAVE_NO_MEDIA" ]
+
+      sources = [
+        "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory+Private.h",
+        "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory.mm",
+      ]
+
+      public_configs = [ ":objc_common_config" ]
+
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin
+        # (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+
+      deps = [
+        ":objc_peerconnectionfactory_base",
+        "../api:libjingle_peerconnection_api",
+        "../base:rtc_base",
+      ]
+    }
+
+    rtc_static_library("objc_peerconnectionfactory_base") {
+      sources = [
         "objc/Framework/Classes/PeerConnection/RTCAudioSource+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCAudioSource.mm",
         "objc/Framework/Classes/PeerConnection/RTCAudioTrack+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCAudioTrack.mm",
-        "objc/Framework/Classes/PeerConnection/RTCCameraVideoCapturer.m",
         "objc/Framework/Classes/PeerConnection/RTCConfiguration+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCConfiguration.mm",
         "objc/Framework/Classes/PeerConnection/RTCDataChannel+Private.h",
@@ -262,8 +398,6 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/PeerConnection/RTCPeerConnection+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCPeerConnection+Stats.mm",
         "objc/Framework/Classes/PeerConnection/RTCPeerConnection.mm",
-        "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory+Private.h",
-        "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory.mm",
         "objc/Framework/Classes/PeerConnection/RTCRtpCodecParameters+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCRtpCodecParameters.mm",
         "objc/Framework/Classes/PeerConnection/RTCRtpEncodingParameters+Private.h",
@@ -290,7 +424,6 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h",
         "objc/Framework/Headers/WebRTC/RTCAudioSource.h",
         "objc/Framework/Headers/WebRTC/RTCAudioTrack.h",
-        "objc/Framework/Headers/WebRTC/RTCCameraVideoCapturer.h",
         "objc/Framework/Headers/WebRTC/RTCConfiguration.h",
         "objc/Framework/Headers/WebRTC/RTCDataChannel.h",
         "objc/Framework/Headers/WebRTC/RTCDataChannelConfiguration.h",
@@ -321,49 +454,27 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/RTCVideoTrack.h",
         "objc/Framework/Headers/WebRTC/RTCVideoViewShading.h",
       ]
-      if (is_ios) {
-        sources += [
-          "objc/Framework/Classes/PeerConnection/RTCFileVideoCapturer.h",
-          "objc/Framework/Classes/PeerConnection/RTCFileVideoCapturer.m",
-        ]
-      }
-      libs = [ "AVFoundation.framework" ]
-
-      if (is_ios) {
-        libs += [ "CoreGraphics.framework" ]
-      }
 
       configs += [ "..:common_objc" ]
 
       public_configs = [ ":objc_common_config" ]
 
       if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        # Suppress warnings from the Chromium Clang plugin
+        # (bugs.webrtc.org/163).
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
 
       deps = [
         ":objc_common",
         ":objc_corevideoframebuffer",
-        ":objc_video",
-        ":objc_videotoolbox",
+        ":objc_videotracksource",
         "../api:video_frame_api",
         "../base:rtc_base",
         "../common_video",
         "../media:rtc_media_base",
-        "../pc:libjingle_peerconnection",
+        "../pc:peerconnection",
       ]
-
-      if (rtc_use_metal_rendering) {
-        deps += [ ":objc_metal" ]
-      }
-
-      if (rtc_build_libyuv) {
-        deps += [ "$rtc_libyuv_dir" ]
-        public_deps = [
-          "$rtc_libyuv_dir",
-        ]
-      }
     }
 
     if (rtc_include_tests) {
@@ -423,7 +534,8 @@ if (is_ios || is_mac) {
           }
         }
         if (!build_with_chromium && is_clang) {
-          # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+          # Suppress warnings from the Chromium Clang plugin
+          # (bugs.webrtc.org/163).
           suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
         }
       }
@@ -518,7 +630,8 @@ if (is_ios || is_mac) {
         public_configs = [ ":objc_common_config" ]
 
         if (!build_with_chromium && is_clang) {
-          # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163)
+          # Suppress warnings from the Chromium Clang plugin
+          # (bugs.webrtc.org/163).
           configs -= [ "//build/config/clang:find_bad_constructs" ]
         }
       }
@@ -546,7 +659,8 @@ if (is_ios || is_mac) {
       ]
 
       if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        # Suppress warnings from the Chromium Clang plugin
+        # (bugs.webrtc.org/163).
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
 
@@ -571,6 +685,7 @@ if (is_ios || is_mac) {
       deps = [
         ":objc_common",
         ":objc_video",
+        ":objc_videotracksource",
         "../base:rtc_base_approved",
         "../common_video",
         "../media:rtc_media",
@@ -589,7 +704,8 @@ if (is_ios || is_mac) {
       ]
 
       if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        # Suppress warnings from the Chromium Clang plugin
+        # (bugs.webrtc.org/163).
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
 

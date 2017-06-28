@@ -24,6 +24,12 @@
 #include "Video/objcvideotracksource.h"
 #include "VideoToolbox/videocodecfactory.h"
 #include "webrtc/api/videosourceproxy.h"
+// Adding the nogncheck to disable the including header check.
+// The no-media version PeerConnectionFactory doesn't depend on media related
+// C++ target.
+// TODO(zhihuang): Remove nogncheck once MediaEngineInterface is moved to C++
+// API layer.
+#include "webrtc/media/engine/webrtcmediaengine.h"  // nogncheck
 
 @implementation RTCPeerConnectionFactory {
   std::unique_ptr<rtc::Thread> _networkThread;
@@ -47,7 +53,21 @@
     _signalingThread = rtc::Thread::Create();
     result = _signalingThread->Start();
     NSAssert(result, @"Failed to start signaling thread.");
-
+#ifdef HAVE_NO_MEDIA
+    _nativeFactory = webrtc::CreateModularPeerConnectionFactory(
+        _networkThread.get(),
+        _workerThread.get(),
+        _signalingThread.get(),
+        nullptr,  // default_adm
+        nullptr,  // audio_encoder_factory
+        nullptr,  // audio_decoder_factory
+        nullptr,  // video_encoder_factory
+        nullptr,  // video_decoder_factory
+        nullptr,  // audio_mixer
+        std::unique_ptr<cricket::MediaEngineInterface>(),
+        std::unique_ptr<webrtc::CallFactoryInterface>(),
+        std::unique_ptr<webrtc::RtcEventLogFactoryInterface>());
+#else
     const auto encoder_factory = new webrtc::VideoToolboxVideoEncoderFactory();
     const auto decoder_factory = new webrtc::VideoToolboxVideoDecoderFactory();
 
@@ -56,6 +76,7 @@
     _nativeFactory = webrtc::CreatePeerConnectionFactory(
         _networkThread.get(), _workerThread.get(), _signalingThread.get(),
         nullptr, encoder_factory, decoder_factory);
+#endif
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
   }
   return self;
@@ -85,8 +106,11 @@
 
 - (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
     (nullable RTCMediaConstraints *)constraints {
-  return [[RTCAVFoundationVideoSource alloc] initWithFactory:self
-                                                 constraints:constraints];
+#ifdef HAVE_NO_MEDIA
+  return nil;
+#else
+  return [[RTCAVFoundationVideoSource alloc] initWithFactory:self constraints:constraints];
+#endif
 }
 
 - (RTCVideoSource *)videoSource {
