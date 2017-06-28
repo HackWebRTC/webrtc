@@ -13,6 +13,7 @@
 #include <limits>
 #include <vector>
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/event.h"
@@ -52,8 +53,9 @@ namespace webrtc {
 #ifdef ENABLE_RTC_EVENT_LOG
 
 class RtcEventLogImpl final : public RtcEventLog {
+  friend std::unique_ptr<RtcEventLog> RtcEventLog::Create();
+
  public:
-  RtcEventLogImpl();
   ~RtcEventLogImpl() override;
 
   bool StartLogging(const std::string& file_name,
@@ -92,10 +94,15 @@ class RtcEventLogImpl final : public RtcEventLog {
                              ProbeFailureReason failure_reason) override;
 
  private:
+  // Private constructor to ensure that creation is done by RtcEventLog::Create.
+  RtcEventLogImpl();
+
   void StoreEvent(std::unique_ptr<rtclog::Event>* event);
   void LogProbeResult(int id,
                       rtclog::BweProbeResult::ResultType result,
                       int bitrate_bps);
+
+  static volatile int log_count_;
 
   // Message queue for passing control messages to the logging thread.
   SwapQueue<RtcEventLogHelperThread::ControlMessage> message_queue_;
@@ -162,6 +169,8 @@ static const int kEventsPerSecond = 1000;
 static const int kControlMessagesPerSecond = 10;
 }  // namespace
 
+volatile int RtcEventLogImpl::log_count_ = 0;
+
 // RtcEventLogImpl member functions.
 RtcEventLogImpl::RtcEventLogImpl()
     // Allocate buffers for roughly one second of history.
@@ -175,6 +184,8 @@ RtcEventLogImpl::RtcEventLogImpl()
 RtcEventLogImpl::~RtcEventLogImpl() {
   // The RtcEventLogHelperThread destructor closes the file
   // and waits for the thread to terminate.
+  int count = rtc::AtomicOps::Decrement(&RtcEventLogImpl::log_count_);
+  RTC_DCHECK_GE(count, 0);
 }
 
 bool RtcEventLogImpl::StartLogging(const std::string& file_name,
@@ -583,6 +594,14 @@ bool RtcEventLog::ParseRtcEventLog(const std::string& file_name,
 // RtcEventLog member functions.
 std::unique_ptr<RtcEventLog> RtcEventLog::Create() {
 #ifdef ENABLE_RTC_EVENT_LOG
+  constexpr int kMaxLogCount = 5;
+  int count = rtc::AtomicOps::Increment(&RtcEventLogImpl::log_count_);
+  if (count > kMaxLogCount) {
+    LOG(LS_WARNING) << "Denied creation of additional WebRTC event logs. "
+                    << count - 1 << " logs open already.";
+    rtc::AtomicOps::Decrement(&RtcEventLogImpl::log_count_);
+    return std::unique_ptr<RtcEventLog>(new RtcEventLogNullImpl());
+  }
   return std::unique_ptr<RtcEventLog>(new RtcEventLogImpl());
 #else
   return std::unique_ptr<RtcEventLog>(new RtcEventLogNullImpl());
