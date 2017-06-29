@@ -304,7 +304,6 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
   auto last_packet = rtc::MakeUnique<RtpPacketToSend>(*rtp_header);
 
   size_t fec_packet_overhead;
-  bool is_timing_frame = false;
   bool red_enabled;
   int32_t retransmission_settings;
   {
@@ -336,7 +335,6 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
       if (video_header->video_timing.is_timing_frame) {
         last_packet->SetExtension<VideoTimingExtension>(
             video_header->video_timing);
-        is_timing_frame = true;
       }
     }
 
@@ -396,7 +394,7 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
 
     bool protect_packet = (packetizer->GetProtectionType() == kProtectedPacket);
     // Put packetization finish timestamp into extension.
-    if (last && is_timing_frame) {
+    if (packet->HasExtension<VideoTimingExtension>()) {
       packet->set_packetization_finish_time_ms(clock_->TimeInMilliseconds());
       // TODO(ilnik): Due to webrtc:7859, packets with timing extensions are not
       // protected by FEC. It reduces FEC efficiency a bit. When FEC is moved
