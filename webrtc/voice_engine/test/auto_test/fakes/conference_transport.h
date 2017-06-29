@@ -147,6 +147,7 @@ class ConferenceTransport: public webrtc::Transport {
   webrtc::VoEBase* local_base_;
   webrtc::VoERTP_RTCP* local_rtp_rtcp_;
   webrtc::VoENetwork* local_network_;
+  rtc::scoped_refptr<webrtc::AudioProcessing> local_apm_;
 
   webrtc::VoiceEngine* remote_voe_;
   webrtc::VoEBase* remote_base_;
@@ -154,7 +155,7 @@ class ConferenceTransport: public webrtc::Transport {
   webrtc::VoERTP_RTCP* remote_rtp_rtcp_;
   webrtc::VoENetwork* remote_network_;
   webrtc::VoEFile* remote_file_;
-
+  rtc::scoped_refptr<webrtc::AudioProcessing> remote_apm_;
   LoudestFilter loudest_filter_;
 
   const std::unique_ptr<webrtc::RtpHeaderParser> rtp_header_parser_;

@@ -1163,6 +1163,8 @@ CreatePeerConnectionFactory(
 // |video_encoder_factory| and |video_decoder_factory| is transferred to the
 // returned factory.
 //
+// If |audio_mixer| is null, an internal audio mixer will be created and used.
+//
 // TODO(deadbeef): Use rtc::scoped_refptr<> and std::unique_ptr<> to make this
 // ownership transfer and ref counting more obvious.
 //

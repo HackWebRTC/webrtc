@@ -146,6 +146,8 @@ class CallTest : public ::testing::Test {
 
   VoiceEngineState voe_send_;
   VoiceEngineState voe_recv_;
+  rtc::scoped_refptr<AudioProcessing> apm_send_;
+  rtc::scoped_refptr<AudioProcessing> apm_recv_;
 
   // The audio devices must outlive the voice engines.
   std::unique_ptr<test::FakeAudioDevice> fake_send_audio_device_;

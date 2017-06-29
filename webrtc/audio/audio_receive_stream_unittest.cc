@@ -17,6 +17,7 @@
 #include "webrtc/audio/conversion.h"
 #include "webrtc/call/rtp_stream_receiver_controller.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
+#include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
 #include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -74,13 +75,13 @@ struct ConfigHelper {
         RegisterVoiceEngineObserver(_)).WillOnce(Return(0));
     EXPECT_CALL(voice_engine_,
         DeRegisterVoiceEngineObserver()).WillOnce(Return(0));
-    EXPECT_CALL(voice_engine_, audio_processing());
     EXPECT_CALL(voice_engine_, audio_device_module());
     EXPECT_CALL(voice_engine_, audio_transport());
 
     AudioState::Config config;
     config.voice_engine = &voice_engine_;
     config.audio_mixer = audio_mixer_;
+    config.audio_processing = new rtc::RefCountedObject<MockAudioProcessing>();
     audio_state_ = AudioState::Create(config);
 
     EXPECT_CALL(voice_engine_, ChannelProxyFactory(kChannelId))

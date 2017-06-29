@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/voice_engine/voice_engine_fixture.h"
+#include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
 
 namespace webrtc {
 
@@ -19,6 +20,7 @@ VoiceEngineFixture::VoiceEngineFixture()
   EXPECT_NE(nullptr, base_);
   EXPECT_NE(nullptr, network_);
   EXPECT_EQ(0, base_->RegisterVoiceEngineObserver(observer_));
+  apm_ = new rtc::RefCountedObject<test::MockAudioProcessing>();
 }
 
 VoiceEngineFixture::~VoiceEngineFixture() {

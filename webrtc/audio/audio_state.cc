@@ -19,11 +19,15 @@
 namespace webrtc {
 namespace internal {
 
+// TODO(peah): Remove the conditional in the audio_transport_proxy_ constructor
+// call when upstream dependencies have properly been resolved.
 AudioState::AudioState(const AudioState::Config& config)
     : config_(config),
       voe_base_(config.voice_engine),
       audio_transport_proxy_(voe_base_->audio_transport(),
-                             voe_base_->audio_processing(),
+                             config_.audio_processing
+                                 ? config_.audio_processing.get()
+                                 : voe_base_->audio_processing(),
                              config_.audio_mixer) {
   process_thread_checker_.DetachFromThread();
   RTC_DCHECK(config_.audio_mixer);

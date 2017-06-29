@@ -13,6 +13,7 @@
 #include "webrtc/voice_engine/include/voe_codec.h"
 
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
@@ -79,8 +80,9 @@ TEST(VoECodecInst, RememberOpusDtxAfterSettingChange) {
   VoEBase* base(VoEBase::GetInterface(voe));
   VoECodec* voe_codec(VoECodec::GetInterface(voe));
   std::unique_ptr<FakeAudioDeviceModule> adm(new FakeAudioDeviceModule);
+  std::unique_ptr<AudioProcessing> apm(AudioProcessing::Create());
 
-  base->Init(adm.get());
+  base->Init(adm.get(), apm.get());
 
   CodecInst codec = {111, "opus", 48000, 960, 1, 32000};
 

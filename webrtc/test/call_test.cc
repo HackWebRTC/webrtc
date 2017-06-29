@@ -56,10 +56,13 @@ void CallTest::RunBaseTest(BaseTest* test) {
     CreateFakeAudioDevices(test->CreateCapturer(), test->CreateRenderer());
     test->OnFakeAudioDevicesCreated(fake_send_audio_device_.get(),
                                     fake_recv_audio_device_.get());
+    apm_send_ = AudioProcessing::Create();
+    apm_recv_ = AudioProcessing::Create();
     CreateVoiceEngines();
     AudioState::Config audio_state_config;
     audio_state_config.voice_engine = voe_send_.voice_engine;
     audio_state_config.audio_mixer = AudioMixerImpl::Create();
+    audio_state_config.audio_processing = apm_send_;
     send_config.audio_state = AudioState::Create(audio_state_config);
   }
   CreateSenderCall(send_config);
@@ -69,6 +72,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
       AudioState::Config audio_state_config;
       audio_state_config.voice_engine = voe_recv_.voice_engine;
       audio_state_config.audio_mixer = AudioMixerImpl::Create();
+      audio_state_config.audio_processing = apm_recv_;
       recv_config.audio_state = AudioState::Create(audio_state_config);
     }
     CreateReceiverCall(recv_config);
@@ -378,8 +382,8 @@ void CallTest::DestroyStreams() {
 void CallTest::CreateVoiceEngines() {
   voe_send_.voice_engine = VoiceEngine::Create();
   voe_send_.base = VoEBase::GetInterface(voe_send_.voice_engine);
-  EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(), nullptr,
-                                    decoder_factory_));
+  EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(),
+                                    apm_send_.get(), decoder_factory_));
   VoEBase::ChannelConfig config;
   config.enable_voice_pacing = true;
   voe_send_.channel_id = voe_send_.base->CreateChannel(config);
@@ -387,8 +391,8 @@ void CallTest::CreateVoiceEngines() {
 
   voe_recv_.voice_engine = VoiceEngine::Create();
   voe_recv_.base = VoEBase::GetInterface(voe_recv_.voice_engine);
-  EXPECT_EQ(0, voe_recv_.base->Init(fake_recv_audio_device_.get(), nullptr,
-                                    decoder_factory_));
+  EXPECT_EQ(0, voe_recv_.base->Init(fake_recv_audio_device_.get(),
+                                    apm_recv_.get(), decoder_factory_));
   voe_recv_.channel_id = voe_recv_.base->CreateChannel();
   EXPECT_GE(voe_recv_.channel_id, 0);
 }

@@ -28,8 +28,14 @@ class AudioState final : public webrtc::AudioState,
   explicit AudioState(const AudioState::Config& config);
   ~AudioState() override;
 
-  VoiceEngine* voice_engine();
+  // TODO(peah): Remove the conditional when upstream dependencies have properly
+  // been resolved.
+  AudioProcessing* audio_processing() override {
+    return config_.audio_processing ? config_.audio_processing.get()
+                                    : voe_base_->audio_processing();
+  }
 
+  VoiceEngine* voice_engine();
   rtc::scoped_refptr<AudioMixer> mixer();
   bool typing_noise_detected() const;
 

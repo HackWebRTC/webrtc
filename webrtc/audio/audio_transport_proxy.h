@@ -23,7 +23,7 @@ namespace webrtc {
 class AudioTransportProxy : public AudioTransport {
  public:
   AudioTransportProxy(AudioTransport* voe_audio_transport,
-                      AudioProcessing* apm,
+                      AudioProcessing* audio_processing,
                       AudioMixer* mixer);
 
   ~AudioTransportProxy() override;
@@ -65,7 +65,7 @@ class AudioTransportProxy : public AudioTransport {
 
  private:
   AudioTransport* voe_audio_transport_;
-  AudioProcessing* apm_;
+  AudioProcessing* audio_processing_;
   rtc::scoped_refptr<AudioMixer> mixer_;
   AudioFrame mixed_frame_;
   // Converts mixed audio to the audio device output rate.

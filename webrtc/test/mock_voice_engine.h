@@ -15,7 +15,6 @@
 
 #include "webrtc/modules/audio_device/include/mock_audio_device.h"
 #include "webrtc/modules/audio_device/include/mock_audio_transport.h"
-#include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
@@ -68,8 +67,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
         .WillByDefault(testing::Return(1000));
     ON_CALL(*this, audio_device_module())
         .WillByDefault(testing::Return(&mock_audio_device_));
-    ON_CALL(*this, audio_processing())
-        .WillByDefault(testing::Return(&mock_audio_processing_));
     ON_CALL(*this, audio_transport())
         .WillByDefault(testing::Return(&mock_audio_transport_));
   }
@@ -102,9 +99,8 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD3(
       Init,
       int(AudioDeviceModule* external_adm,
-          AudioProcessing* audioproc,
+          AudioProcessing* external_apm,
           const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory));
-  MOCK_METHOD0(audio_processing, AudioProcessing*());
   MOCK_METHOD0(audio_device_module, AudioDeviceModule*());
   MOCK_METHOD0(transmit_mixer, voe::TransmitMixer*());
   MOCK_METHOD0(Terminate, int());
@@ -257,7 +253,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   std::map<int, std::unique_ptr<MockRtpRtcp>> mock_rtp_rtcps_;
 
   MockAudioDeviceModule mock_audio_device_;
-  MockAudioProcessing mock_audio_processing_;
   MockAudioTransport mock_audio_transport_;
 };
 }  // namespace test

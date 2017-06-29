@@ -41,6 +41,7 @@ rtc_static_library("ortc") {
     "../logging:rtc_event_log_api",
     "../media:rtc_media",
     "../media:rtc_media_base",
+    "../modules/audio_processing:audio_processing",
     "../p2p:rtc_p2p",
     "../pc:libjingle_peerconnection",
     "../pc:rtc_pc",

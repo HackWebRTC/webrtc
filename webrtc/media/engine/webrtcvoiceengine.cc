@@ -163,7 +163,8 @@ rtc::Optional<std::string> GetAudioNetworkAdaptorConfig(
 
 webrtc::AudioState::Config MakeAudioStateConfig(
     VoEWrapper* voe_wrapper,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
+    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
   webrtc::AudioState::Config config;
   config.voice_engine = voe_wrapper->engine();
   if (audio_mixer) {
@@ -171,6 +172,7 @@ webrtc::AudioState::Config MakeAudioStateConfig(
   } else {
     config.audio_mixer = webrtc::AudioMixerImpl::Create();
   }
+  config.audio_processing = audio_processing;
   return config;
 }
 
@@ -214,11 +216,13 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
     webrtc::AudioDeviceModule* adm,
     const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer)
+    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing)
     : WebRtcVoiceEngine(adm,
                         encoder_factory,
                         decoder_factory,
                         audio_mixer,
+                        audio_processing,
                         nullptr) {}
 
 WebRtcVoiceEngine::WebRtcVoiceEngine(
@@ -226,11 +230,13 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
     const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing,
     VoEWrapper* voe_wrapper)
     : adm_(adm),
       encoder_factory_(encoder_factory),
       decoder_factory_(decoder_factory),
       audio_mixer_(audio_mixer),
+      apm_(audio_processing),
       voe_wrapper_(voe_wrapper) {
   // This may be called from any thread, so detach thread checkers.
   worker_thread_checker_.DetachFromThread();
@@ -238,6 +244,7 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
   LOG(LS_INFO) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
   RTC_DCHECK(decoder_factory);
   RTC_DCHECK(encoder_factory);
+  RTC_DCHECK(audio_processing);
   // The rest of our initialization will happen in Init.
 }
 
@@ -284,8 +291,8 @@ void WebRtcVoiceEngine::Init() {
   webrtc::Trace::SetTraceCallback(this);
   webrtc::Trace::set_level_filter(kElevatedTraceFilter);
   LOG(LS_INFO) << webrtc::VoiceEngine::GetVersionString();
-  RTC_CHECK_EQ(0, voe_wrapper_->base()->Init(adm_.get(), nullptr,
-                                             decoder_factory_));
+  RTC_CHECK_EQ(0,
+               voe_wrapper_->base()->Init(adm_.get(), apm(), decoder_factory_));
   webrtc::Trace::set_level_filter(kDefaultTraceFilter);
 
   // No ADM supplied? Get the default one from VoE.
@@ -294,15 +301,12 @@ void WebRtcVoiceEngine::Init() {
   }
   RTC_DCHECK(adm_);
 
-  apm_ = voe_wrapper_->base()->audio_processing();
-  RTC_DCHECK(apm_);
-
   transmit_mixer_ = voe_wrapper_->base()->transmit_mixer();
   RTC_DCHECK(transmit_mixer_);
 
   // Save the default AGC configuration settings. This must happen before
   // calling ApplyOptions or the default will be overwritten.
-  default_agc_config_ = webrtc::apm_helpers::GetAgcConfig(apm_);
+  default_agc_config_ = webrtc::apm_helpers::GetAgcConfig(apm());
 
   // Set default engine options.
   {
@@ -336,8 +340,8 @@ void WebRtcVoiceEngine::Init() {
 
   // May be null for VoE injected for testing.
   if (voe()->engine()) {
-    audio_state_ =
-        webrtc::AudioState::Create(MakeAudioStateConfig(voe(), audio_mixer_));
+    audio_state_ = webrtc::AudioState::Create(
+        MakeAudioStateConfig(voe(), audio_mixer_, apm_));
   }
 
   initialized_ = true;
@@ -507,7 +511,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
                    << default_agc_config_.targetLeveldBOv << "dB to -"
                    << config.targetLeveldBOv << "dB";
     }
-    webrtc::apm_helpers::SetAgcConfig(apm_, config);
+    webrtc::apm_helpers::SetAgcConfig(apm(), config);
   }
 
   if (options.intelligibility_enhancer) {
@@ -750,8 +754,7 @@ webrtc::AudioDeviceModule* WebRtcVoiceEngine::adm() {
 
 webrtc::AudioProcessing* WebRtcVoiceEngine::apm() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(apm_);
-  return apm_;
+  return apm_.get();
 }
 
 webrtc::voe::TransmitMixer* WebRtcVoiceEngine::transmit_mixer() {

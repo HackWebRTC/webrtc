@@ -33,19 +33,15 @@ struct TestHelper {
     // This replicates the conditions from voe_auto_test.
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
+    apm_ = rtc::scoped_refptr<AudioProcessing>(AudioProcessing::Create(config));
     EXPECT_EQ(0, voe_wrapper_.base()->Init(
-        &mock_audio_device_,
-        AudioProcessing::Create(config),
-        MockAudioDecoderFactory::CreateEmptyFactory()));
+                     &mock_audio_device_, apm_,
+                     MockAudioDecoderFactory::CreateEmptyFactory()));
   }
 
-  AudioProcessing* apm() {
-    return voe_wrapper_.base()->audio_processing();
-  }
+  AudioProcessing* apm() { return apm_.get(); }
 
-  const AudioProcessing* apm() const {
-    return voe_wrapper_.base()->audio_processing();
-  }
+  const AudioProcessing* apm() const { return apm_.get(); }
 
   test::MockAudioDeviceModule* adm() {
     return &mock_audio_device_;
@@ -77,6 +73,7 @@ struct TestHelper {
  private:
   testing::NiceMock<test::MockAudioDeviceModule> mock_audio_device_;
   cricket::VoEWrapper voe_wrapper_;
+  rtc::scoped_refptr<AudioProcessing> apm_;
 };
 }  // namespace
 

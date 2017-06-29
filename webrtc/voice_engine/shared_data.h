@@ -43,7 +43,6 @@ public:
     AudioDeviceModule* audio_device() { return _audioDevicePtr.get(); }
     void set_audio_device(
         const rtc::scoped_refptr<AudioDeviceModule>& audio_device);
-    AudioProcessing* audio_processing() { return audioproc_.get(); }
     void set_audio_processing(AudioProcessing* audio_processing);
     TransmitMixer* transmit_mixer() { return _transmitMixerPtr; }
     OutputMixer* output_mixer() { return _outputMixerPtr; }
@@ -69,7 +68,6 @@ protected:
  rtc::scoped_refptr<AudioDeviceModule> _audioDevicePtr;
  OutputMixer* _outputMixerPtr;
  TransmitMixer* _transmitMixerPtr;
- std::unique_ptr<AudioProcessing> audioproc_;
  std::unique_ptr<ProcessThread> _moduleProcessThreadPtr;
  // |encoder_queue| is defined last to ensure all pending tasks are cancelled
  // and deleted before any other members.

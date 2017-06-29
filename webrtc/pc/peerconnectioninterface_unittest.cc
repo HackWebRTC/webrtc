@@ -30,6 +30,7 @@
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/pc/audiotrack.h"
 #include "webrtc/pc/mediasession.h"
@@ -650,7 +651,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
     auto media_engine = std::unique_ptr<cricket::MediaEngineInterface>(
         cricket::WebRtcMediaEngineFactory::Create(
             nullptr, audio_encoder_factory, audio_decoder_factory, nullptr,
-            nullptr, nullptr));
+            nullptr, nullptr, webrtc::AudioProcessing::Create()));
 
     std::unique_ptr<webrtc::CallFactoryInterface> call_factory =
         webrtc::CreateCallFactory();

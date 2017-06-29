@@ -128,6 +128,7 @@ rtc::scoped_refptr<MockAudioEncoderFactory> SetupEncoderFactoryMock() {
 struct ConfigHelper {
   ConfigHelper(bool audio_bwe_enabled, bool expect_set_encoder_call)
       : stream_config_(nullptr),
+        audio_processing_(new rtc::RefCountedObject<MockAudioProcessing>()),
         simulated_clock_(123456),
         send_side_cc_(rtc::MakeUnique<SendSideCongestionController>(
             &simulated_clock_,
@@ -144,12 +145,12 @@ struct ConfigHelper {
     EXPECT_CALL(voice_engine_,
         DeRegisterVoiceEngineObserver()).WillOnce(Return(0));
     EXPECT_CALL(voice_engine_, audio_device_module());
-    EXPECT_CALL(voice_engine_, audio_processing());
     EXPECT_CALL(voice_engine_, audio_transport());
 
     AudioState::Config config;
     config.voice_engine = &voice_engine_;
     config.audio_mixer = AudioMixerImpl::Create();
+    config.audio_processing = audio_processing_;
     audio_state_ = AudioState::Create(config);
 
     SetupDefaultChannelProxy(audio_bwe_enabled);
@@ -278,8 +279,6 @@ struct ConfigHelper {
         .WillRepeatedly(Return(report_blocks));
     EXPECT_CALL(voice_engine_, transmit_mixer())
         .WillRepeatedly(Return(&transmit_mixer_));
-    EXPECT_CALL(voice_engine_, audio_processing())
-        .WillRepeatedly(Return(&audio_processing_));
 
     EXPECT_CALL(transmit_mixer_, AudioLevelFullRange())
         .WillRepeatedly(Return(kSpeechInputLevel));
@@ -294,7 +293,7 @@ struct ConfigHelper {
     audio_processing_stats_.delay_median = kEchoDelayMedian;
     audio_processing_stats_.delay_standard_deviation = kEchoDelayStdDev;
 
-    EXPECT_CALL(audio_processing_, GetStatistics())
+    EXPECT_CALL(*audio_processing_, GetStatistics())
         .WillRepeatedly(Return(audio_processing_stats_));
   }
 
@@ -303,7 +302,7 @@ struct ConfigHelper {
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
   testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
-  MockAudioProcessing audio_processing_;
+  rtc::scoped_refptr<MockAudioProcessing> audio_processing_;
   MockTransmitMixer transmit_mixer_;
   AudioProcessing::AudioProcessingStatistics audio_processing_stats_;
   SimulatedClock simulated_clock_;

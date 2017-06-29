@@ -321,7 +321,8 @@ AudioProcessing* AudioProcessing::Create(const webrtc::Config& config) {
 
 AudioProcessing* AudioProcessing::Create(const webrtc::Config& config,
                                          NonlinearBeamformer* beamformer) {
-  AudioProcessingImpl* apm = new AudioProcessingImpl(config, beamformer);
+  AudioProcessingImpl* apm =
+      new rtc::RefCountedObject<AudioProcessingImpl>(config, beamformer);
   if (apm->Initialize() != kNoError) {
     delete apm;
     apm = nullptr;

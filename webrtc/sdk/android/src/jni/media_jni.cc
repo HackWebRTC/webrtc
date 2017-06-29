@@ -12,6 +12,7 @@
 #include "webrtc/call/callfactoryinterface.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc_jni {
 
@@ -34,7 +35,7 @@ cricket::MediaEngineInterface* CreateMediaEngine(
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
   return cricket::WebRtcMediaEngineFactory::Create(
       adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory, audio_mixer);
+      video_decoder_factory, audio_mixer, webrtc::AudioProcessing::Create());
 }
 
 }  // namespace webrtc_jni

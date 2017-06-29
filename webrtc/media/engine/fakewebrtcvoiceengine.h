@@ -16,7 +16,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/media/engine/webrtcvoe.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 namespace voe {
@@ -42,10 +41,8 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
     bool neteq_fast_accelerate = false;
   };
 
-  explicit FakeWebRtcVoiceEngine(webrtc::AudioProcessing* apm,
-                                 webrtc::voe::TransmitMixer* transmit_mixer)
-      : apm_(apm), transmit_mixer_(transmit_mixer) {
-  }
+  explicit FakeWebRtcVoiceEngine(webrtc::voe::TransmitMixer* transmit_mixer)
+      : transmit_mixer_(transmit_mixer) {}
   ~FakeWebRtcVoiceEngine() override {
     RTC_CHECK(channels_.empty());
   }
@@ -75,9 +72,9 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
     inited_ = false;
     return 0;
   }
-  webrtc::AudioProcessing* audio_processing() override {
-    return apm_;
-  }
+  // TODO(peah): Remove this when downstream dependencies have properly been
+  // resolved.
+  webrtc::AudioProcessing* audio_processing() override { return nullptr; }
   webrtc::AudioDeviceModule* audio_device_module() override {
     return nullptr;
   }
@@ -131,7 +128,6 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
   int last_channel_ = -1;
   std::map<int, Channel*> channels_;
   bool fail_create_channel_ = false;
-  webrtc::AudioProcessing* apm_ = nullptr;
   webrtc::voe::TransmitMixer* transmit_mixer_ = nullptr;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FakeWebRtcVoiceEngine);

@@ -19,6 +19,8 @@ class CodecTest : public AfterStreamingFixture {
  protected:
   void SetUp() {
     memset(&codec_instance_, 0, sizeof(codec_instance_));
+    apm_ = webrtc::AudioProcessing::Create();
+    voe_base_->Init(nullptr, apm_.get(), nullptr);
   }
 
   void SetArbitrarySendCodec() {
@@ -27,6 +29,7 @@ class CodecTest : public AfterStreamingFixture {
     EXPECT_EQ(0, voe_codec_->SetSendCodec(channel_, codec_instance_));
   }
 
+  rtc::scoped_refptr<webrtc::AudioProcessing> apm_;
   webrtc::CodecInst codec_instance_;
 };
 

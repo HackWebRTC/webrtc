@@ -37,8 +37,8 @@ struct CallHelper {
     webrtc::AudioState::Config audio_state_config;
     audio_state_config.voice_engine = &voice_engine_;
     audio_state_config.audio_mixer = webrtc::AudioMixerImpl::Create();
+    audio_state_config.audio_processing = webrtc::AudioProcessing::Create();
     EXPECT_CALL(voice_engine_, audio_device_module());
-    EXPECT_CALL(voice_engine_, audio_processing());
     EXPECT_CALL(voice_engine_, audio_transport());
     webrtc::Call::Config config(&event_log_);
     config.audio_state = webrtc::AudioState::Create(audio_state_config);
@@ -453,11 +453,13 @@ TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
   };
   ScopedVoiceEngine voice_engine;
 
-  voice_engine.base->Init(&mock_adm);
   AudioState::Config audio_state_config;
   audio_state_config.voice_engine = voice_engine.voe;
   audio_state_config.audio_mixer = mock_mixer;
+  audio_state_config.audio_processing = AudioProcessing::Create();
+  voice_engine.base->Init(&mock_adm, audio_state_config.audio_processing.get());
   auto audio_state = AudioState::Create(audio_state_config);
+
   RtcEventLogNullImpl event_log;
   Call::Config call_config(&event_log);
   call_config.audio_state = audio_state;

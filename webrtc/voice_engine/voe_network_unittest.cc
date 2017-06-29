@@ -32,7 +32,7 @@ static const int kNonExistingChannel = 1234;
 class VoENetworkTest : public VoiceEngineFixture {
  protected:
   int CreateChannelAndRegisterExternalTransport() {
-    EXPECT_EQ(0, base_->Init(&adm_, nullptr));
+    EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
     int channelID = base_->CreateChannel();
     EXPECT_NE(channelID, -1);
     EXPECT_EQ(0, network_->RegisterExternalTransport(channelID, transport_));
@@ -47,19 +47,19 @@ TEST_F(VoENetworkTest, RegisterAndDeRegisterExternalTransport) {
 
 TEST_F(VoENetworkTest,
        RegisterExternalTransportOnNonExistingChannelShouldFail) {
-  EXPECT_EQ(0, base_->Init(&adm_, nullptr));
+  EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
   EXPECT_NE(
       0, network_->RegisterExternalTransport(kNonExistingChannel, transport_));
 }
 
 TEST_F(VoENetworkTest,
        DeRegisterExternalTransportOnNonExistingChannelShouldFail) {
-  EXPECT_EQ(0, base_->Init(&adm_, nullptr));
+  EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
   EXPECT_NE(0, network_->DeRegisterExternalTransport(kNonExistingChannel));
 }
 
 TEST_F(VoENetworkTest, DeRegisterExternalTransportBeforeRegister) {
-  EXPECT_EQ(0, base_->Init(&adm_, nullptr));
+  EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
   int channelID = base_->CreateChannel();
   EXPECT_NE(channelID, -1);
   EXPECT_EQ(0, network_->DeRegisterExternalTransport(channelID));
@@ -72,13 +72,13 @@ TEST_F(VoENetworkTest, ReceivedRTPPacketWithJunkDataShouldFail) {
 }
 
 TEST_F(VoENetworkTest, ReceivedRTPPacketOnNonExistingChannelShouldFail) {
-  EXPECT_EQ(0, base_->Init(&adm_, nullptr));
+  EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
   EXPECT_EQ(-1, network_->ReceivedRTPPacket(kNonExistingChannel, kPacket,
                                             sizeof(kPacket)));
 }
 
 TEST_F(VoENetworkTest, ReceivedRTPPacketOnChannelWithoutTransportShouldFail) {
-  EXPECT_EQ(0, base_->Init(&adm_, nullptr));
+  EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
   int channelID = base_->CreateChannel();
   EXPECT_NE(channelID, -1);
   EXPECT_EQ(-1,
@@ -105,13 +105,13 @@ TEST_F(VoENetworkTest, ReceivedRTCPPacketWithJunkDataShouldFail) {
 }
 
 TEST_F(VoENetworkTest, ReceivedRTCPPacketOnNonExistingChannelShouldFail) {
-  EXPECT_EQ(0, base_->Init(&adm_, nullptr));
+  EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
   EXPECT_EQ(-1, network_->ReceivedRTCPPacket(kNonExistingChannel, kPacket,
                                              sizeof(kPacket)));
 }
 
 TEST_F(VoENetworkTest, ReceivedRTCPPacketOnChannelWithoutTransportShouldFail) {
-  EXPECT_EQ(0, base_->Init(&adm_, nullptr));
+  EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
   int channelID = base_->CreateChannel();
   EXPECT_NE(channelID, -1);
   EXPECT_EQ(-1,

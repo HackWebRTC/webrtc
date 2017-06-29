@@ -57,13 +57,15 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
+      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+      rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing);
   // Dependency injection for testing.
   WebRtcVoiceEngine(
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
       rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+      rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing,
       VoEWrapper* voe_wrapper);
   ~WebRtcVoiceEngine() override;
 
@@ -133,7 +135,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory_;
   rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer_;
   // Reference to the APM, owned by VoE.
-  webrtc::AudioProcessing* apm_ = nullptr;
+  rtc::scoped_refptr<webrtc::AudioProcessing> apm_;
   // Reference to the TransmitMixer, owned by VoE.
   webrtc::voe::TransmitMixer* transmit_mixer_ = nullptr;
   // The primary instance of WebRtc VoiceEngine.

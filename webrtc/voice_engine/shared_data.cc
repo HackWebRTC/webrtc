@@ -61,7 +61,6 @@ void SharedData::set_audio_device(
 }
 
 void SharedData::set_audio_processing(AudioProcessing* audioproc) {
-  audioproc_.reset(audioproc);
   _transmitMixerPtr->SetAudioProcessingModule(audioproc);
   _outputMixerPtr->SetAudioProcessingModule(audioproc);
 }

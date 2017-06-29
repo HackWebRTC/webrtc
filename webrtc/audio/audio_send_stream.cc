@@ -279,8 +279,9 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   stats.audio_level = base->transmit_mixer()->AudioLevelFullRange();
   RTC_DCHECK_LE(0, stats.audio_level);
 
-  RTC_DCHECK(base->audio_processing());
-  auto audio_processing_stats = base->audio_processing()->GetStatistics();
+  RTC_DCHECK(audio_state_->audio_processing());
+  auto audio_processing_stats =
+      audio_state_->audio_processing()->GetStatistics();
   stats.echo_delay_median_ms = audio_processing_stats.delay_median;
   stats.echo_delay_std_ms = audio_processing_stats.delay_standard_deviation;
   stats.echo_return_loss = audio_processing_stats.echo_return_loss.instant();

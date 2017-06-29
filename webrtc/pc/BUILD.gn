@@ -203,6 +203,7 @@ rtc_static_library("create_pc_factory") {
     "../logging:rtc_event_log_api",
     "../media:rtc_audio_video",
     "../modules/audio_device:audio_device",
+    "../modules/audio_processing:audio_processing",
   ]
 
   configs += [ ":libjingle_peerconnection_warnings_config" ]

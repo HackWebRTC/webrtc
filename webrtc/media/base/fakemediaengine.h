@@ -27,6 +27,7 @@
 #include "webrtc/media/base/mediaengine.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/media/base/streamparams.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 
 using webrtc::RtpExtension;
@@ -774,7 +775,8 @@ class FakeVoiceEngine : public FakeBaseEngine {
                       audio_encoder_factory,
                   const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
                       audio_decoder_factory,
-                  rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
+                  rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+                  rtc::scoped_refptr<webrtc::AudioProcessing> apm) {
     // Add a fake audio codec. Note that the name must not be "" as there are
     // sanity checks against that.
     codecs_.push_back(AudioCodec(101, "fake_audio_codec", 0, 0, 1));
@@ -883,6 +885,7 @@ class FakeMediaEngine :
  public:
   FakeMediaEngine()
       : CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine>(nullptr,
+                                                               nullptr,
                                                                nullptr,
                                                                nullptr,
                                                                nullptr) {}

@@ -17,6 +17,7 @@
 #include "webrtc/call/callfactoryinterface.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 
@@ -53,7 +54,8 @@ CreatePeerConnectionFactoryWithAudioMixer(
   std::unique_ptr<cricket::MediaEngineInterface> media_engine(
       cricket::WebRtcMediaEngineFactory::Create(
           default_adm, audio_encoder_factory, audio_decoder_factory,
-          video_encoder_factory, video_decoder_factory, audio_mixer));
+          video_encoder_factory, video_decoder_factory, audio_mixer,
+          AudioProcessing::Create()));
 
   std::unique_ptr<CallFactoryInterface> call_factory = CreateCallFactory();
 

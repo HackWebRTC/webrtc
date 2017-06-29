@@ -22,6 +22,7 @@ namespace webrtc {
 class AudioDecoderFactory;
 class AudioDeviceModule;
 class AudioMixer;
+class AudioProcessing;
 }
 namespace cricket {
 class WebRtcVideoDecoderFactory;
@@ -59,7 +60,8 @@ class WebRtcMediaEngineFactory {
           audio_decoder_factory,
       WebRtcVideoEncoderFactory* video_encoder_factory,
       WebRtcVideoDecoderFactory* video_decoder_factory,
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
+      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+      rtc::scoped_refptr<webrtc::AudioProcessing> apm);
 
   static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
@@ -78,7 +80,8 @@ class WebRtcMediaEngineFactory {
           audio_decoder_factory,
       WebRtcVideoEncoderFactory* video_encoder_factory,
       WebRtcVideoDecoderFactory* video_decoder_factory,
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
+      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+      rtc::scoped_refptr<webrtc::AudioProcessing> apm);
 };
 
 // Verify that extension IDs are within 1-byte extension range and are not

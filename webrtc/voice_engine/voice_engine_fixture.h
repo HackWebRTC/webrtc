@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_transport.h"
 #include "webrtc/voice_engine/include/voe_base.h"
@@ -28,6 +29,7 @@ class VoiceEngineFixture : public ::testing::Test {
   MockVoEObserver observer_;
   FakeAudioDeviceModule adm_;
   MockTransport transport_;
+  rtc::scoped_refptr<AudioProcessing> apm_;
 };
 
 }  // namespace webrtc

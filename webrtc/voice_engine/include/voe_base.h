@@ -124,18 +124,19 @@ class WEBRTC_DLLEXPORT VoEBase {
   // modules:
   // - The Audio Device Module (ADM) which implements all the audio layer
   // functionality in a separate (reference counted) module.
-  // - The AudioProcessing module handles capture-side processing. VoiceEngine
-  // takes ownership of this object.
+  // - The AudioProcessing module handles capture-side processing.
   // - An AudioDecoderFactory - used to create audio decoders.
-  // If NULL is passed for any of these, VoiceEngine will create its own.
-  // Returns -1 in case of an error, 0 otherwise.
+  // If NULL is passed for either of ADM or AudioDecoderFactory, VoiceEngine
+  // will create its own. Returns -1 in case of an error, 0 otherwise.
   // TODO(ajm): Remove default NULLs.
   virtual int Init(AudioDeviceModule* external_adm = NULL,
-                   AudioProcessing* audioproc = NULL,
+                   AudioProcessing* external_apm = nullptr,
                    const rtc::scoped_refptr<AudioDecoderFactory>&
                        decoder_factory = nullptr) = 0;
 
-  // Returns NULL before Init() is called.
+  // Returns null before Init() is called.
+  // TODO(peah): Remove this when downstream dependencies have properly been
+  // resolved.
   virtual AudioProcessing* audio_processing() = 0;
 
   // This method is WIP - DO NOT USE!
