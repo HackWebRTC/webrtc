@@ -17,6 +17,8 @@ namespace {
 // Codec settings.
 const int kBitrates[] = {30, 50, 100, 200, 300, 500, 1000};
 const int kFps[] = {30};
+const int kNumTemporalLayers = 1;
+const int kKeyFrameInterval = -1;
 const bool kErrorConcealmentOn = false;
 const bool kDenoisingOn = false;
 const bool kFrameDropperOn = true;
@@ -65,13 +67,13 @@ class PlotVideoProcessorIntegrationTest
     rate_profile.num_frames = kNumFramesLong;
 
     // Codec/network settings.
-    CodecParams process_settings;
-    SetCodecParams(
-        &process_settings, codec_type_, kHwCodec, kUseSingleCore, kPacketLoss,
-        -1,  // key_frame_interval
-        1,   // num_temporal_layers
-        kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn, kSpatialResizeOn,
-        kResilienceOn, width, height, filename, kVerboseLogging, kBatchMode);
+    ProcessParams process_settings(kHwCodec, kUseSingleCore, kPacketLoss,
+                                   kKeyFrameInterval, filename, kVerboseLogging,
+                                   kBatchMode);
+    SetCodecSettings(&config_, &codec_settings_, codec_type_,
+                     kNumTemporalLayers, kErrorConcealmentOn, kDenoisingOn,
+                     kFrameDropperOn, kSpatialResizeOn, kResilienceOn, width,
+                     height);
 
     // Use default thresholds for quality (PSNR and SSIM).
     QualityThresholds quality_thresholds;

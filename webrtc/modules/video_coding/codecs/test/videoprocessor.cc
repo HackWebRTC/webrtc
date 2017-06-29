@@ -99,23 +99,6 @@ const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
   }
 }
 
-TestConfig::TestConfig()
-    : name(""),
-      description(""),
-      test_number(0),
-      input_filename(""),
-      output_filename(""),
-      output_dir("out"),
-      networking_config(),
-      exclude_frame_types(kExcludeOnlyFirstKeyFrame),
-      frame_length_in_bytes(0),
-      use_single_core(false),
-      keyframe_interval(0),
-      codec_settings(nullptr),
-      verbose(true) {}
-
-TestConfig::~TestConfig() {}
-
 VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
                                        webrtc::VideoDecoder* decoder,
                                        FrameReader* analysis_frame_reader,
