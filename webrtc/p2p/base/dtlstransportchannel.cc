@@ -117,7 +117,8 @@ DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
       downward_(NULL),
       srtp_ciphers_(GetSupportedDtlsSrtpCryptoSuites(crypto_options)),
       ssl_role_(rtc::SSL_CLIENT),
-      ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_12) {
+      ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_12),
+      crypto_options_(crypto_options) {
   ice_transport_->SignalWritableState.connect(this,
                                               &DtlsTransport::OnWritableState);
   ice_transport_->SignalReadPacket.connect(this, &DtlsTransport::OnReadPacket);

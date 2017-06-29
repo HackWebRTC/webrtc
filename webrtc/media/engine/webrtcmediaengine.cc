@@ -208,18 +208,22 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     }
   }
 
-  // Sort by name, ascending, so that we don't reset extensions if they were
-  // specified in a different order (also allows us to use std::unique below).
+  // Sort by name, ascending (prioritise encryption), so that we don't reset
+  // extensions if they were specified in a different order (also allows us
+  // to use std::unique below).
   std::sort(result.begin(), result.end(),
             [](const webrtc::RtpExtension& rhs,
-               const webrtc::RtpExtension& lhs) { return rhs.uri < lhs.uri; });
+               const webrtc::RtpExtension& lhs) {
+                return rhs.encrypt == lhs.encrypt ? rhs.uri < lhs.uri
+                                                  : rhs.encrypt > lhs.encrypt;
+              });
 
   // Remove unnecessary extensions (used on send side).
   if (filter_redundant_extensions) {
     auto it = std::unique(
         result.begin(), result.end(),
         [](const webrtc::RtpExtension& rhs, const webrtc::RtpExtension& lhs) {
-          return rhs.uri == lhs.uri;
+          return rhs.uri == lhs.uri && rhs.encrypt == lhs.encrypt;
         });
     result.erase(it, result.end());
 

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
+#include <iterator>
 #include <utility>
 
 #include "webrtc/pc/channel.h"
@@ -45,20 +47,6 @@ struct SendPacketMessageData : public rtc::MessageData {
   rtc::CopyOnWriteBuffer packet;
   rtc::PacketOptions options;
 };
-
-#if defined(ENABLE_EXTERNAL_AUTH)
-// Returns the named header extension if found among all extensions,
-// nullptr otherwise.
-const webrtc::RtpExtension* FindHeaderExtension(
-    const std::vector<webrtc::RtpExtension>& extensions,
-    const std::string& uri) {
-  for (const auto& extension : extensions) {
-    if (extension.uri == uri)
-      return &extension;
-  }
-  return nullptr;
-}
-#endif
 
 }  // namespace
 
@@ -130,6 +118,7 @@ static const MediaContentDescription* GetContentDescription(
 template <class Codec>
 void RtpParametersFromMediaDescription(
     const MediaContentDescriptionImpl<Codec>* desc,
+    const RtpHeaderExtensions& extensions,
     RtpParameters<Codec>* params) {
   // TODO(pthatcher): Remove this once we're sure no one will give us
   // a description without codecs (currently a CA_UPDATE with just
@@ -140,7 +129,7 @@ void RtpParametersFromMediaDescription(
   // TODO(pthatcher): See if we really need
   // rtp_header_extensions_set() and remove it if we don't.
   if (desc->rtp_header_extensions_set()) {
-    params->extensions = desc->rtp_header_extensions();
+    params->extensions = extensions;
   }
   params->rtcp.reduced_size = desc->rtcp_reduced_size();
 }
@@ -148,8 +137,9 @@ void RtpParametersFromMediaDescription(
 template <class Codec>
 void RtpSendParametersFromMediaDescription(
     const MediaContentDescriptionImpl<Codec>* desc,
+    const RtpHeaderExtensions& extensions,
     RtpSendParameters<Codec>* send_params) {
-  RtpParametersFromMediaDescription(desc, send_params);
+  RtpParametersFromMediaDescription(desc, extensions, send_params);
   send_params->max_bandwidth_bps = desc->bandwidth();
 }
 
@@ -998,16 +988,30 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp) {
     recv_key = &server_write_key;
   }
 
-  if (rtcp) {
-    ret = srtp_filter_.SetRtcpParams(selected_crypto_suite, &(*send_key)[0],
-                                     static_cast<int>(send_key->size()),
-                                     selected_crypto_suite, &(*recv_key)[0],
-                                     static_cast<int>(recv_key->size()));
+  if (!srtp_filter_.IsActive()) {
+    if (rtcp) {
+      ret = srtp_filter_.SetRtcpParams(selected_crypto_suite, &(*send_key)[0],
+                                       static_cast<int>(send_key->size()),
+                                       selected_crypto_suite, &(*recv_key)[0],
+                                       static_cast<int>(recv_key->size()));
+    } else {
+      ret = srtp_filter_.SetRtpParams(selected_crypto_suite, &(*send_key)[0],
+                                      static_cast<int>(send_key->size()),
+                                      selected_crypto_suite, &(*recv_key)[0],
+                                      static_cast<int>(recv_key->size()));
+    }
   } else {
-    ret = srtp_filter_.SetRtpParams(selected_crypto_suite, &(*send_key)[0],
-                                    static_cast<int>(send_key->size()),
-                                    selected_crypto_suite, &(*recv_key)[0],
-                                    static_cast<int>(recv_key->size()));
+    if (rtcp) {
+      // RTCP doesn't need to be updated because UpdateRtpParams is only used
+      // to update the set of encrypted RTP header extension IDs.
+      ret = true;
+    } else {
+      ret = srtp_filter_.UpdateRtpParams(
+          selected_crypto_suite,
+          &(*send_key)[0], static_cast<int>(send_key->size()),
+          selected_crypto_suite,
+          &(*recv_key)[0], static_cast<int>(recv_key->size()));
+    }
   }
 
   if (!ret) {
@@ -1055,26 +1059,39 @@ bool BaseChannel::SetRtpTransportParameters(
     const MediaContentDescription* content,
     ContentAction action,
     ContentSource src,
+    const RtpHeaderExtensions& extensions,
     std::string* error_desc) {
   if (action == CA_UPDATE) {
     // These parameters never get changed by a CA_UDPATE.
     return true;
   }
 
+  std::vector<int> encrypted_extension_ids;
+  for (const webrtc::RtpExtension& extension : extensions) {
+    if (extension.encrypt) {
+      LOG(LS_INFO) << "Using " << (src == CS_LOCAL ? "local" : "remote")
+          << " encrypted extension: " << extension.ToString();
+      encrypted_extension_ids.push_back(extension.id);
+    }
+  }
+
   // Cache srtp_required_ for belt and suspenders check on SendPacket
   return network_thread_->Invoke<bool>(
       RTC_FROM_HERE, Bind(&BaseChannel::SetRtpTransportParameters_n, this,
-                          content, action, src, error_desc));
+                          content, action, src, encrypted_extension_ids,
+                          error_desc));
 }
 
 bool BaseChannel::SetRtpTransportParameters_n(
     const MediaContentDescription* content,
     ContentAction action,
     ContentSource src,
+    const std::vector<int>& encrypted_extension_ids,
     std::string* error_desc) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
-  if (!SetSrtp_n(content->cryptos(), action, src, error_desc)) {
+  if (!SetSrtp_n(content->cryptos(), action, src, encrypted_extension_ids,
+      error_desc)) {
     return false;
   }
 
@@ -1101,6 +1118,7 @@ bool BaseChannel::CheckSrtpConfig_n(const std::vector<CryptoParams>& cryptos,
 bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
                             ContentAction action,
                             ContentSource src,
+                            const std::vector<int>& encrypted_extension_ids,
                             std::string* error_desc) {
   TRACE_EVENT0("webrtc", "BaseChannel::SetSrtp_w");
   if (action == CA_UPDATE) {
@@ -1113,6 +1131,7 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
   if (!ret) {
     return false;
   }
+  srtp_filter_.SetEncryptedHeaderExtensionIds(src, encrypted_extension_ids);
   switch (action) {
     case CA_OFFER:
       // If DTLS is already active on the channel, we could be renegotiating
@@ -1137,6 +1156,14 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
       break;
     default:
       break;
+  }
+  // Only update SRTP filter if using DTLS. SDES is handled internally
+  // by the SRTP filter.
+  // TODO(jbauch): Only update if encrypted extension ids have changed.
+  if (ret && dtls_keyed_ && rtp_dtls_transport_ &&
+      rtp_dtls_transport_->dtls_state() == DTLS_TRANSPORT_CONNECTED) {
+    bool rtcp = false;
+    ret = SetupDtlsSrtp_n(rtcp);
   }
   if (!ret) {
     SafeSetError("Failed to setup SRTP filter.", error_desc);
@@ -1369,6 +1396,23 @@ bool BaseChannel::UpdateRemoteStreams_w(
   return ret;
 }
 
+RtpHeaderExtensions BaseChannel::GetFilteredRtpHeaderExtensions(
+    const RtpHeaderExtensions& extensions) {
+  if (!rtp_dtls_transport_ ||
+      !rtp_dtls_transport_->crypto_options()
+          .enable_encrypted_rtp_header_extensions) {
+    RtpHeaderExtensions filtered;
+    auto pred = [](const webrtc::RtpExtension& extension) {
+        return !extension.encrypt;
+    };
+    std::copy_if(extensions.begin(), extensions.end(),
+        std::back_inserter(filtered), pred);
+    return filtered;
+  }
+
+  return webrtc::RtpExtension::FilterDuplicateNonEncrypted(extensions);
+}
+
 void BaseChannel::MaybeCacheRtpAbsSendTimeHeaderExtension_w(
     const std::vector<webrtc::RtpExtension>& extensions) {
 // Absolute Send Time extension id is used only with external auth,
@@ -1376,7 +1420,8 @@ void BaseChannel::MaybeCacheRtpAbsSendTimeHeaderExtension_w(
 // something that is not used.
 #if defined(ENABLE_EXTERNAL_AUTH)
   const webrtc::RtpExtension* send_time_extension =
-      FindHeaderExtension(extensions, webrtc::RtpExtension::kAbsSendTimeUri);
+      webrtc::RtpExtension::FindHeaderExtensionByUri(
+          extensions, webrtc::RtpExtension::kAbsSendTimeUri);
   int rtp_abs_sendtime_extn_id =
       send_time_extension ? send_time_extension->id : -1;
   invoker_.AsyncInvoke<void>(
@@ -1724,12 +1769,16 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  if (!SetRtpTransportParameters(content, action, CS_LOCAL, error_desc)) {
+  RtpHeaderExtensions rtp_header_extensions =
+      GetFilteredRtpHeaderExtensions(audio->rtp_header_extensions());
+
+  if (!SetRtpTransportParameters(content, action, CS_LOCAL,
+      rtp_header_extensions, error_desc)) {
     return false;
   }
 
   AudioRecvParameters recv_params = last_recv_params_;
-  RtpParametersFromMediaDescription(audio, &recv_params);
+  RtpParametersFromMediaDescription(audio, rtp_header_extensions, &recv_params);
   if (!media_channel()->SetRecvParameters(recv_params)) {
     SafeSetError("Failed to set local audio description recv parameters.",
                  error_desc);
@@ -1769,12 +1818,17 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  if (!SetRtpTransportParameters(content, action, CS_REMOTE, error_desc)) {
+  RtpHeaderExtensions rtp_header_extensions =
+      GetFilteredRtpHeaderExtensions(audio->rtp_header_extensions());
+
+  if (!SetRtpTransportParameters(content, action, CS_REMOTE,
+      rtp_header_extensions, error_desc)) {
     return false;
   }
 
   AudioSendParameters send_params = last_send_params_;
-  RtpSendParametersFromMediaDescription(audio, &send_params);
+  RtpSendParametersFromMediaDescription(audio, rtp_header_extensions,
+      &send_params);
   if (audio->agc_minus_10db()) {
     send_params.options.adjust_agc_delta = rtc::Optional<int>(kAgcMinus10db);
   }
@@ -1797,7 +1851,7 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   }
 
   if (audio->rtp_header_extensions_set()) {
-    MaybeCacheRtpAbsSendTimeHeaderExtension_w(audio->rtp_header_extensions());
+    MaybeCacheRtpAbsSendTimeHeaderExtension_w(rtp_header_extensions);
   }
 
   set_remote_content_direction(content->direction());
@@ -2002,12 +2056,16 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  if (!SetRtpTransportParameters(content, action, CS_LOCAL, error_desc)) {
+  RtpHeaderExtensions rtp_header_extensions =
+      GetFilteredRtpHeaderExtensions(video->rtp_header_extensions());
+
+  if (!SetRtpTransportParameters(content, action, CS_LOCAL,
+      rtp_header_extensions, error_desc)) {
     return false;
   }
 
   VideoRecvParameters recv_params = last_recv_params_;
-  RtpParametersFromMediaDescription(video, &recv_params);
+  RtpParametersFromMediaDescription(video, rtp_header_extensions, &recv_params);
   if (!media_channel()->SetRecvParameters(recv_params)) {
     SafeSetError("Failed to set local video description recv parameters.",
                  error_desc);
@@ -2047,12 +2105,17 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  if (!SetRtpTransportParameters(content, action, CS_REMOTE, error_desc)) {
+  RtpHeaderExtensions rtp_header_extensions =
+      GetFilteredRtpHeaderExtensions(video->rtp_header_extensions());
+
+  if (!SetRtpTransportParameters(content, action, CS_REMOTE,
+      rtp_header_extensions, error_desc)) {
     return false;
   }
 
   VideoSendParameters send_params = last_send_params_;
-  RtpSendParametersFromMediaDescription(video, &send_params);
+  RtpSendParametersFromMediaDescription(video, rtp_header_extensions,
+      &send_params);
   if (video->conference_mode()) {
     send_params.conference_mode = true;
   }
@@ -2076,7 +2139,7 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   }
 
   if (video->rtp_header_extensions_set()) {
-    MaybeCacheRtpAbsSendTimeHeaderExtension_w(video->rtp_header_extensions());
+    MaybeCacheRtpAbsSendTimeHeaderExtension_w(rtp_header_extensions);
   }
 
   set_remote_content_direction(content->direction());
@@ -2197,12 +2260,16 @@ bool RtpDataChannel::SetLocalContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  if (!SetRtpTransportParameters(content, action, CS_LOCAL, error_desc)) {
+  RtpHeaderExtensions rtp_header_extensions =
+      GetFilteredRtpHeaderExtensions(data->rtp_header_extensions());
+
+  if (!SetRtpTransportParameters(content, action, CS_LOCAL,
+      rtp_header_extensions, error_desc)) {
     return false;
   }
 
   DataRecvParameters recv_params = last_recv_params_;
-  RtpParametersFromMediaDescription(data, &recv_params);
+  RtpParametersFromMediaDescription(data, rtp_header_extensions, &recv_params);
   if (!media_channel()->SetRecvParameters(recv_params)) {
     SafeSetError("Failed to set remote data description recv parameters.",
                  error_desc);
@@ -2251,13 +2318,18 @@ bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
     return false;
   }
 
+  RtpHeaderExtensions rtp_header_extensions =
+      GetFilteredRtpHeaderExtensions(data->rtp_header_extensions());
+
   LOG(LS_INFO) << "Setting remote data description";
-  if (!SetRtpTransportParameters(content, action, CS_REMOTE, error_desc)) {
+  if (!SetRtpTransportParameters(content, action, CS_REMOTE,
+      rtp_header_extensions, error_desc)) {
     return false;
   }
 
   DataSendParameters send_params = last_send_params_;
-  RtpSendParametersFromMediaDescription<DataCodec>(data, &send_params);
+  RtpSendParametersFromMediaDescription<DataCodec>(data, rtp_header_extensions,
+      &send_params);
   if (!media_channel()->SetSendParameters(send_params)) {
     SafeSetError("Failed to set remote data description send parameters.",
                  error_desc);

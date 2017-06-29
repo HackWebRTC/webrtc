@@ -385,10 +385,17 @@ if (rtc_include_tests) {
 
   rtc_test("rtc_unittests") {
     testonly = true
+    sources = [
+      "config_unittest.cc",
+    ]
+
     deps = [
+      ":webrtc_common",
       "api:rtc_api_unittests",
       "api/audio_codecs/test:audio_codecs_api_unittests",
       "base:rtc_base_approved_unittests",
+      "base:rtc_base_tests_main",
+      "base:rtc_base_tests_utils",
       "base:rtc_base_unittests",
       "base:rtc_numerics_unittests",
       "base:rtc_task_queue_unittests",

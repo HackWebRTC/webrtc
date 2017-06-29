@@ -625,6 +625,9 @@ bool WebRtcSession::Initialize(
     webrtc_session_desc_factory_->SetSdesPolicy(cricket::SEC_DISABLED);
   }
 
+  webrtc_session_desc_factory_->set_enable_encrypted_rtp_header_extensions(
+      options.crypto_options.enable_encrypted_rtp_header_extensions);
+
   return true;
 }
 

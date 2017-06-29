@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
+
 #include "webrtc/pc/srtpfilter.h"
 
 #include "third_party/libsrtp/include/srtp.h"
@@ -193,6 +195,53 @@ class SrtpFilterTest : public testing::Test {
     EXPECT_EQ(rtcp_len, out_len);
     EXPECT_EQ(0, memcmp(rtcp_packet, kRtcpReport, rtcp_len));
   }
+  void TestProtectUnprotectHeaderEncryption(const std::string& cs1,
+      const std::string& cs2,
+      const std::vector<int>& encrypted_header_ids) {
+    rtc::Buffer rtp_buffer(sizeof(kPcmuFrameWithExtensions) +
+        rtp_auth_tag_len(cs1));
+    char* rtp_packet = rtp_buffer.data<char>();
+    size_t rtp_packet_size = rtp_buffer.size();
+    char original_rtp_packet[sizeof(kPcmuFrameWithExtensions)];
+    size_t original_rtp_packet_size = sizeof(original_rtp_packet);
+    int rtp_len = sizeof(kPcmuFrameWithExtensions), out_len;
+    memcpy(rtp_packet, kPcmuFrameWithExtensions, rtp_len);
+    // In order to be able to run this test function multiple times we can not
+    // use the same sequence number twice. Increase the sequence number by one.
+    rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet) + 2,
+                 ++sequence_number_);
+    memcpy(original_rtp_packet, rtp_packet, rtp_len);
+
+    EXPECT_TRUE(f1_.ProtectRtp(rtp_packet, rtp_len,
+                               static_cast<int>(rtp_buffer.size()),
+                               &out_len));
+    EXPECT_EQ(out_len, rtp_len + rtp_auth_tag_len(cs1));
+    EXPECT_NE(0, memcmp(rtp_packet, original_rtp_packet, rtp_len));
+    CompareHeaderExtensions(rtp_packet, rtp_packet_size,
+        original_rtp_packet, original_rtp_packet_size,
+        encrypted_header_ids, false);
+    EXPECT_TRUE(f2_.UnprotectRtp(rtp_packet, out_len, &out_len));
+    EXPECT_EQ(rtp_len, out_len);
+    EXPECT_EQ(0, memcmp(rtp_packet, original_rtp_packet, rtp_len));
+    CompareHeaderExtensions(rtp_packet, rtp_packet_size,
+        original_rtp_packet, original_rtp_packet_size,
+        encrypted_header_ids, true);
+
+    EXPECT_TRUE(f2_.ProtectRtp(rtp_packet, rtp_len,
+                               static_cast<int>(rtp_buffer.size()),
+                               &out_len));
+    EXPECT_EQ(out_len, rtp_len + rtp_auth_tag_len(cs2));
+    EXPECT_NE(0, memcmp(rtp_packet, original_rtp_packet, rtp_len));
+    CompareHeaderExtensions(rtp_packet, rtp_packet_size,
+        original_rtp_packet, original_rtp_packet_size,
+        encrypted_header_ids, false);
+    EXPECT_TRUE(f1_.UnprotectRtp(rtp_packet, out_len, &out_len));
+    EXPECT_EQ(rtp_len, out_len);
+    EXPECT_EQ(0, memcmp(rtp_packet, original_rtp_packet, rtp_len));
+    CompareHeaderExtensions(rtp_packet, rtp_packet_size,
+        original_rtp_packet, original_rtp_packet_size,
+        encrypted_header_ids, true);
+  }
   void TestProtectSetParamsDirect(bool enable_external_auth, int cs,
       const uint8_t* key1, int key1_len, const uint8_t* key2, int key2_len,
       const std::string& cs_name) {
@@ -216,6 +265,27 @@ class SrtpFilterTest : public testing::Test {
       EXPECT_TRUE(f2_.IsExternalAuthActive());
     }
     TestProtectUnprotect(cs_name, cs_name);
+  }
+  void TestProtectSetParamsDirectHeaderEncryption(int cs,
+      const uint8_t* key1, int key1_len, const uint8_t* key2, int key2_len,
+      const std::string& cs_name) {
+    std::vector<int> encrypted_headers;
+    encrypted_headers.push_back(1);
+    // Don't encrypt header ids 2 and 3.
+    encrypted_headers.push_back(4);
+    EXPECT_EQ(key1_len, key2_len);
+    EXPECT_EQ(cs_name, rtc::SrtpCryptoSuiteToName(cs));
+    f1_.SetEncryptedHeaderExtensionIds(CS_LOCAL, encrypted_headers);
+    f1_.SetEncryptedHeaderExtensionIds(CS_REMOTE, encrypted_headers);
+    f2_.SetEncryptedHeaderExtensionIds(CS_LOCAL, encrypted_headers);
+    f2_.SetEncryptedHeaderExtensionIds(CS_REMOTE, encrypted_headers);
+    EXPECT_TRUE(f1_.SetRtpParams(cs, key1, key1_len, cs, key2, key2_len));
+    EXPECT_TRUE(f2_.SetRtpParams(cs, key2, key2_len, cs, key1, key1_len));
+    EXPECT_TRUE(f1_.IsActive());
+    EXPECT_TRUE(f2_.IsActive());
+    EXPECT_FALSE(f1_.IsExternalAuthActive());
+    EXPECT_FALSE(f2_.IsExternalAuthActive());
+    TestProtectUnprotectHeaderEncryption(cs_name, cs_name, encrypted_headers);
   }
   cricket::SrtpFilter f1_;
   cricket::SrtpFilter f2_;
@@ -619,10 +689,24 @@ TEST_P(SrtpFilterProtectSetParamsDirectTest, Test_AES_CM_128_HMAC_SHA1_80) {
       CS_AES_CM_128_HMAC_SHA1_80);
 }
 
+TEST_F(SrtpFilterTest,
+    TestProtectSetParamsDirectHeaderEncryption_AES_CM_128_HMAC_SHA1_80) {
+  TestProtectSetParamsDirectHeaderEncryption(rtc::SRTP_AES128_CM_SHA1_80,
+      kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
+      CS_AES_CM_128_HMAC_SHA1_80);
+}
+
 // Test directly setting the params with AES_CM_128_HMAC_SHA1_32.
 TEST_P(SrtpFilterProtectSetParamsDirectTest, Test_AES_CM_128_HMAC_SHA1_32) {
   bool enable_external_auth = GetParam();
   TestProtectSetParamsDirect(enable_external_auth, rtc::SRTP_AES128_CM_SHA1_32,
+      kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
+      CS_AES_CM_128_HMAC_SHA1_32);
+}
+
+TEST_F(SrtpFilterTest,
+    TestProtectSetParamsDirectHeaderEncryption_AES_CM_128_HMAC_SHA1_32) {
+  TestProtectSetParamsDirectHeaderEncryption(rtc::SRTP_AES128_CM_SHA1_32,
       kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
       CS_AES_CM_128_HMAC_SHA1_32);
 }
@@ -635,10 +719,24 @@ TEST_P(SrtpFilterProtectSetParamsDirectTest, Test_SRTP_AEAD_AES_128_GCM) {
       CS_AEAD_AES_128_GCM);
 }
 
+TEST_F(SrtpFilterTest,
+    TestProtectSetParamsDirectHeaderEncryption_SRTP_AEAD_AES_128_GCM) {
+  TestProtectSetParamsDirectHeaderEncryption(rtc::SRTP_AEAD_AES_128_GCM,
+      kTestKeyGcm128_1, kTestKeyGcm128Len, kTestKeyGcm128_2, kTestKeyGcm128Len,
+      CS_AEAD_AES_128_GCM);
+}
+
 // Test directly setting the params with SRTP_AEAD_AES_256_GCM.
 TEST_P(SrtpFilterProtectSetParamsDirectTest, Test_SRTP_AEAD_AES_256_GCM) {
   bool enable_external_auth = GetParam();
   TestProtectSetParamsDirect(enable_external_auth, rtc::SRTP_AEAD_AES_256_GCM,
+      kTestKeyGcm256_1, kTestKeyGcm256Len, kTestKeyGcm256_2, kTestKeyGcm256Len,
+      CS_AEAD_AES_256_GCM);
+}
+
+TEST_F(SrtpFilterTest,
+    TestProtectSetParamsDirectHeaderEncryption_SRTP_AEAD_AES_256_GCM) {
+  TestProtectSetParamsDirectHeaderEncryption(rtc::SRTP_AEAD_AES_256_GCM,
       kTestKeyGcm256_1, kTestKeyGcm256Len, kTestKeyGcm256_2, kTestKeyGcm256Len,
       CS_AEAD_AES_256_GCM);
 }

@@ -319,13 +319,18 @@ class BaseChannel
                                   ContentAction action,
                                   std::string* error_desc) = 0;
   bool SetRtpTransportParameters(const MediaContentDescription* content,
-                                 ContentAction action,
-                                 ContentSource src,
-                                 std::string* error_desc);
+      ContentAction action, ContentSource src,
+      const RtpHeaderExtensions& extensions, std::string* error_desc);
   bool SetRtpTransportParameters_n(const MediaContentDescription* content,
-                                   ContentAction action,
-                                   ContentSource src,
-                                   std::string* error_desc);
+      ContentAction action, ContentSource src,
+      const std::vector<int>& encrypted_extension_ids,
+      std::string* error_desc);
+
+  // Return a list of RTP header extensions with the non-encrypted extensions
+  // removed depending on the current crypto_options_ and only if both the
+  // non-encrypted and encrypted extension is present for the same URI.
+  RtpHeaderExtensions GetFilteredRtpHeaderExtensions(
+      const RtpHeaderExtensions& extensions);
 
   // Helper method to get RTP Absoulute SendTime extension header id if
   // present in remote supported extensions list.
@@ -338,6 +343,7 @@ class BaseChannel
   bool SetSrtp_n(const std::vector<CryptoParams>& params,
                  ContentAction action,
                  ContentSource src,
+                 const std::vector<int>& encrypted_extension_ids,
                  std::string* error_desc);
   bool SetRtcpMux_n(bool enable,
                     ContentAction action,

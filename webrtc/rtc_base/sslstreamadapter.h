@@ -78,6 +78,10 @@ struct CryptoOptions {
   // Enable GCM crypto suites from RFC 7714 for SRTP. GCM will only be used
   // if both sides enable it.
   bool enable_gcm_crypto_suites = false;
+
+  // If set to true, encrypted RTP header extensions as defined in RFC 6904
+  // will be negotiated. They will only be used if both peers support them.
+  bool enable_encrypted_rtp_header_extensions = false;
 };
 
 // Returns supported crypto suites, given |crypto_options|.

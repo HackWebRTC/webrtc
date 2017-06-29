@@ -9,6 +9,7 @@
  */
 #include "webrtc/config.h"
 
+#include <algorithm>
 #include <sstream>
 #include <string>
 
@@ -41,6 +42,9 @@ std::string RtpExtension::ToString() const {
   std::stringstream ss;
   ss << "{uri: " << uri;
   ss << ", id: " << id;
+  if (encrypt) {
+    ss << ", encrypt";
+  }
   ss << '}';
   return ss.str();
 }
@@ -80,6 +84,9 @@ const char* RtpExtension::kVideoTimingUri =
     "http://www.webrtc.org/experiments/rtp-hdrext/video-timing";
 const int RtpExtension::kVideoTimingDefaultId = 8;
 
+const char* RtpExtension::kEncryptHeaderExtensionsUri =
+    "urn:ietf:params:rtp-hdrext:encrypt";
+
 const int RtpExtension::kMinId = 1;
 const int RtpExtension::kMaxId = 14;
 
@@ -96,6 +103,61 @@ bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
          uri == webrtc::RtpExtension::kPlayoutDelayUri ||
          uri == webrtc::RtpExtension::kVideoContentTypeUri ||
          uri == webrtc::RtpExtension::kVideoTimingUri;
+}
+
+bool RtpExtension::IsEncryptionSupported(const std::string& uri) {
+  return uri == webrtc::RtpExtension::kAudioLevelUri ||
+         uri == webrtc::RtpExtension::kTimestampOffsetUri ||
+#if !defined(ENABLE_EXTERNAL_AUTH)
+         // TODO(jbauch): Figure out a way to always allow "kAbsSendTimeUri"
+         // here and filter out later if external auth is really used in
+         // srtpfilter. External auth is used by Chromium and replaces the
+         // extension header value of "kAbsSendTimeUri", so it must not be
+         // encrypted (which can't be done by Chromium).
+         uri == webrtc::RtpExtension::kAbsSendTimeUri ||
+#endif
+         uri == webrtc::RtpExtension::kVideoRotationUri ||
+         uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
+         uri == webrtc::RtpExtension::kPlayoutDelayUri ||
+         uri == webrtc::RtpExtension::kVideoContentTypeUri;
+}
+
+const RtpExtension* RtpExtension::FindHeaderExtensionByUri(
+    const std::vector<RtpExtension>& extensions,
+    const std::string& uri) {
+  for (const auto& extension : extensions) {
+    if (extension.uri == uri) {
+      return &extension;
+    }
+  }
+  return nullptr;
+}
+
+std::vector<RtpExtension> RtpExtension::FilterDuplicateNonEncrypted(
+    const std::vector<RtpExtension>& extensions) {
+  std::vector<RtpExtension> filtered;
+  for (auto extension = extensions.begin(); extension != extensions.end();
+      ++extension) {
+    if (extension->encrypt) {
+      filtered.push_back(*extension);
+      continue;
+    }
+
+    // Only add non-encrypted extension if no encrypted with the same URI
+    // is also present...
+    if (std::find_if(extension + 1, extensions.end(),
+        [extension](const RtpExtension& check) {
+          return extension->uri == check.uri;
+        }) != extensions.end()) {
+      continue;
+    }
+
+    // ...and has not been added before.
+    if (!FindHeaderExtensionByUri(filtered, extension->uri)) {
+      filtered.push_back(*extension);
+    }
+  }
+  return filtered;
 }
 
 VideoStream::VideoStream()

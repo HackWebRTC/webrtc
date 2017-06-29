@@ -58,14 +58,30 @@ struct UlpfecConfig {
 
 // RTP header extension, see RFC 5285.
 struct RtpExtension {
-  RtpExtension() : id(0) {}
+  RtpExtension() {}
   RtpExtension(const std::string& uri, int id) : uri(uri), id(id) {}
+  RtpExtension(const std::string& uri, int id, bool encrypt) : uri(uri),
+      id(id), encrypt(encrypt) {}
   std::string ToString() const;
   bool operator==(const RtpExtension& rhs) const {
-    return uri == rhs.uri && id == rhs.id;
+    return uri == rhs.uri && id == rhs.id && encrypt == rhs.encrypt;
   }
   static bool IsSupportedForAudio(const std::string& uri);
   static bool IsSupportedForVideo(const std::string& uri);
+  // Return "true" if the given RTP header extension URI may be encrypted.
+  static bool IsEncryptionSupported(const std::string& uri);
+
+  // Returns the named header extension if found among all extensions,
+  // nullptr otherwise.
+  static const RtpExtension* FindHeaderExtensionByUri(
+    const std::vector<RtpExtension>& extensions,
+    const std::string& uri);
+
+  // Return a list of RTP header extensions with the non-encrypted extensions
+  // removed if both the encrypted and non-encrypted extension is present for
+  // the same URI.
+  static std::vector<RtpExtension> FilterDuplicateNonEncrypted(
+    const std::vector<RtpExtension>& extensions);
 
   // Header extension for audio levels, as defined in:
   // http://tools.ietf.org/html/draft-ietf-avtext-client-to-mixer-audio-level-03
@@ -104,12 +120,17 @@ struct RtpExtension {
   static const char* kPlayoutDelayUri;
   static const int kPlayoutDelayDefaultId;
 
+  // Encryption of Header Extensions, see RFC 6904 for details:
+  // https://tools.ietf.org/html/rfc6904
+  static const char* kEncryptHeaderExtensionsUri;
+
   // Inclusive min and max IDs for one-byte header extensions, per RFC5285.
   static const int kMinId;
   static const int kMaxId;
 
   std::string uri;
-  int id;
+  int id = 0;
+  bool encrypt = false;
 };
 
 struct VideoStream {

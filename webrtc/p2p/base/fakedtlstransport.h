@@ -91,6 +91,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
       if (!asymmetric) {
         dest->SetDestination(this, true);
       }
+      dtls_state_ = DTLS_TRANSPORT_CONNECTED;
       ice_transport_->SetDestination(
           static_cast<FakeIceTransport*>(dest->ice_transport()), asymmetric);
     } else {
@@ -122,6 +123,12 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     *role = ssl_role_;
     return true;
   }
+  const rtc::CryptoOptions& crypto_options() const override {
+    return crypto_options_;
+  }
+  void SetCryptoOptions(const rtc::CryptoOptions& crypto_options) {
+    crypto_options_ = crypto_options;
+  }
   bool SetLocalCertificate(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override {
     local_cert_ = certificate;
@@ -135,8 +142,11 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     if (!do_dtls_) {
       return false;
     }
-    *crypto_suite = rtc::SRTP_AES128_CM_SHA1_80;
+    *crypto_suite = crypto_suite_;
     return true;
+  }
+  void SetSrtpCryptoSuite(int crypto_suite) {
+    crypto_suite_ = crypto_suite;
   }
   bool GetSslCipherSuite(int* cipher_suite) override { return false; }
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override {
@@ -230,6 +240,8 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_12;
   rtc::SSLFingerprint dtls_fingerprint_;
   rtc::SSLRole ssl_role_ = rtc::SSL_CLIENT;
+  int crypto_suite_ = rtc::SRTP_AES128_CM_SHA1_80;
+  rtc::CryptoOptions crypto_options_;
 
   DtlsTransportState dtls_state_ = DTLS_TRANSPORT_NEW;
 

@@ -76,6 +76,10 @@ class SrtpFilter {
   bool SetAnswer(const std::vector<CryptoParams>& answer_params,
                  ContentSource source);
 
+  // Set the header extension ids that should be encrypted for the given source.
+  void SetEncryptedHeaderExtensionIds(ContentSource source,
+      const std::vector<int>& extension_ids);
+
   // Just set up both sets of keys directly.
   // Used with DTLS-SRTP.
   bool SetRtpParams(int send_cs,
@@ -84,6 +88,12 @@ class SrtpFilter {
                     int recv_cs,
                     const uint8_t* recv_key,
                     int recv_key_len);
+  bool UpdateRtpParams(int send_cs,
+                       const uint8_t* send_key,
+                       int send_key_len,
+                       int recv_cs,
+                       const uint8_t* recv_key,
+                       int recv_key_len);
   bool SetRtcpParams(int send_cs,
                      const uint8_t* send_key,
                      int send_key_len,
@@ -177,6 +187,8 @@ class SrtpFilter {
   std::unique_ptr<SrtpSession> recv_rtcp_session_;
   CryptoParams applied_send_params_;
   CryptoParams applied_recv_params_;
+  std::vector<int> send_encrypted_header_extension_ids_;
+  std::vector<int> recv_encrypted_header_extension_ids_;
 };
 
 // Class that wraps a libSRTP session.
@@ -188,9 +200,15 @@ class SrtpSession {
   // Configures the session for sending data using the specified
   // cipher-suite and key. Receiving must be done by a separate session.
   bool SetSend(int cs, const uint8_t* key, size_t len);
+  bool UpdateSend(int cs, const uint8_t* key, size_t len);
+
   // Configures the session for receiving data using the specified
   // cipher-suite and key. Sending must be done by a separate session.
   bool SetRecv(int cs, const uint8_t* key, size_t len);
+  bool UpdateRecv(int cs, const uint8_t* key, size_t len);
+
+  void SetEncryptedHeaderExtensionIds(
+      const std::vector<int>& encrypted_header_extension_ids);
 
   // Encrypts/signs an individual RTP/RTCP packet, in-place.
   // If an HMAC is used, this will increase the packet size.
@@ -229,7 +247,11 @@ class SrtpSession {
   static void Terminate();
 
  private:
+  bool DoSetKey(int type, int cs, const uint8_t* key, size_t len);
   bool SetKey(int type, int cs, const uint8_t* key, size_t len);
+  bool UpdateKey(int type, int cs, const uint8_t* key, size_t len);
+  bool SetEncryptedHeaderExtensionIds(int type,
+      const std::vector<int>& encrypted_header_extension_ids);
     // Returns send stream current packet index from srtp db.
   bool GetSendStreamPacketIndex(void* data, int in_len, int64_t* index);
 
@@ -246,6 +268,7 @@ class SrtpSession {
   int last_send_seq_num_ = -1;
   bool external_auth_active_ = false;
   bool external_auth_enabled_ = false;
+  std::vector<int> encrypted_header_extension_ids_;
   RTC_DISALLOW_COPY_AND_ASSIGN(SrtpSession);
 };
 

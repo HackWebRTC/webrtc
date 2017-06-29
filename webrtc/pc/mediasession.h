@@ -475,6 +475,10 @@ class MediaSessionDescriptionFactory {
   // applications. |add_legacy_| is true per default.
   void set_add_legacy_streams(bool add_legacy) { add_legacy_ = add_legacy; }
 
+  void set_enable_encrypted_rtp_header_extensions(bool enable) {
+    enable_encrypted_rtp_header_extensions_ = enable;
+  }
+
   SessionDescription* CreateOffer(
       const MediaSessionOptions& options,
       const SessionDescription* current_description) const;
@@ -574,6 +578,7 @@ class MediaSessionDescriptionFactory {
   DataCodecs data_codecs_;
   SecurePolicy secure_;
   bool add_legacy_;
+  bool enable_encrypted_rtp_header_extensions_ = false;
   std::string lang_;
   const TransportDescriptionFactory* transport_desc_factory_;
 };

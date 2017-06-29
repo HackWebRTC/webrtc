@@ -94,6 +94,10 @@ class DtlsTransport : public DtlsTransportInternal {
                          const rtc::CryptoOptions& crypto_options);
   ~DtlsTransport() override;
 
+  const rtc::CryptoOptions& crypto_options() const override {
+    return crypto_options_;
+  }
+
   DtlsTransportState dtls_state() const override { return dtls_state_; }
 
   const std::string& transport_name() const override { return transport_name_; }
@@ -218,6 +222,7 @@ class DtlsTransport : public DtlsTransportInternal {
   rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
   rtc::SSLRole ssl_role_;
   rtc::SSLProtocolVersion ssl_max_version_;
+  rtc::CryptoOptions crypto_options_;
   rtc::Buffer remote_fingerprint_value_;
   std::string remote_fingerprint_algorithm_;
 

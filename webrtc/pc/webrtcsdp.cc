@@ -1176,7 +1176,25 @@ bool ParseExtmap(const std::string& line,
     return false;
   }
 
-  *extmap = RtpExtension(uri, value);
+  bool encrypted = false;
+  if (uri == RtpExtension::kEncryptHeaderExtensionsUri) {
+    // RFC 6904
+    // a=extmap:<value["/"<direction>] urn:ietf:params:rtp-hdrext:encrypt \
+    //     <URI> <extensionattributes>
+    const size_t expected_min_fields_encrypted = expected_min_fields + 1;
+    if (fields.size() < expected_min_fields_encrypted) {
+      return ParseFailedExpectMinFieldNum(line, expected_min_fields_encrypted,
+          error);
+    }
+
+    encrypted = true;
+    uri = fields[2];
+    if (uri == RtpExtension::kEncryptHeaderExtensionsUri) {
+      return ParseFailed(line, "Recursive encrypted header.", error);
+    }
+  }
+
+  *extmap = RtpExtension(uri, value, encrypted);
   return true;
 }
 
@@ -1433,9 +1451,13 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
   // The definitions MUST be either all session level or all media level. This
   // implementation uses all media level.
   for (size_t i = 0; i < media_desc->rtp_header_extensions().size(); ++i) {
+    const RtpExtension& extension = media_desc->rtp_header_extensions()[i];
     InitAttrLine(kAttributeExtmap, &os);
-    os << kSdpDelimiterColon << media_desc->rtp_header_extensions()[i].id
-       << kSdpDelimiterSpace << media_desc->rtp_header_extensions()[i].uri;
+    os << kSdpDelimiterColon << extension.id;
+    if (extension.encrypt) {
+      os << kSdpDelimiterSpace << RtpExtension::kEncryptHeaderExtensionsUri;
+    }
+    os << kSdpDelimiterSpace << extension.uri;
     AddLine(os.str(), message);
   }
 

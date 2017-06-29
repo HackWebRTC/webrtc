@@ -77,15 +77,49 @@ bool SrtpFilter::SetRtpParams(int send_cs,
     return false;
   }
   CreateSrtpSessions();
-  if (!send_session_->SetSend(send_cs, send_key, send_key_len))
+  send_session_->SetEncryptedHeaderExtensionIds(
+      send_encrypted_header_extension_ids_);
+  if (!send_session_->SetSend(send_cs, send_key, send_key_len)) {
     return false;
+  }
 
-  if (!recv_session_->SetRecv(recv_cs, recv_key, recv_key_len))
+  recv_session_->SetEncryptedHeaderExtensionIds(
+      recv_encrypted_header_extension_ids_);
+  if (!recv_session_->SetRecv(recv_cs, recv_key, recv_key_len)) {
     return false;
+  }
 
   state_ = ST_ACTIVE;
 
   LOG(LS_INFO) << "SRTP activated with negotiated parameters:"
+               << " send cipher_suite " << send_cs
+               << " recv cipher_suite " << recv_cs;
+  return true;
+}
+
+bool SrtpFilter::UpdateRtpParams(int send_cs,
+                                 const uint8_t* send_key,
+                                 int send_key_len,
+                                 int recv_cs,
+                                 const uint8_t* recv_key,
+                                 int recv_key_len) {
+  if (!IsActive()) {
+    LOG(LS_ERROR) << "Tried to update SRTP Params when filter is not active";
+    return false;
+  }
+  send_session_->SetEncryptedHeaderExtensionIds(
+      send_encrypted_header_extension_ids_);
+  if (!send_session_->UpdateSend(send_cs, send_key, send_key_len)) {
+    return false;
+  }
+
+  recv_session_->SetEncryptedHeaderExtensionIds(
+      recv_encrypted_header_extension_ids_);
+  if (!recv_session_->UpdateRecv(recv_cs, recv_key, recv_key_len)) {
+    return false;
+  }
+
+  LOG(LS_INFO) << "SRTP updated with negotiated parameters:"
                << " send cipher_suite " << send_cs
                << " recv cipher_suite " << recv_cs;
   return true;
@@ -113,12 +147,14 @@ bool SrtpFilter::SetRtcpParams(int send_cs,
   }
 
   send_rtcp_session_.reset(new SrtpSession());
-  if (!send_rtcp_session_->SetRecv(send_cs, send_key, send_key_len))
+  if (!send_rtcp_session_->SetRecv(send_cs, send_key, send_key_len)) {
     return false;
+  }
 
   recv_rtcp_session_.reset(new SrtpSession());
-  if (!recv_rtcp_session_->SetRecv(recv_cs, recv_key, recv_key_len))
+  if (!recv_rtcp_session_->SetRecv(recv_cs, recv_key, recv_key_len)) {
     return false;
+  }
 
   LOG(LS_INFO) << "SRTCP activated with negotiated parameters:"
                << " send cipher_suite " << send_cs
@@ -222,6 +258,15 @@ bool SrtpFilter::IsExternalAuthActive() const {
 
   RTC_CHECK(send_session_);
   return send_session_->IsExternalAuthActive();
+}
+
+void SrtpFilter::SetEncryptedHeaderExtensionIds(ContentSource source,
+    const std::vector<int>& extension_ids) {
+  if (source == CS_LOCAL) {
+    recv_encrypted_header_extension_ids_ = extension_ids;
+  } else {
+    send_encrypted_header_extension_ids_ = extension_ids;
+  }
 }
 
 bool SrtpFilter::ExpectOffer(ContentSource source) {
@@ -384,6 +429,10 @@ bool SrtpFilter::ApplyParams(const CryptoParams& send_params,
                         recv_key.size()));
   if (ret) {
     CreateSrtpSessions();
+    send_session_->SetEncryptedHeaderExtensionIds(
+        send_encrypted_header_extension_ids_);
+    recv_session_->SetEncryptedHeaderExtensionIds(
+        recv_encrypted_header_extension_ids_);
     ret = (send_session_->SetSend(
                rtc::SrtpCryptoSuiteFromName(send_params.cipher_suite),
                send_key.data(), send_key.size()) &&
@@ -456,8 +505,16 @@ bool SrtpSession::SetSend(int cs, const uint8_t* key, size_t len) {
   return SetKey(ssrc_any_outbound, cs, key, len);
 }
 
+bool SrtpSession::UpdateSend(int cs, const uint8_t* key, size_t len) {
+  return UpdateKey(ssrc_any_outbound, cs, key, len);
+}
+
 bool SrtpSession::SetRecv(int cs, const uint8_t* key, size_t len) {
   return SetKey(ssrc_any_inbound, cs, key, len);
+}
+
+bool SrtpSession::UpdateRecv(int cs, const uint8_t* key, size_t len) {
+  return UpdateKey(ssrc_any_inbound, cs, key, len);
 }
 
 bool SrtpSession::ProtectRtp(void* p, int in_len, int max_len, int* out_len) {
@@ -626,17 +683,9 @@ bool SrtpSession::GetSendStreamPacketIndex(void* p,
   return true;
 }
 
-bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (session_) {
-    LOG(LS_ERROR) << "Failed to create SRTP session: "
-                  << "SRTP session already created";
-    return false;
-  }
 
-  if (!Init()) {
-    return false;
-  }
+bool SrtpSession::DoSetKey(int type, int cs, const uint8_t* key, size_t len) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
   srtp_policy_t policy;
   memset(&policy, 0, sizeof(policy));
@@ -654,8 +703,8 @@ bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
     srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
     srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
   } else {
-    LOG(LS_WARNING) << "Failed to create SRTP session: unsupported"
-                    << " cipher_suite " << cs;
+    LOG(LS_WARNING) << "Failed to " << (session_ ? "update" : "create")
+        << " SRTP session: unsupported cipher_suite " << cs;
     return false;
   }
 
@@ -664,14 +713,16 @@ bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
   if (!rtc::GetSrtpKeyAndSaltLengths(cs, &expected_key_len,
       &expected_salt_len)) {
     // This should never happen.
-    LOG(LS_WARNING) << "Failed to create SRTP session: unsupported"
-                    << " cipher_suite without length information" << cs;
+    LOG(LS_WARNING) << "Failed to " << (session_ ? "update" : "create")
+        << " SRTP session: unsupported cipher_suite without length information"
+        << cs;
     return false;
   }
 
   if (!key ||
       len != static_cast<size_t>(expected_key_len + expected_salt_len)) {
-    LOG(LS_WARNING) << "Failed to create SRTP session: invalid key";
+    LOG(LS_WARNING) << "Failed to " << (session_ ? "update" : "create")
+        << " SRTP session: invalid key";
     return false;
   }
 
@@ -691,20 +742,64 @@ bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
       !rtc::IsGcmCryptoSuite(cs)) {
     policy.rtp.auth_type = EXTERNAL_HMAC_SHA1;
   }
+  if (!encrypted_header_extension_ids_.empty()) {
+    policy.enc_xtn_hdr = const_cast<int*>(&encrypted_header_extension_ids_[0]);
+    policy.enc_xtn_hdr_count =
+        static_cast<int>(encrypted_header_extension_ids_.size());
+  }
   policy.next = nullptr;
 
-  int err = srtp_create(&session_, &policy);
-  if (err != srtp_err_status_ok) {
-    session_ = nullptr;
-    LOG(LS_ERROR) << "Failed to create SRTP session, err=" << err;
-    return false;
+  if (!session_) {
+    int err = srtp_create(&session_, &policy);
+    if (err != srtp_err_status_ok) {
+      session_ = nullptr;
+      LOG(LS_ERROR) << "Failed to create SRTP session, err=" << err;
+      return false;
+    }
+    srtp_set_user_data(session_, this);
+  } else {
+    int err = srtp_update(session_, &policy);
+    if (err != srtp_err_status_ok) {
+      LOG(LS_ERROR) << "Failed to update SRTP session, err=" << err;
+      return false;
+    }
   }
 
-  srtp_set_user_data(session_, this);
   rtp_auth_tag_len_ = policy.rtp.auth_tag_len;
   rtcp_auth_tag_len_ = policy.rtcp.auth_tag_len;
   external_auth_active_ = (policy.rtp.auth_type == EXTERNAL_HMAC_SHA1);
   return true;
+}
+
+bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (session_) {
+    LOG(LS_ERROR) << "Failed to create SRTP session: "
+                  << "SRTP session already created";
+    return false;
+  }
+
+  if (!Init()) {
+    return false;
+  }
+
+  return DoSetKey(type, cs, key, len);
+}
+
+bool SrtpSession::UpdateKey(int type, int cs, const uint8_t* key, size_t len) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (!session_) {
+    LOG(LS_ERROR) << "Failed to update non-existing SRTP session";
+    return false;
+  }
+
+  return DoSetKey(type, cs, key, len);
+}
+
+void SrtpSession::SetEncryptedHeaderExtensionIds(
+    const std::vector<int>& encrypted_header_extension_ids) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  encrypted_header_extension_ids_ = encrypted_header_extension_ids;
 }
 
 bool SrtpSession::Init() {

@@ -327,6 +327,7 @@ if (rtc_include_tests) {
     sources = [
       "base/fakemediaengine.h",
       "base/fakenetworkinterface.h",
+      "base/fakertp.cc",
       "base/fakertp.h",
       "base/fakevideocapturer.h",
       "base/fakevideorenderer.h",
