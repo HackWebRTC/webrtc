@@ -577,6 +577,7 @@ def _CommonChecks(input_api, output_api):
   results.extend(_RunPythonTests(input_api, output_api))
   results.extend(_CheckUsageOfGoogleProtobufNamespace(input_api, output_api))
   results.extend(_CheckOrphanHeaders(input_api, output_api))
+  results.extend(_CheckNewLineAtTheEndOfProtoFiles(input_api, output_api))
   return results
 
 
@@ -631,4 +632,19 @@ def _CheckOrphanHeaders(input_api, output_api):
       if not in_build_gn:
         results.append(output_api.PresubmitError(error_msg.format(
             file_path, gn_file_path)))
+  return results
+
+
+def _CheckNewLineAtTheEndOfProtoFiles(input_api, output_api):
+  """Checks that all .proto files are terminated with a newline."""
+  error_msg = 'File {} must end with exactly one newline.'
+  results = []
+  source_file_filter = lambda x: input_api.FilterSourceFile(
+      x, white_list=(r'.+\.proto$',))
+  for f in input_api.AffectedSourceFiles(source_file_filter):
+    file_path = f.LocalPath()
+    with open(file_path) as f:
+      lines = f.readlines()
+      if lines[-1] != '\n' or lines[-2] == '\n':
+        results.append(output_api.PresubmitError(error_msg.format(file_path)))
   return results
