@@ -10,11 +10,12 @@
 
 #include "webrtc/examples/peerconnection/client/peer_connection_client.h"
 
-#include "webrtc/examples/peerconnection/client/defaults.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/examples/peerconnection/client/defaults.h"
 
 #ifdef WIN32
 #include "webrtc/base/win32socketserver.h"

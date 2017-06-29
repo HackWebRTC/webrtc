@@ -15,9 +15,9 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/messagehandler.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/signalthread.h"
 #include "webrtc/base/sigslot.h"
 
 typedef std::map<int, std::string> Peers;

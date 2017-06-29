@@ -404,6 +404,7 @@ rtc_static_library("rtc_base") {
   libs = []
   defines = []
   deps = [
+    ":rtc_task_queue",
     "..:webrtc_common",
   ]
   public_deps = [
@@ -479,8 +480,6 @@ rtc_static_library("rtc_base") {
     "rtccertificate.h",
     "rtccertificategenerator.cc",
     "rtccertificategenerator.h",
-    "signalthread.cc",
-    "signalthread.h",
     "sigslot.cc",
     "sigslot.h",
     "socket.h",
@@ -989,7 +988,6 @@ if (rtc_include_tests) {
       "rtccertificate_unittest.cc",
       "rtccertificategenerator_unittest.cc",
       "sha1digest_unittest.cc",
-      "signalthread_unittest.cc",
       "sigslot_unittest.cc",
       "sigslottester_unittest.cc",
       "stream_unittest.cc",

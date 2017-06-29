@@ -44,6 +44,16 @@ class SCOPED_LOCKABLE DebugNonReentrantCritScope {
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DebugNonReentrantCritScope);
 };
+
+class FunctorPostMessageHandler : public MessageHandler {
+ public:
+  void OnMessage(Message* msg) override {
+    RunnableData* data = static_cast<RunnableData*>(msg->pdata);
+    data->Run();
+    delete data;
+  }
+};
+
 }  // namespace
 
 //------------------------------------------------------------------
@@ -527,6 +537,14 @@ void MessageQueue::Dispatch(Message *pmsg) {
     LOG(LS_INFO) << "Message took " << diff << "ms to dispatch. Posted from: "
                  << pmsg->posted_from.ToString();
   }
+}
+
+void MessageQueue::PostFunctorInternal(const Location& posted_from,
+                                       RunnableData* message_data) {
+  // Use static to ensure it outlives this scope. Safe since
+  // FunctorPostMessageHandler keeps no state.
+  static FunctorPostMessageHandler handler;
+  Post(posted_from, &handler, 0, message_data);
 }
 
 }  // namespace rtc
