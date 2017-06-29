@@ -276,23 +276,25 @@ public class AppRTCBluetoothManager {
   /** Stops and closes all components related to Bluetooth audio. */
   public void stop() {
     ThreadUtils.checkIsOnMainThread();
-    unregisterReceiver(bluetoothHeadsetReceiver);
     Log.d(TAG, "stop: BT state=" + bluetoothState);
-    if (bluetoothAdapter != null) {
-      // Stop BT SCO connection with remote device if needed.
-      stopScoAudio();
-      // Close down remaining BT resources.
-      if (bluetoothState != State.UNINITIALIZED) {
-        cancelTimer();
-        if (bluetoothHeadset != null) {
-          bluetoothAdapter.closeProfileProxy(BluetoothProfile.HEADSET, bluetoothHeadset);
-          bluetoothHeadset = null;
-        }
-        bluetoothAdapter = null;
-        bluetoothDevice = null;
-        bluetoothState = State.UNINITIALIZED;
-      }
+    if (bluetoothAdapter == null) {
+      return;
     }
+    // Stop BT SCO connection with remote device if needed.
+    stopScoAudio();
+    // Close down remaining BT resources.
+    if (bluetoothState == State.UNINITIALIZED) {
+      return;
+    }
+    unregisterReceiver(bluetoothHeadsetReceiver);
+    cancelTimer();
+    if (bluetoothHeadset != null) {
+      bluetoothAdapter.closeProfileProxy(BluetoothProfile.HEADSET, bluetoothHeadset);
+      bluetoothHeadset = null;
+    }
+    bluetoothAdapter = null;
+    bluetoothDevice = null;
+    bluetoothState = State.UNINITIALIZED;
     Log.d(TAG, "stop done: BT state=" + bluetoothState);
   }
 
