@@ -11,8 +11,14 @@
 #ifndef WEBRTC_BASE_GUNIT_PROD_H_
 #define WEBRTC_BASE_GUNIT_PROD_H_
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/gunit_prod.h"
+#if defined(WEBRTC_ANDROID)
+// Android doesn't use gtest at all, so anything that relies on gtest should
+// check this define first.
+#define NO_GTEST
+#elif defined (GTEST_RELATIVE_PATH)
+#include "gtest/gtest_prod.h"
+#else
+#include "testing/base/gunit_prod.h"
+#endif
 
 #endif  // WEBRTC_BASE_GUNIT_PROD_H_

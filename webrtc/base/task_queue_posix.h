@@ -11,9 +11,26 @@
 #ifndef WEBRTC_BASE_TASK_QUEUE_POSIX_H_
 #define WEBRTC_BASE_TASK_QUEUE_POSIX_H_
 
+#include <pthread.h>
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/task_queue_posix.h"
+namespace rtc {
+
+class TaskQueue;
+
+namespace internal {
+
+class AutoSetCurrentQueuePtr {
+ public:
+  explicit AutoSetCurrentQueuePtr(TaskQueue* q);
+  ~AutoSetCurrentQueuePtr();
+
+ private:
+  TaskQueue* const prev_;
+};
+
+pthread_key_t GetQueuePtrTls();
+
+}  // namespace internal
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_TASK_QUEUE_POSIX_H_

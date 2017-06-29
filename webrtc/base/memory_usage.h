@@ -10,9 +10,15 @@
 #ifndef WEBRTC_BASE_MEMORY_USAGE_H_
 #define WEBRTC_BASE_MEMORY_USAGE_H_
 
+#include <stdint.h>
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/memory_usage.h"
+namespace rtc {
+
+// Returns current memory used by the process in bytes (working set size on
+// Windows and resident set size on other platforms).
+// Returns -1 on failure.
+int64_t GetProcessResidentSizeBytes();
+
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_MEMORY_USAGE_H_

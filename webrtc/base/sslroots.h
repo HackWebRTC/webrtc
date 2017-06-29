@@ -1,6 +1,3 @@
-#ifndef WEBRTC_BASE_SSLROOTS_H_
-#define WEBRTC_BASE_SSLROOTS_H_
-
 // This file is the root certificates in C form that are needed to connect to
 // Google.
 
@@ -4267,4 +4264,3 @@ const size_t kSSLCertCertificateSizeList[] = {
   1122,
 };
 
-#endif  // WEBRTC_BASE_SSLROOTS_H_

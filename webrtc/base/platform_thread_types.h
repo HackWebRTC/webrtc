@@ -11,9 +11,22 @@
 #ifndef WEBRTC_BASE_PLATFORM_THREAD_TYPES_H_
 #define WEBRTC_BASE_PLATFORM_THREAD_TYPES_H_
 
+#if defined(WEBRTC_WIN)
+#include <winsock2.h>
+#include <windows.h>
+#elif defined(WEBRTC_POSIX)
+#include <pthread.h>
+#include <unistd.h>
+#endif
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/platform_thread_types.h"
+namespace rtc {
+#if defined(WEBRTC_WIN)
+typedef DWORD PlatformThreadId;
+typedef DWORD PlatformThreadRef;
+#elif defined(WEBRTC_POSIX)
+typedef pid_t PlatformThreadId;
+typedef pthread_t PlatformThreadRef;
+#endif
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_PLATFORM_THREAD_TYPES_H_

@@ -325,7 +325,7 @@ dist_jar("libwebrtc") {
   deps = [
     ":libjingle_peerconnection_java",
     ":libjingle_peerconnection_metrics_default_java",
-    "//webrtc/rtc_base:base_java",
+    "//webrtc/base:base_java",
     "//webrtc/modules/audio_device:audio_device_java",
   ]
 }
@@ -414,7 +414,7 @@ android_library("libjingle_peerconnection_java") {
   ]
 
   deps = [
-    "//webrtc/rtc_base:base_java",
+    "//webrtc/base:base_java",
     "//webrtc/modules/audio_device:audio_device_java",
   ]
 }
@@ -423,7 +423,7 @@ android_library("libjingle_peerconnection_metrics_default_java") {
   java_files = [ "api/org/webrtc/Metrics.java" ]
 
   deps = [
-    "//webrtc/rtc_base:base_java",
+    "//webrtc/base:base_java",
   ]
 }
 
@@ -462,7 +462,7 @@ if (rtc_include_tests) {
       "//third_party/android_support_test_runner:rules_java",
       "//third_party/android_support_test_runner:runner_java",
       "//third_party/junit",
-      "//webrtc/rtc_base:base_java",
+      "//webrtc/base:base_java",
       "//webrtc/sdk/android:libjingle_peerconnection_java",
       "//webrtc/sdk/android:libjingle_peerconnection_metrics_default_java",
     ]

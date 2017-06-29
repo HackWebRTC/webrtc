@@ -23,9 +23,22 @@
 #ifndef WEBRTC_BASE_MD5_H_
 #define WEBRTC_BASE_MD5_H_
 
+#include <stdint.h>
+#include <stdlib.h>
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/md5.h"
+namespace rtc {
+
+struct MD5Context {
+  uint32_t buf[4];
+  uint32_t bits[2];
+  uint32_t in[16];
+};
+
+void MD5Init(MD5Context* context);
+void MD5Update(MD5Context* context, const uint8_t* data, size_t len);
+void MD5Final(MD5Context* context, uint8_t digest[16]);
+void MD5Transform(uint32_t buf[4], const uint32_t in[16]);
+
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_MD5_H_

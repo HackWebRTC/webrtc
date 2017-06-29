@@ -11,9 +11,43 @@
 #ifndef WEBRTC_BASE_NETWORKROUTE_H_
 #define WEBRTC_BASE_NETWORKROUTE_H_
 
+// TODO(honghaiz): Make a directory that describes the interfaces and structs
+// the media code can rely on and the network code can implement, and both can
+// depend on that, but not depend on each other. Then, move this file to that
+// directory.
+namespace rtc {
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/networkroute.h"
+struct NetworkRoute {
+  bool connected;
+  uint16_t local_network_id;
+  uint16_t remote_network_id;
+  int last_sent_packet_id;  // Last packet id sent on the PREVIOUS route.
+
+  NetworkRoute()
+      : connected(false),
+        local_network_id(0),
+        remote_network_id(0),
+        last_sent_packet_id(-1) {}
+
+  // The route is connected if the local and remote network ids are provided.
+  NetworkRoute(bool connected,
+               uint16_t local_net_id,
+               uint16_t remote_net_id,
+               int last_packet_id)
+      : connected(connected),
+        local_network_id(local_net_id),
+        remote_network_id(remote_net_id),
+        last_sent_packet_id(last_packet_id) {}
+
+  // |last_sent_packet_id| does not affect the NetworkRoute comparison.
+  bool operator==(const NetworkRoute& nr) const {
+    return connected == nr.connected &&
+           local_network_id == nr.local_network_id &&
+           remote_network_id == nr.remote_network_id;
+  }
+
+  bool operator!=(const NetworkRoute& nr) const { return !(*this == nr); }
+};
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_NETWORKROUTE_H_

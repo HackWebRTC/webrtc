@@ -11,9 +11,35 @@
 #ifndef WEBRTC_BASE_IFADDRS_CONVERTER_H_
 #define WEBRTC_BASE_IFADDRS_CONVERTER_H_
 
+#if defined(WEBRTC_ANDROID)
+#include "webrtc/base/ifaddrs-android.h"
+#else
+#include <ifaddrs.h>
+#endif  // WEBRTC_ANDROID
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/ifaddrs_converter.h"
+#include "webrtc/base/ipaddress.h"
+
+namespace rtc {
+
+// This class converts native interface addresses to our internal IPAddress
+// class. Subclasses should override ConvertNativeToIPAttributes to implement
+// the different ways of retrieving IPv6 attributes for various POSIX platforms.
+class IfAddrsConverter {
+ public:
+  IfAddrsConverter();
+  virtual ~IfAddrsConverter();
+  virtual bool ConvertIfAddrsToIPAddress(const struct ifaddrs* interface,
+                                         InterfaceAddress* ipaddress,
+                                         IPAddress* mask);
+
+ protected:
+  virtual bool ConvertNativeAttributesToIPAttributes(
+      const struct ifaddrs* interface,
+      int* ip_attributes);
+};
+
+IfAddrsConverter* CreateIfAddrsConverter();
+
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_IFADDRS_CONVERTER_H_

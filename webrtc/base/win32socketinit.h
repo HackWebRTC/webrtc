@@ -11,9 +11,10 @@
 #ifndef WEBRTC_BASE_WIN32SOCKETINIT_H_
 #define WEBRTC_BASE_WIN32SOCKETINIT_H_
 
+namespace rtc {
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/win32socketinit.h"
+void EnsureWinsockInit();
+
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_WIN32SOCKETINIT_H_

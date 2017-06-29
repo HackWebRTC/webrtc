@@ -11,9 +11,10 @@
 #ifndef WEBRTC_BASE_OPENSSL_H_
 #define WEBRTC_BASE_OPENSSL_H_
 
+#include <openssl/ssl.h>
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/openssl.h"
+#if (OPENSSL_VERSION_NUMBER < 0x10000000L)
+#error OpenSSL is older than 1.0.0, which is the minimum supported version.
+#endif
 
 #endif  // WEBRTC_BASE_OPENSSL_H_

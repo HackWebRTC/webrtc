@@ -11,9 +11,29 @@
 #ifndef WEBRTC_BASE_IFADDRS_ANDROID_H_
 #define WEBRTC_BASE_IFADDRS_ANDROID_H_
 
+#include <stdio.h>
+#include <sys/socket.h>
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/ifaddrs-android.h"
+
+// Implementation of getifaddrs for Android.
+// Fills out a list of ifaddr structs (see below) which contain information
+// about every network interface available on the host.
+// See 'man getifaddrs' on Linux or OS X (nb: it is not a POSIX function).
+struct ifaddrs {
+  struct ifaddrs* ifa_next;
+  char* ifa_name;
+  unsigned int ifa_flags;
+  struct sockaddr* ifa_addr;
+  struct sockaddr* ifa_netmask;
+  // Real ifaddrs has broadcast, point to point and data members.
+  // We don't need them (yet?).
+};
+
+namespace rtc {
+
+int getifaddrs(struct ifaddrs** result);
+void freeifaddrs(struct ifaddrs* addrs);
+
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_IFADDRS_ANDROID_H_

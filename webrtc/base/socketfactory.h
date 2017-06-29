@@ -8,12 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_BASE_SOCKETFACTORY_H_
-#define WEBRTC_BASE_SOCKETFACTORY_H_
+#ifndef WEBRTC_BASE_SOCKETFACTORY_H__
+#define WEBRTC_BASE_SOCKETFACTORY_H__
 
+#include "webrtc/base/socket.h"
+#include "webrtc/base/asyncsocket.h"
 
-// This header is deprecated and is just left here temporarily during
-// refactoring. See https://bugs.webrtc.org/7634 for more details.
-#include "webrtc/rtc_base/socketfactory.h"
+namespace rtc {
 
-#endif // WEBRTC_BASE_SOCKETFACTORY_H_
+class SocketFactory {
+public:
+  virtual ~SocketFactory() {}
+
+  // Returns a new socket for blocking communication.  The type can be
+  // SOCK_DGRAM and SOCK_STREAM.
+  // TODO: C++ inheritance rules mean that all users must have both
+  // CreateSocket(int) and CreateSocket(int,int). Will remove CreateSocket(int)
+  // (and CreateAsyncSocket(int) when all callers are changed.
+  virtual Socket* CreateSocket(int type) = 0;
+  virtual Socket* CreateSocket(int family, int type) = 0;
+  // Returns a new socket for nonblocking communication.  The type can be
+  // SOCK_DGRAM and SOCK_STREAM.
+  virtual AsyncSocket* CreateAsyncSocket(int type) = 0;
+  virtual AsyncSocket* CreateAsyncSocket(int family, int type) = 0;
+};
+
+} // namespace rtc
+
+#endif // WEBRTC_BASE_SOCKETFACTORY_H__

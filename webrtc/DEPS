@@ -21,7 +21,6 @@ include_rules = [
   "+webrtc/api",
   "+webrtc/base",
   "+webrtc/modules/include",
-  "+webrtc/rtc_base",
   "+webrtc/test",
   "+webrtc/tools",
 ]
