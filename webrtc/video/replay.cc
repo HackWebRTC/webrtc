@@ -301,7 +301,7 @@ void RtpReplay() {
         RTPHeader header;
         std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
         parser->Parse(packet.data, packet.length, &header);
-        fprintf(stderr, "Packet len=%ld pt=%u seq=%u ts=%u ssrc=0x%8x\n",
+        fprintf(stderr, "Packet len=%zu pt=%u seq=%u ts=%u ssrc=0x%8x\n",
             packet.length, header.payloadType, header.sequenceNumber,
             header.timestamp, header.ssrc);
         break;
