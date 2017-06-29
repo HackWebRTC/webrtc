@@ -229,6 +229,10 @@ rtc::NetworkBindingResult AndroidNetworkMonitor::BindSocketToNetwork(
     const rtc::IPAddress& address) {
   RTC_CHECK(thread_checker_.CalledOnValidThread());
 
+  if (socket_fd == 0 /* NETWORK_UNSPECIFIED */) {
+    return rtc::NetworkBindingResult::NOT_IMPLEMENTED;
+  }
+
   jmethodID network_binding_supported_id = GetMethodID(
       jni(), *j_network_monitor_class_, "networkBindingSupported", "()Z");
   // Android prior to Lollipop didn't have support for binding sockets to
