@@ -61,7 +61,8 @@ class FlexfecReceiverTest : public ::testing::Test {
  protected:
   FlexfecReceiverTest()
       : receiver_(kFlexfecSsrc, kMediaSsrc, &recovered_packet_receiver_),
-        erasure_code_(ForwardErrorCorrection::CreateFlexfec()),
+        erasure_code_(
+            ForwardErrorCorrection::CreateFlexfec(kFlexfecSsrc, kMediaSsrc)),
         packet_generator_(kMediaSsrc, kFlexfecSsrc) {}
 
   // Generates |num_media_packets| corresponding to a single frame.

@@ -100,7 +100,7 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
                                                      this,
                                                      &rtp_payload_registry_)),
       rtp_receive_statistics_(ReceiveStatistics::Create(clock_)),
-      ulpfec_receiver_(UlpfecReceiver::Create(this)),
+      ulpfec_receiver_(UlpfecReceiver::Create(config->rtp.remote_ssrc, this)),
       receiving_(false),
       restored_packet_in_use_(false),
       last_packet_log_ms_(-1),

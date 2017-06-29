@@ -80,7 +80,8 @@ FlexfecSender::FlexfecSender(
       protected_media_ssrc_(protected_media_ssrc),
       seq_num_(rtp_state ? rtp_state->sequence_number
                          : random_.Rand(1, kMaxInitRtpSeqNumber)),
-      ulpfec_generator_(ForwardErrorCorrection::CreateFlexfec()),
+      ulpfec_generator_(
+          ForwardErrorCorrection::CreateFlexfec(ssrc, protected_media_ssrc)),
       rtp_header_extension_map_(RegisterBweExtensions(rtp_header_extensions)),
       header_extensions_size_(
           rtp_header_extension_map_.GetTotalLengthInBytes(extension_sizes)) {

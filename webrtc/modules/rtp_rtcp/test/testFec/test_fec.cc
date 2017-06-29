@@ -78,13 +78,7 @@ void ReceivePackets(
   }
 }
 
-// Too slow to finish before timeout on iOS. See webrtc:4755.
-#if defined(WEBRTC_IOS)
-#define MAYBE_FecTest DISABLED_FecTest
-#else
-#define MAYBE_FecTest FecTest
-#endif
-TEST(FecTest, MAYBE_FecTest) {
+void RunTest(bool use_flexfec) {
   // TODO(marpan): Split this function into subroutines/helper functions.
   enum { kMaxNumberMediaPackets = 48 };
   enum { kMaxNumberFecPackets = 48 };
@@ -107,8 +101,6 @@ TEST(FecTest, MAYBE_FecTest) {
   ASSERT_EQ(12, kMaxMediaPackets[1]) << "Max media packets for bursty mode not "
                                      << "equal to 12.";
 
-  std::unique_ptr<ForwardErrorCorrection> fec =
-      ForwardErrorCorrection::CreateUlpfec();
   ForwardErrorCorrection::PacketList media_packet_list;
   std::list<ForwardErrorCorrection::Packet*> fec_packet_list;
   ForwardErrorCorrection::ReceivedPacketList to_decode_list;
@@ -138,7 +130,24 @@ TEST(FecTest, MAYBE_FecTest) {
 
   uint16_t seq_num = 0;
   uint32_t timestamp = random.Rand<uint32_t>();
-  const uint32_t ssrc = random.Rand(1u, 0xfffffffe);
+  const uint32_t media_ssrc = random.Rand(1u, 0xfffffffe);
+  uint32_t fec_ssrc;
+  uint16_t fec_seq_num_offset;
+  if (use_flexfec) {
+    fec_ssrc = random.Rand(1u, 0xfffffffe);
+    fec_seq_num_offset = random.Rand<uint16_t>();
+  } else {
+    fec_ssrc = media_ssrc;
+    fec_seq_num_offset = 0;
+  }
+
+  std::unique_ptr<ForwardErrorCorrection> fec;
+  if (use_flexfec) {
+    fec = ForwardErrorCorrection::CreateFlexfec(fec_ssrc, media_ssrc);
+  } else {
+    RTC_DCHECK_EQ(media_ssrc, fec_ssrc);
+    fec = ForwardErrorCorrection::CreateUlpfec(fec_ssrc);
+  }
 
   // Loop over the mask types: random and bursty.
   for (int mask_type_idx = 0; mask_type_idx < kNumFecMaskTypes;
@@ -268,7 +277,7 @@ TEST(FecTest, MAYBE_FecTest) {
               ByteWriter<uint32_t>::WriteBigEndian(&media_packet->data[4],
                                                    timestamp);
               ByteWriter<uint32_t>::WriteBigEndian(&media_packet->data[8],
-                                                   ssrc);
+                                                   media_ssrc);
               // Generate random values for payload
               for (size_t j = 12; j < media_packet->length; ++j) {
                 media_packet->data[j] = random.Rand<uint8_t>();
@@ -302,6 +311,7 @@ TEST(FecTest, MAYBE_FecTest) {
                 received_packet->pkt->length = media_packet->length;
                 memcpy(received_packet->pkt->data, media_packet->data,
                        media_packet->length);
+                received_packet->ssrc = media_ssrc;
                 received_packet->seq_num =
                     ByteReader<uint16_t>::ReadBigEndian(&media_packet->data[2]);
                 received_packet->is_fec = false;
@@ -323,9 +333,9 @@ TEST(FecTest, MAYBE_FecTest) {
                 received_packet->pkt->length = fec_packet->length;
                 memcpy(received_packet->pkt->data, fec_packet->data,
                        fec_packet->length);
-                received_packet->seq_num = seq_num;
+                received_packet->seq_num = fec_seq_num_offset + seq_num;
                 received_packet->is_fec = true;
-                received_packet->ssrc = ssrc;
+                received_packet->ssrc = fec_ssrc;
                 received_packet_list.push_back(std::move(received_packet));
 
                 fec_mask_list.push_back(fec_packet_masks[fec_packet_idx]);
@@ -451,6 +461,22 @@ TEST(FecTest, MAYBE_FecTest) {
   fec->ResetState(&recovered_packet_list);
   ASSERT_TRUE(recovered_packet_list.empty())
       << "Recovered packet list is not empty";
+}
+
+// Too slow to finish before timeout on iOS. See webrtc:4755.
+#if defined(WEBRTC_IOS)
+#define MAYBE_UlpecTest DISABLED_UlpecTest
+#define MAYBE_FlexfecTest DISABLED_FlexfecTest
+#else
+#define MAYBE_UlpecTest UlpecTest
+#define MAYBE_FlexfecTest FlexfecTest
+#endif
+TEST(FecTest, MAYBE_UlpecTest) {
+  RunTest(false);
+}
+
+TEST(FecTest, MAYBE_FlexfecTest) {
+  RunTest(true);
 }
 
 }  // namespace test

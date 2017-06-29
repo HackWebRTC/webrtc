@@ -21,13 +21,16 @@
 
 namespace webrtc {
 
-UlpfecReceiver* UlpfecReceiver::Create(RecoveredPacketReceiver* callback) {
-  return new UlpfecReceiverImpl(callback);
+UlpfecReceiver* UlpfecReceiver::Create(uint32_t ssrc,
+                                       RecoveredPacketReceiver* callback) {
+  return new UlpfecReceiverImpl(ssrc, callback);
 }
 
-UlpfecReceiverImpl::UlpfecReceiverImpl(RecoveredPacketReceiver* callback)
-    : recovered_packet_callback_(callback),
-      fec_(ForwardErrorCorrection::CreateUlpfec()) {}
+UlpfecReceiverImpl::UlpfecReceiverImpl(uint32_t ssrc,
+                                       RecoveredPacketReceiver* callback)
+    : ssrc_(ssrc),
+      recovered_packet_callback_(callback),
+      fec_(ForwardErrorCorrection::CreateUlpfec(ssrc_)) {}
 
 UlpfecReceiverImpl::~UlpfecReceiverImpl() {
   received_packets_.clear();
@@ -72,6 +75,12 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
     const uint8_t* incoming_rtp_packet,
     size_t packet_length,
     uint8_t ulpfec_payload_type) {
+  if (header.ssrc != ssrc_) {
+    LOG(LS_INFO)
+        << "Received RED packet with different SSRC than expected; dropping.";
+    return -1;
+  }
+
   rtc::CritScope cs(&crit_sect_);
 
   uint8_t red_header_length = 1;
@@ -90,6 +99,7 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
   // Get payload type from RED header and sequence number from RTP header.
   uint8_t payload_type = incoming_rtp_packet[header.headerLength] & 0x7f;
   received_packet->is_fec = payload_type == ulpfec_payload_type;
+  received_packet->ssrc = header.ssrc;
   received_packet->seq_num = header.sequenceNumber;
 
   uint16_t block_length = 0;
@@ -155,6 +165,7 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
     second_received_packet->pkt = new ForwardErrorCorrection::Packet;
 
     second_received_packet->is_fec = true;
+    second_received_packet->ssrc = header.ssrc;
     second_received_packet->seq_num = header.sequenceNumber;
     ++packet_counter_.num_fec_packets;
 

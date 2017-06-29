@@ -23,7 +23,7 @@ namespace webrtc {
 
 class UlpfecReceiverImpl : public UlpfecReceiver {
  public:
-  explicit UlpfecReceiverImpl(RecoveredPacketReceiver* callback);
+  explicit UlpfecReceiverImpl(uint32_t ssrc, RecoveredPacketReceiver* callback);
   virtual ~UlpfecReceiverImpl();
 
   int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,
@@ -36,6 +36,8 @@ class UlpfecReceiverImpl : public UlpfecReceiver {
   FecPacketCounter GetPacketCounter() const override;
 
  private:
+  const uint32_t ssrc_;
+
   rtc::CriticalSection crit_sect_;
   RecoveredPacketReceiver* recovered_packet_callback_;
   std::unique_ptr<ForwardErrorCorrection> fec_;
