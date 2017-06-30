@@ -11,6 +11,7 @@
 #include "webrtc/api/audio_codecs/audio_encoder_factory_template.h"
 #include "webrtc/api/audio_codecs/g722/audio_encoder_g722.h"
 #include "webrtc/api/audio_codecs/ilbc/audio_encoder_ilbc.h"
+#include "webrtc/api/audio_codecs/opus/audio_encoder_opus.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
@@ -147,6 +148,28 @@ TEST(AudioEncoderFactoryTemplateTest, Ilbc) {
   auto enc = factory->MakeAudioEncoder(17, {"ilbc", 8000, 1});
   ASSERT_NE(nullptr, enc);
   EXPECT_EQ(8000, enc->SampleRateHz());
+}
+
+TEST(AudioEncoderFactoryTemplateTest, Opus) {
+  auto factory = CreateAudioEncoderFactory<AudioEncoderOpus>();
+  AudioCodecInfo info = {48000, 1, 32000, 6000, 510000};
+  info.allow_comfort_noise = false;
+  info.supports_network_adaption = true;
+  EXPECT_THAT(
+      factory->GetSupportedEncoders(),
+      testing::ElementsAre(AudioCodecSpec{
+          {"opus", 48000, 2, {{"minptime", "10"}, {"useinbandfec", "1"}}},
+          info}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>(),
+            factory->QueryAudioEncoder({"foo", 8000, 1}));
+  EXPECT_EQ(
+      rtc::Optional<AudioCodecInfo>(info),
+      factory->QueryAudioEncoder(
+          {"opus", 48000, 2, {{"minptime", "10"}, {"useinbandfec", "1"}}}));
+  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"bar", 16000, 1}));
+  auto enc = factory->MakeAudioEncoder(17, {"opus", 48000, 2});
+  ASSERT_NE(nullptr, enc);
+  EXPECT_EQ(48000, enc->SampleRateHz());
 }
 
 }  // namespace webrtc
