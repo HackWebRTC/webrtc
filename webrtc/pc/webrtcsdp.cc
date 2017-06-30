@@ -1179,8 +1179,7 @@ bool ParseExtmap(const std::string& line,
   bool encrypted = false;
   if (uri == RtpExtension::kEncryptHeaderExtensionsUri) {
     // RFC 6904
-    // a=extmap:<value["/"<direction>] urn:ietf:params:rtp-hdrext:encrypt \
-    //     <URI> <extensionattributes>
+    // a=extmap:<value["/"<direction>] urn:ietf:params:rtp-hdrext:encrypt <URI> <extensionattributes>
     const size_t expected_min_fields_encrypted = expected_min_fields + 1;
     if (fields.size() < expected_min_fields_encrypted) {
       return ParseFailedExpectMinFieldNum(line, expected_min_fields_encrypted,
