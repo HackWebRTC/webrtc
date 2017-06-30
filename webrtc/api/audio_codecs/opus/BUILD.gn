@@ -40,3 +40,16 @@ rtc_source_set("audio_encoder_opus") {
     "../../../modules/audio_coding:webrtc_opus",
   ]
 }
+
+rtc_static_library("audio_decoder_opus") {
+  sources = [
+    "audio_decoder_opus.cc",
+    "audio_decoder_opus.h",
+  ]
+  deps = [
+    "..:audio_codecs_api",
+    "../../..:webrtc_common",
+    "../../../base:rtc_base_approved",
+    "../../../modules/audio_coding:webrtc_opus",
+  ]
+}

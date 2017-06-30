@@ -29,6 +29,7 @@ if (rtc_include_tests) {
       "../g722:audio_encoder_g722",
       "../ilbc:audio_decoder_ilbc",
       "../ilbc:audio_encoder_ilbc",
+      "../opus:audio_decoder_opus",
       "../opus:audio_encoder_opus",
       "//testing/gmock",
     ]

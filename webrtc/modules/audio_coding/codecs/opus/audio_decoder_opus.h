@@ -17,10 +17,10 @@
 
 namespace webrtc {
 
-class AudioDecoderOpus final : public AudioDecoder {
+class AudioDecoderOpusImpl final : public AudioDecoder {
  public:
-  explicit AudioDecoderOpus(size_t num_channels);
-  ~AudioDecoderOpus() override;
+  explicit AudioDecoderOpusImpl(size_t num_channels);
+  ~AudioDecoderOpusImpl() override;
 
   std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
                                         uint32_t timestamp) override;
@@ -47,7 +47,7 @@ class AudioDecoderOpus final : public AudioDecoder {
  private:
   OpusDecInst* dec_state_;
   const size_t channels_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderOpus);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderOpusImpl);
 };
 
 }  // namespace webrtc
