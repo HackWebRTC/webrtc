@@ -20,7 +20,7 @@
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/congestion_controller/acknowledged_bitrate_estimator.h"
+#include "webrtc/modules/congestion_controller/acknowledge_bitrate_estimator.h"
 #include "webrtc/modules/congestion_controller/probe_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 
@@ -89,8 +89,7 @@ SendSideCongestionController::SendSideCongestionController(
       bitrate_controller_(
           BitrateController::CreateBitrateController(clock_, event_log)),
       acknowledged_bitrate_estimator_(
-          rtc::MakeUnique<AcknowledgedBitrateEstimator>(
-              rtc::MakeUnique<BitrateEstimatorCreator>())),
+          rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
       probe_controller_(new ProbeController(pacer_.get(), clock_)),
       retransmission_rate_limiter_(
           new RateLimiter(clock, kRetransmitWindowSizeMs)),
@@ -279,8 +278,7 @@ void SendSideCongestionController::OnTransportFeedback(
       transport_feedback_adapter_.GetTransportFeedbackVector());
   SortPacketFeedbackVector(&feedback_vector);
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
-      feedback_vector,
-      static_cast<bool>(pacer_->GetApplicationLimitedRegionStartTime()));
+      feedback_vector);
   DelayBasedBwe::Result result;
   {
     rtc::CritScope cs(&bwe_lock_);

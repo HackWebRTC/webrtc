@@ -184,7 +184,7 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
                         sequence_number, payload_size, pacing_info);
   std::vector<PacketFeedback> packets;
   packets.push_back(packet);
-  acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets, false);
+  acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(
           packets, acknowledged_bitrate_estimator_->bitrate_bps());
@@ -219,7 +219,7 @@ bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
     packet.arrival_time_ms += arrival_time_offset_ms_;
   }
 
-  acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets, false);
+  acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(
           packets, acknowledged_bitrate_estimator_->bitrate_bps());

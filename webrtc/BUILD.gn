@@ -496,7 +496,6 @@ if (rtc_include_tests) {
     configs += [ ":rtc_unittests_config" ]
 
     deps = [
-      "audio:audio_perf_tests",
       "call:call_perf_tests",
       "modules/audio_coding:audio_coding_perf_tests",
       "modules/audio_processing:audio_processing_perf_tests",
