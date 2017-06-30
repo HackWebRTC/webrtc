@@ -1080,6 +1080,24 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     cricket::WebRtcVideoDecoderFactory* decoder_factory);
 
+// Create a new instance of PeerConnectionFactoryInterface with optional
+// external audio mixed and audio processing modules.
+//
+// If |audio_mixer| is null, an internal audio mixer will be created and used.
+// If |audio_processing| is null, an internal audio processing module will be
+// created and used.
+rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+    rtc::Thread* network_thread,
+    rtc::Thread* worker_thread,
+    rtc::Thread* signaling_thread,
+    AudioDeviceModule* default_adm,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
+    rtc::scoped_refptr<AudioMixer> audio_mixer,
+    rtc::scoped_refptr<AudioProcessing> audio_processing);
+
 // Create a new instance of PeerConnectionFactoryInterface with external audio
 // mixer.
 //
