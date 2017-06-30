@@ -36,8 +36,8 @@ using testing::_;
 // Verifies that the basic BlockProcessor functionality works and that the API
 // methods are callable.
 void RunBasicSetupAndApiCallTest(int sample_rate_hz) {
-  std::unique_ptr<BlockProcessor> block_processor(
-      BlockProcessor::Create(sample_rate_hz));
+  std::unique_ptr<BlockProcessor> block_processor(BlockProcessor::Create(
+      AudioProcessing::Config::EchoCanceller3(), sample_rate_hz));
   std::vector<std::vector<float>> block(NumBandsForRate(sample_rate_hz),
                                         std::vector<float>(kBlockSize, 0.f));
 
@@ -48,8 +48,8 @@ void RunBasicSetupAndApiCallTest(int sample_rate_hz) {
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 void RunRenderBlockSizeVerificationTest(int sample_rate_hz) {
-  std::unique_ptr<BlockProcessor> block_processor(
-      BlockProcessor::Create(sample_rate_hz));
+  std::unique_ptr<BlockProcessor> block_processor(BlockProcessor::Create(
+      AudioProcessing::Config::EchoCanceller3(), sample_rate_hz));
   std::vector<std::vector<float>> block(
       NumBandsForRate(sample_rate_hz), std::vector<float>(kBlockSize - 1, 0.f));
 
@@ -57,8 +57,8 @@ void RunRenderBlockSizeVerificationTest(int sample_rate_hz) {
 }
 
 void RunCaptureBlockSizeVerificationTest(int sample_rate_hz) {
-  std::unique_ptr<BlockProcessor> block_processor(
-      BlockProcessor::Create(sample_rate_hz));
+  std::unique_ptr<BlockProcessor> block_processor(BlockProcessor::Create(
+      AudioProcessing::Config::EchoCanceller3(), sample_rate_hz));
   std::vector<std::vector<float>> block(
       NumBandsForRate(sample_rate_hz), std::vector<float>(kBlockSize - 1, 0.f));
 
@@ -69,8 +69,8 @@ void RunRenderNumBandsVerificationTest(int sample_rate_hz) {
   const size_t wrong_num_bands = NumBandsForRate(sample_rate_hz) < 3
                                      ? NumBandsForRate(sample_rate_hz) + 1
                                      : 1;
-  std::unique_ptr<BlockProcessor> block_processor(
-      BlockProcessor::Create(sample_rate_hz));
+  std::unique_ptr<BlockProcessor> block_processor(BlockProcessor::Create(
+      AudioProcessing::Config::EchoCanceller3(), sample_rate_hz));
   std::vector<std::vector<float>> block(wrong_num_bands,
                                         std::vector<float>(kBlockSize, 0.f));
 
@@ -81,8 +81,8 @@ void RunCaptureNumBandsVerificationTest(int sample_rate_hz) {
   const size_t wrong_num_bands = NumBandsForRate(sample_rate_hz) < 3
                                      ? NumBandsForRate(sample_rate_hz) + 1
                                      : 1;
-  std::unique_ptr<BlockProcessor> block_processor(
-      BlockProcessor::Create(sample_rate_hz));
+  std::unique_ptr<BlockProcessor> block_processor(BlockProcessor::Create(
+      AudioProcessing::Config::EchoCanceller3(), sample_rate_hz));
   std::vector<std::vector<float>> block(wrong_num_bands,
                                         std::vector<float>(kBlockSize, 0.f));
 
@@ -126,7 +126,8 @@ TEST(BlockProcessor, DISABLED_DelayControllerIntegration) {
         .Times(kNumBlocks + 1)
         .WillRepeatedly(Return(0));
     std::unique_ptr<BlockProcessor> block_processor(
-        BlockProcessor::Create(rate, std::move(render_delay_buffer_mock)));
+        BlockProcessor::Create(AudioProcessing::Config::EchoCanceller3(), rate,
+                               std::move(render_delay_buffer_mock)));
 
     std::vector<std::vector<float>> render_block(
         NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
@@ -180,7 +181,8 @@ TEST(BlockProcessor, DISABLED_SubmoduleIntegration) {
         .Times(kNumBlocks);
 
     std::unique_ptr<BlockProcessor> block_processor(BlockProcessor::Create(
-        rate, std::move(render_delay_buffer_mock),
+        AudioProcessing::Config::EchoCanceller3(), rate,
+        std::move(render_delay_buffer_mock),
         std::move(render_delay_controller_mock), std::move(echo_remover_mock)));
 
     std::vector<std::vector<float>> render_block(
@@ -238,7 +240,9 @@ TEST(BlockProcessor, VerifyCaptureNumBandsCheck) {
 
 // Verifiers that the verification for null ProcessCapture input works.
 TEST(BlockProcessor, NullProcessCaptureParameter) {
-  EXPECT_DEATH(std::unique_ptr<BlockProcessor>(BlockProcessor::Create(8000))
+  EXPECT_DEATH(std::unique_ptr<BlockProcessor>(
+                   BlockProcessor::Create(
+                       AudioProcessing::Config::EchoCanceller3(), 8000))
                    ->ProcessCapture(false, false, nullptr),
                "");
 }
@@ -247,7 +251,8 @@ TEST(BlockProcessor, NullProcessCaptureParameter) {
 // TODO(peah): Re-enable the test once the issue with memory leaks during DEATH
 // tests on test bots has been fixed.
 TEST(BlockProcessor, DISABLED_WrongSampleRate) {
-  EXPECT_DEATH(std::unique_ptr<BlockProcessor>(BlockProcessor::Create(8001)),
+  EXPECT_DEATH(std::unique_ptr<BlockProcessor>(BlockProcessor::Create(
+                   AudioProcessing::Config::EchoCanceller3(), 8001)),
                "");
 }
 

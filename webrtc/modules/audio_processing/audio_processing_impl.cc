@@ -1881,8 +1881,8 @@ void AudioProcessingImpl::InitializeLowCutFilter() {
 
 void AudioProcessingImpl::InitializeEchoCanceller3() {
   if (capture_nonlocked_.echo_canceller3_enabled) {
-    private_submodules_->echo_canceller3.reset(
-        new EchoCanceller3(proc_sample_rate_hz(), true));
+    private_submodules_->echo_canceller3.reset(new EchoCanceller3(
+        config_.echo_canceller3, proc_sample_rate_hz(), true));
   } else {
     private_submodules_->echo_canceller3.reset();
   }

@@ -305,7 +305,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> n(kBlockSize, 0.f);
   std::vector<float> y(kBlockSize, 0.f);
-  AecState aec_state;
+  AecState aec_state(0.f);
   RenderSignalAnalyzer render_signal_analyzer;
   std::vector<float> e(kBlockSize, 0.f);
   std::array<float, kFftLength> s;

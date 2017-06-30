@@ -78,10 +78,11 @@ constexpr int kEchoPathChangeCounterMax = 2 * kNumBlocksPerSecond;
 
 int AecState::instance_count_ = 0;
 
-AecState::AecState()
+AecState::AecState(float echo_decay)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
-      echo_path_change_counter_(kEchoPathChangeCounterInitial) {}
+      echo_path_change_counter_(kEchoPathChangeCounterInitial),
+      echo_decay_factor_(echo_decay) {}
 
 AecState::~AecState() = default;
 

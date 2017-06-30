@@ -31,7 +31,7 @@ class ApmDataDumper;
 // Handles the state and the conditions for the echo removal functionality.
 class AecState {
  public:
-  AecState();
+  explicit AecState(float echo_decay);
   ~AecState();
 
   // Returns whether the linear filter estimate is usable.
@@ -79,7 +79,7 @@ class AecState {
 
   // Returns the decay factor for the echo reverberation.
   // TODO(peah): Make this adaptive.
-  float ReverbDecayFactor() const { return 0.f; }
+  float ReverbDecayFactor() const { return echo_decay_factor_; }
 
   // Returns whether the echo suppression gain should be forced to zero.
   bool ForcedZeroGain() const { return force_zero_gain_; }
@@ -113,8 +113,8 @@ class AecState {
   rtc::Optional<size_t> filter_delay_;
   rtc::Optional<size_t> external_delay_;
   size_t blocks_since_last_saturation_ = 1000;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(AecState);
+  const float echo_decay_factor_;
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AecState);
 };
 
 }  // namespace webrtc

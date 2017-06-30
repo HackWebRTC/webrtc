@@ -49,7 +49,9 @@ void LinearEchoPower(const FftData& E,
 // Class for removing the echo from the capture signal.
 class EchoRemoverImpl final : public EchoRemover {
  public:
-  explicit EchoRemoverImpl(int sample_rate_hz);
+  explicit EchoRemoverImpl(
+      const AudioProcessing::Config::EchoCanceller3& config,
+      int sample_rate_hz);
   ~EchoRemoverImpl() override;
 
   // Removes the echo from a block of samples from the capture signal. The
@@ -90,7 +92,9 @@ class EchoRemoverImpl final : public EchoRemover {
 
 int EchoRemoverImpl::instance_count_ = 0;
 
-EchoRemoverImpl::EchoRemoverImpl(int sample_rate_hz)
+EchoRemoverImpl::EchoRemoverImpl(
+    const AudioProcessing::Config::EchoCanceller3& config,
+    int sample_rate_hz)
     : fft_(),
       data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
@@ -99,7 +103,8 @@ EchoRemoverImpl::EchoRemoverImpl(int sample_rate_hz)
       subtractor_(data_dumper_.get(), optimization_),
       suppression_gain_(optimization_),
       cng_(optimization_),
-      suppression_filter_(sample_rate_hz_) {
+      suppression_filter_(sample_rate_hz_),
+      aec_state_(config.echo_decay) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
 }
 
@@ -221,8 +226,10 @@ void EchoRemoverImpl::ProcessCapture(
 
 }  // namespace
 
-EchoRemover* EchoRemover::Create(int sample_rate_hz) {
-  return new EchoRemoverImpl(sample_rate_hz);
+EchoRemover* EchoRemover::Create(
+    const AudioProcessing::Config::EchoCanceller3& config,
+    int sample_rate_hz) {
+  return new EchoRemoverImpl(config, sample_rate_hz);
 }
 
 }  // namespace webrtc

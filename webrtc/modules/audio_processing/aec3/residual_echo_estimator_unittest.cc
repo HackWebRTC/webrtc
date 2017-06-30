@@ -22,7 +22,7 @@ namespace webrtc {
 
 // Verifies that the check for non-null output residual echo power works.
 TEST(ResidualEchoEstimator, NullResidualEchoPowerOutput) {
-  AecState aec_state;
+  AecState aec_state(0.f);
   RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 10,
                              std::vector<size_t>(1, 10));
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2;
@@ -37,7 +37,7 @@ TEST(ResidualEchoEstimator, NullResidualEchoPowerOutput) {
 
 TEST(ResidualEchoEstimator, BasicTest) {
   ResidualEchoEstimator estimator;
-  AecState aec_state;
+  AecState aec_state(0.f);
   RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 10,
                              std::vector<size_t>(1, 10));
   std::array<float, kFftLengthBy2Plus1> E2_main;
