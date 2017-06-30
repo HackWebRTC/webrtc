@@ -15,6 +15,7 @@
 #include "webrtc/base/protobuf_utils.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_debug_dump_writer.h"
 #include "webrtc/test/gtest.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
@@ -29,6 +30,7 @@ RTC_POP_IGNORING_WUNDEF()
 
 namespace webrtc {
 
+using ::testing::_;
 using ::testing::NiceMock;
 
 namespace {
@@ -332,7 +334,49 @@ void CheckControllersOrder(const std::vector<Controller*>& controllers,
   }
 }
 
+MATCHER_P(ControllerManagerEqual, value, "") {
+  ProtoString value_string;
+  ProtoString arg_string;
+  EXPECT_TRUE(arg.SerializeToString(&arg_string));
+  EXPECT_TRUE(value.SerializeToString(&value_string));
+  return arg_string == value_string;
+}
+
 }  // namespace
+
+TEST(ControllerManagerTest, DebugDumpLoggedWhenCreateFromConfigString) {
+  audio_network_adaptor::config::ControllerManager config;
+  config.set_min_reordering_time_ms(kMinReorderingTimeMs);
+  config.set_min_reordering_squared_distance(kMinReorderingSquareDistance);
+
+  AddFecControllerConfig(&config);
+  AddChannelControllerConfig(&config);
+  AddDtxControllerConfig(&config);
+  AddFrameLengthControllerConfig(&config);
+  AddBitrateControllerConfig(&config);
+
+  ProtoString config_string;
+  config.SerializeToString(&config_string);
+
+  constexpr size_t kNumEncoderChannels = 2;
+  const std::vector<int> encoder_frame_lengths_ms = {20, 60};
+
+  constexpr int64_t kClockInitialTimeMs = 12345678;
+  rtc::ScopedFakeClock fake_clock;
+  fake_clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(kClockInitialTimeMs));
+  auto debug_dump_writer =
+      std::unique_ptr<MockDebugDumpWriter>(new NiceMock<MockDebugDumpWriter>());
+  EXPECT_CALL(*debug_dump_writer, Die());
+  EXPECT_CALL(*debug_dump_writer,
+              DumpControllerManagerConfig(ControllerManagerEqual(config),
+                                          kClockInitialTimeMs));
+
+  ControllerManagerImpl::Create(config_string, kNumEncoderChannels,
+                                encoder_frame_lengths_ms, kMinBitrateBps,
+                                kIntialChannelsToEncode, kInitialFrameLengthMs,
+                                kInitialBitrateBps, kInitialFecEnabled,
+                                kInitialDtxEnabled, debug_dump_writer.get());
+}
 
 TEST(ControllerManagerTest, CreateFromConfigStringAndCheckDefaultOrder) {
   audio_network_adaptor::config::ControllerManager config;
