@@ -76,7 +76,7 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
     size_t packet_length,
     uint8_t ulpfec_payload_type) {
   if (header.ssrc != ssrc_) {
-    LOG(LS_INFO)
+    LOG(LS_WARNING)
         << "Received RED packet with different SSRC than expected; dropping.";
     return -1;
   }
