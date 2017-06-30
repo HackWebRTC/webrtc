@@ -471,8 +471,8 @@ def _RunPythonTests(input_api, output_api):
     return input_api.os_path.join(input_api.PresubmitLocalPath(), *args)
 
   test_directories = [
-      Join('webrtc', 'tools', 'py_event_log_analyzer'),
-      Join('webrtc', 'tools'),
+      Join('webrtc', 'rtc_tools', 'py_event_log_analyzer'),
+      Join('webrtc', 'rtc_tools'),
       Join('webrtc', 'audio', 'test', 'unittests'),
   ] + [
       root for root, _, files in os.walk(Join('tools_webrtc'))
