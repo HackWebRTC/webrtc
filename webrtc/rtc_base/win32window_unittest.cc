@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/win32window.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/win32window.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/logging.h"
 
 static LRESULT kDummyResult = 0x1234ABCD;
 

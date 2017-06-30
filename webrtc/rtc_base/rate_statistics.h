@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "webrtc/base/optional.h"
+#include "webrtc/rtc_base/optional.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

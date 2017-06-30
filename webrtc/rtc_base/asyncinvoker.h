@@ -14,12 +14,12 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/base/asyncinvoker-inl.h"
-#include "webrtc/base/bind.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/event.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/asyncinvoker-inl.h"
+#include "webrtc/rtc_base/bind.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace rtc {
 

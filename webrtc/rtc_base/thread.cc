@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/thread.h"
 
 #if defined(WEBRTC_WIN)
 #include <comdef.h>
@@ -16,13 +16,13 @@
 #include <time.h>
 #endif
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/nullsocketserver.h"
-#include "webrtc/base/platform_thread.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/timeutils.h"
-#include "webrtc/base/trace_event.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/nullsocketserver.h"
+#include "webrtc/rtc_base/platform_thread.h"
+#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/rtc_base/trace_event.h"
 
 namespace rtc {
 
@@ -469,7 +469,7 @@ void Thread::Clear(MessageHandler* phandler,
 
 #if !defined(WEBRTC_MAC)
 // Note that these methods have a separate implementation for mac and ios
-// defined in webrtc/base/thread_darwin.mm.
+// defined in webrtc/rtc_base/thread_darwin.mm.
 bool Thread::ProcessMessages(int cmsLoop) {
   // Using ProcessMessages with a custom clock for testing and a time greater
   // than 0 doesn't work, since it's not guaranteed to advance the custom

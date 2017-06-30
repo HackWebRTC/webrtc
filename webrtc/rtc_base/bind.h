@@ -64,8 +64,8 @@
 #include <tuple>
 #include <type_traits>
 
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/template_util.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/template_util.h"
 
 #define NONAME
 

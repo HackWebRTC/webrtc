@@ -9,4 +9,4 @@
  */
 
 // TODO(pbos): Move AtomicOps tests to here from
-// webrtc/base/criticalsection_unittest.cc.
+// webrtc/rtc_base/criticalsection_unittest.cc.

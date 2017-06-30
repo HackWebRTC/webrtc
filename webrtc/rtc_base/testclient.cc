@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/testclient.h"
+#include "webrtc/rtc_base/testclient.h"
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/ptr_util.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/timeutils.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/rtc_base/thread.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace rtc {
 

@@ -12,7 +12,7 @@
 
 #include <utility>
 
-#include "webrtc/base/atomicops.h"
+#include "webrtc/rtc_base/atomicops.h"
 
 namespace rtc {
 

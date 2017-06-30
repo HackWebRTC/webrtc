@@ -16,10 +16,10 @@
 // with this define will get the same level of checking as debug bots.
 #define ENABLE_SEQUENCED_TASK_CHECKER RTC_DCHECK_IS_ON
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/thread_annotations.h"
-#include "webrtc/base/sequenced_task_checker_impl.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/sequenced_task_checker_impl.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 
 namespace rtc {
 

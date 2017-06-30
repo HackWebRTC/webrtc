@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/numerics/exp_filter.h"
+#include "webrtc/rtc_base/numerics/exp_filter.h"
 
 #include <math.h>
 

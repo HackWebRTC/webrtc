@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace rtc {
 

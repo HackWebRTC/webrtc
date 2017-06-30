@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/task_queue_posix.h"
+#include "webrtc/rtc_base/task_queue_posix.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/task_queue.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/task_queue.h"
 
 namespace rtc {
 namespace internal {

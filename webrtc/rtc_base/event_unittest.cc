@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/event.h"
-#include "webrtc/base/gunit.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/gunit.h"
 
 namespace rtc {
 

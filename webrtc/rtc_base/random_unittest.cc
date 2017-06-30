@@ -13,8 +13,8 @@
 #include <limits>
 #include <vector>
 
-#include "webrtc/base/mathutils.h"  // unsigned difference
-#include "webrtc/base/random.h"
+#include "webrtc/rtc_base/mathutils.h"  // unsigned difference
+#include "webrtc/rtc_base/random.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

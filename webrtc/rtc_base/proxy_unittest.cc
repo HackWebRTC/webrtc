@@ -10,13 +10,13 @@
 
 #include <memory>
 #include <string>
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/httpserver.h"
-#include "webrtc/base/proxyserver.h"
-#include "webrtc/base/socketadapters.h"
-#include "webrtc/base/testclient.h"
-#include "webrtc/base/testechoserver.h"
-#include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/httpserver.h"
+#include "webrtc/rtc_base/proxyserver.h"
+#include "webrtc/rtc_base/socketadapters.h"
+#include "webrtc/rtc_base/testclient.h"
+#include "webrtc/rtc_base/testechoserver.h"
+#include "webrtc/rtc_base/virtualsocketserver.h"
 
 using rtc::Socket;
 using rtc::Thread;

@@ -11,8 +11,8 @@
 #ifndef WEBRTC_RTC_BASE_ARRAY_VIEW_H_
 #define WEBRTC_RTC_BASE_ARRAY_VIEW_H_
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/type_traits.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/type_traits.h"
 
 namespace rtc {
 

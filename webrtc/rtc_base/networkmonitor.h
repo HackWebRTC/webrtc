@@ -11,9 +11,9 @@
 #ifndef WEBRTC_RTC_BASE_NETWORKMONITOR_H_
 #define WEBRTC_RTC_BASE_NETWORKMONITOR_H_
 
-#include "webrtc/base/logging.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace rtc {
 

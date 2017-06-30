@@ -10,9 +10,9 @@
 
 #include <algorithm>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/httpbase.h"
-#include "webrtc/base/testutils.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/httpbase.h"
+#include "webrtc/rtc_base/testutils.h"
 
 namespace rtc {
 

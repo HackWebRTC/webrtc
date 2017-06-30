@@ -11,9 +11,9 @@
 #ifndef WEBRTC_RTC_BASE_HTTPCOMMON_INL_H_
 #define WEBRTC_RTC_BASE_HTTPCOMMON_INL_H_
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/httpcommon.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/httpcommon.h"
 
 namespace rtc {
 

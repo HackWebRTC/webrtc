@@ -12,7 +12,7 @@
 #ifndef WEBRTC_RTC_BASE_HTTPBASE_H_
 #define WEBRTC_RTC_BASE_HTTPBASE_H_
 
-#include "webrtc/base/httpcommon.h"
+#include "webrtc/rtc_base/httpcommon.h"
 
 namespace rtc {
 

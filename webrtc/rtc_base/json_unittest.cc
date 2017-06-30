@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/json.h"
+#include "webrtc/rtc_base/json.h"
 
 #include <vector>
 
-#include "webrtc/base/gunit.h"
+#include "webrtc/rtc_base/gunit.h"
 
 namespace rtc {
 

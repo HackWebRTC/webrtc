@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/messagedigest.h"
+#include "webrtc/rtc_base/messagedigest.h"
 
 #include <memory>
 
 #include <string.h>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/openssldigest.h"
-#include "webrtc/base/stringencode.h"
+#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/rtc_base/openssldigest.h"
+#include "webrtc/rtc_base/stringencode.h"
 
 namespace rtc {
 

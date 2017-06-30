@@ -7,21 +7,21 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/base/event_tracer.h"
+#include "webrtc/rtc_base/event_tracer.h"
 
 #include <inttypes.h>
 
 #include <string>
 #include <vector>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/event.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/platform_thread.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/timeutils.h"
-#include "webrtc/base/trace_event.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/platform_thread.h"
+#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/rtc_base/trace_event.h"
 
 // This is a guesstimate that should be enough in most cases.
 static const size_t kEventLoggerArgsStrBufferInitialSize = 256;
@@ -51,7 +51,7 @@ const unsigned char* EventTracer::GetCategoryEnabled(const char* name) {
 }
 
 // Arguments to this function (phase, etc.) are as defined in
-// webrtc/base/trace_event.h.
+// webrtc/rtc_base/trace_event.h.
 void EventTracer::AddTraceEvent(char phase,
                                 const unsigned char* category_enabled,
                                 const char* name,
@@ -232,7 +232,7 @@ class EventLogger final {
   struct TraceArg {
     const char* name;
     unsigned char type;
-    // Copied from webrtc/base/trace_event.h TraceValueUnion.
+    // Copied from webrtc/rtc_base/trace_event.h TraceValueUnion.
     union TraceArgValue {
       bool as_bool;
       unsigned long long as_uint;

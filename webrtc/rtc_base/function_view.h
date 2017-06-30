@@ -14,7 +14,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 // Just like std::function, FunctionView will wrap any callable and hide its
 // actual type, exposing only its signature. But unlike std::function,

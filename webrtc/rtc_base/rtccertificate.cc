@@ -10,9 +10,9 @@
 
 #include <memory>
 
-#include "webrtc/base/rtccertificate.h"
+#include "webrtc/rtc_base/rtccertificate.h"
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace rtc {
 

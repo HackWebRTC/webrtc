@@ -11,7 +11,7 @@
 #ifndef WEBRTC_RTC_BASE_ONETIMEEVENT_H_
 #define WEBRTC_RTC_BASE_ONETIMEEVENT_H_
 
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -7,10 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/socket_unittest.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/win32socketserver.h"
+#include "webrtc/rtc_base/win32socketserver.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/socket_unittest.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace rtc {
 

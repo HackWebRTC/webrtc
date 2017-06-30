@@ -25,13 +25,13 @@
 
 #include <stdio.h>
 
-#include "webrtc/base/ipaddress.h"
-#include "webrtc/base/byteorder.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/nethelpers.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/win32.h"
+#include "webrtc/rtc_base/byteorder.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/ipaddress.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/nethelpers.h"
+#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/rtc_base/win32.h"
 
 namespace rtc {
 

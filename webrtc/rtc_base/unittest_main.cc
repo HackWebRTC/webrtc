@@ -14,12 +14,12 @@
 #include <crtdbg.h>
 #endif
 
-#include "webrtc/base/flags.h"
-#include "webrtc/base/fileutils.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/rtc_base/fileutils.h"
+#include "webrtc/rtc_base/flags.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/ssladapter.h"
+#include "webrtc/rtc_base/sslstreamadapter.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/testsupport/fileutils.h"
 

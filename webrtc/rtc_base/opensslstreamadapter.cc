@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/opensslstreamadapter.h"
+#include "webrtc/rtc_base/opensslstreamadapter.h"
 
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
@@ -24,17 +24,17 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/safe_conversions.h"
-#include "webrtc/base/stream.h"
-#include "webrtc/base/openssl.h"
-#include "webrtc/base/openssladapter.h"
-#include "webrtc/base/openssldigest.h"
-#include "webrtc/base/opensslidentity.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/timeutils.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/openssl.h"
+#include "webrtc/rtc_base/openssladapter.h"
+#include "webrtc/rtc_base/openssldigest.h"
+#include "webrtc/rtc_base/opensslidentity.h"
+#include "webrtc/rtc_base/safe_conversions.h"
+#include "webrtc/rtc_base/stream.h"
+#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/rtc_base/thread.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace {
   bool g_use_time_callback_for_testing = false;
