@@ -1879,7 +1879,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   send_transport.SetReceiver(receiver_call_->Receiver());
   recv_transport.SetReceiver(sender_call_->Receiver());
 
-  FlexfecReceiveStream* flexfec_receive_stream = nullptr;
   std::unique_ptr<test::VideoRenderer> local_preview;
   std::vector<std::unique_ptr<test::VideoRenderer>> loopback_renderers_;
   if (params_.video.enabled) {
@@ -1944,8 +1943,10 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   // Start sending and receiving video.
   if (params_.video.enabled) {
-    if (flexfec_receive_stream)
+    for (FlexfecReceiveStream* flexfec_receive_stream :
+         flexfec_receive_streams_) {
       flexfec_receive_stream->Start();
+    }
     for (VideoReceiveStream* receive_stream : video_receive_streams_)
       receive_stream->Start();
     video_send_stream_->Start();
@@ -1980,14 +1981,15 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   if (params_.video.enabled) {
     video_capturer_->Stop();
     video_send_stream_->Stop();
-    for (VideoReceiveStream* receive_stream : video_receive_streams_)
-      receive_stream->Stop();
-    if (flexfec_receive_stream) {
+    for (FlexfecReceiveStream* flexfec_receive_stream :
+         flexfec_receive_streams_) {
       flexfec_receive_stream->Stop();
       receiver_call_->DestroyFlexfecReceiveStream(flexfec_receive_stream);
     }
-    for (VideoReceiveStream* receive_stream : video_receive_streams_)
+    for (VideoReceiveStream* receive_stream : video_receive_streams_) {
+      receive_stream->Stop();
       receiver_call_->DestroyVideoReceiveStream(receive_stream);
+    }
     sender_call_->DestroyVideoSendStream(video_send_stream_);
   }
 
