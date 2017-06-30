@@ -11,12 +11,12 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/fakeclock.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller_manager.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_debug_dump_writer.h"
+#include "webrtc/rtc_base/fakeclock.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

@@ -13,8 +13,8 @@
 
 #include <queue>
 
-#include "webrtc/base/basictypes.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/basictypes.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

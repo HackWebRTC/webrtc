@@ -17,9 +17,9 @@
 #include <numeric>
 #include <vector>
 
-#include "webrtc/base/arraysize.h"
 #include "webrtc/common_audio/window_generator.h"
 #include "webrtc/modules/audio_processing/beamformer/covariance_matrix_generator.h"
+#include "webrtc/rtc_base/arraysize.h"
 
 namespace webrtc {
 namespace {

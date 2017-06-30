@@ -16,9 +16,9 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
 namespace rtc {

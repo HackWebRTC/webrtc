@@ -9,13 +9,13 @@
  */
 #include "webrtc/modules/audio_processing/aec3/block_processor.h"
 
-#include "webrtc/base/atomicops.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/block_processor_metrics.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
+#include "webrtc/rtc_base/atomicops.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 namespace {

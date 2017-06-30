@@ -14,9 +14,9 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
+#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

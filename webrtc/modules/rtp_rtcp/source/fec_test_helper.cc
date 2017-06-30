@@ -13,10 +13,10 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

@@ -12,7 +12,7 @@
 
 #include <limits>
 
-#include "webrtc/base/random.h"
+#include "webrtc/rtc_base/random.h"
 #include "webrtc/test/gtest.h"
 
 using webrtc::rtcp::ReportBlock;

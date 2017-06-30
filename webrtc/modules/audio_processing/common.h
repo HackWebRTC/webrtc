@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_COMMON_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_COMMON_H_
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

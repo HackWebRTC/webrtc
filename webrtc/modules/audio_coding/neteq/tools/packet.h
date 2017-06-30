@@ -14,8 +14,8 @@
 #include <list>
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"
+#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

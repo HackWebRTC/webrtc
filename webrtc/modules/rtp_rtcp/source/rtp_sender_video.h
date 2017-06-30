@@ -15,12 +15,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/onetimeevent.h"
-#include "webrtc/base/optional.h"
-#include "webrtc/base/rate_statistics.h"
-#include "webrtc/base/sequenced_task_checker.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -29,6 +23,12 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/ulpfec_generator.h"
 #include "webrtc/modules/rtp_rtcp/source/video_codec_information.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/onetimeevent.h"
+#include "webrtc/rtc_base/optional.h"
+#include "webrtc/rtc_base/rate_statistics.h"
+#include "webrtc/rtc_base/sequenced_task_checker.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

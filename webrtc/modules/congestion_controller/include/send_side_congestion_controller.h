@@ -14,10 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/networkroute.h"
-#include "webrtc/base/race_checker.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/congestion_controller/transport_feedback_adapter.h"
@@ -25,6 +21,10 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/pacing/packet_router.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/networkroute.h"
+#include "webrtc/rtc_base/race_checker.h"
 
 namespace rtc {
 struct SentPacket;

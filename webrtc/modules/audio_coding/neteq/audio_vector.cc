@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

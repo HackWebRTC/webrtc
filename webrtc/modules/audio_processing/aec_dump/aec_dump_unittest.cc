@@ -12,8 +12,8 @@
 
 #include "webrtc/modules/audio_processing/aec_dump/aec_dump_factory.h"
 
-#include "webrtc/base/task_queue.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/task_queue.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 

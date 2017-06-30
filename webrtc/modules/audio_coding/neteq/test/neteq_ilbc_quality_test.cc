@@ -10,10 +10,10 @@
 
 #include <memory>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/safe_conversions.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_quality_test.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/safe_conversions.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 using google::RegisterFlagValidator;

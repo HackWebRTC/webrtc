@@ -12,9 +12,9 @@
 
 #include <string.h>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
 #include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
+#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

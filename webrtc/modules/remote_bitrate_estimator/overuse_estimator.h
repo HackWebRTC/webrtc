@@ -12,9 +12,9 @@
 
 #include <deque>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

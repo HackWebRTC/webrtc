@@ -17,10 +17,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/onetimeevent.h"
-#include "webrtc/base/sequenced_task_checker.h"
-#include "webrtc/base/thread_annotations.h"
-#include "webrtc/base/thread_checker.h"
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/modules/video_coding/codec_database.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"
@@ -31,6 +27,10 @@
 #include "webrtc/modules/video_coding/qp_parser.h"
 #include "webrtc/modules/video_coding/receiver.h"
 #include "webrtc/modules/video_coding/timing.h"
+#include "webrtc/rtc_base/onetimeevent.h"
+#include "webrtc/rtc_base/sequenced_task_checker.h"
+#include "webrtc/rtc_base/thread_annotations.h"
+#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

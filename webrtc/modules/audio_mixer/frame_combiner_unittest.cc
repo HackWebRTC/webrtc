@@ -15,9 +15,9 @@
 #include <string>
 
 #include "webrtc/audio/utility/audio_frame_operations.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_mixer/gain_change_calculator.h"
 #include "webrtc/modules/audio_mixer/sine_wave_generator.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

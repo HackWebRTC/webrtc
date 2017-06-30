@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 
-#include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

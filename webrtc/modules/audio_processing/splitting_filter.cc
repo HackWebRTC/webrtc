@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/audio_processing/splitting_filter.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_audio/channel_buffer.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

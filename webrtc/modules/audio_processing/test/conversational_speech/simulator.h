@@ -16,8 +16,8 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/multiend_call.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 namespace test {

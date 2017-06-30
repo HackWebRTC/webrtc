@@ -14,9 +14,9 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/ignore_wundef.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
 
 RTC_PUSH_IGNORING_WUNDEF()
 #include "webrtc/modules/audio_processing/debug.pb.h"

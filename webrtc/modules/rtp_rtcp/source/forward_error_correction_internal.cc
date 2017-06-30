@@ -15,9 +15,9 @@
 
 #include <algorithm>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_private_tables_bursty.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_private_tables_random.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace {
 using webrtc::fec_private_tables::kPacketMaskBurstyTbl;

@@ -13,9 +13,9 @@
 #include <limits>
 #include <utility>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/ptr_util.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/ptr_util.h"
 
 namespace webrtc {
 

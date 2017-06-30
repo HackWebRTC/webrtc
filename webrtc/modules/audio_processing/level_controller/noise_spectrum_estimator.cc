@@ -13,9 +13,9 @@
 #include <string.h>
 #include <algorithm>
 
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/arraysize.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
+#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/rtc_base/arraysize.h"
 
 namespace webrtc {
 namespace {

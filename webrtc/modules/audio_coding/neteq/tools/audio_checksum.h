@@ -13,10 +13,10 @@
 
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/md5digest.h"
-#include "webrtc/base/stringencode.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/md5digest.h"
+#include "webrtc/rtc_base/stringencode.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

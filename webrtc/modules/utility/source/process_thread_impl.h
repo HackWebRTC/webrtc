@@ -15,11 +15,11 @@
 #include <memory>
 #include <queue>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/location.h"
-#include "webrtc/base/platform_thread.h"
-#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/utility/include/process_thread.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/location.h"
+#include "webrtc/rtc_base/platform_thread.h"
+#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/typedefs.h"
 

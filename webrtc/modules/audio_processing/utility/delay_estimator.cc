@@ -14,7 +14,7 @@
 #include <string.h>
 #include <algorithm>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 // Number of right shifts for scaling is linearly depending on number of bits in
 // the far-end binary spectrum.

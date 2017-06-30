@@ -14,8 +14,8 @@
 
 #include <algorithm>  // min_element, max_element
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/format_macros.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/format_macros.h"
 
 namespace webrtc {
 namespace test {

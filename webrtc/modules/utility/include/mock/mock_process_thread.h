@@ -13,8 +13,8 @@
 
 #include <memory>
 
-#include "webrtc/base/location.h"
 #include "webrtc/modules/utility/include/process_thread.h"
+#include "webrtc/rtc_base/location.h"
 #include "webrtc/test/gmock.h"
 
 namespace webrtc {

@@ -12,8 +12,8 @@
 
 #include <algorithm>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

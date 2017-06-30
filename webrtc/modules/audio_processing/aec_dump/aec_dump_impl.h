@@ -15,15 +15,15 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/ignore_wundef.h"
-#include "webrtc/base/platform_file.h"
-#include "webrtc/base/race_checker.h"
-#include "webrtc/base/task_queue.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_processing/aec_dump/capture_stream_info.h"
 #include "webrtc/modules/audio_processing/aec_dump/write_to_file_task.h"
 #include "webrtc/modules/audio_processing/include/aec_dump.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
+#include "webrtc/rtc_base/platform_file.h"
+#include "webrtc/rtc_base/race_checker.h"
+#include "webrtc/rtc_base/task_queue.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
 // Files generated at build-time by the protobuf compiler.

@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <SLES/OpenSLES.h>
 
+#include "webrtc/rtc_base/checks.h"
+
 namespace webrtc {
 
 // Returns a string representation given an integer SL_RESULT_XXX code.

@@ -11,8 +11,8 @@
 
 #include <sstream>
 
-#include "webrtc/base/atomicops.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
+#include "webrtc/rtc_base/atomicops.h"
 
 namespace webrtc {
 

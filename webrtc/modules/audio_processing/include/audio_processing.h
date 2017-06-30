@@ -19,11 +19,11 @@
 #include <stdio.h>  // FILE
 #include <vector>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/platform_file.h"
-#include "webrtc/base/refcount.h"
 #include "webrtc/modules/audio_processing/beamformer/array_util.h"
 #include "webrtc/modules/audio_processing/include/config.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/platform_file.h"
+#include "webrtc/rtc_base/refcount.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

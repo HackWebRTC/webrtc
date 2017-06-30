@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/gtest_prod_util.h"
+#include "webrtc/rtc_base/gtest_prod_util.h"
 
 namespace webrtc {
 namespace testing {

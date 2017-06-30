@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

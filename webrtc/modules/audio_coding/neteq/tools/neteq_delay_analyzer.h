@@ -16,9 +16,9 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_input.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_test.h"
+#include "webrtc/rtc_base/optional.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

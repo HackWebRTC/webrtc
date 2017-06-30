@@ -13,9 +13,9 @@
 #include <math.h>
 #include <string.h>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/transient/dyadic_decimator.h"
 #include "webrtc/modules/audio_processing/transient/wpd_node.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

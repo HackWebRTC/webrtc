@@ -16,9 +16,9 @@
 
 #include <memory>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/desktop_capture/screen_drawer.h"
 #include "webrtc/modules/desktop_capture/x11/shared_x_display.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 
 namespace webrtc {

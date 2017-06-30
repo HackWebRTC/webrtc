@@ -15,10 +15,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
+#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

@@ -19,8 +19,8 @@
 #include <functional>
 #include <numeric>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/aec3/vector_math.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

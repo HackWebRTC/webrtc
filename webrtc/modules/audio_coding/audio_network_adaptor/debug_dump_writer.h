@@ -13,10 +13,10 @@
 
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/ignore_wundef.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #if WEBRTC_ENABLE_PROTOBUF
 RTC_PUSH_IGNORING_WUNDEF()

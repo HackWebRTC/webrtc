@@ -10,10 +10,10 @@
 
 #include "webrtc/modules/audio_processing/agc2/gain_controller2.h"
 
-#include "webrtc/base/atomicops.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
+#include "webrtc/rtc_base/atomicops.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

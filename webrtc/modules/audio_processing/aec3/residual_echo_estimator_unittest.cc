@@ -10,10 +10,10 @@
 
 #include "webrtc/modules/audio_processing/aec3/residual_echo_estimator.h"
 
-#include "webrtc/base/random.h"
-#include "webrtc/modules/audio_processing/aec3/aec_state.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
+#include "webrtc/modules/audio_processing/aec3/aec_state.h"
 #include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
+#include "webrtc/rtc_base/random.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

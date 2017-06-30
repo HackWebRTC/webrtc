@@ -15,11 +15,11 @@
 
 #include <windows.h>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/scoped_thread_desktop.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

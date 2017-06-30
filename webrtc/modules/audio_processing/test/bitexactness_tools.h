@@ -14,8 +14,8 @@
 
 #include <string>
 
-#include "webrtc/base/array_view.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
+#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

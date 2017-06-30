@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/array_view.h"
+#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {

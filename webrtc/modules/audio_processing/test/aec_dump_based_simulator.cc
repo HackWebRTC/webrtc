@@ -12,8 +12,8 @@
 
 #include "webrtc/modules/audio_processing/test/aec_dump_based_simulator.h"
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 
 namespace webrtc {

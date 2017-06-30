@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
+#include "webrtc/rtc_base/constructormagic.h"
 // TODO(zijiehe): These headers are not used in this file, but to avoid build
 // break in remoting/host. We should add headers in each individual files.
 #include "webrtc/modules/desktop_capture/desktop_frame.h"  // Remove

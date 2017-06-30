@@ -17,8 +17,8 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 namespace {

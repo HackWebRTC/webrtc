@@ -11,13 +11,13 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/array_view.h"
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 

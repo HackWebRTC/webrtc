@@ -17,10 +17,10 @@
 #include <set>
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 namespace testing {

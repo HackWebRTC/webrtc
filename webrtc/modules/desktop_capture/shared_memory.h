@@ -19,8 +19,8 @@
 
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/thread_checker.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -9,8 +9,8 @@
  */
 #include "webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 
-#include "webrtc/base/bitbuffer.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/bitbuffer.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

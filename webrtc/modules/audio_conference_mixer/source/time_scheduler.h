@@ -11,7 +11,7 @@
 // The TimeScheduler class keeps track of periodic events. It is non-drifting
 // and keeps track of any missed periods so that it is possible to catch up.
 // (compare to a metronome)
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/rtc_base/criticalsection.h"
 
 #ifndef WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_TIME_SCHEDULER_H_
 #define WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_TIME_SCHEDULER_H_

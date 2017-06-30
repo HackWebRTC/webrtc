@@ -18,7 +18,7 @@
 #if defined(WEBRTC_WIN)
 // Due to a bug in the std::unique_ptr implementation that ships with MSVS,
 // we need the full definition of QueuedTask, on Windows.
-#include "webrtc/base/task_queue.h"
+#include "webrtc/rtc_base/task_queue.h"
 #else
 namespace rtc {
 class QueuedTask;

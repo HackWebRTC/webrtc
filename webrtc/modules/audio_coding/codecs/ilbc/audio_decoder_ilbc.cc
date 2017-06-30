@@ -12,10 +12,10 @@
 
 #include <utility>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

@@ -14,9 +14,9 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/random.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/rtc_base/random.h"
 
 namespace webrtc {
 namespace test {

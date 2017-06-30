@@ -16,12 +16,12 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/deprecation.h"
-#include "webrtc/base/optional.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/deprecation.h"
+#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

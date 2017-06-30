@@ -14,7 +14,7 @@
 #include <assert.h>
 #include <list>
 
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

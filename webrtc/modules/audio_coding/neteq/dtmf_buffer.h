@@ -14,7 +14,7 @@
 #include <list>
 #include <string>  // size_t
 
-#include "webrtc/base/constructormagic.h"
+#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

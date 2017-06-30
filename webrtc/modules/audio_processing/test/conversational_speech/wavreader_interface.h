@@ -13,7 +13,7 @@
 
 #include <stddef.h>
 
-#include "webrtc/base/array_view.h"
+#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

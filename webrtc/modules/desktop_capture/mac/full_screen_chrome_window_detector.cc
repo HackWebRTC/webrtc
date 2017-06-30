@@ -14,11 +14,10 @@
 #include <libproc.h>
 #include <string>
 
-#include "webrtc/base/macutils.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/desktop_capture/mac/window_list_utils.h"
-
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/macutils.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 

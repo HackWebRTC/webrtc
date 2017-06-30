@@ -15,8 +15,8 @@
 #include <stdio.h>
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 namespace test {

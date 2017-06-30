@@ -13,10 +13,10 @@
 
 #include <memory>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/random.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
+#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/rtc_base/random.h"
 
 namespace webrtc {
 namespace test {

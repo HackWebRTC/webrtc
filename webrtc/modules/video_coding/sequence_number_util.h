@@ -14,7 +14,7 @@
 #include <limits>
 #include <type_traits>
 
-#include "webrtc/base/mod_ops.h"
+#include "webrtc/rtc_base/mod_ops.h"
 
 namespace webrtc {
 

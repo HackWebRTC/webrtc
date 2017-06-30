@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/base/basictypes.h"
+#include "webrtc/rtc_base/basictypes.h"
 
 namespace webrtc {
 namespace rtcp {

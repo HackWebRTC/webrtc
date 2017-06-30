@@ -12,8 +12,8 @@
 
 #include <limits>
 
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/video_coding/utility/frame_dropper.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

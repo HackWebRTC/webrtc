@@ -14,7 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/location.h"
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
@@ -22,6 +21,7 @@
 #include "webrtc/modules/video_coding/packet.h"
 #include "webrtc/modules/video_coding/test/stream_generator.h"
 #include "webrtc/modules/video_coding/test/test_util.h"
+#include "webrtc/rtc_base/location.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"

@@ -14,10 +14,10 @@
 #include <set>
 #include <utility>
 
-#include "webrtc/base/random.h"
-#include "webrtc/base/refcount.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/packet_buffer.h"
+#include "webrtc/rtc_base/random.h"
+#include "webrtc/rtc_base/refcount.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gtest.h"
 

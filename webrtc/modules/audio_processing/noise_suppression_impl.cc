@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/audio_processing/noise_suppression_impl.h"
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/rtc_base/constructormagic.h"
 #if defined(WEBRTC_NS_FLOAT)
 #include "webrtc/modules/audio_processing/ns/noise_suppression.h"
 #define NS_CREATE WebRtcNs_Create

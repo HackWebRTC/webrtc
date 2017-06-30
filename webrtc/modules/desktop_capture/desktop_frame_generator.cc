@@ -15,9 +15,9 @@
 
 #include <memory>
 
-#include "webrtc/base/random.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/desktop_capture/rgba_color.h"
+#include "webrtc/rtc_base/random.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 

@@ -17,9 +17,9 @@
 
 #include <algorithm>
 
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

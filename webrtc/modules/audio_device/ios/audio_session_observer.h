@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_SESSION_OBSERVER_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_SESSION_OBSERVER_H_
 
-#include "webrtc/base/asyncinvoker.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/asyncinvoker.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace webrtc {
 

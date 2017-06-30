@@ -15,12 +15,12 @@
 
 #include "webrtc/api/video_codecs/video_decoder.h"
 #include "webrtc/api/video_codecs/video_encoder.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/event.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
 #include "webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

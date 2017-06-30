@@ -16,9 +16,9 @@
 #include <queue>
 #include <string>
 
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
+#include "webrtc/rtc_base/buffer.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

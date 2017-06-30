@@ -15,9 +15,9 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/protobuf_utils.h"
 
 namespace webrtc {
 

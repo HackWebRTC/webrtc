@@ -10,9 +10,6 @@
 
 #include <memory>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/random.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -34,6 +31,9 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
+#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/random.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"

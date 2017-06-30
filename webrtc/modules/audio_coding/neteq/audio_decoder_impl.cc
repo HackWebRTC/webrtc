@@ -12,8 +12,8 @@
 
 #include <assert.h>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
+#include "webrtc/rtc_base/checks.h"
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/audio_decoder_g722.h"
 #endif

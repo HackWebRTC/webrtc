@@ -13,7 +13,7 @@
 
 #include <cstddef>
 
-#include "webrtc/base/numerics/exp_filter.h"
+#include "webrtc/rtc_base/numerics/exp_filter.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

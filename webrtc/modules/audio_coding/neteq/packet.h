@@ -15,8 +15,8 @@
 #include <memory>
 
 #include "webrtc/api/audio_codecs/audio_decoder.h"
-#include "webrtc/base/buffer.h"
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
+#include "webrtc/rtc_base/buffer.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/ignore_wundef.h"
-#include "webrtc/base/protobuf_utils.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
+#include "webrtc/rtc_base/protobuf_utils.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
 RTC_PUSH_IGNORING_WUNDEF()

@@ -15,11 +15,11 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
+#include "webrtc/rtc_base/buffer.h"
+#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 namespace test {
