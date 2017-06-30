@@ -329,9 +329,11 @@ public class AppRTCBluetoothManager {
     // intent ACTION_SCO_AUDIO_STATE_UPDATED and wait for the state to be SCO_AUDIO_STATE_CONNECTED.
     bluetoothState = State.SCO_CONNECTING;
     audioManager.startBluetoothSco();
+    audioManager.setBluetoothScoOn(true);
     scoConnectionAttempts++;
     startTimer();
-    Log.d(TAG, "startScoAudio done: BT state=" + bluetoothState);
+    Log.d(TAG, "startScoAudio done: BT state=" + bluetoothState + ", "
+            + "SCO is on: " + isScoOn());
     return true;
   }
 
@@ -345,8 +347,10 @@ public class AppRTCBluetoothManager {
     }
     cancelTimer();
     audioManager.stopBluetoothSco();
+    audioManager.setBluetoothScoOn(false);
     bluetoothState = State.SCO_DISCONNECTING;
-    Log.d(TAG, "stopScoAudio done: BT state=" + bluetoothState);
+    Log.d(TAG, "stopScoAudio done: BT state=" + bluetoothState + ", "
+            + "SCO is on: " + isScoOn());
   }
 
   /**
@@ -370,7 +374,7 @@ public class AppRTCBluetoothManager {
       bluetoothState = State.HEADSET_UNAVAILABLE;
       Log.d(TAG, "No connected bluetooth headset");
     } else {
-      // Always use first device is list. Android only supports one device.
+      // Always use first device in list. Android only supports one device.
       bluetoothDevice = devices.get(0);
       bluetoothState = State.HEADSET_AVAILABLE;
       Log.d(TAG, "Connected bluetooth headset: "
