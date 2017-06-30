@@ -174,10 +174,7 @@ struct ConfigHelper {
     stream_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
     if (audio_bwe_enabled) {
-      stream_config_.rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                       kTransportSequenceNumberId));
-      stream_config_.send_codec_spec->transport_cc_enabled = true;
+      AddBweToConfig(&stream_config_);
     }
     stream_config_.encoder_factory = SetupEncoderFactoryMock();
     stream_config_.min_bitrate_bps = 10000;
@@ -196,6 +193,13 @@ struct ConfigHelper {
   rtc::TaskQueue* worker_queue() { return &worker_queue_; }
   RtcEventLog* event_log() { return &event_log_; }
   MockVoiceEngine* voice_engine() { return &voice_engine_; }
+
+  static void AddBweToConfig(AudioSendStream::Config* config) {
+    config->rtp.extensions.push_back(
+        RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                     kTransportSequenceNumberId));
+    config->send_codec_spec->transport_cc_enabled = true;
+  }
 
   void SetupDefaultChannelProxy(bool audio_bwe_enabled) {
     using testing::StrEq;
@@ -540,6 +544,29 @@ TEST(AudioSendStreamTest, DontRecreateEncoder) {
       helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
   send_stream.Reconfigure(stream_config);
 }
+
+TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
+  ConfigHelper helper(false, true);
+  internal::AudioSendStream send_stream(
+      helper.config(), helper.audio_state(), helper.worker_queue(),
+      helper.transport(), helper.bitrate_allocator(), helper.event_log(),
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
+  auto new_config = helper.config();
+  ConfigHelper::AddBweToConfig(&new_config);
+  EXPECT_CALL(*helper.channel_proxy(),
+              EnableSendTransportSequenceNumber(kTransportSequenceNumberId))
+      .Times(1);
+  {
+    ::testing::InSequence seq;
+    EXPECT_CALL(*helper.channel_proxy(), ResetSenderCongestionControlObjects())
+        .Times(1);
+    EXPECT_CALL(*helper.channel_proxy(), RegisterSenderCongestionControlObjects(
+        helper.transport(), Ne(nullptr)))
+        .Times(1);
+  }
+  send_stream.Reconfigure(new_config);
+}
+
 
 }  // namespace test
 }  // namespace webrtc

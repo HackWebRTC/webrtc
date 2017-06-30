@@ -171,7 +171,7 @@ void AudioSendStream::ConfigureStream(
   // Transport sequence number
   if (first_time ||
       new_ids.transport_sequence_number != old_ids.transport_sequence_number) {
-    if (old_ids.transport_sequence_number) {
+    if (!first_time) {
       channel_proxy->ResetSenderCongestionControlObjects();
       stream->bandwidth_observer_.reset();
     }
