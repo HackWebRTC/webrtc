@@ -135,7 +135,7 @@ void RunTest(bool use_flexfec) {
   uint16_t fec_seq_num_offset;
   if (use_flexfec) {
     fec_ssrc = random.Rand(1u, 0xfffffffe);
-    fec_seq_num_offset = random.Rand<uint16_t>();
+    fec_seq_num_offset = random.Rand(0, 1 << 15);
   } else {
     fec_ssrc = media_ssrc;
     fec_seq_num_offset = 0;
@@ -465,13 +465,13 @@ void RunTest(bool use_flexfec) {
 
 // Too slow to finish before timeout on iOS. See webrtc:4755.
 #if defined(WEBRTC_IOS)
-#define MAYBE_UlpecTest DISABLED_UlpecTest
+#define MAYBE_UlpfecTest DISABLED_UlpfecTest
 #define MAYBE_FlexfecTest DISABLED_FlexfecTest
 #else
-#define MAYBE_UlpecTest UlpecTest
+#define MAYBE_UlpfecTest UlpfecTest
 #define MAYBE_FlexfecTest FlexfecTest
 #endif
-TEST(FecTest, MAYBE_UlpecTest) {
+TEST(FecTest, MAYBE_UlpfecTest) {
   RunTest(false);
 }
 
