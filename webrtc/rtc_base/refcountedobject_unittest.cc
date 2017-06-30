@@ -10,8 +10,8 @@
 
 #include <string>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/refcount.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/refcount.h"
 
 namespace rtc {
 

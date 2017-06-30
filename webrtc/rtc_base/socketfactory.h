@@ -11,8 +11,8 @@
 #ifndef WEBRTC_RTC_BASE_SOCKETFACTORY_H_
 #define WEBRTC_RTC_BASE_SOCKETFACTORY_H_
 
-#include "webrtc/base/socket.h"
-#include "webrtc/base/asyncsocket.h"
+#include "webrtc/rtc_base/asyncsocket.h"
+#include "webrtc/rtc_base/socket.h"
 
 namespace rtc {
 

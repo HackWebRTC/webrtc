@@ -10,7 +10,7 @@
 #ifndef WEBRTC_RTC_BASE_REFCOUNT_H_
 #define WEBRTC_RTC_BASE_REFCOUNT_H_
 
-#include "webrtc/base/refcountedobject.h"
+#include "webrtc/rtc_base/refcountedobject.h"
 
 namespace rtc {
 

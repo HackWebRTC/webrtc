@@ -12,13 +12,13 @@
 #include <set>
 #include <vector>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/event.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/platform_thread.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/platform_thread.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace rtc {
 

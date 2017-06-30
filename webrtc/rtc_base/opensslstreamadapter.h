@@ -15,9 +15,9 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/sslstreamadapter.h"
-#include "webrtc/base/opensslidentity.h"
+#include "webrtc/rtc_base/buffer.h"
+#include "webrtc/rtc_base/opensslidentity.h"
+#include "webrtc/rtc_base/sslstreamadapter.h"
 
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;

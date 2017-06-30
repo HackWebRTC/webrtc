@@ -9,16 +9,16 @@
  */
 
 #if defined(WEBRTC_WIN)
-#include "webrtc/base/win32.h"
 #include <shellapi.h>
 #include <shlobj.h>
 #include <tchar.h>
+#include "webrtc/rtc_base/win32.h"
 #endif  // WEBRTC_WIN
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/pathutils.h"
-#include "webrtc/base/stringutils.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/pathutils.h"
+#include "webrtc/rtc_base/stringutils.h"
 
 namespace rtc {
 

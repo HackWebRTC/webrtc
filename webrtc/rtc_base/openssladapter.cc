@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/openssladapter.h"
+#include "webrtc/rtc_base/openssladapter.h"
 
 #if defined(WEBRTC_POSIX)
 #include <unistd.h>
 #endif
 
 // Must be included first before openssl headers.
-#include "webrtc/base/win32.h"  // NOLINT
+#include "webrtc/rtc_base/win32.h"  // NOLINT
 
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
@@ -25,14 +25,14 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/openssl.h"
-#include "webrtc/base/safe_conversions.h"
-#include "webrtc/base/sslroots.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/openssl.h"
+#include "webrtc/rtc_base/safe_conversions.h"
+#include "webrtc/rtc_base/sslroots.h"
+#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/rtc_base/thread.h"
 
 #ifndef OPENSSL_IS_BORINGSSL
 

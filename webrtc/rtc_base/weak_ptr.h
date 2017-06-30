@@ -15,9 +15,9 @@
 
 #include <utility>
 
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/sequenced_task_checker.h"
+#include "webrtc/rtc_base/refcount.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/sequenced_task_checker.h"
 
 // The implementation is borrowed from chromium except that it does not
 // implement SupportsWeakPtr.

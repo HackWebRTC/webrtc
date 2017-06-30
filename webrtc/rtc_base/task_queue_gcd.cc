@@ -12,13 +12,13 @@
 // The implementation uses Grand Central Dispatch queues (GCD) to
 // do the actual task queuing.
 
-#include "webrtc/base/task_queue.h"
+#include "webrtc/rtc_base/task_queue.h"
 
 #include <string.h>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/task_queue_posix.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/task_queue_posix.h"
 
 namespace rtc {
 namespace {

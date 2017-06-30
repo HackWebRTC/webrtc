@@ -11,9 +11,9 @@
 #ifndef WEBRTC_RTC_BASE_SOCKETSTREAM_H_
 #define WEBRTC_RTC_BASE_SOCKETSTREAM_H_
 
-#include "webrtc/base/asyncsocket.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/stream.h"
+#include "webrtc/rtc_base/asyncsocket.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/stream.h"
 
 namespace rtc {
 

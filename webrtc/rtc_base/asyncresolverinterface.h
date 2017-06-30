@@ -11,8 +11,8 @@
 #ifndef WEBRTC_RTC_BASE_ASYNCRESOLVERINTERFACE_H_
 #define WEBRTC_RTC_BASE_ASYNCRESOLVERINTERFACE_H_
 
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/socketaddress.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/socketaddress.h"
 
 namespace rtc {
 

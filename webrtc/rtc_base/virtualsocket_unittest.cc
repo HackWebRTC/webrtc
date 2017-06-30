@@ -16,16 +16,16 @@
 
 #include <memory>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/fakeclock.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/ptr_util.h"
-#include "webrtc/base/testclient.h"
-#include "webrtc/base/testutils.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/timeutils.h"
-#include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/fakeclock.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/rtc_base/testclient.h"
+#include "webrtc/rtc_base/testutils.h"
+#include "webrtc/rtc_base/thread.h"
+#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/rtc_base/virtualsocketserver.h"
 
 using namespace rtc;
 

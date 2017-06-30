@@ -36,7 +36,7 @@ NO_RETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 #include <sstream>
 #include <string>
 
-#include "webrtc/base/safe_compare.h"
+#include "webrtc/rtc_base/safe_compare.h"
 
 // The macros here print a message to stderr and abort under various
 // conditions. All will accept additional stream messages. For example:

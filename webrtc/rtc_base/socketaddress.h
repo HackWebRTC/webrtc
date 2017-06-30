@@ -11,11 +11,11 @@
 #ifndef WEBRTC_RTC_BASE_SOCKETADDRESS_H_
 #define WEBRTC_RTC_BASE_SOCKETADDRESS_H_
 
+#include <iosfwd>
 #include <string>
 #include <vector>
-#include <iosfwd>
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/ipaddress.h"
+#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/rtc_base/ipaddress.h"
 
 #undef SetPort
 

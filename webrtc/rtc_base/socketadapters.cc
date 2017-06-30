@@ -26,13 +26,13 @@
 
 #include <algorithm>
 
-#include "webrtc/base/bytebuffer.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/httpcommon.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/socketadapters.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/stringutils.h"
+#include "webrtc/rtc_base/bytebuffer.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/httpcommon.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/socketadapters.h"
+#include "webrtc/rtc_base/stringencode.h"
+#include "webrtc/rtc_base/stringutils.h"
 
 namespace rtc {
 

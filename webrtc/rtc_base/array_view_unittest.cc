@@ -12,10 +12,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/gunit.h"
+#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/rtc_base/buffer.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/gunit.h"
 #include "webrtc/test/gmock.h"
 
 namespace rtc {

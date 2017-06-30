@@ -12,13 +12,13 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/file.h"
+#include "webrtc/rtc_base/file.h"
+#include "webrtc/rtc_base/gunit.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 #if defined(WEBRTC_WIN)
 
-#include "webrtc/base/win32.h"
+#include "webrtc/rtc_base/win32.h"
 
 #else  // if defined(WEBRTC_WIN)
 

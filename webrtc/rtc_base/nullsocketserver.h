@@ -11,8 +11,8 @@
 #ifndef WEBRTC_RTC_BASE_NULLSOCKETSERVER_H_
 #define WEBRTC_RTC_BASE_NULLSOCKETSERVER_H_
 
-#include "webrtc/base/event.h"
-#include "webrtc/base/socketserver.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/socketserver.h"
 
 namespace rtc {
 

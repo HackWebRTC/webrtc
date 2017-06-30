@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/win32socketserver.h"
+#include "webrtc/rtc_base/win32socketserver.h"
 
 #include <algorithm>
 #include <ws2tcpip.h>  // NOLINT
 
-#include "webrtc/base/byteorder.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/win32window.h"
+#include "webrtc/rtc_base/byteorder.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/win32window.h"
 
 namespace rtc {
 

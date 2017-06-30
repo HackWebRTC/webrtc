@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/sequenced_task_checker_impl.h"
+#include "webrtc/rtc_base/sequenced_task_checker_impl.h"
 
 #if defined(WEBRTC_MAC)
 #include <dispatch/dispatch.h>
 #endif
 
-#include "webrtc/base/platform_thread.h"
-#include "webrtc/base/sequenced_task_checker.h"
-#include "webrtc/base/task_queue.h"
+#include "webrtc/rtc_base/platform_thread.h"
+#include "webrtc/rtc_base/sequenced_task_checker.h"
+#include "webrtc/rtc_base/task_queue.h"
 
 namespace rtc {
 

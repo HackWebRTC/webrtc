@@ -14,12 +14,12 @@
 #include <deque>
 #include <map>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/event.h"
-#include "webrtc/base/fakeclock.h"
-#include "webrtc/base/messagequeue.h"
-#include "webrtc/base/socketserver.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/fakeclock.h"
+#include "webrtc/rtc_base/messagequeue.h"
+#include "webrtc/rtc_base/socketserver.h"
 
 namespace rtc {
 

@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/rtccertificategenerator.h"
+#include "webrtc/rtc_base/rtccertificategenerator.h"
 
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/sslidentity.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/sslidentity.h"
 
 namespace rtc {
 

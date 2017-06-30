@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/rtc_base/physicalsocketserver.h"
 
 #if defined(_MSC_VER) && _MSC_VER < 1300
 #pragma warning(disable:4786)
@@ -43,15 +43,15 @@
 #include <algorithm>
 #include <map>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/byteorder.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/networkmonitor.h"
-#include "webrtc/base/nullsocketserver.h"
-#include "webrtc/base/timeutils.h"
-#include "webrtc/base/win32socketinit.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/rtc_base/byteorder.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/networkmonitor.h"
+#include "webrtc/rtc_base/nullsocketserver.h"
+#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/rtc_base/win32socketinit.h"
 
 #if defined(WEBRTC_POSIX)
 #include <netinet/tcp.h>  // for TCP_NODELAY

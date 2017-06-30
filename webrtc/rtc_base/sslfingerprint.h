@@ -13,10 +13,10 @@
 
 #include <string>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/rtccertificate.h"
-#include "webrtc/base/sslidentity.h"
+#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/rtc_base/copyonwritebuffer.h"
+#include "webrtc/rtc_base/rtccertificate.h"
+#include "webrtc/rtc_base/sslidentity.h"
 
 namespace rtc {
 

@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/event_tracer.h"
+#include "webrtc/rtc_base/event_tracer.h"
 
-#include "webrtc/base/trace_event.h"
+#include "webrtc/rtc_base/trace_event.h"
 #include "webrtc/system_wrappers/include/static_instance.h"
 #include "webrtc/test/gtest.h"
 

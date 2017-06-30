@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/rate_limiter.h"
+#include "webrtc/rtc_base/rate_limiter.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

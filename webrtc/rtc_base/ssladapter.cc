@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/ssladapter.h"
+#include "webrtc/rtc_base/ssladapter.h"
 
-#include "webrtc/base/openssladapter.h"
+#include "webrtc/rtc_base/openssladapter.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 

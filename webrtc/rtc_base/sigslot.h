@@ -113,7 +113,7 @@
 #if !defined(WIN32_LEAN_AND_MEAN)
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include "webrtc/base/win32.h"
+#include "webrtc/rtc_base/win32.h"
 #elif defined(__GNUG__) || defined(SIGSLOT_USE_POSIX_THREADS)
 #define _SIGSLOT_HAS_POSIX_THREADS
 #include <pthread.h>

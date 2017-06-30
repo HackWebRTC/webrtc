@@ -13,10 +13,10 @@
 
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/event.h"
-#include "webrtc/base/platform_thread_types.h"
-#include "webrtc/base/thread_checker.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/platform_thread_types.h"
+#include "webrtc/rtc_base/thread_checker.h"
 
 namespace rtc {
 

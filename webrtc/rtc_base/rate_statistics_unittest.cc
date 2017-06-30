@@ -10,7 +10,7 @@
 
 #include <algorithm>
 
-#include "webrtc/base/rate_statistics.h"
+#include "webrtc/rtc_base/rate_statistics.h"
 #include "webrtc/test/gtest.h"
 
 namespace {

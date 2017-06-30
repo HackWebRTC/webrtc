@@ -10,11 +10,11 @@
 
 #include <memory>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/natsocketfactory.h"
-#include "webrtc/base/natserver.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/socketadapters.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/natserver.h"
+#include "webrtc/rtc_base/natsocketfactory.h"
+#include "webrtc/rtc_base/socketadapters.h"
 
 namespace rtc {
 

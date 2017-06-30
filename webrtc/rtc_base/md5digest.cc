@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/md5digest.h"
+#include "webrtc/rtc_base/md5digest.h"
 
 namespace rtc {
 

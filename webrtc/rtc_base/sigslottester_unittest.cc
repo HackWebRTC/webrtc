@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/sigslottester.h"
+#include "webrtc/rtc_base/sigslottester.h"
 
 #include <string>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/sigslot.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/sigslot.h"
 
 namespace rtc {
 

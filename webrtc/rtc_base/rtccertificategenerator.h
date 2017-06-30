@@ -11,12 +11,12 @@
 #ifndef WEBRTC_RTC_BASE_RTCCERTIFICATEGENERATOR_H_
 #define WEBRTC_RTC_BASE_RTCCERTIFICATEGENERATOR_H_
 
-#include "webrtc/base/optional.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/rtccertificate.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/sslidentity.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/optional.h"
+#include "webrtc/rtc_base/refcount.h"
+#include "webrtc/rtc_base/rtccertificate.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/sslidentity.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace rtc {
 
