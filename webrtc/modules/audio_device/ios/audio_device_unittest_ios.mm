@@ -602,7 +602,10 @@ TEST_F(AudioDeviceTest, DISABLED_StartStopPlayout) {
 
 // Tests that recording can be initiated, started and stopped. No audio callback
 // is registered in this test.
-TEST_F(AudioDeviceTest, StartStopRecording) {
+// Can sometimes fail when running on real devices: bugs.webrtc.org/7888.
+TEST_F(AudioDeviceTest, DISABLED_StartStopRecording) {
+  StartRecording();
+  StopRecording();
   StartRecording();
   StopRecording();
 }
