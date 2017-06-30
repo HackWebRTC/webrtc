@@ -26,16 +26,16 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/asyncsocket.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
 
 namespace webrtc {
 namespace testing {

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/weak_ptr.h"
+#include "webrtc/base/weak_ptr.h"
 
 // The implementation is borrowed from chromium except that it does not
 // implement SupportsWeakPtr.

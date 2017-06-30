@@ -14,10 +14,10 @@
 
 #include <sys/utsname.h>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/macutils.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/macutils.h"
+#include "webrtc/base/stringutils.h"
 
 namespace rtc {
 

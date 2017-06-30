@@ -14,8 +14,8 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/optional.h"
 
 namespace rtc {
 

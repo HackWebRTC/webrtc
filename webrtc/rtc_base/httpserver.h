@@ -14,7 +14,7 @@
 #include <map>
 #include <memory>
 
-#include "webrtc/rtc_base/httpbase.h"
+#include "webrtc/base/httpbase.h"
 
 namespace rtc {
 

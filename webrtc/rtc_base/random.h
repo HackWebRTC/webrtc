@@ -13,9 +13,9 @@
 
 #include <limits>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 
@@ -30,7 +30,7 @@ class Random {
   // Besides the quality of the random seed being poor, this also requires
   // the client to take on extra dependencies to generate a seed.
   // If we go for a static seed generator in Random, we can use something from
-  // webrtc/rtc_base and make sure that it works the same way across platforms.
+  // webrtc/base and make sure that it works the same way across platforms.
   // See also discussion here: https://codereview.webrtc.org/1623543002/
   explicit Random(uint64_t seed);
 

@@ -14,10 +14,10 @@
 #include <map>
 #include <string>
 
-#include "webrtc/rtc_base/asyncsocket.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/cryptstring.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/cryptstring.h"
+#include "webrtc/base/logging.h"
 
 namespace rtc {
 

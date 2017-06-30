@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/task_queue.h"
+#include "webrtc/base/task_queue.h"
 
 #include <mmsystem.h>
 #include <string.h>
@@ -16,11 +16,11 @@
 #include <algorithm>
 #include <queue>
 
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/safe_conversions.h"
+#include "webrtc/base/timeutils.h"
 
 namespace rtc {
 namespace {

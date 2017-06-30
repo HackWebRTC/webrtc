@@ -79,9 +79,9 @@
 #include <limits>
 #include <type_traits>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_compare.h"
-#include "webrtc/rtc_base/type_traits.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/safe_compare.h"
+#include "webrtc/base/type_traits.h"
 
 namespace rtc {
 

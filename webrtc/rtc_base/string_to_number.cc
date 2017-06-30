@@ -11,7 +11,7 @@
 #include <cerrno>
 #include <cstdlib>
 
-#include "webrtc/rtc_base/string_to_number.h"
+#include "webrtc/base/string_to_number.h"
 
 namespace rtc {
 namespace string_to_number_internal {

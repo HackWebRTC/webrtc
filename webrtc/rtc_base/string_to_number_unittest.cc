@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/string_to_number.h"
+#include "webrtc/base/string_to_number.h"
 
 #include <string>
 #include <type_traits>
 #include <limits>
 
-#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/base/gunit.h"
 
 namespace rtc {
 

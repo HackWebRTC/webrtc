@@ -14,10 +14,10 @@
 #include <algorithm>
 #include <utility>
 
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace rtc {
 

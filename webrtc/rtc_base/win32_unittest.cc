@@ -10,9 +10,9 @@
 
 #include <string>
 
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/win32.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/win32.h"
 
 #if !defined(WEBRTC_WIN)
 #error Only for Windows

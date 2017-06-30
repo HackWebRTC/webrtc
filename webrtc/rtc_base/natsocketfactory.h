@@ -16,10 +16,10 @@
 #include <memory>
 #include <set>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/natserver.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/socketserver.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/natserver.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/socketserver.h"
 
 namespace rtc {
 

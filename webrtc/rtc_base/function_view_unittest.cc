@@ -11,8 +11,8 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/rtc_base/function_view.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/base/function_view.h"
+#include "webrtc/base/gunit.h"
 
 namespace rtc {
 

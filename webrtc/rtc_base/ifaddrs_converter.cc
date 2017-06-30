@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/ifaddrs_converter.h"
+#include "webrtc/base/ifaddrs_converter.h"
 
 namespace rtc {
 

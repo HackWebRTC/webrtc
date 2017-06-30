@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/file.h"
+#include "webrtc/base/file.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -18,7 +18,7 @@
 
 #include <limits>
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace rtc {
 

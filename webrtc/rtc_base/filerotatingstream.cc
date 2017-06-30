@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/filerotatingstream.h"
+#include "webrtc/base/filerotatingstream.h"
 
 #include <algorithm>
 #include <iostream>
 #include <string>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/pathutils.h"
 
 // Note: We use std::cerr for logging in the write paths of this stream to avoid
 // infinite loops when logging.

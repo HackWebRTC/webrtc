@@ -8,7 +8,7 @@
 
 #include <string>
 
-#include "webrtc/rtc_base/event_tracer.h"
+#include "webrtc/base/event_tracer.h"
 
 #if defined(TRACE_EVENT0)
 #error "Another copy of trace_event.h has already been included."

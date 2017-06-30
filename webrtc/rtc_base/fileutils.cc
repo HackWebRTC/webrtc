@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/fileutils.h"
+#include "webrtc/base/fileutils.h"
 
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/stringutils.h"
 
 #if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/win32filesystem.h"
+#include "webrtc/base/win32filesystem.h"
 #else
-#include "webrtc/rtc_base/unixfilesystem.h"
+#include "webrtc/base/unixfilesystem.h"
 #endif
 
 #if !defined(WEBRTC_WIN)

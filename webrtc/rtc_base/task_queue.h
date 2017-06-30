@@ -19,16 +19,16 @@
 #include <dispatch/dispatch.h>
 #endif
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 
 #if defined(WEBRTC_WIN) || defined(WEBRTC_BUILD_LIBEVENT)
-#include "webrtc/rtc_base/platform_thread.h"
+#include "webrtc/base/platform_thread.h"
 #endif
 
 #if defined(WEBRTC_BUILD_LIBEVENT)
-#include "webrtc/rtc_base/refcountedobject.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/refcountedobject.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 struct event_base;
 struct event;

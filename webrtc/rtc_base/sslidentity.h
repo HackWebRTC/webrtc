@@ -18,10 +18,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/timeutils.h"
 
 namespace rtc {
 

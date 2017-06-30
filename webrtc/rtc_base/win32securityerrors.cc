@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/win32.h"
+#include "webrtc/base/win32.h"
+#include "webrtc/base/logging.h"
 
 namespace rtc {
 

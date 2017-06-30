@@ -11,9 +11,9 @@
 #ifndef WEBRTC_RTC_BASE_GUNIT_H_
 #define WEBRTC_RTC_BASE_GUNIT_H_
 
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/fakeclock.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 #if defined(GTEST_RELATIVE_PATH)
 #include "webrtc/test/gtest.h"
 #else

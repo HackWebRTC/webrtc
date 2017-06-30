@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/asynctcpsocket.h"
+#include "webrtc/base/asynctcpsocket.h"
 
 #include <string.h>
 
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/rtc_base/byteorder.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/byteorder.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 
 #if defined(WEBRTC_POSIX)
 #include <errno.h>

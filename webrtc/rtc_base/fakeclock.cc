@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/fakeclock.h"
+#include "webrtc/base/fakeclock.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/messagequeue.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/messagequeue.h"
 
 namespace rtc {
 

@@ -11,10 +11,10 @@
 #ifndef WEBRTC_RTC_BASE_KEEP_REF_UNTIL_DONE_H_
 #define WEBRTC_RTC_BASE_KEEP_REF_UNTIL_DONE_H_
 
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/callback.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/callback.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace rtc {
 

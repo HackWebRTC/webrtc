@@ -15,9 +15,9 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/sslidentity.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/sslidentity.h"
 
 namespace rtc {
 

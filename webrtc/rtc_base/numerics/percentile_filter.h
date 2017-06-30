@@ -16,7 +16,7 @@
 #include <iterator>
 #include <set>
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

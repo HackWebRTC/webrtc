@@ -12,11 +12,11 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/test/gtest.h"
 
 // Duplicated from base/threading/thread_checker.h so that we can be

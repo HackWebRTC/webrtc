@@ -21,12 +21,12 @@
 #include <list>
 #include <memory>
 
-#include "webrtc/rtc_base/asyncresolverinterface.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "webrtc/base/asyncresolverinterface.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/thread_checker.h"
 
 namespace rtc {
 

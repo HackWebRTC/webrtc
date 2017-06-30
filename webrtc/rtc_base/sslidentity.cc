@@ -9,16 +9,16 @@
  */
 
 // Handling of certificates and keypairs for SSLStreamAdapter's peer mode.
-#include "webrtc/rtc_base/sslidentity.h"
+#include "webrtc/base/sslidentity.h"
 
 #include <ctime>
 #include <string>
 
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/opensslidentity.h"
-#include "webrtc/rtc_base/sslfingerprint.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/opensslidentity.h"
+#include "webrtc/base/sslfingerprint.h"
 
 namespace rtc {
 

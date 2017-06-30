@@ -12,8 +12,8 @@
 #define WEBRTC_RTC_BASE_PROXYINFO_H_
 
 #include <string>
-#include "webrtc/rtc_base/cryptstring.h"
-#include "webrtc/rtc_base/socketaddress.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/cryptstring.h"
 
 namespace rtc {
 

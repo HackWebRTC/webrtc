@@ -16,11 +16,11 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/rtc_base/messagehandler.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/thread.h"
 
 namespace rtc {
 

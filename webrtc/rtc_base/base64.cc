@@ -14,11 +14,11 @@
 //*
 //*********************************************************************
 
-#include "webrtc/rtc_base/base64.h"
+#include "webrtc/base/base64.h"
 
 #include <string.h>
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 using std::vector;
 

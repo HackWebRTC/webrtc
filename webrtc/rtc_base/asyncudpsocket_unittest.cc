@@ -11,10 +11,10 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/rtc_base/asyncudpsocket.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/physicalsocketserver.h"
-#include "webrtc/rtc_base/virtualsocketserver.h"
+#include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/virtualsocketserver.h"
 
 namespace rtc {
 

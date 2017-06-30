@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/task_queue.h"
+#include "webrtc/base/task_queue.h"
 
 #include <fcntl.h>
 #include <signal.h>
@@ -16,10 +16,10 @@
 #include <unistd.h>
 
 #include "base/third_party/libevent/event.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/task_queue_posix.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/task_queue_posix.h"
+#include "webrtc/base/timeutils.h"
 
 namespace rtc {
 using internal::GetQueuePtrTls;

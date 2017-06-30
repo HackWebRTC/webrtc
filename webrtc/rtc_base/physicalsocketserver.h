@@ -20,9 +20,9 @@
 #include <set>
 #include <vector>
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/socketserver.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/socketserver.h"
+#include "webrtc/base/criticalsection.h"
 
 #if defined(WEBRTC_POSIX)
 typedef int SOCKET;

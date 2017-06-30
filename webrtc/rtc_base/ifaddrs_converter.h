@@ -12,12 +12,12 @@
 #define WEBRTC_RTC_BASE_IFADDRS_CONVERTER_H_
 
 #if defined(WEBRTC_ANDROID)
-#include "webrtc/rtc_base/ifaddrs-android.h"
+#include "webrtc/base/ifaddrs-android.h"
 #else
 #include <ifaddrs.h>
 #endif  // WEBRTC_ANDROID
 
-#include "webrtc/rtc_base/ipaddress.h"
+#include "webrtc/base/ipaddress.h"
 
 namespace rtc {
 

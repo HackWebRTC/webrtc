@@ -10,11 +10,11 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/optionsfile.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/optionsfile.h"
+#include "webrtc/base/pathutils.h"
 
 namespace rtc {
 

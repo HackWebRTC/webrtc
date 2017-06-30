@@ -14,7 +14,7 @@
 #include <math.h>
 #include <type_traits>
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265359f

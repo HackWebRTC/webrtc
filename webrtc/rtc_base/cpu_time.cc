@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/cpu_time.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/cpu_time.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 
 #if defined(WEBRTC_LINUX)
 #include <time.h>

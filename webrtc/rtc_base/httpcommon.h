@@ -15,10 +15,10 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/stream.h"
 
 namespace rtc {
 

@@ -20,9 +20,9 @@
 #include <ostream>
 #endif  // UNIT_TEST
 
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/sanitizer.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/sanitizer.h"
 
 namespace rtc {
 

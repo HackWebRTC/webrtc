@@ -19,10 +19,10 @@
 // debug bots.
 #define ENABLE_THREAD_CHECKER RTC_DCHECK_IS_ON
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/thread_checker_impl.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/thread_checker_impl.h"
 
 namespace rtc {
 

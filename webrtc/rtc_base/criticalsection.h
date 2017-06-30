@@ -11,11 +11,11 @@
 #ifndef WEBRTC_RTC_BASE_CRITICALSECTION_H_
 #define WEBRTC_RTC_BASE_CRITICALSECTION_H_
 
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/platform_thread_types.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "webrtc/base/atomicops.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/platform_thread_types.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 #if defined(WEBRTC_WIN)

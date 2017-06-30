@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/helpers.h"
+#include "webrtc/base/helpers.h"
 
 #include <limits>
 #include <memory>
 
 #include <openssl/rand.h>
 
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 
 // Protect against max macro inclusion.
 #undef max

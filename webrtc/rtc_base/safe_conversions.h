@@ -15,8 +15,8 @@
 
 #include <limits>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions_impl.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/safe_conversions_impl.h"
 
 namespace rtc {
 

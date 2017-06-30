@@ -12,17 +12,17 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/rtc_base/asynctcpsocket.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/natserver.h"
-#include "webrtc/rtc_base/natsocketfactory.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/physicalsocketserver.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/testclient.h"
-#include "webrtc/rtc_base/virtualsocketserver.h"
+#include "webrtc/base/asynctcpsocket.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/natserver.h"
+#include "webrtc/base/natsocketfactory.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/ptr_util.h"
+#include "webrtc/base/testclient.h"
+#include "webrtc/base/virtualsocketserver.h"
 
 using namespace rtc;
 

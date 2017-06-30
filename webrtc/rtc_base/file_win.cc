@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/file.h"
+#include "webrtc/base/file.h"
 
 #include <io.h>
-#include "webrtc/rtc_base/win32.h"
+#include "webrtc/base/win32.h"
 
 #include <limits>  // NOLINT: win32.h should be considered a system header
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace rtc {
 

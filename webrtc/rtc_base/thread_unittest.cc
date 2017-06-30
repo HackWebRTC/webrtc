@@ -10,14 +10,14 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/asyncudpsocket.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/physicalsocketserver.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/thread.h"
 
 #if defined(WEBRTC_WIN)
 #include <comdef.h>  // NOLINT

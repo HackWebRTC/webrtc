@@ -11,9 +11,9 @@
 #ifndef WEBRTC_RTC_BASE_EVENT_H_
 #define WEBRTC_RTC_BASE_EVENT_H_
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 #if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/win32.h"  // NOLINT: consider this a system header.
+#include "webrtc/base/win32.h"  // NOLINT: consider this a system header.
 #elif defined(WEBRTC_POSIX)
 #include <pthread.h>
 #else

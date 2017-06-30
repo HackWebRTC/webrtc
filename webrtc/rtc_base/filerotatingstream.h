@@ -15,8 +15,8 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/stream.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/stream.h"
 
 namespace rtc {
 

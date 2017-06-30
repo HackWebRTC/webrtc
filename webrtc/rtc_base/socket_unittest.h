@@ -11,8 +11,8 @@
 #ifndef WEBRTC_RTC_BASE_SOCKET_UNITTEST_H_
 #define WEBRTC_RTC_BASE_SOCKET_UNITTEST_H_
 
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/thread.h"
 
 namespace rtc {
 

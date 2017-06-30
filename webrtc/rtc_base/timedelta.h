@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/timeutils.h"
 
 // Convenience class to convert between different units of relative time.
 // Stores time to precision of nanoseconds, as int64_t internally.

@@ -25,10 +25,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/byteorder.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/byteorder.h"
 #if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/win32.h"
+#include "webrtc/base/win32.h"
 #endif
 
 namespace rtc {

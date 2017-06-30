@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/race_checker.h"
+#include "webrtc/base/race_checker.h"
 
 namespace rtc {
 

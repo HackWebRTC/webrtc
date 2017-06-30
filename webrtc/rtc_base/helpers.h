@@ -12,7 +12,7 @@
 #define WEBRTC_RTC_BASE_HELPERS_H_
 
 #include <string>
-#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/base/basictypes.h"
 
 namespace rtc {
 

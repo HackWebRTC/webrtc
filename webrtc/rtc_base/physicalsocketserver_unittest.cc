@@ -12,13 +12,13 @@
 #include <signal.h>
 #include <stdarg.h>
 
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/networkmonitor.h"
-#include "webrtc/rtc_base/physicalsocketserver.h"
-#include "webrtc/rtc_base/socket_unittest.h"
-#include "webrtc/rtc_base/testutils.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/networkmonitor.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/socket_unittest.h"
+#include "webrtc/base/testutils.h"
+#include "webrtc/base/thread.h"
 
 namespace rtc {
 

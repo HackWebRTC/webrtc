@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/asyncresolverinterface.h"
+#include "webrtc/base/asyncresolverinterface.h"
 
 namespace rtc {
 

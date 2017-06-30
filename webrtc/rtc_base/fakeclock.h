@@ -11,9 +11,9 @@
 #ifndef WEBRTC_RTC_BASE_FAKECLOCK_H_
 #define WEBRTC_RTC_BASE_FAKECLOCK_H_
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/timedelta.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/timedelta.h"
+#include "webrtc/base/timeutils.h"
 
 namespace rtc {
 

@@ -12,8 +12,8 @@
 #define WEBRTC_RTC_BASE_FIREWALLSOCKETSERVER_H_
 
 #include <vector>
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/socketserver.h"
+#include "webrtc/base/socketserver.h"
+#include "webrtc/base/criticalsection.h"
 
 namespace rtc {
 

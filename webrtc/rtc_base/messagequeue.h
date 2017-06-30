@@ -20,16 +20,16 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/location.h"
-#include "webrtc/rtc_base/messagehandler.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/socketserver.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/location.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/socketserver.h"
+#include "webrtc/base/timeutils.h"
+#include "webrtc/base/thread_annotations.h"
 
 namespace rtc {
 

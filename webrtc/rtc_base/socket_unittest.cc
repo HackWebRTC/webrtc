@@ -10,18 +10,18 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/socket_unittest.h"
+#include "webrtc/base/socket_unittest.h"
 
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/asyncudpsocket.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/socketserver.h"
-#include "webrtc/rtc_base/testclient.h"
-#include "webrtc/rtc_base/testutils.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/ptr_util.h"
+#include "webrtc/base/socketserver.h"
+#include "webrtc/base/testclient.h"
+#include "webrtc/base/testutils.h"
+#include "webrtc/base/thread.h"
 
 namespace rtc {
 

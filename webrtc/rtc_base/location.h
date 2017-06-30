@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "webrtc/rtc_base/stringize_macros.h"
+#include "webrtc/base/stringize_macros.h"
 
 namespace rtc {
 

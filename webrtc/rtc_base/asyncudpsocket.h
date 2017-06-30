@@ -13,8 +13,8 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/socketfactory.h"
+#include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/socketfactory.h"
 
 namespace rtc {
 

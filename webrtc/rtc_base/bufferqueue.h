@@ -14,9 +14,9 @@
 #include <deque>
 #include <vector>
 
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 
 namespace rtc {
 

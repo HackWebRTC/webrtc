@@ -11,7 +11,7 @@
 #ifndef WEBRTC_RTC_BASE_SOCKETADDRESSPAIR_H_
 #define WEBRTC_RTC_BASE_SOCKETADDRESSPAIR_H_
 
-#include "webrtc/rtc_base/socketaddress.h"
+#include "webrtc/base/socketaddress.h"
 
 namespace rtc {
 

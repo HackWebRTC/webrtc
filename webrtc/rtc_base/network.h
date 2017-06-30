@@ -19,10 +19,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/ipaddress.h"
-#include "webrtc/rtc_base/messagehandler.h"
-#include "webrtc/rtc_base/networkmonitor.h"
-#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/base/ipaddress.h"
+#include "webrtc/base/networkmonitor.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/sigslot.h"
 
 #if defined(WEBRTC_POSIX)
 struct ifaddrs;

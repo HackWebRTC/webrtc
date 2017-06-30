@@ -10,8 +10,8 @@
 
 #include <stdint.h>
 
-#include "webrtc/rtc_base/byteorder.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/base/byteorder.h"
+#include "webrtc/base/gunit.h"
 
 namespace rtc {
 

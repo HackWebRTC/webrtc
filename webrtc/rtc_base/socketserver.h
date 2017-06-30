@@ -12,7 +12,7 @@
 #define WEBRTC_RTC_BASE_SOCKETSERVER_H_
 
 #include <memory>
-#include "webrtc/rtc_base/socketfactory.h"
+#include "webrtc/base/socketfactory.h"
 
 namespace rtc {
 

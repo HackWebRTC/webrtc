@@ -57,9 +57,9 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/thread_annotations.h"
 
 namespace rtc {
 

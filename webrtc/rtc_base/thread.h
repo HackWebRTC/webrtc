@@ -20,13 +20,13 @@
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>
 #endif
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/platform_thread_types.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/platform_thread_types.h"
 
 #if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/win32.h"
+#include "webrtc/base/win32.h"
 #endif
 
 namespace rtc {

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/event.h"
+#include "webrtc/base/event.h"
 
 #if defined(WEBRTC_WIN)
 #include <windows.h>
@@ -20,7 +20,7 @@
 #error "Must define either WEBRTC_WIN or WEBRTC_POSIX."
 #endif
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace rtc {
 

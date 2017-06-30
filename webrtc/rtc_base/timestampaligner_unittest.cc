@@ -13,9 +13,9 @@
 #include <algorithm>
 #include <limits>
 
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/rtc_base/timestampaligner.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/random.h"
+#include "webrtc/base/timestampaligner.h"
 
 namespace rtc {
 

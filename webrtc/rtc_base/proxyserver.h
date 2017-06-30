@@ -13,11 +13,11 @@
 
 #include <list>
 #include <memory>
-#include "webrtc/rtc_base/asyncsocket.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/socketadapters.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/stream.h"
+#include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/socketadapters.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/stream.h"
 
 namespace rtc {
 

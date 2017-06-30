@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/bitbuffer.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/bytebuffer.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/bitbuffer.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/gunit.h"
 
 namespace rtc {
 

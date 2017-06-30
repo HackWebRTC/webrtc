@@ -11,7 +11,7 @@
 #ifndef WEBRTC_RTC_BASE_SEQUENCED_TASK_CHECKER_IMPL_H_
 #define WEBRTC_RTC_BASE_SEQUENCED_TASK_CHECKER_IMPL_H_
 
-#include "webrtc/rtc_base/thread_checker.h"
+#include "webrtc/base/thread_checker.h"
 
 namespace rtc {
 

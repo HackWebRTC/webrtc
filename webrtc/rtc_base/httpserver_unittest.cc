@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/httpserver.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/testutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/httpserver.h"
+#include "webrtc/base/testutils.h"
 
 using namespace webrtc::testing;
 
