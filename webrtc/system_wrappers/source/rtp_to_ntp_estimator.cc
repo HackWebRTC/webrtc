@@ -54,30 +54,6 @@ bool Contains(const std::list<RtpToNtpEstimator::RtcpMeasurement>& measurements,
   }
   return false;
 }
-
-bool IsValid(const std::list<RtpToNtpEstimator::RtcpMeasurement>& measurements,
-             const RtpToNtpEstimator::RtcpMeasurement& other) {
-  if (!other.ntp_time.Valid())
-    return false;
-
-  int64_t ntp_ms_new = other.ntp_time.ToMs();
-  for (const auto& measurement : measurements) {
-    if (ntp_ms_new <= measurement.ntp_time.ToMs()) {
-      // Old report.
-      return false;
-    }
-    int64_t timestamp_new = other.rtp_timestamp;
-    if (!CompensateForWrapAround(timestamp_new, measurement.rtp_timestamp,
-                                 &timestamp_new)) {
-      return false;
-    }
-    if (timestamp_new <= measurement.rtp_timestamp) {
-      LOG(LS_WARNING) << "Newer RTCP SR report with older RTP timestamp.";
-      return false;
-    }
-  }
-  return true;
-}
 }  // namespace
 
 RtpToNtpEstimator::RtcpMeasurement::RtcpMeasurement(uint32_t ntp_secs,
@@ -93,7 +69,7 @@ bool RtpToNtpEstimator::RtcpMeasurement::IsEqual(
 }
 
 // Class for converting an RTP timestamp to the NTP domain.
-RtpToNtpEstimator::RtpToNtpEstimator() {}
+RtpToNtpEstimator::RtpToNtpEstimator() : consecutive_invalid_samples_(0) {}
 RtpToNtpEstimator::~RtpToNtpEstimator() {}
 
 void RtpToNtpEstimator::UpdateParameters() {
@@ -122,21 +98,51 @@ bool RtpToNtpEstimator::UpdateMeasurements(uint32_t ntp_secs,
                                            bool* new_rtcp_sr) {
   *new_rtcp_sr = false;
 
-  RtcpMeasurement measurement(ntp_secs, ntp_frac, rtp_timestamp);
-  if (Contains(measurements_, measurement)) {
+  RtcpMeasurement new_measurement(ntp_secs, ntp_frac, rtp_timestamp);
+  if (Contains(measurements_, new_measurement)) {
     // RTCP SR report already added.
     return true;
   }
-  if (!IsValid(measurements_, measurement)) {
-    // Old report or invalid parameters.
+  if (!new_measurement.ntp_time.Valid())
     return false;
+
+  int64_t ntp_ms_new = new_measurement.ntp_time.ToMs();
+  bool invalid_sample = false;
+  for (const auto& measurement : measurements_) {
+    if (ntp_ms_new <= measurement.ntp_time.ToMs()) {
+      // Old report.
+      invalid_sample = true;
+      break;
+    }
+    int64_t timestamp_new = new_measurement.rtp_timestamp;
+    if (!CompensateForWrapAround(timestamp_new, measurement.rtp_timestamp,
+                                 &timestamp_new)) {
+      invalid_sample = true;
+      break;
+    }
+    if (timestamp_new <= measurement.rtp_timestamp) {
+      LOG(LS_WARNING)
+          << "Newer RTCP SR report with older RTP timestamp, dropping";
+      invalid_sample = true;
+      break;
+    }
   }
+  if (invalid_sample) {
+    ++consecutive_invalid_samples_;
+    if (consecutive_invalid_samples_ < kMaxInvalidSamples) {
+      return false;
+    }
+    LOG(LS_WARNING) << "Multiple consecutively invalid RTCP SR reports, "
+                       "clearing measurements.";
+    measurements_.clear();
+  }
+  consecutive_invalid_samples_ = 0;
 
   // Insert new RTCP SR report.
   if (measurements_.size() == kNumRtcpReportsToUse)
     measurements_.pop_back();
 
-  measurements_.push_front(measurement);
+  measurements_.push_front(new_measurement);
   *new_rtcp_sr = true;
 
   // List updated, calculate new parameters.

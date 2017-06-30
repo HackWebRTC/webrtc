@@ -138,6 +138,48 @@ TEST(WrapAroundTests, OldRtp_NewRtcpWrapped) {
   EXPECT_EQ(0, timestamp_ms);
 }
 
+TEST(WrapAroundTests, GracefullyHandleRtpJump) {
+  RtpToNtpEstimator estimator;
+  bool new_sr;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 1;
+  uint32_t timestamp = 0;
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp += kTimestampTicksPerMs;
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp -= kTimestampTicksPerMs;
+  int64_t timestamp_ms = -1;
+  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
+  // Constructed at the same time as the first RTCP and should therefore be
+  // mapped to zero.
+  EXPECT_EQ(0, timestamp_ms);
+
+  timestamp -= 0xFFFFF;
+  for (int i = 0; i < RtpToNtpEstimator::kMaxInvalidSamples - 1; ++i) {
+    EXPECT_FALSE(
+        estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+    ntp_frac += kOneMsInNtpFrac;
+    timestamp += kTimestampTicksPerMs;
+  }
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp += kTimestampTicksPerMs;
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp += kTimestampTicksPerMs;
+
+  timestamp_ms = -1;
+  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
+  // 6 milliseconds has passed since the start of the test.
+  EXPECT_EQ(6, timestamp_ms);
+}
+
 TEST(UpdateRtcpMeasurementTests, FailsForZeroNtp) {
   RtpToNtpEstimator estimator;
   uint32_t ntp_sec = 0;
