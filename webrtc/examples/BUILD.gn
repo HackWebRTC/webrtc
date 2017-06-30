@@ -549,7 +549,7 @@ if (is_linux || is_win) {
     deps = [
       "//webrtc:webrtc_common",
       "//webrtc/base:rtc_base_approved",
-      "//webrtc/tools:command_line_parser",
+      "//webrtc/rtc_tools:command_line_parser",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

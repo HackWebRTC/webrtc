@@ -6,7 +6,7 @@ include_rules = [
   "+webrtc/common_video",
   "+webrtc/media/base",
   "+webrtc/system_wrappers",
-  "+webrtc/tools",
+  "+webrtc/rtc_tools",
 ]
 
 specific_include_rules = {

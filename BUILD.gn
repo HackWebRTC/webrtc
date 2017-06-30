@@ -13,7 +13,7 @@ group("default") {
   deps = [
     "//webrtc",
     "//webrtc/examples",
-    "//webrtc/tools",
+    "//webrtc/rtc_tools",
   ]
   if (rtc_include_tests) {
     deps += [ "//webrtc:webrtc_tests" ]
