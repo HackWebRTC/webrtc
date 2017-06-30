@@ -381,18 +381,22 @@ TEST(RtpDemuxerTest, FirstSsrcAssociatedWithAnRsidIsNotForgotten) {
   EXPECT_CALL(sink_a, OnRtpPacket(SamePacketAs(*packet_a))).Times(1);
   EXPECT_TRUE(demuxer.OnRtpPacket(*packet_a));
 
-  // Second, a packet with |rsid_b| is received. Its RSID is ignored.
+  // Second, a packet with |rsid_b| is received. We guarantee that |sink_a|
+  // would receive it, and make no guarantees about |sink_b|.
   auto packet_b = CreateRtpPacketReceivedWithRsid(rsid_b, shared_ssrc, 20);
   EXPECT_CALL(sink_a, OnRtpPacket(SamePacketAs(*packet_b))).Times(1);
+  EXPECT_CALL(sink_b, OnRtpPacket(SamePacketAs(*packet_b))).Times(AtLeast(0));
   EXPECT_TRUE(demuxer.OnRtpPacket(*packet_b));
 
   // Known edge-case; adding a new RSID association makes us re-examine all
   // SSRCs. |sink_b| may or may not be associated with the SSRC now; we make
   // no promises on that. We do however still guarantee that |sink_a| still
   // receives the new packets.
-  MockRtpPacketSink sink_ignored;
-  demuxer.AddSink("ignored", &sink_ignored);
-  auto packet_c = CreateRtpPacketReceivedWithRsid(rsid_b, shared_ssrc, 30);
+  MockRtpPacketSink sink_c;
+  const std::string rsid_c = "c";
+  constexpr uint32_t some_other_ssrc = shared_ssrc + 1;
+  demuxer.AddSink(some_other_ssrc, &sink_c);
+  auto packet_c = CreateRtpPacketReceivedWithRsid(rsid_c, shared_ssrc, 30);
   EXPECT_CALL(sink_a, OnRtpPacket(SamePacketAs(*packet_c))).Times(1);
   EXPECT_CALL(sink_b, OnRtpPacket(SamePacketAs(*packet_c))).Times(AtLeast(0));
   EXPECT_TRUE(demuxer.OnRtpPacket(*packet_c));
@@ -400,7 +404,7 @@ TEST(RtpDemuxerTest, FirstSsrcAssociatedWithAnRsidIsNotForgotten) {
   // Test tear-down
   demuxer.RemoveSink(&sink_a);
   demuxer.RemoveSink(&sink_b);
-  demuxer.RemoveSink(&sink_ignored);
+  demuxer.RemoveSink(&sink_c);
 }
 
 TEST(RtpDemuxerTest, MultipleRsidsOnSameSink) {
@@ -516,34 +520,6 @@ TEST(RtpDemuxerTest, RsidObserversInformedOfResolutions) {
   for (auto& observer : rsid_resolution_observers) {
     demuxer.DeregisterRsidResolutionObserver(&observer);
   }
-}
-
-// Normally, we only produce one notification per resolution (though no such
-// guarantee is made), but when a new observer is added, we reset
-// this suppression - we "re-resolve" associations for the benefit of the
-// new observer..
-TEST(RtpDemuxerTest, NotificationSuppressionResetWhenNewObserverAdded) {
-  RtpDemuxer demuxer;
-
-  constexpr uint32_t ssrc = 111;
-  const std::string rsid = "a";
-
-  // First observer registered, then gets a notification.
-  NiceMock<MockRsidResolutionObserver> first_observer;
-  demuxer.RegisterRsidResolutionObserver(&first_observer);
-  demuxer.OnRtpPacket(*CreateRtpPacketReceivedWithRsid(rsid, ssrc));
-
-  // Second observer registered, then gets a notification. No guarantee is made
-  // about whether the first observer would get an additional notification.
-  MockRsidResolutionObserver second_observer;
-  demuxer.RegisterRsidResolutionObserver(&second_observer);
-  EXPECT_CALL(first_observer, OnRsidResolved(rsid, ssrc)).Times(AtLeast(0));
-  EXPECT_CALL(second_observer, OnRsidResolved(rsid, ssrc)).Times(1);
-  demuxer.OnRtpPacket(*CreateRtpPacketReceivedWithRsid(rsid, ssrc));
-
-  // Test tear-down
-  demuxer.DeregisterRsidResolutionObserver(&first_observer);
-  demuxer.DeregisterRsidResolutionObserver(&second_observer);
 }
 
 TEST(RtpDemuxerTest, DeregisteredRsidObserversNotInformedOfResolutions) {

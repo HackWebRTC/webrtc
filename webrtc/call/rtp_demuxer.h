@@ -12,7 +12,6 @@
 #define WEBRTC_CALL_RTP_DEMUXER_H_
 
 #include <map>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -60,9 +59,6 @@ class RtpDemuxer {
   // packet reception.
   void RecordSsrcToSinkAssociation(uint32_t ssrc, RtpPacketSinkInterface* sink);
 
-  // When a new packet arrives, we attempt to resolve extra associations.
-  void ResolveAssociations(const RtpPacketReceived& packet);
-
   // Find the associations of RSID to SSRCs.
   void ResolveRsidToSsrcAssociations(const RtpPacketReceived& packet);
 
@@ -78,15 +74,6 @@ class RtpDemuxer {
   // When it becomes known, the association of the sink to the RSID is deleted
   // from this container, and moved into |ssrc_sinks_|.
   std::multimap<std::string, RtpPacketSinkInterface*> rsid_sinks_;
-
-  // Iterating over |rsid_sinks_| for each incoming and performing multiple
-  // string comparisons is of non-trivial cost. To avoid this cost, we only
-  // check RSIDs for the first packet on each incoming SSRC stream.
-  // (If RSID associations are added later, we check again.)
-  std::set<uint32_t> processed_ssrcs_;
-
-  // Avoid an attack that would create excessive logging.
-  bool logged_max_processed_ssrcs_exceeded_ = false;
 
   // Observers which will be notified when an RSID association to an SSRC is
   // resolved by this object.

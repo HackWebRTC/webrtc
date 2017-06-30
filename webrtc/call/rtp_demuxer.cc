@@ -20,10 +20,6 @@
 
 namespace webrtc {
 
-namespace {
-constexpr size_t kMaxProcessedSsrcs = 1000;  // Prevent memory overuse.
-}  // namespace
-
 RtpDemuxer::RtpDemuxer() = default;
 
 RtpDemuxer::~RtpDemuxer() {
@@ -43,9 +39,6 @@ void RtpDemuxer::AddSink(const std::string& rsid,
   RTC_DCHECK(!MultimapAssociationExists(rsid_sinks_, rsid, sink));
 
   rsid_sinks_.emplace(rsid, sink);
-
-  // This RSID might now map to an SSRC which we saw earlier.
-  processed_ssrcs_.clear();
 }
 
 bool RtpDemuxer::RemoveSink(const RtpPacketSinkInterface* sink) {
@@ -65,7 +58,12 @@ void RtpDemuxer::RecordSsrcToSinkAssociation(uint32_t ssrc,
 }
 
 bool RtpDemuxer::OnRtpPacket(const RtpPacketReceived& packet) {
-  ResolveAssociations(packet);
+  // TODO(eladalon): This will now check every single packet, but soon a CL will
+  // be added which will change the many-to-many association of packets to sinks
+  // to a many-to-one, meaning each packet will be associated with one sink
+  // at most. Then, only packets with an unknown SSRC will be checked for RSID.
+  ResolveRsidToSsrcAssociations(packet);
+
   auto it_range = ssrc_sinks_.equal_range(packet.Ssrc());
   for (auto it = it_range.first; it != it_range.second; ++it) {
     it->second->OnRtpPacket(packet);
@@ -79,8 +77,6 @@ void RtpDemuxer::RegisterRsidResolutionObserver(
   RTC_DCHECK(!ContainerHasKey(rsid_resolution_observers_, observer));
 
   rsid_resolution_observers_.push_back(observer);
-
-  processed_ssrcs_.clear();  // New observer requires new notifications.
 }
 
 void RtpDemuxer::DeregisterRsidResolutionObserver(
@@ -90,24 +86,6 @@ void RtpDemuxer::DeregisterRsidResolutionObserver(
                       rsid_resolution_observers_.end(), observer);
   RTC_DCHECK(it != rsid_resolution_observers_.end());
   rsid_resolution_observers_.erase(it);
-}
-
-void RtpDemuxer::ResolveAssociations(const RtpPacketReceived& packet) {
-  // Avoid expensive string comparisons for RSID by looking the sinks up only
-  // by SSRC whenever possible.
-  if (processed_ssrcs_.find(packet.Ssrc()) != processed_ssrcs_.cend()) {
-    return;
-  }
-
-  ResolveRsidToSsrcAssociations(packet);
-
-  if (processed_ssrcs_.size() < kMaxProcessedSsrcs) {  // Prevent memory overuse
-    processed_ssrcs_.insert(packet.Ssrc());  // Avoid re-examining in-depth.
-  } else if (!logged_max_processed_ssrcs_exceeded_) {
-    LOG(LS_WARNING) << "More than " << kMaxProcessedSsrcs
-                    << " different SSRCs seen.";
-    logged_max_processed_ssrcs_exceeded_ = true;
-  }
 }
 
 void RtpDemuxer::ResolveRsidToSsrcAssociations(
