@@ -10,28 +10,36 @@
 
 #include "webrtc/modules/pacing/alr_detector.h"
 
+#include <string>
+
 #include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace {
-
 // Time period over which outgoing traffic is measured.
 constexpr int kMeasurementPeriodMs = 500;
-
-// Sent traffic percentage as a function of network capacity used to determine
-// application-limited region. ALR region start when bandwidth usage drops below
-// kAlrStartUsagePercent and ends when it raises above kAlrEndUsagePercent.
-// NOTE: This is intentionally conservative at the moment until BW adjustments
-// of application limited region is fine tuned.
-constexpr int kAlrStartUsagePercent = 60;
-constexpr int kAlrEndUsagePercent = 70;
 
 }  // namespace
 
 namespace webrtc {
 
+const char* AlrDetector::kScreenshareProbingBweExperimentName =
+    "WebRTC-ProbingScreenshareBwe";
+
 AlrDetector::AlrDetector()
-    : rate_(kMeasurementPeriodMs, RateStatistics::kBpsScale) {}
+    : alr_start_usage_percent_(kDefaultAlrStartUsagePercent),
+      alr_end_usage_percent_(kDefaultAlrEndUsagePercent),
+      rate_(kMeasurementPeriodMs, RateStatistics::kBpsScale),
+      estimated_bitrate_bps_(0) {
+  rtc::Optional<AlrExperimentSettings> experiment_settings =
+      ParseAlrSettingsFromFieldTrial();
+  if (experiment_settings) {
+    alr_start_usage_percent_ = experiment_settings->alr_start_usage_percent;
+    alr_end_usage_percent_ = experiment_settings->alr_end_usage_percent;
+  }
+}
 
 AlrDetector::~AlrDetector() {}
 
@@ -44,9 +52,9 @@ void AlrDetector::OnBytesSent(size_t bytes_sent, int64_t now_ms) {
     return;
 
   int percentage = static_cast<int>(*rate) * 100 / estimated_bitrate_bps_;
-  if (percentage < kAlrStartUsagePercent && !alr_started_time_ms_) {
+  if (percentage < alr_start_usage_percent_ && !alr_started_time_ms_) {
     alr_started_time_ms_ = rtc::Optional<int64_t>(now_ms);
-  } else if (percentage > kAlrEndUsagePercent && alr_started_time_ms_) {
+  } else if (percentage > alr_end_usage_percent_ && alr_started_time_ms_) {
     alr_started_time_ms_ = rtc::Optional<int64_t>();
   }
 }
@@ -59,6 +67,40 @@ void AlrDetector::SetEstimatedBitrate(int bitrate_bps) {
 rtc::Optional<int64_t> AlrDetector::GetApplicationLimitedRegionStartTime()
     const {
   return alr_started_time_ms_;
+}
+
+rtc::Optional<AlrDetector::AlrExperimentSettings>
+AlrDetector::ParseAlrSettingsFromFieldTrial() {
+  rtc::Optional<AlrExperimentSettings> ret;
+  std::string group_name =
+      field_trial::FindFullName(kScreenshareProbingBweExperimentName);
+
+  const std::string kIgnoredSuffix = "_Dogfood";
+  if (group_name.rfind(kIgnoredSuffix) ==
+      group_name.length() - kIgnoredSuffix.length()) {
+    group_name.resize(group_name.length() - kIgnoredSuffix.length());
+  }
+
+  if (group_name.empty())
+    return ret;
+
+  AlrExperimentSettings settings;
+  if (sscanf(group_name.c_str(), "%f-%" PRId64 "-%d-%d",
+             &settings.pacing_factor, &settings.max_paced_queue_time,
+             &settings.alr_start_usage_percent,
+             &settings.alr_end_usage_percent) == 4) {
+    ret.emplace(settings);
+    LOG(LS_INFO) << "Using screenshare ALR experiment settings: "
+                    "pacing factor: "
+                 << settings.pacing_factor << ", max pacer queue length: "
+                 << settings.max_paced_queue_time
+                 << ", ALR start usage percent: "
+                 << settings.alr_start_usage_percent
+                 << ", ALR end usage percent: "
+                 << settings.alr_end_usage_percent;
+  }
+
+  return ret;
 }
 
 }  // namespace webrtc

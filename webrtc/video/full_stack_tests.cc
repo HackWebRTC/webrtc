@@ -9,19 +9,29 @@
  */
 #include <stdio.h>
 
+#include "webrtc/modules/pacing/alr_detector.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/video/video_quality_test.h"
 
 namespace webrtc {
 
+namespace {
 static const int kFullStackTestDurationSecs = 45;
+}  // namespace
 
 class FullStackTest : public VideoQualityTest {
  public:
   void RunTest(const VideoQualityTest::Params &params) {
     RunWithAnalyzer(params);
   }
+
+ protected:
+  const std::string kScreenshareSimulcastExperiment =
+      "WebRTC-SimulcastScreenshare/Enabled/";
+  const std::string kAlrProbingExperiment =
+      std::string(AlrDetector::kScreenshareProbingBweExperimentName) +
+      "/1.1-2875-80-90/";
 };
 
 // VideoQualityTest::Params params = {
@@ -310,7 +320,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL) {
 }
 
 TEST_F(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
-  test::ScopedFieldTrials field_trial("WebRTC-SimulcastScreenshare/Enabled/");
+  test::ScopedFieldTrials field_trial(kScreenshareSimulcastExperiment);
   VideoQualityTest::Params screenshare;
   screenshare.call.send_side_bwe = true;
   screenshare.screenshare = {true, 10};
@@ -386,6 +396,93 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNetRestrictedQueue) {
   screenshare.pipe.link_capacity_kbps = 200;
   screenshare.pipe.queue_length_packets = 30;
 
+  RunTest(screenshare);
+}
+
+TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_ModeratelyRestricted) {
+  VideoQualityTest::Params screenshare;
+  screenshare.call.send_side_bwe = true;
+  screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
+                       "VP8", 2,    1,    400000, false, false,  "",      ""};
+  screenshare.screenshare = {true, 10};
+  screenshare.analyzer = {"screenshare_slides_moderately_restricted", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  screenshare.pipe.loss_percent = 1;
+  screenshare.pipe.link_capacity_kbps = 1200;
+  screenshare.pipe.queue_length_packets = 30;
+
+  RunTest(screenshare);
+}
+
+// TODO(sprang): Retire these tests once experiment is removed.
+TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNetRestrictedQueue_ALR) {
+  test::ScopedFieldTrials field_trial(kAlrProbingExperiment);
+  VideoQualityTest::Params screenshare;
+  screenshare.call.send_side_bwe = true;
+  screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
+                       "VP8", 2,    1,    400000, false, false,  "",      ""};
+  screenshare.screenshare = {true, 10};
+  screenshare.analyzer = {"screenshare_slides_lossy_limited_ALR", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  screenshare.pipe.loss_percent = 5;
+  screenshare.pipe.link_capacity_kbps = 200;
+  screenshare.pipe.queue_length_packets = 30;
+
+  RunTest(screenshare);
+}
+
+TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_ALR) {
+  test::ScopedFieldTrials field_trial(kAlrProbingExperiment);
+  VideoQualityTest::Params screenshare;
+  screenshare.call.send_side_bwe = true;
+  screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
+                       "VP8", 2,    1,    400000, false, false,  "",      ""};
+  screenshare.screenshare = {true, 10};
+  screenshare.analyzer = {"screenshare_slides_ALR", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  RunTest(screenshare);
+}
+
+TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_ModeratelyRestricted_ALR) {
+  test::ScopedFieldTrials field_trial(kAlrProbingExperiment);
+  VideoQualityTest::Params screenshare;
+  screenshare.call.send_side_bwe = true;
+  screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
+                       "VP8", 2,    1,    400000, false, false,  "",      ""};
+  screenshare.screenshare = {true, 10};
+  screenshare.analyzer = {"screenshare_slides_moderately_restricted_ALR", 0.0,
+                          0.0, kFullStackTestDurationSecs};
+  screenshare.pipe.loss_percent = 1;
+  screenshare.pipe.link_capacity_kbps = 1200;
+  screenshare.pipe.queue_length_packets = 30;
+
+  RunTest(screenshare);
+}
+
+TEST_F(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast_ALR) {
+  test::ScopedFieldTrials field_trial(kScreenshareSimulcastExperiment +
+                                      kAlrProbingExperiment);
+  VideoQualityTest::Params screenshare;
+  screenshare.call.send_side_bwe = true;
+  screenshare.screenshare = {true, 10};
+  screenshare.video = {true,    1850,  1110,  5, 800000, 2500000,
+                       2500000, false, "VP8", 3, 2,      400000,
+                       false,   false, "",    ""};
+  screenshare.analyzer = {"screenshare_slides_simulcast_alr", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  VideoQualityTest::Params screenshare_params_high;
+  screenshare_params_high.video = {true,    1850,  1110,  5, 800000, 2500000,
+                                   2500000, false, "VP8", 3, 0,      400000,
+                                   false,   false, "",    ""};
+  VideoQualityTest::Params screenshare_params_low;
+  screenshare_params_low.video = {true,    1850,  1110,  5, 50000, 200000,
+                                  2000000, false, "VP8", 2, 0,     400000,
+                                  false,   false, "",    ""};
+
+  std::vector<VideoStream> streams = {
+      DefaultVideoStream(screenshare_params_low),
+      DefaultVideoStream(screenshare_params_high)};
+  screenshare.ss = {streams, 1, 1, 0, std::vector<SpatialLayer>(), false};
   RunTest(screenshare);
 }
 

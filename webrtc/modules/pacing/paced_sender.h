@@ -149,6 +149,9 @@ class PacedSender : public Module, public RtpPacketSender {
   // Called when the prober is associated with a process thread.
   void ProcessThreadAttached(ProcessThread* process_thread) override;
 
+  void SetPacingFactor(float pacing_factor);
+  void SetQueueTimeLimit(int limit_ms);
+
  private:
   // Updates the number of bytes that can be sent for the next time interval.
   void UpdateBudgetWithElapsedTime(int64_t delta_time_in_ms)
@@ -193,6 +196,9 @@ class PacedSender : public Module, public RtpPacketSender {
   std::unique_ptr<paced_sender::PacketQueue> packets_ GUARDED_BY(critsect_);
   uint64_t packet_counter_;
   ProcessThread* process_thread_ = nullptr;
+
+  float pacing_factor_ GUARDED_BY(critsect_);
+  int64_t queue_time_limit GUARDED_BY(critsect_);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_PACING_PACED_SENDER_H_

@@ -312,6 +312,7 @@ int main(int argc, char* argv[]) {
   // with a scope that outlives the test.
   std::string field_trials = webrtc::flags::FLAG_force_fieldtrials;
   webrtc::test::InitFieldTrialsFromString(field_trials);
+
   webrtc::test::RunTest(webrtc::Loopback);
   return 0;
 }

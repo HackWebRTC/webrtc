@@ -27,6 +27,7 @@
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
+#include "webrtc/modules/pacing/alr_detector.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
@@ -345,7 +346,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                       RtcEventLog* event_log,
                       const VideoSendStream::Config* config,
                       int initial_encoder_max_bitrate,
-                      std::map<uint32_t, RtpState> suspended_ssrcs);
+                      std::map<uint32_t, RtpState> suspended_ssrcs,
+                      VideoEncoderConfig::ContentType content_type);
   ~VideoSendStreamImpl() override;
 
   // RegisterProcessThread register |module_process_thread| with those objects
@@ -475,7 +477,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
                    RtcEventLog* event_log,
                    const VideoSendStream::Config* config,
                    int initial_encoder_max_bitrate,
-                   const std::map<uint32_t, RtpState>& suspended_ssrcs)
+                   const std::map<uint32_t, RtpState>& suspended_ssrcs,
+                   VideoEncoderConfig::ContentType content_type)
       : send_stream_(send_stream),
         done_event_(done_event),
         stats_proxy_(stats_proxy),
@@ -487,7 +490,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         event_log_(event_log),
         config_(config),
         initial_encoder_max_bitrate_(initial_encoder_max_bitrate),
-        suspended_ssrcs_(suspended_ssrcs) {}
+        suspended_ssrcs_(suspended_ssrcs),
+        content_type_(content_type) {}
 
   ~ConstructionTask() override { done_event_->Set(); }
 
@@ -496,7 +500,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
     send_stream_->reset(new VideoSendStreamImpl(
         stats_proxy_, rtc::TaskQueue::Current(), call_stats_, transport_,
         bitrate_allocator_, send_delay_stats_, vie_encoder_, event_log_,
-        config_, initial_encoder_max_bitrate_, std::move(suspended_ssrcs_)));
+        config_, initial_encoder_max_bitrate_, std::move(suspended_ssrcs_),
+        content_type_));
     return true;
   }
 
@@ -512,6 +517,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   const VideoSendStream::Config* config_;
   int initial_encoder_max_bitrate_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
+  const VideoEncoderConfig::ContentType content_type_;
 };
 
 class VideoSendStream::DestructAndGetRtpStateTask : public rtc::QueuedTask {
@@ -639,8 +645,8 @@ VideoSendStream::VideoSendStream(
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
       &send_stream_, &thread_sync_event_, &stats_proxy_, vie_encoder_.get(),
       module_process_thread, call_stats, transport, bitrate_allocator,
-      send_delay_stats, event_log, &config_,
-      encoder_config.max_bitrate_bps, suspended_ssrcs)));
+      send_delay_stats, event_log, &config_, encoder_config.max_bitrate_bps,
+      suspended_ssrcs, encoder_config.content_type)));
 
   // Wait for ConstructionTask to complete so that |send_stream_| can be used.
   // |module_process_thread| must be registered and deregistered on the thread
@@ -758,7 +764,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     RtcEventLog* event_log,
     const VideoSendStream::Config* config,
     int initial_encoder_max_bitrate,
-    std::map<uint32_t, RtpState> suspended_ssrcs)
+    std::map<uint32_t, RtpState> suspended_ssrcs,
+    VideoEncoderConfig::ContentType content_type)
     : send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       stats_proxy_(stats_proxy),
@@ -811,8 +818,21 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   RTC_DCHECK(transport_);
   RTC_DCHECK(transport_->send_side_cc());
 
-  transport->send_side_cc()->EnablePeriodicAlrProbing(
-      config_->periodic_alr_bandwidth_probing);
+  if (content_type == VideoEncoderConfig::ContentType::kScreen) {
+    rtc::Optional<AlrDetector::AlrExperimentSettings> alr_settings =
+        AlrDetector::ParseAlrSettingsFromFieldTrial();
+    if (alr_settings) {
+      transport->send_side_cc()->EnablePeriodicAlrProbing(true);
+      transport->send_side_cc()->pacer()->SetPacingFactor(
+          alr_settings->pacing_factor);
+      transport->send_side_cc()->pacer()->SetQueueTimeLimit(
+          alr_settings->max_paced_queue_time);
+    }
+  }
+
+  if (config_->periodic_alr_bandwidth_probing) {
+    transport->send_side_cc()->EnablePeriodicAlrProbing(true);
+  }
 
   // RTP/RTCP initialization.
 

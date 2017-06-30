@@ -264,7 +264,9 @@ PacedSender::PacedSender(const Clock* clock,
       time_last_update_us_(clock->TimeInMicroseconds()),
       first_sent_packet_ms_(-1),
       packets_(new paced_sender::PacketQueue(clock)),
-      packet_counter_(0) {
+      packet_counter_(0),
+      pacing_factor_(kDefaultPaceMultiplier),
+      queue_time_limit(kMaxQueueLengthMs) {
   UpdateBudgetWithElapsedTime(kMinPacketLimitMs);
 }
 
@@ -314,7 +316,7 @@ void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
       std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
   pacing_bitrate_kbps_ =
       std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
-      kDefaultPaceMultiplier;
+      pacing_factor_;
   alr_detector_->SetEstimatedBitrate(bitrate_bps);
 }
 
@@ -324,7 +326,7 @@ void PacedSender::SetSendBitrateLimits(int min_send_bitrate_bps,
   min_send_bitrate_kbps_ = min_send_bitrate_bps / 1000;
   pacing_bitrate_kbps_ =
       std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
-      kDefaultPaceMultiplier;
+      pacing_factor_;
   max_padding_bitrate_kbps_ = padding_bitrate / 1000;
   padding_budget_->set_target_rate_kbps(
       std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
@@ -419,7 +421,7 @@ void PacedSender::Process() {
       // time constraint shall be met. Determine bitrate needed for that.
       packets_->UpdateQueueTime(clock_->TimeInMilliseconds());
       int64_t avg_time_left_ms = std::max<int64_t>(
-          1, kMaxQueueLengthMs - packets_->AverageQueueTimeMs());
+          1, queue_time_limit - packets_->AverageQueueTimeMs());
       int min_bitrate_needed_kbps =
           static_cast<int>(queue_size_bytes * 8 / avg_time_left_ms);
       if (min_bitrate_needed_kbps > target_bitrate_kbps)
@@ -535,4 +537,15 @@ void PacedSender::UpdateBudgetWithBytesSent(size_t bytes_sent) {
   media_budget_->UseBudget(bytes_sent);
   padding_budget_->UseBudget(bytes_sent);
 }
+
+void PacedSender::SetPacingFactor(float pacing_factor) {
+  rtc::CritScope cs(&critsect_);
+  pacing_factor_ = pacing_factor;
+}
+
+void PacedSender::SetQueueTimeLimit(int limit_ms) {
+  rtc::CritScope cs(&critsect_);
+  queue_time_limit = limit_ms;
+}
+
 }  // namespace webrtc
