@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/media/base/videobroadcaster.h"
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/gunit.h"
 #include "webrtc/media/base/fakevideorenderer.h"
-#include "webrtc/media/base/videobroadcaster.h"
+#include "webrtc/rtc_base/gunit.h"
 
 using rtc::VideoBroadcaster;
 using rtc::VideoSinkWants;

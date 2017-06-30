@@ -16,11 +16,11 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/platform_thread.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/platform_thread.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/voice_engine/include/voe_base.h"

@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/base/bitbuffer.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/bitbuffer.h"
+#include "webrtc/rtc_base/logging.h"
 
 typedef rtc::Optional<webrtc::SpsParser::SpsState> OptionalSps;
 

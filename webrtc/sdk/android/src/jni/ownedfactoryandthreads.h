@@ -16,7 +16,7 @@
 #include <utility>
 
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/thread.h"
 
 using cricket::WebRtcVideoDecoderFactory;
 using cricket::WebRtcVideoEncoderFactory;

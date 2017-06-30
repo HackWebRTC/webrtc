@@ -16,12 +16,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "webrtc/base/bytebuffer.h"
-#include "webrtc/base/gunit.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/p2p/quic/quictransportchannel.h"
 #include "webrtc/p2p/quic/reliablequicstream.h"
 #include "webrtc/pc/quicdatachannel.h"
+#include "webrtc/rtc_base/bytebuffer.h"
+#include "webrtc/rtc_base/gunit.h"
 
 using webrtc::DataBuffer;
 using webrtc::DataChannelInit;

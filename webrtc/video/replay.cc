@@ -16,11 +16,11 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/api/video_codecs/video_decoder.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/encoder_settings.h"

@@ -11,14 +11,14 @@
 #ifndef WEBRTC_SDK_ANDROID_SRC_JNI_ANDROIDNETWORKMONITOR_JNI_H_
 #define WEBRTC_SDK_ANDROID_SRC_JNI_ANDROIDNETWORKMONITOR_JNI_H_
 
-#include "webrtc/base/networkmonitor.h"
+#include "webrtc/rtc_base/networkmonitor.h"
 
 #include <stdint.h>
 
 #include <map>
 
+#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/base/thread_checker.h"
 
 namespace webrtc_jni {
 

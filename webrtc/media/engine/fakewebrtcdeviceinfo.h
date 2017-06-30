@@ -13,8 +13,8 @@
 
 #include <vector>
 
-#include "webrtc/base/stringutils.h"
 #include "webrtc/media/engine/webrtcvideocapturer.h"
+#include "webrtc/rtc_base/stringutils.h"
 
 // Fake class for mocking out webrtc::VideoCaptureModule::DeviceInfo.
 class FakeWebRtcDeviceInfo : public webrtc::VideoCaptureModule::DeviceInfo {

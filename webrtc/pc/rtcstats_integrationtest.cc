@@ -17,13 +17,13 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/stats/rtcstats_objects.h"
 #include "webrtc/api/stats/rtcstatsreport.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/refcountedobject.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/pc/test/peerconnectiontestwrapper.h"
 #include "webrtc/pc/test/rtcstatsobtainer.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/refcountedobject.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/virtualsocketserver.h"
 
 namespace webrtc {
 

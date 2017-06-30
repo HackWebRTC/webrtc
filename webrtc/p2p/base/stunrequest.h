@@ -14,8 +14,8 @@
 #include <map>
 #include <string>
 #include "webrtc/p2p/base/stun.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace cricket {
 

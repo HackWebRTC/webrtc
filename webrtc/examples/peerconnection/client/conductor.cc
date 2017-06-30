@@ -15,12 +15,12 @@
 #include <vector>
 
 #include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/json.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/examples/peerconnection/client/defaults.h"
 #include "webrtc/media/engine/webrtcvideocapturerfactory.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/json.h"
+#include "webrtc/rtc_base/logging.h"
 
 // Names used for a IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "sdpMid";

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/checks.h"
 #include "webrtc/p2p/base/portallocator.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace cricket {
 

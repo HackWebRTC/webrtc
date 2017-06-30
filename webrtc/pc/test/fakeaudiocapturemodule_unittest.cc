@@ -12,10 +12,10 @@
 
 #include <algorithm>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/thread.h"
 
 using std::min;
 

@@ -14,9 +14,6 @@
 #include <vector>
 
 #include "webrtc/api/video_codecs/video_encoder.h"
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/stringutils.h"
 #include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
@@ -30,6 +27,9 @@
 #include "webrtc/media/engine/simulcast.h"
 #include "webrtc/media/engine/webrtcvideoengine.h"
 #include "webrtc/media/engine/webrtcvoiceengine.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/stringutils.h"
 #include "webrtc/test/field_trial.h"
 
 using webrtc::RtpExtension;

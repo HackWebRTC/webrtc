@@ -13,9 +13,9 @@
 #include <limits>
 
 #include "webrtc/api/audio_codecs/audio_decoder.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/optional.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 namespace {

@@ -16,16 +16,16 @@
 
 #include "third_party/libsrtp/include/srtp.h"
 #include "third_party/libsrtp/include/srtp_priv.h"
-#include "webrtc/base/base64.h"
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/byteorder.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/sslstreamadapter.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/pc/externalhmac.h"
+#include "webrtc/rtc_base/base64.h"
+#include "webrtc/rtc_base/buffer.h"
+#include "webrtc/rtc_base/byteorder.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/sslstreamadapter.h"
+#include "webrtc/rtc_base/stringencode.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace cricket {
 

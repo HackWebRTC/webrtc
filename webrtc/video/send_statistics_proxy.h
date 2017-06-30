@@ -16,13 +16,13 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/numerics/exp_filter.h"
-#include "webrtc/base/ratetracker.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/numerics/exp_filter.h"
+#include "webrtc/rtc_base/ratetracker.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/report_block_stats.h"

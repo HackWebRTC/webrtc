@@ -12,8 +12,8 @@
 #define WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_VIDEO_OBJCVIDEOTRACKSOURCE_H_
 
 #include "WebRTC/RTCMacros.h"
-#include "webrtc/base/timestampaligner.h"
 #include "webrtc/media/base/adaptedvideotracksource.h"
+#include "webrtc/rtc_base/timestampaligner.h"
 
 RTC_FWD_DECL_OBJC_CLASS(RTCVideoFrame);
 

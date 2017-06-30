@@ -13,10 +13,10 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/messagehandler.h"
-#include "webrtc/base/messagequeue.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/messagehandler.h"
+#include "webrtc/rtc_base/messagequeue.h"
 
 namespace cricket {
 

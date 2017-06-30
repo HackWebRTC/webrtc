@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVIDEODECODERFACTORY_H_
 #define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEODECODERFACTORY_H_
 
-#include "webrtc/base/refcount.h"
 #include "webrtc/common_types.h"
+#include "webrtc/rtc_base/refcount.h"
 
 namespace webrtc {
 class VideoDecoder;

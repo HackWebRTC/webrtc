@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MEDIA_BASE_DEVICE_H_
 #define WEBRTC_MEDIA_BASE_DEVICE_H_
 
-#include "webrtc/base/stringencode.h"
+#include "webrtc/rtc_base/stringencode.h"
 
 namespace cricket {
 

@@ -14,10 +14,10 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/base64.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/pc/channel.h"
 #include "webrtc/pc/peerconnection.h"
+#include "webrtc/rtc_base/base64.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

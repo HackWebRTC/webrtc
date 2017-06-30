@@ -15,7 +15,7 @@
 #include <limits>
 #include <cstring>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

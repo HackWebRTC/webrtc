@@ -17,12 +17,12 @@
 #include <utility>  // For std::move.
 
 #include "webrtc/api/proxy.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/ortc/ortcrtpreceiveradapter.h"
 #include "webrtc/ortc/ortcrtpsenderadapter.h"
 #include "webrtc/ortc/rtpparametersconversion.h"
 #include "webrtc/ortc/rtptransportadapter.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

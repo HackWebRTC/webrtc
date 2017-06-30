@@ -12,10 +12,10 @@
 
 #include <utility>
 
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace cricket {
 

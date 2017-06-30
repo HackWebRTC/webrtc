@@ -18,15 +18,15 @@
 
 #include "webrtc/api/video_codecs/video_decoder.h"
 #include "webrtc/api/video_codecs/video_encoder.h"
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
+#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 
 namespace cricket {
 static const int kEventTimeoutMs = 10000;

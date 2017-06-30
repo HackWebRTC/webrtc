@@ -11,13 +11,13 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/ptr_util.h"
-#include "webrtc/base/testclient.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/p2p/base/stunserver.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/rtc_base/testclient.h"
+#include "webrtc/rtc_base/thread.h"
+#include "webrtc/rtc_base/virtualsocketserver.h"
 
 using namespace cricket;
 

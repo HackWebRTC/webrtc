@@ -18,10 +18,10 @@
 #include "net/quic/quic_crypto_server_stream.h"
 #include "net/quic/quic_crypto_stream.h"
 #include "net/quic/quic_session.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/sslidentity.h"
 #include "webrtc/p2p/quic/reliablequicstream.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/sslidentity.h"
 
 namespace cricket {
 

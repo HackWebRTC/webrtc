@@ -14,7 +14,7 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/base/timeutils.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/rtc_tools/network_tester/config_reader.h"
 #include "webrtc/rtc_tools/network_tester/test_controller.h"
 

@@ -15,8 +15,8 @@
 #include <limits>
 #include <type_traits>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/stringutils.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/stringutils.h"
 
 namespace webrtc {
 

@@ -17,9 +17,9 @@
 #include <algorithm>
 #include <cmath>
 
-#include "webrtc/base/logging.h"
 #include "webrtc/call/call.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

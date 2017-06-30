@@ -11,9 +11,9 @@
 #include <memory>
 
 #include "webrtc/p2p/base/asyncstuntcpsocket.h"
-#include "webrtc/base/asyncsocket.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/rtc_base/asyncsocket.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/virtualsocketserver.h"
 
 namespace cricket {
 

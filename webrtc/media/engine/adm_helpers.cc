@@ -10,8 +10,8 @@
 
 #include "webrtc/media/engine/adm_helpers.h"
 
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 namespace adm_helpers {

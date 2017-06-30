@@ -17,11 +17,11 @@
 
 #include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/proxy.h"
-#include "webrtc/base/messagehandler.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/sigslot.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/pc/channel.h"
+#include "webrtc/rtc_base/messagehandler.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/sigslot.h"
 
 namespace webrtc {
 

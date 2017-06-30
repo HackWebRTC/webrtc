@@ -13,9 +13,9 @@
 
 #include <memory>
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/call/rtp_packet_sink_interface.h"
+#include "webrtc/rtc_base/criticalsection.h"
 
 namespace webrtc {
 

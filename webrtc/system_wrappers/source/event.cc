@@ -22,7 +22,7 @@
 #include "webrtc/system_wrappers/source/event_timer_posix.h"
 #endif
 
-#include "webrtc/base/event.h"
+#include "webrtc/rtc_base/event.h"
 
 namespace webrtc {
 

@@ -10,9 +10,9 @@
 
 #include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
 
-#include "webrtc/base/logging.h"
 #include "webrtc/media/engine/internalencoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

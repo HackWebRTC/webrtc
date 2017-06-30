@@ -14,10 +14,10 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/random.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/random.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/include/voe_base.h"

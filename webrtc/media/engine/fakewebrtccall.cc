@@ -14,10 +14,10 @@
 #include <utility>
 
 #include "webrtc/api/call/audio_sink.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/platform_file.h"
-#include "webrtc/base/gunit.h"
 #include "webrtc/media/base/rtputils.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/platform_file.h"
 
 namespace cricket {
 FakeAudioSendStream::FakeAudioSendStream(

@@ -14,8 +14,8 @@
 
 #include <algorithm>  // swap
 
-#include "webrtc/base/bind.h"
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/bind.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

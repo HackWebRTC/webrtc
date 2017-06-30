@@ -16,7 +16,7 @@
 
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/stunrequest.h"
-#include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/rtc_base/asyncpacketsocket.h"
 
 // TODO(mallinath) - Rename stunport.cc|h to udpport.cc|h.
 namespace rtc {

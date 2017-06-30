@@ -17,7 +17,7 @@
 #include <string>
 
 #include "webrtc/api/datachannelinterface.h"
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

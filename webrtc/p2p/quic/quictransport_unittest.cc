@@ -14,9 +14,9 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/rtccertificate.h"
-#include "webrtc/base/sslidentity.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/rtccertificate.h"
+#include "webrtc/rtc_base/sslidentity.h"
 
 using cricket::TransportChannelImpl;
 using cricket::QuicTransport;

@@ -13,11 +13,11 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/refcount.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"
 #include "webrtc/pc/sctputils.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/refcount.h"
 
 namespace webrtc {
 

@@ -16,8 +16,8 @@
 
 #include "webrtc/api/call/audio_sink.h"
 #include "webrtc/api/notifier.h"
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/pc/channel.h"
+#include "webrtc/rtc_base/criticalsection.h"
 
 namespace rtc {
 struct Message;

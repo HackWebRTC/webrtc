@@ -17,10 +17,10 @@
 #include <queue>
 #include <set>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/random.h"
 #include "webrtc/common_types.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/random.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -18,8 +18,8 @@
 
 #include "webrtc/examples/peerconnection/server/data_socket.h"
 #include "webrtc/examples/peerconnection/server/utils.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/stringutils.h"
+#include "webrtc/rtc_base/stringencode.h"
+#include "webrtc/rtc_base/stringutils.h"
 
 using rtc::sprintfn;
 

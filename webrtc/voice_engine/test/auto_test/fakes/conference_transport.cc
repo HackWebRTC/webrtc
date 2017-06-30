@@ -12,8 +12,8 @@
 
 #include <string>
 
-#include "webrtc/base/byteorder.h"
-#include "webrtc/base/timeutils.h"
+#include "webrtc/rtc_base/byteorder.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"

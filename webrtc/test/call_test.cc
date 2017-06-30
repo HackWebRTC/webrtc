@@ -14,9 +14,9 @@
 
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 

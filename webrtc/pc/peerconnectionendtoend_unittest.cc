@@ -12,14 +12,14 @@
 
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/ptr_util.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/sslstreamadapter.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/rtc_base/ssladapter.h"
+#include "webrtc/rtc_base/sslstreamadapter.h"
+#include "webrtc/rtc_base/stringencode.h"
+#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/rtc_base/thread.h"
 #ifdef WEBRTC_ANDROID
 #include "webrtc/pc/test/androidtestinitializer.h"
 #endif

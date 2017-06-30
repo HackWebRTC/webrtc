@@ -10,8 +10,8 @@
 
 #include "webrtc/voice_engine/voe_codec_impl.h"
 
-#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
+#include "webrtc/rtc_base/format_macros.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel.h"
 #include "webrtc/voice_engine/include/voe_errors.h"

@@ -16,8 +16,6 @@
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/base/flags.h"
-#include "webrtc/base/safe_minmax.h"
 #include "webrtc/modules/audio_processing/agc/agc.h"
 #include "webrtc/modules/audio_processing/agc/loudness_histogram.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"
@@ -26,6 +24,8 @@
 #include "webrtc/modules/audio_processing/vad/standalone_vad.h"
 #include "webrtc/modules/audio_processing/vad/vad_audio_proc.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/flags.h"
+#include "webrtc/rtc_base/safe_minmax.h"
 #include "webrtc/test/gtest.h"
 
 static const int kAgcAnalWindowSamples = 100;

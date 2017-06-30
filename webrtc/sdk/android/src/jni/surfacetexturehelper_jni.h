@@ -13,11 +13,11 @@
 
 #include <jni.h>
 
+#include "webrtc/api/video/video_frame_buffer.h"
+#include "webrtc/rtc_base/refcount.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/native_handle_impl.h"
-#include "webrtc/api/video/video_frame_buffer.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace webrtc_jni {
 

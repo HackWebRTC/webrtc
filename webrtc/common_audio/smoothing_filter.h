@@ -11,8 +11,8 @@
 #ifndef WEBRTC_COMMON_AUDIO_SMOOTHING_FILTER_H_
 #define WEBRTC_COMMON_AUDIO_SMOOTHING_FILTER_H_
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/optional.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/optional.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

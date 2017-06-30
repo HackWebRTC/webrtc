@@ -10,9 +10,9 @@
 
 #include "webrtc/pc/sctputils.h"
 
-#include "webrtc/base/bytebuffer.h"
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/bytebuffer.h"
+#include "webrtc/rtc_base/copyonwritebuffer.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

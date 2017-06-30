@@ -18,8 +18,8 @@
 #include <string>
 
 #include "gflags/gflags.h"
-#include "webrtc/base/md5digest.h"
-#include "webrtc/base/stringencode.h"
+#include "webrtc/rtc_base/md5digest.h"
+#include "webrtc/rtc_base/stringencode.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 

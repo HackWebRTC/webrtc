@@ -15,9 +15,9 @@
 #include "webrtc/api/jsep.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/sslidentity.h"
 #include "webrtc/pc/webrtcsession.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/sslidentity.h"
 
 using cricket::MediaSessionOptions;
 

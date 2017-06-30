@@ -10,17 +10,17 @@
 
 #include "webrtc/media/engine/webrtcvideocapturer.h"
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/bind.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/safe_conversions.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/timeutils.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/bind.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/safe_conversions.h"
+#include "webrtc/rtc_base/thread.h"
+#include "webrtc/rtc_base/timeutils.h"
 
-#include "webrtc/base/win32.h"  // Need this to #include the impl files.
 #include "webrtc/modules/video_capture/video_capture_factory.h"
+#include "webrtc/rtc_base/win32.h"  // Need this to #include the impl files.
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace cricket {

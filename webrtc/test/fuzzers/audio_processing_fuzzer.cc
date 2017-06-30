@@ -14,9 +14,9 @@
 #include <array>
 #include <cmath>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_P2P_BASE_COMMON_H_
 #define WEBRTC_P2P_BASE_COMMON_H_
 
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/logging.h"
 
 // Common log description format for jingle messages
 #define LOG_J(sev, obj) LOG(sev) << "Jingle:" << obj->ToString() << ": "

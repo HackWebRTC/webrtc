@@ -13,7 +13,7 @@
 #include <android/log.h>
 #include <assert.h>
 
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

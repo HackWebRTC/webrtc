@@ -10,13 +10,13 @@
 
 #include <vector>
 
-#include "webrtc/base/bitbuffer.h"
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/fileutils.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/pathutils.h"
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/common_video/h264/sps_vui_rewriter.h"
+#include "webrtc/rtc_base/bitbuffer.h"
+#include "webrtc/rtc_base/buffer.h"
+#include "webrtc/rtc_base/fileutils.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

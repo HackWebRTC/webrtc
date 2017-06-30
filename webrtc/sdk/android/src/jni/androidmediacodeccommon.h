@@ -14,11 +14,10 @@
 #include <android/log.h>
 #include <string>
 
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/thread.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/thread.h"
 
 namespace webrtc_jni {
 

@@ -10,11 +10,11 @@
 
 #include "webrtc/pc/rtptransport.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/trace_event.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/copyonwritebuffer.h"
+#include "webrtc/rtc_base/trace_event.h"
 
 namespace webrtc {
 

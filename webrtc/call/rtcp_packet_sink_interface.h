@@ -10,7 +10,7 @@
 #ifndef WEBRTC_CALL_RTCP_PACKET_SINK_INTERFACE_H_
 #define WEBRTC_CALL_RTCP_PACKET_SINK_INTERFACE_H_
 
-#include "webrtc/base/array_view.h"
+#include "webrtc/rtc_base/array_view.h"
 
 namespace webrtc {
 

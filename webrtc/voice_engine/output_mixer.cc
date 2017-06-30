@@ -10,8 +10,8 @@
 
 #include "webrtc/voice_engine/output_mixer.h"
 
-#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/rtc_base/format_macros.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/statistics.h"

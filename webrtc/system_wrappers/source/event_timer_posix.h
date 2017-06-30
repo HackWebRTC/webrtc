@@ -18,7 +18,7 @@
 #include <pthread.h>
 #include <time.h>
 
-#include "webrtc/base/platform_thread.h"
+#include "webrtc/rtc_base/platform_thread.h"
 
 namespace webrtc {
 

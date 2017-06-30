@@ -13,10 +13,10 @@
 
 #include <vector>
 
-#include "webrtc/base/thread.h"
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/pc/peerconnection.h"
+#include "webrtc/rtc_base/thread.h"
 #include "webrtc/test/gmock.h"
 
 namespace webrtc {

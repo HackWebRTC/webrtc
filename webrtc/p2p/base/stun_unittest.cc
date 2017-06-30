@@ -10,14 +10,14 @@
 
 #include <string>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/bytebuffer.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/messagedigest.h"
-#include "webrtc/base/ptr_util.h"
-#include "webrtc/base/socketaddress.h"
 #include "webrtc/p2p/base/stun.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/bytebuffer.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/messagedigest.h"
+#include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/rtc_base/socketaddress.h"
 
 namespace cricket {
 

@@ -15,11 +15,11 @@
 #include <unordered_map>
 
 #include "webrtc/api/datachannelinterface.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/pc/quicdatachannel.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace cricket {
 class QuicTransportChannel;

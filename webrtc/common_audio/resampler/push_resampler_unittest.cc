@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/checks.h"  // RTC_DCHECK_IS_ON
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
+#include "webrtc/rtc_base/checks.h"  // RTC_DCHECK_IS_ON
 #include "webrtc/test/gtest.h"
 
 // Quality testing of PushResampler is handled through output_mixer_unittest.cc.

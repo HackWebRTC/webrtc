@@ -18,12 +18,6 @@
 
 #include "webrtc/api/audio_codecs/audio_encoder_factory.h"
 #include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/networkroute.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/task_queue.h"
-#include "webrtc/base/thread_checker.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/call/call.h"
 #include "webrtc/config.h"
@@ -33,6 +27,12 @@
 #include "webrtc/media/engine/webrtcvoe.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/pc/channel.h"
+#include "webrtc/rtc_base/buffer.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/networkroute.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/task_queue.h"
+#include "webrtc/rtc_base/thread_checker.h"
 
 namespace webrtc {
 namespace voe {

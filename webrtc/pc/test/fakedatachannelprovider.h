@@ -11,8 +11,8 @@
 #ifndef WEBRTC_PC_TEST_FAKEDATACHANNELPROVIDER_H_
 #define WEBRTC_PC_TEST_FAKEDATACHANNELPROVIDER_H_
 
-#include "webrtc/base/checks.h"
 #include "webrtc/pc/datachannel.h"
+#include "webrtc/rtc_base/checks.h"
 
 class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
  public:

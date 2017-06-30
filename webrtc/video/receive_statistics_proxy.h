@@ -14,13 +14,13 @@
 #include <map>
 #include <string>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/rate_statistics.h"
-#include "webrtc/base/ratetracker.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/rate_statistics.h"
+#include "webrtc/rtc_base/ratetracker.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/video/quality_threshold.h"
 #include "webrtc/video/report_block_stats.h"
 #include "webrtc/video/stats_counter.h"

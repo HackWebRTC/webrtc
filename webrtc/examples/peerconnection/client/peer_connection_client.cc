@@ -10,15 +10,15 @@
 
 #include "webrtc/examples/peerconnection/client/peer_connection_client.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/nethelpers.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/thread.h"
 #include "webrtc/examples/peerconnection/client/defaults.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/nethelpers.h"
+#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/rtc_base/thread.h"
 
 #ifdef WIN32
-#include "webrtc/base/win32socketserver.h"
+#include "webrtc/rtc_base/win32socketserver.h"
 #endif
 
 using rtc::sprintfn;

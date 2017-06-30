@@ -18,11 +18,11 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/asyncinvoker.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/asyncinvoker.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/copyonwritebuffer.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/thread.h"
 // For SendDataParams/ReceiveDataParams.
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"

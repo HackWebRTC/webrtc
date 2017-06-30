@@ -12,8 +12,8 @@
 
 #include <vector>
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/typedefs.h"
 

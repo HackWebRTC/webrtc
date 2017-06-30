@@ -35,9 +35,9 @@
 #define WEBRTC_VOICE_ENGINE_VOE_BASE_H
 
 #include "webrtc/api/audio_codecs/audio_decoder_factory.h"
-#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

@@ -12,9 +12,9 @@
 #define WEBRTC_P2P_QUIC_RELIABLEQUICSTREAM_H_
 
 #include "net/quic/reliable_quic_stream.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/stream.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/stream.h"
 
 namespace cricket {
 

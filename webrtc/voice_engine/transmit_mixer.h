@@ -13,11 +13,11 @@
 
 #include <memory>
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_processing/typing_detection.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/voice_engine/audio_level.h"
 #include "webrtc/voice_engine/file_player.h"
 #include "webrtc/voice_engine/file_recorder.h"

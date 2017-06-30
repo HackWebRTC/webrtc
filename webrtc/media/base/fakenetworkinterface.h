@@ -14,15 +14,15 @@
 #include <map>
 #include <vector>
 
-#include "webrtc/base/byteorder.h"
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/dscp.h"
-#include "webrtc/base/messagehandler.h"
-#include "webrtc/base/messagequeue.h"
-#include "webrtc/base/thread.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/rtputils.h"
+#include "webrtc/rtc_base/byteorder.h"
+#include "webrtc/rtc_base/copyonwritebuffer.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/dscp.h"
+#include "webrtc/rtc_base/messagehandler.h"
+#include "webrtc/rtc_base/messagequeue.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace cricket {
 

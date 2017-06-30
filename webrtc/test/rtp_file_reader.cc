@@ -16,11 +16,11 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/format_macros.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 namespace test {

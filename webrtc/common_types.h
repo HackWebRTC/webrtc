@@ -21,9 +21,9 @@
 #include "webrtc/api/video/video_content_type.h"
 #include "webrtc/api/video/video_rotation.h"
 #include "webrtc/api/video/video_timing.h"
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/optional.h"
+#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/optional.h"
 #include "webrtc/typedefs.h"
 
 #if defined(_MSC_VER)

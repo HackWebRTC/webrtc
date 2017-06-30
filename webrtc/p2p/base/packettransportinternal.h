@@ -16,9 +16,9 @@
 
 // This is included for PacketOptions.
 #include "webrtc/api/ortc/packettransportinterface.h"
-#include "webrtc/base/asyncpacketsocket.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/socket.h"
+#include "webrtc/rtc_base/asyncpacketsocket.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/socket.h"
 
 namespace cricket {
 class TransportChannel;

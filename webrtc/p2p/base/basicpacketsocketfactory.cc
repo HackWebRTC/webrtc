@@ -14,15 +14,15 @@
 
 #include "webrtc/p2p/base/asyncstuntcpsocket.h"
 #include "webrtc/p2p/base/stun.h"
-#include "webrtc/base/asynctcpsocket.h"
-#include "webrtc/base/asyncudpsocket.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/nethelpers.h"
-#include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/socketadapters.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/asynctcpsocket.h"
+#include "webrtc/rtc_base/asyncudpsocket.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/nethelpers.h"
+#include "webrtc/rtc_base/physicalsocketserver.h"
+#include "webrtc/rtc_base/socketadapters.h"
+#include "webrtc/rtc_base/ssladapter.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace rtc {
 

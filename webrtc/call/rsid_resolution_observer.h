@@ -12,7 +12,7 @@
 
 #include <string>
 
-#include "webrtc/base/basictypes.h"
+#include "webrtc/rtc_base/basictypes.h"
 
 namespace webrtc {
 

@@ -12,8 +12,8 @@
 
 #include <cstring>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/include/audio_util.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

@@ -10,8 +10,8 @@
 
 #include <stdio.h>
 
-#include "webrtc/base/flags.h"
-#include "webrtc/base/stringencode.h"
+#include "webrtc/rtc_base/flags.h"
+#include "webrtc/rtc_base/stringencode.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/run_test.h"

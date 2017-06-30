@@ -10,9 +10,9 @@
 
 #include "webrtc/media/base/turnutils.h"
 
-#include "webrtc/base/byteorder.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/p2p/base/stun.h"
+#include "webrtc/rtc_base/byteorder.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace cricket {
 

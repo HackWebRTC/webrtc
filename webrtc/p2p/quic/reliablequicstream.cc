@@ -13,7 +13,7 @@
 #include <string>
 
 #include "net/quic/quic_session.h"
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace cricket {
 

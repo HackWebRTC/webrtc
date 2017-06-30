@@ -12,8 +12,8 @@
 #define WEBRTC_PC_MEDIASTREAMOBSERVER_H_
 
 #include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/sigslot.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/sigslot.h"
 
 namespace webrtc {
 

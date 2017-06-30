@@ -67,8 +67,8 @@
 #include "webrtc/p2p/base/tcpport.h"
 
 #include "webrtc/p2p/base/common.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace cricket {
 

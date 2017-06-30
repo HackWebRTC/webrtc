@@ -10,7 +10,7 @@
 
 #include "webrtc/video/encoder_rtcp_feedback.h"
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/video/vie_encoder.h"
 
 static const int kMinKeyFrameRequestIntervalMs = 300;

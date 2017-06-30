@@ -14,10 +14,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/thread_checker.h"
 #include "webrtc/media/base/videosourcebase.h"
 #include "webrtc/pc/mediastreamtrack.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/thread_checker.h"
 
 namespace webrtc {
 

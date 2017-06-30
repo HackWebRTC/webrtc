@@ -12,7 +12,7 @@
 #include <memory>
 
 #include "webrtc/p2p/base/relayserver.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/thread.h"
 
 int main(int argc, char **argv) {
   if (argc != 3) {

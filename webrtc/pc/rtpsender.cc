@@ -11,10 +11,10 @@
 #include "webrtc/pc/rtpsender.h"
 
 #include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/trace_event.h"
 #include "webrtc/pc/localaudiosource.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/helpers.h"
+#include "webrtc/rtc_base/trace_event.h"
 
 namespace webrtc {
 
