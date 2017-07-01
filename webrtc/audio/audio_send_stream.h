@@ -14,12 +14,12 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/call/audio_send_stream.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/call/bitrate_allocator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/voice_engine/transport_feedback_packet_loss_tracker.h"
 
 namespace webrtc {

@@ -12,7 +12,7 @@
 
 #include <pthread.h>
 
-#include "webrtc/rtc_base/ignore_wundef.h"
+#include "webrtc/base/ignore_wundef.h"
 
 // Note: this dependency is dangerous since it reaches into Chromium's base.
 // There's a risk of e.g. macro clashes. This file may only be used in tests.
@@ -22,9 +22,9 @@ RTC_PUSH_IGNORING_WUNDEF()
 #include "base/android/jni_android.h"
 RTC_POP_IGNORING_WUNDEF()
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/ssladapter.h"
 #include "webrtc/modules/utility/include/jvm_android.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ssladapter.h"
 
 namespace webrtc {
 

@@ -12,10 +12,10 @@
 
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

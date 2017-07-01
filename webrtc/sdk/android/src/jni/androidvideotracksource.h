@@ -11,15 +11,15 @@
 #ifndef WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
 #define WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
 
+#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
+#include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/thread_checker.h"
+#include "webrtc/base/timestampaligner.h"
 #include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/media/base/adaptedvideotracksource.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/rtc_base/timestampaligner.h"
-#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
-#include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
 
 namespace webrtc {
 

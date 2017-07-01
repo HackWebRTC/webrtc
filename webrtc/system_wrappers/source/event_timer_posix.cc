@@ -18,7 +18,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

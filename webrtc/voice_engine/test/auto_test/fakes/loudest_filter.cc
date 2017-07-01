@@ -10,7 +10,7 @@
 
 #include "webrtc/voice_engine/test/auto_test/fakes/loudest_filter.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 namespace voetest {

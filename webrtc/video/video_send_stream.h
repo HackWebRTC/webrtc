@@ -16,11 +16,11 @@
 #include <vector>
 
 #include "webrtc/call/bitrate_allocator.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/protection_bitrate_calculator.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/task_queue.h"
 #include "webrtc/video/encoder_rtcp_feedback.h"
 #include "webrtc/video/send_delay_stats.h"
 #include "webrtc/video/send_statistics_proxy.h"

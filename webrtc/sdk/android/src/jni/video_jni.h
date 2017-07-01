@@ -13,7 +13,7 @@
 
 #include <jni.h>
 
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace cricket {
 class WebRtcVideoEncoderFactory;

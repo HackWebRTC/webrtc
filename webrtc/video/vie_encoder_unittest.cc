@@ -13,11 +13,11 @@
 #include <utility>
 
 #include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/base/fakeclock.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/media/base/videoadapter.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/encoder_settings.h"

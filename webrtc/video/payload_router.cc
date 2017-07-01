@@ -10,10 +10,10 @@
 
 #include "webrtc/video/payload_router.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

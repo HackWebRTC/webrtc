@@ -14,13 +14,13 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/window.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/window.h"
 
 namespace rtc {
 class ByteBufferReader;

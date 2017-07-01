@@ -12,10 +12,11 @@
 #include "webrtc/examples/peerconnection/client/flagdefs.h"
 #include "webrtc/examples/peerconnection/client/main_wnd.h"
 #include "webrtc/examples/peerconnection/client/peer_connection_client.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/win32socketinit.h"
-#include "webrtc/rtc_base/win32socketserver.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/win32socketinit.h"
+#include "webrtc/base/win32socketserver.h"
+
 
 int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
                     wchar_t* cmd_line, int cmd_show) {

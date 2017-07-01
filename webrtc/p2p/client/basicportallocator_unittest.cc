@@ -11,6 +11,21 @@
 #include <algorithm>
 #include <memory>
 
+#include "webrtc/base/fakeclock.h"
+#include "webrtc/base/fakenetwork.h"
+#include "webrtc/base/firewallsocketserver.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/ipaddress.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/natserver.h"
+#include "webrtc/base/natsocketfactory.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
@@ -18,21 +33,6 @@
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
 #include "webrtc/p2p/client/basicportallocator.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/fakenetwork.h"
-#include "webrtc/rtc_base/firewallsocketserver.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/ipaddress.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/natserver.h"
-#include "webrtc/rtc_base/natsocketfactory.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/virtualsocketserver.h"
 
 using rtc::IPAddress;
 using rtc::SocketAddress;

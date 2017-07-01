@@ -16,6 +16,12 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/file.h"
+#include "webrtc/base/location.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
+#include "webrtc/base/weak_ptr.h"
 #include "webrtc/call/rtp_transport_controller_send_interface.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
@@ -27,12 +33,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/file.h"
-#include "webrtc/rtc_base/location.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/trace_event.h"
-#include "webrtc/rtc_base/weak_ptr.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/payload_router.h"

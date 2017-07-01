@@ -13,8 +13,8 @@
 
 #include <memory>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_audio/resampler/sinc_resampler.h"
-#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

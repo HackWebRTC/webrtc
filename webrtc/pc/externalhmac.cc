@@ -12,7 +12,7 @@
 
 #include <stdlib.h>  // For malloc/free.
 
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/logging.h"
 
 #include "third_party/libsrtp/crypto/include/crypto_kernel.h"
 #include "third_party/libsrtp/include/srtp.h"

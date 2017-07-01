@@ -15,6 +15,7 @@
 #include <utility>  // pair
 
 #include "gflags/gflags.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
@@ -32,7 +33,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace {
 

@@ -12,11 +12,11 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/rtc_base/bitbuffer.h"
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/bitbuffer.h"
+#include "webrtc/base/checks.h"
 
 #include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace {
 const int kMaxAbsQpDeltaValue = 51;

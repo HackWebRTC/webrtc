@@ -26,14 +26,14 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/icetransportinternal.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/portinterface.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/sigslot.h"
 
 namespace cricket {
 

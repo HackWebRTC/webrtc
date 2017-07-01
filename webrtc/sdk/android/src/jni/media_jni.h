@@ -11,7 +11,7 @@
 #ifndef WEBRTC_SDK_ANDROID_SRC_JNI_MEDIA_JNI_H_
 #define WEBRTC_SDK_ANDROID_SRC_JNI_MEDIA_JNI_H_
 
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace webrtc {
 class AudioDeviceModule;

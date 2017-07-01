@@ -10,7 +10,7 @@
 
 #include "webrtc/common_audio/signal_processing/dot_product_with_scale.h"
 
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "webrtc/base/safe_conversions.h"
 
 int32_t WebRtcSpl_DotProductWithScale(const int16_t* vector1,
                                       const int16_t* vector2,

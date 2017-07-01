@@ -10,9 +10,9 @@
 
 #include "webrtc/voice_engine/voe_network_impl.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/voice_engine/channel.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"

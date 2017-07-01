@@ -11,9 +11,9 @@
 #include <jni.h>
 
 #include "webrtc/api/videosourceproxy.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/sdk/android/src/jni/androidmediadecoder_jni.h"
 #include "webrtc/sdk/android/src/jni/androidmediaencoder_jni.h"
 #include "webrtc/sdk/android/src/jni/androidvideotracksource.h"

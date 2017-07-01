@@ -15,9 +15,9 @@
 #include <string>
 
 #include "gflags/gflags.h"
-#include "webrtc/rtc_base/file.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/platform_file.h"
+#include "webrtc/base/file.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/platform_file.h"
 #include "webrtc/test/gtest.h"
 
 DECLARE_string(isolated_out_dir);

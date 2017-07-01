@@ -13,7 +13,7 @@
 
 #include <assert.h>
 
-#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/base/criticalsection.h"
 #ifdef _WIN32
 #include "webrtc/system_wrappers/include/fix_interlocked_exchange_pointer_win.h"
 #endif

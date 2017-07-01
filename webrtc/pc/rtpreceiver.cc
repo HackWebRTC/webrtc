@@ -12,9 +12,9 @@
 
 #include "webrtc/api/mediastreamtrackproxy.h"
 #include "webrtc/api/videosourceproxy.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/pc/audiotrack.h"
 #include "webrtc/pc/videotrack.h"
-#include "webrtc/rtc_base/trace_event.h"
 
 namespace webrtc {
 

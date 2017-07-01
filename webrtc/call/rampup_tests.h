@@ -15,9 +15,9 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/event.h"
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/rtc_base/event.h"
 #include "webrtc/test/call_test.h"
 
 namespace webrtc {

@@ -12,13 +12,13 @@
 
 #include <memory>
 
+#include "webrtc/base/bind.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/keep_ref_until_done.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/keep_ref_until_done.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/system_wrappers/include/aligned_malloc.h"

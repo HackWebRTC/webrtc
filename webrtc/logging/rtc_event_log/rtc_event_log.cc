@@ -13,6 +13,15 @@
 #include <limits>
 #include <vector>
 
+#include "webrtc/base/atomicops.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/protobuf_utils.h"
+#include "webrtc/base/swap_queue.h"
+#include "webrtc/base/thread_checker.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_helper_thread.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -28,15 +37,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/protobuf_utils.h"
-#include "webrtc/rtc_base/swap_queue.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
 #ifdef ENABLE_RTC_EVENT_LOG

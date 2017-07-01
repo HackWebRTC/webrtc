@@ -14,8 +14,8 @@
 #include <memory>
 
 #include "webrtc/api/video/video_frame_buffer.h"
-#include "webrtc/rtc_base/callback.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/callback.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

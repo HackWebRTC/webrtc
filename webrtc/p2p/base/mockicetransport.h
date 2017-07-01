@@ -15,8 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/gunit.h"
 #include "webrtc/p2p/base/icetransportinternal.h"
-#include "webrtc/rtc_base/gunit.h"
 #include "webrtc/test/gmock.h"
 
 using testing::_;

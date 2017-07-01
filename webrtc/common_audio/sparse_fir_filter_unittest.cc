@@ -12,8 +12,8 @@
 
 #include "webrtc/common_audio/sparse_fir_filter.h"
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/common_audio/fir_filter.h"
-#include "webrtc/rtc_base/arraysize.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

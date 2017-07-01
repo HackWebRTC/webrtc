@@ -10,8 +10,8 @@
 
 #include <iostream>
 
+#include "webrtc/base/flags.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
-#include "webrtc/rtc_base/flags.h"
 #include "webrtc/rtc_tools/event_log_visualizer/analyzer.h"
 #include "webrtc/rtc_tools/event_log_visualizer/plot_base.h"
 #include "webrtc/rtc_tools/event_log_visualizer/plot_python.h"

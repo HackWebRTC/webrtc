@@ -14,11 +14,11 @@
 #include <memory>
 
 #include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/pc/videotracksource.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/sigslot.h"
 
 // VideoCapturerTrackSource implements VideoTrackSourceInterface. It owns a
 // cricket::VideoCapturer and make sure the camera is started at a resolution

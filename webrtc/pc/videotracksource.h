@@ -13,9 +13,9 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/notifier.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/rtc_base/thread_checker.h"
 
 // VideoTrackSource implements VideoTrackSourceInterface.
 namespace webrtc {

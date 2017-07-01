@@ -14,14 +14,14 @@
 #include "webrtc/p2p/base/dtlstransportchannel.h"
 #include "webrtc/p2p/base/fakeicetransport.h"
 #include "webrtc/p2p/base/packettransportinternal.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/dscp.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/sslidentity.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/dscp.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/sslidentity.h"
+#include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/base/stringutils.h"
 
 #define MAYBE_SKIP_TEST(feature)                              \
   if (!(rtc::SSLStreamAdapter::feature())) {                  \

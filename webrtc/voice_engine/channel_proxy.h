@@ -14,10 +14,10 @@
 #include "webrtc/api/audio/audio_mixer.h"
 #include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/rtpreceiverinterface.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/race_checker.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/call/rtp_packet_sink_interface.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/race_checker.h"
-#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/voice_engine/channel_manager.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 

@@ -11,10 +11,10 @@
 #include <math.h>
 #include <string.h>
 
-#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/test/fake_texture_frame.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/gtest.h"

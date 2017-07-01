@@ -12,11 +12,11 @@
 #define WEBRTC_AUDIO_AUDIO_TRANSPORT_PROXY_H_
 
 #include "webrtc/api/audio/audio_mixer.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

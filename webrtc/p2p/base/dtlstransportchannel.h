@@ -15,13 +15,13 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/bufferqueue.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/base/stream.h"
 #include "webrtc/p2p/base/dtlstransportinternal.h"
 #include "webrtc/p2p/base/icetransportinternal.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/bufferqueue.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
-#include "webrtc/rtc_base/stream.h"
 
 namespace rtc {
 class PacketTransportInternal;

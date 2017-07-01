@@ -14,8 +14,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/real_fourier.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

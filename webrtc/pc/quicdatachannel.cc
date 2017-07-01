@@ -10,12 +10,12 @@
 
 #include "webrtc/pc/quicdatachannel.h"
 
+#include "webrtc/base/bind.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/copyonwritebuffer.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/p2p/quic/quictransportchannel.h"
 #include "webrtc/p2p/quic/reliablequicstream.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/bytebuffer.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
-#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

@@ -15,10 +15,10 @@
 #include <memory>
 #include <set>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/stats_counter.h"
 #include "webrtc/video_send_stream.h"

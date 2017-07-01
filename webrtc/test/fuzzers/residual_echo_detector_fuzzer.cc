@@ -15,8 +15,8 @@
 #include <bitset>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/residual_echo_detector.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

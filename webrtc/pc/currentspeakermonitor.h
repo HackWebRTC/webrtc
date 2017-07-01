@@ -18,7 +18,7 @@
 
 #include <map>
 
-#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/base/sigslot.h"
 
 namespace cricket {
 

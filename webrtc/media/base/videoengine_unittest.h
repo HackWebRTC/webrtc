@@ -15,6 +15,9 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakenetworkinterface.h"
@@ -23,9 +26,6 @@
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/media/engine/fakewebrtccall.h"
-#include "webrtc/rtc_base/bytebuffer.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/timeutils.h"
 
 #define EXPECT_FRAME_WAIT(c, w, h, t) \
   EXPECT_EQ_WAIT((c), renderer_.num_rendered_frames(), (t)); \

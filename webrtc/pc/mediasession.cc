@@ -18,6 +18,12 @@
 #include <unordered_map>
 #include <utility>
 
+#include "webrtc/base/base64.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/stringutils.h"
 #include "webrtc/common_types.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/h264_profile_level_id.h"
@@ -25,12 +31,6 @@
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/pc/srtpfilter.h"
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/stringutils.h"
 
 namespace {
 const char kInline[] = "inline:";

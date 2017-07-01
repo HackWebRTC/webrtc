@@ -17,10 +17,10 @@
 
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/stun.h"
-#include "webrtc/rtc_base/asyncudpsocket.h"
-#include "webrtc/rtc_base/socketaddresspair.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/socketaddresspair.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/timeutils.h"
 
 namespace cricket {
 

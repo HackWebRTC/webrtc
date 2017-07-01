@@ -19,8 +19,8 @@
 #include <limits>
 #include <string>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/include/audio_util.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

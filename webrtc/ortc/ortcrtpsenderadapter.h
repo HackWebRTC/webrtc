@@ -16,10 +16,10 @@
 #include "webrtc/api/ortc/ortcrtpsenderinterface.h"
 #include "webrtc/api/rtcerror.h"
 #include "webrtc/api/rtpparameters.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/ortc/rtptransportcontrolleradapter.h"
 #include "webrtc/pc/rtpsender.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/sigslot.h"
 
 namespace webrtc {
 

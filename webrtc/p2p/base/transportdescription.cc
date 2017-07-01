@@ -10,9 +10,9 @@
 
 #include "webrtc/p2p/base/transportdescription.h"
 
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/stringutils.h"
 #include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/stringutils.h"
 
 namespace cricket {
 

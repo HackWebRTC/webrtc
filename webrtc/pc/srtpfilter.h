@@ -17,13 +17,13 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/p2p/base/sessiondescription.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
-#include "webrtc/rtc_base/thread_checker.h"
 
 // Forward declaration to avoid pulling in libsrtp headers here
 struct srtp_event_data_t;

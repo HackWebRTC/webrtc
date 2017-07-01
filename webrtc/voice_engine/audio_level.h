@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_AUDIO_LEVEL_H_
 #define WEBRTC_VOICE_ENGINE_AUDIO_LEVEL_H_
 
-#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

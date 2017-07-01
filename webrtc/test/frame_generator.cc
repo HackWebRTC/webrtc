@@ -16,11 +16,11 @@
 #include <memory>
 
 #include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/keep_ref_until_done.h"
+#include "webrtc/base/random.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/keep_ref_until_done.h"
-#include "webrtc/rtc_base/random.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/frame_utils.h"
 

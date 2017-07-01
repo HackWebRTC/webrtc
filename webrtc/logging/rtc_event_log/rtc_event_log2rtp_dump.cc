@@ -14,11 +14,11 @@
 #include <string>
 
 #include "gflags/gflags.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/rtp_file_writer.h"
 
 namespace {

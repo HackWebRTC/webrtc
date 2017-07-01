@@ -17,9 +17,9 @@
 #include <jni.h>
 #include <string>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/thread_checker.h"
 
 // Abort the process if |jni| has a Java exception pending.
 // This macros uses the comma operator to execute ExceptionDescribe

@@ -19,11 +19,11 @@
 #include <vector>
 
 #include "webrtc/p2p/base/portinterface.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/socketaddress.h"
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/socketaddress.h"
 
 namespace rtc {
 class ByteBufferWriter;

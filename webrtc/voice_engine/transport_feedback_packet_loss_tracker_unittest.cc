@@ -13,9 +13,9 @@
 #include <numeric>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/voice_engine/transport_feedback_packet_loss_tracker.h"

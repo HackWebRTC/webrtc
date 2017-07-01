@@ -15,10 +15,10 @@
 #include <memory>
 
 #include "webrtc/api/video_codecs/video_encoder.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/sequenced_task_checker.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/common_types.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/rtc_base/task_queue.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

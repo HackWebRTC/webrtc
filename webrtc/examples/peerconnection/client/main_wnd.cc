@@ -15,9 +15,9 @@
 #include "libyuv/convert_argb.h"
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/examples/peerconnection/client/defaults.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 
 ATOM MainWnd::wnd_class_ = 0;
 const wchar_t MainWnd::kClassName[] = L"WebRTC_MainWnd";

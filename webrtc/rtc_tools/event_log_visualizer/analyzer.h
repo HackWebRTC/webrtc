@@ -18,11 +18,11 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/function_view.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
-#include "webrtc/rtc_base/function_view.h"
 #include "webrtc/rtc_tools/event_log_visualizer/plot_base.h"
 
 namespace webrtc {

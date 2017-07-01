@@ -14,10 +14,10 @@
 #include <memory>
 
 #include "webrtc/p2p/base/relayserver.h"
-#include "webrtc/rtc_base/asynctcpsocket.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/socketadapters.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/asynctcpsocket.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/socketadapters.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 

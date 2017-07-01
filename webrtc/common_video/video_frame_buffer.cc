@@ -13,11 +13,11 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/keep_ref_until_done.h"
 #include "libyuv/convert.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/scale.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/keep_ref_until_done.h"
 
 namespace webrtc {
 

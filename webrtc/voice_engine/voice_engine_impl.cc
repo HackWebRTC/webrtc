@@ -14,8 +14,8 @@
 #include "webrtc/modules/audio_device/android/audio_track_jni.h"
 #endif
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"

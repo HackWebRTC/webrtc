@@ -14,9 +14,9 @@
 #include <vector>
 #include <utility>
 
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/p2p/base/port.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/thread.h"
 
 namespace cricket {
 

@@ -16,9 +16,9 @@
 #include <unordered_set>
 
 #include "webrtc/api/datachannelinterface.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 class QuicTransportChannel;

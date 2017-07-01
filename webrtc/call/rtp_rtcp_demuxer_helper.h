@@ -15,9 +15,9 @@
 #include <map>
 #include <utility>
 
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/optional.h"
 
 namespace webrtc {
 

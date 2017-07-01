@@ -14,9 +14,9 @@
 #include <string>
 
 #include "webrtc/api/ortc/packettransportinterface.h"
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/p2p/base/packettransportinternal.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
 
 namespace rtc {
 

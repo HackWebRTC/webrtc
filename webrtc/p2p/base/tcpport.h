@@ -16,7 +16,7 @@
 #include <string>
 
 #include "webrtc/p2p/base/port.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
+#include "webrtc/base/asyncpacketsocket.h"
 
 namespace cricket {
 

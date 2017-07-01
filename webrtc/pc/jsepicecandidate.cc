@@ -12,8 +12,8 @@
 
 #include <vector>
 
+#include "webrtc/base/stringencode.h"
 #include "webrtc/pc/webrtcsdp.h"
-#include "webrtc/rtc_base/stringencode.h"
 
 namespace webrtc {
 

@@ -11,7 +11,7 @@
 #include <jni.h>
 
 #include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc_jni {
 

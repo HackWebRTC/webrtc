@@ -10,7 +10,7 @@
 
 #include "webrtc/voice_engine/channel_manager.h"
 
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/voice_engine/channel.h"
 
 namespace webrtc {

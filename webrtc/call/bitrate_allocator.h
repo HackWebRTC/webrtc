@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/rtc_base/sequenced_task_checker.h"
+#include "webrtc/base/sequenced_task_checker.h"
 
 namespace webrtc {
 

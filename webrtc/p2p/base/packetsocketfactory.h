@@ -11,8 +11,8 @@
 #ifndef WEBRTC_P2P_BASE_PACKETSOCKETFACTORY_H_
 #define WEBRTC_P2P_BASE_PACKETSOCKETFACTORY_H_
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/proxyinfo.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/proxyinfo.h"
 
 namespace rtc {
 

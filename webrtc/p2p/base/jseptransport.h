@@ -16,16 +16,16 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/rtccertificate.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/p2p/base/transportinfo.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/rtccertificate.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
 
 namespace cricket {
 

@@ -10,11 +10,11 @@
 
 #include "webrtc/voice_engine/file_player.h"
 
+#include "webrtc/base/logging.h"
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/media_file/media_file.h"
 #include "webrtc/modules/media_file/media_file_defines.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/coder.h"
 

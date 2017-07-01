@@ -12,10 +12,10 @@
 
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/turnserver.h"
-#include "webrtc/rtc_base/asyncudpsocket.h"
-#include "webrtc/rtc_base/optionsfile.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/optionsfile.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/thread.h"
 
 static const char kSoftware[] = "libjingle TurnServer";
 

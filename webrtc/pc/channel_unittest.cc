@@ -10,6 +10,13 @@
 
 #include <memory>
 
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/fakeclock.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/fakertp.h"
 #include "webrtc/media/base/mediachannel.h"
@@ -18,13 +25,6 @@
 #include "webrtc/p2p/base/fakedtlstransport.h"
 #include "webrtc/p2p/base/fakepackettransport.h"
 #include "webrtc/pc/channel.h"
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
 
 using cricket::CA_OFFER;
 using cricket::CA_PRANSWER;

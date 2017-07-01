@@ -12,15 +12,15 @@
 
 #include <algorithm>
 
+#include "webrtc/base/bind.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/media/base/device.h"
 #include "webrtc/media/base/rtpdataengine.h"
 #include "webrtc/pc/srtpfilter.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/trace_event.h"
 
 namespace cricket {
 

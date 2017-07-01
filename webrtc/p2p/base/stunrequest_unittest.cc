@@ -9,12 +9,12 @@
  */
 
 #include "webrtc/p2p/base/stunrequest.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/fakeclock.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/timeutils.h"
 
 using namespace cricket;
 

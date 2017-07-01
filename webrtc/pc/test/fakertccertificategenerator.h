@@ -16,8 +16,8 @@
 #include <utility>
 
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/rtc_base/rtccertificate.h"
-#include "webrtc/rtc_base/rtccertificategenerator.h"
+#include "webrtc/base/rtccertificate.h"
+#include "webrtc/base/rtccertificategenerator.h"
 
 // RSA with mod size 1024, pub exp 0x10001.
 static const rtc::RTCCertificatePEM kRsaPems[] = {

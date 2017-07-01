@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-#include "webrtc/rtc_base/stringencode.h"
+#include "webrtc/base/stringencode.h"
 
 using rtc::ToString;
 

@@ -10,9 +10,9 @@
 
 #include "webrtc/media/engine/apm_helpers.h"
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/voice_engine/transmit_mixer.h"
 
 namespace webrtc {

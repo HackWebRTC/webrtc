@@ -13,11 +13,11 @@
 
 #include <memory>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
-#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/voice_engine/file_recorder.h"
 
 namespace webrtc {

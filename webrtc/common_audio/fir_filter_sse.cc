@@ -14,7 +14,7 @@
 #include <string.h>
 #include <xmmintrin.h>
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/system_wrappers/include/aligned_malloc.h"
 
 namespace webrtc {

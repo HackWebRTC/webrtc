@@ -12,20 +12,20 @@
 
 #include <tuple>  // for std::tie
 
+#include "webrtc/base/bind.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/ptr_util.h"
+#include "webrtc/base/socketadapters.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/p2p/base/asyncstuntcpsocket.h"
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/packetsocketfactory.h"
 #include "webrtc/p2p/base/stun.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/bytebuffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/socketadapters.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/thread.h"
 
 namespace cricket {
 

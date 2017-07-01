@@ -16,10 +16,10 @@
 #include <set>
 #include <string>
 
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/client/basicportallocator.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
 
 namespace rtc {
 class AsyncResolver;

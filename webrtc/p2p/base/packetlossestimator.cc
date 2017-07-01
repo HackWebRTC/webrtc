@@ -12,7 +12,7 @@
 
 #include "webrtc/p2p/base/packetlossestimator.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace cricket {
 

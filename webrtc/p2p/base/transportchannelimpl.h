@@ -13,9 +13,9 @@
 
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/p2p/base/icetransportinternal.h"
 #include "webrtc/p2p/base/transportchannel.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 class MetricsObserverInterface;

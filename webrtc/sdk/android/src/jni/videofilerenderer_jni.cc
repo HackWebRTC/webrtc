@@ -11,8 +11,8 @@
 #include <jni.h>
 
 #include "third_party/libyuv/include/libyuv/scale.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc_jni {
 

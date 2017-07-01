@@ -11,7 +11,7 @@
 #ifndef WEBRTC_AUDIO_SCOPED_VOE_INTERFACE_H_
 #define WEBRTC_AUDIO_SCOPED_VOE_INTERFACE_H_
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

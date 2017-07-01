@@ -13,12 +13,12 @@
 
 #include <string>
 
+#include "webrtc/base/stringencode.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/jseptransport.h"
 #include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/p2p/base/transportdescription.h"
-#include "webrtc/rtc_base/stringencode.h"
 
 namespace webrtc {
 class MetricsObserverInterface;

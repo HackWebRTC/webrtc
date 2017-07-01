@@ -11,7 +11,7 @@
 #include "webrtc/api/mediaconstraintsinterface.h"
 
 #include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/base/gunit.h"
 
 namespace webrtc {
 

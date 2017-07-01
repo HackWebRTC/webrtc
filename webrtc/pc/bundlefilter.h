@@ -16,8 +16,8 @@
 #include <set>
 #include <vector>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/media/base/streamparams.h"
-#include "webrtc/rtc_base/basictypes.h"
 
 namespace cricket {
 

@@ -10,7 +10,7 @@
 
 #include "webrtc/system_wrappers/include/rtp_to_ntp_estimator.h"
 
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

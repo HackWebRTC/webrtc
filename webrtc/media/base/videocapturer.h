@@ -20,15 +20,15 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/media/base/videosourceinterface.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread_checker.h"
+#include "webrtc/base/timestampaligner.h"
 #include "webrtc/media/base/videoadapter.h"
 #include "webrtc/media/base/videobroadcaster.h"
 #include "webrtc/media/base/videocommon.h"
-#include "webrtc/media/base/videosourceinterface.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/rtc_base/timestampaligner.h"
 
 namespace webrtc {
 class VideoFrame;

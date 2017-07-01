@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 // TODO(nisse): Only needed for the deprecated ConvertToI420.
 #include "webrtc/api/video/i420_buffer.h"
 

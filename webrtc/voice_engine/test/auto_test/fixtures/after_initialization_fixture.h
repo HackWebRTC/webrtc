@@ -14,10 +14,10 @@
 #include <deque>
 #include <memory>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/platform_thread.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"

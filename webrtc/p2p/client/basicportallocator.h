@@ -16,10 +16,10 @@
 #include <vector>
 
 #include "webrtc/p2p/base/portallocator.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 

@@ -13,7 +13,7 @@
 #include <cctype>  // For std::isdigit.
 #include <string>
 
-#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/base/arraysize.h"
 
 namespace webrtc {
 

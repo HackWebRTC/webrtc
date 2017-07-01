@@ -13,14 +13,14 @@
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/relayport.h"
 #include "webrtc/p2p/base/relayserver.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/socketadapters.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/virtualsocketserver.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/socketadapters.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/virtualsocketserver.h"
 
 using rtc::SocketAddress;
 

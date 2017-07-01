@@ -12,11 +12,11 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/call/call.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"

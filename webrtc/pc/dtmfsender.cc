@@ -14,9 +14,9 @@
 
 #include <string>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 
 namespace webrtc {
 

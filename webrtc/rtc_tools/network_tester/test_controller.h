@@ -17,10 +17,10 @@
 #include <string>
 #include <utility>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/ignore_wundef.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/udptransport.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/ignore_wundef.h"
 #include "webrtc/rtc_tools/network_tester/packet_logger.h"
 #include "webrtc/rtc_tools/network_tester/packet_sender.h"
 

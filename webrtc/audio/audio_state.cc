@@ -10,10 +10,10 @@
 
 #include "webrtc/audio/audio_state.h"
 
+#include "webrtc/base/atomicops.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 
 namespace webrtc {

@@ -20,11 +20,11 @@
 #include <utility>
 
 #include "webrtc/api/video/video_frame.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/numerics/exp_filter.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/include/frame_callback.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/numerics/exp_filter.h"
-#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)

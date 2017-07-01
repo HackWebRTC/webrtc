@@ -17,14 +17,14 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/pc/peerconnection.h"
 #include "webrtc/pc/webrtcsession.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 

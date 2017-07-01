@@ -17,9 +17,9 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/bytebuffer.h"
-#include "webrtc/rtc_base/socketaddress.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/socketaddress.h"
 
 namespace cricket {
 

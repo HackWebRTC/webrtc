@@ -15,7 +15,7 @@
 #include <iostream>
 
 #include "webrtc/p2p/base/stunserver.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/thread.h"
 
 using cricket::StunServer;
 

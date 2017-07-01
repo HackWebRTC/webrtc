@@ -14,10 +14,10 @@
 #include <fstream>
 #include <string>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
 
-#include "webrtc/rtc_base/ignore_wundef.h"
+#include "webrtc/base/ignore_wundef.h"
 
 #ifdef WEBRTC_NETWORK_TESTER_PROTO
 RTC_PUSH_IGNORING_WUNDEF()

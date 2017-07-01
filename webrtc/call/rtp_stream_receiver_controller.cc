@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/call/rtp_stream_receiver_controller.h"
-#include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/base/ptr_util.h"
 
 namespace webrtc {
 

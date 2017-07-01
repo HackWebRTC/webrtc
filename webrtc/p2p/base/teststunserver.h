@@ -12,8 +12,8 @@
 #define WEBRTC_P2P_BASE_TESTSTUNSERVER_H_
 
 #include "webrtc/p2p/base/stunserver.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 

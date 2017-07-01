@@ -10,9 +10,9 @@
 
 #include "webrtc/call/rampup_tests.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/platform_thread.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/perf_test.h"

@@ -13,10 +13,10 @@
 #include <memory>
 
 #include "webrtc/p2p/base/transportdescription.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/sslfingerprint.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/sslfingerprint.h"
 
 namespace cricket {
 

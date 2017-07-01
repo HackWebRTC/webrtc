@@ -23,9 +23,9 @@
 #include "webrtc/p2p/base/tcpport.h"
 #include "webrtc/p2p/base/turnport.h"
 #include "webrtc/p2p/base/udpport.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
 
 using rtc::CreateRandomId;
 

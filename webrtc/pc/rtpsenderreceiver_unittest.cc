@@ -12,6 +12,8 @@
 #include <string>
 #include <utility>
 
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/mediachannel.h"
@@ -28,8 +30,6 @@
 #include "webrtc/pc/test/fakevideotracksource.h"
 #include "webrtc/pc/videotrack.h"
 #include "webrtc/pc/videotracksource.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/sigslot.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 

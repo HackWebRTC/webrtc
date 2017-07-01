@@ -13,13 +13,13 @@
 #include <list>
 
 #include "webrtc/audio/utility/audio_frame_operations.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/media_file/media_file.h"
 #include "webrtc/modules/media_file/media_file_defines.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/platform_thread.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/coder.h"

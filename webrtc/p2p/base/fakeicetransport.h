@@ -13,9 +13,9 @@
 
 #include <string>
 
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/p2p/base/icetransportinternal.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
 
 namespace cricket {
 

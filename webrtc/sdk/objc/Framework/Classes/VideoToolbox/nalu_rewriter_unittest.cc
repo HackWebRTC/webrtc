@@ -11,7 +11,7 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
 #include "webrtc/test/gtest.h"
 

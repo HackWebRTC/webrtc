@@ -9,8 +9,8 @@
  */
 #include "webrtc/test/win/d3d_renderer.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

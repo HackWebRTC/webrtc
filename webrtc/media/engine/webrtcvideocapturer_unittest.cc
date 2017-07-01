@@ -15,14 +15,14 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/media/engine/fakewebrtcvcmfactory.h"
 #include "webrtc/media/engine/webrtcvideocapturer.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/thread.h"
 
 using cricket::VideoFormat;
 

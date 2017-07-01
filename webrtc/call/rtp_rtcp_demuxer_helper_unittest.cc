@@ -12,6 +12,9 @@
 
 #include "webrtc/call/rtp_rtcp_demuxer_helper.h"
 
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
@@ -19,9 +22,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rapid_resync_request.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/buffer.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

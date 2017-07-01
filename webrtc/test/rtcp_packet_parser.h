@@ -12,6 +12,8 @@
 #ifndef WEBRTC_TEST_RTCP_PACKET_PARSER_H_
 #define WEBRTC_TEST_RTCP_PACKET_PARSER_H_
 
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
@@ -28,8 +30,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbn.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

@@ -17,9 +17,9 @@
 #include <list>
 #include <string>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/pathutils.h"
 #include "webrtc/test/gtest.h"
 
 #ifdef WIN32

@@ -9,8 +9,8 @@
  */
 #include "webrtc/rtc_tools/network_tester/packet_logger.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/protobuf_utils.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/protobuf_utils.h"
 
 namespace webrtc {
 

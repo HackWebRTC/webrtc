@@ -12,9 +12,9 @@
 
 #include <memory>
 
+#include "webrtc/base/timeutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/common_video/video_render_frames.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_base/trace_event.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {

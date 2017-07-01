@@ -13,7 +13,7 @@
 #include <cstdlib>
 
 #include "dl/sp/api/omxSP.h"
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

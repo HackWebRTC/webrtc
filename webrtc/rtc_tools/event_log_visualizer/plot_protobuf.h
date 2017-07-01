@@ -10,7 +10,7 @@
 #ifndef WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PROTOBUF_H_
 #define WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PROTOBUF_H_
 
-#include "webrtc/rtc_base/ignore_wundef.h"
+#include "webrtc/base/ignore_wundef.h"
 RTC_PUSH_IGNORING_WUNDEF()
 #include "webrtc/rtc_tools/event_log_visualizer/chart.pb.h"
 RTC_POP_IGNORING_WUNDEF()

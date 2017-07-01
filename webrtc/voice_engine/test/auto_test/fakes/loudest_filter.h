@@ -12,8 +12,8 @@
 #define WEBRTC_VOICE_ENGINE_TEST_AUTO_TEST_FAKES_LOUDEST_FILTER_H_
 
 #include <map>
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
-#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 namespace voetest {

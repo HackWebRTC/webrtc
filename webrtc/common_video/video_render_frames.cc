@@ -12,9 +12,9 @@
 
 #include <utility>
 
+#include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {

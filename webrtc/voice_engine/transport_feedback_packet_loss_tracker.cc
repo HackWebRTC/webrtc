@@ -13,10 +13,10 @@
 #include <limits>
 #include <utility>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/mod_ops.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/mod_ops.h"
 
 namespace {
 constexpr uint16_t kSeqNumHalf = 0x8000u;

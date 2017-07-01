@@ -17,7 +17,7 @@
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/transportdescription.h"
-#include "webrtc/rtc_base/helpers.h"
+#include "webrtc/base/helpers.h"
 
 namespace cricket {
 

@@ -21,10 +21,10 @@
 #include <string>
 
 #include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/socketaddress.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/socketaddress.h"
 
 namespace cricket {
 

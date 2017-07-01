@@ -15,15 +15,15 @@
 #include <set>
 
 #include "webrtc/api/umametrics.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/crc32.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
 #include "webrtc/p2p/base/stunport.h"   // For STUN_PORT_TYPE.
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/crc32.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringencode.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace {

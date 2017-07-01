@@ -14,13 +14,13 @@
 #include <list>
 #include <memory>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/numerics/exp_filter.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/sequenced_task_checker.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/numerics/exp_filter.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/thread_annotations.h"
 
 namespace webrtc {
 

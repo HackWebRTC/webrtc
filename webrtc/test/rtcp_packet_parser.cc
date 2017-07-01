@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/test/rtcp_packet_parser.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 namespace test {

@@ -13,14 +13,14 @@
 
 #include <memory>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/voice_engine/channel_manager.h"
 #include "webrtc/voice_engine/statistics.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"

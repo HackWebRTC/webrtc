@@ -15,9 +15,9 @@
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
-#include "webrtc/rtc_base/fakesslidentity.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/ssladapter.h"
+#include "webrtc/base/fakesslidentity.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/ssladapter.h"
 
 using cricket::TransportDescriptionFactory;
 using cricket::TransportDescription;

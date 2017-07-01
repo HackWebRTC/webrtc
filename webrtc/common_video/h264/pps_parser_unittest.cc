@@ -13,9 +13,9 @@
 #include <limits>
 #include <memory>
 
+#include "webrtc/base/bitbuffer.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/rtc_base/bitbuffer.h"
-#include "webrtc/rtc_base/buffer.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

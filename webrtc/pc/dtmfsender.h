@@ -16,9 +16,9 @@
 #include "webrtc/api/dtmfsenderinterface.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/proxy.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/messagehandler.h"
-#include "webrtc/rtc_base/refcount.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/refcount.h"
 
 // DtmfSender is the native implementation of the RTCDTMFSender defined by
 // the WebRTC W3C Editor's Draft.

@@ -15,12 +15,12 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/bind.h"
+#include "webrtc/base/sslfingerprint.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/p2p/base/fakedtlstransport.h"
 #include "webrtc/p2p/base/fakeicetransport.h"
 #include "webrtc/p2p/base/transportcontroller.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/sslfingerprint.h"
-#include "webrtc/rtc_base/thread.h"
 
 namespace cricket {
 

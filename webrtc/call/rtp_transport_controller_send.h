@@ -11,9 +11,9 @@
 #ifndef WEBRTC_CALL_RTP_TRANSPORT_CONTROLLER_SEND_H_
 #define WEBRTC_CALL_RTP_TRANSPORT_CONTROLLER_SEND_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/call/rtp_transport_controller_send_interface.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 class Clock;

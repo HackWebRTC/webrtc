@@ -19,7 +19,7 @@
 #include <unistd.h>
 #endif
 
-#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/base/arraysize.h"
 
 const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";

@@ -15,10 +15,10 @@
 #include <string>
 
 #include "webrtc/api/ortc/udptransportinterface.h"
+#include "webrtc/base/asyncpacketsocket.h"  // For PacketOptions.
+#include "webrtc/base/optional.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/p2p/base/packettransportinternal.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"  // For PacketOptions.
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/thread_checker.h"
 
 namespace rtc {
 class AsyncPacketSocket;

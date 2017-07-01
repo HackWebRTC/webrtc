@@ -14,11 +14,11 @@
 // This was added in Lollipop to dlfcn.h
 #define RTLD_NOLOAD 4
 
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ipaddress.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/ipaddress.h"
 
 namespace webrtc_jni {
 

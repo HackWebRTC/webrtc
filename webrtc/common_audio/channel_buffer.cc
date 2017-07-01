@@ -10,7 +10,7 @@
 
 #include "webrtc/common_audio/channel_buffer.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/call/rtp_packet_sink_interface.h"
 #include "webrtc/call/syncable.h"
 #include "webrtc/common_video/include/incoming_video_stream.h"
@@ -21,7 +22,6 @@
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/video_coding/frame_buffer2.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
-#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/rtp_streams_synchronizer.h"

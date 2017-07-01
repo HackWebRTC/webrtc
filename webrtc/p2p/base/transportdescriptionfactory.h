@@ -11,8 +11,8 @@
 #ifndef WEBRTC_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
 #define WEBRTC_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
 
+#include "webrtc/base/rtccertificate.h"
 #include "webrtc/p2p/base/transportdescription.h"
-#include "webrtc/rtc_base/rtccertificate.h"
 
 namespace rtc {
 class SSLIdentity;

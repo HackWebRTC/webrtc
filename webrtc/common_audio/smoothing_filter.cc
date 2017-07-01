@@ -12,7 +12,7 @@
 
 #include <cmath>
 
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/base/timeutils.h"
 
 namespace webrtc {
 

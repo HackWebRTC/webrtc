@@ -11,10 +11,10 @@
 #ifndef WEBRTC_COMMON_VIDEO_INCLUDE_INCOMING_VIDEO_STREAM_H_
 #define WEBRTC_COMMON_VIDEO_INCLUDE_INCOMING_VIDEO_STREAM_H_
 
+#include "webrtc/base/race_checker.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/common_video/video_render_frames.h"
 #include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/rtc_base/race_checker.h"
-#include "webrtc/rtc_base/task_queue.h"
 
 namespace webrtc {
 

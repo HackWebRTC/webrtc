@@ -22,11 +22,11 @@
 
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/api/jsepsessiondescription.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/stringutils.h"
 // for RtpExtension
 #include "webrtc/config.h"
 #include "webrtc/media/base/codec.h"

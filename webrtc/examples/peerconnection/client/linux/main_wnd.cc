@@ -17,9 +17,9 @@
 #include "libyuv/convert_from.h"
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/examples/peerconnection/client/defaults.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
 
 using rtc::sprintfn;
 

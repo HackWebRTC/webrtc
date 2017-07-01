@@ -14,9 +14,9 @@
 #include <algorithm>
 #include <utility>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 

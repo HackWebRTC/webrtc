@@ -18,10 +18,10 @@
 
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/portinterface.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/proxyinfo.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/proxyinfo.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 
 namespace webrtc {
 class MetricsObserverInterface;

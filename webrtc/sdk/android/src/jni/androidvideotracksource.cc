@@ -12,7 +12,7 @@
 
 #include <utility>
 
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace {
 // MediaCodec wants resolution to be divisible by 2.

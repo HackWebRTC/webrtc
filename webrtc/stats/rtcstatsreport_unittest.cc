@@ -11,8 +11,8 @@
 #include "webrtc/api/stats/rtcstatsreport.h"
 
 #include "webrtc/api/stats/rtcstats.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/gunit.h"
 
 namespace webrtc {
 

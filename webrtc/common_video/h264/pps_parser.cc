@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/rtc_base/bitbuffer.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/bitbuffer.h"
+#include "webrtc/base/logging.h"
 
 #define RETURN_EMPTY_ON_FAIL(x)                  \
   if (!(x)) {                                    \

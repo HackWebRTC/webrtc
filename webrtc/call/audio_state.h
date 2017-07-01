@@ -11,8 +11,8 @@
 #define WEBRTC_CALL_AUDIO_STATE_H_
 
 #include "webrtc/api/audio/audio_mixer.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

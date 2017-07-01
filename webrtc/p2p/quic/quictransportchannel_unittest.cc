@@ -15,9 +15,9 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/sslidentity.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/sslidentity.h"
 
 using cricket::ConnectionRole;
 using cricket::IceRole;

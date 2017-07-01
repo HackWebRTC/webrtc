@@ -16,7 +16,7 @@
 #include <utility>  // For std::move.
 
 #include "webrtc/api/proxy.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 

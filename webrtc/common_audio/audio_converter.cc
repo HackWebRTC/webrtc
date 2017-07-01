@@ -15,10 +15,10 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions.h"
 
 using rtc::checked_cast;
 

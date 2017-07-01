@@ -14,9 +14,9 @@
 #include <list>
 #include <memory>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/include/module.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

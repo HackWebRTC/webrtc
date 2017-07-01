@@ -13,8 +13,8 @@
 
 #include <list>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/stream.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/stream.h"
 
 namespace cricket {
 

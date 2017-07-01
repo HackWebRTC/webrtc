@@ -17,9 +17,9 @@
 #include <CoreMedia/CoreMedia.h>
 #include <vector>
 
+#include "webrtc/base/buffer.h"
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/buffer.h"
 
 using webrtc::H264::NaluIndex;
 

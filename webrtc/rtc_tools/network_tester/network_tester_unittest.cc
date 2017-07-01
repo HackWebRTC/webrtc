@@ -13,7 +13,7 @@
 
 #include "webrtc/rtc_tools/network_tester/test_controller.h"
 
-#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/base/gunit.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 

@@ -16,8 +16,8 @@
 
 #include <vector>
 
+#include "webrtc/base/thread.h"
 #include "webrtc/media/base/fakevideocapturer.h"
-#include "webrtc/rtc_base/thread.h"
 
 namespace webrtc {
 

@@ -16,9 +16,9 @@
 
 #include <memory>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/include/module.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/video/stream_synchronization.h"
 
 namespace webrtc {

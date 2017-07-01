@@ -14,9 +14,9 @@
 
 #include <memory>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/fir_filter_neon.h"
 #include "webrtc/common_audio/fir_filter_sse.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 
 namespace webrtc {

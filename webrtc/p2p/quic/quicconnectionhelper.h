@@ -16,7 +16,7 @@
 #include "net/quic/quic_clock.h"
 #include "net/quic/quic_connection.h"
 #include "net/quic/quic_simple_buffer_allocator.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 
