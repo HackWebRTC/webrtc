@@ -16,11 +16,11 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/transient/common.h"
 #include "webrtc/modules/audio_processing/transient/daubechies_8_wavelet_coeffs.h"
 #include "webrtc/modules/audio_processing/transient/moving_moments.h"
 #include "webrtc/modules/audio_processing/transient/wpd_tree.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

@@ -14,6 +14,10 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
 #include "webrtc/modules/audio_coding/neteq/defines.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
@@ -23,10 +27,6 @@
 #include "webrtc/modules/audio_coding/neteq/statistics_calculator.h"
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -12,8 +12,8 @@
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/checks.h"
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"

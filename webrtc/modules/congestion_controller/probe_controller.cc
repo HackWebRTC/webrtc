@@ -13,8 +13,8 @@
 #include <algorithm>
 #include <initializer_list>
 
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {

@@ -16,6 +16,8 @@
 #include <atomic>
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/resolution_change_detector.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
@@ -23,8 +25,6 @@
 #include "webrtc/modules/desktop_capture/win/dxgi_adapter_duplicator.h"
 #include "webrtc/modules/desktop_capture/win/dxgi_context.h"
 #include "webrtc/modules/desktop_capture/win/dxgi_frame.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

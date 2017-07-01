@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_PACING_ALR_DETECTOR_H_
 #define WEBRTC_MODULES_PACING_ALR_DETECTOR_H_
 
+#include "webrtc/base/optional.h"
+#include "webrtc/base/rate_statistics.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/rate_statistics.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

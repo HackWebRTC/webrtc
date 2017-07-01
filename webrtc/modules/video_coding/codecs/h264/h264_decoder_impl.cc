@@ -21,11 +21,11 @@ extern "C" {
 }  // extern "C"
 
 #include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/keep_ref_until_done.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/keep_ref_until_done.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {

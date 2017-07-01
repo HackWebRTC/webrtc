@@ -18,9 +18,9 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/atomicops.h"
+#include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
 
 namespace webrtc {
 

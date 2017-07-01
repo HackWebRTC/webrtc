@@ -15,9 +15,9 @@
 #include <iterator>
 #include <utility>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_mixer/audio_frame_manipulator.h"
 #include "webrtc/modules/audio_mixer/default_output_rate_calculator.h"
-#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 namespace {

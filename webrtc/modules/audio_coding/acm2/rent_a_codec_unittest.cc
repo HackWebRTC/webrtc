@@ -10,8 +10,8 @@
 
 #include <memory>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
-#include "webrtc/rtc_base/arraysize.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_audio_encoder.h"
 

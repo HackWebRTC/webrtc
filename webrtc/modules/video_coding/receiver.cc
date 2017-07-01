@@ -16,11 +16,11 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/modules/video_coding/internal_defines.h"
 #include "webrtc/modules/video_coding/media_opt_util.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/trace_event.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

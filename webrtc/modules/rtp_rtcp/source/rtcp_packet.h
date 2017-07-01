@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/buffer.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/buffer.h"
 
 namespace webrtc {
 namespace rtcp {

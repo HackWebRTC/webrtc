@@ -12,10 +12,10 @@
 
 #include <string.h>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

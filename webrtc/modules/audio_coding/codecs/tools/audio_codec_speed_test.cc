@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_coding/codecs/tools/audio_codec_speed_test.h"
 
-#include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 

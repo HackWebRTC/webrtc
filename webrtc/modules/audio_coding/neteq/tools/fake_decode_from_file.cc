@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/audio_coding/neteq/tools/fake_decode_from_file.h"
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions.h"
 
 namespace webrtc {
 namespace test {

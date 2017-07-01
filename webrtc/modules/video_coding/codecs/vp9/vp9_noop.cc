@@ -13,8 +13,8 @@
 #error
 #endif  // !defined(RTC_DISABLE_VP9)
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

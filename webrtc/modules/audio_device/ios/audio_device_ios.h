@@ -14,14 +14,14 @@
 #include <memory>
 
 #include "WebRTC/RTCMacros.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/gtest_prod_util.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/ios/audio_session_observer.h"
 #include "webrtc/modules/audio_device/ios/voice_processing_audio_unit.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/gtest_prod_util.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/thread_checker.h"
 
 RTC_FWD_DECL_OBJC_CLASS(RTCAudioSessionDelegateAdapter);
 

@@ -14,10 +14,10 @@
 #include <array>
 #include <memory>
 
-#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/fft_data.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 namespace aec3 {

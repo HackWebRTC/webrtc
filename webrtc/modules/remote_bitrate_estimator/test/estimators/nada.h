@@ -21,9 +21,9 @@
 #include <map>
 #include <memory>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
-#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/voice_engine/channel.h"
 
 namespace webrtc {

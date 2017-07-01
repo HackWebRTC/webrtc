@@ -14,10 +14,10 @@
 
 #include <android/log.h>
 
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/utility/include/helpers_android.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
 
 #define TAG "AudioManager"
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)

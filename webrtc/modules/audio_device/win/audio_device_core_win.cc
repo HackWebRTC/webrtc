@@ -35,8 +35,8 @@
 #include <strsafe.h>
 #include <uuids.h>
 
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/platform_thread.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/system_wrappers/include/trace.h"
 

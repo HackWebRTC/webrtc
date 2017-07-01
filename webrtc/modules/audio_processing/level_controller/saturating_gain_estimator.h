@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_SATURATING_GAIN_ESTIMATOR_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_SATURATING_GAIN_ESTIMATOR_H_
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

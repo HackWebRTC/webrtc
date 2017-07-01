@@ -9,7 +9,7 @@
  */
 #include "webrtc/modules/audio_processing/aec3/cascaded_biquad_filter.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

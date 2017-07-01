@@ -13,7 +13,7 @@
 
 #include <list>
 
-#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/base/criticalsection.h"
 
 namespace webrtc {
 class DtmfQueue {

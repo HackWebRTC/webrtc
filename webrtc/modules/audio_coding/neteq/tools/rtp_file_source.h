@@ -16,10 +16,10 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

@@ -18,9 +18,9 @@
 #include <algorithm>
 #include <sstream>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/platform_thread.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
+#include "webrtc/base/platform_thread.h"
 
 namespace webrtc {
 namespace testing {

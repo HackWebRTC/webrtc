@@ -14,8 +14,8 @@
 #include <cstddef>
 #include <string>
 
+#include "webrtc/base/array_view.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_interface.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/typedefs.h"
 

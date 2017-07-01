@@ -10,13 +10,13 @@
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 

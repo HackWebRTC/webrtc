@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 

@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

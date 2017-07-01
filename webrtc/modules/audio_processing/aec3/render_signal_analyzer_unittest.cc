@@ -14,13 +14,13 @@
 #include <array>
 #include <vector>
 
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/random.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
 #include "webrtc/modules/audio_processing/aec3/fft_data.h"
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/random.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

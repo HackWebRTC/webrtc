@@ -17,10 +17,10 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/congestion_controller/acknowledge_bitrate_estimator.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gtest.h"
 

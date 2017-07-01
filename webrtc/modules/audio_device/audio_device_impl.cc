@@ -8,14 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_device/audio_device_impl.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 #include <assert.h>

@@ -14,13 +14,13 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_interface.h"
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/ptr_util.h"
 
 namespace webrtc {
 namespace test {

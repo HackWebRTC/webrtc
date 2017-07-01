@@ -13,7 +13,7 @@
 
 #include <cstddef>
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

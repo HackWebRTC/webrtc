@@ -13,7 +13,7 @@
 
 #include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_decoder_isac.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

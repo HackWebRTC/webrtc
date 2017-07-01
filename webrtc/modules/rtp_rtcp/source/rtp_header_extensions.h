@@ -16,8 +16,8 @@
 #include "webrtc/api/video/video_content_type.h"
 #include "webrtc/api/video/video_rotation.h"
 #include "webrtc/api/video/video_timing.h"
+#include "webrtc/base/array_view.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/rtc_base/array_view.h"
 
 namespace webrtc {
 

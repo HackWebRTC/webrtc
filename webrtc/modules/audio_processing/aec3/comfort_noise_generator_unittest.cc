@@ -13,10 +13,10 @@
 #include <algorithm>
 #include <numeric>
 
-#include "webrtc/rtc_base/random.h"
+#include "webrtc/typedefs.h"
+#include "webrtc/base/random.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace aec3 {

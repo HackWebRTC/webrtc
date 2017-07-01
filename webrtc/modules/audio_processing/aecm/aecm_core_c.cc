@@ -23,7 +23,7 @@ extern "C" {
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 }
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/typedefs.h"
 
 // Square root of Hanning window in Q14.

@@ -14,15 +14,15 @@
 #include <cmath>
 #include <string>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/typedefs.h"

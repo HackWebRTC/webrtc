@@ -16,11 +16,11 @@
 #include <limits>
 #include <numeric>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/window_generator.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_minmax.h"
 
 namespace webrtc {
 

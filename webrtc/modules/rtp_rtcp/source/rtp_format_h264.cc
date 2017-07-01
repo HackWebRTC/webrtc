@@ -15,15 +15,15 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/common_video/h264/pps_parser.h"
-#include "webrtc/common_video/h264/sps_parser.h"
-#include "webrtc/common_video/h264/sps_vui_rewriter.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/common_video/h264/sps_vui_rewriter.h"
+#include "webrtc/common_video/h264/h264_common.h"
+#include "webrtc/common_video/h264/pps_parser.h"
+#include "webrtc/common_video/h264/sps_parser.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {

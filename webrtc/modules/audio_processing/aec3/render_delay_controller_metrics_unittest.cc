@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/render_delay_controller_metrics.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/modules/audio_processing/aec3/render_delay_controller_metrics.h"
 
 #include "webrtc/test/gtest.h"
 

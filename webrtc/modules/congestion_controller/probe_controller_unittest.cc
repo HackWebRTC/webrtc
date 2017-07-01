@@ -9,9 +9,9 @@
  */
 #include <memory>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/congestion_controller/probe_controller.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"

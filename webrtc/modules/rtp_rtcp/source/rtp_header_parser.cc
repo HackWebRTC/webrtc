@@ -9,9 +9,9 @@
  */
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/rtc_base/criticalsection.h"
 
 namespace webrtc {
 

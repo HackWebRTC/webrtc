@@ -17,13 +17,13 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 namespace test {

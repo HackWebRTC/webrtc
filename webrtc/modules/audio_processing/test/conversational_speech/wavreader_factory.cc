@@ -12,9 +12,9 @@
 
 #include <cstddef>
 
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/wav_file.h"
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

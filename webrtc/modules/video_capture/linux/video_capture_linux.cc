@@ -21,9 +21,9 @@
 #include <iostream>
 #include <new>
 
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/video_capture/linux/video_capture_linux.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {

@@ -15,13 +15,13 @@
 #include <set>
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/packet.h"
 #include "webrtc/modules/video_coding/rtp_frame_reference_finder.h"
 #include "webrtc/modules/video_coding/sequence_number_util.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/thread_annotations.h"
 
 namespace webrtc {
 

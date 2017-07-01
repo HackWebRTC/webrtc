@@ -14,9 +14,9 @@
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/random.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/random.h"
 
 namespace webrtc {
 

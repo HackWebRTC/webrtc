@@ -10,8 +10,8 @@
 
 #include <assert.h>
 
+#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/media_file/media_file_impl.h"
-#include "webrtc/rtc_base/format_macros.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 

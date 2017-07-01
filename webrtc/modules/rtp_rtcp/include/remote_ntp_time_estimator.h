@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/system_wrappers/include/rtp_to_ntp_estimator.h"
 
 namespace webrtc {

@@ -17,11 +17,11 @@
 #include <utility>
 
 #include "webrtc/api/audio/audio_mixer.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/audio_mixer/default_output_rate_calculator.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/thread.h"
 #include "webrtc/test/gmock.h"
 
 using testing::_;

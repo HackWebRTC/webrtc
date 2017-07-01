@@ -10,13 +10,14 @@
 
 #include <memory>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_receiver.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
-#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
+
 
 namespace webrtc {
 namespace testing {

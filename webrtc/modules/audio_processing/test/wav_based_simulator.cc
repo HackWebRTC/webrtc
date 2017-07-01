@@ -13,8 +13,8 @@
 #include <stdio.h>
 #include <iostream>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 
 namespace webrtc {

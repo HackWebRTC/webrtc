@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_DATA_OBSERVER_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_DATA_OBSERVER_H_
 
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

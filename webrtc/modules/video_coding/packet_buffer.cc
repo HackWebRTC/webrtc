@@ -14,11 +14,11 @@
 #include <limits>
 #include <utility>
 
+#include "webrtc/base/atomicops.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/modules/video_coding/frame_object.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

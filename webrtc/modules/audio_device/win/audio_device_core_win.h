@@ -24,8 +24,8 @@
 #include <endpointvolume.h>
 #include <mediaobj.h>        // IMediaObject
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 // Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
 #pragma comment( lib, "avrt.lib" )

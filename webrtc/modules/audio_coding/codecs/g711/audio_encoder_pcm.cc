@@ -13,10 +13,10 @@
 #include <algorithm>
 #include <limits>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/string_to_number.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/g711/g711_interface.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/string_to_number.h"
 
 namespace webrtc {
 

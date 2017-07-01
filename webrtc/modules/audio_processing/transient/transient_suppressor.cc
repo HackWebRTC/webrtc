@@ -17,14 +17,14 @@
 #include <deque>
 #include <set>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/common_audio/fft4g.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_processing/ns/windows_private.h"
 #include "webrtc/modules/audio_processing/transient/common.h"
 #include "webrtc/modules/audio_processing/transient/transient_detector.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/modules/audio_processing/ns/windows_private.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

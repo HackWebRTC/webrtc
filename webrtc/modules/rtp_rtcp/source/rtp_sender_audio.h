@@ -12,13 +12,13 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_AUDIO_H_
 
 #include "webrtc/common_types.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/onetimeevent.h"
 #include "webrtc/modules/rtp_rtcp/source/dtmf_queue.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/onetimeevent.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

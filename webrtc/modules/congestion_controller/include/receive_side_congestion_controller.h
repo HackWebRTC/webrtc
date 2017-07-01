@@ -14,9 +14,9 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_estimator_proxy.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
 
 namespace webrtc {
 class RemoteBitrateEstimator;

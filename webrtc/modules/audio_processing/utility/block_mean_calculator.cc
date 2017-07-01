@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_processing/utility/block_mean_calculator.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

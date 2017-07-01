@@ -9,7 +9,7 @@
  */
 #include "webrtc/modules/audio_processing/aec3/decimator_by_4.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 namespace {

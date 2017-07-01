@@ -12,9 +12,9 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
 
 namespace {
 // The minumum number of probes we need to receive feedback about in percent

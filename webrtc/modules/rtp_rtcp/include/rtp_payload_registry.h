@@ -15,8 +15,8 @@
 #include <set>
 
 #include "webrtc/api/audio_codecs/audio_format.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/rtc_base/criticalsection.h"
 
 namespace webrtc {
 

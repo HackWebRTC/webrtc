@@ -12,7 +12,7 @@
 
 #include <vector>
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 // After this many packets are added, adding additional packets will cause the
 // oldest packets to be pruned from the buffer.

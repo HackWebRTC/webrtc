@@ -17,23 +17,23 @@
 #include <utility>
 
 // TODO(zijiehe): Remove once flaky has been resolved.
-#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h"
 #include "webrtc/modules/desktop_capture/rgba_color.h"
 #include "webrtc/modules/desktop_capture/screen_drawer.h"
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 
 #if defined(WEBRTC_WIN)
+#include "webrtc/base/win32.h"
 #include "webrtc/modules/desktop_capture/win/screen_capturer_win_directx.h"
-#include "webrtc/rtc_base/win32.h"
 #endif  // defined(WEBRTC_WIN)
 
 using ::testing::_;

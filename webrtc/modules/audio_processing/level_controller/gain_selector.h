@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_GAIN_SELECTOR_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_GAIN_SELECTOR_H_
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 #include "webrtc/modules/audio_processing/level_controller/signal_classifier.h"
 

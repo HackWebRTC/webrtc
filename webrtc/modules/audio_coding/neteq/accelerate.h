@@ -13,9 +13,9 @@
 
 #include <assert.h>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
 #include "webrtc/modules/audio_coding/neteq/time_stretch.h"
-#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

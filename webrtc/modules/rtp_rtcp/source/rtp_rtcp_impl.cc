@@ -15,10 +15,10 @@
 #include <set>
 #include <string>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
 
 #ifdef _WIN32
 // Disable warning C4355: 'this' : used in base member initializer list.

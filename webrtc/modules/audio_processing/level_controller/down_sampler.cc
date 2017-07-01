@@ -14,10 +14,10 @@
 #include <algorithm>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/level_controller/biquad_filter.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

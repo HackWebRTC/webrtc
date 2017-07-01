@@ -13,13 +13,13 @@
 #include <memory>
 
 #include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/test/video_codec_test.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"

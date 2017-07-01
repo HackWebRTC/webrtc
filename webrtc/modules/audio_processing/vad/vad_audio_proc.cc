@@ -13,11 +13,11 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/fft4g.h"
+#include "webrtc/modules/audio_processing/vad/vad_audio_proc_internal.h"
 #include "webrtc/modules/audio_processing/vad/pitch_internal.h"
 #include "webrtc/modules/audio_processing/vad/pole_zero_filter.h"
-#include "webrtc/modules/audio_processing/vad/vad_audio_proc_internal.h"
-#include "webrtc/rtc_base/checks.h"
 extern "C" {
 #include "webrtc/modules/audio_coding/codecs/isac/main/source/codec.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/source/lpc_analysis.h"

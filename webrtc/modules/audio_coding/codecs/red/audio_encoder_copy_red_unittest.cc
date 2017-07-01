@@ -11,8 +11,8 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_audio_encoder.h"
 

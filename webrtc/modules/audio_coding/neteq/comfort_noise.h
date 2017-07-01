@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_COMFORT_NOISE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_COMFORT_NOISE_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
-#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

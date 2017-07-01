@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_JITTER_ESTIMATOR_H_
 #define WEBRTC_MODULES_VIDEO_CODING_JITTER_ESTIMATOR_H_
 
+#include "webrtc/base/rollingaccumulator.h"
 #include "webrtc/modules/video_coding/rtt_filter.h"
-#include "webrtc/rtc_base/rollingaccumulator.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

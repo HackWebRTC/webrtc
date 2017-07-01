@@ -14,8 +14,8 @@
 #include <assert.h>
 
 #include "webrtc/api/audio_codecs/audio_decoder.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/neteq_decoder_enum.h"
-#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 #ifdef WEBRTC_CODEC_G722

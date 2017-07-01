@@ -15,9 +15,9 @@
 
 #include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/audio_codecs/audio_format.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

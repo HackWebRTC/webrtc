@@ -12,10 +12,10 @@
 
 #include "webrtc/modules/audio_processing/aec_dump/aec_dump_impl.h"
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/modules/audio_processing/aec_dump/aec_dump_factory.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/ptr_util.h"
 
 namespace webrtc {
 

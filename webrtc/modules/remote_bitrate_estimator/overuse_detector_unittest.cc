@@ -15,12 +15,12 @@
 #include <cstdlib>
 #include <memory>
 
+#include "webrtc/base/random.h"
+#include "webrtc/base/rate_statistics.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_estimator.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/rtc_base/rate_statistics.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/gtest.h"
 

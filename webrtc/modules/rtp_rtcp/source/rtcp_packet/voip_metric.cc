@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/voip_metric.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace rtcp {

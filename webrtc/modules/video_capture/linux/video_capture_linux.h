@@ -13,10 +13,10 @@
 
 #include <memory>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_capture/video_capture_impl.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/platform_thread.h"
 
 namespace webrtc
 {

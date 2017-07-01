@@ -16,6 +16,11 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/format_macros.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/android/build_info.h"
@@ -23,11 +28,6 @@
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_device/include/mock_audio_transport.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"

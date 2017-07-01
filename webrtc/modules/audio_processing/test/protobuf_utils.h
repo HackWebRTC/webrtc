@@ -13,8 +13,8 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/ignore_wundef.h"
-#include "webrtc/rtc_base/protobuf_utils.h"
+#include "webrtc/base/ignore_wundef.h"
+#include "webrtc/base/protobuf_utils.h"
 
 RTC_PUSH_IGNORING_WUNDEF()
 #include "webrtc/modules/audio_processing/debug.pb.h"

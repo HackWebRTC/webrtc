@@ -13,10 +13,10 @@
 
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

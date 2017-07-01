@@ -11,6 +11,8 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
@@ -24,8 +26,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/rate_limiter.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"

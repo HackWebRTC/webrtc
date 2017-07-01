@@ -14,9 +14,9 @@
 #include <string.h>
 #include <sys/shm.h>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/x11/x_error_trap.h"
-#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

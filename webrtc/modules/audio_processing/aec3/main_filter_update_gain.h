@@ -14,12 +14,12 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/adaptive_fir_filter.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/render_signal_analyzer.h"
 #include "webrtc/modules/audio_processing/aec3/subtractor_output.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

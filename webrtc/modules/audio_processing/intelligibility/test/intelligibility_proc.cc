@@ -9,13 +9,13 @@
  */
 
 #include "gflags/gflags.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
 #include "webrtc/modules/audio_processing/noise_suppression_impl.h"
-#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/test/gtest.h"
 
 using std::complex;

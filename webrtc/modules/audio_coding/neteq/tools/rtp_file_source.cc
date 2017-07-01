@@ -20,9 +20,9 @@
 
 #include <memory>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/rtp_file_reader.h"
 
 namespace webrtc {

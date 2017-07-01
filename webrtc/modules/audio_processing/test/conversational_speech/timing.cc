@@ -13,7 +13,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "webrtc/rtc_base/stringencode.h"
+#include "webrtc/base/stringencode.h"
 
 namespace webrtc {
 namespace test {

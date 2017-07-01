@@ -14,9 +14,9 @@
 #include <wrl/client.h>
 #include <D3D11.h>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
 
 using Microsoft::WRL::ComPtr;
 

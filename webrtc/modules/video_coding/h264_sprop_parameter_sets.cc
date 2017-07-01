@@ -13,9 +13,9 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/logging.h"
 
 namespace {
 

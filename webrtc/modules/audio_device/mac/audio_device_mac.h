@@ -13,10 +13,10 @@
 
 #include <memory>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/mac/audio_mixer_manager_mac.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 
 #include <AudioToolbox/AudioConverter.h>

@@ -14,8 +14,8 @@
 #include <array>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

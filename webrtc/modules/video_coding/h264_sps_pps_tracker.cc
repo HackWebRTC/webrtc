@@ -13,13 +13,13 @@
 #include <string>
 #include <utility>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/common_video/h264/pps_parser.h"
 #include "webrtc/common_video/h264/sps_parser.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/packet_buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 namespace video_coding {

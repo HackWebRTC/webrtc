@@ -12,9 +12,9 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

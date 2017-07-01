@@ -11,7 +11,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_CVO_H_
 
 #include "webrtc/api/video/video_rotation.h"
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

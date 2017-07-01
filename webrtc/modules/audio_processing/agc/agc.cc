@@ -16,10 +16,10 @@
 #include <algorithm>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/agc/loudness_histogram.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

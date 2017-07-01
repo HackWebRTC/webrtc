@@ -14,7 +14,7 @@
 
 #include <vector>
 
-#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/base/basictypes.h"
 
 namespace webrtc {
 namespace rtcp {

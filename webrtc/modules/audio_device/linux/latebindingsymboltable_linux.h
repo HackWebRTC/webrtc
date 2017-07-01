@@ -15,7 +15,7 @@
 #include <stddef.h>  // for NULL
 #include <string.h>
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 // This file provides macros for creating "symbol table" classes to simplify the
 // dynamic loading of symbols from DLLs. Currently the implementation only

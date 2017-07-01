@@ -12,8 +12,8 @@
 
 #include <utility>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/safe_conversions.h"
 
 namespace webrtc {
 namespace test {

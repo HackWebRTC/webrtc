@@ -14,11 +14,11 @@
 
 #include <vector>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 struct vpx_codec_ctx;
 struct vpx_codec_frame_buffer;

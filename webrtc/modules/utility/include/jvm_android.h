@@ -16,8 +16,8 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/utility/include/helpers_android.h"
-#include "webrtc/rtc_base/thread_checker.h"
 
 namespace webrtc {
 

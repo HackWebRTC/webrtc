@@ -14,7 +14,7 @@
 #include <cmath>
 #include <vector>
 
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/base/optional.h"
 
 namespace webrtc {
 

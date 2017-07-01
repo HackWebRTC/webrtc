@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 namespace rtcp {

@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 

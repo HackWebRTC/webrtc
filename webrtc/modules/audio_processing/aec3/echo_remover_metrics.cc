@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <numeric>
 
-#include "webrtc/rtc_base/safe_minmax.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {

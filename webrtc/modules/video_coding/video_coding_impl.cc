@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -23,8 +25,6 @@
 #include "webrtc/modules/video_coding/jitter_buffer.h"
 #include "webrtc/modules/video_coding/packet.h"
 #include "webrtc/modules/video_coding/timing.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

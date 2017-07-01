@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
 
-#include "webrtc/rtc_base/random.h"
+#include "webrtc/base/random.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/rtcp_packet_parser.h"

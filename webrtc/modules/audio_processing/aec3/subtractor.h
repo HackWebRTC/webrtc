@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/adaptive_fir_filter.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
@@ -26,7 +27,6 @@
 #include "webrtc/modules/audio_processing/aec3/subtractor_output.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 #include "webrtc/modules/audio_processing/utility/ooura_fft.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

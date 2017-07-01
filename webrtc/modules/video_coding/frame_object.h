@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 #define WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 
+#include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 namespace video_coding {

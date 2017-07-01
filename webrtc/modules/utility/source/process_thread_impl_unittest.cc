@@ -11,11 +11,11 @@
 #include <memory>
 #include <utility>
 
+#include "webrtc/base/location.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/utility/source/process_thread_impl.h"
-#include "webrtc/rtc_base/location.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 

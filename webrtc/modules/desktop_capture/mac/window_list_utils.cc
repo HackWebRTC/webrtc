@@ -12,7 +12,7 @@
 
 #include <ApplicationServices/ApplicationServices.h>
 
-#include "webrtc/rtc_base/macutils.h"
+#include "webrtc/base/macutils.h"
 
 namespace webrtc {
 

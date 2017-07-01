@@ -14,11 +14,11 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/atomicops.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_delay_estimator.h"
 #include "webrtc/modules/audio_processing/aec3/render_delay_controller_metrics.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

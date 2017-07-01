@@ -16,17 +16,17 @@
 #include <vector>
 
 #include "webrtc/api/audio_codecs/audio_decoder.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/acm2/acm_resampler.h"
 #include "webrtc/modules/audio_coding/acm2/call_statistics.h"
-#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_conversions.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 
 namespace webrtc {
 

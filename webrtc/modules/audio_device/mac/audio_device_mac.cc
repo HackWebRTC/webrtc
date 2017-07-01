@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_device/mac/audio_device_mac.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/modules/audio_device/mac/audio_device_mac.h"
 #include "webrtc/modules/audio_device/mac/portaudio/pa_ringbuffer.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/platform_thread.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 

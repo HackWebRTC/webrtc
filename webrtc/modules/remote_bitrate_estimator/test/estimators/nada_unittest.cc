@@ -14,11 +14,11 @@
 #include <memory>
 #include <numeric>
 
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 

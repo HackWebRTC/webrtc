@@ -16,9 +16,9 @@
 #include "libyuv/scale.h"  // NOLINT
 
 #include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace {

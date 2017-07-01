@@ -18,6 +18,9 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
@@ -38,9 +41,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/trace_event.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {

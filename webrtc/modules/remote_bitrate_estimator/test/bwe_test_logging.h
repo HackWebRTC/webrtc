@@ -128,9 +128,9 @@
 #include <stack>
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
 
 #define BWE_TEST_LOGGING_GLOBAL_CONTEXT(name) \
     do { \

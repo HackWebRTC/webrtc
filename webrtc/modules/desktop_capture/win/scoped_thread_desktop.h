@@ -15,7 +15,7 @@
 
 #include <windows.h>
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

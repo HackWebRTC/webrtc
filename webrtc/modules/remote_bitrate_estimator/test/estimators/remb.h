@@ -15,9 +15,9 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

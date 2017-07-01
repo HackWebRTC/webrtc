@@ -15,7 +15,7 @@
 
 #include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/audio_codecs/audio_format.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

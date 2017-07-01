@@ -13,11 +13,11 @@
 #include <string>
 #include <utility>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/ptr_util.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 

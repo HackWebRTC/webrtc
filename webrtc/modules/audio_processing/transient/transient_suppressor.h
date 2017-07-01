@@ -15,7 +15,7 @@
 #include <memory>
 #include <set>
 
-#include "webrtc/rtc_base/gtest_prod_util.h"
+#include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

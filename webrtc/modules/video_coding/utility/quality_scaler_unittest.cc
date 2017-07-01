@@ -12,8 +12,8 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/task_queue.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 

@@ -16,14 +16,14 @@
 #include <memory>
 #include <utility>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/inter_frame_delay.h"
 #include "webrtc/modules/video_coding/sequence_number_util.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/thread_annotations.h"
 
 namespace webrtc {
 

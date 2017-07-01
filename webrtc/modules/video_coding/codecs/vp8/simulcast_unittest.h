@@ -18,6 +18,7 @@
 
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/api/video/video_frame.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/common_video/include/video_frame.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
@@ -25,7 +26,6 @@
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/gtest.h"
 
 using ::testing::_;

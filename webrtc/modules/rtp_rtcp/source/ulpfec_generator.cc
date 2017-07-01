@@ -13,11 +13,11 @@
 #include <memory>
 #include <utility>
 
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

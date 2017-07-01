@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/congestion_controller/congestion_controller_unittests_helper.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

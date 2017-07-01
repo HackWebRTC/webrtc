@@ -14,8 +14,8 @@
 
 #include <sstream>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/safe_minmax.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/safe_minmax.h"
 
 namespace webrtc {
 namespace testing {

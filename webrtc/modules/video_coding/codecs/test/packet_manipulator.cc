@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/base/format_macros.h"
 
 namespace webrtc {
 namespace test {

@@ -9,7 +9,7 @@
  */
 #include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
 
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 

@@ -15,12 +15,12 @@
 #include <algorithm>  // min
 
 #include "webrtc/api/audio_codecs/audio_decoder.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
 #include "webrtc/modules/audio_coding/neteq/decoder_database.h"
 #include "webrtc/modules/audio_coding/neteq/expand.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

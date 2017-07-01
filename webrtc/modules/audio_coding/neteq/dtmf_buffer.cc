@@ -13,8 +13,8 @@
 #include <assert.h>
 #include <algorithm>  // max
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 
 // Modify the code to obtain backwards bit-exactness. Once bit-exactness is no
 // longer required, this #define should be removed (and the code that it

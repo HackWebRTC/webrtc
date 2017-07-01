@@ -10,10 +10,10 @@
 
 #include <string>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
-#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

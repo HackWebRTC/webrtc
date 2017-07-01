@@ -10,8 +10,8 @@
 
 #include <algorithm>  // Access to min.
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

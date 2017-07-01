@@ -13,12 +13,12 @@
 
 #include <memory>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/event_log_writer.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

@@ -12,13 +12,13 @@
 #include <memory>
 #include <utility>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/fakeclock.h"
 #include "webrtc/common_audio/mocks/mock_smoothing_filter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fakeclock.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"

@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/modules/audio_coding/audio_network_adaptor/dtx_controller.h"
-#include "webrtc/rtc_base/checks.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 

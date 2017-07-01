@@ -15,11 +15,11 @@
 #include <memory>
 #include <set>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

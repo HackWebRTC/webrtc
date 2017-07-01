@@ -19,10 +19,10 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/desktop_capture/win/dxgi_texture_mapping.h"
 #include "webrtc/modules/desktop_capture/win/dxgi_texture_staging.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

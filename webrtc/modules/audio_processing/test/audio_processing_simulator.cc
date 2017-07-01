@@ -16,11 +16,11 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/stringutils.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/stringutils.h"
 
 namespace webrtc {
 namespace test {

@@ -14,11 +14,11 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/file.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/include/video_frame.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/file.h"
-#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 

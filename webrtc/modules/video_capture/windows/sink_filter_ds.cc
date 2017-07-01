@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/video_capture/windows/sink_filter_ds.h"
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/video_capture/windows/help_functions_ds.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/platform_thread.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 #include <Dvdmedia.h> // VIDEOINFOHEADER2

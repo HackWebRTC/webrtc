@@ -21,15 +21,15 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/keep_ref_until_done.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/random.h"
+#include "webrtc/base/timeutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/vp9/screenshare_layers.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/keep_ref_until_done.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_base/trace_event.h"
 
 namespace webrtc {
 

@@ -12,11 +12,11 @@
 
 #include <string.h>
 
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/rtc_base/sanitizer.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/safe_conversions.h"
+#include "webrtc/base/sanitizer.h"
 
 namespace webrtc {
 

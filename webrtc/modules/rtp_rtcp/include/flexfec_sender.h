@@ -14,6 +14,9 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/random.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
@@ -21,9 +24,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "webrtc/modules/rtp_rtcp/source/ulpfec_generator.h"
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/random.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

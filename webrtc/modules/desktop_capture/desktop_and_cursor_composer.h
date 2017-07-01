@@ -13,9 +13,9 @@
 
 #include <memory>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor_monitor.h"
-#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

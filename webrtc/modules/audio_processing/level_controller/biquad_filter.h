@@ -13,9 +13,9 @@
 
 #include <vector>
 
-#include "webrtc/rtc_base/array_view.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

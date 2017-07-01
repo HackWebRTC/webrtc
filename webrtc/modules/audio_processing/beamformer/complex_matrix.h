@@ -13,8 +13,8 @@
 
 #include <complex>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/beamformer/matrix.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

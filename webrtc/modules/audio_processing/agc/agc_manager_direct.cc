@@ -16,12 +16,12 @@
 #include <cstdio>
 #endif
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/safe_minmax.h"
 #include "webrtc/modules/audio_processing/agc/gain_map_internal.h"
 #include "webrtc/modules/audio_processing/gain_control_impl.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_minmax.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {

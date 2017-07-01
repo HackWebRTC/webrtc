@@ -13,8 +13,8 @@
 #include <cmath>
 #include <cstring>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

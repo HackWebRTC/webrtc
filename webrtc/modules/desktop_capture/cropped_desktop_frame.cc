@@ -12,7 +12,7 @@
 
 #include "webrtc/modules/desktop_capture/cropped_desktop_frame.h"
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

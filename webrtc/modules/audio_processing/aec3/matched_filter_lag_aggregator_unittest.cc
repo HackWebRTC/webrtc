@@ -14,9 +14,9 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/array_view.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

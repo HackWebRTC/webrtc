@@ -18,14 +18,14 @@
 #include <limits>
 
 #include "webrtc/api/video/video_rotation.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/deprecation.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9_globals.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/deprecation.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/safe_conversions.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

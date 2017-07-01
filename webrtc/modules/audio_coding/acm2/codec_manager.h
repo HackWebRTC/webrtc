@@ -13,13 +13,13 @@
 
 #include <map>
 
-#include "webrtc/common_types.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "webrtc/common_types.h"
 
 namespace webrtc {
 

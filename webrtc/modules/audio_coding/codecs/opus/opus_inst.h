@@ -13,7 +13,7 @@
 
 #include <stddef.h>
 
-#include "webrtc/rtc_base/ignore_wundef.h"
+#include "webrtc/base/ignore_wundef.h"
 
 RTC_PUSH_IGNORING_WUNDEF()
 #include "opus.h"
