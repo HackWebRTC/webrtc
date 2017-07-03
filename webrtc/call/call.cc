@@ -277,8 +277,8 @@ class Call : public webrtc::Call,
 
   // TODO(nisse): Should eventually be injected at creation,
   // with a single object in the bundled case.
-  RtpStreamReceiverController audio_receiver_controller;
-  RtpStreamReceiverController video_receiver_controller;
+  RtpStreamReceiverController audio_receiver_controller_;
+  RtpStreamReceiverController video_receiver_controller_;
 
   // This extra map is used for receive processing which is
   // independent of media type.
@@ -643,7 +643,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   RTC_DCHECK_RUN_ON(&configuration_thread_checker_);
   event_log_->LogAudioReceiveStreamConfig(CreateRtcLogStreamConfig(config));
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
-      &audio_receiver_controller, transport_send_->packet_router(), config,
+      &audio_receiver_controller_, transport_send_->packet_router(), config,
       config_.audio_state, event_log_);
   {
     WriteLockScoped write_lock(*receive_crit_);
@@ -770,7 +770,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   RTC_DCHECK_RUN_ON(&configuration_thread_checker_);
 
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      &video_receiver_controller, num_cpu_cores_,
+      &video_receiver_controller_, num_cpu_cores_,
       transport_send_->packet_router(), std::move(configuration),
       module_process_thread_.get(), call_stats_.get());
 
@@ -836,14 +836,14 @@ FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
     // Unlike the video and audio receive streams,
     // FlexfecReceiveStream implements RtpPacketSinkInterface itself,
     // and hence its constructor passes its |this| pointer to
-    // video_receiver_controller->CreateStream(). Calling the
+    // video_receiver_controller_->CreateStream(). Calling the
     // constructor while holding |receive_crit_| ensures that we don't
     // call OnRtpPacket until the constructor is finished and the
     // object is in a valid state.
     // TODO(nisse): Fix constructor so that it can be moved outside of
     // this locked scope.
     receive_stream = new FlexfecReceiveStreamImpl(
-        &video_receiver_controller, config, recovered_packet_receiver,
+        &video_receiver_controller_, config, recovered_packet_receiver,
         call_stats_->rtcp_rtt_stats(), module_process_thread_.get());
 
     RTC_DCHECK(receive_rtp_config_.find(config.remote_ssrc) ==
@@ -1313,14 +1313,14 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
   NotifyBweOfReceivedPacket(*parsed_packet, media_type);
 
   if (media_type == MediaType::AUDIO) {
-    if (audio_receiver_controller.OnRtpPacket(*parsed_packet)) {
+    if (audio_receiver_controller_.OnRtpPacket(*parsed_packet)) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_audio_bytes_per_second_counter_.Add(static_cast<int>(length));
       event_log_->LogRtpHeader(kIncomingPacket, packet, length);
       return DELIVERY_OK;
     }
   } else if (media_type == MediaType::VIDEO) {
-    if (video_receiver_controller.OnRtpPacket(*parsed_packet)) {
+    if (video_receiver_controller_.OnRtpPacket(*parsed_packet)) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_video_bytes_per_second_counter_.Add(static_cast<int>(length));
       event_log_->LogRtpHeader(kIncomingPacket, packet, length);
@@ -1356,7 +1356,7 @@ void Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
 
   parsed_packet->set_recovered(true);
 
-  video_receiver_controller.OnRtpPacket(*parsed_packet);
+  video_receiver_controller_.OnRtpPacket(*parsed_packet);
 }
 
 void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
