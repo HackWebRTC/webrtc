@@ -2703,6 +2703,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
 
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "EndToEndDelayInMs"));
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "EndToEndDelayMaxInMs"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "InterframeDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "InterframeDelayMaxInMs"));
+
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.RenderSqrtPixelsPerSecond"));
 
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "EncodeTimeInMs"));
@@ -2861,6 +2864,14 @@ TEST_F(EndToEndTest, MAYBE_ContentTypeSwitches) {
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.EndToEndDelayMaxInMs"));
   EXPECT_EQ(
       1, metrics::NumSamples("WebRTC.Video.Screenshare.EndToEndDelayMaxInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InterframeDelayInMs"));
+  EXPECT_EQ(1,
+            metrics::NumSamples(
+                "WebRTC.Video.Screenshare.InterframeDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InterframeDelayMaxInMs"));
+  EXPECT_EQ(1,
+            metrics::NumSamples(
+                "WebRTC.Video.Screenshare.InterframeDelayMaxInMs"));
 }
 
 TEST_F(EndToEndTest, VerifyHistogramStatsWithRtx) {

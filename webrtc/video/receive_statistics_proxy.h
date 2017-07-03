@@ -142,8 +142,12 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   SampleCounter delay_counter_ GUARDED_BY(crit_);
   SampleCounter e2e_delay_counter_video_ GUARDED_BY(crit_);
   SampleCounter e2e_delay_counter_screenshare_ GUARDED_BY(crit_);
+  SampleCounter interframe_delay_counter_video_ GUARDED_BY(crit_);
+  SampleCounter interframe_delay_counter_screenshare_ GUARDED_BY(crit_);
   int64_t e2e_delay_max_ms_video_ GUARDED_BY(crit_);
   int64_t e2e_delay_max_ms_screenshare_ GUARDED_BY(crit_);
+  int64_t interframe_delay_max_ms_video_  GUARDED_BY(crit_);
+  int64_t interframe_delay_max_ms_screenshare_  GUARDED_BY(crit_);
   MaxCounter freq_offset_counter_ GUARDED_BY(crit_);
   int64_t first_report_block_time_ms_ GUARDED_BY(crit_);
   ReportBlockStats report_block_stats_ GUARDED_BY(crit_);
@@ -152,6 +156,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   int64_t avg_rtt_ms_ GUARDED_BY(crit_);
   mutable std::map<int64_t, size_t> frame_window_ GUARDED_BY(&crit_);
   VideoContentType last_content_type_ GUARDED_BY(&crit_);
+  rtc::Optional<int64_t> last_decoded_frame_time_ms_;
 };
 
 }  // namespace webrtc

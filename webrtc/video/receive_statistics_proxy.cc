@@ -77,6 +77,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       total_byte_tracker_(100, 10u),  // bucket_interval_ms, bucket_count
       e2e_delay_max_ms_video_(-1),
       e2e_delay_max_ms_screenshare_(-1),
+      interframe_delay_max_ms_video_(-1),
+      interframe_delay_max_ms_screenshare_(-1),
       freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs),
       first_report_block_time_ms_(-1),
       avg_rtt_ms_(0),
@@ -209,6 +211,36 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
     RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.Screenshare.EndToEndDelayMaxInMs",
                                 e2e_delay_max_ms_screenshare);
   }
+
+  int interframe_delay_ms_screenshare =
+      interframe_delay_counter_screenshare_.Avg(kMinRequiredSamples);
+  if (interframe_delay_ms_screenshare != -1) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.Screenshare.InterframeDelayInMs",
+                               interframe_delay_ms_screenshare);
+  }
+
+  int interframe_delay_ms_video =
+      interframe_delay_counter_video_.Avg(kMinRequiredSamples);
+  if (interframe_delay_ms_video != -1) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.InterframeDelayInMs",
+                               interframe_delay_ms_video);
+  }
+
+  int interframe_delay_max_ms_screenshare =
+      interframe_delay_max_ms_screenshare_;
+  if (interframe_delay_max_ms_screenshare != -1) {
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.Screenshare.InterframeDelayMaxInMs",
+        interframe_delay_ms_screenshare);
+  }
+
+  int interframe_delay_max_ms_video = interframe_delay_max_ms_video_;
+  if (interframe_delay_max_ms_video != -1) {
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.InterframeDelayMaxInMs",
+        interframe_delay_ms_video);
+  }
+
 
   StreamDataCounters rtp = stats_.rtp_stats;
   StreamDataCounters rtx;
@@ -516,6 +548,22 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
   }
   last_content_type_ = content_type;
   decode_fps_estimator_.Update(1, now);
+  if (last_decoded_frame_time_ms_) {
+    int64_t interframe_delay_ms = now - *last_decoded_frame_time_ms_;
+    RTC_DCHECK_GE(interframe_delay_ms, 0);
+    if (last_content_type_ == VideoContentType::SCREENSHARE) {
+      interframe_delay_counter_screenshare_.Add(interframe_delay_ms);
+      if (interframe_delay_max_ms_screenshare_ < interframe_delay_ms) {
+        interframe_delay_max_ms_screenshare_ = interframe_delay_ms;
+      }
+    } else {
+      interframe_delay_counter_video_.Add(interframe_delay_ms);
+      if (interframe_delay_max_ms_video_ < interframe_delay_ms) {
+        interframe_delay_max_ms_video_ = interframe_delay_ms;
+      }
+    }
+  }
+  last_decoded_frame_time_ms_.emplace(now);
 }
 
 void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
