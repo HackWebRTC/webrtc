@@ -8,10 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/call/flexfec_receive_stream_impl.h"
+
 #include <stdint.h>
+#include <memory>
 
 #include "webrtc/base/array_view.h"
-#include "webrtc/call/flexfec_receive_stream_impl.h"
 #include "webrtc/call/rtp_stream_receiver_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
@@ -20,6 +22,7 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/utility/include/mock/mock_process_thread.h"
+#include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_transport.h"
@@ -27,6 +30,8 @@
 namespace webrtc {
 
 namespace {
+
+using ::testing::_;
 
 constexpr uint8_t kFlexfecPlType = 118;
 constexpr uint8_t kFlexfecSsrc[] = {0x00, 0x00, 0x00, 0x01};
@@ -77,12 +82,16 @@ TEST(FlexfecReceiveStreamConfigTest, IsCompleteAndEnabled) {
 class FlexfecReceiveStreamTest : public ::testing::Test {
  protected:
   FlexfecReceiveStreamTest()
-      : config_(CreateDefaultConfig(&rtcp_send_transport_)),
-        receive_stream_(&rtp_stream_receiver_controller_,
-                        config_,
-                        &recovered_packet_receiver_,
-                        &rtt_stats_,
-                        &process_thread_) {}
+      : config_(CreateDefaultConfig(&rtcp_send_transport_)) {
+    EXPECT_CALL(process_thread_, RegisterModule(_, _)).Times(1);
+    receive_stream_ = rtc::MakeUnique<FlexfecReceiveStreamImpl>(
+        &rtp_stream_receiver_controller_, config_, &recovered_packet_receiver_,
+        &rtt_stats_, &process_thread_);
+  }
+
+  ~FlexfecReceiveStreamTest() {
+    EXPECT_CALL(process_thread_, DeRegisterModule(_)).Times(1);
+  }
 
   MockTransport rtcp_send_transport_;
   FlexfecReceiveStream::Config config_;
@@ -90,14 +99,14 @@ class FlexfecReceiveStreamTest : public ::testing::Test {
   MockRtcpRttStats rtt_stats_;
   MockProcessThread process_thread_;
   RtpStreamReceiverController rtp_stream_receiver_controller_;
-  FlexfecReceiveStreamImpl receive_stream_;
+  std::unique_ptr<FlexfecReceiveStreamImpl> receive_stream_;
 };
 
 TEST_F(FlexfecReceiveStreamTest, ConstructDestruct) {}
 
 TEST_F(FlexfecReceiveStreamTest, StartStop) {
-  receive_stream_.Start();
-  receive_stream_.Stop();
+  receive_stream_->Start();
+  receive_stream_->Stop();
 }
 
 // Create a FlexFEC packet that protects a single media packet and ensure
@@ -136,6 +145,7 @@ TEST_F(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
   // clang-format on
 
   testing::StrictMock<MockRecoveredPacketReceiver> recovered_packet_receiver;
+  EXPECT_CALL(process_thread_, RegisterModule(_, _)).Times(1);
   FlexfecReceiveStreamImpl receive_stream(&rtp_stream_receiver_controller_,
                                           config_, &recovered_packet_receiver,
                                           &rtt_stats_, &process_thread_);
@@ -145,10 +155,12 @@ TEST_F(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
 
   // Call back after being started.
   receive_stream.Start();
-  EXPECT_CALL(
-      recovered_packet_receiver,
-      OnRecoveredPacket(::testing::_, kRtpHeaderSize + kPayloadLength[1]));
+  EXPECT_CALL(recovered_packet_receiver,
+              OnRecoveredPacket(_, kRtpHeaderSize + kPayloadLength[1]));
   receive_stream.OnRtpPacket(ParsePacket(kFlexfecPacket));
+
+  // Tear-down
+  EXPECT_CALL(process_thread_, DeRegisterModule(_)).Times(1);
 }
 
 }  // namespace webrtc
