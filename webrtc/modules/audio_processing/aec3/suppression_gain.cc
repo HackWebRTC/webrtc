@@ -158,7 +158,7 @@ void GainToNoAudibleEcho(
     std::array<float, kFftLengthBy2Plus1>* gain) {
   constexpr float kEchoMaskingMargin = 1.f / 100.f;
   const float nearend_masking_margin =
-      low_noise_render ? 2.f : (saturated_echo ? 0.001f : 0.01f);
+      low_noise_render ? 0.1f : (saturated_echo ? 0.001f : 0.01f);
 
   for (size_t k = 0; k < gain->size(); ++k) {
     RTC_DCHECK_LE(0.f, nearend_masking_margin * nearend[k]);
