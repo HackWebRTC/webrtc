@@ -268,7 +268,6 @@ class AudioProcessing : public rtc::RefCountInterface {
     // does not yet have the desired behavior.
     struct EchoCanceller3 {
       bool enabled = false;
-      float echo_decay = 0.f;
     } echo_canceller3;
 
     // Enables the next generation AGC functionality. This feature replaces the

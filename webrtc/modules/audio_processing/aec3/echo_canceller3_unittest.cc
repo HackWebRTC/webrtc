@@ -684,17 +684,7 @@ TEST(EchoCanceller3Messaging, EchoLeakage) {
 
 TEST(EchoCanceller3, ConfigValidation) {
   AudioProcessing::Config::EchoCanceller3 config;
-
-  config.echo_decay = 0.f;
   EXPECT_TRUE(EchoCanceller3::Validate(config));
-  config.echo_decay = 0.9f;
-  EXPECT_TRUE(EchoCanceller3::Validate(config));
-  config.echo_decay = -0.1f;
-  EXPECT_FALSE(EchoCanceller3::Validate(config));
-  config.echo_decay = 1.0f;
-  EXPECT_FALSE(EchoCanceller3::Validate(config));
-  config.echo_decay = 1.1f;
-  EXPECT_FALSE(EchoCanceller3::Validate(config));
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)

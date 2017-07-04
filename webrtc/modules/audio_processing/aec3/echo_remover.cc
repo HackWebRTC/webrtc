@@ -104,7 +104,7 @@ EchoRemoverImpl::EchoRemoverImpl(
       suppression_gain_(optimization_),
       cng_(optimization_),
       suppression_filter_(sample_rate_hz_),
-      aec_state_(config.echo_decay) {
+      aec_state_(0.8f) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
 }
 

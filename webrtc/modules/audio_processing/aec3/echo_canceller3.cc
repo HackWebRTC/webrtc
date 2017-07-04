@@ -334,7 +334,7 @@ std::string EchoCanceller3::ToString(
 
 bool EchoCanceller3::Validate(
     const AudioProcessing::Config::EchoCanceller3& config) {
-  return (config.echo_decay >= 0.f && config.echo_decay < 1.f);
+  return true;
 }
 
 void EchoCanceller3::EmptyRenderQueue() {
