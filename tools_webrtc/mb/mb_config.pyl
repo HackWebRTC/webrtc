@@ -200,7 +200,7 @@
   'configs': {
     # Linux, Mac and Windows
     'gcc_release_bot_x64': [
-      'gn', 'gcc', 'release_bot', 'x64', 'no_rtc_tests'
+      'gn', 'gcc', 'release_bot', 'x64', 'no_rtc_tests', 'use_default_libcxx'
     ],
     # TOOD(kjellander): Restore Goma for this when crbug.com/726706 is fixed.
     'debug_bot_arm': [
@@ -228,7 +228,8 @@
       'gn', 'ubsan', 'clang', 'openh264_release_bot', 'x64'
     ],
     'ubsan_vptr_clang_release_bot_x64': [
-      'gn', 'ubsan_vptr', 'clang', 'openh264_release_bot', 'x64'
+      'gn', 'ubsan_vptr', 'clang', 'openh264_release_bot', 'x64',
+      'use_default_libcxx'
     ],
     'debug_bot_x86': [
       'gn', 'openh264_debug_bot', 'x86'
@@ -256,7 +257,7 @@
       'x64', 'no_rtc_tests'
     ],
     'memcheck_release_bot_x64': [
-      'memcheck', 'gn', 'openh264_release_bot', 'x64'
+      'memcheck', 'gn', 'openh264_release_bot', 'x64', 'use_default_libcxx'
     ],
 
     # iOS
@@ -472,5 +473,9 @@
     'x86': {
       'gn_args': 'target_cpu="x86"',
     },
+
+    'use_default_libcxx': {
+      'gn_args': 'use_custom_libcxx=false',
+    }
   },
 }
