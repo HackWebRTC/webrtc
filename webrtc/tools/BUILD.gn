@@ -1,0 +1,71 @@
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+# TODO(kjellander): Remove when bugs.webrtc.org/7855 is completed.
+import("../webrtc.gni")
+
+group("tools") {
+  # This target shall build all targets in tools/.
+  testonly = true
+
+  public_deps = [
+    "../rtc_tools",
+  ]
+}
+
+group("command_line_parser") {
+  public_deps = [ "../rtc_tools:command_line_parser" ]
+}
+
+group("video_quality_analysis") {
+  public_deps = [ "../rtc_tools:video_quality_analysis" ]
+}
+
+group("frame_analyzer") {
+  public_deps = [ "../rtc_tools:frame_analyzer" ]
+}
+
+group("psnr_ssim_analyzer") {
+  public_deps = [ "../rtc_tools:psnr_ssim_analyzer" ]
+}
+
+group("reference_less_video_analysis_lib") {
+  public_deps = [ "../rtc_tools:reference_less_video_analysis_lib" ]
+}
+
+group("reference_less_video_analysis") {
+  public_deps = [ "../rtc_tools:reference_less_video_analysis" ]
+}
+
+group("rgba_to_i420_converter") {
+  public_deps = [ "../rtc_tools:rgba_to_i420_converter" ]
+}
+
+group("frame_editing_lib") {
+  public_deps = [ "../rtc_tools:frame_editing_lib" ]
+}
+
+group("frame_editor") {
+  public_deps = [ "../rtc_tools:frame_editor" ]
+}
+
+if (rtc_include_internal_audio_device) {
+  group("force_mic_volume_max") {
+    public_deps = [ "../rtc_tools:force_mic_volume_max" ]
+  }
+  }
+
+if (rtc_enable_protobuf) {
+  group("chart_proto") {
+    public_deps = [ "../rtc_tools:chart_proto" ]
+  }
+
+  group("event_log_visualizer_utils") {
+    public_deps = [ "../rtc_tools:event_log_visualizer_utils" ]
+  }
+}
