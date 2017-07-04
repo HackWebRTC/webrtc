@@ -451,9 +451,6 @@ public class AppRTCAudioManager {
         } else if (type == AudioDeviceInfo.TYPE_USB_DEVICE) {
           Log.d(TAG, "hasWiredHeadset: found USB audio device");
           return true;
-        } else if (type == AudioDeviceInfo.TYPE_USB_HEADSET) {
-          Log.d(TAG, "hasWiredHeadset: found USB headset");
-          return true;
         }
       }
       return false;
