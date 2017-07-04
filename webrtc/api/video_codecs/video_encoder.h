@@ -67,12 +67,6 @@ class EncodedImageCallback {
 
 class VideoEncoder {
  public:
-  enum EncoderType {
-    kH264,
-    kVp8,
-    kVp9,
-    kUnsupportedCodec,
-  };
   struct QpThresholds {
     QpThresholds(int l, int h) : low(l), high(h) {}
     QpThresholds() : low(-1), high(-1) {}
@@ -87,11 +81,6 @@ class VideoEncoder {
     const bool enabled;
     const rtc::Optional<QpThresholds> thresholds;
   };
-  static VideoEncoder* Create(EncoderType codec_type);
-  // Returns true if this type of encoder can be created using
-  // VideoEncoder::Create.
-  static bool IsSupportedSoftware(EncoderType codec_type);
-  static EncoderType CodecToEncoderType(VideoCodecType codec_type);
 
   static VideoCodecVP8 GetDefaultVp8Settings();
   static VideoCodecVP9 GetDefaultVp9Settings();
