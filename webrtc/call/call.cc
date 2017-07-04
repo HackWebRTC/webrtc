@@ -325,6 +325,10 @@ class Call : public webrtc::Call,
   RateCounter received_audio_bytes_per_second_counter_;
   RateCounter received_video_bytes_per_second_counter_;
   RateCounter received_rtcp_bytes_per_second_counter_;
+  rtc::Optional<int64_t> first_received_rtp_audio_ms_;
+  rtc::Optional<int64_t> last_received_rtp_audio_ms_;
+  rtc::Optional<int64_t> first_received_rtp_video_ms_;
+  rtc::Optional<int64_t> last_received_rtp_video_ms_;
 
   // TODO(holmer): Remove this lock once BitrateController no longer calls
   // OnNetworkChanged from multiple threads.
@@ -530,6 +534,16 @@ void Call::UpdateSendHistograms(int64_t first_sent_packet_ms) {
 }
 
 void Call::UpdateReceiveHistograms() {
+  if (first_received_rtp_audio_ms_) {
+    RTC_HISTOGRAM_COUNTS_100000(
+        "WebRTC.Call.TimeReceivingAudioRtpPacketsInSeconds",
+        (*last_received_rtp_audio_ms_ - *first_received_rtp_audio_ms_) / 1000);
+  }
+  if (first_received_rtp_video_ms_) {
+    RTC_HISTOGRAM_COUNTS_100000(
+        "WebRTC.Call.TimeReceivingVideoRtpPacketsInSeconds",
+        (*last_received_rtp_video_ms_ - *first_received_rtp_video_ms_) / 1000);
+  }
   const int kMinRequiredPeriodicSamples = 5;
   AggregatedStats video_bytes_per_sec =
       received_video_bytes_per_second_counter_.GetStats();
@@ -1317,6 +1331,11 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_audio_bytes_per_second_counter_.Add(static_cast<int>(length));
       event_log_->LogRtpHeader(kIncomingPacket, packet, length);
+      const int64_t arrival_time_ms = parsed_packet->arrival_time_ms();
+      if (!first_received_rtp_audio_ms_) {
+        first_received_rtp_audio_ms_.emplace(arrival_time_ms);
+      }
+      last_received_rtp_audio_ms_.emplace(arrival_time_ms);
       return DELIVERY_OK;
     }
   } else if (media_type == MediaType::VIDEO) {
@@ -1324,6 +1343,11 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_video_bytes_per_second_counter_.Add(static_cast<int>(length));
       event_log_->LogRtpHeader(kIncomingPacket, packet, length);
+      const int64_t arrival_time_ms = parsed_packet->arrival_time_ms();
+      if (!first_received_rtp_video_ms_) {
+        first_received_rtp_video_ms_.emplace(arrival_time_ms);
+      }
+      last_received_rtp_video_ms_.emplace(arrival_time_ms);
       return DELIVERY_OK;
     }
   }
