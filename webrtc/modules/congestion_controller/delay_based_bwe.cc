@@ -201,6 +201,18 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
         rate_control_.TimeToReduceFurther(now_ms, *acked_bitrate_bps)) {
       result.updated = UpdateEstimate(now_ms, acked_bitrate_bps, overusing,
                                       &result.target_bitrate_bps);
+    } else if (!acked_bitrate_bps && rate_control_.ValidEstimate() &&
+               rate_control_.TimeToReduceFurther(
+                   now_ms, rate_control_.LatestEstimate() / 2 - 1)) {
+      // Overusing before we have a measured acknowledged bitrate. We check
+      // TimeToReduceFurther (with a fake acknowledged bitrate) to avoid
+      // reducing too often.
+      // TODO(tschumim): Improve this and/or the acknowledged bitrate estimator
+      // so that we (almost) always have a bitrate estimate.
+      rate_control_.SetEstimate(rate_control_.LatestEstimate() / 2, now_ms);
+      result.updated = true;
+      result.probe = false;
+      result.target_bitrate_bps = rate_control_.LatestEstimate();
     }
   } else {
     if (probe_bitrate_bps) {

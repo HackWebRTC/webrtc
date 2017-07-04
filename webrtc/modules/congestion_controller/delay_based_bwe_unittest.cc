@@ -194,4 +194,41 @@ TEST_F(DelayBasedBweTest, TestLongTimeoutAndWrap) {
   TestWrappingHelper(10 * 64);
 }
 
+TEST_F(DelayBasedBweTest, TestInitialOveruse) {
+  const uint32_t kStartBitrate = 300e3;
+  const uint32_t kInitialCapacityBps = 200e3;
+  const uint32_t kDummySsrc = 0;
+  // High FPS to ensure that we send a lot of packets in a short time.
+  const int kFps = 90;
+
+  stream_generator_->AddStream(new test::RtpStream(kFps, kStartBitrate));
+  stream_generator_->set_capacity_bps(kInitialCapacityBps);
+
+  // Needed to initialize the AimdRateControl.
+  bitrate_estimator_->SetStartBitrate(kStartBitrate);
+
+  // Produce 30 frames (in 1/3 second) and give them to the estimator.
+  uint32_t bitrate_bps = kStartBitrate;
+  bool seen_overuse = false;
+  for (int i = 0; i < 30; ++i) {
+    bool overuse = GenerateAndProcessFrame(kDummySsrc, bitrate_bps);
+    // The purpose of this test is to ensure that we back down even if we don't
+    // have any acknowledged bitrate estimate yet. Hence, if the test works
+    // as expected, we should not have a measured bitrate yet.
+    EXPECT_FALSE(acknowledged_bitrate_estimator_->bitrate_bps().has_value());
+    if (overuse) {
+      EXPECT_TRUE(bitrate_observer_.updated());
+      EXPECT_NEAR(bitrate_observer_.latest_bitrate(), kStartBitrate / 2, 15000);
+      bitrate_bps = bitrate_observer_.latest_bitrate();
+      seen_overuse = true;
+      break;
+    } else if (bitrate_observer_.updated()) {
+      bitrate_bps = bitrate_observer_.latest_bitrate();
+      bitrate_observer_.Reset();
+    }
+  }
+  EXPECT_TRUE(seen_overuse);
+  EXPECT_NEAR(bitrate_observer_.latest_bitrate(), kStartBitrate / 2, 15000);
+}
+
 }  // namespace webrtc
