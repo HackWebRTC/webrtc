@@ -22,6 +22,8 @@
 using ::testing::Return;
 using ::testing::StrictMock;
 using ::testing::_;
+using ::testing::InSequence;
+using ::testing::MockFunction;
 
 namespace webrtc {
 
@@ -314,26 +316,40 @@ TEST(PacketBuffer, DiscardPackets) {
   // Discard them one by one and make sure that the right packets are at the
   // front of the buffer.
   constexpr int kDiscardPackets = 5;
+
+  // Interleaving the EXPECT_CALL sequence with expectations on the MockFunction
+  // check ensures that exactly one call to PacketsDiscarded happens in each
+  // DiscardNextPacket call.
+  InSequence s;
+  MockFunction<void(int check_point_id)> check;
   for (int i = 0; i < kDiscardPackets; ++i) {
     uint32_t ts;
     EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&ts));
     EXPECT_EQ(current_ts, ts);
-    EXPECT_CALL(mock_stats, PacketsDiscarded(1)).Times(1);
+    EXPECT_CALL(mock_stats, PacketsDiscarded(1));
+    EXPECT_CALL(check, Call(i));
     EXPECT_EQ(PacketBuffer::kOK, buffer.DiscardNextPacket(&mock_stats));
     current_ts += ts_increment;
+    check.Call(i);
   }
 
   constexpr int kRemainingPackets = kTotalPackets - kDiscardPackets;
-  // This will not discard any packets because the oldest packet is newer than
-  // the indicated horizon_samples.
+  // This will discard all remaining packets but one. The oldest packet is older
+  // than the indicated horizon_samples, and will thus be left in the buffer.
+  constexpr size_t kSkipPackets = 1;
+  EXPECT_CALL(mock_stats, PacketsDiscarded(kRemainingPackets - kSkipPackets));
+  EXPECT_CALL(check, Call(17));  // Arbitrary id number.
   buffer.DiscardOldPackets(start_ts + kTotalPackets * ts_increment,
                            kRemainingPackets * ts_increment, &mock_stats);
+  check.Call(17);  // Same arbitrary id number.
+
+  EXPECT_EQ(kSkipPackets, buffer.NumPacketsInBuffer());
   uint32_t ts;
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&ts));
   EXPECT_EQ(current_ts, ts);
 
   // Discard all remaining packets.
-  EXPECT_CALL(mock_stats, PacketsDiscarded(1)).Times(kRemainingPackets);
+  EXPECT_CALL(mock_stats, PacketsDiscarded(kSkipPackets));
   buffer.DiscardAllOldPackets(start_ts + kTotalPackets * ts_increment,
                               &mock_stats);
 

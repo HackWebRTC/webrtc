@@ -221,15 +221,13 @@ int PacketBuffer::DiscardNextPacket(StatisticsCalculator* stats) {
 void PacketBuffer::DiscardOldPackets(uint32_t timestamp_limit,
                                      uint32_t horizon_samples,
                                      StatisticsCalculator* stats) {
-  // TODO(minyue): the following implementation is wrong. It won't discard
-  // old packets if the buffer_.front() is newer than timestamp_limit -
-  // horizon_samples. https://bugs.chromium.org/p/webrtc/issues/detail?id=7937
-  while (!Empty() && timestamp_limit != buffer_.front().timestamp &&
-         IsObsoleteTimestamp(buffer_.front().timestamp, timestamp_limit,
-                             horizon_samples)) {
-    if (DiscardNextPacket(stats) != kOK) {
-      assert(false);  // Must be ok by design.
-    }
+  const size_t old_size = buffer_.size();
+  buffer_.remove_if([timestamp_limit, horizon_samples](const Packet& p) {
+    return timestamp_limit != p.timestamp &&
+           IsObsoleteTimestamp(p.timestamp, timestamp_limit, horizon_samples);
+  });
+  if (old_size > buffer_.size()) {
+    stats->PacketsDiscarded(old_size - buffer_.size());
   }
 }
 
