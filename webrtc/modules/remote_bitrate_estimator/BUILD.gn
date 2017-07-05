@@ -75,6 +75,7 @@ if (rtc_include_tests) {
       "test/estimators/bbr.cc",
       "test/estimators/bbr.h",
       "test/estimators/congestion_window.h",
+      "test/estimators/max_bandwidth_filter.cc",
       "test/estimators/max_bandwidth_filter.h",
       "test/estimators/min_rtt_filter.h",
       "test/estimators/nada.cc",

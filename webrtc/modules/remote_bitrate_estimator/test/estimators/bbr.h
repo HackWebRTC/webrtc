@@ -12,14 +12,10 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_BBR_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_BBR_H_
 
-#include <climits>
 #include <map>
 #include <memory>
-#include <utility>
 #include <vector>
 
-#include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 
 namespace webrtc {
@@ -30,7 +26,7 @@ class MinRttFilter;
 class CongestionWindow;
 class BbrBweSender : public BweSender {
  public:
-  BbrBweSender();
+  explicit BbrBweSender(Clock* clock);
   virtual ~BbrBweSender();
   enum Mode {
     // Startup phase.
@@ -64,8 +60,21 @@ class BbrBweSender : public BweSender {
   void TryExitingDrain(int64_t now);
   void EnterProbeBw(int64_t now);
   void EnterProbeRtt(int64_t now);
-  void TryExitingProbeRtt(int64_t now);
   void TryUpdatingCyclePhase(int64_t now);
+  void TryEnteringProbeRtt(int64_t now);
+  void TryExitingProbeRtt(int64_t now);
+  Clock* const clock_;
+  Mode mode_;
+  std::unique_ptr<MaxBandwidthFilter> max_bandwidth_filter_;
+  uint64_t round_count_;
+  uint64_t last_packet_sent_;
+  uint64_t round_trip_end_;
+  float pacing_gain_;
+  float congestion_window_gain_;
+
+  // If optimal bandwidth has been discovered and reached, (for example after
+  // Startup mode) set this variable to true.
+  bool full_bandwidth_reached_;
 };
 
 class BbrBweReceiver : public BweReceiver {
@@ -78,7 +87,6 @@ class BbrBweReceiver : public BweReceiver {
 
  private:
   SimulatedClock clock_;
-  std::vector<std::pair<uint64_t, int64_t>> packet_feedbacks_;
 };
 }  // namespace bwe
 }  // namespace testing

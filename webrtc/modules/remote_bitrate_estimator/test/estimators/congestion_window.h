@@ -12,17 +12,6 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_CONGESTION_WINDOW_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_CONGESTION_WINDOW_H_
 
-#include <climits>
-#include <list>
-#include <map>
-#include <memory>
-#include <utility>
-#include <vector>
-
-#include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
-
 namespace webrtc {
 namespace testing {
 namespace bwe {
@@ -39,10 +28,6 @@ class CongestionWindow {
   // Ack was received by sender, meaning
   // packet is no longer inflight.
   void AckReceived();
-
-  // Returnes whether or not data inflight has been under
-  // fixed value for past x rounds and y ms.
-  bool DataInflightDecreased();
 };
 }  // namespace bwe
 }  // namespace testing

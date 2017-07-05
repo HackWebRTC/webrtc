@@ -157,7 +157,7 @@ BbrBweFeedback::BbrBweFeedback(
     int flow_id,
     int64_t send_time_us,
     int64_t latest_send_time_ms,
-    const std::vector<std::pair<uint64_t, int64_t>>& packet_feedback_vector)
+    const std::vector<uint64_t>& packet_feedback_vector)
     : FeedbackPacket(flow_id, send_time_us, latest_send_time_ms),
       packet_feedback_vector_(packet_feedback_vector) {}
 
