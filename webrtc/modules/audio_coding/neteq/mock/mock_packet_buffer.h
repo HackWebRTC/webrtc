@@ -48,12 +48,13 @@ class MockPacketBuffer : public PacketBuffer {
       const Packet*());
   MOCK_METHOD0(GetNextPacket,
       rtc::Optional<Packet>());
-  MOCK_METHOD0(DiscardNextPacket,
-      int());
-  MOCK_METHOD2(DiscardOldPackets,
-      int(uint32_t timestamp_limit, uint32_t horizon_samples));
-  MOCK_METHOD1(DiscardAllOldPackets,
-      int(uint32_t timestamp_limit));
+  MOCK_METHOD1(DiscardNextPacket, int(StatisticsCalculator* stats));
+  MOCK_METHOD3(DiscardOldPackets,
+               void(uint32_t timestamp_limit,
+                    uint32_t horizon_samples,
+                    StatisticsCalculator* stats));
+  MOCK_METHOD2(DiscardAllOldPackets,
+               void(uint32_t timestamp_limit, StatisticsCalculator* stats));
   MOCK_CONST_METHOD0(NumPacketsInBuffer,
       size_t());
   MOCK_METHOD1(IncrementWaitingTimes,

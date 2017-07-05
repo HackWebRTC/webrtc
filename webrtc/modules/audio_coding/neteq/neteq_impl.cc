@@ -217,7 +217,7 @@ void NetEqImpl::SetCodecs(const std::map<int, SdpAudioFormat>& codecs) {
   const std::vector<int> changed_payload_types =
       decoder_database_->SetCodecs(codecs);
   for (const int pt : changed_payload_types) {
-    packet_buffer_->DiscardPacketsWithPayloadType(pt);
+    packet_buffer_->DiscardPacketsWithPayloadType(pt, &stats_);
   }
 }
 
@@ -268,7 +268,7 @@ int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
   rtc::CritScope lock(&crit_sect_);
   int ret = decoder_database_->Remove(rtp_payload_type);
   if (ret == DecoderDatabase::kOK || ret == DecoderDatabase::kDecoderNotFound) {
-    packet_buffer_->DiscardPacketsWithPayloadType(rtp_payload_type);
+    packet_buffer_->DiscardPacketsWithPayloadType(rtp_payload_type, &stats_);
     return kOK;
   }
   return kFail;
@@ -1063,7 +1063,8 @@ int NetEqImpl::GetDecision(Operations* operation,
   uint32_t end_timestamp = sync_buffer_->end_timestamp();
   if (!new_codec_) {
     const uint32_t five_seconds_samples = 5 * fs_hz_;
-    packet_buffer_->DiscardOldPackets(end_timestamp, five_seconds_samples);
+    packet_buffer_->DiscardOldPackets(end_timestamp, five_seconds_samples,
+                                      &stats_);
   }
   const Packet* packet = packet_buffer_->PeekNextPacket();
 
@@ -1084,12 +1085,12 @@ int NetEqImpl::GetDecision(Operations* operation,
            (end_timestamp >= packet->timestamp ||
             end_timestamp + generated_noise_samples > packet->timestamp)) {
       // Don't use this packet, discard it.
-      if (packet_buffer_->DiscardNextPacket() != PacketBuffer::kOK) {
+      if (packet_buffer_->DiscardNextPacket(&stats_) != PacketBuffer::kOK) {
         assert(false);  // Must be ok by design.
       }
       // Check buffer again.
       if (!new_codec_) {
-        packet_buffer_->DiscardOldPackets(end_timestamp, 5 * fs_hz_);
+        packet_buffer_->DiscardOldPackets(end_timestamp, 5 * fs_hz_, &stats_);
       }
       packet = packet_buffer_->PeekNextPacket();
     }
@@ -2003,7 +2004,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     // we could end up in the situation where we never decode anything, since
     // all incoming packets are considered too old but the buffer will also
     // never be flooded and flushed.
-    packet_buffer_->DiscardAllOldPackets(timestamp_);
+    packet_buffer_->DiscardAllOldPackets(timestamp_, &stats_);
   }
 
   return rtc::dchecked_cast<int>(extracted_samples);

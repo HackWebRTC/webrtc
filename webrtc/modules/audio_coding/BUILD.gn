@@ -2114,6 +2114,7 @@ if (rtc_include_tests) {
       "neteq/mock/mock_external_decoder_pcm16b.h",
       "neteq/mock/mock_packet_buffer.h",
       "neteq/mock/mock_red_payload_splitter.h",
+      "neteq/mock/mock_statistics_calculator.h",
       "neteq/nack_tracker_unittest.cc",
       "neteq/neteq_external_decoder_unittest.cc",
       "neteq/neteq_impl_unittest.cc",

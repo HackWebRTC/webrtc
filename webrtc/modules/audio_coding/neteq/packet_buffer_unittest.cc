@@ -10,15 +10,17 @@
 
 // Unit tests for PacketBuffer class.
 
+#include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
+#include "webrtc/modules/audio_coding/neteq/mock/mock_statistics_calculator.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
-#include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 
 using ::testing::Return;
+using ::testing::StrictMock;
 using ::testing::_;
 
 namespace webrtc {
@@ -299,22 +301,42 @@ TEST(PacketBuffer, DiscardPackets) {
   PacketList list;
   const int payload_len = 10;
 
+  constexpr int kTotalPackets = 10;
   // Insert 10 small packets.
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < kTotalPackets; ++i) {
     buffer.InsertPacket(gen.NextPacket(payload_len));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
 
+  StrictMock<MockStatisticsCalculator> mock_stats;
+  uint32_t current_ts = start_ts;
+
   // Discard them one by one and make sure that the right packets are at the
   // front of the buffer.
-  uint32_t current_ts = start_ts;
-  for (int i = 0; i < 10; ++i) {
+  constexpr int kDiscardPackets = 5;
+  for (int i = 0; i < kDiscardPackets; ++i) {
     uint32_t ts;
     EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&ts));
     EXPECT_EQ(current_ts, ts);
-    EXPECT_EQ(PacketBuffer::kOK, buffer.DiscardNextPacket());
+    EXPECT_CALL(mock_stats, PacketsDiscarded(1)).Times(1);
+    EXPECT_EQ(PacketBuffer::kOK, buffer.DiscardNextPacket(&mock_stats));
     current_ts += ts_increment;
   }
+
+  constexpr int kRemainingPackets = kTotalPackets - kDiscardPackets;
+  // This will not discard any packets because the oldest packet is newer than
+  // the indicated horizon_samples.
+  buffer.DiscardOldPackets(start_ts + kTotalPackets * ts_increment,
+                           kRemainingPackets * ts_increment, &mock_stats);
+  uint32_t ts;
+  EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&ts));
+  EXPECT_EQ(current_ts, ts);
+
+  // Discard all remaining packets.
+  EXPECT_CALL(mock_stats, PacketsDiscarded(1)).Times(kRemainingPackets);
+  buffer.DiscardAllOldPackets(start_ts + kTotalPackets * ts_increment,
+                              &mock_stats);
+
   EXPECT_TRUE(buffer.Empty());
 }
 
@@ -452,8 +474,12 @@ TEST(PacketBuffer, Failures) {
             buffer->NextHigherTimestamp(0, &temp_ts));
   EXPECT_EQ(NULL, buffer->PeekNextPacket());
   EXPECT_FALSE(buffer->GetNextPacket());
-  EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->DiscardNextPacket());
-  EXPECT_EQ(0, buffer->DiscardAllOldPackets(0));  // 0 packets discarded.
+
+  StrictMock<MockStatisticsCalculator> mock_stats;
+  // Discarding packets will not invoke mock_stats.PacketDiscarded() because the
+  // packet buffer is empty.
+  EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->DiscardNextPacket(&mock_stats));
+  buffer->DiscardAllOldPackets(0, &mock_stats);
 
   // Insert one packet to make the buffer non-empty.
   EXPECT_EQ(PacketBuffer::kOK,
