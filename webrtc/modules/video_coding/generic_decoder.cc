@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/modules/video_coding/generic_decoder.h"
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
-#include "webrtc/modules/video_coding/generic_decoder.h"
 #include "webrtc/modules/video_coding/internal_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -156,20 +157,26 @@ VCMGenericDecoder::VCMGenericDecoder(VideoDecoder* decoder, bool isExternal)
     : _callback(NULL),
       _frameInfos(),
       _nextFrameInfoIdx(0),
-      _decoder(decoder),
+      decoder_(decoder),
       _codecType(kVideoCodecUnknown),
       _isExternal(isExternal),
-      _keyFrameDecoded(false),
-      _last_keyframe_content_type(VideoContentType::UNSPECIFIED) {}
+      _last_keyframe_content_type(VideoContentType::UNSPECIFIED) {
+  RTC_DCHECK(decoder_);
+}
 
-VCMGenericDecoder::~VCMGenericDecoder() {}
+VCMGenericDecoder::~VCMGenericDecoder() {
+  decoder_->Release();
+  if (_isExternal)
+    decoder_.release();
+  RTC_DCHECK(_isExternal || !decoder_);
+}
 
 int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
                                       int32_t numberOfCores) {
   TRACE_EVENT0("webrtc", "VCMGenericDecoder::InitDecode");
   _codecType = settings->codecType;
 
-  return _decoder->InitDecode(settings, numberOfCores);
+  return decoder_->InitDecode(settings, numberOfCores);
 }
 
 int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
@@ -192,11 +199,11 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
 
     _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;
     const RTPFragmentationHeader dummy_header;
-    int32_t ret = _decoder->Decode(frame.EncodedImage(), frame.MissingFrame(),
+    int32_t ret = decoder_->Decode(frame.EncodedImage(), frame.MissingFrame(),
                                    &dummy_header,
                                    frame.CodecSpecific(), frame.RenderTimeMs());
 
-    _callback->OnDecoderImplementationName(_decoder->ImplementationName());
+    _callback->OnDecoderImplementationName(decoder_->ImplementationName());
     if (ret < WEBRTC_VIDEO_CODEC_OK) {
         LOG(LS_WARNING) << "Failed to decode frame with timestamp "
                         << frame.TimeStamp() << ", error code: " << ret;
@@ -210,22 +217,14 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
     return ret;
 }
 
-int32_t VCMGenericDecoder::Release() {
-  return _decoder->Release();
-}
-
 int32_t VCMGenericDecoder::RegisterDecodeCompleteCallback(
     VCMDecodedFrameCallback* callback) {
   _callback = callback;
-  return _decoder->RegisterDecodeCompleteCallback(callback);
-}
-
-bool VCMGenericDecoder::External() const {
-  return _isExternal;
+  return decoder_->RegisterDecodeCompleteCallback(callback);
 }
 
 bool VCMGenericDecoder::PrefersLateDecoding() const {
-  return _decoder->PrefersLateDecoding();
+  return decoder_->PrefersLateDecoding();
 }
 
 }  // namespace webrtc
