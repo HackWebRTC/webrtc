@@ -27,12 +27,6 @@ class MockDebugDumpWriter : public DebugDumpWriter {
   MOCK_METHOD2(DumpNetworkMetrics,
                void(const Controller::NetworkMetrics& metrics,
                     int64_t timestamp));
-#if WEBRTC_ENABLE_PROTOBUF
-  MOCK_METHOD2(DumpControllerManagerConfig,
-               void(const audio_network_adaptor::config::ControllerManager&
-                        controller_manager_config,
-                    int64_t timestamp));
-#endif
 };
 
 }  // namespace webrtc
