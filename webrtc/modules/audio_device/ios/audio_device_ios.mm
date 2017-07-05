@@ -245,6 +245,7 @@ int32_t AudioDeviceIOS::StartPlayout() {
   }
   rtc::AtomicOps::ReleaseStore(&playing_, 1);
   num_playout_callbacks_ = 0;
+  num_detected_playout_glitches_ = 0;
   return 0;
 }
 
@@ -263,6 +264,7 @@ int32_t AudioDeviceIOS::StopPlayout() {
   // Derive average number of calls to OnGetPlayoutData() between detected
   // audio glitches and add the result to a histogram.
   int average_number_of_playout_callbacks_between_glitches = 100000;
+  RTC_DCHECK_GE(num_playout_callbacks_, num_detected_playout_glitches_);
   if (num_detected_playout_glitches_ > 0) {
     average_number_of_playout_callbacks_between_glitches =
         num_playout_callbacks_ / num_detected_playout_glitches_;
