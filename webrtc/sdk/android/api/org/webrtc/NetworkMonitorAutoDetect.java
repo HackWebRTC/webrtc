@@ -590,8 +590,13 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
   }
 
   List<NetworkInformation> getActiveNetworkList() {
+    List<NetworkInformation> connectivityManagerList =
+        connectivityManagerDelegate.getActiveNetworkList();
+    if (connectivityManagerList == null) {
+      return null;
+    }
     ArrayList<NetworkInformation> result =
-        new ArrayList<NetworkInformation>(connectivityManagerDelegate.getActiveNetworkList());
+        new ArrayList<NetworkInformation>(connectivityManagerList);
     if (wifiDirectManagerDelegate != null) {
       result.addAll(wifiDirectManagerDelegate.getActiveNetworkList());
     }
