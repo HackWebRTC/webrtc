@@ -136,6 +136,34 @@ TEST_F(FullStackTest, ForemanCifPlr5Flexfec) {
   RunTest(foreman_cif);
 }
 
+TEST_F(FullStackTest, ForemanCif500kbpsPlr3Flexfec) {
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true,  352,          288, 30, 30000, 500000, 2000000,
+                       false, "VP8",        1,   0,  0,     false,  true,
+                       "",    "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_500kbps_delay_50_0_plr_3_flexfec", 0.0,
+                          0.0, kFullStackTestDurationSecs};
+  foreman_cif.pipe.loss_percent = 3;
+  foreman_cif.pipe.link_capacity_kbps = 500;
+  foreman_cif.pipe.queue_delay_ms = 50;
+  RunTest(foreman_cif);
+}
+
+TEST_F(FullStackTest, ForemanCif500kbpsPlr3Ulpfec) {
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true,  352,          288, 30, 30000, 500000, 2000000,
+                       false, "VP8",        1,   0,  0,     true,   false,
+                       "",    "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_500kbps_delay_50_0_plr_3_ulpfec", 0.0,
+                          0.0, kFullStackTestDurationSecs};
+  foreman_cif.pipe.loss_percent = 3;
+  foreman_cif.pipe.link_capacity_kbps = 500;
+  foreman_cif.pipe.queue_delay_ms = 50;
+  RunTest(foreman_cif);
+}
+
 #if defined(WEBRTC_USE_H264)
 TEST_F(FullStackTest, ForemanCifWithoutPacketlossH264) {
   // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.

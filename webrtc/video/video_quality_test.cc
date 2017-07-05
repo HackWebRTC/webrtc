@@ -155,6 +155,7 @@ class VideoAnalyzer : public PacketReceiver,
                 Clock* clock)
       : transport_(transport),
         receiver_(nullptr),
+        call_(nullptr),
         send_stream_(nullptr),
         receive_stream_(nullptr),
         captured_frame_forwarder_(this, clock),
@@ -168,6 +169,7 @@ class VideoAnalyzer : public PacketReceiver,
         selected_tl_(selected_tl),
         pre_encode_proxy_(this),
         encode_timing_proxy_(this),
+        last_fec_bytes_(0),
         frames_to_process_(duration_frames),
         frames_recorded_(0),
         frames_processed_(0),
@@ -228,6 +230,12 @@ class VideoAnalyzer : public PacketReceiver,
       captured_frame_forwarder_.SetSource(video_capturer);
     rtc::VideoSinkWants wants;
     video_capturer->AddOrUpdateSink(InputInterface(), wants);
+  }
+
+  void SetCall(Call* call) {
+    rtc::CritScope lock(&crit_);
+    RTC_DCHECK(!call_);
+    call_ = call;
   }
 
   void SetSendStream(VideoSendStream* stream) {
@@ -650,6 +658,9 @@ class VideoAnalyzer : public PacketReceiver,
     while (!done_.Wait(kSendStatsPollingIntervalMs)) {
       rtc::CritScope crit(&comparison_lock_);
 
+      Call::Stats call_stats = call_->GetStats();
+      send_bandwidth_bps_.AddSample(call_stats.send_bandwidth_bps);
+
       VideoSendStream::Stats send_stats = send_stream_->GetStats();
       // It's not certain that we yet have estimates for any of these stats.
       // Check that they are positive before mixing them in.
@@ -661,6 +672,13 @@ class VideoAnalyzer : public PacketReceiver,
         encode_usage_percent_.AddSample(send_stats.encode_usage_percent);
       if (send_stats.media_bitrate_bps > 0)
         media_bitrate_bps_.AddSample(send_stats.media_bitrate_bps);
+      size_t fec_bytes = 0;
+      for (auto kv : send_stats.substreams) {
+        fec_bytes += kv.second.rtp_stats.fec.payload_bytes +
+                     kv.second.rtp_stats.fec.padding_bytes;
+      }
+      fec_bitrate_bps_.AddSample((fec_bytes - last_fec_bytes_) * 8);
+      last_fec_bytes_ = fec_bytes;
 
       if (receive_stream_ != nullptr) {
         VideoReceiveStream::Stats receive_stats = receive_stream_->GetStats();
@@ -764,6 +782,8 @@ class VideoAnalyzer : public PacketReceiver,
     PrintResult("encode_frame_rate", encode_frame_rate_, " fps");
     PrintResult("encode_time", encode_time_ms_, " ms");
     PrintResult("media_bitrate", media_bitrate_bps_, " bps");
+    PrintResult("fec_bitrate", fec_bitrate_bps_, " bps");
+    PrintResult("send_bandwidth", send_bandwidth_bps_, " bps");
 
     if (receive_stream_ != nullptr) {
       PrintResult("decode_time", decode_time_ms_, " ms");
@@ -969,6 +989,7 @@ class VideoAnalyzer : public PacketReceiver,
     frames_.push_back(video_frame);
   }
 
+  Call* call_;
   VideoSendStream* send_stream_;
   VideoReceiveStream* receive_stream_;
   CapturedFrameForwarder captured_frame_forwarder_;
@@ -997,8 +1018,11 @@ class VideoAnalyzer : public PacketReceiver,
   test::Statistics decode_time_ms_ GUARDED_BY(comparison_lock_);
   test::Statistics decode_time_max_ms_ GUARDED_BY(comparison_lock_);
   test::Statistics media_bitrate_bps_ GUARDED_BY(comparison_lock_);
+  test::Statistics fec_bitrate_bps_ GUARDED_BY(comparison_lock_);
+  test::Statistics send_bandwidth_bps_ GUARDED_BY(comparison_lock_);
   test::Statistics memory_usage_ GUARDED_BY(comparison_lock_);
 
+  size_t last_fec_bytes_;
 
   const int frames_to_process_;
   int frames_recorded_;
@@ -1717,6 +1741,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       kSendRtxSsrcs[params_.ss.selected_stream],
       static_cast<size_t>(params_.ss.selected_stream), params.ss.selected_sl,
       params_.video.selected_tl, is_quick_test_enabled, clock_);
+  analyzer.SetCall(sender_call_.get());
   analyzer.SetReceiver(receiver_call_->Receiver());
   send_transport.SetReceiver(&analyzer);
   recv_transport.SetReceiver(sender_call_->Receiver());

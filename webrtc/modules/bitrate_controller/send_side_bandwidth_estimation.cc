@@ -209,8 +209,10 @@ void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
   if (first_report_time_ms_ == -1)
     first_report_time_ms_ = now_ms;
 
-  // Update RTT.
-  last_round_trip_time_ms_ = rtt;
+  // Update RTT if we were able to compute an RTT based on this RTCP.
+  // FlexFEC doesn't send RTCP SR, which means we won't be able to compute RTT.
+  if (rtt > 0)
+    last_round_trip_time_ms_ = rtt;
 
   // Check sequence number diff and weight loss report
   if (number_of_packets > 0) {
