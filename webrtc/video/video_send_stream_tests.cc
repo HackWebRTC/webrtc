@@ -32,13 +32,14 @@
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/configurable_frame_size_encoder.h"
 #include "webrtc/test/fake_texture_frame.h"
+#include "webrtc/test/field_trial.h"
 #include "webrtc/test/frame_generator.h"
+#include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtcp_packet_parser.h"
 #include "webrtc/test/testsupport/perf_test.h"
-#include "webrtc/test/field_trial.h"
 
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
@@ -3402,6 +3403,53 @@ TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
     uint32_t max_bitrate_bps_ GUARDED_BY(&crit_);
     bool first_packet_sent_ GUARDED_BY(&crit_);
     rtc::Event bitrate_changed_event_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SendsKeepAlive) {
+  const int kTimeoutMs = 50;  // Really short timeout for testing.
+  const int kPayloadType = 20;
+
+  class KeepaliveObserver : public test::SendTest {
+   public:
+    KeepaliveObserver() : SendTest(kDefaultTimeoutMs) {}
+
+   private:
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+
+      if (header.payloadType != kPayloadType) {
+        // The video stream has started. Stop it now.
+        if (capturer_)
+          capturer_->Stop();
+      } else {
+        observation_complete_.Set();
+      }
+
+      return SEND_PACKET;
+    }
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.keep_alive.timeout_interval_ms = kTimeoutMs;
+      send_config->rtp.keep_alive.payload_type = kPayloadType;
+    }
+
+    void PerformTest() override {
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for keep-alive packet.";
+    }
+
+    void OnFrameGeneratorCapturerCreated(
+        test::FrameGeneratorCapturer* frame_generator_capturer) override {
+      capturer_ = frame_generator_capturer;
+    }
+
+    test::FrameGeneratorCapturer* capturer_ = nullptr;
   } test;
 
   RunBaseTest(&test);

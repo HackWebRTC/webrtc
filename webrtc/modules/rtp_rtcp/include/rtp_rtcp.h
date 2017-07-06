@@ -19,6 +19,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/deprecation.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -92,6 +93,7 @@ class RtpRtcp : public Module {
     SendPacketObserver* send_packet_observer = nullptr;
     RateLimiter* retransmission_rate_limiter = nullptr;
     OverheadObserver* overhead_observer = nullptr;
+    RtpKeepAliveConfig keepalive_config;
 
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);

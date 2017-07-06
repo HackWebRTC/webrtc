@@ -205,6 +205,9 @@ class RTPSender {
   void SetRtxRtpState(const RtpState& rtp_state);
   RtpState GetRtxRtpState() const;
 
+  int64_t LastTimestampTimeMs() const;
+  void SendKeepAlive(uint8_t payload_type);
+
  protected:
   int32_t CheckPayloadType(int8_t payload_type, RtpVideoCodecTypes* video_type);
 

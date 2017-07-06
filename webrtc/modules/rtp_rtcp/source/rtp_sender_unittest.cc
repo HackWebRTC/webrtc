@@ -57,6 +57,7 @@ const uint8_t kPayloadData[] = {47, 11, 32, 93, 89};
 
 using ::testing::_;
 using ::testing::ElementsAreArray;
+using ::testing::Invoke;
 
 uint64_t ConvertMsToAbsSendTime(int64_t time_ms) {
   return (((time_ms << 18) + 500) / 1000) & 0x00ffffff;
@@ -1709,6 +1710,40 @@ TEST_P(RtpSenderTest, SendAudioPadding) {
   EXPECT_EQ(
       kMinPaddingSize,
       rtp_sender_->TimeToSendPadding(kMinPaddingSize - 5, PacedPacketInfo()));
+}
+
+TEST_P(RtpSenderTest, SendsKeepAlive) {
+  MockTransport transport;
+  rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport, nullptr,
+                                  nullptr, nullptr, nullptr, nullptr, nullptr,
+                                  nullptr, &mock_rtc_event_log_, nullptr,
+                                  &retransmission_rate_limiter_, nullptr));
+  rtp_sender_->SetSendPayloadType(kPayload);
+  rtp_sender_->SetSequenceNumber(kSeqNum);
+  rtp_sender_->SetTimestampOffset(0);
+  rtp_sender_->SetSSRC(kSsrc);
+
+  const uint8_t kKeepalivePayloadType = 20;
+  RTC_CHECK_NE(kKeepalivePayloadType, kPayload);
+
+  EXPECT_CALL(transport, SendRtp(_, _, _))
+      .WillOnce(
+          Invoke([&kKeepalivePayloadType](const uint8_t* packet, size_t len,
+                                          const PacketOptions& options) {
+            webrtc::RTPHeader rtp_header;
+            RtpUtility::RtpHeaderParser parser(packet, len);
+            EXPECT_TRUE(parser.Parse(&rtp_header, nullptr));
+            EXPECT_FALSE(rtp_header.markerBit);
+            EXPECT_EQ(0U, rtp_header.paddingLength);
+            EXPECT_EQ(kKeepalivePayloadType, rtp_header.payloadType);
+            EXPECT_EQ(kSeqNum, rtp_header.sequenceNumber);
+            EXPECT_EQ(kSsrc, rtp_header.ssrc);
+            EXPECT_EQ(0u, len - rtp_header.headerLength);
+            return true;
+          }));
+
+  rtp_sender_->SendKeepAlive(kKeepalivePayloadType);
+  EXPECT_EQ(kSeqNum + 1, rtp_sender_->SequenceNumber());
 }
 
 INSTANTIATE_TEST_CASE_P(WithAndWithoutOverhead,

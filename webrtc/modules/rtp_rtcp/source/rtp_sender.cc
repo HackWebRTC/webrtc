@@ -1289,4 +1289,24 @@ void RTPSender::UpdateRtpOverhead(const RtpPacketToSend& packet) {
   overhead_observer_->OnOverheadChanged(overhead_bytes_per_packet);
 }
 
+int64_t RTPSender::LastTimestampTimeMs() const {
+  rtc::CritScope lock(&send_critsect_);
+  return last_timestamp_time_ms_;
+}
+
+void RTPSender::SendKeepAlive(uint8_t payload_type) {
+  std::unique_ptr<RtpPacketToSend> packet = AllocatePacket();
+  packet->SetPayloadType(payload_type);
+  // Set marker bit and timestamps in the same manner as plain padding packets.
+  packet->SetMarker(false);
+  {
+    rtc::CritScope lock(&send_critsect_);
+    packet->SetTimestamp(last_rtp_timestamp_);
+    packet->set_capture_time_ms(capture_time_ms_);
+  }
+  AssignSequenceNumber(packet.get());
+  SendToNetwork(std::move(packet), StorageType::kDontRetransmit,
+                RtpPacketSender::Priority::kLowPriority);
+}
+
 }  // namespace webrtc

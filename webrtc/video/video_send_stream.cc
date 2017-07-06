@@ -58,7 +58,8 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     RtcEventLog* event_log,
     RateLimiter* retransmission_rate_limiter,
     OverheadObserver* overhead_observer,
-    size_t num_modules) {
+    size_t num_modules,
+    RtpKeepAliveConfig keepalive_config) {
   RTC_DCHECK_GT(num_modules, 0);
   RtpRtcp::Configuration configuration;
   ReceiveStatistics* null_receive_statistics = configuration.receive_statistics;
@@ -83,6 +84,7 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
   configuration.event_log = event_log;
   configuration.retransmission_rate_limiter = retransmission_rate_limiter;
   configuration.overhead_observer = overhead_observer;
+  configuration.keepalive_config = keepalive_config;
   std::vector<RtpRtcp*> modules;
   for (size_t i = 0; i < num_modules; ++i) {
     RtpRtcp* rtp_rtcp = RtpRtcp::CreateRtpRtcp(configuration);
@@ -802,7 +804,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           event_log,
           transport->send_side_cc()->GetRetransmissionRateLimiter(),
           this,
-          config_->rtp.ssrcs.size())),
+          config_->rtp.ssrcs.size(),
+          config_->rtp.keep_alive)),
       payload_router_(rtp_rtcp_modules_,
                       config_->encoder_settings.payload_type),
       weak_ptr_factory_(this),
