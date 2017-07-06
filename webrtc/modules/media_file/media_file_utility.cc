@@ -15,10 +15,10 @@
 #include <sys/types.h>
 #include <limits>
 
-#include "webrtc/base/format_macros.h"
 #include "webrtc/common_audio/wav_header.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/format_macros.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/typedefs.h"

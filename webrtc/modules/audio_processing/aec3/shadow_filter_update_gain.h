@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_SHADOW_FILTER_UPDATE_GAIN_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_SHADOW_FILTER_UPDATE_GAIN_H_
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/render_signal_analyzer.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

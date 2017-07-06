@@ -17,7 +17,7 @@
 
 #include <string>
 
-#include "webrtc/base/timeutils.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace cricket {
 

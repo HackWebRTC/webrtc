@@ -10,8 +10,8 @@
 
 #include <algorithm>
 
-#include "webrtc/base/gunit.h"
 #include "webrtc/media/base/fakertp.h"
+#include "webrtc/rtc_base/gunit.h"
 
 void CompareHeaderExtensions(const char* packet1, size_t packet1_size,
     const char* packet2, size_t packet2_size,

@@ -15,11 +15,11 @@
 #include <string>
 
 #include "webrtc/api/ortc/ortcfactoryinterface.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/media/base/mediaengine.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/pc/channelmanager.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

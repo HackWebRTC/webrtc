@@ -15,13 +15,13 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/random.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/differ_block.h"
 #include "webrtc/modules/desktop_capture/fake_desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h"
+#include "webrtc/rtc_base/random.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"

@@ -12,8 +12,8 @@
 
 #include <arm_neon.h>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/real_fft.h"
+#include "webrtc/rtc_base/checks.h"
 
 // TODO(kma): Re-write the corresponding assembly file, the offset
 // generating script and makefile, to replace these C functions.

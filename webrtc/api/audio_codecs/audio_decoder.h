@@ -14,10 +14,10 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/optional.h"
+#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/rtc_base/buffer.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/optional.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

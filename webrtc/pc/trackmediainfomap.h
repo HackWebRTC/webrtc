@@ -18,8 +18,8 @@
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/rtpsenderinterface.h"
-#include "webrtc/base/refcount.h"
 #include "webrtc/media/base/mediachannel.h"
+#include "webrtc/rtc_base/refcount.h"
 
 namespace webrtc {
 

@@ -12,9 +12,9 @@
 #undef JNIEXPORT
 #define JNIEXPORT __attribute__((visibility("default")))
 
+#include "webrtc/rtc_base/ssladapter.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/base/ssladapter.h"
 
 namespace webrtc_jni {
 

@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/audio_processing/test/conversational_speech/mock_wavreader_factory.h"
 
-#include "webrtc/base/logging.h"
-#include "webrtc/base/pathutils.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/mock_wavreader.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/test/gmock.h"
 
 namespace webrtc {

@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_LOCKED_BANDWIDTH_INFO_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_LOCKED_BANDWIDTH_INFO_H_
 
-#include "webrtc/base/atomicops.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/codecs/isac/bandwidth_info.h"
+#include "webrtc/rtc_base/atomicops.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 
 namespace webrtc {
 

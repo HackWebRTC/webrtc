@@ -13,8 +13,8 @@
 #include <algorithm>
 #include <iterator>
 
-#include "webrtc/base/logging.h"
-#include "webrtc/base/pathutils.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/pathutils.h"
 
 namespace webrtc {
 namespace test {

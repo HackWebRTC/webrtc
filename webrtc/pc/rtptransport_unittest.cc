@@ -10,9 +10,9 @@
 
 #include <string>
 
-#include "webrtc/base/gunit.h"
 #include "webrtc/p2p/base/fakepackettransport.h"
 #include "webrtc/pc/rtptransport.h"
+#include "webrtc/rtc_base/gunit.h"
 
 namespace webrtc {
 

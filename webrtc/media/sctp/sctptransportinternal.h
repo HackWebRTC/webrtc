@@ -18,8 +18,8 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/copyonwritebuffer.h"
+#include "webrtc/rtc_base/thread.h"
 // For SendDataParams/ReceiveDataParams.
 // TODO(deadbeef): Use something else for SCTP. It's confusing that we use an
 // SSRC field for SID.

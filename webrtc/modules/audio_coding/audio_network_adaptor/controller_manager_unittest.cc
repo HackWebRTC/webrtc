@@ -10,11 +10,11 @@
 
 #include <utility>
 
-#include "webrtc/base/fakeclock.h"
-#include "webrtc/base/ignore_wundef.h"
-#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"
+#include "webrtc/rtc_base/fakeclock.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
+#include "webrtc/rtc_base/protobuf_utils.h"
 #include "webrtc/test/gtest.h"
 
 #if WEBRTC_ENABLE_PROTOBUF

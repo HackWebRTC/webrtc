@@ -15,8 +15,8 @@
 #include <string.h>  // memcpy()
 
 #include "webrtc/common_types.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/trace_event.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/trace_event.h"
 
 namespace webrtc {
 RTPReceiverStrategy* RTPReceiverStrategy::CreateAudioStrategy(

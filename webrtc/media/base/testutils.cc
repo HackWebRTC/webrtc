@@ -15,14 +15,14 @@
 #include <memory>
 
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/bytebuffer.h"
-#include "webrtc/base/fileutils.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/pathutils.h"
-#include "webrtc/base/stream.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/testutils.h"
 #include "webrtc/media/base/videocapturer.h"
+#include "webrtc/rtc_base/bytebuffer.h"
+#include "webrtc/rtc_base/fileutils.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/pathutils.h"
+#include "webrtc/rtc_base/stream.h"
+#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/rtc_base/testutils.h"
 
 namespace cricket {
 

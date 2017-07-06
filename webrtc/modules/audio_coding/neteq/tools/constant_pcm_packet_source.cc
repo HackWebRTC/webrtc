@@ -12,9 +12,9 @@
 
 #include <algorithm>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

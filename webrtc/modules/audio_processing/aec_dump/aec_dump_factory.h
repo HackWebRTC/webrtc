@@ -14,8 +14,8 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/platform_file.h"
 #include "webrtc/modules/audio_processing/include/aec_dump.h"
+#include "webrtc/rtc_base/platform_file.h"
 
 namespace rtc {
 class TaskQueue;

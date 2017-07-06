@@ -13,8 +13,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_device/dummy/file_audio_device.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

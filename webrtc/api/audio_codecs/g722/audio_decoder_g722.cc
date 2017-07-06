@@ -13,10 +13,10 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/ptr_util.h"
-#include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/g722/audio_decoder_g722.h"
+#include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/rtc_base/safe_conversions.h"
 
 namespace webrtc {
 

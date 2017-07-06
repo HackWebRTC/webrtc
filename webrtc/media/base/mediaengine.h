@@ -21,11 +21,11 @@
 #include "webrtc/api/audio_codecs/audio_decoder_factory.h"
 #include "webrtc/api/audio_codecs/audio_encoder_factory.h"
 #include "webrtc/api/rtpparameters.h"
-#include "webrtc/base/fileutils.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocommon.h"
+#include "webrtc/rtc_base/fileutils.h"
 
 #if defined(GOOGLE_CHROME_BUILD) || defined(CHROMIUM_BUILD)
 #define DISABLE_MEDIA_ENGINE_FACTORY

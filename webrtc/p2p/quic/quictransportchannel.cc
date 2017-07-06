@@ -21,12 +21,12 @@
 #include "net/quic/quic_crypto_server_stream.h"
 #include "net/quic/quic_packet_writer.h"
 #include "net/quic/quic_protocol.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/socket.h"
-#include "webrtc/base/thread.h"
 #include "webrtc/p2p/base/common.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/helpers.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/socket.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace {
 

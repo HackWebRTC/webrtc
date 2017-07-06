@@ -13,10 +13,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/trace_event.h"
 #include "webrtc/modules/video_coding/packet.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/trace_event.h"
 
 namespace webrtc {
 

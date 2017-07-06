@@ -13,14 +13,14 @@
 
 #include "webrtc/modules/audio_device/audio_device_buffer.h"
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/bind.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/format_macros.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/bind.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {

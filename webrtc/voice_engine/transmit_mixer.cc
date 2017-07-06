@@ -13,9 +13,9 @@
 #include <memory>
 
 #include "webrtc/audio/utility/audio_frame_operations.h"
-#include "webrtc/base/format_macros.h"
-#include "webrtc/base/location.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/rtc_base/location.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel.h"

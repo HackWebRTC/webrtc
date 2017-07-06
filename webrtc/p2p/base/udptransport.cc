@@ -13,12 +13,12 @@
 #include <string>
 #include <utility>  // For std::move.
 
-#include "webrtc/base/asyncudpsocket.h"
-#include "webrtc/base/asyncpacketsocket.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/socketaddress.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/thread_checker.h"
+#include "webrtc/rtc_base/asyncpacketsocket.h"
+#include "webrtc/rtc_base/asyncudpsocket.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/socketaddress.h"
+#include "webrtc/rtc_base/thread.h"
+#include "webrtc/rtc_base/thread_checker.h"
 
 namespace cricket {
 

@@ -12,8 +12,8 @@
 
 #include <cstring>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/gunit.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/gunit.h"
 #include "webrtc/stats/test/rtcteststats.h"
 
 namespace webrtc {

@@ -12,7 +12,7 @@
 #include "webrtc/api/audio_codecs/g722/audio_encoder_g722.h"
 #include "webrtc/api/audio_codecs/ilbc/audio_encoder_ilbc.h"
 #include "webrtc/api/audio_codecs/opus/audio_encoder_opus.h"
-#include "webrtc/base/ptr_util.h"
+#include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_audio_encoder.h"

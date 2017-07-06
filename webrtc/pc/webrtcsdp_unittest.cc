@@ -14,18 +14,18 @@
 #include <vector>
 
 #include "webrtc/api/jsepsessiondescription.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/messagedigest.h"
-#include "webrtc/base/sslfingerprint.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/engine/webrtcvideoengine.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/pc/mediasession.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/messagedigest.h"
+#include "webrtc/rtc_base/sslfingerprint.h"
+#include "webrtc/rtc_base/stringencode.h"
+#include "webrtc/rtc_base/stringutils.h"
 #ifdef WEBRTC_ANDROID
 #include "webrtc/pc/test/androidtestinitializer.h"
 #endif

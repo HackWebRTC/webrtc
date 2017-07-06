@@ -17,8 +17,8 @@
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/p2p/base/turnserver.h"
-#include "webrtc/base/asyncudpsocket.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/asyncudpsocket.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace cricket {
 

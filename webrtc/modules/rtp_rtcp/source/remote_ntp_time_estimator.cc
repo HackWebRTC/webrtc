@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/timestamp_extrapolator.h"
 

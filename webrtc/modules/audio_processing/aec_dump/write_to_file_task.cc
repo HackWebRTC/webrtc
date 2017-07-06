@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_processing/aec_dump/write_to_file_task.h"
 
-#include "webrtc/base/protobuf_utils.h"
+#include "webrtc/rtc_base/protobuf_utils.h"
 
 namespace webrtc {
 

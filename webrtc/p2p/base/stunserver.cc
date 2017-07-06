@@ -10,8 +10,8 @@
 
 #include "webrtc/p2p/base/stunserver.h"
 
-#include "webrtc/base/bytebuffer.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/bytebuffer.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace cricket {
 

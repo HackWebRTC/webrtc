@@ -17,8 +17,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/call/rtp_packet_sink_interface.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
@@ -31,6 +29,8 @@
 #include "webrtc/modules/video_coding/packet_buffer.h"
 #include "webrtc/modules/video_coding/rtp_frame_reference_finder.h"
 #include "webrtc/modules/video_coding/sequence_number_util.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_receive_stream.h"
 

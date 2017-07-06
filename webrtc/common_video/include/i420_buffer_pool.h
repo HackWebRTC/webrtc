@@ -15,7 +15,7 @@
 #include <limits>
 
 #include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/base/race_checker.h"
+#include "webrtc/rtc_base/race_checker.h"
 
 namespace webrtc {
 

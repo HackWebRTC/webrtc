@@ -16,11 +16,10 @@
 
 #include <string>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/refcount.h"
-
+#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/copyonwritebuffer.h"
+#include "webrtc/rtc_base/refcount.h"
 
 namespace webrtc {
 

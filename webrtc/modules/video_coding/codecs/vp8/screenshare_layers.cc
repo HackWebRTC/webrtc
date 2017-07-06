@@ -13,10 +13,10 @@
 
 #include <algorithm>
 
-#include "webrtc/base/checks.h"
-#include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
+#include "vpx/vpx_encoder.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 

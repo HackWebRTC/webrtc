@@ -16,8 +16,8 @@
 
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 
 // Including Xlib.h will involve evil defines (Bool, Status, True, False), which

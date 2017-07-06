@@ -10,8 +10,8 @@
 
 #include "webrtc/pc/bundlefilter.h"
 
-#include "webrtc/base/logging.h"
 #include "webrtc/media/base/rtputils.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace cricket {
 

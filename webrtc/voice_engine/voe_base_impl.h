@@ -13,8 +13,8 @@
 
 #include "webrtc/voice_engine/include/voe_base.h"
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/voice_engine/shared_data.h"
 
 namespace webrtc {

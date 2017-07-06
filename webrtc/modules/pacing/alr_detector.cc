@@ -12,9 +12,9 @@
 
 #include <string>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/format_macros.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace {

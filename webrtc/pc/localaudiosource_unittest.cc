@@ -14,9 +14,9 @@
 #include <vector>
 
 #include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/base/gunit.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/fakevideorenderer.h"
+#include "webrtc/rtc_base/gunit.h"
 
 using webrtc::LocalAudioSource;
 using webrtc::MediaConstraintsInterface;

@@ -13,9 +13,9 @@
 #include <algorithm>
 #include <limits>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtc_event_log_source.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

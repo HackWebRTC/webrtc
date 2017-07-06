@@ -13,9 +13,9 @@
 
 #include <initializer_list>
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/pacing/paced_sender.h"
+#include "webrtc/rtc_base/criticalsection.h"
 
 namespace webrtc {
 

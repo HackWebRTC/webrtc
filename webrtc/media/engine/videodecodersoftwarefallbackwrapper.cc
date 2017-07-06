@@ -12,11 +12,11 @@
 
 #include <string>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/trace_event.h"
 #include "webrtc/media/engine/internaldecoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/trace_event.h"
 
 namespace webrtc {
 

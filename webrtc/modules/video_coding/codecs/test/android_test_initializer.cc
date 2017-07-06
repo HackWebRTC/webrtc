@@ -10,8 +10,8 @@
 
 #include <pthread.h>
 
-#include "webrtc/base/ignore_wundef.h"
 #include "webrtc/modules/video_coding/codecs/test/android_test_initializer.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
@@ -23,7 +23,7 @@ RTC_PUSH_IGNORING_WUNDEF()
 #include "base/android/jni_android.h"
 RTC_POP_IGNORING_WUNDEF()
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

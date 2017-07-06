@@ -15,10 +15,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/nethelpers.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/udpport.h"
+#include "webrtc/rtc_base/nethelpers.h"
 
 namespace rtc {
 class SocketFactory;

@@ -14,17 +14,17 @@
 #include "webrtc/test/gmock.h"
 
 #include "webrtc/api/video_codecs/video_decoder.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/event.h"
 #include "webrtc/call/rtp_stream_receiver_controller.h"
 #include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/video/call_stats.h"
-#include "webrtc/video/video_receive_stream.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/event.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/field_trial.h"
+#include "webrtc/video/call_stats.h"
+#include "webrtc/video/video_receive_stream.h"
 
 namespace webrtc {
 namespace {

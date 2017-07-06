@@ -48,20 +48,20 @@
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/videosourceproxy.h"
-#include "webrtc/base/bind.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/event_tracer.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/logsinks.h"
-#include "webrtc/base/messagequeue.h"
-#include "webrtc/base/networkmonitor.h"
-#include "webrtc/base/rtccertificategenerator.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/mediaengine.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/modules/utility/include/jvm_android.h"
 #include "webrtc/pc/webrtcsdp.h"
+#include "webrtc/rtc_base/bind.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/event_tracer.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/logsinks.h"
+#include "webrtc/rtc_base/messagequeue.h"
+#include "webrtc/rtc_base/networkmonitor.h"
+#include "webrtc/rtc_base/rtccertificategenerator.h"
+#include "webrtc/rtc_base/ssladapter.h"
+#include "webrtc/rtc_base/stringutils.h"
 #include "webrtc/sdk/android/src/jni/androidnetworkmonitor_jni.h"
 // Adding 'nogncheck' to disable the gn include headers check.
 // We don't want to always depend on audio and video related targets.
@@ -1130,8 +1130,8 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)
   // talk/ assumes pretty widely that the current Thread is ThreadManager'd, but
   // ThreadManager only WrapCurrentThread()s the thread where it is first
   // created.  Since the semantics around when auto-wrapping happens in
-  // webrtc/base/ are convoluted, we simply wrap here to avoid having to think
-  // about ramifications of auto-wrapping there.
+  // webrtc/rtc_base/ are convoluted, we simply wrap here to avoid having to
+  // think about ramifications of auto-wrapping there.
   rtc::ThreadManager::Instance()->WrapCurrentThread();
   webrtc::Trace::CreateTrace();
 

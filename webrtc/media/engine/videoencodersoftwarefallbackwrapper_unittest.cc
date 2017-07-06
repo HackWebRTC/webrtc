@@ -13,11 +13,11 @@
 #include <utility>
 
 #include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

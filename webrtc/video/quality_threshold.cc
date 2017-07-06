@@ -10,8 +10,8 @@
 
 #include "webrtc/video/quality_threshold.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

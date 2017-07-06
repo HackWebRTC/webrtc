@@ -11,12 +11,12 @@
 #include <vector>
 
 #include "gflags/gflags.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/format_macros.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/format_macros.h"
 
 DEFINE_string(i, "", "The name of the input file to read from.");
 DEFINE_string(o, "out.wav", "Name of the output file to write to.");

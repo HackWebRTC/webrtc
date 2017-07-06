@@ -16,8 +16,8 @@
 #include <functional>
 #include <numeric>
 
-#include "webrtc/base/safe_minmax.h"
 #include "webrtc/modules/audio_processing/utility/ooura_fft.h"
+#include "webrtc/rtc_base/safe_minmax.h"
 
 namespace webrtc {
 namespace {

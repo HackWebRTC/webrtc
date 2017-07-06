@@ -10,10 +10,10 @@
 
 #include "webrtc/modules/audio_processing/gain_control_for_experimental_agc.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/criticalsection.h"
 
 namespace webrtc {
 

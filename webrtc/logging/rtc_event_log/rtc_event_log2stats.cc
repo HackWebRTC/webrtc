@@ -20,10 +20,10 @@
 #include <vector>
 
 #include "gflags/gflags.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/ignore_wundef.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
+#include "webrtc/rtc_base/logging.h"
 
 // Files generated at build-time by the protobuf compiler.
 RTC_PUSH_IGNORING_WUNDEF()

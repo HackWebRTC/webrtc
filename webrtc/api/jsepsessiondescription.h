@@ -20,8 +20,8 @@
 
 #include "webrtc/api/jsep.h"
 #include "webrtc/api/jsepicecandidate.h"
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/p2p/base/candidate.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace cricket {
 class SessionDescription;

@@ -12,10 +12,10 @@
 
 #include <memory>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/stringencode.h"
 #include "webrtc/pc/mediasession.h"
 #include "webrtc/pc/webrtcsdp.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/stringencode.h"
 
 using cricket::SessionDescription;
 

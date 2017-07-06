@@ -13,7 +13,7 @@
 #include <limits>
 #include <utility>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {

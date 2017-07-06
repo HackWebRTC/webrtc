@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

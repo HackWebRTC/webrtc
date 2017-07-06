@@ -10,7 +10,7 @@
 
 #include "webrtc/pc/rtcpmuxfilter.h"
 
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace cricket {
 

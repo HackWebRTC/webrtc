@@ -14,8 +14,8 @@
 #include <map>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
+#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

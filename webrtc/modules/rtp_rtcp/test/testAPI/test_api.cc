@@ -14,8 +14,8 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/rate_limiter.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/rate_limiter.h"
 #include "webrtc/test/null_transport.h"
 
 namespace webrtc {

@@ -13,7 +13,7 @@
 #ifndef WEBRTC_API_UMAMETRICS_H_
 #define WEBRTC_API_UMAMETRICS_H_
 
-#include "webrtc/base/refcount.h"
+#include "webrtc/rtc_base/refcount.h"
 
 namespace webrtc {
 

@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

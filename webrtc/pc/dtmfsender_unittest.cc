@@ -15,11 +15,11 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/fakeclock.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/pc/audiotrack.h"
+#include "webrtc/rtc_base/fakeclock.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 using webrtc::AudioTrackInterface;
 using webrtc::AudioTrack;

@@ -22,7 +22,6 @@
 #include <string>
 
 #include "gflags/gflags.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/fake_decode_from_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
@@ -34,6 +33,7 @@
 #include "webrtc/modules/audio_coding/neteq/tools/output_wav_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
 

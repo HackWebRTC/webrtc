@@ -18,10 +18,10 @@
 #include <memory>
 
 #include "gflags/gflags.h"
-#include "webrtc/base/format_macros.h"
-#include "webrtc/base/ignore_wundef.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
+#include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
 #include "webrtc/typedefs.h"
 
 RTC_PUSH_IGNORING_WUNDEF()

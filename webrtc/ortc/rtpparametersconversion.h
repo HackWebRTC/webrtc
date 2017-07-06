@@ -16,9 +16,9 @@
 
 #include "webrtc/api/rtcerror.h"
 #include "webrtc/api/rtpparameters.h"
-#include "webrtc/base/optional.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/pc/mediasession.h"
+#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

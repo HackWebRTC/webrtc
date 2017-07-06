@@ -14,20 +14,20 @@
 #include <iterator>
 #include <utility>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/numerics/exp_filter.h"
-#include "webrtc/base/protobuf_utils.h"
-#include "webrtc/base/ptr_util.h"
-#include "webrtc/base/safe_conversions.h"
-#include "webrtc/base/safe_minmax.h"
-#include "webrtc/base/string_to_number.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/numerics/exp_filter.h"
+#include "webrtc/rtc_base/protobuf_utils.h"
+#include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/rtc_base/safe_conversions.h"
+#include "webrtc/rtc_base/safe_minmax.h"
+#include "webrtc/rtc_base/string_to_number.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {

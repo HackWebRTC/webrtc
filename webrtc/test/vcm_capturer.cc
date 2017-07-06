@@ -10,8 +10,8 @@
 
 #include "webrtc/test/vcm_capturer.h"
 
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/video_send_stream.h"
 namespace webrtc {
 namespace test {

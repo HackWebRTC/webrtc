@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/base/stringencode.h"
+#include "webrtc/rtc_base/stringencode.h"
 
 namespace webrtc {
 

@@ -18,9 +18,9 @@
 #include "webrtc/api/peerconnectionfactoryproxy.h"
 #include "webrtc/api/peerconnectionproxy.h"
 #include "webrtc/api/videosourceproxy.h"
-#include "webrtc/base/bind.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/rtc_base/bind.h"
+#include "webrtc/rtc_base/checks.h"
 // Adding 'nogncheck' to disable the gn include headers check to support modular
 // WebRTC build targets.
 // TODO(zhihuang): This wouldn't be necessary if the interface and

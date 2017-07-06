@@ -16,10 +16,10 @@
 
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/optional.h"
 #include "webrtc/media/base/videoadapter.h"
 #include "webrtc/media/base/videosourceinterface.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/optional.h"
 
 namespace cricket {
 class VideoAdapter;

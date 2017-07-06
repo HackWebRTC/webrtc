@@ -13,8 +13,8 @@
 #include <algorithm>
 #include <cassert>
 
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

@@ -13,8 +13,8 @@
 
 #include "webrtc/modules/audio_processing/test/audio_processing_simulator.h"
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/ignore_wundef.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
 
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD

@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_MOCK_MOCK_RENDER_DELAY_CONTROLLER_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_MOCK_MOCK_RENDER_DELAY_CONTROLLER_H_
 
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/render_delay_controller.h"
+#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/rtc_base/optional.h"
 #include "webrtc/test/gmock.h"
 
 namespace webrtc {

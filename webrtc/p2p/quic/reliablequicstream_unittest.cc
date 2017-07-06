@@ -17,11 +17,11 @@
 #include "net/quic/quic_connection.h"
 #include "net/quic/quic_protocol.h"
 #include "net/quic/quic_session.h"
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/stream.h"
 #include "webrtc/p2p/quic/quicconnectionhelper.h"
+#include "webrtc/rtc_base/buffer.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/stream.h"
 
 using cricket::QuicConnectionHelper;
 using cricket::ReliableQuicStream;

@@ -12,11 +12,11 @@
 
 #include <algorithm>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/safe_conversions.h"
-#include "webrtc/base/string_to_number.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/safe_conversions.h"
+#include "webrtc/rtc_base/string_to_number.h"
 
 namespace webrtc {
 

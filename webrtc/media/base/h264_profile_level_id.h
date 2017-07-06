@@ -14,8 +14,8 @@
 #include <map>
 #include <string>
 
-#include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
+#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 namespace H264 {

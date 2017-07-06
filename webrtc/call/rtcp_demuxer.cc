@@ -10,10 +10,10 @@
 
 #include "webrtc/call/rtcp_demuxer.h"
 
-#include "webrtc/base/checks.h"
 #include "webrtc/call/rtcp_packet_sink_interface.h"
 #include "webrtc/call/rtp_rtcp_demuxer_helper.h"
 #include "webrtc/common_types.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

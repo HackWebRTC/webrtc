@@ -10,10 +10,10 @@
 
 #include "webrtc/modules/audio_coding/acm2/codec_manager.h"
 
-#include "webrtc/base/checks.h"
-//#include "webrtc/base/format_macros.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/checks.h"
+//#include "webrtc/rtc_base/format_macros.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

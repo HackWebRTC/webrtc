@@ -14,11 +14,11 @@
 
 #include <memory>
 
-#include "webrtc/base/location.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/test/audio_device_test_defines.h"
 #include "webrtc/modules/utility/include/process_thread.h"
+#include "webrtc/rtc_base/location.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"

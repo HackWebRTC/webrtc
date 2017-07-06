@@ -11,8 +11,8 @@
 #include "webrtc/sdk/android/src/jni/videodecoderfactorywrapper.h"
 
 #include "webrtc/api/video_codecs/video_decoder.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/sdk/android/src/jni/videodecoderwrapper.h"
 
 namespace webrtc_jni {

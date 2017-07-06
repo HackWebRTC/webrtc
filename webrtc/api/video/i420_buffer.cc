@@ -14,11 +14,11 @@
 #include <algorithm>
 #include <utility>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/keep_ref_until_done.h"
 #include "libyuv/convert.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/scale.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/keep_ref_until_done.h"
 
 // Aligning pointer to 64 bytes for improved performance, e.g. use SIMD.
 static const int kBufferAlignment = 64;

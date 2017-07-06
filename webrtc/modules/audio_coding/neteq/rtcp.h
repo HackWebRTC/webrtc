@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_RTCP_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_RTCP_H_
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
+#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

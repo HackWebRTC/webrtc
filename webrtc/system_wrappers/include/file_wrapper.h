@@ -14,8 +14,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/typedefs.h"
 
 // Implementation of an InStream and OutStream that can read (exclusive) or

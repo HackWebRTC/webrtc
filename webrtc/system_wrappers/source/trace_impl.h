@@ -13,11 +13,11 @@
 
 #include <memory>
 
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/platform_thread.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/system_wrappers/include/static_instance.h"
-#include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {

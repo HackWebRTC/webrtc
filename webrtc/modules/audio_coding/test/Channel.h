@@ -13,9 +13,9 @@
 
 #include <stdio.h>
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

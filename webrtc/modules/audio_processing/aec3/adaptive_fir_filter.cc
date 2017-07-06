@@ -20,8 +20,8 @@
 #include <algorithm>
 #include <functional>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/aec3/fft_data.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

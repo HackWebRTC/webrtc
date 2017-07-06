@@ -10,8 +10,8 @@
 
 #include "webrtc/api/video/video_frame.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/timeutils.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 

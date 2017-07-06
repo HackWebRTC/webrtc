@@ -12,7 +12,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_RRTR_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_RRTR_H_
 
-#include "webrtc/base/basictypes.h"
+#include "webrtc/rtc_base/basictypes.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {

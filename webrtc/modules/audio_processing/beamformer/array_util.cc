@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <limits>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

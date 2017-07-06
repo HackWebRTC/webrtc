@@ -11,7 +11,7 @@
 #import "WebRTC/RTCDataChannel.h"
 
 #include "webrtc/api/datachannelinterface.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

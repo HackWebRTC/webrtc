@@ -10,8 +10,6 @@
 
 #include "webrtc/modules/video_coding/include/video_codec_initializer.h"
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
@@ -19,6 +17,8 @@
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
+#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

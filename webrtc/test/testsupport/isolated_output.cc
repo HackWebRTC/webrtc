@@ -13,9 +13,9 @@
 #include <string.h>
 
 #include "gflags/gflags.h"
-#include "webrtc/base/file.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/pathutils.h"
+#include "webrtc/rtc_base/file.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 DEFINE_string(isolated_out_dir, webrtc::test::OutputPath(),

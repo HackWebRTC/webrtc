@@ -11,12 +11,12 @@
 #include <iostream>
 
 #include "gflags/gflags.h"
-#include "webrtc/base/ptr_util.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/config.h"
-#include "webrtc/modules/audio_processing/test/conversational_speech/timing.h"
-#include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_factory.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/multiend_call.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/simulator.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/timing.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_factory.h"
+#include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {

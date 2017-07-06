@@ -10,9 +10,8 @@
 
 #include "webrtc/modules/audio_processing/test/debug_dump_replayer.h"
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
-
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

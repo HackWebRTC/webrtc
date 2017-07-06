@@ -15,7 +15,7 @@
 #include <cmath>
 #include <complex>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 using std::complex;
 

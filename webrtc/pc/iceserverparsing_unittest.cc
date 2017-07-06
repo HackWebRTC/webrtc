@@ -11,8 +11,8 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/gunit.h"
 #include "webrtc/pc/iceserverparsing.h"
+#include "webrtc/rtc_base/gunit.h"
 
 namespace webrtc {
 

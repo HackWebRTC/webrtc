@@ -13,8 +13,8 @@
 
 #include <stdlib.h>
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/test/testsupport/packet_reader.h"
 
 namespace webrtc {

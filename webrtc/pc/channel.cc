@@ -15,16 +15,16 @@
 #include "webrtc/pc/channel.h"
 
 #include "webrtc/api/call/audio_sink.h"
-#include "webrtc/base/bind.h"
-#include "webrtc/base/byteorder.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/dscp.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/networkroute.h"
-#include "webrtc/base/trace_event.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
+#include "webrtc/rtc_base/bind.h"
+#include "webrtc/rtc_base/byteorder.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/copyonwritebuffer.h"
+#include "webrtc/rtc_base/dscp.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/networkroute.h"
+#include "webrtc/rtc_base/trace_event.h"
 // Adding 'nogncheck' to disable the gn include headers check to support modular
 // WebRTC build targets.
 #include "webrtc/media/engine/webrtcvoiceengine.h"  // nogncheck

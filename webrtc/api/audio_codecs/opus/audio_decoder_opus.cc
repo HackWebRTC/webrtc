@@ -14,9 +14,9 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/ptr_util.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/opus/audio_decoder_opus.h"
+#include "webrtc/rtc_base/ptr_util.h"
 
 namespace webrtc {
 

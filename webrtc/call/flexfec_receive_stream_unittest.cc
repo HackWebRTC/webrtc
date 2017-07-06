@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <memory>
 
-#include "webrtc/base/array_view.h"
 #include "webrtc/call/rtp_stream_receiver_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
@@ -22,6 +21,7 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/utility/include/mock/mock_process_thread.h"
+#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"

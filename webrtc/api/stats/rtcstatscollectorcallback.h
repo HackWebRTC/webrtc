@@ -12,8 +12,8 @@
 #define WEBRTC_API_STATS_RTCSTATSCOLLECTORCALLBACK_H_
 
 #include "webrtc/api/stats/rtcstatsreport.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/refcount.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

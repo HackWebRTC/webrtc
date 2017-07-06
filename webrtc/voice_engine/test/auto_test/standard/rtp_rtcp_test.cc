@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"

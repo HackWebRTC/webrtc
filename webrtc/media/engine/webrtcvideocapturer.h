@@ -15,13 +15,13 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/asyncinvoker.h"
-#include "webrtc/base/messagehandler.h"
-#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/media/base/device.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/modules/video_capture/video_capture.h"
+#include "webrtc/rtc_base/asyncinvoker.h"
+#include "webrtc/rtc_base/messagehandler.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace cricket {
 

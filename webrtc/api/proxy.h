@@ -55,8 +55,8 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/base/event.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace webrtc {
 

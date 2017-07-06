@@ -13,9 +13,9 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
+#include "webrtc/rtc_base/logging.h"
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/audio_encoder_g722.h"
 #endif

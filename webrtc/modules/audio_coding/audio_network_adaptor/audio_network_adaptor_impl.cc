@@ -12,8 +12,8 @@
 
 #include <utility>
 
-#include "webrtc/base/logging.h"
-#include "webrtc/base/timeutils.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 

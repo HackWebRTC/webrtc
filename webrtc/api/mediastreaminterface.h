@@ -23,18 +23,18 @@
 #include <vector>
 
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/optional.h"
+#include "webrtc/rtc_base/optional.h"
 // TODO(zhihuang): Remove unrelated headers once downstream applications stop
 // relying on them; they were previously transitively included by
 // mediachannel.h, which is no longer a dependency of this file.
-#include "webrtc/base/ratetracker.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourceinterface.h"
+#include "webrtc/rtc_base/ratetracker.h"
+#include "webrtc/rtc_base/refcount.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/thread.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 

@@ -10,7 +10,7 @@
 
 #include "webrtc/sdk/android/src/jni/ownedfactoryandthreads.h"
 
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 

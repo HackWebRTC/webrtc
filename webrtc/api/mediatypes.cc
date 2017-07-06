@@ -11,7 +11,7 @@
 #include "webrtc/api/mediatypes.h"
 
 #include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace {
 static const char* kMediaTypeData = "data";

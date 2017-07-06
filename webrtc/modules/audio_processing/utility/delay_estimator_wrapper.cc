@@ -13,9 +13,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_internal.h"
+#include "webrtc/rtc_base/checks.h"
 
 // Only bit |kBandFirst| through bit |kBandLast| are processed and
 // |kBandFirst| - |kBandLast| must be < 32.

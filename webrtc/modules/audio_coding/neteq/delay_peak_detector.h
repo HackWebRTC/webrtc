@@ -16,8 +16,8 @@
 #include <list>
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

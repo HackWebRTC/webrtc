@@ -16,11 +16,11 @@
 #include <vector>
 
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_frame.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/optional.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/base/optional.h"
 
 namespace webrtc {
 

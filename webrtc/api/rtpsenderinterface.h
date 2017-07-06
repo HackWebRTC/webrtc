@@ -18,12 +18,12 @@
 #include <vector>
 
 #include "webrtc/api/dtmfsenderinterface.h"
-#include "webrtc/api/mediatypes.h"
 #include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/mediatypes.h"
 #include "webrtc/api/proxy.h"
 #include "webrtc/api/rtpparameters.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/refcount.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

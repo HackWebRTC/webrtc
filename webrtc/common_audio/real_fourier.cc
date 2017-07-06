@@ -10,10 +10,10 @@
 
 #include "webrtc/common_audio/real_fourier.h"
 
-#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/real_fourier_ooura.h"
 #include "webrtc/common_audio/real_fourier_openmax.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

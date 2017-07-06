@@ -12,9 +12,9 @@
 
 #include <memory>
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/call/rtp_demuxer.h"
 #include "webrtc/call/rtp_stream_receiver_controller_interface.h"
+#include "webrtc/rtc_base/criticalsection.h"
 
 namespace webrtc {
 

@@ -10,7 +10,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_COMMON_HEADER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_COMMON_HEADER_H_
 
-#include "webrtc/base/basictypes.h"
+#include "webrtc/rtc_base/basictypes.h"
 
 namespace webrtc {
 namespace rtcp {

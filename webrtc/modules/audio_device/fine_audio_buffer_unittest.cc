@@ -13,8 +13,8 @@
 #include <limits.h>
 #include <memory>
 
-#include "webrtc/base/array_view.h"
 #include "webrtc/modules/audio_device/mock_audio_device_buffer.h"
+#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 

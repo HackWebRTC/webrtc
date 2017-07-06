@@ -22,11 +22,11 @@
 extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
 }
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/utility/block_mean_calculator.h"
 #include "webrtc/modules/audio_processing/utility/ooura_fft.h"
+#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

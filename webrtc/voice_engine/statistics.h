@@ -11,8 +11,8 @@
 #ifndef WEBRTC_VOICE_ENGINE_STATISTICS_H
 #define WEBRTC_VOICE_ENGINE_STATISTICS_H
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
+#include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"

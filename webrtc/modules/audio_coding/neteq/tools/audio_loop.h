@@ -14,8 +14,8 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/constructormagic.h"
+#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

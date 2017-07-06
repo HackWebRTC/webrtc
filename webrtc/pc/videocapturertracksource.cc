@@ -15,8 +15,8 @@
 #include <vector>
 
 #include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/checks.h"
 
 using cricket::CaptureState;
 using webrtc::MediaConstraintsInterface;

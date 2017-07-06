@@ -12,7 +12,7 @@
 
 #include <sstream>
 
-#include "webrtc/base/stringutils.h"
+#include "webrtc/rtc_base/stringutils.h"
 
 // Check to verify that the define is properly set.
 #if !defined(WEBRTC_APM_DEBUG_DUMP) || \

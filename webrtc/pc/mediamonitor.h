@@ -13,11 +13,11 @@
 #ifndef WEBRTC_PC_MEDIAMONITOR_H_
 #define WEBRTC_PC_MEDIAMONITOR_H_
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/media/base/mediachannel.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/thread.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 
 namespace cricket {
 

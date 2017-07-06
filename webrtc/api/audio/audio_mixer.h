@@ -13,8 +13,8 @@
 
 #include <memory>
 
-#include "webrtc/base/refcount.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/refcount.h"
 
 namespace webrtc {
 

@@ -13,10 +13,10 @@
 
 #include <vector>
 
-#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

@@ -16,10 +16,10 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/rtccertificategenerator.h"
 #include "webrtc/pc/channelmanager.h"
+#include "webrtc/rtc_base/rtccertificategenerator.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace rtc {
 class BasicNetworkManager;

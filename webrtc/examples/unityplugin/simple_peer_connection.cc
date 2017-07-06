@@ -13,9 +13,9 @@
 #include <utility>
 
 #include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/base/json.h"
 #include "webrtc/media/engine/webrtcvideocapturerfactory.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
+#include "webrtc/rtc_base/json.h"
 
 // Names used for a IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "sdpMid";

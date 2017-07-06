@@ -12,7 +12,7 @@
 #define WEBRTC_API_AUDIO_CODECS_BUILTIN_AUDIO_ENCODER_FACTORY_H_
 
 #include "webrtc/api/audio_codecs/audio_encoder_factory.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

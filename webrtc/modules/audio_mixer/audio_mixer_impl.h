@@ -15,13 +15,13 @@
 #include <vector>
 
 #include "webrtc/api/audio/audio_mixer.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/thread_annotations.h"
-#include "webrtc/base/race_checker.h"
 #include "webrtc/modules/audio_mixer/frame_combiner.h"
 #include "webrtc/modules/audio_mixer/output_rate_calculator.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/race_checker.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

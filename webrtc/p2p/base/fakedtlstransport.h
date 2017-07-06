@@ -15,9 +15,9 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/fakesslidentity.h"
 #include "webrtc/p2p/base/dtlstransportinternal.h"
 #include "webrtc/p2p/base/fakeicetransport.h"
+#include "webrtc/rtc_base/fakesslidentity.h"
 
 namespace cricket {
 

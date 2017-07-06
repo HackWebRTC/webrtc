@@ -15,13 +15,13 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/random.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/mock/mock_echo_remover.h"
 #include "webrtc/modules/audio_processing/aec3/mock/mock_render_delay_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/mock/mock_render_delay_controller.h"
 #include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/random.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 

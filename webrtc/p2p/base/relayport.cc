@@ -10,10 +10,10 @@
 #include <algorithm>
 
 #include "webrtc/p2p/base/relayport.h"
-#include "webrtc/base/asyncpacketsocket.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/asyncpacketsocket.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/helpers.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace cricket {
 

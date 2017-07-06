@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/base/thread_checker.h"
+#include "webrtc/rtc_base/thread_checker.h"
 
 namespace webrtc {
 

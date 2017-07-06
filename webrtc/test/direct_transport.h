@@ -15,10 +15,10 @@
 #include <deque>
 
 #include "webrtc/api/call/transport.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/event.h"
-#include "webrtc/base/platform_thread.h"
 #include "webrtc/call/call.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/platform_thread.h"
 #include "webrtc/test/fake_network_pipe.h"
 
 namespace webrtc {

@@ -13,8 +13,8 @@
 #include <assert.h>
 #include <iostream>
 
-#include "webrtc/base/format_macros.h"
-#include "webrtc/base/timeutils.h"
+#include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 

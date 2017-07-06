@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/optional.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

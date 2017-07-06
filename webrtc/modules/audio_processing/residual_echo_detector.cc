@@ -13,10 +13,10 @@
 #include <algorithm>
 #include <numeric>
 
-#include "webrtc/base/atomicops.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
+#include "webrtc/rtc_base/atomicops.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace {

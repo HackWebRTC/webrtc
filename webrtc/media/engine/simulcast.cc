@@ -10,11 +10,11 @@
 
 #include <stdio.h>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/media/engine/constants.h"
 #include "webrtc/media/engine/simulcast.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace cricket {

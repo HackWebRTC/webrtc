@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/desktop_capture/test_utils.h"
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/desktop_capture/rgba_color.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

@@ -16,11 +16,11 @@
 
 #include "webrtc/api/audio/audio_mixer.h"
 #include "webrtc/audio/audio_state.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/thread_checker.h"
 #include "webrtc/call/audio_receive_stream.h"
 #include "webrtc/call/rtp_packet_sink_interface.h"
 #include "webrtc/call/syncable.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/thread_checker.h"
 
 namespace webrtc {
 class PacketRouter;

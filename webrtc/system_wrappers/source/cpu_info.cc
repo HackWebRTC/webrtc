@@ -23,7 +23,7 @@
 #include <sys/sysctl.h>
 #endif
 
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace internal {
 static int DetectNumberOfCores() {

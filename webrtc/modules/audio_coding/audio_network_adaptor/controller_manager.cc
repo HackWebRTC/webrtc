@@ -13,8 +13,6 @@
 #include <cmath>
 #include <utility>
 
-#include "webrtc/base/ignore_wundef.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/bitrate_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/channel_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/dtx_controller.h"
@@ -22,6 +20,8 @@
 #include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_rplr_based.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/frame_length_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/util/threshold_curve.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
 RTC_PUSH_IGNORING_WUNDEF()

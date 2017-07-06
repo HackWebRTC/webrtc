@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MEDIA_BASE_RTPUTILS_H_
 #define WEBRTC_MEDIA_BASE_RTPUTILS_H_
 
-#include "webrtc/base/byteorder.h"
+#include "webrtc/rtc_base/byteorder.h"
 
 namespace rtc {
 struct PacketTimeUpdateParams;

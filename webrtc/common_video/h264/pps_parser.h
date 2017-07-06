@@ -11,7 +11,7 @@
 #ifndef WEBRTC_COMMON_VIDEO_H264_PPS_PARSER_H_
 #define WEBRTC_COMMON_VIDEO_H264_PPS_PARSER_H_
 
-#include "webrtc/base/optional.h"
+#include "webrtc/rtc_base/optional.h"
 
 namespace rtc {
 class BitBuffer;

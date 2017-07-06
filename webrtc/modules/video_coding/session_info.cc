@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/video_coding/session_info.h"
 
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/video_coding/packet.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

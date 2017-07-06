@@ -18,9 +18,6 @@
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #include <emmintrin.h>
 #endif
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/random.h"
-#include "webrtc/base/safe_minmax.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
 #include "webrtc/modules/audio_processing/aec3/cascaded_biquad_filter.h"
@@ -28,6 +25,9 @@
 #include "webrtc/modules/audio_processing/aec3/shadow_filter_update_gain.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 #include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/random.h"
+#include "webrtc/rtc_base/safe_minmax.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/test/gtest.h"
 

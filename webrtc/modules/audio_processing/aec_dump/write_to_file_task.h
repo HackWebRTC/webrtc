@@ -15,11 +15,11 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/event.h"
-#include "webrtc/base/ignore_wundef.h"
-#include "webrtc/base/platform_file.h"
-#include "webrtc/base/task_queue.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/ignore_wundef.h"
+#include "webrtc/rtc_base/platform_file.h"
+#include "webrtc/rtc_base/task_queue.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
 // Files generated at build-time by the protobuf compiler.

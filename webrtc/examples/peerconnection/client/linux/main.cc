@@ -15,8 +15,8 @@
 #include "webrtc/examples/peerconnection/client/linux/main_wnd.h"
 #include "webrtc/examples/peerconnection/client/peer_connection_client.h"
 
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/ssladapter.h"
+#include "webrtc/rtc_base/thread.h"
 
 class CustomSocketServer : public rtc::PhysicalSocketServer {
  public:

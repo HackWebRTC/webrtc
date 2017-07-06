@@ -14,8 +14,8 @@
 #include <map>
 #include <vector>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/media/engine/webrtcvoe.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 namespace voe {

@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_NOISE_SPECTRUM_ESTIMATOR_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_NOISE_SPECTRUM_ESTIMATOR_H_
 
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/constructormagic.h"
+#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

@@ -15,10 +15,10 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/downsampled_render_buffer.h"
+#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 namespace aec3 {

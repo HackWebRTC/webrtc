@@ -13,14 +13,14 @@
 #include <memory>
 #include <utility>  // for std::pair
 
-#include "webrtc/base/bind.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/dtlstransportchannel.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 #include "webrtc/p2p/base/port.h"
+#include "webrtc/rtc_base/bind.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace cricket {
 

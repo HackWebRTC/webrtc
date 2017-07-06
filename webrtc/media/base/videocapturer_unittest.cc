@@ -13,13 +13,13 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/thread.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/media/base/videocapturer.h"
+#include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/thread.h"
 
 using cricket::FakeVideoCapturer;
 

@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_METRICS_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_METRICS_H_
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
+#include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
 

@@ -15,10 +15,10 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/bitbuffer.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/safe_minmax.h"
+#include "webrtc/rtc_base/bitbuffer.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/safe_minmax.h"
 
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/common_video/h264/sps_parser.h"

@@ -27,10 +27,10 @@
 #include "webrtc/api/ortc/udptransportinterface.h"
 #include "webrtc/api/rtcerror.h"
 #include "webrtc/api/rtpparameters.h"
-#include "webrtc/base/network.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/thread.h"
 #include "webrtc/p2p/base/packetsocketfactory.h"
+#include "webrtc/rtc_base/network.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/thread.h"
 
 namespace webrtc {
 

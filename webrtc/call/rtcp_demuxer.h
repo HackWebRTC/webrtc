@@ -15,9 +15,9 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/basictypes.h"
 #include "webrtc/call/rsid_resolution_observer.h"
+#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/rtc_base/basictypes.h"
 
 namespace webrtc {
 

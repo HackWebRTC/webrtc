@@ -12,7 +12,7 @@
 
 #include "libyuv/convert.h"
 #include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

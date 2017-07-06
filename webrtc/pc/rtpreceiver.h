@@ -21,12 +21,12 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/sigslot.h"
 #include "webrtc/media/base/videobroadcaster.h"
 #include "webrtc/pc/channel.h"
 #include "webrtc/pc/remoteaudiosource.h"
 #include "webrtc/pc/videotracksource.h"
+#include "webrtc/rtc_base/basictypes.h"
+#include "webrtc/rtc_base/sigslot.h"
 
 namespace webrtc {
 

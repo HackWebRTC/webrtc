@@ -16,8 +16,8 @@
 #include <algorithm>
 #include <map>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/rate_statistics.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/rate_statistics.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {

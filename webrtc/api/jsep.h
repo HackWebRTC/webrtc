@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/refcount.h"
+#include "webrtc/rtc_base/refcount.h"
 
 namespace cricket {
 class Candidate;

@@ -15,9 +15,9 @@
 #include <list>
 #include <vector>
 
-#include "webrtc/base/deprecation.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/deprecation.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/typedefs.h"
 

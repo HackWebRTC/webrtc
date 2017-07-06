@@ -12,7 +12,7 @@
 #define WEBRTC_PC_TEST_RTCSTATSOBTAINER_H_
 
 #include "webrtc/api/stats/rtcstatsreport.h"
-#include "webrtc/base/gunit.h"
+#include "webrtc/rtc_base/gunit.h"
 
 namespace webrtc {
 

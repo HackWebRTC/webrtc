@@ -14,7 +14,7 @@
 #include <d3d9.h>
 #pragma comment(lib, "d3d9.lib")       // located in DirectX SDK
 
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/typedefs.h"
 

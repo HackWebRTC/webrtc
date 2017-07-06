@@ -16,11 +16,11 @@
 #include <memory>
 
 #include "webrtc/audio/utility/audio_frame_operations.h"
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_mixer/audio_frame_manipulator.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
+#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 namespace {
