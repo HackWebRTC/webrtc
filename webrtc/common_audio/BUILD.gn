@@ -103,6 +103,23 @@ rtc_static_library("common_audio") {
   }
 }
 
+rtc_source_set("common_audio_c_arm_asm") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  sources = []
+  if (current_cpu == "arm") {
+    sources += [
+      "signal_processing/complex_bit_reverse_arm.S",
+      "signal_processing/spl_sqrt_floor_arm.S",
+    ]
+
+    if (arm_version >= 7) {
+      sources += [ "signal_processing/filter_ar_fast_q12_armv7.S" ]
+    } else {
+      sources += [ "signal_processing/filter_ar_fast_q12.c" ]
+    }
+  }
+}
+
 rtc_source_set("common_audio_c") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
@@ -156,19 +173,6 @@ rtc_source_set("common_audio_c") {
     "vad/webrtc_vad.c",
   ]
 
-  if (current_cpu == "arm") {
-    sources += [
-      "signal_processing/complex_bit_reverse_arm.S",
-      "signal_processing/spl_sqrt_floor_arm.S",
-    ]
-
-    if (arm_version >= 7) {
-      sources += [ "signal_processing/filter_ar_fast_q12_armv7.S" ]
-    } else {
-      sources += [ "signal_processing/filter_ar_fast_q12.c" ]
-    }
-  }
-
   if (current_cpu == "mipsel") {
     sources += [
       "signal_processing/complex_bit_reverse_mips.c",
@@ -202,6 +206,7 @@ rtc_source_set("common_audio_c") {
 
   public_configs = [ ":common_audio_config" ]
   deps = [
+    ":common_audio_c_arm_asm",
     ":common_audio_cc",
     "..:webrtc_common",
     "../base:compile_assert_c",
