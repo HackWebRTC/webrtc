@@ -153,6 +153,8 @@ class FrameBuffer {
 
   void UpdateJitterDelay() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
+  void UpdateTimingFrameInfo() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
   void ClearFramesAndHistory() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   bool HasBadRenderTiming(const FrameObject& frame, int64_t now_ms)

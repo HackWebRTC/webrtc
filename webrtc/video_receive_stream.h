@@ -207,6 +207,8 @@ class VideoReceiveStream {
   // TODO(pbos): Add info on currently-received codec to Stats.
   virtual Stats GetStats() const = 0;
 
+  virtual rtc::Optional<TimingFrameInfo> GetAndResetTimingFrameInfo() = 0;
+
   // Takes ownership of the file, is responsible for closing it later.
   // Calling this method will close and finalize any current log.
   // Giving rtc::kInvalidPlatformFileValue disables logging.

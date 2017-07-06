@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/video_coding/generic_decoder.h"
 
+#include <algorithm>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
@@ -91,6 +93,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
 
   // Report timing information.
   if (frameInfo->timing.is_timing_frame) {
+    int64_t capture_time_ms = decodedImage.ntp_time_ms() - ntp_offset_;
     // Convert remote timestamps to local time from ntp timestamps.
     frameInfo->timing.encode_start_ms -= ntp_offset_;
     frameInfo->timing.encode_finish_ms -= ntp_offset_;
@@ -98,19 +101,44 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
     frameInfo->timing.pacer_exit_ms -= ntp_offset_;
     frameInfo->timing.network_timestamp_ms -= ntp_offset_;
     frameInfo->timing.network2_timestamp_ms -= ntp_offset_;
-    // TODO(ilnik): Report timing information here.
-    // Capture time: decodedImage.ntp_time_ms() - ntp_offset
-    // Encode start: frameInfo->timing.encode_start_ms
-    // Encode finish: frameInfo->timing.encode_finish_ms
-    // Packetization done: frameInfo->timing.packetization_finish_ms
-    // Pacer exit: frameInfo->timing.pacer_exit_ms
-    // Network timestamp: frameInfo->timing.network_timestamp_ms
-    // Network2 timestamp: frameInfo->timing.network2_timestamp_ms
-    // Receive start: frameInfo->timing.receive_start_ms
-    // Receive finish: frameInfo->timing.receive_finish_ms
-    // Decode start: frameInfo->decodeStartTimeMs
-    // Decode finish: now_ms
-    // Render time: frameInfo->renderTimeMs
+
+    int64_t sender_delta_ms = 0;
+    if (decodedImage.ntp_time_ms() < 0) {
+      // Sender clock is not estimated yet. Make sure that sender times are all
+      // negative to indicate that. Yet they still should be relatively correct.
+      sender_delta_ms =
+          std::max({capture_time_ms, frameInfo->timing.encode_start_ms,
+                    frameInfo->timing.encode_finish_ms,
+                    frameInfo->timing.packetization_finish_ms,
+                    frameInfo->timing.pacer_exit_ms,
+                    frameInfo->timing.network_timestamp_ms,
+                    frameInfo->timing.network2_timestamp_ms}) +
+          1;
+    }
+
+    TimingFrameInfo timing_frame_info;
+
+    timing_frame_info.capture_time_ms = capture_time_ms - sender_delta_ms;
+    timing_frame_info.encode_start_ms =
+        frameInfo->timing.encode_start_ms - sender_delta_ms;
+    timing_frame_info.encode_finish_ms =
+        frameInfo->timing.encode_finish_ms - sender_delta_ms;
+    timing_frame_info.packetization_finish_ms =
+        frameInfo->timing.packetization_finish_ms - sender_delta_ms;
+    timing_frame_info.pacer_exit_ms =
+        frameInfo->timing.pacer_exit_ms - sender_delta_ms;
+    timing_frame_info.network_timestamp_ms =
+        frameInfo->timing.network_timestamp_ms - sender_delta_ms;
+    timing_frame_info.network2_timestamp_ms =
+        frameInfo->timing.network2_timestamp_ms - sender_delta_ms;
+    timing_frame_info.receive_start_ms = frameInfo->timing.receive_start_ms;
+    timing_frame_info.receive_finish_ms = frameInfo->timing.receive_finish_ms;
+    timing_frame_info.decode_start_ms = frameInfo->decodeStartTimeMs;
+    timing_frame_info.decode_finish_ms = now_ms;
+    timing_frame_info.render_time_ms = frameInfo->renderTimeMs;
+    timing_frame_info.rtp_timestamp = decodedImage.timestamp();
+
+    _timing->SetTimingFrameInfo(timing_frame_info);
   }
 
   decodedImage.set_timestamp_us(

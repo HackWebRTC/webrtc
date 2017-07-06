@@ -249,6 +249,10 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
   for (const auto& i : ints)
     report->AddInt(i.name, i.value);
   report->AddString(StatsReport::kStatsValueNameMediaType, "video");
+  if (info.timing_frame_info) {
+    report->AddString(StatsReport::kStatsValueNameTimingFrameInfo,
+                      info.timing_frame_info->ToString());
+  }
 }
 
 void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {

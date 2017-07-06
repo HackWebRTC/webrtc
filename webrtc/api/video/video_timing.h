@@ -12,14 +12,17 @@
 #define WEBRTC_API_VIDEO_VIDEO_TIMING_H_
 
 #include <stdint.h>
-#include <limits>
+
+#include <string>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
 
 namespace webrtc {
 
-// Video timing timstamps in ms counted from capture_time_ms of a frame.
-struct VideoTiming {
+// Video timing timestamps in ms counted from capture_time_ms of a frame.
+// This structure represents data sent in video-timing RTP header extension.
+struct VideoSendTiming {
   static const uint8_t kEncodeStartDeltaIdx = 0;
   static const uint8_t kEncodeFinishDeltaIdx = 1;
   static const uint8_t kPacketizationFinishDeltaIdx = 2;
@@ -43,6 +46,44 @@ struct VideoTiming {
   uint16_t network_timstamp_delta_ms;
   uint16_t network2_timstamp_delta_ms;
   bool is_timing_frame;
+};
+
+// Used to report precise timings of a 'timing frames'. Contains all important
+// timestamps for a lifetime of that specific frame. Reported as a string via
+// GetStats(). Only frame which took the longest between two GetStats calls is
+// reported.
+struct TimingFrameInfo {
+  TimingFrameInfo();
+
+  // Returns end-to-end delay of a frame, if sender and receiver timestamps are
+  // synchronized, -1 otherwise.
+  int64_t EndToEndDelay() const;
+
+  // Returns true if current frame took longer to process than |other| frame.
+  // If other frame's clocks are not synchronized, current frame is always
+  // preferred.
+  bool IsLongerThan(const TimingFrameInfo& other) const;
+
+  std::string ToString() const;
+
+  uint32_t rtp_timestamp;  // Identifier of a frame.
+  // All timestamps below are in local monotonous clock of a receiver.
+  // If sender clock is not yet estimated, sender timestamps
+  // (capture_time_ms ... pacer_exit_ms) are negative values, still
+  // relatively correct.
+  int64_t capture_time_ms;          // Captrue time of a frame.
+  int64_t encode_start_ms;          // Encode start time.
+  int64_t encode_finish_ms;         // Encode completion time.
+  int64_t packetization_finish_ms;  // Time when frame was passed to pacer.
+  int64_t pacer_exit_ms;  // Time when last packet was pushed out of pacer.
+  // Two in-network RTP processor timestamps: meaning is application specific.
+  int64_t network_timestamp_ms;
+  int64_t network2_timestamp_ms;
+  int64_t receive_start_ms;   // First received packet time.
+  int64_t receive_finish_ms;  // Last received packet time.
+  int64_t decode_start_ms;    // Decode start time.
+  int64_t decode_finish_ms;   // Decode completion time.
+  int64_t render_time_ms;     // Proposed render time to insure smooth playback.
 };
 
 }  // namespace webrtc

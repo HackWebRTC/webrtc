@@ -2483,6 +2483,8 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   info.plis_sent = stats.rtcp_packet_type_counts.pli_packets;
   info.nacks_sent = stats.rtcp_packet_type_counts.nack_packets;
 
+  info.timing_frame_info = stream_->GetAndResetTimingFrameInfo();
+
   if (log_stats)
     LOG(LS_INFO) << stats.ToString(rtc::TimeMillis());
 

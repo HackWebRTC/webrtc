@@ -132,11 +132,13 @@ EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
   rtp_video_header.content_type = encoded_image.content_type_;
   if (encoded_image.timing_.is_timing_frame) {
     rtp_video_header.video_timing.encode_start_delta_ms =
-        VideoTiming::GetDeltaCappedMs(encoded_image.capture_time_ms_,
-                                      encoded_image.timing_.encode_start_ms);
+        VideoSendTiming::GetDeltaCappedMs(
+            encoded_image.capture_time_ms_,
+            encoded_image.timing_.encode_start_ms);
     rtp_video_header.video_timing.encode_finish_delta_ms =
-        VideoTiming::GetDeltaCappedMs(encoded_image.capture_time_ms_,
-                                      encoded_image.timing_.encode_finish_ms);
+        VideoSendTiming::GetDeltaCappedMs(
+            encoded_image.capture_time_ms_,
+            encoded_image.timing_.encode_finish_ms);
     rtp_video_header.video_timing.packetization_finish_delta_ms = 0;
     rtp_video_header.video_timing.pacer_exit_delta_ms = 0;
     rtp_video_header.video_timing.network_timstamp_delta_ms = 0;

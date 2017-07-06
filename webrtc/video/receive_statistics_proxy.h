@@ -46,6 +46,8 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
 
   VideoReceiveStream::Stats GetStats() const;
 
+  rtc::Optional<TimingFrameInfo> GetAndResetTimingFrameInfo();
+
   void OnDecodedFrame(rtc::Optional<uint8_t> qp, VideoContentType content_type);
   void OnSyncOffsetUpdated(int64_t sync_offset_ms, double estimated_freq_khz);
   void OnRenderedFrame(const VideoFrame& frame);
@@ -68,6 +70,8 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
                                    int jitter_buffer_ms,
                                    int min_playout_delay_ms,
                                    int render_delay_ms) override;
+
+  void OnTimingFrameInfoUpdated(const TimingFrameInfo& info) override;
 
   // Overrides RtcpStatisticsCallback.
   void StatisticsUpdated(const webrtc::RtcpStatistics& statistics,
@@ -157,6 +161,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   mutable std::map<int64_t, size_t> frame_window_ GUARDED_BY(&crit_);
   VideoContentType last_content_type_ GUARDED_BY(&crit_);
   rtc::Optional<int64_t> last_decoded_frame_time_ms_;
+  rtc::Optional<TimingFrameInfo> timing_frame_info_ GUARDED_BY(&crit_);
 };
 
 }  // namespace webrtc

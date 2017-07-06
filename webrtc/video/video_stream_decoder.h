@@ -78,6 +78,8 @@ class VideoStreamDecoder : public VCMReceiveCallback,
                                    int min_playout_delay_ms,
                                    int render_delay_ms) override;
 
+  void OnTimingFrameInfoUpdated(const TimingFrameInfo& info) override;
+
   void RegisterReceiveStatisticsProxy(
       ReceiveStatisticsProxy* receive_statistics_proxy);
 

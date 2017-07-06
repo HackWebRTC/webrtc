@@ -473,7 +473,7 @@ TEST_P(RtpSenderTestWithoutPacer, WritesTimestampToTimingExtension) {
   packet->SetMarker(true);
   packet->SetTimestamp(kTimestamp);
   packet->set_capture_time_ms(capture_time_ms);
-  const VideoTiming kVideoTiming = {0u, 0u, 0u, 0u, 0u, 0u, true};
+  const VideoSendTiming kVideoTiming = {0u, 0u, 0u, 0u, 0u, 0u, true};
   packet->SetExtension<VideoTimingExtension>(kVideoTiming);
   EXPECT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
   size_t packet_size = packet->size();
@@ -1578,7 +1578,7 @@ TEST_P(RtpSenderVideoTest, TimingFrameHasPacketizationTimstampSet) {
   rtp_sender_video_->SendVideo(kRtpVideoGeneric, kVideoFrameKey, kPayload,
                                kTimestamp, kCaptureTimestamp, kFrame,
                                sizeof(kFrame), nullptr, &hdr);
-  VideoTiming timing;
+  VideoSendTiming timing;
   EXPECT_TRUE(transport_.last_sent_packet().GetExtension<VideoTimingExtension>(
       &timing));
   EXPECT_EQ(kPacketizationTimeMs, timing.packetization_finish_delta_ms);

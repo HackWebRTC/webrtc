@@ -13,7 +13,6 @@
 
 #include <stddef.h>
 #include <string.h>
-
 #include <ostream>
 #include <string>
 #include <vector>
@@ -782,7 +781,7 @@ struct RTPHeaderExtension {
   VideoContentType videoContentType;
 
   bool has_video_timing;
-  VideoTiming video_timing;
+  VideoSendTiming video_timing;
 
   PlayoutDelay playout_delay = {-1, -1};
 

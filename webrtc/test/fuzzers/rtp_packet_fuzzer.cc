@@ -91,7 +91,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         packet.GetExtension<VideoContentTypeExtension>(&content_type);
         break;
       case kRtpExtensionVideoTiming:
-        VideoTiming timing;
+        VideoSendTiming timing;
         packet.GetExtension<VideoTimingExtension>(&timing);
         break;
       case kRtpExtensionRtpStreamId: {

@@ -266,40 +266,41 @@ constexpr uint8_t VideoTimingExtension::kValueSizeBytes;
 constexpr const char* VideoTimingExtension::kUri;
 
 bool VideoTimingExtension::Parse(rtc::ArrayView<const uint8_t> data,
-                                 VideoTiming* timing) {
+                                 VideoSendTiming* timing) {
   RTC_DCHECK(timing);
   if (data.size() != kValueSizeBytes)
     return false;
   timing->encode_start_delta_ms =
       ByteReader<uint16_t>::ReadBigEndian(data.data());
   timing->encode_finish_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
-      data.data() + 2 * VideoTiming::kEncodeFinishDeltaIdx);
+      data.data() + 2 * VideoSendTiming::kEncodeFinishDeltaIdx);
   timing->packetization_finish_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
-      data.data() + 2 * VideoTiming::kPacketizationFinishDeltaIdx);
+      data.data() + 2 * VideoSendTiming::kPacketizationFinishDeltaIdx);
   timing->pacer_exit_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
-      data.data() + 2 * VideoTiming::kPacerExitDeltaIdx);
+      data.data() + 2 * VideoSendTiming::kPacerExitDeltaIdx);
   timing->network_timstamp_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
-      data.data() + 2 * VideoTiming::kNetworkTimestampDeltaIdx);
+      data.data() + 2 * VideoSendTiming::kNetworkTimestampDeltaIdx);
   timing->network2_timstamp_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
-      data.data() + 2 * VideoTiming::kNetwork2TimestampDeltaIdx);
+      data.data() + 2 * VideoSendTiming::kNetwork2TimestampDeltaIdx);
   timing->is_timing_frame = true;
   return true;
 }
 
-bool VideoTimingExtension::Write(uint8_t* data, const VideoTiming& timing) {
+bool VideoTimingExtension::Write(uint8_t* data, const VideoSendTiming& timing) {
   ByteWriter<uint16_t>::WriteBigEndian(data, timing.encode_start_delta_ms);
   ByteWriter<uint16_t>::WriteBigEndian(
-      data + 2 * VideoTiming::kEncodeFinishDeltaIdx,
+      data + 2 * VideoSendTiming::kEncodeFinishDeltaIdx,
       timing.encode_finish_delta_ms);
   ByteWriter<uint16_t>::WriteBigEndian(
-      data + 2 * VideoTiming::kPacketizationFinishDeltaIdx,
+      data + 2 * VideoSendTiming::kPacketizationFinishDeltaIdx,
       timing.packetization_finish_delta_ms);
   ByteWriter<uint16_t>::WriteBigEndian(
-      data + 2 * VideoTiming::kPacerExitDeltaIdx, timing.pacer_exit_delta_ms);
+      data + 2 * VideoSendTiming::kPacerExitDeltaIdx,
+      timing.pacer_exit_delta_ms);
   ByteWriter<uint16_t>::WriteBigEndian(
-      data + 2 * VideoTiming::kNetworkTimestampDeltaIdx, 0);  // reserved
+      data + 2 * VideoSendTiming::kNetworkTimestampDeltaIdx, 0);  // reserved
   ByteWriter<uint16_t>::WriteBigEndian(
-      data + 2 * VideoTiming::kNetwork2TimestampDeltaIdx, 0);  // reserved
+      data + 2 * VideoSendTiming::kNetwork2TimestampDeltaIdx, 0);  // reserved
   return true;
 }
 

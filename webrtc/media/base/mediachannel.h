@@ -17,6 +17,7 @@
 
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/api/rtpreceiverinterface.h"
+#include "webrtc/api/video/video_timing.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/copyonwritebuffer.h"
@@ -747,8 +748,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
         render_delay_ms(0),
         target_delay_ms(0),
         current_delay_ms(0),
-        capture_start_ntp_time_ms(-1) {
-  }
+        capture_start_ntp_time_ms(-1) {}
 
   std::vector<SsrcGroup> ssrc_groups;
   // TODO(hbos): Move this to |VideoMediaInfo::receive_codecs|?
@@ -793,6 +793,10 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
 
   // Estimated capture start time in NTP time in ms.
   int64_t capture_start_ntp_time_ms;
+
+  // Timing frame info: all important timestamps for a full lifetime of a
+  // single 'timing frame'.
+  rtc::Optional<webrtc::TimingFrameInfo> timing_frame_info;
 };
 
 struct DataSenderInfo : public MediaSenderInfo {

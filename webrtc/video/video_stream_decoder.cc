@@ -119,6 +119,9 @@ void VideoStreamDecoder::OnFrameBufferTimingsUpdated(int decode_ms,
                                                      int min_playout_delay_ms,
                                                      int render_delay_ms) {}
 
+void VideoStreamDecoder::OnTimingFrameInfoUpdated(const TimingFrameInfo& info) {
+}
+
 void VideoStreamDecoder::OnCompleteFrame(bool is_keyframe, size_t size_bytes) {}
 
 void VideoStreamDecoder::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {

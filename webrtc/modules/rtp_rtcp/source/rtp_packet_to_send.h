@@ -32,26 +32,26 @@ class RtpPacketToSend : public rtp::Packet {
 
   void set_packetization_finish_time_ms(int64_t time) {
     SetExtension<VideoTimingExtension>(
-        VideoTiming::GetDeltaCappedMs(capture_time_ms_, time),
-        VideoTiming::kPacketizationFinishDeltaIdx);
+        VideoSendTiming::GetDeltaCappedMs(capture_time_ms_, time),
+        VideoSendTiming::kPacketizationFinishDeltaIdx);
   }
 
   void set_pacer_exit_time_ms(int64_t time) {
     SetExtension<VideoTimingExtension>(
-        VideoTiming::GetDeltaCappedMs(capture_time_ms_, time),
-        VideoTiming::kPacerExitDeltaIdx);
+        VideoSendTiming::GetDeltaCappedMs(capture_time_ms_, time),
+        VideoSendTiming::kPacerExitDeltaIdx);
   }
 
   void set_network_time_ms(int64_t time) {
     SetExtension<VideoTimingExtension>(
-        VideoTiming::GetDeltaCappedMs(capture_time_ms_, time),
-        VideoTiming::kNetworkTimestampDeltaIdx);
+        VideoSendTiming::GetDeltaCappedMs(capture_time_ms_, time),
+        VideoSendTiming::kNetworkTimestampDeltaIdx);
   }
 
   void set_network2_time_ms(int64_t time) {
     SetExtension<VideoTimingExtension>(
-        VideoTiming::GetDeltaCappedMs(capture_time_ms_, time),
-        VideoTiming::kNetwork2TimestampDeltaIdx);
+        VideoSendTiming::GetDeltaCappedMs(capture_time_ms_, time),
+        VideoSendTiming::kNetwork2TimestampDeltaIdx);
   }
 
  private:

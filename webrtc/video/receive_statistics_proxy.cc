@@ -406,6 +406,17 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   return stats_;
 }
 
+rtc::Optional<TimingFrameInfo>
+ReceiveStatisticsProxy::GetAndResetTimingFrameInfo() {
+  rtc::CritScope lock(&crit_);
+  rtc::Optional<TimingFrameInfo> info = timing_frame_info_;
+  // Reset reported value to empty, so it will be always
+  // overwritten in |OnTimingFrameInfoUpdated|, thus allowing to store new
+  // value instead of reported one.
+  timing_frame_info_.reset();
+  return info;
+}
+
 void ReceiveStatisticsProxy::OnIncomingPayloadType(int payload_type) {
   rtc::CritScope lock(&crit_);
   stats_.current_payload_type = payload_type;
@@ -462,6 +473,17 @@ void ReceiveStatisticsProxy::OnFrameBufferTimingsUpdated(
   TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.RenderDelayInMs",
                        "render_delay_ms", render_delay_ms,
                        "ssrc", stats_.ssrc);
+}
+
+void ReceiveStatisticsProxy::OnTimingFrameInfoUpdated(
+    const TimingFrameInfo& info) {
+  rtc::CritScope lock(&crit_);
+  // Only the frame which was processed the longest since the last
+  // GetStats() call is reported. Therefore, only single 'longest' frame is
+  // stored.
+  if (!timing_frame_info_ || info.IsLongerThan(*timing_frame_info_)) {
+    timing_frame_info_.emplace(info);
+  }
 }
 
 void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(

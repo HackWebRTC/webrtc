@@ -149,6 +149,7 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
       }
 
       UpdateJitterDelay();
+      UpdateTimingFrameInfo();
       PropagateDecodability(next_frame_it_->second);
 
       // Sanity check for RTP timestamp monotonicity.
@@ -534,8 +535,15 @@ void FrameBuffer::UpdateJitterDelay() {
   }
 }
 
+void FrameBuffer::UpdateTimingFrameInfo() {
+  TRACE_EVENT0("webrtc", "FrameBuffer::UpdateTimingFrameInfo");
+  rtc::Optional<TimingFrameInfo> info = timing_->GetTimingFrameInfo();
+  if (info)
+    stats_callback_->OnTimingFrameInfoUpdated(*info);
+}
+
 void FrameBuffer::ClearFramesAndHistory() {
-  TRACE_EVENT0("webrtc", "FrameBuffer::UpdateJitterDelay");
+  TRACE_EVENT0("webrtc", "FrameBuffer::ClearFramesAndHistory");
   frames_.clear();
   last_decoded_frame_it_ = frames_.end();
   last_continuous_frame_it_ = frames_.end();

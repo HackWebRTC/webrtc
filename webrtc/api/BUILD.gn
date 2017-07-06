@@ -173,6 +173,7 @@ rtc_source_set("video_frame_api") {
     "video/video_frame_buffer.cc",
     "video/video_frame_buffer.h",
     "video/video_rotation.h",
+    "video/video_timing.cc",
     "video/video_timing.h",
   ]
 

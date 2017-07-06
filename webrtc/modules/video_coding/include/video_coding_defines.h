@@ -109,6 +109,8 @@ class VCMReceiveStatisticsCallback {
                                            int min_playout_delay_ms,
                                            int render_delay_ms) = 0;
 
+  virtual void OnTimingFrameInfoUpdated(const TimingFrameInfo& info) = 0;
+
  protected:
   virtual ~VCMReceiveStatisticsCallback() {}
 };

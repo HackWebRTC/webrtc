@@ -61,7 +61,7 @@ struct RTPVideoHeader {
 
   VideoContentType content_type;
 
-  VideoTiming video_timing;
+  VideoSendTiming video_timing;
 
   bool is_first_packet_in_frame;
   uint8_t simulcastIdx;  // Index if the simulcast encoder creating

@@ -134,9 +134,10 @@ class VideoTimingExtension {
   static constexpr const char* kUri =
       "http://www.webrtc.org/experiments/rtp-hdrext/video-timing";
 
-  static bool Parse(rtc::ArrayView<const uint8_t> data, VideoTiming* timing);
-  static size_t ValueSize(const VideoTiming&) { return kValueSizeBytes; }
-  static bool Write(uint8_t* data, const VideoTiming& timing);
+  static bool Parse(rtc::ArrayView<const uint8_t> data,
+                    VideoSendTiming* timing);
+  static size_t ValueSize(const VideoSendTiming&) { return kValueSizeBytes; }
+  static bool Write(uint8_t* data, const VideoSendTiming& timing);
 
   static size_t ValueSize(uint16_t time_delta_ms, uint8_t idx) {
     return kValueSizeBytes;
