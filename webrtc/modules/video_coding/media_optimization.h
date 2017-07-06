@@ -74,9 +74,10 @@ class MediaOptimization {
   typedef std::list<EncodedFrameSample> FrameSampleList;
 
   void UpdateIncomingFrameRate() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-  void PurgeOldFrameSamples(int64_t now_ms)
+  void PurgeOldFrameSamples(int64_t threshold_ms)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-  void UpdateSentBitrate(int64_t now_ms) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  // Updates the sent bitrate field, a call to PurgeOldFrameSamples must preceed
+  int GetSentBitrate(int64_t now_ms) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   void UpdateSentFramerate() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   void ProcessIncomingFrameRate(int64_t now)
@@ -116,7 +117,6 @@ class MediaOptimization {
   float incoming_frame_rate_ GUARDED_BY(crit_sect_);
   int64_t incoming_frame_times_[kFrameCountHistorySize] GUARDED_BY(crit_sect_);
   std::list<EncodedFrameSample> encoded_frame_samples_ GUARDED_BY(crit_sect_);
-  uint32_t avg_sent_bit_rate_bps_ GUARDED_BY(crit_sect_);
   uint32_t avg_sent_framerate_ GUARDED_BY(crit_sect_);
   int num_layers_ GUARDED_BY(crit_sect_);
 };
