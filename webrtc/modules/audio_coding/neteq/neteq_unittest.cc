@@ -1336,6 +1336,7 @@ TEST_F(NetEqDecodingTestWithMutedState, MutedState) {
   EXPECT_FALSE(GetAudioReturnMuted());
   // Pull data until faded out.
   GetAudioUntilMuted();
+  EXPECT_TRUE(out_frame_.muted());
 
   // Verify that output audio is not written during muted mode. Other parameters
   // should be correct, though.
@@ -1347,6 +1348,7 @@ TEST_F(NetEqDecodingTestWithMutedState, MutedState) {
   bool muted;
   EXPECT_EQ(0, neteq_->GetAudio(&new_frame, &muted));
   EXPECT_TRUE(muted);
+  EXPECT_TRUE(out_frame_.muted());
   for (size_t i = 0; i < AudioFrame::kMaxDataSizeSamples; i++) {
     EXPECT_EQ(17, frame_data[i]);
   }
@@ -1362,6 +1364,7 @@ TEST_F(NetEqDecodingTestWithMutedState, MutedState) {
   // packet. Verify that normal operation resumes.
   InsertPacket(kSamples * counter_);
   GetAudioUntilNormal();
+  EXPECT_FALSE(out_frame_.muted());
 
   NetEqNetworkStatistics stats;
   EXPECT_EQ(0, neteq_->NetworkStatistics(&stats));

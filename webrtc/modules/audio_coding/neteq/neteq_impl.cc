@@ -200,6 +200,7 @@ int NetEqImpl::GetAudio(AudioFrame* audio_frame, bool* muted) {
   RTC_DCHECK_EQ(
       audio_frame->sample_rate_hz_,
       rtc::dchecked_cast<int>(audio_frame->samples_per_channel_ * 100));
+  RTC_DCHECK_EQ(*muted, audio_frame->muted());
   SetAudioFrameActivityAndType(vad_->enabled(), LastOutputType(),
                                last_vad_activity_, audio_frame);
   last_vad_activity_ = audio_frame->vad_activity_;
@@ -830,6 +831,8 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
   // Check for muted state.
   if (enable_muted_state_ && expand_->Muted() && packet_buffer_->Empty()) {
     RTC_DCHECK_EQ(last_mode_, kModeExpand);
+    audio_frame->Reset();
+    RTC_DCHECK(audio_frame->muted());  // Reset() should mute the frame.
     playout_timestamp_ += static_cast<uint32_t>(output_size_samples_);
     audio_frame->sample_rate_hz_ = fs_hz_;
     audio_frame->samples_per_channel_ = output_size_samples_;
