@@ -537,20 +537,25 @@ void DtlsTransport::OnDtlsEvent(rtc::StreamInterface* dtls, int sig, int err) {
     char buf[kMaxDtlsPacketLen];
     size_t read;
     int read_error;
-    rtc::StreamResult ret = dtls_->Read(buf, sizeof(buf), &read, &read_error);
-    if (ret == rtc::SR_SUCCESS) {
-      SignalReadPacket(this, buf, read, rtc::CreatePacketTime(0), 0);
-    } else if (ret == rtc::SR_EOS) {
-      // Remote peer shut down the association with no error.
-      LOG_J(LS_INFO, this) << "DTLS transport closed";
-      set_writable(false);
-      set_dtls_state(DTLS_TRANSPORT_CLOSED);
-    } else if (ret == rtc::SR_ERROR) {
-      // Remote peer shut down the association with an error.
-      LOG_J(LS_INFO, this) << "DTLS transport error, code=" << read_error;
-      set_writable(false);
-      set_dtls_state(DTLS_TRANSPORT_FAILED);
-    }
+    rtc::StreamResult ret;
+    // The underlying DTLS stream may have received multiple DTLS records in
+    // one packet, so read all of them.
+    do {
+      ret = dtls_->Read(buf, sizeof(buf), &read, &read_error);
+      if (ret == rtc::SR_SUCCESS) {
+        SignalReadPacket(this, buf, read, rtc::CreatePacketTime(0), 0);
+      } else if (ret == rtc::SR_EOS) {
+        // Remote peer shut down the association with no error.
+        LOG_J(LS_INFO, this) << "DTLS transport closed";
+        set_writable(false);
+        set_dtls_state(DTLS_TRANSPORT_CLOSED);
+      } else if (ret == rtc::SR_ERROR) {
+        // Remote peer shut down the association with an error.
+        LOG_J(LS_INFO, this) << "DTLS transport error, code=" << read_error;
+        set_writable(false);
+        set_dtls_state(DTLS_TRANSPORT_FAILED);
+      }
+    } while (ret == rtc::SR_SUCCESS);
   }
   if (sig & rtc::SE_CLOSE) {
     RTC_DCHECK(sig == rtc::SE_CLOSE);  // SE_CLOSE should be by itself.

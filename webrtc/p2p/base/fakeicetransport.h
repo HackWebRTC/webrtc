@@ -161,6 +161,11 @@ class FakeIceTransport : public IceTransportInternal {
   // Fake PacketTransportInternal implementation.
   bool writable() const override { return writable_; }
   bool receiving() const override { return receiving_; }
+  // If combine is enabled, every two consecutive packets to be sent with
+  // "SendPacket" will be combined into one outgoing packet.
+  void combine_outgoing_packets(bool combine) {
+    combine_outgoing_packets_ = combine;
+  }
   int SendPacket(const char* data,
                  size_t len,
                  const rtc::PacketOptions& options,
@@ -168,14 +173,18 @@ class FakeIceTransport : public IceTransportInternal {
     if (!dest_) {
       return -1;
     }
-    rtc::CopyOnWriteBuffer packet(data, len);
-    if (async_) {
-      invoker_.AsyncInvokeDelayed<void>(
-          RTC_FROM_HERE, rtc::Thread::Current(),
-          rtc::Bind(&FakeIceTransport::SendPacketInternal, this, packet),
-          async_delay_ms_);
-    } else {
-      SendPacketInternal(packet);
+
+    send_packet_.AppendData(data, len);
+    if (!combine_outgoing_packets_ || send_packet_.size() > len) {
+      rtc::CopyOnWriteBuffer packet(std::move(send_packet_));
+      if (async_) {
+        invoker_.AsyncInvokeDelayed<void>(
+            RTC_FROM_HERE, rtc::Thread::Current(),
+            rtc::Bind(&FakeIceTransport::SendPacketInternal, this, packet),
+            async_delay_ms_);
+      } else {
+        SendPacketInternal(packet);
+      }
     }
     rtc::SentPacket sent_packet(options.packet_id, rtc::TimeMillis());
     SignalSentPacket(this, sent_packet);
@@ -233,6 +242,8 @@ class FakeIceTransport : public IceTransportInternal {
   bool had_connection_ = false;
   bool writable_ = false;
   bool receiving_ = false;
+  bool combine_outgoing_packets_ = false;
+  rtc::CopyOnWriteBuffer send_packet_;
 };
 
 }  // namespace cricket
