@@ -14,7 +14,7 @@
 #import "RTCMediaStreamTrack+Private.h"
 #import "RTCLegacyStatsReport+Private.h"
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
 

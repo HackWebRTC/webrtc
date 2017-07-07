@@ -12,7 +12,7 @@
 
 #include <arm_neon.h>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 // Constants to compensate for shifting signal log(2^shifts).
 const int16_t WebRtcNsx_kLogTable[9] = {

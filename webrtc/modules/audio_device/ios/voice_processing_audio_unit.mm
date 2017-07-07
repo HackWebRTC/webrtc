@@ -10,7 +10,7 @@
 
 #import "webrtc/modules/audio_device/ios/voice_processing_audio_unit.h"
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 #import "WebRTC/RTCLogging.h"
 #import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h"

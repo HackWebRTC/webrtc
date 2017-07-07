@@ -13,7 +13,7 @@
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/structs.h"
-#include "webrtc/base/compile_assert_c.h"
+#include "webrtc/rtc_base/compile_assert_c.h"
 
 // Number of segments in a pitch subframe.
 static const int kSegments = 5;

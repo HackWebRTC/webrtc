@@ -13,7 +13,7 @@
 #import "NSString+StdString.h"
 #import "WebRTC/RTCLogging.h"
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 @implementation RTCSessionDescription
 

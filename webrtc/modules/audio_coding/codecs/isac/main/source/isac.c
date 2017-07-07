@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/source/bandwidth_estimator.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/source/codec.h"

@@ -11,7 +11,7 @@
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 
-#include "webrtc/base/gunit.h"
+#include "webrtc/rtc_base/gunit.h"
 
 #include <Metal/RTCMTLNV12Renderer.h>
 #include <WebRTC/RTCMTLVideoView.h>

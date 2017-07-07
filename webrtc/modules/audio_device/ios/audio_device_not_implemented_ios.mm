@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/audio_device/ios/audio_device_ios.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 

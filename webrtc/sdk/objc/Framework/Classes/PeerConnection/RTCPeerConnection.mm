@@ -26,7 +26,7 @@
 #include <memory>
 
 #include "webrtc/api/jsepicecandidate.h"
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 NSString * const kRTCPeerConnectionErrorDomain =
     @"org.webrtc.RTCPeerConnection";

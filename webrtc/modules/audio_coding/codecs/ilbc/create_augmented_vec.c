@@ -18,7 +18,7 @@
 
 #include "defines.h"
 #include "constants.h"
-#include "webrtc/base/sanitizer.h"
+#include "webrtc/rtc_base/sanitizer.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 /*----------------------------------------------------------------*

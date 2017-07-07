@@ -11,7 +11,7 @@
 #include <arm_neon.h>
 #include <stdlib.h>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 // Maximum absolute value of word16 vector. C version for generic platforms.

@@ -21,9 +21,9 @@
 #endif
 #import "WebRTC/RTCVideoFrameBuffer.h"
 #include "libyuv/convert_from.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
 #include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
 #include "webrtc/system_wrappers/include/clock.h"

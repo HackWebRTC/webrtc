@@ -11,7 +11,7 @@
 #import "RTCVideoSource+Private.h"
 
 #include "webrtc/api/videosourceproxy.h"
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/sdk/objc/Framework/Classes/Video/objcvideotracksource.h"
 
 static webrtc::ObjcVideoTrackSource *getObjcVideoSource(

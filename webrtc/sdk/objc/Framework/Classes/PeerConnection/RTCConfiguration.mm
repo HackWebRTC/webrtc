@@ -15,8 +15,8 @@
 #import "RTCIceServer+Private.h"
 #import "WebRTC/RTCLogging.h"
 
-#include "webrtc/base/rtccertificategenerator.h"
-#include "webrtc/base/sslidentity.h"
+#include "webrtc/rtc_base/rtccertificategenerator.h"
+#include "webrtc/rtc_base/sslidentity.h"
 
 @implementation RTCConfiguration
 

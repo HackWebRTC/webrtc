@@ -9,9 +9,9 @@
  */
 #include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/videocodecfactory.h"
 
-#include "webrtc/base/logging.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/media/base/codec.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/decoder.h"
 #include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/encoder.h"
 #include "webrtc/system_wrappers/include/field_trial.h"

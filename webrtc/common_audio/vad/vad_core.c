@@ -10,7 +10,7 @@
 
 #include "webrtc/common_audio/vad/vad_core.h"
 
-#include "webrtc/base/sanitizer.h"
+#include "webrtc/rtc_base/sanitizer.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_audio/vad/vad_filterbank.h"
 #include "webrtc/common_audio/vad/vad_gmm.h"

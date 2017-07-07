@@ -10,7 +10,7 @@
 
 #include "webrtc/common_audio/vad/vad_filterbank.h"
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/typedefs.h"
 

@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_inst.h"
 
 #include <stdlib.h>

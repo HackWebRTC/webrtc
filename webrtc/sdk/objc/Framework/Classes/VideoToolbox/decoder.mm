@@ -15,9 +15,9 @@
 
 #include "libyuv/convert.h"
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/common_video/include/video_frame.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
 #include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
 

@@ -24,7 +24,7 @@
 #include <stdio.h>
 #endif
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
 /* The slope of in Q13*/
 static const int16_t kSlope1[8] = {21793, 12517, 7189, 4129,

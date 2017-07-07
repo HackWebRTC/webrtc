@@ -19,7 +19,7 @@
 
 #include <stdlib.h>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/bandwidth_estimator.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/codec.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/entropy_coding.h"

@@ -13,7 +13,7 @@
  *
  */
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 // Maximum number of samples in a low/high-band frame.

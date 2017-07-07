@@ -16,16 +16,16 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/format_macros.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_device/include/mock_audio_transport.h"
 #include "webrtc/modules/audio_device/ios/audio_device_ios.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
@@ -475,7 +475,7 @@ class AudioDeviceTest : public ::testing::Test {
   AudioDeviceTest() : test_is_done_(EventWrapper::Create()) {
     old_sev_ = rtc::LogMessage::GetLogToDebug();
     // Set suitable logging level here. Change to rtc::LS_INFO for more verbose
-    // output. See webrtc/base/logging.h for complete list of options.
+    // output. See webrtc/rtc_base/logging.h for complete list of options.
     rtc::LogMessage::LogToDebug(rtc::LS_INFO);
     // Add extra logging fields here (timestamps and thread id).
     // rtc::LogMessage::LogTimestamps();

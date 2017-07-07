@@ -13,9 +13,9 @@
 #import <Foundation/Foundation.h>
 #include <string.h>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/typedefs.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/sdk/objc/Framework/Classes/Common/helpers.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace test {

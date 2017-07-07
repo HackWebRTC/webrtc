@@ -12,10 +12,10 @@
 
 #include <memory>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/filerotatingstream.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/logsinks.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/filerotatingstream.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/logsinks.h"
 
 NSString *const kDefaultLogDirName = @"webrtc_logs";
 NSUInteger const kDefaultMaxFileSize = 10 * 1024 * 1024; // 10MB.

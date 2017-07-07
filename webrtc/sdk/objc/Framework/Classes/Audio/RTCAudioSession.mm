@@ -12,10 +12,9 @@
 
 #import <UIKit/UIKit.h>
 
-#include "webrtc/base/atomicops.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/criticalsection.h"
-
+#include "webrtc/rtc_base/atomicops.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/criticalsection.h"
 
 #import "WebRTC/RTCAudioSessionConfiguration.h"
 #import "WebRTC/RTCLogging.h"

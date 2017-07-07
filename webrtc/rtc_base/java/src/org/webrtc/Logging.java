@@ -76,7 +76,7 @@ public class Logging {
     }
   }
 
-  // Keep in sync with webrtc/base/logging.h:LoggingSeverity.
+  // Keep in sync with webrtc/rtc_base/logging.h:LoggingSeverity.
   public enum Severity { LS_SENSITIVE, LS_VERBOSE, LS_INFO, LS_WARNING, LS_ERROR, LS_NONE }
 
   public static void enableLogThreads() {
