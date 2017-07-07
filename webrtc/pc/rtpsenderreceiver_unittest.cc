@@ -124,7 +124,8 @@ class RtpSenderReceiverTest : public testing::Test,
   void AddVideoTrack(bool is_screencast) {
     rtc::scoped_refptr<VideoTrackSourceInterface> source(
         FakeVideoTrackSource::Create(is_screencast));
-    video_track_ = VideoTrack::Create(kVideoTrackId, source);
+    video_track_ =
+        VideoTrack::Create(kVideoTrackId, source, rtc::Thread::Current());
     EXPECT_TRUE(local_stream_->AddTrack(video_track_));
   }
 

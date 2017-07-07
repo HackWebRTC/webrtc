@@ -85,10 +85,12 @@ class TrackMediaInfoMapTest : public testing::Test {
         remote_audio_track_(AudioTrack::Create("RemoteAudioTrack", nullptr)),
         local_video_track_(
             VideoTrack::Create("LocalVideoTrack",
-                               FakeVideoTrackSource::Create(false))),
+                               FakeVideoTrackSource::Create(false),
+                               rtc::Thread::Current())),
         remote_video_track_(
             VideoTrack::Create("RemoteVideoTrack",
-                               FakeVideoTrackSource::Create(false))) {}
+                               FakeVideoTrackSource::Create(false),
+                               rtc::Thread::Current())) {}
 
   ~TrackMediaInfoMapTest() {
     // If we have a map the ownership has been passed to the map, only delete if

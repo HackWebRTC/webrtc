@@ -31,7 +31,8 @@ class VideoTrackTest : public testing::Test {
     static const char kVideoTrackId[] = "track_id";
     video_track_source_ = new rtc::RefCountedObject<VideoTrackSource>(
         &capturer_, true /* remote */);
-    video_track_ = VideoTrack::Create(kVideoTrackId, video_track_source_);
+    video_track_ = VideoTrack::Create(kVideoTrackId, video_track_source_,
+                                      rtc::Thread::Current());
     capturer_.Start(
         cricket::VideoFormat(640, 480, cricket::VideoFormat::FpsToInterval(30),
                              cricket::FOURCC_I420));
