@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
 
+#include "webrtc/rtc_base/win32.h"
+
 namespace webrtc {
 
 bool
@@ -29,7 +31,11 @@ GetCroppedWindowRect(HWND window,
   *original_rect = DesktopRect::MakeLTRB(
       rect.left, rect.top, rect.right, rect.bottom);
 
-  if (window_placement.showCmd == SW_SHOWMAXIMIZED) {
+  // After Windows8, transparent borders will be added by OS at
+  // left/bottom/right sides of a window. If the cropped window
+  // doesn't remove these borders, the background will be exposed a bit.
+  if (rtc::IsWindows8OrLater() ||
+      window_placement.showCmd == SW_SHOWMAXIMIZED) {
     DesktopSize border = DesktopSize(GetSystemMetrics(SM_CXSIZEFRAME),
                                      GetSystemMetrics(SM_CYSIZEFRAME));
     *cropped_rect = DesktopRect::MakeLTRB(
