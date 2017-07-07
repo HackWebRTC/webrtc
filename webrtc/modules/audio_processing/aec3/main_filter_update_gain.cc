@@ -100,8 +100,8 @@ void MainFilterUpdateGain::Compute(
 
   // H_error = H_error + factor * erl.
   std::array<float, kFftLengthBy2Plus1> H_error_increase;
-  constexpr float kErlScaleAccurate = 1.f / 30.0f;
-  constexpr float kErlScaleInaccurate = 1.f / 10.0f;
+  constexpr float kErlScaleAccurate = 1.f / 100.0f;
+  constexpr float kErlScaleInaccurate = 1.f / 60.0f;
   std::transform(E2_shadow.begin(), E2_shadow.end(), E2_main.begin(),
                  H_error_increase.begin(), [&](float a, float b) {
                    return a >= b ? kErlScaleAccurate : kErlScaleInaccurate;
