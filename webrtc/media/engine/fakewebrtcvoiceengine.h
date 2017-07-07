@@ -72,9 +72,6 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
     inited_ = false;
     return 0;
   }
-  // TODO(peah): Remove this when downstream dependencies have properly been
-  // resolved.
-  webrtc::AudioProcessing* audio_processing() override { return nullptr; }
   webrtc::AudioDeviceModule* audio_device_module() override {
     return nullptr;
   }

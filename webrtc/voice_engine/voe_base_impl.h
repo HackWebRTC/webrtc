@@ -30,14 +30,8 @@ class VoEBaseImpl : public VoEBase,
 
   int Init(
       AudioDeviceModule* external_adm,
-      AudioProcessing* external_apm,
+      AudioProcessing* audio_processing,
       const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) override;
-  AudioProcessing* audio_processing() override {
-    // TODO(peah): Remove this when downstream dependencies have properly been
-    // resolved.
-    RTC_DCHECK(audio_processing_);
-    return audio_processing_.get();
-  }
   AudioDeviceModule* audio_device_module() override {
     return shared_->audio_device();
   }
@@ -123,10 +117,6 @@ class VoEBaseImpl : public VoEBase,
   VoiceEngineObserver* voiceEngineObserverPtr_;
   rtc::CriticalSection callbackCritSect_;
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
-
-  // TODO(peah): Remove this when upstream dependencies have properly been
-  // resolved.
-  rtc::scoped_refptr<AudioProcessing> audio_processing_;
 
   AudioFrame audioFrame_;
   voe::SharedData* shared_;

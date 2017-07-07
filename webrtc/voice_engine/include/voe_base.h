@@ -133,12 +133,6 @@ class WEBRTC_DLLEXPORT VoEBase {
                    AudioProcessing* external_apm = nullptr,
                    const rtc::scoped_refptr<AudioDecoderFactory>&
                        decoder_factory = nullptr) = 0;
-
-  // Returns null before Init() is called.
-  // TODO(peah): Remove this when downstream dependencies have properly been
-  // resolved.
-  virtual AudioProcessing* audio_processing() = 0;
-
   // This method is WIP - DO NOT USE!
   // Returns NULL before Init() is called.
   virtual AudioDeviceModule* audio_device_module() = 0;
