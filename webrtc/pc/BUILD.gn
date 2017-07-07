@@ -50,6 +50,8 @@ rtc_static_library("rtc_pc_base") {
     "rtptransport.h",
     "srtpfilter.cc",
     "srtpfilter.h",
+    "srtpsession.cc",
+    "srtpsession.h",
     "voicechannel.h",
   ]
 
@@ -257,6 +259,8 @@ if (rtc_include_tests) {
       "rtcpmuxfilter_unittest.cc",
       "rtptransport_unittest.cc",
       "srtpfilter_unittest.cc",
+      "srtpsession_unittest.cc",
+      "srtptestutil.h",
     ]
 
     include_dirs = [ "//third_party/libsrtp/srtp" ]

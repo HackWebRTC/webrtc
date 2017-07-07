@@ -12,27 +12,22 @@
 
 #include "webrtc/pc/srtpfilter.h"
 
-#include "third_party/libsrtp/include/srtp.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/fakertp.h"
 #include "webrtc/p2p/base/sessiondescription.h"
+#include "webrtc/pc/srtptestutil.h"
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/rtc_base/byteorder.h"
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/gunit.h"
 #include "webrtc/rtc_base/thread.h"
 
-using rtc::CS_AES_CM_128_HMAC_SHA1_80;
-using rtc::CS_AES_CM_128_HMAC_SHA1_32;
-using rtc::CS_AEAD_AES_128_GCM;
-using rtc::CS_AEAD_AES_256_GCM;
 using cricket::CryptoParams;
 using cricket::CS_LOCAL;
 using cricket::CS_REMOTE;
 
-static const uint8_t kTestKey1[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234";
-static const uint8_t kTestKey2[] = "4321ZYXWVUTSRQPONMLKJIHGFEDCBA";
-static const int kTestKeyLen = 30;
+namespace rtc {
+
 static const uint8_t kTestKeyGcm128_1[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ12";
 static const uint8_t kTestKeyGcm128_2[] = "21ZYXWVUTSRQPONMLKJIHGFEDCBA";
 static const int kTestKeyGcm128Len = 28;  // 128 bits key + 96 bits salt.
@@ -70,23 +65,6 @@ static const cricket::CryptoParams kTestCryptoParamsGcm3(
 static const cricket::CryptoParams kTestCryptoParamsGcm4(
     1, "AEAD_AES_128_GCM", kTestKeyParamsGcm4, "");
 
-static int rtp_auth_tag_len(const std::string& cs) {
-  if (cs == CS_AES_CM_128_HMAC_SHA1_32) {
-    return 4;
-  } else if (cs == CS_AEAD_AES_128_GCM || cs == CS_AEAD_AES_256_GCM) {
-    return 16;
-  } else {
-    return 10;
-  }
-}
-static int rtcp_auth_tag_len(const std::string& cs) {
-  if (cs == CS_AEAD_AES_128_GCM || cs == CS_AEAD_AES_256_GCM) {
-    return 16;
-  } else {
-    return 10;
-  }
-}
-
 class SrtpFilterTest : public testing::Test {
  protected:
   SrtpFilterTest()
@@ -112,11 +90,11 @@ class SrtpFilterTest : public testing::Test {
   void TestRtpAuthParams(cricket::SrtpFilter* filter, const std::string& cs) {
     int overhead;
     EXPECT_TRUE(filter->GetSrtpOverhead(&overhead));
-    switch (rtc::SrtpCryptoSuiteFromName(cs)) {
-      case rtc::SRTP_AES128_CM_SHA1_32:
+    switch (SrtpCryptoSuiteFromName(cs)) {
+      case SRTP_AES128_CM_SHA1_32:
         EXPECT_EQ(32/8, overhead);  // 32-bit tag.
         break;
-      case rtc::SRTP_AES128_CM_SHA1_80:
+      case SRTP_AES128_CM_SHA1_80:
         EXPECT_EQ(80/8, overhead);  // 80-bit tag.
         break;
       default:
@@ -133,17 +111,16 @@ class SrtpFilterTest : public testing::Test {
     EXPECT_EQ(overhead, tag_len);
   }
   void TestProtectUnprotect(const std::string& cs1, const std::string& cs2) {
-    rtc::Buffer rtp_buffer(sizeof(kPcmuFrame) + rtp_auth_tag_len(cs1));
+    Buffer rtp_buffer(sizeof(kPcmuFrame) + rtp_auth_tag_len(cs1));
     char* rtp_packet = rtp_buffer.data<char>();
     char original_rtp_packet[sizeof(kPcmuFrame)];
-    rtc::Buffer rtcp_buffer(sizeof(kRtcpReport) + 4 + rtcp_auth_tag_len(cs2));
+    Buffer rtcp_buffer(sizeof(kRtcpReport) + 4 + rtcp_auth_tag_len(cs2));
     char* rtcp_packet = rtcp_buffer.data<char>();
     int rtp_len = sizeof(kPcmuFrame), rtcp_len = sizeof(kRtcpReport), out_len;
     memcpy(rtp_packet, kPcmuFrame, rtp_len);
     // In order to be able to run this test function multiple times we can not
     // use the same sequence number twice. Increase the sequence number by one.
-    rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet) + 2,
-                 ++sequence_number_);
+    SetBE16(reinterpret_cast<uint8_t*>(rtp_packet) + 2, ++sequence_number_);
     memcpy(original_rtp_packet, rtp_packet, rtp_len);
     memcpy(rtcp_packet, kRtcpReport, rtcp_len);
 
@@ -198,8 +175,7 @@ class SrtpFilterTest : public testing::Test {
   void TestProtectUnprotectHeaderEncryption(const std::string& cs1,
       const std::string& cs2,
       const std::vector<int>& encrypted_header_ids) {
-    rtc::Buffer rtp_buffer(sizeof(kPcmuFrameWithExtensions) +
-        rtp_auth_tag_len(cs1));
+    Buffer rtp_buffer(sizeof(kPcmuFrameWithExtensions) + rtp_auth_tag_len(cs1));
     char* rtp_packet = rtp_buffer.data<char>();
     size_t rtp_packet_size = rtp_buffer.size();
     char original_rtp_packet[sizeof(kPcmuFrameWithExtensions)];
@@ -208,8 +184,7 @@ class SrtpFilterTest : public testing::Test {
     memcpy(rtp_packet, kPcmuFrameWithExtensions, rtp_len);
     // In order to be able to run this test function multiple times we can not
     // use the same sequence number twice. Increase the sequence number by one.
-    rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet) + 2,
-                 ++sequence_number_);
+    SetBE16(reinterpret_cast<uint8_t*>(rtp_packet) + 2, ++sequence_number_);
     memcpy(original_rtp_packet, rtp_packet, rtp_len);
 
     EXPECT_TRUE(f1_.ProtectRtp(rtp_packet, rtp_len,
@@ -246,7 +221,7 @@ class SrtpFilterTest : public testing::Test {
       const uint8_t* key1, int key1_len, const uint8_t* key2, int key2_len,
       const std::string& cs_name) {
     EXPECT_EQ(key1_len, key2_len);
-    EXPECT_EQ(cs_name, rtc::SrtpCryptoSuiteToName(cs));
+    EXPECT_EQ(cs_name, SrtpCryptoSuiteToName(cs));
     if (enable_external_auth) {
       f1_.EnableExternalAuth();
       f2_.EnableExternalAuth();
@@ -257,7 +232,7 @@ class SrtpFilterTest : public testing::Test {
     EXPECT_TRUE(f2_.SetRtcpParams(cs, key2, key2_len, cs, key1, key1_len));
     EXPECT_TRUE(f1_.IsActive());
     EXPECT_TRUE(f2_.IsActive());
-    if (rtc::IsGcmCryptoSuite(cs)) {
+    if (IsGcmCryptoSuite(cs)) {
       EXPECT_FALSE(f1_.IsExternalAuthActive());
       EXPECT_FALSE(f2_.IsExternalAuthActive());
     } else if (enable_external_auth) {
@@ -274,7 +249,7 @@ class SrtpFilterTest : public testing::Test {
     // Don't encrypt header ids 2 and 3.
     encrypted_headers.push_back(4);
     EXPECT_EQ(key1_len, key2_len);
-    EXPECT_EQ(cs_name, rtc::SrtpCryptoSuiteToName(cs));
+    EXPECT_EQ(cs_name, SrtpCryptoSuiteToName(cs));
     f1_.SetEncryptedHeaderExtensionIds(CS_LOCAL, encrypted_headers);
     f1_.SetEncryptedHeaderExtensionIds(CS_REMOTE, encrypted_headers);
     f2_.SetEncryptedHeaderExtensionIds(CS_LOCAL, encrypted_headers);
@@ -684,61 +659,63 @@ class SrtpFilterProtectSetParamsDirectTest
 // Test directly setting the params with AES_CM_128_HMAC_SHA1_80.
 TEST_P(SrtpFilterProtectSetParamsDirectTest, Test_AES_CM_128_HMAC_SHA1_80) {
   bool enable_external_auth = GetParam();
-  TestProtectSetParamsDirect(enable_external_auth, rtc::SRTP_AES128_CM_SHA1_80,
-      kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
-      CS_AES_CM_128_HMAC_SHA1_80);
+  TestProtectSetParamsDirect(enable_external_auth, SRTP_AES128_CM_SHA1_80,
+                             kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
+                             CS_AES_CM_128_HMAC_SHA1_80);
 }
 
 TEST_F(SrtpFilterTest,
     TestProtectSetParamsDirectHeaderEncryption_AES_CM_128_HMAC_SHA1_80) {
-  TestProtectSetParamsDirectHeaderEncryption(rtc::SRTP_AES128_CM_SHA1_80,
-      kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
+  TestProtectSetParamsDirectHeaderEncryption(
+      SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
       CS_AES_CM_128_HMAC_SHA1_80);
 }
 
 // Test directly setting the params with AES_CM_128_HMAC_SHA1_32.
 TEST_P(SrtpFilterProtectSetParamsDirectTest, Test_AES_CM_128_HMAC_SHA1_32) {
   bool enable_external_auth = GetParam();
-  TestProtectSetParamsDirect(enable_external_auth, rtc::SRTP_AES128_CM_SHA1_32,
-      kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
-      CS_AES_CM_128_HMAC_SHA1_32);
+  TestProtectSetParamsDirect(enable_external_auth, SRTP_AES128_CM_SHA1_32,
+                             kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
+                             CS_AES_CM_128_HMAC_SHA1_32);
 }
 
 TEST_F(SrtpFilterTest,
     TestProtectSetParamsDirectHeaderEncryption_AES_CM_128_HMAC_SHA1_32) {
-  TestProtectSetParamsDirectHeaderEncryption(rtc::SRTP_AES128_CM_SHA1_32,
-      kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
+  TestProtectSetParamsDirectHeaderEncryption(
+      SRTP_AES128_CM_SHA1_32, kTestKey1, kTestKeyLen, kTestKey2, kTestKeyLen,
       CS_AES_CM_128_HMAC_SHA1_32);
 }
 
 // Test directly setting the params with SRTP_AEAD_AES_128_GCM.
 TEST_P(SrtpFilterProtectSetParamsDirectTest, Test_SRTP_AEAD_AES_128_GCM) {
   bool enable_external_auth = GetParam();
-  TestProtectSetParamsDirect(enable_external_auth, rtc::SRTP_AEAD_AES_128_GCM,
-      kTestKeyGcm128_1, kTestKeyGcm128Len, kTestKeyGcm128_2, kTestKeyGcm128Len,
-      CS_AEAD_AES_128_GCM);
+  TestProtectSetParamsDirect(enable_external_auth, SRTP_AEAD_AES_128_GCM,
+                             kTestKeyGcm128_1, kTestKeyGcm128Len,
+                             kTestKeyGcm128_2, kTestKeyGcm128Len,
+                             CS_AEAD_AES_128_GCM);
 }
 
 TEST_F(SrtpFilterTest,
     TestProtectSetParamsDirectHeaderEncryption_SRTP_AEAD_AES_128_GCM) {
-  TestProtectSetParamsDirectHeaderEncryption(rtc::SRTP_AEAD_AES_128_GCM,
-      kTestKeyGcm128_1, kTestKeyGcm128Len, kTestKeyGcm128_2, kTestKeyGcm128Len,
-      CS_AEAD_AES_128_GCM);
+  TestProtectSetParamsDirectHeaderEncryption(
+      SRTP_AEAD_AES_128_GCM, kTestKeyGcm128_1, kTestKeyGcm128Len,
+      kTestKeyGcm128_2, kTestKeyGcm128Len, CS_AEAD_AES_128_GCM);
 }
 
 // Test directly setting the params with SRTP_AEAD_AES_256_GCM.
 TEST_P(SrtpFilterProtectSetParamsDirectTest, Test_SRTP_AEAD_AES_256_GCM) {
   bool enable_external_auth = GetParam();
-  TestProtectSetParamsDirect(enable_external_auth, rtc::SRTP_AEAD_AES_256_GCM,
-      kTestKeyGcm256_1, kTestKeyGcm256Len, kTestKeyGcm256_2, kTestKeyGcm256Len,
-      CS_AEAD_AES_256_GCM);
+  TestProtectSetParamsDirect(enable_external_auth, SRTP_AEAD_AES_256_GCM,
+                             kTestKeyGcm256_1, kTestKeyGcm256Len,
+                             kTestKeyGcm256_2, kTestKeyGcm256Len,
+                             CS_AEAD_AES_256_GCM);
 }
 
 TEST_F(SrtpFilterTest,
     TestProtectSetParamsDirectHeaderEncryption_SRTP_AEAD_AES_256_GCM) {
-  TestProtectSetParamsDirectHeaderEncryption(rtc::SRTP_AEAD_AES_256_GCM,
-      kTestKeyGcm256_1, kTestKeyGcm256Len, kTestKeyGcm256_2, kTestKeyGcm256Len,
-      CS_AEAD_AES_256_GCM);
+  TestProtectSetParamsDirectHeaderEncryption(
+      SRTP_AEAD_AES_256_GCM, kTestKeyGcm256_1, kTestKeyGcm256Len,
+      kTestKeyGcm256_2, kTestKeyGcm256Len, CS_AEAD_AES_256_GCM);
 }
 
 // Run all tests both with and without external auth enabled.
@@ -748,194 +725,12 @@ INSTANTIATE_TEST_CASE_P(ExternalAuth,
 
 // Test directly setting the params with bogus keys.
 TEST_F(SrtpFilterTest, TestSetParamsKeyTooShort) {
-  EXPECT_FALSE(f1_.SetRtpParams(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1,
-                                kTestKeyLen - 1, rtc::SRTP_AES128_CM_SHA1_80,
+  EXPECT_FALSE(f1_.SetRtpParams(SRTP_AES128_CM_SHA1_80, kTestKey1,
+                                kTestKeyLen - 1, SRTP_AES128_CM_SHA1_80,
                                 kTestKey1, kTestKeyLen - 1));
-  EXPECT_FALSE(f1_.SetRtcpParams(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1,
-                                 kTestKeyLen - 1, rtc::SRTP_AES128_CM_SHA1_80,
+  EXPECT_FALSE(f1_.SetRtcpParams(SRTP_AES128_CM_SHA1_80, kTestKey1,
+                                 kTestKeyLen - 1, SRTP_AES128_CM_SHA1_80,
                                  kTestKey1, kTestKeyLen - 1));
 }
 
-class SrtpSessionTest : public testing::Test {
- protected:
-  virtual void SetUp() {
-    rtp_len_ = sizeof(kPcmuFrame);
-    rtcp_len_ = sizeof(kRtcpReport);
-    memcpy(rtp_packet_, kPcmuFrame, rtp_len_);
-    memcpy(rtcp_packet_, kRtcpReport, rtcp_len_);
-  }
-  void TestProtectRtp(const std::string& cs) {
-    int out_len = 0;
-    EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_,
-                               sizeof(rtp_packet_), &out_len));
-    EXPECT_EQ(out_len, rtp_len_ + rtp_auth_tag_len(cs));
-    EXPECT_NE(0, memcmp(rtp_packet_, kPcmuFrame, rtp_len_));
-    rtp_len_ = out_len;
-  }
-  void TestProtectRtcp(const std::string& cs) {
-    int out_len = 0;
-    EXPECT_TRUE(s1_.ProtectRtcp(rtcp_packet_, rtcp_len_,
-                                sizeof(rtcp_packet_), &out_len));
-    EXPECT_EQ(out_len, rtcp_len_ + 4 + rtcp_auth_tag_len(cs));  // NOLINT
-    EXPECT_NE(0, memcmp(rtcp_packet_, kRtcpReport, rtcp_len_));
-    rtcp_len_ = out_len;
-  }
-  void TestUnprotectRtp(const std::string& cs) {
-    int out_len = 0, expected_len = sizeof(kPcmuFrame);
-    EXPECT_TRUE(s2_.UnprotectRtp(rtp_packet_, rtp_len_, &out_len));
-    EXPECT_EQ(expected_len, out_len);
-    EXPECT_EQ(0, memcmp(rtp_packet_, kPcmuFrame, out_len));
-  }
-  void TestUnprotectRtcp(const std::string& cs) {
-    int out_len = 0, expected_len = sizeof(kRtcpReport);
-    EXPECT_TRUE(s2_.UnprotectRtcp(rtcp_packet_, rtcp_len_, &out_len));
-    EXPECT_EQ(expected_len, out_len);
-    EXPECT_EQ(0, memcmp(rtcp_packet_, kRtcpReport, out_len));
-  }
-  cricket::SrtpSession s1_;
-  cricket::SrtpSession s2_;
-  char rtp_packet_[sizeof(kPcmuFrame) + 10];
-  char rtcp_packet_[sizeof(kRtcpReport) + 4 + 10];
-  int rtp_len_;
-  int rtcp_len_;
-};
-
-// Test that we can set up the session and keys properly.
-TEST_F(SrtpSessionTest, TestGoodSetup) {
-  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-}
-
-// Test that we can't change the keys once set.
-TEST_F(SrtpSessionTest, TestBadSetup) {
-  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_FALSE(
-      s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey2, kTestKeyLen));
-  EXPECT_FALSE(
-      s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey2, kTestKeyLen));
-}
-
-// Test that we fail keys of the wrong length.
-TEST_F(SrtpSessionTest, TestKeysTooShort) {
-  EXPECT_FALSE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, 1));
-  EXPECT_FALSE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, 1));
-}
-
-// Test that we can encrypt and decrypt RTP/RTCP using AES_CM_128_HMAC_SHA1_80.
-TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_80) {
-  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  TestProtectRtp(CS_AES_CM_128_HMAC_SHA1_80);
-  TestProtectRtcp(CS_AES_CM_128_HMAC_SHA1_80);
-  TestUnprotectRtp(CS_AES_CM_128_HMAC_SHA1_80);
-  TestUnprotectRtcp(CS_AES_CM_128_HMAC_SHA1_80);
-}
-
-// Test that we can encrypt and decrypt RTP/RTCP using AES_CM_128_HMAC_SHA1_32.
-TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_32) {
-  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_32, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_32, kTestKey1, kTestKeyLen));
-  TestProtectRtp(CS_AES_CM_128_HMAC_SHA1_32);
-  TestProtectRtcp(CS_AES_CM_128_HMAC_SHA1_32);
-  TestUnprotectRtp(CS_AES_CM_128_HMAC_SHA1_32);
-  TestUnprotectRtcp(CS_AES_CM_128_HMAC_SHA1_32);
-}
-
-TEST_F(SrtpSessionTest, TestGetSendStreamPacketIndex) {
-  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_32, kTestKey1, kTestKeyLen));
-  int64_t index;
-  int out_len = 0;
-  EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_,
-                             sizeof(rtp_packet_), &out_len, &index));
-  // |index| will be shifted by 16.
-  int64_t be64_index = static_cast<int64_t>(rtc::NetworkToHost64(1 << 16));
-  EXPECT_EQ(be64_index, index);
-}
-
-// Test that we fail to unprotect if someone tampers with the RTP/RTCP paylaods.
-TEST_F(SrtpSessionTest, TestTamperReject) {
-  int out_len;
-  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  TestProtectRtp(CS_AES_CM_128_HMAC_SHA1_80);
-  TestProtectRtcp(CS_AES_CM_128_HMAC_SHA1_80);
-  rtp_packet_[0] = 0x12;
-  rtcp_packet_[1] = 0x34;
-  EXPECT_FALSE(s2_.UnprotectRtp(rtp_packet_, rtp_len_, &out_len));
-  EXPECT_FALSE(s2_.UnprotectRtcp(rtcp_packet_, rtcp_len_, &out_len));
-}
-
-// Test that we fail to unprotect if the payloads are not authenticated.
-TEST_F(SrtpSessionTest, TestUnencryptReject) {
-  int out_len;
-  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_FALSE(s2_.UnprotectRtp(rtp_packet_, rtp_len_, &out_len));
-  EXPECT_FALSE(s2_.UnprotectRtcp(rtcp_packet_, rtcp_len_, &out_len));
-}
-
-// Test that we fail when using buffers that are too small.
-TEST_F(SrtpSessionTest, TestBuffersTooSmall) {
-  int out_len;
-  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_FALSE(s1_.ProtectRtp(rtp_packet_, rtp_len_,
-                              sizeof(rtp_packet_) - 10, &out_len));
-  EXPECT_FALSE(s1_.ProtectRtcp(rtcp_packet_, rtcp_len_,
-                               sizeof(rtcp_packet_) - 14, &out_len));
-}
-
-TEST_F(SrtpSessionTest, TestReplay) {
-  static const uint16_t kMaxSeqnum = static_cast<uint16_t>(-1);
-  static const uint16_t seqnum_big = 62275;
-  static const uint16_t seqnum_small = 10;
-  static const uint16_t replay_window = 1024;
-  int out_len;
-
-  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
-
-  // Initial sequence number.
-  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2, seqnum_big);
-  EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
-                             &out_len));
-
-  // Replay within the 1024 window should succeed.
-  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2,
-               seqnum_big - replay_window + 1);
-  EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
-                             &out_len));
-
-  // Replay out side of the 1024 window should fail.
-  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2,
-               seqnum_big - replay_window - 1);
-  EXPECT_FALSE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
-                              &out_len));
-
-  // Increment sequence number to a small number.
-  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2, seqnum_small);
-  EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
-                             &out_len));
-
-  // Replay around 0 but out side of the 1024 window should fail.
-  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2,
-               kMaxSeqnum + seqnum_small - replay_window - 1);
-  EXPECT_FALSE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
-                              &out_len));
-
-  // Replay around 0 but within the 1024 window should succeed.
-  for (uint16_t seqnum = 65000; seqnum < 65003; ++seqnum) {
-    rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2, seqnum);
-    EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
-                               &out_len));
-  }
-
-  // Go back to normal sequence nubmer.
-  // NOTE: without the fix in libsrtp, this would fail. This is because
-  // without the fix, the loop above would keep incrementing local sequence
-  // number in libsrtp, eventually the new sequence number would go out side
-  // of the window.
-  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2, seqnum_small + 1);
-  EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
-                             &out_len));
-}
+}  // namespace rtc
