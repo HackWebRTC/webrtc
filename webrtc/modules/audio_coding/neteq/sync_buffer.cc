@@ -74,7 +74,7 @@ void SyncBuffer::GetNextAudioInterleaved(size_t requested_len,
                                          AudioFrame* output) {
   RTC_DCHECK(output);
   const size_t samples_to_read = std::min(FutureLength(), requested_len);
-  output->Reset();
+  output->ResetWithoutMuting();
   const size_t tot_samples_read =
       ReadInterleavedFromIndex(next_index_, samples_to_read,
                                output->mutable_data());

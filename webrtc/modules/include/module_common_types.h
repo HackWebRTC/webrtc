@@ -307,6 +307,11 @@ class AudioFrame {
 
   // Resets all members to their default state.
   void Reset();
+  // Same as Reset(), but leaves mute state unchanged. Muting a frame requires
+  // the buffer to be zeroed on the next call to mutable_data(). Callers
+  // intending to write to the buffer immediately after Reset() can instead use
+  // ResetWithoutMuting() to skip this wasteful zeroing.
+  void ResetWithoutMuting();
 
   void UpdateFrame(int id, uint32_t timestamp, const int16_t* data,
                    size_t samples_per_channel, int sample_rate_hz,
@@ -370,13 +375,17 @@ inline AudioFrame::AudioFrame() {
 }
 
 inline void AudioFrame::Reset() {
+  ResetWithoutMuting();
+  muted_ = true;
+}
+
+inline void AudioFrame::ResetWithoutMuting() {
   id_ = -1;
   // TODO(wu): Zero is a valid value for |timestamp_|. We should initialize
   // to an invalid value, or add a new member to indicate invalidity.
   timestamp_ = 0;
   elapsed_time_ms_ = -1;
   ntp_time_ms_ = -1;
-  muted_ = true;
   samples_per_channel_ = 0;
   sample_rate_hz_ = 0;
   num_channels_ = 0;
