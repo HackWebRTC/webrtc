@@ -18,6 +18,8 @@
 #include "webrtc/rtc_base/gunit.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/nullsocketserver.h"
+#include "webrtc/rtc_base/refcount.h"
+#include "webrtc/rtc_base/refcountedobject.h"
 #include "webrtc/rtc_base/thread.h"
 #include "webrtc/rtc_base/timeutils.h"
 
@@ -214,4 +216,33 @@ TEST(MessageQueueManager, ProcessAllMessageQueuesWithClearedQueue) {
   t.Post(RTC_FROM_HERE, &clearer);
   rtc::Thread::Current()->Post(RTC_FROM_HERE, &event_signaler);
   MessageQueueManager::ProcessAllMessageQueues();
+}
+
+class RefCountedHandler
+  : public MessageHandler,
+    public rtc::RefCountInterface {
+ public:
+  void OnMessage(Message* msg) override {}
+};
+
+class EmptyHandler : public MessageHandler {
+ public:
+  void OnMessage(Message* msg) override {}
+};
+
+TEST(MessageQueueManager, ClearReentrant) {
+  Thread t;
+  EmptyHandler handler;
+  RefCountedHandler* inner_handler(
+      new rtc::RefCountedObject<RefCountedHandler>());
+  // When the empty handler is destroyed, it will clear messages queued for
+  // itself. The message to be cleared itself wraps a MessageHandler object
+  // (RefCountedHandler) so this will cause the message queue to be cleared
+  // again in a re-entrant fashion, which previously triggered a DCHECK.
+  // The inner handler will be removed in a re-entrant fashion from the
+  // message queue of the thread while the outer handler is removed, verifying
+  // that the iterator is not invalidated in "MessageQueue::Clear".
+  t.Post(RTC_FROM_HERE, inner_handler, 0);
+  t.Post(RTC_FROM_HERE, &handler, 0,
+      new ScopedRefMessageData<RefCountedHandler>(inner_handler));
 }

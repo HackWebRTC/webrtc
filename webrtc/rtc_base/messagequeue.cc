@@ -23,26 +23,25 @@ namespace {
 const int kMaxMsgLatency = 150;  // 150 ms
 const int kSlowDispatchLoggingThreshold = 50;  // 50 ms
 
-class SCOPED_LOCKABLE DebugNonReentrantCritScope {
+class SCOPED_LOCKABLE MarkProcessingCritScope {
  public:
-  DebugNonReentrantCritScope(const CriticalSection* cs, bool* locked)
+  MarkProcessingCritScope(const CriticalSection* cs, size_t* processing)
       EXCLUSIVE_LOCK_FUNCTION(cs)
-      : cs_(cs), locked_(locked) {
+      : cs_(cs), processing_(processing) {
     cs_->Enter();
-    RTC_DCHECK(!*locked_);
-    *locked_ = true;
+    *processing_ += 1;
   }
 
-  ~DebugNonReentrantCritScope() UNLOCK_FUNCTION() {
-    *locked_ = false;
+  ~MarkProcessingCritScope() UNLOCK_FUNCTION() {
+    *processing_ -= 1;
     cs_->Leave();
   }
 
  private:
   const CriticalSection* const cs_;
-  bool* locked_;
+  size_t* processing_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(DebugNonReentrantCritScope);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MarkProcessingCritScope);
 };
 
 class FunctorPostMessageHandler : public MessageHandler {
@@ -73,7 +72,7 @@ bool MessageQueueManager::IsInitialized() {
   return instance_ != nullptr;
 }
 
-MessageQueueManager::MessageQueueManager() : locked_(false) {}
+MessageQueueManager::MessageQueueManager() : processing_(0) {}
 
 MessageQueueManager::~MessageQueueManager() {
 }
@@ -82,7 +81,9 @@ void MessageQueueManager::Add(MessageQueue *message_queue) {
   return Instance()->AddInternal(message_queue);
 }
 void MessageQueueManager::AddInternal(MessageQueue *message_queue) {
-  DebugNonReentrantCritScope cs(&crit_, &locked_);
+  CritScope cs(&crit_);
+  // Prevent changes while the list of message queues is processed.
+  RTC_DCHECK_EQ(processing_, 0);
   message_queues_.push_back(message_queue);
 }
 
@@ -99,7 +100,9 @@ void MessageQueueManager::RemoveInternal(MessageQueue *message_queue) {
   // the ThreadManager is destroyed, and threads are no longer active).
   bool destroy = false;
   {
-    DebugNonReentrantCritScope cs(&crit_, &locked_);
+    CritScope cs(&crit_);
+    // Prevent changes while the list of message queues is processed.
+    RTC_DCHECK_EQ(processing_, 0);
     std::vector<MessageQueue *>::iterator iter;
     iter = std::find(message_queues_.begin(), message_queues_.end(),
                      message_queue);
@@ -121,10 +124,14 @@ void MessageQueueManager::Clear(MessageHandler *handler) {
   return Instance()->ClearInternal(handler);
 }
 void MessageQueueManager::ClearInternal(MessageHandler *handler) {
-  DebugNonReentrantCritScope cs(&crit_, &locked_);
+  // Deleted objects may cause re-entrant calls to ClearInternal. This is
+  // allowed as the list of message queues does not change while queues are
+  // cleared.
+  MarkProcessingCritScope cs(&crit_, &processing_);
   std::vector<MessageQueue *>::iterator iter;
-  for (iter = message_queues_.begin(); iter != message_queues_.end(); iter++)
-    (*iter)->Clear(handler);
+  for (MessageQueue* queue : message_queues_) {
+    queue->Clear(handler);
+  }
 }
 
 void MessageQueueManager::ProcessAllMessageQueues() {
@@ -154,7 +161,7 @@ void MessageQueueManager::ProcessAllMessageQueuesInternal() {
   };
 
   {
-    DebugNonReentrantCritScope cs(&crit_, &locked_);
+    MarkProcessingCritScope cs(&crit_, &processing_);
     for (MessageQueue* queue : message_queues_) {
       if (!queue->IsProcessingMessages()) {
         // If the queue is not processing messages, it can

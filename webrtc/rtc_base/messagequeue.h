@@ -70,9 +70,11 @@ class MessageQueueManager {
   // This list contains all live MessageQueues.
   std::vector<MessageQueue*> message_queues_ GUARDED_BY(crit_);
 
-  // Acquire this with DebugNonReentrantCritScope.
+  // Methods that don't modify the list of message queues may be called in a
+  // re-entrant fashion. "processing_" keeps track of the depth of re-entrant
+  // calls.
   CriticalSection crit_;
-  bool locked_ GUARDED_BY(crit_);
+  size_t processing_ GUARDED_BY(crit_);
 };
 
 // Derive from this for specialized data
