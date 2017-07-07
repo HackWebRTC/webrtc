@@ -118,14 +118,17 @@ void ProcessThreadImpl::PostTask(std::unique_ptr<rtc::QueuedTask> task) {
 void ProcessThreadImpl::RegisterModule(Module* module,
                                        const rtc::Location& from) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(module);
+  RTC_DCHECK(module) << from.ToString();
 
 #if RTC_DCHECK_IS_ON
   {
     // Catch programmer error.
     rtc::CritScope lock(&lock_);
-    for (const ModuleCallback& mc : modules_)
-      RTC_DCHECK(mc.module != module);
+    for (const ModuleCallback& mc : modules_) {
+      RTC_DCHECK(mc.module != module)
+          << "Already registered here: " << mc.location.ToString() << "\n"
+          << "Now attempting from here: " << from.ToString();
+    }
   }
 #endif
 
