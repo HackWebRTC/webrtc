@@ -636,11 +636,10 @@ rtc::Optional<CodecInst> AudioCodingModuleImpl::SendCodec() const {
 
 // Get current send frequency.
 int AudioCodingModuleImpl::SendFrequency() const {
-  LOG(LS_VERBOSE) << "SendFrequency()";
   rtc::CritScope lock(&acm_crit_sect_);
 
   if (!encoder_stack_) {
-    LOG(LS_VERBOSE) << "SendFrequency Failed, no codec is registered";
+    LOG(LS_ERROR) << "SendFrequency Failed, no codec is registered";
     return -1;
   }
 
@@ -966,7 +965,6 @@ int AudioCodingModuleImpl::ReceiveFrequency() const {
 
 // Get current playout frequency.
 int AudioCodingModuleImpl::PlayoutFrequency() const {
-  LOG(LS_VERBOSE) << "PlayoutFrequency()";
   return receiver_.last_output_sample_rate_hz();
 }
 
