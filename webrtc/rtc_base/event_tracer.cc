@@ -374,10 +374,15 @@ void SetupInternalTracer() {
 }
 
 void StartInternalCaptureToFile(FILE* file) {
-  g_event_logger->Start(file, false);
+  if (g_event_logger) {
+    g_event_logger->Start(file, false);
+  }
 }
 
 bool StartInternalCapture(const char* filename) {
+  if (!g_event_logger)
+    return false;
+
   FILE* file = fopen(filename, "w");
   if (!file) {
     LOG(LS_ERROR) << "Failed to open trace file '" << filename
@@ -389,7 +394,9 @@ bool StartInternalCapture(const char* filename) {
 }
 
 void StopInternalCapture() {
-  g_event_logger->Stop();
+  if (g_event_logger) {
+    g_event_logger->Stop();
+  }
 }
 
 void ShutdownInternalTracer() {
