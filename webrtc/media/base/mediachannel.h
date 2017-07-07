@@ -741,6 +741,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
         frames_received(0),
         frames_decoded(0),
         frames_rendered(0),
+        interframe_delay_sum_ms(0),
         decode_ms(0),
         max_decode_ms(0),
         jitter_buffer_ms(0),
@@ -770,6 +771,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   uint32_t frames_decoded;
   uint32_t frames_rendered;
   rtc::Optional<uint64_t> qp_sum;
+  uint64_t interframe_delay_sum_ms;
 
   // All stats below are gathered per-VideoReceiver, but some will be correlated
   // across MediaStreamTracks.  NOTE(hta): when sinking stats into per-SSRC

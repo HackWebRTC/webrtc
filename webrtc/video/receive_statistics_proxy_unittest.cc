@@ -97,6 +97,28 @@ TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesQpSum) {
             statistics_proxy_->GetStats().qp_sum);
 }
 
+TEST_F(ReceiveStatisticsProxyTest,
+       OnDecodedFrameIncreasesInterframeDelayMsSum) {
+  const uint64_t kInterframeDelayMs1 = 100;
+  const uint64_t kInterframeDelayMs2 = 200;
+  EXPECT_EQ(0u, statistics_proxy_->GetStats().interframe_delay_sum_ms);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(3u),
+                                    VideoContentType::UNSPECIFIED);
+  EXPECT_EQ(0u, statistics_proxy_->GetStats().interframe_delay_sum_ms);
+
+  fake_clock_.AdvanceTimeMilliseconds(kInterframeDelayMs1);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(127u),
+                                    VideoContentType::UNSPECIFIED);
+  EXPECT_EQ(kInterframeDelayMs1,
+            statistics_proxy_->GetStats().interframe_delay_sum_ms);
+
+  fake_clock_.AdvanceTimeMilliseconds(kInterframeDelayMs2);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(127u),
+                                    VideoContentType::UNSPECIFIED);
+  EXPECT_EQ(kInterframeDelayMs1 + kInterframeDelayMs2,
+            statistics_proxy_->GetStats().interframe_delay_sum_ms);
+}
+
 TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithoutQpQpSumWontExist) {
   EXPECT_EQ(rtc::Optional<uint64_t>(), statistics_proxy_->GetStats().qp_sum);
   statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(),

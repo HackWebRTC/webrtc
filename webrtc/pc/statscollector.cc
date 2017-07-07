@@ -249,10 +249,14 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
   for (const auto& i : ints)
     report->AddInt(i.name, i.value);
   report->AddString(StatsReport::kStatsValueNameMediaType, "video");
+
   if (info.timing_frame_info) {
     report->AddString(StatsReport::kStatsValueNameTimingFrameInfo,
                       info.timing_frame_info->ToString());
   }
+
+  report->AddInt64(StatsReport::kStatsValueNameInterframeDelaySumMs,
+                   info.interframe_delay_sum_ms);
 }
 
 void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {

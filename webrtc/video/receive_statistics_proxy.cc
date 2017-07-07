@@ -573,6 +573,7 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
   if (last_decoded_frame_time_ms_) {
     int64_t interframe_delay_ms = now - *last_decoded_frame_time_ms_;
     RTC_DCHECK_GE(interframe_delay_ms, 0);
+    stats_.interframe_delay_sum_ms += interframe_delay_ms;
     if (last_content_type_ == VideoContentType::SCREENSHARE) {
       interframe_delay_counter_screenshare_.Add(interframe_delay_ms);
       if (interframe_delay_max_ms_screenshare_ < interframe_delay_ms) {

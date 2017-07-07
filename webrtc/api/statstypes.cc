@@ -538,6 +538,8 @@ const char* StatsReport::Value::display_name() const {
       return "googFrameWidthSent";
     case kStatsValueNameInitiator:
       return "googInitiator";
+    case kStatsValueNameInterframeDelaySumMs:
+      return "googInterframeDelaySum";
     case kStatsValueNameIssuerId:
       return "googIssuerId";
     case kStatsValueNameJitterReceived:
