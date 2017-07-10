@@ -522,10 +522,12 @@ def _CheckNoChangesToWebRTCBase(input_api, output_api):
       if 'webrtc/base' in line:
         problems.append('    %s: %s' % (f.LocalPath(), line_num))
 
-  return [output_api.PresubmitPromptWarning(
-      'webrtc/base is being moved to webrtc/rtc_base (See '
-      'bugs.webrtc.org/7634). Please refer to webrtc/rtc_base instead in the '
-      'following files:\n' + '\n'.join(problems))]
+  if problems:
+    return [output_api.PresubmitPromptWarning(
+        'webrtc/base is being moved to webrtc/rtc_base (See '
+        'bugs.webrtc.org/7634). Please refer to webrtc/rtc_base instead in the '
+        'following files:\n' + '\n'.join(problems))]
+  return []
 
 
 def _CommonChecks(input_api, output_api):
