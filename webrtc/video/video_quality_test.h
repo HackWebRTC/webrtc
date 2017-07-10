@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
+#include "webrtc/media/engine/simulcast_encoder_adapter.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
@@ -138,7 +138,7 @@ class VideoQualityTest : public test::CallTest {
   std::unique_ptr<test::TraceToStderr> trace_to_stderr_;
   std::unique_ptr<test::FrameGenerator> frame_generator_;
   std::unique_ptr<VideoEncoder> video_encoder_;
-  std::unique_ptr<VideoEncoderFactory> vp8_encoder_factory_;
+  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> vp8_encoder_factory_;
 
   std::vector<std::unique_ptr<VideoEncoder>> thumbnail_encoders_;
   std::vector<VideoSendStream::Config> thumbnail_send_configs_;

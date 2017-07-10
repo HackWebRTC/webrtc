@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_ENCODER_ADAPTER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_ENCODER_ADAPTER_H_
+#ifndef WEBRTC_MEDIA_ENGINE_SIMULCAST_ENCODER_ADAPTER_H_
+#define WEBRTC_MEDIA_ENGINE_SIMULCAST_ENCODER_ADAPTER_H_
 
 #include <memory>
 #include <stack>
@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/rtc_base/atomicops.h"
 #include "webrtc/rtc_base/sequenced_task_checker.h"
@@ -26,24 +27,13 @@ namespace webrtc {
 
 class SimulcastRateAllocator;
 
-// TODO(brandtr): Remove this class and replace its use with a
-// WebRtcVideoEncoderFactory.
-class VideoEncoderFactory {
- public:
-  virtual VideoEncoder* Create() = 0;
-  virtual void Destroy(VideoEncoder* encoder) = 0;
-  virtual ~VideoEncoderFactory() {}
-};
-
 // SimulcastEncoderAdapter implements simulcast support by creating multiple
 // webrtc::VideoEncoder instances with the given VideoEncoderFactory.
 // The object is created and destroyed on the worker thread, but all public
 // interfaces should be called from the encoder task queue.
 class SimulcastEncoderAdapter : public VP8Encoder {
  public:
-  // TODO(brandtr): Make it clear that the ownership of |factory| is transferred
-  // by only accepting a std::unique_ptr<VideoEncoderFactory> here.
-  explicit SimulcastEncoderAdapter(VideoEncoderFactory* factory);
+  explicit SimulcastEncoderAdapter(cricket::WebRtcVideoEncoderFactory* factory);
   virtual ~SimulcastEncoderAdapter();
 
   // Implements VideoEncoder.
@@ -107,7 +97,7 @@ class SimulcastEncoderAdapter : public VP8Encoder {
   void DestroyStoredEncoders();
 
   volatile int inited_;  // Accessed atomically.
-  const std::unique_ptr<VideoEncoderFactory> factory_;
+  cricket::WebRtcVideoEncoderFactory* const factory_;
   VideoCodec codec_;
   std::vector<StreamInfo> streaminfos_;
   EncodedImageCallback* encoded_complete_callback_;
@@ -123,4 +113,4 @@ class SimulcastEncoderAdapter : public VP8Encoder {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_ENCODER_ADAPTER_H_
+#endif  // WEBRTC_MEDIA_ENGINE_SIMULCAST_ENCODER_ADAPTER_H_

@@ -13,8 +13,8 @@
 #include <vector>
 
 #include "webrtc/common_video/include/video_frame_buffer.h"
-#include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
-#include "webrtc/modules/video_coding/codecs/vp8/simulcast_unittest.h"
+#include "webrtc/media/engine/simulcast_encoder_adapter.h"
+#include "webrtc/modules/video_coding/codecs/vp8/simulcast_test_utility.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/test/gmock.h"
 
@@ -23,22 +23,39 @@ namespace testing {
 
 class TestSimulcastEncoderAdapter : public TestVp8Simulcast {
  public:
-  TestSimulcastEncoderAdapter()
-      : TestVp8Simulcast(new SimulcastEncoderAdapter(new Vp8EncoderFactory()),
-                         VP8Decoder::Create()) {}
+  TestSimulcastEncoderAdapter() : factory_(new Vp8EncoderFactory()) {}
 
  protected:
-  class Vp8EncoderFactory : public VideoEncoderFactory {
+  class Vp8EncoderFactory : public cricket::WebRtcVideoEncoderFactory {
    public:
-    VideoEncoder* Create() override { return VP8Encoder::Create(); }
+    Vp8EncoderFactory() {
+      supported_codecs_.push_back(cricket::VideoCodec("VP8"));
+    }
 
-    void Destroy(VideoEncoder* encoder) override { delete encoder; }
+    const std::vector<cricket::VideoCodec>& supported_codecs() const override {
+      return supported_codecs_;
+    }
+
+    VideoEncoder* CreateVideoEncoder(
+        const cricket::VideoCodec& codec) override {
+      return VP8Encoder::Create();
+    }
+
+    void DestroyVideoEncoder(VideoEncoder* encoder) override { delete encoder; }
 
     virtual ~Vp8EncoderFactory() {}
+
+   private:
+    std::vector<cricket::VideoCodec> supported_codecs_;
   };
 
-  virtual void SetUp() { TestVp8Simulcast::SetUp(); }
-  virtual void TearDown() { TestVp8Simulcast::TearDown(); }
+  VP8Encoder* CreateEncoder() override {
+    return new SimulcastEncoderAdapter(factory_.get());
+  }
+  VP8Decoder* CreateDecoder() override { return VP8Decoder::Create(); }
+
+ private:
+  std::unique_ptr<Vp8EncoderFactory> factory_;
 };
 
 TEST_F(TestSimulcastEncoderAdapter, TestKeyFrameRequestsOnAllStreams) {
@@ -167,11 +184,18 @@ class MockVideoEncoder : public VideoEncoder {
   EncodedImageCallback* callback_;
 };
 
-class MockVideoEncoderFactory : public VideoEncoderFactory {
+class MockVideoEncoderFactory : public cricket::WebRtcVideoEncoderFactory {
  public:
-  VideoEncoder* Create() override {
-    MockVideoEncoder* encoder = new
-        ::testing::NiceMock<MockVideoEncoder>();
+  MockVideoEncoderFactory() {
+    supported_codecs_.push_back(cricket::VideoCodec("VP8"));
+  }
+
+  const std::vector<cricket::VideoCodec>& supported_codecs() const override {
+    return supported_codecs_;
+  }
+
+  VideoEncoder* CreateVideoEncoder(const cricket::VideoCodec& codec) override {
+    MockVideoEncoder* encoder = new ::testing::NiceMock<MockVideoEncoder>();
     encoder->set_init_encode_return_value(init_encode_return_value_);
     const char* encoder_name = encoder_names_.empty()
                                    ? "codec_implementation_name"
@@ -181,7 +205,7 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
     return encoder;
   }
 
-  void Destroy(VideoEncoder* encoder) override {
+  void DestroyVideoEncoder(VideoEncoder* encoder) override {
     for (size_t i = 0; i < encoders_.size(); ++i) {
       if (encoders_[i] == encoder) {
         encoders_.erase(encoders_.begin() + i);
@@ -202,6 +226,7 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
   }
 
  private:
+  std::vector<cricket::VideoCodec> supported_codecs_;
   int32_t init_encode_return_value_ = 0;
   std::vector<MockVideoEncoder*> encoders_;
   std::vector<const char*> encoder_names_;
@@ -215,7 +240,7 @@ class TestSimulcastEncoderAdapterFakeHelper {
   // Can only be called once as the SimulcastEncoderAdapter will take the
   // ownership of |factory_|.
   VP8Encoder* CreateMockEncoderAdapter() {
-    return new SimulcastEncoderAdapter(factory_);
+    return new SimulcastEncoderAdapter(factory_.get());
   }
 
   void ExpectCallSetChannelParameters(uint32_t packetLoss, int64_t rtt) {
@@ -227,10 +252,10 @@ class TestSimulcastEncoderAdapterFakeHelper {
     }
   }
 
-  MockVideoEncoderFactory* factory() { return factory_; }
+  MockVideoEncoderFactory* factory() { return factory_.get(); }
 
  private:
-  MockVideoEncoderFactory* factory_;
+  std::unique_ptr<MockVideoEncoderFactory> factory_;
 };
 
 static const int kTestTemporalLayerProfile[3] = {3, 2, 1};

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
+#include "webrtc/media/engine/simulcast_encoder_adapter.h"
 
 #include <algorithm>
 
@@ -126,7 +126,8 @@ class TemporalLayersFactoryAdapter : public webrtc::TemporalLayersFactory {
 
 namespace webrtc {
 
-SimulcastEncoderAdapter::SimulcastEncoderAdapter(VideoEncoderFactory* factory)
+SimulcastEncoderAdapter::SimulcastEncoderAdapter(
+    cricket::WebRtcVideoEncoderFactory* factory)
     : inited_(0),
       factory_(factory),
       encoded_complete_callback_(nullptr),
@@ -236,14 +237,14 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
       encoder = stored_encoders_.top();
       stored_encoders_.pop();
     } else {
-      encoder = factory_->Create();
+      encoder = factory_->CreateVideoEncoder(cricket::VideoCodec("VP8"));
     }
 
     ret = encoder->InitEncode(&stream_codec, number_of_cores, max_payload_size);
     if (ret < 0) {
       // Explicitly destroy the current encoder; because we haven't registered a
       // StreamInfo for it yet, Release won't do anything about it.
-      factory_->Destroy(encoder);
+      factory_->DestroyVideoEncoder(encoder);
       Release();
       return ret;
     }
@@ -500,7 +501,7 @@ bool SimulcastEncoderAdapter::Initialized() const {
 void SimulcastEncoderAdapter::DestroyStoredEncoders() {
   while (!stored_encoders_.empty()) {
     VideoEncoder* encoder = stored_encoders_.top();
-    factory_->Destroy(encoder);
+    factory_->DestroyVideoEncoder(encoder);
     stored_encoders_.pop();
   }
 }

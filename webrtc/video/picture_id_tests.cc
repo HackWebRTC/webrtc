@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include "webrtc/media/engine/internalencoderfactory.h"
+#include "webrtc/media/engine/simulcast_encoder_adapter.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
-#include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/modules/video_coding/sequence_number_util.h"
 #include "webrtc/test/call_test.h"
 
@@ -291,32 +291,10 @@ TEST_F(PictureIdTest, PictureIdIncreasingAfterStreamCountChangeVp8) {
   TestPictureIdContinuousAfterReconfigure(ssrc_counts);
 }
 
-class VideoEncoderFactoryAdapter : public webrtc::VideoEncoderFactory {
- public:
-  explicit VideoEncoderFactoryAdapter(
-      cricket::WebRtcVideoEncoderFactory* factory)
-      : factory_(factory) {}
-  virtual ~VideoEncoderFactoryAdapter() {}
-
-  // Implements webrtc::VideoEncoderFactory.
-  webrtc::VideoEncoder* Create() override {
-    return factory_->CreateVideoEncoder(
-        cricket::VideoCodec(cricket::kVp8CodecName));
-  }
-
-  void Destroy(webrtc::VideoEncoder* encoder) override {
-    return factory_->DestroyVideoEncoder(encoder);
-  }
-
- private:
-  cricket::WebRtcVideoEncoderFactory* const factory_;
-};
-
 TEST_F(PictureIdTest,
        PictureIdContinuousAfterReconfigureSimulcastEncoderAdapter) {
   cricket::InternalEncoderFactory internal_encoder_factory;
-  SimulcastEncoderAdapter simulcast_encoder_adapter(
-      new VideoEncoderFactoryAdapter(&internal_encoder_factory));
+  SimulcastEncoderAdapter simulcast_encoder_adapter(&internal_encoder_factory);
   SetupEncoder(&simulcast_encoder_adapter);
   TestPictureIdContinuousAfterReconfigure({1, 3, 3, 1, 1});
 }
@@ -324,8 +302,7 @@ TEST_F(PictureIdTest,
 TEST_F(PictureIdTest,
        PictureIdIncreasingAfterRecreateStreamSimulcastEncoderAdapter) {
   cricket::InternalEncoderFactory internal_encoder_factory;
-  SimulcastEncoderAdapter simulcast_encoder_adapter(
-      new VideoEncoderFactoryAdapter(&internal_encoder_factory));
+  SimulcastEncoderAdapter simulcast_encoder_adapter(&internal_encoder_factory);
   SetupEncoder(&simulcast_encoder_adapter);
   TestPictureIdIncreaseAfterRecreateStreams({1, 3, 3, 1, 1});
 }
@@ -337,8 +314,7 @@ TEST_F(
     PictureIdTest,
     DISABLED_PictureIdIncreasingAfterStreamCountChangeSimulcastEncoderAdapter) {
   cricket::InternalEncoderFactory internal_encoder_factory;
-  SimulcastEncoderAdapter simulcast_encoder_adapter(
-      new VideoEncoderFactoryAdapter(&internal_encoder_factory));
+  SimulcastEncoderAdapter simulcast_encoder_adapter(&internal_encoder_factory);
   // Make sure that that the picture id is not reset if the stream count goes
   // down and then up.
   std::vector<int> ssrc_counts = {3, 1, 3};

@@ -25,12 +25,12 @@
 #include "webrtc/media/engine/internaldecoderfactory.h"
 #include "webrtc/media/engine/internalencoderfactory.h"
 #include "webrtc/media/engine/simulcast.h"
+#include "webrtc/media/engine/simulcast_encoder_adapter.h"
 #include "webrtc/media/engine/videodecodersoftwarefallbackwrapper.h"
 #include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/media/engine/webrtcvoiceengine.h"
-#include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/rtc_base/copyonwritebuffer.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/stringutils.h"
@@ -62,28 +62,6 @@ bool IsVideoContentTypeExtensionFieldTrialEnabled() {
   return webrtc::field_trial::IsEnabled("WebRTC-VideoContentTypeExtension");
 }
 
-// Wrap cricket::WebRtcVideoEncoderFactory as a webrtc::VideoEncoderFactory.
-class EncoderFactoryAdapter : public webrtc::VideoEncoderFactory {
- public:
-  // EncoderFactoryAdapter doesn't take ownership of |factory|, which is owned
-  // by e.g. PeerConnectionFactory.
-  explicit EncoderFactoryAdapter(cricket::WebRtcVideoEncoderFactory* factory)
-      : factory_(factory) {}
-  virtual ~EncoderFactoryAdapter() {}
-
-  // Implement webrtc::VideoEncoderFactory.
-  webrtc::VideoEncoder* Create() override {
-    return factory_->CreateVideoEncoder(VideoCodec(kVp8CodecName));
-  }
-
-  void Destroy(webrtc::VideoEncoder* encoder) override {
-    return factory_->DestroyVideoEncoder(encoder);
-  }
-
- private:
-  cricket::WebRtcVideoEncoderFactory* const factory_;
-};
-
 // An encoder factory that wraps Create requests for simulcastable codec types
 // with a webrtc::SimulcastEncoderAdapter. Non simulcastable codec type
 // requests are just passed through to the contained encoder factory.
@@ -113,8 +91,7 @@ class WebRtcSimulcastEncoderFactory
     RTC_DCHECK(factory_ != NULL);
     // If it's a codec type we can simulcast, create a wrapped encoder.
     if (CodecNamesEq(codec.name.c_str(), kVp8CodecName)) {
-      return new webrtc::SimulcastEncoderAdapter(
-          new EncoderFactoryAdapter(factory_));
+      return new webrtc::SimulcastEncoderAdapter(factory_);
     }
     webrtc::VideoEncoder* encoder = factory_->CreateVideoEncoder(codec);
     if (encoder) {

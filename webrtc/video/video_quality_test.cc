@@ -1061,24 +1061,32 @@ class VideoAnalyzer : public PacketReceiver,
   rtc::Event done_;
 };
 
-class Vp8EncoderFactory : public VideoEncoderFactory {
+class Vp8EncoderFactory : public cricket::WebRtcVideoEncoderFactory {
  public:
-  Vp8EncoderFactory() = default;
+  Vp8EncoderFactory() {
+    supported_codecs_.push_back(cricket::VideoCodec("VP8"));
+  }
   ~Vp8EncoderFactory() override { RTC_CHECK(live_encoders_.empty()); }
 
-  VideoEncoder* Create() override {
+  const std::vector<cricket::VideoCodec>& supported_codecs() const override {
+    return supported_codecs_;
+  }
+
+  VideoEncoder* CreateVideoEncoder(const cricket::VideoCodec& codec) override {
     VideoEncoder* encoder = VP8Encoder::Create();
     live_encoders_.insert(encoder);
     return encoder;
   }
 
-  void Destroy(VideoEncoder* encoder) override {
+  void DestroyVideoEncoder(VideoEncoder* encoder) override {
     auto it = live_encoders_.find(encoder);
     RTC_CHECK(it != live_encoders_.end());
     live_encoders_.erase(it);
     delete encoder;
   }
 
+ private:
+  std::vector<cricket::VideoCodec> supported_codecs_;
   std::set<VideoEncoder*> live_encoders_;
 };
 

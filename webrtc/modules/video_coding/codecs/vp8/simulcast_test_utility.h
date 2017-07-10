@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_UNITTEST_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_UNITTEST_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_UTILITY_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_UTILITY_H_
 
 #include <algorithm>
 #include <map>
@@ -161,9 +161,6 @@ class Vp8TestDecodedImageCallback : public DecodedImageCallback {
 
 class TestVp8Simulcast : public ::testing::Test {
  public:
-  TestVp8Simulcast(VP8Encoder* encoder, VP8Decoder* decoder)
-      : encoder_(encoder), decoder_(decoder) {}
-
   static void SetPlane(uint8_t* data,
                        uint8_t value,
                        int width,
@@ -244,11 +241,20 @@ class TestVp8Simulcast : public ::testing::Test {
   }
 
  protected:
-  void SetUp() override { SetUpCodec(kDefaultTemporalLayerProfile); }
+  virtual VP8Encoder* CreateEncoder() = 0;
+  virtual VP8Decoder* CreateDecoder() = 0;
+
+  void SetUp() override {
+    encoder_.reset(CreateEncoder());
+    decoder_.reset(CreateDecoder());
+    SetUpCodec(kDefaultTemporalLayerProfile);
+  }
 
   void TearDown() override {
     encoder_->Release();
     decoder_->Release();
+    encoder_.reset();
+    decoder_.reset();
   }
 
   void SetUpCodec(const int* temporal_layer_profile) {
@@ -746,4 +752,4 @@ class TestVp8Simulcast : public ::testing::Test {
 }  // namespace testing
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_UNITTEST_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_UTILITY_H_

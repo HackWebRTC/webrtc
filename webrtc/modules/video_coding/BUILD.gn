@@ -212,8 +212,6 @@ rtc_static_library("webrtc_vp8") {
     "codecs/vp8/include/vp8_common_types.h",
     "codecs/vp8/screenshare_layers.cc",
     "codecs/vp8/screenshare_layers.h",
-    "codecs/vp8/simulcast_encoder_adapter.cc",
-    "codecs/vp8/simulcast_encoder_adapter.h",
     "codecs/vp8/simulcast_rate_allocator.cc",
     "codecs/vp8/simulcast_rate_allocator.h",
     "codecs/vp8/temporal_layers.h",
@@ -279,6 +277,27 @@ rtc_static_library("webrtc_vp9") {
 }
 
 if (rtc_include_tests) {
+  rtc_source_set("simulcast_test_utility") {
+    testonly = true
+    sources = [
+      "codecs/vp8/simulcast_test_utility.h",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      ":video_coding",
+      ":webrtc_vp8",
+      "../../api:video_frame_api",
+      "../../base:rtc_base_approved",
+      "../../common_video:common_video",
+      "../../test:test_support",
+    ]
+  }
+
   rtc_executable("video_quality_measurement") {
     testonly = true
 
@@ -508,9 +527,7 @@ if (rtc_include_tests) {
       "codecs/test/videoprocessor_unittest.cc",
       "codecs/vp8/default_temporal_layers_unittest.cc",
       "codecs/vp8/screenshare_layers_unittest.cc",
-      "codecs/vp8/simulcast_encoder_adapter_unittest.cc",
       "codecs/vp8/simulcast_unittest.cc",
-      "codecs/vp8/simulcast_unittest.h",
       "decoding_state_unittest.cc",
       "frame_buffer2_unittest.cc",
       "generic_encoder_unittest.cc",
@@ -547,6 +564,7 @@ if (rtc_include_tests) {
       sources += [ "codecs/h264/h264_encoder_impl_unittest.cc" ]
     }
     deps = [
+      ":simulcast_test_utility",
       ":video_codecs_test_framework",
       ":video_coding",
       ":video_coding_utility",
