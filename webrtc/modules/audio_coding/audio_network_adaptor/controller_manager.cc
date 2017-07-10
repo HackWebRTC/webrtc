@@ -15,6 +15,7 @@
 
 #include "webrtc/modules/audio_coding/audio_network_adaptor/bitrate_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/channel_controller.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/dtx_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_plr_based.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_rplr_based.h"
@@ -201,9 +202,29 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
     int initial_bitrate_bps,
     bool initial_fec_enabled,
     bool initial_dtx_enabled) {
+  return Create(config_string, num_encoder_channels, encoder_frame_lengths_ms,
+                min_encoder_bitrate_bps, intial_channels_to_encode,
+                initial_frame_length_ms, initial_bitrate_bps,
+                initial_fec_enabled, initial_dtx_enabled, nullptr);
+}
+
+std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
+    const ProtoString& config_string,
+    size_t num_encoder_channels,
+    rtc::ArrayView<const int> encoder_frame_lengths_ms,
+    int min_encoder_bitrate_bps,
+    size_t intial_channels_to_encode,
+    int initial_frame_length_ms,
+    int initial_bitrate_bps,
+    bool initial_fec_enabled,
+    bool initial_dtx_enabled,
+    DebugDumpWriter* debug_dump_writer) {
 #if WEBRTC_ENABLE_PROTOBUF
   audio_network_adaptor::config::ControllerManager controller_manager_config;
-  controller_manager_config.ParseFromString(config_string);
+  RTC_CHECK(controller_manager_config.ParseFromString(config_string));
+  if (debug_dump_writer)
+    debug_dump_writer->DumpControllerManagerConfig(controller_manager_config,
+                                                   rtc::TimeMillis());
 
   std::vector<std::unique_ptr<Controller>> controllers;
   std::map<const Controller*, std::pair<int, float>> scoring_points;
