@@ -28,7 +28,7 @@ rtc_static_library("primitives") {
 
   deps = [
     "../..:webrtc_common",
-    "../../base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
+    "../../rtc_base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
   ]
 }
 
@@ -49,8 +49,8 @@ if (rtc_include_tests) {
         ":desktop_capture_mock",
         ":primitives",
         ":screen_drawer",
-        "../../base:rtc_base",
-        "../../base:rtc_base_approved",
+        "../../rtc_base:rtc_base",
+        "../../rtc_base:rtc_base_approved",
         "../../system_wrappers",
         "../../test:test_support",
         "../../test:video_test_support",
@@ -94,7 +94,7 @@ if (rtc_include_tests) {
       ":desktop_capture_mock",
       ":primitives",
       "../..:webrtc_common",
-      "../../base:rtc_base_approved",
+      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
       "../../test:test_support",
       "//testing/gmock",
@@ -131,7 +131,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":primitives",
-      "../../base:rtc_base_approved",
+      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
     ]
   }
@@ -155,7 +155,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":primitives",
-      "../../base:rtc_base_approved",
+      "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
     ]
   }
@@ -290,7 +290,7 @@ rtc_static_library("desktop_capture") {
   deps = [
     ":primitives",
     "../..:webrtc_common",
-    "../../base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
+    "../../rtc_base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
     "../../system_wrappers",
     "//third_party/libyuv",
   ]

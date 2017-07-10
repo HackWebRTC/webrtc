@@ -30,7 +30,7 @@ rtc_source_set("rtc_event_log_api") {
   deps = [
     "..:video_stream_api",
     "..:webrtc_common",
-    "../base:rtc_base_approved",
+    "../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -48,11 +48,11 @@ rtc_static_library("rtc_event_log_impl") {
   deps = [
     ":rtc_event_log_api",
     "..:webrtc_common",
-    "../base:protobuf_utils",
-    "../base:rtc_base_approved",
     "../modules/audio_coding:audio_network_adaptor",
     "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
     "../modules/rtp_rtcp",
+    "../rtc_base:protobuf_utils",
+    "../rtc_base:rtc_base_approved",
     "../system_wrappers",
   ]
 
@@ -96,8 +96,8 @@ if (rtc_enable_protobuf) {
     }
     deps = [
       "..:video_stream_api",
-      "../base:protobuf_utils",
-      "../base:rtc_base_approved",
+      "../rtc_base:protobuf_utils",
+      "../rtc_base:rtc_base_approved",
     ]
   }
 
@@ -111,12 +111,12 @@ if (rtc_enable_protobuf) {
       deps = [
         ":rtc_event_log_impl",
         ":rtc_event_log_parser",
-        "../base:rtc_base_approved",
-        "../base:rtc_base_tests_utils",
         "../call",
         "../modules/audio_coding:audio_network_adaptor",
         "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
         "../modules/rtp_rtcp",
+        "../rtc_base:rtc_base_approved",
+        "../rtc_base:rtc_base_tests_utils",
         "../system_wrappers:metrics_default",
         "../test:test_support",
         "//testing/gmock",
@@ -136,8 +136,8 @@ if (rtc_enable_protobuf) {
         ":rtc_event_log_api",
         ":rtc_event_log_impl",
         ":rtc_event_log_parser",
-        "../base:rtc_base_approved",
         "../modules/rtp_rtcp:rtp_rtcp",
+        "../rtc_base:rtc_base_approved",
         "../system_wrappers:field_trial_default",
         "../system_wrappers:metrics_default",
         "../test:rtp_test_utils",
@@ -159,7 +159,7 @@ if (rtc_enable_protobuf) {
         ":rtc_event_log_api",
         ":rtc_event_log_impl",
         ":rtc_event_log_parser",
-        "../base:rtc_base_approved",
+        "../rtc_base:rtc_base_approved",
 
         # TODO(kwiberg): Remove this dependency.
         "../api/audio_codecs:audio_codecs_api",
@@ -182,7 +182,7 @@ if (rtc_enable_protobuf) {
         ":rtc_event_log_api",
         ":rtc_event_log_impl",
         ":rtc_event_log_proto",
-        "../base:rtc_base_approved",
+        "../rtc_base:rtc_base_approved",
         "//third_party/gflags",
       ]
       if (!build_with_chromium && is_clang) {

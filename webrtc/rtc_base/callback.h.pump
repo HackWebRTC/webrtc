@@ -57,8 +57,8 @@
 #ifndef WEBRTC_RTC_BASE_CALLBACK_H_
 #define WEBRTC_RTC_BASE_CALLBACK_H_
 
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/refcount.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 
 namespace rtc {
 

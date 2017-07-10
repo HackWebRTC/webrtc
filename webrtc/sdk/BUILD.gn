@@ -63,7 +63,7 @@ if (is_ios || is_mac) {
     ]
 
     deps = [
-      "../base:rtc_base",
+      "../rtc_base:rtc_base",
     ]
     configs += [ "..:common_objc" ]
 
@@ -98,7 +98,7 @@ if (is_ios || is_mac) {
 
       deps = [
         ":objc_common",
-        "../base:rtc_base_approved",
+        "../rtc_base:rtc_base_approved",
       ]
 
       if (is_clang) {
@@ -127,9 +127,9 @@ if (is_ios || is_mac) {
         ":objc_common",
         "../api:libjingle_peerconnection_api",
         "../api:video_frame_api",
-        "../base:rtc_base",
         "../common_video",
         "../media:rtc_media_base",
+        "../rtc_base:rtc_base",
       ]
 
       configs += [ "..:common_objc" ]
@@ -181,9 +181,9 @@ if (is_ios || is_mac) {
         ":objc_common",
         ":objc_videotracksource",
         "../api:libjingle_peerconnection_api",
-        "../base:rtc_base",
         "../common_video",
         "../media:rtc_media_base",
+        "../rtc_base:rtc_base",
       ]
 
       configs += [ "..:common_objc" ]
@@ -247,7 +247,7 @@ if (is_ios || is_mac) {
         deps = [
           ":objc_video",
           "../api:video_frame_api",
-          "../base:rtc_base_approved",
+          "../rtc_base:rtc_base_approved",
         ]
         configs += [ "..:common_objc" ]
         public_configs = [ ":objc_common_config" ]
@@ -289,9 +289,9 @@ if (is_ios || is_mac) {
         ":objc_peerconnectionfactory",
         ":objc_video",
         "../api:video_frame_api",
-        "../base:rtc_base",
         "../media:rtc_media_base",
         "../pc:libjingle_peerconnection",
+        "../rtc_base:rtc_base",
       ]
 
       if (rtc_use_metal_rendering) {
@@ -334,12 +334,12 @@ if (is_ios || is_mac) {
         ":objc_videotracksource",
         "../api:video_frame_api",
         "../api/video_codecs:video_codecs_api",
-        "../base:rtc_base",
         "../media:rtc_audio_video",
         "../media:rtc_media_base",
         "../modules:module_api",
         "../pc:create_pc_factory",
         "../pc:peerconnection",
+        "../rtc_base:rtc_base",
         "../system_wrappers:field_trial_api",
       ]
     }
@@ -371,7 +371,7 @@ if (is_ios || is_mac) {
       deps = [
         ":objc_peerconnectionfactory_base",
         "../api:libjingle_peerconnection_api",
-        "../base:rtc_base",
+        "../rtc_base:rtc_base",
       ]
     }
 
@@ -484,11 +484,11 @@ if (is_ios || is_mac) {
         ":objc_corevideoframebuffer",
         ":objc_videotracksource",
         "../api:video_frame_api",
-        "../base:rtc_base",
         "../common_video",
         "../media:rtc_media_base",
         "../modules:module_api",
         "../pc:peerconnection",
+        "../rtc_base:rtc_base",
       ]
     }
 
@@ -530,7 +530,7 @@ if (is_ios || is_mac) {
         deps = [
           ":objc_peerconnection",
           "..//system_wrappers:system_wrappers_default",
-          "../base:rtc_base_tests_utils",
+          "../rtc_base:rtc_base_tests_utils",
           "../system_wrappers:system_wrappers_default",
           "//third_party/ocmock",
         ]
@@ -632,7 +632,7 @@ if (is_ios || is_mac) {
           ":objc_audio",
           ":objc_peerconnection",
           ":objc_ui",
-          "../base:rtc_base_approved",
+          "../rtc_base:rtc_base_approved",
           "../system_wrappers:field_trial_default",
           "../system_wrappers:metrics_default",
         ]
@@ -673,8 +673,8 @@ if (is_ios || is_mac) {
       ]
 
       deps = [
-        "../base:rtc_base_approved",
         "../common_video",
+        "../rtc_base:rtc_base_approved",
       ]
 
       if (!build_with_chromium && is_clang) {
@@ -705,13 +705,13 @@ if (is_ios || is_mac) {
         ":objc_common",
         ":objc_video",
         ":objc_videotracksource",
-        "../base:rtc_base_approved",
         "../common_video",
         "../media:rtc_media",
         "../media:rtc_media_base",
         "../modules:module_api",
         "../modules/video_coding:video_coding_utility",
         "../modules/video_coding:webrtc_h264",
+        "../rtc_base:rtc_base_approved",
         "../system_wrappers",
       ]
 

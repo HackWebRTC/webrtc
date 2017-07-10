@@ -107,10 +107,10 @@ rtc_static_library("system_wrappers") {
 
     cflags = [ "/wd4334" ]  # Ignore warning on shift operator promotion.
 
-    # Windows needs //webrtc/base:rtc_base due to include of webrtc/base/win32.h
-    # in source/clock.cc.
+    # Windows needs //webrtc/rtc_base:rtc_base due to include of
+    # webrtc/rtc_base/win32.h in source/clock.cc.
     # TODO(kjellander): Remove (bugs.webrtc.org/6828)
-    deps += [ "../base:rtc_base" ]
+    deps += [ "../rtc_base:rtc_base" ]
   }
 
   if (is_win && is_clang) {
@@ -118,7 +118,7 @@ rtc_static_library("system_wrappers") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps += [ "../base:rtc_base_approved" ]
+  deps += [ "../rtc_base:rtc_base_approved" ]
 }
 
 rtc_source_set("cpu_features_api") {
@@ -148,7 +148,7 @@ rtc_source_set("metrics_api") {
   ]
   deps = [
     "..:webrtc_common",
-    "../base:rtc_base_approved",
+    "../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -169,7 +169,7 @@ rtc_static_library("metrics_default") {
   ]
   deps = [
     ":metrics_api",
-    "../base:rtc_base_approved",
+    "../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -228,7 +228,7 @@ if (rtc_include_tests) {
       ":metrics_default",
       ":system_wrappers",
       "..:webrtc_common",
-      "../base:rtc_base_approved",
+      "../rtc_base:rtc_base_approved",
       "../test:test_main",
       "//testing/gtest",
     ]

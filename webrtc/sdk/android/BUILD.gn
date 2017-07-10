@@ -49,8 +49,8 @@ rtc_source_set("base_jni") {
 
   deps = [
     "//webrtc/api:libjingle_peerconnection_api",
-    "//webrtc/base:rtc_base",
-    "//webrtc/base:rtc_base_approved",
+    "//webrtc/rtc_base:rtc_base",
+    "//webrtc/rtc_base:rtc_base_approved",
     "//webrtc/system_wrappers:metrics_api",
   ]
 
@@ -139,16 +139,16 @@ rtc_static_library("video_jni") {
     "//webrtc/api:libjingle_peerconnection_api",
     "//webrtc/api:video_frame_api",
     "//webrtc/api/video_codecs:video_codecs_api",
-    "//webrtc/base:rtc_base",
-    "//webrtc/base:rtc_base_approved",
-    "//webrtc/base:rtc_task_queue",
-    "//webrtc/base:sequenced_task_checker",
-    "//webrtc/base:weak_ptr",
     "//webrtc/common_video:common_video",
     "//webrtc/media:rtc_audio_video",
     "//webrtc/media:rtc_media_base",
     "//webrtc/modules/utility:utility",
     "//webrtc/modules/video_coding:video_coding_utility",
+    "//webrtc/rtc_base:rtc_base",
+    "//webrtc/rtc_base:rtc_base_approved",
+    "//webrtc/rtc_base:rtc_task_queue",
+    "//webrtc/rtc_base:sequenced_task_checker",
+    "//webrtc/rtc_base:weak_ptr",
     "//webrtc/system_wrappers:system_wrappers",
   ]
 
@@ -237,13 +237,13 @@ rtc_static_library("peerconnection_jni") {
   deps = [
     ":base_jni",
     "../..:webrtc_common",
-    "//webrtc/base:rtc_base",
-    "//webrtc/base:rtc_base_approved",
-    "//webrtc/base:rtc_task_queue",
     "//webrtc/media:rtc_data",
     "//webrtc/media:rtc_media_base",
     "//webrtc/modules/utility:utility",
     "//webrtc/pc:peerconnection",
+    "//webrtc/rtc_base:rtc_base",
+    "//webrtc/rtc_base:rtc_base_approved",
+    "//webrtc/rtc_base:rtc_task_queue",
     "//webrtc/system_wrappers:system_wrappers",
   ]
 }
@@ -294,9 +294,9 @@ rtc_shared_library("libjingle_peerconnection_datachannelonly_so") {
     ":null_media_jni",
     ":null_video_jni",
     ":peerconnection_jni",
-    "//webrtc/base:rtc_base",
-    "//webrtc/base:rtc_base_approved",
     "//webrtc/pc:peerconnection",
+    "//webrtc/rtc_base:rtc_base",
+    "//webrtc/rtc_base:rtc_base_approved",
   ]
   output_extension = "so"
 }
@@ -312,8 +312,8 @@ rtc_shared_library("libjingle_peerconnection_so") {
   deps = [
     ":libjingle_peerconnection_jni",
     ":libjingle_peerconnection_metrics_default_jni",
-    "//webrtc/base:rtc_base",
     "//webrtc/pc:libjingle_peerconnection",
+    "//webrtc/rtc_base:rtc_base",
   ]
   output_extension = "so"
 }

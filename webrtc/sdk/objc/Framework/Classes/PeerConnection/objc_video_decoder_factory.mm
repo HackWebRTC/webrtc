@@ -18,11 +18,11 @@
 #import "WebRTC/RTCVideoFrameBuffer.h"
 
 #include "webrtc/api/video_codecs/video_decoder.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
 
 namespace webrtc {

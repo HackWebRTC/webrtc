@@ -28,8 +28,8 @@ rtc_source_set("call_interfaces") {
     "../api:libjingle_peerconnection_api",
     "../api:transport_api",
     "../api/audio_codecs:audio_codecs_api",
-    "../base:rtc_base",
-    "../base:rtc_base_approved",
+    "../rtc_base:rtc_base",
+    "../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -43,7 +43,7 @@ rtc_source_set("rtp_interfaces") {
     "rtp_transport_controller_send_interface.h",
   ]
   deps = [
-    "../base:rtc_base_approved",
+    "../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -64,8 +64,8 @@ rtc_source_set("rtp_receiver") {
   deps = [
     ":rtp_interfaces",
     "..:webrtc_common",
-    "../base:rtc_base_approved",
     "../modules/rtp_rtcp",
+    "../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -76,8 +76,8 @@ rtc_source_set("rtp_sender") {
   ]
   deps = [
     ":rtp_interfaces",
-    "../base:rtc_base_approved",
     "../modules/congestion_controller",
+    "../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -109,7 +109,6 @@ rtc_static_library("call") {
     "..:webrtc_common",
     "../api:transport_api",
     "../audio",
-    "../base:rtc_task_queue",
     "../logging:rtc_event_log_api",
     "../logging:rtc_event_log_impl",
     "../modules/bitrate_controller",
@@ -117,6 +116,7 @@ rtc_static_library("call") {
     "../modules/pacing",
     "../modules/rtp_rtcp",
     "../modules/utility",
+    "../rtc_base:rtc_task_queue",
     "../system_wrappers",
     "../video",
   ]
@@ -149,7 +149,6 @@ if (rtc_include_tests) {
       ":rtp_sender",
       "..:webrtc_common",
       "../api:mock_audio_mixer",
-      "../base:rtc_base_approved",
       "../logging:rtc_event_log_api",
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer",
@@ -158,6 +157,7 @@ if (rtc_include_tests) {
       "../modules/pacing",
       "../modules/rtp_rtcp",
       "../modules/rtp_rtcp:mock_rtp_rtcp",
+      "../rtc_base:rtc_base_approved",
       "../system_wrappers",
       "../test:audio_codec_mocks",
       "../test:direct_transport",
@@ -191,11 +191,11 @@ if (rtc_include_tests) {
       ":call_interfaces",
       "..:webrtc_common",
       "../api/audio_codecs:builtin_audio_encoder_factory",
-      "../base:rtc_base_approved",
       "../logging:rtc_event_log_api",
       "../modules/audio_coding",
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/rtp_rtcp",
+      "../rtc_base:rtc_base_approved",
       "../system_wrappers",
       "../system_wrappers:metrics_default",
       "../test:direct_transport",

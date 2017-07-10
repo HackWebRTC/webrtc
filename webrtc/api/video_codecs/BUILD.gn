@@ -21,7 +21,7 @@ rtc_source_set("video_codecs_api") {
   deps = [
     "..:video_frame_api",
     "../..:webrtc_common",
-    "../../base:rtc_base_approved",
     "../../common_video",
+    "../../rtc_base:rtc_base_approved",
   ]
 }

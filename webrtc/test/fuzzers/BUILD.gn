@@ -15,7 +15,7 @@ rtc_static_library("webrtc_fuzzer_main") {
     "webrtc_fuzzer_main.cc",
   ]
   deps = [
-    "../../base:rtc_base_approved",
+    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:field_trial_default",
     "../../system_wrappers:metrics_default",
     "//testing/libfuzzer:libfuzzer_main",
@@ -95,8 +95,8 @@ webrtc_fuzzer_test("flexfec_header_reader_fuzzer") {
     "flexfec_header_reader_fuzzer.cc",
   ]
   deps = [
-    "../../base:rtc_base_approved",
     "../../modules/rtp_rtcp",
+    "../../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -116,9 +116,9 @@ webrtc_fuzzer_test("ulpfec_header_reader_fuzzer") {
     "ulpfec_header_reader_fuzzer.cc",
   ]
   deps = [
-    "../../base:rtc_base_approved",
     "../../modules/rtp_rtcp",
     "../../modules/rtp_rtcp:fec_test_helper",
+    "../../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -127,9 +127,9 @@ webrtc_fuzzer_test("ulpfec_generator_fuzzer") {
     "ulpfec_generator_fuzzer.cc",
   ]
   deps = [
-    "../../base:rtc_base_approved",
     "../../modules/rtp_rtcp",
     "../../modules/rtp_rtcp:fec_test_helper",
+    "../../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -138,8 +138,8 @@ webrtc_fuzzer_test("flexfec_receiver_fuzzer") {
     "flexfec_receiver_fuzzer.cc",
   ]
   deps = [
-    "../../base:rtc_base_approved",
     "../../modules/rtp_rtcp",
+    "../../rtc_base:rtc_base_approved",
   ]
   libfuzzer_options = [ "max_len=2000" ]
 }
@@ -160,8 +160,8 @@ webrtc_fuzzer_test("rtcp_receiver_fuzzer") {
     "rtcp_receiver_fuzzer.cc",
   ]
   deps = [
-    "../../base:rtc_base_approved",
     "../../modules/rtp_rtcp",
+    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:system_wrappers",
   ]
   seed_corpus = "corpora/rtcp-corpus"
@@ -207,8 +207,8 @@ rtc_static_library("audio_decoder_fuzzer") {
   deps = [
     "../..:webrtc_common",
     "../../api/audio_codecs:audio_codecs_api",
-    "../../base:rtc_base_approved",
     "../../modules/rtp_rtcp",
+    "../../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -286,13 +286,13 @@ webrtc_fuzzer_test("neteq_rtp_fuzzer") {
     "neteq_rtp_fuzzer.cc",
   ]
   deps = [
-    "../../base:rtc_base_approved",
-    "../../base:rtc_base_tests_utils",
     "../../modules/audio_coding:neteq",
     "../../modules/audio_coding:neteq_test_tools",
     "../../modules/audio_coding:neteq_tools_minimal",
     "../../modules/audio_coding:pcm16b",
     "../../modules/rtp_rtcp",
+    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:rtc_base_tests_utils",
   ]
 }
 
@@ -301,8 +301,8 @@ webrtc_fuzzer_test("residual_echo_detector_fuzzer") {
     "residual_echo_detector_fuzzer.cc",
   ]
   deps = [
-    "../../base:rtc_base_approved",
     "../../modules/audio_processing:audio_processing",
+    "../../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -343,8 +343,8 @@ webrtc_fuzzer_test("pseudotcp_parser_fuzzer") {
     "pseudotcp_parser_fuzzer.cc",
   ]
   deps = [
-    "../../base:rtc_base",
     "../../p2p:rtc_p2p",
+    "../../rtc_base:rtc_base",
   ]
 }
 
@@ -353,8 +353,8 @@ webrtc_fuzzer_test("transport_feedback_packet_loss_tracker_fuzzer") {
     "transport_feedback_packet_loss_tracker_fuzzer.cc",
   ]
   deps = [
-    "../../base:rtc_base_approved",
     "../../modules/rtp_rtcp",
+    "../../rtc_base:rtc_base_approved",
     "../../voice_engine",
   ]
 }
@@ -366,8 +366,8 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
     "audio_processing_fuzzer_configs.cc",
   ]
   deps = [
-    "../../base:rtc_base_approved",
     "../../modules:module_api",
     "../../modules/audio_processing",
+    "../../rtc_base:rtc_base_approved",
   ]
 }
