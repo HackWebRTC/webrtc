@@ -18,6 +18,7 @@ CPPLINT_BLACKLIST = [
   'tools_webrtc',
   'webrtc/api/video_codecs/video_decoder.h',
   'webrtc/api/video_codecs/video_encoder.h',
+  'webrtc/base',
   'webrtc/examples/objc',
   'webrtc/media',
   'webrtc/modules/audio_coding',
@@ -73,6 +74,7 @@ NATIVE_API_DIRS = (
 # These directories should not be used but are maintained only to avoid breaking
 # some legacy downstream code.
 LEGACY_API_DIRS = (
+  'webrtc/base',
   'webrtc/common_audio/include',
   'webrtc/modules/audio_coding/include',
   'webrtc/modules/audio_conference_mixer/include',
@@ -89,7 +91,6 @@ LEGACY_API_DIRS = (
   'webrtc/modules/video_coding/codecs/vp8/include',
   'webrtc/modules/video_coding/codecs/vp9/include',
   'webrtc/modules/video_coding/include',
-  'webrtc/rtc_base',
   'webrtc/system_wrappers/include',
   'webrtc/voice_engine/include',
 )

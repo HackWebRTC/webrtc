@@ -170,11 +170,11 @@ rtc_static_library("rtp_rtcp") {
     "../../api:libjingle_peerconnection_api",
     "../../api:transport_api",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../base:gtest_prod",
+    "../../base:rtc_base_approved",
+    "../../base:sequenced_task_checker",
     "../../common_video",
     "../../logging:rtc_event_log_api",
-    "../../rtc_base:gtest_prod",
-    "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:sequenced_task_checker",
     "../../system_wrappers",
     "../audio_coding:audio_format_conversion",
     "../remote_bitrate_estimator",
@@ -200,7 +200,7 @@ rtc_source_set("fec_test_helper") {
   deps = [
     ":rtp_rtcp",
     "..:module_api",
-    "../../rtc_base:rtc_base_approved",
+    "../../base:rtc_base_approved",
   ]
 
   # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
@@ -221,7 +221,7 @@ rtc_source_set("mock_rtp_rtcp") {
   deps = [
     ":rtp_rtcp",
     "..:module_api",
-    "../../rtc_base:rtc_base_approved",
+    "../../base:rtc_base_approved",
     "../../test:test_support",
   ]
 }
@@ -256,7 +256,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtp_rtcp",
-      "../../rtc_base:rtc_base_approved",
+      "../../base:rtc_base_approved",
       "../../test:test_support",
     ]
     if (!build_with_chromium && is_clang) {
@@ -342,8 +342,8 @@ if (rtc_include_tests) {
       "..:module_api",
       "../..:webrtc_common",
       "../../api:transport_api",
+      "../../base:rtc_base_approved",
       "../../common_video:common_video",
-      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:field_trial",
       "../../test:rtp_test_utils",

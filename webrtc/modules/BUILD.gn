@@ -37,7 +37,7 @@ rtc_source_set("module_api") {
   deps = [
     "..:webrtc_common",
     "../api:video_frame_api",
-    "../rtc_base:rtc_base_approved",
+    "../base:rtc_base_approved",
   ]
 }
 

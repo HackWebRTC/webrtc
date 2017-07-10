@@ -33,8 +33,8 @@ rtc_static_library("utility") {
     "..:module_api",
     "../..:webrtc_common",
     "../../audio/utility:audio_frame_operations",
+    "../../base:rtc_task_queue",
     "../../common_audio",
-    "../../rtc_base:rtc_task_queue",
     "../../system_wrappers",
     "../media_file",
   ]
@@ -56,7 +56,7 @@ if (rtc_include_tests) {
     deps = [
       ":utility",
       "..:module_api",
-      "../../rtc_base:rtc_task_queue",
+      "../../base:rtc_task_queue",
       "../../test:test_support",
       "//testing/gmock",
     ]

@@ -51,9 +51,9 @@ rtc_static_library("audio_device") {
   deps = [
     "..:module_api",
     "../..:webrtc_common",
+    "../../base:rtc_base_approved",
+    "../../base:rtc_task_queue",
     "../../common_audio",
-    "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:rtc_task_queue",
     "../../system_wrappers",
     "../utility",
   ]
@@ -177,8 +177,8 @@ rtc_static_library("audio_device") {
       }
       if (is_ios) {
         public_deps = [
-          "../../rtc_base:gtest_prod",
-          "../../rtc_base:rtc_base",
+          "../../base:gtest_prod",
+          "../../base:rtc_base",
           "../../sdk:objc_audio",
           "../../sdk:objc_common",
         ]
@@ -281,7 +281,7 @@ if (rtc_include_tests) {
     deps = [
       ":audio_device",
       ":mock_audio_device",
-      "../../rtc_base:rtc_base_approved",
+      "../../base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
       "../utility:utility",
@@ -331,7 +331,7 @@ if (rtc_include_tests) {
       deps = [
         ":audio_device",
         "../..:webrtc_common",
-        "../../rtc_base:rtc_base_approved",
+        "../../base:rtc_base_approved",
         "../../system_wrappers",
         "../../test:test_main",
         "../../test:test_support",

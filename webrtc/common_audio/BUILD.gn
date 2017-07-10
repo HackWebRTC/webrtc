@@ -63,8 +63,8 @@ rtc_static_library("common_audio") {
   deps = [
     ":sinc_resampler",
     "..:webrtc_common",
-    "../rtc_base:gtest_prod",
-    "../rtc_base:rtc_base_approved",
+    "../base:gtest_prod",
+    "../base:rtc_base_approved",
     "../system_wrappers",
   ]
   public_deps = [
@@ -209,8 +209,8 @@ rtc_source_set("common_audio_c") {
     ":common_audio_c_arm_asm",
     ":common_audio_cc",
     "..:webrtc_common",
-    "../rtc_base:compile_assert_c",
-    "../rtc_base:rtc_base_approved",
+    "../base:compile_assert_c",
+    "../base:rtc_base_approved",
     "../system_wrappers:system_wrappers",
   ]
 }
@@ -225,7 +225,7 @@ rtc_source_set("common_audio_cc") {
   public_configs = [ ":common_audio_config" ]
   deps = [
     "..:webrtc_common",
-    "../rtc_base:rtc_base_approved",
+    "../base:rtc_base_approved",
     "../system_wrappers:system_wrappers",
   ]
 }
@@ -236,8 +236,8 @@ rtc_source_set("sinc_resampler") {
   ]
   deps = [
     "..:webrtc_common",
-    "../rtc_base:gtest_prod",
-    "../rtc_base:rtc_base_approved",
+    "../base:gtest_prod",
+    "../base:rtc_base_approved",
     "../system_wrappers",
   ]
 }
@@ -344,7 +344,7 @@ if (rtc_build_with_neon) {
     }
     deps = [
       ":common_audio_c",
-      "../rtc_base:rtc_base_approved",
+      "../base:rtc_base_approved",
     ]
   }
 }
@@ -401,8 +401,8 @@ if (rtc_include_tests) {
       ":common_audio",
       ":sinc_resampler",
       "..:webrtc_common",
-      "../rtc_base:rtc_base_approved",
-      "../rtc_base:rtc_base_tests_utils",
+      "../base:rtc_base_approved",
+      "../base:rtc_base_tests_utils",
       "../system_wrappers",
       "../test:test_main",
       "//testing/gmock",

@@ -41,10 +41,10 @@ if (rtc_enable_protobuf) {
     deps = [
       ":network_tester_config_proto",
       ":network_tester_packet_proto",
+      "../../base:protobuf_utils",
+      "../../base:rtc_task_queue",
+      "../../base:sequenced_task_checker",
       "../../p2p",
-      "../../rtc_base:protobuf_utils",
-      "../../rtc_base:rtc_task_queue",
-      "../../rtc_base:sequenced_task_checker",
     ]
 
     if (!build_with_chromium && is_clang) {
@@ -84,7 +84,7 @@ if (rtc_enable_protobuf) {
     deps = [
       ":network_tester",
       "//testing/gtest",
-      "//webrtc/rtc_base:rtc_base_tests_utils",
+      "//webrtc/base:rtc_base_tests_utils",
       "//webrtc/test:test_support",
     ]
 

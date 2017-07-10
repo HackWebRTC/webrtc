@@ -28,8 +28,8 @@ rtc_static_library("pacing") {
   deps = [
     "..:module_api",
     "../../:webrtc_common",
+    "../../base:rtc_base_approved",
     "../../logging:rtc_event_log_api",
-    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
     "../remote_bitrate_estimator",
     "../rtp_rtcp",
@@ -55,8 +55,8 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":pacing",
-      "../../rtc_base:rtc_base_approved",
-      "../../rtc_base:rtc_base_tests_utils",
+      "../../base:rtc_base_approved",
+      "../../base:rtc_base_tests_utils",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
       "../rtp_rtcp",

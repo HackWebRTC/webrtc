@@ -105,7 +105,7 @@ rtc_executable("fake_polqa") {
   output_name = "py_quality_assessment/quality_assessment/fake_polqa"
   deps = [
     "//webrtc:webrtc_common",
-    "//webrtc/rtc_base:rtc_base_approved",
+    "//webrtc/base:rtc_base_approved",
   ]
 }
 

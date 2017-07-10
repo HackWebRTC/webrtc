@@ -42,7 +42,7 @@ rtc_static_library("audio_conference_mixer") {
     "..:module_api",
     "../..:webrtc_common",
     "../../audio/utility:audio_frame_operations",
-    "../../rtc_base:rtc_base_approved",
+    "../../base:rtc_base_approved",
     "../../system_wrappers",
     "../audio_processing",
   ]

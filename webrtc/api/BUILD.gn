@@ -28,7 +28,7 @@ rtc_source_set("call_api") {
     ":audio_mixer_api",
     ":transport_api",
     "..:webrtc_common",
-    "../rtc_base:rtc_base_approved",
+    "../base:rtc_base_approved",
     "audio_codecs:audio_codecs_api",
   ]
 }
@@ -83,8 +83,8 @@ rtc_static_library("libjingle_peerconnection_api") {
   deps = [
     ":rtc_stats_api",
     "..:webrtc_common",
-    "../rtc_base:rtc_base",
-    "../rtc_base:rtc_base_approved",
+    "../base:rtc_base",
+    "../base:rtc_base_approved",
     "audio_codecs:audio_codecs_api",
   ]
 
@@ -143,7 +143,7 @@ rtc_source_set("rtc_stats_api") {
   ]
 
   deps = [
-    "../rtc_base:rtc_base_approved",
+    "../base:rtc_base_approved",
   ]
 }
 
@@ -153,8 +153,8 @@ rtc_source_set("audio_mixer_api") {
   ]
 
   deps = [
+    "../base:rtc_base_approved",
     "../modules:module_api",
-    "../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -178,7 +178,7 @@ rtc_source_set("video_frame_api") {
   ]
 
   deps = [
-    "../rtc_base:rtc_base_approved",
+    "../base:rtc_base_approved",
     "../system_wrappers",
   ]
 
@@ -206,7 +206,7 @@ rtc_source_set("libjingle_peerconnection_test_api") {
   ]
 
   deps = [
-    "../rtc_base:rtc_base_approved",
+    "../base:rtc_base_approved",
   ]
 }
 
@@ -235,7 +235,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":libjingle_peerconnection_api",
-      "../rtc_base:rtc_base_approved",
+      "../base:rtc_base_approved",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

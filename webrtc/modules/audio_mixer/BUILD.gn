@@ -41,7 +41,7 @@ rtc_static_library("audio_mixer_impl") {
     "..:module_api",
     "../..:webrtc_common",
     "../../audio/utility:audio_frame_operations",
-    "../../rtc_base:rtc_base_approved",
+    "../../base:rtc_base_approved",
     "../../system_wrappers",
     "../audio_processing",
   ]
@@ -61,7 +61,7 @@ rtc_static_library("audio_frame_manipulator") {
   deps = [
     "..:module_api",
     "../../audio/utility",
-    "../../rtc_base:rtc_base_approved",
+    "../../base:rtc_base_approved",
   ]
 }
 
@@ -90,8 +90,8 @@ if (rtc_include_tests) {
       "..:module_api",
       "../../api:audio_mixer_api",
       "../../audio/utility:audio_frame_operations",
-      "../../rtc_base:rtc_base",
-      "../../rtc_base:rtc_base_approved",
+      "../../base:rtc_base",
+      "../../base:rtc_base_approved",
       "../../test:test_support",
       "//testing/gmock",
     ]

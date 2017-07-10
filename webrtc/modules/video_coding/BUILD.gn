@@ -97,12 +97,12 @@ rtc_static_library("video_coding") {
     "..:module_api",
     "../..:video_stream_api",
     "../..:webrtc_common",
+    "../../base:rtc_base",
+    "../../base:rtc_base_approved",
+    "../../base:rtc_numerics",
+    "../../base:rtc_task_queue",
+    "../../base:sequenced_task_checker",
     "../../common_video",
-    "../../rtc_base:rtc_base",
-    "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:rtc_numerics",
-    "../../rtc_base:rtc_task_queue",
-    "../../rtc_base:sequenced_task_checker",
     "../../system_wrappers",
     "../rtp_rtcp:rtp_rtcp",
     "../utility:utility",
@@ -136,12 +136,12 @@ rtc_static_library("video_coding_utility") {
     "..:module_api",
     "../..:webrtc_common",
     "../../api/video_codecs:video_codecs_api",
+    "../../base:rtc_base_approved",
+    "../../base:rtc_numerics",
+    "../../base:rtc_task_queue",
+    "../../base:sequenced_task_checker",
     "../../common_video",
     "../../modules/rtp_rtcp:rtp_rtcp",
-    "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:rtc_numerics",
-    "../../rtc_base:rtc_task_queue",
-    "../../rtc_base:sequenced_task_checker",
     "../../system_wrappers",
   ]
 }
@@ -160,8 +160,8 @@ rtc_static_library("webrtc_h264") {
   defines = []
   deps = [
     ":video_coding_utility",
+    "../../base:rtc_base_approved",
     "../../media:rtc_media_base",
-    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
   ]
 
@@ -198,8 +198,8 @@ rtc_static_library("webrtc_i420") {
 
   deps = [
     "../..:webrtc_common",
+    "../../base:rtc_base_approved",
     "../../common_video:common_video",
-    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
   ]
 }
@@ -232,9 +232,9 @@ rtc_static_library("webrtc_vp8") {
     "..:module_api",
     "../..:webrtc_common",
     "../../api/video_codecs:video_codecs_api",
+    "../../base:rtc_base_approved",
+    "../../base:sequenced_task_checker",
     "../../common_video",
-    "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:sequenced_task_checker",
     "../../system_wrappers",
   ]
   if (rtc_build_libvpx) {
@@ -267,8 +267,8 @@ rtc_static_library("webrtc_vp9") {
   deps = [
     ":video_coding_utility",
     "..:module_api",
+    "../../base:rtc_base_approved",
     "../../common_video",
-    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
   ]
   if (rtc_build_libvpx) {
@@ -292,8 +292,8 @@ if (rtc_include_tests) {
       ":video_coding",
       ":webrtc_vp8",
       "../../api:video_frame_api",
+      "../../base:rtc_base_approved",
       "../../common_video:common_video",
-      "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
     ]
   }
@@ -315,7 +315,7 @@ if (rtc_include_tests) {
       ":video_coding",
       ":webrtc_vp8",
       "../..:webrtc_common",
-      "../../rtc_base:rtc_base_approved",
+      "../../base:rtc_base_approved",
       "../../system_wrappers:field_trial_default",
       "../../system_wrappers:metrics_default",
       "../../system_wrappers:system_wrappers",
@@ -354,8 +354,8 @@ if (rtc_include_tests) {
       ":webrtc_vp8",
       "../..:webrtc_common",
       "../../api/video_codecs:video_codecs_api",
+      "../../base:rtc_base_approved",
       "../../common_video:common_video",
-      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
       "../../test:video_test_common",
@@ -378,8 +378,8 @@ if (rtc_include_tests) {
       ":webrtc_vp8",
       ":webrtc_vp9",
       "../..:webrtc_common",
+      "../../base:rtc_base_approved",
       "../../media:rtc_media",
-      "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
       "../../test:video_test_support",
     ]
@@ -391,7 +391,7 @@ if (rtc_include_tests) {
       ]
 
       deps += [
-        "../../rtc_base:rtc_base_approved",
+        "../../base:rtc_base_approved",
         "../../sdk/android:libjingle_peerconnection_jni",
         "//base",
       ]
@@ -428,8 +428,8 @@ if (rtc_include_tests) {
       ":webrtc_vp8",
       ":webrtc_vp9",
       "../../api:video_frame_api",
+      "../../base:rtc_base_approved",
       "../../common_video:common_video",
-      "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
       "../../test:video_test_common",
       "../video_capture",
@@ -483,7 +483,7 @@ if (rtc_include_tests) {
 
     if (is_android) {
       deps += [
-        "../../rtc_base:rtc_base_approved",
+        "../../base:rtc_base_approved",
 
         # TODO(brandtr): Figure out if the java dep below could be moved into
         # :video_coding_videoprocessor_integration_test, where it belongs.
@@ -575,10 +575,10 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../api:video_frame_api",
       "../../api/video_codecs:video_codecs_api",
+      "../../base:rtc_base",
+      "../../base:rtc_base_approved",
+      "../../base:rtc_task_queue",
       "../../common_video:common_video",
-      "../../rtc_base:rtc_base",
-      "../../rtc_base:rtc_base_approved",
-      "../../rtc_base:rtc_task_queue",
       "../../system_wrappers:metrics_default",
       "../../system_wrappers:system_wrappers",
       "../../test:field_trial",
