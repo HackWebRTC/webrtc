@@ -43,52 +43,60 @@
   } while (0)
 
 // The typical EXPECT_XXXX and ASSERT_XXXXs, but done until true or a timeout.
-#define EXPECT_TRUE_WAIT(ex, timeout) \
-  do { \
-    bool res; \
-    WAIT_(ex, timeout, res); \
-    if (!res) EXPECT_TRUE(ex); \
-  } while (0)
+// One can add failure message by appending "<< msg".
+#define EXPECT_TRUE_WAIT(ex, timeout)                   \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                         \
+  if (bool res = true) {                                \
+    WAIT_(ex, timeout, res);                            \
+    if (!res)                                           \
+      goto GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__); \
+  } else                                                \
+    GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : EXPECT_TRUE(ex)
 
-#define EXPECT_EQ_WAIT(v1, v2, timeout) \
-  do { \
-    bool res; \
-    WAIT_(v1 == v2, timeout, res); \
-    if (!res) EXPECT_EQ(v1, v2); \
-  } while (0)
+#define EXPECT_EQ_WAIT(v1, v2, timeout)                 \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                         \
+  if (bool res = true) {                                \
+    WAIT_(v1 == v2, timeout, res);                      \
+    if (!res)                                           \
+      goto GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__); \
+  } else                                                \
+    GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : EXPECT_EQ(v1, v2)
 
-#define ASSERT_TRUE_WAIT(ex, timeout) \
-  do { \
-    bool res; \
-    WAIT_(ex, timeout, res); \
-    if (!res) ASSERT_TRUE(ex); \
-  } while (0)
+#define ASSERT_TRUE_WAIT(ex, timeout)                   \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                         \
+  if (bool res = true) {                                \
+    WAIT_(ex, timeout, res);                            \
+    if (!res)                                           \
+      goto GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__); \
+  } else                                                \
+    GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : ASSERT_TRUE(ex)
 
-#define ASSERT_EQ_WAIT(v1, v2, timeout) \
-  do { \
-    bool res; \
-    WAIT_(v1 == v2, timeout, res); \
-    if (!res) ASSERT_EQ(v1, v2); \
-  } while (0)
+#define ASSERT_EQ_WAIT(v1, v2, timeout)                 \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                         \
+  if (bool res = true) {                                \
+    WAIT_(v1 == v2, timeout, res);                      \
+    if (!res)                                           \
+      goto GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__); \
+  } else                                                \
+    GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : ASSERT_EQ(v1, v2)
 
 // Version with a "soft" timeout and a margin. This logs if the timeout is
 // exceeded, but it only fails if the expression still isn't true after the
 // margin time passes.
 #define EXPECT_TRUE_WAIT_MARGIN(ex, timeout, margin)                       \
-  do {                                                                     \
-    bool res;                                                              \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                            \
+  if (bool res = true) {                                                   \
     WAIT_(ex, timeout, res);                                               \
-    if (res) {                                                             \
+    if (res)                                                               \
       break;                                                               \
-    }                                                                      \
     LOG(LS_WARNING) << "Expression " << #ex << " still not true after "    \
                     << (timeout) << "ms; waiting an additional " << margin \
                     << "ms";                                               \
     WAIT_(ex, margin, res);                                                \
-    if (!res) {                                                            \
-      EXPECT_TRUE(ex);                                                     \
-    }                                                                      \
-  } while (0)
+    if (!res)                                                              \
+      goto GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__);                    \
+  } else                                                                   \
+    GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : EXPECT_TRUE(ex)
 
 // Wait until "ex" is true, or "timeout" expires, using fake clock where
 // messages are processed every millisecond.
@@ -123,28 +131,30 @@
   } while (0)
 
 #define EXPECT_EQ_SIMULATED_WAIT(v1, v2, timeout, clock) \
-  do {                                                   \
-    bool res;                                            \
-    SIMULATED_WAIT_(v1 == v2, timeout, res, clock);      \
-    if (!res) {                                          \
-      EXPECT_EQ(v1, v2);                                 \
-    }                                                    \
-  } while (0)
-
-#define ASSERT_TRUE_SIMULATED_WAIT(ex, timeout, clock) \
-  do {                                                 \
-    bool res;                                          \
-    SIMULATED_WAIT_(ex, timeout, res, clock);          \
-    if (!res)                                          \
-      ASSERT_TRUE(ex);                                 \
-  } while (0)
-
-#define ASSERT_EQ_SIMULATED_WAIT(v1, v2, timeout, clock) \
-  do {                                                   \
-    bool res;                                            \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                          \
+  if (bool res = true) {                                 \
     SIMULATED_WAIT_(v1 == v2, timeout, res, clock);      \
     if (!res)                                            \
-      ASSERT_EQ(v1, v2);                                 \
-  } while (0)
+      goto GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__);  \
+  } else                                                 \
+    GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : EXPECT_EQ(v1, v2)
+
+#define ASSERT_TRUE_SIMULATED_WAIT(ex, timeout, clock)  \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                         \
+  if (bool res = true) {                                \
+    SIMULATED_WAIT_(ex, timeout, res, clock);           \
+    if (!res)                                           \
+      goto GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__); \
+  } else                                                \
+    GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : ASSERT_TRUE(ex)
+
+#define ASSERT_EQ_SIMULATED_WAIT(v1, v2, timeout, clock) \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                          \
+  if (bool res = true) {                                 \
+    SIMULATED_WAIT_(v1 == v2, timeout, res, clock);      \
+    if (!res)                                            \
+      goto GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__);  \
+  } else                                                 \
+    GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : ASSERT_EQ(v1, v2)
 
 #endif  // WEBRTC_RTC_BASE_GUNIT_H_
