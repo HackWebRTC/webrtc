@@ -118,7 +118,6 @@ size_t WebRtc_ReadBuffer(RingBuffer* self,
                                                    &buf_ptr_bytes_1,
                                                    &buf_ptr_2,
                                                    &buf_ptr_bytes_2);
-
     if (buf_ptr_bytes_2 > 0) {
       // We have a wrap around when reading the buffer. Copy the buffer data to
       // |data| and point to it.
@@ -131,7 +130,7 @@ size_t WebRtc_ReadBuffer(RingBuffer* self,
     }
     if (data_ptr) {
       // |buf_ptr_1| == |data| in the case of a wrap.
-      *data_ptr = buf_ptr_1;
+      *data_ptr = read_count == 0 ? NULL : buf_ptr_1;
     }
 
     // Update read position

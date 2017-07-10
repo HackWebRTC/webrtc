@@ -36,12 +36,13 @@ RingBuffer* WebRtc_CreateBuffer(size_t element_count, size_t element_size);
 void WebRtc_InitBuffer(RingBuffer* handle);
 void WebRtc_FreeBuffer(void* handle);
 
-// Reads data from the buffer. The |data_ptr| will point to the address where
-// it is located. If all |element_count| data are feasible to read without
-// buffer wrap around |data_ptr| will point to the location in the buffer.
-// Otherwise, the data will be copied to |data| (memory allocation done by the
-// user) and |data_ptr| points to the address of |data|. |data_ptr| is only
-// guaranteed to be valid until the next call to WebRtc_WriteBuffer().
+// Reads data from the buffer. Returns the number of elements that were read.
+// The |data_ptr| will point to the address where the read data is located.
+// If no data can be read, |data_ptr| is set to |NULL|. If all data can be read
+// without buffer wrap around then |data_ptr| will point to the location in the
+// buffer. Otherwise, the data will be copied to |data| (memory allocation done
+// by the user) and |data_ptr| points to the address of |data|. |data_ptr| is
+// only guaranteed to be valid until the next call to WebRtc_WriteBuffer().
 //
 // To force a copying to |data|, pass a null |data_ptr|.
 //
