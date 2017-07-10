@@ -27,8 +27,7 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
  public:
   static rtc::scoped_refptr<VideoTrack> Create(
       const std::string& label,
-      VideoTrackSourceInterface* source,
-      rtc::Thread* worker_thread);
+      VideoTrackSourceInterface* source);
 
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
@@ -43,17 +42,15 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
   std::string kind() const override;
 
  protected:
-  VideoTrack(const std::string& id,
-             VideoTrackSourceInterface* video_source,
-             rtc::Thread* worker_thread);
+  VideoTrack(const std::string& id, VideoTrackSourceInterface* video_source);
   ~VideoTrack();
 
  private:
   // Implements ObserverInterface. Observes |video_source_| state.
   void OnChanged() override;
 
-  rtc::Thread* const worker_thread_;
   rtc::ThreadChecker signaling_thread_checker_;
+  rtc::ThreadChecker worker_thread_checker_;
   rtc::scoped_refptr<VideoTrackSourceInterface> video_source_;
   ContentHint content_hint_ GUARDED_BY(signaling_thread_checker_);
 };

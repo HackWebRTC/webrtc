@@ -479,8 +479,7 @@ rtc::scoped_refptr<VideoTrackInterface> OrtcFactory::CreateVideoTrack(
     const std::string& id,
     VideoTrackSourceInterface* source) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  rtc::scoped_refptr<VideoTrackInterface> track(
-      VideoTrack::Create(id, source, worker_thread_.get()));
+  rtc::scoped_refptr<VideoTrackInterface> track(VideoTrack::Create(id, source));
   return VideoTrackProxy::Create(signaling_thread_, worker_thread_.get(),
                                  track);
 }

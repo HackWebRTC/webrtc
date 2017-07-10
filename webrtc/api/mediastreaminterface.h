@@ -111,11 +111,6 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
 
 // VideoTrackSourceInterface is a reference counted source used for
 // VideoTracks. The same source can be used by multiple VideoTracks.
-// VideoTrackSourceInterface is designed to be invoked on the signaling thread
-// except for rtc::VideoSourceInterface<VideoFrame> methods that will be invoked
-// on the worker thread via a VideoTrack. A custom implementation of a source
-// can inherit AdaptedVideoTrackSource instead of directly implementing this
-// interface.
 class VideoTrackSourceInterface
     : public MediaSourceInterface,
       public rtc::VideoSourceInterface<VideoFrame> {
@@ -150,12 +145,6 @@ class VideoTrackSourceInterface
   virtual ~VideoTrackSourceInterface() {}
 };
 
-// VideoTrackInterface is designed to be invoked on the signaling thread except
-// for rtc::VideoSourceInterface<VideoFrame> methods that must be invoked
-// on the worker thread.
-// PeerConnectionFactory::CreateVideoTrack can be used for creating a VideoTrack
-// that ensures thread safety and that all methods are called on the right
-// thread.
 class VideoTrackInterface
     : public MediaStreamTrackInterface,
       public rtc::VideoSourceInterface<VideoFrame> {
@@ -164,6 +153,12 @@ class VideoTrackInterface
   // property.
   // See https://crbug.com/653531 and https://github.com/WICG/mst-content-hint.
   enum class ContentHint { kNone, kFluid, kDetailed };
+
+  // Register a video sink for this track. Used to connect the track to the
+  // underlying video engine.
+  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override {}
+  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override {}
 
   virtual VideoTrackSourceInterface* GetSource() const = 0;
 

@@ -460,8 +460,7 @@ rtc::scoped_refptr<StreamCollection> CreateStreamCollection(
       // Add a local video track.
       rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
           webrtc::VideoTrack::Create(kVideoTracks[i * tracks_per_stream + j],
-                                     webrtc::FakeVideoTrackSource::Create(),
-                                     rtc::Thread::Current()));
+                                     webrtc::FakeVideoTrackSource::Create()));
       stream->AddTrack(video_track);
     }
 
@@ -1140,8 +1139,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
                      MediaStreamInterface* stream) {
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         webrtc::VideoTrack::Create(track_id,
-                                   webrtc::FakeVideoTrackSource::Create(),
-                                   rtc::Thread::Current()));
+                                   webrtc::FakeVideoTrackSource::Create()));
     ASSERT_TRUE(stream->AddTrack(video_track));
   }
 

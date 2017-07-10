@@ -155,8 +155,7 @@ VideoRtpReceiver::VideoRtpReceiver(const std::string& track_id,
               track_id,
               VideoTrackSourceProxy::Create(rtc::Thread::Current(),
                                             worker_thread,
-                                            source_),
-              worker_thread))) {
+                                            source_)))) {
   source_->SetState(MediaSourceInterface::kLive);
   if (!channel_) {
     LOG(LS_ERROR)

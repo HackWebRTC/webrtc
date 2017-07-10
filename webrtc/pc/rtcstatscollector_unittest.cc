@@ -218,11 +218,6 @@ class FakeVideoTrackForStats
   std::string kind() const override {
     return MediaStreamTrackInterface::kVideoKind;
   }
-
-  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override{};
-  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override{};
-
   VideoTrackSourceInterface* GetSource() const override { return nullptr; }
 };
 
