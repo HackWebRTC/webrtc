@@ -3410,7 +3410,6 @@ TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
 
 TEST_F(VideoSendStreamTest, SendsKeepAlive) {
   const int kTimeoutMs = 50;  // Really short timeout for testing.
-  const int kPayloadType = 20;
 
   class KeepaliveObserver : public test::SendTest {
    public:
@@ -3421,7 +3420,7 @@ TEST_F(VideoSendStreamTest, SendsKeepAlive) {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
-      if (header.payloadType != kPayloadType) {
+      if (header.payloadType != CallTest::kDefaultKeepalivePayloadType) {
         // The video stream has started. Stop it now.
         if (capturer_)
           capturer_->Stop();
@@ -3437,7 +3436,8 @@ TEST_F(VideoSendStreamTest, SendsKeepAlive) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.keep_alive.timeout_interval_ms = kTimeoutMs;
-      send_config->rtp.keep_alive.payload_type = kPayloadType;
+      send_config->rtp.keep_alive.payload_type =
+          CallTest::kDefaultKeepalivePayloadType;
     }
 
     void PerformTest() override {

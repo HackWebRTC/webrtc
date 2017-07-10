@@ -437,6 +437,9 @@ const uint32_t CallTest::kReceiverLocalVideoSsrc = 0x123456;
 const uint32_t CallTest::kReceiverLocalAudioSsrc = 0x1234567;
 const int CallTest::kNackRtpHistoryMs = 1000;
 
+const uint8_t CallTest::kDefaultKeepalivePayloadType =
+    RtpKeepAliveConfig().payload_type;
+
 const std::map<uint8_t, MediaType> CallTest::payload_type_map_ = {
     {CallTest::kVideoSendPayloadType, MediaType::VIDEO},
     {CallTest::kFakeVideoSendPayloadType, MediaType::VIDEO},
@@ -445,7 +448,8 @@ const std::map<uint8_t, MediaType> CallTest::payload_type_map_ = {
     {CallTest::kRtxRedPayloadType, MediaType::VIDEO},
     {CallTest::kUlpfecPayloadType, MediaType::VIDEO},
     {CallTest::kFlexfecPayloadType, MediaType::VIDEO},
-    {CallTest::kAudioSendPayloadType, MediaType::AUDIO}};
+    {CallTest::kAudioSendPayloadType, MediaType::AUDIO},
+    {CallTest::kDefaultKeepalivePayloadType, MediaType::ANY}};
 
 BaseTest::BaseTest() : event_log_(RtcEventLog::CreateNull()) {}
 
