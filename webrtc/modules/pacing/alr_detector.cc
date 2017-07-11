@@ -15,13 +15,8 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/format_macros.h"
 #include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
-
-namespace {
-// Time period over which outgoing traffic is measured.
-constexpr int kMeasurementPeriodMs = 500;
-
-}  // namespace
 
 namespace webrtc {
 
@@ -29,39 +24,41 @@ const char* AlrDetector::kScreenshareProbingBweExperimentName =
     "WebRTC-ProbingScreenshareBwe";
 
 AlrDetector::AlrDetector()
-    : alr_start_usage_percent_(kDefaultAlrStartUsagePercent),
-      alr_end_usage_percent_(kDefaultAlrEndUsagePercent),
-      rate_(kMeasurementPeriodMs, RateStatistics::kBpsScale),
-      estimated_bitrate_bps_(0) {
+    : bandwidth_usage_percent_(kDefaultAlrBandwidthUsagePercent),
+      alr_start_budget_level_percent_(kDefaultAlrStartBudgetLevelPercent),
+      alr_stop_budget_level_percent_(kDefaultAlrStopBudgetLevelPercent),
+      alr_budget_(0, true) {
   rtc::Optional<AlrExperimentSettings> experiment_settings =
       ParseAlrSettingsFromFieldTrial();
   if (experiment_settings) {
-    alr_start_usage_percent_ = experiment_settings->alr_start_usage_percent;
-    alr_end_usage_percent_ = experiment_settings->alr_end_usage_percent;
+    alr_stop_budget_level_percent_ =
+        experiment_settings->alr_stop_budget_level_percent;
+    alr_start_budget_level_percent_ =
+        experiment_settings->alr_start_budget_level_percent;
+    bandwidth_usage_percent_ = experiment_settings->alr_bandwidth_usage_percent;
   }
 }
 
 AlrDetector::~AlrDetector() {}
 
-void AlrDetector::OnBytesSent(size_t bytes_sent, int64_t now_ms) {
-  RTC_DCHECK(estimated_bitrate_bps_);
+void AlrDetector::OnBytesSent(size_t bytes_sent, int64_t delta_time_ms) {
+  alr_budget_.UseBudget(bytes_sent);
+  alr_budget_.IncreaseBudget(delta_time_ms);
 
-  rate_.Update(bytes_sent, now_ms);
-  rtc::Optional<uint32_t> rate = rate_.Rate(now_ms);
-  if (!rate)
-    return;
-
-  int percentage = static_cast<int>(*rate) * 100 / estimated_bitrate_bps_;
-  if (percentage < alr_start_usage_percent_ && !alr_started_time_ms_) {
-    alr_started_time_ms_ = rtc::Optional<int64_t>(now_ms);
-  } else if (percentage > alr_end_usage_percent_ && alr_started_time_ms_) {
-    alr_started_time_ms_ = rtc::Optional<int64_t>();
+  if (alr_budget_.budget_level_percent() > alr_start_budget_level_percent_ &&
+      !alr_started_time_ms_) {
+    alr_started_time_ms_.emplace(rtc::TimeMillis());
+  } else if (alr_budget_.budget_level_percent() <
+                 alr_stop_budget_level_percent_ &&
+             alr_started_time_ms_) {
+    alr_started_time_ms_.reset();
   }
 }
 
 void AlrDetector::SetEstimatedBitrate(int bitrate_bps) {
   RTC_DCHECK(bitrate_bps);
-  estimated_bitrate_bps_ = bitrate_bps;
+  alr_budget_.set_target_rate_kbps(bitrate_bps * bandwidth_usage_percent_ /
+                                   (1000 * 100));
 }
 
 rtc::Optional<int64_t> AlrDetector::GetApplicationLimitedRegionStartTime()
@@ -85,19 +82,22 @@ AlrDetector::ParseAlrSettingsFromFieldTrial() {
     return ret;
 
   AlrExperimentSettings settings;
-  if (sscanf(group_name.c_str(), "%f-%" PRId64 "-%d-%d",
+  if (sscanf(group_name.c_str(), "%f,%" PRId64 ",%d,%d,%d",
              &settings.pacing_factor, &settings.max_paced_queue_time,
-             &settings.alr_start_usage_percent,
-             &settings.alr_end_usage_percent) == 4) {
+             &settings.alr_bandwidth_usage_percent,
+             &settings.alr_start_budget_level_percent,
+             &settings.alr_stop_budget_level_percent) == 5) {
     ret.emplace(settings);
     LOG(LS_INFO) << "Using screenshare ALR experiment settings: "
                     "pacing factor: "
                  << settings.pacing_factor << ", max pacer queue length: "
                  << settings.max_paced_queue_time
-                 << ", ALR start usage percent: "
-                 << settings.alr_start_usage_percent
-                 << ", ALR end usage percent: "
-                 << settings.alr_end_usage_percent;
+                 << ", ALR start bandwidth usage percent: "
+                 << settings.alr_bandwidth_usage_percent
+                 << ", ALR end budget level percent: "
+                 << settings.alr_start_budget_level_percent
+                 << ", ALR end budget level percent: "
+                 << settings.alr_stop_budget_level_percent;
   }
 
   return ret;

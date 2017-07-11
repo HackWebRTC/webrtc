@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_PACING_ALR_DETECTOR_H_
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/pacing/interval_budget.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/rate_statistics.h"
@@ -32,7 +33,7 @@ class AlrDetector {
   AlrDetector();
   ~AlrDetector();
 
-  void OnBytesSent(size_t bytes_sent, int64_t now_ms);
+  void OnBytesSent(size_t bytes_sent, int64_t delta_time_ms);
 
   // Set current estimated bandwidth.
   void SetEstimatedBitrate(int bitrate_bps);
@@ -44,8 +45,9 @@ class AlrDetector {
   struct AlrExperimentSettings {
     float pacing_factor = PacedSender::kDefaultPaceMultiplier;
     int64_t max_paced_queue_time = PacedSender::kMaxQueueLengthMs;
-    int alr_start_usage_percent = kDefaultAlrStartUsagePercent;
-    int alr_end_usage_percent = kDefaultAlrEndUsagePercent;
+    int alr_bandwidth_usage_percent = kDefaultAlrBandwidthUsagePercent;
+    int alr_start_budget_level_percent = kDefaultAlrStartBudgetLevelPercent;
+    int alr_stop_budget_level_percent = kDefaultAlrStopBudgetLevelPercent;
   };
   static rtc::Optional<AlrExperimentSettings> ParseAlrSettingsFromFieldTrial();
 
@@ -54,17 +56,20 @@ class AlrDetector {
   // below kAlrStartUsagePercent and ends when it raises above
   // kAlrEndUsagePercent. NOTE: This is intentionally conservative at the moment
   // until BW adjustments of application limited region is fine tuned.
-  static constexpr int kDefaultAlrStartUsagePercent = 60;
-  static constexpr int kDefaultAlrEndUsagePercent = 70;
+  static constexpr int kDefaultAlrBandwidthUsagePercent = 65;
+  static constexpr int kDefaultAlrStartBudgetLevelPercent = 20;
+  static constexpr int kDefaultAlrStopBudgetLevelPercent = -20;
   static const char* kScreenshareProbingBweExperimentName;
 
- private:
-  int alr_start_usage_percent_;
-  int alr_end_usage_percent_;
-  RateStatistics rate_;
-  int estimated_bitrate_bps_;
+  void UpdateBudgetWithElapsedTime(int64_t delta_time_ms);
+  void UpdateBudgetWithBytesSent(size_t bytes_sent);
 
-  // Non-empty in ALR state.
+ private:
+  int bandwidth_usage_percent_;
+  int alr_start_budget_level_percent_;
+  int alr_stop_budget_level_percent_;
+
+  IntervalBudget alr_budget_;
   rtc::Optional<int64_t> alr_started_time_ms_;
 };
 

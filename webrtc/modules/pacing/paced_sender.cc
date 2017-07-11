@@ -19,6 +19,7 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/pacing/alr_detector.h"
 #include "webrtc/modules/pacing/bitrate_prober.h"
+#include "webrtc/modules/pacing/interval_budget.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
@@ -35,7 +36,7 @@ const int64_t kMaxIntervalTimeMs = 30;
 
 }  // namespace
 
-// TODO(sprang): Move at least PacketQueue and MediaBudget out to separate
+// TODO(sprang): Move at least PacketQueue out to separate
 // files, so that we can more easily test them.
 
 namespace webrtc {
@@ -201,46 +202,6 @@ class PacketQueue {
   int64_t time_last_updated_;
 };
 
-class IntervalBudget {
- public:
-  explicit IntervalBudget(int initial_target_rate_kbps)
-      : target_rate_kbps_(initial_target_rate_kbps),
-        bytes_remaining_(0) {}
-
-  void set_target_rate_kbps(int target_rate_kbps) {
-    target_rate_kbps_ = target_rate_kbps;
-    bytes_remaining_ =
-        std::max(-kWindowMs * target_rate_kbps_ / 8, bytes_remaining_);
-  }
-
-  void IncreaseBudget(int64_t delta_time_ms) {
-    int64_t bytes = target_rate_kbps_ * delta_time_ms / 8;
-    if (bytes_remaining_ < 0) {
-      // We overused last interval, compensate this interval.
-      bytes_remaining_ = bytes_remaining_ + bytes;
-    } else {
-      // If we underused last interval we can't use it this interval.
-      bytes_remaining_ = bytes;
-    }
-  }
-
-  void UseBudget(size_t bytes) {
-    bytes_remaining_ = std::max(bytes_remaining_ - static_cast<int>(bytes),
-                                -kWindowMs * target_rate_kbps_ / 8);
-  }
-
-  size_t bytes_remaining() const {
-    return static_cast<size_t>(std::max(0, bytes_remaining_));
-  }
-
-  int target_rate_kbps() const { return target_rate_kbps_; }
-
- private:
-  static const int kWindowMs = 500;
-
-  int target_rate_kbps_;
-  int bytes_remaining_;
-};
 }  // namespace paced_sender
 
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
@@ -253,8 +214,8 @@ PacedSender::PacedSender(const Clock* clock,
       packet_sender_(packet_sender),
       alr_detector_(new AlrDetector()),
       paused_(false),
-      media_budget_(new paced_sender::IntervalBudget(0)),
-      padding_budget_(new paced_sender::IntervalBudget(0)),
+      media_budget_(new IntervalBudget(0)),
+      padding_budget_(new IntervalBudget(0)),
       prober_(new BitrateProber(event_log)),
       probing_send_failure_(false),
       estimated_bitrate_bps_(0),
@@ -480,7 +441,7 @@ void PacedSender::Process() {
     if (!probing_send_failure_)
       prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
   }
-  alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
+  alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
 }
 
 void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {

@@ -28,9 +28,9 @@ class BitrateProber;
 class Clock;
 class ProbeClusterCreatedObserver;
 class RtcEventLog;
+class IntervalBudget;
 
 namespace paced_sender {
-class IntervalBudget;
 struct Packet;
 class PacketQueue;
 }  // namespace paced_sender
@@ -173,13 +173,11 @@ class PacedSender : public Module, public RtpPacketSender {
   bool paused_ GUARDED_BY(critsect_);
   // This is the media budget, keeping track of how many bits of media
   // we can pace out during the current interval.
-  std::unique_ptr<paced_sender::IntervalBudget> media_budget_
-      GUARDED_BY(critsect_);
+  std::unique_ptr<IntervalBudget> media_budget_ GUARDED_BY(critsect_);
   // This is the padding budget, keeping track of how many bits of padding we're
   // allowed to send out during the current interval. This budget will be
   // utilized when there's no media to send.
-  std::unique_ptr<paced_sender::IntervalBudget> padding_budget_
-      GUARDED_BY(critsect_);
+  std::unique_ptr<IntervalBudget> padding_budget_ GUARDED_BY(critsect_);
 
   std::unique_ptr<BitrateProber> prober_ GUARDED_BY(critsect_);
   bool probing_send_failure_;
