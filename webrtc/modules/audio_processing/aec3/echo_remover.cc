@@ -190,8 +190,9 @@ void EchoRemoverImpl::ProcessCapture(
 
   // A choose and apply echo suppression gain.
   suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(),
-                            aec_state_.SaturatedEcho(), x,
-                            aec_state_.ForcedZeroGain(), &high_bands_gain, &G);
+                            render_signal_analyzer_, aec_state_.SaturatedEcho(),
+                            x, aec_state_.ForcedZeroGain(), &high_bands_gain,
+                            &G);
   suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
                                 high_bands_gain, y);
 
@@ -206,6 +207,8 @@ void EchoRemoverImpl::ProcessCapture(
                         &subtractor_output.s_main[0],
                         LowestBandRate(sample_rate_hz_), 1);
   data_dumper_->DumpRaw("aec3_output", y0);
+  data_dumper_->DumpRaw("aec3_narrow_render",
+                        render_signal_analyzer_.NarrowPeakBand() ? 1 : 0);
   data_dumper_->DumpRaw("aec3_N2", cng_.NoiseSpectrum());
   data_dumper_->DumpRaw("aec3_suppressor_gain", G);
   data_dumper_->DumpWav("aec3_output",

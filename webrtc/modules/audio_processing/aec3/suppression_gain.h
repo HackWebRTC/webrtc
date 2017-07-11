@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
+#include "webrtc/modules/audio_processing/aec3/render_signal_analyzer.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -25,6 +26,7 @@ class SuppressionGain {
   void GetGain(const std::array<float, kFftLengthBy2Plus1>& nearend,
                const std::array<float, kFftLengthBy2Plus1>& echo,
                const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
+               const RenderSignalAnalyzer& render_signal_analyzer,
                bool saturated_echo,
                const std::vector<std::vector<float>>& render,
                bool force_zero_gain,
@@ -33,6 +35,7 @@ class SuppressionGain {
 
  private:
   void LowerBandGain(bool stationary_with_low_power,
+                     const rtc::Optional<int>& narrow_peak_band,
                      bool saturated_echo,
                      const std::array<float, kFftLengthBy2Plus1>& nearend,
                      const std::array<float, kFftLengthBy2Plus1>& echo,

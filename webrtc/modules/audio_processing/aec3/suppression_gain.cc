@@ -25,6 +25,16 @@
 namespace webrtc {
 namespace {
 
+// Reduce gain to avoid narrow band echo leakage.
+void NarrowBandAttenuation(int narrow_bin,
+                           std::array<float, kFftLengthBy2Plus1>* gain) {
+  const int upper_bin =
+      std::min(narrow_bin + 6, static_cast<int>(kFftLengthBy2Plus1 - 1));
+  for (int k = std::max(0, narrow_bin - 6); k <= upper_bin; ++k) {
+    (*gain)[k] = std::min((*gain)[k], 0.001f);
+  }
+}
+
 // Adjust the gains according to the presence of known external filters.
 void AdjustForExternalFilters(std::array<float, kFftLengthBy2Plus1>* gain) {
   // Limit the low frequency gains to avoid the impact of the high-pass filter
@@ -45,12 +55,18 @@ void AdjustForExternalFilters(std::array<float, kFftLengthBy2Plus1>* gain) {
 
 // Computes the gain to apply for the bands beyond the first band.
 float UpperBandsGain(
+    const rtc::Optional<int>& narrow_peak_band,
     bool saturated_echo,
     const std::vector<std::vector<float>>& render,
     const std::array<float, kFftLengthBy2Plus1>& low_band_gain) {
   RTC_DCHECK_LT(0, render.size());
   if (render.size() == 1) {
     return 1.f;
+  }
+
+  if (narrow_peak_band &&
+      (*narrow_peak_band > static_cast<int>(kFftLengthBy2Plus1 - 10))) {
+    return 0.001f;
   }
 
   constexpr size_t kLowBandGainLimit = kFftLengthBy2 / 2;
@@ -193,6 +209,7 @@ void MaskingPower(const std::array<float, kFftLengthBy2Plus1>& nearend,
 // TODO(peah): Add further optimizations, in particular for the divisions.
 void SuppressionGain::LowerBandGain(
     bool low_noise_render,
+    const rtc::Optional<int>& narrow_peak_band,
     bool saturated_echo,
     const std::array<float, kFftLengthBy2Plus1>& nearend,
     const std::array<float, kFftLengthBy2Plus1>& echo,
@@ -238,6 +255,9 @@ void SuppressionGain::LowerBandGain(
     GainToNoAudibleEcho(low_noise_render, saturated_echo, nearend, echo, masker,
                         min_gain, max_gain, one_by_echo, gain);
     AdjustForExternalFilters(gain);
+    if (narrow_peak_band) {
+      NarrowBandAttenuation(*narrow_peak_band, gain);
+    }
   }
 
   // Update the allowed maximum gain increase.
@@ -263,6 +283,7 @@ void SuppressionGain::GetGain(
     const std::array<float, kFftLengthBy2Plus1>& nearend,
     const std::array<float, kFftLengthBy2Plus1>& echo,
     const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
+    const RenderSignalAnalyzer& render_signal_analyzer,
     bool saturated_echo,
     const std::vector<std::vector<float>>& render,
     bool force_zero_gain,
@@ -283,11 +304,14 @@ void SuppressionGain::GetGain(
   bool low_noise_render = low_render_detector_.Detect(render);
 
   // Compute gain for the lower band.
-  LowerBandGain(low_noise_render, saturated_echo, nearend, echo, comfort_noise,
-                low_band_gain);
+  const rtc::Optional<int> narrow_peak_band =
+      render_signal_analyzer.NarrowPeakBand();
+  LowerBandGain(low_noise_render, narrow_peak_band, saturated_echo, nearend,
+                echo, comfort_noise, low_band_gain);
 
   // Compute the gain for the upper bands.
-  *high_bands_gain = UpperBandsGain(saturated_echo, render, *low_band_gain);
+  *high_bands_gain =
+      UpperBandsGain(narrow_peak_band, saturated_echo, render, *low_band_gain);
 }
 
 // Detects when the render signal can be considered to have low power and
