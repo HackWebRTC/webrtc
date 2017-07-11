@@ -230,9 +230,8 @@ class BasicNetworkManager : public NetworkManagerBase,
 
 #if defined(WEBRTC_LINUX)
   // Sets the flag for ignoring non-default routes.
-  // Defaults to false.
   void set_ignore_non_default_routes(bool value) {
-    ignore_non_default_routes_ = value;
+    ignore_non_default_routes_ = true;
   }
 #endif
 
