@@ -1362,6 +1362,106 @@ TEST_F(P2PTransportChannelTest,
   DestroyChannels();
 }
 
+// Tests that ICE regathering occurs regularly when
+// regather_all_networks_interval_range configuration value is set.
+TEST_F(P2PTransportChannelTest, TestIceRegatherOnAllNetworksContinual) {
+  rtc::ScopedFakeClock clock;
+  ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
+
+  // ep1 gathers continually but ep2 does not.
+  const int kRegatherInterval = 2000;
+  IceConfig config1 = CreateIceConfig(1000, GATHER_CONTINUALLY);
+  config1.regather_all_networks_interval_range.emplace(
+      kRegatherInterval, kRegatherInterval);
+  IceConfig config2;
+  config2.regather_all_networks_interval_range.emplace(
+      kRegatherInterval, kRegatherInterval);
+  CreateChannels(config1, config2);
+
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             kDefaultTimeout, clock);
+
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[0]);
+  // Timeout value such that all connections are deleted.
+  const int kNetworkGatherDuration = 11000;
+  SIMULATED_WAIT(false, kNetworkGatherDuration, clock);
+  // Expect regathering to happen 5 times in 11s with 2s interval.
+  EXPECT_LE(5, GetMetricsObserver(0)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRegathering,
+                   static_cast<int>(IceRegatheringReason::OCCASIONAL_REFRESH)));
+  // Expect no regathering if continual gathering not configured.
+  EXPECT_EQ(0, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRegathering,
+                   static_cast<int>(IceRegatheringReason::OCCASIONAL_REFRESH)));
+
+  DestroyChannels();
+}
+
+// Test that ICE periodic regathering can change the selected connection on the
+// specified interval and that the peers can communicate over the new
+// connection. The test is parameterized to test that it works when regathering
+// is done by the ICE controlling peer and when done by the controlled peer.
+class P2PTransportRegatherAllNetworksTest : public P2PTransportChannelTest {
+ protected:
+  void TestWithRoles(IceRole p1_role, IceRole p2_role) {
+    rtc::ScopedFakeClock clock;
+    ConfigureEndpoints(NAT_SYMMETRIC, NAT_SYMMETRIC, kDefaultPortAllocatorFlags,
+        kDefaultPortAllocatorFlags);
+    set_force_relay(true);
+
+    const int kRegatherInterval = 2000;
+    const int kNumRegathers = 2;
+
+    // Set up peer 1 to auto regather every 2s.
+    IceConfig config1 = CreateIceConfig(1000, GATHER_CONTINUALLY);
+    config1.regather_all_networks_interval_range.emplace(
+        kRegatherInterval, kRegatherInterval);
+    IceConfig config2 = CreateIceConfig(1000, GATHER_CONTINUALLY);
+
+    // Set peer roles.
+    SetIceRole(0, p1_role);
+    SetIceRole(1, p2_role);
+
+    CreateChannels(config1, config2);
+
+    // Wait for initial connection to be made.
+    EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() &&
+                                   ep1_ch1()->writable() &&
+                                   ep2_ch1()->receiving() &&
+                                   ep2_ch1()->writable(),
+                               kMediumTimeout, clock);
+
+    const Connection* initial_selected = ep1_ch1()->selected_connection();
+
+    // Wait long enough for 2 regathering cycles to happen plus some extra so
+    // the new connection has time to settle.
+    const int kWaitRegather =
+        kRegatherInterval * kNumRegathers + kRegatherInterval / 2;
+    SIMULATED_WAIT(false, kWaitRegather, clock);
+    EXPECT_EQ(kNumRegathers, GetMetricsObserver(0)->GetEnumCounter(
+        webrtc::kEnumCounterIceRegathering,
+        static_cast<int>(IceRegatheringReason::OCCASIONAL_REFRESH)));
+
+    const Connection* new_selected = ep1_ch1()->selected_connection();
+
+    // Want the new selected connection to be different.
+    ASSERT_NE(initial_selected, new_selected);
+
+    // Make sure we can communicate over the new connection too.
+    TestSendRecv(clock);
+  }
+};
+
+TEST_F(P2PTransportRegatherAllNetworksTest, TestControlling) {
+  TestWithRoles(ICEROLE_CONTROLLING, ICEROLE_CONTROLLED);
+}
+
+TEST_F(P2PTransportRegatherAllNetworksTest, TestControlled) {
+  TestWithRoles(ICEROLE_CONTROLLED, ICEROLE_CONTROLLING);
+}
+
 // Test that we properly create a connection on a STUN ping from unknown address
 // when the signaling is slow.
 TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {

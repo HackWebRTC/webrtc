@@ -33,6 +33,7 @@
 #include "webrtc/p2p/base/portinterface.h"
 #include "webrtc/rtc_base/asyncpacketsocket.h"
 #include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/random.h"
 #include "webrtc/rtc_base/sigslot.h"
 
 namespace cricket {
@@ -280,6 +281,7 @@ class P2PTransportChannel : public IceTransportInternal,
   void OnMessage(rtc::Message* pmsg) override;
   void OnCheckAndPing();
   void OnRegatherOnFailedNetworks();
+  void OnRegatherOnAllNetworks();
 
   uint32_t GetNominationAttr(Connection* conn) const;
   bool GetUseCandidateAttr(Connection* conn, NominationMode mode) const;
@@ -328,6 +330,16 @@ class P2PTransportChannel : public IceTransportInternal,
                : static_cast<uint32_t>(remote_ice_parameters_.size() - 1);
   }
 
+  // Samples a delay from the uniform distribution defined by the
+  // regather_on_all_networks_interval ICE configuration pair.
+  int SampleRegatherAllNetworksInterval();
+
+  // Indicates if the given local port has been pruned.
+  bool IsPortPruned(const Port* port) const;
+
+  // Indicates if the given remote candidate has been pruned.
+  bool IsRemoteCandidatePruned(const Candidate& cand) const;
+
   // Sets the writable state, signaling if necessary.
   void set_writable(bool writable);
   // Sets the receiving state, signaling if necessary.
@@ -371,6 +383,9 @@ class P2PTransportChannel : public IceTransportInternal,
   IceRole ice_role_;
   uint64_t tiebreaker_;
   IceGatheringState gathering_state_;
+
+  // Used to generate random intervals for regather_all_networks_interval_range.
+  webrtc::Random rand_;
 
   int check_receiving_interval_;
   int64_t last_ping_sent_ms_ = 0;

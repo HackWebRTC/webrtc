@@ -15,6 +15,9 @@
 #include <time.h>
 
 #include <ctime>
+#include <string>
+
+#include "webrtc/rtc_base/checks.h"
 
 namespace rtc {
 
@@ -123,6 +126,32 @@ int64_t TmToSeconds(const std::tm& tm);
 // settimeofday. Always use rtc::TimeMicros(), not this function, for
 // measuring time intervals and timeouts.
 int64_t TimeUTCMicros();
+
+// Interval of time from the range [min, max] inclusive.
+class IntervalRange {
+ public:
+  IntervalRange() : min_(0), max_(0) {}
+  IntervalRange(int min, int max) : min_(min), max_(max) {
+    RTC_DCHECK_LE(min, max);
+  }
+
+  int min() const { return min_; }
+  int max() const { return max_; }
+
+  std::string ToString() const {
+    std::stringstream ss;
+    ss << "[" << min_ << "," << max_ << "]";
+    return ss.str();
+  }
+
+  bool operator==(const IntervalRange& o) const {
+    return min_ == o.min_ && max_ == o.max_;
+  }
+
+ private:
+  int min_;
+  int max_;
+};
 
 }  // namespace rtc
 
