@@ -184,23 +184,23 @@ if (rtc_include_tests) {
       ":voice_engine",
       "../base:rtc_base_approved",
       "../base:rtc_base_tests_utils",
+      "../common_audio",
       "../modules:module_api",
+      "../modules/audio_coding",
+      "../modules/audio_conference_mixer",
+      "../modules/audio_device",
+      "../modules/audio_processing",
+      "../modules/media_file",
+      "../modules/rtp_rtcp",
+      "../modules/utility",
+      "../modules/video_capture:video_capture",
+      "../system_wrappers",
       "../test:test_common",
+      "../test:test_main",
+      "../test:video_test_common",
       "//testing/gmock",
       "//testing/gtest",
       "//third_party/gflags",
-      "//webrtc/common_audio",
-      "//webrtc/modules/audio_coding",
-      "//webrtc/modules/audio_conference_mixer",
-      "//webrtc/modules/audio_device",
-      "//webrtc/modules/audio_processing",
-      "//webrtc/modules/media_file",
-      "//webrtc/modules/rtp_rtcp",
-      "//webrtc/modules/utility",
-      "//webrtc/modules/video_capture:video_capture",
-      "//webrtc/system_wrappers",
-      "//webrtc/test:test_main",
-      "//webrtc/test:video_test_common",
     ]
 
     if (is_android) {
@@ -221,8 +221,8 @@ if (rtc_include_tests) {
     ]
 
     data = [
-      "//resources/utility/encapsulated_pcm16b_8khz.wav",
-      "//resources/utility/encapsulated_pcmu_8khz.wav",
+      "../../resources/utility/encapsulated_pcm16b_8khz.wav",
+      "../../resources/utility/encapsulated_pcmu_8khz.wav",
     ]
 
     if (is_win) {
@@ -248,20 +248,20 @@ if (rtc_include_tests) {
         ":voice_engine",
         "..:webrtc_common",
         "../base:rtc_base_approved",
+        "../logging:rtc_event_log_api",
         "../modules:module_api",
         "../modules/audio_device:audio_device",
         "../modules/audio_processing:audio_processing",
         "../modules/rtp_rtcp:rtp_rtcp",
+        "../modules/video_capture",
+        "../system_wrappers",
+        "../system_wrappers/:system_wrappers_default",
+        "../test/:test_common",
+        "../test/:test_support",
+        "../test/:video_test_common",
         "//testing/gmock",
         "//testing/gtest",
         "//third_party/gflags",
-        "//webrtc/logging:rtc_event_log_api",
-        "//webrtc/modules/video_capture",
-        "//webrtc/system_wrappers",
-        "//webrtc/system_wrappers/:system_wrappers_default",
-        "//webrtc/test/:test_common",
-        "//webrtc/test/:test_support",
-        "//webrtc/test/:video_test_common",
       ]
 
       sources = [

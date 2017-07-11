@@ -62,7 +62,7 @@ if (rtc_include_tests) {
     # gets additional generated targets which would require many lines here to
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
-      visibility = [ "//webrtc:video_engine_tests" ]
+      visibility = [ "..:video_engine_tests" ]
     }
 
     # TODO(kjellander): Remove (bugs.webrtc.org/6828)
@@ -120,8 +120,8 @@ if (rtc_include_tests) {
       }
 
       data = [
-        "//resources/voice_engine/audio_tiny16.wav",
-        "//resources/voice_engine/audio_tiny48.wav",
+        "../../resources/voice_engine/audio_tiny16.wav",
+        "../../resources/voice_engine/audio_tiny48.wav",
       ]
 
       if (!build_with_chromium && is_clang) {

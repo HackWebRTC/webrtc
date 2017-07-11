@@ -316,7 +316,7 @@ if (!build_with_chromium) {
       if (is_android) {
         deps += [
           ":android_junit_tests",
-          "//webrtc/sdk/android:libjingle_peerconnection_android_unittest",
+          "sdk/android:libjingle_peerconnection_android_unittest",
         ]
       } else {
         deps += [ "modules/video_capture:video_capture_tests" ]
@@ -422,8 +422,8 @@ if (rtc_include_tests) {
 
   # TODO(pbos): Rename test suite, this is no longer "just" for video targets.
   video_engine_tests_resources = [
-    "//resources/foreman_cif_short.yuv",
-    "//resources/voice_engine/audio_long16.pcm",
+    "../resources/foreman_cif_short.yuv",
+    "../resources/voice_engine/audio_long16.pcm",
   ]
 
   if (is_ios) {
@@ -466,19 +466,19 @@ if (rtc_include_tests) {
   }
 
   webrtc_perf_tests_resources = [
-    "//resources/audio_coding/speech_mono_16kHz.pcm",
-    "//resources/audio_coding/speech_mono_32_48kHz.pcm",
-    "//resources/audio_coding/testfile32kHz.pcm",
-    "//resources/ConferenceMotion_1280_720_50.yuv",
-    "//resources/difficult_photo_1850_1110.yuv",
-    "//resources/foreman_cif.yuv",
-    "//resources/google-wifi-3mbps.rx",
-    "//resources/paris_qcif.yuv",
-    "//resources/photo_1850_1110.yuv",
-    "//resources/presentation_1850_1110.yuv",
-    "//resources/verizon4g-downlink.rx",
-    "//resources/voice_engine/audio_long16.pcm",
-    "//resources/web_screenshot_1850_1110.yuv",
+    "../resources/audio_coding/speech_mono_16kHz.pcm",
+    "../resources/audio_coding/speech_mono_32_48kHz.pcm",
+    "../resources/audio_coding/testfile32kHz.pcm",
+    "../resources/ConferenceMotion_1280_720_50.yuv",
+    "../resources/difficult_photo_1850_1110.yuv",
+    "../resources/foreman_cif.yuv",
+    "../resources/google-wifi-3mbps.rx",
+    "../resources/paris_qcif.yuv",
+    "../resources/photo_1850_1110.yuv",
+    "../resources/presentation_1850_1110.yuv",
+    "../resources/verizon4g-downlink.rx",
+    "../resources/voice_engine/audio_long16.pcm",
+    "../resources/web_screenshot_1850_1110.yuv",
   ]
 
   if (is_ios) {
@@ -535,9 +535,9 @@ if (rtc_include_tests) {
       ]
 
       deps = [
+        "examples:AppRTCMobile_javalib",
+        "sdk/android:libjingle_peerconnection_java",
         "//base:base_java_test_support",
-        "//webrtc/examples:AppRTCMobile_javalib",
-        "//webrtc/sdk/android:libjingle_peerconnection_java",
       ]
     }
   }

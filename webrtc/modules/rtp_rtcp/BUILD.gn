@@ -237,8 +237,8 @@ if (rtc_include_tests) {
 
     deps = [
       ":rtp_rtcp",
+      "../../test:test_main",
       "//testing/gtest",
-      "//webrtc/test:test_main",
     ]
   }  # test_packet_masks_metrics
 
@@ -249,7 +249,7 @@ if (rtc_include_tests) {
     # gets additional generated targets which would require many lines here to
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
-      visibility = [ "//webrtc/modules:modules_tests" ]
+      visibility = [ "../../modules:modules_tests" ]
     }
     sources = [
       "test/testFec/test_fec.cc",

@@ -222,8 +222,8 @@ if (rtc_include_tests) {
     ]
 
     deps = [
+      "../test:test_support",
       "//testing/gmock",
-      "//webrtc/test:test_support",
     ]
   }
 
@@ -250,7 +250,7 @@ if (rtc_include_tests) {
     # gets additional generated targets which would require many lines here to
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
-      visibility = [ "//webrtc:rtc_unittests" ]
+      visibility = [ "..:rtc_unittests" ]
     }
     sources = [
       "ortc/mediadescription_unittest.cc",
@@ -266,7 +266,7 @@ if (rtc_include_tests) {
     deps = [
       ":libjingle_peerconnection_api",
       ":ortc_api",
-      "//webrtc/test:test_support",
+      "../test:test_support",
     ]
   }
 }

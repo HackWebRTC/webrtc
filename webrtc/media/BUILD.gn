@@ -397,13 +397,13 @@ if (rtc_include_tests) {
   }
 
   rtc_media_unittests_resources = [
-    "//resources/media/captured-320x240-2s-48.frames",
-    "//resources/media/faces.1280x720_P420.yuv",
-    "//resources/media/faces_I420.jpg",
-    "//resources/media/faces_I422.jpg",
-    "//resources/media/faces_I444.jpg",
-    "//resources/media/faces_I411.jpg",
-    "//resources/media/faces_I400.jpg",
+    "../../resources/media/captured-320x240-2s-48.frames",
+    "../../resources/media/faces.1280x720_P420.yuv",
+    "../../resources/media/faces_I420.jpg",
+    "../../resources/media/faces_I422.jpg",
+    "../../resources/media/faces_I444.jpg",
+    "../../resources/media/faces_I411.jpg",
+    "../../resources/media/faces_I400.jpg",
   ]
 
   if (is_ios) {

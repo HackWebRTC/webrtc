@@ -249,13 +249,13 @@ if (!build_with_chromium) {
   }
 
   test_support_unittests_resources = [
-    "//resources/foreman_cif_short.yuv",
-    "//resources/video_coding/frame-ethernet-ii.pcap",
-    "//resources/video_coding/frame-loopback.pcap",
-    "//resources/video_coding/pltype103.rtp",
-    "//resources/video_coding/pltype103_header_only.rtp",
-    "//resources/video_coding/ssrcs-2.pcap",
-    "//resources/video_coding/ssrcs-3.pcap",
+    "../../resources/foreman_cif_short.yuv",
+    "../../resources/video_coding/frame-ethernet-ii.pcap",
+    "../../resources/video_coding/frame-loopback.pcap",
+    "../../resources/video_coding/pltype103.rtp",
+    "../../resources/video_coding/pltype103_header_only.rtp",
+    "../../resources/video_coding/ssrcs-2.pcap",
+    "../../resources/video_coding/ssrcs-3.pcap",
   ]
 
   if (is_ios) {
@@ -606,8 +606,8 @@ if (!build_with_chromium && is_android) {
       "android/org/webrtc/native_test/RTCNativeUnitTestActivity.java",
     ]
     deps = [
+      "../rtc_base:base_java",
       "//testing/android/native_test:native_test_java",
-      "//webrtc/rtc_base:base_java",
     ]
   }
 }

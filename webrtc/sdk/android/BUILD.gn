@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("//webrtc/webrtc.gni")
+import("../../webrtc.gni")
 import("//build/config/android/config.gni")
 import("//build/config/android/rules.gni")
 
@@ -48,10 +48,10 @@ rtc_source_set("base_jni") {
   ]
 
   deps = [
-    "//webrtc/api:libjingle_peerconnection_api",
-    "//webrtc/base:rtc_base",
-    "//webrtc/base:rtc_base_approved",
-    "//webrtc/system_wrappers:metrics_api",
+    "../../api:libjingle_peerconnection_api",
+    "../../base:rtc_base",
+    "../../base:rtc_base_approved",
+    "../../system_wrappers:metrics_api",
   ]
 
   if (is_clang) {
@@ -70,9 +70,9 @@ rtc_static_library("audio_jni") {
 
   deps = [
     ":base_jni",
-    "//webrtc/api/audio_codecs:builtin_audio_decoder_factory",
-    "//webrtc/api/audio_codecs:builtin_audio_encoder_factory",
-    "//webrtc/voice_engine:voice_engine",
+    "../../api/audio_codecs:builtin_audio_decoder_factory",
+    "../../api/audio_codecs:builtin_audio_encoder_factory",
+    "../../voice_engine:voice_engine",
   ]
 }
 
@@ -135,21 +135,21 @@ rtc_static_library("video_jni") {
 
   deps = [
     ":base_jni",
-    "//webrtc:webrtc_common",
-    "//webrtc/api:libjingle_peerconnection_api",
-    "//webrtc/api:video_frame_api",
-    "//webrtc/api/video_codecs:video_codecs_api",
-    "//webrtc/base:rtc_base",
-    "//webrtc/base:rtc_base_approved",
-    "//webrtc/base:rtc_task_queue",
-    "//webrtc/base:sequenced_task_checker",
-    "//webrtc/base:weak_ptr",
-    "//webrtc/common_video:common_video",
-    "//webrtc/media:rtc_audio_video",
-    "//webrtc/media:rtc_media_base",
-    "//webrtc/modules/utility:utility",
-    "//webrtc/modules/video_coding:video_coding_utility",
-    "//webrtc/system_wrappers:system_wrappers",
+    "../..:webrtc_common",
+    "../../api:libjingle_peerconnection_api",
+    "../../api:video_frame_api",
+    "../../api/video_codecs:video_codecs_api",
+    "../../base:rtc_base",
+    "../../base:rtc_base_approved",
+    "../../base:rtc_task_queue",
+    "../../base:sequenced_task_checker",
+    "../../base:weak_ptr",
+    "../../common_video:common_video",
+    "../../media:rtc_audio_video",
+    "../../media:rtc_media_base",
+    "../../modules/utility:utility",
+    "../../modules/video_coding:video_coding_utility",
+    "../../system_wrappers:system_wrappers",
   ]
 
   if (rtc_build_libyuv) {
@@ -180,10 +180,10 @@ rtc_static_library("media_jni") {
 
   deps = [
     ":base_jni",
-    "//webrtc/call:call_interfaces",
-    "//webrtc/logging:rtc_event_log_api",
-    "//webrtc/media:rtc_audio_video",
-    "//webrtc/modules/audio_processing:audio_processing",
+    "../../call:call_interfaces",
+    "../../logging:rtc_event_log_api",
+    "../../media:rtc_audio_video",
+    "../../modules/audio_processing:audio_processing",
   ]
 
   if (is_clang) {
@@ -237,14 +237,14 @@ rtc_static_library("peerconnection_jni") {
   deps = [
     ":base_jni",
     "../..:webrtc_common",
-    "//webrtc/base:rtc_base",
-    "//webrtc/base:rtc_base_approved",
-    "//webrtc/base:rtc_task_queue",
-    "//webrtc/media:rtc_data",
-    "//webrtc/media:rtc_media_base",
-    "//webrtc/modules/utility:utility",
-    "//webrtc/pc:peerconnection",
-    "//webrtc/system_wrappers:system_wrappers",
+    "../../base:rtc_base",
+    "../../base:rtc_base_approved",
+    "../../base:rtc_task_queue",
+    "../../media:rtc_data",
+    "../../media:rtc_media_base",
+    "../../modules/utility:utility",
+    "../../pc:peerconnection",
+    "../../system_wrappers:system_wrappers",
   ]
 }
 
@@ -255,7 +255,7 @@ rtc_static_library("libjingle_peerconnection_jni") {
     ":media_jni",
     ":peerconnection_jni",
     ":video_jni",
-    "//webrtc/pc:create_pc_factory",
+    "../../pc:create_pc_factory",
   ]
 }
 
@@ -269,10 +269,10 @@ rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
   deps = [
     ":base_jni",
     ":peerconnection_jni",
-    "//webrtc/pc:peerconnection",
-    "//webrtc/system_wrappers",
-    "//webrtc/system_wrappers:field_trial_default",
-    "//webrtc/system_wrappers:metrics_default",
+    "../../pc:peerconnection",
+    "../../system_wrappers",
+    "../../system_wrappers:field_trial_default",
+    "../../system_wrappers:metrics_default",
   ]
 }
 
@@ -294,9 +294,9 @@ rtc_shared_library("libjingle_peerconnection_datachannelonly_so") {
     ":null_media_jni",
     ":null_video_jni",
     ":peerconnection_jni",
-    "//webrtc/base:rtc_base",
-    "//webrtc/base:rtc_base_approved",
-    "//webrtc/pc:peerconnection",
+    "../../base:rtc_base",
+    "../../base:rtc_base_approved",
+    "../../pc:peerconnection",
   ]
   output_extension = "so"
 }
@@ -312,8 +312,8 @@ rtc_shared_library("libjingle_peerconnection_so") {
   deps = [
     ":libjingle_peerconnection_jni",
     ":libjingle_peerconnection_metrics_default_jni",
-    "//webrtc/base:rtc_base",
-    "//webrtc/pc:libjingle_peerconnection",
+    "../../base:rtc_base",
+    "../../pc:libjingle_peerconnection",
   ]
   output_extension = "so"
 }
@@ -326,8 +326,8 @@ dist_jar("libwebrtc") {
   deps = [
     ":libjingle_peerconnection_java",
     ":libjingle_peerconnection_metrics_default_java",
-    "//webrtc/modules/audio_device:audio_device_java",
-    "//webrtc/rtc_base:base_java",
+    "../../modules/audio_device:audio_device_java",
+    "../../rtc_base:base_java",
   ]
 }
 
@@ -415,8 +415,8 @@ android_library("libjingle_peerconnection_java") {
   ]
 
   deps = [
-    "//webrtc/modules/audio_device:audio_device_java",
-    "//webrtc/rtc_base:base_java",
+    "../../modules/audio_device:audio_device_java",
+    "../../rtc_base:base_java",
   ]
 }
 
@@ -424,7 +424,7 @@ android_library("libjingle_peerconnection_metrics_default_java") {
   java_files = [ "api/org/webrtc/Metrics.java" ]
 
   deps = [
-    "//webrtc/rtc_base:base_java",
+    "../../rtc_base:base_java",
   ]
 }
 
@@ -454,20 +454,20 @@ if (rtc_include_tests) {
     ]
 
     data = [
-      "//webrtc/sdk/android/instrumentationtests/src/org/webrtc/capturetestvideo.y4m",
+      "../../sdk/android/instrumentationtests/src/org/webrtc/capturetestvideo.y4m",
     ]
 
     deps = [
+      "../../rtc_base:base_java",
+      "../../sdk/android:libjingle_peerconnection_java",
+      "../../sdk/android:libjingle_peerconnection_metrics_default_java",
       "//base:base_java",
       "//base:base_java_test_support",
       "//third_party/android_support_test_runner:rules_java",
       "//third_party/android_support_test_runner:runner_java",
       "//third_party/junit",
-      "//webrtc/rtc_base:base_java",
-      "//webrtc/sdk/android:libjingle_peerconnection_java",
-      "//webrtc/sdk/android:libjingle_peerconnection_metrics_default_java",
     ]
 
-    shared_libraries = [ "//webrtc/sdk/android:libjingle_peerconnection_so" ]
+    shared_libraries = [ "../../sdk/android:libjingle_peerconnection_so" ]
   }
 }

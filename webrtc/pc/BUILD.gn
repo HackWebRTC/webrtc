@@ -431,9 +431,9 @@ if (rtc_include_tests) {
         "test/androidtestinitializer.h",
       ]
       deps += [
+        "../sdk/android:libjingle_peerconnection_java",
+        "../sdk/android:libjingle_peerconnection_jni",
         "//testing/android/native_test:native_test_support",
-        "//webrtc/sdk/android:libjingle_peerconnection_java",
-        "//webrtc/sdk/android:libjingle_peerconnection_jni",
       ]
     }
 

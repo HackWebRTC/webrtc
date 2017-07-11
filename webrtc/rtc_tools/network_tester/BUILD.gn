@@ -54,8 +54,8 @@ if (rtc_enable_protobuf) {
   }
 
   network_tester_unittests_resources = [
-    "//resources/network_tester/client_config.dat",
-    "//resources/network_tester/server_config.dat",
+    "../../../resources/network_tester/client_config.dat",
+    "../../../resources/network_tester/server_config.dat",
   ]
 
   if (is_ios) {
@@ -75,7 +75,7 @@ if (rtc_enable_protobuf) {
     # gets additional generated targets which would require many lines here to
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
-      visibility = [ "//webrtc/rtc_tools:tools_unittests" ]
+      visibility = [ "..:tools_unittests" ]
     }
     sources = [
       "network_tester_unittest.cc",
@@ -83,9 +83,9 @@ if (rtc_enable_protobuf) {
 
     deps = [
       ":network_tester",
+      "../../base:rtc_base_tests_utils",
+      "../../test:test_support",
       "//testing/gtest",
-      "//webrtc/base:rtc_base_tests_utils",
-      "//webrtc/test:test_support",
     ]
 
     if (is_ios) {
@@ -130,11 +130,11 @@ if (is_android) {
     deps = [
       ":NetworkTesterMobile_javalib",
       ":NetworkTesterMobile_resources",
+      "../../rtc_base:base_java",
       "//base:base_java",
-      "//webrtc/rtc_base:base_java",
     ]
 
-    shared_libraries = [ "//webrtc/rtc_tools/network_tester:network_tester_so" ]
+    shared_libraries = [ "../../rtc_tools/network_tester:network_tester_so" ]
   }
 
   android_library("NetworkTesterMobile_javalib") {
@@ -148,7 +148,7 @@ if (is_android) {
 
     deps = [
       ":NetworkTesterMobile_resources",
-      "//webrtc/rtc_base:base_java",
+      "../../rtc_base:base_java",
     ]
   }
 

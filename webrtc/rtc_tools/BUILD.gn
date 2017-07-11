@@ -275,9 +275,9 @@ if (rtc_include_tests) {
   }
 
   tools_unittests_resources = [
-    "//resources/foreman_cif.yuv",
-    "//resources/reference_less_video_test_file.y4m",
-    "//resources/video_quality_analysis_frame.txt",
+    "../../resources/foreman_cif.yuv",
+    "../../resources/reference_less_video_test_file.y4m",
+    "../../resources/video_quality_analysis_frame.txt",
   ]
 
   if (is_ios) {

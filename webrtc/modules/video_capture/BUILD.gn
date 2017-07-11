@@ -183,7 +183,7 @@ if (!build_with_chromium) {
         "../utility",
         "//testing/gtest",
       ]
-      deps += [ "//webrtc/test:test_main" ]
+      deps += [ "../../test:test_main" ]
 
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

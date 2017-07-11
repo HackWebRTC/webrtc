@@ -273,7 +273,7 @@ if (rtc_include_tests) {
     # gets additional generated targets which would require many lines here to
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
-      visibility = [ "//webrtc/modules:modules_unittests" ]
+      visibility = [ "..:modules_unittests" ]
     }
     sources = [
       "fine_audio_buffer_unittest.cc",
@@ -304,7 +304,7 @@ if (rtc_include_tests) {
       ]
       deps += [
         "../../../base",
-        "//webrtc/sdk/android:libjingle_peerconnection_java",
+        "../../sdk/android:libjingle_peerconnection_java",
       ]
     }
     if (is_ios && !use_ios_simulator) {
@@ -355,7 +355,7 @@ if (!build_with_chromium && is_android) {
       "android/java/src/org/webrtc/voiceengine/WebRtcAudioUtils.java",
     ]
     deps = [
-      "//webrtc/rtc_base:base_java",
+      "../../rtc_base:base_java",
     ]
   }
 }

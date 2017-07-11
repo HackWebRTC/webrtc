@@ -412,7 +412,7 @@ if (rtc_include_tests) {
     # gets additional generated targets which would require many lines here to
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
-      visibility = [ "//webrtc/modules:modules_tests" ]
+      visibility = [ "..:modules_tests" ]
     }
     sources = [
       "codecs/h264/test/h264_impl_unittest.cc",
@@ -446,11 +446,11 @@ if (rtc_include_tests) {
   }
 
   plot_videoprocessor_integrationtest_resources = [
-    "//resources/foreman_128x96.yuv",
-    "//resources/foreman_160x120.yuv",
-    "//resources/foreman_176x144.yuv",
-    "//resources/foreman_320x240.yuv",
-    "//resources/foreman_cif.yuv",
+    "../../../resources/foreman_128x96.yuv",
+    "../../../resources/foreman_160x120.yuv",
+    "../../../resources/foreman_176x144.yuv",
+    "../../../resources/foreman_320x240.yuv",
+    "../../../resources/foreman_cif.yuv",
   ]
 
   if (is_ios || is_mac) {
@@ -519,7 +519,7 @@ if (rtc_include_tests) {
     # gets additional generated targets which would require many lines here to
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
-      visibility = [ "//webrtc/modules:modules_unittests" ]
+      visibility = [ "..:modules_unittests" ]
     }
     sources = [
       "codecs/test/packet_manipulator_unittest.cc",
