@@ -23,6 +23,7 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/call_test.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/gtest.h"
@@ -43,20 +44,37 @@ namespace flags {
 static bool ValidatePayloadType(const char* flagname, int32_t payload_type) {
   return payload_type > 0 && payload_type <= 127;
 }
-DEFINE_int32(payload_type, 0, "Payload type");
+DEFINE_int32(payload_type, test::CallTest::kPayloadTypeVP8, "Payload type");
 static int PayloadType() { return static_cast<int>(FLAGS_payload_type); }
 static const bool payload_dummy =
     google::RegisterFlagValidator(&FLAGS_payload_type, &ValidatePayloadType);
+
+DEFINE_int32(payload_type_rtx,
+             test::CallTest::kSendRtxPayloadType,
+             "RTX payload type");
+static int PayloadTypeRtx() {
+  return static_cast<int>(FLAGS_payload_type_rtx);
+}
+static const bool payload_rtx_dummy =
+    google::RegisterFlagValidator(&FLAGS_payload_type_rtx,
+                                  &ValidatePayloadType);
 
 // Flag for SSRC.
 static bool ValidateSsrc(const char* flagname, uint64_t ssrc) {
   return ssrc > 0 && ssrc <= 0xFFFFFFFFu;
 }
 
-DEFINE_uint64(ssrc, 0, "Incoming SSRC");
+DEFINE_uint64(ssrc, test::CallTest::kVideoSendSsrcs[0], "Incoming SSRC");
 static uint32_t Ssrc() { return static_cast<uint32_t>(FLAGS_ssrc); }
 static const bool ssrc_dummy =
     google::RegisterFlagValidator(&FLAGS_ssrc, &ValidateSsrc);
+
+DEFINE_uint64(ssrc_rtx, test::CallTest::kSendRtxSsrcs[0], "Incoming RTX SSRC");
+static uint32_t SsrcRtx() {
+  return static_cast<uint32_t>(FLAGS_ssrc_rtx);
+}
+static const bool ssrc_rtx_dummy =
+    google::RegisterFlagValidator(&FLAGS_ssrc_rtx, &ValidateSsrc);
 
 static bool ValidateOptionalPayloadType(const char* flagname,
                                         int32_t payload_type) {
@@ -219,6 +237,9 @@ void RtpReplay() {
   VideoReceiveStream::Config receive_config(&transport);
   receive_config.rtp.remote_ssrc = flags::Ssrc();
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
+  receive_config.rtp.rtx_ssrc = flags::SsrcRtx();
+  receive_config.rtp.rtx_payload_types[flags::PayloadType()] =
+      flags::PayloadTypeRtx();
   receive_config.rtp.ulpfec.ulpfec_payload_type = flags::FecPayloadType();
   receive_config.rtp.ulpfec.red_payload_type = flags::RedPayloadType();
   receive_config.rtp.nack.rtp_history_ms = 1000;

@@ -52,9 +52,6 @@
 namespace {
 
 constexpr int kSendStatsPollingIntervalMs = 1000;
-constexpr int kPayloadTypeH264 = 122;
-constexpr int kPayloadTypeVP8 = 123;
-constexpr int kPayloadTypeVP9 = 124;
 
 constexpr size_t kMaxComparisons = 10;
 constexpr char kSyncGroup[] = "av_sync";
@@ -588,15 +585,15 @@ class VideoAnalyzer : public PacketReceiver,
   bool IsInSelectedSpatialAndTemporalLayer(const uint8_t* packet,
                                            size_t length,
                                            const RTPHeader& header) {
-    if (header.payloadType != kPayloadTypeVP9 &&
-        header.payloadType != kPayloadTypeVP8) {
+    if (header.payloadType != test::CallTest::kPayloadTypeVP9 &&
+        header.payloadType != test::CallTest::kPayloadTypeVP8) {
       return true;
     } else {
       // Get VP8 and VP9 specific header to check layers indexes.
       const uint8_t* payload = packet + header.headerLength;
       const size_t payload_length = length - header.headerLength;
       const size_t payload_data_length = payload_length - header.paddingLength;
-      const bool is_vp8 = header.payloadType == kPayloadTypeVP8;
+      const bool is_vp8 = header.payloadType == test::CallTest::kPayloadTypeVP8;
       std::unique_ptr<RtpDepacketizer> depacketizer(
           RtpDepacketizer::Create(is_vp8 ? kRtpVideoVp8 : kRtpVideoVp9));
       RtpDepacketizer::ParsedPayload parsed_payload;

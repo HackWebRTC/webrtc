@@ -50,6 +50,9 @@ class CallTest : public ::testing::Test {
   static const uint8_t kUlpfecPayloadType;
   static const uint8_t kFlexfecPayloadType;
   static const uint8_t kAudioSendPayloadType;
+  static const uint8_t kPayloadTypeH264;
+  static const uint8_t kPayloadTypeVP8;
+  static const uint8_t kPayloadTypeVP9;
   static const uint32_t kSendRtxSsrcs[kNumSsrcs];
   static const uint32_t kVideoSendSsrcs[kNumSsrcs];
   static const uint32_t kAudioSendSsrc;

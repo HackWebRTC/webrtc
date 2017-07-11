@@ -427,6 +427,9 @@ const uint8_t CallTest::kRtxRedPayloadType = 99;
 const uint8_t CallTest::kUlpfecPayloadType = 119;
 const uint8_t CallTest::kFlexfecPayloadType = 120;
 const uint8_t CallTest::kAudioSendPayloadType = 103;
+const uint8_t CallTest::kPayloadTypeH264 = 122;
+const uint8_t CallTest::kPayloadTypeVP8 = 123;
+const uint8_t CallTest::kPayloadTypeVP9 = 124;
 const uint32_t CallTest::kSendRtxSsrcs[kNumSsrcs] = {0xBADCAFD, 0xBADCAFE,
                                                      0xBADCAFF};
 const uint32_t CallTest::kVideoSendSsrcs[kNumSsrcs] = {0xC0FFED, 0xC0FFEE,
