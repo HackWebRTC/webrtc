@@ -52,6 +52,7 @@ TEST(ResidualEchoEstimator, BasicTest) {
   Random random_generator(42U);
   FftData X;
   std::array<float, kBlockSize> x_old;
+  std::array<float, kBlockSize> s;
   Aec3Fft fft;
 
   for (auto& H2_k : H2) {
@@ -59,6 +60,11 @@ TEST(ResidualEchoEstimator, BasicTest) {
   }
   H2[2].fill(10.f);
   H2[2][0] = 0.1f;
+
+  std::array<float, kAdaptiveFilterTimeDomainLength> h;
+  h.fill(0.f);
+
+  s.fill(100.f);
 
   constexpr float kLevel = 10.f;
   E2_shadow.fill(kLevel);
@@ -74,8 +80,8 @@ TEST(ResidualEchoEstimator, BasicTest) {
     render_buffer.Insert(x);
 
     aec_state.HandleEchoPathChange(echo_path_variability);
-    aec_state.Update(H2, rtc::Optional<size_t>(2), render_buffer, E2_main, Y2,
-                     x[0], false);
+    aec_state.Update(H2, h, rtc::Optional<size_t>(2), render_buffer, E2_main,
+                     Y2, x[0], s, false);
 
     estimator.Estimate(true, aec_state, render_buffer, S2_linear, Y2, &R2);
   }

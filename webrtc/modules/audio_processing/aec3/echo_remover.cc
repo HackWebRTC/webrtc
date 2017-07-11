@@ -131,6 +131,8 @@ void EchoRemoverImpl::ProcessCapture(
                         LowestBandRate(sample_rate_hz_), 1);
   data_dumper_->DumpWav("aec3_echo_remover_render_input", kBlockSize, &x0[0],
                         LowestBandRate(sample_rate_hz_), 1);
+  data_dumper_->DumpRaw("aec3_echo_remover_capture_input", y0);
+  data_dumper_->DumpRaw("aec3_echo_remover_render_input", x0);
 
   aec_state_.UpdateCaptureSaturation(capture_signal_saturation);
 
@@ -167,13 +169,15 @@ void EchoRemoverImpl::ProcessCapture(
 
   // Update the AEC state information.
   aec_state_.Update(subtractor_.FilterFrequencyResponse(),
+                    subtractor_.FilterImpulseResponse(),
                     echo_path_delay_samples, render_buffer, E2_main, Y2, x0,
-                    echo_leakage_detected_);
+                    subtractor_output.s_main, echo_leakage_detected_);
 
   // Choose the linear output.
   output_selector_.FormLinearOutput(!aec_state_.HeadsetDetected(), e_main, y0);
   data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0],
                         LowestBandRate(sample_rate_hz_), 1);
+  data_dumper_->DumpRaw("aec3_output_linear", y0);
   const auto& E2 = output_selector_.UseSubtractorOutput() ? E2_main : Y2;
 
   // Estimate the residual echo power.
@@ -194,7 +198,14 @@ void EchoRemoverImpl::ProcessCapture(
   // Update the metrics.
   metrics_.Update(aec_state_, cng_.NoiseSpectrum(), G);
 
+  // Update the aec state with the aec output characteristics.
+  aec_state_.UpdateWithOutput(y0);
+
   // Debug outputs for the purpose of development and analysis.
+  data_dumper_->DumpWav("aec3_echo_estimate", kBlockSize,
+                        &subtractor_output.s_main[0],
+                        LowestBandRate(sample_rate_hz_), 1);
+  data_dumper_->DumpRaw("aec3_output", y0);
   data_dumper_->DumpRaw("aec3_N2", cng_.NoiseSpectrum());
   data_dumper_->DumpRaw("aec3_suppressor_gain", G);
   data_dumper_->DumpWav("aec3_output",

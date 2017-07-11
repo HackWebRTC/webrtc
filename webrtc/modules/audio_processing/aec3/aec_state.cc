@@ -78,11 +78,11 @@ constexpr int kEchoPathChangeCounterMax = 2 * kNumBlocksPerSecond;
 
 int AecState::instance_count_ = 0;
 
-AecState::AecState(float echo_decay)
+AecState::AecState(float reverb_decay)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       echo_path_change_counter_(kEchoPathChangeCounterInitial),
-      echo_decay_factor_(echo_decay) {}
+      reverb_decay_(reverb_decay) {}
 
 AecState::~AecState() = default;
 
@@ -111,12 +111,18 @@ void AecState::HandleEchoPathChange(
 
 void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                           adaptive_filter_frequency_response,
+                      const std::array<float, kAdaptiveFilterTimeDomainLength>&
+                          adaptive_filter_impulse_response,
                       const rtc::Optional<size_t>& external_delay_samples,
                       const RenderBuffer& render_buffer,
                       const std::array<float, kFftLengthBy2Plus1>& E2_main,
                       const std::array<float, kFftLengthBy2Plus1>& Y2,
                       rtc::ArrayView<const float> x,
+                      const std::array<float, kBlockSize>& s,
                       bool echo_leakage_detected) {
+  // Update the echo audibility evaluator.
+  echo_audibility_.Update(x, s);
+
   // Store input parameters.
   echo_leakage_detected_ = echo_leakage_detected;
 
@@ -179,6 +185,126 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
       !external_delay_ && !filter_delay_ &&
       (!render_received_ ||
        blocks_with_filter_adaptation_ >= kEchoPathChangeConvergenceBlocks);
+
+  // Update the room reverb estimate.
+  UpdateReverb(adaptive_filter_impulse_response);
+}
+
+void AecState::UpdateReverb(
+    const std::array<float, kAdaptiveFilterTimeDomainLength>&
+        impulse_response) {
+  if ((!(filter_delay_ && usable_linear_estimate_)) ||
+      (*filter_delay_ > kAdaptiveFilterLength - 4)) {
+    return;
+  }
+
+  // Form the data to match against by squaring the impulse response
+  // coefficients.
+  std::array<float, kAdaptiveFilterTimeDomainLength> matching_data;
+  std::transform(impulse_response.begin(), impulse_response.end(),
+                 matching_data.begin(), [](float a) { return a * a; });
+
+  // Avoid matching against noise in the model by subtracting an estimate of the
+  // model noise power.
+  constexpr size_t kTailLength = 64;
+  constexpr size_t tail_index = kAdaptiveFilterTimeDomainLength - kTailLength;
+  const float tail_power = *std::max_element(matching_data.begin() + tail_index,
+                                             matching_data.end());
+  std::for_each(matching_data.begin(), matching_data.begin() + tail_index,
+                [tail_power](float& a) { a = std::max(0.f, a - tail_power); });
+
+  // Identify the peak index of the impulse response.
+  const size_t peak_index = *std::max_element(
+      matching_data.begin(), matching_data.begin() + tail_index);
+
+  if (peak_index + 128 < tail_index) {
+    size_t start_index = peak_index + 64;
+    // Compute the matching residual error for the current candidate to match.
+    float residual_sqr_sum = 0.f;
+    float d_k = reverb_decay_to_test_;
+    for (size_t k = start_index; k < tail_index; ++k) {
+      if (matching_data[start_index + 1] == 0.f) {
+        break;
+      }
+
+      float residual = matching_data[k] - matching_data[peak_index] * d_k;
+      residual_sqr_sum += residual * residual;
+      d_k *= reverb_decay_to_test_;
+    }
+
+    // If needed, update the best candidate for the reverb decay.
+    if (reverb_decay_candidate_residual_ < 0.f ||
+        residual_sqr_sum < reverb_decay_candidate_residual_) {
+      reverb_decay_candidate_residual_ = residual_sqr_sum;
+      reverb_decay_candidate_ = reverb_decay_to_test_;
+    }
+  }
+
+  // Compute the next reverb candidate to evaluate such that all candidates will
+  // be evaluated within one second.
+  reverb_decay_to_test_ += (0.9965f - 0.9f) / (5 * kNumBlocksPerSecond);
+
+  // If all reverb candidates have been evaluated, choose the best one as the
+  // reverb decay.
+  if (reverb_decay_to_test_ >= 0.9965f) {
+    if (reverb_decay_candidate_residual_ < 0.f) {
+      // Transform the decay to be in the unit of blocks.
+      reverb_decay_ = powf(reverb_decay_candidate_, kFftLengthBy2);
+
+      // Limit the estimated reverb_decay_ to the maximum one needed in practice
+      // to minimize the impact of incorrect estimates.
+      reverb_decay_ = std::min(0.8f, reverb_decay_);
+    }
+    reverb_decay_to_test_ = 0.9f;
+    reverb_decay_candidate_residual_ = -1.f;
+  }
+
+  // For noisy impulse responses, assume a fixed tail length.
+  if (tail_power > 0.0005f) {
+    reverb_decay_ = 0.7f;
+  }
+  data_dumper_->DumpRaw("aec3_reverb_decay", reverb_decay_);
+  data_dumper_->DumpRaw("aec3_tail_power", tail_power);
+}
+
+void AecState::EchoAudibility::Update(rtc::ArrayView<const float> x,
+                                      const std::array<float, kBlockSize>& s) {
+  auto result_x = std::minmax_element(x.begin(), x.end());
+  auto result_s = std::minmax_element(s.begin(), s.end());
+  const float x_abs =
+      std::max(std::abs(*result_x.first), std::abs(*result_x.second));
+  const float s_abs =
+      std::max(std::abs(*result_s.first), std::abs(*result_s.second));
+
+  if (x_abs < 5.f) {
+    ++low_farend_counter_;
+  } else {
+    low_farend_counter_ = 0;
+  }
+
+  // The echo is deemed as not audible if the echo estimate is on the level of
+  // the quantization noise in the FFTs and the nearend level is sufficiently
+  // strong to mask that by ensuring that the playout and AGC gains do not boost
+  // any residual echo that is below the quantization noise level. Furthermore,
+  // cases where the render signal is very close to zero are also identified as
+  // not producing audible echo.
+  inaudible_echo_ = max_nearend_ > 500 && s_abs < 30.f;
+  inaudible_echo_ = inaudible_echo_ || low_farend_counter_ > 20;
+}
+
+void AecState::EchoAudibility::UpdateWithOutput(rtc::ArrayView<const float> e) {
+  const float e_max = *std::max_element(e.begin(), e.end());
+  const float e_min = *std::min_element(e.begin(), e.end());
+  const float e_abs = std::max(std::abs(e_max), std::abs(e_min));
+
+  if (max_nearend_ < e_abs) {
+    max_nearend_ = e_abs;
+    max_nearend_counter_ = 0;
+  } else {
+    if (++max_nearend_counter_ > 5 * kNumBlocksPerSecond) {
+      max_nearend_ *= 0.995f;
+    }
+  }
 }
 
 }  // namespace webrtc

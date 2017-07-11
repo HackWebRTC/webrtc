@@ -25,15 +25,22 @@ void PredictionError(const Aec3Fft& fft,
                      const FftData& S,
                      rtc::ArrayView<const float> y,
                      std::array<float, kBlockSize>* e,
-                     FftData* E) {
-  std::array<float, kFftLength> s;
-  fft.Ifft(S, &s);
+                     FftData* E,
+                     std::array<float, kBlockSize>* s) {
+  std::array<float, kFftLength> s_scratch;
+  fft.Ifft(S, &s_scratch);
   constexpr float kScale = 1.0f / kFftLengthBy2;
-  std::transform(y.begin(), y.end(), s.begin() + kFftLengthBy2, e->begin(),
-                 [&](float a, float b) { return a - b * kScale; });
+  std::transform(y.begin(), y.end(), s_scratch.begin() + kFftLengthBy2,
+                 e->begin(), [&](float a, float b) { return a - b * kScale; });
   std::for_each(e->begin(), e->end(),
                 [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
   fft.ZeroPaddedFft(*e, E);
+
+  if (s) {
+    for (size_t k = 0; k < s->size(); ++k) {
+      (*s)[k] = kScale * s_scratch[k + kFftLengthBy2];
+    }
+  }
 }
 }  // namespace
 
@@ -47,7 +54,7 @@ Subtractor::Subtractor(ApmDataDumper* data_dumper,
   RTC_DCHECK(data_dumper_);
 }
 
-Subtractor::~Subtractor() {}
+Subtractor::~Subtractor() = default;
 
 void Subtractor::HandleEchoPathChange(
     const EchoPathVariability& echo_path_variability) {
@@ -76,11 +83,11 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
 
   // Form the output of the main filter.
   main_filter_.Filter(render_buffer, &S);
-  PredictionError(fft_, S, y, &e_main, &E_main);
+  PredictionError(fft_, S, y, &e_main, &E_main, &output->s_main);
 
   // Form the output of the shadow filter.
   shadow_filter_.Filter(render_buffer, &S);
-  PredictionError(fft_, S, y, &e_shadow, &E_shadow);
+  PredictionError(fft_, S, y, &e_shadow, &E_shadow, nullptr);
 
   // Compute spectra for future use.
   E_main.Spectrum(optimization_, &output->E2_main);

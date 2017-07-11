@@ -25,22 +25,6 @@
 
 namespace webrtc {
 
-namespace {
-
-// Constrains the a partiton of the frequency domain filter to be limited in
-// time via setting the relevant time-domain coefficients to zero.
-void Constrain(const Aec3Fft& fft, FftData* H) {
-  std::array<float, kFftLength> h;
-  fft.Ifft(*H, &h);
-  constexpr float kScale = 1.0f / kFftLengthBy2;
-  std::for_each(h.begin(), h.begin() + kFftLengthBy2,
-                [kScale](float& a) { a *= kScale; });
-  std::fill(h.begin() + kFftLengthBy2, h.end(), 0.f);
-  fft.Fft(&h, H);
-}
-
-}  // namespace
-
 namespace aec3 {
 
 // Computes and stores the frequency response of the filter.
@@ -434,6 +418,7 @@ AdaptiveFirFilter::AdaptiveFirFilter(size_t size_partitions,
       H2_(size_partitions, std::array<float, kFftLengthBy2Plus1>()) {
   RTC_DCHECK(data_dumper_);
 
+  h_.fill(0.f);
   for (auto& H_j : H_) {
     H_j.Clear();
   }
@@ -446,6 +431,7 @@ AdaptiveFirFilter::AdaptiveFirFilter(size_t size_partitions,
 AdaptiveFirFilter::~AdaptiveFirFilter() = default;
 
 void AdaptiveFirFilter::HandleEchoPathChange() {
+  h_.fill(0.f);
   for (auto& H_j : H_) {
     H_j.Clear();
   }
@@ -493,10 +479,7 @@ void AdaptiveFirFilter::Adapt(const RenderBuffer& render_buffer,
   }
 
   // Constrain the filter partitions in a cyclic manner.
-  Constrain(fft_, &H_[partition_to_constrain_]);
-  partition_to_constrain_ = partition_to_constrain_ < (H_.size() - 1)
-                                ? partition_to_constrain_ + 1
-                                : 0;
+  Constrain();
 
   // Update the frequency response and echo return loss for the filter.
   switch (optimization_) {
@@ -516,6 +499,27 @@ void AdaptiveFirFilter::Adapt(const RenderBuffer& render_buffer,
       aec3::UpdateFrequencyResponse(H_, &H2_);
       aec3::UpdateErlEstimator(H2_, &erl_);
   }
+}
+
+// Constrains the a partiton of the frequency domain filter to be limited in
+// time via setting the relevant time-domain coefficients to zero.
+void AdaptiveFirFilter::Constrain() {
+  std::array<float, kFftLength> h;
+  fft_.Ifft(H_[partition_to_constrain_], &h);
+
+  constexpr float kScale = 1.0f / kFftLengthBy2;
+  std::for_each(h.begin(), h.begin() + kFftLengthBy2,
+                [kScale](float& a) { a *= kScale; });
+  std::fill(h.begin() + kFftLengthBy2, h.end(), 0.f);
+
+  std::copy(h.begin(), h.begin() + kFftLengthBy2,
+            h_.begin() + partition_to_constrain_ * kFftLengthBy2);
+
+  fft_.Fft(&h, &H_[partition_to_constrain_]);
+
+  partition_to_constrain_ = partition_to_constrain_ < (H_.size() - 1)
+                                ? partition_to_constrain_ + 1
+                                : 0;
 }
 
 }  // namespace webrtc

@@ -119,6 +119,12 @@ class AdaptiveFirFilter {
     return H2_;
   }
 
+  // Returns the estimate of the impulse response.
+  const std::array<float, kAdaptiveFilterTimeDomainLength>&
+  FilterImpulseResponse() const {
+    return h_;
+  }
+
   void DumpFilter(const char* name) {
     for (auto& H : H_) {
       data_dumper_->DumpRaw(name, H.re);
@@ -127,11 +133,15 @@ class AdaptiveFirFilter {
   }
 
  private:
+  // Constrain the filter partitions in a cyclic manner.
+  void Constrain();
+
   ApmDataDumper* const data_dumper_;
   const Aec3Fft fft_;
   const Aec3Optimization optimization_;
   std::vector<FftData> H_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2_;
+  std::array<float, kAdaptiveFilterTimeDomainLength> h_;
   std::array<float, kFftLengthBy2Plus1> erl_;
   size_t partition_to_constrain_ = 0;
 

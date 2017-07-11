@@ -20,6 +20,7 @@ namespace webrtc {
 
 // Stores the values being returned from the echo subtractor.
 struct SubtractorOutput {
+  std::array<float, kBlockSize> s_main;
   std::array<float, kBlockSize> e_main;
   std::array<float, kBlockSize> e_shadow;
   FftData E_main;
@@ -27,6 +28,7 @@ struct SubtractorOutput {
   std::array<float, kFftLengthBy2Plus1> E2_shadow;
 
   void Reset() {
+    s_main.fill(0.f);
     e_main.fill(0.f);
     e_shadow.fill(0.f);
     E_main.re.fill(0.f);

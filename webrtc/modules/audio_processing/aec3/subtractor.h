@@ -45,10 +45,16 @@ class Subtractor {
 
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
 
-  // Returns the block-wise frequency response of the main adaptive filter.
+  // Returns the block-wise frequency response for the main adaptive filter.
   const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   FilterFrequencyResponse() const {
     return main_filter_.FilterFrequencyResponse();
+  }
+
+  // Returns the estimate of the impulse response for the main adaptive filter.
+  const std::array<float, kAdaptiveFilterTimeDomainLength>&
+  FilterImpulseResponse() const {
+    return main_filter_.FilterImpulseResponse();
   }
 
  private:

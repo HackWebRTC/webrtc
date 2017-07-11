@@ -111,7 +111,7 @@ void ResidualEchoEstimator::Estimate(
     const int filter_delay = *aec_state.FilterDelay();
     LinearEstimate(S2_linear, aec_state.Erle(), filter_delay, R2);
     AddEchoReverb(S2_linear, aec_state.SaturatedEcho(), filter_delay,
-                  aec_state.ReverbDecayFactor(), R2);
+                  aec_state.ReverbDecay(), R2);
   } else {
     // Estimate the echo generating signal power.
     std::array<float, kFftLengthBy2Plus1> X2;
@@ -142,7 +142,12 @@ void ResidualEchoEstimator::Estimate(
     AddEchoReverb(*R2, aec_state.SaturatedEcho(),
                   std::min(static_cast<size_t>(kAdaptiveFilterLength),
                            delay.value_or(kAdaptiveFilterLength)),
-                  aec_state.ReverbDecayFactor(), R2);
+                  aec_state.ReverbDecay(), R2);
+  }
+
+  // If the echo is deemed inaudible, set the residual echo to zero.
+  if (aec_state.InaudibleEcho()) {
+    R2->fill(0.f);
   }
 
   // If the echo is saturated, estimate the echo power as the maximum echo power

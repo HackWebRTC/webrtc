@@ -31,7 +31,7 @@ class ApmDataDumper;
 // Handles the state and the conditions for the echo removal functionality.
 class AecState {
  public:
-  explicit AecState(float echo_decay);
+  explicit AecState(float reverb_decay);
   ~AecState();
 
   // Returns whether the linear filter estimate is usable.
@@ -78,23 +78,50 @@ class AecState {
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
 
   // Returns the decay factor for the echo reverberation.
-  // TODO(peah): Make this adaptive.
-  float ReverbDecayFactor() const { return echo_decay_factor_; }
+  float ReverbDecay() const { return reverb_decay_; }
 
   // Returns whether the echo suppression gain should be forced to zero.
   bool ForcedZeroGain() const { return force_zero_gain_; }
 
+  // Returns whether the echo in the capture signal is audible.
+  bool InaudibleEcho() const { return echo_audibility_.InaudibleEcho(); }
+
+  // Updates the aec state with the AEC output signal.
+  void UpdateWithOutput(rtc::ArrayView<const float> e) {
+    echo_audibility_.UpdateWithOutput(e);
+  }
+
   // Updates the aec state.
   void Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                   adaptive_filter_frequency_response,
+              const std::array<float, kAdaptiveFilterTimeDomainLength>&
+                  adaptive_filter_impulse_response,
               const rtc::Optional<size_t>& external_delay_samples,
               const RenderBuffer& render_buffer,
               const std::array<float, kFftLengthBy2Plus1>& E2_main,
               const std::array<float, kFftLengthBy2Plus1>& Y2,
               rtc::ArrayView<const float> x,
+              const std::array<float, kBlockSize>& s_main,
               bool echo_leakage_detected);
 
  private:
+  class EchoAudibility {
+   public:
+    void Update(rtc::ArrayView<const float> x,
+                const std::array<float, kBlockSize>& s);
+    void UpdateWithOutput(rtc::ArrayView<const float> e);
+    bool InaudibleEcho() const { return inaudible_echo_; }
+
+   private:
+    float max_nearend_ = 0.f;
+    size_t max_nearend_counter_ = 0;
+    size_t low_farend_counter_ = 0;
+    bool inaudible_echo_ = false;
+  };
+
+  void UpdateReverb(const std::array<float, kAdaptiveFilterTimeDomainLength>&
+                        impulse_response);
+
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   ErlEstimator erl_estimator_;
@@ -113,7 +140,12 @@ class AecState {
   rtc::Optional<size_t> filter_delay_;
   rtc::Optional<size_t> external_delay_;
   size_t blocks_since_last_saturation_ = 1000;
-  const float echo_decay_factor_;
+  float reverb_decay_;
+  float reverb_decay_to_test_ = 0.9f;
+  float reverb_decay_candidate_ = 0.f;
+  float reverb_decay_candidate_residual_ = -1.f;
+  EchoAudibility echo_audibility_;
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AecState);
 };
 
