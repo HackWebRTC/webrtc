@@ -2759,11 +2759,19 @@ void Channel::ProcessAndEncodeAudio(const int16_t* audio_data,
     return;
   }
   CodecInst codec;
-  GetSendCodec(codec);
+  const int result = GetSendCodec(codec);
   std::unique_ptr<AudioFrame> audio_frame(new AudioFrame());
   audio_frame->id_ = ChannelId();
-  audio_frame->sample_rate_hz_ = std::min(codec.plfreq, sample_rate);
-  audio_frame->num_channels_ = std::min(number_of_channels, codec.channels);
+  // TODO(ossu): Investigate how this could happen. b/62909493
+  if (result == 0) {
+    audio_frame->sample_rate_hz_ = std::min(codec.plfreq, sample_rate);
+    audio_frame->num_channels_ = std::min(number_of_channels, codec.channels);
+  } else {
+    audio_frame->sample_rate_hz_ = sample_rate;
+    audio_frame->num_channels_ = number_of_channels;
+    LOG(LS_WARNING) << "Unable to get send codec for channel " << ChannelId();
+    RTC_NOTREACHED();
+  }
   RemixAndResample(audio_data, number_of_frames, number_of_channels,
                    sample_rate, &input_resampler_, audio_frame.get());
   encoder_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(

@@ -247,9 +247,15 @@ void TransmitMixer::GetSendCodecInfo(int* max_sample_rate,
     Channel* channel = it.GetChannel();
     if (channel->Sending()) {
       CodecInst codec;
-      channel->GetSendCodec(codec);
-      *max_sample_rate = std::max(*max_sample_rate, codec.plfreq);
-      *max_channels = std::max(*max_channels, codec.channels);
+      // TODO(ossu): Investigate how this could happen. b/62909493
+      if (channel->GetSendCodec(codec) == 0) {
+        *max_sample_rate = std::max(*max_sample_rate, codec.plfreq);
+        *max_channels = std::max(*max_channels, codec.channels);
+      } else {
+        LOG(LS_WARNING) << "Unable to get send codec for channel "
+                        << channel->ChannelId();
+        RTC_NOTREACHED();
+      }
     }
   }
 }
