@@ -22,9 +22,6 @@
 namespace webrtc {
 namespace {
 
-constexpr size_t kEchoPathChangeConvergenceBlocks = 2 * kNumBlocksPerSecond;
-constexpr size_t kSaturationLeakageBlocks = 20;
-
 // Computes delay of the adaptive filter.
 rtc::Optional<size_t> EstimateFilterDelay(
     const std::vector<std::array<float, kFftLengthBy2Plus1>>&
@@ -163,15 +160,17 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   const float max_sample = fabs(*std::max_element(
       x.begin(), x.end(), [](float a, float b) { return a * a < b * b; }));
   const bool saturated_echo =
-      previous_max_sample_ * kFixedEchoPathGain > 1600 && SaturatedCapture();
+      previous_max_sample_ * 100 > 1600 && SaturatedCapture();
   previous_max_sample_ = max_sample;
 
   // Counts the blocks since saturation.
+  constexpr size_t kSaturationLeakageBlocks = 20;
   blocks_since_last_saturation_ =
       saturated_echo ? 0 : blocks_since_last_saturation_ + 1;
   echo_saturation_ = blocks_since_last_saturation_ < kSaturationLeakageBlocks;
 
   // Flag whether the linear filter estimate is usable.
+  constexpr size_t kEchoPathChangeConvergenceBlocks = 2 * kNumBlocksPerSecond;
   usable_linear_estimate_ =
       (!echo_saturation_) &&
       (!render_received_ ||
@@ -181,10 +180,10 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   // After an amount of active render samples for which an echo should have been
   // detected in the capture signal if the ERL was not infinite, flag that a
   // headset is used.
-  headset_detected_ =
-      !external_delay_ && !filter_delay_ &&
-      (!render_received_ ||
-       blocks_with_filter_adaptation_ >= kEchoPathChangeConvergenceBlocks);
+  constexpr size_t kHeadSetDetectionBlocks = 5 * kNumBlocksPerSecond;
+  headset_detected_ = !external_delay_ && !filter_delay_ &&
+                      (!render_received_ || blocks_with_filter_adaptation_ >=
+                                                kHeadSetDetectionBlocks);
 
   // Update the room reverb estimate.
   UpdateReverb(adaptive_filter_impulse_response);

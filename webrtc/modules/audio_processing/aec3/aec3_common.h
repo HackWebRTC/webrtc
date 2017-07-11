@@ -60,8 +60,6 @@ constexpr size_t kDownsampledRenderBufferSize =
      kMatchedFilterWindowSizeSubBlocks +
      1);
 
-constexpr float kFixedEchoPathGain = 100;
-
 constexpr size_t kRenderDelayBufferSize =
     (3 * kDownsampledRenderBufferSize) / (4 * kSubBlockSize);
 
