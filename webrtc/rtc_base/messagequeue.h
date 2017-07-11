@@ -149,23 +149,6 @@ class DisposeData : public MessageData {
   T* data_;
 };
 
-// TODO(nisse): Replace RunnableData and FunctorData by a subclass of Message
-// owning a QueuedTask.
-class RunnableData : public MessageData {
- public:
-  virtual void Run() = 0;
-};
-
-template <class FunctorT>
-class FunctorData : public RunnableData {
- public:
-  explicit FunctorData(FunctorT functor) : functor_(std::move(functor)) {}
-  void Run() override { functor_(); }
-
- private:
-  FunctorT functor_;
-};
-
 const uint32_t MQID_ANY = static_cast<uint32_t>(-1);
 const uint32_t MQID_DISPOSE = static_cast<uint32_t>(-2);
 
@@ -255,19 +238,6 @@ class MessageQueue {
                     uint32_t id = 0,
                     MessageData* pdata = nullptr,
                     bool time_sensitive = false);
-
-  // TODO(nisse): Replace with a method for posting a
-  // std::unique_ptr<QueuedTask>, to ease gradual conversion to using TaskQueue.
-  template <class FunctorT,
-            // Additional type check, or else it collides with calls to the
-            // above Post method with the optional arguments omitted.
-            typename std::enable_if<!std::is_pointer<FunctorT>::value>::type* =
-                nullptr>
-  void Post(const Location& posted_from, FunctorT functor) {
-    PostFunctorInternal(posted_from,
-                        new FunctorData<FunctorT>(std::move(functor)));
-  }
-
   virtual void PostDelayed(const Location& posted_from,
                            int cmsDelay,
                            MessageHandler* phandler,
@@ -344,9 +314,6 @@ class MessageQueue {
   bool fDestroyed_;
 
  private:
-  void PostFunctorInternal(const Location& posted_from,
-                           RunnableData* message_data);
-
   volatile int stop_;
 
   // The SocketServer might not be owned by MessageQueue.

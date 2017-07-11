@@ -25,17 +25,13 @@
 #endif
 #endif  // defined(WEBRTC_POSIX) && !defined(__native_client__)
 
-#include "webrtc/rtc_base/bind.h"
 #include "webrtc/rtc_base/byteorder.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/thread.h"
+#include "webrtc/rtc_base/signalthread.h"
 
 namespace rtc {
 
-namespace {
 int ResolveHostname(const std::string& hostname, int family,
                     std::vector<IPAddress>* addresses) {
 #ifdef __native_client__
@@ -85,54 +81,17 @@ int ResolveHostname(const std::string& hostname, int family,
   return 0;
 #endif  // !__native_client__
 }
-}  // namespace
 
 // AsyncResolver
-AsyncResolver::AsyncResolver() : construction_thread_(Thread::Current()) {
-  RTC_DCHECK(construction_thread_);
-}
+AsyncResolver::AsyncResolver()
+    : SignalThread(false /* use_socket_server */), error_(-1) {}
 
-AsyncResolver::~AsyncResolver() {
-  RTC_DCHECK(construction_thread_->IsCurrent());
-  if (state_)
-    // It's possible that we have a posted message waiting on the MessageQueue
-    // refering to this object. Indirection via the ref-counted state_ object
-    // ensure it doesn't access us after deletion.
-
-    // TODO(nisse): An alternative approach to solve this problem would be to
-    // extend MessageQueue::Clear in some way to let us selectively cancel posts
-    // directed to this object. Then we wouldn't need any ref count, but its a
-    // larger change to the MessageQueue.
-    state_->resolver = nullptr;
-}
+AsyncResolver::~AsyncResolver() = default;
 
 void AsyncResolver::Start(const SocketAddress& addr) {
-  RTC_DCHECK_RUN_ON(construction_thread_);
-  RTC_DCHECK(!resolver_queue_);
-  RTC_DCHECK(!state_);
-  // TODO(nisse): Support injection of task queue at construction?
-  resolver_queue_ = rtc::MakeUnique<TaskQueue>("AsyncResolverQueue");
   addr_ = addr;
-  state_ = new RefCountedObject<Trampoline>(this);
-
-  // These member variables need to be copied to local variables to make it
-  // possible to capture them, even for capture-by-copy.
-  scoped_refptr<Trampoline> state = state_;
-  rtc::Thread* construction_thread = construction_thread_;
-  resolver_queue_->PostTask([state, addr, construction_thread]() {
-    std::vector<IPAddress> addresses;
-    int error =
-        ResolveHostname(addr.hostname().c_str(), addr.family(), &addresses);
-    // Ensure SignalDone is called on the main thread.
-    // TODO(nisse): Should use move of the address list, but not easy until
-    // C++17. Since this code isn't performance critical, copy should be fine
-    // for now.
-    construction_thread->Post(RTC_FROM_HERE, [state, error, addresses]() {
-      if (!state->resolver)
-        return;
-      state->resolver->ResolveDone(error, std::move(addresses));
-    });
-  });
+  // SignalThred Start will kickoff the resolve process.
+  SignalThread::Start();
 }
 
 bool AsyncResolver::GetResolvedAddress(int family, SocketAddress* addr) const {
@@ -154,41 +113,16 @@ int AsyncResolver::GetError() const {
 }
 
 void AsyncResolver::Destroy(bool wait) {
-  RTC_DCHECK_RUN_ON(construction_thread_);
-  RTC_DCHECK(!state_ || state_->resolver);
-  // If we don't wait here, we will nevertheless wait in the destructor.
-  if (wait || !state_) {
-    // Destroy task queue, blocks on any currently running task. If we have a
-    // pending task, it will post a call to attempt to call ResolveDone before
-    // finishing, which we will never handle.
-    delete this;
-  } else {
-    destroyed_ = true;
-  }
+  SignalThread::Destroy(wait);
 }
 
-void AsyncResolver::ResolveDone(int error, std::vector<IPAddress> addresses) {
-  RTC_DCHECK_RUN_ON(construction_thread_);
-  error_ = error;
-  addresses_ = std::move(addresses);
-  if (destroyed_) {
-    delete this;
-    return;
-  } else {
-    // Beware that SignalDone may call Destroy.
+void AsyncResolver::DoWork() {
+  error_ = ResolveHostname(addr_.hostname().c_str(), addr_.family(),
+                           &addresses_);
+}
 
-    // TODO(nisse): Currently allows only Destroy(false) in this case,
-    // and that's what all webrtc code is using. With Destroy(true),
-    // this object would be destructed immediately, and the access
-    // both to |destroyed_| below as well as the sigslot machinery
-    // involved in SignalDone implies invalid use-after-free.
-    SignalDone(this);
-    if (destroyed_) {
-      delete this;
-      return;
-    }
-  }
-  state_ = nullptr;
+void AsyncResolver::OnWorkDone() {
+  SignalDone(this);
 }
 
 const char* inet_ntop(int af, const void *src, char* dst, socklen_t size) {

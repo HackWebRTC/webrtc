@@ -15,7 +15,6 @@
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/nethelpers.h"
 #include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/thread.h"
 
 #ifdef WIN32
 #include "webrtc/rtc_base/win32socketserver.h"
