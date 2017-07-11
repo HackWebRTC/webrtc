@@ -17,6 +17,7 @@
 #include "webrtc/modules/video_coding/media_optimization.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/rtc_base/trace_event.h"
 
@@ -216,9 +217,6 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
     const RTPFragmentationHeader* fragmentation_header) {
   TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
                        "timestamp", encoded_image._timeStamp);
-  bool is_timing_frame = false;
-  size_t outlier_frame_size = 0;
-  int64_t encode_start_ms = -1;
   size_t simulcast_svc_idx = 0;
   if (codec_specific->codecType == kVideoCodecVP9) {
     if (codec_specific->codecSpecific.VP9.num_spatial_layers > 1)
@@ -231,64 +229,69 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
     // TODO(ilnik): When h264 simulcast is landed, extract simulcast idx here.
   }
 
+  rtc::Optional<size_t> outlier_frame_size;
+  rtc::Optional<int64_t> encode_start_ms;
+  bool is_timing_frame = false;
   {
     rtc::CritScope crit(&timing_params_lock_);
-    // TODO(ilnik): Workaround for hardware encoders, which do not call
-    // |OnEncodeStarted| correctly. Once fixed, remove conditional check.
-    if (simulcast_svc_idx < timing_frames_info_.size()) {
-      RTC_CHECK_LT(simulcast_svc_idx, timing_frames_info_.size());
 
+    // Encoders with internal sources do not call OnEncodeStarted and
+    // OnFrameRateChanged. |timing_frames_info_| may be not filled here.
+    if (simulcast_svc_idx < timing_frames_info_.size()) {
       auto encode_start_map =
           &timing_frames_info_[simulcast_svc_idx].encode_start_time_ms;
       auto it = encode_start_map->find(encoded_image.capture_time_ms_);
       if (it != encode_start_map->end()) {
-        encode_start_ms = it->second;
+        encode_start_ms.emplace(it->second);
         // Assuming all encoders do not reorder frames within single stream,
         // there may be some dropped frames with smaller timestamps. These
         // should be purged.
         encode_start_map->erase(encode_start_map->begin(), it);
         encode_start_map->erase(it);
       } else {
-        // Some chromium remoting unittests use generic encoder incorrectly
-        // If timestamps do not match, purge them all.
-        encode_start_map->erase(encode_start_map->begin(),
-                                encode_start_map->end());
+        // Encoder is with internal source: free our records of any frames just
+        // in case to free memory.
+        encode_start_map->clear();
       }
 
-      int64_t timing_frame_delay_ms =
-          encoded_image.capture_time_ms_ - last_timing_frame_time_ms_;
-      if (last_timing_frame_time_ms_ == -1 ||
-          timing_frame_delay_ms >= timing_frames_thresholds_.delay_ms ||
-          timing_frame_delay_ms == 0) {
-        is_timing_frame = true;
-        last_timing_frame_time_ms_ = encoded_image.capture_time_ms_;
+      size_t target_bitrate =
+          timing_frames_info_[simulcast_svc_idx].target_bitrate_bytes_per_sec;
+      if (framerate_ > 0 && target_bitrate > 0) {
+        // framerate and target bitrate were reported by encoder.
+        size_t average_frame_size = target_bitrate / framerate_;
+        outlier_frame_size.emplace(
+            average_frame_size *
+            timing_frames_thresholds_.outlier_ratio_percent / 100);
       }
-      // TODO(ilnik): Once OnFramerateChanged is called correctly by hardware
-      // encoders, remove the conditional check below.
-      if (framerate_ > 0) {
-        RTC_CHECK_GT(framerate_, 0);
-        size_t average_frame_size =
-            timing_frames_info_[simulcast_svc_idx].target_bitrate_bytes_per_sec
-            / framerate_;
-        outlier_frame_size = average_frame_size *
-            timing_frames_thresholds_.outlier_ratio_percent /
-            100;
-      } else {
-        outlier_frame_size = encoded_image._length + 1;
-      }
-    } else {
-      // We don't have any information prior to encode start, thus we can't
-      // reliably detect outliers. Set outlier size to anything larger than
-      // current frame size.
-      outlier_frame_size = encoded_image._length + 1;
+    }
+
+    // Check if it's time to send a timing frame.
+    int64_t timing_frame_delay_ms =
+        encoded_image.capture_time_ms_ - last_timing_frame_time_ms_;
+    // Trigger threshold if it's a first frame, too long passed since the last
+    // timing frame, or we already sent timing frame on a different simulcast
+    // stream with the same capture time.
+    if (last_timing_frame_time_ms_ == -1 ||
+        timing_frame_delay_ms >= timing_frames_thresholds_.delay_ms ||
+        timing_frame_delay_ms == 0) {
+      is_timing_frame = true;
+      last_timing_frame_time_ms_ = encoded_image.capture_time_ms_;
+    }
+
+    // Outliers trigger timing frames, but do not affect scheduled timing
+    // frames.
+    if (outlier_frame_size && encoded_image._length >= *outlier_frame_size) {
+      is_timing_frame = true;
     }
   }
 
-  if (encoded_image._length >= outlier_frame_size) {
-    is_timing_frame = true;
-  }
-  if (encode_start_ms >= 0 && is_timing_frame) {
-    encoded_image.SetEncodeTime(encode_start_ms, rtc::TimeMillis());
+  // If encode start is not available that means that encoder uses internal
+  // source. In that case capture timestamp may be from a different clock with a
+  // drift relative to rtc::TimeMillis(). We can't use it for Timing frames,
+  // because to being sent in the network capture time required to be less than
+  // all the other timestamps.
+  if (is_timing_frame && encode_start_ms) {
+    encoded_image.SetEncodeTime(*encode_start_ms, rtc::TimeMillis());
   }
 
   Result result = post_encode_callback_->OnEncodedImage(
