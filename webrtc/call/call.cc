@@ -236,10 +236,10 @@ class Call : public webrtc::Call,
                                  MediaType media_type)
       SHARED_LOCKS_REQUIRED(receive_crit_);
 
-  rtc::Optional<RtpPacketReceived> ParseRtpPacket(const uint8_t* packet,
-                                                  size_t length,
-                                                  const PacketTime* packet_time)
-      SHARED_LOCKS_REQUIRED(receive_crit_);
+  rtc::Optional<RtpPacketReceived> ParseRtpPacket(
+      const uint8_t* packet,
+      size_t length,
+      const PacketTime* packet_time) const;
 
   void UpdateSendHistograms(int64_t first_sent_packet_ms)
       EXCLUSIVE_LOCKS_REQUIRED(&bitrate_crit_);
@@ -485,7 +485,7 @@ Call::~Call() {
 rtc::Optional<RtpPacketReceived> Call::ParseRtpPacket(
     const uint8_t* packet,
     size_t length,
-    const PacketTime* packet_time) {
+    const PacketTime* packet_time) const {
   RtpPacketReceived parsed_packet;
   if (!parsed_packet.Parse(packet, length))
     return rtc::Optional<RtpPacketReceived>();
@@ -1300,17 +1300,24 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
                                                 const PacketTime& packet_time) {
   TRACE_EVENT0("webrtc", "Call::DeliverRtp");
 
-  RTC_DCHECK(media_type == MediaType::AUDIO || media_type == MediaType::VIDEO);
-
-  ReadLockScoped read_lock(*receive_crit_);
   // TODO(nisse): We should parse the RTP header only here, and pass
   // on parsed_packet to the receive streams.
   rtc::Optional<RtpPacketReceived> parsed_packet =
       ParseRtpPacket(packet, length, &packet_time);
 
+  // We might get RTP keep-alive packets in accordance with RFC6263 section 4.6.
+  // These are empty (zero length payload) RTP packets with an unsignaled
+  // payload type.
+  const bool is_keep_alive_packet =
+      parsed_packet && parsed_packet->payload_size() == 0;
+
+  RTC_DCHECK(media_type == MediaType::AUDIO || media_type == MediaType::VIDEO ||
+             is_keep_alive_packet);
+
   if (!parsed_packet)
     return DELIVERY_PACKET_ERROR;
 
+  ReadLockScoped read_lock(*receive_crit_);
   auto it = receive_rtp_config_.find(parsed_packet->Ssrc());
   if (it == receive_rtp_config_.end()) {
     LOG(LS_ERROR) << "receive_rtp_config_ lookup failed for ssrc "
