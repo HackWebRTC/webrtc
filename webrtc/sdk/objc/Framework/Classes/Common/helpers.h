@@ -11,6 +11,8 @@
 #ifndef WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_COMMON_HELPERS_H_
 #define WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_COMMON_HELPERS_H_
 
+#if defined(WEBRTC_IOS)
+
 #include <string>
 
 namespace webrtc {
@@ -31,7 +33,6 @@ std::string GetThreadInfo();
 // Example: <NSThread: 0x170066d80>{number = 1, name = main}
 std::string GetCurrentThreadDescription();
 
-#if defined(WEBRTC_IOS)
 // Returns the current name of the operating system.
 std::string GetSystemName();
 
@@ -45,7 +46,6 @@ double GetSystemVersion();
 // Returns the device type.
 // Examples: ”iPhone” and ”iPod touch”.
 std::string GetDeviceType();
-#endif  // defined(WEBRTC_IOS)
 
 // Returns a more detailed device name.
 // Examples: "iPhone 5s (GSM)" and "iPhone 6 Plus".
@@ -65,12 +65,12 @@ std::string GetOSVersionString();
 // Returns the number of processing cores available on the device.
 int GetProcessorCount();
 
-#if defined(WEBRTC_IOS)
 // Indicates whether Low Power Mode is enabled on the iOS device.
 bool GetLowPowerModeEnabled();
-#endif
 
 }  // namespace ios
 }  // namespace webrtc
+
+#endif  // defined(WEBRTC_IOS)
 
 #endif  // WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_COMMON_HELPERS_H_

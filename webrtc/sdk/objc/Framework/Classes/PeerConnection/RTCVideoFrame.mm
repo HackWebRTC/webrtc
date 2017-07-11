@@ -17,7 +17,6 @@
 }
 
 @synthesize buffer = _buffer;
-@synthesize timeStamp;
 
 - (int)width {
   return _buffer.width;
