@@ -1095,7 +1095,7 @@ bool WebRtcSession::EnableBundle(const cricket::ContentGroup& bundle) {
     bool need_rtcp = (ch->rtcp_dtls_transport() != nullptr);
     cricket::DtlsTransportInternal* rtcp_dtls_transport = nullptr;
     if (need_rtcp) {
-      rtcp_dtls_transport = transport_controller_->CreateDtlsTransport_n(
+      rtcp_dtls_transport = transport_controller_->CreateDtlsTransport(
           transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
     }
 
