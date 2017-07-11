@@ -57,7 +57,8 @@ class VideoSendStream : public webrtc::VideoSendStream {
                   RtcEventLog* event_log,
                   VideoSendStream::Config config,
                   VideoEncoderConfig encoder_config,
-                  const std::map<uint32_t, RtpState>& suspended_ssrcs);
+                  const std::map<uint32_t, RtpState>& suspended_ssrcs,
+                  const RtpKeepAliveConfig& keepalive_config);
 
   ~VideoSendStream() override;
 

@@ -349,7 +349,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                       const VideoSendStream::Config* config,
                       int initial_encoder_max_bitrate,
                       std::map<uint32_t, RtpState> suspended_ssrcs,
-                      VideoEncoderConfig::ContentType content_type);
+                      VideoEncoderConfig::ContentType content_type,
+                      const RtpKeepAliveConfig& keepalive_config);
   ~VideoSendStreamImpl() override;
 
   // RegisterProcessThread register |module_process_thread| with those objects
@@ -480,7 +481,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
                    const VideoSendStream::Config* config,
                    int initial_encoder_max_bitrate,
                    const std::map<uint32_t, RtpState>& suspended_ssrcs,
-                   VideoEncoderConfig::ContentType content_type)
+                   VideoEncoderConfig::ContentType content_type,
+                   const RtpKeepAliveConfig& keepalive_config)
       : send_stream_(send_stream),
         done_event_(done_event),
         stats_proxy_(stats_proxy),
@@ -493,7 +495,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         config_(config),
         initial_encoder_max_bitrate_(initial_encoder_max_bitrate),
         suspended_ssrcs_(suspended_ssrcs),
-        content_type_(content_type) {}
+        content_type_(content_type),
+        keepalive_config_(keepalive_config) {}
 
   ~ConstructionTask() override { done_event_->Set(); }
 
@@ -503,7 +506,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         stats_proxy_, rtc::TaskQueue::Current(), call_stats_, transport_,
         bitrate_allocator_, send_delay_stats_, vie_encoder_, event_log_,
         config_, initial_encoder_max_bitrate_, std::move(suspended_ssrcs_),
-        content_type_));
+        content_type_, keepalive_config_));
     return true;
   }
 
@@ -520,6 +523,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   int initial_encoder_max_bitrate_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
   const VideoEncoderConfig::ContentType content_type_;
+  const RtpKeepAliveConfig& keepalive_config_;
 };
 
 class VideoSendStream::DestructAndGetRtpStateTask : public rtc::QueuedTask {
@@ -632,7 +636,8 @@ VideoSendStream::VideoSendStream(
     RtcEventLog* event_log,
     VideoSendStream::Config config,
     VideoEncoderConfig encoder_config,
-    const std::map<uint32_t, RtpState>& suspended_ssrcs)
+    const std::map<uint32_t, RtpState>& suspended_ssrcs,
+    const RtpKeepAliveConfig& keepalive_config)
     : worker_queue_(worker_queue),
       thread_sync_event_(false /* manual_reset */, false),
       stats_proxy_(Clock::GetRealTimeClock(),
@@ -648,7 +653,7 @@ VideoSendStream::VideoSendStream(
       &send_stream_, &thread_sync_event_, &stats_proxy_, vie_encoder_.get(),
       module_process_thread, call_stats, transport, bitrate_allocator,
       send_delay_stats, event_log, &config_, encoder_config.max_bitrate_bps,
-      suspended_ssrcs, encoder_config.content_type)));
+      suspended_ssrcs, encoder_config.content_type, keepalive_config)));
 
   // Wait for ConstructionTask to complete so that |send_stream_| can be used.
   // |module_process_thread| must be registered and deregistered on the thread
@@ -767,7 +772,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     const VideoSendStream::Config* config,
     int initial_encoder_max_bitrate,
     std::map<uint32_t, RtpState> suspended_ssrcs,
-    VideoEncoderConfig::ContentType content_type)
+    VideoEncoderConfig::ContentType content_type,
+    const RtpKeepAliveConfig& keepalive_config)
     : send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       stats_proxy_(stats_proxy),
@@ -805,7 +811,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           transport->send_side_cc()->GetRetransmissionRateLimiter(),
           this,
           config_->rtp.ssrcs.size(),
-          config_->rtp.keep_alive)),
+          keepalive_config)),
       payload_router_(rtp_rtcp_modules_,
                       config_->encoder_settings.payload_type),
       weak_ptr_factory_(this),

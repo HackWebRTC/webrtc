@@ -3415,6 +3415,14 @@ TEST_F(VideoSendStreamTest, SendsKeepAlive) {
    public:
     KeepaliveObserver() : SendTest(kDefaultTimeoutMs) {}
 
+    Call::Config GetSenderCallConfig() override {
+      Call::Config config = SendTest::GetSenderCallConfig();
+      config.keepalive_config.timeout_interval_ms = kTimeoutMs;
+      config.keepalive_config.payload_type =
+          CallTest::kDefaultKeepalivePayloadType;
+      return config;
+    }
+
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       RTPHeader header;
@@ -3429,15 +3437,6 @@ TEST_F(VideoSendStreamTest, SendsKeepAlive) {
       }
 
       return SEND_PACKET;
-    }
-
-    void ModifyVideoConfigs(
-        VideoSendStream::Config* send_config,
-        std::vector<VideoReceiveStream::Config>* receive_configs,
-        VideoEncoderConfig* encoder_config) override {
-      send_config->rtp.keep_alive.timeout_interval_ms = kTimeoutMs;
-      send_config->rtp.keep_alive.payload_type =
-          CallTest::kDefaultKeepalivePayloadType;
     }
 
     void PerformTest() override {

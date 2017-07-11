@@ -168,8 +168,6 @@ class VideoSendStream {
         int payload_type = -1;
       } rtx;
 
-      RtpKeepAliveConfig keep_alive;
-
       // RTCP CNAME, see RFC 3550.
       std::string c_name;
     } rtp;
