@@ -381,7 +381,7 @@ int VP9EncoderImpl::NumberOfThreads(int width,
   // tiles, which is (1, 2, 4, 8). See comments below for VP9E_SET_TILE_COLUMNS.
   if (width * height >= 1280 * 720 && number_of_cores > 4) {
     return 4;
-  } else if (width * height >= 640 * 480 && number_of_cores > 2) {
+  } else if (width * height >= 640 * 360 && number_of_cores > 2) {
     return 2;
   } else {
     // 1 thread less than VGA.
