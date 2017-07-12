@@ -206,16 +206,21 @@ void BlockBuffer::ExtractExtendedBlock(float extended_block[PART_LEN2]) {
 
   // Extract the previous block.
   WebRtc_MoveReadPtr(buffer_, -1);
-  WebRtc_ReadBuffer(buffer_, reinterpret_cast<void**>(&block_ptr),
-                    &extended_block[0], 1);
-  if (block_ptr != &extended_block[0]) {
+  size_t read_elements = WebRtc_ReadBuffer(
+      buffer_, reinterpret_cast<void**>(&block_ptr), &extended_block[0], 1);
+  if (read_elements == 0u) {
+    std::fill_n(&extended_block[0], PART_LEN, 0.0f);
+  } else if (block_ptr != &extended_block[0]) {
     memcpy(&extended_block[0], block_ptr, PART_LEN * sizeof(float));
   }
 
   // Extract the current block.
-  WebRtc_ReadBuffer(buffer_, reinterpret_cast<void**>(&block_ptr),
-                    &extended_block[PART_LEN], 1);
-  if (block_ptr != &extended_block[PART_LEN]) {
+  read_elements =
+      WebRtc_ReadBuffer(buffer_, reinterpret_cast<void**>(&block_ptr),
+                        &extended_block[PART_LEN], 1);
+  if (read_elements == 0u) {
+    std::fill_n(&extended_block[PART_LEN], PART_LEN, 0.0f);
+  } else if (block_ptr != &extended_block[PART_LEN]) {
     memcpy(&extended_block[PART_LEN], block_ptr, PART_LEN * sizeof(float));
   }
 }
