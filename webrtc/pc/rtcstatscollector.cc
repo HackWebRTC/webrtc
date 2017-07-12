@@ -1201,22 +1201,15 @@ std::map<MediaStreamTrackInterface*, std::string>
 RTCStatsCollector::PrepareTrackToID_s() const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   std::map<MediaStreamTrackInterface*, std::string> track_to_id;
-  StreamCollectionInterface* local_and_remote_streams[] =
-      { pc_->local_streams().get(), pc_->remote_streams().get() };
-  for (auto& streams : local_and_remote_streams) {
-    if (streams) {
-      for (size_t i = 0; i < streams->count(); ++i) {
-        MediaStreamInterface* stream = streams->at(i);
-        for (const rtc::scoped_refptr<AudioTrackInterface>& audio_track :
-             stream->GetAudioTracks()) {
-          track_to_id[audio_track.get()] = audio_track->id();
-        }
-        for (const rtc::scoped_refptr<VideoTrackInterface>& video_track :
-             stream->GetVideoTracks()) {
-          track_to_id[video_track.get()] = video_track->id();
-        }
-      }
-    }
+  for (auto sender : pc_->GetSenders()) {
+    auto track = sender->track();
+    if (track)
+      track_to_id[track.get()] = track->id();
+  }
+  for (auto receiver : pc_->GetReceivers()) {
+    auto track = receiver->track();
+    if (track)
+      track_to_id[track.get()] = track->id();
   }
   return track_to_id;
 }
