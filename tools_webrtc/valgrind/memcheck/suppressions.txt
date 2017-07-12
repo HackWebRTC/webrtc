@@ -27,6 +27,20 @@
    fun:snprintf
    ...
 }
+# See: https://bugs.chromium.org/p/webrtc/issues/detail?id=7973
+{
+   libc_getaddrinfo_uninitialized
+   Memcheck:Param
+   sendmsg(mmsg[0].msg_hdr)
+   fun:sendmmsg
+   fun:__libc_res_nsend
+   fun:__libc_res_nquery
+   fun:__libc_res_nsearch
+   fun:_nss_dns_gethostbyname4_r
+   fun:gaih_inet
+   fun:getaddrinfo
+   ...
+}
 
 #-----------------------------------------------------------------------
 # webrtc stuff
