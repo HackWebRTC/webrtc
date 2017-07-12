@@ -427,6 +427,7 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   vpx_codec_control(encoder_, VP9E_SET_AQ_MODE,
                     inst->VP9().adaptiveQpMode ? 3 : 0);
 
+  vpx_codec_control(encoder_, VP9E_SET_FRAME_PARALLEL_DECODING, 0);
   vpx_codec_control(
       encoder_, VP9E_SET_SVC,
       (num_temporal_layers_ > 1 || num_spatial_layers_ > 1) ? 1 : 0);
