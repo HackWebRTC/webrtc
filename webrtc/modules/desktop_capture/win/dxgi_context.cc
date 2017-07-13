@@ -21,10 +21,11 @@ DxgiAdapterContext::~DxgiAdapterContext() = default;
 DxgiFrameContext::DxgiFrameContext() = default;
 
 DxgiFrameContext::~DxgiFrameContext() {
-  DxgiDuplicatorController::Instance()->Unregister(this);
+  Reset();
 }
 
 void DxgiFrameContext::Reset() {
+  DxgiDuplicatorController::Instance()->Unregister(this);
   controller_id = 0;
 }
 
