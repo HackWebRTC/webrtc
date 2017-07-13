@@ -36,4 +36,6 @@ default_args = {
   # the args.gn file but this setting will be ignored because we don't support
   # component builds.
   is_component_build = false
+
+  mac_sdk_min = "10.11"
 }
