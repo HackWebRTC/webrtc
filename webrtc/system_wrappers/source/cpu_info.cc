@@ -32,7 +32,7 @@ static int DetectNumberOfCores() {
 
 #if defined(WEBRTC_WIN)
   SYSTEM_INFO si;
-  GetSystemInfo(&si);
+  GetNativeSystemInfo(&si);
   number_of_cores = static_cast<int>(si.dwNumberOfProcessors);
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID)
   number_of_cores = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN));
