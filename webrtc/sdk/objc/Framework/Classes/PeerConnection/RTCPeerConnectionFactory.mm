@@ -11,6 +11,7 @@
 #import "RTCPeerConnectionFactory+Private.h"
 
 #import "NSString+StdString.h"
+#import "RTCAVFoundationVideoSource+Private.h"
 #import "RTCAudioSource+Private.h"
 #import "RTCAudioTrack+Private.h"
 #import "RTCMediaConstraints+Private.h"
@@ -18,11 +19,15 @@
 #import "RTCPeerConnection+Private.h"
 #import "RTCVideoSource+Private.h"
 #import "RTCVideoTrack+Private.h"
-#import "RTCAVFoundationVideoSource+Private.h"
 #import "WebRTC/RTCLogging.h"
+#import "WebRTC/RTCVideoCodecFactory.h"
+#ifndef HAVE_NO_MEDIA
+#import "WebRTC/RTCVideoCodecH264.h"
+#endif
 
+#include "PeerConnection/objc_video_decoder_factory.h"
+#include "PeerConnection/objc_video_encoder_factory.h"
 #include "Video/objcvideotracksource.h"
-#include "VideoToolbox/videocodecfactory.h"
 #include "webrtc/api/videosourceproxy.h"
 // Adding the nogncheck to disable the including header check.
 // The no-media version PeerConnectionFactory doesn't depend on media related
@@ -41,7 +46,17 @@
 @synthesize nativeFactory = _nativeFactory;
 
 - (instancetype)init {
-  if ((self = [super init])) {
+#ifdef HAVE_NO_MEDIA
+  return [self initWithEncoderFactory:nil decoderFactory:nil];
+#else
+  return [self initWithEncoderFactory:[[RTCVideoEncoderFactoryH264 alloc] init]
+                       decoderFactory:[[RTCVideoDecoderFactoryH264 alloc] init]];
+#endif
+}
+
+- (instancetype)initWithEncoderFactory:(nullable id<RTCVideoEncoderFactory>)encoderFactory
+                        decoderFactory:(nullable id<RTCVideoDecoderFactory>)decoderFactory {
+  if (self = [super init]) {
     _networkThread = rtc::Thread::CreateWithSocketServer();
     BOOL result = _networkThread->Start();
     NSAssert(result, @"Failed to start network thread.");
@@ -68,8 +83,14 @@
         std::unique_ptr<webrtc::CallFactoryInterface>(),
         std::unique_ptr<webrtc::RtcEventLogFactoryInterface>());
 #else
-    const auto encoder_factory = new webrtc::VideoToolboxVideoEncoderFactory();
-    const auto decoder_factory = new webrtc::VideoToolboxVideoDecoderFactory();
+    cricket::WebRtcVideoEncoderFactory *encoder_factory = nullptr;
+    cricket::WebRtcVideoDecoderFactory *decoder_factory = nullptr;
+    if (encoderFactory) {
+      encoder_factory = new webrtc::ObjCVideoEncoderFactory(encoderFactory);
+    }
+    if (decoderFactory) {
+      decoder_factory = new webrtc::ObjCVideoDecoderFactory(decoderFactory);
+    }
 
     // Ownership of encoder/decoder factories is passed on to the
     // peerconnectionfactory, that handles deleting them.
