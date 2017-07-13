@@ -28,9 +28,9 @@ class NullSocketServerTest
 };
 
 TEST_F(NullSocketServerTest, WaitAndSet) {
-  Thread thread;
-  EXPECT_TRUE(thread.Start());
-  thread.Post(RTC_FROM_HERE, this, 0);
+  auto thread = Thread::Create();
+  EXPECT_TRUE(thread->Start());
+  thread->Post(RTC_FROM_HERE, this, 0);
   // The process_io will be ignored.
   const bool process_io = true;
   EXPECT_TRUE_WAIT(ss_.Wait(SocketServer::kForever, process_io), kTimeout);

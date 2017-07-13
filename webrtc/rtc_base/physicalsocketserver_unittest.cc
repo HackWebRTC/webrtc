@@ -610,7 +610,7 @@ TEST_F(PosixSignalDeliveryTest, SignalOnDifferentThread) {
   // Start a new thread that raises it. It will have to be delivered to that
   // thread. Our implementation should safely handle it and dispatch
   // RecordSignal() on this thread.
-  std::unique_ptr<Thread> thread(new Thread());
+  std::unique_ptr<Thread> thread(Thread::CreateWithSocketServer());
   std::unique_ptr<RaiseSigTermRunnable> runnable(new RaiseSigTermRunnable());
   thread->Start(runnable.get());
   EXPECT_TRUE(ss_->Wait(1500, true));

@@ -681,7 +681,7 @@ void SocketTest::SocketServerWaitInternal(const IPAddress& loopback) {
   EXPECT_FALSE(sink.Check(accepted.get(), SSE_READ));
 
   // Shouldn't signal when blocked in a thread Send, where process_io is false.
-  std::unique_ptr<Thread> thread(new Thread());
+  std::unique_ptr<Thread> thread(Thread::CreateWithSocketServer());
   thread->Start();
   Sleeper sleeper;
   TypedMessageData<AsyncSocket*> data(client.get());

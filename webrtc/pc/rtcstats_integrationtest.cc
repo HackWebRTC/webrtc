@@ -34,14 +34,15 @@ const int64_t kGetStatsTimeoutMs = 10000;
 class RTCStatsIntegrationTest : public testing::Test {
  public:
   RTCStatsIntegrationTest()
-      : network_thread_(&virtual_socket_server_), worker_thread_() {
-    RTC_CHECK(network_thread_.Start());
-    RTC_CHECK(worker_thread_.Start());
+      : network_thread_(new rtc::Thread(&virtual_socket_server_)),
+        worker_thread_(rtc::Thread::Create()) {
+    RTC_CHECK(network_thread_->Start());
+    RTC_CHECK(worker_thread_->Start());
 
     caller_ = new rtc::RefCountedObject<PeerConnectionTestWrapper>(
-        "caller", &network_thread_, &worker_thread_);
+        "caller", network_thread_.get(), worker_thread_.get());
     callee_ = new rtc::RefCountedObject<PeerConnectionTestWrapper>(
-        "callee", &network_thread_, &worker_thread_);
+        "callee", network_thread_.get(), worker_thread_.get());
   }
 
   void StartCall() {
@@ -96,8 +97,8 @@ class RTCStatsIntegrationTest : public testing::Test {
   // |network_thread_| uses |virtual_socket_server_| so they must be
   // constructed/destructed in the correct order.
   rtc::VirtualSocketServer virtual_socket_server_;
-  rtc::Thread network_thread_;
-  rtc::Thread worker_thread_;
+  std::unique_ptr<rtc::Thread> network_thread_;
+  std::unique_ptr<rtc::Thread> worker_thread_;
   rtc::scoped_refptr<PeerConnectionTestWrapper> caller_;
   rtc::scoped_refptr<PeerConnectionTestWrapper> callee_;
 };
