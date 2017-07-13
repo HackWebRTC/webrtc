@@ -623,6 +623,12 @@ void AudioDeviceIOS::HandleSampleRateChange(float sample_rate) {
     return;
   }
 
+  // Extra sanity check to ensure that the new sample rate is valid.
+  if (session_sample_rate <= 0.0) {
+    RTCLogError(@"Sample rate is invalid: %f", session_sample_rate);
+    return;
+  }
+
   // We need to adjust our format and buffer sizes.
   // The stream format is about to be changed and it requires that we first
   // stop and uninitialize the audio unit to deallocate its resources.
