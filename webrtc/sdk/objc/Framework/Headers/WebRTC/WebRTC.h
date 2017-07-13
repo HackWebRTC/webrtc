@@ -27,6 +27,7 @@
 #import <WebRTC/RTCFileLogger.h>
 #import <WebRTC/RTCIceCandidate.h>
 #import <WebRTC/RTCIceServer.h>
+#import <WebRTC/RTCIntervalRange.h>
 #import <WebRTC/RTCLegacyStatsReport.h>
 #import <WebRTC/RTCLogging.h>
 #import <WebRTC/RTCMacros.h>
