@@ -59,6 +59,10 @@ class DxgiAdapterDuplicator {
   // should be between [0, screen_count()).
   DesktopRect ScreenRect(int id) const;
 
+  // Returns the device name of one screen owned by this DxgiAdapterDuplicator
+  // in utf8 encoding. |id| should be between [0, screen_count()).
+  const std::string& GetDeviceName(int id) const;
+
   // Returns the count of screens owned by this DxgiAdapterDuplicator. These
   // screens can be retrieved by an interger in the range of
   // [0, screen_count()).

@@ -14,6 +14,7 @@
 #include <D3DCommon.h>
 
 #include <atomic>
+#include <string>
 #include <vector>
 
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
@@ -101,6 +102,12 @@ class DxgiDuplicatorController {
   // support DXGI based capturer, this function returns 0.
   int ScreenCount();
 
+  // Returns the device names of all screens on the system in utf8 encoding.
+  // These screens can be retrieved by an integer in the range of
+  // [0, output->size()). If system does not support DXGI based capturer, this
+  // function returns false.
+  bool GetDeviceNames(std::vector<std::string>* output);
+
  private:
   // DxgiFrameContext calls private Unregister(Context*) function in Reset().
   friend void DxgiFrameContext::Reset();
@@ -181,6 +188,8 @@ class DxgiDuplicatorController {
   DesktopRect ScreenRect(int id) const;
 
   int ScreenCountUnlocked() const;
+
+  void GetDeviceNamesUnlocked(std::vector<std::string>* output) const;
 
   // Returns the desktop size of the selected screen |monitor_id|. Setting
   // |monitor_id| < 0 to return the entire screen size.

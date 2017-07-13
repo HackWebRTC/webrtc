@@ -146,6 +146,11 @@ DesktopRect DxgiAdapterDuplicator::ScreenRect(int id) const {
   return duplicators_[id].desktop_rect();
 }
 
+const std::string& DxgiAdapterDuplicator::GetDeviceName(int id) const {
+  RTC_DCHECK(id >= 0 && id < static_cast<int>(duplicators_.size()));
+  return duplicators_[id].device_name();
+}
+
 int DxgiAdapterDuplicator::screen_count() const {
   return static_cast<int>(duplicators_.size());
 }

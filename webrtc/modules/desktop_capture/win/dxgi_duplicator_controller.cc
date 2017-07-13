@@ -114,6 +114,16 @@ int DxgiDuplicatorController::ScreenCount() {
   return 0;
 }
 
+bool DxgiDuplicatorController::GetDeviceNames(
+    std::vector<std::string>* output) {
+  rtc::CritScope lock(&lock_);
+  if (Initialize()) {
+    GetDeviceNamesUnlocked(output);
+    return true;
+  }
+  return false;
+}
+
 DxgiDuplicatorController::Result
 DxgiDuplicatorController::DoDuplicate(DxgiFrame* frame, int monitor_id) {
   RTC_DCHECK(frame);
@@ -368,6 +378,16 @@ int DxgiDuplicatorController::ScreenCountUnlocked() const {
     result += duplicator.screen_count();
   }
   return result;
+}
+
+void DxgiDuplicatorController::GetDeviceNamesUnlocked(
+    std::vector<std::string>* output) const {
+  RTC_DCHECK(output);
+  for (auto& duplicator : duplicators_) {
+    for (int i = 0; i < duplicator.screen_count(); i++) {
+      output->push_back(duplicator.GetDeviceName(i));
+    }
+  }
 }
 
 DesktopSize DxgiDuplicatorController::SelectedDesktopSize(
