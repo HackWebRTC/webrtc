@@ -54,14 +54,12 @@ class PeerConnectionEndToEndTest
       DataChannelList;
 
   PeerConnectionEndToEndTest() {
-    network_thread_ = rtc::Thread::CreateWithSocketServer();
-    worker_thread_ = rtc::Thread::Create();
-    RTC_CHECK(network_thread_->Start());
-    RTC_CHECK(worker_thread_->Start());
+    RTC_CHECK(network_thread_.Start());
+    RTC_CHECK(worker_thread_.Start());
     caller_ = new rtc::RefCountedObject<PeerConnectionTestWrapper>(
-        "caller", network_thread_.get(), worker_thread_.get());
+        "caller", &network_thread_, &worker_thread_);
     callee_ = new rtc::RefCountedObject<PeerConnectionTestWrapper>(
-        "callee", network_thread_.get(), worker_thread_.get());
+        "callee", &network_thread_, &worker_thread_);
     webrtc::PeerConnectionInterface::IceServer ice_server;
     ice_server.uri = "stun:stun.l.google.com:19302";
     config_.servers.push_back(ice_server);
@@ -167,8 +165,8 @@ class PeerConnectionEndToEndTest
   }
 
  protected:
-  std::unique_ptr<rtc::Thread> network_thread_;
-  std::unique_ptr<rtc::Thread> worker_thread_;
+  rtc::Thread network_thread_;
+  rtc::Thread worker_thread_;
   rtc::scoped_refptr<PeerConnectionTestWrapper> caller_;
   rtc::scoped_refptr<PeerConnectionTestWrapper> callee_;
   DataChannelList caller_signaled_data_channels_;

@@ -195,24 +195,24 @@ TEST(ThreadTest, DISABLED_Main) {
   const SocketAddress addr("127.0.0.1", 0);
 
   // Create the messaging client on its own thread.
-  auto th1 = Thread::CreateWithSocketServer();
-  Socket* socket =
-      th1->socketserver()->CreateAsyncSocket(addr.family(), SOCK_DGRAM);
-  MessageClient msg_client(th1.get(), socket);
+  Thread th1;
+  Socket* socket = th1.socketserver()->CreateAsyncSocket(addr.family(),
+                                                         SOCK_DGRAM);
+  MessageClient msg_client(&th1, socket);
 
   // Create the socket client on its own thread.
-  auto th2 = Thread::CreateWithSocketServer();
+  Thread th2;
   AsyncSocket* asocket =
-      th2->socketserver()->CreateAsyncSocket(addr.family(), SOCK_DGRAM);
-  SocketClient sock_client(asocket, addr, th1.get(), &msg_client);
+      th2.socketserver()->CreateAsyncSocket(addr.family(), SOCK_DGRAM);
+  SocketClient sock_client(asocket, addr, &th1, &msg_client);
 
   socket->Connect(sock_client.address());
 
-  th1->Start();
-  th2->Start();
+  th1.Start();
+  th2.Start();
 
   // Get the messages started.
-  th1->PostDelayed(RTC_FROM_HERE, 100, &msg_client, 0, new TestMessage(1));
+  th1.PostDelayed(RTC_FROM_HERE, 100, &msg_client, 0, new TestMessage(1));
 
   // Give the clients a little while to run.
   // Messages will be processed at 100, 300, 500, 700, 900.
@@ -221,9 +221,9 @@ TEST(ThreadTest, DISABLED_Main) {
 
   // Stop the sending client. Give the receiver a bit longer to run, in case
   // it is running on a machine that is under load (e.g. the build machine).
-  th1->Stop();
+  th1.Stop();
   th_main->ProcessMessages(200);
-  th2->Stop();
+  th2.Stop();
 
   // Make sure the results were correct
   EXPECT_EQ(5, msg_client.count);
@@ -236,19 +236,23 @@ TEST(ThreadTest, DISABLED_Main) {
 // There's no easy way to verify the name was set properly at this time.
 TEST(ThreadTest, Names) {
   // Default name
-  auto thread = Thread::CreateWithSocketServer();
+  Thread *thread;
+  thread = new Thread();
   EXPECT_TRUE(thread->Start());
   thread->Stop();
+  delete thread;
+  thread = new Thread();
   // Name with no object parameter
-  thread = Thread::CreateWithSocketServer();
   EXPECT_TRUE(thread->SetName("No object", nullptr));
   EXPECT_TRUE(thread->Start());
   thread->Stop();
+  delete thread;
   // Really long name
-  thread = Thread::CreateWithSocketServer();
+  thread = new Thread();
   EXPECT_TRUE(thread->SetName("Abcdefghijklmnopqrstuvwxyz1234567890", this));
   EXPECT_TRUE(thread->Start());
   thread->Stop();
+  delete thread;
 }
 
 TEST(ThreadTest, Wrap) {
@@ -266,21 +270,21 @@ TEST(ThreadTest, Wrap) {
 
 TEST(ThreadTest, Invoke) {
   // Create and start the thread.
-  auto thread = Thread::CreateWithSocketServer();
-  thread->Start();
+  Thread thread;
+  thread.Start();
   // Try calling functors.
-  EXPECT_EQ(42, thread->Invoke<int>(RTC_FROM_HERE, FunctorA()));
+  EXPECT_EQ(42, thread.Invoke<int>(RTC_FROM_HERE, FunctorA()));
   AtomicBool called;
   FunctorB f2(&called);
-  thread->Invoke<void>(RTC_FROM_HERE, f2);
+  thread.Invoke<void>(RTC_FROM_HERE, f2);
   EXPECT_TRUE(called.get());
   // Try calling bare functions.
   struct LocalFuncs {
     static int Func1() { return 999; }
     static void Func2() {}
   };
-  EXPECT_EQ(999, thread->Invoke<int>(RTC_FROM_HERE, &LocalFuncs::Func1));
-  thread->Invoke<void>(RTC_FROM_HERE, &LocalFuncs::Func2);
+  EXPECT_EQ(999, thread.Invoke<int>(RTC_FROM_HERE, &LocalFuncs::Func1));
+  thread.Invoke<void>(RTC_FROM_HERE, &LocalFuncs::Func2);
 }
 
 // Verifies that two threads calling Invoke on each other at the same time does
@@ -290,8 +294,8 @@ TEST(ThreadTest, TwoThreadsInvokeNoDeadlock) {
   Thread* current_thread = Thread::Current();
   ASSERT_TRUE(current_thread != nullptr);
 
-  auto other_thread = Thread::CreateWithSocketServer();
-  other_thread->Start();
+  Thread other_thread;
+  other_thread.Start();
 
   struct LocalFuncs {
     static void Set(bool* out) { *out = true; }
@@ -301,7 +305,7 @@ TEST(ThreadTest, TwoThreadsInvokeNoDeadlock) {
   };
 
   bool called = false;
-  other_thread->Invoke<void>(
+  other_thread.Invoke<void>(
       RTC_FROM_HERE, Bind(&LocalFuncs::InvokeSet, current_thread, &called));
 
   EXPECT_TRUE(called);
@@ -313,10 +317,9 @@ TEST(ThreadTest, TwoThreadsInvokeNoDeadlock) {
 TEST(ThreadTest, ThreeThreadsInvoke) {
   AutoThread thread;
   Thread* thread_a = Thread::Current();
-  auto thread_b = Thread::CreateWithSocketServer();
-  auto thread_c = Thread::CreateWithSocketServer();
-  thread_b->Start();
-  thread_c->Start();
+  Thread thread_b, thread_c;
+  thread_b.Start();
+  thread_c.Start();
 
   class LockedBool {
    public:
@@ -374,9 +377,9 @@ TEST(ThreadTest, ThreeThreadsInvoke) {
   // Start the sequence A --(invoke)--> B --(async invoke)--> C --(invoke)--> A.
   // Thread B returns when C receives the call and C should be blocked until A
   // starts to process messages.
-  thread_b->Invoke<void>(RTC_FROM_HERE,
-                         Bind(&LocalFuncs::AsyncInvokeSetAndWait, &invoker,
-                              thread_c.get(), thread_a, &thread_a_called));
+  thread_b.Invoke<void>(RTC_FROM_HERE,
+                        Bind(&LocalFuncs::AsyncInvokeSetAndWait, &invoker,
+                             &thread_c, thread_a, &thread_a_called));
   EXPECT_FALSE(thread_a_called.Get());
 
   EXPECT_TRUE_WAIT(thread_a_called.Get(), 2000);
@@ -403,9 +406,9 @@ class SetNameOnSignalQueueDestroyedTester : public sigslot::has_slots<> {
 };
 
 TEST(ThreadTest, SetNameOnSignalQueueDestroyed) {
-  auto thread1 = Thread::CreateWithSocketServer();
-  SetNameOnSignalQueueDestroyedTester tester1(thread1.get());
-  thread1.reset();
+  Thread* thread1 = new Thread();
+  SetNameOnSignalQueueDestroyedTester tester1(thread1);
+  delete thread1;
 
   Thread* thread2 = new AutoThread();
   SetNameOnSignalQueueDestroyedTester tester2(thread2);
@@ -435,13 +438,12 @@ class AsyncInvokeTest : public testing::Test {
 TEST_F(AsyncInvokeTest, FireAndForget) {
   AsyncInvoker invoker;
   // Create and start the thread.
-  auto thread = Thread::CreateWithSocketServer();
-  thread->Start();
+  Thread thread;
+  thread.Start();
   // Try calling functor.
   AtomicBool called;
-  invoker.AsyncInvoke<void>(RTC_FROM_HERE, thread.get(), FunctorB(&called));
+  invoker.AsyncInvoke<void>(RTC_FROM_HERE, &thread, FunctorB(&called));
   EXPECT_TRUE_WAIT(called.get(), kWaitTimeout);
-  thread->Stop();
 }
 
 TEST_F(AsyncInvokeTest, KillInvokerDuringExecute) {
@@ -452,12 +454,12 @@ TEST_F(AsyncInvokeTest, KillInvokerDuringExecute) {
   Event functor_continue(false, false);
   Event functor_finished(false, false);
 
-  auto thread = Thread::CreateWithSocketServer();
-  thread->Start();
+  Thread thread;
+  thread.Start();
   volatile bool invoker_destroyed = false;
   {
     AsyncInvoker invoker;
-    invoker.AsyncInvoke<void>(RTC_FROM_HERE, thread.get(),
+    invoker.AsyncInvoke<void>(RTC_FROM_HERE, &thread,
                               [&functor_started, &functor_continue,
                                &functor_finished, &invoker_destroyed] {
                                 functor_started.Set();
@@ -548,7 +550,7 @@ struct CreateInvoker {
 // Test that we can call AsyncInvoke<void>() after the thread died.
 TEST_F(GuardedAsyncInvokeTest, KillThreadFireAndForget) {
   // Create and start the thread.
-  std::unique_ptr<Thread> thread(Thread::Create());
+  std::unique_ptr<Thread> thread(new Thread());
   thread->Start();
   std::unique_ptr<GuardedAsyncInvoker> invoker;
   // Create the invoker on |thread|.

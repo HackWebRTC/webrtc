@@ -624,7 +624,7 @@ bool FakeAudioCaptureModule::ShouldStartProcessing() {
 void FakeAudioCaptureModule::UpdateProcessing(bool start) {
   if (start) {
     if (!process_thread_) {
-      process_thread_ = rtc::Thread::Create();
+      process_thread_.reset(new rtc::Thread());
       process_thread_->Start();
     }
     process_thread_->Post(RTC_FROM_HERE, this, MSG_START_PROCESS);

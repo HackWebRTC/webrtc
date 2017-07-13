@@ -101,10 +101,9 @@ class Runnable {
 // WARNING! SUBCLASSES MUST CALL Stop() IN THEIR DESTRUCTORS!  See ~Thread().
 
 class LOCKABLE Thread : public MessageQueue {
- protected:
-  Thread();
-
  public:
+  // Create a new Thread and optionally assign it to the passed SocketServer.
+  Thread();
   explicit Thread(SocketServer* ss);
   explicit Thread(std::unique_ptr<SocketServer> ss);
 

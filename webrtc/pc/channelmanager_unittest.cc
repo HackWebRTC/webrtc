@@ -38,9 +38,7 @@ static const VideoCodec kVideoCodecs[] = {
 class ChannelManagerTest : public testing::Test {
  protected:
   ChannelManagerTest()
-      : network_(rtc::Thread::CreateWithSocketServer()),
-        worker_(rtc::Thread::Create()),
-        fme_(new cricket::FakeMediaEngine()),
+      : fme_(new cricket::FakeMediaEngine()),
         fdme_(new cricket::FakeDataEngine()),
         cm_(new cricket::ChannelManager(
             std::unique_ptr<MediaEngineInterface>(fme_),
@@ -54,8 +52,8 @@ class ChannelManagerTest : public testing::Test {
   }
 
   webrtc::RtcEventLogNullImpl event_log_;
-  std::unique_ptr<rtc::Thread> network_;
-  std::unique_ptr<rtc::Thread> worker_;
+  rtc::Thread network_;
+  rtc::Thread worker_;
   // |fme_| and |fdme_| are actually owned by |cm_|.
   cricket::FakeMediaEngine* fme_;
   cricket::FakeDataEngine* fdme_;
@@ -76,14 +74,14 @@ TEST_F(ChannelManagerTest, StartupShutdown) {
 
 // Test that we startup/shutdown properly with a worker thread.
 TEST_F(ChannelManagerTest, StartupShutdownOnThread) {
-  network_->Start();
-  worker_->Start();
+  network_.Start();
+  worker_.Start();
   EXPECT_FALSE(cm_->initialized());
   EXPECT_EQ(rtc::Thread::Current(), cm_->worker_thread());
-  EXPECT_TRUE(cm_->set_network_thread(network_.get()));
-  EXPECT_EQ(network_.get(), cm_->network_thread());
-  EXPECT_TRUE(cm_->set_worker_thread(worker_.get()));
-  EXPECT_EQ(worker_.get(), cm_->worker_thread());
+  EXPECT_TRUE(cm_->set_network_thread(&network_));
+  EXPECT_EQ(&network_, cm_->network_thread());
+  EXPECT_TRUE(cm_->set_worker_thread(&worker_));
+  EXPECT_EQ(&worker_, cm_->worker_thread());
   EXPECT_TRUE(cm_->Init());
   EXPECT_TRUE(cm_->initialized());
   // Setting the network or worker thread while initialized should fail.
@@ -123,13 +121,13 @@ TEST_F(ChannelManagerTest, CreateDestroyChannels) {
 
 // Test that we can create and destroy a voice and video channel with a worker.
 TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {
-  network_->Start();
-  worker_->Start();
-  EXPECT_TRUE(cm_->set_worker_thread(worker_.get()));
-  EXPECT_TRUE(cm_->set_network_thread(network_.get()));
+  network_.Start();
+  worker_.Start();
+  EXPECT_TRUE(cm_->set_worker_thread(&worker_));
+  EXPECT_TRUE(cm_->set_network_thread(&network_));
   EXPECT_TRUE(cm_->Init());
-  transport_controller_.reset(new cricket::FakeTransportController(
-      network_.get(), ICEROLE_CONTROLLING));
+  transport_controller_.reset(
+      new cricket::FakeTransportController(&network_, ICEROLE_CONTROLLING));
   cricket::DtlsTransportInternal* rtp_transport =
       transport_controller_->CreateDtlsTransport(
           cricket::CN_AUDIO, cricket::ICE_CANDIDATE_COMPONENT_RTP);

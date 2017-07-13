@@ -349,8 +349,8 @@ TEST(FakeClock, SettingTimeWakesThreads) {
   FakeClock clock;
   SetClockForTesting(&clock);
 
-  std::unique_ptr<Thread> worker(Thread::CreateWithSocketServer());
-  worker->Start();
+  Thread worker;
+  worker.Start();
 
   // Post an event that won't be executed for 10 seconds.
   Event message_handler_dispatched(false, false);
@@ -358,7 +358,7 @@ TEST(FakeClock, SettingTimeWakesThreads) {
     message_handler_dispatched.Set();
   };
   FunctorMessageHandler<void, decltype(functor)> handler(functor);
-  worker->PostDelayed(RTC_FROM_HERE, 60000, &handler);
+  worker.PostDelayed(RTC_FROM_HERE, 60000, &handler);
 
   // Wait for a bit for the worker thread to be started and enter its socket
   // select(). Otherwise this test would be trivial since the worker thread
@@ -369,7 +369,7 @@ TEST(FakeClock, SettingTimeWakesThreads) {
   // and dispatch the message instantly.
   clock.AdvanceTime(TimeDelta::FromSeconds(60u));
   EXPECT_TRUE(message_handler_dispatched.Wait(0));
-  worker->Stop();
+  worker.Stop();
 
   SetClockForTesting(nullptr);
 

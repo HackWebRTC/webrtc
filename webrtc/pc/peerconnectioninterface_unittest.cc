@@ -1278,15 +1278,14 @@ TEST_F(PeerConnectionInterfaceTest, CreatePeerConnectionWithPooledCandidates) {
 // and on the correct thread.
 TEST_F(PeerConnectionInterfaceTest,
        CreatePeerConnectionInitializesPortAllocator) {
-  std::unique_ptr<rtc::Thread> network_thread(
-      rtc::Thread::CreateWithSocketServer());
-  network_thread->Start();
+  rtc::Thread network_thread;
+  network_thread.Start();
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory(
       webrtc::CreatePeerConnectionFactory(
-          network_thread.get(), rtc::Thread::Current(), rtc::Thread::Current(),
+          &network_thread, rtc::Thread::Current(), rtc::Thread::Current(),
           nullptr, nullptr, nullptr));
   std::unique_ptr<cricket::FakePortAllocator> port_allocator(
-      new cricket::FakePortAllocator(network_thread.get(), nullptr));
+      new cricket::FakePortAllocator(&network_thread, nullptr));
   cricket::FakePortAllocator* raw_port_allocator = port_allocator.get();
   PeerConnectionInterface::RTCConfiguration config;
   rtc::scoped_refptr<PeerConnectionInterface> pc(

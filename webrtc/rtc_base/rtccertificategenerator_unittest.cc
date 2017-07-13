@@ -24,7 +24,7 @@ class RTCCertificateGeneratorFixture : public RTCCertificateGeneratorCallback {
  public:
   RTCCertificateGeneratorFixture()
       : signaling_thread_(Thread::Current()),
-        worker_thread_(Thread::Create()),
+        worker_thread_(new Thread()),
         generate_async_completed_(false) {
     RTC_CHECK(signaling_thread_);
     RTC_CHECK(worker_thread_->Start());
