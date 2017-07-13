@@ -152,11 +152,17 @@ TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
       last_emitted_tl0_timestamp_ = unwrapped_timestamp;
       break;
     case 1:
-      if (TimeToSync(unwrapped_timestamp)) {
-        last_sync_timestamp_ = unwrapped_timestamp;
-        layer_state = TemporalLayerState::kTl1Sync;
+      if (layers_[1].state != TemporalLayer::State::kDropped) {
+        if (TimeToSync(unwrapped_timestamp)) {
+          last_sync_timestamp_ = unwrapped_timestamp;
+          layer_state = TemporalLayerState::kTl1Sync;
+        } else {
+          layer_state = TemporalLayerState::kTl1;
+        }
       } else {
-        layer_state = TemporalLayerState::kTl1;
+        layer_state = last_sync_timestamp_ == unwrapped_timestamp
+                          ? TemporalLayerState::kTl1Sync
+                          : TemporalLayerState::kTl1;
       }
       break;
     case -1:

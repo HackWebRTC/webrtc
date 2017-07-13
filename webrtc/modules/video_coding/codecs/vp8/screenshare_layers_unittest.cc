@@ -126,18 +126,29 @@ class ScreenshareLayerTest : public ::testing::Test {
 
   // Adds frames until we get one in the specified temporal layer. The last
   // FrameEncoded() call will be omitted and needs to be done by the caller.
-  void SkipUntilTl(int layer) {
-    for (int i = 0; i < 5; ++i) {
-      ConfigureFrame(false);
+  // Returns the flags for the last frame.
+  int SkipUntilTl(int layer) {
+    return SkipUntilTlAndSync(layer, rtc::Optional<bool>());
+  }
+
+  // Same as SkipUntilTl, but also waits until the sync bit condition is met.
+  int SkipUntilTlAndSync(int layer, rtc::Optional<bool> sync) {
+    int flags = 0;
+    const int kMaxFramesToSkip =
+        1 + (sync.value_or(false) ? kMaxSyncPeriodSeconds : 1) * kFrameRate;
+    for (int i = 0; i < kMaxFramesToSkip; ++i) {
+      flags = ConfigureFrame(false);
       timestamp_ += kTimestampDelta5Fps;
-      if (vp8_info_.temporalIdx != layer) {
+      if (vp8_info_.temporalIdx != layer ||
+          (sync && *sync != vp8_info_.layerSync)) {
         layers_->FrameEncoded(frame_size_, kDefaultQp);
       } else {
-        // Found frame form sought layer.
-        return;
+        // Found frame from sought after layer.
+        return flags;
       }
     }
     ADD_FAILURE() << "Did not get a frame of TL" << layer << " in time.";
+    return -1;
   }
 
   int min_qp_;
@@ -562,4 +573,31 @@ TEST_F(ScreenshareLayerTest, RespectsConfiguredFramerate) {
   // Allow for some rounding errors in the measurements.
   EXPECT_NEAR(num_discarded_frames, num_input_frames / 2, 2);
 }
+
+TEST_F(ScreenshareLayerTest, 2LayersSyncAtOvershootDrop) {
+  // Run grace period so we have existing frames in both TL0 and Tl1.
+  EXPECT_TRUE(RunGracePeriod());
+
+  // Move ahead until we have a sync frame in TL1.
+  EXPECT_EQ(kTl1SyncFlags, SkipUntilTlAndSync(1, rtc::Optional<bool>(true)));
+  ASSERT_TRUE(vp8_info_.layerSync);
+
+  // Simulate overshoot of this frame.
+  layers_->FrameEncoded(0, -1);
+
+  // Reencode, frame config, flags and codec specific info should remain the
+  // same as for the dropped frame.
+  timestamp_ -= kTimestampDelta5Fps;  // Undo last timestamp increment.
+  TemporalLayers::FrameConfig new_tl_config =
+      layers_->UpdateLayerConfig(timestamp_);
+  EXPECT_EQ(tl_config_, new_tl_config);
+
+  config_updated_ = layers_->UpdateConfiguration(&cfg_);
+  EXPECT_EQ(kTl1SyncFlags, VP8EncoderImpl::EncodeFlags(tl_config_));
+
+  CodecSpecificInfoVP8 new_vp8_info;
+  layers_->PopulateCodecSpecific(false, tl_config_, &new_vp8_info, timestamp_);
+  EXPECT_TRUE(new_vp8_info.layerSync);
+}
+
 }  // namespace webrtc

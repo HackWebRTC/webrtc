@@ -25,7 +25,8 @@
 
 namespace webrtc {
 
-TemporalLayers::FrameConfig::FrameConfig() {}
+TemporalLayers::FrameConfig::FrameConfig()
+    : FrameConfig(kNone, kNone, kNone, false) {}
 
 TemporalLayers::FrameConfig::FrameConfig(TemporalLayers::BufferFlags last,
                                          TemporalLayers::BufferFlags golden,
@@ -48,7 +49,9 @@ TemporalLayers::FrameConfig::FrameConfig(TemporalLayers::BufferFlags last,
       last_buffer_flags(last),
       golden_buffer_flags(golden),
       arf_buffer_flags(arf),
-      freeze_entropy(freeze_entropy) {}
+      layer_sync(false),
+      freeze_entropy(freeze_entropy),
+      pattern_idx(0) {}
 
 namespace {
 

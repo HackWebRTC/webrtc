@@ -55,6 +55,16 @@ class TemporalLayers {
 
     int pattern_idx;
 
+    bool operator==(const FrameConfig& o) const {
+      return drop_frame == o.drop_frame &&
+             last_buffer_flags == o.last_buffer_flags &&
+             golden_buffer_flags == o.golden_buffer_flags &&
+             arf_buffer_flags == o.arf_buffer_flags &&
+             layer_sync == o.layer_sync && freeze_entropy == o.freeze_entropy &&
+             pattern_idx == o.pattern_idx;
+    }
+    bool operator!=(const FrameConfig& o) const { return !(*this == o); }
+
    private:
     FrameConfig(BufferFlags last,
                 BufferFlags golden,
