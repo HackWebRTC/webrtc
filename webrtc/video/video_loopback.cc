@@ -133,6 +133,16 @@ int AvgPropagationDelayMs() {
   return static_cast<int>(FLAG_avg_propagation_delay_ms);
 }
 
+DEFINE_string(rtc_event_log_name, "", "Filename for rtc event log.");
+std::string RtcEventLogName() {
+  return static_cast<std::string>(FLAG_rtc_event_log_name);
+}
+
+DEFINE_string(rtp_dump_name, "", "Filename for dumped received RTP stream.");
+std::string RtpDumpName() {
+  return static_cast<std::string>(FLAG_rtp_dump_name);
+}
+
 DEFINE_int(std_propagation_delay_ms,
            0,
            "Link propagation delay standard deviation in ms.");
@@ -256,7 +266,7 @@ void Loopback() {
   call_bitrate_config.max_bitrate_bps = flags::MaxBitrateKbps() * 1000;
 
   VideoQualityTest::Params params;
-  params.call = {flags::FLAG_send_side_bwe, call_bitrate_config};
+  params.call = {flags::FLAG_send_side_bwe, call_bitrate_config, 0};
   params.video = {flags::FLAG_video,
                   flags::Width(),
                   flags::Height(),
@@ -271,16 +281,16 @@ void Loopback() {
                   0,  // No min transmit bitrate.
                   flags::FLAG_use_ulpfec,
                   flags::FLAG_use_flexfec,
-                  flags::EncodedFramePath(),
                   flags::Clip(),
                   flags::GetCaptureDevice()};
   params.audio = {flags::FLAG_audio, flags::FLAG_audio_video_sync,
                   flags::FLAG_audio_dtx};
+  params.logging = {flags::FLAG_logs, flags::FLAG_rtc_event_log_name,
+                    flags::FLAG_rtp_dump_name, flags::FLAG_encoded_frame_path};
   params.screenshare.enabled = false;
   params.analyzer = {"video", 0.0, 0.0, flags::DurationSecs(),
       flags::OutputFilename(), flags::GraphTitle()};
   params.pipe = pipe_config;
-  params.logs = flags::FLAG_logs;
 
   if (flags::NumStreams() > 1 && flags::Stream0().empty() &&
       flags::Stream1().empty()) {

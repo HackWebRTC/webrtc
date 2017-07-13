@@ -69,6 +69,16 @@ std::string Codec() {
   return static_cast<std::string>(FLAG_codec);
 }
 
+DEFINE_string(rtc_event_log_name, "", "Filename for rtc event log.");
+std::string RtcEventLogName() {
+  return static_cast<std::string>(FLAG_rtc_event_log_name);
+}
+
+DEFINE_string(rtp_dump_name, "", "Filename for dumped received RTP stream.");
+std::string RtpDumpName() {
+  return static_cast<std::string>(FLAG_rtp_dump_name);
+}
+
 DEFINE_int(selected_tl,
            -1,
            "Temporal layer to show or analyze. -1 to disable filtering.");
@@ -267,14 +277,14 @@ void Loopback() {
                   flags::MinTransmitBitrateKbps() * 1000,
                   false,  // ULPFEC disabled.
                   false,  // FlexFEC disabled.
-                  flags::EncodedFramePath(),
                   ""};
   params.screenshare = {true, flags::SlideChangeInterval(),
                         flags::ScrollDuration(), flags::Slides()};
   params.analyzer = {"screenshare", 0.0, 0.0, flags::DurationSecs(),
       flags::OutputFilename(), flags::GraphTitle()};
   params.pipe = pipe_config;
-  params.logs = flags::FLAG_logs;
+  params.logging = {flags::FLAG_logs, flags::RtcEventLogName(),
+                    flags::RtpDumpName(), flags::EncodedFramePath()};
 
   if (flags::NumStreams() > 1 && flags::Stream0().empty() &&
       flags::Stream1().empty()) {

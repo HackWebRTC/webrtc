@@ -49,6 +49,8 @@
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 
+#include "webrtc/test/rtp_file_writer.h"
+
 namespace {
 
 constexpr int kSendStatsPollingIntervalMs = 1000;
@@ -149,7 +151,8 @@ class VideoAnalyzer : public PacketReceiver,
                 int selected_sl,
                 int selected_tl,
                 bool is_quick_test_enabled,
-                Clock* clock)
+                Clock* clock,
+                std::string rtp_dump_name)
       : transport_(transport),
         receiver_(nullptr),
         call_(nullptr),
@@ -185,7 +188,9 @@ class VideoAnalyzer : public PacketReceiver,
         is_quick_test_enabled_(is_quick_test_enabled),
         stats_polling_thread_(&PollStatsThread, this, "StatsPoller"),
         comparison_available_event_(false, false),
-        done_(true, false) {
+        done_(true, false),
+        clock_(clock),
+        start_ms_(clock->TimeInMilliseconds()) {
     // Create thread pool for CPU-expensive PSNR/SSIM calculations.
 
     // Try to use about as many threads as cores, but leave kMinCoresLeft alone,
@@ -210,6 +215,12 @@ class VideoAnalyzer : public PacketReceiver,
           new rtc::PlatformThread(&FrameComparisonThread, this, "Analyzer");
       thread->Start();
       comparison_thread_pool_.push_back(thread);
+    }
+
+    if (!rtp_dump_name.empty()) {
+      fprintf(stdout, "Writing rtp dump to %s\n", rtp_dump_name.c_str());
+      rtp_file_writer_.reset(test::RtpFileWriter::Create(
+          test::RtpFileWriter::kRtpDump, rtp_dump_name));
     }
   }
 
@@ -263,6 +274,16 @@ class VideoAnalyzer : public PacketReceiver,
     if (RtpHeaderParser::IsRtcp(packet, length)) {
       return receiver_->DeliverPacket(media_type, packet, length, packet_time);
     }
+
+    if (rtp_file_writer_) {
+      test::RtpPacket p;
+      memcpy(p.data, packet, length);
+      p.length = length;
+      p.original_length = length;
+      p.time_ms = clock_->TimeInMilliseconds() - start_ms_;
+      rtp_file_writer_->WritePacket(&p);
+    }
+
     RtpUtility::RtpHeaderParser parser(packet, length);
     RTPHeader header;
     parser.Parse(&header);
@@ -1056,6 +1077,10 @@ class VideoAnalyzer : public PacketReceiver,
   rtc::Event comparison_available_event_;
   std::deque<FrameComparison> comparisons_ GUARDED_BY(comparison_lock_);
   rtc::Event done_;
+
+  std::unique_ptr<test::RtpFileWriter> rtp_file_writer_;
+  Clock* const clock_;
+  const int64_t start_ms_;
 };
 
 class Vp8EncoderFactory : public cricket::WebRtcVideoEncoderFactory {
@@ -1102,16 +1127,15 @@ VideoQualityTest::VideoQualityTest()
 }
 
 VideoQualityTest::Params::Params()
-    : call({false, Call::Config::BitrateConfig()}),
+    : call({false, Call::Config::BitrateConfig(), 0}),
       video({false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
-             false, "", ""}),
+             false, ""}),
       audio({false, false, false}),
       screenshare({false, 10, 0}),
       analyzer({"", 0.0, 0.0, 0, "", ""}),
       pipe(),
-      logs(false),
       ss({std::vector<VideoStream>(), 0, 0, -1, std::vector<SpatialLayer>()}),
-      num_thumbnails(0) {}
+      logging({false, "", "", ""}) {}
 
 VideoQualityTest::Params::~Params() = default;
 
@@ -1177,8 +1201,8 @@ void VideoQualityTest::CheckParams() {
   } else if (params_.video.codec == "VP9") {
     RTC_CHECK_EQ(params_.ss.streams.size(), 1);
   }
-  RTC_CHECK_GE(params_.num_thumbnails, 0);
-  if (params_.num_thumbnails > 0) {
+  RTC_CHECK_GE(params_.call.num_thumbnails, 0);
+  if (params_.call.num_thumbnails > 0) {
     RTC_CHECK_EQ(params_.ss.num_spatial_layers, 1);
     RTC_CHECK_EQ(params_.ss.streams.size(), 3);
     RTC_CHECK_EQ(params_.video.num_temporal_layers, 3);
@@ -1331,7 +1355,7 @@ void VideoQualityTest::FillScalabilitySettings(
 
 void VideoQualityTest::SetupVideo(Transport* send_transport,
                                   Transport* recv_transport) {
-  if (params_.logs)
+  if (params_.logging.logs)
     trace_to_stderr_.reset(new test::TraceToStderr);
 
   size_t num_video_streams = params_.ss.streams.size();
@@ -1497,7 +1521,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
 
 void VideoQualityTest::SetupThumbnails(Transport* send_transport,
                                        Transport* recv_transport) {
-  for (int i = 0; i < params_.num_thumbnails; ++i) {
+  for (int i = 0; i < params_.call.num_thumbnails; ++i) {
     thumbnail_encoders_.emplace_back(VP8Encoder::Create());
 
     // Thumbnails will be send in the other way: from receiver_call to
@@ -1567,7 +1591,7 @@ void VideoQualityTest::SetupThumbnails(Transport* send_transport,
     thumbnail_receive_configs_.push_back(thumbnail_receive_config.Copy());
   }
 
-  for (int i = 0; i < params_.num_thumbnails; ++i) {
+  for (int i = 0; i < params_.call.num_thumbnails; ++i) {
     thumbnail_send_streams_.push_back(receiver_call_->CreateVideoSendStream(
         thumbnail_send_configs_[i].Copy(),
         thumbnail_encoder_configs_[i].Copy()));
@@ -1719,6 +1743,13 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
         << "!";
   }
 
+  if (!params.logging.rtc_event_log_name.empty()) {
+    event_log_ = RtcEventLog::Create(clock_);
+    bool event_log_started =
+        event_log_->StartLogging(params.logging.rtc_event_log_name, -1);
+    RTC_DCHECK(event_log_started);
+  }
+
   Call::Config call_config(event_log_.get());
   call_config.bitrate_config = params.call.call_bitrate_config;
   CreateCalls(call_config, call_config);
@@ -1745,7 +1776,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       kVideoSendSsrcs[params_.ss.selected_stream],
       kSendRtxSsrcs[params_.ss.selected_stream],
       static_cast<size_t>(params_.ss.selected_stream), params.ss.selected_sl,
-      params_.video.selected_tl, is_quick_test_enabled, clock_);
+      params_.video.selected_tl, is_quick_test_enabled, clock_,
+      params_.logging.rtp_dump_name);
   analyzer.SetCall(sender_call_.get());
   analyzer.SetReceiver(receiver_call_->Receiver());
   send_transport.SetReceiver(&analyzer);
@@ -1769,7 +1801,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   video_send_stream_->SetSource(analyzer.OutputInterface(),
                                 degradation_preference_);
 
-  SetupThumbnailCapturers(params_.num_thumbnails);
+  SetupThumbnailCapturers(params_.call.num_thumbnails);
   for (size_t i = 0; i < thumbnail_send_streams_.size(); ++i) {
     thumbnail_send_streams_[i]->SetSource(thumbnail_capturers_[i].get(),
                                           degradation_preference_);
@@ -1780,7 +1812,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   analyzer.SetSource(video_capturer_.get(), params_.ss.infer_streams);
 
   StartEncodedFrameLogs(video_send_stream_);
-  StartEncodedFrameLogs(video_receive_streams_[0]);
+  StartEncodedFrameLogs(video_receive_streams_[params_.ss.selected_stream]);
   video_send_stream_->Start();
   for (VideoSendStream* thumbnail_send_stream : thumbnail_send_streams_)
     thumbnail_send_stream->Start();
@@ -1823,6 +1855,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   DestroyStreams();
   DestroyThumbnailStreams();
 
+  event_log_->StopLogging();
   if (graph_data_output_file)
     fclose(graph_data_output_file);
 }
@@ -2031,28 +2064,28 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 }
 
 void VideoQualityTest::StartEncodedFrameLogs(VideoSendStream* stream) {
-  if (!params_.video.encoded_frame_base_path.empty()) {
+  if (!params_.logging.encoded_frame_base_path.empty()) {
     std::ostringstream str;
     str << send_logs_++;
     std::string prefix =
-        params_.video.encoded_frame_base_path + "." + str.str() + ".send.";
+        params_.logging.encoded_frame_base_path + "." + str.str() + ".send.";
     stream->EnableEncodedFrameRecording(
         std::vector<rtc::PlatformFile>(
             {rtc::CreatePlatformFile(prefix + "1.ivf"),
              rtc::CreatePlatformFile(prefix + "2.ivf"),
              rtc::CreatePlatformFile(prefix + "3.ivf")}),
-        10000000);
+        100000000);
   }
 }
 
 void VideoQualityTest::StartEncodedFrameLogs(VideoReceiveStream* stream) {
-  if (!params_.video.encoded_frame_base_path.empty()) {
+  if (!params_.logging.encoded_frame_base_path.empty()) {
     std::ostringstream str;
     str << receive_logs_++;
     std::string path =
-        params_.video.encoded_frame_base_path + "." + str.str() + ".recv.ivf";
+        params_.logging.encoded_frame_base_path + "." + str.str() + ".recv.ivf";
     stream->EnableEncodedFrameRecording(rtc::CreatePlatformFile(path),
-                                        10000000);
+                                        100000000);
   }
 }
 }  // namespace webrtc

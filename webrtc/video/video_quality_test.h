@@ -34,6 +34,7 @@ class VideoQualityTest : public test::CallTest {
     struct CallConfig {
       bool send_side_bwe;
       Call::Config::BitrateConfig call_bitrate_config;
+      int num_thumbnails;
     } call;
     struct Video {
       bool enabled;
@@ -50,7 +51,6 @@ class VideoQualityTest : public test::CallTest {
       int min_transmit_bps;
       bool ulpfec;
       bool flexfec;
-      std::string encoded_frame_base_path;
       std::string clip_name;  // "Generator" to generate frames instead.
       size_t capture_device_index;
     } video;
@@ -74,7 +74,6 @@ class VideoQualityTest : public test::CallTest {
       std::string graph_title;
     } analyzer;
     FakeNetworkPipe::Config pipe;
-    bool logs;
     struct SS {                          // Spatial scalability.
       std::vector<VideoStream> streams;  // If empty, one stream is assumed.
       size_t selected_stream;
@@ -85,7 +84,12 @@ class VideoQualityTest : public test::CallTest {
       // If set, default parameters will be used instead of |streams|.
       bool infer_streams;
     } ss;
-    int num_thumbnails;
+    struct Logging {
+      bool logs;
+      std::string rtc_event_log_name;
+      std::string rtp_dump_name;
+      std::string encoded_frame_base_path;
+    } logging;
   };
 
   VideoQualityTest();
