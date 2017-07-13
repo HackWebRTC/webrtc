@@ -36,6 +36,11 @@ bool ScreenCapturerWinDirectx::RetrieveD3dInfo(D3dInfo* info) {
   return DxgiDuplicatorController::Instance()->RetrieveD3dInfo(info);
 }
 
+// static
+bool ScreenCapturerWinDirectx::IsCurrentSessionSupported() {
+  return DxgiDuplicatorController::IsCurrentSessionSupported();
+}
+
 ScreenCapturerWinDirectx::ScreenCapturerWinDirectx()
     : controller_(DxgiDuplicatorController::Instance()) {}
 

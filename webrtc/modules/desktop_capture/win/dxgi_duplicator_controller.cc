@@ -25,22 +25,6 @@
 
 namespace webrtc {
 
-namespace {
-
-// TODO(zijiehe): This function should be public as
-// static bool DxgiDuplicatorController::IsSessionUnsupported()
-bool IsRunningInSession0() {
-  DWORD session_id = 0;
-  if (!::ProcessIdToSessionId(::GetCurrentProcessId(), &session_id)) {
-    LOG(LS_WARNING) << "Failed to retrieve current session Id, current binary "
-                       "may not have required priviledge.";
-    return true;
-  }
-  return session_id == 0;
-}
-
-}  // namespace
-
 // static
 rtc::scoped_refptr<DxgiDuplicatorController>
 DxgiDuplicatorController::Instance() {
@@ -48,6 +32,17 @@ DxgiDuplicatorController::Instance() {
   // threads even during program exiting.
   static DxgiDuplicatorController* instance = new DxgiDuplicatorController();
   return rtc::scoped_refptr<DxgiDuplicatorController>(instance);
+}
+
+// static
+bool DxgiDuplicatorController::IsCurrentSessionSupported() {
+  DWORD session_id = 0;
+  if (!::ProcessIdToSessionId(::GetCurrentProcessId(), &session_id)) {
+    LOG(LS_WARNING) << "Failed to retrieve current session Id, current binary "
+                       "may not have required priviledge.";
+    return false;
+  }
+  return session_id != 0;
 }
 
 DxgiDuplicatorController::DxgiDuplicatorController()
@@ -148,7 +143,7 @@ DxgiDuplicatorController::DoDuplicate(DxgiFrame* frame, int monitor_id) {
   }
 
   if (!Initialize()) {
-    if (succeeded_duplications_ == 0 && IsRunningInSession0()) {
+    if (succeeded_duplications_ == 0 && !IsCurrentSessionSupported()) {
       LOG(LS_WARNING) << "Current binary is running in session 0. DXGI "
                          "components cannot be initialized.";
       return Result::UNSUPPORTED_SESSION;

@@ -71,6 +71,9 @@ class DxgiDuplicatorController {
   // Returns the singleton instance of DxgiDuplicatorController.
   static rtc::scoped_refptr<DxgiDuplicatorController> Instance();
 
+  // See ScreenCapturerWinDirectx::IsCurrentSessionSupported().
+  static bool IsCurrentSessionSupported();
+
   // All the following public functions implicitly call Initialize() function.
 
   // Detects whether the system supports DXGI based capturer.

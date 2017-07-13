@@ -44,6 +44,13 @@ class ScreenCapturerWinDirectx : public DesktopCapturer {
   // consumers should not cache the result returned by this function.
   static bool RetrieveD3dInfo(D3dInfo* info);
 
+  // Whether current process is running in a Windows session which is supported
+  // by ScreenCapturerWinDirectx.
+  // Usually using ScreenCapturerWinDirectx in unsupported sessions will fail.
+  // But this behavior may vary on different Windows version. So consumers can
+  // always try IsSupported() function.
+  static bool IsCurrentSessionSupported();
+
   explicit ScreenCapturerWinDirectx();
 
   ~ScreenCapturerWinDirectx() override;
