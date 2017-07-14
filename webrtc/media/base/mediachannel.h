@@ -615,6 +615,8 @@ struct VoiceSenderInfo : public MediaSenderInfo {
       : ext_seqnum(0),
         jitter_ms(0),
         audio_level(0),
+        total_input_energy(0.0),
+        total_input_duration(0.0),
         aec_quality_min(0.0),
         echo_delay_median_ms(0),
         echo_delay_std_ms(0),
@@ -627,6 +629,10 @@ struct VoiceSenderInfo : public MediaSenderInfo {
   int ext_seqnum;
   int jitter_ms;
   int audio_level;
+  // See description of "totalAudioEnergy" in the WebRTC stats spec:
+  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
+  double total_input_energy;
+  double total_input_duration;
   float aec_quality_min;
   int echo_delay_median_ms;
   int echo_delay_std_ms;
@@ -645,6 +651,8 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
         jitter_buffer_preferred_ms(0),
         delay_estimate_ms(0),
         audio_level(0),
+        total_output_energy(0.0),
+        total_output_duration(0.0),
         expand_rate(0),
         speech_expand_rate(0),
         secondary_decoded_rate(0),
@@ -665,6 +673,10 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   int jitter_buffer_preferred_ms;
   int delay_estimate_ms;
   int audio_level;
+  // See description of "totalAudioEnergy" in the WebRTC stats spec:
+  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
+  double total_output_energy;
+  double total_output_duration;
   // fraction of synthesized audio inserted through expansion.
   float expand_rate;
   // fraction of synthesized speech inserted through expansion.

@@ -374,6 +374,9 @@ ProduceMediaStreamTrackStatsFromVoiceSenderInfo(
     audio_track_stats->audio_level = DoubleAudioLevelFromIntAudioLevel(
         voice_sender_info.audio_level);
   }
+  audio_track_stats->total_audio_energy = voice_sender_info.total_input_energy;
+  audio_track_stats->total_samples_duration =
+      voice_sender_info.total_input_duration;
   if (voice_sender_info.echo_return_loss != -100) {
     audio_track_stats->echo_return_loss = static_cast<double>(
         voice_sender_info.echo_return_loss);
@@ -405,6 +408,10 @@ ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
     audio_track_stats->audio_level = DoubleAudioLevelFromIntAudioLevel(
         voice_receiver_info.audio_level);
   }
+  audio_track_stats->total_audio_energy =
+      voice_receiver_info.total_output_energy;
+  audio_track_stats->total_samples_duration =
+      voice_receiver_info.total_output_duration;
   return audio_track_stats;
 }
 

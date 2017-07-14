@@ -154,6 +154,16 @@ int ChannelProxy::GetSpeechOutputLevelFullRange() const {
   return channel()->GetSpeechOutputLevelFullRange();
 }
 
+double ChannelProxy::GetTotalOutputEnergy() const {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  return channel()->GetTotalOutputEnergy();
+}
+
+double ChannelProxy::GetTotalOutputDuration() const {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  return channel()->GetTotalOutputDuration();
+}
+
 uint32_t ChannelProxy::GetDelayEstimate() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread() ||
              module_process_thread_checker_.CalledOnValidThread());

@@ -475,6 +475,8 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(media_stream_track.echo_return_loss);
       verifier.TestMemberIsUndefined(
           media_stream_track.echo_return_loss_enhancement);
+      verifier.TestMemberIsUndefined(media_stream_track.total_audio_energy);
+      verifier.TestMemberIsUndefined(media_stream_track.total_samples_duration);
     } else {
       RTC_DCHECK_EQ(*media_stream_track.kind,
                     RTCMediaStreamTrackKind::kAudio);
@@ -491,6 +493,10 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(media_stream_track.full_frames_lost);
       // Audio-only members
       verifier.TestMemberIsNonNegative<double>(media_stream_track.audio_level);
+      verifier.TestMemberIsNonNegative<double>(
+          media_stream_track.total_audio_energy);
+      verifier.TestMemberIsNonNegative<double>(
+          media_stream_track.total_samples_duration);
       // TODO(hbos): |echo_return_loss| and |echo_return_loss_enhancement| are
       // flaky on msan bot (sometimes defined, sometimes undefined). Should the
       // test run until available or is there a way to have it always be

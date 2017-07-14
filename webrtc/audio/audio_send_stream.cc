@@ -279,6 +279,9 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   stats.audio_level = base->transmit_mixer()->AudioLevelFullRange();
   RTC_DCHECK_LE(0, stats.audio_level);
 
+  stats.total_input_energy = base->transmit_mixer()->GetTotalInputEnergy();
+  stats.total_input_duration = base->transmit_mixer()->GetTotalInputDuration();
+
   RTC_DCHECK(audio_state_->audio_processing());
   auto audio_processing_stats =
       audio_state_->audio_processing()->GetStatistics();

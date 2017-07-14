@@ -260,6 +260,10 @@ class Channel
   void SetChannelOutputVolumeScaling(float scaling);
   int GetSpeechOutputLevel() const;
   int GetSpeechOutputLevelFullRange() const;
+  // See description of "totalAudioEnergy" in the WebRTC stats spec:
+  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
+  double GetTotalOutputEnergy() const;
+  double GetTotalOutputDuration() const;
 
   // Stats.
   int GetNetworkStatistics(NetworkStatistics& stats);
@@ -470,6 +474,8 @@ class Channel
   acm2::RentACodec rent_a_codec_;
   std::unique_ptr<AudioSinkInterface> audio_sink_;
   AudioLevel _outputAudioLevel;
+  double totalOutputEnergy_ = 0.0;
+  double totalOutputDuration_ = 0.0;
   bool _externalTransport;
   // Downsamples to the codec rate if necessary.
   PushResampler<int16_t> input_resampler_;

@@ -594,6 +594,10 @@ const char* StatsReport::Value::display_name() const {
       return "srtpCipher";
     case kStatsValueNameTargetEncBitrate:
       return "googTargetEncBitrate";
+    case kStatsValueNameTotalAudioEnergy:
+      return "totalAudioEnergy";
+    case kStatsValueNameTotalSamplesDuration:
+      return "totalSamplesDuration";
     case kStatsValueNameTransmitBitrate:
       return "googTransmitBitrate";
     case kStatsValueNameTransportType:

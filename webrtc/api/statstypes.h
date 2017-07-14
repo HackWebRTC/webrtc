@@ -118,6 +118,8 @@ class StatsReport {
     kStatsValueNameSelectedCandidatePairId,
     kStatsValueNameSsrc,
     kStatsValueNameState,
+    kStatsValueNameTotalAudioEnergy,
+    kStatsValueNameTotalSamplesDuration,
     kStatsValueNameTransportId,
     kStatsValueNameSentPingRequestsTotal,
     kStatsValueNameSentPingRequestsBeforeFirstResponse,

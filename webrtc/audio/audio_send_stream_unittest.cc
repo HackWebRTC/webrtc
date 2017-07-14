@@ -55,6 +55,8 @@ const int kEchoReturnLoss = -65;
 const int kEchoReturnLossEnhancement = 101;
 const float kResidualEchoLikelihood = -1.0f;
 const int32_t kSpeechInputLevel = 96;
+const double kTotalInputEnergy = 0.25;
+const double kTotalInputDuration = 0.5;
 const CallStatistics kCallStats = {
     1345,  1678,  1901, 1234,  112, 13456, 17890, 1567, -1890, -1123};
 const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
@@ -82,6 +84,8 @@ class MockLimitObserver : public BitrateAllocator::LimitObserver {
 class MockTransmitMixer : public voe::TransmitMixer {
  public:
   MOCK_CONST_METHOD0(AudioLevelFullRange, int16_t());
+  MOCK_CONST_METHOD0(GetTotalInputEnergy, double());
+  MOCK_CONST_METHOD0(GetTotalInputDuration, double());
 };
 
 std::unique_ptr<MockAudioEncoder> SetupAudioEncoderMock(
@@ -286,6 +290,10 @@ struct ConfigHelper {
 
     EXPECT_CALL(transmit_mixer_, AudioLevelFullRange())
         .WillRepeatedly(Return(kSpeechInputLevel));
+    EXPECT_CALL(transmit_mixer_, GetTotalInputEnergy())
+        .WillRepeatedly(Return(kTotalInputEnergy));
+    EXPECT_CALL(transmit_mixer_, GetTotalInputDuration())
+        .WillRepeatedly(Return(kTotalInputDuration));
 
     // We have to set the instantaneous value, the average, min and max. We only
     // care about the instantaneous value, so we set all to the same value.
@@ -420,6 +428,8 @@ TEST(AudioSendStreamTest, GetStats) {
             stats.jitter_ms);
   EXPECT_EQ(kCallStats.rttMs, stats.rtt_ms);
   EXPECT_EQ(static_cast<int32_t>(kSpeechInputLevel), stats.audio_level);
+  EXPECT_EQ(kTotalInputEnergy, stats.total_input_energy);
+  EXPECT_EQ(kTotalInputDuration, stats.total_input_duration);
   EXPECT_EQ(-1, stats.aec_quality_min);
   EXPECT_EQ(kEchoDelayMedian, stats.echo_delay_median_ms);
   EXPECT_EQ(kEchoDelayStdDev, stats.echo_delay_std_ms);

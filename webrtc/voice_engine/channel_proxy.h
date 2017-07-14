@@ -83,6 +83,10 @@ class ChannelProxy : public RtpPacketSinkInterface {
   virtual AudioDecodingCallStats GetDecodingCallStatistics() const;
   virtual int GetSpeechOutputLevel() const;
   virtual int GetSpeechOutputLevelFullRange() const;
+  // See description of "totalAudioEnergy" in the WebRTC stats spec:
+  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
+  virtual double GetTotalOutputEnergy() const;
+  virtual double GetTotalOutputDuration() const;
   virtual uint32_t GetDelayEstimate() const;
   virtual bool SetSendTelephoneEventPayloadType(int payload_type,
                                                 int payload_frequency);

@@ -57,6 +57,9 @@ const int kTransportSequenceNumberId = 4;
 const int kJitterBufferDelay = -7;
 const int kPlayoutBufferDelay = 302;
 const unsigned int kSpeechOutputLevel = 99;
+const double kTotalOutputEnergy = 0.25;
+const double kTotalOutputDuration = 0.5;
+
 const CallStatistics kCallStats = {
     345,  678,  901, 234, -12, 3456, 7890, 567, 890, 123};
 const CodecInst kCodecInst = {
@@ -154,6 +157,10 @@ struct ConfigHelper {
         .WillOnce(Return(kJitterBufferDelay + kPlayoutBufferDelay));
     EXPECT_CALL(*channel_proxy_, GetSpeechOutputLevelFullRange())
         .WillOnce(Return(kSpeechOutputLevel));
+    EXPECT_CALL(*channel_proxy_, GetTotalOutputEnergy())
+        .WillOnce(Return(kTotalOutputEnergy));
+    EXPECT_CALL(*channel_proxy_, GetTotalOutputDuration())
+        .WillOnce(Return(kTotalOutputDuration));
     EXPECT_CALL(*channel_proxy_, GetNetworkStatistics())
         .WillOnce(Return(kNetworkStats));
     EXPECT_CALL(*channel_proxy_, GetDecodingCallStatistics())
@@ -310,6 +317,8 @@ TEST(AudioReceiveStreamTest, GetStats) {
   EXPECT_EQ(static_cast<uint32_t>(kJitterBufferDelay + kPlayoutBufferDelay),
             stats.delay_estimate_ms);
   EXPECT_EQ(static_cast<int32_t>(kSpeechOutputLevel), stats.audio_level);
+  EXPECT_EQ(kTotalOutputEnergy, stats.total_output_energy);
+  EXPECT_EQ(kTotalOutputDuration, stats.total_output_duration);
   EXPECT_EQ(Q14ToFloat(kNetworkStats.currentExpandRate), stats.expand_rate);
   EXPECT_EQ(Q14ToFloat(kNetworkStats.currentSpeechExpandRate),
             stats.speech_expand_rate);

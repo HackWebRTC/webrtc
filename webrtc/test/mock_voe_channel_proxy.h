@@ -54,6 +54,8 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_CONST_METHOD0(GetDecodingCallStatistics, AudioDecodingCallStats());
   MOCK_CONST_METHOD0(GetSpeechOutputLevel, int());
   MOCK_CONST_METHOD0(GetSpeechOutputLevelFullRange, int());
+  MOCK_CONST_METHOD0(GetTotalOutputEnergy, double());
+  MOCK_CONST_METHOD0(GetTotalOutputDuration, double());
   MOCK_CONST_METHOD0(GetDelayEstimate, uint32_t());
   MOCK_METHOD2(SetSendTelephoneEventPayloadType, bool(int payload_type,
                                                       int payload_frequency));

@@ -187,6 +187,8 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   }
   stats.delay_estimate_ms = channel_proxy_->GetDelayEstimate();
   stats.audio_level = channel_proxy_->GetSpeechOutputLevelFullRange();
+  stats.total_output_energy = channel_proxy_->GetTotalOutputEnergy();
+  stats.total_output_duration = channel_proxy_->GetTotalOutputDuration();
 
   // Get jitter buffer and total delay (alg + jitter + playout) stats.
   auto ns = channel_proxy_->GetNetworkStatistics();

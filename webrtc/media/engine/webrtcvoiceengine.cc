@@ -2248,6 +2248,8 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     sinfo.jitter_ms = stats.jitter_ms;
     sinfo.rtt_ms = stats.rtt_ms;
     sinfo.audio_level = stats.audio_level;
+    sinfo.total_input_energy = stats.total_input_energy;
+    sinfo.total_input_duration = stats.total_input_duration;
     sinfo.aec_quality_min = stats.aec_quality_min;
     sinfo.echo_delay_median_ms = stats.echo_delay_median_ms;
     sinfo.echo_delay_std_ms = stats.echo_delay_std_ms;
@@ -2278,6 +2280,8 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     rinfo.jitter_buffer_preferred_ms = stats.jitter_buffer_preferred_ms;
     rinfo.delay_estimate_ms = stats.delay_estimate_ms;
     rinfo.audio_level = stats.audio_level;
+    rinfo.total_output_energy = stats.total_output_energy;
+    rinfo.total_output_duration = stats.total_output_duration;
     rinfo.expand_rate = stats.expand_rate;
     rinfo.speech_expand_rate = stats.speech_expand_rate;
     rinfo.secondary_decoded_rate = stats.secondary_decoded_rate;
