@@ -394,6 +394,12 @@ class PeerConnection : public PeerConnectionInterface,
   // This function should only be called from the worker thread.
   void StopRtcEventLog_w();
 
+  // Ensures the configuration doesn't have any parameters with invalid values,
+  // or values that conflict with other parameters.
+  //
+  // Returns RTCError::OK() if there are no issues.
+  RTCError ValidateConfiguration(const RTCConfiguration& config) const;
+
   // Storing the factory as a scoped reference pointer ensures that the memory
   // in the PeerConnectionFactoryImpl remains available as long as the
   // PeerConnection is running. It is passed to PeerConnection as a raw pointer.

@@ -797,6 +797,17 @@ class PeerConnectionInterfaceTest : public testing::Test {
     EXPECT_EQ(nullptr, pc);
   }
 
+  void CreatePeerConnectionExpectFail(
+      PeerConnectionInterface::RTCConfiguration config) {
+    PeerConnectionInterface::IceServer server;
+    server.uri = kTurnIceServerUri;
+    server.password = kTurnPassword;
+    config.servers.push_back(server);
+    rtc::scoped_refptr<PeerConnectionInterface> pc =
+        pc_factory_->CreatePeerConnection(config, nullptr, nullptr, &observer_);
+    EXPECT_EQ(nullptr, pc);
+  }
+
   void CreatePeerConnectionWithDifferentConfigurations() {
     CreatePeerConnectionWithIceServer(kStunAddressOnly, "");
     EXPECT_EQ(1u, port_allocator_->stun_servers().size());
@@ -3398,6 +3409,28 @@ TEST_F(PeerConnectionInterfaceTest, SetBitrateMaxNegativeFails) {
   PeerConnectionInterface::BitrateParameters bitrate;
   bitrate.max_bitrate_bps = rtc::Optional<int>(-1);
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
+}
+
+// ice_regather_interval_range requires WebRTC to be configured for continual
+// gathering already.
+TEST_F(PeerConnectionInterfaceTest,
+       SetIceRegatherIntervalRangeWithoutContinualGatheringFails) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.ice_regather_interval_range.emplace(1000, 2000);
+  config.continual_gathering_policy =
+      PeerConnectionInterface::ContinualGatheringPolicy::GATHER_ONCE;
+  CreatePeerConnectionExpectFail(config);
+}
+
+// Ensures that there is no error when ice_regather_interval_range is set with
+// continual gathering enabled.
+TEST_F(PeerConnectionInterfaceTest,
+       SetIceRegatherIntervalRangeWithContinualGathering) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.ice_regather_interval_range.emplace(1000, 2000);
+  config.continual_gathering_policy =
+      PeerConnectionInterface::ContinualGatheringPolicy::GATHER_CONTINUALLY;
+  CreatePeerConnection(config, nullptr);
 }
 
 // The current bitrate from Call's BitrateConfigMask is currently clamped by
