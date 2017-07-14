@@ -6,10 +6,6 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-# Some WebRTC targets require a 10.11 min SDK but those targets are only
-# used in non-Chromium builds.
-mac_sdk_min_build_override = "10.11"
-
 # Some non-Chromium builds don't support building java targets.
 enable_java_templates = true
 
