@@ -481,6 +481,7 @@ TEST_F(OrtcFactoryIntegrationTest,
                                         expect_success);
 }
 
+#if !(defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_64_BITS) && !defined(NDEBUG))
 TEST_F(OrtcFactoryIntegrationTest,
        BasicTwoWayAudioVideoSrtpSendersAndReceivers) {
   auto udp_transports = CreateAndConnectUdpTransportPair();
@@ -490,6 +491,7 @@ TEST_F(OrtcFactoryIntegrationTest,
   BasicTwoWayRtpSendersAndReceiversTest(std::move(srtp_transports),
                                         expect_success);
 }
+#endif
 
 // Tests that the packets cannot be decoded if the keys are mismatched.
 TEST_F(OrtcFactoryIntegrationTest, SrtpSendersAndReceiversWithMismatchingKeys) {
