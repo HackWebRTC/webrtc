@@ -433,8 +433,6 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   }
 
   if (config.regather_all_networks_interval_range) {
-    // Config validation is assumed to have already happened at the API layer.
-    RTC_DCHECK(config.continual_gathering_policy != GATHER_ONCE);
     config_.regather_all_networks_interval_range =
         config.regather_all_networks_interval_range;
     LOG(LS_INFO) << "Set regather_all_networks_interval_range to "

@@ -1374,6 +1374,8 @@ TEST_F(P2PTransportChannelTest, TestIceRegatherOnAllNetworksContinual) {
   config1.regather_all_networks_interval_range.emplace(
       kRegatherInterval, kRegatherInterval);
   IceConfig config2;
+  config2.regather_all_networks_interval_range.emplace(
+      kRegatherInterval, kRegatherInterval);
   CreateChannels(config1, config2);
 
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&

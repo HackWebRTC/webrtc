@@ -216,13 +216,6 @@ bool SafeSetError(webrtc::RTCErrorType type, webrtc::RTCError* error) {
   return type == webrtc::RTCErrorType::NONE;
 }
 
-bool SafeSetError(webrtc::RTCError error, webrtc::RTCError* error_out) {
-  if (error_out) {
-    *error_out = std::move(error);
-  }
-  return error.ok();
-}
-
 }  // namespace
 
 namespace webrtc {
@@ -451,13 +444,6 @@ bool PeerConnection::Initialize(
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     PeerConnectionObserver* observer) {
   TRACE_EVENT0("webrtc", "PeerConnection::Initialize");
-
-  RTCError config_error = ValidateConfiguration(configuration);
-  if (!config_error.ok()) {
-    LOG(LS_ERROR) << "Invalid configuration: " << config_error.message();
-    return false;
-  }
-
   if (!allocator) {
     LOG(LS_ERROR) << "PeerConnection initialized without a PortAllocator? "
                   << "This shouldn't happen if using PeerConnectionFactory.";
@@ -529,17 +515,6 @@ bool PeerConnection::Initialize(
 
   configuration_ = configuration;
   return true;
-}
-
-RTCError PeerConnection::ValidateConfiguration(
-    const RTCConfiguration& config) const {
-  if (config.ice_regather_interval_range &&
-      config.continual_gathering_policy == GATHER_ONCE) {
-    return RTCError(RTCErrorType::INVALID_PARAMETER,
-                    "ice_regather_interval_range specified but continual "
-                    "gathering policy is GATHER_ONCE");
-  }
-  return RTCError::OK();
 }
 
 rtc::scoped_refptr<StreamCollectionInterface>
@@ -1184,12 +1159,6 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   if (configuration != modified_config) {
     LOG(LS_ERROR) << "Modifying the configuration in an unsupported way.";
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
-  }
-
-  // Validate the modified configuration.
-  RTCError validate_error = ValidateConfiguration(modified_config);
-  if (!validate_error.ok()) {
-    return SafeSetError(std::move(validate_error), error);
   }
 
   // Note that this isn't possible through chromium, since it's an unsigned
