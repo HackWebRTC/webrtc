@@ -671,6 +671,31 @@ TEST_F(TestRtpFrameReferenceFinder, Vp8Tl1SyncFrameAfterTl1Frame) {
   CheckReferencesVp8(5, 3);
 }
 
+TEST_F(TestRtpFrameReferenceFinder, Vp8DetectMissingFrame_0212) {
+  InsertVp8(1, 1, true, 1, 0, 1, false);
+  InsertVp8(2, 2, false, 2, 2, 1, true);
+  InsertVp8(3, 3, false, 3, 1, 1, true);
+  InsertVp8(4, 4, false, 4, 2, 1, false);
+
+  InsertVp8(6, 6, false, 6, 2, 2, false);
+  InsertVp8(7, 7, false, 7, 1, 2, false);
+  InsertVp8(8, 8, false, 8, 2, 2, false);
+  ASSERT_EQ(4UL, frames_from_callback_.size());
+
+  InsertVp8(5, 5, false, 5, 0, 2, false);
+  ASSERT_EQ(8UL, frames_from_callback_.size());
+
+  CheckReferencesVp8(1);
+  CheckReferencesVp8(2, 1);
+  CheckReferencesVp8(3, 1);
+  CheckReferencesVp8(4, 3, 2, 1);
+
+  CheckReferencesVp8(5, 1);
+  CheckReferencesVp8(6, 5, 4, 3);
+  CheckReferencesVp8(7, 5, 3);
+  CheckReferencesVp8(8, 7, 6, 5);
+}
+
 TEST_F(TestRtpFrameReferenceFinder, Vp9GofInsertOneFrame) {
   uint16_t pid = Rand();
   uint16_t sn = Rand();
