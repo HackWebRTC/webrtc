@@ -186,8 +186,6 @@ private:
     std::unique_ptr<rtc::PlatformThread> _ptrThreadRec;
     std::unique_ptr<rtc::PlatformThread> _ptrThreadPlay;
 
-    int32_t _id;
-
     AudioMixerManagerLinuxALSA _mixerManager;
 
     uint16_t _inputDeviceIndex;
