@@ -14,6 +14,7 @@
 
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/nullsocketserver.h"
 #include "webrtc/rtc_base/task_queue.h"
 #include "webrtc/rtc_base/thread.h"
 #include "webrtc/rtc_base/thread_checker.h"
@@ -52,7 +53,7 @@ class ThreadCheckerClass : public ThreadChecker {
 class CallDoStuffOnThread : public Thread {
  public:
   explicit CallDoStuffOnThread(ThreadCheckerClass* thread_checker_class)
-      : Thread(),
+      : Thread(std::unique_ptr<SocketServer>(new rtc::NullSocketServer())),
         thread_checker_class_(thread_checker_class) {
     SetName("call_do_stuff_on_thread", nullptr);
   }
@@ -75,9 +76,9 @@ class CallDoStuffOnThread : public Thread {
 class DeleteThreadCheckerClassOnThread : public Thread {
  public:
   explicit DeleteThreadCheckerClassOnThread(
-      ThreadCheckerClass* thread_checker_class)
-      : Thread(),
-        thread_checker_class_(thread_checker_class) {
+      std::unique_ptr<ThreadCheckerClass> thread_checker_class)
+      : Thread(std::unique_ptr<SocketServer>(new rtc::NullSocketServer())),
+        thread_checker_class_(std::move(thread_checker_class)) {
     SetName("delete_thread_checker_class_on_thread", nullptr);
   }
 
@@ -88,6 +89,8 @@ class DeleteThreadCheckerClassOnThread : public Thread {
   void Join() {
     Thread::Join();
   }
+
+  bool has_been_deleted() const { return !thread_checker_class_; }
 
  private:
   std::unique_ptr<ThreadCheckerClass> thread_checker_class_;
@@ -115,10 +118,14 @@ TEST(ThreadCheckerTest, DestructorAllowedOnDifferentThread) {
   // Verify that the destructor doesn't assert
   // when called on a different thread.
   DeleteThreadCheckerClassOnThread delete_on_thread(
-      thread_checker_class.release());
+      std::move(thread_checker_class));
+
+  EXPECT_FALSE(delete_on_thread.has_been_deleted());
 
   delete_on_thread.Start();
   delete_on_thread.Join();
+
+  EXPECT_TRUE(delete_on_thread.has_been_deleted());
 }
 
 TEST(ThreadCheckerTest, DetachFromThread) {

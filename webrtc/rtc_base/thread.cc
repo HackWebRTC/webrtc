@@ -44,7 +44,7 @@ Thread* Thread::Current() {
 #ifndef NO_MAIN_THREAD_WRAPPING
   // Only autowrap the thread which instantiated the ThreadManager.
   if (!thread && manager->IsMainThread()) {
-    thread = new Thread();
+    thread = new Thread(SocketServer::CreateDefault());
     thread->WrapCurrentWithThreadManager(manager, true);
   }
 #endif
@@ -87,7 +87,7 @@ void ThreadManager::SetCurrentThread(Thread *thread) {
 Thread *ThreadManager::WrapCurrentThread() {
   Thread* result = CurrentThread();
   if (nullptr == result) {
-    result = new Thread();
+    result = new Thread(SocketServer::CreateDefault());
     result->WrapCurrentWithThreadManager(this, true);
   }
   return result;
@@ -115,6 +115,7 @@ Thread::ScopedDisallowBlockingCalls::~ScopedDisallowBlockingCalls() {
   thread_->SetAllowBlockingCalls(previous_state_);
 }
 
+// DEPRECATED.
 Thread::Thread() : Thread(SocketServer::CreateDefault()) {}
 
 Thread::Thread(SocketServer* ss)
@@ -520,7 +521,7 @@ bool Thread::WrapCurrentWithThreadManager(ThreadManager* thread_manager,
   return true;
 }
 
-AutoThread::AutoThread() {
+AutoThread::AutoThread() : Thread(SocketServer::CreateDefault()) {
   if (!ThreadManager::Instance()->CurrentThread()) {
     ThreadManager::Instance()->SetCurrentThread(this);
   }

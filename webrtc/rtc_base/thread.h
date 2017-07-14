@@ -102,8 +102,13 @@ class Runnable {
 
 class LOCKABLE Thread : public MessageQueue {
  public:
-  // Create a new Thread and optionally assign it to the passed SocketServer.
+  // DEPRECATED.
+  // The default constructor should not be used because it hides whether or
+  // not a socket server will be associated with the thread. Most instances
+  // of Thread do actually not need one, so please use either of the Create*
+  // methods to construct an instance of Thread.
   Thread();
+
   explicit Thread(SocketServer* ss);
   explicit Thread(std::unique_ptr<SocketServer> ss);
 

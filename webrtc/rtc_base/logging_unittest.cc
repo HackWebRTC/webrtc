@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/fileutils.h"
 #include "webrtc/rtc_base/gunit.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/nullsocketserver.h"
 #include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/rtc_base/stream.h"
 #include "webrtc/rtc_base/thread.h"
@@ -88,6 +89,8 @@ TEST(LogTest, MultipleStreams) {
 // We should restore the correct global state at the end.
 class LogThread : public Thread {
  public:
+  LogThread() : Thread(std::unique_ptr<SocketServer>(new NullSocketServer())) {}
+
   ~LogThread() override {
     Stop();
   }

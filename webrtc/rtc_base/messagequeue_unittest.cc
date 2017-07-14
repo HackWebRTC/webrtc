@@ -38,9 +38,9 @@ class MessageQueueTest: public testing::Test, public MessageQueue {
   bool IsLocked() {
     // We have to do this on a worker thread, or else the TryEnter will
     // succeed, since our critical sections are reentrant.
-    Thread worker;
-    worker.Start();
-    return worker.Invoke<bool>(
+    std::unique_ptr<Thread> worker(Thread::CreateWithSocketServer());
+    worker->Start();
+    return worker->Invoke<bool>(
         RTC_FROM_HERE, rtc::Bind(&MessageQueueTest::IsLocked_Worker, this));
   }
 };
@@ -152,10 +152,10 @@ TEST(MessageQueueManager, Clear) {
 // all registered message queues.
 TEST(MessageQueueManager, ProcessAllMessageQueues) {
   Event entered_process_all_message_queues(true, false);
-  Thread a;
-  Thread b;
-  a.Start();
-  b.Start();
+  auto a = Thread::CreateWithSocketServer();
+  auto b = Thread::CreateWithSocketServer();
+  a->Start();
+  b->Start();
 
   volatile int messages_processed = 0;
   FunctorMessageHandler<void, std::function<void()>> incrementer(
@@ -173,10 +173,10 @@ TEST(MessageQueueManager, ProcessAllMessageQueues) {
       });
 
   // Post messages (both delayed and non delayed) to both threads.
-  a.Post(RTC_FROM_HERE, &incrementer);
-  b.Post(RTC_FROM_HERE, &incrementer);
-  a.PostDelayed(RTC_FROM_HERE, 0, &incrementer);
-  b.PostDelayed(RTC_FROM_HERE, 0, &incrementer);
+  a->Post(RTC_FROM_HERE, &incrementer);
+  b->Post(RTC_FROM_HERE, &incrementer);
+  a->PostDelayed(RTC_FROM_HERE, 0, &incrementer);
+  b->PostDelayed(RTC_FROM_HERE, 0, &incrementer);
   rtc::Thread::Current()->Post(RTC_FROM_HERE, &event_signaler);
 
   MessageQueueManager::ProcessAllMessageQueues();
@@ -185,9 +185,9 @@ TEST(MessageQueueManager, ProcessAllMessageQueues) {
 
 // Test that ProcessAllMessageQueues doesn't hang if a thread is quitting.
 TEST(MessageQueueManager, ProcessAllMessageQueuesWithQuittingThread) {
-  Thread t;
-  t.Start();
-  t.Quit();
+  auto t = Thread::CreateWithSocketServer();
+  t->Start();
+  t->Quit();
   MessageQueueManager::ProcessAllMessageQueues();
 }
 
@@ -195,8 +195,8 @@ TEST(MessageQueueManager, ProcessAllMessageQueuesWithQuittingThread) {
 // messages.
 TEST(MessageQueueManager, ProcessAllMessageQueuesWithClearedQueue) {
   Event entered_process_all_message_queues(true, false);
-  Thread t;
-  t.Start();
+  auto t = Thread::CreateWithSocketServer();
+  t->Start();
 
   FunctorMessageHandler<void, std::function<void()>> clearer(
       [&entered_process_all_message_queues] {
@@ -213,7 +213,7 @@ TEST(MessageQueueManager, ProcessAllMessageQueuesWithClearedQueue) {
       });
 
   // Post messages (both delayed and non delayed) to both threads.
-  t.Post(RTC_FROM_HERE, &clearer);
+  t->Post(RTC_FROM_HERE, &clearer);
   rtc::Thread::Current()->Post(RTC_FROM_HERE, &event_signaler);
   MessageQueueManager::ProcessAllMessageQueues();
 }
@@ -231,7 +231,7 @@ class EmptyHandler : public MessageHandler {
 };
 
 TEST(MessageQueueManager, ClearReentrant) {
-  Thread t;
+  std::unique_ptr<Thread> t(Thread::Create());
   EmptyHandler handler;
   RefCountedHandler* inner_handler(
       new rtc::RefCountedObject<RefCountedHandler>());
@@ -242,7 +242,7 @@ TEST(MessageQueueManager, ClearReentrant) {
   // The inner handler will be removed in a re-entrant fashion from the
   // message queue of the thread while the outer handler is removed, verifying
   // that the iterator is not invalidated in "MessageQueue::Clear".
-  t.Post(RTC_FROM_HERE, inner_handler, 0);
-  t.Post(RTC_FROM_HERE, &handler, 0,
-      new ScopedRefMessageData<RefCountedHandler>(inner_handler));
+  t->Post(RTC_FROM_HERE, inner_handler, 0);
+  t->Post(RTC_FROM_HERE, &handler, 0,
+          new ScopedRefMessageData<RefCountedHandler>(inner_handler));
 }
