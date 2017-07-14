@@ -92,6 +92,7 @@ public class SurfaceViewRenderer
     ThreadUtils.checkIsOnMainThread();
     this.rendererEvents = rendererEvents;
     synchronized (layoutLock) {
+      isFirstFrameRendered = false;
       rotatedFrameWidth = 0;
       rotatedFrameHeight = 0;
       frameRotation = 0;
