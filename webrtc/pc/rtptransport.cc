@@ -190,7 +190,7 @@ void RtpTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
   }
 
   // This mutates |packet| if it is protected.
-  SignalPacketReceived(rtcp, packet, packet_time);
+  SignalPacketReceived(rtcp, &packet, packet_time);
 }
 
 bool RtpTransport::WantsPacket(bool rtcp,

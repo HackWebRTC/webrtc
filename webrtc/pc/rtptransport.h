@@ -73,7 +73,7 @@ class RtpTransport : public RtpTransportInterface, public sigslot::has_slots<> {
   // TODO(zstein): Consider having two signals - RtcPacketReceived and
   // RtcpPacketReceived.
   // The first argument is true for RTCP packets and false for RTP packets.
-  sigslot::signal3<bool, rtc::CopyOnWriteBuffer&, const rtc::PacketTime&>
+  sigslot::signal3<bool, rtc::CopyOnWriteBuffer*, const rtc::PacketTime&>
       SignalPacketReceived;
 
  protected:

@@ -162,7 +162,7 @@ class SignalPacketReceivedCounter : public sigslot::has_slots<> {
 
  private:
   void OnPacketReceived(bool rtcp,
-                        rtc::CopyOnWriteBuffer&,
+                        rtc::CopyOnWriteBuffer*,
                         const rtc::PacketTime&) {
     if (rtcp) {
       ++rtcp_count_;

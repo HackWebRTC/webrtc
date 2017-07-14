@@ -271,7 +271,7 @@ class BaseChannel
                     const rtc::PacketTime& packet_time);
   // TODO(zstein): packet can be const once the RtpTransport handles protection.
   virtual void OnPacketReceived(bool rtcp,
-                                rtc::CopyOnWriteBuffer& packet,
+                                rtc::CopyOnWriteBuffer* packet,
                                 const rtc::PacketTime& packet_time);
   void ProcessPacket(bool rtcp,
                      const rtc::CopyOnWriteBuffer& packet,
@@ -505,7 +505,7 @@ class VoiceChannel : public BaseChannel {
  private:
   // overrides from BaseChannel
   void OnPacketReceived(bool rtcp,
-                        rtc::CopyOnWriteBuffer& packet,
+                        rtc::CopyOnWriteBuffer* packet,
                         const rtc::PacketTime& packet_time) override;
   void UpdateMediaSendRecvState_w() override;
   const ContentInfo* GetFirstContent(const SessionDescription* sdesc) override;

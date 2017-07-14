@@ -748,7 +748,7 @@ bool BaseChannel::HandlesPayloadType(int packet_type) const {
 }
 
 void BaseChannel::OnPacketReceived(bool rtcp,
-                                   rtc::CopyOnWriteBuffer& packet,
+                                   rtc::CopyOnWriteBuffer* packet,
                                    const rtc::PacketTime& packet_time) {
   if (!has_received_packet_ && !rtcp) {
     has_received_packet_ = true;
@@ -758,8 +758,8 @@ void BaseChannel::OnPacketReceived(bool rtcp,
   // Unprotect the packet, if needed.
   if (srtp_filter_.IsActive()) {
     TRACE_EVENT0("webrtc", "SRTP Decode");
-    char* data = packet.data<char>();
-    int len = static_cast<int>(packet.size());
+    char* data = packet->data<char>();
+    int len = static_cast<int>(packet->size());
     bool res;
     if (!rtcp) {
       res = srtp_filter_.UnprotectRtp(data, len, &len);
@@ -784,7 +784,7 @@ void BaseChannel::OnPacketReceived(bool rtcp,
       }
     }
 
-    packet.SetSize(len);
+    packet->SetSize(len);
   } else if (srtp_required_) {
     // Our session description indicates that SRTP is required, but we got a
     // packet before our SRTP filter is active. This means either that
@@ -804,7 +804,7 @@ void BaseChannel::OnPacketReceived(bool rtcp,
 
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, worker_thread_,
-      Bind(&BaseChannel::ProcessPacket, this, rtcp, packet, packet_time));
+      Bind(&BaseChannel::ProcessPacket, this, rtcp, *packet, packet_time));
 }
 
 void BaseChannel::ProcessPacket(bool rtcp,
@@ -1678,7 +1678,7 @@ void VoiceChannel::GetActiveStreams_w(AudioInfo::StreamList* actives) {
 }
 
 void VoiceChannel::OnPacketReceived(bool rtcp,
-                                    rtc::CopyOnWriteBuffer& packet,
+                                    rtc::CopyOnWriteBuffer* packet,
                                     const rtc::PacketTime& packet_time) {
   BaseChannel::OnPacketReceived(rtcp, packet, packet_time);
   // Set a flag when we've received an RTP packet. If we're waiting for early
