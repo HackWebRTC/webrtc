@@ -13,6 +13,7 @@
 #include <memory>
 
 #import "RTCIceServer+Private.h"
+#import "RTCIntervalRange+Private.h"
 #import "WebRTC/RTCLogging.h"
 
 #include "webrtc/rtc_base/rtccertificategenerator.h"
@@ -38,6 +39,7 @@
 @synthesize shouldPresumeWritableWhenFullyRelayed =
     _shouldPresumeWritableWhenFullyRelayed;
 @synthesize iceCheckMinInterval = _iceCheckMinInterval;
+@synthesize iceRegatherIntervalRange = _iceRegatherIntervalRange;
 
 - (instancetype)init {
   // Copy defaults.
@@ -83,13 +85,18 @@
       _iceCheckMinInterval =
           [NSNumber numberWithInt:*config.ice_check_min_interval];
     }
+    if (config.ice_regather_interval_range) {
+      const rtc::IntervalRange &nativeIntervalRange = config.ice_regather_interval_range.value();
+      _iceRegatherIntervalRange =
+          [[RTCIntervalRange alloc] initWithNativeIntervalRange:nativeIntervalRange];
+    }
   }
   return self;
 }
 
 - (NSString *)description {
   return [NSString stringWithFormat:
-      @"RTCConfiguration: {\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n}\n",
+      @"RTCConfiguration: {\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n%@\n}\n",
       _iceServers,
       [[self class] stringForTransportPolicy:_iceTransportPolicy],
       [[self class] stringForBundlePolicy:_bundlePolicy],
@@ -105,7 +112,8 @@
       _iceCandidatePoolSize,
       _shouldPruneTurnPorts,
       _shouldPresumeWritableWhenFullyRelayed,
-      _iceCheckMinInterval];
+      _iceCheckMinInterval,
+      _iceRegatherIntervalRange];
 }
 
 #pragma mark - Private
@@ -158,6 +166,12 @@
   if (_iceCheckMinInterval != nil) {
     nativeConfig->ice_check_min_interval =
         rtc::Optional<int>(_iceCheckMinInterval.intValue);
+  }
+  if (_iceRegatherIntervalRange != nil) {
+    std::unique_ptr<rtc::IntervalRange> nativeIntervalRange(
+        _iceRegatherIntervalRange.nativeIntervalRange);
+    nativeConfig->ice_regather_interval_range =
+        rtc::Optional<rtc::IntervalRange>(*nativeIntervalRange);
   }
 
   return nativeConfig.release();
