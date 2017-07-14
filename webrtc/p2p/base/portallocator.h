@@ -89,7 +89,12 @@ enum {
 };
 
 // Defines various reasons that have caused ICE regathering.
-enum class IceRegatheringReason { NETWORK_CHANGE, NETWORK_FAILURE, MAX_VALUE };
+enum class IceRegatheringReason {
+  NETWORK_CHANGE,      // Network interfaces on the device changed
+  NETWORK_FAILURE,     // Regather only on networks that have failed
+  OCCASIONAL_REFRESH,  // Periodic regather on all networks
+  MAX_VALUE
+};
 
 const uint32_t kDefaultPortAllocatorFlags = 0;
 
@@ -238,7 +243,6 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   // implementation should start re-gathering on all networks of that interface.
   virtual void RegatherOnFailedNetworks() {}
   // Re-gathers candidates on all networks.
-  // TODO(honghaiz): Implement this in BasicPortAllocator.
   virtual void RegatherOnAllNetworks() {}
 
   // Another way of getting the information provided by the signals below.

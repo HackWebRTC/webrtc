@@ -223,11 +223,20 @@ namespace webrtc {
 bool PeerConnectionInterface::RTCConfiguration::operator==(
     const PeerConnectionInterface::RTCConfiguration& o) const {
   // This static_assert prevents us from accidentally breaking operator==.
+  // Note: Order matters! Fields must be ordered the same as RTCConfiguration.
   struct stuff_being_tested_for_equality {
-    IceTransportsType type;
     IceServers servers;
+    IceTransportsType type;
     BundlePolicy bundle_policy;
     RtcpMuxPolicy rtcp_mux_policy;
+    std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
+    int ice_candidate_pool_size;
+    bool disable_ipv6;
+    bool disable_ipv6_on_wifi;
+    bool enable_rtp_data_channel;
+    rtc::Optional<int> screencast_min_bitrate;
+    rtc::Optional<bool> combined_audio_video_bwe;
+    rtc::Optional<bool> enable_dtls_srtp;
     TcpCandidatePolicy tcp_candidate_policy;
     CandidateNetworkPolicy candidate_network_policy;
     int audio_jitter_buffer_max_packets;
@@ -235,22 +244,15 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     int ice_connection_receiving_timeout;
     int ice_backup_candidate_pair_ping_interval;
     ContinualGatheringPolicy continual_gathering_policy;
-    std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
     bool prioritize_most_likely_ice_candidate_pairs;
     struct cricket::MediaConfig media_config;
-    bool disable_ipv6;
-    bool disable_ipv6_on_wifi;
-    bool enable_rtp_data_channel;
     bool enable_quic;
-    rtc::Optional<int> screencast_min_bitrate;
-    rtc::Optional<bool> combined_audio_video_bwe;
-    rtc::Optional<bool> enable_dtls_srtp;
-    int ice_candidate_pool_size;
     bool prune_turn_ports;
     bool presume_writable_when_fully_relayed;
     bool enable_ice_renomination;
     bool redetermine_role_on_ice_restart;
     rtc::Optional<int> ice_check_min_interval;
+    rtc::Optional<rtc::IntervalRange> ice_regather_interval_range;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
                 "Did you add something to RTCConfiguration and forget to "
@@ -284,7 +286,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
              o.presume_writable_when_fully_relayed &&
          enable_ice_renomination == o.enable_ice_renomination &&
          redetermine_role_on_ice_restart == o.redetermine_role_on_ice_restart &&
-         ice_check_min_interval == o.ice_check_min_interval;
+         ice_check_min_interval == o.ice_check_min_interval &&
+         ice_regather_interval_range == o.ice_regather_interval_range;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(

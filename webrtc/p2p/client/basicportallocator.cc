@@ -339,19 +339,43 @@ void BasicPortAllocatorSession::RegatherOnFailedNetworks() {
       sequence->set_network_failed();
     }
   }
+
+  bool disable_equivalent_phases = true;
+  Regather(failed_networks, disable_equivalent_phases,
+           IceRegatheringReason::NETWORK_FAILURE);
+}
+
+void BasicPortAllocatorSession::RegatherOnAllNetworks() {
+  std::vector<rtc::Network*> networks = GetNetworks();
+  if (networks.empty()) {
+    return;
+  }
+
+  LOG(LS_INFO) << "Regather candidates on all networks";
+
+  // We expect to generate candidates that are equivalent to what we have now.
+  // Force DoAllocate to generate them instead of skipping.
+  bool disable_equivalent_phases = false;
+  Regather(networks, disable_equivalent_phases,
+           IceRegatheringReason::OCCASIONAL_REFRESH);
+}
+
+void BasicPortAllocatorSession::Regather(
+    const std::vector<rtc::Network*>& networks,
+    bool disable_equivalent_phases,
+    IceRegatheringReason reason) {
   // Remove ports from being used locally and send signaling to remove
   // the candidates on the remote side.
-  std::vector<PortData*> ports_to_prune = GetUnprunedPorts(failed_networks);
+  std::vector<PortData*> ports_to_prune = GetUnprunedPorts(networks);
   if (!ports_to_prune.empty()) {
-    LOG(LS_INFO) << "Prune " << ports_to_prune.size()
-                 << " ports because their networks failed";
+    LOG(LS_INFO) << "Prune " << ports_to_prune.size() << " ports";
     PrunePortsAndRemoveCandidates(ports_to_prune);
   }
 
   if (allocation_started_ && network_manager_started_ && !IsStopped()) {
-    SignalIceRegathering(this, IceRegatheringReason::NETWORK_FAILURE);
+    SignalIceRegathering(this, reason);
 
-    DoAllocate();
+    DoAllocate(disable_equivalent_phases);
   }
 }
 
@@ -530,8 +554,10 @@ void BasicPortAllocatorSession::AllocatePorts() {
 }
 
 void BasicPortAllocatorSession::OnAllocate() {
-  if (network_manager_started_ && !IsStopped())
-    DoAllocate();
+  if (network_manager_started_ && !IsStopped()) {
+    bool disable_equivalent_phases = true;
+    DoAllocate(disable_equivalent_phases);
+  }
 
   allocation_started_ = true;
 }
@@ -586,7 +612,7 @@ std::vector<rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
 
 // For each network, see if we have a sequence that covers it already.  If not,
 // create a new sequence to create the appropriate ports.
-void BasicPortAllocatorSession::DoAllocate() {
+void BasicPortAllocatorSession::DoAllocate(bool disable_equivalent) {
   bool done_signal_needed = false;
   std::vector<rtc::Network*> networks = GetNetworks();
   if (networks.empty()) {
@@ -622,13 +648,15 @@ void BasicPortAllocatorSession::DoAllocate() {
         continue;
       }
 
-      // Disable phases that would only create ports equivalent to
-      // ones that we have already made.
-      DisableEquivalentPhases(networks[i], config, &sequence_flags);
+      if (disable_equivalent) {
+        // Disable phases that would only create ports equivalent to
+        // ones that we have already made.
+        DisableEquivalentPhases(networks[i], config, &sequence_flags);
 
-      if ((sequence_flags & DISABLE_ALL_PHASES) == DISABLE_ALL_PHASES) {
-        // New AllocationSequence would have nothing to do, so don't make it.
-        continue;
+        if ((sequence_flags & DISABLE_ALL_PHASES) == DISABLE_ALL_PHASES) {
+          // New AllocationSequence would have nothing to do, so don't make it.
+          continue;
+        }
       }
 
       AllocationSequence* sequence =
@@ -671,7 +699,8 @@ void BasicPortAllocatorSession::OnNetworksChanged() {
       // If the network manager has started, it must be regathering.
       SignalIceRegathering(this, IceRegatheringReason::NETWORK_CHANGE);
     }
-    DoAllocate();
+    bool disable_equivalent_phases = true;
+    DoAllocate(disable_equivalent_phases);
   }
 
   if (!network_manager_started_) {
