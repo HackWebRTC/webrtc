@@ -53,6 +53,29 @@ struct TimeSeries {
   std::vector<TimeSeriesPoint> points;
 };
 
+struct Interval {
+  Interval() = default;
+  Interval(double begin, double end) : begin(begin), end(end) {}
+
+  double begin;
+  double end;
+};
+
+struct IntervalSeries {
+  enum Orientation { kHorizontal, kVertical };
+
+  IntervalSeries() = default;
+  IntervalSeries(const std::string& label,
+                 const std::string& color,
+                 IntervalSeries::Orientation orientation)
+      : label(label), color(color), orientation(orientation) {}
+
+  std::string label;
+  std::string color;
+  Orientation orientation;
+  std::vector<Interval> intervals;
+};
+
 // A container that represents a general graph, with axes, title and one or
 // more data series. A subclass should define the output format by overriding
 // the Draw() method.
@@ -109,6 +132,9 @@ class Plot {
   // Add a new TimeSeries to the plot.
   void AppendTimeSeries(TimeSeries&& time_series);
 
+  // Add a new IntervalSeries to the plot.
+  void AppendIntervalSeries(IntervalSeries&& interval_series);
+
   // Add a new TimeSeries to the plot if the series contains contains data.
   // Otherwise, the call has no effect and the timeseries is destroyed.
   void AppendTimeSeriesIfNotEmpty(TimeSeries&& time_series);
@@ -122,6 +148,7 @@ class Plot {
   std::string yaxis_label_;
   std::string title_;
   std::vector<TimeSeries> series_list_;
+  std::vector<IntervalSeries> interval_list_;
 };
 
 class PlotCollection {

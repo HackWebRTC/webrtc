@@ -898,7 +898,8 @@ void EventLogAnalyzer::CreateFractionLossGraph(Plot* plot) {
 // Plot the total bandwidth used by all RTP streams.
 void EventLogAnalyzer::CreateTotalBitrateGraph(
     PacketDirection desired_direction,
-    Plot* plot) {
+    Plot* plot,
+    bool show_detector_state) {
   struct TimestampSize {
     TimestampSize(uint64_t t, size_t s) : timestamp(t), size(s) {}
     uint64_t timestamp;
@@ -958,12 +959,45 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
     }
 
     TimeSeries delay_series("Delay-based estimate", LINE_STEP_GRAPH);
+    IntervalSeries overusing_series("Overusing", "#ff8e82",
+                                    IntervalSeries::kHorizontal);
+    IntervalSeries underusing_series("Underusing", "#5092fc",
+                                     IntervalSeries::kHorizontal);
+    IntervalSeries normal_series("Normal", "#c4ffc4",
+                                 IntervalSeries::kHorizontal);
+    IntervalSeries* last_series = &normal_series;
+    double last_detector_switch = 0.0;
+
+    BandwidthUsage last_detector_state = BandwidthUsage::kBwNormal;
+
     for (auto& delay_update : bwe_delay_updates_) {
       float x =
           static_cast<float>(delay_update.timestamp - begin_time_) / 1000000;
       float y = static_cast<float>(delay_update.bitrate_bps) / 1000;
+
+      if (last_detector_state != delay_update.detector_state) {
+        last_series->intervals.emplace_back(last_detector_switch, x);
+        last_detector_state = delay_update.detector_state;
+        last_detector_switch = x;
+
+        switch (delay_update.detector_state) {
+          case BandwidthUsage::kBwNormal:
+            last_series = &normal_series;
+            break;
+          case BandwidthUsage::kBwUnderusing:
+            last_series = &underusing_series;
+            break;
+          case BandwidthUsage::kBwOverusing:
+            last_series = &overusing_series;
+            break;
+        }
+      }
+
       delay_series.points.emplace_back(x, y);
     }
+
+    RTC_CHECK(last_series);
+    last_series->intervals.emplace_back(last_detector_switch, end_time_);
 
     TimeSeries created_series("Probe cluster created.", DOT_GRAPH);
     for (auto& cluster : bwe_probe_cluster_created_events_) {
@@ -980,6 +1014,14 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
         result_series.points.emplace_back(x, y);
       }
     }
+
+    if (show_detector_state) {
+      plot->AppendIntervalSeries(std::move(overusing_series));
+      plot->AppendIntervalSeries(std::move(underusing_series));
+      plot->AppendIntervalSeries(std::move(normal_series));
+    }
+
+    plot->AppendTimeSeries(std::move(bitrate_series));
     plot->AppendTimeSeries(std::move(loss_series));
     plot->AppendTimeSeries(std::move(delay_series));
     plot->AppendTimeSeries(std::move(created_series));

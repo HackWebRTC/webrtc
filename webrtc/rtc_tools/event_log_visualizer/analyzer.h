@@ -85,7 +85,9 @@ class EventLogAnalyzer {
 
   void CreateFractionLossGraph(Plot* plot);
 
-  void CreateTotalBitrateGraph(PacketDirection desired_direction, Plot* plot);
+  void CreateTotalBitrateGraph(PacketDirection desired_direction,
+                               Plot* plot,
+                               bool show_detector_state = false);
 
   void CreateStreamBitrateGraph(PacketDirection desired_direction, Plot* plot);
 

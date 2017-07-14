@@ -14,6 +14,8 @@
 
 #include <memory>
 
+#include "webrtc/rtc_base/checks.h"
+
 namespace webrtc {
 namespace plotting {
 
@@ -74,6 +76,8 @@ void PythonPlot::Draw() {
         printf("y%zu = [v for dup in y%zu for v in [dup, dup]]\n", i, i);
         printf(
             "plt.plot(x%zu[1:], y%zu[:-1], color=rgb_colors[%zu], "
+            "path_effects=[pe.Stroke(linewidth=2, foreground='black'), "
+            "pe.Normal()], "
             "label=\'%s\')\n",
             i, i, i, series_list_[i].label.c_str());
       } else if (series_list_[i].style == DOT_GRAPH) {
@@ -85,6 +89,47 @@ void PythonPlot::Draw() {
         printf("raise Exception(\"Unknown graph type\")\n");
       }
     }
+
+    // IntervalSeries
+    printf("interval_colors = ['#ff8e82','#5092fc','#c4ffc4']\n");
+    RTC_CHECK_LE(interval_list_.size(), 3);
+    // To get the intervals to show up in the legend we have to created patches
+    // for them.
+    printf("legend_patches = []\n");
+    for (size_t i = 0; i < interval_list_.size(); i++) {
+      // List intervals
+      printf("\n# === IntervalSeries: %s ===\n",
+             interval_list_[i].label.c_str());
+      printf("ival%zu = [", i);
+      if (interval_list_[i].intervals.size() > 0) {
+        printf("(%G, %G)", interval_list_[i].intervals[0].begin,
+               interval_list_[i].intervals[0].end);
+      }
+      for (size_t j = 1; j < interval_list_[i].intervals.size(); j++) {
+        printf(", (%G, %G)", interval_list_[i].intervals[j].begin,
+               interval_list_[i].intervals[j].end);
+      }
+      printf("]\n");
+
+      printf("for i in range(0, %zu):\n", interval_list_[i].intervals.size());
+      if (interval_list_[i].orientation == IntervalSeries::kVertical) {
+        printf(
+            "  plt.axhspan(ival%zu[i][0], ival%zu[i][1], "
+            "facecolor=interval_colors[%zu], "
+            "alpha=0.3)\n",
+            i, i, i);
+      } else {
+        printf(
+            "  plt.axvspan(ival%zu[i][0], ival%zu[i][1], "
+            "facecolor=interval_colors[%zu], "
+            "alpha=0.3)\n",
+            i, i, i);
+      }
+      printf(
+          "legend_patches.append(mpatches.Patch(ec=\'black\', "
+          "fc=interval_colors[%zu], label='%s'))\n",
+          i, interval_list_[i].label.c_str());
+    }
   }
 
   printf("plt.xlim(%f, %f)\n", xaxis_min_, xaxis_max_);
@@ -92,8 +137,12 @@ void PythonPlot::Draw() {
   printf("plt.xlabel(\'%s\')\n", xaxis_label_.c_str());
   printf("plt.ylabel(\'%s\')\n", yaxis_label_.c_str());
   printf("plt.title(\'%s\')\n", title_.c_str());
-  if (!series_list_.empty()) {
-    printf("plt.legend(loc=\'best\', fontsize=\'small\')\n");
+  if (!series_list_.empty() || !interval_list_.empty()) {
+    printf("handles, labels = plt.gca().get_legend_handles_labels()\n");
+    printf("for lp in legend_patches:\n");
+    printf("   handles.append(lp)\n");
+    printf("   labels.append(lp.get_label())\n");
+    printf("plt.legend(handles, labels, loc=\'best\', fontsize=\'small\')\n");
   }
 }
 
@@ -103,6 +152,8 @@ PythonPlotCollection::~PythonPlotCollection() {}
 
 void PythonPlotCollection::Draw() {
   printf("import matplotlib.pyplot as plt\n");
+  printf("import matplotlib.patches as mpatches\n");
+  printf("import matplotlib.patheffects as pe\n");
   printf("import colorsys\n");
   for (size_t i = 0; i < plots_.size(); i++) {
     printf("plt.figure(%zu)\n", i);

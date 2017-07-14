@@ -90,6 +90,11 @@ DEFINE_string(
     "trials are separated by \"/\"");
 DEFINE_bool(help, false, "prints this message");
 
+DEFINE_bool(
+    show_detector_state,
+    false,
+    "Mark the delay based bwe detector state on the total bitrate graph");
+
 int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
   std::string usage =
@@ -178,11 +183,13 @@ int main(int argc, char* argv[]) {
   if (FLAG_plot_all || FLAG_plot_total_bitrate) {
     if (FLAG_incoming) {
       analyzer.CreateTotalBitrateGraph(webrtc::PacketDirection::kIncomingPacket,
-                                       collection->AppendNewPlot());
+                                       collection->AppendNewPlot(),
+                                       FLAG_show_detector_state);
     }
     if (FLAG_outgoing) {
       analyzer.CreateTotalBitrateGraph(webrtc::PacketDirection::kOutgoingPacket,
-                                       collection->AppendNewPlot());
+                                       collection->AppendNewPlot(),
+                                       FLAG_show_detector_state);
     }
   }
 
