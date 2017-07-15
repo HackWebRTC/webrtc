@@ -196,7 +196,7 @@ VCMGenericDecoder::~VCMGenericDecoder() {
   decoder_->Release();
   if (_isExternal)
     decoder_.release();
-  RTC_DCHECK(_isExternal || !decoder_);
+  RTC_DCHECK(_isExternal || decoder_);
 }
 
 int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
