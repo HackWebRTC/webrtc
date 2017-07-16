@@ -11,6 +11,7 @@
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 
 #include <limits>
+#include <utility>
 #include <vector>
 
 #include "webrtc/logging/rtc_event_log/rtc_event_log_helper_thread.h"
@@ -97,7 +98,7 @@ class RtcEventLogImpl final : public RtcEventLog {
   // Private constructor to ensure that creation is done by RtcEventLog::Create.
   RtcEventLogImpl();
 
-  void StoreEvent(std::unique_ptr<rtclog::Event>* event);
+  void StoreEvent(std::unique_ptr<rtclog::Event> event);
   void LogProbeResult(int id,
                       rtclog::BweProbeResult::ResultType result,
                       int bitrate_bps);
@@ -299,7 +300,7 @@ void RtcEventLogImpl::LogVideoReceiveStreamConfig(
       rtx->mutable_config()->set_rtx_payload_type(d.rtx_payload_type);
     }
   }
-  StoreEvent(&event);
+  StoreEvent(std::move(event));
 }
 
 void RtcEventLogImpl::LogVideoSendStreamConfig(
@@ -338,7 +339,7 @@ void RtcEventLogImpl::LogVideoSendStreamConfig(
     }
   }
 
-  StoreEvent(&event);
+  StoreEvent(std::move(event));
 }
 
 void RtcEventLogImpl::LogAudioReceiveStreamConfig(
@@ -358,7 +359,7 @@ void RtcEventLogImpl::LogAudioReceiveStreamConfig(
     extension->set_name(e.uri);
     extension->set_id(e.id);
   }
-  StoreEvent(&event);
+  StoreEvent(std::move(event));
 }
 
 void RtcEventLogImpl::LogAudioSendStreamConfig(
@@ -378,7 +379,7 @@ void RtcEventLogImpl::LogAudioSendStreamConfig(
     extension->set_id(e.id);
   }
 
-  StoreEvent(&event);
+  StoreEvent(std::move(event));
 }
 
 void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
@@ -415,7 +416,7 @@ void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
   rtp_event->mutable_rtp_packet()->set_header(header, header_length);
   if (probe_cluster_id != PacedPacketInfo::kNotAProbe)
     rtp_event->mutable_rtp_packet()->set_probe_cluster_id(probe_cluster_id);
-  StoreEvent(&rtp_event);
+  StoreEvent(std::move(rtp_event));
 }
 
 void RtcEventLogImpl::LogRtcpPacket(PacketDirection direction,
@@ -463,7 +464,7 @@ void RtcEventLogImpl::LogRtcpPacket(PacketDirection direction,
     block_begin += block_size;
   }
   rtcp_event->mutable_rtcp_packet()->set_packet_data(buffer, buffer_length);
-  StoreEvent(&rtcp_event);
+  StoreEvent(std::move(rtcp_event));
 }
 
 void RtcEventLogImpl::LogAudioPlayout(uint32_t ssrc) {
@@ -472,7 +473,7 @@ void RtcEventLogImpl::LogAudioPlayout(uint32_t ssrc) {
   event->set_type(rtclog::Event::AUDIO_PLAYOUT_EVENT);
   auto playout_event = event->mutable_audio_playout_event();
   playout_event->set_local_ssrc(ssrc);
-  StoreEvent(&event);
+  StoreEvent(std::move(event));
 }
 
 void RtcEventLogImpl::LogLossBasedBweUpdate(int32_t bitrate_bps,
@@ -485,7 +486,7 @@ void RtcEventLogImpl::LogLossBasedBweUpdate(int32_t bitrate_bps,
   bwe_event->set_bitrate_bps(bitrate_bps);
   bwe_event->set_fraction_loss(fraction_loss);
   bwe_event->set_total_packets(total_packets);
-  StoreEvent(&event);
+  StoreEvent(std::move(event));
 }
 
 void RtcEventLogImpl::LogDelayBasedBweUpdate(int32_t bitrate_bps,
@@ -496,7 +497,7 @@ void RtcEventLogImpl::LogDelayBasedBweUpdate(int32_t bitrate_bps,
   auto bwe_event = event->mutable_delay_based_bwe_update();
   bwe_event->set_bitrate_bps(bitrate_bps);
   bwe_event->set_detector_state(ConvertDetectorState(detector_state));
-  StoreEvent(&event);
+  StoreEvent(std::move(event));
 }
 
 void RtcEventLogImpl::LogAudioNetworkAdaptation(
@@ -519,7 +520,7 @@ void RtcEventLogImpl::LogAudioNetworkAdaptation(
     audio_network_adaptation->set_enable_dtx(*config.enable_dtx);
   if (config.num_channels)
     audio_network_adaptation->set_num_channels(*config.num_channels);
-  StoreEvent(&event);
+  StoreEvent(std::move(event));
 }
 
 void RtcEventLogImpl::LogProbeClusterCreated(int id,
@@ -535,7 +536,7 @@ void RtcEventLogImpl::LogProbeClusterCreated(int id,
   probe_cluster->set_bitrate_bps(bitrate_bps);
   probe_cluster->set_min_packets(min_probes);
   probe_cluster->set_min_bytes(min_bytes);
-  StoreEvent(&event);
+  StoreEvent(std::move(event));
 }
 
 void RtcEventLogImpl::LogProbeResultSuccess(int id, int bitrate_bps) {
@@ -561,13 +562,12 @@ void RtcEventLogImpl::LogProbeResult(int id,
   probe_result->set_result(result);
   if (result == rtclog::BweProbeResult::SUCCESS)
     probe_result->set_bitrate_bps(bitrate_bps);
-  StoreEvent(&event);
+  StoreEvent(std::move(event));
 }
 
-void RtcEventLogImpl::StoreEvent(std::unique_ptr<rtclog::Event>* event) {
-  RTC_DCHECK(event != nullptr);
-  RTC_DCHECK(event->get() != nullptr);
-  if (!event_queue_.Insert(event)) {
+void RtcEventLogImpl::StoreEvent(std::unique_ptr<rtclog::Event> event) {
+  RTC_DCHECK(event.get() != nullptr);
+  if (!event_queue_.Insert(&event)) {
     LOG(LS_ERROR) << "WebRTC event log queue full. Dropping event.";
   }
   helper_thread_.SignalNewEvent();
