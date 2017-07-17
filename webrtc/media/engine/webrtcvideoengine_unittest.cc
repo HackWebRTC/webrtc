@@ -819,12 +819,12 @@ TEST_F(WebRtcVideoEngineTest, ReportSupportedExternalCodecs) {
 
   std::vector<cricket::VideoCodec> codecs(engine_.codecs());
   ASSERT_GE(codecs.size(), 2u);
-  cricket::VideoCodec external_codec = codecs[0];
-  cricket::VideoCodec internal_codec = codecs[1];
+  cricket::VideoCodec internal_codec = codecs.front();
+  cricket::VideoCodec external_codec = codecs.back();
 
-  // The external codec will appear first in the vector.
-  EXPECT_EQ("FakeExternalCodec", external_codec.name);
+  // The external codec will appear last in the vector.
   EXPECT_EQ("VP8", internal_codec.name);
+  EXPECT_EQ("FakeExternalCodec", external_codec.name);
 }
 
 // Test that an external codec that was added after the engine was initialized
@@ -836,15 +836,15 @@ TEST_F(WebRtcVideoEngineTest, ReportSupportedExternalCodecsWithAddedCodec) {
   engine_.SetExternalEncoderFactory(&encoder_factory);
   engine_.Init();
 
-  // The first external codec will appear first in the vector.
+  // The first external codec will appear last in the vector.
   std::vector<cricket::VideoCodec> codecs_before(engine_.codecs());
-  EXPECT_EQ("FakeExternalCodec1", codecs_before.front().name);
+  EXPECT_EQ("FakeExternalCodec1", codecs_before.back().name);
 
   // Add second codec.
   encoder_factory.AddSupportedVideoCodecType("FakeExternalCodec2");
   std::vector<cricket::VideoCodec> codecs_after(engine_.codecs());
   EXPECT_EQ(codecs_before.size() + 1, codecs_after.size());
-  EXPECT_EQ("FakeExternalCodec2", codecs_after[1].name);
+  EXPECT_EQ("FakeExternalCodec2", codecs_after.back().name);
 }
 
 TEST_F(WebRtcVideoEngineTest, RegisterExternalDecodersIfSupported) {
@@ -1064,11 +1064,6 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
     send_parameters_.codecs = engine_.codecs();
     recv_parameters_.codecs = engine_.codecs();
     ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
-  }
-
-  void TearDown() override {
-    channel_ = nullptr;
-    fake_call_ = nullptr;
   }
 
  protected:
@@ -1980,8 +1975,6 @@ class Vp9SettingsTest : public WebRtcVideoChannelTest {
     // Remove references to encoder_factory_ since this will be destroyed
     // before channel_ and engine_.
     ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
-
-    WebRtcVideoChannelTest::TearDown();
   }
 
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory_;
