@@ -86,7 +86,7 @@ TEST_F(AlrDetectorTest, AlrDetection) {
 
   // Verify that we ALR starts when bitrate drops below 20%.
   SimulateOutgoingTrafficIn(&alr_detector_)
-      .ForTimeMs(1000)
+      .ForTimeMs(1500)
       .AtPercentOfEstimatedBitrate(20);
   EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
@@ -109,7 +109,7 @@ TEST_F(AlrDetectorTest, ShortSpike) {
 
   // Verify that we stay in ALR region even after a short bitrate spike.
   SimulateOutgoingTrafficIn(&alr_detector_)
-      .ForTimeMs(200)
+      .ForTimeMs(100)
       .AtPercentOfEstimatedBitrate(150);
   EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 

@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "webrtc/modules/congestion_controller/acknowledge_bitrate_estimator.h"
+#include "webrtc/modules/congestion_controller/acknowledged_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 

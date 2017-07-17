@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/congestion_controller/acknowledge_bitrate_estimator.h"
+#include "webrtc/modules/congestion_controller/bitrate_estimator.h"
 
 #include <cmath>
 
@@ -20,32 +20,18 @@ namespace webrtc {
 namespace {
 constexpr int kInitialRateWindowMs = 500;
 constexpr int kRateWindowMs = 150;
-
-bool IsInSendTimeHistory(const PacketFeedback& packet) {
-  return packet.send_time_ms >= 0;
-}
-
 }  // namespace
 
-AcknowledgedBitrateEstimator::AcknowledgedBitrateEstimator()
+BitrateEstimator::BitrateEstimator()
     : sum_(0),
       current_win_ms_(0),
       prev_time_ms_(-1),
       bitrate_estimate_(-1.0f),
       bitrate_estimate_var_(50.0f) {}
 
-void AcknowledgedBitrateEstimator::IncomingPacketFeedbackVector(
-    const std::vector<PacketFeedback>& packet_feedback_vector) {
-  RTC_DCHECK(std::is_sorted(packet_feedback_vector.begin(),
-                            packet_feedback_vector.end(),
-                            PacketFeedbackComparator()));
-  for (const auto& packet : packet_feedback_vector) {
-    if (IsInSendTimeHistory(packet))
-      Update(packet.arrival_time_ms, packet.payload_size);
-  }
-}
+BitrateEstimator::~BitrateEstimator() = default;
 
-void AcknowledgedBitrateEstimator::Update(int64_t now_ms, int bytes) {
+void BitrateEstimator::Update(int64_t now_ms, int bytes) {
   int rate_window_ms = kRateWindowMs;
   // We use a larger window at the beginning to get a more stable sample that
   // we can use to initialize the estimate.
@@ -78,9 +64,9 @@ void AcknowledgedBitrateEstimator::Update(int64_t now_ms, int bytes) {
                         bitrate_estimate_ * 1000);
 }
 
-float AcknowledgedBitrateEstimator::UpdateWindow(int64_t now_ms,
-                                                 int bytes,
-                                                 int rate_window_ms) {
+float BitrateEstimator::UpdateWindow(int64_t now_ms,
+                                     int bytes,
+                                     int rate_window_ms) {
   // Reset if time moves backwards.
   if (now_ms < prev_time_ms_) {
     prev_time_ms_ = -1;
@@ -106,10 +92,16 @@ float AcknowledgedBitrateEstimator::UpdateWindow(int64_t now_ms,
   return bitrate_sample;
 }
 
-rtc::Optional<uint32_t> AcknowledgedBitrateEstimator::bitrate_bps() const {
+rtc::Optional<uint32_t> BitrateEstimator::bitrate_bps() const {
   if (bitrate_estimate_ < 0.f)
     return rtc::Optional<uint32_t>();
   return rtc::Optional<uint32_t>(bitrate_estimate_ * 1000);
+}
+
+void BitrateEstimator::ExpectFastRateChange() {
+  // By setting the bitrate-estimate variance to a higher value we allow the
+  // bitrate to change fast for the next few samples.
+  bitrate_estimate_var_ += 200;
 }
 
 }  // namespace webrtc

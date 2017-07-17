@@ -15,14 +15,16 @@
 #include <vector>
 
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/congestion_controller/acknowledge_bitrate_estimator.h"
+#include "webrtc/modules/congestion_controller/acknowledged_bitrate_estimator.h"
 #include "webrtc/modules/congestion_controller/probe_controller.h"
+#include "webrtc/modules/pacing/alr_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/rate_limiter.h"
 #include "webrtc/rtc_base/socket.h"
+#include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
 namespace {
@@ -99,7 +101,8 @@ SendSideCongestionController::SendSideCongestionController(
       last_reported_rtt_(0),
       network_state_(kNetworkUp),
       min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
-      delay_based_bwe_(new DelayBasedBwe(event_log_, clock_)) {
+      delay_based_bwe_(new DelayBasedBwe(event_log_, clock_)),
+      was_in_alr_(0) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
 }
 
@@ -277,6 +280,14 @@ void SendSideCongestionController::OnTransportFeedback(
   std::vector<PacketFeedback> feedback_vector = ReceivedPacketFeedbackVector(
       transport_feedback_adapter_.GetTransportFeedbackVector());
   SortPacketFeedbackVector(&feedback_vector);
+
+  bool currently_in_alr =
+      pacer_->GetApplicationLimitedRegionStartTime().has_value();
+  if (!currently_in_alr && was_in_alr_) {
+    acknowledged_bitrate_estimator_->SetAlrEndedTimeMs(rtc::TimeMillis());
+  }
+  was_in_alr_ = currently_in_alr;
+
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
       feedback_vector);
   DelayBasedBwe::Result result;

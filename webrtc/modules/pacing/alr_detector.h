@@ -27,7 +27,6 @@ namespace webrtc {
 // AlrDetector provides a signal that can be utilized to adjust
 // estimate bandwidth.
 // Note: This class is not thread-safe.
-
 class AlrDetector {
  public:
   AlrDetector();
@@ -57,8 +56,8 @@ class AlrDetector {
   // kAlrEndUsagePercent. NOTE: This is intentionally conservative at the moment
   // until BW adjustments of application limited region is fine tuned.
   static constexpr int kDefaultAlrBandwidthUsagePercent = 65;
-  static constexpr int kDefaultAlrStartBudgetLevelPercent = 20;
-  static constexpr int kDefaultAlrStopBudgetLevelPercent = -20;
+  static constexpr int kDefaultAlrStartBudgetLevelPercent = 80;
+  static constexpr int kDefaultAlrStopBudgetLevelPercent = 50;
   static const char* kScreenshareProbingBweExperimentName;
 
   void UpdateBudgetWithElapsedTime(int64_t delta_time_ms);

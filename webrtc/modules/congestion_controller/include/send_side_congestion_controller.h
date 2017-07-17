@@ -154,6 +154,7 @@ class SendSideCongestionController : public CallStatsObserver,
   rtc::CriticalSection bwe_lock_;
   int min_bitrate_bps_ GUARDED_BY(bwe_lock_);
   std::unique_ptr<DelayBasedBwe> delay_based_bwe_ GUARDED_BY(bwe_lock_);
+  bool was_in_alr_;
 
   rtc::RaceChecker worker_race_;
 
