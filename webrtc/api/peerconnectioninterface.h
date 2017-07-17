@@ -762,9 +762,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   //
   // Setting |current_bitrate_bps| will reset the current bitrate estimate
   // to the provided value.
-  virtual RTCError SetBitrate(const BitrateParameters& bitrate) {
-    return RTCError::OK();
-  }
+  virtual RTCError SetBitrate(const BitrateParameters& bitrate) = 0;
 
   // Returns the current SignalingState.
   virtual SignalingState signaling_state() = 0;
