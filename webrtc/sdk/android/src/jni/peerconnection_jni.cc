@@ -1537,6 +1537,16 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   jfieldID j_disable_ipv6_on_wifi_id =
       GetFieldID(jni, j_rtc_config_class, "disableIPv6OnWifi", "Z");
 
+  jfieldID j_ice_regather_interval_range_id =
+      GetFieldID(jni, j_rtc_config_class, "iceRegatherIntervalRange",
+                 "Lorg/webrtc/PeerConnection$IntervalRange;");
+  jclass j_interval_range_class =
+      jni->FindClass("org/webrtc/PeerConnection$IntervalRange");
+  jmethodID get_min_id =
+      GetMethodID(jni, j_interval_range_class, "getMin", "()I");
+  jmethodID get_max_id =
+      GetMethodID(jni, j_interval_range_class, "getMax", "()I");
+
   rtc_config->type =
       JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
   rtc_config->bundle_policy =
@@ -1575,6 +1585,13 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   }
   rtc_config->disable_ipv6_on_wifi =
       GetBooleanField(jni, j_rtc_config, j_disable_ipv6_on_wifi_id);
+  jobject j_ice_regather_interval_range = GetNullableObjectField(
+      jni, j_rtc_config, j_ice_regather_interval_range_id);
+  if (!IsNull(jni, j_ice_regather_interval_range)) {
+    int min = jni->CallIntMethod(j_ice_regather_interval_range, get_min_id);
+    int max = jni->CallIntMethod(j_ice_regather_interval_range, get_max_id);
+    rtc_config->ice_regather_interval_range.emplace(min, max);
+  }
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(

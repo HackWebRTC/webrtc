@@ -159,6 +159,25 @@ public class PeerConnection {
   /** Java version of PeerConnectionInterface.ContinualGatheringPolicy */
   public enum ContinualGatheringPolicy { GATHER_ONCE, GATHER_CONTINUALLY }
 
+  /** Java version of rtc::IntervalRange */
+  public static class IntervalRange {
+    private final int min;
+    private final int max;
+
+    public IntervalRange(int min, int max) {
+      this.min = min;
+      this.max = max;
+    }
+
+    public int getMin() {
+      return min;
+    }
+
+    public int getMax() {
+      return max;
+    }
+  }
+
   /** Java version of PeerConnectionInterface.RTCConfiguration */
   public static class RTCConfiguration {
     public IceTransportsType iceTransportsType;
@@ -178,6 +197,7 @@ public class PeerConnection {
     public boolean presumeWritableWhenFullyRelayed;
     public Integer iceCheckMinInterval;
     public boolean disableIPv6OnWifi;
+    public IntervalRange iceRegatherIntervalRange;
 
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
@@ -197,6 +217,7 @@ public class PeerConnection {
       presumeWritableWhenFullyRelayed = false;
       iceCheckMinInterval = null;
       disableIPv6OnWifi = false;
+      iceRegatherIntervalRange = null;
     }
   };
 

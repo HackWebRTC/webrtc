@@ -18,6 +18,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.MediumTest;
+import android.support.test.filters.SmallTest;
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
@@ -564,6 +565,28 @@ public class PeerConnectionTest {
   //   extra-important because of all the free-text (class/method names, etc)
   //   in JNI-style programming; make sure no typos!
   // - Test that shutdown mid-interaction is crash-free.
+
+  // Tests that the JNI glue between Java and C++ does not crash when creating a PeerConnection.
+  @Test
+  @SmallTest
+  public void testCreationWithConfig() throws Exception {
+    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
+    PeerConnectionFactory factory = new PeerConnectionFactory(options);
+    List<PeerConnection.IceServer> iceServers =
+        Arrays.asList(new PeerConnection.IceServer("stun:stun.l.google.com:19302"),
+            new PeerConnection.IceServer("turn:fake.example.com", "fakeUsername", "fakePassword"));
+    PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(iceServers);
+
+    // Test configuration options.
+    config.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+    config.iceRegatherIntervalRange = new PeerConnection.IntervalRange(1000, 2000);
+
+    MediaConstraints constraints = new MediaConstraints();
+    ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
+    PeerConnection offeringPC =
+        factory.createPeerConnection(config, constraints, offeringExpectations);
+    assertNotNull(offeringPC);
+  }
 
   @Test
   @MediumTest
