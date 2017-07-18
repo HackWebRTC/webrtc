@@ -258,6 +258,21 @@ public class RendererCommon {
     return matrix;
   }
 
+  /** Converts a float[16] matrix array to android.graphics.Matrix. */
+  public static android.graphics.Matrix convertMatrixToAndroidGraphicsMatrix(float[] matrix4x4) {
+    // clang-format off
+    float[] values = {
+        matrix4x4[0 * 4 + 0], matrix4x4[1 * 4 + 0], matrix4x4[3 * 4 + 0],
+        matrix4x4[0 * 4 + 1], matrix4x4[1 * 4 + 1], matrix4x4[3 * 4 + 1],
+        matrix4x4[0 * 4 + 3], matrix4x4[1 * 4 + 3], matrix4x4[3 * 4 + 3],
+    };
+    // clang-format on
+
+    android.graphics.Matrix matrix = new android.graphics.Matrix();
+    matrix.setValues(values);
+    return matrix;
+  }
+
   /**
    * Calculate display size based on scaling type, video aspect ratio, and maximum display size.
    */

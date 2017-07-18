@@ -21,6 +21,8 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import org.webrtc.VideoFrame.I420Buffer;
+import org.webrtc.VideoFrame.TextureBuffer;
 
 /**
  * Helper class to create and synchronize access to a SurfaceTexture. The caller will get notified
@@ -276,5 +278,96 @@ public class SurfaceTextureHelper {
     surfaceTexture.release();
     eglBase.release();
     handler.getLooper().quit();
+  }
+
+  /**
+   * Creates a VideoFrame buffer backed by this helper's texture. The |width| and |height| should
+   * match the dimensions of the data placed in the texture. The correct |transformMatrix| may be
+   * obtained from callbacks to OnTextureFrameAvailableListener.
+   *
+   * The returned TextureBuffer holds a reference to the SurfaceTextureHelper that created it. The
+   * buffer calls returnTextureFrame() when it is released.
+   */
+  public TextureBuffer createTextureBuffer(int width, int height, float[] transformMatrix) {
+    return new OesTextureBuffer(oesTextureId, width, height, transformMatrix, this);
+  }
+
+  /**
+   * Android OES texture buffer backed by a SurfaceTextureHelper's texture. The buffer calls
+   * returnTextureFrame() when it is released.
+   */
+  private static class OesTextureBuffer implements TextureBuffer {
+    private final int id;
+    private final int width;
+    private final int height;
+    private final float[] transformMatrix;
+    private final SurfaceTextureHelper helper;
+    private int refCount;
+
+    OesTextureBuffer(
+        int id, int width, int height, float[] transformMatrix, SurfaceTextureHelper helper) {
+      this.id = id;
+      this.width = width;
+      this.height = height;
+      this.transformMatrix = transformMatrix;
+      this.helper = helper;
+      this.refCount = 1; // Creator implicitly holds a reference.
+    }
+
+    @Override
+    public TextureBuffer.Type getType() {
+      return TextureBuffer.Type.OES;
+    }
+
+    @Override
+    public int getTextureId() {
+      return id;
+    }
+
+    @Override
+    public int getWidth() {
+      return width;
+    }
+
+    @Override
+    public int getHeight() {
+      return height;
+    }
+
+    @Override
+    public I420Buffer toI420() {
+      // SurfaceTextureHelper requires a stride that is divisible by 8.  Round width up.
+      // See SurfaceTextureHelper for details on the size and format.
+      int stride = ((width + 7) / 8) * 8;
+      int uvHeight = (height + 1) / 2;
+      // Due to the layout used by SurfaceTextureHelper, vPos + stride * uvHeight would overrun the
+      // buffer.  Add one row at the bottom to compensate for this.  There will never be data in the
+      // extra row, but now other code does not have to deal with v stride * v height exceeding the
+      // buffer's capacity.
+      int size = stride * (height + uvHeight + 1);
+      ByteBuffer buffer = ByteBuffer.allocateDirect(size);
+      helper.textureToYUV(buffer, width, height, stride, id, transformMatrix);
+
+      int yPos = 0;
+      int uPos = yPos + stride * height;
+      // Rows of U and V alternate in the buffer, so V data starts after the first row of U.
+      int vPos = yPos + stride / 2;
+
+      // SurfaceTextureHelper uses the same stride for Y, U, and V data.
+      return new I420BufferImpl(
+          buffer, width, height, yPos, stride, uPos, stride, vPos, stride, null);
+    }
+
+    @Override
+    public void retain() {
+      ++refCount;
+    }
+
+    @Override
+    public void release() {
+      if (--refCount == 0) {
+        helper.returnTextureFrame();
+      }
+    }
   }
 }

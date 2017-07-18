@@ -81,7 +81,7 @@ public class HardwareVideoEncoderTest {
 
     assertEquals(encoder.initEncode(SETTINGS, callback), VideoCodecStatus.OK);
 
-    VideoFrame.I420Buffer buffer = new I420BufferImpl(SETTINGS.width, SETTINGS.height);
+    VideoFrame.I420Buffer buffer = I420BufferImpl.allocate(SETTINGS.width, SETTINGS.height);
     VideoFrame frame =
         new VideoFrame(buffer, 0 /* rotation */, presentationTimestampUs * 1000, new Matrix());
     VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(

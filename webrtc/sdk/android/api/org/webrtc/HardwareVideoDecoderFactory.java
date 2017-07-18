@@ -26,6 +26,22 @@ import android.os.Build;
 public class HardwareVideoDecoderFactory implements VideoDecoderFactory {
   private static final String TAG = "HardwareVideoDecoderFactory";
 
+  private final EglBase.Context sharedContext;
+
+  /** Creates a HardwareVideoDecoderFactory that does not use surface textures. */
+  @Deprecated // Not removed yet to avoid breaking callers.
+  public HardwareVideoDecoderFactory() {
+    this(null);
+  }
+
+  /**
+   * Creates a HardwareVideoDecoderFactory that supports surface texture rendering using the given
+   * shared context.  The context may be null.  If it is null, then surface support is disabled.
+   */
+  public HardwareVideoDecoderFactory(EglBase.Context sharedContext) {
+    this.sharedContext = sharedContext;
+  }
+
   @Override
   public VideoDecoder createDecoder(String codecType) {
     VideoCodecType type = VideoCodecType.valueOf(codecType);
@@ -37,7 +53,8 @@ public class HardwareVideoDecoderFactory implements VideoDecoderFactory {
 
     CodecCapabilities capabilities = info.getCapabilitiesForType(type.mimeType());
     return new HardwareVideoDecoder(info.getName(), type,
-        MediaCodecUtils.selectColorFormat(MediaCodecUtils.DECODER_COLOR_FORMATS, capabilities));
+        MediaCodecUtils.selectColorFormat(MediaCodecUtils.DECODER_COLOR_FORMATS, capabilities),
+        sharedContext);
   }
 
   private MediaCodecInfo findCodecForType(VideoCodecType type) {

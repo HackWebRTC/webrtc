@@ -16,6 +16,7 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
 import android.os.SystemClock;
+import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -27,7 +28,8 @@ import org.webrtc.ThreadUtils.ThreadChecker;
 /** Android hardware video decoder. */
 @TargetApi(16)
 @SuppressWarnings("deprecation") // Cannot support API 16 without using deprecated methods.
-class HardwareVideoDecoder implements VideoDecoder {
+class HardwareVideoDecoder
+    implements VideoDecoder, SurfaceTextureHelper.OnTextureFrameAvailableListener {
   private static final String TAG = "HardwareVideoDecoder";
 
   // TODO(magjed): Use MediaFormat.KEY_* constants when part of the public API.
@@ -100,18 +102,45 @@ class HardwareVideoDecoder implements VideoDecoder {
   // Whether the decoder has seen a key frame.  The first frame must be a key frame.
   private boolean keyFrameRequired;
 
+  private final EglBase.Context sharedContext;
+  private SurfaceTextureHelper surfaceTextureHelper;
+  private Surface surface = null;
+
+  private static class DecodedTextureMetadata {
+    final int width;
+    final int height;
+    final int rotation;
+    final long presentationTimestampUs;
+    final Integer decodeTimeMs;
+
+    DecodedTextureMetadata(
+        int width, int height, int rotation, long presentationTimestampUs, Integer decodeTimeMs) {
+      this.width = width;
+      this.height = height;
+      this.rotation = rotation;
+      this.presentationTimestampUs = presentationTimestampUs;
+      this.decodeTimeMs = decodeTimeMs;
+    }
+  }
+
+  // Metadata for the last frame rendered to the texture.  Only accessed on the texture helper's
+  // thread.
+  private DecodedTextureMetadata renderedTextureMetadata;
+
   // Decoding proceeds asynchronously.  This callback returns decoded frames to the caller.
   private Callback callback;
 
   private MediaCodec codec = null;
 
-  HardwareVideoDecoder(String codecName, VideoCodecType codecType, int colorFormat) {
+  HardwareVideoDecoder(
+      String codecName, VideoCodecType codecType, int colorFormat, EglBase.Context sharedContext) {
     if (!isSupportedColorFormat(colorFormat)) {
       throw new IllegalArgumentException("Unsupported color format: " + colorFormat);
     }
     this.codecName = codecName;
     this.codecType = codecType;
     this.colorFormat = colorFormat;
+    this.sharedContext = sharedContext;
     this.frameInfos = new LinkedBlockingDeque<>();
   }
 
@@ -147,8 +176,14 @@ class HardwareVideoDecoder implements VideoDecoder {
     }
     try {
       MediaFormat format = MediaFormat.createVideoFormat(codecType.mimeType(), width, height);
-      format.setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat);
-      codec.configure(format, null, null, 0);
+      if (sharedContext == null) {
+        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat);
+      } else {
+        surfaceTextureHelper = SurfaceTextureHelper.create("decoder-texture-thread", sharedContext);
+        surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
+        surfaceTextureHelper.startListening(this);
+      }
+      codec.configure(format, surface, null, 0);
       codec.start();
     } catch (IllegalStateException e) {
       Logging.e(TAG, "initDecode failed", e);
@@ -209,7 +244,6 @@ class HardwareVideoDecoder implements VideoDecoder {
       }
     }
 
-    // TODO(mellem):  Support textures.
     int index;
     try {
       index = codec.dequeueInputBuffer(DEQUEUE_INPUT_TIMEOUT_US);
@@ -288,6 +322,13 @@ class HardwareVideoDecoder implements VideoDecoder {
       callback = null;
       outputThread = null;
       frameInfos.clear();
+      if (surface != null) {
+        surface.release();
+        surface = null;
+        surfaceTextureHelper.stopListening();
+        surfaceTextureHelper.dispose();
+        surfaceTextureHelper = null;
+      }
     }
     return VideoCodecStatus.OK;
   }
@@ -343,62 +384,104 @@ class HardwareVideoDecoder implements VideoDecoder {
 
       hasDecodedFirstFrame = true;
 
-      // Load dimensions from shared memory under the dimension lock.
-      int width, height, stride, sliceHeight;
-      synchronized (dimensionLock) {
-        width = this.width;
-        height = this.height;
-        stride = this.stride;
-        sliceHeight = this.sliceHeight;
-      }
-
-      // Output must be at least width * height bytes for Y channel, plus (width / 2) * (height / 2)
-      // bytes for each of the U and V channels.
-      if (info.size < width * height * 3 / 2) {
-        Logging.e(TAG, "Insufficient output buffer size: " + info.size);
-        return;
-      }
-
-      if (info.size < stride * height * 3 / 2 && sliceHeight == height && stride > width) {
-        // Some codecs (Exynos) report an incorrect stride.  Correct it here.
-        // Expected size == stride * height * 3 / 2.  A bit of algebra gives the correct stride as
-        // 2 * size / (3 * height).
-        stride = info.size * 2 / (height * 3);
-      }
-
-      ByteBuffer buffer = codec.getOutputBuffers()[result];
-      buffer.position(info.offset);
-      buffer.limit(info.size);
-
-      final VideoFrame.I420Buffer frameBuffer;
-
-      // TODO(mellem):  As an optimization, use libyuv via JNI to copy/reformatting data.
-      if (colorFormat == CodecCapabilities.COLOR_FormatYUV420Planar) {
-        if (sliceHeight % 2 == 0) {
-          frameBuffer =
-              createBufferFromI420(buffer, result, info.offset, stride, sliceHeight, width, height);
-        } else {
-          frameBuffer = new I420BufferImpl(width, height);
-          // Optimal path is not possible because we have to copy the last rows of U- and V-planes.
-          copyI420(buffer, info.offset, frameBuffer, stride, sliceHeight, width, height);
-          codec.releaseOutputBuffer(result, false);
-        }
+      if (surfaceTextureHelper != null) {
+        deliverTextureFrame(result, info, rotation, decodeTimeMs);
       } else {
-        frameBuffer = new I420BufferImpl(width, height);
-        // All other supported color formats are NV12.
-        nv12ToI420(buffer, info.offset, frameBuffer, stride, sliceHeight, width, height);
-        codec.releaseOutputBuffer(result, false);
+        deliverByteFrame(result, info, rotation, decodeTimeMs);
       }
 
-      long presentationTimeNs = info.presentationTimeUs * 1000;
-      VideoFrame frame = new VideoFrame(frameBuffer, rotation, presentationTimeNs, new Matrix());
-
-      // Note that qp is parsed on the C++ side.
-      callback.onDecodedFrame(frame, decodeTimeMs, null /* qp */);
-      frame.release();
     } catch (IllegalStateException e) {
       Logging.e(TAG, "deliverDecodedFrame failed", e);
     }
+  }
+
+  private void deliverTextureFrame(final int index, final MediaCodec.BufferInfo info,
+      final int rotation, final Integer decodeTimeMs) {
+    // Load dimensions from shared memory under the dimension lock.
+    final int width, height;
+    synchronized (dimensionLock) {
+      width = this.width;
+      height = this.height;
+    }
+
+    surfaceTextureHelper.getHandler().post(new Runnable() {
+      @Override
+      public void run() {
+        renderedTextureMetadata = new DecodedTextureMetadata(
+            width, height, rotation, info.presentationTimeUs, decodeTimeMs);
+        codec.releaseOutputBuffer(index, true);
+      }
+    });
+  }
+
+  @Override
+  public void onTextureFrameAvailable(int oesTextureId, float[] transformMatrix, long timestampNs) {
+    VideoFrame.TextureBuffer oesBuffer = surfaceTextureHelper.createTextureBuffer(
+        renderedTextureMetadata.width, renderedTextureMetadata.height, transformMatrix);
+
+    Matrix matrix = RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix);
+
+    VideoFrame frame = new VideoFrame(oesBuffer, renderedTextureMetadata.rotation,
+        renderedTextureMetadata.presentationTimestampUs * 1000, matrix);
+    callback.onDecodedFrame(frame, renderedTextureMetadata.decodeTimeMs, null /* qp */);
+    frame.release();
+  }
+
+  private void deliverByteFrame(
+      int result, MediaCodec.BufferInfo info, int rotation, Integer decodeTimeMs) {
+    // Load dimensions from shared memory under the dimension lock.
+    int width, height, stride, sliceHeight;
+    synchronized (dimensionLock) {
+      width = this.width;
+      height = this.height;
+      stride = this.stride;
+      sliceHeight = this.sliceHeight;
+    }
+
+    // Output must be at least width * height bytes for Y channel, plus (width / 2) * (height / 2)
+    // bytes for each of the U and V channels.
+    if (info.size < width * height * 3 / 2) {
+      Logging.e(TAG, "Insufficient output buffer size: " + info.size);
+      return;
+    }
+
+    if (info.size < stride * height * 3 / 2 && sliceHeight == height && stride > width) {
+      // Some codecs (Exynos) report an incorrect stride.  Correct it here.
+      // Expected size == stride * height * 3 / 2.  A bit of algebra gives the correct stride as
+      // 2 * size / (3 * height).
+      stride = info.size * 2 / (height * 3);
+    }
+
+    ByteBuffer buffer = codec.getOutputBuffers()[result];
+    buffer.position(info.offset);
+    buffer.limit(info.size);
+
+    final VideoFrame.I420Buffer frameBuffer;
+
+    // TODO(mellem):  As an optimization, use libyuv via JNI to copy/reformatting data.
+    if (colorFormat == CodecCapabilities.COLOR_FormatYUV420Planar) {
+      if (sliceHeight % 2 == 0) {
+        frameBuffer =
+            createBufferFromI420(buffer, result, info.offset, stride, sliceHeight, width, height);
+      } else {
+        frameBuffer = I420BufferImpl.allocate(width, height);
+        // Optimal path is not possible because we have to copy the last rows of U- and V-planes.
+        copyI420(buffer, info.offset, frameBuffer, stride, sliceHeight, width, height);
+        codec.releaseOutputBuffer(result, false);
+      }
+    } else {
+      frameBuffer = I420BufferImpl.allocate(width, height);
+      // All other supported color formats are NV12.
+      nv12ToI420(buffer, info.offset, frameBuffer, stride, sliceHeight, width, height);
+      codec.releaseOutputBuffer(result, false);
+    }
+
+    long presentationTimeNs = info.presentationTimeUs * 1000;
+    VideoFrame frame = new VideoFrame(frameBuffer, rotation, presentationTimeNs, new Matrix());
+
+    // Note that qp is parsed on the C++ side.
+    callback.onDecodedFrame(frame, decodeTimeMs, null /* qp */);
+    frame.release();
   }
 
   private void reformat(MediaFormat format) {
@@ -429,7 +512,9 @@ class HardwareVideoDecoder implements VideoDecoder {
       height = newHeight;
     }
 
-    if (format.containsKey(MediaFormat.KEY_COLOR_FORMAT)) {
+    // Note:  texture mode ignores colorFormat.  Hence, if the texture helper is non-null, skip
+    // color format updates.
+    if (surfaceTextureHelper == null && format.containsKey(MediaFormat.KEY_COLOR_FORMAT)) {
       colorFormat = format.getInteger(MediaFormat.KEY_COLOR_FORMAT);
       Logging.d(TAG, "Color: 0x" + Integer.toHexString(colorFormat));
       if (!isSupportedColorFormat(colorFormat)) {
@@ -519,81 +604,20 @@ class HardwareVideoDecoder implements VideoDecoder {
     synchronized (activeOutputBuffersLock) {
       activeOutputBuffers++;
     }
-    return new VideoFrame.I420Buffer() {
-      private int refCount = 1;
 
+    I420BufferImpl.ReleaseCallback callback = new I420BufferImpl.ReleaseCallback() {
       @Override
-      public ByteBuffer getDataY() {
-        ByteBuffer data = buffer.slice();
-        data.position(yPos);
-        data.limit(yPos + getStrideY() * height);
-        return data;
-      }
-
-      @Override
-      public ByteBuffer getDataU() {
-        ByteBuffer data = buffer.slice();
-        data.position(uPos);
-        data.limit(uPos + getStrideU() * chromaHeight);
-        return data;
-      }
-
-      @Override
-      public ByteBuffer getDataV() {
-        ByteBuffer data = buffer.slice();
-        data.position(vPos);
-        data.limit(vPos + getStrideV() * chromaHeight);
-        return data;
-      }
-
-      @Override
-      public int getStrideY() {
-        return stride;
-      }
-
-      @Override
-      public int getStrideU() {
-        return uvStride;
-      }
-
-      @Override
-      public int getStrideV() {
-        return uvStride;
-      }
-
-      @Override
-      public int getWidth() {
-        return width;
-      }
-
-      @Override
-      public int getHeight() {
-        return height;
-      }
-
-      @Override
-      public VideoFrame.I420Buffer toI420() {
-        return this;
-      }
-
-      @Override
-      public void retain() {
-        refCount++;
-      }
-
-      @Override
-      public void release() {
-        refCount--;
-
-        if (refCount == 0) {
-          codec.releaseOutputBuffer(outputBufferIndex, false);
-          synchronized (activeOutputBuffersLock) {
-            activeOutputBuffers--;
-            activeOutputBuffersLock.notifyAll();
-          }
+      public void onRelease() {
+        codec.releaseOutputBuffer(outputBufferIndex, false);
+        synchronized (activeOutputBuffersLock) {
+          activeOutputBuffers--;
+          activeOutputBuffersLock.notifyAll();
         }
       }
     };
+
+    return new I420BufferImpl(
+        buffer, width, height, yPos, stride, uPos, uvStride, vPos, uvStride, callback);
   }
 
   private static void copyI420(ByteBuffer src, int offset, VideoFrame.I420Buffer frameBuffer,
