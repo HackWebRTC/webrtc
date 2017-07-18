@@ -64,10 +64,10 @@ def CatFiles(file_list, output_file):
 
 
 def get_args_and_env():
-  if '--' not in sys.argv:
-    return sys.argv, os.environ
-
-  argv_index = sys.argv.index('--')
+  if '--' in sys.argv:
+    argv_index = sys.argv.index('--')
+  else:
+    argv_index = len(sys.argv)
 
   gtest_parallel_args = sys.argv[1:argv_index]
   executable_args = sys.argv[argv_index + 1:]
