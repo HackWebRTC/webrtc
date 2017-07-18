@@ -200,7 +200,7 @@
   'configs': {
     # Linux, Mac and Windows
     'gcc_release_bot_x64': [
-      'gn', 'gcc', 'release_bot', 'x64', 'no_rtc_tests', 'use_default_libcxx'
+      'gn', 'gcc', 'release_bot', 'x64', 'no_rtc_tests'
     ],
     # TOOD(kjellander): Restore Goma for this when crbug.com/726706 is fixed.
     'debug_bot_arm': [
