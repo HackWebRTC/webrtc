@@ -20,6 +20,7 @@
 #include "webrtc/pc/test/peerconnectiontestwrapper.h"
 #include "webrtc/pc/test/rtcstatsobtainer.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/event_tracer.h"
 #include "webrtc/rtc_base/gunit.h"
 #include "webrtc/rtc_base/refcountedobject.h"
 #include "webrtc/rtc_base/scoped_ref_ptr.h"
@@ -31,11 +32,29 @@ namespace {
 
 const int64_t kGetStatsTimeoutMs = 10000;
 
+const unsigned char* GetCategoryEnabledHandler(const char* name) {
+  return reinterpret_cast<const unsigned char*>("webrtc_stats");
+}
+
+void AddTraceEventHandler(char phase,
+                          const unsigned char* category_enabled,
+                          const char* name,
+                          unsigned long long id,
+                          int num_args,
+                          const char** arg_names,
+                          const unsigned char* arg_types,
+                          const unsigned long long* arg_values,
+                          unsigned char flags) {
+  // Do nothing
+}
+
 class RTCStatsIntegrationTest : public testing::Test {
  public:
   RTCStatsIntegrationTest()
       : network_thread_(new rtc::Thread(&virtual_socket_server_)),
         worker_thread_(rtc::Thread::Create()) {
+    SetupEventTracer(&GetCategoryEnabledHandler, &AddTraceEventHandler);
+
     RTC_CHECK(network_thread_->Start());
     RTC_CHECK(worker_thread_->Start());
 
