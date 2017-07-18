@@ -24,11 +24,25 @@
 #include "webrtc/pc/peerconnection.h"
 #include "webrtc/pc/webrtcsession.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/stringutils.h"
 #include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/rtc_base/trace_event.h"
 
 namespace webrtc {
 
 namespace {
+
+const int kStatTypeMemberNameAndIdMaxLen = 120;
+
+std::string GetStatTypeMemberNameAndId(const RTCStats& stats,
+                                       const RTCStatsMemberInterface* member) {
+  RTC_DCHECK(strlen(stats.type()) + strlen(member->name())
+             + stats.id().size() + 3 < kStatTypeMemberNameAndIdMaxLen);
+  char buffer[kStatTypeMemberNameAndIdMaxLen];
+  rtc::sprintfn(&buffer[0], sizeof(buffer), "%s.%s.%s", stats.type(),
+                member->name(), stats.id().c_str());
+  return buffer;
+}
 
 std::string RTCCertificateIDFromFingerprint(const std::string& fingerprint) {
   return "RTCCertificate_" + fingerprint;
@@ -758,6 +772,19 @@ void RTCStatsCollector::AddPartialResults_s(
     channel_name_pairs_.reset();
     track_media_info_map_.reset();
     track_to_id_.clear();
+    // Trace WebRTC Stats when getStats is called on Javascript.
+    // This allows access to WebRTC stats from trace logs. To enable them,
+    // select the "webrtc_stats" category when recording traces.
+    for (const RTCStats& stats : *cached_report_) {
+      for (const RTCStatsMemberInterface* member : stats.Members()) {
+        if (member->is_defined()) {
+          TRACE_EVENT_INSTANT2("webrtc_stats", "webrtc_stats",
+                               "value", member->ValueToString(),
+                               "type.name.id", GetStatTypeMemberNameAndId(
+                                   stats, member));
+        }
+      }
+    }
     DeliverCachedReport();
   }
 }
