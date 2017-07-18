@@ -164,12 +164,14 @@ public class SurfaceViewRenderer
   public void setScalingType(RendererCommon.ScalingType scalingType) {
     ThreadUtils.checkIsOnMainThread();
     videoLayoutMeasure.setScalingType(scalingType);
+    requestLayout();
   }
 
   public void setScalingType(RendererCommon.ScalingType scalingTypeMatchOrientation,
       RendererCommon.ScalingType scalingTypeMismatchOrientation) {
     ThreadUtils.checkIsOnMainThread();
     videoLayoutMeasure.setScalingType(scalingTypeMatchOrientation, scalingTypeMismatchOrientation);
+    requestLayout();
   }
 
   /**
