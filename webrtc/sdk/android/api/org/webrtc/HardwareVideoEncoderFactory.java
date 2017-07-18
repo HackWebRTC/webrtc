@@ -55,12 +55,26 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   private static final String H264_CONSTRAINED_HIGH_3_1 =
       H264_PROFILE_CONSTRAINED_HIGH + H264_LEVEL_3_1;
 
+  private final EglBase14.Context sharedContext;
   private final boolean enableIntelVp8Encoder;
   private final boolean enableH264HighProfile;
 
-  public HardwareVideoEncoderFactory(boolean enableIntelVp8Encoder, boolean enableH264HighProfile) {
+  public HardwareVideoEncoderFactory(
+      EglBase.Context sharedContext, boolean enableIntelVp8Encoder, boolean enableH264HighProfile) {
+    // Texture mode requires EglBase14.
+    if (sharedContext instanceof EglBase14.Context) {
+      this.sharedContext = (EglBase14.Context) sharedContext;
+    } else {
+      Logging.w(TAG, "No shared EglBase.Context.  Encoders will not use texture mode.");
+      this.sharedContext = null;
+    }
     this.enableIntelVp8Encoder = enableIntelVp8Encoder;
     this.enableH264HighProfile = enableH264HighProfile;
+  }
+
+  @Deprecated
+  public HardwareVideoEncoderFactory(boolean enableIntelVp8Encoder, boolean enableH264HighProfile) {
+    this(null, enableIntelVp8Encoder, enableH264HighProfile);
   }
 
   @Override
@@ -74,11 +88,14 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
 
     String codecName = info.getName();
     String mime = type.mimeType();
-    int colorFormat = MediaCodecUtils.selectColorFormat(
-        MediaCodecUtils.ENCODER_COLOR_FORMATS, info.getCapabilitiesForType(mime));
+    int colorFormat = MediaCodecUtils.selectColorFormat(sharedContext == null
+            ? MediaCodecUtils.ENCODER_COLOR_FORMATS
+            : MediaCodecUtils.TEXTURE_COLOR_FORMATS,
+        info.getCapabilitiesForType(mime));
 
     return new HardwareVideoEncoder(codecName, type, colorFormat, getKeyFrameIntervalSec(type),
-        getForcedKeyFrameIntervalMs(type, codecName), createBitrateAdjuster(type, codecName));
+        getForcedKeyFrameIntervalMs(type, codecName), createBitrateAdjuster(type, codecName),
+        sharedContext);
   }
 
   @Override
@@ -127,8 +144,10 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
       return false;
     }
     // Check for a supported color format.
-    if (MediaCodecUtils.selectColorFormat(
-            MediaCodecUtils.ENCODER_COLOR_FORMATS, info.getCapabilitiesForType(type.mimeType()))
+    if (MediaCodecUtils.selectColorFormat(sharedContext == null
+                ? MediaCodecUtils.ENCODER_COLOR_FORMATS
+                : MediaCodecUtils.TEXTURE_COLOR_FORMATS,
+            info.getCapabilitiesForType(type.mimeType()))
         == null) {
       return false;
     }

@@ -15,6 +15,8 @@ import static org.junit.Assert.assertTrue;
 
 import android.annotation.TargetApi;
 import android.graphics.Matrix;
+import android.opengl.GLES11Ext;
+import android.opengl.GLES20;
 import android.support.test.filters.SmallTest;
 import android.util.Log;
 import java.nio.ByteBuffer;
@@ -44,8 +46,25 @@ public class HardwareVideoEncoderTest {
       return;
     }
     VideoEncoder encoder = factory.createEncoder(supportedCodecs[0]);
-    assertEquals(encoder.initEncode(SETTINGS, null), VideoCodecStatus.OK);
-    assertEquals(encoder.release(), VideoCodecStatus.OK);
+    assertEquals(VideoCodecStatus.OK, encoder.initEncode(SETTINGS, null));
+    assertEquals(VideoCodecStatus.OK, encoder.release());
+  }
+
+  @Test
+  @SmallTest
+  public void testInitializeUsingTextures() {
+    EglBase14 eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
+    HardwareVideoEncoderFactory factory = new HardwareVideoEncoderFactory(
+        eglBase.getEglBaseContext(), ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
+    VideoCodecInfo[] supportedCodecs = factory.getSupportedCodecs();
+    if (supportedCodecs.length == 0) {
+      Log.w(TAG, "No hardware encoding support, skipping testInitializeUsingTextures");
+      return;
+    }
+    VideoEncoder encoder = factory.createEncoder(supportedCodecs[0]);
+    assertEquals(VideoCodecStatus.OK, encoder.initEncode(SETTINGS, null));
+    assertEquals(VideoCodecStatus.OK, encoder.release());
+    eglBase.release();
   }
 
   @Test
@@ -92,5 +111,92 @@ public class HardwareVideoEncoderTest {
     ThreadUtils.awaitUninterruptibly(encodeDone);
 
     assertEquals(encoder.release(), VideoCodecStatus.OK);
+  }
+
+  @Test
+  @SmallTest
+  public void testEncodeTextures() throws InterruptedException {
+    final EglBase14 eglOesBase = new EglBase14(null, EglBase.CONFIG_PIXEL_BUFFER);
+    HardwareVideoEncoderFactory factory = new HardwareVideoEncoderFactory(
+        eglOesBase.getEglBaseContext(), ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
+    VideoCodecInfo[] supportedCodecs = factory.getSupportedCodecs();
+    if (supportedCodecs.length == 0) {
+      Log.w(TAG, "No hardware encoding support, skipping testEncodeTextures");
+      return;
+    }
+
+    eglOesBase.createDummyPbufferSurface();
+    eglOesBase.makeCurrent();
+    final int oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+
+    VideoEncoder encoder = factory.createEncoder(supportedCodecs[0]);
+
+    final long presentationTimestampUs = 20000;
+    final CountDownLatch encodeDone = new CountDownLatch(1);
+
+    VideoEncoder.Callback callback = new VideoEncoder.Callback() {
+      @Override
+      public void onEncodedFrame(EncodedImage image, VideoEncoder.CodecSpecificInfo info) {
+        assertTrue(image.buffer.capacity() > 0);
+        assertEquals(image.encodedWidth, SETTINGS.width);
+        assertEquals(image.encodedHeight, SETTINGS.height);
+        assertEquals(image.captureTimeMs, presentationTimestampUs / 1000);
+        assertEquals(image.frameType, EncodedImage.FrameType.VideoFrameKey);
+        assertEquals(image.rotation, 0);
+        assertTrue(image.completeFrame);
+
+        encodeDone.countDown();
+      }
+    };
+
+    assertEquals(encoder.initEncode(SETTINGS, callback), VideoCodecStatus.OK);
+
+    VideoFrame.TextureBuffer buffer = new VideoFrame.TextureBuffer() {
+      @Override
+      public VideoFrame.TextureBuffer.Type getType() {
+        return VideoFrame.TextureBuffer.Type.OES;
+      }
+
+      @Override
+      public int getTextureId() {
+        return oesTextureId;
+      }
+
+      @Override
+      public int getWidth() {
+        return SETTINGS.width;
+      }
+
+      @Override
+      public int getHeight() {
+        return SETTINGS.height;
+      }
+
+      @Override
+      public VideoFrame.I420Buffer toI420() {
+        return null;
+      }
+
+      @Override
+      public void retain() {}
+
+      @Override
+      public void release() {}
+    };
+    VideoFrame frame =
+        new VideoFrame(buffer, 0 /* rotation */, presentationTimestampUs * 1000, new Matrix());
+    VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
+        new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
+
+    assertEquals(encoder.encode(frame, info), VideoCodecStatus.OK);
+    GlUtil.checkNoGLES2Error("encodeTexture");
+
+    // It should be Ok to delete the texture after calling encodeTexture.
+    GLES20.glDeleteTextures(1, new int[] {oesTextureId}, 0);
+
+    ThreadUtils.awaitUninterruptibly(encodeDone);
+
+    assertEquals(encoder.release(), VideoCodecStatus.OK);
+    eglOesBase.release();
   }
 }

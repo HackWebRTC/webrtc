@@ -48,6 +48,9 @@ class MediaCodecUtils {
       MediaCodecInfo.CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar,
       MediaCodecUtils.COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m};
 
+  // Color formats supported by texture mode encoding - in order of preference.
+  static final int[] TEXTURE_COLOR_FORMATS = {MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface};
+
   static Integer selectColorFormat(int[] supportedColorFormats, CodecCapabilities capabilities) {
     for (int supportedColorFormat : supportedColorFormats) {
       for (int codecColorFormat : capabilities.colorFormats) {

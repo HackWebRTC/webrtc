@@ -11,10 +11,13 @@
 package org.webrtc;
 
 import android.annotation.TargetApi;
+import android.graphics.Matrix;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.opengl.GLES20;
 import android.os.Bundle;
+import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -73,6 +76,19 @@ class HardwareVideoEncoder implements VideoEncoder {
   // value to send exceptions thrown during release back to the encoder thread.
   private volatile Exception shutdownException = null;
 
+  // Surface objects for texture-mode encoding.
+
+  // EGL context shared with the application.  Used to access texture inputs.
+  private EglBase14.Context textureContext;
+  // EGL base wrapping the shared texture context.  Holds hooks to both the shared context and the
+  // input surface.  Making this base current allows textures from the context to be drawn onto the
+  // surface.
+  private EglBase14 textureEglBase;
+  // Input surface for the codec.  The encoder will draw input textures onto this surface.
+  private Surface textureInputSurface;
+  // Drawer used to draw input textures onto the codec's input surface.
+  private GlRectDrawer textureDrawer;
+
   private MediaCodec codec;
   private Callback callback;
 
@@ -97,15 +113,22 @@ class HardwareVideoEncoder implements VideoEncoder {
    * @throws IllegalArgumentException if colorFormat is unsupported
    */
   public HardwareVideoEncoder(String codecName, VideoCodecType codecType, int colorFormat,
-      int keyFrameIntervalSec, int forceKeyFrameIntervalMs, BitrateAdjuster bitrateAdjuster) {
+      int keyFrameIntervalSec, int forceKeyFrameIntervalMs, BitrateAdjuster bitrateAdjuster,
+      EglBase14.Context textureContext) {
     this.codecName = codecName;
     this.codecType = codecType;
     this.colorFormat = colorFormat;
-    this.inputColorFormat = ColorFormat.valueOf(colorFormat);
+    if (textureContext == null) {
+      this.inputColorFormat = ColorFormat.valueOf(colorFormat);
+    } else {
+      // ColorFormat copies bytes between buffers.  It is not used in texture mode.
+      this.inputColorFormat = null;
+    }
     this.keyFrameIntervalSec = keyFrameIntervalSec;
     this.forcedKeyFrameMs = forceKeyFrameIntervalMs;
     this.bitrateAdjuster = bitrateAdjuster;
     this.outputBuilders = new LinkedBlockingDeque<>();
+    this.textureContext = textureContext;
   }
 
   @Override
@@ -144,6 +167,15 @@ class HardwareVideoEncoder implements VideoEncoder {
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, keyFrameIntervalSec);
       Logging.d(TAG, "Format: " + format);
       codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+
+      if (textureContext != null) {
+        // Texture mode.
+        textureEglBase = new EglBase14(textureContext, EglBase.CONFIG_RECORDABLE);
+        textureInputSurface = codec.createInputSurface();
+        textureEglBase.createSurface(textureInputSurface);
+        textureDrawer = new GlRectDrawer();
+      }
+
       codec.start();
     } catch (IllegalStateException e) {
       Logging.e(TAG, "initEncode failed", e);
@@ -161,6 +193,9 @@ class HardwareVideoEncoder implements VideoEncoder {
   @Override
   public VideoCodecStatus release() {
     try {
+      if (outputThread == null) {
+        return VideoCodecStatus.OK;
+      }
       // The outputThread actually stops and releases the codec once running is false.
       running = false;
       if (!ThreadUtils.joinUninterruptibly(outputThread, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
@@ -176,6 +211,19 @@ class HardwareVideoEncoder implements VideoEncoder {
       codec = null;
       outputThread = null;
       outputBuilders.clear();
+
+      if (textureDrawer != null) {
+        textureDrawer.release();
+        textureDrawer = null;
+      }
+      if (textureEglBase != null) {
+        textureEglBase.release();
+        textureEglBase = null;
+      }
+      if (textureInputSurface != null) {
+        textureInputSurface.release();
+        textureInputSurface = null;
+      }
     }
     return VideoCodecStatus.OK;
   }
@@ -196,36 +244,11 @@ class HardwareVideoEncoder implements VideoEncoder {
       }
     }
 
-    // No timeout.  Don't block for an input buffer, drop frames if the encoder falls behind.
-    int index;
-    try {
-      index = codec.dequeueInputBuffer(0 /* timeout */);
-    } catch (IllegalStateException e) {
-      Logging.e(TAG, "dequeueInputBuffer failed", e);
-      return VideoCodecStatus.FALLBACK_SOFTWARE;
-    }
-
-    if (index == -1) {
-      // Encoder is falling behind.  No input buffers available.  Drop the frame.
-      Logging.e(TAG, "Dropped frame, no input buffers available");
-      return VideoCodecStatus.OK; // See webrtc bug 2887.
-    }
     if (outputBuilders.size() > MAX_ENCODER_Q_SIZE) {
       // Too many frames in the encoder.  Drop this frame.
       Logging.e(TAG, "Dropped frame, encoder queue full");
       return VideoCodecStatus.OK; // See webrtc bug 2887.
     }
-
-    // TODO(mellem):  Add support for input surfaces and textures.
-    ByteBuffer buffer;
-    try {
-      buffer = codec.getInputBuffers()[index];
-    } catch (IllegalStateException e) {
-      Logging.e(TAG, "getInputBuffers failed", e);
-      return VideoCodecStatus.FALLBACK_SOFTWARE;
-    }
-    VideoFrame.I420Buffer i420 = videoFrame.getBuffer().toI420();
-    inputColorFormat.fillBufferFromI420(buffer, i420);
 
     boolean requestedKeyFrame = false;
     for (EncodedImage.FrameType frameType : encodeInfo.frameTypes) {
@@ -241,9 +264,10 @@ class HardwareVideoEncoder implements VideoEncoder {
       requestKeyFrame(presentationTimestampMs);
     }
 
+    VideoFrame.Buffer videoFrameBuffer = videoFrame.getBuffer();
     // Number of bytes in the video buffer. Y channel is sampled at one byte per pixel; U and V are
     // subsampled at one byte per four pixels.
-    int bufferSize = videoFrame.getBuffer().getHeight() * videoFrame.getBuffer().getWidth() * 3 / 2;
+    int bufferSize = videoFrameBuffer.getHeight() * videoFrameBuffer.getWidth() * 3 / 2;
     EncodedImage.Builder builder = EncodedImage.builder()
                                        .setCaptureTimeMs(presentationTimestampMs)
                                        .setCompleteFrame(true)
@@ -251,6 +275,80 @@ class HardwareVideoEncoder implements VideoEncoder {
                                        .setEncodedHeight(videoFrame.getHeight())
                                        .setRotation(videoFrame.getRotation());
     outputBuilders.offer(builder);
+
+    if (textureContext != null) {
+      if (!(videoFrameBuffer instanceof VideoFrame.TextureBuffer)) {
+        Logging.e(TAG, "Cannot encode non-texture buffer in texture mode");
+        return VideoCodecStatus.ERROR;
+      }
+      VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) videoFrameBuffer;
+      return encodeTextureBuffer(videoFrame, textureBuffer);
+    } else {
+      if (videoFrameBuffer instanceof VideoFrame.TextureBuffer) {
+        Logging.w(TAG, "Encoding texture buffer in byte mode; this may be inefficient");
+      }
+      return encodeByteBuffer(videoFrame, videoFrameBuffer, bufferSize, presentationTimestampUs);
+    }
+  }
+
+  private VideoCodecStatus encodeTextureBuffer(
+      VideoFrame videoFrame, VideoFrame.TextureBuffer textureBuffer) {
+    Matrix matrix = videoFrame.getTransformMatrix();
+    float[] transformationMatrix = RendererCommon.convertMatrixFromAndroidGraphicsMatrix(matrix);
+
+    try {
+      textureEglBase.makeCurrent();
+      // TODO(perkj): glClear() shouldn't be necessary since every pixel is covered anyway,
+      // but it's a workaround for bug webrtc:5147.
+      GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+      switch (textureBuffer.getType()) {
+        case OES:
+          textureDrawer.drawOes(textureBuffer.getTextureId(), transformationMatrix, width, height,
+              0, 0, width, height);
+          break;
+        case RGB:
+          textureDrawer.drawRgb(textureBuffer.getTextureId(), transformationMatrix, width, height,
+              0, 0, width, height);
+          break;
+      }
+      textureEglBase.swapBuffers(videoFrame.getTimestampNs());
+    } catch (RuntimeException e) {
+      Logging.e(TAG, "encodeTexture failed", e);
+      // Keep the output builders in sync with buffers in the codec.
+      outputBuilders.pollLast();
+      return VideoCodecStatus.ERROR;
+    }
+    return VideoCodecStatus.OK;
+  }
+
+  private VideoCodecStatus encodeByteBuffer(VideoFrame videoFrame,
+      VideoFrame.Buffer videoFrameBuffer, int bufferSize, long presentationTimestampUs) {
+    // No timeout.  Don't block for an input buffer, drop frames if the encoder falls behind.
+    int index;
+    try {
+      index = codec.dequeueInputBuffer(0 /* timeout */);
+    } catch (IllegalStateException e) {
+      Logging.e(TAG, "dequeueInputBuffer failed", e);
+      return VideoCodecStatus.FALLBACK_SOFTWARE;
+    }
+
+    if (index == -1) {
+      // Encoder is falling behind.  No input buffers available.  Drop the frame.
+      Logging.e(TAG, "Dropped frame, no input buffers available");
+      return VideoCodecStatus.OK; // See webrtc bug 2887.
+    }
+
+    ByteBuffer buffer;
+    try {
+      buffer = codec.getInputBuffers()[index];
+    } catch (IllegalStateException e) {
+      Logging.e(TAG, "getInputBuffers failed", e);
+      return VideoCodecStatus.ERROR;
+    }
+    VideoFrame.I420Buffer i420 = videoFrameBuffer.toI420();
+    inputColorFormat.fillBufferFromI420(buffer, i420);
+    i420.release();
+
     try {
       codec.queueInputBuffer(
           index, 0 /* offset */, bufferSize, presentationTimestampUs, 0 /* flags */);
@@ -259,7 +357,7 @@ class HardwareVideoEncoder implements VideoEncoder {
       // Keep the output builders in sync with buffers in the codec.
       outputBuilders.pollLast();
       // IllegalStateException thrown when the codec is in the wrong state.
-      return VideoCodecStatus.FALLBACK_SOFTWARE;
+      return VideoCodecStatus.ERROR;
     }
     return VideoCodecStatus.OK;
   }
