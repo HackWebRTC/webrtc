@@ -74,6 +74,7 @@ if (rtc_include_tests) {
       "test/bwe_test_logging.h",
       "test/estimators/bbr.cc",
       "test/estimators/bbr.h",
+      "test/estimators/congestion_window.cc",
       "test/estimators/congestion_window.h",
       "test/estimators/max_bandwidth_filter.cc",
       "test/estimators/max_bandwidth_filter.h",
@@ -177,6 +178,9 @@ if (rtc_include_tests) {
       "send_time_history_unittest.cc",
       "test/bwe_test_framework_unittest.cc",
       "test/bwe_unittest.cc",
+      "test/estimators/congestion_window_unittest.cc",
+      "test/estimators/max_bandwidth_filter_unittest.cc",
+      "test/estimators/min_rtt_filter_unittest.cc",
       "test/estimators/nada_unittest.cc",
       "test/metric_recorder_unittest.cc",
     ]

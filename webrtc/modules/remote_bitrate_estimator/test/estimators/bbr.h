@@ -57,12 +57,12 @@ class BbrBweSender : public BweSender {
   void EnterStartup();
   bool UpdateBandwidthAndMinRtt();
   void TryExitingStartup();
-  void TryExitingDrain(int64_t now);
-  void EnterProbeBw(int64_t now);
-  void EnterProbeRtt(int64_t now);
-  void TryUpdatingCyclePhase(int64_t now);
-  void TryEnteringProbeRtt(int64_t now);
-  void TryExitingProbeRtt(int64_t now);
+  void TryExitingDrain(int64_t now_ms);
+  void EnterProbeBw(int64_t now_ms);
+  void EnterProbeRtt(int64_t now_ms);
+  void TryUpdatingCyclePhase(int64_t now_ms);
+  void TryEnteringProbeRtt(int64_t now_ms);
+  void TryExitingProbeRtt(int64_t now_ms);
   Clock* const clock_;
   Mode mode_;
   std::unique_ptr<MaxBandwidthFilter> max_bandwidth_filter_;

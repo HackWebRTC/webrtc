@@ -25,7 +25,7 @@ const float kHighGain = 2.885f;
 // time.
 const float kDrainGain = 1 / kHighGain;
 // kStartupGrowthTarget and kMaxRoundsWithoutGrowth are chosen from
-// experiments,according to design document.
+// experiments, according to the design document.
 const float kStartupGrowthTarget = 1.25f;
 const int kMaxRoundsWithoutGrowth = 3;
 }  // namespace
@@ -68,23 +68,23 @@ void BbrBweSender::GiveFeedback(const FeedbackPacket& feedback) {
     full_bandwidth_reached_ = max_bandwidth_filter_->FullBandwidthReached(
         kStartupGrowthTarget, kMaxRoundsWithoutGrowth);
   }
-  int now = clock_->TimeInMilliseconds();
+  int now_ms = clock_->TimeInMilliseconds();
   switch (mode_) {
     break;
     case STARTUP:
       TryExitingStartup();
       break;
     case DRAIN:
-      TryExitingDrain(now);
+      TryExitingDrain(now_ms);
       break;
     case PROBE_BW:
-      TryUpdatingCyclePhase(now);
+      TryUpdatingCyclePhase(now_ms);
       break;
     case PROBE_RTT:
-      TryExitingProbeRtt(now);
+      TryExitingProbeRtt(now_ms);
       break;
   }
-  TryEnteringProbeRtt(now);
+  TryEnteringProbeRtt(now_ms);
   // TODO(gnish): implement functions updating congestion window and pacing rate
   // controllers.
 }
@@ -107,14 +107,14 @@ void BbrBweSender::TryExitingStartup() {
   }
 }
 
-void BbrBweSender::TryExitingDrain(int64_t now) {}
+void BbrBweSender::TryExitingDrain(int64_t now_ms) {}
 
-void BbrBweSender::EnterProbeBw(int64_t now) {}
+void BbrBweSender::EnterProbeBw(int64_t now_ms) {}
 
-void BbrBweSender::TryUpdatingCyclePhase(int64_t now) {}
+void BbrBweSender::TryUpdatingCyclePhase(int64_t now_ms) {}
 
-void BbrBweSender::TryEnteringProbeRtt(int64_t now) {}
-void BbrBweSender::TryExitingProbeRtt(int64_t now) {}
+void BbrBweSender::TryEnteringProbeRtt(int64_t now_ms) {}
+void BbrBweSender::TryExitingProbeRtt(int64_t now_ms) {}
 
 int64_t BbrBweSender::TimeUntilNextProcess() {
   return 100;

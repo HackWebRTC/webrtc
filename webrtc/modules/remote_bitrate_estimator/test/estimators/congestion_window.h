@@ -12,22 +12,33 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_CONGESTION_WINDOW_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_CONGESTION_WINDOW_H_
 
+#include "webrtc/modules/remote_bitrate_estimator/test/estimators/bbr.h"
+
 namespace webrtc {
 namespace testing {
 namespace bwe {
 class CongestionWindow {
  public:
-  void set_gain(float gain);
-  size_t data_inflight();
-  int64_t GetCongestionWindow();
+  CongestionWindow();
+  ~CongestionWindow();
+  int GetCongestionWindow(BbrBweSender::Mode mode,
+                          int64_t bandwidth_estimate,
+                          int64_t min_rtt,
+                          float gain);
+  int GetTargetCongestionWindow(int64_t bandwidth_estimate,
+                                int64_t min_rtt,
+                                float gain);
+  // Packet sent from sender, meaning it is inflight until we receive it and we
+  // should add packet's size to data_inflight.
+  void PacketSent(size_t sent_packet_size);
 
-  // Packet sent from sender, meaning it is inflight
-  // until we receive it and we should add packet's size to data_inflight.
-  void PacketSent();
+  // Ack was received by sender, meaning packet is no longer inflight.
+  void AckReceived(size_t received_packet_size);
 
-  // Ack was received by sender, meaning
-  // packet is no longer inflight.
-  void AckReceived();
+  size_t data_inflight() { return data_inflight_bytes_; }
+
+ private:
+  size_t data_inflight_bytes_;
 };
 }  // namespace bwe
 }  // namespace testing
