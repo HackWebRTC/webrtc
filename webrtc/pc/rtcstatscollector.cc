@@ -32,7 +32,7 @@ namespace webrtc {
 
 namespace {
 
-const int kStatTypeMemberNameAndIdMaxLen = 120;
+const int kStatTypeMemberNameAndIdMaxLen = 512;
 
 std::string GetStatTypeMemberNameAndId(const RTCStats& stats,
                                        const RTCStatsMemberInterface* member) {
