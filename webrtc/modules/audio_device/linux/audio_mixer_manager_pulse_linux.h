@@ -65,7 +65,7 @@ public:
     bool MicrophoneIsInitialized() const;
 
 public:
-    AudioMixerManagerLinuxPulse(const int32_t id);
+    AudioMixerManagerLinuxPulse();
     ~AudioMixerManagerLinuxPulse();
 
 private:
@@ -89,7 +89,6 @@ private:
     bool GetSourceInfoByIndex(int device_index) const;
 
 private:
-    int32_t _id;
     int16_t _paOutputDeviceIndex;
     int16_t _paInputDeviceIndex;
 

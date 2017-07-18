@@ -54,7 +54,7 @@ public:
     bool MicrophoneIsInitialized() const;
 
 public:
-    AudioMixerManagerLinuxALSA(const int32_t id);
+    AudioMixerManagerLinuxALSA();
     ~AudioMixerManagerLinuxALSA();
 
 private:
@@ -64,7 +64,6 @@ private:
 
 private:
     rtc::CriticalSection _critSect;
-    int32_t _id;
     mutable snd_mixer_t* _outputMixerHandle;
     char _outputMixerStr[kAdmMaxDeviceNameSize];
     mutable snd_mixer_t* _inputMixerHandle;

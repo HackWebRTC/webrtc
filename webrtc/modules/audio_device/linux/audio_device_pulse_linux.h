@@ -95,7 +95,7 @@ class EventWrapper;
 class AudioDeviceLinuxPulse: public AudioDeviceGeneric
 {
 public:
-    AudioDeviceLinuxPulse(const int32_t id);
+    AudioDeviceLinuxPulse();
     virtual ~AudioDeviceLinuxPulse();
 
     // Retrieve the currently utilized audio layer
@@ -289,7 +289,6 @@ private:
     // TODO(pbos): Remove unique_ptr and use directly without resetting.
     std::unique_ptr<rtc::PlatformThread> _ptrThreadPlay;
     std::unique_ptr<rtc::PlatformThread> _ptrThreadRec;
-    int32_t _id;
 
     AudioMixerManagerLinuxPulse _mixerManager;
 

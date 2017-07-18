@@ -27,14 +27,12 @@ webrtc::adm_linux_pulse::PulseAudioSymbolTable PaSymbolTable;
 
 namespace webrtc {
 
-AudioDeviceLinuxPulse::AudioDeviceLinuxPulse(const int32_t id)
+AudioDeviceLinuxPulse::AudioDeviceLinuxPulse()
     : _ptrAudioBuffer(NULL),
       _timeEventRec(*EventWrapper::Create()),
       _timeEventPlay(*EventWrapper::Create()),
       _recStartEvent(*EventWrapper::Create()),
       _playStartEvent(*EventWrapper::Create()),
-      _id(id),
-      _mixerManager(id),
       _inputDeviceIndex(0),
       _outputDeviceIndex(0),
       _inputDeviceIsSpecified(false),

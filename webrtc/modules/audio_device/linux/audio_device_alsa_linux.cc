@@ -58,9 +58,8 @@ static const unsigned int ALSA_CAPTURE_WAIT_TIMEOUT = 5; // in ms
 #define FUNC_GET_DEVICE_NAME 1
 #define FUNC_GET_DEVICE_NAME_FOR_AN_ENUM 2
 
-AudioDeviceLinuxALSA::AudioDeviceLinuxALSA(const int32_t id) :
+AudioDeviceLinuxALSA::AudioDeviceLinuxALSA() :
     _ptrAudioBuffer(NULL),
-    _mixerManager(id),
     _inputDeviceIndex(0),
     _outputDeviceIndex(0),
     _inputDeviceIsSpecified(false),

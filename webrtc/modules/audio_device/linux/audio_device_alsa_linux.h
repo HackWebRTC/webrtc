@@ -33,7 +33,7 @@ class EventWrapper;
 class AudioDeviceLinuxALSA : public AudioDeviceGeneric
 {
 public:
-    AudioDeviceLinuxALSA(const int32_t id);
+    AudioDeviceLinuxALSA();
     virtual ~AudioDeviceLinuxALSA();
 
     // Retrieve the currently utilized audio layer

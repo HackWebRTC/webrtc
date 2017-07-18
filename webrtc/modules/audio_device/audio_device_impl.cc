@@ -257,7 +257,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
     LOG(INFO) << "attempting to use the Linux PulseAudio APIs...";
 
     // create *Linux PulseAudio* implementation
-    AudioDeviceLinuxPulse* pulseDevice = new AudioDeviceLinuxPulse(Id());
+    AudioDeviceLinuxPulse* pulseDevice = new AudioDeviceLinuxPulse();
     if (pulseDevice->Init() == AudioDeviceGeneric::InitStatus::OK) {
       ptrAudioDevice = pulseDevice;
       LOG(INFO) << "Linux PulseAudio APIs will be utilized";
@@ -266,7 +266,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
 #endif
 #if defined(LINUX_ALSA)
       // create *Linux ALSA Audio* implementation
-      ptrAudioDevice = new AudioDeviceLinuxALSA(Id());
+      ptrAudioDevice = new AudioDeviceLinuxALSA();
       if (ptrAudioDevice != NULL) {
         // Pulse Audio was not supported => revert to ALSA instead
         _platformAudioLayer =
@@ -281,7 +281,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
   } else if (audioLayer == kLinuxAlsaAudio) {
 #if defined(LINUX_ALSA)
     // create *Linux ALSA Audio* implementation
-    ptrAudioDevice = new AudioDeviceLinuxALSA(Id());
+    ptrAudioDevice = new AudioDeviceLinuxALSA();
     LOG(INFO) << "Linux ALSA APIs will be utilized";
 #endif
   }
