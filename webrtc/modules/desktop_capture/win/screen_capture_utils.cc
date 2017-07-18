@@ -12,6 +12,10 @@
 
 #include <windows.h>
 
+#include <string>
+#include <vector>
+
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/win32.h"
 

@@ -89,6 +89,7 @@ if (rtc_include_tests) {
       "win/cursor_unittest_resources.h",
       "win/cursor_unittest_resources.rc",
       "win/screen_capture_utils_unittest.cc",
+      "win/screen_capturer_win_directx_unittest.cc",
     ]
     deps = [
       ":desktop_capture",

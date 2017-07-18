@@ -21,7 +21,7 @@ namespace webrtc {
 // Output the list of active screens into |screens|. Returns true if succeeded,
 // or false if it fails to enumerate the display devices. If the |device_names|
 // is provided, it will be filled with the DISPLAY_DEVICE.DeviceName in UTF-8
-// encoding. Once this function returns true, consumers can always assume that
+// encoding. If this function returns true, consumers can always assume that
 // |screens|[i] and |device_names|[i] indicate the same monitor on the system.
 bool GetScreenList(DesktopCapturer::SourceList* screens,
                    std::vector<std::string>* device_names = nullptr);

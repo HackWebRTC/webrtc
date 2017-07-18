@@ -22,9 +22,9 @@ TEST(ScreenCaptureUtilsTest, GetScreenList) {
   DesktopCapturer::SourceList screens;
   std::vector<std::string> device_names;
 
-  GetScreenList(&screens);
+  ASSERT_TRUE(GetScreenList(&screens));
   screens.clear();
-  GetScreenList(&screens, &device_names);
+  ASSERT_TRUE(GetScreenList(&screens, &device_names));
 
   ASSERT_EQ(screens.size(), device_names.size());
 }
