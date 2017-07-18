@@ -44,7 +44,7 @@ class LowCutFilter::BiquadFilter {
       tmp_int32 = (tmp_int32 >> 15);
       tmp_int32 += y[0] * ba[3];  // -a[1] * y[i-1] (high part)
       tmp_int32 += y[2] * ba[4];  // -a[2] * y[i-2] (high part)
-      tmp_int32 = (tmp_int32 << 1);
+      tmp_int32 *= 2;
 
       tmp_int32 += data[i] * ba[0];  // b[0] * x[0]
       tmp_int32 += x[0] * ba[1];     // b[1] * x[i-1]
