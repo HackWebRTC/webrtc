@@ -139,14 +139,9 @@ class NoBandwidthDropAfterDtx : public AudioBweTest {
 
 using AudioBweIntegrationTest = CallTest;
 
-// TODO(tschumim): This test is flaky when run on android. Re-enable the test
-// for android when the issue is fixed.
-#if defined(WEBRTC_ANDROID)
-#define MAYBE_NoBandwidthDropAfterDtx DISABLED_NoBandwidthDropAfterDtx
-#else
-#define MAYBE_NoBandwidthDropAfterDtx NoBandwidthDropAfterDtx
-#endif
-TEST_F(AudioBweIntegrationTest, MAYBE_NoBandwidthDropAfterDtx) {
+// TODO(tschumim): This test is flaky when run on android and mac. Re-enable the
+// test for when the issue is fixed.
+TEST_F(AudioBweIntegrationTest, DISABLED_NoBandwidthDropAfterDtx) {
   webrtc::test::ScopedFieldTrials override_field_trials(
       "WebRTC-Audio-SendSideBwe/Enabled/"
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
