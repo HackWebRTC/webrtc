@@ -20,6 +20,7 @@
 #include "webrtc/audio/audio_send_stream.h"
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/scoped_voe_interface.h"
+#include "webrtc/audio/time_interval.h"
 #include "webrtc/call/bitrate_allocator.h"
 #include "webrtc/call/call.h"
 #include "webrtc/call/flexfec_receive_stream_impl.h"
@@ -329,6 +330,7 @@ class Call : public webrtc::Call,
   rtc::Optional<int64_t> last_received_rtp_audio_ms_;
   rtc::Optional<int64_t> first_received_rtp_video_ms_;
   rtc::Optional<int64_t> last_received_rtp_video_ms_;
+  TimeInterval sent_rtp_audio_timer_ms_;
 
   // TODO(holmer): Remove this lock once BitrateController no longer calls
   // OnNetworkChanged from multiple threads.
@@ -510,6 +512,11 @@ void Call::UpdateHistograms() {
 void Call::UpdateSendHistograms(int64_t first_sent_packet_ms) {
   if (first_sent_packet_ms == -1)
     return;
+  if (!sent_rtp_audio_timer_ms_.Empty()) {
+    RTC_HISTOGRAM_COUNTS_100000(
+        "WebRTC.Call.TimeSendingAudioRtpPacketsInSeconds",
+        sent_rtp_audio_timer_ms_.Length() / 1000);
+  }
   int64_t elapsed_sec =
       (clock_->TimeInMilliseconds() - first_sent_packet_ms) / 1000;
   if (elapsed_sec < metrics::kMinRunTimeInSeconds)
@@ -648,6 +655,7 @@ void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
     }
   }
   UpdateAggregateNetworkState();
+  sent_rtp_audio_timer_ms_.Extend(audio_send_stream->GetActiveLifetime());
   delete audio_send_stream;
 }
 

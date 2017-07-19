@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/audio/time_interval.h"
 #include "webrtc/call/audio_send_stream.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/call/bitrate_allocator.h"
@@ -76,8 +77,11 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   void SetTransportOverhead(int transport_overhead_per_packet);
 
   RtpState GetRtpState() const;
+  const TimeInterval& GetActiveLifetime() const;
 
  private:
+  class TimedTransport;
+
   VoiceEngine* voice_engine() const;
 
   // These are all static to make it less likely that (the old) config_ is
@@ -116,6 +120,9 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   RtpRtcp* rtp_rtcp_module_;
   rtc::Optional<RtpState> const suspended_rtp_state_;
+
+  std::unique_ptr<TimedTransport> timed_send_transport_adapter_;
+  TimeInterval active_lifetime_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };
