@@ -27,19 +27,20 @@ class MockPacketBuffer : public PacketBuffer {
       void());
   MOCK_CONST_METHOD0(Empty,
       bool());
-  int InsertPacket(Packet&& packet) {
-    return InsertPacketWrapped(&packet);
+  int InsertPacket(Packet&& packet, StatisticsCalculator* stats) {
+    return InsertPacketWrapped(&packet, stats);
   }
   // Since gtest does not properly support move-only types, InsertPacket is
   // implemented as a wrapper. You'll have to implement InsertPacketWrapped
   // instead and move from |*packet|.
-  MOCK_METHOD1(InsertPacketWrapped,
-      int(Packet* packet));
-  MOCK_METHOD4(InsertPacketList,
-      int(PacketList* packet_list,
-          const DecoderDatabase& decoder_database,
-          rtc::Optional<uint8_t>* current_rtp_payload_type,
-          rtc::Optional<uint8_t>* current_cng_rtp_payload_type));
+  MOCK_METHOD2(InsertPacketWrapped,
+               int(Packet* packet, StatisticsCalculator* stats));
+  MOCK_METHOD5(InsertPacketList,
+               int(PacketList* packet_list,
+                   const DecoderDatabase& decoder_database,
+                   rtc::Optional<uint8_t>* current_rtp_payload_type,
+                   rtc::Optional<uint8_t>* current_cng_rtp_payload_type,
+                   StatisticsCalculator* stats));
   MOCK_CONST_METHOD1(NextTimestamp,
       int(uint32_t* next_timestamp));
   MOCK_CONST_METHOD2(NextHigherTimestamp,

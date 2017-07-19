@@ -273,6 +273,7 @@ NetEqNetworkStatsTest(NetEqDecoder codec,
     expects.stats_ref.packet_loss_rate = 0;
     expects.stats_ref.expand_rate = expects.stats_ref.speech_expand_rate = 0;
     expects.stats_ref.secondary_decoded_rate = 2006;
+    expects.stats_ref.packet_discard_rate = 13374;
     RunTest(50, expects);
   }
 

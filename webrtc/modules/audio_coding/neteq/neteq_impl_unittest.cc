@@ -350,7 +350,7 @@ TEST_F(NetEqImplTest, InsertPacket) {
       .WillOnce(Return(false));  // Called once after first packet is inserted.
   EXPECT_CALL(*mock_packet_buffer_, Flush())
       .Times(1);
-  EXPECT_CALL(*mock_packet_buffer_, InsertPacketList(_, _, _, _))
+  EXPECT_CALL(*mock_packet_buffer_, InsertPacketList(_, _, _, _, _))
       .Times(2)
       .WillRepeatedly(
           DoAll(SetArgPointee<2>(rtc::Optional<uint8_t>(kPayloadType)),

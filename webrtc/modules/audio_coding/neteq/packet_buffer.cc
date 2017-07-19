@@ -68,7 +68,7 @@ bool PacketBuffer::Empty() const {
   return buffer_.empty();
 }
 
-int PacketBuffer::InsertPacket(Packet&& packet) {
+int PacketBuffer::InsertPacket(Packet&& packet, StatisticsCalculator* stats) {
   if (packet.empty()) {
     LOG(LS_WARNING) << "InsertPacket invalid packet";
     return kInvalidPacket;
@@ -99,6 +99,8 @@ int PacketBuffer::InsertPacket(Packet&& packet) {
   // timestamp as |rit|, which has a higher priority, do not insert the new
   // packet to list.
   if (rit != buffer_.rend() && packet.timestamp == rit->timestamp) {
+    RTC_CHECK(stats);
+    stats->PacketsDiscarded(1);
     return return_val;
   }
 
@@ -108,6 +110,8 @@ int PacketBuffer::InsertPacket(Packet&& packet) {
   PacketList::iterator it = rit.base();
   if (it != buffer_.end() && packet.timestamp == it->timestamp) {
     it = buffer_.erase(it);
+    RTC_CHECK(stats);
+    stats->PacketsDiscarded(1);
   }
   buffer_.insert(it, std::move(packet));  // Insert the packet at that position.
 
@@ -118,7 +122,9 @@ int PacketBuffer::InsertPacketList(
     PacketList* packet_list,
     const DecoderDatabase& decoder_database,
     rtc::Optional<uint8_t>* current_rtp_payload_type,
-    rtc::Optional<uint8_t>* current_cng_rtp_payload_type) {
+    rtc::Optional<uint8_t>* current_cng_rtp_payload_type,
+    StatisticsCalculator* stats) {
+  RTC_DCHECK(stats);
   bool flushed = false;
   for (auto& packet : *packet_list) {
     if (decoder_database.IsComfortNoise(packet.payload_type)) {
@@ -145,7 +151,7 @@ int PacketBuffer::InsertPacketList(
       }
       *current_rtp_payload_type = rtc::Optional<uint8_t>(packet.payload_type);
     }
-    int return_val = InsertPacket(std::move(packet));
+    int return_val = InsertPacket(std::move(packet), stats);
     if (return_val == kFlushed) {
       // The buffer flushed, but this is not an error. We can still continue.
       flushed = true;
@@ -214,6 +220,7 @@ int PacketBuffer::DiscardNextPacket(StatisticsCalculator* stats) {
   // Assert that the packet sanity checks in InsertPacket method works.
   RTC_DCHECK(!buffer_.front().empty());
   buffer_.pop_front();
+  RTC_CHECK(stats);
   stats->PacketsDiscarded(1);
   return kOK;
 }
@@ -227,6 +234,7 @@ void PacketBuffer::DiscardOldPackets(uint32_t timestamp_limit,
            IsObsoleteTimestamp(p.timestamp, timestamp_limit, horizon_samples);
   });
   if (old_size > buffer_.size()) {
+    RTC_CHECK(stats);
     stats->PacketsDiscarded(old_size - buffer_.size());
   }
 }
@@ -248,8 +256,10 @@ void PacketBuffer::DiscardPacketsWithPayloadType(uint8_t payload_type,
       ++it;
     }
   }
-  if (packets_discarded > 0)
+  if (packets_discarded > 0) {
+    RTC_CHECK(stats);
     stats->PacketsDiscarded(packets_discarded);
+  }
 }
 
 size_t PacketBuffer::NumPacketsInBuffer() const {

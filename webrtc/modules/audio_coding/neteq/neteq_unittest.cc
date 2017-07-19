@@ -482,10 +482,10 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
       "6237dd113ad80d7764fe4c90b55b2ec035eae64e");
 
   const std::string network_stats_checksum =
-      PlatformChecksum("7a29daca4dfa4fb6eaec06d7e63c1729da7708f6",
-                       "7a29daca4dfa4fb6eaec06d7e63c1729da7708f6",
-                       "7a29daca4dfa4fb6eaec06d7e63c1729da7708f6",
-                       "7a29daca4dfa4fb6eaec06d7e63c1729da7708f6");
+      PlatformChecksum("dda4cee006d9369c7114a03790c5761346cf5e23",
+                       "dda4cee006d9369c7114a03790c5761346cf5e23",
+                       "dda4cee006d9369c7114a03790c5761346cf5e23",
+                       "dda4cee006d9369c7114a03790c5761346cf5e23");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
