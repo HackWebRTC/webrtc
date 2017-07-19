@@ -87,7 +87,7 @@ rtc_static_library("rtc_p2p") {
   deps = [
     "../api:libjingle_peerconnection_api",
     "../api:ortc_api",
-    "../base:rtc_base",
+    "../rtc_base:rtc_base",
     "../system_wrappers:field_trial_api",
   ]
 
@@ -155,9 +155,9 @@ if (rtc_include_tests) {
     deps = [
       ":rtc_p2p",
       "../api:ortc_api",
-      "../base:rtc_base",
-      "../base:rtc_base_approved",
-      "../base:rtc_base_tests_utils",
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_base_tests_utils",
       "../test:test_support",
       "//testing/gmock",
     ]
@@ -209,9 +209,9 @@ if (rtc_include_tests) {
       ":rtc_p2p",
       "../api:fakemetricsobserver",
       "../api:ortc_api",
-      "../base:rtc_base",
-      "../base:rtc_base_approved",
-      "../base:rtc_base_tests_utils",
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_base_tests_utils",
       "../test:test_support",
       "//testing/gmock",
       "//testing/gtest",
@@ -238,7 +238,7 @@ rtc_static_library("libstunprober") {
   deps = [
     ":rtc_p2p",
     "..:webrtc_common",
-    "../base:rtc_base",
+    "../rtc_base:rtc_base",
   ]
 }
 
@@ -259,8 +259,8 @@ if (rtc_include_tests) {
       ":libstunprober",
       ":p2p_test_utils",
       ":rtc_p2p",
-      "../base:rtc_base",
-      "../base:rtc_base_tests_utils",
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_tests_utils",
       "//testing/gmock",
       "//testing/gtest",
     ]

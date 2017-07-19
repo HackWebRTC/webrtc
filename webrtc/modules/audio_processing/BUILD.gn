@@ -238,8 +238,8 @@ rtc_static_library("audio_processing") {
     "..:module_api",
     "../..:webrtc_common",
     "../../audio/utility:audio_frame_operations",
-    "../../base:gtest_prod",
-    "../../base:protobuf_utils",
+    "../../rtc_base:gtest_prod",
+    "../../rtc_base:protobuf_utils",
     "../audio_coding:isac",
   ]
   public_deps = [
@@ -303,8 +303,8 @@ rtc_static_library("audio_processing") {
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
   deps += [
-    "../../base:rtc_base_approved",
     "../../common_audio",
+    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
   ]
 }
@@ -316,7 +316,7 @@ rtc_source_set("aec_dump_interface") {
   ]
 
   deps = [
-    "../../base:rtc_base_approved",
+    "../../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -356,8 +356,8 @@ rtc_source_set("audio_processing_c") {
 
   deps = [
     "../..:webrtc_common",
-    "../../base:rtc_base_approved",
     "../../common_audio",
+    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
   ]
 
@@ -470,7 +470,7 @@ if (rtc_build_with_neon) {
       ]
     }
     deps = [
-      "../../base:rtc_base_approved",
+      "../../rtc_base:rtc_base_approved",
     ]
   }
 }
@@ -550,11 +550,11 @@ if (rtc_include_tests) {
       ":audioproc_test_utils",
       "..:module_api",
       "../..:webrtc_common",
-      "../../base:gtest_prod",
-      "../../base:protobuf_utils",
-      "../../base:rtc_base",
-      "../../base:rtc_base_approved",
       "../../common_audio:common_audio",
+      "../../rtc_base:gtest_prod",
+      "../../rtc_base:protobuf_utils",
+      "../../rtc_base:rtc_base",
+      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
       "../audio_coding:neteq_tools",
@@ -594,7 +594,7 @@ if (rtc_include_tests) {
         ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",
         ":audioproc_unittest_proto",
-        "../../base:rtc_task_queue",
+        "../../rtc_base:rtc_task_queue",
         "aec_dump",
         "aec_dump:aec_dump_unittests",
       ]
@@ -696,7 +696,7 @@ if (rtc_include_tests) {
     deps = [
       ":audio_processing",
       ":audioproc_test_utils",
-      "../../base:protobuf_utils",
+      "../../rtc_base:protobuf_utils",
       "//testing/gtest",
     ]
 
@@ -720,9 +720,9 @@ if (rtc_include_tests) {
         ":audioproc_protobuf_utils",
         ":audioproc_test_utils",
         "../..:webrtc_common",
-        "../../base:protobuf_utils",
-        "../../base:rtc_base_approved",
         "../../common_audio",
+        "../../rtc_base:protobuf_utils",
+        "../../rtc_base:rtc_base_approved",
         "../../system_wrappers:system_wrappers_default",
         "//third_party/gflags:gflags",
       ]
@@ -745,10 +745,10 @@ if (rtc_include_tests) {
         ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",
         ":audioproc_test_utils",
-        "../../base:protobuf_utils",
-        "../../base:rtc_base_approved",
-        "../../base:rtc_task_queue",
         "../../common_audio:common_audio",
+        "../../rtc_base:protobuf_utils",
+        "../../rtc_base:rtc_base_approved",
+        "../../rtc_base:rtc_task_queue",
         "../../system_wrappers",
         "../../system_wrappers:system_wrappers_default",
         "../../test:test_support",
@@ -776,8 +776,8 @@ if (rtc_include_tests) {
     deps = [
       ":audio_processing",
       "..:module_api",
-      "../../base:rtc_base_approved",
       "../../common_audio",
+      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
     ]
   }
@@ -825,8 +825,8 @@ if (rtc_include_tests) {
     deps = [
       ":audio_processing",
       ":audioproc_test_utils",
-      "../../base:rtc_base_approved",
       "../../common_audio:common_audio",
+      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:metrics_default",
       "//third_party/gflags",
     ]
@@ -866,8 +866,8 @@ if (rtc_include_tests) {
       deps = [
         ":audioproc_debug_proto",
         "../..:webrtc_common",
-        "../../base:protobuf_utils",
-        "../../base:rtc_base_approved",
+        "../../rtc_base:protobuf_utils",
+        "../../rtc_base:rtc_base_approved",
       ]
     }
   }

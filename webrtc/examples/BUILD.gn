@@ -523,12 +523,12 @@ if (is_linux || is_win) {
     deps += [
       "../api:libjingle_peerconnection_test_api",
       "../api:video_frame_api",
-      "../base:rtc_base",
-      "../base:rtc_base_approved",
-      "../base:rtc_json",
       "../media:rtc_media",
       "../modules/video_capture:video_capture_module",
       "../pc:libjingle_peerconnection",
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_json",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
       "//third_party/libyuv",
@@ -548,11 +548,8 @@ if (is_linux || is_win) {
     ]
     deps = [
       "..:webrtc_common",
-      "../base:rtc_base_approved",
+      "../rtc_base:rtc_base_approved",
       "../rtc_tools:command_line_parser",
-      "//webrtc:webrtc_common",
-      "//webrtc/base:rtc_base_approved",
-      "//webrtc/rtc_tools:command_line_parser",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -565,10 +562,10 @@ if (is_linux || is_win) {
       "relayserver/relayserver_main.cc",
     ]
     deps = [
-      "../base:rtc_base",
-      "../base:rtc_base_approved",
       "../p2p:rtc_p2p",
       "../pc:rtc_pc",
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
     ]
@@ -583,10 +580,10 @@ if (is_linux || is_win) {
       "turnserver/turnserver_main.cc",
     ]
     deps = [
-      "../base:rtc_base",
-      "../base:rtc_base_approved",
       "../p2p:rtc_p2p",
       "../pc:rtc_pc",
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
     ]
@@ -601,10 +598,10 @@ if (is_linux || is_win) {
       "stunserver/stunserver_main.cc",
     ]
     deps = [
-      "../base:rtc_base",
-      "../base:rtc_base_approved",
       "../p2p:rtc_p2p",
       "../pc:rtc_pc",
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
     ]
@@ -636,13 +633,13 @@ if (is_win) {
     deps = [
       "../api:libjingle_peerconnection_test_api",
       "../api:video_frame_api",
-      "../base:rtc_base",
-      "../base:rtc_base_approved",
-      "../base:rtc_json",
       "../media:rtc_media",
       "../media:rtc_media_base",
       "../modules/video_capture:video_capture_module",
       "../pc:libjingle_peerconnection",
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_json",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
     ]
@@ -664,10 +661,10 @@ if (!build_with_chromium) {
     }
 
     deps = [
-      "../base:rtc_base",
-      "../base:rtc_base_approved",
       "../p2p:libstunprober",
       "../p2p:rtc_p2p",
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial_default",
     ]
   }

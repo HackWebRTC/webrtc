@@ -49,8 +49,8 @@ rtc_source_set("base_jni") {
 
   deps = [
     "../../api:libjingle_peerconnection_api",
-    "../../base:rtc_base",
-    "../../base:rtc_base_approved",
+    "../../rtc_base:rtc_base",
+    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:metrics_api",
   ]
 
@@ -139,16 +139,16 @@ rtc_static_library("video_jni") {
     "../../api:libjingle_peerconnection_api",
     "../../api:video_frame_api",
     "../../api/video_codecs:video_codecs_api",
-    "../../base:rtc_base",
-    "../../base:rtc_base_approved",
-    "../../base:rtc_task_queue",
-    "../../base:sequenced_task_checker",
-    "../../base:weak_ptr",
     "../../common_video:common_video",
     "../../media:rtc_audio_video",
     "../../media:rtc_media_base",
     "../../modules/utility:utility",
     "../../modules/video_coding:video_coding_utility",
+    "../../rtc_base:rtc_base",
+    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:rtc_task_queue",
+    "../../rtc_base:sequenced_task_checker",
+    "../../rtc_base:weak_ptr",
     "../../system_wrappers:system_wrappers",
   ]
 
@@ -237,13 +237,13 @@ rtc_static_library("peerconnection_jni") {
   deps = [
     ":base_jni",
     "../..:webrtc_common",
-    "../../base:rtc_base",
-    "../../base:rtc_base_approved",
-    "../../base:rtc_task_queue",
     "../../media:rtc_data",
     "../../media:rtc_media_base",
     "../../modules/utility:utility",
     "../../pc:peerconnection",
+    "../../rtc_base:rtc_base",
+    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:rtc_task_queue",
     "../../system_wrappers:system_wrappers",
   ]
 }
@@ -294,9 +294,9 @@ rtc_shared_library("libjingle_peerconnection_datachannelonly_so") {
     ":null_media_jni",
     ":null_video_jni",
     ":peerconnection_jni",
-    "../../base:rtc_base",
-    "../../base:rtc_base_approved",
     "../../pc:peerconnection",
+    "../../rtc_base:rtc_base",
+    "../../rtc_base:rtc_base_approved",
   ]
   output_extension = "so"
 }
@@ -312,8 +312,8 @@ rtc_shared_library("libjingle_peerconnection_so") {
   deps = [
     ":libjingle_peerconnection_jni",
     ":libjingle_peerconnection_metrics_default_jni",
-    "../../base:rtc_base",
     "../../pc:libjingle_peerconnection",
+    "../../rtc_base:rtc_base",
   ]
   output_extension = "so"
 }

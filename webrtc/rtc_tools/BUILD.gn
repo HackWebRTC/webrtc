@@ -48,8 +48,8 @@ rtc_static_library("command_line_parser") {
     "simple_command_line_parser.h",
   ]
   deps = [
-    "../base:gtest_prod",
-    "../base:rtc_base_approved",
+    "../rtc_base:gtest_prod",
+    "../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -206,13 +206,13 @@ if (rtc_enable_protobuf) {
     defines = [ "ENABLE_RTC_EVENT_LOG" ]
     deps = [
       "..:video_stream_api",
-      "../base:rtc_base_approved",
       "../call:call_interfaces",
       "../logging:rtc_event_log_impl",
       "../logging:rtc_event_log_parser",
       "../modules:module_api",
       "../modules/audio_coding:ana_debug_dump_proto",
       "../modules/audio_coding:neteq_tools",
+      "../rtc_base:rtc_base_approved",
 
       # TODO(kwiberg): Remove this dependency.
       "../api/audio_codecs:audio_codecs_api",
@@ -245,7 +245,7 @@ if (rtc_include_tests) {
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":event_log_visualizer_utils",
-        "../base:rtc_base_approved",
+        "../rtc_base:rtc_base_approved",
         "../test:field_trial",
         "../test:test_support",
       ]
@@ -264,9 +264,9 @@ if (rtc_include_tests) {
     }
 
     deps = [
-      "../base:rtc_base_approved",
       "../modules:module_api",
       "../modules/audio_processing",
+      "../rtc_base:rtc_base_approved",
       "../system_wrappers:metrics_default",
       "../test:test_support",
       "//build/win:default_exe_manifest",

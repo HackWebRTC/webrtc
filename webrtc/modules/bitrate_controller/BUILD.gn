@@ -37,7 +37,7 @@ rtc_static_library("bitrate_controller") {
   }
 
   deps = [
-    "../../base:rtc_base_approved",
+    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
     "../rtp_rtcp",
   ]

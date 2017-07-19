@@ -232,8 +232,8 @@ rtc_source_set("video_stream_api") {
   deps = [
     ":webrtc_common",
     "api:transport_api",
-    "base:rtc_base_approved",
     "common_video:common_video",
+    "rtc_base:rtc_base_approved",
   ]
 }
 
@@ -252,7 +252,6 @@ if (!build_with_chromium) {
       "api",
       "api:transport_api",
       "audio",
-      "base",
       "call",
       "common_audio",
       "common_video",
@@ -291,7 +290,6 @@ if (!build_with_chromium) {
         ":video_engine_tests",
         ":webrtc_nonparallel_tests",
         ":webrtc_perf_tests",
-        "base:rtc_base_tests_utils",
         "common_audio:common_audio_unittests",
         "common_video:common_video_unittests",
         "media:rtc_media_unittests",
@@ -306,6 +304,7 @@ if (!build_with_chromium) {
         "ortc:ortc_unittests",
         "pc:peerconnection_unittests",
         "pc:rtc_pc_unittests",
+        "rtc_base:rtc_base_tests_utils",
         "stats:rtc_stats_unittests",
         "system_wrappers:system_wrappers_unittests",
         "test",
@@ -393,16 +392,16 @@ if (rtc_include_tests) {
       ":webrtc_common",
       "api:rtc_api_unittests",
       "api/audio_codecs/test:audio_codecs_api_unittests",
-      "base:rtc_base_approved_unittests",
-      "base:rtc_base_tests_main",
-      "base:rtc_base_tests_utils",
-      "base:rtc_base_unittests",
-      "base:rtc_numerics_unittests",
-      "base:rtc_task_queue_unittests",
-      "base:sequenced_task_checker_unittests",
-      "base:weak_ptr_unittests",
       "p2p:libstunprober_unittests",
       "p2p:rtc_p2p_unittests",
+      "rtc_base:rtc_base_approved_unittests",
+      "rtc_base:rtc_base_tests_main",
+      "rtc_base:rtc_base_tests_utils",
+      "rtc_base:rtc_base_unittests",
+      "rtc_base:rtc_numerics_unittests",
+      "rtc_base:rtc_task_queue_unittests",
+      "rtc_base:sequenced_task_checker_unittests",
+      "rtc_base:weak_ptr_unittests",
       "system_wrappers:metrics_default",
     ]
 
@@ -440,12 +439,12 @@ if (rtc_include_tests) {
     testonly = true
     deps = [
       "audio:audio_tests",
-      "base:rtc_base_tests_utils",
 
       # TODO(eladalon): call_tests aren't actually video-specific, so we
       # should move them to a more appropriate test suite.
       "call:call_tests",
       "modules/video_capture",
+      "rtc_base:rtc_base_tests_utils",
       "test:test_common",
       "test:test_main",
       "test:video_test_common",
@@ -518,7 +517,7 @@ if (rtc_include_tests) {
   rtc_test("webrtc_nonparallel_tests") {
     testonly = true
     deps = [
-      "base:rtc_base_nonparallel_tests",
+      "rtc_base:rtc_base_nonparallel_tests",
     ]
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
