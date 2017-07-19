@@ -16,6 +16,7 @@
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/mac/audio_mixer_manager_mac.h"
 #include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 
@@ -61,7 +62,7 @@ const int kGetMicVolumeIntervalMs = 1000;
 
 class AudioDeviceMac : public AudioDeviceGeneric {
  public:
-  AudioDeviceMac(const int32_t id);
+  AudioDeviceMac();
   ~AudioDeviceMac();
 
   // Retrieve the currently utilized audio layer
@@ -189,9 +190,7 @@ class AudioDeviceMac : public AudioDeviceGeneric {
   static void AtomicSet32(int32_t* theValue, int32_t newValue);
   static int32_t AtomicGet32(int32_t* theValue);
 
-  static void logCAMsg(const TraceLevel level,
-                       const TraceModule module,
-                       const int32_t id,
+  static void logCAMsg(const rtc::LoggingSeverity sev,
                        const char* msg,
                        const char* err);
 
@@ -296,8 +295,6 @@ class AudioDeviceMac : public AudioDeviceGeneric {
 
   // Only valid/running between calls to StartPlayout and StopPlayout.
   std::unique_ptr<rtc::PlatformThread> render_worker_thread_;
-
-  int32_t _id;
 
   AudioMixerManagerMac _mixerManager;
 

@@ -201,7 +201,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
 
     if (AudioDeviceWindowsCore::CoreAudioIsSupported()) {
       // create *Windows Core Audio* implementation
-      ptrAudioDevice = new AudioDeviceWindowsCore(Id());
+      ptrAudioDevice = new AudioDeviceWindowsCore();
       LOG(INFO) << "Windows Core Audio APIs will be utilized";
     }
   }
@@ -302,7 +302,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
 #elif defined(WEBRTC_MAC)
   if (audioLayer == kPlatformDefaultAudio) {
     // Create *Mac Audio* implementation
-    ptrAudioDevice = new AudioDeviceMac(Id());
+    ptrAudioDevice = new AudioDeviceMac();
     LOG(INFO) << "Mac OS X Audio APIs will be utilized";
   }
 #endif  // WEBRTC_MAC

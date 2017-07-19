@@ -18,7 +18,7 @@ namespace webrtc {
   do {                                                                 \
     err = expr;                                                        \
     if (err != noErr) {                                                \
-      logCAMsg(kTraceError, kTraceAudioDevice, _id, "Error in " #expr, \
+      logCAMsg(rtc::LS_ERROR, "Error in " #expr,                       \
                (const char*) & err);                                   \
       return -1;                                                       \
     }                                                                  \
@@ -28,7 +28,7 @@ namespace webrtc {
   do {                                                                 \
     err = expr;                                                        \
     if (err != noErr) {                                                \
-      logCAMsg(kTraceError, kTraceAudioDevice, _id, "Error in " #expr, \
+      logCAMsg(rtc::LS_ERROR, "Error in " #expr,                       \
                (const char*) & err);                                   \
     }                                                                  \
   } while (0)
@@ -37,24 +37,21 @@ namespace webrtc {
   do {                                                                   \
     err = expr;                                                          \
     if (err != noErr) {                                                  \
-      logCAMsg(kTraceWarning, kTraceAudioDevice, _id, "Error in " #expr, \
+      logCAMsg(rtc::LS_WARNING, "Error in " #expr,                       \
                (const char*) & err);                                     \
     }                                                                    \
   } while (0)
 
-AudioMixerManagerMac::AudioMixerManagerMac(const int32_t id)
-    : _id(id),
-      _inputDeviceID(kAudioObjectUnknown),
+AudioMixerManagerMac::AudioMixerManagerMac()
+    : _inputDeviceID(kAudioObjectUnknown),
       _outputDeviceID(kAudioObjectUnknown),
       _noInputChannels(0),
       _noOutputChannels(0) {
-  WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s constructed",
-               __FUNCTION__);
+  LOG(LS_INFO) << __FUNCTION__ << " created";
 }
 
 AudioMixerManagerMac::~AudioMixerManagerMac() {
-  WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s destructed",
-               __FUNCTION__);
+  LOG(LS_INFO) << __FUNCTION__ << " destroyed";
   Close();
 }
 
@@ -63,7 +60,7 @@ AudioMixerManagerMac::~AudioMixerManagerMac() {
 // ============================================================================
 
 int32_t AudioMixerManagerMac::Close() {
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
+  LOG(LS_VERBOSE) << __FUNCTION__;
 
   rtc::CritScope lock(&_critSect);
 
@@ -74,7 +71,7 @@ int32_t AudioMixerManagerMac::Close() {
 }
 
 int32_t AudioMixerManagerMac::CloseSpeaker() {
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
+  LOG(LS_VERBOSE) << __FUNCTION__;
 
   rtc::CritScope lock(&_critSect);
 
@@ -85,7 +82,7 @@ int32_t AudioMixerManagerMac::CloseSpeaker() {
 }
 
 int32_t AudioMixerManagerMac::CloseMicrophone() {
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
+  LOG(LS_VERBOSE) << __FUNCTION__;
 
   rtc::CritScope lock(&_critSect);
 
@@ -96,8 +93,7 @@ int32_t AudioMixerManagerMac::CloseMicrophone() {
 }
 
 int32_t AudioMixerManagerMac::OpenSpeaker(AudioDeviceID deviceID) {
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-               "AudioMixerManagerMac::OpenSpeaker(id=%d)", deviceID);
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::OpenSpeaker(id=" << deviceID << ")";
 
   rtc::CritScope lock(&_critSect);
 
@@ -116,17 +112,14 @@ int32_t AudioMixerManagerMac::OpenSpeaker(AudioDeviceID deviceID) {
       _outputDeviceID, &propertyAddress, 0, NULL, &size, &hogPid));
 
   if (hogPid == -1) {
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 " No process has hogged the input device");
+    LOG(LS_VERBOSE) << "No process has hogged the input device";
   }
   // getpid() is apparently "always successful"
   else if (hogPid == getpid()) {
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 " Our process has hogged the input device");
+    LOG(LS_VERBOSE) << "Our process has hogged the input device";
   } else {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 " Another process (pid = %d) has hogged the input device",
-                 static_cast<int>(hogPid));
+    LOG(LS_WARNING) << "Another process (pid = " << static_cast<int>(hogPid)
+                    << ") has hogged the input device";
 
     return -1;
   }
@@ -147,8 +140,8 @@ int32_t AudioMixerManagerMac::OpenSpeaker(AudioDeviceID deviceID) {
 }
 
 int32_t AudioMixerManagerMac::OpenMicrophone(AudioDeviceID deviceID) {
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-               "AudioMixerManagerMac::OpenMicrophone(id=%d)", deviceID);
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::OpenMicrophone(id=" << deviceID
+                  << ")";
 
   rtc::CritScope lock(&_critSect);
 
@@ -165,17 +158,14 @@ int32_t AudioMixerManagerMac::OpenMicrophone(AudioDeviceID deviceID) {
   WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(
       _inputDeviceID, &propertyAddress, 0, NULL, &size, &hogPid));
   if (hogPid == -1) {
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 " No process has hogged the input device");
+    LOG(LS_VERBOSE) << "No process has hogged the input device";
   }
   // getpid() is apparently "always successful"
   else if (hogPid == getpid()) {
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 " Our process has hogged the input device");
+    LOG(LS_VERBOSE) << "Our process has hogged the input device";
   } else {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 " Another process (pid = %d) has hogged the input device",
-                 static_cast<int>(hogPid));
+    LOG(LS_WARNING) << "Another process (pid = " << static_cast<int>(hogPid)
+                    << ") has hogged the input device";
 
     return -1;
   }
@@ -196,26 +186,25 @@ int32_t AudioMixerManagerMac::OpenMicrophone(AudioDeviceID deviceID) {
 }
 
 bool AudioMixerManagerMac::SpeakerIsInitialized() const {
-  WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s", __FUNCTION__);
+  LOG(LS_INFO) << __FUNCTION__;
 
   return (_outputDeviceID != kAudioObjectUnknown);
 }
 
 bool AudioMixerManagerMac::MicrophoneIsInitialized() const {
-  WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s", __FUNCTION__);
+  LOG(LS_INFO) << __FUNCTION__;
 
   return (_inputDeviceID != kAudioObjectUnknown);
 }
 
 int32_t AudioMixerManagerMac::SetSpeakerVolume(uint32_t volume) {
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-               "AudioMixerManagerMac::SetSpeakerVolume(volume=%u)", volume);
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::SetSpeakerVolume(volume=" << volume
+                  << ")";
 
   rtc::CritScope lock(&_critSect);
 
   if (_outputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -258,8 +247,7 @@ int32_t AudioMixerManagerMac::SetSpeakerVolume(uint32_t volume) {
   }
 
   if (!success) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 " Unable to set a volume on any output channel");
+    LOG(LS_WARNING) << "Unable to set a volume on any output channel";
     return -1;
   }
 
@@ -268,8 +256,7 @@ int32_t AudioMixerManagerMac::SetSpeakerVolume(uint32_t volume) {
 
 int32_t AudioMixerManagerMac::SpeakerVolume(uint32_t& volume) const {
   if (_outputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -310,8 +297,7 @@ int32_t AudioMixerManagerMac::SpeakerVolume(uint32_t& volume) const {
     }
 
     if (channels == 0) {
-      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                   " Unable to get a volume on any channel");
+      LOG(LS_WARNING) << "Unable to get a volume on any channel";
       return -1;
     }
 
@@ -320,16 +306,14 @@ int32_t AudioMixerManagerMac::SpeakerVolume(uint32_t& volume) const {
     volume = static_cast<uint32_t>(255 * vol / channels + 0.5);
   }
 
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-               "     AudioMixerManagerMac::SpeakerVolume() => vol=%i", vol);
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::SpeakerVolume() => vol=" << vol;
 
   return 0;
 }
 
 int32_t AudioMixerManagerMac::MaxSpeakerVolume(uint32_t& maxVolume) const {
   if (_outputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -342,8 +326,7 @@ int32_t AudioMixerManagerMac::MaxSpeakerVolume(uint32_t& maxVolume) const {
 
 int32_t AudioMixerManagerMac::MinSpeakerVolume(uint32_t& minVolume) const {
   if (_outputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -356,8 +339,7 @@ int32_t AudioMixerManagerMac::MinSpeakerVolume(uint32_t& minVolume) const {
 
 int32_t AudioMixerManagerMac::SpeakerVolumeStepSize(uint16_t& stepSize) const {
   if (_outputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -370,8 +352,7 @@ int32_t AudioMixerManagerMac::SpeakerVolumeStepSize(uint16_t& stepSize) const {
 
 int32_t AudioMixerManagerMac::SpeakerVolumeIsAvailable(bool& available) {
   if (_outputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -397,9 +378,8 @@ int32_t AudioMixerManagerMac::SpeakerVolumeIsAvailable(bool& available) {
                                         &isSettable);
     if (err != noErr || !isSettable) {
       available = false;
-      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                   " Volume cannot be set for output channel %d, err=%d", i,
-                   err);
+      LOG(LS_WARNING) << "Volume cannot be set for output channel " << i
+                      << ", err=" << err;
       return -1;
     }
   }
@@ -410,8 +390,7 @@ int32_t AudioMixerManagerMac::SpeakerVolumeIsAvailable(bool& available) {
 
 int32_t AudioMixerManagerMac::SpeakerMuteIsAvailable(bool& available) {
   if (_outputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -437,8 +416,8 @@ int32_t AudioMixerManagerMac::SpeakerMuteIsAvailable(bool& available) {
                                         &isSettable);
     if (err != noErr || !isSettable) {
       available = false;
-      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                   " Mute cannot be set for output channel %d, err=%d", i, err);
+      LOG(LS_WARNING) << "Mute cannot be set for output channel " << i
+                      << ", err=" << err;
       return -1;
     }
   }
@@ -448,14 +427,13 @@ int32_t AudioMixerManagerMac::SpeakerMuteIsAvailable(bool& available) {
 }
 
 int32_t AudioMixerManagerMac::SetSpeakerMute(bool enable) {
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-               "AudioMixerManagerMac::SetSpeakerMute(enable=%u)", enable);
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::SetSpeakerMute(enable=" << enable
+                  << ")";
 
   rtc::CritScope lock(&_critSect);
 
   if (_outputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -494,8 +472,7 @@ int32_t AudioMixerManagerMac::SetSpeakerMute(bool enable) {
   }
 
   if (!success) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 " Unable to set mute on any input channel");
+    LOG(LS_WARNING) << "Unable to set mute on any input channel";
     return -1;
   }
 
@@ -504,8 +481,7 @@ int32_t AudioMixerManagerMac::SetSpeakerMute(bool enable) {
 
 int32_t AudioMixerManagerMac::SpeakerMute(bool& enabled) const {
   if (_outputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -545,8 +521,7 @@ int32_t AudioMixerManagerMac::SpeakerMute(bool& enabled) const {
     }
 
     if (channels == 0) {
-      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                   " Unable to get mute for any channel");
+      LOG(LS_WARNING) << "Unable to get mute for any channel";
       return -1;
     }
 
@@ -555,17 +530,15 @@ int32_t AudioMixerManagerMac::SpeakerMute(bool& enabled) const {
     enabled = static_cast<bool>(muted);
   }
 
-  WEBRTC_TRACE(
-      kTraceInfo, kTraceAudioDevice, _id,
-      "     AudioMixerManagerMac::SpeakerMute() => enabled=%d, enabled");
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::SpeakerMute() => enabled="
+                  << enabled;
 
   return 0;
 }
 
 int32_t AudioMixerManagerMac::StereoPlayoutIsAvailable(bool& available) {
   if (_outputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -575,8 +548,7 @@ int32_t AudioMixerManagerMac::StereoPlayoutIsAvailable(bool& available) {
 
 int32_t AudioMixerManagerMac::StereoRecordingIsAvailable(bool& available) {
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -586,8 +558,7 @@ int32_t AudioMixerManagerMac::StereoRecordingIsAvailable(bool& available) {
 
 int32_t AudioMixerManagerMac::MicrophoneMuteIsAvailable(bool& available) {
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -613,8 +584,8 @@ int32_t AudioMixerManagerMac::MicrophoneMuteIsAvailable(bool& available) {
                                         &isSettable);
     if (err != noErr || !isSettable) {
       available = false;
-      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                   " Mute cannot be set for output channel %d, err=%d", i, err);
+      LOG(LS_WARNING) << "Mute cannot be set for output channel " << i
+                      << ", err=" << err;
       return -1;
     }
   }
@@ -624,14 +595,13 @@ int32_t AudioMixerManagerMac::MicrophoneMuteIsAvailable(bool& available) {
 }
 
 int32_t AudioMixerManagerMac::SetMicrophoneMute(bool enable) {
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-               "AudioMixerManagerMac::SetMicrophoneMute(enable=%u)", enable);
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::SetMicrophoneMute(enable=" << enable
+                  << ")";
 
   rtc::CritScope lock(&_critSect);
 
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -670,8 +640,7 @@ int32_t AudioMixerManagerMac::SetMicrophoneMute(bool enable) {
   }
 
   if (!success) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 " Unable to set mute on any input channel");
+    LOG(LS_WARNING) << "Unable to set mute on any input channel";
     return -1;
   }
 
@@ -680,8 +649,7 @@ int32_t AudioMixerManagerMac::SetMicrophoneMute(bool enable) {
 
 int32_t AudioMixerManagerMac::MicrophoneMute(bool& enabled) const {
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -721,8 +689,7 @@ int32_t AudioMixerManagerMac::MicrophoneMute(bool& enabled) const {
     }
 
     if (channels == 0) {
-      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                   " Unable to get mute for any channel");
+      LOG(LS_WARNING) << "Unable to get mute for any channel";
       return -1;
     }
 
@@ -731,17 +698,15 @@ int32_t AudioMixerManagerMac::MicrophoneMute(bool& enabled) const {
     enabled = static_cast<bool>(muted);
   }
 
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-               "     AudioMixerManagerMac::MicrophoneMute() => enabled=%d",
-               enabled);
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::MicrophoneMute() => enabled="
+                  << enabled;
 
   return 0;
 }
 
 int32_t AudioMixerManagerMac::MicrophoneBoostIsAvailable(bool& available) {
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -751,14 +716,13 @@ int32_t AudioMixerManagerMac::MicrophoneBoostIsAvailable(bool& available) {
 }
 
 int32_t AudioMixerManagerMac::SetMicrophoneBoost(bool enable) {
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-               "AudioMixerManagerMac::SetMicrophoneBoost(enable=%u)", enable);
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::SetMicrophoneBoost(enable="
+                  << enable << ")";
 
   rtc::CritScope lock(&_critSect);
 
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -766,8 +730,7 @@ int32_t AudioMixerManagerMac::SetMicrophoneBoost(bool enable) {
   bool available(false);
   MicrophoneBoostIsAvailable(available);
   if (!available) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  it is not possible to enable microphone boost");
+    LOG(LS_WARNING) << "it is not possible to enable microphone boost";
     return -1;
   }
 
@@ -777,8 +740,7 @@ int32_t AudioMixerManagerMac::SetMicrophoneBoost(bool enable) {
 
 int32_t AudioMixerManagerMac::MicrophoneBoost(bool& enabled) const {
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -790,8 +752,7 @@ int32_t AudioMixerManagerMac::MicrophoneBoost(bool& enabled) const {
 
 int32_t AudioMixerManagerMac::MicrophoneVolumeIsAvailable(bool& available) {
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -817,9 +778,8 @@ int32_t AudioMixerManagerMac::MicrophoneVolumeIsAvailable(bool& available) {
                                         &isSettable);
     if (err != noErr || !isSettable) {
       available = false;
-      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                   " Volume cannot be set for input channel %d, err=%d", i,
-                   err);
+      LOG(LS_WARNING) << "Volume cannot be set for input channel " << i
+                      << ", err=" << err;
       return -1;
     }
   }
@@ -829,14 +789,13 @@ int32_t AudioMixerManagerMac::MicrophoneVolumeIsAvailable(bool& available) {
 }
 
 int32_t AudioMixerManagerMac::SetMicrophoneVolume(uint32_t volume) {
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-               "AudioMixerManagerMac::SetMicrophoneVolume(volume=%u)", volume);
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::SetMicrophoneVolume(volume="
+                  << volume << ")";
 
   rtc::CritScope lock(&_critSect);
 
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -879,8 +838,7 @@ int32_t AudioMixerManagerMac::SetMicrophoneVolume(uint32_t volume) {
   }
 
   if (!success) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 " Unable to set a level on any input channel");
+    LOG(LS_WARNING) << "Unable to set a level on any input channel";
     return -1;
   }
 
@@ -889,8 +847,7 @@ int32_t AudioMixerManagerMac::SetMicrophoneVolume(uint32_t volume) {
 
 int32_t AudioMixerManagerMac::MicrophoneVolume(uint32_t& volume) const {
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -931,8 +888,7 @@ int32_t AudioMixerManagerMac::MicrophoneVolume(uint32_t& volume) const {
     }
 
     if (channels == 0) {
-      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                   " Unable to get a level on any channel");
+      LOG(LS_WARNING) << "Unable to get a level on any channel";
       return -1;
     }
 
@@ -941,17 +897,15 @@ int32_t AudioMixerManagerMac::MicrophoneVolume(uint32_t& volume) const {
     volume = static_cast<uint32_t>(255 * volFloat32 / channels + 0.5);
   }
 
-  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-               "     AudioMixerManagerMac::MicrophoneVolume() => vol=%u",
-               volume);
+  LOG(LS_VERBOSE) << "AudioMixerManagerMac::MicrophoneVolume() => vol="
+                  << volume;
 
   return 0;
 }
 
 int32_t AudioMixerManagerMac::MaxMicrophoneVolume(uint32_t& maxVolume) const {
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -964,8 +918,7 @@ int32_t AudioMixerManagerMac::MaxMicrophoneVolume(uint32_t& maxVolume) const {
 
 int32_t AudioMixerManagerMac::MinMicrophoneVolume(uint32_t& minVolume) const {
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -979,8 +932,7 @@ int32_t AudioMixerManagerMac::MinMicrophoneVolume(uint32_t& minVolume) const {
 int32_t AudioMixerManagerMac::MicrophoneVolumeStepSize(
     uint16_t& stepSize) const {
   if (_inputDeviceID == kAudioObjectUnknown) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                 "  device ID has not been set");
+    LOG(LS_WARNING) << "device ID has not been set";
     return -1;
   }
 
@@ -996,20 +948,36 @@ int32_t AudioMixerManagerMac::MicrophoneVolumeStepSize(
 // ============================================================================
 
 // CoreAudio errors are best interpreted as four character strings.
-void AudioMixerManagerMac::logCAMsg(const TraceLevel level,
-                                    const TraceModule module,
-                                    const int32_t id,
-                                    const char* msg,
-                                    const char* err) {
-  assert(msg != NULL);
-  assert(err != NULL);
+void AudioMixerManagerMac::logCAMsg(const rtc::LoggingSeverity sev,
+                              const char* msg,
+                              const char* err) {
+  RTC_DCHECK(msg != NULL);
+  RTC_DCHECK(err != NULL);
+  RTC_DCHECK(sev == rtc::LS_ERROR || sev == rtc::LS_WARNING);
 
 #ifdef WEBRTC_ARCH_BIG_ENDIAN
-  WEBRTC_TRACE(level, module, id, "%s: %.4s", msg, err);
+  switch (sev) {
+    case rtc::LS_ERROR:
+      LOG(LS_ERROR) << msg << ": " << err[0] << err[1] << err[2] << err[3];
+      break;
+    case rtc::LS_WARNING:
+      LOG(LS_WARNING) << msg << ": " << err[0] << err[1] << err[2] << err[3];
+      break;
+    default:
+      break;
+  }
 #else
   // We need to flip the characters in this case.
-  WEBRTC_TRACE(level, module, id, "%s: %.1s%.1s%.1s%.1s", msg, err + 3, err + 2,
-               err + 1, err);
+   switch (sev) {
+    case rtc::LS_ERROR:
+      LOG(LS_ERROR) << msg << ": " << err[3] << err[2] << err[1] << err[0];
+      break;
+    case rtc::LS_WARNING:
+      LOG(LS_WARNING) << msg << ": " << err[3] << err[2] << err[1] << err[0];
+      break;
+    default:
+      break;
+  }
 #endif
 }
 

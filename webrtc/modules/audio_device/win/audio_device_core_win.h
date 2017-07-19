@@ -82,7 +82,7 @@ class ScopedCOMInitializer {
 class AudioDeviceWindowsCore : public AudioDeviceGeneric
 {
 public:
-    AudioDeviceWindowsCore(const int32_t id);
+    AudioDeviceWindowsCore();
     ~AudioDeviceWindowsCore();
 
     static bool CoreAudioIsSupported();
@@ -237,8 +237,6 @@ private:    // thread functions
     void _Lock() { _critSect.Enter(); };
     void _UnLock() { _critSect.Leave(); };
 
-    int32_t Id() {return _id;}
-
     int SetDMOProperties();
 
     int SetBoolProperty(IPropertyStore* ptrPS,
@@ -274,7 +272,6 @@ private:    // thread functions
     AudioDeviceBuffer*                      _ptrAudioBuffer;
     rtc::CriticalSection                    _critSect;
     rtc::CriticalSection                    _volumeMutex;
-    int32_t                                 _id;
 
     IMMDeviceEnumerator*                    _ptrEnumerator;
     IMMDeviceCollection*                    _ptrRenderCollection;
