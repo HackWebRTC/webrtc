@@ -12,6 +12,7 @@
 
 #include "webrtc/p2p/base/fakepackettransport.h"
 #include "webrtc/pc/rtptransport.h"
+#include "webrtc/pc/rtptransporttestutil.h"
 #include "webrtc/rtc_base/gunit.h"
 
 namespace webrtc {
@@ -150,29 +151,6 @@ TEST(RtpTransportTest, ChangingReadyToSendStateOnlySignalsWhenChanged) {
   transport.SetRtcpMuxEnabled(false);
   EXPECT_EQ(observer.count(), 2);
 }
-
-class SignalPacketReceivedCounter : public sigslot::has_slots<> {
- public:
-  explicit SignalPacketReceivedCounter(RtpTransport* transport) {
-    transport->SignalPacketReceived.connect(
-        this, &SignalPacketReceivedCounter::OnPacketReceived);
-  }
-  int rtcp_count() const { return rtcp_count_; }
-  int rtp_count() const { return rtp_count_; }
-
- private:
-  void OnPacketReceived(bool rtcp,
-                        rtc::CopyOnWriteBuffer*,
-                        const rtc::PacketTime&) {
-    if (rtcp) {
-      ++rtcp_count_;
-    } else {
-      ++rtp_count_;
-    }
-  }
-  int rtcp_count_ = 0;
-  int rtp_count_ = 0;
-};
 
 // Test that SignalPacketReceived fires with rtcp=true when a RTCP packet is
 // received.

@@ -77,7 +77,7 @@ bool RtpTransport::IsWritable(bool rtcp) const {
 }
 
 bool RtpTransport::SendPacket(bool rtcp,
-                              const rtc::CopyOnWriteBuffer* packet,
+                              rtc::CopyOnWriteBuffer* packet,
                               const rtc::PacketOptions& options,
                               int flags) {
   rtc::PacketTransportInternal* transport = rtcp && !rtcp_mux_enabled_

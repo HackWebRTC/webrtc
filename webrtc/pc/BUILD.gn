@@ -48,10 +48,13 @@ rtc_static_library("rtc_pc_base") {
     "rtcpmuxfilter.h",
     "rtptransport.cc",
     "rtptransport.h",
+    "rtptransportinternal.h",
     "srtpfilter.cc",
     "srtpfilter.h",
     "srtpsession.cc",
     "srtpsession.h",
+    "srtptransport.cc",
+    "srtptransport.h",
     "voicechannel.h",
   ]
 
@@ -258,9 +261,11 @@ if (rtc_include_tests) {
       "mediasession_unittest.cc",
       "rtcpmuxfilter_unittest.cc",
       "rtptransport_unittest.cc",
+      "rtptransporttestutil.h",
       "srtpfilter_unittest.cc",
       "srtpsession_unittest.cc",
       "srtptestutil.h",
+      "srtptransport_unittest.cc",
     ]
 
     include_dirs = [ "//third_party/libsrtp/srtp" ]
@@ -289,6 +294,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_tests_main",
       "../rtc_base:rtc_base_tests_utils",
       "../system_wrappers:metrics_default",
+      "../test:test_support",
     ]
 
     if (rtc_build_libsrtp) {

@@ -11,8 +11,8 @@
 #ifndef WEBRTC_PC_RTPTRANSPORT_H_
 #define WEBRTC_PC_RTPTRANSPORT_H_
 
-#include "webrtc/api/ortc/rtptransportinterface.h"
 #include "webrtc/pc/bundlefilter.h"
+#include "webrtc/pc/rtptransportinternal.h"
 #include "webrtc/rtc_base/sigslot.h"
 
 namespace rtc {
@@ -26,7 +26,7 @@ class PacketTransportInternal;
 
 namespace webrtc {
 
-class RtpTransport : public RtpTransportInterface, public sigslot::has_slots<> {
+class RtpTransport : public RtpTransportInternal {
  public:
   RtpTransport(const RtpTransport&) = delete;
   RtpTransport& operator=(const RtpTransport&) = delete;
@@ -35,17 +35,17 @@ class RtpTransport : public RtpTransportInterface, public sigslot::has_slots<> {
       : rtcp_mux_enabled_(rtcp_mux_enabled) {}
 
   bool rtcp_mux_enabled() const { return rtcp_mux_enabled_; }
-  void SetRtcpMuxEnabled(bool enable);
+  void SetRtcpMuxEnabled(bool enable) override;
 
-  rtc::PacketTransportInternal* rtp_packet_transport() const {
+  rtc::PacketTransportInternal* rtp_packet_transport() const override {
     return rtp_packet_transport_;
   }
-  void SetRtpPacketTransport(rtc::PacketTransportInternal* rtp);
+  void SetRtpPacketTransport(rtc::PacketTransportInternal* rtp) override;
 
-  rtc::PacketTransportInternal* rtcp_packet_transport() const {
+  rtc::PacketTransportInternal* rtcp_packet_transport() const override {
     return rtcp_packet_transport_;
   }
-  void SetRtcpPacketTransport(rtc::PacketTransportInternal* rtcp);
+  void SetRtcpPacketTransport(rtc::PacketTransportInternal* rtcp) override;
 
   PacketTransportInterface* GetRtpPacketTransport() const override;
   PacketTransportInterface* GetRtcpPacketTransport() const override;
@@ -54,27 +54,16 @@ class RtpTransport : public RtpTransportInterface, public sigslot::has_slots<> {
   RTCError SetRtcpParameters(const RtcpParameters& parameters) override;
   RtcpParameters GetRtcpParameters() const override;
 
-  // Called whenever a transport's ready-to-send state changes. The argument
-  // is true if all used transports are ready to send. This is more specific
-  // than just "writable"; it means the last send didn't return ENOTCONN.
-  sigslot::signal1<bool> SignalReadyToSend;
-
-  bool IsWritable(bool rtcp) const;
+  bool IsWritable(bool rtcp) const override;
 
   bool SendPacket(bool rtcp,
-                  const rtc::CopyOnWriteBuffer* packet,
+                  rtc::CopyOnWriteBuffer* packet,
                   const rtc::PacketOptions& options,
-                  int flags);
+                  int flags) override;
 
-  bool HandlesPayloadType(int payload_type) const;
+  bool HandlesPayloadType(int payload_type) const override;
 
-  void AddHandledPayloadType(int payload_type);
-
-  // TODO(zstein): Consider having two signals - RtcPacketReceived and
-  // RtcpPacketReceived.
-  // The first argument is true for RTCP packets and false for RTP packets.
-  sigslot::signal3<bool, rtc::CopyOnWriteBuffer*, const rtc::PacketTime&>
-      SignalPacketReceived;
+  void AddHandledPayloadType(int payload_type) override;
 
  protected:
   // TODO(zstein): Remove this when we remove RtpTransportAdapter.

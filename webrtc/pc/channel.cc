@@ -31,6 +31,8 @@
 #include "webrtc/media/engine/webrtcvoiceengine.h"  // nogncheck
 #include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/pc/channelmanager.h"
+#include "webrtc/pc/rtptransport.h"
+#include "webrtc/pc/srtptransport.h"
 
 namespace cricket {
 using rtc::Bind;
@@ -156,7 +158,11 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
       signaling_thread_(signaling_thread),
       content_name_(content_name),
       rtcp_mux_required_(rtcp_mux_required),
-      rtp_transport_(rtc::MakeUnique<webrtc::RtpTransport>(rtcp_mux_required)),
+      rtp_transport_(
+          srtp_required
+              ? rtc::WrapUnique<webrtc::RtpTransportInternal>(
+                    new webrtc::SrtpTransport(rtcp_mux_required, content_name))
+              : rtc::MakeUnique<webrtc::RtpTransport>(rtcp_mux_required)),
       srtp_required_(srtp_required),
       media_channel_(media_channel),
       selected_candidate_pair_(nullptr) {
@@ -170,7 +176,7 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
   // with a callback interface later so that the demuxer can select which
   // channel to signal.
   rtp_transport_->SignalPacketReceived.connect(this,
-                                              &BaseChannel::OnPacketReceived);
+                                               &BaseChannel::OnPacketReceived);
   LOG(LS_INFO) << "Created channel for " << content_name;
 }
 

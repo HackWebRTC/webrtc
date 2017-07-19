@@ -33,7 +33,7 @@
 #include "webrtc/pc/mediamonitor.h"
 #include "webrtc/pc/mediasession.h"
 #include "webrtc/pc/rtcpmuxfilter.h"
-#include "webrtc/pc/rtptransport.h"
+#include "webrtc/pc/rtptransportinternal.h"
 #include "webrtc/pc/srtpfilter.h"
 #include "webrtc/rtc_base/asyncinvoker.h"
 #include "webrtc/rtc_base/asyncudpsocket.h"
@@ -397,7 +397,7 @@ class BaseChannel
   // If non-null, "X_dtls_transport_" will always equal "X_packet_transport_".
   DtlsTransportInternal* rtp_dtls_transport_ = nullptr;
   DtlsTransportInternal* rtcp_dtls_transport_ = nullptr;
-  std::unique_ptr<webrtc::RtpTransport> rtp_transport_;
+  std::unique_ptr<webrtc::RtpTransportInternal> rtp_transport_;
   std::vector<std::pair<rtc::Socket::Option, int> > socket_options_;
   std::vector<std::pair<rtc::Socket::Option, int> > rtcp_socket_options_;
   SrtpFilter srtp_filter_;
