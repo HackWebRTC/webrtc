@@ -697,20 +697,9 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
 
   // Measure audio level (0-9)
   // TODO(henrik.lundin) Use the |muted| information here too.
-  // TODO(deadbeef): Use RmsLevel for |_outputAudioLevel| as well (see
+  // TODO(deadbeef): Use RmsLevel for |_outputAudioLevel| (see
   // https://crbug.com/webrtc/7517).
-  _outputAudioLevel.ComputeLevel(*audioFrame);
-  // See the description for "totalAudioEnergy" in the WebRTC stats spec
-  // (https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy)
-  // for an explanation of these formulas. In short, we need a value that can
-  // be used to compute RMS audio levels over different time intervals, by
-  // taking the difference between the results from two getStats calls. To do
-  // this, the value needs to be of units "squared sample value * time".
-  double additional_energy =
-      static_cast<double>(_outputAudioLevel.LevelFullRange()) / INT16_MAX;
-  additional_energy *= additional_energy;
-  totalOutputEnergy_ += additional_energy * kAudioSampleDurationSeconds;
-  totalOutputDuration_ += kAudioSampleDurationSeconds;
+  _outputAudioLevel.ComputeLevel(*audioFrame, kAudioSampleDurationSeconds);
 
   if (capture_start_rtp_time_stamp_ < 0 && audioFrame->timestamp_ != 0) {
     // The first frame with a valid rtp timestamp.
@@ -2385,11 +2374,11 @@ int Channel::GetSpeechOutputLevelFullRange() const {
 }
 
 double Channel::GetTotalOutputEnergy() const {
-  return totalOutputEnergy_;
+  return _outputAudioLevel.TotalEnergy();
 }
 
 double Channel::GetTotalOutputDuration() const {
-  return totalOutputDuration_;
+  return _outputAudioLevel.TotalDuration();
 }
 
 void Channel::SetInputMute(bool enable) {

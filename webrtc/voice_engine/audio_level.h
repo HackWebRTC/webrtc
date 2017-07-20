@@ -29,11 +29,15 @@ class AudioLevel {
   int8_t Level() const;
   int16_t LevelFullRange() const;
   void Clear();
+  // See the description for "totalAudioEnergy" in the WebRTC stats spec
+  // (https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy)
+  double TotalEnergy() const;
+  double TotalDuration() const;
 
   // Called on a native capture audio thread (platform dependent) from the
   // AudioTransport::RecordedDataIsAvailable() callback.
   // In Chrome, this method is called on the AudioInputDevice thread.
-  void ComputeLevel(const AudioFrame& audioFrame);
+  void ComputeLevel(const AudioFrame& audioFrame, double duration);
 
  private:
   enum { kUpdateFrequency = 10 };
@@ -44,6 +48,9 @@ class AudioLevel {
   int16_t count_;
   int8_t current_level_;
   int16_t current_level_full_range_;
+
+  double total_energy_ = 0.0;
+  double total_duration_ = 0.0;
 };
 
 }  // namespace voe

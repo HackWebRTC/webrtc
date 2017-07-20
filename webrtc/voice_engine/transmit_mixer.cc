@@ -313,20 +313,8 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     }
 
     // --- Measure audio level of speech after all processing.
-    _audioLevel.ComputeLevel(_audioFrame);
-
-    // See the description for "totalAudioEnergy" in the WebRTC stats spec
-    // (https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy)
-    // for an explanation of these formulas. In short, we need a value that can
-    // be used to compute RMS audio levels over different time intervals, by
-    // taking the difference between the results from two getStats calls. To do
-    // this, the value needs to be of units "squared sample value * time".
-    double additional_energy =
-        static_cast<double>(_audioLevel.LevelFullRange()) / INT16_MAX;
-    additional_energy *= additional_energy;
     double sample_duration = static_cast<double>(nSamples) / samplesPerSec;
-    totalInputEnergy_ += additional_energy * sample_duration;
-    totalInputDuration_ += sample_duration;
+    _audioLevel.ComputeLevel(_audioFrame, sample_duration);
 
     return 0;
 }
@@ -872,11 +860,11 @@ int16_t TransmitMixer::AudioLevelFullRange() const
 }
 
 double TransmitMixer::GetTotalInputEnergy() const {
-  return totalInputEnergy_;
+  return _audioLevel.TotalEnergy();
 }
 
 double TransmitMixer::GetTotalInputDuration() const {
-  return totalInputDuration_;
+  return _audioLevel.TotalDuration();
 }
 
 bool TransmitMixer::IsRecordingCall()

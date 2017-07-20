@@ -197,8 +197,6 @@ private:
     bool _fileRecording = false;
     bool _fileCallRecording = false;
     voe::AudioLevel _audioLevel;
-    double totalInputEnergy_ = 0.0;
-    double totalInputDuration_ = 0.0;
     // protect file instances and their variables in MixedParticipants()
     rtc::CriticalSection _critSect;
     rtc::CriticalSection _callbackCritSect;
