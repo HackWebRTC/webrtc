@@ -365,6 +365,11 @@ OpenSSLAdapter::BeginSSL() {
     SSL_set_tlsext_host_name(ssl_, ssl_host_name_.c_str());
   }
 
+  // Set a couple common TLS extensions; even though we don't use them yet.
+  // TODO(emadomara) Add ALPN extension.
+  SSL_enable_ocsp_stapling(ssl_);
+  SSL_enable_signed_cert_timestamps(ssl_);
+
   // the SSL object owns the bio now
   bio = nullptr;
 
