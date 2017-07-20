@@ -47,13 +47,23 @@ class TemporalLayers {
     BufferFlags golden_buffer_flags;
     BufferFlags arf_buffer_flags;
 
-    // TODO(pbos): Consider breaking these out of here and returning only a
-    // pattern index that needs to be returned to fill CodecSpecificInfoVP8 or
-    // EncodeFlags.
-    bool layer_sync;
-    bool freeze_entropy;
+    // The encoder layer ID is used to utilize the correct bitrate allocator
+    // inside the encoder. It does not control references nor determine which
+    // "actual" temporal layer this is. The packetizer temporal index determines
+    // which layer the encoded frame should be packetized into.
+    // Normally these are the same, but current temporal-layer strategies for
+    // screenshare use one bitrate allocator for all layers, but attempt to
+    // packetize / utilize references to split a stream into multiple layers,
+    // with different quantizer settings, to hit target bitrate.
+    // TODO(pbos): Screenshare layers are being reconsidered at the time of
+    // writing, we might be able to remove this distinction, and have a temporal
+    // layer imply both (the normal case).
+    int encoder_layer_id;
+    int packetizer_temporal_idx;
 
-    int pattern_idx;
+    bool layer_sync;
+
+    bool freeze_entropy;
 
     bool operator==(const FrameConfig& o) const {
       return drop_frame == o.drop_frame &&
@@ -61,7 +71,8 @@ class TemporalLayers {
              golden_buffer_flags == o.golden_buffer_flags &&
              arf_buffer_flags == o.arf_buffer_flags &&
              layer_sync == o.layer_sync && freeze_entropy == o.freeze_entropy &&
-             pattern_idx == o.pattern_idx;
+             encoder_layer_id == o.encoder_layer_id &&
+             packetizer_temporal_idx == o.packetizer_temporal_idx;
     }
     bool operator!=(const FrameConfig& o) const { return !(*this == o); }
 
@@ -101,8 +112,6 @@ class TemporalLayers {
   // Returns the current tl0_pic_idx, so it can be reused in future
   // instantiations.
   virtual uint8_t Tl0PicIdx() const = 0;
-  virtual int GetTemporalLayerId(
-      const TemporalLayers::FrameConfig& tl_config) const = 0;
 };
 
 class TemporalLayersListener;

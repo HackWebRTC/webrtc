@@ -765,9 +765,8 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
     }
 
     vpx_codec_control(&encoders_[i], VP8E_SET_FRAME_FLAGS, flags[stream_idx]);
-    vpx_codec_control(
-        &encoders_[i], VP8E_SET_TEMPORAL_LAYER_ID,
-        temporal_layers_[stream_idx]->GetTemporalLayerId(tl_configs[i]));
+    vpx_codec_control(&encoders_[i], VP8E_SET_TEMPORAL_LAYER_ID,
+                      tl_configs[i].encoder_layer_id);
   }
   // TODO(holmer): Ideally the duration should be the timestamp diff of this
   // frame and the next frame to be encoded, which we don't have. Instead we

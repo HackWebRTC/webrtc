@@ -54,9 +54,6 @@ class ScreenshareLayers : public TemporalLayers {
 
   void FrameEncoded(unsigned int size, int qp) override;
 
-  int GetTemporalLayerId(
-      const TemporalLayers::FrameConfig& tl_config) const override;
-
   uint8_t Tl0PicIdx() const override;
 
  private:

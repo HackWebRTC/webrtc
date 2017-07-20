@@ -45,9 +45,6 @@ class DefaultTemporalLayers : public TemporalLayers {
 
   void FrameEncoded(unsigned int size, int qp) override {}
 
-  int GetTemporalLayerId(
-      const TemporalLayers::FrameConfig& references) const override;
-
   uint8_t Tl0PicIdx() const override;
 
  private:
@@ -58,7 +55,6 @@ class DefaultTemporalLayers : public TemporalLayers {
 
   uint8_t tl0_pic_idx_;
   uint8_t pattern_idx_;
-  uint32_t timestamp_;
   bool last_base_layer_sync_;
   rtc::Optional<std::vector<uint32_t>> new_bitrates_kbps_;
 };
