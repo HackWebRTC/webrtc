@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '40e1a3f583581893d24ae17d5272c7ab3b1167c1',
+  'chromium_revision': 'd5f03e28168223953bc82a770eb7f6385ccdbe01',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -39,9 +39,9 @@ deps = {
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '5ad14542a6a74dd914f067b948c5d3e8d170396b',
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '357da70df87bd686e4f758d162a66200664b6b7f',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + '718dcd6f4b977da310e113092db724acd6de0c43',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '92223da18fc0481efebec5b21cd2852e26e640a9',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '5ab6ee9552470cbb80f97d53af5bbdc7c63227fe',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -49,7 +49,7 @@ deps = {
   'src/third_party/colorama/src':
     Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/ffmpeg':
-    Var('chromium_git') + '/chromium/third_party/ffmpeg.git' + '@' + 'f82eb1989c0cdd5ed179ee4979ffb18a8030c78a',
+    Var('chromium_git') + '/chromium/third_party/ffmpeg.git' + '@' + 'd19b0ad9b26a4def3411e32a8b780540afbd6a6e',
   'src/third_party/googletest/src':
     Var('chromium_git') + '/external/github.com/google/googletest.git' + '@' + '42bc671f47b122fad36db5eccbc06868afdf7862',
   'src/third_party/jsoncpp/source':
@@ -74,7 +74,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'f9c4b584f9d23722363bffdedd457aaf03953492',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '812e9d49faffae9d55a1828575f364168bb9670b',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'eb296f67da078ec01f5e3a9ea9cdc6d26d680161',
    'src/tools/swarming_client':
