@@ -103,14 +103,11 @@ int main(int argc, char* argv[]) {
       program_name + " <logfile> | python\n" + "Run " + program_name +
       " --help for a list of command line options\n";
   rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
-  if (FLAG_help) {
-    rtc::FlagList::Print(nullptr, false);
-    return 0;
-  }
-
-  if (argc != 2) {
+  if (argc != 2 || FLAG_help) {
     // Print usage information.
     std::cout << usage;
+    if (FLAG_help)
+      rtc::FlagList::Print(nullptr, false);
     return 0;
   }
 
