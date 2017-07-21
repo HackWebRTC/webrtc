@@ -431,45 +431,6 @@ TEST_F(NetworkTest, TestIPv6MergeNetworkList) {
   }
 }
 
-// Test that no more than manager.max_ipv6_networks() IPv6 networks get
-// returned.
-TEST_F(NetworkTest, TestIPv6MergeNetworkListTrimExcessive) {
-  BasicNetworkManager manager;
-  manager.SignalNetworksChanged.connect(static_cast<NetworkTest*>(this),
-                                        &NetworkTest::OnNetworksChanged);
-  NetworkManager::NetworkList original_list;
-
-  // Add twice the allowed number of IPv6 networks.
-  for (int i = 0; i < 2 * manager.max_ipv6_networks(); i++) {
-    // Make a network with different prefix length.
-    IPAddress ip;
-    EXPECT_TRUE(IPFromString("2401:fa01:4:1000:be30:faa:fee:faa", &ip));
-    IPAddress prefix = TruncateIP(ip, 64 - i);
-    Network* ipv6_network =
-        new Network("test_eth0", "Test Network Adapter 1", prefix, 64 - i);
-    ipv6_network->AddIP(ip);
-    original_list.push_back(ipv6_network);
-  }
-
-  // Add one IPv4 network.
-  Network* ipv4_network = new Network("test_eth0", "Test Network Adapter 1",
-                                      IPAddress(0x12345600U), 24);
-  ipv4_network->AddIP(IPAddress(0x12345600U));
-  original_list.push_back(ipv4_network);
-
-  bool changed = false;
-  MergeNetworkList(manager, original_list, &changed);
-  EXPECT_TRUE(changed);
-  NetworkManager::NetworkList list;
-  manager.GetNetworks(&list);
-
-  // List size should be the max allowed IPv6 networks plus one IPv4 network.
-  EXPECT_EQ(manager.max_ipv6_networks() + 1, (int)list.size());
-
-  // Verify that the IPv4 network is in the list.
-  EXPECT_NE(list.end(), std::find(list.begin(), list.end(), ipv4_network));
-}
-
 // Tests that when two network lists that describe the same set of networks are
 // merged, that the changed callback is not called, and that the original
 // objects remain in the result list.
@@ -703,7 +664,9 @@ TEST_F(NetworkTest, MAYBE_TestIPv6Toggle) {
   }
 }
 
-TEST_F(NetworkTest, TestNetworkListSorting) {
+// Test that when network interfaces are sorted and given preference values,
+// IPv6 comes first.
+TEST_F(NetworkTest, IPv6NetworksPreferredOverIPv4) {
   BasicNetworkManager manager;
   Network ipv4_network1("test_eth0", "Test Network Adapter 1",
                         IPAddress(0x12345600U), 24);
@@ -728,6 +691,29 @@ TEST_F(NetworkTest, TestNetworkListSorting) {
   ASSERT_TRUE(changed);
   // After sorting IPv6 network should be higher order than IPv4 networks.
   EXPECT_TRUE(net1->preference() < net2->preference());
+}
+
+// When two interfaces are equivalent in everything but name, they're expected
+// to be preference-ordered by name. For example, "eth0" before "eth1".
+TEST_F(NetworkTest, NetworksSortedByInterfaceName) {
+  BasicNetworkManager manager;
+  Network* eth0 = new Network("test_eth0", "Test Network Adapter 1",
+                              IPAddress(0x65432100U), 24);
+  eth0->AddIP(IPAddress(0x65432100U));
+  Network* eth1 = new Network("test_eth1", "Test Network Adapter 2",
+                              IPAddress(0x12345600U), 24);
+  eth1->AddIP(IPAddress(0x12345600U));
+  NetworkManager::NetworkList list;
+  // Add them to the list in the opposite of the expected sorted order, to
+  // ensure sorting actually occurs.
+  list.push_back(eth1);
+  list.push_back(eth0);
+
+  bool changed = false;
+  MergeNetworkList(manager, list, &changed);
+  ASSERT_TRUE(changed);
+  // "test_eth0" should be preferred over "test_eth1".
+  EXPECT_TRUE(eth0->preference() > eth1->preference());
 }
 
 TEST_F(NetworkTest, TestNetworkAdapterTypes) {

@@ -588,13 +588,14 @@ std::vector<rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
       network_manager->GetAnyAddressNetworks(&networks);
     }
   }
+  // Do some more filtering, depending on the network ignore mask and "disable
+  // costly networks" flag.
   networks.erase(std::remove_if(networks.begin(), networks.end(),
                                 [this](rtc::Network* network) {
                                   return allocator_->network_ignore_mask() &
                                          network->type();
                                 }),
                  networks.end());
-
   if (flags() & PORTALLOCATOR_DISABLE_COSTLY_NETWORKS) {
     uint16_t lowest_cost = rtc::kNetworkCostMax;
     for (rtc::Network* network : networks) {
@@ -606,6 +607,26 @@ std::vector<rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
                                            lowest_cost + rtc::kNetworkCostLow;
                                   }),
                    networks.end());
+  }
+  // Lastly, if we have a limit for the number of IPv6 network interfaces (by
+  // default, it's 5), remove networks to ensure that limit is satisfied.
+  //
+  // TODO(deadbeef): Instead of just taking the first N arbitrary IPv6
+  // networks, we could try to choose a set that's "most likely to work". It's
+  // hard to define what that means though; it's not just "lowest cost".
+  // Alternatively, we could just focus on making our ICE pinging logic smarter
+  // such that this filtering isn't necessary in the first place.
+  int ipv6_networks = 0;
+  for (auto it = networks.begin(); it != networks.end();) {
+    if ((*it)->prefix().family() == AF_INET6) {
+      if (ipv6_networks >= allocator_->max_ipv6_networks()) {
+        it = networks.erase(it);
+        continue;
+      } else {
+        ++ipv6_networks;
+      }
+    }
+    ++it;
   }
   return networks;
 }

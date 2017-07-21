@@ -103,6 +103,12 @@ const uint32_t kDefaultStepDelay = 1000;  // 1 sec step delay.
 // internal. Less than 20ms is not acceptable. We choose 50ms as our default.
 const uint32_t kMinimumStepDelay = 50;
 
+// Turning on IPv6 could make many IPv6 interfaces available for connectivity
+// check and delay the call setup time. kDefaultMaxIPv6Networks is the default
+// upper limit of IPv6 networks but could be changed by
+// set_max_ipv6_networks().
+constexpr int kDefaultMaxIPv6Networks = 5;
+
 // CF = CANDIDATE FILTER
 enum {
   CF_NONE = 0x0,
@@ -324,14 +330,14 @@ class PortAllocatorSession : public sigslot::has_slots<> {
 // passing it into an object that uses it on a different thread.
 class PortAllocator : public sigslot::has_slots<> {
  public:
-  PortAllocator() :
-      flags_(kDefaultPortAllocatorFlags),
-      min_port_(0),
-      max_port_(0),
-      step_delay_(kDefaultStepDelay),
-      allow_tcp_listen_(true),
-      candidate_filter_(CF_ALL) {
-  }
+  PortAllocator()
+      : flags_(kDefaultPortAllocatorFlags),
+        min_port_(0),
+        max_port_(0),
+        max_ipv6_networks_(kDefaultMaxIPv6Networks),
+        step_delay_(kDefaultStepDelay),
+        allow_tcp_listen_(true),
+        candidate_filter_(CF_ALL) {}
 
   virtual ~PortAllocator() {}
 
@@ -429,6 +435,17 @@ class PortAllocator : public sigslot::has_slots<> {
     return true;
   }
 
+  // Can be used to change the default numer of IPv6 network interfaces used
+  // (5). Can set to INT_MAX to effectively disable the limit.
+  //
+  // TODO(deadbeef): Applications shouldn't have to arbitrarily limit the
+  // number of available IPv6 network interfaces just because they could slow
+  // ICE down. We should work on making our ICE logic smarter (for example,
+  // prioritizing pinging connections that are most likely to work) so that
+  // every network interface can be used without impacting ICE's speed.
+  void set_max_ipv6_networks(int networks) { max_ipv6_networks_ = networks; }
+  int max_ipv6_networks() { return max_ipv6_networks_; }
+
   uint32_t step_delay() const { return step_delay_; }
   void set_step_delay(uint32_t delay) { step_delay_ = delay; }
 
@@ -472,6 +489,7 @@ class PortAllocator : public sigslot::has_slots<> {
   rtc::ProxyInfo proxy_;
   int min_port_;
   int max_port_;
+  int max_ipv6_networks_;
   uint32_t step_delay_;
   bool allow_tcp_listen_;
   uint32_t candidate_filter_;

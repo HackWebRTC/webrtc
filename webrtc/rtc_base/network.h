@@ -147,12 +147,12 @@ class NetworkManagerBase : public NetworkManager {
 
   void GetNetworks(NetworkList* networks) const override;
   void GetAnyAddressNetworks(NetworkList* networks) override;
+
   // Defaults to true.
+  // TODO(deadbeef): Remove this. Nothing but tests use this; IPv6 is enabled
+  // by default everywhere else.
   bool ipv6_enabled() const { return ipv6_enabled_; }
   void set_ipv6_enabled(bool enabled) { ipv6_enabled_ = enabled; }
-
-  void set_max_ipv6_networks(int networks) { max_ipv6_networks_ = networks; }
-  int max_ipv6_networks() { return max_ipv6_networks_; }
 
   EnumerationPermission enumeration_permission() const override;
 
@@ -187,7 +187,6 @@ class NetworkManagerBase : public NetworkManager {
   EnumerationPermission enumeration_permission_;
 
   NetworkList networks_;
-  int max_ipv6_networks_;
 
   NetworkMap networks_map_;
   bool ipv6_enabled_;

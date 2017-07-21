@@ -55,6 +55,9 @@ static const SocketAddress kClientIPv6Addr("2401:fa00:4:1000:be30:5bff:fee5:c3",
 static const SocketAddress kClientIPv6Addr2(
     "2401:fa00:4:2000:be30:5bff:fee5:c3",
     0);
+static const SocketAddress kClientIPv6Addr3(
+    "2401:fa00:4:3000:be30:5bff:fee5:c3",
+    0);
 static const SocketAddress kNatUdpAddr("77.77.77.77", rtc::NAT_SERVER_UDP_PORT);
 static const SocketAddress kNatTcpAddr("77.77.77.77", rtc::NAT_SERVER_TCP_PORT);
 static const SocketAddress kRemoteClientAddr("22.22.22.22", 0);
@@ -797,6 +800,57 @@ TEST_F(BasicPortAllocatorTest, TestGatherLowCostNetworkOnly) {
                              kDefaultAllocationTimeout, fake_clock);
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_TRUE(addr_wifi.EqualIPs(candidates_[0].address()));
+}
+
+// Test that no more than allocator.max_ipv6_networks() IPv6 networks are used
+// to gather candidates.
+TEST_F(BasicPortAllocatorTest, MaxIpv6NetworksLimitEnforced) {
+  // Add three IPv6 network interfaces, but tell the allocator to only use two.
+  allocator().set_max_ipv6_networks(2);
+  AddInterface(kClientIPv6Addr, "eth0", rtc::ADAPTER_TYPE_ETHERNET);
+  AddInterface(kClientIPv6Addr2, "eth1", rtc::ADAPTER_TYPE_ETHERNET);
+  AddInterface(kClientIPv6Addr3, "eth2", rtc::ADAPTER_TYPE_ETHERNET);
+
+  // To simplify the test, only gather UDP host candidates.
+  allocator().set_flags(PORTALLOCATOR_ENABLE_IPV6 | PORTALLOCATOR_DISABLE_TCP |
+                        PORTALLOCATOR_DISABLE_STUN |
+                        PORTALLOCATOR_DISABLE_RELAY);
+
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  EXPECT_EQ(2U, candidates_.size());
+  // Ensure the expected two interfaces (eth0 and eth1) were used.
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientIPv6Addr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientIPv6Addr2);
+}
+
+// Ensure that allocator.max_ipv6_networks() doesn't prevent IPv4 networks from
+// being used.
+TEST_F(BasicPortAllocatorTest, MaxIpv6NetworksLimitDoesNotImpactIpv4Networks) {
+  // Set the "max IPv6" limit to 1, adding two IPv6 and two IPv4 networks.
+  allocator().set_max_ipv6_networks(1);
+  AddInterface(kClientIPv6Addr, "eth0", rtc::ADAPTER_TYPE_ETHERNET);
+  AddInterface(kClientIPv6Addr2, "eth1", rtc::ADAPTER_TYPE_ETHERNET);
+  AddInterface(kClientAddr, "eth2", rtc::ADAPTER_TYPE_ETHERNET);
+  AddInterface(kClientAddr2, "eth3", rtc::ADAPTER_TYPE_ETHERNET);
+
+  // To simplify the test, only gather UDP host candidates.
+  allocator().set_flags(PORTALLOCATOR_ENABLE_IPV6 | PORTALLOCATOR_DISABLE_TCP |
+                        PORTALLOCATOR_DISABLE_STUN |
+                        PORTALLOCATOR_DISABLE_RELAY);
+
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  EXPECT_EQ(3U, candidates_.size());
+  // Ensure that only one IPv6 interface was used, but both IPv4 interfaces
+  // were used.
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientIPv6Addr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr2);
 }
 
 // Test that we could use loopback interface as host candidate.
