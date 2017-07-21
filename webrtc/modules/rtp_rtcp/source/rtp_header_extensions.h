@@ -146,34 +146,40 @@ class VideoTimingExtension {
   static bool Write(uint8_t* data, uint16_t time_delta_ms, uint8_t idx);
 };
 
-class RtpStreamId {
+// Base extension class for RTP header extensions which are strings.
+// Subclasses must defined kId and kUri static constexpr members.
+class BaseRtpStringExtension {
+ public:
+  static bool Parse(rtc::ArrayView<const uint8_t> data,
+                    StringRtpHeaderExtension* str);
+  static size_t ValueSize(const StringRtpHeaderExtension& str) {
+    return str.size();
+  }
+  static bool Write(uint8_t* data, const StringRtpHeaderExtension& str);
+
+  static bool Parse(rtc::ArrayView<const uint8_t> data, std::string* str);
+  static size_t ValueSize(const std::string& str) { return str.size(); }
+  static bool Write(uint8_t* data, const std::string& str);
+};
+
+class RtpStreamId : public BaseRtpStringExtension {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionRtpStreamId;
   static constexpr const char* kUri =
       "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
-
-  static bool Parse(rtc::ArrayView<const uint8_t> data, StreamId* rsid);
-  static size_t ValueSize(const StreamId& rsid) { return rsid.size(); }
-  static bool Write(uint8_t* data, const StreamId& rsid);
-
-  static bool Parse(rtc::ArrayView<const uint8_t> data, std::string* rsid);
-  static size_t ValueSize(const std::string& rsid) { return rsid.size(); }
-  static bool Write(uint8_t* data, const std::string& rsid);
 };
 
-class RepairedRtpStreamId {
+class RepairedRtpStreamId : public BaseRtpStringExtension {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionRepairedRtpStreamId;
   static constexpr const char* kUri =
       "urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id";
+};
 
-  static bool Parse(rtc::ArrayView<const uint8_t> data, StreamId* rsid);
-  static size_t ValueSize(const StreamId& rsid);
-  static bool Write(uint8_t* data, const StreamId& rsid);
-
-  static bool Parse(rtc::ArrayView<const uint8_t> data, std::string* rsid);
-  static size_t ValueSize(const std::string& rsid);
-  static bool Write(uint8_t* data, const std::string& rsid);
+class RtpMid : public BaseRtpStringExtension {
+ public:
+  static constexpr RTPExtensionType kId = kRtpExtensionMid;
+  static constexpr const char* kUri = "urn:ietf:params:rtp-hdrext:sdes:mid";
 };
 
 }  // namespace webrtc

@@ -715,23 +715,26 @@ struct PlayoutDelay {
   int max_ms;
 };
 
-// Class to represent RtpStreamId which is a string.
+// Class to represent the value of RTP header extensions that are
+// variable-length strings (e.g., RtpStreamId and RtpMid).
 // Unlike std::string, it can be copied with memcpy and cleared with memset.
-// Empty value represent unset RtpStreamId.
-class StreamId {
+//
+// Empty value represents unset header extension (use empty() to query).
+class StringRtpHeaderExtension {
  public:
-  // Stream id is limited to 16 bytes because it is the maximum length
-  // that can be encoded with one-byte header extensions.
+  // String RTP header extensions are limited to 16 bytes because it is the
+  // maximum length that can be encoded with one-byte header extensions.
   static constexpr size_t kMaxSize = 16;
 
   static bool IsLegalName(rtc::ArrayView<const char> name);
 
-  StreamId() { value_[0] = 0; }
-  explicit StreamId(rtc::ArrayView<const char> value) {
+  StringRtpHeaderExtension() { value_[0] = 0; }
+  explicit StringRtpHeaderExtension(rtc::ArrayView<const char> value) {
     Set(value.data(), value.size());
   }
-  StreamId(const StreamId&) = default;
-  StreamId& operator=(const StreamId&) = default;
+  StringRtpHeaderExtension(const StringRtpHeaderExtension&) = default;
+  StringRtpHeaderExtension& operator=(const StringRtpHeaderExtension&) =
+      default;
 
   bool empty() const { return value_[0] == 0; }
   const char* data() const { return value_; }
@@ -742,16 +745,24 @@ class StreamId {
   }
   void Set(const char* data, size_t size);
 
-  friend bool operator==(const StreamId& lhs, const StreamId& rhs) {
+  friend bool operator==(const StringRtpHeaderExtension& lhs,
+                         const StringRtpHeaderExtension& rhs) {
     return strncmp(lhs.value_, rhs.value_, kMaxSize) == 0;
   }
-  friend bool operator!=(const StreamId& lhs, const StreamId& rhs) {
+  friend bool operator!=(const StringRtpHeaderExtension& lhs,
+                         const StringRtpHeaderExtension& rhs) {
     return !(lhs == rhs);
   }
 
  private:
   char value_[kMaxSize];
 };
+
+// StreamId represents RtpStreamId which is a string.
+typedef StringRtpHeaderExtension StreamId;
+
+// Mid represents RtpMid which is a string.
+typedef StringRtpHeaderExtension Mid;
 
 struct RTPHeaderExtension {
   RTPHeaderExtension();
@@ -790,6 +801,10 @@ struct RTPHeaderExtension {
   // TODO(danilchap): Update url from draft to release version.
   StreamId stream_id;
   StreamId repaired_stream_id;
+
+  // For identifying the media section used to interpret this RTP packet. See
+  // https://tools.ietf.org/html/draft-ietf-mmusic-sdp-bundle-negotiation-38
+  Mid mid;
 };
 
 struct RTPHeader {

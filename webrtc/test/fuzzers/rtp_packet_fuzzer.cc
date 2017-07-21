@@ -104,6 +104,11 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         packet.GetExtension<RepairedRtpStreamId>(&rsid);
         break;
       }
+      case kRtpExtensionMid: {
+        std::string mid;
+        packet.GetExtension<RtpMid>(&mid);
+        break;
+      }
     }
   }
 }

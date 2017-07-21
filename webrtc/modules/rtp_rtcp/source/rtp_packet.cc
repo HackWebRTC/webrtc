@@ -178,6 +178,7 @@ void Packet::GetHeader(RTPHeader* header) const {
       GetExtension<VideoTimingExtension>(&header->extension.video_timing);
   GetExtension<RtpStreamId>(&header->extension.stream_id);
   GetExtension<RepairedRtpStreamId>(&header->extension.repaired_stream_id);
+  GetExtension<RtpMid>(&header->extension.mid);
   GetExtension<PlayoutDelayLimits>(&header->extension.playout_delay);
 }
 

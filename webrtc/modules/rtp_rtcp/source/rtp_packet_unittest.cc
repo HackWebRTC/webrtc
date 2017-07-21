@@ -31,10 +31,12 @@ constexpr uint32_t kTimestamp = 0x65431278;
 constexpr uint8_t kTransmissionOffsetExtensionId = 1;
 constexpr uint8_t kAudioLevelExtensionId = 9;
 constexpr uint8_t kRtpStreamIdExtensionId = 0xa;
+constexpr uint8_t kRtpMidExtensionId = 0xb;
 constexpr int32_t kTimeOffset = 0x56ce;
 constexpr bool kVoiceActive = true;
 constexpr uint8_t kAudioLevel = 0x5a;
 constexpr char kStreamId[] = "streamid";
+constexpr char kMid[] = "mid";
 constexpr size_t kMaxPaddingSize = 224u;
 // clang-format off
 constexpr uint8_t kMinimumPacket[] = {
@@ -65,6 +67,13 @@ constexpr uint8_t kPacketWithRsid[] = {
     0xa7, 's',  't',  'r',
     'e',  'a',  'm',  'i',
     'd' , 0x00, 0x00, 0x00};
+
+constexpr uint8_t kPacketWithMid[] = {
+    0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+    0x65, 0x43, 0x12, 0x78,
+    0x12, 0x34, 0x56, 0x78,
+    0xbe, 0xde, 0x00, 0x01,
+    0xb2, 'm', 'i', 'd'};
 
 constexpr uint32_t kCsrcs[] = {0x34567890, 0x32435465};
 constexpr uint8_t kPayload[] = {'p', 'a', 'y', 'l', 'o', 'a', 'd'};
@@ -157,6 +166,22 @@ TEST(RtpPacketTest, TryToCreateWithLongRsid) {
   extensions.Register<RtpStreamId>(kRtpStreamIdExtensionId);
   RtpPacketToSend packet(&extensions);
   EXPECT_FALSE(packet.SetExtension<RtpStreamId>(kLongStreamId));
+}
+
+TEST(RtpPacketTest, TryToCreateWithEmptyMid) {
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register<RtpMid>(kRtpMidExtensionId);
+  RtpPacketToSend packet(&extensions);
+  EXPECT_FALSE(packet.SetExtension<RtpMid>(""));
+}
+
+TEST(RtpPacketTest, TryToCreateWithLongMid) {
+  RtpPacketToSend::ExtensionManager extensions;
+  constexpr char kLongMid[] = "LoooooooooonogMid";
+  ASSERT_EQ(strlen(kLongMid), 17u);
+  extensions.Register<RtpMid>(kRtpMidExtensionId);
+  RtpPacketToSend packet(&extensions);
+  EXPECT_FALSE(packet.SetExtension<RtpMid>(kLongMid));
 }
 
 TEST(RtpPacketTest, CreateWithExtensionsWithoutManager) {
@@ -443,6 +468,17 @@ TEST(RtpPacketTest, ParseDynamicSizeExtension) {
   EXPECT_TRUE(packet.GetExtension<RtpStreamId>(&rsid));
   EXPECT_EQ(rsid, "HD");
   EXPECT_FALSE(packet.GetExtension<RepairedRtpStreamId>(&repaired_rsid));
+}
+
+TEST(RtpPacketTest, ParseWithMid) {
+  RtpPacketReceived::ExtensionManager extensions;
+  extensions.Register<RtpMid>(kRtpMidExtensionId);
+  RtpPacketReceived packet(&extensions);
+  ASSERT_TRUE(packet.Parse(kPacketWithMid, sizeof(kPacketWithMid)));
+
+  std::string mid;
+  EXPECT_TRUE(packet.GetExtension<RtpMid>(&mid));
+  EXPECT_EQ(mid, kMid);
 }
 
 TEST(RtpPacketTest, RawExtensionFunctionsAcceptZeroIdAndReturnFalse) {
