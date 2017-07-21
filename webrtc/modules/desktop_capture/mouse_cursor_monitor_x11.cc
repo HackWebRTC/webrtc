@@ -17,6 +17,7 @@
 #include <X11/Xutil.h>
 
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
 #include "webrtc/modules/desktop_capture/x11/x_error_trap.h"
@@ -200,8 +201,9 @@ void MouseCursorMonitorX11::Capture() {
       }
     }
 
-    callback_->OnMouseCursorPosition(state,
-                                     webrtc::DesktopVector(win_x, win_y));
+    const DesktopVector position(win_x, win_y);
+    callback_->OnMouseCursorPosition(state, position);
+    callback_->OnMouseCursorPosition(position);
   }
 }
 
@@ -266,6 +268,12 @@ MouseCursorMonitor* MouseCursorMonitor::CreateForScreen(
     return NULL;
   return new MouseCursorMonitorX11(
       options, DefaultRootWindow(options.x_display()->display()));
+}
+
+std::unique_ptr<MouseCursorMonitor> MouseCursorMonitor::Create(
+    const DesktopCaptureOptions& options) {
+  return std::unique_ptr<MouseCursorMonitor>(
+      CreateForScreen(options, kFullDesktopScreenId));
 }
 
 }  // namespace webrtc

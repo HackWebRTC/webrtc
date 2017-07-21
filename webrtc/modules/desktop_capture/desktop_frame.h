@@ -31,7 +31,14 @@ class DesktopFrame {
   virtual ~DesktopFrame();
 
   // Size of the frame.
-  const DesktopSize& size() const { return size_; }
+  DesktopSize size() const { return rect_.size(); }
+
+  // The top-left of the frame in full desktop coordinates. E.g. the top left
+  // monitor should start from (0, 0).
+  DesktopVector top_left() const { return rect_.top_left(); }
+
+  // Rectangle covered by the frame.
+  const DesktopRect& rect() const { return rect_; }
 
   // Distance in the buffer between two neighboring rows in bytes.
   int stride() const { return stride_; }
@@ -78,7 +85,14 @@ class DesktopFrame {
   }
 
  protected:
+  // Deprecated, use the constructor below.
   DesktopFrame(DesktopSize size,
+               int stride,
+               uint8_t* data,
+               SharedMemory* shared_memory);
+
+  // Preferred.
+  DesktopFrame(DesktopRect rect,
                int stride,
                uint8_t* data,
                SharedMemory* shared_memory);
@@ -90,7 +104,7 @@ class DesktopFrame {
   SharedMemory* const shared_memory_;
 
  private:
-  const DesktopSize size_;
+  const DesktopRect rect_;
   const int stride_;
 
   DesktopRegion updated_region_;

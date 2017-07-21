@@ -12,9 +12,13 @@
 
 #include <string.h>
 
+#include <utility>
+
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
+#include "webrtc/modules/desktop_capture/mouse_cursor_monitor.h"
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -130,9 +134,16 @@ DesktopAndCursorComposer::DesktopAndCursorComposer(
     MouseCursorMonitor* mouse_monitor)
     : desktop_capturer_(desktop_capturer),
       mouse_monitor_(mouse_monitor) {
+  RTC_DCHECK(desktop_capturer_);
 }
 
-DesktopAndCursorComposer::~DesktopAndCursorComposer() {}
+DesktopAndCursorComposer::DesktopAndCursorComposer(
+    std::unique_ptr<DesktopCapturer> desktop_capturer,
+    const DesktopCaptureOptions& options)
+    : DesktopAndCursorComposer(desktop_capturer.release(),
+                               MouseCursorMonitor::Create(options).release()) {}
+
+DesktopAndCursorComposer::~DesktopAndCursorComposer() = default;
 
 void DesktopAndCursorComposer::Start(DesktopCapturer::Callback* callback) {
   callback_ = callback;

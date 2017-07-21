@@ -14,6 +14,7 @@
 
 #include <string.h>
 
+#include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/rtc_base/checks.h"
 
 namespace webrtc {
@@ -22,14 +23,23 @@ DesktopFrame::DesktopFrame(DesktopSize size,
                            int stride,
                            uint8_t* data,
                            SharedMemory* shared_memory)
+    : DesktopFrame(DesktopRect::MakeSize(size),
+                   stride,
+                   data,
+                   shared_memory) {}
+
+DesktopFrame::DesktopFrame(DesktopRect rect,
+                           int stride,
+                           uint8_t* data,
+                           SharedMemory* shared_memory)
     : data_(data),
       shared_memory_(shared_memory),
-      size_(size),
+      rect_(rect),
       stride_(stride),
       capture_time_ms_(0),
       capturer_id_(DesktopCapturerId::kUnknown) {}
 
-DesktopFrame::~DesktopFrame() {}
+DesktopFrame::~DesktopFrame() = default;
 
 void DesktopFrame::CopyPixelsFrom(const uint8_t* src_buffer, int src_stride,
                                   const DesktopRect& dest_rect) {

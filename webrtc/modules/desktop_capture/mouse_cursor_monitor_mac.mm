@@ -19,6 +19,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
@@ -244,12 +245,11 @@ void MouseCursorMonitorMac::Capture() {
       position.subtract(configuration.bounds.top_left());
     }
   }
-  if (state == INSIDE) {
-    // Convert Density Independent Pixel to physical pixel.
-    position = DesktopVector(round(position.x() * scale),
-                             round(position.y() * scale));
-  }
+  // Convert Density Independent Pixel to physical pixel.
+  position = DesktopVector(round(position.x() * scale),
+                           round(position.y() * scale));
   callback_->OnMouseCursorPosition(state, position);
+  callback_->OnMouseCursorPosition(position);
 }
 
 void MouseCursorMonitorMac::CaptureImage(float scale) {
@@ -328,6 +328,12 @@ MouseCursorMonitor* MouseCursorMonitor::CreateForScreen(
     const DesktopCaptureOptions& options,
     ScreenId screen) {
   return new MouseCursorMonitorMac(options, kCGNullWindowID, screen);
+}
+
+std::unique_ptr<MouseCursorMonitor> MouseCursorMonitor::Create(
+    const DesktopCaptureOptions& options) {
+  return std::unique_ptr<MouseCursorMonitor>(
+      CreateForScreen(options, kFullDesktopScreenId));
 }
 
 }  // namespace webrtc
