@@ -21,6 +21,7 @@ import java.lang.Thread;
 import java.nio.ByteBuffer;
 import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
+import org.webrtc.ThreadUtils;
 
 public class WebRtcAudioTrack {
   private static final boolean DEBUG = false;
@@ -36,6 +37,10 @@ public class WebRtcAudioTrack {
 
   // Average number of callbacks per second.
   private static final int BUFFERS_PER_SECOND = 1000 / CALLBACK_BUFFER_SIZE_MS;
+
+  // The AudioTrackThread is allowed to wait for successful call to join()
+  // but the wait times out afther this amount of time.
+  private static final long AUDIO_TRACK_THREAD_JOIN_TIMEOUT_MS = 2000;
 
   private final long nativeAudioTrack;
   private final AudioManager audioManager;
@@ -136,7 +141,9 @@ public class WebRtcAudioTrack {
       }
 
       try {
-        audioTrack.stop();
+        if (audioTrack != null) {
+          audioTrack.stop();
+        }
       } catch (IllegalStateException e) {
         Logging.e(TAG, "AudioTrack.stop failed: " + e.getMessage());
       }
@@ -153,15 +160,11 @@ public class WebRtcAudioTrack {
       return audioTrack.write(byteBuffer.array(), byteBuffer.arrayOffset(), sizeInBytes);
     }
 
-    public void joinThread() {
+    // Stops the inner thread loop and also calls AudioTrack.stop().
+    // Does not block the calling thread.
+    public void stopThread() {
+      Logging.d(TAG, "stopThread");
       keepAlive = false;
-      while (isAlive()) {
-        try {
-          join();
-        } catch (InterruptedException e) {
-          // Ignore.
-        }
-      }
     }
   }
 
@@ -264,7 +267,10 @@ public class WebRtcAudioTrack {
     Logging.d(TAG, "stopPlayout");
     assertTrue(audioThread != null);
     logUnderrunCount();
-    audioThread.joinThread();
+    audioThread.stopThread();
+    if (!ThreadUtils.joinUninterruptibly(audioThread, AUDIO_TRACK_THREAD_JOIN_TIMEOUT_MS)) {
+      Logging.e(TAG, "Join of AudioTrackThread timed out");
+    }
     audioThread = null;
     releaseAudioResources();
     return true;
