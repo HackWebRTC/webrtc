@@ -44,7 +44,7 @@ public class WebRtcAudioTrack {
 
   // By default, WebRTC creates audio tracks with a usage attribute
   // corresponding to voice communications, such as telephony or VoIP.
-  private static final int DEFAULT_USAGE = AudioAttributes.USAGE_VOICE_COMMUNICATION;
+  private static final int DEFAULT_USAGE = getDefaultUsageAttribute();
   private static int usageAttribute = DEFAULT_USAGE;
 
   // This method overrides the default usage attribute and allows the user
@@ -54,6 +54,20 @@ public class WebRtcAudioTrack {
     Logging.w(TAG, "Default usage attribute is changed from: "
         + DEFAULT_USAGE + " to " + usage);
     usageAttribute = usage;
+  }
+
+  private static int getDefaultUsageAttribute() {
+    if (WebRtcAudioUtils.runningOnLollipopOrHigher()) {
+      return getDefaultUsageAttributeOnLollipopOrHigher();
+    } else {
+      // Not used on SDKs lower than L.
+      return 0;
+    }
+  }
+
+  @TargetApi(21)
+  private static int getDefaultUsageAttributeOnLollipopOrHigher() {
+    return AudioAttributes.USAGE_VOICE_COMMUNICATION;
   }
 
   private final long nativeAudioTrack;
