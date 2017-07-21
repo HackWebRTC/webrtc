@@ -10,12 +10,13 @@
 
 package org.webrtc;
 
+import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
-import android.media.MediaCodec;
 
 /** Container class for static constants and helpers used with MediaCodec. */
+@TargetApi(18)
 class MediaCodecUtils {
   private static final String TAG = "MediaCodecUtils";
 
