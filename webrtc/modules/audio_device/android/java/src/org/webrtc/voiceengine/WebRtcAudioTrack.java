@@ -42,6 +42,20 @@ public class WebRtcAudioTrack {
   // but the wait times out afther this amount of time.
   private static final long AUDIO_TRACK_THREAD_JOIN_TIMEOUT_MS = 2000;
 
+  // By default, WebRTC creates audio tracks with a usage attribute
+  // corresponding to voice communications, such as telephony or VoIP.
+  private static final int DEFAULT_USAGE = AudioAttributes.USAGE_VOICE_COMMUNICATION;
+  private static int usageAttribute = DEFAULT_USAGE;
+
+  // This method overrides the default usage attribute and allows the user
+  // to set it to something else than AudioAttributes.USAGE_VOICE_COMMUNICATION.
+  // NOTE: calling this method will most likely break existing VoIP tuning.
+  public static synchronized void setAudioTrackUsageAttribute(int usage) {
+    Logging.w(TAG, "Default usage attribute is changed from: "
+        + DEFAULT_USAGE + " to " + usage);
+    usageAttribute = usage;
+  }
+
   private final long nativeAudioTrack;
   private final AudioManager audioManager;
 
@@ -332,10 +346,13 @@ public class WebRtcAudioTrack {
     if (sampleRateInHz != nativeOutputSampleRate) {
       Logging.w(TAG, "Unable to use fast mode since requested sample rate is not native");
     }
+    if (usageAttribute != DEFAULT_USAGE) {
+      Logging.w(TAG, "A non default usage attribute is used: " + usageAttribute);
+    }
     // Create an audio track where the audio usage is for VoIP and the content type is speech.
     return new AudioTrack(
         new AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+            .setUsage(usageAttribute)
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
         .build(),
         new AudioFormat.Builder()
