@@ -33,7 +33,7 @@ namespace webrtc {
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType AbsoluteSendTime::kId;
 constexpr uint8_t AbsoluteSendTime::kValueSizeBytes;
-constexpr const char* AbsoluteSendTime::kUri;
+constexpr const char AbsoluteSendTime::kUri[];
 
 bool AbsoluteSendTime::Parse(rtc::ArrayView<const uint8_t> data,
                              uint32_t* time_24bits) {
@@ -63,7 +63,7 @@ bool AbsoluteSendTime::Write(uint8_t* data, uint32_t time_24bits) {
 //
 constexpr RTPExtensionType AudioLevel::kId;
 constexpr uint8_t AudioLevel::kValueSizeBytes;
-constexpr const char* AudioLevel::kUri;
+constexpr const char AudioLevel::kUri[];
 
 bool AudioLevel::Parse(rtc::ArrayView<const uint8_t> data,
                        bool* voice_activity,
@@ -101,7 +101,7 @@ bool AudioLevel::Write(uint8_t* data,
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType TransmissionOffset::kId;
 constexpr uint8_t TransmissionOffset::kValueSizeBytes;
-constexpr const char* TransmissionOffset::kUri;
+constexpr const char TransmissionOffset::kUri[];
 
 bool TransmissionOffset::Parse(rtc::ArrayView<const uint8_t> data,
                                int32_t* rtp_time) {
@@ -124,7 +124,7 @@ bool TransmissionOffset::Write(uint8_t* data, int32_t rtp_time) {
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType TransportSequenceNumber::kId;
 constexpr uint8_t TransportSequenceNumber::kValueSizeBytes;
-constexpr const char* TransportSequenceNumber::kUri;
+constexpr const char TransportSequenceNumber::kUri[];
 
 bool TransportSequenceNumber::Parse(rtc::ArrayView<const uint8_t> data,
                                     uint16_t* value) {
@@ -152,7 +152,7 @@ bool TransportSequenceNumber::Write(uint8_t* data, uint16_t value) {
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType VideoOrientation::kId;
 constexpr uint8_t VideoOrientation::kValueSizeBytes;
-constexpr const char* VideoOrientation::kUri;
+constexpr const char VideoOrientation::kUri[];
 
 bool VideoOrientation::Parse(rtc::ArrayView<const uint8_t> data,
                              VideoRotation* rotation) {
@@ -187,7 +187,7 @@ bool VideoOrientation::Write(uint8_t* data, uint8_t value) {
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType PlayoutDelayLimits::kId;
 constexpr uint8_t PlayoutDelayLimits::kValueSizeBytes;
-constexpr const char* PlayoutDelayLimits::kUri;
+constexpr const char PlayoutDelayLimits::kUri[];
 
 bool PlayoutDelayLimits::Parse(rtc::ArrayView<const uint8_t> data,
                                PlayoutDelay* playout_delay) {
@@ -227,7 +227,7 @@ bool PlayoutDelayLimits::Write(uint8_t* data,
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType VideoContentTypeExtension::kId;
 constexpr uint8_t VideoContentTypeExtension::kValueSizeBytes;
-constexpr const char* VideoContentTypeExtension::kUri;
+constexpr const char VideoContentTypeExtension::kUri[];
 
 bool VideoContentTypeExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                       VideoContentType* content_type) {
@@ -263,7 +263,7 @@ bool VideoContentTypeExtension::Write(uint8_t* data,
 
 constexpr RTPExtensionType VideoTimingExtension::kId;
 constexpr uint8_t VideoTimingExtension::kValueSizeBytes;
-constexpr const char* VideoTimingExtension::kUri;
+constexpr const char VideoTimingExtension::kUri[];
 
 bool VideoTimingExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                  VideoSendTiming* timing) {
@@ -351,12 +351,12 @@ bool BaseRtpStringExtension::Write(uint8_t* data, const std::string& str) {
 // Constant declarations for string RTP header extension types.
 
 constexpr RTPExtensionType RtpStreamId::kId;
-constexpr const char* RtpStreamId::kUri;
+constexpr const char RtpStreamId::kUri[];
 
 constexpr RTPExtensionType RepairedRtpStreamId::kId;
-constexpr const char* RepairedRtpStreamId::kUri;
+constexpr const char RepairedRtpStreamId::kUri[];
 
 constexpr RTPExtensionType RtpMid::kId;
-constexpr const char* RtpMid::kUri;
+constexpr const char RtpMid::kUri[];
 
 }  // namespace webrtc
