@@ -58,8 +58,8 @@ class LowCutFilter::BiquadFilter {
       y[2] = y[0];
       y[3] = y[1];
       y[0] = static_cast<int16_t>(tmp_int32 >> 13);
-      y[1] = static_cast<int16_t>(
-          (tmp_int32 - (static_cast<int32_t>(y[0]) * ( 1 << 13))) * 4);
+
+      y[1] = static_cast<int16_t>((tmp_int32 & 0x00001FFF) * 4);
 
       // Rounding in Q12, i.e. add 2^11.
       tmp_int32 += 2048;
