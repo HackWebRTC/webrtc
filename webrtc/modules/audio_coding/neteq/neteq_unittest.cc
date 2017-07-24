@@ -471,7 +471,7 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
 #else
 #define MAYBE_TestOpusBitExactness DISABLED_TestOpusBitExactness
 #endif
-TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
+TEST_F(NetEqDecodingTest, DISABLED_TestOpusBitExactness) {
   const std::string input_rtp_file =
       webrtc::test::ResourcePath("audio_coding/neteq_opus", "rtp");
 
