@@ -32,6 +32,8 @@ constexpr int kMaxFramesBuffered = 600;
 
 // Max number of decoded frame info that will be saved.
 constexpr int kMaxFramesHistory = 50;
+
+constexpr int64_t kLogNonDecodedIntervalMs = 5000;
 }  // namespace
 
 FrameBuffer::FrameBuffer(Clock* clock,
@@ -50,7 +52,8 @@ FrameBuffer::FrameBuffer(Clock* clock,
       num_frames_buffered_(0),
       stopped_(false),
       protection_mode_(kProtectionNack),
-      stats_callback_(stats_callback) {}
+      stats_callback_(stats_callback),
+      last_log_non_decoded_ms_(-kLogNonDecodedIntervalMs) {}
 
 FrameBuffer::~FrameBuffer() {}
 
@@ -452,11 +455,15 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
     if (last_decoded_frame_it_ != frames_.end() &&
         ref_key <= last_decoded_frame_it_->first) {
       if (ref_info == frames_.end()) {
-        LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
-                        << key.picture_id << ":"
-                        << static_cast<int>(key.spatial_layer)
-                        << " depends on a non-decoded frame more previous than "
-                        << "the last decoded frame, dropping frame.";
+        int64_t now_ms = clock_->TimeInMilliseconds();
+        if (last_log_non_decoded_ms_ + kLogNonDecodedIntervalMs < now_ms) {
+          LOG(LS_WARNING)
+              << "Frame with (picture_id:spatial_id) (" << key.picture_id << ":"
+              << static_cast<int>(key.spatial_layer)
+              << ") depends on a non-decoded frame more previous than"
+              << " the last decoded frame, dropping frame.";
+          last_log_non_decoded_ms_ = now_ms;
+        }
         return false;
       }
 

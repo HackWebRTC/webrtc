@@ -177,6 +177,7 @@ class FrameBuffer {
   bool stopped_ GUARDED_BY(crit_);
   VCMVideoProtection protection_mode_ GUARDED_BY(crit_);
   VCMReceiveStatisticsCallback* const stats_callback_;
+  int64_t last_log_non_decoded_ms_ GUARDED_BY(crit_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FrameBuffer);
 };
