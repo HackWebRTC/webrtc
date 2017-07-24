@@ -71,7 +71,6 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   rtc::AsyncInvoker invoker_;
   rtc::ThreadChecker camera_thread_checker_;
   SourceState state_;
-  rtc::VideoBroadcaster broadcaster_;
   rtc::TimestampAligner timestamp_aligner_;
   NV12ToI420Scaler nv12toi420_scaler_;
   I420BufferPool buffer_pool_;
