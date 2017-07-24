@@ -62,11 +62,9 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     RtpKeepAliveConfig keepalive_config) {
   RTC_DCHECK_GT(num_modules, 0);
   RtpRtcp::Configuration configuration;
-  ReceiveStatistics* null_receive_statistics = configuration.receive_statistics;
   configuration.audio = false;
   configuration.receiver_only = false;
   configuration.flexfec_sender = flexfec_sender;
-  configuration.receive_statistics = null_receive_statistics;
   configuration.outgoing_transport = outgoing_transport;
   configuration.intra_frame_callback = intra_frame_callback;
   configuration.bandwidth_callback = bandwidth_callback;
