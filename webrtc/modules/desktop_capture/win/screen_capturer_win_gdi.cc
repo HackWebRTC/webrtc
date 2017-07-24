@@ -148,14 +148,8 @@ void ScreenCapturerWinGdi::PrepareCaptureResources() {
     }
   }
 
-  // If the display bounds have changed then recreate GDI resources.
-  // TODO(wez): Also check for pixel format changes.
-  DesktopRect screen_rect(DesktopRect::MakeXYWH(
-      GetSystemMetrics(SM_XVIRTUALSCREEN),
-      GetSystemMetrics(SM_YVIRTUALSCREEN),
-      GetSystemMetrics(SM_CXVIRTUALSCREEN),
-      GetSystemMetrics(SM_CYVIRTUALSCREEN)));
-  if (!screen_rect.equals(desktop_dc_rect_)) {
+  // If the display configurations have changed then recreate GDI resources.
+  if (display_configuration_monitor_.IsChanged()) {
     if (desktop_dc_) {
       ReleaseDC(NULL, desktop_dc_);
       desktop_dc_ = nullptr;
@@ -164,7 +158,6 @@ void ScreenCapturerWinGdi::PrepareCaptureResources() {
       DeleteDC(memory_dc_);
       memory_dc_ = nullptr;
     }
-    desktop_dc_rect_ = DesktopRect();
   }
 
   if (!desktop_dc_) {
@@ -175,8 +168,6 @@ void ScreenCapturerWinGdi::PrepareCaptureResources() {
     RTC_CHECK(desktop_dc_);
     memory_dc_ = CreateCompatibleDC(desktop_dc_);
     RTC_CHECK(memory_dc_);
-
-    desktop_dc_rect_ = screen_rect;
 
     // Make sure the frame buffers will be reallocated.
     queue_.Reset();

@@ -32,6 +32,10 @@ bool GetScreenList(DesktopCapturer::SourceList* screens,
 // id.
 bool IsScreenValid(DesktopCapturer::SourceId screen, std::wstring* device_key);
 
+// Get the rect of the entire system in system coordinate system. I.e. the
+// primary monitor always starts from (0, 0).
+DesktopRect GetFullscreenRect();
+
 // Get the rect of the screen identified by |screen|, relative to the primary
 // display's top-left. If the screen device key does not match |device_key|, or
 // the screen does not exist, or any error happens, an empty rect is returned.

@@ -20,6 +20,7 @@
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
 #include "webrtc/modules/desktop_capture/win/cursor.h"
+#include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
 #include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
 #include "webrtc/rtc_base/logging.h"
 
@@ -162,8 +163,10 @@ void MouseCursorMonitorWin::Capture() {
     position = position.subtract(rect.top_left());
   }
 
+  // TODO(zijiehe): Remove this overload.
   callback_->OnMouseCursorPosition(inside ? INSIDE : OUTSIDE, position);
-  callback_->OnMouseCursorPosition(position);
+  callback_->OnMouseCursorPosition(
+      position.subtract(GetFullscreenRect().top_left()));
 }
 
 DesktopRect MouseCursorMonitorWin::GetScreenRect() {

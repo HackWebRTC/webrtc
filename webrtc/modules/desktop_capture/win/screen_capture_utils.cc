@@ -65,13 +65,17 @@ bool IsScreenValid(DesktopCapturer::SourceId screen, std::wstring* device_key) {
   return !!enum_result;
 }
 
+DesktopRect GetFullscreenRect() {
+  return DesktopRect::MakeXYWH(GetSystemMetrics(SM_XVIRTUALSCREEN),
+                               GetSystemMetrics(SM_YVIRTUALSCREEN),
+                               GetSystemMetrics(SM_CXVIRTUALSCREEN),
+                               GetSystemMetrics(SM_CYVIRTUALSCREEN));
+}
+
 DesktopRect GetScreenRect(DesktopCapturer::SourceId screen,
                           const std::wstring& device_key) {
   if (screen == kFullDesktopScreenId) {
-    return DesktopRect::MakeXYWH(GetSystemMetrics(SM_XVIRTUALSCREEN),
-                                 GetSystemMetrics(SM_YVIRTUALSCREEN),
-                                 GetSystemMetrics(SM_CXVIRTUALSCREEN),
-                                 GetSystemMetrics(SM_CYVIRTUALSCREEN));
+    return GetFullscreenRect();
   }
 
   DISPLAY_DEVICE device;

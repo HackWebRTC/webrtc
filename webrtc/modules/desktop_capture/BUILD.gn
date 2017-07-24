@@ -218,6 +218,8 @@ rtc_static_library("desktop_capture") {
     "win/d3d_device.h",
     "win/desktop.cc",
     "win/desktop.h",
+    "win/display_configuration_monitor.cc",
+    "win/display_configuration_monitor.h",
     "win/dxgi_adapter_duplicator.cc",
     "win/dxgi_adapter_duplicator.h",
     "win/dxgi_context.cc",

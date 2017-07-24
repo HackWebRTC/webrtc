@@ -137,8 +137,7 @@ DxgiDuplicatorController::DoDuplicate(DxgiFrame* frame, int monitor_id) {
   // TODO(zijiehe): Confirm whether IDXGIOutput::GetDesc() and
   // IDXGIOutputDuplication::GetDesc() can detect the resolution change without
   // reinitialization.
-  if (resolution_change_detector_.IsChanged(
-          GetScreenRect(kFullDesktopScreenId, std::wstring()).size())) {
+  if (display_configuration_monitor_.IsChanged()) {
     Deinitialize();
   }
 
@@ -266,7 +265,7 @@ bool DxgiDuplicatorController::DoInitialize() {
 void DxgiDuplicatorController::Deinitialize() {
   desktop_rect_ = DesktopRect();
   duplicators_.clear();
-  resolution_change_detector_.Reset();
+  display_configuration_monitor_.Reset();
 }
 
 bool DxgiDuplicatorController::ContextExpired(

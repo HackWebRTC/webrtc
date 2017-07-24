@@ -17,7 +17,12 @@ namespace webrtc {
 
 class ResolutionChangeDetector {
  public:
+  // Checks whether the |size| has been changed comparing to the |size| passed
+  // in during last IsChanged() call. This function won't return false for the
+  // first time after construction or Reset() call.
   bool IsChanged(DesktopSize size);
+
+  // Resets to the initial state.
   void Reset();
 
  private:

@@ -29,6 +29,8 @@ const WindowId kNullWindowId = 0;
 //   - On Windows: integer display device index.
 //   - On OSX: CGDirectDisplayID cast to intptr_t.
 //   - On Linux (with X11): TBD.
+// On Windows, ScreenId is implementation dependent: sending a ScreenId from one
+// implementation to another usually won't work correctly.
 typedef intptr_t ScreenId;
 
 // The screen id corresponds to all screen combined together.

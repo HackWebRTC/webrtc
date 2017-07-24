@@ -241,15 +241,15 @@ void MouseCursorMonitorMac::Capture() {
         state = OUTSIDE;
         position.set(-1, -1);
       }
-    } else {
-      position.subtract(configuration.bounds.top_left());
     }
   }
   // Convert Density Independent Pixel to physical pixel.
   position = DesktopVector(round(position.x() * scale),
                            round(position.y() * scale));
+  // TODO(zijiehe): Remove this overload.
   callback_->OnMouseCursorPosition(state, position);
-  callback_->OnMouseCursorPosition(position);
+  callback_->OnMouseCursorPosition(
+      position.subtract(configuration.bounds.top_left()));
 }
 
 void MouseCursorMonitorMac::CaptureImage(float scale) {

@@ -201,7 +201,7 @@ DesktopRect CroppingWindowCapturerWin::GetWindowRectInVirtualScreen() {
   window_rect.IntersectWith(window_region_rect_);
 
   // Convert |window_rect| to be relative to the top-left of the virtual screen.
-  DesktopRect screen_rect(GetScreenRect(kFullDesktopScreenId, L""));
+  DesktopRect screen_rect(GetFullscreenRect());
   window_rect.IntersectWith(screen_rect);
   window_rect.Translate(-screen_rect.left(), -screen_rect.top());
   return window_rect;
