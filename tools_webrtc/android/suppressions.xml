@@ -6,6 +6,9 @@
   <!-- TODO(phoglund): make work with suppress.py or remove printout referring
        to suppress.py. -->
 
+  <!-- TODO(crbug.com/739746): Remove once platform-tools is updated. -->
+  <issue id="NewApi" severity="ignore"/>
+
   <issue id="UseSparseArrays" severity="ignore"/>
 
   <issue id="LongLogTag" severity="ignore"/>
