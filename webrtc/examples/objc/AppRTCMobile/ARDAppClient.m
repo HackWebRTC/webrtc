@@ -304,6 +304,7 @@ static int const kKbpsMultiplier = 1000;
   [_factory stopAecDump];
   [_peerConnection stopRtcEventLog];
 #endif
+  [_peerConnection close];
   _peerConnection = nil;
   self.state = kARDAppClientStateDisconnected;
 #if defined(WEBRTC_IOS)
