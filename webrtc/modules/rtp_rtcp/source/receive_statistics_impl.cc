@@ -422,8 +422,8 @@ void ReceiveStatisticsImpl::FecPacketReceived(const RTPHeader& header,
 }
 
 StatisticianMap ReceiveStatisticsImpl::GetActiveStatisticians() const {
-  rtc::CritScope cs(&receive_statistics_lock_);
   StatisticianMap active_statisticians;
+  rtc::CritScope cs(&receive_statistics_lock_);
   for (StatisticianImplMap::const_iterator it = statisticians_.begin();
        it != statisticians_.end(); ++it) {
     uint32_t secs;
