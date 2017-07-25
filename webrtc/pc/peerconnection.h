@@ -193,11 +193,15 @@ class PeerConnection : public PeerConnectionInterface,
                            const std::string& track_id,
                            uint32_t ssrc);
   void DestroyReceiver(const std::string& track_id);
-  void DestroyAudioSender(MediaStreamInterface* stream,
-                          AudioTrackInterface* audio_track,
-                          uint32_t ssrc);
-  void DestroyVideoSender(MediaStreamInterface* stream,
-                          VideoTrackInterface* video_track);
+
+  // May be called either by AddStream/RemoveStream, or when a track is
+  // added/removed from a stream previously added via AddStream.
+  void AddAudioTrack(AudioTrackInterface* track, MediaStreamInterface* stream);
+  void RemoveAudioTrack(AudioTrackInterface* track,
+                        MediaStreamInterface* stream);
+  void AddVideoTrack(VideoTrackInterface* track, MediaStreamInterface* stream);
+  void RemoveVideoTrack(VideoTrackInterface* track,
+                        MediaStreamInterface* stream);
 
   // Implements IceObserver
   void OnIceConnectionStateChange(IceConnectionState new_state) override;

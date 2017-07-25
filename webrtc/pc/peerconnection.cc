@@ -574,10 +574,10 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
   stream_observers_.push_back(std::unique_ptr<MediaStreamObserver>(observer));
 
   for (const auto& track : local_stream->GetAudioTracks()) {
-    OnAudioTrackAdded(track.get(), local_stream);
+    AddAudioTrack(track.get(), local_stream);
   }
   for (const auto& track : local_stream->GetVideoTracks()) {
-    OnVideoTrackAdded(track.get(), local_stream);
+    AddVideoTrack(track.get(), local_stream);
   }
 
   stats_->AddStream(local_stream);
@@ -587,13 +587,14 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
 
 void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
   TRACE_EVENT0("webrtc", "PeerConnection::RemoveStream");
-  for (const auto& track : local_stream->GetAudioTracks()) {
-    OnAudioTrackRemoved(track.get(), local_stream);
+  if (!IsClosed()) {
+    for (const auto& track : local_stream->GetAudioTracks()) {
+      RemoveAudioTrack(track.get(), local_stream);
+    }
+    for (const auto& track : local_stream->GetVideoTracks()) {
+      RemoveVideoTrack(track.get(), local_stream);
+    }
   }
-  for (const auto& track : local_stream->GetVideoTracks()) {
-    OnVideoTrackRemoved(track.get(), local_stream);
-  }
-
   local_streams_->RemoveStream(local_stream);
   stream_observers_.erase(
       std::remove_if(
@@ -1496,6 +1497,89 @@ void PeerConnection::DestroyReceiver(const std::string& track_id) {
   }
 }
 
+void PeerConnection::AddAudioTrack(AudioTrackInterface* track,
+                                   MediaStreamInterface* stream) {
+  RTC_DCHECK(!IsClosed());
+  auto sender = FindSenderForTrack(track);
+  if (sender != senders_.end()) {
+    // We already have a sender for this track, so just change the stream_id
+    // so that it's correct in the next call to CreateOffer.
+    (*sender)->internal()->set_stream_id(stream->label());
+    return;
+  }
+
+  // Normal case; we've never seen this track before.
+  rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender =
+      RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
+          signaling_thread(),
+          new AudioRtpSender(track, stream->label(), session_->voice_channel(),
+                             stats_.get()));
+  senders_.push_back(new_sender);
+  // If the sender has already been configured in SDP, we call SetSsrc,
+  // which will connect the sender to the underlying transport. This can
+  // occur if a local session description that contains the ID of the sender
+  // is set before AddStream is called. It can also occur if the local
+  // session description is not changed and RemoveStream is called, and
+  // later AddStream is called again with the same stream.
+  const TrackInfo* track_info =
+      FindTrackInfo(local_audio_tracks_, stream->label(), track->id());
+  if (track_info) {
+    new_sender->internal()->SetSsrc(track_info->ssrc);
+  }
+}
+
+// TODO(deadbeef): Don't destroy RtpSenders here; they should be kept around
+// indefinitely, when we have unified plan SDP.
+void PeerConnection::RemoveAudioTrack(AudioTrackInterface* track,
+                                      MediaStreamInterface* stream) {
+  RTC_DCHECK(!IsClosed());
+  auto sender = FindSenderForTrack(track);
+  if (sender == senders_.end()) {
+    LOG(LS_WARNING) << "RtpSender for track with id " << track->id()
+                    << " doesn't exist.";
+    return;
+  }
+  (*sender)->internal()->Stop();
+  senders_.erase(sender);
+}
+
+void PeerConnection::AddVideoTrack(VideoTrackInterface* track,
+                                   MediaStreamInterface* stream) {
+  RTC_DCHECK(!IsClosed());
+  auto sender = FindSenderForTrack(track);
+  if (sender != senders_.end()) {
+    // We already have a sender for this track, so just change the stream_id
+    // so that it's correct in the next call to CreateOffer.
+    (*sender)->internal()->set_stream_id(stream->label());
+    return;
+  }
+
+  // Normal case; we've never seen this track before.
+  rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender =
+      RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
+          signaling_thread(), new VideoRtpSender(track, stream->label(),
+                                                 session_->video_channel()));
+  senders_.push_back(new_sender);
+  const TrackInfo* track_info =
+      FindTrackInfo(local_video_tracks_, stream->label(), track->id());
+  if (track_info) {
+    new_sender->internal()->SetSsrc(track_info->ssrc);
+  }
+}
+
+void PeerConnection::RemoveVideoTrack(VideoTrackInterface* track,
+                                      MediaStreamInterface* stream) {
+  RTC_DCHECK(!IsClosed());
+  auto sender = FindSenderForTrack(track);
+  if (sender == senders_.end()) {
+    LOG(LS_WARNING) << "RtpSender for track with id " << track->id()
+                    << " doesn't exist.";
+    return;
+  }
+  (*sender)->internal()->Stop();
+  senders_.erase(sender);
+}
+
 void PeerConnection::OnIceConnectionStateChange(
     PeerConnectionInterface::IceConnectionState new_state) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
@@ -1563,49 +1647,17 @@ void PeerConnection::OnAudioTrackAdded(AudioTrackInterface* track,
   if (IsClosed()) {
     return;
   }
-  auto sender = FindSenderForTrack(track);
-  if (sender != senders_.end()) {
-    // We already have a sender for this track, so just change the stream_id
-    // so that it's correct in the next call to CreateOffer.
-    (*sender)->internal()->set_stream_id(stream->label());
-    return;
-  }
-
-  // Normal case; we've never seen this track before.
-  rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender =
-      RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-          signaling_thread(),
-          new AudioRtpSender(track, stream->label(), session_->voice_channel(),
-                             stats_.get()));
-  senders_.push_back(new_sender);
-  // If the sender has already been configured in SDP, we call SetSsrc,
-  // which will connect the sender to the underlying transport. This can
-  // occur if a local session description that contains the ID of the sender
-  // is set before AddStream is called. It can also occur if the local
-  // session description is not changed and RemoveStream is called, and
-  // later AddStream is called again with the same stream.
-  const TrackInfo* track_info =
-      FindTrackInfo(local_audio_tracks_, stream->label(), track->id());
-  if (track_info) {
-    new_sender->internal()->SetSsrc(track_info->ssrc);
-  }
+  AddAudioTrack(track, stream);
+  observer_->OnRenegotiationNeeded();
 }
 
-// TODO(deadbeef): Don't destroy RtpSenders here; they should be kept around
-// indefinitely, when we have unified plan SDP.
 void PeerConnection::OnAudioTrackRemoved(AudioTrackInterface* track,
                                          MediaStreamInterface* stream) {
   if (IsClosed()) {
     return;
   }
-  auto sender = FindSenderForTrack(track);
-  if (sender == senders_.end()) {
-    LOG(LS_WARNING) << "RtpSender for track with id " << track->id()
-                    << " doesn't exist.";
-    return;
-  }
-  (*sender)->internal()->Stop();
-  senders_.erase(sender);
+  RemoveAudioTrack(track, stream);
+  observer_->OnRenegotiationNeeded();
 }
 
 void PeerConnection::OnVideoTrackAdded(VideoTrackInterface* track,
@@ -1613,25 +1665,8 @@ void PeerConnection::OnVideoTrackAdded(VideoTrackInterface* track,
   if (IsClosed()) {
     return;
   }
-  auto sender = FindSenderForTrack(track);
-  if (sender != senders_.end()) {
-    // We already have a sender for this track, so just change the stream_id
-    // so that it's correct in the next call to CreateOffer.
-    (*sender)->internal()->set_stream_id(stream->label());
-    return;
-  }
-
-  // Normal case; we've never seen this track before.
-  rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender =
-      RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-          signaling_thread(), new VideoRtpSender(track, stream->label(),
-                                                 session_->video_channel()));
-  senders_.push_back(new_sender);
-  const TrackInfo* track_info =
-      FindTrackInfo(local_video_tracks_, stream->label(), track->id());
-  if (track_info) {
-    new_sender->internal()->SetSsrc(track_info->ssrc);
-  }
+  AddVideoTrack(track, stream);
+  observer_->OnRenegotiationNeeded();
 }
 
 void PeerConnection::OnVideoTrackRemoved(VideoTrackInterface* track,
@@ -1639,14 +1674,8 @@ void PeerConnection::OnVideoTrackRemoved(VideoTrackInterface* track,
   if (IsClosed()) {
     return;
   }
-  auto sender = FindSenderForTrack(track);
-  if (sender == senders_.end()) {
-    LOG(LS_WARNING) << "RtpSender for track with id " << track->id()
-                    << " doesn't exist.";
-    return;
-  }
-  (*sender)->internal()->Stop();
-  senders_.erase(sender);
+  RemoveVideoTrack(track, stream);
+  observer_->OnRenegotiationNeeded();
 }
 
 void PeerConnection::PostSetSessionDescriptionFailure(
