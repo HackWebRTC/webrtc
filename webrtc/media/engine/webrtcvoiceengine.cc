@@ -601,27 +601,28 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     level_control_ = options.level_control;
   }
 
+  webrtc::AudioProcessing::Config apm_config = apm()->GetConfig();
+
   LOG(LS_INFO) << "Level control: "
                << (!!level_control_ ? *level_control_ : -1);
   if (level_control_) {
-    apm_config_.level_controller.enabled = *level_control_;
+    apm_config.level_controller.enabled = *level_control_;
     if (options.level_control_initial_peak_level_dbfs) {
-      apm_config_.level_controller.initial_peak_level_dbfs =
+      apm_config.level_controller.initial_peak_level_dbfs =
           *options.level_control_initial_peak_level_dbfs;
     }
   }
 
   if (options.highpass_filter) {
-    apm_config_.high_pass_filter.enabled = *options.highpass_filter;
+    apm_config.high_pass_filter.enabled = *options.highpass_filter;
   }
 
   if (options.residual_echo_detector) {
-    apm_config_.residual_echo_detector.enabled =
-        *options.residual_echo_detector;
+    apm_config.residual_echo_detector.enabled = *options.residual_echo_detector;
   }
 
   apm()->SetExtraOptions(config);
-  apm()->ApplyConfig(apm_config_);
+  apm()->ApplyConfig(apm_config);
 
   if (options.recording_sample_rate) {
     LOG(LS_INFO) << "Recording sample rate is "
@@ -752,7 +753,7 @@ webrtc::AudioDeviceModule* WebRtcVoiceEngine::adm() {
   return adm_;
 }
 
-webrtc::AudioProcessing* WebRtcVoiceEngine::apm() {
+webrtc::AudioProcessing* WebRtcVoiceEngine::apm() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   return apm_.get();
 }

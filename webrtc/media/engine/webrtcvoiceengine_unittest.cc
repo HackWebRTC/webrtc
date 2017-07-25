@@ -34,8 +34,11 @@
 #include "webrtc/test/mock_audio_encoder_factory.h"
 #include "webrtc/voice_engine/transmit_mixer.h"
 
+using testing::_;
 using testing::ContainerEq;
 using testing::Return;
+using testing::ReturnPointee;
+using testing::SaveArg;
 using testing::StrictMock;
 
 namespace {
@@ -125,7 +128,9 @@ TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
   rtc::scoped_refptr<StrictMock<webrtc::test::MockAudioProcessing>> apm =
       new rtc::RefCountedObject<
           StrictMock<webrtc::test::MockAudioProcessing>>();
-  EXPECT_CALL(*apm, ApplyConfig(testing::_));
+  webrtc::AudioProcessing::Config apm_config;
+  EXPECT_CALL(*apm, GetConfig()).WillRepeatedly(ReturnPointee(&apm_config));
+  EXPECT_CALL(*apm, ApplyConfig(_)).WillRepeatedly(SaveArg<0>(&apm_config));
   EXPECT_CALL(*apm, SetExtraOptions(testing::_));
   EXPECT_CALL(*apm, Initialize()).WillOnce(Return(0));
   EXPECT_CALL(*apm, DetachAecDump());
@@ -170,7 +175,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     // AudioDeviceModule.
     AdmSetupExpectations(&adm_);
     // AudioProcessing.
-    EXPECT_CALL(*apm_, ApplyConfig(testing::_));
+    EXPECT_CALL(*apm_, GetConfig()).WillRepeatedly(ReturnPointee(&apm_config_));
+    EXPECT_CALL(*apm_, ApplyConfig(_)).WillRepeatedly(SaveArg<0>(&apm_config_));
     EXPECT_CALL(*apm_, SetExtraOptions(testing::_));
     EXPECT_CALL(*apm_, Initialize()).WillOnce(Return(0));
     EXPECT_CALL(*apm_, DetachAecDump());
@@ -204,7 +210,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   }
 
   bool SetupChannel() {
-    EXPECT_CALL(*apm_, ApplyConfig(testing::_));
     EXPECT_CALL(*apm_, SetExtraOptions(testing::_));
     channel_ = engine_->CreateChannel(&call_, cricket::MediaConfig(),
                                       cricket::AudioOptions());
@@ -278,14 +283,12 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
       EXPECT_CALL(adm_, RecordingIsInitialized()).WillOnce(Return(false));
       EXPECT_CALL(adm_, Recording()).WillOnce(Return(false));
       EXPECT_CALL(adm_, InitRecording()).WillOnce(Return(0));
-      EXPECT_CALL(*apm_, ApplyConfig(testing::_));
       EXPECT_CALL(*apm_, SetExtraOptions(testing::_));
     }
     channel_->SetSend(enable);
   }
 
   void SetSendParameters(const cricket::AudioSendParameters& params) {
-    EXPECT_CALL(*apm_, ApplyConfig(testing::_));
     EXPECT_CALL(*apm_, SetExtraOptions(testing::_));
     ASSERT_TRUE(channel_);
     EXPECT_TRUE(channel_->SetSendParameters(params));
@@ -296,7 +299,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_CALL(*apm_, set_output_will_be_muted(!enable));
     ASSERT_TRUE(channel_);
     if (enable && options) {
-      EXPECT_CALL(*apm_, ApplyConfig(testing::_));
       EXPECT_CALL(*apm_, SetExtraOptions(testing::_));
     }
     EXPECT_TRUE(channel_->SetAudioSend(ssrc, enable, options, source));
@@ -680,6 +682,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   cricket::AudioSendParameters send_parameters_;
   cricket::AudioRecvParameters recv_parameters_;
   FakeAudioSource fake_source_;
+  webrtc::AudioProcessing::Config apm_config_;
+
  private:
   webrtc::test::ScopedFieldTrials override_field_trials_;
 };
@@ -2802,7 +2806,13 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
               RecordingIsInitialized()).Times(2).WillRepeatedly(Return(false));
   EXPECT_CALL(adm_, Recording()).Times(2).WillRepeatedly(Return(false));
   EXPECT_CALL(adm_, InitRecording()).Times(2).WillRepeatedly(Return(0));
-  EXPECT_CALL(*apm_, ApplyConfig(testing::_)).Times(10);
+  webrtc::AudioProcessing::Config apm_config;
+  EXPECT_CALL(*apm_, GetConfig())
+      .Times(10)
+      .WillRepeatedly(ReturnPointee(&apm_config));
+  EXPECT_CALL(*apm_, ApplyConfig(_))
+      .Times(10)
+      .WillRepeatedly(SaveArg<0>(&apm_config));
   EXPECT_CALL(*apm_, SetExtraOptions(testing::_)).Times(10);
 
   std::unique_ptr<cricket::WebRtcVoiceMediaChannel> channel1(
@@ -2913,7 +2923,13 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   cricket::MediaConfig config;
   std::unique_ptr<cricket::VoiceMediaChannel> channel;
 
-  EXPECT_CALL(*apm_, ApplyConfig(testing::_)).Times(3);
+  webrtc::AudioProcessing::Config apm_config;
+  EXPECT_CALL(*apm_, GetConfig())
+      .Times(3)
+      .WillRepeatedly(ReturnPointee(&apm_config));
+  EXPECT_CALL(*apm_, ApplyConfig(_))
+      .Times(3)
+      .WillRepeatedly(SaveArg<0>(&apm_config));
   EXPECT_CALL(*apm_, SetExtraOptions(testing::_)).Times(3);
 
   channel.reset(

@@ -101,8 +101,8 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // Stops AEC dump.
   void StopAecDump();
 
-  const webrtc::AudioProcessing::Config& GetApmConfigForTest() const {
-    return apm_config_;
+  const webrtc::AudioProcessing::Config GetApmConfigForTest() const {
+    return apm()->GetConfig();
   }
 
  private:
@@ -120,7 +120,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   std::unique_ptr<rtc::TaskQueue> low_priority_worker_queue_;
 
   webrtc::AudioDeviceModule* adm();
-  webrtc::AudioProcessing* apm();
+  webrtc::AudioProcessing* apm() const;
   webrtc::voe::TransmitMixer* transmit_mixer();
 
   AudioCodecs CollectCodecs(
@@ -159,8 +159,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   rtc::Optional<bool> experimental_ns_;
   rtc::Optional<bool> intelligibility_enhancer_;
   rtc::Optional<bool> level_control_;
-
-  webrtc::AudioProcessing::Config apm_config_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceEngine);
 };
