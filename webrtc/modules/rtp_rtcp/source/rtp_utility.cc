@@ -22,11 +22,6 @@ RtpFeedback* NullObjectRtpFeedback() {
   return &null_rtp_feedback;
 }
 
-ReceiveStatistics* NullObjectReceiveStatistics() {
-  static NullReceiveStatistics null_receive_statistics;
-  return &null_receive_statistics;
-}
-
 namespace RtpUtility {
 
 enum {

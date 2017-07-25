@@ -55,7 +55,7 @@ class RtpRtcp : public Module {
     // The clock to use to read time. If nullptr then system clock will be used.
     Clock* clock = nullptr;
 
-    ReceiveStatistics* receive_statistics;
+    ReceiveStatistics* receive_statistics = nullptr;
 
     // Transport object that will be called when packets are ready to be sent
     // out on the network.

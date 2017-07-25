@@ -54,8 +54,7 @@ RTPExtensionType StringToRtpExtensionType(const std::string& extension) {
   return kRtpExtensionNone;
 }
 
-RtpRtcp::Configuration::Configuration()
-    : receive_statistics(NullObjectReceiveStatistics()) {}
+RtpRtcp::Configuration::Configuration() = default;
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
   if (configuration.clock) {

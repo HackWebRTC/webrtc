@@ -25,7 +25,6 @@ namespace webrtc {
 const uint8_t kRtpMarkerBitMask = 0x80;
 
 RtpFeedback* NullObjectRtpFeedback();
-ReceiveStatistics* NullObjectReceiveStatistics();
 
 namespace RtpUtility {
 
