@@ -885,15 +885,10 @@ void Call::DestroyFlexfecReceiveStream(FlexfecReceiveStream* receive_stream) {
   RTC_DCHECK_RUN_ON(&configuration_thread_checker_);
 
   RTC_DCHECK(receive_stream != nullptr);
-  // There exist no other derived classes of FlexfecReceiveStream,
-  // so this downcast is safe.
-  FlexfecReceiveStreamImpl* receive_stream_impl =
-      static_cast<FlexfecReceiveStreamImpl*>(receive_stream);
   {
     WriteLockScoped write_lock(*receive_crit_);
 
-    const FlexfecReceiveStream::Config& config =
-        receive_stream_impl->GetConfig();
+    const FlexfecReceiveStream::Config& config = receive_stream->GetConfig();
     uint32_t ssrc = config.remote_ssrc;
     receive_rtp_config_.erase(ssrc);
 
@@ -903,7 +898,7 @@ void Call::DestroyFlexfecReceiveStream(FlexfecReceiveStream* receive_stream) {
         ->RemoveStream(ssrc);
   }
 
-  delete receive_stream_impl;
+  delete receive_stream;
 }
 
 Call::Stats Call::GetStats() const {

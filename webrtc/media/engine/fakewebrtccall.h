@@ -217,7 +217,7 @@ class FakeFlexfecReceiveStream final : public webrtc::FlexfecReceiveStream {
   explicit FakeFlexfecReceiveStream(
       const webrtc::FlexfecReceiveStream::Config& config);
 
-  const webrtc::FlexfecReceiveStream::Config& GetConfig() const;
+  const webrtc::FlexfecReceiveStream::Config& GetConfig() const override;
 
  private:
   // webrtc::FlexfecReceiveStream implementation.

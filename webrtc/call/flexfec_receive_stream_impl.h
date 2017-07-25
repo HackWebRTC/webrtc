@@ -40,8 +40,6 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream,
       ProcessThread* process_thread);
   ~FlexfecReceiveStreamImpl() override;
 
-  const Config& GetConfig() const { return config_; }
-
   // RtpPacketSinkInterface.
   void OnRtpPacket(const RtpPacketReceived& packet) override;
 
@@ -49,6 +47,7 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream,
   void Start() override;
   void Stop() override;
   Stats GetStats() const override;
+  const Config& GetConfig() const override;
 
  private:
   // Config.

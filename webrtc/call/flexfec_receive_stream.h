@@ -23,6 +23,8 @@ namespace webrtc {
 
 class FlexfecReceiveStream {
  public:
+  virtual ~FlexfecReceiveStream() = default;
+
   struct Stats {
     std::string ToString(int64_t time_ms) const;
 
@@ -82,8 +84,7 @@ class FlexfecReceiveStream {
 
   virtual Stats GetStats() const = 0;
 
- protected:
-  virtual ~FlexfecReceiveStream() = default;
+  virtual const Config& GetConfig() const = 0;
 };
 
 }  // namespace webrtc
