@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/testsupport/isolated_output.h"
+#include "webrtc/test/testsupport/test_output.h"
 
 #include <string.h>
 
@@ -18,17 +18,27 @@
 #include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
-DEFINE_string(isolated_out_dir, webrtc::test::OutputPath(),
-    "The isolated output folder provided by swarming test framework.");
+DEFINE_string(test_output_dir,
+              webrtc::test::OutputPath(),
+              "The output folder where test output should be saved.");
 
 namespace webrtc {
 namespace test {
 
-bool WriteIsolatedOutput(const char* filename,
-                         const uint8_t* buffer,
-                         size_t length) {
-  if (FLAGS_isolated_out_dir.empty()) {
-    LOG(LS_WARNING) << "No isolated_out_dir defined.";
+bool GetTestOutputDir(std::string* out_dir) {
+  if (FLAGS_test_output_dir.empty()) {
+    LOG(LS_WARNING) << "No test_out_dir defined.";
+    return false;
+  }
+  *out_dir = FLAGS_test_output_dir;
+  return true;
+}
+
+bool WriteToTestOutput(const char* filename,
+                       const uint8_t* buffer,
+                       size_t length) {
+  if (FLAGS_test_output_dir.empty()) {
+    LOG(LS_WARNING) << "No test_out_dir defined.";
     return false;
   }
 
@@ -38,15 +48,15 @@ bool WriteIsolatedOutput(const char* filename,
   }
 
   rtc::File output =
-      rtc::File::Create(rtc::Pathname(FLAGS_isolated_out_dir, filename));
+      rtc::File::Create(rtc::Pathname(FLAGS_test_output_dir, filename));
 
   return output.IsOpen() && output.Write(buffer, length) == length;
 }
 
-bool WriteIsolatedOutput(const char* filename, const std::string& content) {
-  return WriteIsolatedOutput(filename,
-                             reinterpret_cast<const uint8_t*>(content.c_str()),
-                             content.length());
+bool WriteToTestOutput(const char* filename, const std::string& content) {
+  return WriteToTestOutput(filename,
+                           reinterpret_cast<const uint8_t*>(content.c_str()),
+                           content.length());
 }
 
 }  // namespace test

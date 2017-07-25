@@ -235,11 +235,11 @@ if (!build_with_chromium) {
     }
   }
 
-  rtc_source_set("test_support_isolated_output") {
+  rtc_source_set("test_support_test_output") {
     testonly = true
     sources = [
-      "testsupport/isolated_output.cc",
-      "testsupport/isolated_output.h",
+      "testsupport/test_output.cc",
+      "testsupport/test_output.h",
     ]
     deps = [
       ":fileutils",
@@ -286,10 +286,10 @@ if (!build_with_chromium) {
       "rtp_file_reader_unittest.cc",
       "rtp_file_writer_unittest.cc",
       "testsupport/always_passing_unittest.cc",
-      "testsupport/isolated_output_unittest.cc",
       "testsupport/metrics/video_metrics_unittest.cc",
       "testsupport/packet_reader_unittest.cc",
       "testsupport/perf_test_unittest.cc",
+      "testsupport/test_output_unittest.cc",
       "testsupport/y4m_frame_writer_unittest.cc",
       "testsupport/yuv_frame_reader_unittest.cc",
       "testsupport/yuv_frame_writer_unittest.cc",
@@ -323,7 +323,7 @@ if (!build_with_chromium) {
       ":fileutils_unittests",
       ":test_common",
       ":test_main",
-      ":test_support_isolated_output",
+      ":test_support_test_output",
       ":video_test_common",
       ":video_test_support",
       "../modules/video_capture",
