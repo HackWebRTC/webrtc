@@ -24,6 +24,7 @@ class CommonHeader;
 class SenderReport : public RtcpPacket {
  public:
   static constexpr uint8_t kPacketType = 200;
+  static constexpr size_t kMaxNumberOfReportBlocks = 0x1f;
 
   SenderReport();
   ~SenderReport() override;
@@ -43,6 +44,7 @@ class SenderReport : public RtcpPacket {
     sender_octet_count_ = octet_count;
   }
   bool AddReportBlock(const ReportBlock& block);
+  bool SetReportBlocks(std::vector<ReportBlock> blocks);
   void ClearReportBlocks() { report_blocks_.clear(); }
 
   uint32_t sender_ssrc() const { return sender_ssrc_; }
@@ -63,7 +65,6 @@ class SenderReport : public RtcpPacket {
               RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  static const size_t kMaxNumberOfReportBlocks = 0x1f;
   const size_t kSenderBaseLength = 24;
 
   uint32_t sender_ssrc_;

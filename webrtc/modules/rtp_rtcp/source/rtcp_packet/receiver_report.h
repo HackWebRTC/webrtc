@@ -24,6 +24,8 @@ class CommonHeader;
 class ReceiverReport : public RtcpPacket {
  public:
   static constexpr uint8_t kPacketType = 201;
+  static constexpr size_t kMaxNumberOfReportBlocks = 0x1f;
+
   ReceiverReport();
   ~ReceiverReport() override;
 
@@ -32,6 +34,7 @@ class ReceiverReport : public RtcpPacket {
 
   void SetSenderSsrc(uint32_t ssrc) { sender_ssrc_ = ssrc; }
   bool AddReportBlock(const ReportBlock& block);
+  bool SetReportBlocks(std::vector<ReportBlock> blocks);
 
   uint32_t sender_ssrc() const { return sender_ssrc_; }
   const std::vector<ReportBlock>& report_blocks() const {
@@ -47,7 +50,6 @@ class ReceiverReport : public RtcpPacket {
 
  private:
   static const size_t kRrBaseLength = 4;
-  static const size_t kMaxNumberOfReportBlocks = 0x1F;
 
   uint32_t sender_ssrc_;
   std::vector<ReportBlock> report_blocks_;

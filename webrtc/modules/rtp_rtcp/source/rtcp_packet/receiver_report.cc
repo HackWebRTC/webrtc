@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 
+#include <utility>
+
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "webrtc/rtc_base/checks.h"
@@ -18,6 +20,7 @@
 namespace webrtc {
 namespace rtcp {
 constexpr uint8_t ReceiverReport::kPacketType;
+constexpr size_t ReceiverReport::kMaxNumberOfReportBlocks;
 // RTCP receiver report (RFC 3550).
 //
 //   0                   1                   2                   3
@@ -90,6 +93,16 @@ bool ReceiverReport::AddReportBlock(const ReportBlock& block) {
     return false;
   }
   report_blocks_.push_back(block);
+  return true;
+}
+
+bool ReceiverReport::SetReportBlocks(std::vector<ReportBlock> blocks) {
+  if (blocks.size() > kMaxNumberOfReportBlocks) {
+    LOG(LS_WARNING) << "Too many report blocks (" << blocks.size()
+                    << ") for receiver report.";
+    return false;
+  }
+  report_blocks_ = std::move(blocks);
   return true;
 }
 
