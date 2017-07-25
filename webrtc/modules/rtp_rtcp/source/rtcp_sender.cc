@@ -455,11 +455,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSR(const RtcpContext& ctx) {
   report->SetRtpTimestamp(rtp_timestamp);
   report->SetPacketCount(ctx.feedback_state_.packets_sent);
   report->SetOctetCount(ctx.feedback_state_.media_bytes_sent);
-
-  for (auto it : report_blocks_)
-    report->AddReportBlock(it.second);
-
-  report_blocks_.clear();
+  report->SetReportBlocks(CreateReportBlocks(ctx.feedback_state_));
 
   return std::unique_ptr<rtcp::RtcpPacket>(report);
 }
@@ -481,10 +477,8 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSDES(
 std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildRR(const RtcpContext& ctx) {
   rtcp::ReceiverReport* report = new rtcp::ReceiverReport();
   report->SetSenderSsrc(ssrc_);
-  for (auto it : report_blocks_)
-    report->AddReportBlock(it.second);
+  report->SetReportBlocks(CreateReportBlocks(ctx.feedback_state_));
 
-  report_blocks_.clear();
   return std::unique_ptr<rtcp::RtcpPacket>(report);
 }
 
@@ -830,59 +824,64 @@ void RTCPSender::PrepareReport(const FeedbackState& feedback_state) {
         random_.Rand(minIntervalMs * 1 / 2, minIntervalMs * 3 / 2);
     next_time_to_send_rtcp_ = clock_->TimeInMilliseconds() + timeToNext;
 
-    if (receive_statistics_) {
-      StatisticianMap statisticians =
-          receive_statistics_->GetActiveStatisticians();
-      RTC_DCHECK(report_blocks_.empty());
-      for (auto& it : statisticians) {
-        AddReportBlock(feedback_state, it.first, it.second);
-      }
-    }
+    // RtcpSender expected to be used for sending either just sender reports
+    // or just receiver reports.
+    RTC_DCHECK(!(IsFlagPresent(kRtcpSr) && IsFlagPresent(kRtcpRr)));
   }
 }
 
-bool RTCPSender::AddReportBlock(const FeedbackState& feedback_state,
-                                uint32_t ssrc,
-                                StreamStatistician* statistician) {
-  // Do we have receive statistics to send?
-  RtcpStatistics stats;
-  if (!statistician->GetStatistics(&stats, true))
-    return false;
+std::vector<rtcp::ReportBlock> RTCPSender::CreateReportBlocks(
+    const FeedbackState& feedback_state) {
+  std::vector<rtcp::ReportBlock> result;
+  if (!receive_statistics_)
+    return result;
 
-  if (report_blocks_.size() >= RTCP_MAX_REPORT_BLOCKS) {
-    LOG(LS_WARNING) << "Too many report blocks.";
-    return false;
+  StatisticianMap statisticians = receive_statistics_->GetActiveStatisticians();
+  result.reserve(statisticians.size());
+  for (auto& statistician : statisticians) {
+    // Do we have receive statistics to send?
+    RtcpStatistics stats;
+    if (!statistician.second->GetStatistics(&stats, true))
+      continue;
+    // TODO(danilchap): Support sending more than |RTCP_MAX_REPORT_BLOCKS| per
+    // compound rtcp packet when single rtcp module is used for multiple media
+    // streams.
+    if (result.size() >= RTCP_MAX_REPORT_BLOCKS) {
+      LOG(LS_WARNING) << "Too many report blocks.";
+      continue;
+    }
+    result.emplace_back();
+    rtcp::ReportBlock& block = result.back();
+    block.SetMediaSsrc(statistician.first);
+    block.SetFractionLost(stats.fraction_lost);
+    if (!block.SetCumulativeLost(stats.cumulative_lost)) {
+      LOG(LS_WARNING) << "Cumulative lost is oversized.";
+      result.pop_back();
+      continue;
+    }
+    block.SetExtHighestSeqNum(stats.extended_max_sequence_number);
+    block.SetJitter(stats.jitter);
   }
-  RTC_DCHECK(report_blocks_.find(ssrc) == report_blocks_.end());
-  rtcp::ReportBlock* block = &report_blocks_[ssrc];
-  block->SetMediaSsrc(ssrc);
-  block->SetFractionLost(stats.fraction_lost);
-  if (!block->SetCumulativeLost(stats.cumulative_lost)) {
-    report_blocks_.erase(ssrc);
-    LOG(LS_WARNING) << "Cumulative lost is oversized.";
-    return false;
+
+  if (!result.empty() && ((feedback_state.last_rr_ntp_secs != 0) ||
+                          (feedback_state.last_rr_ntp_frac != 0))) {
+    // Get our NTP as late as possible to avoid a race.
+    uint32_t now = CompactNtp(clock_->CurrentNtpTime());
+
+    uint32_t receive_time = feedback_state.last_rr_ntp_secs & 0x0000FFFF;
+    receive_time <<= 16;
+    receive_time += (feedback_state.last_rr_ntp_frac & 0xffff0000) >> 16;
+
+    uint32_t delay_since_last_sr = now - receive_time;
+    // TODO(danilchap): Instead of setting same value on all report blocks,
+    // set only when media_ssrc match sender ssrc of the sender report
+    // remote times were taken from.
+    for (auto& report_block : result) {
+      report_block.SetLastSr(feedback_state.remote_sr);
+      report_block.SetDelayLastSr(delay_since_last_sr);
+    }
   }
-  block->SetExtHighestSeqNum(stats.extended_max_sequence_number);
-  block->SetJitter(stats.jitter);
-  block->SetLastSr(feedback_state.remote_sr);
-
-  // TODO(sprang): Do we really need separate time stamps for each report?
-  // Get our NTP as late as possible to avoid a race.
-  NtpTime ntp = clock_->CurrentNtpTime();
-
-  // Delay since last received report.
-  if ((feedback_state.last_rr_ntp_secs != 0) ||
-      (feedback_state.last_rr_ntp_frac != 0)) {
-    // Get the 16 lowest bits of seconds and the 16 highest bits of fractions.
-    uint32_t now = CompactNtp(ntp);
-
-    uint32_t receiveTime = feedback_state.last_rr_ntp_secs & 0x0000FFFF;
-    receiveTime <<= 16;
-    receiveTime += (feedback_state.last_rr_ntp_frac & 0xffff0000) >> 16;
-
-    block->SetDelayLastSr(now - receiveTime);
-  }
-  return true;
+  return result;
 }
 
 void RTCPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
