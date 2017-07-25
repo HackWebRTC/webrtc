@@ -45,6 +45,7 @@
 #include "webrtc/test/run_loop.h"
 #include "webrtc/test/statistics.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/frame_writer.h"
 #include "webrtc/test/vcm_capturer.h"
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/voice_engine/include/voe_base.h"
@@ -803,6 +804,11 @@ class VideoAnalyzer : public PacketReceiver,
     PrintResult("fec_bitrate", fec_bitrate_bps_, " bps");
     PrintResult("send_bandwidth", send_bandwidth_bps_, " bps");
 
+    if (worst_frame_) {
+      printf("RESULT min_psnr: %s = %lf dB\n", test_label_.c_str(),
+             worst_frame_->psnr);
+    }
+
     if (receive_stream_ != nullptr) {
       PrintResult("decode_time", decode_time_ms_, " ms");
     }
@@ -817,6 +823,29 @@ class VideoAnalyzer : public PacketReceiver,
       // Therefore this metric will depend on order in which tests are run and
       // will be flaky.
     PrintResult("memory_usage", memory_usage_, " bytes");
+#endif
+    // TODO(ilnik): enable frame writing for android, once jpeg frame writer
+    // is implemented.
+
+#if !defined(WEBRTC_ANDROID)
+    if (worst_frame_) {
+      test::Y4mFrameWriterImpl frame_writer(test_label_ + ".y4m",
+                                            worst_frame_->frame.width(),
+                                            worst_frame_->frame.height(), 1);
+      bool res = frame_writer.Init();
+      RTC_DCHECK(res);
+      size_t length =
+          CalcBufferSize(VideoType::kI420, worst_frame_->frame.width(),
+                         worst_frame_->frame.height());
+      rtc::Buffer extracted_buffer(length);
+      size_t extracted_length =
+          ExtractBuffer(worst_frame_->frame.video_frame_buffer()->ToI420(),
+                        length, extracted_buffer.data());
+      RTC_DCHECK_EQ(extracted_length, frame_writer.FrameLength());
+      res = frame_writer.WriteFrame(extracted_buffer.data());
+      RTC_DCHECK(res);
+      frame_writer.Close();
+    }
 #endif
 
     //  Disable quality check for quick test, as quality checks may fail
@@ -837,6 +866,11 @@ class VideoAnalyzer : public PacketReceiver,
     }
 
     rtc::CritScope crit(&comparison_lock_);
+
+    if (psnr >= 0.0 && (!worst_frame_ || worst_frame_->psnr > psnr)) {
+      worst_frame_.emplace(FrameWithPsnr{psnr, *comparison.render});
+    }
+
     if (graph_data_output_file_) {
       samples_.push_back(Sample(
           comparison.dropped, comparison.input_time_ms, comparison.send_time_ms,
@@ -1039,6 +1073,14 @@ class VideoAnalyzer : public PacketReceiver,
   test::Statistics fec_bitrate_bps_ GUARDED_BY(comparison_lock_);
   test::Statistics send_bandwidth_bps_ GUARDED_BY(comparison_lock_);
   test::Statistics memory_usage_ GUARDED_BY(comparison_lock_);
+
+  struct FrameWithPsnr {
+    double psnr;
+    VideoFrame frame;
+  };
+
+  // Rendered frame with worst PSNR is saved for further analysis.
+  rtc::Optional<FrameWithPsnr> worst_frame_ GUARDED_BY(comparison_lock_);
 
   size_t last_fec_bytes_;
 

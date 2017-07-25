@@ -110,6 +110,7 @@ if (rtc_include_tests) {
       "../test:test_renderer",
       "../test:test_support",
       "../test:video_test_common",
+      "../test:video_test_support",
       "../voice_engine",
       "//testing/gtest",
       "//webrtc/test:rtp_test_utils",
