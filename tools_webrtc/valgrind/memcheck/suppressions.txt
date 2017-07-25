@@ -54,35 +54,12 @@
    fun:_ZN3rtc47HttpServer_SignalsCloseAfterForcedCloseAll_Test8TestBodyEv
 }
 {
-   bug_6773_3
+   bug_6773
    Memcheck:Uninitialized
    fun:vfprintf
    fun:vsnprintf
    fun:snprintf
    ...
-   fun:_ZN6webrtc36RtcpPacketFirTest_TwoFciEntries_Test8TestBodyEv
-}
-{
-   bug_6773_2
-   Memcheck:Uninitialized
-   fun:vfprintf
-   fun:vsnprintf
-   fun:snprintf
-   fun:_ZN7testing12_GLOBAL__N_126PrintByteSegmentInObjectToEPKhmmPSo
-   ...
-   fun:_ZNK6webrtc11MockRtpRtcp11FlexfecSsrcEv
-   fun:_ZN6webrtc12PacketRouter16TimeToSendPacketEjtlbi
-   fun:_ZN6webrtc38PacketRouterTest_TimeToSendPacket_Test8TestBodyEv
-}
-{
-   bug_6773_1
-   Memcheck:Uninitialized
-   fun:vfprintf
-   fun:vsnprintf
-   fun:snprintf
-   fun:_ZN7testing12_GLOBAL__N_126PrintByteSegmentInObjectToEPKhmmPSo
-   ...
-   fun:_ZN6webrtc28RtcpPacketFirTest_Parse_Test8TestBodyEv
 }
 {
    bug_3446
