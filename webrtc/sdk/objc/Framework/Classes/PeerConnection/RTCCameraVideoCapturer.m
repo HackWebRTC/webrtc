@@ -18,7 +18,7 @@
 #import "WebRTC/UIDevice+RTCDevice.h"
 #endif
 
-#import "AVCaptureSession+Device.h"
+#import "AVCaptureSession+DevicePosition.h"
 #import "RTCDispatcher+Private.h"
 
 const int64_t kNanosecondsPerSecond = 1000000000;
@@ -198,16 +198,17 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
 #if TARGET_OS_IPHONE
   // Default to portrait orientation on iPhone.
   RTCVideoRotation rotation = RTCVideoRotation_90;
-  // Check here, which camera this frame is from, to avoid any race conditions.
-  AVCaptureDeviceInput *deviceInput =
-      (AVCaptureDeviceInput *)((AVCaptureInputPort *)connection.inputPorts.firstObject).input;
-  BOOL usingFrontCamera = deviceInput.device.position == AVCaptureDevicePositionFront;
-  // Check the image's EXIF for the actual camera the image came as the image could have been
+  BOOL usingFrontCamera = NO;
+  // Check the image's EXIF for the camera the image came from as the image could have been
   // delayed as we set alwaysDiscardsLateVideoFrames to NO.
   AVCaptureDevicePosition cameraPosition =
       [AVCaptureSession devicePositionForSampleBuffer:sampleBuffer];
   if (cameraPosition != AVCaptureDevicePositionUnspecified) {
-    usingFrontCamera = cameraPosition == AVCaptureDevicePositionFront;
+    usingFrontCamera = AVCaptureDevicePositionFront == cameraPosition;
+  } else {
+    AVCaptureDeviceInput *deviceInput =
+        (AVCaptureDeviceInput *)((AVCaptureInputPort *)connection.inputPorts.firstObject).input;
+    usingFrontCamera = AVCaptureDevicePositionFront == deviceInput.device.position;
   }
   switch (_orientation) {
     case UIDeviceOrientationPortrait:

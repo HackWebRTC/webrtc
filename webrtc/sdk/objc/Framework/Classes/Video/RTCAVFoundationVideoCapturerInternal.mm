@@ -16,7 +16,7 @@
 #import "WebRTC/UIDevice+RTCDevice.h"
 #endif
 
-#import "AVCaptureSession+Device.h"
+#import "AVCaptureSession+DevicePosition.h"
 #import "RTCDispatcher+Private.h"
 #import "WebRTC/RTCLogging.h"
 
@@ -218,7 +218,7 @@
 #if TARGET_OS_IPHONE
   // Default to portrait orientation on iPhone.
   webrtc::VideoRotation rotation = webrtc::kVideoRotation_90;
-  BOOL usingFrontCamera;
+  BOOL usingFrontCamera = NO;
   // Check the image's EXIF for the camera the image came from as the image could have been
   // delayed as we set alwaysDiscardsLateVideoFrames to NO.
   AVCaptureDevicePosition cameraPosition =

@@ -19,7 +19,7 @@
 #import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCDispatcher.h>
 #import <WebRTC/RTCVideoFrame.h>
-#import "AVCaptureSession+Device.h"
+#import "AVCaptureSession+DevicePosition.h"
 
 #if TARGET_OS_IPHONE
 // Helper method.

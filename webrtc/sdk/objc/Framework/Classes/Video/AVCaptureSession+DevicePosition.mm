@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "AVCaptureSession+Device.h"
+#import "AVCaptureSession+DevicePosition.h"
 
 BOOL CFStringContainsString(CFStringRef theString, CFStringRef stringToFind) {
   return CFStringFindWithOptions(theString,
@@ -18,7 +18,7 @@ BOOL CFStringContainsString(CFStringRef theString, CFStringRef stringToFind) {
                                  nil);
 }
 
-@implementation AVCaptureSession (Device)
+@implementation AVCaptureSession (DevicePosition)
 
 + (AVCaptureDevicePosition)devicePositionForSampleBuffer:(CMSampleBufferRef)sampleBuffer {
   // Check the image's EXIF for the camera the image came from.
