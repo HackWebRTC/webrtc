@@ -121,7 +121,7 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
   [RTCDispatcher
       dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
                     block:^{
-                      RTCLogInfo("startCaptureWithDevice %@ @ %zd fps", format, fps);
+                      RTCLogInfo("startCaptureWithDevice %@ @ %ld fps", format, (long)fps);
 
 #if TARGET_OS_IPHONE
                       [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
