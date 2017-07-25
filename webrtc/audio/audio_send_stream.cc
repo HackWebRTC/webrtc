@@ -487,7 +487,9 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
 bool AudioSendStream::ReconfigureSendCodec(AudioSendStream* stream,
                                            const Config& new_config) {
   const auto& old_config = stream->config_;
-  if (new_config.send_codec_spec == old_config.send_codec_spec) {
+  if (new_config.send_codec_spec == old_config.send_codec_spec &&
+      new_config.audio_network_adaptor_config ==
+          old_config.audio_network_adaptor_config) {
     return true;
   }
 
