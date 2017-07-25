@@ -326,10 +326,6 @@ class RtpRtcp : public Module {
       uint32_t ssrc,
       struct RtpPacketLossStats* loss_stats) const = 0;
 
-  // Returns received RTCP sender info.
-  // Returns -1 on failure else 0.
-  virtual int32_t RemoteRTCPStat(RTCPSenderInfo* sender_info) = 0;
-
   // Returns received RTCP report block.
   // Returns -1 on failure else 0.
   virtual int32_t RemoteRTCPStat(

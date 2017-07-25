@@ -86,8 +86,6 @@ class RTCPReceiver {
               int64_t* min_rtt_ms,
               int64_t* max_rtt_ms) const;
 
-  int32_t SenderInfoReceived(RTCPSenderInfo* sender_info) const;
-
   void SetRtcpXrRrtrStatus(bool enable);
   bool GetAndResetXrRrRtt(int64_t* rtt_ms);
 
@@ -222,9 +220,10 @@ class RTCPReceiver {
   std::set<uint32_t> registered_ssrcs_ GUARDED_BY(rtcp_receiver_lock_);
 
   // Received sender report.
-  RTCPSenderInfo remote_sender_info_;
+  NtpTime remote_sender_ntp_time_ GUARDED_BY(rtcp_receiver_lock_);
+  uint32_t remote_sender_rtp_time_ GUARDED_BY(rtcp_receiver_lock_);
   // When did we receive the last send report.
-  NtpTime last_received_sr_ntp_;
+  NtpTime last_received_sr_ntp_ GUARDED_BY(rtcp_receiver_lock_);
 
   // Received XR receive time report.
   rtcp::ReceiveTimeInfo remote_time_info_;

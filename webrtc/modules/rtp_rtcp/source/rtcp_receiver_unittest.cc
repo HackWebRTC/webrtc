@@ -174,8 +174,7 @@ TEST_F(RtcpReceiverTest, InvalidFeedbackPacketIsIgnored) {
 }
 
 TEST_F(RtcpReceiverTest, InjectSrPacket) {
-  RTCPSenderInfo info;
-  EXPECT_EQ(-1, rtcp_receiver_.SenderInfoReceived(&info));
+  EXPECT_FALSE(rtcp_receiver_.NTP(nullptr, nullptr, nullptr, nullptr, nullptr));
 
   int64_t now = system_clock_.TimeInMilliseconds();
   rtcp::SenderReport sr;
@@ -186,7 +185,7 @@ TEST_F(RtcpReceiverTest, InjectSrPacket) {
               OnReceivedRtcpReceiverReport(IsEmpty(), _, now));
   InjectRtcpPacket(sr);
 
-  EXPECT_EQ(0, rtcp_receiver_.SenderInfoReceived(&info));
+  EXPECT_TRUE(rtcp_receiver_.NTP(nullptr, nullptr, nullptr, nullptr, nullptr));
 }
 
 TEST_F(RtcpReceiverTest, InjectSrPacketFromUnknownSender) {
@@ -201,8 +200,7 @@ TEST_F(RtcpReceiverTest, InjectSrPacketFromUnknownSender) {
   InjectRtcpPacket(sr);
 
   // But will not flag that he's gotten sender information.
-  RTCPSenderInfo info;
-  EXPECT_EQ(-1, rtcp_receiver_.SenderInfoReceived(&info));
+  EXPECT_FALSE(rtcp_receiver_.NTP(nullptr, nullptr, nullptr, nullptr, nullptr));
 }
 
 TEST_F(RtcpReceiverTest, InjectSrPacketCalculatesRTT) {
@@ -276,8 +274,6 @@ TEST_F(RtcpReceiverTest, InjectRrPacket) {
               OnReceivedRtcpReceiverReport(IsEmpty(), _, now));
   InjectRtcpPacket(rr);
 
-  RTCPSenderInfo info;
-  EXPECT_EQ(-1, rtcp_receiver_.SenderInfoReceived(&info));
   EXPECT_EQ(now, rtcp_receiver_.LastReceivedReceiverReport());
   std::vector<RTCPReportBlock> report_blocks;
   rtcp_receiver_.StatisticsReceived(&report_blocks);

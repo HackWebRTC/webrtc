@@ -612,10 +612,6 @@ void ModuleRtpRtcpImpl::GetRtpPacketLossStats(
   }
 }
 
-int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(RTCPSenderInfo* sender_info) {
-  return rtcp_receiver_.SenderInfoReceived(sender_info);
-}
-
 // Received RTCP report.
 int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(
     std::vector<RTCPReportBlock>* receive_blocks) const {

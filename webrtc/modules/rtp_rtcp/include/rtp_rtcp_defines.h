@@ -130,14 +130,6 @@ enum RtxMode {
 
 const size_t kRtxHeaderSize = 2;
 
-struct RTCPSenderInfo {
-    uint32_t NTPseconds;
-    uint32_t NTPfraction;
-    uint32_t RTPtimeStamp;
-    uint32_t sendPacketCount;
-    uint32_t sendOctetCount;
-};
-
 struct RTCPReportBlock {
   RTCPReportBlock()
       : remoteSSRC(0), sourceSSRC(0), fractionLost(0), cumulativeLost(0),
