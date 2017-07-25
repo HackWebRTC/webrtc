@@ -142,6 +142,8 @@ if (is_ios || is_mac) {
 
     rtc_static_library("objc_video") {
       sources = [
+        "objc/Framework/Classes/Video/AVCaptureSession+Device.h",
+        "objc/Framework/Classes/Video/AVCaptureSession+Device.mm",
         "objc/Framework/Classes/Video/RTCAVFoundationVideoCapturerInternal.h",
         "objc/Framework/Classes/Video/RTCAVFoundationVideoCapturerInternal.mm",
         "objc/Framework/Classes/Video/RTCDefaultShader.h",
