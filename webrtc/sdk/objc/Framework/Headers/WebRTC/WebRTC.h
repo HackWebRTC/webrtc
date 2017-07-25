@@ -47,6 +47,9 @@
 #import <WebRTC/RTCSSLAdapter.h>
 #import <WebRTC/RTCSessionDescription.h>
 #import <WebRTC/RTCTracing.h>
+#import <WebRTC/RTCVideoCodec.h>
+#import <WebRTC/RTCVideoCodecFactory.h>
+#import <WebRTC/RTCVideoCodecH264.h>
 #import <WebRTC/RTCVideoFrame.h>
 #import <WebRTC/RTCVideoRenderer.h>
 #import <WebRTC/RTCVideoSource.h>
