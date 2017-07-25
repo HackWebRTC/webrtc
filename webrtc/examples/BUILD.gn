@@ -620,6 +620,8 @@ if (is_win) {
       "unityplugin/simple_peer_connection.h",
       "unityplugin/unity_plugin_apis.cc",
       "unityplugin/unity_plugin_apis.h",
+      "unityplugin/video_observer.cc",
+      "unityplugin/video_observer.h",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -637,9 +639,6 @@ if (is_win) {
       "../media:rtc_media_base",
       "../modules/video_capture:video_capture_module",
       "../pc:libjingle_peerconnection",
-      "../rtc_base:rtc_base",
-      "../rtc_base:rtc_base_approved",
-      "../rtc_base:rtc_json",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
     ]

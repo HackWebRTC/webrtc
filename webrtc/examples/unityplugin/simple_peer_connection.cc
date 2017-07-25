@@ -15,16 +15,6 @@
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/media/engine/webrtcvideocapturerfactory.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
-#include "webrtc/rtc_base/json.h"
-
-// Names used for a IceCandidate JSON object.
-const char kCandidateSdpMidName[] = "sdpMid";
-const char kCandidateSdpMlineIndexName[] = "sdpMLineIndex";
-const char kCandidateSdpName[] = "candidate";
-
-// Names used for a SessionDescription JSON object.
-const char kSessionDescriptionTypeName[] = "type";
-const char kSessionDescriptionSdpName[] = "sdp";
 
 // Names used for media stream labels.
 const char kAudioLabel[] = "audio_label";
@@ -73,7 +63,11 @@ class DummySetSessionDescriptionObserver
 
 }  // namespace
 
-bool SimplePeerConnection::InitializePeerConnection(bool is_receiver) {
+bool SimplePeerConnection::InitializePeerConnection(const char** turn_urls,
+                                                    const int no_of_urls,
+                                                    const char* username,
+                                                    const char* credential,
+                                                    bool is_receiver) {
   RTC_DCHECK(peer_connection_.get() == nullptr);
 
   if (g_peer_connection_factory == nullptr) {
@@ -92,21 +86,51 @@ bool SimplePeerConnection::InitializePeerConnection(bool is_receiver) {
   }
 
   g_peer_count++;
-  if (!CreatePeerConnection(is_receiver)) {
+  if (!CreatePeerConnection(turn_urls, no_of_urls, username, credential,
+                            is_receiver)) {
     DeletePeerConnection();
     return false;
   }
   return peer_connection_.get() != nullptr;
 }
 
-bool SimplePeerConnection::CreatePeerConnection(bool is_receiver) {
+bool SimplePeerConnection::CreatePeerConnection(const char** turn_urls,
+                                                const int no_of_urls,
+                                                const char* username,
+                                                const char* credential,
+                                                bool is_receiver) {
   RTC_DCHECK(g_peer_connection_factory.get() != nullptr);
   RTC_DCHECK(peer_connection_.get() == nullptr);
 
-  webrtc::PeerConnectionInterface::RTCConfiguration config;
-  webrtc::PeerConnectionInterface::IceServer server;
-  server.uri = GetPeerConnectionString();
-  config.servers.push_back(server);
+  local_video_observer_.reset(new VideoObserver());
+  remote_video_observer_.reset(new VideoObserver());
+
+  // Add the turn server.
+  if (turn_urls != nullptr) {
+    if (no_of_urls > 0) {
+      webrtc::PeerConnectionInterface::IceServer turn_server;
+      for (int i = 0; i < no_of_urls; i++) {
+        std::string url(turn_urls[i]);
+        if (url.length() > 0)
+          turn_server.urls.push_back(turn_urls[i]);
+      }
+
+      std::string user_name(username);
+      if (user_name.length() > 0)
+        turn_server.username = username;
+
+      std::string password(credential);
+      if (password.length() > 0)
+        turn_server.password = credential;
+
+      config_.servers.push_back(turn_server);
+    }
+  }
+
+  // Add the stun server.
+  webrtc::PeerConnectionInterface::IceServer stun_server;
+  stun_server.uri = GetPeerConnectionString();
+  config_.servers.push_back(stun_server);
 
   webrtc::FakeConstraints constraints;
   constraints.SetAllowDtlsSctpDataChannels();
@@ -117,7 +141,7 @@ bool SimplePeerConnection::CreatePeerConnection(bool is_receiver) {
   }
 
   peer_connection_ = g_peer_connection_factory->CreatePeerConnection(
-      config, &constraints, nullptr, nullptr, this);
+      config_, &constraints, nullptr, nullptr, this);
 
   return peer_connection_.get() != nullptr;
 }
@@ -160,13 +184,8 @@ void SimplePeerConnection::OnSuccess(
   std::string sdp;
   desc->ToString(&sdp);
 
-  Json::StyledWriter writer;
-  Json::Value jmessage;
-  jmessage[kSessionDescriptionTypeName] = desc->type();
-  jmessage[kSessionDescriptionSdpName] = sdp;
-
   if (OnLocalSdpReady)
-    OnLocalSdpReady(writer.write(jmessage).c_str());
+    OnLocalSdpReady(desc->type().c_str(), sdp.c_str());
 }
 
 void SimplePeerConnection::OnFailure(const std::string& error) {
@@ -180,25 +199,27 @@ void SimplePeerConnection::OnIceCandidate(
     const webrtc::IceCandidateInterface* candidate) {
   LOG(INFO) << __FUNCTION__ << " " << candidate->sdp_mline_index();
 
-  Json::StyledWriter writer;
-  Json::Value jmessage;
-
-  jmessage[kCandidateSdpMidName] = candidate->sdp_mid();
-  jmessage[kCandidateSdpMlineIndexName] = candidate->sdp_mline_index();
   std::string sdp;
   if (!candidate->ToString(&sdp)) {
     LOG(LS_ERROR) << "Failed to serialize candidate";
     return;
   }
-  jmessage[kCandidateSdpName] = sdp;
 
   if (OnIceCandiateReady)
-    OnIceCandiateReady(writer.write(jmessage).c_str());
+    OnIceCandiateReady(sdp.c_str(), candidate->sdp_mline_index(),
+                       candidate->sdp_mid().c_str());
 }
 
-void SimplePeerConnection::RegisterOnVideoFramReady(
-    VIDEOFRAMEREADY_CALLBACK callback) {
-  OnVideoFrameReady = callback;
+void SimplePeerConnection::RegisterOnLocalI420FrameReady(
+    I420FRAMEREADY_CALLBACK callback) {
+  if (local_video_observer_)
+    local_video_observer_->SetVideoCallback(callback);
+}
+
+void SimplePeerConnection::RegisterOnRemoteI420FrameReady(
+    I420FRAMEREADY_CALLBACK callback) {
+  if (remote_video_observer_)
+    remote_video_observer_->SetVideoCallback(callback);
 }
 
 void SimplePeerConnection::RegisterOnLocalDataChannelReady(
@@ -230,88 +251,47 @@ void SimplePeerConnection::RegisterOnIceCandiateReadytoSend(
   OnIceCandiateReady = callback;
 }
 
-bool SimplePeerConnection::ReceivedSdp(const char* msg) {
+bool SimplePeerConnection::SetRemoteDescription(const char* type,
+                                                const char* sdp) {
   if (!peer_connection_)
     return false;
 
-  std::string message(msg);
-
-  Json::Reader reader;
-  Json::Value jmessage;
-  if (!reader.parse(message, jmessage)) {
-    LOG(WARNING) << "Received unknown message. " << message;
-    return false;
-  }
-  std::string type;
-  std::string json_object;
-
-  rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName, &type);
-  if (type.empty())
-    return false;
-
-  std::string sdp;
-  if (!rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName,
-                                    &sdp)) {
-    LOG(WARNING) << "Can't parse received session description message.";
-    return false;
-  }
+  std::string remote_desc(sdp);
+  std::string sdp_type(type);
   webrtc::SdpParseError error;
   webrtc::SessionDescriptionInterface* session_description(
-      webrtc::CreateSessionDescription(type, sdp, &error));
+      webrtc::CreateSessionDescription(sdp_type, remote_desc, &error));
   if (!session_description) {
     LOG(WARNING) << "Can't parse received session description message. "
                  << "SdpParseError was: " << error.description;
     return false;
   }
-  LOG(INFO) << " Received session description :" << message;
+  LOG(INFO) << " Received session description :" << remote_desc;
   peer_connection_->SetRemoteDescription(
       DummySetSessionDescriptionObserver::Create(), session_description);
 
   return true;
 }
 
-bool SimplePeerConnection::ReceivedIceCandidate(const char* ice_candidate) {
+bool SimplePeerConnection::AddIceCandidate(const char* candidate,
+                                           const int sdp_mlineindex,
+                                           const char* sdp_mid) {
   if (!peer_connection_)
     return false;
 
-  std::string message(ice_candidate);
-
-  Json::Reader reader;
-  Json::Value jmessage;
-  if (!reader.parse(message, jmessage)) {
-    LOG(WARNING) << "Received unknown message. " << message;
-    return false;
-  }
-  std::string type;
-  std::string json_object;
-
-  rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName, &type);
-  if (!type.empty())
-    return false;
-
-  std::string sdp_mid;
-  int sdp_mlineindex = 0;
-  std::string sdp;
-  if (!rtc::GetStringFromJsonObject(jmessage, kCandidateSdpMidName, &sdp_mid) ||
-      !rtc::GetIntFromJsonObject(jmessage, kCandidateSdpMlineIndexName,
-                                 &sdp_mlineindex) ||
-      !rtc::GetStringFromJsonObject(jmessage, kCandidateSdpName, &sdp)) {
-    LOG(WARNING) << "Can't parse received message.";
-    return false;
-  }
   webrtc::SdpParseError error;
-  std::unique_ptr<webrtc::IceCandidateInterface> candidate(
-      webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp, &error));
-  if (!candidate.get()) {
+  std::unique_ptr<webrtc::IceCandidateInterface> ice_candidate(
+      webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, candidate, &error));
+  if (!ice_candidate.get()) {
     LOG(WARNING) << "Can't parse received candidate message. "
                  << "SdpParseError was: " << error.description;
     return false;
   }
-  if (!peer_connection_->AddIceCandidate(candidate.get())) {
+  if (!peer_connection_->AddIceCandidate(ice_candidate.get())) {
     LOG(WARNING) << "Failed to apply the received candidate";
     return false;
   }
-  LOG(INFO) << " Received candidate :" << message;
+  LOG(INFO) << " Received candidate :" << candidate;
   return true;
 }
 
@@ -348,7 +328,10 @@ void SimplePeerConnection::OnAddStream(
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
   LOG(INFO) << __FUNCTION__ << " " << stream->label();
   remote_stream_ = stream;
-
+  if (remote_video_observer_ && !remote_stream_->GetVideoTracks().empty()) {
+    remote_stream_->GetVideoTracks()[0]->AddOrUpdateSink(
+        remote_video_observer_.get(), rtc::VideoSinkWants());
+  }
   SetAudioControl();
 }
 
@@ -402,9 +385,13 @@ void SimplePeerConnection::AddStreams(bool audio_only) {
       rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
           g_peer_connection_factory->CreateVideoTrack(
               kVideoLabel, g_peer_connection_factory->CreateVideoSource(
-                               OpenVideoCaptureDevice(), nullptr)));
+                               std::move(capture), nullptr)));
 
       stream->AddTrack(video_track);
+      if (local_video_observer_ && !stream->GetVideoTracks().empty()) {
+        stream->GetVideoTracks()[0]->AddOrUpdateSink(
+            local_video_observer_.get(), rtc::VideoSinkWants());
+      }
     }
   }
 
