@@ -250,10 +250,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   // Audio part.
 
-  // This function is deprecated. It was previously used to determine when it
-  // was time to send a DTMF packet in silence (CNG).
-  int32_t SetAudioPacketSize(uint16_t packet_size_samples) override;
-
   // Send a TelephoneEvent tone using RFC 2833 (4733).
   int32_t SendTelephoneEventOutband(uint8_t key,
                                     uint16_t time_ms,

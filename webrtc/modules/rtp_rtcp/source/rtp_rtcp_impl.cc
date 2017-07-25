@@ -772,11 +772,6 @@ int32_t ModuleRtpRtcpImpl::SendTelephoneEventOutband(
   return rtp_sender_->SendTelephoneEvent(key, time_ms, level);
 }
 
-int32_t ModuleRtpRtcpImpl::SetAudioPacketSize(
-    const uint16_t packet_size_samples) {
-  return audio_ ? 0 : -1;
-}
-
 int32_t ModuleRtpRtcpImpl::SetAudioLevel(
     const uint8_t level_d_bov) {
   return rtp_sender_->SetAudioLevel(level_d_bov);

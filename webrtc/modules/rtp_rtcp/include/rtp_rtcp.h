@@ -409,12 +409,6 @@ class RtpRtcp : public Module {
   // Audio
   // **************************************************************************
 
-  // This function is deprecated. It was previously used to determine when it
-  // was time to send a DTMF packet in silence (CNG).
-  // Returns -1 on failure else 0.
-  RTC_DEPRECATED virtual int32_t SetAudioPacketSize(
-      uint16_t packet_size_samples) = 0;
-
   // Sends a TelephoneEvent tone using RFC 2833 (4733).
   // Returns -1 on failure else 0.
   virtual int32_t SendTelephoneEventOutband(uint8_t key,

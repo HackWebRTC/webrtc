@@ -1132,13 +1132,6 @@ int32_t RTPSender::SendTelephoneEvent(uint8_t key,
   return audio_->SendTelephoneEvent(key, time_ms, level);
 }
 
-int32_t RTPSender::SetAudioPacketSize(uint16_t packet_size_samples) {
-  if (!audio_configured_) {
-    return -1;
-  }
-  return 0;
-}
-
 int32_t RTPSender::SetAudioLevel(uint8_t level_d_bov) {
   return audio_->SetAudioLevel(level_d_bov);
 }
