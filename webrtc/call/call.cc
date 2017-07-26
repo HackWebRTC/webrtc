@@ -637,9 +637,9 @@ void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
 
   send_stream->Stop();
 
+  const uint32_t ssrc = send_stream->GetConfig().rtp.ssrc;
   webrtc::internal::AudioSendStream* audio_send_stream =
       static_cast<webrtc::internal::AudioSendStream*>(send_stream);
-  const uint32_t ssrc = audio_send_stream->config().rtp.ssrc;
   suspended_audio_send_ssrcs_[ssrc] = audio_send_stream->GetRtpState();
   {
     WriteLockScoped write_lock(*send_crit_);
@@ -656,7 +656,7 @@ void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
   }
   UpdateAggregateNetworkState();
   sent_rtp_audio_timer_ms_.Extend(audio_send_stream->GetActiveLifetime());
-  delete audio_send_stream;
+  delete send_stream;
 }
 
 webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(

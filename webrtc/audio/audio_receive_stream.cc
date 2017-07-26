@@ -294,7 +294,7 @@ void AudioReceiveStream::AssociateSendStream(AudioSendStream* send_stream) {
   if (send_stream) {
     VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
     std::unique_ptr<voe::ChannelProxy> send_channel_proxy =
-        voe_impl->GetChannelProxy(send_stream->config().voe_channel_id);
+        voe_impl->GetChannelProxy(send_stream->GetConfig().voe_channel_id);
     channel_proxy_->AssociateSendChannel(*send_channel_proxy.get());
   } else {
     channel_proxy_->DisassociateSendChannel();

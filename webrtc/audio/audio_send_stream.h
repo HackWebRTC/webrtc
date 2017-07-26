@@ -50,8 +50,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   ~AudioSendStream() override;
 
   // webrtc::AudioSendStream implementation.
+  const webrtc::AudioSendStream::Config& GetConfig() const override;
   void Reconfigure(const webrtc::AudioSendStream::Config& config) override;
-
   void Start() override;
   void Stop() override;
   bool SendTelephoneEvent(int payload_type, int payload_frequency, int event,
@@ -73,7 +73,6 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   void OnPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedback_vector) override;
 
-  const webrtc::AudioSendStream::Config& config() const;
   void SetTransportOverhead(int transport_overhead_per_packet);
 
   RtpState GetRtpState() const;

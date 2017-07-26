@@ -126,6 +126,11 @@ AudioSendStream::~AudioSendStream() {
   channel_proxy_->SetRtcpRttStats(nullptr);
 }
 
+const webrtc::AudioSendStream::Config& AudioSendStream::GetConfig() const {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  return config_;
+}
+
 void AudioSendStream::Reconfigure(
     const webrtc::AudioSendStream::Config& new_config) {
   ConfigureStream(this, new_config, false);
@@ -403,11 +408,6 @@ void AudioSendStream::OnPacketFeedbackVector(
   if (rplr) {
     channel_proxy_->OnRecoverableUplinkPacketLossRate(*rplr);
   }
-}
-
-const webrtc::AudioSendStream::Config& AudioSendStream::config() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return config_;
 }
 
 void AudioSendStream::SetTransportOverhead(int transport_overhead_per_packet) {

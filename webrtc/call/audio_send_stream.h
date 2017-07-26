@@ -129,6 +129,10 @@ class AudioSendStream {
     rtc::scoped_refptr<AudioEncoderFactory> encoder_factory;
   };
 
+  virtual ~AudioSendStream() = default;
+
+  virtual const webrtc::AudioSendStream::Config& GetConfig() const = 0;
+
   // Reconfigure the stream according to the Configuration.
   virtual void Reconfigure(const Config& config) = 0;
 
@@ -146,9 +150,6 @@ class AudioSendStream {
   virtual void SetMuted(bool muted) = 0;
 
   virtual Stats GetStats() const = 0;
-
- protected:
-  virtual ~AudioSendStream() {}
 };
 }  // namespace webrtc
 

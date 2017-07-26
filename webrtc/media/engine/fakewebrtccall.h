@@ -47,7 +47,7 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
       int id, const webrtc::AudioSendStream::Config& config);
 
   int id() const { return id_; }
-  const webrtc::AudioSendStream::Config& GetConfig() const;
+  const webrtc::AudioSendStream::Config& GetConfig() const override;
   void SetStats(const webrtc::AudioSendStream::Stats& stats);
   TelephoneEvent GetLatestTelephoneEvent() const;
   bool IsSending() const { return sending_; }
