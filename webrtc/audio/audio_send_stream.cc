@@ -487,7 +487,17 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
 bool AudioSendStream::ReconfigureSendCodec(AudioSendStream* stream,
                                            const Config& new_config) {
   const auto& old_config = stream->config_;
-  if (new_config.send_codec_spec == old_config.send_codec_spec) {
+
+  if (!new_config.send_codec_spec) {
+    // We cannot de-configure a send codec. So we will do nothing.
+    // By design, the send codec should have not been configured.
+    RTC_DCHECK(!old_config.send_codec_spec);
+    return true;
+  }
+
+  if (new_config.send_codec_spec == old_config.send_codec_spec &&
+      new_config.audio_network_adaptor_config ==
+          old_config.audio_network_adaptor_config) {
     return true;
   }
 
@@ -500,9 +510,6 @@ bool AudioSendStream::ReconfigureSendCodec(AudioSendStream* stream,
           old_config.send_codec_spec->payload_type) {
     return SetupSendCodec(stream, new_config);
   }
-
-  // Should never move a stream from fully configured to unconfigured.
-  RTC_CHECK(new_config.send_codec_spec);
 
   const rtc::Optional<int>& new_target_bitrate_bps =
       new_config.send_codec_spec->target_bitrate_bps;
