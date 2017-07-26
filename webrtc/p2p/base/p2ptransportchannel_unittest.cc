@@ -2270,10 +2270,9 @@ TEST_F(P2PTransportChannelMultihomedTest, TestBasic) {
 TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   rtc::ScopedFakeClock clock;
   AddAddress(0, kPublicAddrs[0]);
-  // Adding alternate address will make sure |kPublicAddrs| has the higher
-  // priority than others. This is due to FakeNetwork::AddInterface method.
-  AddAddress(1, kAlternateAddrs[1]);
-  AddAddress(1, kPublicAddrs[1]);
+  // Simulate failing over from Wi-Fi to cell interface.
+  AddAddress(1, kPublicAddrs[1], "eth0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, kAlternateAddrs[1], "wlan0", rtc::ADAPTER_TYPE_CELLULAR);
 
   // Use only local ports for simplicity.
   SetAllocatorFlags(0, kOnlyLocalPorts);
@@ -2322,10 +2321,9 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
 // The controlling side has two interfaces and one will die.
 TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   rtc::ScopedFakeClock clock;
-  // Adding alternate address will make sure |kPublicAddrs| has the higher
-  // priority than others. This is due to FakeNetwork::AddInterface method.
-  AddAddress(0, kAlternateAddrs[0]);
-  AddAddress(0, kPublicAddrs[0]);
+  // Simulate failing over from Wi-Fi to cell interface.
+  AddAddress(0, kPublicAddrs[0], "eth0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(0, kAlternateAddrs[0], "wlan0", rtc::ADAPTER_TYPE_CELLULAR);
   AddAddress(1, kPublicAddrs[1]);
 
   // Use only local ports for simplicity.
@@ -2469,10 +2467,9 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverWithManyConnections) {
 // increase.
 TEST_F(P2PTransportChannelMultihomedTest, TestIceRenomination) {
   rtc::ScopedFakeClock clock;
-  // Adding alternate address will make sure |kPublicAddrs| has the higher
-  // priority than others. This is due to FakeNetwork::AddInterface method.
-  AddAddress(0, kAlternateAddrs[0]);
-  AddAddress(0, kPublicAddrs[0]);
+  // Simulate failing over from Wi-Fi to cell interface.
+  AddAddress(0, kPublicAddrs[0], "eth0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(0, kAlternateAddrs[0], "wlan0", rtc::ADAPTER_TYPE_CELLULAR);
   AddAddress(1, kPublicAddrs[1]);
 
   // Use only local ports for simplicity.
@@ -2530,10 +2527,9 @@ TEST_F(P2PTransportChannelMultihomedTest,
        TestConnectionSwitchDampeningControlledSide) {
   rtc::ScopedFakeClock clock;
   AddAddress(0, kPublicAddrs[0]);
-  // Adding alternate address will make sure |kPublicAddrs| has the higher
-  // priority than others. This is due to FakeNetwork::AddInterface method.
-  AddAddress(1, kAlternateAddrs[1]);
-  AddAddress(1, kPublicAddrs[1]);
+  // Simulate failing over from Wi-Fi to cell interface.
+  AddAddress(1, kPublicAddrs[1], "eth0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, kAlternateAddrs[1], "wlan0", rtc::ADAPTER_TYPE_CELLULAR);
 
   // Use only local ports for simplicity.
   SetAllocatorFlags(0, kOnlyLocalPorts);
@@ -2589,10 +2585,9 @@ TEST_F(P2PTransportChannelMultihomedTest,
 TEST_F(P2PTransportChannelMultihomedTest,
        TestConnectionSwitchDampeningControllingSide) {
   rtc::ScopedFakeClock clock;
-  // Adding alternate address will make sure |kPublicAddrs| has the higher
-  // priority than others. This is due to FakeNetwork::AddInterface method.
-  AddAddress(0, kAlternateAddrs[0]);
-  AddAddress(0, kPublicAddrs[0]);
+  // Simulate failing over from Wi-Fi to cell interface.
+  AddAddress(0, kPublicAddrs[0], "eth0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(0, kAlternateAddrs[0], "wlan0", rtc::ADAPTER_TYPE_CELLULAR);
   AddAddress(1, kPublicAddrs[1]);
 
   // Use only local ports for simplicity.

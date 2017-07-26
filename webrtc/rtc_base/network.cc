@@ -45,11 +45,6 @@
 namespace rtc {
 namespace {
 
-// Turning on IPv6 could make many IPv6 interfaces available for connectivity
-// check and delay the call setup time. kMaxIPv6Networks is the default upper
-// limit of IPv6 networks but could be changed by set_max_ipv6_networks().
-const int kMaxIPv6Networks = 5;
-
 const uint32_t kUpdateNetworksMessage = 1;
 const uint32_t kSignalNetworksMessage = 2;
 
@@ -93,7 +88,7 @@ bool SortNetworks(const Network* a, const Network* b) {
   // TODO(mallinath) - Add VPN and Link speed conditions while sorting.
 
   // Networks are sorted last by key.
-  return a->key() > b->key();
+  return a->key() < b->key();
 }
 
 std::string AdapterTypeToString(AdapterType type) {
@@ -175,7 +170,6 @@ bool NetworkManager::GetDefaultLocalAddress(int family, IPAddress* addr) const {
 
 NetworkManagerBase::NetworkManagerBase()
     : enumeration_permission_(NetworkManager::ENUMERATION_ALLOWED),
-      max_ipv6_networks_(kMaxIPv6Networks),
       ipv6_enabled_(true) {
 }
 
@@ -213,18 +207,8 @@ void NetworkManagerBase::GetAnyAddressNetworks(NetworkList* networks) {
 }
 
 void NetworkManagerBase::GetNetworks(NetworkList* result) const {
-  int ipv6_networks = 0;
   result->clear();
-  for (Network* network : networks_) {
-    // Keep the number of IPv6 networks under |max_ipv6_networks_|.
-    if (network->prefix().family() == AF_INET6) {
-      if (ipv6_networks >= max_ipv6_networks_) {
-        continue;
-      }
-      ++ipv6_networks;
-    }
-    result->push_back(network);
-  }
+  result->insert(result->begin(), networks_.begin(), networks_.end());
 }
 
 void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
