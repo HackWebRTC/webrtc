@@ -209,7 +209,9 @@ TEST_F(TestSeqNumUtil, SeqNumComparatorWithDivisor) {
   }
 }
 
-TEST(SeqNumUnwrapper, NoBackWardWrap) {
+// TODO(philipel): Enable when downstream project can hande these death tests.
+
+TEST(SeqNumUnwrapper, DISABLED_NoBackWardWrap) {
   SeqNumUnwrapper<uint8_t> unwrapper;
   EXPECT_EQ(0U, unwrapper.Unwrap(0));
 
@@ -218,7 +220,7 @@ TEST(SeqNumUnwrapper, NoBackWardWrap) {
   ASSERT_DEATH_IF_SUPPORTED(unwrapper.Unwrap(255), "");
 }
 
-TEST(SeqNumUnwrapper, NoForwardWrap) {
+TEST(SeqNumUnwrapper, DISABLED_NoForwardWrap) {
   SeqNumUnwrapper<uint32_t> unwrapper(std::numeric_limits<uint64_t>::max());
   EXPECT_EQ(std::numeric_limits<uint64_t>::max(), unwrapper.Unwrap(0));
 
