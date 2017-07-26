@@ -70,36 +70,40 @@ public class NetworkMonitor {
     return instance;
   }
 
-  /**
-   * Enables auto detection of the current network state based on notifications from the system.
-   * Note that passing true here requires the embedding app have the platform ACCESS_NETWORK_STATE
-   * permission.
-   *
-   * @param shouldAutoDetect true if the NetworkMonitor should listen for system changes in
-   *  network connectivity.
-   */
-  public static void setAutoDetectConnectivityState(boolean shouldAutoDetect) {
-    getInstance().setAutoDetectConnectivityStateInternal(shouldAutoDetect);
-  }
-
   private static void assertIsTrue(boolean condition) {
     if (!condition) {
       throw new AssertionError("Expected to be true");
     }
   }
 
-  // Called by the native code.
+  /**
+   * Called by the native code.
+   *
+   * Enables auto detection of the current network state based on notifications
+   * from the system. Note that this requires the embedding app have the
+   * platform ACCESS_NETWORK_STATE permission.
+   */
   private void startMonitoring(long nativeObserver) {
     Logging.d(TAG, "Start monitoring from native observer " + nativeObserver);
     nativeNetworkObservers.add(nativeObserver);
-    setAutoDetectConnectivityStateInternal(true);
+    if (autoDetector == null) {
+      createAutoDetector();
+    }
+    // The observers expect a network list update after they call startMonitoring.
+    final NetworkMonitorAutoDetect.NetworkState networkState =
+        autoDetector.getCurrentNetworkState();
+    updateCurrentConnectionType(NetworkMonitorAutoDetect.getConnectionType(networkState));
+    updateObserverActiveNetworkList(nativeObserver);
   }
 
   // Called by the native code.
   private void stopMonitoring(long nativeObserver) {
     Logging.d(TAG, "Stop monitoring from native observer " + nativeObserver);
-    setAutoDetectConnectivityStateInternal(false);
     nativeNetworkObservers.remove(nativeObserver);
+    if (nativeNetworkObservers.isEmpty()) {
+      autoDetector.destroy();
+      autoDetector = null;
+    }
   }
 
   // Called by the native code to determine if network binding is supported
@@ -121,41 +125,24 @@ public class NetworkMonitor {
     return autoDetector == null ? INVALID_NET_ID : autoDetector.getDefaultNetId();
   }
 
-  private void destroyAutoDetector() {
-    if (autoDetector != null) {
-      autoDetector.destroy();
-      autoDetector = null;
-    }
-  }
+  private void createAutoDetector() {
+    autoDetector = new NetworkMonitorAutoDetect(new NetworkMonitorAutoDetect.Observer() {
 
-  private void setAutoDetectConnectivityStateInternal(boolean shouldAutoDetect) {
-    if (!shouldAutoDetect) {
-      destroyAutoDetector();
-      return;
-    }
-    if (autoDetector == null) {
-      autoDetector = new NetworkMonitorAutoDetect(new NetworkMonitorAutoDetect.Observer() {
+      @Override
+      public void onConnectionTypeChanged(ConnectionType newConnectionType) {
+        updateCurrentConnectionType(newConnectionType);
+      }
 
-        @Override
-        public void onConnectionTypeChanged(ConnectionType newConnectionType) {
-          updateCurrentConnectionType(newConnectionType);
-        }
+      @Override
+      public void onNetworkConnect(NetworkInformation networkInfo) {
+        notifyObserversOfNetworkConnect(networkInfo);
+      }
 
-        @Override
-        public void onNetworkConnect(NetworkInformation networkInfo) {
-          notifyObserversOfNetworkConnect(networkInfo);
-        }
-
-        @Override
-        public void onNetworkDisconnect(long networkHandle) {
-          notifyObserversOfNetworkDisconnect(networkHandle);
-        }
-      }, ContextUtils.getApplicationContext());
-      final NetworkMonitorAutoDetect.NetworkState networkState =
-          autoDetector.getCurrentNetworkState();
-      updateCurrentConnectionType(NetworkMonitorAutoDetect.getConnectionType(networkState));
-      updateActiveNetworkList();
-    }
+      @Override
+      public void onNetworkDisconnect(long networkHandle) {
+        notifyObserversOfNetworkDisconnect(networkHandle);
+      }
+    }, ContextUtils.getApplicationContext());
   }
 
   private void updateCurrentConnectionType(ConnectionType newConnectionType) {
@@ -187,7 +174,7 @@ public class NetworkMonitor {
     }
   }
 
-  private void updateActiveNetworkList() {
+  private void updateObserverActiveNetworkList(long nativeObserver) {
     List<NetworkInformation> networkInfoList = autoDetector.getActiveNetworkList();
     if (networkInfoList == null || networkInfoList.size() == 0) {
       return;
@@ -195,9 +182,7 @@ public class NetworkMonitor {
 
     NetworkInformation[] networkInfos = new NetworkInformation[networkInfoList.size()];
     networkInfos = networkInfoList.toArray(networkInfos);
-    for (long nativeObserver : nativeNetworkObservers) {
-      nativeNotifyOfActiveNetworkList(nativeObserver, networkInfos);
-    }
+    nativeNotifyOfActiveNetworkList(nativeObserver, networkInfos);
   }
 
   /**
@@ -242,7 +227,12 @@ public class NetworkMonitor {
   }
 
   // For testing only.
-  public static NetworkMonitorAutoDetect getAutoDetectorForTest() {
+  static void createAutoDetectorForTest() {
+    getInstance().createAutoDetector();
+  }
+
+  // For testing only.
+  static NetworkMonitorAutoDetect getAutoDetectorForTest() {
     return getInstance().autoDetector;
   }
 }

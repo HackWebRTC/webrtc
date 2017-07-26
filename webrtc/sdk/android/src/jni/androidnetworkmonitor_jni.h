@@ -65,6 +65,7 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
   rtc::AdapterType GetAdapterType(const std::string& if_name) override;
   void OnNetworkConnected(const NetworkInformation& network_info);
   void OnNetworkDisconnected(NetworkHandle network_handle);
+  // Always expected to be called on the network thread.
   void SetNetworkInfos(const std::vector<NetworkInformation>& network_infos);
 
  private:
