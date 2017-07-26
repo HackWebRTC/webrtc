@@ -471,15 +471,15 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
 #else
 #define MAYBE_TestOpusBitExactness DISABLED_TestOpusBitExactness
 #endif
-TEST_F(NetEqDecodingTest, DISABLED_TestOpusBitExactness) {
+TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
   const std::string input_rtp_file =
       webrtc::test::ResourcePath("audio_coding/neteq_opus", "rtp");
 
   const std::string output_checksum = PlatformChecksum(
-      "6237dd113ad80d7764fe4c90b55b2ec035eae64e",
-      "6237dd113ad80d7764fe4c90b55b2ec035eae64e",
-      "6237dd113ad80d7764fe4c90b55b2ec035eae64e",
-      "6237dd113ad80d7764fe4c90b55b2ec035eae64e");
+      "721e1e0c6effe4b2401536a4eef11512c9fb709c",
+      "721e1e0c6effe4b2401536a4eef11512c9fb709c",
+      "721e1e0c6effe4b2401536a4eef11512c9fb709c",
+      "721e1e0c6effe4b2401536a4eef11512c9fb709c");
 
   const std::string network_stats_checksum =
       PlatformChecksum("dda4cee006d9369c7114a03790c5761346cf5e23",

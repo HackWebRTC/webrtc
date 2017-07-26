@@ -1482,39 +1482,39 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_stereo_20ms) {
 #define MAYBE_Opus_stereo_20ms Opus_stereo_20ms
 #define MAYBE_OpusFromFormat_stereo_20ms OpusFromFormat_stereo_20ms
 #endif
-TEST_F(AcmSenderBitExactnessOldApi, DISABLED_Opus_stereo_20ms) {
+TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "855041f2490b887302bce9d544731849",
-          "855041f2490b887302bce9d544731849",
-          "9692eede45638eb425e0daf9c75b5c7a",
-          "86d3552bb3492247f965cdd0e88a1c82",
-          "86d3552bb3492247f965cdd0e88a1c82"),
+          "3e285b74510e62062fbd8142dacd16e9",
+          "3e285b74510e62062fbd8142dacd16e9",
+          "439e97ad1932c49923b5da029c17dd5e",
+          "038ec90f5f3fc2320f3090f8ecef6bb7",
+          "038ec90f5f3fc2320f3090f8ecef6bb7"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "d781cce1ab986b618d0da87226cdde30",
-          "d781cce1ab986b618d0da87226cdde30",
-          "8d6782b905c3230d4b0e3e83e1fc3439",
-          "798347a685fac7d0c2d8f748ffe66881",
-          "798347a685fac7d0c2d8f748ffe66881"),
+          "78cf8f03157358acdc69f6835caa0d9b",
+          "78cf8f03157358acdc69f6835caa0d9b",
+          "ab88b1a049c36bdfeb7e8b057ef6982a",
+          "27fef7b799393347ec3b5694369a1c36",
+          "27fef7b799393347ec3b5694369a1c36"),
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessNewApi, DISABLED_OpusFromFormat_stereo_20ms) {
+TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms) {
   const SdpAudioFormat kOpusFormat("opus", 48000, 2, {{"stereo", "1"}});
   AudioEncoderOpus encoder(120, kOpusFormat);
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(&encoder, 120));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "855041f2490b887302bce9d544731849",
-          "855041f2490b887302bce9d544731849",
-          "9692eede45638eb425e0daf9c75b5c7a",
-          "86d3552bb3492247f965cdd0e88a1c82",
-          "86d3552bb3492247f965cdd0e88a1c82"),
+          "3e285b74510e62062fbd8142dacd16e9",
+          "3e285b74510e62062fbd8142dacd16e9",
+          "439e97ad1932c49923b5da029c17dd5e",
+          "038ec90f5f3fc2320f3090f8ecef6bb7",
+          "038ec90f5f3fc2320f3090f8ecef6bb7"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "d781cce1ab986b618d0da87226cdde30",
-          "d781cce1ab986b618d0da87226cdde30",
-          "8d6782b905c3230d4b0e3e83e1fc3439",
-          "798347a685fac7d0c2d8f748ffe66881",
-          "798347a685fac7d0c2d8f748ffe66881"),
+          "78cf8f03157358acdc69f6835caa0d9b",
+          "78cf8f03157358acdc69f6835caa0d9b",
+          "ab88b1a049c36bdfeb7e8b057ef6982a",
+          "27fef7b799393347ec3b5694369a1c36",
+          "27fef7b799393347ec3b5694369a1c36"),
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
@@ -1526,43 +1526,43 @@ TEST_F(AcmSenderBitExactnessNewApi, DISABLED_OpusFromFormat_stereo_20ms) {
 #define MAYBE_Opus_stereo_20ms_voip Opus_stereo_20ms_voip
 #define MAYBE_OpusFromFormat_stereo_20ms_voip OpusFromFormat_stereo_20ms_voip
 #endif
-TEST_F(AcmSenderBitExactnessOldApi, DISABLED_Opus_stereo_20ms_voip) {
+TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms_voip) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   // If not set, default will be kAudio in case of stereo.
   EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "9b9e12bc3cc793740966e11cbfa8b35b",
-          "9b9e12bc3cc793740966e11cbfa8b35b",
-          "0de6249018fdd316c21086db84e10610",
-          "9c4cb69db77b85841a5f8225bb8f508b",
-          "9c4cb69db77b85841a5f8225bb8f508b"),
+          "b0325df4e8104f04e03af23c0b75800e",
+          "b0325df4e8104f04e03af23c0b75800e",
+          "1c81121f5d9286a5a865d01dbab22ce8",
+          "11d547f89142e9ef03f37d7ca7f32379",
+          "11d547f89142e9ef03f37d7ca7f32379"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "c7340b1189652ab6b5e80dade7390cb4",
-          "c7340b1189652ab6b5e80dade7390cb4",
-          "95612864c954ee63e28cc6eebad56626",
-          "ae33ea2e43407cf9ebdabbbd6ca912a3",
-          "ae33ea2e43407cf9ebdabbbd6ca912a3"),
+          "4eab2259b6fe24c22dd242a113e0b3d9",
+          "4eab2259b6fe24c22dd242a113e0b3d9",
+          "839ea60399447268ee0f0262a50b75fd",
+          "1815fd5589cad0c6f6cf946c76b81aeb",
+          "1815fd5589cad0c6f6cf946c76b81aeb"),
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessNewApi, DISABLED_OpusFromFormat_stereo_20ms_voip) {
+TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms_voip) {
   const SdpAudioFormat kOpusFormat("opus", 48000, 2, {{"stereo", "1"}});
   AudioEncoderOpus encoder(120, kOpusFormat);
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(&encoder, 120));
   // If not set, default will be kAudio in case of stereo.
   EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "9b9e12bc3cc793740966e11cbfa8b35b",
-          "9b9e12bc3cc793740966e11cbfa8b35b",
-          "0de6249018fdd316c21086db84e10610",
-          "9c4cb69db77b85841a5f8225bb8f508b",
-          "9c4cb69db77b85841a5f8225bb8f508b"),
+          "b0325df4e8104f04e03af23c0b75800e",
+          "b0325df4e8104f04e03af23c0b75800e",
+          "1c81121f5d9286a5a865d01dbab22ce8",
+          "11d547f89142e9ef03f37d7ca7f32379",
+          "11d547f89142e9ef03f37d7ca7f32379"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "c7340b1189652ab6b5e80dade7390cb4",
-          "c7340b1189652ab6b5e80dade7390cb4",
-          "95612864c954ee63e28cc6eebad56626",
-          "ae33ea2e43407cf9ebdabbbd6ca912a3",
-          "ae33ea2e43407cf9ebdabbbd6ca912a3"),
+          "4eab2259b6fe24c22dd242a113e0b3d9",
+          "4eab2259b6fe24c22dd242a113e0b3d9",
+          "839ea60399447268ee0f0262a50b75fd",
+          "1815fd5589cad0c6f6cf946c76b81aeb",
+          "1815fd5589cad0c6f6cf946c76b81aeb"),
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
@@ -1654,24 +1654,24 @@ class AcmSetBitRateNewApi : public AcmSetBitRateTest {
 #define MAYBE_Opus_48khz_20ms_10kbps Opus_48khz_20ms_10kbps
 #define MAYBE_OpusFromFormat_48khz_20ms_10kbps OpusFromFormat_48khz_20ms_10kbps
 #endif
-TEST_F(AcmSetBitRateOldApi, DISABLED_Opus_48khz_20ms_10kbps) {
+TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_10kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
-  Run(10000, 9288);
+  Run(10000, 8640);
 #else
-  Run(10000, 9024);
+  Run(10000, 8680);
 #endif  // WEBRTC_ANDROID
 }
 
-TEST_F(AcmSetBitRateNewApi, DISABLED_OpusFromFormat_48khz_20ms_10kbps) {
+TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_10kbps) {
   AudioEncoderOpus encoder(
       107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "10000"}}));
   ASSERT_TRUE(SetUpSender());
   ASSERT_TRUE(RegisterExternalSendCodec(&encoder, 107));
 #if defined(WEBRTC_ANDROID)
-  RunInner(9288);
+  RunInner(8640);
 #else
-  RunInner(9024);
+  RunInner(8680);
 #endif  // WEBRTC_ANDROID
 }
 
@@ -1683,24 +1683,24 @@ TEST_F(AcmSetBitRateNewApi, DISABLED_OpusFromFormat_48khz_20ms_10kbps) {
 #define MAYBE_Opus_48khz_20ms_50kbps Opus_48khz_20ms_50kbps
 #define MAYBE_OpusFromFormat_48khz_20ms_50kbps OpusFromFormat_48khz_20ms_50kbps
 #endif
-TEST_F(AcmSetBitRateOldApi, DISABLED_Opus_48khz_20ms_50kbps) {
+TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_50kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
-  Run(50000, 47960);
+  Run(50000, 45792);
 #else
-  Run(50000, 49544);
+  Run(50000, 45520);
 #endif  // WEBRTC_ANDROID
 }
 
-TEST_F(AcmSetBitRateNewApi, DISABLED_OpusFromFormat_48khz_20ms_50kbps) {
+TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_50kbps) {
   AudioEncoderOpus encoder(
       107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "50000"}}));
   ASSERT_TRUE(SetUpSender());
   ASSERT_TRUE(RegisterExternalSendCodec(&encoder, 107));
 #if defined(WEBRTC_ANDROID)
-  RunInner(47960);
+  RunInner(45792);
 #else
-  RunInner(49544);
+  RunInner(45520);
 #endif  // WEBRTC_ANDROID
 }
 
@@ -1715,17 +1715,17 @@ TEST_F(AcmSetBitRateNewApi, DISABLED_OpusFromFormat_48khz_20ms_50kbps) {
 #define MAYBE_OpusFromFormat_48khz_20ms_100kbps \
   OpusFromFormat_48khz_20ms_100kbps
 #endif
-TEST_F(AcmSetBitRateOldApi, DISABLED_Opus_48khz_20ms_100kbps) {
+TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_100kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
-  Run(100000, 100888);
+  Run(100000, 100832);
 }
 
-TEST_F(AcmSetBitRateNewApi, DISABLED_OpusFromFormat_48khz_20ms_100kbps) {
+TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_100kbps) {
   AudioEncoderOpus encoder(
       107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "100000"}}));
   ASSERT_TRUE(SetUpSender());
   ASSERT_TRUE(RegisterExternalSendCodec(&encoder, 107));
-  RunInner(100888);
+  RunInner(100832);
 }
 
 // These next 2 tests ensure that the SetBitRate function has no effect on PCM
@@ -1794,12 +1794,12 @@ class AcmChangeBitRateOldApi : public AcmSetBitRateOldApi {
 #else
 #define MAYBE_Opus_48khz_20ms_10kbps_2 Opus_48khz_20ms_10kbps
 #endif
-TEST_F(AcmChangeBitRateOldApi, DISABLED_Opus_48khz_20ms_10kbps_2) {
+TEST_F(AcmChangeBitRateOldApi, MAYBE_Opus_48khz_20ms_10kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
-  Run(10000, 32200, 5176);
+  Run(10000, 29512, 4800);
 #else
-  Run(10000, 32200, 5456);
+  Run(10000, 32200, 5368);
 #endif  // WEBRTC_ANDROID
 }
 
@@ -1808,12 +1808,12 @@ TEST_F(AcmChangeBitRateOldApi, DISABLED_Opus_48khz_20ms_10kbps_2) {
 #else
 #define MAYBE_Opus_48khz_20ms_50kbps_2 Opus_48khz_20ms_50kbps
 #endif
-TEST_F(AcmChangeBitRateOldApi, DISABLED_Opus_48khz_20ms_50kbps_2) {
+TEST_F(AcmChangeBitRateOldApi, MAYBE_Opus_48khz_20ms_50kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
-  Run(50000, 32200, 24768);
+  Run(50000, 29512, 23304);
 #else
-  Run(50000, 32200, 24848);
+  Run(50000, 32200, 23920);
 #endif  // WEBRTC_ANDROID
 }
 
@@ -1823,16 +1823,16 @@ TEST_F(AcmChangeBitRateOldApi, DISABLED_Opus_48khz_20ms_50kbps_2) {
 #else
 #define MAYBE_Opus_48khz_20ms_100kbps_2 Opus_48khz_20ms_100kbps
 #endif
-TEST_F(AcmChangeBitRateOldApi, DISABLED_Opus_48khz_20ms_100kbps_2) {
+TEST_F(AcmChangeBitRateOldApi, MAYBE_Opus_48khz_20ms_100kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   #if defined(WEBRTC_ARCH_ARM64)
-    Run(100000, 32200, 51152);
+    Run(100000, 29512, 50440);
   #else
-    Run(100000, 32200, 51248);
+    Run(100000, 29512, 50496);
   #endif  // WEBRTC_ARCH_ARM64
 #else
-  Run(100000, 32200, 50584);
+  Run(100000, 32200, 50448);
 #endif  // WEBRTC_ANDROID
 }
 
