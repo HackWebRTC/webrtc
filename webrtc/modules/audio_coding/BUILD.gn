@@ -885,6 +885,9 @@ if (rtc_enable_protobuf) {
     sources = [
       "audio_network_adaptor/debug_dump.proto",
     ]
+    deps = [
+      ":ana_config_proto",
+    ]
     proto_out_dir = "webrtc/modules/audio_coding/audio_network_adaptor"
   }
   proto_library("ana_config_proto") {
