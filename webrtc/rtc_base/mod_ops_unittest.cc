@@ -87,6 +87,14 @@ TEST_F(TestModOps, ForwardDiff) {
   }
 }
 
+TEST_F(TestModOps, ForwardDiffWithDivisor) {
+  ASSERT_EQ(122, (ForwardDiff<uint8_t, 123>(0, 122)));
+  ASSERT_EQ(0, (ForwardDiff<uint8_t, 123>(122, 122)));
+  ASSERT_EQ(122, (ForwardDiff<uint8_t, 123>(1, 0)));
+  ASSERT_EQ(0, (ForwardDiff<uint8_t, 123>(0, 0)));
+  ASSERT_EQ(1, (ForwardDiff<uint8_t, 123>(122, 0)));
+}
+
 TEST_F(TestModOps, ReverseDiff) {
   ASSERT_EQ(0u, ReverseDiff(4711u, 4711u));
 
@@ -104,6 +112,14 @@ TEST_F(TestModOps, ReverseDiff) {
     ++x;
     ++yi;
   }
+}
+
+TEST_F(TestModOps, ReverseDiffWithDivisor) {
+  ASSERT_EQ(1, (ReverseDiff<uint8_t, 123>(0, 122)));
+  ASSERT_EQ(0, (ReverseDiff<uint8_t, 123>(122, 122)));
+  ASSERT_EQ(1, (ReverseDiff<uint8_t, 123>(1, 0)));
+  ASSERT_EQ(0, (ReverseDiff<uint8_t, 123>(0, 0)));
+  ASSERT_EQ(122, (ReverseDiff<uint8_t, 123>(122, 0)));
 }
 
 TEST_F(TestModOps, MinDiff) {

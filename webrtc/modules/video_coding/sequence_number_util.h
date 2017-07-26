@@ -15,6 +15,8 @@
 #include <type_traits>
 
 #include "webrtc/rtc_base/mod_ops.h"
+#include "webrtc/rtc_base/optional.h"
+#include "webrtc/rtc_base/safe_compare.h"
 
 namespace webrtc {
 
@@ -24,7 +26,7 @@ namespace webrtc {
 // from each other, then the sequence number with the highest value is
 // considered to be ahead.
 template <typename T, T M>
-inline bool AheadOrAt(T a, T b) {
+inline typename std::enable_if<(M > 0), bool>::type AheadOrAt(T a, T b) {
   static_assert(std::is_unsigned<T>::value,
                 "Type must be an unsigned integer.");
   const T maxDist = M / 2;
@@ -33,8 +35,8 @@ inline bool AheadOrAt(T a, T b) {
   return ForwardDiff<T, M>(b, a) <= maxDist;
 }
 
-template <typename T>
-inline bool AheadOrAt(T a, T b) {
+template <typename T, T M>
+inline typename std::enable_if<(M == 0), bool>::type AheadOrAt(T a, T b) {
   static_assert(std::is_unsigned<T>::value,
                 "Type must be an unsigned integer.");
   const T maxDist = std::numeric_limits<T>::max() / 2 + T(1);
@@ -43,66 +45,76 @@ inline bool AheadOrAt(T a, T b) {
   return ForwardDiff(b, a) < maxDist;
 }
 
+template <typename T>
+inline bool AheadOrAt(T a, T b) {
+  return AheadOrAt<T, 0>(a, b);
+}
+
 // Test if the sequence number |a| is ahead of sequence number |b|.
 //
 // If |M| is an even number and the two sequence numbers are at max distance
 // from each other, then the sequence number with the highest value is
 // considered to be ahead.
-template <typename T, T M>
+template <typename T, T M = 0>
 inline bool AheadOf(T a, T b) {
   static_assert(std::is_unsigned<T>::value,
                 "Type must be an unsigned integer.");
   return a != b && AheadOrAt<T, M>(a, b);
 }
 
-template <typename T>
-inline bool AheadOf(T a, T b) {
-  static_assert(std::is_unsigned<T>::value,
-                "Type must be an unsigned integer.");
-  return a != b && AheadOrAt(a, b);
-}
-
-namespace internal {
-
-template <typename T, typename M>
-struct SeqNumComp;
-
-template <typename T, T M>
-struct SeqNumComp<T, std::integral_constant<T, M>> {
+// Comparator used to compare sequence numbers in a continuous fashion.
+//
+// WARNING! If used to sort sequence numbers of length M then the interval
+//          covered by the sequence numbers may not be larger than floor(M/2).
+template <typename T, T M = 0>
+struct AscendingSeqNumComp {
   bool operator()(T a, T b) const { return AheadOf<T, M>(a, b); }
 };
 
-template <typename T>
-struct SeqNumComp<T, std::integral_constant<T, T(0)>> {
-  bool operator()(T a, T b) const { return AheadOf<T>(a, b); }
-};
-
-}  // namespace internal
-
 // Comparator used to compare sequence numbers in a continuous fashion.
 //
 // WARNING! If used to sort sequence numbers of length M then the interval
 //          covered by the sequence numbers may not be larger than floor(M/2).
 template <typename T, T M = 0>
-struct AscendingSeqNumComp
-    : private internal::SeqNumComp<T, std::integral_constant<T, M>> {
-  bool operator()(T a, T b) const {
-    return internal::SeqNumComp<T, std::integral_constant<T, M>>::operator()(a,
-                                                                             b);
-  }
+struct DescendingSeqNumComp {
+  bool operator()(T a, T b) const { return AheadOf<T, M>(b, a); }
 };
 
-// Comparator used to compare sequence numbers in a continuous fashion.
-//
-// WARNING! If used to sort sequence numbers of length M then the interval
-//          covered by the sequence numbers may not be larger than floor(M/2).
+// A sequencer number unwrapper where the start value of the unwrapped sequence
+// can be set. The unwrapped value is not allowed to wrap.
 template <typename T, T M = 0>
-struct DescendingSeqNumComp
-    : private internal::SeqNumComp<T, std::integral_constant<T, M>> {
-  bool operator()(T a, T b) const {
-    return internal::SeqNumComp<T, std::integral_constant<T, M>>::operator()(b,
-                                                                             a);
+class SeqNumUnwrapper {
+  static_assert(
+      std::is_unsigned<T>::value &&
+          rtc::SafeLt(std::numeric_limits<T>::max(),
+                      std::numeric_limits<uint64_t>::max()),
+      "Type unwrapped must be an unsigned integer smaller than uint64_t.");
+
+ public:
+  SeqNumUnwrapper() : last_unwrapped_(0) {}
+  explicit SeqNumUnwrapper(uint64_t start_at) : last_unwrapped_(start_at) {}
+
+  uint64_t Unwrap(T value) {
+    if (!last_value_)
+      last_value_.emplace(value);
+
+    uint64_t unwrapped = 0;
+    if (AheadOrAt<T, M>(value, *last_value_)) {
+      unwrapped = last_unwrapped_ + ForwardDiff<T, M>(*last_value_, value);
+      RTC_CHECK_GE(unwrapped, last_unwrapped_);
+    } else {
+      unwrapped = last_unwrapped_ - ReverseDiff<T, M>(*last_value_, value);
+      RTC_CHECK_LT(unwrapped, last_unwrapped_);
+    }
+
+    *last_value_ = value;
+    last_unwrapped_ = unwrapped;
+    return last_unwrapped_;
   }
+
+ private:
+  uint64_t last_unwrapped_;
+  rtc::Optional<T> last_value_;
 };
 
 }  // namespace webrtc

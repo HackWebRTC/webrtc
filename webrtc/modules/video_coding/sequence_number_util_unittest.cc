@@ -209,4 +209,108 @@ TEST_F(TestSeqNumUtil, SeqNumComparatorWithDivisor) {
   }
 }
 
+TEST(SeqNumUnwrapper, NoBackWardWrap) {
+  SeqNumUnwrapper<uint8_t> unwrapper;
+  EXPECT_EQ(0U, unwrapper.Unwrap(0));
+
+  // The unwrapped sequence is not allowed to wrap, if that happens the
+  // SeqNumUnwrapper should have been constructed with a higher start value.
+  ASSERT_DEATH_IF_SUPPORTED(unwrapper.Unwrap(255), "");
+}
+
+TEST(SeqNumUnwrapper, NoForwardWrap) {
+  SeqNumUnwrapper<uint32_t> unwrapper(std::numeric_limits<uint64_t>::max());
+  EXPECT_EQ(std::numeric_limits<uint64_t>::max(), unwrapper.Unwrap(0));
+
+  // The unwrapped sequence is not allowed to wrap, if that happens the
+  // SeqNumUnwrapper should have been constructed with a lower start value.
+  ASSERT_DEATH_IF_SUPPORTED(unwrapper.Unwrap(1), "");
+}
+
+TEST(SeqNumUnwrapper, ForwardWrap) {
+  SeqNumUnwrapper<uint8_t> unwrapper;
+  EXPECT_EQ(0U, unwrapper.Unwrap(255));
+  EXPECT_EQ(1U, unwrapper.Unwrap(0));
+}
+
+TEST(SeqNumUnwrapper, ForwardWrapWithDivisor) {
+  SeqNumUnwrapper<uint8_t, 33> unwrapper;
+  EXPECT_EQ(0U, unwrapper.Unwrap(30));
+  EXPECT_EQ(6U, unwrapper.Unwrap(3));
+}
+
+TEST(SeqNumUnwrapper, BackWardWrap) {
+  SeqNumUnwrapper<uint8_t> unwrapper(10);
+  EXPECT_EQ(10U, unwrapper.Unwrap(0));
+  EXPECT_EQ(8U, unwrapper.Unwrap(254));
+}
+
+TEST(SeqNumUnwrapper, BackWardWrapWithDivisor) {
+  SeqNumUnwrapper<uint8_t, 33> unwrapper(10);
+  EXPECT_EQ(10U, unwrapper.Unwrap(0));
+  EXPECT_EQ(8U, unwrapper.Unwrap(31));
+}
+
+TEST(SeqNumUnwrapper, Unwrap) {
+  SeqNumUnwrapper<uint16_t> unwrapper;
+  const uint16_t kMax = std::numeric_limits<uint16_t>::max();
+  const uint16_t kMaxDist = kMax / 2 + 1;
+
+  EXPECT_EQ(0U, unwrapper.Unwrap(0));
+  EXPECT_EQ(kMaxDist, unwrapper.Unwrap(kMaxDist));
+  EXPECT_EQ(0U, unwrapper.Unwrap(0));
+
+  EXPECT_EQ(kMaxDist, unwrapper.Unwrap(kMaxDist));
+  EXPECT_EQ(kMax, unwrapper.Unwrap(kMax));
+  EXPECT_EQ(kMax + 1U, unwrapper.Unwrap(0));
+  EXPECT_EQ(kMax, unwrapper.Unwrap(kMax));
+  EXPECT_EQ(kMaxDist, unwrapper.Unwrap(kMaxDist));
+  EXPECT_EQ(0U, unwrapper.Unwrap(0));
+}
+
+TEST(SeqNumUnwrapper, UnwrapOddDivisor) {
+  SeqNumUnwrapper<uint8_t, 11> unwrapper(10);
+
+  EXPECT_EQ(10U, unwrapper.Unwrap(10));
+  EXPECT_EQ(11U, unwrapper.Unwrap(0));
+  EXPECT_EQ(16U, unwrapper.Unwrap(5));
+  EXPECT_EQ(21U, unwrapper.Unwrap(10));
+  EXPECT_EQ(22U, unwrapper.Unwrap(0));
+  EXPECT_EQ(17U, unwrapper.Unwrap(6));
+  EXPECT_EQ(12U, unwrapper.Unwrap(1));
+  EXPECT_EQ(7U, unwrapper.Unwrap(7));
+  EXPECT_EQ(2U, unwrapper.Unwrap(2));
+  EXPECT_EQ(0U, unwrapper.Unwrap(0));
+}
+
+TEST(SeqNumUnwrapper, ManyForwardWraps) {
+  const int kLargeNumber = 4711;
+  const int kMaxStep = kLargeNumber / 2;
+  const int kNumWraps = 100;
+  SeqNumUnwrapper<uint16_t, kLargeNumber> unwrapper;
+
+  uint16_t next_unwrap = 0;
+  uint64_t expected = 0;
+  for (int i = 0; i < kNumWraps * 2 + 1; ++i) {
+    EXPECT_EQ(expected, unwrapper.Unwrap(next_unwrap));
+    expected += kMaxStep;
+    next_unwrap = (next_unwrap + kMaxStep) % kLargeNumber;
+  }
+}
+
+TEST(SeqNumUnwrapper, ManyBackwardWraps) {
+  const int kLargeNumber = 4711;
+  const int kMaxStep = kLargeNumber / 2;
+  const int kNumWraps = 100;
+  SeqNumUnwrapper<uint16_t, kLargeNumber> unwrapper(kLargeNumber * kNumWraps);
+
+  uint16_t next_unwrap = 0;
+  uint64_t expected = kLargeNumber * kNumWraps;
+  for (uint16_t i = 0; i < kNumWraps * 2 + 1; ++i) {
+    EXPECT_EQ(expected, unwrapper.Unwrap(next_unwrap));
+    expected -= kMaxStep;
+    next_unwrap = (next_unwrap + kMaxStep + 1) % kLargeNumber;
+  }
+}
+
 }  // namespace webrtc
