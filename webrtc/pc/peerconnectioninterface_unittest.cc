@@ -1285,10 +1285,58 @@ TEST_F(PeerConnectionInterfaceTest, CreatePeerConnectionWithPooledCandidates) {
             session->flags() & cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
 }
 
+// Test that network-related RTCConfiguration members are applied to the
+// PortAllocator when CreatePeerConnection is called. Specifically:
+// - disable_ipv6_on_wifi
+// - max_ipv6_networks
+// - tcp_candidate_policy
+// - candidate_network_policy
+// - prune_turn_ports
+//
+// Note that the candidate filter (RTCConfiguration::type) is already tested
+// above.
+TEST_F(PeerConnectionInterfaceTest,
+       CreatePeerConnectionAppliesNetworkConfigToPortAllocator) {
+  // Create fake port allocator.
+  std::unique_ptr<cricket::FakePortAllocator> port_allocator(
+      new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
+  cricket::FakePortAllocator* raw_port_allocator = port_allocator.get();
+
+  // Create RTCConfiguration with some network-related fields relevant to
+  // PortAllocator populated.
+  PeerConnectionInterface::RTCConfiguration config;
+  config.disable_ipv6_on_wifi = true;
+  config.max_ipv6_networks = 10;
+  config.tcp_candidate_policy =
+      PeerConnectionInterface::kTcpCandidatePolicyDisabled;
+  config.candidate_network_policy =
+      PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
+  config.prune_turn_ports = true;
+
+  // Create the PC factory and PC with the above config.
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory(
+      webrtc::CreatePeerConnectionFactory(
+          rtc::Thread::Current(), rtc::Thread::Current(),
+          rtc::Thread::Current(), nullptr, nullptr, nullptr));
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
+      pc_factory->CreatePeerConnection(
+          config, nullptr, std::move(port_allocator), nullptr, &observer_));
+
+  // Now validate that the config fields set above were applied to the
+  // PortAllocator, as flags or otherwise.
+  EXPECT_FALSE(raw_port_allocator->flags() &
+               cricket::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI);
+  EXPECT_EQ(10, raw_port_allocator->max_ipv6_networks());
+  EXPECT_TRUE(raw_port_allocator->flags() & cricket::PORTALLOCATOR_DISABLE_TCP);
+  EXPECT_TRUE(raw_port_allocator->flags() &
+              cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
+  EXPECT_TRUE(raw_port_allocator->prune_turn_ports());
+}
+
 // Test that the PeerConnection initializes the port allocator passed into it,
 // and on the correct thread.
 TEST_F(PeerConnectionInterfaceTest,
-       CreatePeerConnectionInitializesPortAllocator) {
+       CreatePeerConnectionInitializesPortAllocatorOnNetworkThread) {
   std::unique_ptr<rtc::Thread> network_thread(
       rtc::Thread::CreateWithSocketServer());
   network_thread->Start();

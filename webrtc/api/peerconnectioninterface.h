@@ -352,6 +352,13 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // IPv6 ICE candidates on Wi-Fi in those cases.
     bool disable_ipv6_on_wifi = false;
 
+    // By default, the PeerConnection will use a limited number of IPv6 network
+    // interfaces, in order to avoid too many ICE candidate pairs being created
+    // and delaying ICE completion.
+    //
+    // Can be set to INT_MAX to effectively disable the limit.
+    int max_ipv6_networks = cricket::kDefaultMaxIPv6Networks;
+
     // If set to true, use RTP data channels instead of SCTP.
     // TODO(deadbeef): Remove this. We no longer commit to supporting RTP data
     // channels, though some applications are still working on moving off of

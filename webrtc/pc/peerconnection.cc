@@ -240,6 +240,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     int ice_candidate_pool_size;
     bool disable_ipv6;
     bool disable_ipv6_on_wifi;
+    int max_ipv6_networks;
     bool enable_rtp_data_channel;
     rtc::Optional<int> screencast_min_bitrate;
     rtc::Optional<bool> combined_audio_video_bwe;
@@ -282,6 +283,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
              o.prioritize_most_likely_ice_candidate_pairs &&
          media_config == o.media_config && disable_ipv6 == o.disable_ipv6 &&
          disable_ipv6_on_wifi == o.disable_ipv6_on_wifi &&
+         max_ipv6_networks == o.max_ipv6_networks &&
          enable_rtp_data_channel == o.enable_rtp_data_channel &&
          enable_quic == o.enable_quic &&
          screencast_min_bitrate == o.screencast_min_bitrate &&
@@ -2400,6 +2402,7 @@ bool PeerConnection::InitializePortAllocator_n(
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
   port_allocator_->set_candidate_filter(
       ConvertIceTransportTypeToCandidateFilter(configuration.type));
+  port_allocator_->set_max_ipv6_networks(configuration.max_ipv6_networks);
 
   // Call this last since it may create pooled allocator sessions using the
   // properties set above.
