@@ -465,8 +465,7 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
 
 #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID) &&             \
     defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) &&                      \
-    defined(WEBRTC_CODEC_OPUS) &&                                   \
-    !WEBRTC_OPUS_SUPPORT_120MS_PTIME
+    defined(WEBRTC_CODEC_OPUS)
 #define MAYBE_TestOpusBitExactness TestOpusBitExactness
 #else
 #define MAYBE_TestOpusBitExactness DISABLED_TestOpusBitExactness

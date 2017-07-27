@@ -38,7 +38,7 @@ declare_args() {
 
   # Enable this if the Opus version upon which WebRTC is built supports direct
   # encoding of 120 ms packets.
-  rtc_opus_support_120ms_ptime = false
+  rtc_opus_support_120ms_ptime = true
 
   # Enable this to let the Opus audio codec change complexity on the fly.
   rtc_opus_variable_complexity = false

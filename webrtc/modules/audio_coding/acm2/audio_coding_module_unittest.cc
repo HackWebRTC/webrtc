@@ -1475,14 +1475,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_stereo_20ms) {
 }
 #endif
 
-#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
-#define MAYBE_Opus_stereo_20ms DISABLED_Opus_stereo_20ms
-#define MAYBE_OpusFromFormat_stereo_20ms DISABLED_OpusFromFormat_stereo_20ms
-#else
-#define MAYBE_Opus_stereo_20ms Opus_stereo_20ms
-#define MAYBE_OpusFromFormat_stereo_20ms OpusFromFormat_stereo_20ms
-#endif
-TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms) {
+TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "3e285b74510e62062fbd8142dacd16e9",
@@ -1518,15 +1511,7 @@ TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms) {
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
-#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
-#define MAYBE_Opus_stereo_20ms_voip DISABLED_Opus_stereo_20ms_voip
-#define MAYBE_OpusFromFormat_stereo_20ms_voip \
-  DISABLED_OpusFromFormat_stereo_20ms_voip
-#else
-#define MAYBE_Opus_stereo_20ms_voip Opus_stereo_20ms_voip
-#define MAYBE_OpusFromFormat_stereo_20ms_voip OpusFromFormat_stereo_20ms_voip
-#endif
-TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms_voip) {
+TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms_voip) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   // If not set, default will be kAudio in case of stereo.
   EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
@@ -1545,7 +1530,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms_voip) {
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms_voip) {
+TEST_F(AcmSenderBitExactnessNewApi, OpusFromFormat_stereo_20ms_voip) {
   const SdpAudioFormat kOpusFormat("opus", 48000, 2, {{"stereo", "1"}});
   AudioEncoderOpus encoder(120, kOpusFormat);
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(&encoder, 120));
@@ -1646,15 +1631,7 @@ class AcmSetBitRateNewApi : public AcmSetBitRateTest {
   void Run(int expected_total_bits) { RunInner(expected_total_bits); }
 };
 
-#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
-#define MAYBE_Opus_48khz_20ms_10kbps DISABLED_Opus_48khz_20ms_10kbps
-#define MAYBE_OpusFromFormat_48khz_20ms_10kbps \
-  DISABLED_OpusFromFormat_48khz_20ms_10kbps
-#else
-#define MAYBE_Opus_48khz_20ms_10kbps Opus_48khz_20ms_10kbps
-#define MAYBE_OpusFromFormat_48khz_20ms_10kbps OpusFromFormat_48khz_20ms_10kbps
-#endif
-TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_10kbps) {
+TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_10kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   Run(10000, 8640);
@@ -1663,7 +1640,7 @@ TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_10kbps) {
 #endif  // WEBRTC_ANDROID
 }
 
-TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_10kbps) {
+TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_10kbps) {
   AudioEncoderOpus encoder(
       107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "10000"}}));
   ASSERT_TRUE(SetUpSender());
@@ -1675,15 +1652,7 @@ TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_10kbps) {
 #endif  // WEBRTC_ANDROID
 }
 
-#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
-#define MAYBE_Opus_48khz_20ms_50kbps DISABLED_Opus_48khz_20ms_50kbps
-#define MAYBE_OpusFromFormat_48khz_20ms_50kbps \
-  DISABLED_OpusFromFormat_48khz_20ms_50kbps
-#else
-#define MAYBE_Opus_48khz_20ms_50kbps Opus_48khz_20ms_50kbps
-#define MAYBE_OpusFromFormat_48khz_20ms_50kbps OpusFromFormat_48khz_20ms_50kbps
-#endif
-TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_50kbps) {
+TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   Run(50000, 45792);
@@ -1692,7 +1661,7 @@ TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_50kbps) {
 #endif  // WEBRTC_ANDROID
 }
 
-TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_50kbps) {
+TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_50kbps) {
   AudioEncoderOpus encoder(
       107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "50000"}}));
   ASSERT_TRUE(SetUpSender());
@@ -1706,7 +1675,7 @@ TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_50kbps) {
 
 // The result on the Android platforms is inconsistent for this test case.
 // On android_rel the result is different from android and android arm64 rel.
-#if defined(WEBRTC_ANDROID) || WEBRTC_OPUS_SUPPORT_120MS_PTIME
+#if defined(WEBRTC_ANDROID)
 #define MAYBE_Opus_48khz_20ms_100kbps DISABLED_Opus_48khz_20ms_100kbps
 #define MAYBE_OpusFromFormat_48khz_20ms_100kbps \
   DISABLED_OpusFromFormat_48khz_20ms_100kbps
@@ -1789,12 +1758,7 @@ class AcmChangeBitRateOldApi : public AcmSetBitRateOldApi {
   uint32_t frame_size_samples_;
 };
 
-#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
-#define MAYBE_Opus_48khz_20ms_10kbps_2 DISABLED_Opus_48khz_20ms_10kbps
-#else
-#define MAYBE_Opus_48khz_20ms_10kbps_2 Opus_48khz_20ms_10kbps
-#endif
-TEST_F(AcmChangeBitRateOldApi, MAYBE_Opus_48khz_20ms_10kbps_2) {
+TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_10kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   Run(10000, 29512, 4800);
@@ -1803,12 +1767,7 @@ TEST_F(AcmChangeBitRateOldApi, MAYBE_Opus_48khz_20ms_10kbps_2) {
 #endif  // WEBRTC_ANDROID
 }
 
-#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
-#define MAYBE_Opus_48khz_20ms_50kbps_2 DISABLED_Opus_48khz_20ms_50kbps
-#else
-#define MAYBE_Opus_48khz_20ms_50kbps_2 Opus_48khz_20ms_50kbps
-#endif
-TEST_F(AcmChangeBitRateOldApi, MAYBE_Opus_48khz_20ms_50kbps_2) {
+TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   Run(50000, 29512, 23304);
@@ -1817,13 +1776,7 @@ TEST_F(AcmChangeBitRateOldApi, MAYBE_Opus_48khz_20ms_50kbps_2) {
 #endif  // WEBRTC_ANDROID
 }
 
-
-#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
-#define MAYBE_Opus_48khz_20ms_100kbps_2 DISABLED_Opus_48khz_20ms_100kbps
-#else
-#define MAYBE_Opus_48khz_20ms_100kbps_2 Opus_48khz_20ms_100kbps
-#endif
-TEST_F(AcmChangeBitRateOldApi, MAYBE_Opus_48khz_20ms_100kbps_2) {
+TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_100kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   #if defined(WEBRTC_ARCH_ARM64)
