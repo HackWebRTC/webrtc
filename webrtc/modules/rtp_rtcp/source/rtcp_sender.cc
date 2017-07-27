@@ -139,7 +139,7 @@ class RTCPSender::RtcpContext {
 RTCPSender::RTCPSender(
     bool audio,
     Clock* clock,
-    ReceiveStatistics* receive_statistics,
+    ReceiveStatisticsProvider* receive_statistics,
     RtcpPacketTypeCounterObserver* packet_type_counter_observer,
     RtcEventLog* event_log,
     Transport* outgoing_transport)
@@ -836,32 +836,10 @@ std::vector<rtcp::ReportBlock> RTCPSender::CreateReportBlocks(
   if (!receive_statistics_)
     return result;
 
-  StatisticianMap statisticians = receive_statistics_->GetActiveStatisticians();
-  result.reserve(statisticians.size());
-  for (auto& statistician : statisticians) {
-    // Do we have receive statistics to send?
-    RtcpStatistics stats;
-    if (!statistician.second->GetStatistics(&stats, true))
-      continue;
-    // TODO(danilchap): Support sending more than |RTCP_MAX_REPORT_BLOCKS| per
-    // compound rtcp packet when single rtcp module is used for multiple media
-    // streams.
-    if (result.size() >= RTCP_MAX_REPORT_BLOCKS) {
-      LOG(LS_WARNING) << "Too many report blocks.";
-      continue;
-    }
-    result.emplace_back();
-    rtcp::ReportBlock& block = result.back();
-    block.SetMediaSsrc(statistician.first);
-    block.SetFractionLost(stats.fraction_lost);
-    if (!block.SetCumulativeLost(stats.cumulative_lost)) {
-      LOG(LS_WARNING) << "Cumulative lost is oversized.";
-      result.pop_back();
-      continue;
-    }
-    block.SetExtHighestSeqNum(stats.extended_max_sequence_number);
-    block.SetJitter(stats.jitter);
-  }
+  // TODO(danilchap): Support sending more than |RTCP_MAX_REPORT_BLOCKS| per
+  // compound rtcp packet when single rtcp module is used for multiple media
+  // streams.
+  result = receive_statistics_->RtcpReportBlocks(RTCP_MAX_REPORT_BLOCKS);
 
   if (!result.empty() && ((feedback_state.last_rr_ntp_secs != 0) ||
                           (feedback_state.last_rr_ntp_frac != 0))) {

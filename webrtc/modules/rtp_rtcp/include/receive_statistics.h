@@ -12,14 +12,25 @@
 #define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
 
 #include <map>
+#include <vector>
 
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class Clock;
+
+class ReceiveStatisticsProvider {
+ public:
+  virtual ~ReceiveStatisticsProvider() = default;
+  // Collects receive statistic in a form of rtcp report blocks.
+  // Returns at most |max_blocks| report blocks.
+  virtual std::vector<rtcp::ReportBlock> RtcpReportBlocks(
+      size_t max_blocks) = 0;
+};
 
 class StreamStatistician {
  public:
@@ -46,9 +57,9 @@ class StreamStatistician {
 
 typedef std::map<uint32_t, StreamStatistician*> StatisticianMap;
 
-class ReceiveStatistics {
+class ReceiveStatistics : public ReceiveStatisticsProvider {
  public:
-  virtual ~ReceiveStatistics() {}
+  ~ReceiveStatistics() override = default;
 
   static ReceiveStatistics* Create(Clock* clock);
 
@@ -78,6 +89,10 @@ class ReceiveStatistics {
   // Called on new RTP stats creation.
   virtual void RegisterRtpStatisticsCallback(
       StreamDataCountersCallback* callback) = 0;
+
+  // TODO(danilchap): Make pure virtual when all implmentations of the
+  // ReceiveStatistics interface will implement it.
+  std::vector<rtcp::ReportBlock> RtcpReportBlocks(size_t max_blocks) override;
 };
 
 class NullReceiveStatistics : public ReceiveStatistics {

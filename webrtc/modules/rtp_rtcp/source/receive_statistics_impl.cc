@@ -13,10 +13,12 @@
 #include <math.h>
 
 #include <cstdlib>
+#include <vector>
 
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -490,6 +492,37 @@ void ReceiveStatisticsImpl::DataCountersUpdated(const StreamDataCounters& stats,
   if (rtp_stats_callback_) {
     rtp_stats_callback_->DataCountersUpdated(stats, ssrc);
   }
+}
+
+std::vector<rtcp::ReportBlock> ReceiveStatistics::RtcpReportBlocks(
+    size_t max_blocks) {
+  StatisticianMap statisticians = GetActiveStatisticians();
+  std::vector<rtcp::ReportBlock> result;
+  result.reserve(std::min(max_blocks, statisticians.size()));
+  for (auto& statistician : statisticians) {
+    // TODO(danilchap): Select statistician subset across multiple calls using
+    // round-robin, as described in rfc3550 section 6.4 when single
+    // rtcp_module/receive_statistics will be used for more rtp streams.
+    if (result.size() == max_blocks)
+      break;
+
+    // Do we have receive statistics to send?
+    RtcpStatistics stats;
+    if (!statistician.second->GetStatistics(&stats, true))
+      continue;
+    result.emplace_back();
+    rtcp::ReportBlock& block = result.back();
+    block.SetMediaSsrc(statistician.first);
+    block.SetFractionLost(stats.fraction_lost);
+    if (!block.SetCumulativeLost(stats.cumulative_lost)) {
+      LOG(LS_WARNING) << "Cumulative lost is oversized.";
+      result.pop_back();
+      continue;
+    }
+    block.SetExtHighestSeqNum(stats.extended_max_sequence_number);
+    block.SetJitter(stats.jitter);
+  }
+  return result;
 }
 
 void NullReceiveStatistics::IncomingPacket(const RTPHeader& rtp_header,
