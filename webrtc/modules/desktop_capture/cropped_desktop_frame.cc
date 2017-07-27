@@ -12,6 +12,7 @@
 
 #include "webrtc/modules/desktop_capture/cropped_desktop_frame.h"
 
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -31,8 +32,15 @@ class CroppedDesktopFrame : public DesktopFrame {
 std::unique_ptr<DesktopFrame> CreateCroppedDesktopFrame(
     std::unique_ptr<DesktopFrame> frame,
     const DesktopRect& rect) {
-  if (!DesktopRect::MakeSize(frame->size()).ContainsRect(rect))
+  RTC_DCHECK(frame);
+
+  if (!DesktopRect::MakeSize(frame->size()).ContainsRect(rect)) {
     return nullptr;
+  }
+
+  if (frame->size().equals(rect.size())) {
+    return frame;
+  }
 
   return std::unique_ptr<DesktopFrame>(
       new CroppedDesktopFrame(std::move(frame), rect));
