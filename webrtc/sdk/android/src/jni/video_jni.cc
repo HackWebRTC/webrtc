@@ -28,7 +28,7 @@ namespace webrtc_jni {
 // used and all applications inject their own codecs.
 // This is semi broken if someone wants to create multiple peerconnection
 // factories.
-static MediaCodecVideoDecoderFactory* media_codec_decoder_factory;
+static bool use_media_codec_decoder_factory;
 
 cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory(
     JNIEnv* jni,
@@ -41,12 +41,12 @@ cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory(
 cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory(
     JNIEnv* jni,
     jobject j_decoder_factory) {
-  if (j_decoder_factory != nullptr) {
-    media_codec_decoder_factory = nullptr;
-    return new VideoDecoderFactoryWrapper(jni, j_decoder_factory);
+  use_media_codec_decoder_factory = j_decoder_factory == nullptr;
+
+  if (use_media_codec_decoder_factory) {
+    return new MediaCodecVideoDecoderFactory();
   } else {
-    media_codec_decoder_factory = new MediaCodecVideoDecoderFactory();
-    return media_codec_decoder_factory;
+    return new VideoDecoderFactoryWrapper(jni, j_decoder_factory);
   }
 }
 
@@ -109,9 +109,12 @@ JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)
     encoder_factory->SetEGLContext(jni, local_egl_context);
   }
 
-  if (media_codec_decoder_factory) {
+  MediaCodecVideoDecoderFactory* decoder_factory =
+      static_cast<MediaCodecVideoDecoderFactory*>(
+          owned_factory->decoder_factory());
+  if (use_media_codec_decoder_factory && decoder_factory) {
     LOG(LS_INFO) << "Set EGL context for HW decoding.";
-    media_codec_decoder_factory->SetEGLContext(jni, remote_egl_context);
+    decoder_factory->SetEGLContext(jni, remote_egl_context);
   }
 }
 
