@@ -47,15 +47,6 @@
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-// Files generated at build-time by the protobuf compiler.
-#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
-#else
-#include "webrtc/modules/audio_processing/debug.pb.h"
-#endif
-#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
-
 // Check to verify that the define for the intelligibility enhancer is properly
 // set.
 #if !defined(WEBRTC_INTELLIGIBILITY_ENHANCER) || \
@@ -391,10 +382,6 @@ AudioProcessingImpl::~AudioProcessingImpl() {
   private_submodules_->agc_manager.reset();
   // Depends on gain_control_.
   public_submodules_->gain_control_for_experimental_agc.reset();
-
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  debug_dump_.debug_file->CloseFile();
-#endif
 }
 
 int AudioProcessingImpl::Initialize() {
@@ -441,20 +428,6 @@ int AudioProcessingImpl::MaybeInitializeCapture(
     bool force_initialization) {
   return MaybeInitialize(processing_config, force_initialization);
 }
-
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-
-AudioProcessingImpl::ApmDebugDumpThreadState::ApmDebugDumpThreadState()
-    : event_msg(new audioproc::Event()) {}
-
-AudioProcessingImpl::ApmDebugDumpThreadState::~ApmDebugDumpThreadState() {}
-
-AudioProcessingImpl::ApmDebugDumpState::ApmDebugDumpState()
-    : debug_file(FileWrapper::Create()) {}
-
-AudioProcessingImpl::ApmDebugDumpState::~ApmDebugDumpState() {}
-
-#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 
 // Calls InitializeLocked() if any of the audio parameters have changed from
 // their current values (needs to be called while holding the crit_render_lock).
@@ -553,14 +526,6 @@ int AudioProcessingImpl::InitializeLocked() {
   InitializeEchoCanceller3();
   InitializeGainController2();
 
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  if (debug_dump_.debug_file->is_open()) {
-    int err = WriteInitMessage();
-    if (err != kNoError) {
-      return err;
-    }
-  }
-#endif
   if (aec_dump_) {
     aec_dump_->WriteInitMessage(ToStreamsConfig(formats_.api_format));
   }
@@ -877,20 +842,6 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   RTC_DCHECK_EQ(processing_config.input_stream().num_frames(),
                 formats_.api_format.input_stream().num_frames());
 
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  if (debug_dump_.debug_file->is_open()) {
-    RETURN_ON_ERR(WriteConfigMessage(false));
-
-    debug_dump_.capture.event_msg->set_type(audioproc::Event::STREAM);
-    audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
-    const size_t channel_size =
-        sizeof(float) * formats_.api_format.input_stream().num_frames();
-    for (size_t i = 0; i < formats_.api_format.input_stream().num_channels();
-         ++i)
-      msg->add_input_channel(src[i], channel_size);
-  }
-#endif
-
   if (aec_dump_) {
     RecordUnprocessedCaptureStream(src);
   }
@@ -899,19 +850,6 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   RETURN_ON_ERR(ProcessCaptureStreamLocked());
   capture_.capture_audio->CopyTo(formats_.api_format.output_stream(), dest);
 
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  if (debug_dump_.debug_file->is_open()) {
-    audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
-    const size_t channel_size =
-        sizeof(float) * formats_.api_format.output_stream().num_frames();
-    for (size_t i = 0; i < formats_.api_format.output_stream().num_channels();
-         ++i)
-      msg->add_output_channel(dest[i], channel_size);
-    RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                          &debug_dump_.num_bytes_left_for_log_,
-                                          &crit_debug_, &debug_dump_.capture));
-  }
-#endif
   if (aec_dump_) {
     RecordProcessedCaptureStream(dest);
   }
@@ -1157,18 +1095,6 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     RecordUnprocessedCaptureStream(*frame);
   }
 
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  if (debug_dump_.debug_file->is_open()) {
-    RETURN_ON_ERR(WriteConfigMessage(false));
-
-    debug_dump_.capture.event_msg->set_type(audioproc::Event::STREAM);
-    audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
-    const size_t data_size =
-        sizeof(int16_t) * frame->samples_per_channel_ * frame->num_channels_;
-    msg->set_input_data(frame->data(), data_size);
-  }
-#endif
-
   capture_.capture_audio->DeinterleaveFrom(frame);
   RETURN_ON_ERR(ProcessCaptureStreamLocked());
   capture_.capture_audio->InterleaveTo(
@@ -1178,17 +1104,6 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   if (aec_dump_) {
     RecordProcessedCaptureStream(*frame);
   }
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  if (debug_dump_.debug_file->is_open()) {
-    audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
-    const size_t data_size =
-        sizeof(int16_t) * frame->samples_per_channel_ * frame->num_channels_;
-    msg->set_output_data(frame->data(), data_size);
-    RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                          &debug_dump_.num_bytes_left_for_log_,
-                                          &crit_debug_, &debug_dump_.capture));
-  }
-#endif
 
   return kNoError;
 }
@@ -1199,17 +1114,6 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   // are moved to APM.
   RTC_DCHECK(!(public_submodules_->echo_cancellation->is_enabled() &&
                public_submodules_->echo_control_mobile->is_enabled()));
-
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  if (debug_dump_.debug_file->is_open()) {
-    audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
-    msg->set_delay(capture_nonlocked_.stream_delay_ms);
-    msg->set_drift(
-        public_submodules_->echo_cancellation->stream_drift_samples());
-    msg->set_level(gain_control()->stream_analog_level());
-    msg->set_keypress(capture_.key_pressed);
-  }
-#endif
 
   MaybeUpdateHistograms();
 
@@ -1449,21 +1353,6 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
   assert(input_config.num_frames() ==
          formats_.api_format.reverse_input_stream().num_frames());
 
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  if (debug_dump_.debug_file->is_open()) {
-    debug_dump_.render.event_msg->set_type(audioproc::Event::REVERSE_STREAM);
-    audioproc::ReverseStream* msg =
-        debug_dump_.render.event_msg->mutable_reverse_stream();
-    const size_t channel_size =
-        sizeof(float) * formats_.api_format.reverse_input_stream().num_frames();
-    for (size_t i = 0;
-         i < formats_.api_format.reverse_input_stream().num_channels(); ++i)
-      msg->add_channel(src[i], channel_size);
-    RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                          &debug_dump_.num_bytes_left_for_log_,
-                                          &crit_debug_, &debug_dump_.render));
-  }
-#endif
   if (aec_dump_) {
     const size_t channel_size =
         formats_.api_format.reverse_input_stream().num_frames();
@@ -1511,19 +1400,6 @@ int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
     return kBadDataLengthError;
   }
 
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  if (debug_dump_.debug_file->is_open()) {
-    debug_dump_.render.event_msg->set_type(audioproc::Event::REVERSE_STREAM);
-    audioproc::ReverseStream* msg =
-        debug_dump_.render.event_msg->mutable_reverse_stream();
-    const size_t data_size =
-        sizeof(int16_t) * frame->samples_per_channel_ * frame->num_channels_;
-    msg->set_data(frame->data(), data_size);
-    RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                          &debug_dump_.num_bytes_left_for_log_,
-                                          &crit_debug_, &debug_dump_.render));
-  }
-#endif
   if (aec_dump_) {
     aec_dump_->WriteRenderStreamMessage(*frame);
   }
@@ -1644,86 +1520,31 @@ void AudioProcessingImpl::DetachAecDump() {
 int AudioProcessingImpl::StartDebugRecording(
     const char filename[AudioProcessing::kMaxFilenameSize],
     int64_t max_log_size_bytes) {
-  // Run in a single-threaded manner.
-  rtc::CritScope cs_render(&crit_render_);
-  rtc::CritScope cs_capture(&crit_capture_);
-  static_assert(kMaxFilenameSize == FileWrapper::kMaxFileNameSize, "");
-
-  if (filename == nullptr) {
-    return kNullPointerError;
-  }
-
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  debug_dump_.num_bytes_left_for_log_ = max_log_size_bytes;
-  // Stop any ongoing recording.
-  debug_dump_.debug_file->CloseFile();
-
-  if (!debug_dump_.debug_file->OpenFile(filename, false)) {
-    return kFileError;
-  }
-
-  RETURN_ON_ERR(WriteConfigMessage(true));
-  RETURN_ON_ERR(WriteInitMessage());
-  return kNoError;
-#else
+  RTC_NOTREACHED();
   return kUnsupportedFunctionError;
-#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
 int AudioProcessingImpl::StartDebugRecording(FILE* handle,
                                              int64_t max_log_size_bytes) {
-  // Run in a single-threaded manner.
-  rtc::CritScope cs_render(&crit_render_);
-  rtc::CritScope cs_capture(&crit_capture_);
-
-  if (handle == nullptr) {
-    return kNullPointerError;
-  }
-
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  debug_dump_.num_bytes_left_for_log_ = max_log_size_bytes;
-
-  // Stop any ongoing recording.
-  debug_dump_.debug_file->CloseFile();
-
-  if (!debug_dump_.debug_file->OpenFromFileHandle(handle)) {
-    return kFileError;
-  }
-
-  RETURN_ON_ERR(WriteConfigMessage(true));
-  RETURN_ON_ERR(WriteInitMessage());
-  return kNoError;
-#else
+  RTC_NOTREACHED();
   return kUnsupportedFunctionError;
-#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
 int AudioProcessingImpl::StartDebugRecording(FILE* handle) {
-  return StartDebugRecording(handle, -1);
+  RTC_NOTREACHED();
+  return kUnsupportedFunctionError;
 }
 
 int AudioProcessingImpl::StartDebugRecordingForPlatformFile(
     rtc::PlatformFile handle) {
-  // Run in a single-threaded manner.
-  rtc::CritScope cs_render(&crit_render_);
-  rtc::CritScope cs_capture(&crit_capture_);
-  FILE* stream = rtc::FdopenPlatformFileForWriting(handle);
-  return StartDebugRecording(stream, -1);
+  RTC_NOTREACHED();
+  return kUnsupportedFunctionError;
 }
 
 int AudioProcessingImpl::StopDebugRecording() {
-  DetachAecDump();
-
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  // Run in a single-threaded manner.
-  rtc::CritScope cs_render(&crit_render_);
-  rtc::CritScope cs_capture(&crit_capture_);
-  // We just return if recording hasn't started.
-  debug_dump_.debug_file->CloseFile();
-  return kNoError;
-#else
+  // DetachAecDump();
+  RTC_NOTREACHED();
   return kUnsupportedFunctionError;
-#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
 AudioProcessing::AudioProcessingStatistics::AudioProcessingStatistics() {
@@ -2092,152 +1913,6 @@ void AudioProcessingImpl::RecordAudioProcessingState() {
   audio_proc_state.keypress = capture_.key_pressed;
   aec_dump_->AddAudioProcessingState(audio_proc_state);
 }
-
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-int AudioProcessingImpl::WriteMessageToDebugFile(
-    FileWrapper* debug_file,
-    int64_t* filesize_limit_bytes,
-    rtc::CriticalSection* crit_debug,
-    ApmDebugDumpThreadState* debug_state) {
-  int32_t size = debug_state->event_msg->ByteSize();
-  if (size <= 0) {
-    return kUnspecifiedError;
-  }
-#if defined(WEBRTC_ARCH_BIG_ENDIAN)
-// TODO(ajm): Use little-endian "on the wire". For the moment, we can be
-//            pretty safe in assuming little-endian.
-#endif
-
-  if (!debug_state->event_msg->SerializeToString(&debug_state->event_str)) {
-    return kUnspecifiedError;
-  }
-
-  {
-    // Ensure atomic writes of the message.
-    rtc::CritScope cs_debug(crit_debug);
-
-    RTC_DCHECK(debug_file->is_open());
-    // Update the byte counter.
-    if (*filesize_limit_bytes >= 0) {
-      *filesize_limit_bytes -=
-          (sizeof(int32_t) + debug_state->event_str.length());
-      if (*filesize_limit_bytes < 0) {
-        // Not enough bytes are left to write this message, so stop logging.
-        debug_file->CloseFile();
-        return kNoError;
-      }
-    }
-    // Write message preceded by its size.
-    if (!debug_file->Write(&size, sizeof(int32_t))) {
-      return kFileError;
-    }
-    if (!debug_file->Write(debug_state->event_str.data(),
-                           debug_state->event_str.length())) {
-      return kFileError;
-    }
-  }
-
-  debug_state->event_msg->Clear();
-
-  return kNoError;
-}
-
-int AudioProcessingImpl::WriteInitMessage() {
-  debug_dump_.capture.event_msg->set_type(audioproc::Event::INIT);
-  audioproc::Init* msg = debug_dump_.capture.event_msg->mutable_init();
-  msg->set_sample_rate(formats_.api_format.input_stream().sample_rate_hz());
-
-  msg->set_num_input_channels(static_cast<int32_t>(
-      formats_.api_format.input_stream().num_channels()));
-  msg->set_num_output_channels(static_cast<int32_t>(
-      formats_.api_format.output_stream().num_channels()));
-  msg->set_num_reverse_channels(static_cast<int32_t>(
-      formats_.api_format.reverse_input_stream().num_channels()));
-  msg->set_reverse_sample_rate(
-      formats_.api_format.reverse_input_stream().sample_rate_hz());
-  msg->set_output_sample_rate(
-      formats_.api_format.output_stream().sample_rate_hz());
-  msg->set_reverse_output_sample_rate(
-      formats_.api_format.reverse_output_stream().sample_rate_hz());
-  msg->set_num_reverse_output_channels(
-      formats_.api_format.reverse_output_stream().num_channels());
-
-  RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                        &debug_dump_.num_bytes_left_for_log_,
-                                        &crit_debug_, &debug_dump_.capture));
-  return kNoError;
-}
-
-int AudioProcessingImpl::WriteConfigMessage(bool forced) {
-  audioproc::Config config;
-
-  config.set_aec_enabled(public_submodules_->echo_cancellation->is_enabled());
-  config.set_aec_delay_agnostic_enabled(
-      public_submodules_->echo_cancellation->is_delay_agnostic_enabled());
-  config.set_aec_drift_compensation_enabled(
-      public_submodules_->echo_cancellation->is_drift_compensation_enabled());
-  config.set_aec_extended_filter_enabled(
-      public_submodules_->echo_cancellation->is_extended_filter_enabled());
-  config.set_aec_suppression_level(static_cast<int>(
-      public_submodules_->echo_cancellation->suppression_level()));
-
-  config.set_aecm_enabled(
-      public_submodules_->echo_control_mobile->is_enabled());
-  config.set_aecm_comfort_noise_enabled(
-      public_submodules_->echo_control_mobile->is_comfort_noise_enabled());
-  config.set_aecm_routing_mode(static_cast<int>(
-      public_submodules_->echo_control_mobile->routing_mode()));
-
-  config.set_agc_enabled(public_submodules_->gain_control->is_enabled());
-  config.set_agc_mode(
-      static_cast<int>(public_submodules_->gain_control->mode()));
-  config.set_agc_limiter_enabled(
-      public_submodules_->gain_control->is_limiter_enabled());
-  config.set_noise_robust_agc_enabled(constants_.use_experimental_agc);
-
-  config.set_hpf_enabled(config_.high_pass_filter.enabled);
-
-  config.set_ns_enabled(public_submodules_->noise_suppression->is_enabled());
-  config.set_ns_level(
-      static_cast<int>(public_submodules_->noise_suppression->level()));
-
-  config.set_transient_suppression_enabled(
-      capture_.transient_suppressor_enabled);
-  config.set_intelligibility_enhancer_enabled(
-      capture_nonlocked_.intelligibility_enabled);
-
-  std::string experiments_description =
-      public_submodules_->echo_cancellation->GetExperimentsDescription();
-  // TODO(peah): Add semicolon-separated concatenations of experiment
-  // descriptions for other submodules.
-  if (capture_nonlocked_.level_controller_enabled) {
-    experiments_description += "LevelController;";
-  }
-  if (constants_.agc_clipped_level_min != kClippedLevelMin) {
-    experiments_description += "AgcClippingLevelExperiment;";
-  }
-  if (capture_nonlocked_.echo_canceller3_enabled) {
-    experiments_description += "EchoCanceller3;";
-  }
-  config.set_experiments_description(experiments_description);
-
-  ProtoString serialized_config = config.SerializeAsString();
-  if (!forced &&
-      debug_dump_.capture.last_serialized_config == serialized_config) {
-    return kNoError;
-  }
-
-  debug_dump_.capture.last_serialized_config = serialized_config;
-
-  debug_dump_.capture.event_msg->set_type(audioproc::Event::CONFIG);
-  debug_dump_.capture.event_msg->mutable_config()->CopyFrom(config);
-
-  RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                        &debug_dump_.num_bytes_left_for_log_,
-                                        &crit_debug_, &debug_dump_.capture));
-  return kNoError;
-}
-#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 
 AudioProcessingImpl::ApmCaptureState::ApmCaptureState(
     bool transient_suppressor_enabled,

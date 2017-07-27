@@ -29,17 +29,6 @@
 #include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-// *.pb.h files are generated at build-time by the protobuf compiler.
-RTC_PUSH_IGNORING_WUNDEF()
-#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
-#else
-#include "webrtc/modules/audio_processing/debug.pb.h"
-#endif
-RTC_POP_IGNORING_WUNDEF()
-#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
-
 namespace webrtc {
 
 class AudioConverter;
@@ -198,30 +187,6 @@ class AudioProcessingImpl : public AudioProcessing {
     bool first_update_ = true;
   };
 
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  // State for the debug dump.
-  struct ApmDebugDumpThreadState {
-    ApmDebugDumpThreadState();
-    ~ApmDebugDumpThreadState();
-    std::unique_ptr<audioproc::Event> event_msg;  // Protobuf message.
-    ProtoString event_str;  // Memory for protobuf serialization.
-
-    // Serialized string of last saved APM configuration.
-    ProtoString last_serialized_config;
-  };
-
-  struct ApmDebugDumpState {
-    ApmDebugDumpState();
-    ~ApmDebugDumpState();
-    // Number of bytes that can still be written to the log before the maximum
-    // size is reached. A value of <= 0 indicates that no limit is used.
-    int64_t num_bytes_left_for_log_ = -1;
-    std::unique_ptr<FileWrapper> debug_file;
-    ApmDebugDumpThreadState render;
-    ApmDebugDumpThreadState capture;
-  };
-#endif
-
   // Method for modifying the formats struct that are called from both
   // the render and capture threads. The check for whether modifications
   // are needed is done while holding the render lock only, thereby avoiding
@@ -309,30 +274,6 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // Notifies attached AecDump about current state (delay, drift, etc).
   void RecordAudioProcessingState() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-
-// Debug dump methods that are internal and called without locks.
-// TODO(peah): Make thread safe.
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  // TODO(andrew): make this more graceful. Ideally we would split this stuff
-  // out into a separate class with an "enabled" and "disabled" implementation.
-  static int WriteMessageToDebugFile(FileWrapper* debug_file,
-                                     int64_t* filesize_limit_bytes,
-                                     rtc::CriticalSection* crit_debug,
-                                     ApmDebugDumpThreadState* debug_state);
-  int WriteInitMessage() EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
-
-  // Writes Config message. If not |forced|, only writes the current config if
-  // it is different from the last saved one; if |forced|, writes the config
-  // regardless of the last saved.
-  int WriteConfigMessage(bool forced) EXCLUSIVE_LOCKS_REQUIRED(crit_capture_)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-
-  // Critical section.
-  rtc::CriticalSection crit_debug_;
-
-  // Debug dump state.
-  ApmDebugDumpState debug_dump_;
-#endif
 
   // AecDump instance used for optionally logging APM config, input
   // and output to file in the AEC-dump format defined in debug.proto.
