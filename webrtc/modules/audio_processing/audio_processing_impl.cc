@@ -1517,36 +1517,6 @@ void AudioProcessingImpl::DetachAecDump() {
   }
 }
 
-int AudioProcessingImpl::StartDebugRecording(
-    const char filename[AudioProcessing::kMaxFilenameSize],
-    int64_t max_log_size_bytes) {
-  RTC_NOTREACHED();
-  return kUnsupportedFunctionError;
-}
-
-int AudioProcessingImpl::StartDebugRecording(FILE* handle,
-                                             int64_t max_log_size_bytes) {
-  RTC_NOTREACHED();
-  return kUnsupportedFunctionError;
-}
-
-int AudioProcessingImpl::StartDebugRecording(FILE* handle) {
-  RTC_NOTREACHED();
-  return kUnsupportedFunctionError;
-}
-
-int AudioProcessingImpl::StartDebugRecordingForPlatformFile(
-    rtc::PlatformFile handle) {
-  RTC_NOTREACHED();
-  return kUnsupportedFunctionError;
-}
-
-int AudioProcessingImpl::StopDebugRecording() {
-  // DetachAecDump();
-  RTC_NOTREACHED();
-  return kUnsupportedFunctionError;
-}
-
 AudioProcessing::AudioProcessingStatistics::AudioProcessingStatistics() {
   residual_echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);
   echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);

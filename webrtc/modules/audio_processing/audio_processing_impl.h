@@ -56,12 +56,6 @@ class AudioProcessingImpl : public AudioProcessing {
   void UpdateHistogramsOnCallEnd() override;
   void AttachAecDump(std::unique_ptr<AecDump> aec_dump) override;
   void DetachAecDump() override;
-  int StartDebugRecording(const char filename[kMaxFilenameSize],
-                          int64_t max_log_size_bytes) override;
-  int StartDebugRecording(FILE* handle, int64_t max_log_size_bytes) override;
-  int StartDebugRecording(FILE* handle) override;
-  int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) override;
-  int StopDebugRecording() override;
 
   // Capture-side exclusive methods possibly running APM in a
   // multi-threaded manner. Acquire the capture lock.

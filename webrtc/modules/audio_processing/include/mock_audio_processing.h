@@ -179,14 +179,6 @@ class MockAudioProcessing : public AudioProcessing {
   virtual void AttachAecDump(std::unique_ptr<AecDump> aec_dump) {}
   MOCK_METHOD0(DetachAecDump, void());
 
-  MOCK_METHOD2(StartDebugRecording, int(const char filename[kMaxFilenameSize],
-                                        int64_t max_log_size_bytes));
-  MOCK_METHOD2(StartDebugRecording, int(FILE* handle,
-                                        int64_t max_log_size_bytes));
-  MOCK_METHOD1(StartDebugRecording, int (FILE* handle));
-  MOCK_METHOD1(StartDebugRecordingForPlatformFile,
-               int(rtc::PlatformFile handle));
-  MOCK_METHOD0(StopDebugRecording, int());
   MOCK_METHOD0(UpdateHistogramsOnCallEnd, void());
   MOCK_CONST_METHOD0(GetStatistics, AudioProcessingStatistics());
   virtual MockEchoCancellation* echo_cancellation() const {
