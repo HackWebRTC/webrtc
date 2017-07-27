@@ -785,6 +785,9 @@ AdapterType BasicNetworkManager::GetAdapterTypeFromName(
       return type;
     }
   }
+  if (strncmp(network_name, "ipsec", 5) == 0) {
+    return ADAPTER_TYPE_VPN;
+  }
 #if defined(WEBRTC_IOS)
   // Cell networks are pdp_ipN on iOS.
   if (strncmp(network_name, "pdp_ip", 6) == 0) {

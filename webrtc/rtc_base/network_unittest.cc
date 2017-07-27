@@ -828,11 +828,17 @@ TEST_F(NetworkTest, TestGetAdapterTypeFromNameMatching) {
   std::string ipv6_mask = "FFFF:FFFF:FFFF:FFFF::";
   BasicNetworkManager manager;
 
-#if defined(WEBRTC_IOS)
-  char if_name[20] = "pdp_ip0";
+  // IPSec interface; name is in form "ipsec<index>".
+  char if_name[20] = "ipsec11";
   ifaddrs* addr_list =
       InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
+  EXPECT_EQ(ADAPTER_TYPE_VPN, GetAdapterType(manager));
+  ClearNetworks(manager);
+  ReleaseIfAddrs(addr_list);
 
+#if defined(WEBRTC_IOS)
+  strcpy(if_name, "pdp_ip0");
+  addr_list = InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
   EXPECT_EQ(ADAPTER_TYPE_CELLULAR, GetAdapterType(manager));
   ClearNetworks(manager);
   ReleaseIfAddrs(addr_list);
@@ -844,10 +850,8 @@ TEST_F(NetworkTest, TestGetAdapterTypeFromNameMatching) {
   ReleaseIfAddrs(addr_list);
 
 #elif defined(WEBRTC_ANDROID)
-  char if_name[20] = "rmnet0";
-  ifaddrs* addr_list =
-      InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
-
+  strcpy(if_name, "rmnet0");
+  addr_list = InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
   EXPECT_EQ(ADAPTER_TYPE_CELLULAR, GetAdapterType(manager));
   ClearNetworks(manager);
   ReleaseIfAddrs(addr_list);
@@ -864,9 +868,10 @@ TEST_F(NetworkTest, TestGetAdapterTypeFromNameMatching) {
   ClearNetworks(manager);
   ReleaseIfAddrs(addr_list);
 #else
-  char if_name[20] = "wlan0";
-  ifaddrs* addr_list =
-      InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
+  // TODO(deadbeef): If not iOS or Android, "wlan0" should be treated as
+  // "unknown"? Why? This should be fixed if there's no good reason.
+  strcpy(if_name, "wlan0");
+  addr_list = InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
 
   EXPECT_EQ(ADAPTER_TYPE_UNKNOWN, GetAdapterType(manager));
   ClearNetworks(manager);
