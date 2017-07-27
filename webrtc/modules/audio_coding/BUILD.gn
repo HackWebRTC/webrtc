@@ -1551,6 +1551,22 @@ if (rtc_include_tests) {
     }
   }
 
+  audio_codec_speed_tests_resources = [
+    "//resources/audio_coding/music_stereo_48kHz.pcm",
+    "//resources/audio_coding/speech_mono_16kHz.pcm",
+    "//resources/audio_coding/speech_mono_32_48kHz.pcm",
+  ]
+
+  if (is_ios) {
+    bundle_data("audio_codec_speed_tests_data") {
+      testonly = true
+      sources = audio_codec_speed_tests_resources
+      outputs = [
+        "{{bundle_resources_dir}}/{{source_file_part}}",
+      ]
+    }
+  }
+
   rtc_test("audio_codec_speed_tests") {
     testonly = true
     defines = []
@@ -1567,9 +1583,15 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
+    data = audio_codec_speed_tests_resources
+
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
       shard_timeout = 900
+    }
+
+    if (is_ios) {
+      deps += [ ":audio_codec_speed_tests_data" ]
     }
 
     deps += [
