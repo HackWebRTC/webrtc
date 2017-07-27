@@ -1537,6 +1537,9 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   jfieldID j_disable_ipv6_on_wifi_id =
       GetFieldID(jni, j_rtc_config_class, "disableIPv6OnWifi", "Z");
 
+  jfieldID j_max_ipv6_networks_id =
+      GetFieldID(jni, j_rtc_config_class, "maxIPv6Networks", "I");
+
   jfieldID j_ice_regather_interval_range_id =
       GetFieldID(jni, j_rtc_config_class, "iceRegatherIntervalRange",
                  "Lorg/webrtc/PeerConnection$IntervalRange;");
@@ -1585,6 +1588,8 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   }
   rtc_config->disable_ipv6_on_wifi =
       GetBooleanField(jni, j_rtc_config, j_disable_ipv6_on_wifi_id);
+  rtc_config->max_ipv6_networks =
+      GetIntField(jni, j_rtc_config, j_max_ipv6_networks_id);
   jobject j_ice_regather_interval_range = GetNullableObjectField(
       jni, j_rtc_config, j_ice_regather_interval_range_id);
   if (!IsNull(jni, j_ice_regather_interval_range)) {

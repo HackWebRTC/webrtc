@@ -197,8 +197,17 @@ public class PeerConnection {
     public boolean presumeWritableWhenFullyRelayed;
     public Integer iceCheckMinInterval;
     public boolean disableIPv6OnWifi;
+    // By default, PeerConnection will use a limited number of IPv6 network
+    // interfaces, in order to avoid too many ICE candidate pairs being created
+    // and delaying ICE completion.
+    //
+    // Can be set to Integer.MAX_VALUE to effectively disable the limit.
+    public int maxIPv6Networks;
     public IntervalRange iceRegatherIntervalRange;
 
+    // TODO(deadbeef): Instead of duplicating the defaults here, we should do
+    // something to pick up the defaults from C++. The Objective-C equivalent
+    // of RTCConfiguration does that.
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
       bundlePolicy = BundlePolicy.BALANCED;
@@ -217,6 +226,7 @@ public class PeerConnection {
       presumeWritableWhenFullyRelayed = false;
       iceCheckMinInterval = null;
       disableIPv6OnWifi = false;
+      maxIPv6Networks = 5;
       iceRegatherIntervalRange = null;
     }
   };
