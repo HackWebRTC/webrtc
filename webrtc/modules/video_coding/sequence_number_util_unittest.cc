@@ -209,25 +209,27 @@ TEST_F(TestSeqNumUtil, SeqNumComparatorWithDivisor) {
   }
 }
 
-// TODO(philipel): Enable when downstream project can hande these death tests.
-
-TEST(SeqNumUnwrapper, DISABLED_NoBackWardWrap) {
+#if GTEST_HAS_DEATH_TEST
+#if !defined(WEBRTC_ANDROID)
+TEST(SeqNumUnwrapper, NoBackWardWrap) {
   SeqNumUnwrapper<uint8_t> unwrapper;
   EXPECT_EQ(0U, unwrapper.Unwrap(0));
 
   // The unwrapped sequence is not allowed to wrap, if that happens the
   // SeqNumUnwrapper should have been constructed with a higher start value.
-  ASSERT_DEATH_IF_SUPPORTED(unwrapper.Unwrap(255), "");
+  EXPECT_DEATH(unwrapper.Unwrap(255), "");
 }
 
-TEST(SeqNumUnwrapper, DISABLED_NoForwardWrap) {
+TEST(SeqNumUnwrapper, NoForwardWrap) {
   SeqNumUnwrapper<uint32_t> unwrapper(std::numeric_limits<uint64_t>::max());
   EXPECT_EQ(std::numeric_limits<uint64_t>::max(), unwrapper.Unwrap(0));
 
   // The unwrapped sequence is not allowed to wrap, if that happens the
   // SeqNumUnwrapper should have been constructed with a lower start value.
-  ASSERT_DEATH_IF_SUPPORTED(unwrapper.Unwrap(1), "");
+  EXPECT_DEATH(unwrapper.Unwrap(1), "");
 }
+#endif
+#endif
 
 TEST(SeqNumUnwrapper, ForwardWrap) {
   SeqNumUnwrapper<uint8_t> unwrapper;
