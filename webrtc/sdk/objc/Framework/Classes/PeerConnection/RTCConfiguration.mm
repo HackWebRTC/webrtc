@@ -28,6 +28,7 @@
 @synthesize tcpCandidatePolicy = _tcpCandidatePolicy;
 @synthesize candidateNetworkPolicy = _candidateNetworkPolicy;
 @synthesize continualGatheringPolicy = _continualGatheringPolicy;
+@synthesize maxIPv6Networks = _maxIPv6Networks;
 @synthesize audioJitterBufferMaxPackets = _audioJitterBufferMaxPackets;
 @synthesize audioJitterBufferFastAccelerate = _audioJitterBufferFastAccelerate;
 @synthesize iceConnectionReceivingTimeout = _iceConnectionReceivingTimeout;
@@ -71,6 +72,7 @@
     config.continual_gathering_policy;
     _continualGatheringPolicy =
         [[self class] continualGatheringPolicyForNativePolicy:nativePolicy];
+    _maxIPv6Networks = config.max_ipv6_networks;
     _audioJitterBufferMaxPackets = config.audio_jitter_buffer_max_packets;
     _audioJitterBufferFastAccelerate = config.audio_jitter_buffer_fast_accelerate;
     _iceConnectionReceivingTimeout = config.ice_connection_receiving_timeout;
@@ -95,25 +97,27 @@
 }
 
 - (NSString *)description {
-  return [NSString stringWithFormat:
-      @"RTCConfiguration: {\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n%@\n}\n",
-      _iceServers,
-      [[self class] stringForTransportPolicy:_iceTransportPolicy],
-      [[self class] stringForBundlePolicy:_bundlePolicy],
-      [[self class] stringForRtcpMuxPolicy:_rtcpMuxPolicy],
-      [[self class] stringForTcpCandidatePolicy:_tcpCandidatePolicy],
-      [[self class] stringForCandidateNetworkPolicy:_candidateNetworkPolicy],
-      [[self class]
-          stringForContinualGatheringPolicy:_continualGatheringPolicy],
-      _audioJitterBufferMaxPackets,
-      _audioJitterBufferFastAccelerate,
-      _iceConnectionReceivingTimeout,
-      _iceBackupCandidatePairPingInterval,
-      _iceCandidatePoolSize,
-      _shouldPruneTurnPorts,
-      _shouldPresumeWritableWhenFullyRelayed,
-      _iceCheckMinInterval,
-      _iceRegatherIntervalRange];
+  return
+      [NSString stringWithFormat:
+                    @"RTCConfiguration: "
+                    @"{\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n%@\n%d\n}\n",
+                    _iceServers,
+                    [[self class] stringForTransportPolicy:_iceTransportPolicy],
+                    [[self class] stringForBundlePolicy:_bundlePolicy],
+                    [[self class] stringForRtcpMuxPolicy:_rtcpMuxPolicy],
+                    [[self class] stringForTcpCandidatePolicy:_tcpCandidatePolicy],
+                    [[self class] stringForCandidateNetworkPolicy:_candidateNetworkPolicy],
+                    [[self class] stringForContinualGatheringPolicy:_continualGatheringPolicy],
+                    _audioJitterBufferMaxPackets,
+                    _audioJitterBufferFastAccelerate,
+                    _iceConnectionReceivingTimeout,
+                    _iceBackupCandidatePairPingInterval,
+                    _iceCandidatePoolSize,
+                    _shouldPruneTurnPorts,
+                    _shouldPresumeWritableWhenFullyRelayed,
+                    _iceCheckMinInterval,
+                    _iceRegatherIntervalRange,
+                    _maxIPv6Networks];
 }
 
 #pragma mark - Private
@@ -139,6 +143,7 @@
       nativeCandidateNetworkPolicyForPolicy:_candidateNetworkPolicy];
   nativeConfig->continual_gathering_policy = [[self class]
       nativeContinualGatheringPolicyForPolicy:_continualGatheringPolicy];
+  nativeConfig->max_ipv6_networks = _maxIPv6Networks;
   nativeConfig->audio_jitter_buffer_max_packets = _audioJitterBufferMaxPackets;
   nativeConfig->audio_jitter_buffer_fast_accelerate =
       _audioJitterBufferFastAccelerate  ? true : false;

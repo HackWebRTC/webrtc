@@ -84,6 +84,15 @@ RTC_EXPORT
 @property(nonatomic, assign) RTCCandidateNetworkPolicy candidateNetworkPolicy;
 @property(nonatomic, assign)
     RTCContinualGatheringPolicy continualGatheringPolicy;
+
+/** By default, the PeerConnection will use a limited number of IPv6 network
+ *  interfaces, in order to avoid too many ICE candidate pairs being created
+ *  and delaying ICE completion.
+ *
+ *  Can be set to INT_MAX to effectively disable the limit.
+ */
+@property(nonatomic, assign) int maxIPv6Networks;
+
 @property(nonatomic, assign) int audioJitterBufferMaxPackets;
 @property(nonatomic, assign) BOOL audioJitterBufferFastAccelerate;
 @property(nonatomic, assign) int iceConnectionReceivingTimeout;
