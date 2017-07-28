@@ -729,8 +729,6 @@ void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
 
 void AudioEncoderOpus::ApplyAudioNetworkAdaptor() {
   auto config = audio_network_adaptor_->GetEncoderRuntimeConfig();
-  RTC_DCHECK(!config.frame_length_ms || *config.frame_length_ms == 20 ||
-             *config.frame_length_ms == 60);
 
   if (config.bitrate_bps)
     SetTargetBitrate(*config.bitrate_bps);
