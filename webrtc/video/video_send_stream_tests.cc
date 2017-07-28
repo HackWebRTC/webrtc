@@ -374,60 +374,25 @@ TEST_F(VideoSendStreamTest, SupportsVideoTimingFrames) {
   RunBaseTest(&test);
 }
 
-class FakeReceiveStatistics : public NullReceiveStatistics {
+class FakeReceiveStatistics : public ReceiveStatisticsProvider {
  public:
   FakeReceiveStatistics(uint32_t send_ssrc,
                         uint32_t last_sequence_number,
                         uint32_t cumulative_lost,
-                        uint8_t fraction_lost)
-      : lossy_stats_(new LossyStatistician(last_sequence_number,
-                                           cumulative_lost,
-                                           fraction_lost)) {
-    stats_map_[send_ssrc] = lossy_stats_.get();
+                        uint8_t fraction_lost) {
+    stat_.SetMediaSsrc(send_ssrc);
+    stat_.SetExtHighestSeqNum(last_sequence_number);
+    stat_.SetCumulativeLost(cumulative_lost);
+    stat_.SetFractionLost(fraction_lost);
   }
 
-  StatisticianMap GetActiveStatisticians() const override { return stats_map_; }
-
-  StreamStatistician* GetStatistician(uint32_t ssrc) const override {
-    return lossy_stats_.get();
+  std::vector<rtcp::ReportBlock> RtcpReportBlocks(size_t max_blocks) override {
+    EXPECT_GE(max_blocks, 1u);
+    return {stat_};
   }
 
  private:
-  class LossyStatistician : public StreamStatistician {
-   public:
-    LossyStatistician(uint32_t extended_max_sequence_number,
-                      uint32_t cumulative_lost,
-                      uint8_t fraction_lost) {
-      stats_.fraction_lost = fraction_lost;
-      stats_.cumulative_lost = cumulative_lost;
-      stats_.extended_max_sequence_number = extended_max_sequence_number;
-    }
-    bool GetStatistics(RtcpStatistics* statistics, bool reset) override {
-      *statistics = stats_;
-      return true;
-    }
-    void GetDataCounters(size_t* bytes_received,
-                         uint32_t* packets_received) const override {
-      *bytes_received = 0;
-      *packets_received = 0;
-    }
-    void GetReceiveStreamDataCounters(
-        StreamDataCounters* data_counters) const override {}
-    uint32_t BitrateReceived() const override { return 0; }
-    bool IsRetransmitOfOldPacket(const RTPHeader& header,
-                                 int64_t min_rtt) const override {
-      return false;
-    }
-
-    bool IsPacketInOrder(uint16_t sequence_number) const override {
-      return true;
-    }
-
-    RtcpStatistics stats_;
-  };
-
-  std::unique_ptr<LossyStatistician> lossy_stats_;
-  StatisticianMap stats_map_;
+  rtcp::ReportBlock stat_;
 };
 
 class UlpfecObserver : public test::EndToEndTest {
