@@ -54,51 +54,51 @@ namespace webrtc {
 
 // These are used by gtest code, such as if |EXPECT_EQ| fails.
 void PrintTo(const RTCCertificateStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCCodecStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCDataChannelStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCIceCandidatePairStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCLocalIceCandidateStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCRemoteIceCandidateStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCPeerConnectionStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCMediaStreamStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCMediaStreamTrackStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCInboundRTPStreamStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCOutboundRTPStreamStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 void PrintTo(const RTCTransportStats& stats, ::std::ostream* os) {
-  *os << stats.ToString();
+  *os << stats.ToJson();
 }
 
 namespace {

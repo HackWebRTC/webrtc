@@ -103,14 +103,15 @@ RTCStatsReport::ConstIterator RTCStatsReport::end() const {
                        stats_.cend());
 }
 
-std::string RTCStatsReport::ToString() const {
+std::string RTCStatsReport::ToJson() const {
   std::ostringstream oss;
   ConstIterator it = begin();
   if (it != end()) {
-    oss << it->ToString();
+    oss << '[' << it->ToJson();
     for (++it; it != end(); ++it) {
-      oss << '\n' << it->ToString();
+      oss << "," << it->ToJson();
     }
+    oss << ']';
   }
   return oss.str();
 }

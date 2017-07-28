@@ -81,9 +81,9 @@ class RTCStatsReport : public rtc::RefCountInterface {
     return stats_of_type;
   }
 
-  // Creates a human readable string representation of the report, listing all
-  // of its stats objects.
-  std::string ToString() const;
+  // Creates a JSON readable string representation of the report,
+  // listing all of its stats objects.
+  std::string ToJson() const;
 
   friend class rtc::RefCountedObject<RTCStatsReport>;
 

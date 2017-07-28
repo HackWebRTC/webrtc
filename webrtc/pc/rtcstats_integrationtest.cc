@@ -336,7 +336,7 @@ class RTCStatsReportVerifier {
     }
     EXPECT_TRUE(verify_successful) <<
         "One or more problems with the stats. This is the report:\n" <<
-        report_->ToString();
+        report_->ToJson();
   }
 
   bool VerifyRTCCertificateStats(
