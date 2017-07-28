@@ -36,7 +36,6 @@ bool DxgiFrame::Prepare(DesktopSize size, DesktopCapturer::SourceId source_id) {
   if (resolution_tracker_.SetResolution(size)) {
     // Once the output size changed, recreate the SharedDesktopFrame.
     frame_.reset();
-    resolution_tracker_.Reset();
   }
 
   if (!frame_) {
