@@ -8,21 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/resolution_change_detector.h"
+#include "webrtc/modules/desktop_capture/resolution_tracker.h"
 
 namespace webrtc {
 
-bool ResolutionChangeDetector::IsChanged(DesktopSize size) {
+bool ResolutionTracker::SetResolution(DesktopSize size) {
   if (!initialized_) {
     initialized_ = true;
     last_size_ = size;
     return false;
   }
 
-  return !last_size_.equals(size);
+  if (last_size_.equals(size)) {
+    return false;
+  }
+
+  last_size_ = size;
+  return true;
 }
 
-void ResolutionChangeDetector::Reset() {
+void ResolutionTracker::Reset() {
   initialized_ = false;
 }
 

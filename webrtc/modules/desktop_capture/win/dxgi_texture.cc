@@ -57,7 +57,7 @@ bool DxgiTexture::CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
   D3D11_TEXTURE2D_DESC desc = {0};
   texture->GetDesc(&desc);
   desktop_size_.set(desc.Width, desc.Height);
-  if (resolution_change_detector_.IsChanged(desktop_size_)) {
+  if (resolution_tracker_.SetResolution(desktop_size_)) {
     LOG(LS_ERROR) << "Texture size is not consistent with current DxgiTexture.";
     return false;
   }

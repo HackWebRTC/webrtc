@@ -17,7 +17,7 @@
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_types.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/modules/desktop_capture/resolution_change_detector.h"
+#include "webrtc/modules/desktop_capture/resolution_tracker.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/shared_memory.h"
 #include "webrtc/modules/desktop_capture/win/dxgi_context.h"
@@ -52,7 +52,7 @@ class DxgiFrame final {
   Context* context();
 
   SharedMemoryFactory* const factory_;
-  ResolutionChangeDetector resolution_change_detector_;
+  ResolutionTracker resolution_tracker_;
   DesktopCapturer::SourceId source_id_ = kFullDesktopScreenId;
   std::unique_ptr<SharedDesktopFrame> frame_;
   Context context_;

@@ -21,7 +21,7 @@ namespace webrtc {
 class DisplayConfigurationMonitor {
  public:
   // Checks whether the change of display configuration has happened after last
-  // IsChanged() call. This function won't return false for the first time after
+  // IsChanged() call. This function won't return true for the first time after
   // constructor or Reset() call.
   bool IsChanged();
 

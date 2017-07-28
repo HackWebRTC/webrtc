@@ -18,7 +18,7 @@
 
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/modules/desktop_capture/resolution_change_detector.h"
+#include "webrtc/modules/desktop_capture/resolution_tracker.h"
 
 namespace webrtc {
 
@@ -67,7 +67,7 @@ class DxgiTexture {
   DXGI_MAPPED_RECT rect_ = {0};
   DesktopSize desktop_size_;
   std::unique_ptr<DesktopFrame> frame_;
-  ResolutionChangeDetector resolution_change_detector_;
+  ResolutionTracker resolution_tracker_;
 };
 
 }  // namespace webrtc
