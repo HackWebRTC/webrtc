@@ -417,7 +417,6 @@ Call::Call(const Call::Config& config,
       start_ms_(clock_->TimeInMilliseconds()),
       worker_queue_("call_worker_queue"),
       base_bitrate_config_(config.bitrate_config) {
-  RTC_DCHECK(&configuration_thread_checker_);
   RTC_DCHECK(config.event_log != nullptr);
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
