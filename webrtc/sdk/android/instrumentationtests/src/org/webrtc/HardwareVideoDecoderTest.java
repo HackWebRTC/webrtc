@@ -18,8 +18,8 @@ import android.annotation.TargetApi;
 import android.graphics.Matrix;
 import android.support.test.filters.MediumTest;
 import android.util.Log;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -123,8 +123,7 @@ public final class HardwareVideoDecoderTest {
 
     // First, encode a frame.
     VideoFrame.I420Buffer buffer = I420BufferImpl.allocate(SETTINGS.width, SETTINGS.height);
-    VideoFrame frame =
-        new VideoFrame(buffer, rotation, presentationTimestampUs * 1000, new Matrix());
+    VideoFrame frame = new VideoFrame(buffer, rotation, presentationTimestampUs * 1000);
     VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
         new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
 
@@ -141,9 +140,8 @@ public final class HardwareVideoDecoderTest {
     frame = decoded.get();
     assertEquals(frame.getRotation(), rotation);
     assertEquals(frame.getTimestampNs(), presentationTimestampUs * 1000);
-    assertEquals(frame.getTransformMatrix(), new Matrix());
-    assertEquals(frame.getWidth(), SETTINGS.width);
-    assertEquals(frame.getHeight(), SETTINGS.height);
+    assertEquals(frame.getBuffer().getWidth(), SETTINGS.width);
+    assertEquals(frame.getBuffer().getHeight(), SETTINGS.height);
 
     frame.release();
     assertEquals(decoder.release(), VideoCodecStatus.OK);
@@ -200,8 +198,7 @@ public final class HardwareVideoDecoderTest {
 
     // First, encode a frame.
     VideoFrame.I420Buffer buffer = I420BufferImpl.allocate(SETTINGS.width, SETTINGS.height);
-    VideoFrame frame =
-        new VideoFrame(buffer, rotation, presentationTimestampUs * 1000, new Matrix());
+    VideoFrame frame = new VideoFrame(buffer, rotation, presentationTimestampUs * 1000);
     VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
         new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
 
@@ -218,13 +215,13 @@ public final class HardwareVideoDecoderTest {
     frame = decoded.get();
     assertEquals(frame.getRotation(), rotation);
     assertEquals(frame.getTimestampNs(), presentationTimestampUs * 1000);
-    // TODO(mellem):  Compare the matrix to whatever we expect to get back?
-    assertNotNull(frame.getTransformMatrix());
-    assertEquals(frame.getWidth(), SETTINGS.width);
-    assertEquals(frame.getHeight(), SETTINGS.height);
 
     assertTrue(frame.getBuffer() instanceof VideoFrame.TextureBuffer);
     VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) frame.getBuffer();
+    // TODO(mellem):  Compare the matrix to whatever we expect to get back?
+    assertNotNull(textureBuffer.getTransformMatrix());
+    assertEquals(textureBuffer.getWidth(), SETTINGS.width);
+    assertEquals(textureBuffer.getHeight(), SETTINGS.height);
     assertEquals(textureBuffer.getType(), VideoFrame.TextureBuffer.Type.OES);
 
     assertEquals(decoder.release(), VideoCodecStatus.OK);

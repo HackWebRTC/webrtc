@@ -59,9 +59,7 @@ class JavaVideoRendererWrapper
           break;
         case AndroidVideoFrameBuffer::AndroidType::kJavaBuffer:
           j_frame = static_cast<AndroidVideoBuffer*>(android_buffer)
-                        ->ToJavaI420Frame(jni(), video_frame.width(),
-                                          video_frame.height(),
-                                          video_frame.rotation());
+                        ->ToJavaI420Frame(jni(), video_frame.rotation());
           break;
         default:
           RTC_NOTREACHED();

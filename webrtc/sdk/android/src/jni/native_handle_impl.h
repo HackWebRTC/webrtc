@@ -108,14 +108,13 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
                      jmethodID j_release_id,
                      int width,
                      int height,
-                     const Matrix& matrix,
                      jobject j_video_frame_buffer);
   ~AndroidVideoBuffer() override;
 
   jobject video_frame_buffer() const;
 
   // Returns an instance of VideoRenderer.I420Frame (deprecated)
-  jobject ToJavaI420Frame(JNIEnv* jni, int width, int height, int rotation);
+  jobject ToJavaI420Frame(JNIEnv* jni, int rotation);
 
  private:
   Type type() const override;
@@ -129,7 +128,6 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
   const jmethodID j_release_id_;
   const int width_;
   const int height_;
-  const Matrix matrix_;
   // Holds a VideoFrame.Buffer.
   ScopedGlobalRef<jobject> j_video_frame_buffer_;
 };
@@ -143,23 +141,19 @@ class AndroidVideoBufferFactory {
                                  uint32_t timestamp_rtp) const;
 
   rtc::scoped_refptr<AndroidVideoBuffer> CreateBuffer(
-      int width,
-      int height,
-      const Matrix& matrix,
       jobject j_video_frame_buffer) const;
 
  private:
   ScopedGlobalRef<jclass> j_video_frame_class_;
   jmethodID j_get_buffer_id_;
-  jmethodID j_get_width_id_;
-  jmethodID j_get_height_id_;
   jmethodID j_get_rotation_id_;
-  jmethodID j_get_transform_matrix_id_;
   jmethodID j_get_timestamp_ns_id_;
 
   ScopedGlobalRef<jclass> j_video_frame_buffer_class_;
   jmethodID j_retain_id_;
   jmethodID j_release_id_;
+  jmethodID j_get_width_id_;
+  jmethodID j_get_height_id_;
 };
 
 }  // namespace webrtc_jni

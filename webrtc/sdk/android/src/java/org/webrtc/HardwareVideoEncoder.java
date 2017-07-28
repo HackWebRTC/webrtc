@@ -235,8 +235,8 @@ class HardwareVideoEncoder implements VideoEncoder {
     }
 
     // If input resolution changed, restart the codec with the new resolution.
-    int frameWidth = videoFrame.getWidth();
-    int frameHeight = videoFrame.getHeight();
+    int frameWidth = videoFrame.getBuffer().getWidth();
+    int frameHeight = videoFrame.getBuffer().getHeight();
     if (frameWidth != width || frameHeight != height) {
       VideoCodecStatus status = resetCodec(frameWidth, frameHeight);
       if (status != VideoCodecStatus.OK) {
@@ -271,8 +271,8 @@ class HardwareVideoEncoder implements VideoEncoder {
     EncodedImage.Builder builder = EncodedImage.builder()
                                        .setCaptureTimeMs(presentationTimestampMs)
                                        .setCompleteFrame(true)
-                                       .setEncodedWidth(videoFrame.getWidth())
-                                       .setEncodedHeight(videoFrame.getHeight())
+                                       .setEncodedWidth(videoFrame.getBuffer().getWidth())
+                                       .setEncodedHeight(videoFrame.getBuffer().getHeight())
                                        .setRotation(videoFrame.getRotation());
     outputBuilders.offer(builder);
 
@@ -293,7 +293,7 @@ class HardwareVideoEncoder implements VideoEncoder {
 
   private VideoCodecStatus encodeTextureBuffer(
       VideoFrame videoFrame, VideoFrame.TextureBuffer textureBuffer) {
-    Matrix matrix = videoFrame.getTransformMatrix();
+    Matrix matrix = textureBuffer.getTransformMatrix();
     float[] transformationMatrix = RendererCommon.convertMatrixFromAndroidGraphicsMatrix(matrix);
 
     try {

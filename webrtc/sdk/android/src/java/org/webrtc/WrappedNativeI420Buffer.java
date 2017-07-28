@@ -94,6 +94,13 @@ class WrappedNativeI420Buffer implements VideoFrame.I420Buffer {
     nativeRelease(nativeBuffer);
   }
 
+  @Override
+  public VideoFrame.Buffer cropAndScale(
+      int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
+    return VideoFrame.cropAndScaleI420(
+        this, cropX, cropY, cropWidth, cropHeight, scaleWidth, scaleHeight);
+  }
+
   private static native long nativeAddRef(long nativeBuffer);
   private static native long nativeRelease(long nativeBuffer);
 }

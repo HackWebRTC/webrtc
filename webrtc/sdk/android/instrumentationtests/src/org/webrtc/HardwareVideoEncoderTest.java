@@ -101,8 +101,7 @@ public class HardwareVideoEncoderTest {
     assertEquals(encoder.initEncode(SETTINGS, callback), VideoCodecStatus.OK);
 
     VideoFrame.I420Buffer buffer = I420BufferImpl.allocate(SETTINGS.width, SETTINGS.height);
-    VideoFrame frame =
-        new VideoFrame(buffer, 0 /* rotation */, presentationTimestampUs * 1000, new Matrix());
+    VideoFrame frame = new VideoFrame(buffer, 0 /* rotation */, presentationTimestampUs * 1000);
     VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
         new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
 
@@ -163,6 +162,11 @@ public class HardwareVideoEncoderTest {
       }
 
       @Override
+      public Matrix getTransformMatrix() {
+        return new Matrix();
+      }
+
+      @Override
       public int getWidth() {
         return SETTINGS.width;
       }
@@ -182,9 +186,14 @@ public class HardwareVideoEncoderTest {
 
       @Override
       public void release() {}
+
+      @Override
+      public VideoFrame.Buffer cropAndScale(
+          int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
+        return null;
+      }
     };
-    VideoFrame frame =
-        new VideoFrame(buffer, 0 /* rotation */, presentationTimestampUs * 1000, new Matrix());
+    VideoFrame frame = new VideoFrame(buffer, 0 /* rotation */, presentationTimestampUs * 1000);
     VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
         new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
 

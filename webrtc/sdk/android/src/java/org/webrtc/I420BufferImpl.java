@@ -15,32 +15,28 @@ import org.webrtc.VideoFrame.I420Buffer;
 
 /** Implementation of an I420 VideoFrame buffer. */
 class I420BufferImpl implements VideoFrame.I420Buffer {
-  private final ByteBuffer buffer;
   private final int width;
   private final int height;
-  private final int chromaHeight;
-  private final int yPos;
+  private final ByteBuffer dataY;
+  private final ByteBuffer dataU;
+  private final ByteBuffer dataV;
   private final int strideY;
-  private final int uPos;
   private final int strideU;
-  private final int vPos;
   private final int strideV;
-  private final ReleaseCallback releaseCallback;
+  private final Runnable releaseCallback;
 
   private int refCount;
 
-  /** Allocates an I420Buffer backed by existing data. */
-  I420BufferImpl(ByteBuffer buffer, int width, int height, int yPos, int strideY, int uPos,
-      int strideU, int vPos, int strideV, ReleaseCallback releaseCallback) {
-    this.buffer = buffer;
+  /** Constructs an I420Buffer backed by existing data. */
+  I420BufferImpl(int width, int height, ByteBuffer dataY, int strideY, ByteBuffer dataU,
+      int strideU, ByteBuffer dataV, int strideV, Runnable releaseCallback) {
     this.width = width;
     this.height = height;
-    this.chromaHeight = (height + 1) / 2;
-    this.yPos = yPos;
+    this.dataY = dataY;
+    this.dataU = dataU;
+    this.dataV = dataV;
     this.strideY = strideY;
-    this.uPos = uPos;
     this.strideU = strideU;
-    this.vPos = vPos;
     this.strideV = strideV;
     this.releaseCallback = releaseCallback;
 
@@ -54,9 +50,22 @@ class I420BufferImpl implements VideoFrame.I420Buffer {
     int yPos = 0;
     int uPos = yPos + width * height;
     int vPos = uPos + strideUV * chromaHeight;
+
     ByteBuffer buffer = ByteBuffer.allocateDirect(width * height + 2 * strideUV * chromaHeight);
-    return new I420BufferImpl(
-        buffer, width, height, yPos, width, uPos, strideUV, vPos, strideUV, null);
+
+    buffer.position(yPos);
+    buffer.limit(uPos);
+    ByteBuffer dataY = buffer.slice();
+
+    buffer.position(uPos);
+    buffer.limit(vPos);
+    ByteBuffer dataU = buffer.slice();
+
+    buffer.position(vPos);
+    buffer.limit(vPos + strideUV * chromaHeight);
+    ByteBuffer dataV = buffer.slice();
+
+    return new I420BufferImpl(width, height, dataY, width, dataU, strideUV, dataV, strideUV, null);
   }
 
   @Override
@@ -71,26 +80,17 @@ class I420BufferImpl implements VideoFrame.I420Buffer {
 
   @Override
   public ByteBuffer getDataY() {
-    ByteBuffer data = buffer.slice();
-    data.position(yPos);
-    data.limit(yPos + getStrideY() * height);
-    return data;
+    return dataY;
   }
 
   @Override
   public ByteBuffer getDataU() {
-    ByteBuffer data = buffer.slice();
-    data.position(uPos);
-    data.limit(uPos + strideU * chromaHeight);
-    return data;
+    return dataU;
   }
 
   @Override
   public ByteBuffer getDataV() {
-    ByteBuffer data = buffer.slice();
-    data.position(vPos);
-    data.limit(vPos + strideV * chromaHeight);
-    return data;
+    return dataV;
   }
 
   @Override
@@ -121,13 +121,14 @@ class I420BufferImpl implements VideoFrame.I420Buffer {
   @Override
   public void release() {
     if (--refCount == 0 && releaseCallback != null) {
-      releaseCallback.onRelease();
+      releaseCallback.run();
     }
   }
 
-  // Callback called when the frame is no longer referenced.
-  interface ReleaseCallback {
-    // Called when the frame is no longer referenced.
-    void onRelease();
+  @Override
+  public VideoFrame.Buffer cropAndScale(
+      int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
+    return VideoFrame.cropAndScaleI420(
+        this, cropX, cropY, cropWidth, cropHeight, scaleWidth, scaleHeight);
   }
 }

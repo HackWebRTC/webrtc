@@ -417,12 +417,11 @@ class HardwareVideoDecoder
   @Override
   public void onTextureFrameAvailable(int oesTextureId, float[] transformMatrix, long timestampNs) {
     VideoFrame.TextureBuffer oesBuffer = surfaceTextureHelper.createTextureBuffer(
-        renderedTextureMetadata.width, renderedTextureMetadata.height, transformMatrix);
-
-    Matrix matrix = RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix);
+        renderedTextureMetadata.width, renderedTextureMetadata.height,
+        RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
 
     VideoFrame frame = new VideoFrame(oesBuffer, renderedTextureMetadata.rotation,
-        renderedTextureMetadata.presentationTimestampUs * 1000, matrix);
+        renderedTextureMetadata.presentationTimestampUs * 1000);
     callback.onDecodedFrame(frame, renderedTextureMetadata.decodeTimeMs, null /* qp */);
     frame.release();
   }
@@ -477,7 +476,7 @@ class HardwareVideoDecoder
     }
 
     long presentationTimeNs = info.presentationTimeUs * 1000;
-    VideoFrame frame = new VideoFrame(frameBuffer, rotation, presentationTimeNs, new Matrix());
+    VideoFrame frame = new VideoFrame(frameBuffer, rotation, presentationTimeNs);
 
     // Note that qp is parsed on the C++ side.
     callback.onDecodedFrame(frame, decodeTimeMs, null /* qp */);
@@ -605,9 +604,9 @@ class HardwareVideoDecoder
       activeOutputBuffers++;
     }
 
-    I420BufferImpl.ReleaseCallback callback = new I420BufferImpl.ReleaseCallback() {
+    Runnable callback = new Runnable() {
       @Override
-      public void onRelease() {
+      public void run() {
         codec.releaseOutputBuffer(outputBufferIndex, false);
         synchronized (activeOutputBuffersLock) {
           activeOutputBuffers--;
@@ -616,8 +615,20 @@ class HardwareVideoDecoder
       }
     };
 
+    buffer.position(yPos);
+    buffer.limit(uPos);
+    ByteBuffer dataY = buffer.slice();
+
+    buffer.position(uPos);
+    buffer.limit(vPos);
+    ByteBuffer dataU = buffer.slice();
+
+    buffer.position(vPos);
+    buffer.limit(vPos + uvStride * sliceHeight / 2);
+    ByteBuffer dataV = buffer.slice();
+
     return new I420BufferImpl(
-        buffer, width, height, yPos, stride, uPos, uvStride, vPos, uvStride, callback);
+        width, height, dataY, stride, dataU, uvStride, dataV, uvStride, callback);
   }
 
   private static void copyI420(ByteBuffer src, int offset, VideoFrame.I420Buffer frameBuffer,
