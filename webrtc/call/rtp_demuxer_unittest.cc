@@ -14,7 +14,7 @@
 #include <string>
 
 #include "webrtc/call/rsid_resolution_observer.h"
-#include "webrtc/call/rtp_packet_sink_interface.h"
+#include "webrtc/call/test/mock_rtp_packet_sink_interface.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -34,11 +34,6 @@ using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::InSequence;
 using ::testing::NiceMock;
-
-class MockRtpPacketSink : public RtpPacketSinkInterface {
- public:
-  MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived&));
-};
 
 class MockRsidResolutionObserver : public RsidResolutionObserver {
  public:

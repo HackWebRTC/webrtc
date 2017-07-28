@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/call/rtx_receive_stream.h"
+#include "webrtc/call/test/mock_rtp_packet_sink_interface.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
@@ -21,11 +22,6 @@ namespace {
 
 using ::testing::_;
 using ::testing::StrictMock;
-
-class MockRtpPacketSink : public RtpPacketSinkInterface {
- public:
-  MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived&));
-};
 
 constexpr int kMediaPayloadType = 100;
 constexpr int kRtxPayloadType = 98;

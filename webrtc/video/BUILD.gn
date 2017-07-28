@@ -265,6 +265,7 @@ if (rtc_include_tests) {
       "../api:video_frame_api",
       "../api/video_codecs:video_codecs_api",
       "../call:call_interfaces",
+      "../call:mock_rtp_interfaces",
       "../call:rtp_receiver",
       "../common_video",
       "../logging:rtc_event_log_api",

@@ -34,7 +34,7 @@ rtc_source_set("call_interfaces") {
 }
 
 # TODO(nisse): These RTP targets should be moved elsewhere
-# when interfaces have stabilized.
+# when interfaces have stabilized. See also TODO for |mock_rtp_interfaces|.
 rtc_source_set("rtp_interfaces") {
   sources = [
     "rtcp_packet_sink_interface.h",
@@ -144,6 +144,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":call",
+      ":mock_rtp_interfaces",
       ":rtp_interfaces",
       ":rtp_receiver",
       ":rtp_sender",
@@ -212,5 +213,19 @@ if (rtc_include_tests) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
+  }
+
+  # TODO(eladalon): This should be moved, as with the TODO for |rtp_interfaces|.
+  rtc_source_set("mock_rtp_interfaces") {
+    testonly = true
+
+    sources = [
+      "test/mock_rtp_packet_sink_interface.h",
+    ]
+    deps = [
+      ":rtp_interfaces",
+      "../test:test_support",
+      "//testing/gmock",
+    ]
   }
 }
