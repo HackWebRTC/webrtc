@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 
+#include <algorithm>
+
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/acm2/acm_receiver.h"
 #include "webrtc/modules/audio_coding/acm2/acm_resampler.h"
@@ -335,7 +337,7 @@ int DownMix(const AudioFrame& frame,
            static_cast<int32_t>(frame_data[2 * n + 1])) >> 1);
     }
   } else {
-    memset(out_buff, 0, frame.samples_per_channel_);
+    std::fill(out_buff, out_buff + frame.samples_per_channel_, 0);
   }
   return 0;
 }
@@ -354,7 +356,7 @@ int UpMix(const AudioFrame& frame, size_t length_out_buff, int16_t* out_buff) {
       out_buff[2 * i] = sample;
     }
   } else {
-    memset(out_buff, 0, 2 * frame.samples_per_channel_);
+    std::fill(out_buff, out_buff + frame.samples_per_channel_ * 2, 0);
   }
   return 0;
 }
