@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/api/audio_codecs/audio_decoder_factory_template.h"
+#include "webrtc/api/audio_codecs/g711/audio_decoder_g711.h"
 #include "webrtc/api/audio_codecs/g722/audio_decoder_g722.h"
 #include "webrtc/api/audio_codecs/ilbc/audio_decoder_ilbc.h"
 #include "webrtc/api/audio_codecs/opus/audio_decoder_opus.h"
@@ -111,6 +112,24 @@ TEST(AudioDecoderFactoryTemplateTest, TwoDecoderTypes) {
       factory->MakeAudioDecoder({"sham", 16000, 2, {{"param", "value"}}});
   ASSERT_NE(nullptr, dec2);
   EXPECT_EQ(16000, dec2->SampleRateHz());
+}
+
+TEST(AudioDecoderFactoryTemplateTest, G711) {
+  auto factory = CreateAudioDecoderFactory<AudioDecoderG711>();
+  EXPECT_THAT(factory->GetSupportedDecoders(),
+              testing::ElementsAre(
+                  AudioCodecSpec{{"PCMU", 8000, 1}, {8000, 1, 64000}},
+                  AudioCodecSpec{{"PCMA", 8000, 1}, {8000, 1, 64000}}));
+  EXPECT_FALSE(factory->IsSupportedDecoder({"g711", 8000, 1}));
+  EXPECT_TRUE(factory->IsSupportedDecoder({"PCMU", 8000, 1}));
+  EXPECT_TRUE(factory->IsSupportedDecoder({"pcma", 8000, 1}));
+  EXPECT_EQ(nullptr, factory->MakeAudioDecoder({"pcmu", 16000, 1}));
+  auto dec1 = factory->MakeAudioDecoder({"pcmu", 8000, 1});
+  ASSERT_NE(nullptr, dec1);
+  EXPECT_EQ(8000, dec1->SampleRateHz());
+  auto dec2 = factory->MakeAudioDecoder({"PCMA", 8000, 1});
+  ASSERT_NE(nullptr, dec2);
+  EXPECT_EQ(8000, dec2->SampleRateHz());
 }
 
 TEST(AudioDecoderFactoryTemplateTest, G722) {

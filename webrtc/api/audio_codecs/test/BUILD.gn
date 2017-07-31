@@ -25,6 +25,8 @@ if (rtc_include_tests) {
       "../../../rtc_base:rtc_base_approved",
       "../../../test:audio_codec_mocks",
       "../../../test:test_support",
+      "../g711:audio_decoder_g711",
+      "../g711:audio_encoder_g711",
       "../g722:audio_decoder_g722",
       "../g722:audio_encoder_g722",
       "../ilbc:audio_decoder_ilbc",

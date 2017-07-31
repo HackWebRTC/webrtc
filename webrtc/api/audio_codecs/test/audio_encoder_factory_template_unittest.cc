@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/api/audio_codecs/audio_encoder_factory_template.h"
+#include "webrtc/api/audio_codecs/g711/audio_encoder_g711.h"
 #include "webrtc/api/audio_codecs/g722/audio_encoder_g722.h"
 #include "webrtc/api/audio_codecs/ilbc/audio_encoder_ilbc.h"
 #include "webrtc/api/audio_codecs/opus/audio_encoder_opus.h"
@@ -118,6 +119,25 @@ TEST(AudioEncoderFactoryTemplateTest, TwoEncoderTypes) {
       factory->MakeAudioEncoder(17, {"sham", 16000, 2, {{"param", "value"}}});
   ASSERT_NE(nullptr, enc2);
   EXPECT_EQ(16000, enc2->SampleRateHz());
+}
+
+TEST(AudioEncoderFactoryTemplateTest, G711) {
+  auto factory = CreateAudioEncoderFactory<AudioEncoderG711>();
+  EXPECT_THAT(factory->GetSupportedEncoders(),
+              testing::ElementsAre(
+                  AudioCodecSpec{{"PCMU", 8000, 1}, {8000, 1, 64000}},
+                  AudioCodecSpec{{"PCMA", 8000, 1}, {8000, 1, 64000}}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>(),
+            factory->QueryAudioEncoder({"PCMA", 16000, 1}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>({8000, 1, 64000}),
+            factory->QueryAudioEncoder({"PCMA", 8000, 1}));
+  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"PCMU", 16000, 1}));
+  auto enc1 = factory->MakeAudioEncoder(17, {"PCMU", 8000, 1});
+  ASSERT_NE(nullptr, enc1);
+  EXPECT_EQ(8000, enc1->SampleRateHz());
+  auto enc2 = factory->MakeAudioEncoder(17, {"PCMA", 8000, 1});
+  ASSERT_NE(nullptr, enc2);
+  EXPECT_EQ(8000, enc2->SampleRateHz());
 }
 
 TEST(AudioEncoderFactoryTemplateTest, G722) {
