@@ -51,7 +51,7 @@
   return self;
 }
 
-- (webrtc::EncodedImage)toCpp {
+- (webrtc::EncodedImage)nativeEncodedImage {
   // Return the pointer without copying.
   webrtc::EncodedImage encodedImage(
       (uint8_t *)_buffer.bytes, (size_t)_buffer.length, (size_t)_buffer.length);

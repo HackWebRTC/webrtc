@@ -36,7 +36,7 @@ bool IsHighProfileEnabled() {
 
 @synthesize packetizationMode = _packetizationMode;
 
-- (webrtc::CodecSpecificInfo)toCpp {
+- (webrtc::CodecSpecificInfo)nativeCodecSpecificInfo {
   webrtc::CodecSpecificInfo codecSpecificInfo;
   codecSpecificInfo.codecType = webrtc::kVideoCodecH264;
   codecSpecificInfo.codec_name = "H264";
@@ -62,7 +62,7 @@ class H264VideoToolboxEncodeCompleteCallback : public webrtc::EncodedImageCallba
         (RTCH264PacketizationMode)codec_specific_info->codecSpecific.H264.packetization_mode;
 
     RTCRtpFragmentationHeader *header =
-        [[RTCRtpFragmentationHeader alloc] initWithFragmentationHeader:fragmentation];
+        [[RTCRtpFragmentationHeader alloc] initWithNativeFragmentationHeader:fragmentation];
 
     callback(image, info, header);
     return Result(Result::OK, 0);
@@ -105,7 +105,7 @@ class H264VideoToolboxDecodeCompleteCallback : public webrtc::DecodedImageCallba
 
 - (instancetype)initWithCodecInfo:(RTCVideoCodecInfo *)codecInfo {
   if (self = [super init]) {
-    cricket::VideoCodec codec = [codecInfo toCpp];
+    cricket::VideoCodec codec = [codecInfo nativeVideoCodec];
     _videoToolboxEncoder = new webrtc::H264VideoToolboxEncoder(codec);
   }
   return self;
@@ -133,7 +133,7 @@ class H264VideoToolboxDecodeCompleteCallback : public webrtc::DecodedImageCallba
 
 - (NSInteger)startEncodeWithSettings:(RTCVideoEncoderSettings *)settings
                        numberOfCores:(int)numberOfCores {
-  std::unique_ptr<webrtc::VideoCodec> codecSettings = [settings toCpp];
+  std::unique_ptr<webrtc::VideoCodec> codecSettings = [settings createNativeVideoEncoderSettings];
   return _videoToolboxEncoder->InitEncode(
       codecSettings.release(), numberOfCores, kDefaultPayloadSize);
 }
@@ -155,7 +155,7 @@ class H264VideoToolboxDecodeCompleteCallback : public webrtc::DecodedImageCallba
   // Handle types than can be converted into one of webrtc::CodecSpecificInfo's hard coded cases.
   webrtc::CodecSpecificInfo codecSpecificInfo;
   if ([info isKindOfClass:[RTCCodecSpecificInfoH264 class]]) {
-    codecSpecificInfo = [(RTCCodecSpecificInfoH264 *)info toCpp];
+    codecSpecificInfo = [(RTCCodecSpecificInfoH264 *)info nativeCodecSpecificInfo];
   }
 
   std::vector<webrtc::FrameType> nativeFrameTypes;
@@ -189,7 +189,7 @@ class H264VideoToolboxDecodeCompleteCallback : public webrtc::DecodedImageCallba
 
 - (NSInteger)startDecodeWithSettings:(RTCVideoEncoderSettings *)settings
                        numberOfCores:(int)numberOfCores {
-  std::unique_ptr<webrtc::VideoCodec> codecSettings = [settings toCpp];
+  std::unique_ptr<webrtc::VideoCodec> codecSettings = [settings createNativeVideoEncoderSettings];
   return _videoToolboxDecoder->InitDecode(codecSettings.release(), numberOfCores);
 }
 
@@ -222,15 +222,16 @@ class H264VideoToolboxDecodeCompleteCallback : public webrtc::DecodedImageCallba
     fragmentationHeader:(RTCRtpFragmentationHeader *)fragmentationHeader
       codecSpecificInfo:(__nullable id<RTCCodecSpecificInfo>)info
            renderTimeMs:(int64_t)renderTimeMs {
-  webrtc::EncodedImage image = [encodedImage toCpp];
+  webrtc::EncodedImage image = [encodedImage nativeEncodedImage];
 
   // Handle types than can be converted into one of webrtc::CodecSpecificInfo's hard coded cases.
   webrtc::CodecSpecificInfo codecSpecificInfo;
   if ([info isKindOfClass:[RTCCodecSpecificInfoH264 class]]) {
-    codecSpecificInfo = [(RTCCodecSpecificInfoH264 *)info toCpp];
+    codecSpecificInfo = [(RTCCodecSpecificInfoH264 *)info nativeCodecSpecificInfo];
   }
 
-  std::unique_ptr<webrtc::RTPFragmentationHeader> header = [fragmentationHeader toCpp];
+  std::unique_ptr<webrtc::RTPFragmentationHeader> header =
+      [fragmentationHeader createNativeFragmentationHeader];
 
   return _videoToolboxDecoder->Decode(
       image, missingFrames, header.release(), &codecSpecificInfo, renderTimeMs);

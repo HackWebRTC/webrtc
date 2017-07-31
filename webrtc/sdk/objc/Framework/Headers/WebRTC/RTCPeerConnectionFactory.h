@@ -24,8 +24,8 @@ NS_ASSUME_NONNULL_BEGIN
 @class RTCVideoSource;
 @class RTCVideoTrack;
 @protocol RTCPeerConnectionDelegate;
-@protocol RTCVideoEncoderFactory;
 @protocol RTCVideoDecoderFactory;
+@protocol RTCVideoEncoderFactory;
 
 RTC_EXPORT
 @interface RTCPeerConnectionFactory : NSObject

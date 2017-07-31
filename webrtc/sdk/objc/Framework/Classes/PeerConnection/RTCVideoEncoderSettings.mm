@@ -26,7 +26,7 @@
 @synthesize maxFramerate = _maxFramerate;
 @synthesize qpMax = _qpMax;
 
-- (instancetype)initWithVideoCodec:(const webrtc::VideoCodec *__nullable)videoCodec {
+- (instancetype)initWithNativeVideoCodec:(const webrtc::VideoCodec *)videoCodec {
   if (self = [super init]) {
     if (videoCodec) {
       rtc::Optional<const char *> codecName = CodecTypeToPayloadName(videoCodec->codecType);
@@ -48,7 +48,7 @@
   return self;
 }
 
-- (std::unique_ptr<webrtc::VideoCodec>)toCpp {
+- (std::unique_ptr<webrtc::VideoCodec>)createNativeVideoEncoderSettings {
   auto codecSettings = std::unique_ptr<webrtc::VideoCodec>(new webrtc::VideoCodec);
 
   rtc::Optional<webrtc::VideoCodecType> codecType =

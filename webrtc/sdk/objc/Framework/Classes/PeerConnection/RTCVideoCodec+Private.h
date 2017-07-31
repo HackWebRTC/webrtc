@@ -22,35 +22,35 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RTCEncodedImage ()
 
 - (instancetype)initWithNativeEncodedImage:(webrtc::EncodedImage)encodedImage;
-- (webrtc::EncodedImage)toCpp;
+- (webrtc::EncodedImage)nativeEncodedImage;
 
 @end
 
 @interface RTCVideoEncoderSettings ()
 
-- (instancetype)initWithVideoCodec:(const webrtc::VideoCodec *__nullable)videoCodec;
-- (std::unique_ptr<webrtc::VideoCodec>)toCpp;
+- (instancetype)initWithNativeVideoCodec:(const webrtc::VideoCodec *__nullable)videoCodec;
+- (std::unique_ptr<webrtc::VideoCodec>)createNativeVideoEncoderSettings;
 
 @end
 
 @interface RTCCodecSpecificInfoH264 ()
 
-- (webrtc::CodecSpecificInfo)toCpp;
+- (webrtc::CodecSpecificInfo)nativeCodecSpecificInfo;
 
 @end
 
 @interface RTCRtpFragmentationHeader ()
 
-- (instancetype)initWithFragmentationHeader:
+- (instancetype)initWithNativeFragmentationHeader:
         (const webrtc::RTPFragmentationHeader *__nullable)fragmentationHeader;
-- (std::unique_ptr<webrtc::RTPFragmentationHeader>)toCpp;
+- (std::unique_ptr<webrtc::RTPFragmentationHeader>)createNativeFragmentationHeader;
 
 @end
 
 @interface RTCVideoCodecInfo ()
 
-- (instancetype)initWithVideoCodec:(cricket::VideoCodec)videoCodec;
-- (cricket::VideoCodec)toCpp;
+- (instancetype)initWithNativeVideoCodec:(cricket::VideoCodec)videoCodec;
+- (cricket::VideoCodec)nativeVideoCodec;
 
 @end
 

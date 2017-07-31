@@ -19,7 +19,7 @@
 @synthesize fragmentationTimeDiff = _fragmentationTimeDiff;
 @synthesize fragmentationPlType = _fragmentationPlType;
 
-- (instancetype)initWithFragmentationHeader:
+- (instancetype)initWithNativeFragmentationHeader:
         (const webrtc::RTPFragmentationHeader *)fragmentationHeader {
   if (self = [super init]) {
     if (fragmentationHeader) {
@@ -44,7 +44,7 @@
   return self;
 }
 
-- (std::unique_ptr<webrtc::RTPFragmentationHeader>)toCpp {
+- (std::unique_ptr<webrtc::RTPFragmentationHeader>)createNativeFragmentationHeader {
   auto fragmentationHeader =
       std::unique_ptr<webrtc::RTPFragmentationHeader>(new webrtc::RTPFragmentationHeader);
   fragmentationHeader->VerifyAndAllocateFragmentationHeader(_fragmentationOffset.count);

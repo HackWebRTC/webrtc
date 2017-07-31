@@ -32,7 +32,7 @@
   return self;
 }
 
-- (instancetype)initWithVideoCodec:(cricket::VideoCodec)videoCodec {
+- (instancetype)initWithNativeVideoCodec:(cricket::VideoCodec)videoCodec {
   NSMutableDictionary *params = [NSMutableDictionary dictionary];
   for (auto it = videoCodec.params.begin(); it != videoCodec.params.end(); ++it) {
     [params setObject:[NSString stringForStdString:it->second]
@@ -43,7 +43,7 @@
                     parameters:params];
 }
 
-- (cricket::VideoCodec)toCpp {
+- (cricket::VideoCodec)nativeVideoCodec {
   cricket::VideoCodec codec([NSString stdStringForString:_name]);
   for (NSString *paramKey in _parameters.allKeys) {
     codec.SetParam([NSString stdStringForString:paramKey],

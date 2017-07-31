@@ -39,7 +39,7 @@ RTC_EXPORT
 @property(nonatomic, assign) RTCFrameType frameType;
 @property(nonatomic, assign) int rotation;
 @property(nonatomic, assign) BOOL completeFrame;
-@property(nonatomic, retain) NSNumber *qp;
+@property(nonatomic, strong) NSNumber *qp;
 
 @end
 
@@ -88,7 +88,7 @@ RTC_EXPORT
 RTC_EXPORT
 @interface RTCVideoEncoderSettings : NSObject
 
-@property(nonatomic, retain) NSString *name;
+@property(nonatomic, strong) NSString *name;
 
 @property(nonatomic, assign) unsigned short width;
 @property(nonatomic, assign) unsigned short height;

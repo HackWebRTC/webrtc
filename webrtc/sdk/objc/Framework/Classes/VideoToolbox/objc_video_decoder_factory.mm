@@ -35,7 +35,7 @@ class ObjCVideoDecoder : public VideoDecoder {
 
   int32_t InitDecode(const VideoCodec *codec_settings, int32_t number_of_cores) {
     RTCVideoEncoderSettings *settings =
-        [[RTCVideoEncoderSettings alloc] initWithVideoCodec:codec_settings];
+        [[RTCVideoEncoderSettings alloc] initWithNativeVideoCodec:codec_settings];
     return [decoder_ startDecodeWithSettings:settings numberOfCores:number_of_cores];
   }
 
@@ -47,7 +47,7 @@ class ObjCVideoDecoder : public VideoDecoder {
     RTCEncodedImage *encodedImage =
         [[RTCEncodedImage alloc] initWithNativeEncodedImage:input_image];
     RTCRtpFragmentationHeader *header =
-        [[RTCRtpFragmentationHeader alloc] initWithFragmentationHeader:fragmentation];
+        [[RTCRtpFragmentationHeader alloc] initWithNativeFragmentationHeader:fragmentation];
 
     // webrtc::CodecSpecificInfo only handles a hard coded list of codecs
     id<RTCCodecSpecificInfo> rtcCodecSpecificInfo = nil;
