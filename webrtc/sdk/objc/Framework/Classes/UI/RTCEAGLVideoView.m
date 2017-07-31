@@ -121,7 +121,9 @@
 - (instancetype)initWithFrame:(CGRect)frame shader:(id<RTCVideoViewShading>)shader {
   if (self = [super initWithFrame:frame]) {
     _shader = shader;
-    [self configure];
+    if (![self configure]) {
+      return nil;
+    }
   }
   return self;
 }
@@ -129,16 +131,22 @@
 - (instancetype)initWithCoder:(NSCoder *)aDecoder shader:(id<RTCVideoViewShading>)shader {
   if (self = [super initWithCoder:aDecoder]) {
     _shader = shader;
-    [self configure];
+    if (![self configure]) {
+      return nil;
+    }
   }
   return self;
 }
 
-- (void)configure {
+- (BOOL)configure {
   EAGLContext *glContext =
     [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
   if (!glContext) {
     glContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+  }
+  if (!glContext) {
+    RTCLogError(@"Failed to create EAGLContext");
+    return NO;
   }
   _glContext = glContext;
 
@@ -176,6 +184,7 @@
       [strongSelf displayLinkTimerDidFire];
     }];
   [self setupGL];
+  return YES;
 }
 
 - (void)dealloc {
