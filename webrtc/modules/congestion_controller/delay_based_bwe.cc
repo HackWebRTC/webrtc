@@ -57,6 +57,20 @@ bool BweSparseUpdateExperimentIsEnabled() {
 
 namespace webrtc {
 
+DelayBasedBwe::Result::Result()
+    : updated(false),
+      probe(false),
+      target_bitrate_bps(0),
+      recovered_from_overuse(false) {}
+
+DelayBasedBwe::Result::Result(bool probe, uint32_t target_bitrate_bps)
+    : updated(true),
+      probe(probe),
+      target_bitrate_bps(target_bitrate_bps),
+      recovered_from_overuse(false) {}
+
+DelayBasedBwe::Result::~Result() {}
+
 DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
     : event_log_(event_log),
       clock_(clock),
@@ -102,6 +116,8 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
   }
   bool overusing = false;
   bool delayed_feedback = true;
+  bool recovered_from_overuse = false;
+  BandwidthUsage prev_detector_state = detector_.State();
   for (const auto& packet_feedback : packet_feedback_vector) {
     if (packet_feedback.send_time_ms < 0)
       continue;
@@ -109,9 +125,15 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     IncomingPacketFeedback(packet_feedback);
     if (!in_sparse_update_experiment_)
       overusing |= (detector_.State() == BandwidthUsage::kBwOverusing);
+    if (prev_detector_state == BandwidthUsage::kBwUnderusing &&
+        detector_.State() == BandwidthUsage::kBwNormal) {
+      recovered_from_overuse = true;
+    }
+    prev_detector_state = detector_.State();
   }
   if (in_sparse_update_experiment_)
     overusing = (detector_.State() == BandwidthUsage::kBwOverusing);
+
   if (delayed_feedback) {
     ++consecutive_delayed_feedbacks_;
     if (consecutive_delayed_feedbacks_ >= kMaxConsecutiveFailedLookups) {
@@ -120,7 +142,8 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     }
   } else {
     consecutive_delayed_feedbacks_ = 0;
-    return MaybeUpdateEstimate(overusing, acked_bitrate_bps);
+    return MaybeUpdateEstimate(overusing, acked_bitrate_bps,
+                               recovered_from_overuse);
   }
   return Result();
 }
@@ -189,7 +212,8 @@ void DelayBasedBwe::IncomingPacketFeedback(
 
 DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
     bool overusing,
-    rtc::Optional<uint32_t> acked_bitrate_bps) {
+    rtc::Optional<uint32_t> acked_bitrate_bps,
+    bool recovered_from_overuse) {
   Result result;
   int64_t now_ms = clock_->TimeInMilliseconds();
 
@@ -223,6 +247,7 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
     } else {
       result.updated = UpdateEstimate(now_ms, acked_bitrate_bps, overusing,
                                       &result.target_bitrate_bps);
+      result.recovered_from_overuse = recovered_from_overuse;
     }
   }
   if (result.updated) {

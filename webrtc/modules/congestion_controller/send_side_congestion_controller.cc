@@ -283,8 +283,10 @@ void SendSideCongestionController::OnTransportFeedback(
 
   bool currently_in_alr =
       pacer_->GetApplicationLimitedRegionStartTime().has_value();
-  if (!currently_in_alr && was_in_alr_) {
-    acknowledged_bitrate_estimator_->SetAlrEndedTimeMs(rtc::TimeMillis());
+  if (was_in_alr_ && !currently_in_alr) {
+    int64_t now_ms = rtc::TimeMillis();
+    acknowledged_bitrate_estimator_->SetAlrEndedTimeMs(now_ms);
+    probe_controller_->SetAlrEndedTimeMs(now_ms);
   }
   was_in_alr_ = currently_in_alr;
 
@@ -296,8 +298,13 @@ void SendSideCongestionController::OnTransportFeedback(
     result = delay_based_bwe_->IncomingPacketFeedbackVector(
         feedback_vector, acknowledged_bitrate_estimator_->bitrate_bps());
   }
-  if (result.updated)
+  if (result.updated) {
     bitrate_controller_->OnDelayBasedBweResult(result);
+    // Update the estimate in the ProbeController, in case we want to probe.
+    MaybeTriggerOnNetworkChanged();
+  }
+  if (result.recovered_from_overuse)
+    probe_controller_->RequestProbe();
 }
 
 std::vector<PacketFeedback>

@@ -38,6 +38,10 @@ class ProbeController {
 
   void EnablePeriodicAlrProbing(bool enable);
 
+  void SetAlrEndedTimeMs(int64_t alr_end_time);
+
+  void RequestProbe();
+
   // Resets the ProbeController to a state equivalent to as if it was just
   // created EXCEPT for |enable_periodic_alr_probing_|.
   void Reset();
@@ -69,9 +73,13 @@ class ProbeController {
   int64_t estimated_bitrate_bps_ GUARDED_BY(critsect_);
   int64_t start_bitrate_bps_ GUARDED_BY(critsect_);
   int64_t max_bitrate_bps_ GUARDED_BY(critsect_);
-  int64_t last_alr_probing_time_ GUARDED_BY(critsect_);
+  int64_t last_bwe_drop_probing_time_ms_ GUARDED_BY(critsect_);
+  rtc::Optional<int64_t> alr_end_time_ms_ GUARDED_BY(critsect_);
   bool enable_periodic_alr_probing_ GUARDED_BY(critsect_);
+  int64_t time_of_last_large_drop_ms_ GUARDED_BY(critsect_);
+  int64_t bitrate_before_last_large_drop_bps_ GUARDED_BY(critsect_);
 
+  bool in_rapid_recovery_experiment_ GUARDED_BY(critsect_);
   // For WebRTC.BWE.MidCallProbing.* metric.
   bool mid_call_probing_waiting_for_result_ GUARDED_BY(&critsect_);
   int64_t mid_call_probing_bitrate_bps_ GUARDED_BY(&critsect_);

@@ -36,12 +36,13 @@ class DelayBasedBwe {
   static const int64_t kStreamTimeOutMs = 2000;
 
   struct Result {
-    Result() : updated(false), probe(false), target_bitrate_bps(0) {}
-    Result(bool probe, uint32_t target_bitrate_bps)
-        : updated(true), probe(probe), target_bitrate_bps(target_bitrate_bps) {}
+    Result();
+    Result(bool probe, uint32_t target_bitrate_bps);
+    ~Result();
     bool updated;
     bool probe;
     uint32_t target_bitrate_bps;
+    bool recovered_from_overuse;
   };
 
   DelayBasedBwe(RtcEventLog* event_log, const Clock* clock);
@@ -60,9 +61,9 @@ class DelayBasedBwe {
  private:
   void IncomingPacketFeedback(const PacketFeedback& packet_feedback);
   Result OnLongFeedbackDelay(int64_t arrival_time_ms);
-
   Result MaybeUpdateEstimate(bool overusing,
-                             rtc::Optional<uint32_t> acked_bitrate_bps);
+                             rtc::Optional<uint32_t> acked_bitrate_bps,
+                             bool request_probe);
   // Updates the current remote rate estimate and returns true if a valid
   // estimate exists.
   bool UpdateEstimate(int64_t now_ms,
