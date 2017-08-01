@@ -113,7 +113,8 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       keyframe_request_sender_(keyframe_request_sender),
       timing_(timing),
       has_received_frame_(false) {
-  packet_router_->AddReceiveRtpModule(rtp_rtcp_.get());
+  constexpr bool remb_candidate = true;
+  packet_router_->AddReceiveRtpModule(rtp_rtcp_.get(), remb_candidate);
   rtp_receive_statistics_->RegisterRtpStatisticsCallback(receive_stats_proxy);
   rtp_receive_statistics_->RegisterRtcpStatisticsCallback(receive_stats_proxy);
 

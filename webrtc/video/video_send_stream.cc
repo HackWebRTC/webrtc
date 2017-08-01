@@ -846,8 +846,10 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   // We add the highest spatial layer first to ensure it'll be prioritized
   // when sending padding, with the hope that the packet rate will be smaller,
   // and that it's more important to protect than the lower layers.
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    transport->packet_router()->AddSendRtpModule(rtp_rtcp);
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    constexpr bool remb_candidate = true;
+    transport->packet_router()->AddSendRtpModule(rtp_rtcp, remb_candidate);
+  }
 
   for (size_t i = 0; i < config_->rtp.extensions.size(); ++i) {
     const std::string& extension = config_->rtp.extensions[i].uri;

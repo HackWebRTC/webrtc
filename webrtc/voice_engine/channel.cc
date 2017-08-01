@@ -2508,14 +2508,16 @@ void Channel::RegisterSenderCongestionControlObjects(
   seq_num_allocator_proxy_->SetSequenceNumberAllocator(packet_router);
   rtp_packet_sender_proxy_->SetPacketSender(rtp_packet_sender);
   _rtpRtcpModule->SetStorePacketsStatus(true, 600);
-  packet_router->AddSendRtpModule(_rtpRtcpModule.get());
+  constexpr bool remb_candidate = false;
+  packet_router->AddSendRtpModule(_rtpRtcpModule.get(), remb_candidate);
   packet_router_ = packet_router;
 }
 
 void Channel::RegisterReceiverCongestionControlObjects(
     PacketRouter* packet_router) {
   RTC_DCHECK(packet_router && !packet_router_);
-  packet_router->AddReceiveRtpModule(_rtpRtcpModule.get());
+  constexpr bool remb_candidate = false;
+  packet_router->AddReceiveRtpModule(_rtpRtcpModule.get(), remb_candidate);
   packet_router_ = packet_router;
 }
 
