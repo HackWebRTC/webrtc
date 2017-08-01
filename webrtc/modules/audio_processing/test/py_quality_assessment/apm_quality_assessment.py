@@ -23,11 +23,14 @@ import os
 import sys
 
 import quality_assessment.audioproc_wrapper as audioproc_wrapper
+import quality_assessment.echo_path_simulation as echo_path_simulation
 import quality_assessment.eval_scores as eval_scores
 import quality_assessment.evaluation as evaluation
 import quality_assessment.test_data_generation as test_data_generation
 import quality_assessment.simulation as simulation
 
+_ECHO_PATH_SIMULATOR_NAMES = (
+    echo_path_simulation.EchoPathSimulator.REGISTERED_CLASSES)
 _TEST_DATA_GENERATOR_CLASSES = (
     test_data_generation.TestDataGenerator.REGISTERED_CLASSES)
 _TEST_DATA_GENERATORS_NAMES = _TEST_DATA_GENERATOR_CLASSES.keys()
@@ -53,8 +56,20 @@ def _InstanceArgumentsParser():
                             'called'),
                       default=[_DEFAULT_CONFIG_FILE])
 
-  parser.add_argument('-i', '--input_files', nargs='+', required=True,
-                      help='path to the input wav files (one or more)')
+  parser.add_argument('-i', '--capture_input_files', nargs='+', required=True,
+                      help='path to the capture input wav files (one or more)')
+
+  parser.add_argument('-r', '--render_input_files', nargs='+', required=False,
+                      help=('path to the render input wav files; either '
+                            'omitted or one file for each file in '
+                            '--capture_input_files (files will be paired by '
+                            'index)'), default=None)
+
+  parser.add_argument('-p', '--echo_path_simulator', required=False,
+                      help=('custom echo path simulator name; required if '
+                            '--render_input_files is specified'),
+                      choices=_ECHO_PATH_SIMULATOR_NAMES,
+                      default=echo_path_simulation.NoEchoPathSimulator.NAME)
 
   parser.add_argument('-t', '--test_data_generators', nargs='+', required=False,
                       help='custom list of test data generators to use',
@@ -87,6 +102,15 @@ def main():
 
   parser = _InstanceArgumentsParser()
   args = parser.parse_args()
+  if args.capture_input_files and args.render_input_files and (
+      len(args.capture_input_files) != len(args.render_input_files)):
+    parser.error('--render_input_files and --capture_input_files must be lists '
+                 'having the same length')
+    sys.exit(1)
+  if args.render_input_files and not args.echo_path_simulator:
+    parser.error('when --render_input_files is set, --echo_path_simulator is '
+                 'also required')
+    sys.exit(1)
 
   simulator = simulation.ApmModuleSimulator(
       aechen_ir_database_path=args.air_db_path,
@@ -95,7 +119,9 @@ def main():
       evaluator=evaluation.ApmModuleEvaluator())
   simulator.Run(
       config_filepaths=args.config_files,
-      input_filepaths=args.input_files,
+      capture_input_filepaths=args.capture_input_files,
+      render_input_filepaths=args.render_input_files,
+      echo_path_simulator_name=args.echo_path_simulator,
       test_data_generator_names=args.test_data_generators,
       eval_score_names=args.eval_scores,
       output_dir=args.output_dir)

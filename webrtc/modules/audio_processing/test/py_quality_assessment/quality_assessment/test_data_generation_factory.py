@@ -21,7 +21,8 @@ class TestDataGeneratorFactory(object):
   generators will be produced.
   """
 
-  def __init__(self, aechen_ir_database_path):
+  def __init__(self, output_directory_prefix, aechen_ir_database_path):
+    self._output_directory_prefix = output_directory_prefix
     self._aechen_ir_database_path = aechen_ir_database_path
 
   def GetInstance(self, test_data_generators_class):
@@ -30,12 +31,14 @@ class TestDataGeneratorFactory(object):
     Args:
       test_data_generators_class: TestDataGenerator class object (not an
                                   instance).
+
+    Returns:
+      TestDataGenerator instance.
     """
     logging.debug('factory producing %s', test_data_generators_class)
     if test_data_generators_class == (
         test_data_generation.ReverberationTestDataGenerator):
       return test_data_generation.ReverberationTestDataGenerator(
-          self._aechen_ir_database_path)
+          self._output_directory_prefix, self._aechen_ir_database_path)
     else:
-      # By default, no arguments in the constructor.
-      return test_data_generators_class()
+      return test_data_generators_class(self._output_directory_prefix)

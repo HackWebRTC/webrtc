@@ -9,6 +9,7 @@
 """Evaluation score abstract class and implementations.
 """
 
+from __future__ import division
 import logging
 import os
 import re
@@ -24,7 +25,8 @@ class EvaluationScore(object):
   NAME = None
   REGISTERED_CLASSES = {}
 
-  def __init__(self):
+  def __init__(self, score_filename_prefix):
+    self._score_filename_prefix = score_filename_prefix
     self._reference_signal = None
     self._reference_signal_filepath = None
     self._tested_signal = None
@@ -76,8 +78,8 @@ class EvaluationScore(object):
     Args:
       output_path: path to the directory where the output is written.
     """
-    self._output_filepath = os.path.join(output_path, 'score-{}.txt'.format(
-        self.NAME))
+    self._output_filepath = os.path.join(
+        output_path, self._score_filename_prefix + self.NAME + '.txt')
     try:
       # If the score has already been computed, load.
       self._LoadScore()
@@ -110,10 +112,10 @@ class EvaluationScore(object):
 
 
 @EvaluationScore.RegisterClass
-class AudioLevelScore(EvaluationScore):
-  """Audio level score.
+class AudioLevelPeakScore(EvaluationScore):
+  """Peak audio level score.
 
-  Defined as the difference between the average audio level of the tested and
+  Defined as the difference between the peak audio level of the tested and
   the reference signals.
 
   Unit: dB
@@ -121,15 +123,47 @@ class AudioLevelScore(EvaluationScore):
   Worst case: +/-inf dB
   """
 
-  NAME = 'audio_level'
+  NAME = 'audio_level_peak'
 
-  def __init__(self):
-    EvaluationScore.__init__(self)
+  def __init__(self, score_filename_prefix):
+    EvaluationScore.__init__(self, score_filename_prefix)
 
   def _Run(self, output_path):
     self._LoadReferenceSignal()
     self._LoadTestedSignal()
     self._score = self._tested_signal.dBFS - self._reference_signal.dBFS
+    self._SaveScore()
+
+
+@EvaluationScore.RegisterClass
+class MeanAudioLevelScore(EvaluationScore):
+  """Mean audio level score.
+
+  Defined as the difference between the mean audio level of the tested and
+  the reference signals.
+
+  Unit: dB
+  Ideal: 0 dB
+  Worst case: +/-inf dB
+  """
+
+  NAME = 'audio_level_mean'
+
+  def __init__(self, score_filename_prefix):
+    EvaluationScore.__init__(self, score_filename_prefix)
+
+  def _Run(self, output_path):
+    self._LoadReferenceSignal()
+    self._LoadTestedSignal()
+
+    dbfs_diffs_sum = 0.0
+    seconds = min(len(self._tested_signal), len(self._reference_signal)) // 1000
+    for t in range(seconds):
+      t0 = t * seconds
+      t1 = t0 + seconds
+      dbfs_diffs_sum += (
+        self._tested_signal[t0:t1].dBFS - self._reference_signal[t0:t1].dBFS)
+    self._score = dbfs_diffs_sum / float(seconds)
     self._SaveScore()
 
 
@@ -146,8 +180,8 @@ class PolqaScore(EvaluationScore):
 
   NAME = 'polqa'
 
-  def __init__(self, polqa_bin_filepath):
-    EvaluationScore.__init__(self)
+  def __init__(self, score_filename_prefix, polqa_bin_filepath):
+    EvaluationScore.__init__(self, score_filename_prefix)
 
     # POLQA binary file path.
     self._polqa_bin_filepath = polqa_bin_filepath

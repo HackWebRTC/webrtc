@@ -31,7 +31,7 @@ class Metadata(object):
   def __init__(self):
     pass
 
-  _AUDIO_TEST_DATA_FILENAME = 'audio_test_data.txt'
+  _AUDIO_TEST_DATA_FILENAME = 'audio_test_data.json'
 
   @classmethod
   def LoadAudioTestDataPaths(cls, metadata_path):
@@ -46,23 +46,21 @@ class Metadata(object):
     metadata_filepath = os.path.join(
         metadata_path, cls._AUDIO_TEST_DATA_FILENAME)
     with open(metadata_filepath) as f:
-      audio_in_filepath = f.readline().strip()
-      audio_ref_filepath = f.readline().strip()
-    return audio_in_filepath, audio_ref_filepath
+      return json.load(f)
 
   @classmethod
-  def SaveAudioTestDataPaths(cls, output_path, audio_in_filepath,
-                              audio_ref_filepath):
+  def SaveAudioTestDataPaths(cls, output_path, **filepaths):
     """Saves the input and the reference audio track paths.
 
     Args:
       output_path: path to the directory containing the metadata file.
-      audio_in_filepath: path to the input audio track file.
-      audio_ref_filepath: path to the reference audio track file.
+
+    Keyword Args:
+      filepaths: collection of audio track file paths to save.
     """
     output_filepath = os.path.join(output_path, cls._AUDIO_TEST_DATA_FILENAME)
     with open(output_filepath, 'w') as f:
-      f.write('{}\n{}\n'.format(audio_in_filepath, audio_ref_filepath))
+      json.dump(filepaths, f)
 
 
 class AudioProcConfigFile(object):

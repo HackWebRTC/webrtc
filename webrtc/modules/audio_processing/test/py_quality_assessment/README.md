@@ -11,7 +11,7 @@ reference one used for evaluation.
 
  - OS: Linux
  - Python 2.7
- - Python libraries: numpy, scipy, pydub (0.17.0+)
+ - Python libraries: numpy, scipy, pydub (0.17.0+), pandas (0.20.1+)
  - It is recommended that a dedicated Python environment is used
    - install `virtualenv`
    - `$ sudo apt-get install python-virtualenv`
@@ -20,7 +20,7 @@ reference one used for evaluation.
    - activate the new Python environment
    - `$ source ~/my_env/bin/activate`
    - add dependcies via `pip`
-   - `(my_env)$ pip install numpy pydub scipy`
+   - `(my_env)$ pip install numpy pydub scipy pandas`
  - PolqaOem64 (see http://www.polqa.info/)
     - Tested with POLQA Library v1.180 / P863 v2.400
  - Aachen Impulse Response (AIR) Database
@@ -68,22 +68,24 @@ Showing all the results at once can be confusing. You therefore may want to
 export separate reports. In this case, you can use the
 `apm_quality_assessment_export.py` script as follows:
 
- - Set --output_dir to the same value used in `apm_quality_assessment.sh`
+ - Set `--output_dir, -o` to the same value used in `apm_quality_assessment.sh`
  - Use regular expressions to select/filter out scores by
     - APM configurations: `--config_names, -c`
-    - probing signals: `--input_names, -i`
+    - capture signals: `--capture_names, -i`
+    - render signals: `--render_names, -r`
+    - echo simulator: `--echo_simulator_names, -e`
     - test data generators: `--test_data_generators, -t`
-    - scores: `--eval_scores, -e`
+    - scores: `--eval_scores, -s`
  - Assign a suffix to the report name using `-f <suffix>`
 
 For instance:
 
 ```
 $ ./apm_quality_assessment-export.py \
-  -o ~/data/apm_quality_assessment \
-  -e \(polqa\) \
-  -n \(echo\) \
+  -o output/ \
   -c "(^default$)|(.*AE.*)" \
+  -t \(white_noise\) \
+  -s \(polqa\) \
   -f echo
 ```
 
@@ -92,8 +94,8 @@ $ ./apm_quality_assessment-export.py \
 The input wav file must be:
   - sampled at a sample rate that is a multiple of 100 (required by POLQA)
   - in the 16 bit format (required by `audioproc_f`)
-  -  encoded in the Microsoft WAV signed 16 bit PCM format (Audacity default
-     when exporting)
+  - encoded in the Microsoft WAV signed 16 bit PCM format (Audacity default
+    when exporting)
 
 Depending on the license, the POLQA tool may take “breaks” as a way to limit the
 throughput. When this happens, the APM Quality Assessment tool is slowed down.

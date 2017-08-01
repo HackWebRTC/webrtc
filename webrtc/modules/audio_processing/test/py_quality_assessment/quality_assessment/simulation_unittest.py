@@ -71,7 +71,7 @@ class TestApmModuleSimulator(unittest.TestCase):
     # Run all simulations.
     simulator.Run(
         config_filepaths=config_files,
-        input_filepaths=input_files,
+        capture_input_filepaths=input_files,
         test_data_generator_names=test_data_generators,
         eval_score_names=eval_scores,
         output_dir=self._output_path)

@@ -12,22 +12,37 @@
 """
 
 import argparse
-import collections
 import logging
 import glob
 import os
 import re
 import sys
 
-import quality_assessment.audioproc_wrapper as audioproc_wrapper
+try:
+  import pandas as pd
+except ImportError:
+  logging.critical('Cannot import the third-party Python package pandas')
+  sys.exit(1)
+
 import quality_assessment.data_access as data_access
 import quality_assessment.export as export
+import quality_assessment.simulation as sim
 
-# Regular expressions used to derive score descriptors from file paths.
-RE_CONFIG_NAME = re.compile(r'cfg-(.+)')
-RE_INPUT_NAME = re.compile(r'input-(.+)')
-RE_TEST_DATA_GEN_NAME = re.compile(r'gen-(.+)')
-RE_SCORE_NAME = re.compile(r'score-(.+)\.txt')
+# Compiled regular expressions used to extract score descriptors.
+RE_CONFIG_NAME = re.compile(
+    sim.ApmModuleSimulator.GetPrefixApmConfig() + r'(.+)')
+RE_CAPTURE_NAME = re.compile(
+    sim.ApmModuleSimulator.GetPrefixCapture() + r'(.+)')
+RE_RENDER_NAME = re.compile(
+    sim.ApmModuleSimulator.GetPrefixRender() + r'(.+)')
+RE_ECHO_SIM_NAME = re.compile(
+    sim.ApmModuleSimulator.GetPrefixEchoSimulator() + r'(.+)')
+RE_TEST_DATA_GEN_NAME = re.compile(
+    sim.ApmModuleSimulator.GetPrefixTestDataGenerator() + r'(.+)')
+RE_TEST_DATA_GEN_PARAMS = re.compile(
+    sim.ApmModuleSimulator.GetPrefixTestDataGeneratorParameters() + r'(.+)')
+RE_SCORE_NAME = re.compile(
+    sim.ApmModuleSimulator.GetPrefixScore() + r'(.+)(\..+)')
 
 
 def _InstanceArgumentsParser():
@@ -48,15 +63,23 @@ def _InstanceArgumentsParser():
                       help=('regular expression to filter the APM configuration'
                             ' names'))
 
-  parser.add_argument('-i', '--input_names', type=re.compile,
-                      help=('regular expression to filter the probing signal '
+  parser.add_argument('-i', '--capture_names', type=re.compile,
+                      help=('regular expression to filter the capture signal '
+                            'names'))
+
+  parser.add_argument('-r', '--render_names', type=re.compile,
+                      help=('regular expression to filter the render signal '
+                            'names'))
+
+  parser.add_argument('-e', '--echo_simulator_names', type=re.compile,
+                      help=('regular expression to filter the echo simulator '
                             'names'))
 
   parser.add_argument('-t', '--test_data_generators', type=re.compile,
                       help=('regular expression to filter the test data '
                             'generator names'))
 
-  parser.add_argument('-e', '--eval_scores', type=re.compile,
+  parser.add_argument('-s', '--eval_scores', type=re.compile,
                       help=('regular expression to filter the evaluation score '
                             'names'))
 
@@ -70,32 +93,36 @@ def _GetScoreDescriptors(score_filepath):
     score_filepath: path to the score file.
 
   Returns:
-    A tuple of strings (APM configuration name, input audio track name,
-    test data generator name, test data generator parameters name,
-    evaluation score name).
+    A tuple of strings (APM configuration name, capture audio track name,
+    render audio track name, echo simulator name, test data generator name,
+    test data generator parameters as string, evaluation score name).
   """
-  (config_name, input_name, test_data_gen_name, test_data_gen_params,
-      score_name) = score_filepath.split(os.sep)[-5:]
-  config_name = RE_CONFIG_NAME.match(config_name).groups(0)[0]
-  input_name = RE_INPUT_NAME.match(input_name).groups(0)[0]
-  test_data_gen_name = RE_TEST_DATA_GEN_NAME.match(
-      test_data_gen_name).groups(0)[0]
-  score_name = RE_SCORE_NAME.match(score_name).groups(0)[0]
-  return (config_name, input_name, test_data_gen_name, test_data_gen_params,
-          score_name)
+  fields = score_filepath.split(os.sep)[-7:]
+  extract_name = lambda index, reg_expr: (
+      reg_expr.match(fields[index]).groups(0)[0])
+  return (
+      extract_name(0, RE_CONFIG_NAME),
+      extract_name(1, RE_CAPTURE_NAME),
+      extract_name(2, RE_RENDER_NAME),
+      extract_name(3, RE_ECHO_SIM_NAME),
+      extract_name(4, RE_TEST_DATA_GEN_NAME),
+      extract_name(5, RE_TEST_DATA_GEN_PARAMS),
+      extract_name(6, RE_SCORE_NAME),
+  )
 
 
-def _ExcludeScore(config_name, input_name, test_data_gen_name, score_name,
-                  args):
+def _ExcludeScore(config_name, capture_name, render_name, echo_simulator_name,
+                  test_data_gen_name, score_name, args):
   """Decides whether excluding a score.
 
-  Given a score descriptor, encoded in config_name, input_name,
-  test_data_gen_name and score_name, use the corresponding regular expressions
-  to determine if the score should be excluded.
+  A set of optional regular expressions in args is used to determine if the
+  score should be excluded (depending on its |*_name| descriptors).
 
   Args:
     config_name: APM configuration name.
-    input_name: input audio track name.
+    capture_name: capture audio track name.
+    render_name: render audio track name.
+    echo_simulator_name: echo simulator name.
     test_data_gen_name: test data generator name.
     score_name: evaluation score name.
     args: parsed arguments.
@@ -105,7 +132,9 @@ def _ExcludeScore(config_name, input_name, test_data_gen_name, score_name,
   """
   value_regexpr_pairs = [
       (config_name, args.config_names),
-      (input_name, args.input_names),
+      (capture_name, args.capture_names),
+      (render_name, args.render_names),
+      (echo_simulator_name, args.echo_simulator_names),
       (test_data_gen_name, args.test_data_generators),
       (score_name, args.eval_scores),
   ]
@@ -134,53 +163,116 @@ def _BuildOutputFilename(filename_suffix):
   return 'results-{}.html'.format(filename_suffix)
 
 
+def _FindScores(src_path, args):
+  """Given a search path, find scores and return a DataFrame object.
+
+  Args:
+    src_path: Search path pattern.
+    args: parsed arguments.
+
+  Returns:
+    A DataFrame object.
+  """
+  # Get scores.
+  scores = []
+  for score_filepath in glob.iglob(src_path):
+    # Extract score descriptor fields from the path.
+    (config_name,
+     capture_name,
+     render_name,
+     echo_simulator_name,
+     test_data_gen_name,
+     test_data_gen_params,
+     score_name) = _GetScoreDescriptors(score_filepath)
+
+    # Ignore the score if required.
+    if _ExcludeScore(
+        config_name,
+        capture_name,
+        render_name,
+        echo_simulator_name,
+        test_data_gen_name,
+        score_name,
+        args):
+      logging.info(
+          'ignored score: %s %s %s %s %s %s',
+          config_name,
+          capture_name,
+          render_name,
+          echo_simulator_name,
+          test_data_gen_name,
+          score_name)
+      continue
+
+    # Read metadata and score.
+    metadata = data_access.Metadata.LoadAudioTestDataPaths(
+        os.path.split(score_filepath)[0])
+    score = data_access.ScoreFile.Load(score_filepath)
+
+    # Add a score with its descriptor fields.
+    scores.append((
+        metadata['clean_capture_input_filepath'],
+        metadata['echo_free_capture_filepath'],
+        metadata['echo_filepath'],
+        metadata['render_filepath'],
+        metadata['capture_filepath'],
+        metadata['apm_output_filepath'],
+        metadata['apm_reference_filepath'],
+        config_name,
+        capture_name,
+        render_name,
+        echo_simulator_name,
+        test_data_gen_name,
+        test_data_gen_params,
+        score_name,
+        score,
+    ))
+
+  return pd.DataFrame(
+      data=scores,
+      columns=(
+          'clean_capture_input_filepath',
+          'echo_free_capture_filepath',
+          'echo_filepath',
+          'render_filepath',
+          'capture_filepath',
+          'apm_output_filepath',
+          'apm_reference_filepath',
+          'apm_config',
+          'capture',
+          'render',
+          'echo_simulator',
+          'test_data_gen',
+          'test_data_gen_params',
+          'eval_score_name',
+          'score',
+      ))
+
+
 def main():
   # Init.
   logging.basicConfig(level=logging.DEBUG)  # TODO(alessio): INFO once debugged.
   parser = _InstanceArgumentsParser()
-  nested_dict = lambda: collections.defaultdict(nested_dict)
-  scores = nested_dict()  # Organize the scores in a nested dictionary.
-
-  # Parse command line arguments.
   args = parser.parse_args()
 
-  # Find score files in the output path.
+  # Get the scores.
   src_path = os.path.join(
-      args.output_dir, 'cfg-*', 'input-*', 'gen-*', '*', 'score-*.txt')
+      args.output_dir,
+      sim.ApmModuleSimulator.GetPrefixApmConfig() + '*',
+      sim.ApmModuleSimulator.GetPrefixCapture() + '*',
+      sim.ApmModuleSimulator.GetPrefixRender() + '*',
+      sim.ApmModuleSimulator.GetPrefixEchoSimulator() + '*',
+      sim.ApmModuleSimulator.GetPrefixTestDataGenerator() + '*',
+      sim.ApmModuleSimulator.GetPrefixTestDataGeneratorParameters() + '*',
+      sim.ApmModuleSimulator.GetPrefixScore() + '*')
   logging.debug(src_path)
-  for score_filepath in glob.iglob(src_path):
-    # Extract score descriptors from the path.
-    (config_name, input_name, test_data_gen_name, test_data_gen_params,
-        score_name) = _GetScoreDescriptors(score_filepath)
-
-    # Ignore the score if required.
-    if _ExcludeScore(
-        config_name, input_name, test_data_gen_name, score_name, args):
-      logging.info('ignored score: %s %s %s %s',
-                   config_name, input_name, test_data_gen_name, score_name)
-      continue
-
-    # Get metadata.
-    score_path, _ = os.path.split(score_filepath)
-    audio_in_filepath, audio_ref_filepath = (
-        data_access.Metadata.LoadAudioTestDataPaths(score_path))
-    audio_out_filepath = os.path.abspath(os.path.join(
-        score_path, audioproc_wrapper.AudioProcWrapper.OUTPUT_FILENAME))
-
-    # Add the score to the nested dictionary.
-    scores[score_name][config_name][input_name][test_data_gen_name][
-        test_data_gen_params] = {
-            'score': data_access.ScoreFile.Load(score_filepath),
-            'audio_in_filepath': audio_in_filepath,
-            'audio_out_filepath': audio_out_filepath,
-            'audio_ref_filepath': audio_ref_filepath,
-    }
+  scores_data_frame = _FindScores(src_path, args)
 
   # Export.
   output_filepath = os.path.join(args.output_dir, _BuildOutputFilename(
       args.filename_suffix))
   exporter = export.HtmlExport(output_filepath)
-  exporter.Export(scores)
+  exporter.Export(scores_data_frame)
 
   logging.info('output file successfully written in %s', output_filepath)
   sys.exit(0)

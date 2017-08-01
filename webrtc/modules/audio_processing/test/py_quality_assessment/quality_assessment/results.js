@@ -6,59 +6,229 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
+var inspector = null;
+
 /**
- * Inspector UI class.
+ * Opens the score stats inspector dialog.
+ * @param {String} dialogId: identifier of the dialog to show.
+ */
+function openScoreStatsInspector(dialogId) {
+  var dialog = document.getElementById(dialogId);
+  dialog.showModal();
+}
+
+/**
+ * Closes the score stats inspector dialog.
+ * @param {String} dialogId: identifier of the dialog to close.
+ */
+function closeScoreStatsInspector(dialogId) {
+  var dialog = document.getElementById(dialogId);
+  dialog.close();
+  if (inspector != null) {
+    inspector.stopAudio();
+  }
+}
+
+/**
+ * Instance and initialize the audio inspector.
+ */
+function initialize() {
+  inspector = new AudioInspector();
+  inspector.init();
+}
+
+/**
+ * Audio inspector class.
  * @constructor
  */
-function Inspector() {
+function AudioInspector() {
   this.audioPlayer_ = new Audio();
-  this.inspectorNode_ = document.createElement('div');
-  this.divTestDataGeneratorName_ = document.createElement('div');
-  this.divTestDataGenParameters_ = document.createElement('div');
-  this.buttonPlayAudioIn_ = document.createElement('button');
-  this.buttonPlayAudioOut_ = document.createElement('button');
-  this.buttonPlayAudioRef_ = document.createElement('button');
-  this.buttonStopAudio_ = document.createElement('button');
-
-  this.selectedItem_ = null;
-  this.audioInUrl_ = null;
-  this.audioOutUrl_ = null;
-  this.audioRefUrl_ = null;
+  this.metadata_ = {};
+  this.currentScore_ = null;
+  this.audioInspector_ = null;
 }
 
 /**
  * Initialize.
  */
-Inspector.prototype.init = function() {
+AudioInspector.prototype.init = function() {
   window.event.stopPropagation();
+  this.createAudioInspector_();
+  this.initializeEventHandlers_();
+};
 
-  // Create inspector UI.
-  this.buildInspector_();
-  var body = document.getElementsByTagName('body')[0];
-  body.appendChild(this.inspectorNode_);
+/**
+ * Set up the inspector for a new score.
+ * @param {DOMElement} element: Element linked to the selected score.
+ */
+AudioInspector.prototype.selectedScoreChange = function(element) {
+  if (this.currentScore_ == element) { return; }
+  if (this.currentScore_ != null) {
+    this.currentScore_.classList.remove('selected-score');
+  }
+  this.currentScore_ = element;
+  this.currentScore_.classList.add('selected-score');
+  this.stopAudio();
 
-  // Bind click handler.
-  var self = this;
-  var items = document.getElementsByClassName('score');
-  for (var index = 0; index < items.length; index++) {
-    items[index].onclick = function() {
-      self.openInspector(this);
-    };
+  // Read metadata.
+  var matches = element.querySelectorAll('input[type=hidden]');
+  this.metadata_ = {};
+  for (var index = 0; index < matches.length; ++index) {
+    this.metadata_[matches[index].name] = matches[index].value;
   }
 
-  // Bind pressed key handlers.
+  // Show the audio inspector interface.
+  var container = element.parentNode.parentNode.parentNode.parentNode;
+  var audioInspectorPlaceholder = container.querySelector(
+      '.audio-inspector-placeholder');
+  this.moveInspector_(audioInspectorPlaceholder);
+};
+
+/**
+ * Stop playing audio.
+ */
+AudioInspector.prototype.stopAudio = function() {
+  this.audioPlayer_.pause();
+};
+
+/**
+ * Move the audio inspector DOM node into the given parent.
+ * @param {DOMElement} newParentNode: New parent for the inspector.
+ */
+AudioInspector.prototype.moveInspector_ = function(newParentNode) {
+  newParentNode.appendChild(this.audioInspector_);
+};
+
+/**
+ * Play audio file from url.
+ * @param {string} metadataFieldName: Metadata field name.
+ */
+AudioInspector.prototype.playAudio = function(metadataFieldName) {
+  if (this.metadata_[metadataFieldName] == undefined) { return; }
+  if (this.metadata_[metadataFieldName] == 'None') {
+    alert('The selected stream was not used during the experiment.');
+    return;
+  }
+  this.stopAudio();
+  this.audioPlayer_.src = this.metadata_[metadataFieldName];
+  this.audioPlayer_.play();
+};
+
+/**
+ * Initialize event handlers.
+ */
+AudioInspector.prototype.createAudioInspector_ = function() {
+  var buttonIndex = 0;
+  function getButtonHtml(icon, toolTipText, caption, metadataFieldName) {
+    var buttonId = 'audioInspectorButton' + buttonIndex++;
+    html = caption == null ? '' : caption;
+    html += '<button class="mdl-button mdl-js-button mdl-button--icon ' +
+                'mdl-js-ripple-effect" id="' + buttonId + '">' +
+              '<i class="material-icons">' + icon + '</i>' +
+              '<div class="mdl-tooltip" data-mdl-for="' + buttonId + '">' +
+                 toolTipText +
+              '</div>';
+    if (metadataFieldName != null) {
+      html += '<input type="hidden" value="' + metadataFieldName + '">'
+    }
+    html += '</button>'
+
+    return html;
+  }
+
+  this.audioInspector_ = document.createElement('div');
+  this.audioInspector_.classList.add('audio-inspector');
+  this.audioInspector_.innerHTML =
+      '<div class="mdl-grid">' +
+        '<div class="mdl-layout-spacer"></div>' +
+        '<div class="mdl-cell mdl-cell--2-col">' +
+          getButtonHtml('play_arrow', 'Simulated echo', 'E<sub>in</sub>',
+                        'echo_filepath') +
+        '</div>' +
+        '<div class="mdl-cell mdl-cell--2-col">' +
+          getButtonHtml('stop', 'Stop playing [S]', null, '__stop__') +
+        '</div>' +
+        '<div class="mdl-cell mdl-cell--2-col">' +
+          getButtonHtml('play_arrow', 'Render stream', 'R<sub>in</sub>',
+                        'render_filepath') +
+        '</div>' +
+        '<div class="mdl-layout-spacer"></div>' +
+      '</div>' +
+      '<div class="mdl-grid">' +
+        '<div class="mdl-layout-spacer"></div>' +
+        '<div class="mdl-cell mdl-cell--2-col">' +
+          getButtonHtml('play_arrow', 'Capture stream (APM input) [1]',
+                        'Y\'<sub>in</sub>', 'capture_filepath') +
+        '</div>' +
+        '<div class="mdl-cell mdl-cell--2-col"><strong>APM</strong></div>' +
+        '<div class="mdl-cell mdl-cell--2-col">' +
+          getButtonHtml('play_arrow', 'APM output [2]', 'Y<sub>out</sub>',
+                        'apm_output_filepath') +
+        '</div>' +
+        '<div class="mdl-layout-spacer"></div>' +
+      '</div>' +
+      '<div class="mdl-grid">' +
+        '<div class="mdl-layout-spacer"></div>' +
+        '<div class="mdl-cell mdl-cell--2-col">' +
+          getButtonHtml('play_arrow', 'Echo-free capture stream',
+                        'Y<sub>in</sub>', 'echo_free_capture_filepath') +
+        '</div>' +
+        '<div class="mdl-cell mdl-cell--2-col">' +
+          getButtonHtml('play_arrow', 'Clean capture stream',
+                        'Y<sub>clean</sub>', 'clean_capture_input_filepath') +
+        '</div>' +
+        '<div class="mdl-cell mdl-cell--2-col">' +
+          getButtonHtml('play_arrow', 'APM reference [3]', 'Y<sub>ref</sub>',
+                        'apm_reference_filepath') +
+        '</div>' +
+        '<div class="mdl-layout-spacer"></div>' +
+      '</div>';
+
+  // Add an invisible node as initial container for the audio inspector.
+  var parent = document.createElement('div');
+  parent.style.display = 'none';
+  this.moveInspector_(parent);
+  document.body.appendChild(parent);
+};
+
+/**
+ * Initialize event handlers.
+ */
+AudioInspector.prototype.initializeEventHandlers_ = function() {
   var self = this;
+
+  // Score cells.
+  document.querySelectorAll('td.single-score-cell').forEach(function(element) {
+    element.onclick = function() {
+      self.selectedScoreChange(this);
+    }
+  });
+
+  // Audio inspector buttons.
+  this.audioInspector_.querySelectorAll('button').forEach(function(element) {
+    var target = element.querySelector('input[type=hidden]');
+    if (target == null) { return; }
+    element.onclick = function() {
+      if (target.value == '__stop__') {
+        self.stopAudio();
+      } else {
+        self.playAudio(target.value);
+      }
+    };
+  });
+
+  // Keyboard shortcuts.
   window.onkeyup = function(e) {
     var key = e.keyCode ? e.keyCode : e.which;
     switch (key) {
       case 49:  // 1.
-        self.playAudioIn();
+        self.playAudio('capture_filepath');
         break;
       case 50:  // 2.
-        self.playAudioOut();
+        self.playAudio('apm_output_filepath');
         break;
       case 51:  // 3.
-        self.playAudioRef();
+        self.playAudio('apm_reference_filepath');
         break;
       case 83:  // S.
       case 115:  // s.
@@ -67,121 +237,3 @@ Inspector.prototype.init = function() {
     }
   };
 };
-
-/**
- * Open the inspector.
- * @param {DOMElement} target: score element that has been clicked.
- */
-Inspector.prototype.openInspector = function(target) {
-  if (this.selectedItem_ != null) {
-    this.selectedItem_.classList.remove('selected');
-  }
-  this.selectedItem_ = target;
-  this.selectedItem_.classList.add('selected');
-
-  var target = this.selectedItem_.querySelector('.test-data-gen-desc');
-  var testDataGenName = target.querySelector('input[name=gen_name]').value;
-  var testDataGenParams = target.querySelector('input[name=gen_params]').value;
-  var audioIn = target.querySelector('input[name=audio_in]').value;
-  var audioOut = target.querySelector('input[name=audio_out]').value;
-  var audioRef = target.querySelector('input[name=audio_ref]').value;
-
-  this.divTestDataGeneratorName_.innerHTML = testDataGenName;
-  this.divTestDataGenParameters_.innerHTML = testDataGenParams;
-
-  this.audioInUrl_ = audioIn;
-  this.audioOutUrl_ = audioOut;
-  this.audioRefUrl_ = audioRef;
-};
-
-/**
- * Play APM audio input signal.
- */
-Inspector.prototype.playAudioIn = function() {
-  this.play_(this.audioInUrl_);
-};
-
-/**
- * Play APM audio output signal.
- */
-Inspector.prototype.playAudioOut = function() {
-  this.play_(this.audioOutUrl_);
-};
-
-/**
- * Play APM audio reference signal.
- */
-Inspector.prototype.playAudioRef = function() {
-  this.play_(this.audioRefUrl_);
-};
-
-/**
- * Stop playing audio.
- */
-Inspector.prototype.stopAudio = function() {
-  this.audioPlayer_.pause();
-};
-
-/**
- * Play audio file from url.
- * @param {string} url
- */
-Inspector.prototype.play_ = function(url) {
-  if (url == null) {
-    alert('Select a score first.');
-    return;
-  }
-
-  this.audioPlayer_.src = url;
-  this.audioPlayer_.play();
-};
-
-/**
- * Build inspector.
- */
-Inspector.prototype.buildInspector_ = function() {
-  var self = this;
-
-  this.inspectorNode_.setAttribute('class', 'inspector');
-  this.inspectorNode_.innerHTML =
-      '<div class="property test-data-gen-name">' +
-         '<div class="name">test data generator</div>' +
-      '</div>' +
-      '<div class="property test-data-gen-parmas">' +
-         '<div class="name">parameters</div>' +
-      '</div>' +
-      '<div class="buttons"></div>';
-
-  // Add value nodes.
-  function addValueNode(node, parent_selector) {
-    node.setAttribute('class', 'value');
-    node.innerHTML = '-';
-    var parentNode = self.inspectorNode_.querySelector(parent_selector);
-    parentNode.appendChild(node);
-  }
-  addValueNode(this.divTestDataGeneratorName_, 'div.test-data-gen-name');
-  addValueNode(this.divTestDataGenParameters_, 'div.test-data-gen-parmas');
-
-  // Add buttons.
-  var buttonsNode = this.inspectorNode_.querySelector('div.buttons');
-  function addButton(node, caption, callback) {
-    node.innerHTML = caption;
-    buttonsNode.appendChild(node);
-    node.onclick = callback.bind(self);
-  }
-  addButton(this.buttonPlayAudioIn_, 'A_in (<strong>1</strong>)',
-            this.playAudioIn);
-  addButton(this.buttonPlayAudioOut_, 'A_out (<strong>2</strong>)',
-            this.playAudioOut);
-  addButton(this.buttonPlayAudioRef_, 'A_ref (<strong>3</strong>)',
-            this.playAudioRef);
-  addButton(this.buttonStopAudio_, '<strong>S</strong>top', this.stopAudio);
-};
-
-/**
- * Instance and initialize the inspector.
- */
-function initialize() {
-  var inspector = new Inspector();
-  inspector.init();
-}

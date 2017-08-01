@@ -54,11 +54,14 @@ copy("lib") {
     "quality_assessment/__init__.py",
     "quality_assessment/audioproc_wrapper.py",
     "quality_assessment/data_access.py",
+    "quality_assessment/echo_path_simulation.py",
+    "quality_assessment/echo_path_simulation_factory.py",
     "quality_assessment/eval_scores.py",
     "quality_assessment/eval_scores_factory.py",
     "quality_assessment/evaluation.py",
     "quality_assessment/exceptions.py",
     "quality_assessment/export.py",
+    "quality_assessment/input_mixer.py",
     "quality_assessment/results.css",
     "quality_assessment/results.js",
     "quality_assessment/signal_processing.py",
@@ -112,7 +115,9 @@ rtc_executable("fake_polqa") {
 copy("lib_unit_tests") {
   testonly = true
   sources = [
+    "quality_assessment/echo_path_simulation_unittest.py",
     "quality_assessment/eval_scores_unittest.py",
+    "quality_assessment/input_mixer_unittest.py",
     "quality_assessment/signal_processing_unittest.py",
     "quality_assessment/simulation_unittest.py",
     "quality_assessment/test_data_generation_unittest.py",

@@ -21,7 +21,8 @@ class EvaluationScoreWorkerFactory(object):
   workers.
   """
 
-  def __init__(self, polqa_tool_bin_path):
+  def __init__(self, score_filename_prefix, polqa_tool_bin_path):
+    self._score_filename_prefix = score_filename_prefix
     self._polqa_tool_bin_path = polqa_tool_bin_path
 
   def GetInstance(self, evaluation_score_class):
@@ -29,11 +30,14 @@ class EvaluationScoreWorkerFactory(object):
 
     Args:
       evaluation_score_class: EvaluationScore class object (not an instance).
+
+    Returns:
+      An EvaluationScore instance.
     """
     logging.debug(
         'factory producing a %s evaluation score', evaluation_score_class)
     if evaluation_score_class == eval_scores.PolqaScore:
-      return eval_scores.PolqaScore(self._polqa_tool_bin_path)
+      return eval_scores.PolqaScore(
+          self._score_filename_prefix, self._polqa_tool_bin_path)
     else:
-      # By default, no arguments in the constructor.
-      return evaluation_score_class()
+      return evaluation_score_class(self._score_filename_prefix)

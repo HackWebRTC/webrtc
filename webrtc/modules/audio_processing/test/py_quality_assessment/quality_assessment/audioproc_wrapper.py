@@ -15,6 +15,7 @@ import os
 import subprocess
 
 from . import data_access
+from . import exceptions
 
 
 class AudioProcWrapper(object):
@@ -22,11 +23,11 @@ class AudioProcWrapper(object):
   """
 
   OUTPUT_FILENAME = 'output.wav'
-  _AUDIOPROC_F_BIN_PATH = os.path.abspath('../audioproc_f')
+  _AUDIOPROC_F_BIN_PATH = os.path.abspath(os.path.join(
+      os.pardir, 'audioproc_f'))
 
   def __init__(self):
     self._config = None
-    self._input_signal_filepath = None
     self._output_signal_filepath = None
 
     # Profiler instance to measure audioproc_f running time.
@@ -36,17 +37,20 @@ class AudioProcWrapper(object):
   def output_filepath(self):
     return self._output_signal_filepath
 
-  def Run(self, config_filepath, input_filepath, output_path):
+  def Run(self, config_filepath, capture_input_filepath, output_path,
+          render_input_filepath=None):
     """Run audioproc_f.
 
     Args:
       config_filepath: path to the configuration file specifing the arguments
                        for audioproc_f.
-      input_filepath: path to the audio track input file.
+      capture_input_filepath: path to the capture audio track input file (aka
+                              forward or near-end).
       output_path: path of the audio track output file.
+      render_input_filepath: path to the render audio track input file (aka
+                             reverse or far-end).
     """
     # Init.
-    self._input_signal_filepath = input_filepath
     self._output_signal_filepath = os.path.join(
         output_path, self.OUTPUT_FILENAME)
     profiling_stats_filepath = os.path.join(output_path, 'profiling.stats')
@@ -60,8 +64,14 @@ class AudioProcWrapper(object):
     self._config = data_access.AudioProcConfigFile.Load(config_filepath)
 
     # Set remaining parametrs.
-    self._config['-i'] = self._input_signal_filepath
+    if not os.path.exists(capture_input_filepath):
+      raise exceptions.FileNotFoundError('cannot find capture input file')
+    self._config['-i'] = capture_input_filepath
     self._config['-o'] = self._output_signal_filepath
+    if render_input_filepath is not None:
+      if not os.path.exists(render_input_filepath):
+        raise exceptions.FileNotFoundError('cannot find render input file')
+      self._config['-ri'] = render_input_filepath
 
     # Build arguments list.
     args = [self._AUDIOPROC_F_BIN_PATH]

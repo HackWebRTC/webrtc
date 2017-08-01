@@ -63,6 +63,7 @@ class TestEvalScores(unittest.TestCase):
     # Instance evaluation score workers factory with fake dependencies.
     eval_score_workers_factory = (
         eval_scores_factory.EvaluationScoreWorkerFactory(
+            score_filename_prefix='scores-',
             polqa_tool_bin_path=os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), 'fake_polqa')))
 

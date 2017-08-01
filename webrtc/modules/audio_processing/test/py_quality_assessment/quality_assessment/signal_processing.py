@@ -86,24 +86,112 @@ class SignalProcessingUtils(object):
     return number_of_samples / signal.channels
 
   @classmethod
-  def GenerateWhiteNoise(cls, signal):
-    """Generates white noise.
+  def GenerateSilence(cls, duration=1000, sample_rate=48000):
+    """Generates silence.
 
-    White noise is generated with the same duration and in the same format as a
-    given signal.
+    This method can also be used to create a template AudioSegment instance.
+    A template can then be used with other Generate*() methods accepting an
+    AudioSegment instance as argument.
 
     Args:
-      signal: AudioSegment instance.
+      duration: duration in ms.
+      sample_rate: sample rate.
+
+    Returns:
+      AudioSegment instance.
+    """
+    return pydub.AudioSegment.silent(duration, sample_rate)
+
+  @classmethod
+  def GeneratePureTone(cls, template, frequency=440.0):
+    """Generates a pure tone.
+
+    The pure tone is generated with the same duration and in the same format of
+    the given template signal.
+
+    Args:
+      template: AudioSegment instance.
+      frequency: Frequency of the pure tone in Hz.
+
+    Return:
+      AudioSegment instance.
+    """
+    if frequency > template.frame_rate >> 1:
+      raise exceptions.SignalProcessingException('Invalid frequency')
+
+    generator = pydub.generators.Sine(
+        sample_rate=template.frame_rate,
+        bit_depth=template.sample_width * 8,
+        freq=frequency)
+
+    return generator.to_audio_segment(
+        duration=len(template),
+        volume=0.0)
+
+  @classmethod
+  def GenerateWhiteNoise(cls, template):
+    """Generates white noise.
+
+    The white noise is generated with the same duration and in the same format
+    of the given template signal.
+
+    Args:
+      template: AudioSegment instance.
 
     Return:
       AudioSegment instance.
     """
     generator = pydub.generators.WhiteNoise(
-        sample_rate=signal.frame_rate,
-        bit_depth=signal.sample_width * 8)
+        sample_rate=template.frame_rate,
+        bit_depth=template.sample_width * 8)
     return generator.to_audio_segment(
-        duration=len(signal),
+        duration=len(template),
         volume=0.0)
+
+  @classmethod
+  def DetectHardClipping(cls, signal, threshold=2):
+    """Detects hard clipping.
+
+    Hard clipping is simply detected by counting samples that touch either the
+    lower or upper bound too many times in a row (according to |threshold|).
+    The presence of a single sequence of samples meeting such property is enough
+    to label the signal as hard clipped.
+
+    Args:
+      signal: AudioSegment instance.
+      threshold: minimum number of samples at full-scale in a row.
+
+    Returns:
+      True if hard clipping is detect, False otherwise.
+    """
+    if signal.channels != 1:
+      raise NotImplementedError('mutliple-channel clipping not implemented')
+    if signal.sample_width != 2:  # Note that signal.sample_width is in bytes.
+      raise exceptions.SignalProcessingException(
+          'hard-clipping detection only supported for 16 bit samples')
+
+    # Get raw samples, check type, cast.
+    samples = signal.get_array_of_samples()
+    if samples.typecode != 'h':
+      raise exceptions.SignalProcessingException(
+          'hard-clipping detection only supported for 16 bit samples')
+    samples = np.array(signal.get_array_of_samples(), np.int16)
+
+    # Detect adjacent clipped samples.
+    samples_type_info = np.iinfo(samples.dtype)
+    mask_min = samples == samples_type_info.min
+    mask_max = samples == samples_type_info.max
+
+    def HasLongSequence(vector, min_legth=threshold):
+      """Returns True if there are one or more long sequences of True flags."""
+      seq_length = 0
+      for b in vector:
+        seq_length = seq_length + 1 if b else 0
+        if seq_length >= min_legth:
+          return True
+      return False
+
+    return HasLongSequence(mask_min) or HasLongSequence(mask_max)
 
   @classmethod
   def ApplyImpulseResponse(cls, signal, impulse_response):

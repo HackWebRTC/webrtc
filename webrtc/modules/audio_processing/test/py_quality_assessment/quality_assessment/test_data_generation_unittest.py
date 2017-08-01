@@ -29,7 +29,7 @@ class TestTestDataGenerators(unittest.TestCase):
   def setUp(self):
     """Create temporary folders."""
     self._base_output_path = tempfile.mkdtemp()
-    self._input_noise_cache_path = tempfile.mkdtemp()
+    self._test_data_cache_path = tempfile.mkdtemp()
     self._fake_air_db_path = tempfile.mkdtemp()
 
     # Fake AIR DB impulse responses.
@@ -49,13 +49,13 @@ class TestTestDataGenerators(unittest.TestCase):
   def tearDown(self):
     """Recursively delete temporary folders."""
     shutil.rmtree(self._base_output_path)
-    shutil.rmtree(self._input_noise_cache_path)
+    shutil.rmtree(self._test_data_cache_path)
     shutil.rmtree(self._fake_air_db_path)
 
   def testTestDataGenerators(self):
     # Preliminary check.
     self.assertTrue(os.path.exists(self._base_output_path))
-    self.assertTrue(os.path.exists(self._input_noise_cache_path))
+    self.assertTrue(os.path.exists(self._test_data_cache_path))
 
     # Check that there is at least one registered test data generator.
     registered_classes = (
@@ -66,6 +66,7 @@ class TestTestDataGenerators(unittest.TestCase):
     # Instance generators factory.
     generators_factory = (
         test_data_generation_factory.TestDataGeneratorFactory(
+            output_directory_prefix='datagen-',
             aechen_ir_database_path=self._fake_air_db_path))
 
     # Use a sample input file as clean input signal.
@@ -86,7 +87,7 @@ class TestTestDataGenerators(unittest.TestCase):
       # Generate the noisy input - reference pairs.
       generator.Generate(
           input_signal_filepath=input_signal_filepath,
-          input_noise_cache_path=self._input_noise_cache_path,
+          test_data_cache_path=self._test_data_cache_path,
           base_output_path=self._base_output_path)
 
       # Perform checks.
