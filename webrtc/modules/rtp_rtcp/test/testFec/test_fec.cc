@@ -108,8 +108,8 @@ void RunTest(bool use_flexfec) {
   ForwardErrorCorrection::RecoveredPacketList recovered_packet_list;
   std::list<uint8_t*> fec_mask_list;
 
-  // Running over only one loss rate to limit execution time.
-  const float loss_rate[] = {0.5f};
+  // Running over only two loss rates to limit execution time.
+  const float loss_rate[] = {0.05f, 0.01f};
   const uint32_t loss_rate_size = sizeof(loss_rate) / sizeof(*loss_rate);
   const float reorder_rate = 0.1f;
   const float duplicate_rate = 0.1f;
@@ -463,19 +463,11 @@ void RunTest(bool use_flexfec) {
       << "Recovered packet list is not empty";
 }
 
-// Too slow to finish before timeout on iOS. See webrtc:4755.
-#if defined(WEBRTC_IOS)
-#define MAYBE_UlpfecTest DISABLED_UlpfecTest
-#define MAYBE_FlexfecTest DISABLED_FlexfecTest
-#else
-#define MAYBE_UlpfecTest UlpfecTest
-#define MAYBE_FlexfecTest FlexfecTest
-#endif
-TEST(FecTest, MAYBE_UlpfecTest) {
+TEST(FecTest, UlpfecTest) {
   RunTest(false);
 }
 
-TEST(FecTest, MAYBE_FlexfecTest) {
+TEST(FecTest, FlexfecTest) {
   RunTest(true);
 }
 
