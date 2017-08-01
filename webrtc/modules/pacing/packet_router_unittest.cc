@@ -35,6 +35,10 @@ namespace webrtc {
 // guidelines - small tests for one thing at a time.
 // (I'm not removing any tests during CL, so as to demonstrate no regressions.)
 
+namespace {
+constexpr int kProbeMinProbes = 5;
+constexpr int kProbeMinBytes = 1000;
+
 class MockRtpRtcpWithRembTracking : public MockRtpRtcp {
  public:
   MockRtpRtcpWithRembTracking() {
@@ -45,21 +49,15 @@ class MockRtpRtcpWithRembTracking : public MockRtpRtcp {
  private:
   bool remb_ = false;
 };
+}  // namespace
 
-class PacketRouterTest : public ::testing::Test {
- public:
-  PacketRouterTest() : packet_router_(new PacketRouter()) {}
- protected:
-  static constexpr int kProbeMinProbes = 5;
-  static constexpr int kProbeMinBytes = 1000;
-  const std::unique_ptr<PacketRouter> packet_router_;
-};
-
-TEST_F(PacketRouterTest, TimeToSendPacket) {
+TEST(PacketRouterTest, TimeToSendPacket) {
+  PacketRouter packet_router;
   NiceMock<MockRtpRtcp> rtp_1;
   NiceMock<MockRtpRtcp> rtp_2;
-  packet_router_->AddSendRtpModule(&rtp_1, false);
-  packet_router_->AddSendRtpModule(&rtp_2, false);
+
+  packet_router.AddSendRtpModule(&rtp_1, false);
+  packet_router.AddSendRtpModule(&rtp_2, false);
 
   const uint16_t kSsrc1 = 1234;
   uint16_t sequence_number = 17;
@@ -75,7 +73,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
       .Times(1)
       .WillOnce(Return(true));
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router_->TimeToSendPacket(
+  EXPECT_TRUE(packet_router.TimeToSendPacket(
       kSsrc1, sequence_number, timestamp, retransmission,
       PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
 
@@ -93,7 +91,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
                          Field(&PacedPacketInfo::probe_cluster_id, 2)))
       .Times(1)
       .WillOnce(Return(true));
-  EXPECT_TRUE(packet_router_->TimeToSendPacket(
+  EXPECT_TRUE(packet_router.TimeToSendPacket(
       kSsrc2, sequence_number, timestamp, retransmission,
       PacedPacketInfo(2, kProbeMinProbes, kProbeMinBytes)));
 
@@ -102,7 +100,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
   EXPECT_CALL(rtp_1, TimeToSendPacket(_, _, _, _, _)).Times(0);
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(false));
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router_->TimeToSendPacket(
+  EXPECT_TRUE(packet_router.TimeToSendPacket(
       kSsrc1, sequence_number, timestamp, retransmission,
       PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
 
@@ -113,26 +111,28 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
   EXPECT_CALL(rtp_2, SSRC()).Times(1).WillOnce(Return(kSsrc2));
   EXPECT_CALL(rtp_1, TimeToSendPacket(_, _, _, _, _)).Times(0);
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router_->TimeToSendPacket(
+  EXPECT_TRUE(packet_router.TimeToSendPacket(
       kSsrc1 + kSsrc2, sequence_number, timestamp, retransmission,
       PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
 
-  packet_router_->RemoveSendRtpModule(&rtp_1);
+  packet_router.RemoveSendRtpModule(&rtp_1);
 
   // rtp_1 has been removed, try sending a packet on that ssrc and make sure
   // it is dropped as expected by not expecting any calls to rtp_1.
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_2, SSRC()).Times(1).WillOnce(Return(kSsrc2));
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router_->TimeToSendPacket(
+  EXPECT_TRUE(packet_router.TimeToSendPacket(
       kSsrc1, sequence_number, timestamp, retransmission,
       PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
                       kProbeMinBytes)));
 
-  packet_router_->RemoveSendRtpModule(&rtp_2);
+  packet_router.RemoveSendRtpModule(&rtp_2);
 }
 
-TEST_F(PacketRouterTest, TimeToSendPadding) {
+TEST(PacketRouterTest, TimeToSendPadding) {
+  PacketRouter packet_router;
+
   const uint16_t kSsrc1 = 1234;
   const uint16_t kSsrc2 = 4567;
 
@@ -143,8 +143,8 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   // rtp_2 will be prioritized for padding.
   EXPECT_CALL(rtp_2, RtxSendStatus()).WillOnce(Return(kRtxRedundantPayloads));
   EXPECT_CALL(rtp_2, SSRC()).WillRepeatedly(Return(kSsrc2));
-  packet_router_->AddSendRtpModule(&rtp_1, false);
-  packet_router_->AddSendRtpModule(&rtp_2, false);
+  packet_router.AddSendRtpModule(&rtp_1, false);
+  packet_router.AddSendRtpModule(&rtp_2, false);
 
   // Default configuration, sending padding on all modules sending media,
   // ordered by priority (based on rtx mode).
@@ -165,7 +165,7 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
       .Times(1)
       .WillOnce(Return(requested_padding_bytes - sent_padding_bytes));
   EXPECT_EQ(requested_padding_bytes,
-            packet_router_->TimeToSendPadding(
+            packet_router.TimeToSendPadding(
                 requested_padding_bytes,
                 PacedPacketInfo(111, kProbeMinBytes, kProbeMinBytes)));
 
@@ -179,7 +179,7 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
       .Times(1)
       .WillOnce(Return(sent_padding_bytes));
   EXPECT_EQ(sent_padding_bytes,
-            packet_router_->TimeToSendPadding(
+            packet_router.TimeToSendPadding(
                 requested_padding_bytes,
                 PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
                                 kProbeMinBytes)));
@@ -190,7 +190,7 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(false));
   EXPECT_CALL(rtp_2, TimeToSendPadding(_, _)).Times(0);
   EXPECT_EQ(0u,
-            packet_router_->TimeToSendPadding(
+            packet_router.TimeToSendPadding(
                 requested_padding_bytes,
                 PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
                                 kProbeMinBytes)));
@@ -205,12 +205,12 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
       .Times(1)
       .WillOnce(Return(sent_padding_bytes));
   EXPECT_EQ(sent_padding_bytes,
-            packet_router_->TimeToSendPadding(
+            packet_router.TimeToSendPadding(
                 requested_padding_bytes,
                 PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
                                 kProbeMinBytes)));
 
-  packet_router_->RemoveSendRtpModule(&rtp_1);
+  packet_router.RemoveSendRtpModule(&rtp_1);
 
   // rtp_1 has been removed, try sending padding and make sure rtp_1 isn't asked
   // to send by not expecting any calls. Instead verify rtp_2 is called.
@@ -218,98 +218,106 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   EXPECT_CALL(rtp_2, HasBweExtensions()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, _)).Times(1);
   EXPECT_EQ(0u,
-            packet_router_->TimeToSendPadding(
+            packet_router.TimeToSendPadding(
                 requested_padding_bytes,
                 PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
                                 kProbeMinBytes)));
 
-  packet_router_->RemoveSendRtpModule(&rtp_2);
+  packet_router.RemoveSendRtpModule(&rtp_2);
 }
 
-TEST_F(PacketRouterTest, SenderOnlyFunctionsRespectSendingMedia) {
+TEST(PacketRouterTest, SenderOnlyFunctionsRespectSendingMedia) {
+  PacketRouter packet_router;
   NiceMock<MockRtpRtcp> rtp;
-  packet_router_->AddSendRtpModule(&rtp, false);
+  packet_router.AddSendRtpModule(&rtp, false);
   static const uint16_t kSsrc = 1234;
   EXPECT_CALL(rtp, SSRC()).WillRepeatedly(Return(kSsrc));
   EXPECT_CALL(rtp, SendingMedia()).WillRepeatedly(Return(false));
 
   // Verify that TimeToSendPacket does not end up in a receiver.
   EXPECT_CALL(rtp, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router_->TimeToSendPacket(
+  EXPECT_TRUE(packet_router.TimeToSendPacket(
       kSsrc, 1, 1, false, PacedPacketInfo(PacedPacketInfo::kNotAProbe,
                                           kProbeMinBytes, kProbeMinBytes)));
   // Verify that TimeToSendPadding does not end up in a receiver.
   EXPECT_CALL(rtp, TimeToSendPadding(_, _)).Times(0);
   EXPECT_EQ(0u,
-            packet_router_->TimeToSendPadding(
+            packet_router.TimeToSendPadding(
                 200, PacedPacketInfo(PacedPacketInfo::kNotAProbe,
                                      kProbeMinBytes, kProbeMinBytes)));
 
-  packet_router_->RemoveSendRtpModule(&rtp);
+  packet_router.RemoveSendRtpModule(&rtp);
 }
 
-TEST_F(PacketRouterTest, AllocateSequenceNumbers) {
+TEST(PacketRouterTest, AllocateSequenceNumbers) {
+  PacketRouter packet_router;
+
   const uint16_t kStartSeq = 0xFFF0;
   const size_t kNumPackets = 32;
 
-  packet_router_->SetTransportWideSequenceNumber(kStartSeq - 1);
+  packet_router.SetTransportWideSequenceNumber(kStartSeq - 1);
 
   for (size_t i = 0; i < kNumPackets; ++i) {
-    uint16_t seq = packet_router_->AllocateSequenceNumber();
+    uint16_t seq = packet_router.AllocateSequenceNumber();
     uint32_t expected_unwrapped_seq = static_cast<uint32_t>(kStartSeq) + i;
     EXPECT_EQ(static_cast<uint16_t>(expected_unwrapped_seq & 0xFFFF), seq);
   }
 }
 
-TEST_F(PacketRouterTest, SendTransportFeedback) {
+TEST(PacketRouterTest, SendTransportFeedback) {
+  PacketRouter packet_router;
   NiceMock<MockRtpRtcp> rtp_1;
   NiceMock<MockRtpRtcp> rtp_2;
-  packet_router_->AddSendRtpModule(&rtp_1, false);
-  packet_router_->AddReceiveRtpModule(&rtp_2, false);
+
+  packet_router.AddSendRtpModule(&rtp_1, false);
+  packet_router.AddReceiveRtpModule(&rtp_2, false);
 
   rtcp::TransportFeedback feedback;
   EXPECT_CALL(rtp_1, SendFeedbackPacket(_)).Times(1).WillOnce(Return(true));
-  packet_router_->SendTransportFeedback(&feedback);
-  packet_router_->RemoveSendRtpModule(&rtp_1);
+  packet_router.SendTransportFeedback(&feedback);
+  packet_router.RemoveSendRtpModule(&rtp_1);
   EXPECT_CALL(rtp_2, SendFeedbackPacket(_)).Times(1).WillOnce(Return(true));
-  packet_router_->SendTransportFeedback(&feedback);
-  packet_router_->RemoveReceiveRtpModule(&rtp_2);
+  packet_router.SendTransportFeedback(&feedback);
+  packet_router.RemoveReceiveRtpModule(&rtp_2);
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST_F(PacketRouterTest, DoubleRegistrationOfSendModuleDisallowed) {
+TEST(PacketRouterTest, DoubleRegistrationOfSendModuleDisallowed) {
+  PacketRouter packet_router;
   NiceMock<MockRtpRtcp> module;
 
   constexpr bool remb_candidate = false;  // Value irrelevant.
-  packet_router_->AddSendRtpModule(&module, remb_candidate);
-  EXPECT_DEATH(packet_router_->AddSendRtpModule(&module, remb_candidate), "");
+  packet_router.AddSendRtpModule(&module, remb_candidate);
+  EXPECT_DEATH(packet_router.AddSendRtpModule(&module, remb_candidate), "");
 
   // Test tear-down
-  packet_router_->RemoveSendRtpModule(&module);
+  packet_router.RemoveSendRtpModule(&module);
 }
 
-TEST_F(PacketRouterTest, DoubleRegistrationOfReceiveModuleDisallowed) {
+TEST(PacketRouterTest, DoubleRegistrationOfReceiveModuleDisallowed) {
+  PacketRouter packet_router;
   NiceMock<MockRtpRtcp> module;
 
   constexpr bool remb_candidate = false;  // Value irrelevant.
-  packet_router_->AddReceiveRtpModule(&module, remb_candidate);
-  EXPECT_DEATH(packet_router_->AddReceiveRtpModule(&module, remb_candidate),
-               "");
+  packet_router.AddReceiveRtpModule(&module, remb_candidate);
+  EXPECT_DEATH(packet_router.AddReceiveRtpModule(&module, remb_candidate), "");
 
   // Test tear-down
-  packet_router_->RemoveReceiveRtpModule(&module);
+  packet_router.RemoveReceiveRtpModule(&module);
 }
 
-TEST_F(PacketRouterTest, RemovalOfNeverAddedSendModuleDisallowed) {
+TEST(PacketRouterTest, RemovalOfNeverAddedSendModuleDisallowed) {
+  PacketRouter packet_router;
   NiceMock<MockRtpRtcp> module;
 
-  EXPECT_DEATH(packet_router_->RemoveSendRtpModule(&module), "");
+  EXPECT_DEATH(packet_router.RemoveSendRtpModule(&module), "");
 }
 
-TEST_F(PacketRouterTest, RemovalOfNeverAddedReceiveModuleDisallowed) {
+TEST(PacketRouterTest, RemovalOfNeverAddedReceiveModuleDisallowed) {
+  PacketRouter packet_router;
   NiceMock<MockRtpRtcp> module;
 
-  EXPECT_DEATH(packet_router_->RemoveReceiveRtpModule(&module), "");
+  EXPECT_DEATH(packet_router.RemoveReceiveRtpModule(&module), "");
 }
 #endif  // RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
