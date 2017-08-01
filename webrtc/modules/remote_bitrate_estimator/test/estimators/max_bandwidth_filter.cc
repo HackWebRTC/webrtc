@@ -16,22 +16,49 @@ namespace testing {
 namespace bwe {
 MaxBandwidthFilter::MaxBandwidthFilter()
     : bandwidth_last_round_bytes_per_ms_(0),
-      round_bandwidth_updated_(0),
-      max_bandwidth_estimate_bytes_per_ms_(0),
+      max_bandwidth_estimate_bps_(0),
       rounds_without_growth_(0) {}
 
 MaxBandwidthFilter::~MaxBandwidthFilter() {}
 
-// Rounds are units for packets rtt_time, after packet has been acknowledged,
-// one round has passed from its send time.
-void MaxBandwidthFilter::AddBandwidthSample(int64_t sample_bytes_per_ms,
+// For detailed explanation about implementing bandwidth filter this way visit
+// "Bbr design" doc. |sample_bps| was measured during |round|.
+void MaxBandwidthFilter::AddBandwidthSample(int64_t sample_bps,
                                             int64_t round,
                                             size_t filter_size_round) {
-  if (round - round_bandwidth_updated_ >= filter_size_round ||
-      sample_bytes_per_ms >= max_bandwidth_estimate_bytes_per_ms_) {
-    max_bandwidth_estimate_bytes_per_ms_ = sample_bytes_per_ms;
-    round_bandwidth_updated_ = round;
+  if (bandwidth_samples_[0].first == 0 ||
+      sample_bps >= bandwidth_samples_[0].first ||
+      round - bandwidth_samples_[2].second >= filter_size_round)
+    bandwidth_samples_[0] = bandwidth_samples_[1] =
+        bandwidth_samples_[2] = {sample_bps, round};
+  if (sample_bps >= bandwidth_samples_[1].first) {
+    bandwidth_samples_[1] = {sample_bps, round};
+    bandwidth_samples_[2] = bandwidth_samples_[1];
+  } else {
+    if (sample_bps >= bandwidth_samples_[2].first)
+      bandwidth_samples_[2] = {sample_bps, round};
   }
+  if (round - bandwidth_samples_[0].second >= filter_size_round) {
+    bandwidth_samples_[0] = bandwidth_samples_[1];
+    bandwidth_samples_[1] = bandwidth_samples_[2];
+    bandwidth_samples_[2] = {sample_bps, round};
+    if (round - bandwidth_samples_[0].second >= filter_size_round) {
+      bandwidth_samples_[0] = bandwidth_samples_[1];
+      bandwidth_samples_[1] = bandwidth_samples_[2];
+    }
+    max_bandwidth_estimate_bps_ = bandwidth_samples_[0].first;
+    return;
+  }
+  if (bandwidth_samples_[1].first == bandwidth_samples_[0].first &&
+      round - bandwidth_samples_[1].second > filter_size_round / 4) {
+    bandwidth_samples_[2] = bandwidth_samples_[1] = {sample_bps, round};
+    max_bandwidth_estimate_bps_ = bandwidth_samples_[0].first;
+    return;
+  }
+  if (bandwidth_samples_[2].first == bandwidth_samples_[1].first &&
+      round - bandwidth_samples_[2].second > filter_size_round / 2)
+    bandwidth_samples_[2] = {sample_bps, round};
+  max_bandwidth_estimate_bps_ = bandwidth_samples_[0].first;
 }
 
 bool MaxBandwidthFilter::FullBandwidthReached(float growth_target,
@@ -40,8 +67,8 @@ bool MaxBandwidthFilter::FullBandwidthReached(float growth_target,
   // found and full bandwidth is not reached.
   int64_t minimal_bandwidth =
       bandwidth_last_round_bytes_per_ms_ * growth_target;
-  if (max_bandwidth_estimate_bytes_per_ms_ >= minimal_bandwidth) {
-    bandwidth_last_round_bytes_per_ms_ = max_bandwidth_estimate_bytes_per_ms_;
+  if (max_bandwidth_estimate_bps_ >= minimal_bandwidth) {
+    bandwidth_last_round_bytes_per_ms_ = max_bandwidth_estimate_bps_;
     rounds_without_growth_ = 0;
     return false;
   }

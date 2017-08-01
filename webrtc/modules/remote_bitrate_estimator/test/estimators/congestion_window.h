@@ -14,19 +14,25 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/bbr.h"
 
+#include "webrtc/rtc_base/optional.h"
+
 namespace webrtc {
 namespace testing {
 namespace bwe {
 class CongestionWindow {
  public:
+  // Size of congestion window while in PROBE_RTT mode, suggested by BBR's
+  // source code of QUIC's implementation.
+  static const int kMinimumCongestionWindowBytes = 4000;
+
   CongestionWindow();
   ~CongestionWindow();
   int GetCongestionWindow(BbrBweSender::Mode mode,
                           int64_t bandwidth_estimate,
-                          int64_t min_rtt,
+                          rtc::Optional<int64_t> min_rtt,
                           float gain);
   int GetTargetCongestionWindow(int64_t bandwidth_estimate,
-                                int64_t min_rtt,
+                                rtc::Optional<int64_t> min_rtt,
                                 float gain);
   // Packet sent from sender, meaning it is inflight until we receive it and we
   // should add packet's size to data_inflight.

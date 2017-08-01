@@ -17,6 +17,8 @@
 #include <vector>
 
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
+#include "webrtc/rtc_base/optional.h"
+#include "webrtc/rtc_base/random.h"
 
 namespace webrtc {
 namespace testing {
@@ -59,13 +61,16 @@ class BbrBweSender : public BweSender {
   void TryExitingStartup();
   void TryExitingDrain(int64_t now_ms);
   void EnterProbeBw(int64_t now_ms);
-  void EnterProbeRtt(int64_t now_ms);
   void TryUpdatingCyclePhase(int64_t now_ms);
   void TryEnteringProbeRtt(int64_t now_ms);
-  void TryExitingProbeRtt(int64_t now_ms);
+  void TryExitingProbeRtt(int64_t now_ms, int64_t round);
+  size_t TargetCongestionWindow(float gain);
   Clock* const clock_;
   Mode mode_;
   std::unique_ptr<MaxBandwidthFilter> max_bandwidth_filter_;
+  std::unique_ptr<MinRttFilter> min_rtt_filter_;
+  std::unique_ptr<CongestionWindow> congestion_window_;
+  std::unique_ptr<Random> rand_;
   uint64_t round_count_;
   uint64_t last_packet_sent_;
   uint64_t round_trip_end_;
@@ -75,6 +80,27 @@ class BbrBweSender : public BweSender {
   // If optimal bandwidth has been discovered and reached, (for example after
   // Startup mode) set this variable to true.
   bool full_bandwidth_reached_;
+
+  // Entering time for PROBE_BW mode's cycle phase.
+  int64_t cycle_start_time_ms_;
+
+  // Index number of the currently used gain value in PROBE_BW mode, from 0 to
+  // kGainCycleLength - 1.
+  int64_t cycle_index_;
+
+  // Data inflight prior to the moment when last feedback was received.
+  size_t prior_in_flight_;
+
+  // Time we entered PROBE_RTT mode.
+  int64_t probe_rtt_start_time_ms_;
+
+  // First moment of time when data inflight decreased below
+  // kMinimumCongestionWindow in PROBE_RTT mode.
+  rtc::Optional<int64_t> minimum_congestion_window_start_time_ms_;
+
+  // First round when data inflight decreased below kMinimumCongestionWindow in
+  // PROBE_RTT mode.
+  int64_t minimum_congestion_window_start_round_;
 };
 
 class BbrBweReceiver : public BweReceiver {

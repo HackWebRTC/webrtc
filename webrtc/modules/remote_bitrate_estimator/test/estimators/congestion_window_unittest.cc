@@ -19,7 +19,7 @@ namespace bwe {
 namespace {
 // These are the same values used in CongestionWindow class.
 const int64_t kStartingCongestionWindow = 6000;
-const int64_t kMinimumCongestionWindow = 5840;
+const int64_t kMinimumCongestionWindow = 4000;
 }  // namespace
 
 TEST(CongestionWindowTest, InitializationCheck) {
@@ -46,35 +46,38 @@ TEST(CongestionWindowTest, DataInflight) {
 TEST(CongestionWindowTest, ZeroBandwidthDelayProduct) {
   CongestionWindow congestion_window;
   int64_t target_congestion_window =
-      congestion_window.GetTargetCongestionWindow(100, 0, 2.885f);
+      congestion_window.GetTargetCongestionWindow(
+          100, rtc::Optional<int64_t>(0), 2.885f);
   EXPECT_EQ(target_congestion_window, 2.885f * kStartingCongestionWindow);
 }
 
 TEST(CongestionWindowTest, BelowMinimumTargetCongestionWindow) {
   CongestionWindow congestion_window;
   int64_t target_congestion_window =
-      congestion_window.GetTargetCongestionWindow(100, 2, 2.885f);
+      congestion_window.GetTargetCongestionWindow(
+          100, rtc::Optional<int64_t>(2), 2.885f);
   EXPECT_EQ(target_congestion_window, kMinimumCongestionWindow);
 }
 
 TEST(CongestionWindowTest, AboveMinimumTargetCongestionWindow) {
   CongestionWindow congestion_window;
   int64_t target_congestion_window =
-      congestion_window.GetTargetCongestionWindow(100000, 2, 2.885f);
+      congestion_window.GetTargetCongestionWindow(
+          100000, rtc::Optional<int64_t>(2), 2.885f);
   EXPECT_EQ(target_congestion_window, 577000);
 }
 
 TEST(CongestionWindowTest, MinimumCongestionWindow) {
   CongestionWindow congestion_window;
-  int64_t cwnd = congestion_window.GetCongestionWindow(BbrBweSender::PROBE_RTT,
-                                                       100, 100, 2.885f);
+  int64_t cwnd = congestion_window.GetCongestionWindow(
+      BbrBweSender::PROBE_RTT, 100, rtc::Optional<int64_t>(100), 2.885f);
   EXPECT_EQ(cwnd, kMinimumCongestionWindow);
 }
 
 TEST(CongestionWindowTest, CalculateCongestionWindow) {
   CongestionWindow congestion_window;
-  int64_t cwnd = congestion_window.GetCongestionWindow(BbrBweSender::STARTUP,
-                                                       100, 100, 2.885f);
+  int64_t cwnd = congestion_window.GetCongestionWindow(
+      BbrBweSender::STARTUP, 100, rtc::Optional<int64_t>(100l), 2.885f);
   EXPECT_EQ(cwnd, 28850);
 }
 }  // namespace bwe

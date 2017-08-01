@@ -12,8 +12,16 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_MAX_BANDWIDTH_FILTER_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_MAX_BANDWIDTH_FILTER_H_
 
-#include <cstddef>
-#include <cstdint>
+#include <climits>
+#include <list>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
+
+#include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 
 namespace webrtc {
 namespace testing {
@@ -23,23 +31,20 @@ class MaxBandwidthFilter {
   MaxBandwidthFilter();
 
   ~MaxBandwidthFilter();
-  int64_t max_bandwidth_estimate_bytes_per_ms() {
-    return max_bandwidth_estimate_bytes_per_ms_;
-  }
+  int64_t max_bandwidth_estimate_bps() { return max_bandwidth_estimate_bps_; }
 
-  // Save bandwidth sample for the current round. We save bandwidth samples for
-  // past 10 rounds to provide better bandwidth estimate.
+  // Adds bandwidth sample to the bandwidth filter.
   void AddBandwidthSample(int64_t sample, int64_t round, size_t filter_size);
 
-  // Check if bandwidth has grown by certain multiplier for past x rounds,
-  // to decide whether or not full bandwidth was reached.
+  // Checks if bandwidth has grown by certain multiplier for past x rounds,
+  // to decide whether or full bandwidth was reached.
   bool FullBandwidthReached(float growth_target, int max_rounds_without_growth);
 
  private:
   int64_t bandwidth_last_round_bytes_per_ms_;
-  uint64_t round_bandwidth_updated_;
-  int64_t max_bandwidth_estimate_bytes_per_ms_;
+  int64_t max_bandwidth_estimate_bps_;
   int64_t rounds_without_growth_;
+  std::pair<int64_t, size_t> bandwidth_samples_[3];
 };
 }  // namespace bwe
 }  // namespace testing

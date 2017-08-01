@@ -17,27 +17,43 @@ namespace testing {
 namespace bwe {
 TEST(MaxBandwidthFilterTest, InitializationCheck) {
   MaxBandwidthFilter max_bandwidth_filter;
-  EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bytes_per_ms(), 0);
+  EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 0);
 }
 
 TEST(MaxBandwidthFilterTest, AddOneBandwidthSample) {
   MaxBandwidthFilter max_bandwidth_filter;
   max_bandwidth_filter.AddBandwidthSample(13, 4, 10);
-  EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bytes_per_ms(), 13);
+  EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 13);
 }
 
 TEST(MaxBandwidthFilterTest, AddSeveralBandwidthSamples) {
   MaxBandwidthFilter max_bandwidth_filter;
   max_bandwidth_filter.AddBandwidthSample(10, 5, 10);
   max_bandwidth_filter.AddBandwidthSample(13, 6, 10);
-  EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bytes_per_ms(), 13);
+  EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 13);
 }
 
-TEST(MaxBandwidthFilterTest, SampleTimeOut) {
+TEST(MaxBandwidthFilterTest, FirstSampleTimeOut) {
   MaxBandwidthFilter max_bandwidth_filter;
   max_bandwidth_filter.AddBandwidthSample(13, 5, 10);
   max_bandwidth_filter.AddBandwidthSample(10, 15, 10);
-  EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bytes_per_ms(), 10);
+  EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 10);
+}
+
+TEST(MaxBandwidthFilterTest, SecondSampleBecomesTheFirst) {
+  MaxBandwidthFilter max_bandwidth_filter;
+  max_bandwidth_filter.AddBandwidthSample(4, 5, 10);
+  max_bandwidth_filter.AddBandwidthSample(3, 10, 10);
+  max_bandwidth_filter.AddBandwidthSample(2, 15, 10);
+  EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 3);
+}
+
+TEST(MaxBandwidthFilterTest, ThirdSampleBecomesTheFirst) {
+  MaxBandwidthFilter max_bandwidth_filter;
+  max_bandwidth_filter.AddBandwidthSample(4, 5, 10);
+  max_bandwidth_filter.AddBandwidthSample(3, 10, 10);
+  max_bandwidth_filter.AddBandwidthSample(2, 25, 10);
+  EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 2);
 }
 
 TEST(MaxBandwidthFilterTest, FullBandwidthReached) {
