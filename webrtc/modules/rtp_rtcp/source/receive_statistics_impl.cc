@@ -525,29 +525,4 @@ std::vector<rtcp::ReportBlock> ReceiveStatistics::RtcpReportBlocks(
   return result;
 }
 
-void NullReceiveStatistics::IncomingPacket(const RTPHeader& rtp_header,
-                                           size_t packet_length,
-                                           bool retransmitted) {}
-
-void NullReceiveStatistics::FecPacketReceived(const RTPHeader& header,
-                                              size_t packet_length) {}
-
-StatisticianMap NullReceiveStatistics::GetActiveStatisticians() const {
-  return StatisticianMap();
-}
-
-StreamStatistician* NullReceiveStatistics::GetStatistician(
-    uint32_t ssrc) const {
-  return NULL;
-}
-
-void NullReceiveStatistics::SetMaxReorderingThreshold(
-    int max_reordering_threshold) {}
-
-void NullReceiveStatistics::RegisterRtcpStatisticsCallback(
-    RtcpStatisticsCallback* callback) {}
-
-void NullReceiveStatistics::RegisterRtpStatisticsCallback(
-    StreamDataCountersCallback* callback) {}
-
 }  // namespace webrtc

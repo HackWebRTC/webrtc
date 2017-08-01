@@ -95,21 +95,5 @@ class ReceiveStatistics : public ReceiveStatisticsProvider {
   std::vector<rtcp::ReportBlock> RtcpReportBlocks(size_t max_blocks) override;
 };
 
-class NullReceiveStatistics : public ReceiveStatistics {
- public:
-  void IncomingPacket(const RTPHeader& rtp_header,
-                      size_t packet_length,
-                      bool retransmitted) override;
-  void FecPacketReceived(const RTPHeader& header,
-                         size_t packet_length) override;
-  StatisticianMap GetActiveStatisticians() const override;
-  StreamStatistician* GetStatistician(uint32_t ssrc) const override;
-  void SetMaxReorderingThreshold(int max_reordering_threshold) override;
-  void RegisterRtcpStatisticsCallback(
-      RtcpStatisticsCallback* callback) override;
-  void RegisterRtpStatisticsCallback(
-      StreamDataCountersCallback* callback) override;
-};
-
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_

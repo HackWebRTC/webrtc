@@ -757,8 +757,7 @@ void VideoSendStreamTest::TestNackRetransmission(
       if (++send_count_ == 3) {
         uint16_t nack_sequence_number = header.sequenceNumber - 1;
         nacked_sequence_number_ = nack_sequence_number;
-        NullReceiveStatistics null_stats;
-        RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), &null_stats,
+        RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), nullptr,
                                nullptr, nullptr, transport_adapter_.get());
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
