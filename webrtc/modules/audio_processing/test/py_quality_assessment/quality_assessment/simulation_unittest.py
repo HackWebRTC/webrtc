@@ -66,7 +66,7 @@ class TestApmModuleSimulator(unittest.TestCase):
     config_files = ['apm_configs/default.json']
     input_files = [self._fake_audio_track_path]
     test_data_generators = ['identity', 'white_noise']
-    eval_scores = ['audio_level', 'polqa']
+    eval_scores = ['audio_level_mean', 'polqa']
 
     # Run all simulations.
     simulator.Run(

@@ -52,6 +52,25 @@ class TestTestDataGenerators(unittest.TestCase):
     shutil.rmtree(self._test_data_cache_path)
     shutil.rmtree(self._fake_air_db_path)
 
+  def testInputSignalCreation(self):
+    # Init.
+    generator = test_data_generation.IdentityTestDataGenerator('tmp')
+    input_signal_filepath = os.path.join(
+        self._test_data_cache_path, 'pure_tone-440_1000.wav')
+
+    # Check that the input signal is generated.
+    self.assertFalse(os.path.exists(input_signal_filepath))
+    generator.Generate(
+        input_signal_filepath=input_signal_filepath,
+        test_data_cache_path=self._test_data_cache_path,
+        base_output_path=self._base_output_path)
+    self.assertTrue(os.path.exists(input_signal_filepath))
+
+    # Check input signal properties.
+    input_signal = signal_processing.SignalProcessingUtils.LoadWav(
+        input_signal_filepath)
+    self.assertEqual(1000, len(input_signal))
+
   def testTestDataGenerators(self):
     # Preliminary check.
     self.assertTrue(os.path.exists(self._base_output_path))

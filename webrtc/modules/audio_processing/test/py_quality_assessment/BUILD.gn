@@ -62,6 +62,7 @@ copy("lib") {
     "quality_assessment/exceptions.py",
     "quality_assessment/export.py",
     "quality_assessment/input_mixer.py",
+    "quality_assessment/input_signal_creator.py",
     "quality_assessment/results.css",
     "quality_assessment/results.js",
     "quality_assessment/signal_processing.py",
