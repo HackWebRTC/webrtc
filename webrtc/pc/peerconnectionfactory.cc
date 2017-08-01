@@ -292,7 +292,7 @@ rtc::scoped_refptr<VideoTrackInterface> PeerConnectionFactory::CreateVideoTrack(
     VideoTrackSourceInterface* source) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<VideoTrackInterface> track(
-      VideoTrack::Create(id, source));
+      VideoTrack::Create(id, source, worker_thread_));
   return VideoTrackProxy::Create(signaling_thread_, worker_thread_, track);
 }
 
