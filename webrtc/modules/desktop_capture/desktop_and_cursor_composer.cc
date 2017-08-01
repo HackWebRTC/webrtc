@@ -79,7 +79,7 @@ DesktopFrameWithCursor::DesktopFrameWithCursor(
     std::unique_ptr<DesktopFrame> frame,
     const MouseCursor& cursor,
     const DesktopVector& position)
-    : DesktopFrame(frame->size(),
+    : DesktopFrame(frame->rect(),
                    frame->stride(),
                    frame->data(),
                    frame->shared_memory()) {

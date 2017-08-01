@@ -47,7 +47,7 @@ bool SharedDesktopFrame::IsShared() {
 }
 
 SharedDesktopFrame::SharedDesktopFrame(rtc::scoped_refptr<Core> core)
-    : DesktopFrame((*core)->size(),
+    : DesktopFrame((*core)->rect(),
                    (*core)->stride(),
                    (*core)->data(),
                    (*core)->shared_memory()),
