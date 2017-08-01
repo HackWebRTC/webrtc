@@ -54,3 +54,18 @@
 }
 
 @end
+
+@implementation RTCVideoEncoderQpThresholds
+
+@synthesize low = _low;
+@synthesize high = _high;
+
+- (instancetype)initWithThresholdsLow:(NSInteger)low high:(NSInteger)high {
+  if (self = [super init]) {
+    _low = low;
+    _high = high;
+  }
+  return self;
+}
+
+@end

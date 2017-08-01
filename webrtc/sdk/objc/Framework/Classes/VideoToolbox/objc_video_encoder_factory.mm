@@ -111,6 +111,13 @@ class ObjCVideoEncoder : public VideoEncoder {
 
   bool SupportsNativeHandle() const { return true; }
 
+  VideoEncoder::ScalingSettings GetScalingSettings() const {
+    RTCVideoEncoderQpThresholds* qp_thresholds = [encoder_ scalingSettings];
+    return qp_thresholds ?
+        ScalingSettings(true /* enabled */, qp_thresholds.low, qp_thresholds.high) :
+        ScalingSettings(false /* enabled */);
+  }
+
  private:
   id<RTCVideoEncoder> encoder_;
 };

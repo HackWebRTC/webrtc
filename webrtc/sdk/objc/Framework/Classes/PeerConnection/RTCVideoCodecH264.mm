@@ -27,6 +27,11 @@ const size_t kDefaultPayloadSize = 1440;
 
 const char kHighProfileExperiment[] = "WebRTC-H264HighProfile";
 
+// These thresholds deviate from the default h264 QP thresholds, as they have been found to work
+// better on devices that support VideoToolbox
+const int kLowH264QpThreshold = 28;
+const int kHighH264QpThreshold = 39;
+
 bool IsHighProfileEnabled() {
   return webrtc::field_trial::IsEnabled(kHighProfileExperiment);
 }
@@ -169,6 +174,11 @@ class H264VideoToolboxDecodeCompleteCallback : public webrtc::DecodedImageCallba
 
 - (BOOL)setBitrate:(uint32_t)bitrateKbit framerate:(uint32_t)framerate {
   return _videoToolboxEncoder->SetRates(bitrateKbit, framerate) == WEBRTC_VIDEO_CODEC_OK;
+}
+
+- (RTCVideoEncoderQpThresholds *)scalingSettings {
+  return [[RTCVideoEncoderQpThresholds alloc] initWithThresholdsLow:kLowH264QpThreshold
+                                                               high:kHighH264QpThreshold];
 }
 
 @end

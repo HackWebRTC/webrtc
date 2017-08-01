@@ -104,6 +104,17 @@ RTC_EXPORT
 
 @end
 
+/** QP thresholds for encoder. Corresponds to webrtc::VideoEncoder::QpThresholds. */
+RTC_EXPORT
+@interface RTCVideoEncoderQpThresholds : NSObject
+
+- (instancetype)initWithThresholdsLow:(NSInteger)low high:(NSInteger)high;
+
+@property(nonatomic, readonly) NSInteger low;
+@property(nonatomic, readonly) NSInteger high;
+
+@end
+
 /** Protocol for encoder implementations. */
 RTC_EXPORT
 @protocol RTCVideoEncoder <NSObject>
@@ -117,6 +128,13 @@ RTC_EXPORT
     codecSpecificInfo:(id<RTCCodecSpecificInfo>)info
            frameTypes:(NSArray<NSNumber *> *)frameTypes;
 - (BOOL)setBitrate:(uint32_t)bitrateKbit framerate:(uint32_t)framerate;
+
+/** Returns QP scaling settings for encoder. The quality scaler adjusts the resolution in order to
+ *  keep the QP from the encoded images within the given range. Returning nil from this function
+ *  disables quality scaling. */
+- (RTCVideoEncoderQpThresholds *)scalingSettings;
+
+// TODO(andersc): Add implementationName method.
 
 @end
 
@@ -134,6 +152,8 @@ RTC_EXPORT
     fragmentationHeader:(RTCRtpFragmentationHeader *)fragmentationHeader
       codecSpecificInfo:(__nullable id<RTCCodecSpecificInfo>)info
            renderTimeMs:(int64_t)renderTimeMs;
+
+// TODO(andersc): Add implementationName method.
 
 @end
 

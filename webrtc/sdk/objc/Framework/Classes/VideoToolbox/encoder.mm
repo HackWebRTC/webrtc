@@ -757,6 +757,8 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
   bitrate_adjuster_.Update(frame._length);
 }
 
+// TODO(magjed): This function is not used by RTCVideoEncoderH264, but this whole file will be
+// removed soon and inlined as ObjC.
 VideoEncoder::ScalingSettings H264VideoToolboxEncoder::GetScalingSettings()
     const {
   return VideoEncoder::ScalingSettings(true, internal::kLowH264QpThreshold,
