@@ -2088,6 +2088,9 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     video_send_stream_->Stop();
     for (FlexfecReceiveStream* flexfec_receive_stream :
          flexfec_receive_streams_) {
+      for (VideoReceiveStream* video_receive_stream : video_receive_streams_) {
+        video_receive_stream->RemoveSecondarySink(flexfec_receive_stream);
+      }
       flexfec_receive_stream->Stop();
       receiver_call_->DestroyFlexfecReceiveStream(flexfec_receive_stream);
     }

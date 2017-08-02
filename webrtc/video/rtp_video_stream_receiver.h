@@ -31,6 +31,7 @@
 #include "webrtc/modules/video_coding/sequence_number_util.h"
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_receive_stream.h"
 
@@ -142,6 +143,13 @@ class RtpVideoStreamReceiver : public RtpData,
   rtc::Optional<int64_t> LastReceivedPacketMs() const;
   rtc::Optional<int64_t> LastReceivedKeyframePacketMs() const;
 
+  // RtpDemuxer only forwards a given RTP packet to one sink. However, some
+  // sinks, such as FlexFEC, might wish to be informed of all of the packets
+  // a given sink receives (or any set of sinks). They may do so by registering
+  // themselves as secondary sinks.
+  void AddSecondarySink(RtpPacketSinkInterface* sink);
+  void RemoveSecondarySink(const RtpPacketSinkInterface* sink);
+
  private:
   bool AddReceiveCodec(const VideoCodec& video_codec);
   void ReceivePacket(const uint8_t* packet,
@@ -201,6 +209,11 @@ class RtpVideoStreamReceiver : public RtpData,
   int16_t last_payload_type_ = -1;
 
   bool has_received_frame_;
+
+  // TODO(eladalon): https://bugs.chromium.org/p/webrtc/issues/detail?id=8056
+  //  rtc::ThreadChecker worker_thread_checker_;
+  std::vector<RtpPacketSinkInterface*> secondary_sinks_;  // This needs
+  // to be GUARDED_BY(worker_thread_checker_).
 };
 
 }  // namespace webrtc

@@ -82,6 +82,9 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void EnableEncodedFrameRecording(rtc::PlatformFile file,
                                    size_t byte_limit) override;
 
+  void AddSecondarySink(RtpPacketSinkInterface* sink) override;
+  void RemoveSecondarySink(const RtpPacketSinkInterface* sink) override;
+
   // Implements rtc::VideoSinkInterface<VideoFrame>.
   void OnFrame(const VideoFrame& video_frame) override;
 

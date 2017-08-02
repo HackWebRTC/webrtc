@@ -157,8 +157,6 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
   // problem too.
   rtp_stream_receiver_ =
       receiver_controller->CreateReceiver(config_.remote_ssrc, this);
-  for (uint32_t ssrc : config.protected_media_ssrcs)
-    receiver_controller->AddSink(ssrc, this);
 }
 
 FlexfecReceiveStreamImpl::~FlexfecReceiveStreamImpl() {

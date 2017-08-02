@@ -367,6 +367,15 @@ void VideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
   }
 }
 
+void VideoReceiveStream::AddSecondarySink(RtpPacketSinkInterface* sink) {
+  rtp_video_stream_receiver_.AddSecondarySink(sink);
+}
+
+void VideoReceiveStream::RemoveSecondarySink(
+    const RtpPacketSinkInterface* sink) {
+  rtp_video_stream_receiver_.RemoveSecondarySink(sink);
+}
+
 // TODO(tommi): This method grabs a lock 6 times.
 void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
   int64_t sync_offset_ms;

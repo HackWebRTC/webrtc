@@ -10,6 +10,7 @@
 
 #include "webrtc/video/rtp_video_stream_receiver.h"
 
+#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -192,6 +193,8 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
 }
 
 RtpVideoStreamReceiver::~RtpVideoStreamReceiver() {
+  RTC_DCHECK(secondary_sinks_.empty());
+
   if (nack_module_) {
     process_thread_->DeRegisterModule(nack_module_.get());
   }
@@ -309,6 +312,9 @@ int32_t RtpVideoStreamReceiver::OnInitializeDecoder(
 // This method handles both regular RTP packets and packets recovered
 // via FlexFEC.
 void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
+  // TODO(eladalon): https://bugs.chromium.org/p/webrtc/issues/detail?id=8056
+  //  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+
   {
     rtc::CritScope lock(&receive_cs_);
     if (!receiving_) {
@@ -361,6 +367,10 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
     // fixing bug bugs.webrtc.org/6339.
     rtp_receive_statistics_->IncomingPacket(
         header, packet.size(), IsPacketRetransmitted(header, in_order));
+  }
+
+  for (RtpPacketSinkInterface* secondary_sink : secondary_sinks_) {
+    secondary_sink->OnRtpPacket(packet);
   }
 }
 
@@ -427,6 +437,29 @@ rtc::Optional<int64_t> RtpVideoStreamReceiver::LastReceivedPacketMs() const {
 rtc::Optional<int64_t> RtpVideoStreamReceiver::LastReceivedKeyframePacketMs()
     const {
   return packet_buffer_->LastReceivedKeyframePacketMs();
+}
+
+void RtpVideoStreamReceiver::AddSecondarySink(RtpPacketSinkInterface* sink) {
+  // TODO(eladalon): https://bugs.chromium.org/p/webrtc/issues/detail?id=8056
+  //  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  RTC_DCHECK(std::find(secondary_sinks_.cbegin(), secondary_sinks_.cend(),
+                       sink) == secondary_sinks_.cend());
+  secondary_sinks_.push_back(sink);
+}
+
+void RtpVideoStreamReceiver::RemoveSecondarySink(
+    const RtpPacketSinkInterface* sink) {
+  // TODO(eladalon): https://bugs.chromium.org/p/webrtc/issues/detail?id=8056
+  //  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  auto it = std::find(secondary_sinks_.begin(), secondary_sinks_.end(), sink);
+  if (it == secondary_sinks_.end()) {
+    // We might be rolling-back a call whose setup failed mid-way. In such a
+    // case, it's simpler to remove "everything" rather than remember what
+    // has already been added.
+    LOG(LS_WARNING) << "Removal of unknown sink.";
+    return;
+  }
+  secondary_sinks_.erase(it);
 }
 
 void RtpVideoStreamReceiver::ReceivePacket(const uint8_t* packet,

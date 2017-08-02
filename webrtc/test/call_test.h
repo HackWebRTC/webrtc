@@ -95,6 +95,10 @@ class CallTest : public ::testing::Test {
   void CreateVideoStreams();
   void CreateAudioStreams();
   void CreateFlexfecStreams();
+
+  void AssociateFlexfecStreamsWithVideoStreams();
+  void DissociateFlexfecStreamsFromVideoStreams();
+
   void Start();
   void Stop();
   void DestroyStreams();

@@ -14,6 +14,7 @@
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/modules/pacing/packet_router.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
@@ -22,6 +23,7 @@
 #include "webrtc/modules/video_coding/timing.h"
 #include "webrtc/rtc_base/bytebuffer.h"
 #include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/field_trial_default.h"
 #include "webrtc/test/field_trial.h"
@@ -92,6 +94,27 @@ class MockOnCompleteFrameCallback
   }
   rtc::ByteBufferWriter buffer_;
 };
+
+class MockRtpPacketSink : public RtpPacketSinkInterface {
+ public:
+  MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived&));
+};
+
+constexpr uint32_t kSsrc = 111;
+constexpr uint16_t kSequenceNumber = 222;
+std::unique_ptr<RtpPacketReceived> CreateRtpPacketReceived(
+    uint32_t ssrc = kSsrc,
+    uint16_t sequence_number = kSequenceNumber) {
+  auto packet = rtc::MakeUnique<RtpPacketReceived>();
+  packet->SetSsrc(ssrc);
+  packet->SetSequenceNumber(sequence_number);
+  return packet;
+}
+
+MATCHER_P(SamePacketAs, other, "") {
+  return arg.Ssrc() == other.Ssrc() &&
+         arg.SequenceNumber() == other.SequenceNumber();
+}
 
 }  // namespace
 
@@ -343,5 +366,96 @@ TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
   rtp_video_stream_receiver_->OnReceivedPayloadData(data.data(), data.size(),
                                                     &rtp_header);
 }
+
+TEST_F(RtpVideoStreamReceiverTest, SecondarySinksGetRtpNotifications) {
+  rtp_video_stream_receiver_->StartReceive();
+
+  MockRtpPacketSink secondary_sink_1;
+  MockRtpPacketSink secondary_sink_2;
+
+  rtp_video_stream_receiver_->AddSecondarySink(&secondary_sink_1);
+  rtp_video_stream_receiver_->AddSecondarySink(&secondary_sink_2);
+
+  auto rtp_packet = CreateRtpPacketReceived();
+  EXPECT_CALL(secondary_sink_1, OnRtpPacket(SamePacketAs(*rtp_packet)));
+  EXPECT_CALL(secondary_sink_2, OnRtpPacket(SamePacketAs(*rtp_packet)));
+
+  rtp_video_stream_receiver_->OnRtpPacket(*rtp_packet);
+
+  // Test tear-down.
+  rtp_video_stream_receiver_->StopReceive();
+  rtp_video_stream_receiver_->RemoveSecondarySink(&secondary_sink_1);
+  rtp_video_stream_receiver_->RemoveSecondarySink(&secondary_sink_2);
+}
+
+TEST_F(RtpVideoStreamReceiverTest, RemovedSecondarySinksGetNoRtpNotifications) {
+  rtp_video_stream_receiver_->StartReceive();
+
+  MockRtpPacketSink secondary_sink;
+
+  rtp_video_stream_receiver_->AddSecondarySink(&secondary_sink);
+  rtp_video_stream_receiver_->RemoveSecondarySink(&secondary_sink);
+
+  auto rtp_packet = CreateRtpPacketReceived();
+
+  EXPECT_CALL(secondary_sink, OnRtpPacket(_)).Times(0);
+
+  rtp_video_stream_receiver_->OnRtpPacket(*rtp_packet);
+
+  // Test tear-down.
+  rtp_video_stream_receiver_->StopReceive();
+}
+
+TEST_F(RtpVideoStreamReceiverTest,
+       OnlyRemovedSecondarySinksExcludedFromNotifications) {
+  rtp_video_stream_receiver_->StartReceive();
+
+  MockRtpPacketSink kept_secondary_sink;
+  MockRtpPacketSink removed_secondary_sink;
+
+  rtp_video_stream_receiver_->AddSecondarySink(&kept_secondary_sink);
+  rtp_video_stream_receiver_->AddSecondarySink(&removed_secondary_sink);
+  rtp_video_stream_receiver_->RemoveSecondarySink(&removed_secondary_sink);
+
+  auto rtp_packet = CreateRtpPacketReceived();
+  EXPECT_CALL(kept_secondary_sink, OnRtpPacket(SamePacketAs(*rtp_packet)));
+
+  rtp_video_stream_receiver_->OnRtpPacket(*rtp_packet);
+
+  // Test tear-down.
+  rtp_video_stream_receiver_->StopReceive();
+  rtp_video_stream_receiver_->RemoveSecondarySink(&kept_secondary_sink);
+}
+
+TEST_F(RtpVideoStreamReceiverTest,
+       SecondariesOfNonStartedStreamGetNoNotifications) {
+  // Explicitly showing that the stream is not in the |started| state,
+  // regardless of whether streams start out |started| or |stopped|.
+  rtp_video_stream_receiver_->StopReceive();
+
+  MockRtpPacketSink secondary_sink;
+  rtp_video_stream_receiver_->AddSecondarySink(&secondary_sink);
+
+  auto rtp_packet = CreateRtpPacketReceived();
+  EXPECT_CALL(secondary_sink, OnRtpPacket(_)).Times(0);
+
+  rtp_video_stream_receiver_->OnRtpPacket(*rtp_packet);
+
+  // Test tear-down.
+  rtp_video_stream_receiver_->RemoveSecondarySink(&secondary_sink);
+}
+
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+TEST_F(RtpVideoStreamReceiverTest, RepeatedSecondarySinkDisallowed) {
+  MockRtpPacketSink secondary_sink;
+
+  rtp_video_stream_receiver_->AddSecondarySink(&secondary_sink);
+  EXPECT_DEATH(rtp_video_stream_receiver_->AddSecondarySink(&secondary_sink),
+               "");
+
+  // Test tear-down.
+  rtp_video_stream_receiver_->RemoveSecondarySink(&secondary_sink);
+}
+#endif
 
 }  // namespace webrtc

@@ -325,6 +325,7 @@ if (rtc_include_tests) {
       "..:video_stream_api",
       "../modules/audio_coding:rent_a_codec",
       "../modules/audio_processing:audio_processing",
+      "../modules/rtp_rtcp:rtp_rtcp",
       "../p2p:rtc_p2p",
     ]
     sources = [

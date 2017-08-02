@@ -30,8 +30,7 @@ class RtpRtcp;
 class RtpStreamReceiverControllerInterface;
 class RtpStreamReceiverInterface;
 
-class FlexfecReceiveStreamImpl : public FlexfecReceiveStream,
-                                 public RtpPacketSinkInterface {
+class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
  public:
   FlexfecReceiveStreamImpl(
       RtpStreamReceiverControllerInterface* receiver_controller,

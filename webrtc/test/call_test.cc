@@ -336,6 +336,8 @@ void CallTest::CreateVideoStreams() {
     video_receive_streams_.push_back(receiver_call_->CreateVideoReceiveStream(
         video_receive_configs_[i].Copy()));
   }
+
+  AssociateFlexfecStreamsWithVideoStreams();
 }
 
 void CallTest::SetFakeVideoCaptureRotation(VideoRotation rotation) {
@@ -356,9 +358,30 @@ void CallTest::CreateFlexfecStreams() {
         receiver_call_->CreateFlexfecReceiveStream(
             flexfec_receive_configs_[i]));
   }
+
+  AssociateFlexfecStreamsWithVideoStreams();
+}
+
+void CallTest::AssociateFlexfecStreamsWithVideoStreams() {
+  // All FlexFEC streams protect all of the video streams.
+  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_) {
+    for (VideoReceiveStream* video_recv_stream : video_receive_streams_) {
+      video_recv_stream->AddSecondarySink(flexfec_recv_stream);
+    }
+  }
+}
+
+void CallTest::DissociateFlexfecStreamsFromVideoStreams() {
+  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_) {
+    for (VideoReceiveStream* video_recv_stream : video_receive_streams_) {
+      video_recv_stream->RemoveSecondarySink(flexfec_recv_stream);
+    }
+  }
 }
 
 void CallTest::DestroyStreams() {
+  DissociateFlexfecStreamsFromVideoStreams();
+
   if (audio_send_stream_)
     sender_call_->DestroyAudioSendStream(audio_send_stream_);
   audio_send_stream_ = nullptr;

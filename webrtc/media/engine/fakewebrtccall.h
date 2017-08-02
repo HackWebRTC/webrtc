@@ -29,6 +29,7 @@
 #include "webrtc/call/audio_send_stream.h"
 #include "webrtc/call/call.h"
 #include "webrtc/call/flexfec_receive_stream.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -198,6 +199,9 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
   void EnableEncodedFrameRecording(rtc::PlatformFile file,
                                    size_t byte_limit) override;
 
+  void AddSecondarySink(webrtc::RtpPacketSinkInterface* sink) override;
+  void RemoveSecondarySink(const webrtc::RtpPacketSinkInterface* sink) override;
+
  private:
   // webrtc::VideoReceiveStream implementation.
   void Start() override;
@@ -225,6 +229,8 @@ class FakeFlexfecReceiveStream final : public webrtc::FlexfecReceiveStream {
   void Stop() override;
 
   webrtc::FlexfecReceiveStream::Stats GetStats() const override;
+
+  void OnRtpPacket(const webrtc::RtpPacketReceived& packet) override;
 
   webrtc::FlexfecReceiveStream::Config config_;
   bool receiving_;

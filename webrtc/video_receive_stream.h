@@ -25,6 +25,7 @@
 
 namespace webrtc {
 
+class RtpPacketSinkInterface;
 class VideoDecoder;
 
 class VideoReceiveStream {
@@ -220,6 +221,13 @@ class VideoReceiveStream {
   inline void DisableEncodedFrameRecording() {
     EnableEncodedFrameRecording(rtc::kInvalidPlatformFileValue, 0);
   }
+
+  // RtpDemuxer only forwards a given RTP packet to one sink. However, some
+  // sinks, such as FlexFEC, might wish to be informed of all of the packets
+  // a given sink receives (or any set of sinks). They may do so by registering
+  // themselves as secondary sinks.
+  virtual void AddSecondarySink(RtpPacketSinkInterface* sink) = 0;
+  virtual void RemoveSecondarySink(const RtpPacketSinkInterface* sink) = 0;
 
  protected:
   virtual ~VideoReceiveStream() {}

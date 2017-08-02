@@ -59,6 +59,8 @@ FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
   return packet_counter_;
 }
 
+// TODO(eladalon): Consider using packet.recovered() to avoid processing
+// recovered packets here.
 bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 

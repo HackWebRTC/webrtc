@@ -2154,6 +2154,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::AllocatedDecoder::
 
 WebRtcVideoChannel::WebRtcVideoReceiveStream::~WebRtcVideoReceiveStream() {
   if (flexfec_stream_) {
+    MaybeDissociateFlexfecFromVideo();
     call_->DestroyFlexfecReceiveStream(flexfec_stream_);
   }
   call_->DestroyVideoReceiveStream(stream_);
@@ -2334,24 +2335,42 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetRecvParameters(
 void WebRtcVideoChannel::WebRtcVideoReceiveStream::
     RecreateWebRtcVideoStream() {
   if (stream_) {
+    MaybeDissociateFlexfecFromVideo();
     call_->DestroyVideoReceiveStream(stream_);
     stream_ = nullptr;
   }
   webrtc::VideoReceiveStream::Config config = config_.Copy();
   config.rtp.protected_by_flexfec = (flexfec_stream_ != nullptr);
   stream_ = call_->CreateVideoReceiveStream(std::move(config));
+  MaybeAssociateFlexfecWithVideo();
   stream_->Start();
 }
 
 void WebRtcVideoChannel::WebRtcVideoReceiveStream::
     MaybeRecreateWebRtcFlexfecStream() {
   if (flexfec_stream_) {
+    MaybeDissociateFlexfecFromVideo();
     call_->DestroyFlexfecReceiveStream(flexfec_stream_);
     flexfec_stream_ = nullptr;
   }
   if (flexfec_config_.IsCompleteAndEnabled()) {
     flexfec_stream_ = call_->CreateFlexfecReceiveStream(flexfec_config_);
     flexfec_stream_->Start();
+    MaybeAssociateFlexfecWithVideo();
+  }
+}
+
+void WebRtcVideoChannel::WebRtcVideoReceiveStream::
+    MaybeAssociateFlexfecWithVideo() {
+  if (stream_ && flexfec_stream_) {
+    stream_->AddSecondarySink(flexfec_stream_);
+  }
+}
+
+void WebRtcVideoChannel::WebRtcVideoReceiveStream::
+    MaybeDissociateFlexfecFromVideo() {
+  if (stream_ && flexfec_stream_) {
+    stream_->RemoveSecondarySink(flexfec_stream_);
   }
 }
 
