@@ -303,6 +303,30 @@ TEST_F(TestPacketBuffer, ClearSinglePacket) {
   EXPECT_TRUE(Insert(seq_num + kMaxSize, kDeltaFrame, kFirst, kLast));
 }
 
+TEST_F(TestPacketBuffer, ClearFullBuffer) {
+  for (int i = 0; i < kMaxSize; ++i)
+    EXPECT_TRUE(Insert(i, kDeltaFrame, kFirst, kLast));
+
+  packet_buffer_->ClearTo(kMaxSize - 1);
+
+  for (int i = kMaxSize; i < 2 * kMaxSize; ++i)
+    EXPECT_TRUE(Insert(i, kDeltaFrame, kFirst, kLast));
+}
+
+TEST_F(TestPacketBuffer, DontClearNewerPacket) {
+  EXPECT_TRUE(Insert(0, kKeyFrame, kFirst, kLast));
+  packet_buffer_->ClearTo(0);
+  EXPECT_TRUE(Insert(2 * kStartSize, kKeyFrame, kFirst, kLast));
+  EXPECT_TRUE(Insert(3 * kStartSize + 1, kKeyFrame, kFirst, kNotLast));
+  packet_buffer_->ClearTo(2 * kStartSize);
+  EXPECT_TRUE(Insert(3 * kStartSize + 2, kKeyFrame, kNotFirst, kLast));
+
+  ASSERT_EQ(3UL, frames_from_callback_.size());
+  CheckFrame(0);
+  CheckFrame(2 * kStartSize);
+  CheckFrame(3 * kStartSize + 1);
+}
+
 TEST_F(TestPacketBuffer, OneIncompleteFrame) {
   const uint16_t seq_num = Rand();
 

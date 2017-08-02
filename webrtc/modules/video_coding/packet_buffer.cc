@@ -127,20 +127,37 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
 
 void PacketBuffer::ClearTo(uint16_t seq_num) {
   rtc::CritScope lock(&crit_);
+  // We have already cleared past this sequence number, no need to do anything.
+  if (is_cleared_to_first_seq_num_ &&
+      AheadOf<uint16_t>(first_seq_num_, seq_num)) {
+    return;
+  }
 
   // If the packet buffer was cleared between a frame was created and returned.
   if (!first_packet_received_)
     return;
 
-  is_cleared_to_first_seq_num_ = true;
-  while (AheadOrAt<uint16_t>(seq_num, first_seq_num_)) {
+  // Avoid iterating over the buffer more than once by capping the number of
+  // iterations to the |size_| of the buffer.
+  ++seq_num;
+  size_t diff = ForwardDiff<uint16_t>(first_seq_num_, seq_num);
+  size_t iterations = std::min(diff, size_);
+  for (size_t i = 0; i < iterations; ++i) {
     size_t index = first_seq_num_ % size_;
-    delete[] data_buffer_[index].dataPtr;
-    data_buffer_[index].dataPtr = nullptr;
-    sequence_buffer_[index].used = false;
+    RTC_DCHECK_EQ(data_buffer_[index].seqNum, sequence_buffer_[index].seq_num);
+    if (AheadOf<uint16_t>(seq_num, sequence_buffer_[index].seq_num)) {
+      delete[] data_buffer_[index].dataPtr;
+      data_buffer_[index].dataPtr = nullptr;
+      sequence_buffer_[index].used = false;
+    }
     ++first_seq_num_;
   }
 
+  // If |diff| is larger than |iterations| it means that we don't increment
+  // |first_seq_num_| until we reach |seq_num|, so we set it here.
+  first_seq_num_ = seq_num;
+
+  is_cleared_to_first_seq_num_ = true;
   missing_packets_.erase(missing_packets_.begin(),
                          missing_packets_.upper_bound(seq_num));
 }
