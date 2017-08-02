@@ -51,6 +51,57 @@ class MockRtpRtcpWithRembTracking : public MockRtpRtcp {
 };
 }  // namespace
 
+TEST(PacketRouterTest, Sanity_NoModuleRegistered_TimeToSendPacket) {
+  PacketRouter packet_router;
+
+  constexpr uint16_t ssrc = 1234;
+  constexpr uint16_t sequence_number = 17;
+  constexpr uint64_t timestamp = 7890;
+  constexpr bool retransmission = false;
+  const PacedPacketInfo paced_info(1, kProbeMinProbes, kProbeMinBytes);
+
+  // TODO(eladalon): TimeToSendPacket() returning true when nothing was
+  // sent, because no modules were registered, is sub-optimal.
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=8052
+  EXPECT_TRUE(packet_router.TimeToSendPacket(ssrc, sequence_number, timestamp,
+                                             retransmission, paced_info));
+}
+
+TEST(PacketRouterTest, Sanity_NoModuleRegistered_TimeToSendPadding) {
+  PacketRouter packet_router;
+
+  constexpr size_t bytes = 300;
+  const PacedPacketInfo paced_info(1, kProbeMinProbes, kProbeMinBytes);
+
+  EXPECT_EQ(packet_router.TimeToSendPadding(bytes, paced_info), 0u);
+}
+
+TEST(PacketRouterTest, Sanity_NoModuleRegistered_OnReceiveBitrateChanged) {
+  PacketRouter packet_router;
+
+  const std::vector<uint32_t> ssrcs = {1, 2, 3};
+  constexpr uint32_t bitrate_bps = 10000;
+
+  packet_router.OnReceiveBitrateChanged(ssrcs, bitrate_bps);
+}
+
+TEST(PacketRouterTest, Sanity_NoModuleRegistered_SendRemb) {
+  PacketRouter packet_router;
+
+  const std::vector<uint32_t> ssrcs = {1, 2, 3};
+  constexpr uint32_t bitrate_bps = 10000;
+
+  EXPECT_FALSE(packet_router.SendRemb(bitrate_bps, ssrcs));
+}
+
+TEST(PacketRouterTest, Sanity_NoModuleRegistered_SendTransportFeedback) {
+  PacketRouter packet_router;
+
+  rtcp::TransportFeedback feedback;
+
+  EXPECT_FALSE(packet_router.SendTransportFeedback(&feedback));
+}
+
 TEST(PacketRouterTest, TimeToSendPacket) {
   PacketRouter packet_router;
   NiceMock<MockRtpRtcp> rtp_1;

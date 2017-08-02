@@ -469,6 +469,10 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet,
     // are allocating bandwidth for audio.
     if (packet.priority != kHighPriority) {
       // Update media bytes sent.
+      // TODO(eladalon): TimeToSendPacket() can also return |true| in some
+      // situations where nothing actually ended up being sent to the network,
+      // and we probably don't want to update the budget in such cases.
+      // https://bugs.chromium.org/p/webrtc/issues/detail?id=8052
       UpdateBudgetWithBytesSent(packet.bytes);
     }
   }
