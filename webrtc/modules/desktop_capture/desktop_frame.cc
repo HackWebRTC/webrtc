@@ -39,7 +39,6 @@ DesktopFrame::DesktopFrame(DesktopRect rect,
       stride_(stride),
       capture_time_ms_(0),
       capturer_id_(DesktopCapturerId::kUnknown) {
-  RTC_DCHECK(stride_ >= 0);
   RTC_DCHECK(rect.width() >= 0);
   RTC_DCHECK(rect.height() >= 0);
 }
