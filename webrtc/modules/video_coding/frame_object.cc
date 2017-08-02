@@ -93,7 +93,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
     frame_type_ = first_packet->frameType;
   }
 
-  RTC_DCHECK(GetBitstream(_buffer));
+  GetBitstream(_buffer);
   _encodedWidth = first_packet->width;
   _encodedHeight = first_packet->height;
 
