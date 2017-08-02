@@ -3343,6 +3343,21 @@ TEST_F(WebRtcSdpTest, DeserializeLargeBandwidthLimit) {
   ExpectParseFailure(std::string(kSdpWithLargeBandwidth), "foo=fail");
 }
 
+// Similar to the above, except that negative values are illegal, not just
+// error-prone as large values are.
+// https://bugs.chromium.org/p/chromium/issues/detail?id=675361
+TEST_F(WebRtcSdpTest, DeserializingNegativeBandwidthLimitFails) {
+  static const char kSdpWithNegativeBandwidth[] =
+      "v=0\r\n"
+      "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
+      "s=-\r\n"
+      "t=0 0\r\n"
+      "m=video 3457 RTP/SAVPF 120\r\n"
+      "b=AS:-1000\r\n";
+
+  ExpectParseFailure(std::string(kSdpWithNegativeBandwidth), "b=AS:-1000");
+}
+
 // Test that "ufrag"/"pwd" in the candidate line itself are ignored, and only
 // the "a=ice-ufrag"/"a=ice-pwd" attributes are used.
 // Regression test for:

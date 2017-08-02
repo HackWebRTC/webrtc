@@ -2719,6 +2719,9 @@ bool ParseContent(const std::string& message,
           if (!GetValueFromString(line, bandwidth, &b, error)) {
             return false;
           }
+          if (b < 0) {
+            return ParseFailed(line, "b=AS value can't be negative.", error);
+          }
           // We should never use more than the default bandwidth for RTP-based
           // data channels. Don't allow SDP to set the bandwidth, because
           // that would give JS the opportunity to "break the Internet".
