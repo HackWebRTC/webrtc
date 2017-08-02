@@ -98,8 +98,8 @@ class TestPacketBuffer : public ::testing::Test,
         << ".";
   }
 
-  const int kStartSize = 16;
-  const int kMaxSize = 64;
+  static constexpr int kStartSize = 16;
+  static constexpr int kMaxSize = 64;
 
   Random rand_;
   std::unique_ptr<SimulatedClock> clock_;
@@ -374,8 +374,59 @@ TEST_F(TestPacketBuffer, GetBitstream) {
 
   ASSERT_EQ(1UL, frames_from_callback_.size());
   CheckFrame(seq_num);
+  EXPECT_EQ(frames_from_callback_[seq_num]->size(), sizeof(result));
   EXPECT_TRUE(frames_from_callback_[seq_num]->GetBitstream(result));
   EXPECT_EQ(memcmp(result, "many bitstream, such data", sizeof(result)), 0);
+}
+
+TEST_F(TestPacketBuffer, GetBitstreamOneFrameFullBuffer) {
+  uint8_t* data_arr[kStartSize];
+  uint8_t expected[kStartSize];
+  uint8_t result[kStartSize];
+
+  for (uint8_t i = 0; i < kStartSize; ++i) {
+    data_arr[i] = new uint8_t[1];
+    data_arr[i][0] = i;
+    expected[i] = i;
+  }
+
+  EXPECT_TRUE(Insert(0, kKeyFrame, kFirst, kNotLast, 1, data_arr[0]));
+  for (uint8_t i = 1; i < kStartSize - 1; ++i)
+    EXPECT_TRUE(Insert(i, kKeyFrame, kNotFirst, kNotLast, 1, data_arr[i]));
+  EXPECT_TRUE(Insert(kStartSize - 1, kKeyFrame, kNotFirst, kLast, 1,
+                     data_arr[kStartSize - 1]));
+
+  ASSERT_EQ(1UL, frames_from_callback_.size());
+  CheckFrame(0);
+  EXPECT_EQ(frames_from_callback_[0]->size(), static_cast<size_t>(kStartSize));
+  EXPECT_TRUE(frames_from_callback_[0]->GetBitstream(result));
+  EXPECT_EQ(memcmp(result, expected, kStartSize), 0);
+}
+
+TEST_F(TestPacketBuffer, GetBitstreamOneFrameFullBufferH264) {
+  uint8_t* data_arr[kStartSize];
+  uint8_t expected[kStartSize];
+  uint8_t result[kStartSize];
+
+  for (uint8_t i = 0; i < kStartSize; ++i) {
+    data_arr[i] = new uint8_t[1];
+    data_arr[i][0] = i;
+    expected[i] = i;
+  }
+
+  EXPECT_TRUE(InsertH264(0, kKeyFrame, kFirst, kNotLast, 1, 1, data_arr[0]));
+  for (uint8_t i = 1; i < kStartSize - 1; ++i) {
+    EXPECT_TRUE(
+        InsertH264(i, kKeyFrame, kNotFirst, kNotLast, 1, 1, data_arr[i]));
+  }
+  EXPECT_TRUE(InsertH264(kStartSize - 1, kKeyFrame, kNotFirst, kLast, 1, 1,
+                         data_arr[kStartSize - 1]));
+
+  ASSERT_EQ(1UL, frames_from_callback_.size());
+  CheckFrame(0);
+  EXPECT_EQ(frames_from_callback_[0]->size(), static_cast<size_t>(kStartSize));
+  EXPECT_TRUE(frames_from_callback_[0]->GetBitstream(result));
+  EXPECT_EQ(memcmp(result, expected, kStartSize), 0);
 }
 
 TEST_F(TestPacketBuffer, GetBitstreamH264BufferPadding) {
@@ -546,6 +597,23 @@ TEST_F(TestPacketBuffer, OneFrameFillBufferH264) {
 
   EXPECT_EQ(1UL, frames_from_callback_.size());
   CheckFrame(0);
+}
+
+TEST_F(TestPacketBuffer, CreateFramesAfterFilledBufferH264) {
+  InsertH264(kStartSize - 2, kKeyFrame, kFirst, kLast, 0);
+  ASSERT_EQ(1UL, frames_from_callback_.size());
+  frames_from_callback_.clear();
+
+  InsertH264(kStartSize, kDeltaFrame, kFirst, kNotLast, 2000);
+  for (int i = 1; i < kStartSize; ++i)
+    InsertH264(kStartSize + i, kDeltaFrame, kNotFirst, kNotLast, 2000);
+  InsertH264(kStartSize + kStartSize, kDeltaFrame, kNotFirst, kLast, 2000);
+  ASSERT_EQ(0UL, frames_from_callback_.size());
+
+  InsertH264(kStartSize - 1, kKeyFrame, kFirst, kLast, 1000);
+  ASSERT_EQ(2UL, frames_from_callback_.size());
+  CheckFrame(kStartSize - 1);
+  CheckFrame(kStartSize);
 }
 
 TEST_F(TestPacketBuffer, OneFrameMaxSeqNumH264) {
