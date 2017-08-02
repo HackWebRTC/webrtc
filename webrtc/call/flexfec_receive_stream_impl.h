@@ -11,6 +11,7 @@
 #ifndef WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
 #define WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
 
+#include <atomic>
 #include <memory>
 
 #include "webrtc/call/flexfec_receive_stream.h"
@@ -52,8 +53,7 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream,
  private:
   // Config.
   const Config config_;
-  bool started_ GUARDED_BY(crit_);
-  rtc::CriticalSection crit_;
+  std::atomic<bool> started_;
 
   // Erasure code interfacing.
   const std::unique_ptr<FlexfecReceiver> receiver_;

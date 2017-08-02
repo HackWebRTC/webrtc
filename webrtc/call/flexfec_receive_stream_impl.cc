@@ -168,11 +168,8 @@ FlexfecReceiveStreamImpl::~FlexfecReceiveStreamImpl() {
 }
 
 void FlexfecReceiveStreamImpl::OnRtpPacket(const RtpPacketReceived& packet) {
-  {
-    rtc::CritScope cs(&crit_);
-    if (!started_)
-      return;
-  }
+  if (!started_.load())
+    return;
 
   if (!receiver_)
     return;
@@ -191,13 +188,11 @@ void FlexfecReceiveStreamImpl::OnRtpPacket(const RtpPacketReceived& packet) {
 }
 
 void FlexfecReceiveStreamImpl::Start() {
-  rtc::CritScope cs(&crit_);
-  started_ = true;
+  started_.store(true);
 }
 
 void FlexfecReceiveStreamImpl::Stop() {
-  rtc::CritScope cs(&crit_);
-  started_ = false;
+  started_.store(false);
 }
 
 // TODO(brandtr): Implement this member function when we have designed the
