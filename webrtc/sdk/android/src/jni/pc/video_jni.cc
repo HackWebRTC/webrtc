@@ -18,7 +18,7 @@
 #include "webrtc/sdk/android/src/jni/androidmediaencoder_jni.h"
 #include "webrtc/sdk/android/src/jni/androidvideotracksource.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-#include "webrtc/sdk/android/src/jni/ownedfactoryandthreads.h"
+#include "webrtc/sdk/android/src/jni/pc/ownedfactoryandthreads.h"
 #include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
 #include "webrtc/sdk/android/src/jni/videodecoderfactorywrapper.h"
 

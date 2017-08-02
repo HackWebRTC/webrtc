@@ -42,6 +42,7 @@
 #include "webrtc/rtc_base/weak_ptr.h"
 #include "webrtc/sdk/android/src/jni/androidmediacodeccommon.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/native_handle_impl.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 

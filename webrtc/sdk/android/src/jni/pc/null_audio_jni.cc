@@ -8,19 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/audio_jni.h"
-
-#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "webrtc/sdk/android/src/jni/pc/audio_jni.h"
 
 namespace webrtc_jni {
 
 rtc::scoped_refptr<webrtc::AudioDecoderFactory> CreateAudioDecoderFactory() {
-  return webrtc::CreateBuiltinAudioDecoderFactory();
+  return nullptr;
 }
 
 rtc::scoped_refptr<webrtc::AudioEncoderFactory> CreateAudioEncoderFactory() {
-  return webrtc::CreateBuiltinAudioEncoderFactory();
+  return nullptr;
 }
 
 }  // namespace webrtc_jni

@@ -7,22 +7,31 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/sdk/android/src/jni/media_jni.h"
 
-#include "webrtc/call/callfactoryinterface.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log_factory_interface.h"
-#include "webrtc/media/engine/webrtcmediaengine.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_PC_MEDIA_JNI_H_
+#define WEBRTC_SDK_ANDROID_SRC_JNI_PC_MEDIA_JNI_H_
+
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+
+namespace webrtc {
+class AudioDeviceModule;
+class CallFactoryInterface;
+class AudioEncoderFactory;
+class AudioDecoderFactory;
+class RtcEventLogFactoryInterface;
+class AudioMixer;
+}  // namespace webrtc
+
+namespace cricket {
+class MediaEngineInterface;
+class WebRtcVideoEncoderFactory;
+class WebRtcVideoDecoderFactory;
+}  // namespace cricket
 
 namespace webrtc_jni {
 
-webrtc::CallFactoryInterface* CreateCallFactory() {
-  return webrtc::CreateCallFactory().release();
-}
-
-webrtc::RtcEventLogFactoryInterface* CreateRtcEventLogFactory() {
-  return webrtc::CreateRtcEventLogFactory().release();
-}
+webrtc::CallFactoryInterface* CreateCallFactory();
+webrtc::RtcEventLogFactoryInterface* CreateRtcEventLogFactory();
 
 cricket::MediaEngineInterface* CreateMediaEngine(
     webrtc::AudioDeviceModule* adm,
@@ -32,10 +41,8 @@ cricket::MediaEngineInterface* CreateMediaEngine(
         audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
     cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
-  return cricket::WebRtcMediaEngineFactory::Create(
-      adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory, audio_mixer, webrtc::AudioProcessing::Create());
-}
+    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
 
 }  // namespace webrtc_jni
+
+#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_MEDIA_JNI_H_
