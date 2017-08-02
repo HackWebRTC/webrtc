@@ -128,13 +128,12 @@ RTC_EXPORT
     codecSpecificInfo:(id<RTCCodecSpecificInfo>)info
            frameTypes:(NSArray<NSNumber *> *)frameTypes;
 - (BOOL)setBitrate:(uint32_t)bitrateKbit framerate:(uint32_t)framerate;
+- (NSString *)implementationName;
 
 /** Returns QP scaling settings for encoder. The quality scaler adjusts the resolution in order to
  *  keep the QP from the encoded images within the given range. Returning nil from this function
  *  disables quality scaling. */
 - (RTCVideoEncoderQpThresholds *)scalingSettings;
-
-// TODO(andersc): Add implementationName method.
 
 @end
 
@@ -152,8 +151,7 @@ RTC_EXPORT
     fragmentationHeader:(RTCRtpFragmentationHeader *)fragmentationHeader
       codecSpecificInfo:(__nullable id<RTCCodecSpecificInfo>)info
            renderTimeMs:(int64_t)renderTimeMs;
-
-// TODO(andersc): Add implementationName method.
+- (NSString *)implementationName;
 
 @end
 

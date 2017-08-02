@@ -10,6 +10,9 @@
 
 #include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/objc_video_encoder_factory.h"
 
+#include <string>
+
+#import "NSString+StdString.h"
 #import "RTCVideoCodec+Private.h"
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
@@ -32,7 +35,8 @@ namespace webrtc {
 namespace {
 class ObjCVideoEncoder : public VideoEncoder {
  public:
-  ObjCVideoEncoder(id<RTCVideoEncoder> encoder) : encoder_(encoder) {}
+  ObjCVideoEncoder(id<RTCVideoEncoder> encoder)
+      : encoder_(encoder), implementation_name_([encoder implementationName].stdString) {}
   ~ObjCVideoEncoder() { [encoder_ destroy]; }
 
   int32_t InitEncode(const VideoCodec *codec_settings,
@@ -118,8 +122,11 @@ class ObjCVideoEncoder : public VideoEncoder {
         ScalingSettings(false /* enabled */);
   }
 
+  const char *ImplementationName() const { return implementation_name_.c_str(); }
+
  private:
   id<RTCVideoEncoder> encoder_;
+  const std::string implementation_name_;
 };
 }  // namespace
 

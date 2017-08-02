@@ -10,6 +10,7 @@
 
 #include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/objc_video_decoder_factory.h"
 
+#import "NSString+StdString.h"
 #import "RTCVideoCodec+Private.h"
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
@@ -30,7 +31,8 @@ namespace webrtc {
 namespace {
 class ObjCVideoDecoder : public VideoDecoder {
  public:
-  ObjCVideoDecoder(id<RTCVideoDecoder> decoder) : decoder_(decoder) {}
+  ObjCVideoDecoder(id<RTCVideoDecoder> decoder)
+      : decoder_(decoder), implementation_name_([decoder implementationName].stdString) {}
   ~ObjCVideoDecoder() { [decoder_ destroy]; }
 
   int32_t InitDecode(const VideoCodec *codec_settings, int32_t number_of_cores) {
@@ -85,8 +87,11 @@ class ObjCVideoDecoder : public VideoDecoder {
 
   int32_t Release() { return [decoder_ releaseDecoder]; }
 
+  const char *ImplementationName() const { return implementation_name_.c_str(); }
+
  private:
   id<RTCVideoDecoder> decoder_;
+  const std::string implementation_name_;
 };
 }  // namespace
 

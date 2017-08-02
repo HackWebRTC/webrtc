@@ -181,6 +181,10 @@ class H264VideoToolboxDecodeCompleteCallback : public webrtc::DecodedImageCallba
                                                                high:kHighH264QpThreshold];
 }
 
+- (NSString *)implementationName {
+  return @"VideoToolbox";
+}
+
 @end
 
 // Decoder.
@@ -245,6 +249,10 @@ class H264VideoToolboxDecodeCompleteCallback : public webrtc::DecodedImageCallba
 
   return _videoToolboxDecoder->Decode(
       image, missingFrames, header.release(), &codecSpecificInfo, renderTimeMs);
+}
+
+- (NSString *)implementationName {
+  return @"VideoToolbox";
 }
 
 @end
