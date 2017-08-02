@@ -39,31 +39,10 @@ class DirectTransport : public Transport {
                   Call* send_call,
                   std::unique_ptr<Demuxer> demuxer);
 
-  // These deprecated variants always use ForceDemuxer.
-  RTC_DEPRECATED DirectTransport(Call* send_call, MediaType media_type)
-      : DirectTransport(
-            FakeNetworkPipe::Config(),
-            send_call,
-            std::unique_ptr<Demuxer>(new ForceDemuxer(media_type))) {}
-  RTC_DEPRECATED DirectTransport(const FakeNetworkPipe::Config& config,
-                                 Call* send_call,
-                                 MediaType media_type)
-      : DirectTransport(
-            config,
-            send_call,
-            std::unique_ptr<Demuxer>(new ForceDemuxer(media_type))) {}
-
-  // These deprecated variants always use MediaType::VIDEO.
+  // This deprecated variant always uses MediaType::VIDEO.
   RTC_DEPRECATED explicit DirectTransport(Call* send_call)
       : DirectTransport(
             FakeNetworkPipe::Config(),
-            send_call,
-            std::unique_ptr<Demuxer>(new ForceDemuxer(MediaType::VIDEO))) {}
-
-  RTC_DEPRECATED DirectTransport(const FakeNetworkPipe::Config& config,
-                                 Call* send_call)
-      : DirectTransport(
-            config,
             send_call,
             std::unique_ptr<Demuxer>(new ForceDemuxer(MediaType::VIDEO))) {}
 
