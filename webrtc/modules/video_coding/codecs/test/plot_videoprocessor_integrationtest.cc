@@ -67,9 +67,8 @@ class PlotVideoProcessorIntegrationTest
     rate_profile.num_frames = kNumFramesLong;
 
     // Codec/network settings.
-    ProcessParams process_settings(kHwCodec, kUseSingleCore, kPacketLoss,
-                                   kKeyFrameInterval, filename, kVerboseLogging,
-                                   kBatchMode);
+    SetProcessParams(&config_, kHwCodec, kUseSingleCore, kPacketLoss,
+                     kKeyFrameInterval, filename, kVerboseLogging, kBatchMode);
     SetCodecSettings(&config_, &codec_settings_, codec_type_,
                      kNumTemporalLayers, kErrorConcealmentOn, kDenoisingOn,
                      kFrameDropperOn, kSpatialResizeOn, kResilienceOn, width,
@@ -94,8 +93,8 @@ class PlotVideoProcessorIntegrationTest
       1);                  // num_key_frames
     // clang-format on
 
-    ProcessFramesAndVerify(quality_thresholds, rate_profile, process_settings,
-                           rc_thresholds, &kVisualizationParams);
+    ProcessFramesAndVerify(quality_thresholds, rate_profile, rc_thresholds,
+                           &kVisualizationParams);
   }
 
   const int bitrate_;

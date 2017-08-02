@@ -60,6 +60,9 @@ struct TestConfig {
   // different configurations shall be managed.
   int test_number = 0;
 
+  // Plain name of YUV file to process without file extension.
+  std::string filename;
+
   // File to process. This must be a video file in the YUV format.
   std::string input_filename;
 
@@ -78,9 +81,8 @@ struct TestConfig {
   // from packet loss.
   ExcludeFrameTypes exclude_frame_types = kExcludeOnlyFirstKeyFrame;
 
-  // The length of a single frame of the input video file. This value is
-  // calculated out of the width and height according to the video format
-  // specification. Must be set before processing.
+  // The length of a single frame of the input video file. Calculated out of the
+  // width and height according to the video format specification (i.e. YUV).
   size_t frame_length_in_bytes = 0;
 
   // Force the encoder and decoder to use a single core for processing.
@@ -91,12 +93,11 @@ struct TestConfig {
   // If set to false, the maximum number of available cores will be used.
   bool use_single_core = false;
 
-  // If set to a value >0 this setting forces the encoder to create a keyframe
-  // every Nth frame. Note that the encoder may create a keyframe in other
-  // locations in addition to the interval that is set using this parameter.
-  // Forcing key frames may also affect encoder planning optimizations in
-  // a negative way, since it will suddenly be forced to produce an expensive
-  // key frame.
+  // If > 0: forces the encoder to create a keyframe every Nth frame.
+  // Note that the encoder may create a keyframe in other locations in addition
+  // to this setting. Forcing key frames may also affect encoder planning
+  // optimizations in a negative way, since it will suddenly be forced to
+  // produce an expensive key frame.
   int keyframe_interval = 0;
 
   // The codec settings to use for the test (target bitrate, video size,
@@ -106,6 +107,15 @@ struct TestConfig {
 
   // If printing of information to stdout shall be performed during processing.
   bool verbose = true;
+
+  // If HW or SW codec should be used.
+  bool hw_codec = false;
+
+  // In batch mode, the VideoProcessor is fed all the frames for processing
+  // before any metrics are calculated. This is useful for pipelining HW codecs,
+  // for which some calculated metrics otherwise would be incorrect. The
+  // downside with batch mode is that mid-test rate allocation is not supported.
+  bool batch_mode = false;
 };
 
 // Handles encoding/decoding of video using the VideoEncoder/VideoDecoder

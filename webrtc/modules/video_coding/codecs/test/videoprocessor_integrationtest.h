@@ -61,43 +61,21 @@ const int kMaxNumTemporalLayers = 3;
 const int kPercTargetvsActualMismatch = 20;
 const int kBaseKeyFrameInterval = 3000;
 
-// Process and network settings.
-struct ProcessParams {
-  ProcessParams(bool hw_codec,
-                bool use_single_core,
-                float packet_loss_probability,
-                int key_frame_interval,
-                std::string filename,
-                bool verbose_logging,
-                bool batch_mode)
-      : hw_codec(hw_codec),
-        use_single_core(use_single_core),
-        key_frame_interval(key_frame_interval),
-        packet_loss_probability(packet_loss_probability),
-        filename(filename),
-        verbose_logging(verbose_logging),
-        batch_mode(batch_mode) {}
-
-  bool hw_codec;
-  bool use_single_core;
-  int key_frame_interval;
-  float packet_loss_probability;  // [0.0, 1.0].
-  std::string filename;
-  bool verbose_logging;
-
-  // In batch mode, the VideoProcessor is fed all the frames for processing
-  // before any metrics are calculated. This is useful for pipelining HW codecs,
-  // for which some calculated metrics otherwise would be incorrect. The
-  // downside with batch mode is that mid-test rate allocation is not supported.
-  bool batch_mode;
-};
-
 // Thresholds for the quality metrics. Defaults are maximally minimal.
 struct QualityThresholds {
+  QualityThresholds() {}
+  QualityThresholds(double min_avg_psnr,
+                    double min_min_psnr,
+                    double min_avg_ssim,
+                    double min_min_ssim)
+      : min_avg_psnr(min_avg_psnr),
+        min_min_psnr(min_min_psnr),
+        min_avg_ssim(min_avg_ssim),
+        min_min_ssim(min_min_ssim) {}
   double min_avg_psnr = std::numeric_limits<double>::min();
   double min_min_psnr = std::numeric_limits<double>::min();
-  double min_avg_ssim = 0;
-  double min_min_ssim = 0;
+  double min_avg_ssim = 0.0;
+  double min_min_ssim = 0.0;
 };
 
 // The sequence of bit rate and frame rate changes for the encoder, the frame
@@ -166,8 +144,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
   virtual ~VideoProcessorIntegrationTest() = default;
 
-  void CreateEncoderAndDecoder(bool hw_codec) {
-    if (hw_codec) {
+  void CreateEncoderAndDecoder() {
+    if (config_.hw_codec) {
 #if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
 #if defined(WEBRTC_ANDROID)
       // In general, external codecs should be destroyed by the factories that
@@ -233,28 +211,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     }
   }
 
-  void SetUpCodecConfig(const ProcessParams& process,
-                        const VisualizationParams* visualization_params) {
-    CreateEncoderAndDecoder(process.hw_codec);
-
-    // Configure input filename.
-    config_.input_filename = test::ResourcePath(process.filename, "yuv");
-    if (process.verbose_logging)
-      printf("Filename: %s\n", process.filename.c_str());
-    // Generate an output filename in a safe way.
-    config_.output_filename = test::TempFilename(
-        test::OutputPath(), "videoprocessor_integrationtest");
-
-    config_.frame_length_in_bytes =
-        CalcBufferSize(VideoType::kI420, config_.codec_settings->width,
-                       config_.codec_settings->height);
-    config_.verbose = process.verbose_logging;
-    config_.use_single_core = process.use_single_core;
-
-    // Key frame interval and packet loss are set for each test.
-    config_.keyframe_interval = process.key_frame_interval;
-    config_.networking_config.packet_loss_probability =
-        process.packet_loss_probability;
+  void SetUpObjects(const VisualizationParams* visualization_params) {
+    CreateEncoderAndDecoder();
 
     // Create file objects for quality analysis.
     analysis_frame_reader_.reset(new test::YuvFrameReaderImpl(
@@ -269,10 +227,10 @@ class VideoProcessorIntegrationTest : public testing::Test {
     if (visualization_params) {
       // clang-format off
       const std::string output_filename_base =
-          test::OutputPath() + process.filename +
+          test::OutputPath() + config_.filename +
           "_cd-" + CodecTypeToPayloadName(
               config_.codec_settings->codecType).value_or("") +
-          "_hw-" + std::to_string(process.hw_codec) +
+          "_hw-" + std::to_string(config_.hw_codec) +
           "_fr-" + std::to_string(start_frame_rate_) +
           "_br-" + std::to_string(
               static_cast<int>(config_.codec_settings->startBitrate));
@@ -308,8 +266,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     processor_->Init();
   }
 
-  // Reset quantities after each encoder update, update the target
-  // per-frame bandwidth.
+  // Reset quantities after each encoder update, update the target per-frame
+  // bandwidth.
   void ResetRateControlMetrics(int num_frames_to_hit_target) {
     for (int i = 0; i < num_temporal_layers_; i++) {
       num_frames_per_update_[i] = 0;
@@ -324,7 +282,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     float max_key_size = kScaleKeyFrameSize * kOptimalBufferSize * frame_rate_;
     // We don't know exact target size of the key frames (except for first one),
     // but the minimum in libvpx is ~|3 * per_frame_bandwidth| and maximum is
-    // set by |max_key_size_  * per_frame_bandwidth|. Take middle point/average
+    // set by |max_key_size_ * per_frame_bandwidth|. Take middle point/average
     // as reference for mismatch. Note key frames always correspond to base
     // layer frame in this test.
     target_size_key_frame_ = 0.5 * (3 + max_key_size) * per_frame_bandwidth_[0];
@@ -454,8 +412,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     EXPECT_GT(ssim_result.min, quality_thresholds.min_min_ssim);
   }
 
-  void VerifyQpParser(const ProcessParams& process, int frame_number) {
-    if (!process.hw_codec &&
+  void VerifyQpParser(int frame_number) {
+    if (!config_.hw_codec &&
         (config_.codec_settings->codecType == kVideoCodecVP8 ||
          config_.codec_settings->codecType == kVideoCodecVP9)) {
       EXPECT_EQ(processor_->GetQpFromEncoder(frame_number),
@@ -531,9 +489,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
   // const std::vector<RateControlThresholds>&, so we can ensure that the user
   // does not expect us to do mid-clip rate updates when we are not able to,
   // e.g., when we are operating in batch mode.
-  void ProcessFramesAndVerify(QualityThresholds quality_thresholds,
-                              RateProfile rate_profile,
-                              ProcessParams process,
+  void ProcessFramesAndVerify(const QualityThresholds& quality_thresholds,
+                              const RateProfile& rate_profile,
                               RateControlThresholds* rc_thresholds,
                               const VisualizationParams* visualization_params) {
     // Codec/config settings.
@@ -541,7 +498,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     num_temporal_layers_ = NumberOfTemporalLayers(config_.codec_settings);
     config_.codec_settings->startBitrate = rate_profile.target_bit_rate[0];
     start_frame_rate_ = rate_profile.input_frame_rate[0];
-    SetUpCodecConfig(process, visualization_params);
+    SetUpObjects(visualization_params);
     // Update the temporal layers and the codec with the initial rates.
     bit_rate_ = rate_profile.target_bit_rate[0];
     frame_rate_ = rate_profile.input_frame_rate[0];
@@ -558,7 +515,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     ResetRateControlMetrics(
         rate_profile.frame_index_rate_update[update_index + 1]);
 
-    if (process.batch_mode) {
+    if (config_.batch_mode) {
       // In batch mode, we calculate the metrics for all frames after all frames
       // have been sent for encoding.
 
@@ -577,14 +534,14 @@ class VideoProcessorIntegrationTest : public testing::Test {
       // In online mode, we calculate the metrics for a given frame right after
       // it has been sent for encoding.
 
-      if (process.hw_codec) {
+      if (config_.hw_codec) {
         LOG(LS_WARNING) << "HW codecs should mostly be run in batch mode, "
                            "since they may be pipelining.";
       }
 
       while (frame_number < num_frames) {
         EXPECT_TRUE(processor_->ProcessFrame(frame_number));
-        VerifyQpParser(process, frame_number);
+        VerifyQpParser(frame_number);
         ++num_frames_per_update_[TemporalLayerIndexForFrame(frame_number)];
         ++num_frames_total_;
         UpdateRateControlMetrics(frame_number);
@@ -656,6 +613,28 @@ class VideoProcessorIntegrationTest : public testing::Test {
     }
   }
 
+  static void SetProcessParams(test::TestConfig* config,
+                               bool hw_codec,
+                               bool use_single_core,
+                               float packet_loss_probability,
+                               int key_frame_interval,
+                               std::string filename,
+                               bool verbose_logging,
+                               bool batch_mode) {
+    // Configure input filename.
+    config->filename = filename;
+    config->input_filename = test::ResourcePath(filename, "yuv");
+    // Generate an output filename in a safe way.
+    config->output_filename = test::TempFilename(
+        test::OutputPath(), "videoprocessor_integrationtest");
+    config->hw_codec = hw_codec;
+    config->use_single_core = use_single_core;
+    config->keyframe_interval = key_frame_interval;
+    config->networking_config.packet_loss_probability = packet_loss_probability;
+    config->verbose = verbose_logging;
+    config->batch_mode = batch_mode;
+  }
+
   static void SetCodecSettings(test::TestConfig* config,
                                VideoCodec* codec_settings,
                                VideoCodecType codec_type,
@@ -702,17 +681,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
         RTC_NOTREACHED();
         break;
     }
-  }
 
-  static void SetQualityThresholds(QualityThresholds* quality_thresholds,
-                                   double min_avg_psnr,
-                                   double min_min_psnr,
-                                   double min_avg_ssim,
-                                   double min_min_ssim) {
-    quality_thresholds->min_avg_psnr = min_avg_psnr;
-    quality_thresholds->min_min_psnr = min_min_psnr;
-    quality_thresholds->min_avg_ssim = min_avg_ssim;
-    quality_thresholds->min_min_ssim = min_min_ssim;
+    config->frame_length_in_bytes =
+        CalcBufferSize(VideoType::kI420, width, height);
   }
 
   static void SetRateProfile(RateProfile* rate_profile,

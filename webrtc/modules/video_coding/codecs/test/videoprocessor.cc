@@ -164,6 +164,7 @@ void VideoProcessorImpl::Init() {
       << "Failed to initialize VideoDecoder";
 
   if (config_.verbose) {
+    printf("Filename: %s\n", config_.filename.c_str());
     printf("Video Processor:\n");
     printf("  #CPU cores used  : %d\n", num_cores);
     printf("  Total # of frames: %d\n",
