@@ -76,6 +76,17 @@ std::unique_ptr<RtpPacketReceived> CreateRtpPacketReceivedWithRsid(
   return packet;
 }
 
+TEST(RtpDemuxerTest, CanAddSinkBySsrc) {
+  RtpDemuxer demuxer;
+  MockRtpPacketSink sink;
+  constexpr uint32_t ssrc = 1;
+
+  EXPECT_TRUE(demuxer.AddSink(ssrc, &sink));
+
+  // Test tear-down
+  demuxer.RemoveSink(&sink);
+}
+
 TEST(RtpDemuxerTest, OnRtpPacketCalledOnCorrectSinkBySsrc) {
   RtpDemuxer demuxer;
 
@@ -144,29 +155,6 @@ TEST(RtpDemuxerTest, PacketsDeliveredInRightOrder) {
   demuxer.RemoveSink(&sink);
 }
 
-TEST(RtpDemuxerTest, MultipleSinksMappedToSameSsrc) {
-  RtpDemuxer demuxer;
-
-  MockRtpPacketSink sinks[3];
-  constexpr uint32_t ssrc = 404;
-  for (auto& sink : sinks) {
-    demuxer.AddSink(ssrc, &sink);
-  }
-
-  // Reception of an RTP packet associated with the shared SSRC triggers the
-  // callback on all of the sinks associated with it.
-  auto packet = CreateRtpPacketReceived(ssrc);
-  for (auto& sink : sinks) {
-    EXPECT_CALL(sink, OnRtpPacket(SamePacketAs(*packet)));
-  }
-  EXPECT_TRUE(demuxer.OnRtpPacket(*packet));
-
-  // Test tear-down
-  for (const auto& sink : sinks) {
-    demuxer.RemoveSink(&sink);
-  }
-}
-
 TEST(RtpDemuxerTest, SinkMappedToMultipleSsrcs) {
   RtpDemuxer demuxer;
 
@@ -224,14 +212,62 @@ TEST(RtpDemuxerTest, NoCallbackOnSsrcSinkRemovedAfterFirstPacket) {
   EXPECT_FALSE(demuxer.OnRtpPacket(*packet));
 }
 
-TEST(RtpDemuxerTest, RepeatedSsrcAssociationsDoNotTriggerRepeatedCallbacks) {
+TEST(RtpDemuxerTest, AddSinkFailsIfCalledForTwoSinks) {
+  RtpDemuxer demuxer;
+  MockRtpPacketSink sink_a;
+  MockRtpPacketSink sink_b;
+  constexpr uint32_t ssrc = 1;
+  ASSERT_TRUE(demuxer.AddSink(ssrc, &sink_a));
+
+  EXPECT_FALSE(demuxer.AddSink(ssrc, &sink_b));
+
+  // Test tear-down
+  demuxer.RemoveSink(&sink_a);
+}
+
+// An SSRC may only be mapped to a single sink. However, since configuration
+// of this associations might come from the network, we need to fail gracefully.
+TEST(RtpDemuxerTest, OnlyOneSinkPerSsrcGetsOnRtpPacketTriggered) {
+  RtpDemuxer demuxer;
+
+  MockRtpPacketSink sinks[3];
+  constexpr uint32_t ssrc = 404;
+  ASSERT_TRUE(demuxer.AddSink(ssrc, &sinks[0]));
+  ASSERT_FALSE(demuxer.AddSink(ssrc, &sinks[1]));
+  ASSERT_FALSE(demuxer.AddSink(ssrc, &sinks[2]));
+
+  // The first sink associated with the SSRC remains active; other sinks
+  // were not really added, and so do not get OnRtpPacket() called.
+  auto packet = CreateRtpPacketReceived(ssrc);
+  EXPECT_CALL(sinks[0], OnRtpPacket(SamePacketAs(*packet))).Times(1);
+  EXPECT_CALL(sinks[1], OnRtpPacket(_)).Times(0);
+  EXPECT_CALL(sinks[2], OnRtpPacket(_)).Times(0);
+  ASSERT_TRUE(demuxer.OnRtpPacket(*packet));
+
+  // Test tear-down
+  demuxer.RemoveSink(&sinks[0]);
+}
+
+TEST(RtpDemuxerTest, AddSinkFailsIfCalledTwiceEvenIfSameSink) {
+  RtpDemuxer demuxer;
+  MockRtpPacketSink sink;
+  constexpr uint32_t ssrc = 1;
+  ASSERT_TRUE(demuxer.AddSink(ssrc, &sink));
+
+  EXPECT_FALSE(demuxer.AddSink(ssrc, &sink));
+
+  // Test tear-down
+  demuxer.RemoveSink(&sink);
+}
+
+TEST(RtpDemuxerTest, NoRepeatedCallbackOnRepeatedAddSinkForSameSink) {
   RtpDemuxer demuxer;
 
   constexpr uint32_t ssrc = 111;
   MockRtpPacketSink sink;
 
-  demuxer.AddSink(ssrc, &sink);
-  demuxer.AddSink(ssrc, &sink);
+  ASSERT_TRUE(demuxer.AddSink(ssrc, &sink));
+  ASSERT_FALSE(demuxer.AddSink(ssrc, &sink));
 
   auto packet = CreateRtpPacketReceived(ssrc);
   EXPECT_CALL(sink, OnRtpPacket(SamePacketAs(*packet))).Times(1);
@@ -427,31 +463,6 @@ TEST(RtpDemuxerTest, MultipleRsidsOnSameSink) {
   demuxer.RemoveSink(&sink);
 }
 
-TEST(RtpDemuxerTest, RsidUsedByMultipleSinks) {
-  RtpDemuxer demuxer;
-
-  MockRtpPacketSink sinks[3];
-  const std::string shared_rsid = "a";
-
-  for (MockRtpPacketSink& sink : sinks) {
-    demuxer.AddSink(shared_rsid, &sink);
-  }
-
-  constexpr uint32_t shared_ssrc = 888;
-  auto packet = CreateRtpPacketReceivedWithRsid(shared_rsid, shared_ssrc);
-
-  for (auto& sink : sinks) {
-    EXPECT_CALL(sink, OnRtpPacket(SamePacketAs(*packet))).Times(1);
-  }
-
-  EXPECT_TRUE(demuxer.OnRtpPacket(*packet));
-
-  // Test tear-down
-  for (MockRtpPacketSink& sink : sinks) {
-    demuxer.RemoveSink(&sink);
-  }
-}
-
 TEST(RtpDemuxerTest, SinkWithBothRsidAndSsrcAssociations) {
   RtpDemuxer demuxer;
 
@@ -496,11 +507,15 @@ TEST(RtpDemuxerTest, AssociatingByRsidAndBySsrcCannotTriggerDoubleCall) {
   demuxer.RemoveSink(&sink);
 }
 
-TEST(RtpDemuxerTest, RsidObserversInformedOfResolutions) {
+TEST(RtpDemuxerTest, RsidObserversInformedOfResolutionsOfTrackedRsids) {
   RtpDemuxer demuxer;
 
   constexpr uint32_t ssrc = 111;
   const std::string rsid = "a";
+
+  // Only RSIDs which the demuxer knows may be resolved.
+  NiceMock<MockRtpPacketSink> sink;
+  demuxer.AddSink(rsid, &sink);
 
   MockRsidResolutionObserver rsid_resolution_observers[3];
   for (auto& observer : rsid_resolution_observers) {
@@ -515,6 +530,112 @@ TEST(RtpDemuxerTest, RsidObserversInformedOfResolutions) {
   for (auto& observer : rsid_resolution_observers) {
     demuxer.DeregisterRsidResolutionObserver(&observer);
   }
+  demuxer.RemoveSink(&sink);
+}
+
+TEST(RtpDemuxerTest, RsidObserversNotInformedOfResolutionsOfUntrackedRsids) {
+  RtpDemuxer demuxer;
+
+  constexpr uint32_t ssrc = 111;
+  const std::string rsid = "a";
+
+  MockRsidResolutionObserver rsid_resolution_observers[3];
+  for (auto& observer : rsid_resolution_observers) {
+    demuxer.RegisterRsidResolutionObserver(&observer);
+    EXPECT_CALL(observer, OnRsidResolved(rsid, ssrc)).Times(0);
+  }
+
+  // The expected calls to OnRsidResolved() will be triggered by this.
+  demuxer.OnRtpPacket(*CreateRtpPacketReceivedWithRsid(rsid, ssrc));
+
+  // Test tear-down
+  for (auto& observer : rsid_resolution_observers) {
+    demuxer.DeregisterRsidResolutionObserver(&observer);
+  }
+}
+
+// If one sink is associated with SSRC x, and another sink with RSID y, we
+// should never observe RSID x being resolved to SSRC x, or else we'd end
+// up with one SSRC mapped to two sinks. However, if such faulty input
+// ever reaches us, we should handle it gracefully - not crash, and keep the
+// packets routed only to the SSRC sink.
+TEST(RtpDemuxerTest, PacketFittingBothRsidSinkAndSsrcSinkGivenOnlyToSsrcSink) {
+  RtpDemuxer demuxer;
+
+  constexpr uint32_t ssrc = 111;
+  MockRtpPacketSink ssrc_sink;
+  demuxer.AddSink(ssrc, &ssrc_sink);
+
+  const std::string rsid = "a";
+  MockRtpPacketSink rsid_sink;
+  demuxer.AddSink(rsid, &rsid_sink);
+
+  auto packet = CreateRtpPacketReceivedWithRsid(rsid, ssrc);
+  EXPECT_CALL(ssrc_sink, OnRtpPacket(SamePacketAs(*packet))).Times(1);
+  EXPECT_CALL(rsid_sink, OnRtpPacket(SamePacketAs(*packet))).Times(0);
+  demuxer.OnRtpPacket(*packet);
+
+  // Test tear-down
+  demuxer.RemoveSink(&ssrc_sink);
+  demuxer.RemoveSink(&rsid_sink);
+}
+
+TEST(RtpDemuxerTest,
+     PacketFittingBothRsidSinkAndSsrcSinkDoesNotTriggerResolutionCallbacks) {
+  RtpDemuxer demuxer;
+
+  constexpr uint32_t ssrc = 111;
+  NiceMock<MockRtpPacketSink> ssrc_sink;
+  demuxer.AddSink(ssrc, &ssrc_sink);
+
+  const std::string rsid = "a";
+  NiceMock<MockRtpPacketSink> rsid_sink;
+  demuxer.AddSink(rsid, &rsid_sink);
+
+  MockRsidResolutionObserver observer;
+  demuxer.RegisterRsidResolutionObserver(&observer);
+
+  auto packet = CreateRtpPacketReceivedWithRsid(rsid, ssrc);
+  EXPECT_CALL(observer, OnRsidResolved(_, _)).Times(0);
+  demuxer.OnRtpPacket(*packet);
+
+  // Test tear-down
+  demuxer.RemoveSink(&ssrc_sink);
+  demuxer.RemoveSink(&rsid_sink);
+}
+
+// We're not expecting RSIDs to be resolved to SSRCs which were previously
+// mapped to sinks, and make no guarantees except for graceful handling.
+TEST(RtpDemuxerTest, GracefullyHandleRsidBeingMappedToPrevouslyAssociatedSsrc) {
+  RtpDemuxer demuxer;
+
+  constexpr uint32_t ssrc = 111;
+  NiceMock<MockRtpPacketSink> ssrc_sink;
+  demuxer.AddSink(ssrc, &ssrc_sink);
+
+  const std::string rsid = "a";
+  MockRtpPacketSink rsid_sink;
+  demuxer.AddSink(rsid, &rsid_sink);
+
+  MockRsidResolutionObserver observer;
+  demuxer.RegisterRsidResolutionObserver(&observer);
+
+  // The SSRC was mapped to an SSRC sink, but was even active (packets flowed
+  // over it).
+  auto packet = CreateRtpPacketReceivedWithRsid(rsid, ssrc);
+  demuxer.OnRtpPacket(*packet);
+
+  // If the SSRC sink is ever removed, the RSID sink *might* receive indications
+  // of packets, and observers *might* be informed. Only graceful handling
+  // is guaranteed.
+  demuxer.RemoveSink(&ssrc_sink);
+  EXPECT_CALL(rsid_sink, OnRtpPacket(SamePacketAs(*packet))).Times(AtLeast(0));
+  EXPECT_CALL(observer, OnRsidResolved(rsid, ssrc)).Times(AtLeast(0));
+  demuxer.OnRtpPacket(*packet);
+
+  // Test tear-down
+  demuxer.DeregisterRsidResolutionObserver(&observer);
+  demuxer.RemoveSink(&rsid_sink);
 }
 
 TEST(RtpDemuxerTest, DeregisteredRsidObserversNotInformedOfResolutions) {
@@ -554,12 +675,14 @@ TEST(RtpDemuxerTest, DeregisteredRsidObserversNotInformedOfResolutions) {
 TEST(RtpDemuxerTest, RsidMustBeNonEmpty) {
   RtpDemuxer demuxer;
   MockRtpPacketSink sink;
+
   EXPECT_DEATH(demuxer.AddSink("", &sink), "");
 }
 
 TEST(RtpDemuxerTest, RsidMustBeAlphaNumeric) {
   RtpDemuxer demuxer;
   MockRtpPacketSink sink;
+
   EXPECT_DEATH(demuxer.AddSink("a_3", &sink), "");
 }
 
@@ -567,23 +690,45 @@ TEST(RtpDemuxerTest, RsidMustNotExceedMaximumLength) {
   RtpDemuxer demuxer;
   MockRtpPacketSink sink;
   std::string rsid(StreamId::kMaxSize + 1, 'a');
+
   EXPECT_DEATH(demuxer.AddSink(rsid, &sink), "");
 }
 
 TEST(RtpDemuxerTest, RepeatedRsidAssociationsDisallowed) {
   RtpDemuxer demuxer;
+  MockRtpPacketSink sink_a;
+  MockRtpPacketSink sink_b;
+
+  const std::string rsid = "a";
+  demuxer.AddSink(rsid, &sink_a);
+
+  EXPECT_DEATH(demuxer.AddSink(rsid, &sink_b), "");
+
+  // Test tear-down
+  demuxer.RemoveSink(&sink_a);
+}
+
+TEST(RtpDemuxerTest, RepeatedRsidAssociationsDisallowedEvenIfSameSink) {
+  RtpDemuxer demuxer;
   MockRtpPacketSink sink;
-  demuxer.AddSink("a", &sink);
-  EXPECT_DEATH(demuxer.AddSink("a", &sink), "");
+
+  const std::string rsid = "a";
+  demuxer.AddSink(rsid, &sink);
+
+  EXPECT_DEATH(demuxer.AddSink(rsid, &sink), "");
+
+  // Test tear-down
   demuxer.RemoveSink(&sink);
 }
 
-TEST(RtpDemuxerTest,
-     DoubleRegisterationOfNeverRegisteredRsidResolutionObserverDisallowed) {
+TEST(RtpDemuxerTest, DoubleRegisterationOfRsidResolutionObserverDisallowed) {
   RtpDemuxer demuxer;
   MockRsidResolutionObserver observer;
   demuxer.RegisterRsidResolutionObserver(&observer);
+
   EXPECT_DEATH(demuxer.RegisterRsidResolutionObserver(&observer), "");
+
+  // Test tear-down
   demuxer.DeregisterRsidResolutionObserver(&observer);
 }
 
@@ -591,6 +736,7 @@ TEST(RtpDemuxerTest,
      DregisterationOfNeverRegisteredRsidResolutionObserverDisallowed) {
   RtpDemuxer demuxer;
   MockRsidResolutionObserver observer;
+
   EXPECT_DEATH(demuxer.DeregisterRsidResolutionObserver(&observer), "");
 }
 

@@ -27,41 +27,32 @@ RtpDemuxer::~RtpDemuxer() {
   RTC_DCHECK(rsid_sinks_.empty());
 }
 
-void RtpDemuxer::AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink) {
+bool RtpDemuxer::AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink) {
   RTC_DCHECK(sink);
-  RecordSsrcToSinkAssociation(ssrc, sink);
+  // The association might already have been set by a different
+  // configuration source.
+  // We cannot RTC_DCHECK against an attempt to remap an SSRC, because
+  // such a configuration might have come from the network (1. resolution
+  // of an RSID or 2. RTCP messages with RSID resolutions).
+  return ssrc_sinks_.emplace(ssrc, sink).second;
 }
 
 void RtpDemuxer::AddSink(const std::string& rsid,
                          RtpPacketSinkInterface* sink) {
   RTC_DCHECK(StreamId::IsLegalName(rsid));
   RTC_DCHECK(sink);
-  RTC_DCHECK(!MultimapAssociationExists(rsid_sinks_, rsid, sink));
+  RTC_DCHECK(rsid_sinks_.find(rsid) == rsid_sinks_.cend());
 
   rsid_sinks_.emplace(rsid, sink);
 }
 
 bool RtpDemuxer::RemoveSink(const RtpPacketSinkInterface* sink) {
   RTC_DCHECK(sink);
-  return (RemoveFromMultimapByValue(&ssrc_sinks_, sink) +
-          RemoveFromMultimapByValue(&rsid_sinks_, sink)) > 0;
-}
-
-void RtpDemuxer::RecordSsrcToSinkAssociation(uint32_t ssrc,
-                                             RtpPacketSinkInterface* sink) {
-  RTC_DCHECK(sink);
-  // The association might already have been set by a different
-  // configuration source.
-  if (!MultimapAssociationExists(ssrc_sinks_, ssrc, sink)) {
-    ssrc_sinks_.emplace(ssrc, sink);
-  }
+  return (RemoveFromMapByValue(&ssrc_sinks_, sink) +
+          RemoveFromMapByValue(&rsid_sinks_, sink)) > 0;
 }
 
 bool RtpDemuxer::OnRtpPacket(const RtpPacketReceived& packet) {
-  // TODO(eladalon): This will now check every single packet, but soon a CL will
-  // be added which will change the many-to-many association of packets to sinks
-  // to a many-to-one, meaning each packet will be associated with one sink
-  // at most. Then, only packets with an unknown SSRC will be checked for RSID.
   ResolveRsidToSsrcAssociations(packet);
 
   auto it_range = ssrc_sinks_.equal_range(packet.Ssrc());
@@ -91,20 +82,34 @@ void RtpDemuxer::DeregisterRsidResolutionObserver(
 void RtpDemuxer::ResolveRsidToSsrcAssociations(
     const RtpPacketReceived& packet) {
   std::string rsid;
-  if (packet.GetExtension<RtpStreamId>(&rsid)) {
-    // All streams associated with this RSID need to be marked as associated
-    // with this SSRC (if they aren't already).
-    auto it_range = rsid_sinks_.equal_range(rsid);
-    for (auto it = it_range.first; it != it_range.second; ++it) {
-      RecordSsrcToSinkAssociation(packet.Ssrc(), it->second);
-    }
-
-    NotifyObserversOfRsidResolution(rsid, packet.Ssrc());
-
-    // To prevent memory-overuse attacks, forget this RSID. Future packets
-    // with this RSID, but a different SSRC, will not spawn new associations.
-    rsid_sinks_.erase(it_range.first, it_range.second);
+  if (!packet.GetExtension<RtpStreamId>(&rsid)) {
+    return;
   }
+
+  auto it = rsid_sinks_.find(rsid);
+  if (it == rsid_sinks_.end()) {
+    // Might be unknown, or we might have already associated this RSID
+    // with a sink.
+    return;
+  }
+
+  // If a sink is associated with an RSID, we should associate it with
+  // this SSRC.
+  if (!AddSink(packet.Ssrc(), it->second)) {
+    // In the faulty case of RSIDs mapped to SSRCs which are already associated
+    // with a sink, avoid propagating the problem to the resolution observers.
+    LOG(LS_WARNING) << "RSID (" << rsid << ") resolved to preconfigured SSRC ("
+                    << packet.Ssrc() << ").";
+    return;
+  }
+
+  // We make the assumption that observers are only interested in notifications
+  // for RSIDs which are registered with this module. (RTCP sinks are normally
+  // created with RTP sinks.)
+  NotifyObserversOfRsidResolution(rsid, packet.Ssrc());
+
+  // This RSID cannot later be associated with another SSRC.
+  rsid_sinks_.erase(it);
 }
 
 void RtpDemuxer::NotifyObserversOfRsidResolution(const std::string& rsid,
