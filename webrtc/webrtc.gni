@@ -79,7 +79,6 @@ declare_args() {
 
   # Disable these to not build components which can be externally provided.
   rtc_build_json = true
-  rtc_build_libjpeg = true
   rtc_build_libsrtp = true
   rtc_build_libvpx = true
   rtc_libvpx_build_vp9 = true
