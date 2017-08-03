@@ -36,13 +36,15 @@ config("libjingle_peerconnection_jni_warnings_config") {
 rtc_source_set("base_jni") {
   sources = [
     "src/jni/androidhistogram_jni.cc",
+    "src/jni/audio_jni.h",
     "src/jni/classreferenceholder.cc",
     "src/jni/classreferenceholder.h",
     "src/jni/jni_helpers.cc",
     "src/jni/jni_helpers.h",
-    "src/jni/pc/audio_jni.h",
-    "src/jni/pc/media_jni.h",
-    "src/jni/pc/video_jni.h",
+    "src/jni/media_jni.h",
+    "src/jni/ownedfactoryandthreads.cc",
+    "src/jni/ownedfactoryandthreads.h",
+    "src/jni/video_jni.h",
   ]
 
   deps = [
@@ -63,7 +65,7 @@ rtc_source_set("base_jni") {
 
 rtc_static_library("audio_jni") {
   sources = [
-    "src/jni/pc/audio_jni.cc",
+    "src/jni/audio_jni.cc",
   ]
 
   deps = [
@@ -76,7 +78,7 @@ rtc_static_library("audio_jni") {
 
 rtc_static_library("null_audio_jni") {
   sources = [
-    "src/jni/pc/null_audio_jni.cc",
+    "src/jni/null_audio_jni.cc",
   ]
 
   deps = [
@@ -97,9 +99,9 @@ rtc_static_library("video_jni") {
     "src/jni/filevideocapturer_jni.cc",
     "src/jni/native_handle_impl.cc",
     "src/jni/native_handle_impl.h",
-    "src/jni/pc/video_jni.cc",
     "src/jni/surfacetexturehelper_jni.cc",
     "src/jni/surfacetexturehelper_jni.h",
+    "src/jni/video_jni.cc",
     "src/jni/video_renderer_jni.cc",
     "src/jni/videodecoderfactorywrapper.cc",
     "src/jni/videodecoderfactorywrapper.h",
@@ -134,7 +136,6 @@ rtc_static_library("video_jni") {
 
   deps = [
     ":base_jni",
-    ":peerconnection_jni",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
     "../../api:video_frame_api",
@@ -165,7 +166,7 @@ rtc_static_library("video_jni") {
 
 rtc_static_library("null_video_jni") {
   sources = [
-    "src/jni/pc/null_video_jni.cc",
+    "src/jni/null_video_jni.cc",
   ]
 
   deps = [
@@ -175,7 +176,7 @@ rtc_static_library("null_video_jni") {
 
 rtc_static_library("media_jni") {
   sources = [
-    "src/jni/pc/media_jni.cc",
+    "src/jni/media_jni.cc",
   ]
 
   deps = [
@@ -197,7 +198,7 @@ rtc_static_library("media_jni") {
 
 rtc_static_library("null_media_jni") {
   sources = [
-    "src/jni/pc/null_media_jni.cc",
+    "src/jni/null_media_jni.cc",
   ]
 
   deps = [
@@ -207,37 +208,11 @@ rtc_static_library("null_media_jni") {
 
 rtc_static_library("peerconnection_jni") {
   sources = [
-    "src/jni/pc/androidnetworkmonitor_jni.cc",
-    "src/jni/pc/androidnetworkmonitor_jni.h",
-    "src/jni/pc/audiotrack_jni.cc",
-    "src/jni/pc/callsessionfilerotatinglogsink_jni.cc",
-    "src/jni/pc/datachannel_jni.cc",
-    "src/jni/pc/datachannelobserver_jni.cc",
-    "src/jni/pc/datachannelobserver_jni.h",
-    "src/jni/pc/dtmfsender_jni.cc",
-    "src/jni/pc/java_native_conversion.cc",
-    "src/jni/pc/java_native_conversion.h",
-    "src/jni/pc/logging_jni.cc",
-    "src/jni/pc/mediaconstraints_jni.cc",
-    "src/jni/pc/mediaconstraints_jni.h",
-    "src/jni/pc/mediasource_jni.cc",
-    "src/jni/pc/mediastream_jni.cc",
-    "src/jni/pc/mediastreamtrack_jni.cc",
-    "src/jni/pc/ownedfactoryandthreads.cc",
-    "src/jni/pc/ownedfactoryandthreads.h",
-    "src/jni/pc/peerconnection_jni.cc",
-    "src/jni/pc/peerconnectionfactory_jni.cc",
-    "src/jni/pc/peerconnectionobserver_jni.cc",
-    "src/jni/pc/peerconnectionobserver_jni.h",
-    "src/jni/pc/rtcstatscollectorcallbackwrapper.cc",
-    "src/jni/pc/rtcstatscollectorcallbackwrapper.h",
-    "src/jni/pc/rtpreceiver_jni.cc",
-    "src/jni/pc/rtpreceiverobserver_jni.cc",
-    "src/jni/pc/rtpreceiverobserver_jni.h",
-    "src/jni/pc/rtpsender_jni.cc",
-    "src/jni/pc/sdpobserver_jni.h",
-    "src/jni/pc/statsobserver_jni.cc",
-    "src/jni/pc/statsobserver_jni.h",
+    "src/jni/androidnetworkmonitor_jni.cc",
+    "src/jni/androidnetworkmonitor_jni.h",
+    "src/jni/peerconnection_jni.cc",
+    "src/jni/rtcstatscollectorcallbackwrapper.cc",
+    "src/jni/rtcstatscollectorcallbackwrapper.h",
   ]
 
   configs += [ ":libjingle_peerconnection_jni_warnings_config" ]

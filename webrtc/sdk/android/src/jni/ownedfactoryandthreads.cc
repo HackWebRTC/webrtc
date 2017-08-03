@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/pc/ownedfactoryandthreads.h"
+#include "webrtc/sdk/android/src/jni/ownedfactoryandthreads.h"
 
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"

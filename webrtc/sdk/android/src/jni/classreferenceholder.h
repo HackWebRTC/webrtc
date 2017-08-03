@@ -31,6 +31,11 @@ void FreeGlobalClassReferenceHolder();
 // process.
 jclass FindClass(JNIEnv* jni, const char* name);
 
+// Convenience macro defining JNI-accessible methods in the org.webrtc package.
+// Eliminates unnecessary boilerplate and line-wraps, reducing visual clutter.
+#define JOW(rettype, name) \
+  extern "C" JNIEXPORT rettype JNICALL Java_org_webrtc_##name
+
 }  // namespace webrtc_jni
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_

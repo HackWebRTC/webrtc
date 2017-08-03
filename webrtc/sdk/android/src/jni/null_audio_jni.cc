@@ -7,17 +7,16 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "webrtc/sdk/android/src/jni/audio_jni.h"
 
 namespace webrtc_jni {
 
-JOW(void, AudioTrack_nativeSetVolume)
-(JNIEnv*, jclass, jlong j_p, jdouble volume) {
-  rtc::scoped_refptr<webrtc::AudioSourceInterface> source(
-      reinterpret_cast<webrtc::AudioTrackInterface*>(j_p)->GetSource());
-  source->SetVolume(volume);
+rtc::scoped_refptr<webrtc::AudioDecoderFactory> CreateAudioDecoderFactory() {
+  return nullptr;
+}
+
+rtc::scoped_refptr<webrtc::AudioEncoderFactory> CreateAudioEncoderFactory() {
+  return nullptr;
 }
 
 }  // namespace webrtc_jni
