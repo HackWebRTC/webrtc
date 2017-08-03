@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/rtcstatscollectorcallbackwrapper.h"
+#include "webrtc/sdk/android/src/jni/pc/rtcstatscollectorcallbackwrapper.h"
 
 #include <string>
 #include <vector>

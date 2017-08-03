@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
+ *  Copyright 2017 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,25 +8,33 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/video_jni.h"
+#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_PC_VIDEO_JNI_H_
+#define WEBRTC_SDK_ANDROID_SRC_JNI_PC_VIDEO_JNI_H_
+
+#include <jni.h>
+
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
+
+namespace cricket {
+class WebRtcVideoEncoderFactory;
+class WebRtcVideoDecoderFactory;
+}  // namespace cricket
 
 namespace webrtc_jni {
 
+class SurfaceTextureHelper;
+
 cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory(
     JNIEnv* jni,
-    jobject j_encoder_factory) {
-  return nullptr;
-}
+    jobject j_encoder_factory);
 
 cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory(
     JNIEnv* jni,
-    jobject j_decoder_factory) {
-  return nullptr;
-}
+    jobject j_decoder_factory);
 
 jobject GetJavaSurfaceTextureHelper(
-    const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper) {
-  return nullptr;
-}
+    const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper);
 
 }  // namespace webrtc_jni
+
+#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_VIDEO_JNI_H_
