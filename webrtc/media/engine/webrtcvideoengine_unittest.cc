@@ -2272,7 +2272,7 @@ TEST_F(WebRtcVideoChannelTest, PreviousAdaptationDoesNotApplyToScreenshare) {
   send_stream = fake_call_->GetVideoSendStreams().front();
   // We have a new fake send stream, so it doesn't remember the old sink wants.
   // In practice, it will be populated from
-  // ViEEncoder::VideoSourceProxy::SetSource(), so simulate that here.
+  // VideoStreamEncoder::VideoSourceProxy::SetSource(), so simulate that here.
   send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
   ASSERT_EQ(3, fake_call_->GetNumCreatedSendStreams());

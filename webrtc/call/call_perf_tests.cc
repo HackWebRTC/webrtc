@@ -499,8 +499,8 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
       switch (test_phase_) {
         case TestPhase::kStart:
           if (wants.max_pixel_count < std::numeric_limits<int>::max()) {
-            // On adapting down, ViEEncoder::VideoSourceProxy will set only the
-            // max pixel count, leaving the target unset.
+            // On adapting down, VideoStreamEncoder::VideoSourceProxy will set
+            // only the max pixel count, leaving the target unset.
             test_phase_ = TestPhase::kAdaptedDown;
           } else {
             ADD_FAILURE() << "Got unexpected adaptation request, max res = "

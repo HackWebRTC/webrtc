@@ -102,7 +102,7 @@ class DelayedEncoder : public test::FakeEncoder {
 // This class implements a multi-threaded fake encoder by posting
 // FakeH264Encoder::Encode(.) tasks to |queue1_| and |queue2_|, in an
 // alternating fashion. The class itself does not need to be thread safe,
-// as it is called from the task queue in ViEEncoder.
+// as it is called from the task queue in VideoStreamEncoder.
 class MultithreadedFakeH264Encoder : public test::FakeH264Encoder {
  public:
   explicit MultithreadedFakeH264Encoder(Clock* clock);

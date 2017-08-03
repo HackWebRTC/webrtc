@@ -27,7 +27,7 @@
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/report_block_stats.h"
 #include "webrtc/video/stats_counter.h"
-#include "webrtc/video/vie_encoder.h"
+#include "webrtc/video/video_stream_encoder.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
@@ -58,13 +58,15 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   void OnIncomingFrame(int width, int height);
 
   // Adaptation stats.
-  void SetAdaptationStats(const ViEEncoder::AdaptCounts& cpu_counts,
-                          const ViEEncoder::AdaptCounts& quality_counts);
-  void OnCpuAdaptationChanged(const ViEEncoder::AdaptCounts& cpu_counts,
-                              const ViEEncoder::AdaptCounts& quality_counts);
+  void SetAdaptationStats(
+      const VideoStreamEncoder::AdaptCounts& cpu_counts,
+      const VideoStreamEncoder::AdaptCounts& quality_counts);
+  void OnCpuAdaptationChanged(
+      const VideoStreamEncoder::AdaptCounts& cpu_counts,
+      const VideoStreamEncoder::AdaptCounts& quality_counts);
   void OnQualityAdaptationChanged(
-      const ViEEncoder::AdaptCounts& cpu_counts,
-      const ViEEncoder::AdaptCounts& quality_counts);
+      const VideoStreamEncoder::AdaptCounts& cpu_counts,
+      const VideoStreamEncoder::AdaptCounts& quality_counts);
 
   void OnEncoderStatsUpdate(uint32_t framerate, uint32_t bitrate);
   void OnSuspendChange(bool is_suspended);
@@ -164,10 +166,12 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  void SetAdaptTimer(const ViEEncoder::AdaptCounts& counts, StatsTimer* timer)
+  void SetAdaptTimer(const VideoStreamEncoder::AdaptCounts& counts,
+                     StatsTimer* timer)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  void UpdateAdaptationStats(const ViEEncoder::AdaptCounts& cpu_counts,
-                             const ViEEncoder::AdaptCounts& quality_counts)
+  void UpdateAdaptationStats(
+      const VideoStreamEncoder::AdaptCounts& cpu_counts,
+      const VideoStreamEncoder::AdaptCounts& quality_counts)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   Clock* const clock_;

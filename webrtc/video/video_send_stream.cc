@@ -333,7 +333,7 @@ namespace internal {
 class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                             public webrtc::OverheadObserver,
                             public webrtc::VCMProtectionCallback,
-                            public ViEEncoder::EncoderSink,
+                            public VideoStreamEncoder::EncoderSink,
                             public VideoBitrateAllocationObserver {
  public:
   VideoSendStreamImpl(SendStatisticsProxy* stats_proxy,
@@ -342,7 +342,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                       RtpTransportControllerSendInterface* transport,
                       BitrateAllocator* bitrate_allocator,
                       SendDelayStats* send_delay_stats,
-                      ViEEncoder* vie_encoder,
+                      VideoStreamEncoder* video_stream_encoder,
                       RtcEventLog* event_log,
                       const VideoSendStream::Config* config,
                       int initial_encoder_max_bitrate,
@@ -440,7 +440,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   uint32_t encoder_max_bitrate_bps_;
   uint32_t encoder_target_rate_bps_;
 
-  ViEEncoder* const vie_encoder_;
+  VideoStreamEncoder* const video_stream_encoder_;
   EncoderRtcpFeedback encoder_feedback_;
   ProtectionBitrateCalculator protection_bitrate_calculator_;
 
@@ -469,7 +469,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   ConstructionTask(std::unique_ptr<VideoSendStreamImpl>* send_stream,
                    rtc::Event* done_event,
                    SendStatisticsProxy* stats_proxy,
-                   ViEEncoder* vie_encoder,
+                   VideoStreamEncoder* video_stream_encoder,
                    ProcessThread* module_process_thread,
                    CallStats* call_stats,
                    RtpTransportControllerSendInterface* transport,
@@ -484,7 +484,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
       : send_stream_(send_stream),
         done_event_(done_event),
         stats_proxy_(stats_proxy),
-        vie_encoder_(vie_encoder),
+        video_stream_encoder_(video_stream_encoder),
         call_stats_(call_stats),
         transport_(transport),
         bitrate_allocator_(bitrate_allocator),
@@ -502,16 +502,16 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   bool Run() override {
     send_stream_->reset(new VideoSendStreamImpl(
         stats_proxy_, rtc::TaskQueue::Current(), call_stats_, transport_,
-        bitrate_allocator_, send_delay_stats_, vie_encoder_, event_log_,
-        config_, initial_encoder_max_bitrate_, std::move(suspended_ssrcs_),
-        content_type_, keepalive_config_));
+        bitrate_allocator_, send_delay_stats_, video_stream_encoder_,
+        event_log_, config_, initial_encoder_max_bitrate_,
+        std::move(suspended_ssrcs_), content_type_, keepalive_config_));
     return true;
   }
 
   std::unique_ptr<VideoSendStreamImpl>* const send_stream_;
   rtc::Event* const done_event_;
   SendStatisticsProxy* const stats_proxy_;
-  ViEEncoder* const vie_encoder_;
+  VideoStreamEncoder* const video_stream_encoder_;
   CallStats* const call_stats_;
   RtpTransportControllerSendInterface* const transport_;
   BitrateAllocator* const bitrate_allocator_;
@@ -643,15 +643,18 @@ VideoSendStream::VideoSendStream(
                    encoder_config.content_type),
       config_(std::move(config)),
       content_type_(encoder_config.content_type) {
-  vie_encoder_.reset(
-      new ViEEncoder(num_cpu_cores, &stats_proxy_, config_.encoder_settings,
-                     config_.pre_encode_callback, config_.post_encode_callback,
-                     std::unique_ptr<OveruseFrameDetector>()));
+  video_stream_encoder_.reset(
+      new VideoStreamEncoder(num_cpu_cores, &stats_proxy_,
+                             config_.encoder_settings,
+                             config_.pre_encode_callback,
+                             config_.post_encode_callback,
+                             std::unique_ptr<OveruseFrameDetector>()));
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
-      &send_stream_, &thread_sync_event_, &stats_proxy_, vie_encoder_.get(),
-      module_process_thread, call_stats, transport, bitrate_allocator,
-      send_delay_stats, event_log, &config_, encoder_config.max_bitrate_bps,
-      suspended_ssrcs, encoder_config.content_type, keepalive_config)));
+      &send_stream_, &thread_sync_event_, &stats_proxy_,
+      video_stream_encoder_.get(), module_process_thread, call_stats, transport,
+      bitrate_allocator, send_delay_stats, event_log, &config_,
+      encoder_config.max_bitrate_bps, suspended_ssrcs,
+      encoder_config.content_type, keepalive_config)));
 
   // Wait for ConstructionTask to complete so that |send_stream_| can be used.
   // |module_process_thread| must be registered and deregistered on the thread
@@ -661,9 +664,9 @@ VideoSendStream::VideoSendStream(
   // TODO(sprang): Enable this also for regular video calls if it works well.
   if (encoder_config.content_type == VideoEncoderConfig::ContentType::kScreen) {
     // Only signal target bitrate for screenshare streams, for now.
-    vie_encoder_->SetBitrateObserver(send_stream_.get());
+    video_stream_encoder_->SetBitrateObserver(send_stream_.get());
   }
-  vie_encoder_->RegisterProcessThread(module_process_thread);
+  video_stream_encoder_->RegisterProcessThread(module_process_thread);
 
   ReconfigureVideoEncoder(std::move(encoder_config));
 }
@@ -683,8 +686,8 @@ void VideoSendStream::Start() {
   });
 
   // It is expected that after VideoSendStream::Start has been called, incoming
-  // frames are not dropped in ViEEncoder. To ensure this, Start has to be
-  // synchronized.
+  // frames are not dropped in VideoStreamEncoder. To ensure this, Start has to
+  // be synchronized.
   thread_sync_event_.Wait(rtc::Event::kForever);
 }
 
@@ -699,7 +702,7 @@ void VideoSendStream::SetSource(
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
     const DegradationPreference& degradation_preference) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  vie_encoder_->SetSource(source, degradation_preference);
+  video_stream_encoder_->SetSource(source, degradation_preference);
 }
 
 void VideoSendStream::ReconfigureVideoEncoder(VideoEncoderConfig config) {
@@ -707,8 +710,9 @@ void VideoSendStream::ReconfigureVideoEncoder(VideoEncoderConfig config) {
   // ReconfigureVideoEncoder from the network thread.
   // RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(content_type_ == config.content_type);
-  vie_encoder_->ConfigureEncoder(std::move(config), config_.rtp.max_packet_size,
-                                 config_.rtp.nack.rtp_history_ms > 0);
+  video_stream_encoder_->ConfigureEncoder(std::move(config),
+                                          config_.rtp.max_packet_size,
+                                          config_.rtp.nack.rtp_history_ms > 0);
 }
 
 VideoSendStream::Stats VideoSendStream::GetStats() {
@@ -727,8 +731,8 @@ void VideoSendStream::SignalNetworkState(NetworkState state) {
 
 VideoSendStream::RtpStateMap VideoSendStream::StopPermanentlyAndGetRtpStates() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  vie_encoder_->Stop();
-  vie_encoder_->DeRegisterProcessThread();
+  video_stream_encoder_->Stop();
+  video_stream_encoder_->DeRegisterProcessThread();
   VideoSendStream::RtpStateMap state_map;
   send_stream_->DeRegisterProcessThread();
   worker_queue_->PostTask(
@@ -765,7 +769,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     RtpTransportControllerSendInterface* transport,
     BitrateAllocator* bitrate_allocator,
     SendDelayStats* send_delay_stats,
-    ViEEncoder* vie_encoder,
+    VideoStreamEncoder* video_stream_encoder,
     RtcEventLog* event_log,
     const VideoSendStream::Config* config,
     int initial_encoder_max_bitrate,
@@ -788,10 +792,10 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       encoder_min_bitrate_bps_(0),
       encoder_max_bitrate_bps_(initial_encoder_max_bitrate),
       encoder_target_rate_bps_(0),
-      vie_encoder_(vie_encoder),
+      video_stream_encoder_(video_stream_encoder),
       encoder_feedback_(Clock::GetRealTimeClock(),
                         config_->rtp.ssrcs,
-                        vie_encoder),
+                        video_stream_encoder),
       protection_bitrate_calculator_(Clock::GetRealTimeClock(), this),
       bandwidth_observer_(transport->send_side_cc()
                               ->GetBitrateController()
@@ -887,7 +891,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   RTC_DCHECK_GE(config_->encoder_settings.payload_type, 0);
   RTC_DCHECK_LE(config_->encoder_settings.payload_type, 127);
 
-  vie_encoder_->SetStartBitrate(bitrate_allocator_->GetStartBitrate(this));
+  video_stream_encoder_->SetStartBitrate(
+      bitrate_allocator_->GetStartBitrate(this));
 
   // Only request rotation at the source when we positively know that the remote
   // side doesn't support the rotation extension. This allows us to prepare the
@@ -900,7 +905,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                      return extension.uri == RtpExtension::kVideoRotationUri;
                    }) == config_->rtp.extensions.end();
 
-  vie_encoder_->SetSink(this, rotation_applied);
+  video_stream_encoder_->SetSink(this, rotation_applied);
 }
 
 void VideoSendStreamImpl::RegisterProcessThread(
@@ -961,7 +966,7 @@ void VideoSendStreamImpl::Start() {
         CheckEncoderActivityTask::kEncoderTimeOutMs);
   }
 
-  vie_encoder_->SendKeyFrame();
+  video_stream_encoder_->SendKeyFrame();
 }
 
 void VideoSendStreamImpl::Stop() {
@@ -977,7 +982,7 @@ void VideoSendStreamImpl::Stop() {
     check_encoder_activity_task_->Stop();
     check_encoder_activity_task_ = nullptr;
   }
-  vie_encoder_->OnBitrateUpdated(0, 0, 0);
+  video_stream_encoder_->OnBitrateUpdated(0, 0, 0);
   stats_proxy_->OnSetEncoderTargetRate(0);
 }
 
@@ -1298,7 +1303,8 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(uint32_t bitrate_bps,
 
   encoder_target_rate_bps_ =
       std::min(encoder_max_bitrate_bps_, encoder_target_rate_bps_);
-  vie_encoder_->OnBitrateUpdated(encoder_target_rate_bps_, fraction_loss, rtt);
+  video_stream_encoder_->OnBitrateUpdated(encoder_target_rate_bps_,
+                                          fraction_loss, rtt);
   stats_proxy_->OnSetEncoderTargetRate(encoder_target_rate_bps_);
   return protection_bitrate;
 }
@@ -1320,7 +1326,7 @@ void VideoSendStreamImpl::EnableEncodedFrameRecording(
   if (!files.empty()) {
     // Make a keyframe appear as early as possible in the logs, to give actually
     // decodable output.
-    vie_encoder_->SendKeyFrame();
+    video_stream_encoder_->SendKeyFrame();
   }
 }
 

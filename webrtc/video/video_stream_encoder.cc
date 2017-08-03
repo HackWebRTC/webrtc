@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/vie_encoder.h"
+#include "webrtc/video/video_stream_encoder.h"
 
 #include <algorithm>
 #include <limits>
@@ -103,83 +103,85 @@ bool IsFramerateScalingEnabled(
 
 }  //  namespace
 
-class ViEEncoder::ConfigureEncoderTask : public rtc::QueuedTask {
+class VideoStreamEncoder::ConfigureEncoderTask : public rtc::QueuedTask {
  public:
-  ConfigureEncoderTask(ViEEncoder* vie_encoder,
+  ConfigureEncoderTask(VideoStreamEncoder* video_stream_encoder,
                        VideoEncoderConfig config,
                        size_t max_data_payload_length,
                        bool nack_enabled)
-      : vie_encoder_(vie_encoder),
+      : video_stream_encoder_(video_stream_encoder),
         config_(std::move(config)),
         max_data_payload_length_(max_data_payload_length),
         nack_enabled_(nack_enabled) {}
 
  private:
   bool Run() override {
-    vie_encoder_->ConfigureEncoderOnTaskQueue(
+    video_stream_encoder_->ConfigureEncoderOnTaskQueue(
         std::move(config_), max_data_payload_length_, nack_enabled_);
     return true;
   }
 
-  ViEEncoder* const vie_encoder_;
+  VideoStreamEncoder* const video_stream_encoder_;
   VideoEncoderConfig config_;
   size_t max_data_payload_length_;
   bool nack_enabled_;
 };
 
-class ViEEncoder::EncodeTask : public rtc::QueuedTask {
+class VideoStreamEncoder::EncodeTask : public rtc::QueuedTask {
  public:
   EncodeTask(const VideoFrame& frame,
-             ViEEncoder* vie_encoder,
+             VideoStreamEncoder* video_stream_encoder,
              int64_t time_when_posted_us,
              bool log_stats)
       : frame_(frame),
-        vie_encoder_(vie_encoder),
+        video_stream_encoder_(video_stream_encoder),
         time_when_posted_us_(time_when_posted_us),
         log_stats_(log_stats) {
-    ++vie_encoder_->posted_frames_waiting_for_encode_;
+    ++video_stream_encoder_->posted_frames_waiting_for_encode_;
   }
 
  private:
   bool Run() override {
-    RTC_DCHECK_RUN_ON(&vie_encoder_->encoder_queue_);
-    RTC_DCHECK_GT(vie_encoder_->posted_frames_waiting_for_encode_.Value(), 0);
-    vie_encoder_->stats_proxy_->OnIncomingFrame(frame_.width(),
-                                                frame_.height());
-    ++vie_encoder_->captured_frame_count_;
-    if (--vie_encoder_->posted_frames_waiting_for_encode_ == 0) {
-      vie_encoder_->EncodeVideoFrame(frame_, time_when_posted_us_);
+    RTC_DCHECK_RUN_ON(&video_stream_encoder_->encoder_queue_);
+    RTC_DCHECK_GT(
+        video_stream_encoder_->posted_frames_waiting_for_encode_.Value(), 0);
+    video_stream_encoder_->stats_proxy_->OnIncomingFrame(frame_.width(),
+                                                         frame_.height());
+    ++video_stream_encoder_->captured_frame_count_;
+    if (--video_stream_encoder_->posted_frames_waiting_for_encode_ == 0) {
+      video_stream_encoder_->EncodeVideoFrame(frame_, time_when_posted_us_);
     } else {
       // There is a newer frame in flight. Do not encode this frame.
       LOG(LS_VERBOSE)
           << "Incoming frame dropped due to that the encoder is blocked.";
-      ++vie_encoder_->dropped_frame_count_;
+      ++video_stream_encoder_->dropped_frame_count_;
     }
     if (log_stats_) {
       LOG(LS_INFO) << "Number of frames: captured "
-                   << vie_encoder_->captured_frame_count_
+                   << video_stream_encoder_->captured_frame_count_
                    << ", dropped (due to encoder blocked) "
-                   << vie_encoder_->dropped_frame_count_ << ", interval_ms "
+                   << video_stream_encoder_->dropped_frame_count_
+                   << ", interval_ms "
                    << kFrameLogIntervalMs;
-      vie_encoder_->captured_frame_count_ = 0;
-      vie_encoder_->dropped_frame_count_ = 0;
+      video_stream_encoder_->captured_frame_count_ = 0;
+      video_stream_encoder_->dropped_frame_count_ = 0;
     }
     return true;
   }
   VideoFrame frame_;
-  ViEEncoder* const vie_encoder_;
+  VideoStreamEncoder* const video_stream_encoder_;
   const int64_t time_when_posted_us_;
   const bool log_stats_;
 };
 
 // VideoSourceProxy is responsible ensuring thread safety between calls to
-// ViEEncoder::SetSource that will happen on libjingle's worker thread when a
-// video capturer is connected to the encoder and the encoder task queue
+// VideoStreamEncoder::SetSource that will happen on libjingle's worker thread
+// when a video capturer is connected to the encoder and the encoder task queue
 // (encoder_queue_) where the encoder reports its VideoSinkWants.
-class ViEEncoder::VideoSourceProxy {
+class VideoStreamEncoder::VideoSourceProxy {
  public:
-  explicit VideoSourceProxy(ViEEncoder* vie_encoder)
-      : vie_encoder_(vie_encoder),
+  explicit VideoSourceProxy(VideoStreamEncoder* video_stream_encoder)
+      : video_stream_encoder_(video_stream_encoder),
         degradation_preference_(
             VideoSendStream::DegradationPreference::kDegradationDisabled),
         source_(nullptr) {}
@@ -200,21 +202,21 @@ class ViEEncoder::VideoSourceProxy {
     }
 
     if (old_source != source && old_source != nullptr) {
-      old_source->RemoveSink(vie_encoder_);
+      old_source->RemoveSink(video_stream_encoder_);
     }
 
     if (!source) {
       return;
     }
 
-    source->AddOrUpdateSink(vie_encoder_, wants);
+    source->AddOrUpdateSink(video_stream_encoder_, wants);
   }
 
   void SetWantsRotationApplied(bool rotation_applied) {
     rtc::CritScope lock(&crit_);
     sink_wants_.rotation_applied = rotation_applied;
     if (source_)
-      source_->AddOrUpdateSink(vie_encoder_, sink_wants_);
+      source_->AddOrUpdateSink(video_stream_encoder_, sink_wants_);
   }
 
   rtc::VideoSinkWants GetActiveSinkWants() {
@@ -228,7 +230,7 @@ class ViEEncoder::VideoSourceProxy {
     sink_wants_.target_pixel_count.reset();
     sink_wants_.max_framerate_fps = std::numeric_limits<int>::max();
     if (source_)
-      source_->AddOrUpdateSink(vie_encoder_, sink_wants_);
+      source_->AddOrUpdateSink(video_stream_encoder_, sink_wants_);
   }
 
   bool RequestResolutionLowerThan(int pixel_count) {
@@ -249,7 +251,8 @@ class ViEEncoder::VideoSourceProxy {
     LOG(LS_INFO) << "Scaling down resolution, max pixels: " << pixels_wanted;
     sink_wants_.max_pixel_count = pixels_wanted;
     sink_wants_.target_pixel_count = rtc::Optional<int>();
-    source_->AddOrUpdateSink(vie_encoder_, GetActiveSinkWantsInternal());
+    source_->AddOrUpdateSink(video_stream_encoder_,
+                             GetActiveSinkWantsInternal());
     return true;
   }
 
@@ -290,7 +293,8 @@ class ViEEncoder::VideoSourceProxy {
           rtc::Optional<int>((pixel_count * 5) / 3);
     }
     LOG(LS_INFO) << "Scaling up resolution, max pixels: " << max_pixels_wanted;
-    source_->AddOrUpdateSink(vie_encoder_, GetActiveSinkWantsInternal());
+    source_->AddOrUpdateSink(video_stream_encoder_,
+                             GetActiveSinkWantsInternal());
     return true;
   }
 
@@ -320,7 +324,8 @@ class ViEEncoder::VideoSourceProxy {
 
     LOG(LS_INFO) << "Scaling down framerate: " << fps_wanted;
     sink_wants_.max_framerate_fps = fps_wanted;
-    source_->AddOrUpdateSink(vie_encoder_, GetActiveSinkWantsInternal());
+    source_->AddOrUpdateSink(video_stream_encoder_,
+                             GetActiveSinkWantsInternal());
     return true;
   }
 
@@ -336,7 +341,8 @@ class ViEEncoder::VideoSourceProxy {
 
     LOG(LS_INFO) << "Scaling up framerate: " << fps_wanted;
     sink_wants_.max_framerate_fps = fps_wanted;
-    source_->AddOrUpdateSink(vie_encoder_, GetActiveSinkWantsInternal());
+    source_->AddOrUpdateSink(video_stream_encoder_,
+                             GetActiveSinkWantsInternal());
     return true;
   }
 
@@ -366,7 +372,7 @@ class ViEEncoder::VideoSourceProxy {
 
   rtc::CriticalSection crit_;
   rtc::SequencedTaskChecker main_checker_;
-  ViEEncoder* const vie_encoder_;
+  VideoStreamEncoder* const video_stream_encoder_;
   rtc::VideoSinkWants sink_wants_ GUARDED_BY(&crit_);
   VideoSendStream::DegradationPreference degradation_preference_
       GUARDED_BY(&crit_);
@@ -375,7 +381,7 @@ class ViEEncoder::VideoSourceProxy {
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoSourceProxy);
 };
 
-ViEEncoder::ViEEncoder(uint32_t number_of_cores,
+VideoStreamEncoder::VideoStreamEncoder(uint32_t number_of_cores,
                        SendStatisticsProxy* stats_proxy,
                        const VideoSendStream::Config::EncoderSettings& settings,
                        rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
@@ -428,7 +434,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
   });
 }
 
-ViEEncoder::~ViEEncoder() {
+VideoStreamEncoder::~VideoStreamEncoder() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(shutdown_event_.Wait(0))
       << "Must call ::Stop() before destruction.";
@@ -438,7 +444,8 @@ ViEEncoder::~ViEEncoder() {
 // pipelining encoders better (multiple input frames before something comes
 // out). This should effectively turn off CPU adaptations for systems that
 // remotely cope with the load right now.
-CpuOveruseOptions ViEEncoder::GetCpuOveruseOptions(bool full_overuse_time) {
+CpuOveruseOptions VideoStreamEncoder::GetCpuOveruseOptions(
+    bool full_overuse_time) {
   CpuOveruseOptions options;
   if (full_overuse_time) {
     options.low_encode_usage_threshold_percent = 150;
@@ -447,7 +454,7 @@ CpuOveruseOptions ViEEncoder::GetCpuOveruseOptions(bool full_overuse_time) {
   return options;
 }
 
-void ViEEncoder::Stop() {
+void VideoStreamEncoder::Stop() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   source_proxy_->SetSource(nullptr, VideoSendStream::DegradationPreference());
   encoder_queue_.PostTask([this] {
@@ -464,7 +471,8 @@ void ViEEncoder::Stop() {
   shutdown_event_.Wait(rtc::Event::kForever);
 }
 
-void ViEEncoder::RegisterProcessThread(ProcessThread* module_process_thread) {
+void VideoStreamEncoder::RegisterProcessThread(
+    ProcessThread* module_process_thread) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(!module_process_thread_);
   module_process_thread_ = module_process_thread;
@@ -472,12 +480,12 @@ void ViEEncoder::RegisterProcessThread(ProcessThread* module_process_thread) {
   module_process_thread_checker_.DetachFromThread();
 }
 
-void ViEEncoder::DeRegisterProcessThread() {
+void VideoStreamEncoder::DeRegisterProcessThread() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   module_process_thread_->DeRegisterModule(&video_sender_);
 }
 
-void ViEEncoder::SetBitrateObserver(
+void VideoStreamEncoder::SetBitrateObserver(
     VideoBitrateAllocationObserver* bitrate_observer) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   encoder_queue_.PostTask([this, bitrate_observer] {
@@ -487,7 +495,7 @@ void ViEEncoder::SetBitrateObserver(
   });
 }
 
-void ViEEncoder::SetSource(
+void VideoStreamEncoder::SetSource(
     rtc::VideoSourceInterface<VideoFrame>* source,
     const VideoSendStream::DegradationPreference& degradation_preference) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
@@ -521,7 +529,7 @@ void ViEEncoder::SetSource(
   });
 }
 
-void ViEEncoder::SetSink(EncoderSink* sink, bool rotation_applied) {
+void VideoStreamEncoder::SetSink(EncoderSink* sink, bool rotation_applied) {
   source_proxy_->SetWantsRotationApplied(rotation_applied);
   encoder_queue_.PostTask([this, sink] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
@@ -529,24 +537,25 @@ void ViEEncoder::SetSink(EncoderSink* sink, bool rotation_applied) {
   });
 }
 
-void ViEEncoder::SetStartBitrate(int start_bitrate_bps) {
+void VideoStreamEncoder::SetStartBitrate(int start_bitrate_bps) {
   encoder_queue_.PostTask([this, start_bitrate_bps] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     encoder_start_bitrate_bps_ = start_bitrate_bps;
   });
 }
 
-void ViEEncoder::ConfigureEncoder(VideoEncoderConfig config,
-                                  size_t max_data_payload_length,
-                                  bool nack_enabled) {
+void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
+                                          size_t max_data_payload_length,
+                                          bool nack_enabled) {
   encoder_queue_.PostTask(
       std::unique_ptr<rtc::QueuedTask>(new ConfigureEncoderTask(
           this, std::move(config), max_data_payload_length, nack_enabled)));
 }
 
-void ViEEncoder::ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
-                                             size_t max_data_payload_length,
-                                             bool nack_enabled) {
+void VideoStreamEncoder::ConfigureEncoderOnTaskQueue(
+    VideoEncoderConfig config,
+    size_t max_data_payload_length,
+    bool nack_enabled) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   RTC_DCHECK(sink_);
   LOG(LS_INFO) << "ConfigureEncoder requested.";
@@ -569,7 +578,7 @@ void ViEEncoder::ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
   }
 }
 
-void ViEEncoder::ReconfigureEncoder() {
+void VideoStreamEncoder::ReconfigureEncoder() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   RTC_DCHECK(pending_encoder_reconfiguration_);
   std::vector<VideoStream> streams =
@@ -643,7 +652,7 @@ void ViEEncoder::ReconfigureEncoder() {
   ConfigureQualityScaler();
 }
 
-void ViEEncoder::ConfigureQualityScaler() {
+void VideoStreamEncoder::ConfigureQualityScaler() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   const auto scaling_settings = settings_.encoder->GetScalingSettings();
   const bool quality_scaling_allowed =
@@ -670,7 +679,7 @@ void ViEEncoder::ConfigureQualityScaler() {
                                    GetActiveCounts(kQuality));
 }
 
-void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
+void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
   RTC_DCHECK_RUNS_SERIALIZED(&incoming_frame_race_checker_);
   VideoFrame incoming_frame = video_frame;
 
@@ -720,7 +729,7 @@ void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
       incoming_frame, this, rtc::TimeMicros(), log_stats)));
 }
 
-bool ViEEncoder::EncoderPaused() const {
+bool VideoStreamEncoder::EncoderPaused() const {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   // Pause video if paused by caller or as long as the network is down or the
   // pacer queue has grown too large in buffered mode.
@@ -729,7 +738,7 @@ bool ViEEncoder::EncoderPaused() const {
   return last_observed_bitrate_bps_ == 0;
 }
 
-void ViEEncoder::TraceFrameDropStart() {
+void VideoStreamEncoder::TraceFrameDropStart() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   // Start trace event only on the first frame after encoder is paused.
   if (!encoder_paused_and_dropped_frame_) {
@@ -738,7 +747,7 @@ void ViEEncoder::TraceFrameDropStart() {
   encoder_paused_and_dropped_frame_ = true;
 }
 
-void ViEEncoder::TraceFrameDropEnd() {
+void VideoStreamEncoder::TraceFrameDropEnd() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   // End trace event on first frame after encoder resumes, if frame was dropped.
   if (encoder_paused_and_dropped_frame_) {
@@ -747,8 +756,8 @@ void ViEEncoder::TraceFrameDropEnd() {
   encoder_paused_and_dropped_frame_ = false;
 }
 
-void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
-                                  int64_t time_when_posted_us) {
+void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
+                                          int64_t time_when_posted_us) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
 
   if (pre_encode_callback_)
@@ -824,7 +833,7 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   video_sender_.AddVideoFrame(out_frame, nullptr);
 }
 
-void ViEEncoder::SendKeyFrame() {
+void VideoStreamEncoder::SendKeyFrame() {
   if (!encoder_queue_.IsCurrent()) {
     encoder_queue_.PostTask([this] { SendKeyFrame(); });
     return;
@@ -833,7 +842,7 @@ void ViEEncoder::SendKeyFrame() {
   video_sender_.IntraFrameRequest(0);
 }
 
-EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
+EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
@@ -858,7 +867,7 @@ EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
   return result;
 }
 
-void ViEEncoder::OnDroppedFrame() {
+void VideoStreamEncoder::OnDroppedFrame() {
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     if (quality_scaler_)
@@ -866,12 +875,13 @@ void ViEEncoder::OnDroppedFrame() {
   });
 }
 
-void ViEEncoder::SendStatistics(uint32_t bit_rate, uint32_t frame_rate) {
+void VideoStreamEncoder::SendStatistics(uint32_t bit_rate,
+                                        uint32_t frame_rate) {
   RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
   stats_proxy_->OnEncoderStatsUpdate(frame_rate, bit_rate);
 }
 
-void ViEEncoder::OnReceivedIntraFrameRequest(size_t stream_index) {
+void VideoStreamEncoder::OnReceivedIntraFrameRequest(size_t stream_index) {
   if (!encoder_queue_.IsCurrent()) {
     encoder_queue_.PostTask(
         [this, stream_index] { OnReceivedIntraFrameRequest(stream_index); });
@@ -883,9 +893,9 @@ void ViEEncoder::OnReceivedIntraFrameRequest(size_t stream_index) {
   video_sender_.IntraFrameRequest(stream_index);
 }
 
-void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
-                                  uint8_t fraction_lost,
-                                  int64_t round_trip_time_ms) {
+void VideoStreamEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
+                                          uint8_t fraction_lost,
+                                          int64_t round_trip_time_ms) {
   if (!encoder_queue_.IsCurrent()) {
     encoder_queue_.PostTask(
         [this, bitrate_bps, fraction_lost, round_trip_time_ms] {
@@ -917,7 +927,7 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
   }
 }
 
-void ViEEncoder::AdaptDown(AdaptReason reason) {
+void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   AdaptationRequest adaptation_request = {
       last_frame_info_->pixel_count(),
@@ -1008,7 +1018,7 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
   LOG(LS_INFO) << GetConstAdaptCounter().ToString();
 }
 
-void ViEEncoder::AdaptUp(AdaptReason reason) {
+void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
 
   const AdaptCounter& adapt_counter = GetConstAdaptCounter();
@@ -1096,7 +1106,7 @@ void ViEEncoder::AdaptUp(AdaptReason reason) {
   LOG(LS_INFO) << adapt_counter.ToString();
 }
 
-void ViEEncoder::UpdateAdaptationStats(AdaptReason reason) {
+void VideoStreamEncoder::UpdateAdaptationStats(AdaptReason reason) {
   switch (reason) {
     case kCpu:
       stats_proxy_->OnCpuAdaptationChanged(GetActiveCounts(kCpu),
@@ -1109,8 +1119,10 @@ void ViEEncoder::UpdateAdaptationStats(AdaptReason reason) {
   }
 }
 
-ViEEncoder::AdaptCounts ViEEncoder::GetActiveCounts(AdaptReason reason) {
-  ViEEncoder::AdaptCounts counts = GetConstAdaptCounter().Counts(reason);
+VideoStreamEncoder::AdaptCounts VideoStreamEncoder::GetActiveCounts(
+    AdaptReason reason) {
+  VideoStreamEncoder::AdaptCounts counts =
+      GetConstAdaptCounter().Counts(reason);
   switch (reason) {
     case kCpu:
       if (!IsFramerateScalingEnabled(degradation_preference_))
@@ -1132,46 +1144,48 @@ ViEEncoder::AdaptCounts ViEEncoder::GetActiveCounts(AdaptReason reason) {
   return counts;
 }
 
-ViEEncoder::AdaptCounter& ViEEncoder::GetAdaptCounter() {
+VideoStreamEncoder::AdaptCounter& VideoStreamEncoder::GetAdaptCounter() {
   return adapt_counters_[degradation_preference_];
 }
 
-const ViEEncoder::AdaptCounter& ViEEncoder::GetConstAdaptCounter() {
+const VideoStreamEncoder::AdaptCounter&
+VideoStreamEncoder::GetConstAdaptCounter() {
   return adapt_counters_[degradation_preference_];
 }
 
 // Class holding adaptation information.
-ViEEncoder::AdaptCounter::AdaptCounter() {
+VideoStreamEncoder::AdaptCounter::AdaptCounter() {
   fps_counters_.resize(kScaleReasonSize);
   resolution_counters_.resize(kScaleReasonSize);
   static_assert(kScaleReasonSize == 2, "Update MoveCount.");
 }
 
-ViEEncoder::AdaptCounter::~AdaptCounter() {}
+VideoStreamEncoder::AdaptCounter::~AdaptCounter() {}
 
-std::string ViEEncoder::AdaptCounter::ToString() const {
+std::string VideoStreamEncoder::AdaptCounter::ToString() const {
   std::stringstream ss;
   ss << "Downgrade counts: fps: {" << ToString(fps_counters_);
   ss << "}, resolution: {" << ToString(resolution_counters_) << "}";
   return ss.str();
 }
 
-ViEEncoder::AdaptCounts ViEEncoder::AdaptCounter::Counts(int reason) const {
+VideoStreamEncoder::AdaptCounts VideoStreamEncoder::AdaptCounter::Counts(
+    int reason) const {
   AdaptCounts counts;
   counts.fps = fps_counters_[reason];
   counts.resolution = resolution_counters_[reason];
   return counts;
 }
 
-void ViEEncoder::AdaptCounter::IncrementFramerate(int reason) {
+void VideoStreamEncoder::AdaptCounter::IncrementFramerate(int reason) {
   ++(fps_counters_[reason]);
 }
 
-void ViEEncoder::AdaptCounter::IncrementResolution(int reason) {
+void VideoStreamEncoder::AdaptCounter::IncrementResolution(int reason) {
   ++(resolution_counters_[reason]);
 }
 
-void ViEEncoder::AdaptCounter::DecrementFramerate(int reason) {
+void VideoStreamEncoder::AdaptCounter::DecrementFramerate(int reason) {
   if (fps_counters_[reason] == 0) {
     // Balanced mode: Adapt up is in a different order, switch reason.
     // E.g. framerate adapt down: quality (2), framerate adapt up: cpu (3).
@@ -1188,7 +1202,7 @@ void ViEEncoder::AdaptCounter::DecrementFramerate(int reason) {
   RTC_DCHECK_GE(fps_counters_[reason], 0);
 }
 
-void ViEEncoder::AdaptCounter::DecrementResolution(int reason) {
+void VideoStreamEncoder::AdaptCounter::DecrementResolution(int reason) {
   if (resolution_counters_[reason] == 0) {
     // Balanced mode: Adapt up is in a different order, switch reason.
     RTC_DCHECK_GT(TotalCount(reason), 0) << "No downgrade for reason.";
@@ -1200,45 +1214,47 @@ void ViEEncoder::AdaptCounter::DecrementResolution(int reason) {
   RTC_DCHECK_GE(resolution_counters_[reason], 0);
 }
 
-void ViEEncoder::AdaptCounter::DecrementFramerate(int reason, int cur_fps) {
+void VideoStreamEncoder::AdaptCounter::DecrementFramerate(int reason,
+                                                          int cur_fps) {
   DecrementFramerate(reason);
   // Reset if at max fps (i.e. in case of fewer steps up than down).
   if (cur_fps == std::numeric_limits<int>::max())
     std::fill(fps_counters_.begin(), fps_counters_.end(), 0);
 }
 
-int ViEEncoder::AdaptCounter::FramerateCount() const {
+int VideoStreamEncoder::AdaptCounter::FramerateCount() const {
   return Count(fps_counters_);
 }
 
-int ViEEncoder::AdaptCounter::ResolutionCount() const {
+int VideoStreamEncoder::AdaptCounter::ResolutionCount() const {
   return Count(resolution_counters_);
 }
 
-int ViEEncoder::AdaptCounter::FramerateCount(int reason) const {
+int VideoStreamEncoder::AdaptCounter::FramerateCount(int reason) const {
   return fps_counters_[reason];
 }
 
-int ViEEncoder::AdaptCounter::ResolutionCount(int reason) const {
+int VideoStreamEncoder::AdaptCounter::ResolutionCount(int reason) const {
   return resolution_counters_[reason];
 }
 
-int ViEEncoder::AdaptCounter::TotalCount(int reason) const {
+int VideoStreamEncoder::AdaptCounter::TotalCount(int reason) const {
   return FramerateCount(reason) + ResolutionCount(reason);
 }
 
-int ViEEncoder::AdaptCounter::Count(const std::vector<int>& counters) const {
+int VideoStreamEncoder::AdaptCounter::Count(
+    const std::vector<int>& counters) const {
   return std::accumulate(counters.begin(), counters.end(), 0);
 }
 
-void ViEEncoder::AdaptCounter::MoveCount(std::vector<int>* counters,
-                                         int from_reason) {
+void VideoStreamEncoder::AdaptCounter::MoveCount(std::vector<int>* counters,
+                                                 int from_reason) {
   int to_reason = (from_reason + 1) % kScaleReasonSize;
   ++((*counters)[to_reason]);
   --((*counters)[from_reason]);
 }
 
-std::string ViEEncoder::AdaptCounter::ToString(
+std::string VideoStreamEncoder::AdaptCounter::ToString(
     const std::vector<int>& counters) const {
   std::stringstream ss;
   for (size_t reason = 0; reason < kScaleReasonSize; ++reason) {

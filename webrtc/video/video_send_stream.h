@@ -24,7 +24,7 @@
 #include "webrtc/video/encoder_rtcp_feedback.h"
 #include "webrtc/video/send_delay_stats.h"
 #include "webrtc/video/send_statistics_proxy.h"
-#include "webrtc/video/vie_encoder.h"
+#include "webrtc/video/video_stream_encoder.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -44,7 +44,8 @@ class VideoSendStreamImpl;
 
 // VideoSendStream implements webrtc::VideoSendStream.
 // Internally, it delegates all public methods to VideoSendStreamImpl and / or
-// VieEncoder. VideoSendStreamInternal is created and deleted on |worker_queue|.
+// VideoStreamEncoder. VideoSendStreamInternal is created and deleted on
+// |worker_queue|.
 class VideoSendStream : public webrtc::VideoSendStream {
  public:
   VideoSendStream(int num_cpu_cores,
@@ -102,7 +103,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
   const VideoSendStream::Config config_;
   const VideoEncoderConfig::ContentType content_type_;
   std::unique_ptr<VideoSendStreamImpl> send_stream_;
-  std::unique_ptr<ViEEncoder> vie_encoder_;
+  std::unique_ptr<VideoStreamEncoder> video_stream_encoder_;
 };
 
 }  // namespace internal

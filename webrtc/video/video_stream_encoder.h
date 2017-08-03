@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_VIE_ENCODER_H_
-#define WEBRTC_VIDEO_VIE_ENCODER_H_
+#ifndef WEBRTC_VIDEO_VIDEO_STREAM_ENCODER_H_
+#define WEBRTC_VIDEO_VIDEO_STREAM_ENCODER_H_
 
 #include <map>
 #include <memory>
@@ -40,18 +40,18 @@ class ProcessThread;
 class SendStatisticsProxy;
 class VideoBitrateAllocationObserver;
 
-// VieEncoder represent a video encoder that accepts raw video frames as input
-// and produces an encoded bit stream.
+// VideoStreamEncoder represent a video encoder that accepts raw video frames as
+// input and produces an encoded bit stream.
 // Usage:
 //  Instantiate.
 //  Call SetSink.
 //  Call SetSource.
 //  Call ConfigureEncoder with the codec settings.
 //  Call Stop() when done.
-class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
-                   public EncodedImageCallback,
-                   public VCMSendStatisticsCallback,
-                   public AdaptationObserverInterface {
+class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
+                           public EncodedImageCallback,
+                           public VCMSendStatisticsCallback,
+                           public AdaptationObserverInterface {
  public:
   // Interface for receiving encoded video frames and notifications about
   // configuration changes.
@@ -73,13 +73,13 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // Downscale framerate at most 4 times.
   static const int kMaxCpuFramerateDowngrades = 4;
 
-  ViEEncoder(uint32_t number_of_cores,
-             SendStatisticsProxy* stats_proxy,
-             const VideoSendStream::Config::EncoderSettings& settings,
-             rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
-             EncodedFrameObserver* encoder_timing,
-             std::unique_ptr<OveruseFrameDetector> overuse_detector);
-  ~ViEEncoder();
+  VideoStreamEncoder(uint32_t number_of_cores,
+                     SendStatisticsProxy* stats_proxy,
+                     const VideoSendStream::Config::EncoderSettings& settings,
+                     rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
+                     EncodedFrameObserver* encoder_timing,
+                     std::unique_ptr<OveruseFrameDetector> overuse_detector);
+  ~VideoStreamEncoder();
   // RegisterProcessThread register |module_process_thread| with those objects
   // that use it. Registration has to happen on the thread where
   // |module_process_thread| was created (libjingle's worker thread).
@@ -243,7 +243,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   ProcessThread* module_process_thread_;
   rtc::ThreadChecker module_process_thread_checker_;
   // |thread_checker_| checks that public methods that are related to lifetime
-  // of ViEEncoder are called on the same thread.
+  // of VideoStreamEncoder are called on the same thread.
   rtc::ThreadChecker thread_checker_;
 
   VideoEncoderConfig encoder_config_ ACCESS_ON(&encoder_queue_);
@@ -308,9 +308,9 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // destroyed first to make sure no tasks are run that use other members.
   rtc::TaskQueue encoder_queue_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(ViEEncoder);
+  RTC_DISALLOW_COPY_AND_ASSIGN(VideoStreamEncoder);
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_VIE_ENCODER_H_
+#endif  // WEBRTC_VIDEO_VIDEO_STREAM_ENCODER_H_

@@ -19,13 +19,13 @@
 
 namespace webrtc {
 
-class ViEEncoder;
+class VideoStreamEncoder;
 
 class EncoderRtcpFeedback : public RtcpIntraFrameObserver {
  public:
   EncoderRtcpFeedback(Clock* clock,
                        const std::vector<uint32_t>& ssrcs,
-                       ViEEncoder* encoder);
+                       VideoStreamEncoder* encoder);
   void OnReceivedIntraFrameRequest(uint32_t ssrc) override;
 
  private:
@@ -34,7 +34,7 @@ class EncoderRtcpFeedback : public RtcpIntraFrameObserver {
 
   Clock* const clock_;
   const std::vector<uint32_t> ssrcs_;
-  ViEEncoder* const vie_encoder_;
+  VideoStreamEncoder* const video_stream_encoder_;
 
   rtc::CriticalSection crit_;
   std::vector<int64_t> time_last_intra_request_ms_ GUARDED_BY(crit_);
