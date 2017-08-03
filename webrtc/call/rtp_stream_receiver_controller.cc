@@ -9,8 +9,6 @@
  */
 
 #include "webrtc/call/rtp_stream_receiver_controller.h"
-
-#include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/ptr_util.h"
 
 namespace webrtc {
@@ -20,11 +18,7 @@ RtpStreamReceiverController::Receiver::Receiver(
     uint32_t ssrc,
     RtpPacketSinkInterface* sink)
     : controller_(controller), sink_(sink) {
-  const bool sink_added = controller_->AddSink(ssrc, sink_);
-  if (!sink_added) {
-    LOG(LS_ERROR) << "RtpStreamReceiverController::Receiver::Receiver: Sink "
-                  << "could not be added for SSRC=" << ssrc << ".";
-  }
+  controller_->AddSink(ssrc, sink_);
 }
 
 RtpStreamReceiverController::Receiver::~Receiver() {
@@ -49,7 +43,7 @@ bool RtpStreamReceiverController::OnRtpPacket(const RtpPacketReceived& packet) {
   return demuxer_.OnRtpPacket(packet);
 }
 
-bool RtpStreamReceiverController::AddSink(uint32_t ssrc,
+void RtpStreamReceiverController::AddSink(uint32_t ssrc,
                                           RtpPacketSinkInterface* sink) {
   rtc::CritScope cs(&lock_);
   return demuxer_.AddSink(ssrc, sink);

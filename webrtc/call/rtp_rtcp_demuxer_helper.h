@@ -21,7 +21,6 @@
 
 namespace webrtc {
 
-// TODO(eladalon): Remove this in the next CL.
 template <typename Container>
 bool MultimapAssociationExists(const Container& multimap,
                                const typename Container::key_type& key,
@@ -32,7 +31,6 @@ bool MultimapAssociationExists(const Container& multimap,
                      [val](Reference elem) { return elem.second == val; });
 }
 
-// TODO(eladalon): Remove this in the next CL.
 template <typename Container, typename Value>
 size_t RemoveFromMultimapByValue(Container* multimap, const Value& value) {
   size_t count = 0;
@@ -47,26 +45,11 @@ size_t RemoveFromMultimapByValue(Container* multimap, const Value& value) {
   return count;
 }
 
-template <typename Map, typename Value>
-size_t RemoveFromMapByValue(Map* map, const Value& value) {
-  size_t count = 0;
-  for (auto it = map->begin(); it != map->end();) {
-    if (it->second == value) {
-      it = map->erase(it);
-      ++count;
-    } else {
-      ++it;
-    }
-  }
-  return count;
-}
-
 template <typename Container, typename Key>
 bool ContainerHasKey(const Container& c, const Key& k) {
   return std::find(c.cbegin(), c.cend(), k) != c.cend();
 }
 
-// TODO(eladalon): Remove this in the next CL.
 template <typename Container>
 bool MultimapHasValue(const Container& c,
                       const typename Container::mapped_type& v) {
@@ -74,14 +57,6 @@ bool MultimapHasValue(const Container& c,
     return it.second == v;
   };
   return std::any_of(c.cbegin(), c.cend(), predicate);
-}
-
-template <typename Map>
-bool MapHasValue(const Map& map, const typename Map::mapped_type& value) {
-  auto predicate = [value](const typename Map::value_type& it) {
-    return it.second == value;
-  };
-  return std::any_of(map.cbegin(), map.cend(), predicate);
 }
 
 rtc::Optional<uint32_t> ParseRtcpPacketSenderSsrc(

@@ -38,7 +38,7 @@ class RtpStreamReceiverController
       RtpPacketSinkInterface* sink) override;
 
   // Thread-safe wrappers for the corresponding RtpDemuxer methods.
-  bool AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink) override;
+  void AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink) override;
   size_t RemoveSink(const RtpPacketSinkInterface* sink) override;
 
   // TODO(nisse): Not yet responsible for parsing.

@@ -31,22 +31,18 @@ class RtpDemuxer {
   RtpDemuxer();
   ~RtpDemuxer();
 
-  // Registers a sink. Multiple SSRCs may be mapped to the same sink, but
-  // each SSRC may only be mapped to one sink. The return value reports
-  // whether the association has been recorded or rejected. Rejection may occur
-  // if the SSRC has already been associated with a sink. The previously added
-  // sink is *not* forgotten.
-  bool AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink);
+  // Registers a sink. The same sink can be registered for multiple ssrcs, and
+  // the same ssrc can have multiple sinks. Null pointer is not allowed.
+  void AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink);
 
-  // Registers a sink's association to an RSID. Only one sink may be associated
-  // with a given RSID. Null pointer is not allowed.
+  // Registers a sink's association to an RSID. Null pointer is not allowed.
   void AddSink(const std::string& rsid, RtpPacketSinkInterface* sink);
 
   // Removes a sink. Return value reports if anything was actually removed.
   // Null pointer is not allowed.
   bool RemoveSink(const RtpPacketSinkInterface* sink);
 
-  // Handles RTP packets. Returns true if at least one matching sink was found.
+  // Returns true if at least one matching sink was found.
   bool OnRtpPacket(const RtpPacketReceived& packet);
 
   // Allows other objects to be notified when RSID-SSRC associations are
@@ -57,6 +53,12 @@ class RtpDemuxer {
   void DeregisterRsidResolutionObserver(const RsidResolutionObserver* observer);
 
  private:
+  // Records a sink<->SSRC association. This can happen by explicit
+  // configuration by AddSink(ssrc...), or by inferred configuration from an
+  // RSID-based configuration which is resolved to an SSRC upon
+  // packet reception.
+  void RecordSsrcToSinkAssociation(uint32_t ssrc, RtpPacketSinkInterface* sink);
+
   // Find the associations of RSID to SSRCs.
   void ResolveRsidToSsrcAssociations(const RtpPacketReceived& packet);
 
@@ -65,13 +67,13 @@ class RtpDemuxer {
 
   // This records the association SSRCs to sinks. Other associations, such
   // as by RSID, also end up here once the RSID, etc., is resolved to an SSRC.
-  std::map<uint32_t, RtpPacketSinkInterface*> ssrc_sinks_;
+  std::multimap<uint32_t, RtpPacketSinkInterface*> ssrc_sinks_;
 
   // A sink may be associated with an RSID - RTP Stream ID. This tag has a
   // one-to-one association with an SSRC, but that SSRC is not yet known.
   // When it becomes known, the association of the sink to the RSID is deleted
   // from this container, and moved into |ssrc_sinks_|.
-  std::map<std::string, RtpPacketSinkInterface*> rsid_sinks_;
+  std::multimap<std::string, RtpPacketSinkInterface*> rsid_sinks_;
 
   // Observers which will be notified when an RSID association to an SSRC is
   // resolved by this object.
