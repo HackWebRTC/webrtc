@@ -46,7 +46,7 @@ class DirectTransport : public Transport {
             send_call,
             std::unique_ptr<Demuxer>(new ForceDemuxer(MediaType::VIDEO))) {}
 
-  ~DirectTransport();
+  ~DirectTransport() override;
 
   void SetConfig(const FakeNetworkPipe::Config& config);
 
