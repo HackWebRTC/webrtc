@@ -13,7 +13,6 @@
 #include <utility>
 
 #include "webrtc/rtc_base/checks.h"
-#include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
@@ -146,10 +145,6 @@ void FallbackDesktopCapturerWrapper::OnCaptureResult(
     Result result,
     std::unique_ptr<DesktopFrame> frame) {
   RTC_DCHECK(callback_);
-  RTC_HISTOGRAM_BOOLEAN("WebRTC.DesktopCapture.PrimaryCapturerError",
-                        result != Result::SUCCESS);
-  RTC_HISTOGRAM_BOOLEAN("WebRTC.DesktopCapture.PrimaryCapturerPermanentError",
-                        result == Result::ERROR_PERMANENT);
   if (result == Result::SUCCESS) {
     callback_->OnCaptureResult(result, std::move(frame));
     return;

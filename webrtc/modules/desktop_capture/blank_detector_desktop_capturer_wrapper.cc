@@ -15,7 +15,6 @@
 
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/rtc_base/checks.h"
-#include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
@@ -79,8 +78,6 @@ void BlankDetectorDesktopCapturerWrapper::OnCaptureResult(
     last_frame_is_blank_ = IsBlankFrame(*frame);
     is_first_frame_ = false;
   }
-  RTC_HISTOGRAM_BOOLEAN("WebRTC.DesktopCapture.BlankFrameDetected",
-                        last_frame_is_blank_);
   if (!last_frame_is_blank_) {
     non_blank_frame_received_ = true;
     callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
