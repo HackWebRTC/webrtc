@@ -815,6 +815,10 @@ public class PeerConnectionTest {
     answeringExpectations.dataChannel.close();
     offeringExpectations.dataChannel.close();
 
+    // Test SetBitrate.
+    assertTrue(offeringPC.setBitrate(100000, 5000000, 500000000));
+    assertFalse(offeringPC.setBitrate(3, 2, 1));
+
     // Free the Java-land objects and collect them.
     shutdownPC(offeringPC, offeringExpectations);
     offeringPC = null;

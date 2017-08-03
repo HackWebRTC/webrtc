@@ -286,6 +286,26 @@ JOW(void, PeerConnection_nativeNewGetStats)
   ExtractNativePC(jni, j_pc)->GetStats(callback);
 }
 
+JOW(jboolean, PeerConnection_setBitrate)
+(JNIEnv* jni, jobject j_pc, jobject j_min, jobject j_current, jobject j_max) {
+  webrtc::PeerConnectionInterface::BitrateParameters params;
+  jclass j_integer_class = jni->FindClass("java/lang/Integer");
+  jmethodID int_value_id = GetMethodID(jni, j_integer_class, "intValue", "()I");
+  if (!IsNull(jni, j_min)) {
+    int min_value = jni->CallIntMethod(j_min, int_value_id);
+    params.min_bitrate_bps = rtc::Optional<int>(min_value);
+  }
+  if (!IsNull(jni, j_current)) {
+    int current_value = jni->CallIntMethod(j_current, int_value_id);
+    params.current_bitrate_bps = rtc::Optional<int>(current_value);
+  }
+  if (!IsNull(jni, j_max)) {
+    int max_value = jni->CallIntMethod(j_max, int_value_id);
+    params.max_bitrate_bps = rtc::Optional<int>(max_value);
+  }
+  return ExtractNativePC(jni, j_pc)->SetBitrate(params).ok();
+}
+
 JOW(bool, PeerConnection_nativeStartRtcEventLog)
 (JNIEnv* jni, jobject j_pc, int file_descriptor, int max_size_bytes) {
   return ExtractNativePC(jni, j_pc)->StartRtcEventLog(file_descriptor,

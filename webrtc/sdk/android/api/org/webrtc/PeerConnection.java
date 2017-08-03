@@ -324,6 +324,10 @@ public class PeerConnection {
     nativeNewGetStats(callback);
   }
 
+  // Limits the bandwidth allocated for all RTP streams sent by this
+  // PeerConnection. Pass null to leave a value unchanged.
+  public native boolean setBitrate(Integer min, Integer current, Integer max);
+
   // Starts recording an RTC event log. Ownership of the file is transfered to
   // the native code. If an RTC event log is already being recorded, it will be
   // stopped and a new one will start using the provided file. Logging will
