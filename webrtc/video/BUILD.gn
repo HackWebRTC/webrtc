@@ -277,6 +277,7 @@ if (rtc_include_tests) {
       "../modules/rtp_rtcp",
       "../modules/rtp_rtcp:mock_rtp_rtcp",
       "../modules/utility",
+      "../modules/utility:mock_process_thread",
       "../modules/video_coding",
       "../modules/video_coding:video_coding_utility",
       "../modules/video_coding:webrtc_h264",

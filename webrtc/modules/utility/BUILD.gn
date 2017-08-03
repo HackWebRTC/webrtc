@@ -40,6 +40,18 @@ rtc_static_library("utility") {
   ]
 }
 
+rtc_source_set("mock_process_thread") {
+  testonly = true
+  sources = [
+    "include/mock/mock_process_thread.h",
+  ]
+  deps = [
+    ":utility",
+    "../../rtc_base:rtc_base_approved",
+    "../../test:test_support",
+  ]
+}
+
 if (rtc_include_tests) {
   rtc_source_set("utility_unittests") {
     testonly = true

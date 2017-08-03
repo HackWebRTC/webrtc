@@ -158,6 +158,7 @@ if (rtc_include_tests) {
       "../modules/pacing",
       "../modules/rtp_rtcp",
       "../modules/rtp_rtcp:mock_rtp_rtcp",
+      "../modules/utility:mock_process_thread",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",
       "../test:audio_codec_mocks",
