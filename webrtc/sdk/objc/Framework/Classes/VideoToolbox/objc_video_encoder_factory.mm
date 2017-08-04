@@ -13,6 +13,7 @@
 #include <string>
 
 #import "NSString+StdString.h"
+#import "RTCI420Buffer+Private.h"
 #import "RTCVideoCodec+Private.h"
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
@@ -33,6 +34,22 @@
 namespace webrtc {
 
 namespace {
+
+id<RTCVideoFrameBuffer> nativeToRtcFrameBuffer(const rtc::scoped_refptr<VideoFrameBuffer> &buffer) {
+  return buffer->type() == VideoFrameBuffer::Type::kNative ?
+      static_cast<ObjCFrameBuffer *>(buffer.get())->wrapped_frame_buffer() :
+      [[RTCI420Buffer alloc] initWithFrameBuffer:buffer->ToI420()];
+}
+
+RTCVideoFrame *nativeToRtcFrame(const VideoFrame &frame) {
+  RTCVideoFrame *rtcFrame =
+      [[RTCVideoFrame alloc] initWithBuffer:nativeToRtcFrameBuffer(frame.video_frame_buffer())
+                                   rotation:RTCVideoRotation(frame.rotation())
+                                timeStampNs:frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec];
+  rtcFrame.timeStamp = frame.timestamp();
+  return rtcFrame;
+}
+
 class ObjCVideoEncoder : public VideoEncoder {
  public:
   ObjCVideoEncoder(id<RTCVideoEncoder> encoder)
@@ -53,14 +70,13 @@ class ObjCVideoEncoder : public VideoEncoder {
                             RTCRtpFragmentationHeader *header) {
       EncodedImage encodedImage = [frame nativeEncodedImage];
 
-      // Handle types than can be converted into one of webrtc::CodecSpecificInfo's hard coded
-      // cases.
+      // Handle types than can be converted into one of CodecSpecificInfo's hard coded cases.
       CodecSpecificInfo codecSpecificInfo;
       if ([info isKindOfClass:[RTCCodecSpecificInfoH264 class]]) {
         codecSpecificInfo = [(RTCCodecSpecificInfoH264 *)info nativeCodecSpecificInfo];
       }
 
-      std::unique_ptr<webrtc::RTPFragmentationHeader> fragmentationHeader =
+      std::unique_ptr<RTPFragmentationHeader> fragmentationHeader =
           [header createNativeFragmentationHeader];
       callback->OnEncodedImage(encodedImage, &codecSpecificInfo, fragmentationHeader.release());
     }];
@@ -73,17 +89,7 @@ class ObjCVideoEncoder : public VideoEncoder {
   int32_t Encode(const VideoFrame &frame,
                  const CodecSpecificInfo *codec_specific_info,
                  const std::vector<FrameType> *frame_types) {
-    RTC_CHECK(frame.video_frame_buffer()->type() == VideoFrameBuffer::Type::kNative);
-
-    id<RTCVideoFrameBuffer> frame_buffer =
-        static_cast<ObjCFrameBuffer *>(frame.video_frame_buffer().get())->wrapped_frame_buffer();
-    RTCVideoFrame *rtcFrame =
-        [[RTCVideoFrame alloc] initWithBuffer:frame_buffer
-                                     rotation:RTCVideoRotation(frame.rotation())
-                                  timeStampNs:frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec];
-    rtcFrame.timeStamp = frame.timestamp();
-
-    // webrtc::CodecSpecificInfo only handles a hard coded list of codecs
+    // CodecSpecificInfo only handles a hard coded list of codecs
     id<RTCCodecSpecificInfo> rtcCodecSpecificInfo = nil;
     if (codec_specific_info) {
       if (strcmp(codec_specific_info->codec_name, "H264") == 0) {
@@ -99,8 +105,9 @@ class ObjCVideoEncoder : public VideoEncoder {
       [rtcFrameTypes addObject:@(RTCFrameType(frame_types->at(i)))];
     }
 
-    return
-        [encoder_ encode:rtcFrame codecSpecificInfo:rtcCodecSpecificInfo frameTypes:rtcFrameTypes];
+    return [encoder_ encode:nativeToRtcFrame(frame)
+          codecSpecificInfo:rtcCodecSpecificInfo
+                 frameTypes:rtcFrameTypes];
   }
 
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) { return WEBRTC_VIDEO_CODEC_OK; }
@@ -139,8 +146,7 @@ id<RTCVideoEncoderFactory> ObjCVideoEncoderFactory::wrapped_encoder_factory() co
   return encoder_factory_;
 }
 
-webrtc::VideoEncoder *ObjCVideoEncoderFactory::CreateVideoEncoder(
-    const cricket::VideoCodec &codec) {
+VideoEncoder *ObjCVideoEncoderFactory::CreateVideoEncoder(const cricket::VideoCodec &codec) {
   RTCVideoCodecInfo *info = [[RTCVideoCodecInfo alloc] initWithNativeVideoCodec:codec];
   id<RTCVideoEncoder> encoder = [encoder_factory_ createEncoder:info];
   return new ObjCVideoEncoder(encoder);
@@ -156,7 +162,7 @@ const std::vector<cricket::VideoCodec> &ObjCVideoEncoderFactory::supported_codec
   return supported_codecs_;
 }
 
-void ObjCVideoEncoderFactory::DestroyVideoEncoder(webrtc::VideoEncoder *encoder) {
+void ObjCVideoEncoderFactory::DestroyVideoEncoder(VideoEncoder *encoder) {
   delete encoder;
   encoder = nullptr;
 }
