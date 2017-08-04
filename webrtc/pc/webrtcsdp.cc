@@ -2719,6 +2719,16 @@ bool ParseContent(const std::string& message,
           if (!GetValueFromString(line, bandwidth, &b, error)) {
             return false;
           }
+          // TODO(deadbeef): Historically, applications may be setting a value
+          // of -1 to mean "unset any previously set bandwidth limit", even
+          // though ommitting the "b=AS" entirely will do just that. Once we've
+          // transitioned applications to doing the right thing, it would be
+          // better to treat this as a hard error instead of just ignoring it.
+          if (b == -1) {
+            LOG(LS_WARNING) << "Ignoring \"b=AS:-1\"; will be treated as \"no "
+                               "bandwidth limit\".";
+            continue;
+          }
           if (b < 0) {
             return ParseFailed(line, "b=AS value can't be negative.", error);
           }

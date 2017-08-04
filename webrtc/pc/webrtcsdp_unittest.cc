@@ -3358,6 +3358,29 @@ TEST_F(WebRtcSdpTest, DeserializingNegativeBandwidthLimitFails) {
   ExpectParseFailure(std::string(kSdpWithNegativeBandwidth), "b=AS:-1000");
 }
 
+// An exception to the above rule: a value of -1 for b=AS should just be
+// ignored, resulting in "kAutoBandwidth" in the deserialized object.
+// Applications historically may be using "b=AS:-1" to mean "no bandwidth
+// limit", but this is now what ommitting the attribute entirely will do, so
+// ignoring it will have the intended effect.
+TEST_F(WebRtcSdpTest, BandwidthLimitOfNegativeOneIgnored) {
+  static const char kSdpWithBandwidthOfNegativeOne[] =
+      "v=0\r\n"
+      "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
+      "s=-\r\n"
+      "t=0 0\r\n"
+      "m=video 3457 RTP/SAVPF 120\r\n"
+      "b=AS:-1\r\n";
+
+  JsepSessionDescription jdesc_output(kDummyString);
+  EXPECT_TRUE(SdpDeserialize(kSdpWithBandwidthOfNegativeOne, &jdesc_output));
+  const ContentInfo* vc = GetFirstVideoContent(jdesc_output.description());
+  ASSERT_NE(nullptr, vc);
+  const VideoContentDescription* vcd =
+      static_cast<const VideoContentDescription*>(vc->description);
+  EXPECT_EQ(cricket::kAutoBandwidth, vcd->bandwidth());
+}
+
 // Test that "ufrag"/"pwd" in the candidate line itself are ignored, and only
 // the "a=ice-ufrag"/"a=ice-pwd" attributes are used.
 // Regression test for:
