@@ -534,12 +534,12 @@ int H264VideoToolboxEncoder::SetRates(uint32_t new_bitrate_kbit,
 }
 
 int H264VideoToolboxEncoder::Release() {
-  // Need to reset so that the session is invalidated and won't use the
+  // Need to destroy so that the session is invalidated and won't use the
   // callback anymore. Do not remove callback until the session is invalidated
   // since async encoder callbacks can occur until invalidation.
-  int ret = ResetCompressionSession();
+  DestroyCompressionSession();
   callback_ = nullptr;
-  return ret;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int H264VideoToolboxEncoder::ResetCompressionSession() {
