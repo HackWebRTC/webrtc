@@ -992,8 +992,9 @@ void RTCPReceiver::TriggerCallbacksFromRtcpPacket(
     if (stats_callback_) {
       for (const auto& report_block : packet_information.report_blocks) {
         RtcpStatistics stats;
-        stats.cumulative_lost = report_block.cumulativeLost;
-        stats.extended_max_sequence_number = report_block.extendedHighSeqNum;
+        stats.packets_lost = report_block.cumulativeLost;
+        stats.extended_highest_sequence_number =
+            report_block.extendedHighSeqNum;
         stats.fraction_lost = report_block.fractionLost;
         stats.jitter = report_block.jitter;
 

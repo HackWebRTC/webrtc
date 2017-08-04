@@ -201,14 +201,14 @@ TEST_F(ReceiveStatisticsTest, RtcpCallbacks) {
 
   EXPECT_EQ(1u, callback.num_calls_);
   EXPECT_EQ(callback.ssrc_, kSsrc1);
-  EXPECT_EQ(statistics.cumulative_lost, callback.stats_.cumulative_lost);
-  EXPECT_EQ(statistics.extended_max_sequence_number,
-            callback.stats_.extended_max_sequence_number);
+  EXPECT_EQ(statistics.packets_lost, callback.stats_.packets_lost);
+  EXPECT_EQ(statistics.extended_highest_sequence_number,
+            callback.stats_.extended_highest_sequence_number);
   EXPECT_EQ(statistics.fraction_lost, callback.stats_.fraction_lost);
   EXPECT_EQ(statistics.jitter, callback.stats_.jitter);
   EXPECT_EQ(51, statistics.fraction_lost);
-  EXPECT_EQ(1u, statistics.cumulative_lost);
-  EXPECT_EQ(5u, statistics.extended_max_sequence_number);
+  EXPECT_EQ(1u, statistics.packets_lost);
+  EXPECT_EQ(5u, statistics.extended_highest_sequence_number);
   EXPECT_EQ(4u, statistics.jitter);
 
   receive_statistics_->RegisterRtcpStatisticsCallback(NULL);

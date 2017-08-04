@@ -34,9 +34,9 @@ void ReportBlockStats::Store(const RtcpStatistics& rtcp_stats,
                              uint32_t remote_ssrc,
                              uint32_t source_ssrc) {
   RTCPReportBlock block;
-  block.cumulativeLost = rtcp_stats.cumulative_lost;
+  block.cumulativeLost = rtcp_stats.packets_lost;
   block.fractionLost = rtcp_stats.fraction_lost;
-  block.extendedHighSeqNum = rtcp_stats.extended_max_sequence_number;
+  block.extendedHighSeqNum = rtcp_stats.extended_highest_sequence_number;
   block.jitter = rtcp_stats.jitter;
   block.remoteSSRC = remote_ssrc;
   block.sourceSSRC = source_ssrc;

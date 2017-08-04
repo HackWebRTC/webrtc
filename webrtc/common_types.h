@@ -22,6 +22,7 @@
 #include "webrtc/api/video/video_timing.h"
 #include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/deprecation.h"
 #include "webrtc/rtc_base/optional.h"
 #include "webrtc/typedefs.h"
 
@@ -156,13 +157,19 @@ enum FrameType {
 struct RtcpStatistics {
   RtcpStatistics()
       : fraction_lost(0),
-        cumulative_lost(0),
-        extended_max_sequence_number(0),
+        packets_lost(0),
+        extended_highest_sequence_number(0),
         jitter(0) {}
 
   uint8_t fraction_lost;
-  uint32_t cumulative_lost;
-  uint32_t extended_max_sequence_number;
+  union {
+    uint32_t packets_lost;
+    RTC_DEPRECATED uint32_t cumulative_lost;
+  };
+  union {
+    uint32_t extended_highest_sequence_number;
+    RTC_DEPRECATED uint32_t extended_max_sequence_number;
+  };
   uint32_t jitter;
 };
 

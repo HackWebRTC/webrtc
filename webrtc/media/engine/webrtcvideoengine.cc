@@ -2037,7 +2037,7 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
                        stream_stats.rtp_stats.transmitted.header_bytes +
                        stream_stats.rtp_stats.transmitted.padding_bytes;
     info.packets_sent += stream_stats.rtp_stats.transmitted.packets;
-    info.packets_lost += stream_stats.rtcp_stats.cumulative_lost;
+    info.packets_lost += stream_stats.rtcp_stats.packets_lost;
     if (stream_stats.width > info.send_frame_width)
       info.send_frame_width = stream_stats.width;
     if (stream_stats.height > info.send_frame_height)
@@ -2445,7 +2445,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
                     stats.rtp_stats.transmitted.header_bytes +
                     stats.rtp_stats.transmitted.padding_bytes;
   info.packets_rcvd = stats.rtp_stats.transmitted.packets;
-  info.packets_lost = stats.rtcp_stats.cumulative_lost;
+  info.packets_lost = stats.rtcp_stats.packets_lost;
   info.fraction_lost =
       static_cast<float>(stats.rtcp_stats.fraction_lost) / (1 << 8);
 

@@ -1047,15 +1047,14 @@ TEST_F(RtcpReceiverTest, Callbacks) {
   rtcp::ReceiverReport rr1;
   rr1.SetSenderSsrc(kSenderSsrc);
   rr1.AddReportBlock(rb1);
-  EXPECT_CALL(
-      callback,
-      StatisticsUpdated(
-          AllOf(Field(&RtcpStatistics::fraction_lost, kFractionLoss),
-                Field(&RtcpStatistics::cumulative_lost, kCumulativeLoss),
-                Field(&RtcpStatistics::extended_max_sequence_number,
-                      kSequenceNumber),
-                Field(&RtcpStatistics::jitter, kJitter)),
-          kReceiverMainSsrc));
+  EXPECT_CALL(callback,
+              StatisticsUpdated(
+                  AllOf(Field(&RtcpStatistics::fraction_lost, kFractionLoss),
+                        Field(&RtcpStatistics::packets_lost, kCumulativeLoss),
+                        Field(&RtcpStatistics::extended_highest_sequence_number,
+                              kSequenceNumber),
+                        Field(&RtcpStatistics::jitter, kJitter)),
+                  kReceiverMainSsrc));
   EXPECT_CALL(rtp_rtcp_impl_, OnReceivedRtcpReportBlocks(_));
   EXPECT_CALL(bandwidth_observer_, OnReceivedRtcpReceiverReport(_, _, _));
   InjectRtcpPacket(rr1);

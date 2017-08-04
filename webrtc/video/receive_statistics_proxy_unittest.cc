@@ -245,15 +245,15 @@ TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsRtcpStats) {
 
   RtcpStatistics rtcp_stats;
   rtcp_stats.fraction_lost = kFracLost;
-  rtcp_stats.cumulative_lost = kCumLost;
-  rtcp_stats.extended_max_sequence_number = kExtSeqNum;
+  rtcp_stats.packets_lost = kCumLost;
+  rtcp_stats.extended_highest_sequence_number = kExtSeqNum;
   rtcp_stats.jitter = kJitter;
   statistics_proxy_->StatisticsUpdated(rtcp_stats, kRemoteSsrc);
 
   VideoReceiveStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_EQ(kFracLost, stats.rtcp_stats.fraction_lost);
-  EXPECT_EQ(kCumLost, stats.rtcp_stats.cumulative_lost);
-  EXPECT_EQ(kExtSeqNum, stats.rtcp_stats.extended_max_sequence_number);
+  EXPECT_EQ(kCumLost, stats.rtcp_stats.packets_lost);
+  EXPECT_EQ(kExtSeqNum, stats.rtcp_stats.extended_highest_sequence_number);
   EXPECT_EQ(kJitter, stats.rtcp_stats.jitter);
 }
 
@@ -359,14 +359,14 @@ TEST_F(ReceiveStatisticsProxyTest, PacketLossHistogramIsUpdated) {
 
   // One report block received.
   RtcpStatistics rtcp_stats1;
-  rtcp_stats1.cumulative_lost = kCumLost1;
-  rtcp_stats1.extended_max_sequence_number = kExtSeqNum1;
+  rtcp_stats1.packets_lost = kCumLost1;
+  rtcp_stats1.extended_highest_sequence_number = kExtSeqNum1;
   statistics_proxy_->StatisticsUpdated(rtcp_stats1, kRemoteSsrc);
 
   // Two report blocks received.
   RtcpStatistics rtcp_stats2;
-  rtcp_stats2.cumulative_lost = kCumLost2;
-  rtcp_stats2.extended_max_sequence_number = kExtSeqNum2;
+  rtcp_stats2.packets_lost = kCumLost2;
+  rtcp_stats2.extended_highest_sequence_number = kExtSeqNum2;
   statistics_proxy_->StatisticsUpdated(rtcp_stats2, kRemoteSsrc);
 
   // Two received report blocks but min run time has not passed.
@@ -392,8 +392,8 @@ TEST_F(ReceiveStatisticsProxyTest, PacketLossHistogramIsUpdated) {
 TEST_F(ReceiveStatisticsProxyTest,
        PacketLossHistogramIsNotUpdatedIfLessThanTwoReportBlocksAreReceived) {
   RtcpStatistics rtcp_stats1;
-  rtcp_stats1.cumulative_lost = 1;
-  rtcp_stats1.extended_max_sequence_number = 10;
+  rtcp_stats1.packets_lost = 1;
+  rtcp_stats1.extended_highest_sequence_number = 10;
 
   // Min run time has passed but no received report block.
   fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000);

@@ -57,9 +57,9 @@ class ReportBlockStatsTest : public ::testing::Test {
   RtcpStatistics RtcpReportBlockToRtcpStatistics(
       const RTCPReportBlock& stats) {
     RtcpStatistics block;
-    block.cumulative_lost = stats.cumulativeLost;
+    block.packets_lost = stats.cumulativeLost;
     block.fraction_lost = stats.fractionLost;
-    block.extended_max_sequence_number = stats.extendedHighSeqNum;
+    block.extended_highest_sequence_number = stats.extendedHighSeqNum;
     block.jitter = stats.jitter;
     return block;
   }

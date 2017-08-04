@@ -2675,8 +2675,8 @@ int Channel::GetRTPStatistics(CallStatistics& stats) {
   }
 
   stats.fractionLost = statistics.fraction_lost;
-  stats.cumulativeLost = statistics.cumulative_lost;
-  stats.extendedMax = statistics.extended_max_sequence_number;
+  stats.cumulativeLost = statistics.packets_lost;
+  stats.extendedMax = statistics.extended_highest_sequence_number;
   stats.jitterSamples = statistics.jitter;
 
   // --- RTT
