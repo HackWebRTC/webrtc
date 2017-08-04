@@ -42,7 +42,7 @@ class FrameObject : public webrtc::VCMEncodedFrame {
   //                 been implemented.
   virtual bool delayed_by_retransmission() const { return 0; }
 
-  size_t size() { return _length; }
+  size_t size() const { return _length; }
 
   // The tuple (|picture_id|, |spatial_layer|) uniquely identifies a frame
   // object. For codec types that don't necessarily have picture ids they

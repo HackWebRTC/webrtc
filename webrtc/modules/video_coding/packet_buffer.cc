@@ -268,14 +268,14 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       // Find the start index by searching backward until the packet with
       // the |frame_begin| flag is set.
       int start_index = index;
+      size_t tested_packets = 0;
 
       bool is_h264 = data_buffer_[start_index].codec == kVideoCodecH264;
       bool is_h264_keyframe = false;
       int64_t frame_timestamp = data_buffer_[start_index].timestamp;
 
-      // Since packet at |data_buffer_[index]| is already part of the frame
-      // we will have at most |size_ - 1| packets left to check.
-      for (size_t j = 0; j < size_ - 1; ++j) {
+      while (true) {
+        ++tested_packets;
         frame_size += data_buffer_[start_index].sizeBytes;
         max_nack_count =
             std::max(max_nack_count, data_buffer_[start_index].timesNacked);
@@ -294,6 +294,9 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
             }
           }
         }
+
+        if (tested_packets == size_)
+          break;
 
         start_index = start_index > 0 ? start_index - 1 : size_ - 1;
 
@@ -362,19 +365,30 @@ bool PacketBuffer::GetBitstream(const RtpFrameObject& frame,
   size_t index = frame.first_seq_num() % size_;
   size_t end = (frame.last_seq_num() + 1) % size_;
   uint16_t seq_num = frame.first_seq_num();
-  while (index != end) {
+  uint8_t* destination_end = destination + frame.size();
+
+  do {
     if (!sequence_buffer_[index].used ||
         sequence_buffer_[index].seq_num != seq_num) {
       return false;
     }
 
-    const uint8_t* source = data_buffer_[index].dataPtr;
+    RTC_DCHECK_EQ(data_buffer_[index].seqNum, sequence_buffer_[index].seq_num);
     size_t length = data_buffer_[index].sizeBytes;
+    if (destination + length > destination_end) {
+      LOG(LS_WARNING) << "Frame (" << frame.picture_id << ":"
+                      << static_cast<int>(frame.spatial_layer) << ")"
+                      << " bitstream buffer is not large enough.";
+      return false;
+    }
+
+    const uint8_t* source = data_buffer_[index].dataPtr;
     memcpy(destination, source, length);
     destination += length;
     index = (index + 1) % size_;
     ++seq_num;
-  }
+  } while (index != end);
+
   return true;
 }
 
