@@ -11,6 +11,7 @@
 #include <dirent.h>
 #endif
 
+#include <list>
 #include <memory>
 
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
@@ -143,7 +144,6 @@ class TurnPortTest : public testing::Test,
   TurnPortTest()
       : ss_(new TurnPortTestVirtualSocketServer()),
         main_(ss_.get()),
-        network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
         turn_server_(&main_, kTurnUdpIntAddr, kTurnUdpExtAddr),
         turn_ready_(false),
@@ -156,28 +156,12 @@ class TurnPortTest : public testing::Test,
     // so far", so we need to start the fake clock at a nonzero time...
     // TODO(deadbeef): Fix this.
     fake_clock_.AdvanceTime(rtc::TimeDelta::FromSeconds(1));
-    network_.AddIP(rtc::IPAddress(INADDR_ANY));
   }
 
   virtual void OnMessage(rtc::Message* msg) {
     RTC_CHECK(msg->message_id == MSG_TESTFINISH);
     if (msg->message_id == MSG_TESTFINISH)
       test_finish_ = true;
-  }
-
-  void ConnectSignalAddressReadyToSetLocalhostAsAltenertativeLocalAddress() {
-    rtc::AsyncPacketSocket* socket = turn_port_->socket();
-    rtc::VirtualSocket* virtual_socket =
-        ss_->LookupBinding(socket->GetLocalAddress());
-    virtual_socket->SignalAddressReady.connect(
-        this, &TurnPortTest::SetLocalhostAsAltenertativeLocalAddress);
-  }
-
-  void SetLocalhostAsAltenertativeLocalAddress(
-      rtc::VirtualSocket* socket,
-      const rtc::SocketAddress& address) {
-    SocketAddress local_address("127.0.0.1", 2000);
-    socket->SetAlternativeLocalAddress(local_address);
   }
 
   void OnTurnPortComplete(Port* port) {
@@ -229,24 +213,24 @@ class TurnPortTest : public testing::Test,
     return socket;
   }
 
+  rtc::Network* MakeNetwork(const SocketAddress& addr) {
+    networks_.emplace_back("unittest", "unittest", addr.ipaddr(), 32);
+    networks_.back().AddIP(addr.ipaddr());
+    return &networks_.back();
+  }
+
   void CreateTurnPort(const std::string& username,
                       const std::string& password,
                       const ProtocolAddress& server_address) {
-    CreateTurnPort(kLocalAddr1, username, password, server_address);
+    CreateTurnPortWithAllParams(MakeNetwork(kLocalAddr1), username, password,
+                                server_address, std::string());
   }
   void CreateTurnPort(const rtc::SocketAddress& local_address,
                       const std::string& username,
                       const std::string& password,
                       const ProtocolAddress& server_address) {
-    RelayCredentials credentials(username, password);
-    turn_port_.reset(TurnPort::Create(&main_, &socket_factory_, &network_,
-                                 local_address.ipaddr(), 0, 0,
-                                 kIceUfrag1, kIcePwd1,
-                                 server_address, credentials, 0,
-                                 std::string()));
-    // This TURN port will be the controlling.
-    turn_port_->SetIceRole(ICEROLE_CONTROLLING);
-    ConnectSignals();
+    CreateTurnPortWithAllParams(MakeNetwork(local_address), username, password,
+                                server_address, std::string());
   }
 
   // Should be identical to CreateTurnPort but specifies an origin value
@@ -256,12 +240,30 @@ class TurnPortTest : public testing::Test,
                                 const std::string& password,
                                 const ProtocolAddress& server_address,
                                 const std::string& origin) {
+    CreateTurnPortWithAllParams(MakeNetwork(local_address), username, password,
+                                server_address, origin);
+  }
+
+  void CreateTurnPortWithNetwork(rtc::Network* network,
+                                 const std::string& username,
+                                 const std::string& password,
+                                 const ProtocolAddress& server_address) {
+    CreateTurnPortWithAllParams(network, username, password, server_address,
+                                std::string());
+  }
+
+  // Version of CreateTurnPort that takes all possible parameters; all other
+  // helper methods call this, such that "SetIceRole" and "ConnectSignals" (and
+  // possibly other things in the future) only happen in one place.
+  void CreateTurnPortWithAllParams(rtc::Network* network,
+                                   const std::string& username,
+                                   const std::string& password,
+                                   const ProtocolAddress& server_address,
+                                   const std::string& origin) {
     RelayCredentials credentials(username, password);
-    turn_port_.reset(TurnPort::Create(&main_, &socket_factory_, &network_,
-                                 local_address.ipaddr(), 0, 0,
-                                 kIceUfrag1, kIcePwd1,
-                                 server_address, credentials, 0,
-                                 origin));
+    turn_port_.reset(TurnPort::Create(&main_, &socket_factory_, network, 0, 0,
+                                      kIceUfrag1, kIcePwd1, server_address,
+                                      credentials, 0, origin));
     // This TURN port will be the controlling.
     turn_port_->SetIceRole(ICEROLE_CONTROLLING);
     ConnectSignals();
@@ -282,8 +284,8 @@ class TurnPortTest : public testing::Test,
 
     RelayCredentials credentials(username, password);
     turn_port_.reset(TurnPort::Create(
-        &main_, &socket_factory_, &network_, socket_.get(), kIceUfrag1,
-        kIcePwd1, server_address, credentials, 0, std::string()));
+        &main_, &socket_factory_, MakeNetwork(kLocalAddr1), socket_.get(),
+        kIceUfrag1, kIcePwd1, server_address, credentials, 0, std::string()));
     // This TURN port will be the controlling.
     turn_port_->SetIceRole(ICEROLE_CONTROLLING);
     ConnectSignals();
@@ -305,8 +307,8 @@ class TurnPortTest : public testing::Test,
   void CreateUdpPort() { CreateUdpPort(kLocalAddr2); }
 
   void CreateUdpPort(const SocketAddress& address) {
-    udp_port_.reset(UDPPort::Create(&main_, &socket_factory_, &network_,
-                                    address.ipaddr(), 0, 0, kIceUfrag2,
+    udp_port_.reset(UDPPort::Create(&main_, &socket_factory_,
+                                    MakeNetwork(address), 0, 0, kIceUfrag2,
                                     kIcePwd2, std::string(), false));
     // UDP port will be controlled.
     udp_port_->SetIceRole(ICEROLE_CONTROLLED);
@@ -616,9 +618,12 @@ class TurnPortTest : public testing::Test,
 
  protected:
   rtc::ScopedFakeClock fake_clock_;
+  // When a "create port" helper method is called with an IP, we create a
+  // Network with that IP and add it to this list. Using a list instead of a
+  // vector so that when it grows, pointers aren't invalidated.
+  std::list<rtc::Network> networks_;
   std::unique_ptr<TurnPortTestVirtualSocketServer> ss_;
   rtc::AutoSocketServerThread main_;
-  rtc::Network network_;
   rtc::BasicPacketSocketFactory socket_factory_;
   std::unique_ptr<rtc::AsyncPacketSocket> socket_;
   TestTurnServer turn_server_;
@@ -704,16 +709,79 @@ TEST_F(TurnPortTest, TestTurnTcpAllocate) {
 // instead the address that TurnPort originally bound to. The candidate pair
 // impacted by this behavior should still be used.
 TEST_F(TurnPortTest, TestTurnTcpAllocationWhenProxyChangesAddressToLocalHost) {
+  SocketAddress local_address("127.0.0.1", 0);
+  // After calling this, when TurnPort attempts to get a socket bound to
+  // kLocalAddr, it will end up using localhost instead.
+  ss_->SetAlternativeLocalAddress(kLocalAddr1.ipaddr(), local_address.ipaddr());
+
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
-  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+  CreateTurnPort(kLocalAddr1, kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   EXPECT_EQ(0, turn_port_->SetOption(rtc::Socket::OPT_SNDBUF, 10 * 1024));
   turn_port_->PrepareAddress();
-  ConnectSignalAddressReadyToSetLocalhostAsAltenertativeLocalAddress();
   EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 3, fake_clock_);
   ASSERT_EQ(1U, turn_port_->Candidates().size());
   EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
             turn_port_->Candidates()[0].address().ipaddr());
   EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
+
+  // Verify that the socket actually used localhost, otherwise this test isn't
+  // doing what it meant to.
+  ASSERT_EQ(local_address.ipaddr(),
+            turn_port_->Candidates()[0].related_address().ipaddr());
+}
+
+// If the address the socket ends up bound to does not match any address of the
+// TurnPort's Network, then the socket should be discarded and no candidates
+// should be signaled. In the context of ICE, where one TurnPort is created for
+// each Network, when this happens it's likely that the unexpected address is
+// associated with some other Network, which another TurnPort is already
+// covering.
+TEST_F(TurnPortTest,
+       TurnTcpAllocationDiscardedIfBoundAddressDoesNotMatchNetwork) {
+  // Sockets bound to kLocalAddr1 will actually end up with kLocalAddr2.
+  ss_->SetAlternativeLocalAddress(kLocalAddr1.ipaddr(), kLocalAddr2.ipaddr());
+
+  // Set up TURN server to use TCP (this logic only exists for TCP).
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
+
+  // Create TURN port and tell it to start allocation.
+  CreateTurnPort(kLocalAddr1, kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+  turn_port_->PrepareAddress();
+
+  // Shouldn't take more than 1 RTT to realize the bound address isn't the one
+  // expected.
+  EXPECT_TRUE_SIMULATED_WAIT(turn_error_, kSimulatedRtt, fake_clock_);
+}
+
+// A caveat for the above logic: if the socket ends up bound to one of the IPs
+// associated with the Network, just not the "best" one, this is ok.
+TEST_F(TurnPortTest, TurnTcpAllocationNotDiscardedIfNotBoundToBestIP) {
+  // Sockets bound to kLocalAddr1 will actually end up with kLocalAddr2.
+  ss_->SetAlternativeLocalAddress(kLocalAddr1.ipaddr(), kLocalAddr2.ipaddr());
+
+  // Set up a network with kLocalAddr1 as the "best" IP, and kLocalAddr2 as an
+  // alternate.
+  rtc::Network* network = MakeNetwork(kLocalAddr1);
+  network->AddIP(kLocalAddr2.ipaddr());
+  ASSERT_EQ(kLocalAddr1.ipaddr(), network->GetBestIP());
+
+  // Set up TURN server to use TCP (this logic only exists for TCP).
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
+
+  // Create TURN port using our special Network, and tell it to start
+  // allocation.
+  CreateTurnPortWithNetwork(network, kTurnUsername, kTurnPassword,
+                            kTurnTcpProtoAddr);
+  turn_port_->PrepareAddress();
+
+  // Candidate should be gathered as normally.
+  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 3, fake_clock_);
+  ASSERT_EQ(1U, turn_port_->Candidates().size());
+
+  // Verify that the socket actually used the alternate address, otherwise this
+  // test isn't doing what it meant to.
+  ASSERT_EQ(kLocalAddr2.ipaddr(),
+            turn_port_->Candidates()[0].related_address().ipaddr());
 }
 
 // Testing turn port will attempt to create TCP socket on address resolution

@@ -46,19 +46,20 @@ class RelayPortTest : public testing::Test,
   RelayPortTest()
       : virtual_socket_server_(new rtc::VirtualSocketServer()),
         main_(virtual_socket_server_.get()),
-        network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
+        network_("unittest", "unittest", kLocalAddress.ipaddr(), 32),
         socket_factory_(rtc::Thread::Current()),
         username_(rtc::CreateRandomString(16)),
         password_(rtc::CreateRandomString(16)),
         relay_port_(cricket::RelayPort::Create(&main_,
                                                &socket_factory_,
                                                &network_,
-                                               kLocalAddress.ipaddr(),
                                                0,
                                                0,
                                                username_,
                                                password_)),
-        relay_server_(new cricket::RelayServer(&main_)) {}
+        relay_server_(new cricket::RelayServer(&main_)) {
+    network_.AddIP(kLocalAddress.ipaddr());
+  }
 
   void OnReadPacket(rtc::AsyncPacketSocket* socket,
                     const char* data, size_t size,

@@ -142,14 +142,21 @@ class Port : public PortInterface, public rtc::MessageHandler,
        const std::string& type,
        rtc::PacketSocketFactory* factory,
        rtc::Network* network,
-       const rtc::IPAddress& ip,
        const std::string& username_fragment,
        const std::string& password);
+  // TODO(deadbeef): Delete this constructor once clients are moved off of it.
   Port(rtc::Thread* thread,
        const std::string& type,
        rtc::PacketSocketFactory* factory,
        rtc::Network* network,
        const rtc::IPAddress& ip,
+       const std::string& username_fragment,
+       const std::string& password)
+      : Port(thread, type, factory, network, username_fragment, password) {}
+  Port(rtc::Thread* thread,
+       const std::string& type,
+       rtc::PacketSocketFactory* factory,
+       rtc::Network* network,
        uint16_t min_port,
        uint16_t max_port,
        const std::string& username_fragment,
@@ -283,7 +290,6 @@ class Port : public PortInterface, public rtc::MessageHandler,
 
   // Debugging description of this port
   virtual std::string ToString() const;
-  const rtc::IPAddress& ip() const { return ip_; }
   uint16_t min_port() { return min_port_; }
   uint16_t max_port() { return max_port_; }
 
@@ -397,7 +403,6 @@ class Port : public PortInterface, public rtc::MessageHandler,
   std::string type_;
   bool send_retransmit_count_attribute_;
   rtc::Network* network_;
-  rtc::IPAddress ip_;
   uint16_t min_port_;
   uint16_t max_port_;
   std::string content_name_;

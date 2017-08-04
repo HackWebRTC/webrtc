@@ -10,6 +10,7 @@
 
 #include "webrtc/p2p/base/turnport.h"
 
+#include <algorithm>
 #include <functional>
 
 #include "webrtc/p2p/base/common.h"
@@ -194,7 +195,6 @@ TurnPort::TurnPort(rtc::Thread* thread,
            RELAY_PORT_TYPE,
            factory,
            network,
-           socket->GetLocalAddress().ipaddr(),
            username,
            password),
       server_address_(server_address),
@@ -214,7 +214,6 @@ TurnPort::TurnPort(rtc::Thread* thread,
 TurnPort::TurnPort(rtc::Thread* thread,
                    rtc::PacketSocketFactory* factory,
                    rtc::Network* network,
-                   const rtc::IPAddress& ip,
                    uint16_t min_port,
                    uint16_t max_port,
                    const std::string& username,
@@ -227,7 +226,6 @@ TurnPort::TurnPort(rtc::Thread* thread,
            RELAY_PORT_TYPE,
            factory,
            network,
-           ip,
            min_port,
            max_port,
            username,
@@ -293,7 +291,7 @@ void TurnPort::PrepareAddress() {
     if (!IsCompatibleAddress(server_address_.address)) {
       LOG(LS_ERROR) << "IP address family does not match: "
                     << "server: " << server_address_.address.family()
-                    << " local: " << ip().family();
+                    << " local: " << Network()->GetBestIP().family();
       OnAllocateError();
       return;
     }
@@ -322,7 +320,7 @@ bool TurnPort::CreateTurnClientSocket() {
 
   if (server_address_.proto == PROTO_UDP && !SharedSocket()) {
     socket_ = socket_factory()->CreateUdpSocket(
-        rtc::SocketAddress(ip(), 0), min_port(), max_port());
+        rtc::SocketAddress(Network()->GetBestIP(), 0), min_port(), max_port());
   } else if (server_address_.proto == PROTO_TCP ||
              server_address_.proto == PROTO_TLS) {
     RTC_DCHECK(!SharedSocket());
@@ -339,7 +337,7 @@ bool TurnPort::CreateTurnClientSocket() {
     }
 
     socket_ = socket_factory()->CreateClientTcpSocket(
-        rtc::SocketAddress(ip(), 0), server_address_.address,
+        rtc::SocketAddress(Network()->GetBestIP(), 0), server_address_.address,
         proxy(), user_agent(), opts);
   }
 
@@ -381,33 +379,43 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
   RTC_DCHECK(server_address_.proto == PROTO_TCP ||
              server_address_.proto == PROTO_TLS);
 
-  // Do not use this port if the socket bound to a different address than
-  // the one we asked for. This is seen in Chrome, where TCP sockets cannot be
-  // given a binding address, and the platform is expected to pick the
-  // correct local address.
-
+  // Do not use this port if the socket bound to an address not associated with
+  // the desired network interface. This is seen in Chrome, where TCP sockets
+  // cannot be given a binding address, and the platform is expected to pick
+  // the correct local address.
+  //
   // However, there are two situations in which we allow the bound address to
-  // differ from the requested address: 1. The bound address is the loopback
-  // address.  This happens when a proxy forces TCP to bind to only the
-  // localhost address (see issue 3927). 2. The bound address is the "any
-  // address".  This happens when multiple_routes is disabled (see issue 4780).
-  if (socket->GetLocalAddress().ipaddr() != ip()) {
+  // not be one of the addresses of the requested interface:
+  // 1. The bound address is the loopback address. This happens when a proxy
+  // forces TCP to bind to only the localhost address (see issue 3927).
+  // 2. The bound address is the "any address". This happens when
+  // multiple_routes is disabled (see issue 4780).
+  //
+  // Note that, aside from minor differences in log statements, this logic is
+  // identical to that in TcpPort.
+  const rtc::SocketAddress& socket_address = socket->GetLocalAddress();
+  const std::vector<rtc::InterfaceAddress>& desired_addresses =
+      Network()->GetIPs();
+  if (std::find(desired_addresses.begin(), desired_addresses.end(),
+                socket_address.ipaddr()) == desired_addresses.end()) {
     if (socket->GetLocalAddress().IsLoopbackIP()) {
-      LOG(LS_WARNING) << "Socket is bound to a different address:"
-                      << socket->GetLocalAddress().ipaddr().ToString()
-                      << ", rather then the local port:" << ip().ToString()
+      LOG(LS_WARNING) << "Socket is bound to the address:"
+                      << socket_address.ipaddr().ToString()
+                      << ", rather then an address associated with network:"
+                      << Network()->ToString()
                       << ". Still allowing it since it's localhost.";
-    } else if (IPIsAny(ip())) {
-      LOG(LS_WARNING) << "Socket is bound to a different address:"
-                      << socket->GetLocalAddress().ipaddr().ToString()
-                      << ", rather then the local port:" << ip().ToString()
-                      << ". Still allowing it since it's any address"
+    } else if (IPIsAny(Network()->GetBestIP())) {
+      LOG(LS_WARNING) << "Socket is bound to the address:"
+                      << socket_address.ipaddr().ToString()
+                      << ", rather then an address associated with network:"
+                      << Network()->ToString()
+                      << ". Still allowing it since it's the 'any' address"
                       << ", possibly caused by multiple_routes being disabled.";
     } else {
-      LOG(LS_WARNING) << "Socket is bound to a different address:"
-                      << socket->GetLocalAddress().ipaddr().ToString()
-                      << ", rather then the local port:" << ip().ToString()
-                      << ". Discarding TURN port.";
+      LOG(LS_WARNING) << "Socket is bound to the address:"
+                      << socket_address.ipaddr().ToString()
+                      << ", rather then an address associated with network:"
+                      << Network()->ToString() << ". Discarding TURN port.";
       OnAllocateError();
       return;
     }
@@ -701,7 +709,8 @@ void TurnPort::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
   // sockets we need hostname along with resolved address.
   rtc::SocketAddress resolved_address = server_address_.address;
   if (resolver_->GetError() != 0 ||
-      !resolver_->GetResolvedAddress(ip().family(), &resolved_address)) {
+      !resolver_->GetResolvedAddress(Network()->GetBestIP().family(),
+                                     &resolved_address)) {
     LOG_J(LS_WARNING, this) << "TURN host lookup received error "
                             << resolver_->GetError();
     error_ = resolver_->GetError();

@@ -365,7 +365,8 @@ class AllocationSequence : public rtc::MessageHandler,
   BasicPortAllocatorSession* session_;
   bool network_failed_ = false;
   rtc::Network* network_;
-  rtc::IPAddress ip_;
+  // Compared with the new best IP in DisableEquivalentPhases.
+  rtc::IPAddress previous_best_ip_;
   PortConfiguration* config_;
   State state_;
   uint32_t flags_;

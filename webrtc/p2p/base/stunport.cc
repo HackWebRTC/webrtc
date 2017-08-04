@@ -170,7 +170,6 @@ UDPPort::UDPPort(rtc::Thread* thread,
            LOCAL_PORT_TYPE,
            factory,
            network,
-           socket->GetLocalAddress().ipaddr(),
            username,
            password),
       requests_(thread),
@@ -185,7 +184,6 @@ UDPPort::UDPPort(rtc::Thread* thread,
 UDPPort::UDPPort(rtc::Thread* thread,
                  rtc::PacketSocketFactory* factory,
                  rtc::Network* network,
-                 const rtc::IPAddress& ip,
                  uint16_t min_port,
                  uint16_t max_port,
                  const std::string& username,
@@ -196,7 +194,6 @@ UDPPort::UDPPort(rtc::Thread* thread,
            LOCAL_PORT_TYPE,
            factory,
            network,
-           ip,
            min_port,
            max_port,
            username,
@@ -215,7 +212,7 @@ bool UDPPort::Init() {
   if (!SharedSocket()) {
     RTC_DCHECK(socket_ == NULL);
     socket_ = socket_factory()->CreateUdpSocket(
-        rtc::SocketAddress(ip(), 0), min_port(), max_port());
+        rtc::SocketAddress(Network()->GetBestIP(), 0), min_port(), max_port());
     if (!socket_) {
       LOG_J(LS_WARNING, this) << "UDP socket creation failed";
       return false;
@@ -379,8 +376,8 @@ void UDPPort::OnResolveResult(const rtc::SocketAddress& input,
   RTC_DCHECK(resolver_.get() != NULL);
 
   rtc::SocketAddress resolved;
-  if (error != 0 ||
-      !resolver_->GetResolvedAddress(input, ip().family(), &resolved))  {
+  if (error != 0 || !resolver_->GetResolvedAddress(
+                        input, Network()->GetBestIP().family(), &resolved)) {
     LOG_J(LS_WARNING, this) << "StunPort: stun host lookup received error "
                             << error;
     OnStunBindingOrResolveRequestFailed(input);

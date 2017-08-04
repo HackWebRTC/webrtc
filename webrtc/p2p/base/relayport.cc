@@ -182,7 +182,6 @@ class AllocateRequest : public StunRequest {
 RelayPort::RelayPort(rtc::Thread* thread,
                      rtc::PacketSocketFactory* factory,
                      rtc::Network* network,
-                     const rtc::IPAddress& ip,
                      uint16_t min_port,
                      uint16_t max_port,
                      const std::string& username,
@@ -191,7 +190,6 @@ RelayPort::RelayPort(rtc::Thread* thread,
            RELAY_PORT_TYPE,
            factory,
            network,
-           ip,
            min_port,
            max_port,
            username,
@@ -489,14 +487,14 @@ void RelayEntry::Connect() {
   if (ra->proto == PROTO_UDP) {
     // UDP sockets are simple.
     socket = port_->socket_factory()->CreateUdpSocket(
-        rtc::SocketAddress(port_->ip(), 0),
-        port_->min_port(), port_->max_port());
+        rtc::SocketAddress(port_->Network()->GetBestIP(), 0), port_->min_port(),
+        port_->max_port());
   } else if (ra->proto == PROTO_TCP || ra->proto == PROTO_SSLTCP) {
     int opts = (ra->proto == PROTO_SSLTCP)
                    ? rtc::PacketSocketFactory::OPT_TLS_FAKE
                    : 0;
     socket = port_->socket_factory()->CreateClientTcpSocket(
-        rtc::SocketAddress(port_->ip(), 0), ra->address,
+        rtc::SocketAddress(port_->Network()->GetBestIP(), 0), ra->address,
         port_->proxy(), port_->user_agent(), opts);
   } else {
     LOG(LS_WARNING) << "Unknown protocol (" << ra->proto << ")";

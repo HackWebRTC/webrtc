@@ -127,8 +127,6 @@ VirtualSocket::~VirtualSocket() {
 }
 
 SocketAddress VirtualSocket::GetLocalAddress() const {
-  if (!alternative_local_addr_.IsNil())
-    return alternative_local_addr_;
   return local_addr_;
 }
 
@@ -138,10 +136,6 @@ SocketAddress VirtualSocket::GetRemoteAddress() const {
 
 void VirtualSocket::SetLocalAddress(const SocketAddress& addr) {
   local_addr_ = addr;
-}
-
-void VirtualSocket::SetAlternativeLocalAddress(const SocketAddress& addr) {
-  alternative_local_addr_ = addr;
 }
 
 int VirtualSocket::Bind(const SocketAddress& addr) {
@@ -642,6 +636,12 @@ void VirtualSocketServer::WakeUp() {
   wakeup_.Set();
 }
 
+void VirtualSocketServer::SetAlternativeLocalAddress(
+    const rtc::IPAddress& address,
+    const rtc::IPAddress& alternative) {
+  alternative_address_mapping_[address] = alternative;
+}
+
 bool VirtualSocketServer::ProcessMessagesUntilIdle() {
   RTC_DCHECK(msg_queue_ == Thread::Current());
   stop_on_idle_ = true;
@@ -699,12 +699,22 @@ int VirtualSocketServer::Bind(VirtualSocket* socket,
 int VirtualSocketServer::Bind(VirtualSocket* socket, SocketAddress* addr) {
   RTC_DCHECK(nullptr != socket);
 
+  // Normalize the IP.
   if (!IPIsUnspec(addr->ipaddr())) {
     addr->SetIP(addr->ipaddr().Normalized());
   } else {
     RTC_NOTREACHED();
   }
 
+  // If the IP appears in |alternative_address_mapping_|, meaning the test has
+  // configured sockets bound to this IP to actually use another IP, replace
+  // the IP here.
+  auto alternative = alternative_address_mapping_.find(addr->ipaddr());
+  if (alternative != alternative_address_mapping_.end()) {
+    addr->SetIP(alternative->second);
+  }
+
+  // Assign a port if not assigned.
   if (addr->port() == 0) {
     for (int i = 0; i < kEphemeralPortCount; ++i) {
       addr->SetPort(GetNextPort());

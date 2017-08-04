@@ -33,14 +33,13 @@ class TCPPort : public Port {
   static TCPPort* Create(rtc::Thread* thread,
                          rtc::PacketSocketFactory* factory,
                          rtc::Network* network,
-                         const rtc::IPAddress& ip,
                          uint16_t min_port,
                          uint16_t max_port,
                          const std::string& username,
                          const std::string& password,
                          bool allow_listen) {
-    return new TCPPort(thread, factory, network, ip, min_port, max_port,
-                       username, password, allow_listen);
+    return new TCPPort(thread, factory, network, min_port, max_port, username,
+                       password, allow_listen);
   }
   ~TCPPort() override;
 
@@ -62,7 +61,6 @@ class TCPPort : public Port {
   TCPPort(rtc::Thread* thread,
           rtc::PacketSocketFactory* factory,
           rtc::Network* network,
-          const rtc::IPAddress& ip,
           uint16_t min_port,
           uint16_t max_port,
           const std::string& username,

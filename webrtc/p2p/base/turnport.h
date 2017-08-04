@@ -42,6 +42,7 @@ class TurnPort : public Port {
     STATE_DISCONNECTED,  // TCP connection died, cannot send/receive any
                          // packets.
   };
+  // Create a TURN port using the shared UDP socket, |socket|.
   static TurnPort* Create(rtc::Thread* thread,
                           rtc::PacketSocketFactory* factory,
                           rtc::Network* network,
@@ -56,10 +57,11 @@ class TurnPort : public Port {
                         server_address, credentials, server_priority, origin);
   }
 
+  // Create a TURN port that will use a new socket, bound to |network| and
+  // using a port in the range between |min_port| and |max_port|.
   static TurnPort* Create(rtc::Thread* thread,
                           rtc::PacketSocketFactory* factory,
                           rtc::Network* network,
-                          const rtc::IPAddress& ip,
                           uint16_t min_port,
                           uint16_t max_port,
                           const std::string& username,  // ice username.
@@ -68,9 +70,9 @@ class TurnPort : public Port {
                           const RelayCredentials& credentials,
                           int server_priority,
                           const std::string& origin) {
-    return new TurnPort(thread, factory, network, ip, min_port, max_port,
-                        username, password, server_address, credentials,
-                        server_priority, origin);
+    return new TurnPort(thread, factory, network, min_port, max_port, username,
+                        password, server_address, credentials, server_priority,
+                        origin);
   }
 
   virtual ~TurnPort();
@@ -177,7 +179,6 @@ class TurnPort : public Port {
   TurnPort(rtc::Thread* thread,
            rtc::PacketSocketFactory* factory,
            rtc::Network* network,
-           const rtc::IPAddress& ip,
            uint16_t min_port,
            uint16_t max_port,
            const std::string& username,

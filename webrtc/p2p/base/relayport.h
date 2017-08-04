@@ -38,13 +38,12 @@ class RelayPort : public Port {
   static RelayPort* Create(rtc::Thread* thread,
                            rtc::PacketSocketFactory* factory,
                            rtc::Network* network,
-                           const rtc::IPAddress& ip,
                            uint16_t min_port,
                            uint16_t max_port,
                            const std::string& username,
                            const std::string& password) {
-    return new RelayPort(thread, factory, network, ip, min_port, max_port,
-                         username, password);
+    return new RelayPort(thread, factory, network, min_port, max_port, username,
+                         password);
   }
   ~RelayPort() override;
 
@@ -82,7 +81,6 @@ class RelayPort : public Port {
   RelayPort(rtc::Thread* thread,
             rtc::PacketSocketFactory* factory,
             rtc::Network*,
-            const rtc::IPAddress& ip,
             uint16_t min_port,
             uint16_t max_port,
             const std::string& username,

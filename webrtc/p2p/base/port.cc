@@ -145,7 +145,6 @@ Port::Port(rtc::Thread* thread,
            const std::string& type,
            rtc::PacketSocketFactory* factory,
            rtc::Network* network,
-           const rtc::IPAddress& ip,
            const std::string& username_fragment,
            const std::string& password)
     : thread_(thread),
@@ -153,7 +152,6 @@ Port::Port(rtc::Thread* thread,
       type_(type),
       send_retransmit_count_attribute_(false),
       network_(network),
-      ip_(ip),
       min_port_(0),
       max_port_(0),
       component_(ICE_CANDIDATE_COMPONENT_DEFAULT),
@@ -172,7 +170,6 @@ Port::Port(rtc::Thread* thread,
            const std::string& type,
            rtc::PacketSocketFactory* factory,
            rtc::Network* network,
-           const rtc::IPAddress& ip,
            uint16_t min_port,
            uint16_t max_port,
            const std::string& username_fragment,
@@ -182,7 +179,6 @@ Port::Port(rtc::Thread* thread,
       type_(type),
       send_retransmit_count_attribute_(false),
       network_(network),
-      ip_(ip),
       min_port_(min_port),
       max_port_(max_port),
       component_(ICE_CANDIDATE_COMPONENT_DEFAULT),
@@ -471,14 +467,15 @@ bool Port::GetStunMessage(const char* data,
 }
 
 bool Port::IsCompatibleAddress(const rtc::SocketAddress& addr) {
-  int family = ip().family();
+  // Get a representative IP for the Network this port is configured to use.
+  rtc::IPAddress ip = network_->GetBestIP();
   // We use single-stack sockets, so families must match.
-  if (addr.family() != family) {
+  if (addr.family() != ip.family()) {
     return false;
   }
   // Link-local IPv6 ports can only connect to other link-local IPv6 ports.
-  if (family == AF_INET6 &&
-      (IPIsLinkLocal(ip()) != IPIsLinkLocal(addr.ipaddr()))) {
+  if (ip.family() == AF_INET6 &&
+      (IPIsLinkLocal(ip) != IPIsLinkLocal(addr.ipaddr()))) {
     return false;
   }
   return true;
