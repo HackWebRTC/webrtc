@@ -37,18 +37,12 @@ struct MediaOptimization::EncodedFrameSample {
 MediaOptimization::MediaOptimization(Clock* clock)
     : clock_(clock),
       max_bit_rate_(0),
-      codec_width_(0),
-      codec_height_(0),
       user_frame_rate_(0),
       frame_dropper_(new FrameDropper),
-      send_statistics_zero_encode_(0),
-      max_payload_size_(1460),
       video_target_bitrate_(0),
       incoming_frame_rate_(0),
       encoded_frame_samples_(),
-      avg_sent_framerate_(0),
-      num_layers_(0) {
-  memset(send_statistics_, 0, sizeof(send_statistics_));
+      avg_sent_framerate_(0) {
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
 }
 
@@ -57,52 +51,34 @@ MediaOptimization::~MediaOptimization(void) {
 
 void MediaOptimization::Reset() {
   rtc::CritScope lock(&crit_sect_);
-  SetEncodingDataInternal(0, 0, 0, 0, 0, 0, max_payload_size_);
+  SetEncodingDataInternal(0, 0, 0);
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
   incoming_frame_rate_ = 0.0;
   frame_dropper_->Reset();
   frame_dropper_->SetRates(0, 0);
-  send_statistics_zero_encode_ = 0;
   video_target_bitrate_ = 0;
-  codec_width_ = 0;
-  codec_height_ = 0;
   user_frame_rate_ = 0;
   encoded_frame_samples_.clear();
-  num_layers_ = 1;
 }
 
 void MediaOptimization::SetEncodingData(int32_t max_bit_rate,
                                         uint32_t target_bitrate,
-                                        uint16_t width,
-                                        uint16_t height,
-                                        uint32_t frame_rate,
-                                        int num_layers,
-                                        int32_t mtu) {
+                                        uint32_t frame_rate) {
   rtc::CritScope lock(&crit_sect_);
-  SetEncodingDataInternal(max_bit_rate, frame_rate, target_bitrate, width,
-                          height, num_layers, mtu);
+  SetEncodingDataInternal(max_bit_rate, frame_rate, target_bitrate);
 }
 
 void MediaOptimization::SetEncodingDataInternal(int32_t max_bit_rate,
                                                 uint32_t frame_rate,
-                                                uint32_t target_bitrate,
-                                                uint16_t width,
-                                                uint16_t height,
-                                                int num_layers,
-                                                int32_t mtu) {
+                                                uint32_t target_bitrate) {
   // Everything codec specific should be reset here since this means the codec
   // has changed.
-
   max_bit_rate_ = max_bit_rate;
   video_target_bitrate_ = target_bitrate;
   float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
   frame_dropper_->Reset();
   frame_dropper_->SetRates(target_bitrate_kbps, static_cast<float>(frame_rate));
   user_frame_rate_ = static_cast<float>(frame_rate);
-  codec_width_ = width;
-  codec_height_ = height;
-  num_layers_ = (num_layers <= 1) ? 1 : num_layers;  // Can also be zero.
-  max_payload_size_ = mtu;
 }
 
 uint32_t MediaOptimization::SetTargetRates(uint32_t target_bitrate) {
@@ -247,7 +223,7 @@ void MediaOptimization::ProcessIncomingFrameRate(int64_t now) {
   int32_t nr_of_frames = 0;
   for (num = 1; num < (kFrameCountHistorySize - 1); ++num) {
     if (incoming_frame_times_[num] <= 0 ||
-        // don't use data older than 2 s
+        // Don't use data older than 2 s.
         now - incoming_frame_times_[num] > kFrameHistoryWinMs) {
       break;
     } else {

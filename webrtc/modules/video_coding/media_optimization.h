@@ -21,7 +21,6 @@
 
 namespace webrtc {
 
-// Forward declarations.
 class Clock;
 class FrameDropper;
 class VCMContentMetricsProcessing;
@@ -42,14 +41,10 @@ class MediaOptimization {
   // VieEncoder.
   void SetEncodingData(int32_t max_bit_rate,
                        uint32_t bit_rate,
-                       uint16_t width,
-                       uint16_t height,
-                       uint32_t frame_rate,
-                       int num_temporal_layers,
-                       int32_t mtu);
+                       uint32_t frame_rate);
 
   // Sets target rates for the encoder given the channel parameters.
-  // Input:  target bitrate - the encoder target bitrate in bits/s.
+  // Input: |target bitrate| - the encoder target bitrate in bits/s.
   uint32_t SetTargetRates(uint32_t target_bitrate);
 
   void EnableFrameDropper(bool enable);
@@ -76,8 +71,6 @@ class MediaOptimization {
   void UpdateIncomingFrameRate() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   void PurgeOldFrameSamples(int64_t threshold_ms)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-  // Updates the sent bitrate field, a call to PurgeOldFrameSamples must preceed
-  int GetSentBitrate(int64_t now_ms) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   void UpdateSentFramerate() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   void ProcessIncomingFrameRate(int64_t now)
@@ -90,11 +83,7 @@ class MediaOptimization {
 
   void SetEncodingDataInternal(int32_t max_bit_rate,
                                uint32_t frame_rate,
-                               uint32_t bit_rate,
-                               uint16_t width,
-                               uint16_t height,
-                               int num_temporal_layers,
-                               int32_t mtu)
+                               uint32_t bit_rate)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   uint32_t InputFrameRateInternal() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
@@ -106,19 +95,13 @@ class MediaOptimization {
 
   Clock* clock_ GUARDED_BY(crit_sect_);
   int32_t max_bit_rate_ GUARDED_BY(crit_sect_);
-  uint16_t codec_width_ GUARDED_BY(crit_sect_);
-  uint16_t codec_height_ GUARDED_BY(crit_sect_);
   float user_frame_rate_ GUARDED_BY(crit_sect_);
   std::unique_ptr<FrameDropper> frame_dropper_ GUARDED_BY(crit_sect_);
-  uint32_t send_statistics_[4] GUARDED_BY(crit_sect_);
-  uint32_t send_statistics_zero_encode_ GUARDED_BY(crit_sect_);
-  int32_t max_payload_size_ GUARDED_BY(crit_sect_);
   int video_target_bitrate_ GUARDED_BY(crit_sect_);
   float incoming_frame_rate_ GUARDED_BY(crit_sect_);
   int64_t incoming_frame_times_[kFrameCountHistorySize] GUARDED_BY(crit_sect_);
   std::list<EncodedFrameSample> encoded_frame_samples_ GUARDED_BY(crit_sect_);
   uint32_t avg_sent_framerate_ GUARDED_BY(crit_sect_);
-  int num_layers_ GUARDED_BY(crit_sect_);
 };
 }  // namespace media_optimization
 }  // namespace webrtc

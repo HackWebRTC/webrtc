@@ -136,9 +136,8 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
                   << " max frame rate " << sendCodec->maxFramerate
                   << " max payload size " << maxPayloadSize;
   _mediaOpt.SetEncodingData(sendCodec->maxBitrate * 1000,
-                            sendCodec->startBitrate * 1000, sendCodec->width,
-                            sendCodec->height, sendCodec->maxFramerate,
-                            numLayers, maxPayloadSize);
+                            sendCodec->startBitrate * 1000,
+                            sendCodec->maxFramerate);
   return VCM_OK;
 }
 
