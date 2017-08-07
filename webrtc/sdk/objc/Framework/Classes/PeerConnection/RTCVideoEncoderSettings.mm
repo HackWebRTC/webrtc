@@ -25,6 +25,7 @@
 @synthesize targetBitrate = _targetBitrate;
 @synthesize maxFramerate = _maxFramerate;
 @synthesize qpMax = _qpMax;
+@synthesize mode = _mode;
 
 - (instancetype)initWithNativeVideoCodec:(const webrtc::VideoCodec *)videoCodec {
   if (self = [super init]) {
@@ -42,31 +43,11 @@
       _targetBitrate = videoCodec->targetBitrate;
       _maxFramerate = videoCodec->maxFramerate;
       _qpMax = videoCodec->qpMax;
+      _mode = (RTCVideoCodecMode)videoCodec->mode;
     }
   }
 
   return self;
-}
-
-- (std::unique_ptr<webrtc::VideoCodec>)createNativeVideoEncoderSettings {
-  auto codecSettings = std::unique_ptr<webrtc::VideoCodec>(new webrtc::VideoCodec);
-
-  rtc::Optional<webrtc::VideoCodecType> codecType =
-      webrtc::PayloadNameToCodecType([NSString stdStringForString:_name]);
-  if (codecType) {
-    codecSettings->codecType = codecType.value();
-  }
-
-  codecSettings->width = _width;
-  codecSettings->height = _height;
-  codecSettings->startBitrate = _startBitrate;
-  codecSettings->maxBitrate = _maxBitrate;
-  codecSettings->minBitrate = _minBitrate;
-  codecSettings->targetBitrate = _targetBitrate;
-  codecSettings->maxFramerate = _maxFramerate;
-  codecSettings->qpMax = _qpMax;
-
-  return codecSettings;
 }
 
 @end

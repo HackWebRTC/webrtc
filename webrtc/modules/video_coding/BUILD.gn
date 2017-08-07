@@ -277,6 +277,31 @@ rtc_static_library("webrtc_vp9") {
 }
 
 if (rtc_include_tests) {
+  if (is_ios || is_mac) {
+    rtc_static_library("objc_codec_test") {
+      sources = [
+        "codecs/test/objc_codec_h264_test.h",
+        "codecs/test/objc_codec_h264_test.mm",
+      ]
+      deps = [
+        "../../api:video_frame_api",
+        "../../api/video_codecs:video_codecs_api",
+        "../../media:rtc_audio_video",
+        "../../modules:module_api",
+        "../../sdk:objc_common",
+        "../../sdk:objc_peerconnection",
+        "../../sdk:objc_peerconnectionfactory",
+        "../../sdk:objc_videotoolbox",
+        "../../sdk:objc_videotracksource",
+      ]
+
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+    }
+  }
+
   rtc_source_set("simulcast_test_utility") {
     testonly = true
     sources = [
@@ -399,6 +424,7 @@ if (rtc_include_tests) {
 
     if (is_ios || is_mac) {
       deps += [
+        ":objc_codec_test",
         "../../media:rtc_media_base",
         "../../sdk:objc_videotoolbox",
       ]
@@ -434,6 +460,10 @@ if (rtc_include_tests) {
       "../../test:video_test_common",
       "../video_capture",
     ]
+
+    if (is_ios || is_mac) {
+      deps += [ ":objc_codec_test" ]
+    }
 
     if (rtc_use_h264) {
       defines = [ "WEBRTC_USE_H264" ]
@@ -499,7 +529,10 @@ if (rtc_include_tests) {
     }
 
     if (is_ios || is_mac) {
-      deps += [ ":plot_videoprocessor_integrationtest_bundle_data" ]
+      deps += [
+        ":objc_codec_test",
+        ":plot_videoprocessor_integrationtest_bundle_data",
+      ]
     }
 
     # TODO(brandtr): Remove this define when the modules_tests target properly

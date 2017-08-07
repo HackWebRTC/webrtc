@@ -13,7 +13,7 @@ specific_include_rules = {
     "+base/android",
     "+webrtc/sdk",
   ],
-  "(.*test\.cc|.*test\.h)": [
+  "(.*test\.cc|.*test\.h|.*test\.mm)": [
      "+webrtc/media/engine",
      "+webrtc/sdk",
   ],

@@ -29,7 +29,7 @@ id<RTCVideoEncoderFactory> CreateEncoderFactoryReturning(int return_code) {
   OCMStub([encoderMock encode:[OCMArg any] codecSpecificInfo:[OCMArg any] frameTypes:[OCMArg any]])
       .andReturn(return_code);
   OCMStub([encoderMock releaseEncoder]).andReturn(return_code);
-  OCMStub([encoderMock setBitrate:0 framerate:0]).andReturn(return_code == WEBRTC_VIDEO_CODEC_OK);
+  OCMStub([encoderMock setBitrate:0 framerate:0]).andReturn(return_code);
 
   id encoderFactoryMock = OCMProtocolMock(@protocol(RTCVideoEncoderFactory));
   RTCVideoCodecInfo *supported =

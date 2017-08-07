@@ -33,7 +33,6 @@ class ObjCVideoDecoder : public VideoDecoder {
  public:
   ObjCVideoDecoder(id<RTCVideoDecoder> decoder)
       : decoder_(decoder), implementation_name_([decoder implementationName].stdString) {}
-  ~ObjCVideoDecoder() { [decoder_ destroy]; }
 
   int32_t InitDecode(const VideoCodec *codec_settings, int32_t number_of_cores) {
     RTCVideoEncoderSettings *settings =

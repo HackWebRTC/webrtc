@@ -23,8 +23,7 @@
 #include "webrtc/sdk/android/src/jni/androidmediadecoder_jni.h"
 #include "webrtc/sdk/android/src/jni/androidmediaencoder_jni.h"
 #elif defined(WEBRTC_IOS)
-#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/decoder.h"
-#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/encoder.h"
+#include "webrtc/modules/video_coding/codecs/test/objc_codec_h264_test.h"
 #endif
 
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
@@ -178,9 +177,13 @@ class VideoProcessorIntegrationTest : public testing::Test {
 #elif defined(WEBRTC_IOS)
       ASSERT_EQ(kVideoCodecH264, config_.codec_settings->codecType)
           << "iOS HW codecs only support H264.";
-      encoder_.reset(new H264VideoToolboxEncoder(
-          cricket::VideoCodec(cricket::kH264CodecName)));
-      decoder_.reset(new H264VideoToolboxDecoder());
+      std::unique_ptr<cricket::WebRtcVideoEncoderFactory> encoder_factory =
+          CreateObjCEncoderFactory();
+      std::unique_ptr<cricket::WebRtcVideoDecoderFactory> decoder_factory =
+          CreateObjCDecoderFactory();
+      cricket::VideoCodec codecInfo = encoder_factory->supported_codecs().at(0);
+      encoder_.reset(encoder_factory->CreateVideoEncoder(codecInfo));
+      decoder_.reset(decoder_factory->CreateVideoDecoder(kVideoCodecH264));
 #else
       RTC_NOTREACHED() << "Only support HW codecs on Android and iOS.";
 #endif

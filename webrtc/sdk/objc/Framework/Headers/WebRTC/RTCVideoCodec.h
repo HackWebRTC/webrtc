@@ -18,9 +18,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** Represents an encoded frame's type. */
 typedef NS_ENUM(NSUInteger, RTCFrameType) {
-  RTCFrameTypeEmptyFrame,
-  RTCFrameTypeVideoFrameKey,
-  RTCFrameTypeVideoFrameDelta,
+  RTCFrameTypeEmptyFrame = 0,
+  RTCFrameTypeAudioFrameSpeech = 1,
+  RTCFrameTypeAudioFrameCN = 2,
+  RTCFrameTypeVideoFrameKey = 3,
+  RTCFrameTypeVideoFrameDelta = 4,
+};
+
+typedef NS_ENUM(NSUInteger, RTCVideoContentType) {
+  RTCVideoContentTypeUnspecified,
+  RTCVideoContentTypeScreenshare,
 };
 
 /** Represents an encoded frame. Corresponds to webrtc::EncodedImage. */
@@ -40,6 +47,7 @@ RTC_EXPORT
 @property(nonatomic, assign) int rotation;
 @property(nonatomic, assign) BOOL completeFrame;
 @property(nonatomic, strong) NSNumber *qp;
+@property(nonatomic, assign) RTCVideoContentType contentType;
 
 @end
 
@@ -62,13 +70,31 @@ RTC_EXPORT
 
 @end
 
+/** Class for H264 specific config. */
+typedef NS_ENUM(NSUInteger, RTCH264PacketizationMode) {
+  RTCH264PacketizationModeNonInterleaved = 0,  // Mode 1 - STAP-A, FU-A is allowed
+  RTCH264PacketizationModeSingleNalUnit        // Mode 0 - only single NALU allowed
+};
+
+RTC_EXPORT
+@interface RTCCodecSpecificInfoH264 : NSObject<RTCCodecSpecificInfo>
+
+@property(nonatomic, assign) RTCH264PacketizationMode packetizationMode;
+
+@end
+
 /** Callback block for encoder. */
-typedef void (^RTCVideoEncoderCallback)(RTCEncodedImage *frame,
+typedef BOOL (^RTCVideoEncoderCallback)(RTCEncodedImage *frame,
                                         id<RTCCodecSpecificInfo> info,
                                         RTCRtpFragmentationHeader *header);
 
 /** Callback block for decoder. */
 typedef void (^RTCVideoDecoderCallback)(RTCVideoFrame *frame);
+
+typedef NS_ENUM(NSUInteger, RTCVideoCodecMode) {
+  RTCVideoCodecModeRealtimeVideo,
+  RTCVideoCodecModeScreensharing,
+};
 
 /** Holds information to identify a codec. Corresponds to cricket::VideoCodec. */
 RTC_EXPORT
@@ -101,6 +127,7 @@ RTC_EXPORT
 @property(nonatomic, assign) uint32_t maxFramerate;
 
 @property(nonatomic, assign) unsigned int qpMax;
+@property(nonatomic, assign) RTCVideoCodecMode mode;
 
 @end
 
@@ -123,11 +150,10 @@ RTC_EXPORT
 - (NSInteger)startEncodeWithSettings:(RTCVideoEncoderSettings *)settings
                        numberOfCores:(int)numberOfCores;
 - (NSInteger)releaseEncoder;
-- (void)destroy;
 - (NSInteger)encode:(RTCVideoFrame *)frame
     codecSpecificInfo:(id<RTCCodecSpecificInfo>)info
            frameTypes:(NSArray<NSNumber *> *)frameTypes;
-- (BOOL)setBitrate:(uint32_t)bitrateKbit framerate:(uint32_t)framerate;
+- (int)setBitrate:(uint32_t)bitrateKbit framerate:(uint32_t)framerate;
 - (NSString *)implementationName;
 
 /** Returns QP scaling settings for encoder. The quality scaler adjusts the resolution in order to
@@ -145,7 +171,6 @@ RTC_EXPORT
 - (NSInteger)startDecodeWithSettings:(RTCVideoEncoderSettings *)settings
                        numberOfCores:(int)numberOfCores;
 - (NSInteger)releaseDecoder;
-- (void)destroy;
 - (NSInteger)decode:(RTCEncodedImage *)encodedImage
           missingFrames:(BOOL)missingFrames
     fragmentationHeader:(RTCRtpFragmentationHeader *)fragmentationHeader

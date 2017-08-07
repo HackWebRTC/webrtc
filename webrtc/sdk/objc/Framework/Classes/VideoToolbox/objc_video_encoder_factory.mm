@@ -54,7 +54,6 @@ class ObjCVideoEncoder : public VideoEncoder {
  public:
   ObjCVideoEncoder(id<RTCVideoEncoder> encoder)
       : encoder_(encoder), implementation_name_([encoder implementationName].stdString) {}
-  ~ObjCVideoEncoder() { [encoder_ destroy]; }
 
   int32_t InitEncode(const VideoCodec *codec_settings,
                      int32_t number_of_cores,
@@ -65,9 +64,9 @@ class ObjCVideoEncoder : public VideoEncoder {
   }
 
   int32_t RegisterEncodeCompleteCallback(EncodedImageCallback *callback) {
-    [encoder_ setCallback:^(RTCEncodedImage *frame,
-                            id<RTCCodecSpecificInfo> info,
-                            RTCRtpFragmentationHeader *header) {
+    [encoder_ setCallback:^BOOL(RTCEncodedImage *_Nonnull frame,
+                                id<RTCCodecSpecificInfo> _Nonnull info,
+                                RTCRtpFragmentationHeader *_Nonnull header) {
       EncodedImage encodedImage = [frame nativeEncodedImage];
 
       // Handle types than can be converted into one of CodecSpecificInfo's hard coded cases.
@@ -78,7 +77,9 @@ class ObjCVideoEncoder : public VideoEncoder {
 
       std::unique_ptr<RTPFragmentationHeader> fragmentationHeader =
           [header createNativeFragmentationHeader];
-      callback->OnEncodedImage(encodedImage, &codecSpecificInfo, fragmentationHeader.release());
+      EncodedImageCallback::Result res =
+          callback->OnEncodedImage(encodedImage, &codecSpecificInfo, fragmentationHeader.release());
+      return res.error == EncodedImageCallback::Result::OK;
     }];
 
     return WEBRTC_VIDEO_CODEC_OK;
@@ -113,11 +114,7 @@ class ObjCVideoEncoder : public VideoEncoder {
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) { return WEBRTC_VIDEO_CODEC_OK; }
 
   int32_t SetRates(uint32_t bitrate, uint32_t framerate) {
-    if ([encoder_ setBitrate:bitrate framerate:framerate]) {
-      return WEBRTC_VIDEO_CODEC_OK;
-    } else {
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
+    return [encoder_ setBitrate:bitrate framerate:framerate];
   }
 
   bool SupportsNativeHandle() const { return true; }

@@ -697,10 +697,10 @@ if (is_ios || is_mac) {
 
     rtc_static_library("objc_videotoolbox") {
       sources = [
-        "objc/Framework/Classes/VideoToolbox/decoder.h",
-        "objc/Framework/Classes/VideoToolbox/decoder.mm",
-        "objc/Framework/Classes/VideoToolbox/encoder.h",
-        "objc/Framework/Classes/VideoToolbox/encoder.mm",
+        "objc/Framework/Classes/VideoToolbox/RTCVideoDecoderH264.mm",
+        "objc/Framework/Classes/VideoToolbox/RTCVideoEncoderH264.mm",
+        "objc/Framework/Classes/VideoToolbox/helpers.cc",
+        "objc/Framework/Classes/VideoToolbox/helpers.h",
         "objc/Framework/Classes/VideoToolbox/nalu_rewriter.cc",
         "objc/Framework/Classes/VideoToolbox/nalu_rewriter.h",
         "objc/Framework/Classes/VideoToolbox/objc_video_decoder_factory.h",

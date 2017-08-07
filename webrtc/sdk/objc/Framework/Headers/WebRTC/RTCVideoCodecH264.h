@@ -13,22 +13,12 @@
 #import <WebRTC/RTCMacros.h>
 #import <WebRTC/RTCVideoCodecFactory.h>
 
-/** Class for H264 specific config. */
-typedef NS_ENUM(NSUInteger, RTCH264PacketizationMode) {
-  NonInterleaved = 0,  // Mode 1 - STAP-A, FU-A is allowed
-  SingleNalUnit        // Mode 0 - only single NALU allowed
-};
-
-RTC_EXPORT
-@interface RTCCodecSpecificInfoH264 : NSObject<RTCCodecSpecificInfo>
-
-@property(nonatomic, assign) RTCH264PacketizationMode packetizationMode;
-
-@end
-
 /** Encoder. */
 RTC_EXPORT
 @interface RTCVideoEncoderH264 : NSObject<RTCVideoEncoder>
+
+- (instancetype)initWithCodecInfo:(RTCVideoCodecInfo *)codecInfo;
+
 @end
 
 /** Decoder. */

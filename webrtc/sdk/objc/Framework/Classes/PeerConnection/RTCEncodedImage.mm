@@ -27,6 +27,7 @@
 @synthesize rotation = _rotation;
 @synthesize completeFrame = _completeFrame;
 @synthesize qp = _qp;
+@synthesize contentType = _contentType;
 
 - (instancetype)initWithNativeEncodedImage:(webrtc::EncodedImage)encodedImage {
   if (self = [super init]) {
@@ -46,6 +47,9 @@
     _rotation = encodedImage.rotation_;
     _completeFrame = encodedImage._completeFrame;
     _qp = encodedImage.qp_ == -1 ? nil : @(encodedImage.qp_);
+    _contentType = (encodedImage.content_type_ == webrtc::VideoContentType::SCREENSHARE) ?
+        RTCVideoContentTypeScreenshare :
+        RTCVideoContentTypeUnspecified;
   }
 
   return self;
@@ -67,6 +71,9 @@
   encodedImage.rotation_ = webrtc::VideoRotation(_rotation);
   encodedImage._completeFrame = _completeFrame;
   encodedImage.qp_ = _qp ? _qp.intValue : -1;
+  encodedImage.content_type_ = (_contentType == RTCVideoContentTypeScreenshare) ?
+      webrtc::VideoContentType::SCREENSHARE :
+      webrtc::VideoContentType::UNSPECIFIED;
 
   return encodedImage;
 }
