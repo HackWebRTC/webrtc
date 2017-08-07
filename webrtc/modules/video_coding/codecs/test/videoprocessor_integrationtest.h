@@ -105,7 +105,6 @@ struct RateControlThresholds {
 
 // Should video files be saved persistently to disk for post-run visualization?
 struct VisualizationParams {
-  bool save_source_y4m;
   bool save_encoded_ivf;
   bool save_decoded_y4m;
 };
@@ -238,12 +237,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
           "_br-" + std::to_string(
               static_cast<int>(config_.codec_settings->startBitrate));
       // clang-format on
-      if (visualization_params->save_source_y4m) {
-        source_frame_writer_.reset(new test::Y4mFrameWriterImpl(
-            output_filename_base + "_source.y4m", config_.codec_settings->width,
-            config_.codec_settings->height, start_frame_rate_));
-        RTC_CHECK(source_frame_writer_->Init());
-      }
       if (visualization_params->save_encoded_ivf) {
         rtc::File post_encode_file =
             rtc::File::Create(output_filename_base + "_encoded.ivf");
@@ -264,8 +257,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     processor_ = rtc::MakeUnique<VideoProcessor>(
         encoder_.get(), decoder_.get(), analysis_frame_reader_.get(),
         analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
-        &stats_, source_frame_writer_.get(), encoded_frame_writer_.get(),
-        decoded_frame_writer_.get());
+        &stats_, encoded_frame_writer_.get(), decoded_frame_writer_.get());
     processor_->Init();
   }
 
@@ -585,9 +577,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
     analysis_frame_writer_->Close();
 
     // Close visualization files.
-    if (source_frame_writer_) {
-      source_frame_writer_->Close();
-    }
     if (encoded_frame_writer_) {
       EXPECT_TRUE(encoded_frame_writer_->Close());
     }
@@ -738,7 +727,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
   std::unique_ptr<test::VideoProcessor> processor_;
 
   // Visualization objects.
-  std::unique_ptr<test::FrameWriter> source_frame_writer_;
   std::unique_ptr<IvfFileWriter> encoded_frame_writer_;
   std::unique_ptr<test::FrameWriter> decoded_frame_writer_;
 

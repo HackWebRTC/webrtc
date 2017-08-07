@@ -35,7 +35,6 @@ const bool kBatchMode = true;
 const float kPacketLoss = 0.0f;
 
 const VisualizationParams kVisualizationParams = {
-    false,  // save_source_y4m
     false,  // save_encoded_ivf
     false,  // save_decoded_y4m
 };

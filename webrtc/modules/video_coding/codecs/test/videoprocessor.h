@@ -145,7 +145,6 @@ class VideoProcessor {
                  PacketManipulator* packet_manipulator,
                  const TestConfig& config,
                  Stats* stats,
-                 FrameWriter* source_frame_writer,
                  IvfFileWriter* encoded_frame_writer,
                  FrameWriter* decoded_frame_writer);
   ~VideoProcessor();
@@ -287,13 +286,10 @@ class VideoProcessor {
   FrameReader* const analysis_frame_reader_;
   FrameWriter* const analysis_frame_writer_;
 
-  // These (optional) file writers are used for persistently storing the output
-  // of the coding pipeline at different stages: pre encode (source), post
-  // encode (encoded), and post decode (decoded). The purpose is to give the
-  // experimenter an option to subjectively evaluate the quality of the
-  // encoding, given the test settings. Each frame writer is enabled by being
-  // non-null.
-  FrameWriter* const source_frame_writer_;
+  // These (optional) file writers are used to persistently store the encoded
+  // and decoded bitstreams. The purpose is to give the experimenter an option
+  // to subjectively evaluate the quality of the processing. Each frame writer
+  // is enabled by being non-null.
   IvfFileWriter* const encoded_frame_writer_;
   FrameWriter* const decoded_frame_writer_;
 

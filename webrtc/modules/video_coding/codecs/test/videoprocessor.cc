@@ -112,7 +112,6 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                PacketManipulator* packet_manipulator,
                                const TestConfig& config,
                                Stats* stats,
-                               FrameWriter* source_frame_writer,
                                IvfFileWriter* encoded_frame_writer,
                                FrameWriter* decoded_frame_writer)
     : encoder_(encoder),
@@ -124,7 +123,6 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
       config_(config),
       analysis_frame_reader_(analysis_frame_reader),
       analysis_frame_writer_(analysis_frame_writer),
-      source_frame_writer_(source_frame_writer),
       encoded_frame_writer_(encoded_frame_writer),
       decoded_frame_writer_(decoded_frame_writer),
       initialized_(false),
@@ -208,16 +206,6 @@ bool VideoProcessor::ProcessFrame(int frame_number) {
   if (!buffer) {
     // Last frame has been reached.
     return false;
-  }
-
-  if (source_frame_writer_) {
-    size_t length =
-        CalcBufferSize(VideoType::kI420, buffer->width(), buffer->height());
-    rtc::Buffer extracted_buffer(length);
-    int extracted_length =
-        ExtractBuffer(buffer, length, extracted_buffer.data());
-    RTC_DCHECK_EQ(extracted_length, source_frame_writer_->FrameLength());
-    RTC_CHECK(source_frame_writer_->WriteFrame(extracted_buffer.data()));
   }
 
   uint32_t timestamp = FrameNumberToTimestamp(frame_number);
