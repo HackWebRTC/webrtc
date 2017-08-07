@@ -32,7 +32,7 @@ class TestH264Impl : public VideoCodecTest {
   }
 };
 
-#ifdef WEBRTC_VIDEOPROCESSOR_H264_TESTS
+#ifdef WEBRTC_USE_H264
 #define MAYBE_EncodeDecode EncodeDecode
 #define MAYBE_DecodedQpEqualsEncodedQp DecodedQpEqualsEncodedQp
 #else

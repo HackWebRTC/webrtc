@@ -436,7 +436,7 @@ if (rtc_include_tests) {
     ]
 
     if (rtc_use_h264) {
-      defines = [ "WEBRTC_VIDEOPROCESSOR_H264_TESTS" ]
+      defines = [ "WEBRTC_USE_H264" ]
     }
 
     if (!build_with_chromium && is_clang) {

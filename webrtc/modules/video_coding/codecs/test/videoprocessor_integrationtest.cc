@@ -33,7 +33,7 @@ const char kForemanCif[] = "foreman_cif";
 
 }  // namespace
 
-#if defined(WEBRTC_VIDEOPROCESSOR_H264_TESTS)
+#if defined(WEBRTC_USE_H264)
 
 // H264: Run with no packet loss and fixed bitrate. Quality should be very high.
 // Note(hbos): The PacketManipulatorImpl code used to simulate packet loss in
@@ -60,7 +60,7 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
                          nullptr /* visualization_params */);
 }
 
-#endif  // defined(WEBRTC_VIDEOPROCESSOR_H264_TESTS)
+#endif  // defined(WEBRTC_USE_H264)
 
 // Fails on iOS. See webrtc:4755.
 #if !defined(WEBRTC_IOS)
