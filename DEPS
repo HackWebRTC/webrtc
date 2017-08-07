@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '90a73c37c47e79d66c2979cca5cf78de94915cd8',
+  'chromium_revision': '761258229d296808a404cc3cc0bc80c1fab28629',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -23,7 +23,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': '2857b6b6c8582e67f9d81360198a1dc9fa561c39',
+  'catapult_revision': '33a9271eb3cf5caf925293ec6a4b47c94f1ac968',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -33,15 +33,15 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + '2d35e4db33414f1236ed4387973813ae1a4a894f',
+    Var('chromium_git') + '/chromium/src/base' + '@' + 'd36d8a1d924aecbd037c041c3695a914b4eaee4b',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '6a89d4e8a66028f07711aa4046acac97ef427a80',
+    Var('chromium_git') + '/chromium/src/build' + '@' + 'a24caab3bbe16908cba02135950c6a86d1575bab',
   'src/buildtools':
-    Var('chromium_git') + '/chromium/buildtools.git' + '@' + '275b8c481615a168464800fc925364aa1a432d37',
+    Var('chromium_git') + '/chromium/buildtools.git' + '@' + 'f4bcb07d88cdb7d748813c3d150e08bf88435fb9',
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + 'd53e1530b73046dabc1e1d77e6c51809cae0ab41',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + '50c58e8d4c7e997d7785777e36fb980740bf9c18',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '080716c2d301614328b699e4c3696cb6b0c4db3c',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'a44e03102ec1dad31a34dbde6e705c845f71db0e',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -66,17 +66,17 @@ deps = {
   'src/third_party/libvpx/source/libvpx':
     Var('chromium_git') + '/webm/libvpx.git' + '@' +  'c22b17dcefe05981918e4b7d0b6527c27e9ceda8',
   'src/third_party/libyuv':
-    Var('chromium_git') + '/libyuv/libyuv.git' + '@' + '56022ef77fab3ce5a7c8ee44bd095c22a94bff5b',
+    Var('chromium_git') + '/libyuv/libyuv.git' + '@' + '27036e33e86c9ce3b5087d55c18bf04964343c60',
   'src/third_party/openh264/src':
     Var('chromium_git') + '/external/github.com/cisco/openh264' + '@' + '0fd88df93c5dcaf858c57eb7892bd27763f0f0ac',
   'src/third_party/openmax_dl':
     Var('chromium_git') + '/external/webrtc/deps/third_party/openmax.git' + '@' +  Var('openmax_dl_revision'),
   'src/third_party/usrsctp/usrsctplib':
-    Var('chromium_git') + '/external/github.com/sctplab/usrsctp' + '@' + '2f6478eb8d40f1766a96b5b033ed26c0c2244589',
+    Var('chromium_git') + '/external/github.com/sctplab/usrsctp' + '@' + 'f4819e1b177f7bfdd761c147f5a649b9f1a78c06',
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'e511107f86509e5339fb0b206c5f0839dda01ca7',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '9a005ffc36f80f438d6cc62dfcaa850d572a6b72',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'd61a9397e668fa9843c4aa7da9e79460fe590bfb',
    'src/tools/swarming_client':
@@ -118,7 +118,7 @@ deps_os = {
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + '0b47b862b09e76235bc533243b2a0d7ec654e1db',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + 'ada794af5478b6444346c14230115e4f5b591829',
   },
   'unix': {
     'src/third_party/lss':
