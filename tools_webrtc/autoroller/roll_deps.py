@@ -27,11 +27,6 @@ DONT_AUTOROLL_THESE = [
   'src/webrtc/examples/androidtests/third_party/gradle',
 ]
 
-# Run these CQ trybots in addition to the default ones in infra/config/cq.cfg.
-EXTRA_TRYBOTS = (
-    'master.internal.tryserver.corp.webrtc:linux_internal'
-)
-
 WEBRTC_URL = 'https://chromium.googlesource.com/external/webrtc'
 CHROMIUM_SRC_URL = 'https://chromium.googlesource.com/chromium/src'
 CHROMIUM_COMMIT_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s'
@@ -321,7 +316,6 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
 
   commit_msg.append('TBR=%s' % tbr_authors)
   commit_msg.append('BUG=None')
-  commit_msg.append('CQ_INCLUDE_TRYBOTS=%s' % EXTRA_TRYBOTS)
   return '\n'.join(commit_msg)
 
 
