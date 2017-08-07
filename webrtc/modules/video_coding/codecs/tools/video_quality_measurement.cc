@@ -506,12 +506,10 @@ int main(int argc, char* argv[]) {
   if (FLAGS_disable_fixed_random_seed) {
     packet_manipulator.InitializeRandomSeed(time(NULL));
   }
-  webrtc::test::VideoProcessor* processor =
-      new webrtc::test::VideoProcessorImpl(
-          encoder, decoder, &frame_reader, &frame_writer, &packet_manipulator,
-          config, &stats, nullptr /* source_frame_writer */,
-          nullptr /* encoded_frame_writer */,
-          nullptr /* decoded_frame_writer */);
+  webrtc::test::VideoProcessor* processor = new webrtc::test::VideoProcessor(
+      encoder, decoder, &frame_reader, &frame_writer, &packet_manipulator,
+      config, &stats, nullptr /* source_frame_writer */,
+      nullptr /* encoded_frame_writer */, nullptr /* decoded_frame_writer */);
   processor->Init();
 
   int frame_number = 0;

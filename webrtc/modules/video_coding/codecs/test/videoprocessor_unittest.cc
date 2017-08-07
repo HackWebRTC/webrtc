@@ -56,7 +56,7 @@ class VideoProcessorTest : public testing::Test {
         .WillRepeatedly(Return(kNumFrames));
     EXPECT_CALL(frame_reader_mock_, FrameLength())
         .WillRepeatedly(Return(kFrameSize));
-    video_processor_ = rtc::MakeUnique<VideoProcessorImpl>(
+    video_processor_ = rtc::MakeUnique<VideoProcessor>(
         &encoder_mock_, &decoder_mock_, &frame_reader_mock_,
         &frame_writer_mock_, &packet_manipulator_mock_, config_, &stats_,
         nullptr /* source_frame_writer */, nullptr /* encoded_frame_writer */,
@@ -80,7 +80,7 @@ class VideoProcessorTest : public testing::Test {
   VideoCodec codec_settings_;
   TestConfig config_;
   Stats stats_;
-  std::unique_ptr<VideoProcessorImpl> video_processor_;
+  std::unique_ptr<VideoProcessor> video_processor_;
 };
 
 TEST_F(VideoProcessorTest, Init) {

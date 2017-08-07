@@ -136,67 +136,49 @@ struct TestConfig {
 //
 // Note this class is not thread safe in any way and is meant for simple testing
 // purposes.
-//
-// TODO(brandtr): Remove this interface.
 class VideoProcessor {
  public:
-  virtual ~VideoProcessor() {}
+  VideoProcessor(webrtc::VideoEncoder* encoder,
+                 webrtc::VideoDecoder* decoder,
+                 FrameReader* analysis_frame_reader,
+                 FrameWriter* analysis_frame_writer,
+                 PacketManipulator* packet_manipulator,
+                 const TestConfig& config,
+                 Stats* stats,
+                 FrameWriter* source_frame_writer,
+                 IvfFileWriter* encoded_frame_writer,
+                 FrameWriter* decoded_frame_writer);
+  ~VideoProcessor();
 
   // Sets up callbacks and initializes the encoder and decoder.
-  virtual void Init() = 0;
+  void Init();
 
   // Processes a single frame. Returns true as long as there's more frames
   // available in the source clip.
   // |frame_number| must be an integer >= 0.
-  virtual bool ProcessFrame(int frame_number) = 0;
+  bool ProcessFrame(int frame_number);
 
   // Updates the encoder with the target |bit_rate| and the |frame_rate|.
-  virtual void SetRates(int bit_rate, int frame_rate) = 0;
+  void SetRates(int bit_rate, int frame_rate);
 
   // Return the size of the encoded frame in bytes. Dropped frames by the
   // encoder are regarded as zero size.
-  virtual size_t EncodedFrameSize(int frame_number) = 0;
+  size_t EncodedFrameSize(int frame_number);
 
   // Return the encoded frame type (key or delta).
-  virtual FrameType EncodedFrameType(int frame_number) = 0;
+  FrameType EncodedFrameType(int frame_number);
 
   // Return the qp used by encoder.
-  virtual int GetQpFromEncoder(int frame_number) = 0;
+  int GetQpFromEncoder(int frame_number);
 
   // Return the qp from the qp parser.
-  virtual int GetQpFromBitstream(int frame_number) = 0;
+  int GetQpFromBitstream(int frame_number);
 
   // Return the number of dropped frames.
-  virtual int NumberDroppedFrames() = 0;
+  int NumberDroppedFrames();
 
   // Return the number of spatial resizes.
-  virtual int NumberSpatialResizes() = 0;
-};
-
-class VideoProcessorImpl : public VideoProcessor {
- public:
-  VideoProcessorImpl(webrtc::VideoEncoder* encoder,
-                     webrtc::VideoDecoder* decoder,
-                     FrameReader* analysis_frame_reader,
-                     FrameWriter* analysis_frame_writer,
-                     PacketManipulator* packet_manipulator,
-                     const TestConfig& config,
-                     Stats* stats,
-                     FrameWriter* source_frame_writer,
-                     IvfFileWriter* encoded_frame_writer,
-                     FrameWriter* decoded_frame_writer);
-  ~VideoProcessorImpl() override;
-
-  // Implements VideoProcessor.
-  void Init() override;
-  bool ProcessFrame(int frame_number) override;
-  void SetRates(int bit_rate, int frame_rate) override;
-  size_t EncodedFrameSize(int frame_number) override;
-  FrameType EncodedFrameType(int frame_number) override;
-  int GetQpFromEncoder(int frame_number) override;
-  int GetQpFromBitstream(int frame_number) override;
-  int NumberDroppedFrames() override;
-  int NumberSpatialResizes() override;
+  int NumberSpatialResizes();
 
  private:
   // Container that holds per-frame information that needs to be stored between
@@ -231,8 +213,9 @@ class VideoProcessorImpl : public VideoProcessor {
   class VideoProcessorEncodeCompleteCallback
       : public webrtc::EncodedImageCallback {
    public:
-    explicit VideoProcessorEncodeCompleteCallback(VideoProcessorImpl* vp)
-        : video_processor_(vp) {}
+    explicit VideoProcessorEncodeCompleteCallback(
+        VideoProcessor* video_processor)
+        : video_processor_(video_processor) {}
     Result OnEncodedImage(
         const webrtc::EncodedImage& encoded_image,
         const webrtc::CodecSpecificInfo* codec_specific_info,
@@ -245,15 +228,16 @@ class VideoProcessorImpl : public VideoProcessor {
     }
 
    private:
-    VideoProcessorImpl* const video_processor_;
+    VideoProcessor* const video_processor_;
   };
 
   // Callback class required to implement according to the VideoDecoder API.
   class VideoProcessorDecodeCompleteCallback
       : public webrtc::DecodedImageCallback {
    public:
-    explicit VideoProcessorDecodeCompleteCallback(VideoProcessorImpl* vp)
-        : video_processor_(vp) {}
+    explicit VideoProcessorDecodeCompleteCallback(
+        VideoProcessor* video_processor)
+        : video_processor_(video_processor) {}
     int32_t Decoded(webrtc::VideoFrame& image) override {
       // Forward to parent class.
       video_processor_->FrameDecoded(image);
@@ -270,7 +254,7 @@ class VideoProcessorImpl : public VideoProcessor {
     }
 
    private:
-    VideoProcessorImpl* const video_processor_;
+    VideoProcessor* const video_processor_;
   };
 
   // Invoked by the callback when a frame has completed encoding.

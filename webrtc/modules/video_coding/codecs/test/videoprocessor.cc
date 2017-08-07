@@ -105,16 +105,16 @@ const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
   }
 }
 
-VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
-                                       webrtc::VideoDecoder* decoder,
-                                       FrameReader* analysis_frame_reader,
-                                       FrameWriter* analysis_frame_writer,
-                                       PacketManipulator* packet_manipulator,
-                                       const TestConfig& config,
-                                       Stats* stats,
-                                       FrameWriter* source_frame_writer,
-                                       IvfFileWriter* encoded_frame_writer,
-                                       FrameWriter* decoded_frame_writer)
+VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
+                               webrtc::VideoDecoder* decoder,
+                               FrameReader* analysis_frame_reader,
+                               FrameWriter* analysis_frame_writer,
+                               PacketManipulator* packet_manipulator,
+                               const TestConfig& config,
+                               Stats* stats,
+                               FrameWriter* source_frame_writer,
+                               IvfFileWriter* encoded_frame_writer,
+                               FrameWriter* decoded_frame_writer)
     : encoder_(encoder),
       decoder_(decoder),
       bitrate_allocator_(CreateBitrateAllocator(config)),
@@ -144,12 +144,12 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
   frame_infos_.reserve(analysis_frame_reader->NumberOfFrames());
 }
 
-VideoProcessorImpl::~VideoProcessorImpl() {
+VideoProcessor::~VideoProcessor() {
   encoder_->RegisterEncodeCompleteCallback(nullptr);
   decoder_->RegisterDecodeCompleteCallback(nullptr);
 }
 
-void VideoProcessorImpl::Init() {
+void VideoProcessor::Init() {
   RTC_DCHECK(!initialized_) << "VideoProcessor already initialized.";
   RTC_DCHECK(config_.codec_settings) << "No codec settings supplied.";
   initialized_ = true;
@@ -196,7 +196,7 @@ void VideoProcessorImpl::Init() {
   }
 }
 
-bool VideoProcessorImpl::ProcessFrame(int frame_number) {
+bool VideoProcessor::ProcessFrame(int frame_number) {
   RTC_DCHECK_GE(frame_number, 0);
   RTC_DCHECK_LE(frame_number, frame_infos_.size())
       << "Must process frames without gaps.";
@@ -253,7 +253,7 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
   return true;
 }
 
-void VideoProcessorImpl::SetRates(int bit_rate, int frame_rate) {
+void VideoProcessor::SetRates(int bit_rate, int frame_rate) {
   config_.codec_settings->maxFramerate = frame_rate;
   int set_rates_result = encoder_->SetRateAllocation(
       bitrate_allocator_->GetAllocation(bit_rate * 1000, frame_rate),
@@ -264,35 +264,35 @@ void VideoProcessorImpl::SetRates(int bit_rate, int frame_rate) {
   num_spatial_resizes_ = 0;
 }
 
-size_t VideoProcessorImpl::EncodedFrameSize(int frame_number) {
+size_t VideoProcessor::EncodedFrameSize(int frame_number) {
   RTC_DCHECK_LT(frame_number, frame_infos_.size());
   return frame_infos_[frame_number].encoded_frame_size;
 }
 
-FrameType VideoProcessorImpl::EncodedFrameType(int frame_number) {
+FrameType VideoProcessor::EncodedFrameType(int frame_number) {
   RTC_DCHECK_LT(frame_number, frame_infos_.size());
   return frame_infos_[frame_number].encoded_frame_type;
 }
 
-int VideoProcessorImpl::GetQpFromEncoder(int frame_number) {
+int VideoProcessor::GetQpFromEncoder(int frame_number) {
   RTC_DCHECK_LT(frame_number, frame_infos_.size());
   return frame_infos_[frame_number].qp_encoder;
 }
 
-int VideoProcessorImpl::GetQpFromBitstream(int frame_number) {
+int VideoProcessor::GetQpFromBitstream(int frame_number) {
   RTC_DCHECK_LT(frame_number, frame_infos_.size());
   return frame_infos_[frame_number].qp_bitstream;
 }
 
-int VideoProcessorImpl::NumberDroppedFrames() {
+int VideoProcessor::NumberDroppedFrames() {
   return num_dropped_frames_;
 }
 
-int VideoProcessorImpl::NumberSpatialResizes() {
+int VideoProcessor::NumberSpatialResizes() {
   return num_spatial_resizes_;
 }
 
-void VideoProcessorImpl::FrameEncoded(
+void VideoProcessor::FrameEncoded(
     webrtc::VideoCodecType codec,
     const EncodedImage& encoded_image,
     const webrtc::RTPFragmentationHeader* fragmentation) {
@@ -428,7 +428,7 @@ void VideoProcessorImpl::FrameEncoded(
   }
 }
 
-void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
+void VideoProcessor::FrameDecoded(const VideoFrame& image) {
   // For the highest measurement accuracy of the decode time, the start/stop
   // time recordings should wrap the Decode call as tightly as possible.
   int64_t decode_stop_ns = rtc::TimeNanos();
@@ -496,14 +496,14 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
   last_decoded_frame_buffer_ = std::move(extracted_buffer);
 }
 
-uint32_t VideoProcessorImpl::FrameNumberToTimestamp(int frame_number) {
+uint32_t VideoProcessor::FrameNumberToTimestamp(int frame_number) {
   RTC_DCHECK_GE(frame_number, 0);
   const int ticks_per_frame =
       kRtpClockRateHz / config_.codec_settings->maxFramerate;
   return (frame_number + 1) * ticks_per_frame;
 }
 
-int VideoProcessorImpl::TimestampToFrameNumber(uint32_t timestamp) {
+int VideoProcessor::TimestampToFrameNumber(uint32_t timestamp) {
   RTC_DCHECK_GT(timestamp, 0);
   const int ticks_per_frame =
       kRtpClockRateHz / config_.codec_settings->maxFramerate;

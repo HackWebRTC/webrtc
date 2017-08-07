@@ -40,6 +40,7 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/file.h"
 #include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/frame_reader.h"
@@ -260,11 +261,11 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
     packet_manipulator_.reset(new test::PacketManipulatorImpl(
         &packet_reader_, config_.networking_config, config_.verbose));
-    processor_.reset(new test::VideoProcessorImpl(
+    processor_ = rtc::MakeUnique<VideoProcessor>(
         encoder_.get(), decoder_.get(), analysis_frame_reader_.get(),
         analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
         &stats_, source_frame_writer_.get(), encoded_frame_writer_.get(),
-        decoded_frame_writer_.get()));
+        decoded_frame_writer_.get());
     processor_->Init();
   }
 
