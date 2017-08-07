@@ -104,6 +104,10 @@ class DesktopCapturer {
 
   // Gets a list of sources current capturer supports. Returns false in case of
   // a failure.
+  // For DesktopCapturer implementations to capture screens, this function
+  // should return monitors.
+  // For DesktopCapturer implementations to capture windows, this function
+  // should only return root windows owned by applications.
   virtual bool GetSourceList(SourceList* sources);
 
   // Selects a source to be captured. Returns false in case of a failure (e.g.

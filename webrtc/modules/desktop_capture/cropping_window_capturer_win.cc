@@ -186,6 +186,9 @@ bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
 
   // Check if the window is occluded by any other window, excluding the child
   // windows, context menus, and |excluded_window_|.
+  // TODO(zijiehe): EnumWindows enumerates root window only, so the window may
+  // be covered by its own child window. See bug
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=8062
   EnumWindows(&TopWindowVerifier, reinterpret_cast<LPARAM>(&context));
   return context.is_top_window;
 }

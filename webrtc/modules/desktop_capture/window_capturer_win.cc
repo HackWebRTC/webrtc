@@ -115,6 +115,7 @@ WindowCapturerWin::~WindowCapturerWin() {}
 bool WindowCapturerWin::GetSourceList(SourceList* sources) {
   SourceList result;
   LPARAM param = reinterpret_cast<LPARAM>(&result);
+  // EnumWindows only enumerates root windows.
   if (!EnumWindows(&WindowsEnumerationHandler, param))
     return false;
   sources->swap(result);

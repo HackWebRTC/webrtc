@@ -251,6 +251,10 @@ rtc_static_library("desktop_capture") {
     "win/window_capture_utils.h",
     "window_capturer_mac.mm",
     "window_capturer_win.cc",
+    "window_under_point.h",
+    "window_under_point_linux.cc",
+    "window_under_point_mac.mm",
+    "window_under_point_win.cc",
   ]
 
   if (use_x11) {
