@@ -50,7 +50,6 @@ FrameStatistic& Stats::NewFrame(int frame_number) {
 }
 
 void Stats::PrintSummary() {
-  printf("Processing summary:\n");
   if (stats_.empty()) {
     printf("No frame statistics have been logged yet.\n");
     return;
@@ -145,22 +144,22 @@ void Stats::PrintSummary() {
   }
 
   // Bitrate stats.
-  printf("Bit rates:\n");
+  printf("Bitrates:\n");
   frame = std::min_element(stats_.begin(), stats_.end(), LessForBitRate);
-  printf("  Min bit rate: %7d kbps (frame %d)\n", frame->bit_rate_in_kbps,
+  printf("  Min bitrate: %7d kbps (frame %d)\n", frame->bit_rate_in_kbps,
          frame->frame_number);
   frame = std::max_element(stats_.begin(), stats_.end(), LessForBitRate);
-  printf("  Max bit rate: %7d kbps (frame %d)\n", frame->bit_rate_in_kbps,
+  printf("  Max bitrate: %7d kbps (frame %d)\n", frame->bit_rate_in_kbps,
          frame->frame_number);
-
-  int avg_qp = (total_qp_count > 0) ? (total_qp / total_qp_count) : -1;
-  printf("Average QP: %d\n", avg_qp);
 
   printf("\n");
   printf("Total encoding time  : %7d ms.\n", total_encoding_time_in_us / 1000);
   printf("Total decoding time  : %7d ms.\n", total_decoding_time_in_us / 1000);
   printf("Total processing time: %7d ms.\n",
          (total_encoding_time_in_us + total_decoding_time_in_us) / 1000);
+
+  int avg_qp = (total_qp_count > 0) ? (total_qp / total_qp_count) : -1;
+  printf("Average QP: %d\n", avg_qp);
 }
 
 }  // namespace test

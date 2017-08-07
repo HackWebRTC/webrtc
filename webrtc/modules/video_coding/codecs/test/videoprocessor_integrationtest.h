@@ -231,7 +231,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
           "_cd-" + CodecTypeToPayloadName(
               config_.codec_settings->codecType).value_or("") +
           "_hw-" + std::to_string(config_.hw_codec) +
-          "_fr-" + std::to_string(start_frame_rate_) +
           "_br-" + std::to_string(
               static_cast<int>(config_.codec_settings->startBitrate));
       // clang-format on
@@ -343,16 +342,16 @@ class VideoProcessorIntegrationTest : public testing::Test {
     int num_dropped_frames = processor_->NumberDroppedFrames();
     int num_resize_actions = processor_->NumberSpatialResizes();
     printf(
-        "For update #: %d,\n"
-        " Target Bitrate: %d,\n"
-        " Encoding bitrate: %f,\n"
-        " Frame rate: %d \n",
+        "Rate update #%d:\n"
+        " Target bitrate         : %d\n"
+        " Encoded bitrate        : %f\n"
+        " Frame rate             : %d\n",
         update_index, bit_rate_, encoding_bitrate_total_, frame_rate_);
     printf(
-        " Number of processed frames: %d, \n"
-        " Number of frames to approach target rate: %d, \n"
-        " Number of dropped frames: %d, \n"
-        " Number of spatial resizes: %d, \n",
+        " # processed frames     : %d\n"
+        " # frames to convergence: %d\n"
+        " # dropped frames       : %d\n"
+        " # spatial resizes      : %d\n",
         num_frames_total_, num_frames_to_hit_target_, num_dropped_frames,
         num_resize_actions);
     EXPECT_LE(perc_encoding_rate_mismatch_,
@@ -361,29 +360,27 @@ class VideoProcessorIntegrationTest : public testing::Test {
       int perc_key_frame_size_mismatch =
           100 * sum_key_frame_size_mismatch_ / num_key_frames_;
       printf(
-          " Number of Key frames: %d \n"
-          " Key frame rate mismatch: %d \n",
+          " # key frames           : %d\n"
+          " Key frame rate mismatch: %d\n",
           num_key_frames_, perc_key_frame_size_mismatch);
       EXPECT_LE(perc_key_frame_size_mismatch,
                 rc_expected.max_key_frame_size_mismatch);
     }
-    printf("\n");
-    printf("Rates statistics for Layer data \n");
     for (int i = 0; i < num_temporal_layers_; i++) {
-      printf("Temporal layer #%d \n", i);
+      printf(" Temporal layer #%d:\n", i);
       int perc_frame_size_mismatch =
           100 * sum_frame_size_mismatch_[i] / num_frames_per_update_[i];
       int perc_encoding_rate_mismatch =
           100 * fabs(encoding_bitrate_[i] - bit_rate_layer_[i]) /
           bit_rate_layer_[i];
       printf(
-          " Target Layer Bit rate: %f \n"
-          " Layer frame rate: %f, \n"
-          " Layer per frame bandwidth: %f, \n"
-          " Layer Encoding bit rate: %f, \n"
-          " Layer Percent frame size mismatch: %d,  \n"
-          " Layer Percent encoding rate mismatch: %d, \n"
-          " Number of frame processed per layer: %d \n",
+          "  Target layer bitrate                : %f\n"
+          "  Layer frame rate                    : %f\n"
+          "  Layer per frame bandwidth           : %f\n"
+          "  Layer encoding bitrate              : %f\n"
+          "  Layer percent frame size mismatch   : %d\n"
+          "  Layer percent encoding rate mismatch: %d\n"
+          "  # frame processed per layer         : %d\n",
           bit_rate_layer_[i], frame_rate_layer_[i], per_frame_bandwidth_[i],
           encoding_bitrate_[i], perc_frame_size_mismatch,
           perc_encoding_rate_mismatch, num_frames_per_update_[i]);
@@ -601,11 +598,12 @@ class VideoProcessorIntegrationTest : public testing::Test {
                                             config_.codec_settings->width,
                                             config_.codec_settings->height,
                                             &psnr_result, &ssim_result));
+    VerifyQuality(psnr_result, ssim_result, quality_thresholds);
+    stats_.PrintSummary();
     printf("PSNR avg: %f, min: %f\nSSIM avg: %f, min: %f\n",
            psnr_result.average, psnr_result.min, ssim_result.average,
            ssim_result.min);
-    VerifyQuality(psnr_result, ssim_result, quality_thresholds);
-    stats_.PrintSummary();
+    printf("\n");
 
     // Remove analysis file.
     if (remove(config_.output_filename.c_str()) < 0) {

@@ -136,6 +136,8 @@ struct TestConfig {
 //
 // Note this class is not thread safe in any way and is meant for simple testing
 // purposes.
+//
+// TODO(brandtr): Remove this interface.
 class VideoProcessor {
  public:
   virtual ~VideoProcessor() {}
@@ -183,9 +185,18 @@ class VideoProcessorImpl : public VideoProcessor {
                      FrameWriter* source_frame_writer,
                      IvfFileWriter* encoded_frame_writer,
                      FrameWriter* decoded_frame_writer);
-  virtual ~VideoProcessorImpl();
+  ~VideoProcessorImpl() override;
+
+  // Implements VideoProcessor.
   void Init() override;
   bool ProcessFrame(int frame_number) override;
+  void SetRates(int bit_rate, int frame_rate) override;
+  size_t EncodedFrameSize(int frame_number) override;
+  FrameType EncodedFrameType(int frame_number) override;
+  int GetQpFromEncoder(int frame_number) override;
+  int GetQpFromBitstream(int frame_number) override;
+  int NumberDroppedFrames() override;
+  int NumberSpatialResizes() override;
 
  private:
   // Container that holds per-frame information that needs to be stored between
@@ -255,8 +266,7 @@ class VideoProcessorImpl : public VideoProcessor {
     void Decoded(webrtc::VideoFrame& image,
                  rtc::Optional<int32_t> decode_time_ms,
                  rtc::Optional<uint8_t> qp) override {
-      Decoded(image,
-              decode_time_ms ? static_cast<int32_t>(*decode_time_ms) : -1);
+      Decoded(image);
     }
 
    private:
@@ -271,26 +281,11 @@ class VideoProcessorImpl : public VideoProcessor {
   // Invoked by the callback when a frame has completed decoding.
   void FrameDecoded(const webrtc::VideoFrame& image);
 
-  // Updates the encoder with the target bit rate and the frame rate.
-  void SetRates(int bit_rate, int frame_rate) override;
-
-  // Return the size of the encoded frame in bytes.
-  size_t EncodedFrameSize(int frame_number) override;
-
-  // Return the encoded frame type (key or delta).
-  FrameType EncodedFrameType(int frame_number) override;
-
-  // Return the qp used by encoder.
-  int GetQpFromEncoder(int frame_number) override;
-
-  // Return the qp from the qp parser.
-  int GetQpFromBitstream(int frame_number) override;
-
-  // Return the number of dropped frames.
-  int NumberDroppedFrames() override;
-
-  // Return the number of spatial resizes.
-  int NumberSpatialResizes() override;
+  // Use the frame number as the basis for timestamp to identify frames. Let the
+  // first timestamp be non-zero, to not make the IvfFileWriter believe that we
+  // want to use capture timestamps in the IVF files.
+  uint32_t FrameNumberToTimestamp(int frame_number);
+  int TimestampToFrameNumber(uint32_t timestamp);
 
   webrtc::VideoEncoder* const encoder_;
   webrtc::VideoDecoder* const decoder_;
