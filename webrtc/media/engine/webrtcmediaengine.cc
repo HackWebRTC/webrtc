@@ -157,7 +157,7 @@ namespace {
 // Remove mutually exclusive extensions with lower priority.
 void DiscardRedundantExtensions(
     std::vector<webrtc::RtpExtension>* extensions,
-    rtc::ArrayView<const char*> extensions_decreasing_prio) {
+    rtc::ArrayView<const char* const> extensions_decreasing_prio) {
   RTC_DCHECK(extensions);
   bool found = false;
   for (const char* uri : extensions_decreasing_prio) {
@@ -228,7 +228,7 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     result.erase(it, result.end());
 
     // Keep just the highest priority extension of any in the following list.
-    static const char* kBweExtensionPriorities[] = {
+    static const char* const kBweExtensionPriorities[] = {
         webrtc::RtpExtension::kTransportSequenceNumberUri,
         webrtc::RtpExtension::kAbsSendTimeUri,
         webrtc::RtpExtension::kTimestampOffsetUri};

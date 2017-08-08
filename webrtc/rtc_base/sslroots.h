@@ -4153,7 +4153,7 @@ const unsigned char UTN_DATACorp_SGC_Root_CA_certificate[1122]={
 };
 
 
-const unsigned char* kSSLCertCertificateList[] = {
+const unsigned char* const kSSLCertCertificateList[] = {
  GlobalSign_Root_CA_certificate,
  USERTrust_RSA_Certification_Authority_certificate,
  Starfield_Class_2_CA_certificate,

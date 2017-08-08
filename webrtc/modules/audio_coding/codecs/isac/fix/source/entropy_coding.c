@@ -1885,7 +1885,7 @@ const uint16_t kFrameLenCdf[4] = {
   0, 21845, 43690, 65535};
 
 /* pointer to cdf array for frame length indicator */
-const uint16_t *kFrameLenCdfPtr[1] = {kFrameLenCdf};
+const uint16_t * const kFrameLenCdfPtr[1] = {kFrameLenCdf};
 
 /* initial cdf index for decoder of frame length indicator */
 const uint16_t kFrameLenInitIndex[1] = {1};
@@ -1953,7 +1953,7 @@ const uint16_t kBwCdf[25] = {
   62804, 65535};
 
 /* pointer to cdf array for estimated bandwidth */
-const uint16_t *kBwCdfPtr[1] = {kBwCdf};
+const uint16_t * const kBwCdfPtr[1] = {kBwCdf};
 
 /* initial cdf index for decoder of estimated bandwidth*/
 const uint16_t kBwInitIndex[1] = {7};

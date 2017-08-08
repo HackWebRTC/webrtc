@@ -13,7 +13,7 @@
 
 namespace webrtc {
 
-const char* kBweTypeHistogram = "WebRTC.BWE.Types";
+const char kBweTypeHistogram[] = "WebRTC.BWE.Types";
 
 namespace congestion_controller {
 int GetMinBitrateBps() {

@@ -20,9 +20,9 @@
 
 namespace webrtc {
 
-const char* AlrDetector::kScreenshareProbingBweExperimentName =
+const char AlrDetector::kScreenshareProbingBweExperimentName[] =
     "WebRTC-ProbingScreenshareBwe";
-const char* AlrDetector::kStrictPacingAndProbingExperimentName =
+const char AlrDetector::kStrictPacingAndProbingExperimentName[] =
     "WebRTC-StrictPacingAndProbing";
 
 AlrDetector::AlrDetector()

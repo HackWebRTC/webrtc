@@ -85,44 +85,44 @@ struct RtpExtension {
 
   // Header extension for audio levels, as defined in:
   // http://tools.ietf.org/html/draft-ietf-avtext-client-to-mixer-audio-level-03
-  static const char* kAudioLevelUri;
+  static const char kAudioLevelUri[];
   static const int kAudioLevelDefaultId;
 
   // Header extension for RTP timestamp offset, see RFC 5450 for details:
   // http://tools.ietf.org/html/rfc5450
-  static const char* kTimestampOffsetUri;
+  static const char kTimestampOffsetUri[];
   static const int kTimestampOffsetDefaultId;
 
   // Header extension for absolute send time, see url for details:
   // http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
-  static const char* kAbsSendTimeUri;
+  static const char kAbsSendTimeUri[];
   static const int kAbsSendTimeDefaultId;
 
   // Header extension for coordination of video orientation, see url for
   // details:
   // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/ts_126114v120700p.pdf
-  static const char* kVideoRotationUri;
+  static const char kVideoRotationUri[];
   static const int kVideoRotationDefaultId;
 
   // Header extension for video content type. E.g. default or screenshare.
-  static const char* kVideoContentTypeUri;
+  static const char kVideoContentTypeUri[];
   static const int kVideoContentTypeDefaultId;
 
   // Header extension for video timing.
-  static const char* kVideoTimingUri;
+  static const char kVideoTimingUri[];
   static const int kVideoTimingDefaultId;
 
   // Header extension for transport sequence number, see url for details:
   // http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions
-  static const char* kTransportSequenceNumberUri;
+  static const char kTransportSequenceNumberUri[];
   static const int kTransportSequenceNumberDefaultId;
 
-  static const char* kPlayoutDelayUri;
+  static const char kPlayoutDelayUri[];
   static const int kPlayoutDelayDefaultId;
 
   // Encryption of Header Extensions, see RFC 6904 for details:
   // https://tools.ietf.org/html/rfc6904
-  static const char* kEncryptHeaderExtensionsUri;
+  static const char kEncryptHeaderExtensionsUri[];
 
   // Inclusive min and max IDs for one-byte header extensions, per RFC5285.
   static const int kMinId;

@@ -19,7 +19,7 @@
 
 namespace webrtc {
 namespace {
-float kMinNoisePower = 100.f;
+constexpr float kMinNoisePower = 100.f;
 }  // namespace
 
 NoiseSpectrumEstimator::NoiseSpectrumEstimator(ApmDataDumper* data_dumper)

@@ -20,44 +20,44 @@ namespace webrtc {
 
 // https://w3c.github.io/webrtc-pc/#idl-def-rtcdatachannelstate
 struct RTCDataChannelState {
-  static const char* kConnecting;
-  static const char* kOpen;
-  static const char* kClosing;
-  static const char* kClosed;
+  static const char* const kConnecting;
+  static const char* const kOpen;
+  static const char* const kClosing;
+  static const char* const kClosed;
 };
 
 // https://w3c.github.io/webrtc-stats/#dom-rtcstatsicecandidatepairstate
 struct RTCStatsIceCandidatePairState {
-  static const char* kFrozen;
-  static const char* kWaiting;
-  static const char* kInProgress;
-  static const char* kFailed;
-  static const char* kSucceeded;
+  static const char* const kFrozen;
+  static const char* const kWaiting;
+  static const char* const kInProgress;
+  static const char* const kFailed;
+  static const char* const kSucceeded;
 };
 
 // https://w3c.github.io/webrtc-pc/#rtcicecandidatetype-enum
 struct RTCIceCandidateType {
-  static const char* kHost;
-  static const char* kSrflx;
-  static const char* kPrflx;
-  static const char* kRelay;
+  static const char* const kHost;
+  static const char* const kSrflx;
+  static const char* const kPrflx;
+  static const char* const kRelay;
 };
 
 // https://w3c.github.io/webrtc-pc/#idl-def-rtcdtlstransportstate
 struct RTCDtlsTransportState {
-  static const char* kNew;
-  static const char* kConnecting;
-  static const char* kConnected;
-  static const char* kClosed;
-  static const char* kFailed;
+  static const char* const kNew;
+  static const char* const kConnecting;
+  static const char* const kConnected;
+  static const char* const kClosed;
+  static const char* const kFailed;
 };
 
 // |RTCMediaStreamTrackStats::kind| is not an enum in the spec but the only
 // valid values are "audio" and "video".
 // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-kind
 struct RTCMediaStreamTrackKind {
-  static const char* kAudio;
-  static const char* kVideo;
+  static const char* const kAudio;
+  static const char* const kVideo;
 };
 
 // https://w3c.github.io/webrtc-stats/#certificatestats-dict*

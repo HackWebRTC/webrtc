@@ -49,22 +49,22 @@ std::string RtpExtension::ToString() const {
   return ss.str();
 }
 
-const char* RtpExtension::kAudioLevelUri =
+const char RtpExtension::kAudioLevelUri[] =
     "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
 const int RtpExtension::kAudioLevelDefaultId = 1;
 
-const char* RtpExtension::kTimestampOffsetUri =
+const char RtpExtension::kTimestampOffsetUri[] =
     "urn:ietf:params:rtp-hdrext:toffset";
 const int RtpExtension::kTimestampOffsetDefaultId = 2;
 
-const char* RtpExtension::kAbsSendTimeUri =
+const char RtpExtension::kAbsSendTimeUri[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 const int RtpExtension::kAbsSendTimeDefaultId = 3;
 
-const char* RtpExtension::kVideoRotationUri = "urn:3gpp:video-orientation";
+const char RtpExtension::kVideoRotationUri[] = "urn:3gpp:video-orientation";
 const int RtpExtension::kVideoRotationDefaultId = 4;
 
-const char* RtpExtension::kTransportSequenceNumberUri =
+const char RtpExtension::kTransportSequenceNumberUri[] =
     "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
 const int RtpExtension::kTransportSequenceNumberDefaultId = 5;
 
@@ -72,19 +72,19 @@ const int RtpExtension::kTransportSequenceNumberDefaultId = 5;
 // on frames as per the current needs. For example, a gaming application
 // has very different needs on end-to-end delay compared to a video-conference
 // application.
-const char* RtpExtension::kPlayoutDelayUri =
+const char RtpExtension::kPlayoutDelayUri[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/playout-delay";
 const int RtpExtension::kPlayoutDelayDefaultId = 6;
 
-const char* RtpExtension::kVideoContentTypeUri =
+const char RtpExtension::kVideoContentTypeUri[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/video-content-type";
 const int RtpExtension::kVideoContentTypeDefaultId = 7;
 
-const char* RtpExtension::kVideoTimingUri =
+const char RtpExtension::kVideoTimingUri[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/video-timing";
 const int RtpExtension::kVideoTimingDefaultId = 8;
 
-const char* RtpExtension::kEncryptHeaderExtensionsUri =
+const char RtpExtension::kEncryptHeaderExtensionsUri[] =
     "urn:ietf:params:rtp-hdrext:encrypt";
 
 const int RtpExtension::kMinId = 1;

@@ -98,7 +98,7 @@ int WebRtcIsacfix_DecLogisticMulti2(
 int WebRtcIsacfix_EncHistMulti(
     Bitstr_enc *streamData,
     const int16_t *data,
-    const uint16_t **cdf,
+    const uint16_t *const *cdf,
     const int16_t lenData);
 
 
@@ -125,7 +125,7 @@ int WebRtcIsacfix_EncHistMulti(
 int16_t WebRtcIsacfix_DecHistBisectMulti(
     int16_t *data,
     Bitstr_dec *streamData,
-    const uint16_t **cdf,
+    const uint16_t *const *cdf,
     const uint16_t *cdfSize,
     const int16_t lenData);
 
@@ -153,7 +153,7 @@ int16_t WebRtcIsacfix_DecHistBisectMulti(
 int16_t WebRtcIsacfix_DecHistOneStepMulti(
     int16_t *data,
     Bitstr_dec *streamData,
-    const uint16_t **cdf,
+    const uint16_t *const *cdf,
     const uint16_t *initIndex,
     const int16_t lenData);
 

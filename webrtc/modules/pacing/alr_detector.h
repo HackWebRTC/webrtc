@@ -59,8 +59,8 @@ class AlrDetector {
   static constexpr int kDefaultAlrBandwidthUsagePercent = 65;
   static constexpr int kDefaultAlrStartBudgetLevelPercent = 80;
   static constexpr int kDefaultAlrStopBudgetLevelPercent = 50;
-  static const char* kScreenshareProbingBweExperimentName;
-  static const char* kStrictPacingAndProbingExperimentName;
+  static const char kScreenshareProbingBweExperimentName[];
+  static const char kStrictPacingAndProbingExperimentName[];
 
   void UpdateBudgetWithElapsedTime(int64_t delta_time_ms);
   void UpdateBudgetWithBytesSent(size_t bytes_sent);

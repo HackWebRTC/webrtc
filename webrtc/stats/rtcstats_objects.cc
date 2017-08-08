@@ -12,31 +12,31 @@
 
 namespace webrtc {
 
-const char* RTCDataChannelState::kConnecting = "connecting";
-const char* RTCDataChannelState::kOpen = "open";
-const char* RTCDataChannelState::kClosing = "closing";
-const char* RTCDataChannelState::kClosed = "closed";
+const char* const RTCDataChannelState::kConnecting = "connecting";
+const char* const RTCDataChannelState::kOpen = "open";
+const char* const RTCDataChannelState::kClosing = "closing";
+const char* const RTCDataChannelState::kClosed = "closed";
 
-const char* RTCStatsIceCandidatePairState::kFrozen = "frozen";
-const char* RTCStatsIceCandidatePairState::kWaiting = "waiting";
-const char* RTCStatsIceCandidatePairState::kInProgress = "in-progress";
-const char* RTCStatsIceCandidatePairState::kFailed = "failed";
-const char* RTCStatsIceCandidatePairState::kSucceeded = "succeeded";
+const char* const RTCStatsIceCandidatePairState::kFrozen = "frozen";
+const char* const RTCStatsIceCandidatePairState::kWaiting = "waiting";
+const char* const RTCStatsIceCandidatePairState::kInProgress = "in-progress";
+const char* const RTCStatsIceCandidatePairState::kFailed = "failed";
+const char* const RTCStatsIceCandidatePairState::kSucceeded = "succeeded";
 
 // Strings defined in https://tools.ietf.org/html/rfc5245.
-const char* RTCIceCandidateType::kHost = "host";
-const char* RTCIceCandidateType::kSrflx = "srflx";
-const char* RTCIceCandidateType::kPrflx = "prflx";
-const char* RTCIceCandidateType::kRelay = "relay";
+const char* const RTCIceCandidateType::kHost = "host";
+const char* const RTCIceCandidateType::kSrflx = "srflx";
+const char* const RTCIceCandidateType::kPrflx = "prflx";
+const char* const RTCIceCandidateType::kRelay = "relay";
 
-const char* RTCDtlsTransportState::kNew = "new";
-const char* RTCDtlsTransportState::kConnecting = "connecting";
-const char* RTCDtlsTransportState::kConnected = "connected";
-const char* RTCDtlsTransportState::kClosed = "closed";
-const char* RTCDtlsTransportState::kFailed = "failed";
+const char* const RTCDtlsTransportState::kNew = "new";
+const char* const RTCDtlsTransportState::kConnecting = "connecting";
+const char* const RTCDtlsTransportState::kConnected = "connected";
+const char* const RTCDtlsTransportState::kClosed = "closed";
+const char* const RTCDtlsTransportState::kFailed = "failed";
 
-const char* RTCMediaStreamTrackKind::kAudio = "audio";
-const char* RTCMediaStreamTrackKind::kVideo = "video";
+const char* const RTCMediaStreamTrackKind::kAudio = "audio";
+const char* const RTCMediaStreamTrackKind::kVideo = "video";
 
 WEBRTC_RTCSTATS_IMPL(RTCCertificateStats, RTCStats, "certificate",
     &fingerprint,

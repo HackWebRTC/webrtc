@@ -23,7 +23,7 @@ namespace {
 // A certificates' subject and issuer name.
 const char kIdentityName[] = "WebRTC";
 
-uint64_t kYearInSeconds = 365 * 24 * 60 * 60;
+const uint64_t kYearInSeconds = 365 * 24 * 60 * 60;
 
 enum {
   MSG_GENERATE,

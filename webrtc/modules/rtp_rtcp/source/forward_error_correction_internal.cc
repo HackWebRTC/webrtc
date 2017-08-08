@@ -179,7 +179,8 @@ FecMaskType PacketMaskTable::InitMaskType(FecMaskType fec_mask_type,
 
 // Returns the pointer to the packet mask tables corresponding to type
 // |fec_mask_type|.
-const uint8_t*** PacketMaskTable::InitMaskTable(FecMaskType fec_mask_type) {
+const uint8_t* const* const* PacketMaskTable::InitMaskTable(
+    FecMaskType fec_mask_type) {
   switch (fec_mask_type) {
     case kFecMaskRandom: {
       return kPacketMaskRandomTbl;

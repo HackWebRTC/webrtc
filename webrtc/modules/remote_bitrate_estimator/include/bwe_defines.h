@@ -25,7 +25,7 @@ int GetMinBitrateBps();
 
 static const int64_t kBitrateWindowMs = 1000;
 
-extern const char* kBweTypeHistogram;
+extern const char kBweTypeHistogram[];
 
 enum BweNames {
   kReceiverNoExtension = 0,
