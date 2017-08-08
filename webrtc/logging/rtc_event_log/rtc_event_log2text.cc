@@ -16,6 +16,7 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/common_types.h"
+#include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
@@ -31,6 +32,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbn.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/rtc_base/checks.h"
 
@@ -117,6 +119,32 @@ const char* StreamInfo(webrtc::PacketDirection direction,
       return "(in)";
   }
   return "(unknown)";
+}
+
+// Return default values for header extensions, to use on streams without stored
+// mapping data. Currently this only applies to audio streams, since the mapping
+// is not stored in the event log.
+// TODO(ivoc): Remove this once this mapping is stored in the event log for
+//             audio streams. Tracking bug: webrtc:6399
+webrtc::RtpHeaderExtensionMap GetDefaultHeaderExtensionMap() {
+  webrtc::RtpHeaderExtensionMap default_map;
+  default_map.Register<webrtc::AudioLevel>(
+      webrtc::RtpExtension::kAudioLevelDefaultId);
+  default_map.Register<webrtc::TransmissionOffset>(
+      webrtc::RtpExtension::kTimestampOffsetDefaultId);
+  default_map.Register<webrtc::AbsoluteSendTime>(
+      webrtc::RtpExtension::kAbsSendTimeDefaultId);
+  default_map.Register<webrtc::VideoOrientation>(
+      webrtc::RtpExtension::kVideoRotationDefaultId);
+  default_map.Register<webrtc::VideoContentTypeExtension>(
+      webrtc::RtpExtension::kVideoContentTypeDefaultId);
+  default_map.Register<webrtc::VideoTimingExtension>(
+      webrtc::RtpExtension::kVideoTimingDefaultId);
+  default_map.Register<webrtc::TransportSequenceNumber>(
+      webrtc::RtpExtension::kTransportSequenceNumberDefaultId);
+  default_map.Register<webrtc::PlayoutDelayLimits>(
+      webrtc::RtpExtension::kPlayoutDelayDefaultId);
+  return default_map;
 }
 
 void PrintSenderReport(const webrtc::ParsedRtcEventLog& parsed_stream,
@@ -344,6 +372,8 @@ int main(int argc, char* argv[]) {
   if (!FLAGS_ssrc.empty())
     RTC_CHECK(ParseSsrc(FLAGS_ssrc)) << "Flag verification has failed.";
 
+  webrtc::RtpHeaderExtensionMap default_map = GetDefaultHeaderExtensionMap();
+
   webrtc::ParsedRtcEventLog parsed_stream;
   if (!parsed_stream.ParseFile(input_file)) {
     std::cerr << "Error while parsing input file: " << input_file << std::endl;
@@ -443,6 +473,9 @@ int main(int argc, char* argv[]) {
       webrtc::PacketDirection direction;
       webrtc::RtpHeaderExtensionMap* extension_map = parsed_stream.GetRtpHeader(
           i, &direction, header, &header_length, &total_length);
+
+      if (extension_map == nullptr)
+        extension_map = &default_map;
 
       // Parse header to get SSRC and RTP time.
       webrtc::RtpUtility::RtpHeaderParser rtp_parser(header, header_length);

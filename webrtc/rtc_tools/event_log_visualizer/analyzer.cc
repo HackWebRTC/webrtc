@@ -119,8 +119,20 @@ int64_t WrappingDifference(uint32_t later, uint32_t earlier, int64_t modulus) {
 webrtc::RtpHeaderExtensionMap GetDefaultHeaderExtensionMap() {
   webrtc::RtpHeaderExtensionMap default_map;
   default_map.Register<AudioLevel>(webrtc::RtpExtension::kAudioLevelDefaultId);
+  default_map.Register<TransmissionOffset>(
+      webrtc::RtpExtension::kTimestampOffsetDefaultId);
   default_map.Register<AbsoluteSendTime>(
       webrtc::RtpExtension::kAbsSendTimeDefaultId);
+  default_map.Register<VideoOrientation>(
+      webrtc::RtpExtension::kVideoRotationDefaultId);
+  default_map.Register<VideoContentTypeExtension>(
+      webrtc::RtpExtension::kVideoContentTypeDefaultId);
+  default_map.Register<VideoTimingExtension>(
+      webrtc::RtpExtension::kVideoTimingDefaultId);
+  default_map.Register<TransportSequenceNumber>(
+      webrtc::RtpExtension::kTransportSequenceNumberDefaultId);
+  default_map.Register<PlayoutDelayLimits>(
+      webrtc::RtpExtension::kPlayoutDelayDefaultId);
   return default_map;
 }
 
