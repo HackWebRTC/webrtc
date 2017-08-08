@@ -828,17 +828,26 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   RTC_DCHECK(call_stats_);
   RTC_DCHECK(transport_);
   RTC_DCHECK(transport_->send_side_cc());
-
+  RTC_CHECK(field_trial::FindFullName(
+                AlrDetector::kStrictPacingAndProbingExperimentName)
+                .empty() ||
+            field_trial::FindFullName(
+                AlrDetector::kScreenshareProbingBweExperimentName)
+                .empty());
+  rtc::Optional<AlrDetector::AlrExperimentSettings> alr_settings;
   if (content_type == VideoEncoderConfig::ContentType::kScreen) {
-    rtc::Optional<AlrDetector::AlrExperimentSettings> alr_settings =
-        AlrDetector::ParseAlrSettingsFromFieldTrial();
-    if (alr_settings) {
-      transport->send_side_cc()->EnablePeriodicAlrProbing(true);
-      transport->send_side_cc()->pacer()->SetPacingFactor(
-          alr_settings->pacing_factor);
-      transport->send_side_cc()->pacer()->SetQueueTimeLimit(
-          alr_settings->max_paced_queue_time);
-    }
+    alr_settings = AlrDetector::ParseAlrSettingsFromFieldTrial(
+        AlrDetector::kScreenshareProbingBweExperimentName);
+  } else {
+    alr_settings = AlrDetector::ParseAlrSettingsFromFieldTrial(
+        AlrDetector::kStrictPacingAndProbingExperimentName);
+  }
+  if (alr_settings) {
+    transport->send_side_cc()->EnablePeriodicAlrProbing(true);
+    transport->send_side_cc()->pacer()->SetPacingFactor(
+        alr_settings->pacing_factor);
+    transport->send_side_cc()->pacer()->SetQueueTimeLimit(
+        alr_settings->max_paced_queue_time);
   }
 
   if (config_->periodic_alr_bandwidth_probing) {

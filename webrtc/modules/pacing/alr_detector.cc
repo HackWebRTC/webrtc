@@ -22,14 +22,24 @@ namespace webrtc {
 
 const char* AlrDetector::kScreenshareProbingBweExperimentName =
     "WebRTC-ProbingScreenshareBwe";
+const char* AlrDetector::kStrictPacingAndProbingExperimentName =
+    "WebRTC-StrictPacingAndProbing";
 
 AlrDetector::AlrDetector()
     : bandwidth_usage_percent_(kDefaultAlrBandwidthUsagePercent),
       alr_start_budget_level_percent_(kDefaultAlrStartBudgetLevelPercent),
       alr_stop_budget_level_percent_(kDefaultAlrStopBudgetLevelPercent),
       alr_budget_(0, true) {
+  RTC_CHECK(
+      field_trial::FindFullName(kStrictPacingAndProbingExperimentName)
+          .empty() ||
+      field_trial::FindFullName(kScreenshareProbingBweExperimentName).empty());
   rtc::Optional<AlrExperimentSettings> experiment_settings =
-      ParseAlrSettingsFromFieldTrial();
+      ParseAlrSettingsFromFieldTrial(kScreenshareProbingBweExperimentName);
+  if (!experiment_settings) {
+    experiment_settings =
+        ParseAlrSettingsFromFieldTrial(kStrictPacingAndProbingExperimentName);
+  }
   if (experiment_settings) {
     alr_stop_budget_level_percent_ =
         experiment_settings->alr_stop_budget_level_percent;
@@ -67,10 +77,9 @@ rtc::Optional<int64_t> AlrDetector::GetApplicationLimitedRegionStartTime()
 }
 
 rtc::Optional<AlrDetector::AlrExperimentSettings>
-AlrDetector::ParseAlrSettingsFromFieldTrial() {
+AlrDetector::ParseAlrSettingsFromFieldTrial(const char* experiment_name) {
   rtc::Optional<AlrExperimentSettings> ret;
-  std::string group_name =
-      field_trial::FindFullName(kScreenshareProbingBweExperimentName);
+  std::string group_name = field_trial::FindFullName(experiment_name);
 
   const std::string kIgnoredSuffix = "_Dogfood";
   if (group_name.rfind(kIgnoredSuffix) ==
@@ -88,7 +97,7 @@ AlrDetector::ParseAlrSettingsFromFieldTrial() {
              &settings.alr_start_budget_level_percent,
              &settings.alr_stop_budget_level_percent) == 5) {
     ret.emplace(settings);
-    LOG(LS_INFO) << "Using screenshare ALR experiment settings: "
+    LOG(LS_INFO) << "Using ALR experiment settings: "
                     "pacing factor: "
                  << settings.pacing_factor << ", max pacer queue length: "
                  << settings.max_paced_queue_time
@@ -98,6 +107,8 @@ AlrDetector::ParseAlrSettingsFromFieldTrial() {
                  << settings.alr_start_budget_level_percent
                  << ", ALR end budget level percent: "
                  << settings.alr_stop_budget_level_percent;
+  } else {
+    LOG(LS_INFO) << "Failed to parse ALR experiment: " << experiment_name;
   }
 
   return ret;
