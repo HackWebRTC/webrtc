@@ -68,10 +68,9 @@ class PlotVideoProcessorIntegrationTest
     // Codec/network settings.
     SetProcessParams(&config_, kHwCodec, kUseSingleCore, kPacketLoss,
                      kKeyFrameInterval, filename, kVerboseLogging, kBatchMode);
-    SetCodecSettings(&config_, &codec_settings_, codec_type_,
-                     kNumTemporalLayers, kErrorConcealmentOn, kDenoisingOn,
-                     kFrameDropperOn, kSpatialResizeOn, kResilienceOn, width,
-                     height);
+    SetCodecSettings(&config_, codec_type_, kNumTemporalLayers,
+                     kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
+                     kSpatialResizeOn, kResilienceOn, width, height);
 
     // Use default thresholds for quality (PSNR and SSIM).
     QualityThresholds quality_thresholds;

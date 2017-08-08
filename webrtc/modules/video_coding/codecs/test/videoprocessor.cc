@@ -35,52 +35,48 @@ namespace {
 const int kRtpClockRateHz = 90000;
 
 std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
-    const TestConfig& config) {
+    TestConfig* config) {
   std::unique_ptr<TemporalLayersFactory> tl_factory;
-  if (config.codec_settings->codecType == VideoCodecType::kVideoCodecVP8) {
+  if (config->codec_settings.codecType == VideoCodecType::kVideoCodecVP8) {
     tl_factory.reset(new TemporalLayersFactory());
-    config.codec_settings->VP8()->tl_factory = tl_factory.get();
+    config->codec_settings.VP8()->tl_factory = tl_factory.get();
   }
   return std::unique_ptr<VideoBitrateAllocator>(
-      VideoCodecInitializer::CreateBitrateAllocator(*config.codec_settings,
+      VideoCodecInitializer::CreateBitrateAllocator(config->codec_settings,
                                                     std::move(tl_factory)));
 }
 
-void PrintCodecSettings(const VideoCodec* codec_settings) {
-  RTC_DCHECK(codec_settings);
+void PrintCodecSettings(const VideoCodec& codec_settings) {
   printf(" Codec settings:\n");
   printf("  Codec type        : %s\n",
-         CodecTypeToPayloadName(codec_settings->codecType).value_or("Unknown"));
-  printf("  Start bitrate     : %d kbps\n", codec_settings->startBitrate);
-  printf("  Max bitrate       : %d kbps\n", codec_settings->maxBitrate);
-  printf("  Min bitrate       : %d kbps\n", codec_settings->minBitrate);
-  printf("  Width             : %d\n", codec_settings->width);
-  printf("  Height            : %d\n", codec_settings->height);
-  printf("  Max frame rate    : %d\n", codec_settings->maxFramerate);
-  printf("  QPmax             : %d\n", codec_settings->qpMax);
-  if (codec_settings->codecType == kVideoCodecVP8) {
-    printf("  Complexity        : %d\n", codec_settings->VP8().complexity);
-    printf("  Denoising         : %d\n", codec_settings->VP8().denoisingOn);
+         CodecTypeToPayloadName(codec_settings.codecType).value_or("Unknown"));
+  printf("  Start bitrate     : %d kbps\n", codec_settings.startBitrate);
+  printf("  Max bitrate       : %d kbps\n", codec_settings.maxBitrate);
+  printf("  Min bitrate       : %d kbps\n", codec_settings.minBitrate);
+  printf("  Width             : %d\n", codec_settings.width);
+  printf("  Height            : %d\n", codec_settings.height);
+  printf("  Max frame rate    : %d\n", codec_settings.maxFramerate);
+  printf("  QPmax             : %d\n", codec_settings.qpMax);
+  if (codec_settings.codecType == kVideoCodecVP8) {
+    printf("  Complexity        : %d\n", codec_settings.VP8().complexity);
+    printf("  Denoising         : %d\n", codec_settings.VP8().denoisingOn);
     printf("  Error concealment : %d\n",
-           codec_settings->VP8().errorConcealmentOn);
-    printf("  Frame dropping    : %d\n", codec_settings->VP8().frameDroppingOn);
-    printf("  Resilience        : %d\n", codec_settings->VP8().resilience);
+           codec_settings.VP8().errorConcealmentOn);
+    printf("  Frame dropping    : %d\n", codec_settings.VP8().frameDroppingOn);
+    printf("  Resilience        : %d\n", codec_settings.VP8().resilience);
+    printf("  Key frame interval: %d\n", codec_settings.VP8().keyFrameInterval);
+  } else if (codec_settings.codecType == kVideoCodecVP9) {
+    printf("  Complexity        : %d\n", codec_settings.VP9().complexity);
+    printf("  Denoising         : %d\n", codec_settings.VP9().denoisingOn);
+    printf("  Frame dropping    : %d\n", codec_settings.VP9().frameDroppingOn);
+    printf("  Resilience        : %d\n", codec_settings.VP9().resilienceOn);
+    printf("  Key frame interval: %d\n", codec_settings.VP9().keyFrameInterval);
+    printf("  Adaptive QP mode  : %d\n", codec_settings.VP9().adaptiveQpMode);
+  } else if (codec_settings.codecType == kVideoCodecH264) {
+    printf("  Frame dropping    : %d\n", codec_settings.H264().frameDroppingOn);
     printf("  Key frame interval: %d\n",
-           codec_settings->VP8().keyFrameInterval);
-  } else if (codec_settings->codecType == kVideoCodecVP9) {
-    printf("  Complexity        : %d\n", codec_settings->VP9().complexity);
-    printf("  Denoising         : %d\n", codec_settings->VP9().denoisingOn);
-    printf("  Frame dropping    : %d\n", codec_settings->VP9().frameDroppingOn);
-    printf("  Resilience        : %d\n", codec_settings->VP9().resilienceOn);
-    printf("  Key frame interval: %d\n",
-           codec_settings->VP9().keyFrameInterval);
-    printf("  Adaptive QP mode  : %d\n", codec_settings->VP9().adaptiveQpMode);
-  } else if (codec_settings->codecType == kVideoCodecH264) {
-    printf("  Frame dropping    : %d\n",
-           codec_settings->H264().frameDroppingOn);
-    printf("  Key frame interval: %d\n",
-           codec_settings->H264().keyFrameInterval);
-    printf("  Profile           : %d\n", codec_settings->H264().profile);
+           codec_settings.H264().keyFrameInterval);
+    printf("  Profile           : %d\n", codec_settings.H264().profile);
   }
 }
 
@@ -114,13 +110,13 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                Stats* stats,
                                IvfFileWriter* encoded_frame_writer,
                                FrameWriter* decoded_frame_writer)
-    : encoder_(encoder),
+    : config_(config),
+      encoder_(encoder),
       decoder_(decoder),
-      bitrate_allocator_(CreateBitrateAllocator(config)),
+      bitrate_allocator_(CreateBitrateAllocator(&config_)),
       encode_callback_(new VideoProcessorEncodeCompleteCallback(this)),
       decode_callback_(new VideoProcessorDecodeCompleteCallback(this)),
       packet_manipulator_(packet_manipulator),
-      config_(config),
       analysis_frame_reader_(analysis_frame_reader),
       analysis_frame_writer_(analysis_frame_writer),
       encoded_frame_writer_(encoded_frame_writer),
@@ -149,7 +145,6 @@ VideoProcessor::~VideoProcessor() {
 
 void VideoProcessor::Init() {
   RTC_DCHECK(!initialized_) << "VideoProcessor already initialized.";
-  RTC_DCHECK(config_.codec_settings) << "No codec settings supplied.";
   initialized_ = true;
 
   // Setup required callbacks for the encoder and decoder.
@@ -164,12 +159,12 @@ void VideoProcessor::Init() {
   uint32_t num_cores =
       config_.use_single_core ? 1 : CpuInfo::DetectNumberOfCores();
   RTC_CHECK_EQ(
-      encoder_->InitEncode(config_.codec_settings, num_cores,
+      encoder_->InitEncode(&config_.codec_settings, num_cores,
                            config_.networking_config.max_payload_size_in_bytes),
       WEBRTC_VIDEO_CODEC_OK)
       << "Failed to initialize VideoEncoder";
 
-  RTC_CHECK_EQ(decoder_->InitDecode(config_.codec_settings, num_cores),
+  RTC_CHECK_EQ(decoder_->InitDecode(&config_.codec_settings, num_cores),
                WEBRTC_VIDEO_CODEC_OK)
       << "Failed to initialize VideoDecoder";
 
@@ -185,7 +180,7 @@ void VideoProcessor::Init() {
     printf(" Decoder implementation name: %s\n", decoder_name);
     if (strcmp(encoder_name, decoder_name) == 0) {
       printf(" Codec implementation name  : %s_%s\n",
-             CodecTypeToPayloadName(config_.codec_settings->codecType)
+             CodecTypeToPayloadName(config_.codec_settings.codecType)
                  .value_or("Unknown"),
              encoder_->ImplementationName());
     }
@@ -242,7 +237,7 @@ bool VideoProcessor::ProcessFrame(int frame_number) {
 }
 
 void VideoProcessor::SetRates(int bit_rate, int frame_rate) {
-  config_.codec_settings->maxFramerate = frame_rate;
+  config_.codec_settings.maxFramerate = frame_rate;
   int set_rates_result = encoder_->SetRateAllocation(
       bitrate_allocator_->GetAllocation(bit_rate * 1000, frame_rate),
       frame_rate);
@@ -348,7 +343,7 @@ void VideoProcessor::FrameEncoded(
   frame_stat->frame_type = encoded_image._frameType;
   frame_stat->qp = encoded_image.qp_;
   frame_stat->bit_rate_in_kbps = static_cast<int>(
-      encoded_image._length * config_.codec_settings->maxFramerate * 8 / 1000);
+      encoded_image._length * config_.codec_settings.maxFramerate * 8 / 1000);
   frame_stat->total_packets =
       encoded_image._length / config_.networking_config.packet_size_in_bytes +
       1;
@@ -453,10 +448,10 @@ void VideoProcessor::FrameDecoded(const VideoFrame& image) {
   // calculations.
   size_t extracted_length;
   rtc::Buffer extracted_buffer;
-  if (image.width() != config_.codec_settings->width ||
-      image.height() != config_.codec_settings->height) {
+  if (image.width() != config_.codec_settings.width ||
+      image.height() != config_.codec_settings.height) {
     rtc::scoped_refptr<I420Buffer> scaled_buffer(I420Buffer::Create(
-        config_.codec_settings->width, config_.codec_settings->height));
+        config_.codec_settings.width, config_.codec_settings.height));
     // Should be the same aspect ratio, no cropping needed.
     scaled_buffer->ScaleFrom(*image.video_frame_buffer()->ToI420());
 
@@ -487,14 +482,14 @@ void VideoProcessor::FrameDecoded(const VideoFrame& image) {
 uint32_t VideoProcessor::FrameNumberToTimestamp(int frame_number) {
   RTC_DCHECK_GE(frame_number, 0);
   const int ticks_per_frame =
-      kRtpClockRateHz / config_.codec_settings->maxFramerate;
+      kRtpClockRateHz / config_.codec_settings.maxFramerate;
   return (frame_number + 1) * ticks_per_frame;
 }
 
 int VideoProcessor::TimestampToFrameNumber(uint32_t timestamp) {
   RTC_DCHECK_GT(timestamp, 0);
   const int ticks_per_frame =
-      kRtpClockRateHz / config_.codec_settings->maxFramerate;
+      kRtpClockRateHz / config_.codec_settings.maxFramerate;
   RTC_DCHECK_EQ(timestamp % ticks_per_frame, 0);
   return (timestamp / ticks_per_frame) - 1;
 }

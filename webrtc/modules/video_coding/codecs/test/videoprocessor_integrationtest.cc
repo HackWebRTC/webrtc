@@ -49,8 +49,8 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecH264, 1, false, false,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecH264, 1, false, false, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(35.0, 25.0, 0.93, 0.70);
   // Thresholds for rate control.
@@ -78,8 +78,8 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP9, 1, false, false,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(37.0, 36.0, 0.93, 0.92);
   // Thresholds for rate control.
@@ -100,8 +100,8 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.05f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP9, 1, false, false,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(17.0, 14.0, 0.45, 0.36);
   // Thresholds for rate control.
@@ -126,8 +126,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP9, 1, false, false,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(35.5, 30.0, 0.90, 0.85);
   // Thresholds for rate control.
@@ -159,8 +159,8 @@ TEST_F(VideoProcessorIntegrationTest,
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP9, 1, false, false,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(31.5, 18.0, 0.80, 0.43);
   // Thresholds for rate control.
@@ -182,8 +182,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP9, 1, false, true,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, true, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(36.8, 35.8, 0.92, 0.91);
   // Thresholds for rate control.
@@ -207,8 +207,8 @@ TEST_F(VideoProcessorIntegrationTest,
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP9, 1, false, false,
-                   true, true, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, true,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(24.0, 13.0, 0.65, 0.37);
   // Thresholds for rate control.
@@ -235,8 +235,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP8, 1, false, true,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(34.95, 33.0, 0.90, 0.89);
   // Thresholds for rate control.
@@ -257,8 +257,8 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.05f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP8, 1, false, true,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(20.0, 16.0, 0.60, 0.40);
   // Thresholds for rate control.
@@ -279,8 +279,8 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.1f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP8, 1, false, true,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(19.0, 16.0, 0.50, 0.35);
   // Thresholds for rate control.
@@ -303,8 +303,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessInBatchMode) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, true /* batch_mode */);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP8, 1, false, true,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(34.95, 33.0, 0.90, 0.89);
   // Thresholds for rate control.
@@ -347,8 +347,8 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP8, 1, false, true,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(34.0, 32.0, 0.85, 0.80);
   // Thresholds for rate control.
@@ -388,8 +388,8 @@ TEST_F(VideoProcessorIntegrationTest,
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP8, 1, false, true,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(31.0, 22.0, 0.80, 0.65);
   // Thresholds for rate control.
@@ -424,8 +424,8 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossTemporalLayersVP8) {
   // Codec/network settings.
   SetProcessParams(&config_, kHwCodec, kUseSingleCore, 0.0f, -1, kForemanCif,
                    kVerboseLogging, kBatchMode);
-  SetCodecSettings(&config_, &codec_settings_, kVideoCodecVP8, 3, false, true,
-                   true, false, kResilienceOn, kCifWidth, kCifHeight);
+  SetCodecSettings(&config_, kVideoCodecVP8, 3, false, true, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
   // Thresholds for expected quality.
   QualityThresholds quality_thresholds(32.5, 30.0, 0.85, 0.80);
   // Thresholds for rate control.

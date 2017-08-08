@@ -45,12 +45,10 @@ class VideoProcessorTest : public testing::Test {
  protected:
   VideoProcessorTest() {
     // Get a codec configuration struct and configure it.
-    VideoCodingModule::Codec(kVideoCodecVP8, &codec_settings_);
-    config_.codec_settings = &codec_settings_;
-    config_.codec_settings->startBitrate = 100;
-    config_.codec_settings->width = kWidth;
-    config_.codec_settings->height = kHeight;
-    config_.codec_settings->maxFramerate = kFramerate;
+    VideoCodingModule::Codec(kVideoCodecVP8, &config_.codec_settings);
+    config_.codec_settings.width = kWidth;
+    config_.codec_settings.height = kHeight;
+    config_.codec_settings.maxFramerate = kFramerate;
 
     EXPECT_CALL(frame_reader_mock_, NumberOfFrames())
         .WillRepeatedly(Return(kNumFrames));
@@ -71,13 +69,13 @@ class VideoProcessorTest : public testing::Test {
         .Times(AtLeast(1));
   }
 
+  TestConfig config_;
+
   MockVideoEncoder encoder_mock_;
   MockVideoDecoder decoder_mock_;
   MockFrameReader frame_reader_mock_;
   MockFrameWriter frame_writer_mock_;
   MockPacketManipulator packet_manipulator_mock_;
-  VideoCodec codec_settings_;
-  TestConfig config_;
   Stats stats_;
   std::unique_ptr<VideoProcessor> video_processor_;
 };

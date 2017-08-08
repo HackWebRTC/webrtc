@@ -101,9 +101,9 @@ struct TestConfig {
   int keyframe_interval = 0;
 
   // The codec settings to use for the test (target bitrate, video size,
-  // framerate and so on). This struct must be created and filled in using
-  // the VideoCodingModule::Codec() method.
-  webrtc::VideoCodec* codec_settings = nullptr;
+  // framerate and so on). This struct should be filled in using the
+  // VideoCodingModule::Codec() method.
+  webrtc::VideoCodec codec_settings;
 
   // If printing of information to stdout shall be performed during processing.
   bool verbose = true;
@@ -270,6 +270,8 @@ class VideoProcessor {
   uint32_t FrameNumberToTimestamp(int frame_number);
   int TimestampToFrameNumber(uint32_t timestamp);
 
+  TestConfig config_;
+
   webrtc::VideoEncoder* const encoder_;
   webrtc::VideoDecoder* const decoder_;
   const std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
@@ -278,8 +280,8 @@ class VideoProcessor {
   const std::unique_ptr<EncodedImageCallback> encode_callback_;
   const std::unique_ptr<DecodedImageCallback> decode_callback_;
 
+  // Fake network.
   PacketManipulator* const packet_manipulator_;
-  const TestConfig& config_;
 
   // These (mandatory) file manipulators are used for, e.g., objective PSNR and
   // SSIM calculations at the end of a test run.
