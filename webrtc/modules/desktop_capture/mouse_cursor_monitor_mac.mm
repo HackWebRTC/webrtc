@@ -256,6 +256,9 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
   NSCursor* nscursor = [NSCursor currentSystemCursor];
 
   NSImage* nsimage = [nscursor image];
+  if (nsimage == nil || !nsimage.isValid) {
+    return;
+  }
   NSSize nssize = [nsimage size];  // DIP size
 
   // No need to caputre cursor image if it's unchanged since last capture.
