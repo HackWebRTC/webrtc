@@ -23,17 +23,20 @@ namespace {
 // Used to pass input/output data during the EnumWindow call for verifying if
 // the selected window is on top.
 struct TopWindowVerifierContext {
-  TopWindowVerifierContext(HWND selected_window, HWND excluded_window)
+  TopWindowVerifierContext(HWND selected_window,
+                           HWND excluded_window,
+                           DesktopRect selected_window_rect)
       : selected_window(selected_window),
         excluded_window(excluded_window),
-        is_top_window(false),
-        selected_window_process_id(0) {}
+        selected_window_rect(selected_window_rect),
+        is_top_window(false) {
+    RTC_DCHECK_NE(selected_window, excluded_window);
+  }
 
-  HWND selected_window;
-  HWND excluded_window;
+  const HWND selected_window;
+  const HWND excluded_window;
+  const DesktopRect selected_window_rect;
   bool is_top_window;
-  DWORD selected_window_process_id;
-  DesktopRect selected_window_rect;
 };
 
 // The function is called during EnumWindow for every window enumerated and is
@@ -70,13 +73,12 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
   WCHAR window_title[kTitleLength];
   GetWindowText(hwnd, window_title, kTitleLength);
   if (wcsnlen_s(window_title, kTitleLength) == 0) {
-    DWORD enumerated_process;
-    GetWindowThreadProcessId(hwnd, &enumerated_process);
-    if (!context->selected_window_process_id) {
-      GetWindowThreadProcessId(context->selected_window,
-                               &context->selected_window_process_id);
-    }
-    if (context->selected_window_process_id == enumerated_process) {
+    DWORD enumerated_window_process_id;
+    DWORD selected_window_process_id;
+    GetWindowThreadProcessId(hwnd, &enumerated_window_process_id);
+    GetWindowThreadProcessId(context->selected_window,
+                             &selected_window_process_id);
+    if (selected_window_process_id == enumerated_window_process_id) {
       return TRUE;
     }
   }
@@ -127,8 +129,13 @@ bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
   if (!rtc::IsWindows8OrLater() && aero_checker_.IsAeroEnabled())
     return false;
 
-  // Check if the window is a translucent layered window.
   HWND selected = reinterpret_cast<HWND>(selected_window());
+  // Check if the window is hidden or minimized.
+  if (IsIconic(selected) || !IsWindowVisible(selected)) {
+    return false;
+  }
+
+  // Check if the window is a translucent layered window.
   LONG window_ex_style = GetWindowLong(selected, GWL_EXSTYLE);
   if (window_ex_style & WS_EX_LAYERED) {
     COLORREF color_ref_key = 0;
@@ -148,18 +155,13 @@ bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
       return false;
   }
 
-  TopWindowVerifierContext context(
-      selected, reinterpret_cast<HWND>(excluded_window()));
-
   RECT selected_window_rect;
   if (!GetWindowRect(selected, &selected_window_rect)) {
     return false;
   }
-  context.selected_window_rect = DesktopRect::MakeLTRB(
-      selected_window_rect.left,
-      selected_window_rect.top,
-      selected_window_rect.right,
-      selected_window_rect.bottom);
+  window_region_rect_ = DesktopRect::MakeLTRB(
+      selected_window_rect.left, selected_window_rect.top,
+      selected_window_rect.right, selected_window_rect.bottom);
 
   // Get the window region and check if it is rectangular.
   win::ScopedGDIObject<HRGN, win::DeleteObjectTraits<HRGN> >
@@ -178,17 +180,17 @@ bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
                               region_rect.top,
                               region_rect.right,
                               region_rect.bottom);
-    rgn_rect.Translate(context.selected_window_rect.left(),
-                       context.selected_window_rect.top());
-    context.selected_window_rect.IntersectWith(rgn_rect);
+    rgn_rect.Translate(window_region_rect_.left(), window_region_rect_.top());
+    window_region_rect_.IntersectWith(rgn_rect);
   }
-  window_region_rect_ = context.selected_window_rect;
 
   // Check if the window is occluded by any other window, excluding the child
   // windows, context menus, and |excluded_window_|.
   // TODO(zijiehe): EnumWindows enumerates root window only, so the window may
   // be covered by its own child window. See bug
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=8062
+  TopWindowVerifierContext context(
+      selected, reinterpret_cast<HWND>(excluded_window()), window_region_rect_);
   EnumWindows(&TopWindowVerifier, reinterpret_cast<LPARAM>(&context));
   return context.is_top_window;
 }
