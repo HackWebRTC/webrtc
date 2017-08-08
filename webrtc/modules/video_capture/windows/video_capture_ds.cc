@@ -13,7 +13,7 @@
 #include "webrtc/modules/video_capture/video_capture_config.h"
 #include "webrtc/modules/video_capture/windows/help_functions_ds.h"
 #include "webrtc/modules/video_capture/windows/sink_filter_ds.h"
-#include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/rtc_base/logging.h"
 
 #include <Dvdmedia.h> // VIDEOINFOHEADER2
 
@@ -76,8 +76,7 @@ int32_t VideoCaptureDS::Init(const char* deviceUniqueIdUTF8)
     _captureFilter = _dsInfo.GetDeviceFilter(deviceUniqueIdUTF8);
     if (!_captureFilter)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to create capture filter.");
+        LOG(LS_INFO) << "Failed to create capture filter.";
         return -1;
     }
 
@@ -87,8 +86,7 @@ int32_t VideoCaptureDS::Init(const char* deviceUniqueIdUTF8)
                                   (void **) &_graphBuilder);
     if (FAILED(hr))
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to create graph builder.");
+        LOG(LS_INFO) << "Failed to create graph builder.";
         return -1;
     }
 
@@ -96,15 +94,13 @@ int32_t VideoCaptureDS::Init(const char* deviceUniqueIdUTF8)
                                        (void **) &_mediaControl);
     if (FAILED(hr))
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to create media control builder.");
+        LOG(LS_INFO) << "Failed to create media control builder.";
         return -1;
     }
     hr = _graphBuilder->AddFilter(_captureFilter, CAPTURE_FILTER_NAME);
     if (FAILED(hr))
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to add the capture device to the graph.");
+        LOG(LS_INFO) << "Failed to add the capture device to the graph.";
         return -1;
     }
 
@@ -115,8 +111,7 @@ int32_t VideoCaptureDS::Init(const char* deviceUniqueIdUTF8)
                                         *this);
     if (hr != S_OK)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to create send filter");
+        LOG(LS_INFO) << "Failed to create send filter";
         return -1;
     }
     _sinkFilter->AddRef();
@@ -124,8 +119,7 @@ int32_t VideoCaptureDS::Init(const char* deviceUniqueIdUTF8)
     hr = _graphBuilder->AddFilter(_sinkFilter, SINK_FILTER_NAME);
     if (FAILED(hr))
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to add the send filter to the graph.");
+        LOG(LS_INFO) << "Failed to add the send filter to the graph.";
         return -1;
     }
     _inputSendPin = GetInputPin(_sinkFilter);
@@ -139,13 +133,13 @@ int32_t VideoCaptureDS::Init(const char* deviceUniqueIdUTF8)
     hr = _mediaControl->Pause();
     if (FAILED(hr))
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to Pause the Capture device. Is it already occupied? %d.",
-                     hr);
+        LOG(LS_INFO)
+            << "Failed to Pause the Capture device. Is it already occupied? "
+            << hr;
         return -1;
     }
-    WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideoCapture, 0,
-                 "Capture device '%s' initialized.", deviceUniqueIdUTF8);
+    LOG(LS_INFO) << "Capture device '" << deviceUniqueIdUTF8
+                 << "' initialized.";
     return 0;
 }
 
@@ -166,8 +160,7 @@ int32_t VideoCaptureDS::StartCapture(
     HRESULT hr = _mediaControl->Run();
     if (FAILED(hr))
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to start the Capture device.");
+        LOG(LS_INFO) << "Failed to start the Capture device.";
         return -1;
     }
     return 0;
@@ -180,8 +173,7 @@ int32_t VideoCaptureDS::StopCapture()
     HRESULT hr = _mediaControl->Pause();
     if (FAILED(hr))
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to stop the capture graph. %d", hr);
+        LOG(LS_INFO) << "Failed to stop the capture graph. " << hr;
         return -1;
     }
     return 0;
@@ -192,11 +184,9 @@ bool VideoCaptureDS::CaptureStarted()
     HRESULT hr = _mediaControl->GetState(1000, &state);
     if (hr != S_OK && hr != VFW_S_CANT_CUE)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to get the CaptureStarted status");
+        LOG(LS_INFO) << "Failed to get the CaptureStarted status";
     }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,
-                 "CaptureStarted %d", state);
+    LOG(LS_INFO) << "CaptureStarted " << state;
     return state == State_Running;
 
 }
@@ -249,8 +239,7 @@ int32_t VideoCaptureDS::SetCameraOutput(
                                                    (void**) &streamConfig);
     if (hr)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Can't get the Capture format settings.");
+        LOG(LS_INFO) << "Can't get the Capture format settings.";
         return -1;
     }
 
@@ -300,8 +289,7 @@ int32_t VideoCaptureDS::SetCameraOutput(
 
     if (FAILED(hr))
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to set capture device output format");
+        LOG(LS_INFO) << "Failed to set capture device output format";
         return -1;
     }
 
@@ -316,8 +304,7 @@ int32_t VideoCaptureDS::SetCameraOutput(
     }
     if (hr != S_OK)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to connect the Capture graph %d", hr);
+        LOG(LS_INFO) << "Failed to connect the Capture graph " << hr;
         return -1;
     }
     return 0;
@@ -337,9 +324,9 @@ int32_t VideoCaptureDS::DisconnectGraph()
     }
     if (hr != S_OK)
     {
-        WEBRTC_TRACE( webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to Stop the Capture device for reconfiguration %d",
-                     hr);
+        LOG(LS_ERROR)
+            << "Failed to Stop the Capture device for reconfiguration "
+            << hr;
         return -1;
     }
     return 0;
@@ -354,38 +341,33 @@ HRESULT VideoCaptureDS::ConnectDVCamera()
                               IID_IBaseFilter, (void **) &_dvFilter);
         if (hr != S_OK)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                         "Failed to create the dv decoder: %x", hr);
+            LOG(LS_INFO) << "Failed to create the dv decoder: " << hr;
             return hr;
         }
         hr = _graphBuilder->AddFilter(_dvFilter, L"VideoDecoderDV");
         if (hr != S_OK)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                         "Failed to add the dv decoder to the graph: %x", hr);
+            LOG(LS_INFO) << "Failed to add the dv decoder to the graph: " << hr;
             return hr;
         }
         _inputDvPin = GetInputPin(_dvFilter);
         if (_inputDvPin == NULL)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                         "Failed to get input pin from DV decoder");
+            LOG(LS_INFO) << "Failed to get input pin from DV decoder";
             return -1;
         }
         _outputDvPin = GetOutputPin(_dvFilter, GUID_NULL);
         if (_outputDvPin == NULL)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                         "Failed to get output pin from DV decoder");
+            LOG(LS_INFO) << "Failed to get output pin from DV decoder";
             return -1;
         }
     }
     hr = _graphBuilder->ConnectDirect(_outputCapturePin, _inputDvPin, NULL);
     if (hr != S_OK)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                     "Failed to connect capture device to the dv devoder: %x",
-                     hr);
+        LOG(LS_INFO) << "Failed to connect capture device to the dv devoder: "
+                     << hr;
         return hr;
     }
 
@@ -394,14 +376,13 @@ HRESULT VideoCaptureDS::ConnectDVCamera()
     {
         if (hr == HRESULT_FROM_WIN32(ERROR_TOO_MANY_OPEN_FILES))
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                         "Failed to connect the capture device, busy");
+            LOG(LS_INFO) << "Failed to connect the capture device, busy";
         }
         else
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-                         "Failed to connect capture device to the send graph: 0x%x",
-                         hr);
+            LOG(LS_INFO)
+                << "Failed to connect capture device to the send graph: "
+                << hr;
         }
         return hr;
     }

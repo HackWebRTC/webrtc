@@ -20,7 +20,7 @@
 #import "webrtc/modules/video_capture/objc/device_info_objc.h"
 #import "webrtc/modules/video_capture/objc/rtc_video_capture_objc.h"
 
-#include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/rtc_base/logging.h"
 
 using namespace webrtc;
 using namespace webrtc::videocapturemodule;
@@ -70,9 +70,8 @@ using namespace webrtc::videocapturemodule;
     if ([_captureSession canAddOutput:captureOutput]) {
       [_captureSession addOutput:captureOutput];
     } else {
-      WEBRTC_TRACE(kTraceError, kTraceVideoCapture, 0,
-                   "%s:%s:%d Could not add output to AVCaptureSession ",
-                   __FILE__, __FUNCTION__, __LINE__);
+      LOG(LS_ERROR) << __FUNCTION__
+                    << ": Could not add output to AVCaptureSession";
     }
 
 #ifdef WEBRTC_IOS
@@ -243,9 +242,7 @@ using namespace webrtc::videocapturemodule;
 - (void)onVideoError:(NSNotification*)notification {
   NSLog(@"onVideoError: %@", notification);
   // TODO(sjlee): make the specific error handling with this notification.
-  WEBRTC_TRACE(kTraceError, kTraceVideoCapture, 0,
-               "%s:%s:%d [AVCaptureSession startRunning] error.", __FILE__,
-               __FUNCTION__, __LINE__);
+  LOG(LS_ERROR) << __FUNCTION__ << ": [AVCaptureSession startRunning] error.";
 }
 
 - (BOOL)stopCapture {
@@ -307,9 +304,8 @@ using namespace webrtc::videocapturemodule;
   if (!newCaptureInput) {
     const char* errorMessage = [[deviceError localizedDescription] UTF8String];
 
-    WEBRTC_TRACE(kTraceError, kTraceVideoCapture, 0,
-                 "%s:%s:%d deviceInputWithDevice error:%s", __FILE__,
-                 __FUNCTION__, __LINE__, errorMessage);
+    LOG(LS_ERROR) << __FUNCTION__ << ": deviceInputWithDevice error:"
+                  << errorMessage;
 
     return NO;
   }

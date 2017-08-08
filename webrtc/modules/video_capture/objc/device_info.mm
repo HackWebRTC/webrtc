@@ -19,7 +19,7 @@
 #include "webrtc/modules/video_capture/objc/device_info.h"
 #include "webrtc/modules/video_capture/objc/device_info_objc.h"
 #include "webrtc/modules/video_capture/video_capture_impl.h"
-#include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/rtc_base/logging.h"
 
 using namespace webrtc;
 using namespace videocapturemodule;
@@ -30,8 +30,7 @@ static NSArray* camera_presets = @[
 ];
 
 #define IOS_UNSUPPORTED()                                                 \
-  WEBRTC_TRACE(kTraceError, kTraceVideoCapture, 0,                      \
-               "%s is not supported on the iOS platform.", __FUNCTION__); \
+  LOG(LS_ERROR) << __FUNCTION__ << " is not supported on the iOS platform."; \
   return -1;
 
 VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo() {
