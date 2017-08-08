@@ -213,15 +213,6 @@ class RtpFrameReferenceFinder {
   int cleared_to_seq_num_ GUARDED_BY(crit_);
 
   OnCompleteFrameCallback* frame_callback_;
-
-  // Vp9PidFix variables
-  // TODO(philipel): Remove when VP9 PID does not jump mid-stream.
-  int vp9_fix_last_timestamp_ = -1;
-  int vp9_fix_jump_timestamp_ = -1;
-  int vp9_fix_last_picture_id_ = -1;
-  int vp9_fix_pid_offset_ = 0;
-  int vp9_fix_last_tl0_pic_idx_ = -1;
-  int vp9_fix_tl0_pic_idx_offset_ = 0;
 };
 
 }  // namespace video_coding
