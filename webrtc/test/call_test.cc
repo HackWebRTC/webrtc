@@ -146,38 +146,6 @@ void CallTest::RunBaseTest(BaseTest* test) {
   test->OnTestFinished();
 }
 
-void CallTest::Start() {
-  if (video_send_stream_)
-    video_send_stream_->Start();
-  for (VideoReceiveStream* video_recv_stream : video_receive_streams_)
-    video_recv_stream->Start();
-  if (audio_send_stream_) {
-    audio_send_stream_->Start();
-  }
-  for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
-    audio_recv_stream->Start();
-  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_)
-    flexfec_recv_stream->Start();
-  if (frame_generator_capturer_.get() != NULL)
-    frame_generator_capturer_->Start();
-}
-
-void CallTest::Stop() {
-  if (frame_generator_capturer_.get() != NULL)
-    frame_generator_capturer_->Stop();
-  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_)
-    flexfec_recv_stream->Stop();
-  for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
-    audio_recv_stream->Stop();
-  if (audio_send_stream_) {
-    audio_send_stream_->Stop();
-  }
-  for (VideoReceiveStream* video_recv_stream : video_receive_streams_)
-    video_recv_stream->Stop();
-  if (video_send_stream_)
-    video_send_stream_->Stop();
-}
-
 void CallTest::CreateCalls(const Call::Config& sender_config,
                            const Call::Config& receiver_config) {
   CreateSenderCall(sender_config);
@@ -340,10 +308,6 @@ void CallTest::CreateVideoStreams() {
   AssociateFlexfecStreamsWithVideoStreams();
 }
 
-void CallTest::SetFakeVideoCaptureRotation(VideoRotation rotation) {
-  frame_generator_capturer_->SetFakeRotation(rotation);
-}
-
 void CallTest::CreateAudioStreams() {
   audio_send_stream_ = sender_call_->CreateAudioSendStream(audio_send_config_);
   for (size_t i = 0; i < audio_receive_configs_.size(); ++i) {
@@ -379,6 +343,38 @@ void CallTest::DissociateFlexfecStreamsFromVideoStreams() {
   }
 }
 
+void CallTest::Start() {
+  if (video_send_stream_)
+    video_send_stream_->Start();
+  for (VideoReceiveStream* video_recv_stream : video_receive_streams_)
+    video_recv_stream->Start();
+  if (audio_send_stream_) {
+    audio_send_stream_->Start();
+  }
+  for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
+    audio_recv_stream->Start();
+  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_)
+    flexfec_recv_stream->Start();
+  if (frame_generator_capturer_.get() != NULL)
+    frame_generator_capturer_->Start();
+}
+
+void CallTest::Stop() {
+  if (frame_generator_capturer_.get() != NULL)
+    frame_generator_capturer_->Stop();
+  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_)
+    flexfec_recv_stream->Stop();
+  for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
+    audio_recv_stream->Stop();
+  if (audio_send_stream_) {
+    audio_send_stream_->Stop();
+  }
+  for (VideoReceiveStream* video_recv_stream : video_receive_streams_)
+    video_recv_stream->Stop();
+  if (video_send_stream_)
+    video_send_stream_->Stop();
+}
+
 void CallTest::DestroyStreams() {
   DissociateFlexfecStreamsFromVideoStreams();
 
@@ -400,6 +396,10 @@ void CallTest::DestroyStreams() {
 
   video_receive_streams_.clear();
   allocated_decoders_.clear();
+}
+
+void CallTest::SetFakeVideoCaptureRotation(VideoRotation rotation) {
+  frame_generator_capturer_->SetFakeRotation(rotation);
 }
 
 void CallTest::CreateVoiceEngines() {
