@@ -49,7 +49,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public NackSender,
                            public KeyFrameRequestSender,
                            public video_coding::OnCompleteFrameCallback,
-                           public Syncable {
+                           public Syncable,
+                           public CallStatsObserver {
  public:
   VideoReceiveStream(RtpStreamReceiverControllerInterface* receiver_controller,
                      int num_cpu_cores,
@@ -103,6 +104,9 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // Implements video_coding::OnCompleteFrameCallback.
   void OnCompleteFrame(
       std::unique_ptr<video_coding::FrameObject> frame) override;
+
+  // Implements CallStatsObserver::OnRttUpdate
+  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
   // Implements Syncable.
   int id() const override;
