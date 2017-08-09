@@ -408,7 +408,6 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
   @try {
     _currentDevice.activeFormat = format;
     _currentDevice.activeVideoMinFrameDuration = CMTimeMake(1, fps);
-    _currentDevice.activeVideoMaxFrameDuration = CMTimeMake(1, fps);
   } @catch (NSException *exception) {
     RTCLogError(@"Failed to set active format!\n User info:%@", exception.userInfo);
     return;
