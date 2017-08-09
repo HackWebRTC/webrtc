@@ -530,6 +530,20 @@ hooks = [
                'src/resources'],
   },
 ]
+hooks_os = {
+  'android': [
+    {
+      'name': 'desugar',
+      'pattern': '.',
+      'action': ['python',
+                 'src/build/android/update_deps/update_third_party_deps.py',
+                 'download',
+                 '-b', 'chromium-android-tools/bazel/desugar',
+                 '-l', 'third_party/bazel/desugar'
+      ],
+    },
+  ],
+}
 recursedeps = [
   # buildtools provides clang_format, libc++, and libc++abi.
   'src/buildtools',
