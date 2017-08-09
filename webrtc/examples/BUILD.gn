@@ -612,7 +612,7 @@ if (is_linux || is_win) {
   }
 }
 
-if (is_win) {
+if (is_win || is_android) {
   rtc_shared_library("webrtc_unity_plugin") {
     testonly = true
     sources = [
@@ -623,15 +623,26 @@ if (is_win) {
       "unityplugin/video_observer.cc",
       "unityplugin/video_observer.h",
     ]
+
+    if (is_android) {
+      sources += [
+        "unityplugin/classreferenceholder.cc",
+        "unityplugin/classreferenceholder.h",
+        "unityplugin/jni_onload.cc",
+      ]
+    }
+
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
-    cflags = [ "/wd4245" ]
-    configs += [
-      "//build/config/win:windowed",
-      ":peerconnection_client_warnings_config",
-    ]
+    if (is_win) {
+      cflags = [ "/wd4245" ]
+      configs += [
+        "//build/config/win:windowed",
+        ":peerconnection_client_warnings_config",
+      ]
+    }
     deps = [
       "../api:libjingle_peerconnection_test_api",
       "../api:video_frame_api",
@@ -639,8 +650,36 @@ if (is_win) {
       "../media:rtc_media_base",
       "../modules/video_capture:video_capture_module",
       "../pc:libjingle_peerconnection",
+      "../rtc_base:rtc_base",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
+    ]
+    if (is_android) {
+      deps += [ "../sdk/android:libjingle_peerconnection_jni" ]
+    }
+  }
+}
+
+if (is_android) {
+  android_library("webrtc_unity_java") {
+    java_files = [ "unityplugin/java/src/org/webrtc/UnityUtility.java" ]
+    deps = [
+      "../rtc_base:base_java",
+      "../sdk/android:libjingle_peerconnection_java",
+    ]
+  }
+
+  dist_jar("libwebrtc_unity") {
+    _target_dir_name = get_label_info(":$target_name", "dir")
+    output = "${root_out_dir}/lib.java${_target_dir_name}/${target_name}.jar"
+    direct_deps_only = true
+    use_interface_jars = false
+    deps = [
+      ":webrtc_unity_java",
+      "../modules/audio_device:audio_device_java",
+      "../rtc_base:base_java",
+      "../sdk/android:libjingle_peerconnection_java",
+      "../sdk/android:libjingle_peerconnection_metrics_default_java",
     ]
   }
 }

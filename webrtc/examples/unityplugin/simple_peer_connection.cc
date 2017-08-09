@@ -13,8 +13,15 @@
 #include <utility>
 
 #include "webrtc/api/test/fakeconstraints.h"
+#include "webrtc/api/videosourceproxy.h"
 #include "webrtc/media/engine/webrtcvideocapturerfactory.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
+
+#if defined(WEBRTC_ANDROID)
+#include "webrtc/examples/unityplugin/classreferenceholder.h"
+#include "webrtc/sdk/android/src/jni/androidvideotracksource.h"
+#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#endif
 
 // Names used for media stream labels.
 const char kAudioLabel[] = "audio_label";
@@ -27,6 +34,12 @@ static std::unique_ptr<rtc::Thread> g_worker_thread;
 static std::unique_ptr<rtc::Thread> g_signaling_thread;
 static rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
     g_peer_connection_factory;
+#if defined(WEBRTC_ANDROID)
+// Android case: the video track does not own the capturer, and it
+// relies on the app to dispose the capturer when the peerconnection
+// shuts down.
+static jobject g_camera = nullptr;
+#endif
 
 std::string GetEnvVarOrDefault(const char* env_var_name,
                                const char* default_value) {
@@ -148,6 +161,21 @@ bool SimplePeerConnection::CreatePeerConnection(const char** turn_urls,
 
 void SimplePeerConnection::DeletePeerConnection() {
   g_peer_count--;
+
+#if defined(WEBRTC_ANDROID)
+  if (g_camera) {
+    JNIEnv* env = webrtc_jni::GetEnv();
+    jclass pc_factory_class =
+        unity_plugin::FindClass(env, "org/webrtc/UnityUtility");
+    jmethodID stop_camera_method = webrtc_jni::GetStaticMethodID(
+        env, pc_factory_class, "StopCamera", "(Lorg/webrtc/VideoCapturer;)V");
+
+    env->CallStaticVoidMethod(pc_factory_class, stop_camera_method, g_camera);
+    CHECK_EXCEPTION(env);
+
+    g_camera = nullptr;
+  }
+#endif
 
   CloseDataChannel();
   peer_connection_ = nullptr;
@@ -380,6 +408,41 @@ void SimplePeerConnection::AddStreams(bool audio_only) {
   stream->AddTrack(audio_track);
 
   if (!audio_only) {
+#if defined(WEBRTC_ANDROID)
+    JNIEnv* env = webrtc_jni::GetEnv();
+    jclass pc_factory_class =
+        unity_plugin::FindClass(env, "org/webrtc/UnityUtility");
+    jmethodID load_texture_helper_method = webrtc_jni::GetStaticMethodID(
+        env, pc_factory_class, "LoadSurfaceTextureHelper",
+        "()Lorg/webrtc/SurfaceTextureHelper;");
+    jobject texture_helper = env->CallStaticObjectMethod(
+        pc_factory_class, load_texture_helper_method);
+    CHECK_EXCEPTION(env);
+    RTC_DCHECK(texture_helper != nullptr)
+        << "Cannot get the Surface Texture Helper.";
+
+    rtc::scoped_refptr<webrtc::AndroidVideoTrackSource> source(
+        new rtc::RefCountedObject<webrtc::AndroidVideoTrackSource>(
+            g_signaling_thread.get(), env, texture_helper, false));
+    rtc::scoped_refptr<webrtc::VideoTrackSourceProxy> proxy_source =
+        webrtc::VideoTrackSourceProxy::Create(g_signaling_thread.get(),
+                                              g_worker_thread.get(), source);
+
+    // link with VideoCapturer (Camera);
+    jmethodID link_camera_method = webrtc_jni::GetStaticMethodID(
+        env, pc_factory_class, "LinkCamera",
+        "(JLorg/webrtc/SurfaceTextureHelper;)Lorg/webrtc/VideoCapturer;");
+    jobject camera_tmp =
+        env->CallStaticObjectMethod(pc_factory_class, link_camera_method,
+                                    (jlong)proxy_source.get(), texture_helper);
+    CHECK_EXCEPTION(env);
+    g_camera = (jobject)env->NewGlobalRef(camera_tmp);
+
+    rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
+        g_peer_connection_factory->CreateVideoTrack(kVideoLabel,
+                                                    proxy_source.release()));
+    stream->AddTrack(video_track);
+#else
     std::unique_ptr<cricket::VideoCapturer> capture = OpenVideoCaptureDevice();
     if (capture) {
       rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
@@ -388,10 +451,11 @@ void SimplePeerConnection::AddStreams(bool audio_only) {
                                std::move(capture), nullptr)));
 
       stream->AddTrack(video_track);
-      if (local_video_observer_ && !stream->GetVideoTracks().empty()) {
-        stream->GetVideoTracks()[0]->AddOrUpdateSink(
-            local_video_observer_.get(), rtc::VideoSinkWants());
-      }
+    }
+#endif
+    if (local_video_observer_ && !stream->GetVideoTracks().empty()) {
+      stream->GetVideoTracks()[0]->AddOrUpdateSink(local_video_observer_.get(),
+                                                   rtc::VideoSinkWants());
     }
   }
 

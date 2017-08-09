@@ -1,6 +1,9 @@
-This directory contains an example Unity native plugin for Windows OS.
+This directory contains an example Unity native plugin for Windows OS and Android.
+
 The APIs use Platform Invoke (P/Invoke) technology as required by Unity native plugin.
 This plugin dll can also be used by Windows C# applications other than Unity.
+
+For detailed build instruction on Android, see ANDROID_INSTRUCTION
 
 An example of wrapping native plugin into a C# managed class in Unity is given as following:
 

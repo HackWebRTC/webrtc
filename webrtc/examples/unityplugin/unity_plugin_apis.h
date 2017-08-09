@@ -37,7 +37,11 @@ typedef void (*AUDIOBUSREADY_CALLBACK)(const void* audio_data,
                                        int number_of_channels,
                                        int number_of_frames);
 
+#if defined(WEBRTC_WIN)
 #define WEBRTC_PLUGIN_API __declspec(dllexport)
+#elif defined(WEBRTC_ANDROID)
+#define WEBRTC_PLUGIN_API __attribute__((visibility("default")))
+#endif
 extern "C" {
 // Create a peerconnection and return a unique peer connection id.
 WEBRTC_PLUGIN_API int CreatePeerConnection(const char** turn_urls,
