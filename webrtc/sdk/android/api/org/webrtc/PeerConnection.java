@@ -286,6 +286,43 @@ public class PeerConnection {
     localStreams.remove(stream);
   }
 
+  /**
+   * Creates an RtpSender without a track.
+   * <p>
+   * This method allows an application to cause the PeerConnection to negotiate
+   * sending/receiving a specific media type, but without having a track to
+   * send yet.
+   * <p>
+   * When the application does want to begin sending a track, it can call
+   * RtpSender.setTrack, which doesn't require any additional SDP negotiation.
+   * <p>
+   * Example use:
+   * <pre>
+   * {@code
+   * audioSender = pc.createSender("audio", "stream1");
+   * videoSender = pc.createSender("video", "stream1");
+   * // Do normal SDP offer/answer, which will kick off ICE/DTLS and negotiate
+   * // media parameters....
+   * // Later, when the endpoint is ready to actually begin sending:
+   * audioSender.setTrack(audioTrack, false);
+   * videoSender.setTrack(videoTrack, false);
+   * }
+   * </pre>
+   * Note: This corresponds most closely to "addTransceiver" in the official
+   * WebRTC API, in that it creates a sender without a track. It was
+   * implemented before addTransceiver because it provides useful
+   * functionality, and properly implementing transceivers would have required
+   * a great deal more work.
+   *
+   * @param kind      Corresponds to MediaStreamTrack kinds (must be "audio" or
+   *                  "video").
+   * @param stream_id The ID of the MediaStream that this sender's track will
+   *                  be associated with when SDP is applied to the remote
+   *                  PeerConnection. If createSender is used to create an
+   *                  audio and video sender that should be synchronized, they
+   *                  should use the same stream ID.
+   * @return          A new RtpSender object if successful, or null otherwise.
+   */
   public RtpSender createSender(String kind, String stream_id) {
     RtpSender new_sender = nativeCreateSender(kind, stream_id);
     if (new_sender != null) {
