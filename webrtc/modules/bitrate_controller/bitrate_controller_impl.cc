@@ -191,20 +191,20 @@ void BitrateControllerImpl::OnReceivedRtcpReceiverReport(
     for (const RTCPReportBlock& report_block : report_blocks) {
       std::map<uint32_t, uint32_t>::iterator seq_num_it =
           ssrc_to_last_received_extended_high_seq_num_.find(
-              report_block.sourceSSRC);
+              report_block.source_ssrc);
 
       int number_of_packets = 0;
       if (seq_num_it != ssrc_to_last_received_extended_high_seq_num_.end()) {
         number_of_packets =
-            report_block.extendedHighSeqNum - seq_num_it->second;
+            report_block.extended_highest_sequence_number - seq_num_it->second;
       }
 
-      fraction_lost_aggregate += number_of_packets * report_block.fractionLost;
+      fraction_lost_aggregate += number_of_packets * report_block.fraction_lost;
       total_number_of_packets += number_of_packets;
 
       // Update last received for this SSRC.
-      ssrc_to_last_received_extended_high_seq_num_[report_block.sourceSSRC] =
-          report_block.extendedHighSeqNum;
+      ssrc_to_last_received_extended_high_seq_num_[report_block.source_ssrc] =
+          report_block.extended_highest_sequence_number;
     }
     if (total_number_of_packets < 0) {
       LOG(LS_WARNING) << "Received report block where extended high sequence "

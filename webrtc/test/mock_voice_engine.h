@@ -227,7 +227,7 @@ class MockVoiceEngine : public VoiceEngineImpl {
                    unsigned int& timestamp,
                    unsigned int& playoutTimestamp,
                    unsigned int* jitter,
-                   unsigned short* fractionLost));
+                   unsigned short* fraction_lost));
   MOCK_METHOD4(GetRTPStatistics,
                int(int channel,
                    unsigned int& averageJitterMs,

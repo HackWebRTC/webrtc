@@ -91,12 +91,12 @@ void SendSideBweSender::GiveFeedback(const FeedbackPacket& feedback) {
     if (expected_packets > 0) {
       int lost_packets = expected_packets -
                          static_cast<int>(fb.packet_feedback_vector().size());
-      report_block_.fractionLost = (lost_packets << 8) / expected_packets;
-      report_block_.cumulativeLost += lost_packets;
+      report_block_.fraction_lost = (lost_packets << 8) / expected_packets;
+      report_block_.packets_lost += lost_packets;
       uint32_t unwrapped = seq_num_unwrapper_.Unwrap(
           packet_feedback_vector.back().sequence_number);
-      report_block_.extendedHighSeqNum =
-          std::max(unwrapped, report_block_.extendedHighSeqNum);
+      report_block_.extended_highest_sequence_number =
+          std::max(unwrapped, report_block_.extended_highest_sequence_number);
       ReportBlockList report_blocks;
       report_blocks.push_back(report_block_);
       feedback_observer_->OnReceivedRtcpReceiverReport(

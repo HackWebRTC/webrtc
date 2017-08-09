@@ -138,9 +138,10 @@ RTCPReportBlock RembReceiver::BuildReportBlock(
   RTCPReportBlock report_block;
   RtcpStatistics stats;
   RTC_DCHECK(statistician->GetStatistics(&stats, true));
-  report_block.fractionLost = stats.fraction_lost;
-  report_block.cumulativeLost = stats.packets_lost;
-  report_block.extendedHighSeqNum = stats.extended_highest_sequence_number;
+  report_block.fraction_lost = stats.fraction_lost;
+  report_block.packets_lost = stats.packets_lost;
+  report_block.extended_highest_sequence_number =
+      stats.extended_highest_sequence_number;
   report_block.jitter = stats.jitter;
   return report_block;
 }

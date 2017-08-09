@@ -349,8 +349,8 @@ TEST_F(RtcpReceiverTest, InjectRrPacketWithTwoReportBlocks) {
   std::vector<RTCPReportBlock> received_blocks;
   rtcp_receiver_.StatisticsReceived(&received_blocks);
   EXPECT_THAT(received_blocks,
-              UnorderedElementsAre(Field(&RTCPReportBlock::fractionLost, 0),
-                                   Field(&RTCPReportBlock::fractionLost, 10)));
+              UnorderedElementsAre(Field(&RTCPReportBlock::fraction_lost, 0),
+                                   Field(&RTCPReportBlock::fraction_lost, 10)));
 
   // Insert next receiver report with same ssrc but new values.
   rtcp::ReportBlock rb3;
@@ -382,18 +382,19 @@ TEST_F(RtcpReceiverTest, InjectRrPacketWithTwoReportBlocks) {
   received_blocks.clear();
   rtcp_receiver_.StatisticsReceived(&received_blocks);
   EXPECT_EQ(2u, received_blocks.size());
-  EXPECT_THAT(received_blocks,
-              UnorderedElementsAre(
-                  AllOf(Field(&RTCPReportBlock::sourceSSRC, kReceiverMainSsrc),
-                        Field(&RTCPReportBlock::fractionLost, kFracLost[0]),
-                        Field(&RTCPReportBlock::cumulativeLost, kCumLost[0]),
-                        Field(&RTCPReportBlock::extendedHighSeqNum,
-                              kSequenceNumbers[0])),
-                  AllOf(Field(&RTCPReportBlock::sourceSSRC, kReceiverExtraSsrc),
-                        Field(&RTCPReportBlock::fractionLost, kFracLost[1]),
-                        Field(&RTCPReportBlock::cumulativeLost, kCumLost[1]),
-                        Field(&RTCPReportBlock::extendedHighSeqNum,
-                              kSequenceNumbers[1]))));
+  EXPECT_THAT(
+      received_blocks,
+      UnorderedElementsAre(
+          AllOf(Field(&RTCPReportBlock::source_ssrc, kReceiverMainSsrc),
+                Field(&RTCPReportBlock::fraction_lost, kFracLost[0]),
+                Field(&RTCPReportBlock::packets_lost, kCumLost[0]),
+                Field(&RTCPReportBlock::extended_highest_sequence_number,
+                      kSequenceNumbers[0])),
+          AllOf(Field(&RTCPReportBlock::source_ssrc, kReceiverExtraSsrc),
+                Field(&RTCPReportBlock::fraction_lost, kFracLost[1]),
+                Field(&RTCPReportBlock::packets_lost, kCumLost[1]),
+                Field(&RTCPReportBlock::extended_highest_sequence_number,
+                      kSequenceNumbers[1]))));
 }
 
 TEST_F(RtcpReceiverTest, InjectRrPacketsFromTwoRemoteSsrcs) {
@@ -423,11 +424,12 @@ TEST_F(RtcpReceiverTest, InjectRrPacketsFromTwoRemoteSsrcs) {
   std::vector<RTCPReportBlock> received_blocks;
   rtcp_receiver_.StatisticsReceived(&received_blocks);
   EXPECT_EQ(1u, received_blocks.size());
-  EXPECT_EQ(kSenderSsrc, received_blocks[0].remoteSSRC);
-  EXPECT_EQ(kReceiverMainSsrc, received_blocks[0].sourceSSRC);
-  EXPECT_EQ(kFracLost[0], received_blocks[0].fractionLost);
-  EXPECT_EQ(kCumLost[0], received_blocks[0].cumulativeLost);
-  EXPECT_EQ(kSequenceNumbers[0], received_blocks[0].extendedHighSeqNum);
+  EXPECT_EQ(kSenderSsrc, received_blocks[0].sender_ssrc);
+  EXPECT_EQ(kReceiverMainSsrc, received_blocks[0].source_ssrc);
+  EXPECT_EQ(kFracLost[0], received_blocks[0].fraction_lost);
+  EXPECT_EQ(kCumLost[0], received_blocks[0].packets_lost);
+  EXPECT_EQ(kSequenceNumbers[0],
+            received_blocks[0].extended_highest_sequence_number);
 
   rtcp::ReportBlock rb2;
   rb2.SetMediaSsrc(kReceiverMainSsrc);
@@ -446,20 +448,21 @@ TEST_F(RtcpReceiverTest, InjectRrPacketsFromTwoRemoteSsrcs) {
   received_blocks.clear();
   rtcp_receiver_.StatisticsReceived(&received_blocks);
   ASSERT_EQ(2u, received_blocks.size());
-  EXPECT_THAT(received_blocks,
-              UnorderedElementsAre(
-                  AllOf(Field(&RTCPReportBlock::sourceSSRC, kReceiverMainSsrc),
-                        Field(&RTCPReportBlock::remoteSSRC, kSenderSsrc),
-                        Field(&RTCPReportBlock::fractionLost, kFracLost[0]),
-                        Field(&RTCPReportBlock::cumulativeLost, kCumLost[0]),
-                        Field(&RTCPReportBlock::extendedHighSeqNum,
-                              kSequenceNumbers[0])),
-                  AllOf(Field(&RTCPReportBlock::sourceSSRC, kReceiverMainSsrc),
-                        Field(&RTCPReportBlock::remoteSSRC, kSenderSsrc2),
-                        Field(&RTCPReportBlock::fractionLost, kFracLost[1]),
-                        Field(&RTCPReportBlock::cumulativeLost, kCumLost[1]),
-                        Field(&RTCPReportBlock::extendedHighSeqNum,
-                              kSequenceNumbers[1]))));
+  EXPECT_THAT(
+      received_blocks,
+      UnorderedElementsAre(
+          AllOf(Field(&RTCPReportBlock::source_ssrc, kReceiverMainSsrc),
+                Field(&RTCPReportBlock::sender_ssrc, kSenderSsrc),
+                Field(&RTCPReportBlock::fraction_lost, kFracLost[0]),
+                Field(&RTCPReportBlock::packets_lost, kCumLost[0]),
+                Field(&RTCPReportBlock::extended_highest_sequence_number,
+                      kSequenceNumbers[0])),
+          AllOf(Field(&RTCPReportBlock::source_ssrc, kReceiverMainSsrc),
+                Field(&RTCPReportBlock::sender_ssrc, kSenderSsrc2),
+                Field(&RTCPReportBlock::fraction_lost, kFracLost[1]),
+                Field(&RTCPReportBlock::packets_lost, kCumLost[1]),
+                Field(&RTCPReportBlock::extended_highest_sequence_number,
+                      kSequenceNumbers[1]))));
 }
 
 TEST_F(RtcpReceiverTest, GetRtt) {

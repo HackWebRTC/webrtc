@@ -373,16 +373,17 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
       // to calculate the number of RTP packets this report refers to. Ignore if
       // we haven't seen this SSRC before.
       std::map<uint32_t, uint32_t>::iterator seq_num_it =
-          extended_max_sequence_number_.find(block_it->sourceSSRC);
+          extended_max_sequence_number_.find(block_it->source_ssrc);
       int number_of_packets = 0;
       if (seq_num_it != extended_max_sequence_number_.end()) {
-        number_of_packets = block_it->extendedHighSeqNum - seq_num_it->second;
+        number_of_packets =
+            block_it->extended_highest_sequence_number - seq_num_it->second;
       }
-      fraction_lost_aggregate += number_of_packets * block_it->fractionLost;
+      fraction_lost_aggregate += number_of_packets * block_it->fraction_lost;
       total_number_of_packets += number_of_packets;
 
-      extended_max_sequence_number_[block_it->sourceSSRC] =
-          block_it->extendedHighSeqNum;
+      extended_max_sequence_number_[block_it->source_ssrc] =
+          block_it->extended_highest_sequence_number;
     }
     int weighted_fraction_lost = 0;
     if (total_number_of_packets > 0) {
@@ -2648,14 +2649,15 @@ int Channel::GetRemoteRTCPReportBlocks(
   std::vector<RTCPReportBlock>::const_iterator it = rtcp_report_blocks.begin();
   for (; it != rtcp_report_blocks.end(); ++it) {
     ReportBlock report_block;
-    report_block.sender_SSRC = it->remoteSSRC;
-    report_block.source_SSRC = it->sourceSSRC;
-    report_block.fraction_lost = it->fractionLost;
-    report_block.cumulative_num_packets_lost = it->cumulativeLost;
-    report_block.extended_highest_sequence_number = it->extendedHighSeqNum;
+    report_block.sender_SSRC = it->sender_ssrc;
+    report_block.source_SSRC = it->source_ssrc;
+    report_block.fraction_lost = it->fraction_lost;
+    report_block.cumulative_num_packets_lost = it->packets_lost;
+    report_block.extended_highest_sequence_number =
+        it->extended_highest_sequence_number;
     report_block.interarrival_jitter = it->jitter;
-    report_block.last_SR_timestamp = it->lastSR;
-    report_block.delay_since_last_SR = it->delaySinceLastSR;
+    report_block.last_SR_timestamp = it->last_sender_report_timestamp;
+    report_block.delay_since_last_SR = it->delay_since_last_sender_report;
     report_blocks->push_back(report_block);
   }
   return 0;
@@ -3145,7 +3147,7 @@ int64_t Channel::GetRTT(bool allow_associate_channel) const {
   uint32_t remoteSSRC = rtp_receiver_->SSRC();
   std::vector<RTCPReportBlock>::const_iterator it = report_blocks.begin();
   for (; it != report_blocks.end(); ++it) {
-    if (it->remoteSSRC == remoteSSRC)
+    if (it->sender_ssrc == remoteSSRC)
       break;
   }
   if (it == report_blocks.end()) {
@@ -3153,7 +3155,7 @@ int64_t Channel::GetRTT(bool allow_associate_channel) const {
     // To calculate RTT we try with the SSRC of the first report block.
     // This is very important for send-only channels where we don't know
     // the SSRC of the other end.
-    remoteSSRC = report_blocks[0].remoteSSRC;
+    remoteSSRC = report_blocks[0].sender_ssrc;
   }
 
   int64_t avg_rtt = 0;

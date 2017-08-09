@@ -235,13 +235,14 @@ TEST_F(RtpRtcpRtcpTest, RemoteRTCPStatRemote) {
   ASSERT_EQ(1u, report_blocks.size());
 
   // |test_ssrc+1| is the SSRC of module2 that send the report.
-  EXPECT_EQ(test_ssrc+1, report_blocks[0].remoteSSRC);
-  EXPECT_EQ(test_ssrc, report_blocks[0].sourceSSRC);
+  EXPECT_EQ(test_ssrc + 1, report_blocks[0].sender_ssrc);
+  EXPECT_EQ(test_ssrc, report_blocks[0].source_ssrc);
 
-  EXPECT_EQ(0u, report_blocks[0].cumulativeLost);
-  EXPECT_LT(0u, report_blocks[0].delaySinceLastSR);
-  EXPECT_EQ(test_sequence_number, report_blocks[0].extendedHighSeqNum);
-  EXPECT_EQ(0u, report_blocks[0].fractionLost);
+  EXPECT_EQ(0u, report_blocks[0].packets_lost);
+  EXPECT_LT(0u, report_blocks[0].delay_since_last_sender_report);
+  EXPECT_EQ(test_sequence_number,
+            report_blocks[0].extended_highest_sequence_number);
+  EXPECT_EQ(0u, report_blocks[0].fraction_lost);
 }
 
 }  // namespace

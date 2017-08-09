@@ -55,8 +55,9 @@ void PlayoutDelayOracle::OnReceivedRtcpReportBlocks(
     const ReportBlockList& report_blocks) {
   rtc::CritScope lock(&crit_sect_);
   for (const RTCPReportBlock& report_block : report_blocks) {
-    if ((ssrc_ == report_block.sourceSSRC) && send_playout_delay_ &&
-        (report_block.extendedHighSeqNum > high_sequence_number_)) {
+    if ((ssrc_ == report_block.source_ssrc) && send_playout_delay_ &&
+        (report_block.extended_highest_sequence_number >
+         high_sequence_number_)) {
       send_playout_delay_ = false;
     }
   }
