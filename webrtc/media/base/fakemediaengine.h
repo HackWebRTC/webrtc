@@ -23,11 +23,13 @@
 #include "webrtc/media/base/mediaengine.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/media/base/streamparams.h"
+#include "webrtc/media/engine/webrtcvideoengine.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/copyonwritebuffer.h"
 #include "webrtc/rtc_base/networkroute.h"
+#include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/stringutils.h"
 
 using webrtc::RtpExtension;
@@ -47,7 +49,10 @@ template <class Base> class RtpHelper : public Base {
         fail_set_send_codecs_(false),
         fail_set_recv_codecs_(false),
         send_ssrc_(0),
-        ready_to_send_(false) {}
+        ready_to_send_(false),
+        transport_overhead_per_packet_(0),
+        num_network_route_changes_(0) {}
+  virtual ~RtpHelper() = default;
   const std::vector<RtpExtension>& recv_extensions() {
     return recv_extensions_;
   }
@@ -299,7 +304,7 @@ template <class Base> class RtpHelper : public Base {
   bool ready_to_send_;
   int transport_overhead_per_packet_;
   rtc::NetworkRoute last_network_route_;
-  int num_network_route_changes_ = 0;
+  int num_network_route_changes_;
 };
 
 class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
@@ -517,8 +522,7 @@ inline bool CompareDtmfInfo(const FakeVoiceMediaChannel::DtmfInfo& info,
 
 class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
  public:
-  explicit FakeVideoMediaChannel(FakeVideoEngine* engine,
-                                 const VideoOptions& options)
+  FakeVideoMediaChannel(FakeVideoEngine* engine, const VideoOptions& options)
       : engine_(engine), max_bps_(-1) {
     SetOptions(options);
   }
@@ -838,7 +842,9 @@ class FakeVideoEngine : public FakeBaseEngine {
     // sanity checks against that.
     codecs_.push_back(VideoCodec(0, "fake_video_codec"));
   }
+
   void Init() {}
+
   bool SetOptions(const VideoOptions& options) {
     options_ = options;
     options_changed_ = true;
@@ -849,21 +855,26 @@ class FakeVideoEngine : public FakeBaseEngine {
                                    const MediaConfig& config,
                                    const VideoOptions& options) {
     if (fail_create_channel_) {
-      return NULL;
+      return nullptr;
     }
 
     FakeVideoMediaChannel* ch = new FakeVideoMediaChannel(this, options);
-    channels_.push_back(ch);
+    channels_.emplace_back(ch);
     return ch;
   }
+
   FakeVideoMediaChannel* GetChannel(size_t index) {
-    return (channels_.size() > index) ? channels_[index] : NULL;
+    return (channels_.size() > index) ? channels_[index] : nullptr;
   }
+
   void UnregisterChannel(VideoMediaChannel* channel) {
-    channels_.erase(std::find(channels_.begin(), channels_.end(), channel));
+    auto it = std::find(channels_.begin(), channels_.end(), channel);
+    RTC_DCHECK(it != channels_.end());
+    channels_.erase(it);
   }
 
   const std::vector<VideoCodec>& codecs() const { return codecs_; }
+
   void SetCodecs(const std::vector<VideoCodec> codecs) { codecs_ = codecs; }
 
   bool SetCapture(bool capture) {

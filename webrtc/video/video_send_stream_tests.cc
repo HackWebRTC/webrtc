@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "webrtc/call/call.h"
+#include "webrtc/call/rtp_transport_controller_send.h"
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/common_video/include/video_frame.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -3379,12 +3380,12 @@ TEST_F(VideoSendStreamTest, SendsKeepAlive) {
    public:
     KeepaliveObserver() : SendTest(kDefaultTimeoutMs) {}
 
-    Call::Config GetSenderCallConfig() override {
-      Call::Config config = SendTest::GetSenderCallConfig();
-      config.keepalive_config.timeout_interval_ms = kTimeoutMs;
-      config.keepalive_config.payload_type =
-          CallTest::kDefaultKeepalivePayloadType;
-      return config;
+    void OnRtpTransportControllerSendCreated(
+        RtpTransportControllerSend* controller) override {
+      RtpKeepAliveConfig config;
+      config.timeout_interval_ms = kTimeoutMs;
+      config.payload_type = CallTest::kDefaultKeepalivePayloadType;
+      controller->SetKeepAliveConfig(config);
     }
 
    private:

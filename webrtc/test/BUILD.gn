@@ -479,6 +479,7 @@ rtc_source_set("test_common") {
     "../api/video_codecs:video_codecs_api",
     "../audio",
     "../call",
+    "../call:rtp_sender",
     "../common_video",
     "../logging:rtc_event_log_api",
     "../modules/audio_device:mock_audio_device",

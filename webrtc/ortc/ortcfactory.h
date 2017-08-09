@@ -44,13 +44,13 @@ class OrtcFactory : public OrtcFactoryInterface {
   CreateRtpTransportController() override;
 
   RTCErrorOr<std::unique_ptr<RtpTransportInterface>> CreateRtpTransport(
-      const RtcpParameters& rtcp_parameters,
+      const RtpTransportParameters& parameters,
       PacketTransportInterface* rtp,
       PacketTransportInterface* rtcp,
       RtpTransportControllerInterface* transport_controller) override;
 
   RTCErrorOr<std::unique_ptr<SrtpTransportInterface>> CreateSrtpTransport(
-      const RtcpParameters& rtcp_parameters,
+      const RtpTransportParameters& parameters,
       PacketTransportInterface* rtp,
       PacketTransportInterface* rtcp,
       RtpTransportControllerInterface* transport_controller) override;
@@ -102,6 +102,9 @@ class OrtcFactory : public OrtcFactoryInterface {
               rtc::NetworkManager* network_manager,
               rtc::PacketSocketFactory* socket_factory,
               AudioDeviceModule* adm);
+
+  RTCErrorOr<std::unique_ptr<RtpTransportControllerInterface>>
+  CreateRtpTransportController(const RtpTransportParameters& parameters);
 
   // Thread::Invoke doesn't support move-only arguments, so we need to remove
   // the unique_ptr wrapper from media_engine. TODO(deadbeef): Fix this.

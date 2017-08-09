@@ -36,6 +36,7 @@ rtc_static_library("ortc") {
     "../api/audio_codecs:builtin_audio_decoder_factory",
     "../api/audio_codecs:builtin_audio_encoder_factory",
     "../call:call_interfaces",
+    "../call:rtp_sender",
     "../logging:rtc_event_log_api",
     "../media:rtc_media",
     "../media:rtc_media_base",

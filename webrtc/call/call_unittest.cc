@@ -23,6 +23,7 @@
 #include "webrtc/modules/congestion_controller/include/mock/mock_send_side_congestion_controller.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_audio_decoder_factory.h"
 #include "webrtc/test/mock_transport.h"

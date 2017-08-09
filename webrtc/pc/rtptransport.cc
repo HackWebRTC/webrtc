@@ -115,24 +115,30 @@ PacketTransportInterface* RtpTransport::GetRtcpPacketTransport() const {
   return rtcp_packet_transport_;
 }
 
-RTCError RtpTransport::SetRtcpParameters(const RtcpParameters& parameters) {
-  if (rtcp_parameters_.mux && !parameters.mux) {
+RTCError RtpTransport::SetParameters(const RtpTransportParameters& parameters) {
+  if (parameters_.rtcp.mux && !parameters.rtcp.mux) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
                          "Disabling RTCP muxing is not allowed.");
   }
-
-  RtcpParameters new_parameters = parameters;
-
-  if (new_parameters.cname.empty()) {
-    new_parameters.cname = rtcp_parameters_.cname;
+  if (parameters.keepalive != parameters_.keepalive) {
+    // TODO(sprang): Wire up support for keep-alive (only ORTC support for now).
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::INVALID_MODIFICATION,
+        "RTP keep-alive parameters not supported by this channel.");
   }
 
-  rtcp_parameters_ = new_parameters;
+  RtpTransportParameters new_parameters = parameters;
+
+  if (new_parameters.rtcp.cname.empty()) {
+    new_parameters.rtcp.cname = parameters_.rtcp.cname;
+  }
+
+  parameters_ = new_parameters;
   return RTCError::OK();
 }
 
-RtcpParameters RtpTransport::GetRtcpParameters() const {
-  return rtcp_parameters_;
+RtpTransportParameters RtpTransport::GetParameters() const {
+  return parameters_;
 }
 
 RtpTransportAdapter* RtpTransport::GetInternal() {

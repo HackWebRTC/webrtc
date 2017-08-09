@@ -129,11 +129,16 @@ RtpTransportControllerAdapter::~RtpTransportControllerAdapter() {
 
 RTCErrorOr<std::unique_ptr<RtpTransportInterface>>
 RtpTransportControllerAdapter::CreateProxiedRtpTransport(
-    const RtcpParameters& rtcp_parameters,
+    const RtpTransportParameters& parameters,
     PacketTransportInterface* rtp,
     PacketTransportInterface* rtcp) {
-  auto result =
-      RtpTransportAdapter::CreateProxied(rtcp_parameters, rtp, rtcp, this);
+  if (!transport_proxies_.empty() && (parameters.keepalive != keepalive_)) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Cannot create RtpTransport with different keep-alive "
+                         "from the RtpTransports already associated with this "
+                         "transport controller.");
+  }
+  auto result = RtpTransportAdapter::CreateProxied(parameters, rtp, rtcp, this);
   if (result.ok()) {
     transport_proxies_.push_back(result.value().get());
     transport_proxies_.back()->GetInternal()->SignalDestroyed.connect(
@@ -144,11 +149,11 @@ RtpTransportControllerAdapter::CreateProxiedRtpTransport(
 
 RTCErrorOr<std::unique_ptr<SrtpTransportInterface>>
 RtpTransportControllerAdapter::CreateProxiedSrtpTransport(
-    const RtcpParameters& rtcp_parameters,
+    const RtpTransportParameters& parameters,
     PacketTransportInterface* rtp,
     PacketTransportInterface* rtcp) {
   auto result =
-      RtpTransportAdapter::CreateSrtpProxied(rtcp_parameters, rtp, rtcp, this);
+      RtpTransportAdapter::CreateSrtpProxied(parameters, rtp, rtcp, this);
   if (result.ok()) {
     transport_proxies_.push_back(result.value().get());
     transport_proxies_.back()->GetInternal()->SignalDestroyed.connect(
@@ -219,12 +224,26 @@ RtpTransportControllerAdapter::GetTransports() const {
   return transport_proxies_;
 }
 
-RTCError RtpTransportControllerAdapter::SetRtcpParameters(
-    const RtcpParameters& parameters,
+RTCError RtpTransportControllerAdapter::SetRtpTransportParameters(
+    const RtpTransportParameters& parameters,
     RtpTransportInterface* inner_transport) {
+  if ((video_channel_ != nullptr || voice_channel_ != nullptr) &&
+      (parameters.keepalive != keepalive_)) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Cannot change keep-alive settings after creating "
+                         "media streams or additional transports for the same "
+                         "transport controller.");
+  }
+  // Call must be configured on the worker thread.
+  worker_thread_->Invoke<void>(
+      RTC_FROM_HERE,
+      rtc::Bind(&RtpTransportControllerAdapter::SetRtpTransportParameters_w,
+                this, parameters));
+
   do {
     if (inner_transport == inner_audio_transport_) {
-      CopyRtcpParametersToDescriptions(parameters, &local_audio_description_,
+      CopyRtcpParametersToDescriptions(parameters.rtcp,
+                                       &local_audio_description_,
                                        &remote_audio_description_);
       if (!voice_channel_->SetLocalContent(&local_audio_description_,
                                            cricket::CA_OFFER, nullptr)) {
@@ -235,7 +254,8 @@ RTCError RtpTransportControllerAdapter::SetRtcpParameters(
         break;
       }
     } else if (inner_transport == inner_video_transport_) {
-      CopyRtcpParametersToDescriptions(parameters, &local_video_description_,
+      CopyRtcpParametersToDescriptions(parameters.rtcp,
+                                       &local_video_description_,
                                        &remote_video_description_);
       if (!video_channel_->SetLocalContent(&local_video_description_,
                                            cricket::CA_OFFER, nullptr)) {
@@ -250,6 +270,11 @@ RTCError RtpTransportControllerAdapter::SetRtcpParameters(
   } while (false);
   LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
                        "Failed to apply new RTCP parameters.");
+}
+
+void RtpTransportControllerAdapter::SetRtpTransportParameters_w(
+    const RtpTransportParameters& parameters) {
+  call_send_rtp_transport_controller_->SetKeepAliveConfig(parameters.keepalive);
 }
 
 RTCError RtpTransportControllerAdapter::ValidateAndApplyAudioSenderParameters(
@@ -270,7 +295,7 @@ RTCError RtpTransportControllerAdapter::ValidateAndApplyAudioSenderParameters(
   }
 
   auto stream_params_result = MakeSendStreamParamsVec(
-      parameters.encodings, inner_audio_transport_->GetRtcpParameters().cname,
+      parameters.encodings, inner_audio_transport_->GetParameters().rtcp.cname,
       local_audio_description_);
   if (!stream_params_result.ok()) {
     return stream_params_result.MoveError();
@@ -359,7 +384,7 @@ RTCError RtpTransportControllerAdapter::ValidateAndApplyVideoSenderParameters(
   }
 
   auto stream_params_result = MakeSendStreamParamsVec(
-      parameters.encodings, inner_video_transport_->GetRtcpParameters().cname,
+      parameters.encodings, inner_video_transport_->GetParameters().rtcp.cname,
       local_video_description_);
   if (!stream_params_result.ok()) {
     return stream_params_result.MoveError();
@@ -590,7 +615,8 @@ RtpTransportControllerAdapter::RtpTransportControllerAdapter(
       worker_thread_(worker_thread),
       media_config_(config),
       channel_manager_(channel_manager),
-      event_log_(event_log) {
+      event_log_(event_log),
+      call_send_rtp_transport_controller_(nullptr) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   RTC_DCHECK(channel_manager_);
   // Add "dummy" codecs to the descriptions, because the media engines
@@ -626,11 +652,16 @@ void RtpTransportControllerAdapter::Init_w() {
   call_config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
   call_config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
 
-  call_.reset(webrtc::Call::Create(call_config));
+  call_send_rtp_transport_controller_ =
+      new RtpTransportControllerSend(Clock::GetRealTimeClock(), event_log_);
+  call_.reset(webrtc::Call::Create(
+      call_config, std::unique_ptr<RtpTransportControllerSendInterface>(
+                       call_send_rtp_transport_controller_)));
 }
 
 void RtpTransportControllerAdapter::Close_w() {
   call_.reset();
+  call_send_rtp_transport_controller_ = nullptr;
 }
 
 RTCError RtpTransportControllerAdapter::AttachAudioSender(
@@ -656,7 +687,7 @@ RTCError RtpTransportControllerAdapter::AttachAudioSender(
   // If setting new transport, extract its RTCP parameters and create voice
   // channel.
   if (!inner_audio_transport_) {
-    CopyRtcpParametersToDescriptions(inner_transport->GetRtcpParameters(),
+    CopyRtcpParametersToDescriptions(inner_transport->GetParameters().rtcp,
                                      &local_audio_description_,
                                      &remote_audio_description_);
     inner_audio_transport_ = inner_transport;
@@ -691,7 +722,7 @@ RTCError RtpTransportControllerAdapter::AttachVideoSender(
   // If setting new transport, extract its RTCP parameters and create video
   // channel.
   if (!inner_video_transport_) {
-    CopyRtcpParametersToDescriptions(inner_transport->GetRtcpParameters(),
+    CopyRtcpParametersToDescriptions(inner_transport->GetParameters().rtcp,
                                      &local_video_description_,
                                      &remote_video_description_);
     inner_video_transport_ = inner_transport;
@@ -726,7 +757,7 @@ RTCError RtpTransportControllerAdapter::AttachAudioReceiver(
   // If setting new transport, extract its RTCP parameters and create voice
   // channel.
   if (!inner_audio_transport_) {
-    CopyRtcpParametersToDescriptions(inner_transport->GetRtcpParameters(),
+    CopyRtcpParametersToDescriptions(inner_transport->GetParameters().rtcp,
                                      &local_audio_description_,
                                      &remote_audio_description_);
     inner_audio_transport_ = inner_transport;
@@ -761,7 +792,7 @@ RTCError RtpTransportControllerAdapter::AttachVideoReceiver(
   // If setting new transport, extract its RTCP parameters and create video
   // channel.
   if (!inner_video_transport_) {
-    CopyRtcpParametersToDescriptions(inner_transport->GetRtcpParameters(),
+    CopyRtcpParametersToDescriptions(inner_transport->GetParameters().rtcp,
                                      &local_video_description_,
                                      &remote_video_description_);
     inner_video_transport_ = inner_transport;

@@ -76,6 +76,7 @@ rtc_source_set("rtp_sender") {
   ]
   deps = [
     ":rtp_interfaces",
+    "..:webrtc_common",
     "../modules/congestion_controller",
     "../rtc_base:rtc_base_approved",
   ]

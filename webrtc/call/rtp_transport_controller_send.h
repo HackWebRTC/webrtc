@@ -12,6 +12,7 @@
 #define WEBRTC_CALL_RTP_TRANSPORT_CONTROLLER_SEND_H_
 
 #include "webrtc/call/rtp_transport_controller_send_interface.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
@@ -31,10 +32,14 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
   SendSideCongestionController* send_side_cc() override;
   TransportFeedbackObserver* transport_feedback_observer() override;
   RtpPacketSender* packet_sender() override;
+  const RtpKeepAliveConfig& keepalive_config() const override;
+
+  void SetKeepAliveConfig(const RtpKeepAliveConfig& config);
 
  private:
   PacketRouter packet_router_;
   SendSideCongestionController send_side_cc_;
+  RtpKeepAliveConfig keepalive_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpTransportControllerSend);
 };

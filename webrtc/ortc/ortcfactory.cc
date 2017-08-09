@@ -76,14 +76,14 @@ PROXY_METHOD0(RTCErrorOr<std::unique_ptr<RtpTransportControllerInterface>>,
               CreateRtpTransportController)
 PROXY_METHOD4(RTCErrorOr<std::unique_ptr<RtpTransportInterface>>,
               CreateRtpTransport,
-              const RtcpParameters&,
+              const RtpTransportParameters&,
               PacketTransportInterface*,
               PacketTransportInterface*,
               RtpTransportControllerInterface*)
 
 PROXY_METHOD4(RTCErrorOr<std::unique_ptr<SrtpTransportInterface>>,
               CreateSrtpTransport,
-              const RtcpParameters&,
+              const RtpTransportParameters&,
               PacketTransportInterface*,
               PacketTransportInterface*,
               RtpTransportControllerInterface*)
@@ -226,14 +226,14 @@ OrtcFactory::CreateRtpTransportController() {
 
 RTCErrorOr<std::unique_ptr<RtpTransportInterface>>
 OrtcFactory::CreateRtpTransport(
-    const RtcpParameters& rtcp_parameters,
+    const RtpTransportParameters& parameters,
     PacketTransportInterface* rtp,
     PacketTransportInterface* rtcp,
     RtpTransportControllerInterface* transport_controller) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  RtcpParameters copied_parameters = rtcp_parameters;
-  if (copied_parameters.cname.empty()) {
-    copied_parameters.cname = default_cname_;
+  RtpTransportParameters copied_parameters = parameters;
+  if (copied_parameters.rtcp.cname.empty()) {
+    copied_parameters.rtcp.cname = default_cname_;
   }
   if (transport_controller) {
     return transport_controller->GetInternal()->CreateProxiedRtpTransport(
@@ -263,14 +263,14 @@ OrtcFactory::CreateRtpTransport(
 
 RTCErrorOr<std::unique_ptr<SrtpTransportInterface>>
 OrtcFactory::CreateSrtpTransport(
-    const RtcpParameters& rtcp_parameters,
+    const RtpTransportParameters& parameters,
     PacketTransportInterface* rtp,
     PacketTransportInterface* rtcp,
     RtpTransportControllerInterface* transport_controller) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  RtcpParameters copied_parameters = rtcp_parameters;
-  if (copied_parameters.cname.empty()) {
-    copied_parameters.cname = default_cname_;
+  RtpTransportParameters copied_parameters = parameters;
+  if (copied_parameters.rtcp.cname.empty()) {
+    copied_parameters.rtcp.cname = default_cname_;
   }
   if (transport_controller) {
     return transport_controller->GetInternal()->CreateProxiedSrtpTransport(

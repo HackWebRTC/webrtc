@@ -21,6 +21,7 @@
 #include "webrtc/api/ortc/rtptransportcontrollerinterface.h"
 #include "webrtc/api/ortc/srtptransportinterface.h"
 #include "webrtc/call/call.h"
+#include "webrtc/call/rtp_transport_controller_send.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/mediachannel.h"  // For MediaConfig.
 #include "webrtc/pc/channelmanager.h"
@@ -77,12 +78,12 @@ class RtpTransportControllerAdapter : public RtpTransportControllerInterface,
   // these methods return proxies that will safely call methods on the correct
   // thread.
   RTCErrorOr<std::unique_ptr<RtpTransportInterface>> CreateProxiedRtpTransport(
-      const RtcpParameters& rtcp_parameters,
+      const RtpTransportParameters& rtcp_parameters,
       PacketTransportInterface* rtp,
       PacketTransportInterface* rtcp);
 
   RTCErrorOr<std::unique_ptr<SrtpTransportInterface>>
-  CreateProxiedSrtpTransport(const RtcpParameters& rtcp_parameters,
+  CreateProxiedSrtpTransport(const RtpTransportParameters& rtcp_parameters,
                              PacketTransportInterface* rtp,
                              PacketTransportInterface* rtcp);
 
@@ -100,8 +101,10 @@ class RtpTransportControllerAdapter : public RtpTransportControllerInterface,
   rtc::Thread* signaling_thread() const { return signaling_thread_; }
   rtc::Thread* worker_thread() const { return worker_thread_; }
 
-  RTCError SetRtcpParameters(const RtcpParameters& parameters,
-                             RtpTransportInterface* inner_transport);
+  // |parameters.keepalive| will be set for ALL RTP transports in the call.
+  RTCError SetRtpTransportParameters(const RtpTransportParameters& parameters,
+                                     RtpTransportInterface* inner_transport);
+  void SetRtpTransportParameters_w(const RtpTransportParameters& parameters);
 
   cricket::VoiceChannel* voice_channel() { return voice_channel_; }
   cricket::VideoChannel* video_channel() { return video_channel_; }
@@ -193,9 +196,11 @@ class RtpTransportControllerAdapter : public RtpTransportControllerInterface,
   RtpTransportInterface* inner_audio_transport_ = nullptr;
   RtpTransportInterface* inner_video_transport_ = nullptr;
   const cricket::MediaConfig media_config_;
+  RtpKeepAliveConfig keepalive_;
   cricket::ChannelManager* channel_manager_;
   webrtc::RtcEventLog* event_log_;
   std::unique_ptr<Call> call_;
+  webrtc::RtpTransportControllerSend* call_send_rtp_transport_controller_;
 
   // BaseChannel takes content descriptions as input, so we store them here
   // such that they can be updated when a new RtpSenderAdapter/

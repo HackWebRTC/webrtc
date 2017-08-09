@@ -22,23 +22,34 @@ constexpr bool kMuxEnabled = true;
 
 TEST(RtpTransportTest, SetRtcpParametersCantDisableRtcpMux) {
   RtpTransport transport(kMuxDisabled);
-  RtcpParameters params;
-  transport.SetRtcpParameters(params);
-  params.mux = false;
-  EXPECT_FALSE(transport.SetRtcpParameters(params).ok());
+  RtpTransportParameters params;
+  transport.SetParameters(params);
+  params.rtcp.mux = false;
+  EXPECT_FALSE(transport.SetParameters(params).ok());
 }
 
 TEST(RtpTransportTest, SetRtcpParametersEmptyCnameUsesExisting) {
   static const char kName[] = "name";
   RtpTransport transport(kMuxDisabled);
-  RtcpParameters params_with_name;
-  params_with_name.cname = kName;
-  transport.SetRtcpParameters(params_with_name);
-  EXPECT_EQ(transport.GetRtcpParameters().cname, kName);
+  RtpTransportParameters params_with_name;
+  params_with_name.rtcp.cname = kName;
+  transport.SetParameters(params_with_name);
+  EXPECT_EQ(transport.GetParameters().rtcp.cname, kName);
 
-  RtcpParameters params_without_name;
-  transport.SetRtcpParameters(params_without_name);
-  EXPECT_EQ(transport.GetRtcpParameters().cname, kName);
+  RtpTransportParameters params_without_name;
+  transport.SetParameters(params_without_name);
+  EXPECT_EQ(transport.GetParameters().rtcp.cname, kName);
+}
+
+TEST(RtpTransportTest, SetRtpTransportKeepAliveNotSupported) {
+  // Tests that we warn users that keep-alive isn't supported yet.
+  // TODO(sprang): Wire up keep-alive and remove this test.
+  RtpTransport transport(kMuxDisabled);
+  RtpTransportParameters params;
+  params.keepalive.timeout_interval_ms = 1;
+  auto result = transport.SetParameters(params);
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, result.type());
 }
 
 class SignalObserver : public sigslot::has_slots<> {

@@ -78,12 +78,12 @@ class SrtpTransport : public RtpTransportInternal {
     rtp_transport_->AddHandledPayloadType(payload_type);
   }
 
-  RtcpParameters GetRtcpParameters() const override {
-    return rtp_transport_->GetRtcpParameters();
+  RTCError SetParameters(const RtpTransportParameters& parameters) override {
+    return rtp_transport_->SetParameters(parameters);
   }
 
-  RTCError SetRtcpParameters(const RtcpParameters& parameters) override {
-    return rtp_transport_->SetRtcpParameters(parameters);
+  RtpTransportParameters GetParameters() const override {
+    return rtp_transport_->GetParameters();
   }
 
   // TODO(zstein): Remove this when we remove RtpTransportAdapter.

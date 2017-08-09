@@ -35,4 +35,13 @@ RtpPacketSender* RtpTransportControllerSend::packet_sender() {
   return send_side_cc_.pacer();
 }
 
+const RtpKeepAliveConfig& RtpTransportControllerSend::keepalive_config() const {
+  return keepalive_;
+}
+
+void RtpTransportControllerSend::SetKeepAliveConfig(
+    const RtpKeepAliveConfig& config) {
+  keepalive_ = config;
+}
+
 }  // namespace webrtc

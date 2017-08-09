@@ -51,8 +51,8 @@ class RtpTransport : public RtpTransportInternal {
   PacketTransportInterface* GetRtcpPacketTransport() const override;
 
   // TODO(zstein): Use these RtcpParameters for configuration elsewhere.
-  RTCError SetRtcpParameters(const RtcpParameters& parameters) override;
-  RtcpParameters GetRtcpParameters() const override;
+  RTCError SetParameters(const RtpTransportParameters& parameters) override;
+  RtpTransportParameters GetParameters() const override;
 
   bool IsWritable(bool rtcp) const override;
 
@@ -97,7 +97,7 @@ class RtpTransport : public RtpTransportInternal {
   bool rtp_ready_to_send_ = false;
   bool rtcp_ready_to_send_ = false;
 
-  RtcpParameters rtcp_parameters_;
+  RtpTransportParameters parameters_;
 
   cricket::BundleFilter bundle_filter_;
 };

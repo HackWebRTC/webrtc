@@ -40,10 +40,10 @@ class OrtcRtpSenderTest : public testing::Test {
         nullptr, nullptr, nullptr, nullptr, nullptr,
         std::unique_ptr<cricket::MediaEngineInterface>(fake_media_engine_));
     ortc_factory_ = ortc_factory_result.MoveValue();
-    RtcpParameters rtcp_parameters;
-    rtcp_parameters.mux = true;
+    RtpTransportParameters parameters;
+    parameters.rtcp.mux = true;
     auto rtp_transport_result = ortc_factory_->CreateRtpTransport(
-        rtcp_parameters, &fake_packet_transport_, nullptr, nullptr);
+        parameters, &fake_packet_transport_, nullptr, nullptr);
     rtp_transport_ = rtp_transport_result.MoveValue();
   }
 
@@ -153,10 +153,10 @@ TEST_F(OrtcRtpSenderTest, SetTrackOfWrongKindFails) {
 // test/tests for it.
 TEST_F(OrtcRtpSenderTest, SetTransportFails) {
   rtc::FakePacketTransport fake_packet_transport("another_transport");
-  RtcpParameters rtcp_parameters;
-  rtcp_parameters.mux = true;
+  RtpTransportParameters parameters;
+  parameters.rtcp.mux = true;
   auto rtp_transport_result = ortc_factory_->CreateRtpTransport(
-      rtcp_parameters, &fake_packet_transport, nullptr, nullptr);
+      parameters, &fake_packet_transport, nullptr, nullptr);
   auto rtp_transport = rtp_transport_result.MoveValue();
 
   auto sender_result = ortc_factory_->CreateRtpSender(cricket::MEDIA_TYPE_AUDIO,

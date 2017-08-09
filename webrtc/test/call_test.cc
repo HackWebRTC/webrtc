@@ -14,12 +14,12 @@
 
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "webrtc/call/rtp_transport_controller_send.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/include/voe_base.h"
-
 namespace webrtc {
 namespace test {
 
@@ -30,6 +30,7 @@ const int kVideoRotationRtpExtensionId = 4;
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
       event_log_(RtcEventLog::CreateNull()),
+      sender_call_transport_controller_(nullptr),
       video_send_config_(nullptr),
       video_send_stream_(nullptr),
       audio_send_config_(nullptr),
@@ -66,6 +67,10 @@ void CallTest::RunBaseTest(BaseTest* test) {
     send_config.audio_state = AudioState::Create(audio_state_config);
   }
   CreateSenderCall(send_config);
+  if (sender_call_transport_controller_ != nullptr) {
+    test->OnRtpTransportControllerSendCreated(
+        sender_call_transport_controller_);
+  }
   if (test->ShouldCreateReceivers()) {
     Call::Config recv_config(test->GetReceiverCallConfig());
     if (num_audio_streams_ > 0) {
@@ -153,7 +158,12 @@ void CallTest::CreateCalls(const Call::Config& sender_config,
 }
 
 void CallTest::CreateSenderCall(const Call::Config& config) {
-  sender_call_.reset(Call::Create(config));
+  sender_call_transport_controller_ = new RtpTransportControllerSend(
+      Clock::GetRealTimeClock(), config.event_log);
+
+  sender_call_.reset(
+      Call::Create(config, std::unique_ptr<RtpTransportControllerSend>(
+                               sender_call_transport_controller_)));
 }
 
 void CallTest::CreateReceiverCall(const Call::Config& config) {
@@ -504,6 +514,9 @@ Call::Config BaseTest::GetSenderCallConfig() {
 Call::Config BaseTest::GetReceiverCallConfig() {
   return Call::Config(event_log_.get());
 }
+
+void BaseTest::OnRtpTransportControllerSendCreated(
+    RtpTransportControllerSend* controller) {}
 
 void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {
 }

@@ -113,16 +113,16 @@ class OrtcFactoryInterface {
   // |rtp| will be used for sending RTP packets, and |rtcp| for RTCP packets.
   //
   // |rtp| can't be null. |rtcp| must be non-null if and only if
-  // |rtcp_parameters.mux| is false, indicating that RTCP muxing isn't used.
+  // |rtp_parameters.rtcp.mux| is false, indicating that RTCP muxing isn't used.
   // Note that if RTCP muxing isn't enabled initially, it can still enabled
-  // later through SetRtcpParameters.
+  // later through SetParameters.
   //
   // If |transport_controller| is null, one will automatically be created, and
   // its lifetime managed by the returned RtpTransport. This should only be
   // done if a single RtpTransport is being used to communicate with the remote
   // endpoint.
   virtual RTCErrorOr<std::unique_ptr<RtpTransportInterface>> CreateRtpTransport(
-      const RtcpParameters& rtcp_parameters,
+      const RtpTransportParameters& rtp_parameters,
       PacketTransportInterface* rtp,
       PacketTransportInterface* rtcp,
       RtpTransportControllerInterface* transport_controller) = 0;
@@ -130,7 +130,7 @@ class OrtcFactoryInterface {
   // Creates an SrtpTransport which is an RTP transport that uses SRTP.
   virtual RTCErrorOr<std::unique_ptr<SrtpTransportInterface>>
   CreateSrtpTransport(
-      const RtcpParameters& rtcp_parameters,
+      const RtpTransportParameters& rtp_parameters,
       PacketTransportInterface* rtp,
       PacketTransportInterface* rtcp,
       RtpTransportControllerInterface* transport_controller) = 0;

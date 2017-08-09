@@ -15,6 +15,7 @@ namespace webrtc {
 
 class PacketRouter;
 class RtpPacketSender;
+struct RtpKeepAliveConfig;
 class SendSideCongestionController;
 class TransportFeedbackObserver;
 
@@ -50,6 +51,7 @@ class RtpTransportControllerSendInterface {
   virtual TransportFeedbackObserver* transport_feedback_observer() = 0;
 
   virtual RtpPacketSender* packet_sender() = 0;
+  virtual const RtpKeepAliveConfig& keepalive_config() const = 0;
 };
 
 }  // namespace webrtc

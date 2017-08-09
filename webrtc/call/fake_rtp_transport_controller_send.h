@@ -12,6 +12,7 @@
 #define WEBRTC_CALL_FAKE_RTP_TRANSPORT_CONTROLLER_SEND_H_
 
 #include "webrtc/call/rtp_transport_controller_send_interface.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
 
@@ -39,9 +40,18 @@ class FakeRtpTransportControllerSend
 
   RtpPacketSender* packet_sender() override { return send_side_cc_->pacer(); }
 
+  const RtpKeepAliveConfig& keepalive_config() const override {
+    return keepalive_;
+  }
+
+  void set_keepalive_config(const RtpKeepAliveConfig& keepalive_config) {
+    keepalive_ = keepalive_config;
+  }
+
  private:
   PacketRouter* packet_router_;
   SendSideCongestionController* send_side_cc_;
+  RtpKeepAliveConfig keepalive_;
 };
 
 }  // namespace webrtc

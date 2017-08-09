@@ -58,7 +58,7 @@ class SrtpTransportTest : public testing::Test {
 
     fake_packet_transport_.reset(new rtc::FakePacketTransport("fake"));
     auto srtp_transport_result = ortc_factory_->CreateSrtpTransport(
-        rtcp_parameters_, fake_packet_transport_.get(), nullptr,
+        rtp_transport_parameters_, fake_packet_transport_.get(), nullptr,
         rtp_transport_controller_.get());
     srtp_transport_ = srtp_transport_result.MoveValue();
   }
@@ -69,7 +69,7 @@ class SrtpTransportTest : public testing::Test {
   std::unique_ptr<OrtcFactoryInterface> ortc_factory_;
   std::unique_ptr<RtpTransportControllerInterface> rtp_transport_controller_;
   std::unique_ptr<SrtpTransportInterface> srtp_transport_;
-  RtcpParameters rtcp_parameters_;
+  RtpTransportParameters rtp_transport_parameters_;
   std::unique_ptr<rtc::FakePacketTransport> fake_packet_transport_;
 };
 

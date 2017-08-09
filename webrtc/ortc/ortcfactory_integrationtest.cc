@@ -128,29 +128,29 @@ class OrtcFactoryIntegrationTest : public testing::Test {
   // empty if RTCP muxing is used. |transport_controllers| can be empty if
   // these transports are being created using a default transport controller.
   RtpTransportPair CreateRtpTransportPair(
-      const RtcpParameters& rtcp_parameters,
+      const RtpTransportParameters& parameters,
       const UdpTransportPair& rtp_udp_transports,
       const UdpTransportPair& rtcp_udp_transports,
       const RtpTransportControllerPair& transport_controllers) {
     auto transport_result1 = ortc_factory1_->CreateRtpTransport(
-        rtcp_parameters, rtp_udp_transports.first.get(),
+        parameters, rtp_udp_transports.first.get(),
         rtcp_udp_transports.first.get(), transport_controllers.first.get());
     auto transport_result2 = ortc_factory2_->CreateRtpTransport(
-        rtcp_parameters, rtp_udp_transports.second.get(),
+        parameters, rtp_udp_transports.second.get(),
         rtcp_udp_transports.second.get(), transport_controllers.second.get());
     return {transport_result1.MoveValue(), transport_result2.MoveValue()};
   }
 
   SrtpTransportPair CreateSrtpTransportPair(
-      const RtcpParameters& rtcp_parameters,
+      const RtpTransportParameters& parameters,
       const UdpTransportPair& rtp_udp_transports,
       const UdpTransportPair& rtcp_udp_transports,
       const RtpTransportControllerPair& transport_controllers) {
     auto transport_result1 = ortc_factory1_->CreateSrtpTransport(
-        rtcp_parameters, rtp_udp_transports.first.get(),
+        parameters, rtp_udp_transports.first.get(),
         rtcp_udp_transports.first.get(), transport_controllers.first.get());
     auto transport_result2 = ortc_factory2_->CreateSrtpTransport(
-        rtcp_parameters, rtp_udp_transports.second.get(),
+        parameters, rtp_udp_transports.second.get(),
         rtcp_udp_transports.second.get(), transport_controllers.second.get());
     return {transport_result1.MoveValue(), transport_result2.MoveValue()};
   }
@@ -158,18 +158,18 @@ class OrtcFactoryIntegrationTest : public testing::Test {
   // For convenience when |rtcp_udp_transports| and |transport_controllers|
   // aren't needed.
   RtpTransportPair CreateRtpTransportPair(
-      const RtcpParameters& rtcp_parameters,
+      const RtpTransportParameters& parameters,
       const UdpTransportPair& rtp_udp_transports) {
-    return CreateRtpTransportPair(rtcp_parameters, rtp_udp_transports,
+    return CreateRtpTransportPair(parameters, rtp_udp_transports,
                                   UdpTransportPair(),
                                   RtpTransportControllerPair());
   }
 
   SrtpTransportPair CreateSrtpTransportPairAndSetKeys(
-      const RtcpParameters& rtcp_parameters,
+      const RtpTransportParameters& parameters,
       const UdpTransportPair& rtp_udp_transports) {
     SrtpTransportPair srtp_transports = CreateSrtpTransportPair(
-        rtcp_parameters, rtp_udp_transports, UdpTransportPair(),
+        parameters, rtp_udp_transports, UdpTransportPair(),
         RtpTransportControllerPair());
     EXPECT_TRUE(srtp_transports.first->SetSrtpSendKey(kTestCryptoParams1).ok());
     EXPECT_TRUE(
@@ -182,10 +182,10 @@ class OrtcFactoryIntegrationTest : public testing::Test {
   }
 
   SrtpTransportPair CreateSrtpTransportPairAndSetMismatchingKeys(
-      const RtcpParameters& rtcp_parameters,
+      const RtpTransportParameters& parameters,
       const UdpTransportPair& rtp_udp_transports) {
     SrtpTransportPair srtp_transports = CreateSrtpTransportPair(
-        rtcp_parameters, rtp_udp_transports, UdpTransportPair(),
+        parameters, rtp_udp_transports, UdpTransportPair(),
         RtpTransportControllerPair());
     EXPECT_TRUE(srtp_transports.first->SetSrtpSendKey(kTestCryptoParams1).ok());
     EXPECT_TRUE(
@@ -558,18 +558,18 @@ TEST_F(OrtcFactoryIntegrationTest,
   // transport controller.
   auto transport_controllers = CreateRtpTransportControllerPair();
 
-  RtcpParameters audio_rtcp_parameters;
-  audio_rtcp_parameters.mux = false;
-  auto audio_srtp_transports =
-      CreateSrtpTransportPair(audio_rtcp_parameters, audio_rtp_udp_transports,
-                              audio_rtcp_udp_transports, transport_controllers);
+  RtpTransportParameters audio_rtp_transport_parameters;
+  audio_rtp_transport_parameters.rtcp.mux = false;
+  auto audio_srtp_transports = CreateSrtpTransportPair(
+      audio_rtp_transport_parameters, audio_rtp_udp_transports,
+      audio_rtcp_udp_transports, transport_controllers);
 
-  RtcpParameters video_rtcp_parameters;
-  video_rtcp_parameters.mux = false;
-  video_rtcp_parameters.reduced_size = true;
-  auto video_srtp_transports =
-      CreateSrtpTransportPair(video_rtcp_parameters, video_rtp_udp_transports,
-                              video_rtcp_udp_transports, transport_controllers);
+  RtpTransportParameters video_rtp_transport_parameters;
+  video_rtp_transport_parameters.rtcp.mux = false;
+  video_rtp_transport_parameters.rtcp.reduced_size = true;
+  auto video_srtp_transports = CreateSrtpTransportPair(
+      video_rtp_transport_parameters, video_rtp_udp_transports,
+      video_rtcp_udp_transports, transport_controllers);
 
   // Set keys for SRTP transports.
   audio_srtp_transports.first->SetSrtpSendKey(kTestCryptoParams1);

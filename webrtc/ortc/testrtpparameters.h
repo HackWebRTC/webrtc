@@ -30,10 +30,10 @@ namespace webrtc {
 // parameters is applied properly should construct the parameters in the test
 // itself.
 
-inline RtcpParameters MakeRtcpMuxParameters() {
-  RtcpParameters rtcp_parameters;
-  rtcp_parameters.mux = true;
-  return rtcp_parameters;
+inline RtpTransportParameters MakeRtcpMuxParameters() {
+  RtpTransportParameters parameters;
+  parameters.rtcp.mux = true;
+  return parameters;
 }
 
 RtpParameters MakeMinimalOpusParameters();

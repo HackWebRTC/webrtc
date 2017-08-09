@@ -267,6 +267,7 @@ if (rtc_include_tests) {
       "../call:call_interfaces",
       "../call:mock_rtp_interfaces",
       "../call:rtp_receiver",
+      "../call:rtp_sender",
       "../common_video",
       "../logging:rtc_event_log_api",
       "../media:rtc_media",
