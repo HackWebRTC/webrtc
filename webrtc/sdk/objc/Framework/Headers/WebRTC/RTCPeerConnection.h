@@ -184,6 +184,13 @@ RTC_EXPORT
            completionHandler:
     (nullable void (^)(NSError * _Nullable error))completionHandler;
 
+/** Updates bandwidth estimation parameters. Null parameters will be unchanged.
+ *  Returns true iff the parameters were successfully updated.
+ */
+- (BOOL)setBitrateToMin:(NSNumber *_Nullable)minBitrateBps
+              toCurrent:(NSNumber *_Nullable)currentBitrateBps
+                  toMax:(NSNumber *_Nullable)maxBitrateBps;
+
 /** Start or stop recording an Rtc EventLog. */
 - (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath
                       maxSizeInBytes:(int64_t)maxSizeInBytes;
