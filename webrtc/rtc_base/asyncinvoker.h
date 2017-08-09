@@ -11,6 +11,7 @@
 #ifndef WEBRTC_RTC_BASE_ASYNCINVOKER_H_
 #define WEBRTC_RTC_BASE_ASYNCINVOKER_H_
 
+#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -18,6 +19,8 @@
 #include "webrtc/rtc_base/bind.h"
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/refcountedobject.h"
+#include "webrtc/rtc_base/scoped_ref_ptr.h"
 #include "webrtc/rtc_base/sigslot.h"
 #include "webrtc/rtc_base/thread.h"
 
@@ -70,6 +73,20 @@ namespace rtc {
 //     AsyncInvoker invoker_;
 //     int result_;
 //   };
+//
+// More details about threading:
+// - It's safe to construct/destruct AsyncInvoker on different threads.
+// - It's safe to call AsyncInvoke from different threads.
+// - It's safe to call AsyncInvoke recursively from *within* a functor that's
+//   being AsyncInvoked.
+// - However, it's *not* safe to call AsyncInvoke from *outside* a functor
+//   that's being AsyncInvoked while the AsyncInvoker is being destroyed on
+//   another thread. This is just inherently unsafe and there's no way to
+//   prevent that. So, the user of this class should ensure that the start of
+//   each "chain" of invocations is synchronized somehow with the AsyncInvoker's
+//   destruction. This can be done by starting each chain of invocations on the
+//   same thread on which it will be destroyed, or by using some other
+//   synchronization method.
 class AsyncInvoker : public MessageHandler {
  public:
   AsyncInvoker();
@@ -118,9 +135,28 @@ class AsyncInvoker : public MessageHandler {
                        std::unique_ptr<AsyncClosure> closure,
                        uint32_t delay_ms,
                        uint32_t id);
-  volatile int pending_invocations_ = 0;
-  Event invocation_complete_;
-  bool destroying_ = false;
+
+  // Used to keep track of how many invocations (AsyncClosures) are still
+  // alive, so that the destructor can wait for them to finish, as described in
+  // the class documentation.
+  //
+  // TODO(deadbeef): Using a raw std::atomic like this is prone to error and
+  // difficult to maintain. We should try to wrap this functionality in a
+  // separate class to reduce the chance of errors being introduced in the
+  // future.
+  std::atomic<int> pending_invocations_;
+
+  // Reference counted so that if the AsyncInvoker destructor finishes before
+  // an AsyncClosure's destructor that's about to call
+  // "invocation_complete_->Set()", it's not dereferenced after being
+  // destroyed.
+  scoped_refptr<RefCountedObject<Event>> invocation_complete_;
+
+  // This flag is used to ensure that if an application AsyncInvokes tasks that
+  // recursively AsyncInvoke other tasks ad infinitum, the cycle eventually
+  // terminates.
+  std::atomic<bool> destroying_;
+
   friend class AsyncClosure;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AsyncInvoker);
@@ -149,7 +185,7 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
   bool AsyncInvoke(const Location& posted_from,
                    const FunctorT& functor,
                    uint32_t id = 0) {
-    rtc::CritScope cs(&crit_);
+    CritScope cs(&crit_);
     if (thread_ == nullptr)
       return false;
     invoker_.AsyncInvoke<ReturnT, FunctorT>(posted_from, thread_, functor, id);
@@ -163,7 +199,7 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
                           const FunctorT& functor,
                           uint32_t delay_ms,
                           uint32_t id = 0) {
-    rtc::CritScope cs(&crit_);
+    CritScope cs(&crit_);
     if (thread_ == nullptr)
       return false;
     invoker_.AsyncInvokeDelayed<ReturnT, FunctorT>(posted_from, thread_,
@@ -180,7 +216,7 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
                    void (HostT::*callback)(ReturnT),
                    HostT* callback_host,
                    uint32_t id = 0) {
-    rtc::CritScope cs(&crit_);
+    CritScope cs(&crit_);
     if (thread_ == nullptr)
       return false;
     invoker_.AsyncInvoke<ReturnT, FunctorT, HostT>(
@@ -198,7 +234,7 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
                    void (HostT::*callback)(),
                    HostT* callback_host,
                    uint32_t id = 0) {
-    rtc::CritScope cs(&crit_);
+    CritScope cs(&crit_);
     if (thread_ == nullptr)
       return false;
     invoker_.AsyncInvoke<ReturnT, FunctorT, HostT>(
