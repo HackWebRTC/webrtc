@@ -29,6 +29,7 @@
 namespace {
 // Time limit in milliseconds between packet bursts.
 const int64_t kMinPacketLimitMs = 5;
+const int64_t kPausedPacketIntervalMs = 500;
 
 // Upper cap on process interval, in case process has not been called in a long
 // time.
@@ -239,9 +240,10 @@ void PacedSender::CreateProbeCluster(int bitrate_bps) {
 }
 
 void PacedSender::Pause() {
-  LOG(LS_INFO) << "PacedSender paused.";
   {
     rtc::CritScope cs(&critsect_);
+    if (!paused_)
+      LOG(LS_INFO) << "PacedSender paused.";
     paused_ = true;
   }
   // Tell the process thread to call our TimeUntilNextProcess() method to get
@@ -251,9 +253,10 @@ void PacedSender::Pause() {
 }
 
 void PacedSender::Resume() {
-  LOG(LS_INFO) << "PacedSender resumed.";
   {
     rtc::CritScope cs(&critsect_);
+    if (paused_)
+      LOG(LS_INFO) << "PacedSender resumed.";
     paused_ = false;
   }
   // Tell the process thread to call our TimeUntilNextProcess() method to
@@ -355,16 +358,18 @@ int64_t PacedSender::AverageQueueTimeMs() {
 
 int64_t PacedSender::TimeUntilNextProcess() {
   rtc::CritScope cs(&critsect_);
+  int64_t elapsed_time_us = clock_->TimeInMicroseconds() - time_last_update_us_;
+  int64_t elapsed_time_ms = (elapsed_time_us + 500) / 1000;
+  // When paused we wake up every 500 ms to send a padding packet to ensure
+  // we won't get stuck in the paused state due to no feedback being received.
   if (paused_)
-    return 1000 * 60 * 60;
+    return std::max<int64_t>(kPausedPacketIntervalMs - elapsed_time_ms, 0);
 
   if (prober_->IsProbing()) {
     int64_t ret = prober_->TimeUntilNextProbe(clock_->TimeInMilliseconds());
     if (ret > 0 || (ret == 0 && !probing_send_failure_))
       return ret;
   }
-  int64_t elapsed_time_us = clock_->TimeInMicroseconds() - time_last_update_us_;
-  int64_t elapsed_time_ms = (elapsed_time_us + 500) / 1000;
   return std::max<int64_t>(kMinPacketLimitMs - elapsed_time_ms, 0);
 }
 
@@ -372,9 +377,21 @@ void PacedSender::Process() {
   int64_t now_us = clock_->TimeInMicroseconds();
   rtc::CritScope cs(&critsect_);
   int64_t elapsed_time_ms = (now_us - time_last_update_us_ + 500) / 1000;
-  time_last_update_us_ = now_us;
   int target_bitrate_kbps = pacing_bitrate_kbps_;
-  if (!paused_ && elapsed_time_ms > 0) {
+
+  if (paused_) {
+    PacedPacketInfo pacing_info;
+    time_last_update_us_ = now_us;
+    // We can not send padding unless a normal packet has first been sent. If we
+    // do, timestamps get messed up.
+    if (packet_counter_ == 0)
+      return;
+    size_t bytes_sent = SendPadding(1, pacing_info);
+    alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
+    return;
+  }
+
+  if (elapsed_time_ms > 0) {
     size_t queue_size_bytes = packets_->SizeInBytes();
     if (queue_size_bytes > 0) {
       // Assuming equal size packets and input/output rate, the average packet
@@ -394,6 +411,8 @@ void PacedSender::Process() {
     elapsed_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
     UpdateBudgetWithElapsedTime(elapsed_time_ms);
   }
+
+  time_last_update_us_ = now_us;
 
   bool is_probing = prober_->IsProbing();
   PacedPacketInfo pacing_info;
@@ -424,14 +443,13 @@ void PacedSender::Process() {
     }
   }
 
-  if (packets_->Empty() && !paused_) {
+  if (packets_->Empty()) {
     // We can not send padding unless a normal packet has first been sent. If we
     // do, timestamps get messed up.
     if (packet_counter_ > 0) {
       int padding_needed =
           static_cast<int>(is_probing ? (recommended_probe_size - bytes_sent)
                                       : padding_budget_->bytes_remaining());
-
       if (padding_needed > 0)
         bytes_sent += SendPadding(padding_needed, pacing_info);
     }
@@ -451,8 +469,7 @@ void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet,
                              const PacedPacketInfo& pacing_info) {
-  if (paused_)
-    return false;
+  RTC_DCHECK(!paused_);
   if (media_budget_->bytes_remaining() == 0 &&
       pacing_info.probe_cluster_id == PacedPacketInfo::kNotAProbe) {
     return false;
@@ -482,6 +499,7 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet,
 
 size_t PacedSender::SendPadding(size_t padding_needed,
                                 const PacedPacketInfo& pacing_info) {
+  RTC_DCHECK_GT(packet_counter_, 0);
   critsect_.Leave();
   size_t bytes_sent =
       packet_sender_->TimeToSendPadding(padding_needed, pacing_info);

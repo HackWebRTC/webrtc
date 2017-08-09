@@ -435,17 +435,20 @@ Call::Call(const Call::Config& config,
   call_stats_->RegisterStatsObserver(&receive_side_cc_);
   call_stats_->RegisterStatsObserver(transport_send_->send_side_cc());
 
-  module_process_thread_->Start();
-  module_process_thread_->RegisterModule(call_stats_.get(), RTC_FROM_HERE);
-  module_process_thread_->RegisterModule(&receive_side_cc_, RTC_FROM_HERE);
-  module_process_thread_->RegisterModule(transport_send_->send_side_cc(),
-                                         RTC_FROM_HERE);
+  // We have to attach the pacer to the pacer thread before starting the
+  // module process thread to avoid a race accessing the process thread
+  // both from the process thread and the pacer thread.
   pacer_thread_->RegisterModule(transport_send_->send_side_cc()->pacer(),
                                 RTC_FROM_HERE);
   pacer_thread_->RegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true), RTC_FROM_HERE);
-
   pacer_thread_->Start();
+
+  module_process_thread_->RegisterModule(call_stats_.get(), RTC_FROM_HERE);
+  module_process_thread_->RegisterModule(&receive_side_cc_, RTC_FROM_HERE);
+  module_process_thread_->RegisterModule(transport_send_->send_side_cc(),
+                                         RTC_FROM_HERE);
+  module_process_thread_->Start();
 }
 
 Call::~Call() {
@@ -457,11 +460,15 @@ Call::~Call() {
   RTC_CHECK(audio_receive_streams_.empty());
   RTC_CHECK(video_receive_streams_.empty());
 
+  // The send-side congestion controller must be de-registered prior to
+  // the pacer thread being stopped to avoid a race when accessing the
+  // pacer thread object on the module process thread at the same time as
+  // the pacer thread is stopped.
+  module_process_thread_->DeRegisterModule(transport_send_->send_side_cc());
   pacer_thread_->Stop();
   pacer_thread_->DeRegisterModule(transport_send_->send_side_cc()->pacer());
   pacer_thread_->DeRegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true));
-  module_process_thread_->DeRegisterModule(transport_send_->send_side_cc());
   module_process_thread_->DeRegisterModule(&receive_side_cc_);
   module_process_thread_->DeRegisterModule(call_stats_.get());
   module_process_thread_->Stop();

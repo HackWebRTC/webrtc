@@ -25,9 +25,19 @@
 #include "webrtc/rtc_base/rate_limiter.h"
 #include "webrtc/rtc_base/socket.h"
 #include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {
+
+const char kCwndExperiment[] = "WebRTC-CwndExperiment";
+
+bool CwndExperimentEnabled() {
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName(kCwndExperiment);
+  // The experiment is enabled iff the field trial string begins with "Enabled".
+  return experiment_string.find("Enabled") == 0;
+}
 
 static const int64_t kRetransmitWindowSizeMs = 500;
 
@@ -100,8 +110,11 @@ SendSideCongestionController::SendSideCongestionController(
       last_reported_fraction_loss_(0),
       last_reported_rtt_(0),
       network_state_(kNetworkUp),
+      pause_pacer_(false),
+      pacer_paused_(false),
       min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       delay_based_bwe_(new DelayBasedBwe(event_log_, clock_)),
+      in_cwnd_experiment_(CwndExperimentEnabled()),
       was_in_alr_(0) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
 }
@@ -219,13 +232,9 @@ SendSideCongestionController::GetTransportFeedbackObserver() {
 void SendSideCongestionController::SignalNetworkState(NetworkState state) {
   LOG(LS_INFO) << "SignalNetworkState "
                << (state == kNetworkUp ? "Up" : "Down");
-  if (state == kNetworkUp) {
-    pacer_->Resume();
-  } else {
-    pacer_->Pause();
-  }
   {
     rtc::CritScope cs(&network_state_lock_);
+    pause_pacer_ = state == kNetworkDown;
     network_state_ = state;
   }
   probe_controller_->OnNetworkStateChanged(state);
@@ -246,6 +255,7 @@ void SendSideCongestionController::OnSentPacket(
     return;
   transport_feedback_adapter_.OnSentPacket(sent_packet.packet_id,
                                            sent_packet.send_time_ms);
+  LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
 }
 
 void SendSideCongestionController::OnRttUpdate(int64_t avg_rtt_ms,
@@ -259,6 +269,20 @@ int64_t SendSideCongestionController::TimeUntilNextProcess() {
 }
 
 void SendSideCongestionController::Process() {
+  bool pause_pacer;
+  // TODO(holmer): Once this class is running on a task queue we should
+  // replace this with a task instead.
+  {
+    rtc::CritScope lock(&network_state_lock_);
+    pause_pacer = pause_pacer_;
+  }
+  if (pause_pacer && !pacer_paused_) {
+    pacer_->Pause();
+    pacer_paused_ = true;
+  } else if (!pause_pacer && pacer_paused_) {
+    pacer_->Resume();
+    pacer_paused_ = false;
+  }
   bitrate_controller_->Process();
   probe_controller_->Process();
   MaybeTriggerOnNetworkChanged();
@@ -305,6 +329,35 @@ void SendSideCongestionController::OnTransportFeedback(
   }
   if (result.recovered_from_overuse)
     probe_controller_->RequestProbe();
+  LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
+}
+
+void SendSideCongestionController::LimitOutstandingBytes(
+    size_t num_outstanding_bytes) {
+  if (!in_cwnd_experiment_)
+    return;
+  {
+    rtc::CritScope lock(&network_state_lock_);
+    rtc::Optional<int64_t> min_rtt_ms =
+        transport_feedback_adapter_.GetMinFeedbackLoopRtt();
+    // No valid RTT. Could be because send-side BWE isn't used, in which case
+    // we don't try to limit the outstanding packets.
+    if (!min_rtt_ms)
+      return;
+    const int64_t kAcceptedQueueMs = 250;
+    const size_t kMinCwndBytes = 2 * 1500;
+    size_t max_outstanding_bytes =
+        std::max<size_t>((*min_rtt_ms + kAcceptedQueueMs) *
+                             last_reported_bitrate_bps_ / 1000 / 8,
+                         kMinCwndBytes);
+    LOG(LS_INFO) << clock_->TimeInMilliseconds()
+                 << " Outstanding bytes: " << num_outstanding_bytes
+                 << " pacer queue: " << pacer_->QueueInMs()
+                 << " max outstanding: " << max_outstanding_bytes;
+    LOG(LS_INFO) << "Feedback rtt: " << *min_rtt_ms
+                 << " Bitrate: " << last_reported_bitrate_bps_;
+    pause_pacer_ = num_outstanding_bytes > max_outstanding_bytes;
+  }
 }
 
 std::vector<PacketFeedback>
