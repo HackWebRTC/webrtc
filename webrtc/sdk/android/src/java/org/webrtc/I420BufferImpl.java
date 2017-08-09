@@ -110,6 +110,7 @@ class I420BufferImpl implements VideoFrame.I420Buffer {
 
   @Override
   public I420Buffer toI420() {
+    retain();
     return this;
   }
 

@@ -81,6 +81,7 @@ class WrappedNativeI420Buffer implements VideoFrame.I420Buffer {
 
   @Override
   public VideoFrame.I420Buffer toI420() {
+    retain();
     return this;
   }
 

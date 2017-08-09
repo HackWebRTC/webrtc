@@ -129,7 +129,7 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
   const int width_;
   const int height_;
   // Holds a VideoFrame.Buffer.
-  ScopedGlobalRef<jobject> j_video_frame_buffer_;
+  const ScopedGlobalRef<jobject> j_video_frame_buffer_;
 };
 
 class AndroidVideoBufferFactory {
