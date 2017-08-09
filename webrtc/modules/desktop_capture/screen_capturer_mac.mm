@@ -276,7 +276,8 @@ CGImageRef CreateExcludedWindowRegionImage(const DesktopRect& pixel_bounds,
 class ScreenCapturerMac : public DesktopCapturer {
  public:
   explicit ScreenCapturerMac(
-      rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor);
+      rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor,
+      bool detect_updated_region);
   ~ScreenCapturerMac() override;
 
   bool Init();
@@ -310,6 +311,8 @@ class ScreenCapturerMac : public DesktopCapturer {
   void ReleaseBuffers();
 
   std::unique_ptr<DesktopFrame> CreateFrame();
+
+  const bool detect_updated_region_;
 
   Callback* callback_ = nullptr;
 
@@ -383,8 +386,10 @@ class InvertedDesktopFrame : public DesktopFrame {
 };
 
 ScreenCapturerMac::ScreenCapturerMac(
-    rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor)
-    : desktop_config_monitor_(desktop_config_monitor) {
+    rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor,
+    bool detect_updated_region)
+    : detect_updated_region_(detect_updated_region),
+      desktop_config_monitor_(desktop_config_monitor) {
   display_stream_manager_ = new DisplayStreamManager;
 }
 
@@ -479,7 +484,12 @@ void ScreenCapturerMac::CaptureFrame() {
   }
 
   std::unique_ptr<DesktopFrame> new_frame = queue_.current_frame()->Share();
-  *new_frame->mutable_updated_region() = region;
+  if (detect_updated_region_) {
+    *new_frame->mutable_updated_region() = region;
+  } else {
+    new_frame->mutable_updated_region()->AddRect(
+        DesktopRect::MakeSize(new_frame->size()));
+  }
 
   if (flip)
     new_frame.reset(new InvertedDesktopFrame(std::move(new_frame)));
@@ -1033,8 +1043,8 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
   if (!options.configuration_monitor())
     return nullptr;
 
-  std::unique_ptr<ScreenCapturerMac> capturer(
-      new ScreenCapturerMac(options.configuration_monitor()));
+  std::unique_ptr<ScreenCapturerMac> capturer(new ScreenCapturerMac(
+      options.configuration_monitor(), options.detect_updated_region()));
   if (!capturer.get()->Init()) {
     return nullptr;
   }
