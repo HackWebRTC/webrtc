@@ -57,7 +57,8 @@ class FrameBuffer {
   //    kTimeout.
   //  - If the FrameBuffer is stopped then it will return kStopped.
   ReturnReason NextFrame(int64_t max_wait_time_ms,
-                         std::unique_ptr<FrameObject>* frame_out);
+                         std::unique_ptr<FrameObject>* frame_out,
+                         bool keyframe_required = false);
 
   // Tells the FrameBuffer which protection mode that is in use. Affects
   // the frame timing.

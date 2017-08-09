@@ -144,6 +144,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   std::unique_ptr<RtpStreamReceiverInterface> media_receiver_;
   std::unique_ptr<RtpStreamReceiverInterface> rtx_receiver_;
+
+  // Whenever we are in an undecodable state (stream has just started or due to
+  // a decoding error) we require a keyframe to restart the stream.
+  bool keyframe_required_ = true;
 };
 }  // namespace internal
 }  // namespace webrtc
