@@ -84,10 +84,10 @@ struct DescendingSeqNumComp {
 // can be set. The unwrapped value is not allowed to wrap.
 template <typename T, T M = 0>
 class SeqNumUnwrapper {
+  // Use '<' instead of rtc::SafeLt to avoid crbug.com/753488
   static_assert(
       std::is_unsigned<T>::value &&
-          rtc::SafeLt(std::numeric_limits<T>::max(),
-                      std::numeric_limits<uint64_t>::max()),
+          std::numeric_limits<T>::max() < std::numeric_limits<uint64_t>::max(),
       "Type unwrapped must be an unsigned integer smaller than uint64_t.");
 
  public:
