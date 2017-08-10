@@ -29,6 +29,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/numerics/exp_filter.h"
 #include "webrtc/rtc_base/random.h"
 #include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/rtc_base/trace_event.h"
@@ -122,6 +123,28 @@ bool GetGfBoostPercentageFromFieldTrialGroup(int* boost_percentage) {
 
   return true;
 }
+
+void GetPostProcParamsFromFieldTrialGroup(
+    VP8DecoderImpl::DeblockParams* deblock_params) {
+  std::string group =
+      webrtc::field_trial::FindFullName(kVp8PostProcArmFieldTrial);
+  if (group.empty())
+    return;
+
+  VP8DecoderImpl::DeblockParams params;
+  if (sscanf(group.c_str(), "Enabled-%d,%d,%d", &params.max_level,
+             &params.min_qp, &params.degrade_qp) != 3)
+    return;
+
+  if (params.max_level < 0 || params.max_level > 16)
+    return;
+
+  if (params.min_qp < 0 || params.degrade_qp <= params.min_qp)
+    return;
+
+  *deblock_params = params;
+}
+
 }  // namespace
 
 VP8Encoder* VP8Encoder::Create() {
@@ -925,9 +948,33 @@ int VP8EncoderImpl::RegisterEncodeCompleteCallback(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
+class VP8DecoderImpl::QpSmoother {
+ public:
+  QpSmoother() : last_sample_ms_(rtc::TimeMillis()), smoother_(kAlpha) {}
+
+  int GetAvg() const {
+    float value = smoother_.filtered();
+    return (value == rtc::ExpFilter::kValueUndefined) ? 0
+                                                      : static_cast<int>(value);
+  }
+
+  void Add(float sample) {
+    int64_t now_ms = rtc::TimeMillis();
+    smoother_.Apply(static_cast<float>(now_ms - last_sample_ms_), sample);
+    last_sample_ms_ = now_ms;
+  }
+
+  void Reset() { smoother_.Reset(kAlpha); }
+
+ private:
+  const float kAlpha = 0.95f;
+  int64_t last_sample_ms_;
+  rtc::ExpFilter smoother_;
+};
+
 VP8DecoderImpl::VP8DecoderImpl()
-    : use_postproc_arm_(webrtc::field_trial::FindFullName(
-                            kVp8PostProcArmFieldTrial) == "Enabled"),
+    : use_postproc_arm_(
+          webrtc::field_trial::IsEnabled(kVp8PostProcArmFieldTrial)),
       buffer_pool_(false, 300 /* max_number_of_buffers*/),
       decode_complete_callback_(NULL),
       inited_(false),
@@ -935,7 +982,11 @@ VP8DecoderImpl::VP8DecoderImpl()
       propagation_cnt_(-1),
       last_frame_width_(0),
       last_frame_height_(0),
-      key_frame_required_(true) {}
+      key_frame_required_(true),
+      qp_smoother_(use_postproc_arm_ ? new QpSmoother() : nullptr) {
+  if (use_postproc_arm_)
+    GetPostProcParamsFromFieldTrialGroup(&deblock_);
+}
 
 VP8DecoderImpl::~VP8DecoderImpl() {
   inited_ = true;  // in order to do the actual release
@@ -999,12 +1050,23 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
   if (use_postproc_arm_) {
     vp8_postproc_cfg_t ppcfg;
     ppcfg.post_proc_flag = VP8_MFQE;
-    // For low resolutions, use stronger deblocking filter and enable the
-    // deblock and demacroblocker.
+    // For low resolutions, use stronger deblocking filter.
     int last_width_x_height = last_frame_width_ * last_frame_height_;
     if (last_width_x_height > 0 && last_width_x_height <= 320 * 240) {
-      ppcfg.deblocking_level = 6;  // Only affects VP8_DEMACROBLOCK.
-      ppcfg.post_proc_flag |= VP8_DEBLOCK | VP8_DEMACROBLOCK;
+      // Enable the deblock and demacroblocker based on qp thresholds.
+      RTC_DCHECK(qp_smoother_);
+      int qp = qp_smoother_->GetAvg();
+      if (qp > deblock_.min_qp) {
+        int level = deblock_.max_level;
+        if (qp < deblock_.degrade_qp) {
+          // Use lower level.
+          level = deblock_.max_level * (qp - deblock_.min_qp) /
+                  (deblock_.degrade_qp - deblock_.min_qp);
+        }
+        // Deblocking level only affects VP8_DEMACROBLOCK.
+        ppcfg.deblocking_level = std::max(level, 1);
+        ppcfg.post_proc_flag |= VP8_DEBLOCK | VP8_DEMACROBLOCK;
+      }
     }
     vpx_codec_control(decoder_, VP8_SET_POSTPROC, &ppcfg);
   }
@@ -1103,6 +1165,13 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
   if (img == NULL) {
     // Decoder OK and NULL image => No show frame
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
+  }
+  if (qp_smoother_) {
+    if (last_frame_width_ != static_cast<int>(img->d_w) ||
+        last_frame_height_ != static_cast<int>(img->d_h)) {
+      qp_smoother_->Reset();
+    }
+    qp_smoother_->Add(qp);
   }
   last_frame_width_ = img->d_w;
   last_frame_height_ = img->d_h;
