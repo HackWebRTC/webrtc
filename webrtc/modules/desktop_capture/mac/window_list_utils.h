@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_LIST_UTILS_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_LIST_UTILS_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_
 
 #include <ApplicationServices/ApplicationServices.h>
 
@@ -24,8 +24,8 @@ namespace webrtc {
 // Iterates all on-screen windows in decreasing z-order and sends them
 // one-by-one to |on_window| function. If |on_window| returns false, this
 // function returns immediately. GetWindowList() returns false if native APIs
-// failed. Menus, dock, minimized windows and any windows which do not have a
-// valid window id or title will be ignored.
+// failed. Menus, dock, minimized windows (if |ignore_minimized| is true) and
+// any windows which do not have a valid window id or title will be ignored.
 bool GetWindowList(rtc::FunctionView<bool(CFDictionaryRef)> on_window,
                    bool ignore_minimized);
 
@@ -56,4 +56,4 @@ DesktopRect GetWindowBounds(CFDictionaryRef window);
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_LIST_UTILS_H_
+#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_
