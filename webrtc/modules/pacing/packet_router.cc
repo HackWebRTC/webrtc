@@ -10,6 +10,9 @@
 
 #include "webrtc/modules/pacing/packet_router.h"
 
+#include <algorithm>
+#include <limits>
+
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
@@ -18,10 +21,17 @@
 #include "webrtc/rtc_base/timeutils.h"
 
 namespace webrtc {
+namespace {
+
+constexpr int kRembSendIntervalMs = 200;
+
+}  // namespace
 
 PacketRouter::PacketRouter()
     : last_remb_time_ms_(rtc::TimeMillis()),
       last_send_bitrate_bps_(0),
+      bitrate_bps_(0),
+      max_bitrate_bps_(std::numeric_limits<decltype(max_bitrate_bps_)>::max()),
       active_remb_module_(nullptr),
       transport_seq_(0) {}
 
@@ -142,8 +152,6 @@ uint16_t PacketRouter::AllocateSequenceNumber() {
 
 void PacketRouter::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                            uint32_t bitrate_bps) {
-  const int kRembSendIntervalMs = 200;
-
   // % threshold for if we should send a new REMB asap.
   const uint32_t kSendThresholdPercent = 97;
 
@@ -173,8 +181,24 @@ void PacketRouter::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
     // a module to actually send it.
     last_remb_time_ms_ = now_ms;
     last_send_bitrate_bps_ = bitrate_bps;
+    // Cap the value to send in remb with configured value.
+    bitrate_bps = std::min(bitrate_bps, max_bitrate_bps_);
   }
   SendRemb(bitrate_bps, ssrcs);
+}
+
+void PacketRouter::SetMaxDesiredReceiveBitrate(uint32_t bitrate_bps) {
+  {
+    rtc::CritScope lock(&remb_crit_);
+    max_bitrate_bps_ = bitrate_bps;
+    if (rtc::TimeMillis() - last_remb_time_ms_ < kRembSendIntervalMs &&
+        last_send_bitrate_bps_ > 0 &&
+        last_send_bitrate_bps_ <= max_bitrate_bps_) {
+      // Recent measured bitrate is already below the cap.
+      return;
+    }
+  }
+  SendRemb(bitrate_bps, /*ssrcs=*/{});
 }
 
 bool PacketRouter::SendRemb(uint32_t bitrate_bps,
