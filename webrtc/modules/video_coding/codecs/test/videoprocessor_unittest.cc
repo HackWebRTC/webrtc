@@ -22,6 +22,7 @@
 #include "webrtc/test/testsupport/mock/mock_frame_writer.h"
 #include "webrtc/test/testsupport/packet_reader.h"
 #include "webrtc/test/testsupport/unittest_utils.h"
+#include "webrtc/test/video_codec_settings.h"
 #include "webrtc/typedefs.h"
 
 using ::testing::_;
@@ -45,7 +46,7 @@ class VideoProcessorTest : public testing::Test {
  protected:
   VideoProcessorTest() {
     // Get a codec configuration struct and configure it.
-    VideoCodingModule::Codec(kVideoCodecVP8, &config_.codec_settings);
+    webrtc::test::CodecSettings(kVideoCodecVP8, &config_.codec_settings);
     config_.codec_settings.width = kWidth;
     config_.codec_settings.height = kHeight;
     config_.codec_settings.maxFramerate = kFramerate;

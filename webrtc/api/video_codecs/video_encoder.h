@@ -41,7 +41,7 @@ class EncodedImageCallback {
       ERROR_SEND_FAILED,
     };
 
-    Result(Error error) : error(error) {}
+    explicit Result(Error error) : error(error) {}
     Result(Error error, uint32_t frame_id) : error(error), frame_id(frame_id) {}
 
     Error error;
@@ -74,10 +74,11 @@ class VideoEncoder {
     int high;
   };
   struct ScalingSettings {
-    ScalingSettings(bool on, int low, int high)
-        : enabled(on),
-          thresholds(rtc::Optional<QpThresholds>(QpThresholds(low, high))) {}
-    explicit ScalingSettings(bool on) : enabled(on) {}
+    ScalingSettings(bool on, int low, int high);
+    explicit ScalingSettings(bool on);
+    ScalingSettings(const ScalingSettings&);
+    ~ScalingSettings();
+
     const bool enabled;
     const rtc::Optional<QpThresholds> thresholds;
   };
@@ -155,28 +156,20 @@ class VideoEncoder {
   //          - framerate       : The target frame rate
   //
   // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-  virtual int32_t SetRates(uint32_t bitrate, uint32_t framerate) {
-    RTC_NOTREACHED() << "SetRate(uint32_t, uint32_t) is deprecated.";
-    return -1;
-  }
+  virtual int32_t SetRates(uint32_t bitrate, uint32_t framerate);
 
   // Default fallback: Just use the sum of bitrates as the single target rate.
   // TODO(sprang): Remove this default implementation when we remove SetRates().
   virtual int32_t SetRateAllocation(const BitrateAllocation& allocation,
-                                    uint32_t framerate) {
-    return SetRates(allocation.get_sum_kbps(), framerate);
-  }
+                                    uint32_t framerate);
 
   // Any encoder implementation wishing to use the WebRTC provided
   // quality scaler must implement this method.
-  virtual ScalingSettings GetScalingSettings() const {
-    return ScalingSettings(false);
-  }
+  virtual ScalingSettings GetScalingSettings() const;
 
-  virtual int32_t SetPeriodicKeyFrames(bool enable) { return -1; }
-  virtual bool SupportsNativeHandle() const { return false; }
-  virtual const char* ImplementationName() const { return "unknown"; }
+  virtual int32_t SetPeriodicKeyFrames(bool enable);
+  virtual bool SupportsNativeHandle() const;
+  virtual const char* ImplementationName() const;
 };
-
 }  // namespace webrtc
 #endif  // WEBRTC_API_VIDEO_CODECS_VIDEO_ENCODER_H_

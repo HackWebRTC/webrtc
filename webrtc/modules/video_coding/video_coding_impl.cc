@@ -270,10 +270,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 };
 }  // namespace
 
-void VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec) {
-  VCMCodecDataBase::Codec(codecType, codec);
-}
-
 // DEPRECATED.  Create method for current interface, will be removed when the
 // new jitter buffer is in place.
 VideoCodingModule* VideoCodingModule::Create(Clock* clock,

@@ -47,10 +47,6 @@ class VCMCodecDataBase {
   explicit VCMCodecDataBase(VCMEncodedFrameCallback* encoded_frame_callback);
   ~VCMCodecDataBase();
 
-  // Sender Side
-  // Returns the default settings for the codec with type |codec_type|.
-  static void Codec(VideoCodecType codec_type, VideoCodec* settings);
-
   // Sets the sender side codec and initiates the desired codec given the
   // VideoCodec struct.
   // Returns true if the codec was successfully registered, false otherwise.

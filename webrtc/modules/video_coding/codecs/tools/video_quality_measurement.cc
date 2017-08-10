@@ -31,6 +31,7 @@
 #include "webrtc/test/testsupport/frame_writer.h"
 #include "webrtc/test/testsupport/metrics/video_metrics.h"
 #include "webrtc/test/testsupport/packet_reader.h"
+#include "webrtc/test/video_codec_settings.h"
 
 DEFINE_string(test_name, "Quality test", "The name of the test to run. ");
 DEFINE_string(test_description,
@@ -204,8 +205,7 @@ int HandleCommandLineFlags(webrtc::test::TestConfig* config) {
   config->use_single_core = FLAGS_use_single_core;
 
   // Get codec specific configuration.
-  webrtc::VideoCodingModule::Codec(webrtc::kVideoCodecVP8,
-                                   &config->codec_settings);
+  webrtc::test::CodecSettings(webrtc::kVideoCodecVP8, &config->codec_settings);
 
   // Check the temporal layers.
   if (FLAGS_temporal_layers < 0 ||

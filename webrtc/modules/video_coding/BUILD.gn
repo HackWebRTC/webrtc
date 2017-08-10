@@ -407,6 +407,7 @@ if (rtc_include_tests) {
       "../../media:rtc_media",
       "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
+      "../../test:video_test_common",
       "../../test:video_test_support",
     ]
 

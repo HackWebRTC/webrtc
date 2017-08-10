@@ -25,6 +25,7 @@
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/video_codec_settings.h"
 
 using ::testing::_;
 using ::testing::AllOf;
@@ -206,7 +207,7 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
   void SetUp() override {
     TestVideoSender::SetUp();
     sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, false);
-    VideoCodingModule::Codec(kVideoCodecVP8, &settings_);
+    webrtc::test::CodecSettings(kVideoCodecVP8, &settings_);
     settings_.numberOfSimulcastStreams = kNumberOfStreams;
     ConfigureStream(kDefaultWidth / 4, kDefaultHeight / 4, 100,
                     &settings_.simulcastStream[0]);
@@ -426,7 +427,7 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
                                       int height,
                                       int temporal_layers) {
     VideoCodec codec;
-    VideoCodingModule::Codec(kVideoCodecVP8, &codec);
+    webrtc::test::CodecSettings(kVideoCodecVP8, &codec);
     codec.width = width;
     codec.height = height;
     codec.VP8()->numberOfTemporalLayers = temporal_layers;

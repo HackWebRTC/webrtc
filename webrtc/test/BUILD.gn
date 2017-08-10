@@ -50,6 +50,7 @@ rtc_source_set("video_test_common") {
     "vcm_capturer.h",
     "video_capturer.cc",
     "video_capturer.h",
+    "video_codec_settings.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -60,6 +61,7 @@ rtc_source_set("video_test_common") {
   deps = [
     "..:video_stream_api",
     "..:webrtc_common",
+    "../api/video_codecs:video_codecs_api",
     "../common_video",
     "../media:rtc_media_base",
     "../modules/video_capture:video_capture_module",

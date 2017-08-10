@@ -40,7 +40,6 @@ namespace webrtc {
 #define VCM_NOT_IMPLEMENTED -20
 
 enum {
-  kDefaultStartBitrateKbps = 300,
   // Timing frames settings. Timing frames are sent every
   // |kDefaultTimingFramesDelayMs|, or if the frame is at least
   // |kDefaultOutliserFrameSizePercent| in size of average frame.

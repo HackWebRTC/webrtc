@@ -74,16 +74,6 @@ class VideoCodingModule : public Module {
   // DEPRECATED.
   static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 
-  // Get supported codec settings using codec type
-  //
-  // Input:
-  //      - codecType      : The codec type to get settings for
-  //      - codec          : Memory where the codec settings will be stored
-  //
-  // Return value     : VCM_OK,              on success
-  //                    VCM_PARAMETER_ERROR  if codec not supported
-  static void Codec(VideoCodecType codecType, VideoCodec* codec);
-
   /*
   *   Sender
   */

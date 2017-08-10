@@ -42,4 +42,15 @@ size_t EncodedImage::GetBufferPaddingBytes(VideoCodecType codec_type) {
   return 0;
 }
 
+EncodedImage::EncodedImage() : EncodedImage(nullptr, 0, 0) {}
+
+EncodedImage::EncodedImage(uint8_t* buffer, size_t length, size_t size)
+      : _buffer(buffer), _length(length), _size(size) {}
+
+void EncodedImage::SetEncodeTime(int64_t encode_start_ms,
+                                int64_t encode_finish_ms) const {
+    timing_.is_timing_frame = true;
+    timing_.encode_start_ms = encode_start_ms;
+    timing_.encode_finish_ms = encode_finish_ms;
+}
 }  // namespace webrtc

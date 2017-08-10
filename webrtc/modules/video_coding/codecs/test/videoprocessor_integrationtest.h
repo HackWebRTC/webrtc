@@ -47,6 +47,7 @@
 #include "webrtc/test/testsupport/frame_writer.h"
 #include "webrtc/test/testsupport/metrics/video_metrics.h"
 #include "webrtc/test/testsupport/packet_reader.h"
+#include "webrtc/test/video_codec_settings.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -634,7 +635,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
                                bool resilience_on,
                                int width,
                                int height) {
-    VideoCodingModule::Codec(codec_type, &config->codec_settings);
+    webrtc::test::CodecSettings(codec_type, &config->codec_settings);
     config->codec_settings.width = width;
     config->codec_settings.height = height;
     switch (config->codec_settings.codecType) {

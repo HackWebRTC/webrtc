@@ -17,7 +17,6 @@ import sys
 CPPLINT_BLACKLIST = [
   'tools_webrtc',
   'webrtc/api/video_codecs/video_decoder.h',
-  'webrtc/api/video_codecs/video_encoder.h',
   'webrtc/examples/objc',
   'webrtc/media',
   'webrtc/modules/audio_coding',

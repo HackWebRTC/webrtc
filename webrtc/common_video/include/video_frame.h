@@ -30,16 +30,10 @@ class EncodedImage {
   // number of additional bytes (due to over-reading byte readers).
   static size_t GetBufferPaddingBytes(VideoCodecType codec_type);
 
-  EncodedImage() : EncodedImage(nullptr, 0, 0) {}
+  EncodedImage();
+  EncodedImage(uint8_t* buffer, size_t length, size_t size);
 
-  EncodedImage(uint8_t* buffer, size_t length, size_t size)
-      : _buffer(buffer), _length(length), _size(size) {}
-
-  void SetEncodeTime(int64_t encode_start_ms, int64_t encode_finish_ms) const {
-    timing_.is_timing_frame = true;
-    timing_.encode_start_ms = encode_start_ms;
-    timing_.encode_finish_ms = encode_finish_ms;
-  }
+  void SetEncodeTime(int64_t encode_start_ms, int64_t encode_finish_ms) const;
 
   // TODO(kthelgason): get rid of this struct as it only has a single member
   // remaining.

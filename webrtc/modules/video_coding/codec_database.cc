@@ -20,56 +20,9 @@
 
 namespace {
 const size_t kDefaultPayloadSize = 1440;
-const uint8_t kDefaultPayloadType = 100;
 }
 
 namespace webrtc {
-
-VideoCodecVP8 VideoEncoder::GetDefaultVp8Settings() {
-  VideoCodecVP8 vp8_settings;
-  memset(&vp8_settings, 0, sizeof(vp8_settings));
-
-  vp8_settings.resilience = kResilientStream;
-  vp8_settings.numberOfTemporalLayers = 1;
-  vp8_settings.denoisingOn = true;
-  vp8_settings.errorConcealmentOn = false;
-  vp8_settings.automaticResizeOn = false;
-  vp8_settings.frameDroppingOn = true;
-  vp8_settings.keyFrameInterval = 3000;
-
-  return vp8_settings;
-}
-
-VideoCodecVP9 VideoEncoder::GetDefaultVp9Settings() {
-  VideoCodecVP9 vp9_settings;
-  memset(&vp9_settings, 0, sizeof(vp9_settings));
-
-  vp9_settings.resilienceOn = true;
-  vp9_settings.numberOfTemporalLayers = 1;
-  vp9_settings.denoisingOn = true;
-  vp9_settings.frameDroppingOn = true;
-  vp9_settings.keyFrameInterval = 3000;
-  vp9_settings.adaptiveQpMode = true;
-  vp9_settings.automaticResizeOn = true;
-  vp9_settings.numberOfSpatialLayers = 1;
-  vp9_settings.flexibleMode = false;
-  return vp9_settings;
-}
-
-VideoCodecH264 VideoEncoder::GetDefaultH264Settings() {
-  VideoCodecH264 h264_settings;
-  memset(&h264_settings, 0, sizeof(h264_settings));
-
-  h264_settings.frameDroppingOn = true;
-  h264_settings.keyFrameInterval = 3000;
-  h264_settings.spsData = nullptr;
-  h264_settings.spsLen = 0;
-  h264_settings.ppsData = nullptr;
-  h264_settings.ppsLen = 0;
-  h264_settings.profile = H264::kProfileConstrainedBaseline;
-
-  return h264_settings;
-}
 
 // Create an internal Decoder given a codec type
 static std::unique_ptr<VCMGenericDecoder> CreateDecoder(VideoCodecType type) {
@@ -133,89 +86,6 @@ VCMCodecDataBase::~VCMCodecDataBase() {
     delete kv.second;
   for (auto& kv : dec_external_map_)
     delete kv.second;
-}
-
-void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
-  memset(settings, 0, sizeof(VideoCodec));
-  switch (codec_type) {
-    case kVideoCodecVP8:
-      strncpy(settings->plName, "VP8", 4);
-      settings->codecType = kVideoCodecVP8;
-      // 96 to 127 dynamic payload types for video codecs.
-      settings->plType = kDefaultPayloadType;
-      settings->startBitrate = kDefaultStartBitrateKbps;
-      settings->minBitrate = VCM_MIN_BITRATE;
-      settings->maxBitrate = 0;
-      settings->maxFramerate = VCM_DEFAULT_FRAME_RATE;
-      settings->width = VCM_DEFAULT_CODEC_WIDTH;
-      settings->height = VCM_DEFAULT_CODEC_HEIGHT;
-      settings->numberOfSimulcastStreams = 0;
-      settings->qpMax = 56;
-      settings->timing_frame_thresholds = {
-          kDefaultTimingFramesDelayMs, kDefaultOutlierFrameSizePercent,
-      };
-      *(settings->VP8()) = VideoEncoder::GetDefaultVp8Settings();
-      return;
-    case kVideoCodecVP9:
-      strncpy(settings->plName, "VP9", 4);
-      settings->codecType = kVideoCodecVP9;
-      // 96 to 127 dynamic payload types for video codecs.
-      settings->plType = kDefaultPayloadType;
-      settings->startBitrate = 100;
-      settings->minBitrate = VCM_MIN_BITRATE;
-      settings->maxBitrate = 0;
-      settings->maxFramerate = VCM_DEFAULT_FRAME_RATE;
-      settings->width = VCM_DEFAULT_CODEC_WIDTH;
-      settings->height = VCM_DEFAULT_CODEC_HEIGHT;
-      settings->numberOfSimulcastStreams = 0;
-      settings->qpMax = 56;
-      settings->timing_frame_thresholds = {
-          kDefaultTimingFramesDelayMs, kDefaultOutlierFrameSizePercent,
-      };
-      *(settings->VP9()) = VideoEncoder::GetDefaultVp9Settings();
-      return;
-    case kVideoCodecH264:
-      strncpy(settings->plName, "H264", 5);
-      settings->codecType = kVideoCodecH264;
-      // 96 to 127 dynamic payload types for video codecs.
-      settings->plType = kDefaultPayloadType;
-      settings->startBitrate = kDefaultStartBitrateKbps;
-      settings->minBitrate = VCM_MIN_BITRATE;
-      settings->maxBitrate = 0;
-      settings->maxFramerate = VCM_DEFAULT_FRAME_RATE;
-      settings->width = VCM_DEFAULT_CODEC_WIDTH;
-      settings->height = VCM_DEFAULT_CODEC_HEIGHT;
-      settings->numberOfSimulcastStreams = 0;
-      settings->qpMax = 56;
-      settings->timing_frame_thresholds = {
-          kDefaultTimingFramesDelayMs, kDefaultOutlierFrameSizePercent,
-      };
-      *(settings->H264()) = VideoEncoder::GetDefaultH264Settings();
-      return;
-    case kVideoCodecI420:
-      strncpy(settings->plName, "I420", 5);
-      settings->codecType = kVideoCodecI420;
-      // 96 to 127 dynamic payload types for video codecs.
-      settings->plType = kDefaultPayloadType;
-      // Bitrate needed for this size and framerate.
-      settings->startBitrate = 3 * VCM_DEFAULT_CODEC_WIDTH *
-                               VCM_DEFAULT_CODEC_HEIGHT * 8 *
-                               VCM_DEFAULT_FRAME_RATE / 1000 / 2;
-      settings->maxBitrate = settings->startBitrate;
-      settings->maxFramerate = VCM_DEFAULT_FRAME_RATE;
-      settings->width = VCM_DEFAULT_CODEC_WIDTH;
-      settings->height = VCM_DEFAULT_CODEC_HEIGHT;
-      settings->minBitrate = VCM_MIN_BITRATE;
-      settings->numberOfSimulcastStreams = 0;
-      return;
-    case kVideoCodecRED:
-    case kVideoCodecULPFEC:
-    case kVideoCodecFlexfec:
-    case kVideoCodecGeneric:
-    case kVideoCodecUnknown:
-      RTC_NOTREACHED();
-      return;
-  }
 }
 
 // Assuming only one registered encoder - since only one used, no need for more.
