@@ -2380,7 +2380,9 @@ TEST_F(EndToEndTest, MAYBE_InitialProbing) {
   class InitialProbingTest : public ProbingTest {
    public:
     explicit InitialProbingTest(bool* success)
-        : ProbingTest(300000), success_(success) {}
+        : ProbingTest(300000), success_(success) {
+      *success_ = false;
+    }
 
     void PerformTest() override {
       int64_t start_time_ms = clock_->TimeInMilliseconds();
@@ -2403,7 +2405,7 @@ TEST_F(EndToEndTest, MAYBE_InitialProbing) {
     bool* const success_;
   };
 
-  bool success;
+  bool success = false;
   const int kMaxAttempts = 3;
   for (int i = 0; i < kMaxAttempts; ++i) {
     InitialProbingTest test(&success);
@@ -2411,8 +2413,8 @@ TEST_F(EndToEndTest, MAYBE_InitialProbing) {
     if (success)
       return;
   }
-  RTC_DCHECK(success) << "Failed to perform mid initial probing ("
-                      << kMaxAttempts << " attempts).";
+  EXPECT_TRUE(success) << "Failed to perform mid initial probing ("
+                       << kMaxAttempts << " attempts).";
 }
 
 // Fails on Linux MSan: bugs.webrtc.org/7428
@@ -2474,7 +2476,7 @@ TEST_F(EndToEndTest, TriggerMidCallProbing) {
     bool* const success_;
   };
 
-  bool success;
+  bool success = false;
   const int kMaxAttempts = 3;
   for (int i = 0; i < kMaxAttempts; ++i) {
     TriggerMidCallProbingTest test(&success);
