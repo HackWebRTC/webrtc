@@ -130,7 +130,10 @@ public class VideoRenderer {
 
     @Override
     public String toString() {
-      return width + "x" + height + ":" + yuvStrides[0] + ":" + yuvStrides[1] + ":" + yuvStrides[2];
+      final String type = yuvFrame
+          ? "Y: " + yuvStrides[0] + ", U: " + yuvStrides[1] + ", V: " + yuvStrides[2]
+          : "Texture: " + textureId;
+      return width + "x" + height + ", " + type;
     }
   }
 
