@@ -156,6 +156,17 @@ class AndroidVideoBufferFactory {
   jmethodID j_get_height_id_;
 };
 
+class JavaVideoFrameFactory {
+ public:
+  JavaVideoFrameFactory(JNIEnv* jni);
+
+  jobject ToJavaFrame(JNIEnv* jni, const webrtc::VideoFrame& frame) const;
+
+ private:
+  ScopedGlobalRef<jclass> j_video_frame_class_;
+  jmethodID j_video_frame_constructor_id_;
+};
+
 }  // namespace webrtc_jni
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_

@@ -375,8 +375,7 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> AndroidVideoBuffer::ToI420() {
                                                height_, j_i420_buffer);
 }
 
-jobject AndroidVideoBuffer::ToJavaI420Frame(JNIEnv* jni,
-                                            int rotation) {
+jobject AndroidVideoBuffer::ToJavaI420Frame(JNIEnv* jni, int rotation) {
   jclass j_byte_buffer_class = jni->FindClass("java/nio/ByteBuffer");
   jclass j_i420_frame_class =
       FindClass(jni, "org/webrtc/VideoRenderer$I420Frame");
@@ -436,6 +435,31 @@ rtc::scoped_refptr<AndroidVideoBuffer> AndroidVideoBufferFactory::CreateBuffer(
   int height = jni->CallIntMethod(j_video_frame_buffer, j_get_height_id_);
   return new rtc::RefCountedObject<AndroidVideoBuffer>(
       jni, j_retain_id_, j_release_id_, width, height, j_video_frame_buffer);
+}
+
+JavaVideoFrameFactory::JavaVideoFrameFactory(JNIEnv* jni)
+    : j_video_frame_class_(jni, FindClass(jni, "org/webrtc/VideoFrame")) {
+  j_video_frame_constructor_id_ =
+      GetMethodID(jni, *j_video_frame_class_, "<init>",
+                  "(Lorg/webrtc/VideoFrame$Buffer;IJ)V");
+}
+
+jobject JavaVideoFrameFactory::ToJavaFrame(
+    JNIEnv* jni,
+    const webrtc::VideoFrame& frame) const {
+  RTC_DCHECK(frame.video_frame_buffer()->type() ==
+             webrtc::VideoFrameBuffer::Type::kNative);
+  AndroidVideoFrameBuffer* android_buffer =
+      static_cast<AndroidVideoFrameBuffer*>(frame.video_frame_buffer().get());
+  RTC_DCHECK(android_buffer->android_type() ==
+             AndroidVideoFrameBuffer::AndroidType::kJavaBuffer);
+  AndroidVideoBuffer* android_video_buffer =
+      static_cast<AndroidVideoBuffer*>(android_buffer);
+  jobject buffer = android_video_buffer->video_frame_buffer();
+  return jni->NewObject(
+      *j_video_frame_class_, j_video_frame_constructor_id_, buffer,
+      static_cast<jint>(frame.rotation()),
+      static_cast<jlong>(frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec));
 }
 
 }  // namespace webrtc_jni
