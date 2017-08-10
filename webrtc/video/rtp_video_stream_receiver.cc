@@ -43,7 +43,9 @@
 namespace webrtc {
 
 namespace {
-constexpr int kPacketBufferStartSize = 32;
+// TODO(philipel): Change kPacketBufferStartSize back to 32 in M63 see:
+//                 crbug.com/752886
+constexpr int kPacketBufferStartSize = 512;
 constexpr int kPacketBufferMaxSixe = 2048;
 }
 
