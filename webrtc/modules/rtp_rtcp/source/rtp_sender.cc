@@ -288,9 +288,8 @@ void RTPSender::SetSendPayloadType(int8_t payload_type) {
 }
 
 void RTPSender::SetMaxRtpPacketSize(size_t max_packet_size) {
-  // Sanity check.
-  RTC_DCHECK(max_packet_size >= 100 && max_packet_size <= IP_PACKET_SIZE)
-      << "Invalid max payload length: " << max_packet_size;
+  RTC_DCHECK_GE(max_packet_size, 100);
+  RTC_DCHECK_LE(max_packet_size, IP_PACKET_SIZE);
   rtc::CritScope lock(&send_critsect_);
   max_packet_size_ = max_packet_size;
 }

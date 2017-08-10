@@ -64,8 +64,8 @@ void SetUpdatedRegion(DesktopFrame* frame,
 void PaintRect(DesktopFrame* frame, DesktopRect rect, RgbaColor rgba_color) {
   static_assert(DesktopFrame::kBytesPerPixel == sizeof(uint32_t),
                 "kBytesPerPixel should be 4.");
-  RTC_DCHECK(frame->size().width() >= rect.right() &&
-             frame->size().height() >= rect.bottom());
+  RTC_DCHECK_GE(frame->size().width(), rect.right());
+  RTC_DCHECK_GE(frame->size().height(), rect.bottom());
   uint32_t color = rgba_color.ToUInt32();
   uint8_t* row = frame->GetFrameDataAtPos(rect.top_left());
   for (int i = 0; i < rect.height(); i++) {

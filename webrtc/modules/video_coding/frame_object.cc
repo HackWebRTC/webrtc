@@ -102,7 +102,8 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   timestamp = first_packet->timestamp;
 
   VCMPacket* last_packet = packet_buffer_->GetPacket(last_seq_num);
-  RTC_CHECK(last_packet && last_packet->markerBit);
+  RTC_CHECK(last_packet);
+  RTC_CHECK(last_packet->markerBit);
   // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
   // ts_126114v120700p.pdf Section 7.4.5.
   // The MTSI client shall add the payload bytes as defined in this clause

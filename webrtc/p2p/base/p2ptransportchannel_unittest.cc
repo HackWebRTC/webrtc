@@ -2179,7 +2179,8 @@ TEST_F(P2PTransportChannelTest, SignalReadyToSendWithPresumedWritable) {
 class P2PTransportChannelSameNatTest : public P2PTransportChannelTestBase {
  protected:
   void ConfigureEndpoints(Config nat_type, Config config1, Config config2) {
-    RTC_CHECK(nat_type >= NAT_FULL_CONE && nat_type <= NAT_SYMMETRIC);
+    RTC_CHECK_GE(nat_type, NAT_FULL_CONE);
+    RTC_CHECK_LE(nat_type, NAT_SYMMETRIC);
     rtc::NATSocketServer::Translator* outer_nat =
         nat()->AddTranslator(kPublicAddrs[0], kNatAddrs[0],
             static_cast<rtc::NATType>(nat_type - NAT_FULL_CONE));

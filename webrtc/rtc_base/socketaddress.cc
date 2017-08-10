@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/rtc_base/socketaddress.h"
+#include "webrtc/rtc_base/safe_conversions.h"
 
 #if defined(WEBRTC_POSIX)
 #include <sys/types.h>
@@ -120,8 +121,7 @@ void SocketAddress::SetResolvedIP(const IPAddress& ip) {
 }
 
 void SocketAddress::SetPort(int port) {
-  RTC_DCHECK((0 <= port) && (port < 65536));
-  port_ = static_cast<uint16_t>(port);
+  port_ = rtc::dchecked_cast<uint16_t>(port);
 }
 
 uint32_t SocketAddress::ip() const {

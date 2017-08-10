@@ -72,7 +72,9 @@ void DecodeFourChar(UInt32 fc, std::string* out) {
 }
 
 static bool GetOSVersion(int* major, int* minor, int* bugfix) {
-  RTC_DCHECK(major && minor && bugfix);
+  RTC_DCHECK(major);
+  RTC_DCHECK(minor);
+  RTC_DCHECK(bugfix);
   struct utsname uname_info;
   if (uname(&uname_info) != 0)
     return false;

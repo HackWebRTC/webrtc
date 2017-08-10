@@ -2502,7 +2502,8 @@ void Channel::RegisterSenderCongestionControlObjects(
 
   RTC_DCHECK(rtp_packet_sender);
   RTC_DCHECK(transport_feedback_observer);
-  RTC_DCHECK(packet_router && !packet_router_);
+  RTC_DCHECK(packet_router);
+  RTC_DCHECK(!packet_router_);
   rtcp_observer_->SetBandwidthObserver(bandwidth_observer);
   feedback_observer_proxy_->SetTransportFeedbackObserver(
       transport_feedback_observer);
@@ -2516,7 +2517,8 @@ void Channel::RegisterSenderCongestionControlObjects(
 
 void Channel::RegisterReceiverCongestionControlObjects(
     PacketRouter* packet_router) {
-  RTC_DCHECK(packet_router && !packet_router_);
+  RTC_DCHECK(packet_router);
+  RTC_DCHECK(!packet_router_);
   constexpr bool remb_candidate = false;
   packet_router->AddReceiveRtpModule(_rtpRtcpModule.get(), remb_candidate);
   packet_router_ = packet_router;

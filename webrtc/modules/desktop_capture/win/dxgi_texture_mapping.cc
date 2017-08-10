@@ -29,7 +29,8 @@ DxgiTextureMapping::~DxgiTextureMapping() = default;
 bool DxgiTextureMapping::CopyFromTexture(
     const DXGI_OUTDUPL_FRAME_INFO& frame_info,
     ID3D11Texture2D* texture) {
-  RTC_DCHECK(texture && frame_info.AccumulatedFrames > 0);
+  RTC_DCHECK_GT(frame_info.AccumulatedFrames, 0);
+  RTC_DCHECK(texture);
   *rect() = {0};
   _com_error error = duplication_->MapDesktopSurface(rect());
   if (error.Error() != S_OK) {

@@ -43,7 +43,8 @@ SocketAddress ProxyServer::GetServerAddress() {
 }
 
 void ProxyServer::OnAcceptEvent(AsyncSocket* socket) {
-  RTC_DCHECK(socket != nullptr && socket == server_socket_.get());
+  RTC_DCHECK(socket);
+  RTC_DCHECK_EQ(socket, server_socket_.get());
   AsyncSocket* int_socket = socket->Accept(nullptr);
   AsyncProxyServerSocket* wrapped_socket = WrapSocket(int_socket);
   AsyncSocket* ext_socket = ext_factory_->CreateAsyncSocket(ext_ip_.family(),
@@ -84,7 +85,8 @@ ProxyBinding::~ProxyBinding() = default;
 
 void ProxyBinding::OnConnectRequest(AsyncProxyServerSocket* socket,
                                    const SocketAddress& addr) {
-  RTC_DCHECK(!connected_ && ext_socket_.get() != nullptr);
+  RTC_DCHECK(!connected_);
+  RTC_DCHECK(ext_socket_);
   ext_socket_->Connect(addr);
   // TODO: handle errors here
 }

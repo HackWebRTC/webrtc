@@ -104,7 +104,8 @@ std::pair<uint64_t, bool> ParseVarInt(std::istream& stream) {
     if (stream.eof()) {
       return std::make_pair(varint, false);
     }
-    RTC_DCHECK(0 <= byte && byte <= 255);
+    RTC_DCHECK_GE(byte, 0);
+    RTC_DCHECK_LE(byte, 255);
     varint |= static_cast<uint64_t>(byte & 0x7F) << (7 * bytes_read);
     if ((byte & 0x80) == 0) {
       return std::make_pair(varint, true);

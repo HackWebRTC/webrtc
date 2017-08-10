@@ -555,7 +555,8 @@ StreamResult OpenSSLStreamAdapter::Write(const void* data, size_t data_len,
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     LOG(LS_VERBOSE) << " -- success";
-    RTC_DCHECK(0 < code && static_cast<unsigned>(code) <= data_len);
+    RTC_DCHECK_GT(code, 0);
+    RTC_DCHECK_LE(code, data_len);
     if (written)
       *written = code;
     return SR_SUCCESS;
@@ -619,7 +620,8 @@ StreamResult OpenSSLStreamAdapter::Read(void* data, size_t data_len,
   switch (ssl_error) {
     case SSL_ERROR_NONE:
       LOG(LS_VERBOSE) << " -- success";
-      RTC_DCHECK(0 < code && static_cast<unsigned>(code) <= data_len);
+      RTC_DCHECK_GT(code, 0);
+      RTC_DCHECK_LE(code, data_len);
       if (read)
         *read = code;
 

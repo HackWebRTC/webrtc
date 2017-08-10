@@ -218,13 +218,15 @@ ComfortNoiseEncoder::ComfortNoiseEncoder(int fs, int interval, int quality)
       enc_reflCoefs_{0},
       enc_corrVector_{0},
       enc_seed_(7777)  /* For debugging only. */ {
-  RTC_CHECK(quality <= WEBRTC_CNG_MAX_LPC_ORDER && quality > 0);
+  RTC_CHECK_GT(quality, 0);
+  RTC_CHECK_LE(quality, WEBRTC_CNG_MAX_LPC_ORDER);
   /* Needed to get the right function pointers in SPLIB. */
   WebRtcSpl_Init();
 }
 
 void ComfortNoiseEncoder::Reset(int fs, int interval, int quality) {
-  RTC_CHECK(quality <= WEBRTC_CNG_MAX_LPC_ORDER && quality > 0);
+  RTC_CHECK_GT(quality, 0);
+  RTC_CHECK_LE(quality, WEBRTC_CNG_MAX_LPC_ORDER);
   enc_nrOfCoefs_ = quality;
   enc_sampfreq_ = fs;
   enc_interval_ = interval;

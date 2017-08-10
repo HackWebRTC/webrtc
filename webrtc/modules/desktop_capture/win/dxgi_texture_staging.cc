@@ -87,7 +87,8 @@ void DxgiTextureStaging::AssertStageAndSurfaceAreSameObject() {
 bool DxgiTextureStaging::CopyFromTexture(
     const DXGI_OUTDUPL_FRAME_INFO& frame_info,
     ID3D11Texture2D* texture) {
-  RTC_DCHECK(texture && frame_info.AccumulatedFrames > 0);
+  RTC_DCHECK_GT(frame_info.AccumulatedFrames, 0);
+  RTC_DCHECK(texture);
 
   // AcquireNextFrame returns a CPU inaccessible IDXGIResource, so we need to
   // copy it to a CPU accessible staging ID3D11Texture2D.

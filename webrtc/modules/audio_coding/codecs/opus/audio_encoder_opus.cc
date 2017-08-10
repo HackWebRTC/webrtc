@@ -391,7 +391,8 @@ AudioEncoderOpus::AudioEncoderOpus(
           ? std::move(bitrate_smoother) : std::unique_ptr<SmoothingFilter>(
               // We choose 5sec as initial time constant due to empirical data.
               new SmoothingFilterImpl(5000))) {
-  RTC_DCHECK(0 <= payload_type && payload_type <= 127);
+  RTC_DCHECK_GE(payload_type, 0);
+  RTC_DCHECK_LE(payload_type, 127);
 
   // Sanity check of the redundant payload type field that we want to get rid
   // of. See https://bugs.chromium.org/p/webrtc/issues/detail?id=7847

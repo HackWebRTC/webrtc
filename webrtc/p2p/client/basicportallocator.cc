@@ -1350,7 +1350,8 @@ void AllocationSequence::CreateRelayPorts() {
 
   // If BasicPortAllocatorSession::OnAllocate left relay ports enabled then we
   // ought to have a relay list for them here.
-  RTC_DCHECK(config_ && !config_->relays.empty());
+  RTC_DCHECK(config_);
+  RTC_DCHECK(!config_->relays.empty());
   if (!(config_ && !config_->relays.empty())) {
     LOG(LS_WARNING)
         << "AllocationSequence: No relay server configured, skipping.";

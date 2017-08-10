@@ -151,12 +151,12 @@ class FakeRTCCertificateGenerator
     if (should_fail_) {
       msg_id = MSG_FAILURE;
     } else if (key_params.type() == rtc::KT_RSA) {
-      RTC_DCHECK(key_params.rsa_params().mod_size == 1024 &&
-                 key_params.rsa_params().pub_exp == 0x10001);
+      RTC_DCHECK_EQ(key_params.rsa_params().mod_size, 1024);
+      RTC_DCHECK_EQ(key_params.rsa_params().pub_exp, 0x10001);
       msg_id = MSG_SUCCESS_RSA;
     } else {
-      RTC_DCHECK(key_params.type() == rtc::KT_ECDSA &&
-                 key_params.ec_curve() == rtc::EC_NIST_P256);
+      RTC_DCHECK_EQ(key_params.type(), rtc::KT_ECDSA);
+      RTC_DCHECK_EQ(key_params.ec_curve(), rtc::EC_NIST_P256);
       msg_id = MSG_SUCCESS_ECDSA;
     }
     rtc::Thread::Current()->Post(RTC_FROM_HERE, this, msg_id, msg);

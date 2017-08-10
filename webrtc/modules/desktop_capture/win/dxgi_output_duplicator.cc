@@ -69,7 +69,8 @@ DxgiOutputDuplicator::DxgiOutputDuplicator(const D3dDevice& device,
       desktop_rect_(RECTToDesktopRect(desc.DesktopCoordinates)) {
   RTC_DCHECK(output_);
   RTC_DCHECK(!desktop_rect_.is_empty());
-  RTC_DCHECK(desktop_rect_.width() > 0 && desktop_rect_.height() > 0);
+  RTC_DCHECK_GT(desktop_rect_.width(), 0);
+  RTC_DCHECK_GT(desktop_rect_.height(), 0);
 }
 
 DxgiOutputDuplicator::DxgiOutputDuplicator(DxgiOutputDuplicator&& other) =
@@ -385,7 +386,8 @@ int64_t DxgiOutputDuplicator::num_frames_captured() const {
 
 void DxgiOutputDuplicator::TranslateRect(const DesktopVector& position) {
   desktop_rect_.Translate(position);
-  RTC_DCHECK(desktop_rect_.left() >= 0 && desktop_rect_.top() >= 0);
+  RTC_DCHECK_GE(desktop_rect_.left(), 0);
+  RTC_DCHECK_GE(desktop_rect_.top(), 0);
 }
 
 }  // namespace webrtc

@@ -26,7 +26,8 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   bool SendData(const cricket::SendDataParams& params,
                 const rtc::CopyOnWriteBuffer& payload,
                 cricket::SendDataResult* result) override {
-    RTC_CHECK(ready_to_send_ && transport_available_);
+    RTC_CHECK(ready_to_send_);
+    RTC_CHECK(transport_available_);
     if (send_blocked_) {
       *result = cricket::SDR_BLOCK;
       return false;

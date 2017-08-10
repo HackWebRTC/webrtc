@@ -42,7 +42,8 @@ DxgiTexture::~DxgiTexture() = default;
 
 bool DxgiTexture::CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
                            IDXGIResource* resource) {
-  RTC_DCHECK(resource && frame_info.AccumulatedFrames > 0);
+  RTC_DCHECK_GT(frame_info.AccumulatedFrames, 0);
+  RTC_DCHECK(resource);
   ComPtr<ID3D11Texture2D> texture;
   _com_error error = resource->QueryInterface(
       __uuidof(ID3D11Texture2D),
