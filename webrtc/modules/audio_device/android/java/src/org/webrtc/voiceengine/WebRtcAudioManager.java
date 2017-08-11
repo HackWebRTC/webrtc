@@ -199,7 +199,7 @@ public class WebRtcAudioManager {
         ? blacklistDeviceForOpenSLESUsage
         : WebRtcAudioUtils.deviceIsBlacklistedForOpenSLESUsage();
     if (blacklisted) {
-      Logging.e(TAG, Build.MODEL + " is blacklisted for OpenSL ES usage!");
+      Logging.d(TAG, Build.MODEL + " is blacklisted for OpenSL ES usage!");
     }
     return blacklisted;
   }
