@@ -64,7 +64,7 @@ def main():
     _RunCommand([GENERATE_GRADLE_SCRIPT, '--output-directory', output_dir,
         '--target', '//webrtc/examples:AppRTCMobile',
         '--project-dir', project_dir,
-        '--use-gradle-process-resources', '--split-projects'])
+        '--use-gradle-process-resources', '--split-projects', '--canary'])
     _RunCommand([GRADLEW_BIN, 'assembleDebug'], project_dir)
   finally:
     # Do not delete temporary directory if user specified it manually.
