@@ -44,6 +44,8 @@ class FrameObject : public webrtc::VCMEncodedFrame {
 
   size_t size() const { return _length; }
 
+  bool is_keyframe() const { return num_references == 0; }
+
   // The tuple (|picture_id|, |spatial_layer|) uniquely identifies a frame
   // object. For codec types that don't necessarily have picture ids they
   // have to be constructed from the header data relevant to that codec.

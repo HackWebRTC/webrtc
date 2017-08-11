@@ -320,24 +320,7 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
   if (decoder == nullptr) {
     return VCM_NO_CODEC_REGISTERED;
   }
-  // Decode a frame
-  int32_t ret = decoder->Decode(frame, clock_->TimeInMilliseconds());
-
-  // Check for failed decoding, run frame type request callback if needed.
-  bool request_key_frame = false;
-  if (ret < 0) {
-    request_key_frame = true;
-  }
-
-  if (!frame.Complete() || frame.MissingFrame()) {
-    request_key_frame = true;
-    ret = VCM_OK;
-  }
-  if (request_key_frame) {
-    rtc::CritScope cs(&process_crit_);
-    _scheduleKeyRequest = true;
-  }
-  return ret;
+  return decoder->Decode(frame, clock_->TimeInMilliseconds());
 }
 
 // Register possible receive codecs, can be called multiple times
