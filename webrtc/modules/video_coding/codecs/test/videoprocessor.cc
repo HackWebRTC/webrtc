@@ -138,10 +138,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
   frame_infos_.reserve(analysis_frame_reader->NumberOfFrames());
 }
 
-VideoProcessor::~VideoProcessor() {
-  encoder_->RegisterEncodeCompleteCallback(nullptr);
-  decoder_->RegisterDecodeCompleteCallback(nullptr);
-}
+VideoProcessor::~VideoProcessor() = default;
 
 void VideoProcessor::Init() {
   RTC_DCHECK(!initialized_) << "VideoProcessor already initialized.";
@@ -187,6 +184,16 @@ void VideoProcessor::Init() {
     PrintCodecSettings(config_.codec_settings);
     printf("\n");
   }
+}
+
+void VideoProcessor::Release() {
+  encoder_->RegisterEncodeCompleteCallback(nullptr);
+  decoder_->RegisterDecodeCompleteCallback(nullptr);
+
+  RTC_CHECK_EQ(encoder_->Release(), WEBRTC_VIDEO_CODEC_OK);
+  RTC_CHECK_EQ(decoder_->Release(), WEBRTC_VIDEO_CODEC_OK);
+
+  initialized_ = false;
 }
 
 bool VideoProcessor::ProcessFrame(int frame_number) {

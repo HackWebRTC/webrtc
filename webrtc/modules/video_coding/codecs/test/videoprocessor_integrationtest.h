@@ -26,14 +26,13 @@
 #include "webrtc/modules/video_coding/codecs/test/objc_codec_h264_test.h"
 #endif
 
+#include "webrtc/media/engine/internaldecoderfactory.h"
+#include "webrtc/media/engine/internalencoderfactory.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
-#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
-#include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
@@ -52,15 +51,17 @@
 
 namespace webrtc {
 namespace test {
-// Maximum number of rate updates (i.e., calls to encoder to change bitrate
-// and/or frame rate) for the current tests.
-const int kMaxNumRateUpdates = 3;
 
-// Maximum number of temporal layers to use in tests.
+const int kMaxNumRateUpdates = 3;
 const int kMaxNumTemporalLayers = 3;
 
 const int kPercTargetvsActualMismatch = 20;
 const int kBaseKeyFrameInterval = 3000;
+
+// Parameters from VP8 wrapper, which control target size of key frames.
+const float kInitialBufferSize = 0.5f;
+const float kOptimalBufferSize = 0.6f;
+const float kScaleKeyFrameSize = 0.5f;
 
 // Thresholds for the quality metrics. Defaults are maximally minimal.
 struct QualityThresholds {
@@ -110,16 +111,6 @@ struct VisualizationParams {
   bool save_decoded_y4m;
 };
 
-#if !defined(WEBRTC_IOS)
-const int kNumFramesShort = 100;
-#endif
-const int kNumFramesLong = 299;
-
-// Parameters from VP8 wrapper, which control target size of key frames.
-const float kInitialBufferSize = 0.5f;
-const float kOptimalBufferSize = 0.6f;
-const float kScaleKeyFrameSize = 0.5f;
-
 // Integration test for video processor. Encodes+decodes a clip and
 // writes it to the output directory. After completion, quality metrics
 // (PSNR and SSIM) and rate control metrics are computed and compared to given
@@ -135,108 +126,87 @@ class VideoProcessorIntegrationTest : public testing::Test {
 #if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED) && \
     defined(WEBRTC_ANDROID)
     InitializeAndroidObjects();
-
-    external_encoder_factory_.reset(
-        new webrtc_jni::MediaCodecVideoEncoderFactory());
-    external_decoder_factory_.reset(
-        new webrtc_jni::MediaCodecVideoDecoderFactory());
 #endif
   }
-  virtual ~VideoProcessorIntegrationTest() = default;
+  ~VideoProcessorIntegrationTest() override = default;
 
   void CreateEncoderAndDecoder() {
     if (config_.hw_codec) {
 #if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
 #if defined(WEBRTC_ANDROID)
-      // In general, external codecs should be destroyed by the factories that
-      // allocated them. For the particular case of the Android
-      // MediaCodecVideo{En,De}coderFactory's, however, it turns out that it is
-      // fine for the std::unique_ptr to destroy the owned codec directly.
-      switch (config_.codec_settings.codecType) {
-        case kVideoCodecH264:
-          encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
-              cricket::VideoCodec(cricket::kH264CodecName)));
-          decoder_.reset(
-              external_decoder_factory_->CreateVideoDecoder(kVideoCodecH264));
-          break;
-        case kVideoCodecVP8:
-          encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
-              cricket::VideoCodec(cricket::kVp8CodecName)));
-          decoder_.reset(
-              external_decoder_factory_->CreateVideoDecoder(kVideoCodecVP8));
-          break;
-        case kVideoCodecVP9:
-          encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
-              cricket::VideoCodec(cricket::kVp9CodecName)));
-          decoder_.reset(
-              external_decoder_factory_->CreateVideoDecoder(kVideoCodecVP9));
-          break;
-        default:
-          RTC_NOTREACHED();
-          break;
-      }
+      encoder_factory_.reset(new webrtc_jni::MediaCodecVideoEncoderFactory());
+      decoder_factory_.reset(new webrtc_jni::MediaCodecVideoDecoderFactory());
 #elif defined(WEBRTC_IOS)
-      ASSERT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
+      EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
           << "iOS HW codecs only support H264.";
-      std::unique_ptr<cricket::WebRtcVideoEncoderFactory> encoder_factory =
-          CreateObjCEncoderFactory();
-      std::unique_ptr<cricket::WebRtcVideoDecoderFactory> decoder_factory =
-          CreateObjCDecoderFactory();
-      cricket::VideoCodec codecInfo = encoder_factory->supported_codecs().at(0);
-      encoder_.reset(encoder_factory->CreateVideoEncoder(codecInfo));
-      decoder_.reset(decoder_factory->CreateVideoDecoder(kVideoCodecH264));
+      encoder_factory_ = CreateObjCEncoderFactory();
+      decoder_factory_ = CreateObjCDecoderFactory();
 #else
       RTC_NOTREACHED() << "Only support HW codecs on Android and iOS.";
 #endif
 #endif  // WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED
-      RTC_CHECK(encoder_) << "HW encoder not successfully created.";
-      RTC_CHECK(decoder_) << "HW decoder not successfully created.";
-      return;
+    } else {
+      // SW codecs.
+      encoder_factory_.reset(new cricket::InternalEncoderFactory());
+      decoder_factory_.reset(new cricket::InternalDecoderFactory());
     }
 
-    // SW codecs.
     switch (config_.codec_settings.codecType) {
-      case kVideoCodecH264:
-        encoder_.reset(
-            H264Encoder::Create(cricket::VideoCodec(cricket::kH264CodecName)));
-        decoder_.reset(H264Decoder::Create());
-        break;
       case kVideoCodecVP8:
-        encoder_.reset(VP8Encoder::Create());
-        decoder_.reset(VP8Decoder::Create());
+        encoder_ = encoder_factory_->CreateVideoEncoder(
+            cricket::VideoCodec(cricket::kVp8CodecName));
+        decoder_ = decoder_factory_->CreateVideoDecoder(kVideoCodecVP8);
         break;
       case kVideoCodecVP9:
-        encoder_.reset(VP9Encoder::Create());
-        decoder_.reset(VP9Decoder::Create());
+        encoder_ = encoder_factory_->CreateVideoEncoder(
+            cricket::VideoCodec(cricket::kVp9CodecName));
+        decoder_ = decoder_factory_->CreateVideoDecoder(kVideoCodecVP9);
+        break;
+      case kVideoCodecH264:
+        // TODO(brandtr): Generalize so that we support multiple profiles here.
+        encoder_ = encoder_factory_->CreateVideoEncoder(
+            cricket::VideoCodec(cricket::kH264CodecName));
+        decoder_ = decoder_factory_->CreateVideoDecoder(kVideoCodecH264);
         break;
       default:
         RTC_NOTREACHED();
         break;
     }
+
+    RTC_CHECK(encoder_) << "Encoder not successfully created.";
+    RTC_CHECK(decoder_) << "Decoder not successfully created.";
   }
 
-  void SetUpObjects(const VisualizationParams* visualization_params) {
+  void DestroyEncoderAndDecoder() {
+    encoder_factory_->DestroyVideoEncoder(encoder_);
+    decoder_factory_->DestroyVideoDecoder(decoder_);
+  }
+
+  void SetUpObjects(const VisualizationParams* visualization_params,
+                    const int initial_bitrate_kbps,
+                    const int initial_framerate_fps) {
     CreateEncoderAndDecoder();
 
     // Create file objects for quality analysis.
-    analysis_frame_reader_.reset(new test::YuvFrameReaderImpl(
+    analysis_frame_reader_.reset(new YuvFrameReaderImpl(
         config_.input_filename, config_.codec_settings.width,
         config_.codec_settings.height));
-    analysis_frame_writer_.reset(new test::YuvFrameWriterImpl(
+    analysis_frame_writer_.reset(new YuvFrameWriterImpl(
         config_.output_filename, config_.codec_settings.width,
         config_.codec_settings.height));
     RTC_CHECK(analysis_frame_reader_->Init());
     RTC_CHECK(analysis_frame_writer_->Init());
 
     if (visualization_params) {
+      const std::string codec_name =
+          CodecTypeToPayloadName(config_.codec_settings.codecType)
+              .value_or("unknown");
+      const std::string implementation_type = config_.hw_codec ? "hw" : "sw";
       // clang-format off
       const std::string output_filename_base =
-          test::OutputPath() + config_.filename +
-          "_cd-" + CodecTypeToPayloadName(
-              config_.codec_settings.codecType).value_or("") +
-          "_hw-" + std::to_string(config_.hw_codec) +
-          "_br-" + std::to_string(
-              static_cast<int>(config_.codec_settings.startBitrate));
+          OutputPath() + config_.filename + "-" +
+          codec_name + "-" + implementation_type + "-" +
+          std::to_string(initial_bitrate_kbps);
       // clang-format on
       if (visualization_params->save_encoded_ivf) {
         rtc::File post_encode_file =
@@ -245,17 +215,17 @@ class VideoProcessorIntegrationTest : public testing::Test {
             IvfFileWriter::Wrap(std::move(post_encode_file), 0);
       }
       if (visualization_params->save_decoded_y4m) {
-        decoded_frame_writer_.reset(new test::Y4mFrameWriterImpl(
+        decoded_frame_writer_.reset(new Y4mFrameWriterImpl(
             output_filename_base + "_decoded.y4m", config_.codec_settings.width,
-            config_.codec_settings.height, start_frame_rate_));
+            config_.codec_settings.height, initial_framerate_fps));
         RTC_CHECK(decoded_frame_writer_->Init());
       }
     }
 
-    packet_manipulator_.reset(new test::PacketManipulatorImpl(
+    packet_manipulator_.reset(new PacketManipulatorImpl(
         &packet_reader_, config_.networking_config, config_.verbose));
     processor_ = rtc::MakeUnique<VideoProcessor>(
-        encoder_.get(), decoder_.get(), analysis_frame_reader_.get(),
+        encoder_, decoder_, analysis_frame_reader_.get(),
         analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
         &stats_, encoded_frame_writer_.get(), decoded_frame_writer_.get());
     processor_->Init();
@@ -264,7 +234,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
   // Reset quantities after each encoder update, update the target per-frame
   // bandwidth.
   void ResetRateControlMetrics(int num_frames_to_hit_target) {
-    for (int i = 0; i < num_temporal_layers_; i++) {
+    const int num_temporal_layers =
+        NumberOfTemporalLayers(config_.codec_settings);
+    for (int i = 0; i < num_temporal_layers; i++) {
       num_frames_per_update_[i] = 0;
       sum_frame_size_mismatch_[i] = 0.0f;
       sum_encoded_frame_size_[i] = 0.0f;
@@ -362,7 +334,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
       EXPECT_LE(perc_key_frame_size_mismatch,
                 rc_expected.max_key_frame_size_mismatch);
     }
-    for (int i = 0; i < num_temporal_layers_; i++) {
+    const int num_temporal_layers =
+        NumberOfTemporalLayers(config_.codec_settings);
+    for (int i = 0; i < num_temporal_layers; i++) {
       printf(" Temporal layer #%d:\n", i);
       int perc_frame_size_mismatch =
           100 * sum_frame_size_mismatch_[i] / num_frames_per_update_[i];
@@ -396,8 +370,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     }
   }
 
-  void VerifyQuality(const test::QualityMetricsResult& psnr_result,
-                     const test::QualityMetricsResult& ssim_result,
+  void VerifyQuality(const QualityMetricsResult& psnr_result,
+                     const QualityMetricsResult& ssim_result,
                      const QualityThresholds& quality_thresholds) {
     EXPECT_GT(psnr_result.average, quality_thresholds.min_avg_psnr);
     EXPECT_GT(psnr_result.min, quality_thresholds.min_min_psnr);
@@ -426,8 +400,10 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   // Temporal layer index corresponding to frame number, for up to 3 layers.
   int TemporalLayerIndexForFrame(int frame_number) {
+    const int num_temporal_layers =
+        NumberOfTemporalLayers(config_.codec_settings);
     int tl_idx = -1;
-    switch (num_temporal_layers_) {
+    switch (num_temporal_layers) {
       case 1:
         tl_idx = 0;
         break;
@@ -457,22 +433,23 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   // Set the bit rate and frame rate per temporal layer, for up to 3 layers.
   void SetTemporalLayerRates() {
-    RTC_DCHECK_LE(num_temporal_layers_, kMaxNumTemporalLayers);
-    for (int i = 0; i < num_temporal_layers_; i++) {
-      float bit_rate_ratio =
-          kVp8LayerRateAlloction[num_temporal_layers_ - 1][i];
+    const int num_temporal_layers =
+        NumberOfTemporalLayers(config_.codec_settings);
+    RTC_DCHECK_LE(num_temporal_layers, kMaxNumTemporalLayers);
+    for (int i = 0; i < num_temporal_layers; i++) {
+      float bit_rate_ratio = kVp8LayerRateAlloction[num_temporal_layers - 1][i];
       if (i > 0) {
         float bit_rate_delta_ratio =
-            kVp8LayerRateAlloction[num_temporal_layers_ - 1][i] -
-            kVp8LayerRateAlloction[num_temporal_layers_ - 1][i - 1];
+            kVp8LayerRateAlloction[num_temporal_layers - 1][i] -
+            kVp8LayerRateAlloction[num_temporal_layers - 1][i - 1];
         bit_rate_layer_[i] = bit_rate_ * bit_rate_delta_ratio;
       } else {
         bit_rate_layer_[i] = bit_rate_ * bit_rate_ratio;
       }
       frame_rate_layer_[i] =
-          frame_rate_ / static_cast<float>(1 << (num_temporal_layers_ - 1));
+          frame_rate_ / static_cast<float>(1 << (num_temporal_layers - 1));
     }
-    if (num_temporal_layers_ == 3) {
+    if (num_temporal_layers == 3) {
       frame_rate_layer_[2] = frame_rate_ / 2.0f;
     }
   }
@@ -486,12 +463,11 @@ class VideoProcessorIntegrationTest : public testing::Test {
                               const RateProfile& rate_profile,
                               RateControlThresholds* rc_thresholds,
                               const VisualizationParams* visualization_params) {
-    // Codec/config settings.
-    num_temporal_layers_ = NumberOfTemporalLayers(config_.codec_settings);
     config_.codec_settings.startBitrate = rate_profile.target_bit_rate[0];
-    start_frame_rate_ = rate_profile.input_frame_rate[0];
-    SetUpObjects(visualization_params);
-    // Update the temporal layers and the codec with the initial rates.
+    SetUpObjects(visualization_params, rate_profile.target_bit_rate[0],
+                 rate_profile.input_frame_rate[0]);
+
+    // Set initial rates.
     bit_rate_ = rate_profile.target_bit_rate[0];
     frame_rate_ = rate_profile.input_frame_rate[0];
     SetTemporalLayerRates();
@@ -518,7 +494,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
       }
 
       for (frame_number = 0; frame_number < num_frames; ++frame_number) {
-        ++num_frames_per_update_[TemporalLayerIndexForFrame(frame_number)];
+        const int tl_idx = TemporalLayerIndexForFrame(frame_number);
+        ++num_frames_per_update_[tl_idx];
         ++num_frames_total_;
         UpdateRateControlMetrics(frame_number);
       }
@@ -534,7 +511,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
       while (frame_number < num_frames) {
         EXPECT_TRUE(processor_->ProcessFrame(frame_number));
         VerifyQpParser(frame_number);
-        ++num_frames_per_update_[TemporalLayerIndexForFrame(frame_number)];
+        const int tl_idx = TemporalLayerIndexForFrame(frame_number);
+        ++num_frames_per_update_[tl_idx];
         ++num_frames_total_;
         UpdateRateControlMetrics(frame_number);
 
@@ -568,8 +546,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     EXPECT_EQ(num_frames + 1, static_cast<int>(stats_.stats_.size()));
 
     // Release encoder and decoder to make sure they have finished processing.
-    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
-    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Release());
+    processor_->Release();
+    DestroyEncoderAndDecoder();
 
     // Close the analysis files before we use them for SSIM/PSNR calculations.
     analysis_frame_reader_->Close();
@@ -584,12 +562,12 @@ class VideoProcessorIntegrationTest : public testing::Test {
     }
 
     // TODO(marpan): Should compute these quality metrics per SetRates update.
-    test::QualityMetricsResult psnr_result, ssim_result;
-    EXPECT_EQ(0, test::I420MetricsFromFiles(config_.input_filename.c_str(),
-                                            config_.output_filename.c_str(),
-                                            config_.codec_settings.width,
-                                            config_.codec_settings.height,
-                                            &psnr_result, &ssim_result));
+    QualityMetricsResult psnr_result, ssim_result;
+    EXPECT_EQ(0, I420MetricsFromFiles(config_.input_filename.c_str(),
+                                      config_.output_filename.c_str(),
+                                      config_.codec_settings.width,
+                                      config_.codec_settings.height,
+                                      &psnr_result, &ssim_result));
     VerifyQuality(psnr_result, ssim_result, quality_thresholds);
     stats_.PrintSummary();
     printf("PSNR avg: %f, min: %f\nSSIM avg: %f, min: %f\n",
@@ -603,7 +581,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     }
   }
 
-  static void SetProcessParams(test::TestConfig* config,
+  static void SetProcessParams(TestConfig* config,
                                bool hw_codec,
                                bool use_single_core,
                                float packet_loss_probability,
@@ -613,10 +591,10 @@ class VideoProcessorIntegrationTest : public testing::Test {
                                bool batch_mode) {
     // Configure input filename.
     config->filename = filename;
-    config->input_filename = test::ResourcePath(filename, "yuv");
+    config->input_filename = ResourcePath(filename, "yuv");
     // Generate an output filename in a safe way.
-    config->output_filename = test::TempFilename(
-        test::OutputPath(), "videoprocessor_integrationtest");
+    config->output_filename =
+        TempFilename(OutputPath(), "videoprocessor_integrationtest");
     config->hw_codec = hw_codec;
     config->use_single_core = use_single_core;
     config->keyframe_interval = key_frame_interval;
@@ -625,7 +603,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     config->batch_mode = batch_mode;
   }
 
-  static void SetCodecSettings(test::TestConfig* config,
+  static void SetCodecSettings(TestConfig* config,
                                VideoCodecType codec_type,
                                int num_temporal_layers,
                                bool error_concealment_on,
@@ -708,23 +686,20 @@ class VideoProcessorIntegrationTest : public testing::Test {
   TestConfig config_;
 
   // Codecs.
-  std::unique_ptr<VideoEncoder> encoder_;
-  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> external_encoder_factory_;
-  std::unique_ptr<VideoDecoder> decoder_;
-  std::unique_ptr<cricket::WebRtcVideoDecoderFactory> external_decoder_factory_;
+  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> encoder_factory_;
+  VideoEncoder* encoder_;
+  std::unique_ptr<cricket::WebRtcVideoDecoderFactory> decoder_factory_;
+  VideoDecoder* decoder_;
 
   // Helper objects.
-  std::unique_ptr<test::FrameReader> analysis_frame_reader_;
-  std::unique_ptr<test::FrameWriter> analysis_frame_writer_;
-  test::PacketReader packet_reader_;
-  std::unique_ptr<test::PacketManipulator> packet_manipulator_;
-  test::Stats stats_;
-  // Must be destroyed before |encoder_| and |decoder_|.
-  std::unique_ptr<test::VideoProcessor> processor_;
-
-  // Visualization objects.
+  std::unique_ptr<FrameReader> analysis_frame_reader_;
+  std::unique_ptr<FrameWriter> analysis_frame_writer_;
   std::unique_ptr<IvfFileWriter> encoded_frame_writer_;
-  std::unique_ptr<test::FrameWriter> decoded_frame_writer_;
+  std::unique_ptr<FrameWriter> decoded_frame_writer_;
+  PacketReader packet_reader_;
+  std::unique_ptr<PacketManipulator> packet_manipulator_;
+  Stats stats_;
+  std::unique_ptr<VideoProcessor> processor_;
 
   // Quantities defined/updated for every encoder rate update.
   int num_frames_per_update_[kMaxNumTemporalLayers];
@@ -746,10 +721,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
   float target_size_key_frame_;
   float sum_key_frame_size_mismatch_;
   int num_key_frames_;
-  int start_frame_rate_;
-
-  // Codec and network settings.
-  int num_temporal_layers_;
 };
 
 }  // namespace test

@@ -15,21 +15,24 @@ namespace test {
 
 namespace {
 
-// In these correctness tests, we only consider SW codecs.
-const bool kHwCodec = false;
-const bool kBatchMode = false;
-const bool kVerboseLogging = false;
-
+// Test settings.
 // Only allow encoder/decoder to use single core, for predictability.
 const bool kUseSingleCore = true;
+const bool kVerboseLogging = false;
+const bool kHwCodec = false;
+const bool kBatchMode = false;
 
-// Default codec setting is on.
+// Codec settings.
 const bool kResilienceOn = true;
 
 // Default sequence is foreman (CIF): may be better to use VGA for resize test.
 const int kCifWidth = 352;
 const int kCifHeight = 288;
 const char kForemanCif[] = "foreman_cif";
+#if !defined(WEBRTC_IOS)
+const int kNumFramesShort = 100;
+#endif
+const int kNumFramesLong = 299;
 
 }  // namespace
 
@@ -148,7 +151,6 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
 // metrics averaged over whole sequence run.
 TEST_F(VideoProcessorIntegrationTest,
        ProcessNoLossChangeFrameRateFrameDropVP9) {
-  config_.networking_config.packet_loss_probability = 0;
   // Bit rate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfile(&rate_profile, 0, 100, 24, 0);
@@ -198,7 +200,6 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
 // Resize happens on delta frame. Expect only one key frame (first frame).
 TEST_F(VideoProcessorIntegrationTest,
        DISABLED_ProcessNoLossSpatialResizeFrameDropVP9) {
-  config_.networking_config.packet_loss_probability = 0;
   // Bit rate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfile(&rate_profile, 0, 50, 30, 0);
@@ -377,7 +378,6 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
 #endif
 TEST_F(VideoProcessorIntegrationTest,
        MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8) {
-  config_.networking_config.packet_loss_probability = 0;
   // Bit rate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfile(&rate_profile, 0, 80, 24, 0);
@@ -414,7 +414,6 @@ TEST_F(VideoProcessorIntegrationTest,
 #define MAYBE_ProcessNoLossTemporalLayersVP8 ProcessNoLossTemporalLayersVP8
 #endif
 TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossTemporalLayersVP8) {
-  config_.networking_config.packet_loss_probability = 0;
   // Bit rate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfile(&rate_profile, 0, 200, 30, 0);

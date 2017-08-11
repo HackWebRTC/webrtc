@@ -152,6 +152,9 @@ class VideoProcessor {
   // Sets up callbacks and initializes the encoder and decoder.
   void Init();
 
+  // Tears down callbacks and releases the encoder and decoder.
+  void Release();
+
   // Processes a single frame. Returns true as long as there's more frames
   // available in the source clip.
   // |frame_number| must be an integer >= 0.

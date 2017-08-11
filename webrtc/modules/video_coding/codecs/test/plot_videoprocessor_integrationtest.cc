@@ -40,6 +40,8 @@ const VisualizationParams kVisualizationParams = {
 };
 
 const bool kVerboseLogging = true;
+
+const int kNumFrames = 299;
 }  // namespace
 
 // Tests for plotting statistics from logs.
@@ -62,8 +64,8 @@ class PlotVideoProcessorIntegrationTest
                    0,  // update_index
                    bitrate_, framerate_,
                    0);  // frame_index_rate_update
-    rate_profile.frame_index_rate_update[1] = kNumFramesLong + 1;
-    rate_profile.num_frames = kNumFramesLong;
+    rate_profile.frame_index_rate_update[1] = kNumFrames + 1;
+    rate_profile.num_frames = kNumFrames;
 
     // Codec/network settings.
     SetProcessParams(&config_, kHwCodec, kUseSingleCore, kPacketLoss,
@@ -81,14 +83,14 @@ class PlotVideoProcessorIntegrationTest
     // clang-format off
     SetRateControlThresholds(
       rc_thresholds,
-      0,                   // update_index
-      kNumFramesLong + 1,  // max_num_dropped_frames
-      10000,               // max_key_frame_size_mismatch
-      10000,               // max_delta_frame_size_mismatch
-      10000,               // max_encoding_rate_mismatch
-      kNumFramesLong + 1,  // max_time_hit_target
-      0,                   // num_spatial_resizes
-      1);                  // num_key_frames
+      0,               // update_index
+      kNumFrames + 1,  // max_num_dropped_frames
+      10000,           // max_key_frame_size_mismatch
+      10000,           // max_delta_frame_size_mismatch
+      10000,           // max_encoding_rate_mismatch
+      kNumFrames + 1,  // max_time_hit_target
+      0,               // num_spatial_resizes
+      1);              // num_key_frames
     // clang-format on
 
     ProcessFramesAndVerify(quality_thresholds, rate_profile, rc_thresholds,
