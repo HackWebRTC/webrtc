@@ -29,7 +29,6 @@
 #include "webrtc/test/drifting_clock.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_audio_device.h"
-#include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/frame_generator.h"
@@ -204,8 +203,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
       receiver_call_.get(), &observer, test::PacketTransport::kReceiver,
       payload_type_map_, FakeNetworkPipe::Config());
   receive_transport.SetReceiver(sender_call_->Receiver());
-
-  test::FakeDecoder fake_decoder;
 
   CreateSendConfig(1, 0, 0, &video_send_transport);
   CreateMatchingReceiveConfigs(&receive_transport);
