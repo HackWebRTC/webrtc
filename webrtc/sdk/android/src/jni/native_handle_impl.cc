@@ -322,8 +322,31 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> AndroidTextureBuffer::ToI420() {
   return copy;
 }
 
+rtc::scoped_refptr<AndroidVideoBuffer> AndroidVideoBuffer::WrapReference(
+    JNIEnv* jni,
+    jmethodID j_release_id,
+    int width,
+    int height,
+    jobject j_video_frame_buffer) {
+  return new rtc::RefCountedObject<AndroidVideoBuffer>(
+      jni, j_release_id, width, height, j_video_frame_buffer);
+}
+
 AndroidVideoBuffer::AndroidVideoBuffer(JNIEnv* jni,
                                        jmethodID j_retain_id,
+                                       jmethodID j_release_id,
+                                       int width,
+                                       int height,
+                                       jobject j_video_frame_buffer)
+    : AndroidVideoBuffer(jni,
+                         j_release_id,
+                         width,
+                         height,
+                         j_video_frame_buffer) {
+  jni->CallVoidMethod(j_video_frame_buffer, j_retain_id);
+}
+
+AndroidVideoBuffer::AndroidVideoBuffer(JNIEnv* jni,
                                        jmethodID j_release_id,
                                        int width,
                                        int height,
@@ -331,9 +354,7 @@ AndroidVideoBuffer::AndroidVideoBuffer(JNIEnv* jni,
     : j_release_id_(j_release_id),
       width_(width),
       height_(height),
-      j_video_frame_buffer_(jni, j_video_frame_buffer) {
-  jni->CallVoidMethod(j_video_frame_buffer, j_retain_id);
-}
+      j_video_frame_buffer_(jni, j_video_frame_buffer) {}
 
 AndroidVideoBuffer::~AndroidVideoBuffer() {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
@@ -422,15 +443,24 @@ webrtc::VideoFrame AndroidVideoBufferFactory::CreateFrame(
   uint32_t timestamp_ns =
       jni->CallLongMethod(j_video_frame, j_get_timestamp_ns_id_);
   rtc::scoped_refptr<AndroidVideoBuffer> buffer =
-      CreateBuffer(j_video_frame_buffer);
+      CreateBuffer(jni, j_video_frame_buffer);
   return webrtc::VideoFrame(buffer, timestamp_rtp,
                             timestamp_ns / rtc::kNumNanosecsPerMillisec,
                             static_cast<webrtc::VideoRotation>(rotation));
 }
 
-rtc::scoped_refptr<AndroidVideoBuffer> AndroidVideoBufferFactory::CreateBuffer(
+rtc::scoped_refptr<AndroidVideoBuffer> AndroidVideoBufferFactory::WrapBuffer(
+    JNIEnv* jni,
     jobject j_video_frame_buffer) const {
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
+  int width = jni->CallIntMethod(j_video_frame_buffer, j_get_width_id_);
+  int height = jni->CallIntMethod(j_video_frame_buffer, j_get_height_id_);
+  return AndroidVideoBuffer::WrapReference(jni, j_release_id_, width, height,
+                                           j_video_frame_buffer);
+}
+
+rtc::scoped_refptr<AndroidVideoBuffer> AndroidVideoBufferFactory::CreateBuffer(
+    JNIEnv* jni,
+    jobject j_video_frame_buffer) const {
   int width = jni->CallIntMethod(j_video_frame_buffer, j_get_width_id_);
   int height = jni->CallIntMethod(j_video_frame_buffer, j_get_height_id_);
   return new rtc::RefCountedObject<AndroidVideoBuffer>(

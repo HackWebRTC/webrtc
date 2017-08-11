@@ -65,6 +65,11 @@ public class FileVideoCapturerTest {
       // Empty on purpose.
     }
 
+    @Override
+    public void onFrameCaptured(VideoFrame frame) {
+      // Empty on purpose.
+    }
+
     public synchronized ArrayList<Frame> getMinimumFramesBlocking(int minFrames)
         throws InterruptedException {
       while (frameDatas.size() < minFrames) {

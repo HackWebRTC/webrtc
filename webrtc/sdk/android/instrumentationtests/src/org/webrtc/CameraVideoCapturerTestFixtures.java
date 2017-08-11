@@ -135,6 +135,7 @@ class CameraVideoCapturerTestFixtures {
         frameLock.notify();
       }
     }
+
     @Override
     public void onTextureFrameCaptured(int width, int height, int oesTextureId,
         float[] transformMatrix, int rotation, long timeStamp) {
@@ -146,6 +147,11 @@ class CameraVideoCapturerTestFixtures {
         timestamps.add(timeStamp);
         frameLock.notify();
       }
+    }
+
+    @Override
+    public void onFrameCaptured(VideoFrame frame) {
+      // Empty on purpose.
     }
 
     public boolean waitForCapturerToStart() throws InterruptedException {

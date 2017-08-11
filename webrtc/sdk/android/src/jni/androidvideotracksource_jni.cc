@@ -69,6 +69,22 @@ JOW_OBSERVER_METHOD(void, nativeOnTextureFrameCaptured)
       NativeHandleImpl(jni, j_oes_texture_id, j_transform_matrix));
 }
 
+JOW_OBSERVER_METHOD(void, nativeOnFrameCaptured)
+(JNIEnv* jni,
+ jclass,
+ jlong j_source,
+ jint j_width,
+ jint j_height,
+ jint j_rotation,
+ jlong j_timestamp_ns,
+ jobject j_video_frame_buffer) {
+  webrtc::AndroidVideoTrackSource* source =
+      AndroidVideoTrackSourceFromJavaProxy(j_source);
+  source->OnFrameCaptured(jni, j_width, j_height, j_timestamp_ns,
+                          jintToVideoRotation(j_rotation),
+                          j_video_frame_buffer);
+}
+
 JOW_OBSERVER_METHOD(void, nativeCapturerStarted)
 (JNIEnv* jni, jclass, jlong j_source, jboolean j_success) {
   LOG(LS_INFO) << "AndroidVideoTrackSourceObserve_nativeCapturerStarted";

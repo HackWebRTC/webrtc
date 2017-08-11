@@ -103,8 +103,24 @@ class AndroidTextureBuffer : public AndroidVideoFrameBuffer {
 
 class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
  public:
+  // Wraps an existing reference to a Java VideoBuffer. Retain will not be
+  // called but release will be called when the C++ object is destroyed.
+  static rtc::scoped_refptr<AndroidVideoBuffer> WrapReference(
+      JNIEnv* jni,
+      jmethodID j_release_id,
+      int width,
+      int height,
+      jobject j_video_frame_buffer);
+
   AndroidVideoBuffer(JNIEnv* jni,
                      jmethodID j_retain_id,
+                     jmethodID j_release_id,
+                     int width,
+                     int height,
+                     jobject j_video_frame_buffer);
+  // Should not be called directly. Wraps a reference. Use
+  // AndroidVideoBuffer::WrapReference instead for clarity.
+  AndroidVideoBuffer(JNIEnv* jni,
                      jmethodID j_release_id,
                      int width,
                      int height,
@@ -140,7 +156,14 @@ class AndroidVideoBufferFactory {
                                  jobject j_video_frame,
                                  uint32_t timestamp_rtp) const;
 
+  // Wraps a buffer to AndroidVideoBuffer without incrementing the reference
+  // count.
+  rtc::scoped_refptr<AndroidVideoBuffer> WrapBuffer(
+      JNIEnv* jni,
+      jobject j_video_frame_buffer) const;
+
   rtc::scoped_refptr<AndroidVideoBuffer> CreateBuffer(
+      JNIEnv* jni,
       jobject j_video_frame_buffer) const;
 
  private:

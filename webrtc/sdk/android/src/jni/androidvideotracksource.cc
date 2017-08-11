@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "webrtc/rtc_base/logging.h"
+#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
 namespace {
 // MediaCodec wants resolution to be divisible by 2.
@@ -32,9 +33,16 @@ AndroidVideoTrackSource::AndroidVideoTrackSource(
           new rtc::RefCountedObject<webrtc_jni::SurfaceTextureHelper>(
               jni,
               j_surface_texture_helper)),
+      video_buffer_factory_(jni),
       is_screencast_(is_screencast) {
   LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
   camera_thread_checker_.DetachFromThread();
+
+  jclass j_video_frame_buffer_class =
+      webrtc_jni::FindClass(jni, "org/webrtc/VideoFrame$Buffer");
+  j_crop_and_scale_id_ =
+      jni->GetMethodID(j_video_frame_buffer_class, "cropAndScale",
+                       "(IIIIII)Lorg/webrtc/VideoFrame$Buffer;");
 }
 
 void AndroidVideoTrackSource::SetState(SourceState state) {
@@ -150,6 +158,46 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
           adapted_width, adapted_height,
           webrtc_jni::NativeHandleImpl(handle.oes_texture_id, matrix)),
       rotation, translated_camera_time_us));
+}
+
+void AndroidVideoTrackSource::OnFrameCaptured(JNIEnv* jni,
+                                              int width,
+                                              int height,
+                                              int64_t timestamp_ns,
+                                              VideoRotation rotation,
+                                              jobject j_video_frame_buffer) {
+  RTC_DCHECK(camera_thread_checker_.CalledOnValidThread());
+
+  int64_t camera_time_us = timestamp_ns / rtc::kNumNanosecsPerMicrosec;
+  int64_t translated_camera_time_us =
+      timestamp_aligner_.TranslateTimestamp(camera_time_us, rtc::TimeMicros());
+
+  int adapted_width;
+  int adapted_height;
+  int crop_width;
+  int crop_height;
+  int crop_x;
+  int crop_y;
+
+  if (!AdaptFrame(width, height, camera_time_us, &adapted_width,
+                  &adapted_height, &crop_width, &crop_height, &crop_x,
+                  &crop_y)) {
+    return;
+  }
+
+  jobject j_adapted_video_frame_buffer = jni->CallObjectMethod(
+      j_video_frame_buffer, j_crop_and_scale_id_, crop_x, crop_y, crop_width,
+      crop_height, adapted_width, adapted_height);
+
+  rtc::scoped_refptr<VideoFrameBuffer> buffer =
+      video_buffer_factory_.WrapBuffer(jni, j_adapted_video_frame_buffer);
+
+  // AdaptedVideoTrackSource handles applying rotation for I420 frames.
+  if (apply_rotation()) {
+    buffer = buffer->ToI420();
+  }
+
+  OnFrame(VideoFrame(buffer, rotation, translated_camera_time_us));
 }
 
 void AndroidVideoTrackSource::OnOutputFormatRequest(int width,
