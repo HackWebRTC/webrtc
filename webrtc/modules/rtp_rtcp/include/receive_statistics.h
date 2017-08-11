@@ -89,10 +89,6 @@ class ReceiveStatistics : public ReceiveStatisticsProvider {
   // Called on new RTP stats creation.
   virtual void RegisterRtpStatisticsCallback(
       StreamDataCountersCallback* callback) = 0;
-
-  // TODO(danilchap): Make pure virtual when all implmentations of the
-  // ReceiveStatistics interface will implement it.
-  std::vector<rtcp::ReportBlock> RtcpReportBlocks(size_t max_blocks) override;
 };
 
 }  // namespace webrtc

@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <map>
+#include <vector>
 
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/rate_statistics.h"
@@ -96,6 +97,9 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
   explicit ReceiveStatisticsImpl(Clock* clock);
 
   ~ReceiveStatisticsImpl();
+
+  // Implement ReceiveStatisticsProvider.
+  std::vector<rtcp::ReportBlock> RtcpReportBlocks(size_t max_blocks) override;
 
   // Implement ReceiveStatistics.
   void IncomingPacket(const RTPHeader& header,

@@ -494,7 +494,7 @@ void ReceiveStatisticsImpl::DataCountersUpdated(const StreamDataCounters& stats,
   }
 }
 
-std::vector<rtcp::ReportBlock> ReceiveStatistics::RtcpReportBlocks(
+std::vector<rtcp::ReportBlock> ReceiveStatisticsImpl::RtcpReportBlocks(
     size_t max_blocks) {
   StatisticianMap statisticians = GetActiveStatisticians();
   std::vector<rtcp::ReportBlock> result;
