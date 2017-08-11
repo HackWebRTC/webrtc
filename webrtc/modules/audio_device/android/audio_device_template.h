@@ -377,7 +377,9 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   // TODO(henrika): add support.
   int32_t SetStereoPlayout(bool enable) override {
     LOG(INFO) << __FUNCTION__;
-    return -1;
+    // Allow disabling stereo playout, as that matches returning false(0) from
+    // StereoPlayoutIsAvailable and is the default case.
+    return enable ? -1 : 0;
   }
 
   // TODO(henrika): add support.
