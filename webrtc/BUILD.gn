@@ -33,7 +33,6 @@ config("common_inherited_config") {
       "FEATURE_ENABLE_VOICEMAIL",
       "EXPAT_RELATIVE_PATH",
       "GTEST_RELATIVE_PATH",
-      "NO_SOUND_SYSTEM",
       "WEBRTC_CHROMIUM_BUILD",
     ]
     include_dirs = [
