@@ -110,15 +110,13 @@ WebRtcVideoCapturer::WebRtcVideoCapturer()
     : factory_(new WebRtcVcmFactory),
       module_(nullptr),
       captured_frames_(0),
-      start_thread_(nullptr),
-      async_invoker_(nullptr) {}
+      start_thread_(nullptr) {}
 
 WebRtcVideoCapturer::WebRtcVideoCapturer(WebRtcVcmFactoryInterface* factory)
     : factory_(factory),
       module_(nullptr),
       captured_frames_(0),
-      start_thread_(nullptr),
-      async_invoker_(nullptr) {}
+      start_thread_(nullptr) {}
 
 WebRtcVideoCapturer::~WebRtcVideoCapturer() {}
 
@@ -256,8 +254,6 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
   }
 
   start_thread_ = rtc::Thread::Current();
-  RTC_DCHECK(!async_invoker_);
-  async_invoker_.reset(new rtc::AsyncInvoker());
   captured_frames_ = 0;
 
   SetCaptureFormat(&capture_format);
@@ -273,7 +269,6 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
   if (module_->StartCapture(cap) != 0) {
     LOG(LS_ERROR) << "Camera '" << GetId() << "' failed to start";
     module_->DeRegisterCaptureDataCallback();
-    async_invoker_.reset();
     SetCaptureFormat(nullptr);
     start_thread_ = nullptr;
     return CS_FAILED;
@@ -294,7 +289,6 @@ void WebRtcVideoCapturer::Stop() {
   }
   RTC_DCHECK(start_thread_);
   RTC_DCHECK(start_thread_->IsCurrent());
-  RTC_DCHECK(async_invoker_);
   if (IsRunning()) {
     // The module is responsible for OnIncomingCapturedFrame being called, if
     // we stop it we will get no further callbacks.
@@ -307,10 +301,6 @@ void WebRtcVideoCapturer::Stop() {
   LOG(LS_INFO) << "Camera '" << GetId() << "' stopped after capturing "
                << captured_frames_ << " frames and dropping "
                << drop_ratio << "%";
-
-  // Clear any pending async invokes (that OnIncomingCapturedFrame may have
-  // caused).
-  async_invoker_.reset();
 
   SetCaptureFormat(NULL);
   start_thread_ = nullptr;
@@ -337,7 +327,6 @@ void WebRtcVideoCapturer::OnFrame(
     const webrtc::VideoFrame& sample) {
   // This can only happen between Start() and Stop().
   RTC_DCHECK(start_thread_);
-  RTC_DCHECK(async_invoker_);
 
   ++captured_frames_;
   // Log the size and pixel aspect ratio of the first captured frame.

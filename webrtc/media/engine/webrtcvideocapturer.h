@@ -78,8 +78,6 @@ class WebRtcVideoCapturer : public VideoCapturer,
   int captured_frames_;
   std::vector<uint8_t> capture_buffer_;
   rtc::Thread* start_thread_;  // Set in Start(), unset in Stop();
-
-  std::unique_ptr<rtc::AsyncInvoker> async_invoker_;
 };
 
 }  // namespace cricket
