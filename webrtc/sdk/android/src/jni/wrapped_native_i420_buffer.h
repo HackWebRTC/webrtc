@@ -20,6 +20,7 @@ namespace webrtc_jni {
 // This function wraps the C++ I420 buffer and returns a Java
 // VideoFrame.I420Buffer as a jobject.
 jobject WrapI420Buffer(
+    JNIEnv* jni,
     const rtc::scoped_refptr<webrtc::I420BufferInterface>& i420_buffer);
 
 }  // namespace webrtc_jni

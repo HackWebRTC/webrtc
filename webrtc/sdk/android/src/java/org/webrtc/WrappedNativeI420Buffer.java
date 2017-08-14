@@ -37,6 +37,8 @@ class WrappedNativeI420Buffer implements VideoFrame.I420Buffer {
     this.dataV = dataV;
     this.strideV = strideV;
     this.nativeBuffer = nativeBuffer;
+
+    retain();
   }
 
   @Override

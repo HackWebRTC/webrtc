@@ -113,6 +113,7 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/VideoFrame$I420Buffer");
   LoadClass(jni, "org/webrtc/VideoFrame$TextureBuffer");
   LoadClass(jni, "org/webrtc/VideoRenderer$I420Frame");
+  LoadClass(jni, "org/webrtc/VideoSink");
   LoadClass(jni, "org/webrtc/VideoTrack");
   LoadClass(jni, "org/webrtc/WrappedNativeI420Buffer");
 }
