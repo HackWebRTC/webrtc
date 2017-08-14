@@ -368,31 +368,31 @@ class AudioEncoderOpus::PacketLossFractionSmoother {
 AudioEncoderOpus::AudioEncoderOpus(const AudioEncoderOpusConfig& config)
     : AudioEncoderOpus(config, config.payload_type) {}
 
+AudioEncoderOpus::AudioEncoderOpus(const AudioEncoderOpusConfig& config,
+                                   int payload_type)
+    : AudioEncoderOpus(
+          config,
+          payload_type,
+          [this](const ProtoString& config_string, RtcEventLog* event_log) {
+            return DefaultAudioNetworkAdaptorCreator(config_string, event_log);
+          },
+          // We choose 5sec as initial time constant due to empirical data.
+          rtc::MakeUnique<SmoothingFilterImpl>(5000)) {}
+
 AudioEncoderOpus::AudioEncoderOpus(
     const AudioEncoderOpusConfig& config,
     int payload_type,
-    AudioNetworkAdaptorCreator&& audio_network_adaptor_creator,
+    const AudioNetworkAdaptorCreator& audio_network_adaptor_creator,
     std::unique_ptr<SmoothingFilter> bitrate_smoother)
     : payload_type_(payload_type),
-      send_side_bwe_with_overhead_(webrtc::field_trial::IsEnabled(
-          "WebRTC-SendSideBwe-WithOverhead")),
+      send_side_bwe_with_overhead_(
+          webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       packet_loss_rate_(0.0),
       inst_(nullptr),
       packet_loss_fraction_smoother_(new PacketLossFractionSmoother()),
-      audio_network_adaptor_creator_(
-          audio_network_adaptor_creator
-              ? std::move(audio_network_adaptor_creator)
-              : [this](const ProtoString& config_string,
-                       RtcEventLog* event_log) {
-                  return DefaultAudioNetworkAdaptorCreator(config_string,
-                                                           event_log);
-              }),
-      bitrate_smoother_(bitrate_smoother
-          ? std::move(bitrate_smoother) : std::unique_ptr<SmoothingFilter>(
-              // We choose 5sec as initial time constant due to empirical data.
-              new SmoothingFilterImpl(5000))) {
-  RTC_DCHECK_GE(payload_type, 0);
-  RTC_DCHECK_LE(payload_type, 127);
+      audio_network_adaptor_creator_(audio_network_adaptor_creator),
+      bitrate_smoother_(std::move(bitrate_smoother)) {
+  RTC_DCHECK(0 <= payload_type && payload_type <= 127);
 
   // Sanity check of the redundant payload type field that we want to get rid
   // of. See https://bugs.chromium.org/p/webrtc/issues/detail?id=7847

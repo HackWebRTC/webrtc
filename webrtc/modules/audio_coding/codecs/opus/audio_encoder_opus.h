@@ -67,11 +67,14 @@ class AudioEncoderOpus final : public AudioEncoder {
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=7847
   AudioEncoderOpus(const AudioEncoderOpusConfig& config);
 
+  AudioEncoderOpus(const AudioEncoderOpusConfig& config, int payload_type);
+
+  // Dependency injection for testing.
   AudioEncoderOpus(
       const AudioEncoderOpusConfig& config,
       int payload_type,
-      AudioNetworkAdaptorCreator&& audio_network_adaptor_creator = nullptr,
-      std::unique_ptr<SmoothingFilter> bitrate_smoother = nullptr);
+      const AudioNetworkAdaptorCreator& audio_network_adaptor_creator,
+      std::unique_ptr<SmoothingFilter> bitrate_smoother);
 
   explicit AudioEncoderOpus(const CodecInst& codec_inst);
   AudioEncoderOpus(int payload_type, const SdpAudioFormat& format);
@@ -164,7 +167,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   int next_frame_length_ms_;
   int complexity_;
   std::unique_ptr<PacketLossFractionSmoother> packet_loss_fraction_smoother_;
-  AudioNetworkAdaptorCreator audio_network_adaptor_creator_;
+  const AudioNetworkAdaptorCreator audio_network_adaptor_creator_;
   std::unique_ptr<AudioNetworkAdaptor> audio_network_adaptor_;
   rtc::Optional<size_t> overhead_bytes_per_packet_;
   const std::unique_ptr<SmoothingFilter> bitrate_smoother_;

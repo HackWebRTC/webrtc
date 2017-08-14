@@ -302,7 +302,7 @@ ControllerManagerImpl::ControllerManagerImpl(const Config& config)
 
 ControllerManagerImpl::ControllerManagerImpl(
     const Config& config,
-    std::vector<std::unique_ptr<Controller>>&& controllers,
+    std::vector<std::unique_ptr<Controller>> controllers,
     const std::map<const Controller*, std::pair<int, float>>& scoring_points)
     : config_(config),
       controllers_(std::move(controllers)),

@@ -74,7 +74,7 @@ class ControllerManagerImpl final : public ControllerManager {
   // Dependency injection for testing.
   ControllerManagerImpl(
       const Config& config,
-      std::vector<std::unique_ptr<Controller>>&& controllers,
+      std::vector<std::unique_ptr<Controller>> controllers,
       const std::map<const Controller*, std::pair<int, float>>&
           chracteristic_points);
 
