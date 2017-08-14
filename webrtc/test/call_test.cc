@@ -363,8 +363,6 @@ void CallTest::Start() {
   }
   for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
     audio_recv_stream->Start();
-  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_)
-    flexfec_recv_stream->Start();
   if (frame_generator_capturer_.get() != NULL)
     frame_generator_capturer_->Start();
 }
@@ -372,8 +370,6 @@ void CallTest::Start() {
 void CallTest::Stop() {
   if (frame_generator_capturer_.get() != NULL)
     frame_generator_capturer_->Stop();
-  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_)
-    flexfec_recv_stream->Stop();
   for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
     audio_recv_stream->Stop();
   if (audio_send_stream_) {

@@ -11,12 +11,10 @@
 #ifndef WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
 #define WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
 
-#include <atomic>
 #include <memory>
 
 #include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/call/rtp_packet_sink_interface.h"
-#include "webrtc/rtc_base/criticalsection.h"
 
 namespace webrtc {
 
@@ -43,16 +41,12 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
   // RtpPacketSinkInterface.
   void OnRtpPacket(const RtpPacketReceived& packet) override;
 
-  // Implements FlexfecReceiveStream.
-  void Start() override;
-  void Stop() override;
   Stats GetStats() const override;
   const Config& GetConfig() const override;
 
  private:
   // Config.
   const Config config_;
-  std::atomic<bool> started_;
 
   // Erasure code interfacing.
   const std::unique_ptr<FlexfecReceiver> receiver_;

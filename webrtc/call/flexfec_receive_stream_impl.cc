@@ -129,7 +129,6 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
     RtcpRttStats* rtt_stats,
     ProcessThread* process_thread)
     : config_(config),
-      started_(false),
       receiver_(MaybeCreateFlexfecReceiver(config_, recovered_packet_receiver)),
       rtp_receive_statistics_(
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
@@ -161,14 +160,10 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
 
 FlexfecReceiveStreamImpl::~FlexfecReceiveStreamImpl() {
   LOG(LS_INFO) << "~FlexfecReceiveStreamImpl: " << config_.ToString();
-  Stop();
   process_thread_->DeRegisterModule(rtp_rtcp_.get());
 }
 
 void FlexfecReceiveStreamImpl::OnRtpPacket(const RtpPacketReceived& packet) {
-  if (!started_.load())
-    return;
-
   if (!receiver_)
     return;
 
@@ -183,14 +178,6 @@ void FlexfecReceiveStreamImpl::OnRtpPacket(const RtpPacketReceived& packet) {
     rtp_receive_statistics_->IncomingPacket(header, packet.size(),
                                             kNotRetransmitted);
   }
-}
-
-void FlexfecReceiveStreamImpl::Start() {
-  started_.store(true);
-}
-
-void FlexfecReceiveStreamImpl::Stop() {
-  started_.store(false);
 }
 
 // TODO(brandtr): Implement this member function when we have designed the

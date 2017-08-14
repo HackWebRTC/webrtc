@@ -76,13 +76,6 @@ class FlexfecReceiveStream : public RtpPacketSinkInterface {
     std::vector<RtpExtension> rtp_header_extensions;
   };
 
-  // Starts stream activity.
-  // When a stream is active, it can receive and process packets.
-  virtual void Start() = 0;
-  // Stops stream activity.
-  // When a stream is stopped, it can't receive nor process packets.
-  virtual void Stop() = 0;
-
   virtual Stats GetStats() const = 0;
 
   virtual const Config& GetConfig() const = 0;

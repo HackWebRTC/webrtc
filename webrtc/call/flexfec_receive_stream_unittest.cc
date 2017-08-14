@@ -104,15 +104,10 @@ class FlexfecReceiveStreamTest : public ::testing::Test {
 
 TEST_F(FlexfecReceiveStreamTest, ConstructDestruct) {}
 
-TEST_F(FlexfecReceiveStreamTest, StartStop) {
-  receive_stream_->Start();
-  receive_stream_->Stop();
-}
-
 // Create a FlexFEC packet that protects a single media packet and ensure
 // that the callback is called. Correctness of recovery is checked in the
 // FlexfecReceiver unit tests.
-TEST_F(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
+TEST_F(FlexfecReceiveStreamTest, RecoversPacket) {
   constexpr uint8_t kFlexfecSeqNum[] = {0x00, 0x01};
   constexpr uint8_t kFlexfecTs[] = {0x00, 0x11, 0x22, 0x33};
   constexpr uint8_t kMediaPlType = 107;
@@ -150,13 +145,9 @@ TEST_F(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
                                           config_, &recovered_packet_receiver,
                                           &rtt_stats_, &process_thread_);
 
-  // Do not call back before being started.
-  receive_stream.OnRtpPacket(ParsePacket(kFlexfecPacket));
-
-  // Call back after being started.
-  receive_stream.Start();
   EXPECT_CALL(recovered_packet_receiver,
               OnRecoveredPacket(_, kRtpHeaderSize + kPayloadLength[1]));
+
   receive_stream.OnRtpPacket(ParsePacket(kFlexfecPacket));
 
   // Tear-down

@@ -1860,8 +1860,6 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     thumbnail_send_stream->Start();
   for (VideoReceiveStream* receive_stream : video_receive_streams_)
     receive_stream->Start();
-  for (FlexfecReceiveStream* receive_stream : flexfec_receive_streams_)
-    receive_stream->Start();
   for (VideoReceiveStream* thumbnail_receive_stream :
        thumbnail_receive_streams_)
     thumbnail_receive_stream->Start();
@@ -1886,8 +1884,6 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   for (VideoReceiveStream* thumbnail_receive_stream :
        thumbnail_receive_streams_)
     thumbnail_receive_stream->Stop();
-  for (FlexfecReceiveStream* receive_stream : flexfec_receive_streams_)
-    receive_stream->Stop();
   for (VideoReceiveStream* receive_stream : video_receive_streams_)
     receive_stream->Stop();
   for (VideoSendStream* thumbnail_send_stream : thumbnail_send_streams_)
@@ -2048,12 +2044,9 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   // Start sending and receiving video.
   if (params_.video.enabled) {
-    for (FlexfecReceiveStream* flexfec_receive_stream :
-         flexfec_receive_streams_) {
-      flexfec_receive_stream->Start();
-    }
-    for (VideoReceiveStream* receive_stream : video_receive_streams_)
-      receive_stream->Start();
+    for (VideoReceiveStream* video_receive_stream : video_receive_streams_)
+      video_receive_stream->Start();
+
     video_send_stream_->Start();
     video_capturer_->Start();
   }
@@ -2091,7 +2084,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
       for (VideoReceiveStream* video_receive_stream : video_receive_streams_) {
         video_receive_stream->RemoveSecondarySink(flexfec_receive_stream);
       }
-      flexfec_receive_stream->Stop();
       receiver_call_->DestroyFlexfecReceiveStream(flexfec_receive_stream);
     }
     for (VideoReceiveStream* receive_stream : video_receive_streams_) {
