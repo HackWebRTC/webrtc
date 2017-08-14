@@ -581,25 +581,22 @@ class VideoProcessorIntegrationTest : public testing::Test {
     }
   }
 
-  static void SetProcessParams(TestConfig* config,
-                               bool hw_codec,
-                               bool use_single_core,
-                               float packet_loss_probability,
-                               int key_frame_interval,
-                               std::string filename,
-                               bool verbose_logging,
-                               bool batch_mode) {
-    // Configure input filename.
+  static void SetTestConfig(TestConfig* config,
+                            bool hw_codec,
+                            bool use_single_core,
+                            float packet_loss_probability,
+                            std::string filename,
+                            bool verbose_logging,
+                            bool batch_mode) {
     config->filename = filename;
     config->input_filename = ResourcePath(filename, "yuv");
     // Generate an output filename in a safe way.
     config->output_filename =
         TempFilename(OutputPath(), "videoprocessor_integrationtest");
-    config->hw_codec = hw_codec;
-    config->use_single_core = use_single_core;
-    config->keyframe_interval = key_frame_interval;
     config->networking_config.packet_loss_probability = packet_loss_probability;
+    config->use_single_core = use_single_core;
     config->verbose = verbose_logging;
+    config->hw_codec = hw_codec;
     config->batch_mode = batch_mode;
   }
 
@@ -617,29 +614,29 @@ class VideoProcessorIntegrationTest : public testing::Test {
     config->codec_settings.width = width;
     config->codec_settings.height = height;
     switch (config->codec_settings.codecType) {
+      case kVideoCodecVP8:
+        config->codec_settings.VP8()->resilience =
+            resilience_on ? kResilientStream : kResilienceOff;
+        config->codec_settings.VP8()->numberOfTemporalLayers =
+            num_temporal_layers;
+        config->codec_settings.VP8()->denoisingOn = denoising_on;
+        config->codec_settings.VP8()->errorConcealmentOn = error_concealment_on;
+        config->codec_settings.VP8()->automaticResizeOn = spatial_resize_on;
+        config->codec_settings.VP8()->frameDroppingOn = frame_dropper_on;
+        config->codec_settings.VP8()->keyFrameInterval = kBaseKeyFrameInterval;
+        break;
+      case kVideoCodecVP9:
+        config->codec_settings.VP9()->resilienceOn = resilience_on;
+        config->codec_settings.VP9()->numberOfTemporalLayers =
+            num_temporal_layers;
+        config->codec_settings.VP9()->denoisingOn = denoising_on;
+        config->codec_settings.VP9()->frameDroppingOn = frame_dropper_on;
+        config->codec_settings.VP9()->keyFrameInterval = kBaseKeyFrameInterval;
+        config->codec_settings.VP9()->automaticResizeOn = spatial_resize_on;
+        break;
       case kVideoCodecH264:
         config->codec_settings.H264()->frameDroppingOn = frame_dropper_on;
         config->codec_settings.H264()->keyFrameInterval = kBaseKeyFrameInterval;
-        break;
-      case kVideoCodecVP8:
-        config->codec_settings.VP8()->errorConcealmentOn = error_concealment_on;
-        config->codec_settings.VP8()->denoisingOn = denoising_on;
-        config->codec_settings.VP8()->numberOfTemporalLayers =
-            num_temporal_layers;
-        config->codec_settings.VP8()->frameDroppingOn = frame_dropper_on;
-        config->codec_settings.VP8()->automaticResizeOn = spatial_resize_on;
-        config->codec_settings.VP8()->keyFrameInterval = kBaseKeyFrameInterval;
-        config->codec_settings.VP8()->resilience =
-            resilience_on ? kResilientStream : kResilienceOff;
-        break;
-      case kVideoCodecVP9:
-        config->codec_settings.VP9()->denoisingOn = denoising_on;
-        config->codec_settings.VP9()->numberOfTemporalLayers =
-            num_temporal_layers;
-        config->codec_settings.VP9()->frameDroppingOn = frame_dropper_on;
-        config->codec_settings.VP9()->automaticResizeOn = spatial_resize_on;
-        config->codec_settings.VP9()->keyFrameInterval = kBaseKeyFrameInterval;
-        config->codec_settings.VP9()->resilienceOn = resilience_on;
         break;
       default:
         RTC_NOTREACHED();

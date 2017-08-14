@@ -28,7 +28,6 @@ const bool kDenoisingOn = false;
 const bool kErrorConcealmentOn = false;
 const bool kSpatialResizeOn = false;
 const bool kFrameDropperOn = false;
-const int kKeyFrameInterval = -1;
 
 // Test settings.
 const bool kBatchMode = true;
@@ -69,8 +68,8 @@ class PlotVideoProcessorIntegrationTest
     rate_profile.num_frames = kNumFrames;
 
     // Codec/network settings.
-    SetProcessParams(&config_, hw_codec_, kUseSingleCore, kPacketLoss,
-                     kKeyFrameInterval, filename, kVerboseLogging, kBatchMode);
+    SetTestConfig(&config_, hw_codec_, kUseSingleCore, kPacketLoss, filename,
+                  kVerboseLogging, kBatchMode);
     SetCodecSettings(&config_, codec_type_, kNumTemporalLayers,
                      kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
                      kSpatialResizeOn, kResilienceOn, width, height);
