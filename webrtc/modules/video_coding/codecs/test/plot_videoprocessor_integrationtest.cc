@@ -14,61 +14,62 @@ namespace webrtc {
 namespace test {
 
 namespace {
-// Codec settings.
+
+// Loop variables.
 const int kBitrates[] = {30, 50, 100, 200, 300, 500, 1000};
-const int kFps[] = {30};
-const int kNumTemporalLayers = 1;
-const int kKeyFrameInterval = -1;
-const bool kErrorConcealmentOn = false;
-const bool kDenoisingOn = false;
-const bool kFrameDropperOn = true;
-const bool kSpatialResizeOn = false;
-const bool kResilienceOn = false;
 const VideoCodecType kVideoCodecType[] = {kVideoCodecVP8};
-const bool kHwCodec = false;
-const bool kUseSingleCore = true;
+const bool kHwCodec[] = {false};
+
+// Codec settings.
+const bool kUseSingleCore = false;
+const bool kResilienceOn = false;
+const int kNumTemporalLayers = 1;
+const bool kDenoisingOn = false;
+const bool kErrorConcealmentOn = false;
+const bool kSpatialResizeOn = false;
+const bool kFrameDropperOn = false;
+const int kKeyFrameInterval = -1;
 
 // Test settings.
 const bool kBatchMode = true;
-
-// Packet loss probability [0.0, 1.0].
+const bool kVerboseLogging = true;
 const float kPacketLoss = 0.0f;
-
 const VisualizationParams kVisualizationParams = {
     false,  // save_encoded_ivf
     false,  // save_decoded_y4m
 };
 
-const bool kVerboseLogging = true;
-
 const int kNumFrames = 299;
+
 }  // namespace
 
 // Tests for plotting statistics from logs.
 class PlotVideoProcessorIntegrationTest
     : public VideoProcessorIntegrationTest,
       public ::testing::WithParamInterface<
-          ::testing::tuple<int, int, VideoCodecType>> {
+          ::testing::tuple<int, VideoCodecType, bool>> {
  protected:
   PlotVideoProcessorIntegrationTest()
       : bitrate_(::testing::get<0>(GetParam())),
-        framerate_(::testing::get<1>(GetParam())),
-        codec_type_(::testing::get<2>(GetParam())) {}
+        codec_type_(::testing::get<1>(GetParam())),
+        hw_codec_(::testing::get<2>(GetParam())) {}
+  ~PlotVideoProcessorIntegrationTest() override = default;
 
-  virtual ~PlotVideoProcessorIntegrationTest() {}
-
-  void RunTest(int width, int height, const std::string& filename) {
+  void RunTest(int width,
+               int height,
+               int framerate,
+               const std::string& filename) {
     // Bitrate and frame rate profile.
     RateProfile rate_profile;
     SetRateProfile(&rate_profile,
                    0,  // update_index
-                   bitrate_, framerate_,
+                   bitrate_, framerate,
                    0);  // frame_index_rate_update
     rate_profile.frame_index_rate_update[1] = kNumFrames + 1;
     rate_profile.num_frames = kNumFrames;
 
     // Codec/network settings.
-    SetProcessParams(&config_, kHwCodec, kUseSingleCore, kPacketLoss,
+    SetProcessParams(&config_, hw_codec_, kUseSingleCore, kPacketLoss,
                      kKeyFrameInterval, filename, kVerboseLogging, kBatchMode);
     SetCodecSettings(&config_, codec_type_, kNumTemporalLayers,
                      kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
@@ -98,35 +99,35 @@ class PlotVideoProcessorIntegrationTest
   }
 
   const int bitrate_;
-  const int framerate_;
   const VideoCodecType codec_type_;
+  const bool hw_codec_;
 };
 
 INSTANTIATE_TEST_CASE_P(
     CodecSettings,
     PlotVideoProcessorIntegrationTest,
     ::testing::Combine(::testing::ValuesIn(kBitrates),
-                       ::testing::ValuesIn(kFps),
-                       ::testing::ValuesIn(kVideoCodecType)));
+                       ::testing::ValuesIn(kVideoCodecType),
+                       ::testing::ValuesIn(kHwCodec)));
 
-TEST_P(PlotVideoProcessorIntegrationTest, Process128x96) {
-  RunTest(128, 96, "foreman_128x96");
+TEST_P(PlotVideoProcessorIntegrationTest, Process_128x96_30fps) {
+  RunTest(128, 96, 30, "foreman_128x96");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, Process160x120) {
-  RunTest(160, 120, "foreman_160x120");
+TEST_P(PlotVideoProcessorIntegrationTest, Process_160x120_30fps) {
+  RunTest(160, 120, 30, "foreman_160x120");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, Process176x144) {
-  RunTest(176, 144, "foreman_176x144");
+TEST_P(PlotVideoProcessorIntegrationTest, Process_176x144_30fps) {
+  RunTest(176, 144, 30, "foreman_176x144");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, Process320x240) {
-  RunTest(320, 240, "foreman_320x240");
+TEST_P(PlotVideoProcessorIntegrationTest, Process_320x240_30fps) {
+  RunTest(320, 240, 30, "foreman_320x240");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, Process352x288) {
-  RunTest(352, 288, "foreman_cif");
+TEST_P(PlotVideoProcessorIntegrationTest, Process_352x288_30fps) {
+  RunTest(352, 288, 30, "foreman_cif");
 }
 
 }  // namespace test
