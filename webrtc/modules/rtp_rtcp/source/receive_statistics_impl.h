@@ -25,7 +25,8 @@ namespace webrtc {
 
 class StreamStatisticianImpl : public StreamStatistician {
  public:
-  StreamStatisticianImpl(Clock* clock,
+  StreamStatisticianImpl(uint32_t ssrc,
+                         Clock* clock,
                          RtcpStatisticsCallback* rtcp_callback,
                          StreamDataCountersCallback* rtp_callback);
   virtual ~StreamStatisticianImpl() {}
@@ -49,18 +50,17 @@ class StreamStatisticianImpl : public StreamStatistician {
 
  private:
   bool InOrderPacketInternal(uint16_t sequence_number) const;
-  RtcpStatistics CalculateRtcpStatistics();
+  RtcpStatistics CalculateRtcpStatistics()
+      EXCLUSIVE_LOCKS_REQUIRED(stream_lock_);
   void UpdateJitter(const RTPHeader& header, NtpTime receive_time);
-  void UpdateCounters(const RTPHeader& rtp_header,
-                      size_t packet_length,
-                      bool retransmitted);
-  void NotifyRtpCallback() LOCKS_EXCLUDED(stream_lock_);
-  void NotifyRtcpCallback() LOCKS_EXCLUDED(stream_lock_);
+  StreamDataCounters UpdateCounters(const RTPHeader& rtp_header,
+                                    size_t packet_length,
+                                    bool retransmitted);
 
+  const uint32_t ssrc_;
   Clock* const clock_;
   rtc::CriticalSection stream_lock_;
   RateStatistics incoming_bitrate_;
-  uint32_t ssrc_;
   int max_reordering_threshold_;  // In number of packets or sequence numbers.
 
   // Stats on received RTP packets.
@@ -86,6 +86,7 @@ class StreamStatisticianImpl : public StreamStatistician {
   uint16_t last_report_seq_max_;
   RtcpStatistics last_reported_statistics_;
 
+  // stream_lock_ shouldn't be held when calling callbacks.
   RtcpStatisticsCallback* const rtcp_callback_;
   StreamDataCountersCallback* const rtp_callback_;
 };
