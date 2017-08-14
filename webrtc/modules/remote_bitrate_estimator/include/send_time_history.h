@@ -38,15 +38,11 @@ class SendTimeHistory {
   // thus be non-null and have the sequence_number field set.
   bool GetFeedback(PacketFeedback* packet_feedback, bool remove);
 
-  size_t GetOutstandingBytes(uint16_t local_net_id,
-                             uint16_t remote_net_id) const;
-
  private:
   const Clock* const clock_;
   const int64_t packet_age_limit_ms_;
   SequenceNumberUnwrapper seq_num_unwrapper_;
   std::map<int64_t, PacketFeedback> history_;
-  rtc::Optional<int64_t> latest_acked_seq_num_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendTimeHistory);
 };

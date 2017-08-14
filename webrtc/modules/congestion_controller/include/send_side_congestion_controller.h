@@ -136,7 +136,6 @@ class SendSideCongestionController : public CallStatsObserver,
   bool HasNetworkParametersToReportChanged(uint32_t bitrate_bps,
                                            uint8_t fraction_loss,
                                            int64_t rtt);
-  void LimitOutstandingBytes(size_t num_outstanding_bytes);
   const Clock* const clock_;
   rtc::CriticalSection observer_lock_;
   Observer* observer_ GUARDED_BY(observer_lock_);
@@ -152,15 +151,9 @@ class SendSideCongestionController : public CallStatsObserver,
   uint8_t last_reported_fraction_loss_ GUARDED_BY(network_state_lock_);
   int64_t last_reported_rtt_ GUARDED_BY(network_state_lock_);
   NetworkState network_state_ GUARDED_BY(network_state_lock_);
-  bool pause_pacer_ GUARDED_BY(network_state_lock_);
-  // Duplicate the pacer paused state to avoid grabbing a lock when
-  // pausing the pacer. This can be removed when we move this class
-  // over to the task queue.
-  bool pacer_paused_;
   rtc::CriticalSection bwe_lock_;
   int min_bitrate_bps_ GUARDED_BY(bwe_lock_);
   std::unique_ptr<DelayBasedBwe> delay_based_bwe_ GUARDED_BY(bwe_lock_);
-  const bool in_cwnd_experiment_;
   bool was_in_alr_;
 
   rtc::RaceChecker worker_race_;

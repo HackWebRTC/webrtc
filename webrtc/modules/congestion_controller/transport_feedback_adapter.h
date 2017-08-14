@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_TRANSPORT_FEEDBACK_ADAPTER_H_
 #define WEBRTC_MODULES_CONGESTION_CONTROLLER_TRANSPORT_FEEDBACK_ADAPTER_H_
 
-#include <deque>
 #include <vector>
 
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
@@ -47,13 +46,10 @@ class TransportFeedbackAdapter {
   // to the CongestionController interface.
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback);
   std::vector<PacketFeedback> GetTransportFeedbackVector() const;
-  rtc::Optional<int64_t> GetMinFeedbackLoopRtt() const;
 
   void SetTransportOverhead(int transport_overhead_bytes_per_packet);
 
   void SetNetworkIds(uint16_t local_id, uint16_t remote_id);
-
-  size_t GetOutstandingBytes() const;
 
  private:
   std::vector<PacketFeedback> GetPacketFeedbackVector(
@@ -69,8 +65,6 @@ class TransportFeedbackAdapter {
   std::vector<PacketFeedback> last_packet_feedback_vector_;
   uint16_t local_net_id_ GUARDED_BY(&lock_);
   uint16_t remote_net_id_ GUARDED_BY(&lock_);
-  std::deque<int64_t> feedback_rtts_ GUARDED_BY(&lock_);
-  rtc::Optional<int64_t> min_feedback_rtt_ GUARDED_BY(&lock_);
 
   rtc::CriticalSection observers_lock_;
   std::vector<PacketFeedbackObserver*> observers_ GUARDED_BY(&observers_lock_);

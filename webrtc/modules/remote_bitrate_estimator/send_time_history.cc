@@ -52,9 +52,6 @@ bool SendTimeHistory::GetFeedback(PacketFeedback* packet_feedback,
   RTC_DCHECK(packet_feedback);
   int64_t unwrapped_seq_num =
       seq_num_unwrapper_.Unwrap(packet_feedback->sequence_number);
-  latest_acked_seq_num_.emplace(
-      std::max(unwrapped_seq_num, latest_acked_seq_num_.value_or(0)));
-  RTC_DCHECK_GE(*latest_acked_seq_num_, 0);
   auto it = history_.find(unwrapped_seq_num);
   if (it == history_.end())
     return false;
@@ -67,23 +64,6 @@ bool SendTimeHistory::GetFeedback(PacketFeedback* packet_feedback,
   if (remove)
     history_.erase(it);
   return true;
-}
-
-size_t SendTimeHistory::GetOutstandingBytes(uint16_t local_net_id,
-                                            uint16_t remote_net_id) const {
-  size_t outstanding_bytes = 0;
-  auto unacked_it = history_.begin();
-  if (latest_acked_seq_num_) {
-    unacked_it = history_.lower_bound(*latest_acked_seq_num_);
-  }
-  for (; unacked_it != history_.end(); ++unacked_it) {
-    if (unacked_it->second.local_net_id == local_net_id &&
-        unacked_it->second.remote_net_id == remote_net_id &&
-        unacked_it->second.send_time_ms >= 0) {
-      outstanding_bytes += unacked_it->second.payload_size;
-    }
-  }
-  return outstanding_bytes;
 }
 
 }  // namespace webrtc

@@ -651,20 +651,12 @@ TEST_F(PacedSenderTest, Pause) {
   EXPECT_EQ(second_capture_time_ms - capture_time_ms,
             send_bucket_->QueueInMs());
 
-  EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  EXPECT_CALL(callback_, TimeToSendPadding(1, _)).Times(1);
-  send_bucket_->Process();
-
-  int64_t expected_time_until_send = 500;
-  EXPECT_CALL(callback_, TimeToSendPadding(1, _)).Times(1);
-  while (expected_time_until_send >= 0) {
+  for (int i = 0; i < 10; ++i) {
+    clock_.AdvanceTimeMilliseconds(5);
     // TimeUntilNextProcess must not return 0 when paused.  If it does,
     // we risk running a busy loop, so ideally it should return a large value.
-    EXPECT_EQ(expected_time_until_send, send_bucket_->TimeUntilNextProcess());
-    if (expected_time_until_send == 0)
-      send_bucket_->Process();
-    clock_.AdvanceTimeMilliseconds(5);
-    expected_time_until_send -= 5;
+    EXPECT_GE(send_bucket_->TimeUntilNextProcess(), 1000);
+    send_bucket_->Process();
   }
 
   // Expect high prio packets to come out first followed by normal
@@ -707,10 +699,10 @@ TEST_F(PacedSenderTest, Pause) {
   send_bucket_->Resume();
 
   for (size_t i = 0; i < 4; i++) {
-    EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-    send_bucket_->Process();
     EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
     clock_.AdvanceTimeMilliseconds(5);
+    EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
+    send_bucket_->Process();
   }
 
   EXPECT_EQ(0, send_bucket_->QueueInMs());

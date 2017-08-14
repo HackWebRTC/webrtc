@@ -1831,9 +1831,9 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
 
 class TransportFeedbackTester : public test::EndToEndTest {
  public:
-  TransportFeedbackTester(bool feedback_enabled,
-                          size_t num_video_streams,
-                          size_t num_audio_streams)
+  explicit TransportFeedbackTester(bool feedback_enabled,
+                                   size_t num_video_streams,
+                                   size_t num_audio_streams)
       : EndToEndTest(::webrtc::EndToEndTest::kDefaultTimeoutMs),
         feedback_enabled_(feedback_enabled),
         num_video_streams_(num_video_streams),
@@ -1925,80 +1925,6 @@ TEST_F(EndToEndTest, AudioTransportFeedbackNotConfigured) {
 
 TEST_F(EndToEndTest, AudioVideoReceivesTransportFeedback) {
   TransportFeedbackTester test(true, 1, 1);
-  RunBaseTest(&test);
-}
-
-TEST_F(EndToEndTest, StopsSendingMediaWithoutFeedback) {
-  test::ScopedFieldTrials override_field_trials(
-      "WebRTC-CwndExperiment/Enabled/");
-
-  class TransportFeedbackTester : public test::EndToEndTest {
-   public:
-    TransportFeedbackTester(size_t num_video_streams, size_t num_audio_streams)
-        : EndToEndTest(::webrtc::EndToEndTest::kDefaultTimeoutMs),
-          num_video_streams_(num_video_streams),
-          num_audio_streams_(num_audio_streams),
-          media_sent_(0),
-          padding_sent_(0) {
-      // Only one stream of each supported for now.
-      EXPECT_LE(num_video_streams, 1u);
-      EXPECT_LE(num_audio_streams, 1u);
-    }
-
-   protected:
-    Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, length, &header));
-      const bool only_padding =
-          header.headerLength + header.paddingLength == length;
-      rtc::CritScope lock(&crit_);
-      if (only_padding) {
-        ++padding_sent_;
-      } else {
-        ++media_sent_;
-        EXPECT_LT(media_sent_, 40) << "Media sent without feedback.";
-      }
-
-      return SEND_PACKET;
-    }
-
-    Action OnReceiveRtcp(const uint8_t* data, size_t length) override {
-      rtc::CritScope lock(&crit_);
-      if (media_sent_ > 20 && HasTransportFeedback(data, length)) {
-        return DROP_PACKET;
-      }
-      return SEND_PACKET;
-    }
-
-    bool HasTransportFeedback(const uint8_t* data, size_t length) const {
-      test::RtcpPacketParser parser;
-      EXPECT_TRUE(parser.Parse(data, length));
-      return parser.transport_feedback()->num_packets() > 0;
-    }
-
-    Call::Config GetSenderCallConfig() override {
-      Call::Config config = EndToEndTest::GetSenderCallConfig();
-      config.bitrate_config.max_bitrate_bps = 300000;
-      return config;
-    }
-
-    void PerformTest() override {
-      const int64_t kDisabledFeedbackTimeoutMs = 10000;
-      observation_complete_.Wait(kDisabledFeedbackTimeoutMs);
-      rtc::CritScope lock(&crit_);
-      EXPECT_GT(padding_sent_, 0);
-    }
-
-    size_t GetNumVideoStreams() const override { return num_video_streams_; }
-    size_t GetNumAudioStreams() const override { return num_audio_streams_; }
-
-   private:
-    const size_t num_video_streams_;
-    const size_t num_audio_streams_;
-    rtc::CriticalSection crit_;
-    int media_sent_ GUARDED_BY(crit_);
-    int padding_sent_ GUARDED_BY(crit_);
-  } test(1, 0);
   RunBaseTest(&test);
 }
 
@@ -2484,8 +2410,8 @@ TEST_F(EndToEndTest, TriggerMidCallProbing) {
     if (success)
       return;
   }
-  EXPECT_TRUE(success) << "Failed to perform mid call probing (" << kMaxAttempts
-                       << " attempts).";
+  RTC_DCHECK(success) << "Failed to perform mid call probing (" << kMaxAttempts
+                      << " attempts).";
 }
 
 TEST_F(EndToEndTest, VerifyNackStats) {
@@ -4270,17 +4196,12 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
           receiver_call_(nullptr),
           sender_state_(kNetworkUp),
           sender_rtp_(0),
-          sender_padding_(0),
           sender_rtcp_(0),
           receiver_rtcp_(0),
           down_frames_(0) {}
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&test_crit_);
-      RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, length, &header));
-      if (length == header.headerLength + header.paddingLength)
-        ++sender_padding_;
       ++sender_rtp_;
       packet_event_.Set();
       return SEND_PACKET;
@@ -4405,8 +4326,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
         int64_t time_now_ms = clock_->TimeInMilliseconds();
         rtc::CritScope lock(&test_crit_);
         if (sender_down) {
-          ASSERT_LE(sender_rtp_ - initial_sender_rtp - sender_padding_,
-                    kNumAcceptedDowntimeRtp)
+          ASSERT_LE(sender_rtp_ - initial_sender_rtp, kNumAcceptedDowntimeRtp)
               << "RTP sent during sender-side downtime.";
           ASSERT_LE(sender_rtcp_ - initial_sender_rtcp,
                     kNumAcceptedDowntimeRtcp)
@@ -4441,7 +4361,6 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     Call* receiver_call_;
     NetworkState sender_state_ GUARDED_BY(test_crit_);
     int sender_rtp_ GUARDED_BY(test_crit_);
-    int sender_padding_ GUARDED_BY(test_crit_);
     int sender_rtcp_ GUARDED_BY(test_crit_);
     int receiver_rtcp_ GUARDED_BY(test_crit_);
     int down_frames_ GUARDED_BY(test_crit_);
