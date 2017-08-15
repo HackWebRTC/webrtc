@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.os.Handler;
@@ -29,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * This class is intended to be used as a helper class for rendering on SurfaceViews and
  * TextureViews.
  */
-public class EglRenderer implements VideoRenderer.Callbacks {
+public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
   private static final String TAG = "EglRenderer";
   private static final long LOG_INTERVAL_SEC = 4;
   private static final int MAX_SURFACE_CLEAR_COUNT = 3;
@@ -100,7 +101,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
 
   // Pending frame to render. Serves as a queue with size 1. Synchronized on |frameLock|.
   private final Object frameLock = new Object();
-  private VideoRenderer.I420Frame pendingFrame;
+  private VideoFrame pendingFrame;
 
   // These variables are synchronized on |layoutLock|.
   private final Object layoutLock = new Object();
@@ -252,7 +253,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     ThreadUtils.awaitUninterruptibly(eglCleanupBarrier);
     synchronized (frameLock) {
       if (pendingFrame != null) {
-        VideoRenderer.renderFrameDone(pendingFrame);
+        pendingFrame.release();
         pendingFrame = null;
       }
     }
@@ -414,6 +415,14 @@ public class EglRenderer implements VideoRenderer.Callbacks {
   // VideoRenderer.Callbacks interface.
   @Override
   public void renderFrame(VideoRenderer.I420Frame frame) {
+    VideoFrame videoFrame = frame.toVideoFrame();
+    onFrame(videoFrame);
+    videoFrame.release();
+  }
+
+  // VideoSink interface.
+  @Override
+  public void onFrame(VideoFrame frame) {
     synchronized (statisticsLock) {
       ++framesReceived;
     }
@@ -421,15 +430,16 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
         logD("Dropping frame - Not initialized or already released.");
-        VideoRenderer.renderFrameDone(frame);
+        frame.release();
         return;
       }
       synchronized (frameLock) {
         dropOldFrame = (pendingFrame != null);
         if (dropOldFrame) {
-          VideoRenderer.renderFrameDone(pendingFrame);
+          pendingFrame.release();
         }
         pendingFrame = frame;
+        pendingFrame.retain();
         renderThreadHandler.post(this ::renderFrameOnRenderThread);
       }
     }
@@ -507,7 +517,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
    */
   private void renderFrameOnRenderThread() {
     // Fetch and render |pendingFrame|.
-    final VideoRenderer.I420Frame frame;
+    final VideoFrame frame;
     synchronized (frameLock) {
       if (pendingFrame == null) {
         return;
@@ -517,7 +527,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     }
     if (eglBase == null || !eglBase.hasSurface()) {
       logD("Dropping frame - No surface");
-      VideoRenderer.renderFrameDone(frame);
+      frame.release();
       return;
     }
     // Check if fps reduction is active.
@@ -544,38 +554,25 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     }
 
     final long startTimeNs = System.nanoTime();
-    final float[] texMatrix =
-        RendererCommon.rotateTextureMatrix(frame.samplingMatrix, frame.rotationDegree);
-    final float[] drawMatrix;
 
-    // After a surface size change, the EGLSurface might still have a buffer of the old size in the
-    // pipeline. Querying the EGLSurface will show if the underlying buffer dimensions haven't yet
-    // changed. Such a buffer will be rendered incorrectly, so flush it with a black frame.
-    final int drawnFrameWidth;
-    final int drawnFrameHeight;
+    final float frameAspectRatio = frame.getRotatedWidth() / (float) frame.getRotatedHeight();
+    final float drawnAspectRatio;
     synchronized (layoutLock) {
-      final float[] layoutMatrix;
-      if (layoutAspectRatio > 0) {
-        final float frameAspectRatio = frame.rotatedWidth() / (float) frame.rotatedHeight();
-        layoutMatrix = RendererCommon.getLayoutMatrix(mirror, frameAspectRatio, layoutAspectRatio);
-        if (frameAspectRatio > layoutAspectRatio) {
-          drawnFrameWidth = (int) (frame.rotatedHeight() * layoutAspectRatio);
-          drawnFrameHeight = frame.rotatedHeight();
-        } else {
-          drawnFrameWidth = frame.rotatedWidth();
-          drawnFrameHeight = (int) (frame.rotatedWidth() / layoutAspectRatio);
-        }
-      } else {
-        layoutMatrix =
-            mirror ? RendererCommon.horizontalFlipMatrix() : RendererCommon.identityMatrix();
-        drawnFrameWidth = frame.rotatedWidth();
-        drawnFrameHeight = frame.rotatedHeight();
-      }
-      drawMatrix = RendererCommon.multiplyMatrices(texMatrix, layoutMatrix);
+      drawnAspectRatio = layoutAspectRatio != 0f ? layoutAspectRatio : frameAspectRatio;
     }
 
+    VideoFrame.Buffer buffer = frame.getBuffer();
+    final boolean isYuvBuffer;
+    if (buffer instanceof VideoFrame.TextureBuffer) {
+      isYuvBuffer = false;
+    } else {
+      isYuvBuffer = true;
+      VideoFrame.Buffer oldBuffer = buffer;
+      buffer = buffer.toI420();
+      oldBuffer.release();
+    }
     boolean shouldUploadYuvTextures = false;
-    if (frame.yuvFrame) {
+    if (isYuvBuffer) {
       shouldUploadYuvTextures = shouldRenderFrame;
       // Check if there are frame listeners that we want to render a bitmap for regardless of if the
       // frame was rendered. This is the case when there are frameListeners with scale != 0f.
@@ -590,17 +587,43 @@ public class EglRenderer implements VideoRenderer.Callbacks {
       }
     }
     final int[] yuvTextures = shouldUploadYuvTextures
-        ? yuvUploader.uploadYuvData(frame.width, frame.height, frame.yuvStrides, frame.yuvPlanes)
+        ? yuvUploader.uploadFromBuffer((VideoFrame.I420Buffer) buffer)
         : null;
+
+    final float scaleX;
+    final float scaleY;
+
+    if (frameAspectRatio > drawnAspectRatio) {
+      scaleX = drawnAspectRatio / frameAspectRatio;
+      scaleY = 1f;
+    } else {
+      scaleX = 1f;
+      scaleY = frameAspectRatio / drawnAspectRatio;
+    }
+
+    final int drawnFrameWidth = (int) (scaleX * frame.getRotatedWidth());
+    final int drawnFrameHeight = (int) (scaleY * frame.getRotatedHeight());
+
+    final Matrix drawMatrix = new Matrix();
+    drawMatrix.preTranslate(0.5f, 0.5f);
+    if (isYuvBuffer)
+      drawMatrix.preScale(1f, -1f); // I420-frames are upside down
+    drawMatrix.preRotate(frame.getRotation());
+    if (mirror)
+      drawMatrix.preScale(-1f, 1f);
+    drawMatrix.preScale(scaleX, scaleY);
+    drawMatrix.preTranslate(-0.5f, -0.5f);
 
     if (shouldRenderFrame) {
       GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
       GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-      if (frame.yuvFrame) {
-        drawer.drawYuv(yuvTextures, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
-            eglBase.surfaceWidth(), eglBase.surfaceHeight());
+      if (isYuvBuffer) {
+        drawer.drawYuv(yuvTextures,
+            RendererCommon.convertMatrixFromAndroidGraphicsMatrix(drawMatrix), drawnFrameWidth,
+            drawnFrameHeight, 0, 0, eglBase.surfaceWidth(), eglBase.surfaceHeight());
       } else {
-        drawer.drawOes(frame.textureId, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
+        VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) buffer;
+        drawer.drawTexture(textureBuffer, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
             eglBase.surfaceWidth(), eglBase.surfaceHeight());
       }
 
@@ -615,19 +638,24 @@ public class EglRenderer implements VideoRenderer.Callbacks {
       }
     }
 
-    notifyCallbacks(frame, yuvTextures, texMatrix, shouldRenderFrame);
-    VideoRenderer.renderFrameDone(frame);
+    notifyCallbacks(frame, isYuvBuffer, yuvTextures, shouldRenderFrame);
+    frame.release();
   }
 
   private void notifyCallbacks(
-      VideoRenderer.I420Frame frame, int[] yuvTextures, float[] texMatrix, boolean wasRendered) {
+      VideoFrame frame, boolean isYuvBuffer, int[] yuvTextures, boolean wasRendered) {
     if (frameListeners.isEmpty())
       return;
 
-    final float[] bitmapMatrix = RendererCommon.multiplyMatrices(
-        RendererCommon.multiplyMatrices(texMatrix,
-            mirror ? RendererCommon.horizontalFlipMatrix() : RendererCommon.identityMatrix()),
-        RendererCommon.verticalFlipMatrix());
+    final Matrix drawMatrix = new Matrix();
+    drawMatrix.preTranslate(0.5f, 0.5f);
+    if (isYuvBuffer)
+      drawMatrix.preScale(1f, -1f); // I420-frames are upside down
+    drawMatrix.preRotate(frame.getRotation());
+    if (mirror)
+      drawMatrix.preScale(-1f, 1f);
+    drawMatrix.preScale(1f, -1f); // We want the output to be upside down for Bitmap.
+    drawMatrix.preTranslate(-0.5f, -0.5f);
 
     Iterator<FrameListenerAndParams> it = frameListeners.iterator();
     while (it.hasNext()) {
@@ -637,8 +665,8 @@ public class EglRenderer implements VideoRenderer.Callbacks {
       }
       it.remove();
 
-      final int scaledWidth = (int) (listenerAndParams.scale * frame.rotatedWidth());
-      final int scaledHeight = (int) (listenerAndParams.scale * frame.rotatedHeight());
+      final int scaledWidth = (int) (listenerAndParams.scale * frame.getRotatedWidth());
+      final int scaledHeight = (int) (listenerAndParams.scale * frame.getRotatedHeight());
 
       if (scaledWidth == 0 || scaledHeight == 0) {
         listenerAndParams.listener.onFrame(null);
@@ -656,12 +684,14 @@ public class EglRenderer implements VideoRenderer.Callbacks {
 
       GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
       GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-      if (frame.yuvFrame) {
-        listenerAndParams.drawer.drawYuv(yuvTextures, bitmapMatrix, frame.rotatedWidth(),
-            frame.rotatedHeight(), 0 /* viewportX */, 0 /* viewportY */, scaledWidth, scaledHeight);
+      if (isYuvBuffer) {
+        drawer.drawYuv(yuvTextures,
+            RendererCommon.convertMatrixFromAndroidGraphicsMatrix(drawMatrix),
+            frame.getRotatedWidth(), frame.getRotatedHeight(), 0, 0, scaledWidth, scaledHeight);
       } else {
-        listenerAndParams.drawer.drawOes(frame.textureId, bitmapMatrix, frame.rotatedWidth(),
-            frame.rotatedHeight(), 0 /* viewportX */, 0 /* viewportY */, scaledWidth, scaledHeight);
+        VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) frame.getBuffer();
+        drawer.drawTexture(textureBuffer, drawMatrix, frame.getRotatedWidth(),
+            frame.getRotatedHeight(), 0, 0, scaledWidth, scaledHeight);
       }
 
       final ByteBuffer bitmapBuffer = ByteBuffer.allocateDirect(scaledWidth * scaledHeight * 4);

@@ -91,6 +91,9 @@ public class VideoFrame {
     if (buffer == null) {
       throw new IllegalArgumentException("buffer not allowed to be null");
     }
+    if (rotation % 90 != 0) {
+      throw new IllegalArgumentException("rotation must be a multiple of 90");
+    }
     this.buffer = buffer;
     this.rotation = rotation;
     this.timestampNs = timestampNs;
@@ -112,6 +115,20 @@ public class VideoFrame {
    */
   public long getTimestampNs() {
     return timestampNs;
+  }
+
+  public int getRotatedWidth() {
+    if (rotation % 180 == 0) {
+      return buffer.getWidth();
+    }
+    return buffer.getHeight();
+  }
+
+  public int getRotatedHeight() {
+    if (rotation % 180 == 0) {
+      return buffer.getHeight();
+    }
+    return buffer.getWidth();
   }
 
   /**
