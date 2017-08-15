@@ -27,7 +27,8 @@ TimingFrameInfo::TimingFrameInfo()
       receive_finish_ms(-1),
       decode_start_ms(-1),
       decode_finish_ms(-1),
-      render_time_ms(-1) {}
+      render_time_ms(-1),
+      flags(TimingFrameFlags::kDefault) {}
 
 int64_t TimingFrameInfo::EndToEndDelay() const {
   return capture_time_ms >= 0 ? decode_finish_ms - capture_time_ms : -1;
@@ -38,14 +39,31 @@ bool TimingFrameInfo::IsLongerThan(const TimingFrameInfo& other) const {
   return other_delay == -1 || EndToEndDelay() > other_delay;
 }
 
+bool TimingFrameInfo::IsOutlier() const {
+  return !IsInvalid() && (flags & TimingFrameFlags::kTriggeredBySize);
+}
+
+bool TimingFrameInfo::IsTimerTriggered() const {
+  return !IsInvalid() && (flags & TimingFrameFlags::kTriggeredByTimer);
+}
+
+bool TimingFrameInfo::IsInvalid() const {
+  return flags == TimingFrameFlags::kInvalid;
+}
+
 std::string TimingFrameInfo::ToString() const {
   std::stringstream out;
-  out << rtp_timestamp << ',' << capture_time_ms << ',' << encode_start_ms
-      << ',' << encode_finish_ms << ',' << packetization_finish_ms << ','
-      << pacer_exit_ms << ',' << network_timestamp_ms << ','
-      << network2_timestamp_ms << ',' << receive_start_ms << ','
-      << receive_finish_ms << ',' << decode_start_ms << ',' << decode_finish_ms
-      << ',' << render_time_ms;
+  if (IsInvalid()) {
+    out << "[Invalid]";
+  } else {
+    out << rtp_timestamp << ',' << capture_time_ms << ',' << encode_start_ms
+        << ',' << encode_finish_ms << ',' << packetization_finish_ms << ','
+        << pacer_exit_ms << ',' << network_timestamp_ms << ','
+        << network2_timestamp_ms << ',' << receive_start_ms << ','
+        << receive_finish_ms << ',' << decode_start_ms << ','
+        << decode_finish_ms << ',' << render_time_ms << ", outlier_triggered "
+        << IsOutlier() << ", timer_triggered " << IsTimerTriggered();
+  }
   return out.str();
 }
 

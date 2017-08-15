@@ -657,7 +657,7 @@ CFStringRef ExtractProfile(const cricket::VideoCodec &codec) {
   frame.rotation = rotation;
   frame.contentType = (_mode == RTCVideoCodecModeScreensharing) ? RTCVideoContentTypeScreenshare :
                                                                   RTCVideoContentTypeUnspecified;
-  frame.isTimingFrame = NO;
+  frame.flags = webrtc::TimingFrameFlags::kInvalid;
 
   int qp;
   _h264BitstreamParser.ParseBitstream(buffer->data(), buffer->size());

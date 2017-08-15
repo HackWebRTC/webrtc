@@ -88,7 +88,7 @@ void VCMEncodedFrame::Reset() {
   _codec = kVideoCodecUnknown;
   rotation_ = kVideoRotation_0;
   content_type_ = VideoContentType::UNSPECIFIED;
-  timing_.is_timing_frame = false;
+  timing_.flags = TimingFrameFlags::kInvalid;
   _rotation_set = false;
 }
 

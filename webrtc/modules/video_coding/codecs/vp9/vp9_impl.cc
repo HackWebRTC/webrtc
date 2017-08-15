@@ -710,7 +710,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
                                        : VideoContentType::UNSPECIFIED;
     encoded_image_._encodedHeight = raw_->d_h;
     encoded_image_._encodedWidth = raw_->d_w;
-    encoded_image_.timing_.is_timing_frame = false;
+    encoded_image_.timing_.flags = TimingFrameFlags::kInvalid;
     int qp = -1;
     vpx_codec_control(encoder_, VP8E_GET_LAST_QUANTIZER, &qp);
     encoded_image_.qp_ = qp;

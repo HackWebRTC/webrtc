@@ -130,7 +130,7 @@ class VideoContentTypeExtension {
 class VideoTimingExtension {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionVideoTiming;
-  static constexpr uint8_t kValueSizeBytes = 12;
+  static constexpr uint8_t kValueSizeBytes = 13;
   static constexpr const char kUri[] =
       "http://www.webrtc.org/experiments/rtp-hdrext/video-timing";
 

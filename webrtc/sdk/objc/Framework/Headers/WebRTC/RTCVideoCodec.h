@@ -40,7 +40,7 @@ RTC_EXPORT
 @property(nonatomic, assign) uint32_t timeStamp;
 @property(nonatomic, assign) long captureTimeMs;
 @property(nonatomic, assign) long ntpTimeMs;
-@property(nonatomic, assign) BOOL isTimingFrame;
+@property(nonatomic, assign) uint8_t flags;
 @property(nonatomic, assign) long encodeStartMs;
 @property(nonatomic, assign) long encodeFinishMs;
 @property(nonatomic, assign) RTCFrameType frameType;
