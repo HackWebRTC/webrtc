@@ -23,20 +23,23 @@ TEST(MinRttFilterTest, InitializationCheck) {
 
 TEST(MinRttFilterTest, AddRttSample) {
   MinRttFilter min_rtt_filter;
-  min_rtt_filter.add_rtt_sample(120, 5);
+  min_rtt_filter.AddRttSample(120, 5);
   EXPECT_EQ(min_rtt_filter.min_rtt_ms(), 120);
   EXPECT_EQ(min_rtt_filter.discovery_time(), 5);
-  min_rtt_filter.add_rtt_sample(121, 6);
+  min_rtt_filter.AddRttSample(121, 6);
   EXPECT_EQ(min_rtt_filter.discovery_time(), 5);
-  min_rtt_filter.add_rtt_sample(119, 7);
+  min_rtt_filter.AddRttSample(119, 7);
   EXPECT_EQ(min_rtt_filter.discovery_time(), 7);
+  min_rtt_filter.AddRttSample(140, 10007);
+  EXPECT_EQ(min_rtt_filter.discovery_time(), 10007);
+  EXPECT_EQ(min_rtt_filter.min_rtt_ms(), 140);
 }
 
 TEST(MinRttFilterTest, MinRttExpired) {
   MinRttFilter min_rtt_filter;
-  min_rtt_filter.add_rtt_sample(120, 5);
-  EXPECT_EQ(min_rtt_filter.min_rtt_expired(10, 5), true);
-  EXPECT_EQ(min_rtt_filter.min_rtt_expired(9, 5), false);
+  min_rtt_filter.AddRttSample(120, 5);
+  EXPECT_EQ(min_rtt_filter.MinRttExpired(10006), true);
+  EXPECT_EQ(min_rtt_filter.MinRttExpired(10), false);
 }
 }  // namespace bwe
 }  // namespace testing

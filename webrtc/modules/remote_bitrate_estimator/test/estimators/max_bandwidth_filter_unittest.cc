@@ -22,61 +22,61 @@ TEST(MaxBandwidthFilterTest, InitializationCheck) {
 
 TEST(MaxBandwidthFilterTest, AddOneBandwidthSample) {
   MaxBandwidthFilter max_bandwidth_filter;
-  max_bandwidth_filter.AddBandwidthSample(13, 4, 10);
+  max_bandwidth_filter.AddBandwidthSample(13, 4);
   EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 13);
 }
 
 TEST(MaxBandwidthFilterTest, AddSeveralBandwidthSamples) {
   MaxBandwidthFilter max_bandwidth_filter;
-  max_bandwidth_filter.AddBandwidthSample(10, 5, 10);
-  max_bandwidth_filter.AddBandwidthSample(13, 6, 10);
+  max_bandwidth_filter.AddBandwidthSample(10, 5);
+  max_bandwidth_filter.AddBandwidthSample(13, 6);
   EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 13);
 }
 
 TEST(MaxBandwidthFilterTest, FirstSampleTimeOut) {
   MaxBandwidthFilter max_bandwidth_filter;
-  max_bandwidth_filter.AddBandwidthSample(13, 5, 10);
-  max_bandwidth_filter.AddBandwidthSample(10, 15, 10);
+  max_bandwidth_filter.AddBandwidthSample(13, 5);
+  max_bandwidth_filter.AddBandwidthSample(10, 15);
   EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 10);
 }
 
 TEST(MaxBandwidthFilterTest, SecondSampleBecomesTheFirst) {
   MaxBandwidthFilter max_bandwidth_filter;
-  max_bandwidth_filter.AddBandwidthSample(4, 5, 10);
-  max_bandwidth_filter.AddBandwidthSample(3, 10, 10);
-  max_bandwidth_filter.AddBandwidthSample(2, 15, 10);
+  max_bandwidth_filter.AddBandwidthSample(4, 5);
+  max_bandwidth_filter.AddBandwidthSample(3, 10);
+  max_bandwidth_filter.AddBandwidthSample(2, 15);
   EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 3);
 }
 
 TEST(MaxBandwidthFilterTest, ThirdSampleBecomesTheFirst) {
   MaxBandwidthFilter max_bandwidth_filter;
-  max_bandwidth_filter.AddBandwidthSample(4, 5, 10);
-  max_bandwidth_filter.AddBandwidthSample(3, 10, 10);
-  max_bandwidth_filter.AddBandwidthSample(2, 25, 10);
+  max_bandwidth_filter.AddBandwidthSample(4, 5);
+  max_bandwidth_filter.AddBandwidthSample(3, 10);
+  max_bandwidth_filter.AddBandwidthSample(2, 25);
   EXPECT_EQ(max_bandwidth_filter.max_bandwidth_estimate_bps(), 2);
 }
 
 TEST(MaxBandwidthFilterTest, FullBandwidthReached) {
   MaxBandwidthFilter max_bandwidth_filter;
-  max_bandwidth_filter.AddBandwidthSample(100, 1, 10);
+  max_bandwidth_filter.AddBandwidthSample(100, 1);
   EXPECT_EQ(max_bandwidth_filter.FullBandwidthReached(1.25f, 3), false);
-  max_bandwidth_filter.AddBandwidthSample(110, 2, 10);
+  max_bandwidth_filter.AddBandwidthSample(110, 2);
   EXPECT_EQ(max_bandwidth_filter.FullBandwidthReached(1.25f, 3), false);
-  max_bandwidth_filter.AddBandwidthSample(120, 3, 10);
+  max_bandwidth_filter.AddBandwidthSample(120, 3);
   EXPECT_EQ(max_bandwidth_filter.FullBandwidthReached(1.25f, 3), false);
-  max_bandwidth_filter.AddBandwidthSample(124, 4, 10);
+  max_bandwidth_filter.AddBandwidthSample(124, 4);
   EXPECT_EQ(max_bandwidth_filter.FullBandwidthReached(1.25f, 3), true);
 }
 
 TEST(MaxBandwidthFilterTest, FullBandwidthNotReached) {
   MaxBandwidthFilter max_bandwidth_filter;
-  max_bandwidth_filter.AddBandwidthSample(100, 1, 10);
+  max_bandwidth_filter.AddBandwidthSample(100, 1);
   EXPECT_EQ(max_bandwidth_filter.FullBandwidthReached(1.25f, 3), false);
-  max_bandwidth_filter.AddBandwidthSample(110, 2, 10);
+  max_bandwidth_filter.AddBandwidthSample(110, 2);
   EXPECT_EQ(max_bandwidth_filter.FullBandwidthReached(1.25f, 3), false);
-  max_bandwidth_filter.AddBandwidthSample(120, 3, 10);
+  max_bandwidth_filter.AddBandwidthSample(120, 3);
   EXPECT_EQ(max_bandwidth_filter.FullBandwidthReached(1.25f, 3), false);
-  max_bandwidth_filter.AddBandwidthSample(125, 4, 10);
+  max_bandwidth_filter.AddBandwidthSample(125, 4);
   EXPECT_EQ(max_bandwidth_filter.FullBandwidthReached(1.25f, 3), false);
 }
 }  // namespace bwe

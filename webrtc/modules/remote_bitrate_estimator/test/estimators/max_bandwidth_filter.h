@@ -28,13 +28,15 @@ namespace testing {
 namespace bwe {
 class MaxBandwidthFilter {
  public:
-  MaxBandwidthFilter();
+  // Number of rounds for bandwidth estimate to expire.
+  static const size_t kBandwidthWindowFilterSize = 10;
 
+  MaxBandwidthFilter();
   ~MaxBandwidthFilter();
   int64_t max_bandwidth_estimate_bps() { return max_bandwidth_estimate_bps_; }
 
   // Adds bandwidth sample to the bandwidth filter.
-  void AddBandwidthSample(int64_t sample, int64_t round, size_t filter_size);
+  void AddBandwidthSample(int64_t sample, int64_t round);
 
   // Checks if bandwidth has grown by certain multiplier for past x rounds,
   // to decide whether or full bandwidth was reached.

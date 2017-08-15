@@ -20,14 +20,19 @@
 namespace webrtc {
 namespace testing {
 namespace bwe {
+
+// Expiration time for min_rtt sample, which is set to 10 seconds according to
+// BBR design doc.
+const int64_t kMinRttFilterSizeMs = 10000;
+
 class MinRttFilter {
  public:
   MinRttFilter() {}
   ~MinRttFilter() {}
 
   rtc::Optional<int64_t> min_rtt_ms() { return min_rtt_ms_; }
-  void add_rtt_sample(int64_t rtt_ms, int64_t now_ms) {
-    if (!min_rtt_ms_ || rtt_ms <= *min_rtt_ms_) {
+  void AddRttSample(int64_t rtt_ms, int64_t now_ms) {
+    if (!min_rtt_ms_ || rtt_ms <= *min_rtt_ms_ || MinRttExpired(now_ms)) {
       min_rtt_ms_.emplace(rtt_ms);
       discovery_time_ms_ = now_ms;
     }
@@ -36,8 +41,8 @@ class MinRttFilter {
 
   // Checks whether or not last discovered min_rtt value is older than x
   // milliseconds.
-  bool min_rtt_expired(int64_t now_ms, int64_t min_rtt_filter_window_size_ms) {
-    return now_ms - discovery_time_ms_ >= min_rtt_filter_window_size_ms;
+  bool MinRttExpired(int64_t now_ms) {
+    return now_ms - discovery_time_ms_ >= kMinRttFilterSizeMs;
   }
 
  private:
