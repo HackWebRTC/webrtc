@@ -792,6 +792,8 @@ rtc_static_library("pcm16b") {
     "codecs/pcm16b/audio_decoder_pcm16b.h",
     "codecs/pcm16b/audio_encoder_pcm16b.cc",
     "codecs/pcm16b/audio_encoder_pcm16b.h",
+    "codecs/pcm16b/pcm16b_common.cc",
+    "codecs/pcm16b/pcm16b_common.h",
   ]
 
   deps = [
