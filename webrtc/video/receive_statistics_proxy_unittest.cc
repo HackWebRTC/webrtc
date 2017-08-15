@@ -30,7 +30,8 @@ const int kMinRequiredSamples = 200;
 }  // namespace
 
 // TODO(sakal): ReceiveStatisticsProxy is lacking unittesting.
-class ReceiveStatisticsProxyTest : public ::testing::Test {
+class ReceiveStatisticsProxyTest
+    : public ::testing::TestWithParam<webrtc::VideoContentType> {
  public:
   ReceiveStatisticsProxyTest() : fake_clock_(1234), config_(GetTestConfig()) {}
   virtual ~ReceiveStatisticsProxyTest() {}
@@ -716,6 +717,66 @@ TEST_F(ReceiveStatisticsProxyTest, RtcpHistogramsAreUpdated) {
   EXPECT_EQ(
       1, metrics::NumEvents("WebRTC.Video.NackPacketsSentPerMinute",
                             kNackPackets * 60 / metrics::kMinRunTimeInSeconds));
+}
+
+INSTANTIATE_TEST_CASE_P(ContentTypes,
+                        ReceiveStatisticsProxyTest,
+                        ::testing::Values(VideoContentType::UNSPECIFIED,
+                                          VideoContentType::SCREENSHARE));
+
+TEST_P(ReceiveStatisticsProxyTest, InterFrameDelaysAreReported) {
+  const VideoContentType content_type = GetParam();
+  const int kInterFrameDelayMs = 33;
+  for (int i = 0; i < kMinRequiredSamples; ++i) {
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
+    fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
+  }
+  // One extra with with double the interval.
+  fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
+
+  statistics_proxy_.reset();
+  const int kExpectedInterFrame =
+      (kInterFrameDelayMs * (kMinRequiredSamples - 1) +
+       kInterFrameDelayMs * 2) /
+      kMinRequiredSamples;
+  switch (content_type) {
+    case VideoContentType::UNSPECIFIED:
+      EXPECT_EQ(kExpectedInterFrame,
+                metrics::MinSample("WebRTC.Video.InterframeDelayInMs"));
+      EXPECT_EQ(kInterFrameDelayMs * 2,
+                metrics::MinSample("WebRTC.Video.InterframeDelayMaxInMs"));
+      break;
+    case VideoContentType::SCREENSHARE:
+      EXPECT_EQ(
+          kExpectedInterFrame,
+          metrics::MinSample("WebRTC.Video.Screenshare.InterframeDelayInMs"));
+      EXPECT_EQ(kInterFrameDelayMs * 2,
+                metrics::MinSample(
+                    "WebRTC.Video.Screenshare.InterframeDelayMaxInMs"));
+      break;
+    default:
+      RTC_NOTREACHED();
+  }
+}
+
+TEST_P(ReceiveStatisticsProxyTest, MaxInterFrameDelayOnlyWithValidAverage) {
+  const VideoContentType content_type = GetParam();
+  const int kInterFrameDelayMs = 33;
+  for (int i = 0; i < kMinRequiredSamples; ++i) {
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
+    fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
+  }
+
+  // |kMinRequiredSamples| samples, and thereby intervals, is required. That
+  // means we're one frame short of having a valid data set.
+  statistics_proxy_.reset();
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.InterframeDelayInMs"));
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.InterframeDelayMaxInMs"));
+  EXPECT_EQ(
+      0, metrics::NumSamples("WebRTC.Video.Screenshare.InterframeDelayInMs"));
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Video.Screenshare.InterframeDelayMaxInMs"));
 }
 
 }  // namespace webrtc

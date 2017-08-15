@@ -216,6 +216,11 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   if (interframe_delay_ms_screenshare != -1) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.Screenshare.InterframeDelayInMs",
                                interframe_delay_ms_screenshare);
+    RTC_DCHECK_GE(interframe_delay_max_ms_screenshare_,
+                  interframe_delay_ms_screenshare);
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.Screenshare.InterframeDelayMaxInMs",
+        interframe_delay_max_ms_screenshare_);
   }
 
   int interframe_delay_ms_video =
@@ -223,23 +228,10 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   if (interframe_delay_ms_video != -1) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.InterframeDelayInMs",
                                interframe_delay_ms_video);
+    RTC_DCHECK_GE(interframe_delay_max_ms_video_, interframe_delay_ms_video);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.InterframeDelayMaxInMs",
+                               interframe_delay_max_ms_video_);
   }
-
-  int interframe_delay_max_ms_screenshare =
-      interframe_delay_max_ms_screenshare_;
-  if (interframe_delay_max_ms_screenshare != -1) {
-    RTC_HISTOGRAM_COUNTS_10000(
-        "WebRTC.Video.Screenshare.InterframeDelayMaxInMs",
-        interframe_delay_ms_screenshare);
-  }
-
-  int interframe_delay_max_ms_video = interframe_delay_max_ms_video_;
-  if (interframe_delay_max_ms_video != -1) {
-    RTC_HISTOGRAM_COUNTS_10000(
-        "WebRTC.Video.InterframeDelayMaxInMs",
-        interframe_delay_ms_video);
-  }
-
 
   StreamDataCounters rtp = stats_.rtp_stats;
   StreamDataCounters rtx;
