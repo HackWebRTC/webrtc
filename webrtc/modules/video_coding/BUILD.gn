@@ -146,6 +146,11 @@ rtc_static_library("video_coding_utility") {
   ]
 }
 
+# TODO(ehmaldonado): Remove once http://bugs.webrtc.org/8090 is fixed.
+config("webrtc_h264_config") {
+  cflags = [ "-Wno-thread-safety-attributes" ]
+}
+
 rtc_static_library("webrtc_h264") {
   sources = [
     "codecs/h264/h264.cc",
@@ -166,6 +171,7 @@ rtc_static_library("webrtc_h264") {
   ]
 
   if (rtc_use_h264) {
+    configs += [ ":webrtc_h264_config" ]
     defines += [ "WEBRTC_USE_H264" ]
     if (rtc_initialize_ffmpeg) {
       defines += [ "WEBRTC_INITIALIZE_FFMPEG" ]
