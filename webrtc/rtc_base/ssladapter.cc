@@ -16,8 +16,11 @@
 
 namespace rtc {
 
-SSLAdapter*
-SSLAdapter::Create(AsyncSocket* socket) {
+SSLAdapterFactory* SSLAdapterFactory::Create() {
+  return new OpenSSLAdapterFactory();
+}
+
+SSLAdapter* SSLAdapter::Create(AsyncSocket* socket) {
   return new OpenSSLAdapter(socket);
 }
 
