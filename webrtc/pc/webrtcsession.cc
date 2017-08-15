@@ -23,7 +23,6 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/call/call.h"
 #include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/pc/channel.h"
