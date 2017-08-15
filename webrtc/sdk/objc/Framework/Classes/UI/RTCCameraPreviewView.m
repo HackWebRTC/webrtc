@@ -27,11 +27,14 @@
   if (_captureSession == captureSession) {
     return;
   }
-  _captureSession = captureSession;
-  AVCaptureVideoPreviewLayer *previewLayer = [self previewLayer];
-  [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
+  [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeMain
                                block:^{
-    previewLayer.session = captureSession;
+    _captureSession = captureSession;
+    AVCaptureVideoPreviewLayer *previewLayer = [self previewLayer];
+    [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
+                                 block:^{
+      previewLayer.session = captureSession;
+    }];
   }];
 }
 
