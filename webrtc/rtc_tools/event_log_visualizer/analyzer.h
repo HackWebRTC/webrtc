@@ -79,9 +79,8 @@ class EventLogAnalyzer {
 
   void CreateIncomingPacketLossGraph(Plot* plot);
 
-  void CreateDelayChangeGraph(Plot* plot);
-
-  void CreateAccumulatedDelayChangeGraph(Plot* plot);
+  void CreateIncomingDelayDeltaGraph(Plot* plot);
+  void CreateIncomingDelayGraph(Plot* plot);
 
   void CreateFractionLossGraph(Plot* plot);
 
@@ -98,7 +97,7 @@ class EventLogAnalyzer {
 
   void CreateAudioEncoderTargetBitrateGraph(Plot* plot);
   void CreateAudioEncoderFrameLengthGraph(Plot* plot);
-  void CreateAudioEncoderUplinkPacketLossFractionGraph(Plot* plot);
+  void CreateAudioEncoderPacketLossGraph(Plot* plot);
   void CreateAudioEncoderEnableFecGraph(Plot* plot);
   void CreateAudioEncoderEnableDtxGraph(Plot* plot);
   void CreateAudioEncoderNumChannelsGraph(Plot* plot);

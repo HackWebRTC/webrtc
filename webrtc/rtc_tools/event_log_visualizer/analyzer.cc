@@ -825,7 +825,7 @@ void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
   plot->SetTitle("Estimated incoming loss rate");
 }
 
-void EventLogAnalyzer::CreateDelayChangeGraph(Plot* plot) {
+void EventLogAnalyzer::CreateIncomingDelayDeltaGraph(Plot* plot) {
   for (auto& kv : rtp_packets_) {
     StreamId stream_id = kv.first;
     const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
@@ -855,10 +855,10 @@ void EventLogAnalyzer::CreateDelayChangeGraph(Plot* plot) {
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Latency change (ms)", kBottomMargin,
                           kTopMargin);
-  plot->SetTitle("Network latency change between consecutive packets");
+  plot->SetTitle("Network latency difference between consecutive packets");
 }
 
-void EventLogAnalyzer::CreateAccumulatedDelayChangeGraph(Plot* plot) {
+void EventLogAnalyzer::CreateIncomingDelayGraph(Plot* plot) {
   for (auto& kv : rtp_packets_) {
     StreamId stream_id = kv.first;
     const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
@@ -888,7 +888,7 @@ void EventLogAnalyzer::CreateAccumulatedDelayChangeGraph(Plot* plot) {
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Latency change (ms)", kBottomMargin,
                           kTopMargin);
-  plot->SetTitle("Accumulated network latency change");
+  plot->SetTitle("Network latency (relative to first packet)");
 }
 
 // Plot the fraction of packets lost (as perceived by the loss-based BWE).
@@ -1420,8 +1420,7 @@ void EventLogAnalyzer::CreateAudioEncoderFrameLengthGraph(Plot* plot) {
   plot->SetTitle("Reported audio encoder frame length");
 }
 
-void EventLogAnalyzer::CreateAudioEncoderUplinkPacketLossFractionGraph(
-    Plot* plot) {
+void EventLogAnalyzer::CreateAudioEncoderPacketLossGraph(Plot* plot) {
   TimeSeries time_series("Audio encoder uplink packet loss fraction",
                          LINE_DOT_GRAPH);
   ProcessPoints<AudioNetworkAdaptationEvent>(
