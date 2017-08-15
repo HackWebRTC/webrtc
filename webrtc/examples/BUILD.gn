@@ -325,6 +325,8 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objc/AppRTCMobile/ios/resources/ic_switch_video_black_24dp.png",
         "objc/AppRTCMobile/ios/resources/ic_switch_video_black_24dp@2x.png",
         "objc/AppRTCMobile/ios/resources/mozart.mp3",
+        "objc/Icon-120.png",
+        "objc/Icon-180.png",
         "objc/Icon.png",
       ]
       outputs = [
