@@ -39,7 +39,10 @@ class XServerPixelBuffer {
   bool is_initialized() { return window_ != 0; }
 
   // Returns the size of the window the buffer was initialized for.
-  const DesktopSize& window_size() { return window_size_; }
+  DesktopSize window_size() { return window_rect_.size(); }
+
+  // Returns the rectangle of the window the buffer was initialized for.
+  const DesktopRect& window_rect() { return window_rect_; }
 
   // Returns true if the window can be found.
   bool IsWindowValid() const;
@@ -65,7 +68,7 @@ class XServerPixelBuffer {
 
   Display* display_ = nullptr;
   Window window_ = 0;
-  DesktopSize window_size_;
+  DesktopRect window_rect_;
   XImage* x_image_ = nullptr;
   XShmSegmentInfo* shm_segment_info_ = nullptr;
   XImage* x_shm_image_ = nullptr;

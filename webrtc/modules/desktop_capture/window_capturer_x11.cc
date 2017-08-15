@@ -219,14 +219,17 @@ void WindowCapturerLinux::CaptureFrame() {
 bool WindowCapturerLinux::HandleXEvent(const XEvent& event) {
   if (event.type == ConfigureNotify) {
     XConfigureEvent xce = event.xconfigure;
-    if (!DesktopSize(xce.width, xce.height).equals(
-            x_server_pixel_buffer_.window_size())) {
-      if (!x_server_pixel_buffer_.Init(display(), selected_window_)) {
-        LOG(LS_ERROR) << "Failed to initialize pixel buffer after resizing.";
+    if (xce.window == selected_window_) {
+      if (!DesktopRectFromXAttributes(xce).equals(
+            x_server_pixel_buffer_.window_rect())) {
+        if (!x_server_pixel_buffer_.Init(display(), selected_window_)) {
+          LOG(LS_ERROR) << "Failed to initialize pixel buffer after resizing.";
+        }
       }
-      return true;
     }
   }
+
+  // Always returns false, so other observers can still receive the events.
   return false;
 }
 

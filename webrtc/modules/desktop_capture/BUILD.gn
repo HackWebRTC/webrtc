@@ -251,10 +251,11 @@ rtc_static_library("desktop_capture") {
     "win/window_capture_utils.h",
     "window_capturer_mac.mm",
     "window_capturer_win.cc",
-    "window_under_point.h",
-    "window_under_point_linux.cc",
-    "window_under_point_mac.mm",
-    "window_under_point_win.cc",
+    "window_finder.h",
+    "window_finder_mac.h",
+    "window_finder_mac.mm",
+    "window_finder_win.cc",
+    "window_finder_win.h",
   ]
 
   if (use_x11) {
@@ -262,6 +263,8 @@ rtc_static_library("desktop_capture") {
       "mouse_cursor_monitor_x11.cc",
       "screen_capturer_x11.cc",
       "window_capturer_x11.cc",
+      "window_finder_x11.cc",
+      "window_finder_x11.h",
       "x11/shared_x_display.cc",
       "x11/shared_x_display.h",
       "x11/window_list_utils.cc",

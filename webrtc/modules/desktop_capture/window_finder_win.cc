@@ -8,13 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/window_under_point.h"
+#include "webrtc/modules/desktop_capture/window_finder_win.h"
 
 #include <windows.h>
 
 namespace webrtc {
 
-WindowId GetWindowUnderPoint(DesktopVector point) {
+WindowFinderWin::WindowFinderWin() = default;
+WindowFinderWin::~WindowFinderWin() = default;
+
+WindowId WindowFinderWin::GetWindowUnderPoint(DesktopVector point) {
   HWND window = WindowFromPoint(POINT { point.x(), point.y() });
   if (!window) {
     return kNullWindowId;

@@ -216,4 +216,25 @@ bool GetWindowList(XAtomCache* cache,
   return failed_screens < num_screens;
 }
 
+bool GetWindowRect(::Display* display,
+                   ::Window window,
+                   DesktopRect* rect,
+                   XWindowAttributes* attributes /* = nullptr */) {
+  XWindowAttributes local_attributes;
+  if (attributes == nullptr) {
+    attributes = &local_attributes;
+  }
+
+  {
+    XErrorTrap error_trap(display);
+    if (!XGetWindowAttributes(display, window, attributes) ||
+        error_trap.GetLastErrorAndDisable() != 0) {
+      return false;
+    }
+  }
+
+  *rect = DesktopRectFromXAttributes(*attributes);
+  return true;
+}
+
 }  // namespace webrtc

@@ -13,6 +13,7 @@
 
 #include <X11/Xlib.h>
 
+#include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/x11/x_atom_cache.h"
 #include "webrtc/rtc_base/function_view.h"
 
@@ -31,6 +32,23 @@ bool GetWindowList(XAtomCache* cache,
 // Returns WM_STATE property of the |window|. This function returns
 // WithdrawnState if the |window| is missing.
 int32_t GetWindowState(XAtomCache* cache, ::Window window);
+
+// Returns the rectangle of the |window| in the coordinates of |display|. This
+// function returns false if native APIs failed. If |attributes| is provided, it
+// will be filled with the attributes of |window|.
+bool GetWindowRect(::Display* display,
+                   ::Window window,
+                   DesktopRect* rect,
+                   XWindowAttributes* attributes = nullptr);
+
+// Creates a DesktopRect from |attributes|.
+template <typename T>
+DesktopRect DesktopRectFromXAttributes(const T& attributes) {
+  return DesktopRect::MakeXYWH(attributes.x,
+                               attributes.y,
+                               attributes.width,
+                               attributes.height);
+}
 
 }  // namespace webrtc
 
