@@ -370,7 +370,7 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
   encoded_image_.content_type_ = (mode_ == kScreensharing)
                                      ? VideoContentType::SCREENSHARE
                                      : VideoContentType::UNSPECIFIED;
-  encoded_image_.timing_.flags = TimingFrameFlags::kInvalid;
+  encoded_image_.timing_.is_timing_frame = false;
   encoded_image_._frameType = ConvertToVideoFrameType(info.eFrameType);
 
   // Split encoded image up into fragments. This also updates |encoded_image_|.

@@ -164,7 +164,8 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
     rotation_ = packet.video_header.rotation;
     _rotation_set = true;
     content_type_ = packet.video_header.content_type;
-    if (packet.video_header.video_timing.flags != TimingFrameFlags::kInvalid) {
+    if (packet.video_header.video_timing.is_timing_frame) {
+      timing_.is_timing_frame = true;
       timing_.encode_start_ms =
           ntp_time_ms_ + packet.video_header.video_timing.encode_start_delta_ms;
       timing_.encode_finish_ms =
@@ -181,8 +182,9 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
       timing_.network2_timestamp_ms =
           ntp_time_ms_ +
           packet.video_header.video_timing.network2_timstamp_delta_ms;
+    } else {
+      timing_.is_timing_frame = false;
     }
-    timing_.flags = packet.video_header.video_timing.flags;
   }
 
   if (packet.is_first_packet_in_frame) {

@@ -20,7 +20,7 @@
 @synthesize timeStamp = _timeStamp;
 @synthesize captureTimeMs = _captureTimeMs;
 @synthesize ntpTimeMs = _ntpTimeMs;
-@synthesize flags = _flags;
+@synthesize isTimingFrame = _isTimingFrame;
 @synthesize encodeStartMs = _encodeStartMs;
 @synthesize encodeFinishMs = _encodeFinishMs;
 @synthesize frameType = _frameType;
@@ -40,7 +40,7 @@
     _timeStamp = encodedImage._timeStamp;
     _captureTimeMs = encodedImage.capture_time_ms_;
     _ntpTimeMs = encodedImage.ntp_time_ms_;
-    _flags = encodedImage.timing_.flags;
+    _isTimingFrame = encodedImage.timing_.is_timing_frame;
     _encodeStartMs = encodedImage.timing_.encode_start_ms;
     _encodeFinishMs = encodedImage.timing_.encode_finish_ms;
     _frameType = (RTCFrameType)encodedImage._frameType;
@@ -64,7 +64,7 @@
   encodedImage._timeStamp = _timeStamp;
   encodedImage.capture_time_ms_ = _captureTimeMs;
   encodedImage.ntp_time_ms_ = _ntpTimeMs;
-  encodedImage.timing_.flags = _flags;
+  encodedImage.timing_.is_timing_frame = _isTimingFrame;
   encodedImage.timing_.encode_start_ms = _encodeStartMs;
   encodedImage.timing_.encode_finish_ms = _encodeFinishMs;
   encodedImage._frameType = webrtc::FrameType(_frameType);

@@ -332,7 +332,7 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
         last_packet->SetExtension<VideoContentTypeExtension>(
             video_header->content_type);
       }
-      if (video_header->video_timing.flags != TimingFrameFlags::kInvalid) {
+      if (video_header->video_timing.is_timing_frame) {
         last_packet->SetExtension<VideoTimingExtension>(
             video_header->video_timing);
       }

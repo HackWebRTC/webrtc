@@ -92,7 +92,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                            frameInfo->renderTimeMs);
 
   // Report timing information.
-  if (frameInfo->timing.flags != TimingFrameFlags::kInvalid) {
+  if (frameInfo->timing.is_timing_frame) {
     int64_t capture_time_ms = decodedImage.ntp_time_ms() - ntp_offset_;
     // Convert remote timestamps to local time from ntp timestamps.
     frameInfo->timing.encode_start_ms -= ntp_offset_;
@@ -137,7 +137,6 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
     timing_frame_info.decode_finish_ms = now_ms;
     timing_frame_info.render_time_ms = frameInfo->renderTimeMs;
     timing_frame_info.rtp_timestamp = decodedImage.timestamp();
-    timing_frame_info.flags = frameInfo->timing.flags;
 
     _timing->SetTimingFrameInfo(timing_frame_info);
   }

@@ -66,7 +66,7 @@ class EncodedImage {
 
   // Timing information should be updatable on const instances.
   mutable struct Timing {
-    uint8_t flags = TimingFrameFlags::kInvalid;
+    bool is_timing_frame = false;
     int64_t encode_start_ms = 0;
     int64_t encode_finish_ms = 0;
     int64_t packetization_finish_ms = 0;
