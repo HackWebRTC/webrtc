@@ -102,83 +102,72 @@ RtpTransceiverDirection
 NegotiateRtpTransceiverDirection(RtpTransceiverDirection offer,
                                  RtpTransceiverDirection wants);
 
-struct MediaSessionOptions {
-  MediaSessionOptions()
-      : recv_audio(true),
-        recv_video(false),
-        data_channel_type(DCT_NONE),
-        is_muc(false),
-        vad_enabled(true),  // When disabled, removes all CN codecs from SDP.
-        rtcp_mux_enabled(true),
-        bundle_enabled(false),
-        video_bandwidth(kAutoBandwidth),
-        data_bandwidth(kDataMaxBandwidth),
-        rtcp_cname(kDefaultRtcpCname) {}
+// Options for an RtpSender contained with an media description/"m=" section.
+struct SenderOptions {
+  std::string track_id;
+  std::string stream_id;
+  int num_sim_layers;
+};
 
-  bool has_audio() const {
-    return recv_audio || HasSendMediaStream(MEDIA_TYPE_AUDIO);
-  }
-  bool has_video() const {
-    return recv_video || HasSendMediaStream(MEDIA_TYPE_VIDEO);
-  }
-  bool has_data() const { return data_channel_type != DCT_NONE; }
+// Options for an individual media description/"m=" section.
+struct MediaDescriptionOptions {
+  MediaDescriptionOptions(MediaType type,
+                          const std::string& mid,
+                          RtpTransceiverDirection direction,
+                          bool stopped)
+      : type(type), mid(mid), direction(direction), stopped(stopped) {}
 
-  // Add a stream with MediaType type and id.
-  // All streams with the same sync_label will get the same CNAME.
-  // All ids must be unique.
-  void AddSendStream(MediaType type,
-                 const std::string& id,
-                 const std::string& sync_label);
-  void AddSendVideoStream(const std::string& id,
-                      const std::string& sync_label,
+  // TODO(deadbeef): When we don't support Plan B, there will only be one
+  // sender per media description and this can be simplified.
+  void AddAudioSender(const std::string& track_id,
+                      const std::string& stream_id);
+  void AddVideoSender(const std::string& track_id,
+                      const std::string& stream_id,
                       int num_sim_layers);
-  void RemoveSendStream(MediaType type, const std::string& id);
 
+  // Internally just uses sender_options.
+  void AddRtpDataChannel(const std::string& track_id,
+                         const std::string& stream_id);
 
-  // Helper function.
-  void AddSendStreamInternal(MediaType type,
-                         const std::string& id,
-                         const std::string& sync_label,
+  MediaType type;
+  std::string mid;
+  RtpTransceiverDirection direction;
+  bool stopped;
+  TransportOptions transport_options;
+  // Note: There's no equivalent "RtpReceiverOptions" because only send
+  // stream information goes in the local descriptions.
+  std::vector<SenderOptions> sender_options;
+
+ private:
+  // Doesn't DCHECK on |type|.
+  void AddSenderInternal(const std::string& track_id,
+                         const std::string& stream_id,
                          int num_sim_layers);
+};
 
-  bool HasSendMediaStream(MediaType type) const;
+// Provides a mechanism for describing how m= sections should be generated.
+// The m= section with index X will use media_description_options[X]. There
+// must be an option for each existing section if creating an answer, or a
+// subsequent offer.
+struct MediaSessionOptions {
+  MediaSessionOptions() {}
 
-  // TODO(deadbeef): Put all the audio/video/data-specific options into a map
-  // structure (content name -> options).
-  // MediaSessionDescriptionFactory assumes there will never be more than one
-  // audio/video/data content, but this will change with unified plan.
-  bool recv_audio;
-  bool recv_video;
-  DataChannelType data_channel_type;
-  bool is_muc;
-  bool vad_enabled;
-  bool rtcp_mux_enabled;
-  bool bundle_enabled;
-  // bps. -1 == auto.
-  int video_bandwidth;
-  int data_bandwidth;
-  bool enable_ice_renomination = false;
-  // content name ("mid") => options.
-  std::map<std::string, TransportOptions> transport_options;
-  std::string rtcp_cname;
+  bool has_audio() const { return HasMediaDescription(MEDIA_TYPE_AUDIO); }
+  bool has_video() const { return HasMediaDescription(MEDIA_TYPE_VIDEO); }
+  bool has_data() const { return HasMediaDescription(MEDIA_TYPE_DATA); }
+
+  bool HasMediaDescription(MediaType type) const;
+
+  DataChannelType data_channel_type = DCT_NONE;
+  bool is_muc = false;
+  bool vad_enabled = true;  // When disabled, removes all CN codecs from SDP.
+  bool rtcp_mux_enabled = true;
+  bool bundle_enabled = false;
+  std::string rtcp_cname = kDefaultRtcpCname;
   rtc::CryptoOptions crypto_options;
-
-  struct Stream {
-    Stream(MediaType type,
-           const std::string& id,
-           const std::string& sync_label,
-           int num_sim_layers)
-        : type(type), id(id), sync_label(sync_label),
-          num_sim_layers(num_sim_layers) {
-    }
-    MediaType type;
-    std::string id;
-    std::string sync_label;
-    int num_sim_layers;
-  };
-
-  typedef std::vector<Stream> Streams;
-  Streams streams;
+  // List of media description options in the same order that the media
+  // descriptions will be generated.
+  std::vector<MediaDescriptionOptions> media_description_options;
 };
 
 // "content" (as used in XEP-0166) descriptions for voice and video.
@@ -277,7 +266,6 @@ class MediaContentDescription : public ContentDescription {
     streams_.push_back(sp);
   }
   // Sets the CNAME of all StreamParams if it have not been set.
-  // This can be used to set the CNAME of legacy streams.
   void SetCnameIfEmpty(const std::string& cname) {
     for (cricket::StreamParamsVec::iterator it = streams_.begin();
          it != streams_.end(); ++it) {
@@ -469,11 +457,6 @@ class MediaSessionDescriptionFactory {
   void set_data_codecs(const DataCodecs& codecs) { data_codecs_ = codecs; }
   SecurePolicy secure() const { return secure_; }
   void set_secure(SecurePolicy s) { secure_ = s; }
-  // Decides if a StreamParams shall be added to the audio and video media
-  // content in SessionDescription when CreateOffer and CreateAnswer is called
-  // even if |options| don't include a Stream. This is needed to support legacy
-  // applications. |add_legacy_| is true per default.
-  void set_add_legacy_streams(bool add_legacy) { add_legacy_ = add_legacy; }
 
   void set_enable_encrypted_rtp_header_extensions(bool enable) {
     enable_encrypted_rtp_header_extensions_ = enable;
@@ -493,13 +476,15 @@ class MediaSessionDescriptionFactory {
   const AudioCodecs& GetAudioCodecsForAnswer(
       const RtpTransceiverDirection& offer,
       const RtpTransceiverDirection& answer) const;
-  void GetCodecsToOffer(const SessionDescription* current_description,
-                        const AudioCodecs& supported_audio_codecs,
-                        const VideoCodecs& supported_video_codecs,
-                        const DataCodecs& supported_data_codecs,
-                        AudioCodecs* audio_codecs,
-                        VideoCodecs* video_codecs,
-                        DataCodecs* data_codecs) const;
+  void GetCodecsForOffer(const SessionDescription* current_description,
+                         AudioCodecs* audio_codecs,
+                         VideoCodecs* video_codecs,
+                         DataCodecs* data_codecs) const;
+  void GetCodecsForAnswer(const SessionDescription* current_description,
+                          const SessionDescription* remote_offer,
+                          AudioCodecs* audio_codecs,
+                          VideoCodecs* video_codecs,
+                          DataCodecs* data_codecs) const;
   void GetRtpHdrExtsToOffer(const SessionDescription* current_description,
                             RtpHeaderExtensions* audio_extensions,
                             RtpHeaderExtensions* video_extensions) const;
@@ -526,7 +511,9 @@ class MediaSessionDescriptionFactory {
   // error.
 
   bool AddAudioContentForOffer(
-      const MediaSessionOptions& options,
+      const MediaDescriptionOptions& media_description_options,
+      const MediaSessionOptions& session_options,
+      const ContentInfo* current_content,
       const SessionDescription* current_description,
       const RtpHeaderExtensions& audio_rtp_extensions,
       const AudioCodecs& audio_codecs,
@@ -534,7 +521,9 @@ class MediaSessionDescriptionFactory {
       SessionDescription* desc) const;
 
   bool AddVideoContentForOffer(
-      const MediaSessionOptions& options,
+      const MediaDescriptionOptions& media_description_options,
+      const MediaSessionOptions& session_options,
+      const ContentInfo* current_content,
       const SessionDescription* current_description,
       const RtpHeaderExtensions& video_rtp_extensions,
       const VideoCodecs& video_codecs,
@@ -542,43 +531,66 @@ class MediaSessionDescriptionFactory {
       SessionDescription* desc) const;
 
   bool AddDataContentForOffer(
-      const MediaSessionOptions& options,
+      const MediaDescriptionOptions& media_description_options,
+      const MediaSessionOptions& session_options,
+      const ContentInfo* current_content,
       const SessionDescription* current_description,
-      DataCodecs* data_codecs,
+      const DataCodecs& data_codecs,
       StreamParamsVec* current_streams,
       SessionDescription* desc) const;
 
-  bool AddAudioContentForAnswer(const SessionDescription* offer,
-                                const MediaSessionOptions& options,
-                                const SessionDescription* current_description,
-                                const TransportInfo* bundle_transport,
-                                StreamParamsVec* current_streams,
-                                SessionDescription* answer) const;
+  bool AddAudioContentForAnswer(
+      const MediaDescriptionOptions& media_description_options,
+      const MediaSessionOptions& session_options,
+      const ContentInfo* offer_content,
+      const SessionDescription* offer_description,
+      const ContentInfo* current_content,
+      const SessionDescription* current_description,
+      const TransportInfo* bundle_transport,
+      const AudioCodecs& audio_codecs,
+      StreamParamsVec* current_streams,
+      SessionDescription* answer) const;
 
-  bool AddVideoContentForAnswer(const SessionDescription* offer,
-                                const MediaSessionOptions& options,
-                                const SessionDescription* current_description,
-                                const TransportInfo* bundle_transport,
-                                StreamParamsVec* current_streams,
-                                SessionDescription* answer) const;
+  bool AddVideoContentForAnswer(
+      const MediaDescriptionOptions& media_description_options,
+      const MediaSessionOptions& session_options,
+      const ContentInfo* offer_content,
+      const SessionDescription* offer_description,
+      const ContentInfo* current_content,
+      const SessionDescription* current_description,
+      const TransportInfo* bundle_transport,
+      const VideoCodecs& video_codecs,
+      StreamParamsVec* current_streams,
+      SessionDescription* answer) const;
 
-  bool AddDataContentForAnswer(const SessionDescription* offer,
-                               const MediaSessionOptions& options,
-                               const SessionDescription* current_description,
-                               const TransportInfo* bundle_transport,
-                               StreamParamsVec* current_streams,
-                               SessionDescription* answer) const;
+  bool AddDataContentForAnswer(
+      const MediaDescriptionOptions& media_description_options,
+      const MediaSessionOptions& session_options,
+      const ContentInfo* offer_content,
+      const SessionDescription* offer_description,
+      const ContentInfo* current_content,
+      const SessionDescription* current_description,
+      const TransportInfo* bundle_transport,
+      const DataCodecs& data_codecs,
+      StreamParamsVec* current_streams,
+      SessionDescription* answer) const;
+
+  void ComputeAudioCodecsIntersectionAndUnion();
 
   AudioCodecs audio_send_codecs_;
   AudioCodecs audio_recv_codecs_;
+  // Intersection of send and recv.
   AudioCodecs audio_sendrecv_codecs_;
+  // Union of send and recv.
+  AudioCodecs all_audio_codecs_;
   RtpHeaderExtensions audio_rtp_extensions_;
   VideoCodecs video_codecs_;
   RtpHeaderExtensions video_rtp_extensions_;
   DataCodecs data_codecs_;
-  SecurePolicy secure_;
-  bool add_legacy_;
   bool enable_encrypted_rtp_header_extensions_ = false;
+  // TODO(zhihuang): Rename secure_ to sdec_policy_; rename the related getter
+  // and setter.
+  SecurePolicy secure_ = SEC_DISABLED;
   std::string lang_;
   const TransportDescriptionFactory* transport_desc_factory_;
 };

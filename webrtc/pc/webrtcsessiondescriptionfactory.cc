@@ -30,24 +30,30 @@ static const char kFailedDueToSessionShutdown[] =
 
 static const uint64_t kInitSessionVersion = 2;
 
-static bool CompareStream(const MediaSessionOptions::Stream& stream1,
-                          const MediaSessionOptions::Stream& stream2) {
-  return stream1.id < stream2.id;
+static bool CompareSenderOptions(const cricket::SenderOptions& sender1,
+                                 const cricket::SenderOptions& sender2) {
+  return sender1.track_id < sender2.track_id;
 }
 
-static bool SameId(const MediaSessionOptions::Stream& stream1,
-                   const MediaSessionOptions::Stream& stream2) {
-  return stream1.id == stream2.id;
+static bool SameId(const cricket::SenderOptions& sender1,
+                   const cricket::SenderOptions& sender2) {
+  return sender1.track_id == sender2.track_id;
 }
 
-// Checks if each Stream within the |streams| has unique id.
-static bool ValidStreams(const MediaSessionOptions::Streams& streams) {
-  MediaSessionOptions::Streams sorted_streams = streams;
-  std::sort(sorted_streams.begin(), sorted_streams.end(), CompareStream);
-  MediaSessionOptions::Streams::iterator it =
-      std::adjacent_find(sorted_streams.begin(), sorted_streams.end(),
-                         SameId);
-  return it == sorted_streams.end();
+// Check that each sender has a unique ID.
+static bool ValidMediaSessionOptions(
+    const cricket::MediaSessionOptions& session_options) {
+  std::vector<cricket::SenderOptions> sorted_senders;
+  for (const cricket::MediaDescriptionOptions& media_description_options :
+       session_options.media_description_options) {
+    sorted_senders.insert(sorted_senders.end(),
+                          media_description_options.sender_options.begin(),
+                          media_description_options.sender_options.end());
+  }
+  std::sort(sorted_senders.begin(), sorted_senders.end(), CompareSenderOptions);
+  std::vector<cricket::SenderOptions>::iterator it =
+      std::adjacent_find(sorted_senders.begin(), sorted_senders.end(), SameId);
+  return it == sorted_senders.end();
 }
 
 enum {
@@ -128,7 +134,6 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
       session_id_(session_id),
       certificate_request_state_(CERTIFICATE_NOT_NEEDED) {
   RTC_DCHECK(signaling_thread_);
-  session_desc_factory_.set_add_legacy_streams(false);
   bool dtls_enabled = cert_generator_ || certificate;
   // SRTP-SDES is disabled if DTLS is on.
   SetSdesPolicy(dtls_enabled ? cricket::SEC_DISABLED : cricket::SEC_REQUIRED);
@@ -237,8 +242,8 @@ void WebRtcSessionDescriptionFactory::CreateOffer(
     return;
   }
 
-  if (!ValidStreams(session_options.streams)) {
-    error += " called with invalid media streams.";
+  if (!ValidMediaSessionOptions(session_options)) {
+    error += " called with invalid session options";
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
     return;
@@ -279,8 +284,8 @@ void WebRtcSessionDescriptionFactory::CreateAnswer(
     return;
   }
 
-  if (!ValidStreams(session_options.streams)) {
-    error += " called with invalid media streams.";
+  if (!ValidMediaSessionOptions(session_options)) {
+    error += " called with invalid session options.";
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
     return;
@@ -340,13 +345,12 @@ void WebRtcSessionDescriptionFactory::OnMessage(rtc::Message* msg) {
 void WebRtcSessionDescriptionFactory::InternalCreateOffer(
     CreateSessionDescriptionRequest request) {
   if (session_->local_description()) {
-    for (const cricket::TransportInfo& transport :
-         session_->local_description()->description()->transport_infos()) {
-      // If the needs-ice-restart flag is set as described by JSEP, we should
-      // generate an offer with a new ufrag/password to trigger an ICE restart.
-      if (session_->NeedsIceRestart(transport.content_name)) {
-        request.options.transport_options[transport.content_name].ice_restart =
-            true;
+    // If the needs-ice-restart flag is set as described by JSEP, we should
+    // generate an offer with a new ufrag/password to trigger an ICE restart.
+    for (cricket::MediaDescriptionOptions& options :
+         request.options.media_description_options) {
+      if (session_->NeedsIceRestart(options.mid)) {
+        options.transport_options.ice_restart = true;
       }
     }
   }
@@ -375,13 +379,11 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
     return;
   }
   if (session_->local_description()) {
-    for (const cricket::ContentInfo& content :
-         session_->local_description()->description()->contents()) {
-      // Include all local ICE candidates in the SessionDescription unless
-      // an ICE restart was requested.
-      if (!request.options.transport_options[content.name].ice_restart) {
+    for (const cricket::MediaDescriptionOptions& options :
+         request.options.media_description_options) {
+      if (!options.transport_options.ice_restart) {
         CopyCandidatesFromSessionDescription(session_->local_description(),
-                                             content.name, offer);
+                                             options.mid, offer);
       }
     }
   }
@@ -391,18 +393,18 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
 void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
     CreateSessionDescriptionRequest request) {
   if (session_->remote_description()) {
-    for (const cricket::ContentInfo& content :
-         session_->remote_description()->description()->contents()) {
+    for (cricket::MediaDescriptionOptions& options :
+         request.options.media_description_options) {
       // According to http://tools.ietf.org/html/rfc5245#section-9.2.1.1
       // an answer should also contain new ICE ufrag and password if an offer
       // has been received with new ufrag and password.
-      request.options.transport_options[content.name].ice_restart =
-          session_->IceRestartPending(content.name);
+      options.transport_options.ice_restart =
+          session_->IceRestartPending(options.mid);
       // We should pass the current SSL role to the transport description
       // factory, if there is already an existing ongoing session.
       rtc::SSLRole ssl_role;
-      if (session_->GetSslRole(content.name, &ssl_role)) {
-        request.options.transport_options[content.name].prefer_passive_role =
+      if (session_->GetSslRole(options.mid, &ssl_role)) {
+        options.transport_options.prefer_passive_role =
             (rtc::SSL_SERVER == ssl_role);
       }
     }
@@ -433,13 +435,13 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
     return;
   }
   if (session_->local_description()) {
-    for (const cricket::ContentInfo& content :
-         session_->local_description()->description()->contents()) {
-      // Include all local ICE candidates in the SessionDescription unless
-      // the remote peer has requested an ICE restart.
-      if (!request.options.transport_options[content.name].ice_restart) {
+    // Include all local ICE candidates in the SessionDescription unless
+    // the remote peer has requested an ICE restart.
+    for (const cricket::MediaDescriptionOptions& options :
+         request.options.media_description_options) {
+      if (!options.transport_options.ice_restart) {
         CopyCandidatesFromSessionDescription(session_->local_description(),
-                                             content.name, answer);
+                                             options.mid, answer);
       }
     }
   }
