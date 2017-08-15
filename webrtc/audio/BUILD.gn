@@ -144,7 +144,7 @@ if (rtc_include_tests) {
     # gets additional generated targets which would require many lines here to
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
-      visibility = [ "//webrtc:webrtc_perf_tests" ]
+      visibility = [ "..:webrtc_perf_tests" ]
     }
     sources = [
       "test/audio_bwe_integration_test.cc",

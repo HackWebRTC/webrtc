@@ -106,16 +106,16 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:rtc_task_queue",
       "../system_wrappers",
+      "../test:rtp_test_utils",
       "../test:test_common",
       "../test:test_renderer",
+      "../test:test_renderer",
       "../test:test_support",
+      "../test:video_test_common",
       "../test:video_test_common",
       "../test:video_test_support",
       "../voice_engine",
       "//testing/gtest",
-      "//webrtc/test:rtp_test_utils",
-      "//webrtc/test:test_renderer",
-      "//webrtc/test:video_test_common",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

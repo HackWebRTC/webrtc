@@ -246,9 +246,9 @@ if (current_cpu == "x86" || current_cpu == "x64") {
   rtc_static_library("common_audio_sse2") {
     # TODO(kjellander): Remove (bugs.webrtc.org/6828)
     # Enabling GN check triggers dependency cycle:
-    #   //webrtc/common_audio:common_audio ->
-    #   //webrtc/common_audio:common_audio_sse2 ->
-    #   //webrtc/common_audio:common_audio
+    #   :common_audio ->
+    #   :common_audio_sse2 ->
+    #   :common_audio
     check_includes = false
     sources = [
       "fir_filter_sse.cc",
@@ -273,9 +273,9 @@ if (rtc_build_with_neon) {
   rtc_static_library("common_audio_neon") {
     # TODO(kjellander): Remove (bugs.webrtc.org/6828)
     # Enabling GN check triggers dependency cycle:
-    #   //webrtc/common_audio:common_audio ->
-    #   //webrtc/common_audio:common_audio_neon ->
-    #   //webrtc/common_audio:common_audio
+    #   :common_audio ->
+    #   :common_audio_neon ->
+    #   :common_audio
     check_includes = false
     sources = [
       "fir_filter_neon.cc",

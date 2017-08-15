@@ -272,8 +272,8 @@ template("rtc_test") {
       public_configs += invoker.public_configs
     }
     if (!build_with_chromium && is_android) {
-      android_manifest = "//webrtc/test/android/AndroidManifest.xml"
-      deps += [ "//webrtc/test:native_test_java" ]
+      android_manifest = webrtc_root + "test/android/AndroidManifest.xml"
+      deps += [ webrtc_root + "test:native_test_java" ]
     }
   }
 }

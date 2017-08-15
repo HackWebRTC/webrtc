@@ -53,10 +53,10 @@ rtc_source_set("rtc_h264_profile_id") {
 rtc_static_library("rtc_media_base") {
   # TODO(kjellander): Remove (bugs.webrtc.org/6828)
   # Enabling GN check triggers cyclic dependency error:
-  #   //webrtc/media:rtc_media_base ->
-  #   //webrtc/pc:rtc_pc_base ->
-  #   //webrtc/media:rtc_data ->
-  #   //webrtc/media:rtc_media_base
+  #   :rtc_media_base ->
+  #   ../pc:rtc_pc_base ->
+  #   :rtc_data ->
+  #   :rtc_media_base
   check_includes = false
   defines = []
   libs = []

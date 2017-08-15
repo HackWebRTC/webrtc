@@ -90,7 +90,7 @@ source_set("compile_assert_c") {
 rtc_static_library("rtc_base_approved") {
   # TODO(kjellander): Remove (bugs.webrtc.org/7480)
   # Enabling GN check triggers a cyclic dependency caused by rate_limiter.cc:
-  #   :rtc_base_approved -> //webrtc/system_wrappers -> :rtc_base_approved
+  #   :rtc_base_approved -> ../system_wrappers -> :rtc_base_approved
   check_includes = false
   defines = []
   libs = []
@@ -765,7 +765,7 @@ if (rtc_include_tests) {
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
       # TODO(kjellander): Reenable after finishing https://bugs.webrtc.org/7634.
-      #visibility = [ "//webrtc:webrtc_nonparallel_tests" ]
+      #visibility = [ "..:webrtc_nonparallel_tests" ]
     }
     sources = [
       "cpu_time_unittest.cc",
@@ -802,7 +802,7 @@ if (rtc_include_tests) {
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
       # TODO(kjellander): Reenable after finishing https://bugs.webrtc.org/7634.
-      #visibility = [ "//webrtc:rtc_unittests" ]
+      #visibility = [ "..:rtc_unittests" ]
     }
     sources = [
       "array_view_unittest.cc",
@@ -869,7 +869,7 @@ if (rtc_include_tests) {
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
       # TODO(kjellander): Reenable after finishing https://bugs.webrtc.org/7634.
-      #visibility = [ "//webrtc:rtc_unittests" ]
+      #visibility = [ "..:rtc_unittests" ]
     }
     sources = [
       "task_queue_unittest.cc",
@@ -894,7 +894,7 @@ if (rtc_include_tests) {
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
       # TODO(kjellander): Reenable after finishing https://bugs.webrtc.org/7634.
-      #visibility = [ "//webrtc:rtc_unittests" ]
+      #visibility = [ "..:rtc_unittests" ]
     }
     sources = [
       "sequenced_task_checker_unittest.cc",
@@ -916,7 +916,7 @@ if (rtc_include_tests) {
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
       # TODO(kjellander): Reenable after finishing https://bugs.webrtc.org/7634.
-      #visibility = [ "//webrtc:rtc_unittests" ]
+      #visibility = [ "..:rtc_unittests" ]
     }
     sources = [
       "weak_ptr_unittest.cc",
@@ -938,7 +938,7 @@ if (rtc_include_tests) {
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
       # TODO(kjellander): Reenable after finishing https://bugs.webrtc.org/7634.
-      #visibility = [ "//webrtc:rtc_unittests" ]
+      #visibility = [ "..:rtc_unittests" ]
     }
     sources = [
       "numerics/exp_filter_unittest.cc",
@@ -965,7 +965,7 @@ if (rtc_include_tests) {
     # cover (which would be confusing to read and hard to maintain).
     if (!is_android && !is_ios) {
       # TODO(kjellander): Reenable after finishing https://bugs.webrtc.org/7634.
-      #visibility = [ "//webrtc:rtc_unittests" ]
+      #visibility = [ "..:rtc_unittests" ]
     }
     sources = [
       "callback_unittest.cc",
