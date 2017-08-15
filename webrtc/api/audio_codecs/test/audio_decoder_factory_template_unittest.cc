@@ -9,7 +9,6 @@
  */
 
 #include "webrtc/api/audio_codecs/audio_decoder_factory_template.h"
-#include "webrtc/api/audio_codecs/L16/audio_decoder_L16.h"
 #include "webrtc/api/audio_codecs/g711/audio_decoder_g711.h"
 #include "webrtc/api/audio_codecs/g722/audio_decoder_g722.h"
 #include "webrtc/api/audio_codecs/ilbc/audio_decoder_ilbc.h"
@@ -164,26 +163,6 @@ TEST(AudioDecoderFactoryTemplateTest, Ilbc) {
   auto dec = factory->MakeAudioDecoder({"ilbc", 8000, 1});
   ASSERT_NE(nullptr, dec);
   EXPECT_EQ(8000, dec->SampleRateHz());
-}
-
-TEST(AudioDecoderFactoryTemplateTest, L16) {
-  auto factory = CreateAudioDecoderFactory<AudioDecoderL16>();
-  EXPECT_THAT(
-      factory->GetSupportedDecoders(),
-      testing::ElementsAre(
-          AudioCodecSpec{{"L16", 8000, 1}, {8000, 1, 8000 * 16}},
-          AudioCodecSpec{{"L16", 16000, 1}, {16000, 1, 16000 * 16}},
-          AudioCodecSpec{{"L16", 32000, 1}, {32000, 1, 32000 * 16}},
-          AudioCodecSpec{{"L16", 8000, 2}, {8000, 2, 8000 * 16 * 2}},
-          AudioCodecSpec{{"L16", 16000, 2}, {16000, 2, 16000 * 16 * 2}},
-          AudioCodecSpec{{"L16", 32000, 2}, {32000, 2, 32000 * 16 * 2}}));
-  EXPECT_FALSE(factory->IsSupportedDecoder({"foo", 8000, 1}));
-  EXPECT_TRUE(factory->IsSupportedDecoder({"L16", 48000, 1}));
-  EXPECT_FALSE(factory->IsSupportedDecoder({"L16", 96000, 1}));
-  EXPECT_EQ(nullptr, factory->MakeAudioDecoder({"L16", 8000, 0}));
-  auto dec = factory->MakeAudioDecoder({"L16", 48000, 2});
-  ASSERT_NE(nullptr, dec);
-  EXPECT_EQ(48000, dec->SampleRateHz());
 }
 
 TEST(AudioDecoderFactoryTemplateTest, Opus) {
