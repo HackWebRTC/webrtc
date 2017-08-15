@@ -273,29 +273,6 @@ TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeCapturer) {
   EXPECT_TRUE(capturer.apply_rotation());
 }
 
-
-// TODO(ilnik): Remove this test once field trial is gone.
-TEST_F(WebRtcVideoEngineTest, SupportsVideoContentTypeHeaderExtension) {
-  // Extension shound not be reported outside of the field trial.
-  RtpCapabilities capabilities = engine_.GetCapabilities();
-  EXPECT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpExtension& extension : capabilities.header_extensions) {
-    EXPECT_NE(extension.uri, RtpExtension::kVideoContentTypeUri);
-  }
-  webrtc::test::ScopedFieldTrials override_field_trials_(
-        "WebRTC-VideoContentTypeExtension/Enabled/");
-  // Should be reported within field trial.
-  capabilities = engine_.GetCapabilities();
-  EXPECT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == RtpExtension::kVideoContentTypeUri) {
-      EXPECT_EQ(RtpExtension::kVideoContentTypeDefaultId, extension.id);
-      return;
-    }
-  }
-  FAIL() << "Video Content Type extension not in header-extension list.";
-}
-
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeAddSendStream) {
   // Allocate the capturer first to prevent early destruction before channel's
   // dtor is called.

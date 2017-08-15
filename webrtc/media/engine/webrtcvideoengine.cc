@@ -55,13 +55,6 @@ bool IsFlexfecAdvertisedFieldTrialEnabled() {
   return webrtc::field_trial::IsEnabled("WebRTC-FlexFEC-03-Advertised");
 }
 
-// If this field trial is enabled, we will report VideoContentType RTP extension
-// in capabilities (thus, it will end up in the default SDP and extension will
-// be sent for all key-frames).
-bool IsVideoContentTypeExtensionFieldTrialEnabled() {
-  return webrtc::field_trial::IsEnabled("WebRTC-VideoContentTypeExtension");
-}
-
 // An encoder factory that wraps Create requests for simulcastable codec types
 // with a webrtc::SimulcastEncoderAdapter. Non simulcastable codec type
 // requests are just passed through to the contained encoder factory.
@@ -430,11 +423,9 @@ RtpCapabilities WebRtcVideoEngine::GetCapabilities() const {
   capabilities.header_extensions.push_back(
       webrtc::RtpExtension(webrtc::RtpExtension::kPlayoutDelayUri,
                            webrtc::RtpExtension::kPlayoutDelayDefaultId));
-  if (IsVideoContentTypeExtensionFieldTrialEnabled()) {
-    capabilities.header_extensions.push_back(
-        webrtc::RtpExtension(webrtc::RtpExtension::kVideoContentTypeUri,
-                             webrtc::RtpExtension::kVideoContentTypeDefaultId));
-  }
+  capabilities.header_extensions.push_back(
+      webrtc::RtpExtension(webrtc::RtpExtension::kVideoContentTypeUri,
+                           webrtc::RtpExtension::kVideoContentTypeDefaultId));
   // TODO(ilnik): Add kVideoTimingUri/kVideoTimingDefaultId to capabilities.
   // Possibly inside field trial.
   return capabilities;
