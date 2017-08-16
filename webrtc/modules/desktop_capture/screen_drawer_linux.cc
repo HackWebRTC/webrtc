@@ -8,46 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <semaphore.h>
 #include <string.h>
 #include <X11/Xlib.h>
 
 #include <memory>
 
 #include "webrtc/modules/desktop_capture/screen_drawer.h"
+#include "webrtc/modules/desktop_capture/screen_drawer_lock_posix.h"
 #include "webrtc/modules/desktop_capture/x11/shared_x_display.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 
 namespace webrtc {
 
 namespace {
-
-static constexpr char kSemaphoreName[] =
-    "/global-screen-drawer-linux-54fe5552-8047-11e6-a725-3f429a5b4fb4";
-
-class ScreenDrawerLockLinux : public ScreenDrawerLock {
- public:
-  ScreenDrawerLockLinux();
-  ~ScreenDrawerLockLinux() override;
-
- private:
-  sem_t* semaphore_;
-};
-
-ScreenDrawerLockLinux::ScreenDrawerLockLinux() {
-  semaphore_ =
-      sem_open(kSemaphoreName, O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO, 1);
-  sem_wait(semaphore_);
-}
-
-ScreenDrawerLockLinux::~ScreenDrawerLockLinux() {
-  sem_post(semaphore_);
-  sem_close(semaphore_);
-  // sem_unlink(kSemaphoreName);
-}
 
 // A ScreenDrawer implementation for X11.
 class ScreenDrawerLinux : public ScreenDrawer {
@@ -187,13 +162,13 @@ void ScreenDrawerLinux::BringToFront() {
 
 // static
 std::unique_ptr<ScreenDrawerLock> ScreenDrawerLock::Create() {
-  return std::unique_ptr<ScreenDrawerLock>(new ScreenDrawerLockLinux());
+  return rtc::MakeUnique<ScreenDrawerLockPosix>();
 }
 
 // static
 std::unique_ptr<ScreenDrawer> ScreenDrawer::Create() {
   if (SharedXDisplay::CreateDefault().get()) {
-    return std::unique_ptr<ScreenDrawer>(new ScreenDrawerLinux());
+    return rtc::MakeUnique<ScreenDrawerLinux>();
   }
   return nullptr;
 }

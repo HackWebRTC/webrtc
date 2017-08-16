@@ -127,6 +127,8 @@ if (rtc_include_tests) {
       "screen_drawer.cc",
       "screen_drawer.h",
       "screen_drawer_linux.cc",
+      "screen_drawer_lock_posix.cc",
+      "screen_drawer_lock_posix.h",
       "screen_drawer_mac.cc",
       "screen_drawer_win.cc",
     ]
