@@ -153,7 +153,8 @@ class TestFrameBuffer2 : public ::testing::Test {
                   T... refs) {
     static_assert(sizeof...(refs) <= kMaxReferences,
                   "To many references specified for FrameObject.");
-    std::array<uint16_t, sizeof...(refs)> references = {{refs...}};
+    std::array<uint16_t, sizeof...(refs)> references = {
+        {rtc::checked_cast<uint16_t>(refs)...}};
 
     std::unique_ptr<FrameObjectFake> frame(new FrameObjectFake());
     frame->picture_id = picture_id;
