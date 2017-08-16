@@ -162,14 +162,16 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     ]
     public_configs = [ ":apprtc_common_config" ]
 
-    deps = [
-      "../system_wrappers:field_trial_default",
-      "../system_wrappers:metrics_default",
-    ]
     if (is_ios) {
-      deps += [ ":AppRTCMobile_ios_frameworks" ]
+      deps = [
+        ":AppRTCMobile_ios_frameworks",
+      ]
     } else {
-      deps += [ "../sdk:objc_common" ]
+      deps = [
+        "../sdk:objc_common",
+        "../system_wrappers:field_trial_default",
+        "../system_wrappers:metrics_default",
+      ]
     }
   }
 
