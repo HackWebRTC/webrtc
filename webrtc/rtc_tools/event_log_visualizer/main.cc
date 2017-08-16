@@ -111,6 +111,9 @@ DEFINE_string(
     "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enabled/"
     " will assign the group Enabled to field trial WebRTC-FooFeature. Multiple "
     "trials are separated by \"/\"");
+DEFINE_string(wav_filename,
+              "",
+              "Path to wav file used for simulation of jitter buffer");
 DEFINE_bool(help, false, "prints this message");
 
 DEFINE_bool(show_detector_state,
@@ -255,11 +258,15 @@ int main(int argc, char* argv[]) {
     analyzer.CreateAudioEncoderNumChannelsGraph(collection->AppendNewPlot());
   }
   if (FLAG_plot_audio_jitter_buffer) {
-    analyzer.CreateAudioJitterBufferGraph(
-        webrtc::test::ResourcePath(
-            "audio_processing/conversational_speech/EN_script2_F_sp2_B1",
-            "wav"),
-        48000, collection->AppendNewPlot());
+    std::string wav_path;
+    if (FLAG_wav_filename[0] != '\0') {
+      wav_path = FLAG_wav_filename;
+    } else {
+      wav_path = webrtc::test::ResourcePath(
+          "audio_processing/conversational_speech/EN_script2_F_sp2_B1", "wav");
+    }
+    analyzer.CreateAudioJitterBufferGraph(wav_path, 48000,
+                                          collection->AppendNewPlot());
   }
 
   collection->Draw();
