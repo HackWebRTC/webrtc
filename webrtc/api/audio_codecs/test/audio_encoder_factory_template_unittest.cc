@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/api/audio_codecs/audio_encoder_factory_template.h"
+#include "webrtc/api/audio_codecs/L16/audio_encoder_L16.h"
 #include "webrtc/api/audio_codecs/g711/audio_encoder_g711.h"
 #include "webrtc/api/audio_codecs/g722/audio_encoder_g722.h"
 #include "webrtc/api/audio_codecs/ilbc/audio_encoder_ilbc.h"
@@ -168,6 +169,27 @@ TEST(AudioEncoderFactoryTemplateTest, Ilbc) {
   auto enc = factory->MakeAudioEncoder(17, {"ilbc", 8000, 1});
   ASSERT_NE(nullptr, enc);
   EXPECT_EQ(8000, enc->SampleRateHz());
+}
+
+TEST(AudioEncoderFactoryTemplateTest, L16) {
+  auto factory = CreateAudioEncoderFactory<AudioEncoderL16>();
+  EXPECT_THAT(
+      factory->GetSupportedEncoders(),
+      testing::ElementsAre(
+          AudioCodecSpec{{"L16", 8000, 1}, {8000, 1, 8000 * 16}},
+          AudioCodecSpec{{"L16", 16000, 1}, {16000, 1, 16000 * 16}},
+          AudioCodecSpec{{"L16", 32000, 1}, {32000, 1, 32000 * 16}},
+          AudioCodecSpec{{"L16", 8000, 2}, {8000, 2, 8000 * 16 * 2}},
+          AudioCodecSpec{{"L16", 16000, 2}, {16000, 2, 16000 * 16 * 2}},
+          AudioCodecSpec{{"L16", 32000, 2}, {32000, 2, 32000 * 16 * 2}}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>(),
+            factory->QueryAudioEncoder({"L16", 8000, 0}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>({48000, 1, 48000 * 16}),
+            factory->QueryAudioEncoder({"L16", 48000, 1}));
+  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"L16", 8000, 0}));
+  auto enc = factory->MakeAudioEncoder(17, {"L16", 48000, 2});
+  ASSERT_NE(nullptr, enc);
+  EXPECT_EQ(48000, enc->SampleRateHz());
 }
 
 TEST(AudioEncoderFactoryTemplateTest, Opus) {
