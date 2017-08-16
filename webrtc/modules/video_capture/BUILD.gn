@@ -102,7 +102,10 @@ if (!build_with_chromium) {
         "linux/video_capture_linux.cc",
         "linux/video_capture_linux.h",
       ]
-      deps += [ "../..:webrtc_common" ]
+      deps += [
+        "../..:webrtc_common",
+        "../../media:rtc_media_base",
+      ]
     }
     if (is_win) {
       sources = [
