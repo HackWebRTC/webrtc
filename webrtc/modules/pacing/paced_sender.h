@@ -136,7 +136,8 @@ class PacedSender : public Module, public RtpPacketSender {
   virtual rtc::Optional<int64_t> GetApplicationLimitedRegionStartTime() const;
 
   // Returns the average time since being enqueued, in milliseconds, for all
-  // packets currently in the pacer queue, or 0 if queue is empty.
+  // packets currently in the pacer queue, excluding any time the pacer has been
+  // paused. Returns 0 if queue is empty.
   virtual int64_t AverageQueueTimeMs();
 
   // Returns the number of milliseconds until the module want a worker thread

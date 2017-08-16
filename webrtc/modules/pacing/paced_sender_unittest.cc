@@ -1094,5 +1094,69 @@ TEST_F(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
 }
 
+TEST_F(PacedSenderTest, QueueTimeWithPause) {
+  const size_t kPacketSize = 1200;
+  const uint32_t kSsrc = 12346;
+  uint16_t sequence_number = 1234;
+
+  send_bucket_->InsertPacket(PacedSender::kNormalPriority, kSsrc,
+      sequence_number++, clock_.TimeInMilliseconds(),
+      kPacketSize, false);
+  send_bucket_->InsertPacket(PacedSender::kNormalPriority, kSsrc,
+      sequence_number++, clock_.TimeInMilliseconds(),
+      kPacketSize, false);
+
+  clock_.AdvanceTimeMilliseconds(100);
+  EXPECT_EQ(100, send_bucket_->AverageQueueTimeMs());
+
+  send_bucket_->Pause();
+  EXPECT_EQ(100, send_bucket_->AverageQueueTimeMs());
+
+  // In paused state, queue time should not increase.
+  clock_.AdvanceTimeMilliseconds(100);
+  EXPECT_EQ(100, send_bucket_->AverageQueueTimeMs());
+
+  send_bucket_->Resume();
+  EXPECT_EQ(100, send_bucket_->AverageQueueTimeMs());
+
+  clock_.AdvanceTimeMilliseconds(100);
+  EXPECT_EQ(200, send_bucket_->AverageQueueTimeMs());
+}
+
+TEST_F(PacedSenderTest, QueueTimePausedDuringPush) {
+  const size_t kPacketSize = 1200;
+  const uint32_t kSsrc = 12346;
+  uint16_t sequence_number = 1234;
+
+  send_bucket_->InsertPacket(PacedSender::kNormalPriority, kSsrc,
+      sequence_number++, clock_.TimeInMilliseconds(),
+      kPacketSize, false);
+  clock_.AdvanceTimeMilliseconds(100);
+  send_bucket_->Pause();
+  clock_.AdvanceTimeMilliseconds(100);
+  EXPECT_EQ(100, send_bucket_->AverageQueueTimeMs());
+
+  // Add a new packet during paused phase.
+  send_bucket_->InsertPacket(PacedSender::kNormalPriority, kSsrc,
+      sequence_number++, clock_.TimeInMilliseconds(),
+      kPacketSize, false);
+  // From a queue time perspective, packet inserted during pause will have zero
+  // queue time. Average queue time will then be (0 + 100) / 2 = 50.
+  EXPECT_EQ(50, send_bucket_->AverageQueueTimeMs());
+
+  clock_.AdvanceTimeMilliseconds(100);
+  EXPECT_EQ(50, send_bucket_->AverageQueueTimeMs());
+
+  send_bucket_->Resume();
+  EXPECT_EQ(50, send_bucket_->AverageQueueTimeMs());
+
+  clock_.AdvanceTimeMilliseconds(100);
+  EXPECT_EQ(150, send_bucket_->AverageQueueTimeMs());
+}
+
+// TODO(sprang): Extract PacketQueue from PacedSender so that we can test
+// removing elements while paused. (This is possible, but only because of semi-
+// racy condition so can't easily be tested).
+
 }  // namespace test
 }  // namespace webrtc
