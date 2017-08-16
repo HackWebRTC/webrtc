@@ -152,8 +152,10 @@ public class WebRtcAudioTrack {
           bytesWritten = writePreLollipop(audioTrack, byteBuffer, sizeInBytes);
         }
         if (bytesWritten != sizeInBytes) {
-          Logging.e(TAG, "AudioTrack.write failed: " + bytesWritten);
-          if (bytesWritten == AudioTrack.ERROR_INVALID_OPERATION) {
+          Logging.e(TAG, "AudioTrack.write played invalid number of bytes: " + bytesWritten);
+          // If a write() returns a negative value, an error has occurred.
+          // Stop playing and report an error in this case.
+          if (bytesWritten < 0) {
             keepAlive = false;
             reportWebRtcAudioTrackError("AudioTrack.write failed: " + bytesWritten);
           }
@@ -168,15 +170,16 @@ public class WebRtcAudioTrack {
         // audioTrack.getPlaybackHeadPosition().
       }
 
-      try {
-        if (audioTrack != null) {
-          audioTrack.stop();
-        }
-      } catch (IllegalStateException e) {
-        Logging.e(TAG, "AudioTrack.stop failed: " + e.getMessage());
+      // Stops playing the audio data. Since the instance was created in
+      // MODE_STREAM mode, audio will stop playing after the last buffer that
+      // was written has been played.
+      final AudioTrack at = audioTrack;
+      if (at != null) {
+        Logging.d(TAG, "Stopping the audio track...");
+        at.stop();
+        Logging.d(TAG, "The audio track has now been stopped.");
+        at.flush();
       }
-      assertTrue(audioTrack.getPlayState() == AudioTrack.PLAYSTATE_STOPPED);
-      audioTrack.flush();
     }
 
     @TargetApi(21)
@@ -188,7 +191,7 @@ public class WebRtcAudioTrack {
       return audioTrack.write(byteBuffer.array(), byteBuffer.arrayOffset(), sizeInBytes);
     }
 
-    // Stops the inner thread loop and also calls AudioTrack.stop().
+    // Stops the inner thread loop and also calls AudioTrack.pause() and flush().
     // Does not block the calling thread.
     public void stopThread() {
       Logging.d(TAG, "stopThread");
@@ -296,10 +299,18 @@ public class WebRtcAudioTrack {
     assertTrue(audioThread != null);
     logUnderrunCount();
     audioThread.stopThread();
-    if (!ThreadUtils.joinUninterruptibly(audioThread, AUDIO_TRACK_THREAD_JOIN_TIMEOUT_MS)) {
-      Logging.e(TAG, "Join of AudioTrackThread timed out");
-    }
+
+    final Thread aThread = audioThread;
     audioThread = null;
+    if (aThread != null) {
+      Logging.d(TAG, "Stopping the AudioTrackThread...");
+      aThread.interrupt();
+      if (!ThreadUtils.joinUninterruptibly(aThread, AUDIO_TRACK_THREAD_JOIN_TIMEOUT_MS)) {
+        Logging.e(TAG, "Join of AudioTrackThread timed out.");
+      }
+      Logging.d(TAG, "AudioTrackThread has now been stopped.");
+    }
+
     releaseAudioResources();
     return true;
   }
@@ -430,6 +441,7 @@ public class WebRtcAudioTrack {
 
   // Releases the native AudioTrack resources.
   private void releaseAudioResources() {
+    Logging.d(TAG, "releaseAudioResources");
     if (audioTrack != null) {
       audioTrack.release();
       audioTrack = null;
