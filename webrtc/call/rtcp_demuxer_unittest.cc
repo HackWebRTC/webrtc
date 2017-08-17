@@ -92,7 +92,7 @@ TEST(RtcpDemuxerTest, OnRtcpPacketCalledOnResolvedRsidSink) {
   // Only resolve one of the sinks.
   constexpr size_t resolved_sink_index = 0;
   constexpr uint32_t ssrc = 345;
-  demuxer.OnRsidResolved(rsids[resolved_sink_index], ssrc);
+  demuxer.OnSsrcBoundToRsid(rsids[resolved_sink_index], ssrc);
 
   // The resolved sink gets notifications of RTCP messages with its SSRC.
   auto packet = CreateRtcpPacket(ssrc);
@@ -123,7 +123,7 @@ TEST(RtcpDemuxerTest,
   demuxer.AddSink(rsid, &sink);
 
   // Resolve the RSID to the aforementioned SSRC.
-  demuxer.OnRsidResolved(rsid, ssrc);
+  demuxer.OnSsrcBoundToRsid(rsid, ssrc);
 
   // OnRtcpPacket still called only a single time for messages with this SSRC.
   auto packet = CreateRtcpPacket(ssrc);
@@ -276,7 +276,7 @@ TEST(RtcpDemuxerTest, MultipleRsidsOnSameSink) {
   uint32_t ssrcs[arraysize(rsids)];
   for (size_t i = 0; i < arraysize(rsids); i++) {
     ssrcs[i] = 1000 + static_cast<uint32_t>(i);
-    demuxer.OnRsidResolved(rsids[i], ssrcs[i]);
+    demuxer.OnSsrcBoundToRsid(rsids[i], ssrcs[i]);
   }
 
   // Set up packets to match those RSIDs/SSRCs.
@@ -312,7 +312,7 @@ TEST(RtcpDemuxerTest, RsidUsedByMultipleSinks) {
   }
 
   constexpr uint32_t shared_ssrc = 888;
-  demuxer.OnRsidResolved(shared_rsid, shared_ssrc);
+  demuxer.OnSsrcBoundToRsid(shared_rsid, shared_ssrc);
 
   auto packet = CreateRtcpPacket(shared_ssrc);
 
@@ -373,7 +373,7 @@ TEST(RtcpDemuxerTest, NoCallbackOnRsidSinkRemovedBeforeRsidResolution) {
 
   // Removal before resolution.
   demuxer.RemoveSink(&sink);
-  demuxer.OnRsidResolved(rsid, ssrc);
+  demuxer.OnSsrcBoundToRsid(rsid, ssrc);
 
   // The removed sink does not get callbacks.
   auto packet = CreateRtcpPacket(ssrc);
@@ -390,7 +390,7 @@ TEST(RtcpDemuxerTest, NoCallbackOnRsidSinkRemovedAfterRsidResolution) {
   demuxer.AddSink(rsid, &sink);
 
   // Removal after resolution.
-  demuxer.OnRsidResolved(rsid, ssrc);
+  demuxer.OnSsrcBoundToRsid(rsid, ssrc);
   demuxer.RemoveSink(&sink);
 
   // The removed sink does not get callbacks.
@@ -443,10 +443,10 @@ TEST(RtcpDemuxerTest, FirstRsolutionOfRsidNotForgotten) {
   demuxer.AddSink(rsid, &sink);
 
   constexpr uint32_t ssrc_a = 111;  // First resolution - guaranteed effective.
-  demuxer.OnRsidResolved(rsid, ssrc_a);
+  demuxer.OnSsrcBoundToRsid(rsid, ssrc_a);
 
   constexpr uint32_t ssrc_b = 222;  // Second resolution - no guarantees.
-  demuxer.OnRsidResolved(rsid, ssrc_b);
+  demuxer.OnSsrcBoundToRsid(rsid, ssrc_b);
 
   auto packet_a = CreateRtcpPacket(ssrc_a);
   EXPECT_CALL(

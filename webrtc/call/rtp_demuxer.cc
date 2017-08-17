@@ -10,9 +10,9 @@
 
 #include "webrtc/call/rtp_demuxer.h"
 
-#include "webrtc/call/rsid_resolution_observer.h"
 #include "webrtc/call/rtp_packet_sink_interface.h"
 #include "webrtc/call/rtp_rtcp_demuxer_helper.h"
+#include "webrtc/call/ssrc_binding_observer.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/rtc_base/checks.h"
@@ -62,21 +62,27 @@ bool RtpDemuxer::OnRtpPacket(const RtpPacketReceived& packet) {
   return it_range.first != it_range.second;
 }
 
-void RtpDemuxer::RegisterRsidResolutionObserver(
-    RsidResolutionObserver* observer) {
+void RtpDemuxer::RegisterSsrcBindingObserver(SsrcBindingObserver* observer) {
   RTC_DCHECK(observer);
-  RTC_DCHECK(!ContainerHasKey(rsid_resolution_observers_, observer));
+  RTC_DCHECK(!ContainerHasKey(ssrc_binding_observers_, observer));
 
-  rsid_resolution_observers_.push_back(observer);
+  ssrc_binding_observers_.push_back(observer);
+}
+void RtpDemuxer::RegisterRsidResolutionObserver(SsrcBindingObserver* observer) {
+  RegisterSsrcBindingObserver(observer);
 }
 
-void RtpDemuxer::DeregisterRsidResolutionObserver(
-    const RsidResolutionObserver* observer) {
+void RtpDemuxer::DeregisterSsrcBindingObserver(
+    const SsrcBindingObserver* observer) {
   RTC_DCHECK(observer);
-  auto it = std::find(rsid_resolution_observers_.begin(),
-                      rsid_resolution_observers_.end(), observer);
-  RTC_DCHECK(it != rsid_resolution_observers_.end());
-  rsid_resolution_observers_.erase(it);
+  auto it = std::find(ssrc_binding_observers_.begin(),
+                      ssrc_binding_observers_.end(), observer);
+  RTC_DCHECK(it != ssrc_binding_observers_.end());
+  ssrc_binding_observers_.erase(it);
+}
+void RtpDemuxer::DeregisterRsidResolutionObserver(
+    const SsrcBindingObserver* observer) {
+  DeregisterSsrcBindingObserver(observer);
 }
 
 void RtpDemuxer::ResolveRsidToSsrcAssociations(
@@ -114,8 +120,8 @@ void RtpDemuxer::ResolveRsidToSsrcAssociations(
 
 void RtpDemuxer::NotifyObserversOfRsidResolution(const std::string& rsid,
                                                  uint32_t ssrc) {
-  for (auto* observer : rsid_resolution_observers_) {
-    observer->OnRsidResolved(rsid, ssrc);
+  for (auto* observer : ssrc_binding_observers_) {
+    observer->OnSsrcBoundToRsid(rsid, ssrc);
   }
 }
 

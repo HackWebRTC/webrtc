@@ -13,7 +13,7 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/call/rsid_resolution_observer.h"
+#include "webrtc/call/ssrc_binding_observer.h"
 #include "webrtc/call/test/mock_rtp_packet_sink_interface.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
@@ -35,9 +35,9 @@ using ::testing::AtLeast;
 using ::testing::InSequence;
 using ::testing::NiceMock;
 
-class MockRsidResolutionObserver : public RsidResolutionObserver {
+class MockSsrcBindingObserver : public SsrcBindingObserver {
  public:
-  MOCK_METHOD2(OnRsidResolved, void(const std::string& rsid, uint32_t ssrc));
+  MOCK_METHOD2(OnSsrcBoundToRsid, void(const std::string& rsid, uint32_t ssrc));
 };
 
 MATCHER_P(SamePacketAs, other, "") {
@@ -517,18 +517,18 @@ TEST(RtpDemuxerTest, RsidObserversInformedOfResolutionsOfTrackedRsids) {
   NiceMock<MockRtpPacketSink> sink;
   demuxer.AddSink(rsid, &sink);
 
-  MockRsidResolutionObserver rsid_resolution_observers[3];
+  MockSsrcBindingObserver rsid_resolution_observers[3];
   for (auto& observer : rsid_resolution_observers) {
-    demuxer.RegisterRsidResolutionObserver(&observer);
-    EXPECT_CALL(observer, OnRsidResolved(rsid, ssrc)).Times(1);
+    demuxer.RegisterSsrcBindingObserver(&observer);
+    EXPECT_CALL(observer, OnSsrcBoundToRsid(rsid, ssrc)).Times(1);
   }
 
-  // The expected calls to OnRsidResolved() will be triggered by this.
+  // The expected calls to OnSsrcBoundToRsid() will be triggered by this.
   demuxer.OnRtpPacket(*CreateRtpPacketReceivedWithRsid(rsid, ssrc));
 
   // Test tear-down
   for (auto& observer : rsid_resolution_observers) {
-    demuxer.DeregisterRsidResolutionObserver(&observer);
+    demuxer.DeregisterSsrcBindingObserver(&observer);
   }
   demuxer.RemoveSink(&sink);
 }
@@ -539,10 +539,10 @@ TEST(RtpDemuxerTest, RsidObserversNotInformedOfResolutionsOfUntrackedRsids) {
   constexpr uint32_t ssrc = 111;
   const std::string rsid = "a";
 
-  MockRsidResolutionObserver rsid_resolution_observers[3];
+  MockSsrcBindingObserver rsid_resolution_observers[3];
   for (auto& observer : rsid_resolution_observers) {
-    demuxer.RegisterRsidResolutionObserver(&observer);
-    EXPECT_CALL(observer, OnRsidResolved(rsid, ssrc)).Times(0);
+    demuxer.RegisterSsrcBindingObserver(&observer);
+    EXPECT_CALL(observer, OnSsrcBoundToRsid(rsid, ssrc)).Times(0);
   }
 
   // The expected calls to OnRsidResolved() will be triggered by this.
@@ -550,7 +550,7 @@ TEST(RtpDemuxerTest, RsidObserversNotInformedOfResolutionsOfUntrackedRsids) {
 
   // Test tear-down
   for (auto& observer : rsid_resolution_observers) {
-    demuxer.DeregisterRsidResolutionObserver(&observer);
+    demuxer.DeregisterSsrcBindingObserver(&observer);
   }
 }
 
@@ -592,11 +592,11 @@ TEST(RtpDemuxerTest,
   NiceMock<MockRtpPacketSink> rsid_sink;
   demuxer.AddSink(rsid, &rsid_sink);
 
-  MockRsidResolutionObserver observer;
-  demuxer.RegisterRsidResolutionObserver(&observer);
+  MockSsrcBindingObserver observer;
+  demuxer.RegisterSsrcBindingObserver(&observer);
 
   auto packet = CreateRtpPacketReceivedWithRsid(rsid, ssrc);
-  EXPECT_CALL(observer, OnRsidResolved(_, _)).Times(0);
+  EXPECT_CALL(observer, OnSsrcBoundToRsid(_, _)).Times(0);
   demuxer.OnRtpPacket(*packet);
 
   // Test tear-down
@@ -617,8 +617,8 @@ TEST(RtpDemuxerTest, GracefullyHandleRsidBeingMappedToPrevouslyAssociatedSsrc) {
   MockRtpPacketSink rsid_sink;
   demuxer.AddSink(rsid, &rsid_sink);
 
-  MockRsidResolutionObserver observer;
-  demuxer.RegisterRsidResolutionObserver(&observer);
+  MockSsrcBindingObserver observer;
+  demuxer.RegisterSsrcBindingObserver(&observer);
 
   // The SSRC was mapped to an SSRC sink, but was even active (packets flowed
   // over it).
@@ -630,11 +630,11 @@ TEST(RtpDemuxerTest, GracefullyHandleRsidBeingMappedToPrevouslyAssociatedSsrc) {
   // is guaranteed.
   demuxer.RemoveSink(&ssrc_sink);
   EXPECT_CALL(rsid_sink, OnRtpPacket(SamePacketAs(*packet))).Times(AtLeast(0));
-  EXPECT_CALL(observer, OnRsidResolved(rsid, ssrc)).Times(AtLeast(0));
+  EXPECT_CALL(observer, OnSsrcBoundToRsid(rsid, ssrc)).Times(AtLeast(0));
   demuxer.OnRtpPacket(*packet);
 
   // Test tear-down
-  demuxer.DeregisterRsidResolutionObserver(&observer);
+  demuxer.DeregisterSsrcBindingObserver(&observer);
   demuxer.RemoveSink(&rsid_sink);
 }
 
@@ -648,27 +648,27 @@ TEST(RtpDemuxerTest, DeregisteredRsidObserversNotInformedOfResolutions) {
 
   // Register several, then deregister only one, to show that not all of the
   // observers had been forgotten when one was removed.
-  MockRsidResolutionObserver observer_1;
-  MockRsidResolutionObserver observer_2_removed;
-  MockRsidResolutionObserver observer_3;
+  MockSsrcBindingObserver observer_1;
+  MockSsrcBindingObserver observer_2_removed;
+  MockSsrcBindingObserver observer_3;
 
-  demuxer.RegisterRsidResolutionObserver(&observer_1);
-  demuxer.RegisterRsidResolutionObserver(&observer_2_removed);
-  demuxer.RegisterRsidResolutionObserver(&observer_3);
+  demuxer.RegisterSsrcBindingObserver(&observer_1);
+  demuxer.RegisterSsrcBindingObserver(&observer_2_removed);
+  demuxer.RegisterSsrcBindingObserver(&observer_3);
 
-  demuxer.DeregisterRsidResolutionObserver(&observer_2_removed);
+  demuxer.DeregisterSsrcBindingObserver(&observer_2_removed);
 
-  EXPECT_CALL(observer_1, OnRsidResolved(rsid, ssrc)).Times(1);
-  EXPECT_CALL(observer_2_removed, OnRsidResolved(_, _)).Times(0);
-  EXPECT_CALL(observer_3, OnRsidResolved(rsid, ssrc)).Times(1);
+  EXPECT_CALL(observer_1, OnSsrcBoundToRsid(rsid, ssrc)).Times(1);
+  EXPECT_CALL(observer_2_removed, OnSsrcBoundToRsid(_, _)).Times(0);
+  EXPECT_CALL(observer_3, OnSsrcBoundToRsid(rsid, ssrc)).Times(1);
 
-  // The expected calls to OnRsidResolved() will be triggered by this.
+  // The expected calls to OnSsrcBoundToRsid() will be triggered by this.
   demuxer.OnRtpPacket(*CreateRtpPacketReceivedWithRsid(rsid, ssrc));
 
   // Test tear-down
   demuxer.RemoveSink(&sink);
-  demuxer.DeregisterRsidResolutionObserver(&observer_1);
-  demuxer.DeregisterRsidResolutionObserver(&observer_3);
+  demuxer.DeregisterSsrcBindingObserver(&observer_1);
+  demuxer.DeregisterSsrcBindingObserver(&observer_3);
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
@@ -723,21 +723,21 @@ TEST(RtpDemuxerTest, RepeatedRsidAssociationsDisallowedEvenIfSameSink) {
 
 TEST(RtpDemuxerTest, DoubleRegisterationOfRsidResolutionObserverDisallowed) {
   RtpDemuxer demuxer;
-  MockRsidResolutionObserver observer;
-  demuxer.RegisterRsidResolutionObserver(&observer);
+  MockSsrcBindingObserver observer;
+  demuxer.RegisterSsrcBindingObserver(&observer);
 
-  EXPECT_DEATH(demuxer.RegisterRsidResolutionObserver(&observer), "");
+  EXPECT_DEATH(demuxer.RegisterSsrcBindingObserver(&observer), "");
 
   // Test tear-down
-  demuxer.DeregisterRsidResolutionObserver(&observer);
+  demuxer.DeregisterSsrcBindingObserver(&observer);
 }
 
 TEST(RtpDemuxerTest,
      DregisterationOfNeverRegisteredRsidResolutionObserverDisallowed) {
   RtpDemuxer demuxer;
-  MockRsidResolutionObserver observer;
+  MockSsrcBindingObserver observer;
 
-  EXPECT_DEATH(demuxer.DeregisterRsidResolutionObserver(&observer), "");
+  EXPECT_DEATH(demuxer.DeregisterSsrcBindingObserver(&observer), "");
 }
 
 #endif

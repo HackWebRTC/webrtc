@@ -49,7 +49,6 @@ rtc_source_set("rtp_interfaces") {
 
 rtc_source_set("rtp_receiver") {
   sources = [
-    "rsid_resolution_observer.h",
     "rtcp_demuxer.cc",
     "rtcp_demuxer.h",
     "rtp_demuxer.cc",
@@ -60,6 +59,7 @@ rtc_source_set("rtp_receiver") {
     "rtp_stream_receiver_controller.h",
     "rtx_receive_stream.cc",
     "rtx_receive_stream.h",
+    "ssrc_binding_observer.h",
   ]
   deps = [
     ":rtp_interfaces",

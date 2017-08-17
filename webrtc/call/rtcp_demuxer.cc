@@ -80,7 +80,7 @@ void RtcpDemuxer::OnRtcpPacket(rtc::ArrayView<const uint8_t> packet) {
   }
 }
 
-void RtcpDemuxer::OnRsidResolved(const std::string& rsid, uint32_t ssrc) {
+void RtcpDemuxer::OnSsrcBoundToRsid(const std::string& rsid, uint32_t ssrc) {
   // Record the new SSRC association for all of the sinks that were associated
   // with the RSID.
   auto it_range = rsid_sinks_.equal_range(rsid);

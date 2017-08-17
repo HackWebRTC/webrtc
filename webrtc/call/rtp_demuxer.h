@@ -17,9 +17,9 @@
 
 namespace webrtc {
 
-class RsidResolutionObserver;
 class RtpPacketReceived;
 class RtpPacketSinkInterface;
+class SsrcBindingObserver;
 
 // This class represents the RTP demuxing, for a single RTP session (i.e., one
 // ssrc space, see RFC 7656). It isn't thread aware, leaving responsibility of
@@ -51,10 +51,14 @@ class RtpDemuxer {
 
   // Allows other objects to be notified when RSID-SSRC associations are
   // resolved by this object.
-  void RegisterRsidResolutionObserver(RsidResolutionObserver* observer);
+  void RegisterSsrcBindingObserver(SsrcBindingObserver* observer);
+  // Deprecated: Use the above method.
+  void RegisterRsidResolutionObserver(SsrcBindingObserver* observer);
 
-  // Undo a previous RegisterRsidResolutionObserver().
-  void DeregisterRsidResolutionObserver(const RsidResolutionObserver* observer);
+  // Undo a previous RegisterSsrcBindingObserver().
+  void DeregisterSsrcBindingObserver(const SsrcBindingObserver* observer);
+  // Deprecated: Use the above method.
+  void DeregisterRsidResolutionObserver(const SsrcBindingObserver* observer);
 
  private:
   // Find the associations of RSID to SSRCs.
@@ -75,7 +79,7 @@ class RtpDemuxer {
 
   // Observers which will be notified when an RSID association to an SSRC is
   // resolved by this object.
-  std::vector<RsidResolutionObserver*> rsid_resolution_observers_;
+  std::vector<SsrcBindingObserver*> ssrc_binding_observers_;
 };
 
 }  // namespace webrtc
