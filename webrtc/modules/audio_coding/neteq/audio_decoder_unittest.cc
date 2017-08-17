@@ -350,14 +350,14 @@ class AudioDecoderIsacFloatTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 16000;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    AudioEncoderIsac::Config config;
+    AudioEncoderIsacFloatImpl::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
     config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-    audio_encoder_.reset(new AudioEncoderIsac(config));
-    decoder_ = new AudioDecoderIsac(codec_input_rate_hz_);
+    audio_encoder_.reset(new AudioEncoderIsacFloatImpl(config));
+    decoder_ = new AudioDecoderIsacFloatImpl(codec_input_rate_hz_);
   }
 };
 
@@ -367,14 +367,14 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 32000;
     frame_size_ = 960;
     data_length_ = 10 * frame_size_;
-    AudioEncoderIsac::Config config;
+    AudioEncoderIsacFloatImpl::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
     config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-    audio_encoder_.reset(new AudioEncoderIsac(config));
-    decoder_ = new AudioDecoderIsac(codec_input_rate_hz_);
+    audio_encoder_.reset(new AudioEncoderIsacFloatImpl(config));
+    decoder_ = new AudioDecoderIsacFloatImpl(codec_input_rate_hz_);
   }
 };
 
@@ -384,14 +384,14 @@ class AudioDecoderIsacFixTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 16000;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    AudioEncoderIsacFix::Config config;
+    AudioEncoderIsacFixImpl::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
     config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-    audio_encoder_.reset(new AudioEncoderIsacFix(config));
-    decoder_ = new AudioDecoderIsacFix(codec_input_rate_hz_);
+    audio_encoder_.reset(new AudioEncoderIsacFixImpl(config));
+    decoder_ = new AudioDecoderIsacFixImpl(codec_input_rate_hz_);
   }
 };
 

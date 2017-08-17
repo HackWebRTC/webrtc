@@ -753,9 +753,9 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
         receive_packet_count_(0),
         next_insert_packet_time_ms_(0),
         fake_clock_(new SimulatedClock(0)) {
-    AudioEncoderIsac::Config config;
+    AudioEncoderIsacFloatImpl::Config config;
     config.payload_type = kPayloadType;
-    isac_encoder_.reset(new AudioEncoderIsac(config));
+    isac_encoder_.reset(new AudioEncoderIsacFloatImpl(config));
     clock_ = fake_clock_.get();
   }
 
@@ -882,7 +882,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   bool codec_registered_ GUARDED_BY(crit_sect_);
   int receive_packet_count_ GUARDED_BY(crit_sect_);
   int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
-  std::unique_ptr<AudioEncoderIsac> isac_encoder_;
+  std::unique_ptr<AudioEncoderIsacFloatImpl> isac_encoder_;
   std::unique_ptr<SimulatedClock> fake_clock_;
   test::AudioLoop audio_loop_;
 };

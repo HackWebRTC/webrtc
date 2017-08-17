@@ -16,7 +16,7 @@
 
 namespace webrtc {
 
-using AudioEncoderIsacFix = AudioEncoderIsacT<IsacFix>;
+using AudioEncoderIsacFixImpl = AudioEncoderIsacT<IsacFix>;
 
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INCLUDE_AUDIO_ENCODER_ISACFIX_H_

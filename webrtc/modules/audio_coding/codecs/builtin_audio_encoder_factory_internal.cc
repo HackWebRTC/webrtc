@@ -68,9 +68,9 @@ NamedEncoderFactory encoder_factories[] = {
     NamedEncoderFactory::ForEncoder<AudioEncoderIlbcImpl>(),
 #endif
 #if defined(WEBRTC_CODEC_ISACFX)
-    NamedEncoderFactory::ForEncoder<AudioEncoderIsacFix>(),
+    NamedEncoderFactory::ForEncoder<AudioEncoderIsacFixImpl>(),
 #elif defined(WEBRTC_CODEC_ISAC)
-    NamedEncoderFactory::ForEncoder<AudioEncoderIsac>(),
+    NamedEncoderFactory::ForEncoder<AudioEncoderIsacFloatImpl>(),
 #endif
 
 #ifdef WEBRTC_CODEC_OPUS

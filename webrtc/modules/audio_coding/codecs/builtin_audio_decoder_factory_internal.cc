@@ -91,7 +91,7 @@ NamedDecoderConstructor decoder_constructors[] = {
      [](const SdpAudioFormat& format, std::unique_ptr<AudioDecoder>* out) {
        if (format.clockrate_hz == 16000 && format.num_channels == 1) {
          if (out) {
-           out->reset(new AudioDecoderIsacFix(format.clockrate_hz));
+           out->reset(new AudioDecoderIsacFixImpl(format.clockrate_hz));
          }
          return true;
        } else {
@@ -104,7 +104,7 @@ NamedDecoderConstructor decoder_constructors[] = {
        if ((format.clockrate_hz == 16000 || format.clockrate_hz == 32000) &&
            format.num_channels == 1) {
          if (out) {
-           out->reset(new AudioDecoderIsac(format.clockrate_hz));
+           out->reset(new AudioDecoderIsacFloatImpl(format.clockrate_hz));
          }
          return true;
        } else {

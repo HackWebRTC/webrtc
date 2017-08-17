@@ -154,12 +154,12 @@ std::unique_ptr<AudioEncoder> CreateEncoder(
 #if defined(WEBRTC_CODEC_ISACFX)
   if (STR_CASE_CMP(speech_inst.plname, "isac") == 0)
     return std::unique_ptr<AudioEncoder>(
-        new AudioEncoderIsacFix(speech_inst, bwinfo));
+        new AudioEncoderIsacFixImpl(speech_inst, bwinfo));
 #endif
 #if defined(WEBRTC_CODEC_ISAC)
   if (STR_CASE_CMP(speech_inst.plname, "isac") == 0)
     return std::unique_ptr<AudioEncoder>(
-        new AudioEncoderIsac(speech_inst, bwinfo));
+        new AudioEncoderIsacFloatImpl(speech_inst, bwinfo));
 #endif
 #ifdef WEBRTC_CODEC_OPUS
   if (STR_CASE_CMP(speech_inst.plname, "opus") == 0)
@@ -229,10 +229,10 @@ std::unique_ptr<AudioDecoder> CreateIsacDecoder(
     const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo) {
 #if defined(WEBRTC_CODEC_ISACFX)
   return std::unique_ptr<AudioDecoder>(
-      new AudioDecoderIsacFix(sample_rate_hz, bwinfo));
+      new AudioDecoderIsacFixImpl(sample_rate_hz, bwinfo));
 #elif defined(WEBRTC_CODEC_ISAC)
   return std::unique_ptr<AudioDecoder>(
-      new AudioDecoderIsac(sample_rate_hz, bwinfo));
+      new AudioDecoderIsacFloatImpl(sample_rate_hz, bwinfo));
 #else
   FATAL() << "iSAC is not supported.";
   return std::unique_ptr<AudioDecoder>();
