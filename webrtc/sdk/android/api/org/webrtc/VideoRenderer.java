@@ -104,6 +104,7 @@ public class VideoRenderer {
         this.yuvPlanes = null;
       } else {
         VideoFrame.I420Buffer i420Buffer = buffer.toI420();
+        buffer.release();
         this.yuvFrame = true;
         this.yuvStrides =
             new int[] {i420Buffer.getStrideY(), i420Buffer.getStrideU(), i420Buffer.getStrideV()};
