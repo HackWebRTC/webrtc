@@ -64,15 +64,15 @@ void VP9EncoderImpl::EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
 
 VP9EncoderImpl::VP9EncoderImpl()
     : encoded_image_(),
-      encoded_complete_callback_(NULL),
+      encoded_complete_callback_(nullptr),
       inited_(false),
       timestamp_(0),
       cpu_speed_(3),
       rc_max_intra_target_(0),
-      encoder_(NULL),
-      config_(NULL),
-      raw_(NULL),
-      input_image_(NULL),
+      encoder_(nullptr),
+      config_(nullptr),
+      raw_(nullptr),
+      input_image_(nullptr),
       frames_since_kf_(0),
       num_temporal_layers_(0),
       num_spatial_layers_(0),
@@ -93,24 +93,24 @@ VP9EncoderImpl::~VP9EncoderImpl() {
 }
 
 int VP9EncoderImpl::Release() {
-  if (encoded_image_._buffer != NULL) {
+  if (encoded_image_._buffer != nullptr) {
     delete[] encoded_image_._buffer;
-    encoded_image_._buffer = NULL;
+    encoded_image_._buffer = nullptr;
   }
-  if (encoder_ != NULL) {
+  if (encoder_ != nullptr) {
     if (vpx_codec_destroy(encoder_)) {
       return WEBRTC_VIDEO_CODEC_MEMORY;
     }
     delete encoder_;
-    encoder_ = NULL;
+    encoder_ = nullptr;
   }
-  if (config_ != NULL) {
+  if (config_ != nullptr) {
     delete config_;
-    config_ = NULL;
+    config_ = nullptr;
   }
-  if (raw_ != NULL) {
+  if (raw_ != nullptr) {
     vpx_img_free(raw_);
-    raw_ = NULL;
+    raw_ = nullptr;
   }
   inited_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
@@ -232,7 +232,7 @@ int VP9EncoderImpl::SetRateAllocation(
 int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
                                int number_of_cores,
                                size_t /*max_payload_size*/) {
-  if (inst == NULL) {
+  if (inst == nullptr) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   if (inst->maxFramerate < 1) {
@@ -260,10 +260,10 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (ret_val < 0) {
     return ret_val;
   }
-  if (encoder_ == NULL) {
+  if (encoder_ == nullptr) {
     encoder_ = new vpx_codec_ctx_t;
   }
-  if (config_ == NULL) {
+  if (config_ == nullptr) {
     config_ = new vpx_codec_enc_cfg_t;
   }
   timestamp_ = 0;
@@ -277,18 +277,18 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
     num_temporal_layers_ = 1;
 
   // Allocate memory for encoded image
-  if (encoded_image_._buffer != NULL) {
+  if (encoded_image_._buffer != nullptr) {
     delete[] encoded_image_._buffer;
   }
   encoded_image_._size =
       CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
   encoded_image_._completeFrame = true;
-  // Creating a wrapper to the image - setting image data to NULL. Actual
+  // Creating a wrapper to the image - setting image data to nullptr. Actual
   // pointer will be set in encode. Setting align to 1, as it is meaningless
   // (actual memory is not allocated).
-  raw_ = vpx_img_wrap(NULL, VPX_IMG_FMT_I420, codec_.width, codec_.height, 1,
-                      NULL);
+  raw_ = vpx_img_wrap(nullptr, VPX_IMG_FMT_I420, codec_.width, codec_.height, 1,
+                      nullptr);
   // Populate encoder configuration with default values.
   if (vpx_codec_enc_config_default(vpx_codec_vp9_cx(), config_, 0)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -490,7 +490,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (encoded_complete_callback_ == NULL) {
+  if (encoded_complete_callback_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   FrameType frame_type = kVideoFrameDelta;
@@ -547,7 +547,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
     vpx_codec_control(encoder_, VP9E_SET_SVC_REF_FRAME_CONFIG, &enc_layer_conf);
   }
 
-  assert(codec_.maxFramerate > 0);
+  RTC_CHECK_GT(codec_.maxFramerate, 0);
   uint32_t duration = 90000 / codec_.maxFramerate;
   if (vpx_codec_encode(encoder_, raw_, timestamp_, duration, flags,
                        VPX_DL_REALTIME)) {
@@ -561,7 +561,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
 void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                                            const vpx_codec_cx_pkt& pkt,
                                            uint32_t timestamp) {
-  assert(codec_specific != NULL);
+  RTC_CHECK(codec_specific != nullptr);
   codec_specific->codecType = kVideoCodecVP9;
   codec_specific->codec_name = ImplementationName();
   CodecSpecificInfoVP9* vp9_info = &(codec_specific->codecSpecific.VP9);
@@ -577,16 +577,16 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
 
-  assert(num_temporal_layers_ > 0);
-  assert(num_spatial_layers_ > 0);
+  RTC_CHECK_GT(num_temporal_layers_, 0);
+  RTC_CHECK_GT(num_spatial_layers_, 0);
   if (num_temporal_layers_ == 1) {
-    assert(layer_id.temporal_layer_id == 0);
+    RTC_CHECK_EQ(layer_id.temporal_layer_id, 0);
     vp9_info->temporal_idx = kNoTemporalIdx;
   } else {
     vp9_info->temporal_idx = layer_id.temporal_layer_id;
   }
   if (num_spatial_layers_ == 1) {
-    assert(layer_id.spatial_layer_id == 0);
+    RTC_CHECK_EQ(layer_id.spatial_layer_id, 0);
     vp9_info->spatial_idx = kNoSpatialIdx;
   } else {
     vp9_info->spatial_idx = layer_id.spatial_layer_id;
@@ -846,9 +846,9 @@ VP9Decoder* VP9Decoder::Create() {
 }
 
 VP9DecoderImpl::VP9DecoderImpl()
-    : decode_complete_callback_(NULL),
+    : decode_complete_callback_(nullptr),
       inited_(false),
-      decoder_(NULL),
+      decoder_(nullptr),
       key_frame_required_(true) {
   memset(&codec_, 0, sizeof(codec_));
 }
@@ -867,14 +867,14 @@ VP9DecoderImpl::~VP9DecoderImpl() {
 }
 
 int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
-  if (inst == NULL) {
+  if (inst == nullptr) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   int ret_val = Release();
   if (ret_val < 0) {
     return ret_val;
   }
-  if (decoder_ == NULL) {
+  if (decoder_ == nullptr) {
     decoder_ = new vpx_codec_ctx_t;
   }
   vpx_codec_dec_cfg_t cfg;
@@ -908,7 +908,7 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (decode_complete_callback_ == NULL) {
+  if (decode_complete_callback_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   // Always start with a complete key frame.
@@ -922,11 +922,11 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
   }
-  vpx_codec_iter_t iter = NULL;
+  vpx_codec_iter_t iter = nullptr;
   vpx_image_t* img;
   uint8_t* buffer = input_image._buffer;
   if (input_image._length == 0) {
-    buffer = NULL;  // Triggers full frame concealment.
+    buffer = nullptr;  // Triggers full frame concealment.
   }
   // During decode libvpx may get and release buffers from |frame_buffer_pool_|.
   // In practice libvpx keeps a few (~3-4) buffers alive at a time.
@@ -955,8 +955,8 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
                                 uint32_t timestamp,
                                 int64_t ntp_time_ms,
                                 int qp) {
-  if (img == NULL) {
-    // Decoder OK and NULL image => No show frame.
+  if (img == nullptr) {
+    // Decoder OK and nullptr image => No show frame.
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
 
@@ -994,14 +994,14 @@ int VP9DecoderImpl::RegisterDecodeCompleteCallback(
 }
 
 int VP9DecoderImpl::Release() {
-  if (decoder_ != NULL) {
+  if (decoder_ != nullptr) {
     // When a codec is destroyed libvpx will release any buffers of
     // |frame_buffer_pool_| it is currently using.
     if (vpx_codec_destroy(decoder_)) {
       return WEBRTC_VIDEO_CODEC_MEMORY;
     }
     delete decoder_;
-    decoder_ = NULL;
+    decoder_ = nullptr;
   }
   // Releases buffers from the pool. Any buffers not in use are deleted. Buffers
   // still referenced externally are deleted once fully released, not returning
