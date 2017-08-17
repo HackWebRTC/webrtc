@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCVideoFrame.h"
-#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCVideoFrameBuffer.h"
+#import "WebRTC/RTCVideoFrame.h"
+#import "WebRTC/RTCVideoFrameBuffer.h"
 
 @implementation RTCVideoFrame {
   RTCVideoRotation _rotation;

@@ -14,8 +14,6 @@
 
 #import "RTCVideoCodec+Private.h"
 #import "WebRTC/RTCVideoCodec.h"
-#import "WebRTC/RTCVideoFrame.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
 
 #include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
