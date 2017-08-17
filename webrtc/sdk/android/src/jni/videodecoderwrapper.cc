@@ -12,6 +12,8 @@
 
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
+#include "webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
@@ -70,6 +72,8 @@ VideoDecoderWrapper::VideoDecoderWrapper(JNIEnv* jni, jobject decoder)
   int_value_method_ = jni->GetMethodID(*integer_class_, "intValue", "()I");
 
   initialized_ = false;
+  // QP parsing starts enabled and we disable it if the decoder provides frames.
+  qp_parsing_enabled_ = true;
 }
 
 int32_t VideoDecoderWrapper::InitDecode(
@@ -100,6 +104,11 @@ int32_t VideoDecoderWrapper::InitDecodeInternal(JNIEnv* jni) {
   if (jni->CallIntMethod(ret, get_number_method_) == WEBRTC_VIDEO_CODEC_OK) {
     initialized_ = true;
   }
+
+  // The decoder was reinitialized so re-enable the QP parsing in case it stops
+  // providing QP values.
+  qp_parsing_enabled_ = true;
+
   return HandleReturnCode(jni, ret);
 }
 
@@ -120,6 +129,8 @@ int32_t VideoDecoderWrapper::Decode(
   FrameExtraInfo frame_extra_info;
   frame_extra_info.capture_time_ms = input_image.capture_time_ms_;
   frame_extra_info.timestamp_rtp = input_image._timeStamp;
+  frame_extra_info.qp =
+      qp_parsing_enabled_ ? ParseQP(input_image) : rtc::Optional<uint8_t>();
   frame_extra_infos_.push_back(frame_extra_info);
 
   jobject jinput_image =
@@ -189,9 +200,16 @@ void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* jni,
   rtc::Optional<uint8_t> qp;
   if (jqp != nullptr) {
     qp = rtc::Optional<uint8_t>(jni->CallIntMethod(jqp, int_value_method_));
+    // The decoder provides QP values itself, no need to parse the bitstream.
+    qp_parsing_enabled_ = false;
+  } else {
+    qp = frame_extra_info.qp;
+    // The decoder doesn't provide QP values, ensure bitstream parsing is
+    // enabled.
+    qp_parsing_enabled_ = true;
   }
 
-  callback_->Decoded(frame, decoding_time_ms, rtc::Optional<uint8_t>());
+  callback_->Decoded(frame, decoding_time_ms, qp);
 }
 
 jobject VideoDecoderWrapper::ConvertEncodedImageToJavaEncodedImage(
@@ -240,6 +258,45 @@ int32_t VideoDecoderWrapper::HandleReturnCode(JNIEnv* jni, jobject code) {
   } else {
     return value;
   }
+}
+
+rtc::Optional<uint8_t> VideoDecoderWrapper::ParseQP(
+    const webrtc::EncodedImage& input_image) {
+  if (input_image.qp_ != -1) {
+    return rtc::Optional<uint8_t>(input_image.qp_);
+  }
+
+  rtc::Optional<uint8_t> qp;
+  switch (codec_settings_.codecType) {
+    case webrtc::kVideoCodecVP8: {
+      int qp_int;
+      if (webrtc::vp8::GetQp(input_image._buffer, input_image._length,
+                             &qp_int)) {
+        qp = rtc::Optional<uint8_t>(qp_int);
+      }
+      break;
+    }
+    case webrtc::kVideoCodecVP9: {
+      int qp_int;
+      if (webrtc::vp9::GetQp(input_image._buffer, input_image._length,
+                             &qp_int)) {
+        qp = rtc::Optional<uint8_t>(qp_int);
+      }
+      break;
+    }
+    case webrtc::kVideoCodecH264: {
+      h264_bitstream_parser_.ParseBitstream(input_image._buffer,
+                                            input_image._length);
+      int qp_int;
+      if (h264_bitstream_parser_.GetLastSliceQp(&qp_int)) {
+        qp = rtc::Optional<uint8_t>(qp_int);
+      }
+      break;
+    }
+    default:
+      break;  // Default is to not provide QP.
+  }
+  return qp;
 }
 
 JOW(void, VideoDecoderWrapperCallback_nativeOnDecodedFrame)

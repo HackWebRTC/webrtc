@@ -12,10 +12,10 @@
 #define WEBRTC_SDK_ANDROID_SRC_JNI_VIDEODECODERWRAPPER_H_
 
 #include <jni.h>
-
 #include <deque>
 
 #include "webrtc/api/video_codecs/video_decoder.h"
+#include "webrtc/common_video/h264/h264_bitstream_parser.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/native_handle_impl.h"
 
@@ -60,6 +60,7 @@ class VideoDecoderWrapper : public webrtc::VideoDecoder {
     uint32_t capture_time_ms;  // Used as an identifier of the frame.
 
     uint32_t timestamp_rtp;
+    rtc::Optional<uint8_t> qp;
   };
 
   int32_t InitDecodeInternal(JNIEnv* jni);
@@ -68,12 +69,16 @@ class VideoDecoderWrapper : public webrtc::VideoDecoder {
   // status code.
   int32_t HandleReturnCode(JNIEnv* jni, jobject code);
 
+  rtc::Optional<uint8_t> ParseQP(const webrtc::EncodedImage& input_image);
+
   webrtc::VideoCodec codec_settings_;
   int32_t number_of_cores_;
 
   bool initialized_;
   AndroidVideoBufferFactory android_video_buffer_factory_;
   std::deque<FrameExtraInfo> frame_extra_infos_;
+  bool qp_parsing_enabled_;
+  webrtc::H264BitstreamParser h264_bitstream_parser_;
 
   webrtc::DecodedImageCallback* callback_;
 
