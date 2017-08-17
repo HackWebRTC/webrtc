@@ -52,22 +52,24 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   // If |forced_fallback_possible_| is true:
   // The forced fallback is requested if the target bitrate is below |low_kbps|
   // for more than |min_low_ms| and the input video resolution is not larger
-  // than |kMaxPixels|.
-  // If the bitrate is above |high_kbps|, the forced fallback is requested to
-  // immediately be stopped.
+  // than |kMaxPixelsStart|.
+  // If the bitrate is above |high_kbps| and the resolution is not smaller than
+  // |kMinPixelsStop|, the forced fallback is requested to immediately be
+  // stopped.
   class ForcedFallbackParams {
    public:
     bool ShouldStart(uint32_t bitrate_kbps, const VideoCodec& codec);
-    bool ShouldStop(uint32_t bitrate_kbps) const;
+    bool ShouldStop(uint32_t bitrate_kbps, const VideoCodec& codec) const;
     void Reset() { start_ms.reset(); }
     bool IsValid(const VideoCodec& codec) const {
-      return codec.width * codec.height <= kMaxPixels;
+      return codec.width * codec.height <= kMaxPixelsStart;
     }
     rtc::Optional<int64_t> start_ms;  // Set when bitrate is below |low_kbps|.
     uint32_t low_kbps = 100;
     uint32_t high_kbps = 150;
     int64_t min_low_ms = 10000;
-    const int kMaxPixels = 320 * 240;
+    const int kMaxPixelsStart = 320 * 240;
+    const int kMinPixelsStop = 320 * 180;
   };
 
   bool RequestForcedFallback();

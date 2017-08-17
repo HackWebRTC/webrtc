@@ -464,6 +464,7 @@ if (rtc_include_tests) {
       "../../api:video_frame_api",
       "../../common_video:common_video",
       "../../rtc_base:rtc_base_approved",
+      "../../test:field_trial",
       "../../test:test_support",
       "../../test:video_test_common",
       "../video_capture",

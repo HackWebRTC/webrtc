@@ -38,12 +38,6 @@ namespace {
 
 // Time interval for logging frame counts.
 const int64_t kFrameLogIntervalMs = 60000;
-
-// We will never ask for a resolution lower than this.
-// TODO(kthelgason): Lower this limit when better testing
-// on MediaCodec and fallback implementations are in place.
-// See https://bugs.chromium.org/p/webrtc/issues/detail?id=7206
-const int kMinPixelsPerFrame = 320 * 180;
 const int kMinFramerateFps = 2;
 const int kMaxFramerateFps = 120;
 
@@ -233,7 +227,7 @@ class VideoStreamEncoder::VideoSourceProxy {
       source_->AddOrUpdateSink(video_stream_encoder_, sink_wants_);
   }
 
-  bool RequestResolutionLowerThan(int pixel_count) {
+  bool RequestResolutionLowerThan(int pixel_count, int min_pixels_per_frame) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
     if (!source_ || !IsResolutionScalingEnabled(degradation_preference_)) {
@@ -244,7 +238,7 @@ class VideoStreamEncoder::VideoSourceProxy {
     // The input video frame size will have a resolution less than or equal to
     // |max_pixel_count| depending on how the source can scale the frame size.
     const int pixels_wanted = (pixel_count * 3) / 5;
-    if (pixels_wanted < kMinPixelsPerFrame ||
+    if (pixels_wanted < min_pixels_per_frame ||
         pixels_wanted >= sink_wants_.max_pixel_count) {
       return false;
     }
@@ -990,7 +984,8 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
     case VideoSendStream::DegradationPreference::kMaintainFramerate:
       // Scale down resolution.
       if (!source_proxy_->RequestResolutionLowerThan(
-              adaptation_request.input_pixel_count_)) {
+              adaptation_request.input_pixel_count_,
+              settings_.encoder->GetScalingSettings().min_pixels_per_frame)) {
         return;
       }
       GetAdaptCounter().IncrementResolution(reason);

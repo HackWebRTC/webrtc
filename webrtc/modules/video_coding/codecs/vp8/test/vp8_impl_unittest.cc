@@ -20,9 +20,11 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/test/field_trial.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/video_codec_settings.h"
 
 namespace webrtc {
 
@@ -39,6 +41,10 @@ enum { kMaxWaitDecTimeMs = 25 };
 constexpr uint32_t kTestTimestamp = 123;
 constexpr int64_t kTestNtpTimeMs = 456;
 constexpr uint32_t kTimestampIncrementPerFrame = 3000;
+constexpr int kNumCores = 1;
+constexpr size_t kMaxPayloadSize = 1440;
+constexpr int kMinPixelsPerFrame = 12345;
+constexpr int kDefaultMinPixelsPerFrame = 320 * 180;
 
 }  // namespace
 
@@ -143,6 +149,10 @@ void Vp8UnitTestDecodeCompleteCallback::Decoded(
 
 class TestVp8Impl : public ::testing::Test {
  protected:
+  TestVp8Impl() : TestVp8Impl("") {}
+  explicit TestVp8Impl(const std::string& field_trials)
+      : override_field_trials_(field_trials) {}
+
   virtual void SetUp() {
     encoder_.reset(VP8Encoder::Create());
     decoder_.reset(VP8Decoder::Create());
@@ -190,9 +200,11 @@ class TestVp8Impl : public ::testing::Test {
     codec_settings_.VP8()->tl_factory = &tl_factory_;
     codec_settings_.VP8()->numberOfTemporalLayers = 1;
 
+    EXPECT_EQ(
+        WEBRTC_VIDEO_CODEC_OK,
+        encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-              encoder_->InitEncode(&codec_settings_, 1, 1440));
-    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->InitDecode(&codec_settings_, 1));
+              decoder_->InitDecode(&codec_settings_, kNumCores));
   }
 
   size_t WaitForEncodedFrame() const {
@@ -228,6 +240,7 @@ class TestVp8Impl : public ::testing::Test {
   const int kWidth = 172;
   const int kHeight = 144;
 
+  test::ScopedFieldTrials override_field_trials_;
   std::unique_ptr<Vp8UnitTestEncodeCompleteCallback> encode_complete_callback_;
   std::unique_ptr<Vp8UnitTestDecodeCompleteCallback> decode_complete_callback_;
   std::unique_ptr<uint8_t[]> source_buffer_;
@@ -266,12 +279,13 @@ TEST_F(TestVp8Impl, EncoderParameterTest) {
                                         codec_settings_.maxFramerate));
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(&codec_settings_, 1, 1440));
+            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
 
   // Decoder parameter tests.
   // Calls before InitDecode().
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Release());
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->InitDecode(&codec_settings_, 1));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            decoder_->InitDecode(&codec_settings_, kNumCores));
 }
 
 // We only test the encoder here, since the decoded frame rotation is set based
@@ -374,7 +388,7 @@ TEST_F(TestVp8Impl, EncoderRetainsRtpStateAfterRelease) {
   // Override default settings.
   codec_settings_.VP8()->numberOfTemporalLayers = 2;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(&codec_settings_, 1, 1440));
+            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
 
   // Temporal layer 0.
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
@@ -410,7 +424,7 @@ TEST_F(TestVp8Impl, EncoderRetainsRtpStateAfterRelease) {
   // Reinit.
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(&codec_settings_, 1, 1440));
+            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
 
   // Temporal layer 0.
   input_frame_->set_timestamp(input_frame_->timestamp() +
@@ -443,6 +457,48 @@ TEST_F(TestVp8Impl, EncoderRetainsRtpStateAfterRelease) {
             encoder_->Encode(*input_frame_, nullptr, nullptr));
   ExpectFrameWith((picture_id + 7) % (1 << 15), (tl0_pic_idx + 3) % (1 << 8),
                   1);
+}
+
+TEST_F(TestVp8Impl, ScalingDisabledIfAutomaticResizeOff) {
+  webrtc::test::CodecSettings(kVideoCodecVP8, &codec_settings_);
+  codec_settings_.VP8()->tl_factory = &tl_factory_;
+  codec_settings_.VP8()->automaticResizeOn = false;
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
+  VideoEncoder::ScalingSettings settings = encoder_->GetScalingSettings();
+  EXPECT_FALSE(settings.enabled);
+}
+
+TEST_F(TestVp8Impl, ScalingEnabledIfAutomaticResizeOn) {
+  webrtc::test::CodecSettings(kVideoCodecVP8, &codec_settings_);
+  codec_settings_.VP8()->tl_factory = &tl_factory_;
+  codec_settings_.VP8()->automaticResizeOn = true;
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
+  VideoEncoder::ScalingSettings settings = encoder_->GetScalingSettings();
+  EXPECT_TRUE(settings.enabled);
+  EXPECT_EQ(kDefaultMinPixelsPerFrame, settings.min_pixels_per_frame);
+}
+
+class TestVp8ImplWithForcedFallbackEnabled : public TestVp8Impl {
+ public:
+  TestVp8ImplWithForcedFallbackEnabled()
+      : TestVp8Impl("WebRTC-VP8-Forced-Fallback-Encoder/Enabled-1,2,3," +
+                    std::to_string(kMinPixelsPerFrame) + "/") {}
+};
+
+TEST_F(TestVp8ImplWithForcedFallbackEnabled, MinPixelsPerFrameConfigured) {
+  webrtc::test::CodecSettings(kVideoCodecVP8, &codec_settings_);
+  codec_settings_.VP8()->tl_factory = &tl_factory_;
+  codec_settings_.VP8()->automaticResizeOn = true;
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
+  VideoEncoder::ScalingSettings settings = encoder_->GetScalingSettings();
+  EXPECT_TRUE(settings.enabled);
+  EXPECT_EQ(kMinPixelsPerFrame, settings.min_pixels_per_frame);
 }
 
 }  // namespace webrtc

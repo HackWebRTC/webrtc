@@ -29,8 +29,6 @@
 #include "webrtc/video/video_stream_encoder.h"
 
 namespace {
-// TODO(kthelgason): Lower this limit when better testing
-// on MediaCodec and fallback implementations are in place.
 const int kMinPixelsPerFrame = 320 * 180;
 const int kMinFramerateFps = 2;
 const int64_t kFrameTimeoutMs = 100;
@@ -482,7 +480,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     VideoEncoder::ScalingSettings GetScalingSettings() const override {
       rtc::CritScope lock(&local_crit_sect_);
       if (quality_scaling_)
-        return VideoEncoder::ScalingSettings(true, 1, 2);
+        return VideoEncoder::ScalingSettings(true, 1, 2, kMinPixelsPerFrame);
       return VideoEncoder::ScalingSettings(false);
     }
 
@@ -1909,7 +1907,7 @@ TEST_F(VideoStreamEncoderTest, DoesNotScaleBelowSetResolutionLimit) {
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   // Enable adapter, expected input resolutions when downscaling:
-  // 1280x720 -> 960x540 -> 640x360 -> 480x270 -> 320x180 (min resolution limit)
+  // 1280x720 -> 960x540 -> 640x360 -> 480x270 -> 320x180 (kMinPixelsPerFrame)
   video_source_.set_adaptation_enabled(true);
 
   EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_resolution);

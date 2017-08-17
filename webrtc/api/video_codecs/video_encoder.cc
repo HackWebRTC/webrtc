@@ -64,6 +64,17 @@ VideoEncoder::ScalingSettings::ScalingSettings(bool on, int low, int high)
     : enabled(on),
       thresholds(rtc::Optional<QpThresholds>(QpThresholds(low, high))) {}
 
+VideoEncoder::ScalingSettings::ScalingSettings(bool on,
+                                               int low,
+                                               int high,
+                                               int min_pixels)
+    : enabled(on),
+      thresholds(rtc::Optional<QpThresholds>(QpThresholds(low, high))),
+      min_pixels_per_frame(min_pixels) {}
+
+VideoEncoder::ScalingSettings::ScalingSettings(bool on, int min_pixels)
+    : enabled(on), min_pixels_per_frame(min_pixels) {}
+
 VideoEncoder::ScalingSettings::ScalingSettings(bool on) : enabled(on) {}
 
 VideoEncoder::ScalingSettings::~ScalingSettings() {}

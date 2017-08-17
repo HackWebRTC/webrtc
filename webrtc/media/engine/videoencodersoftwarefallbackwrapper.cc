@@ -50,12 +50,14 @@ void GetForcedFallbackParamsFromFieldTrialGroup(uint32_t* param_low_kbps,
   int low_kbps;
   int high_kbps;
   int min_low_ms;
-  if (sscanf(group.c_str(), "Enabled-%d,%d,%d", &low_kbps, &high_kbps,
-             &min_low_ms) != 3) {
+  int min_pixels;
+  if (sscanf(group.c_str(), "Enabled-%d,%d,%d,%d", &low_kbps, &high_kbps,
+             &min_low_ms, &min_pixels) != 4) {
     LOG(LS_WARNING) << "Invalid number of forced fallback parameters provided.";
     return;
   }
-  if (min_low_ms <= 0 || low_kbps <= 0 || high_kbps <= low_kbps) {
+  if (min_low_ms <= 0 || min_pixels <= 0 || low_kbps <= 0 ||
+      high_kbps <= low_kbps) {
     LOG(LS_WARNING) << "Invalid forced fallback parameter value provided.";
     return;
   }
@@ -245,6 +247,8 @@ bool VideoEncoderSoftwareFallbackWrapper::SupportsNativeHandle() const {
 
 VideoEncoder::ScalingSettings
 VideoEncoderSoftwareFallbackWrapper::GetScalingSettings() const {
+  if (forced_fallback_possible_ && fallback_encoder_)
+    return fallback_encoder_->GetScalingSettings();
   return encoder_->GetScalingSettings();
 }
 
@@ -272,8 +276,10 @@ bool VideoEncoderSoftwareFallbackWrapper::TryReleaseForcedFallbackEncoder() {
   if (!IsForcedFallbackActive())
     return false;
 
-  if (!forced_fallback_.ShouldStop(bitrate_allocation_.get_sum_kbps()))
+  if (!forced_fallback_.ShouldStop(bitrate_allocation_.get_sum_kbps(),
+                                   codec_settings_)) {
     return false;
+  }
 
   // Release the forced fallback encoder.
   if (encoder_->InitEncode(&codec_settings_, number_of_cores_,
@@ -343,8 +349,10 @@ bool VideoEncoderSoftwareFallbackWrapper::ForcedFallbackParams::ShouldStart(
 }
 
 bool VideoEncoderSoftwareFallbackWrapper::ForcedFallbackParams::ShouldStop(
-    uint32_t bitrate_kbps) const {
-  return bitrate_kbps >= high_kbps;
+    uint32_t bitrate_kbps,
+    const VideoCodec& codec) const {
+  return bitrate_kbps >= high_kbps &&
+         (codec.width * codec.height >= kMinPixelsStop);
 }
 
 }  // namespace webrtc
