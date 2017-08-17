@@ -32,11 +32,27 @@ class MediaStreamObserver;
 class VideoRtpReceiver;
 class RtcEventLog;
 
-// TODO(zhihuang): Remove this declaration when the WebRtcSession tests don't
-// need it.
-void ExtractSharedMediaSessionOptions(
+// Populates |session_options| from |rtc_options|, and returns true if options
+// are valid.
+// |session_options|->transport_options map entries must exist in order for
+// them to be populated from |rtc_options|.
+bool ExtractMediaSessionOptions(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
+    bool is_offer,
     cricket::MediaSessionOptions* session_options);
+
+// Populates |session_options| from |constraints|, and returns true if all
+// mandatory constraints are satisfied.
+// Assumes that |session_options|->transport_options map entries exist.
+// Will also set defaults if corresponding constraints are not present:
+// recv_audio=true, recv_video=true, bundle_enabled=true.
+// Other fields will be left with existing values.
+//
+// Deprecated. Will be removed once callers that use constraints are gone.
+// TODO(hta): Remove when callers are gone.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5617
+bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
+                               cricket::MediaSessionOptions* session_options);
 
 // PeerConnection implements the PeerConnectionInterface interface.
 // It uses WebRtcSession to implement the PeerConnection functionality.
@@ -228,24 +244,26 @@ class PeerConnection : public PeerConnectionInterface,
 
   // Returns a MediaSessionOptions struct with options decided by |options|,
   // the local MediaStreams and DataChannels.
-  void GetOptionsForOffer(
+  virtual bool GetOptionsForOffer(
       const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
       cricket::MediaSessionOptions* session_options);
 
   // Returns a MediaSessionOptions struct with options decided by
   // |constraints|, the local MediaStreams and DataChannels.
-  void GetOptionsForAnswer(const RTCOfferAnswerOptions& options,
-                           cricket::MediaSessionOptions* session_options);
+  // Deprecated, use version without constraints.
+  virtual bool GetOptionsForAnswer(
+      const MediaConstraintsInterface* constraints,
+      cricket::MediaSessionOptions* session_options);
+  virtual bool GetOptionsForAnswer(
+      const RTCOfferAnswerOptions& options,
+      cricket::MediaSessionOptions* session_options);
 
-  // Generates MediaDescriptionOptions for the |session_opts| based on existing
-  // local description or remote description.
-  void GenerateMediaDescriptionOptions(
-      const SessionDescriptionInterface* session_desc,
-      cricket::RtpTransceiverDirection audio_direction,
-      cricket::RtpTransceiverDirection video_direction,
-      int* audio_index,
-      int* video_index,
-      int* data_index,
+  void InitializeOptionsForAnswer(
+      cricket::MediaSessionOptions* session_options);
+
+  // Helper function for options processing.
+  // Deprecated.
+  virtual void FinishOptionsForAnswer(
       cricket::MediaSessionOptions* session_options);
 
   // Remove all local and remote tracks of type |media_type|.
@@ -343,7 +361,6 @@ class PeerConnection : public PeerConnectionInterface,
   void OnDataChannelOpenMessage(const std::string& label,
                                 const InternalDataChannelInit& config);
 
-  bool HasRtpSender(cricket::MediaType type) const;
   RtpSenderInternal* FindSenderById(const std::string& id);
 
   std::vector<rtc::scoped_refptr<

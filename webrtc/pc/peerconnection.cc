@@ -133,45 +133,32 @@ bool IsValidOfferToReceiveMedia(int value) {
          (value <= Options::kMaxOfferToReceiveMedia);
 }
 
-// Add options to |[audio/video]_media_description_options| from |senders|.
-void AddRtpSenderOptions(
+// Add the stream and RTP data channel info to |session_options|.
+void AddSendStreams(
+    cricket::MediaSessionOptions* session_options,
     const std::vector<rtc::scoped_refptr<
         RtpSenderProxyWithInternal<RtpSenderInternal>>>& senders,
-    cricket::MediaDescriptionOptions* audio_media_description_options,
-    cricket::MediaDescriptionOptions* video_media_description_options) {
-  for (const auto& sender : senders) {
-    if (sender->media_type() == cricket::MEDIA_TYPE_AUDIO) {
-      if (audio_media_description_options) {
-        audio_media_description_options->AddAudioSender(
-            sender->id(), sender->internal()->stream_id());
-      }
-    } else {
-      RTC_DCHECK(sender->media_type() == cricket::MEDIA_TYPE_VIDEO);
-      if (video_media_description_options) {
-        video_media_description_options->AddVideoSender(
-            sender->id(), sender->internal()->stream_id(), 1);
-      }
-    }
-  }
-}
-
-// Add options to |session_options| from |rtp_data_channels|.
-void AddRtpDataChannelOptions(
     const std::map<std::string, rtc::scoped_refptr<DataChannel>>&
-        rtp_data_channels,
-    cricket::MediaDescriptionOptions* data_media_description_options) {
-  if (!data_media_description_options) {
-    return;
+        rtp_data_channels) {
+  session_options->streams.clear();
+  for (const auto& sender : senders) {
+    session_options->AddSendStream(sender->media_type(), sender->id(),
+                                   sender->internal()->stream_id());
   }
+
   // Check for data channels.
   for (const auto& kv : rtp_data_channels) {
     const DataChannel* channel = kv.second;
     if (channel->state() == DataChannel::kConnecting ||
         channel->state() == DataChannel::kOpen) {
-      // Legacy RTP data channels are signaled with the track/stream ID set to
-      // the data channel's label.
-      data_media_description_options->AddRtpDataChannel(channel->label(),
-                                                        channel->label());
+      // |streamid| and |sync_label| are both set to the DataChannel label
+      // here so they can be signaled the same way as MediaStreams and Tracks.
+      // For MediaStreams, the sync_label is the MediaStream label and the
+      // track label is the same as |streamid|.
+      const std::string& streamid = channel->label();
+      const std::string& sync_label = channel->label();
+      session_options->AddSendStream(cricket::MEDIA_TYPE_DATA, streamid,
+                                     sync_label);
     }
   }
 }
@@ -327,62 +314,92 @@ std::string GenerateRtcpCname() {
   return cname;
 }
 
-bool ValidateOfferAnswerOptions(
-    const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options) {
-  return IsValidOfferToReceiveMedia(rtc_options.offer_to_receive_audio) &&
-         IsValidOfferToReceiveMedia(rtc_options.offer_to_receive_video);
-}
-
-// From |rtc_options|, fill parts of |session_options| shared by all generated
-// m= sections (in other words, nothing that involves a map/array).
-void ExtractSharedMediaSessionOptions(
+bool ExtractMediaSessionOptions(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
+    bool is_offer,
     cricket::MediaSessionOptions* session_options) {
-  session_options->vad_enabled = rtc_options.voice_activity_detection;
-  session_options->bundle_enabled = rtc_options.use_rtp_mux;
-}
-
-bool ConvertConstraintsToOfferAnswerOptions(
-    const MediaConstraintsInterface* constraints,
-    PeerConnectionInterface::RTCOfferAnswerOptions* offer_answer_options) {
-  if (!constraints) {
-    return true;
+  typedef PeerConnectionInterface::RTCOfferAnswerOptions RTCOfferAnswerOptions;
+  if (!IsValidOfferToReceiveMedia(rtc_options.offer_to_receive_audio) ||
+      !IsValidOfferToReceiveMedia(rtc_options.offer_to_receive_video)) {
+    return false;
   }
 
+  // If constraints don't prevent us, we always accept video.
+  if (rtc_options.offer_to_receive_audio != RTCOfferAnswerOptions::kUndefined) {
+    session_options->recv_audio = (rtc_options.offer_to_receive_audio > 0);
+  } else {
+    session_options->recv_audio = true;
+  }
+  // For offers, we only offer video if we have it or it's forced by options.
+  // For answers, we will always accept video (if offered).
+  if (rtc_options.offer_to_receive_video != RTCOfferAnswerOptions::kUndefined) {
+    session_options->recv_video = (rtc_options.offer_to_receive_video > 0);
+  } else if (is_offer) {
+    session_options->recv_video = false;
+  } else {
+    session_options->recv_video = true;
+  }
+
+  session_options->vad_enabled = rtc_options.voice_activity_detection;
+  session_options->bundle_enabled = rtc_options.use_rtp_mux;
+  for (auto& kv : session_options->transport_options) {
+    kv.second.ice_restart = rtc_options.ice_restart;
+  }
+
+  return true;
+}
+
+bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
+                               cricket::MediaSessionOptions* session_options) {
   bool value = false;
   size_t mandatory_constraints_satisfied = 0;
 
-  if (FindConstraint(constraints,
-                     MediaConstraintsInterface::kOfferToReceiveAudio, &value,
-                     &mandatory_constraints_satisfied)) {
-    offer_answer_options->offer_to_receive_audio =
-        value ? PeerConnectionInterface::RTCOfferAnswerOptions::
-                    kOfferToReceiveMediaTrue
-              : 0;
+  // kOfferToReceiveAudio defaults to true according to spec.
+  if (!FindConstraint(constraints,
+                      MediaConstraintsInterface::kOfferToReceiveAudio, &value,
+                      &mandatory_constraints_satisfied) ||
+      value) {
+    session_options->recv_audio = true;
   }
 
-  if (FindConstraint(constraints,
-                     MediaConstraintsInterface::kOfferToReceiveVideo, &value,
-                     &mandatory_constraints_satisfied)) {
-    offer_answer_options->offer_to_receive_video =
-        value ? PeerConnectionInterface::RTCOfferAnswerOptions::
-                    kOfferToReceiveMediaTrue
-              : 0;
+  // kOfferToReceiveVideo defaults to false according to spec. But
+  // if it is an answer and video is offered, we should still accept video
+  // per default.
+  value = false;
+  if (!FindConstraint(constraints,
+                      MediaConstraintsInterface::kOfferToReceiveVideo, &value,
+                      &mandatory_constraints_satisfied) ||
+      value) {
+    session_options->recv_video = true;
   }
+
   if (FindConstraint(constraints,
                      MediaConstraintsInterface::kVoiceActivityDetection, &value,
                      &mandatory_constraints_satisfied)) {
-    offer_answer_options->voice_activity_detection = value;
-  }
-  if (FindConstraint(constraints, MediaConstraintsInterface::kUseRtpMux, &value,
-                     &mandatory_constraints_satisfied)) {
-    offer_answer_options->use_rtp_mux = value;
-  }
-  if (FindConstraint(constraints, MediaConstraintsInterface::kIceRestart,
-                     &value, &mandatory_constraints_satisfied)) {
-    offer_answer_options->ice_restart = value;
+    session_options->vad_enabled = value;
   }
 
+  if (FindConstraint(constraints, MediaConstraintsInterface::kUseRtpMux, &value,
+                     &mandatory_constraints_satisfied)) {
+    session_options->bundle_enabled = value;
+  } else {
+    // kUseRtpMux defaults to true according to spec.
+    session_options->bundle_enabled = true;
+  }
+
+  bool ice_restart = false;
+  if (FindConstraint(constraints, MediaConstraintsInterface::kIceRestart,
+                     &value, &mandatory_constraints_satisfied)) {
+    // kIceRestart defaults to false according to spec.
+    ice_restart = true;
+  }
+  for (auto& kv : session_options->transport_options) {
+    kv.second.ice_restart = ice_restart;
+  }
+
+  if (!constraints) {
+    return true;
+  }
   return mandatory_constraints_satisfied == constraints->GetMandatory().size();
 }
 
@@ -825,17 +842,49 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
     LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
     return;
   }
-  PeerConnectionInterface::RTCOfferAnswerOptions offer_answer_options;
-  // Always create an offer even if |ConvertConstraintsToOfferAnswerOptions|
-  // returns false for now. Because |ConvertConstraintsToOfferAnswerOptions|
-  // compares the mandatory fields parsed with the mandatory fields added in the
-  // |constraints| and some downstream applications might create offers with
-  // mandatory fields which would not be parsed in the helper method. For
-  // example, in Chromium/remoting, |kEnableDtlsSrtp| is added to the
-  // |constraints| as a mandatory field but it is not parsed.
-  ConvertConstraintsToOfferAnswerOptions(constraints, &offer_answer_options);
+  RTCOfferAnswerOptions options;
 
-  CreateOffer(observer, offer_answer_options);
+  bool value;
+  size_t mandatory_constraints = 0;
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kOfferToReceiveAudio,
+                     &value,
+                     &mandatory_constraints)) {
+    options.offer_to_receive_audio =
+        value ? RTCOfferAnswerOptions::kOfferToReceiveMediaTrue : 0;
+  }
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kOfferToReceiveVideo,
+                     &value,
+                     &mandatory_constraints)) {
+    options.offer_to_receive_video =
+        value ? RTCOfferAnswerOptions::kOfferToReceiveMediaTrue : 0;
+  }
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kVoiceActivityDetection,
+                     &value,
+                     &mandatory_constraints)) {
+    options.voice_activity_detection = value;
+  }
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kIceRestart,
+                     &value,
+                     &mandatory_constraints)) {
+    options.ice_restart = value;
+  }
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kUseRtpMux,
+                     &value,
+                     &mandatory_constraints)) {
+    options.use_rtp_mux = value;
+  }
+
+  CreateOffer(observer, options);
 }
 
 void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
@@ -846,15 +895,14 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
     return;
   }
 
-  if (!ValidateOfferAnswerOptions(options)) {
+  cricket::MediaSessionOptions session_options;
+  if (!GetOptionsForOffer(options, &session_options)) {
     std::string error = "CreateOffer called with invalid options.";
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailure(observer, error);
     return;
   }
 
-  cricket::MediaSessionOptions session_options;
-  GetOptionsForOffer(options, &session_options);
   session_->CreateOffer(observer, options, session_options);
 }
 
@@ -867,26 +915,14 @@ void PeerConnection::CreateAnswer(
     return;
   }
 
-  if (!session_->remote_description() ||
-      session_->remote_description()->type() !=
-          SessionDescriptionInterface::kOffer) {
-    std::string error = "CreateAnswer called without remote offer.";
-    LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailure(observer, error);
-    return;
-  }
-
-  PeerConnectionInterface::RTCOfferAnswerOptions offer_answer_options;
-  if (!ConvertConstraintsToOfferAnswerOptions(constraints,
-                                              &offer_answer_options)) {
+  cricket::MediaSessionOptions session_options;
+  if (!GetOptionsForAnswer(constraints, &session_options)) {
     std::string error = "CreateAnswer called with invalid constraints.";
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailure(observer, error);
     return;
   }
 
-  cricket::MediaSessionOptions session_options;
-  GetOptionsForAnswer(offer_answer_options, &session_options);
   session_->CreateAnswer(observer, session_options);
 }
 
@@ -899,7 +935,12 @@ void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
   }
 
   cricket::MediaSessionOptions session_options;
-  GetOptionsForAnswer(options, &session_options);
+  if (!GetOptionsForAnswer(options, &session_options)) {
+    std::string error = "CreateAnswer called with invalid options.";
+    LOG(LS_ERROR) << error;
+    PostCreateSessionDescriptionFailure(observer, error);
+    return;
+  }
 
   session_->CreateAnswer(observer, session_options);
 }
@@ -1657,242 +1698,121 @@ void PeerConnection::PostCreateSessionDescriptionFailure(
                            MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
 }
 
-void PeerConnection::GetOptionsForOffer(
+bool PeerConnection::GetOptionsForOffer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
     cricket::MediaSessionOptions* session_options) {
-  ExtractSharedMediaSessionOptions(rtc_options, session_options);
-
-  // Figure out transceiver directional preferences.
-  bool send_audio = HasRtpSender(cricket::MEDIA_TYPE_AUDIO);
-  bool send_video = HasRtpSender(cricket::MEDIA_TYPE_VIDEO);
-
-  // By default, generate sendrecv/recvonly m= sections.
-  bool recv_audio = true;
-  bool recv_video = true;
-
-  // By default, only offer a new m= section if we have media to send with it.
-  bool offer_new_audio_description = send_audio;
-  bool offer_new_video_description = send_video;
-  bool offer_new_data_description = HasDataChannels();
-
-  // The "offer_to_receive_X" options allow those defaults to be overridden.
-  if (rtc_options.offer_to_receive_audio != RTCOfferAnswerOptions::kUndefined) {
-    recv_audio = (rtc_options.offer_to_receive_audio > 0);
-    offer_new_audio_description =
-        offer_new_audio_description || (rtc_options.offer_to_receive_audio > 0);
-  }
-  if (rtc_options.offer_to_receive_video != RTCOfferAnswerOptions::kUndefined) {
-    recv_video = (rtc_options.offer_to_receive_video > 0);
-    offer_new_video_description =
-        offer_new_video_description || (rtc_options.offer_to_receive_video > 0);
-  }
-
-  int audio_index = -1;
-  int video_index = -1;
-  int data_index = -1;
-  // If a current description exists, generate m= sections in the same order,
-  // using the first audio/video/data section that appears and rejecting
-  // extraneous ones.
+  // TODO(deadbeef): Once we have transceivers, enumerate them here instead of
+  // ContentInfos.
   if (session_->local_description()) {
-    GenerateMediaDescriptionOptions(
-        session_->local_description(),
-        cricket::RtpTransceiverDirection(send_audio, recv_audio),
-        cricket::RtpTransceiverDirection(send_video, recv_video), &audio_index,
-        &video_index, &data_index, session_options);
+    for (const cricket::ContentInfo& content :
+         session_->local_description()->description()->contents()) {
+      session_options->transport_options[content.name] =
+          cricket::TransportOptions();
+    }
+  }
+  session_options->enable_ice_renomination =
+      configuration_.enable_ice_renomination;
+
+  if (!ExtractMediaSessionOptions(rtc_options, true, session_options)) {
+    return false;
   }
 
-  // Add audio/video/data m= sections to the end if needed.
-  if (audio_index == -1 && offer_new_audio_description) {
-    session_options->media_description_options.push_back(
-        cricket::MediaDescriptionOptions(
-            cricket::MEDIA_TYPE_AUDIO, cricket::CN_AUDIO,
-            cricket::RtpTransceiverDirection(send_audio, recv_audio), false));
-    audio_index = session_options->media_description_options.size() - 1;
+  AddSendStreams(session_options, senders_, rtp_data_channels_);
+  // Offer to receive audio/video if the constraint is not set and there are
+  // send streams, or we're currently receiving.
+  if (rtc_options.offer_to_receive_audio == RTCOfferAnswerOptions::kUndefined) {
+    session_options->recv_audio =
+        session_options->HasSendMediaStream(cricket::MEDIA_TYPE_AUDIO) ||
+        !remote_audio_tracks_.empty();
   }
-  if (video_index == -1 && offer_new_video_description) {
-    session_options->media_description_options.push_back(
-        cricket::MediaDescriptionOptions(
-            cricket::MEDIA_TYPE_VIDEO, cricket::CN_VIDEO,
-            cricket::RtpTransceiverDirection(send_video, recv_video), false));
-    video_index = session_options->media_description_options.size() - 1;
+  if (rtc_options.offer_to_receive_video == RTCOfferAnswerOptions::kUndefined) {
+    session_options->recv_video =
+        session_options->HasSendMediaStream(cricket::MEDIA_TYPE_VIDEO) ||
+        !remote_video_tracks_.empty();
   }
-  if (data_index == -1 && offer_new_data_description) {
-    session_options->media_description_options.push_back(
-        cricket::MediaDescriptionOptions(
-            cricket::MEDIA_TYPE_DATA, cricket::CN_DATA,
-            cricket::RtpTransceiverDirection(true, true), false));
-    data_index = session_options->media_description_options.size() - 1;
-  }
-
-  cricket::MediaDescriptionOptions* audio_media_description_options =
-      audio_index == -1
-          ? nullptr
-          : &session_options->media_description_options[audio_index];
-  cricket::MediaDescriptionOptions* video_media_description_options =
-      video_index == -1
-          ? nullptr
-          : &session_options->media_description_options[video_index];
-  cricket::MediaDescriptionOptions* data_media_description_options =
-      data_index == -1
-          ? nullptr
-          : &session_options->media_description_options[data_index];
-
-  // Apply ICE restart flag and renomination flag.
-  for (auto& options : session_options->media_description_options) {
-    options.transport_options.ice_restart = rtc_options.ice_restart;
-    options.transport_options.enable_ice_renomination =
-        configuration_.enable_ice_renomination;
-  }
-
-  AddRtpSenderOptions(senders_, audio_media_description_options,
-                      video_media_description_options);
-  AddRtpDataChannelOptions(rtp_data_channels_, data_media_description_options);
 
   // Intentionally unset the data channel type for RTP data channel with the
   // second condition. Otherwise the RTP data channels would be successfully
   // negotiated by default and the unit tests in WebRtcDataBrowserTest will fail
   // when building with chromium. We want to leave RTP data channels broken, so
   // people won't try to use them.
-  if (!rtp_data_channels_.empty() ||
-      session_->data_channel_type() != cricket::DCT_RTP) {
+  if (HasDataChannels() && session_->data_channel_type() != cricket::DCT_RTP) {
     session_options->data_channel_type = session_->data_channel_type();
   }
 
+  session_options->bundle_enabled =
+      session_options->bundle_enabled &&
+      (session_options->has_audio() || session_options->has_video() ||
+       session_options->has_data());
+
   session_options->rtcp_cname = rtcp_cname_;
   session_options->crypto_options = factory_->options().crypto_options;
+  return true;
 }
 
-void PeerConnection::GetOptionsForAnswer(
-    const RTCOfferAnswerOptions& rtc_options,
+void PeerConnection::InitializeOptionsForAnswer(
     cricket::MediaSessionOptions* session_options) {
-  ExtractSharedMediaSessionOptions(rtc_options, session_options);
+  session_options->recv_audio = false;
+  session_options->recv_video = false;
+  session_options->enable_ice_renomination =
+      configuration_.enable_ice_renomination;
+}
 
-  // Figure out transceiver directional preferences.
-  bool send_audio = HasRtpSender(cricket::MEDIA_TYPE_AUDIO);
-  bool send_video = HasRtpSender(cricket::MEDIA_TYPE_VIDEO);
-
-  // By default, generate sendrecv/recvonly m= sections. The direction is also
-  // restricted by the direction in the offer.
-  bool recv_audio = true;
-  bool recv_video = true;
-
-  // The "offer_to_receive_X" options allow those defaults to be overridden.
-  if (rtc_options.offer_to_receive_audio != RTCOfferAnswerOptions::kUndefined) {
-    recv_audio = (rtc_options.offer_to_receive_audio > 0);
+void PeerConnection::FinishOptionsForAnswer(
+    cricket::MediaSessionOptions* session_options) {
+  // TODO(deadbeef): Once we have transceivers, enumerate them here instead of
+  // ContentInfos.
+  if (session_->remote_description()) {
+    // Initialize the transport_options map.
+    for (const cricket::ContentInfo& content :
+         session_->remote_description()->description()->contents()) {
+      session_options->transport_options[content.name] =
+          cricket::TransportOptions();
+    }
   }
-  if (rtc_options.offer_to_receive_video != RTCOfferAnswerOptions::kUndefined) {
-    recv_video = (rtc_options.offer_to_receive_video > 0);
-  }
-
-  int audio_index = -1;
-  int video_index = -1;
-  int data_index = -1;
-  // There should be a pending remote description that's an offer...
-  RTC_DCHECK(session_->remote_description());
-  RTC_DCHECK(session_->remote_description()->type() ==
-             SessionDescriptionInterface::kOffer);
-  // Generate m= sections that match those in the offer.
-  // Note that mediasession.cc will handle intersection our preferred direction
-  // with the offered direction.
-  GenerateMediaDescriptionOptions(
-      session_->remote_description(),
-      cricket::RtpTransceiverDirection(send_audio, recv_audio),
-      cricket::RtpTransceiverDirection(send_video, recv_video), &audio_index,
-      &video_index, &data_index, session_options);
-
-  cricket::MediaDescriptionOptions* audio_media_description_options =
-      audio_index == -1
-          ? nullptr
-          : &session_options->media_description_options[audio_index];
-  cricket::MediaDescriptionOptions* video_media_description_options =
-      video_index == -1
-          ? nullptr
-          : &session_options->media_description_options[video_index];
-  cricket::MediaDescriptionOptions* data_media_description_options =
-      data_index == -1
-          ? nullptr
-          : &session_options->media_description_options[data_index];
-
-  // Apply ICE renomination flag.
-  for (auto& options : session_options->media_description_options) {
-    options.transport_options.enable_ice_renomination =
-        configuration_.enable_ice_renomination;
-  }
-
-  AddRtpSenderOptions(senders_, audio_media_description_options,
-                      video_media_description_options);
-  AddRtpDataChannelOptions(rtp_data_channels_, data_media_description_options);
-
+  AddSendStreams(session_options, senders_, rtp_data_channels_);
+  // RTP data channel is handled in MediaSessionOptions::AddStream. SCTP streams
+  // are not signaled in the SDP so does not go through that path and must be
+  // handled here.
   // Intentionally unset the data channel type for RTP data channel. Otherwise
   // the RTP data channels would be successfully negotiated by default and the
   // unit tests in WebRtcDataBrowserTest will fail when building with chromium.
   // We want to leave RTP data channels broken, so people won't try to use them.
-  if (!rtp_data_channels_.empty() ||
-      session_->data_channel_type() != cricket::DCT_RTP) {
+  if (session_->data_channel_type() != cricket::DCT_RTP) {
     session_options->data_channel_type = session_->data_channel_type();
   }
+  session_options->bundle_enabled =
+      session_options->bundle_enabled &&
+      (session_options->has_audio() || session_options->has_video() ||
+       session_options->has_data());
 
-  session_options->rtcp_cname = rtcp_cname_;
   session_options->crypto_options = factory_->options().crypto_options;
 }
 
-void PeerConnection::GenerateMediaDescriptionOptions(
-    const SessionDescriptionInterface* session_desc,
-    cricket::RtpTransceiverDirection audio_direction,
-    cricket::RtpTransceiverDirection video_direction,
-    int* audio_index,
-    int* video_index,
-    int* data_index,
+bool PeerConnection::GetOptionsForAnswer(
+    const MediaConstraintsInterface* constraints,
     cricket::MediaSessionOptions* session_options) {
-  for (const cricket::ContentInfo& content :
-       session_desc->description()->contents()) {
-    if (IsAudioContent(&content)) {
-      // If we already have an audio m= section, reject this extra one.
-      if (*audio_index != -1) {
-        session_options->media_description_options.push_back(
-            cricket::MediaDescriptionOptions(
-                cricket::MEDIA_TYPE_AUDIO, content.name,
-                cricket::RtpTransceiverDirection(false, false), true));
-      } else {
-        session_options->media_description_options.push_back(
-            cricket::MediaDescriptionOptions(
-                cricket::MEDIA_TYPE_AUDIO, content.name, audio_direction,
-                !audio_direction.send && !audio_direction.recv));
-        *audio_index = session_options->media_description_options.size() - 1;
-      }
-    } else if (IsVideoContent(&content)) {
-      // If we already have an video m= section, reject this extra one.
-      if (*video_index != -1) {
-        session_options->media_description_options.push_back(
-            cricket::MediaDescriptionOptions(
-                cricket::MEDIA_TYPE_VIDEO, content.name,
-                cricket::RtpTransceiverDirection(false, false), true));
-      } else {
-        session_options->media_description_options.push_back(
-            cricket::MediaDescriptionOptions(
-                cricket::MEDIA_TYPE_VIDEO, content.name, video_direction,
-                !video_direction.send && !video_direction.recv));
-        *video_index = session_options->media_description_options.size() - 1;
-      }
-    } else {
-      RTC_DCHECK(IsDataContent(&content));
-      // If we already have an data m= section, reject this extra one.
-      if (*data_index != -1) {
-        session_options->media_description_options.push_back(
-            cricket::MediaDescriptionOptions(
-                cricket::MEDIA_TYPE_DATA, content.name,
-                cricket::RtpTransceiverDirection(false, false), true));
-      } else {
-        session_options->media_description_options.push_back(
-            cricket::MediaDescriptionOptions(
-                cricket::MEDIA_TYPE_DATA, content.name,
-                // Direction for data sections is meaningless, but legacy
-                // endpoints might expect sendrecv.
-                cricket::RtpTransceiverDirection(true, true), false));
-        *data_index = session_options->media_description_options.size() - 1;
-      }
-    }
+  InitializeOptionsForAnswer(session_options);
+  if (!ParseConstraintsForAnswer(constraints, session_options)) {
+    return false;
   }
+  session_options->rtcp_cname = rtcp_cname_;
+
+  FinishOptionsForAnswer(session_options);
+  return true;
+}
+
+bool PeerConnection::GetOptionsForAnswer(
+    const RTCOfferAnswerOptions& options,
+    cricket::MediaSessionOptions* session_options) {
+  InitializeOptionsForAnswer(session_options);
+  if (!ExtractMediaSessionOptions(options, false, session_options)) {
+    return false;
+  }
+  session_options->rtcp_cname = rtcp_cname_;
+
+  FinishOptionsForAnswer(session_options);
+  return true;
 }
 
 void PeerConnection::RemoveTracks(cricket::MediaType media_type) {
@@ -2363,15 +2283,6 @@ void PeerConnection::OnDataChannelOpenMessage(
   rtc::scoped_refptr<DataChannelInterface> proxy_channel =
       DataChannelProxy::Create(signaling_thread(), channel);
   observer_->OnDataChannel(std::move(proxy_channel));
-}
-
-bool PeerConnection::HasRtpSender(cricket::MediaType type) const {
-  return std::find_if(
-             senders_.begin(), senders_.end(),
-             [type](const rtc::scoped_refptr<
-                    RtpSenderProxyWithInternal<RtpSenderInternal>>& sender) {
-               return sender->media_type() == type;
-             }) != senders_.end();
 }
 
 RtpSenderInternal* PeerConnection::FindSenderById(const std::string& id) {
