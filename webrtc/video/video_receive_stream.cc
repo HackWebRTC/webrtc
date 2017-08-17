@@ -497,14 +497,9 @@ void VideoReceiveStream::DecodeThreadFunction(void* ptr) {
 bool VideoReceiveStream::Decode() {
   TRACE_EVENT0("webrtc", "VideoReceiveStream::Decode");
   static const int kMaxWaitForFrameMs = 3000;
-  static const int kMaxWaitForKeyFrameMs = 200;
-
-  int wait_ms = keyframe_required_ ? kMaxWaitForKeyFrameMs : kMaxWaitForFrameMs;
   std::unique_ptr<video_coding::FrameObject> frame;
-  // TODO(philipel): Call NextFrame with |keyframe_required| argument when
-  //                 downstream project has been fixed.
   video_coding::FrameBuffer::ReturnReason res =
-      frame_buffer_->NextFrame(wait_ms, &frame);
+      frame_buffer_->NextFrame(kMaxWaitForFrameMs, &frame);
 
   if (res == video_coding::FrameBuffer::ReturnReason::kStopped) {
     video_receiver_.DecodingStopped();
@@ -513,15 +508,8 @@ bool VideoReceiveStream::Decode() {
 
   if (frame) {
     RTC_DCHECK_EQ(res, video_coding::FrameBuffer::ReturnReason::kFrameFound);
-    if (video_receiver_.Decode(frame.get()) == VCM_OK) {
-      keyframe_required_ = false;
+    if (video_receiver_.Decode(frame.get()) == VCM_OK)
       rtp_video_stream_receiver_.FrameDecoded(frame->picture_id);
-    } else if (keyframe_required_ == false) {
-      keyframe_required_ = true;
-      // TODO(philipel): Remove this keyframe request when downstream project
-      //                 has been fixed.
-      RequestKeyFrame();
-    }
   } else {
     RTC_DCHECK_EQ(res, video_coding::FrameBuffer::ReturnReason::kTimeout);
     int64_t now_ms = clock_->TimeInMilliseconds();
@@ -534,14 +522,15 @@ bool VideoReceiveStream::Decode() {
     // check if we have received a packet within the last 5 seconds.
     bool stream_is_active = last_packet_ms && now_ms - *last_packet_ms < 5000;
 
-    // If we recently have been receiving packets belonging to a keyframe then
-    // we assume a keyframe is currently being received.
+    // If we recently (within |kMaxWaitForFrameMs|) have been receiving packets
+    // belonging to a keyframe then we assume a keyframe is being received right
+    // now.
     bool receiving_keyframe =
         last_keyframe_packet_ms &&
-        now_ms - *last_keyframe_packet_ms < kMaxWaitForKeyFrameMs;
+        now_ms - *last_keyframe_packet_ms < kMaxWaitForFrameMs;
 
     if (stream_is_active && !receiving_keyframe) {
-      LOG(LS_WARNING) << "No decodable frame in " << wait_ms
+      LOG(LS_WARNING) << "No decodable frame in " << kMaxWaitForFrameMs
                       << " ms, requesting keyframe.";
       RequestKeyFrame();
     }
