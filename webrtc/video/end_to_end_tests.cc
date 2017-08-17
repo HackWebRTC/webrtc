@@ -1930,7 +1930,7 @@ TEST_F(EndToEndTest, AudioVideoReceivesTransportFeedback) {
 
 TEST_F(EndToEndTest, StopsSendingMediaWithoutFeedback) {
   test::ScopedFieldTrials override_field_trials(
-      "WebRTC-CwndExperiment/Enabled/");
+      "WebRTC-CwndExperiment/Enabled-250/");
 
   class TransportFeedbackTester : public test::EndToEndTest {
    public:

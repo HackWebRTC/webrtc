@@ -20,6 +20,7 @@
 #include "webrtc/modules/pacing/alr_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/format_macros.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/rate_limiter.h"
@@ -31,12 +32,27 @@ namespace webrtc {
 namespace {
 
 const char kCwndExperiment[] = "WebRTC-CwndExperiment";
+const int64_t kDefaultAcceptedQueueMs = 250;
 
 bool CwndExperimentEnabled() {
   std::string experiment_string =
       webrtc::field_trial::FindFullName(kCwndExperiment);
   // The experiment is enabled iff the field trial string begins with "Enabled".
   return experiment_string.find("Enabled") == 0;
+}
+
+bool ReadCwndExperimentParameter(int64_t* accepted_queue_ms) {
+  RTC_DCHECK(accepted_queue_ms);
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName(kCwndExperiment);
+  int parsed_values =
+      sscanf(experiment_string.c_str(), "Enabled-%" PRId64, accepted_queue_ms);
+  if (parsed_values == 1) {
+    RTC_CHECK_GE(*accepted_queue_ms, 0)
+        << "Accepted must be greater than or equal to 0.";
+    return true;
+  }
+  return false;
 }
 
 static const int64_t kRetransmitWindowSizeMs = 500;
@@ -115,8 +131,15 @@ SendSideCongestionController::SendSideCongestionController(
       min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       delay_based_bwe_(new DelayBasedBwe(event_log_, clock_)),
       in_cwnd_experiment_(CwndExperimentEnabled()),
+      accepted_queue_ms_(kDefaultAcceptedQueueMs),
       was_in_alr_(0) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
+  if (in_cwnd_experiment_ &&
+      !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
+    LOG(LS_WARNING) << "Failed to parse parameters for CwndExperiment "
+                       "from field trial string. Experiment disabled.";
+    in_cwnd_experiment_ = false;
+  }
 }
 
 SendSideCongestionController::~SendSideCongestionController() {}
@@ -344,10 +367,9 @@ void SendSideCongestionController::LimitOutstandingBytes(
     // we don't try to limit the outstanding packets.
     if (!min_rtt_ms)
       return;
-    const int64_t kAcceptedQueueMs = 250;
     const size_t kMinCwndBytes = 2 * 1500;
     size_t max_outstanding_bytes =
-        std::max<size_t>((*min_rtt_ms + kAcceptedQueueMs) *
+        std::max<size_t>((*min_rtt_ms + accepted_queue_ms_) *
                              last_reported_bitrate_bps_ / 1000 / 8,
                          kMinCwndBytes);
     LOG(LS_INFO) << clock_->TimeInMilliseconds()
