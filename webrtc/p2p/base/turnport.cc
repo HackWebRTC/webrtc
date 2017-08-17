@@ -698,7 +698,8 @@ void TurnPort::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
   // one of the reason could be due to DNS queries blocked by firewall.
   // In such cases we will try to connect to the server with hostname, assuming
   // socket layer will resolve the hostname through a HTTP proxy (if any).
-  if (resolver_->GetError() != 0 && server_address_.proto == PROTO_TCP) {
+  if (resolver_->GetError() != 0 && (server_address_.proto == PROTO_TCP ||
+                                     server_address_.proto == PROTO_TLS)) {
     if (!CreateTurnClientSocket()) {
       OnAllocateError();
     }
@@ -818,7 +819,8 @@ void TurnPort::OnMessage(rtc::Message* message) {
         // Since it's TCP, we have to delete the connected socket and reconnect
         // with the alternate server. PrepareAddress will send stun binding once
         // the new socket is connected.
-        RTC_DCHECK(server_address().proto == PROTO_TCP);
+        RTC_DCHECK(server_address().proto == PROTO_TCP ||
+                   server_address().proto == PROTO_TLS);
         RTC_DCHECK(!SharedSocket());
         delete socket_;
         socket_ = NULL;

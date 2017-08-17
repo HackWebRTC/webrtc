@@ -279,6 +279,7 @@ OpenSSLAdapter::OpenSSLAdapter(AsyncSocket* socket,
     : SSLAdapter(socket),
       factory_(factory),
       state_(SSL_NONE),
+      role_(SSL_CLIENT),
       ssl_read_needs_write_(false),
       ssl_write_needs_read_(false),
       restartable_(false),
@@ -305,6 +306,30 @@ void OpenSSLAdapter::SetMode(SSLMode mode) {
   RTC_DCHECK(!ssl_ctx_);
   RTC_DCHECK(state_ == SSL_NONE);
   ssl_mode_ = mode;
+}
+
+void OpenSSLAdapter::SetIdentity(SSLIdentity* identity) {
+  RTC_DCHECK(!identity_);
+  identity_.reset(static_cast<OpenSSLIdentity*>(identity));
+}
+
+void OpenSSLAdapter::SetRole(SSLRole role) {
+  role_ = role;
+}
+
+AsyncSocket* OpenSSLAdapter::Accept(SocketAddress* paddr) {
+  RTC_DCHECK(role_ == SSL_SERVER);
+  AsyncSocket* socket = SSLAdapter::Accept(paddr);
+  if (!socket) {
+    return nullptr;
+  }
+
+  SSLAdapter* adapter = SSLAdapter::Create(socket);
+  adapter->SetIdentity(identity_->GetReference());
+  adapter->SetRole(rtc::SSL_SERVER);
+  adapter->set_ignore_bad_cert(ignore_bad_cert());
+  adapter->StartSSL("", false);
+  return adapter;
 }
 
 int OpenSSLAdapter::StartSSL(const char* hostname, bool restartable) {
@@ -343,6 +368,12 @@ int OpenSSLAdapter::BeginSSL() {
     ssl_ctx_ = CreateContext(ssl_mode_, false);
   }
   if (!ssl_ctx_) {
+    err = -1;
+    goto ssl_error;
+  }
+
+  if (identity_ && !identity_->ConfigureIdentity(ssl_ctx_)) {
+    SSL_CTX_free(ssl_ctx_);
     err = -1;
     goto ssl_error;
   }
@@ -423,7 +454,7 @@ int OpenSSLAdapter::ContinueSSL() {
   // Clear the DTLS timer
   Thread::Current()->Clear(this, MSG_TIMEOUT);
 
-  int code = SSL_connect(ssl_);
+  int code = (role_ == SSL_CLIENT) ? SSL_connect(ssl_) : SSL_accept(ssl_);
   switch (SSL_get_error(ssl_, code)) {
   case SSL_ERROR_NONE:
     if (!SSLPostConnectionCheck(ssl_, ssl_host_name_.c_str())) {
@@ -496,6 +527,7 @@ void OpenSSLAdapter::Cleanup() {
     SSL_CTX_free(ssl_ctx_);
     ssl_ctx_ = nullptr;
   }
+  identity_.reset();
 
   // Clear the DTLS timer
   Thread::Current()->Clear(this, MSG_TIMEOUT);

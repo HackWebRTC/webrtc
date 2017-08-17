@@ -16,6 +16,7 @@
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/rtc_base/messagehandler.h"
 #include "webrtc/rtc_base/messagequeue.h"
+#include "webrtc/rtc_base/opensslidentity.h"
 #include "webrtc/rtc_base/ssladapter.h"
 
 typedef struct ssl_st SSL;
@@ -38,6 +39,9 @@ class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
   ~OpenSSLAdapter() override;
 
   void SetMode(SSLMode mode) override;
+  void SetIdentity(SSLIdentity* identity) override;
+  void SetRole(SSLRole role) override;
+  AsyncSocket* Accept(SocketAddress* paddr) override;
   int StartSSL(const char* hostname, bool restartable) override;
   int Send(const void* pv, size_t cb) override;
   int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
@@ -107,6 +111,8 @@ class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
   OpenSSLAdapterFactory* factory_;
 
   SSLState state_;
+  std::unique_ptr<OpenSSLIdentity> identity_;
+  SSLRole role_;
   bool ssl_read_needs_write_;
   bool ssl_write_needs_read_;
   // If true, socket will retain SSL configuration after Close.

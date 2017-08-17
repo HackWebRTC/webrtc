@@ -53,6 +53,12 @@ class SSLAdapter : public AsyncSocketAdapter {
   // Do DTLS or TLS (default is TLS, if unspecified)
   virtual void SetMode(SSLMode mode) = 0;
 
+  // Set the certificate this socket will present to incoming clients.
+  virtual void SetIdentity(SSLIdentity* identity) = 0;
+
+  // Choose whether the socket acts as a server socket or client socket.
+  virtual void SetRole(SSLRole role) = 0;
+
   // StartSSL returns 0 if successful.
   // If StartSSL is called while the socket is closed or connecting, the SSL
   // negotiation will begin as soon as the socket connects.

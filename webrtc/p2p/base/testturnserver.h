@@ -18,6 +18,8 @@
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/p2p/base/turnserver.h"
 #include "webrtc/rtc_base/asyncudpsocket.h"
+#include "webrtc/rtc_base/ssladapter.h"
+#include "webrtc/rtc_base/sslidentity.h"
 #include "webrtc/rtc_base/thread.h"
 
 namespace cricket {
@@ -81,14 +83,28 @@ class TestTurnServer : public TurnAuthInterface {
       server_.AddInternalSocket(
           rtc::AsyncUDPSocket::Create(thread_->socketserver(), int_addr),
           proto);
-    } else if (proto == cricket::PROTO_TCP) {
+    } else if (proto == cricket::PROTO_TCP || proto == cricket::PROTO_TLS) {
       // For TCP we need to create a server socket which can listen for incoming
       // new connections.
       rtc::AsyncSocket* socket =
           thread_->socketserver()->CreateAsyncSocket(SOCK_STREAM);
+      if (proto == cricket::PROTO_TLS) {
+        // For TLS, wrap the TCP socket with an SSL adapter. The adapter must
+        // be configured with a self-signed certificate for testing.
+        // Additionally, the client will not present a valid certificate, so we
+        // must not fail when checking the peer's identity.
+        rtc::SSLAdapter* adapter = rtc::SSLAdapter::Create(socket);
+        adapter->SetRole(rtc::SSL_SERVER);
+        adapter->SetIdentity(
+            rtc::SSLIdentity::Generate("test turn server", rtc::KeyParams()));
+        adapter->set_ignore_bad_cert(true);
+        socket = adapter;
+      }
       socket->Bind(int_addr);
       socket->Listen(5);
       server_.AddInternalServerSocket(socket, proto);
+    } else {
+      RTC_NOTREACHED() << "Unknown protocol type: " << proto;
     }
   }
 
