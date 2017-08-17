@@ -107,6 +107,7 @@ if (rtc_enable_protobuf) {
       sources = [
         "rtc_event_log/rtc_event_log_unittest.cc",
         "rtc_event_log/rtc_event_log_unittest_helper.cc",
+        "rtc_event_log/rtc_event_log_unittest_helper.h",
       ]
       deps = [
         ":rtc_event_log_impl",
