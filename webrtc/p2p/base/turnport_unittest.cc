@@ -320,16 +320,46 @@ class TurnPortTest : public testing::Test,
     // turn_port_ should have been created.
     ASSERT_TRUE(turn_port_ != nullptr);
     turn_port_->PrepareAddress();
-    // Two round trips are required to allocate a TURN candidate.
-    // Plus, an extra round trip is needed for TCP.
     ASSERT_TRUE_SIMULATED_WAIT(
-        turn_ready_,
-        protocol_type == PROTO_TCP ? kSimulatedRtt * 3 : kSimulatedRtt * 2,
-        fake_clock_);
+        turn_ready_, TimeToGetTurnCandidate(protocol_type), fake_clock_);
 
     CreateUdpPort();
     udp_port_->PrepareAddress();
     ASSERT_TRUE_SIMULATED_WAIT(udp_ready_, kSimulatedRtt, fake_clock_);
+  }
+
+  // Returns the fake clock time to establish a connection over the given
+  // protocol.
+  int TimeToConnect(ProtocolType protocol_type) {
+    switch (protocol_type) {
+      case PROTO_TCP:
+        // The virtual socket server will delay by a fixed half a round trip
+        // for a TCP connection.
+        return kSimulatedRtt / 2;
+      case PROTO_UDP:
+      default:
+        // UDP requires no round trips to set up the connection.
+        return 0;
+    }
+  }
+
+  // Returns the total fake clock time to establish a connection with a TURN
+  // server over the given protocol and to allocate a TURN candidate.
+  int TimeToGetTurnCandidate(ProtocolType protocol_type) {
+    // For a simple allocation, the first Allocate message will return with an
+    // error asking for credentials and will succeed after the second Allocate
+    // message.
+    return 2 * kSimulatedRtt + TimeToConnect(protocol_type);
+  }
+
+  // Total fake clock time to do the following:
+  // 1. Connect to primary TURN server
+  // 2. Send Allocate and receive a redirect from the primary TURN server
+  // 3. Connect to alternate TURN server
+  // 4. Send Allocate and receive a request for credentials
+  // 5. Send Allocate with credentials and receive allocation
+  int TimeToGetAlternateTurnCandidate(ProtocolType protocol_type) {
+    return 3 * kSimulatedRtt + 2 * TimeToConnect(protocol_type);
   }
 
   bool CheckConnectionFailedAndPruned(Connection* conn) {
@@ -352,6 +382,15 @@ class TurnPortTest : public testing::Test,
     return true;
   }
 
+  void TestReconstructedServerUrl(ProtocolType protocol_type,
+                                  const char* expected_url) {
+    turn_port_->PrepareAddress();
+    ASSERT_TRUE_SIMULATED_WAIT(
+        turn_ready_, TimeToGetTurnCandidate(protocol_type), fake_clock_);
+    ASSERT_EQ(1U, turn_port_->Candidates().size());
+    EXPECT_EQ(turn_port_->Candidates()[0].url(), expected_url);
+  }
+
   void TestTurnAlternateServer(ProtocolType protocol_type) {
     std::vector<rtc::SocketAddress> redirect_addresses;
     redirect_addresses.push_back(kTurnAlternateIntAddr);
@@ -368,11 +407,9 @@ class TurnPortTest : public testing::Test,
     const SocketAddress old_addr = turn_port_->server_address().address;
 
     turn_port_->PrepareAddress();
-    // Extra round trip due to "use alternate server" error response.
-    EXPECT_TRUE_SIMULATED_WAIT(
-        turn_ready_,
-        (protocol_type == PROTO_TCP ? kSimulatedRtt * 4 : kSimulatedRtt * 3),
-        fake_clock_);
+    EXPECT_TRUE_SIMULATED_WAIT(turn_ready_,
+                               TimeToGetAlternateTurnCandidate(protocol_type),
+                               fake_clock_);
     // Retrieve the address again, the turn port's address should be
     // changed.
     const SocketAddress new_addr = turn_port_->server_address().address;
@@ -393,7 +430,10 @@ class TurnPortTest : public testing::Test,
     CreateTurnPort(kTurnUsername, kTurnPassword,
                    ProtocolAddress(kTurnIntAddr, protocol_type));
     turn_port_->PrepareAddress();
-    EXPECT_TRUE_SIMULATED_WAIT(turn_error_, kSimulatedRtt * 2, fake_clock_);
+    // Need time to connect to TURN server, send Allocate request and receive
+    // redirect notice.
+    EXPECT_TRUE_SIMULATED_WAIT(
+        turn_error_, kSimulatedRtt + TimeToConnect(protocol_type), fake_clock_);
   }
 
   void TestTurnAlternateServerPingPong(ProtocolType protocol_type) {
@@ -410,11 +450,9 @@ class TurnPortTest : public testing::Test,
                    ProtocolAddress(kTurnIntAddr, protocol_type));
 
     turn_port_->PrepareAddress();
-    // Extra round trip due to "use alternate server" error response.
-    EXPECT_TRUE_SIMULATED_WAIT(
-        turn_error_,
-        (protocol_type == PROTO_TCP ? kSimulatedRtt * 4 : kSimulatedRtt * 3),
-        fake_clock_);
+    EXPECT_TRUE_SIMULATED_WAIT(turn_error_,
+                               TimeToGetAlternateTurnCandidate(protocol_type),
+                               fake_clock_);
     ASSERT_EQ(0U, turn_port_->Candidates().size());
     rtc::SocketAddress address;
     // Verify that we have exhausted all alternate servers instead of
@@ -436,11 +474,9 @@ class TurnPortTest : public testing::Test,
                    ProtocolAddress(kTurnIntAddr, protocol_type));
 
     turn_port_->PrepareAddress();
-    // Extra round trip due to "use alternate server" error response.
-    EXPECT_TRUE_SIMULATED_WAIT(
-        turn_error_,
-        (protocol_type == PROTO_TCP ? kSimulatedRtt * 4 : kSimulatedRtt * 3),
-        fake_clock_);
+    EXPECT_TRUE_SIMULATED_WAIT(turn_error_,
+                               TimeToGetAlternateTurnCandidate(protocol_type),
+                               fake_clock_);
     ASSERT_EQ(0U, turn_port_->Candidates().size());
   }
 
@@ -479,9 +515,7 @@ class TurnPortTest : public testing::Test,
 
     turn_port_->PrepareAddress();
     EXPECT_TRUE_SIMULATED_WAIT(
-        turn_error_,
-        (protocol_type == PROTO_TCP ? kSimulatedRtt * 3 : kSimulatedRtt * 2),
-        fake_clock_);
+        turn_error_, TimeToGetTurnCandidate(protocol_type), fake_clock_);
 
     // Wait for some extra time, and make sure no packets were received on the
     // loopback port we created (or in the case of TCP, no connection attempt
@@ -616,6 +650,14 @@ class TurnPortTest : public testing::Test,
     }
   }
 
+  // Test that a TURN allocation is released when the port is closed.
+  void TestTurnReleaseAllocation(ProtocolType protocol_type) {
+    PrepareTurnAndUdpPorts(protocol_type);
+    turn_port_.reset();
+    EXPECT_EQ_SIMULATED_WAIT(0U, turn_server_.server()->allocations().size(),
+                             kSimulatedRtt, fake_clock_);
+  }
+
  protected:
   rtc::ScopedFakeClock fake_clock_;
   // When a "create port" helper method is called with an IP, we create a
@@ -648,36 +690,24 @@ TEST_F(TurnPortTest, TestTurnPortType) {
 
 // Tests that the URL of the servers can be correctly reconstructed when
 // gathering the candidates.
-TEST_F(TurnPortTest, TestReconstructedServerUrl) {
-  // Connect the TURN server using UDP.
+TEST_F(TurnPortTest, TestReconstructedServerUrlForUdpIPv4) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  turn_port_->PrepareAddress();
-  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 2, fake_clock_);
-  std::string expected_server_url = "turn:99.99.99.3:3478?transport=udp";
-  EXPECT_EQ(turn_port_->Candidates()[0].url(), expected_server_url);
+  TestReconstructedServerUrl(PROTO_UDP, "turn:99.99.99.3:3478?transport=udp");
+}
 
-  // Connect the server with IPV6 using UDP.
-  turn_ready_ = false;
+TEST_F(TurnPortTest, TestReconstructedServerUrlForUdpIPv6) {
   turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, PROTO_UDP);
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  kTurnUdpIPv6ProtoAddr);
-  turn_port_->PrepareAddress();
-  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 2, fake_clock_);
-  ASSERT_EQ(1U, turn_port_->Candidates().size());
-  expected_server_url =
-      "turn:2400:4030:1:2c00:be30:abcd:efab:cdef:3478?transport=udp";
-  EXPECT_EQ(turn_port_->Candidates()[0].url(), expected_server_url);
+  TestReconstructedServerUrl(
+      PROTO_UDP,
+      "turn:2400:4030:1:2c00:be30:abcd:efab:cdef:3478?transport=udp");
+}
 
-  // Connection the server using TCP.
-  turn_ready_ = false;
+TEST_F(TurnPortTest, TestReconstructedServerUrlForTcp) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  turn_port_->PrepareAddress();
-  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 3, fake_clock_);
-  ASSERT_EQ(1U, turn_port_->Candidates().size());
-  expected_server_url = "turn:99.99.99.4:3478?transport=tcp";
-  EXPECT_EQ(turn_port_->Candidates()[0].url(), expected_server_url);
-  turn_ready_ = false;
+  TestReconstructedServerUrl(PROTO_TCP, "turn:99.99.99.4:3478?transport=tcp");
 }
 
 // Do a normal TURN allocation.
@@ -1317,26 +1347,14 @@ TEST_F(TurnPortTest, TestConnectionFailedAndPrunedOnCreatePermissionFailure) {
 // Test that a TURN allocation is released when the port is closed.
 TEST_F(TurnPortTest, TestTurnReleaseAllocation) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  turn_port_->PrepareAddress();
-  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 2, fake_clock_);
-
-  ASSERT_GT(turn_server_.server()->allocations().size(), 0U);
-  turn_port_.reset();
-  EXPECT_EQ_SIMULATED_WAIT(0U, turn_server_.server()->allocations().size(),
-                           kSimulatedRtt, fake_clock_);
+  TestTurnReleaseAllocation(PROTO_UDP);
 }
 
 // Test that a TURN TCP allocation is released when the port is closed.
 TEST_F(TurnPortTest, TestTurnTCPReleaseAllocation) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  turn_port_->PrepareAddress();
-  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 3, fake_clock_);
-
-  ASSERT_GT(turn_server_.server()->allocations().size(), 0U);
-  turn_port_.reset();
-  EXPECT_EQ_SIMULATED_WAIT(0U, turn_server_.server()->allocations().size(),
-                           kSimulatedRtt, fake_clock_);
+  TestTurnReleaseAllocation(PROTO_TCP);
 }
 
 // This test verifies any FD's are not leaked after TurnPort is destroyed.
