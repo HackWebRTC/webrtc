@@ -575,15 +575,9 @@
 #define INTERNAL_TRACE_EVENT_UID(name_prefix) \
     INTERNAL_TRACE_EVENT_UID2(name_prefix, __LINE__)
 
-#if WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS
-#define INTERNAL_TRACE_EVENT_INFO_TYPE const unsigned char*
-#else
-#define INTERNAL_TRACE_EVENT_INFO_TYPE static const unsigned char*
-#endif  // WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS
-
 // Implementation detail: internal macro to create static category.
 #define INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category) \
-    INTERNAL_TRACE_EVENT_INFO_TYPE INTERNAL_TRACE_EVENT_UID(catstatic) = \
+    static const unsigned char* INTERNAL_TRACE_EVENT_UID(catstatic) = \
         TRACE_EVENT_API_GET_CATEGORY_ENABLED(category);
 
 // Implementation detail: internal macro to create static category and add
