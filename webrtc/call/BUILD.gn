@@ -118,6 +118,7 @@ rtc_static_library("call") {
     "../modules/rtp_rtcp",
     "../modules/utility",
     "../rtc_base:rtc_task_queue",
+    "../rtc_base:sequenced_task_checker",
     "../system_wrappers",
     "../video",
   ]
