@@ -111,6 +111,7 @@ if (rtc_include_tests) {
       "../test:test_renderer",
       "../test:test_renderer",
       "../test:test_support",
+      "../test:test_support_test_output",
       "../test:video_test_common",
       "../test:video_test_common",
       "../test:video_test_support",

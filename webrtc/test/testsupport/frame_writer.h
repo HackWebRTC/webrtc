@@ -15,6 +15,7 @@
 
 #include <string>
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -81,6 +82,20 @@ class Y4mFrameWriterImpl : public YuvFrameWriterImpl {
  private:
   const int frame_rate_;
 };
+
+// LibJpeg is not available on iOS
+#if !defined(is_ios)
+class JpegFrameWriter {
+ public:
+  JpegFrameWriter(const std::string &output_filename);
+  bool WriteFrame(const VideoFrame& input_frame, int quality);
+
+ private:
+  bool frame_written_;
+  const std::string output_filename_;
+  FILE* output_file_;
+};
+#endif
 
 }  // namespace test
 }  // namespace webrtc
