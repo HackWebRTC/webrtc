@@ -10,8 +10,11 @@
 
 #include "webrtc/rtc_base/network.h"
 
+#include <stdlib.h>
+
 #include <memory>
 #include <vector>
+
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/nethelpers.h"
 #include "webrtc/rtc_base/networkmonitor.h"
@@ -122,7 +125,8 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
 
   struct sockaddr_in6* CreateIpv6Addr(const std::string& ip_string,
                                       uint32_t scope_id) {
-    struct sockaddr_in6* ipv6_addr = new struct sockaddr_in6;
+    struct sockaddr_in6* ipv6_addr = static_cast<struct sockaddr_in6*>(
+        malloc(sizeof(struct sockaddr_in6)));
     memset(ipv6_addr, 0, sizeof(struct sockaddr_in6));
     ipv6_addr->sin6_family = AF_INET6;
     ipv6_addr->sin6_scope_id = scope_id;
@@ -168,8 +172,8 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
     struct ifaddrs* if_addr = list;
     while (if_addr != nullptr) {
       struct ifaddrs* next_addr = if_addr->ifa_next;
-      delete if_addr->ifa_addr;
-      delete if_addr->ifa_netmask;
+      free(if_addr->ifa_addr);
+      free(if_addr->ifa_netmask);
       delete if_addr;
       if_addr = next_addr;
     }
