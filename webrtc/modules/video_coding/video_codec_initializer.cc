@@ -22,15 +22,6 @@
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
-namespace {
-bool TemporalLayersConfigured(const std::vector<VideoStream>& streams) {
-  for (const VideoStream& stream : streams) {
-    if (stream.temporal_layer_thresholds_bps.size() > 0)
-      return true;
-  }
-  return false;
-}
-}  // namespace
 
 bool VideoCodecInitializer::SetupCodec(
     const VideoEncoderConfig& config,
@@ -130,8 +121,12 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
         *video_codec.VP8() = VideoEncoder::GetDefaultVp8Settings();
       video_codec.VP8()->numberOfTemporalLayers = static_cast<unsigned char>(
           streams.back().temporal_layer_thresholds_bps.size() + 1);
-
-      if (nack_enabled && !TemporalLayersConfigured(streams)) {
+      bool temporal_layers_configured = false;
+      for (const VideoStream& stream : streams) {
+        if (stream.temporal_layer_thresholds_bps.size() > 0)
+          temporal_layers_configured = true;
+      }
+      if (nack_enabled && !temporal_layers_configured) {
         LOG(LS_INFO) << "No temporal layers and nack enabled -> resilience off";
         video_codec.VP8()->resilience = kResilienceOff;
       }
@@ -149,13 +144,6 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       }
       video_codec.VP9()->numberOfTemporalLayers = static_cast<unsigned char>(
           streams.back().temporal_layer_thresholds_bps.size() + 1);
-
-      if (nack_enabled && !TemporalLayersConfigured(streams) &&
-          video_codec.VP9()->numberOfSpatialLayers == 1) {
-        LOG(LS_INFO) << "No temporal or spatial layers and nack enabled -> "
-                     << "resilience off";
-        video_codec.VP9()->resilienceOn = false;
-      }
       break;
     }
     case kVideoCodecH264: {
