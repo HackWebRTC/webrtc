@@ -406,7 +406,8 @@ int64_t PacedSender::TimeUntilNextProcess() {
 void PacedSender::Process() {
   int64_t now_us = clock_->TimeInMicroseconds();
   rtc::CritScope cs(&critsect_);
-  int64_t elapsed_time_ms = (now_us - time_last_update_us_ + 500) / 1000;
+  int64_t elapsed_time_ms = std::min(
+      kMaxIntervalTimeMs, (now_us - time_last_update_us_ + 500) / 1000);
   int target_bitrate_kbps = pacing_bitrate_kbps_;
 
   if (paused_) {
@@ -417,7 +418,7 @@ void PacedSender::Process() {
     if (packet_counter_ == 0)
       return;
     size_t bytes_sent = SendPadding(1, pacing_info);
-    alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
+    alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
     return;
   }
 
@@ -437,8 +438,6 @@ void PacedSender::Process() {
     }
 
     media_budget_->set_target_rate_kbps(target_bitrate_kbps);
-
-    elapsed_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
     UpdateBudgetWithElapsedTime(elapsed_time_ms);
   }
 
