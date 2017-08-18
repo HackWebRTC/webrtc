@@ -31,7 +31,8 @@ class FakeEncodedImageCallback : public EncodedImageCallback {
   Result OnEncodedImage(const EncodedImage& encoded_image,
                         const CodecSpecificInfo* codec_specific_info,
                         const RTPFragmentationHeader* fragmentation) override {
-    last_frame_was_timing_ = encoded_image.timing_.is_timing_frame;
+    last_frame_was_timing_ =
+        encoded_image.timing_.flags != TimingFrameFlags::kInvalid;
     return Result(Result::OK);
   };
 
@@ -162,6 +163,31 @@ TEST(TestVCMEncodedFrameCallback, MarksOutliers) {
       }
     }
   }
+}
+
+TEST(TestVCMEncodedFrameCallback, NoTimingFrameIfNoEncodeStartTime) {
+  EncodedImage image;
+  CodecSpecificInfo codec_specific;
+  int64_t timestamp = 1;
+  image._length = 500;
+  image.capture_time_ms_ = timestamp;
+  codec_specific.codecType = kVideoCodecGeneric;
+  codec_specific.codecSpecific.generic.simulcast_idx = 0;
+  FakeEncodedImageCallback sink;
+  VCMEncodedFrameCallback callback(&sink, nullptr);
+  VideoCodec::TimingFrameTriggerThresholds thresholds;
+  thresholds.delay_ms = 1;  // Make all frames timing frames.
+  callback.SetTimingFramesThresholds(thresholds);
+
+  // Verify a single frame works with encode start time set.
+  callback.OnEncodeStarted(timestamp, 0);
+  callback.OnEncodedImage(image, &codec_specific, nullptr);
+  EXPECT_TRUE(sink.WasTimingFrame());
+
+  // New frame, now skip OnEncodeStarted. Should not result in timing frame.
+  image.capture_time_ms_ = ++timestamp;
+  callback.OnEncodedImage(image, &codec_specific, nullptr);
+  EXPECT_FALSE(sink.WasTimingFrame());
 }
 
 }  // namespace test

@@ -560,7 +560,6 @@ void RtpVideoStreamReceiver::NotifyReceiverOfFecPacket(
   rtp_header.type.Video.video_timing = {0u, 0u, 0u, 0u, 0u, 0u, false};
   if (header.extension.has_video_timing) {
     rtp_header.type.Video.video_timing = header.extension.video_timing;
-    rtp_header.type.Video.video_timing.is_timing_frame = true;
   }
   rtp_header.type.Video.playout_delay = header.extension.playout_delay;
 

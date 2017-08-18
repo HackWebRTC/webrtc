@@ -231,7 +231,7 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
 
   rtc::Optional<size_t> outlier_frame_size;
   rtc::Optional<int64_t> encode_start_ms;
-  bool is_timing_frame = false;
+  uint8_t timing_flags = TimingFrameFlags::kInvalid;
   {
     rtc::CritScope crit(&timing_params_lock_);
 
@@ -274,14 +274,16 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
     if (last_timing_frame_time_ms_ == -1 ||
         timing_frame_delay_ms >= timing_frames_thresholds_.delay_ms ||
         timing_frame_delay_ms == 0) {
-      is_timing_frame = true;
+      timing_flags = TimingFrameFlags::kTriggeredByTimer;
       last_timing_frame_time_ms_ = encoded_image.capture_time_ms_;
     }
 
     // Outliers trigger timing frames, but do not affect scheduled timing
     // frames.
     if (outlier_frame_size && encoded_image._length >= *outlier_frame_size) {
-      is_timing_frame = true;
+      if (timing_flags == TimingFrameFlags::kInvalid)
+        timing_flags = 0;
+      timing_flags |= TimingFrameFlags::kTriggeredBySize;
     }
   }
 
@@ -290,8 +292,11 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
   // drift relative to rtc::TimeMillis(). We can't use it for Timing frames,
   // because to being sent in the network capture time required to be less than
   // all the other timestamps.
-  if (is_timing_frame && encode_start_ms) {
+  if (timing_flags != TimingFrameFlags::kInvalid && encode_start_ms) {
     encoded_image.SetEncodeTime(*encode_start_ms, rtc::TimeMillis());
+    encoded_image.timing_.flags = timing_flags;
+  } else {
+    encoded_image.timing_.flags = TimingFrameFlags::kInvalid;
   }
 
   Result result = post_encode_callback_->OnEncodedImage(
