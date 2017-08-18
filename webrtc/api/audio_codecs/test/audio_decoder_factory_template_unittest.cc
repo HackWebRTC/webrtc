@@ -13,6 +13,7 @@
 #include "webrtc/api/audio_codecs/g711/audio_decoder_g711.h"
 #include "webrtc/api/audio_codecs/g722/audio_decoder_g722.h"
 #include "webrtc/api/audio_codecs/ilbc/audio_decoder_ilbc.h"
+#include "webrtc/api/audio_codecs/isac/audio_decoder_isac_fix.h"
 #include "webrtc/api/audio_codecs/opus/audio_decoder_opus.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/test/gmock.h"
@@ -164,6 +165,19 @@ TEST(AudioDecoderFactoryTemplateTest, Ilbc) {
   auto dec = factory->MakeAudioDecoder({"ilbc", 8000, 1});
   ASSERT_NE(nullptr, dec);
   EXPECT_EQ(8000, dec->SampleRateHz());
+}
+
+TEST(AudioDecoderFactoryTemplateTest, IsacFix) {
+  auto factory = CreateAudioDecoderFactory<AudioDecoderIsacFix>();
+  EXPECT_THAT(factory->GetSupportedDecoders(),
+              testing::ElementsAre(AudioCodecSpec{
+                  {"ISAC", 16000, 1}, {16000, 1, 32000, 10000, 32000}}));
+  EXPECT_FALSE(factory->IsSupportedDecoder({"isac", 16000, 2}));
+  EXPECT_TRUE(factory->IsSupportedDecoder({"isac", 16000, 1}));
+  EXPECT_EQ(nullptr, factory->MakeAudioDecoder({"isac", 8000, 1}));
+  auto dec = factory->MakeAudioDecoder({"isac", 16000, 1});
+  ASSERT_NE(nullptr, dec);
+  EXPECT_EQ(16000, dec->SampleRateHz());
 }
 
 TEST(AudioDecoderFactoryTemplateTest, L16) {
