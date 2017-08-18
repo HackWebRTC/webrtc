@@ -59,7 +59,8 @@ FrameBuffer::~FrameBuffer() {}
 
 FrameBuffer::ReturnReason FrameBuffer::NextFrame(
     int64_t max_wait_time_ms,
-    std::unique_ptr<FrameObject>* frame_out) {
+    std::unique_ptr<FrameObject>* frame_out,
+    bool keyframe_required) {
   TRACE_EVENT0("webrtc", "FrameBuffer::NextFrame");
   int64_t latest_return_time_ms =
       clock_->TimeInMilliseconds() + max_wait_time_ms;
@@ -105,6 +106,10 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
         }
 
         FrameObject* frame = frame_it->second.frame.get();
+
+        if (keyframe_required && !frame->is_keyframe())
+          continue;
+
         next_frame_it_ = frame_it;
         if (frame->RenderTime() == -1)
           frame->SetRenderTime(timing_->RenderTimeMs(frame->timestamp, now_ms));
@@ -279,7 +284,7 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   TRACE_EVENT0("webrtc", "FrameBuffer::InsertFrame");
   RTC_DCHECK(frame);
   if (stats_callback_)
-    stats_callback_->OnCompleteFrame(frame->num_references == 0, frame->size());
+    stats_callback_->OnCompleteFrame(frame->is_keyframe(), frame->size());
   FrameKey key(frame->picture_id, frame->spatial_layer);
 
   rtc::CritScope lock(&crit_);
@@ -307,7 +312,7 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   if (last_decoded_frame_it_ != frames_.end() &&
       key <= last_decoded_frame_it_->first) {
     if (AheadOf(frame->timestamp, last_decoded_frame_timestamp_) &&
-        frame->num_references == 0) {
+        frame->is_keyframe()) {
       // If this frame has a newer timestamp but an earlier picture id then we
       // assume there has been a jump in the picture id due to some encoder
       // reconfiguration or some other reason. Even though this is not according

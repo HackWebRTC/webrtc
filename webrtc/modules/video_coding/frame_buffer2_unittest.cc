@@ -168,11 +168,12 @@ class TestFrameBuffer2 : public ::testing::Test {
     return buffer_.InsertFrame(std::move(frame));
   }
 
-  void ExtractFrame(int64_t max_wait_time = 0) {
+  void ExtractFrame(int64_t max_wait_time = 0, bool keyframe_required = false) {
     crit_.Enter();
     if (max_wait_time == 0) {
       std::unique_ptr<FrameObject> frame;
-      FrameBuffer::ReturnReason res = buffer_.NextFrame(0, &frame);
+      FrameBuffer::ReturnReason res =
+          buffer_.NextFrame(0, &frame, keyframe_required);
       if (res != FrameBuffer::ReturnReason::kStopped)
         frames_.emplace_back(std::move(frame));
       crit_.Leave();
@@ -539,6 +540,19 @@ TEST_F(TestFrameBuffer2, InvalidReferences) {
   EXPECT_EQ(1, InsertFrame(1, 0, 2000, false));
   ExtractFrame();
   EXPECT_EQ(2, InsertFrame(2, 0, 3000, false, 1));
+}
+
+TEST_F(TestFrameBuffer2, KeyframeRequired) {
+  EXPECT_EQ(1, InsertFrame(1, 0, 1000, false));
+  EXPECT_EQ(2, InsertFrame(2, 0, 2000, false, 1));
+  EXPECT_EQ(3, InsertFrame(3, 0, 3000, false));
+  ExtractFrame();
+  ExtractFrame(0, true);
+  ExtractFrame();
+
+  CheckFrame(0, 1, 0);
+  CheckFrame(1, 3, 0);
+  CheckNoFrame(2);
 }
 
 }  // namespace video_coding
