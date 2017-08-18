@@ -685,12 +685,12 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
       GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
       GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
       if (isYuvBuffer) {
-        drawer.drawYuv(yuvTextures,
+        listenerAndParams.drawer.drawYuv(yuvTextures,
             RendererCommon.convertMatrixFromAndroidGraphicsMatrix(drawMatrix),
             frame.getRotatedWidth(), frame.getRotatedHeight(), 0, 0, scaledWidth, scaledHeight);
       } else {
         VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) frame.getBuffer();
-        drawer.drawTexture(textureBuffer, drawMatrix, frame.getRotatedWidth(),
+        listenerAndParams.drawer.drawTexture(textureBuffer, drawMatrix, frame.getRotatedWidth(),
             frame.getRotatedHeight(), 0, 0, scaledWidth, scaledHeight);
       }
 
