@@ -11,6 +11,7 @@
 #include "webrtc/call/rtcp_demuxer.h"
 
 #include <memory>
+#include <set>
 
 #include "webrtc/call/rtcp_packet_sink_interface.h"
 #include "webrtc/common_types.h"
@@ -30,11 +31,53 @@ using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::ElementsAreArray;
 using ::testing::InSequence;
+using ::testing::Matcher;
 using ::testing::NiceMock;
 
 class MockRtcpPacketSink : public RtcpPacketSinkInterface {
  public:
   MOCK_METHOD1(OnRtcpPacket, void(rtc::ArrayView<const uint8_t>));
+};
+
+class RtcpDemuxerTest : public testing::Test {
+ protected:
+  ~RtcpDemuxerTest() {
+    for (auto* sink : sinks_to_tear_down_) {
+      demuxer_.RemoveSink(sink);
+    }
+    for (auto* sink : broadcast_sinks_to_tear_down_) {
+      demuxer_.RemoveBroadcastSink(sink);
+    }
+  }
+
+  void AddSsrcSink(uint32_t ssrc, RtcpPacketSinkInterface* sink) {
+    demuxer_.AddSink(ssrc, sink);
+    sinks_to_tear_down_.insert(sink);
+  }
+
+  void AddRsidSink(const std::string& rsid, RtcpPacketSinkInterface* sink) {
+    demuxer_.AddSink(rsid, sink);
+    sinks_to_tear_down_.insert(sink);
+  }
+
+  void RemoveSink(RtcpPacketSinkInterface* sink) {
+    sinks_to_tear_down_.erase(sink);
+    demuxer_.RemoveSink(sink);
+  }
+
+  void AddBroadcastSink(RtcpPacketSinkInterface* sink) {
+    demuxer_.AddBroadcastSink(sink);
+    broadcast_sinks_to_tear_down_.insert(sink);
+  }
+
+  void RemoveBroadcastSink(RtcpPacketSinkInterface* sink) {
+    broadcast_sinks_to_tear_down_.erase(sink);
+    demuxer_.RemoveBroadcastSink(sink);
+  }
+
+  RtcpDemuxer demuxer_;
+  std::set<RtcpPacketSinkInterface*> sinks_to_tear_down_;
+  std::set<RtcpPacketSinkInterface*> broadcast_sinks_to_tear_down_;
 };
 
 // Produces a packet buffer representing an RTCP packet with a given SSRC,
@@ -54,120 +97,91 @@ rtc::Buffer CreateRtcpPacket(uint32_t ssrc,
   return packet.Build();
 }
 
+static Matcher<rtc::ArrayView<const uint8_t>> SamePacketAs(
+    const rtc::Buffer& other) {
+  return ElementsAreArray(other.cbegin(), other.cend());
+}
+
 }  // namespace
 
-TEST(RtcpDemuxerTest, OnRtcpPacketCalledOnCorrectSinkBySsrc) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, OnRtcpPacketCalledOnCorrectSinkBySsrc) {
   constexpr uint32_t ssrcs[] = {101, 202, 303};
   MockRtcpPacketSink sinks[arraysize(ssrcs)];
   for (size_t i = 0; i < arraysize(ssrcs); i++) {
-    demuxer.AddSink(ssrcs[i], &sinks[i]);
+    AddSsrcSink(ssrcs[i], &sinks[i]);
   }
 
   for (size_t i = 0; i < arraysize(ssrcs); i++) {
     auto packet = CreateRtcpPacket(ssrcs[i]);
-    EXPECT_CALL(sinks[i],
-                OnRtcpPacket(ElementsAreArray(packet.cbegin(), packet.cend())))
-        .Times(1);
-    demuxer.OnRtcpPacket(packet);
-  }
-
-  // Test tear-down
-  for (const auto& sink : sinks) {
-    demuxer.RemoveSink(&sink);
+    EXPECT_CALL(sinks[i], OnRtcpPacket(SamePacketAs(packet))).Times(1);
+    demuxer_.OnRtcpPacket(packet);
   }
 }
 
-TEST(RtcpDemuxerTest, OnRtcpPacketCalledOnResolvedRsidSink) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, OnRtcpPacketCalledOnResolvedRsidSink) {
   // Set up some RSID sinks.
   const std::string rsids[] = {"a", "b", "c"};
   MockRtcpPacketSink sinks[arraysize(rsids)];
   for (size_t i = 0; i < arraysize(rsids); i++) {
-    demuxer.AddSink(rsids[i], &sinks[i]);
+    AddRsidSink(rsids[i], &sinks[i]);
   }
 
   // Only resolve one of the sinks.
   constexpr size_t resolved_sink_index = 0;
   constexpr uint32_t ssrc = 345;
-  demuxer.OnSsrcBoundToRsid(rsids[resolved_sink_index], ssrc);
+  demuxer_.OnSsrcBoundToRsid(rsids[resolved_sink_index], ssrc);
 
   // The resolved sink gets notifications of RTCP messages with its SSRC.
   auto packet = CreateRtcpPacket(ssrc);
-  EXPECT_CALL(sinks[resolved_sink_index],
-              OnRtcpPacket(ElementsAreArray(packet.cbegin(), packet.cend())))
+  EXPECT_CALL(sinks[resolved_sink_index], OnRtcpPacket(SamePacketAs(packet)))
       .Times(1);
 
   // RTCP received; expected calls triggered.
-  demuxer.OnRtcpPacket(packet);
-
-  // Test tear-down
-  for (const auto& sink : sinks) {
-    demuxer.RemoveSink(&sink);
-  }
+  demuxer_.OnRtcpPacket(packet);
 }
 
-TEST(RtcpDemuxerTest,
-     SingleCallbackAfterResolutionOfAnRsidToAlreadyRegisteredSsrc) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest,
+       SingleCallbackAfterResolutionOfAnRsidToAlreadyRegisteredSsrc) {
   // Associate a sink with an SSRC.
   MockRtcpPacketSink sink;
   constexpr uint32_t ssrc = 999;
-  demuxer.AddSink(ssrc, &sink);
+  AddSsrcSink(ssrc, &sink);
 
   // Associate the same sink with an RSID.
   const std::string rsid = "r";
-  demuxer.AddSink(rsid, &sink);
+  AddRsidSink(rsid, &sink);
 
   // Resolve the RSID to the aforementioned SSRC.
-  demuxer.OnSsrcBoundToRsid(rsid, ssrc);
+  demuxer_.OnSsrcBoundToRsid(rsid, ssrc);
 
   // OnRtcpPacket still called only a single time for messages with this SSRC.
   auto packet = CreateRtcpPacket(ssrc);
-  EXPECT_CALL(sink,
-              OnRtcpPacket(ElementsAreArray(packet.cbegin(), packet.cend())))
-      .Times(1);
-  demuxer.OnRtcpPacket(packet);
-
-  // Test tear-down
-  demuxer.RemoveSink(&sink);
+  EXPECT_CALL(sink, OnRtcpPacket(SamePacketAs(packet))).Times(1);
+  demuxer_.OnRtcpPacket(packet);
 }
 
-TEST(RtcpDemuxerTest, OnRtcpPacketCalledOnAllBroadcastSinksForAllRtcpPackets) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest,
+       OnRtcpPacketCalledOnAllBroadcastSinksForAllRtcpPackets) {
   MockRtcpPacketSink sinks[3];
   for (MockRtcpPacketSink& sink : sinks) {
-    demuxer.AddBroadcastSink(&sink);
+    AddBroadcastSink(&sink);
   }
 
   constexpr uint32_t ssrc = 747;
   auto packet = CreateRtcpPacket(ssrc);
 
   for (MockRtcpPacketSink& sink : sinks) {
-    EXPECT_CALL(sink,
-                OnRtcpPacket(ElementsAreArray(packet.cbegin(), packet.cend())))
-        .Times(1);
+    EXPECT_CALL(sink, OnRtcpPacket(SamePacketAs(packet))).Times(1);
   }
 
   // RTCP received; expected calls triggered.
-  demuxer.OnRtcpPacket(packet);
-
-  // Test tear-down
-  for (const auto& sink : sinks) {
-    demuxer.RemoveBroadcastSink(&sink);
-  }
+  demuxer_.OnRtcpPacket(packet);
 }
 
-TEST(RtcpDemuxerTest, PacketsDeliveredInRightOrderToNonBroadcastSink) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, PacketsDeliveredInRightOrderToNonBroadcastSink) {
   constexpr uint32_t ssrc = 101;
   MockRtcpPacketSink sink;
-  demuxer.AddSink(ssrc, &sink);
+  AddSsrcSink(ssrc, &sink);
 
   std::vector<rtc::Buffer> packets;
   for (size_t i = 0; i < 5; i++) {
@@ -176,24 +190,17 @@ TEST(RtcpDemuxerTest, PacketsDeliveredInRightOrderToNonBroadcastSink) {
 
   InSequence sequence;
   for (const auto& packet : packets) {
-    EXPECT_CALL(sink,
-                OnRtcpPacket(ElementsAreArray(packet.cbegin(), packet.cend())))
-        .Times(1);
+    EXPECT_CALL(sink, OnRtcpPacket(SamePacketAs(packet))).Times(1);
   }
 
   for (const auto& packet : packets) {
-    demuxer.OnRtcpPacket(packet);
+    demuxer_.OnRtcpPacket(packet);
   }
-
-  // Test tear-down
-  demuxer.RemoveSink(&sink);
 }
 
-TEST(RtcpDemuxerTest, PacketsDeliveredInRightOrderToBroadcastSink) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, PacketsDeliveredInRightOrderToBroadcastSink) {
   MockRtcpPacketSink sink;
-  demuxer.AddBroadcastSink(&sink);
+  AddBroadcastSink(&sink);
 
   std::vector<rtc::Buffer> packets;
   for (size_t i = 0; i < 5; i++) {
@@ -203,80 +210,60 @@ TEST(RtcpDemuxerTest, PacketsDeliveredInRightOrderToBroadcastSink) {
 
   InSequence sequence;
   for (const auto& packet : packets) {
-    EXPECT_CALL(sink,
-                OnRtcpPacket(ElementsAreArray(packet.cbegin(), packet.cend())))
-        .Times(1);
+    EXPECT_CALL(sink, OnRtcpPacket(SamePacketAs(packet))).Times(1);
   }
 
   for (const auto& packet : packets) {
-    demuxer.OnRtcpPacket(packet);
+    demuxer_.OnRtcpPacket(packet);
   }
-
-  // Test tear-down
-  demuxer.RemoveBroadcastSink(&sink);
 }
 
-TEST(RtcpDemuxerTest, MultipleSinksMappedToSameSsrc) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, MultipleSinksMappedToSameSsrc) {
   MockRtcpPacketSink sinks[3];
   constexpr uint32_t ssrc = 404;
   for (auto& sink : sinks) {
-    demuxer.AddSink(ssrc, &sink);
+    AddSsrcSink(ssrc, &sink);
   }
 
   // Reception of an RTCP packet associated with the shared SSRC triggers the
   // callback on all of the sinks associated with it.
   auto packet = CreateRtcpPacket(ssrc);
   for (auto& sink : sinks) {
-    EXPECT_CALL(sink,
-                OnRtcpPacket(ElementsAreArray(packet.cbegin(), packet.cend())));
+    EXPECT_CALL(sink, OnRtcpPacket(SamePacketAs(packet)));
   }
-  demuxer.OnRtcpPacket(packet);
 
-  // Test tear-down
-  for (const auto& sink : sinks) {
-    demuxer.RemoveSink(&sink);
-  }
+  demuxer_.OnRtcpPacket(packet);
 }
 
-TEST(RtcpDemuxerTest, SinkMappedToMultipleSsrcs) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, SinkMappedToMultipleSsrcs) {
   constexpr uint32_t ssrcs[] = {404, 505, 606};
   MockRtcpPacketSink sink;
   for (uint32_t ssrc : ssrcs) {
-    demuxer.AddSink(ssrc, &sink);
+    AddSsrcSink(ssrc, &sink);
   }
 
   // The sink which is associated with multiple SSRCs gets the callback
   // triggered for each of those SSRCs.
   for (uint32_t ssrc : ssrcs) {
     auto packet = CreateRtcpPacket(ssrc);
-    EXPECT_CALL(sink,
-                OnRtcpPacket(ElementsAreArray(packet.cbegin(), packet.cend())));
-    demuxer.OnRtcpPacket(packet);
+    EXPECT_CALL(sink, OnRtcpPacket(SamePacketAs(packet)));
+    demuxer_.OnRtcpPacket(packet);
   }
-
-  // Test tear-down
-  demuxer.RemoveSink(&sink);
 }
 
-TEST(RtcpDemuxerTest, MultipleRsidsOnSameSink) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, MultipleRsidsOnSameSink) {
   // Sink associated with multiple sinks.
   MockRtcpPacketSink sink;
   const std::string rsids[] = {"a", "b", "c"};
   for (const auto& rsid : rsids) {
-    demuxer.AddSink(rsid, &sink);
+    AddRsidSink(rsid, &sink);
   }
 
   // RSIDs resolved to SSRCs.
   uint32_t ssrcs[arraysize(rsids)];
   for (size_t i = 0; i < arraysize(rsids); i++) {
     ssrcs[i] = 1000 + static_cast<uint32_t>(i);
-    demuxer.OnSsrcBoundToRsid(rsids[i], ssrcs[i]);
+    demuxer_.OnSsrcBoundToRsid(rsids[i], ssrcs[i]);
   }
 
   // Set up packets to match those RSIDs/SSRCs.
@@ -287,298 +274,231 @@ TEST(RtcpDemuxerTest, MultipleRsidsOnSameSink) {
 
   // The sink expects to receive all of the packets.
   for (const auto& packet : packets) {
-    EXPECT_CALL(sink,
-                OnRtcpPacket(ElementsAreArray(packet.cbegin(), packet.cend())))
-        .Times(1);
+    EXPECT_CALL(sink, OnRtcpPacket(SamePacketAs(packet))).Times(1);
   }
 
   // Packet demuxed correctly; OnRtcpPacket() triggered on sink.
   for (const auto& packet : packets) {
-    demuxer.OnRtcpPacket(packet);
+    demuxer_.OnRtcpPacket(packet);
   }
-
-  // Test tear-down
-  demuxer.RemoveSink(&sink);
 }
 
-TEST(RtcpDemuxerTest, RsidUsedByMultipleSinks) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, RsidUsedByMultipleSinks) {
   MockRtcpPacketSink sinks[3];
   const std::string shared_rsid = "a";
 
   for (MockRtcpPacketSink& sink : sinks) {
-    demuxer.AddSink(shared_rsid, &sink);
+    AddRsidSink(shared_rsid, &sink);
   }
 
   constexpr uint32_t shared_ssrc = 888;
-  demuxer.OnSsrcBoundToRsid(shared_rsid, shared_ssrc);
+  demuxer_.OnSsrcBoundToRsid(shared_rsid, shared_ssrc);
 
   auto packet = CreateRtcpPacket(shared_ssrc);
 
   for (MockRtcpPacketSink& sink : sinks) {
-    EXPECT_CALL(sink,
-                OnRtcpPacket(ElementsAreArray(packet.cbegin(), packet.cend())))
-        .Times(1);
+    EXPECT_CALL(sink, OnRtcpPacket(SamePacketAs(packet))).Times(1);
   }
 
-  demuxer.OnRtcpPacket(packet);
-
-  // Test tear-down
-  for (MockRtcpPacketSink& sink : sinks) {
-    demuxer.RemoveSink(&sink);
-  }
+  demuxer_.OnRtcpPacket(packet);
 }
 
-TEST(RtcpDemuxerTest, NoCallbackOnSsrcSinkRemovedBeforeFirstPacket) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, NoCallbackOnSsrcSinkRemovedBeforeFirstPacket) {
   constexpr uint32_t ssrc = 404;
   MockRtcpPacketSink sink;
-  demuxer.AddSink(ssrc, &sink);
+  AddSsrcSink(ssrc, &sink);
 
-  demuxer.RemoveSink(&sink);
+  RemoveSink(&sink);
 
   // The removed sink does not get callbacks.
   auto packet = CreateRtcpPacket(ssrc);
   EXPECT_CALL(sink, OnRtcpPacket(_)).Times(0);  // Not called.
-  demuxer.OnRtcpPacket(packet);
+  demuxer_.OnRtcpPacket(packet);
 }
 
-TEST(RtcpDemuxerTest, NoCallbackOnSsrcSinkRemovedAfterFirstPacket) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, NoCallbackOnSsrcSinkRemovedAfterFirstPacket) {
   constexpr uint32_t ssrc = 404;
   NiceMock<MockRtcpPacketSink> sink;
-  demuxer.AddSink(ssrc, &sink);
+  AddSsrcSink(ssrc, &sink);
 
   auto before_packet = CreateRtcpPacket(ssrc);
-  demuxer.OnRtcpPacket(before_packet);
+  demuxer_.OnRtcpPacket(before_packet);
 
-  demuxer.RemoveSink(&sink);
+  RemoveSink(&sink);
 
   // The removed sink does not get callbacks.
   auto after_packet = CreateRtcpPacket(ssrc);
   EXPECT_CALL(sink, OnRtcpPacket(_)).Times(0);  // Not called.
-  demuxer.OnRtcpPacket(after_packet);
+  demuxer_.OnRtcpPacket(after_packet);
 }
 
-TEST(RtcpDemuxerTest, NoCallbackOnRsidSinkRemovedBeforeRsidResolution) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, NoCallbackOnRsidSinkRemovedBeforeRsidResolution) {
   const std::string rsid = "a";
   constexpr uint32_t ssrc = 404;
   MockRtcpPacketSink sink;
-  demuxer.AddSink(rsid, &sink);
+  AddRsidSink(rsid, &sink);
 
   // Removal before resolution.
-  demuxer.RemoveSink(&sink);
-  demuxer.OnSsrcBoundToRsid(rsid, ssrc);
+  RemoveSink(&sink);
+  demuxer_.OnSsrcBoundToRsid(rsid, ssrc);
 
   // The removed sink does not get callbacks.
   auto packet = CreateRtcpPacket(ssrc);
   EXPECT_CALL(sink, OnRtcpPacket(_)).Times(0);  // Not called.
-  demuxer.OnRtcpPacket(packet);
+  demuxer_.OnRtcpPacket(packet);
 }
 
-TEST(RtcpDemuxerTest, NoCallbackOnRsidSinkRemovedAfterRsidResolution) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, NoCallbackOnRsidSinkRemovedAfterRsidResolution) {
   const std::string rsid = "a";
   constexpr uint32_t ssrc = 404;
   MockRtcpPacketSink sink;
-  demuxer.AddSink(rsid, &sink);
+  AddRsidSink(rsid, &sink);
 
   // Removal after resolution.
-  demuxer.OnSsrcBoundToRsid(rsid, ssrc);
-  demuxer.RemoveSink(&sink);
+  demuxer_.OnSsrcBoundToRsid(rsid, ssrc);
+  RemoveSink(&sink);
 
   // The removed sink does not get callbacks.
   auto packet = CreateRtcpPacket(ssrc);
   EXPECT_CALL(sink, OnRtcpPacket(_)).Times(0);  // Not called.
-  demuxer.OnRtcpPacket(packet);
+  demuxer_.OnRtcpPacket(packet);
 }
 
-TEST(RtcpDemuxerTest, NoCallbackOnBroadcastSinkRemovedBeforeFirstPacket) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, NoCallbackOnBroadcastSinkRemovedBeforeFirstPacket) {
   MockRtcpPacketSink sink;
-  demuxer.AddBroadcastSink(&sink);
+  AddBroadcastSink(&sink);
 
-  demuxer.RemoveBroadcastSink(&sink);
+  RemoveBroadcastSink(&sink);
 
   // The removed sink does not get callbacks.
   constexpr uint32_t ssrc = 404;
   auto packet = CreateRtcpPacket(ssrc);
   EXPECT_CALL(sink, OnRtcpPacket(_)).Times(0);  // Not called.
-  demuxer.OnRtcpPacket(packet);
+  demuxer_.OnRtcpPacket(packet);
 }
 
-TEST(RtcpDemuxerTest, NoCallbackOnBroadcastSinkRemovedAfterFirstPacket) {
-  RtcpDemuxer demuxer;
-
+TEST_F(RtcpDemuxerTest, NoCallbackOnBroadcastSinkRemovedAfterFirstPacket) {
   NiceMock<MockRtcpPacketSink> sink;
-  demuxer.AddBroadcastSink(&sink);
+  AddBroadcastSink(&sink);
 
   constexpr uint32_t ssrc = 404;
   auto before_packet = CreateRtcpPacket(ssrc);
-  demuxer.OnRtcpPacket(before_packet);
+  demuxer_.OnRtcpPacket(before_packet);
 
-  demuxer.RemoveBroadcastSink(&sink);
+  RemoveBroadcastSink(&sink);
 
   // The removed sink does not get callbacks.
   auto after_packet = CreateRtcpPacket(ssrc);
   EXPECT_CALL(sink, OnRtcpPacket(_)).Times(0);  // Not called.
-  demuxer.OnRtcpPacket(after_packet);
+  demuxer_.OnRtcpPacket(after_packet);
 }
 
 // The RSID to SSRC mapping should be one-to-one. If we end up receiving
 // two (or more) packets with the same SSRC, but different RSIDs, we guarantee
 // remembering the first one; no guarantees are made about further associations.
-TEST(RtcpDemuxerTest, FirstRsolutionOfRsidNotForgotten) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, FirstResolutionOfRsidNotForgotten) {
   MockRtcpPacketSink sink;
-
   const std::string rsid = "a";
-  demuxer.AddSink(rsid, &sink);
+  AddRsidSink(rsid, &sink);
 
   constexpr uint32_t ssrc_a = 111;  // First resolution - guaranteed effective.
-  demuxer.OnSsrcBoundToRsid(rsid, ssrc_a);
+  demuxer_.OnSsrcBoundToRsid(rsid, ssrc_a);
 
   constexpr uint32_t ssrc_b = 222;  // Second resolution - no guarantees.
-  demuxer.OnSsrcBoundToRsid(rsid, ssrc_b);
+  demuxer_.OnSsrcBoundToRsid(rsid, ssrc_b);
 
   auto packet_a = CreateRtcpPacket(ssrc_a);
-  EXPECT_CALL(
-      sink, OnRtcpPacket(ElementsAreArray(packet_a.cbegin(), packet_a.cend())))
-      .Times(1);
-  demuxer.OnRtcpPacket(packet_a);
+  EXPECT_CALL(sink, OnRtcpPacket(SamePacketAs(packet_a))).Times(1);
+  demuxer_.OnRtcpPacket(packet_a);
 
   auto packet_b = CreateRtcpPacket(ssrc_b);
-  EXPECT_CALL(
-      sink, OnRtcpPacket(ElementsAreArray(packet_b.cbegin(), packet_b.cend())))
-      .Times(AtLeast(0));
-  demuxer.OnRtcpPacket(packet_b);
-
-  // Test tear-down
-  demuxer.RemoveSink(&sink);
+  EXPECT_CALL(sink, OnRtcpPacket(SamePacketAs(packet_b))).Times(AtLeast(0));
+  demuxer_.OnRtcpPacket(packet_b);
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST(RtcpDemuxerTest, RepeatedSsrcToSinkAssociationsDisallowed) {
-  RtcpDemuxer demuxer;
+
+TEST_F(RtcpDemuxerTest, RepeatedSsrcToSinkAssociationsDisallowed) {
   MockRtcpPacketSink sink;
 
   constexpr uint32_t ssrc = 101;
-  demuxer.AddSink(ssrc, &sink);
-  EXPECT_DEATH(demuxer.AddSink(ssrc, &sink), "");
-
-  // Test tear-down
-  demuxer.RemoveSink(&sink);
+  AddSsrcSink(ssrc, &sink);
+  EXPECT_DEATH(AddSsrcSink(ssrc, &sink), "");
 }
 
-TEST(RtcpDemuxerTest, RepeatedRsidToSinkAssociationsDisallowed) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, RepeatedRsidToSinkAssociationsDisallowed) {
   MockRtcpPacketSink sink;
 
   const std::string rsid = "z";
-  demuxer.AddSink(rsid, &sink);
-  EXPECT_DEATH(demuxer.AddSink(rsid, &sink), "");
-
-  // Test tear-down
-  demuxer.RemoveSink(&sink);
+  AddRsidSink(rsid, &sink);
+  EXPECT_DEATH(AddRsidSink(rsid, &sink), "");
 }
 
-TEST(RtcpDemuxerTest, RepeatedBroadcastSinkRegistrationDisallowed) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, RepeatedBroadcastSinkRegistrationDisallowed) {
   MockRtcpPacketSink sink;
 
-  demuxer.AddBroadcastSink(&sink);
-  EXPECT_DEATH(demuxer.AddBroadcastSink(&sink), "");
-
-  // Test tear-down
-  demuxer.RemoveBroadcastSink(&sink);
+  AddBroadcastSink(&sink);
+  EXPECT_DEATH(AddBroadcastSink(&sink), "");
 }
 
-TEST(RtcpDemuxerTest, SsrcSinkCannotAlsoBeRegisteredAsBroadcast) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, SsrcSinkCannotAlsoBeRegisteredAsBroadcast) {
   MockRtcpPacketSink sink;
 
   constexpr uint32_t ssrc = 101;
-  demuxer.AddSink(ssrc, &sink);
-  EXPECT_DEATH(demuxer.AddBroadcastSink(&sink), "");
-
-  // Test tear-down
-  demuxer.RemoveSink(&sink);
+  AddSsrcSink(ssrc, &sink);
+  EXPECT_DEATH(AddBroadcastSink(&sink), "");
 }
 
-TEST(RtcpDemuxerTest, RsidSinkCannotAlsoBeRegisteredAsBroadcast) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, RsidSinkCannotAlsoBeRegisteredAsBroadcast) {
   MockRtcpPacketSink sink;
 
   const std::string rsid = "z";
-  demuxer.AddSink(rsid, &sink);
-  EXPECT_DEATH(demuxer.AddBroadcastSink(&sink), "");
-
-  // Test tear-down
-  demuxer.RemoveSink(&sink);
+  AddRsidSink(rsid, &sink);
+  EXPECT_DEATH(AddBroadcastSink(&sink), "");
 }
 
-TEST(RtcpDemuxerTest, BroadcastSinkCannotAlsoBeRegisteredAsSsrcSink) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, BroadcastSinkCannotAlsoBeRegisteredAsSsrcSink) {
   MockRtcpPacketSink sink;
 
-  demuxer.AddBroadcastSink(&sink);
+  AddBroadcastSink(&sink);
   constexpr uint32_t ssrc = 101;
-  EXPECT_DEATH(demuxer.AddSink(ssrc, &sink), "");
-
-  // Test tear-down
-  demuxer.RemoveBroadcastSink(&sink);
+  EXPECT_DEATH(AddSsrcSink(ssrc, &sink), "");
 }
 
-TEST(RtcpDemuxerTest, BroadcastSinkCannotAlsoBeRegisteredAsRsidSink) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, BroadcastSinkCannotAlsoBeRegisteredAsRsidSink) {
   MockRtcpPacketSink sink;
 
-  demuxer.AddBroadcastSink(&sink);
+  AddBroadcastSink(&sink);
   const std::string rsid = "j";
-  EXPECT_DEATH(demuxer.AddSink(rsid, &sink), "");
-
-  // Test tear-down
-  demuxer.RemoveBroadcastSink(&sink);
+  EXPECT_DEATH(AddRsidSink(rsid, &sink), "");
 }
 
-TEST(RtcpDemuxerTest, MayNotCallRemoveSinkOnNeverAddedSink) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, MayNotCallRemoveSinkOnNeverAddedSink) {
   MockRtcpPacketSink sink;
-
-  EXPECT_DEATH(demuxer.RemoveSink(&sink), "");
+  EXPECT_DEATH(RemoveSink(&sink), "");
 }
 
-TEST(RtcpDemuxerTest, MayNotCallRemoveBroadcastSinkOnNeverAddedSink) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, MayNotCallRemoveBroadcastSinkOnNeverAddedSink) {
   MockRtcpPacketSink sink;
-
-  EXPECT_DEATH(demuxer.RemoveBroadcastSink(&sink), "");
+  EXPECT_DEATH(RemoveBroadcastSink(&sink), "");
 }
 
-TEST(RtcpDemuxerTest, RsidMustBeNonEmpty) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, RsidMustBeNonEmpty) {
   MockRtcpPacketSink sink;
-  EXPECT_DEATH(demuxer.AddSink("", &sink), "");
+  EXPECT_DEATH(AddRsidSink("", &sink), "");
 }
 
-TEST(RtcpDemuxerTest, RsidMustBeAlphaNumeric) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, RsidMustBeAlphaNumeric) {
   MockRtcpPacketSink sink;
-  EXPECT_DEATH(demuxer.AddSink("a_3", &sink), "");
+  EXPECT_DEATH(AddRsidSink("a_3", &sink), "");
 }
 
-TEST(RtcpDemuxerTest, RsidMustNotExceedMaximumLength) {
-  RtcpDemuxer demuxer;
+TEST_F(RtcpDemuxerTest, RsidMustNotExceedMaximumLength) {
   MockRtcpPacketSink sink;
   std::string rsid(StreamId::kMaxSize + 1, 'a');
-  EXPECT_DEATH(demuxer.AddSink(rsid, &sink), "");
+  EXPECT_DEATH(AddRsidSink(rsid, &sink), "");
 }
+
 #endif
+
 }  // namespace webrtc
