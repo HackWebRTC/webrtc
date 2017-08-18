@@ -32,7 +32,6 @@ bool MultimapAssociationExists(const Container& multimap,
                      [val](Reference elem) { return elem.second == val; });
 }
 
-// TODO(eladalon): Remove this in the next CL.
 template <typename Container, typename Value>
 size_t RemoveFromMultimapByValue(Container* multimap, const Value& value) {
   size_t count = 0;
@@ -82,6 +81,13 @@ bool MapHasValue(const Map& map, const typename Map::mapped_type& value) {
     return it.second == value;
   };
   return std::any_of(map.cbegin(), map.cend(), predicate);
+}
+
+template <typename Container>
+bool MultimapHasKey(const Container& c,
+                    const typename Container::key_type& key) {
+  auto it_range = c.equal_range(key);
+  return it_range.first != it_range.second;
 }
 
 rtc::Optional<uint32_t> ParseRtcpPacketSenderSsrc(

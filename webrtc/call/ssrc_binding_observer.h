@@ -26,7 +26,15 @@ class SsrcBindingObserver {
  public:
   virtual ~SsrcBindingObserver() = default;
 
-  virtual void OnSsrcBoundToRsid(const std::string& rsid, uint32_t ssrc) = 0;
+  virtual void OnSsrcBoundToRsid(const std::string& rsid, uint32_t ssrc) {}
+
+  virtual void OnSsrcBoundToMid(const std::string& mid, uint32_t ssrc) {}
+
+  virtual void OnSsrcBoundToMidRsid(const std::string& mid,
+                                    const std::string& rsid,
+                                    uint32_t ssrc) {}
+
+  virtual void OnSsrcBoundToPayloadType(uint8_t payload_type, uint32_t ssrc) {}
 };
 
 }  // namespace webrtc
