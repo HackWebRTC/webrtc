@@ -21,7 +21,7 @@
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/video_coding/frame_buffer2.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "webrtc/rtc_base/sequenced_task_checker.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/rtp_streams_synchronizer.h"
@@ -118,8 +118,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   static void DecodeThreadFunction(void* ptr);
   bool Decode();
 
-  rtc::ThreadChecker worker_thread_checker_;
-  rtc::ThreadChecker module_process_thread_checker_;
+  rtc::SequencedTaskChecker worker_sequence_checker_;
+  rtc::SequencedTaskChecker module_process_sequence_checker_;
 
   TransportAdapter transport_adapter_;
   const VideoReceiveStream::Config config_;

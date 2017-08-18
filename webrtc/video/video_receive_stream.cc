@@ -205,7 +205,7 @@ VideoReceiveStream::VideoReceiveStream(
   RTC_DCHECK(process_thread_);
   RTC_DCHECK(call_stats_);
 
-  module_process_thread_checker_.DetachFromThread();
+  module_process_sequence_checker_.Detach();
 
   RTC_DCHECK(!config_.decoders.empty());
   std::set<int> decoder_payload_types;
@@ -236,7 +236,7 @@ VideoReceiveStream::VideoReceiveStream(
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_sequence_checker_);
   LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
   Stop();
 
@@ -244,7 +244,7 @@ VideoReceiveStream::~VideoReceiveStream() {
 }
 
 void VideoReceiveStream::SignalNetworkState(NetworkState state) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_sequence_checker_);
   rtp_video_stream_receiver_.SignalNetworkState(state);
 }
 
@@ -253,12 +253,12 @@ bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
 }
 
 void VideoReceiveStream::SetSync(Syncable* audio_syncable) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_sequence_checker_);
   rtp_stream_sync_.ConfigureSync(audio_syncable);
 }
 
 void VideoReceiveStream::Start() {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_sequence_checker_);
   if (decode_thread_.IsRunning())
     return;
 
@@ -313,7 +313,7 @@ void VideoReceiveStream::Start() {
 }
 
 void VideoReceiveStream::Stop() {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_sequence_checker_);
   rtp_video_stream_receiver_.StopReceive();
 
   frame_buffer_->Stop();
@@ -450,12 +450,12 @@ void VideoReceiveStream::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
 }
 
 int VideoReceiveStream::id() const {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_sequence_checker_);
   return config_.rtp.remote_ssrc;
 }
 
 rtc::Optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
-  RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&module_process_sequence_checker_);
   Syncable::Info info;
 
   RtpReceiver* rtp_receiver = rtp_video_stream_receiver_.GetRtpReceiver();
@@ -485,7 +485,7 @@ uint32_t VideoReceiveStream::GetPlayoutTimestamp() const {
 }
 
 void VideoReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
-  RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&module_process_sequence_checker_);
   video_receiver_.SetMinimumPlayoutDelay(delay_ms);
 }
 
