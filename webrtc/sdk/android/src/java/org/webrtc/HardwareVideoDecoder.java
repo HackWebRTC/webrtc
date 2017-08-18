@@ -11,7 +11,6 @@
 package org.webrtc;
 
 import android.annotation.TargetApi;
-import android.graphics.Matrix;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
@@ -19,9 +18,7 @@ import android.os.SystemClock;
 import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Deque;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.webrtc.ThreadUtils.ThreadChecker;
 
@@ -302,18 +299,22 @@ class HardwareVideoDecoder
     // TODO(sakal): This is not called on the correct thread but is still called synchronously.
     // Re-enable the check once this is called on the correct thread.
     // decoderThreadChecker.checkIsOnValidThread();
+    if (!running) {
+      Logging.d(TAG, "release: Decoder is not running.");
+      return VideoCodecStatus.OK;
+    }
     try {
       // The outputThread actually stops and releases the codec once running is false.
       running = false;
       if (!ThreadUtils.joinUninterruptibly(outputThread, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
         // Log an exception to capture the stack trace and turn it into a TIMEOUT error.
-        Logging.e(TAG, "Media encoder release timeout", new RuntimeException());
+        Logging.e(TAG, "Media decoder release timeout", new RuntimeException());
         return VideoCodecStatus.TIMEOUT;
       }
       if (shutdownException != null) {
         // Log the exception and turn it into an error.  Wrap the exception in a new exception to
         // capture both the output thread's stack trace and this thread's stack trace.
-        Logging.e(TAG, "Media encoder release error", new RuntimeException(shutdownException));
+        Logging.e(TAG, "Media decoder release error", new RuntimeException(shutdownException));
         shutdownException = null;
         return VideoCodecStatus.ERROR;
       }
@@ -453,26 +454,20 @@ class HardwareVideoDecoder
 
     ByteBuffer buffer = codec.getOutputBuffers()[result];
     buffer.position(info.offset);
-    buffer.limit(info.size);
+    buffer.limit(info.offset + info.size);
+    buffer = buffer.slice();
+    final VideoFrame.Buffer frameBuffer;
 
-    final VideoFrame.I420Buffer frameBuffer;
-
-    // TODO(mellem):  As an optimization, use libyuv via JNI to copy/reformatting data.
     if (colorFormat == CodecCapabilities.COLOR_FormatYUV420Planar) {
       if (sliceHeight % 2 == 0) {
-        frameBuffer =
-            createBufferFromI420(buffer, result, info.offset, stride, sliceHeight, width, height);
+        frameBuffer = wrapI420Buffer(buffer, result, stride, sliceHeight, width, height);
       } else {
-        frameBuffer = I420BufferImpl.allocate(width, height);
-        // Optimal path is not possible because we have to copy the last rows of U- and V-planes.
-        copyI420(buffer, info.offset, frameBuffer, stride, sliceHeight, width, height);
-        codec.releaseOutputBuffer(result, false);
+        // WebRTC rounds chroma plane size conversions up so we have to repeat the last row.
+        frameBuffer = copyI420Buffer(buffer, result, stride, sliceHeight, width, height);
       }
     } else {
-      frameBuffer = I420BufferImpl.allocate(width, height);
       // All other supported color formats are NV12.
-      nv12ToI420(buffer, info.offset, frameBuffer, stride, sliceHeight, width, height);
-      codec.releaseOutputBuffer(result, false);
+      frameBuffer = wrapNV12Buffer(buffer, result, stride, sliceHeight, width, height);
     }
 
     long presentationTimeNs = info.presentationTimeUs * 1000;
@@ -481,6 +476,105 @@ class HardwareVideoDecoder
     // Note that qp is parsed on the C++ side.
     callback.onDecodedFrame(frame, decodeTimeMs, null /* qp */);
     frame.release();
+  }
+
+  private VideoFrame.Buffer wrapNV12Buffer(ByteBuffer buffer, int outputBufferIndex, int stride,
+      int sliceHeight, int width, int height) {
+    synchronized (activeOutputBuffersLock) {
+      activeOutputBuffers++;
+    }
+
+    return new NV12Buffer(width, height, stride, sliceHeight, buffer, () -> {
+      codec.releaseOutputBuffer(outputBufferIndex, false);
+      synchronized (activeOutputBuffersLock) {
+        activeOutputBuffers--;
+        activeOutputBuffersLock.notifyAll();
+      }
+    });
+  }
+
+  private VideoFrame.Buffer copyI420Buffer(ByteBuffer buffer, int outputBufferIndex, int stride,
+      int sliceHeight, int width, int height) {
+    final int uvStride = stride / 2;
+
+    final int yPos = 0;
+    final int uPos = yPos + stride * sliceHeight;
+    final int uEnd = uPos + uvStride * (sliceHeight / 2);
+    final int vPos = uPos + uvStride * sliceHeight / 2;
+    final int vEnd = vPos + uvStride * (sliceHeight / 2);
+
+    VideoFrame.I420Buffer frameBuffer = I420BufferImpl.allocate(width, height);
+
+    ByteBuffer dataY = frameBuffer.getDataY();
+    dataY.position(0); // Ensure we are in the beginning.
+    buffer.position(yPos);
+    buffer.limit(uPos);
+    dataY.put(buffer);
+    dataY.position(0); // Go back to beginning.
+
+    ByteBuffer dataU = frameBuffer.getDataU();
+    dataU.position(0); // Ensure we are in the beginning.
+    buffer.position(uPos);
+    buffer.limit(uEnd);
+    dataU.put(buffer);
+    if (sliceHeight % 2 != 0) {
+      buffer.position(uEnd - uvStride); // Repeat the last row.
+      dataU.put(buffer);
+    }
+    dataU.position(0); // Go back to beginning.
+
+    ByteBuffer dataV = frameBuffer.getDataU();
+    dataV.position(0); // Ensure we are in the beginning.
+    buffer.position(vPos);
+    buffer.limit(vEnd);
+    dataV.put(buffer);
+    if (sliceHeight % 2 != 0) {
+      buffer.position(vEnd - uvStride); // Repeat the last row.
+      dataV.put(buffer);
+    }
+    dataV.position(0); // Go back to beginning.
+
+    codec.releaseOutputBuffer(outputBufferIndex, false);
+
+    return frameBuffer;
+  }
+
+  private VideoFrame.Buffer wrapI420Buffer(ByteBuffer buffer, int outputBufferIndex, int stride,
+      int sliceHeight, int width, int height) {
+    final int uvStride = stride / 2;
+
+    final int yPos = 0;
+    final int uPos = yPos + stride * sliceHeight;
+    final int uEnd = uPos + uvStride * (sliceHeight / 2);
+    final int vPos = uPos + uvStride * sliceHeight / 2;
+    final int vEnd = vPos + uvStride * (sliceHeight / 2);
+
+    synchronized (activeOutputBuffersLock) {
+      activeOutputBuffers++;
+    }
+
+    Runnable releaseCallback = () -> {
+      codec.releaseOutputBuffer(outputBufferIndex, false);
+      synchronized (activeOutputBuffersLock) {
+        activeOutputBuffers--;
+        activeOutputBuffersLock.notifyAll();
+      }
+    };
+
+    buffer.position(yPos);
+    buffer.limit(uPos);
+    ByteBuffer dataY = buffer.slice();
+
+    buffer.position(uPos);
+    buffer.limit(uEnd);
+    ByteBuffer dataU = buffer.slice();
+
+    buffer.position(vPos);
+    buffer.limit(vEnd);
+    ByteBuffer dataV = buffer.slice();
+
+    return new I420BufferImpl(
+        width, height, dataY, stride, dataU, uvStride, dataV, uvStride, releaseCallback);
   }
 
   private void reformat(MediaFormat format) {
@@ -587,117 +681,5 @@ class HardwareVideoDecoder
       }
     }
     return false;
-  }
-
-  private VideoFrame.I420Buffer createBufferFromI420(final ByteBuffer buffer,
-      final int outputBufferIndex, final int offset, final int stride, final int sliceHeight,
-      final int width, final int height) {
-    final int uvStride = stride / 2;
-    final int chromaWidth = (width + 1) / 2;
-    final int chromaHeight = (height + 1) / 2;
-
-    final int yPos = offset;
-    final int uPos = yPos + stride * sliceHeight;
-    final int vPos = uPos + uvStride * sliceHeight / 2;
-
-    synchronized (activeOutputBuffersLock) {
-      activeOutputBuffers++;
-    }
-
-    Runnable callback = new Runnable() {
-      @Override
-      public void run() {
-        codec.releaseOutputBuffer(outputBufferIndex, false);
-        synchronized (activeOutputBuffersLock) {
-          activeOutputBuffers--;
-          activeOutputBuffersLock.notifyAll();
-        }
-      }
-    };
-
-    buffer.position(yPos);
-    buffer.limit(uPos);
-    ByteBuffer dataY = buffer.slice();
-
-    buffer.position(uPos);
-    buffer.limit(vPos);
-    ByteBuffer dataU = buffer.slice();
-
-    buffer.position(vPos);
-    buffer.limit(vPos + uvStride * sliceHeight / 2);
-    ByteBuffer dataV = buffer.slice();
-
-    return new I420BufferImpl(
-        width, height, dataY, stride, dataU, uvStride, dataV, uvStride, callback);
-  }
-
-  private static void copyI420(ByteBuffer src, int offset, VideoFrame.I420Buffer frameBuffer,
-      int stride, int sliceHeight, int width, int height) {
-    int uvStride = stride / 2;
-    int chromaWidth = (width + 1) / 2;
-    // Note that hardware truncates instead of rounding.  WebRTC expects rounding, so the last
-    // row will be duplicated if the sliceHeight is odd.
-    int chromaHeight = (sliceHeight % 2 == 0) ? (height + 1) / 2 : height / 2;
-
-    int yPos = offset;
-    int uPos = yPos + stride * sliceHeight;
-    int vPos = uPos + uvStride * sliceHeight / 2;
-
-    copyPlane(
-        src, yPos, stride, frameBuffer.getDataY(), 0, frameBuffer.getStrideY(), width, height);
-    copyPlane(src, uPos, uvStride, frameBuffer.getDataU(), 0, frameBuffer.getStrideU(), chromaWidth,
-        chromaHeight);
-    copyPlane(src, vPos, uvStride, frameBuffer.getDataV(), 0, frameBuffer.getStrideV(), chromaWidth,
-        chromaHeight);
-
-    // If the sliceHeight is odd, duplicate the last rows of chroma.  Copy the last row of the U and
-    // V channels and append them at the end of each channel.
-    if (sliceHeight % 2 != 0) {
-      int strideU = frameBuffer.getStrideU();
-      int endU = chromaHeight * strideU;
-      copyRow(frameBuffer.getDataU(), endU - strideU, frameBuffer.getDataU(), endU, chromaWidth);
-      int strideV = frameBuffer.getStrideV();
-      int endV = chromaHeight * strideV;
-      copyRow(frameBuffer.getDataV(), endV - strideV, frameBuffer.getDataV(), endV, chromaWidth);
-    }
-  }
-
-  private static void nv12ToI420(ByteBuffer src, int offset, VideoFrame.I420Buffer frameBuffer,
-      int stride, int sliceHeight, int width, int height) {
-    int yPos = offset;
-    int uvPos = yPos + stride * sliceHeight;
-    int chromaWidth = (width + 1) / 2;
-    int chromaHeight = (height + 1) / 2;
-
-    copyPlane(
-        src, yPos, stride, frameBuffer.getDataY(), 0, frameBuffer.getStrideY(), width, height);
-
-    // Split U and V rows.
-    int dstUPos = 0;
-    int dstVPos = 0;
-    for (int i = 0; i < chromaHeight; ++i) {
-      for (int j = 0; j < chromaWidth; ++j) {
-        frameBuffer.getDataU().put(dstUPos + j, src.get(uvPos + j * 2));
-        frameBuffer.getDataV().put(dstVPos + j, src.get(uvPos + j * 2 + 1));
-      }
-      dstUPos += frameBuffer.getStrideU();
-      dstVPos += frameBuffer.getStrideV();
-      uvPos += stride;
-    }
-  }
-
-  private static void copyPlane(ByteBuffer src, int srcPos, int srcStride, ByteBuffer dst,
-      int dstPos, int dstStride, int width, int height) {
-    for (int i = 0; i < height; ++i) {
-      copyRow(src, srcPos, dst, dstPos, width);
-      srcPos += srcStride;
-      dstPos += dstStride;
-    }
-  }
-
-  private static void copyRow(ByteBuffer src, int srcPos, ByteBuffer dst, int dstPos, int width) {
-    for (int i = 0; i < width; ++i) {
-      dst.put(dstPos + i, src.get(srcPos + i));
-    }
   }
 }
