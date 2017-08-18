@@ -24,7 +24,6 @@ Chrome's suppression files and our own, so we can easily maintain WebRTC
 specific suppressions in our own files.
 """
 
-import argparse
 import logging
 import optparse
 import os
@@ -124,15 +123,6 @@ def main(_):
   parser.add_option("--test-launcher-shard-index", type=int,
                     help="run the tests with --test-launcher-shard-index")
   options, args = parser.parse_args()
-
-  ignore_parser = argparse.ArgumentParser()
-  # Ignore Chromium-specific flags
-  # TODO(oprypin): Remove (bugs.webrtc.org/8115)
-  ignore_parser.add_argument('--isolated-script-test-output',
-                             type=str, default=None)
-  ignore_parser.add_argument('--isolated-script-test-chartjson-output',
-                             type=str, default=None)
-  _, args = ignore_parser.parse_known_args(args)
 
   if options.verbose:
     logging_utils.config_root(logging.DEBUG)
