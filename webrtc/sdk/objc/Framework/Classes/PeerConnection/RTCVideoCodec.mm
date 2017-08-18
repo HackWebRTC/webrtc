@@ -20,13 +20,12 @@
 @synthesize name = _name;
 @synthesize parameters = _parameters;
 
-- (instancetype)initWithPayload:(NSInteger)payload
-                           name:(NSString *)name
-                     parameters:(NSDictionary<NSString *, NSString *> *)parameters {
+- (instancetype)initWithName:(NSString *)name
+                  parameters:(nullable NSDictionary<NSString *, NSString *> *)parameters {
   if (self = [super init]) {
-    _payload = payload;
+    _payload = 0;
     _name = name;
-    _parameters = parameters;
+    _parameters = (parameters ? parameters : @{});
   }
 
   return self;
@@ -41,6 +40,16 @@
   return [self initWithPayload:videoCodec.id
                           name:[NSString stringForStdString:videoCodec.name]
                     parameters:params];
+}
+
+- (instancetype)initWithPayload:(NSInteger)payload
+                           name:(NSString *)name
+                     parameters:(NSDictionary<NSString *, NSString *> *)parameters {
+  if (self = [self initWithName:name parameters:parameters]) {
+    _payload = payload;
+  }
+
+  return self;
 }
 
 - (cricket::VideoCodec)nativeVideoCodec {

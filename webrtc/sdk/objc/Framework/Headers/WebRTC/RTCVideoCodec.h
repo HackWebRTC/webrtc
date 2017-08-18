@@ -100,9 +100,11 @@ typedef NS_ENUM(NSUInteger, RTCVideoCodecMode) {
 RTC_EXPORT
 @interface RTCVideoCodecInfo : NSObject
 
-- (instancetype)initWithPayload:(NSInteger)payload
-                           name:(NSString *)name
-                     parameters:(NSDictionary<NSString *, NSString *> *)parameters;
+- (instancetype)init NS_UNAVAILABLE;
+
+- (instancetype)initWithName:(NSString *)name
+                  parameters:(nullable NSDictionary<NSString *, NSString *> *)parameters
+    NS_DESIGNATED_INITIALIZER;
 
 @property(nonatomic, readonly) NSInteger payload;
 @property(nonatomic, readonly) NSString *name;

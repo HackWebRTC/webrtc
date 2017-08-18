@@ -49,6 +49,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RTCVideoCodecInfo ()
 
 - (instancetype)initWithNativeVideoCodec:(cricket::VideoCodec)videoCodec;
+- (instancetype)initWithPayload:(NSInteger)payload
+                           name:(NSString *)name
+                     parameters:(NSDictionary<NSString *, NSString *> *)parameters;
 - (cricket::VideoCodec)nativeVideoCodec;
 
 @end

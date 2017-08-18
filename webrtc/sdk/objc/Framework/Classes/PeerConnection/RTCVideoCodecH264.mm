@@ -58,9 +58,7 @@ bool IsHighProfileEnabled() {
       @"packetization-mode" : @"1",
     };
     RTCVideoCodecInfo *constrainedHighInfo =
-        [[RTCVideoCodecInfo alloc] initWithPayload:0
-                                              name:codecName
-                                        parameters:constrainedHighParams];
+        [[RTCVideoCodecInfo alloc] initWithName:codecName parameters:constrainedHighParams];
     [codecs addObject:constrainedHighInfo];
   }
 
@@ -70,9 +68,7 @@ bool IsHighProfileEnabled() {
     @"packetization-mode" : @"1",
   };
   RTCVideoCodecInfo *constrainedBaselineInfo =
-      [[RTCVideoCodecInfo alloc] initWithPayload:0
-                                            name:codecName
-                                      parameters:constrainedBaselineParams];
+      [[RTCVideoCodecInfo alloc] initWithName:codecName parameters:constrainedBaselineParams];
   [codecs addObject:constrainedBaselineInfo];
 
   return [codecs copy];
@@ -93,7 +89,7 @@ bool IsHighProfileEnabled() {
 
 - (NSArray<RTCVideoCodecInfo *> *)supportedCodecs {
   NSString *codecName = [NSString stringWithUTF8String:cricket::kH264CodecName];
-  return @[ [[RTCVideoCodecInfo alloc] initWithPayload:0 name:codecName parameters:@{}] ];
+  return @[ [[RTCVideoCodecInfo alloc] initWithName:codecName parameters:nil] ];
 }
 
 @end

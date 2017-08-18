@@ -32,8 +32,7 @@ id<RTCVideoEncoderFactory> CreateEncoderFactoryReturning(int return_code) {
   OCMStub([encoderMock setBitrate:0 framerate:0]).andReturn(return_code);
 
   id encoderFactoryMock = OCMProtocolMock(@protocol(RTCVideoEncoderFactory));
-  RTCVideoCodecInfo *supported =
-      [[RTCVideoCodecInfo alloc] initWithPayload:0 name:@"H264" parameters:@{}];
+  RTCVideoCodecInfo *supported = [[RTCVideoCodecInfo alloc] initWithName:@"H264" parameters:nil];
   OCMStub([encoderFactoryMock supportedCodecs]).andReturn(@[ supported ]);
   OCMStub([encoderFactoryMock createEncoder:[OCMArg any]]).andReturn(encoderMock);
   return encoderFactoryMock;
