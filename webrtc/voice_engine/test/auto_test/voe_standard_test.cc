@@ -101,9 +101,6 @@ int main(int argc, char** argv) {
   // This function and RunInAutomatedMode is defined in automated_mode.cc
   // to avoid macro clashes with googletest (for instance ASSERT_TRUE).
   webrtc::voetest::InitializeGoogleTest(&argc, argv);
-  // AllowCommandLineParsing allows us to ignore flags passed on to us by
-  // Chromium build bots without having to explicitly disable them.
-  google::AllowCommandLineReparsing();
   google::ParseCommandLineFlags(&argc, &argv, true);
 
   if (FLAGS_automated) {
