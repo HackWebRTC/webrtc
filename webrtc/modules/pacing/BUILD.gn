@@ -18,6 +18,7 @@ rtc_static_library("pacing") {
     "interval_budget.h",
     "paced_sender.cc",
     "paced_sender.h",
+    "pacer.h",
     "packet_router.cc",
     "packet_router.h",
   ]

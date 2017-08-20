@@ -95,7 +95,7 @@ BweSender* CreateBweSender(BandwidthEstimatorType estimator,
     case kNadaEstimator:
       return new NadaBweSender(kbps, observer, clock);
     case kBbrEstimator:
-      return new BbrBweSender(clock);
+      return new BbrBweSender(observer, clock);
     case kTcpEstimator:
       FALLTHROUGH();
     case kNullEstimator:

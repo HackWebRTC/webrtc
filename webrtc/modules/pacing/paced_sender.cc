@@ -37,8 +37,8 @@ const int64_t kMaxIntervalTimeMs = 30;
 
 }  // namespace
 
-// TODO(sprang): Move at least PacketQueue out to separate
-// files, so that we can more easily test them.
+// TODO(sprang): Move at least PacketQueue out to separate files, so that we can
+// more easily test them.
 
 namespace webrtc {
 namespace paced_sender {

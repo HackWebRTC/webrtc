@@ -21,10 +21,6 @@ namespace testing {
 namespace bwe {
 class CongestionWindow {
  public:
-  // Size of congestion window while in PROBE_RTT mode, suggested by BBR's
-  // source code of QUIC's implementation.
-  static const int kMinimumCongestionWindowBytes = 4000;
-
   CongestionWindow();
   ~CongestionWindow();
   int GetCongestionWindow(BbrBweSender::Mode mode,

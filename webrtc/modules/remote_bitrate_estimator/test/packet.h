@@ -114,15 +114,15 @@ class BbrBweFeedback : public FeedbackPacket {
   BbrBweFeedback(int flow_id,
                  int64_t send_time_us,
                  int64_t latest_send_time_ms,
-                 const std::vector<uint64_t>& packet_feedback_vector);
+                 const std::vector<uint16_t>& packet_feedback_vector);
   virtual ~BbrBweFeedback() {}
 
-  const std::vector<uint64_t>& packet_feedback_vector() const {
+  const std::vector<uint16_t>& packet_feedback_vector() const {
     return packet_feedback_vector_;
   }
 
  private:
-  const std::vector<uint64_t> packet_feedback_vector_;
+  const std::vector<uint16_t> packet_feedback_vector_;
 };
 
 class RembFeedback : public FeedbackPacket {

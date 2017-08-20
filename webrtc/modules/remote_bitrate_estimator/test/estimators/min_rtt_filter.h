@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <list>
 
 #include "webrtc/rtc_base/optional.h"
 
@@ -21,12 +22,17 @@ namespace webrtc {
 namespace testing {
 namespace bwe {
 
-// Expiration time for min_rtt sample, which is set to 10 seconds according to
-// BBR design doc.
-const int64_t kMinRttFilterSizeMs = 10000;
+// Average rtt for past |kRttFilterSize| packets should grow by
+// |kRttIncreaseThresholdForExpiry| in order to enter PROBE_RTT mode and expire.
+// old min_rtt estimate.
+const float kRttIncreaseThresholdForExpiry = 2.3f;
+const size_t kRttFilterSize = 25;
 
 class MinRttFilter {
  public:
+  // This class implements a simple filter to ensure that PROBE_RTT is only
+  // entered when RTTs start to increase, instead of fixed 10 second window as
+  // in orginal BBR design doc, to avoid unnecessary freezes in stream.
   MinRttFilter() {}
   ~MinRttFilter() {}
 
@@ -34,20 +40,31 @@ class MinRttFilter {
   void AddRttSample(int64_t rtt_ms, int64_t now_ms) {
     if (!min_rtt_ms_ || rtt_ms <= *min_rtt_ms_ || MinRttExpired(now_ms)) {
       min_rtt_ms_.emplace(rtt_ms);
-      discovery_time_ms_ = now_ms;
     }
+    rtt_samples_.push_back(rtt_ms);
+    if (rtt_samples_.size() > kRttFilterSize)
+      rtt_samples_.pop_front();
   }
-  int64_t discovery_time() { return discovery_time_ms_; }
 
-  // Checks whether or not last discovered min_rtt value is older than x
-  // milliseconds.
+  // Checks whether or not last RTT values for past |kRttFilterSize| packets
+  // started to increase, meaning we have to update min_rtt estimate.
   bool MinRttExpired(int64_t now_ms) {
-    return now_ms - discovery_time_ms_ >= kMinRttFilterSizeMs;
+    if (rtt_samples_.size() < kRttFilterSize || !min_rtt_ms_)
+      return false;
+    int64_t sum_of_rtts_ms = 0;
+    for (int64_t i : rtt_samples_)
+      sum_of_rtts_ms += i;
+    if (sum_of_rtts_ms >=
+        *min_rtt_ms_ * kRttIncreaseThresholdForExpiry * kRttFilterSize) {
+      rtt_samples_.clear();
+      return true;
+    }
+    return false;
   }
 
  private:
   rtc::Optional<int64_t> min_rtt_ms_;
-  int64_t discovery_time_ms_ = 0;
+  std::list<int64_t> rtt_samples_;
 };
 }  // namespace bwe
 }  // namespace testing

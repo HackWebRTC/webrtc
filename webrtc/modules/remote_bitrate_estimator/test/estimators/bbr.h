@@ -30,7 +30,7 @@ class MinRttFilter;
 class CongestionWindow;
 class BbrBweSender : public BweSender {
  public:
-  explicit BbrBweSender(Clock* clock);
+  explicit BbrBweSender(BitrateObserver* observer, Clock* clock);
   virtual ~BbrBweSender();
   enum Mode {
     // Startup phase.
@@ -113,8 +113,8 @@ class BbrBweSender : public BweSender {
 
  private:
   void EnterStartup();
-  bool UpdateBandwidthAndMinRtt(int64_t now_ms,
-                                const std::vector<uint64_t>& feedback_vector,
+  void UpdateBandwidthAndMinRtt(int64_t now_ms,
+                                const std::vector<uint16_t>& feedback_vector,
                                 int64_t bytes_acked);
   void TryExitingStartup();
   void TryExitingDrain(int64_t now_ms);
@@ -145,6 +145,7 @@ class BbrBweSender : public BweSender {
   // declare those packets as lost immediately.
   void HandleLoss(uint64_t last_acked_packet, uint64_t recently_acked_packet);
   void AddToPastRtts(int64_t rtt_sample_ms);
+  BitrateObserver* observer_;
   Clock* const clock_;
   Mode mode_;
   std::unique_ptr<MaxBandwidthFilter> max_bandwidth_filter_;
@@ -229,10 +230,10 @@ class BbrBweReceiver : public BweReceiver {
   void ReceivePacket(int64_t arrival_time_ms,
                      const MediaPacket& media_packet) override;
   FeedbackPacket* GetFeedback(int64_t now_ms) override;
-
  private:
   SimulatedClock clock_;
-  std::vector<uint64_t> packet_feedbacks_;
+  std::vector<uint16_t> packet_feedbacks_;
+  int64_t last_feedback_ms_;
 };
 }  // namespace bwe
 }  // namespace testing

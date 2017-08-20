@@ -34,7 +34,7 @@ const float kDrainGain = 1 / kHighGain;
 const float kStartupGrowthTarget = 1.25f;
 const int kMaxRoundsWithoutGrowth = 3;
 // Pacing gain values for Probe Bandwidth mode.
-const float kPacingGain[] = {1.25, 0.75, 1, 1, 1, 1, 1, 1};
+const float kPacingGain[] = {1.1, 0.9, 1, 1, 1, 1, 1, 1};
 const size_t kGainCycleLength = sizeof(kPacingGain) / sizeof(kPacingGain[0]);
 // Least number of rounds PROBE_RTT should last.
 const int kProbeRttDurationRounds = 1;
@@ -46,7 +46,7 @@ const float kTargetCongestionWindowGain = 1;
 // equal to 1, but in practice because of delayed acks and the way networks
 // work, it is nice to have some extra room in congestion window for full link
 // utilization. Value chosen by observations on different tests.
-const float kCruisingCongestionWindowGain = 1.5f;
+const float kCruisingCongestionWindowGain = 2;
 // Pacing gain specific for Recovery mode. Chosen by experiments in simulation
 // tool.
 const float kRecoveryPacingGain = 0.5f;
@@ -61,10 +61,29 @@ const float kRttIncreaseThreshold = 3;
 // Threshold to assume average RTT has decreased for a round. Chosen by
 // experiments in simulation tool.
 const float kRttDecreaseThreshold = 1.5f;
+// If |kCongestionWindowThreshold| of the congestion window is filled up, tell
+// encoder to stop, to avoid building sender side queues.
+const float kCongestionWindowThreshold = 0.69f;
+// Duration we send at |kDefaultRatebps| in order to ensure BBR has data to work
+// with.
+const int64_t kDefaultDurationMs = 200;
+const int64_t kDefaultRatebps = 300000;
+// Congestion window gain for PROBE_RTT mode.
+const float kProbeRttCongestionWindowGain = 0.65f;
+// We need to be sure that data inflight has increased by at least
+// |kTargetCongestionWindowGainForHighGain| compared to the congestion window in
+// PROBE_BW's high gain phase, to make ramp-up quicker. As high gain value has
+// been decreased from 1.25 to 1.1 we need to make
+// |kTargetCongestionWindowGainForHighGain| slightly higher than the actual high
+// gain value.
+const float kTargetCongestionWindowGainForHighGain = 1.15f;
+// Encoder rate gain value for PROBE_RTT mode.
+const float kEncoderRateGainForProbeRtt = 0.1f;
 }  // namespace
 
-BbrBweSender::BbrBweSender(Clock* clock)
+BbrBweSender::BbrBweSender(BitrateObserver* observer, Clock* clock)
     : BweSender(0),
+      observer_(observer),
       clock_(clock),
       mode_(STARTUP),
       max_bandwidth_filter_(new MaxBandwidthFilter()),
@@ -113,14 +132,13 @@ void BbrBweSender::CalculatePacingRate() {
       max_bandwidth_filter_->max_bandwidth_estimate_bps() * pacing_gain_;
 }
 
+// Declare lost packets as acked.
 void BbrBweSender::HandleLoss(uint64_t last_acked_packet,
                               uint64_t recently_acked_packet) {
-  // Logic specific to wrapping sequence numbers.
-  if (!last_acked_packet)
-    return;
   for (uint16_t i = last_acked_packet + 1;
        AheadOrAt<uint16_t>(recently_acked_packet - 1, i); i++) {
     congestion_window_->AckReceived(packet_stats_[i].payload_size_bytes);
+    observer_->OnBytesAcked(packet_stats_[i].payload_size_bytes);
   }
 }
 
@@ -148,7 +166,7 @@ void BbrBweSender::GiveFeedback(const FeedbackPacket& feedback) {
   last_packet_ack_time_ = now_ms;
   const BbrBweFeedback& fb = static_cast<const BbrBweFeedback&>(feedback);
   // feedback_vector holds values of acknowledged packets' sequence numbers.
-  const std::vector<uint64_t>& feedback_vector = fb.packet_feedback_vector();
+  const std::vector<uint16_t>& feedback_vector = fb.packet_feedback_vector();
   // Go through all the packets acked, update variables/containers accordingly.
   for (uint16_t sequence_number : feedback_vector) {
     // Completing packet information with a recently received ack.
@@ -175,9 +193,7 @@ void BbrBweSender::GiveFeedback(const FeedbackPacket& feedback) {
           bytes_acked_ - packet->payload_size_bytes / 2;
       high_gain_over_ = true;
     }
-    // Notify pacer that an ack was received, to adjust data inflight.
-    // TODO(gnish): Add implementation for BitrateObserver class, to notify
-    // pacer about incoming acks.
+    observer_->OnBytesAcked(packet->payload_size_bytes);
     congestion_window_->AckReceived(packet->payload_size_bytes);
     HandleLoss(last_packet_acked_sequence_number_, packet->sequence_number);
     last_packet_acked_sequence_number_ = packet->sequence_number;
@@ -196,9 +212,8 @@ void BbrBweSender::GiveFeedback(const FeedbackPacket& feedback) {
       round_trip_end_ = last_packet_sent_sequence_number_;
     }
   }
-  bool min_rtt_expired = false;
-  min_rtt_expired =
-      UpdateBandwidthAndMinRtt(now_ms, feedback_vector, bytes_acked_);
+  TryEnteringProbeRtt(now_ms);
+  UpdateBandwidthAndMinRtt(now_ms, feedback_vector, bytes_acked_);
   if (new_round_started && !full_bandwidth_reached_) {
     full_bandwidth_reached_ = max_bandwidth_filter_->FullBandwidthReached(
         kStartupGrowthTarget, kMaxRoundsWithoutGrowth);
@@ -221,19 +236,37 @@ void BbrBweSender::GiveFeedback(const FeedbackPacket& feedback) {
       TryExitingRecovery(new_round_started);
       break;
   }
-  TryEnteringProbeRtt(now_ms);
   TryEnteringRecovery(new_round_started);  // Comment this line to disable
                                            // entering Recovery mode.
-  for (uint64_t f : feedback_vector)
+  for (uint16_t f : feedback_vector)
     AddToPastRtts(packet_stats_[f].ack_time_ms - packet_stats_[f].send_time_ms);
   CalculatePacingRate();
+  size_t cwnd = congestion_window_->GetCongestionWindow(
+      mode_, max_bandwidth_filter_->max_bandwidth_estimate_bps(),
+      min_rtt_filter_->min_rtt_ms(), congestion_window_gain_);
   // Make sure we don't get stuck when pacing_rate is 0, because of simulation
   // tool specifics.
   if (!pacing_rate_bps_)
     pacing_rate_bps_ = 100;
   BWE_TEST_LOGGING_PLOT(1, "SendRate", now_ms, pacing_rate_bps_ / 1000);
-  // TODO(gnish): Add implementation for BitrateObserver class to update pacing
-  // rate for the pacer and the encoder.
+  int64_t rate_for_pacer_bps = pacing_rate_bps_;
+  int64_t rate_for_encoder_bps = pacing_rate_bps_;
+  if (congestion_window_->data_inflight() >= cwnd * kCongestionWindowThreshold)
+    rate_for_encoder_bps = 0;
+  // We dont completely stop sending during PROBE_RTT, so we need encoder to
+  // produce something, another way of doing this would be telling encoder to
+  // stop and send padding instead of actual data.
+  if (mode_ == PROBE_RTT)
+    rate_for_encoder_bps = rate_for_pacer_bps * kEncoderRateGainForProbeRtt;
+  // Send for 300 kbps for first 200 ms, so that BBR has data to work with.
+  if (now_ms <= kDefaultDurationMs)
+    observer_->OnNetworkChanged(
+        kDefaultRatebps, kDefaultRatebps, false,
+        clock_->TimeInMicroseconds() + kFeedbackIntervalsMs * 1000, cwnd);
+  else
+    observer_->OnNetworkChanged(
+        rate_for_encoder_bps, rate_for_pacer_bps, mode_ == PROBE_RTT,
+        clock_->TimeInMicroseconds() + kFeedbackIntervalsMs * 1000, cwnd);
 }
 
 size_t BbrBweSender::TargetCongestionWindow(float gain) {
@@ -251,16 +284,16 @@ rtc::Optional<int64_t> BbrBweSender::CalculateBandwidthSample(
     int64_t ack_time_delta_ms) {
   rtc::Optional<int64_t> bandwidth_sample;
   if (send_time_delta_ms > 0)
-    *bandwidth_sample = data_sent_bytes * 8000 / send_time_delta_ms;
+    bandwidth_sample.emplace(data_sent_bytes * 8000 / send_time_delta_ms);
   rtc::Optional<int64_t> ack_rate;
   if (ack_time_delta_ms > 0)
-    *ack_rate = data_acked_bytes * 8000 / ack_time_delta_ms;
+    ack_rate.emplace(data_acked_bytes * 8000 / ack_time_delta_ms);
   // If send rate couldn't be calculated automaticaly set |bandwidth_sample| to
   // ack_rate.
   if (!bandwidth_sample)
     bandwidth_sample = ack_rate;
   if (bandwidth_sample && ack_rate)
-    *bandwidth_sample = std::min(*bandwidth_sample, *ack_rate);
+    bandwidth_sample.emplace(std::min(*bandwidth_sample, *ack_rate));
   return bandwidth_sample;
 }
 
@@ -285,12 +318,12 @@ void BbrBweSender::AddSampleForHighGain() {
   first_packet_send_time_during_high_gain_ms_.reset();
 }
 
-bool BbrBweSender::UpdateBandwidthAndMinRtt(
+void BbrBweSender::UpdateBandwidthAndMinRtt(
     int64_t now_ms,
-    const std::vector<uint64_t>& feedback_vector,
+    const std::vector<uint16_t>& feedback_vector,
     int64_t bytes_acked) {
   rtc::Optional<int64_t> min_rtt_sample_ms;
-  for (uint64_t f : feedback_vector) {
+  for (uint16_t f : feedback_vector) {
     PacketStats packet = packet_stats_[f];
     size_t data_sent_bytes =
         packet.data_sent_bytes - packet.data_sent_before_last_sent_packet_bytes;
@@ -306,20 +339,22 @@ bool BbrBweSender::UpdateBandwidthAndMinRtt(
     if (bandwidth_sample)
       max_bandwidth_filter_->AddBandwidthSample(*bandwidth_sample,
                                                 round_count_);
-    AddSampleForHighGain();  // Comment to disable bucket for high gain.
+    // AddSampleForHighGain();  // Comment to disable bucket for high gain.
     if (!min_rtt_sample_ms)
-      *min_rtt_sample_ms = packet.ack_time_ms - packet.send_time_ms;
+      min_rtt_sample_ms.emplace(packet.ack_time_ms - packet.send_time_ms);
     else
       *min_rtt_sample_ms = std::min(*min_rtt_sample_ms,
                                     packet.ack_time_ms - packet.send_time_ms);
     BWE_TEST_LOGGING_PLOT(1, "MinRtt", now_ms,
                           packet.ack_time_ms - packet.send_time_ms);
   }
-  if (!min_rtt_sample_ms)
-    return false;
-  min_rtt_filter_->AddRttSample(*min_rtt_sample_ms, now_ms);
-  bool min_rtt_expired = min_rtt_filter_->MinRttExpired(now_ms);
-  return min_rtt_expired;
+  // We only feed RTT samples into the min_rtt filter which were not produced
+  // during 1.1 gain phase, to ensure they contain no queueing delay. But if the
+  // rtt sample from 1.1 gain phase improves the current estimate then we should
+  // make it as a new best estimate.
+  if (pacing_gain_ <= 1.0f || !min_rtt_filter_->min_rtt_ms() ||
+      *min_rtt_filter_->min_rtt_ms() >= *min_rtt_sample_ms)
+    min_rtt_filter_->AddRttSample(*min_rtt_sample_ms, now_ms);
 }
 
 void BbrBweSender::EnterStartup() {
@@ -365,8 +400,9 @@ void BbrBweSender::TryUpdatingCyclePhase(int64_t now_ms) {
   // If BBR was probing and it couldn't increase data inflight sufficiently in
   // one min_rtt time, continue probing. BBR design doc isn't clear about this,
   // but condition helps in quicker ramp-up and performs better.
-  if (pacing_gain_ > 1.0 && congestion_window_->data_inflight() <
-                                TargetCongestionWindow(pacing_gain_))
+  if (pacing_gain_ > 1.0 &&
+      congestion_window_->data_inflight() <
+          TargetCongestionWindow(kTargetCongestionWindowGainForHighGain))
     advance_cycle_phase = false;
   // If BBR has already drained queues there is no point in continuing draining
   // phase.
@@ -385,6 +421,7 @@ void BbrBweSender::TryEnteringProbeRtt(int64_t now_ms) {
   if (min_rtt_filter_->MinRttExpired(now_ms) && mode_ != PROBE_RTT) {
     mode_ = PROBE_RTT;
     pacing_gain_ = 1;
+    congestion_window_gain_ = kProbeRttCongestionWindowGain;
     probe_rtt_start_time_ms_ = now_ms;
     minimum_congestion_window_start_time_ms_.reset();
   }
@@ -397,22 +434,23 @@ void BbrBweSender::TryEnteringProbeRtt(int64_t now_ms) {
 void BbrBweSender::TryExitingProbeRtt(int64_t now_ms, int64_t round) {
   if (!minimum_congestion_window_start_time_ms_) {
     if (congestion_window_->data_inflight() <=
-        CongestionWindow::kMinimumCongestionWindowBytes) {
-      *minimum_congestion_window_start_time_ms_ = now_ms;
+        TargetCongestionWindow(kProbeRttCongestionWindowGain)) {
+      minimum_congestion_window_start_time_ms_.emplace(now_ms);
       minimum_congestion_window_start_round_ = round;
     }
   } else {
     if (now_ms - *minimum_congestion_window_start_time_ms_ >=
             kProbeRttDurationMs &&
         round - minimum_congestion_window_start_round_ >=
-            kProbeRttDurationRounds)
+            kProbeRttDurationRounds) {
       EnterProbeBw(now_ms);
+    }
   }
 }
 
 void BbrBweSender::TryEnteringRecovery(bool new_round_started) {
-  // If we are already in Recovery don't try to enter.
-  if (mode_ == RECOVERY || !new_round_started || !full_bandwidth_reached_)
+  if (mode_ == RECOVERY || !new_round_started || !full_bandwidth_reached_ ||
+      !min_rtt_filter_->min_rtt_ms())
     return;
   uint64_t increased_rtt_round_counter = 0;
   // If average RTT for past |kPastRttsFilterSize| rounds has been more than
@@ -460,7 +498,8 @@ void BbrBweSender::OnPacketsSent(const Packets& packets) {
       last_packet_sent_sequence_number_ = media_packet->sequence_number();
       // If this is the first packet sent for high gain phase, save data for it.
       if (!first_packet_send_time_during_high_gain_ms_ && pacing_gain_ > 1) {
-        *first_packet_send_time_during_high_gain_ms_ = last_packet_send_time_;
+        first_packet_send_time_during_high_gain_ms_.emplace(
+            last_packet_send_time_);
         data_sent_before_high_gain_started_bytes_ =
             bytes_sent_ - media_packet->payload_size() / 2;
         first_packet_seq_num_during_high_gain_ =
@@ -483,15 +522,31 @@ void BbrBweSender::OnPacketsSent(const Packets& packets) {
 void BbrBweSender::Process() {}
 
 BbrBweReceiver::BbrBweReceiver(int flow_id)
-    : BweReceiver(flow_id, kReceivingRateTimeWindowMs), clock_(0) {}
+    : BweReceiver(flow_id, kReceivingRateTimeWindowMs),
+      clock_(0),
+      packet_feedbacks_(),
+      last_feedback_ms_(0) {}
 
 BbrBweReceiver::~BbrBweReceiver() {}
 
 void BbrBweReceiver::ReceivePacket(int64_t arrival_time_ms,
-                                   const MediaPacket& media_packet) {}
+                                   const MediaPacket& media_packet) {
+  packet_feedbacks_.push_back(media_packet.sequence_number());
+  BweReceiver::ReceivePacket(arrival_time_ms, media_packet);
+}
 
 FeedbackPacket* BbrBweReceiver::GetFeedback(int64_t now_ms) {
-  return nullptr;
+  last_feedback_ms_ = now_ms;
+  int64_t corrected_send_time_ms = 0L;
+  if (!received_packets_.empty()) {
+    PacketIdentifierNode* latest = *(received_packets_.begin());
+    corrected_send_time_ms =
+        latest->send_time_ms + now_ms - latest->arrival_time_ms;
+  }
+  FeedbackPacket* fb = new BbrBweFeedback(
+      flow_id_, now_ms * 1000, corrected_send_time_ms, packet_feedbacks_);
+  packet_feedbacks_.clear();
+  return fb;
 }
 }  // namespace bwe
 }  // namespace testing

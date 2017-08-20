@@ -61,6 +61,8 @@ if (rtc_include_tests) {
   rtc_static_library("bwe_simulator_lib") {
     testonly = true
     sources = [
+      "test/bbr_paced_sender.cc",
+      "test/bbr_paced_sender.h",
       "test/bwe.cc",
       "test/bwe.h",
       "test/bwe_test.cc",
