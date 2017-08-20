@@ -207,7 +207,6 @@ if (!build_with_chromium) {
       ":test_support",
       ":video_test_common",
       "..:webrtc_common",
-      "../api:video_frame_api",
       "../common_video",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",
@@ -215,11 +214,6 @@ if (!build_with_chromium) {
       "//testing/gtest",
       "//third_party/gflags",
     ]
-
-    if (!is_ios) {
-      deps += [ "//third_party:jpeg" ]
-      sources += [ "testsupport/jpeg_frame_writer.cc" ]
-    }
 
     public_deps = [
       ":fileutils",

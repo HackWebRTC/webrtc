@@ -12,36 +12,32 @@
 
 #include <string.h>
 
-#include "webrtc/rtc_base/flags.h"
+#include "gflags/gflags.h"
 #include "webrtc/rtc_base/file.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
-namespace {
-const std::string kDefaultOutputPath = webrtc::test::OutputPath();
-}
-
 DEFINE_string(test_output_dir,
-              kDefaultOutputPath.c_str(),
+              webrtc::test::OutputPath(),
               "The output folder where test output should be saved.");
 
 namespace webrtc {
 namespace test {
 
 bool GetTestOutputDir(std::string* out_dir) {
-  if (strlen(FLAG_test_output_dir) == 0) {
+  if (FLAGS_test_output_dir.empty()) {
     LOG(LS_WARNING) << "No test_out_dir defined.";
     return false;
   }
-  *out_dir = FLAG_test_output_dir;
+  *out_dir = FLAGS_test_output_dir;
   return true;
 }
 
 bool WriteToTestOutput(const char* filename,
                        const uint8_t* buffer,
                        size_t length) {
-  if (strlen(FLAG_test_output_dir) == 0) {
+  if (FLAGS_test_output_dir.empty()) {
     LOG(LS_WARNING) << "No test_out_dir defined.";
     return false;
   }
@@ -52,7 +48,7 @@ bool WriteToTestOutput(const char* filename,
   }
 
   rtc::File output =
-      rtc::File::Create(rtc::Pathname(FLAG_test_output_dir, filename));
+      rtc::File::Create(rtc::Pathname(FLAGS_test_output_dir, filename));
 
   return output.IsOpen() && output.Write(buffer, length) == length;
 }
