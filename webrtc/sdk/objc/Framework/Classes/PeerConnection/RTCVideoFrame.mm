@@ -83,14 +83,6 @@
   return _timeStampNs;
 }
 
-- (CVPixelBufferRef)nativeHandle {
-  if ([_buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
-    return ((RTCCVPixelBuffer *)_buffer).pixelBuffer;
-  } else {
-    return nullptr;
-  }
-}
-
 - (RTCVideoFrame *)newI420VideoFrame {
   return [[RTCVideoFrame alloc] initWithBuffer:[_buffer toI420]
                                       rotation:_rotation

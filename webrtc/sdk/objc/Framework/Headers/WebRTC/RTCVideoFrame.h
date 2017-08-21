@@ -54,10 +54,6 @@ RTC_EXPORT
 /** Timestamp 90 kHz. */
 @property(nonatomic, assign) int32_t timeStamp;
 
-/** The native handle should be a pixel buffer on iOS. */
-@property(nonatomic, readonly)
-    CVPixelBufferRef nativeHandle DEPRECATED_MSG_ATTRIBUTE("use buffer instead");
-
 @property(nonatomic, readonly) id<RTCVideoFrameBuffer> buffer;
 
 - (instancetype)init NS_UNAVAILABLE;
