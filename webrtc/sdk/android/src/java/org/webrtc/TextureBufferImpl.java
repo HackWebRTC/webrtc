@@ -25,6 +25,7 @@ class TextureBufferImpl implements VideoFrame.TextureBuffer {
   private final Matrix transformMatrix;
   private final SurfaceTextureHelper surfaceTextureHelper;
   private final Runnable releaseCallback;
+  private final Object refCountLock = new Object();
   private int refCount;
 
   public TextureBufferImpl(int width, int height, Type type, int id, Matrix transformMatrix,
@@ -102,13 +103,17 @@ class TextureBufferImpl implements VideoFrame.TextureBuffer {
 
   @Override
   public void retain() {
-    ++refCount;
+    synchronized (refCountLock) {
+      ++refCount;
+    }
   }
 
   @Override
   public void release() {
-    if (--refCount == 0) {
-      releaseCallback.run();
+    synchronized (refCountLock) {
+      if (--refCount == 0 && releaseCallback != null) {
+        releaseCallback.run();
+      }
     }
   }
 

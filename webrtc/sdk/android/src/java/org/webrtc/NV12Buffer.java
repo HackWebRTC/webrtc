@@ -19,6 +19,7 @@ public class NV12Buffer implements VideoFrame.Buffer {
   private final int sliceHeight;
   private final ByteBuffer buffer;
   private final Runnable releaseCallback;
+  private final Object refCountLock = new Object();
 
   private int refCount;
 
@@ -51,13 +52,17 @@ public class NV12Buffer implements VideoFrame.Buffer {
 
   @Override
   public void retain() {
-    refCount++;
+    synchronized (refCountLock) {
+      ++refCount;
+    }
   }
 
   @Override
   public void release() {
-    if (--refCount == 0) {
-      releaseCallback.run();
+    synchronized (refCountLock) {
+      if (--refCount == 0 && releaseCallback != null) {
+        releaseCallback.run();
+      }
     }
   }
 

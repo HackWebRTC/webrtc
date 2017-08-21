@@ -24,6 +24,7 @@ class I420BufferImpl implements VideoFrame.I420Buffer {
   private final int strideU;
   private final int strideV;
   private final Runnable releaseCallback;
+  private final Object refCountLock = new Object();
 
   private int refCount;
 
@@ -116,13 +117,17 @@ class I420BufferImpl implements VideoFrame.I420Buffer {
 
   @Override
   public void retain() {
-    ++refCount;
+    synchronized (refCountLock) {
+      ++refCount;
+    }
   }
 
   @Override
   public void release() {
-    if (--refCount == 0 && releaseCallback != null) {
-      releaseCallback.run();
+    synchronized (refCountLock) {
+      if (--refCount == 0 && releaseCallback != null) {
+        releaseCallback.run();
+      }
     }
   }
 

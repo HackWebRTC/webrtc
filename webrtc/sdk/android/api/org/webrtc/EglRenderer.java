@@ -639,7 +639,7 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
     }
 
     notifyCallbacks(frame, isYuvBuffer, yuvTextures, shouldRenderFrame);
-    frame.release();
+    buffer.release();
   }
 
   private void notifyCallbacks(
