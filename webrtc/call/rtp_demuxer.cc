@@ -142,11 +142,11 @@ void RtpDemuxer::AddSink(const std::string& rsid,
 
 bool RtpDemuxer::RemoveSink(const RtpPacketSinkInterface* sink) {
   RTC_DCHECK(sink);
-  int num_removed = RemoveFromMapByValue(&sink_by_mid_, sink) +
-                    RemoveFromMapByValue(&sink_by_ssrc_, sink) +
-                    RemoveFromMultimapByValue(&sinks_by_pt_, sink) +
-                    RemoveFromMapByValue(&sink_by_mid_and_rsid_, sink) +
-                    RemoveFromMapByValue(&sink_by_rsid_, sink);
+  size_t num_removed = RemoveFromMapByValue(&sink_by_mid_, sink) +
+                       RemoveFromMapByValue(&sink_by_ssrc_, sink) +
+                       RemoveFromMultimapByValue(&sinks_by_pt_, sink) +
+                       RemoveFromMapByValue(&sink_by_mid_and_rsid_, sink) +
+                       RemoveFromMapByValue(&sink_by_rsid_, sink);
   RefreshKnownMids();
   return num_removed > 0;
 }
