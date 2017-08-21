@@ -31,54 +31,6 @@
   return _rotation;
 }
 
-- (const uint8_t *)dataY {
-  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
-    return ((id<RTCI420Buffer>)_buffer).dataY;
-  } else {
-    return nullptr;
-  }
-}
-
-- (const uint8_t *)dataU {
-  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
-    return ((id<RTCI420Buffer>)_buffer).dataU;
-  } else {
-    return nullptr;
-  }
-}
-
-- (const uint8_t *)dataV {
-  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
-    return ((id<RTCI420Buffer>)_buffer).dataV;
-  } else {
-    return nullptr;
-  }
-}
-
-- (int)strideY {
-  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
-    return ((id<RTCI420Buffer>)_buffer).strideY;
-  } else {
-    return 0;
-  }
-}
-
-- (int)strideU {
-  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
-    return ((id<RTCI420Buffer>)_buffer).strideU;
-  } else {
-    return 0;
-  }
-}
-
-- (int)strideV {
-  if ([_buffer conformsToProtocol:@protocol(RTCI420Buffer)]) {
-    return ((id<RTCI420Buffer>)_buffer).strideV;
-  } else {
-    return 0;
-  }
-}
-
 - (int64_t)timeStampNs {
   return _timeStampNs;
 }

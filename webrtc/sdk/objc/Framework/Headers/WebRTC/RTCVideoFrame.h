@@ -34,19 +34,6 @@ RTC_EXPORT
 /** Height without rotation applied. */
 @property(nonatomic, readonly) int height;
 @property(nonatomic, readonly) RTCVideoRotation rotation;
-/** Accessing YUV data should only be done for I420 frames, i.e. if nativeHandle
- *  is null. It is always possible to get such a frame by calling
- *  newI420VideoFrame.
- */
-@property(nonatomic, readonly, nullable)
-    const uint8_t *dataY DEPRECATED_MSG_ATTRIBUTE("use [buffer toI420]");
-@property(nonatomic, readonly, nullable)
-    const uint8_t *dataU DEPRECATED_MSG_ATTRIBUTE("use [buffer toI420]");
-@property(nonatomic, readonly, nullable)
-    const uint8_t *dataV DEPRECATED_MSG_ATTRIBUTE("use [buffer toI420]");
-@property(nonatomic, readonly) int strideY DEPRECATED_MSG_ATTRIBUTE("use [buffer toI420]");
-@property(nonatomic, readonly) int strideU DEPRECATED_MSG_ATTRIBUTE("use [buffer toI420]");
-@property(nonatomic, readonly) int strideV DEPRECATED_MSG_ATTRIBUTE("use [buffer toI420]");
 
 /** Timestamp in nanoseconds. */
 @property(nonatomic, readonly) int64_t timeStampNs;
