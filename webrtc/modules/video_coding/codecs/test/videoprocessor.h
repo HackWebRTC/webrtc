@@ -25,6 +25,7 @@
 #include "webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/test/testsupport/frame_reader.h"
 #include "webrtc/test/testsupport/frame_writer.h"
 
@@ -155,26 +156,19 @@ class VideoProcessor {
   // Tears down callbacks and releases the encoder and decoder.
   void Release();
 
-  // Processes a single frame. Returns true as long as there's more frames
-  // available in the source clip.
-  // |frame_number| must be an integer >= 0.
-  bool ProcessFrame(int frame_number);
+  // Processes a single frame. The frames must be processed in order, and the
+  // VideoProcessor must be initialized first.
+  void ProcessFrame(int frame_number);
 
-  // Updates the encoder with the target |bit_rate| and the |frame_rate|.
-  void SetRates(int bit_rate, int frame_rate);
+  // Updates the encoder with target rates. Must be called at least once.
+  void SetRates(int bitrate_kbps, int framerate_fps);
 
-  // Return the size of the encoded frame in bytes. Dropped frames by the
-  // encoder are regarded as zero size.
-  size_t EncodedFrameSize(int frame_number);
 
-  // Return the encoded frame type (key or delta).
-  FrameType EncodedFrameType(int frame_number);
+  // TODO(brandtr): Get rid of these functions by moving the corresponding QP
+  // fields to the Stats object.
+  int GetQpFromEncoder(int frame_number) const;
+  int GetQpFromBitstream(int frame_number) const;
 
-  // Return the qp used by encoder.
-  int GetQpFromEncoder(int frame_number);
-
-  // Return the qp from the qp parser.
-  int GetQpFromBitstream(int frame_number);
 
   // Return the number of dropped frames.
   int NumberDroppedFrames();
@@ -186,32 +180,17 @@ class VideoProcessor {
   // Container that holds per-frame information that needs to be stored between
   // calls to Encode and Decode, as well as the corresponding callbacks. It is
   // not directly used for statistics -- for that, test::FrameStatistic is used.
+  // TODO(brandtr): Get rid of this struct and use the Stats class instead.
   struct FrameInfo {
-    FrameInfo()
-        : timestamp(0),
-          encode_start_ns(0),
-          decode_start_ns(0),
-          encoded_frame_size(0),
-          encoded_frame_type(kVideoFrameDelta),
-          decoded_width(0),
-          decoded_height(0),
-          manipulated_length(0),
-          qp_encoder(0),
-          qp_bitstream(0) {}
-
-    uint32_t timestamp;
-    int64_t encode_start_ns;
-    int64_t decode_start_ns;
-    size_t encoded_frame_size;
-    FrameType encoded_frame_type;
-    int decoded_width;
-    int decoded_height;
-    size_t manipulated_length;
-    int qp_encoder;
-    int qp_bitstream;
+    int64_t encode_start_ns = 0;
+    int64_t decode_start_ns = 0;
+    int qp_encoder = 0;
+    int qp_bitstream = 0;
+    int decoded_width = 0;
+    int decoded_height = 0;
+    size_t manipulated_length = 0;
   };
 
-  // Callback class required to implement according to the VideoEncoder API.
   class VideoProcessorEncodeCompleteCallback
       : public webrtc::EncodedImageCallback {
    public:
@@ -233,7 +212,6 @@ class VideoProcessor {
     VideoProcessor* const video_processor_;
   };
 
-  // Callback class required to implement according to the VideoDecoder API.
   class VideoProcessorDecodeCompleteCallback
       : public webrtc::DecodedImageCallback {
    public:
@@ -259,19 +237,19 @@ class VideoProcessor {
     VideoProcessor* const video_processor_;
   };
 
-  // Invoked by the callback when a frame has completed encoding.
+  // Invoked by the callback adapter when a frame has completed encoding.
   void FrameEncoded(webrtc::VideoCodecType codec,
                     const webrtc::EncodedImage& encodedImage,
                     const webrtc::RTPFragmentationHeader* fragmentation);
 
-  // Invoked by the callback when a frame has completed decoding.
+  // Invoked by the callback adapter when a frame has completed decoding.
   void FrameDecoded(const webrtc::VideoFrame& image);
 
   // Use the frame number as the basis for timestamp to identify frames. Let the
   // first timestamp be non-zero, to not make the IvfFileWriter believe that we
   // want to use capture timestamps in the IVF files.
-  uint32_t FrameNumberToTimestamp(int frame_number);
-  int TimestampToFrameNumber(uint32_t timestamp);
+  uint32_t FrameNumberToTimestamp(int frame_number) const;
+  int TimestampToFrameNumber(uint32_t timestamp) const;
 
   TestConfig config_;
 
@@ -280,8 +258,8 @@ class VideoProcessor {
   const std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
 
   // Adapters for the codec callbacks.
-  const std::unique_ptr<EncodedImageCallback> encode_callback_;
-  const std::unique_ptr<DecodedImageCallback> decode_callback_;
+  VideoProcessorEncodeCompleteCallback encode_callback_;
+  VideoProcessorDecodeCompleteCallback decode_callback_;
 
   // Fake network.
   PacketManipulator* const packet_manipulator_;
@@ -318,6 +296,8 @@ class VideoProcessor {
   Stats* stats_;
   int num_dropped_frames_;
   int num_spatial_resizes_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(VideoProcessor);
 };
 
 }  // namespace test

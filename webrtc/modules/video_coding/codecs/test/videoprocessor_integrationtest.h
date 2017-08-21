@@ -266,10 +266,12 @@ class VideoProcessorIntegrationTest : public testing::Test {
   // For every encoded frame, update the rate control metrics.
   void UpdateRateControlMetrics(int frame_number) {
     RTC_CHECK_GE(frame_number, 0);
-    int tl_idx = TemporalLayerIndexForFrame(frame_number);
-    FrameType frame_type = processor_->EncodedFrameType(frame_number);
+
+    FrameType frame_type = stats_.stats_[frame_number].frame_type;
     float encoded_size_kbits =
-        processor_->EncodedFrameSize(frame_number) * 8.0f / 1000.0f;
+        stats_.stats_[frame_number].encoded_frame_length_in_bytes * 8.0f /
+        1000.0f;
+    const int tl_idx = TemporalLayerIndexForFrame(frame_number);
 
     // Update layer data.
     // Update rate mismatch relative to per-frame bandwidth for delta frames.
@@ -490,7 +492,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
       // TODO(brandtr): Refactor "frame number accounting" so we don't have to
       // call ProcessFrame num_frames+1 times here.
       for (frame_number = 0; frame_number <= num_frames; ++frame_number) {
-        EXPECT_TRUE(processor_->ProcessFrame(frame_number));
+        processor_->ProcessFrame(frame_number);
       }
 
       for (frame_number = 0; frame_number < num_frames; ++frame_number) {
@@ -509,7 +511,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
       }
 
       while (frame_number < num_frames) {
-        EXPECT_TRUE(processor_->ProcessFrame(frame_number));
+        processor_->ProcessFrame(frame_number);
         VerifyQpParser(frame_number);
         const int tl_idx = TemporalLayerIndexForFrame(frame_number);
         ++num_frames_per_update_[tl_idx];
@@ -536,7 +538,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
       }
       // TODO(brandtr): Refactor "frame number accounting" so we don't have to
       // call ProcessFrame one extra time here.
-      EXPECT_TRUE(processor_->ProcessFrame(frame_number));
+      processor_->ProcessFrame(frame_number);
     }
 
     // Verify rate control metrics for all frames (if in batch mode), or for all

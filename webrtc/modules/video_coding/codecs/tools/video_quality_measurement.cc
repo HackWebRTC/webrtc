@@ -510,8 +510,10 @@ int main(int argc, char* argv[]) {
       nullptr /* decoded_frame_writer */);
   processor->Init();
 
+  const int num_frames = frame_reader.NumberOfFrames();
   int frame_number = 0;
-  while (processor->ProcessFrame(frame_number)) {
+  while (frame_number < num_frames) {
+    processor->ProcessFrame(frame_number);
     if (frame_number % 80 == 0) {
       Log("\n");  // make the output a bit nicer.
     }
@@ -522,8 +524,7 @@ int main(int argc, char* argv[]) {
   Log("Processed %d frames\n", frame_number);
 
   // Release encoder and decoder to make sure they have finished processing.
-  encoder->Release();
-  decoder->Release();
+  processor->Release();
 
   // Verify statistics are correct:
   assert(frame_number == static_cast<int>(stats.stats_.size()));
