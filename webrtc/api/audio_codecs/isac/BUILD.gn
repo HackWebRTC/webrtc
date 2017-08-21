@@ -37,3 +37,29 @@ rtc_static_library("audio_decoder_isac_fix") {
     "../../../rtc_base:rtc_base_approved",
   ]
 }
+
+rtc_static_library("audio_encoder_isac_float") {
+  sources = [
+    "audio_encoder_isac_float.cc",
+    "audio_encoder_isac_float.h",
+  ]
+  deps = [
+    "..:audio_codecs_api",
+    "../../..:webrtc_common",
+    "../../../modules/audio_coding:isac",
+    "../../../rtc_base:rtc_base_approved",
+  ]
+}
+
+rtc_static_library("audio_decoder_isac_float") {
+  sources = [
+    "audio_decoder_isac_float.cc",
+    "audio_decoder_isac_float.h",
+  ]
+  deps = [
+    "..:audio_codecs_api",
+    "../../..:webrtc_common",
+    "../../../modules/audio_coding:isac",
+    "../../../rtc_base:rtc_base_approved",
+  ]
+}

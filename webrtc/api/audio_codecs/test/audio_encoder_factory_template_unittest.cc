@@ -14,6 +14,7 @@
 #include "webrtc/api/audio_codecs/g722/audio_encoder_g722.h"
 #include "webrtc/api/audio_codecs/ilbc/audio_encoder_ilbc.h"
 #include "webrtc/api/audio_codecs/isac/audio_encoder_isac_fix.h"
+#include "webrtc/api/audio_codecs/isac/audio_encoder_isac_float.h"
 #include "webrtc/api/audio_codecs/opus/audio_encoder_opus.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/test/gmock.h"
@@ -181,6 +182,8 @@ TEST(AudioEncoderFactoryTemplateTest, IsacFix) {
             factory->QueryAudioEncoder({"isac", 16000, 2}));
   EXPECT_EQ(rtc::Optional<AudioCodecInfo>({16000, 1, 32000, 10000, 32000}),
             factory->QueryAudioEncoder({"isac", 16000, 1}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>(),
+            factory->QueryAudioEncoder({"isac", 32000, 1}));
   EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"isac", 8000, 1}));
   auto enc1 = factory->MakeAudioEncoder(17, {"isac", 16000, 1});
   ASSERT_NE(nullptr, enc1);
@@ -190,6 +193,28 @@ TEST(AudioEncoderFactoryTemplateTest, IsacFix) {
       factory->MakeAudioEncoder(17, {"isac", 16000, 1, {{"ptime", "60"}}});
   ASSERT_NE(nullptr, enc2);
   EXPECT_EQ(6u, enc2->Num10MsFramesInNextPacket());
+}
+
+TEST(AudioEncoderFactoryTemplateTest, IsacFloat) {
+  auto factory = CreateAudioEncoderFactory<AudioEncoderIsacFloat>();
+  EXPECT_THAT(
+      factory->GetSupportedEncoders(),
+      testing::ElementsAre(
+          AudioCodecSpec{{"ISAC", 16000, 1}, {16000, 1, 32000, 10000, 32000}},
+          AudioCodecSpec{{"ISAC", 32000, 1}, {32000, 1, 56000, 10000, 56000}}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>(),
+            factory->QueryAudioEncoder({"isac", 16000, 2}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>({16000, 1, 32000, 10000, 32000}),
+            factory->QueryAudioEncoder({"isac", 16000, 1}));
+  EXPECT_EQ(rtc::Optional<AudioCodecInfo>({32000, 1, 56000, 10000, 56000}),
+            factory->QueryAudioEncoder({"isac", 32000, 1}));
+  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"isac", 8000, 1}));
+  auto enc1 = factory->MakeAudioEncoder(17, {"isac", 16000, 1});
+  ASSERT_NE(nullptr, enc1);
+  EXPECT_EQ(16000, enc1->SampleRateHz());
+  auto enc2 = factory->MakeAudioEncoder(17, {"isac", 32000, 1});
+  ASSERT_NE(nullptr, enc2);
+  EXPECT_EQ(32000, enc2->SampleRateHz());
 }
 
 TEST(AudioEncoderFactoryTemplateTest, L16) {
