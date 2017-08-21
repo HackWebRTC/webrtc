@@ -14,10 +14,8 @@ rtc_static_library("congestion_controller") {
     "acknowledged_bitrate_estimator.h",
     "bitrate_estimator.cc",
     "bitrate_estimator.h",
-    "congestion_controller.cc",
     "delay_based_bwe.cc",
     "delay_based_bwe.h",
-    "include/congestion_controller.h",
     "include/receive_side_congestion_controller.h",
     "include/send_side_congestion_controller.h",
     "median_slope_estimator.cc",
@@ -76,7 +74,6 @@ if (rtc_include_tests) {
     }
     sources = [
       "acknowledged_bitrate_estimator_unittest.cc",
-      "congestion_controller_unittest.cc",
       "congestion_controller_unittests_helper.cc",
       "congestion_controller_unittests_helper.h",
       "delay_based_bwe_unittest.cc",
@@ -85,6 +82,8 @@ if (rtc_include_tests) {
       "median_slope_estimator_unittest.cc",
       "probe_bitrate_estimator_unittest.cc",
       "probe_controller_unittest.cc",
+      "receive_side_congestion_controller_unittest.cc",
+      "send_side_congestion_controller_unittest.cc",
       "transport_feedback_adapter_unittest.cc",
       "trendline_estimator_unittest.cc",
     ]
@@ -99,7 +98,6 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../bitrate_controller:bitrate_controller",
       "../pacing:pacing",
-      "../remote_bitrate_estimator:mock_remote_bitrate_observer",
       "../remote_bitrate_estimator:remote_bitrate_estimator",
       "../rtp_rtcp:rtp_rtcp",
       "//testing/gmock",

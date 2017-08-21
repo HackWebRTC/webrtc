@@ -15,7 +15,6 @@
 #include <string>
 
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"

@@ -8,14 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
+#include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/congestion_controller_unittests_helper.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_observer.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/rtc_base/socket.h"
@@ -36,19 +35,10 @@ namespace {
 const webrtc::PacedPacketInfo kPacingInfo0(0, 5, 2000);
 const webrtc::PacedPacketInfo kPacingInfo1(1, 8, 4000);
 
-// Helper to convert some time format to resolution used in absolute send time
-// header extension, rounded upwards. |t| is the time to convert, in some
-// resolution. |denom| is the value to divide |t| by to get whole seconds,
-// e.g. |denom| = 1000 if |t| is in milliseconds.
-uint32_t AbsSendTime(int64_t t, int64_t denom) {
-  return (((t << 18) + (denom >> 1)) / denom) & 0x00fffffful;
-}
-
 class MockPacketRouter : public PacketRouter {
  public:
   MOCK_METHOD2(OnReceiveBitrateChanged,
-               void(const std::vector<uint32_t>& ssrcs,
-                    uint32_t bitrate));
+               void(const std::vector<uint32_t>& ssrcs, uint32_t bitrate));
 };
 
 const uint32_t kInitialBitrateBps = 60000;
@@ -57,17 +47,17 @@ const uint32_t kInitialBitrateBps = 60000;
 
 namespace test {
 
-class CongestionControllerTest : public ::testing::Test {
+class SendSideCongestionControllerTest : public ::testing::Test {
  protected:
-  CongestionControllerTest() : clock_(123456), target_bitrate_observer_(this) {}
-  ~CongestionControllerTest() override {}
+  SendSideCongestionControllerTest()
+      : clock_(123456), target_bitrate_observer_(this) {}
+  ~SendSideCongestionControllerTest() override {}
 
   void SetUp() override {
     pacer_ = new NiceMock<MockPacedSender>();
     std::unique_ptr<PacedSender> pacer(pacer_);  // Passes ownership.
-    controller_.reset(new CongestionController(
-        &clock_, &observer_, &remote_bitrate_observer_, &event_log_,
-        &packet_router_, std::move(pacer)));
+    controller_.reset(new SendSideCongestionController(
+        &clock_, &observer_, &event_log_, std::move(pacer)));
     bandwidth_observer_.reset(
         controller_->GetBitrateController()->CreateRtcpBandwidthObserver());
 
@@ -84,9 +74,8 @@ class CongestionControllerTest : public ::testing::Test {
   // prescribing on which iterations it must change (like a mock would).
   void TargetBitrateTrackingSetup() {
     std::unique_ptr<PacedSender> pacer(new NiceMock<MockPacedSender>());
-    controller_.reset(new CongestionController(
-        &clock_, &target_bitrate_observer_, &remote_bitrate_observer_,
-        &event_log_, &packet_router_, std::move(pacer)));
+    controller_.reset(new SendSideCongestionController(
+        &clock_, &target_bitrate_observer_, &event_log_, std::move(pacer)));
     controller_->SetBweBitrates(0, kInitialBitrateBps, 5 * kInitialBitrateBps);
   }
 
@@ -101,9 +90,9 @@ class CongestionControllerTest : public ::testing::Test {
 
   // Allows us to track the target bitrate, without prescribing the exact
   // iterations when this would hapen, like a mock would.
-  class TargetBitrateObserver : public CongestionController::Observer {
+  class TargetBitrateObserver : public SendSideCongestionController::Observer {
    public:
-    explicit TargetBitrateObserver(CongestionControllerTest* owner)
+    explicit TargetBitrateObserver(SendSideCongestionControllerTest* owner)
         : owner_(owner) {}
     ~TargetBitrateObserver() override = default;
     void OnNetworkChanged(uint32_t bitrate_bps,
@@ -114,7 +103,7 @@ class CongestionControllerTest : public ::testing::Test {
     }
 
    private:
-    CongestionControllerTest* owner_;
+    SendSideCongestionControllerTest* owner_;
   };
 
   void PacketTransmissionAndFeedbackBlock(uint16_t* seq_num,
@@ -150,16 +139,14 @@ class CongestionControllerTest : public ::testing::Test {
   StrictMock<MockCongestionObserver> observer_;
   TargetBitrateObserver target_bitrate_observer_;
   NiceMock<MockPacedSender>* pacer_;
-  NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
   NiceMock<MockRtcEventLog> event_log_;
   std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
-  PacketRouter packet_router_;
-  std::unique_ptr<CongestionController> controller_;
+  std::unique_ptr<SendSideCongestionController> controller_;
 
   rtc::Optional<uint32_t> target_bitrate_bps_;
 };
 
-TEST_F(CongestionControllerTest, OnNetworkChanged) {
+TEST_F(SendSideCongestionControllerTest, OnNetworkChanged) {
   // Test no change.
   clock_.AdvanceTimeMilliseconds(25);
   controller_->Process();
@@ -177,7 +164,7 @@ TEST_F(CongestionControllerTest, OnNetworkChanged) {
   controller_->Process();
 }
 
-TEST_F(CongestionControllerTest, OnSendQueueFull) {
+TEST_F(SendSideCongestionControllerTest, OnSendQueueFull) {
   EXPECT_CALL(*pacer_, ExpectedQueueTimeMs())
       .WillOnce(Return(PacedSender::kMaxQueueLengthMs + 1));
 
@@ -192,7 +179,7 @@ TEST_F(CongestionControllerTest, OnSendQueueFull) {
   controller_->Process();
 }
 
-TEST_F(CongestionControllerTest, OnSendQueueFullAndEstimateChange) {
+TEST_F(SendSideCongestionControllerTest, OnSendQueueFullAndEstimateChange) {
   EXPECT_CALL(*pacer_, ExpectedQueueTimeMs())
       .WillOnce(Return(PacedSender::kMaxQueueLengthMs + 1));
   EXPECT_CALL(observer_, OnNetworkChanged(0, _, _, _));
@@ -216,7 +203,7 @@ TEST_F(CongestionControllerTest, OnSendQueueFullAndEstimateChange) {
   controller_->Process();
 }
 
-TEST_F(CongestionControllerTest, SignalNetworkState) {
+TEST_F(SendSideCongestionControllerTest, SignalNetworkState) {
   EXPECT_CALL(observer_, OnNetworkChanged(0, _, _, _));
   controller_->SignalNetworkState(kNetworkDown);
 
@@ -227,7 +214,7 @@ TEST_F(CongestionControllerTest, SignalNetworkState) {
   controller_->SignalNetworkState(kNetworkDown);
 }
 
-TEST_F(CongestionControllerTest, OnNetworkRouteChanged) {
+TEST_F(SendSideCongestionControllerTest, OnNetworkRouteChanged) {
   int new_bitrate = 200000;
   testing::Mock::VerifyAndClearExpectations(pacer_);
   EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _, _));
@@ -247,7 +234,7 @@ TEST_F(CongestionControllerTest, OnNetworkRouteChanged) {
   controller_->OnNetworkRouteChanged(route, -1, -1, -1);
 }
 
-TEST_F(CongestionControllerTest, OldFeedback) {
+TEST_F(SendSideCongestionControllerTest, OldFeedback) {
   int new_bitrate = 200000;
   testing::Mock::VerifyAndClearExpectations(pacer_);
   EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _, _));
@@ -290,7 +277,7 @@ TEST_F(CongestionControllerTest, OldFeedback) {
   controller_->OnNetworkRouteChanged(route, -1, -1, -1);
 }
 
-TEST_F(CongestionControllerTest,
+TEST_F(SendSideCongestionControllerTest,
        SignalNetworkStateAndQueueIsFullAndEstimateChange) {
   // Send queue is full
   EXPECT_CALL(*pacer_, ExpectedQueueTimeMs())
@@ -319,7 +306,7 @@ TEST_F(CongestionControllerTest,
   controller_->Process();
 }
 
-TEST_F(CongestionControllerTest, GetPacerQueuingDelayMs) {
+TEST_F(SendSideCongestionControllerTest, GetPacerQueuingDelayMs) {
   EXPECT_CALL(observer_, OnNetworkChanged(_, _, _, _)).Times(AtLeast(1));
 
   const int64_t kQueueTimeMs = 123;
@@ -335,7 +322,7 @@ TEST_F(CongestionControllerTest, GetPacerQueuingDelayMs) {
   EXPECT_EQ(kQueueTimeMs, controller_->GetPacerQueuingDelayMs());
 }
 
-TEST_F(CongestionControllerTest, GetProbingInterval) {
+TEST_F(SendSideCongestionControllerTest, GetProbingInterval) {
   clock_.AdvanceTimeMilliseconds(25);
   controller_->Process();
 
@@ -346,33 +333,7 @@ TEST_F(CongestionControllerTest, GetProbingInterval) {
   controller_->Process();
 }
 
-TEST(ReceiveSideCongestionControllerTest, OnReceivedPacketWithAbsSendTime) {
-  StrictMock<MockPacketRouter> packet_router;
-  SimulatedClock clock_(123456);
-
-  ReceiveSideCongestionController controller(&clock_, &packet_router);
-
-  size_t payload_size = 1000;
-  RTPHeader header;
-  header.ssrc = 0x11eb21c;
-  header.extension.hasAbsoluteSendTime = true;
-
-  std::vector<unsigned int> ssrcs;
-  EXPECT_CALL(packet_router, OnReceiveBitrateChanged(_, _))
-      .WillRepeatedly(SaveArg<0>(&ssrcs));
-
-  for (int i = 0; i < 10; ++i) {
-    clock_.AdvanceTimeMilliseconds((1000 * payload_size) / kInitialBitrateBps);
-    int64_t now_ms = clock_.TimeInMilliseconds();
-    header.extension.absoluteSendTime = AbsSendTime(now_ms, 1000);
-    controller.OnReceivedPacket(now_ms, payload_size, header);
-  }
-
-  ASSERT_EQ(1u, ssrcs.size());
-  EXPECT_EQ(header.ssrc, ssrcs[0]);
-}
-
-TEST_F(CongestionControllerTest, ProbeOnRouteChange) {
+TEST_F(SendSideCongestionControllerTest, ProbeOnRouteChange) {
   testing::Mock::VerifyAndClearExpectations(pacer_);
   EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 6));
   EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 12));
@@ -385,7 +346,7 @@ TEST_F(CongestionControllerTest, ProbeOnRouteChange) {
 
 // Estimated bitrate reduced when the feedbacks arrive with such a long delay,
 // that the send-time-history no longer holds the feedbacked packets.
-TEST_F(CongestionControllerTest, LongFeedbackDelays) {
+TEST_F(SendSideCongestionControllerTest, LongFeedbackDelays) {
   TargetBitrateTrackingSetup();
 
   const int64_t kFeedbackTimeoutMs = 60001;
@@ -476,7 +437,7 @@ TEST_F(CongestionControllerTest, LongFeedbackDelays) {
 
 // Bandwidth estimation is updated when feedbacks are received.
 // Feedbacks which show an increasing delay cause the estimation to be reduced.
-TEST_F(CongestionControllerTest, UpdatesDelayBasedEstimate) {
+TEST_F(SendSideCongestionControllerTest, UpdatesDelayBasedEstimate) {
   TargetBitrateTrackingSetup();
 
   const int64_t kRunTimeMs = 6000;

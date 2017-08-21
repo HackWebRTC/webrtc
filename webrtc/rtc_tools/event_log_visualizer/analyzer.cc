@@ -27,7 +27,7 @@
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_replacement_input.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_test.h"
 #include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
-#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
+#include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -528,14 +528,10 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
   }
 }
 
-class BitrateObserver : public CongestionController::Observer,
+class BitrateObserver : public SendSideCongestionController::Observer,
                         public RemoteBitrateObserver {
  public:
   BitrateObserver() : last_bitrate_bps_(0), bitrate_updated_(false) {}
-
-  // TODO(minyue): remove this when old OnNetworkChanged is deprecated. See
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=6796
-  using CongestionController::Observer::OnNetworkChanged;
 
   void OnNetworkChanged(uint32_t bitrate_bps,
                         uint8_t fraction_loss,
@@ -1130,8 +1126,8 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
   BitrateObserver observer;
   RtcEventLogNullImpl null_event_log;
   PacketRouter packet_router;
-  CongestionController cc(&clock, &observer, &observer, &null_event_log,
-                          &packet_router);
+  SendSideCongestionController cc(&clock, &observer, &null_event_log,
+                                  &packet_router);
   // TODO(holmer): Log the call config and use that here instead.
   static const uint32_t kDefaultStartBitrateBps = 300000;
   cc.SetBweBitrates(0, kDefaultStartBitrateBps, -1);
