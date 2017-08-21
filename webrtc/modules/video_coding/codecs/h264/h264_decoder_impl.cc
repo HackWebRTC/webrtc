@@ -50,9 +50,10 @@ rtc::CriticalSection ffmpeg_init_lock;
 bool ffmpeg_initialized = false;
 
 // Called by FFmpeg to do mutex operations if initialized using
-// |InitializeFFmpeg|.
+// |InitializeFFmpeg|. Disabling thread safety analysis because void** does not
+// play nicely with thread_annotations.h macros.
 int LockManagerOperation(void** lock, AVLockOp op)
-    EXCLUSIVE_LOCK_FUNCTION() UNLOCK_FUNCTION() {
+    NO_THREAD_SAFETY_ANALYSIS {
   switch (op) {
     case AV_LOCK_CREATE:
       *lock = new rtc::CriticalSection();
