@@ -148,7 +148,9 @@ rtc_static_library("video_coding_utility") {
 
 # TODO(ehmaldonado): Remove once http://bugs.webrtc.org/8090 is fixed.
 config("webrtc_h264_config") {
-  cflags = [ "-Wno-thread-safety-attributes" ]
+  if (is_clang) {
+    cflags = [ "-Wno-thread-safety-attributes" ]
+  }
 }
 
 rtc_static_library("webrtc_h264") {
