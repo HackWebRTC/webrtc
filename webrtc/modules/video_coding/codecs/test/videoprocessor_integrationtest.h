@@ -173,8 +173,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
         break;
     }
 
-    RTC_CHECK(encoder_) << "Encoder not successfully created.";
-    RTC_CHECK(decoder_) << "Decoder not successfully created.";
+    EXPECT_TRUE(encoder_) << "Encoder not successfully created.";
+    EXPECT_TRUE(decoder_) << "Decoder not successfully created.";
   }
 
   void DestroyEncoderAndDecoder() {
@@ -194,8 +194,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     analysis_frame_writer_.reset(new YuvFrameWriterImpl(
         config_.output_filename, config_.codec_settings.width,
         config_.codec_settings.height));
-    RTC_CHECK(analysis_frame_reader_->Init());
-    RTC_CHECK(analysis_frame_writer_->Init());
+    EXPECT_TRUE(analysis_frame_reader_->Init());
+    EXPECT_TRUE(analysis_frame_writer_->Init());
 
     if (visualization_params) {
       const std::string codec_name =
@@ -210,15 +210,15 @@ class VideoProcessorIntegrationTest : public testing::Test {
       // clang-format on
       if (visualization_params->save_encoded_ivf) {
         rtc::File post_encode_file =
-            rtc::File::Create(output_filename_base + "_encoded.ivf");
+            rtc::File::Create(output_filename_base + ".ivf");
         encoded_frame_writer_ =
             IvfFileWriter::Wrap(std::move(post_encode_file), 0);
       }
       if (visualization_params->save_decoded_y4m) {
         decoded_frame_writer_.reset(new Y4mFrameWriterImpl(
-            output_filename_base + "_decoded.y4m", config_.codec_settings.width,
+            output_filename_base + ".y4m", config_.codec_settings.width,
             config_.codec_settings.height, initial_framerate_fps));
-        RTC_CHECK(decoded_frame_writer_->Init());
+        EXPECT_TRUE(decoded_frame_writer_->Init());
       }
     }
 
@@ -242,11 +242,11 @@ class VideoProcessorIntegrationTest : public testing::Test {
       sum_encoded_frame_size_[i] = 0.0f;
       encoding_bitrate_[i] = 0.0f;
       // Update layer per-frame-bandwidth.
-      per_frame_bandwidth_[i] = static_cast<float>(bit_rate_layer_[i]) /
-                                static_cast<float>(frame_rate_layer_[i]);
+      per_frame_bandwidth_[i] = static_cast<float>(bitrate_layer_[i]) /
+                                static_cast<float>(framerate_layer_[i]);
     }
     // Set maximum size of key frames, following setting in the VP8 wrapper.
-    float max_key_size = kScaleKeyFrameSize * kOptimalBufferSize * frame_rate_;
+    float max_key_size = kScaleKeyFrameSize * kOptimalBufferSize * framerate_;
     // We don't know exact target size of the key frames (except for first one),
     // but the minimum in libvpx is ~|3 * per_frame_bandwidth| and maximum is
     // set by |max_key_size_ * per_frame_bandwidth|. Take middle point/average
@@ -291,14 +291,14 @@ class VideoProcessorIntegrationTest : public testing::Test {
     // Encoding bit rate per temporal layer: from the start of the update/run
     // to the current frame.
     encoding_bitrate_[tl_idx] = sum_encoded_frame_size_[tl_idx] *
-                                frame_rate_layer_[tl_idx] /
+                                framerate_layer_[tl_idx] /
                                 num_frames_per_update_[tl_idx];
     // Total encoding rate: from the start of the update/run to current frame.
     sum_encoded_frame_size_total_ += encoded_size_kbits;
     encoding_bitrate_total_ =
-        sum_encoded_frame_size_total_ * frame_rate_ / num_frames_total_;
+        sum_encoded_frame_size_total_ * framerate_ / num_frames_total_;
     perc_encoding_rate_mismatch_ =
-        100 * fabs(encoding_bitrate_total_ - bit_rate_) / bit_rate_;
+        100 * fabs(encoding_bitrate_total_ - bitrate_kbps_) / bitrate_kbps_;
     if (perc_encoding_rate_mismatch_ < kPercTargetvsActualMismatch &&
         !encoding_rate_within_target_) {
       num_frames_to_hit_target_ = num_frames_total_;
@@ -307,7 +307,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
 
   // Verify expected behavior of rate control and print out data.
-  void VerifyRateControlMetrics(int update_index,
+  void VerifyRateControlMetrics(int rate_update_index,
                                 const RateControlThresholds& rc_expected) {
     int num_dropped_frames = processor_->NumberDroppedFrames();
     int num_resize_actions = processor_->NumberSpatialResizes();
@@ -316,7 +316,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
         " Target bitrate         : %d\n"
         " Encoded bitrate        : %f\n"
         " Frame rate             : %d\n",
-        update_index, bit_rate_, encoding_bitrate_total_, frame_rate_);
+        rate_update_index, bitrate_kbps_, encoding_bitrate_total_, framerate_);
     printf(
         " # processed frames     : %d\n"
         " # frames to convergence: %d\n"
@@ -324,6 +324,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
         " # spatial resizes      : %d\n",
         num_frames_total_, num_frames_to_hit_target_, num_dropped_frames,
         num_resize_actions);
+
     EXPECT_LE(perc_encoding_rate_mismatch_,
               rc_expected.max_encoding_rate_mismatch);
     if (num_key_frames_ > 0) {
@@ -336,24 +337,25 @@ class VideoProcessorIntegrationTest : public testing::Test {
       EXPECT_LE(perc_key_frame_size_mismatch,
                 rc_expected.max_key_frame_size_mismatch);
     }
+
     const int num_temporal_layers =
         NumberOfTemporalLayers(config_.codec_settings);
     for (int i = 0; i < num_temporal_layers; i++) {
-      printf(" Temporal layer #%d:\n", i);
       int perc_frame_size_mismatch =
           100 * sum_frame_size_mismatch_[i] / num_frames_per_update_[i];
       int perc_encoding_rate_mismatch =
-          100 * fabs(encoding_bitrate_[i] - bit_rate_layer_[i]) /
-          bit_rate_layer_[i];
+          100 * fabs(encoding_bitrate_[i] - bitrate_layer_[i]) /
+          bitrate_layer_[i];
       printf(
+          " Temporal layer #%d:\n"
           "  Target layer bitrate                : %f\n"
           "  Layer frame rate                    : %f\n"
           "  Layer per frame bandwidth           : %f\n"
           "  Layer encoding bitrate              : %f\n"
           "  Layer percent frame size mismatch   : %d\n"
           "  Layer percent encoding rate mismatch: %d\n"
-          "  # frame processed per layer         : %d\n",
-          bit_rate_layer_[i], frame_rate_layer_[i], per_frame_bandwidth_[i],
+          "  # frames processed per layer        : %d\n",
+          i, bitrate_layer_[i], framerate_layer_[i], per_frame_bandwidth_[i],
           encoding_bitrate_[i], perc_frame_size_mismatch,
           perc_encoding_rate_mismatch, num_frames_per_update_[i]);
       EXPECT_LE(perc_frame_size_mismatch,
@@ -362,6 +364,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
                 rc_expected.max_encoding_rate_mismatch);
     }
     printf("\n");
+
     EXPECT_LE(num_frames_to_hit_target_, rc_expected.max_time_hit_target);
     EXPECT_LE(num_dropped_frames, rc_expected.max_num_dropped_frames);
     if (rc_expected.num_spatial_resizes >= 0) {
@@ -372,9 +375,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
     }
   }
 
-  void VerifyQuality(const QualityMetricsResult& psnr_result,
-                     const QualityMetricsResult& ssim_result,
-                     const QualityThresholds& quality_thresholds) {
+  static void VerifyQuality(const QualityMetricsResult& psnr_result,
+                            const QualityMetricsResult& ssim_result,
+                            const QualityThresholds& quality_thresholds) {
     EXPECT_GT(psnr_result.average, quality_thresholds.min_avg_psnr);
     EXPECT_GT(psnr_result.min, quality_thresholds.min_min_psnr);
     EXPECT_GT(ssim_result.average, quality_thresholds.min_avg_ssim);
@@ -390,7 +393,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     }
   }
 
-  int NumberOfTemporalLayers(const VideoCodec& codec_settings) {
+  static int NumberOfTemporalLayers(const VideoCodec& codec_settings) {
     if (codec_settings.codecType == kVideoCodecVP8) {
       return codec_settings.VP8().numberOfTemporalLayers;
     } else if (codec_settings.codecType == kVideoCodecVP9) {
@@ -444,15 +447,15 @@ class VideoProcessorIntegrationTest : public testing::Test {
         float bit_rate_delta_ratio =
             kVp8LayerRateAlloction[num_temporal_layers - 1][i] -
             kVp8LayerRateAlloction[num_temporal_layers - 1][i - 1];
-        bit_rate_layer_[i] = bit_rate_ * bit_rate_delta_ratio;
+        bitrate_layer_[i] = bitrate_kbps_ * bit_rate_delta_ratio;
       } else {
-        bit_rate_layer_[i] = bit_rate_ * bit_rate_ratio;
+        bitrate_layer_[i] = bitrate_kbps_ * bit_rate_ratio;
       }
-      frame_rate_layer_[i] =
-          frame_rate_ / static_cast<float>(1 << (num_temporal_layers - 1));
+      framerate_layer_[i] =
+          framerate_ / static_cast<float>(1 << (num_temporal_layers - 1));
     }
     if (num_temporal_layers == 3) {
-      frame_rate_layer_[2] = frame_rate_ / 2.0f;
+      framerate_layer_[2] = framerate_ / 2.0f;
     }
   }
 
@@ -470,13 +473,13 @@ class VideoProcessorIntegrationTest : public testing::Test {
                  rate_profile.input_frame_rate[0]);
 
     // Set initial rates.
-    bit_rate_ = rate_profile.target_bit_rate[0];
-    frame_rate_ = rate_profile.input_frame_rate[0];
+    bitrate_kbps_ = rate_profile.target_bit_rate[0];
+    framerate_ = rate_profile.input_frame_rate[0];
     SetTemporalLayerRates();
     // Set the initial target size for key frame.
     target_size_key_frame_initial_ =
-        0.5 * kInitialBufferSize * bit_rate_layer_[0];
-    processor_->SetRates(bit_rate_, frame_rate_);
+        0.5 * kInitialBufferSize * bitrate_layer_[0];
+    processor_->SetRates(bitrate_kbps_, framerate_);
 
     // Process each frame, up to |num_frames|.
     int frame_number = 0;
@@ -528,12 +531,12 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
           // Update layer rates and the codec with new rates.
           ++update_index;
-          bit_rate_ = rate_profile.target_bit_rate[update_index];
-          frame_rate_ = rate_profile.input_frame_rate[update_index];
+          bitrate_kbps_ = rate_profile.target_bit_rate[update_index];
+          framerate_ = rate_profile.input_frame_rate[update_index];
           SetTemporalLayerRates();
           ResetRateControlMetrics(
               rate_profile.frame_index_rate_update[update_index + 1]);
-          processor_->SetRates(bit_rate_, frame_rate_);
+          processor_->SetRates(bitrate_kbps_, framerate_);
         }
       }
       // TODO(brandtr): Refactor "frame number accounting" so we don't have to
@@ -650,13 +653,13 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
 
   static void SetRateProfile(RateProfile* rate_profile,
-                             int update_index,
-                             int bit_rate,
-                             int frame_rate,
+                             int rate_update_index,
+                             int bitrate_kbps,
+                             int framerate_fps,
                              int frame_index_rate_update) {
-    rate_profile->target_bit_rate[update_index] = bit_rate;
-    rate_profile->input_frame_rate[update_index] = frame_rate;
-    rate_profile->frame_index_rate_update[update_index] =
+    rate_profile->target_bit_rate[rate_update_index] = bitrate_kbps;
+    rate_profile->input_frame_rate[rate_update_index] = framerate_fps;
+    rate_profile->frame_index_rate_update[rate_update_index] =
         frame_index_rate_update;
   }
 
@@ -706,16 +709,16 @@ class VideoProcessorIntegrationTest : public testing::Test {
   float sum_encoded_frame_size_[kMaxNumTemporalLayers];
   float encoding_bitrate_[kMaxNumTemporalLayers];
   float per_frame_bandwidth_[kMaxNumTemporalLayers];
-  float bit_rate_layer_[kMaxNumTemporalLayers];
-  float frame_rate_layer_[kMaxNumTemporalLayers];
+  float bitrate_layer_[kMaxNumTemporalLayers];
+  float framerate_layer_[kMaxNumTemporalLayers];
   int num_frames_total_;
   float sum_encoded_frame_size_total_;
   float encoding_bitrate_total_;
   float perc_encoding_rate_mismatch_;
   int num_frames_to_hit_target_;
   bool encoding_rate_within_target_;
-  int bit_rate_;
-  int frame_rate_;
+  int bitrate_kbps_;
+  int framerate_;
   float target_size_key_frame_initial_;
   float target_size_key_frame_;
   float sum_key_frame_size_mismatch_;
