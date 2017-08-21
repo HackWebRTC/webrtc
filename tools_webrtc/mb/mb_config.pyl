@@ -74,6 +74,7 @@
       'Win64 Debug (Clang)': 'win_clang_debug_bot_x64',
       'Win64 Release (Clang)': 'win_clang_release_bot_x64',
       'Win32 ASan': 'win_asan_clang_release_bot_x86',
+      'Win32 Release (MSVC)': 'win_msvc_release_bot_x86',
       'Win32 Release [large tests]': 'release_bot_x86',
     },
     'client.webrtc.perf': {
@@ -187,6 +188,7 @@
       'win_x64_clang_dbg': 'win_clang_debug_bot_x64',
       'win_x64_clang_rel': 'win_clang_release_bot_x64',
       'win_asan': 'win_asan_clang_release_bot_x86',
+      'win_msvc_rel': 'win_msvc_release_bot_x86',
       'win_baremetal': 'release_bot_x86',
       'win_x64_win8': 'debug_bot_x64',
       'win_x64_win10': 'debug_bot_x64',
@@ -278,6 +280,9 @@
     ],
     'win_clang_release_bot_x64': [
       'gn', 'clang', 'openh264_release_bot', 'x64',
+    ],
+    'win_msvc_release_bot_x86': [
+      'gn', 'no_clang', 'openh264_release_bot', 'x86',
     ],
     'win_asan_clang_release_bot_x86': [
       'gn', 'asan', 'clang',  'full_symbols', 'openh264_release_bot', 'x86',
@@ -419,6 +424,10 @@
     'msan': {
       'gn_args': ('is_msan=true msan_track_origins=2 '
                   'use_prebuilt_instrumented_libraries=true'),
+    },
+
+    'no_clang': {
+      'gn_args': 'is_clang=false',
     },
 
     'no_rtc_tests': {
