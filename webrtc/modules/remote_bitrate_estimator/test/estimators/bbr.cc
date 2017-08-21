@@ -34,7 +34,7 @@ const float kDrainGain = 1 / kHighGain;
 const float kStartupGrowthTarget = 1.25f;
 const int kMaxRoundsWithoutGrowth = 3;
 // Pacing gain values for Probe Bandwidth mode.
-const float kPacingGain[] = {1.1, 0.9, 1, 1, 1, 1, 1, 1};
+const float kPacingGain[] = {1.1f, 0.9f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
 const size_t kGainCycleLength = sizeof(kPacingGain) / sizeof(kPacingGain[0]);
 // Least number of rounds PROBE_RTT should last.
 const int kProbeRttDurationRounds = 1;
@@ -112,8 +112,8 @@ BbrBweSender::BbrBweSender(BitrateObserver* observer, Clock* clock)
       last_packet_ack_time_during_high_gain_ms_(-1),
       data_acked_before_high_gain_started_bytes_(-1),
       data_acked_before_high_gain_ended_bytes_(-1),
-      first_packet_seq_num_during_high_gain_(-1),
-      last_packet_seq_num_during_high_gain_(-1),
+      first_packet_seq_num_during_high_gain_(0),
+      last_packet_seq_num_during_high_gain_(0),
       high_gain_over_(false),
       packet_stats_(),
       past_rtts_() {
