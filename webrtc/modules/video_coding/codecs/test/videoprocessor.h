@@ -26,6 +26,8 @@
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/sequenced_task_checker.h"
+#include "webrtc/rtc_base/task_queue.h"
 #include "webrtc/test/testsupport/frame_reader.h"
 #include "webrtc/test/testsupport/frame_writer.h"
 
@@ -196,20 +198,59 @@ class VideoProcessor {
    public:
     explicit VideoProcessorEncodeCompleteCallback(
         VideoProcessor* video_processor)
-        : video_processor_(video_processor) {}
+        : video_processor_(video_processor),
+          task_queue_(rtc::TaskQueue::Current()) {}
+
     Result OnEncodedImage(
         const webrtc::EncodedImage& encoded_image,
         const webrtc::CodecSpecificInfo* codec_specific_info,
         const webrtc::RTPFragmentationHeader* fragmentation) override {
-      // Forward to parent class.
       RTC_CHECK(codec_specific_info);
+
+      if (task_queue_ && !task_queue_->IsCurrent()) {
+        task_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(
+            new EncodeCallbackTask(video_processor_, encoded_image,
+                                   codec_specific_info, fragmentation)));
+        return Result(Result::OK, 0);
+      }
+
       video_processor_->FrameEncoded(codec_specific_info->codecType,
                                      encoded_image, fragmentation);
       return Result(Result::OK, 0);
     }
 
    private:
+    class EncodeCallbackTask : public rtc::QueuedTask {
+     public:
+      EncodeCallbackTask(VideoProcessor* video_processor,
+                         const webrtc::EncodedImage& encoded_image,
+                         const webrtc::CodecSpecificInfo* codec_specific_info,
+                         const webrtc::RTPFragmentationHeader* fragmentation)
+          : video_processor_(video_processor),
+            buffer_(encoded_image._buffer, encoded_image._length),
+            encoded_image_(encoded_image),
+            codec_specific_info_(*codec_specific_info) {
+        encoded_image_._buffer = buffer_.data();
+        RTC_CHECK(fragmentation);
+        fragmentation_.CopyFrom(*fragmentation);
+      }
+
+      bool Run() override {
+        video_processor_->FrameEncoded(codec_specific_info_.codecType,
+                                       encoded_image_, &fragmentation_);
+        return true;
+      }
+
+     private:
+      VideoProcessor* const video_processor_;
+      rtc::Buffer buffer_;
+      webrtc::EncodedImage encoded_image_;
+      const webrtc::CodecSpecificInfo codec_specific_info_;
+      webrtc::RTPFragmentationHeader fragmentation_;
+    };
+
     VideoProcessor* const video_processor_;
+    rtc::TaskQueue* const task_queue_;
   };
 
   class VideoProcessorDecodeCompleteCallback
@@ -217,16 +258,25 @@ class VideoProcessor {
    public:
     explicit VideoProcessorDecodeCompleteCallback(
         VideoProcessor* video_processor)
-        : video_processor_(video_processor) {}
+        : video_processor_(video_processor),
+          task_queue_(rtc::TaskQueue::Current()) {}
+
     int32_t Decoded(webrtc::VideoFrame& image) override {
-      // Forward to parent class.
+      if (task_queue_ && !task_queue_->IsCurrent()) {
+        task_queue_->PostTask(
+            [this, image]() { video_processor_->FrameDecoded(image); });
+        return 0;
+      }
+
       video_processor_->FrameDecoded(image);
       return 0;
     }
+
     int32_t Decoded(webrtc::VideoFrame& image,
                     int64_t decode_time_ms) override {
       return Decoded(image);
     }
+
     void Decoded(webrtc::VideoFrame& image,
                  rtc::Optional<int32_t> decode_time_ms,
                  rtc::Optional<uint8_t> qp) override {
@@ -235,6 +285,7 @@ class VideoProcessor {
 
    private:
     VideoProcessor* const video_processor_;
+    rtc::TaskQueue* const task_queue_;
   };
 
   // Invoked by the callback adapter when a frame has completed encoding.
@@ -251,7 +302,9 @@ class VideoProcessor {
   uint32_t FrameNumberToTimestamp(int frame_number) const;
   int TimestampToFrameNumber(uint32_t timestamp) const;
 
-  TestConfig config_;
+  bool initialized_ GUARDED_BY(sequence_checker_);
+
+  TestConfig config_ GUARDED_BY(sequence_checker_);
 
   webrtc::VideoEncoder* const encoder_;
   webrtc::VideoDecoder* const decoder_;
@@ -276,26 +329,26 @@ class VideoProcessor {
   IvfFileWriter* const encoded_frame_writer_;
   FrameWriter* const decoded_frame_writer_;
 
-  bool initialized_;
-
   // Frame metadata for all frames that have been added through a call to
   // ProcessFrames(). We need to store this metadata over the course of the
   // test run, to support pipelining HW codecs.
-  std::vector<FrameInfo> frame_infos_;
-  int last_encoded_frame_num_;
-  int last_decoded_frame_num_;
+  std::vector<FrameInfo> frame_infos_ GUARDED_BY(sequence_checker_);
+  int last_encoded_frame_num_ GUARDED_BY(sequence_checker_);
+  int last_decoded_frame_num_ GUARDED_BY(sequence_checker_);
 
   // Keep track of if we have excluded the first key frame from packet loss.
-  bool first_key_frame_has_been_excluded_;
+  bool first_key_frame_has_been_excluded_ GUARDED_BY(sequence_checker_);
 
   // Keep track of the last successfully decoded frame, since we write that
   // frame to disk when decoding fails.
-  rtc::Buffer last_decoded_frame_buffer_;
+  rtc::Buffer last_decoded_frame_buffer_ GUARDED_BY(sequence_checker_);
 
   // Statistics.
   Stats* stats_;
-  int num_dropped_frames_;
-  int num_spatial_resizes_;
+  int num_dropped_frames_ GUARDED_BY(sequence_checker_);
+  int num_spatial_resizes_ GUARDED_BY(sequence_checker_);
+
+  rtc::SequencedTaskChecker sequence_checker_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoProcessor);
 };

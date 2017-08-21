@@ -121,7 +121,8 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                Stats* stats,
                                IvfFileWriter* encoded_frame_writer,
                                FrameWriter* decoded_frame_writer)
-    : config_(config),
+    : initialized_(false),
+      config_(config),
       encoder_(encoder),
       decoder_(decoder),
       bitrate_allocator_(CreateBitrateAllocator(&config_)),
@@ -132,7 +133,6 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
       analysis_frame_writer_(analysis_frame_writer),
       encoded_frame_writer_(encoded_frame_writer),
       decoded_frame_writer_(decoded_frame_writer),
-      initialized_(false),
       last_encoded_frame_num_(-1),
       last_decoded_frame_num_(-1),
       first_key_frame_has_been_excluded_(false),
@@ -152,6 +152,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
 VideoProcessor::~VideoProcessor() = default;
 
 void VideoProcessor::Init() {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   RTC_DCHECK(!initialized_) << "VideoProcessor already initialized.";
   initialized_ = true;
 
@@ -198,6 +199,8 @@ void VideoProcessor::Init() {
 }
 
 void VideoProcessor::Release() {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+
   RTC_CHECK_EQ(encoder_->Release(), WEBRTC_VIDEO_CODEC_OK);
   RTC_CHECK_EQ(decoder_->Release(), WEBRTC_VIDEO_CODEC_OK);
 
@@ -208,6 +211,7 @@ void VideoProcessor::Release() {
 }
 
 void VideoProcessor::ProcessFrame(int frame_number) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   RTC_DCHECK_EQ(frame_number, frame_infos_.size())
       << "Must process frames in sequence.";
   RTC_DCHECK(initialized_) << "VideoProcessor not initialized.";
@@ -248,6 +252,8 @@ void VideoProcessor::ProcessFrame(int frame_number) {
 }
 
 void VideoProcessor::SetRates(int bitrate_kbps, int framerate_fps) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+
   config_.codec_settings.maxFramerate = framerate_fps;
   int set_rates_result = encoder_->SetRateAllocation(
       bitrate_allocator_->GetAllocation(bitrate_kbps * 1000, framerate_fps),
@@ -259,20 +265,24 @@ void VideoProcessor::SetRates(int bitrate_kbps, int framerate_fps) {
 }
 
 int VideoProcessor::GetQpFromEncoder(int frame_number) const {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   RTC_CHECK_LT(frame_number, frame_infos_.size());
   return frame_infos_[frame_number].qp_encoder;
 }
 
 int VideoProcessor::GetQpFromBitstream(int frame_number) const {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   RTC_CHECK_LT(frame_number, frame_infos_.size());
   return frame_infos_[frame_number].qp_bitstream;
 }
 
 int VideoProcessor::NumberDroppedFrames() {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   return num_dropped_frames_;
 }
 
 int VideoProcessor::NumberSpatialResizes() {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   return num_spatial_resizes_;
 }
 
@@ -280,6 +290,8 @@ void VideoProcessor::FrameEncoded(
     webrtc::VideoCodecType codec,
     const EncodedImage& encoded_image,
     const webrtc::RTPFragmentationHeader* fragmentation) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+
   // For the highest measurement accuracy of the encode time, the start/stop
   // time recordings should wrap the Encode call as tightly as possible.
   int64_t encode_stop_ns = rtc::TimeNanos();
@@ -411,6 +423,8 @@ void VideoProcessor::FrameEncoded(
 }
 
 void VideoProcessor::FrameDecoded(const VideoFrame& image) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+
   // For the highest measurement accuracy of the decode time, the start/stop
   // time recordings should wrap the Decode call as tightly as possible.
   int64_t decode_stop_ns = rtc::TimeNanos();
@@ -479,6 +493,8 @@ void VideoProcessor::FrameDecoded(const VideoFrame& image) {
 }
 
 uint32_t VideoProcessor::FrameNumberToTimestamp(int frame_number) const {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+
   RTC_DCHECK_GE(frame_number, 0);
   const int ticks_per_frame =
       kRtpClockRateHz / config_.codec_settings.maxFramerate;
@@ -486,6 +502,8 @@ uint32_t VideoProcessor::FrameNumberToTimestamp(int frame_number) const {
 }
 
 int VideoProcessor::TimestampToFrameNumber(uint32_t timestamp) const {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+
   RTC_DCHECK_GT(timestamp, 0);
   const int ticks_per_frame =
       kRtpClockRateHz / config_.codec_settings.maxFramerate;

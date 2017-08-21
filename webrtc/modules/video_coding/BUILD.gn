@@ -382,6 +382,8 @@ if (rtc_include_tests) {
       "../../api/video_codecs:video_codecs_api",
       "../../common_video:common_video",
       "../../rtc_base:rtc_base_approved",
+      "../../rtc_base:rtc_task_queue",
+      "../../rtc_base:sequenced_task_checker",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
       "../../test:video_test_common",
