@@ -58,6 +58,9 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   void OnPreDecode(const EncodedImage& encoded_image,
                    const CodecSpecificInfo* codec_specific_info);
 
+  // Indicates video stream has been paused (no incoming packets).
+  void OnStreamInactive();
+
   // Overrides VCMReceiveStatisticsCallback.
   void OnReceiveRatesUpdated(uint32_t bitRate, uint32_t frameRate) override;
   void OnFrameCountsUpdated(const FrameCounts& frame_counts) override;
@@ -160,7 +163,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   int64_t avg_rtt_ms_ GUARDED_BY(crit_);
   mutable std::map<int64_t, size_t> frame_window_ GUARDED_BY(&crit_);
   VideoContentType last_content_type_ GUARDED_BY(&crit_);
-  rtc::Optional<int64_t> last_decoded_frame_time_ms_;
+  rtc::Optional<int64_t> last_decoded_frame_time_ms_ GUARDED_BY(&crit_);
   rtc::Optional<TimingFrameInfo> timing_frame_info_ GUARDED_BY(&crit_);
 };
 

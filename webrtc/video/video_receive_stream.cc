@@ -431,6 +431,8 @@ bool VideoReceiveStream::Decode() {
     // To avoid spamming keyframe requests for a stream that is not active we
     // check if we have received a packet within the last 5 seconds.
     bool stream_is_active = last_packet_ms && now_ms - *last_packet_ms < 5000;
+    if (!stream_is_active)
+      stats_proxy_.OnStreamInactive();
 
     // If we recently have been receiving packets belonging to a keyframe then
     // we assume a keyframe is currently being received.

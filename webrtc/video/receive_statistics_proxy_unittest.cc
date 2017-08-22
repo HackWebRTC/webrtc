@@ -779,4 +779,45 @@ TEST_P(ReceiveStatisticsProxyTest, MaxInterFrameDelayOnlyWithValidAverage) {
                    "WebRTC.Video.Screenshare.InterframeDelayMaxInMs"));
 }
 
+TEST_P(ReceiveStatisticsProxyTest, MaxInterFrameDelayOnlyWithPause) {
+  const VideoContentType content_type = GetParam();
+  const int kInterFrameDelayMs = 33;
+  for (int i = 0; i <= kMinRequiredSamples; ++i) {
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
+    fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
+  }
+
+  // At this state, we should have a valid inter-frame delay.
+  // Indicate stream paused and make a large jump in time.
+  statistics_proxy_->OnStreamInactive();
+  fake_clock_.AdvanceTimeMilliseconds(5000);
+
+  // Insert two more frames. The interval during the pause should be disregarded
+  // in the stats.
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
+  fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
+
+  statistics_proxy_.reset();
+  if (content_type == VideoContentType::SCREENSHARE) {
+    EXPECT_EQ(
+        1, metrics::NumSamples("WebRTC.Video.Screenshare.InterframeDelayInMs"));
+    EXPECT_EQ(1, metrics::NumSamples(
+                     "WebRTC.Video.Screenshare.InterframeDelayMaxInMs"));
+    EXPECT_EQ(
+        kInterFrameDelayMs,
+        metrics::MinSample("WebRTC.Video.Screenshare.InterframeDelayInMs"));
+    EXPECT_EQ(
+        kInterFrameDelayMs,
+        metrics::MinSample("WebRTC.Video.Screenshare.InterframeDelayMaxInMs"));
+  } else {
+    EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InterframeDelayInMs"));
+    EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InterframeDelayMaxInMs"));
+    EXPECT_EQ(kInterFrameDelayMs,
+              metrics::MinSample("WebRTC.Video.InterframeDelayInMs"));
+    EXPECT_EQ(kInterFrameDelayMs,
+              metrics::MinSample("WebRTC.Video.InterframeDelayMaxInMs"));
+  }
+}
+
 }  // namespace webrtc

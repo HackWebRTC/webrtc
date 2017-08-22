@@ -648,6 +648,14 @@ void ReceiveStatisticsProxy::OnPreDecode(
   }
 }
 
+void ReceiveStatisticsProxy::OnStreamInactive() {
+  // TODO(sprang): Figure out any other state that should be reset.
+
+  rtc::CritScope lock(&crit_);
+  // Don't report inter-frame delay if stream was paused.
+  last_decoded_frame_time_ms_.reset();
+}
+
 void ReceiveStatisticsProxy::SampleCounter::Add(int sample) {
   sum += sample;
   ++num_samples;
