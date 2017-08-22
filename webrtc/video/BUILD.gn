@@ -111,11 +111,13 @@ if (rtc_include_tests) {
       "../test:test_renderer",
       "../test:test_renderer",
       "../test:test_support",
+      "../test:test_support_test_output",
       "../test:video_test_common",
       "../test:video_test_common",
       "../test:video_test_support",
       "../voice_engine",
       "//testing/gtest",
+      "//third_party/gflags",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

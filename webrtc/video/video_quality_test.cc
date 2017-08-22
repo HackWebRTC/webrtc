@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "gflags/gflags.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
@@ -34,8 +35,10 @@
 #include "webrtc/rtc_base/cpu_time.h"
 #include "webrtc/rtc_base/event.h"
 #include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/memory_usage.h"
 #include "webrtc/rtc_base/optional.h"
+#include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/rtc_base/platform_file.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/timeutils.h"
@@ -47,11 +50,17 @@
 #include "webrtc/test/statistics.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/frame_writer.h"
+#include "webrtc/test/testsupport/test_output.h"
 #include "webrtc/test/vcm_capturer.h"
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 
 #include "webrtc/test/rtp_file_writer.h"
+
+DEFINE_bool(save_worst_frame,
+            false,
+            "Enable saving a frame with the lowest PSNR to a jpeg file in the "
+            "test_output_dir");
 
 namespace {
 
@@ -825,27 +834,21 @@ class VideoAnalyzer : public PacketReceiver,
       // will be flaky.
     PrintResult("memory_usage", memory_usage_, " bytes");
 #endif
-    // TODO(ilnik): enable frame writing for android, once jpeg frame writer
-    // is implemented.
 
-#if !defined(WEBRTC_ANDROID)
-    if (worst_frame_) {
-      test::Y4mFrameWriterImpl frame_writer(test_label_ + ".y4m",
-                                            worst_frame_->frame.width(),
-                                            worst_frame_->frame.height(), 1);
-      bool res = frame_writer.Init();
-      RTC_DCHECK(res);
-      size_t length =
-          CalcBufferSize(VideoType::kI420, worst_frame_->frame.width(),
-                         worst_frame_->frame.height());
-      rtc::Buffer extracted_buffer(length);
-      size_t extracted_length =
-          ExtractBuffer(worst_frame_->frame.video_frame_buffer()->ToI420(),
-                        length, extracted_buffer.data());
-      RTC_DCHECK_EQ(extracted_length, frame_writer.FrameLength());
-      res = frame_writer.WriteFrame(extracted_buffer.data());
-      RTC_DCHECK(res);
-      frame_writer.Close();
+    // LibJpeg is not available on iOS.
+#if !defined(WEBRTC_IOS)
+    // Saving only the worst frame for manual analysis. Intention here is to
+    // only detect video corruptions and not to track picture quality. Thus,
+    // jpeg is used here.
+    if (FLAGS_save_worst_frame && worst_frame_) {
+      std::string output_dir;
+      test::GetTestOutputDir(&output_dir);
+      std::string output_path =
+          rtc::Pathname(output_dir, test_label_ + ".jpg").pathname();
+      LOG(LS_INFO) << "Saving worst frame to " << output_path;
+      test::JpegFrameWriter frame_writer(output_path);
+      RTC_CHECK(frame_writer.WriteFrame(worst_frame_->frame,
+                                        100 /*best quality*/));
     }
 #endif
 
