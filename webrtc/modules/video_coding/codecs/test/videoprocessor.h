@@ -208,14 +208,14 @@ class VideoProcessor {
       RTC_CHECK(codec_specific_info);
 
       if (task_queue_ && !task_queue_->IsCurrent()) {
-        task_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(
-            new EncodeCallbackTask(video_processor_, encoded_image,
-                                   codec_specific_info, fragmentation)));
+        task_queue_->PostTask(
+            std::unique_ptr<rtc::QueuedTask>(new EncodeCallbackTask(
+                video_processor_, encoded_image, codec_specific_info)));
         return Result(Result::OK, 0);
       }
 
       video_processor_->FrameEncoded(codec_specific_info->codecType,
-                                     encoded_image, fragmentation);
+                                     encoded_image);
       return Result(Result::OK, 0);
     }
 
@@ -224,20 +224,17 @@ class VideoProcessor {
      public:
       EncodeCallbackTask(VideoProcessor* video_processor,
                          const webrtc::EncodedImage& encoded_image,
-                         const webrtc::CodecSpecificInfo* codec_specific_info,
-                         const webrtc::RTPFragmentationHeader* fragmentation)
+                         const webrtc::CodecSpecificInfo* codec_specific_info)
           : video_processor_(video_processor),
             buffer_(encoded_image._buffer, encoded_image._length),
             encoded_image_(encoded_image),
             codec_specific_info_(*codec_specific_info) {
         encoded_image_._buffer = buffer_.data();
-        RTC_CHECK(fragmentation);
-        fragmentation_.CopyFrom(*fragmentation);
       }
 
       bool Run() override {
         video_processor_->FrameEncoded(codec_specific_info_.codecType,
-                                       encoded_image_, &fragmentation_);
+                                       encoded_image_);
         return true;
       }
 
@@ -246,7 +243,6 @@ class VideoProcessor {
       rtc::Buffer buffer_;
       webrtc::EncodedImage encoded_image_;
       const webrtc::CodecSpecificInfo codec_specific_info_;
-      webrtc::RTPFragmentationHeader fragmentation_;
     };
 
     VideoProcessor* const video_processor_;
@@ -267,7 +263,6 @@ class VideoProcessor {
             [this, image]() { video_processor_->FrameDecoded(image); });
         return 0;
       }
-
       video_processor_->FrameDecoded(image);
       return 0;
     }
@@ -290,8 +285,7 @@ class VideoProcessor {
 
   // Invoked by the callback adapter when a frame has completed encoding.
   void FrameEncoded(webrtc::VideoCodecType codec,
-                    const webrtc::EncodedImage& encodedImage,
-                    const webrtc::RTPFragmentationHeader* fragmentation);
+                    const webrtc::EncodedImage& encodedImage);
 
   // Invoked by the callback adapter when a frame has completed decoding.
   void FrameDecoded(const webrtc::VideoFrame& image);

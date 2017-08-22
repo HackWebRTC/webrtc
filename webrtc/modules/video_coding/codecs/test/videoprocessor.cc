@@ -286,10 +286,8 @@ int VideoProcessor::NumberSpatialResizes() {
   return num_spatial_resizes_;
 }
 
-void VideoProcessor::FrameEncoded(
-    webrtc::VideoCodecType codec,
-    const EncodedImage& encoded_image,
-    const webrtc::RTPFragmentationHeader* fragmentation) {
+void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
+                                  const EncodedImage& encoded_image) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   // For the highest measurement accuracy of the encode time, the start/stop
@@ -394,11 +392,6 @@ void VideoProcessor::FrameEncoded(
         packet_manipulator_->ManipulatePackets(&copied_image);
   }
   frame_info->manipulated_length = copied_image._length;
-
-  // Keep track of if frames are lost due to packet loss so we can tell
-  // this to the encoder (this is handled by the RTP logic in the full stack).
-  // TODO(kjellander): Pass fragmentation header to the decoder when
-  // CL 172001 has been submitted and PacketManipulator supports this.
 
   // For the highest measurement accuracy of the decode time, the start/stop
   // time recordings should wrap the Decode call as tightly as possible.
