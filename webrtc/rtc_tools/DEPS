@@ -9,6 +9,7 @@ include_rules = [
   "+webrtc/modules/audio_processing",
   "+webrtc/modules/bitrate_controller",
   "+webrtc/modules/congestion_controller",
+  "+webrtc/modules/pacing",
   "+webrtc/modules/rtp_rtcp",
   "+webrtc/system_wrappers",
   "+webrtc/p2p",

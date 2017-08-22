@@ -21,11 +21,11 @@ class MockSendSideCongestionController : public SendSideCongestionController {
  public:
   MockSendSideCongestionController(const Clock* clock,
                                    RtcEventLog* event_log,
-                                   PacketRouter* packet_router)
+                                   PacedSender* paced_sender)
       : SendSideCongestionController(clock,
                                      nullptr /* observer */,
                                      event_log,
-                                     packet_router) {}
+                                     paced_sender) {}
 
   MOCK_METHOD3(SetBweBitrates,
                void(int min_bitrate_bps,

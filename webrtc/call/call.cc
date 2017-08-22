@@ -30,7 +30,6 @@
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/receive_side_congestion_controller.h"
-#include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -438,8 +437,7 @@ Call::Call(const Call::Config& config,
   // We have to attach the pacer to the pacer thread before starting the
   // module process thread to avoid a race accessing the process thread
   // both from the process thread and the pacer thread.
-  pacer_thread_->RegisterModule(transport_send_->send_side_cc()->pacer(),
-                                RTC_FROM_HERE);
+  pacer_thread_->RegisterModule(transport_send_->pacer(), RTC_FROM_HERE);
   pacer_thread_->RegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true), RTC_FROM_HERE);
   pacer_thread_->Start();
@@ -466,7 +464,7 @@ Call::~Call() {
   // the pacer thread is stopped.
   module_process_thread_->DeRegisterModule(transport_send_->send_side_cc());
   pacer_thread_->Stop();
-  pacer_thread_->DeRegisterModule(transport_send_->send_side_cc()->pacer());
+  pacer_thread_->DeRegisterModule(transport_send_->pacer());
   pacer_thread_->DeRegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true));
   module_process_thread_->DeRegisterModule(&receive_side_cc_);
@@ -1198,8 +1196,8 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps,
 
 void Call::OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
                                      uint32_t max_padding_bitrate_bps) {
-  transport_send_->send_side_cc()->SetAllocatedSendBitrateLimits(
-      min_send_bitrate_bps, max_padding_bitrate_bps);
+  transport_send_->SetAllocatedSendBitrateLimits(min_send_bitrate_bps,
+                                                 max_padding_bitrate_bps);
   rtc::CritScope lock(&bitrate_crit_);
   min_allocated_send_bitrate_bps_ = min_send_bitrate_bps;
   configured_max_padding_bitrate_bps_ = max_padding_bitrate_bps;

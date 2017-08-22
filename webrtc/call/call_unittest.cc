@@ -21,6 +21,7 @@
 #include "webrtc/modules/audio_device/include/mock_audio_device.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_send_side_congestion_controller.h"
+#include "webrtc/modules/pacing/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/test/fake_encoder.h"
@@ -324,12 +325,12 @@ struct CallBitrateHelper {
   CallBitrateHelper() : CallBitrateHelper(Call::Config::BitrateConfig()) {}
 
   explicit CallBitrateHelper(const Call::Config::BitrateConfig& bitrate_config)
-      : mock_cc_(Clock::GetRealTimeClock(), &event_log_, &packet_router_) {
+      : mock_cc_(Clock::GetRealTimeClock(), &event_log_, &pacer_) {
     Call::Config config(&event_log_);
     config.bitrate_config = bitrate_config;
     call_.reset(
         Call::Create(config, rtc::MakeUnique<FakeRtpTransportControllerSend>(
-                                 &packet_router_, &mock_cc_)));
+                                 &packet_router_, &pacer_, &mock_cc_)));
   }
 
   webrtc::Call* operator->() { return call_.get(); }
@@ -340,6 +341,7 @@ struct CallBitrateHelper {
  private:
   webrtc::RtcEventLogNullImpl event_log_;
   PacketRouter packet_router_;
+  testing::NiceMock<MockPacedSender> pacer_;
   testing::NiceMock<test::MockSendSideCongestionController> mock_cc_;
   std::unique_ptr<Call> call_;
 };

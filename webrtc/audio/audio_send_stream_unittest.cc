@@ -22,7 +22,7 @@
 #include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_observer.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
-#include "webrtc/modules/pacing/paced_sender.h"
+#include "webrtc/modules/pacing/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/rtc_base/ptr_util.h"
@@ -139,8 +139,8 @@ struct ConfigHelper {
             &simulated_clock_,
             nullptr /* observer */,
             &event_log_,
-            &packet_router_)),
-        fake_transport_(&packet_router_, send_side_cc_.get()),
+            &pacer_)),
+        fake_transport_(&packet_router_, &pacer_, send_side_cc_.get()),
         bitrate_allocator_(&limit_observer_),
         worker_queue_("ConfigHelper_worker_queue"),
         audio_encoder_(nullptr) {
@@ -335,6 +335,7 @@ struct ConfigHelper {
   AudioProcessing::AudioProcessingStatistics audio_processing_stats_;
   SimulatedClock simulated_clock_;
   PacketRouter packet_router_;
+  testing::NiceMock<MockPacedSender> pacer_;
   std::unique_ptr<SendSideCongestionController> send_side_cc_;
   FakeRtpTransportControllerSend fake_transport_;
   MockRtcEventLog event_log_;

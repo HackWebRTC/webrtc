@@ -15,11 +15,15 @@ namespace webrtc {
 RtpTransportControllerSend::RtpTransportControllerSend(
     Clock* clock,
     webrtc::RtcEventLog* event_log)
-    : send_side_cc_(clock, nullptr /* observer */, event_log, &packet_router_) {
-}
+    : pacer_(clock, &packet_router_, event_log),
+      send_side_cc_(clock, nullptr /* observer */, event_log, &pacer_) {}
 
 PacketRouter* RtpTransportControllerSend::packet_router() {
   return &packet_router_;
+}
+
+PacedSender* RtpTransportControllerSend::pacer() {
+  return &pacer_;
 }
 
 SendSideCongestionController* RtpTransportControllerSend::send_side_cc() {
@@ -32,11 +36,17 @@ RtpTransportControllerSend::transport_feedback_observer() {
 }
 
 RtpPacketSender* RtpTransportControllerSend::packet_sender() {
-  return send_side_cc_.pacer();
+  return &pacer_;
 }
 
 const RtpKeepAliveConfig& RtpTransportControllerSend::keepalive_config() const {
   return keepalive_;
+}
+
+void RtpTransportControllerSend::SetAllocatedSendBitrateLimits(
+    int min_send_bitrate_bps,
+    int max_padding_bitrate_bps) {
+  pacer_.SetSendBitrateLimits(min_send_bitrate_bps, max_padding_bitrate_bps);
 }
 
 void RtpTransportControllerSend::SetKeepAliveConfig(

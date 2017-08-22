@@ -54,10 +54,9 @@ class SendSideCongestionControllerTest : public ::testing::Test {
   ~SendSideCongestionControllerTest() override {}
 
   void SetUp() override {
-    pacer_ = new NiceMock<MockPacedSender>();
-    std::unique_ptr<PacedSender> pacer(pacer_);  // Passes ownership.
+    pacer_.reset(new NiceMock<MockPacedSender>());
     controller_.reset(new SendSideCongestionController(
-        &clock_, &observer_, &event_log_, std::move(pacer)));
+        &clock_, &observer_, &event_log_, pacer_.get()));
     bandwidth_observer_.reset(
         controller_->GetBitrateController()->CreateRtcpBandwidthObserver());
 
@@ -73,9 +72,9 @@ class SendSideCongestionControllerTest : public ::testing::Test {
   // Custom setup - use an observer that tracks the target bitrate, without
   // prescribing on which iterations it must change (like a mock would).
   void TargetBitrateTrackingSetup() {
-    std::unique_ptr<PacedSender> pacer(new NiceMock<MockPacedSender>());
+    pacer_.reset(new NiceMock<MockPacedSender>());
     controller_.reset(new SendSideCongestionController(
-        &clock_, &target_bitrate_observer_, &event_log_, std::move(pacer)));
+        &clock_, &target_bitrate_observer_, &event_log_, pacer_.get()));
     controller_->SetBweBitrates(0, kInitialBitrateBps, 5 * kInitialBitrateBps);
   }
 
@@ -138,9 +137,10 @@ class SendSideCongestionControllerTest : public ::testing::Test {
   SimulatedClock clock_;
   StrictMock<MockCongestionObserver> observer_;
   TargetBitrateObserver target_bitrate_observer_;
-  NiceMock<MockPacedSender>* pacer_;
   NiceMock<MockRtcEventLog> event_log_;
   std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
+  PacketRouter packet_router_;
+  std::unique_ptr<NiceMock<MockPacedSender>> pacer_;
   std::unique_ptr<SendSideCongestionController> controller_;
 
   rtc::Optional<uint32_t> target_bitrate_bps_;
@@ -216,7 +216,7 @@ TEST_F(SendSideCongestionControllerTest, SignalNetworkState) {
 
 TEST_F(SendSideCongestionControllerTest, OnNetworkRouteChanged) {
   int new_bitrate = 200000;
-  testing::Mock::VerifyAndClearExpectations(pacer_);
+  testing::Mock::VerifyAndClearExpectations(pacer_.get());
   EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _, _));
   EXPECT_CALL(*pacer_, SetEstimatedBitrate(new_bitrate));
   rtc::NetworkRoute route;
@@ -236,7 +236,7 @@ TEST_F(SendSideCongestionControllerTest, OnNetworkRouteChanged) {
 
 TEST_F(SendSideCongestionControllerTest, OldFeedback) {
   int new_bitrate = 200000;
-  testing::Mock::VerifyAndClearExpectations(pacer_);
+  testing::Mock::VerifyAndClearExpectations(pacer_.get());
   EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _, _));
   EXPECT_CALL(*pacer_, SetEstimatedBitrate(new_bitrate));
 
@@ -334,7 +334,7 @@ TEST_F(SendSideCongestionControllerTest, GetProbingInterval) {
 }
 
 TEST_F(SendSideCongestionControllerTest, ProbeOnRouteChange) {
-  testing::Mock::VerifyAndClearExpectations(pacer_);
+  testing::Mock::VerifyAndClearExpectations(pacer_.get());
   EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 6));
   EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 12));
   EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps * 2, _, _, _));
