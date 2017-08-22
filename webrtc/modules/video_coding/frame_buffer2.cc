@@ -147,8 +147,6 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
         float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
         timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
         timing_->UpdateCurrentDelay(frame->RenderTime(), now_ms);
-      } else {
-        jitter_estimator_->FrameNacked();
       }
 
       // Gracefully handle bad RTP timestamps and render time issues.
@@ -247,11 +245,6 @@ void FrameBuffer::Stop() {
   rtc::CritScope lock(&crit_);
   stopped_ = true;
   new_continuous_frame_event_.Set();
-}
-
-void FrameBuffer::UpdateRtt(int64_t rtt_ms) {
-  rtc::CritScope lock(&crit_);
-  jitter_estimator_->UpdateRtt(rtt_ms);
 }
 
 bool FrameBuffer::ValidReferences(const FrameObject& frame) const {

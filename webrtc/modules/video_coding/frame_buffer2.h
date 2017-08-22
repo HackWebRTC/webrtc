@@ -74,9 +74,6 @@ class FrameBuffer {
   // return immediately.
   void Stop();
 
-  // Updates the RTT for jitter buffer estimation.
-  void UpdateRtt(int64_t rtt_ms);
-
  private:
   struct FrameKey {
     FrameKey() : picture_id(0), spatial_layer(0) {}
