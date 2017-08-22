@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "webrtc/call/rtp_packet_sink_interface.h"
+#include "webrtc/call/video_receive_stream.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
@@ -33,7 +34,6 @@
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
 

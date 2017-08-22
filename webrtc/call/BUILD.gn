@@ -22,7 +22,7 @@ rtc_source_set("call_interfaces") {
   ]
   deps = [
     ":rtp_interfaces",
-    "..:video_stream_api",
+    ":video_stream_api",
     "..:webrtc_common",
     "../api:audio_mixer_api",
     "../api:libjingle_peerconnection_api",
@@ -121,6 +121,21 @@ rtc_static_library("call") {
     "../rtc_base:sequenced_task_checker",
     "../system_wrappers",
     "../video",
+  ]
+}
+
+rtc_source_set("video_stream_api") {
+  sources = [
+    "video_receive_stream.cc",
+    "video_receive_stream.h",
+    "video_send_stream.cc",
+    "video_send_stream.h",
+  ]
+  deps = [
+    "../:webrtc_common",
+    "../api:transport_api",
+    "../common_video:common_video",
+    "../rtc_base:rtc_base_approved",
   ]
 }
 

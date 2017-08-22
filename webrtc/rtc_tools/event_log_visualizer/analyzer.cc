@@ -20,6 +20,8 @@
 #include "webrtc/call/audio_receive_stream.h"
 #include "webrtc/call/audio_send_stream.h"
 #include "webrtc/call/call.h"
+#include "webrtc/call/video_receive_stream.h"
+#include "webrtc/call/video_send_stream.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
 #include "webrtc/modules/audio_coding/neteq/tools/fake_decode_from_file.h"
@@ -43,8 +45,6 @@
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/rate_statistics.h"
-#include "webrtc/video_receive_stream.h"
-#include "webrtc/video_send_stream.h"
 
 namespace webrtc {
 namespace plotting {

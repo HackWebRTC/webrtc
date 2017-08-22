@@ -93,6 +93,11 @@ rtc_static_library("rtc_media_base") {
     "base/videocommon.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
+
+    # TODO(aleloi): add "base/videosinkinterface.h"
+    "base/videosourceinterface.cc",
+
+    # TODO(aleloi): add "base/videosourceinterface.h"
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -217,7 +222,6 @@ rtc_static_library("rtc_audio_video") {
   }
   deps += [
     ":rtc_media_base",
-    "..:video_stream_api",
     "..:webrtc_common",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
@@ -228,6 +232,7 @@ rtc_static_library("rtc_audio_video") {
     "../api/audio_codecs:builtin_audio_encoder_factory",
     "../api/video_codecs:video_codecs_api",
     "../call",
+    "../call:video_stream_api",
     "../common_video:common_video",
     "../modules/audio_coding:rent_a_codec",
     "../modules/audio_device:audio_device",
@@ -322,7 +327,7 @@ if (rtc_include_tests) {
     include_dirs = []
     public_deps = []
     deps = [
-      "..:video_stream_api",
+      "../call:video_stream_api",
       "../modules/audio_coding:rent_a_codec",
       "../modules/audio_processing:audio_processing",
       "../modules/rtp_rtcp:rtp_rtcp",

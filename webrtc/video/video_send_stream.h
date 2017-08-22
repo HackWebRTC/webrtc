@@ -16,6 +16,8 @@
 #include <vector>
 
 #include "webrtc/call/bitrate_allocator.h"
+#include "webrtc/call/video_receive_stream.h"
+#include "webrtc/call/video_send_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/protection_bitrate_calculator.h"
 #include "webrtc/rtc_base/criticalsection.h"
@@ -25,8 +27,6 @@
 #include "webrtc/video/send_delay_stats.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/video_stream_encoder.h"
-#include "webrtc/video_receive_stream.h"
-#include "webrtc/video_send_stream.h"
 
 namespace webrtc {
 

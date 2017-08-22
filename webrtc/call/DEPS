@@ -15,3 +15,14 @@ include_rules = [
   "+webrtc/voice_engine",
   "+webrtc/video",
 ]
+
+specific_include_rules = {
+  "video_receive_stream\.h": [
+    "+webrtc/common_video/include",
+    "+webrtc/media/base",
+  ],
+  "video_send_stream\.h": [
+    "+webrtc/common_video/include",
+    "+webrtc/media/base",
+  ],
+}
