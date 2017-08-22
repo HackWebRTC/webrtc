@@ -10,42 +10,91 @@
 
 #include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
 
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/win32.h"
 
 namespace webrtc {
 
-bool
-GetCroppedWindowRect(HWND window,
-                     DesktopRect* cropped_rect,
-                     DesktopRect* original_rect) {
+bool GetWindowRect(HWND window, DesktopRect* result) {
   RECT rect;
-  if (!GetWindowRect(window, &rect)) {
+  if (!::GetWindowRect(window, &rect)) {
     return false;
   }
-  WINDOWPLACEMENT window_placement;
-  window_placement.length = sizeof(window_placement);
-  if (!GetWindowPlacement(window, &window_placement)) {
+  *result = DesktopRect::MakeLTRB(
+      rect.left, rect.top, rect.right, rect.bottom);
+  return true;
+}
+
+bool GetCroppedWindowRect(HWND window,
+                          DesktopRect* cropped_rect,
+                          DesktopRect* original_rect) {
+  DesktopRect window_rect;
+  if (!GetWindowRect(window, &window_rect)) {
     return false;
   }
 
-  *original_rect = DesktopRect::MakeLTRB(
-      rect.left, rect.top, rect.right, rect.bottom);
+  if (original_rect) {
+    *original_rect = window_rect;
+  }
+  *cropped_rect = window_rect;
+
+  WINDOWPLACEMENT window_placement;
+  window_placement.length = sizeof(window_placement);
+  if (!::GetWindowPlacement(window, &window_placement)) {
+    return false;
+  }
 
   // After Windows8, transparent borders will be added by OS at
   // left/bottom/right sides of a window. If the cropped window
   // doesn't remove these borders, the background will be exposed a bit.
+  //
+  // On Windows 8.1. or upper, rtc::IsWindows8OrLater(), which uses
+  // GetVersionEx() may not correctly return the windows version. See
+  // https://msdn.microsoft.com/en-us/library/windows/desktop/ms724451(v=vs.85).aspx
+  // So we always prefer to check |window_placement|.showCmd.
   if (rtc::IsWindows8OrLater() ||
       window_placement.showCmd == SW_SHOWMAXIMIZED) {
-    DesktopSize border = DesktopSize(GetSystemMetrics(SM_CXSIZEFRAME),
-                                     GetSystemMetrics(SM_CYSIZEFRAME));
-    *cropped_rect = DesktopRect::MakeLTRB(
-        rect.left + border.width(),
-        rect.top,
-        rect.right - border.width(),
-        rect.bottom - border.height());
-  } else {
-    *cropped_rect = *original_rect;
+    const int width = GetSystemMetrics(SM_CXSIZEFRAME);
+    const int height = GetSystemMetrics(SM_CYSIZEFRAME);
+    cropped_rect->Extend(-width, 0, -width, -height);
   }
+
+  return true;
+}
+
+bool GetWindowContentRect(HWND window, DesktopRect* result) {
+  if (!GetWindowRect(window, result)) {
+    return false;
+  }
+
+  RECT rect;
+  if (!::GetClientRect(window, &rect)) {
+    return false;
+  }
+
+  const int width = rect.right - rect.left;
+  // The GetClientRect() is not expected to return a larger area than
+  // GetWindowRect().
+  if (width > 0 && width < result->width()) {
+    // - GetClientRect() always set the left / top of RECT to 0. So we need to
+    //   estimate the border width from GetClientRect() and GetWindowRect().
+    // - Border width of a window varies according to the window type.
+    // - GetClientRect() excludes the title bar, which should be considered as
+    //   part of the content and included in the captured frame. So we always
+    //   estimate the border width according to the window width.
+    // - We assume a window has same border width in each side.
+    // So we shrink half of the width difference from all four sides.
+    const int shrink = ((width - result->width()) / 2);
+    // When |shrink| is negative, DesktopRect::Extend() shrinks itself.
+    result->Extend(shrink, 0, shrink, 0);
+    // Usually this should not happen, just in case we have received a strange
+    // window, which has only left and right borders.
+    if (result->height() > shrink * 2) {
+      result->Extend(0, shrink, 0, shrink);
+    }
+    RTC_DCHECK(!result->is_empty());
+  }
+
   return true;
 }
 
