@@ -59,7 +59,7 @@ size_t ComputeNewBufferDelay(size_t current_delay,
   size_t new_delay = std::max(echo_path_delay_blocks - kDelayHeadroomBlocks, 0);
 
   // Add hysteresis.
-  if (new_delay == current_delay + 1 || new_delay + 1 == current_delay) {
+  if (new_delay == current_delay + 1) {
     new_delay = current_delay;
   }
 
@@ -78,7 +78,7 @@ RenderDelayControllerImpl::RenderDelayControllerImpl(int sample_rate_hz)
 RenderDelayControllerImpl::~RenderDelayControllerImpl() = default;
 
 void RenderDelayControllerImpl::Reset() {
-  delay_ = 0;
+  delay_ = kMinEchoPathDelayBlocks;
   blocks_since_last_delay_estimate_ = 300000;
   echo_path_delay_samples_ = 0;
   align_call_counter_ = 0;

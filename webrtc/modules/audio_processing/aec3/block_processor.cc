@@ -112,20 +112,27 @@ void BlockProcessorImpl::ProcessCapture(
   const size_t old_delay = render_buffer_->Delay();
   const size_t new_delay = delay_controller_->GetDelay(
       render_buffer_->GetDownsampledRenderBuffer(), (*capture_block)[0]);
-  render_buffer_->SetDelay(new_delay);
-  const size_t achieved_delay = render_buffer_->Delay();
 
-  // Inform the delay controller of the actually set delay to allow it to
-  // properly react to a non-feasible delay.
-  delay_controller_->SetDelay(achieved_delay);
+  bool delay_change;
+  if (new_delay >= kMinEchoPathDelayBlocks) {
+    render_buffer_->SetDelay(new_delay);
+    const size_t achieved_delay = render_buffer_->Delay();
+    delay_change = old_delay != achieved_delay || old_delay != new_delay ||
+                   render_buffer_overrun_occurred_;
+
+    // Inform the delay controller of the actually set delay to allow it to
+    // properly react to a non-feasible delay.
+    delay_controller_->SetDelay(achieved_delay);
+  } else {
+    delay_controller_->Reset();
+    render_buffer_->Reset();
+    delay_change = true;
+  }
 
   // Remove the echo from the capture signal.
   echo_remover_->ProcessCapture(
       delay_controller_->AlignmentHeadroomSamples(),
-      EchoPathVariability(echo_path_gain_change,
-                          old_delay != achieved_delay ||
-                              old_delay != new_delay ||
-                              render_buffer_overrun_occurred_),
+      EchoPathVariability(echo_path_gain_change, delay_change),
       capture_signal_saturation, render_buffer_->GetRenderBuffer(),
       capture_block);
 
