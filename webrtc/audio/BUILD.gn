@@ -156,6 +156,7 @@ if (rtc_include_tests) {
       "../system_wrappers",
       "../test:fake_audio_device",
       "../test:field_trial",
+      "../test:single_threaded_task_queue",
       "../test:test_common",
       "../test:test_main",
       "//testing/gmock",

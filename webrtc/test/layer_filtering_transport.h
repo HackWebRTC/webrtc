@@ -13,6 +13,7 @@
 #include "webrtc/call/call.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/fake_network_pipe.h"
+#include "webrtc/test/single_threaded_task_queue.h"
 
 #include <map>
 
@@ -22,7 +23,8 @@ namespace test {
 
 class LayerFilteringTransport : public test::DirectTransport {
  public:
-  LayerFilteringTransport(const FakeNetworkPipe::Config& config,
+  LayerFilteringTransport(SingleThreadedTaskQueueForTesting* task_queue,
+                          const FakeNetworkPipe::Config& config,
                           Call* send_call,
                           uint8_t vp8_video_payload_type,
                           uint8_t vp9_video_payload_type,

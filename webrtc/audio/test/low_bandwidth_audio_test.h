@@ -41,8 +41,11 @@ class AudioQualityTest : public test::EndToEndTest {
       test::FakeAudioDevice* send_audio_device,
       test::FakeAudioDevice* recv_audio_device) override;
 
-  test::PacketTransport* CreateSendTransport(Call* sender_call) override;
-  test::PacketTransport* CreateReceiveTransport() override;
+  test::PacketTransport* CreateSendTransport(
+      SingleThreadedTaskQueueForTesting* task_queue,
+      Call* sender_call) override;
+  test::PacketTransport* CreateReceiveTransport(
+      SingleThreadedTaskQueueForTesting* task_queue) override;
 
   void ModifyAudioConfigs(
       AudioSendStream::Config* send_config,

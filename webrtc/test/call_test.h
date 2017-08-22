@@ -23,6 +23,7 @@
 #include "webrtc/test/fake_videorenderer.h"
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
+#include "webrtc/test/single_threaded_task_queue.h"
 
 namespace webrtc {
 
@@ -136,6 +137,8 @@ class CallTest : public ::testing::Test {
   rtc::scoped_refptr<AudioEncoderFactory> encoder_factory_;
   test::FakeVideoRenderer fake_renderer_;
 
+  SingleThreadedTaskQueueForTesting task_queue_;
+
  private:
   // TODO(holmer): Remove once VoiceEngine is fully refactored to the new API.
   // These methods are used to set up legacy voice engines and channels which is
@@ -188,8 +191,11 @@ class BaseTest : public RtpRtcpObserver {
       RtpTransportControllerSend* controller);
   virtual void OnCallsCreated(Call* sender_call, Call* receiver_call);
 
-  virtual test::PacketTransport* CreateSendTransport(Call* sender_call);
-  virtual test::PacketTransport* CreateReceiveTransport();
+  virtual test::PacketTransport* CreateSendTransport(
+      SingleThreadedTaskQueueForTesting* task_queue,
+      Call* sender_call);
+  virtual test::PacketTransport* CreateReceiveTransport(
+      SingleThreadedTaskQueueForTesting* task_queue);
 
   virtual void ModifyVideoConfigs(
       VideoSendStream::Config* send_config,

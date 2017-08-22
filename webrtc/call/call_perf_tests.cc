@@ -21,7 +21,7 @@
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/test/call_test.h"
@@ -35,6 +35,7 @@
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
+#include "webrtc/test/single_threaded_task_queue.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/transport_adapter.h"
@@ -143,146 +144,167 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   const uint32_t kAudioSendSsrc = 1234;
   const uint32_t kAudioRecvSsrc = 5678;
 
-  metrics::Reset();
-  rtc::scoped_refptr<AudioProcessing> audio_processing =
-      AudioProcessing::Create();
-  VoiceEngine* voice_engine = VoiceEngine::Create();
-  VoEBase* voe_base = VoEBase::GetInterface(voice_engine);
-  FakeAudioDevice fake_audio_device(
-      FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000),
-      FakeAudioDevice::CreateDiscardRenderer(48000), audio_rtp_speed);
-  EXPECT_EQ(0, voe_base->Init(&fake_audio_device, audio_processing.get(),
-                              decoder_factory_));
-  VoEBase::ChannelConfig config;
-  config.enable_voice_pacing = true;
-  int send_channel_id = voe_base->CreateChannel(config);
-  int recv_channel_id = voe_base->CreateChannel();
-
-  AudioState::Config send_audio_state_config;
-  send_audio_state_config.voice_engine = voice_engine;
-  send_audio_state_config.audio_mixer = AudioMixerImpl::Create();
-  send_audio_state_config.audio_processing = audio_processing;
-  Call::Config sender_config(event_log_.get());
-
-  sender_config.audio_state = AudioState::Create(send_audio_state_config);
-  Call::Config receiver_config(event_log_.get());
-  receiver_config.audio_state = sender_config.audio_state;
-  CreateCalls(sender_config, receiver_config);
-
-
-  VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock());
+  int send_channel_id;
+  int recv_channel_id;
 
   FakeNetworkPipe::Config audio_net_config;
   audio_net_config.queue_delay_ms = 500;
   audio_net_config.loss_percent = 5;
 
+  rtc::scoped_refptr<AudioProcessing> audio_processing;
+  VoiceEngine* voice_engine;
+  VoEBase* voe_base;
+  std::unique_ptr<FakeAudioDevice> fake_audio_device;
+  VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock());
+
   std::map<uint8_t, MediaType> audio_pt_map;
   std::map<uint8_t, MediaType> video_pt_map;
-  std::copy_if(std::begin(payload_type_map_), std::end(payload_type_map_),
-               std::inserter(audio_pt_map, audio_pt_map.end()),
-               [](const std::pair<const uint8_t, MediaType>& pair) {
-                 return pair.second == MediaType::AUDIO;
-               });
-  std::copy_if(std::begin(payload_type_map_), std::end(payload_type_map_),
-               std::inserter(video_pt_map, video_pt_map.end()),
-               [](const std::pair<const uint8_t, MediaType>& pair) {
-                 return pair.second == MediaType::VIDEO;
-               });
 
-  test::PacketTransport audio_send_transport(sender_call_.get(), &observer,
-                                             test::PacketTransport::kSender,
-                                             audio_pt_map, audio_net_config);
-  audio_send_transport.SetReceiver(receiver_call_->Receiver());
+  std::unique_ptr<test::PacketTransport> audio_send_transport;
+  std::unique_ptr<test::PacketTransport> video_send_transport;
+  std::unique_ptr<test::PacketTransport> receive_transport;
 
-  test::PacketTransport video_send_transport(
-      sender_call_.get(), &observer, test::PacketTransport::kSender,
-      video_pt_map, FakeNetworkPipe::Config());
-  video_send_transport.SetReceiver(receiver_call_->Receiver());
-
-  test::PacketTransport receive_transport(
-      receiver_call_.get(), &observer, test::PacketTransport::kReceiver,
-      payload_type_map_, FakeNetworkPipe::Config());
-  receive_transport.SetReceiver(sender_call_->Receiver());
-
-  CreateSendConfig(1, 0, 0, &video_send_transport);
-  CreateMatchingReceiveConfigs(&receive_transport);
-
-  AudioSendStream::Config audio_send_config(&audio_send_transport);
-  audio_send_config.voe_channel_id = send_channel_id;
-  audio_send_config.rtp.ssrc = kAudioSendSsrc;
-  audio_send_config.send_codec_spec =
-      rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
-          {kAudioSendPayloadType, {"ISAC", 16000, 1}});
-  audio_send_config.encoder_factory = CreateBuiltinAudioEncoderFactory();
-  AudioSendStream* audio_send_stream =
-      sender_call_->CreateAudioSendStream(audio_send_config);
-
-  video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-  if (fec == FecMode::kOn) {
-    video_send_config_.rtp.ulpfec.red_payload_type = kRedPayloadType;
-    video_send_config_.rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
-    video_receive_configs_[0].rtp.ulpfec.red_payload_type = kRedPayloadType;
-    video_receive_configs_[0].rtp.ulpfec.ulpfec_payload_type =
-        kUlpfecPayloadType;
-  }
-  video_receive_configs_[0].rtp.nack.rtp_history_ms = 1000;
-  video_receive_configs_[0].renderer = &observer;
-  video_receive_configs_[0].sync_group = kSyncGroup;
-
-  AudioReceiveStream::Config audio_recv_config;
-  audio_recv_config.rtp.remote_ssrc = kAudioSendSsrc;
-  audio_recv_config.rtp.local_ssrc = kAudioRecvSsrc;
-  audio_recv_config.voe_channel_id = recv_channel_id;
-  audio_recv_config.sync_group = kSyncGroup;
-  audio_recv_config.decoder_factory = decoder_factory_;
-  audio_recv_config.decoder_map = {{kAudioSendPayloadType, {"ISAC", 16000, 1}}};
-
+  AudioSendStream* audio_send_stream;
   AudioReceiveStream* audio_receive_stream;
+  std::unique_ptr<DriftingClock> drifting_clock;
 
-  if (create_first == CreateOrder::kAudioFirst) {
-    audio_receive_stream =
-        receiver_call_->CreateAudioReceiveStream(audio_recv_config);
-    CreateVideoStreams();
-  } else {
-    CreateVideoStreams();
-    audio_receive_stream =
-        receiver_call_->CreateAudioReceiveStream(audio_recv_config);
-  }
-  EXPECT_EQ(1u, video_receive_streams_.size());
-  observer.set_receive_stream(video_receive_streams_[0]);
-  DriftingClock drifting_clock(clock_, video_ntp_speed);
-  CreateFrameGeneratorCapturerWithDrift(&drifting_clock, video_rtp_speed,
-                                        kDefaultFramerate, kDefaultWidth,
-                                        kDefaultHeight);
+  task_queue_.SendTask([&]() {
+    metrics::Reset();
+    audio_processing = AudioProcessing::Create();
+    voice_engine = VoiceEngine::Create();
+    voe_base = VoEBase::GetInterface(voice_engine);
+    fake_audio_device = rtc::MakeUnique<FakeAudioDevice>(
+        FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000),
+        FakeAudioDevice::CreateDiscardRenderer(48000), audio_rtp_speed);
+    EXPECT_EQ(0, voe_base->Init(fake_audio_device.get(), audio_processing.get(),
+                                decoder_factory_));
+    VoEBase::ChannelConfig config;
+    config.enable_voice_pacing = true;
+    send_channel_id = voe_base->CreateChannel(config);
+    recv_channel_id = voe_base->CreateChannel();
 
-  Start();
+    AudioState::Config send_audio_state_config;
+    send_audio_state_config.voice_engine = voice_engine;
+    send_audio_state_config.audio_mixer = AudioMixerImpl::Create();
+    send_audio_state_config.audio_processing = audio_processing;
+    Call::Config sender_config(event_log_.get());
 
-  audio_send_stream->Start();
-  audio_receive_stream->Start();
+    sender_config.audio_state = AudioState::Create(send_audio_state_config);
+    Call::Config receiver_config(event_log_.get());
+    receiver_config.audio_state = sender_config.audio_state;
+    CreateCalls(sender_config, receiver_config);
+
+    std::copy_if(std::begin(payload_type_map_), std::end(payload_type_map_),
+                 std::inserter(audio_pt_map, audio_pt_map.end()),
+                 [](const std::pair<const uint8_t, MediaType>& pair) {
+                   return pair.second == MediaType::AUDIO;
+                 });
+    std::copy_if(std::begin(payload_type_map_), std::end(payload_type_map_),
+                 std::inserter(video_pt_map, video_pt_map.end()),
+                 [](const std::pair<const uint8_t, MediaType>& pair) {
+                   return pair.second == MediaType::VIDEO;
+                 });
+
+    audio_send_transport = rtc::MakeUnique<test::PacketTransport>(
+        &task_queue_, sender_call_.get(), &observer,
+        test::PacketTransport::kSender, audio_pt_map, audio_net_config);
+    audio_send_transport->SetReceiver(receiver_call_->Receiver());
+
+    video_send_transport = rtc::MakeUnique<test::PacketTransport>(
+        &task_queue_, sender_call_.get(), &observer,
+        test::PacketTransport::kSender, video_pt_map,
+        FakeNetworkPipe::Config());
+    video_send_transport->SetReceiver(receiver_call_->Receiver());
+
+    receive_transport = rtc::MakeUnique<test::PacketTransport>(
+        &task_queue_, receiver_call_.get(), &observer,
+        test::PacketTransport::kReceiver, payload_type_map_,
+        FakeNetworkPipe::Config());
+    receive_transport->SetReceiver(sender_call_->Receiver());
+
+    CreateSendConfig(1, 0, 0, video_send_transport.get());
+    CreateMatchingReceiveConfigs(receive_transport.get());
+
+    AudioSendStream::Config audio_send_config(audio_send_transport.get());
+    audio_send_config.voe_channel_id = send_channel_id;
+    audio_send_config.rtp.ssrc = kAudioSendSsrc;
+    audio_send_config.send_codec_spec =
+        rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
+            {kAudioSendPayloadType, {"ISAC", 16000, 1}});
+    audio_send_config.encoder_factory = CreateBuiltinAudioEncoderFactory();
+    audio_send_stream = sender_call_->CreateAudioSendStream(audio_send_config);
+
+    video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+    if (fec == FecMode::kOn) {
+      video_send_config_.rtp.ulpfec.red_payload_type = kRedPayloadType;
+      video_send_config_.rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
+      video_receive_configs_[0].rtp.ulpfec.red_payload_type = kRedPayloadType;
+      video_receive_configs_[0].rtp.ulpfec.ulpfec_payload_type =
+          kUlpfecPayloadType;
+    }
+    video_receive_configs_[0].rtp.nack.rtp_history_ms = 1000;
+    video_receive_configs_[0].renderer = &observer;
+    video_receive_configs_[0].sync_group = kSyncGroup;
+
+    AudioReceiveStream::Config audio_recv_config;
+    audio_recv_config.rtp.remote_ssrc = kAudioSendSsrc;
+    audio_recv_config.rtp.local_ssrc = kAudioRecvSsrc;
+    audio_recv_config.voe_channel_id = recv_channel_id;
+    audio_recv_config.sync_group = kSyncGroup;
+    audio_recv_config.decoder_factory = decoder_factory_;
+    audio_recv_config.decoder_map = {
+        {kAudioSendPayloadType, {"ISAC", 16000, 1}}};
+
+    if (create_first == CreateOrder::kAudioFirst) {
+      audio_receive_stream =
+          receiver_call_->CreateAudioReceiveStream(audio_recv_config);
+      CreateVideoStreams();
+    } else {
+      CreateVideoStreams();
+      audio_receive_stream =
+          receiver_call_->CreateAudioReceiveStream(audio_recv_config);
+    }
+    EXPECT_EQ(1u, video_receive_streams_.size());
+    observer.set_receive_stream(video_receive_streams_[0]);
+    drifting_clock = rtc::MakeUnique<DriftingClock>(clock_, video_ntp_speed);
+    CreateFrameGeneratorCapturerWithDrift(drifting_clock.get(), video_rtp_speed,
+                                          kDefaultFramerate, kDefaultWidth,
+                                          kDefaultHeight);
+
+    Start();
+
+    audio_send_stream->Start();
+    audio_receive_stream->Start();
+  });
 
   EXPECT_TRUE(observer.Wait())
       << "Timed out while waiting for audio and video to be synchronized.";
 
-  audio_send_stream->Stop();
-  audio_receive_stream->Stop();
+  task_queue_.SendTask([&]() {
+    audio_send_stream->Stop();
+    audio_receive_stream->Stop();
 
-  Stop();
-  video_send_transport.StopSending();
-  audio_send_transport.StopSending();
-  receive_transport.StopSending();
+    Stop();
 
-  DestroyStreams();
+    DestroyStreams();
 
-  sender_call_->DestroyAudioSendStream(audio_send_stream);
-  receiver_call_->DestroyAudioReceiveStream(audio_receive_stream);
+    video_send_transport.reset();
+    audio_send_transport.reset();
+    receive_transport.reset();
 
-  voe_base->DeleteChannel(send_channel_id);
-  voe_base->DeleteChannel(recv_channel_id);
-  voe_base->Release();
+    sender_call_->DestroyAudioSendStream(audio_send_stream);
+    receiver_call_->DestroyAudioReceiveStream(audio_receive_stream);
 
-  DestroyCalls();
+    voe_base->DeleteChannel(send_channel_id);
+    voe_base->DeleteChannel(recv_channel_id);
+    voe_base->Release();
 
-  VoiceEngine::Delete(voice_engine);
+    DestroyCalls();
+
+    VoiceEngine::Delete(voice_engine);
+
+    fake_audio_device.reset();
+  });
 
   observer.PrintResults();
 
@@ -335,14 +357,17 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
           rtp_start_timestamp_(0) {}
 
    private:
-    test::PacketTransport* CreateSendTransport(Call* sender_call) override {
-      return new test::PacketTransport(sender_call, this,
+    test::PacketTransport* CreateSendTransport(
+        test::SingleThreadedTaskQueueForTesting* task_queue,
+        Call* sender_call) override {
+      return new test::PacketTransport(task_queue, sender_call, this,
                                        test::PacketTransport::kSender,
                                        payload_type_map_, net_config_);
     }
 
-    test::PacketTransport* CreateReceiveTransport() override {
-      return new test::PacketTransport(nullptr, this,
+    test::PacketTransport* CreateReceiveTransport(
+        test::SingleThreadedTaskQueueForTesting* task_queue) override {
+      return new test::PacketTransport(task_queue, nullptr, this,
                                        test::PacketTransport::kReceiver,
                                        payload_type_map_, net_config_);
     }

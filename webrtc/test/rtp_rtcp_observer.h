@@ -32,6 +32,7 @@ namespace webrtc {
 namespace test {
 
 class PacketTransport;
+class SingleThreadedTaskQueueForTesting;
 
 class RtpRtcpObserver {
  public:
@@ -91,12 +92,16 @@ class PacketTransport : public test::DirectTransport {
  public:
   enum TransportType { kReceiver, kSender };
 
-  PacketTransport(Call* send_call,
+  PacketTransport(SingleThreadedTaskQueueForTesting* task_queue,
+                  Call* send_call,
                   RtpRtcpObserver* observer,
                   TransportType transport_type,
                   const std::map<uint8_t, MediaType>& payload_type_map,
                   const FakeNetworkPipe::Config& configuration)
-      : test::DirectTransport(configuration, send_call, payload_type_map),
+      : test::DirectTransport(task_queue,
+                              configuration,
+                              send_call,
+                              payload_type_map),
         observer_(observer),
         transport_type_(transport_type) {}
 

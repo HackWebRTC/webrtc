@@ -139,6 +139,14 @@ class PictureIdTest : public test::CallTest {
   virtual ~PictureIdTest() {
     EXPECT_EQ(nullptr, video_send_stream_);
     EXPECT_TRUE(video_receive_streams_.empty());
+
+    task_queue_.SendTask([this]() {
+      Stop();
+      DestroyStreams();
+      send_transport_.reset();
+      receive_transport_.reset();
+      DestroyCalls();
+    });
   }
 
   void SetupEncoder(VideoEncoder* encoder);
@@ -196,28 +204,34 @@ class VideoStreamFactory
 };
 
 void PictureIdTest::SetupEncoder(VideoEncoder* encoder) {
-  Call::Config config(event_log_.get());
-  CreateCalls(config, config);
+  task_queue_.SendTask([this, &encoder]() {
+    Call::Config config(event_log_.get());
+    CreateCalls(config, config);
 
-  send_transport_.reset(new test::PacketTransport(
-      sender_call_.get(), &observer, test::PacketTransport::kSender,
-      payload_type_map_, FakeNetworkPipe::Config()));
+    send_transport_.reset(new test::PacketTransport(
+        &task_queue_, sender_call_.get(), &observer,
+        test::PacketTransport::kSender, payload_type_map_,
+        FakeNetworkPipe::Config()));
 
-  CreateSendConfig(kNumSsrcs, 0, 0, send_transport_.get());
-  video_send_config_.encoder_settings.encoder = encoder;
-  video_send_config_.encoder_settings.payload_name = "VP8";
-  video_encoder_config_.video_stream_factory =
-      new rtc::RefCountedObject<VideoStreamFactory>();
-  video_encoder_config_.number_of_streams = 1;
+    CreateSendConfig(kNumSsrcs, 0, 0, send_transport_.get());
+    video_send_config_.encoder_settings.encoder = encoder;
+    video_send_config_.encoder_settings.payload_name = "VP8";
+    video_encoder_config_.video_stream_factory =
+        new rtc::RefCountedObject<VideoStreamFactory>();
+    video_encoder_config_.number_of_streams = 1;
+  });
 }
 
 void PictureIdTest::TestPictureIdContinuousAfterReconfigure(
     const std::vector<int>& ssrc_counts) {
-  CreateVideoStreams();
-  CreateFrameGeneratorCapturer(kFrameRate, kFrameMaxWidth, kFrameMaxHeight);
+  task_queue_.SendTask([this]() {
+    CreateVideoStreams();
+    CreateFrameGeneratorCapturer(kFrameRate, kFrameMaxWidth, kFrameMaxHeight);
 
-  // Initial test with a single stream.
-  Start();
+    // Initial test with a single stream.
+    Start();
+  });
+
   EXPECT_TRUE(observer.Wait()) << "Timed out waiting for packets.";
 
   // Reconfigure VideoEncoder and test picture id increase.
@@ -228,21 +242,31 @@ void PictureIdTest::TestPictureIdContinuousAfterReconfigure(
     observer.SetExpectedSsrcs(ssrc_count);
     observer.ResetObservedSsrcs();
     // Make sure the picture_id sequence is continuous on reinit and recreate.
-    video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_.Copy());
+    task_queue_.SendTask([this]() {
+      video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_.Copy());
+    });
     EXPECT_TRUE(observer.Wait()) << "Timed out waiting for packets.";
   }
 
-  Stop();
-  DestroyStreams();
+  task_queue_.SendTask([this]() {
+    Stop();
+    DestroyStreams();
+    send_transport_.reset();
+    receive_transport_.reset();
+    DestroyCalls();
+  });
 }
 
 void PictureIdTest::TestPictureIdIncreaseAfterRecreateStreams(
     const std::vector<int>& ssrc_counts) {
-  CreateVideoStreams();
-  CreateFrameGeneratorCapturer(kFrameRate, kFrameMaxWidth, kFrameMaxHeight);
+  task_queue_.SendTask([this]() {
+    CreateVideoStreams();
+    CreateFrameGeneratorCapturer(kFrameRate, kFrameMaxWidth, kFrameMaxHeight);
 
-  // Initial test with a single stream.
-  Start();
+    // Initial test with a single stream.
+    Start();
+  });
+
   EXPECT_TRUE(observer.Wait()) << "Timed out waiting for packets.";
 
   // Recreate VideoSendStream and test picture id increase.
@@ -250,24 +274,31 @@ void PictureIdTest::TestPictureIdIncreaseAfterRecreateStreams(
   // with it, therefore it is expected that some frames might be lost.
   observer.SetMaxExpectedPictureIdGap(kMaxFramesLost);
   for (int ssrc_count : ssrc_counts) {
-    video_encoder_config_.number_of_streams = ssrc_count;
+    task_queue_.SendTask([this, &ssrc_count]() {
+      video_encoder_config_.number_of_streams = ssrc_count;
 
-    frame_generator_capturer_->Stop();
-    sender_call_->DestroyVideoSendStream(video_send_stream_);
+      frame_generator_capturer_->Stop();
+      sender_call_->DestroyVideoSendStream(video_send_stream_);
 
-    observer.SetExpectedSsrcs(ssrc_count);
-    observer.ResetObservedSsrcs();
+      observer.SetExpectedSsrcs(ssrc_count);
+      observer.ResetObservedSsrcs();
 
-    video_send_stream_ = sender_call_->CreateVideoSendStream(
-        video_send_config_.Copy(), video_encoder_config_.Copy());
-    video_send_stream_->Start();
-    CreateFrameGeneratorCapturer(kFrameRate, kFrameMaxWidth, kFrameMaxHeight);
-    frame_generator_capturer_->Start();
+      video_send_stream_ = sender_call_->CreateVideoSendStream(
+          video_send_config_.Copy(), video_encoder_config_.Copy());
+      video_send_stream_->Start();
+      CreateFrameGeneratorCapturer(kFrameRate, kFrameMaxWidth, kFrameMaxHeight);
+      frame_generator_capturer_->Start();
+    });
+
     EXPECT_TRUE(observer.Wait()) << "Timed out waiting for packets.";
   }
 
-  Stop();
-  DestroyStreams();
+  task_queue_.SendTask([this]() {
+    Stop();
+    DestroyStreams();
+    send_transport_.reset();
+    receive_transport_.reset();
+  });
 }
 
 TEST_F(PictureIdTest, PictureIdContinuousAfterReconfigureVp8) {

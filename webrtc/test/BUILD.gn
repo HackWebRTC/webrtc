@@ -287,6 +287,7 @@ if (!build_with_chromium) {
       "frame_generator_unittest.cc",
       "rtp_file_reader_unittest.cc",
       "rtp_file_writer_unittest.cc",
+      "single_threaded_task_queue_unittest.cc",
       "testsupport/always_passing_unittest.cc",
       "testsupport/metrics/video_metrics_unittest.cc",
       "testsupport/packet_reader_unittest.cc",
@@ -401,7 +402,22 @@ rtc_source_set("direct_transport") {
     "../call",
     "../modules/rtp_rtcp",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base:sequenced_task_checker",
     "../system_wrappers",
+  ]
+  public_deps = [
+    ":single_threaded_task_queue",
+  ]
+}
+
+rtc_source_set("single_threaded_task_queue") {
+  testonly = true
+  sources = [
+    "single_threaded_task_queue.cc",
+    "single_threaded_task_queue.h",
+  ]
+  deps = [
+    "../rtc_base:rtc_base_approved",
   ]
 }
 

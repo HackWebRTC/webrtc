@@ -86,15 +86,17 @@ FakeNetworkPipe::Config AudioQualityTest::GetNetworkPipeConfig() {
 }
 
 test::PacketTransport* AudioQualityTest::CreateSendTransport(
+    SingleThreadedTaskQueueForTesting* task_queue,
     Call* sender_call) {
   return new test::PacketTransport(
-      sender_call, this, test::PacketTransport::kSender,
+      task_queue, sender_call, this, test::PacketTransport::kSender,
       test::CallTest::payload_type_map_, GetNetworkPipeConfig());
 }
 
-test::PacketTransport* AudioQualityTest::CreateReceiveTransport() {
+test::PacketTransport* AudioQualityTest::CreateReceiveTransport(
+    SingleThreadedTaskQueueForTesting* task_queue) {
   return new test::PacketTransport(
-      nullptr, this, test::PacketTransport::kReceiver,
+      task_queue, nullptr, this, test::PacketTransport::kReceiver,
       test::CallTest::payload_type_map_, GetNetworkPipeConfig());
 }
 

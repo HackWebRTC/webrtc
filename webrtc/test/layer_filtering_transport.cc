@@ -21,6 +21,7 @@ namespace webrtc {
 namespace test {
 
 LayerFilteringTransport::LayerFilteringTransport(
+    SingleThreadedTaskQueueForTesting* task_queue,
     const FakeNetworkPipe::Config& config,
     Call* send_call,
     uint8_t vp8_video_payload_type,
@@ -28,7 +29,7 @@ LayerFilteringTransport::LayerFilteringTransport(
     int selected_tl,
     int selected_sl,
     const std::map<uint8_t, MediaType>& payload_type_map)
-    : test::DirectTransport(config, send_call, payload_type_map),
+    : DirectTransport(task_queue, config, send_call, payload_type_map),
       vp8_video_payload_type_(vp8_video_payload_type),
       vp9_video_payload_type_(vp9_video_payload_type),
       selected_tl_(selected_tl),

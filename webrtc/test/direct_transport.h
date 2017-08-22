@@ -12,14 +12,13 @@
 
 #include <assert.h>
 
-#include <deque>
+#include <memory>
 
 #include "webrtc/api/call/transport.h"
 #include "webrtc/call/call.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/platform_thread.h"
+#include "webrtc/rtc_base/sequenced_task_checker.h"
 #include "webrtc/test/fake_network_pipe.h"
+#include "webrtc/test/single_threaded_task_queue.h"
 
 namespace webrtc {
 
@@ -30,14 +29,17 @@ namespace test {
 
 class DirectTransport : public Transport {
  public:
-  DirectTransport(Call* send_call,
-                  const std::map<uint8_t, MediaType>& payload_type_map);
-  DirectTransport(const FakeNetworkPipe::Config& config,
-                  Call* send_call,
-                  const std::map<uint8_t, MediaType>& payload_type_map);
-  DirectTransport(const FakeNetworkPipe::Config& config,
-                  Call* send_call,
-                  std::unique_ptr<Demuxer> demuxer);
+  RTC_DEPRECATED DirectTransport(
+      Call* send_call,
+      const std::map<uint8_t, MediaType>& payload_type_map);
+  RTC_DEPRECATED DirectTransport(
+      const FakeNetworkPipe::Config& config,
+      Call* send_call,
+      const std::map<uint8_t, MediaType>& payload_type_map);
+  RTC_DEPRECATED DirectTransport(
+      const FakeNetworkPipe::Config& config,
+      Call* send_call,
+      std::unique_ptr<Demuxer> demuxer);
 
   // This deprecated variant always uses MediaType::VIDEO.
   RTC_DEPRECATED explicit DirectTransport(Call* send_call)
@@ -46,11 +48,26 @@ class DirectTransport : public Transport {
             send_call,
             std::unique_ptr<Demuxer>(new ForceDemuxer(MediaType::VIDEO))) {}
 
+  DirectTransport(SingleThreadedTaskQueueForTesting* task_queue,
+                  Call* send_call,
+                  const std::map<uint8_t, MediaType>& payload_type_map);
+
+  DirectTransport(SingleThreadedTaskQueueForTesting* task_queue,
+                  const FakeNetworkPipe::Config& config,
+                  Call* send_call,
+                  const std::map<uint8_t, MediaType>& payload_type_map);
+
+  DirectTransport(SingleThreadedTaskQueueForTesting* task_queue,
+                  const FakeNetworkPipe::Config& config,
+                  Call* send_call,
+                  std::unique_ptr<Demuxer> demuxer);
+
   ~DirectTransport() override;
 
   void SetConfig(const FakeNetworkPipe::Config& config);
 
-  virtual void StopSending();
+  RTC_DEPRECATED void StopSending();
+
   // TODO(holmer): Look into moving this to the constructor.
   virtual void SetReceiver(PacketReceiver* receiver);
 
@@ -77,18 +94,25 @@ class DirectTransport : public Transport {
     RTC_DISALLOW_COPY_AND_ASSIGN(ForceDemuxer);
   };
 
-  static bool NetworkProcess(void* transport);
-  bool SendPackets();
+  void SendPackets();
 
-  rtc::CriticalSection lock_;
   Call* const send_call_;
-  rtc::Event packet_event_;
-  rtc::PlatformThread thread_;
   Clock* const clock_;
 
-  bool shutting_down_;
+  // TODO(eladalon): Make |task_queue_| const.
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=8125
+  SingleThreadedTaskQueueForTesting* task_queue_;
+  SingleThreadedTaskQueueForTesting::TaskId next_scheduled_task_;
 
   FakeNetworkPipe fake_network_;
+
+  rtc::SequencedTaskChecker sequence_checker_;
+
+  // TODO(eladalon): https://bugs.chromium.org/p/webrtc/issues/detail?id=8125
+  // Deprecated versions of the ctor don't get the task queue passed in from
+  // outside. We'll create one locally for them. This is deprecated, and will
+  // be removed as soon as the need for those ctors is removed.
+  std::unique_ptr<SingleThreadedTaskQueueForTesting> deprecated_task_queue_;
 };
 }  // namespace test
 }  // namespace webrtc

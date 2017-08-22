@@ -48,15 +48,18 @@ void AudioBweTest::OnFakeAudioDevicesCreated(
   send_audio_device_ = send_audio_device;
 }
 
-test::PacketTransport* AudioBweTest::CreateSendTransport(Call* sender_call) {
+test::PacketTransport* AudioBweTest::CreateSendTransport(
+    SingleThreadedTaskQueueForTesting* task_queue,
+    Call* sender_call) {
   return new test::PacketTransport(
-      sender_call, this, test::PacketTransport::kSender,
+      task_queue, sender_call, this, test::PacketTransport::kSender,
       test::CallTest::payload_type_map_, GetNetworkPipeConfig());
 }
 
-test::PacketTransport* AudioBweTest::CreateReceiveTransport() {
+test::PacketTransport* AudioBweTest::CreateReceiveTransport(
+    SingleThreadedTaskQueueForTesting* task_queue) {
   return new test::PacketTransport(
-      nullptr, this, test::PacketTransport::kReceiver,
+      task_queue, nullptr, this, test::PacketTransport::kReceiver,
       test::CallTest::payload_type_map_, GetNetworkPipeConfig());
 }
 

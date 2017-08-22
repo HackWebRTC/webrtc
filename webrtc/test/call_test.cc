@@ -18,8 +18,11 @@
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/include/voe_base.h"
+
 namespace webrtc {
 namespace test {
 
@@ -41,112 +44,124 @@ CallTest::CallTest()
       num_flexfec_streams_(0),
       decoder_factory_(CreateBuiltinAudioDecoderFactory()),
       encoder_factory_(CreateBuiltinAudioEncoderFactory()),
+      task_queue_("CallTestTaskQueue"),
       fake_send_audio_device_(nullptr),
       fake_recv_audio_device_(nullptr) {}
 
 CallTest::~CallTest() {
+  task_queue_.SendTask([this]() {
+    fake_send_audio_device_.reset();
+    fake_recv_audio_device_.reset();
+    frame_generator_capturer_.reset();
+  });
 }
 
 void CallTest::RunBaseTest(BaseTest* test) {
-  num_video_streams_ = test->GetNumVideoStreams();
-  num_audio_streams_ = test->GetNumAudioStreams();
-  num_flexfec_streams_ = test->GetNumFlexfecStreams();
-  RTC_DCHECK(num_video_streams_ > 0 || num_audio_streams_ > 0);
-  Call::Config send_config(test->GetSenderCallConfig());
-  if (num_audio_streams_ > 0) {
-    CreateFakeAudioDevices(test->CreateCapturer(), test->CreateRenderer());
-    test->OnFakeAudioDevicesCreated(fake_send_audio_device_.get(),
-                                    fake_recv_audio_device_.get());
-    apm_send_ = AudioProcessing::Create();
-    apm_recv_ = AudioProcessing::Create();
-    CreateVoiceEngines();
-    AudioState::Config audio_state_config;
-    audio_state_config.voice_engine = voe_send_.voice_engine;
-    audio_state_config.audio_mixer = AudioMixerImpl::Create();
-    audio_state_config.audio_processing = apm_send_;
-    send_config.audio_state = AudioState::Create(audio_state_config);
-  }
-  CreateSenderCall(send_config);
-  if (sender_call_transport_controller_ != nullptr) {
-    test->OnRtpTransportControllerSendCreated(
-        sender_call_transport_controller_);
-  }
-  if (test->ShouldCreateReceivers()) {
-    Call::Config recv_config(test->GetReceiverCallConfig());
+  task_queue_.SendTask([this, test]() {
+    num_video_streams_ = test->GetNumVideoStreams();
+    num_audio_streams_ = test->GetNumAudioStreams();
+    num_flexfec_streams_ = test->GetNumFlexfecStreams();
+    RTC_DCHECK(num_video_streams_ > 0 || num_audio_streams_ > 0);
+    Call::Config send_config(test->GetSenderCallConfig());
     if (num_audio_streams_ > 0) {
+      CreateFakeAudioDevices(test->CreateCapturer(), test->CreateRenderer());
+      test->OnFakeAudioDevicesCreated(fake_send_audio_device_.get(),
+                                      fake_recv_audio_device_.get());
+      apm_send_ = AudioProcessing::Create();
+      apm_recv_ = AudioProcessing::Create();
+      CreateVoiceEngines();
       AudioState::Config audio_state_config;
-      audio_state_config.voice_engine = voe_recv_.voice_engine;
+      audio_state_config.voice_engine = voe_send_.voice_engine;
       audio_state_config.audio_mixer = AudioMixerImpl::Create();
-      audio_state_config.audio_processing = apm_recv_;
-      recv_config.audio_state = AudioState::Create(audio_state_config);
+      audio_state_config.audio_processing = apm_send_;
+      send_config.audio_state = AudioState::Create(audio_state_config);
     }
-    CreateReceiverCall(recv_config);
-  }
-  test->OnCallsCreated(sender_call_.get(), receiver_call_.get());
-  receive_transport_.reset(test->CreateReceiveTransport());
-  send_transport_.reset(test->CreateSendTransport(sender_call_.get()));
+    CreateSenderCall(send_config);
+    if (sender_call_transport_controller_ != nullptr) {
+      test->OnRtpTransportControllerSendCreated(
+          sender_call_transport_controller_);
+    }
+    if (test->ShouldCreateReceivers()) {
+      Call::Config recv_config(test->GetReceiverCallConfig());
+      if (num_audio_streams_ > 0) {
+        AudioState::Config audio_state_config;
+        audio_state_config.voice_engine = voe_recv_.voice_engine;
+        audio_state_config.audio_mixer = AudioMixerImpl::Create();
+        audio_state_config.audio_processing = apm_recv_;
+        recv_config.audio_state = AudioState::Create(audio_state_config);
+      }
+      CreateReceiverCall(recv_config);
+    }
+    test->OnCallsCreated(sender_call_.get(), receiver_call_.get());
+    receive_transport_.reset(test->CreateReceiveTransport(&task_queue_));
+    send_transport_.reset(
+        test->CreateSendTransport(&task_queue_, sender_call_.get()));
 
-  if (test->ShouldCreateReceivers()) {
-    send_transport_->SetReceiver(receiver_call_->Receiver());
-    receive_transport_->SetReceiver(sender_call_->Receiver());
-    if (num_video_streams_ > 0)
-      receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
-    if (num_audio_streams_ > 0)
-      receiver_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
-  } else {
-    // Sender-only call delivers to itself.
-    send_transport_->SetReceiver(sender_call_->Receiver());
-    receive_transport_->SetReceiver(nullptr);
-  }
+    if (test->ShouldCreateReceivers()) {
+      send_transport_->SetReceiver(receiver_call_->Receiver());
+      receive_transport_->SetReceiver(sender_call_->Receiver());
+      if (num_video_streams_ > 0)
+        receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+      if (num_audio_streams_ > 0)
+        receiver_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
+    } else {
+      // Sender-only call delivers to itself.
+      send_transport_->SetReceiver(sender_call_->Receiver());
+      receive_transport_->SetReceiver(nullptr);
+    }
 
-  CreateSendConfig(num_video_streams_, num_audio_streams_, num_flexfec_streams_,
-                   send_transport_.get());
-  if (test->ShouldCreateReceivers()) {
-    CreateMatchingReceiveConfigs(receive_transport_.get());
-  }
-  if (num_video_streams_ > 0) {
-    test->ModifyVideoConfigs(&video_send_config_, &video_receive_configs_,
-                             &video_encoder_config_);
-  }
-  if (num_audio_streams_ > 0) {
-    test->ModifyAudioConfigs(&audio_send_config_, &audio_receive_configs_);
-  }
-  if (num_flexfec_streams_ > 0) {
-    test->ModifyFlexfecConfigs(&flexfec_receive_configs_);
-  }
+    CreateSendConfig(num_video_streams_, num_audio_streams_,
+                     num_flexfec_streams_, send_transport_.get());
+    if (test->ShouldCreateReceivers()) {
+      CreateMatchingReceiveConfigs(receive_transport_.get());
+    }
+    if (num_video_streams_ > 0) {
+      test->ModifyVideoConfigs(&video_send_config_, &video_receive_configs_,
+                               &video_encoder_config_);
+    }
+    if (num_audio_streams_ > 0) {
+      test->ModifyAudioConfigs(&audio_send_config_, &audio_receive_configs_);
+    }
+    if (num_flexfec_streams_ > 0) {
+      test->ModifyFlexfecConfigs(&flexfec_receive_configs_);
+    }
 
-  if (num_flexfec_streams_ > 0) {
-    CreateFlexfecStreams();
-    test->OnFlexfecStreamsCreated(flexfec_receive_streams_);
-  }
-  if (num_video_streams_ > 0) {
-    CreateVideoStreams();
-    test->OnVideoStreamsCreated(video_send_stream_, video_receive_streams_);
-  }
-  if (num_audio_streams_ > 0) {
-    CreateAudioStreams();
-    test->OnAudioStreamsCreated(audio_send_stream_, audio_receive_streams_);
-  }
+    if (num_flexfec_streams_ > 0) {
+      CreateFlexfecStreams();
+      test->OnFlexfecStreamsCreated(flexfec_receive_streams_);
+    }
+    if (num_video_streams_ > 0) {
+      CreateVideoStreams();
+      test->OnVideoStreamsCreated(video_send_stream_, video_receive_streams_);
+    }
+    if (num_audio_streams_ > 0) {
+      CreateAudioStreams();
+      test->OnAudioStreamsCreated(audio_send_stream_, audio_receive_streams_);
+    }
 
-  if (num_video_streams_ > 0) {
-    int width = kDefaultWidth;
-    int height = kDefaultHeight;
-    int frame_rate = kDefaultFramerate;
-    test->ModifyVideoCaptureStartResolution(&width, &height, &frame_rate);
-    CreateFrameGeneratorCapturer(frame_rate, width, height);
-    test->OnFrameGeneratorCapturerCreated(frame_generator_capturer_.get());
-  }
+    if (num_video_streams_ > 0) {
+      int width = kDefaultWidth;
+      int height = kDefaultHeight;
+      int frame_rate = kDefaultFramerate;
+      test->ModifyVideoCaptureStartResolution(&width, &height, &frame_rate);
+      CreateFrameGeneratorCapturer(frame_rate, width, height);
+      test->OnFrameGeneratorCapturerCreated(frame_generator_capturer_.get());
+    }
 
-  Start();
+    Start();
+  });
+
   test->PerformTest();
-  send_transport_->StopSending();
-  receive_transport_->StopSending();
-  Stop();
 
-  DestroyStreams();
-  DestroyCalls();
-  if (num_audio_streams_ > 0)
-    DestroyVoiceEngines();
+  task_queue_.SendTask([this]() {
+    Stop();
+    DestroyStreams();
+    send_transport_.reset();
+    receive_transport_.reset();
+    DestroyCalls();
+    if (num_audio_streams_ > 0)
+      DestroyVoiceEngines();
+  });
 
   test->OnTestFinished();
 }
@@ -517,16 +532,19 @@ void BaseTest::OnRtpTransportControllerSendCreated(
 void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {
 }
 
-test::PacketTransport* BaseTest::CreateSendTransport(Call* sender_call) {
-  return new PacketTransport(sender_call, this, test::PacketTransport::kSender,
-                             CallTest::payload_type_map_,
-                             FakeNetworkPipe::Config());
+test::PacketTransport* BaseTest::CreateSendTransport(
+    SingleThreadedTaskQueueForTesting* task_queue,
+    Call* sender_call) {
+  return new PacketTransport(
+      task_queue, sender_call, this, test::PacketTransport::kSender,
+      CallTest::payload_type_map_, FakeNetworkPipe::Config());
 }
 
-test::PacketTransport* BaseTest::CreateReceiveTransport() {
-  return new PacketTransport(nullptr, this, test::PacketTransport::kReceiver,
-                             CallTest::payload_type_map_,
-                             FakeNetworkPipe::Config());
+test::PacketTransport* BaseTest::CreateReceiveTransport(
+    SingleThreadedTaskQueueForTesting* task_queue) {
+  return new PacketTransport(
+      task_queue, nullptr, this, test::PacketTransport::kReceiver,
+      CallTest::payload_type_map_, FakeNetworkPipe::Config());
 }
 
 size_t BaseTest::GetNumVideoStreams() const {
