@@ -407,9 +407,6 @@ class FileStream : public StreamInterface {
   bool Unlock();
 #endif
 
-  // Note: Deprecated in favor of Filesystem::GetFileSize().
-  static bool GetSize(const std::string& filename, size_t* size);
-
  protected:
   virtual void DoClose();
 

@@ -472,14 +472,6 @@ bool FileStream::ReserveSize(size_t size) {
   return true;
 }
 
-bool FileStream::GetSize(const std::string& filename, size_t* size) {
-  struct stat file_stats;
-  if (stat(filename.c_str(), &file_stats) != 0)
-    return false;
-  *size = file_stats.st_size;
-  return true;
-}
-
 bool FileStream::Flush() {
   if (file_) {
     return (0 == fflush(file_));
