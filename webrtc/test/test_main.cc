@@ -19,6 +19,11 @@
 
 #if defined(WEBRTC_IOS)
 #include "webrtc/test/ios/test_support.h"
+
+DEFINE_string(NSTreatUnknownArgumentsAsOpen, "",
+    "Intentionally ignored flag intended for iOS simulator.");
+DEFINE_string(ApplePersistenceIgnoreState, "",
+    "Intentionally ignored flag intended for iOS simulator.");
 #endif
 
 DEFINE_bool(logs, false, "print logs to stderr");
@@ -36,9 +41,6 @@ int main(int argc, char* argv[]) {
   if (rtc::LogMessage::GetLogToDebug() > rtc::LS_INFO)
     rtc::LogMessage::LogToDebug(rtc::LS_INFO);
 
-  // AllowCommandLineParsing allows us to ignore flags passed on to us by
-  // Chromium build bots without having to explicitly disable them.
-  google::AllowCommandLineReparsing();
   google::ParseCommandLineFlags(&argc, &argv, false);
 
   webrtc::test::SetExecutablePath(argv[0]);
