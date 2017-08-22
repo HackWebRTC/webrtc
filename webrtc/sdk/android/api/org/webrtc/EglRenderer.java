@@ -430,7 +430,6 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
         logD("Dropping frame - Not initialized or already released.");
-        frame.release();
         return;
       }
       synchronized (frameLock) {
