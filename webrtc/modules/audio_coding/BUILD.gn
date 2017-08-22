@@ -51,6 +51,34 @@ rtc_static_library("audio_format_conversion") {
   ]
 }
 
+rtc_static_library("builtin_audio_decoder_factory_internal") {
+  sources = [
+    "codecs/builtin_audio_decoder_factory_internal.cc",
+    "codecs/builtin_audio_decoder_factory_internal.h",
+  ]
+  deps = [
+           "../..:webrtc_common",
+           "../../rtc_base:protobuf_utils",
+           "../../rtc_base:rtc_base_approved",
+           "../../api/audio_codecs:audio_codecs_api",
+         ] + audio_codec_deps
+  defines = audio_codec_defines
+}
+
+rtc_static_library("builtin_audio_encoder_factory_internal") {
+  sources = [
+    "codecs/builtin_audio_encoder_factory_internal.cc",
+    "codecs/builtin_audio_encoder_factory_internal.h",
+  ]
+  deps = [
+           "../..:webrtc_common",
+           "../../rtc_base:protobuf_utils",
+           "../../rtc_base:rtc_base_approved",
+           "../../api/audio_codecs:audio_codecs_api",
+         ] + audio_codec_deps
+  defines = audio_codec_defines
+}
+
 rtc_static_library("rent_a_codec") {
   sources = [
     "acm2/acm_codec_database.cc",
@@ -812,13 +840,13 @@ rtc_static_library("webrtc_opus") {
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/audio_codecs/opus:audio_encoder_opus_config",
     "../../common_audio",
+    "../../rtc_base:protobuf_utils",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_numerics",
     "../../system_wrappers",
   ]
   public_deps = [
     ":webrtc_opus_c",
-    "../../rtc_base:protobuf_utils",
   ]
 
   defines = audio_codec_defines

@@ -21,6 +21,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       "..:audio_codecs_api",
+      "../../../rtc_base:protobuf_utils",  # TODO(kwiberg): Why is this needed?
       "../../../rtc_base:rtc_base_approved",
       "../../../test:audio_codec_mocks",
       "../../../test:test_support",

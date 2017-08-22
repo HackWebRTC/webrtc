@@ -36,11 +36,8 @@ rtc_source_set("audio_encoder_opus") {
     ":audio_encoder_opus_config",
     "..:audio_codecs_api",
     "../../../modules/audio_coding:webrtc_opus",
+    "../../../rtc_base:protobuf_utils",  # TODO(kwiberg): Why is this needed?
     "../../../rtc_base:rtc_base_approved",
-  ]
-  public_deps = [
-    # TODO(kwiberg): Remove this public_dep when bug 7847 has been fixed.
-    "../../../rtc_base:protobuf_utils",
   ]
 }
 
