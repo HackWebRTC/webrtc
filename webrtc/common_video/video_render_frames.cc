@@ -15,7 +15,6 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 namespace {
@@ -46,27 +45,20 @@ int32_t VideoRenderFrames::AddFrame(VideoFrame&& new_frame) {
   // really slow system never renders any frames.
   if (!incoming_frames_.empty() &&
       new_frame.render_time_ms() + kOldRenderTimestampMS < time_now) {
-    WEBRTC_TRACE(kTraceWarning,
-                 kTraceVideoRenderer,
-                 -1,
-                 "%s: too old frame, timestamp=%u.",
-                 __FUNCTION__,
-                 new_frame.timestamp());
+    LOG(LS_WARNING) << "Too old frame, timestamp=" << new_frame.timestamp();
     return -1;
   }
 
   if (new_frame.render_time_ms() > time_now + kFutureRenderTimestampMS) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVideoRenderer, -1,
-                 "%s: frame too long into the future, timestamp=%u.",
-                 __FUNCTION__, new_frame.timestamp());
+    LOG(LS_WARNING) << "Frame too long into the future, timestamp="
+                    << new_frame.timestamp();
     return -1;
   }
 
   if (new_frame.render_time_ms() < last_render_time_ms_) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVideoRenderer, -1,
-                 "%s: frame scheduled out of order, render_time=%u, latest=%u.",
-                 __FUNCTION__, new_frame.render_time_ms(),
-                 last_render_time_ms_);
+    LOG(LS_WARNING) << "Frame scheduled out of order, render_time="
+                    << new_frame.render_time_ms()
+                    << ", latest=" << last_render_time_ms_;
     // For more details, see bug:
     // https://bugs.chromium.org/p/webrtc/issues/detail?id=7253
     return -1;
