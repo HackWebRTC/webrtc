@@ -14,6 +14,7 @@
 #include "webrtc/modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b_common.h"
 #include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/rtc_base/safe_conversions.h"
 
 namespace webrtc {
 
@@ -21,7 +22,7 @@ rtc::Optional<AudioEncoderL16::Config> AudioEncoderL16::SdpToConfig(
     const SdpAudioFormat& format) {
   Config config;
   config.sample_rate_hz = format.clockrate_hz;
-  config.num_channels = format.num_channels;
+  config.num_channels = rtc::checked_cast<int>(format.num_channels);
   return STR_CASE_CMP(format.name.c_str(), "L16") == 0 && config.IsOk()
              ? rtc::Optional<Config>(config)
              : rtc::Optional<Config>();
