@@ -112,14 +112,13 @@ rtc_static_library("rtc_media_base") {
   }
 
   deps += [
+    ":rtc_h264_profile_id",
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../p2p",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
   ]
-
-  public_deps += [ ":rtc_h264_profile_id" ]
 
   if (is_nacl) {
     deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
