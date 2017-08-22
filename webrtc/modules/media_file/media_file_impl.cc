@@ -12,8 +12,8 @@
 
 #include "webrtc/modules/media_file/media_file_impl.h"
 #include "webrtc/rtc_base/format_macros.h"
+#include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
-#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 MediaFile* MediaFile::CreateMediaFile(const int32_t id)
@@ -43,7 +43,7 @@ MediaFileImpl::MediaFileImpl(const int32_t id)
       _fileName(),
       _ptrCallback(NULL)
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceFile, id, "Created");
+    LOG(LS_INFO) << "MediaFileImpl()";
 
     codec_info_.plname[0] = '\0';
     _fileName[0] = '\0';
@@ -52,7 +52,7 @@ MediaFileImpl::MediaFileImpl(const int32_t id)
 
 MediaFileImpl::~MediaFileImpl()
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceFile, _id, "~MediaFileImpl()");
+    LOG(LS_INFO) << "~MediaFileImpl()";
     {
         rtc::CritScope lock(&_crit);
 
@@ -80,34 +80,29 @@ MediaFileImpl::~MediaFileImpl()
 
 int64_t MediaFileImpl::TimeUntilNextProcess()
 {
-    WEBRTC_TRACE(
-        kTraceWarning,
-        kTraceFile,
-        _id,
-        "TimeUntilNextProcess: This method is not used by MediaFile class.");
+    LOG(LS_WARNING)
+        << "TimeUntilNextProcess: This method is not used by MediaFile class.";
     return -1;
 }
 
 void MediaFileImpl::Process()
 {
-    WEBRTC_TRACE(kTraceWarning, kTraceFile, _id,
-                 "Process: This method is not used by MediaFile class.");
+    LOG(LS_WARNING) << "Process: This method is not used by MediaFile class.";
 }
 
 int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,
                                         size_t& dataLengthInBytes)
 {
-    WEBRTC_TRACE(kTraceStream, kTraceFile, _id,
-               "MediaFileImpl::PlayoutData(buffer= 0x%x, bufLen= %" PRIuS ")",
-                 buffer, dataLengthInBytes);
+    LOG(LS_INFO) << "MediaFileImpl::PlayoutData(buffer= "
+                 << static_cast<void*>(buffer)
+                 << ", bufLen= " << dataLengthInBytes << ")";
 
     const size_t bufferLengthInBytes = dataLengthInBytes;
     dataLengthInBytes = 0;
 
     if(buffer == NULL || bufferLengthInBytes == 0)
     {
-        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                     "Buffer pointer or length is NULL!");
+        LOG(LS_ERROR) << "Buffer pointer or length is NULL!";
         return -1;
     }
 
@@ -117,15 +112,13 @@ int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,
 
         if(!_playingActive)
         {
-            WEBRTC_TRACE(kTraceWarning, kTraceFile, _id,
-                         "Not currently playing!");
+            LOG(LS_WARNING) << "Not currently playing!";
             return -1;
         }
 
         if(!_ptrFileUtilityObj)
         {
-            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                         "Playing, but no FileUtility object!");
+            LOG(LS_ERROR) << "Playing, but no FileUtility object!";
             StopPlaying();
             return -1;
         }
@@ -165,8 +158,7 @@ int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,
                 break;
             default:
             {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Invalid file format: %d", _fileFormat);
+                LOG(LS_ERROR) << "Invalid file format: " << _fileFormat;
                 assert(false);
                 break;
             }
@@ -226,20 +218,18 @@ int32_t MediaFileImpl::PlayoutStereoData(
     int8_t* bufferRight,
     size_t& dataLengthInBytes)
 {
-    WEBRTC_TRACE(kTraceStream, kTraceFile, _id,
-                 "MediaFileImpl::PlayoutStereoData(Left = 0x%x, Right = 0x%x,"
-                 " Len= %" PRIuS ")",
-                 bufferLeft,
-                 bufferRight,
-                 dataLengthInBytes);
+    LOG(LS_INFO)
+        << "MediaFileImpl::PlayoutStereoData(Left = "
+        << static_cast<void*>(bufferLeft) << ", Right = "
+        << static_cast<void*>(bufferRight) << ", Len= " << dataLengthInBytes
+        << ")";
 
     const size_t bufferLengthInBytes = dataLengthInBytes;
     dataLengthInBytes = 0;
 
     if(bufferLeft == NULL || bufferRight == NULL || bufferLengthInBytes == 0)
     {
-        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                     "A buffer pointer or the length is NULL!");
+        LOG(LS_ERROR) << "A buffer pointer or the length is NULL!";
         return -1;
     }
 
@@ -250,18 +240,14 @@ int32_t MediaFileImpl::PlayoutStereoData(
 
         if(!_playingActive || !_isStereo)
         {
-            WEBRTC_TRACE(kTraceWarning, kTraceFile, _id,
-                         "Not currently playing stereo!");
+            LOG(LS_WARNING) << "Not currently playing stereo!";
             return -1;
         }
 
         if(!_ptrFileUtilityObj)
         {
-            WEBRTC_TRACE(
-                kTraceError,
-                kTraceFile,
-                _id,
-                "Playing stereo, but the FileUtility objects is NULL!");
+            LOG(LS_ERROR)
+                << "Playing stereo, but the FileUtility objects is NULL!";
             StopPlaying();
             return -1;
         }
@@ -278,9 +264,8 @@ int32_t MediaFileImpl::PlayoutStereoData(
                         bufferLengthInBytes);
                     break;
             default:
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Trying to read non-WAV as stereo audio\
- (not supported)");
+                LOG(LS_ERROR)
+                    << "Trying to read non-WAV as stereo audio (not supported)";
                 break;
         }
 
@@ -348,27 +333,21 @@ int32_t MediaFileImpl::StartPlayingAudioFile(
     if((startPointMs && stopPointMs && !loop) &&
        (notificationTimeMs > (stopPointMs - startPointMs)))
     {
-        WEBRTC_TRACE(
-            kTraceError,
-            kTraceFile,
-            _id,
-            "specified notification time is longer than amount of ms that will\
- be played");
+        LOG(LS_ERROR) << "specified notification time is longer than amount of"
+                      << " ms that will be played";
         return -1;
     }
 
     FileWrapper* inputStream = FileWrapper::Create();
     if(inputStream == NULL)
     {
-       WEBRTC_TRACE(kTraceMemory, kTraceFile, _id,
-                    "Failed to allocate input stream for file %s", fileName);
+       LOG(LS_INFO) << "Failed to allocate input stream for file " << fileName;
         return -1;
     }
 
     if (!inputStream->OpenFile(fileName, true)) {
       delete inputStream;
-      WEBRTC_TRACE(kTraceError, kTraceFile, _id, "Could not open input file %s",
-                   fileName);
+      LOG(LS_ERROR) << "Could not open input file " << fileName;
       return -1;
     }
 
@@ -421,30 +400,24 @@ int32_t MediaFileImpl::StartPlayingStream(
     rtc::CritScope lock(&_crit);
     if(_playingActive || _recordingActive)
     {
-        WEBRTC_TRACE(
-            kTraceError,
-            kTraceFile,
-            _id,
-            "StartPlaying called, but already playing or recording file %s",
-            (_fileName[0] == '\0') ? "(name not set)" : _fileName);
+        LOG(LS_ERROR)
+            << "StartPlaying called, but already playing or recording file "
+            << ((_fileName[0] == '\0') ? "(name not set)" : _fileName);
         return -1;
     }
 
     if(_ptrFileUtilityObj != NULL)
     {
-        WEBRTC_TRACE(kTraceError,
-                     kTraceFile,
-                     _id,
-                     "StartPlaying called, but FileUtilityObj already exists!");
+        LOG(LS_ERROR)
+            << "StartPlaying called, but FileUtilityObj already exists!";
         StopPlaying();
         return -1;
     }
 
-    _ptrFileUtilityObj = new ModuleFileUtility(_id);
+    _ptrFileUtilityObj = new ModuleFileUtility();
     if(_ptrFileUtilityObj == NULL)
     {
-        WEBRTC_TRACE(kTraceMemory, kTraceFile, _id,
-                     "Failed to create FileUtilityObj!");
+        LOG(LS_INFO) << "Failed to create FileUtilityObj!";
         return -1;
     }
 
@@ -455,8 +428,7 @@ int32_t MediaFileImpl::StartPlayingStream(
             if(_ptrFileUtilityObj->InitWavReading(stream, startPointMs,
                                                   stopPointMs) == -1)
             {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Not a valid WAV file!");
+                LOG(LS_ERROR) << "Not a valid WAV file!";
                 StopPlaying();
                 return -1;
             }
@@ -468,8 +440,7 @@ int32_t MediaFileImpl::StartPlayingStream(
             if(_ptrFileUtilityObj->InitCompressedReading(stream, startPointMs,
                                                          stopPointMs) == -1)
             {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Not a valid Compressed file!");
+                LOG(LS_ERROR) << "Not a valid Compressed file!";
                 StopPlaying();
                 return -1;
             }
@@ -488,8 +459,7 @@ int32_t MediaFileImpl::StartPlayingStream(
                                                   stopPointMs,
                                                   codecInst->plfreq) == -1)
             {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Not a valid raw 8 or 16 KHz PCM file!");
+                LOG(LS_ERROR) << "Not a valid raw 8 or 16 KHz PCM file!";
                 StopPlaying();
                 return -1;
             }
@@ -505,8 +475,7 @@ int32_t MediaFileImpl::StartPlayingStream(
             if(_ptrFileUtilityObj->InitPreEncodedReading(stream, *codecInst) ==
                -1)
             {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Not a valid PreEncoded file!");
+                LOG(LS_ERROR) << "Not a valid PreEncoded file!";
                 StopPlaying();
                 return -1;
             }
@@ -516,16 +485,14 @@ int32_t MediaFileImpl::StartPlayingStream(
         }
         default:
         {
-            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                         "Invalid file format: %d", format);
+            LOG(LS_ERROR) << "Invalid file format: " << format;
             assert(false);
             break;
         }
     }
     if(_ptrFileUtilityObj->codec_info(codec_info_) == -1)
     {
-        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                     "Failed to retrieve codec info!");
+        LOG(LS_ERROR) << "Failed to retrieve codec info!";
         StopPlaying();
         return -1;
     }
@@ -533,8 +500,7 @@ int32_t MediaFileImpl::StartPlayingStream(
     _isStereo = (codec_info_.channels == 2);
     if(_isStereo && (_fileFormat != kFileFormatWavFile))
     {
-        WEBRTC_TRACE(kTraceWarning, kTraceFile, _id,
-                     "Stereo is only allowed for WAV files");
+        LOG(LS_WARNING) << "Stereo is only allowed for WAV files";
         StopPlaying();
         return -1;
     }
@@ -572,8 +538,7 @@ int32_t MediaFileImpl::StopPlaying()
 
     if(!_playingActive)
     {
-        WEBRTC_TRACE(kTraceWarning, kTraceFile, _id,
-                     "playing is not active!");
+        LOG(LS_WARNING) << "playing is not active!";
         return -1;
     }
 
@@ -583,7 +548,7 @@ int32_t MediaFileImpl::StopPlaying()
 
 bool MediaFileImpl::IsPlaying()
 {
-    WEBRTC_TRACE(kTraceStream, kTraceFile, _id, "MediaFileImpl::IsPlaying()");
+    LOG(LS_VERBOSE) << "MediaFileImpl::IsPlaying()";
     rtc::CritScope lock(&_crit);
     return _playingActive;
 }
@@ -592,14 +557,13 @@ int32_t MediaFileImpl::IncomingAudioData(
     const int8_t*  buffer,
     const size_t bufferLengthInBytes)
 {
-    WEBRTC_TRACE(kTraceStream, kTraceFile, _id,
-                 "MediaFile::IncomingData(buffer= 0x%x, bufLen= %" PRIuS,
-                 buffer, bufferLengthInBytes);
+    LOG(LS_INFO) << "MediaFile::IncomingData(buffer= "
+                 << static_cast<const void*>(buffer) << ", bufLen= "
+                 << bufferLengthInBytes << ")";
 
     if(buffer == NULL || bufferLengthInBytes == 0)
     {
-        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                     "Buffer pointer or length is NULL!");
+        LOG(LS_ERROR) << "Buffer pointer or length is NULL!";
         return -1;
     }
 
@@ -610,14 +574,12 @@ int32_t MediaFileImpl::IncomingAudioData(
 
         if(!_recordingActive)
         {
-            WEBRTC_TRACE(kTraceWarning, kTraceFile, _id,
-                         "Not currently recording!");
+            LOG(LS_WARNING) << "Not currently recording!";
             return -1;
         }
         if(_ptrOutStream == NULL)
         {
-            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                         "Recording is active, but output stream is NULL!");
+            LOG(LS_ERROR) << "Recording is active, but output stream is NULL!";
             assert(false);
             return -1;
         }
@@ -663,8 +625,7 @@ int32_t MediaFileImpl::IncomingAudioData(
                         *_ptrOutStream, buffer, bufferLengthInBytes);
                     break;
                 default:
-                    WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                                 "Invalid file format: %d", _fileFormat);
+                    LOG(LS_ERROR) << "Invalid file format: " << _fileFormat;
                     assert(false);
                     break;
             }
@@ -693,8 +654,7 @@ int32_t MediaFileImpl::IncomingAudioData(
         }
         if(bytesWritten < (int32_t)bufferLengthInBytes)
         {
-            WEBRTC_TRACE(kTraceWarning, kTraceFile, _id,
-                         "Failed to write all requested bytes!");
+            LOG(LS_WARNING) << "Failed to write all requested bytes!";
             StopRecording();
             recordingEnded = true;
         }
@@ -736,15 +696,14 @@ int32_t MediaFileImpl::StartRecordingAudioFile(
     FileWrapper* outputStream = FileWrapper::Create();
     if(outputStream == NULL)
     {
-        WEBRTC_TRACE(kTraceMemory, kTraceFile, _id,
-                     "Failed to allocate memory for output stream");
+        LOG(LS_INFO) << "Failed to allocate memory for output stream";
         return -1;
     }
 
     if (!outputStream->OpenFile(fileName, false)) {
       delete outputStream;
-      WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                   "Could not open output file '%s' for writing!", fileName);
+      LOG(LS_ERROR) << "Could not open output file '" << fileName
+                    << "' for writing!";
       return -1;
     }
 
@@ -783,31 +742,24 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
     rtc::CritScope lock(&_crit);
     if(_recordingActive || _playingActive)
     {
-        WEBRTC_TRACE(
-            kTraceError,
-            kTraceFile,
-            _id,
-            "StartRecording called, but already recording or playing file %s!",
-                   _fileName);
+        LOG(LS_ERROR)
+            << "StartRecording called, but already recording or playing file "
+            << _fileName << "!";
         return -1;
     }
 
     if(_ptrFileUtilityObj != NULL)
     {
-        WEBRTC_TRACE(
-            kTraceError,
-            kTraceFile,
-            _id,
-            "StartRecording called, but fileUtilityObj already exists!");
+        LOG(LS_ERROR)
+            << "StartRecording called, but fileUtilityObj already exists!";
         StopRecording();
         return -1;
     }
 
-    _ptrFileUtilityObj = new ModuleFileUtility(_id);
+    _ptrFileUtilityObj = new ModuleFileUtility();
     if(_ptrFileUtilityObj == NULL)
     {
-        WEBRTC_TRACE(kTraceMemory, kTraceFile, _id,
-                     "Cannot allocate fileUtilityObj!");
+        LOG(LS_INFO) << "Cannot allocate fileUtilityObj!";
         return -1;
     }
 
@@ -819,8 +771,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
         {
             if(_ptrFileUtilityObj->InitWavWriting(stream, codecInst) == -1)
             {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Failed to initialize WAV file!");
+                LOG(LS_ERROR) << "Failed to initialize WAV file!";
                 delete _ptrFileUtilityObj;
                 _ptrFileUtilityObj = NULL;
                 return -1;
@@ -834,8 +785,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
             if(_ptrFileUtilityObj->InitCompressedWriting(stream, codecInst) ==
                -1)
             {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Failed to initialize Compressed file!");
+                LOG(LS_ERROR) << "Failed to initialize Compressed file!";
                 delete _ptrFileUtilityObj;
                 _ptrFileUtilityObj = NULL;
                 return -1;
@@ -850,8 +800,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
                _ptrFileUtilityObj->InitPCMWriting(stream, codecInst.plfreq) ==
                -1)
             {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Failed to initialize 8 or 16KHz PCM file!");
+                LOG(LS_ERROR) << "Failed to initialize 8 or 16KHz PCM file!";
                 delete _ptrFileUtilityObj;
                 _ptrFileUtilityObj = NULL;
                 return -1;
@@ -864,8 +813,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
             if(_ptrFileUtilityObj->InitPreEncodedWriting(stream, codecInst) ==
                -1)
             {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Failed to initialize Pre-Encoded file!");
+                LOG(LS_ERROR) << "Failed to initialize Pre-Encoded file!";
                 delete _ptrFileUtilityObj;
                 _ptrFileUtilityObj = NULL;
                 return -1;
@@ -876,8 +824,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
         }
         default:
         {
-            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                         "Invalid file format %d specified!", format);
+            LOG(LS_ERROR) << "Invalid file format " << format << " specified!";
             delete _ptrFileUtilityObj;
             _ptrFileUtilityObj = NULL;
             return -1;
@@ -888,8 +835,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
     {
         if(_fileFormat != kFileFormatWavFile)
         {
-            WEBRTC_TRACE(kTraceWarning, kTraceFile, _id,
-                         "Stereo is only allowed for WAV files");
+            LOG(LS_WARNING) << "Stereo is only allowed for WAV files";
             StopRecording();
             return -1;
         }
@@ -897,11 +843,8 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
            (STR_NCASE_CMP(tmpAudioCodec.plname, "PCMU", 5) != 0) &&
            (STR_NCASE_CMP(tmpAudioCodec.plname, "PCMA", 5) != 0))
         {
-            WEBRTC_TRACE(
-                kTraceWarning,
-                kTraceFile,
-                _id,
-                "Stereo is only allowed for codec PCMU, PCMA and L16 ");
+            LOG(LS_WARNING)
+                << "Stereo is only allowed for codec PCMU, PCMA and L16 ";
             StopRecording();
             return -1;
         }
@@ -920,8 +863,7 @@ int32_t MediaFileImpl::StopRecording()
     rtc::CritScope lock(&_crit);
     if(!_recordingActive)
     {
-        WEBRTC_TRACE(kTraceWarning, kTraceFile, _id,
-                     "recording is not active!");
+        LOG(LS_WARNING) << "recording is not active!";
         return -1;
     }
 
@@ -960,7 +902,7 @@ int32_t MediaFileImpl::StopRecording()
 
 bool MediaFileImpl::IsRecording()
 {
-    WEBRTC_TRACE(kTraceStream, kTraceFile, _id, "MediaFileImpl::IsRecording()");
+    LOG(LS_VERBOSE) << "MediaFileImpl::IsRecording()";
     rtc::CritScope lock(&_crit);
     return _recordingActive;
 }
@@ -980,7 +922,7 @@ int32_t MediaFileImpl::RecordDurationMs(uint32_t& durationMs)
 
 bool MediaFileImpl::IsStereo()
 {
-    WEBRTC_TRACE(kTraceStream, kTraceFile, _id, "MediaFileImpl::IsStereo()");
+    LOG(LS_VERBOSE) << "MediaFileImpl::IsStereo()";
     rtc::CritScope lock(&_crit);
     return _isStereo;
 }
@@ -1009,11 +951,10 @@ int32_t MediaFileImpl::FileDurationMs(const char* fileName,
         return -1;
     }
 
-    ModuleFileUtility* utilityObj = new ModuleFileUtility(_id);
+    ModuleFileUtility* utilityObj = new ModuleFileUtility();
     if(utilityObj == NULL)
     {
-        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                     "failed to allocate utility object!");
+        LOG(LS_ERROR) << "failed to allocate utility object!";
         return -1;
     }
 
@@ -1047,15 +988,14 @@ int32_t MediaFileImpl::codec_info(CodecInst& codecInst) const
     rtc::CritScope lock(&_crit);
     if(!_playingActive && !_recordingActive)
     {
-        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                     "Neither playout nor recording has been initialized!");
+        LOG(LS_ERROR) << "Neither playout nor recording has been initialized!";
         return -1;
     }
     if (codec_info_.pltype == 0 && codec_info_.plname[0] == '\0')
     {
-        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                     "The CodecInst for %s is unknown!",
-            _playingActive ? "Playback" : "Recording");
+        LOG(LS_ERROR) << "The CodecInst for "
+                      << (_playingActive ? "Playback" : "Recording")
+                      << " is unknown!";
         return -1;
     }
     memcpy(&codecInst,&codec_info_,sizeof(CodecInst));
@@ -1072,8 +1012,7 @@ bool MediaFileImpl::ValidFileFormat(const FileFormats format,
            format == kFileFormatPcm16kHzFile   ||
            format == kFileFormatPcm32kHzFile)
         {
-            WEBRTC_TRACE(kTraceError, kTraceFile, -1,
-                         "Codec info required for file format specified!");
+            LOG(LS_ERROR) << "Codec info required for file format specified!";
             return false;
         }
     }
@@ -1084,7 +1023,7 @@ bool MediaFileImpl::ValidFileName(const char* fileName)
 {
     if((fileName == NULL) ||(fileName[0] == '\0'))
     {
-        WEBRTC_TRACE(kTraceError, kTraceFile, -1, "FileName not specified!");
+        LOG(LS_ERROR) << "FileName not specified!";
         return false;
     }
     return true;
@@ -1100,14 +1039,12 @@ bool MediaFileImpl::ValidFilePositions(const uint32_t startPointMs,
     }
     if(stopPointMs &&(startPointMs >= stopPointMs))
     {
-        WEBRTC_TRACE(kTraceError, kTraceFile, -1,
-                     "startPointMs must be less than stopPointMs!");
+        LOG(LS_ERROR) << "startPointMs must be less than stopPointMs!";
         return false;
     }
     if(stopPointMs &&((stopPointMs - startPointMs) < 20))
     {
-        WEBRTC_TRACE(kTraceError, kTraceFile, -1,
-                     "minimum play duration for files is 20 ms!");
+        LOG(LS_ERROR) << "minimum play duration for files is 20 ms!";
         return false;
     }
     return true;
@@ -1119,8 +1056,7 @@ bool MediaFileImpl::ValidFrequency(const uint32_t frequency)
     {
         return true;
     }
-    WEBRTC_TRACE(kTraceError, kTraceFile, -1,
-                 "Frequency should be 8000, 16000 or 32000 (Hz)");
+    LOG(LS_ERROR) << "Frequency should be 8000, 16000 or 32000 (Hz)";
     return false;
 }
 }  // namespace webrtc
