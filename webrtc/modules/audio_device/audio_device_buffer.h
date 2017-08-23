@@ -118,6 +118,12 @@ class AudioDeviceBuffer {
 
   int32_t SetTypingStatus(bool typing_status);
 
+  // Called on iOS where the native audio layer can be interrupted by other
+  // audio applications. This method can then be used to reset internal
+  // states and detach thread checkers to allow for a new audio session where
+  // native callbacks may come from a new set of I/O threads.
+  void NativeAudioInterrupted();
+
  private:
   // Starts/stops periodic logging of audio stats.
   void StartPeriodicLogging();

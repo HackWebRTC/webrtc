@@ -554,6 +554,15 @@ void AudioDeviceIOS::HandleInterruptionBegin() {
     RTCLog(@"Stopping the audio unit due to interruption begin.");
     if (!audio_unit_->Stop()) {
       RTCLogError(@"Failed to stop the audio unit for interruption begin.");
+    } else {
+      // The audio unit has been stopped but will be restarted when the
+      // interruption ends in HandleInterruptionEnd(). It will result in audio
+      // callbacks from a new native I/O thread which means that we must detach
+      // thread checkers here to be prepared for an upcoming new audio stream.
+      io_thread_checker_.DetachFromThread();
+      // The audio device buffer must also be informed about the interrupted
+      // state so it can detach its thread checkers as well.
+      audio_device_buffer_->NativeAudioInterrupted();
     }
   }
   is_interrupted_ = true;

@@ -260,6 +260,12 @@ int32_t AudioDeviceBuffer::SetTypingStatus(bool typing_status) {
   return 0;
 }
 
+void AudioDeviceBuffer::NativeAudioInterrupted() {
+  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
+  playout_thread_checker_.DetachFromThread();
+  recording_thread_checker_.DetachFromThread();
+}
+
 uint32_t AudioDeviceBuffer::NewMicLevel() const {
   RTC_DCHECK_RUN_ON(&recording_thread_checker_);
   return new_mic_level_;
