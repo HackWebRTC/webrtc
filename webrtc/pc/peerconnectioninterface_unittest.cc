@@ -31,6 +31,7 @@
 #include "webrtc/pc/mediastream.h"
 #include "webrtc/pc/peerconnection.h"
 #include "webrtc/pc/streamcollection.h"
+#include "webrtc/pc/test/fakeaudiocapturemodule.h"
 #include "webrtc/pc/test/fakertccertificategenerator.h"
 #include "webrtc/pc/test/fakevideotracksource.h"
 #include "webrtc/pc/test/mockpeerconnectionobservers.h"
@@ -662,8 +663,9 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
 
     return new rtc::RefCountedObject<PeerConnectionFactoryForTest>(
         rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
-        nullptr, audio_encoder_factory, audio_decoder_factory, nullptr, nullptr,
-        nullptr, std::move(media_engine), std::move(call_factory),
+        FakeAudioCaptureModule::Create(), audio_encoder_factory,
+        audio_decoder_factory, nullptr, nullptr, nullptr,
+        std::move(media_engine), std::move(call_factory),
         std::move(event_log_factory));
   }
 
@@ -671,7 +673,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread,
       rtc::Thread* signaling_thread,
-      webrtc::AudioDeviceModule* default_adm,
+      rtc::scoped_refptr<FakeAudioCaptureModule> fake_adm,
       rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
       rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
       cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
@@ -683,7 +685,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
       : webrtc::PeerConnectionFactory(network_thread,
                                       worker_thread,
                                       signaling_thread,
-                                      default_adm,
+                                      fake_adm,
                                       audio_encoder_factory,
                                       audio_decoder_factory,
                                       video_encoder_factory,
@@ -702,6 +704,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
     return transport_controller;
   }
 
+  rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
   cricket::TransportController* transport_controller;
 };
 
@@ -715,9 +718,12 @@ class PeerConnectionInterfaceTest : public testing::Test {
   }
 
   virtual void SetUp() {
+    // Use fake audio capture module since we're only testing the interface
+    // level, and using a real one could make tests flaky when run in parallel.
+    fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
     pc_factory_ = webrtc::CreatePeerConnectionFactory(
         rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
-        nullptr, nullptr, nullptr);
+        fake_audio_capture_module_, nullptr, nullptr);
     ASSERT_TRUE(pc_factory_);
     pc_factory_for_test_ =
         PeerConnectionFactoryForTest::CreatePeerConnectionFactoryForTest();
@@ -1237,6 +1243,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
   rtc::AutoSocketServerThread main_;
+  rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
   cricket::FakePortAllocator* port_allocator_ = nullptr;
   FakeRTCCertificateGenerator* fake_certificate_generator_ = nullptr;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory_;
@@ -1370,7 +1377,8 @@ TEST_F(PeerConnectionInterfaceTest,
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory(
       webrtc::CreatePeerConnectionFactory(
           rtc::Thread::Current(), rtc::Thread::Current(),
-          rtc::Thread::Current(), nullptr, nullptr, nullptr));
+          rtc::Thread::Current(), fake_audio_capture_module_, nullptr,
+          nullptr));
   rtc::scoped_refptr<PeerConnectionInterface> pc(
       pc_factory->CreatePeerConnection(
           config, nullptr, std::move(port_allocator), nullptr, &observer_));
@@ -1396,7 +1404,7 @@ TEST_F(PeerConnectionInterfaceTest,
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory(
       webrtc::CreatePeerConnectionFactory(
           network_thread.get(), rtc::Thread::Current(), rtc::Thread::Current(),
-          nullptr, nullptr, nullptr));
+          fake_audio_capture_module_, nullptr, nullptr));
   std::unique_ptr<cricket::FakePortAllocator> port_allocator(
       new cricket::FakePortAllocator(network_thread.get(), nullptr));
   cricket::FakePortAllocator* raw_port_allocator = port_allocator.get();
