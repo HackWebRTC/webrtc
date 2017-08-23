@@ -178,7 +178,6 @@ config("common_config") {
         "-Wthread-safety",
         "-Winconsistent-missing-override",
         "-Wundef",
-        "-Wunused-lambda-capture",
       ]
     }
   }
