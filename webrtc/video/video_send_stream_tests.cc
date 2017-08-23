@@ -554,6 +554,20 @@ TEST_F(VideoSendStreamTest, SupportsUlpfecWithoutExtensions) {
   RunBaseTest(&test);
 }
 
+class VideoSendStreamWithoutUlpfecTest : public VideoSendStreamTest {
+ protected:
+  VideoSendStreamWithoutUlpfecTest()
+      : field_trial_("WebRTC-DisableUlpFecExperiment/Enabled/") {}
+
+  test::ScopedFieldTrials field_trial_;
+};
+
+TEST_F(VideoSendStreamWithoutUlpfecTest, NoUlpfecIfDisabledThroughFieldTrial) {
+  std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
+  UlpfecObserver test(false, false, true, false, "VP8", encoder.get());
+  RunBaseTest(&test);
+}
+
 // The FEC scheme used is not efficient for H264, so we should not use RED/FEC
 // since we'll still have to re-request FEC packets, effectively wasting
 // bandwidth since the receiver has to wait for FEC retransmissions to determine

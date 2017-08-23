@@ -987,6 +987,11 @@ void VideoSendStreamImpl::ConfigureProtection() {
   auto IsUlpfecEnabled = [&]() { return ulpfec_payload_type >= 0; };
   auto DisableUlpfec = [&]() { ulpfec_payload_type = -1; };
 
+  if (webrtc::field_trial::IsEnabled("WebRTC-DisableUlpFecExperiment")) {
+    LOG(LS_INFO) << "Experiment to disable sending ULPFEC is enabled.";
+    DisableUlpfec();
+  }
+
   // If enabled, FlexFEC takes priority over RED+ULPFEC.
   if (flexfec_enabled) {
     // We can safely disable RED here, because if the remote supports FlexFEC,
@@ -1045,9 +1050,7 @@ void VideoSendStreamImpl::ConfigureProtection() {
         true,
         kMinSendSidePacketHistorySize);
     // Set RED/ULPFEC information.
-    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-      rtp_rtcp->SetUlpfecConfig(red_payload_type, ulpfec_payload_type);
-    }
+    rtp_rtcp->SetUlpfecConfig(red_payload_type, ulpfec_payload_type);
   }
 
   // Currently, both ULPFEC and FlexFEC use the same FEC rate calculation logic,
