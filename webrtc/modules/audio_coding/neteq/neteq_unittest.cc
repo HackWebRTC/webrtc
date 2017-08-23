@@ -75,12 +75,12 @@ void Convert(const webrtc::NetEqNetworkStatistics& stats_raw,
   stats->set_preferred_buffer_size_ms(stats_raw.preferred_buffer_size_ms);
   stats->set_jitter_peaks_found(stats_raw.jitter_peaks_found);
   stats->set_packet_loss_rate(stats_raw.packet_loss_rate);
-  stats->set_packet_discard_rate(stats_raw.packet_discard_rate);
   stats->set_expand_rate(stats_raw.expand_rate);
   stats->set_speech_expand_rate(stats_raw.speech_expand_rate);
   stats->set_preemptive_rate(stats_raw.preemptive_rate);
   stats->set_accelerate_rate(stats_raw.accelerate_rate);
   stats->set_secondary_decoded_rate(stats_raw.secondary_decoded_rate);
+  stats->set_secondary_discarded_rate(stats_raw.secondary_discarded_rate);
   stats->set_clockdrift_ppm(stats_raw.clockdrift_ppm);
   stats->set_added_zero_samples(stats_raw.added_zero_samples);
   stats->set_mean_waiting_time_ms(stats_raw.mean_waiting_time_ms);
@@ -445,10 +445,10 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
       "759fef89a5de52bd17e733dc255c671ce86be909");
 
   const std::string network_stats_checksum =
-      PlatformChecksum("f7c2158761a531dd2804d13da0480033faa7be12",
-                       "8b5e3c8247dce48cb33923eaa1a502ca91429d5e",
-                       "f7c2158761a531dd2804d13da0480033faa7be12",
-                       "f7c2158761a531dd2804d13da0480033faa7be12");
+      PlatformChecksum("5b4262ca328e5f066af5d34f3380521583dd20de",
+                       "80235b6d727281203acb63b98f9a9e85d95f7ec0",
+                       "5b4262ca328e5f066af5d34f3380521583dd20de",
+                       "5b4262ca328e5f066af5d34f3380521583dd20de");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
       "b8880bf9fed2487efbddcb8d94b9937a29ae521d",
@@ -481,10 +481,10 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
       "721e1e0c6effe4b2401536a4eef11512c9fb709c");
 
   const std::string network_stats_checksum =
-      PlatformChecksum("dda4cee006d9369c7114a03790c5761346cf5e23",
-                       "dda4cee006d9369c7114a03790c5761346cf5e23",
-                       "dda4cee006d9369c7114a03790c5761346cf5e23",
-                       "dda4cee006d9369c7114a03790c5761346cf5e23");
+      PlatformChecksum("4e749c46e2611877120ac7a20cbbe555cfbd70ea",
+                       "4e749c46e2611877120ac7a20cbbe555cfbd70ea",
+                       "4e749c46e2611877120ac7a20cbbe555cfbd70ea",
+                       "4e749c46e2611877120ac7a20cbbe555cfbd70ea");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",

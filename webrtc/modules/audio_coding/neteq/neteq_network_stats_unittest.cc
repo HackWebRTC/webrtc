@@ -136,12 +136,12 @@ struct NetEqNetworkStatsCheck {
   logic preferred_buffer_size_ms;
   logic jitter_peaks_found;
   logic packet_loss_rate;
-  logic packet_discard_rate;
   logic expand_rate;
   logic speech_expand_rate;
   logic preemptive_rate;
   logic accelerate_rate;
   logic secondary_decoded_rate;
+  logic secondary_discarded_rate;
   logic clockdrift_ppm;
   logic added_zero_samples;
   NetEqNetworkStatistics stats_ref;
@@ -201,12 +201,12 @@ NetEqNetworkStatsTest(NetEqDecoder codec,
     CHECK_NETEQ_NETWORK_STATS(preferred_buffer_size_ms);
     CHECK_NETEQ_NETWORK_STATS(jitter_peaks_found);
     CHECK_NETEQ_NETWORK_STATS(packet_loss_rate);
-    CHECK_NETEQ_NETWORK_STATS(packet_discard_rate);
     CHECK_NETEQ_NETWORK_STATS(expand_rate);
     CHECK_NETEQ_NETWORK_STATS(speech_expand_rate);
     CHECK_NETEQ_NETWORK_STATS(preemptive_rate);
     CHECK_NETEQ_NETWORK_STATS(accelerate_rate);
     CHECK_NETEQ_NETWORK_STATS(secondary_decoded_rate);
+    CHECK_NETEQ_NETWORK_STATS(secondary_discarded_rate);
     CHECK_NETEQ_NETWORK_STATS(clockdrift_ppm);
     CHECK_NETEQ_NETWORK_STATS(added_zero_samples);
 
@@ -249,12 +249,12 @@ NetEqNetworkStatsTest(NetEqDecoder codec,
       kIgnore,  // preferred_buffer_size_ms
       kIgnore,  // jitter_peaks_found
       kEqual,  // packet_loss_rate
-      kEqual,  // packet_discard_rate
       kEqual,  // expand_rate
       kEqual,  // voice_expand_rate
       kIgnore,  // preemptive_rate
       kEqual,  // accelerate_rate
       kEqual,  // decoded_fec_rate
+      kEqual,  // discarded_fec_rate
       kIgnore,  // clockdrift_ppm
       kEqual,  // added_zero_samples
       {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
@@ -273,7 +273,7 @@ NetEqNetworkStatsTest(NetEqDecoder codec,
     expects.stats_ref.packet_loss_rate = 0;
     expects.stats_ref.expand_rate = expects.stats_ref.speech_expand_rate = 0;
     expects.stats_ref.secondary_decoded_rate = 2006;
-    expects.stats_ref.packet_discard_rate = 13374;
+    expects.stats_ref.secondary_discarded_rate = 14336;
     RunTest(50, expects);
   }
 
@@ -283,12 +283,12 @@ NetEqNetworkStatsTest(NetEqDecoder codec,
       kIgnore,  // preferred_buffer_size_ms
       kIgnore,  // jitter_peaks_found
       kEqual,  // packet_loss_rate
-      kEqual,  // packet_discard_rate
       kEqual,  // expand_rate
       kEqual,  // speech_expand_rate
       kIgnore,  // preemptive_rate
       kEqual,  // accelerate_rate
       kEqual,  // decoded_fec_rate
+      kEqual,  // discard_fec_rate
       kIgnore,  // clockdrift_ppm
       kEqual,  // added_zero_samples
       {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}

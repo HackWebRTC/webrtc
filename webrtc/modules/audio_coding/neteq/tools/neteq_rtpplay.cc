@@ -352,12 +352,12 @@ class StatsGetter : public NetEqGetAudioCallback {
     double preferred_buffer_size_ms = 0.0;
     double jitter_peaks_found = 0.0;
     double packet_loss_rate = 0.0;
-    double packet_discard_rate = 0.0;
     double expand_rate = 0.0;
     double speech_expand_rate = 0.0;
     double preemptive_rate = 0.0;
     double accelerate_rate = 0.0;
     double secondary_decoded_rate = 0.0;
+    double secondary_discarded_rate = 0.0;
     double clockdrift_ppm = 0.0;
     double added_zero_samples = 0.0;
     double mean_waiting_time_ms = 0.0;
@@ -410,12 +410,12 @@ class StatsGetter : public NetEqGetAudioCallback {
           a.preferred_buffer_size_ms += b.preferred_buffer_size_ms;
           a.jitter_peaks_found += b.jitter_peaks_found;
           a.packet_loss_rate += b.packet_loss_rate / 16384.0;
-          a.packet_discard_rate += b.packet_discard_rate / 16384.0;
           a.expand_rate += b.expand_rate / 16384.0;
           a.speech_expand_rate += b.speech_expand_rate / 16384.0;
           a.preemptive_rate += b.preemptive_rate / 16384.0;
           a.accelerate_rate += b.accelerate_rate / 16384.0;
           a.secondary_decoded_rate += b.secondary_decoded_rate / 16384.0;
+          a.secondary_discarded_rate += b.secondary_discarded_rate / 16384.0;
           a.clockdrift_ppm += b.clockdrift_ppm;
           a.added_zero_samples += b.added_zero_samples;
           a.mean_waiting_time_ms += b.mean_waiting_time_ms;
@@ -429,12 +429,12 @@ class StatsGetter : public NetEqGetAudioCallback {
     sum_stats.preferred_buffer_size_ms /= stats_.size();
     sum_stats.jitter_peaks_found /= stats_.size();
     sum_stats.packet_loss_rate /= stats_.size();
-    sum_stats.packet_discard_rate /= stats_.size();
     sum_stats.expand_rate /= stats_.size();
     sum_stats.speech_expand_rate /= stats_.size();
     sum_stats.preemptive_rate /= stats_.size();
     sum_stats.accelerate_rate /= stats_.size();
     sum_stats.secondary_decoded_rate /= stats_.size();
+    sum_stats.secondary_discarded_rate /= stats_.size();
     sum_stats.clockdrift_ppm /= stats_.size();
     sum_stats.added_zero_samples /= stats_.size();
     sum_stats.mean_waiting_time_ms /= stats_.size();
@@ -644,13 +644,14 @@ int RunTest(int argc, char* argv[]) {
   printf("  output duration: %" PRId64 " ms\n", test_duration_ms);
   auto stats = stats_getter.AverageStats();
   printf("  packet_loss_rate: %f %%\n", 100.0 * stats.packet_loss_rate);
-  printf("  packet_discard_rate: %f %%\n", 100.0 * stats.packet_discard_rate);
   printf("  expand_rate: %f %%\n", 100.0 * stats.expand_rate);
   printf("  speech_expand_rate: %f %%\n", 100.0 * stats.speech_expand_rate);
   printf("  preemptive_rate: %f %%\n", 100.0 * stats.preemptive_rate);
   printf("  accelerate_rate: %f %%\n", 100.0 * stats.accelerate_rate);
   printf("  secondary_decoded_rate: %f %%\n",
          100.0 * stats.secondary_decoded_rate);
+  printf("  secondary_discarded_rate: %f %%\n",
+         100.0 * stats.secondary_discarded_rate);
   printf("  clockdrift_ppm: %f ppm\n", stats.clockdrift_ppm);
   printf("  mean_waiting_time_ms: %f ms\n", stats.mean_waiting_time_ms);
   printf("  median_waiting_time_ms: %f ms\n", stats.median_waiting_time_ms);

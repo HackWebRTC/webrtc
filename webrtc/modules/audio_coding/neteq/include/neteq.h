@@ -35,7 +35,6 @@ struct NetEqNetworkStatistics {
   uint16_t jitter_peaks_found;  // 1 if adding extra delay due to peaky
                                 // jitter; 0 otherwise.
   uint16_t packet_loss_rate;  // Loss rate (network + late) in Q14.
-  uint16_t packet_discard_rate;  // Late loss rate in Q14.
   uint16_t expand_rate;  // Fraction (of original stream) of synthesized
                          // audio inserted through expansion (in Q14).
   uint16_t speech_expand_rate;  // Fraction (of original stream) of synthesized
@@ -44,8 +43,10 @@ struct NetEqNetworkStatistics {
                              // expansion (in Q14).
   uint16_t accelerate_rate;  // Fraction of data removed through acceleration
                              // (in Q14).
-  uint16_t secondary_decoded_rate;  // Fraction of data coming from secondary
+  uint16_t secondary_decoded_rate;  // Fraction of data coming from FEC/RED
                                     // decoding (in Q14).
+  uint16_t secondary_discarded_rate;  // Fraction of discarded FEC/RED data (in
+                                      // Q14).
   int32_t clockdrift_ppm;  // Average clock-drift in parts-per-million
                            // (positive or negative).
   size_t added_zero_samples;  // Number of zero samples added in "off" mode.

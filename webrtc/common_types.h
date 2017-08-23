@@ -370,7 +370,9 @@ struct NetworkStatistics {
   // Loss rate (network + late); fraction between 0 and 1, scaled to Q14.
   uint16_t currentPacketLossRate;
   // Late loss rate; fraction between 0 and 1, scaled to Q14.
-  uint16_t currentDiscardRate;
+  union {
+    RTC_DEPRECATED uint16_t currentDiscardRate;
+  };
   // fraction (of original stream) of synthesized audio inserted through
   // expansion (in Q14)
   uint16_t currentExpandRate;
@@ -384,6 +386,8 @@ struct NetworkStatistics {
   uint16_t currentAccelerateRate;
   // fraction of data coming from secondary decoding (in Q14)
   uint16_t currentSecondaryDecodedRate;
+  // fraction of secondary data that is discarded (in Q14).
+  uint16_t currentSecondaryDiscardedRate;
   // clock-drift in parts-per-million (negative or positive)
   int32_t clockDriftPPM;
   // average packet waiting time in the jitter buffer (ms)

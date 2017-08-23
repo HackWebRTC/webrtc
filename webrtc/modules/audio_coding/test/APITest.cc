@@ -752,8 +752,6 @@ void APITest::TestDelay(char side) {
             networkStat.jitterPeaksFound);
     fprintf(stdout, "packet-size rate........ %d\n",
             networkStat.currentPacketLossRate);
-    fprintf(stdout, "discard rate............ %d\n",
-            networkStat.currentDiscardRate);
     fprintf(stdout, "expand rate............. %d\n",
             networkStat.currentExpandRate);
     fprintf(stdout, "speech expand rate...... %d\n",
@@ -764,6 +762,8 @@ void APITest::TestDelay(char side) {
             networkStat.currentAccelerateRate);
     fprintf(stdout, "Secondary decoded rate.. %d\n",
             networkStat.currentSecondaryDecodedRate);
+    fprintf(stdout, "Secondary discarded rate.%d\n",
+            networkStat.currentSecondaryDiscardedRate);
     fprintf(stdout, "Clock-drift............. %d\n", networkStat.clockDriftPPM);
     fprintf(stdout, "Mean waiting time....... %d\n",
             networkStat.meanWaitingTimeMs);

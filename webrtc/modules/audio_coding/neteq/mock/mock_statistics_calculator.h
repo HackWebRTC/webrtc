@@ -19,8 +19,8 @@ namespace webrtc {
 
 class MockStatisticsCalculator : public StatisticsCalculator {
  public:
-  // For current unittest, we mock only one method.
   MOCK_METHOD1(PacketsDiscarded, void(size_t num_packets));
+  MOCK_METHOD1(SecondaryPacketsDiscarded, void(size_t num_packets));
 };
 
 }  // namespace webrtc

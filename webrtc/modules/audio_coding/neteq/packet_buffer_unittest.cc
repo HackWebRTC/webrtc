@@ -292,9 +292,13 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
               packet_facts[i].payload_type,
               kFrameSize);
     Packet packet = gen.NextPacket(kPayloadLength);
-    packet.priority.red_level = packet_facts[i].primary ? 0 : 1;
+    packet.priority.codec_level = packet_facts[i].primary ? 0 : 1;
     if (packet_facts[i].extract_order < 0) {
-      EXPECT_CALL(mock_stats, PacketsDiscarded(1));
+      if (packet.priority.codec_level > 0) {
+        EXPECT_CALL(mock_stats, SecondaryPacketsDiscarded(1));
+      } else {
+        EXPECT_CALL(mock_stats, PacketsDiscarded(1));
+      }
     }
     EXPECT_CALL(check, Call(i));
     EXPECT_EQ(PacketBuffer::kOK,
@@ -358,7 +362,8 @@ TEST(PacketBuffer, DiscardPackets) {
   // This will discard all remaining packets but one. The oldest packet is older
   // than the indicated horizon_samples, and will thus be left in the buffer.
   constexpr size_t kSkipPackets = 1;
-  EXPECT_CALL(mock_stats, PacketsDiscarded(kRemainingPackets - kSkipPackets));
+  EXPECT_CALL(mock_stats, PacketsDiscarded(1))
+      .Times(kRemainingPackets - kSkipPackets);
   EXPECT_CALL(check, Call(17));  // Arbitrary id number.
   buffer.DiscardOldPackets(start_ts + kTotalPackets * ts_increment,
                            kRemainingPackets * ts_increment, &mock_stats);

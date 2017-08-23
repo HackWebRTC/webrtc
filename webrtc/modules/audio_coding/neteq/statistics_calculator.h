@@ -66,6 +66,9 @@ class StatisticsCalculator {
   // Reports that |num_packets| packets were discarded.
   virtual void PacketsDiscarded(size_t num_packets);
 
+  // Reports that |num_packets| packets samples were discarded.
+  virtual void SecondaryPacketsDiscarded(size_t num_samples);
+
   // Reports that |num_samples| were lost.
   void LostSamples(size_t num_samples);
 
@@ -165,6 +168,7 @@ class StatisticsCalculator {
   uint32_t timestamps_since_last_report_;
   std::deque<int> waiting_times_;
   uint32_t secondary_decoded_samples_;
+  size_t discarded_secondary_packets_;
   PeriodicUmaCount delayed_packet_outage_counter_;
   PeriodicUmaAverage excess_buffer_delay_;
 
