@@ -740,10 +740,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     RTC_DCHECK_GE(id, 1);
     RTC_DCHECK_LE(id, 14);
     RTC_DCHECK(RtpExtension::IsSupportedForVideo(extension));
-    if (StringToRtpExtensionType(extension) == kRtpExtensionVideoContentType &&
-        !field_trial::IsEnabled("WebRTC-VideoContentTypeExtension")) {
-      continue;
-    }
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
       RTC_CHECK_EQ(0, rtp_rtcp->RegisterSendRtpHeaderExtension(
                           StringToRtpExtensionType(extension), id));
