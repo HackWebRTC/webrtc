@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
 
+#include "webrtc/modules/desktop_capture/win/scoped_gdi_object.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/win32.h"
 
@@ -96,6 +97,20 @@ bool GetWindowContentRect(HWND window, DesktopRect* result) {
   }
 
   return true;
+}
+
+int GetWindowRegionTypeWithBoundary(HWND window, DesktopRect* result) {
+  win::ScopedGDIObject<HRGN, win::DeleteObjectTraits<HRGN>>
+      scoped_hrgn(CreateRectRgn(0, 0, 0, 0));
+  const int region_type = GetWindowRgn(window, scoped_hrgn.Get());
+
+  if (region_type == SIMPLEREGION) {
+    RECT rect;
+    GetRgnBox(scoped_hrgn.Get(), &rect);
+    *result = DesktopRect::MakeLTRB(
+        rect.left, rect.top, rect.right, rect.bottom);
+  }
+  return region_type;
 }
 
 AeroChecker::AeroChecker() : dwmapi_library_(nullptr), func_(nullptr) {

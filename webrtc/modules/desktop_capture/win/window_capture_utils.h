@@ -37,6 +37,10 @@ bool GetCroppedWindowRect(HWND window,
 // APIs fail.
 bool GetWindowContentRect(HWND window, DesktopRect* result);
 
+// Returns the region type of the |window| and fill |rect| with the region of
+// |window| if region type is SIMPLEREGION.
+int GetWindowRegionTypeWithBoundary(HWND window, DesktopRect* result);
+
 typedef HRESULT (WINAPI *DwmIsCompositionEnabledFunc)(BOOL* enabled);
 class AeroChecker {
  public:
