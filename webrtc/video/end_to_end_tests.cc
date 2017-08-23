@@ -831,6 +831,8 @@ class FlexfecRenderObserver : public test::EndToEndTest,
   }
 
   void OnFrame(const VideoFrame& video_frame) override {
+    EXPECT_EQ(kVideoRotation_90, video_frame.rotation());
+
     rtc::CritScope lock(&crit_);
     // Rendering frame with timestamp of packet that was dropped -> FEC
     // protection worked.
@@ -866,6 +868,11 @@ class FlexfecRenderObserver : public test::EndToEndTest,
           .rtp.rtx_payload_types[test::CallTest::kVideoSendPayloadType] =
           test::CallTest::kSendRtxPayloadType;
     }
+  }
+
+  void OnFrameGeneratorCapturerCreated(
+      test::FrameGeneratorCapturer* frame_generator_capturer) override {
+    frame_generator_capturer->SetFakeRotation(kVideoRotation_90);
   }
 
   void ModifyFlexfecConfigs(
@@ -1133,6 +1140,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
     }
 
     void OnFrame(const VideoFrame& frame) override {
+      EXPECT_EQ(kVideoRotation_90, frame.rotation());
       {
         rtc::CritScope lock(&crit_);
         if (frame.timestamp() == retransmitted_timestamp_)
@@ -1183,6 +1191,11 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
       send_config->encoder_settings.encoder = encoder_.get();
       send_config->encoder_settings.payload_name = "VP8";
       (*receive_configs)[0].decoders[0].payload_name = "VP8";
+    }
+
+    void OnFrameGeneratorCapturerCreated(
+        test::FrameGeneratorCapturer* frame_generator_capturer) override {
+      frame_generator_capturer->SetFakeRotation(kVideoRotation_90);
     }
 
     void PerformTest() override {

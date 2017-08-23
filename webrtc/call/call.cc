@@ -1382,10 +1382,7 @@ PacketReceiver::DeliveryStatus Call::DeliverPacket(
   return DeliverRtp(media_type, packet, length, packet_time);
 }
 
-// TODO(brandtr): Update this member function when we support protecting
-// audio packets with FlexFEC.
 void Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
-  ReadLockScoped read_lock(*receive_crit_);
   rtc::Optional<RtpPacketReceived> parsed_packet =
       ParseRtpPacket(packet, length, nullptr);
   if (!parsed_packet)
@@ -1393,6 +1390,22 @@ void Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
 
   parsed_packet->set_recovered(true);
 
+  ReadLockScoped read_lock(*receive_crit_);
+  auto it = receive_rtp_config_.find(parsed_packet->Ssrc());
+  if (it == receive_rtp_config_.end()) {
+    LOG(LS_ERROR) << "receive_rtp_config_ lookup failed for ssrc "
+                  << parsed_packet->Ssrc();
+    // Destruction of the receive stream, including deregistering from the
+    // RtpDemuxer, is not protected by the |receive_crit_| lock. But
+    // deregistering in the |receive_rtp_config_| map is protected by that lock.
+    // So by not passing the packet on to demuxing in this case, we prevent
+    // incoming packets to be passed on via the demuxer to a receive stream
+    // which is being torned down.
+    return;
+  }
+  parsed_packet->IdentifyExtensions(it->second.extensions);
+
+  // TODO(brandtr): Update here when we support protecting audio packets too.
   video_receiver_controller_.OnRtpPacket(*parsed_packet);
 }
 
