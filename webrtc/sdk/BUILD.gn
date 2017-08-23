@@ -310,9 +310,15 @@ if (is_ios || is_mac) {
 
     rtc_static_library("objc_peerconnectionfactory") {
       sources = [
+        "objc/Framework/Classes/PeerConnection/RTCBuiltinAudioDecoderFactory.mm",
+        "objc/Framework/Classes/PeerConnection/RTCBuiltinAudioEncoderFactory.mm",
         "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory.mm",
         "objc/Framework/Classes/PeerConnection/RTCVideoCodecH264.mm",
+        "objc/Framework/Headers/WebRTC/RTCAudioDecoderFactory.h",
+        "objc/Framework/Headers/WebRTC/RTCAudioEncoderFactory.h",
+        "objc/Framework/Headers/WebRTC/RTCBuiltinAudioDecoderFactory.h",
+        "objc/Framework/Headers/WebRTC/RTCBuiltinAudioEncoderFactory.h",
       ]
 
       public_configs = [ ":objc_common_config" ]
@@ -331,6 +337,8 @@ if (is_ios || is_mac) {
         ":objc_videotoolbox",
         ":objc_videotracksource",
         "../api:video_frame_api",
+        "../api/audio_codecs:builtin_audio_decoder_factory",
+        "../api/audio_codecs:builtin_audio_encoder_factory",
         "../api/video_codecs:video_codecs_api",
         "../media:rtc_audio_video",
         "../media:rtc_media_base",
@@ -569,15 +577,16 @@ if (is_ios || is_mac) {
       ios_framework_bundle("objc_framework") {
         info_plist = "objc/Framework/Info.plist"
         output_name = "WebRTC"
-
         common_objc_headers = [
-          "objc/Framework/Headers/WebRTC/RTCAudioSession.h",
-          "objc/Framework/Headers/WebRTC/RTCVideoCodec.h",
-          "objc/Framework/Headers/WebRTC/RTCVideoCodecFactory.h",
-          "objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h",
           "objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h",
+          "objc/Framework/Headers/WebRTC/RTCAudioDecoderFactory.h",
+          "objc/Framework/Headers/WebRTC/RTCAudioEncoderFactory.h",
+          "objc/Framework/Headers/WebRTC/RTCAudioSession.h",
+          "objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h",
           "objc/Framework/Headers/WebRTC/RTCAudioSource.h",
           "objc/Framework/Headers/WebRTC/RTCAudioTrack.h",
+          "objc/Framework/Headers/WebRTC/RTCBuiltinAudioDecoderFactory.h",
+          "objc/Framework/Headers/WebRTC/RTCBuiltinAudioEncoderFactory.h",
           "objc/Framework/Headers/WebRTC/RTCCameraVideoCapturer.h",
           "objc/Framework/Headers/WebRTC/RTCCameraPreviewView.h",
           "objc/Framework/Headers/WebRTC/RTCConfiguration.h",
@@ -609,6 +618,8 @@ if (is_ios || is_mac) {
           "objc/Framework/Headers/WebRTC/RTCSessionDescription.h",
           "objc/Framework/Headers/WebRTC/RTCTracing.h",
           "objc/Framework/Headers/WebRTC/RTCVideoCapturer.h",
+          "objc/Framework/Headers/WebRTC/RTCVideoCodec.h",
+          "objc/Framework/Headers/WebRTC/RTCVideoCodecFactory.h",
           "objc/Framework/Headers/WebRTC/RTCVideoFrame.h",
           "objc/Framework/Headers/WebRTC/RTCVideoFrameBuffer.h",
           "objc/Framework/Headers/WebRTC/RTCVideoRenderer.h",
