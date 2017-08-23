@@ -4278,9 +4278,13 @@ TEST_F(EndToEndTest, MAYBE_TestFlexfecRtpStatePreservation) {
     rtc::CriticalSection crit_;
   } observer;
 
-  constexpr int kFrameMaxWidth = 320;
-  constexpr int kFrameMaxHeight = 180;
-  constexpr int kFrameRate = 15;
+  // These would have been declared as constexpr, but then some compilers
+  // require them to be captured in the lambda, and other compilers complain
+  // about no-ununused-lambda-capture. Keeping them as normal variables was
+  // the easiest work-around.
+  int kFrameMaxWidth = 320;
+  int kFrameMaxHeight = 180;
+  int kFrameRate = 15;
 
   Call::Config config(event_log_.get());
 

@@ -507,7 +507,7 @@ void AdaptiveFirFilter::Constrain() {
   std::array<float, kFftLength> h;
   fft_.Ifft(H_[partition_to_constrain_], &h);
 
-  constexpr float kScale = 1.0f / kFftLengthBy2;
+  const float kScale = 1.0f / kFftLengthBy2;
   std::for_each(h.begin(), h.begin() + kFftLengthBy2,
                 [kScale](float& a) { a *= kScale; });
   std::fill(h.begin() + kFftLengthBy2, h.end(), 0.f);

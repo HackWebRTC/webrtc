@@ -721,13 +721,13 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
 
   // Mock the session to return the local and remote certificates.
   EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
-      [this](const ChannelNamePairs&) {
+      [](const ChannelNamePairs&) {
         std::unique_ptr<SessionStats> stats(new SessionStats());
         stats->transport_stats["transport"].transport_name = "transport";
         return stats;
       }));
   EXPECT_CALL(test_->session(), GetLocalCertificate(_, _)).WillRepeatedly(
-      Invoke([this, &local_certinfo](const std::string& transport_name,
+      Invoke([&local_certinfo](const std::string& transport_name,
              rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
         if (transport_name == "transport") {
           *certificate = local_certinfo->certificate;
@@ -737,7 +737,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
       }));
   EXPECT_CALL(test_->session(),
       GetRemoteSSLCertificate_ReturnsRawPointer(_)).WillRepeatedly(Invoke(
-      [this, &remote_certinfo](const std::string& transport_name) {
+      [&remote_certinfo](const std::string& transport_name) {
         if (transport_name == "transport")
           return remote_certinfo->certificate->ssl_certificate().GetReference();
         return static_cast<rtc::SSLCertificate*>(nullptr);
@@ -892,14 +892,14 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
 
   // Mock the session to return the local and remote certificates.
   EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
-      [this](const ChannelNamePairs&) {
+      [](const ChannelNamePairs&) {
         std::unique_ptr<SessionStats> stats(new SessionStats());
         stats->transport_stats["audio"].transport_name = "audio";
         stats->transport_stats["video"].transport_name = "video";
         return stats;
       }));
   EXPECT_CALL(test_->session(), GetLocalCertificate(_, _)).WillRepeatedly(
-      Invoke([this, &audio_local_certinfo, &video_local_certinfo](
+      Invoke([&audio_local_certinfo, &video_local_certinfo](
             const std::string& transport_name,
             rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
         if (transport_name == "audio") {
@@ -914,7 +914,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
       }));
   EXPECT_CALL(test_->session(),
       GetRemoteSSLCertificate_ReturnsRawPointer(_)).WillRepeatedly(Invoke(
-      [this, &audio_remote_certinfo, &video_remote_certinfo](
+      [&audio_remote_certinfo, &video_remote_certinfo](
           const std::string& transport_name) {
         if (transport_name == "audio") {
           return audio_remote_certinfo->certificate->ssl_certificate()
@@ -952,13 +952,13 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
 
   // Mock the session to return the local and remote certificates.
   EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
-      [this](const ChannelNamePairs&) {
+      [](const ChannelNamePairs&) {
         std::unique_ptr<SessionStats> stats(new SessionStats());
         stats->transport_stats["transport"].transport_name = "transport";
         return stats;
       }));
   EXPECT_CALL(test_->session(), GetLocalCertificate(_, _)).WillRepeatedly(
-      Invoke([this, &local_certinfo](const std::string& transport_name,
+      Invoke([&local_certinfo](const std::string& transport_name,
              rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
         if (transport_name == "transport") {
           *certificate = local_certinfo->certificate;
@@ -968,7 +968,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
       }));
   EXPECT_CALL(test_->session(),
       GetRemoteSSLCertificate_ReturnsRawPointer(_)).WillRepeatedly(Invoke(
-      [this, &remote_certinfo](const std::string& transport_name) {
+      [&remote_certinfo](const std::string& transport_name) {
         if (transport_name == "transport")
           return remote_certinfo->certificate->ssl_certificate().GetReference();
         return static_cast<rtc::SSLCertificate*>(nullptr);
@@ -2278,7 +2278,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
       CreateFakeCertificateAndInfoFromDers(
           std::vector<std::string>({ "(remote) local", "(remote) chain" }));
   EXPECT_CALL(test_->session(), GetLocalCertificate(_, _)).WillRepeatedly(
-    Invoke([this, &local_certinfo](const std::string& transport_name,
+    Invoke([&local_certinfo](const std::string& transport_name,
            rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
       if (transport_name == "transport") {
         *certificate = local_certinfo->certificate;
@@ -2288,7 +2288,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
     }));
   EXPECT_CALL(test_->session(),
       GetRemoteSSLCertificate_ReturnsRawPointer(_)).WillRepeatedly(Invoke(
-      [this, &remote_certinfo](const std::string& transport_name) {
+      [&remote_certinfo](const std::string& transport_name) {
         if (transport_name == "transport")
           return remote_certinfo->certificate->ssl_certificate().GetReference();
         return static_cast<rtc::SSLCertificate*>(nullptr);

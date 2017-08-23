@@ -337,7 +337,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
       delay_buffer.Delay(x[0], y);
 
       RandomizeSampleVector(&random_generator, n);
-      constexpr float kNoiseScaling = 1.f / 100.f;
+      const float kNoiseScaling = 1.f / 100.f;
       std::transform(
           y.begin(), y.end(), n.begin(), y.begin(),
           [kNoiseScaling](float a, float b) { return a + b * kNoiseScaling; });
