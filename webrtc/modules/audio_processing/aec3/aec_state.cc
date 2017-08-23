@@ -175,7 +175,7 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
       (!echo_saturation_) &&
       (!render_received_ ||
        blocks_with_filter_adaptation_ > kEchoPathChangeConvergenceBlocks) &&
-      filter_delay_ && echo_path_change_counter_ <= 0;
+      filter_delay_ && echo_path_change_counter_ <= 0 && external_delay_;
 
   // After an amount of active render samples for which an echo should have been
   // detected in the capture signal if the ERL was not infinite, flag that a
