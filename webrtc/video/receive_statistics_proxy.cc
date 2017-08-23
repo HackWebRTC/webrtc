@@ -43,6 +43,9 @@ const int kHighQpThresholdVp8 = 70;
 const int kLowVarianceThreshold = 1;
 const int kHighVarianceThreshold = 2;
 
+// Some metrics are reported as a maximum over this period.
+const int kMovingMaxWindowMs = 10000;
+
 // How large window we use to calculate the framerate/bitrate.
 const int kRateStatisticsWindowSizeMs = 1000;
 }  // namespace
@@ -78,6 +81,7 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       e2e_delay_max_ms_screenshare_(-1),
       interframe_delay_max_ms_video_(-1),
       interframe_delay_max_ms_screenshare_(-1),
+      interframe_delay_max_moving_(kMovingMaxWindowMs),
       freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs),
       first_report_block_time_ms_(-1),
       avg_rtt_ms_(0),
@@ -394,6 +398,8 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   stats_.decode_frame_rate = decode_fps_estimator_.Rate(now_ms).value_or(0);
   stats_.total_bitrate_bps =
       static_cast<int>(total_byte_tracker_.ComputeRate() * 8);
+  stats_.interframe_delay_max_ms =
+      interframe_delay_max_moving_.Max(now_ms).value_or(-1);
   return stats_;
 }
 
@@ -544,7 +550,7 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
   if (last_decoded_frame_time_ms_) {
     int64_t interframe_delay_ms = now - *last_decoded_frame_time_ms_;
     RTC_DCHECK_GE(interframe_delay_ms, 0);
-    stats_.interframe_delay_sum_ms += interframe_delay_ms;
+    interframe_delay_max_moving_.Add(interframe_delay_ms, now);
     if (last_content_type_ == VideoContentType::SCREENSHARE) {
       interframe_delay_counter_screenshare_.Add(interframe_delay_ms);
       if (interframe_delay_max_ms_screenshare_ < interframe_delay_ms) {

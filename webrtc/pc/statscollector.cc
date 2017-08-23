@@ -268,8 +268,8 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
                       info.timing_frame_info->ToString());
   }
 
-  report->AddInt64(StatsReport::kStatsValueNameInterframeDelaySumMs,
-                   info.interframe_delay_sum_ms);
+  report->AddInt64(StatsReport::kStatsValueNameInterframeDelayMaxMs,
+                   info.interframe_delay_max_ms);
 }
 
 void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {

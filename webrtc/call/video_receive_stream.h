@@ -75,7 +75,7 @@ class VideoReceiveStream {
     int jitter_buffer_ms = 0;
     int min_playout_delay_ms = 0;
     int render_delay_ms = 10;
-    uint64_t interframe_delay_sum_ms = 0;
+    int64_t interframe_delay_max_ms = -1;
     uint32_t frames_decoded = 0;
     rtc::Optional<uint64_t> qp_sum;
 

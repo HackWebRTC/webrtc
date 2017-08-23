@@ -107,7 +107,7 @@ class StatsReport {
     kStatsValueNameDataChannelId,
     kStatsValueNameFramesDecoded,
     kStatsValueNameFramesEncoded,
-    kStatsValueNameInterframeDelaySumMs,
+    kStatsValueNameInterframeDelayMaxMs,  // Max over last 10 seconds.
     kStatsValueNameMediaType,
     kStatsValueNamePacketsLost,
     kStatsValueNamePacketsReceived,

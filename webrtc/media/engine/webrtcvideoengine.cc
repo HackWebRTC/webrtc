@@ -2464,7 +2464,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   info.frames_rendered = stats.frames_rendered;
   info.qp_sum = stats.qp_sum;
 
-  info.interframe_delay_sum_ms = stats.interframe_delay_sum_ms;
+  info.interframe_delay_max_ms = stats.interframe_delay_max_ms;
 
   info.codec_name = GetCodecNameFromPayloadType(stats.current_payload_type);
 

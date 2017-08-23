@@ -19,6 +19,7 @@
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/moving_max_counter.h"
 #include "webrtc/rtc_base/rate_statistics.h"
 #include "webrtc/rtc_base/ratetracker.h"
 #include "webrtc/rtc_base/thread_annotations.h"
@@ -155,6 +156,8 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   int64_t e2e_delay_max_ms_screenshare_ GUARDED_BY(crit_);
   int64_t interframe_delay_max_ms_video_  GUARDED_BY(crit_);
   int64_t interframe_delay_max_ms_screenshare_  GUARDED_BY(crit_);
+  mutable rtc::MovingMaxCounter<int> interframe_delay_max_moving_
+      GUARDED_BY(crit_);
   MaxCounter freq_offset_counter_ GUARDED_BY(crit_);
   int64_t first_report_block_time_ms_ GUARDED_BY(crit_);
   ReportBlockStats report_block_stats_ GUARDED_BY(crit_);
