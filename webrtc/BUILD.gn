@@ -179,6 +179,15 @@ config("common_config") {
         "-Winconsistent-missing-override",
         "-Wundef",
       ]
+
+      # use_xcode_clang only refers to the iOS toolchain, host binaries use
+      # chromium's clang always.
+      if (!is_nacl &&
+          (!use_xcode_clang || current_toolchain == host_toolchain)) {
+        # Flags NaCl (Clang 3.7) and Xcode 7.3 (Clang clang-703.0.31) do not
+        # recognize.
+        cflags += [ "-Wunused-lambda-capture" ]
+      }
     }
   }
 
