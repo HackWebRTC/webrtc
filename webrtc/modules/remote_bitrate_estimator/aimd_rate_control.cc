@@ -136,13 +136,12 @@ int AimdRateControl::GetNearMaxIncreaseRateBps() const {
 }
 
 int AimdRateControl::GetExpectedBandwidthPeriodMs() const {
-  constexpr int kMinPeriodMs = 2000;
-  constexpr int kDefaultPeriodMs = 3000;
+  constexpr int kMinPeriodMs = 500;
   constexpr int kMaxPeriodMs = 50000;
 
   int increase_rate = GetNearMaxIncreaseRateBps();
   if (!last_decrease_)
-    return kDefaultPeriodMs;
+    return kMinPeriodMs;
 
   return std::min(kMaxPeriodMs,
                   std::max<int>(1000 * static_cast<int64_t>(*last_decrease_) /
@@ -211,8 +210,17 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
 
       if (bitrate_is_initialized_ &&
           incoming_bitrate_bps < current_bitrate_bps_) {
-        last_decrease_ =
-            rtc::Optional<int>(current_bitrate_bps_ - new_bitrate_bps);
+        constexpr float kDegradationFactor = 0.9f;
+        if (new_bitrate_bps <
+            kDegradationFactor * beta_ * current_bitrate_bps_) {
+          // If bitrate decreases more than a normal back off after overuse, it
+          // indicates a real network degradation. We do not let such a decrease
+          // to determine the bandwidth estimation period.
+          last_decrease_ = rtc::Optional<int>();
+        } else {
+          last_decrease_ = rtc::Optional<int>(
+              current_bitrate_bps_ - new_bitrate_bps);
+        }
       }
       if (incoming_bitrate_kbps <
           avg_max_bitrate_kbps_ - 3 * std_max_bit_rate) {
