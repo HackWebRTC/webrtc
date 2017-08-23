@@ -14,7 +14,11 @@
 
 #import <UIKit/UIKit.h>
 
+#include "webrtc/rtc_base/checks.h"
+
 @implementation RTCUIApplicationStatusObserver {
+  BOOL _initialized;
+  dispatch_block_t _initializeBlock;
   UIApplicationState _state;
 }
 
@@ -45,21 +49,24 @@
                       _state = [UIApplication sharedApplication].applicationState;
                     }];
 
-    dispatch_block_t initializeBlock = ^{
+    _initialized = NO;
+    _initializeBlock = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, ^{
       _state = [UIApplication sharedApplication].applicationState;
-    };
+      _initialized = YES;
+    });
 
-    if ([NSThread isMainThread]) {
-      initializeBlock();
-    } else {
-      dispatch_sync(dispatch_get_main_queue(), initializeBlock);
-    }
+    dispatch_async(dispatch_get_main_queue(), _initializeBlock);
   }
 
   return self;
 }
 
 - (BOOL)isApplicationActive {
+  if (!_initialized) {
+    long ret =
+        dispatch_block_wait(_initializeBlock, dispatch_time(DISPATCH_TIME_NOW, 1.0 * NSEC_PER_SEC));
+    RTC_CHECK_EQ(ret, 0);
+  }
   return _state == UIApplicationStateActive;
 }
 
