@@ -1479,6 +1479,7 @@ void MediaCodecVideoEncoderFactory::DestroyVideoEncoder(
 
 JOW(void, MediaCodecVideoEncoder_nativeFillBuffer)
 (JNIEnv* jni,
+ jclass,
  jlong native_encoder,
  jint input_buffer,
  jobject j_buffer_y,

@@ -59,6 +59,9 @@ public class Camera1CapturerUsingByteBufferTest {
 
   @Before
   public void setUp() {
+    // Enable VideoFrame capture.
+    PeerConnectionFactory.initializeFieldTrials(PeerConnectionFactory.VIDEO_FRAME_EMIT_TRIAL + "/"
+        + PeerConnectionFactory.TRIAL_ENABLED + "/");
     fixtures = new CameraVideoCapturerTestFixtures(new TestObjectFactory());
   }
 

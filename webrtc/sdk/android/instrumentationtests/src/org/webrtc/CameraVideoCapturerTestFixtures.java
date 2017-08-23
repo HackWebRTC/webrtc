@@ -100,9 +100,7 @@ class CameraVideoCapturerTestFixtures {
 
   static private class FakeCapturerObserver implements CameraVideoCapturer.CapturerObserver {
     private int framesCaptured = 0;
-    private int frameSize = 0;
-    private int frameWidth = 0;
-    private int frameHeight = 0;
+    private VideoFrame videoFrame;
     final private Object frameLock = new Object();
     final private Object capturerStartLock = new Object();
     private boolean capturerStartResult = false;
@@ -126,32 +124,27 @@ class CameraVideoCapturerTestFixtures {
     @Override
     public void onByteBufferFrameCaptured(
         byte[] frame, int width, int height, int rotation, long timeStamp) {
-      synchronized (frameLock) {
-        ++framesCaptured;
-        frameSize = frame.length;
-        frameWidth = width;
-        frameHeight = height;
-        timestamps.add(timeStamp);
-        frameLock.notify();
-      }
+      throw new RuntimeException("onByteBufferFrameCaptured called");
     }
 
     @Override
     public void onTextureFrameCaptured(int width, int height, int oesTextureId,
         float[] transformMatrix, int rotation, long timeStamp) {
-      synchronized (frameLock) {
-        ++framesCaptured;
-        frameWidth = width;
-        frameHeight = height;
-        frameSize = 0;
-        timestamps.add(timeStamp);
-        frameLock.notify();
-      }
+      throw new RuntimeException("onTextureFrameCaptured called");
     }
 
     @Override
     public void onFrameCaptured(VideoFrame frame) {
-      // Empty on purpose.
+      synchronized (frameLock) {
+        ++framesCaptured;
+        if (videoFrame != null) {
+          videoFrame.release();
+        }
+        videoFrame = frame;
+        videoFrame.retain();
+        timestamps.add(videoFrame.getTimestampNs());
+        frameLock.notify();
+      }
     }
 
     public boolean waitForCapturerToStart() throws InterruptedException {
@@ -170,21 +163,24 @@ class CameraVideoCapturerTestFixtures {
       }
     }
 
-    int frameSize() {
-      synchronized (frameLock) {
-        return frameSize;
-      }
-    }
-
     int frameWidth() {
       synchronized (frameLock) {
-        return frameWidth;
+        return videoFrame.getBuffer().getWidth();
       }
     }
 
     int frameHeight() {
       synchronized (frameLock) {
-        return frameHeight;
+        return videoFrame.getBuffer().getHeight();
+      }
+    }
+
+    void releaseFrame() {
+      synchronized (frameLock) {
+        if (videoFrame != null) {
+          videoFrame.release();
+          videoFrame = null;
+        }
       }
     }
 
@@ -385,7 +381,7 @@ class CameraVideoCapturerTestFixtures {
     instance.capturer.stopCapture();
     instance.cameraEvents.waitForCameraClosed();
     instance.capturer.dispose();
-    instance.surfaceTextureHelper.returnTextureFrame();
+    instance.observer.releaseFrame();
     instance.surfaceTextureHelper.dispose();
   }
 
@@ -637,7 +633,7 @@ class CameraVideoCapturerTestFixtures {
     // Make sure camera is started and then stop it.
     assertTrue(capturerInstance.observer.waitForCapturerToStart());
     capturerInstance.capturer.stopCapture();
-    capturerInstance.surfaceTextureHelper.returnTextureFrame();
+    capturerInstance.observer.releaseFrame();
 
     // We can't change |capturer| at this point, but we should not crash.
     capturerInstance.capturer.switchCamera(null /* switchEventsHandler */);
@@ -687,13 +683,8 @@ class CameraVideoCapturerTestFixtures {
             + capturerInstance.format.height + "x" + capturerInstance.format.width);
       }
 
-      if (testObjectFactory.isCapturingToTexture()) {
-        assertEquals(0, capturerInstance.observer.frameSize());
-      } else {
-        assertTrue(capturerInstance.format.frameSize() <= capturerInstance.observer.frameSize());
-      }
       capturerInstance.capturer.stopCapture();
-      capturerInstance.surfaceTextureHelper.returnTextureFrame();
+      capturerInstance.observer.releaseFrame();
     }
     disposeCapturer(capturerInstance);
   }
@@ -710,7 +701,7 @@ class CameraVideoCapturerTestFixtures {
 
     startCapture(capturerInstance, 1);
     capturerInstance.observer.waitForCapturerToStart();
-    capturerInstance.surfaceTextureHelper.returnTextureFrame();
+    capturerInstance.observer.releaseFrame();
 
     capturerInstance.observer.waitForNextCapturedFrame();
     capturerInstance.capturer.stopCapture();
