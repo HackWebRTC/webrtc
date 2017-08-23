@@ -77,6 +77,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   bool TryReInitForcedFallbackEncoder();
   void ValidateSettingsForForcedFallback();
   bool IsForcedFallbackActive() const;
+  void MaybeModifyCodecForFallback();
 
   // Settings used in the last InitEncode call and used if a dynamic fallback to
   // software is required.
@@ -94,7 +95,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   uint32_t packet_loss_;
   int64_t rtt_;
 
-  const cricket::VideoCodec codec_;
+  cricket::VideoCodec codec_;
   webrtc::VideoEncoder* const encoder_;
 
   std::unique_ptr<webrtc::VideoEncoder> fallback_encoder_;

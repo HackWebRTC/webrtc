@@ -61,6 +61,7 @@ rtc_static_library("rtc_media_base") {
   defines = []
   libs = []
   deps = []
+  public_deps = []
   sources = [
     "base/adaptedvideotracksource.cc",
     "base/adaptedvideotracksource.h",
@@ -108,22 +109,21 @@ rtc_static_library("rtc_media_base") {
   include_dirs = []
   if (rtc_build_libyuv) {
     deps += [ "$rtc_libyuv_dir" ]
-    public_deps = [
-      "$rtc_libyuv_dir",
-    ]
+    public_deps += [ "$rtc_libyuv_dir" ]
   } else {
     # Need to add a directory normally exported by libyuv.
     include_dirs += [ "$rtc_libyuv_dir/include" ]
   }
 
   deps += [
-    ":rtc_h264_profile_id",
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../p2p",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
   ]
+
+  public_deps += [ ":rtc_h264_profile_id" ]
 
   if (is_nacl) {
     deps += [ "//native_client_sdk/src/libraries/nacl_io" ]

@@ -10,6 +10,7 @@
 
 #include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
 
+#include "webrtc/media/base/h264_profile_level_id.h"
 #include "webrtc/media/engine/internalencoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
 #include "webrtc/rtc_base/checks.h"
@@ -89,6 +90,7 @@ VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
 }
 
 bool VideoEncoderSoftwareFallbackWrapper::InitFallbackEncoder() {
+  MaybeModifyCodecForFallback();
   cricket::InternalEncoderFactory internal_factory;
   if (!FindMatchingCodec(internal_factory.supported_codecs(), codec_)) {
     LOG(LS_WARNING)
@@ -353,6 +355,15 @@ bool VideoEncoderSoftwareFallbackWrapper::ForcedFallbackParams::ShouldStop(
     const VideoCodec& codec) const {
   return bitrate_kbps >= high_kbps &&
          (codec.width * codec.height >= kMinPixelsStop);
+}
+
+void VideoEncoderSoftwareFallbackWrapper::MaybeModifyCodecForFallback() {
+  // We have a specific case for H264 ConstrainedBaseline because that is the
+  // only supported profile in Sw fallback.
+  if (!cricket::CodecNamesEq(codec_.name.c_str(), cricket::kH264CodecName))
+    return;
+  codec_.SetParam(cricket::kH264FmtpProfileLevelId,
+                  cricket::kH264ProfileLevelConstrainedBaseline);
 }
 
 }  // namespace webrtc
