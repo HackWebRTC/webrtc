@@ -706,14 +706,31 @@ if (is_ios || is_mac) {
       libs = [ "CoreVideo.framework" ]
     }
 
-    rtc_static_library("videotoolbox_objc") {
+    rtc_static_library("video_toolbox_cc") {
+      visibility = [ ":*" ]
       sources = [
-        "objc/Framework/Classes/VideoToolbox/RTCVideoDecoderH264.mm",
-        "objc/Framework/Classes/VideoToolbox/RTCVideoEncoderH264.mm",
         "objc/Framework/Classes/VideoToolbox/helpers.cc",
         "objc/Framework/Classes/VideoToolbox/helpers.h",
         "objc/Framework/Classes/VideoToolbox/nalu_rewriter.cc",
         "objc/Framework/Classes/VideoToolbox/nalu_rewriter.h",
+      ]
+      deps = [
+        "../common_video",
+        "../modules:module_api",
+        "../modules/video_coding:webrtc_h264",
+        "../rtc_base:rtc_base_approved",
+      ]
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin
+        # (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+    }
+
+    rtc_static_library("videotoolbox_objc") {
+      sources = [
+        "objc/Framework/Classes/VideoToolbox/RTCVideoDecoderH264.mm",
+        "objc/Framework/Classes/VideoToolbox/RTCVideoEncoderH264.mm",
         "objc/Framework/Classes/VideoToolbox/objc_video_decoder_factory.h",
         "objc/Framework/Classes/VideoToolbox/objc_video_decoder_factory.mm",
         "objc/Framework/Classes/VideoToolbox/objc_video_encoder_factory.h",
@@ -726,6 +743,7 @@ if (is_ios || is_mac) {
       deps = [
         ":common_objc",
         ":video_objc",
+        ":video_toolbox_cc",
         ":videotracksource_objc",
         "../api/video_codecs:video_codecs_api",
         "../common_video",
