@@ -144,7 +144,8 @@ void ResidualEchoEstimator::Estimate(
   }
 
   // If the echo is deemed inaudible, set the residual echo to zero.
-  if (aec_state.InaudibleEcho()) {
+  if (aec_state.InaudibleEcho() &&
+      (aec_state.ExternalDelay() || aec_state.HeadsetDetected())) {
     R2->fill(0.f);
   }
 
