@@ -67,7 +67,7 @@ class DesktopFrameWithCursor : public DesktopFrame {
   ~DesktopFrameWithCursor() override;
 
  private:
-  std::unique_ptr<DesktopFrame> original_frame_;
+  const std::unique_ptr<DesktopFrame> original_frame_;
 
   DesktopVector restore_position_;
   std::unique_ptr<DesktopFrame> restore_frame_;
@@ -79,15 +79,12 @@ DesktopFrameWithCursor::DesktopFrameWithCursor(
     std::unique_ptr<DesktopFrame> frame,
     const MouseCursor& cursor,
     const DesktopVector& position)
-    : DesktopFrame(frame->rect(),
+    : DesktopFrame(frame->size(),
                    frame->stride(),
                    frame->data(),
-                   frame->shared_memory()) {
-  set_dpi(frame->dpi());
-  set_capture_time_ms(frame->capture_time_ms());
-  set_capturer_id(frame->capturer_id());
-  mutable_updated_region()->Swap(frame->mutable_updated_region());
-  original_frame_ = std::move(frame);
+                   frame->shared_memory()),
+      original_frame_(std::move(frame)) {
+  MoveFrameInfoFrom(original_frame_.get());
 
   DesktopVector image_pos = position.subtract(cursor.hotspot());
   DesktopRect target_rect = DesktopRect::MakeSize(cursor.image()->size());

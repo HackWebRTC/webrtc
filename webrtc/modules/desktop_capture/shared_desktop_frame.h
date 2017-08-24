@@ -31,8 +31,14 @@ class SharedDesktopFrame : public DesktopFrame {
   // TODO(sergeyu): remove this method.
   static SharedDesktopFrame* Wrap(DesktopFrame* desktop_frame);
 
+  // Deprecated. Clients do not need to know the underlying DesktopFrame
+  // instance.
+  // TODO(zijiehe): Remove this method.
   // Returns the underlying instance of DesktopFrame.
   DesktopFrame* GetUnderlyingFrame();
+
+  // Returns whether |this| and |other| share the underlying DesktopFrame.
+  bool ShareFrameWith(const SharedDesktopFrame& other) const;
 
   // Creates a clone of this object.
   std::unique_ptr<SharedDesktopFrame> Share();
@@ -46,7 +52,7 @@ class SharedDesktopFrame : public DesktopFrame {
 
   SharedDesktopFrame(rtc::scoped_refptr<Core> core);
 
-  rtc::scoped_refptr<Core> core_;
+  const rtc::scoped_refptr<Core> core_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SharedDesktopFrame);
 };

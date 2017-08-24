@@ -31,14 +31,12 @@ class DesktopFrame {
   virtual ~DesktopFrame();
 
   // Size of the frame.
-  DesktopSize size() const { return rect_.size(); }
+  const DesktopSize& size() const { return size_; }
 
   // The top-left of the frame in full desktop coordinates. E.g. the top left
   // monitor should start from (0, 0).
-  DesktopVector top_left() const { return rect_.top_left(); }
-
-  // Rectangle covered by the frame.
-  const DesktopRect& rect() const { return rect_; }
+  const DesktopVector& top_left() const { return top_left_; }
+  void set_top_left(const DesktopVector& top_left) { top_left_ = top_left; }
 
   // Distance in the buffer between two neighboring rows in bytes.
   int stride() const { return stride_; }
@@ -84,18 +82,26 @@ class DesktopFrame {
     capturer_id_ = capturer_id;
   }
 
- protected:
-  // Deprecated, use the constructor below.
-  // TODO(zijiehe): Remove deprecated constructors. DesktopFrame should describe
-  // its own position in the system. See
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=7950
-  DesktopFrame(DesktopSize size,
-               int stride,
-               uint8_t* data,
-               SharedMemory* shared_memory);
+  // Copies various information from |other|. Anything initialized in
+  // constructor are not copied.
+  // This function is usually used when sharing a source DesktopFrame with
+  // several clients: the original DesktopFrame should be kept unchanged. For
+  // example, BasicDesktopFrame::CopyOf() and SharedDesktopFrame::Share().
+  void CopyFrameInfoFrom(const DesktopFrame& other);
 
-  // Preferred.
-  DesktopFrame(DesktopRect rect,
+  // Copies various information from |other|. Anything initialized in
+  // constructor are not copied. Not like CopyFrameInfoFrom() function, this
+  // function uses swap or move constructor to avoid data copy. It won't break
+  // the |other|, but some of its information may be missing after this
+  // operation. E.g. other->updated_region_;
+  // This function is usually used when wrapping a DesktopFrame: the wrapper
+  // instance takes the ownership of |other|, so other components cannot access
+  // |other| anymore. For example, CroppedDesktopFrame and
+  // DesktopFrameWithCursor.
+  void MoveFrameInfoFrom(DesktopFrame* other);
+
+ protected:
+  DesktopFrame(DesktopSize size,
                int stride,
                uint8_t* data,
                SharedMemory* shared_memory);
@@ -107,10 +113,11 @@ class DesktopFrame {
   SharedMemory* const shared_memory_;
 
  private:
-  const DesktopRect rect_;
+  const DesktopSize size_;
   const int stride_;
 
   DesktopRegion updated_region_;
+  DesktopVector top_left_;
   DesktopVector dpi_;
   int64_t capture_time_ms_;
   uint32_t capturer_id_;
@@ -121,15 +128,12 @@ class DesktopFrame {
 // A DesktopFrame that stores data in the heap.
 class BasicDesktopFrame : public DesktopFrame {
  public:
-  // Deprecated, use the next constructor.
   explicit BasicDesktopFrame(DesktopSize size);
-
-  // Preferred.
-  explicit BasicDesktopFrame(DesktopRect rect);
 
   ~BasicDesktopFrame() override;
 
   // Creates a BasicDesktopFrame that contains copy of |frame|.
+  // TODO(zijiehe): Return std::unique_ptr<DesktopFrame>
   static DesktopFrame* CopyOf(const DesktopFrame& frame);
 
  private:
@@ -142,14 +146,8 @@ class SharedMemoryDesktopFrame : public DesktopFrame {
   // May return nullptr if |shared_memory_factory| failed to create a
   // SharedMemory instance.
   // |shared_memory_factory| should not be nullptr.
-  // Deprecated, use the next Create() function.
   static std::unique_ptr<DesktopFrame> Create(
       DesktopSize size,
-      SharedMemoryFactory* shared_memory_factory);
-
-  // Preferred.
-  static std::unique_ptr<DesktopFrame> Create(
-      DesktopRect rect,
       SharedMemoryFactory* shared_memory_factory);
 
   // Takes ownership of |shared_memory|.
@@ -159,7 +157,7 @@ class SharedMemoryDesktopFrame : public DesktopFrame {
                            SharedMemory* shared_memory);
 
   // Preferred.
-  SharedMemoryDesktopFrame(DesktopRect rect,
+  SharedMemoryDesktopFrame(DesktopSize size,
                            int stride,
                            std::unique_ptr<SharedMemory> shared_memory);
 
