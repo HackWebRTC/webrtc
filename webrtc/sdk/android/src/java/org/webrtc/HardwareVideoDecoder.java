@@ -18,7 +18,7 @@ import android.os.SystemClock;
 import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Deque;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.webrtc.ThreadUtils.ThreadChecker;
 
@@ -64,11 +64,12 @@ class HardwareVideoDecoder
     }
   }
 
-  private final Deque<FrameInfo> frameInfos;
+  private final BlockingDeque<FrameInfo> frameInfos;
   private int colorFormat;
 
   // Output thread runs a loop which polls MediaCodec for decoded output buffers.  It reformats
-  // those buffers into VideoFrames and delivers them to the callback.
+  // those buffers into VideoFrames and delivers them to the callback.  Variable is set on decoder
+  // thread and is immutable while the codec is running.
   private Thread outputThread;
 
   // Checker that ensures work is run on the output thread.
@@ -94,12 +95,15 @@ class HardwareVideoDecoder
   private int sliceHeight;
 
   // Whether the decoder has finished the first frame.  The codec may not change output dimensions
-  // after delivering the first frame.
+  // after delivering the first frame.  Only accessed on the output thread while the decoder is
+  // running.
   private boolean hasDecodedFirstFrame;
-  // Whether the decoder has seen a key frame.  The first frame must be a key frame.
+  // Whether the decoder has seen a key frame.  The first frame must be a key frame.  Only accessed
+  // on the decoder thread.
   private boolean keyFrameRequired;
 
   private final EglBase.Context sharedContext;
+  // Valid and immutable while the decoder is running.
   private SurfaceTextureHelper surfaceTextureHelper;
   private Surface surface = null;
 
@@ -124,9 +128,11 @@ class HardwareVideoDecoder
   // thread.
   private DecodedTextureMetadata renderedTextureMetadata;
 
-  // Decoding proceeds asynchronously.  This callback returns decoded frames to the caller.
+  // Decoding proceeds asynchronously.  This callback returns decoded frames to the caller.  Valid
+  // and immutable while the decoder is running.
   private Callback callback;
 
+  // Valid and immutable while the decoder is running.
   private MediaCodec codec = null;
 
   HardwareVideoDecoder(
@@ -144,11 +150,20 @@ class HardwareVideoDecoder
   @Override
   public VideoCodecStatus initDecode(Settings settings, Callback callback) {
     this.decoderThreadChecker = new ThreadChecker();
-    return initDecodeInternal(settings.width, settings.height, callback);
+
+    this.callback = callback;
+    if (sharedContext != null) {
+      surfaceTextureHelper = SurfaceTextureHelper.create("decoder-texture-thread", sharedContext);
+      surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
+      surfaceTextureHelper.startListening(this);
+    }
+    return initDecodeInternal(settings.width, settings.height);
   }
 
-  private VideoCodecStatus initDecodeInternal(int width, int height, Callback callback) {
+  // Internal variant is used when restarting the codec due to reconfiguration.
+  private VideoCodecStatus initDecodeInternal(int width, int height) {
     decoderThreadChecker.checkIsOnValidThread();
+    Logging.d(TAG, "initDecodeInternal");
     if (outputThread != null) {
       Logging.e(TAG, "initDecodeInternal called while the codec is already running");
       return VideoCodecStatus.ERROR;
@@ -156,7 +171,6 @@ class HardwareVideoDecoder
 
     // Note:  it is not necessary to initialize dimensions under the lock, since the output thread
     // is not running.
-    this.callback = callback;
     this.width = width;
     this.height = height;
 
@@ -175,10 +189,6 @@ class HardwareVideoDecoder
       MediaFormat format = MediaFormat.createVideoFormat(codecType.mimeType(), width, height);
       if (sharedContext == null) {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat);
-      } else {
-        surfaceTextureHelper = SurfaceTextureHelper.create("decoder-texture-thread", sharedContext);
-        surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
-        surfaceTextureHelper.startListening(this);
       }
       codec.configure(format, surface, null, 0);
       codec.start();
@@ -187,11 +197,11 @@ class HardwareVideoDecoder
       release();
       return VideoCodecStatus.ERROR;
     }
-
     running = true;
     outputThread = createOutputThread();
     outputThread.start();
 
+    Logging.d(TAG, "initDecodeInternal done");
     return VideoCodecStatus.OK;
   }
 
@@ -199,6 +209,7 @@ class HardwareVideoDecoder
   public VideoCodecStatus decode(EncodedImage frame, DecodeInfo info) {
     decoderThreadChecker.checkIsOnValidThread();
     if (codec == null || callback == null) {
+      Logging.d(TAG, "decode uninitalized, codec: " + codec + ", callback: " + callback);
       return VideoCodecStatus.UNINITIALIZED;
     }
 
@@ -299,6 +310,22 @@ class HardwareVideoDecoder
     // TODO(sakal): This is not called on the correct thread but is still called synchronously.
     // Re-enable the check once this is called on the correct thread.
     // decoderThreadChecker.checkIsOnValidThread();
+    Logging.d(TAG, "release");
+    VideoCodecStatus status = releaseInternal();
+    if (surface != null) {
+      surface.release();
+      surface = null;
+      surfaceTextureHelper.stopListening();
+      surfaceTextureHelper.dispose();
+      surfaceTextureHelper = null;
+    }
+    callback = null;
+    frameInfos.clear();
+    return status;
+  }
+
+  // Internal variant is used when restarting the codec due to reconfiguration.
+  private VideoCodecStatus releaseInternal() {
     if (!running) {
       Logging.d(TAG, "release: Decoder is not running.");
       return VideoCodecStatus.OK;
@@ -320,27 +347,18 @@ class HardwareVideoDecoder
       }
     } finally {
       codec = null;
-      callback = null;
       outputThread = null;
-      frameInfos.clear();
-      if (surface != null) {
-        surface.release();
-        surface = null;
-        surfaceTextureHelper.stopListening();
-        surfaceTextureHelper.dispose();
-        surfaceTextureHelper = null;
-      }
     }
     return VideoCodecStatus.OK;
   }
 
   private VideoCodecStatus reinitDecode(int newWidth, int newHeight) {
     decoderThreadChecker.checkIsOnValidThread();
-    VideoCodecStatus status = release();
+    VideoCodecStatus status = releaseInternal();
     if (status != VideoCodecStatus.OK) {
       return status;
     }
-    return initDecodeInternal(newWidth, newHeight, callback);
+    return initDecodeInternal(newWidth, newHeight);
   }
 
   private Thread createOutputThread() {
@@ -646,10 +664,6 @@ class HardwareVideoDecoder
       // Propagate exceptions caught during release back to the main thread.
       shutdownException = e;
     }
-    codec = null;
-    callback = null;
-    outputThread = null;
-    frameInfos.clear();
     Logging.d(TAG, "Release on output thread done");
   }
 
