@@ -17,6 +17,7 @@
 #include "webrtc/api/call/transport.h"
 #include "webrtc/call/call.h"
 #include "webrtc/rtc_base/sequenced_task_checker.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/test/fake_network_pipe.h"
 #include "webrtc/test/single_threaded_task_queue.h"
 
@@ -27,6 +28,8 @@ class PacketReceiver;
 
 namespace test {
 
+// Objects of this class are expected to be allocated and destroyed  on the
+// same task-queue - the one that's passed in via the constructor.
 class DirectTransport : public Transport {
  public:
   RTC_DEPRECATED DirectTransport(
@@ -102,7 +105,8 @@ class DirectTransport : public Transport {
   // TODO(eladalon): Make |task_queue_| const.
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=8125
   SingleThreadedTaskQueueForTesting* task_queue_;
-  SingleThreadedTaskQueueForTesting::TaskId next_scheduled_task_;
+  SingleThreadedTaskQueueForTesting::TaskId next_scheduled_task_
+      GUARDED_BY(&sequence_checker_);
 
   FakeNetworkPipe fake_network_;
 
