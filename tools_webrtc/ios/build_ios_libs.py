@@ -162,7 +162,7 @@ def main():
   if args.build_type == 'static_only':
     gn_target_name = 'rtc_sdk_objc'
   elif args.build_type == 'framework':
-    gn_target_name = 'objc_framework'
+    gn_target_name = 'framework_objc'
     if not args.bitcode:
       gn_args.append('enable_dsyms=true')
     gn_args.append('enable_stripping=true')
