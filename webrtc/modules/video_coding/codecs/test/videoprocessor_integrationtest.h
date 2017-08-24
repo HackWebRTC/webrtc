@@ -199,8 +199,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
     if (visualization_params) {
       const std::string codec_name =
-          CodecTypeToPayloadName(config_.codec_settings.codecType)
-              .value_or("unknown");
+          CodecTypeToPayloadString(config_.codec_settings.codecType);
       const std::string implementation_type = config_.hw_codec ? "hw" : "sw";
       // clang-format off
       const std::string output_filename_base =

@@ -387,8 +387,7 @@ VideoStreamEncoder::VideoStreamEncoder(uint32_t number_of_cores,
       source_proxy_(new VideoSourceProxy(this)),
       sink_(nullptr),
       settings_(settings),
-      codec_type_(PayloadNameToCodecType(settings.payload_name)
-                      .value_or(VideoCodecType::kVideoCodecUnknown)),
+      codec_type_(PayloadStringToCodecType(settings.payload_name)),
       video_sender_(Clock::GetRealTimeClock(), this, this),
       overuse_detector_(
           overuse_detector.get()

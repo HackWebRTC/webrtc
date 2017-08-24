@@ -148,15 +148,10 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
 namespace {
 
 bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
-  rtc::Optional<VideoCodecType> codecType =
-      PayloadNameToCodecType(payload_name);
-  if (codecType &&
-      (*codecType == kVideoCodecVP8 || *codecType == kVideoCodecVP9)) {
+  const VideoCodecType codecType = PayloadStringToCodecType(payload_name);
+  if (codecType == kVideoCodecVP8 || codecType == kVideoCodecVP9) {
     return true;
   }
-  RTC_DCHECK((codecType && *codecType == kVideoCodecH264) ||
-             payload_name == "FAKE")
-      << "unknown payload_name " << payload_name;
   return false;
 }
 

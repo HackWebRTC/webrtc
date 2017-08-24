@@ -30,10 +30,8 @@
 - (instancetype)initWithNativeVideoCodec:(const webrtc::VideoCodec *)videoCodec {
   if (self = [super init]) {
     if (videoCodec) {
-      rtc::Optional<const char *> codecName = CodecTypeToPayloadName(videoCodec->codecType);
-      if (codecName) {
-        _name = [NSString stringWithUTF8String:codecName.value()];
-      }
+      const char *codecName = CodecTypeToPayloadString(videoCodec->codecType);
+      _name = [NSString stringWithUTF8String:codecName];
 
       _width = videoCodec->width;
       _height = videoCodec->height;

@@ -50,12 +50,8 @@ const char* GetUmaPrefix(VideoEncoderConfig::ContentType content_type) {
 
 HistogramCodecType PayloadNameToHistogramCodecType(
     const std::string& payload_name) {
-  rtc::Optional<VideoCodecType> codecType =
-      PayloadNameToCodecType(payload_name);
-  if (!codecType) {
-    return kVideoUnknown;
-  }
-  switch (*codecType) {
+  VideoCodecType codecType = PayloadStringToCodecType(payload_name);
+  switch (codecType) {
     case kVideoCodecVP8:
       return kVideoVp8;
     case kVideoCodecVP9:

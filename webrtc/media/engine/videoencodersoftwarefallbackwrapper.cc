@@ -27,8 +27,7 @@ bool EnableForcedFallback(const cricket::VideoCodec& codec) {
   if (!webrtc::field_trial::IsEnabled(kVp8ForceFallbackEncoderFieldTrial))
     return false;
 
-  return (PayloadNameToCodecType(codec.name).value_or(kVideoCodecUnknown) ==
-          kVideoCodecVP8);
+  return (PayloadStringToCodecType(codec.name) == kVideoCodecVP8);
 }
 
 bool IsForcedFallbackPossible(const VideoCodec& codec_settings) {

@@ -104,13 +104,9 @@ id<RTCVideoDecoderFactory> ObjCVideoDecoderFactory::wrapped_decoder_factory() co
 }
 
 VideoDecoder *ObjCVideoDecoderFactory::CreateVideoDecoder(VideoCodecType type) {
-  const rtc::Optional<const char *> codec_name = CodecTypeToPayloadName(type);
-  if (!codec_name) {
-    LOG(LS_ERROR) << "Invalid codec type: " << type;
-    return nullptr;
-  }
+  const char *codec_name = CodecTypeToPayloadString(type);
 
-  NSString *codecName = [NSString stringWithUTF8String:codec_name.value()];
+  NSString *codecName = [NSString stringWithUTF8String:codec_name];
   for (RTCVideoCodecInfo *codecInfo in decoder_factory_.supportedCodecs) {
     if ([codecName isEqualToString:codecInfo.name]) {
       id<RTCVideoDecoder> decoder = [decoder_factory_ createDecoder:codecInfo];

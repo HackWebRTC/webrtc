@@ -553,8 +553,7 @@ int32_t MediaCodecVideoEncoder::ProcessHWErrorOnEncode() {
 }
 
 VideoCodecType MediaCodecVideoEncoder::GetCodecType() const {
-  return webrtc::PayloadNameToCodecType(codec_.name)
-      .value_or(webrtc::kVideoCodecUnknown);
+  return webrtc::PayloadStringToCodecType(codec_.name);
 }
 
 int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,

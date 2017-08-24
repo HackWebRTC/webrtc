@@ -49,7 +49,7 @@ std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
 void PrintCodecSettings(const VideoCodec& codec_settings) {
   printf(" Codec settings:\n");
   printf("  Codec type        : %s\n",
-         CodecTypeToPayloadName(codec_settings.codecType).value_or("Unknown"));
+         CodecTypeToPayloadString(codec_settings.codecType));
   printf("  Start bitrate     : %d kbps\n", codec_settings.startBitrate);
   printf("  Max bitrate       : %d kbps\n", codec_settings.maxBitrate);
   printf("  Min bitrate       : %d kbps\n", codec_settings.minBitrate);
@@ -189,8 +189,7 @@ void VideoProcessor::Init() {
     printf(" Decoder implementation name: %s\n", decoder_name);
     if (strcmp(encoder_name, decoder_name) == 0) {
       printf(" Codec implementation name  : %s_%s\n",
-             CodecTypeToPayloadName(config_.codec_settings.codecType)
-                 .value_or("Unknown"),
+             CodecTypeToPayloadString(config_.codec_settings.codecType),
              encoder_->ImplementationName());
     }
     PrintCodecSettings(config_.codec_settings);

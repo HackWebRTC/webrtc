@@ -1730,8 +1730,7 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetCodec(
   parameters_.config.encoder_settings.payload_type = codec_settings.codec.id;
   if (new_encoder.external) {
     webrtc::VideoCodecType type =
-        webrtc::PayloadNameToCodecType(codec_settings.codec.name)
-            .value_or(webrtc::kVideoCodecUnknown);
+        webrtc::PayloadStringToCodecType(codec_settings.codec.name);
     parameters_.config.encoder_settings.internal_source =
         external_encoder_factory_->EncoderTypeHasInternalSource(type);
   } else {
@@ -2175,8 +2174,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::AllocatedDecoder
 WebRtcVideoChannel::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
     std::vector<AllocatedDecoder>* old_decoders,
     const VideoCodec& codec) {
-  webrtc::VideoCodecType type = webrtc::PayloadNameToCodecType(codec.name)
-                                    .value_or(webrtc::kVideoCodecUnknown);
+  webrtc::VideoCodecType type = webrtc::PayloadStringToCodecType(codec.name);
 
   for (size_t i = 0; i < old_decoders->size(); ++i) {
     if ((*old_decoders)[i].type == type) {

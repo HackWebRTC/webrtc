@@ -132,43 +132,50 @@ static bool CodecNamesEq(const char* name1, const char* name2) {
   return _stricmp(name1, name2) == 0;
 }
 
-rtc::Optional<const char*> CodecTypeToPayloadName(VideoCodecType type) {
+const char* CodecTypeToPayloadString(VideoCodecType type) {
   switch (type) {
     case kVideoCodecVP8:
-      return rtc::Optional<const char*>(kPayloadNameVp8);
+      return kPayloadNameVp8;
     case kVideoCodecVP9:
-      return rtc::Optional<const char*>(kPayloadNameVp9);
+      return kPayloadNameVp9;
     case kVideoCodecH264:
-      return rtc::Optional<const char*>(kPayloadNameH264);
+      return kPayloadNameH264;
     case kVideoCodecI420:
-      return rtc::Optional<const char*>(kPayloadNameI420);
+      return kPayloadNameI420;
     case kVideoCodecRED:
-      return rtc::Optional<const char*>(kPayloadNameRED);
+      return kPayloadNameRED;
     case kVideoCodecULPFEC:
-      return rtc::Optional<const char*>(kPayloadNameULPFEC);
-    case kVideoCodecGeneric:
-      return rtc::Optional<const char*>(kPayloadNameGeneric);
+      return kPayloadNameULPFEC;
     default:
-      return rtc::Optional<const char*>();
+      // Unrecognized codecs default to generic.
+      return kPayloadNameGeneric;
   }
 }
 
-rtc::Optional<VideoCodecType> PayloadNameToCodecType(const std::string& name) {
+VideoCodecType PayloadStringToCodecType(const std::string& name) {
   if (CodecNamesEq(name.c_str(), kPayloadNameVp8))
-    return rtc::Optional<VideoCodecType>(kVideoCodecVP8);
+    return kVideoCodecVP8;
   if (CodecNamesEq(name.c_str(), kPayloadNameVp9))
-    return rtc::Optional<VideoCodecType>(kVideoCodecVP9);
+    return kVideoCodecVP9;
   if (CodecNamesEq(name.c_str(), kPayloadNameH264))
-    return rtc::Optional<VideoCodecType>(kVideoCodecH264);
+    return kVideoCodecH264;
   if (CodecNamesEq(name.c_str(), kPayloadNameI420))
-    return rtc::Optional<VideoCodecType>(kVideoCodecI420);
+    return kVideoCodecI420;
   if (CodecNamesEq(name.c_str(), kPayloadNameRED))
-    return rtc::Optional<VideoCodecType>(kVideoCodecRED);
+    return kVideoCodecRED;
   if (CodecNamesEq(name.c_str(), kPayloadNameULPFEC))
-    return rtc::Optional<VideoCodecType>(kVideoCodecULPFEC);
-  if (CodecNamesEq(name.c_str(), kPayloadNameGeneric))
-    return rtc::Optional<VideoCodecType>(kVideoCodecGeneric);
-  return rtc::Optional<VideoCodecType>();
+    return kVideoCodecULPFEC;
+  return kVideoCodecGeneric;
+}
+
+// TODO(kthelgason): Remove these methods once upstream projects
+// have been updated.
+rtc::Optional<const char*> CodecTypeToPayloadName(VideoCodecType type) {
+  return rtc::Optional<const char*>(CodecTypeToPayloadString(type));
+}
+
+rtc::Optional<VideoCodecType> PayloadNameToCodecType(const std::string& name) {
+  return rtc::Optional<VideoCodecType>(PayloadStringToCodecType(name));
 }
 
 const uint32_t BitrateAllocation::kMaxBitrateBps =

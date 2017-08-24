@@ -30,10 +30,8 @@ webrtc::VideoDecoder* VideoDecoderFactoryWrapper::CreateVideoDecoder(
     webrtc::VideoCodecType type) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
-  rtc::Optional<const char*> type_payload =
-      webrtc::CodecTypeToPayloadName(type);
-  RTC_DCHECK(type_payload);
-  jstring name = jni->NewStringUTF(*type_payload);
+  const char* type_payload = webrtc::CodecTypeToPayloadString(type);
+  jstring name = jni->NewStringUTF(type_payload);
   jobject decoder =
       jni->CallObjectMethod(*decoder_factory_, create_decoder_method_, name);
   return decoder != nullptr ? new VideoDecoderWrapper(jni, decoder) : nullptr;

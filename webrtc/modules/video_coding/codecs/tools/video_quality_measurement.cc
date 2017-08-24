@@ -411,8 +411,7 @@ void PrintPythonOutput(const webrtc::test::TestConfig& config,
       ExcludeFrameTypesToStr(config.exclude_frame_types),
       config.frame_length_in_bytes, config.use_single_core ? "True " : "False",
       config.keyframe_interval,
-      CodecTypeToPayloadName(config.codec_settings.codecType)
-          .value_or("Unknown"),
+      CodecTypeToPayloadString(config.codec_settings.codecType),
       config.codec_settings.width, config.codec_settings.height,
       config.codec_settings.startBitrate);
   printf(
