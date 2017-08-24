@@ -27,8 +27,8 @@ rtc_static_library("rtc_p2p") {
     "base/basicpacketsocketfactory.h",
     "base/candidate.h",
     "base/common.h",
-    "base/dtlstransportchannel.cc",
-    "base/dtlstransportchannel.h",
+    "base/dtlstransport.cc",
+    "base/dtlstransport.h",
     "base/dtlstransportinternal.h",
     "base/icetransportinternal.h",
     "base/jseptransport.cc",
@@ -174,7 +174,7 @@ if (rtc_include_tests) {
     }
     sources = [
       "base/asyncstuntcpsocket_unittest.cc",
-      "base/dtlstransportchannel_unittest.cc",
+      "base/dtlstransport_unittest.cc",
       "base/jseptransport_unittest.cc",
       "base/p2ptransportchannel_unittest.cc",
       "base/packetlossestimator_unittest.cc",

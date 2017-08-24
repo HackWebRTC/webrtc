@@ -11,7 +11,7 @@
 #include <map>
 #include <memory>
 
-#include "webrtc/p2p/base/dtlstransportchannel.h"
+#include "webrtc/p2p/base/dtlstransport.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"

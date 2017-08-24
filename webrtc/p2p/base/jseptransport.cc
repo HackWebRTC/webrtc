@@ -14,7 +14,7 @@
 #include <utility>  // for std::pair
 
 #include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/dtlstransportchannel.h"
+#include "webrtc/p2p/base/dtlstransport.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 #include "webrtc/p2p/base/port.h"

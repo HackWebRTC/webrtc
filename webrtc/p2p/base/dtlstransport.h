@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_DTLSTRANSPORTCHANNEL_H_
-#define WEBRTC_P2P_BASE_DTLSTRANSPORTCHANNEL_H_
+#ifndef WEBRTC_P2P_BASE_DTLSTRANSPORT_H_
+#define WEBRTC_P2P_BASE_DTLSTRANSPORT_H_
 
 #include <memory>
 #include <string>
@@ -57,7 +57,6 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
 
   RTC_DISALLOW_COPY_AND_ASSIGN(StreamInterfaceChannel);
 };
-
 
 // This class provides a DTLS SSLStreamAdapter inside a TransportChannel-style
 // packet-based interface, wrapping an existing TransportChannel instance
@@ -116,7 +115,6 @@ class DtlsTransport : public DtlsTransportInternal {
                             const uint8_t* digest,
                             size_t digest_len) override;
 
-
   // Called to send a packet (via DTLS, if turned on).
   int SendPacket(const char* data,
                  size_t size,
@@ -152,11 +150,10 @@ class DtlsTransport : public DtlsTransportInternal {
                             bool use_context,
                             uint8_t* result,
                             size_t result_len) override {
-    return (dtls_.get()) ? dtls_->ExportKeyingMaterial(label, context,
-                                                       context_len,
-                                                       use_context,
-                                                       result, result_len)
-        : false;
+    return (dtls_.get())
+               ? dtls_->ExportKeyingMaterial(label, context, context_len,
+                                             use_context, result, result_len)
+               : false;
   }
 
   IceTransportInternal* ice_transport() override { return ice_transport_; }
@@ -217,7 +214,7 @@ class DtlsTransport : public DtlsTransportInternal {
   std::unique_ptr<rtc::SSLStreamAdapter> dtls_;  // The DTLS stream
   StreamInterfaceChannel*
       downward_;  // Wrapper for ice_transport_, owned by dtls_.
-  std::vector<int> srtp_ciphers_;     // SRTP ciphers to use with DTLS.
+  std::vector<int> srtp_ciphers_;  // SRTP ciphers to use with DTLS.
   bool dtls_active_ = false;
   rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
   rtc::SSLRole ssl_role_;
@@ -239,4 +236,4 @@ class DtlsTransport : public DtlsTransportInternal {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_DTLSTRANSPORTCHANNEL_H_
+#endif  // WEBRTC_P2P_BASE_DTLSTRANSPORT_H_

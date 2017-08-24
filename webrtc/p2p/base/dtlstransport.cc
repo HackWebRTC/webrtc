@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
 #include <memory>
 #include <utility>
 
-#include "webrtc/p2p/base/dtlstransportchannel.h"
+#include "webrtc/p2p/base/dtlstransport.h"
 
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/packettransportinternal.h"
@@ -62,9 +63,9 @@ StreamInterfaceChannel::StreamInterfaceChannel(
       packets_(kMaxPendingPackets, kMaxDtlsPacketLen) {}
 
 rtc::StreamResult StreamInterfaceChannel::Read(void* buffer,
-                                                     size_t buffer_len,
-                                                     size_t* read,
-                                                     int* error) {
+                                               size_t buffer_len,
+                                               size_t* read,
+                                               int* error) {
   if (state_ == rtc::SS_CLOSED)
     return rtc::SR_EOS;
   if (state_ == rtc::SS_OPENING)
@@ -78,9 +79,9 @@ rtc::StreamResult StreamInterfaceChannel::Read(void* buffer,
 }
 
 rtc::StreamResult StreamInterfaceChannel::Write(const void* data,
-                                                      size_t data_len,
-                                                      size_t* written,
-                                                      int* error) {
+                                                size_t data_len,
+                                                size_t* written,
+                                                int* error) {
   // Always succeeds, since this is an unreliable transport anyway.
   // TODO(zhihuang): Should this block if ice_transport_'s temporarily
   // unwritable?
@@ -328,7 +329,6 @@ bool DtlsTransport::GetSrtpCryptoSuite(int* cipher) {
 
   return dtls_->GetDtlsSrtpCryptoSuite(cipher);
 }
-
 
 // Called from upper layers to send a media packet.
 int DtlsTransport::SendPacket(const char* data,
@@ -671,8 +671,7 @@ void DtlsTransport::ConfigureHandshakeTimeout() {
     // Limit the timeout to a reasonable range in case the ICE RTT takes
     // extreme values.
     int initial_timeout = std::max(kMinHandshakeTimeout,
-                                   std::min(kMaxHandshakeTimeout,
-                                            2 * (*rtt)));
+                                   std::min(kMaxHandshakeTimeout, 2 * (*rtt)));
     LOG_J(LS_INFO, this) << "configuring DTLS handshake timeout "
                          << initial_timeout << " based on ICE RTT " << *rtt;
 
@@ -682,6 +681,5 @@ void DtlsTransport::ConfigureHandshakeTimeout() {
         << "no RTT estimate - using default DTLS handshake timeout";
   }
 }
-
 
 }  // namespace cricket

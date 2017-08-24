@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/dtlstransportchannel.h"
+#include "webrtc/p2p/base/dtlstransport.h"
 #include "webrtc/p2p/base/jseptransport.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 #include "webrtc/rtc_base/asyncinvoker.h"
