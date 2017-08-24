@@ -51,12 +51,6 @@ class Win32Filesystem : public FilesystemInterface {
                            const std::string& prefix) override;
 
   bool GetFileSize(const Pathname& path, size_t* size) override;
-
-  // A folder appropriate for storing temporary files (Contents are
-  // automatically deleted when the program exists)
-  bool GetTemporaryFolder(Pathname& path,
-                          bool create,
-                          const std::string* append) override;
 };
 
 }  // namespace rtc

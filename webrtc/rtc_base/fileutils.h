@@ -102,11 +102,6 @@ class FilesystemInterface {
   // directory either exists, or is also absent.
   virtual bool IsAbsent(const Pathname& pathname) = 0;
 
-  // A folder appropriate for storing temporary files (Contents are
-  // automatically deleted when the program exits)
-  virtual bool GetTemporaryFolder(Pathname &path, bool create,
-                                  const std::string *append) = 0;
-
   virtual std::string TempFilename(const Pathname &dir,
                                    const std::string &prefix) = 0;
 
@@ -154,11 +149,6 @@ class Filesystem {
 
   static bool IsAbsent(const Pathname &pathname) {
     return EnsureDefaultFilesystem()->IsAbsent(pathname);
-  }
-
-  static bool GetTemporaryFolder(Pathname &path, bool create,
-                                 const std::string *append) {
-    return EnsureDefaultFilesystem()->GetTemporaryFolder(path, create, append);
   }
 
   static std::string TempFilename(const Pathname &dir,

@@ -72,29 +72,6 @@ bool Win32Filesystem::DeleteFile(const Pathname &filename) {
   return ::DeleteFile(ToUtf16(filename.pathname()).c_str()) != 0;
 }
 
-bool Win32Filesystem::GetTemporaryFolder(Pathname &pathname, bool create,
-                                         const std::string *append) {
-  wchar_t buffer[MAX_PATH + 1];
-  if (!::GetTempPath(arraysize(buffer), buffer))
-    return false;
-  if (!IsCurrentProcessLowIntegrity() &&
-      !::GetLongPathName(buffer, buffer, arraysize(buffer)))
-    return false;
-  size_t len = strlen(buffer);
-  if ((len > 0) && (buffer[len-1] != '\\')) {
-    len += strcpyn(buffer + len, arraysize(buffer) - len, L"\\");
-  }
-  if (len >= arraysize(buffer) - 1)
-    return false;
-  pathname.clear();
-  pathname.SetFolder(ToUtf8(buffer));
-  if (append != nullptr) {
-    RTC_DCHECK(!append->empty());
-    pathname.AppendFolder(*append);
-  }
-  return !create || CreateFolder(pathname);
-}
-
 std::string Win32Filesystem::TempFilename(const Pathname &dir,
                                           const std::string &prefix) {
   wchar_t filename[MAX_PATH];

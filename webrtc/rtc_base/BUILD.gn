@@ -415,7 +415,6 @@ rtc_static_library("rtc_base") {
   all_dependent_configs = [ ":rtc_base_all_dependent_config" ]
 
   sources = [
-    "applefilesystem.mm",
     "asyncinvoker-inl.h",
     "asyncinvoker.cc",
     "asyncinvoker.h",
@@ -972,7 +971,6 @@ if (rtc_include_tests) {
     sources = [
       "callback_unittest.cc",
       "crc32_unittest.cc",
-      "fileutils_unittest.cc",
       "helpers_unittest.cc",
       "httpbase_unittest.cc",
       "httpcommon_unittest.cc",

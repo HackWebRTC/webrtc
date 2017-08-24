@@ -11,10 +11,9 @@
 #include <memory>
 
 #include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fileutils.h"
 #include "webrtc/rtc_base/gunit.h"
 #include "webrtc/rtc_base/optionsfile.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace rtc {
 
@@ -46,14 +45,13 @@ static int kZero = 0;
 class MAYBE_OptionsFileTest : public testing::Test {
  public:
   MAYBE_OptionsFileTest() {
-    Pathname dir;
-    RTC_CHECK(Filesystem::GetTemporaryFolder(dir, true, nullptr));
-    test_file_ = Filesystem::TempFilename(dir, ".testfile");
+    test_file_ =
+        webrtc::test::TempFilename(webrtc::test::OutputPath(), ".testfile");
     OpenStore();
   }
 
   ~MAYBE_OptionsFileTest() override {
-    remove(test_file_.c_str());
+    webrtc::test::RemoveFile(test_file_);
   }
 
  protected:

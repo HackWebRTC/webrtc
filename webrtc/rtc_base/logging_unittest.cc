@@ -12,9 +12,9 @@
 #include "webrtc/rtc_base/gunit.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/nullsocketserver.h"
-#include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/rtc_base/stream.h"
 #include "webrtc/rtc_base/thread.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace rtc {
 
@@ -139,12 +139,11 @@ TEST(LogTest, WallClockStartTime) {
 #endif
 
 TEST(LogTest, MAYBE_Perf) {
-  Pathname path;
-  EXPECT_TRUE(Filesystem::GetTemporaryFolder(path, true, nullptr));
-  path.SetPathname(Filesystem::TempFilename(path, "ut"));
+  std::string path =
+      webrtc::test::TempFilename(webrtc::test::OutputPath(), "ut");
 
   LogSinkImpl<FileStream> stream;
-  EXPECT_TRUE(stream.Open(path.pathname(), "wb", nullptr));
+  EXPECT_TRUE(stream.Open(path, "wb", nullptr));
   stream.DisableBuffering();
   LogMessage::AddLogToStream(&stream, LS_SENSITIVE);
 
@@ -157,7 +156,7 @@ TEST(LogTest, MAYBE_Perf) {
 
   LogMessage::RemoveLogToStream(&stream);
   stream.Close();
-  Filesystem::DeleteFile(path);
+  webrtc::test::RemoveFile(path);
 
   LOG(LS_INFO) << "Average log time: " << TimeDiff(finish, start) << " ms";
 }

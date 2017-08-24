@@ -51,42 +51,9 @@
 #include "webrtc/rtc_base/stream.h"
 #include "webrtc/rtc_base/stringutils.h"
 
-#if defined(WEBRTC_MAC)
-// Defined in applefilesystem.mm.  No header file to discourage use
-// elsewhere; other places should use GetApp{Data,Temp}Folder() in
-// this file.  Don't copy/paste.  I mean it.
-char* AppleDataDirectory();
-char* AppleTempDirectory();
-void AppleAppName(rtc::Pathname* path);
-#endif
-
 namespace rtc {
 
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_MAC)
-char* UnixFilesystem::app_temp_path_ = nullptr;
-#else
-char* UnixFilesystem::provided_app_data_folder_ = nullptr;
-char* UnixFilesystem::provided_app_temp_folder_ = nullptr;
-
-void UnixFilesystem::SetAppDataFolder(const std::string& folder) {
-  delete [] provided_app_data_folder_;
-  provided_app_data_folder_ = CopyString(folder);
-}
-
-void UnixFilesystem::SetAppTempFolder(const std::string& folder) {
-  delete [] provided_app_temp_folder_;
-  provided_app_temp_folder_ = CopyString(folder);
-}
-#endif
-
-UnixFilesystem::UnixFilesystem() {
-#if defined(WEBRTC_MAC)
-  if (!provided_app_data_folder_)
-    provided_app_data_folder_ = AppleDataDirectory();
-  if (!provided_app_temp_folder_)
-    provided_app_temp_folder_ = AppleTempDirectory();
-#endif
-}
+UnixFilesystem::UnixFilesystem() {}
 
 UnixFilesystem::~UnixFilesystem() {}
 
@@ -131,31 +98,6 @@ bool UnixFilesystem::DeleteFile(const Pathname &filename) {
     return false;
   }
   return ::unlink(filename.pathname().c_str()) == 0;
-}
-
-bool UnixFilesystem::GetTemporaryFolder(Pathname &pathname, bool create,
-                                        const std::string *append) {
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  RTC_DCHECK(provided_app_temp_folder_ != nullptr);
-  pathname.SetPathname(provided_app_temp_folder_, "");
-#else
-  if (const char* tmpdir = getenv("TMPDIR")) {
-    pathname.SetPathname(tmpdir, "");
-  } else if (const char* tmp = getenv("TMP")) {
-    pathname.SetPathname(tmp, "");
-  } else {
-#ifdef P_tmpdir
-    pathname.SetPathname(P_tmpdir, "");
-#else  // !P_tmpdir
-    pathname.SetPathname("/tmp/", "");
-#endif  // !P_tmpdir
-  }
-#endif  // defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-  if (append) {
-    RTC_DCHECK(!append->empty());
-    pathname.AppendFolder(*append);
-  }
-  return !create || CreateFolder(pathname);
 }
 
 std::string UnixFilesystem::TempFilename(const Pathname &dir,

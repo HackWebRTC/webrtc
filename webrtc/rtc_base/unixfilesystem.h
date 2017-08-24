@@ -22,18 +22,6 @@ class UnixFilesystem : public FilesystemInterface {
   UnixFilesystem();
   ~UnixFilesystem() override;
 
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  // Android does not have a native code API to fetch the app data or temp
-  // folders. That needs to be passed into this class from Java. Similarly, iOS
-  // only supports an Objective-C API for fetching the folder locations, so that
-  // needs to be passed in here from Objective-C.  Or at least that used to be
-  // the case; now the ctor will do the work if necessary and possible.
-  // TODO(fischman): add an Android version that uses JNI and drop the
-  // SetApp*Folder() APIs once external users stop using them.
-  static void SetAppDataFolder(const std::string& folder);
-  static void SetAppTempFolder(const std::string& folder);
-#endif
-
   // This will attempt to delete the file located at filename.
   // It will fail with VERIY if you pass it a non-existant file, or a directory.
   bool DeleteFile(const Pathname& filename) override;
@@ -64,12 +52,6 @@ class UnixFilesystem : public FilesystemInterface {
 
   std::string TempFilename(const Pathname& dir,
                            const std::string& prefix) override;
-
-  // A folder appropriate for storing temporary files (Contents are
-  // automatically deleted when the program exists)
-  bool GetTemporaryFolder(Pathname& path,
-                          bool create,
-                          const std::string* append) override;
 
   bool GetFileSize(const Pathname& path, size_t* size) override;
 
