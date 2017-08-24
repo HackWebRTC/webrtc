@@ -11,7 +11,6 @@
 #include <memory>
 
 #include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"

@@ -19,7 +19,6 @@
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 
