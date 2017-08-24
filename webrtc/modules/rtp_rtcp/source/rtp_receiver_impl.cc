@@ -163,7 +163,11 @@ bool RtpReceiverImpl::IncomingRtpPacket(
   webrtc_rtp_header.header = rtp_header;
   CheckCSRC(webrtc_rtp_header);
 
-  UpdateSources();
+  auto audio_level =
+      rtp_header.extension.hasAudioLevel
+          ? rtc::Optional<uint8_t>(rtp_header.extension.audioLevel)
+          : rtc::Optional<uint8_t>();
+  UpdateSources(audio_level);
 
   size_t payload_data_length = payload_length - rtp_header.paddingLength;
 
@@ -500,7 +504,8 @@ void RtpReceiverImpl::CheckCSRC(const WebRtcRTPHeader& rtp_header) {
   }
 }
 
-void RtpReceiverImpl::UpdateSources() {
+void RtpReceiverImpl::UpdateSources(
+    const rtc::Optional<uint8_t>& ssrc_audio_level) {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
   int64_t now_ms = clock_->TimeInMilliseconds();
 
@@ -526,6 +531,8 @@ void RtpReceiverImpl::UpdateSources() {
   } else {
     ssrc_sources_.rbegin()->update_timestamp_ms(now_ms);
   }
+
+  ssrc_sources_.back().set_audio_level(ssrc_audio_level);
 
   RemoveOutdatedSources(now_ms);
 }

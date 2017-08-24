@@ -79,7 +79,7 @@ class RtpReceiverImpl : public RtpReceiver {
                               bool* is_red,
                               PayloadUnion* payload);
 
-  void UpdateSources();
+  void UpdateSources(const rtc::Optional<uint8_t>& ssrc_audio_level);
   void RemoveOutdatedSources(int64_t now_ms);
 
   Clock* clock_;

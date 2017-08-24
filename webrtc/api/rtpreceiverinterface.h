@@ -39,6 +39,15 @@ class RtpSource {
         source_id_(source_id),
         source_type_(source_type) {}
 
+  RtpSource(int64_t timestamp_ms,
+            uint32_t source_id,
+            RtpSourceType source_type,
+            uint8_t audio_level)
+      : timestamp_ms_(timestamp_ms),
+        source_id_(source_id),
+        source_type_(source_type),
+        audio_level_(audio_level) {}
+
   int64_t timestamp_ms() const { return timestamp_ms_; }
   void update_timestamp_ms(int64_t timestamp_ms) {
     RTC_DCHECK_LE(timestamp_ms_, timestamp_ms);
@@ -51,19 +60,21 @@ class RtpSource {
   // The source can be either a contributing source or a synchronization source.
   RtpSourceType source_type() const { return source_type_; }
 
-  // This isn't implemented yet and will always return an empty Optional.
-  // TODO(zhihuang): Implement this to return real audio level.
-  rtc::Optional<int8_t> audio_level() const { return rtc::Optional<int8_t>(); }
+  rtc::Optional<uint8_t> audio_level() const { return audio_level_; }
+  void set_audio_level(const rtc::Optional<uint8_t>& level) {
+    audio_level_ = level;
+  }
 
   bool operator==(const RtpSource& o) const {
     return timestamp_ms_ == o.timestamp_ms() && source_id_ == o.source_id() &&
-           source_type_ == o.source_type();
+           source_type_ == o.source_type() && audio_level_ == o.audio_level_;
   }
 
  private:
   int64_t timestamp_ms_;
   uint32_t source_id_;
   RtpSourceType source_type_;
+  rtc::Optional<uint8_t> audio_level_;
 };
 
 class RtpReceiverObserverInterface {

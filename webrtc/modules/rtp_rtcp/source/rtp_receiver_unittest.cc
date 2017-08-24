@@ -255,4 +255,88 @@ TEST_F(RtpReceiverTest, GetSourcesRemoveOutdatedSource) {
             csrc_sources.begin()->timestamp_ms());
 }
 
+// The audio level from the RTPHeader extension should be stored in the
+// RtpSource with the matching SSRC.
+TEST_F(RtpReceiverTest, GetSourcesContainsAudioLevelExtension) {
+  RTPHeader header;
+  int64_t time1_ms = fake_clock_.TimeInMilliseconds();
+  header.payloadType = kPcmuPayloadType;
+  header.ssrc = kSsrc1;
+  header.timestamp = rtp_timestamp(time1_ms);
+  header.extension.hasAudioLevel = true;
+  header.extension.audioLevel = 10;
+  PayloadUnion payload_specific = {AudioPayload()};
+
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
+  auto sources = rtp_receiver_->GetSources();
+  EXPECT_THAT(sources, UnorderedElementsAre(RtpSource(
+                           time1_ms, kSsrc1, RtpSourceType::SSRC, 10)));
+
+  // Receive a packet from a different SSRC with a different level and check
+  // that they are both remembered.
+  fake_clock_.AdvanceTimeMilliseconds(1);
+  int64_t time2_ms = fake_clock_.TimeInMilliseconds();
+  header.ssrc = kSsrc2;
+  header.timestamp = rtp_timestamp(time2_ms);
+  header.extension.hasAudioLevel = true;
+  header.extension.audioLevel = 20;
+
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
+  sources = rtp_receiver_->GetSources();
+  EXPECT_THAT(sources,
+              UnorderedElementsAre(
+                  RtpSource(time1_ms, kSsrc1, RtpSourceType::SSRC, 10),
+                  RtpSource(time2_ms, kSsrc2, RtpSourceType::SSRC, 20)));
+
+  // Receive a packet from the first SSRC again and check that the level is
+  // updated.
+  fake_clock_.AdvanceTimeMilliseconds(1);
+  int64_t time3_ms = fake_clock_.TimeInMilliseconds();
+  header.ssrc = kSsrc1;
+  header.timestamp = rtp_timestamp(time3_ms);
+  header.extension.hasAudioLevel = true;
+  header.extension.audioLevel = 30;
+
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
+  sources = rtp_receiver_->GetSources();
+  EXPECT_THAT(sources,
+              UnorderedElementsAre(
+                  RtpSource(time3_ms, kSsrc1, RtpSourceType::SSRC, 30),
+                  RtpSource(time2_ms, kSsrc2, RtpSourceType::SSRC, 20)));
+}
+
+TEST_F(RtpReceiverTest,
+       MissingAudioLevelHeaderExtensionClearsRtpSourceAudioLevel) {
+  RTPHeader header;
+  int64_t time1_ms = fake_clock_.TimeInMilliseconds();
+  header.payloadType = kPcmuPayloadType;
+  header.ssrc = kSsrc1;
+  header.timestamp = rtp_timestamp(time1_ms);
+  header.extension.hasAudioLevel = true;
+  header.extension.audioLevel = 10;
+  PayloadUnion payload_specific = {AudioPayload()};
+
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
+  auto sources = rtp_receiver_->GetSources();
+  EXPECT_THAT(sources, UnorderedElementsAre(RtpSource(
+                           time1_ms, kSsrc1, RtpSourceType::SSRC, 10)));
+
+  // Receive a second packet without the audio level header extension and check
+  // that the audio level is cleared.
+  fake_clock_.AdvanceTimeMilliseconds(1);
+  int64_t time2_ms = fake_clock_.TimeInMilliseconds();
+  header.timestamp = rtp_timestamp(time2_ms);
+  header.extension.hasAudioLevel = false;
+
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
+  sources = rtp_receiver_->GetSources();
+  EXPECT_THAT(sources, UnorderedElementsAre(
+                           RtpSource(time2_ms, kSsrc1, RtpSourceType::SSRC)));
+}
+
 }  // namespace webrtc
