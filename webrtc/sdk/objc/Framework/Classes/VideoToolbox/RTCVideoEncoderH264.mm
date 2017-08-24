@@ -509,24 +509,51 @@ CFStringRef ExtractProfile(const cricket::VideoCodec &codec) {
     CFRelease(pixelFormat);
     pixelFormat = nullptr;
   }
-  OSStatus status = VTCompressionSessionCreate(nullptr,  // use default allocator
-                                               _width,
-                                               _height,
-                                               kCMVideoCodecType_H264,
-                                               nullptr,  // use default encoder
-                                               sourceAttributes,
-                                               nullptr,  // use default compressed data allocator
-                                               compressionOutputCallback,
-                                               nullptr,
-                                               &_compressionSession);
+  CFMutableDictionaryRef encoder_specs = nullptr;
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+  // Currently hw accl is supported above 360p on mac, below 360p
+  // the compression session will be created with hw accl disabled.
+  encoder_specs = CFDictionaryCreateMutable(
+      nullptr, 1, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+  CFDictionarySetValue(encoder_specs,
+                       kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder,
+                       kCFBooleanTrue);
+#endif
+  OSStatus status =
+      VTCompressionSessionCreate(nullptr,  // use default allocator
+                                 _width,
+                                 _height,
+                                 kCMVideoCodecType_H264,
+                                 encoder_specs,  // use hardware accelerated encoder if available
+                                 sourceAttributes,
+                                 nullptr,  // use default compressed data allocator
+                                 compressionOutputCallback,
+                                 nullptr,
+                                 &_compressionSession);
   if (sourceAttributes) {
     CFRelease(sourceAttributes);
     sourceAttributes = nullptr;
+  }
+  if (encoder_specs) {
+    CFRelease(encoder_specs);
+    encoder_specs = nullptr;
   }
   if (status != noErr) {
     LOG(LS_ERROR) << "Failed to create compression session: " << status;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+  CFBooleanRef hwaccl_enabled = nullptr;
+  status = VTSessionCopyProperty(_compressionSession,
+                                 kVTCompressionPropertyKey_UsingHardwareAcceleratedVideoEncoder,
+                                 nullptr,
+                                 &hwaccl_enabled);
+  if (status == noErr && (CFBooleanGetValue(hwaccl_enabled))) {
+    LOG(LS_INFO) << "Compression session created with hw accl enabled";
+  } else {
+    LOG(LS_INFO) << "Compression session created with hw accl disabled";
+  }
+#endif
   [self configureCompressionSession];
   return WEBRTC_VIDEO_CODEC_OK;
 }
