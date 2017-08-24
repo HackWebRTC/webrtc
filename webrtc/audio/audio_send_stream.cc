@@ -388,9 +388,7 @@ void AudioSendStream::OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {
 
 void AudioSendStream::OnPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
-  // TODO(eladalon): This fails in UT; fix and uncomment.
-  // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=7405
-  // RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   rtc::Optional<float> plr;
   rtc::Optional<float> rplr;
   {
