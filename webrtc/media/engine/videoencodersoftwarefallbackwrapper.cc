@@ -89,6 +89,7 @@ VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
 }
 
 bool VideoEncoderSoftwareFallbackWrapper::InitFallbackEncoder() {
+  LOG(LS_WARNING) << "Encoder falling back to software encoding.";
   MaybeModifyCodecForFallback();
   cricket::InternalEncoderFactory internal_factory;
   if (!FindMatchingCodec(internal_factory.supported_codecs(), codec_)) {
@@ -146,8 +147,11 @@ int32_t VideoEncoderSoftwareFallbackWrapper::InitEncode(
   int32_t ret =
       encoder_->InitEncode(codec_settings, number_of_cores, max_payload_size);
   if (ret == WEBRTC_VIDEO_CODEC_OK || codec_.name.empty()) {
-    if (fallback_encoder_)
+    if (fallback_encoder_) {
+      LOG(LS_WARNING)
+          << "InitEncode OK, no longer using the software fallback encoder.";
       fallback_encoder_->Release();
+    }
     fallback_encoder_.reset();
     if (callback_)
       encoder_->RegisterEncodeCompleteCallback(callback_);

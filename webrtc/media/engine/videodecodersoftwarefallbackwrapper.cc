@@ -94,7 +94,7 @@ int32_t VideoDecoderSoftwareFallbackWrapper::Decode(
     if (ret == WEBRTC_VIDEO_CODEC_OK) {
       if (fallback_decoder_) {
         // Decode OK -> stop using fallback decoder.
-        LOG(LS_INFO)
+        LOG(LS_WARNING)
             << "Decode OK, no longer using the software fallback decoder.";
         fallback_decoder_->Release();
         fallback_decoder_.reset();
