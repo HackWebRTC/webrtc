@@ -32,8 +32,8 @@ void EchoGeneratingPower(const RenderBuffer& render_buffer,
   }
 
   // Apply soft noise gate of -78 dBFS.
-  const float kNoiseGatePower = 27509.42f;
-  std::for_each(X2->begin(), X2->end(), [kNoiseGatePower](float& a) {
+  static constexpr float kNoiseGatePower = 27509.42f;
+  std::for_each(X2->begin(), X2->end(), [](float& a) {
     if (kNoiseGatePower > a) {
       a = std::max(0.f, a - 0.3f * (kNoiseGatePower - a));
     }

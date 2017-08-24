@@ -4278,13 +4278,9 @@ TEST_F(EndToEndTest, MAYBE_TestFlexfecRtpStatePreservation) {
     rtc::CriticalSection crit_;
   } observer;
 
-  // These would have been declared as constexpr, but then some compilers
-  // require them to be captured in the lambda, and other compilers complain
-  // about no-ununused-lambda-capture. Keeping them as normal variables was
-  // the easiest work-around.
-  int kFrameMaxWidth = 320;
-  int kFrameMaxHeight = 180;
-  int kFrameRate = 15;
+  static constexpr int kFrameMaxWidth = 320;
+  static constexpr int kFrameMaxHeight = 180;
+  static constexpr int kFrameRate = 15;
 
   Call::Config config(event_log_.get());
 
@@ -4371,8 +4367,7 @@ TEST_F(EndToEndTest, MAYBE_TestFlexfecRtpStatePreservation) {
 
   EXPECT_TRUE(observer.Wait()) << "Timed out waiting for packets.";
 
-  task_queue_.SendTask([this, &observer,
-                        kFrameRate, kFrameMaxWidth, kFrameMaxHeight]() {
+  task_queue_.SendTask([this, &observer]() {
     // Ensure monotonicity when the VideoSendStream is recreated.
     frame_generator_capturer_->Stop();
     sender_call_->DestroyVideoSendStream(video_send_stream_);
