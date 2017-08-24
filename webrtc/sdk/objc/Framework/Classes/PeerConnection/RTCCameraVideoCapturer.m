@@ -141,8 +141,8 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
                       }
                       [self reconfigureCaptureSessionInput];
                       [self updateOrientation];
-                      [_captureSession startRunning];
                       [self updateDeviceCaptureFormat:format fps:fps];
+                      [_captureSession startRunning];
                       [_currentDevice unlockForConfiguration];
                       _isRunning = YES;
                     }];
