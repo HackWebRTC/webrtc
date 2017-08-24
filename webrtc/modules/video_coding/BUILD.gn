@@ -279,7 +279,7 @@ rtc_static_library("webrtc_vp9") {
 
 if (rtc_include_tests) {
   if (is_ios || is_mac) {
-    rtc_static_library("objc_codec_test") {
+    rtc_static_library("codec_test_objc") {
       sources = [
         "codecs/test/objc_codec_h264_test.h",
         "codecs/test/objc_codec_h264_test.mm",
@@ -289,11 +289,11 @@ if (rtc_include_tests) {
         "../../api/video_codecs:video_codecs_api",
         "../../media:rtc_audio_video",
         "../../modules:module_api",
-        "../../sdk:objc_common",
-        "../../sdk:objc_peerconnection",
-        "../../sdk:objc_peerconnectionfactory",
-        "../../sdk:objc_videotoolbox",
-        "../../sdk:objc_videotracksource",
+        "../../sdk:common_objc",
+        "../../sdk:peerconnection_objc",
+        "../../sdk:peerconnectionfactory_objc",
+        "../../sdk:videotoolbox_objc",
+        "../../sdk:videotracksource_objc",
       ]
 
       if (!build_with_chromium && is_clang) {
@@ -428,9 +428,9 @@ if (rtc_include_tests) {
 
     if (is_ios || is_mac) {
       deps += [
-        ":objc_codec_test",
+        ":codec_test_objc",
         "../../media:rtc_media_base",
-        "../../sdk:objc_videotoolbox",
+        "../../sdk:videotoolbox_objc",
       ]
     }
   }
@@ -467,7 +467,7 @@ if (rtc_include_tests) {
     ]
 
     if (is_ios || is_mac) {
-      deps += [ ":objc_codec_test" ]
+      deps += [ ":codec_test_objc" ]
     }
 
     if (rtc_use_h264) {
@@ -535,7 +535,7 @@ if (rtc_include_tests) {
 
     if (is_ios || is_mac) {
       deps += [
-        ":objc_codec_test",
+        ":codec_test_objc",
         ":plot_videoprocessor_integrationtest_bundle_data",
       ]
     }

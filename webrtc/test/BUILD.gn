@@ -162,7 +162,7 @@ rtc_source_set("test_support") {
   }
 
   if (is_ios && !build_with_chromium) {
-    deps += [ "../sdk:objc_common" ]
+    deps += [ "../sdk:common_objc" ]
   }
 
   if (rtc_use_memcheck) {
@@ -242,7 +242,7 @@ if (!build_with_chromium) {
     }
 
     if (is_ios) {
-      deps += [ "../sdk:objc_common" ]
+      deps += [ "../sdk:common_objc" ]
     }
 
     if (rtc_use_memcheck) {
@@ -359,7 +359,7 @@ if (is_ios) {
     deps = [
       "..:webrtc_common",
       "../rtc_base:rtc_base_approved",
-      "../sdk:objc_common",
+      "../sdk:common_objc",
     ]
   }
 }
