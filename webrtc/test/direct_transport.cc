@@ -18,25 +18,6 @@ namespace webrtc {
 namespace test {
 
 DirectTransport::DirectTransport(
-    Call* send_call,
-    const std::map<uint8_t, MediaType>& payload_type_map)
-    : DirectTransport(FakeNetworkPipe::Config(), send_call, payload_type_map) {}
-
-DirectTransport::DirectTransport(
-    const FakeNetworkPipe::Config& config,
-    Call* send_call,
-    const std::map<uint8_t, MediaType>& payload_type_map)
-    : DirectTransport(
-          config,
-          send_call,
-          std::unique_ptr<Demuxer>(new DemuxerImpl(payload_type_map))) {}
-
-DirectTransport::DirectTransport(const FakeNetworkPipe::Config& config,
-                                 Call* send_call,
-                                 std::unique_ptr<Demuxer> demuxer)
-    : DirectTransport(nullptr, config, send_call, std::move(demuxer)) {}
-
-DirectTransport::DirectTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
     Call* send_call,
     const std::map<uint8_t, MediaType>& payload_type_map)
@@ -66,15 +47,7 @@ DirectTransport::DirectTransport(SingleThreadedTaskQueueForTesting* task_queue,
       clock_(Clock::GetRealTimeClock()),
       task_queue_(task_queue),
       fake_network_(clock_, config, std::move(demuxer)) {
-  // TODO(eladalon): When the deprecated ctors are removed, this check
-  // can be restored. https://bugs.chromium.org/p/webrtc/issues/detail?id=8125
-  // RTC_DCHECK(task_queue);
-  if (!task_queue) {
-    deprecated_task_queue_ =
-        rtc::MakeUnique<SingleThreadedTaskQueueForTesting>("deprecated_queue");
-    task_queue_ = deprecated_task_queue_.get();
-  }
-
+  RTC_DCHECK(task_queue);
   if (send_call_) {
     send_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
     send_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
@@ -122,22 +95,6 @@ bool DirectTransport::SendRtcp(const uint8_t* data, size_t length) {
 
 int DirectTransport::GetAverageDelayMs() {
   return fake_network_.AverageDelay();
-}
-
-DirectTransport::ForceDemuxer::ForceDemuxer(MediaType media_type)
-    : media_type_(media_type) {}
-
-void DirectTransport::ForceDemuxer::SetReceiver(PacketReceiver* receiver) {
-  packet_receiver_ = receiver;
-}
-
-void DirectTransport::ForceDemuxer::DeliverPacket(
-    const NetworkPacket* packet,
-    const PacketTime& packet_time) {
-  if (!packet_receiver_)
-    return;
-  packet_receiver_->DeliverPacket(media_type_, packet->data(),
-                                  packet->data_length(), packet_time);
 }
 
 void DirectTransport::SendPackets() {

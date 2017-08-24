@@ -32,25 +32,6 @@ namespace test {
 // same task-queue - the one that's passed in via the constructor.
 class DirectTransport : public Transport {
  public:
-  RTC_DEPRECATED DirectTransport(
-      Call* send_call,
-      const std::map<uint8_t, MediaType>& payload_type_map);
-  RTC_DEPRECATED DirectTransport(
-      const FakeNetworkPipe::Config& config,
-      Call* send_call,
-      const std::map<uint8_t, MediaType>& payload_type_map);
-  RTC_DEPRECATED DirectTransport(
-      const FakeNetworkPipe::Config& config,
-      Call* send_call,
-      std::unique_ptr<Demuxer> demuxer);
-
-  // This deprecated variant always uses MediaType::VIDEO.
-  RTC_DEPRECATED explicit DirectTransport(Call* send_call)
-      : DirectTransport(
-            FakeNetworkPipe::Config(),
-            send_call,
-            std::unique_ptr<Demuxer>(new ForceDemuxer(MediaType::VIDEO))) {}
-
   DirectTransport(SingleThreadedTaskQueueForTesting* task_queue,
                   Call* send_call,
                   const std::map<uint8_t, MediaType>& payload_type_map);
@@ -82,21 +63,6 @@ class DirectTransport : public Transport {
   int GetAverageDelayMs();
 
  private:
-  // TODO(minyue): remove when the deprecated ctors of DirectTransport that
-  // create ForceDemuxer are removed.
-  class ForceDemuxer : public Demuxer {
-   public:
-    explicit ForceDemuxer(MediaType media_type);
-    void SetReceiver(PacketReceiver* receiver) override;
-    void DeliverPacket(const NetworkPacket* packet,
-                       const PacketTime& packet_time) override;
-
-   private:
-    const MediaType media_type_;
-    PacketReceiver* packet_receiver_;
-    RTC_DISALLOW_COPY_AND_ASSIGN(ForceDemuxer);
-  };
-
   void SendPackets();
 
   Call* const send_call_;
@@ -111,12 +77,6 @@ class DirectTransport : public Transport {
   FakeNetworkPipe fake_network_;
 
   rtc::SequencedTaskChecker sequence_checker_;
-
-  // TODO(eladalon): https://bugs.chromium.org/p/webrtc/issues/detail?id=8125
-  // Deprecated versions of the ctor don't get the task queue passed in from
-  // outside. We'll create one locally for them. This is deprecated, and will
-  // be removed as soon as the need for those ctors is removed.
-  std::unique_ptr<SingleThreadedTaskQueueForTesting> deprecated_task_queue_;
 };
 }  // namespace test
 }  // namespace webrtc
