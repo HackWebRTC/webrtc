@@ -95,10 +95,10 @@ void ResidualEchoEstimator::Estimate(
   RTC_DCHECK(R2);
 
   const rtc::Optional<size_t> delay =
-      aec_state.FilterDelay()
-          ? aec_state.FilterDelay()
-          : (aec_state.ExternalDelay() ? aec_state.ExternalDelay()
-                                       : rtc::Optional<size_t>());
+      aec_state.ExternalDelay()
+          ? (aec_state.FilterDelay() ? aec_state.FilterDelay()
+                                     : aec_state.ExternalDelay())
+          : rtc::Optional<size_t>();
 
   // Estimate the power of the stationary noise in the render signal.
   RenderNoisePower(render_buffer, &X2_noise_floor_, &X2_noise_floor_counter_);
@@ -115,7 +115,7 @@ void ResidualEchoEstimator::Estimate(
   } else {
     // Estimate the echo generating signal power.
     std::array<float, kFftLengthBy2Plus1> X2;
-    if (aec_state.ExternalDelay() || aec_state.FilterDelay()) {
+    if (aec_state.ExternalDelay() && aec_state.FilterDelay()) {
       RTC_DCHECK(delay);
       const int delay_use = static_cast<int>(*delay);
 
