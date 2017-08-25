@@ -279,7 +279,7 @@ class AudioProcessing : public rtc::RefCountInterface {
           float lf = 100.f;
           float mf = 1000.f;
           float hf = 5000.f;
-          float default_len = 0.7f;
+          float default_len = 0.f;
         } ep_strength;
 
         struct Mask {
