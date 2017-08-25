@@ -1225,15 +1225,6 @@ TEST_F(RtcpReceiverTest, ReceivesTargetBitrate) {
   rtcp::ExtendedReports xr;
   xr.SetTargetBitrate(bitrate);
 
-  // Wrong sender ssrc, target bitrate should be discarded.
-  xr.SetSenderSsrc(kSenderSsrc + 1);
-  EXPECT_CALL(bitrate_allocation_observer_,
-              OnBitrateAllocationUpdated(expected_allocation))
-      .Times(0);
-  InjectRtcpPacket(xr);
-
-  // Set correct ssrc, callback should be called once.
-  xr.SetSenderSsrc(kSenderSsrc);
   EXPECT_CALL(bitrate_allocation_observer_,
               OnBitrateAllocationUpdated(expected_allocation));
   InjectRtcpPacket(xr);
@@ -1250,7 +1241,6 @@ TEST_F(RtcpReceiverTest, HandlesIncorrectTargetBitrate) {
 
   rtcp::ExtendedReports xr;
   xr.SetTargetBitrate(bitrate);
-  xr.SetSenderSsrc(kSenderSsrc);
 
   EXPECT_CALL(bitrate_allocation_observer_,
               OnBitrateAllocationUpdated(expected_allocation));
