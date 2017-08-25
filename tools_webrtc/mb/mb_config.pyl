@@ -136,6 +136,7 @@
       'mac_rel': 'release_bot_x64',
       'mac_asan': 'mac_asan_clang_release_bot_x64',
       'mac_baremetal': 'release_bot_x64',
+      'mac_experimental': 'release_bot_x64',
 
       # Linux
       'linux_compile_dbg': 'debug_bot_x64',
@@ -156,6 +157,7 @@
       'linux_ubsan': 'ubsan_clang_release_bot_x64',
       'linux_ubsan_vptr': 'ubsan_vptr_clang_release_bot_x64',
       'linux_baremetal': 'release_bot_x64',
+      'linux_experimental': 'release_bot_x64',
       'linux_libfuzzer_rel': 'libfuzzer_asan_release_bot_x64',
 
       # Android
@@ -188,6 +190,7 @@
       'win_asan': 'win_asan_clang_release_bot_x86',
       'win_msvc_rel': 'win_msvc_release_bot_x86',
       'win_baremetal': 'release_bot_x86',
+      'win_experimental': 'release_bot_x86',
       'win_x64_win8': 'debug_bot_x64',
       'win_x64_win10': 'debug_bot_x64',
     }
