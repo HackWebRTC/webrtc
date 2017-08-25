@@ -26,7 +26,7 @@ import javax.microedition.khronos.egl.EGLSurface;
  * Holds EGL state and utility methods for handling an egl 1.0 EGLContext, an EGLDisplay,
  * and an EGLSurface.
  */
-class EglBase10 extends EglBase {
+class EglBase10 implements EglBase {
   // This constant is taken from EGL14.EGL_CONTEXT_CLIENT_VERSION.
   private static final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
 
@@ -250,6 +250,12 @@ class EglBase10 extends EglBase {
     synchronized (EglBase.lock) {
       egl.eglSwapBuffers(eglDisplay, eglSurface);
     }
+  }
+
+  @Override
+  public void swapBuffers(long timeStampNs) {
+    // Setting presentation time is not supported for EGL 1.0.
+    swapBuffers();
   }
 
   // Return an EGLDisplay, or die trying.
