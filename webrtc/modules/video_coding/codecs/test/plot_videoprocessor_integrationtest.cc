@@ -38,7 +38,7 @@ const VisualizationParams kVisualizationParams = {
     false,  // save_decoded_y4m
 };
 
-const int kNumFrames = 299;
+const int kNumFrames = 300;
 
 }  // namespace
 

@@ -496,9 +496,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
       // In batch mode, we calculate the metrics for all frames after all frames
       // have been sent for encoding.
 
-      // TODO(brandtr): Refactor "frame number accounting" so we don't have to
-      // call ProcessFrame num_frames+1 times here.
-      for (frame_number = 0; frame_number <= num_frames; ++frame_number) {
+      for (frame_number = 0; frame_number < num_frames; ++frame_number) {
         processor_->ProcessFrame(frame_number);
       }
 
@@ -543,16 +541,13 @@ class VideoProcessorIntegrationTest : public testing::Test {
           processor_->SetRates(bitrate_kbps_, framerate_);
         }
       }
-      // TODO(brandtr): Refactor "frame number accounting" so we don't have to
-      // call ProcessFrame one extra time here.
-      processor_->ProcessFrame(frame_number);
     }
 
     // Verify rate control metrics for all frames (if in batch mode), or for all
     // frames since the last rate update (if not in batch mode).
     PrintAndMaybeVerifyRateControlMetrics(update_index, rc_thresholds);
     EXPECT_EQ(num_frames, frame_number);
-    EXPECT_EQ(num_frames + 1, static_cast<int>(stats_.stats_.size()));
+    EXPECT_EQ(num_frames, static_cast<int>(stats_.stats_.size()));
 
     // Release encoder and decoder to make sure they have finished processing.
     processor_->Release();

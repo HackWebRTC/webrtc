@@ -34,7 +34,7 @@ const char kForemanCif[] = "foreman_cif";
 #if !defined(WEBRTC_IOS)
 const int kNumFramesShort = 100;
 #endif
-const int kNumFramesLong = 299;
+const int kNumFramesLong = 300;
 
 const std::nullptr_t kNoVisualizationParams = nullptr;
 
