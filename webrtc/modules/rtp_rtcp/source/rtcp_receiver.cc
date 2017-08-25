@@ -688,8 +688,10 @@ void RTCPReceiver::HandleXr(const CommonHeader& rtcp_block,
   for (const rtcp::ReceiveTimeInfo& time_info : xr.dlrr().sub_blocks())
     HandleXrDlrrReportBlock(time_info);
 
-  if (xr.target_bitrate())
-    HandleXrTargetBitrate(*xr.target_bitrate(), packet_information);
+  if (xr.target_bitrate()) {
+    HandleXrTargetBitrate(xr.sender_ssrc(), *xr.target_bitrate(),
+                          packet_information);
+  }
 }
 
 void RTCPReceiver::HandleXrReceiveReferenceTime(uint32_t sender_ssrc,
@@ -722,8 +724,13 @@ void RTCPReceiver::HandleXrDlrrReportBlock(const rtcp::ReceiveTimeInfo& rti) {
 }
 
 void RTCPReceiver::HandleXrTargetBitrate(
+    uint32_t ssrc,
     const rtcp::TargetBitrate& target_bitrate,
     PacketInformation* packet_information) {
+  if (ssrc != remote_ssrc_) {
+    return;  // Not for us.
+  }
+
   BitrateAllocation bitrate_allocation;
   for (const auto& item : target_bitrate.GetTargetBitrates()) {
     if (item.spatial_layer >= kMaxSpatialLayers ||
