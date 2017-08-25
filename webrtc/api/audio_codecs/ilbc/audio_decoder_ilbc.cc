@@ -21,7 +21,7 @@ namespace webrtc {
 
 rtc::Optional<AudioDecoderIlbc::Config> AudioDecoderIlbc::SdpToConfig(
     const SdpAudioFormat& format) {
-  return STR_CASE_CMP(format.name.c_str(), "ilbc") == 0 &&
+  return STR_CASE_CMP(format.name.c_str(), "ILBC") == 0 &&
                  format.clockrate_hz == 8000 && format.num_channels == 1
              ? rtc::Optional<Config>(Config())
              : rtc::Optional<Config>();

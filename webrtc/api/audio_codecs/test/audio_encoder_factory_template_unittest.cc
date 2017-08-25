@@ -147,13 +147,13 @@ TEST(AudioEncoderFactoryTemplateTest, G722) {
   auto factory = CreateAudioEncoderFactory<AudioEncoderG722>();
   EXPECT_THAT(factory->GetSupportedEncoders(),
               testing::ElementsAre(
-                  AudioCodecSpec{{"g722", 8000, 1}, {16000, 1, 64000}}));
+                  AudioCodecSpec{{"G722", 8000, 1}, {16000, 1, 64000}}));
   EXPECT_EQ(rtc::Optional<AudioCodecInfo>(),
             factory->QueryAudioEncoder({"foo", 8000, 1}));
   EXPECT_EQ(rtc::Optional<AudioCodecInfo>({16000, 1, 64000}),
-            factory->QueryAudioEncoder({"g722", 8000, 1}));
+            factory->QueryAudioEncoder({"G722", 8000, 1}));
   EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"bar", 16000, 1}));
-  auto enc = factory->MakeAudioEncoder(17, {"g722", 8000, 1});
+  auto enc = factory->MakeAudioEncoder(17, {"G722", 8000, 1});
   ASSERT_NE(nullptr, enc);
   EXPECT_EQ(16000, enc->SampleRateHz());
 }

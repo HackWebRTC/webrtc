@@ -123,7 +123,7 @@ TEST(AudioDecoderFactoryTemplateTest, G711) {
               testing::ElementsAre(
                   AudioCodecSpec{{"PCMU", 8000, 1}, {8000, 1, 64000}},
                   AudioCodecSpec{{"PCMA", 8000, 1}, {8000, 1, 64000}}));
-  EXPECT_FALSE(factory->IsSupportedDecoder({"g711", 8000, 1}));
+  EXPECT_FALSE(factory->IsSupportedDecoder({"G711", 8000, 1}));
   EXPECT_TRUE(factory->IsSupportedDecoder({"PCMU", 8000, 1}));
   EXPECT_TRUE(factory->IsSupportedDecoder({"pcma", 8000, 1}));
   EXPECT_EQ(nullptr, factory->MakeAudioDecoder({"pcmu", 16000, 1}));
@@ -139,19 +139,19 @@ TEST(AudioDecoderFactoryTemplateTest, G722) {
   auto factory = CreateAudioDecoderFactory<AudioDecoderG722>();
   EXPECT_THAT(factory->GetSupportedDecoders(),
               testing::ElementsAre(
-                  AudioCodecSpec{{"g722", 8000, 1}, {16000, 1, 64000}}));
+                  AudioCodecSpec{{"G722", 8000, 1}, {16000, 1, 64000}}));
   EXPECT_FALSE(factory->IsSupportedDecoder({"foo", 8000, 1}));
-  EXPECT_TRUE(factory->IsSupportedDecoder({"g722", 8000, 1}));
+  EXPECT_TRUE(factory->IsSupportedDecoder({"G722", 8000, 1}));
   EXPECT_EQ(nullptr, factory->MakeAudioDecoder({"bar", 16000, 1}));
-  auto dec1 = factory->MakeAudioDecoder({"g722", 8000, 1});
+  auto dec1 = factory->MakeAudioDecoder({"G722", 8000, 1});
   ASSERT_NE(nullptr, dec1);
   EXPECT_EQ(16000, dec1->SampleRateHz());
   EXPECT_EQ(1u, dec1->Channels());
-  auto dec2 = factory->MakeAudioDecoder({"g722", 8000, 2});
+  auto dec2 = factory->MakeAudioDecoder({"G722", 8000, 2});
   ASSERT_NE(nullptr, dec2);
   EXPECT_EQ(16000, dec2->SampleRateHz());
   EXPECT_EQ(2u, dec2->Channels());
-  auto dec3 = factory->MakeAudioDecoder({"g722", 8000, 3});
+  auto dec3 = factory->MakeAudioDecoder({"G722", 8000, 3});
   ASSERT_EQ(nullptr, dec3);
 }
 

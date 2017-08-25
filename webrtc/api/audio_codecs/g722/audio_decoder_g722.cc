@@ -22,7 +22,7 @@ namespace webrtc {
 
 rtc::Optional<AudioDecoderG722::Config> AudioDecoderG722::SdpToConfig(
     const SdpAudioFormat& format) {
-  return STR_CASE_CMP(format.name.c_str(), "g722") == 0 &&
+  return STR_CASE_CMP(format.name.c_str(), "G722") == 0 &&
                  format.clockrate_hz == 8000 &&
                  (format.num_channels == 1 || format.num_channels == 2)
              ? rtc::Optional<Config>(
@@ -32,7 +32,7 @@ rtc::Optional<AudioDecoderG722::Config> AudioDecoderG722::SdpToConfig(
 
 void AudioDecoderG722::AppendSupportedDecoders(
     std::vector<AudioCodecSpec>* specs) {
-  specs->push_back({{"g722", 8000, 1}, {16000, 1, 64000}});
+  specs->push_back({{"G722", 8000, 1}, {16000, 1, 64000}});
 }
 
 std::unique_ptr<AudioDecoder> AudioDecoderG722::MakeAudioDecoder(
