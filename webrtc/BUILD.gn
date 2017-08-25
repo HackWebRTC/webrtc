@@ -43,7 +43,6 @@ config("common_inherited_config") {
       # TODO(kjellander): Cleanup unused ones and move defines closer to
       # the source when webrtc:4256 is completed.
       "FEATURE_ENABLE_VOICEMAIL",
-      "EXPAT_RELATIVE_PATH",
       "GTEST_RELATIVE_PATH",
       "WEBRTC_CHROMIUM_BUILD",
     ]
@@ -123,10 +122,6 @@ config("common_config") {
 
   if (rtc_include_internal_audio_device) {
     defines += [ "WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE" ]
-  }
-
-  if (rtc_relative_path) {
-    defines += [ "EXPAT_RELATIVE_PATH" ]
   }
 
   if (!rtc_libvpx_build_vp9) {

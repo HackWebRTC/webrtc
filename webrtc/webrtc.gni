@@ -43,9 +43,6 @@ declare_args() {
   # Enable this to let the Opus audio codec change complexity on the fly.
   rtc_opus_variable_complexity = false
 
-  # Disable to use absolute header paths for some libraries.
-  rtc_relative_path = true
-
   # Used to specify an external Jsoncpp include path when not compiling the
   # library that comes with WebRTC (i.e. rtc_build_json == 0).
   rtc_jsoncpp_root = "//third_party/jsoncpp/source/include"
