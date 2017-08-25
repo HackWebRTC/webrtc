@@ -241,11 +241,13 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
     }
     ForwardErrorCorrection::Packet* packet = recovered_packet->pkt;
     ++packet_counter_.num_recovered_packets;
+    // Set this flag first; in case the recovered packet carries a RED
+    // header, OnRecoveredPacket will recurse back here.
+    recovered_packet->returned = true;
     crit_sect_.Leave();
     recovered_packet_callback_->OnRecoveredPacket(packet->data,
                                                   packet->length);
     crit_sect_.Enter();
-    recovered_packet->returned = true;
   }
   crit_sect_.Leave();
   return 0;
