@@ -379,9 +379,11 @@ WEBRTC_RTCSTATS_IMPL(RTCMediaStreamTrackStats, RTCStats, "track",
                      &full_frames_lost,
                      &audio_level,
                      &total_audio_energy,
-                     &total_samples_duration,
                      &echo_return_loss,
-                     &echo_return_loss_enhancement);
+                     &echo_return_loss_enhancement,
+                     &total_samples_received,
+                     &total_samples_duration,
+                     &concealed_samples);
 // clang-format on
 
 RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
@@ -410,9 +412,11 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(std::string&& id,
       full_frames_lost("fullFramesLost"),
       audio_level("audioLevel"),
       total_audio_energy("totalAudioEnergy"),
-      total_samples_duration("totalSamplesDuration"),
       echo_return_loss("echoReturnLoss"),
-      echo_return_loss_enhancement("echoReturnLossEnhancement") {
+      echo_return_loss_enhancement("echoReturnLossEnhancement"),
+      total_samples_received("totalSamplesReceived"),
+      total_samples_duration("totalSamplesDuration"),
+      concealed_samples("concealedSamples") {
   RTC_DCHECK(kind == RTCMediaStreamTrackKind::kAudio ||
              kind == RTCMediaStreamTrackKind::kVideo);
 }
@@ -437,9 +441,11 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
       full_frames_lost(other.full_frames_lost),
       audio_level(other.audio_level),
       total_audio_energy(other.total_audio_energy),
-      total_samples_duration(other.total_samples_duration),
       echo_return_loss(other.echo_return_loss),
-      echo_return_loss_enhancement(other.echo_return_loss_enhancement) {}
+      echo_return_loss_enhancement(other.echo_return_loss_enhancement),
+      total_samples_received(other.total_samples_received),
+      total_samples_duration(other.total_samples_duration),
+      concealed_samples(other.concealed_samples) {}
 
 RTCMediaStreamTrackStats::~RTCMediaStreamTrackStats() {
 }

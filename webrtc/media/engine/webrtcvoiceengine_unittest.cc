@@ -596,6 +596,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     stats.jitter_buffer_preferred_ms = 567;
     stats.delay_estimate_ms = 890;
     stats.audio_level = 1234;
+    stats.total_samples_received = 5678901;
+    stats.concealed_samples = 234;
     stats.expand_rate = 5.67f;
     stats.speech_expand_rate = 8.90f;
     stats.secondary_decoded_rate = 1.23f;
@@ -632,6 +634,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
               stats.jitter_buffer_preferred_ms);
     EXPECT_EQ(info.delay_estimate_ms, stats.delay_estimate_ms);
     EXPECT_EQ(info.audio_level, stats.audio_level);
+    EXPECT_EQ(info.total_samples_received, stats.total_samples_received);
+    EXPECT_EQ(info.concealed_samples, stats.concealed_samples);
     EXPECT_EQ(info.expand_rate, stats.expand_rate);
     EXPECT_EQ(info.speech_expand_rate, stats.speech_expand_rate);
     EXPECT_EQ(info.secondary_decoded_rate, stats.secondary_decoded_rate);

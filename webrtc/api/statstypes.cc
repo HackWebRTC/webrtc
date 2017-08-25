@@ -371,6 +371,8 @@ const char* StatsReport::Value::display_name() const {
       return "audioInputLevel";
     case kStatsValueNameBytesSent:
       return "bytesSent";
+    case kStatsValueNameConcealedSamples:
+      return "concealedSamples";
     case kStatsValueNamePacketsSent:
       return "packetsSent";
     case kStatsValueNameBytesReceived:
@@ -383,6 +385,8 @@ const char* StatsReport::Value::display_name() const {
       return "packetsLost";
     case kStatsValueNameProtocol:
       return "protocol";
+    case kStatsValueNameTotalSamplesReceived:
+      return "totalSamplesReceived";
     case kStatsValueNameTransportId:
       return "transportId";
     case kStatsValueNameSelectedCandidatePairId:

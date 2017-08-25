@@ -424,8 +424,11 @@ ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
   }
   audio_track_stats->total_audio_energy =
       voice_receiver_info.total_output_energy;
+  audio_track_stats->total_samples_received =
+      voice_receiver_info.total_samples_received;
   audio_track_stats->total_samples_duration =
       voice_receiver_info.total_output_duration;
+  audio_track_stats->concealed_samples = voice_receiver_info.concealed_samples;
   return audio_track_stats;
 }
 

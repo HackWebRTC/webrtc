@@ -332,6 +332,10 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
   acm_stat->medianWaitingTimeMs = neteq_stat.median_waiting_time_ms;
   acm_stat->minWaitingTimeMs = neteq_stat.min_waiting_time_ms;
   acm_stat->maxWaitingTimeMs = neteq_stat.max_waiting_time_ms;
+
+  NetEqLifetimeStatistics neteq_lifetime_stat = neteq_->GetLifetimeStatistics();
+  acm_stat->totalSamplesReceived = neteq_lifetime_stat.total_samples_received;
+  acm_stat->concealedSamples = neteq_lifetime_stat.concealed_samples;
 }
 
 int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,

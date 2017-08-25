@@ -273,9 +273,11 @@ class RTCMediaStreamTrackStats final : public RTCStats {
   // Audio-only members
   RTCStatsMember<double> audio_level;
   RTCStatsMember<double> total_audio_energy;
-  RTCStatsMember<double> total_samples_duration;
   RTCStatsMember<double> echo_return_loss;
   RTCStatsMember<double> echo_return_loss_enhancement;
+  RTCStatsMember<uint64_t> total_samples_received;
+  RTCStatsMember<double> total_samples_duration;
+  RTCStatsMember<uint64_t> concealed_samples;
 };
 
 // https://w3c.github.io/webrtc-stats/#pcstats-dict*

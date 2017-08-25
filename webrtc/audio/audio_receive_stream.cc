@@ -194,6 +194,8 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   auto ns = channel_proxy_->GetNetworkStatistics();
   stats.jitter_buffer_ms = ns.currentBufferSize;
   stats.jitter_buffer_preferred_ms = ns.preferredBufferSize;
+  stats.total_samples_received = ns.totalSamplesReceived;
+  stats.concealed_samples = ns.concealedSamples;
   stats.expand_rate = Q14ToFloat(ns.currentExpandRate);
   stats.speech_expand_rate = Q14ToFloat(ns.currentSpeechExpandRate);
   stats.secondary_decoded_rate = Q14ToFloat(ns.currentSecondaryDecodedRate);

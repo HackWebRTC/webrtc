@@ -380,6 +380,11 @@ int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
   return 0;
 }
 
+NetEqLifetimeStatistics NetEqImpl::GetLifetimeStatistics() const {
+  rtc::CritScope lock(&crit_sect_);
+  return stats_.GetLifetimeStatistics();
+}
+
 void NetEqImpl::GetRtcpStatistics(RtcpStatistics* stats) {
   rtc::CritScope lock(&crit_sect_);
   if (stats) {

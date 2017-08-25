@@ -153,24 +153,29 @@ void StatisticsCalculator::ResetMcu() {
 
 void StatisticsCalculator::ExpandedVoiceSamples(size_t num_samples) {
   expanded_speech_samples_ += num_samples;
+  lifetime_stats_.concealed_samples += num_samples;
 }
 
 void StatisticsCalculator::ExpandedNoiseSamples(size_t num_samples) {
   expanded_noise_samples_ += num_samples;
+  lifetime_stats_.concealed_samples += num_samples;
 }
 
 void StatisticsCalculator::ExpandedVoiceSamplesCorrection(int num_samples) {
   expanded_speech_samples_ =
       AddIntToSizeTWithLowerCap(num_samples, expanded_speech_samples_);
+  lifetime_stats_.concealed_samples += num_samples;
 }
 
 void StatisticsCalculator::ExpandedNoiseSamplesCorrection(int num_samples) {
   expanded_noise_samples_ =
       AddIntToSizeTWithLowerCap(num_samples, expanded_noise_samples_);
+  lifetime_stats_.concealed_samples += num_samples;
 }
 
 void StatisticsCalculator::PreemptiveExpandedSamples(size_t num_samples) {
   preemptive_samples_ += num_samples;
+  lifetime_stats_.concealed_samples += num_samples;
 }
 
 void StatisticsCalculator::AcceleratedSamples(size_t num_samples) {
@@ -205,6 +210,7 @@ void StatisticsCalculator::IncreaseCounter(size_t num_samples, int fs_hz) {
     timestamps_since_last_report_ = 0;
     discarded_packets_ = 0;
   }
+  lifetime_stats_.total_samples_received += num_samples;
 }
 
 void StatisticsCalculator::SecondaryDecodedSamples(int num_samples) {
@@ -305,6 +311,10 @@ void StatisticsCalculator::GetNetworkStatistics(
   // Reset counters.
   ResetMcu();
   Reset();
+}
+
+NetEqLifetimeStatistics StatisticsCalculator::GetLifetimeStatistics() const {
+  return lifetime_stats_;
 }
 
 uint16_t StatisticsCalculator::CalculateQ14Ratio(size_t numerator,

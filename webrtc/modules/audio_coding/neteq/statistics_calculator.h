@@ -99,6 +99,10 @@ class StatisticsCalculator {
                             const DecisionLogic& decision_logic,
                             NetEqNetworkStatistics *stats);
 
+  // Returns a copy of this class's lifetime statistics. These statistics are
+  // never reset.
+  NetEqLifetimeStatistics GetLifetimeStatistics() const;
+
  private:
   static const int kMaxReportPeriod = 60;  // Seconds before auto-reset.
   static const size_t kLenWaitingTimes = 100;
@@ -158,6 +162,8 @@ class StatisticsCalculator {
   // Calculates numerator / denominator, and returns the value in Q14.
   static uint16_t CalculateQ14Ratio(size_t numerator, uint32_t denominator);
 
+  // TODO(steveanton): Add unit tests for the lifetime stats.
+  NetEqLifetimeStatistics lifetime_stats_;
   size_t preemptive_samples_;
   size_t accelerate_samples_;
   size_t added_zero_samples_;

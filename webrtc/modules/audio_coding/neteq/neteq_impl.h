@@ -185,6 +185,8 @@ class NetEqImpl : public webrtc::NetEq {
   // and a new report period is started with the call.
   void GetRtcpStatistics(RtcpStatistics* stats) override;
 
+  NetEqLifetimeStatistics GetLifetimeStatistics() const override;
+
   // Same as RtcpStatistics(), but does not reset anything.
   void GetRtcpStatisticsNoReset(RtcpStatistics* stats) override;
 

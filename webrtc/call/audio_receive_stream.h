@@ -52,7 +52,15 @@ class AudioReceiveStream {
     // See description of "totalAudioEnergy" in the WebRTC stats spec:
     // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
     double total_output_energy = 0.0;
+    // See description of "totalSamplesReceived" in the WebRTC stats spec:
+    // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalsamplesreceived
+    uint64_t total_samples_received = 0;
+    // See description of "totalSamplesDuration" in the WebRTC stats spec:
+    // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalsamplesduration
     double total_output_duration = 0.0;
+    // See description of "concealedSamples" in the WebRTC stats spec:
+    // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-concealedsamples
+    uint64_t concealed_samples = 0;
     float expand_rate = 0.0f;
     float speech_expand_rate = 0.0f;
     float secondary_decoded_rate = 0.0f;
