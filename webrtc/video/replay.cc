@@ -31,6 +31,7 @@
 #include "webrtc/test/rtp_file_reader.h"
 #include "webrtc/test/run_loop.h"
 #include "webrtc/test/run_test.h"
+#include "webrtc/test/testsupport/frame_writer.h"
 #include "webrtc/test/video_capturer.h"
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/typedefs.h"
@@ -136,7 +137,7 @@ static const bool input_file_dummy =
                                   &ValidateInputFilenameNotEmpty);
 
 // Flag for raw output files.
-DEFINE_string(out_base, "", "Basename (excluding .yuv) for raw output");
+DEFINE_string(out_base, "", "Basename (excluding .jpg) for raw output");
 static std::string OutBase() {
   return static_cast<std::string>(FLAGS_out_base);
 }
@@ -158,12 +159,7 @@ class FileRenderPassthrough : public rtc::VideoSinkInterface<VideoFrame> {
  public:
   FileRenderPassthrough(const std::string& basename,
                         rtc::VideoSinkInterface<VideoFrame>* renderer)
-      : basename_(basename),
-        renderer_(renderer),
-        file_(nullptr),
-        count_(0),
-        last_width_(0),
-        last_height_(0) {}
+      : basename_(basename), renderer_(renderer), file_(nullptr), count_(0) {}
 
   ~FileRenderPassthrough() {
     if (file_)
@@ -174,38 +170,24 @@ class FileRenderPassthrough : public rtc::VideoSinkInterface<VideoFrame> {
   void OnFrame(const VideoFrame& video_frame) override {
     if (renderer_)
       renderer_->OnFrame(video_frame);
+
     if (basename_.empty())
       return;
-    if (last_width_ != video_frame.width() ||
-        last_height_ != video_frame.height()) {
-      if (file_)
-        fclose(file_);
-      std::stringstream filename;
-      filename << basename_;
-      if (++count_ > 1)
-        filename << '-' << count_;
-      filename << '_' << video_frame.width() << 'x' << video_frame.height()
-               << ".yuv";
-      file_ = fopen(filename.str().c_str(), "wb");
-      if (!file_) {
-        fprintf(stderr,
-                "Couldn't open file for writing: %s\n",
-                filename.str().c_str());
-      }
-    }
-    last_width_ = video_frame.width();
-    last_height_ = video_frame.height();
-    if (!file_)
-      return;
-    PrintVideoFrame(video_frame, file_);
+
+    std::stringstream filename;
+    filename << basename_ << count_++ << "_" << video_frame.timestamp()
+             << ".jpg";
+
+#if !defined(WEBRTC_IOS)
+    test::JpegFrameWriter frame_writer(filename.str());
+    RTC_CHECK(frame_writer.WriteFrame(video_frame, 100));
+#endif
   }
 
   const std::string basename_;
   rtc::VideoSinkInterface<VideoFrame>* const renderer_;
   FILE* file_;
   size_t count_;
-  int last_width_;
-  int last_height_;
 };
 
 class DecoderBitstreamFileWriter : public EncodedFrameObserver {

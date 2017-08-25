@@ -223,6 +223,7 @@ if (rtc_include_tests) {
       "../test:test_renderer",
       "../test:test_support",
       "../test:video_test_common",
+      "../test:video_test_support",
       "//third_party/gflags",
     ]
     if (!build_with_chromium && is_clang) {
