@@ -58,7 +58,12 @@ class PlotVideoProcessorIntegrationTest
                int height,
                int framerate,
                const std::string& filename) {
-    // Bitrate and frame rate profile.
+    SetTestConfig(&config_, hw_codec_, kUseSingleCore, kPacketLoss, filename,
+                  kVerboseLogging, kBatchMode);
+    SetCodecSettings(&config_, codec_type_, kNumTemporalLayers,
+                     kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
+                     kSpatialResizeOn, kResilienceOn, width, height);
+
     RateProfile rate_profile;
     SetRateProfile(&rate_profile,
                    0,  // update_index
@@ -67,34 +72,8 @@ class PlotVideoProcessorIntegrationTest
     rate_profile.frame_index_rate_update[1] = kNumFrames + 1;
     rate_profile.num_frames = kNumFrames;
 
-    // Codec/network settings.
-    SetTestConfig(&config_, hw_codec_, kUseSingleCore, kPacketLoss, filename,
-                  kVerboseLogging, kBatchMode);
-    SetCodecSettings(&config_, codec_type_, kNumTemporalLayers,
-                     kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
-                     kSpatialResizeOn, kResilienceOn, width, height);
-
-    // Use default thresholds for quality (PSNR and SSIM).
-    QualityThresholds quality_thresholds;
-
-    // Use very loose thresholds for rate control, so even poor HW codecs will
-    // pass the requirements.
-    RateControlThresholds rc_thresholds[1];
-    // clang-format off
-    SetRateControlThresholds(
-      rc_thresholds,
-      0,               // update_index
-      kNumFrames + 1,  // max_num_dropped_frames
-      10000,           // max_key_frame_size_mismatch
-      10000,           // max_delta_frame_size_mismatch
-      10000,           // max_encoding_rate_mismatch
-      kNumFrames + 1,  // max_time_hit_target
-      0,               // num_spatial_resizes
-      1);              // num_key_frames
-    // clang-format on
-
-    ProcessFramesAndVerify(quality_thresholds, rate_profile, rc_thresholds,
-                           &kVisualizationParams);
+    ProcessFramesAndMaybeVerify(rate_profile, nullptr, nullptr,
+                                &kVisualizationParams);
   }
 
   const int bitrate_;

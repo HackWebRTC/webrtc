@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #if defined(WEBRTC_ANDROID)
 #include "webrtc/modules/video_coding/codecs/test/android_test_initializer.h"
@@ -65,7 +66,6 @@ const float kScaleKeyFrameSize = 0.5f;
 
 // Thresholds for the quality metrics. Defaults are maximally minimal.
 struct QualityThresholds {
-  QualityThresholds() {}
   QualityThresholds(double min_avg_psnr,
                     double min_min_psnr,
                     double min_avg_ssim,
@@ -74,10 +74,10 @@ struct QualityThresholds {
         min_min_psnr(min_min_psnr),
         min_avg_ssim(min_avg_ssim),
         min_min_ssim(min_min_ssim) {}
-  double min_avg_psnr = std::numeric_limits<double>::min();
-  double min_min_psnr = std::numeric_limits<double>::min();
-  double min_avg_ssim = 0.0;
-  double min_min_ssim = 0.0;
+  double min_avg_psnr;
+  double min_min_psnr;
+  double min_avg_ssim;
+  double min_min_ssim;
 };
 
 // The sequence of bit rate and frame rate changes for the encoder, the frame
@@ -101,8 +101,8 @@ struct RateControlThresholds {
   int max_delta_frame_size_mismatch;
   int max_encoding_rate_mismatch;
   int max_time_hit_target;
-  int num_spatial_resizes;  // Set to -1 to disable check.
-  int num_key_frames;       // Set to -1 to disable check.
+  int num_spatial_resizes;
+  int num_key_frames;
 };
 
 // Should video files be saved persistently to disk for post-run visualization?
@@ -306,8 +306,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
 
   // Verify expected behavior of rate control and print out data.
-  void VerifyRateControlMetrics(int rate_update_index,
-                                const RateControlThresholds& rc_expected) {
+  void PrintAndMaybeVerifyRateControlMetrics(
+      int rate_update_index,
+      const std::vector<RateControlThresholds>* rc_thresholds) {
     int num_dropped_frames = processor_->NumberDroppedFrames();
     int num_resize_actions = processor_->NumberSpatialResizes();
     printf(
@@ -324,8 +325,13 @@ class VideoProcessorIntegrationTest : public testing::Test {
         num_frames_total_, num_frames_to_hit_target_, num_dropped_frames,
         num_resize_actions);
 
-    EXPECT_LE(perc_encoding_rate_mismatch_,
-              rc_expected.max_encoding_rate_mismatch);
+    const RateControlThresholds* rc_threshold = nullptr;
+    if (rc_thresholds) {
+      rc_threshold = &(*rc_thresholds)[rate_update_index];
+
+      EXPECT_LE(perc_encoding_rate_mismatch_,
+                rc_threshold->max_encoding_rate_mismatch);
+    }
     if (num_key_frames_ > 0) {
       int perc_key_frame_size_mismatch =
           100 * sum_key_frame_size_mismatch_ / num_key_frames_;
@@ -333,8 +339,10 @@ class VideoProcessorIntegrationTest : public testing::Test {
           " # key frames           : %d\n"
           " Key frame rate mismatch: %d\n",
           num_key_frames_, perc_key_frame_size_mismatch);
-      EXPECT_LE(perc_key_frame_size_mismatch,
-                rc_expected.max_key_frame_size_mismatch);
+      if (rc_threshold) {
+        EXPECT_LE(perc_key_frame_size_mismatch,
+                  rc_threshold->max_key_frame_size_mismatch);
+      }
     }
 
     const int num_temporal_layers =
@@ -357,20 +365,20 @@ class VideoProcessorIntegrationTest : public testing::Test {
           i, bitrate_layer_[i], framerate_layer_[i], per_frame_bandwidth_[i],
           encoding_bitrate_[i], perc_frame_size_mismatch,
           perc_encoding_rate_mismatch, num_frames_per_update_[i]);
-      EXPECT_LE(perc_frame_size_mismatch,
-                rc_expected.max_delta_frame_size_mismatch);
-      EXPECT_LE(perc_encoding_rate_mismatch,
-                rc_expected.max_encoding_rate_mismatch);
+      if (rc_threshold) {
+        EXPECT_LE(perc_frame_size_mismatch,
+                  rc_threshold->max_delta_frame_size_mismatch);
+        EXPECT_LE(perc_encoding_rate_mismatch,
+                  rc_threshold->max_encoding_rate_mismatch);
+      }
     }
     printf("\n");
 
-    EXPECT_LE(num_frames_to_hit_target_, rc_expected.max_time_hit_target);
-    EXPECT_LE(num_dropped_frames, rc_expected.max_num_dropped_frames);
-    if (rc_expected.num_spatial_resizes >= 0) {
-      EXPECT_EQ(rc_expected.num_spatial_resizes, num_resize_actions);
-    }
-    if (rc_expected.num_key_frames >= 0) {
-      EXPECT_EQ(rc_expected.num_key_frames, num_key_frames_);
+    if (rc_threshold) {
+      EXPECT_LE(num_frames_to_hit_target_, rc_threshold->max_time_hit_target);
+      EXPECT_LE(num_dropped_frames, rc_threshold->max_num_dropped_frames);
+      EXPECT_EQ(rc_threshold->num_spatial_resizes, num_resize_actions);
+      EXPECT_EQ(rc_threshold->num_key_frames, num_key_frames_);
     }
   }
 
@@ -459,14 +467,11 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
 
   // Processes all frames in the clip and verifies the result.
-  // TODO(brandtr): Change the second last argument to be a
-  // const std::vector<RateControlThresholds>&, so we can ensure that the user
-  // does not expect us to do mid-clip rate updates when we are not able to,
-  // e.g., when we are operating in batch mode.
-  void ProcessFramesAndVerify(const QualityThresholds& quality_thresholds,
-                              const RateProfile& rate_profile,
-                              RateControlThresholds* rc_thresholds,
-                              const VisualizationParams* visualization_params) {
+  void ProcessFramesAndMaybeVerify(
+      const RateProfile& rate_profile,
+      const std::vector<RateControlThresholds>* rc_thresholds,
+      const QualityThresholds* quality_thresholds,
+      const VisualizationParams* visualization_params) {
     config_.codec_settings.startBitrate = rate_profile.target_bit_rate[0];
     SetUpObjects(visualization_params, rate_profile.target_bit_rate[0],
                  rate_profile.input_frame_rate[0]);
@@ -526,7 +531,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
         // update layers and codec with new rates.
         if (frame_number ==
             rate_profile.frame_index_rate_update[update_index + 1]) {
-          VerifyRateControlMetrics(update_index, rc_thresholds[update_index]);
+          PrintAndMaybeVerifyRateControlMetrics(update_index, rc_thresholds);
 
           // Update layer rates and the codec with new rates.
           ++update_index;
@@ -545,7 +550,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
     // Verify rate control metrics for all frames (if in batch mode), or for all
     // frames since the last rate update (if not in batch mode).
-    VerifyRateControlMetrics(update_index, rc_thresholds[update_index]);
+    PrintAndMaybeVerifyRateControlMetrics(update_index, rc_thresholds);
     EXPECT_EQ(num_frames, frame_number);
     EXPECT_EQ(num_frames + 1, static_cast<int>(stats_.stats_.size()));
 
@@ -572,7 +577,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
                                       config_.codec_settings.width,
                                       config_.codec_settings.height,
                                       &psnr_result, &ssim_result));
-    VerifyQuality(psnr_result, ssim_result, quality_thresholds);
+    if (quality_thresholds) {
+      VerifyQuality(psnr_result, ssim_result, *quality_thresholds);
+    }
     stats_.PrintSummary();
     printf("PSNR avg: %f, min: %f\nSSIM avg: %f, min: %f\n",
            psnr_result.average, psnr_result.min, ssim_result.average,
@@ -662,25 +669,26 @@ class VideoProcessorIntegrationTest : public testing::Test {
         frame_index_rate_update;
   }
 
-  static void SetRateControlThresholds(RateControlThresholds* rc_thresholds,
-                                       int update_index,
-                                       int max_num_dropped_frames,
-                                       int max_key_frame_size_mismatch,
-                                       int max_delta_frame_size_mismatch,
-                                       int max_encoding_rate_mismatch,
-                                       int max_time_hit_target,
-                                       int num_spatial_resizes,
-                                       int num_key_frames) {
-    rc_thresholds[update_index].max_num_dropped_frames = max_num_dropped_frames;
-    rc_thresholds[update_index].max_key_frame_size_mismatch =
-        max_key_frame_size_mismatch;
-    rc_thresholds[update_index].max_delta_frame_size_mismatch =
-        max_delta_frame_size_mismatch;
-    rc_thresholds[update_index].max_encoding_rate_mismatch =
-        max_encoding_rate_mismatch;
-    rc_thresholds[update_index].max_time_hit_target = max_time_hit_target;
-    rc_thresholds[update_index].num_spatial_resizes = num_spatial_resizes;
-    rc_thresholds[update_index].num_key_frames = num_key_frames;
+  static void AddRateControlThresholds(
+      int max_num_dropped_frames,
+      int max_key_frame_size_mismatch,
+      int max_delta_frame_size_mismatch,
+      int max_encoding_rate_mismatch,
+      int max_time_hit_target,
+      int num_spatial_resizes,
+      int num_key_frames,
+      std::vector<RateControlThresholds>* rc_thresholds) {
+    RTC_DCHECK(rc_thresholds);
+
+    rc_thresholds->emplace_back();
+    RateControlThresholds* rc_threshold = &rc_thresholds->back();
+    rc_threshold->max_num_dropped_frames = max_num_dropped_frames;
+    rc_threshold->max_key_frame_size_mismatch = max_key_frame_size_mismatch;
+    rc_threshold->max_delta_frame_size_mismatch = max_delta_frame_size_mismatch;
+    rc_threshold->max_encoding_rate_mismatch = max_encoding_rate_mismatch;
+    rc_threshold->max_time_hit_target = max_time_hit_target;
+    rc_threshold->num_spatial_resizes = num_spatial_resizes;
+    rc_threshold->num_key_frames = num_key_frames;
   }
 
   // Config.
