@@ -86,6 +86,14 @@ bool UseSendSideBwe(const FlexfecReceiveStream::Config& config) {
   return UseSendSideBwe(config.rtp_header_extensions, config.transport_cc);
 }
 
+const int* FindKeyByValue(const std::map<int, int>& m, int v) {
+  for (const auto& kv : m) {
+    if (kv.second == v)
+      return &kv.first;
+  }
+  return nullptr;
+}
+
 rtclog::StreamConfig CreateRtcLogStreamConfig(
     const VideoReceiveStream::Config& config) {
   rtclog::StreamConfig rtclog_config;
@@ -97,10 +105,10 @@ rtclog::StreamConfig CreateRtcLogStreamConfig(
   rtclog_config.rtp_extensions = config.rtp.extensions;
 
   for (const auto& d : config.decoders) {
-    auto search = config.rtp.rtx_payload_types.find(d.payload_type);
-    rtclog_config.codecs.emplace_back(
-        d.payload_name, d.payload_type,
-        search != config.rtp.rtx_payload_types.end() ? search->second : 0);
+    const int* search =
+        FindKeyByValue(config.rtp.rtx_associated_payload_types, d.payload_type);
+    rtclog_config.codecs.emplace_back(d.payload_name, d.payload_type,
+                                      search ? *search : 0);
   }
   return rtclog_config;
 }

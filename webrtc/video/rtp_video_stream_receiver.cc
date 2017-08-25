@@ -148,9 +148,9 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
   if (config_.rtp.rtx_ssrc) {
     rtp_payload_registry_.SetRtxSsrc(config_.rtp.rtx_ssrc);
 
-    for (const auto& kv : config_.rtp.rtx_payload_types) {
-      RTC_DCHECK(kv.second != 0);
-      rtp_payload_registry_.SetRtxPayloadType(kv.second, kv.first);
+    for (const auto& kv : config_.rtp.rtx_associated_payload_types) {
+      RTC_DCHECK_NE(kv.first, 0);
+      rtp_payload_registry_.SetRtxPayloadType(kv.first, kv.second);
     }
   }
 

@@ -865,8 +865,9 @@ class FlexfecRenderObserver : public test::EndToEndTest,
 
       (*receive_configs)[0].rtp.rtx_ssrc = test::CallTest::kSendRtxSsrcs[0];
       (*receive_configs)[0]
-          .rtp.rtx_payload_types[test::CallTest::kVideoSendPayloadType] =
-          test::CallTest::kSendRtxPayloadType;
+          .rtp
+          .rtx_associated_payload_types[test::CallTest::kSendRtxPayloadType] =
+          test::CallTest::kVideoSendPayloadType;
     }
   }
 
@@ -1182,8 +1183,9 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
         send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
         (*receive_configs)[0].rtp.rtx_ssrc = kSendRtxSsrcs[0];
-        (*receive_configs)[0].rtp.rtx_payload_types[payload_type_] =
-            kSendRtxPayloadType;
+        (*receive_configs)[0]
+            .rtp.rtx_associated_payload_types[kSendRtxPayloadType] =
+            payload_type_;
       }
       // Configure encoding and decoding with VP8, since generic packetization
       // doesn't support FEC with NACK.
@@ -2773,8 +2775,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
         send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
         (*receive_configs)[0].rtp.rtx_ssrc = kSendRtxSsrcs[0];
-        (*receive_configs)[0].rtp.rtx_payload_types[kFakeVideoSendPayloadType] =
-            kSendRtxPayloadType;
+        (*receive_configs)[0]
+            .rtp.rtx_associated_payload_types[kSendRtxPayloadType] =
+            kFakeVideoSendPayloadType;
       }
       // RTT needed for RemoteNtpTimeEstimator for the receive stream.
       (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report = true;
@@ -3540,8 +3543,9 @@ TEST_F(EndToEndTest, GetStats) {
         (*receive_configs)[i].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
 
         (*receive_configs)[i].rtp.rtx_ssrc = kSendRtxSsrcs[i];
-        (*receive_configs)[i].rtp.rtx_payload_types[kFakeVideoSendPayloadType] =
-            kSendRtxPayloadType;
+        (*receive_configs)[i]
+            .rtp.rtx_associated_payload_types[kSendRtxPayloadType] =
+            kFakeVideoSendPayloadType;
       }
 
       for (size_t i = 0; i < kNumSsrcs; ++i)
@@ -4323,8 +4327,9 @@ TEST_F(EndToEndTest, MAYBE_TestFlexfecRtpStatePreservation) {
     CreateMatchingReceiveConfigs(receive_transport.get());
     video_receive_configs_[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
     video_receive_configs_[0].rtp.rtx_ssrc = kSendRtxSsrcs[0];
-    video_receive_configs_[0].rtp.rtx_payload_types[kVideoSendPayloadType] =
-        kSendRtxPayloadType;
+    video_receive_configs_[0]
+        .rtp.rtx_associated_payload_types[kSendRtxPayloadType] =
+        kVideoSendPayloadType;
 
     // The matching FlexFEC receive config is not created by
     // CreateMatchingReceiveConfigs since this is not a test::BaseTest.
@@ -4824,7 +4829,7 @@ TEST_F(EndToEndTest, VerifyDefaultVideoReceiveConfigParameters) {
       << "RTCP XR settings require rtcp-xr to be negotiated.";
   EXPECT_EQ(0U, default_receive_config.rtp.rtx_ssrc)
       << "Enabling RTX requires ssrc-group: FID negotiation";
-  EXPECT_TRUE(default_receive_config.rtp.rtx_payload_types.empty())
+  EXPECT_TRUE(default_receive_config.rtp.rtx_associated_payload_types.empty())
       << "Enabling RTX requires rtpmap: rtx negotiation.";
   EXPECT_TRUE(default_receive_config.rtp.extensions.empty())
       << "Enabling RTP extensions require negotiation.";

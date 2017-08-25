@@ -111,6 +111,16 @@ cricket::MediaConfig GetMediaConfig() {
   media_config.video.enable_cpu_overuse_detection = false;
   return media_config;
 }
+
+// TODO(nisse): Duplicated in call.cc.
+const int* FindKeyByValue(const std::map<int, int>& m, int v) {
+  for (const auto& kv : m) {
+    if (kv.second == v)
+      return &kv.first;
+  }
+  return nullptr;
+}
+
 }  // namespace
 
 namespace cricket {
@@ -1304,9 +1314,10 @@ TEST_F(WebRtcVideoChannelTest, RecvStreamWithSimAndRtx) {
   // Receiver side.
   FakeVideoReceiveStream* recv_stream = AddRecvStream(
       cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs));
-  EXPECT_FALSE(recv_stream->GetConfig().rtp.rtx_payload_types.empty());
+  EXPECT_FALSE(
+      recv_stream->GetConfig().rtp.rtx_associated_payload_types.empty());
   EXPECT_EQ(recv_stream->GetConfig().decoders.size(),
-            recv_stream->GetConfig().rtp.rtx_payload_types.size())
+            recv_stream->GetConfig().rtp.rtx_associated_payload_types.size())
       << "RTX should be mapped for all decoders/payload types.";
   EXPECT_EQ(rtx_ssrcs[0], recv_stream->GetConfig().rtp.rtx_ssrc);
 }
@@ -3142,11 +3153,11 @@ TEST_F(WebRtcVideoChannelTest, SetRecvCodecsWithChangedRtxPayloadType) {
   ASSERT_EQ(1U, fake_call_->GetVideoReceiveStreams().size());
   const webrtc::VideoReceiveStream::Config& config_before =
       fake_call_->GetVideoReceiveStreams()[0]->GetConfig();
-  EXPECT_EQ(1U, config_before.rtp.rtx_payload_types.size());
-  auto it_before =
-      config_before.rtp.rtx_payload_types.find(GetEngineCodec("VP8").id);
-  ASSERT_NE(it_before, config_before.rtp.rtx_payload_types.end());
-  EXPECT_EQ(kUnusedPayloadType1, it_before->second);
+  EXPECT_EQ(1U, config_before.rtp.rtx_associated_payload_types.size());
+  const int* payload_type_before = FindKeyByValue(
+      config_before.rtp.rtx_associated_payload_types, GetEngineCodec("VP8").id);
+  ASSERT_NE(payload_type_before, nullptr);
+  EXPECT_EQ(kUnusedPayloadType1, *payload_type_before);
   EXPECT_EQ(kRtxSsrcs1[0], config_before.rtp.rtx_ssrc);
 
   // Change payload type for RTX.
@@ -3155,11 +3166,11 @@ TEST_F(WebRtcVideoChannelTest, SetRecvCodecsWithChangedRtxPayloadType) {
   ASSERT_EQ(1U, fake_call_->GetVideoReceiveStreams().size());
   const webrtc::VideoReceiveStream::Config& config_after =
       fake_call_->GetVideoReceiveStreams()[0]->GetConfig();
-  EXPECT_EQ(1U, config_after.rtp.rtx_payload_types.size());
-  auto it_after =
-      config_after.rtp.rtx_payload_types.find(GetEngineCodec("VP8").id);
-  ASSERT_NE(it_after, config_after.rtp.rtx_payload_types.end());
-  EXPECT_EQ(kUnusedPayloadType2, it_after->second);
+  EXPECT_EQ(1U, config_after.rtp.rtx_associated_payload_types.size());
+  const int* payload_type_after = FindKeyByValue(
+      config_after.rtp.rtx_associated_payload_types, GetEngineCodec("VP8").id);
+  ASSERT_NE(payload_type_after, nullptr);
+  EXPECT_EQ(kUnusedPayloadType2, *payload_type_after);
   EXPECT_EQ(kRtxSsrcs1[0], config_after.rtp.rtx_ssrc);
 }
 
@@ -3783,9 +3794,10 @@ TEST_F(WebRtcVideoChannelTest, DefaultReceiveStreamReconfiguresToUseRtx) {
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
       << "AddRecvStream should have reconfigured, not added a new receiver.";
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
-  EXPECT_FALSE(recv_stream->GetConfig().rtp.rtx_payload_types.empty());
+  EXPECT_FALSE(
+      recv_stream->GetConfig().rtp.rtx_associated_payload_types.empty());
   EXPECT_EQ(recv_stream->GetConfig().decoders.size(),
-            recv_stream->GetConfig().rtp.rtx_payload_types.size())
+            recv_stream->GetConfig().rtp.rtx_associated_payload_types.size())
       << "RTX should be mapped for all decoders/payload types.";
   EXPECT_EQ(rtx_ssrcs[0], recv_stream->GetConfig().rtp.rtx_ssrc);
 }

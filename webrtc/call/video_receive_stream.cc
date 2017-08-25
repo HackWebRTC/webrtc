@@ -113,8 +113,8 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
   ss << ", ulpfec: " << ulpfec.ToString();
   ss << ", rtx_ssrc: " << rtx_ssrc;
   ss << ", rtx_payload_types: {";
-  for (auto& kv : rtx_payload_types) {
-    ss << kv.first << " (apt) -> " << kv.second << " (pt), ";
+  for (auto& kv : rtx_associated_payload_types) {
+    ss << kv.first << " (pt) -> " << kv.second << " (apt), ";
   }
   ss << '}';
   ss << ", extensions: [";

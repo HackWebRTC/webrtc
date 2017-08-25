@@ -2219,10 +2219,10 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::ConfigureCodecs(
     config_.decoders.push_back(decoder);
   }
 
-  config_.rtp.rtx_payload_types.clear();
+  config_.rtp.rtx_associated_payload_types.clear();
   for (const VideoCodecSettings& recv_codec : recv_codecs) {
-    config_.rtp.rtx_payload_types[recv_codec.codec.id] =
-        recv_codec.rtx_payload_type;
+    config_.rtp.rtx_associated_payload_types[recv_codec.rtx_payload_type] =
+        recv_codec.codec.id;
   }
 
   config_.rtp.ulpfec = recv_codecs.front().ulpfec;

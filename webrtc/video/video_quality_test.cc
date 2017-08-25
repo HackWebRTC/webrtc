@@ -1484,8 +1484,8 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   for (size_t i = 0; i < num_video_streams; ++i) {
     video_receive_configs_[i].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
     video_receive_configs_[i].rtp.rtx_ssrc = kSendRtxSsrcs[i];
-    video_receive_configs_[i].rtp.rtx_payload_types[payload_type] =
-        kSendRtxPayloadType;
+    video_receive_configs_[i]
+        .rtp.rtx_associated_payload_types[kSendRtxPayloadType] = payload_type;
     video_receive_configs_[i].rtp.transport_cc = params_.call.send_side_bwe;
     video_receive_configs_[i].rtp.remb = !params_.call.send_side_bwe;
     // Enable RTT calculation so NTP time estimator will work.
@@ -1627,8 +1627,8 @@ void VideoQualityTest::SetupThumbnails(Transport* send_transport,
 
     thumbnail_receive_config.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
     thumbnail_receive_config.rtp.rtx_ssrc = kThumbnailRtxSsrcStart + i;
-    thumbnail_receive_config.rtp.rtx_payload_types[kPayloadTypeVP8] =
-        kSendRtxPayloadType;
+    thumbnail_receive_config.rtp
+        .rtx_associated_payload_types[kSendRtxPayloadType] = kPayloadTypeVP8;
     thumbnail_receive_config.rtp.transport_cc = params_.call.send_side_bwe;
     thumbnail_receive_config.rtp.remb = !params_.call.send_side_bwe;
 
