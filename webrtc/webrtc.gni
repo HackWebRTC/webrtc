@@ -105,7 +105,14 @@ declare_args() {
   # See http://clang.llvm.org/docs/SanitizerCoverage.html .
   rtc_sanitize_coverage = ""
 
+  # Links a default implementation of task queues to targets
+  # that depend on the target rtc_task_queue. Set to false to
+  # use an external implementation.
+  rtc_link_task_queue_impl = true
+
   # Enable libevent task queues on platforms that support it.
+  # rtc_link_task_queue_impl must be set to true for this to
+  # have an effect.
   if (is_win || is_mac || is_ios || is_nacl) {
     rtc_enable_libevent = false
     rtc_build_libevent = false
@@ -314,6 +321,7 @@ template("rtc_executable") {
       "//build/config:exe_and_shlib_deps",
     ]
     deps += invoker.deps
+
     public_configs = [ rtc_common_inherited_config ]
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs

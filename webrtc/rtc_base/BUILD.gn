@@ -295,42 +295,71 @@ config("enable_libevent_config") {
   defines = [ "WEBRTC_BUILD_LIBEVENT" ]
 }
 
-rtc_static_library("rtc_task_queue") {
+rtc_source_set("rtc_task_queue") {
   public_deps = [
     ":rtc_base_approved",
+    ":rtc_task_queue_api",
   ]
 
+  if (rtc_link_task_queue_impl) {
+    deps = [
+      ":rtc_task_queue_impl",
+    ]
+  }
+}
+
+# WebRTC targets must not directly depend on rtc_task_queue_api or
+# rtc_task_queue_impl. Instead, depend on rtc_task_queue.
+# The build flag |rtc_link_task_queue_impl| decides if WebRTC targets will link
+# to the default implemenation in rtc_task_queue_impl or if an externally
+# provided implementation should be used. An external implementation should
+# depend on rtc_task_queue_api.
+rtc_source_set("rtc_task_queue_api") {
   if (build_with_chromium) {
     sources = [
-      "../../webrtc_overrides/webrtc/rtc_base/task_queue.cc",
       "../../webrtc_overrides/webrtc/rtc_base/task_queue.h",
     ]
   } else {
     sources = [
       "task_queue.h",
-      "task_queue_posix.h",
     ]
-    if (rtc_build_libevent) {
-      deps = [
-        "//base/third_party/libevent",
-      ]
-    }
+  }
+  deps = [
+    ":rtc_base_approved",
+  ]
+}
 
+rtc_source_set("rtc_task_queue_impl") {
+  deps = [
+    ":rtc_base_approved",
+    ":rtc_task_queue_api",
+  ]
+  if (build_with_chromium) {
+    sources = [
+      "../../webrtc_overrides/webrtc/rtc_base/task_queue.cc",
+    ]
+  } else {
+    if (rtc_build_libevent) {
+      deps += [ "//base/third_party/libevent" ]
+    }
     if (rtc_enable_libevent) {
-      sources += [
+      sources = [
         "task_queue_libevent.cc",
         "task_queue_posix.cc",
+        "task_queue_posix.h",
       ]
       all_dependent_configs = [ ":enable_libevent_config" ]
     } else {
       if (is_mac || is_ios) {
-        sources += [
+        sources = [
           "task_queue_gcd.cc",
           "task_queue_posix.cc",
         ]
       }
       if (is_win) {
-        sources += [ "task_queue_win.cc" ]
+        sources = [
+          "task_queue_win.cc",
+        ]
       }
     }
   }
