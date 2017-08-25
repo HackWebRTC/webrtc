@@ -318,30 +318,6 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
-
-  if (!is_ios) {
-    # These tests do not work on ios, see
-    # https://bugs.chromium.org/p/webrtc/issues/detail?id=4755
-    rtc_executable("audio_device_tests") {
-      testonly = true
-      sources = [
-        "test/audio_device_test_api.cc",
-        "test/audio_device_test_defines.h",
-      ]
-      deps = [
-        ":audio_device",
-        "../..:webrtc_common",
-        "../../rtc_base:rtc_base_approved",
-        "../../system_wrappers",
-        "../../test:test_main",
-        "../../test:test_support",
-        "../rtp_rtcp",
-        "../utility",
-        "//testing/gtest",
-      ]
-      public_configs = [ ":audio_device_config" ]
-    }
-  }
 }
 
 if (!build_with_chromium && is_android) {
