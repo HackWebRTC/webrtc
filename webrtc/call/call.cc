@@ -590,9 +590,7 @@ void Call::UpdateReceiveHistograms() {
 }
 
 PacketReceiver* Call::Receiver() {
-  // TODO(solenberg): Some test cases in EndToEndTest use this from a different
-  // thread. Re-enable once that is fixed.
-  //  RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
   return this;
 }
 
@@ -1372,10 +1370,7 @@ PacketReceiver::DeliveryStatus Call::DeliverPacket(
     const uint8_t* packet,
     size_t length,
     const PacketTime& packet_time) {
-  // TODO(solenberg): Tests call this function on a network thread, libjingle
-  // calls on the worker thread. We should move towards always using a network
-  // thread. Then this check can be enabled.
-  // RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
   if (RtpHeaderParser::IsRtcp(packet, length))
     return DeliverRtcp(media_type, packet, length);
 
