@@ -21,11 +21,11 @@
   int _bufferHeight;
   int _cropWidth;
   int _cropHeight;
-  int _cropX;
-  int _cropY;
 }
 
 @synthesize pixelBuffer = _pixelBuffer;
+@synthesize cropX = _cropX;
+@synthesize cropY = _cropY;
 
 - (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer {
   return [self initWithPixelBuffer:pixelBuffer

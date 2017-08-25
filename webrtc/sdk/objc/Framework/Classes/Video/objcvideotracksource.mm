@@ -54,8 +54,8 @@ void ObjcVideoTrackSource::OnCapturedFrame(RTCVideoFrame* frame) {
               adaptedHeight:adapted_height
                   cropWidth:crop_width
                  cropHeight:crop_height
-                      cropX:crop_x
-                      cropY:crop_y]);
+                      cropX:crop_x + rtcPixelBuffer.cropX
+                      cropY:crop_y + rtcPixelBuffer.cropY]);
   } else {
     // Adapted I420 frame.
     // TODO(magjed): Optimize this I420 path.
