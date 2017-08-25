@@ -30,7 +30,6 @@ const bool kSpatialResizeOn = false;
 const bool kFrameDropperOn = false;
 
 // Test settings.
-const bool kBatchMode = true;
 const bool kVerboseLogging = true;
 const float kPacketLoss = 0.0f;
 const VisualizationParams kVisualizationParams = {
@@ -59,7 +58,7 @@ class PlotVideoProcessorIntegrationTest
                int framerate,
                const std::string& filename) {
     SetTestConfig(&config_, hw_codec_, kUseSingleCore, kPacketLoss, filename,
-                  kVerboseLogging, kBatchMode);
+                  kVerboseLogging);
     SetCodecSettings(&config_, codec_type_, kNumTemporalLayers,
                      kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
                      kSpatialResizeOn, kResilienceOn, width, height);

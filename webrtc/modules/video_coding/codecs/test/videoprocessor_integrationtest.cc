@@ -22,7 +22,6 @@ namespace {
 const bool kUseSingleCore = true;
 const bool kVerboseLogging = false;
 const bool kHwCodec = false;
-const bool kBatchMode = false;
 
 // Codec settings.
 const bool kResilienceOn = true;
@@ -49,7 +48,7 @@ const std::nullptr_t kNoVisualizationParams = nullptr;
 // not been added.
 TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecH264, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -77,7 +76,7 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
 // One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -99,7 +98,7 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
 // lower. One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.05f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -123,7 +122,7 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
 // One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -155,7 +154,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
 TEST_F(VideoProcessorIntegrationTest,
        ProcessNoLossChangeFrameRateFrameDropVP9) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -180,7 +179,7 @@ TEST_F(VideoProcessorIntegrationTest,
 // VP9: Run with no packet loss and denoiser on. One key frame (first frame).
 TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -204,7 +203,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
 TEST_F(VideoProcessorIntegrationTest,
        DISABLED_ProcessNoLossSpatialResizeFrameDropVP9) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, true,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -232,7 +231,7 @@ TEST_F(VideoProcessorIntegrationTest,
 // to -1 below means no periodic key frames in test.
 TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -254,7 +253,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
 // lower. One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.05f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -276,7 +275,7 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
 // One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.1f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -289,30 +288,6 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
   AddRateControlThresholds(0, 40, 20, 10, 15, 0, 1, &rc_thresholds);
 
   QualityThresholds quality_thresholds(19.0, 16.0, 0.50, 0.35);
-
-  ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
-}
-
-// This test is identical to VideoProcessorIntegrationTest.ProcessZeroPacketLoss
-// except that |batch_mode| is turned on. The main point of this test is to see
-// that the reported stats are not wildly varying between batch mode and the
-// regular online mode.
-TEST_F(VideoProcessorIntegrationTest, ProcessInBatchMode) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, true /* batch_mode */);
-  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
-
-  RateProfile rate_profile;
-  SetRateProfile(&rate_profile, 0, 500, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNumFramesShort + 1;
-  rate_profile.num_frames = kNumFramesShort;
-
-  std::vector<RateControlThresholds> rc_thresholds;
-  AddRateControlThresholds(0, 40, 20, 10, 15, 0, 1, &rc_thresholds);
-
-  QualityThresholds quality_thresholds(34.95, 33.0, 0.90, 0.89);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
                               kNoVisualizationParams);
@@ -342,7 +317,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessInBatchMode) {
 #endif
 TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -382,7 +357,7 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
 TEST_F(VideoProcessorIntegrationTest,
        MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -418,7 +393,7 @@ TEST_F(VideoProcessorIntegrationTest,
 #endif
 TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossTemporalLayersVP8) {
   SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging, kBatchMode);
+                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP8, 3, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 

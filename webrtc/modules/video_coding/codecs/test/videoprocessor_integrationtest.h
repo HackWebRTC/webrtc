@@ -492,59 +492,34 @@ class VideoProcessorIntegrationTest : public testing::Test {
     ResetRateControlMetrics(
         rate_profile.frame_index_rate_update[update_index + 1]);
 
-    if (config_.batch_mode) {
-      // In batch mode, we calculate the metrics for all frames after all frames
-      // have been sent for encoding.
+    while (frame_number < num_frames) {
+      processor_->ProcessFrame(frame_number);
+      VerifyQpParser(frame_number);
+      const int tl_idx = TemporalLayerIndexForFrame(frame_number);
+      ++num_frames_per_update_[tl_idx];
+      ++num_frames_total_;
+      UpdateRateControlMetrics(frame_number);
 
-      for (frame_number = 0; frame_number < num_frames; ++frame_number) {
-        processor_->ProcessFrame(frame_number);
-      }
+      ++frame_number;
 
-      for (frame_number = 0; frame_number < num_frames; ++frame_number) {
-        const int tl_idx = TemporalLayerIndexForFrame(frame_number);
-        ++num_frames_per_update_[tl_idx];
-        ++num_frames_total_;
-        UpdateRateControlMetrics(frame_number);
-      }
-    } else {
-      // In online mode, we calculate the metrics for a given frame right after
-      // it has been sent for encoding.
+      // If we hit another/next update, verify stats for current state and
+      // update layers and codec with new rates.
+      if (frame_number ==
+          rate_profile.frame_index_rate_update[update_index + 1]) {
+        PrintAndMaybeVerifyRateControlMetrics(update_index, rc_thresholds);
 
-      if (config_.hw_codec) {
-        LOG(LS_WARNING) << "HW codecs should mostly be run in batch mode, "
-                           "since they may be pipelining.";
-      }
-
-      while (frame_number < num_frames) {
-        processor_->ProcessFrame(frame_number);
-        VerifyQpParser(frame_number);
-        const int tl_idx = TemporalLayerIndexForFrame(frame_number);
-        ++num_frames_per_update_[tl_idx];
-        ++num_frames_total_;
-        UpdateRateControlMetrics(frame_number);
-
-        ++frame_number;
-
-        // If we hit another/next update, verify stats for current state and
-        // update layers and codec with new rates.
-        if (frame_number ==
-            rate_profile.frame_index_rate_update[update_index + 1]) {
-          PrintAndMaybeVerifyRateControlMetrics(update_index, rc_thresholds);
-
-          // Update layer rates and the codec with new rates.
-          ++update_index;
-          bitrate_kbps_ = rate_profile.target_bit_rate[update_index];
-          framerate_ = rate_profile.input_frame_rate[update_index];
-          SetTemporalLayerRates();
-          ResetRateControlMetrics(
-              rate_profile.frame_index_rate_update[update_index + 1]);
-          processor_->SetRates(bitrate_kbps_, framerate_);
-        }
+        // Update layer rates and the codec with new rates.
+        ++update_index;
+        bitrate_kbps_ = rate_profile.target_bit_rate[update_index];
+        framerate_ = rate_profile.input_frame_rate[update_index];
+        SetTemporalLayerRates();
+        ResetRateControlMetrics(
+            rate_profile.frame_index_rate_update[update_index + 1]);
+        processor_->SetRates(bitrate_kbps_, framerate_);
       }
     }
 
-    // Verify rate control metrics for all frames (if in batch mode), or for all
-    // frames since the last rate update (if not in batch mode).
+    // Verify rate control metrics for all frames since the last rate update.
     PrintAndMaybeVerifyRateControlMetrics(update_index, rc_thresholds);
     EXPECT_EQ(num_frames, frame_number);
     EXPECT_EQ(num_frames, static_cast<int>(stats_.stats_.size()));
@@ -592,8 +567,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
                             bool use_single_core,
                             float packet_loss_probability,
                             std::string filename,
-                            bool verbose_logging,
-                            bool batch_mode) {
+                            bool verbose_logging) {
     config->filename = filename;
     config->input_filename = ResourcePath(filename, "yuv");
     // Generate an output filename in a safe way.
@@ -603,7 +577,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
     config->use_single_core = use_single_core;
     config->verbose = verbose_logging;
     config->hw_codec = hw_codec;
-    config->batch_mode = batch_mode;
   }
 
   static void SetCodecSettings(TestConfig* config,

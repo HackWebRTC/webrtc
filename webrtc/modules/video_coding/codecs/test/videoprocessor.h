@@ -113,12 +113,6 @@ struct TestConfig {
 
   // If HW or SW codec should be used.
   bool hw_codec = false;
-
-  // In batch mode, the VideoProcessor is fed all the frames for processing
-  // before any metrics are calculated. This is useful for pipelining HW codecs,
-  // for which some calculated metrics otherwise would be incorrect. The
-  // downside with batch mode is that mid-test rate allocation is not supported.
-  bool batch_mode = false;
 };
 
 // Handles encoding/decoding of video using the VideoEncoder/VideoDecoder
