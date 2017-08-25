@@ -1065,5 +1065,8 @@ if (is_android) {
       "java/src/org/webrtc/Size.java",
       "java/src/org/webrtc/ThreadUtils.java",
     ]
+
+    # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
+    no_build_hooks = true
   }
 }

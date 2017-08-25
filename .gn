@@ -41,4 +41,7 @@ default_args = {
 
   # WebRTC does not want to switch to C++14 yet.
   use_cxx11 = true
+
+  # WebRTC relies on Chromium's Android test infrastructure.
+  use_cxx11_on_android = false
 }

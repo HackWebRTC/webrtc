@@ -451,6 +451,9 @@ android_library("libjingle_peerconnection_java") {
     "../../modules/audio_device:audio_device_java",
     "../../rtc_base:base_java",
   ]
+
+  # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
+  no_build_hooks = true
 }
 
 android_library("libjingle_peerconnection_metrics_default_java") {
@@ -459,6 +462,9 @@ android_library("libjingle_peerconnection_metrics_default_java") {
   deps = [
     "../../rtc_base:base_java",
   ]
+
+  # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
+  no_build_hooks = true
 }
 
 if (rtc_include_tests) {
@@ -502,5 +508,8 @@ if (rtc_include_tests) {
     ]
 
     shared_libraries = [ "../../sdk/android:libjingle_peerconnection_so" ]
+
+    # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
+    no_build_hooks = true
   }
 }

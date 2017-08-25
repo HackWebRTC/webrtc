@@ -717,5 +717,8 @@ if (!build_with_chromium && is_android) {
       "../rtc_base:base_java",
       "//testing/android/native_test:native_test_java",
     ]
+
+    # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
+    no_build_hooks = true
   }
 }
