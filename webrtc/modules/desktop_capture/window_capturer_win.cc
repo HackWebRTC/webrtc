@@ -172,10 +172,23 @@ void WindowCapturerWin::CaptureFrame() {
     return;
   }
 
+  DesktopRect original_rect;
+  DesktopRect cropped_rect;
+  // TODO(zijiehe): GetCroppedWindowRect() is not accurate, Windows won't draw
+  // the content below the |window_| with PrintWindow() or BitBlt(). See bug
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=8157.
+  if (!GetCroppedWindowRect(window_, &cropped_rect, &original_rect)) {
+    LOG(LS_WARNING) << "Failed to get window info: " << GetLastError();
+    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
+    return;
+  }
+
   // Return a 1x1 black frame if the window is minimized or invisible, to match
   // behavior on mace. Window can be temporarily invisible during the
   // transition of full screen mode on/off.
-  if (IsIconic(window_) || !IsWindowVisible(window_)) {
+  if (original_rect.is_empty() ||
+      IsIconic(window_) ||
+      !IsWindowVisible(window_)) {
     std::unique_ptr<DesktopFrame> frame(
         new BasicDesktopFrame(DesktopSize(1, 1)));
     memset(frame->data(), 0, frame->stride() * frame->size().height());
@@ -186,19 +199,34 @@ void WindowCapturerWin::CaptureFrame() {
     return;
   }
 
-  DesktopRect original_rect;
-  DesktopRect cropped_rect;
-  if (!GetCroppedWindowRect(window_, &cropped_rect, &original_rect)) {
-    LOG(LS_WARNING) << "Failed to get window info: " << GetLastError();
-    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
-    return;
-  }
-
   HDC window_dc = GetWindowDC(window_);
   if (!window_dc) {
     LOG(LS_WARNING) << "Failed to get window DC: " << GetLastError();
     callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
+  }
+
+  DesktopSize window_dc_size;
+  if (GetDcSize(window_dc, &window_dc_size)) {
+    // The |window_dc_size| is used to detect the scaling of the original
+    // window. If the application does not support high-DPI settings, it will
+    // be scaled by Windows according to the scaling setting.
+    // https://www.google.com/search?q=windows+scaling+settings&ie=UTF-8
+    // So the size of the |window_dc|, i.e. the bitmap we can retrieve from
+    // PrintWindow() or BitBlt() function, will be smaller than
+    // |original_rect| and |cropped_rect|. Part of the captured desktop frame
+    // will be black. See
+    // bug https://bugs.chromium.org/p/webrtc/issues/detail?id=8112 for
+    // details.
+
+    // If |window_dc_size| is smaller than |window_rect|, let's resize both
+    // |original_rect| and |cropped_rect| according to the scaling factor.
+    const double vertical_scale =
+        static_cast<double>(window_dc_size.width()) / original_rect.width();
+    const double horizontal_scale =
+        static_cast<double>(window_dc_size.height()) / original_rect.height();
+    original_rect.Scale(vertical_scale, horizontal_scale);
+    cropped_rect.Scale(vertical_scale, horizontal_scale);
   }
 
   std::unique_ptr<DesktopFrameWin> frame(

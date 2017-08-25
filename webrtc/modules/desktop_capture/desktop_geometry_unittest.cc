@@ -66,4 +66,41 @@ TEST(DesktopRectTest, EmptyRectUnionWithEmptyOne) {
   ASSERT_TRUE(rect.is_empty());
 }
 
+TEST(DesktopRectTest, Scale) {
+  DesktopRect rect = DesktopRect::MakeXYWH(100, 100, 100, 100);
+  rect.Scale(1.1, 1.1);
+  ASSERT_EQ(rect.top(), 100);
+  ASSERT_EQ(rect.left(), 100);
+  ASSERT_EQ(rect.width(), 110);
+  ASSERT_EQ(rect.height(), 110);
+
+  rect = DesktopRect::MakeXYWH(100, 100, 100, 100);
+  rect.Scale(0.01, 0.01);
+  ASSERT_EQ(rect.top(), 100);
+  ASSERT_EQ(rect.left(), 100);
+  ASSERT_EQ(rect.width(), 1);
+  ASSERT_EQ(rect.height(), 1);
+
+  rect = DesktopRect::MakeXYWH(100, 100, 100, 100);
+  rect.Scale(1.1, 0.9);
+  ASSERT_EQ(rect.top(), 100);
+  ASSERT_EQ(rect.left(), 100);
+  ASSERT_EQ(rect.width(), 110);
+  ASSERT_EQ(rect.height(), 90);
+
+  rect = DesktopRect::MakeXYWH(0, 0, 100, 100);
+  rect.Scale(1.1, 1.1);
+  ASSERT_EQ(rect.top(), 0);
+  ASSERT_EQ(rect.left(), 0);
+  ASSERT_EQ(rect.width(), 110);
+  ASSERT_EQ(rect.height(), 110);
+
+  rect = DesktopRect::MakeXYWH(0, 100, 100, 100);
+  rect.Scale(1.1, 1.1);
+  ASSERT_EQ(rect.top(), 100);
+  ASSERT_EQ(rect.left(), 0);
+  ASSERT_EQ(rect.width(), 110);
+  ASSERT_EQ(rect.height(), 110);
+}
+
 }  // namespace webrtc

@@ -41,6 +41,10 @@ bool GetWindowContentRect(HWND window, DesktopRect* result);
 // |window| if region type is SIMPLEREGION.
 int GetWindowRegionTypeWithBoundary(HWND window, DesktopRect* result);
 
+// Retrieves the size of the |hdc|. This function returns false if native APIs
+// fail.
+bool GetDcSize(HDC hdc, DesktopSize* size);
+
 typedef HRESULT (WINAPI *DwmIsCompositionEnabledFunc)(BOOL* enabled);
 class AeroChecker {
  public:

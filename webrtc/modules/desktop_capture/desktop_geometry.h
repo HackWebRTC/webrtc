@@ -142,6 +142,10 @@ class DesktopRect {
               int32_t right_offset,
               int32_t bottom_offset);
 
+  // Scales current DesktopRect. This function does not impact the |top_| and
+  // |left_|.
+  void Scale(double horizontal, double vertical);
+
  private:
   DesktopRect(int32_t left, int32_t top, int32_t right, int32_t bottom)
       : left_(left), top_(top), right_(right), bottom_(bottom) {

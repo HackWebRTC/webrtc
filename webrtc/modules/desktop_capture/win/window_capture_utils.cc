@@ -113,6 +113,18 @@ int GetWindowRegionTypeWithBoundary(HWND window, DesktopRect* result) {
   return region_type;
 }
 
+bool GetDcSize(HDC hdc, DesktopSize* size) {
+  win::ScopedGDIObject<HGDIOBJ, win::DeleteObjectTraits<HGDIOBJ>>
+      scoped_hgdi(GetCurrentObject(hdc, OBJ_BITMAP));
+  BITMAP bitmap;
+  memset(&bitmap, 0, sizeof(BITMAP));
+  if (GetObject(scoped_hgdi.Get(), sizeof(BITMAP), &bitmap) == 0) {
+    return false;
+  }
+  size->set(bitmap.bmWidth, bitmap.bmHeight);
+  return true;
+}
+
 AeroChecker::AeroChecker() : dwmapi_library_(nullptr), func_(nullptr) {
   // Try to load dwmapi.dll dynamically since it is not available on XP.
   dwmapi_library_ = LoadLibrary(L"dwmapi.dll");

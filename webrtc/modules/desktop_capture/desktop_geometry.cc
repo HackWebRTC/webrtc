@@ -70,5 +70,10 @@ void DesktopRect::Extend(int32_t left_offset,
   bottom_ += bottom_offset;
 }
 
+void DesktopRect::Scale(double horizontal, double vertical) {
+  right_ += width() * (horizontal - 1);
+  bottom_ += height() * (vertical - 1);
+}
+
 }  // namespace webrtc
 
