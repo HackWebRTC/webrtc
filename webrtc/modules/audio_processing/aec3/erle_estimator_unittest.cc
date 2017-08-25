@@ -36,7 +36,7 @@ TEST(ErleEstimator, Estimates) {
   std::array<float, kFftLengthBy2Plus1> E2;
   std::array<float, kFftLengthBy2Plus1> Y2;
 
-  ErleEstimator estimator;
+  ErleEstimator estimator(1.f, 8.f, 1.5f);
 
   // Verifies that the ERLE estimate is properley increased to higher values.
   X2.fill(500 * 1000.f * 1000.f);

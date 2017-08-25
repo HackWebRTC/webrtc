@@ -40,7 +40,7 @@ float RunSubtractorTest(int num_blocks_to_process,
   std::array<float, kFftLengthBy2Plus1> Y2;
   std::array<float, kFftLengthBy2Plus1> E2_main;
   std::array<float, kFftLengthBy2Plus1> E2_shadow;
-  AecState aec_state(0.f);
+  AecState aec_state(AudioProcessing::Config::EchoCanceller3{});
   x_old.fill(0.f);
   Y2.fill(0.f);
   E2_main.fill(0.f);
@@ -109,9 +109,11 @@ TEST(Subtractor, DISABLED_NullOutput) {
   RenderSignalAnalyzer render_signal_analyzer;
   std::vector<float> y(kBlockSize, 0.f);
 
-  EXPECT_DEATH(subtractor.Process(render_buffer, y, render_signal_analyzer,
-                                  AecState(0.f), nullptr),
-               "");
+  EXPECT_DEATH(
+      subtractor.Process(render_buffer, y, render_signal_analyzer,
+                         AecState(AudioProcessing::Config::EchoCanceller3{}),
+                         nullptr),
+      "");
 }
 
 // Verifies the check for the capture signal size.
@@ -124,9 +126,11 @@ TEST(Subtractor, WrongCaptureSize) {
   std::vector<float> y(kBlockSize - 1, 0.f);
   SubtractorOutput output;
 
-  EXPECT_DEATH(subtractor.Process(render_buffer, y, render_signal_analyzer,
-                                  AecState(0.f), &output),
-               "");
+  EXPECT_DEATH(
+      subtractor.Process(render_buffer, y, render_signal_analyzer,
+                         AecState(AudioProcessing::Config::EchoCanceller3{}),
+                         &output),
+      "");
 }
 
 #endif

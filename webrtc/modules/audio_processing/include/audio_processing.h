@@ -17,6 +17,7 @@
 #include <math.h>
 #include <stddef.h>  // size_t
 #include <stdio.h>  // FILE
+#include <string.h>
 #include <vector>
 
 #include "webrtc/modules/audio_processing/beamformer/array_util.h"
@@ -267,6 +268,49 @@ class AudioProcessing : public rtc::RefCountInterface {
     // The functionality is not yet activated in the code and turning this on
     // does not yet have the desired behavior.
     struct EchoCanceller3 {
+      struct Param {
+        struct Erle {
+          float min = 1.f;
+          float max_l = 8.f;
+          float max_h = 1.5f;
+        } erle;
+
+        struct EpStrength {
+          float lf = 100.f;
+          float mf = 1000.f;
+          float hf = 5000.f;
+          float default_len = 0.7f;
+        } ep_strength;
+
+        struct Mask {
+          float m1 = 0.01f;
+          float m2 = 0.001f;
+          float m3 = 0.01f;
+          float m4 = 0.1f;
+        } gain_mask;
+
+        struct EchoAudibility {
+          float low_render_limit = 192.f;
+          float normal_render_limit = 64.f;
+        } echo_audibility;
+
+        struct GainUpdates {
+          struct GainChanges {
+            float max_inc;
+            float max_dec;
+            float rate_inc;
+            float rate_dec;
+            float min_inc;
+            float min_dec;
+          };
+
+          GainChanges low_noise = {8.f, 8.f, 2.f, 2.f, 4.f, 4.f};
+          GainChanges normal = {4.f, 4.f, 2.f, 2.f, 1.2f, 2.f};
+          GainChanges saturation = {1.2f, 1.2f, 1.5f, 1.5f, 1.f, 1.f};
+
+          float floor_first_increase = 0.001f;
+        } gain_updates;
+      } param;
       bool enabled = false;
     } echo_canceller3;
 
@@ -277,6 +321,17 @@ class AudioProcessing : public rtc::RefCountInterface {
     struct GainController2 {
       bool enabled = false;
     } gain_controller2;
+
+    // Explicit copy assignment implementation to avoid issues with memory
+    // sanitizer complaints in case of self-assignment.
+    // TODO(peah): Add buildflag to ensure that this is only included for memory
+    // sanitizer builds.
+    Config& operator=(const Config& config) {
+      if (this != &config) {
+        memcpy(this, &config, sizeof(*this));
+      }
+      return *this;
+    }
   };
 
   // TODO(mgraczyk): Remove once all methods that use ChannelLayout are gone.

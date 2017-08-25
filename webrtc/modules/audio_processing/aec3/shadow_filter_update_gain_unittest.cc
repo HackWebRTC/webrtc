@@ -47,7 +47,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);
-  AecState aec_state(0.f);
+  AecState aec_state(AudioProcessing::Config::EchoCanceller3{});
   RenderSignalAnalyzer render_signal_analyzer;
   std::array<float, kFftLength> s;
   FftData S;

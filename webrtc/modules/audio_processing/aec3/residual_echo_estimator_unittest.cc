@@ -12,6 +12,7 @@
 
 #include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
 #include "webrtc/rtc_base/random.h"
 #include "webrtc/test/gtest.h"
@@ -22,22 +23,25 @@ namespace webrtc {
 
 // Verifies that the check for non-null output residual echo power works.
 TEST(ResidualEchoEstimator, NullResidualEchoPowerOutput) {
-  AecState aec_state(0.f);
+  AecState aec_state(AudioProcessing::Config::EchoCanceller3{});
   RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 10,
                              std::vector<size_t>(1, 10));
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2;
   std::array<float, kFftLengthBy2Plus1> S2_linear;
   std::array<float, kFftLengthBy2Plus1> Y2;
-  EXPECT_DEATH(ResidualEchoEstimator().Estimate(true, aec_state, render_buffer,
-                                                S2_linear, Y2, nullptr),
-               "");
+  EXPECT_DEATH(
+      ResidualEchoEstimator(AudioProcessing::Config::EchoCanceller3{})
+          .Estimate(true, aec_state, render_buffer, S2_linear, Y2, nullptr),
+      "");
 }
 
 #endif
 
 TEST(ResidualEchoEstimator, BasicTest) {
-  ResidualEchoEstimator estimator;
-  AecState aec_state(0.f);
+  ResidualEchoEstimator estimator(AudioProcessing::Config::EchoCanceller3{});
+  AudioProcessing::Config::EchoCanceller3 config;
+  config.param.ep_strength.default_len = 0.f;
+  AecState aec_state(config);
   RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 10,
                              std::vector<size_t>(1, 10));
   std::array<float, kFftLengthBy2Plus1> E2_main;

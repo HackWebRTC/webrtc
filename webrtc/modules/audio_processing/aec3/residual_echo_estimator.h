@@ -18,6 +18,7 @@
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
@@ -25,7 +26,8 @@ namespace webrtc {
 
 class ResidualEchoEstimator {
  public:
-  ResidualEchoEstimator();
+  explicit ResidualEchoEstimator(
+      const AudioProcessing::Config::EchoCanceller3& config);
   ~ResidualEchoEstimator();
 
   void Estimate(bool using_subtractor_output,
@@ -69,8 +71,9 @@ class ResidualEchoEstimator {
       S2_old_;
   std::array<float, kFftLengthBy2Plus1> X2_noise_floor_;
   std::array<int, kFftLengthBy2Plus1> X2_noise_floor_counter_;
+  const AudioProcessing::Config::EchoCanceller3 config_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(ResidualEchoEstimator);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ResidualEchoEstimator);
 };
 
 }  // namespace webrtc

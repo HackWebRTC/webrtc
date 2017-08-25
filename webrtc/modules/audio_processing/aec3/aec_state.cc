@@ -75,11 +75,15 @@ constexpr int kEchoPathChangeCounterMax = 2 * kNumBlocksPerSecond;
 
 int AecState::instance_count_ = 0;
 
-AecState::AecState(float reverb_decay)
+AecState::AecState(const AudioProcessing::Config::EchoCanceller3& config)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
+      erle_estimator_(config.param.erle.min,
+                      config.param.erle.max_l,
+                      config.param.erle.max_h),
       echo_path_change_counter_(kEchoPathChangeCounterInitial),
-      reverb_decay_(reverb_decay) {}
+      config_(config),
+      reverb_decay_(config_.param.ep_strength.default_len) {}
 
 AecState::~AecState() = default;
 
@@ -252,7 +256,8 @@ void AecState::UpdateReverb(
 
       // Limit the estimated reverb_decay_ to the maximum one needed in practice
       // to minimize the impact of incorrect estimates.
-      reverb_decay_ = std::min(0.8f, reverb_decay_);
+      reverb_decay_ =
+          std::min(config_.param.ep_strength.default_len, reverb_decay_);
     }
     reverb_decay_to_test_ = 0.9f;
     reverb_decay_candidate_residual_ = -1.f;
@@ -260,7 +265,7 @@ void AecState::UpdateReverb(
 
   // For noisy impulse responses, assume a fixed tail length.
   if (tail_power > 0.0005f) {
-    reverb_decay_ = 0.7f;
+    reverb_decay_ = config_.param.ep_strength.default_len;
   }
   data_dumper_->DumpRaw("aec3_reverb_decay", reverb_decay_);
   data_dumper_->DumpRaw("aec3_tail_power", tail_power);

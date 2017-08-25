@@ -20,6 +20,7 @@
 #include "webrtc/modules/audio_processing/aec3/erl_estimator.h"
 #include "webrtc/modules/audio_processing/aec3/erle_estimator.h"
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/optional.h"
@@ -31,7 +32,7 @@ class ApmDataDumper;
 // Handles the state and the conditions for the echo removal functionality.
 class AecState {
  public:
-  explicit AecState(float reverb_decay);
+  explicit AecState(const AudioProcessing::Config::EchoCanceller3& config);
   ~AecState();
 
   // Returns whether the linear filter estimate is usable.
@@ -140,13 +141,14 @@ class AecState {
   rtc::Optional<size_t> filter_delay_;
   rtc::Optional<size_t> external_delay_;
   size_t blocks_since_last_saturation_ = 1000;
-  float reverb_decay_;
   float reverb_decay_to_test_ = 0.9f;
   float reverb_decay_candidate_ = 0.f;
   float reverb_decay_candidate_residual_ = -1.f;
   EchoAudibility echo_audibility_;
+  const AudioProcessing::Config::EchoCanceller3 config_;
+  float reverb_decay_;
 
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AecState);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AecState);
 };
 
 }  // namespace webrtc

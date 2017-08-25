@@ -18,7 +18,7 @@ namespace webrtc {
 // Verify the general functionality of AecState
 TEST(AecState, NormalUsage) {
   ApmDataDumper data_dumper(42);
-  AecState state(0.f);
+  AecState state(AudioProcessing::Config::EchoCanceller3{});
   RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 30,
                              std::vector<size_t>(1, 30));
   std::array<float, kFftLengthBy2Plus1> E2_main = {};
@@ -163,7 +163,7 @@ TEST(AecState, NormalUsage) {
 
 // Verifies the a non-significant delay is correctly identified.
 TEST(AecState, NonSignificantDelay) {
-  AecState state(0.f);
+  AecState state(AudioProcessing::Config::EchoCanceller3{});
   RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 30,
                              std::vector<size_t>(1, 30));
   std::array<float, kFftLengthBy2Plus1> E2_main;
@@ -192,7 +192,7 @@ TEST(AecState, NonSignificantDelay) {
 // Verifies the delay for a converged filter is correctly identified.
 TEST(AecState, ConvergedFilterDelay) {
   constexpr int kFilterLength = 10;
-  AecState state(0.f);
+  AecState state(AudioProcessing::Config::EchoCanceller3{});
   RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 30,
                              std::vector<size_t>(1, 30));
   std::array<float, kFftLengthBy2Plus1> E2_main;
@@ -228,7 +228,7 @@ TEST(AecState, ConvergedFilterDelay) {
 
 // Verify that the externally reported delay is properly reported and converted.
 TEST(AecState, ExternalDelay) {
-  AecState state(0.f);
+  AecState state(AudioProcessing::Config::EchoCanceller3{});
   std::array<float, kFftLengthBy2Plus1> E2_main;
   std::array<float, kFftLengthBy2Plus1> E2_shadow;
   std::array<float, kFftLengthBy2Plus1> Y2;

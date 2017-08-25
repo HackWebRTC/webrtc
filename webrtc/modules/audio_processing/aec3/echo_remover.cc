@@ -72,6 +72,7 @@ class EchoRemoverImpl final : public EchoRemover {
 
  private:
   static int instance_count_;
+  const AudioProcessing::Config::EchoCanceller3 config_;
   const Aec3Fft fft_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const Aec3Optimization optimization_;
@@ -95,16 +96,18 @@ int EchoRemoverImpl::instance_count_ = 0;
 EchoRemoverImpl::EchoRemoverImpl(
     const AudioProcessing::Config::EchoCanceller3& config,
     int sample_rate_hz)
-    : fft_(),
+    : config_(config),
+      fft_(),
       data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
       sample_rate_hz_(sample_rate_hz),
       subtractor_(data_dumper_.get(), optimization_),
-      suppression_gain_(optimization_),
+      suppression_gain_(config_, optimization_),
       cng_(optimization_),
       suppression_filter_(sample_rate_hz_),
-      aec_state_(0.8f) {
+      residual_echo_estimator_(config_),
+      aec_state_(config_) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
 }
 

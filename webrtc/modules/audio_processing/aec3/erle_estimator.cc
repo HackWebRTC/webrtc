@@ -16,16 +16,13 @@
 
 namespace webrtc {
 
-namespace {
-
-constexpr float kMinErle = 1.f;
-constexpr float kMaxLfErle = 8.f;
-constexpr float kMaxHfErle = 1.5f;
-
-}  // namespace
-
-ErleEstimator::ErleEstimator() {
-  erle_.fill(kMinErle);
+ErleEstimator::ErleEstimator(float min_erle,
+                             float max_erle_lf,
+                             float max_erle_hf)
+    : min_erle_(min_erle),
+      max_erle_lf_(max_erle_lf),
+      max_erle_hf_(max_erle_hf) {
+  erle_.fill(min_erle_);
   hold_counters_.fill(0);
 }
 
@@ -50,19 +47,19 @@ void ErleEstimator::Update(
         if (new_erle > erle_[k]) {
           hold_counters_[k - 1] = 100;
           erle_[k] += 0.1f * (new_erle - erle_[k]);
-          erle_[k] = rtc::SafeClamp(erle_[k], kMinErle, max_erle);
+          erle_[k] = rtc::SafeClamp(erle_[k], min_erle_, max_erle);
         }
       }
     }
   };
-  erle_update(1, kFftLengthBy2 / 2, kMaxLfErle);
-  erle_update(kFftLengthBy2 / 2, kFftLengthBy2, kMaxHfErle);
+  erle_update(1, kFftLengthBy2 / 2, max_erle_lf_);
+  erle_update(kFftLengthBy2 / 2, kFftLengthBy2, max_erle_hf_);
 
   std::for_each(hold_counters_.begin(), hold_counters_.end(),
                 [](int& a) { --a; });
   std::transform(hold_counters_.begin(), hold_counters_.end(),
-                 erle_.begin() + 1, erle_.begin() + 1, [](int a, float b) {
-                   return a > 0 ? b : std::max(kMinErle, 0.97f * b);
+                 erle_.begin() + 1, erle_.begin() + 1, [&](int a, float b) {
+                   return a > 0 ? b : std::max(min_erle_, 0.97f * b);
                  });
 
   erle_[0] = erle_[1];
