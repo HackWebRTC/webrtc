@@ -314,37 +314,33 @@ int32_t RtpVideoStreamReceiver::OnInitializeDecoder(
 // This method handles both regular RTP packets and packets recovered
 // via FlexFEC.
 void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
-  // TODO(eladalon): https://bugs.chromium.org/p/webrtc/issues/detail?id=8056
-  //  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
 
-  {
-    rtc::CritScope lock(&receive_cs_);
-    if (!receiving_) {
-      return;
-    }
+  if (!receiving_) {
+    return;
+  }
 
-    if (!packet.recovered()) {
-      int64_t now_ms = clock_->TimeInMilliseconds();
+  if (!packet.recovered()) {
+    int64_t now_ms = clock_->TimeInMilliseconds();
 
-      // Periodically log the RTP header of incoming packets.
-      if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
-        std::stringstream ss;
-        ss << "Packet received on SSRC: " << packet.Ssrc()
-           << " with payload type: " << static_cast<int>(packet.PayloadType())
-           << ", timestamp: " << packet.Timestamp()
-           << ", sequence number: " << packet.SequenceNumber()
-           << ", arrival time: " << packet.arrival_time_ms();
-        int32_t time_offset;
-        if (packet.GetExtension<TransmissionOffset>(&time_offset)) {
-          ss << ", toffset: " << time_offset;
-        }
-        uint32_t send_time;
-        if (packet.GetExtension<AbsoluteSendTime>(&send_time)) {
-          ss << ", abs send time: " << send_time;
-        }
-        LOG(LS_INFO) << ss.str();
-        last_packet_log_ms_ = now_ms;
+    // Periodically log the RTP header of incoming packets.
+    if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
+      std::stringstream ss;
+      ss << "Packet received on SSRC: " << packet.Ssrc()
+         << " with payload type: " << static_cast<int>(packet.PayloadType())
+         << ", timestamp: " << packet.Timestamp()
+         << ", sequence number: " << packet.SequenceNumber()
+         << ", arrival time: " << packet.arrival_time_ms();
+      int32_t time_offset;
+      if (packet.GetExtension<TransmissionOffset>(&time_offset)) {
+        ss << ", toffset: " << time_offset;
       }
+      uint32_t send_time;
+      if (packet.GetExtension<AbsoluteSendTime>(&send_time)) {
+        ss << ", abs send time: " << send_time;
+      }
+      LOG(LS_INFO) << ss.str();
+      last_packet_log_ms_ = now_ms;
     }
   }
 
@@ -442,8 +438,7 @@ rtc::Optional<int64_t> RtpVideoStreamReceiver::LastReceivedKeyframePacketMs()
 }
 
 void RtpVideoStreamReceiver::AddSecondarySink(RtpPacketSinkInterface* sink) {
-  // TODO(eladalon): https://bugs.chromium.org/p/webrtc/issues/detail?id=8056
-  //  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
   RTC_DCHECK(std::find(secondary_sinks_.cbegin(), secondary_sinks_.cend(),
                        sink) == secondary_sinks_.cend());
   secondary_sinks_.push_back(sink);
@@ -451,8 +446,7 @@ void RtpVideoStreamReceiver::AddSecondarySink(RtpPacketSinkInterface* sink) {
 
 void RtpVideoStreamReceiver::RemoveSecondarySink(
     const RtpPacketSinkInterface* sink) {
-  // TODO(eladalon): https://bugs.chromium.org/p/webrtc/issues/detail?id=8056
-  //  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
   auto it = std::find(secondary_sinks_.begin(), secondary_sinks_.end(), sink);
   if (it == secondary_sinks_.end()) {
     // We might be rolling-back a call whose setup failed mid-way. In such a
@@ -486,6 +480,7 @@ void RtpVideoStreamReceiver::ReceivePacket(const uint8_t* packet,
 
 void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
     const uint8_t* packet, size_t packet_length, const RTPHeader& header) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
   if (rtp_payload_registry_.IsRed(header)) {
     int8_t ulpfec_pt = rtp_payload_registry_.ulpfec_payload_type();
     if (packet[header.headerLength] == ulpfec_pt) {
@@ -510,7 +505,6 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
       return;
     if (packet_length > sizeof(restored_packet_))
       return;
-    rtc::CritScope lock(&receive_cs_);
     if (restored_packet_in_use_) {
       LOG(LS_WARNING) << "Multiple RTX headers detected, dropping packet.";
       return;
@@ -568,11 +562,10 @@ void RtpVideoStreamReceiver::NotifyReceiverOfFecPacket(
 
 bool RtpVideoStreamReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
                                          size_t rtcp_packet_length) {
-  {
-    rtc::CritScope lock(&receive_cs_);
-    if (!receiving_) {
-      return false;
-    }
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
+
+  if (!receiving_) {
+    return false;
   }
 
   rtp_rtcp_->IncomingRtcpPacket(rtcp_packet, rtcp_packet_length);
@@ -634,12 +627,12 @@ void RtpVideoStreamReceiver::SignalNetworkState(NetworkState state) {
 }
 
 void RtpVideoStreamReceiver::StartReceive() {
-  rtc::CritScope lock(&receive_cs_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
   receiving_ = true;
 }
 
 void RtpVideoStreamReceiver::StopReceive() {
-  rtc::CritScope lock(&receive_cs_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
   receiving_ = false;
 }
 
