@@ -295,7 +295,8 @@ void SendSideCongestionController::OnSentPacket(
     return;
   transport_feedback_adapter_.OnSentPacket(sent_packet.packet_id,
                                            sent_packet.send_time_ms);
-  LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
+  if (in_cwnd_experiment_)
+    LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
 }
 
 void SendSideCongestionController::OnRttUpdate(int64_t avg_rtt_ms,
@@ -369,34 +370,32 @@ void SendSideCongestionController::OnTransportFeedback(
   }
   if (result.recovered_from_overuse)
     probe_controller_->RequestProbe();
-  LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
+  if (in_cwnd_experiment_)
+    LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
 }
 
 void SendSideCongestionController::LimitOutstandingBytes(
     size_t num_outstanding_bytes) {
-  if (!in_cwnd_experiment_)
+  RTC_DCHECK(in_cwnd_experiment_);
+  rtc::CritScope lock(&network_state_lock_);
+  rtc::Optional<int64_t> min_rtt_ms =
+      transport_feedback_adapter_.GetMinFeedbackLoopRtt();
+  // No valid RTT. Could be because send-side BWE isn't used, in which case
+  // we don't try to limit the outstanding packets.
+  if (!min_rtt_ms)
     return;
-  {
-    rtc::CritScope lock(&network_state_lock_);
-    rtc::Optional<int64_t> min_rtt_ms =
-        transport_feedback_adapter_.GetMinFeedbackLoopRtt();
-    // No valid RTT. Could be because send-side BWE isn't used, in which case
-    // we don't try to limit the outstanding packets.
-    if (!min_rtt_ms)
-      return;
-    const size_t kMinCwndBytes = 2 * 1500;
-    size_t max_outstanding_bytes =
-        std::max<size_t>((*min_rtt_ms + accepted_queue_ms_) *
-                             last_reported_bitrate_bps_ / 1000 / 8,
-                         kMinCwndBytes);
-    LOG(LS_INFO) << clock_->TimeInMilliseconds()
-                 << " Outstanding bytes: " << num_outstanding_bytes
-                 << " pacer queue: " << pacer_->QueueInMs()
-                 << " max outstanding: " << max_outstanding_bytes;
-    LOG(LS_INFO) << "Feedback rtt: " << *min_rtt_ms
-                 << " Bitrate: " << last_reported_bitrate_bps_;
-    pause_pacer_ = num_outstanding_bytes > max_outstanding_bytes;
-  }
+  const size_t kMinCwndBytes = 2 * 1500;
+  size_t max_outstanding_bytes =
+      std::max<size_t>((*min_rtt_ms + accepted_queue_ms_) *
+                           last_reported_bitrate_bps_ / 1000 / 8,
+                       kMinCwndBytes);
+  LOG(LS_INFO) << clock_->TimeInMilliseconds()
+               << " Outstanding bytes: " << num_outstanding_bytes
+               << " pacer queue: " << pacer_->QueueInMs()
+               << " max outstanding: " << max_outstanding_bytes;
+  LOG(LS_INFO) << "Feedback rtt: " << *min_rtt_ms
+               << " Bitrate: " << last_reported_bitrate_bps_;
+  pause_pacer_ = num_outstanding_bytes > max_outstanding_bytes;
 }
 
 std::vector<PacketFeedback>
