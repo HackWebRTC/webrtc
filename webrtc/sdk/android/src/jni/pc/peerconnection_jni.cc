@@ -62,7 +62,7 @@ JNI_FUNCTION_DECLARATION(void,
                          JNIEnv*,
                          jclass,
                          jlong j_p) {
-  CHECK_RELEASE(reinterpret_cast<webrtc::PeerConnectionInterface*>(j_p));
+  reinterpret_cast<webrtc::PeerConnectionInterface*>(j_p)->Release();
 }
 
 JNI_FUNCTION_DECLARATION(void,
