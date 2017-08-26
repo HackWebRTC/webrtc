@@ -57,12 +57,13 @@ jobject GetJavaSurfaceTextureHelper(
              : nullptr;
 }
 
-JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)
-(JNIEnv* jni,
- jclass,
- jlong native_factory,
- jobject j_surface_texture_helper,
- jboolean is_screencast) {
+JNI_FUNCTION_DECLARATION(jlong,
+                         PeerConnectionFactory_nativeCreateVideoSource,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong native_factory,
+                         jobject j_surface_texture_helper,
+                         jboolean is_screencast) {
   OwnedFactoryAndThreads* factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
 
@@ -77,8 +78,13 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)
   return (jlong)proxy_source.release();
 }
 
-JOW(jlong, PeerConnectionFactory_nativeCreateVideoTrack)
-(JNIEnv* jni, jclass, jlong native_factory, jstring id, jlong native_source) {
+JNI_FUNCTION_DECLARATION(jlong,
+                         PeerConnectionFactory_nativeCreateVideoTrack,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong native_factory,
+                         jstring id,
+                         jlong native_source) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
   rtc::scoped_refptr<webrtc::VideoTrackInterface> track(
@@ -88,12 +94,14 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoTrack)
   return (jlong)track.release();
 }
 
-JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)
-(JNIEnv* jni,
- jclass,
- jlong native_factory,
- jobject local_egl_context,
- jobject remote_egl_context) {
+JNI_FUNCTION_DECLARATION(
+    void,
+    PeerConnectionFactory_nativeSetVideoHwAccelerationOptions,
+    JNIEnv* jni,
+    jclass,
+    jlong native_factory,
+    jobject local_egl_context,
+    jobject remote_egl_context) {
   OwnedFactoryAndThreads* owned_factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
 

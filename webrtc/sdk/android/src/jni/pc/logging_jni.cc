@@ -17,8 +17,12 @@
 
 namespace webrtc_jni {
 
-JOW(void, Logging_nativeEnableTracing)
-(JNIEnv* jni, jclass, jstring j_path, jint nativeLevels) {
+JNI_FUNCTION_DECLARATION(void,
+                         Logging_nativeEnableTracing,
+                         JNIEnv* jni,
+                         jclass,
+                         jstring j_path,
+                         jint nativeLevels) {
   std::string path = JavaToStdString(jni, j_path);
   if (nativeLevels != webrtc::kTraceNone) {
     webrtc::Trace::set_level_filter(nativeLevels);
@@ -34,24 +38,38 @@ JOW(void, Logging_nativeEnableTracing)
   }
 }
 
-JOW(void, Logging_nativeEnableLogToDebugOutput)
-(JNIEnv* jni, jclass, jint nativeSeverity) {
+JNI_FUNCTION_DECLARATION(void,
+                         Logging_nativeEnableLogToDebugOutput,
+                         JNIEnv* jni,
+                         jclass,
+                         jint nativeSeverity) {
   if (nativeSeverity >= rtc::LS_SENSITIVE && nativeSeverity <= rtc::LS_NONE) {
     rtc::LogMessage::LogToDebug(
         static_cast<rtc::LoggingSeverity>(nativeSeverity));
   }
 }
 
-JOW(void, Logging_nativeEnableLogThreads)(JNIEnv* jni, jclass) {
+JNI_FUNCTION_DECLARATION(void,
+                         Logging_nativeEnableLogThreads,
+                         JNIEnv* jni,
+                         jclass) {
   rtc::LogMessage::LogThreads(true);
 }
 
-JOW(void, Logging_nativeEnableLogTimeStamps)(JNIEnv* jni, jclass) {
+JNI_FUNCTION_DECLARATION(void,
+                         Logging_nativeEnableLogTimeStamps,
+                         JNIEnv* jni,
+                         jclass) {
   rtc::LogMessage::LogTimestamps(true);
 }
 
-JOW(void, Logging_nativeLog)
-(JNIEnv* jni, jclass, jint j_severity, jstring j_tag, jstring j_message) {
+JNI_FUNCTION_DECLARATION(void,
+                         Logging_nativeLog,
+                         JNIEnv* jni,
+                         jclass,
+                         jint j_severity,
+                         jstring j_tag,
+                         jstring j_message) {
   std::string message = JavaToStdString(jni, j_message);
   std::string tag = JavaToStdString(jni, j_tag);
   LOG_TAG(static_cast<rtc::LoggingSeverity>(j_severity), tag) << message;

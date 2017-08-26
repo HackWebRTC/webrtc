@@ -46,13 +46,19 @@ jobject WrapI420Buffer(
   return j_wrapped_native_i420_buffer;
 }
 
-JOW(void, WrappedNativeI420Buffer_nativeAddRef)
-(JNIEnv* jni, jclass, jlong j_buffer_pointer) {
+JNI_FUNCTION_DECLARATION(void,
+                         WrappedNativeI420Buffer_nativeAddRef,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_buffer_pointer) {
   reinterpret_cast<webrtc::VideoFrameBuffer*>(j_buffer_pointer)->AddRef();
 }
 
-JOW(void, WrappedNativeI420Buffer_nativeRelease)
-(JNIEnv* jni, jclass, jlong j_buffer_pointer) {
+JNI_FUNCTION_DECLARATION(void,
+                         WrappedNativeI420Buffer_nativeRelease,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_buffer_pointer) {
   reinterpret_cast<webrtc::VideoFrameBuffer*>(j_buffer_pointer)->Release();
 }
 

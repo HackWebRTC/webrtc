@@ -13,32 +13,56 @@
 
 namespace webrtc_jni {
 
-JOW(void, MediaStreamTrack_free)(JNIEnv*, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(void,
+                         MediaStreamTrack_free,
+                         JNIEnv*,
+                         jclass,
+                         jlong j_p) {
   reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->Release();
 }
 
-JOW(jstring, MediaStreamTrack_nativeId)(JNIEnv* jni, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(jstring,
+                         MediaStreamTrack_nativeId,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_p) {
   return JavaStringFromStdString(
       jni, reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->id());
 }
 
-JOW(jstring, MediaStreamTrack_nativeKind)(JNIEnv* jni, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(jstring,
+                         MediaStreamTrack_nativeKind,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_p) {
   return JavaStringFromStdString(
       jni, reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->kind());
 }
 
-JOW(jboolean, MediaStreamTrack_nativeEnabled)(JNIEnv* jni, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         MediaStreamTrack_nativeEnabled,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_p) {
   return reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->enabled();
 }
 
-JOW(jobject, MediaStreamTrack_nativeState)(JNIEnv* jni, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         MediaStreamTrack_nativeState,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_p) {
   return JavaEnumFromIndexAndClassName(
       jni, "MediaStreamTrack$State",
       reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->state());
 }
 
-JOW(jboolean, MediaStreamTrack_nativeSetEnabled)
-(JNIEnv* jni, jclass, jlong j_p, jboolean enabled) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         MediaStreamTrack_nativeSetEnabled,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_p,
+                         jboolean enabled) {
   return reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->set_enabled(
       enabled);
 }

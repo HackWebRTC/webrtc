@@ -13,8 +13,13 @@
 
 namespace webrtc_jni {
 
-JOW(jlong, CallSessionFileRotatingLogSink_nativeAddSink)
-(JNIEnv* jni, jclass, jstring j_dirPath, jint j_maxFileSize, jint j_severity) {
+JNI_FUNCTION_DECLARATION(jlong,
+                         CallSessionFileRotatingLogSink_nativeAddSink,
+                         JNIEnv* jni,
+                         jclass,
+                         jstring j_dirPath,
+                         jint j_maxFileSize,
+                         jint j_severity) {
   std::string dir_path = JavaToStdString(jni, j_dirPath);
   rtc::CallSessionFileRotatingLogSink* sink =
       new rtc::CallSessionFileRotatingLogSink(dir_path, j_maxFileSize);
@@ -30,16 +35,22 @@ JOW(jlong, CallSessionFileRotatingLogSink_nativeAddSink)
   return (jlong)sink;
 }
 
-JOW(void, CallSessionFileRotatingLogSink_nativeDeleteSink)
-(JNIEnv* jni, jclass, jlong j_sink) {
+JNI_FUNCTION_DECLARATION(void,
+                         CallSessionFileRotatingLogSink_nativeDeleteSink,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_sink) {
   rtc::CallSessionFileRotatingLogSink* sink =
       reinterpret_cast<rtc::CallSessionFileRotatingLogSink*>(j_sink);
   rtc::LogMessage::RemoveLogToStream(sink);
   delete sink;
 }
 
-JOW(jbyteArray, CallSessionFileRotatingLogSink_nativeGetLogData)
-(JNIEnv* jni, jclass, jstring j_dirPath) {
+JNI_FUNCTION_DECLARATION(jbyteArray,
+                         CallSessionFileRotatingLogSink_nativeGetLogData,
+                         JNIEnv* jni,
+                         jclass,
+                         jstring j_dirPath) {
   std::string dir_path = JavaToStdString(jni, j_dirPath);
   std::unique_ptr<rtc::CallSessionFileRotatingStream> stream(
       new rtc::CallSessionFileRotatingStream(dir_path));

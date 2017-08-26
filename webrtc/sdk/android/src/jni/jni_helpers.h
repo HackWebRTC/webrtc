@@ -36,20 +36,8 @@
 
 // Convenience macro defining JNI-accessible methods in the org.webrtc package.
 // Eliminates unnecessary boilerplate and line-wraps, reducing visual clutter.
-//
-// TODO(deadbeef): Rename this macro to something like
-// "JNI_FUNCTION_DECLARATION", and use variable length arguments, such that you
-// can write:
-//
-// JNI_FUNCTION_DECLARATION(void, nativeFoo, Type arg1, Type arg2) { ...
-//
-// Instead of:
-//
-// JNI_FUNCTION_DECLARATION(void, nativeFoo)(Type arg1, Type arg2) { ...
-//
-// The latter gets handled poorly by autoformatting tools.
-#define JOW(rettype, name) \
-  extern "C" JNIEXPORT rettype JNICALL Java_org_webrtc_##name
+#define JNI_FUNCTION_DECLARATION(rettype, name, ...) \
+  extern "C" JNIEXPORT rettype JNICALL Java_org_webrtc_##name(__VA_ARGS__)
 
 namespace webrtc_jni {
 

@@ -13,36 +13,56 @@
 
 namespace webrtc_jni {
 
-JOW(jboolean, MediaStream_nativeAddAudioTrack)
-(JNIEnv* jni, jclass, jlong pointer, jlong j_audio_track_pointer) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         MediaStream_nativeAddAudioTrack,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong pointer,
+                         jlong j_audio_track_pointer) {
   return reinterpret_cast<webrtc::MediaStreamInterface*>(pointer)->AddTrack(
       reinterpret_cast<webrtc::AudioTrackInterface*>(j_audio_track_pointer));
 }
 
-JOW(jboolean, MediaStream_nativeAddVideoTrack)
-(JNIEnv* jni, jclass, jlong pointer, jlong j_video_track_pointer) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         MediaStream_nativeAddVideoTrack,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong pointer,
+                         jlong j_video_track_pointer) {
   return reinterpret_cast<webrtc::MediaStreamInterface*>(pointer)->AddTrack(
       reinterpret_cast<webrtc::VideoTrackInterface*>(j_video_track_pointer));
 }
 
-JOW(jboolean, MediaStream_nativeRemoveAudioTrack)
-(JNIEnv* jni, jclass, jlong pointer, jlong j_audio_track_pointer) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         MediaStream_nativeRemoveAudioTrack,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong pointer,
+                         jlong j_audio_track_pointer) {
   return reinterpret_cast<webrtc::MediaStreamInterface*>(pointer)->RemoveTrack(
       reinterpret_cast<webrtc::AudioTrackInterface*>(j_audio_track_pointer));
 }
 
-JOW(jboolean, MediaStream_nativeRemoveVideoTrack)
-(JNIEnv* jni, jclass, jlong pointer, jlong j_video_track_pointer) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         MediaStream_nativeRemoveVideoTrack,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong pointer,
+                         jlong j_video_track_pointer) {
   return reinterpret_cast<webrtc::MediaStreamInterface*>(pointer)->RemoveTrack(
       reinterpret_cast<webrtc::VideoTrackInterface*>(j_video_track_pointer));
 }
 
-JOW(jstring, MediaStream_nativeLabel)(JNIEnv* jni, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(jstring,
+                         MediaStream_nativeLabel,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_p) {
   return JavaStringFromStdString(
       jni, reinterpret_cast<webrtc::MediaStreamInterface*>(j_p)->label());
 }
 
-JOW(void, MediaStream_free)(JNIEnv*, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(void, MediaStream_free, JNIEnv*, jclass, jlong j_p) {
   CHECK_RELEASE(reinterpret_cast<webrtc::MediaStreamInterface*>(j_p));
 }
 

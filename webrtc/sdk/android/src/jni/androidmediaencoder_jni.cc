@@ -1476,17 +1476,18 @@ void MediaCodecVideoEncoderFactory::DestroyVideoEncoder(
   delete encoder;
 }
 
-JOW(void, MediaCodecVideoEncoder_nativeFillBuffer)
-(JNIEnv* jni,
- jclass,
- jlong native_encoder,
- jint input_buffer,
- jobject j_buffer_y,
- jint stride_y,
- jobject j_buffer_u,
- jint stride_u,
- jobject j_buffer_v,
- jint stride_v) {
+JNI_FUNCTION_DECLARATION(void,
+                         MediaCodecVideoEncoder_nativeFillBuffer,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong native_encoder,
+                         jint input_buffer,
+                         jobject j_buffer_y,
+                         jint stride_y,
+                         jobject j_buffer_u,
+                         jint stride_u,
+                         jobject j_buffer_v,
+                         jint stride_v) {
   uint8_t* buffer_y =
       static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_buffer_y));
   uint8_t* buffer_u =

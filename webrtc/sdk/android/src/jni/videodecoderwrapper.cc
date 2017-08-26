@@ -299,13 +299,14 @@ rtc::Optional<uint8_t> VideoDecoderWrapper::ParseQP(
   return qp;
 }
 
-JOW(void, VideoDecoderWrapperCallback_nativeOnDecodedFrame)
-(JNIEnv* jni,
- jclass,
- jlong jnative_decoder,
- jobject jframe,
- jobject jdecode_time_ms,
- jobject jqp) {
+JNI_FUNCTION_DECLARATION(void,
+                         VideoDecoderWrapperCallback_nativeOnDecodedFrame,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong jnative_decoder,
+                         jobject jframe,
+                         jobject jdecode_time_ms,
+                         jobject jqp) {
   VideoDecoderWrapper* native_decoder =
       reinterpret_cast<VideoDecoderWrapper*>(jnative_decoder);
   native_decoder->OnDecodedFrame(jni, jframe, jdecode_time_ms, jqp);

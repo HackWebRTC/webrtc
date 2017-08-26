@@ -19,12 +19,15 @@
 // Enables collection of native histograms and creating them.
 namespace webrtc_jni {
 
-JOW(void, Metrics_nativeEnable)(JNIEnv* jni, jclass) {
+JNI_FUNCTION_DECLARATION(void, Metrics_nativeEnable, JNIEnv* jni, jclass) {
   webrtc::metrics::Enable();
 }
 
 // Gets and clears native histograms.
-JOW(jobject, Metrics_nativeGetAndReset)(JNIEnv* jni, jclass) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         Metrics_nativeGetAndReset,
+                         JNIEnv* jni,
+                         jclass) {
   jclass j_metrics_class = jni->FindClass("org/webrtc/Metrics");
   jmethodID j_add =
       GetMethodID(jni, j_metrics_class, "add",

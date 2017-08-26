@@ -57,30 +57,48 @@ static rtc::scoped_refptr<webrtc::PeerConnectionInterface> ExtractNativePC(
       reinterpret_cast<webrtc::PeerConnectionInterface*>(j_p));
 }
 
-JOW(void, PeerConnection_freePeerConnection)(JNIEnv*, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(void,
+                         PeerConnection_freePeerConnection,
+                         JNIEnv*,
+                         jclass,
+                         jlong j_p) {
   CHECK_RELEASE(reinterpret_cast<webrtc::PeerConnectionInterface*>(j_p));
 }
 
-JOW(void, PeerConnection_freeObserver)(JNIEnv*, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(void,
+                         PeerConnection_freeObserver,
+                         JNIEnv*,
+                         jclass,
+                         jlong j_p) {
   PeerConnectionObserverJni* p =
       reinterpret_cast<PeerConnectionObserverJni*>(j_p);
   delete p;
 }
 
-JOW(jobject, PeerConnection_getLocalDescription)(JNIEnv* jni, jobject j_pc) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         PeerConnection_getLocalDescription,
+                         JNIEnv* jni,
+                         jobject j_pc) {
   const webrtc::SessionDescriptionInterface* sdp =
       ExtractNativePC(jni, j_pc)->local_description();
   return sdp ? NativeToJavaSessionDescription(jni, sdp) : NULL;
 }
 
-JOW(jobject, PeerConnection_getRemoteDescription)(JNIEnv* jni, jobject j_pc) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         PeerConnection_getRemoteDescription,
+                         JNIEnv* jni,
+                         jobject j_pc) {
   const webrtc::SessionDescriptionInterface* sdp =
       ExtractNativePC(jni, j_pc)->remote_description();
   return sdp ? NativeToJavaSessionDescription(jni, sdp) : NULL;
 }
 
-JOW(jobject, PeerConnection_createDataChannel)
-(JNIEnv* jni, jobject j_pc, jstring j_label, jobject j_init) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         PeerConnection_createDataChannel,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jstring j_label,
+                         jobject j_init) {
   webrtc::DataChannelInit init = JavaToNativeDataChannelInit(jni, j_init);
   rtc::scoped_refptr<webrtc::DataChannelInterface> channel(
       ExtractNativePC(jni, j_pc)->CreateDataChannel(
@@ -105,8 +123,12 @@ JOW(jobject, PeerConnection_createDataChannel)
   return j_channel;
 }
 
-JOW(void, PeerConnection_createOffer)
-(JNIEnv* jni, jobject j_pc, jobject j_observer, jobject j_constraints) {
+JNI_FUNCTION_DECLARATION(void,
+                         PeerConnection_createOffer,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jobject j_observer,
+                         jobject j_constraints) {
   MediaConstraintsJni* constraints =
       new MediaConstraintsJni(jni, j_constraints);
   rtc::scoped_refptr<CreateSdpObserverJni> observer(
@@ -115,8 +137,12 @@ JOW(void, PeerConnection_createOffer)
   ExtractNativePC(jni, j_pc)->CreateOffer(observer, constraints);
 }
 
-JOW(void, PeerConnection_createAnswer)
-(JNIEnv* jni, jobject j_pc, jobject j_observer, jobject j_constraints) {
+JNI_FUNCTION_DECLARATION(void,
+                         PeerConnection_createAnswer,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jobject j_observer,
+                         jobject j_constraints) {
   MediaConstraintsJni* constraints =
       new MediaConstraintsJni(jni, j_constraints);
   rtc::scoped_refptr<CreateSdpObserverJni> observer(
@@ -125,24 +151,36 @@ JOW(void, PeerConnection_createAnswer)
   ExtractNativePC(jni, j_pc)->CreateAnswer(observer, constraints);
 }
 
-JOW(void, PeerConnection_setLocalDescription)
-(JNIEnv* jni, jobject j_pc, jobject j_observer, jobject j_sdp) {
+JNI_FUNCTION_DECLARATION(void,
+                         PeerConnection_setLocalDescription,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jobject j_observer,
+                         jobject j_sdp) {
   rtc::scoped_refptr<SetSdpObserverJni> observer(
       new rtc::RefCountedObject<SetSdpObserverJni>(jni, j_observer, nullptr));
   ExtractNativePC(jni, j_pc)->SetLocalDescription(
       observer, JavaToNativeSessionDescription(jni, j_sdp));
 }
 
-JOW(void, PeerConnection_setRemoteDescription)
-(JNIEnv* jni, jobject j_pc, jobject j_observer, jobject j_sdp) {
+JNI_FUNCTION_DECLARATION(void,
+                         PeerConnection_setRemoteDescription,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jobject j_observer,
+                         jobject j_sdp) {
   rtc::scoped_refptr<SetSdpObserverJni> observer(
       new rtc::RefCountedObject<SetSdpObserverJni>(jni, j_observer, nullptr));
   ExtractNativePC(jni, j_pc)->SetRemoteDescription(
       observer, JavaToNativeSessionDescription(jni, j_sdp));
 }
 
-JOW(jboolean, PeerConnection_nativeSetConfiguration)
-(JNIEnv* jni, jobject j_pc, jobject j_rtc_config, jlong native_observer) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         PeerConnection_nativeSetConfiguration,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jobject j_rtc_config,
+                         jlong native_observer) {
   // Need to merge constraints into RTCConfiguration again, which are stored
   // in the observer object.
   PeerConnectionObserverJni* observer =
@@ -154,12 +192,13 @@ JOW(jboolean, PeerConnection_nativeSetConfiguration)
   return ExtractNativePC(jni, j_pc)->SetConfiguration(rtc_config);
 }
 
-JOW(jboolean, PeerConnection_nativeAddIceCandidate)
-(JNIEnv* jni,
- jobject j_pc,
- jstring j_sdp_mid,
- jint j_sdp_mline_index,
- jstring j_candidate_sdp) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         PeerConnection_nativeAddIceCandidate,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jstring j_sdp_mid,
+                         jint j_sdp_mline_index,
+                         jstring j_candidate_sdp) {
   std::string sdp_mid = JavaToStdString(jni, j_sdp_mid);
   std::string sdp = JavaToStdString(jni, j_candidate_sdp);
   std::unique_ptr<webrtc::IceCandidateInterface> candidate(
@@ -167,8 +206,11 @@ JOW(jboolean, PeerConnection_nativeAddIceCandidate)
   return ExtractNativePC(jni, j_pc)->AddIceCandidate(candidate.get());
 }
 
-JOW(jboolean, PeerConnection_nativeRemoveIceCandidates)
-(JNIEnv* jni, jobject j_pc, jobjectArray j_candidates) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         PeerConnection_nativeRemoveIceCandidates,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jobjectArray j_candidates) {
   std::vector<cricket::Candidate> candidates;
   size_t num_candidates = jni->GetArrayLength(j_candidates);
   for (size_t i = 0; i < num_candidates; ++i) {
@@ -178,20 +220,30 @@ JOW(jboolean, PeerConnection_nativeRemoveIceCandidates)
   return ExtractNativePC(jni, j_pc)->RemoveIceCandidates(candidates);
 }
 
-JOW(jboolean, PeerConnection_nativeAddLocalStream)
-(JNIEnv* jni, jobject j_pc, jlong native_stream) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         PeerConnection_nativeAddLocalStream,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jlong native_stream) {
   return ExtractNativePC(jni, j_pc)->AddStream(
       reinterpret_cast<webrtc::MediaStreamInterface*>(native_stream));
 }
 
-JOW(void, PeerConnection_nativeRemoveLocalStream)
-(JNIEnv* jni, jobject j_pc, jlong native_stream) {
+JNI_FUNCTION_DECLARATION(void,
+                         PeerConnection_nativeRemoveLocalStream,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jlong native_stream) {
   ExtractNativePC(jni, j_pc)->RemoveStream(
       reinterpret_cast<webrtc::MediaStreamInterface*>(native_stream));
 }
 
-JOW(jobject, PeerConnection_nativeCreateSender)
-(JNIEnv* jni, jobject j_pc, jstring j_kind, jstring j_stream_id) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         PeerConnection_nativeCreateSender,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jstring j_kind,
+                         jstring j_stream_id) {
   jclass j_rtp_sender_class = FindClass(jni, "org/webrtc/RtpSender");
   jmethodID j_rtp_sender_ctor =
       GetMethodID(jni, j_rtp_sender_class, "<init>", "(J)V");
@@ -213,7 +265,10 @@ JOW(jobject, PeerConnection_nativeCreateSender)
   return j_sender;
 }
 
-JOW(jobject, PeerConnection_nativeGetSenders)(JNIEnv* jni, jobject j_pc) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         PeerConnection_nativeGetSenders,
+                         JNIEnv* jni,
+                         jobject j_pc) {
   jclass j_array_list_class = FindClass(jni, "java/util/ArrayList");
   jmethodID j_array_list_ctor =
       GetMethodID(jni, j_array_list_class, "<init>", "()V");
@@ -241,7 +296,10 @@ JOW(jobject, PeerConnection_nativeGetSenders)(JNIEnv* jni, jobject j_pc) {
   return j_senders;
 }
 
-JOW(jobject, PeerConnection_nativeGetReceivers)(JNIEnv* jni, jobject j_pc) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         PeerConnection_nativeGetReceivers,
+                         JNIEnv* jni,
+                         jobject j_pc) {
   jclass j_array_list_class = FindClass(jni, "java/util/ArrayList");
   jmethodID j_array_list_ctor =
       GetMethodID(jni, j_array_list_class, "<init>", "()V");
@@ -268,8 +326,12 @@ JOW(jobject, PeerConnection_nativeGetReceivers)(JNIEnv* jni, jobject j_pc) {
   return j_receivers;
 }
 
-JOW(bool, PeerConnection_nativeOldGetStats)
-(JNIEnv* jni, jobject j_pc, jobject j_observer, jlong native_track) {
+JNI_FUNCTION_DECLARATION(bool,
+                         PeerConnection_nativeOldGetStats,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jobject j_observer,
+                         jlong native_track) {
   rtc::scoped_refptr<StatsObserverJni> observer(
       new rtc::RefCountedObject<StatsObserverJni>(jni, j_observer));
   return ExtractNativePC(jni, j_pc)->GetStats(
@@ -278,16 +340,24 @@ JOW(bool, PeerConnection_nativeOldGetStats)
       webrtc::PeerConnectionInterface::kStatsOutputLevelStandard);
 }
 
-JOW(void, PeerConnection_nativeNewGetStats)
-(JNIEnv* jni, jobject j_pc, jobject j_callback) {
+JNI_FUNCTION_DECLARATION(void,
+                         PeerConnection_nativeNewGetStats,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jobject j_callback) {
   rtc::scoped_refptr<RTCStatsCollectorCallbackWrapper> callback(
       new rtc::RefCountedObject<RTCStatsCollectorCallbackWrapper>(jni,
                                                                   j_callback));
   ExtractNativePC(jni, j_pc)->GetStats(callback);
 }
 
-JOW(jboolean, PeerConnection_setBitrate)
-(JNIEnv* jni, jobject j_pc, jobject j_min, jobject j_current, jobject j_max) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         PeerConnection_setBitrate,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         jobject j_min,
+                         jobject j_current,
+                         jobject j_max) {
   webrtc::PeerConnectionInterface::BitrateParameters params;
   jclass j_integer_class = jni->FindClass("java/lang/Integer");
   jmethodID int_value_id = GetMethodID(jni, j_integer_class, "intValue", "()I");
@@ -306,38 +376,57 @@ JOW(jboolean, PeerConnection_setBitrate)
   return ExtractNativePC(jni, j_pc)->SetBitrate(params).ok();
 }
 
-JOW(bool, PeerConnection_nativeStartRtcEventLog)
-(JNIEnv* jni, jobject j_pc, int file_descriptor, int max_size_bytes) {
+JNI_FUNCTION_DECLARATION(bool,
+                         PeerConnection_nativeStartRtcEventLog,
+                         JNIEnv* jni,
+                         jobject j_pc,
+                         int file_descriptor,
+                         int max_size_bytes) {
   return ExtractNativePC(jni, j_pc)->StartRtcEventLog(file_descriptor,
                                                       max_size_bytes);
 }
 
-JOW(void, PeerConnection_nativeStopRtcEventLog)(JNIEnv* jni, jobject j_pc) {
+JNI_FUNCTION_DECLARATION(void,
+                         PeerConnection_nativeStopRtcEventLog,
+                         JNIEnv* jni,
+                         jobject j_pc) {
   ExtractNativePC(jni, j_pc)->StopRtcEventLog();
 }
 
-JOW(jobject, PeerConnection_signalingState)(JNIEnv* jni, jobject j_pc) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         PeerConnection_signalingState,
+                         JNIEnv* jni,
+                         jobject j_pc) {
   webrtc::PeerConnectionInterface::SignalingState state =
       ExtractNativePC(jni, j_pc)->signaling_state();
   return JavaEnumFromIndexAndClassName(jni, "PeerConnection$SignalingState",
                                        state);
 }
 
-JOW(jobject, PeerConnection_iceConnectionState)(JNIEnv* jni, jobject j_pc) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         PeerConnection_iceConnectionState,
+                         JNIEnv* jni,
+                         jobject j_pc) {
   webrtc::PeerConnectionInterface::IceConnectionState state =
       ExtractNativePC(jni, j_pc)->ice_connection_state();
   return JavaEnumFromIndexAndClassName(jni, "PeerConnection$IceConnectionState",
                                        state);
 }
 
-JOW(jobject, PeerConnection_iceGatheringState)(JNIEnv* jni, jobject j_pc) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         PeerConnection_iceGatheringState,
+                         JNIEnv* jni,
+                         jobject j_pc) {
   webrtc::PeerConnectionInterface::IceGatheringState state =
       ExtractNativePC(jni, j_pc)->ice_gathering_state();
   return JavaEnumFromIndexAndClassName(jni, "PeerConnection$IceGatheringState",
                                        state);
 }
 
-JOW(void, PeerConnection_close)(JNIEnv* jni, jobject j_pc) {
+JNI_FUNCTION_DECLARATION(void,
+                         PeerConnection_close,
+                         JNIEnv* jni,
+                         jobject j_pc) {
   ExtractNativePC(jni, j_pc)->Close();
   return;
 }

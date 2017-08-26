@@ -13,11 +13,15 @@
 
 namespace webrtc_jni {
 
-JOW(void, MediaSource_free)(JNIEnv*, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(void, MediaSource_free, JNIEnv*, jclass, jlong j_p) {
   reinterpret_cast<rtc::RefCountInterface*>(j_p)->Release();
 }
 
-JOW(jobject, MediaSource_nativeState)(JNIEnv* jni, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         MediaSource_nativeState,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_p) {
   rtc::scoped_refptr<webrtc::MediaSourceInterface> p(
       reinterpret_cast<webrtc::MediaSourceInterface*>(j_p));
   return JavaEnumFromIndexAndClassName(jni, "MediaSource$State", p->state());

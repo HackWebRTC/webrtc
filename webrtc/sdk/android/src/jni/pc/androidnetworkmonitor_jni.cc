@@ -389,18 +389,22 @@ AndroidNetworkMonitorFactory::CreateNetworkMonitor() {
   return new AndroidNetworkMonitor();
 }
 
-JOW(void, NetworkMonitor_nativeNotifyConnectionTypeChanged)
-(JNIEnv* jni, jobject j_monitor, jlong j_native_monitor) {
+JNI_FUNCTION_DECLARATION(void,
+                         NetworkMonitor_nativeNotifyConnectionTypeChanged,
+                         JNIEnv* jni,
+                         jobject j_monitor,
+                         jlong j_native_monitor) {
   rtc::NetworkMonitorInterface* network_monitor =
       reinterpret_cast<rtc::NetworkMonitorInterface*>(j_native_monitor);
   network_monitor->OnNetworksChanged();
 }
 
-JOW(void, NetworkMonitor_nativeNotifyOfActiveNetworkList)
-(JNIEnv* jni,
- jobject j_monitor,
- jlong j_native_monitor,
- jobjectArray j_network_infos) {
+JNI_FUNCTION_DECLARATION(void,
+                         NetworkMonitor_nativeNotifyOfActiveNetworkList,
+                         JNIEnv* jni,
+                         jobject j_monitor,
+                         jlong j_native_monitor,
+                         jobjectArray j_network_infos) {
   AndroidNetworkMonitor* network_monitor =
       reinterpret_cast<AndroidNetworkMonitor*>(j_native_monitor);
   std::vector<NetworkInformation> network_infos;
@@ -413,11 +417,12 @@ JOW(void, NetworkMonitor_nativeNotifyOfActiveNetworkList)
   network_monitor->SetNetworkInfos(network_infos);
 }
 
-JOW(void, NetworkMonitor_nativeNotifyOfNetworkConnect)
-(JNIEnv* jni,
- jobject j_monitor,
- jlong j_native_monitor,
- jobject j_network_info) {
+JNI_FUNCTION_DECLARATION(void,
+                         NetworkMonitor_nativeNotifyOfNetworkConnect,
+                         JNIEnv* jni,
+                         jobject j_monitor,
+                         jlong j_native_monitor,
+                         jobject j_network_info) {
   AndroidNetworkMonitor* network_monitor =
       reinterpret_cast<AndroidNetworkMonitor*>(j_native_monitor);
   NetworkInformation network_info =
@@ -425,8 +430,12 @@ JOW(void, NetworkMonitor_nativeNotifyOfNetworkConnect)
   network_monitor->OnNetworkConnected(network_info);
 }
 
-JOW(void, NetworkMonitor_nativeNotifyOfNetworkDisconnect)
-(JNIEnv* jni, jobject j_monitor, jlong j_native_monitor, jlong network_handle) {
+JNI_FUNCTION_DECLARATION(void,
+                         NetworkMonitor_nativeNotifyOfNetworkDisconnect,
+                         JNIEnv* jni,
+                         jobject j_monitor,
+                         jlong j_native_monitor,
+                         jlong network_handle) {
   AndroidNetworkMonitor* network_monitor =
       reinterpret_cast<AndroidNetworkMonitor*>(j_native_monitor);
   network_monitor->OnNetworkDisconnected(

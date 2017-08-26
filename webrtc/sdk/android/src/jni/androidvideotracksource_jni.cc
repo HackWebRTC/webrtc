@@ -14,11 +14,6 @@
 #include "webrtc/sdk/android/src/jni/androidvideotracksource.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
-// Identifiers are over 80 characters long so this is needed to fit them on one
-// line.
-#define JOW_OBSERVER_METHOD(rettype, name) \
-  JOW(rettype, AndroidVideoTrackSourceObserver_##name)
-
 static webrtc::VideoRotation jintToVideoRotation(jint rotation) {
   RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
              rotation == 270);
@@ -34,16 +29,18 @@ static webrtc::AndroidVideoTrackSource* AndroidVideoTrackSourceFromJavaProxy(
       proxy_source->internal());
 }
 
-JOW_OBSERVER_METHOD(void, nativeOnByteBufferFrameCaptured)
-(JNIEnv* jni,
- jclass,
- jlong j_source,
- jbyteArray j_frame,
- jint length,
- jint width,
- jint height,
- jint rotation,
- jlong timestamp) {
+JNI_FUNCTION_DECLARATION(
+    void,
+    AndroidVideoTrackSourceObserver_nativeOnByteBufferFrameCaptured,
+    JNIEnv* jni,
+    jclass,
+    jlong j_source,
+    jbyteArray j_frame,
+    jint length,
+    jint width,
+    jint height,
+    jint rotation,
+    jlong timestamp) {
   webrtc::AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
   jbyte* bytes = jni->GetByteArrayElements(j_frame, nullptr);
@@ -52,16 +49,18 @@ JOW_OBSERVER_METHOD(void, nativeOnByteBufferFrameCaptured)
   jni->ReleaseByteArrayElements(j_frame, bytes, JNI_ABORT);
 }
 
-JOW_OBSERVER_METHOD(void, nativeOnTextureFrameCaptured)
-(JNIEnv* jni,
- jclass,
- jlong j_source,
- jint j_width,
- jint j_height,
- jint j_oes_texture_id,
- jfloatArray j_transform_matrix,
- jint j_rotation,
- jlong j_timestamp) {
+JNI_FUNCTION_DECLARATION(
+    void,
+    AndroidVideoTrackSourceObserver_nativeOnTextureFrameCaptured,
+    JNIEnv* jni,
+    jclass,
+    jlong j_source,
+    jint j_width,
+    jint j_height,
+    jint j_oes_texture_id,
+    jfloatArray j_transform_matrix,
+    jint j_rotation,
+    jlong j_timestamp) {
   webrtc::AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
   source->OnTextureFrameCaptured(
@@ -69,15 +68,16 @@ JOW_OBSERVER_METHOD(void, nativeOnTextureFrameCaptured)
       NativeHandleImpl(jni, j_oes_texture_id, j_transform_matrix));
 }
 
-JOW_OBSERVER_METHOD(void, nativeOnFrameCaptured)
-(JNIEnv* jni,
- jclass,
- jlong j_source,
- jint j_width,
- jint j_height,
- jint j_rotation,
- jlong j_timestamp_ns,
- jobject j_video_frame_buffer) {
+JNI_FUNCTION_DECLARATION(void,
+                         AndroidVideoTrackSourceObserver_nativeOnFrameCaptured,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_source,
+                         jint j_width,
+                         jint j_height,
+                         jint j_rotation,
+                         jlong j_timestamp_ns,
+                         jobject j_video_frame_buffer) {
   webrtc::AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
   source->OnFrameCaptured(jni, j_width, j_height, j_timestamp_ns,
@@ -85,8 +85,12 @@ JOW_OBSERVER_METHOD(void, nativeOnFrameCaptured)
                           j_video_frame_buffer);
 }
 
-JOW_OBSERVER_METHOD(void, nativeCapturerStarted)
-(JNIEnv* jni, jclass, jlong j_source, jboolean j_success) {
+JNI_FUNCTION_DECLARATION(void,
+                         AndroidVideoTrackSourceObserver_nativeCapturerStarted,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_source,
+                         jboolean j_success) {
   LOG(LS_INFO) << "AndroidVideoTrackSourceObserve_nativeCapturerStarted";
   webrtc::AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
@@ -95,16 +99,25 @@ JOW_OBSERVER_METHOD(void, nativeCapturerStarted)
                        : webrtc::AndroidVideoTrackSource::SourceState::kEnded);
 }
 
-JOW_OBSERVER_METHOD(void, nativeCapturerStopped)
-(JNIEnv* jni, jclass, jlong j_source) {
+JNI_FUNCTION_DECLARATION(void,
+                         AndroidVideoTrackSourceObserver_nativeCapturerStopped,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_source) {
   LOG(LS_INFO) << "AndroidVideoTrackSourceObserve_nativeCapturerStopped";
   webrtc::AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
   source->SetState(webrtc::AndroidVideoTrackSource::SourceState::kEnded);
 }
 
-JOW(void, VideoSource_nativeAdaptOutputFormat)
-(JNIEnv* jni, jclass, jlong j_source, jint j_width, jint j_height, jint j_fps) {
+JNI_FUNCTION_DECLARATION(void,
+                         VideoSource_nativeAdaptOutputFormat,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_source,
+                         jint j_width,
+                         jint j_height,
+                         jint j_fps) {
   LOG(LS_INFO) << "VideoSource_nativeAdaptOutputFormat";
   webrtc::AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);

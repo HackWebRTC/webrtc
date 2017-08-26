@@ -14,31 +14,45 @@
 
 namespace webrtc_jni {
 
-JOW(jboolean, RtpSender_nativeSetTrack)
-(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer, jlong j_track_pointer) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         RtpSender_nativeSetTrack,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_rtp_sender_pointer,
+                         jlong j_track_pointer) {
   return reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
       ->SetTrack(reinterpret_cast<webrtc::MediaStreamTrackInterface*>(
           j_track_pointer));
 }
 
-JOW(jlong, RtpSender_nativeGetTrack)
-(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+JNI_FUNCTION_DECLARATION(jlong,
+                         RtpSender_nativeGetTrack,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_rtp_sender_pointer) {
   return jlongFromPointer(
       reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
           ->track()
           .release());
 }
 
-JOW(jlong, RtpSender_nativeGetDtmfSender)
-(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+JNI_FUNCTION_DECLARATION(jlong,
+                         RtpSender_nativeGetDtmfSender,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_rtp_sender_pointer) {
   return jlongFromPointer(
       reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
           ->GetDtmfSender()
           .release());
 }
 
-JOW(jboolean, RtpSender_nativeSetParameters)
-(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer, jobject j_parameters) {
+JNI_FUNCTION_DECLARATION(jboolean,
+                         RtpSender_nativeSetParameters,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_rtp_sender_pointer,
+                         jobject j_parameters) {
   if (IsNull(jni, j_parameters)) {
     return false;
   }
@@ -48,22 +62,32 @@ JOW(jboolean, RtpSender_nativeSetParameters)
       ->SetParameters(parameters);
 }
 
-JOW(jobject, RtpSender_nativeGetParameters)
-(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+JNI_FUNCTION_DECLARATION(jobject,
+                         RtpSender_nativeGetParameters,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_rtp_sender_pointer) {
   webrtc::RtpParameters parameters =
       reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
           ->GetParameters();
   return NativeToJavaRtpParameters(jni, parameters);
 }
 
-JOW(jstring, RtpSender_nativeId)
-(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+JNI_FUNCTION_DECLARATION(jstring,
+                         RtpSender_nativeId,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_rtp_sender_pointer) {
   return JavaStringFromStdString(
       jni, reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
                ->id());
 }
 
-JOW(void, RtpSender_free)(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+JNI_FUNCTION_DECLARATION(void,
+                         RtpSender_free,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_rtp_sender_pointer) {
   reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
       ->Release();
 }

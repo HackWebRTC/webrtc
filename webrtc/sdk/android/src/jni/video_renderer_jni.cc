@@ -135,31 +135,42 @@ class JavaVideoRendererWrapper
   ScopedGlobalRef<jclass> j_byte_buffer_class_;
 };
 
-JOW(void, VideoRenderer_freeWrappedVideoRenderer)(JNIEnv*, jclass, jlong j_p) {
+JNI_FUNCTION_DECLARATION(void,
+                         VideoRenderer_freeWrappedVideoRenderer,
+                         JNIEnv*,
+                         jclass,
+                         jlong j_p) {
   delete reinterpret_cast<JavaVideoRendererWrapper*>(j_p);
 }
 
-JOW(void, VideoRenderer_releaseNativeFrame)
-(JNIEnv* jni, jclass, jlong j_frame_ptr) {
+JNI_FUNCTION_DECLARATION(void,
+                         VideoRenderer_releaseNativeFrame,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_frame_ptr) {
   delete reinterpret_cast<const webrtc::VideoFrame*>(j_frame_ptr);
 }
 
-JOW(jlong, VideoRenderer_nativeWrapVideoRenderer)
-(JNIEnv* jni, jclass, jobject j_callbacks) {
+JNI_FUNCTION_DECLARATION(jlong,
+                         VideoRenderer_nativeWrapVideoRenderer,
+                         JNIEnv* jni,
+                         jclass,
+                         jobject j_callbacks) {
   std::unique_ptr<JavaVideoRendererWrapper> renderer(
       new JavaVideoRendererWrapper(jni, j_callbacks));
   return (jlong)renderer.release();
 }
 
-JOW(void, VideoRenderer_nativeCopyPlane)
-(JNIEnv* jni,
- jclass,
- jobject j_src_buffer,
- jint width,
- jint height,
- jint src_stride,
- jobject j_dst_buffer,
- jint dst_stride) {
+JNI_FUNCTION_DECLARATION(void,
+                         VideoRenderer_nativeCopyPlane,
+                         JNIEnv* jni,
+                         jclass,
+                         jobject j_src_buffer,
+                         jint width,
+                         jint height,
+                         jint src_stride,
+                         jobject j_dst_buffer,
+                         jint dst_stride) {
   size_t src_size = jni->GetDirectBufferCapacity(j_src_buffer);
   size_t dst_size = jni->GetDirectBufferCapacity(j_dst_buffer);
   RTC_CHECK(src_stride >= width) << "Wrong source stride " << src_stride;
