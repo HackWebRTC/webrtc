@@ -16,7 +16,6 @@
 #include "webrtc/modules/audio_coding/codecs/ilbc/ilbc.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/rtc_base/string_to_number.h"
 
 namespace webrtc {
 
@@ -47,26 +46,6 @@ int GetIlbcBitrate(int ptime) {
 
 }  // namespace
 
-rtc::Optional<AudioEncoderIlbcConfig> AudioEncoderIlbcImpl::SdpToConfig(
-    const SdpAudioFormat& format) {
-  if (STR_CASE_CMP(format.name.c_str(), "ilbc") != 0 ||
-      format.clockrate_hz != 8000 || format.num_channels != 1) {
-    return rtc::Optional<AudioEncoderIlbcConfig>();
-  }
-
-  AudioEncoderIlbcConfig config;
-  auto ptime_iter = format.parameters.find("ptime");
-  if (ptime_iter != format.parameters.end()) {
-    auto ptime = rtc::StringToNumber<int>(ptime_iter->second);
-    if (ptime && *ptime > 0) {
-      const int whole_packets = *ptime / 10;
-      config.frame_size_ms = std::max(20, std::min(whole_packets * 10, 60));
-    }
-  }
-  return config.IsOk() ? rtc::Optional<AudioEncoderIlbcConfig>(config)
-                       : rtc::Optional<AudioEncoderIlbcConfig>();
-}
-
 AudioEncoderIlbcImpl::AudioEncoderIlbcImpl(const AudioEncoderIlbcConfig& config,
                                            int payload_type)
     : frame_size_ms_(config.frame_size_ms),
@@ -81,27 +60,8 @@ AudioEncoderIlbcImpl::AudioEncoderIlbcImpl(const AudioEncoderIlbcConfig& config,
 AudioEncoderIlbcImpl::AudioEncoderIlbcImpl(const CodecInst& codec_inst)
     : AudioEncoderIlbcImpl(CreateConfig(codec_inst), codec_inst.pltype) {}
 
-AudioEncoderIlbcImpl::AudioEncoderIlbcImpl(int payload_type,
-                                           const SdpAudioFormat& format)
-    : AudioEncoderIlbcImpl(*SdpToConfig(format), payload_type) {}
-
 AudioEncoderIlbcImpl::~AudioEncoderIlbcImpl() {
   RTC_CHECK_EQ(0, WebRtcIlbcfix_EncoderFree(encoder_));
-}
-
-rtc::Optional<AudioCodecInfo> AudioEncoderIlbcImpl::QueryAudioEncoder(
-    const SdpAudioFormat& format) {
-  if (STR_CASE_CMP(format.name.c_str(), GetPayloadName()) == 0) {
-    const auto config_opt = SdpToConfig(format);
-    if (format.clockrate_hz == 8000 && format.num_channels == 1 &&
-        config_opt) {
-      RTC_DCHECK(config_opt->IsOk());
-      return rtc::Optional<AudioCodecInfo>(
-          {rtc::dchecked_cast<int>(kSampleRateHz), 1,
-           GetIlbcBitrate(config_opt->frame_size_ms)});
-    }
-  }
-  return rtc::Optional<AudioCodecInfo>();
 }
 
 int AudioEncoderIlbcImpl::SampleRateHz() const {

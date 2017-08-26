@@ -13,15 +13,34 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/g722/audio_encoder_g722.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/safe_conversions.h"
+#include "webrtc/rtc_base/safe_minmax.h"
+#include "webrtc/rtc_base/string_to_number.h"
 
 namespace webrtc {
 
 rtc::Optional<AudioEncoderG722Config> AudioEncoderG722::SdpToConfig(
     const SdpAudioFormat& format) {
-  return AudioEncoderG722Impl::SdpToConfig(format);
+  if (STR_CASE_CMP(format.name.c_str(), "g722") != 0 ||
+      format.clockrate_hz != 8000) {
+    return rtc::Optional<AudioEncoderG722Config>();
+  }
+
+  AudioEncoderG722Config config;
+  config.num_channels = rtc::checked_cast<int>(format.num_channels);
+  auto ptime_iter = format.parameters.find("ptime");
+  if (ptime_iter != format.parameters.end()) {
+    auto ptime = rtc::StringToNumber<int>(ptime_iter->second);
+    if (ptime && *ptime > 0) {
+      const int whole_packets = *ptime / 10;
+      config.frame_size_ms = rtc::SafeClamp<int>(whole_packets * 10, 10, 60);
+    }
+  }
+  return config.IsOk() ? rtc::Optional<AudioEncoderG722Config>(config)
+                       : rtc::Optional<AudioEncoderG722Config>();
 }
 
 void AudioEncoderG722::AppendSupportedEncoders(

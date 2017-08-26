@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "webrtc/api/audio_codecs/audio_encoder.h"
-#include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -81,11 +80,6 @@ class AudioEncoderPcmA final : public AudioEncoderPcm {
   explicit AudioEncoderPcmA(const Config& config)
       : AudioEncoderPcm(config, kSampleRateHz) {}
   explicit AudioEncoderPcmA(const CodecInst& codec_inst);
-  AudioEncoderPcmA(int payload_type, const SdpAudioFormat& format);
-
-  static constexpr const char* GetPayloadName() { return "PCMA"; }
-  static rtc::Optional<AudioCodecInfo> QueryAudioEncoder(
-      const SdpAudioFormat& format);
 
  protected:
   size_t EncodeCall(const int16_t* audio,
@@ -110,11 +104,6 @@ class AudioEncoderPcmU final : public AudioEncoderPcm {
   explicit AudioEncoderPcmU(const Config& config)
       : AudioEncoderPcm(config, kSampleRateHz) {}
   explicit AudioEncoderPcmU(const CodecInst& codec_inst);
-  AudioEncoderPcmU(int payload_type, const SdpAudioFormat& format);
-
-  static constexpr const char* GetPayloadName() { return "PCMU"; }
-  static rtc::Optional<AudioCodecInfo> QueryAudioEncoder(
-      const SdpAudioFormat& format);
 
  protected:
   size_t EncodeCall(const int16_t* audio,

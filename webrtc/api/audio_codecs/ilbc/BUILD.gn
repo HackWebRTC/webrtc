@@ -26,6 +26,7 @@ rtc_static_library("audio_encoder_ilbc") {
   deps = [
     ":audio_encoder_ilbc_config",
     "..:audio_codecs_api",
+    "../../..:webrtc_common",
     "../../../modules/audio_coding:ilbc",
     "../../../rtc_base:rtc_base_approved",
   ]

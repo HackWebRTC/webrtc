@@ -14,7 +14,6 @@
 #include <memory>
 
 #include "webrtc/api/audio_codecs/audio_encoder.h"
-#include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/api/audio_codecs/g722/audio_encoder_g722_config.h"
 #include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
 #include "webrtc/rtc_base/buffer.h"
@@ -26,17 +25,9 @@ struct CodecInst;
 
 class AudioEncoderG722Impl final : public AudioEncoder {
  public:
-  static rtc::Optional<AudioEncoderG722Config> SdpToConfig(
-      const SdpAudioFormat& format);
-
   AudioEncoderG722Impl(const AudioEncoderG722Config& config, int payload_type);
   explicit AudioEncoderG722Impl(const CodecInst& codec_inst);
-  AudioEncoderG722Impl(int payload_type, const SdpAudioFormat& format);
   ~AudioEncoderG722Impl() override;
-
-  static constexpr const char* GetPayloadName() { return "G722"; }
-  static rtc::Optional<AudioCodecInfo> QueryAudioEncoder(
-      const SdpAudioFormat& format);
 
   int SampleRateHz() const override;
   size_t NumChannels() const override;

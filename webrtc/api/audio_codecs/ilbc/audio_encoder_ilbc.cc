@@ -13,9 +13,12 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/safe_conversions.h"
+#include "webrtc/rtc_base/safe_minmax.h"
+#include "webrtc/rtc_base/string_to_number.h"
 
 namespace webrtc {
 namespace {
@@ -37,7 +40,22 @@ int GetIlbcBitrate(int ptime) {
 
 rtc::Optional<AudioEncoderIlbcConfig> AudioEncoderIlbc::SdpToConfig(
     const SdpAudioFormat& format) {
-  return AudioEncoderIlbcImpl::SdpToConfig(format);
+  if (STR_CASE_CMP(format.name.c_str(), "ILBC") != 0 ||
+      format.clockrate_hz != 8000 || format.num_channels != 1) {
+    return rtc::Optional<AudioEncoderIlbcConfig>();
+  }
+
+  AudioEncoderIlbcConfig config;
+  auto ptime_iter = format.parameters.find("ptime");
+  if (ptime_iter != format.parameters.end()) {
+    auto ptime = rtc::StringToNumber<int>(ptime_iter->second);
+    if (ptime && *ptime > 0) {
+      const int whole_packets = *ptime / 10;
+      config.frame_size_ms = rtc::SafeClamp<int>(whole_packets * 10, 20, 60);
+    }
+  }
+  return config.IsOk() ? rtc::Optional<AudioEncoderIlbcConfig>(config)
+                       : rtc::Optional<AudioEncoderIlbcConfig>();
 }
 
 void AudioEncoderIlbc::AppendSupportedEncoders(
