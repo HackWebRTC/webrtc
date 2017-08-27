@@ -405,11 +405,9 @@ public class PeerConnection {
       receiver.dispose();
     }
     receivers.clear();
-    freePeerConnection(nativePeerConnection);
+    JniCommon.nativeReleaseRef(nativePeerConnection);
     freeObserver(nativeObserver);
   }
-
-  private static native void freePeerConnection(long nativePeerConnection);
 
   private static native void freeObserver(long nativeObserver);
 

@@ -64,15 +64,6 @@ JNI_FUNCTION_DECLARATION(jstring,
           ->id());
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         RtpReceiver_free,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_rtp_receiver_pointer) {
-  reinterpret_cast<webrtc::RtpReceiverInterface*>(j_rtp_receiver_pointer)
-      ->Release();
-}
-
 JNI_FUNCTION_DECLARATION(jlong,
                          RtpReceiver_nativeSetObserver,
                          JNIEnv* jni,

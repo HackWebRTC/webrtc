@@ -9,13 +9,13 @@
  */
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-
 #include <asm/unistd.h>
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <vector>
+
+#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc_jni {
 

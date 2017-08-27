@@ -62,13 +62,4 @@ JNI_FUNCTION_DECLARATION(jint,
       ->inter_tone_gap();
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         DtmfSender_free,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_dtmf_sender_pointer) {
-  reinterpret_cast<webrtc::DtmfSenderInterface*>(j_dtmf_sender_pointer)
-      ->Release();
-}
-
 }  // namespace webrtc_jni

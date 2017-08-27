@@ -13,14 +13,6 @@
 
 namespace webrtc_jni {
 
-JNI_FUNCTION_DECLARATION(void,
-                         MediaStreamTrack_free,
-                         JNIEnv*,
-                         jclass,
-                         jlong j_p) {
-  reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->Release();
-}
-
 JNI_FUNCTION_DECLARATION(jstring,
                          MediaStreamTrack_nativeId,
                          JNIEnv* jni,

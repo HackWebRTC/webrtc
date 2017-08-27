@@ -82,7 +82,7 @@ public class RtpSender {
     if (cachedTrack != null && ownsTrack) {
       cachedTrack.dispose();
     }
-    free(nativeRtpSender);
+    JniCommon.nativeReleaseRef(nativeRtpSender);
   }
 
   private static native boolean nativeSetTrack(long nativeRtpSender, long nativeTrack);
@@ -100,6 +100,4 @@ public class RtpSender {
   private static native RtpParameters nativeGetParameters(long nativeRtpSender);
 
   private static native String nativeId(long nativeRtpSender);
-
-  private static native void free(long nativeRtpSender);
 };

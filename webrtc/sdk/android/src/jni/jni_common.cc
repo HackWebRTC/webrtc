@@ -8,19 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/rtc_base/refcount.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc_jni {
 
-JNI_FUNCTION_DECLARATION(jobject,
-                         MediaSource_nativeState,
+JNI_FUNCTION_DECLARATION(void,
+                         JniCommon_nativeAddRef,
                          JNIEnv* jni,
                          jclass,
-                         jlong j_p) {
-  rtc::scoped_refptr<webrtc::MediaSourceInterface> p(
-      reinterpret_cast<webrtc::MediaSourceInterface*>(j_p));
-  return JavaEnumFromIndexAndClassName(jni, "MediaSource$State", p->state());
+                         jlong j_native_ref_counted_pointer) {
+  reinterpret_cast<rtc::RefCountInterface*>(j_native_ref_counted_pointer)
+      ->AddRef();
+}
+
+JNI_FUNCTION_DECLARATION(void,
+                         JniCommon_nativeReleaseRef,
+                         JNIEnv* jni,
+                         jclass,
+                         jlong j_native_ref_counted_pointer) {
+  reinterpret_cast<rtc::RefCountInterface*>(j_native_ref_counted_pointer)
+      ->Release();
 }
 
 }  // namespace webrtc_jni

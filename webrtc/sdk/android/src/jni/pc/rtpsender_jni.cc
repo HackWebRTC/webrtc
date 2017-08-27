@@ -83,13 +83,4 @@ JNI_FUNCTION_DECLARATION(jstring,
                ->id());
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         RtpSender_free,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_rtp_sender_pointer) {
-  reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
-      ->Release();
-}
-
 }  // namespace webrtc_jni

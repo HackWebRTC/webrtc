@@ -47,7 +47,7 @@ public class MediaStreamTrack {
   }
 
   public void dispose() {
-    free(nativeTrack);
+    JniCommon.nativeReleaseRef(nativeTrack);
   }
 
   private static native String nativeId(long nativeTrack);
@@ -59,6 +59,4 @@ public class MediaStreamTrack {
   private static native boolean nativeSetEnabled(long nativeTrack, boolean enabled);
 
   private static native State nativeState(long nativeTrack);
-
-  private static native void free(long nativeTrack);
 }

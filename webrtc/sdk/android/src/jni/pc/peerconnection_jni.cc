@@ -58,14 +58,6 @@ static rtc::scoped_refptr<webrtc::PeerConnectionInterface> ExtractNativePC(
 }
 
 JNI_FUNCTION_DECLARATION(void,
-                         PeerConnection_freePeerConnection,
-                         JNIEnv*,
-                         jclass,
-                         jlong j_p) {
-  reinterpret_cast<webrtc::PeerConnectionInterface*>(j_p)->Release();
-}
-
-JNI_FUNCTION_DECLARATION(void,
                          PeerConnection_freeObserver,
                          JNIEnv*,
                          jclass,
