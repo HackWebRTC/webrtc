@@ -36,7 +36,7 @@
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/payload_router.h"
-#include "webrtc/video_send_stream.h"
+#include "webrtc/call/video_send_stream.h"
 
 namespace webrtc {
 

@@ -28,7 +28,7 @@
 #include "webrtc/video/report_block_stats.h"
 #include "webrtc/video/stats_counter.h"
 #include "webrtc/video/video_stream_encoder.h"
-#include "webrtc/video_send_stream.h"
+#include "webrtc/call/video_send_stream.h"
 
 namespace webrtc {
 

@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/video_send_stream.h"
+#include "webrtc/call/video_send_stream.h"
 
 namespace webrtc {
 

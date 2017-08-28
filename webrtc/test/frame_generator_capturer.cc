@@ -20,7 +20,7 @@
 #include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/frame_generator.h"
-#include "webrtc/video_send_stream.h"
+#include "webrtc/call/video_send_stream.h"
 
 namespace webrtc {
 namespace test {

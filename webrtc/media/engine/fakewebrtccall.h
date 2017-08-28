@@ -31,8 +31,8 @@
 #include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/rtc_base/buffer.h"
-#include "webrtc/video_receive_stream.h"
-#include "webrtc/video_send_stream.h"
+#include "webrtc/call/video_receive_stream.h"
+#include "webrtc/call/video_send_stream.h"
 
 namespace cricket {
 class FakeAudioSendStream final : public webrtc::AudioSendStream {

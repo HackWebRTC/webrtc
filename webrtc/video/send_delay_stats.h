@@ -21,7 +21,7 @@
 #include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/stats_counter.h"
-#include "webrtc/video_send_stream.h"
+#include "webrtc/call/video_send_stream.h"
 
 namespace webrtc {
 

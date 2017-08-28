@@ -22,7 +22,7 @@
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_send_stream.h"
+#include "webrtc/call/video_send_stream.h"
 
 namespace {
 const int kShortTimeoutMs = 500;
