@@ -91,11 +91,27 @@ class RTPFragmentationHeader {
         fragmentationTimeDiff(NULL),
         fragmentationPlType(NULL) {}
 
+  RTPFragmentationHeader(RTPFragmentationHeader&& other)
+      : RTPFragmentationHeader() {
+    std::swap(*this, other);
+  }
+
   ~RTPFragmentationHeader() {
     delete[] fragmentationOffset;
     delete[] fragmentationLength;
     delete[] fragmentationTimeDiff;
     delete[] fragmentationPlType;
+  }
+
+  void operator=(RTPFragmentationHeader&& other) { std::swap(*this, other); }
+
+  friend void swap(RTPFragmentationHeader& a, RTPFragmentationHeader& b) {
+    using std::swap;
+    swap(a.fragmentationVectorSize, b.fragmentationVectorSize);
+    swap(a.fragmentationOffset, b.fragmentationOffset);
+    swap(a.fragmentationLength, b.fragmentationLength);
+    swap(a.fragmentationTimeDiff, b.fragmentationTimeDiff);
+    swap(a.fragmentationPlType, b.fragmentationPlType);
   }
 
   void CopyFrom(const RTPFragmentationHeader& src) {
