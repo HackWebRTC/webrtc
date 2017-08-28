@@ -14,21 +14,21 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
-// Adapter for a Java StatsObserver presenting a C++ webrtc::StatsObserver and
+// Adapter for a Java StatsObserver presenting a C++ StatsObserver and
 // dispatching the callback from C++ back to Java.
-class StatsObserverJni : public webrtc::StatsObserver {
+class StatsObserverJni : public StatsObserver {
  public:
   StatsObserverJni(JNIEnv* jni, jobject j_observer);
 
-  void OnComplete(const webrtc::StatsReports& reports) override;
+  void OnComplete(const StatsReports& reports) override;
 
  private:
-  jobjectArray ReportsToJava(JNIEnv* jni, const webrtc::StatsReports& reports);
+  jobjectArray ReportsToJava(JNIEnv* jni, const StatsReports& reports);
 
-  jobjectArray ValuesToJava(JNIEnv* jni,
-                            const webrtc::StatsReport::Values& values);
+  jobjectArray ValuesToJava(JNIEnv* jni, const StatsReport::Values& values);
 
   const ScopedGlobalRef<jobject> j_observer_global_;
   const ScopedGlobalRef<jclass> j_observer_class_;
@@ -38,6 +38,7 @@ class StatsObserverJni : public webrtc::StatsObserver {
   const jmethodID j_value_ctor_;
 };
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_STATSOBSERVER_JNI_H_

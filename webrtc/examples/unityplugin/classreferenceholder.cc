@@ -36,12 +36,12 @@ static ClassReferenceHolder* g_class_reference_holder = nullptr;
 
 void LoadGlobalClassReferenceHolder() {
   RTC_CHECK(g_class_reference_holder == nullptr);
-  g_class_reference_holder = new ClassReferenceHolder(webrtc_jni::GetEnv());
+  g_class_reference_holder = new ClassReferenceHolder(webrtc::jni::GetEnv());
 }
 
 void FreeGlobalClassReferenceHolder() {
   g_class_reference_holder->FreeReferences(
-      webrtc_jni::AttachCurrentThreadIfNeeded());
+      webrtc::jni::AttachCurrentThreadIfNeeded());
   delete g_class_reference_holder;
   g_class_reference_holder = nullptr;
 }

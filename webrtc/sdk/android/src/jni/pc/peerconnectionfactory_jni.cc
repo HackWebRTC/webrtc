@@ -32,7 +32,8 @@
 #include "webrtc/system_wrappers/include/field_trial_default.h"  // nogncheck
 #include "webrtc/system_wrappers/include/trace.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Note: Some of the video-specific PeerConnectionFactory methods are
 // implemented in "video_jni.cc". This is done so that if an application
@@ -63,7 +64,7 @@ JNI_FUNCTION_DECLARATION(void,
                          jboolean video_hw_acceleration) {
   video_hw_acceleration_enabled = video_hw_acceleration;
   if (!factory_static_initialized) {
-    webrtc::JVM::Initialize(GetJVM());
+    JVM::Initialize(GetJVM());
     factory_static_initialized = true;
   }
 }
@@ -83,7 +84,7 @@ JNI_FUNCTION_DECLARATION(void,
     jni->ReleaseStringUTFChars(j_trials_init_string, init_string);
     LOG(LS_INFO) << "initializeFieldTrials: " << field_trials_init_string;
   }
-  webrtc::field_trial::InitFieldTrialsFromString(field_trials_init_string);
+  field_trial::InitFieldTrialsFromString(field_trials_init_string);
 }
 
 JNI_FUNCTION_DECLARATION(void,
@@ -99,7 +100,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          jclass,
                          jstring j_name) {
   return JavaStringFromStdString(
-      jni, webrtc::field_trial::FindFullName(JavaToStdString(jni, j_name)));
+      jni, field_trial::FindFullName(JavaToStdString(jni, j_name)));
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
@@ -146,7 +147,7 @@ JNI_FUNCTION_DECLARATION(
   // webrtc/rtc_base/ are convoluted, we simply wrap here to avoid having to
   // think about ramifications of auto-wrapping there.
   rtc::ThreadManager::Instance()->WrapCurrentThread();
-  webrtc::Trace::CreateTrace();
+  Trace::CreateTrace();
 
   std::unique_ptr<rtc::Thread> network_thread =
       rtc::Thread::CreateWithSocketServer();
@@ -167,7 +168,7 @@ JNI_FUNCTION_DECLARATION(
   auto audio_encoder_factory = CreateAudioEncoderFactory();
   auto audio_decoder_factory = CreateAudioDecoderFactory();
 
-  webrtc::PeerConnectionFactoryInterface::Options options;
+  PeerConnectionFactoryInterface::Options options;
   bool has_options = joptions != NULL;
   if (has_options) {
     options = JavaToNativePeerConnectionFactoryOptions(jni, joptions);
@@ -184,17 +185,16 @@ JNI_FUNCTION_DECLARATION(
     rtc::NetworkMonitorFactory::SetFactory(network_monitor_factory);
   }
 
-  webrtc::AudioDeviceModule* adm = nullptr;
-  rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer = nullptr;
-  std::unique_ptr<webrtc::CallFactoryInterface> call_factory(
-      CreateCallFactory());
-  std::unique_ptr<webrtc::RtcEventLogFactoryInterface> rtc_event_log_factory(
+  AudioDeviceModule* adm = nullptr;
+  rtc::scoped_refptr<AudioMixer> audio_mixer = nullptr;
+  std::unique_ptr<CallFactoryInterface> call_factory(CreateCallFactory());
+  std::unique_ptr<RtcEventLogFactoryInterface> rtc_event_log_factory(
       CreateRtcEventLogFactory());
   std::unique_ptr<cricket::MediaEngineInterface> media_engine(CreateMediaEngine(
       adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
       video_decoder_factory, audio_mixer));
 
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       CreateModularPeerConnectionFactory(
           network_thread.get(), worker_thread.get(), signaling_thread.get(),
           adm, audio_encoder_factory, audio_decoder_factory,
@@ -223,11 +223,11 @@ JNI_FUNCTION_DECLARATION(void,
                          jlong j_p) {
   delete reinterpret_cast<OwnedFactoryAndThreads*>(j_p);
   if (field_trials_init_string) {
-    webrtc::field_trial::InitFieldTrialsFromString(NULL);
+    field_trial::InitFieldTrialsFromString(NULL);
     delete field_trials_init_string;
     field_trials_init_string = NULL;
   }
-  webrtc::Trace::ReturnTrace();
+  Trace::ReturnTrace();
 }
 
 JNI_FUNCTION_DECLARATION(void,
@@ -246,9 +246,9 @@ JNI_FUNCTION_DECLARATION(jlong,
                          jclass,
                          jlong native_factory,
                          jstring label) {
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  rtc::scoped_refptr<webrtc::MediaStreamInterface> stream(
+  rtc::scoped_refptr<MediaStreamInterface> stream(
       factory->CreateLocalMediaStream(JavaToStdString(jni, label)));
   return (jlong)stream.release();
 }
@@ -261,11 +261,11 @@ JNI_FUNCTION_DECLARATION(jlong,
                          jobject j_constraints) {
   std::unique_ptr<MediaConstraintsJni> constraints(
       new MediaConstraintsJni(jni, j_constraints));
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
   cricket::AudioOptions options;
   CopyConstraintsIntoAudioOptions(constraints.get(), &options);
-  rtc::scoped_refptr<webrtc::AudioSourceInterface> source(
+  rtc::scoped_refptr<AudioSourceInterface> source(
       factory->CreateAudioSource(options));
   return (jlong)source.release();
 }
@@ -277,12 +277,11 @@ JNI_FUNCTION_DECLARATION(jlong,
                          jlong native_factory,
                          jstring id,
                          jlong native_source) {
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> track(
-      factory->CreateAudioTrack(
-          JavaToStdString(jni, id),
-          reinterpret_cast<webrtc::AudioSourceInterface*>(native_source)));
+  rtc::scoped_refptr<AudioTrackInterface> track(factory->CreateAudioTrack(
+      JavaToStdString(jni, id),
+      reinterpret_cast<AudioSourceInterface*>(native_source)));
   return (jlong)track.release();
 }
 
@@ -293,7 +292,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
                          jlong native_factory,
                          jint file,
                          jint filesize_limit_bytes) {
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
   return factory->StartAecDump(file, filesize_limit_bytes);
 }
@@ -303,7 +302,7 @@ JNI_FUNCTION_DECLARATION(void,
                          JNIEnv* jni,
                          jclass,
                          jlong native_factory) {
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
   factory->StopAecDump();
 }
@@ -314,9 +313,9 @@ JNI_FUNCTION_DECLARATION(void,
                          jclass,
                          jlong native_factory,
                          jobject options) {
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  webrtc::PeerConnectionFactoryInterface::Options options_to_set =
+  PeerConnectionFactoryInterface::Options options_to_set =
       JavaToNativePeerConnectionFactoryOptions(jni, options);
   factory->SetOptions(options_to_set);
 
@@ -339,12 +338,12 @@ JNI_FUNCTION_DECLARATION(jlong,
                          jobject j_rtc_config,
                          jobject j_constraints,
                          jlong observer_p) {
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> f(
-      reinterpret_cast<webrtc::PeerConnectionFactoryInterface*>(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> f(
+      reinterpret_cast<PeerConnectionFactoryInterface*>(
           factoryFromJava(factory)));
 
-  webrtc::PeerConnectionInterface::RTCConfiguration rtc_config(
-      webrtc::PeerConnectionInterface::RTCConfigurationType::kAggressive);
+  PeerConnectionInterface::RTCConfiguration rtc_config(
+      PeerConnectionInterface::RTCConfigurationType::kAggressive);
   JavaToNativeRTCConfiguration(jni, j_rtc_config, &rtc_config);
 
   jclass j_rtc_config_class = GetObjectClass(jni, j_rtc_config);
@@ -369,9 +368,10 @@ JNI_FUNCTION_DECLARATION(jlong,
       reinterpret_cast<PeerConnectionObserverJni*>(observer_p);
   observer->SetConstraints(new MediaConstraintsJni(jni, j_constraints));
   CopyConstraintsIntoRtcConfiguration(observer->constraints(), &rtc_config);
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc(
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
       f->CreatePeerConnection(rtc_config, nullptr, nullptr, observer));
   return (jlong)pc.release();
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

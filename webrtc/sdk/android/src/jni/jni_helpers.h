@@ -39,7 +39,8 @@
 #define JNI_FUNCTION_DECLARATION(rettype, name, ...) \
   extern "C" JNIEXPORT rettype JNICALL Java_org_webrtc_##name(__VA_ARGS__)
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 jint InitGlobalJniVariables(JavaVM *jvm);
 
@@ -203,6 +204,15 @@ class Iterable {
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Iterable);
 };
+
+}  // namespace jni
+}  // namespace webrtc
+
+// TODO(magjed): Remove once external clients are updated.
+namespace webrtc_jni {
+
+using webrtc::jni::AttachCurrentThreadIfNeeded;
+using webrtc::jni::InitGlobalJniVariables;
 
 }  // namespace webrtc_jni
 

@@ -14,14 +14,14 @@
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/pc/datachannelobserver_jni.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
-static webrtc::DataChannelInterface* ExtractNativeDC(JNIEnv* jni,
-                                                     jobject j_dc) {
+static DataChannelInterface* ExtractNativeDC(JNIEnv* jni, jobject j_dc) {
   jfieldID native_dc_id =
       GetFieldID(jni, GetObjectClass(jni, j_dc), "nativeDataChannel", "J");
   jlong j_d = GetLongField(jni, j_dc, native_dc_id);
-  return reinterpret_cast<webrtc::DataChannelInterface*>(j_d);
+  return reinterpret_cast<DataChannelInterface*>(j_d);
 }
 
 JNI_FUNCTION_DECLARATION(jlong,
@@ -87,7 +87,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
                          jbyteArray data,
                          jboolean binary) {
   jbyte* bytes = jni->GetByteArrayElements(data, NULL);
-  bool ret = ExtractNativeDC(jni, j_dc)->Send(webrtc::DataBuffer(
+  bool ret = ExtractNativeDC(jni, j_dc)->Send(DataBuffer(
       rtc::CopyOnWriteBuffer(bytes, jni->GetArrayLength(data)), binary));
   jni->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
   return ret;
@@ -97,4 +97,5 @@ JNI_FUNCTION_DECLARATION(void, DataChannel_dispose, JNIEnv* jni, jobject j_dc) {
   CHECK_RELEASE(ExtractNativeDC(jni, j_dc));
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

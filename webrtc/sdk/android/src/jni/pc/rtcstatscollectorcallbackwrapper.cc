@@ -15,7 +15,8 @@
 
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 RTCStatsCollectorCallbackWrapper::RTCStatsCollectorCallbackWrapper(
     JNIEnv* jni,
@@ -57,7 +58,7 @@ RTCStatsCollectorCallbackWrapper::RTCStatsCollectorCallbackWrapper(
       j_string_class_(FindClass(jni, "java/lang/String")) {}
 
 void RTCStatsCollectorCallbackWrapper::OnStatsDelivered(
-    const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) {
+    const rtc::scoped_refptr<const RTCStatsReport>& report) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   jobject j_report = ReportToJava(jni, report);
@@ -69,11 +70,11 @@ void RTCStatsCollectorCallbackWrapper::OnStatsDelivered(
 
 jobject RTCStatsCollectorCallbackWrapper::ReportToJava(
     JNIEnv* jni,
-    const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) {
+    const rtc::scoped_refptr<const RTCStatsReport>& report) {
   jobject j_stats_map =
       jni->NewObject(j_linked_hash_map_class_, j_linked_hash_map_ctor_);
   CHECK_EXCEPTION(jni) << "error during NewObject";
-  for (const webrtc::RTCStats& stats : *report) {
+  for (const RTCStats& stats : *report) {
     // Create a local reference frame for each RTCStats, since there is a
     // maximum number of references that can be created in one frame.
     ScopedLocalRefFrame local_ref_frame(jni);
@@ -88,14 +89,13 @@ jobject RTCStatsCollectorCallbackWrapper::ReportToJava(
   return j_report;
 }
 
-jobject RTCStatsCollectorCallbackWrapper::StatsToJava(
-    JNIEnv* jni,
-    const webrtc::RTCStats& stats) {
+jobject RTCStatsCollectorCallbackWrapper::StatsToJava(JNIEnv* jni,
+                                                      const RTCStats& stats) {
   jstring j_type = JavaStringFromStdString(jni, stats.type());
   jstring j_id = JavaStringFromStdString(jni, stats.id());
   jobject j_members =
       jni->NewObject(j_linked_hash_map_class_, j_linked_hash_map_ctor_);
-  for (const webrtc::RTCStatsMemberInterface* member : stats.Members()) {
+  for (const RTCStatsMemberInterface* member : stats.Members()) {
     if (!member->is_defined()) {
       continue;
     }
@@ -115,57 +115,56 @@ jobject RTCStatsCollectorCallbackWrapper::StatsToJava(
 
 jobject RTCStatsCollectorCallbackWrapper::MemberToJava(
     JNIEnv* jni,
-    const webrtc::RTCStatsMemberInterface* member) {
+    const RTCStatsMemberInterface* member) {
   switch (member->type()) {
-    case webrtc::RTCStatsMemberInterface::kBool: {
-      jobject value =
-          jni->NewObject(j_boolean_class_, j_boolean_ctor_,
-                         *member->cast_to<webrtc::RTCStatsMember<bool>>());
+    case RTCStatsMemberInterface::kBool: {
+      jobject value = jni->NewObject(j_boolean_class_, j_boolean_ctor_,
+                                     *member->cast_to<RTCStatsMember<bool>>());
       CHECK_EXCEPTION(jni) << "error during NewObject";
       return value;
     }
-    case webrtc::RTCStatsMemberInterface::kInt32: {
+    case RTCStatsMemberInterface::kInt32: {
       jobject value =
           jni->NewObject(j_integer_class_, j_integer_ctor_,
-                         *member->cast_to<webrtc::RTCStatsMember<int32_t>>());
+                         *member->cast_to<RTCStatsMember<int32_t>>());
       CHECK_EXCEPTION(jni) << "error during NewObject";
       return value;
     }
-    case webrtc::RTCStatsMemberInterface::kUint32: {
-      jobject value = jni->NewObject(
-          j_long_class_, j_long_ctor_,
-          (jlong)*member->cast_to<webrtc::RTCStatsMember<uint32_t>>());
-      CHECK_EXCEPTION(jni) << "error during NewObject";
-      return value;
-    }
-    case webrtc::RTCStatsMemberInterface::kInt64: {
+    case RTCStatsMemberInterface::kUint32: {
       jobject value =
           jni->NewObject(j_long_class_, j_long_ctor_,
-                         *member->cast_to<webrtc::RTCStatsMember<int64_t>>());
+                         (jlong)*member->cast_to<RTCStatsMember<uint32_t>>());
       CHECK_EXCEPTION(jni) << "error during NewObject";
       return value;
     }
-    case webrtc::RTCStatsMemberInterface::kUint64: {
+    case RTCStatsMemberInterface::kInt64: {
+      jobject value =
+          jni->NewObject(j_long_class_, j_long_ctor_,
+                         *member->cast_to<RTCStatsMember<int64_t>>());
+      CHECK_EXCEPTION(jni) << "error during NewObject";
+      return value;
+    }
+    case RTCStatsMemberInterface::kUint64: {
       jobject value =
           jni->NewObject(j_big_integer_class_, j_big_integer_ctor_,
                          JavaStringFromStdString(jni, member->ValueToString()));
       CHECK_EXCEPTION(jni) << "error during NewObject";
       return value;
     }
-    case webrtc::RTCStatsMemberInterface::kDouble: {
+    case RTCStatsMemberInterface::kDouble: {
       jobject value =
           jni->NewObject(j_double_class_, j_double_ctor_,
-                         *member->cast_to<webrtc::RTCStatsMember<double>>());
+                         *member->cast_to<RTCStatsMember<double>>());
       CHECK_EXCEPTION(jni) << "error during NewObject";
       return value;
     }
-    case webrtc::RTCStatsMemberInterface::kString: {
+    case RTCStatsMemberInterface::kString: {
       return JavaStringFromStdString(
-          jni, *member->cast_to<webrtc::RTCStatsMember<std::string>>());
+          jni, *member->cast_to<RTCStatsMember<std::string>>());
     }
-    case webrtc::RTCStatsMemberInterface::kSequenceBool: {
+    case RTCStatsMemberInterface::kSequenceBool: {
       const std::vector<bool>& values =
-          *member->cast_to<webrtc::RTCStatsMember<std::vector<bool>>>();
+          *member->cast_to<RTCStatsMember<std::vector<bool>>>();
       jobjectArray j_values =
           jni->NewObjectArray(values.size(), j_boolean_class_, nullptr);
       CHECK_EXCEPTION(jni) << "error during NewObjectArray";
@@ -177,9 +176,9 @@ jobject RTCStatsCollectorCallbackWrapper::MemberToJava(
       }
       return j_values;
     }
-    case webrtc::RTCStatsMemberInterface::kSequenceInt32: {
+    case RTCStatsMemberInterface::kSequenceInt32: {
       const std::vector<int32_t>& values =
-          *member->cast_to<webrtc::RTCStatsMember<std::vector<int32_t>>>();
+          *member->cast_to<RTCStatsMember<std::vector<int32_t>>>();
       jobjectArray j_values =
           jni->NewObjectArray(values.size(), j_integer_class_, nullptr);
       CHECK_EXCEPTION(jni) << "error during NewObjectArray";
@@ -191,9 +190,9 @@ jobject RTCStatsCollectorCallbackWrapper::MemberToJava(
       }
       return j_values;
     }
-    case webrtc::RTCStatsMemberInterface::kSequenceUint32: {
+    case RTCStatsMemberInterface::kSequenceUint32: {
       const std::vector<uint32_t>& values =
-          *member->cast_to<webrtc::RTCStatsMember<std::vector<uint32_t>>>();
+          *member->cast_to<RTCStatsMember<std::vector<uint32_t>>>();
       jobjectArray j_values =
           jni->NewObjectArray(values.size(), j_long_class_, nullptr);
       CHECK_EXCEPTION(jni) << "error during NewObjectArray";
@@ -204,9 +203,9 @@ jobject RTCStatsCollectorCallbackWrapper::MemberToJava(
       }
       return j_values;
     }
-    case webrtc::RTCStatsMemberInterface::kSequenceInt64: {
+    case RTCStatsMemberInterface::kSequenceInt64: {
       const std::vector<int64_t>& values =
-          *member->cast_to<webrtc::RTCStatsMember<std::vector<int64_t>>>();
+          *member->cast_to<RTCStatsMember<std::vector<int64_t>>>();
       jobjectArray j_values =
           jni->NewObjectArray(values.size(), j_long_class_, nullptr);
       CHECK_EXCEPTION(jni) << "error during NewObjectArray";
@@ -217,9 +216,9 @@ jobject RTCStatsCollectorCallbackWrapper::MemberToJava(
       }
       return j_values;
     }
-    case webrtc::RTCStatsMemberInterface::kSequenceUint64: {
+    case RTCStatsMemberInterface::kSequenceUint64: {
       const std::vector<uint64_t>& values =
-          *member->cast_to<webrtc::RTCStatsMember<std::vector<uint64_t>>>();
+          *member->cast_to<RTCStatsMember<std::vector<uint64_t>>>();
       jobjectArray j_values =
           jni->NewObjectArray(values.size(), j_big_integer_class_, nullptr);
       CHECK_EXCEPTION(jni) << "error during NewObjectArray";
@@ -232,9 +231,9 @@ jobject RTCStatsCollectorCallbackWrapper::MemberToJava(
       }
       return j_values;
     }
-    case webrtc::RTCStatsMemberInterface::kSequenceDouble: {
+    case RTCStatsMemberInterface::kSequenceDouble: {
       const std::vector<double>& values =
-          *member->cast_to<webrtc::RTCStatsMember<std::vector<double>>>();
+          *member->cast_to<RTCStatsMember<std::vector<double>>>();
       jobjectArray j_values =
           jni->NewObjectArray(values.size(), j_double_class_, nullptr);
       CHECK_EXCEPTION(jni) << "error during NewObjectArray";
@@ -246,9 +245,9 @@ jobject RTCStatsCollectorCallbackWrapper::MemberToJava(
       }
       return j_values;
     }
-    case webrtc::RTCStatsMemberInterface::kSequenceString: {
+    case RTCStatsMemberInterface::kSequenceString: {
       const std::vector<std::string>& values =
-          *member->cast_to<webrtc::RTCStatsMember<std::vector<std::string>>>();
+          *member->cast_to<RTCStatsMember<std::vector<std::string>>>();
       jobjectArray j_values =
           jni->NewObjectArray(values.size(), j_string_class_, nullptr);
       CHECK_EXCEPTION(jni) << "error during NewObjectArray";
@@ -264,4 +263,5 @@ jobject RTCStatsCollectorCallbackWrapper::MemberToJava(
   return nullptr;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

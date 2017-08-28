@@ -13,12 +13,13 @@
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // TODO(magjed): Write a test for this function.
 jobject WrapI420Buffer(
     JNIEnv* jni,
-    const rtc::scoped_refptr<webrtc::I420BufferInterface>& i420_buffer) {
+    const rtc::scoped_refptr<I420BufferInterface>& i420_buffer) {
   jclass j_wrapped_native_i420_buffer_class =
       FindClass(jni, "org/webrtc/WrappedNativeI420Buffer");
   jmethodID j_wrapped_native_i420_buffer_ctor_id =
@@ -46,4 +47,5 @@ jobject WrapI420Buffer(
   return j_wrapped_native_i420_buffer;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

@@ -20,7 +20,8 @@ class WebRtcVideoEncoderFactory;
 class WebRtcVideoDecoderFactory;
 }  // namespace cricket
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 class SurfaceTextureHelper;
 
@@ -35,6 +36,7 @@ cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory(
 jobject GetJavaSurfaceTextureHelper(
     const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper);
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_VIDEO_JNI_H_

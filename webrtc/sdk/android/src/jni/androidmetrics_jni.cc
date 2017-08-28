@@ -17,10 +17,11 @@
 #include "webrtc/system_wrappers/include/metrics_default.h"
 
 // Enables collection of native histograms and creating them.
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 JNI_FUNCTION_DECLARATION(void, Metrics_nativeEnable, JNIEnv* jni, jclass) {
-  webrtc::metrics::Enable();
+  metrics::Enable();
 }
 
 // Gets and clears native histograms.
@@ -39,9 +40,8 @@ JNI_FUNCTION_DECLARATION(jobject,
   jobject j_metrics = jni->NewObject(
       j_metrics_class, GetMethodID(jni, j_metrics_class, "<init>", "()V"));
 
-  std::map<std::string, std::unique_ptr<webrtc::metrics::SampleInfo>>
-      histograms;
-  webrtc::metrics::GetAndReset(&histograms);
+  std::map<std::string, std::unique_ptr<metrics::SampleInfo>> histograms;
+  metrics::GetAndReset(&histograms);
   for (const auto& kv : histograms) {
     // Create and add samples to |HistogramInfo|.
     jobject j_info = jni->NewObject(
@@ -61,4 +61,5 @@ JNI_FUNCTION_DECLARATION(jobject,
   return j_metrics;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

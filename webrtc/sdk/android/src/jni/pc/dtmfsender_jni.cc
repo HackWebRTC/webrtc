@@ -11,14 +11,15 @@
 #include "webrtc/api/dtmfsenderinterface.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 JNI_FUNCTION_DECLARATION(jboolean,
                          DtmfSender_nativeCanInsertDtmf,
                          JNIEnv* jni,
                          jclass,
                          jlong j_dtmf_sender_pointer) {
-  return reinterpret_cast<webrtc::DtmfSenderInterface*>(j_dtmf_sender_pointer)
+  return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
       ->CanInsertDtmf();
 }
 
@@ -30,7 +31,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
                          jstring tones,
                          jint duration,
                          jint inter_tone_gap) {
-  return reinterpret_cast<webrtc::DtmfSenderInterface*>(j_dtmf_sender_pointer)
+  return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
       ->InsertDtmf(JavaToStdString(jni, tones), duration, inter_tone_gap);
 }
 
@@ -40,8 +41,8 @@ JNI_FUNCTION_DECLARATION(jstring,
                          jclass,
                          jlong j_dtmf_sender_pointer) {
   return JavaStringFromStdString(
-      jni, reinterpret_cast<webrtc::DtmfSenderInterface*>(j_dtmf_sender_pointer)
-               ->tones());
+      jni,
+      reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)->tones());
 }
 
 JNI_FUNCTION_DECLARATION(jint,
@@ -49,7 +50,7 @@ JNI_FUNCTION_DECLARATION(jint,
                          JNIEnv* jni,
                          jclass,
                          jlong j_dtmf_sender_pointer) {
-  return reinterpret_cast<webrtc::DtmfSenderInterface*>(j_dtmf_sender_pointer)
+  return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
       ->duration();
 }
 
@@ -58,8 +59,9 @@ JNI_FUNCTION_DECLARATION(jint,
                          JNIEnv* jni,
                          jclass,
                          jlong j_dtmf_sender_pointer) {
-  return reinterpret_cast<webrtc::DtmfSenderInterface*>(j_dtmf_sender_pointer)
+  return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
       ->inter_tone_gap();
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

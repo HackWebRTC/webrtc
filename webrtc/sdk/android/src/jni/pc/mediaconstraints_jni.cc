@@ -10,7 +10,8 @@
 
 #include "webrtc/sdk/android/src/jni/pc/mediaconstraints_jni.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 MediaConstraintsJni::MediaConstraintsJni(JNIEnv* jni, jobject j_constraints) {
   PopulateConstraintsFromJavaPairList(jni, j_constraints, "mandatory",
@@ -44,4 +45,5 @@ void MediaConstraintsJni::PopulateConstraintsFromJavaPairList(
   }
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

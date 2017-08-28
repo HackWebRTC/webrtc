@@ -12,7 +12,8 @@
 
 #include "webrtc/sdk/android/src/jni/pc/java_native_conversion.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 void RtpReceiverObserverJni::OnFirstPacketReceived(
     cricket::MediaType media_type) {
@@ -29,4 +30,5 @@ void RtpReceiverObserverJni::OnFirstPacketReceived(
   CHECK_EXCEPTION(jni) << "error during CallVoidMethod";
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

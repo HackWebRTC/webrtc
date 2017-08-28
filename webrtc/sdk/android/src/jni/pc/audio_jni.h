@@ -17,12 +17,14 @@
 #include "webrtc/api/audio_codecs/audio_encoder_factory.h"  // nogncheck
 #include "webrtc/rtc_base/scoped_ref_ptr.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
-rtc::scoped_refptr<webrtc::AudioDecoderFactory> CreateAudioDecoderFactory();
+rtc::scoped_refptr<AudioDecoderFactory> CreateAudioDecoderFactory();
 
-rtc::scoped_refptr<webrtc::AudioEncoderFactory> CreateAudioEncoderFactory();
+rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory();
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_AUDIO_JNI_H_

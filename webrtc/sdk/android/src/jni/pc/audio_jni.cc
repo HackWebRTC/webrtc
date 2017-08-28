@@ -13,14 +13,16 @@
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
-rtc::scoped_refptr<webrtc::AudioDecoderFactory> CreateAudioDecoderFactory() {
-  return webrtc::CreateBuiltinAudioDecoderFactory();
+rtc::scoped_refptr<AudioDecoderFactory> CreateAudioDecoderFactory() {
+  return CreateBuiltinAudioDecoderFactory();
 }
 
-rtc::scoped_refptr<webrtc::AudioEncoderFactory> CreateAudioEncoderFactory() {
-  return webrtc::CreateBuiltinAudioEncoderFactory();
+rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory() {
+  return CreateBuiltinAudioEncoderFactory();
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

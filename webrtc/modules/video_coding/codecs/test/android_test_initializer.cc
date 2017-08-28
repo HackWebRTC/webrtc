@@ -40,10 +40,10 @@ void EnsureInitializedOnce() {
   JavaVM* jvm = NULL;
   RTC_CHECK_EQ(0, jni->GetJavaVM(&jvm));
 
-  jint ret = webrtc_jni::InitGlobalJniVariables(jvm);
+  jint ret = jni::InitGlobalJniVariables(jvm);
   RTC_DCHECK_GE(ret, 0);
 
-  webrtc_jni::LoadGlobalClassReferenceHolder();
+  jni::LoadGlobalClassReferenceHolder();
 }
 
 }  // namespace

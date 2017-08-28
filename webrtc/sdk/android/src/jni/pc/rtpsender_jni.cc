@@ -12,7 +12,8 @@
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/pc/java_native_conversion.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 JNI_FUNCTION_DECLARATION(jboolean,
                          RtpSender_nativeSetTrack,
@@ -20,9 +21,8 @@ JNI_FUNCTION_DECLARATION(jboolean,
                          jclass,
                          jlong j_rtp_sender_pointer,
                          jlong j_track_pointer) {
-  return reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
-      ->SetTrack(reinterpret_cast<webrtc::MediaStreamTrackInterface*>(
-          j_track_pointer));
+  return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
+      ->SetTrack(reinterpret_cast<MediaStreamTrackInterface*>(j_track_pointer));
 }
 
 JNI_FUNCTION_DECLARATION(jlong,
@@ -31,7 +31,7 @@ JNI_FUNCTION_DECLARATION(jlong,
                          jclass,
                          jlong j_rtp_sender_pointer) {
   return jlongFromPointer(
-      reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
+      reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
           ->track()
           .release());
 }
@@ -42,7 +42,7 @@ JNI_FUNCTION_DECLARATION(jlong,
                          jclass,
                          jlong j_rtp_sender_pointer) {
   return jlongFromPointer(
-      reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
+      reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
           ->GetDtmfSender()
           .release());
 }
@@ -56,9 +56,9 @@ JNI_FUNCTION_DECLARATION(jboolean,
   if (IsNull(jni, j_parameters)) {
     return false;
   }
-  webrtc::RtpParameters parameters;
+  RtpParameters parameters;
   JavaToNativeRtpParameters(jni, j_parameters, &parameters);
-  return reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
+  return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
       ->SetParameters(parameters);
 }
 
@@ -67,8 +67,8 @@ JNI_FUNCTION_DECLARATION(jobject,
                          JNIEnv* jni,
                          jclass,
                          jlong j_rtp_sender_pointer) {
-  webrtc::RtpParameters parameters =
-      reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
+  RtpParameters parameters =
+      reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
           ->GetParameters();
   return NativeToJavaRtpParameters(jni, parameters);
 }
@@ -79,8 +79,8 @@ JNI_FUNCTION_DECLARATION(jstring,
                          jclass,
                          jlong j_rtp_sender_pointer) {
   return JavaStringFromStdString(
-      jni, reinterpret_cast<webrtc::RtpSenderInterface*>(j_rtp_sender_pointer)
-               ->id());
+      jni, reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)->id());
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

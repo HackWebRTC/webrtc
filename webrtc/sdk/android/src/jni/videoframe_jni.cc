@@ -14,7 +14,8 @@
 
 #include "webrtc/rtc_base/checks.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 extern "C" JNIEXPORT void JNICALL
 Java_org_webrtc_VideoFrame_nativeCropAndScaleI420(JNIEnv* jni,
@@ -59,4 +60,5 @@ Java_org_webrtc_VideoFrame_nativeCropAndScaleI420(JNIEnv* jni,
   RTC_DCHECK_EQ(ret, 0) << "I420Scale failed";
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

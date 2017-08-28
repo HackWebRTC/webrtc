@@ -19,7 +19,8 @@
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Uncomment this define to enable verbose logging for every encoded/decoded
 // video frame.
@@ -82,6 +83,7 @@ static inline bool CheckException(JNIEnv* jni) {
   return false;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_

@@ -20,7 +20,8 @@
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 enum AndroidSdkVersion {
   SDK_VERSION_LOLLIPOP = 21,
@@ -442,4 +443,5 @@ JNI_FUNCTION_DECLARATION(void,
       static_cast<NetworkHandle>(network_handle));
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

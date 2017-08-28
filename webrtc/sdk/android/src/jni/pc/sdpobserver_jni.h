@@ -18,7 +18,8 @@
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/pc/mediaconstraints_jni.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Adapter for a Java StatsObserver presenting a C++
 // CreateSessionDescriptionObserver or SetSessionDescriptionObserver and
@@ -44,7 +45,7 @@ class SdpObserverJni : public T {
   }
 
   // Can't mark override because of templating.
-  virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) {
+  virtual void OnSuccess(SessionDescriptionInterface* desc) {
     ScopedLocalRefFrame local_ref_frame(jni());
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "onCreateSuccess",
                               "(Lorg/webrtc/SessionDescription;)V");
@@ -76,7 +77,7 @@ class SdpObserverJni : public T {
 };
 
 class CreateSdpObserverJni
-    : public SdpObserverJni<webrtc::CreateSessionDescriptionObserver> {
+    : public SdpObserverJni<CreateSessionDescriptionObserver> {
  public:
   CreateSdpObserverJni(JNIEnv* jni,
                        jobject j_observer,
@@ -89,8 +90,7 @@ class CreateSdpObserverJni
   }
 };
 
-class SetSdpObserverJni
-    : public SdpObserverJni<webrtc::SetSessionDescriptionObserver> {
+class SetSdpObserverJni : public SdpObserverJni<SetSessionDescriptionObserver> {
  public:
   SetSdpObserverJni(JNIEnv* jni,
                     jobject j_observer,
@@ -103,6 +103,7 @@ class SetSdpObserverJni
   }
 };
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_SDPOBSERVER_JNI_H_

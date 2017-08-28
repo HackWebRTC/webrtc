@@ -10,14 +10,16 @@
 
 #include "webrtc/sdk/android/src/jni/pc/audio_jni.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
-rtc::scoped_refptr<webrtc::AudioDecoderFactory> CreateAudioDecoderFactory() {
+rtc::scoped_refptr<AudioDecoderFactory> CreateAudioDecoderFactory() {
   return nullptr;
 }
 
-rtc::scoped_refptr<webrtc::AudioEncoderFactory> CreateAudioEncoderFactory() {
+rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory() {
   return nullptr;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

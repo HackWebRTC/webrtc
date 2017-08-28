@@ -134,8 +134,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     if (config_.hw_codec) {
 #if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
 #if defined(WEBRTC_ANDROID)
-      encoder_factory_.reset(new webrtc_jni::MediaCodecVideoEncoderFactory());
-      decoder_factory_.reset(new webrtc_jni::MediaCodecVideoDecoderFactory());
+      encoder_factory_.reset(new jni::MediaCodecVideoEncoderFactory());
+      decoder_factory_.reset(new jni::MediaCodecVideoDecoderFactory());
 #elif defined(WEBRTC_IOS)
       EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
           << "iOS HW codecs only support H264.";

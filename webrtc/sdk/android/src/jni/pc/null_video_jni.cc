@@ -10,7 +10,8 @@
 
 #include "webrtc/sdk/android/src/jni/pc/video_jni.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory(
     JNIEnv* jni,
@@ -29,4 +30,5 @@ jobject GetJavaSurfaceTextureHelper(
   return nullptr;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

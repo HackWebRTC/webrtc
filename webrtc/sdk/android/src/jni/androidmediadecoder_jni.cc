@@ -39,18 +39,8 @@ using rtc::Bind;
 using rtc::Thread;
 using rtc::ThreadManager;
 
-using webrtc::CodecSpecificInfo;
-using webrtc::DecodedImageCallback;
-using webrtc::EncodedImage;
-using webrtc::VideoFrame;
-using webrtc::RTPFragmentationHeader;
-using webrtc::VideoCodec;
-using webrtc::VideoCodecType;
-using webrtc::kVideoCodecH264;
-using webrtc::kVideoCodecVP8;
-using webrtc::kVideoCodecVP9;
-
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Logging macros.
 #define TAG_DECODER "MediaCodecVideoDecoder"
@@ -66,8 +56,7 @@ namespace webrtc_jni {
 
 enum { kMaxWarningLogFrames = 2 };
 
-class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
-                               public rtc::MessageHandler {
+class MediaCodecVideoDecoder : public VideoDecoder, public rtc::MessageHandler {
  public:
   explicit MediaCodecVideoDecoder(
       JNIEnv* jni, VideoCodecType codecType, jobject render_egl_context);
@@ -121,7 +110,7 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   bool sw_fallback_required_;
   bool use_surface_;
   VideoCodec codec_;
-  webrtc::I420BufferPool decoded_frame_pool_;
+  I420BufferPool decoded_frame_pool_;
   rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper_;
   DecodedImageCallback* callback_;
   int frames_received_;  // Number of frames received by decoder.
@@ -134,7 +123,7 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   int current_decoding_time_ms_;  // Overall decoding time in the current second
   int current_delay_time_ms_;  // Overall delay time in the current second.
   uint32_t max_pending_frames_;  // Maximum number of pending input frames.
-  webrtc::H264BitstreamParser h264_bitstream_parser_;
+  H264BitstreamParser h264_bitstream_parser_;
   std::deque<rtc::Optional<uint8_t>> pending_frame_qps_;
 
   // State that is constant for the lifetime of this object once the ctor
@@ -561,7 +550,7 @@ int32_t MediaCodecVideoDecoder::Decode(
 
   // Always start with a complete key frame.
   if (key_frame_required_) {
-    if (inputImage._frameType != webrtc::kVideoFrameKey) {
+    if (inputImage._frameType != kVideoFrameKey) {
       ALOGE << "Decode() - key frame is required";
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
@@ -661,7 +650,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   rtc::Optional<uint8_t> qp;
   if (codecType_ == kVideoCodecVP8) {
     int qp_int;
-    if (webrtc::vp8::GetQp(inputImage._buffer, inputImage._length, &qp_int)) {
+    if (vp8::GetQp(inputImage._buffer, inputImage._length, &qp_int)) {
       qp = rtc::Optional<uint8_t>(qp_int);
     }
   } else if (codecType_ == kVideoCodecH264) {
@@ -726,7 +715,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int width = GetIntField(jni, *j_media_codec_video_decoder_, j_width_field_);
   int height = GetIntField(jni, *j_media_codec_video_decoder_, j_height_field_);
 
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> frame_buffer;
+  rtc::scoped_refptr<VideoFrameBuffer> frame_buffer;
   int64_t presentation_timestamps_ms = 0;
   int64_t output_timestamps_ms = 0;
   int64_t output_ntp_timestamps_ms = 0;
@@ -753,7 +742,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       frame_delayed_ms = GetLongField(
           jni, j_decoder_output_buffer, j_texture_frame_delay_ms_field_);
 
-      // Create webrtc::VideoFrameBuffer with native texture handle.
+      // Create VideoFrameBuffer with native texture handle.
       frame_buffer = surface_texture_helper_->CreateTextureFrame(
           width, height, NativeHandleImpl(jni, texture_id, j_transform_matrix));
     } else {
@@ -805,7 +794,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     payload += output_buffer_offset;
 
     // Create yuv420 frame.
-    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
+    rtc::scoped_refptr<I420Buffer> i420_buffer =
         decoded_frame_pool_.CreateBuffer(width, height);
     if (color_format == COLOR_FormatYUV420Planar) {
       RTC_CHECK_EQ(0, stride % 2);
@@ -903,7 +892,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
 
   // If the frame was dropped, frame_buffer is left as nullptr.
   if (frame_buffer) {
-    VideoFrame decoded_frame(frame_buffer, 0, 0, webrtc::kVideoRotation_0);
+    VideoFrame decoded_frame(frame_buffer, 0, 0, kVideoRotation_0);
     decoded_frame.set_timestamp(output_timestamps_ms);
     decoded_frame.set_ntp_time_ms(output_ntp_timestamps_ms);
 
@@ -1004,7 +993,7 @@ void MediaCodecVideoDecoderFactory::SetEGLContext(
   }
 }
 
-webrtc::VideoDecoder* MediaCodecVideoDecoderFactory::CreateVideoDecoder(
+VideoDecoder* MediaCodecVideoDecoderFactory::CreateVideoDecoder(
     VideoCodecType type) {
   if (supported_codec_types_.empty()) {
     ALOGW << "No HW video decoder for type " << (int)type;
@@ -1022,8 +1011,7 @@ webrtc::VideoDecoder* MediaCodecVideoDecoderFactory::CreateVideoDecoder(
   return nullptr;
 }
 
-void MediaCodecVideoDecoderFactory::DestroyVideoDecoder(
-    webrtc::VideoDecoder* decoder) {
+void MediaCodecVideoDecoderFactory::DestroyVideoDecoder(VideoDecoder* decoder) {
   ALOGD << "Destroy video decoder.";
   delete decoder;
 }
@@ -1032,4 +1020,5 @@ const char* MediaCodecVideoDecoder::ImplementationName() const {
   return "MediaCodec";
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

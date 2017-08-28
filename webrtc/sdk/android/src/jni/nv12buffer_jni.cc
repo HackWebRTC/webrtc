@@ -16,7 +16,8 @@
 
 #include "webrtc/rtc_base/checks.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 extern "C" JNIEXPORT void JNICALL
 Java_org_webrtc_NV12Buffer_nativeCropAndScale(JNIEnv* jni,
@@ -73,4 +74,5 @@ Java_org_webrtc_NV12Buffer_nativeCropAndScale(JNIEnv* jni,
                     scale_height, libyuv::kFilterBox);
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

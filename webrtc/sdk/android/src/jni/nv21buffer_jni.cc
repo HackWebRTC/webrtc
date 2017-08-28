@@ -17,7 +17,8 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/rtc_base/checks.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 extern "C" JNIEXPORT void JNICALL
 Java_org_webrtc_NV21Buffer_nativeCropAndScale(JNIEnv* jni,
@@ -61,7 +62,7 @@ Java_org_webrtc_NV21Buffer_nativeCropAndScale(JNIEnv* jni,
   src_y += crop_x + crop_y * src_stride_y;
   src_uv += crop_chroma_x + crop_chroma_y * src_stride_uv;
 
-  webrtc::NV12ToI420Scaler scaler;
+  NV12ToI420Scaler scaler;
   // U- and V-planes are swapped because this is NV21 not NV12.
   scaler.NV12ToI420Scale(src_y, src_stride_y, src_uv, src_stride_uv, crop_width,
                          crop_height, dst_y, dst_stride_y, dst_v, dst_stride_v,
@@ -70,4 +71,5 @@ Java_org_webrtc_NV21Buffer_nativeCropAndScale(JNIEnv* jni,
   jni->ReleaseByteArrayElements(j_src, src_bytes, JNI_ABORT);
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

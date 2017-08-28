@@ -19,26 +19,27 @@
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/native_handle_impl.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Wraps a Java decoder and delegates all calls to it. Passes
 // VideoDecoderWrapperCallback to the decoder on InitDecode. Wraps the received
 // frames to AndroidVideoBuffer.
-class VideoDecoderWrapper : public webrtc::VideoDecoder {
+class VideoDecoderWrapper : public VideoDecoder {
  public:
   VideoDecoderWrapper(JNIEnv* jni, jobject decoder);
 
-  int32_t InitDecode(const webrtc::VideoCodec* codec_settings,
+  int32_t InitDecode(const VideoCodec* codec_settings,
                      int32_t number_of_cores) override;
 
-  int32_t Decode(const webrtc::EncodedImage& input_image,
+  int32_t Decode(const EncodedImage& input_image,
                  bool missing_frames,
-                 const webrtc::RTPFragmentationHeader* fragmentation,
-                 const webrtc::CodecSpecificInfo* codec_specific_info,
+                 const RTPFragmentationHeader* fragmentation,
+                 const CodecSpecificInfo* codec_specific_info,
                  int64_t render_time_ms) override;
 
   int32_t RegisterDecodeCompleteCallback(
-      webrtc::DecodedImageCallback* callback) override;
+      DecodedImageCallback* callback) override;
 
   int32_t Release() override;
 
@@ -69,18 +70,18 @@ class VideoDecoderWrapper : public webrtc::VideoDecoder {
   // status code.
   int32_t HandleReturnCode(JNIEnv* jni, jobject code);
 
-  rtc::Optional<uint8_t> ParseQP(const webrtc::EncodedImage& input_image);
+  rtc::Optional<uint8_t> ParseQP(const EncodedImage& input_image);
 
-  webrtc::VideoCodec codec_settings_;
+  VideoCodec codec_settings_;
   int32_t number_of_cores_;
 
   bool initialized_;
   AndroidVideoBufferFactory android_video_buffer_factory_;
   std::deque<FrameExtraInfo> frame_extra_infos_;
   bool qp_parsing_enabled_;
-  webrtc::H264BitstreamParser h264_bitstream_parser_;
+  H264BitstreamParser h264_bitstream_parser_;
 
-  webrtc::DecodedImageCallback* callback_;
+  DecodedImageCallback* callback_;
 
   const ScopedGlobalRef<jobject> decoder_;
   const ScopedGlobalRef<jclass> encoded_image_class_;
@@ -110,11 +111,11 @@ class VideoDecoderWrapper : public webrtc::VideoDecoder {
   jmethodID integer_constructor_;
   jmethodID int_value_method_;
 
-  jobject ConvertEncodedImageToJavaEncodedImage(
-      JNIEnv* jni,
-      const webrtc::EncodedImage& image);
+  jobject ConvertEncodedImageToJavaEncodedImage(JNIEnv* jni,
+                                                const EncodedImage& image);
 };
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_VIDEODECODERWRAPPER_H_

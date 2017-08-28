@@ -14,18 +14,19 @@
 #include "webrtc/api/datachannelinterface.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Adapter for a Java DataChannel$Observer presenting a C++ DataChannelObserver
 // and dispatching the callback from C++ back to Java.
-class DataChannelObserverJni : public webrtc::DataChannelObserver {
+class DataChannelObserverJni : public DataChannelObserver {
  public:
   DataChannelObserverJni(JNIEnv* jni, jobject j_observer);
   virtual ~DataChannelObserverJni() {}
 
   void OnBufferedAmountChange(uint64_t previous_amount) override;
   void OnStateChange() override;
-  void OnMessage(const webrtc::DataBuffer& buffer) override;
+  void OnMessage(const DataBuffer& buffer) override;
 
  private:
   const ScopedGlobalRef<jobject> j_observer_global_;
@@ -37,6 +38,7 @@ class DataChannelObserverJni : public webrtc::DataChannelObserver {
   const jmethodID j_buffer_ctor_;
 };
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_DATACHANNELOBSERVER_JNI_H_

@@ -19,10 +19,11 @@
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/native_handle_impl.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Helper class to create and synchronize access to an Android SurfaceTexture.
-// It is used for creating webrtc::VideoFrameBuffers from a SurfaceTexture when
+// It is used for creating VideoFrameBuffers from a SurfaceTexture when
 // the SurfaceTexture has been updated.
 // When the VideoFrameBuffer is released, this class returns the buffer to the
 // java SurfaceTextureHelper so it can be updated safely. The VideoFrameBuffer
@@ -46,7 +47,7 @@ class SurfaceTextureHelper : public rtc::RefCountInterface {
 
   jobject GetJavaSurfaceTextureHelper() const;
 
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateTextureFrame(
+  rtc::scoped_refptr<VideoFrameBuffer> CreateTextureFrame(
       int width,
       int height,
       const NativeHandleImpl& native_handle);
@@ -63,6 +64,7 @@ class SurfaceTextureHelper : public rtc::RefCountInterface {
   const jmethodID j_return_texture_method_;
 };
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_SURFACETEXTUREHELPER_JNI_H_

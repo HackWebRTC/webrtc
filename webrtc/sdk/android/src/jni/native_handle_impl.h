@@ -19,7 +19,8 @@
 #include "webrtc/rtc_base/callback.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Open gl texture matrix, in column-major order. Operations are
 // in-place.
@@ -37,7 +38,7 @@ class Matrix {
             float crop_x,
             float crop_y);
 
-  void Rotate(webrtc::VideoRotation rotation);
+  void Rotate(VideoRotation rotation);
 
  private:
   Matrix() {}
@@ -62,7 +63,7 @@ struct NativeHandleImpl {
 // Java-based frames.
 // TODO(sakal): Remove this and AndroidTextureBuffer once they are no longer
 // needed.
-class AndroidVideoFrameBuffer : public webrtc::VideoFrameBuffer {
+class AndroidVideoFrameBuffer : public VideoFrameBuffer {
  public:
   enum class AndroidType { kTextureBuffer, kJavaBuffer };
 
@@ -85,7 +86,7 @@ class AndroidTextureBuffer : public AndroidVideoFrameBuffer {
   int width() const override;
   int height() const override;
 
-  rtc::scoped_refptr<webrtc::I420BufferInterface> ToI420() override;
+  rtc::scoped_refptr<I420BufferInterface> ToI420() override;
 
   AndroidType android_type() override { return AndroidType::kTextureBuffer; }
 
@@ -137,7 +138,7 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
   int width() const override;
   int height() const override;
 
-  rtc::scoped_refptr<webrtc::I420BufferInterface> ToI420() override;
+  rtc::scoped_refptr<I420BufferInterface> ToI420() override;
 
   AndroidType android_type() override { return AndroidType::kJavaBuffer; }
 
@@ -152,9 +153,9 @@ class AndroidVideoBufferFactory {
  public:
   explicit AndroidVideoBufferFactory(JNIEnv* jni);
 
-  webrtc::VideoFrame CreateFrame(JNIEnv* jni,
-                                 jobject j_video_frame,
-                                 uint32_t timestamp_rtp) const;
+  VideoFrame CreateFrame(JNIEnv* jni,
+                         jobject j_video_frame,
+                         uint32_t timestamp_rtp) const;
 
   // Wraps a buffer to AndroidVideoBuffer without incrementing the reference
   // count.
@@ -183,13 +184,14 @@ class JavaVideoFrameFactory {
  public:
   JavaVideoFrameFactory(JNIEnv* jni);
 
-  jobject ToJavaFrame(JNIEnv* jni, const webrtc::VideoFrame& frame) const;
+  jobject ToJavaFrame(JNIEnv* jni, const VideoFrame& frame) const;
 
  private:
   ScopedGlobalRef<jclass> j_video_frame_class_;
   jmethodID j_video_frame_constructor_id_;
 };
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_

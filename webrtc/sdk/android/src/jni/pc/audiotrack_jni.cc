@@ -11,7 +11,8 @@
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 JNI_FUNCTION_DECLARATION(void,
                          AudioTrack_nativeSetVolume,
@@ -19,9 +20,10 @@ JNI_FUNCTION_DECLARATION(void,
                          jclass,
                          jlong j_p,
                          jdouble volume) {
-  rtc::scoped_refptr<webrtc::AudioSourceInterface> source(
-      reinterpret_cast<webrtc::AudioTrackInterface*>(j_p)->GetSource());
+  rtc::scoped_refptr<AudioSourceInterface> source(
+      reinterpret_cast<AudioTrackInterface*>(j_p)->GetSource());
   source->SetVolume(volume);
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

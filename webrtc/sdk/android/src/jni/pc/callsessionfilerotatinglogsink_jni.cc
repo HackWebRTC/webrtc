@@ -11,7 +11,8 @@
 #include "webrtc/rtc_base/logsinks.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 JNI_FUNCTION_DECLARATION(jlong,
                          CallSessionFileRotatingLogSink_nativeAddSink,
@@ -76,4 +77,5 @@ JNI_FUNCTION_DECLARATION(jbyteArray,
   return result;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

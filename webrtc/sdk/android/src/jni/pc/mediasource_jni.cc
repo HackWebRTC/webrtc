@@ -11,16 +11,18 @@
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 JNI_FUNCTION_DECLARATION(jobject,
                          MediaSource_nativeState,
                          JNIEnv* jni,
                          jclass,
                          jlong j_p) {
-  rtc::scoped_refptr<webrtc::MediaSourceInterface> p(
-      reinterpret_cast<webrtc::MediaSourceInterface*>(j_p));
+  rtc::scoped_refptr<MediaSourceInterface> p(
+      reinterpret_cast<MediaSourceInterface*>(j_p));
   return JavaEnumFromIndexAndClassName(jni, "MediaSource$State", p->state());
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

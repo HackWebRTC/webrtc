@@ -14,12 +14,13 @@
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Adapter between the C++ RtpReceiverObserverInterface and the Java
 // RtpReceiver.Observer interface. Wraps an instance of the Java interface and
 // dispatches C++ callbacks to Java.
-class RtpReceiverObserverJni : public webrtc::RtpReceiverObserverInterface {
+class RtpReceiverObserverJni : public RtpReceiverObserverInterface {
  public:
   RtpReceiverObserverJni(JNIEnv* jni, jobject j_observer)
       : j_observer_global_(jni, j_observer) {}
@@ -32,6 +33,7 @@ class RtpReceiverObserverJni : public webrtc::RtpReceiverObserverInterface {
   const ScopedGlobalRef<jobject> j_observer_global_;
 };
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_RTPRECEIVEROBSERVER_JNI_H_

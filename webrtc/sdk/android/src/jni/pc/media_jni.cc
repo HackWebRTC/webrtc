@@ -14,28 +14,28 @@
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
-webrtc::CallFactoryInterface* CreateCallFactory() {
+CallFactoryInterface* CreateCallFactory() {
   return webrtc::CreateCallFactory().release();
 }
 
-webrtc::RtcEventLogFactoryInterface* CreateRtcEventLogFactory() {
+RtcEventLogFactoryInterface* CreateRtcEventLogFactory() {
   return webrtc::CreateRtcEventLogFactory().release();
 }
 
 cricket::MediaEngineInterface* CreateMediaEngine(
-    webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-        audio_encoder_factory,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
+    AudioDeviceModule* adm,
+    const rtc::scoped_refptr<AudioEncoderFactory>& audio_encoder_factory,
+    const rtc::scoped_refptr<AudioDecoderFactory>& audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
     cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
+    rtc::scoped_refptr<AudioMixer> audio_mixer) {
   return cricket::WebRtcMediaEngineFactory::Create(
       adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory, audio_mixer, webrtc::AudioProcessing::Create());
+      video_decoder_factory, audio_mixer, AudioProcessing::Create());
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

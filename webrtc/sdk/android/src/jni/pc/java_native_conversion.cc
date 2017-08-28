@@ -15,11 +15,11 @@
 #include "webrtc/pc/webrtcsdp.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
-webrtc::DataChannelInit JavaToNativeDataChannelInit(JNIEnv* jni,
-                                                    jobject j_init) {
-  webrtc::DataChannelInit init;
+DataChannelInit JavaToNativeDataChannelInit(JNIEnv* jni, jobject j_init) {
+  DataChannelInit init;
 
   jclass j_init_class = FindClass(jni, "org/webrtc/DataChannel$Init");
   jfieldID ordered_id = GetFieldID(jni, j_init_class, "ordered", "Z");
@@ -93,7 +93,7 @@ cricket::Candidate JavaToNativeCandidate(JNIEnv* jni, jobject j_candidate) {
   std::string sdp =
       JavaToStdString(jni, GetStringField(jni, j_candidate, j_sdp_id));
   cricket::Candidate candidate;
-  if (!webrtc::SdpDeserializeCandidate(sdp_mid, sdp, &candidate, NULL)) {
+  if (!SdpDeserializeCandidate(sdp_mid, sdp, &candidate, NULL)) {
     LOG(LS_ERROR) << "SdpDescrializeCandidate failed with sdp " << sdp;
   }
   return candidate;
@@ -102,7 +102,7 @@ cricket::Candidate JavaToNativeCandidate(JNIEnv* jni, jobject j_candidate) {
 jobject NativeToJavaCandidate(JNIEnv* jni,
                               jclass* candidate_class,
                               const cricket::Candidate& candidate) {
-  std::string sdp = webrtc::SdpSerializeCandidate(candidate);
+  std::string sdp = SdpSerializeCandidate(candidate);
   RTC_CHECK(!sdp.empty()) << "got an empty ICE candidate";
   jmethodID ctor = GetMethodID(jni, *candidate_class, "<init>",
                                "(Ljava/lang/String;ILjava/lang/String;)V");
@@ -130,9 +130,8 @@ jobjectArray NativeToJavaCandidateArray(
   return java_candidates;
 }
 
-webrtc::SessionDescriptionInterface* JavaToNativeSessionDescription(
-    JNIEnv* jni,
-    jobject j_sdp) {
+SessionDescriptionInterface* JavaToNativeSessionDescription(JNIEnv* jni,
+                                                            jobject j_sdp) {
   jfieldID j_type_id = GetFieldID(jni, GetObjectClass(jni, j_sdp), "type",
                                   "Lorg/webrtc/SessionDescription$Type;");
   jobject j_type = GetObjectField(jni, j_sdp, j_type_id);
@@ -149,12 +148,12 @@ webrtc::SessionDescriptionInterface* JavaToNativeSessionDescription(
   jstring j_description = (jstring)GetObjectField(jni, j_sdp, j_description_id);
   std::string std_description = JavaToStdString(jni, j_description);
 
-  return webrtc::CreateSessionDescription(std_type, std_description, NULL);
+  return CreateSessionDescription(std_type, std_description, NULL);
 }
 
 jobject NativeToJavaSessionDescription(
     JNIEnv* jni,
-    const webrtc::SessionDescriptionInterface* desc) {
+    const SessionDescriptionInterface* desc) {
   std::string sdp;
   RTC_CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
   jstring j_description = JavaStringFromStdString(jni, sdp);
@@ -178,7 +177,7 @@ jobject NativeToJavaSessionDescription(
   return j_sdp;
 }
 
-webrtc::PeerConnectionFactoryInterface::Options
+PeerConnectionFactoryInterface::Options
 JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni, jobject options) {
   jclass options_class = jni->GetObjectClass(options);
   jfieldID network_ignore_mask_field =
@@ -196,7 +195,7 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni, jobject options) {
   bool disable_network_monitor =
       jni->GetBooleanField(options, disable_network_monitor_field);
 
-  webrtc::PeerConnectionFactoryInterface::Options native_options;
+  PeerConnectionFactoryInterface::Options native_options;
 
   // This doesn't necessarily match the c++ version of this struct; feel free
   // to add more parameters as necessary.
@@ -206,80 +205,82 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni, jobject options) {
   return native_options;
 }
 
-webrtc::PeerConnectionInterface::IceTransportsType
-JavaToNativeIceTransportsType(JNIEnv* jni, jobject j_ice_transports_type) {
+PeerConnectionInterface::IceTransportsType JavaToNativeIceTransportsType(
+    JNIEnv* jni,
+    jobject j_ice_transports_type) {
   std::string enum_name =
       GetJavaEnumName(jni, "org/webrtc/PeerConnection$IceTransportsType",
                       j_ice_transports_type);
 
   if (enum_name == "ALL")
-    return webrtc::PeerConnectionInterface::kAll;
+    return PeerConnectionInterface::kAll;
 
   if (enum_name == "RELAY")
-    return webrtc::PeerConnectionInterface::kRelay;
+    return PeerConnectionInterface::kRelay;
 
   if (enum_name == "NOHOST")
-    return webrtc::PeerConnectionInterface::kNoHost;
+    return PeerConnectionInterface::kNoHost;
 
   if (enum_name == "NONE")
-    return webrtc::PeerConnectionInterface::kNone;
+    return PeerConnectionInterface::kNone;
 
   RTC_CHECK(false) << "Unexpected IceTransportsType enum_name " << enum_name;
-  return webrtc::PeerConnectionInterface::kAll;
+  return PeerConnectionInterface::kAll;
 }
 
-webrtc::PeerConnectionInterface::BundlePolicy JavaToNativeBundlePolicy(
+PeerConnectionInterface::BundlePolicy JavaToNativeBundlePolicy(
     JNIEnv* jni,
     jobject j_bundle_policy) {
   std::string enum_name = GetJavaEnumName(
       jni, "org/webrtc/PeerConnection$BundlePolicy", j_bundle_policy);
 
   if (enum_name == "BALANCED")
-    return webrtc::PeerConnectionInterface::kBundlePolicyBalanced;
+    return PeerConnectionInterface::kBundlePolicyBalanced;
 
   if (enum_name == "MAXBUNDLE")
-    return webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
+    return PeerConnectionInterface::kBundlePolicyMaxBundle;
 
   if (enum_name == "MAXCOMPAT")
-    return webrtc::PeerConnectionInterface::kBundlePolicyMaxCompat;
+    return PeerConnectionInterface::kBundlePolicyMaxCompat;
 
   RTC_CHECK(false) << "Unexpected BundlePolicy enum_name " << enum_name;
-  return webrtc::PeerConnectionInterface::kBundlePolicyBalanced;
+  return PeerConnectionInterface::kBundlePolicyBalanced;
 }
 
-webrtc::PeerConnectionInterface::RtcpMuxPolicy JavaToNativeRtcpMuxPolicy(
+PeerConnectionInterface::RtcpMuxPolicy JavaToNativeRtcpMuxPolicy(
     JNIEnv* jni,
     jobject j_rtcp_mux_policy) {
   std::string enum_name = GetJavaEnumName(
       jni, "org/webrtc/PeerConnection$RtcpMuxPolicy", j_rtcp_mux_policy);
 
   if (enum_name == "NEGOTIATE")
-    return webrtc::PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+    return PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
 
   if (enum_name == "REQUIRE")
-    return webrtc::PeerConnectionInterface::kRtcpMuxPolicyRequire;
+    return PeerConnectionInterface::kRtcpMuxPolicyRequire;
 
   RTC_CHECK(false) << "Unexpected RtcpMuxPolicy enum_name " << enum_name;
-  return webrtc::PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+  return PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
 }
 
-webrtc::PeerConnectionInterface::TcpCandidatePolicy
-JavaToNativeTcpCandidatePolicy(JNIEnv* jni, jobject j_tcp_candidate_policy) {
+PeerConnectionInterface::TcpCandidatePolicy JavaToNativeTcpCandidatePolicy(
+    JNIEnv* jni,
+    jobject j_tcp_candidate_policy) {
   std::string enum_name =
       GetJavaEnumName(jni, "org/webrtc/PeerConnection$TcpCandidatePolicy",
                       j_tcp_candidate_policy);
 
   if (enum_name == "ENABLED")
-    return webrtc::PeerConnectionInterface::kTcpCandidatePolicyEnabled;
+    return PeerConnectionInterface::kTcpCandidatePolicyEnabled;
 
   if (enum_name == "DISABLED")
-    return webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled;
+    return PeerConnectionInterface::kTcpCandidatePolicyDisabled;
 
   RTC_CHECK(false) << "Unexpected TcpCandidatePolicy enum_name " << enum_name;
-  return webrtc::PeerConnectionInterface::kTcpCandidatePolicyEnabled;
+  return PeerConnectionInterface::kTcpCandidatePolicyEnabled;
 }
 
-webrtc::PeerConnectionInterface::CandidateNetworkPolicy
+PeerConnectionInterface::CandidateNetworkPolicy
 JavaToNativeCandidateNetworkPolicy(JNIEnv* jni,
                                    jobject j_candidate_network_policy) {
   std::string enum_name =
@@ -287,14 +288,14 @@ JavaToNativeCandidateNetworkPolicy(JNIEnv* jni,
                       j_candidate_network_policy);
 
   if (enum_name == "ALL")
-    return webrtc::PeerConnectionInterface::kCandidateNetworkPolicyAll;
+    return PeerConnectionInterface::kCandidateNetworkPolicyAll;
 
   if (enum_name == "LOW_COST")
-    return webrtc::PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
+    return PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
 
   RTC_CHECK(false) << "Unexpected CandidateNetworkPolicy enum_name "
                    << enum_name;
-  return webrtc::PeerConnectionInterface::kCandidateNetworkPolicyAll;
+  return PeerConnectionInterface::kCandidateNetworkPolicyAll;
 }
 
 rtc::KeyType JavaToNativeKeyType(JNIEnv* jni, jobject j_key_type) {
@@ -310,23 +311,23 @@ rtc::KeyType JavaToNativeKeyType(JNIEnv* jni, jobject j_key_type) {
   return rtc::KT_ECDSA;
 }
 
-webrtc::PeerConnectionInterface::ContinualGatheringPolicy
+PeerConnectionInterface::ContinualGatheringPolicy
 JavaToNativeContinualGatheringPolicy(JNIEnv* jni, jobject j_gathering_policy) {
   std::string enum_name =
       GetJavaEnumName(jni, "org/webrtc/PeerConnection$ContinualGatheringPolicy",
                       j_gathering_policy);
   if (enum_name == "GATHER_ONCE")
-    return webrtc::PeerConnectionInterface::GATHER_ONCE;
+    return PeerConnectionInterface::GATHER_ONCE;
 
   if (enum_name == "GATHER_CONTINUALLY")
-    return webrtc::PeerConnectionInterface::GATHER_CONTINUALLY;
+    return PeerConnectionInterface::GATHER_CONTINUALLY;
 
   RTC_CHECK(false) << "Unexpected ContinualGatheringPolicy enum name "
                    << enum_name;
-  return webrtc::PeerConnectionInterface::GATHER_ONCE;
+  return PeerConnectionInterface::GATHER_ONCE;
 }
 
-webrtc::PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
+PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
     JNIEnv* jni,
     jobject j_ice_server_tls_cert_policy) {
   std::string enum_name =
@@ -334,19 +335,18 @@ webrtc::PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
                       j_ice_server_tls_cert_policy);
 
   if (enum_name == "TLS_CERT_POLICY_SECURE")
-    return webrtc::PeerConnectionInterface::kTlsCertPolicySecure;
+    return PeerConnectionInterface::kTlsCertPolicySecure;
 
   if (enum_name == "TLS_CERT_POLICY_INSECURE_NO_CHECK")
-    return webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
+    return PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
 
   RTC_CHECK(false) << "Unexpected TlsCertPolicy enum_name " << enum_name;
-  return webrtc::PeerConnectionInterface::kTlsCertPolicySecure;
+  return PeerConnectionInterface::kTlsCertPolicySecure;
 }
 
-void JavaToNativeIceServers(
-    JNIEnv* jni,
-    jobject j_ice_servers,
-    webrtc::PeerConnectionInterface::IceServers* ice_servers) {
+void JavaToNativeIceServers(JNIEnv* jni,
+                            jobject j_ice_servers,
+                            PeerConnectionInterface::IceServers* ice_servers) {
   for (jobject j_ice_server : Iterable(jni, j_ice_servers)) {
     jclass j_ice_server_class = GetObjectClass(jni, j_ice_server);
     jfieldID j_ice_server_uri_id =
@@ -368,11 +368,11 @@ void JavaToNativeIceServers(
         GetObjectField(jni, j_ice_server, j_ice_server_username_id));
     jstring password = reinterpret_cast<jstring>(
         GetObjectField(jni, j_ice_server, j_ice_server_password_id));
-    webrtc::PeerConnectionInterface::TlsCertPolicy tls_cert_policy =
+    PeerConnectionInterface::TlsCertPolicy tls_cert_policy =
         JavaToNativeTlsCertPolicy(jni, j_ice_server_tls_cert_policy);
     jstring hostname = reinterpret_cast<jstring>(
         GetObjectField(jni, j_ice_server, j_ice_server_hostname_id));
-    webrtc::PeerConnectionInterface::IceServer server;
+    PeerConnectionInterface::IceServer server;
     server.uri = JavaToStdString(jni, uri);
     server.username = JavaToStdString(jni, username);
     server.password = JavaToStdString(jni, password);
@@ -385,7 +385,7 @@ void JavaToNativeIceServers(
 void JavaToNativeRTCConfiguration(
     JNIEnv* jni,
     jobject j_rtc_config,
-    webrtc::PeerConnectionInterface::RTCConfiguration* rtc_config) {
+    PeerConnectionInterface::RTCConfiguration* rtc_config) {
   jclass j_rtc_config_class = GetObjectClass(jni, j_rtc_config);
 
   jfieldID j_ice_transports_type_id =
@@ -516,7 +516,7 @@ void JavaToNativeRTCConfiguration(
 
 void JavaToNativeRtpParameters(JNIEnv* jni,
                                jobject j_parameters,
-                               webrtc::RtpParameters* parameters) {
+                               RtpParameters* parameters) {
   RTC_CHECK(parameters != nullptr);
   jclass parameters_class = jni->FindClass("org/webrtc/RtpParameters");
   jfieldID encodings_id =
@@ -540,7 +540,7 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
   jmethodID long_value_id = GetMethodID(jni, j_long_class, "longValue", "()J");
 
   for (jobject j_encoding_parameters : Iterable(jni, j_encodings)) {
-    webrtc::RtpEncodingParameters encoding;
+    RtpEncodingParameters encoding;
     encoding.active = GetBooleanField(jni, j_encoding_parameters, active_id);
     jobject j_bitrate =
         GetNullableObjectField(jni, j_encoding_parameters, bitrate_id);
@@ -572,7 +572,7 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
       GetFieldID(jni, codec_class, "numChannels", "Ljava/lang/Integer;");
 
   for (jobject j_codec : Iterable(jni, j_codecs)) {
-    webrtc::RtpCodecParameters codec;
+    RtpCodecParameters codec;
     codec.payload_type = GetIntField(jni, j_codec, payload_type_id);
     codec.name = JavaToStdString(jni, GetStringField(jni, j_codec, name_id));
     codec.kind =
@@ -595,7 +595,7 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
 }
 
 jobject NativeToJavaRtpParameters(JNIEnv* jni,
-                                  const webrtc::RtpParameters& parameters) {
+                                  const RtpParameters& parameters) {
   jclass parameters_class = jni->FindClass("org/webrtc/RtpParameters");
   jmethodID parameters_ctor =
       GetMethodID(jni, parameters_class, "<init>", "()V");
@@ -621,7 +621,7 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni,
   jmethodID integer_ctor = GetMethodID(jni, integer_class, "<init>", "(I)V");
   jmethodID long_ctor = GetMethodID(jni, long_class, "<init>", "(J)V");
 
-  for (const webrtc::RtpEncodingParameters& encoding : parameters.encodings) {
+  for (const RtpEncodingParameters& encoding : parameters.encodings) {
     jobject j_encoding_parameters =
         jni->NewObject(encoding_class, encoding_ctor);
     CHECK_EXCEPTION(jni) << "error during NewObject";
@@ -664,7 +664,7 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni,
   jfieldID num_channels_id =
       GetFieldID(jni, codec_class, "numChannels", "Ljava/lang/Integer;");
 
-  for (const webrtc::RtpCodecParameters& codec : parameters.codecs) {
+  for (const RtpCodecParameters& codec : parameters.codecs) {
     jobject j_codec = jni->NewObject(codec_class, codec_ctor);
     CHECK_EXCEPTION(jni) << "error during NewObject";
     jni->SetIntField(j_codec, payload_type_id, codec.payload_type);
@@ -697,4 +697,5 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni,
   return j_parameters;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

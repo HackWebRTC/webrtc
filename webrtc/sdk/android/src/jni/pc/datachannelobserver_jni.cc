@@ -12,7 +12,8 @@
 
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Convenience, used since callbacks occur on the signaling thread, which may
 // be a non-Java thread.
@@ -52,7 +53,7 @@ void DataChannelObserverJni::OnStateChange() {
   CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
 }
 
-void DataChannelObserverJni::OnMessage(const webrtc::DataBuffer& buffer) {
+void DataChannelObserverJni::OnMessage(const DataBuffer& buffer) {
   ScopedLocalRefFrame local_ref_frame(jni());
   jobject byte_buffer = jni()->NewDirectByteBuffer(
       const_cast<char*>(buffer.data.data<char>()), buffer.data.size());
@@ -62,4 +63,5 @@ void DataChannelObserverJni::OnMessage(const webrtc::DataBuffer& buffer) {
   CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

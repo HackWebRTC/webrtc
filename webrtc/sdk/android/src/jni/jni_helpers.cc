@@ -17,7 +17,8 @@
 
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 static JavaVM* g_jvm = nullptr;
 
@@ -385,4 +386,5 @@ bool Iterable::Iterator::AtEnd() const {
   return jni_ == nullptr || IsNull(jni_, iterator_);
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

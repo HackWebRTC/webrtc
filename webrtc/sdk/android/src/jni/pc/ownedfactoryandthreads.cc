@@ -14,7 +14,8 @@
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 PeerConnectionFactoryInterface* factoryFromJava(jlong j_p) {
   return reinterpret_cast<OwnedFactoryAndThreads*>(j_p)->factory();
@@ -61,4 +62,5 @@ void OwnedFactoryAndThreads::InvokeJavaCallbacksOnFactoryThreads() {
                                   [this] { JavaCallbackOnFactoryThreads(); });
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

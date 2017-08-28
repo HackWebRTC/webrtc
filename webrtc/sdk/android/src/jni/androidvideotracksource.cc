@@ -21,6 +21,7 @@ const int kRequiredResolutionAlignment = 2;
 }
 
 namespace webrtc {
+namespace jni {
 
 AndroidVideoTrackSource::AndroidVideoTrackSource(
     rtc::Thread* signaling_thread,
@@ -29,17 +30,16 @@ AndroidVideoTrackSource::AndroidVideoTrackSource(
     bool is_screencast)
     : AdaptedVideoTrackSource(kRequiredResolutionAlignment),
       signaling_thread_(signaling_thread),
-      surface_texture_helper_(
-          new rtc::RefCountedObject<webrtc_jni::SurfaceTextureHelper>(
-              jni,
-              j_surface_texture_helper)),
+      surface_texture_helper_(new rtc::RefCountedObject<SurfaceTextureHelper>(
+          jni,
+          j_surface_texture_helper)),
       video_buffer_factory_(jni),
       is_screencast_(is_screencast) {
   LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
   camera_thread_checker_.DetachFromThread();
 
   jclass j_video_frame_buffer_class =
-      webrtc_jni::FindClass(jni, "org/webrtc/VideoFrame$Buffer");
+      FindClass(jni, "org/webrtc/VideoFrame$Buffer");
   j_crop_and_scale_id_ =
       jni->GetMethodID(j_video_frame_buffer_class, "cropAndScale",
                        "(IIIIII)Lorg/webrtc/VideoFrame$Buffer;");
@@ -115,7 +115,7 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
     int height,
     VideoRotation rotation,
     int64_t timestamp_ns,
-    const webrtc_jni::NativeHandleImpl& handle) {
+    const NativeHandleImpl& handle) {
   RTC_DCHECK(camera_thread_checker_.CalledOnValidThread());
 
   int64_t camera_time_us = timestamp_ns / rtc::kNumNanosecsPerMicrosec;
@@ -136,7 +136,7 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
     return;
   }
 
-  webrtc_jni::Matrix matrix = handle.sampling_matrix;
+  Matrix matrix = handle.sampling_matrix;
 
   matrix.Crop(crop_width / static_cast<float>(width),
               crop_height / static_cast<float>(height),
@@ -153,11 +153,10 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
     rotation = kVideoRotation_0;
   }
 
-  OnFrame(VideoFrame(
-      surface_texture_helper_->CreateTextureFrame(
-          adapted_width, adapted_height,
-          webrtc_jni::NativeHandleImpl(handle.oes_texture_id, matrix)),
-      rotation, translated_camera_time_us));
+  OnFrame(VideoFrame(surface_texture_helper_->CreateTextureFrame(
+                         adapted_width, adapted_height,
+                         NativeHandleImpl(handle.oes_texture_id, matrix)),
+                     rotation, translated_camera_time_us));
 }
 
 void AndroidVideoTrackSource::OnFrameCaptured(JNIEnv* jni,
@@ -208,4 +207,5 @@ void AndroidVideoTrackSource::OnOutputFormatRequest(int width,
   video_adapter()->OnOutputFormatRequest(format);
 }
 
+}  // namespace webrtc
 }  // namespace webrtc

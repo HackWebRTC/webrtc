@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// This is a supplement of webrtc_jni::ClassReferenceHolder.
+// This is a supplement of webrtc::jni::ClassReferenceHolder.
 // The purpose of this ClassReferenceHolder is to load the example
 // specific java class into JNI c++ side, so that our c++ code can
 // call those java functions.

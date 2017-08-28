@@ -15,7 +15,8 @@
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/pc/java_native_conversion.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Convenience, used since callbacks occur on the signaling thread, which may
 // be a non-Java thread.
@@ -52,7 +53,7 @@ PeerConnectionObserverJni::~PeerConnectionObserverJni() {
 }
 
 void PeerConnectionObserverJni::OnIceCandidate(
-    const webrtc::IceCandidateInterface* candidate) {
+    const IceCandidateInterface* candidate) {
   ScopedLocalRefFrame local_ref_frame(jni());
   std::string sdp;
   RTC_CHECK(candidate->ToString(&sdp)) << "got so far: " << sdp;
@@ -83,7 +84,7 @@ void PeerConnectionObserverJni::OnIceCandidatesRemoved(
 }
 
 void PeerConnectionObserverJni::OnSignalingChange(
-    webrtc::PeerConnectionInterface::SignalingState new_state) {
+    PeerConnectionInterface::SignalingState new_state) {
   ScopedLocalRefFrame local_ref_frame(jni());
   jmethodID m = GetMethodID(jni(), *j_observer_class_, "onSignalingChange",
                             "(Lorg/webrtc/PeerConnection$SignalingState;)V");
@@ -94,7 +95,7 @@ void PeerConnectionObserverJni::OnSignalingChange(
 }
 
 void PeerConnectionObserverJni::OnIceConnectionChange(
-    webrtc::PeerConnectionInterface::IceConnectionState new_state) {
+    PeerConnectionInterface::IceConnectionState new_state) {
   ScopedLocalRefFrame local_ref_frame(jni());
   jmethodID m =
       GetMethodID(jni(), *j_observer_class_, "onIceConnectionChange",
@@ -114,7 +115,7 @@ void PeerConnectionObserverJni::OnIceConnectionReceivingChange(bool receiving) {
 }
 
 void PeerConnectionObserverJni::OnIceGatheringChange(
-    webrtc::PeerConnectionInterface::IceGatheringState new_state) {
+    PeerConnectionInterface::IceGatheringState new_state) {
   ScopedLocalRefFrame local_ref_frame(jni());
   jmethodID m = GetMethodID(jni(), *j_observer_class_, "onIceGatheringChange",
                             "(Lorg/webrtc/PeerConnection$IceGatheringState;)V");
@@ -125,7 +126,7 @@ void PeerConnectionObserverJni::OnIceGatheringChange(
 }
 
 void PeerConnectionObserverJni::OnAddStream(
-    rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
+    rtc::scoped_refptr<MediaStreamInterface> stream) {
   ScopedLocalRefFrame local_ref_frame(jni());
   // The stream could be added into the remote_streams_ map when calling
   // OnAddTrack.
@@ -176,7 +177,7 @@ void PeerConnectionObserverJni::OnAddStream(
 }
 
 void PeerConnectionObserverJni::OnRemoveStream(
-    rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
+    rtc::scoped_refptr<MediaStreamInterface> stream) {
   ScopedLocalRefFrame local_ref_frame(jni());
   NativeToJavaStreamsMap::iterator it = remote_streams_.find(stream);
   RTC_CHECK(it != remote_streams_.end())
@@ -193,7 +194,7 @@ void PeerConnectionObserverJni::OnRemoveStream(
 }
 
 void PeerConnectionObserverJni::OnDataChannel(
-    rtc::scoped_refptr<webrtc::DataChannelInterface> channel) {
+    rtc::scoped_refptr<DataChannelInterface> channel) {
   ScopedLocalRefFrame local_ref_frame(jni());
   jobject j_channel =
       jni()->NewObject(*j_data_channel_class_, j_data_channel_ctor_,
@@ -223,9 +224,8 @@ void PeerConnectionObserverJni::OnRenegotiationNeeded() {
 }
 
 void PeerConnectionObserverJni::OnAddTrack(
-    rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
-    const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
-        streams) {
+    rtc::scoped_refptr<RtpReceiverInterface> receiver,
+    const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {
   ScopedLocalRefFrame local_ref_frame(jni());
   jobject j_rtp_receiver =
       jni()->NewObject(*j_rtp_receiver_class_, j_rtp_receiver_ctor_,
@@ -272,7 +272,7 @@ void PeerConnectionObserverJni::DisposeRtpReceiver(
 // If the NativeToJavaStreamsMap contains the stream, return it.
 // Otherwise, create a new Java MediaStream.
 jobject PeerConnectionObserverJni::GetOrCreateJavaStream(
-    const rtc::scoped_refptr<webrtc::MediaStreamInterface>& stream) {
+    const rtc::scoped_refptr<MediaStreamInterface>& stream) {
   NativeToJavaStreamsMap::iterator it = remote_streams_.find(stream);
   if (it != remote_streams_.end()) {
     return it->second;
@@ -292,8 +292,7 @@ jobject PeerConnectionObserverJni::GetOrCreateJavaStream(
 
 jobjectArray PeerConnectionObserverJni::NativeToJavaMediaStreamArray(
     JNIEnv* jni,
-    const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
-        streams) {
+    const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {
   jobjectArray java_streams =
       jni->NewObjectArray(streams.size(), *j_media_stream_class_, nullptr);
   CHECK_EXCEPTION(jni) << "error during NewObjectArray";
@@ -304,4 +303,5 @@ jobjectArray PeerConnectionObserverJni::NativeToJavaMediaStreamArray(
   return java_streams;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

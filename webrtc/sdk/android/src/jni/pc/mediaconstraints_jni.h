@@ -14,11 +14,12 @@
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Wrapper for a Java MediaConstraints object.  Copies all needed data so when
 // the constructor returns the Java object is no longer needed.
-class MediaConstraintsJni : public webrtc::MediaConstraintsInterface {
+class MediaConstraintsJni : public MediaConstraintsInterface {
  public:
   MediaConstraintsJni(JNIEnv* jni, jobject j_constraints);
   virtual ~MediaConstraintsJni() {}
@@ -38,6 +39,7 @@ class MediaConstraintsJni : public webrtc::MediaConstraintsInterface {
   Constraints optional_;
 };
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_MEDIACONSTRAINTS_JNI_H_

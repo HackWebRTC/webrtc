@@ -11,7 +11,8 @@
 
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // ClassReferenceHolder holds global reference to Java classes in app/webrtc.
 class ClassReferenceHolder {
@@ -153,4 +154,5 @@ jclass FindClass(JNIEnv* jni, const char* name) {
   return g_class_reference_holder->GetClass(name);
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

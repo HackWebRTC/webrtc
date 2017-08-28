@@ -27,10 +27,10 @@
 // PeerConnection-related structures. Similar to some methods in jni_helpers.h,
 // but specifically for structures tied to the PeerConnection API.
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
-webrtc::DataChannelInit JavaToNativeDataChannelInit(JNIEnv* jni,
-                                                    jobject j_init);
+DataChannelInit JavaToNativeDataChannelInit(JNIEnv* jni, jobject j_init);
 
 cricket::MediaType JavaToNativeMediaType(JNIEnv* jni, jobject j_media_type);
 
@@ -46,67 +46,66 @@ jobjectArray NativeToJavaCandidateArray(
     JNIEnv* jni,
     const std::vector<cricket::Candidate>& candidates);
 
-webrtc::SessionDescriptionInterface* JavaToNativeSessionDescription(
-    JNIEnv* jni,
-    jobject j_sdp);
+SessionDescriptionInterface* JavaToNativeSessionDescription(JNIEnv* jni,
+                                                            jobject j_sdp);
 
-jobject NativeToJavaSessionDescription(
-    JNIEnv* jni,
-    const webrtc::SessionDescriptionInterface* desc);
+jobject NativeToJavaSessionDescription(JNIEnv* jni,
+                                       const SessionDescriptionInterface* desc);
 
-webrtc::PeerConnectionFactoryInterface::Options
+PeerConnectionFactoryInterface::Options
 JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni, jobject options);
 
 /*****************************************************
  * Below are all things that go into RTCConfiguration.
  *****************************************************/
-webrtc::PeerConnectionInterface::IceTransportsType
-JavaToNativeIceTransportsType(JNIEnv* jni, jobject j_ice_transports_type);
+PeerConnectionInterface::IceTransportsType JavaToNativeIceTransportsType(
+    JNIEnv* jni,
+    jobject j_ice_transports_type);
 
-webrtc::PeerConnectionInterface::BundlePolicy JavaToNativeBundlePolicy(
+PeerConnectionInterface::BundlePolicy JavaToNativeBundlePolicy(
     JNIEnv* jni,
     jobject j_bundle_policy);
 
-webrtc::PeerConnectionInterface::RtcpMuxPolicy JavaToNativeRtcpMuxPolicy(
+PeerConnectionInterface::RtcpMuxPolicy JavaToNativeRtcpMuxPolicy(
     JNIEnv* jni,
     jobject j_rtcp_mux_policy);
 
-webrtc::PeerConnectionInterface::TcpCandidatePolicy
-JavaToNativeTcpCandidatePolicy(JNIEnv* jni, jobject j_tcp_candidate_policy);
+PeerConnectionInterface::TcpCandidatePolicy JavaToNativeTcpCandidatePolicy(
+    JNIEnv* jni,
+    jobject j_tcp_candidate_policy);
 
-webrtc::PeerConnectionInterface::CandidateNetworkPolicy
+PeerConnectionInterface::CandidateNetworkPolicy
 JavaToNativeCandidateNetworkPolicy(JNIEnv* jni,
                                    jobject j_candidate_network_policy);
 
 rtc::KeyType JavaToNativeKeyType(JNIEnv* jni, jobject j_key_type);
 
-webrtc::PeerConnectionInterface::ContinualGatheringPolicy
+PeerConnectionInterface::ContinualGatheringPolicy
 JavaToNativeContinualGatheringPolicy(JNIEnv* jni, jobject j_gathering_policy);
 
-webrtc::PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
+PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
     JNIEnv* jni,
     jobject j_ice_server_tls_cert_policy);
 
-void JavaToNativeIceServers(
-    JNIEnv* jni,
-    jobject j_ice_servers,
-    webrtc::PeerConnectionInterface::IceServers* ice_servers);
+void JavaToNativeIceServers(JNIEnv* jni,
+                            jobject j_ice_servers,
+                            PeerConnectionInterface::IceServers* ice_servers);
 
 void JavaToNativeRTCConfiguration(
     JNIEnv* jni,
     jobject j_rtc_config,
-    webrtc::PeerConnectionInterface::RTCConfiguration* rtc_config);
+    PeerConnectionInterface::RTCConfiguration* rtc_config);
 
 /*********************************************************
  * RtpParameters, used for RtpSender and RtpReceiver APIs.
  *********************************************************/
 void JavaToNativeRtpParameters(JNIEnv* jni,
                                jobject j_parameters,
-                               webrtc::RtpParameters* parameters);
+                               RtpParameters* parameters);
 
-jobject NativeToJavaRtpParameters(JNIEnv* jni,
-                                  const webrtc::RtpParameters& parameters);
+jobject NativeToJavaRtpParameters(JNIEnv* jni, const RtpParameters& parameters);
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_JAVA_NATIVE_CONVERSION_H_

@@ -11,7 +11,8 @@
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 JNI_FUNCTION_DECLARATION(jstring,
                          MediaStreamTrack_nativeId,
@@ -19,7 +20,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          jclass,
                          jlong j_p) {
   return JavaStringFromStdString(
-      jni, reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->id());
+      jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->id());
 }
 
 JNI_FUNCTION_DECLARATION(jstring,
@@ -28,7 +29,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          jclass,
                          jlong j_p) {
   return JavaStringFromStdString(
-      jni, reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->kind());
+      jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->kind());
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
@@ -36,7 +37,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
                          JNIEnv* jni,
                          jclass,
                          jlong j_p) {
-  return reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->enabled();
+  return reinterpret_cast<MediaStreamTrackInterface*>(j_p)->enabled();
 }
 
 JNI_FUNCTION_DECLARATION(jobject,
@@ -46,7 +47,7 @@ JNI_FUNCTION_DECLARATION(jobject,
                          jlong j_p) {
   return JavaEnumFromIndexAndClassName(
       jni, "MediaStreamTrack$State",
-      reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->state());
+      reinterpret_cast<MediaStreamTrackInterface*>(j_p)->state());
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
@@ -55,8 +56,9 @@ JNI_FUNCTION_DECLARATION(jboolean,
                          jclass,
                          jlong j_p,
                          jboolean enabled) {
-  return reinterpret_cast<webrtc::MediaStreamTrackInterface*>(j_p)->set_enabled(
+  return reinterpret_cast<MediaStreamTrackInterface*>(j_p)->set_enabled(
       enabled);
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

@@ -16,17 +16,18 @@
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/native_handle_impl.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 namespace {
 
-class VideoSinkWrapper : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
+class VideoSinkWrapper : public rtc::VideoSinkInterface<VideoFrame> {
  public:
   VideoSinkWrapper(JNIEnv* jni, jobject j_sink);
   ~VideoSinkWrapper() override {}
 
  private:
-  void OnFrame(const webrtc::VideoFrame& frame) override;
+  void OnFrame(const VideoFrame& frame) override;
 
   jmethodID j_on_frame_method_;
 
@@ -41,7 +42,7 @@ VideoSinkWrapper::VideoSinkWrapper(JNIEnv* jni, jobject j_sink)
                                         "(Lorg/webrtc/VideoFrame;)V");
 }
 
-void VideoSinkWrapper::OnFrame(const webrtc::VideoFrame& frame) {
+void VideoSinkWrapper::OnFrame(const VideoFrame& frame) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   jni->CallVoidMethod(*j_sink_, j_on_frame_method_,
@@ -55,10 +56,9 @@ Java_org_webrtc_VideoTrack_nativeAddSink(JNIEnv* jni,
                                          jclass,
                                          jlong j_native_track,
                                          jlong j_native_sink) {
-  reinterpret_cast<webrtc::VideoTrackInterface*>(j_native_track)
+  reinterpret_cast<VideoTrackInterface*>(j_native_track)
       ->AddOrUpdateSink(
-          reinterpret_cast<rtc::VideoSinkInterface<webrtc::VideoFrame>*>(
-              j_native_sink),
+          reinterpret_cast<rtc::VideoSinkInterface<VideoFrame>*>(j_native_sink),
           rtc::VideoSinkWants());
 }
 
@@ -67,10 +67,9 @@ Java_org_webrtc_VideoTrack_nativeRemoveSink(JNIEnv* jni,
                                             jclass,
                                             jlong j_native_track,
                                             jlong j_native_sink) {
-  reinterpret_cast<webrtc::VideoTrackInterface*>(j_native_track)
-      ->RemoveSink(
-          reinterpret_cast<rtc::VideoSinkInterface<webrtc::VideoFrame>*>(
-              j_native_sink));
+  reinterpret_cast<VideoTrackInterface*>(j_native_track)
+      ->RemoveSink(reinterpret_cast<rtc::VideoSinkInterface<VideoFrame>*>(
+          j_native_sink));
 }
 
 extern "C" JNIEXPORT jlong JNICALL
@@ -82,8 +81,8 @@ extern "C" JNIEXPORT void JNICALL
 Java_org_webrtc_VideoTrack_nativeFreeSink(JNIEnv* jni,
                                           jclass,
                                           jlong j_native_sink) {
-  delete reinterpret_cast<rtc::VideoSinkInterface<webrtc::VideoFrame>*>(
-      j_native_sink);
+  delete reinterpret_cast<rtc::VideoSinkInterface<VideoFrame>*>(j_native_sink);
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

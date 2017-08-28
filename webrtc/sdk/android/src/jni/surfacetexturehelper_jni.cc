@@ -16,7 +16,8 @@
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 rtc::scoped_refptr<SurfaceTextureHelper> SurfaceTextureHelper::create(
     JNIEnv* jni,
@@ -71,12 +72,14 @@ void SurfaceTextureHelper::ReturnTextureFrame() const {
       jni) << "error during SurfaceTextureHelper.returnTextureFrame";
 }
 
-rtc::scoped_refptr<webrtc::VideoFrameBuffer>
-SurfaceTextureHelper::CreateTextureFrame(int width, int height,
+rtc::scoped_refptr<VideoFrameBuffer> SurfaceTextureHelper::CreateTextureFrame(
+    int width,
+    int height,
     const NativeHandleImpl& native_handle) {
   return new rtc::RefCountedObject<AndroidTextureBuffer>(
       width, height, native_handle, *j_surface_texture_helper_,
       rtc::Bind(&SurfaceTextureHelper::ReturnTextureFrame, this));
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

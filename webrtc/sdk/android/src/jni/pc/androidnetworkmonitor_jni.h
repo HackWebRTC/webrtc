@@ -20,7 +20,8 @@
 #include "webrtc/rtc_base/thread_checker.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 typedef int64_t NetworkHandle;
 
@@ -91,6 +92,15 @@ class AndroidNetworkMonitorFactory : public rtc::NetworkMonitorFactory {
 
   rtc::NetworkMonitorInterface* CreateNetworkMonitor() override;
 };
+
+}  // namespace jni
+}  // namespace webrtc
+
+// TODO(magjed): Remove once external clients are updated.
+namespace webrtc_jni {
+
+using webrtc::jni::AndroidNetworkMonitor;
+using webrtc::jni::AndroidNetworkMonitorFactory;
 
 }  // namespace webrtc_jni
 

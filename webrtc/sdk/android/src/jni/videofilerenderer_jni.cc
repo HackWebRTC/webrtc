@@ -14,7 +14,8 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 extern "C" JNIEXPORT void JNICALL
 Java_org_webrtc_VideoFileRenderer_nativeI420Scale(JNIEnv* jni,
@@ -82,4 +83,5 @@ Java_org_webrtc_VideoFileRenderer_nativeFreeNativeByteBuffer(
   ::operator delete(data);
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

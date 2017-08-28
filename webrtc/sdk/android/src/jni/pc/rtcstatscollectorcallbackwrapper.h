@@ -16,27 +16,25 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Adapter for a Java RTCStatsCollectorCallback presenting a C++
 // RTCStatsCollectorCallback and dispatching the callback from C++ back to
 // Java.
-class RTCStatsCollectorCallbackWrapper
-    : public webrtc::RTCStatsCollectorCallback {
+class RTCStatsCollectorCallbackWrapper : public RTCStatsCollectorCallback {
  public:
   RTCStatsCollectorCallbackWrapper(JNIEnv* jni, jobject j_callback);
 
   void OnStatsDelivered(
-      const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) override;
+      const rtc::scoped_refptr<const RTCStatsReport>& report) override;
 
  private:
   // Helper functions for converting C++ RTCStatsReport to Java equivalent.
-  jobject ReportToJava(
-      JNIEnv* jni,
-      const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report);
-  jobject StatsToJava(JNIEnv* jni, const webrtc::RTCStats& stats);
-  jobject MemberToJava(JNIEnv* jni,
-                       const webrtc::RTCStatsMemberInterface* member);
+  jobject ReportToJava(JNIEnv* jni,
+                       const rtc::scoped_refptr<const RTCStatsReport>& report);
+  jobject StatsToJava(JNIEnv* jni, const RTCStats& stats);
+  jobject MemberToJava(JNIEnv* jni, const RTCStatsMemberInterface* member);
 
   const ScopedGlobalRef<jobject> j_callback_global_;
   const ScopedGlobalRef<jclass> j_callback_class_;
@@ -60,6 +58,7 @@ class RTCStatsCollectorCallbackWrapper
   const jclass j_string_class_;
 };
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
 
 #endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_RTCSTATSCOLLECTORCALLBACKWRAPPER_H_

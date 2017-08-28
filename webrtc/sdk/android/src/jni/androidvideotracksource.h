@@ -24,6 +24,7 @@
 #include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
 
 namespace webrtc {
+namespace jni {
 
 class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
  public:
@@ -59,7 +60,7 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
                               int height,
                               VideoRotation rotation,
                               int64_t timestamp_ns,
-                              const webrtc_jni::NativeHandleImpl& handle);
+                              const NativeHandleImpl& handle);
 
   void OnFrameCaptured(JNIEnv* jni,
                        int width,
@@ -70,8 +71,7 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
 
   void OnOutputFormatRequest(int width, int height, int fps);
 
-  rtc::scoped_refptr<webrtc_jni::SurfaceTextureHelper>
-  surface_texture_helper() {
+  rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper() {
     return surface_texture_helper_;
   }
 
@@ -83,13 +83,14 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   rtc::TimestampAligner timestamp_aligner_;
   NV12ToI420Scaler nv12toi420_scaler_;
   I420BufferPool buffer_pool_;
-  rtc::scoped_refptr<webrtc_jni::SurfaceTextureHelper> surface_texture_helper_;
-  webrtc_jni::AndroidVideoBufferFactory video_buffer_factory_;
+  rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper_;
+  AndroidVideoBufferFactory video_buffer_factory_;
   const bool is_screencast_;
 
   jmethodID j_crop_and_scale_id_;
 };
 
+}  // namespace jni
 }  // namespace webrtc
 
 #endif  // WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_

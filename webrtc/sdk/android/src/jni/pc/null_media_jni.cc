@@ -10,26 +10,26 @@
 
 #include "webrtc/sdk/android/src/jni/pc/media_jni.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
-webrtc::CallFactoryInterface* CreateCallFactory() {
+CallFactoryInterface* CreateCallFactory() {
   return nullptr;
 }
 
-webrtc::RtcEventLogFactoryInterface* CreateRtcEventLogFactory() {
+RtcEventLogFactoryInterface* CreateRtcEventLogFactory() {
   return nullptr;
 }
 
 cricket::MediaEngineInterface* CreateMediaEngine(
-    webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-        audio_encoder_factory,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
+    AudioDeviceModule* adm,
+    const rtc::scoped_refptr<AudioEncoderFactory>& audio_encoder_factory,
+    const rtc::scoped_refptr<AudioDecoderFactory>& audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
     cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
+    rtc::scoped_refptr<AudioMixer> audio_mixer) {
   return nullptr;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

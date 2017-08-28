@@ -12,7 +12,8 @@
 
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // Convenience, used since callbacks occur on the signaling thread, which may
 // be a non-Java thread.
@@ -35,7 +36,7 @@ StatsObserverJni::StatsObserverJni(JNIEnv* jni, jobject j_observer)
                                 "<init>",
                                 "(Ljava/lang/String;Ljava/lang/String;)V")) {}
 
-void StatsObserverJni::OnComplete(const webrtc::StatsReports& reports) {
+void StatsObserverJni::OnComplete(const StatsReports& reports) {
   ScopedLocalRefFrame local_ref_frame(jni());
   jobjectArray j_reports = ReportsToJava(jni(), reports);
   jmethodID m = GetMethodID(jni(), *j_observer_class_, "onComplete",
@@ -44,9 +45,8 @@ void StatsObserverJni::OnComplete(const webrtc::StatsReports& reports) {
   CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
 }
 
-jobjectArray StatsObserverJni::ReportsToJava(
-    JNIEnv* jni,
-    const webrtc::StatsReports& reports) {
+jobjectArray StatsObserverJni::ReportsToJava(JNIEnv* jni,
+                                             const StatsReports& reports) {
   jobjectArray reports_array =
       jni->NewObjectArray(reports.size(), *j_stats_report_class_, NULL);
   int i = 0;
@@ -63,9 +63,8 @@ jobjectArray StatsObserverJni::ReportsToJava(
   return reports_array;
 }
 
-jobjectArray StatsObserverJni::ValuesToJava(
-    JNIEnv* jni,
-    const webrtc::StatsReport::Values& values) {
+jobjectArray StatsObserverJni::ValuesToJava(JNIEnv* jni,
+                                            const StatsReport::Values& values) {
   jobjectArray j_values =
       jni->NewObjectArray(values.size(), *j_value_class_, NULL);
   int i = 0;
@@ -82,4 +81,5 @@ jobjectArray StatsObserverJni::ValuesToJava(
   return j_values;
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

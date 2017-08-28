@@ -22,7 +22,8 @@
 #include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
 #include "webrtc/sdk/android/src/jni/videodecoderfactorywrapper.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // TODO(sakal): Remove this once MediaCodecVideoDecoder/Encoder are no longer
 // used and all applications inject their own codecs.
@@ -67,13 +68,13 @@ JNI_FUNCTION_DECLARATION(jlong,
   OwnedFactoryAndThreads* factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
 
-  rtc::scoped_refptr<webrtc::AndroidVideoTrackSource> source(
-      new rtc::RefCountedObject<webrtc::AndroidVideoTrackSource>(
+  rtc::scoped_refptr<AndroidVideoTrackSource> source(
+      new rtc::RefCountedObject<AndroidVideoTrackSource>(
           factory->signaling_thread(), jni, j_surface_texture_helper,
           is_screencast));
-  rtc::scoped_refptr<webrtc::VideoTrackSourceProxy> proxy_source =
-      webrtc::VideoTrackSourceProxy::Create(factory->signaling_thread(),
-                                            factory->worker_thread(), source);
+  rtc::scoped_refptr<VideoTrackSourceProxy> proxy_source =
+      VideoTrackSourceProxy::Create(factory->signaling_thread(),
+                                    factory->worker_thread(), source);
 
   return (jlong)proxy_source.release();
 }
@@ -87,10 +88,9 @@ JNI_FUNCTION_DECLARATION(jlong,
                          jlong native_source) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> track(
-      factory->CreateVideoTrack(
-          JavaToStdString(jni, id),
-          reinterpret_cast<webrtc::VideoTrackSourceInterface*>(native_source)));
+  rtc::scoped_refptr<VideoTrackInterface> track(factory->CreateVideoTrack(
+      JavaToStdString(jni, id),
+      reinterpret_cast<VideoTrackSourceInterface*>(native_source)));
   return (jlong)track.release();
 }
 
@@ -126,4 +126,5 @@ JNI_FUNCTION_DECLARATION(
   }
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

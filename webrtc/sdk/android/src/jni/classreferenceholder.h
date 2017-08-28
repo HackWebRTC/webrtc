@@ -20,7 +20,8 @@
 #include <map>
 #include <string>
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 // LoadGlobalClassReferenceHolder must be called in JNI_OnLoad.
 void LoadGlobalClassReferenceHolder();
@@ -30,6 +31,15 @@ void FreeGlobalClassReferenceHolder();
 // Returns a global reference guaranteed to be valid for the lifetime of the
 // process.
 jclass FindClass(JNIEnv* jni, const char* name);
+
+}  // namespace jni
+}  // namespace webrtc
+
+// TODO(magjed): Remove once external clients are updated.
+namespace webrtc_jni {
+
+using webrtc::jni::LoadGlobalClassReferenceHolder;
+using webrtc::jni::FreeGlobalClassReferenceHolder;
 
 }  // namespace webrtc_jni
 

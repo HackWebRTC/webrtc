@@ -14,7 +14,8 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 extern "C" JNIEXPORT void JNICALL
 Java_org_webrtc_FileVideoCapturer_nativeI420ToNV21(JNIEnv* jni,
@@ -57,4 +58,5 @@ Java_org_webrtc_FileVideoCapturer_nativeI420ToNV21(JNIEnv* jni,
   }
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc

@@ -16,7 +16,8 @@
 #include "webrtc/system_wrappers/include/metrics.h"
 
 // Enables collection of native histograms and creating them.
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 JNI_FUNCTION_DECLARATION(jlong,
                          Histogram_nativeCreateCounts,
@@ -28,7 +29,7 @@ JNI_FUNCTION_DECLARATION(jlong,
                          jint buckets) {
   std::string name = JavaToStdString(jni, j_name);
   return jlongFromPointer(
-      webrtc::metrics::HistogramFactoryGetCounts(name, min, max, buckets));
+      metrics::HistogramFactoryGetCounts(name, min, max, buckets));
 }
 
 JNI_FUNCTION_DECLARATION(jlong,
@@ -38,8 +39,7 @@ JNI_FUNCTION_DECLARATION(jlong,
                          jstring j_name,
                          jint max) {
   std::string name = JavaToStdString(jni, j_name);
-  return jlongFromPointer(
-      webrtc::metrics::HistogramFactoryGetEnumeration(name, max));
+  return jlongFromPointer(metrics::HistogramFactoryGetEnumeration(name, max));
 }
 
 JNI_FUNCTION_DECLARATION(void,
@@ -49,9 +49,9 @@ JNI_FUNCTION_DECLARATION(void,
                          jlong histogram,
                          jint sample) {
   if (histogram) {
-    HistogramAdd(reinterpret_cast<webrtc::metrics::Histogram*>(histogram),
-                 sample);
+    HistogramAdd(reinterpret_cast<metrics::Histogram*>(histogram), sample);
   }
 }
 
-}  // namespace webrtc_jni
+}  // namespace jni
+}  // namespace webrtc
