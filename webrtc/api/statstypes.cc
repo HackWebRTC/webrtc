@@ -590,6 +590,8 @@ const char* StatsReport::Value::display_name() const {
       return "googRtt";
     case kStatsValueNameSecondaryDecodedRate:
       return "googSecondaryDecodedRate";
+    case kStatsValueNameSecondaryDiscardedRate:
+      return "googSecondaryDiscardedRate";
     case kStatsValueNameSendPacketsDiscarded:
       return "packetsDiscardedOnSend";
     case kStatsValueNameSpeechExpandRate:

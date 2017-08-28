@@ -2288,6 +2288,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     rinfo.expand_rate = stats.expand_rate;
     rinfo.speech_expand_rate = stats.speech_expand_rate;
     rinfo.secondary_decoded_rate = stats.secondary_decoded_rate;
+    rinfo.secondary_discarded_rate = stats.secondary_discarded_rate;
     rinfo.accelerate_rate = stats.accelerate_rate;
     rinfo.preemptive_expand_rate = stats.preemptive_expand_rate;
     rinfo.decoding_calls_to_silence_generator =
