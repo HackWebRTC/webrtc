@@ -282,7 +282,8 @@ void StatisticsCalculator::GetNetworkStatistics(
       discarded_secondary_packets_ * samples_per_packet;
   stats->secondary_discarded_rate = CalculateQ14Ratio(
       discarded_secondary_samples,
-      discarded_secondary_samples + secondary_decoded_samples_);
+      static_cast<uint32_t>(discarded_secondary_samples +
+        secondary_decoded_samples_));
 
   if (waiting_times_.size() == 0) {
     stats->mean_waiting_time_ms = -1;
