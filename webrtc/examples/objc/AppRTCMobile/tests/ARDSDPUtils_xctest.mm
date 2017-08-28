@@ -21,31 +21,31 @@
 @implementation ARDSDPUtilsTest
 
 - (void)testPreferVideoCodecH264 {
-  NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\n"
-                    "a=rtpmap:120 H264/90000\n"
-                    "a=rtpmap:97 H264/90000\n");
-  NSString *expectedSdp = @("m=video 9 RTP/SAVPF 120 97 100 116 117 96\n"
-                            "a=rtpmap:120 H264/90000\n"
-                            "a=rtpmap:97 H264/90000\n");
+  NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\r\n"
+                    "a=rtpmap:120 H264/90000\r\n"
+                    "a=rtpmap:97 H264/90000\r\n");
+  NSString *expectedSdp = @("m=video 9 RTP/SAVPF 120 97 100 116 117 96\r\n"
+                            "a=rtpmap:120 H264/90000\r\n"
+                            "a=rtpmap:97 H264/90000\r\n");
   [self preferVideoCodec:@"H264" sdp:sdp expected:expectedSdp];
 }
 
 - (void)testPreferVideoCodecVP8 {
-  NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\n"
-                    "a=rtpmap:116 VP8/90000\n");
-  NSString *expectedSdp = @("m=video 9 RTP/SAVPF 116 100 117 96 120 97\n"
-                            "a=rtpmap:116 VP8/90000\n");
+  NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\r\n"
+                    "a=rtpmap:116 VP8/90000\r\n");
+  NSString *expectedSdp = @("m=video 9 RTP/SAVPF 116 100 117 96 120 97\r\n"
+                            "a=rtpmap:116 VP8/90000\r\n");
   [self preferVideoCodec:@"VP8" sdp:sdp expected:expectedSdp];
 }
 
 - (void)testNoMLine {
-  NSString *sdp = @("a=rtpmap:116 VP8/90000\n");
+  NSString *sdp = @("a=rtpmap:116 VP8/90000\r\n");
   [self preferVideoCodec:@"VP8" sdp:sdp expected:sdp];
 }
 
 - (void)testMissingCodec {
-  NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\n"
-                    "a=rtpmap:116 VP8/90000\n");
+  NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\r\n"
+                    "a=rtpmap:116 VP8/90000\r\n");
   [self preferVideoCodec:@"foo" sdp:sdp expected:sdp];
 }
 

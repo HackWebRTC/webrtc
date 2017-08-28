@@ -19,7 +19,7 @@
     descriptionForDescription:(RTCSessionDescription *)description
           preferredVideoCodec:(NSString *)codec {
   NSString *sdpString = description.sdp;
-  NSString *lineSeparator = @"\n";
+  NSString *lineSeparator = @"\r\n";
   NSString *mLineSeparator = @" ";
   // Copied from PeerConnectionClient.java.
   // TODO(tkchin): Move this to a shared C++ file.
