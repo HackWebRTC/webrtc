@@ -103,6 +103,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:webrtc_h264",
       "../modules/video_coding:webrtc_vp8",
       "../modules/video_coding:webrtc_vp9",
+      "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:rtc_task_queue",
       "../system_wrappers",

@@ -296,15 +296,15 @@ config("enable_libevent_config") {
 }
 
 rtc_source_set("rtc_task_queue") {
-  public_deps = [
+  deps = [
     ":rtc_base_approved",
+  ]
+  public_deps = [
     ":rtc_task_queue_api",
   ]
 
   if (rtc_link_task_queue_impl) {
-    deps = [
-      ":rtc_task_queue_impl",
-    ]
+    deps += [ ":rtc_task_queue_impl" ]
   }
 }
 
@@ -372,6 +372,7 @@ rtc_static_library("sequenced_task_checker") {
     "sequenced_task_checker_impl.h",
   ]
   deps = [
+    ":rtc_base_approved",
     ":rtc_task_queue",
   ]
 }
@@ -905,6 +906,7 @@ if (rtc_include_tests) {
       "task_queue_unittest.cc",
     ]
     deps = [
+      ":rtc_base_approved",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_task_queue",
