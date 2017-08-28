@@ -616,10 +616,8 @@ public class MediaCodecVideoEncoder {
         // TODO(perkj): glClear() shouldn't be necessary since every pixel is covered anyway,
         // but it's a workaround for bug webrtc:5147.
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        drawer.drawOes(textureBuffer.getTextureId(),
-            RendererCommon.convertMatrixFromAndroidGraphicsMatrix(
-                textureBuffer.getTransformMatrix()),
-            width, height, 0, 0, width, height);
+        drawer.drawTexture(textureBuffer, new Matrix() /* renderMatrix */, width, height,
+            0 /* viewportX */, 0 /* viewportY */, width, height);
         eglBase.swapBuffers(frame.getTimestampNs());
       } else {
         VideoFrame.I420Buffer i420Buffer = buffer.toI420();

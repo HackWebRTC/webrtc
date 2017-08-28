@@ -48,6 +48,12 @@ public class RendererCommon {
     void drawYuv(int[] yuvTextures, float[] texMatrix, int frameWidth, int frameHeight,
         int viewportX, int viewportY, int viewportWidth, int viewportHeight);
 
+    /**
+     * Draws a VideoFrame.TextureBuffer. Default implementation calls either drawOes or drawRgb
+     * depending on the type of the buffer. You can supply an additional render matrix. This is
+     * used multiplied together with the transformation matrix of the frame. (M = renderMatrix *
+     * transformationMatrix)
+     */
     default void
       drawTexture(VideoFrame.TextureBuffer buffer, android.graphics.Matrix renderMatrix,
           int frameWidth, int frameHeight, int viewportX, int viewportY, int viewportWidth,
