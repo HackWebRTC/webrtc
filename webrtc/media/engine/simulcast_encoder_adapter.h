@@ -65,19 +65,18 @@ class SimulcastEncoderAdapter : public VP8Encoder {
 
  private:
   struct StreamInfo {
-    StreamInfo(VideoEncoder* encoder,
+    StreamInfo(std::unique_ptr<VideoEncoder> encoder,
                std::unique_ptr<EncodedImageCallback> callback,
                uint16_t width,
                uint16_t height,
                bool send_stream)
-        : encoder(encoder),
+        : encoder(std::move(encoder)),
           callback(std::move(callback)),
           width(width),
           height(height),
           key_frame_request(false),
           send_stream(send_stream) {}
-    // Deleted by SimulcastEncoderAdapter::DestroyStoredEncoders().
-    VideoEncoder* encoder;
+    std::unique_ptr<VideoEncoder> encoder;
     std::unique_ptr<EncodedImageCallback> callback;
     uint16_t width;
     uint16_t height;
@@ -108,7 +107,7 @@ class SimulcastEncoderAdapter : public VP8Encoder {
 
   // Store encoders in between calls to Release and InitEncode, so they don't
   // have to be recreated. Remaining encoders are destroyed by the destructor.
-  std::stack<VideoEncoder*> stored_encoders_;
+  std::stack<std::unique_ptr<VideoEncoder>> stored_encoders_;
 };
 
 }  // namespace webrtc

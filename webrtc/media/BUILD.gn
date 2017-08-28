@@ -146,6 +146,8 @@ rtc_static_library("rtc_audio_video") {
     "engine/nullwebrtcvideoengine.h",
     "engine/payload_type_mapper.cc",
     "engine/payload_type_mapper.h",
+    "engine/scopedvideoencoder.cc",
+    "engine/scopedvideoencoder.h",
     "engine/simulcast.cc",
     "engine/simulcast.h",
     "engine/simulcast_encoder_adapter.cc",
