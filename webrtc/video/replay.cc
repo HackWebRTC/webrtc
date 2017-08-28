@@ -178,10 +178,8 @@ class FileRenderPassthrough : public rtc::VideoSinkInterface<VideoFrame> {
     filename << basename_ << count_++ << "_" << video_frame.timestamp()
              << ".jpg";
 
-#if !defined(WEBRTC_IOS)
     test::JpegFrameWriter frame_writer(filename.str());
     RTC_CHECK(frame_writer.WriteFrame(video_frame, 100));
-#endif
   }
 
   const std::string basename_;

@@ -35,7 +35,10 @@ JpegFrameWriter::JpegFrameWriter(const std::string &output_filename)
       output_file_(nullptr) {}
 
 bool JpegFrameWriter::WriteFrame(const VideoFrame& input_frame, int quality) {
-  RTC_CHECK(!frame_written_) << "Only a single frame can be saved to Jpeg.";
+  if (frame_written_) {
+    LOG(LS_ERROR) << "Only a single frame can be saved to Jpeg.";
+    return false;
+  }
   const int kColorPlanes = 3;  // R, G and B.
   size_t rgb_len = input_frame.height() * input_frame.width() * kColorPlanes;
   std::unique_ptr<uint8_t[]> rgb_buf(new uint8_t[rgb_len]);

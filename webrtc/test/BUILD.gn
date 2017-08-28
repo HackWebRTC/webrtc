@@ -226,6 +226,8 @@ if (!build_with_chromium) {
     if (!is_ios) {
       deps += [ "//third_party:jpeg" ]
       sources += [ "testsupport/jpeg_frame_writer.cc" ]
+    } else {
+      sources += [ "testsupport/jpeg_frame_writer_ios.cc" ]
     }
 
     public_deps = [

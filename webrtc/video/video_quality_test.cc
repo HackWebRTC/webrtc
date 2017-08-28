@@ -835,8 +835,6 @@ class VideoAnalyzer : public PacketReceiver,
     PrintResult("memory_usage", memory_usage_, " bytes");
 #endif
 
-    // LibJpeg is not available on iOS.
-#if !defined(WEBRTC_IOS)
     // Saving only the worst frame for manual analysis. Intention here is to
     // only detect video corruptions and not to track picture quality. Thus,
     // jpeg is used here.
@@ -850,7 +848,6 @@ class VideoAnalyzer : public PacketReceiver,
       RTC_CHECK(frame_writer.WriteFrame(worst_frame_->frame,
                                         100 /*best quality*/));
     }
-#endif
 
     //  Disable quality check for quick test, as quality checks may fail
     //  because too few samples were collected.

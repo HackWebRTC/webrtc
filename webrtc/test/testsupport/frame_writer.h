@@ -83,19 +83,21 @@ class Y4mFrameWriterImpl : public YuvFrameWriterImpl {
   const int frame_rate_;
 };
 
-// LibJpeg is not available on iOS
-#if !defined(is_ios)
+// LibJpeg is not available on iOS. This class will do nothing on iOS.
 class JpegFrameWriter {
  public:
   JpegFrameWriter(const std::string &output_filename);
+  // Quality can be from 0 (worst) to 100 (best). Best quality is still lossy.
+  // WriteFrame can be called only once. Subsequent calls will fail.
   bool WriteFrame(const VideoFrame& input_frame, int quality);
 
+#if !defined(WEBRTC_IOS)
  private:
   bool frame_written_;
   const std::string output_filename_;
   FILE* output_file_;
-};
 #endif
+};
 
 }  // namespace test
 }  // namespace webrtc
