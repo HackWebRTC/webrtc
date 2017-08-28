@@ -165,7 +165,8 @@ class RTCPReceiver {
   void HandleXrDlrrReportBlock(const rtcp::ReceiveTimeInfo& rti)
       EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
 
-  void HandleXrTargetBitrate(const rtcp::TargetBitrate& target_bitrate,
+  void HandleXrTargetBitrate(uint32_t ssrc,
+                             const rtcp::TargetBitrate& target_bitrate,
                              PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
 
