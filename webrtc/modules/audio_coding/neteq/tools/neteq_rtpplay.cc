@@ -389,7 +389,7 @@ class StatsGetter : public NetEqGetAudioCallback {
       stats_.push_back(stats);
     }
     if (other_callback_) {
-      other_callback_->BeforeGetAudio(neteq);
+      other_callback_->AfterGetAudio(time_now_ms, audio_frame, muted, neteq);
     }
   }
 
@@ -635,9 +635,12 @@ int RunTest(int argc, char* argv[]) {
   int64_t test_duration_ms = test.Run();
 
   if (FLAGS_matlabplot) {
-    std::cout << "Creating Matlab plot script " << output_file_name + ".m"
+    auto matlab_script_name = output_file_name;
+    std::replace(matlab_script_name.begin(), matlab_script_name.end(), '.',
+                 '_');
+    std::cout << "Creating Matlab plot script " << matlab_script_name + ".m"
               << std::endl;
-    delay_analyzer->CreateMatlabScript(output_file_name + ".m");
+    delay_analyzer->CreateMatlabScript(matlab_script_name + ".m");
   }
 
   printf("Simulation statistics:\n");
