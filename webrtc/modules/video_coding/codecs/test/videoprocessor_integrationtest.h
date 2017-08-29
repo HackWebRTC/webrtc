@@ -391,15 +391,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
     EXPECT_GT(ssim_result.min, quality_thresholds.min_min_ssim);
   }
 
-  void VerifyQpParser(int frame_number) {
-    if (!config_.hw_codec &&
-        (config_.codec_settings.codecType == kVideoCodecVP8 ||
-         config_.codec_settings.codecType == kVideoCodecVP9)) {
-      EXPECT_EQ(processor_->GetQpFromEncoder(frame_number),
-                processor_->GetQpFromBitstream(frame_number));
-    }
-  }
-
   static int NumberOfTemporalLayers(const VideoCodec& codec_settings) {
     if (codec_settings.codecType == kVideoCodecVP8) {
       return codec_settings.VP8().numberOfTemporalLayers;
@@ -494,7 +485,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
     while (frame_number < num_frames) {
       processor_->ProcessFrame(frame_number);
-      VerifyQpParser(frame_number);
       const int tl_idx = TemporalLayerIndexForFrame(frame_number);
       ++num_frames_per_update_[tl_idx];
       ++num_frames_total_;

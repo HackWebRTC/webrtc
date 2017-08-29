@@ -26,6 +26,7 @@
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/system_wrappers/include/cpu_info.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace test {
@@ -89,6 +90,22 @@ void PrintCodecSettings(const VideoCodec& codec_settings) {
            codec_settings.H264().keyFrameInterval);
     printf("  Profile           : %d\n", codec_settings.H264().profile);
   }
+}
+
+void VerifyQpParser(const EncodedImage& encoded_frame,
+                    const TestConfig& config) {
+  if (config.hw_codec)
+    return;
+
+  int qp;
+  if (config.codec_settings.codecType == kVideoCodecVP8) {
+    ASSERT_TRUE(vp8::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
+  } else if (config.codec_settings.codecType == kVideoCodecVP9) {
+    ASSERT_TRUE(vp9::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
+  } else {
+    return;
+  }
+  EXPECT_EQ(encoded_frame.qp_, qp) << "Encoder QP != parsed bitstream QP.";
 }
 
 int GetElapsedTimeMicroseconds(int64_t start_ns, int64_t stop_ns) {
@@ -263,18 +280,6 @@ void VideoProcessor::SetRates(int bitrate_kbps, int framerate_fps) {
   num_spatial_resizes_ = 0;
 }
 
-int VideoProcessor::GetQpFromEncoder(int frame_number) const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  RTC_CHECK_LT(frame_number, frame_infos_.size());
-  return frame_infos_[frame_number].qp_encoder;
-}
-
-int VideoProcessor::GetQpFromBitstream(int frame_number) const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  RTC_CHECK_LT(frame_number, frame_infos_.size());
-  return frame_infos_[frame_number].qp_bitstream;
-}
-
 int VideoProcessor::NumberDroppedFrames() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   return num_dropped_frames_;
@@ -332,16 +337,9 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
   last_encoded_frame_num_ = frame_number;
 
   // Frame is not dropped, so update frame information and statistics.
+  VerifyQpParser(encoded_image, config_);
   RTC_CHECK_LT(frame_number, frame_infos_.size());
   FrameInfo* frame_info = &frame_infos_[frame_number];
-  frame_info->qp_encoder = encoded_image.qp_;
-  if (codec == kVideoCodecVP8) {
-    vp8::GetQp(encoded_image._buffer, encoded_image._length,
-      &frame_info->qp_bitstream);
-  } else if (codec == kVideoCodecVP9) {
-    vp9::GetQp(encoded_image._buffer, encoded_image._length,
-      &frame_info->qp_bitstream);
-  }
   FrameStatistic* frame_stat = &stats_->stats_[frame_number];
   frame_stat->encode_time_in_us =
       GetElapsedTimeMicroseconds(frame_info->encode_start_ns, encode_stop_ns);

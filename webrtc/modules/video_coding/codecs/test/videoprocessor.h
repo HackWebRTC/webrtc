@@ -159,13 +159,6 @@ class VideoProcessor {
   // Updates the encoder with target rates. Must be called at least once.
   void SetRates(int bitrate_kbps, int framerate_fps);
 
-
-  // TODO(brandtr): Get rid of these functions by moving the corresponding QP
-  // fields to the Stats object.
-  int GetQpFromEncoder(int frame_number) const;
-  int GetQpFromBitstream(int frame_number) const;
-
-
   // Return the number of dropped frames.
   int NumberDroppedFrames();
 
@@ -180,8 +173,6 @@ class VideoProcessor {
   struct FrameInfo {
     int64_t encode_start_ns = 0;
     int64_t decode_start_ns = 0;
-    int qp_encoder = 0;
-    int qp_bitstream = 0;
     int decoded_width = 0;
     int decoded_height = 0;
     size_t manipulated_length = 0;
