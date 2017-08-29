@@ -63,9 +63,9 @@
 
 - (BOOL)isApplicationActive {
   if (!_initialized) {
-    long ret =
-        dispatch_block_wait(_initializeBlock, dispatch_time(DISPATCH_TIME_NOW, 1.0 * NSEC_PER_SEC));
-    RTC_CHECK_EQ(ret, 0);
+    long ret = dispatch_block_wait(_initializeBlock,
+                                   dispatch_time(DISPATCH_TIME_NOW, 10.0 * NSEC_PER_SEC));
+    RTC_DCHECK_EQ(ret, 0);
   }
   return _state == UIApplicationStateActive;
 }
