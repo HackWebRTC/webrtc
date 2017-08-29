@@ -35,8 +35,7 @@ RTC_EXPORT
 
 /* Initialize object with injectable video encoder/decoder factories */
 - (instancetype)initWithEncoderFactory:(nullable id<RTCVideoEncoderFactory>)encoderFactory
-                        decoderFactory:(nullable id<RTCVideoDecoderFactory>)decoderFactory
-    NS_DESIGNATED_INITIALIZER;
+                        decoderFactory:(nullable id<RTCVideoDecoderFactory>)decoderFactory;
 
 /** Initialize an RTCAudioSource with constraints. */
 - (RTCAudioSource *)audioSourceWithConstraints:(nullable RTCMediaConstraints *)constraints;

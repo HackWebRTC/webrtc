@@ -310,6 +310,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("peerconnectionfactory_objc") {
       sources = [
+        "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory+Native.h",
         "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory.mm",
         "objc/Framework/Classes/PeerConnection/RTCVideoCodecH264.mm",
@@ -331,6 +332,8 @@ if (is_ios || is_mac) {
         ":videotoolbox_objc",
         ":videotracksource_objc",
         "../api:video_frame_api",
+        "../api/audio_codecs:builtin_audio_decoder_factory",
+        "../api/audio_codecs:builtin_audio_encoder_factory",
         "../api/video_codecs:video_codecs_api",
         "../media:rtc_audio_video",
         "../media:rtc_media_base",
@@ -353,6 +356,7 @@ if (is_ios || is_mac) {
       defines = [ "HAVE_NO_MEDIA" ]
 
       sources = [
+        "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory+Native.h",
         "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory.mm",
       ]
