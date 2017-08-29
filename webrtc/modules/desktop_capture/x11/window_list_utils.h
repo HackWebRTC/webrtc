@@ -35,7 +35,8 @@ int32_t GetWindowState(XAtomCache* cache, ::Window window);
 
 // Returns the rectangle of the |window| in the coordinates of |display|. This
 // function returns false if native APIs failed. If |attributes| is provided, it
-// will be filled with the attributes of |window|.
+// will be filled with the attributes of |window|. The |rect| is in system
+// coordinate, i.e. the primary monitor always starts from (0, 0).
 bool GetWindowRect(::Display* display,
                    ::Window window,
                    DesktopRect* rect,

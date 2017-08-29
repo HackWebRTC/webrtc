@@ -178,7 +178,6 @@ bool GetWindowList(XAtomCache* cache,
   RTC_DCHECK(cache);
   RTC_DCHECK(on_window);
   ::Display* const display = cache->display();
-  XErrorTrap error_trap(display);
 
   int failed_screens = 0;
   const int num_screens = XScreenCount(display);
@@ -187,16 +186,20 @@ bool GetWindowList(XAtomCache* cache,
     ::Window parent;
     ::Window* children;
     unsigned int num_children;
-    if (XQueryTree(display,
-                   root_window,
-                   &root_window,
-                   &parent,
-                   &children,
-                   &num_children) == 0) {
-      failed_screens++;
-      LOG(LS_ERROR) << "Failed to query for child windows for screen "
-                    << screen;
-      continue;
+    {
+      XErrorTrap error_trap(display);
+      if (XQueryTree(display,
+                     root_window,
+                     &root_window,
+                     &parent,
+                     &children,
+                     &num_children) == 0 ||
+          error_trap.GetLastErrorAndDisable() != 0) {
+        failed_screens++;
+        LOG(LS_ERROR) << "Failed to query for child windows for screen "
+                      << screen;
+        continue;
+      }
     }
 
     DeferXFree free_children(children);
@@ -221,6 +224,8 @@ bool GetWindowRect(::Display* display,
                    DesktopRect* rect,
                    XWindowAttributes* attributes /* = nullptr */) {
   XWindowAttributes local_attributes;
+  int offset_x;
+  int offset_y;
   if (attributes == nullptr) {
     attributes = &local_attributes;
   }
@@ -232,8 +237,24 @@ bool GetWindowRect(::Display* display,
       return false;
     }
   }
+  {
+    XErrorTrap error_trap(display);
+    ::Window child;
+    if (!XTranslateCoordinates(display,
+                               window,
+                               attributes->root,
+                               0,
+                               0,
+                               &offset_x,
+                               &offset_y,
+                               &child) ||
+        error_trap.GetLastErrorAndDisable() != 0) {
+      return false;
+    }
+  }
 
   *rect = DesktopRectFromXAttributes(*attributes);
+  rect->Translate(offset_x, offset_y);
   return true;
 }
 
