@@ -13,10 +13,14 @@
 #include <Cocoa/Cocoa.h>
 #include <CoreFoundation/CoreFoundation.h>
 
+#include <utility>
+
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "webrtc/modules/desktop_capture/window_finder_mac.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
+#include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
 #include "webrtc/modules/desktop_capture/mac/full_screen_chrome_window_detector.h"
 #include "webrtc/modules/desktop_capture/mac/window_list_utils.h"
 #include "webrtc/rtc_base/constructormagic.h"
@@ -44,7 +48,9 @@ bool IsWindowValid(CGWindowID id) {
 class WindowCapturerMac : public DesktopCapturer {
  public:
   explicit WindowCapturerMac(rtc::scoped_refptr<FullScreenChromeWindowDetector>
-                                 full_screen_chrome_window_detector);
+                                 full_screen_chrome_window_detector,
+                             rtc::scoped_refptr<DesktopConfigurationMonitor>
+                                 configuration_monitor);
   ~WindowCapturerMac() override;
 
   // DesktopCapturer interface.
@@ -53,6 +59,7 @@ class WindowCapturerMac : public DesktopCapturer {
   bool GetSourceList(SourceList* sources) override;
   bool SelectSource(SourceId id) override;
   bool FocusOnSelectedSource() override;
+  bool IsOccluded(const DesktopVector& pos) override;
 
  private:
   Callback* callback_ = nullptr;
@@ -60,16 +67,23 @@ class WindowCapturerMac : public DesktopCapturer {
   // The window being captured.
   CGWindowID window_id_ = 0;
 
-  rtc::scoped_refptr<FullScreenChromeWindowDetector>
+  const rtc::scoped_refptr<FullScreenChromeWindowDetector>
       full_screen_chrome_window_detector_;
+
+  const rtc::scoped_refptr<DesktopConfigurationMonitor> configuration_monitor_;
+
+  WindowFinderMac window_finder_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerMac);
 };
 
 WindowCapturerMac::WindowCapturerMac(
     rtc::scoped_refptr<FullScreenChromeWindowDetector>
-        full_screen_chrome_window_detector)
-    : full_screen_chrome_window_detector_(full_screen_chrome_window_detector) {}
+        full_screen_chrome_window_detector,
+    rtc::scoped_refptr<DesktopConfigurationMonitor> configuration_monitor)
+    : full_screen_chrome_window_detector_(
+          std::move(full_screen_chrome_window_detector)),
+      configuration_monitor_(std::move(configuration_monitor)) {}
 
 WindowCapturerMac::~WindowCapturerMac() {}
 
@@ -119,6 +133,17 @@ bool WindowCapturerMac::FocusOnSelectedSource() {
   CFRelease(window_id_array);
   CFRelease(window_array);
   return result;
+}
+
+bool WindowCapturerMac::IsOccluded(const DesktopVector& pos) {
+  DesktopVector sys_pos = pos;
+  if (configuration_monitor_) {
+    configuration_monitor_->Lock();
+    auto configuration = configuration_monitor_->desktop_configuration();
+    configuration_monitor_->Unlock();
+    sys_pos = pos.add(configuration.bounds.top_left());
+  }
+  return window_finder_.GetWindowUnderPoint(sys_pos) != window_id_;
 }
 
 void WindowCapturerMac::Start(Callback* callback) {
@@ -192,7 +217,8 @@ void WindowCapturerMac::CaptureFrame() {
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(
     const DesktopCaptureOptions& options) {
   return std::unique_ptr<DesktopCapturer>(
-      new WindowCapturerMac(options.full_screen_chrome_window_detector()));
+      new WindowCapturerMac(options.full_screen_chrome_window_detector(),
+                            options.configuration_monitor()));
 }
 
 }  // namespace webrtc

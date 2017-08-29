@@ -14,6 +14,8 @@
 
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
+#include "webrtc/modules/desktop_capture/window_finder_win.h"
+#include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
 #include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/constructormagic.h"
@@ -90,6 +92,7 @@ class WindowCapturerWin : public DesktopCapturer {
   bool GetSourceList(SourceList* sources) override;
   bool SelectSource(SourceId id) override;
   bool FocusOnSelectedSource() override;
+  bool IsOccluded(const DesktopVector& pos) override;
 
  private:
   Callback* callback_ = nullptr;
@@ -105,6 +108,8 @@ class WindowCapturerWin : public DesktopCapturer {
   // This map is used to avoid flickering for the case when SelectWindow() calls
   // are interleaved with Capture() calls.
   std::map<HWND, DesktopSize> window_size_map_;
+
+  WindowFinderWin window_finder_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerWin);
 };
@@ -150,6 +155,12 @@ bool WindowCapturerWin::FocusOnSelectedSource() {
 
   return BringWindowToTop(window_) != FALSE &&
          SetForegroundWindow(window_) != FALSE;
+}
+
+bool WindowCapturerWin::IsOccluded(const DesktopVector& pos) {
+  DesktopVector sys_pos = pos.add(GetFullscreenRect().top_left());
+  return reinterpret_cast<HWND>(window_finder_.GetWindowUnderPoint(sys_pos))
+      != window_;
 }
 
 void WindowCapturerWin::Start(Callback* callback) {

@@ -17,7 +17,7 @@ namespace webrtc {
 
 class XAtomCache;
 
-// The implementation of WindowFinder for Windows.
+// The implementation of WindowFinder for X11.
 class WindowFinderX11 final : public WindowFinder {
  public:
   explicit WindowFinderX11(XAtomCache* cache);

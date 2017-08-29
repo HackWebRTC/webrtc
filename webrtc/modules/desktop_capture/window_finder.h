@@ -25,6 +25,8 @@ class WindowFinder {
   // Returns the id of the visible window under |point|. This function returns
   // kNullWindowId if no window is under |point| and the platform does not have
   // "root window" concept, i.e. the visible area under |point| is the desktop.
+  // |point| is always in system coordinate, i.e. the primary monitor always
+  // starts from (0, 0).
   virtual WindowId GetWindowUnderPoint(DesktopVector point) = 0;
 };
 

@@ -119,6 +119,13 @@ class DesktopCapturer {
   // implementation does not support this functionality.
   virtual bool FocusOnSelectedSource();
 
+  // Returns true if the |pos| on the selected source is covered by other
+  // elements on the display, and is not visible to the users.
+  // |pos| is in full desktop coordinates, i.e. the top-left monitor always
+  // starts from (0, 0).
+  // The return value if |pos| is out of the scope of the source is undefined.
+  virtual bool IsOccluded(const DesktopVector& pos);
+
   // Creates a DesktopCapturer instance which targets to capture windows.
   static std::unique_ptr<DesktopCapturer> CreateWindowCapturer(
       const DesktopCaptureOptions& options);

@@ -17,6 +17,7 @@
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "webrtc/modules/desktop_capture/window_finder_x11.h"
 #include "webrtc/modules/desktop_capture/x11/shared_x_display.h"
 #include "webrtc/modules/desktop_capture/x11/window_list_utils.h"
 #include "webrtc/modules/desktop_capture/x11/x_atom_cache.h"
@@ -42,6 +43,7 @@ class WindowCapturerLinux : public DesktopCapturer,
   bool GetSourceList(SourceList* sources) override;
   bool SelectSource(SourceId id) override;
   bool FocusOnSelectedSource() override;
+  bool IsOccluded(const DesktopVector& pos) override;
 
   // SharedXDisplay::XEventHandler interface.
   bool HandleXEvent(const XEvent& event) override;
@@ -61,13 +63,15 @@ class WindowCapturerLinux : public DesktopCapturer,
   ::Window selected_window_ = 0;
   XServerPixelBuffer x_server_pixel_buffer_;
   XAtomCache atom_cache_;
+  WindowFinderX11 window_finder_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerLinux);
 };
 
 WindowCapturerLinux::WindowCapturerLinux(const DesktopCaptureOptions& options)
     : x_display_(options.x_display()),
-      atom_cache_(display()) {
+      atom_cache_(display()),
+      window_finder_(&atom_cache_) {
   int event_base, error_base, major_version, minor_version;
   if (XCompositeQueryExtension(display(), &event_base, &error_base) &&
       XCompositeQueryVersion(display(), &major_version, &minor_version) &&
@@ -214,6 +218,11 @@ void WindowCapturerLinux::CaptureFrame() {
       DesktopRect::MakeSize(frame->size()));
 
   callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
+}
+
+bool WindowCapturerLinux::IsOccluded(const DesktopVector& pos) {
+  return window_finder_.GetWindowUnderPoint(pos) !=
+      static_cast<WindowId>(selected_window_);
 }
 
 bool WindowCapturerLinux::HandleXEvent(const XEvent& event) {

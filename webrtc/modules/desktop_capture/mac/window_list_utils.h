@@ -51,7 +51,9 @@ std::string GetWindowTitle(CFDictionaryRef window);
 WindowId GetWindowId(CFDictionaryRef window);
 
 // Returns the bounds of |window|. If |window| is not a window or the bounds
-// cannot be retrieved, this function returns an empty DesktopRect.
+// cannot be retrieved, this function returns an empty DesktopRect. The returned
+// DesktopRect is in system coordinate, i.e. the primary monitor always starts
+// from (0, 0).
 DesktopRect GetWindowBounds(CFDictionaryRef window);
 
 }  // namespace webrtc

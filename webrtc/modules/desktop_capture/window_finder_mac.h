@@ -15,7 +15,7 @@
 
 namespace webrtc {
 
-// The implementation of WindowFinder for Windows.
+// The implementation of WindowFinder for Mac OSX.
 class WindowFinderMac final : public WindowFinder {
  public:
   WindowFinderMac();
