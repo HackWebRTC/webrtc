@@ -9,16 +9,12 @@
  */
 
 #import <WebRTC/RTCAVFoundationVideoSource.h>
-#import <WebRTC/RTCAudioDecoderFactory.h>
-#import <WebRTC/RTCAudioEncoderFactory.h>
 #if TARGET_OS_IPHONE
 #import <WebRTC/RTCAudioSession.h>
 #import <WebRTC/RTCAudioSessionConfiguration.h>
 #endif
 #import <WebRTC/RTCAudioSource.h>
 #import <WebRTC/RTCAudioTrack.h>
-#import <WebRTC/RTCBuiltinAudioDecoderFactory.h>
-#import <WebRTC/RTCBuiltinAudioEncoderFactory.h>
 #import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCVideoCapturer.h>
 #if TARGET_OS_IPHONE
