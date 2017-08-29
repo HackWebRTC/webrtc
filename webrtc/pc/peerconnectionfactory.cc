@@ -252,19 +252,18 @@ PeerConnectionFactory::CreatePeerConnection(
         new rtc::RTCCertificateGenerator(signaling_thread_, network_thread_));
   }
 
-  std::unique_ptr<RtcEventLog> event_log(new RtcEventLogNullImpl());
-  if (event_log_factory_) {
-    event_log = event_log_factory_->CreateRtcEventLog();
-  }
-
   if (!allocator) {
     allocator.reset(new cricket::BasicPortAllocator(
-        default_network_manager_.get(), default_socket_factory_.get(),
-        event_log.get()));
+        default_network_manager_.get(), default_socket_factory_.get()));
   }
   network_thread_->Invoke<void>(
       RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask,
                                allocator.get(), options_.network_ignore_mask));
+
+  std::unique_ptr<RtcEventLog> event_log(new RtcEventLogNullImpl());
+  if (event_log_factory_) {
+    event_log = event_log_factory_->CreateRtcEventLog();
+  }
 
   std::unique_ptr<Call> call = worker_thread_->Invoke<std::unique_ptr<Call>>(
       RTC_FROM_HERE,

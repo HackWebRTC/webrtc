@@ -186,11 +186,6 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
     }
   };
 
-  void LogHostLookupResult(int error,
-                           int64_t elapsed_time_in_milliseconds) override {
-    RTC_NOTREACHED();
-  }
-
   void SetEventLog(RtcEventLog* event_log) {
     rtc::CritScope lock(&crit_);
     event_log_ = event_log;

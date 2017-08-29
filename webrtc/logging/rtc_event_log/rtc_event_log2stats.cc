@@ -160,8 +160,6 @@ std::string EventTypeToString(webrtc::rtclog::Event::EventType event_type) {
       return "BWE_PROBE_CREATED";
     case webrtc::rtclog::Event::BWE_PROBE_RESULT_EVENT:
       return "BWE_PROBE_RESULT";
-    case webrtc::rtclog::Event::HOST_LOOKUP_EVENT:
-      return "HOST_LOOKUP";
   }
   RTC_NOTREACHED();
   return "UNKNOWN_EVENT";

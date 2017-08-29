@@ -570,26 +570,4 @@ void RtcEventLogTestHelper::VerifyProbeResultFailure(
   // TODO(philipel): Verify the parser when parsing has been implemented.
 }
 
-void RtcEventLogTestHelper::VerifyLogHostLookupEvent(
-    const ParsedRtcEventLog& parsed_log,
-    size_t index,
-    int error,
-    int64_t host_lookup_time_ms) {
-  const rtclog::Event& event = parsed_log.events_[index];
-  ASSERT_TRUE(IsValidBasicEvent(event));
-  EXPECT_EQ(rtclog::Event::HOST_LOOKUP_EVENT, event.type());
-
-  const rtclog::HostLookupResult& lookup_event = event.host_lookup_result();
-  ASSERT_TRUE(lookup_event.has_error());
-  ASSERT_EQ(lookup_event.error(), error);
-  ASSERT_TRUE(lookup_event.has_host_lookup_time_ms());
-  ASSERT_EQ(lookup_event.host_lookup_time_ms(), host_lookup_time_ms);
-
-  int error_compare;
-  int64_t host_lookup_time_ms_compare;
-  parsed_log.GetHostLookup(index, &error_compare, &host_lookup_time_ms_compare);
-  ASSERT_EQ(error, error_compare);
-  ASSERT_EQ(host_lookup_time_ms, host_lookup_time_ms_compare);
-}
-
 }  // namespace webrtc

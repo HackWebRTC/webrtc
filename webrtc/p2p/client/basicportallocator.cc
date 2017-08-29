@@ -98,19 +98,15 @@ const uint32_t DISABLE_ALL_PHASES =
 
 // BasicPortAllocator
 BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
-                                       rtc::PacketSocketFactory* socket_factory,
-                                       webrtc::RtcEventLog* event_log)
-    : network_manager_(network_manager),
-      socket_factory_(socket_factory),
-      event_log_(event_log) {
+                                       rtc::PacketSocketFactory* socket_factory)
+    : network_manager_(network_manager), socket_factory_(socket_factory) {
   RTC_DCHECK(network_manager_ != nullptr);
   RTC_DCHECK(socket_factory_ != nullptr);
   Construct();
 }
 
 BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager)
-    : network_manager_(network_manager), socket_factory_(nullptr),
-      event_log_(nullptr) {
+    : network_manager_(network_manager), socket_factory_(nullptr) {
   RTC_DCHECK(network_manager_ != nullptr);
   Construct();
 }
@@ -118,8 +114,7 @@ BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager)
 BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
                                        rtc::PacketSocketFactory* socket_factory,
                                        const ServerAddresses& stun_servers)
-    : network_manager_(network_manager), socket_factory_(socket_factory),
-      event_log_(nullptr) {
+    : network_manager_(network_manager), socket_factory_(socket_factory) {
   RTC_DCHECK(socket_factory_ != NULL);
   SetConfiguration(stun_servers, std::vector<RelayServerConfig>(), 0, false);
   Construct();
@@ -131,8 +126,7 @@ BasicPortAllocator::BasicPortAllocator(
     const rtc::SocketAddress& relay_address_udp,
     const rtc::SocketAddress& relay_address_tcp,
     const rtc::SocketAddress& relay_address_ssl)
-    : network_manager_(network_manager), socket_factory_(NULL),
-      event_log_(nullptr) {
+    : network_manager_(network_manager), socket_factory_(NULL) {
   std::vector<RelayServerConfig> turn_servers;
   RelayServerConfig config(RELAY_GTURN);
   if (!relay_address_udp.IsNil()) {
@@ -1435,11 +1429,12 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
     // due to webrtc bug https://code.google.com/p/webrtc/issues/detail?id=3537
     if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
         relay_port->proto == PROTO_UDP && udp_socket_) {
-      port = TurnPort::Create(
-          session_->network_thread(), session_->socket_factory(), network_,
-          udp_socket_.get(), session_->username(), session_->password(),
-          *relay_port, config.credentials, config.priority,
-          session_->allocator()->origin(), session_->event_log());
+      port = TurnPort::Create(session_->network_thread(),
+                              session_->socket_factory(),
+                              network_, udp_socket_.get(),
+                              session_->username(), session_->password(),
+                              *relay_port, config.credentials, config.priority,
+                              session_->allocator()->origin());
       turn_ports_.push_back(port);
       // Listen to the port destroyed signal, to allow AllocationSequence to
       // remove entrt from it's map.
@@ -1449,8 +1444,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
           session_->network_thread(), session_->socket_factory(), network_,
           session_->allocator()->min_port(), session_->allocator()->max_port(),
           session_->username(), session_->password(), *relay_port,
-          config.credentials, config.priority, session_->allocator()->origin(),
-          session_->event_log());
+          config.credentials, config.priority, session_->allocator()->origin());
     }
     RTC_DCHECK(port != NULL);
     port->SetTlsCertPolicy(config.tls_cert_policy);

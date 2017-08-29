@@ -74,8 +74,6 @@ ParsedRtcEventLog::EventType GetRuntimeEventType(
       return ParsedRtcEventLog::EventType::BWE_PROBE_CLUSTER_CREATED_EVENT;
     case rtclog::Event::BWE_PROBE_RESULT_EVENT:
       return ParsedRtcEventLog::EventType::BWE_PROBE_RESULT_EVENT;
-    case rtclog::Event::HOST_LOOKUP_EVENT:
-      return ParsedRtcEventLog::EventType::HOST_LOOKUP_EVENT;
   }
   RTC_NOTREACHED();
   return ParsedRtcEventLog::EventType::UNKNOWN_EVENT;
@@ -655,22 +653,5 @@ ParsedRtcEventLog::MediaType ParsedRtcEventLog::GetMediaType(
       return rit->media_type;
   }
   return MediaType::ANY;
-}
-
-void ParsedRtcEventLog::GetHostLookup(
-    size_t index,
-    int* error, int64_t* host_lookup_time_ms) const {
-  RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = events_[index];
-  RTC_CHECK(event.has_type());
-  RTC_CHECK_EQ(event.type(), rtclog::Event::HOST_LOOKUP_EVENT);
-  RTC_CHECK(event.has_host_lookup_result());
-  const rtclog::HostLookupResult& lookup_event = event.host_lookup_result();
-  RTC_CHECK(lookup_event.has_error());
-  if (error)
-    *error = lookup_event.error();
-  RTC_CHECK(lookup_event.has_host_lookup_time_ms());
-  if (host_lookup_time_ms)
-    *host_lookup_time_ms = lookup_event.host_lookup_time_ms();
 }
 }  // namespace webrtc

@@ -84,8 +84,7 @@ int ResolveHostname(const std::string& hostname, int family,
 
 // AsyncResolver
 AsyncResolver::AsyncResolver()
-    : SignalThread(false /* use_socket_server */),
-      error_(-1), resolve_time_ms_(0) {}
+    : SignalThread(false /* use_socket_server */), error_(-1) {}
 
 AsyncResolver::~AsyncResolver() = default;
 
@@ -109,10 +108,6 @@ bool AsyncResolver::GetResolvedAddress(int family, SocketAddress* addr) const {
   return false;
 }
 
-int64_t AsyncResolver::GetResolveElapsedTimeMilliseconds() const {
-  return resolve_time_ms_;
-}
-
 int AsyncResolver::GetError() const {
   return error_;
 }
@@ -122,11 +117,8 @@ void AsyncResolver::Destroy(bool wait) {
 }
 
 void AsyncResolver::DoWork() {
-  int64_t start = rtc::TimeMillis();
   error_ = ResolveHostname(addr_.hostname().c_str(), addr_.family(),
                            &addresses_);
-  int64_t stop = rtc::TimeMillis();
-  resolve_time_ms_ = stop - start;
 }
 
 void AsyncResolver::OnWorkDone() {

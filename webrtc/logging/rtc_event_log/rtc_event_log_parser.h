@@ -75,8 +75,7 @@ class ParsedRtcEventLog {
     AUDIO_SENDER_CONFIG_EVENT = 11,
     AUDIO_NETWORK_ADAPTATION_EVENT = 16,
     BWE_PROBE_CLUSTER_CREATED_EVENT = 17,
-    BWE_PROBE_RESULT_EVENT = 18,
-    HOST_LOOKUP_EVENT = 19
+    BWE_PROBE_RESULT_EVENT = 18
   };
 
   enum class MediaType { ANY, AUDIO, VIDEO, DATA };
@@ -174,10 +173,6 @@ class ParsedRtcEventLog {
   BweProbeResultEvent GetBweProbeResult(size_t index) const;
 
   MediaType GetMediaType(uint32_t ssrc, PacketDirection direction) const;
-
-  // Reads info from a HostLookupResult.
-  void GetHostLookup(size_t index,
-                     int* error, int64_t* host_lookup_time_ms) const;
 
  private:
   rtclog::StreamConfig GetVideoReceiveConfig(const rtclog::Event& event) const;

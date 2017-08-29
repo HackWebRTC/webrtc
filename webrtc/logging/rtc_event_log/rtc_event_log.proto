@@ -40,7 +40,6 @@ message Event {
     AUDIO_NETWORK_ADAPTATION_EVENT = 16;
     BWE_PROBE_CLUSTER_CREATED_EVENT = 17;
     BWE_PROBE_RESULT_EVENT = 18;
-    HOST_LOOKUP_EVENT = 19;
   }
 
   // required - Indicates the type of this event
@@ -82,9 +81,6 @@ message Event {
 
     // required if type == BWE_PROBE_RESULT_EVENT
     BweProbeResult probe_result = 18;
-
-    // required if type == HOST_LOOKUP_EVENT
-    HostLookupResult host_lookup_result = 19;
   }
 }
 
@@ -318,12 +314,3 @@ message BweProbeResult {
   // optional - but required if result == SUCCESS. The resulting bitrate in bps.
   optional uint64 bitrate_bps = 3;
 }
-
-message HostLookupResult {
-  // required - error code or 0 for OK
-  optional int32 error = 1;
-
-  // required - Time elapsed for lookup in milliseconds.
-  optional int64 host_lookup_time_ms = 2;
-}
-

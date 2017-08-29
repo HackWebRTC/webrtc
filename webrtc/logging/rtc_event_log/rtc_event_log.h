@@ -170,13 +170,6 @@ class RtcEventLog {
   virtual void LogProbeResultFailure(int id,
                                      ProbeFailureReason failure_reason) = 0;
 
-  // Logs the result of a host lookup.
-  // if error =  0 - no error
-  //    error = -1 - generic error
-  //    else       - is given by underlying resolver
-  virtual void LogHostLookupResult(int error,
-                                   int64_t elapsed_time_in_milliseconds) = 0;
-
   // Reads an RtcEventLog file and returns true when reading was successful.
   // The result is stored in the given EventStream object.
   // The order of the events in the EventStream is implementation defined.
@@ -231,9 +224,6 @@ class RtcEventLogNullImpl : public RtcEventLog {
   void LogProbeResultSuccess(int id, int bitrate_bps) override{};
   void LogProbeResultFailure(int id,
                              ProbeFailureReason failure_reason) override{};
-
-  void LogHostLookupResult(int error,
-                           int64_t elapsed_time_in_milliseconds) override {}
 };
 
 }  // namespace webrtc

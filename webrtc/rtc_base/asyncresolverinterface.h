@@ -37,7 +37,6 @@ class AsyncResolverInterface {
     GetResolvedAddress(AF_INET, &addr);
     return addr;
   }
-  virtual int64_t GetResolveElapsedTimeMilliseconds() const = 0;
 
   // This signal is fired when address resolve process is completed.
   sigslot::signal1<AsyncResolverInterface*> SignalDone;
