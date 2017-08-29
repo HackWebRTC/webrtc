@@ -218,6 +218,13 @@ int MinTransmitBitrateKbps() {
   return FLAG_min_transmit_bitrate;
 }
 
+DEFINE_bool(generate_slides,
+           false,
+           "Whether to use randomly generated slides or read them from files.");
+bool GenerateSlides() {
+  return static_cast<int>(FLAG_generate_slides);
+}
+
 DEFINE_int(slide_change_interval,
            10,
            "Interval (in seconds) between simulated slide changes.");
@@ -278,7 +285,8 @@ void Loopback() {
                   false,  // ULPFEC disabled.
                   false,  // FlexFEC disabled.
                   ""};
-  params.screenshare = {true, flags::SlideChangeInterval(),
+  params.screenshare = {true, flags::GenerateSlides(),
+                        flags::SlideChangeInterval(),
                         flags::ScrollDuration(), flags::Slides()};
   params.analyzer = {"screenshare", 0.0, 0.0, flags::DurationSecs(),
       flags::OutputFilename(), flags::GraphTitle()};

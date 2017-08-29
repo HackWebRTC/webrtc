@@ -342,7 +342,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL) {
   screenshare.call.send_side_bwe = true;
   screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
                        "VP8", 2,    1,    400000, false, false,  ""};
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   RunTest(screenshare);
@@ -352,7 +352,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
   test::ScopedFieldTrials field_trial(kScreenshareSimulcastExperiment);
   VideoQualityTest::Params screenshare;
   screenshare.call.send_side_bwe = true;
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.video = {true,    1850,    1110,  5,     800000,
                        2500000, 2500000, false, "VP8", 3,
                        2,       400000,  false, false, ""};
@@ -379,7 +379,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
   config.call.send_side_bwe = true;
   config.video = {true,  1850, 1110 / 2, 5,      50000, 200000, 2000000, false,
                   "VP8", 2,    1,        400000, false, false,  ""};
-  config.screenshare = {true, 10, 2};
+  config.screenshare = {true, false, 10, 2};
   config.analyzer = {"screenshare_slides_scrolling", 0.0, 0.0,
                      kFullStackTestDurationSecs};
   RunTest(config);
@@ -390,7 +390,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNet) {
   screenshare.call.send_side_bwe = true;
   screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
                        "VP8", 2,    1,    400000, false, false,  ""};
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_lossy_net", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   screenshare.pipe.loss_percent = 5;
@@ -404,7 +404,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_VeryLossyNet) {
   screenshare.call.send_side_bwe = true;
   screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
                        "VP8", 2,    1,    400000, false, false,  ""};
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_very_lossy", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   screenshare.pipe.loss_percent = 10;
@@ -418,7 +418,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNetRestrictedQueue) {
   screenshare.call.send_side_bwe = true;
   screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
                        "VP8", 2,    1,    400000, false, false,  ""};
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_lossy_limited", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   screenshare.pipe.loss_percent = 5;
@@ -433,7 +433,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_ModeratelyRestricted) {
   screenshare.call.send_side_bwe = true;
   screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
                        "VP8", 2,    1,    400000, false, false,  ""};
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_moderately_restricted", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   screenshare.pipe.loss_percent = 1;
@@ -450,7 +450,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNetRestrictedQueue_ALR) {
   screenshare.call.send_side_bwe = true;
   screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
                        "VP8", 2,    1,    400000, false, false,  ""};
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_lossy_limited_ALR", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   screenshare.pipe.loss_percent = 5;
@@ -466,7 +466,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_ALR) {
   screenshare.call.send_side_bwe = true;
   screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
                        "VP8", 2,    1,    400000, false, false,  ""};
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_ALR", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   RunTest(screenshare);
@@ -478,7 +478,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_ModeratelyRestricted_ALR) {
   screenshare.call.send_side_bwe = true;
   screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
                        "VP8", 2,    1,    400000, false, false,  ""};
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_moderately_restricted_ALR", 0.0,
                           0.0, kFullStackTestDurationSecs};
   screenshare.pipe.loss_percent = 1;
@@ -493,7 +493,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast_ALR) {
                                       kAlrProbingExperiment);
   VideoQualityTest::Params screenshare;
   screenshare.call.send_side_bwe = true;
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.video = {true,    1850,    1110,  5,     800000,
                        2500000, 2500000, false, "VP8", 3,
                        2,       400000,  false, false, ""};
@@ -541,7 +541,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
   screenshare.call.send_side_bwe = true;
   screenshare.video = {true,  1850, 1110, 5,      50000, 200000, 2000000, false,
                        "VP9", 1,    0,    400000, false, false,  ""};
-  screenshare.screenshare = {true, 10};
+  screenshare.screenshare = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_vp9_2sl", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   screenshare.ss = {std::vector<VideoStream>(),  0,    2, 1,

@@ -1174,7 +1174,7 @@ VideoQualityTest::Params::Params()
       video({false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
              false, ""}),
       audio({false, false, false}),
-      screenshare({false, 10, 0}),
+      screenshare({false, false, 10, 0}),
       analyzer({"", 0.0, 0.0, 0, "", ""}),
       pipe(),
       ss({std::vector<VideoStream>(), 0, 0, -1, std::vector<SpatialLayer>()}),
@@ -1689,32 +1689,41 @@ void VideoQualityTest::SetupScreenshareOrSVC() {
     // Setup frame generator.
     const size_t kWidth = 1850;
     const size_t kHeight = 1110;
-    std::vector<std::string> slides = params_.screenshare.slides;
-    if (slides.size() == 0) {
-      slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
-      slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
-      slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
-      slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
-    }
-    if (params_.screenshare.scroll_duration == 0) {
-      // Cycle image every slide_change_interval seconds.
-      frame_generator_ = test::FrameGenerator::CreateFromYuvFile(
-          slides, kWidth, kHeight,
+    if (params_.screenshare.generate_slides) {
+      frame_generator_ = test::FrameGenerator::CreateSlideGenerator(
+          kWidth, kHeight,
           params_.screenshare.slide_change_interval * params_.video.fps);
     } else {
-      RTC_CHECK_LE(params_.video.width, kWidth);
-      RTC_CHECK_LE(params_.video.height, kHeight);
-      RTC_CHECK_GT(params_.screenshare.slide_change_interval, 0);
-      const int kPauseDurationMs = (params_.screenshare.slide_change_interval -
-                                    params_.screenshare.scroll_duration) *
-                                   1000;
-      RTC_CHECK_LE(params_.screenshare.scroll_duration,
-                   params_.screenshare.slide_change_interval);
+      std::vector<std::string> slides = params_.screenshare.slides;
+      if (slides.size() == 0) {
+        slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
+        slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
+        slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
+        slides.push_back(
+            test::ResourcePath("difficult_photo_1850_1110", "yuv"));
+      }
+      if (params_.screenshare.scroll_duration == 0) {
+        // Cycle image every slide_change_interval seconds.
+        frame_generator_ = test::FrameGenerator::CreateFromYuvFile(
+            slides, kWidth, kHeight,
+            params_.screenshare.slide_change_interval * params_.video.fps);
+      } else {
+        RTC_CHECK_LE(params_.video.width, kWidth);
+        RTC_CHECK_LE(params_.video.height, kHeight);
+        RTC_CHECK_GT(params_.screenshare.slide_change_interval, 0);
+        const int kPauseDurationMs =
+            (params_.screenshare.slide_change_interval -
+             params_.screenshare.scroll_duration) *
+            1000;
+        RTC_CHECK_LE(params_.screenshare.scroll_duration,
+                     params_.screenshare.slide_change_interval);
 
-      frame_generator_ = test::FrameGenerator::CreateScrollingInputFromYuvFiles(
-          clock_, slides, kWidth, kHeight, params_.video.width,
-          params_.video.height, params_.screenshare.scroll_duration * 1000,
-          kPauseDurationMs);
+        frame_generator_ =
+            test::FrameGenerator::CreateScrollingInputFromYuvFiles(
+                clock_, slides, kWidth, kHeight, params_.video.width,
+                params_.video.height,
+                params_.screenshare.scroll_duration * 1000, kPauseDurationMs);
+      }
     }
   } else if (params_.ss.num_spatial_layers > 1) {  // For non-screenshare case.
     RTC_CHECK(params_.video.codec == "VP9");

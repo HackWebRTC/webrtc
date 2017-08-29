@@ -114,6 +114,22 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::CreateFromYuvFile(
   return capturer.release();
 }
 
+FrameGeneratorCapturer* FrameGeneratorCapturer::CreateSlideGenerator(
+    int width,
+    int height,
+    int frame_repeat_count,
+    int target_fps,
+    Clock* clock) {
+  std::unique_ptr<FrameGeneratorCapturer> capturer(new FrameGeneratorCapturer(
+      clock, FrameGenerator::CreateSlideGenerator(width, height,
+                                                  frame_repeat_count),
+      target_fps));
+  if (!capturer->Init())
+    return nullptr;
+
+  return capturer.release();
+}
+
 FrameGeneratorCapturer::FrameGeneratorCapturer(
     Clock* clock,
     std::unique_ptr<FrameGenerator> frame_generator,

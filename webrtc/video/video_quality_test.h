@@ -61,6 +61,7 @@ class VideoQualityTest : public test::CallTest {
     } audio;
     struct Screenshare {
       bool enabled;
+      bool generate_slides;
       int32_t slide_change_interval;
       int32_t scroll_duration;
       std::vector<std::string> slides;

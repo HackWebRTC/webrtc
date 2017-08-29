@@ -181,6 +181,85 @@ class YuvFileGenerator : public FrameGenerator {
   std::unique_ptr<VideoFrame> temp_frame_;
 };
 
+// SlideGenerator works similarly to YuvFileGenerator but it fills the frames
+// with randomly sized and colored squares instead of reading their content
+// from files.
+class SlideGenerator : public FrameGenerator {
+ public:
+  SlideGenerator(int width, int height, int frame_repeat_count)
+      : width_(width),
+        height_(height),
+        frame_display_count_(frame_repeat_count),
+        current_display_count_(0),
+        random_generator_(1234) {
+    RTC_DCHECK_GT(width, 0);
+    RTC_DCHECK_GT(height, 0);
+    RTC_DCHECK_GT(frame_repeat_count, 0);
+  }
+
+  VideoFrame* NextFrame() override {
+    if (current_display_count_ == 0)
+      GenerateNewFrame();
+    if (++current_display_count_ >= frame_display_count_)
+      current_display_count_ = 0;
+
+    frame_.reset(
+        new VideoFrame(buffer_, 0, 0, webrtc::kVideoRotation_0));
+    return frame_.get();
+  }
+
+  // Generates some randomly sized and colored squares scattered
+  // over the frame.
+  void GenerateNewFrame() {
+    // The squares should have a varying order of magnitude in order
+    // to simulate variation in the slides' complexity.
+    const int kSquareNum =  1 << (4 + (random_generator_.Rand(0, 3) * 4));
+
+    buffer_ = I420Buffer::Create(width_, height_);
+    memset(buffer_->MutableDataY(), 127, height_ * buffer_->StrideY());
+    memset(buffer_->MutableDataU(), 127,
+           buffer_->ChromaHeight() * buffer_->StrideU());
+    memset(buffer_->MutableDataV(), 127,
+           buffer_->ChromaHeight() * buffer_->StrideV());
+
+    for (int i = 0; i < kSquareNum; ++i) {
+      int length = random_generator_.Rand(1, width_ > 4 ? width_ / 4 : 1);
+      // Limit the length of later squares so that they don't overwrite the
+      // previous ones too much.
+      length = (length * (kSquareNum - i)) / kSquareNum;
+
+      int x = random_generator_.Rand(0, width_ - length);
+      int y = random_generator_.Rand(0, height_ - length);
+      uint8_t yuv_y = random_generator_.Rand(0, 255);
+      uint8_t yuv_u = random_generator_.Rand(0, 255);
+      uint8_t yuv_v = random_generator_.Rand(0, 255);
+
+      for (int yy = y; yy < y + length; ++yy) {
+        uint8_t* pos_y =
+            (buffer_->MutableDataY() + x + yy * buffer_->StrideY());
+        memset(pos_y, yuv_y, length);
+      }
+      for (int yy = y; yy < y + length; yy += 2) {
+        uint8_t* pos_u =
+            (buffer_->MutableDataU() + x / 2 + yy / 2 * buffer_->StrideU());
+        memset(pos_u, yuv_u, length / 2);
+        uint8_t* pos_v =
+            (buffer_->MutableDataV() + x / 2 + yy / 2 * buffer_->StrideV());
+        memset(pos_v, yuv_v, length / 2);
+      }
+    }
+  }
+
+ private:
+  const int width_;
+  const int height_;
+  const int frame_display_count_;
+  int current_display_count_;
+  Random random_generator_;
+  rtc::scoped_refptr<I420Buffer> buffer_;
+  std::unique_ptr<VideoFrame> frame_;
+};
+
 class ScrollingImageFrameGenerator : public FrameGenerator {
  public:
   ScrollingImageFrameGenerator(Clock* clock,
@@ -319,6 +398,12 @@ std::unique_ptr<FrameGenerator> FrameGenerator::CreateSquareGenerator(
     int width,
     int height) {
   return std::unique_ptr<FrameGenerator>(new SquareGenerator(width, height));
+}
+
+std::unique_ptr<FrameGenerator> FrameGenerator::CreateSlideGenerator(
+    int width, int height, int frame_repeat_count) {
+  return std::unique_ptr<FrameGenerator>(new SlideGenerator(
+      width, height, frame_repeat_count));
 }
 
 std::unique_ptr<FrameGenerator> FrameGenerator::CreateFromYuvFile(

@@ -50,6 +50,12 @@ class FrameGeneratorCapturer : public VideoCapturer {
                                                    size_t height,
                                                    int target_fps,
                                                    Clock* clock);
+
+  static FrameGeneratorCapturer* CreateSlideGenerator(int width,
+                                                      int height,
+                                                      int frame_repeat_count,
+                                                      int target_fps,
+                                                      Clock* clock);
   virtual ~FrameGeneratorCapturer();
 
   void Start() override;
