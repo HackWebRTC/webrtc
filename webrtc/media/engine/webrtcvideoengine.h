@@ -317,7 +317,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
       AllocatedEncoder& operator=(AllocatedEncoder&&) = default;
 
       AllocatedEncoder(std::unique_ptr<webrtc::VideoEncoder> encoder,
-                       std::unique_ptr<webrtc::VideoEncoder> external_encoder,
+                       bool is_external,
                        const cricket::VideoCodec& codec,
                        bool has_internal_source);
 
@@ -326,7 +326,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
       webrtc::VideoEncoder* encoder() { return encoder_.get(); }
 
       // Returns true if the encoder is external.
-      bool IsExternal() { return static_cast<bool>(external_encoder_); }
+      bool IsExternal() { return is_external_; }
 
       cricket::VideoCodec codec() { return codec_; }
 
@@ -337,11 +337,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
      private:
       std::unique_ptr<webrtc::VideoEncoder> encoder_;
-      // TODO(magjed): |external_encoder_| is not used except for managing
-      // the lifetime when we use VideoEncoderSoftwareFallbackWrapper. Let
-      // VideoEncoderSoftwareFallbackWrapper own the external encoder instead
-      // and remove this member variable.
-      std::unique_ptr<webrtc::VideoEncoder> external_encoder_;
+      bool is_external_;
       cricket::VideoCodec codec_;
       bool has_internal_source_;
     };

@@ -1415,16 +1415,15 @@ WebRtcVideoChannel::WebRtcVideoSendStream::VideoSendStreamParameters::
 
 WebRtcVideoChannel::WebRtcVideoSendStream::AllocatedEncoder::AllocatedEncoder(
     std::unique_ptr<webrtc::VideoEncoder> encoder,
-    std::unique_ptr<webrtc::VideoEncoder> external_encoder,
+    bool is_external,
     const cricket::VideoCodec& codec,
     bool has_internal_source)
     : encoder_(std::move(encoder)),
-      external_encoder_(std::move(external_encoder)),
+      is_external_(is_external),
       codec_(codec),
       has_internal_source_(has_internal_source) {}
 
 void WebRtcVideoChannel::WebRtcVideoSendStream::AllocatedEncoder::Reset() {
-  external_encoder_.reset();
   encoder_.reset();
   codec_ = cricket::VideoCodec();
 }
@@ -1602,13 +1601,13 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoder(
     if (external_encoder) {
       std::unique_ptr<webrtc::VideoEncoder> internal_encoder(
           new webrtc::VideoEncoderSoftwareFallbackWrapper(
-              codec, external_encoder.get()));
+              codec, std::move(external_encoder)));
       const webrtc::VideoCodecType codec_type =
           webrtc::PayloadStringToCodecType(codec.name);
       const bool has_internal_source =
           external_encoder_factory_->EncoderTypeHasInternalSource(codec_type);
       return AllocatedEncoder(std::move(internal_encoder),
-                              std::move(external_encoder), codec,
+                              true /* is_external */, codec,
                               has_internal_source);
     }
   }
@@ -1629,7 +1628,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoder(
           internal_encoder_factory_->CreateVideoEncoder(codec));
     }
     return AllocatedEncoder(std::move(internal_encoder),
-                            nullptr /* external_encoder */, codec,
+                            false /* is_external */, codec,
                             false /* has_internal_source */);
   }
 

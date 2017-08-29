@@ -25,8 +25,9 @@ namespace webrtc {
 // hardware restrictions, such as max resolution.
 class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
  public:
-  VideoEncoderSoftwareFallbackWrapper(const cricket::VideoCodec& codec,
-                                      webrtc::VideoEncoder* encoder);
+  VideoEncoderSoftwareFallbackWrapper(
+      const cricket::VideoCodec& codec,
+      std::unique_ptr<webrtc::VideoEncoder> encoder);
 
   int32_t InitEncode(const VideoCodec* codec_settings,
                      int32_t number_of_cores,
@@ -96,7 +97,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   int64_t rtt_;
 
   cricket::VideoCodec codec_;
-  webrtc::VideoEncoder* const encoder_;
+  std::unique_ptr<webrtc::VideoEncoder> encoder_;
 
   std::unique_ptr<webrtc::VideoEncoder> fallback_encoder_;
   std::string fallback_implementation_name_;

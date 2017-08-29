@@ -69,7 +69,7 @@ void GetForcedFallbackParamsFromFieldTrialGroup(uint32_t* param_low_kbps,
 
 VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
     const cricket::VideoCodec& codec,
-    webrtc::VideoEncoder* encoder)
+    std::unique_ptr<webrtc::VideoEncoder> encoder)
     : number_of_cores_(0),
       max_payload_size_(0),
       rates_set_(false),
@@ -78,7 +78,7 @@ VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
       packet_loss_(0),
       rtt_(0),
       codec_(codec),
-      encoder_(encoder),
+      encoder_(std::move(encoder)),
       callback_(nullptr),
       forced_fallback_possible_(EnableForcedFallback(codec)) {
   if (forced_fallback_possible_) {
