@@ -873,4 +873,53 @@ TEST(RtcEventLogTest, LogAudioNetworkAdaptation) {
   test.DoTest();
 }
 
+TEST(RtcEventLogTest, LogHostLookupResult) {
+  unsigned int random_seed = 779911;
+  Random prng(random_seed);
+
+  // Find the name of the current test, in order to use it as a temporary
+  // filename.
+  auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+  const std::string temp_filename =
+      test::OutputPath() + test_info->test_case_name() + test_info->name();
+
+  // When log_dumper goes out of scope, it causes the log file to be flushed
+  // to disk.
+  {
+    rtc::ScopedFakeClock fake_clock;
+    fake_clock.SetTimeMicros(prng.Rand<uint32_t>());
+    std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
+    log_dumper->StartLogging(temp_filename, 10000000);
+    fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+    log_dumper->LogHostLookupResult(0, 123);
+    fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+    log_dumper->LogHostLookupResult(1, 349);
+    fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+    log_dumper->StopLogging();
+  }
+
+  // Read the generated file from disk.
+  ParsedRtcEventLog parsed_log;
+
+  ASSERT_TRUE(parsed_log.ParseFile(temp_filename));
+
+  // Verify that what we read back from the event log is the same as
+  // what we wrote down. For RTCP we log the full packets, but for
+  // RTP we should only log the header.
+  const size_t event_count = 4;
+  EXPECT_EQ(event_count, parsed_log.GetNumberOfEvents());
+  if (event_count != parsed_log.GetNumberOfEvents()) {
+    // Print the expected and actual event types for easier debugging.
+    PrintActualEvents(parsed_log);
+  }
+
+  RtcEventLogTestHelper::VerifyLogStartEvent(parsed_log, 0);
+  RtcEventLogTestHelper::VerifyLogHostLookupEvent(parsed_log, 1, 0, 123);
+  RtcEventLogTestHelper::VerifyLogHostLookupEvent(parsed_log, 2, 1, 349);
+  RtcEventLogTestHelper::VerifyLogEndEvent(parsed_log, 3);
+
+  // Clean up temporary file - can be pretty slow.
+  remove(temp_filename.c_str());
+}
+
 }  // namespace webrtc

@@ -52,9 +52,11 @@ class TurnPort : public Port {
                           const ProtocolAddress& server_address,
                           const RelayCredentials& credentials,
                           int server_priority,
-                          const std::string& origin) {
+                          const std::string& origin,
+                          webrtc::RtcEventLog* event_log) {
     return new TurnPort(thread, factory, network, socket, username, password,
-                        server_address, credentials, server_priority, origin);
+                        server_address, credentials, server_priority, origin,
+                        event_log);
   }
 
   // Create a TURN port that will use a new socket, bound to |network| and
@@ -69,10 +71,11 @@ class TurnPort : public Port {
                           const ProtocolAddress& server_address,
                           const RelayCredentials& credentials,
                           int server_priority,
-                          const std::string& origin) {
+                          const std::string& origin,
+                          webrtc::RtcEventLog* event_log) {
     return new TurnPort(thread, factory, network, min_port, max_port, username,
                         password, server_address, credentials, server_priority,
-                        origin);
+                        origin, event_log);
   }
 
   virtual ~TurnPort();
@@ -174,7 +177,8 @@ class TurnPort : public Port {
            const ProtocolAddress& server_address,
            const RelayCredentials& credentials,
            int server_priority,
-           const std::string& origin);
+           const std::string& origin,
+           webrtc::RtcEventLog* event_log);
 
   TurnPort(rtc::Thread* thread,
            rtc::PacketSocketFactory* factory,
@@ -186,7 +190,8 @@ class TurnPort : public Port {
            const ProtocolAddress& server_address,
            const RelayCredentials& credentials,
            int server_priority,
-           const std::string& origin);
+           const std::string& origin,
+           webrtc::RtcEventLog* event_log);
 
  private:
   enum {
@@ -289,6 +294,8 @@ class TurnPort : public Port {
 
   // The number of retries made due to allocate mismatch error.
   size_t allocate_mismatch_retries_;
+
+  webrtc::RtcEventLog* event_log_;
 
   rtc::AsyncInvoker invoker_;
 

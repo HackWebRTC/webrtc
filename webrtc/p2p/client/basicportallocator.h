@@ -21,12 +21,17 @@
 #include "webrtc/rtc_base/network.h"
 #include "webrtc/rtc_base/thread.h"
 
+namespace webrtc {
+class RtcEventLog;
+}  // namespace webrtc
+
 namespace cricket {
 
 class BasicPortAllocator : public PortAllocator {
  public:
   BasicPortAllocator(rtc::NetworkManager* network_manager,
-                     rtc::PacketSocketFactory* socket_factory);
+                     rtc::PacketSocketFactory* socket_factory,
+                     webrtc::RtcEventLog* event_log);
   explicit BasicPortAllocator(rtc::NetworkManager* network_manager);
   BasicPortAllocator(rtc::NetworkManager* network_manager,
                      rtc::PacketSocketFactory* socket_factory,
@@ -49,6 +54,7 @@ class BasicPortAllocator : public PortAllocator {
   int network_ignore_mask() const { return network_ignore_mask_; }
 
   rtc::NetworkManager* network_manager() const { return network_manager_; }
+  webrtc::RtcEventLog* event_log() const { return event_log_; }
 
   // If socket_factory() is set to NULL each PortAllocatorSession
   // creates its own socket factory.
@@ -71,6 +77,7 @@ class BasicPortAllocator : public PortAllocator {
 
   rtc::NetworkManager* network_manager_;
   rtc::PacketSocketFactory* socket_factory_;
+  webrtc::RtcEventLog* event_log_;
   bool allow_tcp_listen_;
   int network_ignore_mask_ = rtc::kDefaultNetworkIgnoreMask;
 };
@@ -99,6 +106,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   virtual BasicPortAllocator* allocator() { return allocator_; }
   rtc::Thread* network_thread() { return network_thread_; }
   rtc::PacketSocketFactory* socket_factory() { return socket_factory_; }
+  webrtc::RtcEventLog* event_log() { return allocator_->event_log(); }
 
   void SetCandidateFilter(uint32_t filter) override;
   void StartGettingPorts() override;

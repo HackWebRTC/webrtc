@@ -94,6 +94,9 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogProbeResultFailure(int id,
                              ProbeFailureReason failure_reason) override;
 
+  void LogHostLookupResult(int error,
+                           int64_t elapsed_time_in_milliseconds) override;
+
  private:
   // Private constructor to ensure that creation is done by RtcEventLog::Create.
   RtcEventLogImpl();
@@ -562,6 +565,18 @@ void RtcEventLogImpl::LogProbeResult(int id,
   probe_result->set_result(result);
   if (result == rtclog::BweProbeResult::SUCCESS)
     probe_result->set_bitrate_bps(bitrate_bps);
+  StoreEvent(std::move(event));
+}
+
+void RtcEventLogImpl::LogHostLookupResult(
+    int error,
+    int64_t host_lookup_time_ms) {
+  std::unique_ptr<rtclog::Event> event(new rtclog::Event());
+  event->set_timestamp_us(rtc::TimeMicros());
+  event->set_type(rtclog::Event::HOST_LOOKUP_EVENT);
+  auto result = event->mutable_host_lookup_result();
+  result->set_error(error);
+  result->set_host_lookup_time_ms(host_lookup_time_ms);
   StoreEvent(std::move(event));
 }
 

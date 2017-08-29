@@ -76,6 +76,10 @@ class MockRtcEventLog : public RtcEventLog {
   MOCK_METHOD2(LogProbeResultSuccess, void(int id, int bitrate_bps));
   MOCK_METHOD2(LogProbeResultFailure,
                void(int id, ProbeFailureReason failure_reason));
+
+  MOCK_METHOD2(LogHostLookupResult,
+               void(int error,
+                    int64_t time_ms));
 };
 
 }  // namespace webrtc

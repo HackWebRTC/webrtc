@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <functional>
 
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/rtc_base/asyncpacketsocket.h"
@@ -190,13 +191,9 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    const ProtocolAddress& server_address,
                    const RelayCredentials& credentials,
                    int server_priority,
-                   const std::string& origin)
-    : Port(thread,
-           RELAY_PORT_TYPE,
-           factory,
-           network,
-           username,
-           password),
+                   const std::string& origin,
+                   webrtc::RtcEventLog* event_log)
+    : Port(thread, RELAY_PORT_TYPE, factory, network, username, password),
       server_address_(server_address),
       credentials_(credentials),
       socket_(socket),
@@ -206,7 +203,8 @@ TurnPort::TurnPort(rtc::Thread* thread,
       next_channel_number_(TURN_CHANNEL_NUMBER_START),
       state_(STATE_CONNECTING),
       server_priority_(server_priority),
-      allocate_mismatch_retries_(0) {
+      allocate_mismatch_retries_(0),
+      event_log_(event_log) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
   request_manager_.set_origin(origin);
 }
@@ -221,7 +219,8 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    const ProtocolAddress& server_address,
                    const RelayCredentials& credentials,
                    int server_priority,
-                   const std::string& origin)
+                   const std::string& origin,
+                   webrtc::RtcEventLog* event_log)
     : Port(thread,
            RELAY_PORT_TYPE,
            factory,
@@ -239,7 +238,8 @@ TurnPort::TurnPort(rtc::Thread* thread,
       next_channel_number_(TURN_CHANNEL_NUMBER_START),
       state_(STATE_CONNECTING),
       server_priority_(server_priority),
-      allocate_mismatch_retries_(0) {
+      allocate_mismatch_retries_(0),
+      event_log_(event_log) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
   request_manager_.set_origin(origin);
 }
@@ -709,15 +709,32 @@ void TurnPort::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
   // Copy the original server address in |resolved_address|. For TLS based
   // sockets we need hostname along with resolved address.
   rtc::SocketAddress resolved_address = server_address_.address;
-  if (resolver_->GetError() != 0 ||
-      !resolver_->GetResolvedAddress(Network()->GetBestIP().family(),
-                                     &resolved_address)) {
-    LOG_J(LS_WARNING, this) << "TURN host lookup received error "
-                            << resolver_->GetError();
+
+  bool found = resolver_->GetError() == 0 &&
+               resolver_->GetResolvedAddress(Network()->GetBestIP().family(),
+                                             &resolved_address);
+  if (event_log_) {
+    int error = resolver_->GetError();
+    event_log_->LogHostLookupResult(
+        found ? 0 : (error == 0 ? -1 : error),
+        resolver_->GetResolveElapsedTimeMilliseconds());
+  }
+
+  if (!found) {
+    LOG_J(LS_WARNING, this)
+        << "TURN host lookup for " << resolved_address.hostname()
+        << " received error " << resolver_->GetError() << " after "
+        << resolver_->GetResolveElapsedTimeMilliseconds() << " ms";
     error_ = resolver_->GetError();
     OnAllocateError();
     return;
   }
+
+  LOG_J(LS_INFO, this) << "TURN host lookup for " << resolved_address.hostname()
+                       << " completed in "
+                       << resolver_->GetResolveElapsedTimeMilliseconds()
+                       << " ms";
+
   // Signal needs both resolved and unresolved address. After signal is sent
   // we can copy resolved address back into |server_address_|.
   SignalResolvedServerAddress(this, server_address_.address,

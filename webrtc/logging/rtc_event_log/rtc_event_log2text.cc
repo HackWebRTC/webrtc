@@ -566,6 +566,17 @@ int main(int argc, char* argv[]) {
         }
       }
     }
+    if (parsed_stream.GetEventType(i) ==
+        webrtc::ParsedRtcEventLog::HOST_LOOKUP_EVENT) {
+      int error;
+      int64_t elapsed_ms;
+      parsed_stream.GetHostLookup(i, &error, &elapsed_ms);
+      std::cout << parsed_stream.GetTimestamp(i)
+                << "\tHOST_LOOKUP"
+                << "\terror=" << error
+                << "\telapsed_ms=" << elapsed_ms
+                << std::endl;
+    }
   }
   return 0;
 }

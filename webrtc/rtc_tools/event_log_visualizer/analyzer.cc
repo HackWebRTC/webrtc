@@ -509,6 +509,10 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         bwe_probe_result_events_.push_back(parsed_log_.GetBweProbeResult(i));
         break;
       }
+      case ParsedRtcEventLog::HOST_LOOKUP_EVENT: {
+        // TODO(jonaso): What to do ??
+        break;
+      }
       case ParsedRtcEventLog::UNKNOWN_EVENT: {
         break;
       }

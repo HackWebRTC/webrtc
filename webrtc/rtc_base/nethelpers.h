@@ -40,6 +40,7 @@ class AsyncResolver : public SignalThread, public AsyncResolverInterface {
   bool GetResolvedAddress(int family, SocketAddress* addr) const override;
   int GetError() const override;
   void Destroy(bool wait) override;
+  int64_t GetResolveElapsedTimeMilliseconds() const override;
 
   const std::vector<IPAddress>& addresses() const { return addresses_; }
   void set_error(int error) { error_ = error; }
@@ -52,6 +53,7 @@ class AsyncResolver : public SignalThread, public AsyncResolverInterface {
   SocketAddress addr_;
   std::vector<IPAddress> addresses_;
   int error_;
+  int64_t resolve_time_ms_;
 };
 
 // rtc namespaced wrappers for inet_ntop and inet_pton so we can avoid

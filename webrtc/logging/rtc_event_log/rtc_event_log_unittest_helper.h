@@ -82,6 +82,11 @@ class RtcEventLogTestHelper {
                                        size_t index,
                                        uint32_t id,
                                        ProbeFailureReason failure_reason);
+
+  static void VerifyLogHostLookupEvent(const ParsedRtcEventLog& parsed_log,
+                                       size_t index,
+                                       int error,
+                                       int64_t host_lookup_time_ms);
 };
 
 }  // namespace webrtc
