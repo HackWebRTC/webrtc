@@ -104,11 +104,6 @@ class FakeAudioCaptureModule
   int32_t SetAGC(bool enable) override;
   bool AGC() const override;
 
-  int32_t SetWaveOutVolume(uint16_t volume_left,
-                           uint16_t volume_right) override;
-  int32_t WaveOutVolume(uint16_t* volume_left,
-                        uint16_t* volume_right) const override;
-
   int32_t InitSpeaker() override;
   bool SpeakerIsInitialized() const override;
   int32_t InitMicrophone() override;

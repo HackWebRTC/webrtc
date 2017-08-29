@@ -111,11 +111,6 @@ class AudioDeviceMac : public AudioDeviceGeneric {
   virtual int32_t SetAGC(bool enable);
   virtual bool AGC() const;
 
-  // Volume control based on the Windows Wave API (Windows only)
-  virtual int32_t SetWaveOutVolume(uint16_t volumeLeft, uint16_t volumeRight);
-  virtual int32_t WaveOutVolume(uint16_t& volumeLeft,
-                                uint16_t& volumeRight) const;
-
   // Audio mixer initialization
   virtual int32_t InitSpeaker();
   virtual bool SpeakerIsInitialized() const;

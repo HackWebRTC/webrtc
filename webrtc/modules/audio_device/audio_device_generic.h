@@ -75,12 +75,6 @@ class AudioDeviceGeneric {
   virtual int32_t SetAGC(bool enable) = 0;
   virtual bool AGC() const = 0;
 
-  // Volume control based on the Windows Wave API (Windows only)
-  virtual int32_t SetWaveOutVolume(uint16_t volumeLeft,
-                                   uint16_t volumeRight) = 0;
-  virtual int32_t WaveOutVolume(uint16_t& volumeLeft,
-                                uint16_t& volumeRight) const = 0;
-
   // Audio mixer initialization
   virtual int32_t InitSpeaker() = 0;
   virtual bool SpeakerIsInitialized() const = 0;

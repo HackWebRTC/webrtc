@@ -83,16 +83,6 @@ int32_t AudioDeviceDummy::SetAGC(bool enable) { return -1; }
 
 bool AudioDeviceDummy::AGC() const { return false; }
 
-int32_t AudioDeviceDummy::SetWaveOutVolume(uint16_t volumeLeft,
-                                           uint16_t volumeRight) {
-  return -1;
-}
-
-int32_t AudioDeviceDummy::WaveOutVolume(uint16_t& volumeLeft,
-                                        uint16_t& volumeRight) const {
-  return -1;
-}
-
 int32_t AudioDeviceDummy::InitSpeaker() { return -1; }
 
 bool AudioDeviceDummy::SpeakerIsInitialized() const { return false; }

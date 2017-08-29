@@ -231,18 +231,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return false;
   }
 
-  int32_t SetWaveOutVolume(
-      uint16_t volumeLeft, uint16_t volumeRight) override {
-     FATAL() << "Should never be called";
-    return -1;
-  }
-
-  int32_t WaveOutVolume(
-      uint16_t& volumeLeft, uint16_t& volumeRight) const override {
-    FATAL() << "Should never be called";
-    return -1;
-  }
-
   int32_t InitSpeaker() override {
     LOG(INFO) << __FUNCTION__;
     return 0;

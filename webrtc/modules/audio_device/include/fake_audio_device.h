@@ -83,14 +83,6 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   virtual int32_t StartRecording() { return 0; }
   virtual bool Recording() const { return false; }
   virtual bool AGC() const { return true; }
-  virtual int32_t SetWaveOutVolume(uint16_t volumeLeft,
-                           uint16_t volumeRight) {
-    return 0;
-  }
-  virtual int32_t WaveOutVolume(uint16_t* volumeLeft,
-                        uint16_t* volumeRight) const {
-    return 0;
-  }
   virtual bool SpeakerIsInitialized() const { return true; }
   virtual bool MicrophoneIsInitialized() const { return true; }
   virtual int32_t SpeakerVolumeIsAvailable(bool* available) { return 0; }

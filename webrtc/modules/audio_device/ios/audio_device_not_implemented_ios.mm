@@ -67,16 +67,6 @@ int32_t AudioDeviceIOS::SpeakerVolume(uint32_t& volume) const {
   return -1;
 }
 
-int32_t AudioDeviceIOS::SetWaveOutVolume(uint16_t, uint16_t) {
-  RTC_NOTREACHED() << "Not implemented";
-  return -1;
-}
-
-int32_t AudioDeviceIOS::WaveOutVolume(uint16_t&, uint16_t&) const {
-  RTC_NOTREACHED() << "Not implemented";
-  return -1;
-}
-
 int32_t AudioDeviceIOS::MaxSpeakerVolume(uint32_t& maxVolume) const {
   RTC_NOTREACHED() << "Not implemented";
   return -1;

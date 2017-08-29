@@ -1045,24 +1045,6 @@ Exit:
 }
 
 // ----------------------------------------------------------------------------
-//  SetWaveOutVolume
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceWindowsCore::SetWaveOutVolume(uint16_t volumeLeft, uint16_t volumeRight)
-{
-    return -1;
-}
-
-// ----------------------------------------------------------------------------
-//  WaveOutVolume
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceWindowsCore::WaveOutVolume(uint16_t& volumeLeft, uint16_t& volumeRight) const
-{
-    return -1;
-}
-
-// ----------------------------------------------------------------------------
 //  MaxSpeakerVolume
 //
 //  The internal range for Core Audio is 0.0 to 1.0, where 0.0 indicates

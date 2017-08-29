@@ -309,16 +309,6 @@ int32_t FileAudioDevice::SetAGC(bool enable) { return -1; }
 
 bool FileAudioDevice::AGC() const { return false; }
 
-int32_t FileAudioDevice::SetWaveOutVolume(uint16_t volumeLeft,
-                                           uint16_t volumeRight) {
-  return -1;
-}
-
-int32_t FileAudioDevice::WaveOutVolume(uint16_t& volumeLeft,
-                                        uint16_t& volumeRight) const {
-  return -1;
-}
-
 int32_t FileAudioDevice::InitSpeaker() { return -1; }
 
 bool FileAudioDevice::SpeakerIsInitialized() const { return false; }

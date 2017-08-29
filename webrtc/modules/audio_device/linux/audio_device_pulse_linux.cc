@@ -372,18 +372,6 @@ int32_t AudioDeviceLinuxPulse::SpeakerVolume(uint32_t& volume) const {
   return 0;
 }
 
-int32_t AudioDeviceLinuxPulse::SetWaveOutVolume(uint16_t volumeLeft,
-                                                uint16_t volumeRight) {
-  LOG(LS_WARNING) << "API call not supported on this platform";
-  return -1;
-}
-
-int32_t AudioDeviceLinuxPulse::WaveOutVolume(uint16_t& /*volumeLeft*/,
-                                             uint16_t& /*volumeRight*/) const {
-  LOG(LS_WARNING) << "API call not supported on this platform";
-  return -1;
-}
-
 int32_t AudioDeviceLinuxPulse::MaxSpeakerVolume(uint32_t& maxVolume) const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   uint32_t maxVol(0);

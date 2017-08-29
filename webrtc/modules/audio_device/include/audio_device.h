@@ -108,11 +108,12 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t SetAGC(bool enable) = 0;
   virtual bool AGC() const = 0;
 
-  // Volume control based on the Windows Wave API (Windows only)
+  // Deprecated.
+  // TODO(henrika): to be removed.
   virtual int32_t SetWaveOutVolume(uint16_t volumeLeft,
-                                   uint16_t volumeRight) = 0;
+                                   uint16_t volumeRight) { return -1; }
   virtual int32_t WaveOutVolume(uint16_t* volumeLeft,
-                                uint16_t* volumeRight) const = 0;
+                                uint16_t* volumeRight) const { return -1; }
 
   // Audio mixer initialization
   virtual int32_t InitSpeaker() = 0;

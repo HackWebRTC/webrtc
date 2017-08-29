@@ -116,9 +116,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   int32_t SetRecordingDevice(uint16_t index) override;
   int32_t SetRecordingDevice(
       AudioDeviceModule::WindowsDeviceType device) override;
-  int32_t SetWaveOutVolume(uint16_t volumeLeft, uint16_t volumeRight) override;
-  int32_t WaveOutVolume(uint16_t& volumeLeft,
-                        uint16_t& volumeRight) const override;
   int32_t InitSpeaker() override;
   bool SpeakerIsInitialized() const override;
   int32_t InitMicrophone() override;

@@ -321,24 +321,6 @@ int32_t AudioDeviceLinuxALSA::SpeakerVolume(uint32_t& volume) const
     return 0;
 }
 
-
-int32_t AudioDeviceLinuxALSA::SetWaveOutVolume(uint16_t volumeLeft,
-                                               uint16_t volumeRight)
-{
-
-    LOG(LS_WARNING) << "API call not supported on this platform";
-    return -1;
-}
-
-int32_t AudioDeviceLinuxALSA::WaveOutVolume(
-    uint16_t& /*volumeLeft*/,
-    uint16_t& /*volumeRight*/) const
-{
-
-    LOG(LS_WARNING) << "API call not supported on this platform";
-    return -1;
-}
-
 int32_t AudioDeviceLinuxALSA::MaxSpeakerVolume(
     uint32_t& maxVolume) const
 {

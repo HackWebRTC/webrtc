@@ -179,14 +179,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   bool Recording() const override { return impl_->Recording(); }
   int32_t SetAGC(bool enable) override { return impl_->SetAGC(enable); }
   bool AGC() const override { return impl_->AGC(); }
-  int32_t SetWaveOutVolume(uint16_t volume_left,
-                           uint16_t volume_right) override {
-    return impl_->SetWaveOutVolume(volume_left, volume_right);
-  }
-  int32_t WaveOutVolume(uint16_t* volume_left,
-                        uint16_t* volume_right) const override {
-    return impl_->WaveOutVolume(volume_left, volume_right);
-  }
   int32_t InitSpeaker() override { return impl_->InitSpeaker(); }
   bool SpeakerIsInitialized() const override {
     return impl_->SpeakerIsInitialized();

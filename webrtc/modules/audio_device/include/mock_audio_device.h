@@ -63,10 +63,6 @@ class MockAudioDeviceModule : public AudioDeviceModule {
   MOCK_CONST_METHOD0(Recording, bool());
   MOCK_METHOD1(SetAGC, int32_t(bool enable));
   MOCK_CONST_METHOD0(AGC, bool());
-  MOCK_METHOD2(SetWaveOutVolume, int32_t(uint16_t volumeLeft,
-                                         uint16_t volumeRight));
-  MOCK_CONST_METHOD2(WaveOutVolume, int32_t(uint16_t* volumeLeft,
-                                            uint16_t* volumeRight));
   MOCK_METHOD0(InitSpeaker, int32_t());
   MOCK_CONST_METHOD0(SpeakerIsInitialized, bool());
   MOCK_METHOD0(InitMicrophone, int32_t());

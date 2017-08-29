@@ -576,40 +576,6 @@ int32_t AudioDeviceModuleImpl::SpeakerVolume(uint32_t* volume) const {
 }
 
 // ----------------------------------------------------------------------------
-//  SetWaveOutVolume
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceModuleImpl::SetWaveOutVolume(uint16_t volumeLeft,
-                                                uint16_t volumeRight) {
-  LOG(INFO) << __FUNCTION__ << "(" << volumeLeft << ", " << volumeRight << ")";
-  CHECK_INITIALIZED();
-  return (_ptrAudioDevice->SetWaveOutVolume(volumeLeft, volumeRight));
-}
-
-// ----------------------------------------------------------------------------
-//  WaveOutVolume
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceModuleImpl::WaveOutVolume(uint16_t* volumeLeft,
-                                             uint16_t* volumeRight) const {
-  LOG(INFO) << __FUNCTION__;
-  CHECK_INITIALIZED();
-
-  uint16_t volLeft(0);
-  uint16_t volRight(0);
-
-  if (_ptrAudioDevice->WaveOutVolume(volLeft, volRight) == -1) {
-    return -1;
-  }
-
-  *volumeLeft = volLeft;
-  *volumeRight = volRight;
-  LOG(INFO) << "output: " << *volumeLeft << ", " << *volumeRight;
-
-  return (0);
-}
-
-// ----------------------------------------------------------------------------
 //  SpeakerIsInitialized
 // ----------------------------------------------------------------------------
 

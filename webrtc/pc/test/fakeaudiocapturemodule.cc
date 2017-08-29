@@ -276,19 +276,6 @@ bool FakeAudioCaptureModule::AGC() const {
   return 0;
 }
 
-int32_t FakeAudioCaptureModule::SetWaveOutVolume(uint16_t /*volume_left*/,
-                                                 uint16_t /*volume_right*/) {
-  RTC_NOTREACHED();
-  return 0;
-}
-
-int32_t FakeAudioCaptureModule::WaveOutVolume(
-    uint16_t* /*volume_left*/,
-    uint16_t* /*volume_right*/) const {
-  RTC_NOTREACHED();
-  return 0;
-}
-
 int32_t FakeAudioCaptureModule::InitSpeaker() {
   // No speaker, just playing from file. Return success.
   return 0;

@@ -548,18 +548,6 @@ int32_t AudioDeviceMac::SpeakerVolume(uint32_t& volume) const {
   return 0;
 }
 
-int32_t AudioDeviceMac::SetWaveOutVolume(uint16_t volumeLeft,
-                                         uint16_t volumeRight) {
-  LOG(LS_WARNING) << "API call not supported on this platform";
-  return -1;
-}
-
-int32_t AudioDeviceMac::WaveOutVolume(uint16_t& /*volumeLeft*/,
-                                      uint16_t& /*volumeRight*/) const {
-  LOG(LS_WARNING) << "API call not supported on this platform";
-  return -1;
-}
-
 int32_t AudioDeviceMac::MaxSpeakerVolume(uint32_t& maxVolume) const {
   uint32_t maxVol(0);
 
