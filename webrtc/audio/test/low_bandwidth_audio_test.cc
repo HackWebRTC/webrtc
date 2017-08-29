@@ -10,16 +10,16 @@
 
 #include <algorithm>
 
-#include "gflags/gflags.h"
 #include "webrtc/audio/test/low_bandwidth_audio_test.h"
 #include "webrtc/common_audio/wav_file.h"
-#include "webrtc/test/gtest.h"
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 
-DEFINE_int32(sample_rate_hz, 16000,
-             "Sample rate (Hz) of the produced audio files.");
+DEFINE_int(sample_rate_hz, 16000,
+           "Sample rate (Hz) of the produced audio files.");
 
 DEFINE_bool(quick, false,
             "Don't do the full audio recording. "
@@ -31,7 +31,7 @@ namespace {
 constexpr int kExtraRecordTimeMs = 500;
 
 std::string FileSampleRateSuffix() {
-  return std::to_string(FLAGS_sample_rate_hz / 1000);
+  return std::to_string(FLAG_sample_rate_hz / 1000);
 }
 
 }  // namespace
@@ -72,7 +72,7 @@ std::unique_ptr<test::FakeAudioDevice::Capturer>
 std::unique_ptr<test::FakeAudioDevice::Renderer>
     AudioQualityTest::CreateRenderer() {
   return test::FakeAudioDevice::CreateBoundedWavFileWriter(
-      AudioOutputFile(), FLAGS_sample_rate_hz);
+      AudioOutputFile(), FLAG_sample_rate_hz);
 }
 
 void AudioQualityTest::OnFakeAudioDevicesCreated(
@@ -112,7 +112,7 @@ void AudioQualityTest::ModifyAudioConfigs(
 }
 
 void AudioQualityTest::PerformTest() {
-  if (FLAGS_quick) {
+  if (FLAG_quick) {
     // Let the recording run for a small amount of time to check if it works.
     SleepMs(1000);
   } else {

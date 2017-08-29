@@ -200,7 +200,6 @@ if (rtc_include_tests) {
       "../test:video_test_common",
       "//testing/gmock",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
 
     if (is_android) {

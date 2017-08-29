@@ -20,13 +20,13 @@
 #include <string>
 #include <vector>
 
-#include "gflags/gflags.h"
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/rtc_base/ignore_wundef.h"
 #include "webrtc/rtc_base/protobuf_utils.h"
 #include "webrtc/rtc_base/sha1digest.h"
@@ -460,7 +460,7 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
                    output_checksum,
                    network_stats_checksum,
                    rtcp_stats_checksum,
-                   FLAGS_gen_ref);
+                   FLAG_gen_ref);
 }
 
 #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID) &&             \
@@ -496,7 +496,7 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
                    output_checksum,
                    network_stats_checksum,
                    rtcp_stats_checksum,
-                   FLAGS_gen_ref);
+                   FLAG_gen_ref);
 }
 
 // Use fax mode to avoid time-scaling. This is to simplify the testing of

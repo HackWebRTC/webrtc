@@ -171,11 +171,8 @@ rtc_source_set("test_support") {
 }
 
 if (!build_with_chromium) {
-  # This target depends on //third_party/gflags and since chromium does not
-  # have gflags it causes an error when Gn parses this BUILD.gn file.
-  # It seems that Gn eagerly tries to understand if all the targets are
-  # buildable (even deps). Obviously gflags is not buildable in chromium
-  # so if a target depends on this BUILD.gn file we hit this error.
+  # This target used to depend on //third_party/gflags which Chromium does not
+  # provide. TODO(oprypin): remove the conditional.
   rtc_source_set("test_main") {
     testonly = true
     sources = [
@@ -191,7 +188,6 @@ if (!build_with_chromium) {
       "../system_wrappers:metrics_default",
       "//testing/gmock",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
   }
 
@@ -220,7 +216,6 @@ if (!build_with_chromium) {
       "../system_wrappers",
       "//testing/gmock",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
 
     if (!is_ios) {
@@ -261,7 +256,6 @@ if (!build_with_chromium) {
     deps = [
       ":fileutils",
       "../rtc_base:rtc_base_approved",
-      "//third_party/gflags",
     ]
   }
 
@@ -345,9 +339,9 @@ if (!build_with_chromium) {
       ":video_test_common",
       ":video_test_support",
       "../modules/video_capture",
+      "../rtc_base:rtc_base_approved",
       "//testing/gmock",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
   }
 }

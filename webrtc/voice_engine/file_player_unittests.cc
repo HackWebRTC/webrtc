@@ -17,7 +17,7 @@
 #include <memory>
 #include <string>
 
-#include "gflags/gflags.h"
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/rtc_base/md5digest.h"
 #include "webrtc/rtc_base/stringencode.h"
 #include "webrtc/test/gtest.h"
@@ -38,7 +38,7 @@ class FilePlayerTest : public ::testing::Test {
         output_file_(NULL) {}
 
   void SetUp() override {
-    if (FLAGS_file_player_output) {
+    if (FLAG_file_player_output) {
       std::string output_file =
           webrtc::test::OutputPath() + "file_player_unittest_out.pcm";
       output_file_ = fopen(output_file.c_str(), "wb");
@@ -64,7 +64,7 @@ class FilePlayerTest : public ::testing::Test {
       EXPECT_EQ(
           0, player_->Get10msAudioFromFile(out, &num_samples, kSampleRateHz));
       checksum.Update(out, num_samples * sizeof(out[0]));
-      if (FLAGS_file_player_output) {
+      if (FLAG_file_player_output) {
         ASSERT_EQ(num_samples,
                   fwrite(out, sizeof(out[0]), num_samples, output_file_));
       }

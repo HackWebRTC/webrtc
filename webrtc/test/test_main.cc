@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "gflags/gflags.h"
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/test/field_trial.h"
@@ -33,6 +33,8 @@ DEFINE_string(force_fieldtrials, "",
     "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
     " will assign the group Enable to field trial WebRTC-FooFeature.");
 
+DEFINE_bool(help, false, "Print this message.");
+
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleMock(&argc, argv);
 
@@ -41,15 +43,22 @@ int main(int argc, char* argv[]) {
   if (rtc::LogMessage::GetLogToDebug() > rtc::LS_INFO)
     rtc::LogMessage::LogToDebug(rtc::LS_INFO);
 
-  google::ParseCommandLineFlags(&argc, &argv, false);
+  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, false)) {
+    return 1;
+  }
+  if (FLAG_help) {
+    rtc::FlagList::Print(nullptr, false);
+    return 0;
+  }
 
   webrtc::test::SetExecutablePath(argv[0]);
-  webrtc::test::InitFieldTrialsFromString(FLAGS_force_fieldtrials);
+  std::string fieldtrials = FLAG_force_fieldtrials;
+  webrtc::test::InitFieldTrialsFromString(fieldtrials);
   webrtc::metrics::Enable();
 
-  rtc::LogMessage::SetLogToStderr(FLAGS_logs);
+  rtc::LogMessage::SetLogToStderr(FLAG_logs);
   std::unique_ptr<webrtc::test::TraceToStderr> trace_to_stderr;
-  if (FLAGS_logs)
+  if (FLAG_logs)
       trace_to_stderr.reset(new webrtc::test::TraceToStderr);
 #if defined(WEBRTC_IOS)
   rtc::test::InitTestSuite(RUN_ALL_TESTS, argc, argv);

@@ -13,7 +13,6 @@
 
 #include <fstream>
 #include <memory>
-#include <gflags/gflags.h>
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
@@ -21,10 +20,9 @@
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"
-
-using google::RegisterFlagValidator;
 
 namespace webrtc {
 namespace test {

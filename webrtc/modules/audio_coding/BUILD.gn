@@ -1630,7 +1630,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
   }
 
@@ -1816,9 +1815,9 @@ if (rtc_include_tests) {
       ":neteq_quality_test_support",
       ":neteq_tools",
       ":webrtc_opus",
+      "../../rtc_base:rtc_base_approved",
       "../../test:test_main",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
   }
 
@@ -1856,7 +1855,6 @@ if (rtc_include_tests) {
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_main",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
   }
 
@@ -1874,7 +1872,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../test:test_main",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
   }
 
@@ -1892,7 +1889,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../test:test_main",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
   }
 
@@ -2179,7 +2175,6 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "//testing/gmock",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
 
     defines = audio_coding_defines

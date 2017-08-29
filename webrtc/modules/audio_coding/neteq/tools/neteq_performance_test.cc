@@ -80,7 +80,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   AudioFrame out_frame;
   while (time_now_ms < runtime_ms) {
     while (packet_input_time_ms <= time_now_ms) {
-      // Drop every N packets, where N = FLAGS_lossrate.
+      // Drop every N packets, where N = FLAG_lossrate.
       bool lost = false;
       if (lossrate > 0) {
         lost = ((rtp_header.sequenceNumber - 1) % lossrate) == 0;

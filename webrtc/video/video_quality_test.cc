@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "gflags/gflags.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
@@ -34,6 +33,7 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/cpu_time.h"
 #include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/rtc_base/format_macros.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/memory_usage.h"
@@ -838,7 +838,7 @@ class VideoAnalyzer : public PacketReceiver,
     // Saving only the worst frame for manual analysis. Intention here is to
     // only detect video corruptions and not to track picture quality. Thus,
     // jpeg is used here.
-    if (FLAGS_save_worst_frame && worst_frame_) {
+    if (FLAG_save_worst_frame && worst_frame_) {
       std::string output_dir;
       test::GetTestOutputDir(&output_dir);
       std::string output_path =

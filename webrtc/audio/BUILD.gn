@@ -112,13 +112,13 @@ if (rtc_include_tests) {
 
       deps = [
         "../common_audio",
+        "../rtc_base:rtc_base_approved",
         "../system_wrappers",
         "../test:fake_audio_device",
         "../test:test_common",
         "../test:test_main",
         "//testing/gmock",
         "//testing/gtest",
-        "//third_party/gflags",
       ]
       if (is_android) {
         deps += [ "//testing/android/native_test:native_test_native_code" ]
@@ -161,7 +161,6 @@ if (rtc_include_tests) {
       "../test:test_main",
       "//testing/gmock",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
 
     data = [

@@ -14,8 +14,8 @@
 
 #include <string>
 
-#include "gflags/gflags.h"
 #include "webrtc/rtc_base/file.h"
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/rtc_base/platform_file.h"
 #include "webrtc/test/gtest.h"
@@ -26,10 +26,10 @@ namespace webrtc {
 namespace test {
 
 TEST(IsolatedOutputTest, ShouldRejectInvalidIsolatedOutDir) {
-  std::string backup = FLAGS_test_output_dir;
-  FLAGS_test_output_dir = "";
+  const char* backup = FLAG_test_output_dir;
+  FLAG_test_output_dir = "";
   ASSERT_FALSE(WriteToTestOutput("a-file", "some-contents"));
-  FLAGS_test_output_dir = backup;
+  FLAG_test_output_dir = backup;
 }
 
 TEST(IsolatedOutputTest, ShouldRejectInvalidFileName) {
@@ -42,7 +42,7 @@ TEST(IsolatedOutputTest, ShouldBeAbleToWriteContent) {
   const char* filename = "a-file";
   const char* content = "some-contents";
   if (WriteToTestOutput(filename, content)) {
-    rtc::Pathname out_file(FLAGS_test_output_dir, filename);
+    rtc::Pathname out_file(FLAG_test_output_dir, filename);
     rtc::File input = rtc::File::Open(out_file);
     EXPECT_TRUE(input.IsOpen());
     EXPECT_TRUE(input.Seek(0));
