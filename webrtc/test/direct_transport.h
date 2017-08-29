@@ -68,9 +68,7 @@ class DirectTransport : public Transport {
   Call* const send_call_;
   Clock* const clock_;
 
-  // TODO(eladalon): Make |task_queue_| const.
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=8125
-  SingleThreadedTaskQueueForTesting* task_queue_;
+  SingleThreadedTaskQueueForTesting* const task_queue_;
   SingleThreadedTaskQueueForTesting::TaskId next_scheduled_task_
       GUARDED_BY(&sequence_checker_);
 
