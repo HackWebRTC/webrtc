@@ -110,6 +110,9 @@ public class PeerConnection {
     // necessary.
     public final String hostname;
 
+    // List of protocols to be used in the TLS ALPN extension.
+    public final List<String> tlsAlpnProtocols;
+
     /** Convenience constructor for STUN servers. */
     public IceServer(String uri) {
       this(uri, "", "");
@@ -125,16 +128,68 @@ public class PeerConnection {
 
     public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy,
         String hostname) {
+      this(uri, username, password, tlsCertPolicy, hostname, null);
+    }
+
+    private IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy,
+        String hostname, List<String> tlsAlpnProtocols) {
       this.uri = uri;
       this.username = username;
       this.password = password;
       this.tlsCertPolicy = tlsCertPolicy;
       this.hostname = hostname;
+      this.tlsAlpnProtocols = tlsAlpnProtocols;
     }
 
     public String toString() {
       return uri + " [" + username + ":" + password + "] [" + tlsCertPolicy + "] [" + hostname
-          + "]";
+          + "] [" + tlsAlpnProtocols + "]";
+    }
+
+    public static Builder builder(String uri) {
+      return new Builder(uri);
+    }
+
+    public static class Builder {
+      private String uri;
+      private String username = "";
+      private String password = "";
+      private TlsCertPolicy tlsCertPolicy = TlsCertPolicy.TLS_CERT_POLICY_SECURE;
+      private String hostname = "";
+      private List<String> tlsAlpnProtocols;
+
+      private Builder(String uri) {
+        this.uri = uri;
+      }
+
+      public Builder setUsername(String username) {
+        this.username = username;
+        return this;
+      }
+
+      public Builder setPassword(String password) {
+        this.password = password;
+        return this;
+      }
+
+      public Builder setTlsCertPolicy(TlsCertPolicy tlsCertPolicy) {
+        this.tlsCertPolicy = tlsCertPolicy;
+        return this;
+      }
+
+      public Builder setHostname(String hostname) {
+        this.hostname = hostname;
+        return this;
+      }
+
+      public Builder setTlsAlpnProtocols(List<String> tlsAlpnProtocols) {
+        this.tlsAlpnProtocols = tlsAlpnProtocols;
+        return this;
+      }
+
+      public IceServer createIceServer() {
+        return new IceServer(uri, username, password, tlsCertPolicy, hostname, tlsAlpnProtocols);
+      }
     }
   }
 

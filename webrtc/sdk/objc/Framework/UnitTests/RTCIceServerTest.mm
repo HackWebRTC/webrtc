@@ -76,12 +76,30 @@
   EXPECT_EQ("hostname", iceStruct.hostname);
 }
 
+- (void)testTlsAlpnProtocols {
+  RTCIceServer *server = [[RTCIceServer alloc] initWithURLStrings:@[ @"turn1:turn1.example.net" ]
+                                                         username:@"username"
+                                                       credential:@"credential"
+                                                    tlsCertPolicy:RTCTlsCertPolicySecure
+                                                         hostname:@"hostname"
+                                                 tlsAlpnProtocols:@[ @"proto1", @"proto2" ]];
+  webrtc::PeerConnectionInterface::IceServer iceStruct = server.nativeServer;
+  EXPECT_EQ(1u, iceStruct.urls.size());
+  EXPECT_EQ("turn1:turn1.example.net", iceStruct.urls.front());
+  EXPECT_EQ("username", iceStruct.username);
+  EXPECT_EQ("credential", iceStruct.password);
+  EXPECT_EQ("hostname", iceStruct.hostname);
+  EXPECT_EQ(2u, iceStruct.tls_alpn_protocols.size());
+}
+
 - (void)testInitFromNativeServer {
   webrtc::PeerConnectionInterface::IceServer nativeServer;
   nativeServer.username = "username";
   nativeServer.password = "password";
   nativeServer.urls.push_back("stun:stun.example.net");
   nativeServer.hostname = "hostname";
+  nativeServer.tls_alpn_protocols.push_back("proto1");
+  nativeServer.tls_alpn_protocols.push_back("proto2");
 
   RTCIceServer *iceServer =
       [[RTCIceServer alloc] initWithNativeServer:nativeServer];
@@ -91,6 +109,7 @@
   EXPECT_EQ("username", [NSString stdStringForString:iceServer.username]);
   EXPECT_EQ("password", [NSString stdStringForString:iceServer.credential]);
   EXPECT_EQ("hostname", [NSString stdStringForString:iceServer.hostname]);
+  EXPECT_EQ(2u, iceServer.tlsAlpnProtocols.count);
 }
 
 @end

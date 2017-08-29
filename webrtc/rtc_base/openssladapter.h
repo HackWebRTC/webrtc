@@ -38,6 +38,9 @@ class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
                           OpenSSLAdapterFactory* factory = nullptr);
   ~OpenSSLAdapter() override;
 
+  void SetIgnoreBadCert(bool ignore) override;
+  void SetAlpnProtocols(const std::vector<std::string>& protos) override;
+
   void SetMode(SSLMode mode) override;
   void SetIdentity(SSLIdentity* identity) override;
   void SetRole(SSLRole role) override;
@@ -129,10 +132,17 @@ class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
   std::string ssl_host_name_;
   // Do DTLS or not
   SSLMode ssl_mode_;
+  // If true, the server certificate need not match the configured hostname.
+  bool ignore_bad_cert_;
+  // List of protocols to be used in the TLS ALPN extension.
+  std::vector<std::string> alpn_protocols_;
 
   bool custom_verification_succeeded_;
 };
 
+std::string TransformAlpnProtocols(const std::vector<std::string>& protos);
+
+/////////////////////////////////////////////////////////////////////////////
 class OpenSSLAdapterFactory : public SSLAdapterFactory {
  public:
   OpenSSLAdapterFactory();

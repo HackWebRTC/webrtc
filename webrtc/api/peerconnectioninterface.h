@@ -193,11 +193,14 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // extension). If |urls| itself contains the hostname, this isn't
     // necessary.
     std::string hostname;
+    // List of protocols to be used in the TLS ALPN extension.
+    std::vector<std::string> tls_alpn_protocols;
 
     bool operator==(const IceServer& o) const {
       return uri == o.uri && urls == o.urls && username == o.username &&
              password == o.password && tls_cert_policy == o.tls_cert_policy &&
-             hostname == o.hostname;
+             hostname == o.hostname &&
+             tls_alpn_protocols == o.tls_alpn_protocols;
     }
     bool operator!=(const IceServer& o) const { return !(*this == o); }
   };

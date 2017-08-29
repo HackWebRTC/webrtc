@@ -16,6 +16,7 @@
 
 #include <jni.h>
 #include <string>
+#include <vector>
 
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/constructormagic.h"
@@ -98,6 +99,10 @@ jstring JavaStringFromStdString(JNIEnv* jni, const std::string& native);
 
 // Given a (UTF-16) jstring return a new UTF-8 native string.
 std::string JavaToStdString(JNIEnv* jni, const jstring& j_string);
+
+// Given a List of (UTF-16) jstrings
+// return a new vector of UTF-8 native strings.
+std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni, jobject list);
 
 // Return the (singleton) Java Enum object corresponding to |index|;
 jobject JavaEnumFromIndex(JNIEnv* jni, jclass state_class,

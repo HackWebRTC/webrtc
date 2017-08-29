@@ -52,12 +52,16 @@ class SSLAdapterTestDummyClient : public sigslot::has_slots<> {
     // Ignore any certificate errors for the purpose of testing.
     // Note: We do this only because we don't have a real certificate.
     // NEVER USE THIS IN PRODUCTION CODE!
-    ssl_adapter_->set_ignore_bad_cert(true);
+    ssl_adapter_->SetIgnoreBadCert(true);
 
     ssl_adapter_->SignalReadEvent.connect(this,
         &SSLAdapterTestDummyClient::OnSSLAdapterReadEvent);
     ssl_adapter_->SignalCloseEvent.connect(this,
         &SSLAdapterTestDummyClient::OnSSLAdapterCloseEvent);
+  }
+
+  void SetAlpnProtocols(const std::vector<std::string>& protos) {
+    ssl_adapter_->SetAlpnProtocols(protos);
   }
 
   rtc::SocketAddress GetAddress() const {
@@ -282,6 +286,10 @@ class SSLAdapterTestBase : public testing::Test,
     handshake_wait_ = wait;
   }
 
+  void SetAlpnProtocols(const std::vector<std::string>& protos) {
+    client_->SetAlpnProtocols(protos);
+  }
+
   void TestHandshake(bool expect_success) {
     int rv;
 
@@ -430,6 +438,14 @@ TEST_F(SSLAdapterTestTLS_RSA, TestTLSTransferWithBlockedSocket) {
 
 // Test transfer between client and server, using ECDSA
 TEST_F(SSLAdapterTestTLS_ECDSA, TestTLSTransfer) {
+  TestHandshake(true);
+  TestTransfer("Hello, world!");
+}
+
+// Test transfer using ALPN with protos as h2 and http/1.1
+TEST_F(SSLAdapterTestTLS_ECDSA, TestTLSALPN) {
+  std::vector<std::string> alpn_protos{"h2", "http/1.1"};
+  SetAlpnProtocols(alpn_protos);
   TestHandshake(true);
   TestTransfer("Hello, world!");
 }

@@ -221,7 +221,8 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    const ProtocolAddress& server_address,
                    const RelayCredentials& credentials,
                    int server_priority,
-                   const std::string& origin)
+                   const std::string& origin,
+                   const std::vector<std::string>& tls_alpn_protocols)
     : Port(thread,
            RELAY_PORT_TYPE,
            factory,
@@ -231,6 +232,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
            username,
            password),
       server_address_(server_address),
+      tls_alpn_protocols_(tls_alpn_protocols),
       credentials_(credentials),
       socket_(NULL),
       resolver_(NULL),
@@ -336,9 +338,12 @@ bool TurnPort::CreateTurnClientSocket() {
       }
     }
 
+    rtc::PacketSocketTcpOptions tcp_options;
+    tcp_options.opts = opts;
+    tcp_options.tls_alpn_protocols = tls_alpn_protocols_;
     socket_ = socket_factory()->CreateClientTcpSocket(
         rtc::SocketAddress(Network()->GetBestIP(), 0), server_address_.address,
-        proxy(), user_agent(), opts);
+        proxy(), user_agent(), tcp_options);
   }
 
   if (!socket_) {

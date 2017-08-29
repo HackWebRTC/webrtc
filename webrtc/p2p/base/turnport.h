@@ -69,10 +69,11 @@ class TurnPort : public Port {
                           const ProtocolAddress& server_address,
                           const RelayCredentials& credentials,
                           int server_priority,
-                          const std::string& origin) {
+                          const std::string& origin,
+                          const std::vector<std::string>& tls_alpn_protocols) {
     return new TurnPort(thread, factory, network, min_port, max_port, username,
                         password, server_address, credentials, server_priority,
-                        origin);
+                        origin, tls_alpn_protocols);
   }
 
   virtual ~TurnPort();
@@ -93,6 +94,10 @@ class TurnPort : public Port {
 
   virtual void SetTlsCertPolicy(TlsCertPolicy tls_cert_policy) {
     tls_cert_policy_ = tls_cert_policy;
+  }
+
+  virtual std::vector<std::string> GetTlsAlpnProtocols() const {
+    return tls_alpn_protocols_;
   }
 
   virtual void PrepareAddress();
@@ -186,7 +191,8 @@ class TurnPort : public Port {
            const ProtocolAddress& server_address,
            const RelayCredentials& credentials,
            int server_priority,
-           const std::string& origin);
+           const std::string& origin,
+           const std::vector<std::string>& alpn_protocols);
 
  private:
   enum {
@@ -266,6 +272,7 @@ class TurnPort : public Port {
 
   ProtocolAddress server_address_;
   TlsCertPolicy tls_cert_policy_ = TlsCertPolicy::TLS_CERT_POLICY_SECURE;
+  std::vector<std::string> tls_alpn_protocols_;
   RelayCredentials credentials_;
   AttemptedServerSet attempted_server_addresses_;
 

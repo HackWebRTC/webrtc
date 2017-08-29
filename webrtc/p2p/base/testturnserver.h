@@ -97,7 +97,7 @@ class TestTurnServer : public TurnAuthInterface {
         adapter->SetRole(rtc::SSL_SERVER);
         adapter->SetIdentity(
             rtc::SSLIdentity::Generate("test turn server", rtc::KeyParams()));
-        adapter->set_ignore_bad_cert(true);
+        adapter->SetIgnoreBadCert(true);
         socket = adapter;
       }
       socket->Bind(int_addr);

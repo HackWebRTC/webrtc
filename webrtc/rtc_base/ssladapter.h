@@ -47,8 +47,8 @@ class SSLAdapter : public AsyncSocketAdapter {
   // Do not call these methods in production code.
   // TODO(juberti): Remove the opportunistic encryption mechanism in
   // BasicPacketSocketFactory that uses this function.
-  bool ignore_bad_cert() const { return ignore_bad_cert_; }
-  void set_ignore_bad_cert(bool ignore) { ignore_bad_cert_ = ignore; }
+  virtual void SetIgnoreBadCert(bool ignore) = 0;
+  virtual void SetAlpnProtocols(const std::vector<std::string>& protos) = 0;
 
   // Do DTLS or TLS (default is TLS, if unspecified)
   virtual void SetMode(SSLMode mode) = 0;
@@ -76,10 +76,6 @@ class SSLAdapter : public AsyncSocketAdapter {
   // and deletes |socket|. Otherwise, the returned SSLAdapter takes ownership
   // of |socket|.
   static SSLAdapter* Create(AsyncSocket* socket);
-
- private:
-  // If true, the server certificate need not match the configured hostname.
-  bool ignore_bad_cert_ = false;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

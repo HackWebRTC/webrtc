@@ -105,8 +105,11 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
 }
 
 AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
-    const SocketAddress& local_address, const SocketAddress& remote_address,
-    const ProxyInfo& proxy_info, const std::string& user_agent, int opts) {
+    const SocketAddress& local_address,
+    const SocketAddress& remote_address,
+    const ProxyInfo& proxy_info,
+    const std::string& user_agent,
+    const PacketSocketTcpOptions& tcp_options) {
   AsyncSocket* socket =
       socket_factory()->CreateAsyncSocket(local_address.family(), SOCK_STREAM);
   if (!socket) {
@@ -138,9 +141,9 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   }
 
   // Assert that at most one TLS option is used.
-  int tlsOpts =
-      opts & (PacketSocketFactory::OPT_TLS | PacketSocketFactory::OPT_TLS_FAKE |
-              PacketSocketFactory::OPT_TLS_INSECURE);
+  int tlsOpts = tcp_options.opts & (PacketSocketFactory::OPT_TLS |
+                                    PacketSocketFactory::OPT_TLS_FAKE |
+                                    PacketSocketFactory::OPT_TLS_INSECURE);
   RTC_DCHECK((tlsOpts & (tlsOpts - 1)) == 0);
 
   if ((tlsOpts & PacketSocketFactory::OPT_TLS) ||
@@ -152,8 +155,10 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
     }
 
     if (tlsOpts & PacketSocketFactory::OPT_TLS_INSECURE) {
-      ssl_adapter->set_ignore_bad_cert(true);
+      ssl_adapter->SetIgnoreBadCert(true);
     }
+
+    ssl_adapter->SetAlpnProtocols(tcp_options.tls_alpn_protocols);
 
     socket = ssl_adapter;
 
@@ -176,7 +181,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
 
   // Finally, wrap that socket in a TCP or STUN TCP packet socket.
   AsyncPacketSocket* tcp_socket;
-  if (opts & PacketSocketFactory::OPT_STUN) {
+  if (tcp_options.opts & PacketSocketFactory::OPT_STUN) {
     tcp_socket = new cricket::AsyncStunTCPSocket(socket, false);
   } else {
     tcp_socket = new AsyncTCPSocket(socket, false);

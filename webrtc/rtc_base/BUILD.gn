@@ -1038,6 +1038,7 @@ if (rtc_include_tests) {
     }
     if (is_posix) {
       sources += [
+        "openssladapter_unittest.cc",
         "ssladapter_unittest.cc",
         "sslidentity_unittest.cc",
         "sslstreamadapter_unittest.cc",
@@ -1055,6 +1056,14 @@ if (rtc_include_tests) {
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+    if (build_with_chromium) {
+      include_dirs = [ "../../boringssl/src/include" ]
+    }
+    if (rtc_build_ssl) {
+      deps += [ "//third_party/boringssl" ]
+    } else {
+      configs += [ ":external_ssl_library" ]
     }
   }
 }

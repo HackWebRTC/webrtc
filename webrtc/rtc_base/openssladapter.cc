@@ -286,6 +286,7 @@ OpenSSLAdapter::OpenSSLAdapter(AsyncSocket* socket,
       ssl_(nullptr),
       ssl_ctx_(nullptr),
       ssl_mode_(SSL_MODE_TLS),
+      ignore_bad_cert_(false),
       custom_verification_succeeded_(false) {
   // If a factory is used, take a reference on the factory's SSL_CTX.
   // Otherwise, we'll create our own later.
@@ -300,6 +301,14 @@ OpenSSLAdapter::OpenSSLAdapter(AsyncSocket* socket,
 
 OpenSSLAdapter::~OpenSSLAdapter() {
   Cleanup();
+}
+
+void OpenSSLAdapter::SetIgnoreBadCert(bool ignore) {
+  ignore_bad_cert_ = ignore;
+}
+
+void OpenSSLAdapter::SetAlpnProtocols(const std::vector<std::string>& protos) {
+  alpn_protocols_ = protos;
 }
 
 void OpenSSLAdapter::SetMode(SSLMode mode) {
@@ -327,7 +336,7 @@ AsyncSocket* OpenSSLAdapter::Accept(SocketAddress* paddr) {
   SSLAdapter* adapter = SSLAdapter::Create(socket);
   adapter->SetIdentity(identity_->GetReference());
   adapter->SetRole(rtc::SSL_SERVER);
-  adapter->set_ignore_bad_cert(ignore_bad_cert());
+  adapter->SetIgnoreBadCert(ignore_bad_cert_);
   adapter->StartSSL("", false);
   return adapter;
 }
@@ -424,9 +433,17 @@ int OpenSSLAdapter::BeginSSL() {
   }
 
   // Set a couple common TLS extensions; even though we don't use them yet.
-  // TODO(emadomara) Add ALPN extension.
   SSL_enable_ocsp_stapling(ssl_);
   SSL_enable_signed_cert_timestamps(ssl_);
+
+  if (!alpn_protocols_.empty()) {
+    std::string tls_alpn_string = TransformAlpnProtocols(alpn_protocols_);
+    if (!tls_alpn_string.empty()) {
+      SSL_set_alpn_protos(
+          ssl_, reinterpret_cast<const unsigned char*>(tls_alpn_string.data()),
+          tls_alpn_string.size());
+    }
+  }
 
   // Now that the initial config is done, transfer ownership of |bio| to the
   // SSL object. If ContinueSSL() fails, the bio will be freed in Cleanup().
@@ -927,14 +944,14 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
 }
 
 bool OpenSSLAdapter::SSLPostConnectionCheck(SSL* ssl, const char* host) {
-  bool ok = VerifyServerName(ssl, host, ignore_bad_cert());
+  bool ok = VerifyServerName(ssl, host, ignore_bad_cert_);
 
   if (ok) {
     ok = (SSL_get_verify_result(ssl) == X509_V_OK ||
           custom_verification_succeeded_);
   }
 
-  if (!ok && ignore_bad_cert()) {
+  if (!ok && ignore_bad_cert_) {
     LOG(LS_INFO) << "Other TLS post connection checks failed.";
     ok = true;
   }
@@ -1009,7 +1026,7 @@ int OpenSSLAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
   }
 
   // Should only be used for debugging and development.
-  if (!ok && stream->ignore_bad_cert()) {
+  if (!ok && stream->ignore_bad_cert_) {
     LOG(LS_WARNING) << "Ignoring cert error while verifying cert chain";
     ok = 1;
   }
@@ -1094,6 +1111,27 @@ SSL_CTX* OpenSSLAdapter::CreateContext(SSLMode mode, bool enable_cache) {
   }
 
   return ctx;
+}
+
+std::string TransformAlpnProtocols(
+    const std::vector<std::string>& alpn_protocols) {
+  // Transforms the alpn_protocols list to the format expected by
+  // Open/BoringSSL. This requires joining the protocols into a single string
+  // and prepending a character with the size of the protocol string before
+  // each protocol.
+  std::string transformed_alpn;
+  for (const std::string& proto : alpn_protocols) {
+    if (proto.size() == 0 || proto.size() > 0xFF) {
+      LOG(LS_ERROR) << "OpenSSLAdapter::Error("
+                    << "TransformAlpnProtocols received proto with size "
+                    << proto.size() << ")";
+      return "";
+    }
+    transformed_alpn += static_cast<char>(proto.size());
+    transformed_alpn += proto;
+    LOG(LS_VERBOSE) << "TransformAlpnProtocols: Adding proto: " << proto;
+  }
+  return transformed_alpn;
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -37,7 +37,18 @@ class BasicPacketSocketFactory : public PacketSocketFactory {
                                            const SocketAddress& remote_address,
                                            const ProxyInfo& proxy_info,
                                            const std::string& user_agent,
-                                           int opts) override;
+                                           int opts) override {
+    PacketSocketTcpOptions tcp_options;
+    tcp_options.opts = opts;
+    return CreateClientTcpSocket(local_address, remote_address, proxy_info,
+                                 user_agent, tcp_options);
+  }
+  AsyncPacketSocket* CreateClientTcpSocket(
+      const SocketAddress& local_address,
+      const SocketAddress& remote_address,
+      const ProxyInfo& proxy_info,
+      const std::string& user_agent,
+      const PacketSocketTcpOptions& tcp_options) override;
 
   AsyncResolverInterface* CreateAsyncResolver() override;
 

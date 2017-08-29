@@ -43,6 +43,9 @@ RTC_EXPORT
  */
 @property(nonatomic, readonly, nullable) NSString *hostname;
 
+/** List of protocols to be used in the TLS ALPN extension. */
+@property(nonatomic, readonly) NSArray<NSString *> *tlsAlpnProtocols;
+
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
 /** Convenience initializer for a server with no authentication (e.g. STUN). */
@@ -73,7 +76,19 @@ RTC_EXPORT
                           username:(nullable NSString *)username
                         credential:(nullable NSString *)credential
                      tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy
-                          hostname:(nullable NSString *)hostname NS_DESIGNATED_INITIALIZER;
+                          hostname:(nullable NSString *)hostname;
+
+/**
+ * Initialize an RTCIceServer with its associated URLs, optional username,
+ * optional credential, TLS cert policy, hostname and ALPN protocols.
+ */
+- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
+                          username:(nullable NSString *)username
+                        credential:(nullable NSString *)credential
+                     tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy
+                          hostname:(nullable NSString *)hostname
+                  tlsAlpnProtocols:(NSArray<NSString *> *)tlsAlpnProtocols
+    NS_DESIGNATED_INITIALIZER;
 
 @end
 
