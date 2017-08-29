@@ -3771,6 +3771,53 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_TRUE(video_content->rejected);
 }
 
+// This test ensures OnRenegotiationNeeded is called when we add track with
+// MediaStream -> AddTrack in the same way it is called when we add track with
+// PeerConnection -> AddTrack.
+// The test can be removed once addStream is rewritten in terms of addTrack
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=7815
+TEST_F(PeerConnectionInterfaceTest, MediaStreamAddTrackRemoveTrackRenegotiate) {
+  CreatePeerConnectionWithoutDtls();
+  rtc::scoped_refptr<MediaStreamInterface> stream(
+      pc_factory_->CreateLocalMediaStream(kStreamLabel1));
+  pc_->AddStream(stream);
+  rtc::scoped_refptr<AudioTrackInterface> audio_track(
+      pc_factory_->CreateAudioTrack("audio_track", nullptr));
+  rtc::scoped_refptr<VideoTrackInterface> video_track(
+      pc_factory_->CreateVideoTrack(
+          "video_track", pc_factory_->CreateVideoSource(
+                             std::unique_ptr<cricket::VideoCapturer>(
+                                 new cricket::FakeVideoCapturer()))));
+  stream->AddTrack(audio_track);
+  EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
+  observer_.renegotiation_needed_ = false;
+
+  stream->AddTrack(video_track);
+  EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
+  observer_.renegotiation_needed_ = false;
+
+  stream->RemoveTrack(audio_track);
+  EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
+  observer_.renegotiation_needed_ = false;
+
+  stream->RemoveTrack(video_track);
+  EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
+  observer_.renegotiation_needed_ = false;
+}
+
+// Tests that creating answer would fail gracefully without being crashed if the
+// remote description is unset.
+TEST_F(PeerConnectionInterfaceTest, CreateAnswerWithoutRemoteDescription) {
+  CreatePeerConnection();
+  // Creating answer fails because the remote description is unset.
+  std::unique_ptr<SessionDescriptionInterface> answer;
+  EXPECT_FALSE(DoCreateAnswer(&answer, nullptr));
+
+  // Createing answer succeeds when the remote description is set.
+  CreateOfferAsRemoteDescription();
+  EXPECT_TRUE(DoCreateAnswer(&answer, nullptr));
+}
+
 class PeerConnectionMediaConfigTest : public testing::Test {
  protected:
   void SetUp() override {
@@ -3890,38 +3937,4 @@ TEST(RTCConfigurationTest, ComparisonOperators) {
   PeerConnectionInterface::RTCConfiguration h(
       PeerConnectionInterface::RTCConfigurationType::kAggressive);
   EXPECT_NE(a, h);
-}
-
-// This test ensures OnRenegotiationNeeded is called when we add track with
-// MediaStream -> AddTrack in the same way it is called when we add track with
-// PeerConnection -> AddTrack.
-// The test can be removed once addStream is rewritten in terms of addTrack
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=7815
-TEST_F(PeerConnectionInterfaceTest, MediaStreamAddTrackRemoveTrackRenegotiate) {
-  CreatePeerConnectionWithoutDtls();
-  rtc::scoped_refptr<MediaStreamInterface> stream(
-      pc_factory_->CreateLocalMediaStream(kStreamLabel1));
-  pc_->AddStream(stream);
-  rtc::scoped_refptr<AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  rtc::scoped_refptr<VideoTrackInterface> video_track(
-      pc_factory_->CreateVideoTrack(
-          "video_track", pc_factory_->CreateVideoSource(
-              std::unique_ptr<cricket::VideoCapturer>(
-                  new cricket::FakeVideoCapturer()))));
-  stream->AddTrack(audio_track);
-  EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
-  observer_.renegotiation_needed_ = false;
-
-  stream->AddTrack(video_track);
-  EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
-  observer_.renegotiation_needed_ = false;
-
-  stream->RemoveTrack(audio_track);
-  EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
-  observer_.renegotiation_needed_ = false;
-
-  stream->RemoveTrack(video_track);
-  EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
-  observer_.renegotiation_needed_ = false;
 }

@@ -1787,18 +1787,19 @@ void PeerConnection::GetOptionsForAnswer(
   rtc::Optional<size_t> audio_index;
   rtc::Optional<size_t> video_index;
   rtc::Optional<size_t> data_index;
-  // There should be a pending remote description that's an offer...
-  RTC_DCHECK(session_->remote_description());
-  RTC_DCHECK(session_->remote_description()->type() ==
-             SessionDescriptionInterface::kOffer);
-  // Generate m= sections that match those in the offer.
-  // Note that mediasession.cc will handle intersection our preferred direction
-  // with the offered direction.
-  GenerateMediaDescriptionOptions(
-      session_->remote_description(),
-      cricket::RtpTransceiverDirection(send_audio, recv_audio),
-      cricket::RtpTransceiverDirection(send_video, recv_video), &audio_index,
-      &video_index, &data_index, session_options);
+  if (session_->remote_description()) {
+    // The pending remote description should be an offer.
+    RTC_DCHECK(session_->remote_description()->type() ==
+               SessionDescriptionInterface::kOffer);
+    // Generate m= sections that match those in the offer.
+    // Note that mediasession.cc will handle intersection our preferred
+    // direction with the offered direction.
+    GenerateMediaDescriptionOptions(
+        session_->remote_description(),
+        cricket::RtpTransceiverDirection(send_audio, recv_audio),
+        cricket::RtpTransceiverDirection(send_video, recv_video), &audio_index,
+        &video_index, &data_index, session_options);
+  }
 
   cricket::MediaDescriptionOptions* audio_media_description_options =
       !audio_index ? nullptr
