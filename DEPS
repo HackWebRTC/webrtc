@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '9e8703286ad66404a3a13c6dc926e2a23b3c0b62',
+  'chromium_revision': 'ed2864a8ee018ed22906a65e1ef6e1d1c1e3b37a',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -41,7 +41,7 @@ deps = {
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + 'f991fe6a886c1b2acdbd7cff68da8c8043d14894',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '18e54ad36a1329f052deb2a4e6ee7eeb144ec140',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '30913a42ac6c3ef2bba75bc267bd796bff58710c',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -76,7 +76,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + 'b98114e18d8b9b84586b10d24353ab8616d4c5fc',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '3acb3408382ead0d9216afd01174956664348f48',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + 'b21d356cb5346f060cf1317dd825c68fa515d56e',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'd61a9397e668fa9843c4aa7da9e79460fe590bfb',
   'src/tools/swarming_client':
@@ -118,7 +118,7 @@ deps_os = {
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + 'c9803eabb5b974675e408b2dca54ab58e16410f2',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + 'bc993826e51613c6a773b6046fbc6549e121bb0a',
   },
   'unix': {
     'src/third_party/lss':
