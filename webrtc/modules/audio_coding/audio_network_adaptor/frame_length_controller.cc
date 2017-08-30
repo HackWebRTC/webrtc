@@ -98,9 +98,7 @@ bool FrameLengthController::FrameLengthIncreasingDecision(
   //    current overhead rate OR all the following:
   // 2. longer frame length is available AND
   // 3. |uplink_bandwidth_bps| is known to be smaller than a threshold AND
-  // 4. |uplink_packet_loss_fraction| is known to be smaller than a threshold
-  //    AND
-  // 5. FEC is not decided or is OFF.
+  // 4. |uplink_packet_loss_fraction| is known to be smaller than a threshold.
 
   auto longer_frame_length_ms = std::next(frame_length_ms_);
   if (longer_frame_length_ms == config_.encoder_frame_lengths_ms.end())
@@ -123,8 +121,7 @@ bool FrameLengthController::FrameLengthIncreasingDecision(
           *uplink_bandwidth_bps_ <= increase_threshold->second) &&
          (uplink_packet_loss_fraction_ &&
           *uplink_packet_loss_fraction_ <=
-              config_.fl_increasing_packet_loss_fraction) &&
-         !config.enable_fec.value_or(false);
+              config_.fl_increasing_packet_loss_fraction);
 }
 
 bool FrameLengthController::FrameLengthDecreasingDecision(
@@ -137,7 +134,6 @@ bool FrameLengthController::FrameLengthDecreasingDecision(
   // one or more of the followings:
   // 3. |uplink_bandwidth_bps| is known to be larger than a threshold,
   // 4. |uplink_packet_loss_fraction| is known to be larger than a threshold,
-  // 5. FEC is decided ON.
   if (frame_length_ms_ == config_.encoder_frame_lengths_ms.begin())
     return false;
 
@@ -160,8 +156,7 @@ bool FrameLengthController::FrameLengthDecreasingDecision(
           *uplink_bandwidth_bps_ >= decrease_threshold->second) ||
          (uplink_packet_loss_fraction_ &&
           *uplink_packet_loss_fraction_ >=
-              config_.fl_decreasing_packet_loss_fraction) ||
-         config.enable_fec.value_or(false);
+              config_.fl_decreasing_packet_loss_fraction);
 }
 
 }  // namespace webrtc
