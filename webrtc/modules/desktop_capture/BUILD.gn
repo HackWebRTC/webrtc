@@ -165,7 +165,45 @@ if (rtc_include_tests) {
   }
 }
 
-rtc_static_library("desktop_capture") {
+rtc_source_set("desktop_capture") {
+  if (is_mac) {
+    public_deps = [
+      ":desktop_capture_objc",
+    ]
+  } else {
+    public_deps = [
+      ":desktop_capture_generic",
+    ]
+  }
+}
+
+if (is_mac) {
+  rtc_source_set("desktop_capture_objc") {
+    visibility = [ ":*" ]
+    sources = [
+      "mac/desktop_configuration.mm",
+      "mouse_cursor_monitor_mac.mm",
+      "screen_capturer_mac.mm",
+      "window_capturer_mac.mm",
+    ]
+    public_deps = [
+      ":desktop_capture_generic",
+    ]
+    deps = [
+      ":primitives",
+      "../../rtc_base:rtc_base",
+      "../../rtc_base:rtc_base_approved",
+    ]
+    libs = [
+      "AppKit.framework",
+      "IOKit.framework",
+      "OpenGL.framework",
+    ]
+  }
+}
+
+rtc_static_library("desktop_capture_generic") {
+  visibility = [ ":*" ]
   sources = [
     "blank_detector_desktop_capturer_wrapper.cc",
     "blank_detector_desktop_capturer_wrapper.h",
@@ -191,7 +229,6 @@ rtc_static_library("desktop_capture") {
     "fallback_desktop_capturer_wrapper.cc",
     "fallback_desktop_capturer_wrapper.h",
     "mac/desktop_configuration.h",
-    "mac/desktop_configuration.mm",
     "mac/desktop_configuration_monitor.cc",
     "mac/desktop_configuration_monitor.h",
     "mac/full_screen_chrome_window_detector.cc",
@@ -203,7 +240,6 @@ rtc_static_library("desktop_capture") {
     "mouse_cursor.cc",
     "mouse_cursor.h",
     "mouse_cursor_monitor.h",
-    "mouse_cursor_monitor_mac.mm",
     "mouse_cursor_monitor_win.cc",
     "resolution_tracker.cc",
     "resolution_tracker.h",
@@ -212,7 +248,6 @@ rtc_static_library("desktop_capture") {
     "screen_capture_frame_queue.h",
     "screen_capturer_helper.cc",
     "screen_capturer_helper.h",
-    "screen_capturer_mac.mm",
     "screen_capturer_win.cc",
     "win/cursor.cc",
     "win/cursor.h",
@@ -251,7 +286,6 @@ rtc_static_library("desktop_capture") {
     "win/screen_capturer_win_magnifier.h",
     "win/window_capture_utils.cc",
     "win/window_capture_utils.h",
-    "window_capturer_mac.mm",
     "window_capturer_win.cc",
     "window_finder.h",
     "window_finder_mac.h",
@@ -286,14 +320,6 @@ rtc_static_library("desktop_capture") {
       "mouse_cursor_monitor_null.cc",
       "screen_capturer_null.cc",
       "window_capturer_null.cc",
-    ]
-  }
-
-  if (is_mac) {
-    libs = [
-      "AppKit.framework",
-      "IOKit.framework",
-      "OpenGL.framework",
     ]
   }
 
