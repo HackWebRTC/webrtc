@@ -1,7 +1,6 @@
 include_rules = [
   "+third_party/libjpeg",
   "+third_party/libjpeg_turbo",
-  "+webrtc/base",
   "+webrtc/call",
   "+webrtc/common_audio",
   "+webrtc/common_video",

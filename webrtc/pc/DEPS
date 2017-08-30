@@ -1,7 +1,6 @@
 include_rules = [
   "+third_party/libsrtp",
   "+webrtc/api",
-  "+webrtc/base",
   "+webrtc/call",
   "+webrtc/common_video/h264",
   "+webrtc/logging/rtc_event_log",

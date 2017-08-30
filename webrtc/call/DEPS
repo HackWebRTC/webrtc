@@ -1,6 +1,5 @@
 include_rules = [
   "+webrtc/audio",
-  "+webrtc/base",
   "+webrtc/logging/rtc_event_log",
   "+webrtc/modules/audio_coding",
   "+webrtc/modules/audio_device",
