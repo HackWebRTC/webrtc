@@ -58,6 +58,10 @@ void DesktopFrame::CopyPixelsFrom(const DesktopFrame& src_frame,
                  src_frame.stride(), dest_rect);
 }
 
+DesktopRect DesktopFrame::rect() const {
+  return DesktopRect::MakeOriginSize(top_left(), size());
+}
+
 uint8_t* DesktopFrame::GetFrameDataAtPos(const DesktopVector& pos) const {
   return data() + stride() * pos.y() + DesktopFrame::kBytesPerPixel * pos.x();
 }

@@ -40,7 +40,9 @@ bool SharedDesktopFrame::ShareFrameWith(const SharedDesktopFrame& other) const {
 }
 
 std::unique_ptr<SharedDesktopFrame> SharedDesktopFrame::Share() {
-  return std::unique_ptr<SharedDesktopFrame>(new SharedDesktopFrame(core_));
+  std::unique_ptr<SharedDesktopFrame> result(new SharedDesktopFrame(core_));
+  result->CopyFrameInfoFrom(*this);
+  return result;
 }
 
 bool SharedDesktopFrame::IsShared() {

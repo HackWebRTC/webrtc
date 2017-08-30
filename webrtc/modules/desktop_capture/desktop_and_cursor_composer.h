@@ -20,6 +20,9 @@
 
 namespace webrtc {
 
+template <bool use_desktop_relative_cursor_position>
+class DesktopAndCursorComposerTest;
+
 // A wrapper for DesktopCapturer that also captures mouse using specified
 // MouseCursorMonitor and renders it on the generated streams.
 class DesktopAndCursorComposer : public DesktopCapturer,
@@ -50,6 +53,16 @@ class DesktopAndCursorComposer : public DesktopCapturer,
   void SetExcludedWindow(WindowId window) override;
 
  private:
+  // Allows test cases to use a fake MouseCursorMonitor implementation.
+  friend class DesktopAndCursorComposerTest<true>;
+  friend class DesktopAndCursorComposerTest<false>;
+
+  // Constructor to delegate both deprecated and new constructors and allows
+  // test cases to use a fake MouseCursorMonitor implementation.
+  DesktopAndCursorComposer(DesktopCapturer* desktop_capturer,
+                           MouseCursorMonitor* mouse_monitor,
+                           bool use_desktop_relative_cursor_position);
+
   // DesktopCapturer::Callback interface.
   void OnCaptureResult(DesktopCapturer::Result result,
                        std::unique_ptr<DesktopFrame> frame) override;
@@ -58,13 +71,23 @@ class DesktopAndCursorComposer : public DesktopCapturer,
   void OnMouseCursor(MouseCursor* cursor) override;
   void OnMouseCursorPosition(MouseCursorMonitor::CursorState state,
                              const DesktopVector& position) override;
+  void OnMouseCursorPosition(const DesktopVector& position) override;
 
   const std::unique_ptr<DesktopCapturer> desktop_capturer_;
   const std::unique_ptr<MouseCursorMonitor> mouse_monitor_;
+  // This is a temporary flag to decide how to use the |mouse_monitor_|.
+  // If it's true, DesktopAndCursorComposer will use the absolute position from
+  // MouseCursorMonitor but ignore the MouseCursorMonitor::CursorState.
+  // Otherwise MouseCursorMonitor::CursorState is respected. This flag is false
+  // when the deprecated constructor is used, and true when the new one is used.
+  // This flag will be removed together with the deprecated constructor.
+  const bool use_desktop_relative_cursor_position_;
 
   DesktopCapturer::Callback* callback_;
 
   std::unique_ptr<MouseCursor> cursor_;
+  // This field is irrelevant if |use_desktop_relative_cursor_position_| is
+  // true.
   MouseCursorMonitor::CursorState cursor_state_;
   DesktopVector cursor_position_;
 

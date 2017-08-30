@@ -30,6 +30,10 @@ class DesktopFrame {
 
   virtual ~DesktopFrame();
 
+  // Returns the rectangle in full desktop coordinates to indicate the area
+  // covered by the DesktopFrame.
+  DesktopRect rect() const;
+
   // Size of the frame.
   const DesktopSize& size() const { return size_; }
 
