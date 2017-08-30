@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -159,11 +160,11 @@ class VideoProcessor {
   // Updates the encoder with target rates. Must be called at least once.
   void SetRates(int bitrate_kbps, int framerate_fps);
 
-  // Return the number of dropped frames.
-  int NumberDroppedFrames();
+  // Returns the number of dropped frames.
+  std::vector<int> NumberDroppedFramesPerRateUpdate() const;
 
-  // Return the number of spatial resizes.
-  int NumberSpatialResizes();
+  // Returns the number of spatial resizes.
+  std::vector<int> NumberSpatialResizesPerRateUpdate() const;
 
  private:
   // Container that holds per-frame information that needs to be stored between
@@ -275,14 +276,7 @@ class VideoProcessor {
   // Invoked by the callback adapter when a frame has completed decoding.
   void FrameDecoded(const webrtc::VideoFrame& image);
 
-  // Use the frame number as the basis for timestamp to identify frames. Let the
-  // first timestamp be non-zero, to not make the IvfFileWriter believe that we
-  // want to use capture timestamps in the IVF files.
-  uint32_t FrameNumberToTimestamp(int frame_number) const;
-  int TimestampToFrameNumber(uint32_t timestamp) const;
-
   bool initialized_ GUARDED_BY(sequence_checker_);
-
   TestConfig config_ GUARDED_BY(sequence_checker_);
 
   webrtc::VideoEncoder* const encoder_;
@@ -315,6 +309,11 @@ class VideoProcessor {
   int last_encoded_frame_num_ GUARDED_BY(sequence_checker_);
   int last_decoded_frame_num_ GUARDED_BY(sequence_checker_);
 
+  // Store an RTP timestamp -> frame number map, since the timestamps are
+  // based off of the frame rate, which can change mid-test.
+  std::map<uint32_t, int> rtp_timestamp_to_frame_num_
+      GUARDED_BY(sequence_checker_);
+
   // Keep track of if we have excluded the first key frame from packet loss.
   bool first_key_frame_has_been_excluded_ GUARDED_BY(sequence_checker_);
 
@@ -324,8 +323,9 @@ class VideoProcessor {
 
   // Statistics.
   Stats* stats_;
-  int num_dropped_frames_ GUARDED_BY(sequence_checker_);
-  int num_spatial_resizes_ GUARDED_BY(sequence_checker_);
+  std::vector<int> num_dropped_frames_ GUARDED_BY(sequence_checker_);
+  std::vector<int> num_spatial_resizes_ GUARDED_BY(sequence_checker_);
+  int rate_update_index_ GUARDED_BY(sequence_checker_);
 
   rtc::SequencedTaskChecker sequence_checker_;
 

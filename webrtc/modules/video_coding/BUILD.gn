@@ -409,6 +409,8 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../media:rtc_media",
       "../../rtc_base:rtc_base_approved",
+      "../../rtc_base:rtc_task_queue",
+      "../../system_wrappers:system_wrappers",
       "../../test:test_support",
       "../../test:video_test_common",
       "../../test:video_test_support",

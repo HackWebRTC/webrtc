@@ -155,8 +155,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
       first_key_frame_has_been_excluded_(false),
       last_decoded_frame_buffer_(analysis_frame_reader->FrameLength()),
       stats_(stats),
-      num_dropped_frames_(0),
-      num_spatial_resizes_(0) {
+      rate_update_index_(-1) {
   RTC_DCHECK(encoder);
   RTC_DCHECK(decoder);
   RTC_DCHECK(packet_manipulator);
@@ -236,9 +235,15 @@ void VideoProcessor::ProcessFrame(int frame_number) {
   rtc::scoped_refptr<I420BufferInterface> buffer(
       analysis_frame_reader_->ReadFrame());
   RTC_CHECK(buffer) << "Tried to read too many frames from the file.";
+  // Use the frame number as the basis for timestamp to identify frames. Let the
+  // first timestamp be non-zero, to not make the IvfFileWriter believe that we
+  // want to use capture timestamps in the IVF files.
+  const uint32_t rtp_timestamp = (frame_number + 1) * kRtpClockRateHz /
+                                 config_.codec_settings.maxFramerate;
+  rtp_timestamp_to_frame_num_[rtp_timestamp] = frame_number;
   const int64_t kNoRenderTime = 0;
-  VideoFrame source_frame(buffer, FrameNumberToTimestamp(frame_number),
-                          kNoRenderTime, webrtc::kVideoRotation_0);
+  VideoFrame source_frame(buffer, rtp_timestamp, kNoRenderTime,
+                          webrtc::kVideoRotation_0);
 
   // Decide if we are going to force a keyframe.
   std::vector<FrameType> frame_types(1, kVideoFrameDelta);
@@ -269,23 +274,23 @@ void VideoProcessor::ProcessFrame(int frame_number) {
 
 void VideoProcessor::SetRates(int bitrate_kbps, int framerate_fps) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-
   config_.codec_settings.maxFramerate = framerate_fps;
   int set_rates_result = encoder_->SetRateAllocation(
       bitrate_allocator_->GetAllocation(bitrate_kbps * 1000, framerate_fps),
       framerate_fps);
   RTC_DCHECK_GE(set_rates_result, 0)
       << "Failed to update encoder with new rate " << bitrate_kbps << ".";
-  num_dropped_frames_ = 0;
-  num_spatial_resizes_ = 0;
+  ++rate_update_index_;
+  num_dropped_frames_.push_back(0);
+  num_spatial_resizes_.push_back(0);
 }
 
-int VideoProcessor::NumberDroppedFrames() {
+std::vector<int> VideoProcessor::NumberDroppedFramesPerRateUpdate() const {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   return num_dropped_frames_;
 }
 
-int VideoProcessor::NumberSpatialResizes() {
+std::vector<int> VideoProcessor::NumberSpatialResizesPerRateUpdate() const {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   return num_spatial_resizes_;
 }
@@ -302,16 +307,17 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
     RTC_CHECK(encoded_frame_writer_->WriteFrame(encoded_image, codec));
   }
 
-  // Timestamp is proportional to frame number, so this gives us number of
-  // dropped frames.
-  int frame_number = TimestampToFrameNumber(encoded_image._timeStamp);
+  // Check for dropped frames.
+  const int frame_number =
+      rtp_timestamp_to_frame_num_[encoded_image._timeStamp];
   bool last_frame_missing = false;
   if (frame_number > 0) {
     RTC_DCHECK_GE(last_encoded_frame_num_, 0);
     int num_dropped_from_last_encode =
         frame_number - last_encoded_frame_num_ - 1;
     RTC_DCHECK_GE(num_dropped_from_last_encode, 0);
-    num_dropped_frames_ += num_dropped_from_last_encode;
+    RTC_CHECK_GE(rate_update_index_, 0);
+    num_dropped_frames_[rate_update_index_] += num_dropped_from_last_encode;
     if (num_dropped_from_last_encode > 0) {
       // For dropped frames, we write out the last decoded frame to avoid
       // getting out of sync for the computation of PSNR and SSIM.
@@ -328,7 +334,6 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
         }
       }
     }
-
     last_frame_missing =
         (frame_infos_[last_encoded_frame_num_].manipulated_length == 0);
   }
@@ -336,7 +341,7 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
   RTC_CHECK_GT(frame_number, last_encoded_frame_num_);
   last_encoded_frame_num_ = frame_number;
 
-  // Frame is not dropped, so update frame information and statistics.
+  // Update frame information and statistics.
   VerifyQpParser(encoded_image, config_);
   RTC_CHECK_LT(frame_number, frame_infos_.size());
   FrameInfo* frame_info = &frame_infos_[frame_number];
@@ -420,8 +425,8 @@ void VideoProcessor::FrameDecoded(const VideoFrame& image) {
   int64_t decode_stop_ns = rtc::TimeNanos();
 
   // Update frame information and statistics.
-  int frame_number = TimestampToFrameNumber(image.timestamp());
-  RTC_DCHECK_LT(frame_number, frame_infos_.size());
+  const int frame_number = rtp_timestamp_to_frame_num_[image.timestamp()];
+  RTC_CHECK_LT(frame_number, frame_infos_.size());
   FrameInfo* frame_info = &frame_infos_[frame_number];
   frame_info->decoded_width = image.width();
   frame_info->decoded_height = image.height();
@@ -432,14 +437,15 @@ void VideoProcessor::FrameDecoded(const VideoFrame& image) {
 
   // Check if the codecs have resized the frame since previously decoded frame.
   if (frame_number > 0) {
-    RTC_DCHECK_GE(last_decoded_frame_num_, 0);
+    RTC_CHECK_GE(last_decoded_frame_num_, 0);
     const FrameInfo& last_decoded_frame_info =
         frame_infos_[last_decoded_frame_num_];
     if (static_cast<int>(image.width()) !=
             last_decoded_frame_info.decoded_width ||
         static_cast<int>(image.height()) !=
             last_decoded_frame_info.decoded_height) {
-      ++num_spatial_resizes_;
+      RTC_CHECK_GE(rate_update_index_, 0);
+      ++num_spatial_resizes_[rate_update_index_];
     }
   }
   // Ensure strict monotonicity.
@@ -480,25 +486,6 @@ void VideoProcessor::FrameDecoded(const VideoFrame& image) {
   }
 
   last_decoded_frame_buffer_ = std::move(extracted_buffer);
-}
-
-uint32_t VideoProcessor::FrameNumberToTimestamp(int frame_number) const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-
-  RTC_DCHECK_GE(frame_number, 0);
-  const int ticks_per_frame =
-      kRtpClockRateHz / config_.codec_settings.maxFramerate;
-  return (frame_number + 1) * ticks_per_frame;
-}
-
-int VideoProcessor::TimestampToFrameNumber(uint32_t timestamp) const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-
-  RTC_DCHECK_GT(timestamp, 0);
-  const int ticks_per_frame =
-      kRtpClockRateHz / config_.codec_settings.maxFramerate;
-  RTC_DCHECK_EQ(timestamp % ticks_per_frame, 0);
-  return (timestamp / ticks_per_frame) - 1;
 }
 
 }  // namespace test

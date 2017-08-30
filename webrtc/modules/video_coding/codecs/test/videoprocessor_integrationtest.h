@@ -38,9 +38,11 @@
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/event.h"
 #include "webrtc/rtc_base/file.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/ptr_util.h"
+#include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/frame_reader.h"
@@ -182,9 +184,10 @@ class VideoProcessorIntegrationTest : public testing::Test {
     decoder_factory_->DestroyVideoDecoder(decoder_);
   }
 
-  void SetUpObjects(const VisualizationParams* visualization_params,
-                    const int initial_bitrate_kbps,
-                    const int initial_framerate_fps) {
+  void SetUpAndInitObjects(rtc::TaskQueue* task_queue,
+                           const int initial_bitrate_kbps,
+                           const int initial_framerate_fps,
+                           const VisualizationParams* visualization_params) {
     CreateEncoderAndDecoder();
 
     // Create file objects for quality analysis.
@@ -223,54 +226,59 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
     packet_manipulator_.reset(new PacketManipulatorImpl(
         &packet_reader_, config_.networking_config, config_.verbose));
-    processor_ = rtc::MakeUnique<VideoProcessor>(
-        encoder_, decoder_, analysis_frame_reader_.get(),
-        analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
-        &stats_, encoded_frame_writer_.get(), decoded_frame_writer_.get());
-    processor_->Init();
+
+    config_.codec_settings.minBitrate = 0;
+    config_.codec_settings.startBitrate = initial_bitrate_kbps;
+    config_.codec_settings.maxFramerate = initial_framerate_fps;
+
+    rtc::Event sync_event(false, false);
+    task_queue->PostTask([this, &sync_event]() {
+      processor_ = rtc::MakeUnique<VideoProcessor>(
+          encoder_, decoder_, analysis_frame_reader_.get(),
+          analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
+          &stats_, encoded_frame_writer_.get(), decoded_frame_writer_.get());
+      processor_->Init();
+      sync_event.Set();
+    });
+    sync_event.Wait(rtc::Event::kForever);
   }
 
-  // Reset quantities after each encoder update, update the target per-frame
-  // bandwidth.
-  void ResetRateControlMetrics(int num_frames_to_hit_target) {
-    const int num_temporal_layers =
-        NumberOfTemporalLayers(config_.codec_settings);
-    for (int i = 0; i < num_temporal_layers; i++) {
-      num_frames_per_update_[i] = 0;
-      sum_frame_size_mismatch_[i] = 0.0f;
-      sum_encoded_frame_size_[i] = 0.0f;
-      encoding_bitrate_[i] = 0.0f;
-      // Update layer per-frame-bandwidth.
-      per_frame_bandwidth_[i] = static_cast<float>(bitrate_layer_[i]) /
-                                static_cast<float>(framerate_layer_[i]);
+  void ReleaseAndCloseObjects(rtc::TaskQueue* task_queue) {
+    rtc::Event sync_event(false, false);
+    task_queue->PostTask([this, &sync_event]() {
+      processor_->Release();
+      sync_event.Set();
+    });
+    sync_event.Wait(rtc::Event::kForever);
+
+    // The VideoProcessor must be ::Release()'d before we destroy the codecs.
+    DestroyEncoderAndDecoder();
+
+    // Close the analysis files before we use them for SSIM/PSNR calculations.
+    analysis_frame_reader_->Close();
+    analysis_frame_writer_->Close();
+
+    // Close visualization files.
+    if (encoded_frame_writer_) {
+      EXPECT_TRUE(encoded_frame_writer_->Close());
     }
-    // Set maximum size of key frames, following setting in the VP8 wrapper.
-    float max_key_size = kScaleKeyFrameSize * kOptimalBufferSize * framerate_;
-    // We don't know exact target size of the key frames (except for first one),
-    // but the minimum in libvpx is ~|3 * per_frame_bandwidth| and maximum is
-    // set by |max_key_size_ * per_frame_bandwidth|. Take middle point/average
-    // as reference for mismatch. Note key frames always correspond to base
-    // layer frame in this test.
-    target_size_key_frame_ = 0.5 * (3 + max_key_size) * per_frame_bandwidth_[0];
-    num_frames_total_ = 0;
-    sum_encoded_frame_size_total_ = 0.0f;
-    encoding_bitrate_total_ = 0.0f;
-    perc_encoding_rate_mismatch_ = 0.0f;
-    num_frames_to_hit_target_ = num_frames_to_hit_target;
-    encoding_rate_within_target_ = false;
-    sum_key_frame_size_mismatch_ = 0.0;
-    num_key_frames_ = 0;
+    if (decoded_frame_writer_) {
+      decoded_frame_writer_->Close();
+    }
   }
 
   // For every encoded frame, update the rate control metrics.
   void UpdateRateControlMetrics(int frame_number) {
     RTC_CHECK_GE(frame_number, 0);
 
+    const int tl_idx = TemporalLayerIndexForFrame(frame_number);
+    ++num_frames_per_update_[tl_idx];
+    ++num_frames_total_;
+
     FrameType frame_type = stats_.stats_[frame_number].frame_type;
     float encoded_size_kbits =
         stats_.stats_[frame_number].encoded_frame_length_in_bytes * 8.0f /
         1000.0f;
-    const int tl_idx = TemporalLayerIndexForFrame(frame_number);
 
     // Update layer data.
     // Update rate mismatch relative to per-frame bandwidth for delta frames.
@@ -308,9 +316,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
   // Verify expected behavior of rate control and print out data.
   void PrintAndMaybeVerifyRateControlMetrics(
       int rate_update_index,
-      const std::vector<RateControlThresholds>* rc_thresholds) {
-    int num_dropped_frames = processor_->NumberDroppedFrames();
-    int num_resize_actions = processor_->NumberSpatialResizes();
+      const std::vector<RateControlThresholds>* rc_thresholds,
+      const std::vector<int>& num_dropped_frames,
+      const std::vector<int>& num_resize_actions) {
     printf(
         "Rate update #%d:\n"
         " Target bitrate         : %d\n"
@@ -322,8 +330,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
         " # frames to convergence: %d\n"
         " # dropped frames       : %d\n"
         " # spatial resizes      : %d\n",
-        num_frames_total_, num_frames_to_hit_target_, num_dropped_frames,
-        num_resize_actions);
+        num_frames_total_, num_frames_to_hit_target_,
+        num_dropped_frames[rate_update_index],
+        num_resize_actions[rate_update_index]);
 
     const RateControlThresholds* rc_threshold = nullptr;
     if (rc_thresholds) {
@@ -376,8 +385,10 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
     if (rc_threshold) {
       EXPECT_LE(num_frames_to_hit_target_, rc_threshold->max_time_hit_target);
-      EXPECT_LE(num_dropped_frames, rc_threshold->max_num_dropped_frames);
-      EXPECT_EQ(rc_threshold->num_spatial_resizes, num_resize_actions);
+      EXPECT_LE(num_dropped_frames[rate_update_index],
+                rc_threshold->max_num_dropped_frames);
+      EXPECT_EQ(rc_threshold->num_spatial_resizes,
+                num_resize_actions[rate_update_index]);
       EXPECT_EQ(rc_threshold->num_key_frames, num_key_frames_);
     }
   }
@@ -434,8 +445,12 @@ class VideoProcessorIntegrationTest : public testing::Test {
     return tl_idx;
   }
 
-  // Set the bit rate and frame rate per temporal layer, for up to 3 layers.
-  void SetTemporalLayerRates() {
+  // Reset quantities before each encoder rate update.
+  void ResetRateControlMetrics(int rate_update_index,
+                               const RateProfile& rate_profile) {
+    // Set new rates.
+    bitrate_kbps_ = rate_profile.target_bit_rate[rate_update_index];
+    framerate_ = rate_profile.input_frame_rate[rate_update_index];
     const int num_temporal_layers =
         NumberOfTemporalLayers(config_.codec_settings);
     RTC_DCHECK_LE(num_temporal_layers, kMaxNumTemporalLayers);
@@ -455,6 +470,38 @@ class VideoProcessorIntegrationTest : public testing::Test {
     if (num_temporal_layers == 3) {
       framerate_layer_[2] = framerate_ / 2.0f;
     }
+    if (rate_update_index == 0) {
+      target_size_key_frame_initial_ =
+          0.5 * kInitialBufferSize * bitrate_layer_[0];
+    }
+
+    // Reset rate control metrics.
+    for (int i = 0; i < num_temporal_layers; i++) {
+      num_frames_per_update_[i] = 0;
+      sum_frame_size_mismatch_[i] = 0.0f;
+      sum_encoded_frame_size_[i] = 0.0f;
+      encoding_bitrate_[i] = 0.0f;
+      // Update layer per-frame-bandwidth.
+      per_frame_bandwidth_[i] = static_cast<float>(bitrate_layer_[i]) /
+                                static_cast<float>(framerate_layer_[i]);
+    }
+    // Set maximum size of key frames, following setting in the VP8 wrapper.
+    float max_key_size = kScaleKeyFrameSize * kOptimalBufferSize * framerate_;
+    // We don't know exact target size of the key frames (except for first one),
+    // but the minimum in libvpx is ~|3 * per_frame_bandwidth| and maximum is
+    // set by |max_key_size_ * per_frame_bandwidth|. Take middle point/average
+    // as reference for mismatch. Note key frames always correspond to base
+    // layer frame in this test.
+    target_size_key_frame_ = 0.5 * (3 + max_key_size) * per_frame_bandwidth_[0];
+    num_frames_total_ = 0;
+    sum_encoded_frame_size_total_ = 0.0f;
+    encoding_bitrate_total_ = 0.0f;
+    perc_encoding_rate_mismatch_ = 0.0f;
+    num_frames_to_hit_target_ =
+        rate_profile.frame_index_rate_update[rate_update_index + 1];
+    encoding_rate_within_target_ = false;
+    sum_key_frame_size_mismatch_ = 0.0;
+    num_key_frames_ = 0;
   }
 
   // Processes all frames in the clip and verifies the result.
@@ -463,73 +510,95 @@ class VideoProcessorIntegrationTest : public testing::Test {
       const std::vector<RateControlThresholds>* rc_thresholds,
       const QualityThresholds* quality_thresholds,
       const VisualizationParams* visualization_params) {
-    config_.codec_settings.startBitrate = rate_profile.target_bit_rate[0];
-    SetUpObjects(visualization_params, rate_profile.target_bit_rate[0],
-                 rate_profile.input_frame_rate[0]);
+    // The Android HW codec needs to be run on a task queue, so we simply always
+    // run the test on a task queue.
+    rtc::TaskQueue task_queue("VidProc TQ");
+    rtc::Event sync_event(false, false);
+
+    SetUpAndInitObjects(&task_queue, rate_profile.target_bit_rate[0],
+                        rate_profile.input_frame_rate[0], visualization_params);
 
     // Set initial rates.
-    bitrate_kbps_ = rate_profile.target_bit_rate[0];
-    framerate_ = rate_profile.input_frame_rate[0];
-    SetTemporalLayerRates();
-    // Set the initial target size for key frame.
-    target_size_key_frame_initial_ =
-        0.5 * kInitialBufferSize * bitrate_layer_[0];
-    processor_->SetRates(bitrate_kbps_, framerate_);
+    int rate_update_index = 0;
+    task_queue.PostTask([this, &rate_profile, rate_update_index] {
+      processor_->SetRates(rate_profile.target_bit_rate[rate_update_index],
+                           rate_profile.input_frame_rate[rate_update_index]);
+    });
 
-    // Process each frame, up to |num_frames|.
+    // Process all frames.
     int frame_number = 0;
-    int update_index = 0;
-    int num_frames = rate_profile.num_frames;
-    ResetRateControlMetrics(
-        rate_profile.frame_index_rate_update[update_index + 1]);
-
+    const int num_frames = rate_profile.num_frames;
+    RTC_DCHECK_GE(num_frames, 1);
     while (frame_number < num_frames) {
-      processor_->ProcessFrame(frame_number);
-      const int tl_idx = TemporalLayerIndexForFrame(frame_number);
-      ++num_frames_per_update_[tl_idx];
-      ++num_frames_total_;
+      // In order to not overwhelm the OpenMAX buffers in the Android
+      // MediaCodec API, we roughly pace the frames here. The downside
+      // of this is that the encode run will be done in real-time.
+      // TODO(brandtr): Investigate if this is needed on iOS.
+      if (config_.hw_codec) {
+        SleepMs(rtc::kNumMillisecsPerSec /
+                rate_profile.input_frame_rate[rate_update_index]);
+      }
+
+      task_queue.PostTask(
+          [this, frame_number] { processor_->ProcessFrame(frame_number); });
+      ++frame_number;
+
+      if (frame_number ==
+          rate_profile.frame_index_rate_update[rate_update_index + 1]) {
+        ++rate_update_index;
+
+        task_queue.PostTask([this, &rate_profile, rate_update_index] {
+          processor_->SetRates(
+              rate_profile.target_bit_rate[rate_update_index],
+              rate_profile.input_frame_rate[rate_update_index]);
+        });
+      }
+    }
+
+    // Give the VideoProcessor pipeline some time to process the last frame,
+    // and then release the codecs.
+    if (config_.hw_codec) {
+      SleepMs(1 * rtc::kNumMillisecsPerSec);
+    }
+    ReleaseAndCloseObjects(&task_queue);
+
+    // Calculate and print rate control statistics.
+    rate_update_index = 0;
+    frame_number = 0;
+    ResetRateControlMetrics(rate_update_index, rate_profile);
+    std::vector<int> num_dropped_frames;
+    std::vector<int> num_resize_actions;
+    sync_event.Reset();
+    task_queue.PostTask(
+        [this, &num_dropped_frames, &num_resize_actions, &sync_event]() {
+          num_dropped_frames = processor_->NumberDroppedFramesPerRateUpdate();
+          num_resize_actions = processor_->NumberSpatialResizesPerRateUpdate();
+          sync_event.Set();
+        });
+    sync_event.Wait(rtc::Event::kForever);
+    while (frame_number < num_frames) {
       UpdateRateControlMetrics(frame_number);
 
       ++frame_number;
 
-      // If we hit another/next update, verify stats for current state and
-      // update layers and codec with new rates.
       if (frame_number ==
-          rate_profile.frame_index_rate_update[update_index + 1]) {
-        PrintAndMaybeVerifyRateControlMetrics(update_index, rc_thresholds);
-
-        // Update layer rates and the codec with new rates.
-        ++update_index;
-        bitrate_kbps_ = rate_profile.target_bit_rate[update_index];
-        framerate_ = rate_profile.input_frame_rate[update_index];
-        SetTemporalLayerRates();
-        ResetRateControlMetrics(
-            rate_profile.frame_index_rate_update[update_index + 1]);
-        processor_->SetRates(bitrate_kbps_, framerate_);
+          rate_profile.frame_index_rate_update[rate_update_index + 1]) {
+        PrintAndMaybeVerifyRateControlMetrics(rate_update_index, rc_thresholds,
+                                              num_dropped_frames,
+                                              num_resize_actions);
+        ++rate_update_index;
+        ResetRateControlMetrics(rate_update_index, rate_profile);
       }
     }
+    PrintAndMaybeVerifyRateControlMetrics(rate_update_index, rc_thresholds,
+                                          num_dropped_frames,
+                                          num_resize_actions);
 
-    // Verify rate control metrics for all frames since the last rate update.
-    PrintAndMaybeVerifyRateControlMetrics(update_index, rc_thresholds);
-    EXPECT_EQ(num_frames, frame_number);
+    // Calculate and print other statistics.
     EXPECT_EQ(num_frames, static_cast<int>(stats_.stats_.size()));
+    stats_.PrintSummary();
 
-    // Release encoder and decoder to make sure they have finished processing.
-    processor_->Release();
-    DestroyEncoderAndDecoder();
-
-    // Close the analysis files before we use them for SSIM/PSNR calculations.
-    analysis_frame_reader_->Close();
-    analysis_frame_writer_->Close();
-
-    // Close visualization files.
-    if (encoded_frame_writer_) {
-      EXPECT_TRUE(encoded_frame_writer_->Close());
-    }
-    if (decoded_frame_writer_) {
-      decoded_frame_writer_->Close();
-    }
-
+    // Calculate and print image quality statistics.
     // TODO(marpan): Should compute these quality metrics per SetRates update.
     QualityMetricsResult psnr_result, ssim_result;
     EXPECT_EQ(0, I420MetricsFromFiles(config_.input_filename.c_str(),
@@ -540,7 +609,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
     if (quality_thresholds) {
       VerifyQuality(psnr_result, ssim_result, *quality_thresholds);
     }
-    stats_.PrintSummary();
     printf("PSNR avg: %f, min: %f\nSSIM avg: %f, min: %f\n",
            psnr_result.average, psnr_result.min, ssim_result.average,
            ssim_result.min);
