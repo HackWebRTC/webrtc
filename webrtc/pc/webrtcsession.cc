@@ -1774,7 +1774,7 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content,
         transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
     if (rtcp_dtls_transport) {
       transport_controller_->DestroyDtlsTransport(
-          transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+          transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
     }
     return false;
   }
@@ -1817,7 +1817,7 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content,
         transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
     if (rtcp_dtls_transport) {
       transport_controller_->DestroyDtlsTransport(
-          transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+          transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
     }
     return false;
   }
@@ -1882,7 +1882,7 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
           transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
       if (rtcp_dtls_transport) {
         transport_controller_->DestroyDtlsTransport(
-            transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+            transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
       }
       return false;
     }
