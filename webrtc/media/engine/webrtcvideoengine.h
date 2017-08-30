@@ -47,6 +47,7 @@ class Thread;
 
 namespace cricket {
 
+class EncoderFactoryAdapter;
 class VideoCapturer;
 class VideoProcessor;
 class VideoRenderer;
@@ -121,7 +122,7 @@ class WebRtcVideoEngine {
   bool initialized_;
 
   WebRtcVideoDecoderFactory* external_decoder_factory_;
-  WebRtcVideoEncoderFactory* external_encoder_factory_;
+  std::unique_ptr<EncoderFactoryAdapter> encoder_factory_;
 };
 
 class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
@@ -129,7 +130,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   WebRtcVideoChannel(webrtc::Call* call,
                      const MediaConfig& config,
                      const VideoOptions& options,
-                     WebRtcVideoEncoderFactory* external_encoder_factory,
+                     const EncoderFactoryAdapter& encoder_factory,
                      WebRtcVideoDecoderFactory* external_decoder_factory);
   ~WebRtcVideoChannel() override;
 
@@ -258,7 +259,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
         const StreamParams& sp,
         webrtc::VideoSendStream::Config config,
         const VideoOptions& options,
-        WebRtcVideoEncoderFactory* external_encoder_factory,
+        const EncoderFactoryAdapter& encoder_factory,
         bool enable_cpu_overuse_detection,
         int max_bitrate_bps,
         const rtc::Optional<VideoCodecSettings>& codec_settings,
@@ -310,42 +311,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
       webrtc::VideoEncoderConfig encoder_config;
     };
 
-    class AllocatedEncoder {
-     public:
-      AllocatedEncoder() = default;
-      AllocatedEncoder(AllocatedEncoder&&) = default;
-      AllocatedEncoder& operator=(AllocatedEncoder&&) = default;
-
-      AllocatedEncoder(std::unique_ptr<webrtc::VideoEncoder> encoder,
-                       bool is_external,
-                       const cricket::VideoCodec& codec,
-                       bool has_internal_source);
-
-      // Returns a raw pointer to the allocated encoder. This object still has
-      // ownership of the encoder and is responsible for deleting it.
-      webrtc::VideoEncoder* encoder() { return encoder_.get(); }
-
-      // Returns true if the encoder is external.
-      bool IsExternal() { return is_external_; }
-
-      cricket::VideoCodec codec() { return codec_; }
-
-      bool HasInternalSource() { return has_internal_source_; }
-
-      // Release the encoders this object manages.
-      void Reset();
-
-     private:
-      std::unique_ptr<webrtc::VideoEncoder> encoder_;
-      bool is_external_;
-      cricket::VideoCodec codec_;
-      bool has_internal_source_;
-    };
-
     rtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings>
     ConfigureVideoEncoderSettings(const VideoCodec& codec);
-    // Creates and returns a new AllocatedEncoder of the specified codec type.
-    AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec);
     void SetCodec(const VideoCodecSettings& codec,
                   bool force_encoder_allocation);
     void RecreateWebRtcStream();
@@ -370,9 +337,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     const bool enable_cpu_overuse_detection_;
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source_
         ACCESS_ON(&thread_checker_);
-    WebRtcVideoEncoderFactory* const external_encoder_factory_
-        ACCESS_ON(&thread_checker_);
-    const std::unique_ptr<WebRtcVideoEncoderFactory> internal_encoder_factory_
+    std::unique_ptr<EncoderFactoryAdapter> encoder_factory_
         ACCESS_ON(&thread_checker_);
 
     webrtc::VideoSendStream* stream_ ACCESS_ON(&thread_checker_);
@@ -388,7 +353,9 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     // TODO(skvlad): Combine parameters_ and rtp_parameters_ once we have only
     // one stream per MediaChannel.
     webrtc::RtpParameters rtp_parameters_ ACCESS_ON(&thread_checker_);
-    AllocatedEncoder allocated_encoder_ ACCESS_ON(&thread_checker_);
+    std::unique_ptr<webrtc::VideoEncoder> allocated_encoder_
+        ACCESS_ON(&thread_checker_);
+    VideoCodec allocated_codec_ ACCESS_ON(&thread_checker_);
 
     bool sending_ ACCESS_ON(&thread_checker_);
   };
@@ -529,7 +496,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   rtc::Optional<VideoCodecSettings> send_codec_;
   rtc::Optional<std::vector<webrtc::RtpExtension>> send_rtp_extensions_;
 
-  WebRtcVideoEncoderFactory* const external_encoder_factory_;
+  std::unique_ptr<EncoderFactoryAdapter> encoder_factory_;
   WebRtcVideoDecoderFactory* const external_decoder_factory_;
   std::vector<VideoCodecSettings> recv_codecs_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
