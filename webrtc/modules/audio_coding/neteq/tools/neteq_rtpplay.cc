@@ -161,6 +161,10 @@ const bool audio_level_dummy =
 DEFINE_int32(abs_send_time, 3, "Extension ID for absolute sender time");
 const bool abs_send_time_dummy =
     google::RegisterFlagValidator(&FLAGS_abs_send_time, &ValidateExtensionId);
+DEFINE_int32(transport_seq_no, 5, "Extension ID for transport sequence number");
+const bool transport_seq_no_dummy =
+    google::RegisterFlagValidator(&FLAGS_transport_seq_no,
+                                  &ValidateExtensionId);
 DEFINE_bool(matlabplot,
             false,
             "Generates a matlab script for plotting the delay profile");
@@ -420,8 +424,12 @@ class StatsGetter : public NetEqGetAudioCallback {
           a.added_zero_samples += b.added_zero_samples;
           a.mean_waiting_time_ms += b.mean_waiting_time_ms;
           a.median_waiting_time_ms += b.median_waiting_time_ms;
-          a.min_waiting_time_ms += b.min_waiting_time_ms;
-          a.max_waiting_time_ms += b.max_waiting_time_ms;
+          a.min_waiting_time_ms =
+              std::min(a.min_waiting_time_ms,
+                       static_cast<double>(b.min_waiting_time_ms));
+          a.max_waiting_time_ms =
+              std::max(a.max_waiting_time_ms,
+                       static_cast<double>(b.max_waiting_time_ms));
           return a;
         });
 
@@ -439,8 +447,6 @@ class StatsGetter : public NetEqGetAudioCallback {
     sum_stats.added_zero_samples /= stats_.size();
     sum_stats.mean_waiting_time_ms /= stats_.size();
     sum_stats.median_waiting_time_ms /= stats_.size();
-    sum_stats.min_waiting_time_ms /= stats_.size();
-    sum_stats.max_waiting_time_ms /= stats_.size();
 
     return sum_stats;
   }
@@ -477,7 +483,8 @@ int RunTest(int argc, char* argv[]) {
   // Gather RTP header extensions in a map.
   NetEqPacketSourceInput::RtpHeaderExtensionMap rtp_ext_map = {
       {FLAGS_audio_level, kRtpExtensionAudioLevel},
-      {FLAGS_abs_send_time, kRtpExtensionAbsoluteSendTime}};
+      {FLAGS_abs_send_time, kRtpExtensionAbsoluteSendTime},
+      {FLAGS_transport_seq_no, kRtpExtensionTransportSequenceNumber}};
 
   const std::string input_file_name = argv[1];
   std::unique_ptr<NetEqInput> input;
