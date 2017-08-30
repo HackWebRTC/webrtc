@@ -183,18 +183,14 @@ void ChannelManager::Terminate() {
 
 void ChannelManager::DestructorDeletes_w() {
   RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
-  media_engine_.reset(NULL);
+  media_engine_.reset(nullptr);
 }
 
 void ChannelManager::Terminate_w() {
   RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   // Need to destroy the voice/video channels
-  while (!video_channels_.empty()) {
-    DestroyVideoChannel_w(video_channels_.back());
-  }
-  while (!voice_channels_.empty()) {
-    DestroyVoiceChannel_w(voice_channels_.back());
-  }
+  video_channels_.clear();
+  voice_channels_.clear();
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel(
@@ -249,21 +245,22 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
 
   VoiceMediaChannel* media_channel = media_engine_->CreateChannel(
       call, media_config, options);
-  if (!media_channel)
+  if (!media_channel) {
     return nullptr;
+  }
 
-  VoiceChannel* voice_channel =
+  std::unique_ptr<VoiceChannel> voice_channel(
       new VoiceChannel(worker_thread_, network_thread_, signaling_thread,
                        media_engine_.get(), media_channel, content_name,
-                       rtcp_packet_transport == nullptr, srtp_required);
+                       rtcp_packet_transport == nullptr, srtp_required));
 
   if (!voice_channel->Init_w(rtp_dtls_transport, rtcp_dtls_transport,
                              rtp_packet_transport, rtcp_packet_transport)) {
-    delete voice_channel;
     return nullptr;
   }
-  voice_channels_.push_back(voice_channel);
-  return voice_channel;
+  VoiceChannel* voice_channel_ptr = voice_channel.get();
+  voice_channels_.push_back(std::move(voice_channel));
+  return voice_channel_ptr;
 }
 
 void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel) {
@@ -277,16 +274,17 @@ void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel) {
 
 void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyVoiceChannel_w");
-  // Destroy voice channel.
   RTC_DCHECK(initialized_);
   RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
-  VoiceChannels::iterator it = std::find(voice_channels_.begin(),
-      voice_channels_.end(), voice_channel);
+
+  auto it = std::find_if(voice_channels_.begin(), voice_channels_.end(),
+                         [&](const std::unique_ptr<VoiceChannel>& p) {
+                           return p.get() == voice_channel;
+                         });
   RTC_DCHECK(it != voice_channels_.end());
   if (it == voice_channels_.end())
     return;
   voice_channels_.erase(it);
-  delete voice_channel;
 }
 
 VideoChannel* ChannelManager::CreateVideoChannel(
@@ -337,20 +335,20 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
   RTC_DCHECK(nullptr != call);
   VideoMediaChannel* media_channel = media_engine_->CreateVideoChannel(
       call, media_config, options);
-  if (media_channel == NULL) {
-    return NULL;
+  if (!media_channel) {
+    return nullptr;
   }
 
-  VideoChannel* video_channel = new VideoChannel(
+  std::unique_ptr<VideoChannel> video_channel(new VideoChannel(
       worker_thread_, network_thread_, signaling_thread, media_channel,
-      content_name, rtcp_packet_transport == nullptr, srtp_required);
+      content_name, rtcp_packet_transport == nullptr, srtp_required));
   if (!video_channel->Init_w(rtp_dtls_transport, rtcp_dtls_transport,
                              rtp_packet_transport, rtcp_packet_transport)) {
-    delete video_channel;
-    return NULL;
+    return nullptr;
   }
-  video_channels_.push_back(video_channel);
-  return video_channel;
+  VideoChannel* video_channel_ptr = video_channel.get();
+  video_channels_.push_back(std::move(video_channel));
+  return video_channel_ptr;
 }
 
 void ChannelManager::DestroyVideoChannel(VideoChannel* video_channel) {
@@ -364,17 +362,18 @@ void ChannelManager::DestroyVideoChannel(VideoChannel* video_channel) {
 
 void ChannelManager::DestroyVideoChannel_w(VideoChannel* video_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyVideoChannel_w");
-  // Destroy video channel.
   RTC_DCHECK(initialized_);
   RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
-  VideoChannels::iterator it = std::find(video_channels_.begin(),
-      video_channels_.end(), video_channel);
+
+  auto it = std::find_if(video_channels_.begin(), video_channels_.end(),
+                         [&](const std::unique_ptr<VideoChannel>& p) {
+                           return p.get() == video_channel;
+                         });
   RTC_DCHECK(it != video_channels_.end());
   if (it == video_channels_.end())
     return;
 
   video_channels_.erase(it);
-  delete video_channel;
 }
 
 RtpDataChannel* ChannelManager::CreateRtpDataChannel(
@@ -406,17 +405,17 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel_w(
     return nullptr;
   }
 
-  RtpDataChannel* data_channel = new RtpDataChannel(
+  std::unique_ptr<RtpDataChannel> data_channel(new RtpDataChannel(
       worker_thread_, network_thread_, signaling_thread, media_channel,
-      content_name, rtcp_transport == nullptr, srtp_required);
+      content_name, rtcp_transport == nullptr, srtp_required));
   if (!data_channel->Init_w(rtp_transport, rtcp_transport, rtp_transport,
                             rtcp_transport)) {
     LOG(LS_WARNING) << "Failed to init data channel.";
-    delete data_channel;
     return nullptr;
   }
-  data_channels_.push_back(data_channel);
-  return data_channel;
+  RtpDataChannel* data_channel_ptr = data_channel.get();
+  data_channels_.push_back(std::move(data_channel));
+  return data_channel_ptr;
 }
 
 void ChannelManager::DestroyRtpDataChannel(RtpDataChannel* data_channel) {
@@ -430,16 +429,17 @@ void ChannelManager::DestroyRtpDataChannel(RtpDataChannel* data_channel) {
 
 void ChannelManager::DestroyRtpDataChannel_w(RtpDataChannel* data_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyRtpDataChannel_w");
-  // Destroy data channel.
   RTC_DCHECK(initialized_);
-  RtpDataChannels::iterator it =
-      std::find(data_channels_.begin(), data_channels_.end(), data_channel);
+
+  auto it = std::find_if(data_channels_.begin(), data_channels_.end(),
+                         [&](const std::unique_ptr<RtpDataChannel>& p) {
+                           return p.get() == data_channel;
+                         });
   RTC_DCHECK(it != data_channels_.end());
   if (it == data_channels_.end())
     return;
 
   data_channels_.erase(it);
-  delete data_channel;
 }
 
 bool ChannelManager::StartAecDump(rtc::PlatformFile file,
