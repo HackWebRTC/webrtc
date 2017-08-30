@@ -189,6 +189,26 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
                  << sent_fps.ToString();
   }
 
+  if (in_fps.num_samples > kMinRequiredPeriodicSamples &&
+      sent_fps.num_samples >= kMinRequiredPeriodicSamples) {
+    int in_fps_avg = in_fps.average;
+    if (in_fps_avg > 0) {
+      int sent_fps_avg = sent_fps.average;
+      int sent_to_in_fps_ratio_percent =
+          (100 * sent_fps_avg + in_fps_avg / 2) / in_fps_avg;
+      // If reported period is small, it may happen that sent_fps is larger than
+      // input_fps briefly on average. This should be treated as 100% sent to
+      // input ratio.
+      if (sent_to_in_fps_ratio_percent > 100)
+        sent_to_in_fps_ratio_percent = 100;
+      RTC_HISTOGRAMS_PERCENTAGE(kIndex,
+                                uma_prefix_ + "SentToInputFpsRatioPercent",
+                                sent_to_in_fps_ratio_percent);
+      LOG(LS_INFO) << uma_prefix_ << "SentToInputFpsRatioPercent "
+                   << sent_to_in_fps_ratio_percent;
+    }
+  }
+
   int encode_ms = encode_time_counter_.Avg(kMinRequiredMetricsSamples);
   if (encode_ms != -1) {
     RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "EncodeTimeInMs",
