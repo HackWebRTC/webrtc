@@ -105,6 +105,9 @@ class DesktopRect {
   int32_t width() const { return right_ - left_; }
   int32_t height() const { return bottom_ - top_; }
 
+  void set_width(int32_t width) { right_ = left_ + width; }
+  void set_height(int32_t height) { bottom_ = top_ + height; }
+
   DesktopVector top_left() const { return DesktopVector(left_, top_); }
   DesktopSize size() const { return DesktopSize(width(), height()); }
 

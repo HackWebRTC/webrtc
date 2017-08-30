@@ -39,22 +39,15 @@ bool GetCroppedWindowRect(HWND window,
   }
   *cropped_rect = window_rect;
 
-  WINDOWPLACEMENT window_placement;
-  window_placement.length = sizeof(window_placement);
-  if (!::GetWindowPlacement(window, &window_placement)) {
+  bool is_maximized = false;
+  if (!IsWindowMaximized(window, &is_maximized)) {
     return false;
   }
 
   // After Windows8, transparent borders will be added by OS at
   // left/bottom/right sides of a window. If the cropped window
   // doesn't remove these borders, the background will be exposed a bit.
-  //
-  // On Windows 8.1. or upper, rtc::IsWindows8OrLater(), which uses
-  // GetVersionEx() may not correctly return the windows version. See
-  // https://msdn.microsoft.com/en-us/library/windows/desktop/ms724451(v=vs.85).aspx
-  // So we always prefer to check |window_placement|.showCmd.
-  if (rtc::IsWindows8OrLater() ||
-      window_placement.showCmd == SW_SHOWMAXIMIZED) {
+  if (rtc::IsWindows8OrLater() || is_maximized) {
     const int width = GetSystemMetrics(SM_CXSIZEFRAME);
     const int height = GetSystemMetrics(SM_CYSIZEFRAME);
     cropped_rect->Extend(-width, 0, -width, -height);
@@ -122,6 +115,18 @@ bool GetDcSize(HDC hdc, DesktopSize* size) {
     return false;
   }
   size->set(bitmap.bmWidth, bitmap.bmHeight);
+  return true;
+}
+
+bool IsWindowMaximized(HWND window, bool* result) {
+  WINDOWPLACEMENT placement;
+  memset(&placement, 0, sizeof(WINDOWPLACEMENT));
+  placement.length = sizeof(WINDOWPLACEMENT);
+  if (!::GetWindowPlacement(window, &placement)) {
+    return false;
+  }
+
+  *result = (placement.showCmd == SW_SHOWMAXIMIZED);
   return true;
 }
 

@@ -26,6 +26,14 @@ bool GetWindowRect(HWND window, DesktopRect* result);
 // Returns true if all API calls succeeded. The returned DesktopRect is in
 // system coordinates, i.e. the primary monitor on the system always starts from
 // (0, 0). |original_rect| can be nullptr.
+//
+// TODO(zijiehe): Move this function to CroppingWindowCapturerWin after it has
+// been removed from MouseCursorMonitorWin.
+// This function should only be used by CroppingWindowCapturerWin. Instead a
+// DesktopRect CropWindowRect(const DesktopRect& rect)
+// should be added as a utility function to help CroppingWindowCapturerWin and
+// WindowCapturerWin to crop out the borders or shadow according to their
+// scenarios. But this function is too generic and easy to be misused.
 bool GetCroppedWindowRect(HWND window,
                           DesktopRect* cropped_rect,
                           DesktopRect* original_rect);
@@ -44,6 +52,10 @@ int GetWindowRegionTypeWithBoundary(HWND window, DesktopRect* result);
 // Retrieves the size of the |hdc|. This function returns false if native APIs
 // fail.
 bool GetDcSize(HDC hdc, DesktopSize* size);
+
+// Retrieves whether the |window| is maximized and stores in |result|. This
+// function returns false if native APIs fail.
+bool IsWindowMaximized(HWND window, bool* result);
 
 typedef HRESULT (WINAPI *DwmIsCompositionEnabledFunc)(BOOL* enabled);
 class AeroChecker {
