@@ -17,6 +17,7 @@
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_delay_estimator.h"
 #include "webrtc/modules/audio_processing/aec3/render_delay_controller_metrics.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/rtc_base/atomicops.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
@@ -26,7 +27,9 @@ namespace {
 
 class RenderDelayControllerImpl final : public RenderDelayController {
  public:
-  RenderDelayControllerImpl(int sample_rate_hz);
+  RenderDelayControllerImpl(
+      const AudioProcessing::Config::EchoCanceller3& config,
+      int sample_rate_hz);
   ~RenderDelayControllerImpl() override;
   void Reset() override;
   void SetDelay(size_t render_delay) override;
@@ -68,10 +71,12 @@ size_t ComputeNewBufferDelay(size_t current_delay,
 
 int RenderDelayControllerImpl::instance_count_ = 0;
 
-RenderDelayControllerImpl::RenderDelayControllerImpl(int sample_rate_hz)
+RenderDelayControllerImpl::RenderDelayControllerImpl(
+    const AudioProcessing::Config::EchoCanceller3& config,
+    int sample_rate_hz)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
-      delay_estimator_(data_dumper_.get()) {
+      delay_estimator_(data_dumper_.get(), config) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
 }
 
@@ -134,8 +139,10 @@ size_t RenderDelayControllerImpl::GetDelay(
 
 }  // namespace
 
-RenderDelayController* RenderDelayController::Create(int sample_rate_hz) {
-  return new RenderDelayControllerImpl(sample_rate_hz);
+RenderDelayController* RenderDelayController::Create(
+    const AudioProcessing::Config::EchoCanceller3& config,
+    int sample_rate_hz) {
+  return new RenderDelayControllerImpl(config, sample_rate_hz);
 }
 
 }  // namespace webrtc

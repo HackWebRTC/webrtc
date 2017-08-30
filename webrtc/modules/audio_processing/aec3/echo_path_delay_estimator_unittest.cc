@@ -37,7 +37,8 @@ TEST(EchoPathDelayEstimator, BasicApiCalls) {
   ApmDataDumper data_dumper(0);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(3));
-  EchoPathDelayEstimator estimator(&data_dumper);
+  EchoPathDelayEstimator estimator(&data_dumper,
+                                   AudioProcessing::Config::EchoCanceller3());
   std::vector<std::vector<float>> render(3, std::vector<float>(kBlockSize));
   std::vector<float> capture(kBlockSize);
   for (size_t k = 0; k < 100; ++k) {
@@ -59,7 +60,8 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
         RenderDelayBuffer::Create(3));
     DelayBuffer<float> signal_delay_buffer(delay_samples);
-    EchoPathDelayEstimator estimator(&data_dumper);
+    EchoPathDelayEstimator estimator(&data_dumper,
+                                     AudioProcessing::Config::EchoCanceller3());
 
     rtc::Optional<size_t> estimated_delay_samples;
     for (size_t k = 0; k < (100 + delay_samples / kBlockSize); ++k) {
@@ -91,7 +93,8 @@ TEST(EchoPathDelayEstimator, NoInitialDelayestimates) {
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(3));
 
-  EchoPathDelayEstimator estimator(&data_dumper);
+  EchoPathDelayEstimator estimator(&data_dumper,
+                                   AudioProcessing::Config::EchoCanceller3());
   for (size_t k = 0; k < 19; ++k) {
     RandomizeSampleVector(&random_generator, render[0]);
     std::copy(render[0].begin(), render[0].end(), capture.begin());
@@ -109,7 +112,8 @@ TEST(EchoPathDelayEstimator, NoDelayEstimatesForLowLevelRenderSignals) {
   std::vector<std::vector<float>> render(3, std::vector<float>(kBlockSize));
   std::vector<float> capture(kBlockSize);
   ApmDataDumper data_dumper(0);
-  EchoPathDelayEstimator estimator(&data_dumper);
+  EchoPathDelayEstimator estimator(&data_dumper,
+                                   AudioProcessing::Config::EchoCanceller3());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(3));
   for (size_t k = 0; k < 100; ++k) {
@@ -132,7 +136,8 @@ TEST(EchoPathDelayEstimator, NoDelayEstimatesForUncorrelatedSignals) {
   std::vector<std::vector<float>> render(3, std::vector<float>(kBlockSize));
   std::vector<float> capture(kBlockSize);
   ApmDataDumper data_dumper(0);
-  EchoPathDelayEstimator estimator(&data_dumper);
+  EchoPathDelayEstimator estimator(&data_dumper,
+                                   AudioProcessing::Config::EchoCanceller3());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(3));
   for (size_t k = 0; k < 100; ++k) {
@@ -152,7 +157,8 @@ TEST(EchoPathDelayEstimator, NoDelayEstimatesForUncorrelatedSignals) {
 // tests on test bots has been fixed.
 TEST(EchoPathDelayEstimator, DISABLED_WrongRenderBlockSize) {
   ApmDataDumper data_dumper(0);
-  EchoPathDelayEstimator estimator(&data_dumper);
+  EchoPathDelayEstimator estimator(&data_dumper,
+                                   AudioProcessing::Config::EchoCanceller3());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(3));
   std::vector<float> capture(kBlockSize);
@@ -166,7 +172,8 @@ TEST(EchoPathDelayEstimator, DISABLED_WrongRenderBlockSize) {
 // tests on test bots has been fixed.
 TEST(EchoPathDelayEstimator, WrongCaptureBlockSize) {
   ApmDataDumper data_dumper(0);
-  EchoPathDelayEstimator estimator(&data_dumper);
+  EchoPathDelayEstimator estimator(&data_dumper,
+                                   AudioProcessing::Config::EchoCanceller3());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(3));
   std::vector<float> capture(std::vector<float>(kBlockSize - 1));
@@ -177,7 +184,9 @@ TEST(EchoPathDelayEstimator, WrongCaptureBlockSize) {
 
 // Verifies the check for non-null data dumper.
 TEST(EchoPathDelayEstimator, NullDataDumper) {
-  EXPECT_DEATH(EchoPathDelayEstimator(nullptr), "");
+  EXPECT_DEATH(EchoPathDelayEstimator(
+                   nullptr, AudioProcessing::Config::EchoCanceller3()),
+               "");
 }
 
 #endif

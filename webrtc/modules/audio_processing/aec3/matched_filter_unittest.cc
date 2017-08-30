@@ -137,7 +137,7 @@ TEST(MatchedFilter, LagEstimation) {
     DelayBuffer<float> signal_delay_buffer(4 * delay_samples);
     MatchedFilter filter(&data_dumper, DetectOptimization(),
                          kWindowSizeSubBlocks, kNumMatchedFilters,
-                         kAlignmentShiftSubBlocks);
+                         kAlignmentShiftSubBlocks, 150);
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
         RenderDelayBuffer::Create(3));
 
@@ -206,7 +206,7 @@ TEST(MatchedFilter, LagNotReliableForUncorrelatedRenderAndCapture) {
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(3));
   MatchedFilter filter(&data_dumper, DetectOptimization(), kWindowSizeSubBlocks,
-                       kNumMatchedFilters, kAlignmentShiftSubBlocks);
+                       kNumMatchedFilters, kAlignmentShiftSubBlocks, 150);
 
   // Analyze the correlation between render and capture.
   for (size_t k = 0; k < 100; ++k) {
@@ -236,7 +236,7 @@ TEST(MatchedFilter, LagNotUpdatedForLowLevelRender) {
   capture.fill(0.f);
   ApmDataDumper data_dumper(0);
   MatchedFilter filter(&data_dumper, DetectOptimization(), kWindowSizeSubBlocks,
-                       kNumMatchedFilters, kAlignmentShiftSubBlocks);
+                       kNumMatchedFilters, kAlignmentShiftSubBlocks, 150);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(3));
   DecimatorBy4 capture_decimator;
@@ -273,7 +273,7 @@ TEST(MatchedFilter, NumberOfLagEstimates) {
   for (size_t num_matched_filters = 0; num_matched_filters < 10;
        ++num_matched_filters) {
     MatchedFilter filter(&data_dumper, DetectOptimization(), 32,
-                         num_matched_filters, 1);
+                         num_matched_filters, 1, 150);
     EXPECT_EQ(num_matched_filters, filter.GetLagEstimates().size());
   }
 }
@@ -283,12 +283,13 @@ TEST(MatchedFilter, NumberOfLagEstimates) {
 // Verifies the check for non-zero windows size.
 TEST(MatchedFilter, ZeroWindowSize) {
   ApmDataDumper data_dumper(0);
-  EXPECT_DEATH(MatchedFilter(&data_dumper, DetectOptimization(), 0, 1, 1), "");
+  EXPECT_DEATH(MatchedFilter(&data_dumper, DetectOptimization(), 0, 1, 1, 150),
+               "");
 }
 
 // Verifies the check for non-null data dumper.
 TEST(MatchedFilter, NullDataDumper) {
-  EXPECT_DEATH(MatchedFilter(nullptr, DetectOptimization(), 1, 1, 1), "");
+  EXPECT_DEATH(MatchedFilter(nullptr, DetectOptimization(), 1, 1, 1, 150), "");
 }
 
 #endif

@@ -292,7 +292,13 @@ class AudioProcessing : public rtc::RefCountInterface {
         struct EchoAudibility {
           float low_render_limit = 192.f;
           float normal_render_limit = 64.f;
+          float active_render_limit = 100.f;
         } echo_audibility;
+
+        struct RenderLevels {
+          float active_render_limit = 100.f;
+          float poor_excitation_render_limit = 150.f;
+        } render_levels;
 
         struct GainUpdates {
           struct GainChanges {

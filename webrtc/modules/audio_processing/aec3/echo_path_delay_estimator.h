@@ -17,6 +17,7 @@
 #include "webrtc/modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/matched_filter.h"
 #include "webrtc/modules/audio_processing/aec3/matched_filter_lag_aggregator.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/optional.h"
 
@@ -27,7 +28,8 @@ class ApmDataDumper;
 // Estimates the delay of the echo path.
 class EchoPathDelayEstimator {
  public:
-  explicit EchoPathDelayEstimator(ApmDataDumper* data_dumper);
+  EchoPathDelayEstimator(ApmDataDumper* data_dumper,
+                         const AudioProcessing::Config::EchoCanceller3& config);
   ~EchoPathDelayEstimator();
 
   // Resets the estimation.
@@ -44,7 +46,7 @@ class EchoPathDelayEstimator {
   MatchedFilter matched_filter_;
   MatchedFilterLagAggregator matched_filter_lag_aggregator_;
 
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoPathDelayEstimator);
+  RTC_DISALLOW_COPY_AND_ASSIGN(EchoPathDelayEstimator);
 };
 }  // namespace webrtc
 

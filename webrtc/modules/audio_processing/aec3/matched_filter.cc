@@ -291,13 +291,15 @@ MatchedFilter::MatchedFilter(ApmDataDumper* data_dumper,
                              Aec3Optimization optimization,
                              size_t window_size_sub_blocks,
                              int num_matched_filters,
-                             size_t alignment_shift_sub_blocks)
+                             size_t alignment_shift_sub_blocks,
+                             float excitation_limit)
     : data_dumper_(data_dumper),
       optimization_(optimization),
       filter_intra_lag_shift_(alignment_shift_sub_blocks * kSubBlockSize),
       filters_(num_matched_filters,
                std::vector<float>(window_size_sub_blocks * kSubBlockSize, 0.f)),
-      lag_estimates_(num_matched_filters) {
+      lag_estimates_(num_matched_filters),
+      excitation_limit_(excitation_limit) {
   RTC_DCHECK(data_dumper);
   RTC_DCHECK_LT(0, window_size_sub_blocks);
 }
@@ -318,7 +320,8 @@ void MatchedFilter::Update(const DownsampledRenderBuffer& render_buffer,
                            const std::array<float, kSubBlockSize>& capture) {
   const std::array<float, kSubBlockSize>& y = capture;
 
-  const float x2_sum_threshold = filters_[0].size() * 150.f * 150.f;
+  const float x2_sum_threshold =
+      filters_[0].size() * excitation_limit_ * excitation_limit_;
 
   // Apply all matched filters.
   size_t alignment_shift = 0;

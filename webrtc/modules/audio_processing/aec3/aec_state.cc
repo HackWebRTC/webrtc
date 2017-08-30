@@ -129,7 +129,11 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
 
   // Update counters.
   const float x_energy = std::inner_product(x.begin(), x.end(), x.begin(), 0.f);
-  const bool active_render_block = x_energy > 10000.f * kFftLengthBy2;
+
+  const bool active_render_block =
+      x_energy > (config_.param.render_levels.active_render_limit *
+                  config_.param.render_levels.active_render_limit) *
+                     kFftLengthBy2;
   if (active_render_block) {
     render_received_ = true;
   }

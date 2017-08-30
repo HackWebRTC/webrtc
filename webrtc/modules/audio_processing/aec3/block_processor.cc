@@ -181,7 +181,7 @@ BlockProcessor* BlockProcessor::Create(
   std::unique_ptr<RenderDelayBuffer> render_buffer(
       RenderDelayBuffer::Create(NumBandsForRate(sample_rate_hz)));
   std::unique_ptr<RenderDelayController> delay_controller(
-      RenderDelayController::Create(sample_rate_hz));
+      RenderDelayController::Create(config, sample_rate_hz));
   std::unique_ptr<EchoRemover> echo_remover(
       EchoRemover::Create(config, sample_rate_hz));
   return Create(config, sample_rate_hz, std::move(render_buffer),
@@ -193,7 +193,7 @@ BlockProcessor* BlockProcessor::Create(
     int sample_rate_hz,
     std::unique_ptr<RenderDelayBuffer> render_buffer) {
   std::unique_ptr<RenderDelayController> delay_controller(
-      RenderDelayController::Create(sample_rate_hz));
+      RenderDelayController::Create(config, sample_rate_hz));
   std::unique_ptr<EchoRemover> echo_remover(
       EchoRemover::Create(config, sample_rate_hz));
   return Create(config, sample_rate_hz, std::move(render_buffer),

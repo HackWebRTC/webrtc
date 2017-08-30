@@ -83,7 +83,8 @@ class MatchedFilter {
                 Aec3Optimization optimization,
                 size_t window_size_sub_blocks,
                 int num_matched_filters,
-                size_t alignment_shift_sub_blocks);
+                size_t alignment_shift_sub_blocks,
+                float excitation_limit);
 
   ~MatchedFilter();
 
@@ -108,6 +109,7 @@ class MatchedFilter {
   const size_t filter_intra_lag_shift_;
   std::vector<std::vector<float>> filters_;
   std::vector<LagEstimate> lag_estimates_;
+  const float excitation_limit_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MatchedFilter);
 };
