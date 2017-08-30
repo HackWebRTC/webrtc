@@ -12,16 +12,21 @@
 
 #include "webrtc/call/rtx_receive_stream.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 
-RtxReceiveStream::RtxReceiveStream(
-    RtpPacketSinkInterface* media_sink,
-    std::map<int, int> rtx_payload_type_map,
-    uint32_t media_ssrc)
+RtxReceiveStream::RtxReceiveStream(RtpPacketSinkInterface* media_sink,
+                                   std::map<int, int> associated_payload_types,
+                                   uint32_t media_ssrc)
     : media_sink_(media_sink),
-      rtx_payload_type_map_(std::move(rtx_payload_type_map)),
-      media_ssrc_(media_ssrc) {}
+      associated_payload_types_(std::move(associated_payload_types)),
+      media_ssrc_(media_ssrc) {
+  if (associated_payload_types_.empty()) {
+    LOG(LS_WARNING)
+        << "RtxReceiveStream created with empty payload type mapping.";
+  }
+}
 
 RtxReceiveStream::~RtxReceiveStream() = default;
 
@@ -32,8 +37,11 @@ void RtxReceiveStream::OnRtpPacket(const RtpPacketReceived& rtx_packet) {
     return;
   }
 
-  auto it = rtx_payload_type_map_.find(rtx_packet.PayloadType());
-  if (it == rtx_payload_type_map_.end()) {
+  auto it = associated_payload_types_.find(rtx_packet.PayloadType());
+  if (it == associated_payload_types_.end()) {
+    LOG(LS_VERBOSE) << "Unknown payload type "
+                    << static_cast<int>(rtx_packet.PayloadType())
+                    << " on rtx ssrc " << rtx_packet.Ssrc();
     return;
   }
   RtpPacketReceived media_packet;
@@ -42,6 +50,7 @@ void RtxReceiveStream::OnRtpPacket(const RtpPacketReceived& rtx_packet) {
   media_packet.SetSsrc(media_ssrc_);
   media_packet.SetSequenceNumber((payload[0] << 8) + payload[1]);
   media_packet.SetPayloadType(it->second);
+  media_packet.set_recovered(true);
 
   // Skip the RTX header.
   rtc::ArrayView<const uint8_t> rtx_payload =

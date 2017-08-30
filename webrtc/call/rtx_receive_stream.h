@@ -17,10 +17,12 @@
 
 namespace webrtc {
 
+// This class is responsible for RTX decapsulation. The resulting media packets
+// are passed on to a sink representing the associated media stream.
 class RtxReceiveStream : public RtpPacketSinkInterface {
  public:
   RtxReceiveStream(RtpPacketSinkInterface* media_sink,
-                   std::map<int, int> rtx_payload_type_map,
+                   std::map<int, int> associated_payload_types,
                    uint32_t media_ssrc);
   ~RtxReceiveStream() override;
   // RtpPacketSinkInterface.
@@ -28,8 +30,8 @@ class RtxReceiveStream : public RtpPacketSinkInterface {
 
  private:
   RtpPacketSinkInterface* const media_sink_;
-  // Mapping rtx_payload_type_map_[rtx] = associated.
-  const std::map<int, int> rtx_payload_type_map_;
+  // Map from rtx payload type -> media payload type.
+  const std::map<int, int> associated_payload_types_;
   // TODO(nisse): Ultimately, the media receive stream shouldn't care about the
   // ssrc, and we should delete this.
   const uint32_t media_ssrc_;
