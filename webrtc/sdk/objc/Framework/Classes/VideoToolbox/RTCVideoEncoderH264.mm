@@ -664,10 +664,10 @@ CFStringRef ExtractProfile(const cricket::VideoCodec &codec) {
   std::unique_ptr<rtc::Buffer> buffer(new rtc::Buffer());
   RTCRtpFragmentationHeader *header;
   {
-    webrtc::RTPFragmentationHeader *header_cpp;
+    std::unique_ptr<webrtc::RTPFragmentationHeader> header_cpp;
     bool result =
         H264CMSampleBufferToAnnexBBuffer(sampleBuffer, isKeyframe, buffer.get(), &header_cpp);
-    header = [[RTCRtpFragmentationHeader alloc] initWithNativeFragmentationHeader:header_cpp];
+    header = [[RTCRtpFragmentationHeader alloc] initWithNativeFragmentationHeader:header_cpp.get()];
     if (!result) {
       return;
     }

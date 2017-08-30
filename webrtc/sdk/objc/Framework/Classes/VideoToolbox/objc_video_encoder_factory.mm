@@ -78,7 +78,7 @@ class ObjCVideoEncoder : public VideoEncoder {
       std::unique_ptr<RTPFragmentationHeader> fragmentationHeader =
           [header createNativeFragmentationHeader];
       EncodedImageCallback::Result res =
-          callback->OnEncodedImage(encodedImage, &codecSpecificInfo, fragmentationHeader.release());
+          callback->OnEncodedImage(encodedImage, &codecSpecificInfo, fragmentationHeader.get());
       return res.error == EncodedImageCallback::Result::OK;
     }];
 

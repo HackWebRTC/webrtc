@@ -33,7 +33,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
     CMSampleBufferRef avcc_sample_buffer,
     bool is_keyframe,
     rtc::Buffer* annexb_buffer,
-    webrtc::RTPFragmentationHeader** out_header);
+    std::unique_ptr<RTPFragmentationHeader> *out_header);
 
 // Converts a buffer received from RTP into a sample buffer suitable for the
 // VideoToolbox decoder. The RTP buffer is in annex b format whereas the sample

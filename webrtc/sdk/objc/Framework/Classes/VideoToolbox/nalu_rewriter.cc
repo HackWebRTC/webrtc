@@ -33,10 +33,10 @@ bool H264CMSampleBufferToAnnexBBuffer(
     CMSampleBufferRef avcc_sample_buffer,
     bool is_keyframe,
     rtc::Buffer* annexb_buffer,
-    webrtc::RTPFragmentationHeader** out_header) {
+    std::unique_ptr<RTPFragmentationHeader> *out_header) {
   RTC_DCHECK(avcc_sample_buffer);
   RTC_DCHECK(out_header);
-  *out_header = nullptr;
+  out_header->reset(nullptr);
 
   // Get format description from the sample buffer.
   CMVideoFormatDescriptionRef description =
@@ -143,8 +143,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
   }
   RTC_DCHECK_EQ(bytes_remaining, (size_t)0);
 
-  std::unique_ptr<webrtc::RTPFragmentationHeader> header;
-  header.reset(new webrtc::RTPFragmentationHeader());
+  std::unique_ptr<RTPFragmentationHeader> header(new RTPFragmentationHeader());
   header->VerifyAndAllocateFragmentationHeader(frag_offsets.size());
   RTC_DCHECK_EQ(frag_lengths.size(), frag_offsets.size());
   for (size_t i = 0; i < frag_offsets.size(); ++i) {
@@ -153,7 +152,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
     header->fragmentationPlType[i] = 0;
     header->fragmentationTimeDiff[i] = 0;
   }
-  *out_header = header.release();
+  *out_header = std::move(header);
   CFRelease(contiguous_buffer);
   return true;
 }
