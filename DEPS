@@ -79,8 +79,8 @@ deps = {
     Var('chromium_git') + '/chromium/src/tools' + '@' + 'e0d76b62239b1849bc99c97f7f4ea3e7dde5f7e1',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'd61a9397e668fa9843c4aa7da9e79460fe590bfb',
-   'src/tools/swarming_client':
-     Var('chromium_git') + '/external/swarming.client.git' + '@' +  Var('swarming_revision'),
+  'src/tools/swarming_client':
+    Var('chromium_git') + '/infra/luci/client-py.git' + '@' +  Var('swarming_revision'),
   # WebRTC-only dependencies (not present in Chromium).
   'src/third_party/gflags':
     Var('chromium_git') + '/external/webrtc/deps/third_party/gflags' + '@' + '892576179b45861b53e04a112996a738309cf364',
