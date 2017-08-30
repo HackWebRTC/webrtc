@@ -232,7 +232,7 @@ constexpr const char VideoContentTypeExtension::kUri[];
 bool VideoContentTypeExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                       VideoContentType* content_type) {
   if (data.size() == 1 &&
-      data[0] < static_cast<uint8_t>(VideoContentType::TOTAL_CONTENT_TYPES)) {
+      videocontenttypehelpers::IsValidContentType(data[0])) {
     *content_type = static_cast<VideoContentType>(data[0]);
     return true;
   }

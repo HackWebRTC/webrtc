@@ -12,13 +12,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <sstream>
 #include <utility>
 
+#include "webrtc/modules/pacing/alr_detector.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -48,6 +49,28 @@ const int kMovingMaxWindowMs = 10000;
 
 // How large window we use to calculate the framerate/bitrate.
 const int kRateStatisticsWindowSizeMs = 1000;
+
+std::string UmaPrefixForContentType(VideoContentType content_type) {
+  std::stringstream ss;
+  ss << "WebRTC.Video";
+  if (videocontenttypehelpers::IsScreenshare(content_type)) {
+    ss << ".Screenshare";
+  }
+  return ss.str();
+}
+
+std::string UmaSuffixForContentType(VideoContentType content_type) {
+  std::stringstream ss;
+  int simulcast_id = videocontenttypehelpers::GetSimulcastId(content_type);
+  if (simulcast_id > 0) {
+    ss << ".S" << simulcast_id - 1;
+  }
+  int experiment_id = videocontenttypehelpers::GetExperimentId(content_type);
+  if (experiment_id > 0) {
+    ss << ".ExperimentGroup" << experiment_id - 1;
+  }
+  return ss.str();
+}
 }  // namespace
 
 ReceiveStatisticsProxy::ReceiveStatisticsProxy(
@@ -77,10 +100,6 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       render_fps_tracker_(100, 10u),
       render_pixel_tracker_(100, 10u),
       total_byte_tracker_(100, 10u),  // bucket_interval_ms, bucket_count
-      e2e_delay_max_ms_video_(-1),
-      e2e_delay_max_ms_screenshare_(-1),
-      interframe_delay_max_ms_video_(-1),
-      interframe_delay_max_ms_screenshare_(-1),
       interframe_delay_max_moving_(kMovingMaxWindowMs),
       freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs),
       first_report_block_time_ms_(-1),
@@ -99,9 +118,14 @@ ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {
 }
 
 void ReceiveStatisticsProxy::UpdateHistograms() {
-  RTC_HISTOGRAM_COUNTS_100000(
-      "WebRTC.Video.ReceiveStreamLifetimeInSeconds",
-      (clock_->TimeInMilliseconds() - start_ms_) / 1000);
+  int stream_duration_sec = (clock_->TimeInMilliseconds() - start_ms_) / 1000;
+  if (stats_.frame_counts.key_frames > 0 ||
+      stats_.frame_counts.delta_frames > 0) {
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.ReceiveStreamLifetimeInSeconds",
+                                stream_duration_sec);
+    LOG(LS_INFO) << "WebRTC.Video.ReceiveStreamLifetimeInSeconds "
+                 << stream_duration_sec;
+  }
 
   if (first_report_block_time_ms_ != -1 &&
       ((clock_->TimeInMilliseconds() - first_report_block_time_ms_) / 1000) >=
@@ -124,14 +148,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
         "WebRTC.Video.RenderSqrtPixelsPerSecond",
         round(render_pixel_tracker_.ComputeTotalRate()));
   }
-  int width = render_width_counter_.Avg(kMinRequiredSamples);
-  int height = render_height_counter_.Avg(kMinRequiredSamples);
-  if (width != -1) {
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.ReceivedWidthInPixels", width);
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.ReceivedHeightInPixels", height);
-    LOG(LS_INFO) << "WebRTC.Video.ReceivedWidthInPixels " << width;
-    LOG(LS_INFO) << "WebRTC.Video.ReceivedHeightInPixels " << height;
-  }
+
   int sync_offset_ms = sync_offset_counter_.Avg(kMinRequiredSamples);
   if (sync_offset_ms != -1) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.AVSyncOffsetInMs", sync_offset_ms);
@@ -189,52 +206,131 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   if (delay_ms != -1)
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.OnewayDelayInMs", delay_ms);
 
-  int e2e_delay_ms_video = e2e_delay_counter_video_.Avg(kMinRequiredSamples);
-  if (e2e_delay_ms_video != -1) {
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.EndToEndDelayInMs",
-                               e2e_delay_ms_video);
-    LOG(LS_INFO) << "WebRTC.Video.EndToEndDelayInMs " << e2e_delay_ms_video;
+  // Aggregate content_specific_stats_ by removing experiment or simulcast
+  // information;
+  std::map<VideoContentType, ContentSpecificStats> aggregated_stats;
+  for (auto it : content_specific_stats_) {
+    // Calculate simulcast specific metrics (".S0" ... ".S2" suffixes).
+    VideoContentType content_type = it.first;
+    if (videocontenttypehelpers::GetSimulcastId(content_type) > 0) {
+      // Aggregate on experiment id.
+      videocontenttypehelpers::SetExperimentId(&content_type, 0);
+      aggregated_stats[content_type].Add(it.second);
+    }
+    // Calculate experiment specific metrics (".ExperimentGroup[0-7]" suffixes).
+    content_type = it.first;
+    if (videocontenttypehelpers::GetExperimentId(content_type) > 0) {
+      // Aggregate on simulcast id.
+      videocontenttypehelpers::SetSimulcastId(&content_type, 0);
+      aggregated_stats[content_type].Add(it.second);
+    }
+    // Calculate aggregated metrics (no suffixes. Aggregated on everything).
+    content_type = it.first;
+    videocontenttypehelpers::SetSimulcastId(&content_type, 0);
+    videocontenttypehelpers::SetExperimentId(&content_type, 0);
+    aggregated_stats[content_type].Add(it.second);
   }
 
-  int e2e_delay_ms_screenshare =
-      e2e_delay_counter_screenshare_.Avg(kMinRequiredSamples);
-  if (e2e_delay_ms_screenshare != -1) {
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.Screenshare.EndToEndDelayInMs",
-                               e2e_delay_ms_screenshare);
-  }
+  for (auto it : aggregated_stats) {
+    // For the metric Foo we report the following slices:
+    // WebRTC.Video.Foo,
+    // WebRTC.Video.Screenshare.Foo,
+    // WebRTC.Video.Foo.S[0-3],
+    // WebRTC.Video.Foo.ExperimentGroup[0-7],
+    // WebRTC.Video.Screenshare.Foo.S[0-3],
+    // WebRTC.Video.Screenshare.Foo.ExperimentGroup[0-7].
+    auto content_type = it.first;
+    auto stats = it.second;
+    std::string uma_prefix = UmaPrefixForContentType(content_type);
+    std::string uma_suffix = UmaSuffixForContentType(content_type);
+    // Metrics can be sliced on either simulcast id or experiment id but not
+    // both.
+    RTC_DCHECK(videocontenttypehelpers::GetExperimentId(content_type) == 0 ||
+               videocontenttypehelpers::GetSimulcastId(content_type) == 0);
 
-  int e2e_delay_max_ms_video = e2e_delay_max_ms_video_;
-  if (e2e_delay_max_ms_video != -1) {
-    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.EndToEndDelayMaxInMs",
-                                e2e_delay_max_ms_video);
-  }
+    int e2e_delay_ms = stats.e2e_delay_counter.Avg(kMinRequiredSamples);
+    if (e2e_delay_ms != -1) {
+      RTC_HISTOGRAM_COUNTS_SPARSE_10000(
+          uma_prefix + ".EndToEndDelayInMs" + uma_suffix, e2e_delay_ms);
+      LOG(LS_INFO) << uma_prefix << ".EndToEndDelayInMs" << uma_suffix << " "
+                   << e2e_delay_ms;
+    }
+    int e2e_delay_max_ms = stats.e2e_delay_counter.Max();
+    if (e2e_delay_max_ms != -1 && e2e_delay_ms != -1) {
+      RTC_HISTOGRAM_COUNTS_SPARSE_100000(
+          uma_prefix + ".EndToEndDelayMaxInMs" + uma_suffix, e2e_delay_max_ms);
+      LOG(LS_INFO) << uma_prefix << ".EndToEndDelayMaxInMs" << uma_suffix << " "
+                   << e2e_delay_max_ms;
+    }
+    int interframe_delay_ms =
+        stats.interframe_delay_counter.Avg(kMinRequiredSamples);
+    if (interframe_delay_ms != -1) {
+      RTC_HISTOGRAM_COUNTS_SPARSE_10000(
+          uma_prefix + ".InterframeDelayInMs" + uma_suffix,
+          interframe_delay_ms);
+      LOG(LS_INFO) << uma_prefix << ".InterframeDelayInMs" << uma_suffix << " "
+                   << interframe_delay_ms;
+    }
+    int interframe_delay_max_ms = stats.interframe_delay_counter.Max();
+    if (interframe_delay_max_ms != -1 && interframe_delay_ms != -1) {
+      RTC_HISTOGRAM_COUNTS_SPARSE_10000(
+          uma_prefix + ".InterframeDelayMaxInMs" + uma_suffix,
+          interframe_delay_max_ms);
+      LOG(LS_INFO) << uma_prefix << ".InterframeDelayMaxInMs" << uma_suffix
+                   << " " << interframe_delay_max_ms;
+    }
 
-  int e2e_delay_max_ms_screenshare = e2e_delay_max_ms_screenshare_;
-  if (e2e_delay_max_ms_screenshare != -1) {
-    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.Screenshare.EndToEndDelayMaxInMs",
-                                e2e_delay_max_ms_screenshare);
-  }
+    int width = stats.received_width.Avg(kMinRequiredSamples);
+    if (width != -1) {
+      RTC_HISTOGRAM_COUNTS_SPARSE_10000(
+          uma_prefix + ".ReceivedWidthInPixels" + uma_suffix, width);
+      LOG(LS_INFO) << uma_prefix << ".ReceivedWidthInPixels" << uma_suffix
+                   << " " << width;
+    }
 
-  int interframe_delay_ms_screenshare =
-      interframe_delay_counter_screenshare_.Avg(kMinRequiredSamples);
-  if (interframe_delay_ms_screenshare != -1) {
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.Screenshare.InterframeDelayInMs",
-                               interframe_delay_ms_screenshare);
-    RTC_DCHECK_GE(interframe_delay_max_ms_screenshare_,
-                  interframe_delay_ms_screenshare);
-    RTC_HISTOGRAM_COUNTS_10000(
-        "WebRTC.Video.Screenshare.InterframeDelayMaxInMs",
-        interframe_delay_max_ms_screenshare_);
-  }
+    int height = stats.received_height.Avg(kMinRequiredSamples);
+    if (height != -1) {
+      RTC_HISTOGRAM_COUNTS_SPARSE_10000(
+          uma_prefix + ".ReceivedHeightInPixels" + uma_suffix, height);
+      LOG(LS_INFO) << uma_prefix << ".ReceivedHeightInPixels" << uma_suffix
+                   << " " << height;
+    }
 
-  int interframe_delay_ms_video =
-      interframe_delay_counter_video_.Avg(kMinRequiredSamples);
-  if (interframe_delay_ms_video != -1) {
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.InterframeDelayInMs",
-                               interframe_delay_ms_video);
-    RTC_DCHECK_GE(interframe_delay_max_ms_video_, interframe_delay_ms_video);
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.InterframeDelayMaxInMs",
-                               interframe_delay_max_ms_video_);
+    if (content_type != VideoContentType::UNSPECIFIED) {
+      // Don't report these 3 metrics unsliced, as more precise variants
+      // are reported separately in this method.
+      float flow_duration_sec = stats.flow_duration_ms / 1000.0;
+      if (flow_duration_sec >= metrics::kMinRunTimeInSeconds) {
+        int media_bitrate_kbps = static_cast<int>(stats.total_media_bytes * 8 /
+                                                  flow_duration_sec / 1000);
+        RTC_HISTOGRAM_COUNTS_SPARSE_10000(
+            uma_prefix + ".MediaBitrateReceivedInKbps" + uma_suffix,
+            media_bitrate_kbps);
+        LOG(LS_INFO) << uma_prefix << ".MediaBitrateReceivedInKbps"
+                     << uma_suffix << " " << media_bitrate_kbps;
+      }
+
+      int num_total_frames =
+          stats.frame_counts.key_frames + stats.frame_counts.delta_frames;
+      if (num_total_frames >= kMinRequiredSamples) {
+        int num_key_frames = stats.frame_counts.key_frames;
+        int key_frames_permille =
+            (num_key_frames * 1000 + num_total_frames / 2) / num_total_frames;
+        RTC_HISTOGRAM_COUNTS_SPARSE_1000(
+            uma_prefix + ".KeyFramesReceivedInPermille" + uma_suffix,
+            key_frames_permille);
+        LOG(LS_INFO) << uma_prefix << ".KeyFramesReceivedInPermille"
+                     << uma_suffix << " " << key_frames_permille;
+      }
+
+      int qp = stats.qp_counter.Avg(kMinRequiredSamples);
+      if (qp != -1) {
+        RTC_HISTOGRAM_COUNTS_SPARSE_200(
+            uma_prefix + ".Decoded.Vp8.Qp" + uma_suffix, qp);
+        LOG(LS_INFO) << uma_prefix << ".Decoded.Vp8.Qp" << uma_suffix << " "
+                     << qp;
+      }
+    }
   }
 
   StreamDataCounters rtp = stats_.rtp_stats;
@@ -250,9 +346,12 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
         "WebRTC.Video.BitrateReceivedInKbps",
         static_cast<int>(rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
                          1000));
-    RTC_HISTOGRAM_COUNTS_10000(
-        "WebRTC.Video.MediaBitrateReceivedInKbps",
-        static_cast<int>(rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000));
+    int media_bitrate_kbs =
+        static_cast<int>(rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateReceivedInKbps",
+                               media_bitrate_kbs);
+    LOG(LS_INFO) << "WebRTC.Video.MediaBitrateReceivedInKbps "
+                 << media_bitrate_kbs;
     RTC_HISTOGRAM_COUNTS_10000(
         "WebRTC.Video.PaddingBitrateReceivedInKbps",
         static_cast<int>(rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec /
@@ -529,6 +628,9 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
   uint64_t now = clock_->TimeInMilliseconds();
 
   rtc::CritScope lock(&crit_);
+
+  ContentSpecificStats* content_specific_stats =
+      &content_specific_stats_[content_type];
   ++stats_.frames_decoded;
   if (qp) {
     if (!stats_.qp_sum) {
@@ -540,6 +642,7 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
       stats_.qp_sum = rtc::Optional<uint64_t>(0);
     }
     *stats_.qp_sum += *qp;
+    content_specific_stats->qp_counter.Add(*qp);
   } else if (stats_.qp_sum) {
     LOG(LS_WARNING)
         << "QP sum was already set and no QP was given for a frame.";
@@ -551,17 +654,8 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
     int64_t interframe_delay_ms = now - *last_decoded_frame_time_ms_;
     RTC_DCHECK_GE(interframe_delay_ms, 0);
     interframe_delay_max_moving_.Add(interframe_delay_ms, now);
-    if (last_content_type_ == VideoContentType::SCREENSHARE) {
-      interframe_delay_counter_screenshare_.Add(interframe_delay_ms);
-      if (interframe_delay_max_ms_screenshare_ < interframe_delay_ms) {
-        interframe_delay_max_ms_screenshare_ = interframe_delay_ms;
-      }
-    } else {
-      interframe_delay_counter_video_.Add(interframe_delay_ms);
-      if (interframe_delay_max_ms_video_ < interframe_delay_ms) {
-        interframe_delay_max_ms_video_ = interframe_delay_ms;
-      }
-    }
+    content_specific_stats->interframe_delay_counter.Add(interframe_delay_ms);
+    content_specific_stats->flow_duration_ms += interframe_delay_ms;
   }
   last_decoded_frame_time_ms_.emplace(now);
 }
@@ -572,28 +666,22 @@ void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
   RTC_DCHECK_GT(width, 0);
   RTC_DCHECK_GT(height, 0);
   uint64_t now = clock_->TimeInMilliseconds();
-
   rtc::CritScope lock(&crit_);
+  ContentSpecificStats* content_specific_stats =
+      &content_specific_stats_[last_content_type_];
   renders_fps_estimator_.Update(1, now);
   ++stats_.frames_rendered;
   stats_.width = width;
   stats_.height = height;
-  render_width_counter_.Add(width);
-  render_height_counter_.Add(height);
   render_fps_tracker_.AddSamples(1);
   render_pixel_tracker_.AddSamples(sqrt(width * height));
+  content_specific_stats->received_width.Add(width);
+  content_specific_stats->received_height.Add(height);
 
   if (frame.ntp_time_ms() > 0) {
     int64_t delay_ms = clock_->CurrentNtpInMilliseconds() - frame.ntp_time_ms();
     if (delay_ms >= 0) {
-      if (last_content_type_ == VideoContentType::SCREENSHARE) {
-        e2e_delay_max_ms_screenshare_ =
-            std::max(delay_ms, e2e_delay_max_ms_screenshare_);
-        e2e_delay_counter_screenshare_.Add(delay_ms);
-      } else {
-        e2e_delay_max_ms_video_ = std::max(delay_ms, e2e_delay_max_ms_video_);
-        e2e_delay_counter_video_.Add(delay_ms);
-      }
+      content_specific_stats->e2e_delay_counter.Add(delay_ms);
     }
   }
 }
@@ -618,12 +706,24 @@ void ReceiveStatisticsProxy::OnReceiveRatesUpdated(uint32_t bitRate,
 }
 
 void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
-                                             size_t size_bytes) {
+                                             size_t size_bytes,
+                                             VideoContentType content_type) {
   rtc::CritScope lock(&crit_);
-  if (is_keyframe)
+  if (is_keyframe) {
     ++stats_.frame_counts.key_frames;
-  else
+  } else {
     ++stats_.frame_counts.delta_frames;
+  }
+
+  ContentSpecificStats* content_specific_stats =
+      &content_specific_stats_[content_type];
+
+  content_specific_stats->total_media_bytes += size_bytes;
+  if (is_keyframe) {
+    ++content_specific_stats->frame_counts.key_frames;
+  } else {
+    ++content_specific_stats->frame_counts.delta_frames;
+  }
 
   int64_t now_ms = clock_->TimeInMilliseconds();
   frame_window_.insert(std::make_pair(now_ms, size_bytes));
@@ -665,6 +765,16 @@ void ReceiveStatisticsProxy::OnStreamInactive() {
 void ReceiveStatisticsProxy::SampleCounter::Add(int sample) {
   sum += sample;
   ++num_samples;
+  if (!max || sample > *max) {
+    max.emplace(sample);
+  }
+}
+
+void ReceiveStatisticsProxy::SampleCounter::Add(const SampleCounter& other) {
+  sum += other.sum;
+  num_samples += other.num_samples;
+  if (other.max && (!max || *max < *other.max))
+    max = other.max;
 }
 
 int ReceiveStatisticsProxy::SampleCounter::Avg(
@@ -674,15 +784,33 @@ int ReceiveStatisticsProxy::SampleCounter::Avg(
   return static_cast<int>(sum / num_samples);
 }
 
+int ReceiveStatisticsProxy::SampleCounter::Max() const {
+  return max.value_or(-1);
+}
+
 void ReceiveStatisticsProxy::SampleCounter::Reset() {
   num_samples = 0;
   sum = 0;
+  max.reset();
 }
 
 void ReceiveStatisticsProxy::OnRttUpdate(int64_t avg_rtt_ms,
                                          int64_t max_rtt_ms) {
   rtc::CritScope lock(&crit_);
   avg_rtt_ms_ = avg_rtt_ms;
+}
+
+void ReceiveStatisticsProxy::ContentSpecificStats::Add(
+    const ContentSpecificStats& other) {
+  e2e_delay_counter.Add(other.e2e_delay_counter);
+  interframe_delay_counter.Add(other.interframe_delay_counter);
+  flow_duration_ms += other.flow_duration_ms;
+  total_media_bytes += other.total_media_bytes;
+  received_height.Add(other.received_height);
+  received_width.Add(other.received_width);
+  qp_counter.Add(other.qp_counter);
+  frame_counts.key_frames += other.frame_counts.key_frames;
+  frame_counts.delta_frames += other.frame_counts.delta_frames;
 }
 
 }  // namespace webrtc

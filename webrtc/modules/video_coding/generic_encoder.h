@@ -82,6 +82,11 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
   int64_t last_timing_frame_time_ms_ GUARDED_BY(timing_params_lock_);
   VideoCodec::TimingFrameTriggerThresholds timing_frames_thresholds_
       GUARDED_BY(timing_params_lock_);
+
+  // Experiment groups parsed from field trials for realtime video ([0]) and
+  // screenshare ([1]). 0 means no group specified. Positive values are
+  // experiment group numbers incremented by 1.
+  uint8_t experiment_groups_[2];
 };
 
 class VCMGenericEncoder {

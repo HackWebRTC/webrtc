@@ -69,7 +69,7 @@ class VCMReceiveCallback {
  public:
   virtual int32_t FrameToRender(VideoFrame& videoFrame,  // NOLINT
                                 rtc::Optional<uint8_t> qp,
-                                VideoContentType /*content_type*/) = 0;
+                                VideoContentType content_type) = 0;
 
   virtual int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId) {
     return -1;
@@ -97,7 +97,9 @@ class VCMSendStatisticsCallback {
 class VCMReceiveStatisticsCallback {
  public:
   virtual void OnReceiveRatesUpdated(uint32_t bitRate, uint32_t frameRate) = 0;
-  virtual void OnCompleteFrame(bool is_keyframe, size_t size_bytes) = 0;
+  virtual void OnCompleteFrame(bool is_keyframe,
+                               size_t size_bytes,
+                               VideoContentType content_type) = 0;
   virtual void OnDiscardedPacketsUpdated(int discarded_packets) = 0;
   virtual void OnFrameCountsUpdated(const FrameCounts& frame_counts) = 0;
   virtual void OnFrameBufferTimingsUpdated(int decode_ms,

@@ -91,11 +91,12 @@ AlrDetector::ParseAlrSettingsFromFieldTrial(const char* experiment_name) {
     return ret;
 
   AlrExperimentSettings settings;
-  if (sscanf(group_name.c_str(), "%f,%" PRId64 ",%d,%d,%d",
+  if (sscanf(group_name.c_str(), "%f,%" PRId64 ",%d,%d,%d,%d",
              &settings.pacing_factor, &settings.max_paced_queue_time,
              &settings.alr_bandwidth_usage_percent,
              &settings.alr_start_budget_level_percent,
-             &settings.alr_stop_budget_level_percent) == 5) {
+             &settings.alr_stop_budget_level_percent,
+             &settings.group_id) == 6) {
     ret.emplace(settings);
     LOG(LS_INFO) << "Using ALR experiment settings: "
                     "pacing factor: "
@@ -106,7 +107,8 @@ AlrDetector::ParseAlrSettingsFromFieldTrial(const char* experiment_name) {
                  << ", ALR end budget level percent: "
                  << settings.alr_start_budget_level_percent
                  << ", ALR end budget level percent: "
-                 << settings.alr_stop_budget_level_percent;
+                 << settings.alr_stop_budget_level_percent
+                 << ", ALR experiment group ID: " << settings.group_id;
   } else {
     LOG(LS_INFO) << "Failed to parse ALR experiment: " << experiment_name;
   }

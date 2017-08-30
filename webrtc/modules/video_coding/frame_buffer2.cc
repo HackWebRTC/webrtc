@@ -277,7 +277,8 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   TRACE_EVENT0("webrtc", "FrameBuffer::InsertFrame");
   RTC_DCHECK(frame);
   if (stats_callback_)
-    stats_callback_->OnCompleteFrame(frame->is_keyframe(), frame->size());
+    stats_callback_->OnCompleteFrame(frame->is_keyframe(), frame->size(),
+                                     frame->contentType());
   FrameKey key(frame->picture_id, frame->spatial_layer);
 
   rtc::CritScope lock(&crit_);

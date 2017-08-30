@@ -92,14 +92,44 @@
                              webrtc::metrics::HistogramFactoryGetCountsLinear( \
                                  name, min, max, bucket_count))
 
-// Deprecated.
-// TODO(asapersson): Remove.
+// Slow metrics: pointer to metric is acquired at each call and is not cached.
+//
 #define RTC_HISTOGRAM_COUNTS_SPARSE_100(name, sample) \
   RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 100, 50)
+
+#define RTC_HISTOGRAM_COUNTS_SPARSE_200(name, sample) \
+  RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 200, 50)
+
+#define RTC_HISTOGRAM_COUNTS_SPARSE_500(name, sample) \
+  RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 500, 50)
+
+#define RTC_HISTOGRAM_COUNTS_SPARSE_1000(name, sample) \
+  RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 1000, 50)
+
+#define RTC_HISTOGRAM_COUNTS_SPARSE_10000(name, sample) \
+  RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 10000, 50)
+
+#define RTC_HISTOGRAM_COUNTS_SPARSE_100000(name, sample) \
+  RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 100000, 50)
 
 #define RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, min, max, bucket_count) \
   RTC_HISTOGRAM_COMMON_BLOCK_SLOW(name, sample, \
       webrtc::metrics::HistogramFactoryGetCounts(name, min, max, bucket_count))
+
+// Histogram for percentage (evenly spaced buckets).
+#define RTC_HISTOGRAM_PERCENTAGE_SPARSE(name, sample) \
+  RTC_HISTOGRAM_ENUMERATION_SPARSE(name, sample, 101)
+
+// Histogram for booleans.
+#define RTC_HISTOGRAM_BOOLEAN_SPARSE(name, sample) \
+  RTC_HISTOGRAM_ENUMERATION_SPARSE(name, sample, 2)
+
+// Histogram for enumerators (evenly spaced buckets).
+// |boundary| should be above the max enumerator sample.
+#define RTC_HISTOGRAM_ENUMERATION_SPARSE(name, sample, boundary) \
+  RTC_HISTOGRAM_COMMON_BLOCK_SLOW(                               \
+      name, sample,                                              \
+      webrtc::metrics::HistogramFactoryGetEnumeration(name, boundary))
 
 // Histogram for percentage (evenly spaced buckets).
 #define RTC_HISTOGRAM_PERCENTAGE(name, sample) \
@@ -154,7 +184,9 @@
 
 // Helper macros.
 // Macros for calling a histogram with varying name (e.g. when using a metric
-// in different modes such as real-time vs screenshare).
+// in different modes such as real-time vs screenshare). Fast, because pointer
+// is cached. |index| should be different for different names. Allowed |index|
+// values are 0, 1, and 2.
 #define RTC_HISTOGRAMS_COUNTS_100(index, name, sample) \
   RTC_HISTOGRAMS_COMMON(index, name, sample, \
       RTC_HISTOGRAM_COUNTS(name, sample, 1, 100, 50))
@@ -188,22 +220,21 @@
       RTC_HISTOGRAM_PERCENTAGE(name, sample))
 
 #define RTC_HISTOGRAMS_COMMON(index, name, sample, macro_invocation) \
-  do { \
-    switch (index) { \
-      case 0: \
-        macro_invocation; \
-        break; \
-      case 1: \
-        macro_invocation; \
-        break; \
-      case 2: \
-        macro_invocation; \
-        break; \
-      default: \
-        RTC_NOTREACHED(); \
-    } \
+  do {                                                               \
+    switch (index) {                                                 \
+      case 0:                                                        \
+        macro_invocation;                                            \
+        break;                                                       \
+      case 1:                                                        \
+        macro_invocation;                                            \
+        break;                                                       \
+      case 2:                                                        \
+        macro_invocation;                                            \
+        break;                                                       \
+      default:                                                       \
+        RTC_NOTREACHED();                                            \
+    }                                                                \
   } while (0)
-
 
 namespace webrtc {
 namespace metrics {

@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/modules/pacing/alr_detector.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/modules/video_coding/media_optimization.h"
 #include "webrtc/rtc_base/checks.h"
@@ -20,6 +21,7 @@
 #include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/rtc_base/trace_event.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -183,7 +185,23 @@ VCMEncodedFrameCallback::VCMEncodedFrameCallback(
       media_opt_(media_opt),
       framerate_(1),
       last_timing_frame_time_ms_(-1),
-      timing_frames_thresholds_({-1, 0}) {}
+      timing_frames_thresholds_({-1, 0}) {
+  rtc::Optional<AlrDetector::AlrExperimentSettings> experiment_settings =
+      AlrDetector::ParseAlrSettingsFromFieldTrial(
+          AlrDetector::kStrictPacingAndProbingExperimentName);
+  if (experiment_settings) {
+    experiment_groups_[0] = experiment_settings->group_id + 1;
+  } else {
+    experiment_groups_[0] = 0;
+  }
+  experiment_settings = AlrDetector::ParseAlrSettingsFromFieldTrial(
+      AlrDetector::kScreenshareProbingBweExperimentName);
+  if (experiment_settings) {
+    experiment_groups_[1] = experiment_settings->group_id + 1;
+  } else {
+    experiment_groups_[1] = 0;
+  }
+}
 
 VCMEncodedFrameCallback::~VCMEncodedFrameCallback() {}
 
@@ -231,13 +249,15 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
 
   rtc::Optional<size_t> outlier_frame_size;
   rtc::Optional<int64_t> encode_start_ms;
+  size_t num_simulcast_svc_streams = 1;
   uint8_t timing_flags = TimingFrameFlags::kInvalid;
   {
     rtc::CritScope crit(&timing_params_lock_);
 
     // Encoders with internal sources do not call OnEncodeStarted and
     // OnFrameRateChanged. |timing_frames_info_| may be not filled here.
-    if (simulcast_svc_idx < timing_frames_info_.size()) {
+    num_simulcast_svc_streams = timing_frames_info_.size();
+    if (simulcast_svc_idx < num_simulcast_svc_streams) {
       auto encode_start_map =
           &timing_frames_info_[simulcast_svc_idx].encode_start_time_ms;
       auto it = encode_start_map->find(encoded_image.capture_time_ms_);
@@ -298,6 +318,23 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
   } else {
     encoded_image.timing_.flags = TimingFrameFlags::kInvalid;
   }
+
+  // Piggyback ALR experiment group id and simulcast id into the content type.
+  uint8_t experiment_id =
+      experiment_groups_[videocontenttypehelpers::IsScreenshare(
+          encoded_image.content_type_)];
+
+  // TODO(ilnik): This will force content type extension to be present even
+  // for realtime video. At the expense of miniscule overhead we will get
+  // sliced receive statistics.
+  RTC_CHECK(videocontenttypehelpers::SetExperimentId(
+      &encoded_image.content_type_, experiment_id));
+  // We count simulcast streams from 1 on the wire. That's why we set simulcast
+  // id in content type to +1 of that is actual simulcast index. This is because
+  // value 0 on the wire is reserved for 'no simulcast stream specified'.
+  RTC_CHECK(videocontenttypehelpers::SetSimulcastId(
+      &encoded_image.content_type_,
+      static_cast<uint8_t>(simulcast_svc_idx + 1)));
 
   Result result = post_encode_callback_->OnEncodedImage(
       encoded_image, codec_specific, fragmentation_header);

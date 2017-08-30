@@ -69,7 +69,9 @@ class VideoStreamDecoder : public VCMReceiveCallback,
   void OnReceiveRatesUpdated(uint32_t bit_rate, uint32_t frame_rate) override;
   void OnDiscardedPacketsUpdated(int discarded_packets) override;
   void OnFrameCountsUpdated(const FrameCounts& frame_counts) override;
-  void OnCompleteFrame(bool is_keyframe, size_t size_bytes) override;
+  void OnCompleteFrame(bool is_keyframe,
+                       size_t size_bytes,
+                       VideoContentType content_type) override;
   void OnFrameBufferTimingsUpdated(int decode_ms,
                                    int max_decode_ms,
                                    int current_delay_ms,

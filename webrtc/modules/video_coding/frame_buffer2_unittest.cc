@@ -105,7 +105,10 @@ class VCMReceiveStatisticsCallbackMock : public VCMReceiveStatisticsCallback {
  public:
   MOCK_METHOD2(OnReceiveRatesUpdated,
                void(uint32_t bitRate, uint32_t frameRate));
-  MOCK_METHOD2(OnCompleteFrame, void(bool is_keyframe, size_t size_bytes));
+  MOCK_METHOD3(OnCompleteFrame,
+               void(bool is_keyframe,
+                    size_t size_bytes,
+                    VideoContentType content_type));
   MOCK_METHOD1(OnDiscardedPacketsUpdated, void(int discarded_packets));
   MOCK_METHOD1(OnFrameCountsUpdated, void(const FrameCounts& frame_counts));
   MOCK_METHOD7(OnFrameBufferTimingsUpdated,
@@ -489,7 +492,8 @@ TEST_F(TestFrameBuffer2, StatsCallback) {
   uint32_t ts = Rand();
   const int kFrameSize = 5000;
 
-  EXPECT_CALL(stats_callback_, OnCompleteFrame(true, kFrameSize));
+  EXPECT_CALL(stats_callback_,
+              OnCompleteFrame(true, kFrameSize, VideoContentType::UNSPECIFIED));
   EXPECT_CALL(stats_callback_,
               OnFrameBufferTimingsUpdated(_, _, _, _, _, _, _));
 

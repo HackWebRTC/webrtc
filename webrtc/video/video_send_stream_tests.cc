@@ -318,8 +318,8 @@ TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
       if (!header.markerBit)
         return SEND_PACKET;
       EXPECT_TRUE(header.extension.hasVideoContentType);
-      EXPECT_EQ(VideoContentType::SCREENSHARE,
-                header.extension.videoContentType);
+      EXPECT_TRUE(videocontenttypehelpers::IsScreenshare(
+          header.extension.videoContentType));
       observation_complete_.Set();
       return SEND_PACKET;
     }

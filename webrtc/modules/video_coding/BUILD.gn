@@ -104,6 +104,7 @@ rtc_static_library("video_coding") {
     "../../rtc_base:rtc_task_queue",
     "../../rtc_base:sequenced_task_checker",
     "../../system_wrappers",
+    "../pacing",
     "../rtp_rtcp:rtp_rtcp",
     "../utility:utility",
   ]

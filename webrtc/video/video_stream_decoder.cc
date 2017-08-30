@@ -122,7 +122,9 @@ void VideoStreamDecoder::OnFrameBufferTimingsUpdated(int decode_ms,
 void VideoStreamDecoder::OnTimingFrameInfoUpdated(const TimingFrameInfo& info) {
 }
 
-void VideoStreamDecoder::OnCompleteFrame(bool is_keyframe, size_t size_bytes) {}
+void VideoStreamDecoder::OnCompleteFrame(bool is_keyframe,
+                                         size_t size_bytes,
+                                         VideoContentType content_type) {}
 
 void VideoStreamDecoder::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   video_receiver_->SetReceiveChannelParameters(max_rtt_ms);
