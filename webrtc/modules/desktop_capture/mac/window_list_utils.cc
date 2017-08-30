@@ -83,7 +83,7 @@ bool GetWindowList(rtc::FunctionView<bool(CFDictionaryRef)> on_window,
     }
 
     // Skip windows that are minimized and not full screen.
-    if (ignore_minimized && IsWindowMinimized(window) &&
+    if (ignore_minimized && !IsWindowOnScreen(window) &&
         !IsWindowFullScreen(desktop_config, window)) {
       continue;
     }
@@ -138,29 +138,28 @@ bool IsWindowFullScreen(
   return fullscreen;
 }
 
-bool IsWindowMinimized(CFDictionaryRef window) {
+bool IsWindowOnScreen(CFDictionaryRef window) {
   CFBooleanRef on_screen = reinterpret_cast<CFBooleanRef>(
       CFDictionaryGetValue(window, kCGWindowIsOnscreen));
-  return on_screen != NULL && !CFBooleanGetValue(on_screen);
+  return on_screen == NULL || CFBooleanGetValue(on_screen);
 }
 
-// Returns true if the window is minimized.
-bool IsWindowMinimized(CGWindowID id) {
+bool IsWindowOnScreen(CGWindowID id) {
   CFArrayRef window_id_array =
       CFArrayCreate(NULL, reinterpret_cast<const void **>(&id), 1, NULL);
   CFArrayRef window_array =
       CGWindowListCreateDescriptionFromArray(window_id_array);
-  bool minimized = false;
+  bool on_screen = true;
 
   if (window_array && CFArrayGetCount(window_array)) {
-    minimized = IsWindowMinimized(reinterpret_cast<CFDictionaryRef>(
+    on_screen = IsWindowOnScreen(reinterpret_cast<CFDictionaryRef>(
         CFArrayGetValueAtIndex(window_array, 0)));
   }
 
   CFRelease(window_id_array);
   CFRelease(window_array);
 
-  return minimized;
+  return on_screen;
 }
 
 std::string GetWindowTitle(CFDictionaryRef window) {

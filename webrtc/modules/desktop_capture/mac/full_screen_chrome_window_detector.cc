@@ -147,7 +147,7 @@ FullScreenChromeWindowDetector::~FullScreenChromeWindowDetector() {}
 
 CGWindowID FullScreenChromeWindowDetector::FindFullScreenWindow(
     CGWindowID original_window) {
-  if (!IsChromeWindow(original_window) || !IsWindowMinimized(original_window))
+  if (!IsChromeWindow(original_window) || IsWindowOnScreen(original_window))
     return kCGNullWindowID;
 
   CGWindowID full_screen_window_id =
@@ -176,7 +176,7 @@ void FullScreenChromeWindowDetector::UpdateWindowListIfNeeded(
     previous_window_list_.swap(current_window_list_);
 
     // No need to update the window list when the window is minimized.
-    if (IsWindowMinimized(original_window)) {
+    if (!IsWindowOnScreen(original_window)) {
       previous_window_list_.clear();
       return;
     }
