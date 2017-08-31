@@ -29,11 +29,10 @@
 namespace webrtc {
 
 namespace {
-constexpr int64_t kMaxWaitEncTimeMs = 100;
-constexpr int64_t kMaxWaitDecTimeMs = 25;
-constexpr uint32_t kTestTimestamp = 123;
+constexpr uint32_t kInitialTimestampRtp = 123;
 constexpr int64_t kTestNtpTimeMs = 456;
-constexpr uint32_t kTimestampIncrementPerFrame = 3000;
+constexpr int64_t kInitialTimestampMs = 789;
+constexpr uint32_t kTimestampIncrement = 3000;
 constexpr int kNumCores = 1;
 constexpr size_t kMaxPayloadSize = 1440;
 constexpr int kMinPixelsPerFrame = 12345;
@@ -67,6 +66,7 @@ class EncodedImageCallbackTestImpl : public webrtc::EncodedImageCallback {
     // Skip |codec_name|, to avoid allocating.
     EXPECT_STREQ("libvpx", codec_specific_info->codec_name);
     EXPECT_EQ(kVideoCodecVP8, codec_specific_info->codecType);
+    EXPECT_EQ(0u, codec_specific_info->codecSpecific.VP8.simulcastIdx);
     codec_specific_info_.codecType = codec_specific_info->codecType;
     codec_specific_info_.codecSpecific = codec_specific_info->codecSpecific;
     complete_ = true;
@@ -165,8 +165,8 @@ class TestVp8Impl : public ::testing::Test {
     // No scaling in our case, just a copy, to add stride to the image.
     stride_buffer->ScaleFrom(*compact_buffer);
 
-    input_frame_.reset(new VideoFrame(stride_buffer, kVideoRotation_0, 0));
-    input_frame_->set_timestamp(kTestTimestamp);
+    input_frame_.reset(new VideoFrame(stride_buffer, kInitialTimestampRtp,
+                                      kInitialTimestampMs, kVideoRotation_0));
     fclose(file);
   }
 
@@ -190,31 +190,19 @@ class TestVp8Impl : public ::testing::Test {
               decoder_->InitDecode(&codec_settings_, kNumCores));
   }
 
-  void WaitForEncodedFrame() {
-    int64_t start_ms = rtc::TimeMillis();
-    while (rtc::TimeMillis() - start_ms < kMaxWaitEncTimeMs) {
-      if (encoded_cb_.EncodeComplete())
-        return;
-    }
-    ASSERT_TRUE(false);
-  }
-
-  void WaitForDecodedFrame() {
-    int64_t start_ms = rtc::TimeMillis();
-    while (rtc::TimeMillis() - start_ms < kMaxWaitDecTimeMs) {
-      if (decoded_cb_.DecodeComplete())
-        return;
-    }
-    ASSERT_TRUE(false);
+  void EncodeFrame() {
+    EXPECT_FALSE(encoded_cb_.EncodeComplete());
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->Encode(*input_frame_, nullptr, nullptr));
+    EXPECT_TRUE(encoded_cb_.EncodeComplete());
   }
 
   void ExpectFrameWith(int16_t picture_id,
                        int tl0_pic_idx,
                        uint8_t temporal_idx) {
-    WaitForEncodedFrame();
-    EXPECT_EQ(picture_id,
+    EXPECT_EQ(picture_id % (1 << 15),
               encoded_cb_.codec_specific_info_.codecSpecific.VP8.pictureId);
-    EXPECT_EQ(tl0_pic_idx,
+    EXPECT_EQ(tl0_pic_idx % (1 << 8),
               encoded_cb_.codec_specific_info_.codecSpecific.VP8.tl0PicIdx);
     EXPECT_EQ(temporal_idx,
               encoded_cb_.codec_specific_info_.codecSpecific.VP8.temporalIdx);
@@ -230,35 +218,45 @@ class TestVp8Impl : public ::testing::Test {
   TemporalLayersFactory tl_factory_;
 };
 
-TEST_F(TestVp8Impl, EncodeFrame) {
-  InitEncodeDecode();
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  WaitForEncodedFrame();
-}
-
-TEST_F(TestVp8Impl, EncoderParameterTest) {
-  codec_settings_.maxBitrate = 0;
-  codec_settings_.width = 1440;
-  codec_settings_.height = 1080;
-
-  // Calls before InitEncode().
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
+TEST_F(TestVp8Impl, SetRateAllocation) {
   const int kBitrateBps = 300000;
   BitrateAllocation bitrate_allocation;
   bitrate_allocation.SetBitrate(0, 0, kBitrateBps);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_UNINITIALIZED,
             encoder_->SetRateAllocation(bitrate_allocation,
                                         codec_settings_.maxFramerate));
+  InitEncodeDecode();
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
+            encoder_->SetRateAllocation(bitrate_allocation,
+                                        codec_settings_.maxFramerate));
 }
 
-TEST_F(TestVp8Impl, DecoderParameterTest) {
-  // Calls before InitDecode().
+TEST_F(TestVp8Impl, EncodeFrameAndRelease) {
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
+  EncodeFrame();
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_UNINITIALIZED,
+            encoder_->Encode(*input_frame_, nullptr, nullptr));
+}
+
+TEST_F(TestVp8Impl, InitDecode) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Release());
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->InitDecode(&codec_settings_, kNumCores));
+}
+
+TEST_F(TestVp8Impl, OnEncodedImageReportsInfo) {
+  InitEncodeDecode();
+  EncodeFrame();
+  EXPECT_EQ(kInitialTimestampRtp, encoded_cb_.encoded_frame_._timeStamp);
+  EXPECT_EQ(kInitialTimestampMs, encoded_cb_.encoded_frame_.capture_time_ms_);
+  EXPECT_EQ(kWidth, static_cast<int>(encoded_cb_.encoded_frame_._encodedWidth));
+  EXPECT_EQ(kHeight,
+            static_cast<int>(encoded_cb_.encoded_frame_._encodedHeight));
+  EXPECT_EQ(-1,  // Disabled for single stream.
+            encoded_cb_.encoded_frame_.adapt_reason_.bw_resolutions_disabled);
 }
 
 // We only test the encoder here, since the decoded frame rotation is set based
@@ -267,29 +265,23 @@ TEST_F(TestVp8Impl, DecoderParameterTest) {
 // in the same way as done in the encoder.
 TEST_F(TestVp8Impl, EncodedRotationEqualsInputRotation) {
   InitEncodeDecode();
-
   input_frame_->set_rotation(kVideoRotation_0);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  WaitForEncodedFrame();
+  EncodeFrame();
   EXPECT_EQ(kVideoRotation_0, encoded_cb_.encoded_frame_.rotation_);
 
   input_frame_->set_rotation(kVideoRotation_90);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  WaitForEncodedFrame();
+  EncodeFrame();
   EXPECT_EQ(kVideoRotation_90, encoded_cb_.encoded_frame_.rotation_);
 }
 
 TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {
   InitEncodeDecode();
-  encoder_->Encode(*input_frame_, nullptr, nullptr);
-  WaitForEncodedFrame();
+  EncodeFrame();
   // First frame should be a key frame.
   encoded_cb_.encoded_frame_._frameType = kVideoFrameKey;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_cb_.encoded_frame_, false, nullptr));
-  WaitForDecodedFrame();
+  EXPECT_TRUE(decoded_cb_.DecodeComplete());
   EXPECT_GT(I420PSNR(input_frame_.get(), &*decoded_cb_.frame_), 36);
   EXPECT_EQ(encoded_cb_.encoded_frame_.qp_, *decoded_cb_.qp_);
 }
@@ -301,17 +293,16 @@ TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {
 #endif
 TEST_F(TestVp8Impl, MAYBE_AlignedStrideEncodeDecode) {
   InitEncodeDecode();
-  encoder_->Encode(*input_frame_, nullptr, nullptr);
-  WaitForEncodedFrame();
+  EncodeFrame();
   // First frame should be a key frame.
   encoded_cb_.encoded_frame_._frameType = kVideoFrameKey;
   encoded_cb_.encoded_frame_.ntp_time_ms_ = kTestNtpTimeMs;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_cb_.encoded_frame_, false, nullptr));
-  WaitForDecodedFrame();
+  EXPECT_TRUE(decoded_cb_.DecodeComplete());
   // Compute PSNR on all planes (faster than SSIM).
   EXPECT_GT(I420PSNR(input_frame_.get(), &*decoded_cb_.frame_), 36);
-  EXPECT_EQ(kTestTimestamp, decoded_cb_.frame_->timestamp());
+  EXPECT_EQ(kInitialTimestampRtp, decoded_cb_.frame_->timestamp());
   EXPECT_EQ(kTestNtpTimeMs, decoded_cb_.frame_->ntp_time_ms());
 }
 
@@ -322,8 +313,7 @@ TEST_F(TestVp8Impl, MAYBE_AlignedStrideEncodeDecode) {
 #endif
 TEST_F(TestVp8Impl, MAYBE_DecodeWithACompleteKeyFrame) {
   InitEncodeDecode();
-  encoder_->Encode(*input_frame_, nullptr, nullptr);
-  WaitForEncodedFrame();
+  EncodeFrame();
   // Setting complete to false -> should return an error.
   encoded_cb_.encoded_frame_._completeFrame = false;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERROR,
@@ -341,45 +331,29 @@ TEST_F(TestVp8Impl, MAYBE_DecodeWithACompleteKeyFrame) {
   EXPECT_GT(I420PSNR(input_frame_.get(), &*decoded_cb_.frame_), 36);
 }
 
-TEST_F(TestVp8Impl, EncoderRetainsRtpStateAfterRelease) {
-  InitEncodeDecode();
-  // Override default settings.
+TEST_F(TestVp8Impl, EncoderWith2TemporalLayersRetainsRtpStateAfterRelease) {
   codec_settings_.VP8()->numberOfTemporalLayers = 2;
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
+  InitEncodeDecode();
 
   // Temporal layer 0.
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  WaitForEncodedFrame();
+  EncodeFrame();
   EXPECT_EQ(0, encoded_cb_.codec_specific_info_.codecSpecific.VP8.temporalIdx);
   int16_t picture_id =
       encoded_cb_.codec_specific_info_.codecSpecific.VP8.pictureId;
   int tl0_pic_idx =
       encoded_cb_.codec_specific_info_.codecSpecific.VP8.tl0PicIdx;
-
   // Temporal layer 1.
-  input_frame_->set_timestamp(input_frame_->timestamp() +
-                              kTimestampIncrementPerFrame);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  ExpectFrameWith((picture_id + 1) % (1 << 15), tl0_pic_idx, 1);
-
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 1, tl0_pic_idx + 0, 1);
   // Temporal layer 0.
-  input_frame_->set_timestamp(input_frame_->timestamp() +
-                              kTimestampIncrementPerFrame);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  ExpectFrameWith((picture_id + 2) % (1 << 15), (tl0_pic_idx + 1) % (1 << 8),
-                  0);
-
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 2, tl0_pic_idx + 1, 0);
   // Temporal layer 1.
-  input_frame_->set_timestamp(input_frame_->timestamp() +
-                              kTimestampIncrementPerFrame);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  ExpectFrameWith((picture_id + 3) % (1 << 15), (tl0_pic_idx + 1) % (1 << 8),
-                  1);
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 3, tl0_pic_idx + 1, 1);
 
   // Reinit.
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
@@ -387,36 +361,68 @@ TEST_F(TestVp8Impl, EncoderRetainsRtpStateAfterRelease) {
             encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
 
   // Temporal layer 0.
-  input_frame_->set_timestamp(input_frame_->timestamp() +
-                              kTimestampIncrementPerFrame);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  ExpectFrameWith((picture_id + 4) % (1 << 15), (tl0_pic_idx + 2) % (1 << 8),
-                  0);
-
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 4, tl0_pic_idx + 2, 0);
   // Temporal layer 1.
-  input_frame_->set_timestamp(input_frame_->timestamp() +
-                              kTimestampIncrementPerFrame);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  ExpectFrameWith((picture_id + 5) % (1 << 15), (tl0_pic_idx + 2) % (1 << 8),
-                  1);
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 5, tl0_pic_idx + 2, 1);
+  // Temporal layer 0.
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 6, tl0_pic_idx + 3, 0);
+  // Temporal layer 1.
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 7, tl0_pic_idx + 3, 1);
+}
+
+TEST_F(TestVp8Impl, EncoderWith3TemporalLayersRetainsRtpStateAfterRelease) {
+  codec_settings_.VP8()->numberOfTemporalLayers = 3;
+  InitEncodeDecode();
 
   // Temporal layer 0.
-  input_frame_->set_timestamp(input_frame_->timestamp() +
-                              kTimestampIncrementPerFrame);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  ExpectFrameWith((picture_id + 6) % (1 << 15), (tl0_pic_idx + 3) % (1 << 8),
-                  0);
-
+  EncodeFrame();
+  EXPECT_EQ(0, encoded_cb_.codec_specific_info_.codecSpecific.VP8.temporalIdx);
+  int16_t picture_id =
+      encoded_cb_.codec_specific_info_.codecSpecific.VP8.pictureId;
+  int tl0_pic_idx =
+      encoded_cb_.codec_specific_info_.codecSpecific.VP8.tl0PicIdx;
+  // Temporal layer 2.
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 1, tl0_pic_idx + 0, 2);
   // Temporal layer 1.
-  input_frame_->set_timestamp(input_frame_->timestamp() +
-                              kTimestampIncrementPerFrame);
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 2, tl0_pic_idx + 0, 1);
+  // Temporal layer 2.
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 3, tl0_pic_idx + 0, 2);
+
+  // Reinit.
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  ExpectFrameWith((picture_id + 7) % (1 << 15), (tl0_pic_idx + 3) % (1 << 8),
-                  1);
+            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
+
+  // Temporal layer 0.
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 4, tl0_pic_idx + 1, 0);
+  // Temporal layer 2.
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 5, tl0_pic_idx + 1, 2);
+  // Temporal layer 1.
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 6, tl0_pic_idx + 1, 1);
+  // Temporal layer 2.
+  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
+  EncodeFrame();
+  ExpectFrameWith(picture_id + 7, tl0_pic_idx + 1, 2);
 }
 
 TEST_F(TestVp8Impl, ScalingDisabledIfAutomaticResizeOff) {
