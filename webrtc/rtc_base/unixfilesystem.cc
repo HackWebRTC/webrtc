@@ -144,14 +144,6 @@ bool UnixFilesystem::IsFile(const Pathname& pathname) {
   return res == 0 && !S_ISDIR(st.st_mode);
 }
 
-bool UnixFilesystem::IsAbsent(const Pathname& pathname) {
-  struct stat st;
-  int res = ::stat(pathname.pathname().c_str(), &st);
-  // Note: we specifically maintain ENOTDIR as an error, because that implies
-  // that you could not call CreateFolder(pathname).
-  return res != 0 && ENOENT == errno;
-}
-
 bool UnixFilesystem::GetFileSize(const Pathname& pathname, size_t *size) {
   struct stat st;
   if (::stat(pathname.pathname().c_str(), &st) != 0)

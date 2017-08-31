@@ -111,15 +111,6 @@ bool Win32Filesystem::IsFile(const Pathname &path) {
   return (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
 }
 
-bool Win32Filesystem::IsAbsent(const Pathname& path) {
-  WIN32_FILE_ATTRIBUTE_DATA data = {0};
-  if (0 != ::GetFileAttributesEx(ToUtf16(path.pathname()).c_str(),
-                                 GetFileExInfoStandard, &data))
-    return false;
-  DWORD err = ::GetLastError();
-  return (ERROR_FILE_NOT_FOUND == err || ERROR_PATH_NOT_FOUND == err);
-}
-
 bool Win32Filesystem::GetFileSize(const Pathname &pathname, size_t *size) {
   WIN32_FILE_ATTRIBUTE_DATA data = {0};
   if (::GetFileAttributesEx(ToUtf16(pathname.pathname()).c_str(),

@@ -46,10 +46,6 @@ class UnixFilesystem : public FilesystemInterface {
   // Returns true of pathname represents an existing file
   bool IsFile(const Pathname& pathname) override;
 
-  // Returns true if pathname refers to no filesystem object, every parent
-  // directory either exists, or is also absent.
-  bool IsAbsent(const Pathname& pathname) override;
-
   std::string TempFilename(const Pathname& dir,
                            const std::string& prefix) override;
 

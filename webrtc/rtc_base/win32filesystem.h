@@ -38,10 +38,6 @@ class Win32Filesystem : public FilesystemInterface {
   // Returns true if a file exists at path
   bool IsFile(const Pathname& path) override;
 
-  // Returns true if pathname refers to no filesystem object, every parent
-  // directory either exists, or is also absent.
-  bool IsAbsent(const Pathname& pathname) override;
-
   // All of the following functions set pathname and return true if successful.
   // Returned paths always include a trailing backslash.
   // If create is true, the path will be recursively created.

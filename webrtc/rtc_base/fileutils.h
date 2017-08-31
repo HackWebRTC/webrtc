@@ -98,10 +98,6 @@ class FilesystemInterface {
   // Returns true if pathname refers to a file
   virtual bool IsFile(const Pathname& pathname) = 0;
 
-  // Returns true if pathname refers to no filesystem object, every parent
-  // directory either exists, or is also absent.
-  virtual bool IsAbsent(const Pathname& pathname) = 0;
-
   virtual std::string TempFilename(const Pathname &dir,
                                    const std::string &prefix) = 0;
 
@@ -145,10 +141,6 @@ class Filesystem {
 
   static bool IsFile(const Pathname &pathname) {
     return EnsureDefaultFilesystem()->IsFile(pathname);
-  }
-
-  static bool IsAbsent(const Pathname &pathname) {
-    return EnsureDefaultFilesystem()->IsAbsent(pathname);
   }
 
   static std::string TempFilename(const Pathname &dir,
