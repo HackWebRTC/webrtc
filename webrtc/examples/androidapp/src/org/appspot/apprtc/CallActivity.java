@@ -45,7 +45,6 @@ import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
-import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
@@ -162,7 +161,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   private AppRTCClient appRtcClient;
   private SignalingParameters signalingParameters;
   private AppRTCAudioManager audioManager = null;
-  private EglBase rootEglBase;
   private SurfaceViewRenderer pipRenderer;
   private SurfaceViewRenderer fullscreenRenderer;
   private VideoFileRenderer videoFileRenderer;
@@ -234,9 +232,11 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
     final Intent intent = getIntent();
 
+    // Create peer connection client.
+    peerConnectionClient = new PeerConnectionClient();
+
     // Create video renderers.
-    rootEglBase = EglBase.create();
-    pipRenderer.init(rootEglBase.getEglBaseContext(), null);
+    pipRenderer.init(peerConnectionClient.getRenderContext(), null);
     pipRenderer.setScalingType(ScalingType.SCALE_ASPECT_FIT);
     String saveRemoteVideoToFile = intent.getStringExtra(EXTRA_SAVE_REMOTE_VIDEO_TO_FILE);
 
@@ -245,15 +245,15 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       int videoOutWidth = intent.getIntExtra(EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_WIDTH, 0);
       int videoOutHeight = intent.getIntExtra(EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_HEIGHT, 0);
       try {
-        videoFileRenderer = new VideoFileRenderer(
-            saveRemoteVideoToFile, videoOutWidth, videoOutHeight, rootEglBase.getEglBaseContext());
+        videoFileRenderer = new VideoFileRenderer(saveRemoteVideoToFile, videoOutWidth,
+            videoOutHeight, peerConnectionClient.getRenderContext());
         remoteRenderers.add(videoFileRenderer);
       } catch (IOException e) {
         throw new RuntimeException(
             "Failed to open video file for output: " + saveRemoteVideoToFile, e);
       }
     }
-    fullscreenRenderer.init(rootEglBase.getEglBaseContext(), null);
+    fullscreenRenderer.init(peerConnectionClient.getRenderContext(), null);
     fullscreenRenderer.setScalingType(ScalingType.SCALE_ASPECT_FILL);
 
     pipRenderer.setZOrderMediaOverlay(true);
@@ -368,7 +368,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       }, runTimeMs);
     }
 
-    peerConnectionClient = PeerConnectionClient.getInstance();
     if (loopback) {
       PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
       options.networkIgnoreMask = 0;
@@ -507,7 +506,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       logToast.cancel();
     }
     activityRunning = false;
-    rootEglBase.release();
     super.onDestroy();
   }
 
@@ -623,10 +621,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       appRtcClient.disconnectFromRoom();
       appRtcClient = null;
     }
-    if (peerConnectionClient != null) {
-      peerConnectionClient.close();
-      peerConnectionClient = null;
-    }
     if (pipRenderer != null) {
       pipRenderer.release();
       pipRenderer = null;
@@ -638,6 +632,10 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     if (fullscreenRenderer != null) {
       fullscreenRenderer.release();
       fullscreenRenderer = null;
+    }
+    if (peerConnectionClient != null) {
+      peerConnectionClient.close();
+      peerConnectionClient = null;
     }
     if (audioManager != null) {
       audioManager.stop();
@@ -747,8 +745,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     if (peerConnectionParameters.videoCallEnabled) {
       videoCapturer = createVideoCapturer();
     }
-    peerConnectionClient.createPeerConnection(rootEglBase.getEglBaseContext(), localProxyRenderer,
-        remoteRenderers, videoCapturer, signalingParameters);
+    peerConnectionClient.createPeerConnection(
+        localProxyRenderer, remoteRenderers, videoCapturer, signalingParameters);
 
     if (signalingParameters.initiator) {
       logAndToast("Creating OFFER...");
