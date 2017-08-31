@@ -204,12 +204,29 @@ class WebRtcSession :
   }
 
   // Exposed for stats collecting.
+  // TODO(steveanton): Switch callers to use the plural form and remove these.
   virtual cricket::VoiceChannel* voice_channel() {
-    return voice_channel_.get();
+    if (voice_channels_.empty()) {
+      return nullptr;
+    } else {
+      return voice_channels_[0];
+    }
   }
   virtual cricket::VideoChannel* video_channel() {
-    return video_channel_.get();
+    if (video_channels_.empty()) {
+      return nullptr;
+    } else {
+      return video_channels_[0];
+    }
   }
+
+  virtual std::vector<cricket::VoiceChannel*> voice_channels() const {
+    return voice_channels_;
+  }
+  virtual std::vector<cricket::VideoChannel*> video_channels() const {
+    return video_channels_;
+  }
+
   // Only valid when using deprecated RTP data channels.
   virtual cricket::RtpDataChannel* rtp_data_channel() {
     return rtp_data_channel_.get();
@@ -547,8 +564,10 @@ class WebRtcSession :
   const std::string GetTransportName(const std::string& content_name);
 
   void DestroyRtcpTransport_n(const std::string& transport_name);
-  void DestroyVideoChannel();
-  void DestroyVoiceChannel();
+  void RemoveAndDestroyVideoChannel(cricket::VideoChannel* video_channel);
+  void DestroyVideoChannel(cricket::VideoChannel* video_channel);
+  void RemoveAndDestroyVoiceChannel(cricket::VoiceChannel* voice_channel);
+  void DestroyVoiceChannel(cricket::VoiceChannel* voice_channel);
   void DestroyDataChannel();
 
   rtc::Thread* const network_thread_;
@@ -567,10 +586,18 @@ class WebRtcSession :
   const cricket::MediaConfig media_config_;
   RtcEventLog* event_log_;
   Call* call_;
-  std::unique_ptr<cricket::VoiceChannel> voice_channel_;
-  std::unique_ptr<cricket::VideoChannel> video_channel_;
+  // TODO(steveanton): voice_channels_ and video_channels_ used to be a single
+  // VoiceChannel/VideoChannel respectively but are being changed to support
+  // multiple m= lines in unified plan. But until more work is done, these can
+  // only have 0 or 1 channel each.
+  // These channels are owned by ChannelManager.
+  std::vector<cricket::VoiceChannel*> voice_channels_;
+  std::vector<cricket::VideoChannel*> video_channels_;
   // |rtp_data_channel_| is used if in RTP data channel mode, |sctp_transport_|
   // when using SCTP.
+  // TODO(steveanton): This should be changed to a bare pointer because
+  // WebRtcSession doesn't actually own the RtpDataChannel
+  // (ChannelManager does).
   std::unique_ptr<cricket::RtpDataChannel> rtp_data_channel_;
 
   std::unique_ptr<cricket::SctpTransportInternal> sctp_transport_;
