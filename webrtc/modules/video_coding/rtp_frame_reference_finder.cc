@@ -285,7 +285,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
   if (frame->frame_type() == kVideoFrameKey) {
     frame->num_references = 0;
     layer_info_[codec_header.tl0PicIdx].fill(-1);
-    UpdateLayerInfoVp8(frame);
+    UpdateLayerInfoVp8(frame, codec_header);
     return kHandOff;
   }
 
@@ -307,7 +307,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
             .first;
     frame->num_references = 1;
     frame->references[0] = layer_info_it->second[0];
-    UpdateLayerInfoVp8(frame);
+    UpdateLayerInfoVp8(frame, codec_header);
     return kHandOff;
   }
 
@@ -316,7 +316,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
     frame->num_references = 1;
     frame->references[0] = layer_info_it->second[0];
 
-    UpdateLayerInfoVp8(frame);
+    UpdateLayerInfoVp8(frame, codec_header);
     return kHandOff;
   }
 
@@ -359,15 +359,13 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
     frame->references[layer] = layer_info_it->second[layer];
   }
 
-  UpdateLayerInfoVp8(frame);
+  UpdateLayerInfoVp8(frame, codec_header);
   return kHandOff;
 }
 
-void RtpFrameReferenceFinder::UpdateLayerInfoVp8(RtpFrameObject* frame) {
-  rtc::Optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
-  RTC_DCHECK(rtp_codec_header);
-  const RTPVideoHeaderVP8& codec_header = rtp_codec_header->VP8;
-
+void RtpFrameReferenceFinder::UpdateLayerInfoVp8(
+    RtpFrameObject* frame,
+    const RTPVideoHeaderVP8& codec_header) {
   uint8_t tl0_pic_idx = codec_header.tl0PicIdx;
   uint8_t temporal_index = codec_header.temporalIdx;
   auto layer_info_it = layer_info_.find(tl0_pic_idx);
@@ -394,7 +392,9 @@ void RtpFrameReferenceFinder::UpdateLayerInfoVp8(RtpFrameObject* frame) {
 RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
     RtpFrameObject* frame) {
   rtc::Optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
-  RTC_DCHECK(rtp_codec_header);
+  if (!rtp_codec_header)
+    return kDrop;
+
   const RTPVideoHeaderVP9& codec_header = rtp_codec_header->VP9;
 
   if (codec_header.picture_id == kNoPictureId ||
