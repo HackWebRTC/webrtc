@@ -19,9 +19,9 @@
 #include <utility>
 #include <vector>
 
-#include "gflags/gflags.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/rtc_base/ignore_wundef.h"
 #include "webrtc/rtc_base/logging.h"
 
@@ -35,6 +35,8 @@ RTC_PUSH_IGNORING_WUNDEF()
 RTC_POP_IGNORING_WUNDEF()
 
 namespace {
+
+DEFINE_bool(help, false, "Prints this message.");
 
 struct Stats {
   int count = 0;
@@ -176,15 +178,17 @@ int main(int argc, char* argv[]) {
       "Tool for file usage statistics from an RtcEventLog.\n"
       "Run " +
       program_name +
-      " --helpshort for usage.\n"
+      " --help for usage.\n"
       "Example usage:\n" +
       program_name + " input.rel\n";
-  google::SetUsageMessage(usage);
-  google::ParseCommandLineFlags(&argc, &argv, true);
-
-  if (argc != 2) {
-    std::cout << google::ProgramUsage();
-    return 0;
+  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) ||
+      FLAG_help || argc != 2) {
+    std::cout << usage;
+    if (FLAG_help) {
+      rtc::FlagList::Print(nullptr, false);
+      return 0;
+    }
+    return 1;
   }
   std::string file_name = argv[1];
 

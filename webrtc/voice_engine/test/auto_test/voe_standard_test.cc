@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/test/auto_test/automated_mode.h"
@@ -26,6 +27,7 @@ DEFINE_bool(include_timing_dependent_tests, true,
 DEFINE_bool(automated, false,
             "If true, we'll run the automated tests we have in noninteractive "
             "mode.");
+DEFINE_bool(help, false, "Print this message.");
 
 namespace webrtc {
 namespace voetest {
@@ -101,9 +103,15 @@ int main(int argc, char** argv) {
   // This function and RunInAutomatedMode is defined in automated_mode.cc
   // to avoid macro clashes with googletest (for instance ASSERT_TRUE).
   webrtc::voetest::InitializeGoogleTest(&argc, argv);
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true)) {
+    return 1;
+  }
+  if (FLAG_help) {
+    rtc::FlagList::Print(nullptr, false);
+    return 0;
+  }
 
-  if (FLAGS_automated) {
+  if (FLAG_automated) {
     return webrtc::voetest::RunInAutomatedMode();
   }
 

@@ -14,13 +14,14 @@
 #include <memory>
 #include <sstream>
 
-#include "gflags/gflags.h"
 #include "webrtc/api/video_codecs/video_decoder.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/flags.h"
+#include "webrtc/rtc_base/string_to_number.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/call_test.h"
@@ -36,121 +37,113 @@
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/typedefs.h"
 
+namespace {
+
+static bool ValidatePayloadType(int32_t payload_type) {
+  return payload_type > 0 && payload_type <= 127;
+}
+
+static bool ValidateSsrc(const char* ssrc_string) {
+  return rtc::StringToNumber<uint32_t>(ssrc_string).has_value();
+}
+
+static bool ValidateOptionalPayloadType(int32_t payload_type) {
+  return payload_type == -1 || ValidatePayloadType(payload_type);
+}
+
+static bool ValidateRtpHeaderExtensionId(int32_t extension_id) {
+  return extension_id >= -1 && extension_id < 15;
+}
+
+bool ValidateInputFilenameNotEmpty(const std::string& string) {
+  return !string.empty();
+}
+
+}  // namespace
+
 namespace webrtc {
 namespace flags {
 
 // TODO(pbos): Multiple receivers.
 
 // Flag for payload type.
-static bool ValidatePayloadType(const char* flagname, int32_t payload_type) {
-  return payload_type > 0 && payload_type <= 127;
-}
-DEFINE_int32(payload_type, test::CallTest::kPayloadTypeVP8, "Payload type");
-static int PayloadType() { return static_cast<int>(FLAGS_payload_type); }
-static const bool payload_dummy =
-    google::RegisterFlagValidator(&FLAGS_payload_type, &ValidatePayloadType);
+DEFINE_int(payload_type, test::CallTest::kPayloadTypeVP8, "Payload type");
+static int PayloadType() { return static_cast<int>(FLAG_payload_type); }
 
-DEFINE_int32(payload_type_rtx,
-             test::CallTest::kSendRtxPayloadType,
-             "RTX payload type");
+DEFINE_int(payload_type_rtx,
+           test::CallTest::kSendRtxPayloadType,
+           "RTX payload type");
 static int PayloadTypeRtx() {
-  return static_cast<int>(FLAGS_payload_type_rtx);
+  return static_cast<int>(FLAG_payload_type_rtx);
 }
-static const bool payload_rtx_dummy =
-    google::RegisterFlagValidator(&FLAGS_payload_type_rtx,
-                                  &ValidatePayloadType);
 
 // Flag for SSRC.
-static bool ValidateSsrc(const char* flagname, uint64_t ssrc) {
-  return ssrc > 0 && ssrc <= 0xFFFFFFFFu;
+const std::string& DefaultSsrc() {
+  static const std::string ssrc = std::to_string(
+      test::CallTest::kVideoSendSsrcs[0]);
+  return ssrc;
+}
+DEFINE_string(ssrc, DefaultSsrc().c_str(), "Incoming SSRC");
+static uint32_t Ssrc() {
+  return rtc::StringToNumber<uint32_t>(FLAG_ssrc).value();
 }
 
-DEFINE_uint64(ssrc, test::CallTest::kVideoSendSsrcs[0], "Incoming SSRC");
-static uint32_t Ssrc() { return static_cast<uint32_t>(FLAGS_ssrc); }
-static const bool ssrc_dummy =
-    google::RegisterFlagValidator(&FLAGS_ssrc, &ValidateSsrc);
-
-DEFINE_uint64(ssrc_rtx, test::CallTest::kSendRtxSsrcs[0], "Incoming RTX SSRC");
+const std::string& DefaultSsrcRtx() {
+  static const std::string ssrc_rtx = std::to_string(
+      test::CallTest::kSendRtxSsrcs[0]);
+  return ssrc_rtx;
+}
+DEFINE_string(ssrc_rtx, DefaultSsrcRtx().c_str(), "Incoming RTX SSRC");
 static uint32_t SsrcRtx() {
-  return static_cast<uint32_t>(FLAGS_ssrc_rtx);
-}
-static const bool ssrc_rtx_dummy =
-    google::RegisterFlagValidator(&FLAGS_ssrc_rtx, &ValidateSsrc);
-
-static bool ValidateOptionalPayloadType(const char* flagname,
-                                        int32_t payload_type) {
-  return payload_type == -1 || ValidatePayloadType(flagname, payload_type);
+  return rtc::StringToNumber<uint32_t>(FLAG_ssrc_rtx).value();
 }
 
 // Flag for RED payload type.
-DEFINE_int32(red_payload_type, -1, "RED payload type");
+DEFINE_int(red_payload_type, -1, "RED payload type");
 static int RedPayloadType() {
-  return static_cast<int>(FLAGS_red_payload_type);
+  return static_cast<int>(FLAG_red_payload_type);
 }
-static const bool red_dummy =
-    google::RegisterFlagValidator(&FLAGS_red_payload_type,
-                                  &ValidateOptionalPayloadType);
 
 // Flag for ULPFEC payload type.
-DEFINE_int32(fec_payload_type, -1, "ULPFEC payload type");
+DEFINE_int(fec_payload_type, -1, "ULPFEC payload type");
 static int FecPayloadType() {
-  return static_cast<int>(FLAGS_fec_payload_type);
+  return static_cast<int>(FLAG_fec_payload_type);
 }
-static const bool fec_dummy =
-    google::RegisterFlagValidator(&FLAGS_fec_payload_type,
-                                  &ValidateOptionalPayloadType);
 
 // Flag for abs-send-time id.
-static bool ValidateRtpHeaderExtensionId(const char* flagname,
-                                         int32_t extension_id) {
-  return extension_id >= -1 || extension_id < 15;
-}
-DEFINE_int32(abs_send_time_id, -1, "RTP extension ID for abs-send-time");
-static int AbsSendTimeId() { return static_cast<int>(FLAGS_abs_send_time_id); }
-static const bool abs_send_time_dummy =
-    google::RegisterFlagValidator(&FLAGS_abs_send_time_id,
-                                  &ValidateRtpHeaderExtensionId);
+DEFINE_int(abs_send_time_id, -1, "RTP extension ID for abs-send-time");
+static int AbsSendTimeId() { return static_cast<int>(FLAG_abs_send_time_id); }
 
 // Flag for transmission-offset id.
-DEFINE_int32(transmission_offset_id,
-             -1,
-             "RTP extension ID for transmission-offset");
+DEFINE_int(transmission_offset_id,
+           -1,
+           "RTP extension ID for transmission-offset");
 static int TransmissionOffsetId() {
-  return static_cast<int>(FLAGS_transmission_offset_id);
+  return static_cast<int>(FLAG_transmission_offset_id);
 }
-static const bool timestamp_offset_dummy =
-    google::RegisterFlagValidator(&FLAGS_transmission_offset_id,
-                                  &ValidateRtpHeaderExtensionId);
 
 // Flag for rtpdump input file.
-bool ValidateInputFilenameNotEmpty(const char* flagname,
-                                   const std::string& string) {
-  return !string.empty();
-}
-
 DEFINE_string(input_file, "", "input file");
 static std::string InputFile() {
-  return static_cast<std::string>(FLAGS_input_file);
+  return static_cast<std::string>(FLAG_input_file);
 }
-static const bool input_file_dummy =
-    google::RegisterFlagValidator(&FLAGS_input_file,
-                                  &ValidateInputFilenameNotEmpty);
 
 // Flag for raw output files.
 DEFINE_string(out_base, "", "Basename (excluding .jpg) for raw output");
 static std::string OutBase() {
-  return static_cast<std::string>(FLAGS_out_base);
+  return static_cast<std::string>(FLAG_out_base);
 }
 
 DEFINE_string(decoder_bitstream_filename, "", "Decoder bitstream output file");
 static std::string DecoderBitstreamFilename() {
-  return static_cast<std::string>(FLAGS_decoder_bitstream_filename);
+  return static_cast<std::string>(FLAG_decoder_bitstream_filename);
 }
 
 // Flag for video codec.
 DEFINE_string(codec, "VP8", "Video codec");
-static std::string Codec() { return static_cast<std::string>(FLAGS_codec); }
+static std::string Codec() { return static_cast<std::string>(FLAG_codec); }
 
+DEFINE_bool(help, false, "Print this message.");
 }  // namespace flags
 
 static const uint32_t kReceiverLocalSsrc = 0x123456;
@@ -330,7 +323,24 @@ void RtpReplay() {
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true)) {
+    return 1;
+  }
+  if (webrtc::flags::FLAG_help) {
+    rtc::FlagList::Print(nullptr, false);
+    return 0;
+  }
+
+  RTC_CHECK(ValidatePayloadType(webrtc::flags::FLAG_payload_type));
+  RTC_CHECK(ValidatePayloadType(webrtc::flags::FLAG_payload_type_rtx));
+  RTC_CHECK(ValidateSsrc(webrtc::flags::FLAG_ssrc));
+  RTC_CHECK(ValidateSsrc(webrtc::flags::FLAG_ssrc_rtx));
+  RTC_CHECK(ValidateOptionalPayloadType(webrtc::flags::FLAG_red_payload_type));
+  RTC_CHECK(ValidateOptionalPayloadType(webrtc::flags::FLAG_fec_payload_type));
+  RTC_CHECK(ValidateRtpHeaderExtensionId(webrtc::flags::FLAG_abs_send_time_id));
+  RTC_CHECK(ValidateRtpHeaderExtensionId(
+      webrtc::flags::FLAG_transmission_offset_id));
+  RTC_CHECK(ValidateInputFilenameNotEmpty(webrtc::flags::FLAG_input_file));
 
   webrtc::test::RunTest(webrtc::RtpReplay);
   return 0;

@@ -14,11 +14,8 @@
 #include <stdio.h>
 #include <string>
 
-#include "gflags/gflags.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
-
-DECLARE_bool(include_timing_dependent_tests);
 
 namespace webrtc {
 namespace voetest {

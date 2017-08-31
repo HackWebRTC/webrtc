@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 
 #include <stdarg.h>
 #include <sys/stat.h>  // To check for directory existence.
@@ -19,13 +20,13 @@
 #define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
 #endif
 
-#include "gflags/gflags.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/stats.h"
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/rtc_base/format_macros.h"
 #include "webrtc/test/testsupport/frame_reader.h"
 #include "webrtc/test/testsupport/frame_writer.h"
@@ -43,12 +44,12 @@ DEFINE_string(input_filename,
               "Input file. "
               "The source video file to be encoded and decoded. Must be in "
               ".yuv format");
-DEFINE_int32(width, -1, "Width in pixels of the frames in the input file.");
-DEFINE_int32(height, -1, "Height in pixels of the frames in the input file.");
-DEFINE_int32(framerate,
-             30,
-             "Frame rate of the input file, in FPS "
-             "(frames-per-second). ");
+DEFINE_int(width, -1, "Width in pixels of the frames in the input file.");
+DEFINE_int(height, -1, "Height in pixels of the frames in the input file.");
+DEFINE_int(framerate,
+           30,
+           "Frame rate of the input file, in FPS "
+           "(frames-per-second). ");
 DEFINE_string(output_dir,
               ".",
               "Output directory. "
@@ -76,40 +77,40 @@ DEFINE_string(output_filename,
               "The name of the output video file resulting of the processing "
               "of the source file. By default this is the same name as the "
               "input file with '_out' appended before the extension.");
-DEFINE_int32(bitrate, 500, "Bit rate in kilobits/second.");
-DEFINE_int32(keyframe_interval,
-             0,
-             "Forces a keyframe every Nth frame. "
-             "0 means the encoder decides when to insert keyframes.  Note that "
-             "the encoder may create a keyframe in other locations in addition "
-             "to the interval that is set using this parameter.");
-DEFINE_int32(temporal_layers,
-             0,
-             "The number of temporal layers to use "
-             "(VP8 specific codec setting). Must be 0-4.");
-DEFINE_int32(packet_size,
-             1500,
-             "Simulated network packet size in bytes (MTU). "
-             "Used for packet loss simulation.");
-DEFINE_int32(max_payload_size,
-             1440,
-             "Max payload size in bytes for the "
-             "encoder.");
+DEFINE_int(bitrate, 500, "Bit rate in kilobits/second.");
+DEFINE_int(keyframe_interval,
+           0,
+           "Forces a keyframe every Nth frame. "
+           "0 means the encoder decides when to insert keyframes.  Note that "
+           "the encoder may create a keyframe in other locations in addition "
+           "to the interval that is set using this parameter.");
+DEFINE_int(temporal_layers,
+           0,
+           "The number of temporal layers to use "
+           "(VP8 specific codec setting). Must be 0-4.");
+DEFINE_int(packet_size,
+           1500,
+           "Simulated network packet size in bytes (MTU). "
+           "Used for packet loss simulation.");
+DEFINE_int(max_payload_size,
+           1440,
+           "Max payload size in bytes for the "
+           "encoder.");
 DEFINE_string(packet_loss_mode,
               "uniform",
               "Packet loss mode. Two different "
               "packet loss models are supported: uniform or burst. This "
               "setting has no effect unless packet_loss_rate is >0. ");
-DEFINE_double(packet_loss_probability,
-              0.0,
-              "Packet loss probability. A value "
-              "between 0.0 and 1.0 that defines the probability of a packet "
-              "being lost. 0.1 means 10% and so on.");
-DEFINE_int32(packet_loss_burst_length,
-             1,
-             "Packet loss burst length. Defines "
-             "how many packets will be lost in a burst when a packet has been "
-             "decided to be lost. Must be >=1.");
+DEFINE_float(packet_loss_probability,
+             0.0f,
+             "Packet loss probability. A value "
+             "between 0.0 and 1.0 that defines the probability of a packet "
+             "being lost. 0.1 means 10% and so on.");
+DEFINE_int(packet_loss_burst_length,
+           1,
+           "Packet loss burst length. Defines "
+           "how many packets will be lost in a burst when a packet has been "
+           "decided to be lost. Must be >=1.");
 DEFINE_bool(csv,
             false,
             "CSV output. Enabling this will output all frame "
@@ -126,12 +127,13 @@ DEFINE_bool(verbose,
             "Verbose mode. Prints a lot of debugging info. "
             "Suitable for tracking progress but not for capturing output. "
             "Disable with --noverbose flag.");
+DEFINE_bool(help, false, "Prints this message.");
 
 // Custom log method that only prints if the verbose flag is given.
 // Supports all the standard printf parameters and formatting (just forwarded).
 int Log(const char* format, ...) {
   int result = 0;
-  if (FLAGS_verbose) {
+  if (FLAG_verbose) {
     va_list args;
     va_start(args, format);
     result = vprintf(format, args);
@@ -143,55 +145,58 @@ int Log(const char* format, ...) {
 // Validates the arguments given as command line flags and fills in the
 // TestConfig struct with all configurations needed for video processing.
 // Returns 0 if everything is OK, otherwise an exit code.
-int HandleCommandLineFlags(webrtc::test::TestConfig* config) {
+int HandleCommandLineFlags(webrtc::test::TestConfig* config,
+                           const std::string& usage) {
   // Validate the mandatory flags:
-  if (FLAGS_input_filename.empty() || FLAGS_width == -1 || FLAGS_height == -1) {
-    printf("%s\n", google::ProgramUsage());
+  if (strlen(FLAG_input_filename) == 0 ||
+      FLAG_width == -1 || FLAG_height == -1) {
+    printf("%s\n", usage.c_str());
     return 1;
   }
-  config->name = FLAGS_test_name;
-  config->description = FLAGS_test_description;
+  config->name = FLAG_test_name;
+  config->description = FLAG_test_description;
 
   // Verify the input file exists and is readable.
   FILE* test_file;
-  test_file = fopen(FLAGS_input_filename.c_str(), "rb");
+  test_file = fopen(FLAG_input_filename, "rb");
   if (test_file == NULL) {
     fprintf(stderr, "Cannot read the specified input file: %s\n",
-            FLAGS_input_filename.c_str());
+            FLAG_input_filename);
     return 2;
   }
   fclose(test_file);
-  config->input_filename = FLAGS_input_filename;
+  config->input_filename = FLAG_input_filename;
 
   // Verify the output dir exists.
   struct stat dir_info;
-  if (!(stat(FLAGS_output_dir.c_str(), &dir_info) == 0 &&
+  if (!(stat(FLAG_output_dir, &dir_info) == 0 &&
         S_ISDIR(dir_info.st_mode))) {
     fprintf(stderr, "Cannot find output directory: %s\n",
-            FLAGS_output_dir.c_str());
+            FLAG_output_dir);
     return 3;
   }
-  config->output_dir = FLAGS_output_dir;
+  config->output_dir = FLAG_output_dir;
 
   // Manufacture an output filename if none was given.
-  if (FLAGS_output_filename.empty()) {
+  if (strlen(FLAG_output_filename) == 0) {
     // Cut out the filename without extension from the given input file
     // (which may include a path)
-    size_t startIndex = FLAGS_input_filename.find_last_of("/") + 1;
+    size_t startIndex = config->input_filename.find_last_of("/") + 1;
     if (startIndex == 0) {
       startIndex = 0;
     }
-    FLAGS_output_filename =
-        FLAGS_input_filename.substr(
-            startIndex, FLAGS_input_filename.find_last_of(".") - startIndex) +
+    config->output_filename =
+        config->input_filename.substr(
+            startIndex, config->input_filename.find_last_of(".") - startIndex) +
         "_out.yuv";
+  } else {
+    config->output_filename = FLAG_output_filename;
   }
 
   // Verify output file can be written.
-  if (FLAGS_output_dir == ".") {
-    config->output_filename = FLAGS_output_filename;
-  } else {
-    config->output_filename = FLAGS_output_dir + "/" + FLAGS_output_filename;
+  if (config->output_dir != ".") {
+    config->output_filename =
+        config->output_dir + "/" + config->output_filename;
   }
   test_file = fopen(config->output_filename.c_str(), "wb");
   if (test_file == NULL) {
@@ -202,99 +207,98 @@ int HandleCommandLineFlags(webrtc::test::TestConfig* config) {
   fclose(test_file);
 
   // Check single core flag.
-  config->use_single_core = FLAGS_use_single_core;
+  config->use_single_core = FLAG_use_single_core;
 
   // Get codec specific configuration.
   webrtc::test::CodecSettings(webrtc::kVideoCodecVP8, &config->codec_settings);
 
   // Check the temporal layers.
-  if (FLAGS_temporal_layers < 0 ||
-      FLAGS_temporal_layers > webrtc::kMaxTemporalStreams) {
+  if (FLAG_temporal_layers < 0 ||
+      FLAG_temporal_layers > webrtc::kMaxTemporalStreams) {
     fprintf(stderr, "Temporal layers number must be 0-4, was: %d\n",
-            FLAGS_temporal_layers);
+            FLAG_temporal_layers);
     return 13;
   }
-  config->codec_settings.VP8()->numberOfTemporalLayers = FLAGS_temporal_layers;
+  config->codec_settings.VP8()->numberOfTemporalLayers = FLAG_temporal_layers;
 
   // Check the bit rate.
-  if (FLAGS_bitrate <= 0) {
-    fprintf(stderr, "Bit rate must be >0 kbps, was: %d\n", FLAGS_bitrate);
+  if (FLAG_bitrate <= 0) {
+    fprintf(stderr, "Bit rate must be >0 kbps, was: %d\n", FLAG_bitrate);
     return 5;
   }
-  config->codec_settings.startBitrate = FLAGS_bitrate;
+  config->codec_settings.startBitrate = FLAG_bitrate;
 
   // Check the keyframe interval.
-  if (FLAGS_keyframe_interval < 0) {
+  if (FLAG_keyframe_interval < 0) {
     fprintf(stderr, "Keyframe interval must be >=0, was: %d\n",
-            FLAGS_keyframe_interval);
+            FLAG_keyframe_interval);
     return 6;
   }
-  config->keyframe_interval = FLAGS_keyframe_interval;
+  config->keyframe_interval = FLAG_keyframe_interval;
 
   // Check packet size and max payload size.
-  if (FLAGS_packet_size <= 0) {
+  if (FLAG_packet_size <= 0) {
     fprintf(stderr, "Packet size must be >0 bytes, was: %d\n",
-            FLAGS_packet_size);
+            FLAG_packet_size);
     return 7;
   }
   config->networking_config.packet_size_in_bytes =
-      static_cast<size_t>(FLAGS_packet_size);
+      static_cast<size_t>(FLAG_packet_size);
 
-  if (FLAGS_max_payload_size <= 0) {
+  if (FLAG_max_payload_size <= 0) {
     fprintf(stderr, "Max payload size must be >0 bytes, was: %d\n",
-            FLAGS_max_payload_size);
+            FLAG_max_payload_size);
     return 8;
   }
   config->networking_config.max_payload_size_in_bytes =
-      static_cast<size_t>(FLAGS_max_payload_size);
+      static_cast<size_t>(FLAG_max_payload_size);
 
   // Check the width and height
-  if (FLAGS_width <= 0 || FLAGS_height <= 0) {
+  if (FLAG_width <= 0 || FLAG_height <= 0) {
     fprintf(stderr, "Width and height must be >0.");
     return 9;
   }
-  config->codec_settings.width = FLAGS_width;
-  config->codec_settings.height = FLAGS_height;
-  config->codec_settings.maxFramerate = FLAGS_framerate;
+  config->codec_settings.width = FLAG_width;
+  config->codec_settings.height = FLAG_height;
+  config->codec_settings.maxFramerate = FLAG_framerate;
 
   // Calculate the size of each frame to read (according to YUV spec).
   config->frame_length_in_bytes =
       3 * config->codec_settings.width * config->codec_settings.height / 2;
 
   // Check packet loss settings
-  if (FLAGS_packet_loss_mode != "uniform" &&
-      FLAGS_packet_loss_mode != "burst") {
+  if (strcmp(FLAG_packet_loss_mode, "uniform") == 0) {
+    config->networking_config.packet_loss_mode = webrtc::test::kUniform;
+  } else if (strcmp(FLAG_packet_loss_mode, "burst") == 0) {
+    config->networking_config.packet_loss_mode = webrtc::test::kBurst;
+  } else {
     fprintf(stderr,
             "Unsupported packet loss mode, must be 'uniform' or "
             "'burst'\n.");
     return 10;
   }
-  config->networking_config.packet_loss_mode = webrtc::test::kUniform;
-  if (FLAGS_packet_loss_mode == "burst") {
-    config->networking_config.packet_loss_mode = webrtc::test::kBurst;
-  }
 
-  if (FLAGS_packet_loss_probability < 0.0 ||
-      FLAGS_packet_loss_probability > 1.0) {
+  if (FLAG_packet_loss_probability < 0.0 ||
+      FLAG_packet_loss_probability > 1.0) {
     fprintf(stderr,
             "Invalid packet loss probability. Must be 0.0 - 1.0, "
             "was: %f\n",
-            FLAGS_packet_loss_probability);
+            FLAG_packet_loss_probability);
     return 11;
   }
   config->networking_config.packet_loss_probability =
-      FLAGS_packet_loss_probability;
+      FLAG_packet_loss_probability;
 
-  if (FLAGS_packet_loss_burst_length < 1) {
+  if (FLAG_packet_loss_burst_length < 1) {
     fprintf(stderr,
             "Invalid packet loss burst length, must be >=1, "
             "was: %d\n",
-            FLAGS_packet_loss_burst_length);
+            FLAG_packet_loss_burst_length);
     return 12;
   }
   config->networking_config.packet_loss_burst_length =
-      FLAGS_packet_loss_burst_length;
-  config->verbose = FLAGS_verbose;
+      FLAG_packet_loss_burst_length;
+  config->verbose = FLAG_verbose;
   return 0;
 }
 
@@ -464,18 +468,21 @@ int main(int argc, char* argv[]) {
       "Quality test application for video comparisons.\n"
       "Run " +
       program_name +
-      " --helpshort for usage.\n"
+      " --help for usage.\n"
       "Example usage:\n" +
       program_name +
       " --input_filename=filename.yuv --width=352 --height=288\n";
-  google::SetUsageMessage(usage);
 
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
+  if (FLAG_help) {
+    rtc::FlagList::Print(nullptr, false);
+    return 0;
+  }
 
   // Create TestConfig.
   webrtc::test::TestConfig config;
 
-  int return_code = HandleCommandLineFlags(&config);
+  int return_code = HandleCommandLineFlags(&config, usage);
   // Exit if an invalid argument is supplied.
   if (return_code != 0) {
     return return_code;
@@ -500,7 +507,7 @@ int main(int argc, char* argv[]) {
       &packet_reader, config.networking_config, config.verbose);
   // By default the packet manipulator is seeded with a fixed random.
   // If disabled we must generate a new seed.
-  if (FLAGS_disable_fixed_random_seed) {
+  if (FLAG_disable_fixed_random_seed) {
     packet_manipulator.InitializeRandomSeed(time(NULL));
   }
   webrtc::test::VideoProcessor* processor = new webrtc::test::VideoProcessor(
@@ -539,10 +546,10 @@ int main(int argc, char* argv[]) {
   webrtc::test::QualityMetricsResult psnr_result;
   CalculatePsnrVideoMetrics(&config, &psnr_result);
 
-  if (FLAGS_csv) {
+  if (FLAG_csv) {
     PrintCsvOutput(stats, ssim_result, psnr_result);
   }
-  if (FLAGS_python) {
+  if (FLAG_python) {
     PrintPythonOutput(config, stats, ssim_result, psnr_result);
   }
   delete processor;

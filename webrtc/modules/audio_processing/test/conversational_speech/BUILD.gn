@@ -24,7 +24,6 @@ rtc_executable("conversational_speech_generator") {
     ":lib",
     "../../../../rtc_base:rtc_base_approved",
     "../../../../test:test_support",
-    "//third_party/gflags",
   ]
 }
 

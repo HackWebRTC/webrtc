@@ -350,7 +350,6 @@ if (rtc_include_tests) {
       "../../test:video_test_common",
       "../../test:video_test_support",
       "../video_capture",
-      "//third_party/gflags",
     ]
   }  # video_quality_measurement
 

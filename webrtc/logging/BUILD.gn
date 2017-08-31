@@ -142,7 +142,6 @@ if (rtc_enable_protobuf) {
         "../system_wrappers:field_trial_default",
         "../system_wrappers:metrics_default",
         "../test:rtp_test_utils",
-        "//third_party/gflags",
       ]
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -165,7 +164,6 @@ if (rtc_enable_protobuf) {
         # TODO(kwiberg): Remove this dependency.
         "../api/audio_codecs:audio_codecs_api",
         "../modules/rtp_rtcp:rtp_rtcp",
-        "//third_party/gflags",
       ]
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -184,7 +182,6 @@ if (rtc_enable_protobuf) {
         ":rtc_event_log_impl",
         ":rtc_event_log_proto",
         "../rtc_base:rtc_base_approved",
-        "//third_party/gflags",
       ]
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

@@ -11,10 +11,13 @@
 #include <memory>
 
 #include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/flags.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
 #include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
+
+DECLARE_bool(include_timing_dependent_tests);
 
 class TestRtpObserver : public webrtc::VoERTPObserver {
  public:
@@ -85,7 +88,7 @@ class RtpRtcpTest : public AfterStreamingFixture {
 };
 
 TEST_F(RtpRtcpTest, RemoteRtcpCnameHasPropagatedToRemoteSide) {
-  if (!FLAGS_include_timing_dependent_tests) {
+  if (!FLAG_include_timing_dependent_tests) {
     TEST_LOG("Skipping test - running in slow execution environment...\n");
     return;
   }

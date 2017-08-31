@@ -1395,7 +1395,6 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../rtp_rtcp",
       "//testing/gtest",
-      "//third_party/gflags:gflags",
     ]
   }  # delay_test
 
@@ -1425,7 +1424,6 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../rtp_rtcp",
       "//testing/gtest",
-      "//third_party/gflags:gflags",
     ]
   }  # insert_packet_with_timing
 
@@ -1520,7 +1518,6 @@ if (rtc_include_tests) {
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers:system_wrappers_default",
         "../../test:test_support",
-        "//third_party/gflags",
       ]
     }
   }
@@ -1792,9 +1789,9 @@ if (rtc_include_tests) {
       ":neteq",
       ":neteq_test_tools",
       ":pcm16b",
+      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers_default",
       "//testing/gtest",
-      "//third_party/gflags:gflags",
     ]
 
     if (!build_with_chromium && is_clang) {
@@ -1832,9 +1829,9 @@ if (rtc_include_tests) {
       ":neteq",
       ":neteq_test_support",
       "../..:webrtc_common",
+      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_support",
-      "//third_party/gflags",
     ]
   }
 

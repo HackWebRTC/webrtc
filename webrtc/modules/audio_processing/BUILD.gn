@@ -724,7 +724,6 @@ if (rtc_include_tests) {
         "../../rtc_base:protobuf_utils",
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers:system_wrappers_default",
-        "//third_party/gflags:gflags",
       ]
     }  # unpack_aecdump
 
@@ -755,7 +754,6 @@ if (rtc_include_tests) {
         "aec_dump",
         "aec_dump:aec_dump_impl",
         "//testing/gtest",
-        "//third_party/gflags:gflags",
       ]
     }  # audioproc_f
   }
@@ -794,11 +792,11 @@ if (rtc_include_tests) {
       "..:module_api",
       "../..:webrtc_common",
       "../../common_audio:common_audio",
+      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:metrics_default",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
   }
 
@@ -828,7 +826,6 @@ if (rtc_include_tests) {
       "../../common_audio:common_audio",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:metrics_default",
-      "//third_party/gflags",
     ]
   }
 
@@ -841,10 +838,10 @@ if (rtc_include_tests) {
       deps = [
         ":audio_processing",
         ":audioproc_test_utils",
+        "../../rtc_base:rtc_base_approved",
         "../../system_wrappers:metrics_default",
         "../../test:test_support",
         "//testing/gtest",
-        "//third_party/gflags",
       ]
     }
   }

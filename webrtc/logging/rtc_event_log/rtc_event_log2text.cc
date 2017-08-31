@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+
 #include <iostream>
 #include <map>
 #include <sstream>
 #include <string>
 #include <utility>  // pair
 
-#include "gflags/gflags.h"
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
@@ -35,6 +36,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/flags.h"
 
 namespace {
 
@@ -54,6 +56,7 @@ DEFINE_string(ssrc,
               "",
               "Print only packets with this SSRC (decimal or hex, the latter "
               "starting with 0x).");
+DEFINE_bool(help, false, "Prints this message.");
 
 using MediaType = webrtc::ParsedRtcEventLog::MediaType;
 
@@ -81,17 +84,17 @@ bool ParseSsrc(std::string str) {
 bool ExcludePacket(webrtc::PacketDirection direction,
                    MediaType media_type,
                    uint32_t packet_ssrc) {
-  if (FLAGS_nooutgoing && direction == webrtc::kOutgoingPacket)
+  if (FLAG_nooutgoing && direction == webrtc::kOutgoingPacket)
     return true;
-  if (FLAGS_noincoming && direction == webrtc::kIncomingPacket)
+  if (FLAG_noincoming && direction == webrtc::kIncomingPacket)
     return true;
-  if (FLAGS_noaudio && media_type == MediaType::AUDIO)
+  if (FLAG_noaudio && media_type == MediaType::AUDIO)
     return true;
-  if (FLAGS_novideo && media_type == MediaType::VIDEO)
+  if (FLAG_novideo && media_type == MediaType::VIDEO)
     return true;
-  if (FLAGS_nodata && media_type == MediaType::DATA)
+  if (FLAG_nodata && media_type == MediaType::DATA)
     return true;
-  if (!FLAGS_ssrc.empty() && packet_ssrc != filtered_ssrc)
+  if (strlen(FLAG_ssrc) > 0 && packet_ssrc != filtered_ssrc)
     return true;
   return false;
 }
@@ -357,20 +360,22 @@ int main(int argc, char* argv[]) {
       "Tool for printing packet information from an RtcEventLog as text.\n"
       "Run " +
       program_name +
-      " --helpshort for usage.\n"
+      " --help for usage.\n"
       "Example usage:\n" +
       program_name + " input.rel\n";
-  google::SetUsageMessage(usage);
-  google::ParseCommandLineFlags(&argc, &argv, true);
-
-  if (argc != 2) {
-    std::cout << google::ProgramUsage();
-    return 0;
+  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) ||
+      FLAG_help || argc != 2) {
+    std::cout << usage;
+    if (FLAG_help) {
+      rtc::FlagList::Print(nullptr, false);
+      return 0;
+    }
+    return 1;
   }
   std::string input_file = argv[1];
 
-  if (!FLAGS_ssrc.empty())
-    RTC_CHECK(ParseSsrc(FLAGS_ssrc)) << "Flag verification has failed.";
+  if (strlen(FLAG_ssrc) > 0)
+    RTC_CHECK(ParseSsrc(FLAG_ssrc)) << "Flag verification has failed.";
 
   webrtc::RtpHeaderExtensionMap default_map = GetDefaultHeaderExtensionMap();
 
@@ -381,7 +386,7 @@ int main(int argc, char* argv[]) {
   }
 
   for (size_t i = 0; i < parsed_stream.GetNumberOfEvents(); i++) {
-    if (!FLAGS_noconfig && !FLAGS_novideo && !FLAGS_noincoming &&
+    if (!FLAG_noconfig && !FLAG_novideo && !FLAG_noincoming &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT) {
       webrtc::rtclog::StreamConfig config =
@@ -402,7 +407,7 @@ int main(int argc, char* argv[]) {
       }
       std::cout << "}" << std::endl;
     }
-    if (!FLAGS_noconfig && !FLAGS_novideo && !FLAGS_nooutgoing &&
+    if (!FLAG_noconfig && !FLAG_novideo && !FLAG_nooutgoing &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT) {
       std::vector<webrtc::rtclog::StreamConfig> configs =
@@ -425,7 +430,7 @@ int main(int argc, char* argv[]) {
         std::cout << "}" << std::endl;
       }
     }
-    if (!FLAGS_noconfig && !FLAGS_noaudio && !FLAGS_noincoming &&
+    if (!FLAG_noconfig && !FLAG_noaudio && !FLAG_noincoming &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT) {
       webrtc::rtclog::StreamConfig config =
@@ -446,7 +451,7 @@ int main(int argc, char* argv[]) {
       }
       std::cout << "}" << std::endl;
     }
-    if (!FLAGS_noconfig && !FLAGS_noaudio && !FLAGS_nooutgoing &&
+    if (!FLAG_noconfig && !FLAG_noaudio && !FLAG_nooutgoing &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT) {
       webrtc::rtclog::StreamConfig config = parsed_stream.GetAudioSendConfig(i);
@@ -465,7 +470,7 @@ int main(int argc, char* argv[]) {
       }
       std::cout << "}" << std::endl;
     }
-    if (!FLAGS_nortp &&
+    if (!FLAG_nortp &&
         parsed_stream.GetEventType(i) == webrtc::ParsedRtcEventLog::RTP_EVENT) {
       size_t header_length;
       size_t total_length;
@@ -516,7 +521,7 @@ int main(int argc, char* argv[]) {
       }
       std::cout << std::endl;
     }
-    if (!FLAGS_nortcp &&
+    if (!FLAG_nortcp &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::RTCP_EVENT) {
       size_t length;
