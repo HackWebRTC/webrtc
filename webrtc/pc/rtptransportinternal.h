@@ -54,10 +54,13 @@ class RtpTransportInternal : public RtpTransportInterface,
 
   virtual bool IsWritable(bool rtcp) const = 0;
 
-  virtual bool SendPacket(bool rtcp,
-                          rtc::CopyOnWriteBuffer* packet,
-                          const rtc::PacketOptions& options,
-                          int flags) = 0;
+  virtual bool SendRtpPacket(rtc::CopyOnWriteBuffer* packet,
+                             const rtc::PacketOptions& options,
+                             int flags) = 0;
+
+  virtual bool SendRtcpPacket(rtc::CopyOnWriteBuffer* packet,
+                              const rtc::PacketOptions& options,
+                              int flags) = 0;
 
   virtual bool HandlesPayloadType(int payload_type) const = 0;
 

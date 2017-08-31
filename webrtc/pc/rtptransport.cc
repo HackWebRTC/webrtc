@@ -76,6 +76,18 @@ bool RtpTransport::IsWritable(bool rtcp) const {
   return transport && transport->writable();
 }
 
+bool RtpTransport::SendRtpPacket(rtc::CopyOnWriteBuffer* packet,
+                                 const rtc::PacketOptions& options,
+                                 int flags) {
+  return SendPacket(false, packet, options, flags);
+}
+
+bool RtpTransport::SendRtcpPacket(rtc::CopyOnWriteBuffer* packet,
+                                  const rtc::PacketOptions& options,
+                                  int flags) {
+  return SendPacket(true, packet, options, flags);
+}
+
 bool RtpTransport::SendPacket(bool rtcp,
                               rtc::CopyOnWriteBuffer* packet,
                               const rtc::PacketOptions& options,

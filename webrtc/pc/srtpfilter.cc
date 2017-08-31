@@ -17,7 +17,6 @@
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/pc/srtpsession.h"
 #include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/buffer.h"
 #include "webrtc/rtc_base/byteorder.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
@@ -61,209 +60,6 @@ bool SrtpFilter::SetProvisionalAnswer(
     const std::vector<CryptoParams>& answer_params,
     ContentSource source) {
   return DoSetAnswer(answer_params, source, false);
-}
-
-bool SrtpFilter::SetRtpParams(int send_cs,
-                              const uint8_t* send_key,
-                              int send_key_len,
-                              int recv_cs,
-                              const uint8_t* recv_key,
-                              int recv_key_len) {
-  if (IsActive()) {
-    LOG(LS_ERROR) << "Tried to set SRTP Params when filter already active";
-    return false;
-  }
-  CreateSrtpSessions();
-  send_session_->SetEncryptedHeaderExtensionIds(
-      send_encrypted_header_extension_ids_);
-  if (!send_session_->SetSend(send_cs, send_key, send_key_len)) {
-    return false;
-  }
-
-  recv_session_->SetEncryptedHeaderExtensionIds(
-      recv_encrypted_header_extension_ids_);
-  if (!recv_session_->SetRecv(recv_cs, recv_key, recv_key_len)) {
-    return false;
-  }
-
-  state_ = ST_ACTIVE;
-
-  LOG(LS_INFO) << "SRTP activated with negotiated parameters:"
-               << " send cipher_suite " << send_cs
-               << " recv cipher_suite " << recv_cs;
-  return true;
-}
-
-bool SrtpFilter::UpdateRtpParams(int send_cs,
-                                 const uint8_t* send_key,
-                                 int send_key_len,
-                                 int recv_cs,
-                                 const uint8_t* recv_key,
-                                 int recv_key_len) {
-  if (!IsActive()) {
-    LOG(LS_ERROR) << "Tried to update SRTP Params when filter is not active";
-    return false;
-  }
-  send_session_->SetEncryptedHeaderExtensionIds(
-      send_encrypted_header_extension_ids_);
-  if (!send_session_->UpdateSend(send_cs, send_key, send_key_len)) {
-    return false;
-  }
-
-  recv_session_->SetEncryptedHeaderExtensionIds(
-      recv_encrypted_header_extension_ids_);
-  if (!recv_session_->UpdateRecv(recv_cs, recv_key, recv_key_len)) {
-    return false;
-  }
-
-  LOG(LS_INFO) << "SRTP updated with negotiated parameters:"
-               << " send cipher_suite " << send_cs
-               << " recv cipher_suite " << recv_cs;
-  return true;
-}
-
-// This function is provided separately because DTLS-SRTP behaves
-// differently in RTP/RTCP mux and non-mux modes.
-//
-// - In the non-muxed case, RTP and RTCP are keyed with different
-//   keys (from different DTLS handshakes), and so we need a new
-//   SrtpSession.
-// - In the muxed case, they are keyed with the same keys, so
-//   this function is not needed
-bool SrtpFilter::SetRtcpParams(int send_cs,
-                               const uint8_t* send_key,
-                               int send_key_len,
-                               int recv_cs,
-                               const uint8_t* recv_key,
-                               int recv_key_len) {
-  // This can only be called once, but can be safely called after
-  // SetRtpParams
-  if (send_rtcp_session_ || recv_rtcp_session_) {
-    LOG(LS_ERROR) << "Tried to set SRTCP Params when filter already active";
-    return false;
-  }
-
-  send_rtcp_session_.reset(new SrtpSession());
-  if (!send_rtcp_session_->SetRecv(send_cs, send_key, send_key_len)) {
-    return false;
-  }
-
-  recv_rtcp_session_.reset(new SrtpSession());
-  if (!recv_rtcp_session_->SetRecv(recv_cs, recv_key, recv_key_len)) {
-    return false;
-  }
-
-  LOG(LS_INFO) << "SRTCP activated with negotiated parameters:"
-               << " send cipher_suite " << send_cs
-               << " recv cipher_suite " << recv_cs;
-
-  return true;
-}
-
-bool SrtpFilter::ProtectRtp(void* p, int in_len, int max_len, int* out_len) {
-  if (!IsActive()) {
-    LOG(LS_WARNING) << "Failed to ProtectRtp: SRTP not active";
-    return false;
-  }
-  RTC_CHECK(send_session_);
-  return send_session_->ProtectRtp(p, in_len, max_len, out_len);
-}
-
-bool SrtpFilter::ProtectRtp(void* p,
-                            int in_len,
-                            int max_len,
-                            int* out_len,
-                            int64_t* index) {
-  if (!IsActive()) {
-    LOG(LS_WARNING) << "Failed to ProtectRtp: SRTP not active";
-    return false;
-  }
-  RTC_CHECK(send_session_);
-  return send_session_->ProtectRtp(p, in_len, max_len, out_len, index);
-}
-
-bool SrtpFilter::ProtectRtcp(void* p, int in_len, int max_len, int* out_len) {
-  if (!IsActive()) {
-    LOG(LS_WARNING) << "Failed to ProtectRtcp: SRTP not active";
-    return false;
-  }
-  if (send_rtcp_session_) {
-    return send_rtcp_session_->ProtectRtcp(p, in_len, max_len, out_len);
-  } else {
-    RTC_CHECK(send_session_);
-    return send_session_->ProtectRtcp(p, in_len, max_len, out_len);
-  }
-}
-
-bool SrtpFilter::UnprotectRtp(void* p, int in_len, int* out_len) {
-  if (!IsActive()) {
-    LOG(LS_WARNING) << "Failed to UnprotectRtp: SRTP not active";
-    return false;
-  }
-  RTC_CHECK(recv_session_);
-  return recv_session_->UnprotectRtp(p, in_len, out_len);
-}
-
-bool SrtpFilter::UnprotectRtcp(void* p, int in_len, int* out_len) {
-  if (!IsActive()) {
-    LOG(LS_WARNING) << "Failed to UnprotectRtcp: SRTP not active";
-    return false;
-  }
-  if (recv_rtcp_session_) {
-    return recv_rtcp_session_->UnprotectRtcp(p, in_len, out_len);
-  } else {
-    RTC_CHECK(recv_session_);
-    return recv_session_->UnprotectRtcp(p, in_len, out_len);
-  }
-}
-
-bool SrtpFilter::GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len) {
-  if (!IsActive()) {
-    LOG(LS_WARNING) << "Failed to GetRtpAuthParams: SRTP not active";
-    return false;
-  }
-
-  RTC_CHECK(send_session_);
-  return send_session_->GetRtpAuthParams(key, key_len, tag_len);
-}
-
-bool SrtpFilter::GetSrtpOverhead(int* srtp_overhead) const {
-  if (!IsActive()) {
-    LOG(LS_WARNING) << "Failed to GetSrtpOverhead: SRTP not active";
-    return false;
-  }
-
-  RTC_CHECK(send_session_);
-  *srtp_overhead = send_session_->GetSrtpOverhead();
-  return true;
-}
-
-void SrtpFilter::EnableExternalAuth() {
-  RTC_DCHECK(!IsActive());
-  external_auth_enabled_ = true;
-}
-
-bool SrtpFilter::IsExternalAuthEnabled() const {
-  return external_auth_enabled_;
-}
-
-bool SrtpFilter::IsExternalAuthActive() const {
-  if (!IsActive()) {
-    LOG(LS_WARNING) << "Failed to check IsExternalAuthActive: SRTP not active";
-    return false;
-  }
-
-  RTC_CHECK(send_session_);
-  return send_session_->IsExternalAuthActive();
-}
-
-void SrtpFilter::SetEncryptedHeaderExtensionIds(ContentSource source,
-    const std::vector<int>& extension_ids) {
-  if (source == CS_LOCAL) {
-    recv_encrypted_header_extension_ids_ = extension_ids;
-  } else {
-    send_encrypted_header_extension_ids_ = extension_ids;
-  }
 }
 
 bool SrtpFilter::ExpectOffer(ContentSource source) {
@@ -323,13 +119,16 @@ bool SrtpFilter::DoSetAnswer(const std::vector<CryptoParams>& answer_params,
   CryptoParams selected_params;
   if (!NegotiateParams(answer_params, &selected_params))
     return false;
-  const CryptoParams& send_params =
+
+  const CryptoParams& new_send_params =
       (source == CS_REMOTE) ? selected_params : answer_params[0];
-  const CryptoParams& recv_params =
+  const CryptoParams& new_recv_params =
       (source == CS_REMOTE) ? answer_params[0] : selected_params;
-  if (!ApplyParams(send_params, recv_params)) {
+  if (!ApplySendParams(new_send_params) || !ApplyRecvParams(new_recv_params)) {
     return false;
   }
+  applied_send_params_ = new_send_params;
+  applied_recv_params_ = new_recv_params;
 
   if (final) {
     offer_params_.clear();
@@ -339,17 +138,6 @@ bool SrtpFilter::DoSetAnswer(const std::vector<CryptoParams>& answer_params,
         (source == CS_LOCAL) ? ST_SENTPRANSWER : ST_RECEIVEDPRANSWER;
   }
   return true;
-}
-
-void SrtpFilter::CreateSrtpSessions() {
-  send_session_.reset(new SrtpSession());
-  applied_send_params_ = CryptoParams();
-  recv_session_.reset(new SrtpSession());
-  applied_recv_params_ = CryptoParams();
-
-  if (external_auth_enabled_) {
-    send_session_->EnableExternalAuth();
-  }
 }
 
 bool SrtpFilter::NegotiateParams(const std::vector<CryptoParams>& answer_params,
@@ -379,85 +167,76 @@ bool SrtpFilter::NegotiateParams(const std::vector<CryptoParams>& answer_params,
   return ret;
 }
 
-bool SrtpFilter::ApplyParams(const CryptoParams& send_params,
-                             const CryptoParams& recv_params) {
-  // TODO(jiayl): Split this method to apply send and receive CryptoParams
-  // independently, so that we can skip one method when either send or receive
-  // CryptoParams is unchanged.
+bool SrtpFilter::ResetParams() {
+  offer_params_.clear();
+  applied_send_params_ = CryptoParams();
+  applied_recv_params_ = CryptoParams();
+  send_cipher_suite_ = rtc::Optional<int>();
+  recv_cipher_suite_ = rtc::Optional<int>();
+  send_key_.Clear();
+  recv_key_.Clear();
+  state_ = ST_INIT;
+  return true;
+}
+
+bool SrtpFilter::ApplySendParams(const CryptoParams& send_params) {
   if (applied_send_params_.cipher_suite == send_params.cipher_suite &&
-      applied_send_params_.key_params == send_params.key_params &&
-      applied_recv_params_.cipher_suite == recv_params.cipher_suite &&
-      applied_recv_params_.key_params == recv_params.key_params) {
-    LOG(LS_INFO) << "Applying the same SRTP parameters again. No-op.";
+      applied_send_params_.key_params == send_params.key_params) {
+    LOG(LS_INFO) << "Applying the same SRTP send parameters again. No-op.";
 
     // We do not want to reset the ROC if the keys are the same. So just return.
     return true;
   }
 
-  int send_suite = rtc::SrtpCryptoSuiteFromName(send_params.cipher_suite);
-  int recv_suite = rtc::SrtpCryptoSuiteFromName(recv_params.cipher_suite);
-  if (send_suite == rtc::SRTP_INVALID_CRYPTO_SUITE ||
-      recv_suite == rtc::SRTP_INVALID_CRYPTO_SUITE) {
+  send_cipher_suite_ = rtc::Optional<int>(
+      rtc::SrtpCryptoSuiteFromName(send_params.cipher_suite));
+  if (send_cipher_suite_ == rtc::SRTP_INVALID_CRYPTO_SUITE) {
     LOG(LS_WARNING) << "Unknown crypto suite(s) received:"
-                    << " send cipher_suite " << send_params.cipher_suite
-                    << " recv cipher_suite " << recv_params.cipher_suite;
+                    << " send cipher_suite " << send_params.cipher_suite;
     return false;
   }
 
   int send_key_len, send_salt_len;
-  int recv_key_len, recv_salt_len;
-  if (!rtc::GetSrtpKeyAndSaltLengths(send_suite, &send_key_len,
-                                     &send_salt_len) ||
-      !rtc::GetSrtpKeyAndSaltLengths(recv_suite, &recv_key_len,
-                                     &recv_salt_len)) {
+  if (!rtc::GetSrtpKeyAndSaltLengths(*send_cipher_suite_, &send_key_len,
+                                     &send_salt_len)) {
     LOG(LS_WARNING) << "Could not get lengths for crypto suite(s):"
-                    << " send cipher_suite " << send_params.cipher_suite
+                    << " send cipher_suite " << send_params.cipher_suite;
+    return false;
+  }
+
+  send_key_ = rtc::Buffer(send_key_len + send_salt_len);
+  return ParseKeyParams(send_params.key_params, send_key_.data(),
+                        send_key_.size());
+}
+
+bool SrtpFilter::ApplyRecvParams(const CryptoParams& recv_params) {
+  if (applied_recv_params_.cipher_suite == recv_params.cipher_suite &&
+      applied_recv_params_.key_params == recv_params.key_params) {
+    LOG(LS_INFO) << "Applying the same SRTP recv parameters again. No-op.";
+
+    // We do not want to reset the ROC if the keys are the same. So just return.
+    return true;
+  }
+
+  recv_cipher_suite_ = rtc::Optional<int>(
+      rtc::SrtpCryptoSuiteFromName(recv_params.cipher_suite));
+  if (recv_cipher_suite_ == rtc::SRTP_INVALID_CRYPTO_SUITE) {
+    LOG(LS_WARNING) << "Unknown crypto suite(s) received:"
                     << " recv cipher_suite " << recv_params.cipher_suite;
     return false;
   }
 
-  // TODO(juberti): Zero these buffers after use.
-  bool ret;
-  rtc::Buffer send_key(send_key_len + send_salt_len);
-  rtc::Buffer recv_key(recv_key_len + recv_salt_len);
-  ret = (ParseKeyParams(send_params.key_params, send_key.data(),
-                        send_key.size()) &&
-         ParseKeyParams(recv_params.key_params, recv_key.data(),
-                        recv_key.size()));
-  if (ret) {
-    CreateSrtpSessions();
-    send_session_->SetEncryptedHeaderExtensionIds(
-        send_encrypted_header_extension_ids_);
-    recv_session_->SetEncryptedHeaderExtensionIds(
-        recv_encrypted_header_extension_ids_);
-    ret = (send_session_->SetSend(
-               rtc::SrtpCryptoSuiteFromName(send_params.cipher_suite),
-               send_key.data(), send_key.size()) &&
-           recv_session_->SetRecv(
-               rtc::SrtpCryptoSuiteFromName(recv_params.cipher_suite),
-               recv_key.data(), recv_key.size()));
+  int recv_key_len, recv_salt_len;
+  if (!rtc::GetSrtpKeyAndSaltLengths(*recv_cipher_suite_, &recv_key_len,
+                                     &recv_salt_len)) {
+    LOG(LS_WARNING) << "Could not get lengths for crypto suite(s):"
+                    << " recv cipher_suite " << recv_params.cipher_suite;
+    return false;
   }
-  if (ret) {
-    LOG(LS_INFO) << "SRTP activated with negotiated parameters:"
-                 << " send cipher_suite " << send_params.cipher_suite
-                 << " recv cipher_suite " << recv_params.cipher_suite;
-    applied_send_params_ = send_params;
-    applied_recv_params_ = recv_params;
-  } else {
-    LOG(LS_WARNING) << "Failed to apply negotiated SRTP parameters";
-  }
-  return ret;
-}
 
-bool SrtpFilter::ResetParams() {
-  offer_params_.clear();
-  state_ = ST_INIT;
-  send_session_ = nullptr;
-  recv_session_ = nullptr;
-  send_rtcp_session_ = nullptr;
-  recv_rtcp_session_ = nullptr;
-  LOG(LS_INFO) << "SRTP reset to init state";
-  return true;
+  recv_key_ = rtc::Buffer(recv_key_len + recv_salt_len);
+  return ParseKeyParams(recv_params.key_params, recv_key_.data(),
+                        recv_key_.size());
 }
 
 bool SrtpFilter::ParseKeyParams(const std::string& key_params,
@@ -472,8 +251,9 @@ bool SrtpFilter::ParseKeyParams(const std::string& key_params,
 
   // Fail if base64 decode fails, or the key is the wrong size.
   std::string key_b64(key_params.substr(7)), key_str;
-  if (!rtc::Base64::Decode(key_b64, rtc::Base64::DO_STRICT,
-                           &key_str, nullptr) || key_str.size() != len) {
+  if (!rtc::Base64::Decode(key_b64, rtc::Base64::DO_STRICT, &key_str,
+                           nullptr) ||
+      key_str.size() != len) {
     return false;
   }
 
