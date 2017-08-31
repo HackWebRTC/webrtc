@@ -836,8 +836,6 @@ static void UpdateDelayMetrics(AecCore* self) {
   // Reset histogram.
   memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
   self->num_delay_values = 0;
-
-  return;
 }
 
 static void ScaledInverseFft(const OouraFft& ooura_fft,

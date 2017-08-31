@@ -17,7 +17,6 @@
 #include "webrtc/test/gtest.h"
 
 using ::testing::Invoke;
-using ::testing::Return;
 
 namespace webrtc {
 namespace {

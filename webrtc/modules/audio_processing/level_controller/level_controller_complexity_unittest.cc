@@ -67,7 +67,7 @@ void RunStandaloneSubmodule(int sample_rate_hz, size_t num_channels) {
       false);
 }
 
-void RunTogetherWithApm(std::string test_description,
+void RunTogetherWithApm(const std::string& test_description,
                         int render_input_sample_rate_hz,
                         int render_output_sample_rate_hz,
                         int capture_input_sample_rate_hz,

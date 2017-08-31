@@ -146,7 +146,7 @@ class EchoCanceller3::RenderWriter {
                int frame_length,
                int num_bands);
   ~RenderWriter();
-  void Insert(AudioBuffer* render);
+  void Insert(AudioBuffer* input);
 
  private:
   ApmDataDumper* data_dumper_;

@@ -22,7 +22,7 @@
 namespace {
 
 float Power(rtc::ArrayView<const float> input) {
-  if (input.size() == 0) {
+  if (input.empty()) {
     return 0.f;
   }
   return std::inner_product(input.begin(), input.end(), input.begin(), 0.f) /

@@ -175,7 +175,7 @@ DEFINE_bool(store_intermediate_output,
 DEFINE_string(custom_call_order_file, "", "Custom process API call order file");
 DEFINE_bool(help, false, "Print this message");
 
-void SetSettingIfSpecified(const std::string value,
+void SetSettingIfSpecified(const std::string& value,
                            rtc::Optional<std::string>* parameter) {
   if (value.compare("") != 0) {
     *parameter = rtc::Optional<std::string>(value);
@@ -279,7 +279,7 @@ SimulationSettings CreateSettings() {
   return settings;
 }
 
-void ReportConditionalErrorAndExit(bool condition, std::string message) {
+void ReportConditionalErrorAndExit(bool condition, const std::string& message) {
   if (condition) {
     std::cerr << message << std::endl;
     exit(1);

@@ -40,10 +40,10 @@ void MaybeResetBuffer(std::unique_ptr<ChannelBuffer<float>>* buffer,
 class DebugDumpGenerator {
  public:
   DebugDumpGenerator(const std::string& input_file_name,
-                     int input_file_rate_hz,
+                     int input_rate_hz,
                      int input_channels,
                      const std::string& reverse_file_name,
-                     int reverse_file_rate_hz,
+                     int reverse_rate_hz,
                      int reverse_channels,
                      const Config& config,
                      const std::string& dump_file_name);
@@ -244,7 +244,7 @@ class DebugDumpTest : public ::testing::Test {
   // VerifyDebugDump replays a debug dump using APM and verifies that the result
   // is bit-exact-identical to the output channel in the dump. This is only
   // guaranteed if the debug dump is started on the first frame.
-  void VerifyDebugDump(const std::string& dump_file_name);
+  void VerifyDebugDump(const std::string& in_filename);
 
  private:
   DebugDumpReplayer debug_dump_replayer_;

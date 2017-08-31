@@ -20,11 +20,8 @@
 
 using ::testing::_;
 using ::testing::DoAll;
-using ::testing::Eq;
-using ::testing::Mock;
 using ::testing::Return;
 using ::testing::SetArgPointee;
-using ::testing::SetArgReferee;
 
 namespace webrtc {
 namespace {

@@ -237,7 +237,7 @@ void WriteStatsMessage(const AudioProcessing::Statistic& output,
 }
 #endif
 
-void OpenFileAndWriteMessage(const std::string filename,
+void OpenFileAndWriteMessage(const std::string& filename,
                              const MessageLite& msg) {
   FILE* file = fopen(filename.c_str(), "wb");
   ASSERT_TRUE(file != NULL);
@@ -253,7 +253,7 @@ void OpenFileAndWriteMessage(const std::string filename,
   fclose(file);
 }
 
-std::string ResourceFilePath(std::string name, int sample_rate_hz) {
+std::string ResourceFilePath(const std::string& name, int sample_rate_hz) {
   std::ostringstream ss;
   // Resource files are all stereo.
   ss << name << sample_rate_hz / 1000 << "_stereo";
@@ -265,7 +265,7 @@ std::string ResourceFilePath(std::string name, int sample_rate_hz) {
 // have competing filenames.
 std::map<std::string, std::string> temp_filenames;
 
-std::string OutputFilePath(std::string name,
+std::string OutputFilePath(const std::string& name,
                            int input_rate,
                            int output_rate,
                            int reverse_input_rate,
@@ -307,7 +307,7 @@ void ClearTempFiles() {
     remove(kv.second.c_str());
 }
 
-void OpenFileAndReadMessage(std::string filename, MessageLite* msg) {
+void OpenFileAndReadMessage(const std::string& filename, MessageLite* msg) {
   FILE* file = fopen(filename.c_str(), "rb");
   ASSERT_TRUE(file != NULL);
   ReadMessageFromFile(file, msg);
@@ -2438,7 +2438,7 @@ class AudioProcessingTest
                             size_t num_output_channels,
                             size_t num_reverse_input_channels,
                             size_t num_reverse_output_channels,
-                            std::string output_file_prefix) {
+                            const std::string& output_file_prefix) {
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
     std::unique_ptr<AudioProcessing> ap(AudioProcessing::Create(config));

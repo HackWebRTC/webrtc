@@ -75,10 +75,10 @@ typedef struct
 
 // Estimates delay to set the position of the farend buffer read pointer
 // (controlled by knownDelay)
-static int WebRtcAecm_EstBufDelay(AecMobile* aecmInst, short msInSndCardBuf);
+static int WebRtcAecm_EstBufDelay(AecMobile* aecm, short msInSndCardBuf);
 
 // Stuffs the farend buffer if the estimated delay is too large
-static int WebRtcAecm_DelayComp(AecMobile* aecmInst);
+static int WebRtcAecm_DelayComp(AecMobile* aecm);
 
 void* WebRtcAecm_Create() {
     AecMobile* aecm = static_cast<AecMobile*>(malloc(sizeof(AecMobile)));

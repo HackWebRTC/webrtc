@@ -482,7 +482,7 @@ void AecDumpBasedSimulator::HandleMessage(
     }
 
     if (settings_.use_verbose_logging && msg.has_experiments_description() &&
-        msg.experiments_description().size() > 0) {
+        !msg.experiments_description().empty()) {
       std::cout << " experiments not included by default in the simulation: "
                 << msg.experiments_description() << std::endl;
     }

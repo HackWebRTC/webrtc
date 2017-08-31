@@ -37,7 +37,7 @@ typedef struct {
 
 static int EstimateSkew(const int* rawSkew,
                         int size,
-                        int absLimit,
+                        int deviceSampleRateHz,
                         float* skewEst);
 
 void* WebRtcAec_CreateResampler() {

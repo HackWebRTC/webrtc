@@ -82,7 +82,7 @@ AudioProcessingSimulator::AudioProcessingSimulator(
     const SimulationSettings& settings)
     : settings_(settings), worker_queue_("file_writer_task_queue") {
   if (settings_.ed_graph_output_filename &&
-      settings_.ed_graph_output_filename->size() > 0) {
+      !settings_.ed_graph_output_filename->empty()) {
     residual_echo_likelihood_graph_writer_.open(
         *settings_.ed_graph_output_filename);
     RTC_CHECK(residual_echo_likelihood_graph_writer_.is_open());

@@ -28,7 +28,6 @@
 namespace webrtc {
 namespace {
 
-using testing::Return;
 using testing::StrictMock;
 using testing::_;
 

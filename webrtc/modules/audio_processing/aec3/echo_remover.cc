@@ -57,12 +57,11 @@ class EchoRemoverImpl final : public EchoRemover {
   // Removes the echo from a block of samples from the capture signal. The
   // supplied render signal is assumed to be pre-aligned with the capture
   // signal.
-  void ProcessCapture(
-      const rtc::Optional<size_t>& external_echo_path_delay_estimate,
-      const EchoPathVariability& echo_path_variability,
-      bool capture_signal_saturation,
-      const RenderBuffer& render_buffer,
-      std::vector<std::vector<float>>* capture) override;
+  void ProcessCapture(const rtc::Optional<size_t>& echo_path_delay_samples,
+                      const EchoPathVariability& echo_path_variability,
+                      bool capture_signal_saturation,
+                      const RenderBuffer& render_buffer,
+                      std::vector<std::vector<float>>* capture) override;
 
   // Updates the status on whether echo leakage is detected in the output of the
   // echo remover.

@@ -258,7 +258,7 @@ class TimedThreadApiProcessor {
   bool Process();
 
   // Method for printing out the simulation statistics.
-  void print_processor_statistics(std::string processor_name) const {
+  void print_processor_statistics(const std::string& processor_name) const {
     const std::string modifier = "_api_call_duration";
 
     // Lambda function for creating a test printout string.
