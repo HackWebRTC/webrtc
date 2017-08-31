@@ -14,6 +14,7 @@
 #include <list>
 #include <memory>
 #include <queue>
+#include <type_traits>
 
 #if defined(WEBRTC_MAC)
 #include <dispatch/dispatch.h>
@@ -189,7 +190,12 @@ class LOCKABLE TaskQueue {
   // more likely). This can be mitigated by limiting the use of delayed tasks.
   void PostDelayedTask(std::unique_ptr<QueuedTask> task, uint32_t milliseconds);
 
-  template <class Closure>
+  // std::enable_if is used here to make sure that calls to PostTask() with
+  // std::unique_ptr<SomeClassDerivedFromQueuedTask> would not end up being
+  // caught by this template.
+  template <class Closure,
+            typename std::enable_if<
+                std::is_copy_constructible<Closure>::value>::type* = nullptr>
   void PostTask(const Closure& closure) {
     PostTask(std::unique_ptr<QueuedTask>(new ClosureTask<Closure>(closure)));
   }
