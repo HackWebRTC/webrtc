@@ -344,27 +344,6 @@ AudioMixerManagerLinuxPulse::MinSpeakerVolume(uint32_t& minVolume) const
 }
 
 int32_t
-AudioMixerManagerLinuxPulse::SpeakerVolumeStepSize(uint16_t& stepSize) const
-{
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
-    if (_paOutputDeviceIndex == -1)
-    {
-        LOG(LS_WARNING) << "output device index has not been set";
-        return -1;
-    }
-
-    // The sink input (stream) will always have step size = 1
-    // There are PA_VOLUME_NORM+1 steps
-    stepSize = 1;
-
-    LOG(LS_VERBOSE)
-        << "AudioMixerManagerLinuxPulse::SpeakerVolumeStepSize() => size="
-        << stepSize;
-
-    return 0;
-}
-
-int32_t
 AudioMixerManagerLinuxPulse::SpeakerVolumeIsAvailable(bool& available)
 {
     RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -653,65 +632,6 @@ int32_t AudioMixerManagerLinuxPulse::MicrophoneMute(bool& enabled) const
     return 0;
 }
 
-int32_t
-AudioMixerManagerLinuxPulse::MicrophoneBoostIsAvailable(bool& available)
-{
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
-    if (_paInputDeviceIndex == -1)
-    {
-        LOG(LS_WARNING) << "input device index has not been set";
-        return -1;
-    }
-
-    // Always unavailable in Pulse Audio
-    // Could make it possible to use PA_VOLUME_MAX
-    // but that gives bad audio with some sound cards
-    available = false;
-
-    return 0;
-}
-
-int32_t AudioMixerManagerLinuxPulse::SetMicrophoneBoost(bool enable)
-{
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
-    LOG(LS_VERBOSE) << "AudioMixerManagerLinuxPulse::SetMicrophoneBoost(enable="
-                    << enable << ")";
-
-    if (_paInputDeviceIndex == -1)
-    {
-        LOG(LS_WARNING) << "input device index has not been set";
-        return -1;
-    }
-
-    // Ensure the selected microphone destination has a valid boost control
-    bool available(false);
-    MicrophoneBoostIsAvailable(available);
-    if (!available)
-    {
-        LOG(LS_WARNING) << "it is not possible to enable microphone boost";
-        return -1;
-    }
-
-    // It is assumed that the call above fails!
-
-    return 0;
-}
-
-int32_t AudioMixerManagerLinuxPulse::MicrophoneBoost(bool& enabled) const
-{
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
-    if (_paInputDeviceIndex == -1)
-    {
-        LOG(LS_WARNING) << "input device index has not been set";
-        return -1;
-    }
-
-    // Microphone boost cannot be enabled on this platform!
-    enabled = false;
-
-    return 0;
-}
-
 int32_t AudioMixerManagerLinuxPulse::MicrophoneVolumeIsAvailable(
     bool& available)
 {
@@ -871,48 +791,6 @@ AudioMixerManagerLinuxPulse::MinMicrophoneVolume(uint32_t& minVolume) const
     }
 
     minVolume = static_cast<uint32_t> (PA_VOLUME_MUTED);
-
-    return 0;
-}
-
-int32_t AudioMixerManagerLinuxPulse::MicrophoneVolumeStepSize(
-    uint16_t& stepSize) const
-{
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
-    if (_paInputDeviceIndex == -1)
-    {
-        LOG(LS_WARNING) << "input device index has not been set";
-        return -1;
-    }
-
-    uint32_t deviceIndex = (uint32_t) _paInputDeviceIndex;
-
-    AutoPulseLock auto_lock(_paMainloop);
-
-    // Get the actual stream device index if we have a connected stream
-    // The device used by the stream can be changed
-    // during the call
-    if (_paRecStream && (LATE(pa_stream_get_state)(_paRecStream)
-        != PA_STREAM_UNCONNECTED))
-    {
-        deviceIndex = LATE(pa_stream_get_device_index)(_paRecStream);
-    }
-
-    pa_operation* paOperation = NULL;
-
-    // Get info for this source
-    paOperation
-        = LATE(pa_context_get_source_info_by_index)(_paContext, deviceIndex,
-                                                    PaSourceInfoCallback,
-                                                    (void*) this);
-
-    WaitForOperationCompletion(paOperation);
-
-    stepSize = static_cast<uint16_t> ((PA_VOLUME_NORM + 1) / _paVolSteps);
-
-    LOG(LS_VERBOSE)
-        << "AudioMixerManagerLinuxPulse::MicrophoneVolumeStepSize() => size="
-        << stepSize;
 
     return 0;
 }

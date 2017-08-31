@@ -534,22 +534,6 @@ int32_t AudioMixerManagerLinuxALSA::MinSpeakerVolume(
  }
  */
 
-int32_t AudioMixerManagerLinuxALSA::SpeakerVolumeStepSize(
-    uint16_t& stepSize) const
-{
-
-    if (_outputMixerHandle == NULL)
-    {
-        LOG(LS_WARNING) << "no avaliable output mixer exists";
-        return -1;
-    }
-
-    // The step size is always 1 for ALSA
-    stepSize = 1;
-
-    return 0;
-}
-
 int32_t AudioMixerManagerLinuxALSA::SpeakerVolumeIsAvailable(
     bool& available)
 {
@@ -739,63 +723,6 @@ int32_t AudioMixerManagerLinuxALSA::MicrophoneMute(bool& enabled) const
 
     // Note value = 0 (off) means muted
     enabled = (bool) !value;
-
-    return 0;
-}
-
-int32_t AudioMixerManagerLinuxALSA::MicrophoneBoostIsAvailable(
-    bool& available)
-{
-    if (_inputMixerHandle == NULL)
-    {
-        LOG(LS_WARNING) << "no avaliable input mixer exists";
-        return -1;
-    }
-
-    // Microphone boost cannot be enabled through ALSA Simple Mixer Interface
-    available = false;
-
-    return 0;
-}
-
-int32_t AudioMixerManagerLinuxALSA::SetMicrophoneBoost(bool enable)
-{
-    LOG(LS_VERBOSE) << "AudioMixerManagerLinuxALSA::SetMicrophoneBoost(enable="
-                    << enable << ")";
-
-    rtc::CritScope lock(&_critSect);
-
-    if (_inputMixerHandle == NULL)
-    {
-        LOG(LS_WARNING) << "no avaliable input mixer exists";
-        return -1;
-    }
-
-    // Ensure that the selected microphone destination has a valid mute control.
-    bool available(false);
-    MicrophoneMuteIsAvailable(available);
-    if (!available)
-    {
-        LOG(LS_WARNING) << "it is not possible to enable microphone boost";
-        return -1;
-    }
-
-    // It is assumed that the call above fails!
-
-    return (0);
-}
-
-int32_t AudioMixerManagerLinuxALSA::MicrophoneBoost(bool& enabled) const
-{
-
-    if (_inputMixerHandle == NULL)
-    {
-        LOG(LS_WARNING) << "no avaliable input mixer exists";
-        return -1;
-    }
-
-    // Microphone boost cannot be enabled on this platform!
-    enabled = false;
 
     return 0;
 }
@@ -1023,22 +950,6 @@ int32_t AudioMixerManagerLinuxALSA::MinMicrophoneVolume(
     }
 
     minVolume = static_cast<uint32_t> (minVol);
-
-    return 0;
-}
-
-int32_t AudioMixerManagerLinuxALSA::MicrophoneVolumeStepSize(
-    uint16_t& stepSize) const
-{
-
-    if (_inputMixerHandle == NULL)
-    {
-        LOG(LS_WARNING) << "no avaliable input mixer exists";
-        return -1;
-    }
-
-    // The step size is always 1 for ALSA
-    stepSize = 1;
 
     return 0;
 }

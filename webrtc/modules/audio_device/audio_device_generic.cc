@@ -34,19 +34,6 @@ int32_t AudioDeviceGeneric::GetLoudspeakerStatus(bool& enable) const {
   return -1;
 }
 
-int32_t AudioDeviceGeneric::ResetAudioDevice() {
-  LOG_F(LS_ERROR) << "Not supported on this platform";
-  return -1;
-}
-
-int32_t AudioDeviceGeneric::SoundDeviceControl(unsigned int par1,
-                                               unsigned int par2,
-                                               unsigned int par3,
-                                               unsigned int par4) {
-  LOG_F(LS_ERROR) << "Not supported on this platform";
-  return -1;
-}
-
 bool AudioDeviceGeneric::BuiltInAECIsAvailable() const {
   LOG_F(LS_ERROR) << "Not supported on this platform";
   return false;

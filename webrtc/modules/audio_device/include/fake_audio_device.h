@@ -90,24 +90,17 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   virtual int32_t SpeakerVolume(uint32_t* volume) const { return 0; }
   virtual int32_t MaxSpeakerVolume(uint32_t* maxVolume) const { return 0; }
   virtual int32_t MinSpeakerVolume(uint32_t* minVolume) const { return 0; }
-  virtual int32_t SpeakerVolumeStepSize(uint16_t* stepSize) const { return 0; }
   virtual int32_t MicrophoneVolumeIsAvailable(bool* available) { return 0; }
   virtual int32_t SetMicrophoneVolume(uint32_t volume) { return 0; }
   virtual int32_t MicrophoneVolume(uint32_t* volume) const { return 0; }
   virtual int32_t MaxMicrophoneVolume(uint32_t* maxVolume) const { return 0; }
   virtual int32_t MinMicrophoneVolume(uint32_t* minVolume) const { return 0; }
-  virtual int32_t MicrophoneVolumeStepSize(uint16_t* stepSize) const {
-    return 0;
-  }
   virtual int32_t SpeakerMuteIsAvailable(bool* available) { return 0; }
   virtual int32_t SetSpeakerMute(bool enable) { return 0; }
   virtual int32_t SpeakerMute(bool* enabled) const { return 0; }
   virtual int32_t MicrophoneMuteIsAvailable(bool* available) { return 0; }
   virtual int32_t SetMicrophoneMute(bool enable) { return 0; }
   virtual int32_t MicrophoneMute(bool* enabled) const { return 0; }
-  virtual int32_t MicrophoneBoostIsAvailable(bool* available) { return 0; }
-  virtual int32_t SetMicrophoneBoost(bool enable) { return 0; }
-  virtual int32_t MicrophoneBoost(bool* enabled) const { return 0; }
   virtual int32_t StereoPlayoutIsAvailable(bool* available) const {
     *available = false;
     return 0;
@@ -120,29 +113,11 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   virtual int32_t StereoRecording(bool* enabled) const { return 0; }
   virtual int32_t SetRecordingChannel(const ChannelType channel) { return 0; }
   virtual int32_t RecordingChannel(ChannelType* channel) const { return 0; }
-  virtual int32_t SetPlayoutBuffer(const BufferType type,
-                           uint16_t sizeMS = 0) {
-    return 0;
-  }
-  virtual int32_t PlayoutBuffer(BufferType* type, uint16_t* sizeMS) const {
-    return 0;
-  }
   virtual int32_t PlayoutDelay(uint16_t* delayMS) const {
     *delayMS = 0;
     return 0;
   }
   virtual int32_t RecordingDelay(uint16_t* delayMS) const { return 0; }
-  virtual int32_t CPULoad(uint16_t* load) const { return 0; }
-  virtual int32_t StartRawOutputFileRecording(
-      const char pcmFileNameUTF8[kAdmMaxFileNameSize]) {
-    return 0;
-  }
-  virtual int32_t StopRawOutputFileRecording() { return 0; }
-  virtual int32_t StartRawInputFileRecording(
-      const char pcmFileNameUTF8[kAdmMaxFileNameSize]) {
-    return 0;
-  }
-  virtual int32_t StopRawInputFileRecording() { return 0; }
   virtual int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) {
     return 0;
   }
@@ -153,7 +128,6 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
     return 0;
   }
   virtual int32_t PlayoutSampleRate(uint32_t* samplesPerSec) const { return 0; }
-  virtual int32_t ResetAudioDevice() { return 0; }
   virtual int32_t SetLoudspeakerStatus(bool enable) { return 0; }
   virtual int32_t GetLoudspeakerStatus(bool* enabled) const { return 0; }
   virtual bool BuiltInAECIsAvailable() const { return false; }

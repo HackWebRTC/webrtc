@@ -202,9 +202,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   int32_t MinSpeakerVolume(uint32_t* min_volume) const override {
     return impl_->MinSpeakerVolume(min_volume);
   }
-  int32_t SpeakerVolumeStepSize(uint16_t* step_size) const override {
-    return impl_->SpeakerVolumeStepSize(step_size);
-  }
   int32_t MicrophoneVolumeIsAvailable(bool* available) override {
     return impl_->MicrophoneVolumeIsAvailable(available);
   }
@@ -219,9 +216,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   }
   int32_t MinMicrophoneVolume(uint32_t* min_volume) const override {
     return impl_->MinMicrophoneVolume(min_volume);
-  }
-  int32_t MicrophoneVolumeStepSize(uint16_t* step_size) const override {
-    return impl_->MicrophoneVolumeStepSize(step_size);
   }
   int32_t SpeakerMuteIsAvailable(bool* available) override {
     return impl_->SpeakerMuteIsAvailable(available);
@@ -240,15 +234,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   }
   int32_t MicrophoneMute(bool* enabled) const override {
     return impl_->MicrophoneMute(enabled);
-  }
-  int32_t MicrophoneBoostIsAvailable(bool* available) override {
-    return impl_->MicrophoneBoostIsAvailable(available);
-  }
-  int32_t SetMicrophoneBoost(bool enable) override {
-    return impl_->SetMicrophoneBoost(enable);
-  }
-  int32_t MicrophoneBoost(bool* enabled) const override {
-    return impl_->MicrophoneBoost(enabled);
   }
   int32_t StereoPlayoutIsAvailable(bool* available) const override {
     return impl_->StereoPlayoutIsAvailable(available);
@@ -274,34 +259,11 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   int32_t RecordingChannel(ChannelType* channel) const override {
     return impl_->RecordingChannel(channel);
   }
-  int32_t SetPlayoutBuffer(const BufferType type, uint16_t size_ms) override {
-    return impl_->SetPlayoutBuffer(type, size_ms);
-  }
-  int32_t PlayoutBuffer(BufferType* type, uint16_t* size_ms) const override {
-    return impl_->PlayoutBuffer(type, size_ms);
-  }
   int32_t PlayoutDelay(uint16_t* delay_ms) const override {
     return impl_->PlayoutDelay(delay_ms);
   }
   int32_t RecordingDelay(uint16_t* delay_ms) const override {
     return impl_->RecordingDelay(delay_ms);
-  }
-  int32_t CPULoad(uint16_t* load) const override {
-    return impl_->CPULoad(load);
-  }
-  int32_t StartRawOutputFileRecording(
-      const char pcm_file_name_utf8[kAdmMaxFileNameSize]) override {
-    return impl_->StartRawOutputFileRecording(pcm_file_name_utf8);
-  }
-  int32_t StopRawOutputFileRecording() override {
-    return impl_->StopRawOutputFileRecording();
-  }
-  int32_t StartRawInputFileRecording(
-      const char pcm_file_name_utf8[kAdmMaxFileNameSize]) override {
-    return impl_->StartRawInputFileRecording(pcm_file_name_utf8);
-  }
-  int32_t StopRawInputFileRecording() override {
-    return impl_->StopRawInputFileRecording();
   }
   int32_t SetRecordingSampleRate(const uint32_t samples_per_sec) override {
     return impl_->SetRecordingSampleRate(samples_per_sec);
@@ -315,7 +277,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   int32_t PlayoutSampleRate(uint32_t* samples_per_sec) const override {
     return impl_->PlayoutSampleRate(samples_per_sec);
   }
-  int32_t ResetAudioDevice() override { return impl_->ResetAudioDevice(); }
   int32_t SetLoudspeakerStatus(bool enable) override {
     return impl_->SetLoudspeakerStatus(enable);
   }

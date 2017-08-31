@@ -276,11 +276,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return output_.MinSpeakerVolume(minVolume);
   }
 
-  int32_t SpeakerVolumeStepSize(uint16_t& stepSize) const override {
-    FATAL() << "Should never be called";
-    return -1;
-  }
-
   int32_t MicrophoneVolumeIsAvailable(bool& available) override{
     available = false;
     return -1;
@@ -302,11 +297,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t MinMicrophoneVolume(uint32_t& minVolume) const override {
-    FATAL() << "Should never be called";
-    return -1;
-  }
-
-  int32_t MicrophoneVolumeStepSize(uint16_t& stepSize) const override {
     FATAL() << "Should never be called";
     return -1;
   }
@@ -338,21 +328,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t MicrophoneMute(bool& enabled) const override {
     FATAL() << "Not implemented";
-    return -1;
-  }
-
-  int32_t MicrophoneBoostIsAvailable(bool& available) override {
-    FATAL() << "Should never be called";
-    return -1;
-  }
-
-  int32_t SetMicrophoneBoost(bool enable) override {
-    FATAL() << "Should never be called";
-    return -1;
-  }
-
-  int32_t MicrophoneBoost(bool& enabled) const override {
-    FATAL() << "Should never be called";
     return -1;
   }
 
@@ -394,18 +369,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return 0;
   }
 
-  int32_t SetPlayoutBuffer(
-      const AudioDeviceModule::BufferType type, uint16_t sizeMS) override {
-    FATAL() << "Should never be called";
-    return -1;
-  }
-
-  int32_t PlayoutBuffer(
-      AudioDeviceModule::BufferType& type, uint16_t& sizeMS) const override {
-    FATAL() << "Should never be called";
-    return -1;
-  }
-
   int32_t PlayoutDelay(uint16_t& delay_ms) const override {
     // Best guess we can do is to use half of the estimated total delay.
     delay_ms = audio_manager_->GetDelayEstimateInMilliseconds() / 2;
@@ -419,11 +382,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     delay_ms = audio_manager_->GetDelayEstimateInMilliseconds() / 2;
     RTC_DCHECK_GT(delay_ms, 0);
     return 0;
-  }
-
-  int32_t CPULoad(uint16_t& load) const override {
-    FATAL() << "Should never be called";
-    return -1;
   }
 
   bool PlayoutWarning() const override {

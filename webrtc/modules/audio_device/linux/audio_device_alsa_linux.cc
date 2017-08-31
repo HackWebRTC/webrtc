@@ -82,7 +82,6 @@ AudioDeviceLinuxALSA::AudioDeviceLinuxALSA() :
     _playoutBuffer(NULL),
     _recordingFramesLeft(0),
     _playoutFramesLeft(0),
-    _playBufType(AudioDeviceModule::kFixedBufferSize),
     _initialized(false),
     _recording(false),
     _playing(false),
@@ -94,9 +93,7 @@ AudioDeviceLinuxALSA::AudioDeviceLinuxALSA() :
     _playWarning(0),
     _playError(0),
     _recWarning(0),
-    _recError(0),
-    _playBufDelay(80),
-    _playBufDelayFixed(80)
+    _recError(0)
 {
     memset(_oldKeyState, 0, sizeof(_oldKeyState));
     LOG(LS_INFO) << __FUNCTION__ << " created";
@@ -353,22 +350,6 @@ int32_t AudioDeviceLinuxALSA::MinSpeakerVolume(
     return 0;
 }
 
-int32_t AudioDeviceLinuxALSA::SpeakerVolumeStepSize(
-    uint16_t& stepSize) const
-{
-
-    uint16_t delta(0);
-
-    if (_mixerManager.SpeakerVolumeStepSize(delta) == -1)
-    {
-        return -1;
-    }
-
-    stepSize = delta;
-
-    return 0;
-}
-
 int32_t AudioDeviceLinuxALSA::SpeakerMuteIsAvailable(bool& available)
 {
 
@@ -474,58 +455,6 @@ int32_t AudioDeviceLinuxALSA::MicrophoneMute(bool& enabled) const
     }
 
     enabled = muted;
-    return 0;
-}
-
-int32_t AudioDeviceLinuxALSA::MicrophoneBoostIsAvailable(bool& available)
-{
-
-    bool isAvailable(false);
-    bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
-
-    // Enumerate all avaliable microphone and make an attempt to open up the
-    // input mixer corresponding to the currently selected input device.
-    //
-    if (!wasInitialized && InitMicrophone() == -1)
-    {
-        // If we end up here it means that the selected microphone has no volume
-        // control, hence it is safe to state that there is no boost control
-        // already at this stage.
-        available = false;
-        return 0;
-    }
-
-    // Check if the selected microphone has a boost control
-    _mixerManager.MicrophoneBoostIsAvailable(isAvailable);
-    available = isAvailable;
-
-    // Close the initialized input mixer
-    if (!wasInitialized)
-    {
-        _mixerManager.CloseMicrophone();
-    }
-
-    return 0;
-}
-
-int32_t AudioDeviceLinuxALSA::SetMicrophoneBoost(bool enable)
-{
-
-    return (_mixerManager.SetMicrophoneBoost(enable));
-}
-
-int32_t AudioDeviceLinuxALSA::MicrophoneBoost(bool& enabled) const
-{
-
-    bool onOff(0);
-
-    if (_mixerManager.MicrophoneBoost(onOff) == -1)
-    {
-        return -1;
-    }
-
-    enabled = onOff;
-
     return 0;
 }
 
@@ -765,22 +694,6 @@ int32_t AudioDeviceLinuxALSA::MinMicrophoneVolume(
     }
 
     minVolume = minVol;
-
-    return 0;
-}
-
-int32_t AudioDeviceLinuxALSA::MicrophoneVolumeStepSize(
-    uint16_t& stepSize) const
-{
-
-    uint16_t delta(0);
-
-    if (_mixerManager.MicrophoneVolumeStepSize(delta) == -1)
-    {
-        return -1;
-    }
-
-    stepSize = delta;
 
     return 0;
 }
@@ -1532,45 +1445,6 @@ int32_t AudioDeviceLinuxALSA::RecordingDelay(uint16_t& delayMS) const
 bool AudioDeviceLinuxALSA::Playing() const
 {
     return (_playing);
-}
-// ----------------------------------------------------------------------------
-//  SetPlayoutBuffer
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceLinuxALSA::SetPlayoutBuffer(
-    const AudioDeviceModule::BufferType type,
-    uint16_t sizeMS)
-{
-    _playBufType = type;
-    if (type == AudioDeviceModule::kFixedBufferSize)
-    {
-        _playBufDelayFixed = sizeMS;
-    }
-    return 0;
-}
-
-int32_t AudioDeviceLinuxALSA::PlayoutBuffer(
-    AudioDeviceModule::BufferType& type,
-    uint16_t& sizeMS) const
-{
-    type = _playBufType;
-    if (type == AudioDeviceModule::kFixedBufferSize)
-    {
-        sizeMS = _playBufDelayFixed;
-    }
-    else
-    {
-        sizeMS = _playBufDelay;
-    }
-
-    return 0;
-}
-
-int32_t AudioDeviceLinuxALSA::CPULoad(uint16_t& load) const
-{
-
-    LOG(LS_WARNING) << "API call not supported on this platform";
-    return -1;
 }
 
 bool AudioDeviceLinuxALSA::PlayoutWarning() const

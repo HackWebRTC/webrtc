@@ -37,7 +37,6 @@ public:
     int32_t SpeakerVolume(uint32_t& volume) const;
     int32_t MaxSpeakerVolume(uint32_t& maxVolume) const;
     int32_t MinSpeakerVolume(uint32_t& minVolume) const;
-    int32_t SpeakerVolumeStepSize(uint16_t& stepSize) const;
     int32_t SpeakerVolumeIsAvailable(bool& available);
     int32_t SpeakerMuteIsAvailable(bool& available);
     int32_t SetSpeakerMute(bool enable);
@@ -47,15 +46,11 @@ public:
     int32_t MicrophoneMuteIsAvailable(bool& available);
     int32_t SetMicrophoneMute(bool enable);
     int32_t MicrophoneMute(bool& enabled) const;
-    int32_t MicrophoneBoostIsAvailable(bool& available);
-    int32_t SetMicrophoneBoost(bool enable);
-    int32_t MicrophoneBoost(bool& enabled) const;
     int32_t MicrophoneVolumeIsAvailable(bool& available);
     int32_t SetMicrophoneVolume(uint32_t volume);
     int32_t MicrophoneVolume(uint32_t& volume) const;
     int32_t MaxMicrophoneVolume(uint32_t& maxVolume) const;
     int32_t MinMicrophoneVolume(uint32_t& minVolume) const;
-    int32_t MicrophoneVolumeStepSize(uint16_t& stepSize) const;
     int32_t SetPulseAudioObjects(pa_threaded_mainloop* mainloop,
                                  pa_context* context);
     int32_t Close();

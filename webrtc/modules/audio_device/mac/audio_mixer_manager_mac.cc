@@ -337,19 +337,6 @@ int32_t AudioMixerManagerMac::MinSpeakerVolume(uint32_t& minVolume) const {
   return 0;
 }
 
-int32_t AudioMixerManagerMac::SpeakerVolumeStepSize(uint16_t& stepSize) const {
-  if (_outputDeviceID == kAudioObjectUnknown) {
-    LOG(LS_WARNING) << "device ID has not been set";
-    return -1;
-  }
-
-  // volume range is 0.0 to 1.0
-  // we convert that to 0 - 255
-  stepSize = 1;
-
-  return 0;
-}
-
 int32_t AudioMixerManagerMac::SpeakerVolumeIsAvailable(bool& available) {
   if (_outputDeviceID == kAudioObjectUnknown) {
     LOG(LS_WARNING) << "device ID has not been set";
@@ -704,52 +691,6 @@ int32_t AudioMixerManagerMac::MicrophoneMute(bool& enabled) const {
   return 0;
 }
 
-int32_t AudioMixerManagerMac::MicrophoneBoostIsAvailable(bool& available) {
-  if (_inputDeviceID == kAudioObjectUnknown) {
-    LOG(LS_WARNING) << "device ID has not been set";
-    return -1;
-  }
-
-  available = false;  // No AudioObjectPropertySelector value for Mic Boost
-
-  return 0;
-}
-
-int32_t AudioMixerManagerMac::SetMicrophoneBoost(bool enable) {
-  LOG(LS_VERBOSE) << "AudioMixerManagerMac::SetMicrophoneBoost(enable="
-                  << enable << ")";
-
-  rtc::CritScope lock(&_critSect);
-
-  if (_inputDeviceID == kAudioObjectUnknown) {
-    LOG(LS_WARNING) << "device ID has not been set";
-    return -1;
-  }
-
-  // Ensure that the selected microphone has a valid boost control.
-  bool available(false);
-  MicrophoneBoostIsAvailable(available);
-  if (!available) {
-    LOG(LS_WARNING) << "it is not possible to enable microphone boost";
-    return -1;
-  }
-
-  // It is assumed that the call above fails!
-  return 0;
-}
-
-int32_t AudioMixerManagerMac::MicrophoneBoost(bool& enabled) const {
-  if (_inputDeviceID == kAudioObjectUnknown) {
-    LOG(LS_WARNING) << "device ID has not been set";
-    return -1;
-  }
-
-  // Microphone boost cannot be enabled on this platform!
-  enabled = false;
-
-  return 0;
-}
-
 int32_t AudioMixerManagerMac::MicrophoneVolumeIsAvailable(bool& available) {
   if (_inputDeviceID == kAudioObjectUnknown) {
     LOG(LS_WARNING) << "device ID has not been set";
@@ -925,20 +866,6 @@ int32_t AudioMixerManagerMac::MinMicrophoneVolume(uint32_t& minVolume) const {
   // volume range is 0.0 to 1.0
   // we convert that to 0 - 10
   minVolume = 0;
-
-  return 0;
-}
-
-int32_t AudioMixerManagerMac::MicrophoneVolumeStepSize(
-    uint16_t& stepSize) const {
-  if (_inputDeviceID == kAudioObjectUnknown) {
-    LOG(LS_WARNING) << "device ID has not been set";
-    return -1;
-  }
-
-  // volume range is 0.0 to 1.0
-  // we convert that to 0 - 10
-  stepSize = 1;
 
   return 0;
 }

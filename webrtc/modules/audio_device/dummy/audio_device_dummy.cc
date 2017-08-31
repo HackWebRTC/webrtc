@@ -107,10 +107,6 @@ int32_t AudioDeviceDummy::MinSpeakerVolume(uint32_t& minVolume) const {
   return -1;
 }
 
-int32_t AudioDeviceDummy::SpeakerVolumeStepSize(uint16_t& stepSize) const {
-  return -1;
-}
-
 int32_t AudioDeviceDummy::MicrophoneVolumeIsAvailable(bool& available) {
   return -1;
 }
@@ -129,10 +125,6 @@ int32_t AudioDeviceDummy::MinMicrophoneVolume(uint32_t& minVolume) const {
   return -1;
 }
 
-int32_t AudioDeviceDummy::MicrophoneVolumeStepSize(uint16_t& stepSize) const {
-  return -1;
-}
-
 int32_t AudioDeviceDummy::SpeakerMuteIsAvailable(bool& available) { return -1; }
 
 int32_t AudioDeviceDummy::SetSpeakerMute(bool enable) { return -1; }
@@ -146,14 +138,6 @@ int32_t AudioDeviceDummy::MicrophoneMuteIsAvailable(bool& available) {
 int32_t AudioDeviceDummy::SetMicrophoneMute(bool enable) { return -1; }
 
 int32_t AudioDeviceDummy::MicrophoneMute(bool& enabled) const { return -1; }
-
-int32_t AudioDeviceDummy::MicrophoneBoostIsAvailable(bool& available) {
-  return -1;
-}
-
-int32_t AudioDeviceDummy::SetMicrophoneBoost(bool enable) { return -1; }
-
-int32_t AudioDeviceDummy::MicrophoneBoost(bool& enabled) const { return -1; }
 
 int32_t AudioDeviceDummy::StereoPlayoutIsAvailable(bool& available) {
   return -1;
@@ -170,22 +154,9 @@ int32_t AudioDeviceDummy::SetStereoRecording(bool enable) { return -1; }
 
 int32_t AudioDeviceDummy::StereoRecording(bool& enabled) const { return -1; }
 
-int32_t AudioDeviceDummy::SetPlayoutBuffer(
-    const AudioDeviceModule::BufferType type,
-    uint16_t sizeMS) {
-  return -1;
-}
-
-int32_t AudioDeviceDummy::PlayoutBuffer(AudioDeviceModule::BufferType& type,
-                                        uint16_t& sizeMS) const {
-  return -1;
-}
-
 int32_t AudioDeviceDummy::PlayoutDelay(uint16_t& delayMS) const { return -1; }
 
 int32_t AudioDeviceDummy::RecordingDelay(uint16_t& delayMS) const { return -1; }
-
-int32_t AudioDeviceDummy::CPULoad(uint16_t& load) const { return -1; }
 
 bool AudioDeviceDummy::PlayoutWarning() const { return false; }
 

@@ -108,14 +108,6 @@ class AudioDeviceBuffer {
   virtual int32_t RequestPlayoutData(size_t samples_per_channel);
   virtual int32_t GetPlayoutData(void* audio_buffer);
 
-  // TODO(henrika): these methods should not be used and does not contain any
-  // valid implementation. Investigate the possibility to either remove them
-  // or add a proper implementation if needed.
-  int32_t StartInputFileRecording(const char fileName[kAdmMaxFileNameSize]);
-  int32_t StopInputFileRecording();
-  int32_t StartOutputFileRecording(const char fileName[kAdmMaxFileNameSize]);
-  int32_t StopOutputFileRecording();
-
   int32_t SetTypingStatus(bool typing_status);
 
   // Called on iOS where the native audio layer can be interrupted by other

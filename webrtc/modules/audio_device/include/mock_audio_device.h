@@ -72,22 +72,17 @@ class MockAudioDeviceModule : public AudioDeviceModule {
   MOCK_CONST_METHOD1(SpeakerVolume, int32_t(uint32_t* volume));
   MOCK_CONST_METHOD1(MaxSpeakerVolume, int32_t(uint32_t* maxVolume));
   MOCK_CONST_METHOD1(MinSpeakerVolume, int32_t(uint32_t* minVolume));
-  MOCK_CONST_METHOD1(SpeakerVolumeStepSize, int32_t(uint16_t* stepSize));
   MOCK_METHOD1(MicrophoneVolumeIsAvailable, int32_t(bool* available));
   MOCK_METHOD1(SetMicrophoneVolume, int32_t(uint32_t volume));
   MOCK_CONST_METHOD1(MicrophoneVolume, int32_t(uint32_t* volume));
   MOCK_CONST_METHOD1(MaxMicrophoneVolume, int32_t(uint32_t* maxVolume));
   MOCK_CONST_METHOD1(MinMicrophoneVolume, int32_t(uint32_t* minVolume));
-  MOCK_CONST_METHOD1(MicrophoneVolumeStepSize, int32_t(uint16_t* stepSize));
   MOCK_METHOD1(SpeakerMuteIsAvailable, int32_t(bool* available));
   MOCK_METHOD1(SetSpeakerMute, int32_t(bool enable));
   MOCK_CONST_METHOD1(SpeakerMute, int32_t(bool* enabled));
   MOCK_METHOD1(MicrophoneMuteIsAvailable, int32_t(bool* available));
   MOCK_METHOD1(SetMicrophoneMute, int32_t(bool enable));
   MOCK_CONST_METHOD1(MicrophoneMute, int32_t(bool* enabled));
-  MOCK_METHOD1(MicrophoneBoostIsAvailable, int32_t(bool* available));
-  MOCK_METHOD1(SetMicrophoneBoost, int32_t(bool enable));
-  MOCK_CONST_METHOD1(MicrophoneBoost, int32_t(bool* enabled));
   MOCK_CONST_METHOD1(StereoPlayoutIsAvailable, int32_t(bool* available));
   MOCK_METHOD1(SetStereoPlayout, int32_t(bool enable));
   MOCK_CONST_METHOD1(StereoPlayout, int32_t(bool* enabled));
@@ -96,24 +91,12 @@ class MockAudioDeviceModule : public AudioDeviceModule {
   MOCK_CONST_METHOD1(StereoRecording, int32_t(bool* enabled));
   MOCK_METHOD1(SetRecordingChannel, int32_t(const ChannelType channel));
   MOCK_CONST_METHOD1(RecordingChannel, int32_t(ChannelType* channel));
-  MOCK_METHOD2(SetPlayoutBuffer, int32_t(const BufferType type,
-                                         uint16_t sizeMS));
-  MOCK_CONST_METHOD2(PlayoutBuffer, int32_t(BufferType* type,
-                                            uint16_t* sizeMS));
   MOCK_CONST_METHOD1(PlayoutDelay, int32_t(uint16_t* delayMS));
   MOCK_CONST_METHOD1(RecordingDelay, int32_t(uint16_t* delayMS));
-  MOCK_CONST_METHOD1(CPULoad, int32_t(uint16_t* load));
-  MOCK_METHOD1(StartRawOutputFileRecording,
-               int32_t(const char pcmFileNameUTF8[kAdmMaxFileNameSize]));
-  MOCK_METHOD0(StopRawOutputFileRecording, int32_t());
-  MOCK_METHOD1(StartRawInputFileRecording,
-               int32_t(const char pcmFileNameUTF8[kAdmMaxFileNameSize]));
-  MOCK_METHOD0(StopRawInputFileRecording, int32_t());
   MOCK_METHOD1(SetRecordingSampleRate, int32_t(const uint32_t samplesPerSec));
   MOCK_CONST_METHOD1(RecordingSampleRate, int32_t(uint32_t* samplesPerSec));
   MOCK_METHOD1(SetPlayoutSampleRate, int32_t(const uint32_t samplesPerSec));
   MOCK_CONST_METHOD1(PlayoutSampleRate, int32_t(uint32_t* samplesPerSec));
-  MOCK_METHOD0(ResetAudioDevice, int32_t());
   MOCK_METHOD1(SetLoudspeakerStatus, int32_t(bool enable));
   MOCK_CONST_METHOD1(GetLoudspeakerStatus, int32_t(bool* enabled));
   MOCK_CONST_METHOD0(BuiltInAECIsAvailable, bool());

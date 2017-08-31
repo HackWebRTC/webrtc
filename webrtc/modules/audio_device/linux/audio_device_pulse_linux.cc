@@ -40,7 +40,6 @@ AudioDeviceLinuxPulse::AudioDeviceLinuxPulse()
       sample_rate_hz_(0),
       _recChannels(1),
       _playChannels(1),
-      _playBufType(AudioDeviceModule::kFixedBufferSize),
       _initialized(false),
       _recording(false),
       _playing(false),
@@ -52,7 +51,6 @@ AudioDeviceLinuxPulse::AudioDeviceLinuxPulse()
       _stopPlay(false),
       _AGC(false),
       update_speaker_volume_at_startup_(false),
-      _playBufDelayFixed(20),
       _sndCardPlayDelay(0),
       _sndCardRecDelay(0),
       _writeErrors(0),
@@ -398,19 +396,6 @@ int32_t AudioDeviceLinuxPulse::MinSpeakerVolume(uint32_t& minVolume) const {
   return 0;
 }
 
-int32_t AudioDeviceLinuxPulse::SpeakerVolumeStepSize(uint16_t& stepSize) const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  uint16_t delta(0);
-
-  if (_mixerManager.SpeakerVolumeStepSize(delta) == -1) {
-    return -1;
-  }
-
-  stepSize = delta;
-
-  return 0;
-}
-
 int32_t AudioDeviceLinuxPulse::SpeakerMuteIsAvailable(bool& available) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   bool isAvailable(false);
@@ -499,52 +484,6 @@ int32_t AudioDeviceLinuxPulse::MicrophoneMute(bool& enabled) const {
   }
 
   enabled = muted;
-  return 0;
-}
-
-int32_t AudioDeviceLinuxPulse::MicrophoneBoostIsAvailable(bool& available) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  bool isAvailable(false);
-  bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
-
-  // Enumerate all avaliable microphone and make an attempt to open up the
-  // input mixer corresponding to the currently selected input device.
-  //
-  if (!wasInitialized && InitMicrophone() == -1) {
-    // If we end up here it means that the selected microphone has no
-    // volume control, hence it is safe to state that there is no
-    // boost control already at this stage.
-    available = false;
-    return 0;
-  }
-
-  // Check if the selected microphone has a boost control
-  _mixerManager.MicrophoneBoostIsAvailable(isAvailable);
-  available = isAvailable;
-
-  // Close the initialized input mixer
-  if (!wasInitialized) {
-    _mixerManager.CloseMicrophone();
-  }
-
-  return 0;
-}
-
-int32_t AudioDeviceLinuxPulse::SetMicrophoneBoost(bool enable) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return (_mixerManager.SetMicrophoneBoost(enable));
-}
-
-int32_t AudioDeviceLinuxPulse::MicrophoneBoost(bool& enabled) const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  bool onOff(0);
-
-  if (_mixerManager.MicrophoneBoost(onOff) == -1) {
-    return -1;
-  }
-
-  enabled = onOff;
-
   return 0;
 }
 
@@ -723,20 +662,6 @@ int32_t AudioDeviceLinuxPulse::MinMicrophoneVolume(uint32_t& minVolume) const {
   }
 
   minVolume = minVol;
-
-  return 0;
-}
-
-int32_t AudioDeviceLinuxPulse::MicrophoneVolumeStepSize(
-    uint16_t& stepSize) const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  uint16_t delta(0);
-
-  if (_mixerManager.MicrophoneVolumeStepSize(delta) == -1) {
-    return -1;
-  }
-
-  stepSize = delta;
 
   return 0;
 }
@@ -1365,36 +1290,6 @@ int32_t AudioDeviceLinuxPulse::RecordingDelay(uint16_t& delayMS) const {
 bool AudioDeviceLinuxPulse::Playing() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return (_playing);
-}
-
-int32_t AudioDeviceLinuxPulse::SetPlayoutBuffer(
-    const AudioDeviceModule::BufferType type,
-    uint16_t sizeMS) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (type != AudioDeviceModule::kFixedBufferSize) {
-    LOG(LS_ERROR) << "Adaptive buffer size not supported on this platform";
-    return -1;
-  }
-
-  _playBufType = type;
-  _playBufDelayFixed = sizeMS;
-
-  return 0;
-}
-
-int32_t AudioDeviceLinuxPulse::PlayoutBuffer(
-    AudioDeviceModule::BufferType& type,
-    uint16_t& sizeMS) const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  type = _playBufType;
-  sizeMS = _playBufDelayFixed;
-
-  return 0;
-}
-
-int32_t AudioDeviceLinuxPulse::CPULoad(uint16_t& /*load*/) const {
-  LOG(LS_WARNING) << "API call not supported on this platform";
-  return -1;
 }
 
 bool AudioDeviceLinuxPulse::PlayoutWarning() const {

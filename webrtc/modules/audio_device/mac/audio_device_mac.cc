@@ -125,7 +125,6 @@ AudioDeviceMac::AudioDeviceMac()
       _playChannels(N_PLAY_CHANNELS),
       _captureBufData(NULL),
       _renderBufData(NULL),
-      _playBufType(AudioDeviceModule::kFixedBufferSize),
       _initialized(false),
       _isShutDown(false),
       _recording(false),
@@ -145,7 +144,6 @@ AudioDeviceMac::AudioDeviceMac()
       _captureDelayUs(0),
       _renderDelayUs(0),
       _renderDelayOffsetSamples(0),
-      _playBufDelayFixed(20),
       _playWarning(0),
       _playError(0),
       _recWarning(0),
@@ -570,17 +568,6 @@ int32_t AudioDeviceMac::MinSpeakerVolume(uint32_t& minVolume) const {
   return 0;
 }
 
-int32_t AudioDeviceMac::SpeakerVolumeStepSize(uint16_t& stepSize) const {
-  uint16_t delta(0);
-
-  if (_mixerManager.SpeakerVolumeStepSize(delta) == -1) {
-    return -1;
-  }
-
-  stepSize = delta;
-  return 0;
-}
-
 int32_t AudioDeviceMac::SpeakerMuteIsAvailable(bool& available) {
   bool isAvailable(false);
   bool wasInitialized = _mixerManager.SpeakerIsInitialized();
@@ -667,50 +654,6 @@ int32_t AudioDeviceMac::MicrophoneMute(bool& enabled) const {
   }
 
   enabled = muted;
-  return 0;
-}
-
-int32_t AudioDeviceMac::MicrophoneBoostIsAvailable(bool& available) {
-  bool isAvailable(false);
-  bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
-
-  // Enumerate all avaliable microphone and make an attempt to open up the
-  // input mixer corresponding to the currently selected input device.
-  //
-  if (!wasInitialized && InitMicrophone() == -1) {
-    // If we end up here it means that the selected microphone has no volume
-    // control, hence it is safe to state that there is no boost control
-    // already at this stage.
-    available = false;
-    return 0;
-  }
-
-  // Check if the selected microphone has a boost control
-  //
-  _mixerManager.MicrophoneBoostIsAvailable(isAvailable);
-  available = isAvailable;
-
-  // Close the initialized input mixer
-  //
-  if (!wasInitialized) {
-    _mixerManager.CloseMicrophone();
-  }
-
-  return 0;
-}
-
-int32_t AudioDeviceMac::SetMicrophoneBoost(bool enable) {
-  return (_mixerManager.SetMicrophoneBoost(enable));
-}
-
-int32_t AudioDeviceMac::MicrophoneBoost(bool& enabled) const {
-  bool onOff(0);
-
-  if (_mixerManager.MicrophoneBoost(onOff) == -1) {
-    return -1;
-  }
-
-  enabled = onOff;
   return 0;
 }
 
@@ -870,17 +813,6 @@ int32_t AudioDeviceMac::MinMicrophoneVolume(uint32_t& minVolume) const {
   }
 
   minVolume = minVol;
-  return 0;
-}
-
-int32_t AudioDeviceMac::MicrophoneVolumeStepSize(uint16_t& stepSize) const {
-  uint16_t delta(0);
-
-  if (_mixerManager.MicrophoneVolumeStepSize(delta) == -1) {
-    return -1;
-  }
-
-  stepSize = delta;
   return 0;
 }
 
@@ -1623,34 +1555,6 @@ bool AudioDeviceMac::Playing() const {
   return (_playing);
 }
 
-int32_t AudioDeviceMac::SetPlayoutBuffer(
-    const AudioDeviceModule::BufferType type,
-    uint16_t sizeMS) {
-  if (type != AudioDeviceModule::kFixedBufferSize) {
-    LOG(LS_ERROR) << "Adaptive buffer size not supported on this platform";
-    return -1;
-  }
-
-  _playBufType = type;
-  _playBufDelayFixed = sizeMS;
-  return 0;
-}
-
-int32_t AudioDeviceMac::PlayoutBuffer(AudioDeviceModule::BufferType& type,
-                                      uint16_t& sizeMS) const {
-  type = _playBufType;
-  sizeMS = _playBufDelayFixed;
-
-  return 0;
-}
-
-// Not implemented for Mac.
-int32_t AudioDeviceMac::CPULoad(uint16_t& /*load*/) const {
-  LOG(LS_WARNING) << "API call not supported on this platform";
-
-  return -1;
-}
-
 bool AudioDeviceMac::PlayoutWarning() const {
   return (_playWarning > 0);
 }
@@ -1978,9 +1882,10 @@ OSStatus AudioDeviceMac::SetDesiredPlayoutFormat() {
   WEBRTC_CA_RETURN_ON_ERR(AudioConverterNew(
       &_outDesiredFormat, &_outStreamFormat, &_renderConverter));
 
-  // Try to set buffer size to desired value (_playBufDelayFixed).
+  // Try to set buffer size to desired value set to 20ms.
+  const uint16_t kPlayBufDelayFixed = 20;
   UInt32 bufByteCount = static_cast<UInt32>(
-      (_outStreamFormat.mSampleRate / 1000.0) * _playBufDelayFixed *
+      (_outStreamFormat.mSampleRate / 1000.0) * kPlayBufDelayFixed *
       _outStreamFormat.mChannelsPerFrame * sizeof(Float32));
   if (_outStreamFormat.mFramesPerPacket != 0) {
     if (bufByteCount % _outStreamFormat.mFramesPerPacket != 0) {

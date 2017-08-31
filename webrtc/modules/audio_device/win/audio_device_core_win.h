@@ -145,7 +145,6 @@ public:
     virtual int32_t SpeakerVolume(uint32_t& volume) const;
     virtual int32_t MaxSpeakerVolume(uint32_t& maxVolume) const;
     virtual int32_t MinSpeakerVolume(uint32_t& minVolume) const;
-    virtual int32_t SpeakerVolumeStepSize(uint16_t& stepSize) const;
 
     // Microphone volume controls
     virtual int32_t MicrophoneVolumeIsAvailable(bool& available);
@@ -153,7 +152,6 @@ public:
     virtual int32_t MicrophoneVolume(uint32_t& volume) const;
     virtual int32_t MaxMicrophoneVolume(uint32_t& maxVolume) const;
     virtual int32_t MinMicrophoneVolume(uint32_t& minVolume) const;
-    virtual int32_t MicrophoneVolumeStepSize(uint16_t& stepSize) const;
 
     // Speaker mute control
     virtual int32_t SpeakerMuteIsAvailable(bool& available);
@@ -165,11 +163,6 @@ public:
     virtual int32_t SetMicrophoneMute(bool enable);
     virtual int32_t MicrophoneMute(bool& enabled) const;
 
-    // Microphone boost control
-    virtual int32_t MicrophoneBoostIsAvailable(bool& available);
-    virtual int32_t SetMicrophoneBoost(bool enable);
-    virtual int32_t MicrophoneBoost(bool& enabled) const;
-
     // Stereo support
     virtual int32_t StereoPlayoutIsAvailable(bool& available);
     virtual int32_t SetStereoPlayout(bool enable);
@@ -179,13 +172,8 @@ public:
     virtual int32_t StereoRecording(bool& enabled) const;
 
     // Delay information and control
-    virtual int32_t SetPlayoutBuffer(const AudioDeviceModule::BufferType type, uint16_t sizeMS);
-    virtual int32_t PlayoutBuffer(AudioDeviceModule::BufferType& type, uint16_t& sizeMS) const;
     virtual int32_t PlayoutDelay(uint16_t& delayMS) const;
     virtual int32_t RecordingDelay(uint16_t& delayMS) const;
-
-    // CPU load
-    virtual int32_t CPULoad(uint16_t& load) const;
 
     virtual int32_t EnableBuiltInAEC(bool enable);
 
@@ -312,7 +300,6 @@ private:    // thread functions
     uint32_t                          _playChannels;
     uint32_t                          _sndCardPlayDelay;
     UINT64                                  _writtenSamples;
-    LONGLONG                                _playAcc;
 
     UINT                                    _recAudioFrameSize;
     uint32_t                          _recSampleRate;
@@ -326,7 +313,6 @@ private:    // thread functions
 
     LARGE_INTEGER                           _perfCounterFreq;
     double                                  _perfCounterFactor;
-    float                                   _avgCPULoad;
 
 private:
     bool                                    _initialized;
@@ -351,9 +337,7 @@ private:
     uint16_t                          _recWarning;
     uint16_t                          _recError;
 
-    AudioDeviceModule::BufferType           _playBufType;
     uint16_t                          _playBufDelay;
-    uint16_t                          _playBufDelayFixed;
 
     uint16_t                          _newMicLevel;
 

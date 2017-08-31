@@ -15,21 +15,10 @@
 
 namespace webrtc {
 
-int32_t AudioDeviceIOS::PlayoutBuffer(AudioDeviceModule::BufferType& type,
-                                      uint16_t& sizeMS) const {
-  RTC_NOTREACHED() << "Not implemented";
-  return -1;
-}
-
 int32_t AudioDeviceIOS::ActiveAudioLayer(
     AudioDeviceModule::AudioLayer& audioLayer) const {
   audioLayer = AudioDeviceModule::kPlatformDefaultAudio;
   return 0;
-}
-
-int32_t AudioDeviceIOS::ResetAudioDevice() {
-  RTC_NOTREACHED() << "Not implemented";
-  return -1;
 }
 
 int16_t AudioDeviceIOS::PlayoutDevices() {
@@ -73,11 +62,6 @@ int32_t AudioDeviceIOS::MaxSpeakerVolume(uint32_t& maxVolume) const {
 }
 
 int32_t AudioDeviceIOS::MinSpeakerVolume(uint32_t& minVolume) const {
-  RTC_NOTREACHED() << "Not implemented";
-  return -1;
-}
-
-int32_t AudioDeviceIOS::SpeakerVolumeStepSize(uint16_t& stepSize) const {
   RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
@@ -146,21 +130,6 @@ int32_t AudioDeviceIOS::MicrophoneMute(bool& enabled) const {
   return -1;
 }
 
-int32_t AudioDeviceIOS::MicrophoneBoostIsAvailable(bool& available) {
-  available = false;
-  return 0;
-}
-
-int32_t AudioDeviceIOS::SetMicrophoneBoost(bool enable) {
-  RTC_NOTREACHED() << "Not implemented";
-  return -1;
-}
-
-int32_t AudioDeviceIOS::MicrophoneBoost(bool& enabled) const {
-  enabled = false;
-  return 0;
-}
-
 int32_t AudioDeviceIOS::StereoRecordingIsAvailable(bool& available) {
   available = false;
   return 0;
@@ -227,11 +196,6 @@ int32_t AudioDeviceIOS::MinMicrophoneVolume(uint32_t& minVolume) const {
   return -1;
 }
 
-int32_t AudioDeviceIOS::MicrophoneVolumeStepSize(uint16_t& stepSize) const {
-  RTC_NOTREACHED() << "Not implemented";
-  return -1;
-}
-
 int32_t AudioDeviceIOS::PlayoutDeviceName(uint16_t index,
                                           char name[kAdmMaxDeviceNameSize],
                                           char guid[kAdmMaxGuidSize]) {
@@ -265,18 +229,6 @@ int32_t AudioDeviceIOS::PlayoutIsAvailable(bool& available) {
 int32_t AudioDeviceIOS::RecordingIsAvailable(bool& available) {
   available = true;
   return 0;
-}
-
-int32_t AudioDeviceIOS::SetPlayoutBuffer(
-    const AudioDeviceModule::BufferType type,
-    uint16_t sizeMS) {
-  RTC_NOTREACHED() << "Not implemented";
-  return -1;
-}
-
-int32_t AudioDeviceIOS::CPULoad(uint16_t&) const {
-  RTC_NOTREACHED() << "Not implemented";
-  return -1;
 }
 
 }  // namespace webrtc

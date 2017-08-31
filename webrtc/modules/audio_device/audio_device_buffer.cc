@@ -280,28 +280,6 @@ void AudioDeviceBuffer::SetVQEData(int play_delay_ms,
   clock_drift_ = clock_drift;
 }
 
-int32_t AudioDeviceBuffer::StartInputFileRecording(
-    const char fileName[kAdmMaxFileNameSize]) {
-  LOG(LS_WARNING) << "Not implemented";
-  return 0;
-}
-
-int32_t AudioDeviceBuffer::StopInputFileRecording() {
-  LOG(LS_WARNING) << "Not implemented";
-  return 0;
-}
-
-int32_t AudioDeviceBuffer::StartOutputFileRecording(
-    const char fileName[kAdmMaxFileNameSize]) {
-  LOG(LS_WARNING) << "Not implemented";
-  return 0;
-}
-
-int32_t AudioDeviceBuffer::StopOutputFileRecording() {
-  LOG(LS_WARNING) << "Not implemented";
-  return 0;
-}
-
 int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
                                              size_t samples_per_channel) {
   RTC_DCHECK_RUN_ON(&recording_thread_checker_);
