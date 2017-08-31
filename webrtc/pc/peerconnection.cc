@@ -143,13 +143,13 @@ void AddRtpSenderOptions(
     if (sender->media_type() == cricket::MEDIA_TYPE_AUDIO) {
       if (audio_media_description_options) {
         audio_media_description_options->AddAudioSender(
-            sender->id(), sender->internal()->stream_id());
+            sender->id(), sender->internal()->stream_ids());
       }
     } else {
       RTC_DCHECK(sender->media_type() == cricket::MEDIA_TYPE_VIDEO);
       if (video_media_description_options) {
         video_media_description_options->AddVideoSender(
-            sender->id(), sender->internal()->stream_id(), 1);
+            sender->id(), sender->internal()->stream_ids(), 1);
       }
     }
   }
@@ -1475,8 +1475,8 @@ void PeerConnection::AddAudioTrack(AudioTrackInterface* track,
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender =
       RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
           signaling_thread(),
-          new AudioRtpSender(track, stream->label(), session_->voice_channel(),
-                             stats_.get()));
+          new AudioRtpSender(track, {stream->label()},
+                             session_->voice_channel(), stats_.get()));
   senders_.push_back(new_sender);
   // If the sender has already been configured in SDP, we call SetSsrc,
   // which will connect the sender to the underlying transport. This can
@@ -1520,7 +1520,7 @@ void PeerConnection::AddVideoTrack(VideoTrackInterface* track,
   // Normal case; we've never seen this track before.
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender =
       RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-          signaling_thread(), new VideoRtpSender(track, stream->label(),
+          signaling_thread(), new VideoRtpSender(track, {stream->label()},
                                                  session_->video_channel()));
   senders_.push_back(new_sender);
   const TrackInfo* track_info =

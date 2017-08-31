@@ -105,7 +105,9 @@ NegotiateRtpTransceiverDirection(RtpTransceiverDirection offer,
 // Options for an RtpSender contained with an media description/"m=" section.
 struct SenderOptions {
   std::string track_id;
-  std::string stream_id;
+  // TODO(steveanton): As part of work towards Unified Plan, this has been
+  // changed to be a vector. But for now this can only have exactly one.
+  std::vector<std::string> stream_ids;
   int num_sim_layers;
 };
 
@@ -120,9 +122,9 @@ struct MediaDescriptionOptions {
   // TODO(deadbeef): When we don't support Plan B, there will only be one
   // sender per media description and this can be simplified.
   void AddAudioSender(const std::string& track_id,
-                      const std::string& stream_id);
+                      const std::vector<std::string>& stream_ids);
   void AddVideoSender(const std::string& track_id,
-                      const std::string& stream_id,
+                      const std::vector<std::string>& stream_ids,
                       int num_sim_layers);
 
   // Internally just uses sender_options.
@@ -141,7 +143,7 @@ struct MediaDescriptionOptions {
  private:
   // Doesn't DCHECK on |type|.
   void AddSenderInternal(const std::string& track_id,
-                         const std::string& stream_id,
+                         const std::vector<std::string>& stream_ids,
                          int num_sim_layers);
 };
 

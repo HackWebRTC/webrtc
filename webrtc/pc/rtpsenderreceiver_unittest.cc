@@ -136,7 +136,7 @@ class RtpSenderReceiverTest : public testing::Test,
     EXPECT_TRUE(local_stream_->AddTrack(audio_track_));
     audio_rtp_sender_ =
         new AudioRtpSender(local_stream_->GetAudioTracks()[0],
-                           local_stream_->label(), voice_channel_, nullptr);
+                           {local_stream_->label()}, voice_channel_, nullptr);
     audio_rtp_sender_->SetSsrc(kAudioSsrc);
     audio_rtp_sender_->GetOnDestroyedSignal()->connect(
         this, &RtpSenderReceiverTest::OnAudioSenderDestroyed);
@@ -151,7 +151,7 @@ class RtpSenderReceiverTest : public testing::Test,
     AddVideoTrack(is_screencast);
     video_rtp_sender_ =
         new VideoRtpSender(local_stream_->GetVideoTracks()[0],
-                           local_stream_->label(), video_channel_);
+                           {local_stream_->label()}, video_channel_);
     video_rtp_sender_->SetSsrc(kVideoSsrc);
     VerifyVideoChannelInput();
   }
@@ -715,7 +715,7 @@ TEST_F(RtpSenderReceiverTest,
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
   video_rtp_sender_ =
       new VideoRtpSender(local_stream_->GetVideoTracks()[0],
-                         local_stream_->label(), video_channel_);
+                         {local_stream_->label()}, video_channel_);
   video_track_->set_enabled(true);
 
   // Sender is not ready to send (no SSRC) so no option should have been set.

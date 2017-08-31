@@ -596,10 +596,10 @@ class WebRtcSessionTest
             cricket::MEDIA_TYPE_AUDIO, media_description_options.mid,
             cricket::RtpTransceiverDirection(send_audio, recv_audio), stopped);
         if (send_stream_1_ && send_audio) {
-          media_desc_options.AddAudioSender(kAudioTrack1, kStream1);
+          media_desc_options.AddAudioSender(kAudioTrack1, {kStream1});
         }
         if (send_stream_2_ && send_audio) {
-          media_desc_options.AddAudioSender(kAudioTrack2, kStream2);
+          media_desc_options.AddAudioSender(kAudioTrack2, {kStream2});
         }
         session_options->media_description_options.push_back(
             media_desc_options);
@@ -609,11 +609,11 @@ class WebRtcSessionTest
             cricket::MEDIA_TYPE_VIDEO, media_description_options.mid,
             cricket::RtpTransceiverDirection(send_video, recv_video), stopped);
         if (send_stream_1_ && send_video) {
-          media_desc_options.AddVideoSender(kVideoTrack1, kStream1,
+          media_desc_options.AddVideoSender(kVideoTrack1, {kStream1},
                                             num_sim_layer);
         }
         if (send_stream_2_ && send_video) {
-          media_desc_options.AddVideoSender(kVideoTrack2, kStream2,
+          media_desc_options.AddVideoSender(kVideoTrack2, {kStream2},
                                             num_sim_layer);
         }
         session_options->media_description_options.push_back(
@@ -649,10 +649,10 @@ class WebRtcSessionTest
               cricket::RtpTransceiverDirection(send_audio, recv_audio),
               kActive);
       if (send_stream_1_ && send_audio) {
-        media_desc_options.AddAudioSender(kAudioTrack1, kStream1);
+        media_desc_options.AddAudioSender(kAudioTrack1, {kStream1});
       }
       if (send_stream_2_ && send_audio) {
-        media_desc_options.AddAudioSender(kAudioTrack2, kStream2);
+        media_desc_options.AddAudioSender(kAudioTrack2, {kStream2});
       }
       session_options->media_description_options.push_back(media_desc_options);
       offered_media_sections_.push_back(media_desc_options);
@@ -666,11 +666,11 @@ class WebRtcSessionTest
               kActive);
       int num_sim_layer = 1;
       if (send_stream_1_ && send_video) {
-        media_desc_options.AddVideoSender(kVideoTrack1, kStream1,
+        media_desc_options.AddVideoSender(kVideoTrack1, {kStream1},
                                           num_sim_layer);
       }
       if (send_stream_2_ && send_video) {
-        media_desc_options.AddVideoSender(kVideoTrack2, kStream2,
+        media_desc_options.AddVideoSender(kVideoTrack2, {kStream2},
                                           num_sim_layer);
       }
       session_options->media_description_options.push_back(media_desc_options);

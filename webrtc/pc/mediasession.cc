@@ -498,7 +498,9 @@ static bool AddStreamParams(
         }
       }
       stream_param.cname = rtcp_cname;
-      stream_param.sync_label = sender.stream_id;
+      // TODO(steveanton): Support any number of stream ids.
+      RTC_CHECK(sender.stream_ids.size() == 1U);
+      stream_param.sync_label = sender.stream_ids[0];
       content_description->AddStream(stream_param);
 
       // Store the new StreamParams in current_streams.
@@ -508,7 +510,9 @@ static bool AddStreamParams(
       // Use existing generated SSRCs/groups, but update the sync_label if
       // necessary. This may be needed if a MediaStreamTrack was moved from one
       // MediaStream to another.
-      param->sync_label = sender.stream_id;
+      // TODO(steveanton): Support any number of stream ids.
+      RTC_CHECK(sender.stream_ids.size() == 1U);
+      param->sync_label = sender.stream_ids[0];
       content_description->AddStream(*param);
     }
   }
@@ -1250,29 +1254,36 @@ std::string MediaContentDirectionToString(MediaContentDirection direction) {
   return dir_str;
 }
 
-void MediaDescriptionOptions::AddAudioSender(const std::string& track_id,
-                                             const std::string& stream_id) {
+void MediaDescriptionOptions::AddAudioSender(
+    const std::string& track_id,
+    const std::vector<std::string>& stream_ids) {
   RTC_DCHECK(type == MEDIA_TYPE_AUDIO);
-  AddSenderInternal(track_id, stream_id, 1);
+  AddSenderInternal(track_id, stream_ids, 1);
 }
 
-void MediaDescriptionOptions::AddVideoSender(const std::string& track_id,
-                                             const std::string& stream_id,
-                                             int num_sim_layers) {
+void MediaDescriptionOptions::AddVideoSender(
+    const std::string& track_id,
+    const std::vector<std::string>& stream_ids,
+    int num_sim_layers) {
   RTC_DCHECK(type == MEDIA_TYPE_VIDEO);
-  AddSenderInternal(track_id, stream_id, num_sim_layers);
+  AddSenderInternal(track_id, stream_ids, num_sim_layers);
 }
 
 void MediaDescriptionOptions::AddRtpDataChannel(const std::string& track_id,
                                                 const std::string& stream_id) {
   RTC_DCHECK(type == MEDIA_TYPE_DATA);
-  AddSenderInternal(track_id, stream_id, 1);
+  // TODO(steveanton): Is it the case that RtpDataChannel will never have more
+  // than one stream?
+  AddSenderInternal(track_id, {stream_id}, 1);
 }
 
-void MediaDescriptionOptions::AddSenderInternal(const std::string& track_id,
-                                                const std::string& stream_id,
-                                                int num_sim_layers) {
-  sender_options.push_back(SenderOptions{track_id, stream_id, num_sim_layers});
+void MediaDescriptionOptions::AddSenderInternal(
+    const std::string& track_id,
+    const std::vector<std::string>& stream_ids,
+    int num_sim_layers) {
+  // TODO(steveanton): Support any number of stream ids.
+  RTC_CHECK(stream_ids.size() == 1U);
+  sender_options.push_back(SenderOptions{track_id, stream_ids, num_sim_layers});
 }
 
 bool MediaSessionOptions::HasMediaDescription(MediaType type) const {

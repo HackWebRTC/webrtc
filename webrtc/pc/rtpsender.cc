@@ -45,16 +45,19 @@ void LocalAudioSinkAdapter::SetSink(cricket::AudioSource::Sink* sink) {
 }
 
 AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
-                               const std::string& stream_id,
+                               const std::vector<std::string>& stream_ids,
                                cricket::VoiceChannel* channel,
                                StatsCollector* stats)
     : id_(track->id()),
-      stream_id_(stream_id),
+      stream_ids_(stream_ids),
       channel_(channel),
       stats_(stats),
       track_(track),
       cached_track_enabled_(track->enabled()),
       sink_adapter_(new LocalAudioSinkAdapter()) {
+  // TODO(steveanton): Relax this constraint once more Unified Plan work is
+  // done.
+  RTC_CHECK(stream_ids_.size() == 1U);
   track_->RegisterObserver(this);
   track_->AddSink(sink_adapter_.get());
   CreateDtmfSender();
@@ -64,7 +67,8 @@ AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
                                cricket::VoiceChannel* channel,
                                StatsCollector* stats)
     : id_(track->id()),
-      stream_id_(rtc::CreateRandomUuid()),
+      // TODO(steveanton): With Unified Plan this should be empty.
+      stream_ids_({rtc::CreateRandomUuid()}),
       channel_(channel),
       stats_(stats),
       track_(track),
@@ -78,7 +82,8 @@ AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
 AudioRtpSender::AudioRtpSender(cricket::VoiceChannel* channel,
                                StatsCollector* stats)
     : id_(rtc::CreateRandomUuid()),
-      stream_id_(rtc::CreateRandomUuid()),
+      // TODO(steveanton): With Unified Plan this should be empty.
+      stream_ids_({rtc::CreateRandomUuid()}),
       channel_(channel),
       stats_(stats),
       sink_adapter_(new LocalAudioSinkAdapter()) {
@@ -297,21 +302,25 @@ void AudioRtpSender::CreateDtmfSender() {
 }
 
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
-                               const std::string& stream_id,
+                               const std::vector<std::string>& stream_ids,
                                cricket::VideoChannel* channel)
     : id_(track->id()),
-      stream_id_(stream_id),
+      stream_ids_({stream_ids}),
       channel_(channel),
       track_(track),
       cached_track_enabled_(track->enabled()),
       cached_track_content_hint_(track->content_hint()) {
+  // TODO(steveanton): Relax this constraint once more Unified Plan work is
+  // done.
+  RTC_CHECK(stream_ids_.size() == 1U);
   track_->RegisterObserver(this);
 }
 
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
                                cricket::VideoChannel* channel)
     : id_(track->id()),
-      stream_id_(rtc::CreateRandomUuid()),
+      // TODO(steveanton): With Unified Plan this should be empty.
+      stream_ids_({rtc::CreateRandomUuid()}),
       channel_(channel),
       track_(track),
       cached_track_enabled_(track->enabled()),
@@ -321,7 +330,8 @@ VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
 
 VideoRtpSender::VideoRtpSender(cricket::VideoChannel* channel)
     : id_(rtc::CreateRandomUuid()),
-      stream_id_(rtc::CreateRandomUuid()),
+      // TODO(steveanton): With Unified Plan this should be empty.
+      stream_ids_({rtc::CreateRandomUuid()}),
       channel_(channel) {}
 
 VideoRtpSender::~VideoRtpSender() {
