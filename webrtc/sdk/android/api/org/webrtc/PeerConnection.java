@@ -114,18 +114,22 @@ public class PeerConnection {
     public final List<String> tlsAlpnProtocols;
 
     /** Convenience constructor for STUN servers. */
+    @Deprecated
     public IceServer(String uri) {
       this(uri, "", "");
     }
 
+    @Deprecated
     public IceServer(String uri, String username, String password) {
       this(uri, username, password, TlsCertPolicy.TLS_CERT_POLICY_SECURE);
     }
 
+    @Deprecated
     public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy) {
       this(uri, username, password, tlsCertPolicy, "");
     }
 
+    @Deprecated
     public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy,
         String hostname) {
       this(uri, username, password, tlsCertPolicy, hostname, null);

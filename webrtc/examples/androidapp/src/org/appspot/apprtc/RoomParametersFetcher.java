@@ -187,7 +187,12 @@ public class RoomParametersFetcher {
       String credential = server.has("credential") ? server.getString("credential") : "";
       for (int j = 0; j < turnUrls.length(); j++) {
         String turnUrl = turnUrls.getString(j);
-        turnServers.add(new PeerConnection.IceServer(turnUrl, username, credential));
+        PeerConnection.IceServer turnServer =
+            PeerConnection.IceServer.builder(turnUrl)
+              .setUsername(username)
+              .setPassword(credential)
+              .createIceServer();
+        turnServers.add(turnServer);
       }
     }
     return turnServers;
@@ -204,7 +209,11 @@ public class RoomParametersFetcher {
       JSONObject server = servers.getJSONObject(i);
       String url = server.getString("urls");
       String credential = server.has("credential") ? server.getString("credential") : "";
-      ret.add(new PeerConnection.IceServer(url, "", credential));
+        PeerConnection.IceServer turnServer =
+            PeerConnection.IceServer.builder(url)
+              .setPassword(credential)
+              .createIceServer();
+      ret.add(turnServer);
     }
     return ret;
   }
