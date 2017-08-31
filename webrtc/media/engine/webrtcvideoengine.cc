@@ -434,51 +434,28 @@ void WebRtcVideoEngine::SetExternalEncoderFactory(
   encoder_factory_.reset(new CricketEncoderFactoryAdapter(encoder_factory));
 }
 
-// This is a helper function for AppendVideoCodecs below. It will return the
-// first unused dynamic payload type (in the range [96, 127]), or nothing if no
-// payload type is unused.
-static rtc::Optional<int> NextFreePayloadType(
-    const std::vector<VideoCodec>& codecs) {
+// This function will assign dynamic payload types (in the range [96, 127]) to
+// the input codecs, and also add associated RTX codecs for recognized codecs
+// (VP8, VP9, H264, and RED). It will also add default feedback params to the
+// codecs.
+static std::vector<VideoCodec> AssignPayloadTypesAndAddAssociatedRtxCodecs(
+    const std::vector<VideoCodec>& input_codecs) {
   static const int kFirstDynamicPayloadType = 96;
   static const int kLastDynamicPayloadType = 127;
-  bool is_payload_used[1 + kLastDynamicPayloadType - kFirstDynamicPayloadType] =
-      {false};
-  for (const VideoCodec& codec : codecs) {
-    if (kFirstDynamicPayloadType <= codec.id &&
-        codec.id <= kLastDynamicPayloadType) {
-      is_payload_used[codec.id - kFirstDynamicPayloadType] = true;
-    }
-  }
-  for (int i = kFirstDynamicPayloadType; i <= kLastDynamicPayloadType; ++i) {
-    if (!is_payload_used[i - kFirstDynamicPayloadType])
-      return rtc::Optional<int>(i);
-  }
-  // No free payload type.
-  return rtc::Optional<int>();
-}
-
-// This is a helper function for GetSupportedCodecs below. It will append new
-// unique codecs from |input_codecs| to |unified_codecs|. It will add default
-// feedback params to the codecs and will also add an associated RTX codec for
-// recognized codecs (VP8, VP9, H264, and RED).
-static void AppendVideoCodecs(const std::vector<VideoCodec>& input_codecs,
-                              std::vector<VideoCodec>* unified_codecs) {
+  int payload_type = kFirstDynamicPayloadType;
+  std::vector<VideoCodec> output_codecs;
   for (VideoCodec codec : input_codecs) {
-    const rtc::Optional<int> payload_type =
-        NextFreePayloadType(*unified_codecs);
-    if (!payload_type)
-      return;
-    codec.id = *payload_type;
-    // TODO(magjed): Move the responsibility of setting these parameters to the
-    // encoder factories instead.
+    codec.id = payload_type;
     if (codec.name != kRedCodecName && codec.name != kUlpfecCodecName &&
-        codec.name != kFlexfecCodecName)
+        codec.name != kFlexfecCodecName) {
       AddDefaultFeedbackParams(&codec);
-    // Don't add same codec twice.
-    if (FindMatchingCodec(*unified_codecs, codec))
-      continue;
+    }
+    output_codecs.push_back(codec);
 
-    unified_codecs->push_back(codec);
+    // Increment payload type.
+    ++payload_type;
+    if (payload_type > kLastDynamicPayloadType)
+      break;
 
     // Add associated RTX codec for recognized codecs.
     // TODO(deadbeef): Should we add RTX codecs for external codecs whose names
@@ -487,35 +464,38 @@ static void AppendVideoCodecs(const std::vector<VideoCodec>& input_codecs,
         CodecNamesEq(codec.name, kVp9CodecName) ||
         CodecNamesEq(codec.name, kH264CodecName) ||
         CodecNamesEq(codec.name, kRedCodecName)) {
-      const rtc::Optional<int> rtx_payload_type =
-          NextFreePayloadType(*unified_codecs);
-      if (!rtx_payload_type)
-        return;
-      unified_codecs->push_back(
-          VideoCodec::CreateRtxCodec(*rtx_payload_type, codec.id));
+      output_codecs.push_back(
+          VideoCodec::CreateRtxCodec(payload_type, codec.id));
+
+      // Increment payload type.
+      ++payload_type;
+      if (payload_type > kLastDynamicPayloadType)
+        break;
     }
   }
+  return output_codecs;
 }
 
 std::vector<VideoCodec> CricketEncoderFactoryAdapter::GetSupportedCodecs()
     const {
-  const std::vector<VideoCodec> internal_codecs =
-      InternalEncoderFactory().supported_codecs();
+  std::vector<VideoCodec> codecs = InternalEncoderFactory().supported_codecs();
   LOG(LS_INFO) << "Internally supported codecs: "
-               << CodecVectorToString(internal_codecs);
+               << CodecVectorToString(codecs);
 
-  std::vector<VideoCodec> unified_codecs;
-  AppendVideoCodecs(internal_codecs, &unified_codecs);
-
+  // Add external codecs.
   if (external_encoder_factory_ != nullptr) {
     const std::vector<VideoCodec>& external_codecs =
         external_encoder_factory_->supported_codecs();
-    AppendVideoCodecs(external_codecs, &unified_codecs);
+    for (const VideoCodec& codec : external_codecs) {
+      // Don't add same codec twice.
+      if (!FindMatchingCodec(codecs, codec))
+        codecs.push_back(codec);
+    }
     LOG(LS_INFO) << "Codecs supported by the external encoder factory: "
                  << CodecVectorToString(external_codecs);
   }
 
-  return unified_codecs;
+  return AssignPayloadTypesAndAddAssociatedRtxCodecs(codecs);
 }
 
 WebRtcVideoChannel::WebRtcVideoChannel(
