@@ -141,7 +141,7 @@ bool IsWindowFullScreen(
 bool IsWindowOnScreen(CFDictionaryRef window) {
   CFBooleanRef on_screen = reinterpret_cast<CFBooleanRef>(
       CFDictionaryGetValue(window, kCGWindowIsOnscreen));
-  return on_screen == NULL || CFBooleanGetValue(on_screen);
+  return on_screen != NULL && CFBooleanGetValue(on_screen);
 }
 
 bool IsWindowOnScreen(CGWindowID id) {
@@ -149,7 +149,7 @@ bool IsWindowOnScreen(CGWindowID id) {
       CFArrayCreate(NULL, reinterpret_cast<const void **>(&id), 1, NULL);
   CFArrayRef window_array =
       CGWindowListCreateDescriptionFromArray(window_id_array);
-  bool on_screen = true;
+  bool on_screen = false;
 
   if (window_array && CFArrayGetCount(window_array)) {
     on_screen = IsWindowOnScreen(reinterpret_cast<CFDictionaryRef>(

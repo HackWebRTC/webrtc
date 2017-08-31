@@ -36,15 +36,12 @@ bool GetWindowList(DesktopCapturer::SourceList* windows, bool ignore_minimized);
 bool IsWindowFullScreen(const MacDesktopConfiguration& desktop_config,
                         CFDictionaryRef window);
 
-// TODO(zijiehe): Flip the behaviors of the following two functions when native
-// APIs fail. If |window| does not represent a window, or |id| cannot be found,
-// returning false is more reasonable.
-// Returns true if the |window| is on screen. This function returns true if
+// Returns true if the |window| is on screen. This function returns false if
 // native APIs fail.
 bool IsWindowOnScreen(CFDictionaryRef window);
 
-// Returns true if the window is on screen. This function returns true if native
-// APIs fail or |id| cannot be found.
+// Returns true if the window is on screen. This function returns false if
+// native APIs fail or |id| cannot be found.
 bool IsWindowOnScreen(CGWindowID id);
 
 // Returns utf-8 encoded title of |window|. If |window| is not a window or no
