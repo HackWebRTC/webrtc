@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An encoded frame from a video stream. Used as an input for decoders and as an output for
@@ -26,18 +27,20 @@ public class EncodedImage {
   public final ByteBuffer buffer;
   public final int encodedWidth;
   public final int encodedHeight;
-  public final long captureTimeMs;
+  public final long captureTimeMs; // Deprecated
+  public final long captureTimeNs;
   public final FrameType frameType;
   public final int rotation;
   public final boolean completeFrame;
   public final Integer qp;
 
-  private EncodedImage(ByteBuffer buffer, int encodedWidth, int encodedHeight, long captureTimeMs,
+  private EncodedImage(ByteBuffer buffer, int encodedWidth, int encodedHeight, long captureTimeNs,
       FrameType frameType, int rotation, boolean completeFrame, Integer qp) {
     this.buffer = buffer;
     this.encodedWidth = encodedWidth;
     this.encodedHeight = encodedHeight;
-    this.captureTimeMs = captureTimeMs;
+    this.captureTimeMs = TimeUnit.NANOSECONDS.toMillis(captureTimeNs);
+    this.captureTimeNs = captureTimeNs;
     this.frameType = frameType;
     this.rotation = rotation;
     this.completeFrame = completeFrame;
@@ -52,7 +55,7 @@ public class EncodedImage {
     private ByteBuffer buffer;
     private int encodedWidth;
     private int encodedHeight;
-    private long captureTimeMs;
+    private long captureTimeNs;
     private EncodedImage.FrameType frameType;
     private int rotation;
     private boolean completeFrame;
@@ -75,8 +78,14 @@ public class EncodedImage {
       return this;
     }
 
+    @Deprecated
     public Builder setCaptureTimeMs(long captureTimeMs) {
-      this.captureTimeMs = captureTimeMs;
+      this.captureTimeNs = TimeUnit.MILLISECONDS.toNanos(captureTimeMs);
+      return this;
+    }
+
+    public Builder setCaptureTimeNs(long captureTimeNs) {
+      this.captureTimeNs = captureTimeNs;
       return this;
     }
 
@@ -101,7 +110,7 @@ public class EncodedImage {
     }
 
     public EncodedImage createEncodedImage() {
-      return new EncodedImage(buffer, encodedWidth, encodedHeight, captureTimeMs, frameType,
+      return new EncodedImage(buffer, encodedWidth, encodedHeight, captureTimeNs, frameType,
           rotation, completeFrame, qp);
     }
   }

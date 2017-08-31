@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import org.webrtc.ThreadUtils.ThreadChecker;
 
 /** Android hardware video decoder. */
@@ -282,8 +283,8 @@ class HardwareVideoDecoder
 
     frameInfos.offer(new FrameInfo(SystemClock.elapsedRealtime(), frame.rotation));
     try {
-      codec.queueInputBuffer(
-          index, 0 /* offset */, size, frame.captureTimeMs * 1000, 0 /* flags */);
+      codec.queueInputBuffer(index, 0 /* offset */, size,
+          TimeUnit.NANOSECONDS.toMicros(frame.captureTimeNs), 0 /* flags */);
     } catch (IllegalStateException e) {
       Logging.e(TAG, "queueInputBuffer failed", e);
       frameInfos.pollLast();

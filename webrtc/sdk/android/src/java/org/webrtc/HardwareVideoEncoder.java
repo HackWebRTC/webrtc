@@ -25,6 +25,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 /** Android hardware video encoder. */
 @TargetApi(19)
@@ -55,9 +56,9 @@ class HardwareVideoEncoder implements VideoEncoder {
   private final int keyFrameIntervalSec;
   // Interval at which to force a key frame. Used to reduce color distortions caused by some
   // Qualcomm video encoders.
-  private final long forcedKeyFrameMs;
+  private final long forcedKeyFrameNs;
   // Presentation timestamp of the last requested (or forced) key frame.
-  private long lastKeyFrameMs;
+  private long lastKeyFrameNs;
 
   private final BitrateAdjuster bitrateAdjuster;
   private int adjustedBitrate;
@@ -125,7 +126,7 @@ class HardwareVideoEncoder implements VideoEncoder {
       this.inputColorFormat = null;
     }
     this.keyFrameIntervalSec = keyFrameIntervalSec;
-    this.forcedKeyFrameMs = forceKeyFrameIntervalMs;
+    this.forcedKeyFrameNs = TimeUnit.MILLISECONDS.toNanos(forceKeyFrameIntervalMs);
     this.bitrateAdjuster = bitrateAdjuster;
     this.outputBuilders = new LinkedBlockingDeque<>();
     this.textureContext = textureContext;
@@ -150,7 +151,7 @@ class HardwareVideoEncoder implements VideoEncoder {
 
     this.callback = callback;
 
-    lastKeyFrameMs = -1;
+    lastKeyFrameNs = -1;
 
     try {
       codec = MediaCodec.createByCodecName(codecName);
@@ -257,11 +258,8 @@ class HardwareVideoEncoder implements VideoEncoder {
       }
     }
 
-    // Frame timestamp rounded to the nearest microsecond and millisecond.
-    long presentationTimestampUs = (videoFrame.getTimestampNs() + 500) / 1000;
-    long presentationTimestampMs = (presentationTimestampUs + 500) / 1000;
-    if (requestedKeyFrame || shouldForceKeyFrame(presentationTimestampMs)) {
-      requestKeyFrame(presentationTimestampMs);
+    if (requestedKeyFrame || shouldForceKeyFrame(videoFrame.getTimestampNs())) {
+      requestKeyFrame(videoFrame.getTimestampNs());
     }
 
     VideoFrame.Buffer videoFrameBuffer = videoFrame.getBuffer();
@@ -269,7 +267,7 @@ class HardwareVideoEncoder implements VideoEncoder {
     // subsampled at one byte per four pixels.
     int bufferSize = videoFrameBuffer.getHeight() * videoFrameBuffer.getWidth() * 3 / 2;
     EncodedImage.Builder builder = EncodedImage.builder()
-                                       .setCaptureTimeMs(presentationTimestampMs)
+                                       .setCaptureTimeNs(videoFrame.getTimestampNs())
                                        .setCompleteFrame(true)
                                        .setEncodedWidth(videoFrame.getBuffer().getWidth())
                                        .setEncodedHeight(videoFrame.getBuffer().getHeight())
@@ -287,7 +285,7 @@ class HardwareVideoEncoder implements VideoEncoder {
       if (videoFrameBuffer instanceof VideoFrame.TextureBuffer) {
         Logging.w(TAG, "Encoding texture buffer in byte mode; this may be inefficient");
       }
-      return encodeByteBuffer(videoFrame, videoFrameBuffer, bufferSize, presentationTimestampUs);
+      return encodeByteBuffer(videoFrame, videoFrameBuffer, bufferSize);
     }
   }
 
@@ -321,8 +319,11 @@ class HardwareVideoEncoder implements VideoEncoder {
     return VideoCodecStatus.OK;
   }
 
-  private VideoCodecStatus encodeByteBuffer(VideoFrame videoFrame,
-      VideoFrame.Buffer videoFrameBuffer, int bufferSize, long presentationTimestampUs) {
+  private VideoCodecStatus encodeByteBuffer(
+      VideoFrame videoFrame, VideoFrame.Buffer videoFrameBuffer, int bufferSize) {
+    // Frame timestamp rounded to the nearest microsecond.
+    long presentationTimestampUs = (videoFrame.getTimestampNs() + 500) / 1000;
+
     // No timeout.  Don't block for an input buffer, drop frames if the encoder falls behind.
     int index;
     try {
@@ -397,11 +398,11 @@ class HardwareVideoEncoder implements VideoEncoder {
     return initEncodeInternal(newWidth, newHeight, 0, 0, callback);
   }
 
-  private boolean shouldForceKeyFrame(long presentationTimestampMs) {
-    return forcedKeyFrameMs > 0 && presentationTimestampMs > lastKeyFrameMs + forcedKeyFrameMs;
+  private boolean shouldForceKeyFrame(long presentationTimestampNs) {
+    return forcedKeyFrameNs > 0 && presentationTimestampNs > lastKeyFrameNs + forcedKeyFrameNs;
   }
 
-  private void requestKeyFrame(long presentationTimestampMs) {
+  private void requestKeyFrame(long presentationTimestampNs) {
     // Ideally MediaCodec would honor BUFFER_FLAG_SYNC_FRAME so we could
     // indicate this in queueInputBuffer() below and guarantee _this_ frame
     // be encoded as a key frame, but sadly that flag is ignored.  Instead,
@@ -414,7 +415,7 @@ class HardwareVideoEncoder implements VideoEncoder {
       Logging.e(TAG, "requestKeyFrame failed", e);
       return;
     }
-    lastKeyFrameMs = presentationTimestampMs;
+    lastKeyFrameNs = presentationTimestampNs;
   }
 
   private Thread createOutputThread() {

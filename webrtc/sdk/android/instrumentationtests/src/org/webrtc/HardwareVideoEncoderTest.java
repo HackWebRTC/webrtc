@@ -80,7 +80,7 @@ public class HardwareVideoEncoderTest {
 
     VideoEncoder encoder = factory.createEncoder(supportedCodecs[0]);
 
-    final long presentationTimestampUs = 20000;
+    final long presentationTimestampNs = 20000;
     final CountDownLatch encodeDone = new CountDownLatch(1);
 
     VideoEncoder.Callback callback = new VideoEncoder.Callback() {
@@ -89,7 +89,7 @@ public class HardwareVideoEncoderTest {
         assertTrue(image.buffer.capacity() > 0);
         assertEquals(image.encodedWidth, SETTINGS.width);
         assertEquals(image.encodedHeight, SETTINGS.height);
-        assertEquals(image.captureTimeMs, presentationTimestampUs / 1000);
+        assertEquals(image.captureTimeNs, presentationTimestampNs);
         assertEquals(image.frameType, EncodedImage.FrameType.VideoFrameKey);
         assertEquals(image.rotation, 0);
         assertTrue(image.completeFrame);
@@ -101,7 +101,7 @@ public class HardwareVideoEncoderTest {
     assertEquals(encoder.initEncode(SETTINGS, callback), VideoCodecStatus.OK);
 
     VideoFrame.I420Buffer buffer = I420BufferImpl.allocate(SETTINGS.width, SETTINGS.height);
-    VideoFrame frame = new VideoFrame(buffer, 0 /* rotation */, presentationTimestampUs * 1000);
+    VideoFrame frame = new VideoFrame(buffer, 0 /* rotation */, presentationTimestampNs);
     VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
         new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
 
@@ -130,7 +130,7 @@ public class HardwareVideoEncoderTest {
 
     VideoEncoder encoder = factory.createEncoder(supportedCodecs[0]);
 
-    final long presentationTimestampUs = 20000;
+    final long presentationTimestampNs = 20000;
     final CountDownLatch encodeDone = new CountDownLatch(1);
 
     VideoEncoder.Callback callback = new VideoEncoder.Callback() {
@@ -139,7 +139,7 @@ public class HardwareVideoEncoderTest {
         assertTrue(image.buffer.capacity() > 0);
         assertEquals(image.encodedWidth, SETTINGS.width);
         assertEquals(image.encodedHeight, SETTINGS.height);
-        assertEquals(image.captureTimeMs, presentationTimestampUs / 1000);
+        assertEquals(image.captureTimeNs, presentationTimestampNs);
         assertEquals(image.frameType, EncodedImage.FrameType.VideoFrameKey);
         assertEquals(image.rotation, 0);
         assertTrue(image.completeFrame);
@@ -193,7 +193,7 @@ public class HardwareVideoEncoderTest {
         return null;
       }
     };
-    VideoFrame frame = new VideoFrame(buffer, 0 /* rotation */, presentationTimestampUs * 1000);
+    VideoFrame frame = new VideoFrame(buffer, 0 /* rotation */, presentationTimestampNs);
     VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
         new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
 

@@ -15,6 +15,7 @@
 #include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
 #include "webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
@@ -127,7 +128,8 @@ int32_t VideoDecoderWrapper::Decode(
   ScopedLocalRefFrame local_ref_frame(jni);
 
   FrameExtraInfo frame_extra_info;
-  frame_extra_info.capture_time_ms = input_image.capture_time_ms_;
+  frame_extra_info.capture_time_ns =
+      input_image.capture_time_ms_ * rtc::kNumNanosecsPerMillisec;
   frame_extra_info.timestamp_rtp = input_image._timeStamp;
   frame_extra_info.qp =
       qp_parsing_enabled_ ? ParseQP(input_image) : rtc::Optional<uint8_t>();
@@ -174,7 +176,6 @@ void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* jni,
                                          jobject jqp) {
   const jlong capture_time_ns =
       jni->CallLongMethod(jframe, video_frame_get_timestamp_ns_method_);
-  const uint32_t capture_time_ms = capture_time_ns / 1000 / 1000;
   FrameExtraInfo frame_extra_info;
   do {
     if (frame_extra_infos_.empty()) {
@@ -186,7 +187,7 @@ void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* jni,
     frame_extra_infos_.pop_front();
     // If the decoder might drop frames so iterate through the queue until we
     // find a matching timestamp.
-  } while (frame_extra_info.capture_time_ms != capture_time_ms);
+  } while (frame_extra_info.capture_time_ns != capture_time_ns);
 
   VideoFrame frame = android_video_buffer_factory_.CreateFrame(
       jni, jframe, frame_extra_info.timestamp_rtp);
@@ -237,12 +238,12 @@ jobject VideoDecoderWrapper::ConvertEncodedImageToJavaEncodedImage(
   if (image.qp_ != -1) {
     qp = jni->NewObject(*integer_class_, integer_constructor_, image.qp_);
   }
-  return jni->NewObject(*encoded_image_class_, encoded_image_constructor_,
-                        buffer, static_cast<jint>(image._encodedWidth),
-                        static_cast<jint>(image._encodedHeight),
-                        static_cast<jlong>(image.capture_time_ms_), frame_type,
-                        static_cast<jint>(image.rotation_),
-                        image._completeFrame, qp);
+  return jni->NewObject(
+      *encoded_image_class_, encoded_image_constructor_, buffer,
+      static_cast<jint>(image._encodedWidth),
+      static_cast<jint>(image._encodedHeight),
+      static_cast<jlong>(image.capture_time_ms_ * rtc::kNumNanosecsPerMillisec),
+      frame_type, static_cast<jint>(image.rotation_), image._completeFrame, qp);
 }
 
 int32_t VideoDecoderWrapper::HandleReturnCode(JNIEnv* jni, jobject code) {
