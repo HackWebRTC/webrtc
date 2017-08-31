@@ -31,7 +31,7 @@ class FullStackTest : public VideoQualityTest {
       "WebRTC-SimulcastScreenshare/Enabled/";
   const std::string kAlrProbingExperiment =
       std::string(AlrDetector::kScreenshareProbingBweExperimentName) +
-      "/1.1,2875,85,20,-20/";
+      "/1.1,2875,85,20,-20,0/";
 };
 
 // VideoQualityTest::Params params = {
