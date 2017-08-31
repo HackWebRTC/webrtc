@@ -905,7 +905,6 @@ Channel::Channel(int32_t channelId,
       transport_overhead_per_packet_(0),
       rtp_overhead_per_packet_(0),
       _outputSpeechType(AudioFrame::kNormalSpeech),
-      restored_packet_in_use_(false),
       rtcp_observer_(new VoERtcpObserver(this)),
       associate_send_channel_(ChannelOwner(nullptr)),
       pacing_enabled_(config.enable_voice_pacing),
@@ -1747,9 +1746,6 @@ bool Channel::ReceivePacket(const uint8_t* packet,
                             size_t packet_length,
                             const RTPHeader& header,
                             bool in_order) {
-  if (rtp_payload_registry_->IsRtx(header)) {
-    return HandleRtxPacket(packet, packet_length, header);
-  }
   const uint8_t* payload = packet + header.headerLength;
   assert(packet_length >= header.headerLength);
   size_t payload_length = packet_length - header.headerLength;
@@ -1762,35 +1758,6 @@ bool Channel::ReceivePacket(const uint8_t* packet,
                                           payload_specific, in_order);
 }
 
-bool Channel::HandleRtxPacket(const uint8_t* packet,
-                              size_t packet_length,
-                              const RTPHeader& header) {
-  if (!rtp_payload_registry_->IsRtx(header))
-    return false;
-
-  // Remove the RTX header and parse the original RTP header.
-  if (packet_length < header.headerLength)
-    return false;
-  if (packet_length > kVoiceEngineMaxIpPacketSizeBytes)
-    return false;
-  if (restored_packet_in_use_) {
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVoice, _channelId,
-                 "Multiple RTX headers detected, dropping packet");
-    return false;
-  }
-  if (!rtp_payload_registry_->RestoreOriginalPacket(
-          restored_packet_, packet, &packet_length, rtp_receiver_->SSRC(),
-          header)) {
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVoice, _channelId,
-                 "Incoming RTX packet: invalid RTP header");
-    return false;
-  }
-  restored_packet_in_use_ = true;
-  bool ret = OnRecoveredPacket(restored_packet_, packet_length);
-  restored_packet_in_use_ = false;
-  return ret;
-}
-
 bool Channel::IsPacketInOrder(const RTPHeader& header) const {
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(header.ssrc);
@@ -1801,9 +1768,6 @@ bool Channel::IsPacketInOrder(const RTPHeader& header) const {
 
 bool Channel::IsPacketRetransmitted(const RTPHeader& header,
                                     bool in_order) const {
-  // Retransmissions are handled separately if RTX is enabled.
-  if (rtp_payload_registry_->RtxEnabled())
-    return false;
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(header.ssrc);
   if (!statistician)

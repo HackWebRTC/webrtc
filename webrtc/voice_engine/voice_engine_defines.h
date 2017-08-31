@@ -34,8 +34,6 @@ const float kMinOutputVolumePanning = 0.0f;
 // Max scale factor for output volume panning
 const float kMaxOutputVolumePanning = 1.0f;
 
-enum { kVoiceEngineMaxIpPacketSizeBytes = 1500 };  // assumes Ethernet
-
 // Audio processing
 const NoiseSuppression::Level kDefaultNsMode = NoiseSuppression::kModerate;
 const GainControl::Mode kDefaultAgcMode =

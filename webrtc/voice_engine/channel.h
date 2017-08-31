@@ -426,9 +426,6 @@ class Channel
                      size_t packet_length,
                      const RTPHeader& header,
                      bool in_order);
-  bool HandleRtxPacket(const uint8_t* packet,
-                       size_t packet_length,
-                       const RTPHeader& header);
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   int ResendPackets(const uint16_t* sequence_numbers, int length);
@@ -495,7 +492,6 @@ class Channel
   uint32_t playout_timestamp_rtp_ GUARDED_BY(video_sync_lock_);
   uint32_t playout_delay_ms_ GUARDED_BY(video_sync_lock_);
   uint16_t send_sequence_number_;
-  uint8_t restored_packet_[kVoiceEngineMaxIpPacketSizeBytes];
 
   rtc::CriticalSection ts_stats_lock_;
 
@@ -529,8 +525,6 @@ class Channel
   rtc::CriticalSection overhead_per_packet_lock_;
   // VoENetwork
   AudioFrame::SpeechType _outputSpeechType;
-  // DTX.
-  bool restored_packet_in_use_;
   // RtcpBandwidthObserver
   std::unique_ptr<VoERtcpObserver> rtcp_observer_;
   // An associated send channel.
