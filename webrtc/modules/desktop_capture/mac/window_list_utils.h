@@ -58,6 +58,11 @@ WindowId GetWindowId(CFDictionaryRef window);
 // from (0, 0).
 DesktopRect GetWindowBounds(CFDictionaryRef window);
 
+// Returns the bounds of window with |id|. If |id| does not represent a window
+// or the bounds cannot be retrieved, this function returns an empty
+// DesktopRect. The returned DesktopRect is in system coordinates.
+DesktopRect GetWindowBounds(CGWindowID id);
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_

@@ -316,6 +316,8 @@ void WindowCapturerWin::CaptureFrame() {
 
   frame->mutable_updated_region()->SetRect(
       DesktopRect::MakeSize(frame->size()));
+  frame->set_top_left(
+      cropped_rect.top_left().subtract(GetFullscreenRect().top_left()));
 
   if (result) {
     callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));

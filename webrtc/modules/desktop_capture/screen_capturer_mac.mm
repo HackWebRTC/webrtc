@@ -373,9 +373,7 @@ class InvertedDesktopFrame : public DesktopFrame {
             frame->data() + (frame->size().height() - 1) * frame->stride(),
             frame->shared_memory()) {
     original_frame_ = std::move(frame);
-    set_dpi(original_frame_->dpi());
-    set_capture_time_ms(original_frame_->capture_time_ms());
-    mutable_updated_region()->Swap(original_frame_->mutable_updated_region());
+    MoveFrameInfoFrom(original_frame_.get());
   }
   ~InvertedDesktopFrame() override {}
 
@@ -493,6 +491,15 @@ void ScreenCapturerMac::CaptureFrame() {
 
   if (flip)
     new_frame.reset(new InvertedDesktopFrame(std::move(new_frame)));
+
+  if (current_display_) {
+    const MacDisplayConfiguration* config =
+        desktop_config_.FindDisplayConfigurationById(current_display_);
+    if (config) {
+      new_frame->set_top_left(config->bounds.top_left().subtract(
+          desktop_config_.bounds.top_left()));
+    }
+  }
 
   helper_.set_size_most_recent(new_frame->size());
 

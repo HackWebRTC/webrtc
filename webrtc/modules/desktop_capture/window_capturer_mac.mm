@@ -204,6 +204,14 @@ void WindowCapturerMac::CaptureFrame() {
 
   frame->mutable_updated_region()->SetRect(
       DesktopRect::MakeSize(frame->size()));
+  DesktopVector top_left = GetWindowBounds(on_screen_window).top_left();
+  if (configuration_monitor_) {
+    configuration_monitor_->Lock();
+    auto configuration = configuration_monitor_->desktop_configuration();
+    configuration_monitor_->Unlock();
+    top_left = top_left.subtract(configuration.bounds.top_left());
+  }
+  frame->set_top_left(top_left);
 
   callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 

@@ -195,6 +195,7 @@ bool ScreenCapturerWinGdi::CaptureImage() {
       return false;
     queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(std::move(buffer)));
   }
+  queue_.current_frame()->set_top_left(screen_rect.top_left());
 
   // Select the target bitmap into the memory dc and copy the rect from desktop
   // to memory.

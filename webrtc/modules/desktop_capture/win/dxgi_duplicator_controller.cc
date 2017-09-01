@@ -333,6 +333,7 @@ bool DxgiDuplicatorController::DoDuplicateOne(Context* context,
     } else {
       if (duplicators_[i].DuplicateMonitor(&context->contexts[i], monitor_id,
                                            target)) {
+        target->set_top_left(duplicators_[i].ScreenRect(monitor_id).top_left());
         return true;
       }
       return false;
