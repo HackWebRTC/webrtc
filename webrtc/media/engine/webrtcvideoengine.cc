@@ -24,6 +24,7 @@
 #include "webrtc/media/engine/constants.h"
 #include "webrtc/media/engine/internaldecoderfactory.h"
 #include "webrtc/media/engine/internalencoderfactory.h"
+#include "webrtc/media/engine/scopedvideodecoder.h"
 #include "webrtc/media/engine/scopedvideoencoder.h"
 #include "webrtc/media/engine/simulcast.h"
 #include "webrtc/media/engine/simulcast_encoder_adapter.h"
@@ -71,6 +72,17 @@ class EncoderFactoryAdapter {
   virtual std::unique_ptr<EncoderFactoryAdapter> clone() const = 0;
 };
 
+class DecoderFactoryAdapter {
+ public:
+  virtual ~DecoderFactoryAdapter() {}
+
+  virtual std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
+      webrtc::VideoCodecType type,
+      const VideoDecoderParams& decoder_params) const = 0;
+
+  virtual std::unique_ptr<DecoderFactoryAdapter> clone() const = 0;
+};
+
 namespace {
 
 // Wraps cricket::WebRtcVideoEncoderFactory* into common EncoderFactoryAdapter
@@ -102,6 +114,31 @@ class CricketEncoderFactoryAdapter : public EncoderFactoryAdapter {
 
   const std::unique_ptr<WebRtcVideoEncoderFactory> internal_encoder_factory_;
   WebRtcVideoEncoderFactory* const external_encoder_factory_;
+};
+
+class CricketDecoderFactoryAdapter : public DecoderFactoryAdapter {
+ public:
+  explicit CricketDecoderFactoryAdapter(
+      WebRtcVideoDecoderFactory* external_decoder_factory)
+      : internal_decoder_factory_(new InternalDecoderFactory()),
+        external_decoder_factory_(external_decoder_factory) {}
+
+ private:
+  explicit CricketDecoderFactoryAdapter(
+      const CricketDecoderFactoryAdapter& other)
+      : CricketDecoderFactoryAdapter(other.external_decoder_factory_) {}
+
+  std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
+      webrtc::VideoCodecType type,
+      const VideoDecoderParams& decoder_params) const override;
+
+  std::unique_ptr<DecoderFactoryAdapter> clone() const override {
+    return std::unique_ptr<DecoderFactoryAdapter>(
+        new CricketDecoderFactoryAdapter(*this));
+  }
+
+  const std::unique_ptr<WebRtcVideoDecoderFactory> internal_decoder_factory_;
+  WebRtcVideoDecoderFactory* const external_decoder_factory_;
 };
 
 // If this field trial is enabled, we will enable sending FlexFEC and disable
@@ -367,7 +404,8 @@ void DefaultUnsignalledSsrcHandler::SetDefaultSink(
 
 WebRtcVideoEngine::WebRtcVideoEngine()
     : initialized_(false),
-      external_decoder_factory_(NULL),
+      decoder_factory_(new CricketDecoderFactoryAdapter(
+          nullptr /* external_decoder_factory */)),
       encoder_factory_(new CricketEncoderFactoryAdapter(
           nullptr /* external_encoder_factory */)) {
   LOG(LS_INFO) << "WebRtcVideoEngine::WebRtcVideoEngine()";
@@ -389,7 +427,7 @@ WebRtcVideoChannel* WebRtcVideoEngine::CreateChannel(
   RTC_DCHECK(initialized_);
   LOG(LS_INFO) << "CreateChannel. Options: " << options.ToString();
   return new WebRtcVideoChannel(call, config, options, *encoder_factory_,
-                                external_decoder_factory_);
+                                *decoder_factory_);
 }
 
 std::vector<VideoCodec> WebRtcVideoEngine::codecs() const {
@@ -425,7 +463,7 @@ RtpCapabilities WebRtcVideoEngine::GetCapabilities() const {
 void WebRtcVideoEngine::SetExternalDecoderFactory(
     WebRtcVideoDecoderFactory* decoder_factory) {
   RTC_DCHECK(!initialized_);
-  external_decoder_factory_ = decoder_factory;
+  decoder_factory_.reset(new CricketDecoderFactoryAdapter(decoder_factory));
 }
 
 void WebRtcVideoEngine::SetExternalEncoderFactory(
@@ -503,13 +541,13 @@ WebRtcVideoChannel::WebRtcVideoChannel(
     const MediaConfig& config,
     const VideoOptions& options,
     const EncoderFactoryAdapter& encoder_factory,
-    WebRtcVideoDecoderFactory* external_decoder_factory)
+    const DecoderFactoryAdapter& decoder_factory)
     : VideoMediaChannel(config),
       call_(call),
       unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
       video_config_(config.video),
       encoder_factory_(encoder_factory.clone()),
-      external_decoder_factory_(external_decoder_factory),
+      decoder_factory_(decoder_factory.clone()),
       default_send_options_(options),
       last_stats_log_ms_(-1) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -1125,7 +1163,7 @@ bool WebRtcVideoChannel::AddRecvStream(const StreamParams& sp,
   config.sync_group = sp.sync_label;
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
-      call_, sp, std::move(config), external_decoder_factory_, default_stream,
+      call_, sp, std::move(config), *decoder_factory_, default_stream,
       recv_codecs_, flexfec_config);
 
   return true;
@@ -2063,7 +2101,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::Call* call,
     const StreamParams& sp,
     webrtc::VideoReceiveStream::Config config,
-    WebRtcVideoDecoderFactory* external_decoder_factory,
+    const DecoderFactoryAdapter& decoder_factory,
     bool default_stream,
     const std::vector<VideoCodecSettings>& recv_codecs,
     const webrtc::FlexfecReceiveStream::Config& flexfec_config)
@@ -2074,32 +2112,18 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
       config_(std::move(config)),
       flexfec_config_(flexfec_config),
       flexfec_stream_(nullptr),
-      external_decoder_factory_(external_decoder_factory),
+      decoder_factory_(decoder_factory.clone()),
       sink_(NULL),
       first_frame_timestamp_(-1),
       estimated_remote_start_ntp_time_ms_(0) {
   config_.renderer = this;
-  std::vector<AllocatedDecoder> old_decoders;
+  std::map<webrtc::VideoCodecType, std::unique_ptr<webrtc::VideoDecoder>>
+      old_decoders;
   ConfigureCodecs(recv_codecs, &old_decoders);
   ConfigureFlexfecCodec(flexfec_config.payload_type);
   MaybeRecreateWebRtcFlexfecStream();
   RecreateWebRtcVideoStream();
   RTC_DCHECK(old_decoders.empty());
-}
-
-WebRtcVideoChannel::WebRtcVideoReceiveStream::AllocatedDecoder::
-    AllocatedDecoder(webrtc::VideoDecoder* decoder,
-                     webrtc::VideoCodecType type,
-                     bool external)
-    : decoder(decoder),
-      external_decoder(nullptr),
-      type(type),
-      external(external) {
-  if (external) {
-    external_decoder = decoder;
-    this->decoder =
-        new webrtc::VideoDecoderSoftwareFallbackWrapper(type, external_decoder);
-  }
 }
 
 WebRtcVideoChannel::WebRtcVideoReceiveStream::~WebRtcVideoReceiveStream() {
@@ -2108,7 +2132,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::~WebRtcVideoReceiveStream() {
     call_->DestroyFlexfecReceiveStream(flexfec_stream_);
   }
   call_->DestroyVideoReceiveStream(stream_);
-  ClearDecoders(&allocated_decoders_);
+  allocated_decoders_.clear();
 }
 
 const std::vector<uint32_t>&
@@ -2129,53 +2153,59 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetFirstPrimarySsrc() const {
   }
 }
 
-WebRtcVideoChannel::WebRtcVideoReceiveStream::AllocatedDecoder
-WebRtcVideoChannel::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
-    std::vector<AllocatedDecoder>* old_decoders,
-    const VideoCodec& codec) {
-  webrtc::VideoCodecType type = webrtc::PayloadStringToCodecType(codec.name);
-
-  for (size_t i = 0; i < old_decoders->size(); ++i) {
-    if ((*old_decoders)[i].type == type) {
-      AllocatedDecoder decoder = (*old_decoders)[i];
-      (*old_decoders)[i] = old_decoders->back();
-      old_decoders->pop_back();
-      return decoder;
+std::unique_ptr<webrtc::VideoDecoder>
+CricketDecoderFactoryAdapter::CreateVideoDecoder(
+    webrtc::VideoCodecType type,
+    const VideoDecoderParams& decoder_params) const {
+  if (external_decoder_factory_ != nullptr) {
+    std::unique_ptr<webrtc::VideoDecoder> external_decoder =
+        CreateScopedVideoDecoder(external_decoder_factory_, type,
+                                 decoder_params);
+    if (external_decoder) {
+      std::unique_ptr<webrtc::VideoDecoder> internal_decoder(
+          new webrtc::VideoDecoderSoftwareFallbackWrapper(
+              type, std::move(external_decoder)));
+      return internal_decoder;
     }
   }
 
-  if (external_decoder_factory_ != NULL) {
-    webrtc::VideoDecoder* decoder =
-        external_decoder_factory_->CreateVideoDecoderWithParams(
-            type, {stream_params_.id});
-    if (decoder != NULL) {
-      return AllocatedDecoder(decoder, type, true /* is_external */);
-    }
-  }
-
-  InternalDecoderFactory internal_decoder_factory;
-  return AllocatedDecoder(internal_decoder_factory.CreateVideoDecoderWithParams(
-                              type, {stream_params_.id}),
-                          type, false /* is_external */);
+  std::unique_ptr<webrtc::VideoDecoder> internal_decoder(
+      internal_decoder_factory_->CreateVideoDecoderWithParams(type,
+                                                              decoder_params));
+  return internal_decoder;
 }
 
 void WebRtcVideoChannel::WebRtcVideoReceiveStream::ConfigureCodecs(
     const std::vector<VideoCodecSettings>& recv_codecs,
-    std::vector<AllocatedDecoder>* old_decoders) {
-  *old_decoders = allocated_decoders_;
+    std::map<webrtc::VideoCodecType, std::unique_ptr<webrtc::VideoDecoder>>*
+        old_decoders) {
+  *old_decoders = std::move(allocated_decoders_);
   allocated_decoders_.clear();
   config_.decoders.clear();
   for (size_t i = 0; i < recv_codecs.size(); ++i) {
-    AllocatedDecoder allocated_decoder =
-        CreateOrReuseVideoDecoder(old_decoders, recv_codecs[i].codec);
-    allocated_decoders_.push_back(allocated_decoder);
+    webrtc::VideoCodecType type =
+        webrtc::PayloadStringToCodecType(recv_codecs[i].codec.name);
+    std::unique_ptr<webrtc::VideoDecoder> new_decoder;
+
+    auto it = old_decoders->find(type);
+    if (it != old_decoders->end()) {
+      new_decoder = std::move(it->second);
+      old_decoders->erase(it);
+    }
+
+    if (!new_decoder) {
+      new_decoder =
+          decoder_factory_->CreateVideoDecoder(type, {stream_params_.id});
+    }
 
     webrtc::VideoReceiveStream::Decoder decoder;
-    decoder.decoder = allocated_decoder.decoder;
+    decoder.decoder = new_decoder.get();
     decoder.payload_type = recv_codecs[i].codec.id;
     decoder.payload_name = recv_codecs[i].codec.name;
     decoder.codec_params = recv_codecs[i].codec.params;
     config_.decoders.push_back(decoder);
+
+    allocated_decoders_.insert(std::make_pair(type, std::move(new_decoder)));
   }
 
   config_.rtp.rtx_associated_payload_types.clear();
@@ -2253,7 +2283,8 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetRecvParameters(
     const ChangedRecvParameters& params) {
   bool video_needs_recreation = false;
   bool flexfec_needs_recreation = false;
-  std::vector<AllocatedDecoder> old_decoders;
+  std::map<webrtc::VideoCodecType, std::unique_ptr<webrtc::VideoDecoder>>
+      old_decoders;
   if (params.codec_settings) {
     ConfigureCodecs(*params.codec_settings, &old_decoders);
     video_needs_recreation = true;
@@ -2277,7 +2308,6 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetRecvParameters(
     LOG(LS_INFO)
         << "RecreateWebRtcVideoStream (recv) because of SetRecvParameters";
     RecreateWebRtcVideoStream();
-    ClearDecoders(&old_decoders);
   }
 }
 
@@ -2320,18 +2350,6 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::
   if (stream_ && flexfec_stream_) {
     stream_->RemoveSecondarySink(flexfec_stream_);
   }
-}
-
-void WebRtcVideoChannel::WebRtcVideoReceiveStream::ClearDecoders(
-    std::vector<AllocatedDecoder>* allocated_decoders) {
-  for (size_t i = 0; i < allocated_decoders->size(); ++i) {
-    if ((*allocated_decoders)[i].external) {
-      external_decoder_factory_->DestroyVideoDecoder(
-          (*allocated_decoders)[i].external_decoder);
-    }
-    delete (*allocated_decoders)[i].decoder;
-  }
-  allocated_decoders->clear();
 }
 
 void WebRtcVideoChannel::WebRtcVideoReceiveStream::OnFrame(

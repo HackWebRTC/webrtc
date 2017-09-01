@@ -21,10 +21,10 @@ namespace webrtc {
 // Class used to wrap external VideoDecoders to provide a fallback option on
 // software decoding when a hardware decoder fails to decode a stream due to
 // hardware restrictions, such as max resolution.
-class VideoDecoderSoftwareFallbackWrapper : public webrtc::VideoDecoder {
+class VideoDecoderSoftwareFallbackWrapper : public VideoDecoder {
  public:
   VideoDecoderSoftwareFallbackWrapper(VideoCodecType codec_type,
-                                      VideoDecoder* decoder);
+                                      std::unique_ptr<VideoDecoder> decoder);
 
   int32_t InitDecode(const VideoCodec* codec_settings,
                      int32_t number_of_cores) override;
@@ -47,7 +47,7 @@ class VideoDecoderSoftwareFallbackWrapper : public webrtc::VideoDecoder {
   bool InitFallbackDecoder();
 
   const VideoCodecType codec_type_;
-  VideoDecoder* const decoder_;
+  std::unique_ptr<VideoDecoder> decoder_;
   bool decoder_initialized_;
 
   VideoCodec codec_settings_;
