@@ -1128,6 +1128,16 @@ int32_t ModuleFileUtility::InitPCMReading(InStream& pcm,
         codec_info_.rate     = 512000;
         _codecId = kCodecL16_32Khz;
     }
+    else if(freq == 48000)
+    {
+        strcpy(codec_info_.plname, "L16");
+        codec_info_.pltype   = -1;
+        codec_info_.plfreq   = 48000;
+        codec_info_.pacsize  = 480;
+        codec_info_.channels = 1;
+        codec_info_.rate     = 768000;
+        _codecId = kCodecL16_48Khz;
+    }
 
     // Readsize for 10ms of audio data (2 bytes per sample).
     _readSizeBytes = 2 * codec_info_. plfreq / 100;
@@ -1261,11 +1271,23 @@ int32_t ModuleFileUtility::InitPCMWriting(OutStream& out, uint32_t freq)
 
         _codecId = kCodecL16_32Khz;
     }
+    else if(freq == 48000)
+    {
+        strcpy(codec_info_.plname, "L16");
+        codec_info_.pltype   = -1;
+        codec_info_.plfreq   = 48000;
+        codec_info_.pacsize  = 480;
+        codec_info_.channels = 1;
+        codec_info_.rate     = 768000;
+
+        _codecId = kCodecL16_48Khz;
+    }
     if((_codecId != kCodecL16_8Khz) &&
        (_codecId != kCodecL16_16kHz) &&
-       (_codecId != kCodecL16_32Khz))
+       (_codecId != kCodecL16_32Khz) &&
+       (_codecId != kCodecL16_48Khz))
     {
-        LOG(LS_ERROR) << "CodecInst is not 8KHz PCM or 16KHz PCM!";
+        LOG(LS_ERROR) << "CodecInst is not 8KHz, 16KHz, 32kHz or 48kHz PCM!";
         return -1;
     }
     _writing = true;
@@ -1334,6 +1356,10 @@ int32_t ModuleFileUtility::set_codec_info(const CodecInst& codecInst)
         else if(codecInst.plfreq == 32000)
         {
             _codecId = kCodecL16_32Khz;
+        }
+        else if(codecInst.plfreq == 48000)
+        {
+            _codecId = kCodecL16_48Khz;
         }
     }
 #ifdef WEBRTC_CODEC_ILBC

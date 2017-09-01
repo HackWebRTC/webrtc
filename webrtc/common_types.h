@@ -142,7 +142,8 @@ enum FileFormats {
   kFileFormatPreencodedFile = 4,
   kFileFormatPcm16kHzFile = 7,
   kFileFormatPcm8kHzFile = 8,
-  kFileFormatPcm32kHzFile = 9
+  kFileFormatPcm32kHzFile = 9,
+  kFileFormatPcm48kHzFile = 10
 };
 
 enum FrameType {
