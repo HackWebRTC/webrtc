@@ -198,9 +198,9 @@ void AudioEncoderCng::OnReceivedUplinkRecoverablePacketLossFraction(
 
 void AudioEncoderCng::OnReceivedUplinkBandwidth(
     int target_audio_bitrate_bps,
-    rtc::Optional<int64_t> probing_interval_ms) {
+    rtc::Optional<int64_t> bwe_period_ms) {
   speech_encoder_->OnReceivedUplinkBandwidth(target_audio_bitrate_bps,
-                                             probing_interval_ms);
+                                             bwe_period_ms);
 }
 
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(
