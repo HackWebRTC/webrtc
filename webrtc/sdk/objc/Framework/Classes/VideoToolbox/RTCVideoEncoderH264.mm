@@ -148,8 +148,10 @@ void compressionOutputCallback(void *encoder,
                                OSStatus status,
                                VTEncodeInfoFlags infoFlags,
                                CMSampleBufferRef sampleBuffer) {
+  RTC_CHECK(params);
   std::unique_ptr<RTCFrameEncodeParams> encodeParams(
       reinterpret_cast<RTCFrameEncodeParams *>(params));
+  RTC_CHECK(encodeParams->encoder);
   [encodeParams->encoder frameWasEncoded:status
                                    flags:infoFlags
                             sampleBuffer:sampleBuffer
