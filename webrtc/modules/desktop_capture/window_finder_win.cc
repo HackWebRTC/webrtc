@@ -12,6 +12,8 @@
 
 #include <windows.h>
 
+#include "webrtc/rtc_base/ptr_util.h"
+
 namespace webrtc {
 
 WindowFinderWin::WindowFinderWin() = default;
@@ -33,6 +35,12 @@ WindowId WindowFinderWin::GetWindowUnderPoint(DesktopVector point) {
   }
 
   return reinterpret_cast<WindowId>(window);
+}
+
+// static
+std::unique_ptr<WindowFinder> WindowFinder::Create(
+    const WindowFinder::Options& options) {
+  return rtc::MakeUnique<WindowFinderWin>();
 }
 
 }  // namespace webrtc

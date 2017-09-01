@@ -58,6 +58,7 @@ if (rtc_include_tests) {
       sources += [
         "screen_capturer_integration_test.cc",
         "screen_drawer_unittest.cc",
+        "window_finder_unittest.cc",
       ]
     }
   }

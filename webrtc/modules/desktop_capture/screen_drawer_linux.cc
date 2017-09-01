@@ -36,6 +36,7 @@ class ScreenDrawerLinux : public ScreenDrawer {
   void Clear() override;
   void WaitForPendingDraws() override;
   bool MayDrawIncompleteShapes() override;
+  WindowId window_id() const override;
 
  private:
   // Bring the window to the front, this can help to avoid the impact from other
@@ -134,6 +135,10 @@ void ScreenDrawerLinux::WaitForPendingDraws() {
 
 bool ScreenDrawerLinux::MayDrawIncompleteShapes() {
   return true;
+}
+
+WindowId ScreenDrawerLinux::window_id() const {
+  return window_;
 }
 
 void ScreenDrawerLinux::BringToFront() {
