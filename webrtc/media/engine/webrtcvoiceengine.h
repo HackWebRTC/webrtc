@@ -20,7 +20,6 @@
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/call/call.h"
-#include "webrtc/config.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/media/engine/apm_helpers.h"
 #include "webrtc/media/engine/webrtccommon.h"

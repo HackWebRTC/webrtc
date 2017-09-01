@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/config.h"
+#include <utility>
 
-#include <vector>
+#include "webrtc/api/rtpparameters.h"
+#include "webrtc/test/gtest.h"
 
-#include "webrtc/rtc_base/gunit.h"
+namespace webrtc {
 
 using webrtc::RtpExtension;
 
@@ -47,3 +48,4 @@ TEST(RtpExtensionTest, FilterDuplicateNonEncrypted) {
   EXPECT_EQ(2u, filtered.size());
   EXPECT_EQ(extensions, filtered);
 }
+}  // namespace webrtc

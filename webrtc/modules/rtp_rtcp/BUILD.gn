@@ -341,6 +341,7 @@ if (rtc_include_tests) {
       ":rtp_rtcp",
       "..:module_api",
       "../..:webrtc_common",
+      "../../api:libjingle_peerconnection_api",
       "../../api:transport_api",
       "../../common_video:common_video",
       "../../rtc_base:rtc_base_approved",

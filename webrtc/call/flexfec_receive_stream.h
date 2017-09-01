@@ -17,8 +17,9 @@
 #include <vector>
 
 #include "webrtc/api/call/transport.h"
+#include "webrtc/api/rtpparameters.h"
 #include "webrtc/call/rtp_packet_sink_interface.h"
-#include "webrtc/config.h"
+#include "webrtc/common_types.h"
 
 namespace webrtc {
 

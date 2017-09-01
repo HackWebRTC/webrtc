@@ -18,7 +18,7 @@
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/video/video_timing.h"
-#include "webrtc/config.h"
+#include "webrtc/call/video_config.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"

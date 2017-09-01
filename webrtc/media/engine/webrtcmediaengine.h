@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "webrtc/call/call.h"
-#include "webrtc/config.h"
 #include "webrtc/media/base/mediaengine.h"
 
 namespace webrtc {

@@ -14,8 +14,8 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/call/video_config.h"
 #include "webrtc/common_types.h"
-#include "webrtc/config.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"

@@ -15,7 +15,6 @@
 
 #include "webrtc/api/video_codecs/video_encoder.h"
 #include "webrtc/common_types.h"
-#include "webrtc/config.h"
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/thread_annotations.h"

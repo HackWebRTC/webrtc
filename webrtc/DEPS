@@ -9,8 +9,8 @@ include_rules = [
   "+libyuv",
   "-webrtc",  # Has to be disabled; otherwise all dirs below will be allowed.
   # Individual headers that will be moved out of here, see webrtc:4243.
+  "+webrtc/call/rtp_config.h",
   "+webrtc/common_types.h",
-  "+webrtc/config.h",
   "+webrtc/transport.h",
   "+webrtc/typedefs.h",
   "+webrtc/voice_engine_configurations.h",

@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/config.h"
+#include "webrtc/call/video_config.h"
 #include "webrtc/rtc_base/basictypes.h"
 
 namespace cricket {

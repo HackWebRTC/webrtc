@@ -22,13 +22,8 @@
 
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/api/jsepsessiondescription.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/stringutils.h"
 // for RtpExtension
-#include "webrtc/config.h"
+#include "webrtc/api/rtpparameters.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/mediaconstants.h"
@@ -38,6 +33,11 @@
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/pc/mediasession.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/messagedigest.h"
+#include "webrtc/rtc_base/stringutils.h"
 
 using cricket::AudioContentDescription;
 using cricket::Candidate;

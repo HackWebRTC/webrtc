@@ -38,6 +38,8 @@ rtc_source_set("call_interfaces") {
 rtc_source_set("rtp_interfaces") {
   sources = [
     "rtcp_packet_sink_interface.h",
+    "rtp_config.cc",
+    "rtp_config.h",
     "rtp_packet_sink_interface.h",
     "rtp_stream_receiver_controller_interface.h",
     "rtp_transport_controller_send_interface.h",
@@ -100,6 +102,7 @@ rtc_static_library("call") {
   public_deps = [
     ":call_interfaces",
     "../api:call_api",
+    "../api:libjingle_peerconnection_api",
   ]
 
   deps = [
@@ -107,6 +110,7 @@ rtc_static_library("call") {
     ":rtp_interfaces",
     ":rtp_receiver",
     ":rtp_sender",
+    ":video_stream_api",
     "..:webrtc_common",
     "../api:transport_api",
     "../audio",
@@ -127,13 +131,17 @@ rtc_static_library("call") {
 
 rtc_source_set("video_stream_api") {
   sources = [
+    "video_config.cc",
+    "video_config.h",
     "video_receive_stream.cc",
     "video_receive_stream.h",
     "video_send_stream.cc",
     "video_send_stream.h",
   ]
   deps = [
+    ":rtp_interfaces",
     "../:webrtc_common",
+    "../api:libjingle_peerconnection_api",
     "../api:transport_api",
     "../common_video:common_video",
     "../rtc_base:rtc_base_approved",
@@ -209,6 +217,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":call_interfaces",
+      ":video_stream_api",
       "..:webrtc_common",
       "../api/audio_codecs:builtin_audio_encoder_factory",
       "../logging:rtc_event_log_api",

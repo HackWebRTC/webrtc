@@ -16,8 +16,8 @@
 #include <set>
 #include <string>
 
+#include "webrtc/api/rtpparameters.h"
 #include "webrtc/common_types.h"
-#include "webrtc/config.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 

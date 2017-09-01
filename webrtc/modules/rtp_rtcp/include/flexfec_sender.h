@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/config.h"
+#include "webrtc/api/rtpparameters.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"

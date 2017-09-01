@@ -15,7 +15,6 @@
 
 #include "webrtc/audio/utility/audio_frame_operations.h"
 #include "webrtc/call/rtp_transport_controller_send_interface.h"
-#include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"

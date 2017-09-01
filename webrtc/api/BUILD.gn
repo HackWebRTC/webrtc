@@ -62,6 +62,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "proxy.h",
     "rtcerror.cc",
     "rtcerror.h",
+    "rtpparameters.cc",
     "rtpparameters.h",
     "rtpreceiverinterface.h",
     "rtpsender.h",
@@ -258,6 +259,7 @@ if (rtc_include_tests) {
       "ortc/mediadescription_unittest.cc",
       "ortc/sessiondescription_unittest.cc",
       "rtcerror_unittest.cc",
+      "rtpparameters_unittest.cc",
     ]
 
     if (!build_with_chromium && is_clang) {

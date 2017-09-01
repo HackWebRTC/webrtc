@@ -18,9 +18,10 @@
 
 #include "webrtc/api/audio_codecs/audio_decoder_factory.h"
 #include "webrtc/api/call/transport.h"
+#include "webrtc/api/rtpparameters.h"
 #include "webrtc/api/rtpreceiverinterface.h"
+#include "webrtc/call/rtp_config.h"
 #include "webrtc/common_types.h"
-#include "webrtc/config.h"
 #include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/scoped_ref_ptr.h"
 #include "webrtc/typedefs.h"

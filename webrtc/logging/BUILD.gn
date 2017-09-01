@@ -29,6 +29,7 @@ rtc_source_set("rtc_event_log_api") {
   ]
   deps = [
     "..:webrtc_common",
+    "../api:libjingle_peerconnection_api",
     "../call:video_stream_api",
     "../rtc_base:rtc_base_approved",
   ]
@@ -159,6 +160,7 @@ if (rtc_enable_protobuf) {
         ":rtc_event_log_api",
         ":rtc_event_log_impl",
         ":rtc_event_log_parser",
+        "../call:video_stream_api",
         "../rtc_base:rtc_base_approved",
 
         # TODO(kwiberg): Remove this dependency.

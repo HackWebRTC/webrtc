@@ -15,7 +15,8 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/config.h"
+#include "webrtc/api/rtpparameters.h"
+#include "webrtc/common_types.h"
 #include "webrtc/rtc_base/platform_file.h"
 
 namespace webrtc {

@@ -16,8 +16,8 @@
 #include <string>
 #include <utility>  // pair
 
+#include "webrtc/call/video_config.h"
 #include "webrtc/common_types.h"
-#include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"

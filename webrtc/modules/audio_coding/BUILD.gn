@@ -1569,8 +1569,11 @@ if (rtc_include_tests) {
       ":isac_fix",
       ":webrtc_opus",
       "../..:webrtc_common",
+      "../../api:libjingle_peerconnection_api",
       "../../rtc_base:rtc_base_approved",
+      "../../system_wrappers:metrics_default",
       "../../system_wrappers:system_wrappers_default",
+      "../../test:field_trial",
       "../../test:test_main",
       "../audio_processing",
       "//testing/gtest",
@@ -1702,6 +1705,8 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../common_audio",
       "../../rtc_base:rtc_base_approved",
+      "../../system_wrappers:metrics_default",
+      "../../test:field_trial",
     ]
 
     configs += [ ":RTPencode_config" ]

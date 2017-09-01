@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "webrtc/config.h"
+#include "webrtc/api/rtpparameters.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
