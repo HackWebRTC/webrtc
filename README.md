@@ -21,3 +21,5 @@ started developing with the native code.
  * Samples and reference apps: https://github.com/webrtc
  * Mailing list: http://groups.google.com/group/discuss-webrtc
  * Continuous build: http://build.chromium.org/p/client.webrtc
+ * [Coding style guide](style-guide.md)
+ * [Code of conduct](CODE_OF_CONDUCT.md)
