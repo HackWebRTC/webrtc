@@ -182,6 +182,7 @@ if (rtc_include_tests) {
       "../modules/bitrate_controller",
       "../modules/congestion_controller:mock_congestion_controller",
       "../modules/pacing",
+      "../modules/pacing:mock_paced_sender",
       "../modules/rtp_rtcp",
       "../modules/rtp_rtcp:mock_rtp_rtcp",
       "../modules/utility:mock_process_thread",

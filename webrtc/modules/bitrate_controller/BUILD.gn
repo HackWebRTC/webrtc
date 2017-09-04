@@ -61,6 +61,7 @@ if (rtc_include_tests) {
       ":bitrate_controller",
       "../../test:field_trial",
       "../../test:test_support",
+      "../pacing:mock_paced_sender",
       "../remote_bitrate_estimator:remote_bitrate_estimator",
       "//testing/gmock",
     ]
