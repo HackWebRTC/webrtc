@@ -11,11 +11,11 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_CONTROLLER_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_CONTROLLER_H_
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/render_delay_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {

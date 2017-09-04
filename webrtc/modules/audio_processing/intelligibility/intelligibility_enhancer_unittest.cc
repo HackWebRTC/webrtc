@@ -15,13 +15,13 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
 #include "webrtc/modules/audio_processing/noise_suppression_impl.h"
 #include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
 #include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/arraysize.h"
 #include "webrtc/test/gtest.h"
 

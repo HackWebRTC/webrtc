@@ -51,6 +51,7 @@ rtc_static_library("audio_device") {
   deps = [
     "..:module_api",
     "../..:webrtc_common",
+    "../../api:array_view",
     "../../common_audio",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",
@@ -281,6 +282,7 @@ if (rtc_include_tests) {
     deps = [
       ":audio_device",
       ":mock_audio_device",
+      "../../api:array_view",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",

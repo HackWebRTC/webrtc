@@ -89,6 +89,7 @@ rtc_source_set("rtp_test_utils") {
 
   deps = [
     "..:webrtc_common",
+    "../api:array_view",
     "../modules/rtp_rtcp",
     "../rtc_base:rtc_base_approved",
     "//testing/gtest",
@@ -488,6 +489,7 @@ rtc_source_set("fake_audio_device") {
   }
   deps = [
     "..:webrtc_common",
+    "../api:array_view",
     "../common_audio:common_audio",
     "../modules/audio_device:audio_device",
     "../rtc_base:rtc_base_approved",
@@ -695,6 +697,7 @@ rtc_source_set("audio_codec_mocks") {
 
   deps = [
     ":test_support",
+    "../api:array_view",
     "../api/audio_codecs:audio_codecs_api",
     "../api/audio_codecs:builtin_audio_decoder_factory",
     "../rtc_base:rtc_base_approved",

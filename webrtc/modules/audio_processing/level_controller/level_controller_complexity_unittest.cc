@@ -11,6 +11,7 @@
 #include <numeric>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/level_controller/level_controller.h"
@@ -18,7 +19,6 @@
 #include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
 #include "webrtc/modules/audio_processing/test/performance_timer.h"
 #include "webrtc/modules/audio_processing/test/simulator_buffers.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/random.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gtest.h"

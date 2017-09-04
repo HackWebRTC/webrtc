@@ -14,8 +14,8 @@
 #include <numeric>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/atomicops.h"
 #include "webrtc/rtc_base/checks.h"
 

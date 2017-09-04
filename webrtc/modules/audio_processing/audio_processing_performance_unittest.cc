@@ -15,9 +15,9 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/atomicops.h"
 #include "webrtc/rtc_base/platform_thread.h"
 #include "webrtc/rtc_base/random.h"

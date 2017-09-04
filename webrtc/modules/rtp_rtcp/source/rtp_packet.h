@@ -12,8 +12,8 @@
 
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/basictypes.h"
 #include "webrtc/rtc_base/copyonwritebuffer.h"
 

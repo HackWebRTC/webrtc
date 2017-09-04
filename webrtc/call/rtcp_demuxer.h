@@ -15,8 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/call/ssrc_binding_observer.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/basictypes.h"
 
 namespace webrtc {

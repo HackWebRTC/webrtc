@@ -15,11 +15,11 @@
 #include <array>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {

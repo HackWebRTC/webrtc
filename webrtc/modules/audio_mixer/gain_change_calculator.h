@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_MIXER_GAIN_CHANGE_CALCULATOR_H_
 #define WEBRTC_MODULES_AUDIO_MIXER_GAIN_CHANGE_CALCULATOR_H_
 
-#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/api/array_view.h"
 
 namespace webrtc {
 

@@ -15,8 +15,8 @@
 
 #include <cmath>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_device/fine_audio_buffer.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/atomicops.h"
 #include "webrtc/rtc_base/bind.h"
 #include "webrtc/rtc_base/checks.h"

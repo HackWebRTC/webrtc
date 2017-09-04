@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/audio/utility/audio_frame_operations.h"
 #include "webrtc/call/rtp_transport_controller_send_interface.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
@@ -27,7 +28,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/format_macros.h"

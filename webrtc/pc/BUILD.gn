@@ -284,6 +284,7 @@ if (rtc_include_tests) {
     deps = [
       ":libjingle_peerconnection",
       ":rtc_pc",
+      "../api:array_view",
       "../logging:rtc_event_log_api",
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",

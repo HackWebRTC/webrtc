@@ -11,8 +11,8 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/rms_level.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/mathutils.h"
 #include "webrtc/rtc_base/safe_conversions.h"

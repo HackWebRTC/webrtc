@@ -835,7 +835,6 @@ if (rtc_include_tests) {
       #visibility = [ "..:rtc_unittests" ]
     }
     sources = [
-      "array_view_unittest.cc",
       "atomicops_unittest.cc",
       "base64_unittest.cc",
       "basictypes_unittest.cc",
@@ -883,6 +882,7 @@ if (rtc_include_tests) {
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_task_queue",
+      "../api:array_view",
       "../system_wrappers:system_wrappers",
       "../test:test_support",
     ]

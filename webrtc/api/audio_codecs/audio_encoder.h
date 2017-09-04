@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/api/array_view.h"
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/rtc_base/deprecation.h"
 #include "webrtc/rtc_base/optional.h"

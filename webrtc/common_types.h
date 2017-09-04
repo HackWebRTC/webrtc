@@ -17,10 +17,10 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/api/video/video_content_type.h"
 #include "webrtc/api/video/video_rotation.h"
 #include "webrtc/api/video/video_timing.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/deprecation.h"
 #include "webrtc/rtc_base/optional.h"

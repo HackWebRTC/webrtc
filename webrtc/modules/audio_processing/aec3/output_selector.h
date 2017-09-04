@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_OUTPUT_SELECTOR_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_OUTPUT_SELECTOR_H_
 
-#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/api/array_view.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {

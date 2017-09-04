@@ -45,6 +45,7 @@ rtc_static_library("lib") {
   ]
   deps = [
     "../../../..:webrtc_common",
+    "../../../../api:array_view",
     "../../../../common_audio",
     "../../../../rtc_base:rtc_base_approved",
   ]
@@ -63,6 +64,7 @@ rtc_source_set("unittest") {
   deps = [
     ":lib",
     "../../../..:webrtc_common",
+    "../../../../api:array_view",
     "../../../../common_audio",
     "../../../../rtc_base:rtc_base_approved",
     "../../../../test:test_support",

@@ -13,11 +13,11 @@
 
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/echo_detector/circular_buffer.h"
 #include "webrtc/modules/audio_processing/echo_detector/mean_variance_estimator.h"
 #include "webrtc/modules/audio_processing/echo_detector/moving_max.h"
 #include "webrtc/modules/audio_processing/echo_detector/normalized_covariance_estimator.h"
-#include "webrtc/rtc_base/array_view.h"
 
 namespace webrtc {
 

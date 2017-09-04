@@ -13,8 +13,8 @@
 
 #include <string>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/api/audio_codecs/audio_encoder.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/test/gmock.h"
 
 namespace webrtc {

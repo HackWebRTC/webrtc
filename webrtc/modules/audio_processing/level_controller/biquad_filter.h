@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/api/array_view.h"
 #include "webrtc/rtc_base/arraysize.h"
 #include "webrtc/rtc_base/constructormagic.h"
 

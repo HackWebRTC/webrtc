@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/api/array_view.h"
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/typedefs.h"
 

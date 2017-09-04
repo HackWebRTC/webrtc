@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/api/array_view.h"
 #include "webrtc/rtc_base/checks.h"
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"

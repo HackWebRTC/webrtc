@@ -12,10 +12,10 @@
 
 #include <android/log.h>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/fine_audio_buffer.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/arraysize.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/format_macros.h"

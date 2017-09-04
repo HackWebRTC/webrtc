@@ -15,10 +15,10 @@
 #include <functional>
 #include <memory>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/audio/utility/audio_frame_operations.h"
 #include "webrtc/modules/audio_mixer/audio_frame_manipulator.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 

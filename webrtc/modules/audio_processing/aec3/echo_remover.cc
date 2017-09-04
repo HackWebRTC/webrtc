@@ -15,6 +15,7 @@
 #include <numeric>
 #include <string>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
 #include "webrtc/modules/audio_processing/aec3/comfort_noise_generator.h"
@@ -29,7 +30,6 @@
 #include "webrtc/modules/audio_processing/aec3/suppression_filter.h"
 #include "webrtc/modules/audio_processing/aec3/suppression_gain.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/atomicops.h"
 #include "webrtc/rtc_base/constructormagic.h"
 

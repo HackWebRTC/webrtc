@@ -19,10 +19,10 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/timing.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_abstract_factory.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_interface.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {

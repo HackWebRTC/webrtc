@@ -14,8 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/event.h"

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <numeric>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/level_controller/gain_applier.h"
 #include "webrtc/modules/audio_processing/level_controller/gain_selector.h"
@@ -22,7 +23,6 @@
 #include "webrtc/modules/audio_processing/level_controller/saturating_gain_estimator.h"
 #include "webrtc/modules/audio_processing/level_controller/signal_classifier.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/arraysize.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"

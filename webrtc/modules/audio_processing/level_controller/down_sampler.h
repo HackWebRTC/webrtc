@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_DOWN_SAMPLER_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_DOWN_SAMPLER_H_
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/level_controller/biquad_filter.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {

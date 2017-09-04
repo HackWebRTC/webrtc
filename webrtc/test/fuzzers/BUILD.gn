@@ -287,6 +287,7 @@ webrtc_fuzzer_test("neteq_rtp_fuzzer") {
     "neteq_rtp_fuzzer.cc",
   ]
   deps = [
+    "../../api:array_view",
     "../../modules/audio_coding:neteq",
     "../../modules/audio_coding:neteq_test_tools",
     "../../modules/audio_coding:neteq_tools_minimal",
@@ -354,6 +355,7 @@ webrtc_fuzzer_test("transport_feedback_packet_loss_tracker_fuzzer") {
     "transport_feedback_packet_loss_tracker_fuzzer.cc",
   ]
   deps = [
+    "../../api:array_view",
     "../../modules/rtp_rtcp",
     "../../rtc_base:rtc_base_approved",
     "../../voice_engine",

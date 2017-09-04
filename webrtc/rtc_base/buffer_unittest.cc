@@ -10,7 +10,7 @@
 
 #include "webrtc/rtc_base/buffer.h"
 
-#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/api/array_view.h"
 #include "webrtc/rtc_base/gunit.h"
 
 #include <type_traits>

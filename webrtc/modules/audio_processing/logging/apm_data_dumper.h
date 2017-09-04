@@ -17,8 +17,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/common_audio/wav_file.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
 // Check to verify that the define is properly set.

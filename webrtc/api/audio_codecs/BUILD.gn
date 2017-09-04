@@ -26,6 +26,7 @@ rtc_source_set("audio_codecs_api") {
     "audio_format.h",
   ]
   deps = [
+    "..:array_view",
     "../..:webrtc_common",
     "../../rtc_base:rtc_base_approved",
   ]

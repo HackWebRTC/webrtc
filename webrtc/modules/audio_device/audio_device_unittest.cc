@@ -12,10 +12,10 @@
 #include <cstring>
 #include <numeric>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_device/include/mock_audio_transport.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/event.h"

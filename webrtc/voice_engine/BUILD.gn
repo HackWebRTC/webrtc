@@ -135,6 +135,7 @@ rtc_static_library("voice_engine") {
     ":file_player",
     ":file_recorder",
     "..:webrtc_common",
+    "../api:array_view",
     "../api:audio_mixer_api",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",

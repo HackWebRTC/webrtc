@@ -18,8 +18,8 @@
 #include <algorithm>
 #include <array>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/rtc_base/array_view.h"
 
 namespace webrtc {
 

@@ -237,6 +237,7 @@ rtc_static_library("audio_processing") {
     ":aec_dump_interface",
     "..:module_api",
     "../..:webrtc_common",
+    "../../api:array_view",
     "../../audio/utility:audio_frame_operations",
     "../../rtc_base:gtest_prod",
     "../../rtc_base:protobuf_utils",
@@ -316,6 +317,7 @@ rtc_source_set("aec_dump_interface") {
   ]
 
   deps = [
+    "../../api:array_view",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -550,6 +552,7 @@ if (rtc_include_tests) {
       ":audioproc_test_utils",
       "..:module_api",
       "../..:webrtc_common",
+      "../../api:array_view",
       "../../common_audio:common_audio",
       "../../rtc_base:gtest_prod",
       "../../rtc_base:protobuf_utils",
@@ -774,6 +777,7 @@ if (rtc_include_tests) {
     deps = [
       ":audio_processing",
       "..:module_api",
+      "../../api:array_view",
       "../../common_audio",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",

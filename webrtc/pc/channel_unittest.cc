@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/fakertp.h"
 #include "webrtc/media/base/mediachannel.h"
@@ -18,7 +19,6 @@
 #include "webrtc/p2p/base/fakedtlstransport.h"
 #include "webrtc/p2p/base/fakepackettransport.h"
 #include "webrtc/pc/channel.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/fakeclock.h"

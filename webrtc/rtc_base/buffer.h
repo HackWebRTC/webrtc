@@ -17,7 +17,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/api/array_view.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/type_traits.h"
 

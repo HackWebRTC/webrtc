@@ -11,10 +11,10 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/agc2/digital_gain_applier.h"
 #include "webrtc/modules/audio_processing/agc2/gain_controller2.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

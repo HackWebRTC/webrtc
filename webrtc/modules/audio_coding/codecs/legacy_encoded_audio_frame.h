@@ -13,8 +13,8 @@
 
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/api/audio_codecs/audio_decoder.h"
-#include "webrtc/rtc_base/array_view.h"
 
 namespace webrtc {
 

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_RMS_LEVEL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_RMS_LEVEL_H_
 
-#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/api/array_view.h"
 #include "webrtc/rtc_base/optional.h"
 #include "webrtc/typedefs.h"
 

@@ -14,11 +14,11 @@
 #include <numeric>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/level_controller/down_sampler.h"
 #include "webrtc/modules/audio_processing/level_controller/noise_spectrum_estimator.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/constructormagic.h"
 
 namespace webrtc {

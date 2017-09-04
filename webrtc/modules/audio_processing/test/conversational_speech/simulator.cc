@@ -14,9 +14,9 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_interface.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/pathutils.h"

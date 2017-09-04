@@ -16,13 +16,13 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/array_view.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/modules/audio_coding/acm2/acm_resampler.h"
 #include "webrtc/modules/audio_coding/acm2/call_statistics.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/array_view.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/thread_annotations.h"

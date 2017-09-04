@@ -14,7 +14,7 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/rtc_base/array_view.h"
+#include "webrtc/api/array_view.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/sanitizer.h"
 #include "webrtc/rtc_base/trace_event.h"
