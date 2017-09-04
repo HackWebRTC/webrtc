@@ -217,12 +217,6 @@ TaskQueue* TaskQueue::Current() {
   return static_cast<TaskQueue*>(::TlsGetValue(GetQueuePtrTls()));
 }
 
-// static
-bool TaskQueue::IsCurrent(const char* queue_name) {
-  TaskQueue* current = Current();
-  return current && current->thread_.name().compare(queue_name) == 0;
-}
-
 bool TaskQueue::IsCurrent() const {
   return IsThreadRefEqual(thread_.GetThreadRef(), CurrentThreadRef());
 }

@@ -37,7 +37,7 @@ class IncomingVideoStream::NewFrameTask : public rtc::QueuedTask {
 
  private:
   bool Run() override {
-    RTC_DCHECK(rtc::TaskQueue::IsCurrent(kIncomingQueueName));
+    RTC_DCHECK(stream_->incoming_render_queue_.IsCurrent());
     if (stream_->render_buffers_.AddFrame(std::move(frame_)) == 1)
       stream_->Dequeue();
     return true;

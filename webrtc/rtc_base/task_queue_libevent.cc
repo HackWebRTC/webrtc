@@ -119,7 +119,6 @@ class TaskQueue::Impl : public RefCountInterface {
   static TaskQueue* CurrentQueue();
 
   // Used for DCHECKing the current queue.
-  static bool IsCurrent(const char* queue_name);
   bool IsCurrent() const;
 
   void PostTask(std::unique_ptr<QueuedTask> task);
@@ -337,12 +336,6 @@ TaskQueue* TaskQueue::Impl::CurrentQueue() {
   return nullptr;
 }
 
-// static
-bool TaskQueue::Impl::IsCurrent(const char* queue_name) {
-  TaskQueue::Impl* current = Current();
-  return current && current->thread_.name().compare(queue_name) == 0;
-}
-
 bool TaskQueue::Impl::IsCurrent() const {
   return IsThreadRefEqual(thread_.GetThreadRef(), CurrentThreadRef());
 }
@@ -503,11 +496,6 @@ TaskQueue* TaskQueue::Current() {
 }
 
 // Used for DCHECKing the current queue.
-// static
-bool TaskQueue::IsCurrent(const char* queue_name) {
-  return TaskQueue::Impl::IsCurrent(queue_name);
-}
-
 bool TaskQueue::IsCurrent() const {
   return impl_->IsCurrent();
 }

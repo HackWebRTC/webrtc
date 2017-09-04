@@ -170,7 +170,6 @@ class LOCKABLE TaskQueue {
   static TaskQueue* Current();
 
   // Used for DCHECKing the current queue.
-  static bool IsCurrent(const char* queue_name);
   bool IsCurrent() const;
 
   // TODO(tommi): For better debuggability, implement RTC_FROM_HERE.

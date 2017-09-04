@@ -145,13 +145,6 @@ TaskQueue* TaskQueue::Current() {
   return static_cast<TaskQueue*>(pthread_getspecific(GetQueuePtrTls()));
 }
 
-// static
-bool TaskQueue::IsCurrent(const char* queue_name) {
-  TaskQueue* current = Current();
-  return current &&
-         strcmp(queue_name, dispatch_queue_get_label(current->queue_)) == 0;
-}
-
 bool TaskQueue::IsCurrent() const {
   RTC_DCHECK(queue_);
   return this == Current();

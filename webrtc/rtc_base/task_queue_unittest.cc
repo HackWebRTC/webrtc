@@ -47,8 +47,7 @@ class EnableHighResTimers {
 }
 
 namespace {
-void CheckCurrent(const char* expected_queue, Event* signal, TaskQueue* queue) {
-  EXPECT_TRUE(TaskQueue::IsCurrent(expected_queue));
+void CheckCurrent(Event* signal, TaskQueue* queue) {
   EXPECT_TRUE(queue->IsCurrent());
   if (signal)
     signal->Set();
@@ -71,7 +70,7 @@ TEST(TaskQueueTest, PostAndCheckCurrent) {
   EXPECT_FALSE(queue.IsCurrent());
   EXPECT_FALSE(TaskQueue::Current());
 
-  queue.PostTask(Bind(&CheckCurrent, kQueueName, &event, &queue));
+  queue.PostTask(Bind(&CheckCurrent, &event, &queue));
   EXPECT_TRUE(event.Wait(1000));
 }
 
@@ -132,7 +131,7 @@ TEST(TaskQueueTest, PostDelayed) {
   TaskQueue queue(kQueueName, TaskQueue::Priority::HIGH);
 
   uint32_t start = Time();
-  queue.PostDelayedTask(Bind(&CheckCurrent, kQueueName, &event, &queue), 100);
+  queue.PostDelayedTask(Bind(&CheckCurrent, &event, &queue), 100);
   EXPECT_TRUE(event.Wait(1000));
   uint32_t end = Time();
   // These tests are a little relaxed due to how "powerful" our test bots can
@@ -152,7 +151,7 @@ TEST(TaskQueueTest, DISABLED_PostDelayedHighRes) {
   TaskQueue queue(kQueueName, TaskQueue::Priority::HIGH);
 
   uint32_t start = Time();
-  queue.PostDelayedTask(Bind(&CheckCurrent, kQueueName, &event, &queue), 3);
+  queue.PostDelayedTask(Bind(&CheckCurrent, &event, &queue), 3);
   EXPECT_TRUE(event.Wait(1000));
   uint32_t end = TimeMillis();
   // These tests are a little relaxed due to how "powerful" our test bots can
@@ -170,7 +169,7 @@ TEST(TaskQueueTest, PostMultipleDelayed) {
   for (int i = 0; i < 100; ++i) {
     events.push_back(std::unique_ptr<Event>(new Event(false, false)));
     queue.PostDelayedTask(
-        Bind(&CheckCurrent, kQueueName, events.back().get(), &queue), i);
+        Bind(&CheckCurrent, events.back().get(), &queue), i);
   }
 
   for (const auto& e : events)
@@ -182,7 +181,7 @@ TEST(TaskQueueTest, PostDelayedAfterDestruct) {
   Event event(false, false);
   {
     TaskQueue queue(kQueueName);
-    queue.PostDelayedTask(Bind(&CheckCurrent, kQueueName, &event, &queue), 100);
+    queue.PostDelayedTask(Bind(&CheckCurrent, &event, &queue), 100);
   }
   EXPECT_FALSE(event.Wait(200));  // Task should not run.
 }
@@ -195,8 +194,8 @@ TEST(TaskQueueTest, PostAndReply) {
   TaskQueue reply_queue(kReplyQueue);
 
   post_queue.PostTaskAndReply(
-      Bind(&CheckCurrent, kPostQueue, nullptr, &post_queue),
-      Bind(&CheckCurrent, kReplyQueue, &event, &reply_queue), &reply_queue);
+      Bind(&CheckCurrent, nullptr, &post_queue),
+      Bind(&CheckCurrent, &event, &reply_queue), &reply_queue);
   EXPECT_TRUE(event.Wait(1000));
 }
 
@@ -277,11 +276,10 @@ TEST(TaskQueueTest, PostAndReplyDeadlock) {
 }
 
 void TestPostTaskAndReply(TaskQueue* work_queue,
-                          const char* work_queue_name,
                           Event* event) {
   ASSERT_FALSE(work_queue->IsCurrent());
   work_queue->PostTaskAndReply(
-      Bind(&CheckCurrent, work_queue_name, nullptr, work_queue),
+      Bind(&CheckCurrent, nullptr, work_queue),
       NewClosure([event]() { event->Set(); }));
 }
 
@@ -295,7 +293,7 @@ TEST(TaskQueueTest, PostAndReply2) {
   TaskQueue work_queue(kWorkQueueName);
 
   queue.PostTask(
-      Bind(&TestPostTaskAndReply, &work_queue, kWorkQueueName, &event));
+      Bind(&TestPostTaskAndReply, &work_queue, &event));
   EXPECT_TRUE(event.Wait(1000));
 }
 
