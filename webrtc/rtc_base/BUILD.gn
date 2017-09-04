@@ -429,28 +429,7 @@ rtc_source_set("rtc_json") {
   }
 }
 
-rtc_source_set("rtc_base") {
-  public_deps = [
-    ":rtc_base_generic",
-  ]
-  if (is_ios || is_mac) {
-    public_deps += [ ":rtc_base_objc" ]
-  }
-}
-
-if (is_ios || is_mac) {
-  rtc_source_set("rtc_base_objc") {
-    sources = [
-      "thread_darwin.mm",
-    ]
-    deps = [
-      ":rtc_base_generic",
-    ]
-    visibility = [ ":rtc_base" ]
-  }
-}
-
-rtc_source_set("rtc_base_generic") {
+rtc_static_library("rtc_base") {
   cflags = []
   cflags_cc = []
   libs = []
@@ -559,11 +538,6 @@ rtc_source_set("rtc_base_generic") {
     "thread.h",
   ]
 
-  visibility = [
-    ":rtc_base",
-    ":rtc_base_objc",
-  ]
-
   # TODO(henrike): issue 3307, make rtc_base build with the Chromium default
   # compiler settings.
   suppressed_configs += [ "//build/config/compiler:chromium_code" ]
@@ -623,7 +597,10 @@ rtc_source_set("rtc_base_generic") {
   }
 
   if (is_ios || is_mac) {
-    sources += [ "macifaddrs_converter.cc" ]
+    sources += [
+      "macifaddrs_converter.cc",
+      "thread_darwin.mm",
+    ]
   }
 
   if (use_x11) {
