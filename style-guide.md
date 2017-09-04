@@ -34,3 +34,35 @@ pre-dates the use of the current C++ style guide for this code base.
   surrounding code.
 * If making large changes to C code, consider converting the whole
   thing to C++ first.
+
+## Build files
+
+### Conditional compilation with the C preprocessor
+
+Avoid using the C preprocessor to conditionally enable or disable
+pieces of code. But if you can’t avoid it, introduce a gn variable,
+and then set a preprocessor constant to either 0 or 1 in the build
+targets that need it:
+
+```
+if (apm_debug_dump) {
+  defines = [ "WEBRTC_APM_DEBUG_DUMP=1" ]
+} else {
+  defines = [ "WEBRTC_APM_DEBUG_DUMP=0" ]
+}
+```
+
+In the C, C++, or Objective-C files, use `#if` when testing the flag,
+not `#ifdef` or `#if defined()`:
+
+```
+#if WEBRTC_APM_DEBUG_DUMP
+// One way.
+#else
+// Or another.
+#endif
+```
+
+When combined with the `-Wundef` compiler option, this produces
+compile time warnings if preprocessor symbols are misspelled, or used
+without corresponding build rules to set them.
