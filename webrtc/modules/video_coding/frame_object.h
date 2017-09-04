@@ -49,14 +49,14 @@ class FrameObject : public webrtc::VCMEncodedFrame {
   // The tuple (|picture_id|, |spatial_layer|) uniquely identifies a frame
   // object. For codec types that don't necessarily have picture ids they
   // have to be constructed from the header data relevant to that codec.
-  uint16_t picture_id;
+  int64_t picture_id;
   uint8_t spatial_layer;
   uint32_t timestamp;
 
   // TODO(philipel): Add simple modify/access functions to prevent adding too
   // many |references|.
   size_t num_references;
-  uint16_t references[kMaxFrameReferences];
+  int64_t references[kMaxFrameReferences];
   bool inter_layer_predicted;
 };
 

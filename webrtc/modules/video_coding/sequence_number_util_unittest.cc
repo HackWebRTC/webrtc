@@ -212,7 +212,7 @@ TEST_F(TestSeqNumUtil, SeqNumComparatorWithDivisor) {
 #if GTEST_HAS_DEATH_TEST
 #if !defined(WEBRTC_ANDROID)
 TEST(SeqNumUnwrapper, NoBackWardWrap) {
-  SeqNumUnwrapper<uint8_t> unwrapper;
+  SeqNumUnwrapper<uint8_t> unwrapper(0);
   EXPECT_EQ(0U, unwrapper.Unwrap(0));
 
   // The unwrapped sequence is not allowed to wrap, if that happens the
@@ -232,13 +232,13 @@ TEST(SeqNumUnwrapper, NoForwardWrap) {
 #endif
 
 TEST(SeqNumUnwrapper, ForwardWrap) {
-  SeqNumUnwrapper<uint8_t> unwrapper;
+  SeqNumUnwrapper<uint8_t> unwrapper(0);
   EXPECT_EQ(0U, unwrapper.Unwrap(255));
   EXPECT_EQ(1U, unwrapper.Unwrap(0));
 }
 
 TEST(SeqNumUnwrapper, ForwardWrapWithDivisor) {
-  SeqNumUnwrapper<uint8_t, 33> unwrapper;
+  SeqNumUnwrapper<uint8_t, 33> unwrapper(0);
   EXPECT_EQ(0U, unwrapper.Unwrap(30));
   EXPECT_EQ(6U, unwrapper.Unwrap(3));
 }
@@ -256,7 +256,7 @@ TEST(SeqNumUnwrapper, BackWardWrapWithDivisor) {
 }
 
 TEST(SeqNumUnwrapper, Unwrap) {
-  SeqNumUnwrapper<uint16_t> unwrapper;
+  SeqNumUnwrapper<uint16_t> unwrapper(0);
   const uint16_t kMax = std::numeric_limits<uint16_t>::max();
   const uint16_t kMaxDist = kMax / 2 + 1;
 
@@ -294,7 +294,7 @@ TEST(SeqNumUnwrapper, ManyForwardWraps) {
   SeqNumUnwrapper<uint16_t, kLargeNumber> unwrapper;
 
   uint16_t next_unwrap = 0;
-  uint64_t expected = 0;
+  uint64_t expected = decltype(unwrapper)::kDefaultStartValue;
   for (int i = 0; i < kNumWraps * 2 + 1; ++i) {
     EXPECT_EQ(expected, unwrapper.Unwrap(next_unwrap));
     expected += kMaxStep;

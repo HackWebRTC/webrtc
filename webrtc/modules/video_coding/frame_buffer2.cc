@@ -249,7 +249,7 @@ void FrameBuffer::Stop() {
 
 bool FrameBuffer::ValidReferences(const FrameObject& frame) const {
   for (size_t i = 0; i < frame.num_references; ++i) {
-    if (AheadOrAt(frame.references[i], frame.picture_id))
+    if (AheadOrAt<uint16_t>(frame.references[i], frame.picture_id))
       return false;
     for (size_t j = i + 1; j < frame.num_references; ++j) {
       if (frame.references[i] == frame.references[j])

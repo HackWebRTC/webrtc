@@ -176,7 +176,7 @@ RtpFrameReferenceFinder::ManageFrameGeneric(RtpFrameObject* frame,
     if (last_unwrap_ == -1)
       last_unwrap_ = picture_id;
 
-    frame->picture_id = UnwrapPictureId(picture_id % kPicIdLength);
+    frame->picture_id = unwrapper_.Unwrap(picture_id);
     frame->num_references = frame->frame_type() == kVideoFrameKey ? 0 : 1;
     frame->references[0] = frame->picture_id - 1;
     return kHandOff;
@@ -228,22 +228,25 @@ RtpFrameReferenceFinder::ManageFrameGeneric(RtpFrameObject* frame,
   // picture id according to some incrementing counter.
   frame->picture_id = frame->last_seq_num();
   frame->num_references = frame->frame_type() == kVideoFrameDelta;
-  frame->references[0] = last_picture_id_gop;
-  if (AheadOf(frame->picture_id, last_picture_id_gop)) {
+  frame->references[0] = generic_unwrapper_.Unwrap(last_picture_id_gop);
+  if (AheadOf<uint16_t>(frame->picture_id, last_picture_id_gop)) {
     seq_num_it->second.first = frame->picture_id;
     seq_num_it->second.second = frame->picture_id;
   }
 
   last_picture_id_ = frame->picture_id;
   UpdateLastPictureIdWithPadding(frame->picture_id);
+  frame->picture_id = generic_unwrapper_.Unwrap(frame->picture_id);
   return kHandOff;
 }
 
 RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
     RtpFrameObject* frame) {
   rtc::Optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
-  if (!rtp_codec_header)
+  if (!rtp_codec_header) {
+    LOG(LS_WARNING) << "Failed to get codec header from frame, dropping frame.";
     return kDrop;
+  }
 
   const RTPVideoHeaderVP8& codec_header = rtp_codec_header->VP8;
 
@@ -285,7 +288,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
   if (frame->frame_type() == kVideoFrameKey) {
     frame->num_references = 0;
     layer_info_[codec_header.tl0PicIdx].fill(-1);
-    UpdateLayerInfoVp8(frame, codec_header);
+    UpdateLayerInfoVp8(frame);
     return kHandOff;
   }
 
@@ -307,7 +310,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
             .first;
     frame->num_references = 1;
     frame->references[0] = layer_info_it->second[0];
-    UpdateLayerInfoVp8(frame, codec_header);
+    UpdateLayerInfoVp8(frame);
     return kHandOff;
   }
 
@@ -316,7 +319,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
     frame->num_references = 1;
     frame->references[0] = layer_info_it->second[0];
 
-    UpdateLayerInfoVp8(frame, codec_header);
+    UpdateLayerInfoVp8(frame);
     return kHandOff;
   }
 
@@ -359,13 +362,14 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
     frame->references[layer] = layer_info_it->second[layer];
   }
 
-  UpdateLayerInfoVp8(frame, codec_header);
+  UpdateLayerInfoVp8(frame);
   return kHandOff;
 }
 
-void RtpFrameReferenceFinder::UpdateLayerInfoVp8(
-    RtpFrameObject* frame,
-    const RTPVideoHeaderVP8& codec_header) {
+void RtpFrameReferenceFinder::UpdateLayerInfoVp8(RtpFrameObject* frame) {
+  rtc::Optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
+  RTC_DCHECK(rtp_codec_header);
+  const RTPVideoHeaderVP8& codec_header = rtp_codec_header->VP8;
   uint8_t tl0_pic_idx = codec_header.tl0PicIdx;
   uint8_t temporal_index = codec_header.temporalIdx;
   auto layer_info_it = layer_info_.find(tl0_pic_idx);
@@ -392,8 +396,10 @@ void RtpFrameReferenceFinder::UpdateLayerInfoVp8(
 RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
     RtpFrameObject* frame) {
   rtc::Optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
-  if (!rtp_codec_header)
+  if (!rtp_codec_header) {
+    LOG(LS_WARNING) << "Failed to get codec header from frame, dropping frame.";
     return kDrop;
+  }
 
   const RTPVideoHeaderVP9& codec_header = rtp_codec_header->VP9;
 
@@ -585,22 +591,8 @@ bool RtpFrameReferenceFinder::UpSwitchInIntervalVp9(uint16_t picture_id,
 
 void RtpFrameReferenceFinder::UnwrapPictureIds(RtpFrameObject* frame) {
   for (size_t i = 0; i < frame->num_references; ++i)
-    frame->references[i] = UnwrapPictureId(frame->references[i]);
-  frame->picture_id = UnwrapPictureId(frame->picture_id);
-}
-
-uint16_t RtpFrameReferenceFinder::UnwrapPictureId(uint16_t picture_id) {
-  RTC_DCHECK_NE(-1, last_unwrap_);
-
-  uint16_t unwrap_truncated = last_unwrap_ % kPicIdLength;
-  uint16_t diff = MinDiff<uint16_t, kPicIdLength>(unwrap_truncated, picture_id);
-
-  if (AheadOf<uint16_t, kPicIdLength>(picture_id, unwrap_truncated))
-    last_unwrap_ = Add<1 << 16>(last_unwrap_, diff);
-  else
-    last_unwrap_ = Subtract<1 << 16>(last_unwrap_, diff);
-
-  return last_unwrap_;
+    frame->references[i] = unwrapper_.Unwrap(frame->references[i]);
+  frame->picture_id = unwrapper_.Unwrap(frame->picture_id);
 }
 
 }  // namespace video_coding

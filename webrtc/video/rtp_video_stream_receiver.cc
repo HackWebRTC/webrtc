@@ -589,7 +589,7 @@ bool RtpVideoStreamReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
   return true;
 }
 
-void RtpVideoStreamReceiver::FrameContinuous(uint16_t picture_id) {
+void RtpVideoStreamReceiver::FrameContinuous(int64_t picture_id) {
   if (!nack_module_)
     return;
 
@@ -604,7 +604,7 @@ void RtpVideoStreamReceiver::FrameContinuous(uint16_t picture_id) {
     nack_module_->ClearUpTo(seq_num);
 }
 
-void RtpVideoStreamReceiver::FrameDecoded(uint16_t picture_id) {
+void RtpVideoStreamReceiver::FrameDecoded(int64_t picture_id) {
   int seq_num = -1;
   {
     rtc::CritScope lock(&last_seq_num_cs_);

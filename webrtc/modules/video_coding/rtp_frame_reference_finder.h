@@ -99,8 +99,7 @@ class RtpFrameReferenceFinder {
 
   // Updates necessary layer info state used to determine frame references for
   // Vp8.
-  void UpdateLayerInfoVp8(RtpFrameObject* frame,
-                          const RTPVideoHeaderVP8& codec_header)
+  void UpdateLayerInfoVp8(RtpFrameObject* frame)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Find references for Vp9 frames
@@ -126,8 +125,6 @@ class RtpFrameReferenceFinder {
 
   // Unwrap |frame|s picture id and its references to 16 bits.
   void UnwrapPictureIds(RtpFrameObject* frame) EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  // All picture ids are unwrapped to 16 bits.
-  uint16_t UnwrapPictureId(uint16_t picture_id) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Returns true if the frame is old and should be dropped.
   // TODO(philipel): Remove when VP9 PID/TL0 does not jump mid-stream (should be
@@ -214,6 +211,14 @@ class RtpFrameReferenceFinder {
   int cleared_to_seq_num_ GUARDED_BY(crit_);
 
   OnCompleteFrameCallback* frame_callback_;
+
+  // Unwrapper used to unwrap generic RTP streams. In a generic stream we derive
+  // a picture id from the packet sequence number.
+  SeqNumUnwrapper<uint16_t> generic_unwrapper_ GUARDED_BY(crit_);
+
+  // Unwrapper used to unwrap VP8/VP9 streams which have their picture id
+  // specified.
+  SeqNumUnwrapper<uint16_t, kPicIdLength> unwrapper_ GUARDED_BY(crit_);
 };
 
 }  // namespace video_coding

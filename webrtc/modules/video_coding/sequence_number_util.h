@@ -91,7 +91,13 @@ class SeqNumUnwrapper {
       "Type unwrapped must be an unsigned integer smaller than uint64_t.");
 
  public:
-  SeqNumUnwrapper() : last_unwrapped_(0) {}
+  // We want a value that is close to 2^63 for two reasons. Firstly, we
+  // can unwrap wrapping numbers in either direction, and secondly, we avoid
+  // causing a crash on bad input. We also want the default value to be somewhat
+  // human readable, a power of 10 for example.
+  static constexpr uint64_t kDefaultStartValue = 10000000000000000000UL;
+
+  SeqNumUnwrapper() : last_unwrapped_(kDefaultStartValue) {}
   explicit SeqNumUnwrapper(uint64_t start_at) : last_unwrapped_(start_at) {}
 
   uint64_t Unwrap(T value) {

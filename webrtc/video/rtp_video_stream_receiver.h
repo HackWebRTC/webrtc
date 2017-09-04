@@ -93,9 +93,9 @@ class RtpVideoStreamReceiver : public RtpData,
 
   bool DeliverRtcp(const uint8_t* rtcp_packet, size_t rtcp_packet_length);
 
-  void FrameContinuous(uint16_t seq_num);
+  void FrameContinuous(int64_t seq_num);
 
-  void FrameDecoded(uint16_t seq_num);
+  void FrameDecoded(int64_t seq_num);
 
   void SignalNetworkState(NetworkState state);
 
@@ -199,8 +199,8 @@ class RtpVideoStreamReceiver : public RtpData,
   rtc::scoped_refptr<video_coding::PacketBuffer> packet_buffer_;
   std::unique_ptr<video_coding::RtpFrameReferenceFinder> reference_finder_;
   rtc::CriticalSection last_seq_num_cs_;
-  std::map<uint16_t, uint16_t, DescendingSeqNumComp<uint16_t>>
-      last_seq_num_for_pic_id_ GUARDED_BY(last_seq_num_cs_);
+  std::map<int64_t, uint16_t> last_seq_num_for_pic_id_
+      GUARDED_BY(last_seq_num_cs_);
   video_coding::H264SpsPpsTracker tracker_;
   // TODO(johan): Remove pt_codec_params_ once
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=6883 is resolved.
