@@ -90,5 +90,9 @@ bool IsValidContentType(uint8_t value) {
   // Any 6-bit value is allowed.
   return value < (1 << kTotalBitsSize);
 }
+
+const char* ToString(const VideoContentType& content_type) {
+  return IsScreenshare(content_type) ? "screen" : "realtime";
+}
 }  // namespace videocontenttypehelpers
 }  // namespace webrtc

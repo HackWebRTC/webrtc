@@ -460,6 +460,8 @@ const char* StatsReport::Value::display_name() const {
       return "googComponent";
     case kStatsValueNameContentName:
       return "googContentName";
+    case kStatsValueNameContentType:
+      return "googContentType";
     case kStatsValueNameCpuLimitedResolution:
       return "googCpuLimitedResolution";
     case kStatsValueNameDecodingCTSG:

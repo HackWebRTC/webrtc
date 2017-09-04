@@ -108,7 +108,6 @@ class StatsReport {
     kStatsValueNameDataChannelId,
     kStatsValueNameFramesDecoded,
     kStatsValueNameFramesEncoded,
-    kStatsValueNameInterframeDelayMaxMs,  // Max over last 10 seconds.
     kStatsValueNameMediaType,
     kStatsValueNamePacketsLost,
     kStatsValueNamePacketsReceived,
@@ -149,6 +148,7 @@ class StatsReport {
     kStatsValueNameCodecName,
     kStatsValueNameComponent,
     kStatsValueNameContentName,
+    kStatsValueNameContentType,
     kStatsValueNameCpuLimitedResolution,
     kStatsValueNameCurrentDelayMs,
     kStatsValueNameDecodeMs,
@@ -184,6 +184,7 @@ class StatsReport {
     kStatsValueNameFrameWidthReceived,
     kStatsValueNameFrameWidthSent,
     kStatsValueNameInitiator,
+    kStatsValueNameInterframeDelayMaxMs,  // Max over last 10 seconds.
     kStatsValueNameIssuerId,
     kStatsValueNameJitterBufferMs,
     kStatsValueNameJitterReceived,

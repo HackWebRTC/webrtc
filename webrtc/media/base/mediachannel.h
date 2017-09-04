@@ -771,6 +771,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
         frames_decoded(0),
         frames_rendered(0),
         interframe_delay_max_ms(-1),
+        content_type(webrtc::VideoContentType::UNSPECIFIED),
         decode_ms(0),
         max_decode_ms(0),
         jitter_buffer_ms(0),
@@ -801,6 +802,8 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   uint32_t frames_rendered;
   rtc::Optional<uint64_t> qp_sum;
   int64_t interframe_delay_max_ms;
+
+  webrtc::VideoContentType content_type;
 
   // All stats below are gathered per-VideoReceiver, but some will be correlated
   // across MediaStreamTracks.  NOTE(hta): when sinking stats into per-SSRC

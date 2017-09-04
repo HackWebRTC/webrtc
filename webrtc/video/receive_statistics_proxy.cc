@@ -501,6 +501,7 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   stats_.interframe_delay_max_ms =
       interframe_delay_max_moving_.Max(now_ms).value_or(-1);
   stats_.timing_frame_info = timing_frame_info_counter_.Max(now_ms);
+  stats_.content_type = last_content_type_;
   return stats_;
 }
 

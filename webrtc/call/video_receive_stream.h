@@ -88,6 +88,8 @@ class VideoReceiveStream {
     int width = 0;
     int height = 0;
 
+    VideoContentType content_type = VideoContentType::UNSPECIFIED;
+
     int sync_offset_ms = std::numeric_limits<int>::max();
 
     uint32_t ssrc = 0;

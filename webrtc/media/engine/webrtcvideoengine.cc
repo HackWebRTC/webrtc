@@ -2418,6 +2418,8 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
 
   info.interframe_delay_max_ms = stats.interframe_delay_max_ms;
 
+  info.content_type = stats.content_type;
+
   info.codec_name = GetCodecNameFromPayloadType(stats.current_payload_type);
 
   info.firs_sent = stats.rtcp_packet_type_counts.fir_packets;

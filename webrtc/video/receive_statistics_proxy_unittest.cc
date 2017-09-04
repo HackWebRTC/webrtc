@@ -98,6 +98,21 @@ TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesQpSum) {
             statistics_proxy_->GetStats().qp_sum);
 }
 
+TEST_F(ReceiveStatisticsProxyTest, ReportsContentType) {
+  const std::string kRealtimeString("realtime");
+  const std::string kScreenshareString("screen");
+  EXPECT_EQ(kRealtimeString, videocontenttypehelpers::ToString(
+                            statistics_proxy_->GetStats().content_type));
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(3u),
+                                    VideoContentType::SCREENSHARE);
+  EXPECT_EQ(kScreenshareString, videocontenttypehelpers::ToString(
+                          statistics_proxy_->GetStats().content_type));
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(3u),
+                                    VideoContentType::UNSPECIFIED);
+  EXPECT_EQ(kRealtimeString, videocontenttypehelpers::ToString(
+                            statistics_proxy_->GetStats().content_type));
+}
+
 TEST_F(ReceiveStatisticsProxyTest, ReportsMaxInterframeDelay) {
   const int64_t kInterframeDelayMs1 = 100;
   const int64_t kInterframeDelayMs2 = 200;

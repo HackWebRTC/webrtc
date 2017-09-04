@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+#include <string>
+
 namespace webrtc {
 
 enum class VideoContentType : uint8_t {
@@ -32,6 +34,8 @@ namespace videocontenttypehelpers {
   bool IsScreenshare(const VideoContentType& content_type);
 
   bool IsValidContentType(uint8_t value);
+
+  const char* ToString(const VideoContentType& content_type);
 }  // namespace videocontenttypehelpers
 
 }  // namespace webrtc

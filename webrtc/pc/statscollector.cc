@@ -272,6 +272,10 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
 
   report->AddInt64(StatsReport::kStatsValueNameInterframeDelayMaxMs,
                    info.interframe_delay_max_ms);
+
+  report->AddString(
+      StatsReport::kStatsValueNameContentType,
+      webrtc::videocontenttypehelpers::ToString(info.content_type));
 }
 
 void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
