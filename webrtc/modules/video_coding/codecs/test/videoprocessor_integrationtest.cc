@@ -120,9 +120,6 @@ void VideoProcessorIntegrationTest::SetCodecSettings(TestConfig* config,
       RTC_NOTREACHED();
       break;
   }
-
-  config->frame_length_in_bytes =
-      CalcBufferSize(VideoType::kI420, width, height);
 }
 
 void VideoProcessorIntegrationTest::SetRateProfile(

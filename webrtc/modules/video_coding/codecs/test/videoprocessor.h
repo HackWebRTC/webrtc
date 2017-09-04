@@ -53,17 +53,6 @@ const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e);
 
 // Test configuration for a test run.
 struct TestConfig {
-  // Name of the test. This is purely metadata and does not affect the test.
-  std::string name;
-
-  // More detailed description of the test. This is purely metadata and does
-  // not affect the test.
-  std::string description;
-
-  // Number of this test. Useful if multiple runs of the same test with
-  // different configurations shall be managed.
-  int test_number = 0;
-
   // Plain name of YUV file to process without file extension.
   std::string filename;
 
@@ -74,20 +63,12 @@ struct TestConfig {
   // in the YUV format.
   std::string output_filename;
 
-  // Path to the directory where encoded files will be put
-  // (absolute or relative to the executable).
-  std::string output_dir = "out";
-
   // Configurations related to networking.
   NetworkingConfig networking_config;
 
   // Decides how the packet loss simulations shall exclude certain frames
   // from packet loss.
   ExcludeFrameTypes exclude_frame_types = kExcludeOnlyFirstKeyFrame;
-
-  // The length of a single frame of the input video file. Calculated out of the
-  // width and height according to the video format specification (i.e. YUV).
-  size_t frame_length_in_bytes = 0;
 
   // Force the encoder and decoder to use a single core for processing.
   // Using a single core is necessary to get a deterministic behavior for the
