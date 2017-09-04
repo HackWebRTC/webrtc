@@ -2135,13 +2135,13 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
     const VideoCodec& codec) {
   webrtc::VideoCodecType type = webrtc::PayloadStringToCodecType(codec.name);
 
-  for (size_t i = 0; i < old_decoders->size(); ++i) {
-    if ((*old_decoders)[i].type == type) {
-      AllocatedDecoder decoder = (*old_decoders)[i];
-      (*old_decoders)[i] = old_decoders->back();
-      old_decoders->pop_back();
-      return decoder;
-    }
+  const auto& found = std::find_if(
+      old_decoders->begin(), old_decoders->end(),
+      [type](const AllocatedDecoder decoder) { return decoder.type == type; });
+  if (found != old_decoders->end()) {
+    AllocatedDecoder decoder = *found;
+    old_decoders->erase(found);
+    return decoder;
   }
 
   if (external_decoder_factory_ != NULL) {
@@ -2165,21 +2165,18 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::ConfigureCodecs(
   *old_decoders = allocated_decoders_;
   allocated_decoders_.clear();
   config_.decoders.clear();
-  for (size_t i = 0; i < recv_codecs.size(); ++i) {
+  config_.rtp.rtx_associated_payload_types.clear();
+  for (const auto& recv_codec : recv_codecs) {
     AllocatedDecoder allocated_decoder =
-        CreateOrReuseVideoDecoder(old_decoders, recv_codecs[i].codec);
+        CreateOrReuseVideoDecoder(old_decoders, recv_codec.codec);
     allocated_decoders_.push_back(allocated_decoder);
 
     webrtc::VideoReceiveStream::Decoder decoder;
     decoder.decoder = allocated_decoder.decoder;
-    decoder.payload_type = recv_codecs[i].codec.id;
-    decoder.payload_name = recv_codecs[i].codec.name;
-    decoder.codec_params = recv_codecs[i].codec.params;
+    decoder.payload_type = recv_codec.codec.id;
+    decoder.payload_name = recv_codec.codec.name;
+    decoder.codec_params = recv_codec.codec.params;
     config_.decoders.push_back(decoder);
-  }
-
-  config_.rtp.rtx_associated_payload_types.clear();
-  for (const VideoCodecSettings& recv_codec : recv_codecs) {
     config_.rtp.rtx_associated_payload_types[recv_codec.rtx_payload_type] =
         recv_codec.codec.id;
   }
@@ -2324,12 +2321,10 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::
 
 void WebRtcVideoChannel::WebRtcVideoReceiveStream::ClearDecoders(
     std::vector<AllocatedDecoder>* allocated_decoders) {
-  for (size_t i = 0; i < allocated_decoders->size(); ++i) {
-    if ((*allocated_decoders)[i].external) {
-      external_decoder_factory_->DestroyVideoDecoder(
-          (*allocated_decoders)[i].external_decoder);
-    }
-    delete (*allocated_decoders)[i].decoder;
+  for (auto& dec : *allocated_decoders) {
+    if (dec.external)
+      external_decoder_factory_->DestroyVideoDecoder(dec.external_decoder);
+    delete dec.decoder;
   }
   allocated_decoders->clear();
 }
