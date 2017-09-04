@@ -472,24 +472,6 @@ RtpPacketizerVp9::RtpPacketizerVp9(const RTPVideoHeaderVP9& hdr,
 RtpPacketizerVp9::~RtpPacketizerVp9() {
 }
 
-ProtectionType RtpPacketizerVp9::GetProtectionType() {
-  bool protect =
-      hdr_.temporal_idx == 0 || hdr_.temporal_idx == kNoTemporalIdx;
-  return protect ? kProtectedPacket : kUnprotectedPacket;
-}
-
-StorageType RtpPacketizerVp9::GetStorageType(uint32_t retransmission_settings) {
-  StorageType storage = kAllowRetransmission;
-  if (hdr_.temporal_idx == 0 &&
-      !(retransmission_settings & kRetransmitBaseLayer)) {
-    storage = kDontRetransmit;
-  } else if (hdr_.temporal_idx != kNoTemporalIdx && hdr_.temporal_idx > 0 &&
-             !(retransmission_settings & kRetransmitHigherLayers)) {
-    storage = kDontRetransmit;
-  }
-  return storage;
-}
-
 std::string RtpPacketizerVp9::ToString() {
   return "RtpPacketizerVp9";
 }

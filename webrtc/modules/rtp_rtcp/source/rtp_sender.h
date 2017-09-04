@@ -108,7 +108,8 @@ class RTPSender {
                         size_t payload_size,
                         const RTPFragmentationHeader* fragmentation,
                         const RTPVideoHeader* rtp_header,
-                        uint32_t* transport_frame_id_out);
+                        uint32_t* transport_frame_id_out,
+                        int64_t expected_retransmission_time_ms);
 
   // RTP header extension
   int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);

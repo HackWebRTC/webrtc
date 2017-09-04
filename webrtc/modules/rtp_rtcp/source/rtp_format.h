@@ -41,10 +41,6 @@ class RtpPacketizer {
   // Returns true on success, false otherwise.
   virtual bool NextPacket(RtpPacketToSend* packet) = 0;
 
-  virtual ProtectionType GetProtectionType() = 0;
-
-  virtual StorageType GetStorageType(uint32_t retransmission_settings) = 0;
-
   virtual std::string ToString() = 0;
 };
 

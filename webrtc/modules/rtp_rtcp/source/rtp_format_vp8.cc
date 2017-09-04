@@ -211,25 +211,6 @@ bool RtpPacketizerVp8::NextPacket(RtpPacketToSend* packet) {
   return true;
 }
 
-ProtectionType RtpPacketizerVp8::GetProtectionType() {
-  bool protect =
-      hdr_info_.temporalIdx == 0 || hdr_info_.temporalIdx == kNoTemporalIdx;
-  return protect ? kProtectedPacket : kUnprotectedPacket;
-}
-
-StorageType RtpPacketizerVp8::GetStorageType(uint32_t retransmission_settings) {
-  if (hdr_info_.temporalIdx == 0 &&
-      !(retransmission_settings & kRetransmitBaseLayer)) {
-    return kDontRetransmit;
-  }
-  if (hdr_info_.temporalIdx != kNoTemporalIdx &&
-             hdr_info_.temporalIdx > 0 &&
-             !(retransmission_settings & kRetransmitHigherLayers)) {
-    return kDontRetransmit;
-  }
-  return kAllowRetransmission;
-}
-
 std::string RtpPacketizerVp8::ToString() {
   return "RtpPacketizerVp8";
 }

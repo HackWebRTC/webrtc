@@ -232,7 +232,7 @@ int32_t RTPSender::RegisterPayload(
   if (payload_type_map_.end() != it) {
     // We already use this payload type.
     RtpUtility::Payload* payload = it->second;
-    assert(payload);
+    RTC_DCHECK(payload);
 
     // Check if it's the same as we already have.
     if (RtpUtility::StringCompare(
@@ -355,7 +355,7 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
   }
   SetSendPayloadType(payload_type);
   RtpUtility::Payload* payload = it->second;
-  assert(payload);
+  RTC_DCHECK(payload);
   if (!payload->audio && !audio_configured_) {
     video_->SetVideoCodecType(payload->typeSpecific.Video.videoCodecType);
     *video_type = payload->typeSpecific.Video.videoCodecType;
@@ -371,7 +371,8 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
                                  size_t payload_size,
                                  const RTPFragmentationHeader* fragmentation,
                                  const RTPVideoHeader* rtp_header,
-                                 uint32_t* transport_frame_id_out) {
+                                 uint32_t* transport_frame_id_out,
+                                 int64_t expected_retransmission_time_ms) {
   uint32_t ssrc;
   uint16_t sequence_number;
   uint32_t rtp_timestamp;
@@ -395,20 +396,29 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
     return false;
   }
 
+  switch (frame_type) {
+    case kAudioFrameSpeech:
+    case kAudioFrameCN:
+      RTC_CHECK(audio_configured_);
+      break;
+    case kVideoFrameKey:
+    case kVideoFrameDelta:
+      RTC_CHECK(!audio_configured_);
+      break;
+    case kEmptyFrame:
+      break;
+  }
+
   bool result;
   if (audio_configured_) {
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", rtp_timestamp, "Send", "type",
                             FrameTypeToString(frame_type));
-    assert(frame_type == kAudioFrameSpeech || frame_type == kAudioFrameCN ||
-           frame_type == kEmptyFrame);
 
     result = audio_->SendAudio(frame_type, payload_type, rtp_timestamp,
                                payload_data, payload_size, fragmentation);
   } else {
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms,
                             "Send", "type", FrameTypeToString(frame_type));
-    assert(frame_type != kAudioFrameSpeech && frame_type != kAudioFrameCN);
-
     if (frame_type == kEmptyFrame)
       return true;
 
@@ -419,7 +429,8 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
 
     result = video_->SendVideo(video_type, frame_type, payload_type,
                                rtp_timestamp, capture_time_ms, payload_data,
-                               payload_size, fragmentation, rtp_header);
+                               payload_size, fragmentation, rtp_header,
+                               expected_retransmission_time_ms);
   }
 
   rtc::CritScope cs(&statistics_crit_);
@@ -1105,7 +1116,7 @@ rtc::Optional<uint32_t> RTPSender::FlexfecSsrc() const {
 }
 
 void RTPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
-  assert(csrcs.size() <= kRtpCsrcSize);
+  RTC_DCHECK_LE(csrcs.size(), kRtpCsrcSize);
   rtc::CritScope lock(&send_critsect_);
   csrcs_ = csrcs;
 }
@@ -1136,7 +1147,7 @@ int32_t RTPSender::SetAudioLevel(uint8_t level_d_bov) {
 }
 
 RtpVideoCodecTypes RTPSender::VideoCodecType() const {
-  assert(!audio_configured_ && "Sender is an audio stream!");
+  RTC_DCHECK(!audio_configured_) << "Sender is an audio stream!";
   return video_->VideoCodecType();
 }
 

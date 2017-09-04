@@ -39,10 +39,6 @@ class RtpPacketizerVp9 : public RtpPacketizer {
 
   virtual ~RtpPacketizerVp9();
 
-  ProtectionType GetProtectionType() override;
-
-  StorageType GetStorageType(uint32_t retransmission_settings) override;
-
   std::string ToString() override;
 
   // The payload data must be one encoded VP9 layer frame.

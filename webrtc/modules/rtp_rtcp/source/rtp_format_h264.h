@@ -41,10 +41,6 @@ class RtpPacketizerH264 : public RtpPacketizer {
   // Returns true on success, false otherwise.
   bool NextPacket(RtpPacketToSend* rtp_packet) override;
 
-  ProtectionType GetProtectionType() override;
-
-  StorageType GetStorageType(uint32_t retransmission_settings) override;
-
   std::string ToString() override;
 
  private:

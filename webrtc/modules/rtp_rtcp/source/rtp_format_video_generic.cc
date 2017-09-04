@@ -108,15 +108,6 @@ bool RtpPacketizerGeneric::NextPacket(RtpPacketToSend* packet) {
   return true;
 }
 
-ProtectionType RtpPacketizerGeneric::GetProtectionType() {
-  return kProtectedPacket;
-}
-
-StorageType RtpPacketizerGeneric::GetStorageType(
-    uint32_t retransmission_settings) {
-  return kAllowRetransmission;
-}
-
 std::string RtpPacketizerGeneric::ToString() {
   return "RtpPacketizerGeneric";
 }

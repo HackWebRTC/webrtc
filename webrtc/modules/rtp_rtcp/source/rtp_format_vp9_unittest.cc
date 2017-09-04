@@ -580,37 +580,6 @@ TEST_F(RtpPacketizerVp9Test, TestRespectsLastPacketReductionLen) {
   EXPECT_TRUE(packet.Marker());
 }
 
-TEST_F(RtpPacketizerVp9Test, TestBaseLayerProtectionAndStorageType) {
-  const size_t kFrameSize = 10;
-  const size_t kPacketSize = 12;
-
-  // I:0, P:0, L:1, F:1, B:1, E:1, V:0 (2hdr + 10 payload)
-  // L:   T:0, U:0, S:0, D:0
-  expected_.flexible_mode = true;
-  expected_.temporal_idx = 0;
-  Init(kFrameSize, kPacketSize);
-  EXPECT_EQ(kProtectedPacket, packetizer_->GetProtectionType());
-  EXPECT_EQ(kAllowRetransmission,
-            packetizer_->GetStorageType(kRetransmitBaseLayer));
-  EXPECT_EQ(kDontRetransmit, packetizer_->GetStorageType(kRetransmitOff));
-}
-
-TEST_F(RtpPacketizerVp9Test, TestHigherLayerProtectionAndStorageType) {
-  const size_t kFrameSize = 10;
-  const size_t kPacketSize = 12;
-
-  // I:0, P:0, L:1, F:1, B:1, E:1, V:0 (2hdr + 10 payload)
-  // L:   T:1, U:0, S:0, D:0
-  expected_.flexible_mode = true;
-  expected_.temporal_idx = 1;
-  Init(kFrameSize, kPacketSize);
-  EXPECT_EQ(kUnprotectedPacket, packetizer_->GetProtectionType());
-  EXPECT_EQ(kDontRetransmit, packetizer_->GetStorageType(kRetransmitBaseLayer));
-  EXPECT_EQ(kAllowRetransmission,
-            packetizer_->GetStorageType(kRetransmitHigherLayers));
-}
-
-
 class RtpDepacketizerVp9Test : public ::testing::Test {
  protected:
   RtpDepacketizerVp9Test()

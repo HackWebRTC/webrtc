@@ -31,6 +31,7 @@ namespace {
 const int64_t kRtpRtcpMaxIdleTimeProcessMs = 5;
 const int64_t kRtpRtcpRttProcessTimeMs = 1000;
 const int64_t kRtpRtcpBitrateProcessTimeMs = 10;
+const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
 }  // namespace
 
 RTPExtensionType StringToRtpExtensionType(const std::string& extension) {
@@ -430,9 +431,20 @@ bool ModuleRtpRtcpImpl::SendOutgoingData(
   if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
       rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
   }
+  int64_t expected_retransmission_time_ms = rtt_ms();
+  if (expected_retransmission_time_ms == 0) {
+    // No rtt available (|kRtpRtcpRttProcessTimeMs| not yet passed?), so try to
+    // poll avg_rtt_ms directly from rtcp receiver.
+    if (rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), nullptr,
+                           &expected_retransmission_time_ms, nullptr,
+                           nullptr) == -1) {
+      expected_retransmission_time_ms = kDefaultExpectedRetransmissionTimeMs;
+    }
+  }
   return rtp_sender_->SendOutgoingData(
       frame_type, payload_type, time_stamp, capture_time_ms, payload_data,
-      payload_size, fragmentation, rtp_video_header, transport_frame_id_out);
+      payload_size, fragmentation, rtp_video_header, transport_frame_id_out,
+      expected_retransmission_time_ms);
 }
 
 bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,

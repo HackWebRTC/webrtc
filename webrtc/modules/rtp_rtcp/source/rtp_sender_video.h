@@ -11,9 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_
 
-#include <list>
+#include <map>
 #include <memory>
-#include <vector>
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
@@ -32,10 +31,13 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+class RtpPacketizer;
 class RtpPacketToSend;
 
 class RTPSenderVideo {
  public:
+  static constexpr int64_t kTLRateWindowSizeMs = 2500;
+
   RTPSenderVideo(Clock* clock,
                  RTPSender* rtpSender,
                  FlexfecSender* flexfec_sender);
@@ -55,7 +57,8 @@ class RTPSenderVideo {
                  const uint8_t* payload_data,
                  size_t payload_size,
                  const RTPFragmentationHeader* fragmentation,
-                 const RTPVideoHeader* video_header);
+                 const RTPVideoHeader* video_header,
+                 int64_t expected_retransmission_time_ms);
 
   void SetVideoCodecType(RtpVideoCodecTypes type);
 
@@ -76,7 +79,24 @@ class RTPSenderVideo {
   int SelectiveRetransmissions() const;
   void SetSelectiveRetransmissions(uint8_t settings);
 
+ protected:
+  static uint8_t GetTemporalId(const RTPVideoHeader& header);
+  StorageType GetStorageType(uint8_t temporal_id,
+                             int32_t retransmission_settings,
+                             int64_t expected_retransmission_time_ms);
+
  private:
+  struct TemporalLayerStats {
+    TemporalLayerStats()
+        : frame_rate_fp1000s(kTLRateWindowSizeMs, 1000 * 1000),
+          last_frame_time_ms(0) {}
+    // Frame rate, in frames per 1000 seconds. This essentially turns the fps
+    // value into a fixed point value with three decimals. Improves precision at
+    // low frame rates.
+    RateStatistics frame_rate_fp1000s;
+    int64_t last_frame_time_ms;
+  };
+
   size_t CalculateFecPacketOverhead() const EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   void SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
@@ -102,6 +122,10 @@ class RTPSenderVideo {
   }
 
   bool flexfec_enabled() const { return flexfec_sender_ != nullptr; }
+
+  bool UpdateConditionalRetransmit(uint8_t temporal_id,
+                                   int64_t expected_retransmission_time_ms)
+      EXCLUSIVE_LOCKS_REQUIRED(stats_crit_);
 
   RTPSender* const rtp_sender_;
   Clock* const clock_;
@@ -131,6 +155,10 @@ class RTPSenderVideo {
   RateStatistics fec_bitrate_ GUARDED_BY(stats_crit_);
   // Bitrate used for video payload and RTP headers.
   RateStatistics video_bitrate_ GUARDED_BY(stats_crit_);
+
+  std::map<int, TemporalLayerStats> frame_stats_by_temporal_layer_
+      GUARDED_BY(stats_crit_);
+
   OneTimeEvent first_frame_sent_;
 };
 

@@ -389,15 +389,6 @@ void RtpPacketizerH264::NextFragmentPacket(RtpPacketToSend* rtp_packet) {
   packets_.pop();
 }
 
-ProtectionType RtpPacketizerH264::GetProtectionType() {
-  return kProtectedPacket;
-}
-
-StorageType RtpPacketizerH264::GetStorageType(
-    uint32_t retransmission_settings) {
-  return kAllowRetransmission;
-}
-
 std::string RtpPacketizerH264::ToString() {
   return "RtpPacketizerH264";
 }
