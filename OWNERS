@@ -7,6 +7,7 @@ tommi@webrtc.org
 per-file .gitignore=*
 per-file .gn=kjellander@webrtc.org
 per-file *.py=kjellander@webrtc.org
+per-file .vpython=kjellander@webrtc.org
 per-file AUTHORS=*
 per-file BUILD.gn=kjellander@webrtc.org
 per-file DEPS=*
