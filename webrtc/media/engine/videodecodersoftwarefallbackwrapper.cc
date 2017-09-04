@@ -22,9 +22,9 @@ namespace webrtc {
 
 VideoDecoderSoftwareFallbackWrapper::VideoDecoderSoftwareFallbackWrapper(
     VideoCodecType codec_type,
-    std::unique_ptr<VideoDecoder> decoder)
+    VideoDecoder* decoder)
     : codec_type_(codec_type),
-      decoder_(std::move(decoder)),
+      decoder_(decoder),
       decoder_initialized_(false),
       callback_(nullptr) {}
 
