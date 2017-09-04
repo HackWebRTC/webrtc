@@ -98,17 +98,16 @@ class RtcEventLog {
                             int64_t max_size_bytes) = 0;
 
   // Deprecated. Pass an explicit file size limit.
-  RTC_DEPRECATED bool StartLogging(const std::string& file_name) {
+  bool StartLogging(const std::string& file_name) {
     return StartLogging(file_name, 10000000);
   }
 
   // Deprecated. Pass an explicit file size limit.
-  RTC_DEPRECATED bool StartLogging(rtc::PlatformFile platform_file) {
+  bool StartLogging(rtc::PlatformFile platform_file) {
     return StartLogging(platform_file, 10000000);
   }
 
-  // Stops logging to file and waits until the file has been closed, after
-  // which it would be permissible to read and/or modify it.
+  // Stops logging to file and waits until the thread has finished.
   virtual void StopLogging() = 0;
 
   // Logs configuration information for a video receive stream.
