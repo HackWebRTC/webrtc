@@ -103,10 +103,9 @@ id<RTCVideoDecoderFactory> ObjCVideoDecoderFactory::wrapped_decoder_factory() co
   return decoder_factory_;
 }
 
-VideoDecoder *ObjCVideoDecoderFactory::CreateVideoDecoder(VideoCodecType type) {
-  const char *codec_name = CodecTypeToPayloadString(type);
-
-  NSString *codecName = [NSString stringWithUTF8String:codec_name];
+VideoDecoder *ObjCVideoDecoderFactory::CreateVideoDecoderWithParams(
+    const cricket::VideoCodec &codec, cricket::VideoDecoderParams params) {
+  NSString *codecName = [NSString stringWithUTF8String:codec.name.c_str()];
   for (RTCVideoCodecInfo *codecInfo in decoder_factory_.supportedCodecs) {
     if ([codecName isEqualToString:codecInfo.name]) {
       id<RTCVideoDecoder> decoder = [decoder_factory_ createDecoder:codecInfo];

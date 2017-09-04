@@ -2147,7 +2147,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
   if (external_decoder_factory_ != NULL) {
     webrtc::VideoDecoder* decoder =
         external_decoder_factory_->CreateVideoDecoderWithParams(
-            type, {stream_params_.id});
+            codec, {stream_params_.id});
     if (decoder != NULL) {
       return AllocatedDecoder(decoder, type, true /* is_external */);
     }
@@ -2155,7 +2155,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
 
   InternalDecoderFactory internal_decoder_factory;
   return AllocatedDecoder(internal_decoder_factory.CreateVideoDecoderWithParams(
-                              type, {stream_params_.id}),
+                              codec, {stream_params_.id}),
                           type, false /* is_external */);
 }
 

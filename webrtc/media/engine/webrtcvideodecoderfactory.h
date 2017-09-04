@@ -12,6 +12,7 @@
 #define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEODECODERFACTORY_H_
 
 #include "webrtc/common_types.h"
+#include "webrtc/media/base/codec.h"
 #include "webrtc/rtc_base/refcount.h"
 
 namespace webrtc {
@@ -28,8 +29,23 @@ class WebRtcVideoDecoderFactory {
  public:
   // Caller takes the ownership of the returned object and it should be released
   // by calling DestroyVideoDecoder().
+  virtual webrtc::VideoDecoder* CreateVideoDecoderWithParams(
+      const VideoCodec& codec,
+      VideoDecoderParams params) {
+    // Default implementation that delegates to old version in order to preserve
+    // backwards-compatability.
+    webrtc::VideoCodecType type = webrtc::PayloadStringToCodecType(codec.name);
+    return CreateVideoDecoderWithParams(type, params);
+  }
+  // DEPRECATED.
+  // These methods should not be used by new code and will eventually be
+  // removed. See http://crbug.com/webrtc/8140.
   virtual webrtc::VideoDecoder* CreateVideoDecoder(
-      webrtc::VideoCodecType type) = 0;
+      webrtc::VideoCodecType type) {
+    RTC_NOTREACHED();
+    return nullptr;
+  };
+
   virtual webrtc::VideoDecoder* CreateVideoDecoderWithParams(
       webrtc::VideoCodecType type,
       VideoDecoderParams params) {

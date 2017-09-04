@@ -15,6 +15,7 @@
 
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
+#include "webrtc/media/base/codec.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
@@ -49,7 +50,8 @@ id<RTCVideoDecoderFactory> CreateErrorDecoderFactory() {
 
 webrtc::VideoDecoder *GetObjCDecoder(id<RTCVideoDecoderFactory> factory) {
   webrtc::ObjCVideoDecoderFactory decoder_factory(factory);
-  return decoder_factory.CreateVideoDecoder(webrtc::kVideoCodecH264);
+  return decoder_factory.CreateVideoDecoderWithParams(cricket::VideoCodec(cricket::kH264CodecName),
+                                                      {});
 }
 
 #pragma mark -

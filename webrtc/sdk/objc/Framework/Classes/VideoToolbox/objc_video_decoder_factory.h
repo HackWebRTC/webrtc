@@ -25,8 +25,10 @@ class ObjCVideoDecoderFactory : public cricket::WebRtcVideoDecoderFactory {
 
   id<RTCVideoDecoderFactory> wrapped_decoder_factory() const;
 
-  webrtc::VideoDecoder* CreateVideoDecoder(
-      webrtc::VideoCodecType type) override;
+  VideoDecoder* CreateVideoDecoderWithParams(
+      const cricket::VideoCodec& codec,
+      cricket::VideoDecoderParams params) override;
+
   void DestroyVideoDecoder(webrtc::VideoDecoder* decoder) override;
 
  private:
