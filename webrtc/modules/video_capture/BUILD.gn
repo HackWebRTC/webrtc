@@ -86,7 +86,38 @@ if (!build_with_chromium) {
     }
   }
 
-  rtc_static_library("video_capture_internal_impl") {
+  if (is_ios || is_mac) {
+    rtc_source_set("video_capture_internal_impl_objc") {
+      visibility = [ ":video_capture_internal_impl" ]
+      configs += [ ":video_capture_internal_impl_warnings_config" ]
+
+      deps = [
+        ":video_capture_module",
+        "../../rtc_base:rtc_base_approved",
+        "../../system_wrappers",
+      ]
+
+      sources = [
+        "objc/device_info.h",
+        "objc/device_info.mm",
+        "objc/device_info_objc.h",
+        "objc/device_info_objc.mm",
+        "objc/rtc_video_capture_objc.h",
+        "objc/rtc_video_capture_objc.mm",
+        "objc/video_capture.h",
+        "objc/video_capture.mm",
+      ]
+
+      all_dependent_configs = [ ":video_capture_internal_impl_config" ]
+
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+    }
+  }
+
+  rtc_source_set("video_capture_internal_impl") {
     configs += [ ":video_capture_internal_impl_warnings_config" ]
 
     deps = [
@@ -129,16 +160,7 @@ if (!build_with_chromium) {
       deps += [ "//third_party/winsdk_samples" ]
     }
     if (is_ios || is_mac) {
-      sources = [
-        "objc/device_info.h",
-        "objc/device_info.mm",
-        "objc/device_info_objc.h",
-        "objc/device_info_objc.mm",
-        "objc/rtc_video_capture_objc.h",
-        "objc/rtc_video_capture_objc.mm",
-        "objc/video_capture.h",
-        "objc/video_capture.mm",
-      ]
+      deps += [ ":video_capture_internal_impl_objc" ]
     }
 
     all_dependent_configs = [ ":video_capture_internal_impl_config" ]
