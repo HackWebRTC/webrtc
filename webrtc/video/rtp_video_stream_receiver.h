@@ -185,8 +185,6 @@ class RtpVideoStreamReceiver : public RtpData,
 
   rtc::SequencedTaskChecker worker_task_checker_;
   bool receiving_ GUARDED_BY(worker_task_checker_);
-  uint8_t restored_packet_[IP_PACKET_SIZE] GUARDED_BY(worker_task_checker_);
-  bool restored_packet_in_use_ GUARDED_BY(worker_task_checker_);
   int64_t last_packet_log_ms_ GUARDED_BY(worker_task_checker_);
 
   const std::unique_ptr<RtpRtcp> rtp_rtcp_;

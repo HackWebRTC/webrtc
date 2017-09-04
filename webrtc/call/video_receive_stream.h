@@ -161,6 +161,11 @@ class VideoReceiveStream {
       NackConfig nack;
 
       // See UlpfecConfig for description.
+      // TODO(nisse): UlpfecConfig includes the field red_rtx_payload_type,
+      // which duplicates info in the rtx_associated_payload_types mapping. So
+      // delete the use of UlpfecConfig here, and replace by the values which
+      // make sense in this context, likely those are ulpfec_payload_type_ and
+      // red_payload_type_.
       UlpfecConfig ulpfec;
 
       // SSRC for retransmissions.
