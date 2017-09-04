@@ -12,6 +12,8 @@
 
 #include <vector>
 
+#include "webrtc/test/testsupport/fileutils.h"
+
 namespace webrtc {
 namespace test {
 
@@ -19,33 +21,38 @@ namespace test {
 
 namespace {
 
-// Test settings.
-// Only allow encoder/decoder to use single core, for predictability.
-const bool kUseSingleCore = true;
-const bool kVerboseLogging = false;
-const bool kHwCodec = false;
-
 // Codec settings.
 const bool kResilienceOn = true;
-
-// Default sequence is foreman (CIF): may be better to use VGA for resize test.
 const int kCifWidth = 352;
 const int kCifHeight = 288;
-const char kForemanCif[] = "foreman_cif";
 const int kNumFrames = 100;
 
 const std::nullptr_t kNoVisualizationParams = nullptr;
 
 }  // namespace
 
+class VideoProcessorIntegrationTestOpenH264
+    : public VideoProcessorIntegrationTest {
+ protected:
+  VideoProcessorIntegrationTestOpenH264() {
+    config_.filename = "foreman_cif";
+    config_.input_filename = ResourcePath(config_.filename, "yuv");
+    config_.output_filename =
+        TempFilename(OutputPath(), "videoprocessor_integrationtest_libvpx");
+    config_.networking_config.packet_loss_probability = 0.0;
+    // Only allow encoder/decoder to use single core, for predictability.
+    config_.use_single_core = true;
+    config_.verbose = false;
+    config_.hw_codec = false;
+  }
+};
+
 // H264: Run with no packet loss and fixed bitrate. Quality should be very high.
 // Note(hbos): The PacketManipulatorImpl code used to simulate packet loss in
 // these unittests appears to drop "packets" in a way that is not compatible
 // with H264. Therefore ProcessXPercentPacketLossH264, X != 0, unittests have
 // not been added.
-TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging);
+TEST_F(VideoProcessorIntegrationTestOpenH264, Process0PercentPacketLossH264) {
   SetCodecSettings(&config_, kVideoCodecH264, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 

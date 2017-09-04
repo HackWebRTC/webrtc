@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor_integrationtest.h"
 
+#include "webrtc/test/testsupport/fileutils.h"
+
 namespace webrtc {
 namespace test {
 
@@ -21,7 +23,6 @@ const VideoCodecType kVideoCodecType[] = {kVideoCodecVP8};
 const bool kHwCodec[] = {false};
 
 // Codec settings.
-const bool kUseSingleCore = false;
 const bool kResilienceOn = false;
 const int kNumTemporalLayers = 1;
 const bool kDenoisingOn = false;
@@ -30,8 +31,7 @@ const bool kSpatialResizeOn = false;
 const bool kFrameDropperOn = false;
 
 // Test settings.
-const bool kVerboseLogging = true;
-const float kPacketLoss = 0.0f;
+const bool kUseSingleCore = false;
 const VisualizationParams kVisualizationParams = {
     false,  // save_encoded_ivf
     false,  // save_decoded_y4m
@@ -57,8 +57,13 @@ class PlotVideoProcessorIntegrationTest
                int height,
                int framerate,
                const std::string& filename) {
-    SetTestConfig(&config_, hw_codec_, kUseSingleCore, kPacketLoss, filename,
-                  kVerboseLogging);
+    config_.filename = filename;
+    config_.input_filename = ResourcePath(filename, "yuv");
+    config_.output_filename =
+        TempFilename(OutputPath(), "plot_videoprocessor_integrationtest");
+    config_.use_single_core = kUseSingleCore;
+    config_.verbose = true;
+    config_.hw_codec = hw_codec_;
     SetCodecSettings(&config_, codec_type_, kNumTemporalLayers,
                      kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
                      kSpatialResizeOn, kResilienceOn, width, height);

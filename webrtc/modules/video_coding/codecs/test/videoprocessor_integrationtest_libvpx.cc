@@ -12,24 +12,17 @@
 
 #include <vector>
 
+#include "webrtc/test/testsupport/fileutils.h"
+
 namespace webrtc {
 namespace test {
 
 namespace {
 
-// Test settings.
-// Only allow encoder/decoder to use single core, for predictability.
-const bool kUseSingleCore = true;
-const bool kVerboseLogging = false;
-const bool kHwCodec = false;
-
 // Codec settings.
 const bool kResilienceOn = true;
-
-// Default sequence is foreman (CIF): may be better to use VGA for resize test.
 const int kCifWidth = 352;
 const int kCifHeight = 288;
-const char kForemanCif[] = "foreman_cif";
 #if !defined(WEBRTC_IOS)
 const int kNumFramesShort = 100;
 #endif
@@ -39,15 +32,29 @@ const std::nullptr_t kNoVisualizationParams = nullptr;
 
 }  // namespace
 
+class VideoProcessorIntegrationTestLibvpx
+    : public VideoProcessorIntegrationTest {
+ protected:
+  VideoProcessorIntegrationTestLibvpx() {
+    config_.filename = "foreman_cif";
+    config_.input_filename = ResourcePath(config_.filename, "yuv");
+    config_.output_filename =
+        TempFilename(OutputPath(), "videoprocessor_integrationtest_libvpx");
+    config_.networking_config.packet_loss_probability = 0.0;
+    // Only allow encoder/decoder to use single core, for predictability.
+    config_.use_single_core = true;
+    config_.verbose = false;
+    config_.hw_codec = false;
+  }
+};
+
 // Fails on iOS. See webrtc:4755.
 #if !defined(WEBRTC_IOS)
 
 #if !defined(RTC_DISABLE_VP9)
 // VP9: Run with no packet loss and fixed bitrate. Quality should be very high.
 // One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging);
+TEST_F(VideoProcessorIntegrationTestLibvpx, Process0PercentPacketLossVP9) {
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -67,9 +74,8 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
 
 // VP9: Run with 5% packet loss and fixed bitrate. Quality should be a bit
 // lower. One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.05f, kForemanCif,
-                kVerboseLogging);
+TEST_F(VideoProcessorIntegrationTestLibvpx, Process5PercentPacketLossVP9) {
+  config_.networking_config.packet_loss_probability = 0.05f;
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -91,9 +97,7 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
 // low to high to medium. Check that quality and encoder response to the new
 // target rate/per-frame bandwidth (for each rate update) is within limits.
 // One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging);
+TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossChangeBitRateVP9) {
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -122,10 +126,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
 // for the rate control metrics can be lower. One key frame (first frame only).
 // Note: quality after update should be higher but we currently compute quality
 // metrics averaged over whole sequence run.
-TEST_F(VideoProcessorIntegrationTest,
+TEST_F(VideoProcessorIntegrationTestLibvpx,
        ProcessNoLossChangeFrameRateFrameDropVP9) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -148,9 +150,7 @@ TEST_F(VideoProcessorIntegrationTest,
 }
 
 // VP9: Run with no packet loss and denoiser on. One key frame (first frame).
-TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging);
+TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossDenoiserOnVP9) {
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -171,10 +171,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
 // Run with no packet loss, at low bitrate.
 // spatial_resize is on, for this low bitrate expect one resize in sequence.
 // Resize happens on delta frame. Expect only one key frame (first frame).
-TEST_F(VideoProcessorIntegrationTest,
+TEST_F(VideoProcessorIntegrationTestLibvpx,
        DISABLED_ProcessNoLossSpatialResizeFrameDropVP9) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, true,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -200,9 +198,7 @@ TEST_F(VideoProcessorIntegrationTest,
 // VP8: Run with no packet loss and fixed bitrate. Quality should be very high.
 // One key frame (first frame only) in sequence. Setting |key_frame_interval|
 // to -1 below means no periodic key frames in test.
-TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging);
+TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessZeroPacketLoss) {
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -222,9 +218,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
 
 // VP8: Run with 5% packet loss and fixed bitrate. Quality should be a bit
 // lower. One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.05f, kForemanCif,
-                kVerboseLogging);
+TEST_F(VideoProcessorIntegrationTestLibvpx, Process5PercentPacketLoss) {
+  config_.networking_config.packet_loss_probability = 0.05f;
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -244,9 +239,8 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
 
 // VP8: Run with 10% packet loss and fixed bitrate. Quality should be lower.
 // One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.1f, kForemanCif,
-                kVerboseLogging);
+TEST_F(VideoProcessorIntegrationTestLibvpx, Process10PercentPacketLoss) {
+  config_.networking_config.packet_loss_probability = 0.1f;
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -286,9 +280,8 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
 #else
 #define MAYBE_ProcessNoLossChangeBitRateVP8 ProcessNoLossChangeBitRateVP8
 #endif
-TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging);
+TEST_F(VideoProcessorIntegrationTestLibvpx,
+       MAYBE_ProcessNoLossChangeBitRateVP8) {
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -325,10 +318,8 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
 #define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8 \
   ProcessNoLossChangeFrameRateFrameDropVP8
 #endif
-TEST_F(VideoProcessorIntegrationTest,
+TEST_F(VideoProcessorIntegrationTestLibvpx,
        MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging);
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -362,9 +353,8 @@ TEST_F(VideoProcessorIntegrationTest,
 #else
 #define MAYBE_ProcessNoLossTemporalLayersVP8 ProcessNoLossTemporalLayersVP8
 #endif
-TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossTemporalLayersVP8) {
-  SetTestConfig(&config_, kHwCodec, kUseSingleCore, 0.0f, kForemanCif,
-                kVerboseLogging);
+TEST_F(VideoProcessorIntegrationTestLibvpx,
+       MAYBE_ProcessNoLossTemporalLayersVP8) {
   SetCodecSettings(&config_, kVideoCodecVP8, 3, false, true, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 

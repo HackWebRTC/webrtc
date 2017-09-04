@@ -93,13 +93,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
   VideoProcessorIntegrationTest();
   ~VideoProcessorIntegrationTest() override;
 
-  static void SetTestConfig(TestConfig* config,
-                            bool hw_codec,
-                            bool use_single_core,
-                            float packet_loss_probability,
-                            std::string filename,
-                            bool verbose_logging);
-
   static void SetCodecSettings(TestConfig* config,
                                VideoCodecType codec_type,
                                int num_temporal_layers,

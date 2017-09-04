@@ -78,23 +78,6 @@ VideoProcessorIntegrationTest::VideoProcessorIntegrationTest() {
 
 VideoProcessorIntegrationTest::~VideoProcessorIntegrationTest() = default;
 
-void VideoProcessorIntegrationTest::SetTestConfig(TestConfig* config,
-                                                  bool hw_codec,
-                                                  bool use_single_core,
-                                                  float packet_loss_probability,
-                                                  std::string filename,
-                                                  bool verbose_logging) {
-  config->filename = filename;
-  config->input_filename = ResourcePath(filename, "yuv");
-  // Generate an output filename in a safe way.
-  config->output_filename =
-      TempFilename(OutputPath(), "videoprocessor_integrationtest");
-  config->networking_config.packet_loss_probability = packet_loss_probability;
-  config->use_single_core = use_single_core;
-  config->verbose = verbose_logging;
-  config->hw_codec = hw_codec;
-}
-
 void VideoProcessorIntegrationTest::SetCodecSettings(TestConfig* config,
                                                      VideoCodecType codec_type,
                                                      int num_temporal_layers,
