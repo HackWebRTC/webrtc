@@ -24,6 +24,7 @@
 #include "webrtc/rtc_base/gunit.h"
 #include "webrtc/rtc_base/refcountedobject.h"
 #include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "webrtc/rtc_base/trace_event.h"
 #include "webrtc/rtc_base/virtualsocketserver.h"
 
 namespace webrtc {
@@ -33,27 +34,61 @@ namespace {
 const int64_t kGetStatsTimeoutMs = 10000;
 
 const unsigned char* GetCategoryEnabledHandler(const char* name) {
-  return reinterpret_cast<const unsigned char*>("webrtc_stats");
+  if (strcmp("webrtc_stats", name) != 0) {
+    return reinterpret_cast<const unsigned char*>("");
+  }
+  return reinterpret_cast<const unsigned char*>(name);
 }
 
-void AddTraceEventHandler(char phase,
-                          const unsigned char* category_enabled,
-                          const char* name,
-                          unsigned long long id,
-                          int num_args,
-                          const char** arg_names,
-                          const unsigned char* arg_types,
-                          const unsigned long long* arg_values,
-                          unsigned char flags) {
-  // Do nothing
-}
+class RTCStatsReportTraceListener {
+ public:
+  static void SetUp() {
+    if (!traced_report_)
+      traced_report_ = new RTCStatsReportTraceListener();
+    traced_report_->last_trace_ = "";
+    SetupEventTracer(&GetCategoryEnabledHandler,
+                     &RTCStatsReportTraceListener::AddTraceEventHandler);
+  }
+
+  static const std::string& last_trace() {
+    RTC_DCHECK(traced_report_);
+    return traced_report_->last_trace_;
+  }
+
+ private:
+  static void AddTraceEventHandler(char phase,
+                                   const unsigned char* category_enabled,
+                                   const char* name,
+                                   unsigned long long id,
+                                   int num_args,
+                                   const char** arg_names,
+                                   const unsigned char* arg_types,
+                                   const unsigned long long* arg_values,
+                                   unsigned char flags) {
+    RTC_DCHECK(traced_report_);
+    EXPECT_STREQ("webrtc_stats",
+                 reinterpret_cast<const char*>(category_enabled));
+    EXPECT_STREQ("webrtc_stats", name);
+    EXPECT_EQ(1, num_args);
+    EXPECT_STREQ("report", arg_names[0]);
+    EXPECT_EQ(TRACE_VALUE_TYPE_COPY_STRING, arg_types[0]);
+
+    traced_report_->last_trace_ = reinterpret_cast<const char*>(arg_values[0]);
+  }
+
+  static RTCStatsReportTraceListener* traced_report_;
+  std::string last_trace_;
+};
+
+RTCStatsReportTraceListener* RTCStatsReportTraceListener::traced_report_ =
+    nullptr;
 
 class RTCStatsIntegrationTest : public testing::Test {
  public:
   RTCStatsIntegrationTest()
       : network_thread_(new rtc::Thread(&virtual_socket_server_)),
         worker_thread_(rtc::Thread::Create()) {
-    SetupEventTracer(&GetCategoryEnabledHandler, &AddTraceEventHandler);
+    RTCStatsReportTraceListener::SetUp();
 
     RTC_CHECK(network_thread_->Start());
     RTC_CHECK(worker_thread_->Start());
@@ -662,6 +697,7 @@ TEST_F(RTCStatsIntegrationTest, GetStatsFromCaller) {
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsFromCaller();
   RTCStatsReportVerifier(report.get()).VerifyReport();
+  EXPECT_EQ(report->ToJson(), RTCStatsReportTraceListener::last_trace());
 }
 
 TEST_F(RTCStatsIntegrationTest, GetStatsFromCallee) {
@@ -669,6 +705,7 @@ TEST_F(RTCStatsIntegrationTest, GetStatsFromCallee) {
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsFromCallee();
   RTCStatsReportVerifier(report.get()).VerifyReport();
+  EXPECT_EQ(report->ToJson(), RTCStatsReportTraceListener::last_trace());
 }
 
 TEST_F(RTCStatsIntegrationTest, GetsStatsWhileDestroyingPeerConnections) {
@@ -682,6 +719,8 @@ TEST_F(RTCStatsIntegrationTest, GetsStatsWhileDestroyingPeerConnections) {
   // Any pending stats requests should have completed in the act of destroying
   // the peer connection.
   EXPECT_TRUE(stats_obtainer->report());
+  EXPECT_EQ(stats_obtainer->report()->ToJson(),
+            RTCStatsReportTraceListener::last_trace());
 }
 #endif  // HAVE_SCTP
 

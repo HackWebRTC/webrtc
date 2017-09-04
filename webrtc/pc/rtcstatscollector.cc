@@ -32,18 +32,6 @@ namespace webrtc {
 
 namespace {
 
-const int kStatTypeMemberNameAndIdMaxLen = 1024;
-
-std::string GetStatTypeMemberNameAndId(const RTCStats& stats,
-                                       const RTCStatsMemberInterface* member) {
-  RTC_DCHECK(strlen(stats.type()) + strlen(member->name())
-             + stats.id().size() + 3 < kStatTypeMemberNameAndIdMaxLen);
-  char buffer[kStatTypeMemberNameAndIdMaxLen];
-  rtc::sprintfn(&buffer[0], sizeof(buffer), "%s.%s.%s", stats.type(),
-                member->name(), stats.id().c_str());
-  return buffer;
-}
-
 std::string RTCCertificateIDFromFingerprint(const std::string& fingerprint) {
   return "RTCCertificate_" + fingerprint;
 }
@@ -778,16 +766,8 @@ void RTCStatsCollector::AddPartialResults_s(
     // Trace WebRTC Stats when getStats is called on Javascript.
     // This allows access to WebRTC stats from trace logs. To enable them,
     // select the "webrtc_stats" category when recording traces.
-    for (const RTCStats& stats : *cached_report_) {
-      for (const RTCStatsMemberInterface* member : stats.Members()) {
-        if (member->is_defined()) {
-          TRACE_EVENT_INSTANT2("webrtc_stats", "webrtc_stats",
-                               "value", member->ValueToString(),
-                               "type.name.id", GetStatTypeMemberNameAndId(
-                                   stats, member));
-        }
-      }
-    }
+    TRACE_EVENT_INSTANT1("webrtc_stats", "webrtc_stats", "report",
+                         cached_report_->ToJson());
     DeliverCachedReport();
   }
 }
