@@ -461,11 +461,11 @@
     },
 
     'ubsan': {
-      'gn_args': 'is_ubsan=true',
+      'gn_args': 'is_ubsan=true is_ubsan_no_recover=true',
     },
 
     'ubsan_vptr': {
-      'gn_args': 'is_ubsan_vptr=true',
+      'gn_args': 'is_ubsan_vptr=true is_ubsan_no_recover=true',
     },
 
     'win_fastlink': {

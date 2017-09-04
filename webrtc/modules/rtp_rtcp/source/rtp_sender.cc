@@ -936,7 +936,7 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
     return;
 
   uint32_t ssrc;
-  int avg_delay_ms = 0;
+  int64_t avg_delay_ms = 0;
   int max_delay_ms = 0;
   {
     rtc::CritScope lock(&send_critsect_);
@@ -962,8 +962,8 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
       return;
     avg_delay_ms = (avg_delay_ms + num_delays / 2) / num_delays;
   }
-  send_side_delay_observer_->SendSideDelayUpdated(avg_delay_ms, max_delay_ms,
-                                                  ssrc);
+  send_side_delay_observer_->SendSideDelayUpdated(
+      rtc::dchecked_cast<int>(avg_delay_ms), max_delay_ms, ssrc);
 }
 
 void RTPSender::UpdateOnSendPacket(int packet_id,

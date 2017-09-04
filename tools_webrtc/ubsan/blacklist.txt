@@ -23,6 +23,10 @@ src:*/usr/*
 fun:*FilterBanksTest*CalculateResidualEnergyTester*
 
 #############################################################################
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=8200
+fun:*WebRtcAecm_ProcessBlock*
+
+#############################################################################
 # Ignore errors in common_audio.
 # https://bugs.chromium.org/p/webrtc/issues/detail?id=5486
 src:*/webrtc/common_audio/signal_processing/signal_processing_unittest.cc
@@ -30,4 +34,5 @@ src:*/webrtc/common_audio/signal_processing/resample_by_2_internal.c
 fun:*WebRtcSpl_AddSatW32*
 fun:*WebRtcSpl_SubSatW32*
 fun:*WebRtcSpl_DivW32HiLow*
+fun:*WebRtcSpl_LevinsonDurbin*
 fun:*GmmProbability*

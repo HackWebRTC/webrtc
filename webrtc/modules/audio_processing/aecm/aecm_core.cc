@@ -24,6 +24,7 @@ extern "C" {
 }
 
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/safe_conversions.h"
 #include "webrtc/typedefs.h"
 
 #ifdef AEC_DEBUG
@@ -927,8 +928,8 @@ void WebRtcAecm_UpdateChannel(AecmCore* aecm,
             {
                 // We need to shift down before multiplication
                 shiftChFar = 32 - zerosCh - zerosFar;
-                tmpU32no1 = (aecm->channelAdapt32[i] >> shiftChFar) *
-                    far_spectrum[i];
+                tmpU32no1 = rtc::dchecked_cast<uint32_t>(
+                    aecm->channelAdapt32[i] >> shiftChFar) * far_spectrum[i];
             }
             // Determine Q-domain of numerator
             zerosNum = WebRtcSpl_NormU32(tmpU32no1);
