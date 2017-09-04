@@ -93,6 +93,7 @@ class HardwareVideoEncoder implements VideoEncoder {
   private MediaCodec codec;
   private Callback callback;
 
+  private boolean automaticResizeOn;
   private int width;
   private int height;
 
@@ -134,6 +135,8 @@ class HardwareVideoEncoder implements VideoEncoder {
 
   @Override
   public VideoCodecStatus initEncode(Settings settings, Callback callback) {
+    automaticResizeOn = settings.automaticResizeOn;
+
     return initEncodeInternal(
         settings.width, settings.height, settings.startBitrate, settings.maxFramerate, callback);
   }
@@ -380,8 +383,7 @@ class HardwareVideoEncoder implements VideoEncoder {
 
   @Override
   public ScalingSettings getScalingSettings() {
-    // TODO(mellem):  Implement scaling settings.
-    return null;
+    return new ScalingSettings(automaticResizeOn);
   }
 
   @Override

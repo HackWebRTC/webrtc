@@ -22,13 +22,16 @@ public interface VideoEncoder {
     public final int height;
     public final int startBitrate; // Kilobits per second.
     public final int maxFramerate;
+    public final boolean automaticResizeOn;
 
-    public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate) {
+    public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate,
+        boolean automaticResizeOn) {
       this.numberOfCores = numberOfCores;
       this.width = width;
       this.height = height;
       this.startBitrate = startBitrate;
       this.maxFramerate = maxFramerate;
+      this.automaticResizeOn = automaticResizeOn;
     }
   }
 
@@ -84,11 +87,22 @@ public interface VideoEncoder {
   /** Settings for WebRTC quality based scaling. */
   public class ScalingSettings {
     public final boolean on;
-    public final int low;
-    public final int high;
+    public final Integer low;
+    public final Integer high;
 
     /**
-     * Creates quality based scaling settings.
+     * Creates quality based scaling setting.
+     *
+     * @param on True if quality scaling is turned on.
+     */
+    public ScalingSettings(boolean on) {
+      this.on = on;
+      this.low = null;
+      this.high = null;
+    }
+
+    /**
+     * Creates quality based scaling settings with custom thresholds.
      *
      * @param on True if quality scaling is turned on.
      * @param low Average QP at which to scale up the resolution.
@@ -129,6 +143,6 @@ public interface VideoEncoder {
   VideoCodecStatus setRateAllocation(BitrateAllocation allocation, int framerate);
   /** Any encoder that wants to use WebRTC provided quality scaler must implement this method. */
   ScalingSettings getScalingSettings();
-  /** Should return a descriptive name for the implementation. */
+  /** Should return a descriptive name for the implementation. Gets called once and cached. */
   String getImplementationName();
 }

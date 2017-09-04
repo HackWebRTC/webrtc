@@ -15,6 +15,7 @@
 #define WEBRTC_SDK_ANDROID_SRC_JNI_JNI_HELPERS_H_
 
 #include <jni.h>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -113,6 +114,10 @@ jobject JavaEnumFromIndex(JNIEnv* jni, jclass state_class,
 jobject JavaEnumFromIndexAndClassName(JNIEnv* jni,
                                       const std::string& state_class_fragment,
                                       int index);
+
+// Parses Map<String, String> to std::map<std::string, std::string>.
+std::map<std::string, std::string> JavaToStdMapStrings(JNIEnv* jni,
+                                                       jobject j_map);
 
 // Returns the name of a Java enum.
 std::string GetJavaEnumName(JNIEnv* jni,

@@ -32,8 +32,9 @@ public class HardwareVideoEncoderTest {
 
   private static final boolean ENABLE_INTEL_VP8_ENCODER = true;
   private static final boolean ENABLE_H264_HIGH_PROFILE = true;
-  private static final VideoEncoder.Settings SETTINGS = new VideoEncoder.Settings(
-      1 /* core */, 640 /* width */, 480 /* height */, 300 /* kbps */, 30 /* fps */);
+  private static final VideoEncoder.Settings SETTINGS =
+      new VideoEncoder.Settings(1 /* core */, 640 /* width */, 480 /* height */, 300 /* kbps */,
+          30 /* fps */, true /* automaticResizeOn */);
 
   @Test
   @SmallTest

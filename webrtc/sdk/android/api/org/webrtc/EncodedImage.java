@@ -18,10 +18,30 @@ import java.util.concurrent.TimeUnit;
  * encoders.
  */
 public class EncodedImage {
+  // Must be kept in sync with common_types.h FrameType.
   public enum FrameType {
-    EmptyFrame,
-    VideoFrameKey,
-    VideoFrameDelta,
+    EmptyFrame(0),
+    VideoFrameKey(3),
+    VideoFrameDelta(4);
+
+    private final int nativeIndex;
+
+    private FrameType(int nativeIndex) {
+      this.nativeIndex = nativeIndex;
+    }
+
+    public int getNative() {
+      return nativeIndex;
+    }
+
+    public static FrameType fromNative(int nativeIndex) {
+      for (FrameType type : FrameType.values()) {
+        if (type.nativeIndex == nativeIndex) {
+          return type;
+        }
+      }
+      throw new IllegalArgumentException("Unknown native frame type: " + nativeIndex);
+    }
   }
 
   public final ByteBuffer buffer;

@@ -116,9 +116,9 @@ public final class HardwareVideoDecoderTest {
         encodeDone.countDown();
       }
     };
-    assertEquals(
-        encoder.initEncode(
-            new VideoEncoder.Settings(1, SETTINGS.width, SETTINGS.height, 300, 30), encodeCallback),
+    assertEquals(encoder.initEncode(new VideoEncoder.Settings(1, SETTINGS.width, SETTINGS.height,
+                                        300, 30, true /* automaticResizeOn */),
+                     encodeCallback),
         VideoCodecStatus.OK);
 
     // First, encode a frame.
@@ -191,9 +191,9 @@ public final class HardwareVideoDecoderTest {
         encodeDone.countDown();
       }
     };
-    assertEquals(
-        encoder.initEncode(
-            new VideoEncoder.Settings(1, SETTINGS.width, SETTINGS.height, 300, 30), encodeCallback),
+    assertEquals(encoder.initEncode(new VideoEncoder.Settings(1, SETTINGS.width, SETTINGS.height,
+                                        300, 30, true /* automaticResizeOn */),
+                     encodeCallback),
         VideoCodecStatus.OK);
 
     // First, encode a frame.
