@@ -2188,11 +2188,6 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::ConfigureCodecs(
 
   config_.rtp.nack.rtp_history_ms =
       HasNack(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
-  if (config_.rtp.ulpfec.red_rtx_payload_type != -1) {
-    config_.rtp
-        .rtx_associated_payload_types[config_.rtp.ulpfec.red_rtx_payload_type] =
-        config_.rtp.ulpfec.red_payload_type;
-  }
 }
 
 void WebRtcVideoChannel::WebRtcVideoReceiveStream::ConfigureFlexfecCodec(
