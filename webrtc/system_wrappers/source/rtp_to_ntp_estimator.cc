@@ -10,6 +10,7 @@
 
 #include "webrtc/system_wrappers/include/rtp_to_ntp_estimator.h"
 
+#include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -162,6 +163,9 @@ bool RtpToNtpEstimator::Estimate(int64_t rtp_timestamp,
     return false;
   }
 
+  // params_.calculated should not be true unless params_.frequency_khz has been
+  // set to something non-zero.
+  RTC_DCHECK_NE(params_.frequency_khz, 0.0);
   double rtp_ms =
       (static_cast<double>(rtp_timestamp_unwrapped) - params_.offset_ms) /
           params_.frequency_khz +
