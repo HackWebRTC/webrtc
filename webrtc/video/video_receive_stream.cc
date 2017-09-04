@@ -251,11 +251,6 @@ VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
   return stats_proxy_.GetStats();
 }
 
-rtc::Optional<TimingFrameInfo>
-VideoReceiveStream::GetAndResetTimingFrameInfo() {
-  return stats_proxy_.GetAndResetTimingFrameInfo();
-}
-
 void VideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
                                                      size_t byte_limit) {
   {

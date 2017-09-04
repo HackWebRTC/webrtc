@@ -209,8 +209,6 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
 
   webrtc::VideoReceiveStream::Stats GetStats() const override;
 
-  rtc::Optional<webrtc::TimingFrameInfo> GetAndResetTimingFrameInfo() override;
-
   webrtc::VideoReceiveStream::Config config_;
   bool receiving_;
   webrtc::VideoReceiveStream::Stats stats_;

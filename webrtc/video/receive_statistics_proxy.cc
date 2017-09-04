@@ -104,7 +104,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs),
       first_report_block_time_ms_(-1),
       avg_rtt_ms_(0),
-      last_content_type_(VideoContentType::UNSPECIFIED) {
+      last_content_type_(VideoContentType::UNSPECIFIED),
+      timing_frame_info_counter_(kMovingMaxWindowMs) {
   stats_.ssrc = config_.rtp.remote_ssrc;
   // TODO(brandtr): Replace |rtx_stats_| with a single instance of
   // StreamDataCounters.
@@ -499,18 +500,8 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
       static_cast<int>(total_byte_tracker_.ComputeRate() * 8);
   stats_.interframe_delay_max_ms =
       interframe_delay_max_moving_.Max(now_ms).value_or(-1);
+  stats_.timing_frame_info = timing_frame_info_counter_.Max(now_ms);
   return stats_;
-}
-
-rtc::Optional<TimingFrameInfo>
-ReceiveStatisticsProxy::GetAndResetTimingFrameInfo() {
-  rtc::CritScope lock(&crit_);
-  rtc::Optional<TimingFrameInfo> info = timing_frame_info_;
-  // Reset reported value to empty, so it will be always
-  // overwritten in |OnTimingFrameInfoUpdated|, thus allowing to store new
-  // value instead of reported one.
-  timing_frame_info_.reset();
-  return info;
 }
 
 void ReceiveStatisticsProxy::OnIncomingPayloadType(int payload_type) {
@@ -557,13 +548,9 @@ void ReceiveStatisticsProxy::OnFrameBufferTimingsUpdated(
 
 void ReceiveStatisticsProxy::OnTimingFrameInfoUpdated(
     const TimingFrameInfo& info) {
+  int64_t now_ms = clock_->TimeInMilliseconds();
   rtc::CritScope lock(&crit_);
-  // Only the frame which was processed the longest since the last
-  // GetStats() call is reported. Therefore, only single 'longest' frame is
-  // stored.
-  if (!timing_frame_info_ || info.IsLongerThan(*timing_frame_info_)) {
-    timing_frame_info_.emplace(info);
-  }
+  timing_frame_info_counter_.Add(info, now_ms);
 }
 
 void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(

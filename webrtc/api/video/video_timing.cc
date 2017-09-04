@@ -39,6 +39,14 @@ bool TimingFrameInfo::IsLongerThan(const TimingFrameInfo& other) const {
   return other_delay == -1 || EndToEndDelay() > other_delay;
 }
 
+bool TimingFrameInfo::operator<(const TimingFrameInfo& other) const {
+  return other.IsLongerThan(*this);
+}
+
+bool TimingFrameInfo::operator<=(const TimingFrameInfo& other) const {
+  return !IsLongerThan(other);
+}
+
 bool TimingFrameInfo::IsOutlier() const {
   return !IsInvalid() && (flags & TimingFrameFlags::kTriggeredBySize);
 }
@@ -54,15 +62,15 @@ bool TimingFrameInfo::IsInvalid() const {
 std::string TimingFrameInfo::ToString() const {
   std::stringstream out;
   if (IsInvalid()) {
-    out << "[Invalid]";
+    out << "";
   } else {
     out << rtp_timestamp << ',' << capture_time_ms << ',' << encode_start_ms
         << ',' << encode_finish_ms << ',' << packetization_finish_ms << ','
         << pacer_exit_ms << ',' << network_timestamp_ms << ','
         << network2_timestamp_ms << ',' << receive_start_ms << ','
         << receive_finish_ms << ',' << decode_start_ms << ','
-        << decode_finish_ms << ',' << render_time_ms << ", outlier_triggered "
-        << IsOutlier() << ", timer_triggered " << IsTimerTriggered();
+        << decode_finish_ms << ',' << render_time_ms << ','
+        << IsOutlier() << ',' << IsTimerTriggered();
   }
   return out.str();
 }

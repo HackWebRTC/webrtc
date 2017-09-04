@@ -309,7 +309,7 @@ TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsNoCNameForUnknownSsrc) {
 }
 
 TEST_F(ReceiveStatisticsProxyTest,
-       GetTimingFrameInfoReportsLongestTimingFrame) {
+       ReportsLongestTimingFrameInfo) {
   const int64_t kShortEndToEndDelay = 10;
   const int64_t kMedEndToEndDelay = 20;
   const int64_t kLongEndToEndDelay = 100;
@@ -329,24 +329,28 @@ TEST_F(ReceiveStatisticsProxyTest,
   info.capture_time_ms = 0;
   info.decode_finish_ms = kMedEndToEndDelay;
   statistics_proxy_->OnTimingFrameInfoUpdated(info);
-  result = statistics_proxy_->GetAndResetTimingFrameInfo();
+  result = statistics_proxy_->GetStats().timing_frame_info;
   EXPECT_TRUE(result);
   EXPECT_EQ(kExpectedRtpTimestamp, result->rtp_timestamp);
 }
 
-TEST_F(ReceiveStatisticsProxyTest, GetTimingFrameInfoTimingFramesReportedOnce) {
+TEST_F(ReceiveStatisticsProxyTest, RespectsReportingIntervalForTimingFrames) {
+  TimingFrameInfo info;
   const int64_t kShortEndToEndDelay = 10;
   const uint32_t kExpectedRtpTimestamp = 2;
-  TimingFrameInfo info;
+  const int64_t kShortDelayMs = 1000;
+  const int64_t kLongDelayMs = 10000;
   rtc::Optional<TimingFrameInfo> result;
   info.rtp_timestamp = kExpectedRtpTimestamp;
   info.capture_time_ms = 0;
   info.decode_finish_ms = kShortEndToEndDelay;
   statistics_proxy_->OnTimingFrameInfoUpdated(info);
-  result = statistics_proxy_->GetAndResetTimingFrameInfo();
+  fake_clock_.AdvanceTimeMilliseconds(kShortDelayMs);
+  result = statistics_proxy_->GetStats().timing_frame_info;
   EXPECT_TRUE(result);
   EXPECT_EQ(kExpectedRtpTimestamp, result->rtp_timestamp);
-  result = statistics_proxy_->GetAndResetTimingFrameInfo();
+  fake_clock_.AdvanceTimeMilliseconds(kLongDelayMs);
+  result = statistics_proxy_->GetStats().timing_frame_info;
   EXPECT_FALSE(result);
 }
 

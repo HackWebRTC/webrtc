@@ -89,6 +89,10 @@ struct TimingFrameInfo {
 
   std::string ToString() const;
 
+  bool operator<(const TimingFrameInfo& other) const;
+
+  bool operator<=(const TimingFrameInfo& other) const;
+
   uint32_t rtp_timestamp;  // Identifier of a frame.
   // All timestamps below are in local monotonous clock of a receiver.
   // If sender clock is not yet estimated, sender timestamps

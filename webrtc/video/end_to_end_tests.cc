@@ -3631,7 +3631,7 @@ TEST_F(EndToEndTest, GetStats) {
   RunBaseTest(&test);
 }
 
-TEST_F(EndToEndTest, GetTimingFrameInfoReportsTimingFrames) {
+TEST_F(EndToEndTest, TimingFramesAreReported) {
   static const int kExtensionId = 5;
 
   class StatsObserver : public test::EndToEndTest {
@@ -3639,12 +3639,6 @@ TEST_F(EndToEndTest, GetTimingFrameInfoReportsTimingFrames) {
     StatsObserver() : EndToEndTest(kLongTimeoutMs) {}
 
    private:
-    std::string CompoundKey(const char* name, uint32_t ssrc) {
-      std::ostringstream oss;
-      oss << name << "_" << ssrc;
-      return oss.str();
-    }
-
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
@@ -3668,13 +3662,13 @@ TEST_F(EndToEndTest, GetTimingFrameInfoReportsTimingFrames) {
     void PerformTest() override {
       // No frames reported initially.
       for (size_t i = 0; i < receive_streams_.size(); ++i) {
-        EXPECT_FALSE(receive_streams_[i]->GetAndResetTimingFrameInfo());
+        EXPECT_FALSE(receive_streams_[i]->GetStats().timing_frame_info);
       }
       // Wait for at least one timing frame to be sent with 100ms grace period.
       SleepMs(kDefaultTimingFramesDelayMs + 100);
       // Check that timing frames are reported for each stream.
       for (size_t i = 0; i < receive_streams_.size(); ++i) {
-        EXPECT_TRUE(receive_streams_[i]->GetAndResetTimingFrameInfo());
+        EXPECT_TRUE(receive_streams_[i]->GetStats().timing_frame_info);
       }
     }
 

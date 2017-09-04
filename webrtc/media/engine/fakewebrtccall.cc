@@ -309,11 +309,6 @@ webrtc::VideoReceiveStream::Stats FakeVideoReceiveStream::GetStats() const {
   return stats_;
 }
 
-rtc::Optional<webrtc::TimingFrameInfo>
-FakeVideoReceiveStream::GetAndResetTimingFrameInfo() {
-  return rtc::Optional<webrtc::TimingFrameInfo>();
-}
-
 void FakeVideoReceiveStream::Start() {
   receiving_ = true;
 }
