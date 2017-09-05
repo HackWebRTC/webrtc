@@ -55,7 +55,9 @@ class CroppingWindowCapturer : public DesktopCapturer,
   virtual bool ShouldUseScreenCapturer() = 0;
 
   // Returns the window area relative to the top left of the virtual screen
-  // within the bounds of the virtual screen.
+  // within the bounds of the virtual screen. This function should return the
+  // DesktopRect in full desktop coordinates, i.e. the top-left monitor starts
+  // from (0, 0).
   virtual DesktopRect GetWindowRectInVirtualScreen() = 0;
 
   WindowId selected_window() const { return selected_window_; }
