@@ -21,6 +21,7 @@
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/rtc_base/bind.h"
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/ptr_util.h"
 // Adding 'nogncheck' to disable the gn include headers check to support modular
 // WebRTC build targets.
 // TODO(zhihuang): This wouldn't be necessary if the interface and
@@ -260,10 +261,9 @@ PeerConnectionFactory::CreatePeerConnection(
       RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask,
                                allocator.get(), options_.network_ignore_mask));
 
-  std::unique_ptr<RtcEventLog> event_log(new RtcEventLogNullImpl());
-  if (event_log_factory_) {
-    event_log = event_log_factory_->CreateRtcEventLog();
-  }
+  std::unique_ptr<RtcEventLog> event_log =
+      event_log_factory_ ? event_log_factory_->CreateRtcEventLog()
+                         : rtc::MakeUnique<RtcEventLogNullImpl>();
 
   std::unique_ptr<Call> call = worker_thread_->Invoke<std::unique_ptr<Call>>(
       RTC_FROM_HERE,
