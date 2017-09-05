@@ -66,7 +66,6 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
                                uint32_t bitrate) override;
 
  private:
-  static RTCPReportBlock BuildReportBlock(StreamStatistician* statistician);
   bool LatestEstimate(uint32_t* estimate_bps);
 
   std::string estimate_log_prefix_;

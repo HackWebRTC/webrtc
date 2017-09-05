@@ -110,10 +110,14 @@ FeedbackPacket* RembReceiver::GetFeedback(int64_t now_ms) {
   uint32_t estimated_bps = 0;
   RembFeedback* feedback = NULL;
   if (LatestEstimate(&estimated_bps)) {
-    StatisticianMap statisticians = recv_stats_->GetActiveStatisticians();
-    RTCPReportBlock report_block;
-    if (!statisticians.empty()) {
-      latest_report_block_ = BuildReportBlock(statisticians.begin()->second);
+    auto report_blocks = recv_stats_->RtcpReportBlocks(1);
+    if (!report_blocks.empty()) {
+      const rtcp::ReportBlock& stat = report_blocks.front();
+      latest_report_block_.fraction_lost = stat.fraction_lost();
+      latest_report_block_.packets_lost = stat.cumulative_lost();
+      latest_report_block_.extended_highest_sequence_number =
+          stat.extended_high_seq_num();
+      latest_report_block_.jitter = stat.jitter();
     }
 
     feedback = new RembFeedback(flow_id_, now_ms * 1000, last_feedback_ms_,
@@ -132,19 +136,6 @@ FeedbackPacket* RembReceiver::GetFeedback(int64_t now_ms) {
 
 void RembReceiver::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                            uint32_t bitrate) {}
-
-RTCPReportBlock RembReceiver::BuildReportBlock(
-    StreamStatistician* statistician) {
-  RTCPReportBlock report_block;
-  RtcpStatistics stats;
-  RTC_DCHECK(statistician->GetStatistics(&stats, true));
-  report_block.fraction_lost = stats.fraction_lost;
-  report_block.packets_lost = stats.packets_lost;
-  report_block.extended_highest_sequence_number =
-      stats.extended_highest_sequence_number;
-  report_block.jitter = stats.jitter;
-  return report_block;
-}
 
 bool RembReceiver::LatestEstimate(uint32_t* estimate_bps) {
   if (latest_estimate_bps_ < 0) {
