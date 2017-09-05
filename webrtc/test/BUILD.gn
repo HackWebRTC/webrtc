@@ -113,7 +113,7 @@ rtc_source_set("field_trial") {
 if (is_ios) {
   rtc_source_set("test_support_objc") {
     testonly = true
-    visibility = [ ":*" ]
+    visibility = [ ":test_support" ]
     sources = [
       "ios/test_support.h",
       "ios/test_support.mm",
@@ -349,7 +349,7 @@ if (!build_with_chromium) {
 
 if (is_ios) {
   rtc_source_set("fileutils_objc") {
-    visibility = [ ":*" ]
+    visibility = [ ":fileutils" ]
     sources = [
       "testsupport/iosfileutils.mm",
     ]
@@ -363,7 +363,12 @@ if (is_ios) {
 
 rtc_source_set("fileutils") {
   testonly = true
-  visibility = [ ":*" ]
+  visibility = [
+    ":fileutils_unittests",
+    ":test_support_test_output",
+    ":test_support",
+    ":video_test_support",
+  ]
   sources = [
     "testsupport/fileutils.cc",
     "testsupport/fileutils.h",
@@ -394,8 +399,6 @@ rtc_source_set("run_test") {
 }
 
 rtc_source_set("run_test_interface") {
-  testonly = true
-  visibility = [ ":*" ]
   sources = [
     "run_test.h",
   ]
@@ -404,11 +407,11 @@ rtc_source_set("run_test_interface") {
 if (is_mac) {
   rtc_source_set("run_test_objc") {
     testonly = true
-    visibility = [ ":*" ]
+    visibility = [ ":run_test" ]
     sources = [
       "mac/run_test.mm",
     ]
-    public_deps = [
+    deps = [
       ":run_test_interface",
     ]
   }
@@ -416,11 +419,11 @@ if (is_mac) {
 
 rtc_source_set("run_test_generic") {
   testonly = true
-  visibility = [ ":*" ]
+  visibility = [ ":run_test" ]
   sources = [
     "run_test.cc",
   ]
-  public_deps = [
+  deps = [
     ":run_test_interface",
   ]
 }
@@ -593,30 +596,25 @@ config("test_renderer_exported_config") {
 }
 
 rtc_source_set("test_renderer") {
+  public_deps = [
+    ":test_renderer_generic",
+  ]
   testonly = true
   if (is_mac) {
-    public_deps = [
-      ":test_renderer_objc",
-    ]
-  } else {
-    public_deps = [
-      ":test_renderer_generic",
-    ]
+    public_deps += [ ":test_renderer_objc" ]
   }
 }
 
 if (is_mac) {
   rtc_source_set("test_renderer_objc") {
     testonly = true
-    visibility = [ ":*" ]
+    visibility = [ ":test_renderer" ]
     sources = [
       "mac/video_renderer_mac.h",
       "mac/video_renderer_mac.mm",
     ]
-    public_deps = [
-      ":test_renderer_generic",
-    ]
     deps = [
+      ":test_renderer_generic",
       "../rtc_base:rtc_base_approved",
     ]
     libs = [
@@ -633,7 +631,10 @@ if (is_mac) {
 
 rtc_source_set("test_renderer_generic") {
   testonly = true
-  visibility = [ ":*" ]
+  visibility = [
+    ":test_renderer",
+    ":test_renderer_objc",
+  ]
   libs = []
   sources = [
     "linux/glx_renderer.cc",
