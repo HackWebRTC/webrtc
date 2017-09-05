@@ -149,7 +149,7 @@ void FlagList::SplitArgument(const char* arg,
     arg++;  // remove 1st '-'
     if (*arg == '-')
       arg++;  // remove 2nd '-'
-    if (arg[0] == 'n' && arg[1] == 'o') {
+    if (arg[0] == 'n' && arg[1] == 'o' && Lookup(arg + 2)) {
       arg += 2;  // remove "no"
       *is_bool = true;
     }
