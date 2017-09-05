@@ -34,6 +34,9 @@ DEFAULT_ARCHS = ENABLED_ARCHS = ['arm64', 'arm', 'x64', 'x86']
 IOS_DEPLOYMENT_TARGET = '8.0'
 LIBVPX_BUILD_VP9 = False
 
+sys.path.append(os.path.join(SCRIPT_DIR, '..', 'libs'))
+from generate_licenses import LicenseBuilder
+
 
 def _ParseArgs():
   parser = argparse.ArgumentParser(description=__doc__)
@@ -224,13 +227,13 @@ def main():
       _RunCommand(cmd)
 
     # Generate the license file.
-    license_script_path = os.path.join(SCRIPT_DIR, 'generate_licenses.py')
     ninja_dirs = [os.path.join(args.output_dir, arch + '_libs')
                   for arch in architectures]
     gn_target_full_name = '//webrtc/sdk:' + gn_target_name
-    cmd = [sys.executable, license_script_path, gn_target_full_name,
-           os.path.join(args.output_dir, SDK_FRAMEWORK_NAME)] + ninja_dirs
-    _RunCommand(cmd)
+    builder = LicenseBuilder(ninja_dirs, [gn_target_full_name])
+    builder.GenerateLicenseText(
+        os.path.join(args.output_dir, SDK_FRAMEWORK_NAME))
+
 
     # Modify the version number.
     # Format should be <Branch cut MXX>.<Hotfix #>.<Rev #>.

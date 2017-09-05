@@ -34,6 +34,7 @@ import tempfile
 import zipfile
 
 
+SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
 DEFAULT_ARCHS = ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64']
 NEEDED_SO_FILES = ['libjingle_peerconnection_so.so']
 JAR_FILE = 'lib.java/webrtc/sdk/android/libwebrtc.jar'
@@ -42,6 +43,9 @@ TARGETS = [
   'webrtc/sdk/android:libwebrtc',
   'webrtc/sdk/android:libjingle_peerconnection_so',
 ]
+
+sys.path.append(os.path.join(SCRIPT_DIR, '..', 'libs'))
+from generate_licenses import LicenseBuilder
 
 
 def _ParseArgs():
@@ -122,6 +126,7 @@ def Build(tmp_dir, arch, use_goma, extra_gn_args):
     'target_os': 'android',
     'is_debug': False,
     'is_component_build': False,
+    'rtc_include_tests': False,
     'target_cpu': _GetTargetCpu(arch),
     'use_goma': use_goma
   }
@@ -133,7 +138,7 @@ def Build(tmp_dir, arch, use_goma, extra_gn_args):
 
   _RunGN(['gen', output_directory, gn_args_str])
 
-  ninja_args = TARGETS
+  ninja_args = TARGETS[:]
   if use_goma:
     ninja_args.extend(['-j', '200'])
   _RunNinja(output_directory, ninja_args)
@@ -158,6 +163,12 @@ def Collect(aar_file, tmp_dir, arch):
                    os.path.join(abi_dir, so_file))
 
 
+def GenerateLicenses(output_dir, tmp_dir, archs):
+  builder = LicenseBuilder(
+      [_GetOutputDirectory(tmp_dir, arch) for arch in archs], TARGETS)
+  builder.GenerateLicenseText(output_dir)
+
+
 def main():
   args = _ParseArgs()
   logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
@@ -172,6 +183,9 @@ def main():
     CollectCommon(aar_file, tmp_dir, args.arch[0])
     for arch in args.arch:
       Collect(aar_file, tmp_dir, arch)
+
+  license_dir = os.path.dirname(os.path.realpath(args.output))
+  GenerateLicenses(license_dir, tmp_dir, args.arch)
 
   shutil.rmtree(tmp_dir, True)
 
