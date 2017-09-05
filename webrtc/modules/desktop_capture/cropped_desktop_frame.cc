@@ -48,7 +48,7 @@ std::unique_ptr<DesktopFrame> CreateCroppedDesktopFrame(
 
 CroppedDesktopFrame::CroppedDesktopFrame(std::unique_ptr<DesktopFrame> frame,
                                          const DesktopRect& rect)
-    : DesktopFrame(frame->size(),
+    : DesktopFrame(rect.size(),
                    frame->stride(),
                    frame->GetFrameDataAtPos(rect.top_left()),
                    frame->shared_memory()),
