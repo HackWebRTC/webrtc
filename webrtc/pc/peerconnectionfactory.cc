@@ -262,8 +262,9 @@ PeerConnectionFactory::CreatePeerConnection(
                                allocator.get(), options_.network_ignore_mask));
 
   std::unique_ptr<RtcEventLog> event_log =
-      event_log_factory_ ? event_log_factory_->CreateRtcEventLog()
-                         : rtc::MakeUnique<RtcEventLogNullImpl>();
+      worker_thread_->Invoke<std::unique_ptr<RtcEventLog>>(
+          RTC_FROM_HERE,
+          rtc::Bind(&PeerConnectionFactory::CreateRtcEventLog_w, this));
 
   std::unique_ptr<Call> call = worker_thread_->Invoke<std::unique_ptr<Call>>(
       RTC_FROM_HERE,
@@ -329,6 +330,11 @@ rtc::Thread* PeerConnectionFactory::worker_thread() {
 
 rtc::Thread* PeerConnectionFactory::network_thread() {
   return network_thread_;
+}
+
+std::unique_ptr<RtcEventLog> PeerConnectionFactory::CreateRtcEventLog_w() {
+  return event_log_factory_ ? event_log_factory_->CreateRtcEventLog()
+                            : rtc::MakeUnique<RtcEventLogNullImpl>();
 }
 
 std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(

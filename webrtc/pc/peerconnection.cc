@@ -1337,11 +1337,11 @@ void PeerConnection::Close() {
       rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
                 port_allocator_.get()));
 
-  factory_->worker_thread()->Invoke<void>(RTC_FROM_HERE,
-                                          [this] { call_.reset(); });
-
-  // The event log must outlive call (and any other object that uses it).
-  event_log_.reset();
+  factory_->worker_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
+    call_.reset();
+    // The event log must outlive call (and any other object that uses it).
+    event_log_.reset();
+  });
 }
 
 void PeerConnection::OnSessionStateChange(WebRtcSession* /*session*/,
