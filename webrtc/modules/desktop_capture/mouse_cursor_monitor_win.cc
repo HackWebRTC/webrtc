@@ -138,6 +138,7 @@ void MouseCursorMonitorWin::Capture() {
   if (mode_ != SHAPE_AND_POSITION)
     return;
 
+  // CURSORINFO::ptScreenPos is in full desktop coordinate.
   DesktopVector position(cursor_info.ptScreenPos.x, cursor_info.ptScreenPos.y);
   bool inside = cursor_info.flags == CURSOR_SHOWING;
 
@@ -165,8 +166,7 @@ void MouseCursorMonitorWin::Capture() {
 
   // TODO(zijiehe): Remove this overload.
   callback_->OnMouseCursorPosition(inside ? INSIDE : OUTSIDE, position);
-  callback_->OnMouseCursorPosition(
-      position.subtract(GetFullscreenRect().top_left()));
+  callback_->OnMouseCursorPosition(position);
 }
 
 DesktopRect MouseCursorMonitorWin::GetScreenRect() {
