@@ -369,9 +369,9 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
   _peerConnection->SetRemoteDescription(observer, sdp.nativeDescription);
 }
 
-- (BOOL)setBitrateToMin:(NSNumber *_Nullable)minBitrateBps
-              toCurrent:(NSNumber *_Nullable)currentBitrateBps
-                  toMax:(NSNumber *_Nullable)maxBitrateBps {
+- (BOOL)setBweMinBitrateBps:(nullable NSNumber *)minBitrateBps
+          currentBitrateBps:(nullable NSNumber *)currentBitrateBps
+              maxBitrateBps:(nullable NSNumber *)maxBitrateBps {
   webrtc::PeerConnectionInterface::BitrateParameters params;
   if (minBitrateBps != nil) {
     params.min_bitrate_bps = rtc::Optional<int>(minBitrateBps.intValue);

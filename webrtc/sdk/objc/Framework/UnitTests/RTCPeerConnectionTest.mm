@@ -60,12 +60,12 @@
         [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
     newConfig = peerConnection.configuration;
 
-    EXPECT_TRUE([peerConnection setBitrateToMin:[NSNumber numberWithInt:100000]
-                                      toCurrent:[NSNumber numberWithInt:5000000]
-                                          toMax:[NSNumber numberWithInt:500000000]]);
-    EXPECT_FALSE([peerConnection setBitrateToMin:[NSNumber numberWithInt:2]
-                                       toCurrent:[NSNumber numberWithInt:1]
-                                           toMax:nullptr]);
+    EXPECT_TRUE([peerConnection setBweMinBitrateBps:[NSNumber numberWithInt:100000]
+                                  currentBitrateBps:[NSNumber numberWithInt:5000000]
+                                      maxBitrateBps:[NSNumber numberWithInt:500000000]]);
+    EXPECT_FALSE([peerConnection setBweMinBitrateBps:[NSNumber numberWithInt:2]
+                                   currentBitrateBps:[NSNumber numberWithInt:1]
+                                       maxBitrateBps:nil]);
   }
 
   EXPECT_EQ([config.iceServers count], [newConfig.iceServers count]);
