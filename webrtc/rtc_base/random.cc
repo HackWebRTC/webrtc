@@ -12,6 +12,7 @@
 #include <math.h>
 
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/safe_conversions.h"
 
 namespace webrtc {
 
@@ -40,11 +41,9 @@ uint32_t Random::Rand(uint32_t low, uint32_t high) {
 
 int32_t Random::Rand(int32_t low, int32_t high) {
   RTC_DCHECK(low <= high);
-  // We rely on subtraction (and addition) to be the same for signed and
-  // unsigned numbers in two-complement representation. Thus, although
-  // high - low might be negative as an int, it is the correct difference
-  // when interpreted as an unsigned.
-  return Rand(high - low) + low;
+  const int64_t low_i64{low};
+  return rtc::dchecked_cast<int32_t>(
+      Rand(rtc::dchecked_cast<uint32_t>(high - low_i64)) + low_i64);
 }
 
 template <>

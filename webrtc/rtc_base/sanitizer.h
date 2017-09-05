@@ -11,6 +11,8 @@
 #ifndef WEBRTC_RTC_BASE_SANITIZER_H_
 #define WEBRTC_RTC_BASE_SANITIZER_H_
 
+#include <stddef.h>  // for size_t
+
 #if defined(__has_feature)
 #if __has_feature(address_sanitizer)
 #define RTC_HAS_ASAN 1

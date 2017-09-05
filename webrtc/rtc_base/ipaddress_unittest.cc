@@ -672,13 +672,7 @@ TEST(IPAddressTest, TestAsIPv6Address) {
   EXPECT_EQ(addr, addr2);
 }
 
-// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5491
-#ifdef UNDEFINED_SANITIZER
-#define MAYBE_TestCountIPMaskBits DISABLED_TestCountIPMaskBits
-#else
-#define MAYBE_TestCountIPMaskBits TestCountIPMaskBits
-#endif
-TEST(IPAddressTest, MAYBE_TestCountIPMaskBits) {
+TEST(IPAddressTest, TestCountIPMaskBits) {
   IPAddress mask;
   // IPv4 on byte boundaries
   EXPECT_PRED2(CheckMaskCount, "255.255.255.255", 32);

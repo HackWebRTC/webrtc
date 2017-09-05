@@ -24,6 +24,7 @@ extern "C" {
 }
 
 #include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/sanitizer.h"
 #include "webrtc/typedefs.h"
 
 // Square root of Hanning window in Q14.
@@ -276,11 +277,12 @@ static int TimeToFrequencyDomain(AecmCore* aecm,
   return time_signal_scaling;
 }
 
-int WebRtcAecm_ProcessBlock(AecmCore* aecm,
-                            const int16_t* farend,
-                            const int16_t* nearendNoisy,
-                            const int16_t* nearendClean,
-                            int16_t* output) {
+int RTC_NO_SANITIZE("signed-integer-overflow")  // bugs.webrtc.org/8200
+WebRtcAecm_ProcessBlock(AecmCore* aecm,
+                        const int16_t* farend,
+                        const int16_t* nearendNoisy,
+                        const int16_t* nearendClean,
+                        int16_t* output) {
   int i;
 
   uint32_t xfaSum;
@@ -453,6 +455,7 @@ int WebRtcAecm_ProcessBlock(AecmCore* aecm,
     // How much can we shift right to preserve resolution
     tmp32no1 = echoEst32[i] - aecm->echoFilt[i];
     aecm->echoFilt[i] += (tmp32no1 * 50) >> 8;
+    // UBSan: 72293096 * 50 cannot be represented in type 'int'
 
     zeros32 = WebRtcSpl_NormW32(aecm->echoFilt[i]) + 1;
     zeros16 = WebRtcSpl_NormW16(supGain) + 1;
