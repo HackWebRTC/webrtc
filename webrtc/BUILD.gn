@@ -93,6 +93,10 @@ config("common_inherited_config") {
     ldflags += [ "-fsanitize-coverage=${rtc_sanitize_coverage}" ]
   }
 
+  if (is_ubsan) {
+    cflags += [ "-fsanitize=float-cast-overflow" ]
+  }
+
   # TODO(GYP): Support these in GN.
   # if (is_bsd) {
   #   defines += [ "BSD" ]

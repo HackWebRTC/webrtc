@@ -18,6 +18,7 @@
 #include "webrtc/rtc_base/helpers.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/ratelimiter.h"
+#include "webrtc/rtc_base/sanitizer.h"
 #include "webrtc/rtc_base/stringutils.h"
 
 namespace cricket {
@@ -74,9 +75,12 @@ RtpDataMediaChannel::~RtpDataMediaChannel() {
   }
 }
 
-void RtpClock::Tick(double now, int* seq_num, uint32_t* timestamp) {
+void RTC_NO_SANITIZE("float-cast-overflow")  // bugs.webrtc.org/8204
+RtpClock::Tick(double now, int* seq_num, uint32_t* timestamp) {
   *seq_num = ++last_seq_num_;
   *timestamp = timestamp_offset_ + static_cast<uint32_t>(now * clockrate_);
+  // UBSan: 5.92374e+10 is outside the range of representable values of type
+  // 'unsigned int'
 }
 
 const DataCodec* FindUnknownCodec(const std::vector<DataCodec>& codecs) {

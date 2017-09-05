@@ -49,7 +49,7 @@ float FrameEnergy(const AudioBuffer& audio) {
   for (size_t k = 0; k < audio.num_channels(); ++k) {
     float channel_energy =
         std::accumulate(audio.channels_const_f()[k],
-                        audio.channels_const_f()[k] + audio.num_frames(), 0,
+                        audio.channels_const_f()[k] + audio.num_frames(), 0.f,
                         [](float a, float b) -> float { return a + b * b; });
     energy = std::max(channel_energy, energy);
   }
