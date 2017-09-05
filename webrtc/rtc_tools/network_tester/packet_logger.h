@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TOOLS_NETWORK_TESTER_PACKET_LOGGER_H_
-#define WEBRTC_TOOLS_NETWORK_TESTER_PACKET_LOGGER_H_
+#ifndef WEBRTC_RTC_TOOLS_NETWORK_TESTER_PACKET_LOGGER_H_
+#define WEBRTC_RTC_TOOLS_NETWORK_TESTER_PACKET_LOGGER_H_
 
 #include <fstream>
 #include <string>
@@ -43,4 +43,4 @@ class PacketLogger {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_TOOLS_NETWORK_TESTER_PACKET_LOGGER_H_
+#endif  // WEBRTC_RTC_TOOLS_NETWORK_TESTER_PACKET_LOGGER_H_

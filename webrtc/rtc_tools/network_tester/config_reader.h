@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TOOLS_NETWORK_TESTER_CONFIG_READER_H_
-#define WEBRTC_TOOLS_NETWORK_TESTER_CONFIG_READER_H_
+#ifndef WEBRTC_RTC_TOOLS_NETWORK_TESTER_CONFIG_READER_H_
+#define WEBRTC_RTC_TOOLS_NETWORK_TESTER_CONFIG_READER_H_
 
 #include <fstream>
 #include <string>
@@ -50,4 +50,4 @@ class ConfigReader {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_TOOLS_NETWORK_TESTER_CONFIG_READER_H_
+#endif  // WEBRTC_RTC_TOOLS_NETWORK_TESTER_CONFIG_READER_H_

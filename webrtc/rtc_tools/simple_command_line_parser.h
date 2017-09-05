@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
-#define WEBRTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
+#ifndef WEBRTC_RTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
+#define WEBRTC_RTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
 
 #include <map>
 #include <string>
@@ -97,4 +97,4 @@ class CommandLineParser {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
+#endif  // WEBRTC_RTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
