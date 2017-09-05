@@ -17,9 +17,9 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/video_coding/sequence_number_util.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/random.h"
 
 namespace webrtc {

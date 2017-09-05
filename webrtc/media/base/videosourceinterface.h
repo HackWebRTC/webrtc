@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
 #define WEBRTC_MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
 
+#include "webrtc/api/optional.h"
 #include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace rtc {
 

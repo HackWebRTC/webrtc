@@ -140,6 +140,7 @@ if (rtc_include_tests) {
       ":remote_bitrate_estimator",
       "..:module_api",
       "../..:webrtc_common",
+      "../../api:optional",
       "../../rtc_base:gtest_prod",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",

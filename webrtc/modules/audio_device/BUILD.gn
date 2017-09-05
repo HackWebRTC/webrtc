@@ -283,6 +283,7 @@ if (rtc_include_tests) {
       ":audio_device",
       ":mock_audio_device",
       "../../api:array_view",
+      "../../api:optional",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",

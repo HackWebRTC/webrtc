@@ -14,11 +14,11 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/api/rtcerror.h"
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/pc/mediasession.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

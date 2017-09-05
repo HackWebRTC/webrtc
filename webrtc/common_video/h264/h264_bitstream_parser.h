@@ -13,9 +13,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/common_video/h264/pps_parser.h"
 #include "webrtc/common_video/h264/sps_parser.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace rtc {
 class BitBufferWriter;

@@ -19,6 +19,7 @@ rtc_static_library("audio_encoder_L16") {
   ]
   deps = [
     "..:audio_codecs_api",
+    "../..:optional",
     "../../..:webrtc_common",
     "../../../modules/audio_coding:pcm16b",
     "../../../rtc_base:rtc_base_approved",
@@ -32,6 +33,7 @@ rtc_static_library("audio_decoder_L16") {
   ]
   deps = [
     "..:audio_codecs_api",
+    "../..:optional",
     "../../..:webrtc_common",
     "../../../modules/audio_coding:pcm16b",
     "../../../rtc_base:rtc_base_approved",

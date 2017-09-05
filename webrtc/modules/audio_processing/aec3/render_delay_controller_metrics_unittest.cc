@@ -9,8 +9,8 @@
  */
 
 #include "webrtc/modules/audio_processing/aec3/render_delay_controller_metrics.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/rtc_base/optional.h"
 
 #include "webrtc/test/gtest.h"
 

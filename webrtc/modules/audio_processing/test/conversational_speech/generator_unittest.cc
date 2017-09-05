@@ -42,6 +42,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/config.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/mock_wavreader_factory.h"
@@ -50,7 +51,6 @@
 #include "webrtc/modules/audio_processing/test/conversational_speech/timing.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_factory.h"
 #include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"

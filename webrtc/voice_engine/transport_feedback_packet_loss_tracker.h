@@ -13,8 +13,8 @@
 
 #include <map>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

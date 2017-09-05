@@ -60,6 +60,7 @@ rtc_source_set("video_test_common") {
 
   deps = [
     "..:webrtc_common",
+    "../api:optional",
     "../api/video_codecs:video_codecs_api",
     "../call:video_stream_api",
     "../common_video",
@@ -375,6 +376,7 @@ rtc_source_set("fileutils") {
   ]
   deps = [
     "..:webrtc_common",
+    "../api:optional",
     "../rtc_base:rtc_base_approved",
   ]
   if (is_ios) {
@@ -437,6 +439,7 @@ rtc_source_set("fileutils_unittests") {
   deps = [
     ":fileutils",
     ":test_support",
+    "../api:optional",
     "../rtc_base:rtc_base_approved",
     "//testing/gmock",
     "//testing/gtest",

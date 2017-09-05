@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/api/video_codecs/video_encoder.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/include/frame_callback.h"
@@ -38,7 +39,6 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/event.h"
 #include "webrtc/rtc_base/file.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/random.h"
 #include "webrtc/rtc_base/rate_limiter.h"

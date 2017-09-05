@@ -15,12 +15,12 @@
 #include <cstdlib>
 #include <limits>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/rtc_base/arraysize.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace {
 struct Fraction {

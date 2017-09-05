@@ -13,6 +13,7 @@
 #include <numeric>
 
 #include "webrtc/api/array_view.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_device/include/mock_audio_transport.h"
@@ -20,7 +21,6 @@
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/event.h"
 #include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/race_checker.h"
 #include "webrtc/rtc_base/safe_conversions.h"
 #include "webrtc/rtc_base/scoped_ref_ptr.h"

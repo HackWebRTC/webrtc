@@ -55,6 +55,7 @@ rtc_static_library("video") {
 
   deps = [
     "..:webrtc_common",
+    "../api:optional",
     "../api:transport_api",
     "../api/video_codecs:video_codecs_api",
     "../call:call_interfaces",
@@ -93,6 +94,7 @@ if (rtc_include_tests) {
       "video_quality_test.h",
     ]
     deps = [
+      "../api:optional",
       "../call:call_interfaces",
       "../common_video",
       "../logging:rtc_event_log_api",
@@ -265,6 +267,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video",
+      "../api:optional",
       "../api:video_frame_api",
       "../api/video_codecs:video_codecs_api",
       "../call:call_interfaces",

@@ -37,6 +37,7 @@ rtc_static_library("audio") {
     "..:webrtc_common",
     "../api:audio_mixer_api",
     "../api:call_api",
+    "../api:optional",
     "../api/audio_codecs:audio_codecs_api",
     "../api/audio_codecs:builtin_audio_encoder_factory",
     "../call:call_interfaces",

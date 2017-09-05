@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/h264_profile_level_id.h"
@@ -29,7 +30,6 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/helpers.h"
 #include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/stringutils.h"
 
 namespace {

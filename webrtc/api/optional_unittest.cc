@@ -14,8 +14,8 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace rtc {
 
@@ -37,14 +37,12 @@ void PrintTo(const MyPrintableType& mpt, std::ostream* os) {
   *os << "The value is " << mpt.value;
 }
 
-std::ostream& operator<<(std::ostream& os,
-                         const MyPrintableType& mpt) {
+std::ostream& operator<<(std::ostream& os, const MyPrintableType& mpt) {
   os << mpt.value;
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os,
-                         const MyOstreamPrintableType& mpt) {
+std::ostream& operator<<(std::ostream& os, const MyOstreamPrintableType& mpt) {
   os << mpt.value;
   return os;
 }

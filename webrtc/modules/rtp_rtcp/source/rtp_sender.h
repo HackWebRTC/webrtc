@@ -18,6 +18,7 @@
 
 #include "webrtc/api/array_view.h"
 #include "webrtc/api/call/transport.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
@@ -29,7 +30,6 @@
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/deprecation.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/random.h"
 #include "webrtc/rtc_base/rate_statistics.h"
 #include "webrtc/rtc_base/thread_annotations.h"

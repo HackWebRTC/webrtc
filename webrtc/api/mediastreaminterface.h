@@ -22,8 +22,8 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/rtc_base/optional.h"
 // TODO(zhihuang): Remove unrelated headers once downstream applications stop
 // relying on them; they were previously transitively included by
 // mediachannel.h, which is no longer a dependency of this file.

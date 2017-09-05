@@ -16,10 +16,10 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/scoped_ref_ptr.h"
 #include "webrtc/typedefs.h"
 

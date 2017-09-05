@@ -15,9 +15,9 @@
 #include <vector>
 
 #include "webrtc/api/array_view.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/rtc_base/buffer.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

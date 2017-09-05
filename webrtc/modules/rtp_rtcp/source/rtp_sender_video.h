@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -24,7 +25,6 @@
 #include "webrtc/modules/rtp_rtcp/source/video_codec_information.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/onetimeevent.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/rate_statistics.h"
 #include "webrtc/rtc_base/sequenced_task_checker.h"
 #include "webrtc/rtc_base/thread_annotations.h"

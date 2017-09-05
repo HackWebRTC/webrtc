@@ -16,7 +16,7 @@
 
 #include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/audio_codecs/audio_format.h"
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/api/optional.h"
 
 namespace webrtc {
 

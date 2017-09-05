@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/video/video_timing.h"
@@ -30,7 +31,6 @@
 #include "webrtc/rtc_base/dscp.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/networkroute.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/sigslot.h"
 #include "webrtc/rtc_base/socket.h"
 #include "webrtc/rtc_base/window.h"

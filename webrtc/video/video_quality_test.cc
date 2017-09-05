@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
@@ -37,7 +38,6 @@
 #include "webrtc/rtc_base/format_macros.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/memory_usage.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/rtc_base/platform_file.h"
 #include "webrtc/rtc_base/ptr_util.h"

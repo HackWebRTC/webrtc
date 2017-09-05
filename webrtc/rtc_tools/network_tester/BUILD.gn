@@ -41,6 +41,7 @@ if (rtc_enable_protobuf) {
     deps = [
       ":network_tester_config_proto",
       ":network_tester_packet_proto",
+      "../../api:optional",
       "../../p2p",
       "../../rtc_base:protobuf_utils",
       "../../rtc_base:rtc_base_approved",

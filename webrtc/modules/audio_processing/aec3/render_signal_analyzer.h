@@ -14,10 +14,10 @@
 #include <array>
 #include <memory>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

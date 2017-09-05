@@ -18,6 +18,7 @@ rtc_static_library("audio_encoder_opus_config") {
     "audio_encoder_opus_config.h",
   ]
   deps = [
+    "../..:optional",
     "../../../rtc_base:rtc_base_approved",
   ]
   defines = []
@@ -51,6 +52,7 @@ rtc_static_library("audio_decoder_opus") {
   ]
   deps = [
     "..:audio_codecs_api",
+    "../..:optional",
     "../../..:webrtc_common",
     "../../../modules/audio_coding:webrtc_opus",
     "../../../rtc_base:rtc_base_approved",

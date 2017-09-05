@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/level_controller/gain_applier.h"
 #include "webrtc/modules/audio_processing/level_controller/gain_selector.h"
@@ -22,7 +23,6 @@
 #include "webrtc/modules/audio_processing/level_controller/saturating_gain_estimator.h"
 #include "webrtc/modules/audio_processing/level_controller/signal_classifier.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

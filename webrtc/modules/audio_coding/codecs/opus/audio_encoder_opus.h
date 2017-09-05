@@ -19,11 +19,11 @@
 #include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/api/audio_codecs/opus/audio_encoder_opus_config.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/common_audio/smoothing_filter.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/protobuf_utils.h"
 
 namespace webrtc {

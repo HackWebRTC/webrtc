@@ -137,8 +137,6 @@ rtc_static_library("rtc_base_approved") {
     "mod_ops.h",
     "moving_max_counter.h",
     "onetimeevent.h",
-    "optional.cc",
-    "optional.h",
     "pathutils.cc",
     "pathutils.h",
     "platform_file.cc",
@@ -436,6 +434,7 @@ rtc_static_library("rtc_base") {
   defines = []
   deps = [
     "..:webrtc_common",
+    "../api:optional",
   ]
   public_deps = [
     ":rtc_base_approved",
@@ -855,7 +854,6 @@ if (rtc_include_tests) {
       "mod_ops_unittest.cc",
       "moving_max_counter_unittest.cc",
       "onetimeevent_unittest.cc",
-      "optional_unittest.cc",
       "pathutils_unittest.cc",
       "platform_thread_unittest.cc",
       "random_unittest.cc",
@@ -1047,6 +1045,7 @@ if (rtc_include_tests) {
     deps = [
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
+      "../api:optional",
       "../test:test_support",
     ]
     public_deps = [

@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

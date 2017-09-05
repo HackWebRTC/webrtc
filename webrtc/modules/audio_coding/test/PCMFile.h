@@ -16,8 +16,8 @@
 
 #include <string>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

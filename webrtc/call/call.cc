@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/audio/audio_receive_stream.h"
 #include "webrtc/audio/audio_send_stream.h"
 #include "webrtc/audio/audio_state.h"
@@ -40,7 +41,6 @@
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/location.h"
 #include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/sequenced_task_checker.h"
 #include "webrtc/rtc_base/task_queue.h"

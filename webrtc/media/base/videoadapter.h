@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MEDIA_BASE_VIDEOADAPTER_H_
 #define WEBRTC_MEDIA_BASE_VIDEOADAPTER_H_
 
+#include "webrtc/api/optional.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace cricket {
 

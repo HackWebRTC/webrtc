@@ -183,6 +183,7 @@ if (is_ios || is_mac) {
         ":common_objc",
         ":videotracksource_objc",
         "../api:libjingle_peerconnection_api",
+        "../api:optional",
         "../common_video",
         "../media:rtc_media_base",
         "../rtc_base:rtc_base",

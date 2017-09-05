@@ -15,9 +15,9 @@
 #include <memory>
 #include <set>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/pacing/pacer.h"
 #include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/typedefs.h"
 

@@ -16,13 +16,13 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/p2p/base/transportinfo.h"
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/rtccertificate.h"
 #include "webrtc/rtc_base/sigslot.h"
 #include "webrtc/rtc_base/sslstreamadapter.h"

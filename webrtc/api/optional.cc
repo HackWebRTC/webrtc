@@ -8,14 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/api/optional.h"
 
 namespace rtc {
 namespace optional_internal {
 
 #if RTC_HAS_ASAN
 
-void* FunctionThatDoesNothingImpl(void* x) { return x; }
+void* FunctionThatDoesNothingImpl(void* x) {
+  return x;
+}
 
 #endif
 

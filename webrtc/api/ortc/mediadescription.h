@@ -15,8 +15,8 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/media/base/cryptoparams.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

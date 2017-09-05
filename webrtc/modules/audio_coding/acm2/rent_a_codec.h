@@ -18,10 +18,10 @@
 #include "webrtc/api/array_view.h"
 #include "webrtc/api/audio_codecs/audio_decoder.h"
 #include "webrtc/api/audio_codecs/audio_encoder.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/scoped_ref_ptr.h"
 #include "webrtc/typedefs.h"
 

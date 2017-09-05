@@ -12,10 +12,10 @@
 
 #include <memory>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/gunit.h"
 #include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/thread.h"
 
 namespace rtc {

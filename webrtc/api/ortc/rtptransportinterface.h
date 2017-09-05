@@ -13,10 +13,10 @@
 
 #include <string>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/api/ortc/packettransportinterface.h"
 #include "webrtc/api/rtcerror.h"
 #include "webrtc/common_types.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

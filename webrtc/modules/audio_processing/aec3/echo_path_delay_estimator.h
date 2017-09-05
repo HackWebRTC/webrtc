@@ -13,13 +13,13 @@
 
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/audio_processing/aec3/decimator_by_4.h"
 #include "webrtc/modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/matched_filter.h"
 #include "webrtc/modules/audio_processing/aec3/matched_filter_lag_aggregator.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_RTC_BASE_RTCCERTIFICATEGENERATOR_H_
 #define WEBRTC_RTC_BASE_RTCCERTIFICATEGENERATOR_H_
 
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/rtc_base/refcount.h"
 #include "webrtc/rtc_base/rtccertificate.h"
 #include "webrtc/rtc_base/scoped_ref_ptr.h"

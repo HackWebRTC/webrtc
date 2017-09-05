@@ -13,8 +13,8 @@
 #include <string.h>
 
 #include "webrtc/api/array_view.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/safe_conversions.h"
 #include "webrtc/rtc_base/sanitizer.h"
 

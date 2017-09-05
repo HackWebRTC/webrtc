@@ -17,13 +17,13 @@
 
 #include "webrtc/api/audio_codecs/audio_decoder_factory.h"
 #include "webrtc/api/audio_codecs/audio_encoder.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/rtc_base/deprecation.h"
 #include "webrtc/rtc_base/function_view.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/typedefs.h"
 

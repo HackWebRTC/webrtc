@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "webrtc/api/call/transport.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/call/call.h"
 #include "webrtc/call/flexfec_receive_stream.h"
@@ -31,7 +32,6 @@
 #include "webrtc/rtc_base/asyncinvoker.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/networkroute.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/rtc_base/thread_checker.h"
 

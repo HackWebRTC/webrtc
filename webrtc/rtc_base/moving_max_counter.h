@@ -17,9 +17,9 @@
 #include <limits>
 #include <utility>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace rtc {
 

@@ -11,7 +11,7 @@
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/test/fuzzers/audio_processing_fuzzer.h"
 
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/api/optional.h"
 
 namespace webrtc {
 

@@ -16,8 +16,8 @@
 #include <utility>
 
 #include "webrtc/api/array_view.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

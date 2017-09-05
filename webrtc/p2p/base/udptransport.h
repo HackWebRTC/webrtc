@@ -14,10 +14,10 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/api/ortc/udptransportinterface.h"
 #include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/rtc_base/asyncpacketsocket.h"  // For PacketOptions.
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/thread_checker.h"
 
 namespace rtc {

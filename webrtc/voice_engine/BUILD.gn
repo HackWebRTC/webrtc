@@ -139,6 +139,7 @@ rtc_static_library("voice_engine") {
     "../api:audio_mixer_api",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
+    "../api:optional",
     "../api:transport_api",
     "../api/audio_codecs:audio_codecs_api",
     "../api/audio_codecs:builtin_audio_decoder_factory",

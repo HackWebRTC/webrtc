@@ -13,9 +13,9 @@
 
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/audio_processing/aec3/matched_filter.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

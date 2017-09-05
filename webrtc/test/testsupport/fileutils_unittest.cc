@@ -17,8 +17,8 @@
 #include <list>
 #include <string>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/pathutils.h"
 #include "webrtc/test/gtest.h"
 

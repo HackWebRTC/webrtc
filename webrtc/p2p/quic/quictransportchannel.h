@@ -17,11 +17,11 @@
 
 #include "net/quic/quic_crypto_client_stream.h"
 #include "net/quic/quic_packet_writer.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/p2p/quic/quicconnectionhelper.h"
 #include "webrtc/p2p/quic/quicsession.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace cricket {
 

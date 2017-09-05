@@ -57,6 +57,7 @@ rtc_static_library("common_video") {
 
   deps = [
     "..:webrtc_common",
+    "../api:optional",
     "../media:rtc_h264_profile_id",
     "../modules:module_api",
     "../rtc_base:rtc_base",

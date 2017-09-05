@@ -14,8 +14,8 @@
 #include <fstream>
 #include <string>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 
 #include "webrtc/rtc_base/ignore_wundef.h"
 

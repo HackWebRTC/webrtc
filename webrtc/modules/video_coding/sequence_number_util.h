@@ -14,8 +14,8 @@
 #include <limits>
 #include <type_traits>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/rtc_base/mod_ops.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/safe_compare.h"
 
 namespace webrtc {

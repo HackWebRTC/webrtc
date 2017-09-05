@@ -207,6 +207,7 @@ rtc_static_library("audio_decoder_fuzzer") {
   ]
   deps = [
     "../..:webrtc_common",
+    "../../api:optional",
     "../../api/audio_codecs:audio_codecs_api",
     "../../modules/rtp_rtcp",
     "../../rtc_base:rtc_base_approved",
@@ -369,6 +370,7 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
     "audio_processing_fuzzer_configs.cc",
   ]
   deps = [
+    "../../api:optional",
     "../../modules:module_api",
     "../../modules/audio_processing",
     "../../rtc_base:rtc_base_approved",

@@ -45,6 +45,7 @@ rtc_source_set("rtc_h264_profile_id") {
 
   deps = [
     "..:webrtc_common",
+    "../api:optional",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
   ]
@@ -227,6 +228,7 @@ rtc_static_library("rtc_audio_video") {
     "..:webrtc_common",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
+    "../api:optional",
     "../api:transport_api",
     "../api:video_frame_api",
     "../api/audio_codecs:audio_codecs_api",

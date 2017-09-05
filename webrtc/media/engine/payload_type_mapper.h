@@ -15,8 +15,8 @@
 #include <set>
 
 #include "webrtc/api/audio_codecs/audio_format.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/media/base/codec.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace cricket {
 

@@ -15,8 +15,8 @@
 
 #include "webrtc/api/array_view.h"
 #include "webrtc/api/audio_codecs/audio_decoder.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 namespace test {

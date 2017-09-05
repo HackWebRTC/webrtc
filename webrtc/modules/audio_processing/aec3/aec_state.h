@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "webrtc/api/array_view.h"
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
 #include "webrtc/modules/audio_processing/aec3/erl_estimator.h"
@@ -23,7 +24,6 @@
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

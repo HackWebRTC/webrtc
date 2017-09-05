@@ -16,7 +16,7 @@
 
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/api/optional.h"
 
 namespace webrtc {
 

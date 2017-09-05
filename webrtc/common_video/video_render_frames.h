@@ -15,8 +15,8 @@
 
 #include <list>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

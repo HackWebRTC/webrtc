@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/statstypes.h"
 #include "webrtc/call/call.h"
@@ -24,7 +25,6 @@
 #include "webrtc/pc/datachannel.h"
 #include "webrtc/pc/mediasession.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/sigslot.h"
 #include "webrtc/rtc_base/sslidentity.h"
 #include "webrtc/rtc_base/thread.h"

@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/call/rtp_stream_receiver_controller_interface.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
@@ -31,7 +32,6 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/location.h"
 #include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/trace_event.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/field_trial.h"

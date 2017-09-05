@@ -14,8 +14,8 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/modules/congestion_controller/bitrate_estimator.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

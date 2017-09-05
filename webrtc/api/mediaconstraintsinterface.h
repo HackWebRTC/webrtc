@@ -23,8 +23,8 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/rtc_base/optional.h"
 
 namespace webrtc {
 

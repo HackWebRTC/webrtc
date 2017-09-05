@@ -16,6 +16,7 @@
 #include <set>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/api/stats/rtcstats_objects.h"
 #include "webrtc/api/stats/rtcstatscollectorcallback.h"
 #include "webrtc/api/stats/rtcstatsreport.h"
@@ -24,7 +25,6 @@
 #include "webrtc/pc/datachannel.h"
 #include "webrtc/pc/trackmediainfomap.h"
 #include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/refcount.h"
 #include "webrtc/rtc_base/scoped_ref_ptr.h"
 #include "webrtc/rtc_base/sigslot.h"

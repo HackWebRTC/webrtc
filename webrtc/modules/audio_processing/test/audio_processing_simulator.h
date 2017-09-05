@@ -17,11 +17,11 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/task_queue.h"
 #include "webrtc/rtc_base/timeutils.h"
 

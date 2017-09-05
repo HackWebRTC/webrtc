@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/optional.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/jseptransport.h"
@@ -28,7 +29,6 @@
 #include "webrtc/rtc_base/asyncpacketsocket.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/optional.h"
 #include "webrtc/rtc_base/proxyinfo.h"
 #include "webrtc/rtc_base/ratetracker.h"
 #include "webrtc/rtc_base/sigslot.h"

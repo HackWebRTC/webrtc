@@ -12,7 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_NETEQ_DECODER_ENUM_H_
 
 #include "webrtc/api/audio_codecs/audio_format.h"
-#include "webrtc/rtc_base/optional.h"
+#include "webrtc/api/optional.h"
 
 namespace webrtc {
 
