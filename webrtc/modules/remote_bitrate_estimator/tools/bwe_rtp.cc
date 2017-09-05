@@ -79,7 +79,7 @@ bool ParseArgsAndSetupEstimator(int argc,
   if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true)) {
     return 1;
   }
-  if (FLAG_help) {
+  if (flags::FLAG_help) {
     rtc::FlagList::Print(nullptr, false);
     return 0;
   }

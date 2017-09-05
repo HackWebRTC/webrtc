@@ -57,6 +57,26 @@ rtc_static_library("remote_bitrate_estimator") {
   ]
 }
 
+if (!build_with_chromium) {
+  rtc_source_set("bwe_rtp") {
+    testonly = true
+    sources = [
+      "tools/bwe_rtp.cc",
+      "tools/bwe_rtp.h",
+    ]
+    deps = [
+      ":remote_bitrate_estimator",
+      "../../rtc_base:rtc_base_approved",
+      "../../test:rtp_test_utils",
+      "../rtp_rtcp:rtp_rtcp",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+}
+
 if (rtc_include_tests) {
   rtc_static_library("bwe_simulator_lib") {
     testonly = true
