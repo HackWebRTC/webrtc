@@ -265,7 +265,6 @@ template("rtc_test") {
                            "*",
                            [
                              "configs",
-                             "data",
                              "public_configs",
                              "suppressed_configs",
                            ])
@@ -276,16 +275,9 @@ template("rtc_test") {
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }
-    data = []
-    if (defined(invoker.data)) {
-      data += invoker.data
-    }
     if (!build_with_chromium && is_android) {
       android_manifest = webrtc_root + "test/android/AndroidManifest.xml"
       deps += [ webrtc_root + "test:native_test_java" ]
-
-      # Needed for build/android/pylib/results/presentation/test_results_presentation.py
-      data += [ "//build/android/pylib/results/" ]
     }
   }
 }
