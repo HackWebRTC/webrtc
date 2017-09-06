@@ -94,7 +94,7 @@ void PrintCodecSettings(const VideoCodec& codec_settings) {
 
 void VerifyQpParser(const EncodedImage& encoded_frame,
                     const TestConfig& config) {
-  if (config.hw_codec)
+  if (config.hw_encoder)
     return;
 
   int qp;

@@ -93,8 +93,14 @@ struct TestConfig {
   // If printing of information to stdout shall be performed during processing.
   bool verbose = true;
 
-  // If HW or SW codec should be used.
-  bool hw_codec = false;
+  // Should hardware accelerated codecs be used?
+  bool hw_encoder = false;
+  bool hw_decoder = false;
+
+  // Should the hardware codecs be wrapped in software fallbacks?
+  bool sw_fallback_encoder = false;
+  // TODO(brandtr): Add support for SW decoder fallbacks, when
+  // webrtc::VideoDecoder's can be wrapped in std::unique_ptr's.
 };
 
 // Handles encoding/decoding of video using the VideoEncoder/VideoDecoder

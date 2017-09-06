@@ -44,7 +44,8 @@ class VideoProcessorIntegrationTestLibvpx
     // Only allow encoder/decoder to use single core, for predictability.
     config_.use_single_core = true;
     config_.verbose = false;
-    config_.hw_codec = false;
+    config_.hw_encoder = false;
+    config_.hw_decoder = false;
   }
 };
 

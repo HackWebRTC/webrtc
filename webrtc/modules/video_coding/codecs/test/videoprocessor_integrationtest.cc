@@ -22,6 +22,7 @@
 
 #include "webrtc/media/engine/internaldecoderfactory.h"
 #include "webrtc/media/engine/internalencoderfactory.h"
+#include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
@@ -89,8 +90,12 @@ void VideoProcessorIntegrationTest::SetCodecSettings(TestConfig* config,
                                                      int width,
                                                      int height) {
   webrtc::test::CodecSettings(codec_type, &config->codec_settings);
+
+  // TODO(brandtr): Move the setting of |width| and |height| to the tests, and
+  // DCHECK that they are set before initializing the codec instead.
   config->codec_settings.width = width;
   config->codec_settings.height = height;
+
   switch (config->codec_settings.codecType) {
     case kVideoCodecVP8:
       config->codec_settings.VP8()->resilience =
@@ -186,7 +191,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
     // MediaCodec API, we roughly pace the frames here. The downside
     // of this is that the encode run will be done in real-time.
     // TODO(brandtr): Investigate if this is needed on iOS.
-    if (config_.hw_codec) {
+    if (config_.hw_encoder || config_.hw_decoder) {
       SleepMs(rtc::kNumMillisecsPerSec /
               rate_profile.input_frame_rate[rate_update_index]);
     }
@@ -207,7 +212,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
 
   // Give the VideoProcessor pipeline some time to process the last frame,
   // and then release the codecs.
-  if (config_.hw_codec) {
+  if (config_.hw_encoder || config_.hw_decoder) {
     SleepMs(1 * rtc::kNumMillisecsPerSec);
   }
   ReleaseAndCloseObjects(&task_queue);
@@ -269,41 +274,55 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
 }
 
 void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
-  if (config_.hw_codec) {
+  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> encoder_factory;
+  if (config_.hw_encoder) {
 #if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
 #if defined(WEBRTC_ANDROID)
-    encoder_factory_.reset(new jni::MediaCodecVideoEncoderFactory());
+    encoder_factory.reset(new jni::MediaCodecVideoEncoderFactory());
+#elif defined(WEBRTC_IOS)
+    EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
+        << "iOS HW codecs only support H264.";
+    encoder_factory = CreateObjCEncoderFactory();
+#else
+    RTC_NOTREACHED() << "Only support HW encoder on Android and iOS.";
+#endif
+#endif  // WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED
+  } else {
+    encoder_factory.reset(new cricket::InternalEncoderFactory());
+  }
+
+  if (config_.hw_decoder) {
+#if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
+#if defined(WEBRTC_ANDROID)
     decoder_factory_.reset(new jni::MediaCodecVideoDecoderFactory());
 #elif defined(WEBRTC_IOS)
     EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
         << "iOS HW codecs only support H264.";
-    encoder_factory_ = CreateObjCEncoderFactory();
     decoder_factory_ = CreateObjCDecoderFactory();
 #else
-    RTC_NOTREACHED() << "Only support HW codecs on Android and iOS.";
+    RTC_NOTREACHED() << "Only support HW decoder on Android and iOS.";
 #endif
 #endif  // WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED
   } else {
-    // SW codecs.
-    encoder_factory_.reset(new cricket::InternalEncoderFactory());
     decoder_factory_.reset(new cricket::InternalDecoderFactory());
   }
 
+  cricket::VideoCodec encoder_codec;
   switch (config_.codec_settings.codecType) {
     case kVideoCodecVP8:
-      encoder_ = encoder_factory_->CreateVideoEncoder(
-          cricket::VideoCodec(cricket::kVp8CodecName));
+      encoder_codec = cricket::VideoCodec(cricket::kVp8CodecName);
+      encoder_.reset(encoder_factory->CreateVideoEncoder(encoder_codec));
       decoder_ = decoder_factory_->CreateVideoDecoder(kVideoCodecVP8);
       break;
     case kVideoCodecVP9:
-      encoder_ = encoder_factory_->CreateVideoEncoder(
-          cricket::VideoCodec(cricket::kVp9CodecName));
+      encoder_codec = cricket::VideoCodec(cricket::kVp9CodecName);
+      encoder_.reset(encoder_factory->CreateVideoEncoder(encoder_codec));
       decoder_ = decoder_factory_->CreateVideoDecoder(kVideoCodecVP9);
       break;
     case kVideoCodecH264:
       // TODO(brandtr): Generalize so that we support multiple profiles here.
-      encoder_ = encoder_factory_->CreateVideoEncoder(
-          cricket::VideoCodec(cricket::kH264CodecName));
+      encoder_codec = cricket::VideoCodec(cricket::kH264CodecName);
+      encoder_.reset(encoder_factory->CreateVideoEncoder(encoder_codec));
       decoder_ = decoder_factory_->CreateVideoDecoder(kVideoCodecH264);
       break;
     default:
@@ -311,12 +330,17 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
       break;
   }
 
+  if (config_.sw_fallback_encoder) {
+    encoder_ = rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
+        encoder_codec, std::move(encoder_));
+  }
+
   EXPECT_TRUE(encoder_) << "Encoder not successfully created.";
   EXPECT_TRUE(decoder_) << "Decoder not successfully created.";
 }
 
 void VideoProcessorIntegrationTest::DestroyEncoderAndDecoder() {
-  encoder_factory_->DestroyVideoEncoder(encoder_);
+  encoder_.reset();
   decoder_factory_->DestroyVideoDecoder(decoder_);
 }
 
@@ -340,7 +364,7 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
   if (visualization_params) {
     const std::string codec_name =
         CodecTypeToPayloadString(config_.codec_settings.codecType);
-    const std::string implementation_type = config_.hw_codec ? "hw" : "sw";
+    const std::string implementation_type = config_.hw_encoder ? "hw" : "sw";
     // clang-format off
     const std::string output_filename_base =
         OutputPath() + config_.filename + "-" +
@@ -370,8 +394,12 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
 
   rtc::Event sync_event(false, false);
   task_queue->PostTask([this, &sync_event]() {
+    // TODO(brandtr): std::move |encoder_| and |decoder_| into the
+    // VideoProcessor when we are able to store |decoder_| in a
+    // std::unique_ptr. That is, when https://codereview.webrtc.org/3009973002
+    // has been relanded.
     processor_ = rtc::MakeUnique<VideoProcessor>(
-        encoder_, decoder_, analysis_frame_reader_.get(),
+        encoder_.get(), decoder_, analysis_frame_reader_.get(),
         analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
         &stats_, encoded_frame_writer_.get(), decoded_frame_writer_.get());
     processor_->Init();

@@ -150,8 +150,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
                                const RateProfile& rate_profile);
 
   // Codecs.
-  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> encoder_factory_;
-  VideoEncoder* encoder_;
+  std::unique_ptr<VideoEncoder> encoder_;
   std::unique_ptr<cricket::WebRtcVideoDecoderFactory> decoder_factory_;
   VideoDecoder* decoder_;
 
