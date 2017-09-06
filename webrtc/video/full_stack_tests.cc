@@ -304,6 +304,7 @@ TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
   RunTest(foreman_cif);
 }
 
+// TODO(sprang): Remove this if we have the similar ModerateLimits below?
 TEST_F(FullStackTest, ConferenceMotionHd2000kbps100msLimitedQueue) {
   VideoQualityTest::Params conf_motion_hd;
   conf_motion_hd.call.send_side_bwe = true;
@@ -314,6 +315,87 @@ TEST_F(FullStackTest, ConferenceMotionHd2000kbps100msLimitedQueue) {
   conf_motion_hd.analyzer = {"conference_motion_hd_2000kbps_100ms_32pkts_queue",
                              0.0, 0.0, kFullStackTestDurationSecs};
   conf_motion_hd.pipe.queue_length_packets = 32;
+  conf_motion_hd.pipe.queue_delay_ms = 100;
+  conf_motion_hd.pipe.link_capacity_kbps = 2000;
+  RunTest(conf_motion_hd);
+}
+
+TEST_F(FullStackTest, ConferenceMotionHd1TLModerateLimits) {
+  VideoQualityTest::Params conf_motion_hd;
+  conf_motion_hd.call.send_side_bwe = true;
+  conf_motion_hd.video = {
+      true,    1280,    720,   50,    30000,
+      3000000, 3000000, false, "VP8", 1,
+      -1,      0,       false, false, "ConferenceMotion_1280_720_50"};
+  conf_motion_hd.analyzer = {"conference_motion_hd_1tl_moderate_limits", 0.0,
+                             0.0, kFullStackTestDurationSecs};
+  conf_motion_hd.pipe.queue_length_packets = 50;
+  conf_motion_hd.pipe.loss_percent = 3;
+  conf_motion_hd.pipe.queue_delay_ms = 100;
+  conf_motion_hd.pipe.link_capacity_kbps = 2000;
+  RunTest(conf_motion_hd);
+}
+
+TEST_F(FullStackTest, ConferenceMotionHd2TLModerateLimits) {
+  VideoQualityTest::Params conf_motion_hd;
+  conf_motion_hd.call.send_side_bwe = true;
+  conf_motion_hd.video = {
+      true,    1280,    720,   50,    30000,
+      3000000, 3000000, false, "VP8", 2,
+      -1,      0,       false, false, "ConferenceMotion_1280_720_50"};
+  conf_motion_hd.analyzer = {"conference_motion_hd_2tl_moderate_limits", 0.0,
+                             0.0, kFullStackTestDurationSecs};
+  conf_motion_hd.pipe.queue_length_packets = 50;
+  conf_motion_hd.pipe.loss_percent = 3;
+  conf_motion_hd.pipe.queue_delay_ms = 100;
+  conf_motion_hd.pipe.link_capacity_kbps = 2000;
+  RunTest(conf_motion_hd);
+}
+
+TEST_F(FullStackTest, ConferenceMotionHd3TLModerateLimits) {
+  VideoQualityTest::Params conf_motion_hd;
+  conf_motion_hd.call.send_side_bwe = true;
+  conf_motion_hd.video = {
+      true,    1280,    720,   50,    30000,
+      3000000, 3000000, false, "VP8", 3,
+      -1,      0,       false, false, "ConferenceMotion_1280_720_50"};
+  conf_motion_hd.analyzer = {"conference_motion_hd_3tl_moderate_limits", 0.0,
+                             0.0, kFullStackTestDurationSecs};
+  conf_motion_hd.pipe.queue_length_packets = 50;
+  conf_motion_hd.pipe.loss_percent = 3;
+  conf_motion_hd.pipe.queue_delay_ms = 100;
+  conf_motion_hd.pipe.link_capacity_kbps = 2000;
+  RunTest(conf_motion_hd);
+}
+
+TEST_F(FullStackTest, ConferenceMotionHd4TLModerateLimits) {
+  VideoQualityTest::Params conf_motion_hd;
+  conf_motion_hd.call.send_side_bwe = true;
+  conf_motion_hd.video = {
+      true,    1280,    720,   50,    30000,
+      3000000, 3000000, false, "VP8", 4,
+      -1,      0,       false, false, "ConferenceMotion_1280_720_50"};
+  conf_motion_hd.analyzer = {"conference_motion_hd_4tl_moderate_limits", 0.0,
+                             0.0, kFullStackTestDurationSecs};
+  conf_motion_hd.pipe.queue_length_packets = 50;
+  conf_motion_hd.pipe.loss_percent = 3;
+  conf_motion_hd.pipe.queue_delay_ms = 100;
+  conf_motion_hd.pipe.link_capacity_kbps = 2000;
+  RunTest(conf_motion_hd);
+}
+
+TEST_F(FullStackTest, ConferenceMotionHd3TLModerateLimitsAltTLPattern) {
+  test::ScopedFieldTrials field_trial("WebRTC-UseShortVP8TL3Pattern/Enabled/");
+  VideoQualityTest::Params conf_motion_hd;
+  conf_motion_hd.call.send_side_bwe = true;
+  conf_motion_hd.video = {
+      true,    1280,    720,   50,    30000,
+      3000000, 3000000, false, "VP8", 3,
+      -1,      0,       false, false, "ConferenceMotion_1280_720_50"};
+  conf_motion_hd.analyzer = {"conference_motion_hd_3tl_alt_moderate_limits",
+                             0.0, 0.0, kFullStackTestDurationSecs};
+  conf_motion_hd.pipe.queue_length_packets = 50;
+  conf_motion_hd.pipe.loss_percent = 3;
   conf_motion_hd.pipe.queue_delay_ms = 100;
   conf_motion_hd.pipe.link_capacity_kbps = 2000;
   RunTest(conf_motion_hd);

@@ -1297,6 +1297,12 @@ VideoStream VideoQualityTest::DefaultVideoStream(const Params& params) {
   } else if (params.video.num_temporal_layers == 3) {
     stream.temporal_layer_thresholds_bps.push_back(stream.max_bitrate_bps / 4);
     stream.temporal_layer_thresholds_bps.push_back(stream.target_bitrate_bps);
+  } else {
+    RTC_CHECK_LE(params.video.num_temporal_layers, kMaxTemporalStreams);
+    for (int i = 0; i < params.video.num_temporal_layers - 1; ++i) {
+      stream.temporal_layer_thresholds_bps.push_back(static_cast<int>(
+          stream.max_bitrate_bps * kVp8LayerRateAlloction[0][i] + 0.5));
+    }
   }
   return stream;
 }

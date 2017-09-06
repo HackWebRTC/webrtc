@@ -96,16 +96,19 @@ std::vector<bool> GetTemporalLayerSync(size_t num_layers) {
     case 2:
       return {false, true, false, false, false, false, false, false};
     case 3:
-      return {false, true, true, false, false, false, false, false};
+      if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
+        return {false, true, true, false};
+      } else {
+        return {false, true, true, false, false, false, false, false};
+      }
     case 4:
-      return {false, true, true,  true, true,  true, false, true,
-              false, true, false, true, false, true, false, true};
+      return {false, true,  true,  false, true,  false, false, false,
+              false, false, false, false, false, false, false, false};
     default:
-      RTC_NOTREACHED();
       break;
   }
-  RTC_NOTREACHED();
-  return {false};
+  RTC_NOTREACHED() << num_layers;
+  return {};
 }
 
 std::vector<TemporalLayers::FrameConfig> GetTemporalPattern(size_t num_layers) {
@@ -134,7 +137,7 @@ std::vector<TemporalLayers::FrameConfig> GetTemporalPattern(size_t num_layers) {
       // TL0 also references and updates the 'last' buffer.
       // TL1 also references 'last' and references and updates 'golden'.
       return {TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
-                                          TemporalLayers::kUpdate,
+                                          TemporalLayers::kNone,
                                           TemporalLayers::kReference),
               TemporalLayers::FrameConfig(TemporalLayers::kReference,
                                           TemporalLayers::kUpdate,
@@ -158,35 +161,68 @@ std::vector<TemporalLayers::FrameConfig> GetTemporalPattern(size_t num_layers) {
                   TemporalLayers::kReference, TemporalLayers::kReference,
                   TemporalLayers::kReference, TemporalLayers::kFreezeEntropy)};
     case 3:
-      // All layers can reference but not update the 'alt' buffer, this means
-      // that the 'alt' buffer reference is effectively the last keyframe.
-      // TL0 also references and updates the 'last' buffer.
-      // TL1 also references 'last' and references and updates 'golden'.
-      // TL2 references both 'last' and 'golden' but updates no buffer.
-      return {TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
-                                          TemporalLayers::kUpdate,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(
-                  TemporalLayers::kReference, TemporalLayers::kNone,
-                  TemporalLayers::kReference, TemporalLayers::kFreezeEntropy),
-              TemporalLayers::FrameConfig(TemporalLayers::kReference,
-                                          TemporalLayers::kUpdate,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(
-                  TemporalLayers::kReference, TemporalLayers::kReference,
-                  TemporalLayers::kReference, TemporalLayers::kFreezeEntropy),
-              TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
-                                          TemporalLayers::kNone,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(
-                  TemporalLayers::kReference, TemporalLayers::kReference,
-                  TemporalLayers::kReference, TemporalLayers::kFreezeEntropy),
-              TemporalLayers::FrameConfig(TemporalLayers::kReference,
-                                          TemporalLayers::kReferenceAndUpdate,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(
-                  TemporalLayers::kReference, TemporalLayers::kReference,
-                  TemporalLayers::kReference, TemporalLayers::kFreezeEntropy)};
+      if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
+        // This field trial is intended to check if it is worth using a shorter
+        // temporal pattern, trading some coding efficiency for less risk of
+        // dropped frames.
+        // The coding efficiency will decrease somewhat since the higher layer
+        // state is more volatile, but it will be offset slightly by updating
+        // the altref buffer with TL2 frames, instead of just referencing lower
+        // layers.
+        // If a frame is dropped in a higher layer, the jitter
+        // buffer on the receive side won't be able to decode any higher layer
+        // frame until the next sync frame. So we expect a noticeable decrease
+        // in frame drops on links with high packet loss.
+
+        // TL0 references and updates the 'last' buffer.
+        // TL1  references 'last' and references and updates 'golden'.
+        // TL2 references both 'last' & 'golden' and references and updates
+        // 'arf'.
+        return {TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kNone,
+                                            TemporalLayers::kNone),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kNone,
+                                            TemporalLayers::kUpdate),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kUpdate,
+                                            TemporalLayers::kNone),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kReference,
+                                            TemporalLayers::kReference,
+                                            TemporalLayers::kFreezeEntropy)};
+      } else {
+        // All layers can reference but not update the 'alt' buffer, this means
+        // that the 'alt' buffer reference is effectively the last keyframe.
+        // TL0 also references and updates the 'last' buffer.
+        // TL1 also references 'last' and references and updates 'golden'.
+        // TL2 references both 'last' and 'golden' but updates no buffer.
+        return {TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kNone,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(
+                    TemporalLayers::kReference, TemporalLayers::kNone,
+                    TemporalLayers::kReference, TemporalLayers::kFreezeEntropy),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kUpdate,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(
+                    TemporalLayers::kReference, TemporalLayers::kReference,
+                    TemporalLayers::kReference, TemporalLayers::kFreezeEntropy),
+                TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kNone,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(
+                    TemporalLayers::kReference, TemporalLayers::kReference,
+                    TemporalLayers::kReference, TemporalLayers::kFreezeEntropy),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kReference,
+                                            TemporalLayers::kReference,
+                                            TemporalLayers::kFreezeEntropy)};
+      }
     case 4:
       // TL0 references and updates only the 'last' buffer.
       // TL1 references 'last' and updates and references 'golden'.
@@ -196,13 +232,13 @@ std::vector<TemporalLayers::FrameConfig> GetTemporalPattern(size_t num_layers) {
                                           TemporalLayers::kNone,
                                           TemporalLayers::kNone),
               TemporalLayers::FrameConfig(
-                  TemporalLayers::kReference, TemporalLayers::kReference,
-                  TemporalLayers::kReference, TemporalLayers::kFreezeEntropy),
+                  TemporalLayers::kReference, TemporalLayers::kNone,
+                  TemporalLayers::kNone, TemporalLayers::kFreezeEntropy),
               TemporalLayers::FrameConfig(TemporalLayers::kReference,
                                           TemporalLayers::kNone,
                                           TemporalLayers::kUpdate),
               TemporalLayers::FrameConfig(
-                  TemporalLayers::kReference, TemporalLayers::kReference,
+                  TemporalLayers::kReference, TemporalLayers::kNone,
                   TemporalLayers::kReference, TemporalLayers::kFreezeEntropy),
               TemporalLayers::FrameConfig(TemporalLayers::kReference,
                                           TemporalLayers::kUpdate,

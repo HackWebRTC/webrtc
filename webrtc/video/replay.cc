@@ -198,8 +198,10 @@ class DecoderBitstreamFileWriter : public EncodedFrameObserver {
 };
 
 void RtpReplay() {
+  std::stringstream window_title;
+  window_title << "Playback Video (" << flags::InputFile() << ")";
   std::unique_ptr<test::VideoRenderer> playback_video(
-      test::VideoRenderer::Create("Playback Video", 640, 480));
+      test::VideoRenderer::Create(window_title.str().c_str(), 640, 480));
   FileRenderPassthrough file_passthrough(flags::OutBase(),
                                          playback_video.get());
 
