@@ -24,10 +24,6 @@
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/scoped_ref_ptr.h"
 
-#if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/platform_thread.h"
-#endif
-
 namespace rtc {
 
 // Base interface for asynchronously executed tasks.
@@ -246,27 +242,6 @@ class LOCKABLE TaskQueue {
   struct PostTaskAndReplyContext;
   dispatch_queue_t queue_;
   QueueContext* const context_;
-#elif defined(WEBRTC_WIN)
-  class ThreadState;
-  void RunPendingTasks();
-  static void ThreadMain(void* context);
-
-  class WorkerThread : public PlatformThread {
-   public:
-    WorkerThread(ThreadRunFunction func,
-                 void* obj,
-                 const char* thread_name,
-                 ThreadPriority priority)
-        : PlatformThread(func, obj, thread_name, priority) {}
-
-    bool QueueAPC(PAPCFUNC apc_function, ULONG_PTR data) {
-      return PlatformThread::QueueAPC(apc_function, data);
-    }
-  };
-  WorkerThread thread_;
-  rtc::CriticalSection pending_lock_;
-  std::queue<std::unique_ptr<QueuedTask>> pending_ GUARDED_BY(pending_lock_);
-  HANDLE in_queue_;
 #else
   class Impl;
   const scoped_refptr<Impl> impl_;
