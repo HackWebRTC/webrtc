@@ -3,9 +3,9 @@
 ## C++
 
 WebRTC follows the [Chromium][chr-style] and [Google][goog-style] C++
-style guides, unless an exception is listed below. In cases where they
-conflict, the Chromium style guide trumps the Google style guide, and
-the exceptions in this file trump them both.
+style guides. In cases where they conflict, the Chromium style guide
+trumps the Google style guide, and the rules in this file trump them
+both.
 
 [chr-style]: https://chromium.googlesource.com/chromium/src/+/master/styleguide/c++/c++.md
 [goog-style]: https://google.github.io/styleguide/cppguide.html
@@ -18,10 +18,21 @@ Some older parts of the code violate the style guide in various ways.
 * If making large changes to such code, consider first cleaning it up
   in a separate CL.
 
-### Exceptions
+### ArrayView
 
-There are no exceptions yet. If and when exceptions are adopted,
-they’ll be listed here.
+When passing an array of values to a function, use `rtc::ArrayView`
+whenever possible—that is, whenever you’re not passing ownership of
+the array, and don’t allow the callee to change the array size.
+
+For example,
+
+instead of                          | use
+------------------------------------|---------------------
+`const std::vector<T>&`             | `ArrayView<const T>`
+`const T* ptr, size_t num_elements` | `ArrayView<const T>`
+`T* ptr, size_t num_elements`       | `ArrayView<T>`
+
+See [the source](webrtc/api/array_view.h) for more detailed docs.
 
 ## C
 
