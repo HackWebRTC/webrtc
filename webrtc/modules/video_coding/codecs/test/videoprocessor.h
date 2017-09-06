@@ -134,9 +134,11 @@ class VideoProcessor {
   // Tears down callbacks and releases the encoder and decoder.
   void Release();
 
-  // Processes a single frame. The frames must be processed in order, and the
-  // VideoProcessor must be initialized first.
-  void ProcessFrame(int frame_number);
+  // Reads a frame from the analysis frame reader and sends it to the encoder.
+  // When the encode callback is received, the encoded frame is sent to the
+  // decoder. The decoded frame is written to disk by the analysis frame writer.
+  // Objective video quality metrics can thus be calculated after the fact.
+  void ProcessFrame();
 
   // Updates the encoder with target rates. Must be called at least once.
   void SetRates(int bitrate_kbps, int framerate_fps);
@@ -148,18 +150,6 @@ class VideoProcessor {
   std::vector<int> NumberSpatialResizesPerRateUpdate() const;
 
  private:
-  // Container that holds per-frame information that needs to be stored between
-  // calls to Encode and Decode, as well as the corresponding callbacks. It is
-  // not directly used for statistics -- for that, test::FrameStatistic is used.
-  // TODO(brandtr): Get rid of this struct and use the Stats class instead.
-  struct FrameInfo {
-    int64_t encode_start_ns = 0;
-    int64_t decode_start_ns = 0;
-    int decoded_width = 0;
-    int decoded_height = 0;
-    size_t manipulated_length = 0;
-  };
-
   class VideoProcessorEncodeCompleteCallback
       : public webrtc::EncodedImageCallback {
    public:
@@ -283,10 +273,8 @@ class VideoProcessor {
   IvfFileWriter* const encoded_frame_writer_;
   FrameWriter* const decoded_frame_writer_;
 
-  // Frame metadata for all frames that have been added through a call to
-  // ProcessFrames(). We need to store this metadata over the course of the
-  // test run, to support pipelining HW codecs.
-  std::vector<FrameInfo> frame_infos_ GUARDED_BY(sequence_checker_);
+  // Keep track of inputed/encoded/decoded frames, so we can detect frame drops.
+  int last_inputed_frame_num_ GUARDED_BY(sequence_checker_);
   int last_encoded_frame_num_ GUARDED_BY(sequence_checker_);
   int last_decoded_frame_num_ GUARDED_BY(sequence_checker_);
 

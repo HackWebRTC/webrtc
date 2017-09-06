@@ -191,8 +191,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
               rate_profile.input_frame_rate[rate_update_index]);
     }
 
-    task_queue.PostTask(
-        [this, frame_number] { processor_->ProcessFrame(frame_number); });
+    task_queue.PostTask([this] { processor_->ProcessFrame(); });
     ++frame_number;
 
     if (frame_number ==
@@ -245,7 +244,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
                                         num_dropped_frames, num_resize_actions);
 
   // Calculate and print other statistics.
-  EXPECT_EQ(num_frames, static_cast<int>(stats_.stats_.size()));
+  EXPECT_EQ(num_frames, static_cast<int>(stats_.size()));
   stats_.PrintSummary();
 
   // Calculate and print image quality statistics.
@@ -414,10 +413,10 @@ void VideoProcessorIntegrationTest::UpdateRateControlMetrics(int frame_number) {
   ++num_frames_per_update_[tl_idx];
   ++num_frames_total_;
 
-  FrameType frame_type = stats_.stats_[frame_number].frame_type;
+  const FrameStatistic* frame_stat = stats_.GetFrame(frame_number);
+  FrameType frame_type = frame_stat->frame_type;
   float encoded_size_kbits =
-      stats_.stats_[frame_number].encoded_frame_length_in_bytes * 8.0f /
-      1000.0f;
+      frame_stat->encoded_frame_size_bytes * 8.0f / 1000.0f;
 
   // Update layer data.
   // Update rate mismatch relative to per-frame bandwidth for delta frames.

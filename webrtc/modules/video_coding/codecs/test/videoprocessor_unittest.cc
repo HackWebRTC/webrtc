@@ -109,13 +109,13 @@ TEST_F(VideoProcessorTest, ProcessFrames_FixedFramerate) {
       encoder_mock_,
       Encode(Property(&VideoFrame::timestamp, 1 * 90000 / kFramerateFps), _, _))
       .Times(1);
-  video_processor_->ProcessFrame(0);
+  video_processor_->ProcessFrame();
 
   EXPECT_CALL(
       encoder_mock_,
       Encode(Property(&VideoFrame::timestamp, 2 * 90000 / kFramerateFps), _, _))
       .Times(1);
-  video_processor_->ProcessFrame(1);
+  video_processor_->ProcessFrame();
 
   ExpectRelease();
   video_processor_->Release();
@@ -135,7 +135,7 @@ TEST_F(VideoProcessorTest, ProcessFrames_VariableFramerate) {
                                              1 * 90000 / kStartFramerateFps),
                                     _, _))
       .Times(1);
-  video_processor_->ProcessFrame(0);
+  video_processor_->ProcessFrame();
 
   const int kNewFramerateFps = 13;
   video_processor_->SetRates(kBitrateKbps, kNewFramerateFps);
@@ -144,7 +144,7 @@ TEST_F(VideoProcessorTest, ProcessFrames_VariableFramerate) {
                                              2 * 90000 / kNewFramerateFps),
                                     _, _))
       .Times(1);
-  video_processor_->ProcessFrame(1);
+  video_processor_->ProcessFrame();
 
   ExpectRelease();
   video_processor_->Release();
