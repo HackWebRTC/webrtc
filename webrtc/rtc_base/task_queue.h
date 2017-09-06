@@ -153,7 +153,7 @@ static std::unique_ptr<QueuedTask> NewClosure(const Closure& closure,
 // TaskQueue itself has been deleted or it may happen synchronously while the
 // TaskQueue instance is being deleted.  This may vary from one OS to the next
 // so assumptions about lifetimes of pending tasks should not be made.
-class LOCKABLE TaskQueue {
+class RTC_LOCKABLE TaskQueue {
  public:
   // TaskQueue priority levels. On some platforms these will map to thread
   // priorities, on others such as Mac and iOS, GCD queue priorities.

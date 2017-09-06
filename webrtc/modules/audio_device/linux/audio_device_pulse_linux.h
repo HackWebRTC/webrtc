@@ -199,10 +199,10 @@ public:
    void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
 private:
-    void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect) {
+    void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION(_critSect) {
         _critSect.Enter();
     }
-    void UnLock() UNLOCK_FUNCTION(_critSect) {
+    void UnLock() RTC_UNLOCK_FUNCTION(_critSect) {
         _critSect.Leave();
     }
     void WaitForOperationCompletion(pa_operation* paOperation) const;
