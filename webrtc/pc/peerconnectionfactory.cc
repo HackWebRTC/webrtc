@@ -333,12 +333,15 @@ rtc::Thread* PeerConnectionFactory::network_thread() {
 }
 
 std::unique_ptr<RtcEventLog> PeerConnectionFactory::CreateRtcEventLog_w() {
+  RTC_DCHECK_RUN_ON(worker_thread_);
   return event_log_factory_ ? event_log_factory_->CreateRtcEventLog()
                             : rtc::MakeUnique<RtcEventLogNullImpl>();
 }
 
 std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
     RtcEventLog* event_log) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+
   const int kMinBandwidthBps = 30000;
   const int kStartBandwidthBps = 300000;
   const int kMaxBandwidthBps = 2000000;
