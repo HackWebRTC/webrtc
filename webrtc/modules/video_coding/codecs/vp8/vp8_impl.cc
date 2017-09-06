@@ -40,7 +40,7 @@
 namespace webrtc {
 namespace {
 
-const char kVp8PostProcArmFieldTrial[] = "WebRTC-VP8-Postproc-Arm";
+const char kVp8PostProcArmFieldTrial[] = "WebRTC-VP8-Postproc-Config-Arm";
 const char kVp8GfBoostFieldTrial[] = "WebRTC-VP8-GfBoost";
 const char kVp8ForceFallbackEncoderFieldTrial[] =
     "WebRTC-VP8-Forced-Fallback-Encoder";
