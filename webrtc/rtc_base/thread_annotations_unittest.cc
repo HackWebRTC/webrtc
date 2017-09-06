@@ -13,19 +13,21 @@
 
 namespace {
 
-class LOCKABLE Lock {
+class RTC_LOCKABLE Lock {
  public:
-  void EnterWrite() const EXCLUSIVE_LOCK_FUNCTION() {}
-  void EnterRead() const SHARED_LOCK_FUNCTION() {}
-  bool TryEnterWrite() const EXCLUSIVE_TRYLOCK_FUNCTION(true) { return true; }
-  bool TryEnterRead() const SHARED_TRYLOCK_FUNCTION(true) { return true; }
-  void Leave() const UNLOCK_FUNCTION() {}
+  void EnterWrite() const RTC_EXCLUSIVE_LOCK_FUNCTION() {}
+  void EnterRead() const RTC_SHARED_LOCK_FUNCTION() {}
+  bool TryEnterWrite() const RTC_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
+    return true;
+  }
+  bool TryEnterRead() const RTC_SHARED_TRYLOCK_FUNCTION(true) { return true; }
+  void Leave() const RTC_UNLOCK_FUNCTION() {}
 };
 
-class SCOPED_LOCKABLE ScopeLock {
+class RTC_SCOPED_LOCKABLE ScopeLock {
  public:
-  explicit ScopeLock(const Lock& lock) EXCLUSIVE_LOCK_FUNCTION(lock) {}
-  ~ScopeLock() UNLOCK_FUNCTION() {}
+  explicit ScopeLock(const Lock& lock) RTC_EXCLUSIVE_LOCK_FUNCTION(lock) {}
+  ~ScopeLock() RTC_UNLOCK_FUNCTION() {}
 };
 
 class ThreadSafe {
@@ -50,7 +52,7 @@ class ThreadSafe {
     anylock_.Leave();
   }
 
-  void UnprotectedFunction() LOCKS_EXCLUDED(anylock_, lock_, pt_lock_) {
+  void UnprotectedFunction() RTC_LOCKS_EXCLUDED(anylock_, lock_, pt_lock_) {
     // Can access unprotected Value.
     unprotected_ = 15;
     // Can access pointers themself, but not data they point to.
@@ -110,30 +112,30 @@ class ThreadSafe {
   }
 
  private:
-  void ReadProtectedFunction() SHARED_LOCKS_REQUIRED(lock_, pt_lock_) {
+  void ReadProtectedFunction() RTC_SHARED_LOCKS_REQUIRED(lock_, pt_lock_) {
     unprotected_ = protected_by_lock_;
     unprotected_ = *pt_protected_by_lock_;
   }
 
-  void WriteProtectedFunction() EXCLUSIVE_LOCKS_REQUIRED(lock_, pt_lock_) {
+  void WriteProtectedFunction() RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_, pt_lock_) {
     int x = protected_by_lock_;
     *pt_protected_by_lock_ = x;
     protected_by_lock_ = unprotected_;
   }
 
-  const Lock& GetLock() LOCK_RETURNED(lock_) { return lock_; }
+  const Lock& GetLock() RTC_LOCK_RETURNED(lock_) { return lock_; }
 
-  Lock anylock_ ACQUIRED_BEFORE(lock_);
+  Lock anylock_ RTC_ACQUIRED_BEFORE(lock_);
   Lock lock_;
-  Lock pt_lock_ ACQUIRED_AFTER(lock_);
+  Lock pt_lock_ RTC_ACQUIRED_AFTER(lock_);
 
   int unprotected_ = 0;
 
-  int protected_by_lock_ GUARDED_BY(lock_) = 0;
-  int protected_by_anything_ GUARDED_VAR = 0;
+  int protected_by_lock_ RTC_GUARDED_BY(lock_) = 0;
+  int protected_by_anything_ RTC_GUARDED_VAR = 0;
 
-  int* pt_protected_by_lock_ PT_GUARDED_BY(pt_lock_);
-  int* pt_protected_by_anything_ PT_GUARDED_VAR;
+  int* pt_protected_by_lock_ RTC_PT_GUARDED_BY(pt_lock_);
+  int* pt_protected_by_anything_ RTC_PT_GUARDED_VAR;
 };
 
 }  // namespace

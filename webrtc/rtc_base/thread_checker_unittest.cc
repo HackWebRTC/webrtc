@@ -241,16 +241,16 @@ class ThreadAnnotateTest {
   }
 
  private:
-  void function() RUN_ON(thread_) {}
-  void fun_acccess_var() RUN_ON(thread_) { var_thread_ = 13; }
+  void function() RTC_RUN_ON(thread_) {}
+  void fun_acccess_var() RTC_RUN_ON(thread_) { var_thread_ = 13; }
 
   rtc::Thread* thread_;
   rtc::ThreadChecker checker_;
   rtc::TaskQueue* queue_;
 
-  int var_thread_ ACCESS_ON(thread_);
-  int var_checker_ GUARDED_BY(checker_);
-  int var_queue_ ACCESS_ON(queue_);
+  int var_thread_ RTC_ACCESS_ON(thread_);
+  int var_checker_ RTC_GUARDED_BY(checker_);
+  int var_queue_ RTC_ACCESS_ON(queue_);
 };
 
 // Just in case we ever get lumped together with other compilation units.

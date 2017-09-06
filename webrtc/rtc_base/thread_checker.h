@@ -103,8 +103,8 @@ class SCOPED_LOCKABLE AnnounceOnThread {
 }  // namespace internal
 }  // namespace rtc
 
-// RUN_ON/ACCESS_ON/RTC_DCHECK_RUN_ON macros allows to annotate variables are
-// accessed from same thread/task queue.
+// RTC_RUN_ON/RTC_ACCESS_ON/RTC_DCHECK_RUN_ON macros allows to annotate
+// variables are accessed from same thread/task queue.
 // Using tools designed to check mutexes, it checks at compile time everywhere
 // variable is access, there is a run-time dcheck thread/task queue is correct.
 //
@@ -117,12 +117,12 @@ class SCOPED_LOCKABLE AnnounceOnThread {
 //
 //  private:
 //   rtc::Thread* network_thread_;
-//   int transport_ ACCESS_ON(network_thread_);
+//   int transport_ RTC_ACCESS_ON(network_thread_);
 // };
 //
 // class ExampleThreadChecker {
 //  public:
-//   int CalledFromPacer() RUN_ON(pacer_thread_checker_) {
+//   int CalledFromPacer() RTC_RUN_ON(pacer_thread_checker_) {
 //     return var2_;
 //   }
 //
@@ -133,7 +133,7 @@ class SCOPED_LOCKABLE AnnounceOnThread {
 //   }
 //
 //  private:
-//   int pacer_var_ ACCESS_ON(pacer_thread_checker_);
+//   int pacer_var_ RTC_ACCESS_ON(pacer_thread_checker_);
 //   rtc::ThreadChecker pacer_thread_checker_;
 // };
 //
@@ -149,7 +149,7 @@ class SCOPED_LOCKABLE AnnounceOnThread {
 //
 //    private:
 //     rtc::TaskQueue* const encoder_queue_;
-//     Frame var_ ACCESS_ON(encoder_queue_);
+//     Frame var_ RTC_ACCESS_ON(encoder_queue_);
 //   };
 //
 //   void Encode() {
@@ -166,10 +166,12 @@ class SCOPED_LOCKABLE AnnounceOnThread {
 
 // Document if a variable/field is not shared and should be accessed from
 // same thread/task queue.
-#define ACCESS_ON(x) THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
+#define ACCESS_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
+#define RTC_ACCESS_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
 
 // Document if a function expected to be called from same thread/task queue.
-#define RUN_ON(x) THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
+#define RUN_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
+#define RTC_RUN_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
 
 #define RTC_DCHECK_RUN_ON(thread_like_object) \
   rtc::internal::AnnounceOnThread thread_announcer(thread_like_object); \
