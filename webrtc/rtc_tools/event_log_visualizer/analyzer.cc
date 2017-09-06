@@ -1247,6 +1247,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   SimulatedClock clock(0);
   TransportFeedbackAdapter feedback_adapter(&clock);
 
+  TimeSeries late_feedback_series("Late feedback results.", DOT_GRAPH);
   TimeSeries time_series("Network Delay Change", LINE_DOT_GRAPH);
   int64_t estimated_base_delay_ms = std::numeric_limits<int64_t>::max();
 
@@ -1266,6 +1267,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   };
 
   int64_t time_us = std::min(NextRtpTime(), NextRtcpTime());
+  int64_t prev_y = 0;
   while (time_us != std::numeric_limits<int64_t>::max()) {
     clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
     if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
@@ -1278,10 +1280,15 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
             feedback_adapter.GetTransportFeedbackVector();
         SortPacketFeedbackVector(&feedback);
         for (const PacketFeedback& packet : feedback) {
-          int64_t y = packet.arrival_time_ms - packet.send_time_ms;
           float x =
               static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
               1000000;
+          if (packet.send_time_ms == -1) {
+            late_feedback_series.points.emplace_back(x, prev_y);
+            continue;
+          }
+          int64_t y = packet.arrival_time_ms - packet.send_time_ms;
+          prev_y = y;
           estimated_base_delay_ms = std::min(y, estimated_base_delay_ms);
           time_series.points.emplace_back(x, y);
         }
@@ -1307,8 +1314,11 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   // observed during the call.
   for (TimeSeriesPoint& point : time_series.points)
     point.y -= estimated_base_delay_ms;
+  for (TimeSeriesPoint& point : late_feedback_series.points)
+    point.y -= estimated_base_delay_ms;
   // Add the data set to the plot.
-  plot->AppendTimeSeries(std::move(time_series));
+  plot->AppendTimeSeriesIfNotEmpty(std::move(time_series));
+  plot->AppendTimeSeriesIfNotEmpty(std::move(late_feedback_series));
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 10, "Delay (ms)", kBottomMargin, kTopMargin);
