@@ -74,6 +74,7 @@ if (rtc_include_tests) {
     }
     sources = [
       "blank_detector_desktop_capturer_wrapper_unittest.cc",
+      "cropped_desktop_frame_unittest.cc",
       "desktop_and_cursor_composer_unittest.cc",
       "desktop_capturer_differ_wrapper_unittest.cc",
       "desktop_frame_rotation_unittest.cc",
