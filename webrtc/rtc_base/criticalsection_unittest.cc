@@ -113,10 +113,14 @@ class RunnerBase : public MessageHandler {
   int shared_value_;
 };
 
-class RTC_LOCKABLE CriticalSectionLock {
+class LOCKABLE CriticalSectionLock {
  public:
-  void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION() { cs_.Enter(); }
-  void Unlock() RTC_UNLOCK_FUNCTION() { cs_.Leave(); }
+  void Lock() EXCLUSIVE_LOCK_FUNCTION() {
+    cs_.Enter();
+  }
+  void Unlock() UNLOCK_FUNCTION() {
+    cs_.Leave();
+  }
 
  private:
   CriticalSection cs_;

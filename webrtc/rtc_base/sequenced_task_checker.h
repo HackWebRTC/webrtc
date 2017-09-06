@@ -14,7 +14,7 @@
 // Apart from debug builds, we also enable the sequence checker in
 // builds with RTC_DCHECK_IS_ON so that trybots and waterfall bots
 // with this define will get the same level of checking as debug bots.
-#define RTC_ENABLE_SEQUENCED_TASK_CHECKER RTC_DCHECK_IS_ON
+#define ENABLE_SEQUENCED_TASK_CHECKER RTC_DCHECK_IS_ON
 
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/constructormagic.h"
@@ -53,19 +53,18 @@ class SequencedTaskCheckerDoNothing {
 // }
 //
 // In Release mode, CalledOnValidThread will always return true.
-#if RTC_ENABLE_SEQUENCED_TASK_CHECKER
-class RTC_LOCKABLE SequencedTaskChecker : public SequencedTaskCheckerImpl {};
+#if ENABLE_SEQUENCED_TASK_CHECKER
+class LOCKABLE SequencedTaskChecker : public SequencedTaskCheckerImpl {};
 #else
-class RTC_LOCKABLE SequencedTaskChecker : public SequencedTaskCheckerDoNothing {
-};
-#endif  // RTC_ENABLE_SEQUENCED_TASK_CHECKER_H_
+class LOCKABLE SequencedTaskChecker : public SequencedTaskCheckerDoNothing {};
+#endif  // ENABLE_SEQUENCED_TASK_CHECKER_H_
 
 namespace internal {
-class RTC_SCOPED_LOCKABLE SequencedTaskCheckerScope {
+class SCOPED_LOCKABLE SequencedTaskCheckerScope {
  public:
   explicit SequencedTaskCheckerScope(const SequencedTaskChecker* checker)
-      RTC_EXCLUSIVE_LOCK_FUNCTION(checker);
-  ~SequencedTaskCheckerScope() RTC_UNLOCK_FUNCTION();
+      EXCLUSIVE_LOCK_FUNCTION(checker);
+  ~SequencedTaskCheckerScope() UNLOCK_FUNCTION();
 };
 
 }  // namespace internal
@@ -73,7 +72,7 @@ class RTC_SCOPED_LOCKABLE SequencedTaskCheckerScope {
 #define RTC_DCHECK_CALLED_SEQUENTIALLY(x) \
   rtc::internal::SequencedTaskCheckerScope checker(x)
 
-#undef RTC_ENABLE_SEQUENCED_TASK_CHECKER
+#undef ENABLE_SEQUENCED_TASK_CHECKER
 
 }  // namespace rtc
 #endif  // WEBRTC_RTC_BASE_SEQUENCED_TASK_CHECKER_H_

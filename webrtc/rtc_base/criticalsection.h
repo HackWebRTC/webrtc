@@ -52,14 +52,14 @@ namespace rtc {
 // Locking methods (Enter, TryEnter, Leave)are const to permit protecting
 // members inside a const context without requiring mutable CriticalSections
 // everywhere.
-class RTC_LOCKABLE CriticalSection {
+class LOCKABLE CriticalSection {
  public:
   CriticalSection();
   ~CriticalSection();
 
-  void Enter() const RTC_EXCLUSIVE_LOCK_FUNCTION();
-  bool TryEnter() const RTC_EXCLUSIVE_TRYLOCK_FUNCTION(true);
-  void Leave() const RTC_UNLOCK_FUNCTION();
+  void Enter() const EXCLUSIVE_LOCK_FUNCTION();
+  bool TryEnter() const EXCLUSIVE_TRYLOCK_FUNCTION(true);
+  void Leave() const UNLOCK_FUNCTION();
 
  private:
   // Use only for RTC_DCHECKing.
@@ -91,11 +91,10 @@ class RTC_LOCKABLE CriticalSection {
 };
 
 // CritScope, for serializing execution through a scope.
-class RTC_SCOPED_LOCKABLE CritScope {
+class SCOPED_LOCKABLE CritScope {
  public:
-  explicit CritScope(const CriticalSection* cs) RTC_EXCLUSIVE_LOCK_FUNCTION(cs);
-  ~CritScope() RTC_UNLOCK_FUNCTION();
-
+  explicit CritScope(const CriticalSection* cs) EXCLUSIVE_LOCK_FUNCTION(cs);
+  ~CritScope() UNLOCK_FUNCTION();
  private:
   const CriticalSection* const cs_;
   RTC_DISALLOW_COPY_AND_ASSIGN(CritScope);
@@ -128,11 +127,11 @@ class TryCritScope {
 
 // A POD lock used to protect global variables. Do NOT use for other purposes.
 // No custom constructor or private data member should be added.
-class RTC_LOCKABLE GlobalLockPod {
+class LOCKABLE GlobalLockPod {
  public:
-  void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION();
+  void Lock() EXCLUSIVE_LOCK_FUNCTION();
 
-  void Unlock() RTC_UNLOCK_FUNCTION();
+  void Unlock() UNLOCK_FUNCTION();
 
   volatile int lock_acquired;
 };
@@ -143,12 +142,10 @@ class GlobalLock : public GlobalLockPod {
 };
 
 // GlobalLockScope, for serializing execution through a scope.
-class RTC_SCOPED_LOCKABLE GlobalLockScope {
+class SCOPED_LOCKABLE GlobalLockScope {
  public:
-  explicit GlobalLockScope(GlobalLockPod* lock)
-      RTC_EXCLUSIVE_LOCK_FUNCTION(lock);
-  ~GlobalLockScope() RTC_UNLOCK_FUNCTION();
-
+  explicit GlobalLockScope(GlobalLockPod* lock) EXCLUSIVE_LOCK_FUNCTION(lock);
+  ~GlobalLockScope() UNLOCK_FUNCTION();
  private:
   GlobalLockPod* const lock_;
   RTC_DISALLOW_COPY_AND_ASSIGN(GlobalLockScope);

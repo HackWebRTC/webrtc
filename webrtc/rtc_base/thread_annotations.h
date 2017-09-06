@@ -20,9 +20,9 @@
 #define WEBRTC_RTC_BASE_THREAD_ANNOTATIONS_H_
 
 #if defined(__clang__) && (!defined(SWIG))
-#define RTC_THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
+#define THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
 #else
-#define RTC_THREAD_ANNOTATION_ATTRIBUTE__(x)  // no-op
+#define THREAD_ANNOTATION_ATTRIBUTE__(x)  // no-op
 #endif
 
 // Document if a shared variable/field needs to be protected by a lock.
@@ -31,9 +31,11 @@
 // indicates a shared variable should be guarded (by any lock). GUARDED_VAR
 // is primarily used when the client cannot express the name of the lock.
 #if !defined(GUARDED_BY)
-#define GUARDED_BY(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
+#define GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
 #endif
-#define RTC_GUARDED_VAR RTC_THREAD_ANNOTATION_ATTRIBUTE__(guarded_var)
+#if !defined(GUARDED_VAR)
+#define GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(guarded_var)
+#endif
 
 // Document if the memory location pointed to by a pointer should be guarded
 // by a lock when dereferencing the pointer. Similar to GUARDED_VAR,
@@ -43,8 +45,12 @@
 // q, which is guarded by mu1, points to a shared memory location that is
 // guarded by mu2, q should be annotated as follows:
 //     int *q GUARDED_BY(mu1) PT_GUARDED_BY(mu2);
-#define RTC_PT_GUARDED_BY(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_by(x))
-#define RTC_PT_GUARDED_VAR RTC_THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_var)
+#if !defined(PT_GUARDED_BY)
+#define PT_GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_by(x))
+#endif
+#if !defined(PT_GUARDED_VAR)
+#define PT_GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_var)
+#endif
 
 // Document the acquisition order between locks that can be held
 // simultaneously by a thread. For any two locks that need to be annotated
@@ -52,10 +58,10 @@
 // (i.e. You don't have to annotate both locks with both ACQUIRED_AFTER
 // and ACQUIRED_BEFORE.)
 #if !defined(ACQUIRED_AFTER)
-#define ACQUIRED_AFTER(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(acquired_after(x))
+#define ACQUIRED_AFTER(x) THREAD_ANNOTATION_ATTRIBUTE__(acquired_after(x))
 #endif
 #if !defined(ACQUIRED_BEFORE)
-#define ACQUIRED_BEFORE(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(acquired_before(x))
+#define ACQUIRED_BEFORE(x) THREAD_ANNOTATION_ATTRIBUTE__(acquired_before(x))
 #endif
 
 // The following three annotations document the lock requirements for
@@ -64,12 +70,12 @@
 // Document if a function expects certain locks to be held before it is called
 #if !defined(EXCLUSIVE_LOCKS_REQUIRED)
 #define EXCLUSIVE_LOCKS_REQUIRED(...) \
-  RTC_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(__VA_ARGS__))
+  THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(__VA_ARGS__))
 #endif
 
 #if !defined(SHARED_LOCKS_REQUIRED)
 #define SHARED_LOCKS_REQUIRED(...) \
-  RTC_THREAD_ANNOTATION_ATTRIBUTE__(shared_locks_required(__VA_ARGS__))
+  THREAD_ANNOTATION_ATTRIBUTE__(shared_locks_required(__VA_ARGS__))
 #endif
 
 // Document the locks acquired in the body of the function. These locks
@@ -77,38 +83,54 @@
 // non-reentrant).
 #if !defined(LOCKS_EXCLUDED)
 #define LOCKS_EXCLUDED(...) \
-  RTC_THREAD_ANNOTATION_ATTRIBUTE__(locks_excluded(__VA_ARGS__))
+  THREAD_ANNOTATION_ATTRIBUTE__(locks_excluded(__VA_ARGS__))
 #endif
 
 // Document the lock the annotated function returns without acquiring it.
-#define RTC_LOCK_RETURNED(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(lock_returned(x))
+#if !defined(LOCK_RETURNED)
+#define LOCK_RETURNED(x) THREAD_ANNOTATION_ATTRIBUTE__(lock_returned(x))
+#endif
 
 // Document if a class/type is a lockable type (such as the Mutex class).
-#define RTC_LOCKABLE RTC_THREAD_ANNOTATION_ATTRIBUTE__(lockable)
+#if !defined(LOCKABLE)
+#define LOCKABLE THREAD_ANNOTATION_ATTRIBUTE__(lockable)
+#endif
 
 // Document if a class is a scoped lockable type (such as the MutexLock class).
-#define RTC_SCOPED_LOCKABLE RTC_THREAD_ANNOTATION_ATTRIBUTE__(scoped_lockable)
+#if !defined(SCOPED_LOCKABLE)
+#define SCOPED_LOCKABLE THREAD_ANNOTATION_ATTRIBUTE__(scoped_lockable)
+#endif
 
 // The following annotations specify lock and unlock primitives.
-#define RTC_EXCLUSIVE_LOCK_FUNCTION(...) \
-  RTC_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_lock_function(__VA_ARGS__))
+#if !defined(EXCLUSIVE_LOCK_FUNCTION)
+#define EXCLUSIVE_LOCK_FUNCTION(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(exclusive_lock_function(__VA_ARGS__))
+#endif
 
-#define RTC_SHARED_LOCK_FUNCTION(...) \
-  RTC_THREAD_ANNOTATION_ATTRIBUTE__(shared_lock_function(__VA_ARGS__))
+#if !defined(SHARED_LOCK_FUNCTION)
+#define SHARED_LOCK_FUNCTION(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(shared_lock_function(__VA_ARGS__))
+#endif
 
-#define RTC_EXCLUSIVE_TRYLOCK_FUNCTION(...) \
-  RTC_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_trylock_function(__VA_ARGS__))
+#if !defined(EXCLUSIVE_TRYLOCK_FUNCTION)
+#define EXCLUSIVE_TRYLOCK_FUNCTION(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(exclusive_trylock_function(__VA_ARGS__))
+#endif
 
-#define RTC_SHARED_TRYLOCK_FUNCTION(...) \
-  RTC_THREAD_ANNOTATION_ATTRIBUTE__(shared_trylock_function(__VA_ARGS__))
+#if !defined(SHARED_TRYLOCK_FUNCTION)
+#define SHARED_TRYLOCK_FUNCTION(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(shared_trylock_function(__VA_ARGS__))
+#endif
 
-#define RTC_UNLOCK_FUNCTION(...) \
-  RTC_THREAD_ANNOTATION_ATTRIBUTE__(unlock_function(__VA_ARGS__))
+#if !defined(UNLOCK_FUNCTION)
+#define UNLOCK_FUNCTION(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(unlock_function(__VA_ARGS__))
+#endif
 
 // An escape hatch for thread safety analysis to ignore the annotated function.
 #if !defined(NO_THREAD_SAFETY_ANALYSIS)
 #define NO_THREAD_SAFETY_ANALYSIS \
-  RTC_THREAD_ANNOTATION_ATTRIBUTE__(no_thread_safety_analysis)
+  THREAD_ANNOTATION_ATTRIBUTE__(no_thread_safety_analysis)
 #endif
 
 #endif  // WEBRTC_RTC_BASE_THREAD_ANNOTATIONS_H_

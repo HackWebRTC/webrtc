@@ -146,8 +146,8 @@ private:
 
     bool KeyPressed() const;
 
-    void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION(_critSect) { _critSect.Enter(); };
-    void UnLock() RTC_UNLOCK_FUNCTION(_critSect) { _critSect.Leave(); };
+    void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect) { _critSect.Enter(); };
+    void UnLock() UNLOCK_FUNCTION(_critSect) { _critSect.Leave(); };
 
     inline int32_t InputSanityCheckAfterUnlockedPeriod() const;
     inline int32_t OutputSanityCheckAfterUnlockedPeriod() const;

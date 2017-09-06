@@ -71,20 +71,22 @@ class ThreadCheckerDoNothing {
 //
 // In Release mode, CalledOnValidThread will always return true.
 #if ENABLE_THREAD_CHECKER
-class RTC_LOCKABLE ThreadChecker : public ThreadCheckerImpl {};
+class LOCKABLE ThreadChecker : public ThreadCheckerImpl {
+};
 #else
-class RTC_LOCKABLE ThreadChecker : public ThreadCheckerDoNothing {};
+class LOCKABLE ThreadChecker : public ThreadCheckerDoNothing {
+};
 #endif  // ENABLE_THREAD_CHECKER
 
 #undef ENABLE_THREAD_CHECKER
 
 namespace internal {
-class RTC_SCOPED_LOCKABLE AnnounceOnThread {
+class SCOPED_LOCKABLE AnnounceOnThread {
  public:
-  template <typename ThreadLikeObject>
+  template<typename ThreadLikeObject>
   explicit AnnounceOnThread(const ThreadLikeObject* thread_like_object)
-      RTC_EXCLUSIVE_LOCK_FUNCTION(thread_like_object) {}
-  ~AnnounceOnThread() RTC_UNLOCK_FUNCTION() {}
+      EXCLUSIVE_LOCK_FUNCTION(thread_like_object) {}
+  ~AnnounceOnThread() UNLOCK_FUNCTION() {}
 
   template<typename ThreadLikeObject>
   static bool IsCurrent(const ThreadLikeObject* thread_like_object) {
@@ -164,10 +166,10 @@ class RTC_SCOPED_LOCKABLE AnnounceOnThread {
 
 // Document if a variable/field is not shared and should be accessed from
 // same thread/task queue.
-#define ACCESS_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
+#define ACCESS_ON(x) THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
 
 // Document if a function expected to be called from same thread/task queue.
-#define RUN_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
+#define RUN_ON(x) THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
 
 #define RTC_DCHECK_RUN_ON(thread_like_object) \
   rtc::internal::AnnounceOnThread thread_announcer(thread_like_object); \

@@ -100,7 +100,7 @@ class Runnable {
 
 // WARNING! SUBCLASSES MUST CALL Stop() IN THEIR DESTRUCTORS!  See ~Thread().
 
-class RTC_LOCKABLE Thread : public MessageQueue {
+class LOCKABLE Thread : public MessageQueue {
  public:
   // DEPRECATED.
   // The default constructor should not be used because it hides whether or

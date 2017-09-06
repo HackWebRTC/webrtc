@@ -56,7 +56,7 @@ CriticalSection::~CriticalSection() {
 #endif
 }
 
-void CriticalSection::Enter() const {
+void CriticalSection::Enter() const EXCLUSIVE_LOCK_FUNCTION() {
 #if defined(WEBRTC_WIN)
   EnterCriticalSection(&crit_);
 #elif defined(WEBRTC_POSIX)
@@ -115,7 +115,7 @@ void CriticalSection::Enter() const {
 #endif
 }
 
-bool CriticalSection::TryEnter() const {
+bool CriticalSection::TryEnter() const EXCLUSIVE_TRYLOCK_FUNCTION(true) {
 #if defined(WEBRTC_WIN)
   return TryEnterCriticalSection(&crit_) != FALSE;
 #elif defined(WEBRTC_POSIX)
@@ -148,7 +148,7 @@ bool CriticalSection::TryEnter() const {
 #endif
 }
 
-void CriticalSection::Leave() const {
+void CriticalSection::Leave() const UNLOCK_FUNCTION() {
   RTC_DCHECK(CurrentThreadIsOwner());
 #if defined(WEBRTC_WIN)
   LeaveCriticalSection(&crit_);
