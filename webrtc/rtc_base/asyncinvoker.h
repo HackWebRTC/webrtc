@@ -248,8 +248,8 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
   void ThreadDestroyed();
 
   CriticalSection crit_;
-  Thread* thread_ GUARDED_BY(crit_);
-  AsyncInvoker invoker_ GUARDED_BY(crit_);
+  Thread* thread_ RTC_GUARDED_BY(crit_);
+  AsyncInvoker invoker_ RTC_GUARDED_BY(crit_);
 };
 
 }  // namespace rtc

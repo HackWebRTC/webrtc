@@ -71,22 +71,20 @@ class ThreadCheckerDoNothing {
 //
 // In Release mode, CalledOnValidThread will always return true.
 #if ENABLE_THREAD_CHECKER
-class LOCKABLE ThreadChecker : public ThreadCheckerImpl {
-};
+class RTC_LOCKABLE ThreadChecker : public ThreadCheckerImpl {};
 #else
-class LOCKABLE ThreadChecker : public ThreadCheckerDoNothing {
-};
+class RTC_LOCKABLE ThreadChecker : public ThreadCheckerDoNothing {};
 #endif  // ENABLE_THREAD_CHECKER
 
 #undef ENABLE_THREAD_CHECKER
 
 namespace internal {
-class SCOPED_LOCKABLE AnnounceOnThread {
+class RTC_SCOPED_LOCKABLE AnnounceOnThread {
  public:
-  template<typename ThreadLikeObject>
+  template <typename ThreadLikeObject>
   explicit AnnounceOnThread(const ThreadLikeObject* thread_like_object)
-      EXCLUSIVE_LOCK_FUNCTION(thread_like_object) {}
-  ~AnnounceOnThread() UNLOCK_FUNCTION() {}
+      RTC_EXCLUSIVE_LOCK_FUNCTION(thread_like_object) {}
+  ~AnnounceOnThread() RTC_UNLOCK_FUNCTION() {}
 
   template<typename ThreadLikeObject>
   static bool IsCurrent(const ThreadLikeObject* thread_like_object) {

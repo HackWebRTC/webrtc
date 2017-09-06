@@ -68,13 +68,13 @@ class MessageQueueManager {
 
   static MessageQueueManager* instance_;
   // This list contains all live MessageQueues.
-  std::vector<MessageQueue*> message_queues_ GUARDED_BY(crit_);
+  std::vector<MessageQueue*> message_queues_ RTC_GUARDED_BY(crit_);
 
   // Methods that don't modify the list of message queues may be called in a
   // re-entrant fashion. "processing_" keeps track of the depth of re-entrant
   // calls.
   CriticalSection crit_;
-  size_t processing_ GUARDED_BY(crit_);
+  size_t processing_ RTC_GUARDED_BY(crit_);
 };
 
 // Derive from this for specialized data
@@ -306,9 +306,9 @@ class MessageQueue {
 
   bool fPeekKeep_;
   Message msgPeek_;
-  MessageList msgq_ GUARDED_BY(crit_);
-  PriorityQueue dmsgq_ GUARDED_BY(crit_);
-  uint32_t dmsgq_next_num_ GUARDED_BY(crit_);
+  MessageList msgq_ RTC_GUARDED_BY(crit_);
+  PriorityQueue dmsgq_ RTC_GUARDED_BY(crit_);
+  uint32_t dmsgq_next_num_ RTC_GUARDED_BY(crit_);
   CriticalSection crit_;
   bool fInitialized_;
   bool fDestroyed_;

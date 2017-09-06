@@ -119,9 +119,9 @@ class SignalThread
     RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Worker);
   };
 
-  class SCOPED_LOCKABLE EnterExit {
+  class RTC_SCOPED_LOCKABLE EnterExit {
    public:
-    explicit EnterExit(SignalThread* t) EXCLUSIVE_LOCK_FUNCTION(t->cs_)
+    explicit EnterExit(SignalThread* t) RTC_EXCLUSIVE_LOCK_FUNCTION(t->cs_)
         : t_(t) {
       t_->cs_.Enter();
       // If refcount_ is zero then the object has already been deleted and we
@@ -129,7 +129,7 @@ class SignalThread
       RTC_DCHECK_NE(0, t_->refcount_);
       ++t_->refcount_;
     }
-    ~EnterExit() UNLOCK_FUNCTION() {
+    ~EnterExit() RTC_UNLOCK_FUNCTION() {
       bool d = (0 == --t_->refcount_);
       t_->cs_.Leave();
       if (d)

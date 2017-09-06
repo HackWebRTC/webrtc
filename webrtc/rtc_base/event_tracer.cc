@@ -320,7 +320,7 @@ class EventLogger final {
   }
 
   rtc::CriticalSection crit_;
-  std::vector<TraceEvent> trace_events_ GUARDED_BY(crit_);
+  std::vector<TraceEvent> trace_events_ RTC_GUARDED_BY(crit_);
   rtc::PlatformThread logging_thread_;
   rtc::Event shutdown_event_;
   rtc::ThreadChecker thread_checker_;

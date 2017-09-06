@@ -203,7 +203,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   SOCKET s_;
   bool udp_;
   CriticalSection crit_;
-  int error_ GUARDED_BY(crit_);
+  int error_ RTC_GUARDED_BY(crit_);
   ConnState state_;
   AsyncResolver* resolver_;
 

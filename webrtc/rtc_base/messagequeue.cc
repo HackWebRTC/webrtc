@@ -23,16 +23,16 @@ namespace {
 const int kMaxMsgLatency = 150;  // 150 ms
 const int kSlowDispatchLoggingThreshold = 50;  // 50 ms
 
-class SCOPED_LOCKABLE MarkProcessingCritScope {
+class RTC_SCOPED_LOCKABLE MarkProcessingCritScope {
  public:
   MarkProcessingCritScope(const CriticalSection* cs, size_t* processing)
-      EXCLUSIVE_LOCK_FUNCTION(cs)
+      RTC_EXCLUSIVE_LOCK_FUNCTION(cs)
       : cs_(cs), processing_(processing) {
     cs_->Enter();
     *processing_ += 1;
   }
 
-  ~MarkProcessingCritScope() UNLOCK_FUNCTION() {
+  ~MarkProcessingCritScope() RTC_UNLOCK_FUNCTION() {
     *processing_ -= 1;
     cs_->Leave();
   }

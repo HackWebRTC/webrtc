@@ -42,7 +42,7 @@ class FakeClock : public ClockInterface {
   }
  private:
   CriticalSection lock_;
-  int64_t time_ GUARDED_BY(lock_) = 0;
+  int64_t time_ RTC_GUARDED_BY(lock_) = 0;
 };
 
 // Helper class that sets itself as the global clock in its constructor and

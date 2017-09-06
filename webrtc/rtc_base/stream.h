@@ -539,26 +539,30 @@ class FifoBuffer : public StreamInterface {
  private:
   // Helper method that implements ReadOffset. Caller must acquire a lock
   // when calling this method.
-  StreamResult ReadOffsetLocked(void* buffer, size_t bytes, size_t offset,
+  StreamResult ReadOffsetLocked(void* buffer,
+                                size_t bytes,
+                                size_t offset,
                                 size_t* bytes_read)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Helper method that implements WriteOffset. Caller must acquire a lock
   // when calling this method.
-  StreamResult WriteOffsetLocked(const void* buffer, size_t bytes,
-                                 size_t offset, size_t* bytes_written)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  StreamResult WriteOffsetLocked(const void* buffer,
+                                 size_t bytes,
+                                 size_t offset,
+                                 size_t* bytes_written)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // keeps the opened/closed state of the stream
-  StreamState state_ GUARDED_BY(crit_);
+  StreamState state_ RTC_GUARDED_BY(crit_);
   // the allocated buffer
-  std::unique_ptr<char[]> buffer_ GUARDED_BY(crit_);
+  std::unique_ptr<char[]> buffer_ RTC_GUARDED_BY(crit_);
   // size of the allocated buffer
-  size_t buffer_length_ GUARDED_BY(crit_);
+  size_t buffer_length_ RTC_GUARDED_BY(crit_);
   // amount of readable data in the buffer
-  size_t data_length_ GUARDED_BY(crit_);
+  size_t data_length_ RTC_GUARDED_BY(crit_);
   // offset to the readable data
-  size_t read_position_ GUARDED_BY(crit_);
+  size_t read_position_ RTC_GUARDED_BY(crit_);
   // stream callbacks are dispatched on this thread
   Thread* owner_;
   // object lock

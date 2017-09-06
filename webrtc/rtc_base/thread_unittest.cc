@@ -336,7 +336,7 @@ TEST(ThreadTest, ThreeThreadsInvoke) {
 
    private:
     CriticalSection crit_;
-    bool value_ GUARDED_BY(crit_);
+    bool value_ RTC_GUARDED_BY(crit_);
   };
 
   struct LocalFuncs {

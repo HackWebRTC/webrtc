@@ -150,9 +150,9 @@ class TaskQueue::Impl : public RefCountInterface {
   std::unique_ptr<event> wakeup_event_;
   PlatformThread thread_;
   rtc::CriticalSection pending_lock_;
-  std::list<std::unique_ptr<QueuedTask>> pending_ GUARDED_BY(pending_lock_);
+  std::list<std::unique_ptr<QueuedTask>> pending_ RTC_GUARDED_BY(pending_lock_);
   std::list<scoped_refptr<ReplyTaskOwnerRef>> pending_replies_
-      GUARDED_BY(pending_lock_);
+      RTC_GUARDED_BY(pending_lock_);
 };
 
 struct TaskQueue::Impl::QueueContext {

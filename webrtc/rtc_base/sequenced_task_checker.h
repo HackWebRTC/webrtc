@@ -54,17 +54,18 @@ class SequencedTaskCheckerDoNothing {
 //
 // In Release mode, CalledOnValidThread will always return true.
 #if ENABLE_SEQUENCED_TASK_CHECKER
-class LOCKABLE SequencedTaskChecker : public SequencedTaskCheckerImpl {};
+class RTC_LOCKABLE SequencedTaskChecker : public SequencedTaskCheckerImpl {};
 #else
-class LOCKABLE SequencedTaskChecker : public SequencedTaskCheckerDoNothing {};
+class RTC_LOCKABLE SequencedTaskChecker : public SequencedTaskCheckerDoNothing {
+};
 #endif  // ENABLE_SEQUENCED_TASK_CHECKER_H_
 
 namespace internal {
-class SCOPED_LOCKABLE SequencedTaskCheckerScope {
+class RTC_SCOPED_LOCKABLE SequencedTaskCheckerScope {
  public:
   explicit SequencedTaskCheckerScope(const SequencedTaskChecker* checker)
-      EXCLUSIVE_LOCK_FUNCTION(checker);
-  ~SequencedTaskCheckerScope() UNLOCK_FUNCTION();
+      RTC_EXCLUSIVE_LOCK_FUNCTION(checker);
+  ~SequencedTaskCheckerScope() RTC_UNLOCK_FUNCTION();
 };
 
 }  // namespace internal

@@ -44,9 +44,9 @@ class RateLimiter {
  private:
   const Clock* const clock_;
   rtc::CriticalSection lock_;
-  RateStatistics current_rate_ GUARDED_BY(lock_);
-  int64_t window_size_ms_ GUARDED_BY(lock_);
-  uint32_t max_rate_bps_ GUARDED_BY(lock_);
+  RateStatistics current_rate_ RTC_GUARDED_BY(lock_);
+  int64_t window_size_ms_ RTC_GUARDED_BY(lock_);
+  uint32_t max_rate_bps_ RTC_GUARDED_BY(lock_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RateLimiter);
 };

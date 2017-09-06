@@ -237,7 +237,7 @@ class TestAnnotations {
   }
 
  private:
-  bool test_var_ GUARDED_BY(&checker_);
+  bool test_var_ RTC_GUARDED_BY(&checker_);
   SequencedTaskChecker checker_;
 };
 

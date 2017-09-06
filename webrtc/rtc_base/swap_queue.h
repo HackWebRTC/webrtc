@@ -192,16 +192,16 @@ class SwapQueue {
 
   // TODO(peah): Change this to use std::function() once we can use C++11 std
   // lib.
-  QueueItemVerifier queue_item_verifier_ GUARDED_BY(crit_queue_);
+  QueueItemVerifier queue_item_verifier_ RTC_GUARDED_BY(crit_queue_);
 
   // (next_read_index_ + num_elements_) % queue_.size() =
   //  next_write_index_
-  size_t next_write_index_ GUARDED_BY(crit_queue_) = 0;
-  size_t next_read_index_ GUARDED_BY(crit_queue_) = 0;
-  size_t num_elements_ GUARDED_BY(crit_queue_) = 0;
+  size_t next_write_index_ RTC_GUARDED_BY(crit_queue_) = 0;
+  size_t next_read_index_ RTC_GUARDED_BY(crit_queue_) = 0;
+  size_t num_elements_ RTC_GUARDED_BY(crit_queue_) = 0;
 
   // queue_.size() is constant.
-  std::vector<T> queue_ GUARDED_BY(crit_queue_);
+  std::vector<T> queue_ RTC_GUARDED_BY(crit_queue_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SwapQueue);
 };
