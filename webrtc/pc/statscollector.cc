@@ -310,6 +310,9 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
   for (const auto& i : ints)
     report->AddInt(i.name, i.value);
   report->AddString(StatsReport::kStatsValueNameMediaType, "video");
+  report->AddString(
+      StatsReport::kStatsValueNameContentType,
+      webrtc::videocontenttypehelpers::ToString(info.content_type));
 }
 
 void ExtractStats(const cricket::BandwidthEstimationInfo& info,

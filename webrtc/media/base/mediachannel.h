@@ -731,7 +731,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
         adapt_changes(0),
         avg_encode_ms(0),
         encode_usage_percent(0),
-        frames_encoded(0) {}
+        frames_encoded(0),
+        content_type(webrtc::VideoContentType::UNSPECIFIED) {}
 
   std::vector<SsrcGroup> ssrc_groups;
   // TODO(hbos): Move this to |VideoMediaInfo::send_codecs|?
@@ -752,6 +753,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int encode_usage_percent;
   uint32_t frames_encoded;
   rtc::Optional<uint64_t> qp_sum;
+  webrtc::VideoContentType content_type;
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {

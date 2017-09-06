@@ -539,6 +539,10 @@ VideoSendStream::Stats SendStatisticsProxy::GetStats() {
   PurgeOldStats();
   stats_.input_frame_rate =
       round(uma_container_->input_frame_rate_tracker_.ComputeRate());
+  stats_.content_type =
+      content_type_ == VideoEncoderConfig::ContentType::kRealtimeVideo
+          ? VideoContentType::UNSPECIFIED
+          : VideoContentType::SCREENSHARE;
   return stats_;
 }
 

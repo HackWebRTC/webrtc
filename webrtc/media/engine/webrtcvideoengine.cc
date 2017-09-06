@@ -1976,6 +1976,8 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
   info.nominal_bitrate = stats.media_bitrate_bps;
   info.preferred_bitrate = stats.preferred_media_bitrate_bps;
 
+  info.content_type = stats.content_type;
+
   info.send_frame_width = 0;
   info.send_frame_height = 0;
   for (std::map<uint32_t, webrtc::VideoSendStream::StreamStats>::iterator it =
