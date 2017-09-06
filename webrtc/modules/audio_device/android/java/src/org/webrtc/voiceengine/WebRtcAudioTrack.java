@@ -173,12 +173,14 @@ public class WebRtcAudioTrack {
       // Stops playing the audio data. Since the instance was created in
       // MODE_STREAM mode, audio will stop playing after the last buffer that
       // was written has been played.
-      final AudioTrack at = audioTrack;
-      if (at != null) {
+      if (audioTrack != null) {
         Logging.d(TAG, "Stopping the audio track...");
-        at.stop();
-        Logging.d(TAG, "The audio track has now been stopped.");
-        at.flush();
+        try {
+          audioTrack.stop();
+          Logging.d(TAG, "The audio track has now been stopped.");
+        } catch (IllegalStateException e) {
+          Logging.e(TAG, "AudioTrack.stop failed: " + e.getMessage());
+        }
       }
     }
 
