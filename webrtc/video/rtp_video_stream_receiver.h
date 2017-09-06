@@ -72,6 +72,7 @@ class RtpVideoStreamReceiver : public RtpData,
       RtcpRttStats* rtt_stats,
       PacketRouter* packet_router,
       const VideoReceiveStream::Config* config,
+      ReceiveStatistics* rtp_receive_statistics,
       ReceiveStatisticsProxy* receive_stats_proxy,
       ProcessThread* process_thread,
       NackSender* nack_sender,
@@ -180,13 +181,11 @@ class RtpVideoStreamReceiver : public RtpData,
 
   const std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
   const std::unique_ptr<RtpReceiver> rtp_receiver_;
-  const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
+  ReceiveStatistics* const rtp_receive_statistics_;
   std::unique_ptr<UlpfecReceiver> ulpfec_receiver_;
 
   rtc::SequencedTaskChecker worker_task_checker_;
   bool receiving_ GUARDED_BY(worker_task_checker_);
-  uint8_t restored_packet_[IP_PACKET_SIZE] GUARDED_BY(worker_task_checker_);
-  bool restored_packet_in_use_ GUARDED_BY(worker_task_checker_);
   int64_t last_packet_log_ms_ GUARDED_BY(worker_task_checker_);
 
   const std::unique_ptr<RtpRtcp> rtp_rtcp_;

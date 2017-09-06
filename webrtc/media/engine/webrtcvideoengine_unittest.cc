@@ -83,6 +83,32 @@ bool HasRtxCodec(const std::vector<cricket::VideoCodec>& codecs,
   return false;
 }
 
+// TODO(nisse): Duplicated in call.cc.
+const int* FindKeyByValue(const std::map<int, int>& m, int v) {
+  for (const auto& kv : m) {
+    if (kv.second == v)
+      return &kv.first;
+  }
+  return nullptr;
+}
+
+bool HasRtxReceiveAssociation(
+    const webrtc::VideoReceiveStream::Config& config,
+    int payload_type) {
+  return FindKeyByValue(config.rtp.rtx_associated_payload_types,
+                        payload_type) != nullptr;
+}
+
+// Check that there's an Rtx payload type for each decoder.
+bool VerifyRtxReceiveAssociations(
+    const webrtc::VideoReceiveStream::Config& config) {
+  for (const auto& decoder : config.decoders) {
+    if (!HasRtxReceiveAssociation(config, decoder.payload_type))
+      return false;
+  }
+  return true;
+}
+
 rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateBlackFrameBuffer(
     int width,
     int height) {
@@ -110,15 +136,6 @@ cricket::MediaConfig GetMediaConfig() {
   cricket::MediaConfig media_config;
   media_config.video.enable_cpu_overuse_detection = false;
   return media_config;
-}
-
-// TODO(nisse): Duplicated in call.cc.
-const int* FindKeyByValue(const std::map<int, int>& m, int v) {
-  for (const auto& kv : m) {
-    if (kv.second == v)
-      return &kv.first;
-  }
-  return nullptr;
 }
 
 }  // namespace
@@ -1316,9 +1333,12 @@ TEST_F(WebRtcVideoChannelTest, RecvStreamWithSimAndRtx) {
       cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs));
   EXPECT_FALSE(
       recv_stream->GetConfig().rtp.rtx_associated_payload_types.empty());
-  EXPECT_EQ(recv_stream->GetConfig().decoders.size(),
-            recv_stream->GetConfig().rtp.rtx_associated_payload_types.size())
+  EXPECT_TRUE(VerifyRtxReceiveAssociations(recv_stream->GetConfig()))
       << "RTX should be mapped for all decoders/payload types.";
+  EXPECT_TRUE(HasRtxReceiveAssociation(recv_stream->GetConfig(),
+                                          GetEngineCodec("red").id))
+      << "RTX should be mapped for the RED payload type";
+
   EXPECT_EQ(rtx_ssrcs[0], recv_stream->GetConfig().rtp.rtx_ssrc);
 }
 
@@ -1329,6 +1349,12 @@ TEST_F(WebRtcVideoChannelTest, RecvStreamWithRtx) {
   params.AddFidSsrc(kSsrcs1[0], kRtxSsrcs1[0]);
   FakeVideoReceiveStream* recv_stream = AddRecvStream(params);
   EXPECT_EQ(kRtxSsrcs1[0], recv_stream->GetConfig().rtp.rtx_ssrc);
+
+  EXPECT_TRUE(VerifyRtxReceiveAssociations(recv_stream->GetConfig()))
+      << "RTX should be mapped for all decoders/payload types.";
+  EXPECT_TRUE(HasRtxReceiveAssociation(recv_stream->GetConfig(),
+                                          GetEngineCodec("red").id))
+      << "RTX should be mapped for the RED payload type";
 }
 
 TEST_F(WebRtcVideoChannelTest, RecvStreamNoRtx) {
@@ -3796,9 +3822,11 @@ TEST_F(WebRtcVideoChannelTest, DefaultReceiveStreamReconfiguresToUseRtx) {
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
   EXPECT_FALSE(
       recv_stream->GetConfig().rtp.rtx_associated_payload_types.empty());
-  EXPECT_EQ(recv_stream->GetConfig().decoders.size(),
-            recv_stream->GetConfig().rtp.rtx_associated_payload_types.size())
+  EXPECT_TRUE(VerifyRtxReceiveAssociations(recv_stream->GetConfig()))
       << "RTX should be mapped for all decoders/payload types.";
+  EXPECT_TRUE(HasRtxReceiveAssociation(recv_stream->GetConfig(),
+                                          GetEngineCodec("red").id))
+      << "RTX should be mapped also for the RED payload type";
   EXPECT_EQ(rtx_ssrcs[0], recv_stream->GetConfig().rtp.rtx_ssrc);
 }
 
