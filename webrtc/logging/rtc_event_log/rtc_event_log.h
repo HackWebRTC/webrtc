@@ -55,7 +55,6 @@ struct StreamConfig {
 }  // namespace rtclog
 
 class Clock;
-class RtcEventLogImpl;
 struct AudioEncoderRuntimeConfig;
 
 enum class MediaType;
