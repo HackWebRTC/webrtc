@@ -189,11 +189,12 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
     // In order to not overwhelm the OpenMAX buffers in the Android
     // MediaCodec API, we roughly pace the frames here. The downside
     // of this is that the encode run will be done in real-time.
-    // TODO(brandtr): Investigate if this is needed on iOS.
+#if defined(WEBRTC_ANDROID)
     if (config_.hw_encoder || config_.hw_decoder) {
       SleepMs(rtc::kNumMillisecsPerSec /
               rate_profile.input_frame_rate[rate_update_index]);
     }
+#endif
 
     task_queue.PostTask([this] { processor_->ProcessFrame(); });
     ++frame_number;
@@ -302,23 +303,27 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
     decoder_factory_.reset(new cricket::InternalDecoderFactory());
   }
 
-  cricket::VideoCodec encoder_codec;
+  cricket::VideoCodec codec;
+  cricket::VideoDecoderParams decoder_params;  // Empty.
   switch (config_.codec_settings.codecType) {
     case kVideoCodecVP8:
-      encoder_codec = cricket::VideoCodec(cricket::kVp8CodecName);
-      encoder_.reset(encoder_factory->CreateVideoEncoder(encoder_codec));
-      decoder_ = decoder_factory_->CreateVideoDecoder(kVideoCodecVP8);
+      codec = cricket::VideoCodec(cricket::kVp8CodecName);
+      encoder_.reset(encoder_factory->CreateVideoEncoder(codec));
+      decoder_ =
+          decoder_factory_->CreateVideoDecoderWithParams(codec, decoder_params);
       break;
     case kVideoCodecVP9:
-      encoder_codec = cricket::VideoCodec(cricket::kVp9CodecName);
-      encoder_.reset(encoder_factory->CreateVideoEncoder(encoder_codec));
-      decoder_ = decoder_factory_->CreateVideoDecoder(kVideoCodecVP9);
+      codec = cricket::VideoCodec(cricket::kVp9CodecName);
+      encoder_.reset(encoder_factory->CreateVideoEncoder(codec));
+      decoder_ =
+          decoder_factory_->CreateVideoDecoderWithParams(codec, decoder_params);
       break;
     case kVideoCodecH264:
       // TODO(brandtr): Generalize so that we support multiple profiles here.
-      encoder_codec = cricket::VideoCodec(cricket::kH264CodecName);
-      encoder_.reset(encoder_factory->CreateVideoEncoder(encoder_codec));
-      decoder_ = decoder_factory_->CreateVideoDecoder(kVideoCodecH264);
+      codec = cricket::VideoCodec(cricket::kH264CodecName);
+      encoder_.reset(encoder_factory->CreateVideoEncoder(codec));
+      decoder_ =
+          decoder_factory_->CreateVideoDecoderWithParams(codec, decoder_params);
       break;
     default:
       RTC_NOTREACHED();
@@ -327,7 +332,7 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
 
   if (config_.sw_fallback_encoder) {
     encoder_ = rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
-        encoder_codec, std::move(encoder_));
+        codec, std::move(encoder_));
   }
 
   EXPECT_TRUE(encoder_) << "Encoder not successfully created.";
