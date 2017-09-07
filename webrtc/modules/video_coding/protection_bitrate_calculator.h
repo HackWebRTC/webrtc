@@ -69,8 +69,8 @@ class ProtectionBitrateCalculator {
 
   rtc::CriticalSection crit_sect_;
   std::unique_ptr<media_optimization::VCMLossProtectionLogic> loss_prot_logic_
-      GUARDED_BY(crit_sect_);
-  size_t max_payload_size_ GUARDED_BY(crit_sect_);
+      RTC_GUARDED_BY(crit_sect_);
+  size_t max_payload_size_ RTC_GUARDED_BY(crit_sect_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ProtectionBitrateCalculator);
 };

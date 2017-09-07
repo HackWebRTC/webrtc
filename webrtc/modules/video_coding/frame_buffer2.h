@@ -129,56 +129,56 @@ class FrameBuffer {
   // Updates the minimal and maximal playout delays
   // depending on the frame.
   void UpdatePlayoutDelays(const FrameObject& frame)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Update all directly dependent and indirectly dependent frames and mark
   // them as continuous if all their references has been fulfilled.
   void PropagateContinuity(FrameMap::iterator start)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Marks the frame as decoded and updates all directly dependent frames.
   void PropagateDecodability(const FrameInfo& info)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Advances |last_decoded_frame_it_| to |decoded| and removes old
   // frame info.
   void AdvanceLastDecodedFrame(FrameMap::iterator decoded)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Update the corresponding FrameInfo of |frame| and all FrameInfos that
   // |frame| references.
   // Return false if |frame| will never be decodable, true otherwise.
   bool UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
                                         FrameMap::iterator info)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  void UpdateJitterDelay() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void UpdateJitterDelay() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  void UpdateTimingFrameInfo() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void UpdateTimingFrameInfo() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  void ClearFramesAndHistory() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void ClearFramesAndHistory() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   bool HasBadRenderTiming(const FrameObject& frame, int64_t now_ms)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  FrameMap frames_ GUARDED_BY(crit_);
+  FrameMap frames_ RTC_GUARDED_BY(crit_);
 
   rtc::CriticalSection crit_;
   Clock* const clock_;
   rtc::Event new_continuous_frame_event_;
-  VCMJitterEstimator* const jitter_estimator_ GUARDED_BY(crit_);
-  VCMTiming* const timing_ GUARDED_BY(crit_);
-  VCMInterFrameDelay inter_frame_delay_ GUARDED_BY(crit_);
-  uint32_t last_decoded_frame_timestamp_ GUARDED_BY(crit_);
-  FrameMap::iterator last_decoded_frame_it_ GUARDED_BY(crit_);
-  FrameMap::iterator last_continuous_frame_it_ GUARDED_BY(crit_);
-  FrameMap::iterator next_frame_it_ GUARDED_BY(crit_);
-  int num_frames_history_ GUARDED_BY(crit_);
-  int num_frames_buffered_ GUARDED_BY(crit_);
-  bool stopped_ GUARDED_BY(crit_);
-  VCMVideoProtection protection_mode_ GUARDED_BY(crit_);
+  VCMJitterEstimator* const jitter_estimator_ RTC_GUARDED_BY(crit_);
+  VCMTiming* const timing_ RTC_GUARDED_BY(crit_);
+  VCMInterFrameDelay inter_frame_delay_ RTC_GUARDED_BY(crit_);
+  uint32_t last_decoded_frame_timestamp_ RTC_GUARDED_BY(crit_);
+  FrameMap::iterator last_decoded_frame_it_ RTC_GUARDED_BY(crit_);
+  FrameMap::iterator last_continuous_frame_it_ RTC_GUARDED_BY(crit_);
+  FrameMap::iterator next_frame_it_ RTC_GUARDED_BY(crit_);
+  int num_frames_history_ RTC_GUARDED_BY(crit_);
+  int num_frames_buffered_ RTC_GUARDED_BY(crit_);
+  bool stopped_ RTC_GUARDED_BY(crit_);
+  VCMVideoProtection protection_mode_ RTC_GUARDED_BY(crit_);
   VCMReceiveStatisticsCallback* const stats_callback_;
-  int64_t last_log_non_decoded_ms_ GUARDED_BY(crit_);
+  int64_t last_log_non_decoded_ms_ RTC_GUARDED_BY(crit_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FrameBuffer);
 };

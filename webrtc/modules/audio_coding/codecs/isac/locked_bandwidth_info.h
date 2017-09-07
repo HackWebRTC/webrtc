@@ -48,7 +48,7 @@ class LockedIsacBandwidthInfo final {
  private:
   mutable volatile int ref_count_;
   rtc::CriticalSection lock_;
-  IsacBandwidthInfo bwinfo_ GUARDED_BY(lock_);
+  IsacBandwidthInfo bwinfo_ RTC_GUARDED_BY(lock_);
 };
 
 }  // namespace webrtc

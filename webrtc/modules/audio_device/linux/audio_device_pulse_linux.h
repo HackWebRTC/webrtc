@@ -199,153 +199,156 @@ public:
    void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
 private:
-    void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect) {
-        _critSect.Enter();
-    }
-    void UnLock() UNLOCK_FUNCTION(_critSect) {
-        _critSect.Leave();
-    }
-    void WaitForOperationCompletion(pa_operation* paOperation) const;
-    void WaitForSuccess(pa_operation* paOperation) const;
+ void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION(_critSect) { _critSect.Enter(); }
+ void UnLock() RTC_UNLOCK_FUNCTION(_critSect) { _critSect.Leave(); }
+ void WaitForOperationCompletion(pa_operation* paOperation) const;
+ void WaitForSuccess(pa_operation* paOperation) const;
 
-    bool KeyPressed() const;
+ bool KeyPressed() const;
 
-    static void PaContextStateCallback(pa_context *c, void *pThis);
-    static void PaSinkInfoCallback(pa_context *c, const pa_sink_info *i,
-                                   int eol, void *pThis);
-    static void PaSourceInfoCallback(pa_context *c, const pa_source_info *i,
-                                     int eol, void *pThis);
-    static void PaServerInfoCallback(pa_context *c, const pa_server_info *i,
-                                     void *pThis);
-    static void PaStreamStateCallback(pa_stream *p, void *pThis);
-    void PaContextStateCallbackHandler(pa_context *c);
-    void PaSinkInfoCallbackHandler(const pa_sink_info *i, int eol);
-    void PaSourceInfoCallbackHandler(const pa_source_info *i, int eol);
-    void PaServerInfoCallbackHandler(const pa_server_info *i);
-    void PaStreamStateCallbackHandler(pa_stream *p);
+ static void PaContextStateCallback(pa_context* c, void* pThis);
+ static void PaSinkInfoCallback(pa_context* c,
+                                const pa_sink_info* i,
+                                int eol,
+                                void* pThis);
+ static void PaSourceInfoCallback(pa_context* c,
+                                  const pa_source_info* i,
+                                  int eol,
+                                  void* pThis);
+ static void PaServerInfoCallback(pa_context* c,
+                                  const pa_server_info* i,
+                                  void* pThis);
+ static void PaStreamStateCallback(pa_stream* p, void* pThis);
+ void PaContextStateCallbackHandler(pa_context* c);
+ void PaSinkInfoCallbackHandler(const pa_sink_info* i, int eol);
+ void PaSourceInfoCallbackHandler(const pa_source_info* i, int eol);
+ void PaServerInfoCallbackHandler(const pa_server_info* i);
+ void PaStreamStateCallbackHandler(pa_stream* p);
 
-    void EnableWriteCallback();
-    void DisableWriteCallback();
-    static void PaStreamWriteCallback(pa_stream *unused, size_t buffer_space,
-                                      void *pThis);
-    void PaStreamWriteCallbackHandler(size_t buffer_space);
-    static void PaStreamUnderflowCallback(pa_stream *unused, void *pThis);
-    void PaStreamUnderflowCallbackHandler();
-    void EnableReadCallback();
-    void DisableReadCallback();
-    static void PaStreamReadCallback(pa_stream *unused1, size_t unused2,
-                                     void *pThis);
-    void PaStreamReadCallbackHandler();
-    static void PaStreamOverflowCallback(pa_stream *unused, void *pThis);
-    void PaStreamOverflowCallbackHandler();
-    int32_t LatencyUsecs(pa_stream *stream);
-    int32_t ReadRecordedData(const void* bufferData, size_t bufferSize);
-    int32_t ProcessRecordedData(int8_t *bufferData,
-                                uint32_t bufferSizeInSamples,
-                                uint32_t recDelay);
+ void EnableWriteCallback();
+ void DisableWriteCallback();
+ static void PaStreamWriteCallback(pa_stream* unused,
+                                   size_t buffer_space,
+                                   void* pThis);
+ void PaStreamWriteCallbackHandler(size_t buffer_space);
+ static void PaStreamUnderflowCallback(pa_stream* unused, void* pThis);
+ void PaStreamUnderflowCallbackHandler();
+ void EnableReadCallback();
+ void DisableReadCallback();
+ static void PaStreamReadCallback(pa_stream* unused1,
+                                  size_t unused2,
+                                  void* pThis);
+ void PaStreamReadCallbackHandler();
+ static void PaStreamOverflowCallback(pa_stream* unused, void* pThis);
+ void PaStreamOverflowCallbackHandler();
+ int32_t LatencyUsecs(pa_stream* stream);
+ int32_t ReadRecordedData(const void* bufferData, size_t bufferSize);
+ int32_t ProcessRecordedData(int8_t* bufferData,
+                             uint32_t bufferSizeInSamples,
+                             uint32_t recDelay);
 
-    int32_t CheckPulseAudioVersion();
-    int32_t InitSamplingFrequency();
-    int32_t GetDefaultDeviceInfo(bool recDevice, char* name, uint16_t& index);
-    int32_t InitPulseAudio();
-    int32_t TerminatePulseAudio();
+ int32_t CheckPulseAudioVersion();
+ int32_t InitSamplingFrequency();
+ int32_t GetDefaultDeviceInfo(bool recDevice, char* name, uint16_t& index);
+ int32_t InitPulseAudio();
+ int32_t TerminatePulseAudio();
 
-    void PaLock();
-    void PaUnLock();
+ void PaLock();
+ void PaUnLock();
 
-    static bool RecThreadFunc(void*);
-    static bool PlayThreadFunc(void*);
-    bool RecThreadProcess();
-    bool PlayThreadProcess();
+ static bool RecThreadFunc(void*);
+ static bool PlayThreadFunc(void*);
+ bool RecThreadProcess();
+ bool PlayThreadProcess();
 
-    AudioDeviceBuffer* _ptrAudioBuffer;
+ AudioDeviceBuffer* _ptrAudioBuffer;
 
-    rtc::CriticalSection _critSect;
-    EventWrapper& _timeEventRec;
-    EventWrapper& _timeEventPlay;
-    EventWrapper& _recStartEvent;
-    EventWrapper& _playStartEvent;
+ rtc::CriticalSection _critSect;
+ EventWrapper& _timeEventRec;
+ EventWrapper& _timeEventPlay;
+ EventWrapper& _recStartEvent;
+ EventWrapper& _playStartEvent;
 
-    // TODO(pbos): Remove unique_ptr and use directly without resetting.
-    std::unique_ptr<rtc::PlatformThread> _ptrThreadPlay;
-    std::unique_ptr<rtc::PlatformThread> _ptrThreadRec;
+ // TODO(pbos): Remove unique_ptr and use directly without resetting.
+ std::unique_ptr<rtc::PlatformThread> _ptrThreadPlay;
+ std::unique_ptr<rtc::PlatformThread> _ptrThreadRec;
 
-    AudioMixerManagerLinuxPulse _mixerManager;
+ AudioMixerManagerLinuxPulse _mixerManager;
 
-    uint16_t _inputDeviceIndex;
-    uint16_t _outputDeviceIndex;
-    bool _inputDeviceIsSpecified;
-    bool _outputDeviceIsSpecified;
+ uint16_t _inputDeviceIndex;
+ uint16_t _outputDeviceIndex;
+ bool _inputDeviceIsSpecified;
+ bool _outputDeviceIsSpecified;
 
-    int sample_rate_hz_;
-    uint8_t _recChannels;
-    uint8_t _playChannels;
+ int sample_rate_hz_;
+ uint8_t _recChannels;
+ uint8_t _playChannels;
 
-    // Stores thread ID in constructor.
-    // We can then use ThreadChecker::CalledOnValidThread() to ensure that
-    // other methods are called from the same thread.
-    // Currently only does RTC_DCHECK(thread_checker_.CalledOnValidThread()).
-    rtc::ThreadChecker thread_checker_;
+ // Stores thread ID in constructor.
+ // We can then use ThreadChecker::CalledOnValidThread() to ensure that
+ // other methods are called from the same thread.
+ // Currently only does RTC_DCHECK(thread_checker_.CalledOnValidThread()).
+ rtc::ThreadChecker thread_checker_;
 
-    bool _initialized;
-    bool _recording;
-    bool _playing;
-    bool _recIsInitialized;
-    bool _playIsInitialized;
-    bool _startRec;
-    bool _stopRec;
-    bool _startPlay;
-    bool _stopPlay;
-    bool _AGC;
-    bool update_speaker_volume_at_startup_;
+ bool _initialized;
+ bool _recording;
+ bool _playing;
+ bool _recIsInitialized;
+ bool _playIsInitialized;
+ bool _startRec;
+ bool _stopRec;
+ bool _startPlay;
+ bool _stopPlay;
+ bool _AGC;
+ bool update_speaker_volume_at_startup_;
 
-    uint32_t _sndCardPlayDelay;
-    uint32_t _sndCardRecDelay;
+ uint32_t _sndCardPlayDelay;
+ uint32_t _sndCardRecDelay;
 
-    int32_t _writeErrors;
-    uint16_t _playWarning;
-    uint16_t _playError;
-    uint16_t _recWarning;
-    uint16_t _recError;
+ int32_t _writeErrors;
+ uint16_t _playWarning;
+ uint16_t _playError;
+ uint16_t _recWarning;
+ uint16_t _recError;
 
-    uint16_t _deviceIndex;
-    int16_t _numPlayDevices;
-    int16_t _numRecDevices;
-    char* _playDeviceName;
-    char* _recDeviceName;
-    char* _playDisplayDeviceName;
-    char* _recDisplayDeviceName;
-    char _paServerVersion[32];
+ uint16_t _deviceIndex;
+ int16_t _numPlayDevices;
+ int16_t _numRecDevices;
+ char* _playDeviceName;
+ char* _recDeviceName;
+ char* _playDisplayDeviceName;
+ char* _recDisplayDeviceName;
+ char _paServerVersion[32];
 
-    int8_t* _playBuffer;
-    size_t _playbackBufferSize;
-    size_t _playbackBufferUnused;
-    size_t _tempBufferSpace;
-    int8_t* _recBuffer;
-    size_t _recordBufferSize;
-    size_t _recordBufferUsed;
-    const void* _tempSampleData;
-    size_t _tempSampleDataSize;
-    int32_t _configuredLatencyPlay;
-    int32_t _configuredLatencyRec;
+ int8_t* _playBuffer;
+ size_t _playbackBufferSize;
+ size_t _playbackBufferUnused;
+ size_t _tempBufferSpace;
+ int8_t* _recBuffer;
+ size_t _recordBufferSize;
+ size_t _recordBufferUsed;
+ const void* _tempSampleData;
+ size_t _tempSampleDataSize;
+ int32_t _configuredLatencyPlay;
+ int32_t _configuredLatencyRec;
 
-    // PulseAudio
-    uint16_t _paDeviceIndex;
-    bool _paStateChanged;
+ // PulseAudio
+ uint16_t _paDeviceIndex;
+ bool _paStateChanged;
 
-    pa_threaded_mainloop* _paMainloop;
-    pa_mainloop_api* _paMainloopApi;
-    pa_context* _paContext;
+ pa_threaded_mainloop* _paMainloop;
+ pa_mainloop_api* _paMainloopApi;
+ pa_context* _paContext;
 
-    pa_stream* _recStream;
-    pa_stream* _playStream;
-    uint32_t _recStreamFlags;
-    uint32_t _playStreamFlags;
-    pa_buffer_attr _playBufferAttr;
-    pa_buffer_attr _recBufferAttr;
+ pa_stream* _recStream;
+ pa_stream* _playStream;
+ uint32_t _recStreamFlags;
+ uint32_t _playStreamFlags;
+ pa_buffer_attr _playBufferAttr;
+ pa_buffer_attr _recBufferAttr;
 
-    char _oldKeyState[32];
-    Display* _XDisplay;
+ char _oldKeyState[32];
+ Display* _XDisplay;
 };
 
 }

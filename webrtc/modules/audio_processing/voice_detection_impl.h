@@ -43,14 +43,14 @@ class VoiceDetectionImpl : public VoiceDetection {
  private:
   class Vad;
   rtc::CriticalSection* const crit_;
-  bool enabled_ GUARDED_BY(crit_) = false;
-  bool stream_has_voice_ GUARDED_BY(crit_) = false;
-  bool using_external_vad_ GUARDED_BY(crit_) = false;
-  Likelihood likelihood_ GUARDED_BY(crit_) = kLowLikelihood;
-  int frame_size_ms_ GUARDED_BY(crit_) = 10;
-  size_t frame_size_samples_ GUARDED_BY(crit_) = 0;
-  int sample_rate_hz_ GUARDED_BY(crit_) = 0;
-  std::unique_ptr<Vad> vad_ GUARDED_BY(crit_);
+  bool enabled_ RTC_GUARDED_BY(crit_) = false;
+  bool stream_has_voice_ RTC_GUARDED_BY(crit_) = false;
+  bool using_external_vad_ RTC_GUARDED_BY(crit_) = false;
+  Likelihood likelihood_ RTC_GUARDED_BY(crit_) = kLowLikelihood;
+  int frame_size_ms_ RTC_GUARDED_BY(crit_) = 10;
+  size_t frame_size_samples_ RTC_GUARDED_BY(crit_) = 0;
+  int sample_rate_hz_ RTC_GUARDED_BY(crit_) = 0;
+  std::unique_ptr<Vad> vad_ RTC_GUARDED_BY(crit_);
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(VoiceDetectionImpl);
 };
 }  // namespace webrtc

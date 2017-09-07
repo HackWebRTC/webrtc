@@ -118,18 +118,18 @@ class VideoSender : public Module {
       VideoBitrateAllocator* bitrate_allocator,
       uint32_t target_bitrate_bps);
   void SetEncoderParameters(EncoderParameters params, bool has_internal_source)
-      EXCLUSIVE_LOCKS_REQUIRED(encoder_crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(encoder_crit_);
 
   Clock* const clock_;
 
   rtc::CriticalSection encoder_crit_;
   VCMGenericEncoder* _encoder;
   media_optimization::MediaOptimization _mediaOpt;
-  VCMEncodedFrameCallback _encodedFrameCallback GUARDED_BY(encoder_crit_);
+  VCMEncodedFrameCallback _encodedFrameCallback RTC_GUARDED_BY(encoder_crit_);
   EncodedImageCallback* const post_encode_callback_;
   VCMSendStatisticsCallback* const send_stats_callback_;
-  VCMCodecDataBase _codecDataBase GUARDED_BY(encoder_crit_);
-  bool frame_dropper_enabled_ GUARDED_BY(encoder_crit_);
+  VCMCodecDataBase _codecDataBase RTC_GUARDED_BY(encoder_crit_);
+  bool frame_dropper_enabled_ RTC_GUARDED_BY(encoder_crit_);
   VCMProcessTimer _sendStatsTimer;
 
   // Must be accessed on the construction thread of VideoSender.
@@ -137,9 +137,9 @@ class VideoSender : public Module {
   rtc::SequencedTaskChecker sequenced_checker_;
 
   rtc::CriticalSection params_crit_;
-  EncoderParameters encoder_params_ GUARDED_BY(params_crit_);
-  bool encoder_has_internal_source_ GUARDED_BY(params_crit_);
-  std::vector<FrameType> next_frame_types_ GUARDED_BY(params_crit_);
+  EncoderParameters encoder_params_ RTC_GUARDED_BY(params_crit_);
+  bool encoder_has_internal_source_ RTC_GUARDED_BY(params_crit_);
+  std::vector<FrameType> next_frame_types_ RTC_GUARDED_BY(params_crit_);
 };
 
 class VideoReceiver : public Module {
@@ -200,7 +200,7 @@ class VideoReceiver : public Module {
 
  protected:
   int32_t Decode(const webrtc::VCMEncodedFrame& frame)
-      EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
   int32_t RequestKeyFrame();
 
  private:
@@ -211,16 +211,18 @@ class VideoReceiver : public Module {
   VCMTiming* _timing;
   VCMReceiver _receiver;
   VCMDecodedFrameCallback _decodedFrameCallback;
-  VCMFrameTypeCallback* _frameTypeCallback GUARDED_BY(process_crit_);
-  VCMReceiveStatisticsCallback* _receiveStatsCallback GUARDED_BY(process_crit_);
-  VCMPacketRequestCallback* _packetRequestCallback GUARDED_BY(process_crit_);
+  VCMFrameTypeCallback* _frameTypeCallback RTC_GUARDED_BY(process_crit_);
+  VCMReceiveStatisticsCallback* _receiveStatsCallback
+      RTC_GUARDED_BY(process_crit_);
+  VCMPacketRequestCallback* _packetRequestCallback
+      RTC_GUARDED_BY(process_crit_);
 
   VCMFrameBuffer _frameFromFile;
-  bool _scheduleKeyRequest GUARDED_BY(process_crit_);
-  bool drop_frames_until_keyframe_ GUARDED_BY(process_crit_);
-  size_t max_nack_list_size_ GUARDED_BY(process_crit_);
+  bool _scheduleKeyRequest RTC_GUARDED_BY(process_crit_);
+  bool drop_frames_until_keyframe_ RTC_GUARDED_BY(process_crit_);
+  size_t max_nack_list_size_ RTC_GUARDED_BY(process_crit_);
 
-  VCMCodecDataBase _codecDataBase GUARDED_BY(receive_crit_);
+  VCMCodecDataBase _codecDataBase RTC_GUARDED_BY(receive_crit_);
   EncodedImageCallback* pre_decode_image_callback_;
 
   VCMProcessTimer _receiveStatsTimer;

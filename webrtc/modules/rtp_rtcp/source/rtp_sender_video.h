@@ -97,7 +97,7 @@ class RTPSenderVideo {
     int64_t last_frame_time_ms;
   };
 
-  size_t CalculateFecPacketOverhead() const EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  size_t CalculateFecPacketOverhead() const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   void SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
                        StorageType storage);
@@ -113,11 +113,11 @@ class RTPSenderVideo {
                                   StorageType media_packet_storage,
                                   bool protect_media_packet);
 
-  bool red_enabled() const EXCLUSIVE_LOCKS_REQUIRED(crit_) {
+  bool red_enabled() const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_) {
     return red_payload_type_ >= 0;
   }
 
-  bool ulpfec_enabled() const EXCLUSIVE_LOCKS_REQUIRED(crit_) {
+  bool ulpfec_enabled() const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_) {
     return ulpfec_payload_type_ >= 0;
   }
 
@@ -125,7 +125,7 @@ class RTPSenderVideo {
 
   bool UpdateConditionalRetransmit(uint8_t temporal_id,
                                    int64_t expected_retransmission_time_ms)
-      EXCLUSIVE_LOCKS_REQUIRED(stats_crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(stats_crit_);
 
   RTPSender* const rtp_sender_;
   Clock* const clock_;
@@ -134,30 +134,30 @@ class RTPSenderVideo {
   rtc::CriticalSection crit_;
 
   RtpVideoCodecTypes video_type_;
-  int32_t retransmission_settings_ GUARDED_BY(crit_);
-  VideoRotation last_rotation_ GUARDED_BY(crit_);
+  int32_t retransmission_settings_ RTC_GUARDED_BY(crit_);
+  VideoRotation last_rotation_ RTC_GUARDED_BY(crit_);
 
   // RED/ULPFEC.
-  int red_payload_type_ GUARDED_BY(crit_);
-  int ulpfec_payload_type_ GUARDED_BY(crit_);
-  UlpfecGenerator ulpfec_generator_ GUARDED_BY(crit_);
+  int red_payload_type_ RTC_GUARDED_BY(crit_);
+  int ulpfec_payload_type_ RTC_GUARDED_BY(crit_);
+  UlpfecGenerator ulpfec_generator_ RTC_GUARDED_BY(crit_);
 
   // FlexFEC.
   FlexfecSender* const flexfec_sender_;
 
   // FEC parameters, applicable to either ULPFEC or FlexFEC.
-  FecProtectionParams delta_fec_params_ GUARDED_BY(crit_);
-  FecProtectionParams key_fec_params_ GUARDED_BY(crit_);
+  FecProtectionParams delta_fec_params_ RTC_GUARDED_BY(crit_);
+  FecProtectionParams key_fec_params_ RTC_GUARDED_BY(crit_);
 
   rtc::CriticalSection stats_crit_;
   // Bitrate used for FEC payload, RED headers, RTP headers for FEC packets
   // and any padding overhead.
-  RateStatistics fec_bitrate_ GUARDED_BY(stats_crit_);
+  RateStatistics fec_bitrate_ RTC_GUARDED_BY(stats_crit_);
   // Bitrate used for video payload and RTP headers.
-  RateStatistics video_bitrate_ GUARDED_BY(stats_crit_);
+  RateStatistics video_bitrate_ RTC_GUARDED_BY(stats_crit_);
 
   std::map<int, TemporalLayerStats> frame_stats_by_temporal_layer_
-      GUARDED_BY(stats_crit_);
+      RTC_GUARDED_BY(stats_crit_);
 
   OneTimeEvent first_frame_sent_;
 };

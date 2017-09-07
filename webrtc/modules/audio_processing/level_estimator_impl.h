@@ -38,8 +38,8 @@ class LevelEstimatorImpl : public LevelEstimator {
 
  private:
   rtc::CriticalSection* const crit_ = nullptr;
-  bool enabled_ GUARDED_BY(crit_) = false;
-  std::unique_ptr<RmsLevel> rms_ GUARDED_BY(crit_);
+  bool enabled_ RTC_GUARDED_BY(crit_) = false;
+  std::unique_ptr<RmsLevel> rms_ RTC_GUARDED_BY(crit_);
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(LevelEstimatorImpl);
 };
 }  // namespace webrtc

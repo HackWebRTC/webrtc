@@ -77,11 +77,11 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
   };
   // Separate instance for each simulcast stream or spatial layer.
   std::vector<TimingFramesLayerInfo> timing_frames_info_
-      GUARDED_BY(timing_params_lock_);
-  size_t framerate_ GUARDED_BY(timing_params_lock_);
-  int64_t last_timing_frame_time_ms_ GUARDED_BY(timing_params_lock_);
+      RTC_GUARDED_BY(timing_params_lock_);
+  size_t framerate_ RTC_GUARDED_BY(timing_params_lock_);
+  int64_t last_timing_frame_time_ms_ RTC_GUARDED_BY(timing_params_lock_);
   VideoCodec::TimingFrameTriggerThresholds timing_frames_thresholds_
-      GUARDED_BY(timing_params_lock_);
+      RTC_GUARDED_BY(timing_params_lock_);
 
   // Experiment groups parsed from field trials for realtime video ([0]) and
   // screenshare ([1]). 0 means no group specified. Positive values are
@@ -117,11 +117,11 @@ class VCMGenericEncoder {
  private:
   rtc::RaceChecker race_checker_;
 
-  VideoEncoder* const encoder_ GUARDED_BY(race_checker_);
+  VideoEncoder* const encoder_ RTC_GUARDED_BY(race_checker_);
   VCMEncodedFrameCallback* const vcm_encoded_frame_callback_;
   const bool internal_source_;
   rtc::CriticalSection params_lock_;
-  EncoderParameters encoder_params_ GUARDED_BY(params_lock_);
+  EncoderParameters encoder_params_ RTC_GUARDED_BY(params_lock_);
   bool is_screenshare_;
   size_t streams_or_svc_num_;
 };

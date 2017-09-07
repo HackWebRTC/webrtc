@@ -54,7 +54,7 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
 
  private:
   void OnPacketArrival(uint16_t sequence_number, int64_t arrival_time)
-      EXCLUSIVE_LOCKS_REQUIRED(&lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_);
   bool BuildFeedbackPacket(rtcp::TransportFeedback* feedback_packet);
 
   const Clock* const clock_;
@@ -63,13 +63,13 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
 
   rtc::CriticalSection lock_;
 
-  uint32_t media_ssrc_ GUARDED_BY(&lock_);
-  uint8_t feedback_sequence_ GUARDED_BY(&lock_);
-  SequenceNumberUnwrapper unwrapper_ GUARDED_BY(&lock_);
-  int64_t window_start_seq_ GUARDED_BY(&lock_);
+  uint32_t media_ssrc_ RTC_GUARDED_BY(&lock_);
+  uint8_t feedback_sequence_ RTC_GUARDED_BY(&lock_);
+  SequenceNumberUnwrapper unwrapper_ RTC_GUARDED_BY(&lock_);
+  int64_t window_start_seq_ RTC_GUARDED_BY(&lock_);
   // Map unwrapped seq -> time.
-  std::map<int64_t, int64_t> packet_arrival_times_ GUARDED_BY(&lock_);
-  int64_t send_interval_ms_ GUARDED_BY(&lock_);
+  std::map<int64_t, int64_t> packet_arrival_times_ RTC_GUARDED_BY(&lock_);
+  int64_t send_interval_ms_ RTC_GUARDED_BY(&lock_);
 };
 
 }  // namespace webrtc

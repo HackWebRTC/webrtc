@@ -69,7 +69,7 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
   VCMReceiveCallback* _receiveCallback = nullptr;
   VCMTiming* _timing;
   rtc::CriticalSection lock_;
-  VCMTimestampMap _timestampMap GUARDED_BY(lock_);
+  VCMTimestampMap _timestampMap RTC_GUARDED_BY(lock_);
   uint64_t _lastReceivedPictureID;
   int64_t ntp_offset_;
 };

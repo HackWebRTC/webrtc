@@ -72,7 +72,7 @@ class EncodedImageCallbackWrapper : public EncodedImageCallback {
 
  private:
   rtc::CriticalSection cs_;
-  EncodedImageCallback* callback_ GUARDED_BY(cs_);
+  EncodedImageCallback* callback_ RTC_GUARDED_BY(cs_);
 };
 
 class VideoCodingModuleImpl : public VideoCodingModule {

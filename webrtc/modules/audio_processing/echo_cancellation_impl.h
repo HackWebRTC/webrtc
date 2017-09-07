@@ -90,20 +90,20 @@ class EchoCancellationImpl : public EchoCancellation {
   void AllocateRenderQueue();
   int Configure();
 
-  rtc::CriticalSection* const crit_render_ ACQUIRED_BEFORE(crit_capture_);
+  rtc::CriticalSection* const crit_render_ RTC_ACQUIRED_BEFORE(crit_capture_);
   rtc::CriticalSection* const crit_capture_;
 
   bool enabled_ = false;
-  bool drift_compensation_enabled_ GUARDED_BY(crit_capture_);
-  bool metrics_enabled_ GUARDED_BY(crit_capture_);
-  SuppressionLevel suppression_level_ GUARDED_BY(crit_capture_);
-  int stream_drift_samples_ GUARDED_BY(crit_capture_);
-  bool was_stream_drift_set_ GUARDED_BY(crit_capture_);
-  bool stream_has_echo_ GUARDED_BY(crit_capture_);
-  bool delay_logging_enabled_ GUARDED_BY(crit_capture_);
-  bool extended_filter_enabled_ GUARDED_BY(crit_capture_);
-  bool delay_agnostic_enabled_ GUARDED_BY(crit_capture_);
-  bool refined_adaptive_filter_enabled_ GUARDED_BY(crit_capture_) = false;
+  bool drift_compensation_enabled_ RTC_GUARDED_BY(crit_capture_);
+  bool metrics_enabled_ RTC_GUARDED_BY(crit_capture_);
+  SuppressionLevel suppression_level_ RTC_GUARDED_BY(crit_capture_);
+  int stream_drift_samples_ RTC_GUARDED_BY(crit_capture_);
+  bool was_stream_drift_set_ RTC_GUARDED_BY(crit_capture_);
+  bool stream_has_echo_ RTC_GUARDED_BY(crit_capture_);
+  bool delay_logging_enabled_ RTC_GUARDED_BY(crit_capture_);
+  bool extended_filter_enabled_ RTC_GUARDED_BY(crit_capture_);
+  bool delay_agnostic_enabled_ RTC_GUARDED_BY(crit_capture_);
+  bool refined_adaptive_filter_enabled_ RTC_GUARDED_BY(crit_capture_) = false;
 
   std::vector<std::unique_ptr<Canceller>> cancellers_;
   std::unique_ptr<StreamProperties> stream_properties_;

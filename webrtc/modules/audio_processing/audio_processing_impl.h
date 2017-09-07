@@ -100,7 +100,7 @@ class AudioProcessingImpl : public AudioProcessing {
   size_t num_reverse_channels() const override;
   int stream_delay_ms() const override;
   bool was_stream_delay_set() const override
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   AudioProcessingStatistics GetStatistics() const override;
 
@@ -125,7 +125,7 @@ class AudioProcessingImpl : public AudioProcessing {
  protected:
   // Overridden in a mock.
   virtual int InitializeLocked()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
 
  private:
   // TODO(peah): These friend classes should be removed as soon as the new
@@ -188,49 +188,50 @@ class AudioProcessingImpl : public AudioProcessing {
   // The struct is modified in a single-threaded manner by holding both the
   // render and capture locks.
   int MaybeInitialize(const ProcessingConfig& config, bool force_initialization)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   int MaybeInitializeRender(const ProcessingConfig& processing_config)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   int MaybeInitializeCapture(const ProcessingConfig& processing_config,
                              bool force_initialization)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   // Method for updating the state keeping track of the active submodules.
   // Returns a bool indicating whether the state has changed.
-  bool UpdateActiveSubmoduleStates() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  bool UpdateActiveSubmoduleStates()
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   // Methods requiring APM running in a single-threaded manner.
   // Are called with both the render and capture locks already
   // acquired.
   void InitializeTransient()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeBeamformer()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeIntelligibility()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   int InitializeLocked(const ProcessingConfig& config)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
-  void InitializeLevelController() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+  void InitializeLevelController() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeResidualEchoDetector()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
-  void InitializeLowCutFilter() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  void InitializeEchoCanceller3() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+  void InitializeLowCutFilter() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeEchoCanceller3() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeGainController2();
 
   void EmptyQueuedRenderAudio();
   void AllocateRenderQueue()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void QueueBandedRenderAudio(AudioBuffer* audio)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
   void QueueNonbandedRenderAudio(AudioBuffer* audio)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   // Capture-side exclusive methods possibly running APM in a multi-threaded
   // manner that are called with the render lock already acquired.
-  int ProcessCaptureStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  void MaybeUpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  int ProcessCaptureStreamLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void MaybeUpdateHistograms() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   // Render-side exclusive methods possibly running APM in a multi-threaded
   // manner that are called with the render lock already acquired.
@@ -238,8 +239,8 @@ class AudioProcessingImpl : public AudioProcessing {
   int AnalyzeReverseStreamLocked(const float* const* src,
                                  const StreamConfig& input_config,
                                  const StreamConfig& output_config)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
-  int ProcessRenderStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+  int ProcessRenderStreamLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   // Collects configuration settings from public and private
   // submodules to be saved as an audioproc::Config message on the
@@ -247,27 +248,27 @@ class AudioProcessingImpl : public AudioProcessing {
   // config if it is different from the last saved one; if |forced|,
   // writes the config regardless of the last saved.
   void WriteAecDumpConfigMessage(bool forced)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   // Notifies attached AecDump of current configuration and capture data.
   void RecordUnprocessedCaptureStream(const float* const* capture_stream)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   void RecordUnprocessedCaptureStream(const AudioFrame& capture_frame)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   // Notifies attached AecDump of current configuration and
   // processed capture data and issues a capture stream recording
   // request.
   void RecordProcessedCaptureStream(
       const float* const* processed_capture_stream)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   void RecordProcessedCaptureStream(const AudioFrame& processed_capture_frame)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   // Notifies attached AecDump about current state (delay, drift, etc).
-  void RecordAudioProcessingState() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void RecordAudioProcessingState() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   // AecDump instance used for optionally logging APM config, input
   // and output to file in the AEC-dump format defined in debug.proto.
@@ -275,10 +276,10 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // Hold the last config written with AecDump for avoiding writing
   // the same config twice.
-  InternalAPMConfig apm_config_for_aec_dump_ GUARDED_BY(crit_capture_);
+  InternalAPMConfig apm_config_for_aec_dump_ RTC_GUARDED_BY(crit_capture_);
 
   // Critical sections.
-  rtc::CriticalSection crit_render_ ACQUIRED_BEFORE(crit_capture_);
+  rtc::CriticalSection crit_render_ RTC_ACQUIRED_BEFORE(crit_capture_);
   rtc::CriticalSection crit_capture_;
 
   // Struct containing the Config specifying the behavior of APM.
@@ -345,7 +346,7 @@ class AudioProcessingImpl : public AudioProcessing {
     StreamConfig capture_processing_format;
     int split_rate;
     bool echo_path_gain_change;
-  } capture_ GUARDED_BY(crit_capture_);
+  } capture_ RTC_GUARDED_BY(crit_capture_);
 
   struct ApmCaptureNonLockedState {
     ApmCaptureNonLockedState(bool beamformer_enabled,
@@ -373,31 +374,31 @@ class AudioProcessingImpl : public AudioProcessing {
     ~ApmRenderState();
     std::unique_ptr<AudioConverter> render_converter;
     std::unique_ptr<AudioBuffer> render_audio;
-  } render_ GUARDED_BY(crit_render_);
+  } render_ RTC_GUARDED_BY(crit_render_);
 
-  size_t aec_render_queue_element_max_size_ GUARDED_BY(crit_render_)
-      GUARDED_BY(crit_capture_) = 0;
-  std::vector<float> aec_render_queue_buffer_ GUARDED_BY(crit_render_);
-  std::vector<float> aec_capture_queue_buffer_ GUARDED_BY(crit_capture_);
+  size_t aec_render_queue_element_max_size_ RTC_GUARDED_BY(crit_render_)
+      RTC_GUARDED_BY(crit_capture_) = 0;
+  std::vector<float> aec_render_queue_buffer_ RTC_GUARDED_BY(crit_render_);
+  std::vector<float> aec_capture_queue_buffer_ RTC_GUARDED_BY(crit_capture_);
 
-  size_t aecm_render_queue_element_max_size_ GUARDED_BY(crit_render_)
-      GUARDED_BY(crit_capture_) = 0;
-  std::vector<int16_t> aecm_render_queue_buffer_ GUARDED_BY(crit_render_);
-  std::vector<int16_t> aecm_capture_queue_buffer_ GUARDED_BY(crit_capture_);
+  size_t aecm_render_queue_element_max_size_ RTC_GUARDED_BY(crit_render_)
+      RTC_GUARDED_BY(crit_capture_) = 0;
+  std::vector<int16_t> aecm_render_queue_buffer_ RTC_GUARDED_BY(crit_render_);
+  std::vector<int16_t> aecm_capture_queue_buffer_ RTC_GUARDED_BY(crit_capture_);
 
-  size_t agc_render_queue_element_max_size_ GUARDED_BY(crit_render_)
-      GUARDED_BY(crit_capture_) = 0;
-  std::vector<int16_t> agc_render_queue_buffer_ GUARDED_BY(crit_render_);
-  std::vector<int16_t> agc_capture_queue_buffer_ GUARDED_BY(crit_capture_);
+  size_t agc_render_queue_element_max_size_ RTC_GUARDED_BY(crit_render_)
+      RTC_GUARDED_BY(crit_capture_) = 0;
+  std::vector<int16_t> agc_render_queue_buffer_ RTC_GUARDED_BY(crit_render_);
+  std::vector<int16_t> agc_capture_queue_buffer_ RTC_GUARDED_BY(crit_capture_);
 
-  size_t red_render_queue_element_max_size_ GUARDED_BY(crit_render_)
-      GUARDED_BY(crit_capture_) = 0;
-  std::vector<float> red_render_queue_buffer_ GUARDED_BY(crit_render_);
-  std::vector<float> red_capture_queue_buffer_ GUARDED_BY(crit_capture_);
+  size_t red_render_queue_element_max_size_ RTC_GUARDED_BY(crit_render_)
+      RTC_GUARDED_BY(crit_capture_) = 0;
+  std::vector<float> red_render_queue_buffer_ RTC_GUARDED_BY(crit_render_);
+  std::vector<float> red_capture_queue_buffer_ RTC_GUARDED_BY(crit_capture_);
 
-  RmsLevel capture_input_rms_ GUARDED_BY(crit_capture_);
-  RmsLevel capture_output_rms_ GUARDED_BY(crit_capture_);
-  int capture_rms_interval_counter_ GUARDED_BY(crit_capture_) = 0;
+  RmsLevel capture_input_rms_ RTC_GUARDED_BY(crit_capture_);
+  RmsLevel capture_output_rms_ RTC_GUARDED_BY(crit_capture_);
+  int capture_rms_interval_counter_ RTC_GUARDED_BY(crit_capture_) = 0;
 
   // Lock protection not needed.
   std::unique_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>

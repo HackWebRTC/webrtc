@@ -254,7 +254,7 @@ class RTPSender {
 
   Clock* const clock_;
   const int64_t clock_delta_ms_;
-  Random random_ GUARDED_BY(send_critsect_);
+  Random random_ RTC_GUARDED_BY(send_critsect_);
 
   const bool audio_configured_;
   const std::unique_ptr<RTPSenderAudio> audio_;
@@ -267,14 +267,15 @@ class RTPSender {
   rtc::CriticalSection send_critsect_;
 
   Transport* transport_;
-  bool sending_media_ GUARDED_BY(send_critsect_);
+  bool sending_media_ RTC_GUARDED_BY(send_critsect_);
 
   size_t max_packet_size_;
 
-  int8_t payload_type_ GUARDED_BY(send_critsect_);
+  int8_t payload_type_ RTC_GUARDED_BY(send_critsect_);
   std::map<int8_t, RtpUtility::Payload*> payload_type_map_;
 
-  RtpHeaderExtensionMap rtp_header_extension_map_ GUARDED_BY(send_critsect_);
+  RtpHeaderExtensionMap rtp_header_extension_map_
+      RTC_GUARDED_BY(send_critsect_);
 
   // Tracks the current request for playout delay limits from application
   // and decides whether the current RTP frame should include the playout
@@ -288,13 +289,14 @@ class RTPSender {
 
   // Statistics
   rtc::CriticalSection statistics_crit_;
-  SendDelayMap send_delays_ GUARDED_BY(statistics_crit_);
-  FrameCounts frame_counts_ GUARDED_BY(statistics_crit_);
-  StreamDataCounters rtp_stats_ GUARDED_BY(statistics_crit_);
-  StreamDataCounters rtx_rtp_stats_ GUARDED_BY(statistics_crit_);
-  StreamDataCountersCallback* rtp_stats_callback_ GUARDED_BY(statistics_crit_);
-  RateStatistics total_bitrate_sent_ GUARDED_BY(statistics_crit_);
-  RateStatistics nack_bitrate_sent_ GUARDED_BY(statistics_crit_);
+  SendDelayMap send_delays_ RTC_GUARDED_BY(statistics_crit_);
+  FrameCounts frame_counts_ RTC_GUARDED_BY(statistics_crit_);
+  StreamDataCounters rtp_stats_ RTC_GUARDED_BY(statistics_crit_);
+  StreamDataCounters rtx_rtp_stats_ RTC_GUARDED_BY(statistics_crit_);
+  StreamDataCountersCallback* rtp_stats_callback_
+      RTC_GUARDED_BY(statistics_crit_);
+  RateStatistics total_bitrate_sent_ RTC_GUARDED_BY(statistics_crit_);
+  RateStatistics nack_bitrate_sent_ RTC_GUARDED_BY(statistics_crit_);
   FrameCountObserver* const frame_count_observer_;
   SendSideDelayObserver* const send_side_delay_observer_;
   RtcEventLog* const event_log_;
@@ -302,25 +304,25 @@ class RTPSender {
   BitrateStatisticsObserver* const bitrate_callback_;
 
   // RTP variables
-  uint32_t timestamp_offset_ GUARDED_BY(send_critsect_);
-  uint32_t remote_ssrc_ GUARDED_BY(send_critsect_);
-  bool sequence_number_forced_ GUARDED_BY(send_critsect_);
-  uint16_t sequence_number_ GUARDED_BY(send_critsect_);
-  uint16_t sequence_number_rtx_ GUARDED_BY(send_critsect_);
+  uint32_t timestamp_offset_ RTC_GUARDED_BY(send_critsect_);
+  uint32_t remote_ssrc_ RTC_GUARDED_BY(send_critsect_);
+  bool sequence_number_forced_ RTC_GUARDED_BY(send_critsect_);
+  uint16_t sequence_number_ RTC_GUARDED_BY(send_critsect_);
+  uint16_t sequence_number_rtx_ RTC_GUARDED_BY(send_critsect_);
   // Must be explicitly set by the application, use of rtc::Optional
   // only to keep track of correct use.
-  rtc::Optional<uint32_t> ssrc_ GUARDED_BY(send_critsect_);
-  uint32_t last_rtp_timestamp_ GUARDED_BY(send_critsect_);
-  int64_t capture_time_ms_ GUARDED_BY(send_critsect_);
-  int64_t last_timestamp_time_ms_ GUARDED_BY(send_critsect_);
-  bool media_has_been_sent_ GUARDED_BY(send_critsect_);
-  bool last_packet_marker_bit_ GUARDED_BY(send_critsect_);
-  std::vector<uint32_t> csrcs_ GUARDED_BY(send_critsect_);
-  int rtx_ GUARDED_BY(send_critsect_);
-  rtc::Optional<uint32_t> ssrc_rtx_ GUARDED_BY(send_critsect_);
+  rtc::Optional<uint32_t> ssrc_ RTC_GUARDED_BY(send_critsect_);
+  uint32_t last_rtp_timestamp_ RTC_GUARDED_BY(send_critsect_);
+  int64_t capture_time_ms_ RTC_GUARDED_BY(send_critsect_);
+  int64_t last_timestamp_time_ms_ RTC_GUARDED_BY(send_critsect_);
+  bool media_has_been_sent_ RTC_GUARDED_BY(send_critsect_);
+  bool last_packet_marker_bit_ RTC_GUARDED_BY(send_critsect_);
+  std::vector<uint32_t> csrcs_ RTC_GUARDED_BY(send_critsect_);
+  int rtx_ RTC_GUARDED_BY(send_critsect_);
+  rtc::Optional<uint32_t> ssrc_rtx_ RTC_GUARDED_BY(send_critsect_);
   // Mapping rtx_payload_type_map_[associated] = rtx.
-  std::map<int8_t, int8_t> rtx_payload_type_map_ GUARDED_BY(send_critsect_);
-  size_t rtp_overhead_bytes_per_packet_ GUARDED_BY(send_critsect_);
+  std::map<int8_t, int8_t> rtx_payload_type_map_ RTC_GUARDED_BY(send_critsect_);
+  size_t rtp_overhead_bytes_per_packet_ RTC_GUARDED_BY(send_critsect_);
 
   RateLimiter* const retransmission_rate_limiter_;
   OverheadObserver* overhead_observer_;

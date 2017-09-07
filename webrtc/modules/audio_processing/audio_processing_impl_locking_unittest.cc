@@ -83,7 +83,7 @@ class RandomGenerator {
 
  private:
   rtc::CriticalSection crit_;
-  Random rand_gen_ GUARDED_BY(crit_);
+  Random rand_gen_ RTC_GUARDED_BY(crit_);
 };
 
 // Variables related to the audio data and formats.
@@ -300,8 +300,8 @@ class FrameCounters {
 
  private:
   rtc::CriticalSection crit_;
-  int render_count GUARDED_BY(crit_) = 0;
-  int capture_count GUARDED_BY(crit_) = 0;
+  int render_count RTC_GUARDED_BY(crit_) = 0;
+  int capture_count RTC_GUARDED_BY(crit_) = 0;
 };
 
 // Class for handling the capture side processing.

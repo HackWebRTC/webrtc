@@ -68,8 +68,8 @@ class RTPSenderAudio {
   // DTMF.
   bool dtmf_event_is_on_ = false;
   bool dtmf_event_first_packet_sent_ = false;
-  int8_t dtmf_payload_type_ GUARDED_BY(send_audio_critsect_) = -1;
-  uint32_t dtmf_payload_freq_ GUARDED_BY(send_audio_critsect_) = 8000;
+  int8_t dtmf_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
+  uint32_t dtmf_payload_freq_ RTC_GUARDED_BY(send_audio_critsect_) = 8000;
   uint32_t dtmf_timestamp_ = 0;
   uint32_t dtmf_length_samples_ = 0;
   int64_t dtmf_time_last_sent_ = 0;
@@ -78,16 +78,16 @@ class RTPSenderAudio {
   DtmfQueue dtmf_queue_;
 
   // VAD detection, used for marker bit.
-  bool inband_vad_active_ GUARDED_BY(send_audio_critsect_) = false;
-  int8_t cngnb_payload_type_ GUARDED_BY(send_audio_critsect_) = -1;
-  int8_t cngwb_payload_type_ GUARDED_BY(send_audio_critsect_) = -1;
-  int8_t cngswb_payload_type_ GUARDED_BY(send_audio_critsect_) = -1;
-  int8_t cngfb_payload_type_ GUARDED_BY(send_audio_critsect_) = -1;
-  int8_t last_payload_type_ GUARDED_BY(send_audio_critsect_) = -1;
+  bool inband_vad_active_ RTC_GUARDED_BY(send_audio_critsect_) = false;
+  int8_t cngnb_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
+  int8_t cngwb_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
+  int8_t cngswb_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
+  int8_t cngfb_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
+  int8_t last_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
 
   // Audio level indication.
   // (https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/)
-  uint8_t audio_level_dbov_ GUARDED_BY(send_audio_critsect_) = 0;
+  uint8_t audio_level_dbov_ RTC_GUARDED_BY(send_audio_critsect_) = 0;
   OneTimeEvent first_packet_sent_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTPSenderAudio);

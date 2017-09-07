@@ -106,7 +106,7 @@ class Vp9FrameBufferPool {
   rtc::CriticalSection buffers_lock_;
   // All buffers, in use or ready to be recycled.
   std::vector<rtc::scoped_refptr<Vp9FrameBuffer>> allocated_buffers_
-      GUARDED_BY(buffers_lock_);
+      RTC_GUARDED_BY(buffers_lock_);
   // If more buffers than this are allocated we print warnings and crash if in
   // debug mode. VP9 is defined to have 8 reference buffers, of which 3 can be
   // referenced by any frame, see

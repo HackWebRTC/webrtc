@@ -126,7 +126,7 @@ class SendSideCongestionController : public CallStatsObserver,
   void LimitOutstandingBytes(size_t num_outstanding_bytes);
   const Clock* const clock_;
   rtc::CriticalSection observer_lock_;
-  Observer* observer_ GUARDED_BY(observer_lock_);
+  Observer* observer_ RTC_GUARDED_BY(observer_lock_);
   RtcEventLog* const event_log_;
   std::unique_ptr<PacedSender> owned_pacer_;
   PacedSender* pacer_;
@@ -136,18 +136,18 @@ class SendSideCongestionController : public CallStatsObserver,
   const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
   TransportFeedbackAdapter transport_feedback_adapter_;
   rtc::CriticalSection network_state_lock_;
-  uint32_t last_reported_bitrate_bps_ GUARDED_BY(network_state_lock_);
-  uint8_t last_reported_fraction_loss_ GUARDED_BY(network_state_lock_);
-  int64_t last_reported_rtt_ GUARDED_BY(network_state_lock_);
-  NetworkState network_state_ GUARDED_BY(network_state_lock_);
-  bool pause_pacer_ GUARDED_BY(network_state_lock_);
+  uint32_t last_reported_bitrate_bps_ RTC_GUARDED_BY(network_state_lock_);
+  uint8_t last_reported_fraction_loss_ RTC_GUARDED_BY(network_state_lock_);
+  int64_t last_reported_rtt_ RTC_GUARDED_BY(network_state_lock_);
+  NetworkState network_state_ RTC_GUARDED_BY(network_state_lock_);
+  bool pause_pacer_ RTC_GUARDED_BY(network_state_lock_);
   // Duplicate the pacer paused state to avoid grabbing a lock when
   // pausing the pacer. This can be removed when we move this class
   // over to the task queue.
   bool pacer_paused_;
   rtc::CriticalSection bwe_lock_;
-  int min_bitrate_bps_ GUARDED_BY(bwe_lock_);
-  std::unique_ptr<DelayBasedBwe> delay_based_bwe_ GUARDED_BY(bwe_lock_);
+  int min_bitrate_bps_ RTC_GUARDED_BY(bwe_lock_);
+  std::unique_ptr<DelayBasedBwe> delay_based_bwe_ RTC_GUARDED_BY(bwe_lock_);
   bool in_cwnd_experiment_;
   int64_t accepted_queue_ms_;
   bool was_in_alr_;

@@ -44,11 +44,11 @@ class NoiseSuppressionImpl : public NoiseSuppression {
  private:
   class Suppressor;
   rtc::CriticalSection* const crit_;
-  bool enabled_ GUARDED_BY(crit_) = false;
-  Level level_ GUARDED_BY(crit_) = kModerate;
-  size_t channels_ GUARDED_BY(crit_) = 0;
-  int sample_rate_hz_ GUARDED_BY(crit_) = 0;
-  std::vector<std::unique_ptr<Suppressor>> suppressors_ GUARDED_BY(crit_);
+  bool enabled_ RTC_GUARDED_BY(crit_) = false;
+  Level level_ RTC_GUARDED_BY(crit_) = kModerate;
+  size_t channels_ RTC_GUARDED_BY(crit_) = 0;
+  int sample_rate_hz_ RTC_GUARDED_BY(crit_) = 0;
+  std::vector<std::unique_ptr<Suppressor>> suppressors_ RTC_GUARDED_BY(crit_);
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(NoiseSuppressionImpl);
 };
 }  // namespace webrtc

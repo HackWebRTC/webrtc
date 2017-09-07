@@ -173,10 +173,10 @@ class FifoAudioStream : public AudioStream {
   rtc::CriticalSection lock_;
   rtc::RaceChecker race_checker_;
 
-  std::list<Buffer16> fifo_ GUARDED_BY(lock_);
-  size_t write_count_ GUARDED_BY(race_checker_) = 0;
-  size_t max_size_ GUARDED_BY(race_checker_) = 0;
-  size_t written_elements_ GUARDED_BY(race_checker_) = 0;
+  std::list<Buffer16> fifo_ RTC_GUARDED_BY(lock_);
+  size_t write_count_ RTC_GUARDED_BY(race_checker_) = 0;
+  size_t max_size_ RTC_GUARDED_BY(race_checker_) = 0;
+  size_t written_elements_ RTC_GUARDED_BY(race_checker_) = 0;
 };
 
 // Inserts periodic impulses and measures the latency between the time of
@@ -293,10 +293,10 @@ class LatencyAudioStream : public AudioStream {
   rtc::ThreadChecker read_thread_checker_;
   rtc::ThreadChecker write_thread_checker_;
 
-  rtc::Optional<int64_t> pulse_time_ GUARDED_BY(lock_);
-  std::vector<int> latencies_ GUARDED_BY(race_checker_);
-  size_t read_count_ ACCESS_ON(read_thread_checker_) = 0;
-  size_t write_count_ ACCESS_ON(write_thread_checker_) = 0;
+  rtc::Optional<int64_t> pulse_time_ RTC_GUARDED_BY(lock_);
+  std::vector<int> latencies_ RTC_GUARDED_BY(race_checker_);
+  size_t read_count_ RTC_ACCESS_ON(read_thread_checker_) = 0;
+  size_t write_count_ RTC_ACCESS_ON(write_thread_checker_) = 0;
 };
 
 // Mocks the AudioTransport object and proxies actions for the two callbacks

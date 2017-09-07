@@ -60,7 +60,8 @@ class AudioMixerImpl : public AudioMixer {
   void RemoveSource(Source* audio_source) override;
 
   void Mix(size_t number_of_channels,
-           AudioFrame* audio_frame_for_mixing) override LOCKS_EXCLUDED(crit_);
+           AudioFrame* audio_frame_for_mixing) override
+      RTC_LOCKS_EXCLUDED(crit_);
 
   // Returns true if the source was mixed last round. Returns
   // false and logs an error if the source was never added to the
@@ -80,7 +81,7 @@ class AudioMixerImpl : public AudioMixer {
   // Compute what audio sources to mix from audio_source_list_. Ramp
   // in and out. Update mixed status. Mixes up to
   // kMaximumAmountOfMixedAudioSources audio sources.
-  AudioFrameList GetAudioFromSources() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  AudioFrameList GetAudioFromSources() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Add/remove the MixerAudioSource to the specified
   // MixerAudioSource list.
@@ -97,14 +98,14 @@ class AudioMixerImpl : public AudioMixer {
 
   std::unique_ptr<OutputRateCalculator> output_rate_calculator_;
   // The current sample frequency and sample size when mixing.
-  int output_frequency_ GUARDED_BY(race_checker_);
-  size_t sample_size_ GUARDED_BY(race_checker_);
+  int output_frequency_ RTC_GUARDED_BY(race_checker_);
+  size_t sample_size_ RTC_GUARDED_BY(race_checker_);
 
   // List of all audio sources. Note all lists are disjunct
-  SourceStatusList audio_source_list_ GUARDED_BY(crit_);  // May be mixed.
+  SourceStatusList audio_source_list_ RTC_GUARDED_BY(crit_);  // May be mixed.
 
   // Component that handles actual adding of audio frames.
-  FrameCombiner frame_combiner_ GUARDED_BY(race_checker_);
+  FrameCombiner frame_combiner_ RTC_GUARDED_BY(race_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioMixerImpl);
 };

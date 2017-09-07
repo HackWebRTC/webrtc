@@ -188,58 +188,58 @@ class AudioDeviceBuffer {
   // Keeps track of if playout/recording are active or not. A combination
   // of these states are used to determine when to start and stop the timer.
   // Only used on the creating thread and not used to control any media flow.
-  bool playing_ ACCESS_ON(main_thread_checker_);
-  bool recording_ ACCESS_ON(main_thread_checker_);
+  bool playing_ RTC_ACCESS_ON(main_thread_checker_);
+  bool recording_ RTC_ACCESS_ON(main_thread_checker_);
 
   // Buffer used for audio samples to be played out. Size can be changed
   // dynamically. The 16-bit samples are interleaved, hence the size is
   // proportional to the number of channels.
-  rtc::BufferT<int16_t> play_buffer_ ACCESS_ON(playout_thread_checker_);
+  rtc::BufferT<int16_t> play_buffer_ RTC_ACCESS_ON(playout_thread_checker_);
 
   // Byte buffer used for recorded audio samples. Size can be changed
   // dynamically.
-  rtc::BufferT<int16_t> rec_buffer_ ACCESS_ON(recording_thread_checker_);
+  rtc::BufferT<int16_t> rec_buffer_ RTC_ACCESS_ON(recording_thread_checker_);
 
   // AGC parameters.
 #if !defined(WEBRTC_WIN)
-  uint32_t current_mic_level_ ACCESS_ON(recording_thread_checker_);
+  uint32_t current_mic_level_ RTC_ACCESS_ON(recording_thread_checker_);
 #else
   // Windows uses a dedicated thread for volume APIs.
   uint32_t current_mic_level_;
 #endif
-  uint32_t new_mic_level_ ACCESS_ON(recording_thread_checker_);
+  uint32_t new_mic_level_ RTC_ACCESS_ON(recording_thread_checker_);
 
   // Contains true of a key-press has been detected.
-  bool typing_status_ ACCESS_ON(recording_thread_checker_);
+  bool typing_status_ RTC_ACCESS_ON(recording_thread_checker_);
 
   // Delay values used by the AEC.
-  int play_delay_ms_ ACCESS_ON(recording_thread_checker_);
-  int rec_delay_ms_ ACCESS_ON(recording_thread_checker_);
+  int play_delay_ms_ RTC_ACCESS_ON(recording_thread_checker_);
+  int rec_delay_ms_ RTC_ACCESS_ON(recording_thread_checker_);
 
   // Contains a clock-drift measurement.
-  int clock_drift_ ACCESS_ON(recording_thread_checker_);
+  int clock_drift_ RTC_ACCESS_ON(recording_thread_checker_);
 
   // Counts number of times LogStats() has been called.
-  size_t num_stat_reports_ ACCESS_ON(task_queue_);
+  size_t num_stat_reports_ RTC_ACCESS_ON(task_queue_);
 
   // Time stamp of last timer task (drives logging).
-  int64_t last_timer_task_time_ ACCESS_ON(task_queue_);
+  int64_t last_timer_task_time_ RTC_ACCESS_ON(task_queue_);
 
   // Counts number of audio callbacks modulo 50 to create a signal when
   // a new storage of audio stats shall be done.
-  int16_t rec_stat_count_ ACCESS_ON(recording_thread_checker_);
-  int16_t play_stat_count_ ACCESS_ON(playout_thread_checker_);
+  int16_t rec_stat_count_ RTC_ACCESS_ON(recording_thread_checker_);
+  int16_t play_stat_count_ RTC_ACCESS_ON(playout_thread_checker_);
 
   // Time stamps of when playout and recording starts.
-  int64_t play_start_time_ ACCESS_ON(main_thread_checker_);
-  int64_t rec_start_time_ ACCESS_ON(main_thread_checker_);
+  int64_t play_start_time_ RTC_ACCESS_ON(main_thread_checker_);
+  int64_t rec_start_time_ RTC_ACCESS_ON(main_thread_checker_);
 
   // Contains counters for playout and recording statistics.
-  Stats stats_ GUARDED_BY(lock_);
+  Stats stats_ RTC_GUARDED_BY(lock_);
 
   // Stores current stats at each timer task. Used to calculate differences
   // between two successive timer events.
-  Stats last_stats_ ACCESS_ON(task_queue_);
+  Stats last_stats_ RTC_ACCESS_ON(task_queue_);
 
   // Set to true at construction and modified to false as soon as one audio-
   // level estimate larger than zero is detected.
@@ -249,12 +249,12 @@ class AudioDeviceBuffer {
   // StartPeriodicLogging() and set to false by StopPeriodicLogging().
   // Setting this member to false prevents (possiby invalid) log messages from
   // being printed in the LogStats() task.
-  bool log_stats_ ACCESS_ON(task_queue_);
+  bool log_stats_ RTC_ACCESS_ON(task_queue_);
 
 // Should *never* be defined in production builds. Only used for testing.
 // When defined, the output signal will be replaced by a sinus tone at 440Hz.
 #ifdef AUDIO_DEVICE_PLAYS_SINUS_TONE
-  double phase_ ACCESS_ON(playout_thread_checker_);
+  double phase_ RTC_ACCESS_ON(playout_thread_checker_);
 #endif
 };
 

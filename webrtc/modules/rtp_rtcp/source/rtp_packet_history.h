@@ -65,19 +65,19 @@ class RtpPacketHistory {
   };
 
   std::unique_ptr<RtpPacketToSend> GetPacket(int index) const
-      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void Allocate(size_t number_to_store) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void Free() EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void Allocate(size_t number_to_store) RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void Free() RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   bool FindSeqNum(uint16_t sequence_number, int* index) const
-      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   int FindBestFittingPacket(size_t size) const
-      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   Clock* clock_;
   rtc::CriticalSection critsect_;
-  bool store_ GUARDED_BY(critsect_);
-  uint32_t prev_index_ GUARDED_BY(critsect_);
-  std::vector<StoredPacket> stored_packets_ GUARDED_BY(critsect_);
+  bool store_ RTC_GUARDED_BY(critsect_);
+  uint32_t prev_index_ RTC_GUARDED_BY(critsect_);
+  std::vector<StoredPacket> stored_packets_ RTC_GUARDED_BY(critsect_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtpPacketHistory);
 };

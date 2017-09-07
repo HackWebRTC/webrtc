@@ -253,8 +253,8 @@ class VideoProcessor {
   // Invoked by the callback adapter when a frame has completed decoding.
   void FrameDecoded(const webrtc::VideoFrame& image);
 
-  bool initialized_ GUARDED_BY(sequence_checker_);
-  TestConfig config_ GUARDED_BY(sequence_checker_);
+  bool initialized_ RTC_GUARDED_BY(sequence_checker_);
+  TestConfig config_ RTC_GUARDED_BY(sequence_checker_);
 
   webrtc::VideoEncoder* const encoder_;
   webrtc::VideoDecoder* const decoder_;
@@ -280,27 +280,27 @@ class VideoProcessor {
   FrameWriter* const decoded_frame_writer_;
 
   // Keep track of inputed/encoded/decoded frames, so we can detect frame drops.
-  int last_inputed_frame_num_ GUARDED_BY(sequence_checker_);
-  int last_encoded_frame_num_ GUARDED_BY(sequence_checker_);
-  int last_decoded_frame_num_ GUARDED_BY(sequence_checker_);
+  int last_inputed_frame_num_ RTC_GUARDED_BY(sequence_checker_);
+  int last_encoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
+  int last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
 
   // Store an RTP timestamp -> frame number map, since the timestamps are
   // based off of the frame rate, which can change mid-test.
   std::map<uint32_t, int> rtp_timestamp_to_frame_num_
-      GUARDED_BY(sequence_checker_);
+      RTC_GUARDED_BY(sequence_checker_);
 
   // Keep track of if we have excluded the first key frame from packet loss.
-  bool first_key_frame_has_been_excluded_ GUARDED_BY(sequence_checker_);
+  bool first_key_frame_has_been_excluded_ RTC_GUARDED_BY(sequence_checker_);
 
   // Keep track of the last successfully decoded frame, since we write that
   // frame to disk when decoding fails.
-  rtc::Buffer last_decoded_frame_buffer_ GUARDED_BY(sequence_checker_);
+  rtc::Buffer last_decoded_frame_buffer_ RTC_GUARDED_BY(sequence_checker_);
 
   // Statistics.
   Stats* stats_;
-  std::vector<int> num_dropped_frames_ GUARDED_BY(sequence_checker_);
-  std::vector<int> num_spatial_resizes_ GUARDED_BY(sequence_checker_);
-  int rate_update_index_ GUARDED_BY(sequence_checker_);
+  std::vector<int> num_dropped_frames_ RTC_GUARDED_BY(sequence_checker_);
+  std::vector<int> num_spatial_resizes_ RTC_GUARDED_BY(sequence_checker_);
+  int rate_update_index_ RTC_GUARDED_BY(sequence_checker_);
 
   rtc::SequencedTaskChecker sequence_checker_;
 

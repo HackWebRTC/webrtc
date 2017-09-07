@@ -30,7 +30,8 @@ class RtpHeaderParserImpl : public RtpHeaderParser {
 
  private:
   rtc::CriticalSection critical_section_;
-  RtpHeaderExtensionMap rtp_header_extension_map_ GUARDED_BY(critical_section_);
+  RtpHeaderExtensionMap rtp_header_extension_map_
+      RTC_GUARDED_BY(critical_section_);
 };
 
 RtpHeaderParser* RtpHeaderParser::Create() {

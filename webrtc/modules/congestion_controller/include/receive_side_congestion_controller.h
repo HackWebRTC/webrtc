@@ -82,8 +82,8 @@ class ReceiveSideCongestionController : public CallStatsObserver,
 
    private:
     void PickEstimatorFromHeader(const RTPHeader& header)
-        EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-    void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+        RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+    void PickEstimator() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
     RemoteBitrateObserver* observer_;
     const Clock* const clock_;
     rtc::CriticalSection crit_sect_;

@@ -146,11 +146,11 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
   }
 
  private:
-  int num_calls_ GUARDED_BY(crit_sect_);
-  FrameType last_frame_type_ GUARDED_BY(crit_sect_);
-  int last_payload_type_ GUARDED_BY(crit_sect_);
-  uint32_t last_timestamp_ GUARDED_BY(crit_sect_);
-  std::vector<uint8_t> last_payload_vec_ GUARDED_BY(crit_sect_);
+  int num_calls_ RTC_GUARDED_BY(crit_sect_);
+  FrameType last_frame_type_ RTC_GUARDED_BY(crit_sect_);
+  int last_payload_type_ RTC_GUARDED_BY(crit_sect_);
+  uint32_t last_timestamp_ RTC_GUARDED_BY(crit_sect_);
+  std::vector<uint8_t> last_payload_vec_ RTC_GUARDED_BY(crit_sect_);
   rtc::CriticalSection crit_sect_;
 };
 
@@ -607,9 +607,9 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   const std::unique_ptr<EventWrapper> test_complete_;
   int send_count_;
   int insert_packet_count_;
-  int pull_audio_count_ GUARDED_BY(crit_sect_);
+  int pull_audio_count_ RTC_GUARDED_BY(crit_sect_);
   rtc::CriticalSection crit_sect_;
-  int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
+  int64_t next_insert_packet_time_ms_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<SimulatedClock> fake_clock_;
 };
 
@@ -879,9 +879,9 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   rtc::PlatformThread codec_registration_thread_;
   const std::unique_ptr<EventWrapper> test_complete_;
   rtc::CriticalSection crit_sect_;
-  bool codec_registered_ GUARDED_BY(crit_sect_);
-  int receive_packet_count_ GUARDED_BY(crit_sect_);
-  int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
+  bool codec_registered_ RTC_GUARDED_BY(crit_sect_);
+  int receive_packet_count_ RTC_GUARDED_BY(crit_sect_);
+  int64_t next_insert_packet_time_ms_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<AudioEncoderIsacFloatImpl> isac_encoder_;
   std::unique_ptr<SimulatedClock> fake_clock_;
   test::AudioLoop audio_loop_;

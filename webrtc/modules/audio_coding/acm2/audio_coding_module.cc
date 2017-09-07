@@ -234,17 +234,17 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   int RegisterReceiveCodecUnlocked(
       const CodecInst& codec,
       rtc::FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory)
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   int Add10MsDataInternal(const AudioFrame& audio_frame, InputData* input_data)
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
   int Encode(const InputData& input_data)
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
-  int InitializeReceiverSafe() EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+  int InitializeReceiverSafe() RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   bool HaveValidEncoder(const char* caller_name) const
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   // Preprocessing of input audio, including resampling and down-mixing if
   // required, before pushing audio into encoder's buffer.
@@ -259,33 +259,36 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   //    0: otherwise.
   int PreprocessToAddData(const AudioFrame& in_frame,
                           const AudioFrame** ptr_out)
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   // Change required states after starting to receive the codec corresponding
   // to |index|.
   int UpdateUponReceivingCodec(int index);
 
   rtc::CriticalSection acm_crit_sect_;
-  rtc::Buffer encode_buffer_ GUARDED_BY(acm_crit_sect_);
+  rtc::Buffer encode_buffer_ RTC_GUARDED_BY(acm_crit_sect_);
   int id_;  // TODO(henrik.lundin) Make const.
-  uint32_t expected_codec_ts_ GUARDED_BY(acm_crit_sect_);
-  uint32_t expected_in_ts_ GUARDED_BY(acm_crit_sect_);
-  acm2::ACMResampler resampler_ GUARDED_BY(acm_crit_sect_);
+  uint32_t expected_codec_ts_ RTC_GUARDED_BY(acm_crit_sect_);
+  uint32_t expected_in_ts_ RTC_GUARDED_BY(acm_crit_sect_);
+  acm2::ACMResampler resampler_ RTC_GUARDED_BY(acm_crit_sect_);
   acm2::AcmReceiver receiver_;  // AcmReceiver has it's own internal lock.
-  ChangeLogger bitrate_logger_ GUARDED_BY(acm_crit_sect_);
+  ChangeLogger bitrate_logger_ RTC_GUARDED_BY(acm_crit_sect_);
 
-  std::unique_ptr<EncoderFactory> encoder_factory_ GUARDED_BY(acm_crit_sect_);
+  std::unique_ptr<EncoderFactory> encoder_factory_
+      RTC_GUARDED_BY(acm_crit_sect_);
 
   // Current encoder stack, either obtained from
   // encoder_factory_->rent_a_codec.RentEncoderStack or provided by a call to
   // RegisterEncoder.
-  std::unique_ptr<AudioEncoder> encoder_stack_ GUARDED_BY(acm_crit_sect_);
+  std::unique_ptr<AudioEncoder> encoder_stack_ RTC_GUARDED_BY(acm_crit_sect_);
 
-  std::unique_ptr<AudioDecoder> isac_decoder_16k_ GUARDED_BY(acm_crit_sect_);
-  std::unique_ptr<AudioDecoder> isac_decoder_32k_ GUARDED_BY(acm_crit_sect_);
+  std::unique_ptr<AudioDecoder> isac_decoder_16k_
+      RTC_GUARDED_BY(acm_crit_sect_);
+  std::unique_ptr<AudioDecoder> isac_decoder_32k_
+      RTC_GUARDED_BY(acm_crit_sect_);
 
   // This is to keep track of CN instances where we can send DTMFs.
-  uint8_t previous_pltype_ GUARDED_BY(acm_crit_sect_);
+  uint8_t previous_pltype_ RTC_GUARDED_BY(acm_crit_sect_);
 
   // Used when payloads are pushed into ACM without any RTP info
   // One example is when pre-encoded bit-stream is pushed from
@@ -295,19 +298,19 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // be used in other methods, locks need to be taken.
   std::unique_ptr<WebRtcRTPHeader> aux_rtp_header_;
 
-  bool receiver_initialized_ GUARDED_BY(acm_crit_sect_);
+  bool receiver_initialized_ RTC_GUARDED_BY(acm_crit_sect_);
 
-  AudioFrame preprocess_frame_ GUARDED_BY(acm_crit_sect_);
-  bool first_10ms_data_ GUARDED_BY(acm_crit_sect_);
+  AudioFrame preprocess_frame_ RTC_GUARDED_BY(acm_crit_sect_);
+  bool first_10ms_data_ RTC_GUARDED_BY(acm_crit_sect_);
 
-  bool first_frame_ GUARDED_BY(acm_crit_sect_);
-  uint32_t last_timestamp_ GUARDED_BY(acm_crit_sect_);
-  uint32_t last_rtp_timestamp_ GUARDED_BY(acm_crit_sect_);
+  bool first_frame_ RTC_GUARDED_BY(acm_crit_sect_);
+  uint32_t last_timestamp_ RTC_GUARDED_BY(acm_crit_sect_);
+  uint32_t last_rtp_timestamp_ RTC_GUARDED_BY(acm_crit_sect_);
 
   rtc::CriticalSection callback_crit_sect_;
   AudioPacketizationCallback* packetization_callback_
-      GUARDED_BY(callback_crit_sect_);
-  ACMVADCallback* vad_callback_ GUARDED_BY(callback_crit_sect_);
+      RTC_GUARDED_BY(callback_crit_sect_);
+  ACMVADCallback* vad_callback_ RTC_GUARDED_BY(callback_crit_sect_);
 
   int codec_histogram_bins_log_[static_cast<size_t>(
       AudioEncoder::CodecType::kMaxLoggedAudioCodecTypes)];

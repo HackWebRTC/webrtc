@@ -95,13 +95,15 @@ class VideoCodecTest : public ::testing::Test {
 
   rtc::Event encoded_frame_event_;
   rtc::CriticalSection encoded_frame_section_;
-  rtc::Optional<EncodedImage> encoded_frame_ GUARDED_BY(encoded_frame_section_);
-  CodecSpecificInfo codec_specific_info_ GUARDED_BY(encoded_frame_section_);
+  rtc::Optional<EncodedImage> encoded_frame_
+      RTC_GUARDED_BY(encoded_frame_section_);
+  CodecSpecificInfo codec_specific_info_ RTC_GUARDED_BY(encoded_frame_section_);
 
   rtc::Event decoded_frame_event_;
   rtc::CriticalSection decoded_frame_section_;
-  rtc::Optional<VideoFrame> decoded_frame_ GUARDED_BY(decoded_frame_section_);
-  rtc::Optional<uint8_t> decoded_qp_ GUARDED_BY(decoded_frame_section_);
+  rtc::Optional<VideoFrame> decoded_frame_
+      RTC_GUARDED_BY(decoded_frame_section_);
+  rtc::Optional<uint8_t> decoded_qp_ RTC_GUARDED_BY(decoded_frame_section_);
 };
 
 }  // namespace webrtc

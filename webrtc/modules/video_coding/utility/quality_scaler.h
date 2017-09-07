@@ -71,16 +71,16 @@ class QualityScaler {
   void ReportQPHigh();
   int64_t GetSamplingPeriodMs() const;
 
-  CheckQPTask* check_qp_task_ GUARDED_BY(&task_checker_);
-  AdaptationObserverInterface* const observer_ GUARDED_BY(&task_checker_);
+  CheckQPTask* check_qp_task_ RTC_GUARDED_BY(&task_checker_);
+  AdaptationObserverInterface* const observer_ RTC_GUARDED_BY(&task_checker_);
   rtc::SequencedTaskChecker task_checker_;
 
   const int64_t sampling_period_ms_;
-  bool fast_rampup_ GUARDED_BY(&task_checker_);
-  MovingAverage average_qp_ GUARDED_BY(&task_checker_);
-  MovingAverage framedrop_percent_ GUARDED_BY(&task_checker_);
+  bool fast_rampup_ RTC_GUARDED_BY(&task_checker_);
+  MovingAverage average_qp_ RTC_GUARDED_BY(&task_checker_);
+  MovingAverage framedrop_percent_ RTC_GUARDED_BY(&task_checker_);
 
-  VideoEncoder::QpThresholds thresholds_ GUARDED_BY(&task_checker_);
+  VideoEncoder::QpThresholds thresholds_ RTC_GUARDED_BY(&task_checker_);
 };
 }  // namespace webrtc
 

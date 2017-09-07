@@ -83,7 +83,7 @@ class BitrateControllerImpl : public BitrateController {
 
   void OnNetworkChanged(uint32_t bitrate,
                         uint8_t fraction_loss,  // 0 - 255.
-                        int64_t rtt) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+                        int64_t rtt) RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   // Used by process thread.
   const Clock* const clock_;
@@ -93,14 +93,14 @@ class BitrateControllerImpl : public BitrateController {
 
   rtc::CriticalSection critsect_;
   std::map<uint32_t, uint32_t> ssrc_to_last_received_extended_high_seq_num_
-      GUARDED_BY(critsect_);
-  SendSideBandwidthEstimation bandwidth_estimation_ GUARDED_BY(critsect_);
-  uint32_t reserved_bitrate_bps_ GUARDED_BY(critsect_);
+      RTC_GUARDED_BY(critsect_);
+  SendSideBandwidthEstimation bandwidth_estimation_ RTC_GUARDED_BY(critsect_);
+  uint32_t reserved_bitrate_bps_ RTC_GUARDED_BY(critsect_);
 
-  uint32_t last_bitrate_bps_ GUARDED_BY(critsect_);
-  uint8_t last_fraction_loss_ GUARDED_BY(critsect_);
-  int64_t last_rtt_ms_ GUARDED_BY(critsect_);
-  uint32_t last_reserved_bitrate_bps_ GUARDED_BY(critsect_);
+  uint32_t last_bitrate_bps_ RTC_GUARDED_BY(critsect_);
+  uint8_t last_fraction_loss_ RTC_GUARDED_BY(critsect_);
+  int64_t last_rtt_ms_ RTC_GUARDED_BY(critsect_);
+  uint32_t last_reserved_bitrate_bps_ RTC_GUARDED_BY(critsect_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(BitrateControllerImpl);
 };

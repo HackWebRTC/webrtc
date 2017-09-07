@@ -68,40 +68,42 @@ class MediaOptimization {
   struct EncodedFrameSample;
   typedef std::list<EncodedFrameSample> FrameSampleList;
 
-  void UpdateIncomingFrameRate() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  void UpdateIncomingFrameRate() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   void PurgeOldFrameSamples(int64_t threshold_ms)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-  void UpdateSentFramerate() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  void UpdateSentFramerate() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   void ProcessIncomingFrameRate(int64_t now)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Checks conditions for suspending the video. The method compares
   // |video_target_bitrate_| with the threshold values for suspension, and
   // changes the state of |video_suspended_| accordingly.
-  void CheckSuspendConditions() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  void CheckSuspendConditions() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   void SetEncodingDataInternal(int32_t max_bit_rate,
                                uint32_t frame_rate,
                                uint32_t bit_rate)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  uint32_t InputFrameRateInternal() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  uint32_t InputFrameRateInternal() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  uint32_t SentFrameRateInternal() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  uint32_t SentFrameRateInternal() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Protect all members.
   rtc::CriticalSection crit_sect_;
 
-  Clock* clock_ GUARDED_BY(crit_sect_);
-  int32_t max_bit_rate_ GUARDED_BY(crit_sect_);
-  float user_frame_rate_ GUARDED_BY(crit_sect_);
-  std::unique_ptr<FrameDropper> frame_dropper_ GUARDED_BY(crit_sect_);
-  int video_target_bitrate_ GUARDED_BY(crit_sect_);
-  float incoming_frame_rate_ GUARDED_BY(crit_sect_);
-  int64_t incoming_frame_times_[kFrameCountHistorySize] GUARDED_BY(crit_sect_);
-  std::list<EncodedFrameSample> encoded_frame_samples_ GUARDED_BY(crit_sect_);
-  uint32_t avg_sent_framerate_ GUARDED_BY(crit_sect_);
+  Clock* clock_ RTC_GUARDED_BY(crit_sect_);
+  int32_t max_bit_rate_ RTC_GUARDED_BY(crit_sect_);
+  float user_frame_rate_ RTC_GUARDED_BY(crit_sect_);
+  std::unique_ptr<FrameDropper> frame_dropper_ RTC_GUARDED_BY(crit_sect_);
+  int video_target_bitrate_ RTC_GUARDED_BY(crit_sect_);
+  float incoming_frame_rate_ RTC_GUARDED_BY(crit_sect_);
+  int64_t incoming_frame_times_[kFrameCountHistorySize] RTC_GUARDED_BY(
+      crit_sect_);
+  std::list<EncodedFrameSample> encoded_frame_samples_
+      RTC_GUARDED_BY(crit_sect_);
+  uint32_t avg_sent_framerate_ RTC_GUARDED_BY(crit_sect_);
 };
 }  // namespace media_optimization
 }  // namespace webrtc

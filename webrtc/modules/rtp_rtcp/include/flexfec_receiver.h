@@ -49,17 +49,17 @@ class FlexfecReceiver {
 
   // Erasure code interfacing and callback.
   std::unique_ptr<ForwardErrorCorrection> erasure_code_
-      GUARDED_BY(sequence_checker_);
+      RTC_GUARDED_BY(sequence_checker_);
   ForwardErrorCorrection::ReceivedPacketList received_packets_
-      GUARDED_BY(sequence_checker_);
+      RTC_GUARDED_BY(sequence_checker_);
   ForwardErrorCorrection::RecoveredPacketList recovered_packets_
-      GUARDED_BY(sequence_checker_);
+      RTC_GUARDED_BY(sequence_checker_);
   RecoveredPacketReceiver* const recovered_packet_receiver_;
 
   // Logging and stats.
   Clock* const clock_;
-  int64_t last_recovered_packet_ms_ GUARDED_BY(sequence_checker_);
-  FecPacketCounter packet_counter_ GUARDED_BY(sequence_checker_);
+  int64_t last_recovered_packet_ms_ RTC_GUARDED_BY(sequence_checker_);
+  FecPacketCounter packet_counter_ RTC_GUARDED_BY(sequence_checker_);
 
   rtc::SequencedTaskChecker sequence_checker_;
 };

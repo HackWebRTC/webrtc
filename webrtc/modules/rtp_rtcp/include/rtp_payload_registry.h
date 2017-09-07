@@ -126,13 +126,14 @@ class RTPPayloadRegistry {
   uint32_t ssrc_rtx_;
   // Only warn once per payload type, if an RTX packet is received but
   // no associated payload type found in |rtx_payload_type_map_|.
-  std::set<int> payload_types_with_suppressed_warnings_ GUARDED_BY(crit_sect_);
+  std::set<int> payload_types_with_suppressed_warnings_
+      RTC_GUARDED_BY(crit_sect_);
 
   // As a first step in splitting this class up in separate cases for audio and
   // video, DCHECK that no instance is used for both audio and video.
 #if RTC_DCHECK_IS_ON
-  bool used_for_audio_ GUARDED_BY(crit_sect_) = false;
-  bool used_for_video_ GUARDED_BY(crit_sect_) = false;
+  bool used_for_audio_ RTC_GUARDED_BY(crit_sect_) = false;
+  bool used_for_video_ RTC_GUARDED_BY(crit_sect_) = false;
 #endif
 };
 

@@ -59,22 +59,22 @@ class NackModule : public Module {
     int retries;
   };
   void AddPacketsToNack(uint16_t seq_num_start, uint16_t seq_num_end)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Removes packets from the nack list until the next keyframe. Returns true
   // if packets were removed.
-  bool RemovePacketsUntilKeyFrame() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  bool RemovePacketsUntilKeyFrame() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   std::vector<uint16_t> GetNackBatch(NackFilterOptions options)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Update the reordering distribution.
   void UpdateReorderingStatistics(uint16_t seq_num)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Returns how many packets we have to wait in order to receive the packet
   // with probability |probabilty| or higher.
   int WaitNumberOfPackets(float probability) const
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   rtc::CriticalSection crit_;
   Clock* const clock_;
@@ -85,13 +85,13 @@ class NackModule : public Module {
   // known thread (e.g. see |initialized_|). Those probably do not need
   // synchronized access.
   std::map<uint16_t, NackInfo, DescendingSeqNumComp<uint16_t>> nack_list_
-      GUARDED_BY(crit_);
+      RTC_GUARDED_BY(crit_);
   std::set<uint16_t, DescendingSeqNumComp<uint16_t>> keyframe_list_
-      GUARDED_BY(crit_);
-  video_coding::Histogram reordering_histogram_ GUARDED_BY(crit_);
-  bool initialized_ GUARDED_BY(crit_);
-  int64_t rtt_ms_ GUARDED_BY(crit_);
-  uint16_t newest_seq_num_ GUARDED_BY(crit_);
+      RTC_GUARDED_BY(crit_);
+  video_coding::Histogram reordering_histogram_ RTC_GUARDED_BY(crit_);
+  bool initialized_ RTC_GUARDED_BY(crit_);
+  int64_t rtt_ms_ RTC_GUARDED_BY(crit_);
+  uint16_t newest_seq_num_ RTC_GUARDED_BY(crit_);
 
   // Only touched on the process thread.
   int64_t next_process_time_ms_;

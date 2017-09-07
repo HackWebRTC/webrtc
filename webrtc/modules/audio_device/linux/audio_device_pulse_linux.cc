@@ -1947,7 +1947,7 @@ int32_t AudioDeviceLinuxPulse::LatencyUsecs(pa_stream* stream) {
 
 int32_t AudioDeviceLinuxPulse::ReadRecordedData(const void* bufferData,
                                                 size_t bufferSize)
-    EXCLUSIVE_LOCKS_REQUIRED(_critSect) {
+    RTC_EXCLUSIVE_LOCKS_REQUIRED(_critSect) {
   size_t size = bufferSize;
   uint32_t numRecSamples = _recordBufferSize / (2 * _recChannels);
 
@@ -2017,7 +2017,7 @@ int32_t AudioDeviceLinuxPulse::ReadRecordedData(const void* bufferData,
 int32_t AudioDeviceLinuxPulse::ProcessRecordedData(int8_t* bufferData,
                                                    uint32_t bufferSizeInSamples,
                                                    uint32_t recDelay)
-    EXCLUSIVE_LOCKS_REQUIRED(_critSect) {
+    RTC_EXCLUSIVE_LOCKS_REQUIRED(_critSect) {
   uint32_t currentMicLevel(0);
   uint32_t newMicLevel(0);
 

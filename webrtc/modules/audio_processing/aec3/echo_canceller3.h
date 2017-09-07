@@ -105,7 +105,8 @@ class EchoCanceller3 {
   rtc::RaceChecker render_race_checker_;
 
   // State that is accessed by the AnalyzeRender call.
-  std::unique_ptr<RenderWriter> render_writer_ GUARDED_BY(render_race_checker_);
+  std::unique_ptr<RenderWriter> render_writer_
+      RTC_GUARDED_BY(render_race_checker_);
 
   // State that may be accessed by the capture thread.
   static int instance_count_;
@@ -113,21 +114,22 @@ class EchoCanceller3 {
   const int sample_rate_hz_;
   const int num_bands_;
   const size_t frame_length_;
-  BlockFramer output_framer_ GUARDED_BY(capture_race_checker_);
-  FrameBlocker capture_blocker_ GUARDED_BY(capture_race_checker_);
-  FrameBlocker render_blocker_ GUARDED_BY(capture_race_checker_);
+  BlockFramer output_framer_ RTC_GUARDED_BY(capture_race_checker_);
+  FrameBlocker capture_blocker_ RTC_GUARDED_BY(capture_race_checker_);
+  FrameBlocker render_blocker_ RTC_GUARDED_BY(capture_race_checker_);
   SwapQueue<std::vector<std::vector<float>>, Aec3RenderQueueItemVerifier>
       render_transfer_queue_;
   std::unique_ptr<BlockProcessor> block_processor_
-      GUARDED_BY(capture_race_checker_);
+      RTC_GUARDED_BY(capture_race_checker_);
   std::vector<std::vector<float>> render_queue_output_frame_
-      GUARDED_BY(capture_race_checker_);
+      RTC_GUARDED_BY(capture_race_checker_);
   std::unique_ptr<CascadedBiQuadFilter> capture_highpass_filter_
-      GUARDED_BY(capture_race_checker_);
-  bool saturated_microphone_signal_ GUARDED_BY(capture_race_checker_) = false;
-  std::vector<std::vector<float>> block_ GUARDED_BY(capture_race_checker_);
+      RTC_GUARDED_BY(capture_race_checker_);
+  bool saturated_microphone_signal_ RTC_GUARDED_BY(capture_race_checker_) =
+      false;
+  std::vector<std::vector<float>> block_ RTC_GUARDED_BY(capture_race_checker_);
   std::vector<rtc::ArrayView<float>> sub_frame_view_
-      GUARDED_BY(capture_race_checker_);
+      RTC_GUARDED_BY(capture_race_checker_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoCanceller3);
 };

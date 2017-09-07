@@ -64,15 +64,15 @@ class EchoControlMobileImpl : public EchoControlMobile {
 
   int Configure();
 
-  rtc::CriticalSection* const crit_render_ ACQUIRED_BEFORE(crit_capture_);
+  rtc::CriticalSection* const crit_render_ RTC_ACQUIRED_BEFORE(crit_capture_);
   rtc::CriticalSection* const crit_capture_;
 
   bool enabled_ = false;
 
-  RoutingMode routing_mode_ GUARDED_BY(crit_capture_);
-  bool comfort_noise_enabled_ GUARDED_BY(crit_capture_);
-  unsigned char* external_echo_path_ GUARDED_BY(crit_render_)
-      GUARDED_BY(crit_capture_);
+  RoutingMode routing_mode_ RTC_GUARDED_BY(crit_capture_);
+  bool comfort_noise_enabled_ RTC_GUARDED_BY(crit_capture_);
+  unsigned char* external_echo_path_ RTC_GUARDED_BY(crit_render_)
+      RTC_GUARDED_BY(crit_capture_);
 
   std::vector<std::unique_ptr<Canceller>> cancellers_;
   std::unique_ptr<StreamProperties> stream_properties_;

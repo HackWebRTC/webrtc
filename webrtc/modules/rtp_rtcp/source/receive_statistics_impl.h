@@ -51,7 +51,7 @@ class StreamStatisticianImpl : public StreamStatistician {
  private:
   bool InOrderPacketInternal(uint16_t sequence_number) const;
   RtcpStatistics CalculateRtcpStatistics()
-      EXCLUSIVE_LOCKS_REQUIRED(stream_lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(stream_lock_);
   void UpdateJitter(const RTPHeader& header, NtpTime receive_time);
   StreamDataCounters UpdateCounters(const RTPHeader& rtp_header,
                                     size_t packet_length,

@@ -106,12 +106,13 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
       const std::list<Cluster>& clusters) const;
 
   // Returns true if a probe which changed the estimate was detected.
-  ProbeResult ProcessClusters(int64_t now_ms) EXCLUSIVE_LOCKS_REQUIRED(&crit_);
+  ProbeResult ProcessClusters(int64_t now_ms)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_);
 
   bool IsBitrateImproving(int probe_bitrate_bps) const
-      EXCLUSIVE_LOCKS_REQUIRED(&crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_);
 
-  void TimeoutStreams(int64_t now_ms) EXCLUSIVE_LOCKS_REQUIRED(&crit_);
+  void TimeoutStreams(int64_t now_ms) RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_);
 
   rtc::ThreadChecker network_thread_;
   const Clock* const clock_;
@@ -130,8 +131,8 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   bool uma_recorded_;
 
   rtc::CriticalSection crit_;
-  Ssrcs ssrcs_ GUARDED_BY(&crit_);
-  AimdRateControl remote_rate_ GUARDED_BY(&crit_);
+  Ssrcs ssrcs_ RTC_GUARDED_BY(&crit_);
+  AimdRateControl remote_rate_ RTC_GUARDED_BY(&crit_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RemoteBitrateEstimatorAbsSendTime);
 };
