@@ -7,7 +7,7 @@ style guides. In cases where they conflict, the Chromium style guide
 trumps the Google style guide, and the rules in this file trump them
 both.
 
-[chr-style]: https://chromium.googlesource.com/chromium/src/+/master/styleguide/c++/c++.md
+[chr-style]: https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/c++/c++.md
 [goog-style]: https://google.github.io/styleguide/cppguide.html
 
 Some older parts of the code violate the style guide in various ways.
@@ -48,10 +48,34 @@ pre-dates the use of the current C++ style guide for this code base.
 
 ## Build files
 
+The WebRTC build files are written in [GN][gn], and we follow
+the [Chromium GN style guide][chr-gn-style]. Additionally, there are
+some WebRTC-specific rules below; in case of conflict, they trump the
+Chromium style guide.
+
+[gn]: https://chromium.googlesource.com/chromium/src/tools/gn/
+[chr-gn-style]: https://chromium.googlesource.com/chromium/src/tools/gn/+/HEAD/docs/style_guide.md
+
+### WebRTC-specific GN templates
+
+Use the following [GN templates][gn-templ] to ensure that all
+our [targets][gn-target] are built with the same configuration:
+
+instead of       | use
+-----------------|---------------------
+`executable`     | `rtc_executable`
+`shared_library` | `rtc_shared_library`
+`source_set`     | `rtc_source_set`
+`static_library` | `rtc_static_library`
+`test`           | `rtc_test`
+
+[gn-templ]: https://chromium.googlesource.com/chromium/src/tools/gn/+/HEAD/docs/language.md#Templates
+[gn-target]: https://chromium.googlesource.com/chromium/src/tools/gn/+/HEAD/docs/language.md#Targets
+
 ### Conditional compilation with the C preprocessor
 
 Avoid using the C preprocessor to conditionally enable or disable
-pieces of code. But if you can’t avoid it, introduce a gn variable,
+pieces of code. But if you can’t avoid it, introduce a GN variable,
 and then set a preprocessor constant to either 0 or 1 in the build
 targets that need it:
 
