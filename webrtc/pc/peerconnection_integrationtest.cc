@@ -87,9 +87,6 @@ static const int kMaxWaitForFramesMs = 10000;
 static const int kDefaultExpectedAudioFrameCount = 3;
 static const int kDefaultExpectedVideoFrameCount = 3;
 
-static const char kDefaultStreamLabel[] = "stream_label";
-static const char kDefaultVideoTrackId[] = "video_track";
-static const char kDefaultAudioTrackId[] = "audio_track";
 static const char kDataChannelLabel[] = "data_channel";
 
 // SRTP cipher name negotiated by the tests. This must be updated if the
@@ -306,45 +303,31 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
         peer_connection_factory_->CreateAudioSource(&constraints);
     // TODO(perkj): Test audio source when it is implemented. Currently audio
     // always use the default input.
-    return peer_connection_factory_->CreateAudioTrack(kDefaultAudioTrackId,
+    return peer_connection_factory_->CreateAudioTrack(rtc::CreateRandomUuid(),
                                                       source);
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface> CreateLocalVideoTrack() {
-    return CreateLocalVideoTrackInternal(
-        kDefaultVideoTrackId, FakeConstraints(), webrtc::kVideoRotation_0);
+    return CreateLocalVideoTrackInternal(FakeConstraints(),
+                                         webrtc::kVideoRotation_0);
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface>
   CreateLocalVideoTrackWithConstraints(const FakeConstraints& constraints) {
-    return CreateLocalVideoTrackInternal(kDefaultVideoTrackId, constraints,
-                                         webrtc::kVideoRotation_0);
+    return CreateLocalVideoTrackInternal(constraints, webrtc::kVideoRotation_0);
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface>
   CreateLocalVideoTrackWithRotation(webrtc::VideoRotation rotation) {
-    return CreateLocalVideoTrackInternal(kDefaultVideoTrackId,
-                                         FakeConstraints(), rotation);
-  }
-
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> CreateLocalVideoTrackWithId(
-      const std::string& id) {
-    return CreateLocalVideoTrackInternal(id, FakeConstraints(),
-                                         webrtc::kVideoRotation_0);
+    return CreateLocalVideoTrackInternal(FakeConstraints(), rotation);
   }
 
   void AddMediaStreamFromTracks(
       rtc::scoped_refptr<webrtc::AudioTrackInterface> audio,
       rtc::scoped_refptr<webrtc::VideoTrackInterface> video) {
-    AddMediaStreamFromTracksWithLabel(audio, video, kDefaultStreamLabel);
-  }
-
-  void AddMediaStreamFromTracksWithLabel(
-      rtc::scoped_refptr<webrtc::AudioTrackInterface> audio,
-      rtc::scoped_refptr<webrtc::VideoTrackInterface> video,
-      const std::string& stream_label) {
     rtc::scoped_refptr<MediaStreamInterface> stream =
-        peer_connection_factory_->CreateLocalMediaStream(stream_label);
+        peer_connection_factory_->CreateLocalMediaStream(
+            rtc::CreateRandomUuid());
     if (audio) {
       stream->AddTrack(audio);
     }
@@ -634,7 +617,6 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface> CreateLocalVideoTrackInternal(
-      const std::string& track_id,
       const FakeConstraints& constraints,
       webrtc::VideoRotation rotation) {
     // Set max frame rate to 10fps to reduce the risk of test flakiness.
@@ -650,7 +632,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
         peer_connection_factory_->CreateVideoSource(fake_capturer,
                                                     &source_constraints);
     rtc::scoped_refptr<webrtc::VideoTrackInterface> track(
-        peer_connection_factory_->CreateVideoTrack(track_id, source));
+        peer_connection_factory_->CreateVideoTrack(rtc::CreateRandomUuid(),
+                                                   source));
     if (!local_video_renderer_) {
       local_video_renderer_.reset(new webrtc::FakeVideoTrackRenderer(track));
     }
@@ -1411,8 +1394,7 @@ TEST_F(PeerConnectionIntegrationTest, AudioToVideoUpgrade) {
   EXPECT_TRUE(callee_video_content->rejected);
   // Now negotiate with video and ensure negotiation succeeds, with video
   // frames and additional audio frames being received.
-  callee()->AddMediaStreamFromTracksWithLabel(
-      nullptr, callee()->CreateLocalVideoTrack(), "video_only_stream");
+  callee()->AddVideoOnlyMediaStream();
   options.offer_to_receive_video = 1;
   callee()->SetOfferAnswerOptions(options);
   callee()->CreateAndSetAndSignalOffer();
@@ -1435,10 +1417,8 @@ TEST_F(PeerConnectionIntegrationTest, AddAudioToVideoOnlyCall) {
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   // Now add an audio track and do another offer/answer.
-  caller()->AddMediaStreamFromTracksWithLabel(caller()->CreateLocalAudioTrack(),
-                                              nullptr, "audio_stream");
-  callee()->AddMediaStreamFromTracksWithLabel(callee()->CreateLocalAudioTrack(),
-                                              nullptr, "audio_stream");
+  caller()->AddAudioOnlyMediaStream();
+  callee()->AddAudioOnlyMediaStream();
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   // Ensure both audio and video frames are received end-to-end.
@@ -1787,9 +1767,7 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithTwoVideoTracks) {
   ConnectFakeSignaling();
   // Add one audio/video stream, and one video-only stream.
   caller()->AddAudioVideoMediaStream();
-  caller()->AddMediaStreamFromTracksWithLabel(
-      nullptr, caller()->CreateLocalVideoTrackWithId("extra_track"),
-      "extra_stream");
+  caller()->AddVideoOnlyMediaStream();
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   ASSERT_EQ(2u, callee()->number_of_remote_streams());
