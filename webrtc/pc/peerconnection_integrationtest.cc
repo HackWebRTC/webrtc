@@ -1393,8 +1393,7 @@ TEST_F(PeerConnectionIntegrationTest, AudioToVideoUpgrade) {
   // Initially, offer an audio/video stream from the caller, but refuse to
   // send/receive video on the callee side.
   caller()->AddAudioVideoMediaStream();
-  callee()->AddMediaStreamFromTracks(callee()->CreateLocalAudioTrack(),
-                                     nullptr);
+  callee()->AddAudioOnlyMediaStream();
   PeerConnectionInterface::RTCOfferAnswerOptions options;
   options.offer_to_receive_video = 0;
   callee()->SetOfferAnswerOptions(options);
@@ -1419,6 +1418,30 @@ TEST_F(PeerConnectionIntegrationTest, AudioToVideoUpgrade) {
   callee()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   // Expect additional audio frames to be received after the upgrade.
+  ExpectNewFramesReceivedWithWait(
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kMaxWaitForFramesMs);
+}
+
+// Simpler than the above test; just add an audio track to an established
+// video-only connection.
+TEST_F(PeerConnectionIntegrationTest, AddAudioToVideoOnlyCall) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  // Do initial offer/answer with just a video track.
+  caller()->AddVideoOnlyMediaStream();
+  callee()->AddVideoOnlyMediaStream();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  // Now add an audio track and do another offer/answer.
+  caller()->AddMediaStreamFromTracksWithLabel(caller()->CreateLocalAudioTrack(),
+                                              nullptr, "audio_stream");
+  callee()->AddMediaStreamFromTracksWithLabel(callee()->CreateLocalAudioTrack(),
+                                              nullptr, "audio_stream");
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  // Ensure both audio and video frames are received end-to-end.
   ExpectNewFramesReceivedWithWait(
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
