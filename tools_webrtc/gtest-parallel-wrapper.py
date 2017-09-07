@@ -31,7 +31,7 @@ For example:
       --another_flag \
       -- \
       --isolated-script-test-output=some_dir \
-      --isolated-script-test-chartjson-output=some_other_dir \
+      --isolated-script-test-perf-output=some_other_dir \
       --foo=bar \
       --baz
 
@@ -78,7 +78,7 @@ def get_args_and_env():
   # We don't need to implement this flag, and possibly can't, since it's
   # intended for results of Telemetry tests. See
   # https://chromium.googlesource.com/external/github.com/catapult-project/catapult/+/HEAD/dashboard/docs/data-format.md
-  parser.add_argument('--isolated-script-test-chartjson-output', type=str,
+  parser.add_argument('--isolated-script-test-perf-output', type=str,
                       default=None)
 
   # No-sandbox is a Chromium-specific flag, ignore it.

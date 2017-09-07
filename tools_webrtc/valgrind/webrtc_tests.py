@@ -130,7 +130,7 @@ def main(_):
   # TODO(oprypin): Remove (bugs.webrtc.org/8115)
   ignore_parser.add_argument('--isolated-script-test-output',
                              type=str, default=None)
-  ignore_parser.add_argument('--isolated-script-test-chartjson-output',
+  ignore_parser.add_argument('--isolated-script-test-perf-output',
                              type=str, default=None)
   _, args = ignore_parser.parse_known_args(args)
 
