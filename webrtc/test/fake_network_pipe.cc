@@ -132,8 +132,16 @@ void FakeNetworkPipe::SendPacket(const uint8_t* data, size_t data_length) {
 
   // Delay introduced by the link capacity.
   int64_t capacity_delay_ms = 0;
-  if (config_.link_capacity_kbps > 0)
-    capacity_delay_ms = data_length / (config_.link_capacity_kbps / 8);
+  if (config_.link_capacity_kbps > 0) {
+    const int bytes_per_millisecond = config_.link_capacity_kbps / 8;
+    // To round to the closest millisecond we add half a milliseconds worth of
+    // bytes to the delay calculation.
+    capacity_delay_ms = (data_length + capacity_delay_error_bytes_ +
+                         bytes_per_millisecond / 2) /
+                        bytes_per_millisecond;
+    capacity_delay_error_bytes_ +=
+        data_length - capacity_delay_ms * bytes_per_millisecond;
+  }
   int64_t network_start_time = time_now;
 
   // Check if there already are packets on the link and change network start

@@ -176,6 +176,8 @@ class FakeNetworkPipe {
 
   int64_t last_log_time_;
 
+  int64_t capacity_delay_error_bytes_ = 0;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(FakeNetworkPipe);
 };
 
