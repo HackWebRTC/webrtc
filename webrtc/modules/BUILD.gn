@@ -77,7 +77,13 @@ if (rtc_include_tests) {
     data = modules_tests_resources
 
     if (is_android) {
-      deps += [ "//testing/android/native_test:native_test_native_code" ]
+      deps += [
+        # NOTE(brandtr): Including Java classes seems only to be possible from
+        # rtc_test targets. Therefore we include this target here, instead of
+        # in video_coding_modules_tests, where it is actually used.
+        "../sdk/android:libjingle_peerconnection_java",
+        "//testing/android/native_test:native_test_native_code",
+      ]
       shard_timeout = 900
     }
 

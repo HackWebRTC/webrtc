@@ -18,7 +18,7 @@ namespace test {
 namespace {
 
 // Loop variables.
-const int kBitrates[] = {30, 50, 100, 200, 300, 500, 1000};
+const int kBitrates[] = {500};
 const VideoCodecType kVideoCodecType[] = {kVideoCodecVP8};
 const bool kHwCodec[] = {false};
 
@@ -37,21 +37,21 @@ const VisualizationParams kVisualizationParams = {
     false,  // save_decoded_y4m
 };
 
-const int kNumFrames = 300;
+const int kNumFrames = 30;
 
 }  // namespace
 
 // Tests for plotting statistics from logs.
-class PlotVideoProcessorIntegrationTest
+class VideoProcessorIntegrationTestParameterized
     : public VideoProcessorIntegrationTest,
       public ::testing::WithParamInterface<
           ::testing::tuple<int, VideoCodecType, bool>> {
  protected:
-  PlotVideoProcessorIntegrationTest()
+  VideoProcessorIntegrationTestParameterized()
       : bitrate_(::testing::get<0>(GetParam())),
         codec_type_(::testing::get<1>(GetParam())),
         hw_codec_(::testing::get<2>(GetParam())) {}
-  ~PlotVideoProcessorIntegrationTest() override = default;
+  ~VideoProcessorIntegrationTestParameterized() override = default;
 
   void RunTest(int width,
                int height,
@@ -86,30 +86,29 @@ class PlotVideoProcessorIntegrationTest
   const bool hw_codec_;
 };
 
-INSTANTIATE_TEST_CASE_P(
-    CodecSettings,
-    PlotVideoProcessorIntegrationTest,
-    ::testing::Combine(::testing::ValuesIn(kBitrates),
-                       ::testing::ValuesIn(kVideoCodecType),
-                       ::testing::ValuesIn(kHwCodec)));
+INSTANTIATE_TEST_CASE_P(CodecSettings,
+                        VideoProcessorIntegrationTestParameterized,
+                        ::testing::Combine(::testing::ValuesIn(kBitrates),
+                                           ::testing::ValuesIn(kVideoCodecType),
+                                           ::testing::ValuesIn(kHwCodec)));
 
-TEST_P(PlotVideoProcessorIntegrationTest, Process_128x96_30fps) {
+TEST_P(VideoProcessorIntegrationTestParameterized, Process_128x96_30fps) {
   RunTest(128, 96, 30, "foreman_128x96");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, Process_160x120_30fps) {
+TEST_P(VideoProcessorIntegrationTestParameterized, Process_160x120_30fps) {
   RunTest(160, 120, 30, "foreman_160x120");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, Process_176x144_30fps) {
+TEST_P(VideoProcessorIntegrationTestParameterized, Process_176x144_30fps) {
   RunTest(176, 144, 30, "foreman_176x144");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, Process_320x240_30fps) {
+TEST_P(VideoProcessorIntegrationTestParameterized, Process_320x240_30fps) {
   RunTest(320, 240, 30, "foreman_320x240");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, Process_352x288_30fps) {
+TEST_P(VideoProcessorIntegrationTestParameterized, Process_352x288_30fps) {
   RunTest(352, 288, 30, "foreman_cif");
 }
 

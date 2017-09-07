@@ -18,8 +18,9 @@ import re
 import matplotlib.pyplot as plt
 
 # Log events.
-EVENT_START = 'RUN      ] CodecSettings/PlotVideoProcessorIntegrationTest.'
-EVENT_END = 'OK ] CodecSettings/PlotVideoProcessorIntegrationTest.'
+EVENT_START = \
+  'RUN      ] CodecSettings/VideoProcessorIntegrationTestParameterized.'
+EVENT_END = 'OK ] CodecSettings/VideoProcessorIntegrationTestParameterized.'
 
 # Metrics to plot, tuple: (name to parse in file, label to use when plotting).
 BITRATE = ('Target bitrate', 'target bitrate (kbps)')

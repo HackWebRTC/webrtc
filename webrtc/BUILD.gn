@@ -307,7 +307,6 @@ if (!build_with_chromium) {
         "modules/remote_bitrate_estimator:bwe_simulations_tests",
         "modules/rtp_rtcp:test_packet_masks_metrics",
         "modules/video_capture:video_capture_internal_impl",
-        "modules/video_coding:plot_videoprocessor_integrationtest",
         "ortc:ortc_unittests",
         "pc:peerconnection_unittests",
         "pc:rtc_pc_unittests",

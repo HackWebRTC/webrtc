@@ -71,8 +71,7 @@ int NumberOfTemporalLayers(const VideoCodec& codec_settings) {
 }  // namespace
 
 VideoProcessorIntegrationTest::VideoProcessorIntegrationTest() {
-#if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED) && \
-    defined(WEBRTC_ANDROID)
+#if defined(WEBRTC_ANDROID)
   InitializeAndroidObjects();
 #endif
 }
@@ -276,7 +275,6 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
 void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
   std::unique_ptr<cricket::WebRtcVideoEncoderFactory> encoder_factory;
   if (config_.hw_encoder) {
-#if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
 #if defined(WEBRTC_ANDROID)
     encoder_factory.reset(new jni::MediaCodecVideoEncoderFactory());
 #elif defined(WEBRTC_IOS)
@@ -286,13 +284,11 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
 #else
     RTC_NOTREACHED() << "Only support HW encoder on Android and iOS.";
 #endif
-#endif  // WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED
   } else {
     encoder_factory.reset(new cricket::InternalEncoderFactory());
   }
 
   if (config_.hw_decoder) {
-#if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
 #if defined(WEBRTC_ANDROID)
     decoder_factory_.reset(new jni::MediaCodecVideoDecoderFactory());
 #elif defined(WEBRTC_IOS)
@@ -302,7 +298,6 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
 #else
     RTC_NOTREACHED() << "Only support HW decoder on Android and iOS.";
 #endif
-#endif  // WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED
   } else {
     decoder_factory_.reset(new cricket::InternalDecoderFactory());
   }
