@@ -93,59 +93,59 @@ const int* FindKeyByValue(const std::map<int, int>& m, int v) {
   return nullptr;
 }
 
-rtclog::StreamConfig CreateRtcLogStreamConfig(
+std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
     const VideoReceiveStream::Config& config) {
-  rtclog::StreamConfig rtclog_config;
-  rtclog_config.remote_ssrc = config.rtp.remote_ssrc;
-  rtclog_config.local_ssrc = config.rtp.local_ssrc;
-  rtclog_config.rtx_ssrc = config.rtp.rtx_ssrc;
-  rtclog_config.rtcp_mode = config.rtp.rtcp_mode;
-  rtclog_config.remb = config.rtp.remb;
-  rtclog_config.rtp_extensions = config.rtp.extensions;
+  auto rtclog_config = rtc::MakeUnique<rtclog::StreamConfig>();
+  rtclog_config->remote_ssrc = config.rtp.remote_ssrc;
+  rtclog_config->local_ssrc = config.rtp.local_ssrc;
+  rtclog_config->rtx_ssrc = config.rtp.rtx_ssrc;
+  rtclog_config->rtcp_mode = config.rtp.rtcp_mode;
+  rtclog_config->remb = config.rtp.remb;
+  rtclog_config->rtp_extensions = config.rtp.extensions;
 
   for (const auto& d : config.decoders) {
     const int* search =
         FindKeyByValue(config.rtp.rtx_associated_payload_types, d.payload_type);
-    rtclog_config.codecs.emplace_back(d.payload_name, d.payload_type,
+    rtclog_config->codecs.emplace_back(d.payload_name, d.payload_type,
                                       search ? *search : 0);
   }
   return rtclog_config;
 }
 
-rtclog::StreamConfig CreateRtcLogStreamConfig(
+std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
     const VideoSendStream::Config& config,
     size_t ssrc_index) {
-  rtclog::StreamConfig rtclog_config;
-  rtclog_config.local_ssrc = config.rtp.ssrcs[ssrc_index];
+  auto rtclog_config = rtc::MakeUnique<rtclog::StreamConfig>();
+  rtclog_config->local_ssrc = config.rtp.ssrcs[ssrc_index];
   if (ssrc_index < config.rtp.rtx.ssrcs.size()) {
-    rtclog_config.rtx_ssrc = config.rtp.rtx.ssrcs[ssrc_index];
+    rtclog_config->rtx_ssrc = config.rtp.rtx.ssrcs[ssrc_index];
   }
-  rtclog_config.rtcp_mode = config.rtp.rtcp_mode;
-  rtclog_config.rtp_extensions = config.rtp.extensions;
+  rtclog_config->rtcp_mode = config.rtp.rtcp_mode;
+  rtclog_config->rtp_extensions = config.rtp.extensions;
 
-  rtclog_config.codecs.emplace_back(config.encoder_settings.payload_name,
-                                    config.encoder_settings.payload_type,
-                                    config.rtp.rtx.payload_type);
+  rtclog_config->codecs.emplace_back(config.encoder_settings.payload_name,
+                                     config.encoder_settings.payload_type,
+                                     config.rtp.rtx.payload_type);
   return rtclog_config;
 }
 
-rtclog::StreamConfig CreateRtcLogStreamConfig(
+std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
     const AudioReceiveStream::Config& config) {
-  rtclog::StreamConfig rtclog_config;
-  rtclog_config.remote_ssrc = config.rtp.remote_ssrc;
-  rtclog_config.local_ssrc = config.rtp.local_ssrc;
-  rtclog_config.rtp_extensions = config.rtp.extensions;
+  auto rtclog_config = rtc::MakeUnique<rtclog::StreamConfig>();
+  rtclog_config->remote_ssrc = config.rtp.remote_ssrc;
+  rtclog_config->local_ssrc = config.rtp.local_ssrc;
+  rtclog_config->rtp_extensions = config.rtp.extensions;
   return rtclog_config;
 }
 
-rtclog::StreamConfig CreateRtcLogStreamConfig(
+std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
     const AudioSendStream::Config& config) {
-  rtclog::StreamConfig rtclog_config;
-  rtclog_config.local_ssrc = config.rtp.ssrc;
-  rtclog_config.rtp_extensions = config.rtp.extensions;
+  auto rtclog_config = rtc::MakeUnique<rtclog::StreamConfig>();
+  rtclog_config->local_ssrc = config.rtp.ssrc;
+  rtclog_config->rtp_extensions = config.rtp.extensions;
   if (config.send_codec_spec) {
-    rtclog_config.codecs.emplace_back(config.send_codec_spec->format.name,
-                                      config.send_codec_spec->payload_type, 0);
+    rtclog_config->codecs.emplace_back(config.send_codec_spec->format.name,
+                                       config.send_codec_spec->payload_type, 0);
   }
   return rtclog_config;
 }
@@ -605,7 +605,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
-  event_log_->LogAudioSendStreamConfig(CreateRtcLogStreamConfig(config));
+  event_log_->LogAudioSendStreamConfig(*CreateRtcLogStreamConfig(config));
 
   rtc::Optional<RtpState> suspended_rtp_state;
   {
@@ -671,7 +671,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
-  event_log_->LogAudioReceiveStreamConfig(CreateRtcLogStreamConfig(config));
+  event_log_->LogAudioReceiveStreamConfig(*CreateRtcLogStreamConfig(config));
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
       &audio_receiver_controller_, transport_send_->packet_router(), config,
       config_.audio_state, event_log_);
@@ -732,7 +732,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   for (size_t ssrc_index = 0; ssrc_index < config.rtp.ssrcs.size();
        ++ssrc_index) {
     event_log_->LogVideoSendStreamConfig(
-        CreateRtcLogStreamConfig(config, ssrc_index));
+        *CreateRtcLogStreamConfig(config, ssrc_index));
   }
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
@@ -822,7 +822,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   }
   receive_stream->SignalNetworkState(video_network_state_);
   UpdateAggregateNetworkState();
-  event_log_->LogVideoReceiveStreamConfig(CreateRtcLogStreamConfig(config));
+  event_log_->LogVideoReceiveStreamConfig(*CreateRtcLogStreamConfig(config));
   return receive_stream;
 }
 
