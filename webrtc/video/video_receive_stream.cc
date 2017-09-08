@@ -18,7 +18,6 @@
 
 #include "webrtc/api/optional.h"
 #include "webrtc/call/rtp_stream_receiver_controller_interface.h"
-#include "webrtc/call/rtx_receive_stream.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -33,7 +32,6 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/location.h"
 #include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/ptr_util.h"
 #include "webrtc/rtc_base/trace_event.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
@@ -90,7 +88,6 @@ VideoReceiveStream::VideoReceiveStream(
                      "DecodingThread",
                      rtc::kHighestPriority),
       call_stats_(call_stats),
-      rtp_receive_statistics_(ReceiveStatistics::Create(clock_)),
       timing_(new VCMTiming(clock_)),
       video_receiver_(clock_, nullptr, this, timing_.get(), this, this),
       stats_proxy_(&config_, clock_),
@@ -98,7 +95,6 @@ VideoReceiveStream::VideoReceiveStream(
                                  call_stats_->rtcp_rtt_stats(),
                                  packet_router,
                                  &config_,
-                                 rtp_receive_statistics_.get(),
                                  &stats_proxy_,
                                  process_thread_,
                                  this,  // NackSender
@@ -124,7 +120,7 @@ VideoReceiveStream::VideoReceiveStream(
     decoder_payload_types.insert(decoder.payload_type);
   }
 
-  video_receiver_.SetRenderDelay(config_.render_delay_ms);
+  video_receiver_.SetRenderDelay(config.render_delay_ms);
 
   jitter_estimator_.reset(new VCMJitterEstimator(clock_));
   frame_buffer_.reset(new video_coding::FrameBuffer(
@@ -135,12 +131,9 @@ VideoReceiveStream::VideoReceiveStream(
   // Register with RtpStreamReceiverController.
   media_receiver_ = receiver_controller->CreateReceiver(
       config_.rtp.remote_ssrc, &rtp_video_stream_receiver_);
-  if (config_.rtp.rtx_ssrc) {
-    rtx_receive_stream_ = rtc::MakeUnique<RtxReceiveStream>(
-        &rtp_video_stream_receiver_, config.rtp.rtx_associated_payload_types,
-        config_.rtp.remote_ssrc, rtp_receive_statistics_.get());
+  if (config.rtp.rtx_ssrc) {
     rtx_receiver_ = receiver_controller->CreateReceiver(
-        config_.rtp.rtx_ssrc, rtx_receive_stream_.get());
+        config_.rtp.rtx_ssrc, &rtp_video_stream_receiver_);
   }
 }
 

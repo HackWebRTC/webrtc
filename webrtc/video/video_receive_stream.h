@@ -38,7 +38,6 @@ class ProcessThread;
 class RTPFragmentationHeader;
 class RtpStreamReceiverInterface;
 class RtpStreamReceiverControllerInterface;
-class RtxReceiveStream;
 class VCMTiming;
 class VCMJitterEstimator;
 
@@ -126,10 +125,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   CallStats* const call_stats_;
 
-  // Shared by media and rtx stream receivers, since the latter has no RtpRtcp
-  // module of its own.
-  const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
-
   std::unique_ptr<VCMTiming> timing_;  // Jitter buffer experiment.
   vcm::VideoReceiver video_receiver_;
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> incoming_video_stream_;
@@ -146,7 +141,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   std::unique_ptr<video_coding::FrameBuffer> frame_buffer_;
 
   std::unique_ptr<RtpStreamReceiverInterface> media_receiver_;
-  std::unique_ptr<RtxReceiveStream> rtx_receive_stream_;
   std::unique_ptr<RtpStreamReceiverInterface> rtx_receiver_;
 
   // Whenever we are in an undecodable state (stream has just started or due to

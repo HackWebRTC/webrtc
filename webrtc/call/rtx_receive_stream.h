@@ -17,20 +17,13 @@
 
 namespace webrtc {
 
-class ReceiveStatistics;
-
 // This class is responsible for RTX decapsulation. The resulting media packets
 // are passed on to a sink representing the associated media stream.
 class RtxReceiveStream : public RtpPacketSinkInterface {
  public:
   RtxReceiveStream(RtpPacketSinkInterface* media_sink,
                    std::map<int, int> associated_payload_types,
-                   uint32_t media_ssrc,
-                   // TODO(nisse): Delete this argument, and
-                   // corresponding member variable, by moving the
-                   // responsibility for rtcp feedback to
-                   // RtpStreamReceiverController.
-                   ReceiveStatistics* rtp_receive_statistics = nullptr);
+                   uint32_t media_ssrc);
   ~RtxReceiveStream() override;
   // RtpPacketSinkInterface.
   void OnRtpPacket(const RtpPacketReceived& packet) override;
@@ -42,7 +35,6 @@ class RtxReceiveStream : public RtpPacketSinkInterface {
   // TODO(nisse): Ultimately, the media receive stream shouldn't care about the
   // ssrc, and we should delete this.
   const uint32_t media_ssrc_;
-  ReceiveStatistics* const rtp_receive_statistics_;
 };
 
 }  // namespace webrtc

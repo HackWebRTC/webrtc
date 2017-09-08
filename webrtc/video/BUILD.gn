@@ -61,9 +61,6 @@ rtc_static_library("video") {
     "../call:call_interfaces",
     "../call:rtp_interfaces",
     "../call:video_stream_api",
-
-    # For RtxReceiveStream.
-    "../call:rtp_receiver",
     "../common_video",
     "../logging:rtc_event_log_api",
     "../media:rtc_media_base",
