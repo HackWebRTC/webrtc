@@ -38,7 +38,6 @@ CPPLINT_BLACKLIST = [
   'webrtc/voice_engine',
   'webrtc/common_types.h',
   'webrtc/common_types.cc',
-  'webrtc/video_send_stream.h',
 ]
 
 # These filters will always be removed, even if the caller specifies a filter
