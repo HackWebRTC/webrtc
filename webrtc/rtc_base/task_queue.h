@@ -16,10 +16,6 @@
 #include <queue>
 #include <type_traits>
 
-#if defined(WEBRTC_MAC)
-#include <dispatch/dispatch.h>
-#endif
-
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/scoped_ref_ptr.h"
@@ -236,16 +232,8 @@ class RTC_LOCKABLE TaskQueue {
   }
 
  private:
-#if defined(WEBRTC_MAC)
-  struct QueueContext;
-  struct TaskContext;
-  struct PostTaskAndReplyContext;
-  dispatch_queue_t queue_;
-  QueueContext* const context_;
-#else
   class Impl;
   const scoped_refptr<Impl> impl_;
-#endif
 
   RTC_DISALLOW_COPY_AND_ASSIGN(TaskQueue);
 };
