@@ -53,19 +53,7 @@ class RTPPayloadRegistry {
 
   void SetRtxPayloadType(int payload_type, int associated_payload_type);
 
-  bool IsRtx(const RTPHeader& header) const;
-
-  bool RestoreOriginalPacket(uint8_t* restored_packet,
-                             const uint8_t* packet,
-                             size_t* packet_length,
-                             uint32_t original_ssrc,
-                             const RTPHeader& header);
-
   bool IsRed(const RTPHeader& header) const;
-
-  // Returns true if the media of this RTP packet is encapsulated within an
-  // extra header, such as RTX or RED.
-  bool IsEncapsulated(const RTPHeader& header) const;
 
   bool GetPayloadSpecifics(uint8_t payload_type, PayloadUnion* payload) const;
 

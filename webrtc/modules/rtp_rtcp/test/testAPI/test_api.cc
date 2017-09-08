@@ -162,23 +162,4 @@ TEST_F(RtpRtcpAPITest, RtxSender) {
   EXPECT_EQ(kRtxRetransmitted, module_->RtxSendStatus());
 }
 
-TEST_F(RtpRtcpAPITest, RtxReceiver) {
-  const uint32_t kRtxSsrc = 1;
-  const int kRtxPayloadType = 119;
-  const int kPayloadType = 100;
-  EXPECT_FALSE(rtp_payload_registry_->RtxEnabled());
-  rtp_payload_registry_->SetRtxSsrc(kRtxSsrc);
-  rtp_payload_registry_->SetRtxPayloadType(kRtxPayloadType, kPayloadType);
-  EXPECT_TRUE(rtp_payload_registry_->RtxEnabled());
-  RTPHeader rtx_header;
-  rtx_header.ssrc = kRtxSsrc;
-  rtx_header.payloadType = kRtxPayloadType;
-  EXPECT_TRUE(rtp_payload_registry_->IsRtx(rtx_header));
-  rtx_header.ssrc = 0;
-  EXPECT_FALSE(rtp_payload_registry_->IsRtx(rtx_header));
-  rtx_header.ssrc = kRtxSsrc;
-  rtx_header.payloadType = 0;
-  EXPECT_TRUE(rtp_payload_registry_->IsRtx(rtx_header));
-}
-
 }  // namespace webrtc
