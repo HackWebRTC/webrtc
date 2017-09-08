@@ -97,7 +97,7 @@ BweSender* CreateBweSender(BandwidthEstimatorType estimator,
     case kBbrEstimator:
       return new BbrBweSender(observer, clock);
     case kTcpEstimator:
-      RTC_FALLTHROUGH();
+      FALLTHROUGH();
     case kNullEstimator:
       return new NullBweSender();
   }

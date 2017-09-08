@@ -98,8 +98,6 @@ rtc_static_library("rtc_base_approved") {
   all_dependent_configs = [ ":rtc_base_approved_all_dependent_config" ]
 
   sources = [
-    "annotations.h",
-    "arch.h",
     "array_view.h",
     "arraysize.h",
     "atomicops.h",

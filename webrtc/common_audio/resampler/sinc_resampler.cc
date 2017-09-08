@@ -160,12 +160,12 @@ SincResampler::SincResampler(double io_sample_rate_ratio,
           AlignedMalloc(sizeof(float) * kKernelStorageSize, 16))),
       input_buffer_(static_cast<float*>(
           AlignedMalloc(sizeof(float) * input_buffer_size_, 16))),
-#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__))
+#if defined(WEBRTC_CPU_DETECTION)
       convolve_proc_(nullptr),
 #endif
       r1_(input_buffer_.get()),
       r2_(input_buffer_.get() + kKernelSize / 2) {
-#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__))
+#if defined(WEBRTC_CPU_DETECTION)
   InitializeCPUSpecificFeatures();
   RTC_DCHECK(convolve_proc_);
 #endif

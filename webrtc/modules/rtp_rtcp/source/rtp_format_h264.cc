@@ -574,7 +574,7 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
       }
       case H264::NaluType::kIdr:
         parsed_payload->frame_type = kVideoFrameKey;
-        RTC_FALLTHROUGH();
+        FALLTHROUGH();
       case H264::NaluType::kSlice: {
         rtc::Optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
             &payload_data[start_offset], end_offset - start_offset);

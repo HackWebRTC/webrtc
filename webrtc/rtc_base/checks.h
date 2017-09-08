@@ -11,6 +11,8 @@
 #ifndef WEBRTC_RTC_BASE_CHECKS_H_
 #define WEBRTC_RTC_BASE_CHECKS_H_
 
+#include "webrtc/typedefs.h"
+
 // If you for some reson need to know if DCHECKs are on, test the value of
 // RTC_DCHECK_IS_ON. (Test its value, not if it's defined; it'll always be
 // defined, to either a true or a false value.)
@@ -20,20 +22,10 @@
 #define RTC_DCHECK_IS_ON 0
 #endif
 
-// Annotate a function that will not return control flow to the caller.
-#if defined(_MSC_VER)
-#define RTC_NO_RETURN __declspec(noreturn)
-#elif defined(__GNUC__)
-#define RTC_NO_RETURN __attribute__ ((__noreturn__))
-#else
-#define RTC_NO_RETURN
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-RTC_NO_RETURN
-    void rtc_FatalMessage(const char* file, int line, const char* msg);
+NO_RETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 #ifdef __cplusplus
 }  // extern "C"
 #endif
@@ -240,7 +232,7 @@ class FatalMessage {
   FatalMessage(const char* file, int line);
   // Used for RTC_CHECK_EQ(), etc. Takes ownership of the given string.
   FatalMessage(const char* file, int line, std::string* result);
-  RTC_NO_RETURN ~FatalMessage();
+  NO_RETURN ~FatalMessage();
 
   std::ostream& stream() { return stream_; }
 

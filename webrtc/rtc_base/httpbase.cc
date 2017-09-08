@@ -537,7 +537,7 @@ bool HttpBase::DoReceiveLoop(HttpError* error) {
       case SR_EOS:
         // Clean close, with no error.
         read_error = 0;
-        RTC_FALLTHROUGH();  // Fall through to HandleStreamClose.
+        FALLTHROUGH();  // Fall through to HandleStreamClose.
       case SR_ERROR:
         *error = HandleStreamClose(read_error);
         return true;

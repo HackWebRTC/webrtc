@@ -71,7 +71,7 @@ void RtpFrameReferenceFinder::RetryStashedFrames() {
         case kHandOff:
           complete_frame = true;
           frame_callback_->OnCompleteFrame(std::move(*frame_it));
-          RTC_FALLTHROUGH();
+          FALLTHROUGH();
         case kDrop:
           frame_it = stashed_frames_.erase(frame_it);
       }
