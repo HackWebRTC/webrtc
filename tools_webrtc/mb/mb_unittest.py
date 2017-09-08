@@ -381,7 +381,9 @@ class UnitTest(unittest.TestCase):
         '../../build/android/test_wrapper/logdog_wrapper.py',
         '--target', 'base_unittests',
         '--logdog-bin-cmd', '../../bin/logdog_butler',
-        '--target-devices-file', '${SWARMING_BOT_FILE}'
+        '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
+        '--store-tombstones',
+        '--target-devices-file', '${SWARMING_BOT_FILE}',
     ])
 
   def test_gn_gen_swarming_android_junit_test(self):
@@ -413,6 +415,8 @@ class UnitTest(unittest.TestCase):
         '../../build/android/test_wrapper/logdog_wrapper.py',
         '--target', 'base_unittests',
         '--logdog-bin-cmd', '../../bin/logdog_butler',
+        '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
+        '--store-tombstones',
     ])
 
   def test_gn_gen_non_parallel_console_test_launcher(self):

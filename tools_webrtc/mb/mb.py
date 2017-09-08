@@ -1057,7 +1057,10 @@ class MetaBuildWrapper(object):
     if android:
       cmdline = ['../../build/android/test_wrapper/logdog_wrapper.py',
                  '--target', target,
-                 '--logdog-bin-cmd', '../../bin/logdog_butler']
+                 '--logdog-bin-cmd', '../../bin/logdog_butler',
+                 '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
+                 '--store-tombstones']
+
       if test_type != 'junit_test':
         cmdline += ['--target-devices-file', '${SWARMING_BOT_FILE}']
     else:
