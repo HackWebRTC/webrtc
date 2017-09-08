@@ -550,8 +550,12 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     stats.ana_statistics.channel_action_counter = rtc::Optional<uint32_t>(432);
     stats.ana_statistics.dtx_action_counter = rtc::Optional<uint32_t>(543);
     stats.ana_statistics.fec_action_counter = rtc::Optional<uint32_t>(654);
-    stats.ana_statistics.frame_length_action_counter =
+    stats.ana_statistics.frame_length_increase_counter =
         rtc::Optional<uint32_t>(765);
+    stats.ana_statistics.frame_length_decrease_counter =
+        rtc::Optional<uint32_t>(876);
+    stats.ana_statistics.uplink_packet_loss_fraction =
+        rtc::Optional<float>(987.0);
     stats.typing_noise_detected = true;
     return stats;
   }
@@ -591,8 +595,12 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
               stats.ana_statistics.dtx_action_counter);
     EXPECT_EQ(info.ana_statistics.fec_action_counter,
               stats.ana_statistics.fec_action_counter);
-    EXPECT_EQ(info.ana_statistics.frame_length_action_counter,
-              stats.ana_statistics.frame_length_action_counter);
+    EXPECT_EQ(info.ana_statistics.frame_length_increase_counter,
+              stats.ana_statistics.frame_length_increase_counter);
+    EXPECT_EQ(info.ana_statistics.frame_length_decrease_counter,
+              stats.ana_statistics.frame_length_decrease_counter);
+    EXPECT_EQ(info.ana_statistics.uplink_packet_loss_fraction,
+              stats.ana_statistics.uplink_packet_loss_fraction);
     EXPECT_EQ(info.typing_noise_detected,
               stats.typing_noise_detected && is_sending);
   }

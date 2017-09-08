@@ -454,13 +454,27 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
   ASSERT_TRUE(sinfo.ana_statistics.fec_action_counter);
   EXPECT_EQ(rtc::ToString<uint32_t>(*sinfo.ana_statistics.fec_action_counter),
             value_in_report);
-  EXPECT_TRUE(GetValue(report,
-                       StatsReport::kStatsValueNameAnaFrameLengthActionCounter,
-                       &value_in_report));
-  ASSERT_TRUE(sinfo.ana_statistics.frame_length_action_counter);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameAnaFrameLengthIncreaseCounter,
+      &value_in_report));
+  ASSERT_TRUE(sinfo.ana_statistics.frame_length_increase_counter);
   EXPECT_EQ(rtc::ToString<uint32_t>(
-                *sinfo.ana_statistics.frame_length_action_counter),
+                *sinfo.ana_statistics.frame_length_increase_counter),
             value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameAnaFrameLengthDecreaseCounter,
+      &value_in_report));
+  ASSERT_TRUE(sinfo.ana_statistics.frame_length_decrease_counter);
+  EXPECT_EQ(rtc::ToString<uint32_t>(
+                *sinfo.ana_statistics.frame_length_decrease_counter),
+            value_in_report);
+  EXPECT_TRUE(GetValue(report,
+                       StatsReport::kStatsValueNameAnaUplinkPacketLossFraction,
+                       &value_in_report));
+  ASSERT_TRUE(sinfo.ana_statistics.uplink_packet_loss_fraction);
+  EXPECT_EQ(
+      rtc::ToString<float>(*sinfo.ana_statistics.uplink_packet_loss_fraction),
+      value_in_report);
 }
 
 // Helper methods to avoid duplication of code.
@@ -489,8 +503,12 @@ void InitVoiceSenderInfo(cricket::VoiceSenderInfo* voice_sender_info) {
       rtc::Optional<uint32_t>(115);
   voice_sender_info->ana_statistics.fec_action_counter =
       rtc::Optional<uint32_t>(116);
-  voice_sender_info->ana_statistics.frame_length_action_counter =
+  voice_sender_info->ana_statistics.frame_length_increase_counter =
       rtc::Optional<uint32_t>(117);
+  voice_sender_info->ana_statistics.frame_length_decrease_counter =
+      rtc::Optional<uint32_t>(118);
+  voice_sender_info->ana_statistics.uplink_packet_loss_fraction =
+      rtc::Optional<float>(119.0);
 }
 
 void UpdateVoiceSenderInfoFromAudioTrack(

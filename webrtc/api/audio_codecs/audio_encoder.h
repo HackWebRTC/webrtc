@@ -48,10 +48,17 @@ struct ANAStats {
   // call. If this value is not set, it indicates that the FEC controller is
   // disabled.
   rtc::Optional<uint32_t> fec_action_counter;
-  // Number of actions taken by the ANA frame length controller since the start
-  // of the call. If this value is not set, it indicates that the frame length
-  // controller is disabled.
-  rtc::Optional<uint32_t> frame_length_action_counter;
+  // Number of times the ANA frame length controller decided to increase the
+  // frame length since the start of the call. If this value is not set, it
+  // indicates that the frame length controller is disabled.
+  rtc::Optional<uint32_t> frame_length_increase_counter;
+  // Number of times the ANA frame length controller decided to decrease the
+  // frame length since the start of the call. If this value is not set, it
+  // indicates that the frame length controller is disabled.
+  rtc::Optional<uint32_t> frame_length_decrease_counter;
+  // The uplink packet loss fractions as set by the ANA FEC controller. If this
+  // value is not set, it indicates that the ANA FEC controller is not active.
+  rtc::Optional<float> uplink_packet_loss_fraction;
 };
 
 // This is the interface class for encoders in AudioCoding module. Each codec

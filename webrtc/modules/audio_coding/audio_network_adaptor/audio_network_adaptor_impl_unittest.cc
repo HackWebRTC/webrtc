@@ -298,8 +298,12 @@ TEST(AudioNetworkAdaptorImplTest, TestANAStats) {
             default_stats.channel_action_counter);
   EXPECT_EQ(ana_stats.dtx_action_counter, default_stats.dtx_action_counter);
   EXPECT_EQ(ana_stats.fec_action_counter, default_stats.fec_action_counter);
-  EXPECT_EQ(ana_stats.frame_length_action_counter,
-            default_stats.frame_length_action_counter);
+  EXPECT_EQ(ana_stats.frame_length_increase_counter,
+            default_stats.frame_length_increase_counter);
+  EXPECT_EQ(ana_stats.frame_length_decrease_counter,
+            default_stats.frame_length_decrease_counter);
+  EXPECT_EQ(ana_stats.uplink_packet_loss_fraction,
+            default_stats.uplink_packet_loss_fraction);
 }
 
 }  // namespace webrtc

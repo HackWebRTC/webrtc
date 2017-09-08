@@ -594,8 +594,12 @@ const char* StatsReport::Value::display_name() const {
       return "googAnaDtxActionCounter";
     case kStatsValueNameAnaFecActionCounter:
       return "googAnaFecActionCounter";
-    case kStatsValueNameAnaFrameLengthActionCounter:
-      return "googAnaFrameLengthActionCounter";
+    case kStatsValueNameAnaFrameLengthIncreaseCounter:
+      return "googAnaFrameLengthIncreaseCounter";
+    case kStatsValueNameAnaFrameLengthDecreaseCounter:
+      return "googAnaFrameLengthDecreaseCounter";
+    case kStatsValueNameAnaUplinkPacketLossFraction:
+      return "googAnaUplinkPacketLossFraction";
     case kStatsValueNameRetransmitBitrate:
       return "googRetransmitBitrate";
     case kStatsValueNameRtt:

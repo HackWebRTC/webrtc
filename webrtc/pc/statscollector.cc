@@ -240,9 +240,17 @@ void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
     report->AddInt(StatsReport::kStatsValueNameAnaFecActionCounter,
                    *info.ana_statistics.fec_action_counter);
   }
-  if (info.ana_statistics.frame_length_action_counter) {
-    report->AddInt(StatsReport::kStatsValueNameAnaFrameLengthActionCounter,
-                   *info.ana_statistics.frame_length_action_counter);
+  if (info.ana_statistics.frame_length_increase_counter) {
+    report->AddInt(StatsReport::kStatsValueNameAnaFrameLengthIncreaseCounter,
+                   *info.ana_statistics.frame_length_increase_counter);
+  }
+  if (info.ana_statistics.frame_length_decrease_counter) {
+    report->AddInt(StatsReport::kStatsValueNameAnaFrameLengthDecreaseCounter,
+                   *info.ana_statistics.frame_length_decrease_counter);
+  }
+  if (info.ana_statistics.uplink_packet_loss_fraction) {
+    report->AddFloat(StatsReport::kStatsValueNameAnaUplinkPacketLossFraction,
+                     *info.ana_statistics.uplink_packet_loss_fraction);
   }
 }
 
