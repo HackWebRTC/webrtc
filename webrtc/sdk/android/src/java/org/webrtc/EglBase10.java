@@ -26,7 +26,7 @@ import javax.microedition.khronos.egl.EGLSurface;
  * Holds EGL state and utility methods for handling an egl 1.0 EGLContext, an EGLDisplay,
  * and an EGLSurface.
  */
-class EglBase10 implements EglBase {
+class EglBase10 extends EglBase {
   // This constant is taken from EGL14.EGL_CONTEXT_CLIENT_VERSION.
   private static final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
 

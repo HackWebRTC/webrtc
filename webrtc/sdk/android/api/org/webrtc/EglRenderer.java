@@ -622,8 +622,8 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
             drawnFrameHeight, 0, 0, eglBase.surfaceWidth(), eglBase.surfaceHeight());
       } else {
         VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) buffer;
-        drawer.drawTexture(textureBuffer, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
-            eglBase.surfaceWidth(), eglBase.surfaceHeight());
+        RendererCommon.drawTexture(drawer, textureBuffer, drawMatrix, drawnFrameWidth,
+            drawnFrameHeight, 0, 0, eglBase.surfaceWidth(), eglBase.surfaceHeight());
       }
 
       final long swapBuffersStartTimeNs = System.nanoTime();
@@ -689,8 +689,8 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
             frame.getRotatedWidth(), frame.getRotatedHeight(), 0, 0, scaledWidth, scaledHeight);
       } else {
         VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) frame.getBuffer();
-        listenerAndParams.drawer.drawTexture(textureBuffer, drawMatrix, frame.getRotatedWidth(),
-            frame.getRotatedHeight(), 0, 0, scaledWidth, scaledHeight);
+        RendererCommon.drawTexture(listenerAndParams.drawer, textureBuffer, drawMatrix,
+            frame.getRotatedWidth(), frame.getRotatedHeight(), 0, 0, scaledWidth, scaledHeight);
       }
 
       final ByteBuffer bitmapBuffer = ByteBuffer.allocateDirect(scaledWidth * scaledHeight * 4);

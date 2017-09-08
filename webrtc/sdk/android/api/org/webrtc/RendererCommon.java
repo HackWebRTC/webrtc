@@ -34,7 +34,6 @@ public class RendererCommon {
   }
 
   /** Interface for rendering frames on an EGLSurface. */
-  @SuppressWarnings("StaticOrDefaultInterfaceMethod")
   public static interface GlDrawer {
     /**
      * Functions for drawing frames with different sources. The rendering surface target is
@@ -49,37 +48,35 @@ public class RendererCommon {
         int viewportX, int viewportY, int viewportWidth, int viewportHeight);
 
     /**
-     * Draws a VideoFrame.TextureBuffer. Default implementation calls either drawOes or drawRgb
-     * depending on the type of the buffer. You can supply an additional render matrix. This is
-     * used multiplied together with the transformation matrix of the frame. (M = renderMatrix *
-     * transformationMatrix)
+     * Release all GL resources. This needs to be done manually, otherwise resources may leak.
      */
-    default void
-      drawTexture(VideoFrame.TextureBuffer buffer, android.graphics.Matrix renderMatrix,
-          int frameWidth, int frameHeight, int viewportX, int viewportY, int viewportWidth,
-          int viewportHeight) {
-        android.graphics.Matrix finalMatrix =
-            new android.graphics.Matrix(buffer.getTransformMatrix());
-        finalMatrix.preConcat(renderMatrix);
-        float[] finalGlMatrix = convertMatrixFromAndroidGraphicsMatrix(finalMatrix);
-        switch (buffer.getType()) {
-          case OES:
-            drawOes(buffer.getTextureId(), finalGlMatrix, frameWidth, frameHeight, viewportX,
-                viewportY, viewportWidth, viewportHeight);
-            break;
-          case RGB:
-            drawRgb(buffer.getTextureId(), finalGlMatrix, frameWidth, frameHeight, viewportX,
-                viewportY, viewportWidth, viewportHeight);
-            break;
-          default:
-            throw new RuntimeException("Unknown texture type.");
-        }
-      }
+    void release();
+  }
 
-      /**
-       * Release all GL resources. This needs to be done manually, otherwise resources may leak.
-       */
-      void release();
+  /**
+   * Draws a VideoFrame.TextureBuffer. Calls either drawer.drawOes or drawer.drawRgb
+   * depending on the type of the buffer. You can supply an additional render matrix. This is
+   * used multiplied together with the transformation matrix of the frame. (M = renderMatrix *
+   * transformationMatrix)
+   */
+  static void drawTexture(GlDrawer drawer, VideoFrame.TextureBuffer buffer,
+      android.graphics.Matrix renderMatrix, int frameWidth, int frameHeight, int viewportX,
+      int viewportY, int viewportWidth, int viewportHeight) {
+    android.graphics.Matrix finalMatrix = new android.graphics.Matrix(buffer.getTransformMatrix());
+    finalMatrix.preConcat(renderMatrix);
+    float[] finalGlMatrix = convertMatrixFromAndroidGraphicsMatrix(finalMatrix);
+    switch (buffer.getType()) {
+      case OES:
+        drawer.drawOes(buffer.getTextureId(), finalGlMatrix, frameWidth, frameHeight, viewportX,
+            viewportY, viewportWidth, viewportHeight);
+        break;
+      case RGB:
+        drawer.drawRgb(buffer.getTextureId(), finalGlMatrix, frameWidth, frameHeight, viewportX,
+            viewportY, viewportWidth, viewportHeight);
+        break;
+      default:
+        throw new RuntimeException("Unknown texture type.");
+    }
   }
 
   /**

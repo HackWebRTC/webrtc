@@ -25,7 +25,7 @@ import android.view.Surface;
  * and an EGLSurface.
  */
 @TargetApi(18)
-class EglBase14 implements EglBase {
+class EglBase14 extends EglBase {
   private static final String TAG = "EglBase14";
   private static final int EGLExt_SDK_VERSION = android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
   private static final int CURRENT_SDK_VERSION = android.os.Build.VERSION.SDK_INT;
