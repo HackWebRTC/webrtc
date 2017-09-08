@@ -491,7 +491,7 @@ def _CheckUsageOfGoogleProtobufNamespace(input_api, output_api):
   """Checks that the namespace google::protobuf has not been used."""
   files = []
   pattern = input_api.re.compile(r'google::protobuf')
-  proto_utils_path = os.path.join('webrtc', 'base', 'protobuf_utils.h')
+  proto_utils_path = os.path.join('webrtc', 'rtc_base', 'protobuf_utils.h')
   for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
     if f.LocalPath() in [proto_utils_path, 'PRESUBMIT.py']:
       continue
