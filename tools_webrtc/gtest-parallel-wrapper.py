@@ -143,7 +143,7 @@ def main():
   output_dir = get_output_dir(gtest_parallel_args)
   if output_dir:
     for test_status in 'passed', 'failed', 'interrupted':
-      logs_dir = os.path.join(output_dir, test_status)
+      logs_dir = os.path.join(output_dir, 'gtest-parallel-logs', test_status)
       if not os.path.isdir(logs_dir):
         continue
       logs = [os.path.join(logs_dir, log) for log in os.listdir(logs_dir)]
