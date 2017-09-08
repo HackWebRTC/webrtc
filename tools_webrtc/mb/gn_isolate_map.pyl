@@ -43,6 +43,14 @@
     "label": "//webrtc/common_video:common_video_unittests",
     "type": "console_test_launcher",
   },
+  "isac_fix_test": {
+    "label": "//webrtc/modules/audio_coding:isac_fix_test",
+    "type": "console_test_launcher",
+    "args": [
+      "32000", "../../resources/speech_and_misc_wb.pcm",
+      "isac_speech_and_misc_wb.pcm",
+    ]
+  },
   "libjingle_peerconnection_android_unittest": {
     "label": "//webrtc/sdk/android:libjingle_peerconnection_android_unittest",
     "type": "additional_compile_target",

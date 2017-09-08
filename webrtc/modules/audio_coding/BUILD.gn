@@ -1925,6 +1925,10 @@ if (rtc_include_tests) {
       "../../test:test_support",
     ]
 
+    data = [
+      "../../../resources/speech_and_misc_wb.pcm",
+    ]
+
     if (is_win) {
       cflags = [
         # Disable warnings to enable Win64 build, issue 1323.
