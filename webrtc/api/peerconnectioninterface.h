@@ -195,12 +195,15 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     std::string hostname;
     // List of protocols to be used in the TLS ALPN extension.
     std::vector<std::string> tls_alpn_protocols;
+    // List of elliptic curves to be used in the TLS elliptic curves extension.
+    std::vector<std::string> tls_elliptic_curves;
 
     bool operator==(const IceServer& o) const {
       return uri == o.uri && urls == o.urls && username == o.username &&
              password == o.password && tls_cert_policy == o.tls_cert_policy &&
              hostname == o.hostname &&
-             tls_alpn_protocols == o.tls_alpn_protocols;
+             tls_alpn_protocols == o.tls_alpn_protocols &&
+             tls_elliptic_curves == o.tls_elliptic_curves;
     }
     bool operator!=(const IceServer& o) const { return !(*this == o); }
   };

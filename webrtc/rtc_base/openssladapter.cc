@@ -31,6 +31,7 @@
 #include "webrtc/rtc_base/openssl.h"
 #include "webrtc/rtc_base/safe_conversions.h"
 #include "webrtc/rtc_base/sslroots.h"
+#include "webrtc/rtc_base/stringencode.h"
 #include "webrtc/rtc_base/stringutils.h"
 #include "webrtc/rtc_base/thread.h"
 
@@ -311,6 +312,10 @@ void OpenSSLAdapter::SetAlpnProtocols(const std::vector<std::string>& protos) {
   alpn_protocols_ = protos;
 }
 
+void OpenSSLAdapter::SetEllipticCurves(const std::vector<std::string>& curves) {
+  elliptic_curves_ = curves;
+}
+
 void OpenSSLAdapter::SetMode(SSLMode mode) {
   RTC_DCHECK(!ssl_ctx_);
   RTC_DCHECK(state_ == SSL_NONE);
@@ -443,6 +448,10 @@ int OpenSSLAdapter::BeginSSL() {
           ssl_, reinterpret_cast<const unsigned char*>(tls_alpn_string.data()),
           tls_alpn_string.size());
     }
+  }
+
+  if (!elliptic_curves_.empty()) {
+    SSL_set1_curves_list(ssl_, rtc::join(elliptic_curves_, ':').c_str());
   }
 
   // Now that the initial config is done, transfer ownership of |bio| to the

@@ -40,6 +40,7 @@ class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
 
   void SetIgnoreBadCert(bool ignore) override;
   void SetAlpnProtocols(const std::vector<std::string>& protos) override;
+  void SetEllipticCurves(const std::vector<std::string>& curves) override;
 
   void SetMode(SSLMode mode) override;
   void SetIdentity(SSLIdentity* identity) override;
@@ -136,6 +137,8 @@ class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
   bool ignore_bad_cert_;
   // List of protocols to be used in the TLS ALPN extension.
   std::vector<std::string> alpn_protocols_;
+  // List of elliptic curves to be used in the TLS elliptic curves extension.
+  std::vector<std::string> elliptic_curves_;
 
   bool custom_verification_succeeded_;
 };

@@ -20,6 +20,7 @@ namespace rtc {
 struct PacketSocketTcpOptions {
   int opts;
   std::vector<std::string> tls_alpn_protocols;
+  std::vector<std::string> tls_elliptic_curves;
 };
 
 class AsyncPacketSocket;

@@ -64,6 +64,10 @@ class SSLAdapterTestDummyClient : public sigslot::has_slots<> {
     ssl_adapter_->SetAlpnProtocols(protos);
   }
 
+  void SetEllipticCurves(const std::vector<std::string>& curves) {
+    ssl_adapter_->SetEllipticCurves(curves);
+  }
+
   rtc::SocketAddress GetAddress() const {
     return ssl_adapter_->GetLocalAddress();
   }
@@ -290,6 +294,10 @@ class SSLAdapterTestBase : public testing::Test,
     client_->SetAlpnProtocols(protos);
   }
 
+  void SetEllipticCurves(const std::vector<std::string>& curves) {
+    client_->SetEllipticCurves(curves);
+  }
+
   void TestHandshake(bool expect_success) {
     int rv;
 
@@ -446,6 +454,14 @@ TEST_F(SSLAdapterTestTLS_ECDSA, TestTLSTransfer) {
 TEST_F(SSLAdapterTestTLS_ECDSA, TestTLSALPN) {
   std::vector<std::string> alpn_protos{"h2", "http/1.1"};
   SetAlpnProtocols(alpn_protos);
+  TestHandshake(true);
+  TestTransfer("Hello, world!");
+}
+
+// Test transfer with TLS Elliptic curves set to "X25519:P-256:P-384:P-521"
+TEST_F(SSLAdapterTestTLS_ECDSA, TestTLSEllipticCurves) {
+  std::vector<std::string> elliptic_curves{"X25519", "P-256", "P-384", "P-521"};
+  SetEllipticCurves(elliptic_curves);
   TestHandshake(true);
   TestTransfer("Hello, world!");
 }

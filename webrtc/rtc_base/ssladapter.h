@@ -48,7 +48,9 @@ class SSLAdapter : public AsyncSocketAdapter {
   // TODO(juberti): Remove the opportunistic encryption mechanism in
   // BasicPacketSocketFactory that uses this function.
   virtual void SetIgnoreBadCert(bool ignore) = 0;
+
   virtual void SetAlpnProtocols(const std::vector<std::string>& protos) = 0;
+  virtual void SetEllipticCurves(const std::vector<std::string>& curves) = 0;
 
   // Do DTLS or TLS (default is TLS, if unspecified)
   virtual void SetMode(SSLMode mode) = 0;

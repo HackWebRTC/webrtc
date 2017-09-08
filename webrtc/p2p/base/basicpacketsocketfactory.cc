@@ -159,6 +159,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
     }
 
     ssl_adapter->SetAlpnProtocols(tcp_options.tls_alpn_protocols);
+    ssl_adapter->SetEllipticCurves(tcp_options.tls_elliptic_curves);
 
     socket = ssl_adapter;
 

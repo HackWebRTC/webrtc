@@ -364,6 +364,8 @@ void JavaToNativeIceServers(JNIEnv* jni,
         GetFieldID(jni, j_ice_server_class, "hostname", "Ljava/lang/String;");
     jfieldID j_ice_server_tls_alpn_protocols_id = GetFieldID(
         jni, j_ice_server_class, "tlsAlpnProtocols", "Ljava/util/List;");
+    jfieldID j_ice_server_tls_elliptic_curves_id = GetFieldID(
+        jni, j_ice_server_class, "tlsEllipticCurves", "Ljava/util/List;");
     jstring uri = reinterpret_cast<jstring>(
         GetObjectField(jni, j_ice_server, j_ice_server_uri_id));
     jstring username = reinterpret_cast<jstring>(
@@ -376,6 +378,8 @@ void JavaToNativeIceServers(JNIEnv* jni,
         GetObjectField(jni, j_ice_server, j_ice_server_hostname_id));
     jobject tls_alpn_protocols = GetNullableObjectField(
         jni, j_ice_server, j_ice_server_tls_alpn_protocols_id);
+    jobject tls_elliptic_curves = GetNullableObjectField(
+        jni, j_ice_server, j_ice_server_tls_elliptic_curves_id);
     PeerConnectionInterface::IceServer server;
     server.uri = JavaToStdString(jni, uri);
     server.username = JavaToStdString(jni, username);
@@ -383,6 +387,8 @@ void JavaToNativeIceServers(JNIEnv* jni,
     server.tls_cert_policy = tls_cert_policy;
     server.hostname = JavaToStdString(jni, hostname);
     server.tls_alpn_protocols = JavaToStdVectorStrings(jni, tls_alpn_protocols);
+    server.tls_elliptic_curves =
+        JavaToStdVectorStrings(jni, tls_elliptic_curves);
     ice_servers->push_back(server);
   }
 }

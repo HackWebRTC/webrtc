@@ -136,6 +136,10 @@ inline std::string s_url_decode(const std::string& source) {
   return s_transform(source, url_decode);
 }
 
+// Joins the source vector of strings into a single string, with each
+// field in source being separated by delimiter. No trailing delimiter is added.
+std::string join(const std::vector<std::string>& source, char delimiter);
+
 // Splits the source string into multiple fields separated by delimiter,
 // with duplicates of delimiter creating empty fields.
 size_t split(const std::string& source, char delimiter,

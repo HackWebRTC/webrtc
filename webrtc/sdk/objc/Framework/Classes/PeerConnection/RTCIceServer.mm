@@ -20,6 +20,7 @@
 @synthesize tlsCertPolicy = _tlsCertPolicy;
 @synthesize hostname = _hostname;
 @synthesize tlsAlpnProtocols = _tlsAlpnProtocols;
+@synthesize tlsEllipticCurves = _tlsEllipticCurves;
 
 - (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings {
   return [self initWithURLStrings:urlStrings
@@ -57,7 +58,7 @@
                        credential:credential
                     tlsCertPolicy:tlsCertPolicy
                          hostname:hostname
-                 tlsAlpnProtocols:[NSMutableArray new]];
+                 tlsAlpnProtocols:[NSArray array]];
 }
 
 - (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
@@ -66,6 +67,22 @@
                      tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy
                           hostname:(NSString *)hostname
                   tlsAlpnProtocols:(NSArray<NSString *> *)tlsAlpnProtocols {
+  return [self initWithURLStrings:urlStrings
+                         username:username
+                       credential:credential
+                    tlsCertPolicy:tlsCertPolicy
+                         hostname:hostname
+                 tlsAlpnProtocols:tlsAlpnProtocols
+                tlsEllipticCurves:[NSArray array]];
+}
+
+- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
+                          username:(NSString *)username
+                        credential:(NSString *)credential
+                     tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy
+                          hostname:(NSString *)hostname
+                  tlsAlpnProtocols:(NSArray<NSString *> *)tlsAlpnProtocols
+                 tlsEllipticCurves:(NSArray<NSString *> *)tlsEllipticCurves {
   NSParameterAssert(urlStrings.count);
   if (self = [super init]) {
     _urlStrings = [[NSArray alloc] initWithArray:urlStrings copyItems:YES];
@@ -74,18 +91,20 @@
     _tlsCertPolicy = tlsCertPolicy;
     _hostname = [hostname copy];
     _tlsAlpnProtocols = [[NSArray alloc] initWithArray:tlsAlpnProtocols copyItems:YES];
+    _tlsEllipticCurves = [[NSArray alloc] initWithArray:tlsEllipticCurves copyItems:YES];
   }
   return self;
 }
 
 - (NSString *)description {
-  return [NSString stringWithFormat:@"RTCIceServer:\n%@\n%@\n%@\n%@\n%@\n%@",
+  return [NSString stringWithFormat:@"RTCIceServer:\n%@\n%@\n%@\n%@\n%@\n%@\n%@",
                                     _urlStrings,
                                     _username,
                                     _credential,
                                     [self stringForTlsCertPolicy:_tlsCertPolicy],
                                     _hostname,
-                                    _tlsAlpnProtocols];
+                                    _tlsAlpnProtocols,
+                                    _tlsEllipticCurves];
 }
 
 #pragma mark - Private
@@ -108,6 +127,10 @@
 
   [_tlsAlpnProtocols enumerateObjectsUsingBlock:^(NSString *proto, NSUInteger idx, BOOL *stop) {
     iceServer.tls_alpn_protocols.push_back(proto.stdString);
+  }];
+
+  [_tlsEllipticCurves enumerateObjectsUsingBlock:^(NSString *curve, NSUInteger idx, BOOL *stop) {
+    iceServer.tls_elliptic_curves.push_back(curve.stdString);
   }];
 
   [_urlStrings enumerateObjectsUsingBlock:^(NSString *url,
@@ -144,6 +167,11 @@
   for (auto const &proto : nativeServer.tls_alpn_protocols) {
     [tlsAlpnProtocols addObject:[NSString stringForStdString:proto]];
   }
+  NSMutableArray *tlsEllipticCurves =
+      [NSMutableArray arrayWithCapacity:nativeServer.tls_elliptic_curves.size()];
+  for (auto const &curve : nativeServer.tls_elliptic_curves) {
+    [tlsEllipticCurves addObject:[NSString stringForStdString:curve]];
+  }
   RTCTlsCertPolicy tlsCertPolicy;
 
   switch (nativeServer.tls_cert_policy) {
@@ -160,7 +188,8 @@
                        credential:credential
                     tlsCertPolicy:tlsCertPolicy
                          hostname:hostname
-                 tlsAlpnProtocols:tlsAlpnProtocols];
+                 tlsAlpnProtocols:tlsAlpnProtocols
+                tlsEllipticCurves:tlsEllipticCurves];
   return self;
 }
 

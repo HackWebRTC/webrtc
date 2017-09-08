@@ -258,6 +258,7 @@ static RTCErrorType ParseIceServerUrl(
             cricket::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK;
       }
       config.tls_alpn_protocols = server.tls_alpn_protocols;
+      config.tls_elliptic_curves = server.tls_elliptic_curves;
 
       turn_servers->push_back(config);
       break;
