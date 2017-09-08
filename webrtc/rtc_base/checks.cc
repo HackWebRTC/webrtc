@@ -100,7 +100,7 @@ FatalMessage::FatalMessage(const char* file, int line, std::string* result) {
   delete result;
 }
 
-NO_RETURN FatalMessage::~FatalMessage() {
+RTC_NO_RETURN FatalMessage::~FatalMessage() {
   fflush(stdout);
   fflush(stderr);
   stream_ << std::endl << "#" << std::endl;
@@ -136,6 +136,8 @@ template std::string* MakeCheckOpString<std::string, std::string>(
 }  // namespace rtc
 
 // Function to call from the C version of the RTC_CHECK and RTC_DCHECK macros.
-NO_RETURN void rtc_FatalMessage(const char* file, int line, const char* msg) {
+RTC_NO_RETURN void rtc_FatalMessage(const char* file,
+                                    int line,
+                                    const char* msg) {
   rtc::FatalMessage(file, line).stream() << msg;
 }

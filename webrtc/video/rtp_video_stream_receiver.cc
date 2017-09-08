@@ -268,7 +268,7 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
     switch (tracker_.CopyAndFixBitstream(&packet)) {
       case video_coding::H264SpsPpsTracker::kRequestKeyframe:
         keyframe_request_sender_->RequestKeyFrame();
-        FALLTHROUGH();
+        RTC_FALLTHROUGH();
       case video_coding::H264SpsPpsTracker::kDrop:
         return 0;
       case video_coding::H264SpsPpsTracker::kInsert:

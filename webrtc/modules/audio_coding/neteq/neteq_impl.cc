@@ -935,7 +935,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
           static_cast<uint32_t>(output_size_samples_));
       // Skipping break on purpose. Execution should move on into the
       // next case.
-      FALLTHROUGH();
+      RTC_FALLTHROUGH();
     }
     case kAudioRepetition: {
       // TODO(hlundin): Write test for this.

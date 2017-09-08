@@ -978,7 +978,7 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
         break;
       }
       // Scale down resolution.
-      FALLTHROUGH();
+      RTC_FALLTHROUGH();
     }
     case VideoSendStream::DegradationPreference::kMaintainFramerate:
       // Scale down resolution.
@@ -1056,7 +1056,7 @@ void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
         break;
       }
       // Scale up resolution.
-      FALLTHROUGH();
+      RTC_FALLTHROUGH();
     }
     case VideoSendStream::DegradationPreference::kMaintainFramerate: {
       // Scale up resolution.
