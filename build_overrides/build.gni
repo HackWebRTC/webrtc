@@ -35,6 +35,5 @@ lint_suppressions_file = "//tools_webrtc/android/suppressions.xml"
 # so we just ignore that assert. See https://crbug.com/648948 for more info.
 ignore_elf32_limitations = true
 
-# Use system Xcode installation instead of the Chromium bundled Mac toolchain,
-# since it contains only SDK 10.11, not 10.12 which WebRTC needs.
-use_system_xcode = true
+# Use bundled hermetic Xcode installation maintainted by Chromium.
+use_system_xcode = false
