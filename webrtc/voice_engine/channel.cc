@@ -2856,6 +2856,10 @@ void Channel::GetDecodingCallStatistics(AudioDecodingCallStats* stats) const {
   audio_coding_->GetDecodingCallStatistics(stats);
 }
 
+ANAStats Channel::GetANAStatistics() const {
+  return audio_coding_->GetANAStats();
+}
+
 uint32_t Channel::GetDelayEstimate() const {
   rtc::CritScope lock(&video_sync_lock_);
   return audio_coding_->FilteredCurrentDelayMs() + playout_delay_ms_;

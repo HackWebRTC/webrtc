@@ -333,6 +333,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   internal::AudioState* audio_state =
       static_cast<internal::AudioState*>(audio_state_.get());
   stats.typing_noise_detected = audio_state->typing_noise_detected();
+  stats.ana_statistics = channel_proxy_->GetANAStatistics();
 
   return stats;
 }

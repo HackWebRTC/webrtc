@@ -40,6 +40,8 @@ class MockAudioNetworkAdaptor : public AudioNetworkAdaptor {
   MOCK_METHOD1(StartDebugDump, void(FILE* file_handle));
 
   MOCK_METHOD0(StopDebugDump, void());
+
+  MOCK_CONST_METHOD0(GetStats, ANAStats());
 };
 
 }  // namespace webrtc

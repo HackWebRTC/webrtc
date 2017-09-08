@@ -224,6 +224,26 @@ void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
     }
   }
   report->AddString(StatsReport::kStatsValueNameMediaType, "audio");
+  if (info.ana_statistics.bitrate_action_counter) {
+    report->AddInt(StatsReport::kStatsValueNameAnaBitrateActionCounter,
+                   *info.ana_statistics.bitrate_action_counter);
+  }
+  if (info.ana_statistics.channel_action_counter) {
+    report->AddInt(StatsReport::kStatsValueNameAnaChannelActionCounter,
+                   *info.ana_statistics.channel_action_counter);
+  }
+  if (info.ana_statistics.dtx_action_counter) {
+    report->AddInt(StatsReport::kStatsValueNameAnaDtxActionCounter,
+                   *info.ana_statistics.dtx_action_counter);
+  }
+  if (info.ana_statistics.fec_action_counter) {
+    report->AddInt(StatsReport::kStatsValueNameAnaFecActionCounter,
+                   *info.ana_statistics.fec_action_counter);
+  }
+  if (info.ana_statistics.frame_length_action_counter) {
+    report->AddInt(StatsReport::kStatsValueNameAnaFrameLengthActionCounter,
+                   *info.ana_statistics.frame_length_action_counter);
+  }
 }
 
 void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {

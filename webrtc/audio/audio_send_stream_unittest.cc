@@ -301,6 +301,8 @@ struct ConfigHelper {
         .WillRepeatedly(Return(kCallStats));
     EXPECT_CALL(*channel_proxy_, GetRemoteRTCPReportBlocks())
         .WillRepeatedly(Return(report_blocks));
+    EXPECT_CALL(*channel_proxy_, GetANAStatistics())
+        .WillRepeatedly(Return(ANAStats()));
     EXPECT_CALL(voice_engine_, transmit_mixer())
         .WillRepeatedly(Return(&transmit_mixer_));
 

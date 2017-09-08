@@ -144,6 +144,11 @@ AudioDecodingCallStats ChannelProxy::GetDecodingCallStatistics() const {
   return stats;
 }
 
+ANAStats ChannelProxy::GetANAStatistics() const {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  return channel()->GetANAStatistics();
+}
+
 int ChannelProxy::GetSpeechOutputLevel() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   return channel()->GetSpeechOutputLevel();

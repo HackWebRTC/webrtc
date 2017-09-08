@@ -546,6 +546,12 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     stats.echo_return_loss_enhancement = 1234;
     stats.residual_echo_likelihood = 0.432f;
     stats.residual_echo_likelihood_recent_max = 0.6f;
+    stats.ana_statistics.bitrate_action_counter = rtc::Optional<uint32_t>(321);
+    stats.ana_statistics.channel_action_counter = rtc::Optional<uint32_t>(432);
+    stats.ana_statistics.dtx_action_counter = rtc::Optional<uint32_t>(543);
+    stats.ana_statistics.fec_action_counter = rtc::Optional<uint32_t>(654);
+    stats.ana_statistics.frame_length_action_counter =
+        rtc::Optional<uint32_t>(765);
     stats.typing_noise_detected = true;
     return stats;
   }
@@ -577,6 +583,16 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(info.residual_echo_likelihood, stats.residual_echo_likelihood);
     EXPECT_EQ(info.residual_echo_likelihood_recent_max,
               stats.residual_echo_likelihood_recent_max);
+    EXPECT_EQ(info.ana_statistics.bitrate_action_counter,
+              stats.ana_statistics.bitrate_action_counter);
+    EXPECT_EQ(info.ana_statistics.channel_action_counter,
+              stats.ana_statistics.channel_action_counter);
+    EXPECT_EQ(info.ana_statistics.dtx_action_counter,
+              stats.ana_statistics.dtx_action_counter);
+    EXPECT_EQ(info.ana_statistics.fec_action_counter,
+              stats.ana_statistics.fec_action_counter);
+    EXPECT_EQ(info.ana_statistics.frame_length_action_counter,
+              stats.ana_statistics.frame_length_action_counter);
     EXPECT_EQ(info.typing_noise_detected,
               stats.typing_noise_detected && is_sending);
   }

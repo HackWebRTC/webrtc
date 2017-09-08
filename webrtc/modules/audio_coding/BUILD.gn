@@ -913,6 +913,7 @@ rtc_static_library("audio_network_adaptor") {
   deps = [
     "../..:webrtc_common",
     "../../api:optional",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
     "../../logging:rtc_event_log_api",
     "../../rtc_base:protobuf_utils",

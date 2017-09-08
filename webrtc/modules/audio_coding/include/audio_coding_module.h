@@ -823,6 +823,8 @@ class AudioCodingModule {
 
   virtual void GetDecodingCallStatistics(
       AudioDecodingCallStats* call_stats) const = 0;
+
+  virtual ANAStats GetANAStats() const = 0;
 };
 
 }  // namespace webrtc

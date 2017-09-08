@@ -270,4 +270,36 @@ TEST(AudioNetworkAdaptorImplTest, LogRuntimeConfigOnGetEncoderRuntimeConfig) {
   states.audio_network_adaptor->GetEncoderRuntimeConfig();
 }
 
+TEST(AudioNetworkAdaptorImplTest, TestANAStats) {
+  auto states = CreateAudioNetworkAdaptor();
+
+  // Simulate some adaptation, otherwise the stats will not show anything.
+  AudioEncoderRuntimeConfig config1, config2;
+  config1.bitrate_bps = rtc::Optional<int>(32000);
+  config1.enable_fec = rtc::Optional<bool>(true);
+  config2.bitrate_bps = rtc::Optional<int>(16000);
+  config2.enable_fec = rtc::Optional<bool>(false);
+
+  EXPECT_CALL(*states.mock_controllers[0], MakeDecision(_))
+      .WillOnce(SetArgPointee<0>(config1));
+  states.audio_network_adaptor->GetEncoderRuntimeConfig();
+  EXPECT_CALL(*states.mock_controllers[0], MakeDecision(_))
+      .WillOnce(SetArgPointee<0>(config2));
+  states.audio_network_adaptor->GetEncoderRuntimeConfig();
+
+  auto ana_stats = states.audio_network_adaptor->GetStats();
+
+  // Check that the default stats are returned, as these have not been
+  // implemented yet). Tracking bug: https://crbug.com/8127
+  auto default_stats = ANAStats();
+  EXPECT_EQ(ana_stats.bitrate_action_counter,
+            default_stats.bitrate_action_counter);
+  EXPECT_EQ(ana_stats.channel_action_counter,
+            default_stats.channel_action_counter);
+  EXPECT_EQ(ana_stats.dtx_action_counter, default_stats.dtx_action_counter);
+  EXPECT_EQ(ana_stats.fec_action_counter, default_stats.fec_action_counter);
+  EXPECT_EQ(ana_stats.frame_length_action_counter,
+            default_stats.frame_length_action_counter);
+}
+
 }  // namespace webrtc

@@ -586,6 +586,16 @@ const char* StatsReport::Value::display_name() const {
       return "googResidualEchoLikelihood";
     case kStatsValueNameResidualEchoLikelihoodRecentMax:
       return "googResidualEchoLikelihoodRecentMax";
+    case kStatsValueNameAnaBitrateActionCounter:
+      return "googAnaBitrateActionCounter";
+    case kStatsValueNameAnaChannelActionCounter:
+      return "googAnaChannelActionCounter";
+    case kStatsValueNameAnaDtxActionCounter:
+      return "googAnaDtxActionCounter";
+    case kStatsValueNameAnaFecActionCounter:
+      return "googAnaFecActionCounter";
+    case kStatsValueNameAnaFrameLengthActionCounter:
+      return "googAnaFrameLengthActionCounter";
     case kStatsValueNameRetransmitBitrate:
       return "googRetransmitBitrate";
     case kStatsValueNameRtt:

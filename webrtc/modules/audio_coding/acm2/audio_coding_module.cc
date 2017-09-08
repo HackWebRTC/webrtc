@@ -204,6 +204,8 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const override;
 
+  ANAStats GetANAStats() const override;
+
  private:
   struct InputData {
     uint32_t input_timestamp;
@@ -1271,6 +1273,14 @@ int AudioCodingModuleImpl::LeastRequiredDelayMs() const {
 void AudioCodingModuleImpl::GetDecodingCallStatistics(
       AudioDecodingCallStats* call_stats) const {
   receiver_.GetDecodingCallStatistics(call_stats);
+}
+
+ANAStats AudioCodingModuleImpl::GetANAStats() const {
+  rtc::CritScope lock(&acm_crit_sect_);
+  if (encoder_stack_)
+    return encoder_stack_->GetANAStats();
+  // If no encoder is set, return default stats.
+  return ANAStats();
 }
 
 }  // namespace

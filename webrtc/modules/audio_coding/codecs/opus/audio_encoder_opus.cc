@@ -773,4 +773,11 @@ void AudioEncoderOpus::MaybeUpdateUplinkBandwidth() {
   }
 }
 
+ANAStats AudioEncoderOpus::GetANAStats() const {
+  if (audio_network_adaptor_) {
+    return audio_network_adaptor_->GetStats();
+  }
+  return ANAStats();
+}
+
 }  // namespace webrtc

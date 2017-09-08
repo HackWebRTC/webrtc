@@ -15,6 +15,10 @@
 
 namespace webrtc {
 
+ANAStats::ANAStats() = default;
+ANAStats::~ANAStats() = default;
+ANAStats::ANAStats(const ANAStats&) = default;
+
 AudioEncoder::EncodedInfo::EncodedInfo() = default;
 AudioEncoder::EncodedInfo::EncodedInfo(const EncodedInfo&) = default;
 AudioEncoder::EncodedInfo::EncodedInfo(EncodedInfo&&) = default;
@@ -94,5 +98,9 @@ void AudioEncoder::OnReceivedOverhead(size_t overhead_bytes_per_packet) {}
 
 void AudioEncoder::SetReceiverFrameLengthRange(int min_frame_length_ms,
                                                int max_frame_length_ms) {}
+
+ANAStats AudioEncoder::GetANAStats() const {
+  return ANAStats();
+}
 
 }  // namespace webrtc

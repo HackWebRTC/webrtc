@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/optional.h"
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/api/rtpreceiverinterface.h"
@@ -641,6 +642,7 @@ struct VoiceSenderInfo : public MediaSenderInfo {
   float residual_echo_likelihood;
   float residual_echo_likelihood_recent_max;
   bool typing_noise_detected;
+  webrtc::ANAStats ana_statistics;
 };
 
 struct VoiceReceiverInfo : public MediaReceiverInfo {

@@ -135,6 +135,12 @@ void AudioNetworkAdaptorImpl::StopDebugDump() {
   debug_dump_writer_.reset(nullptr);
 }
 
+ANAStats AudioNetworkAdaptorImpl::GetStats() const {
+  // TODO(ivoc): Actually implement the stat.
+  // Tracking bug: https://crbug.com/webrtc/8127
+  return ANAStats();
+}
+
 void AudioNetworkAdaptorImpl::DumpNetworkMetrics() {
   if (debug_dump_writer_)
     debug_dump_writer_->DumpNetworkMetrics(last_metrics_, rtc::TimeMillis());

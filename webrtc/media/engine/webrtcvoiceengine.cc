@@ -2260,6 +2260,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     sinfo.residual_echo_likelihood_recent_max =
         stats.residual_echo_likelihood_recent_max;
     sinfo.typing_noise_detected = (send_ ? stats.typing_noise_detected : false);
+    sinfo.ana_statistics = stats.ana_statistics;
     info->senders.push_back(sinfo);
   }
 

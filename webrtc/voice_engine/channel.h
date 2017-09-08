@@ -268,6 +268,7 @@ class Channel
   // Stats.
   int GetNetworkStatistics(NetworkStatistics& stats);
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
+  ANAStats GetANAStatistics() const;
 
   // Audio+Video Sync.
   uint32_t GetDelayEstimate() const;

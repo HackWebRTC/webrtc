@@ -116,6 +116,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   void OnReceivedOverhead(size_t overhead_bytes_per_packet) override;
   void SetReceiverFrameLengthRange(int min_frame_length_ms,
                                    int max_frame_length_ms) override;
+  ANAStats GetANAStats() const override;
   rtc::ArrayView<const int> supported_frame_lengths_ms() const {
     return config_.supported_frame_lengths_ms;
   }

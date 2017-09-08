@@ -58,6 +58,8 @@ class AudioNetworkAdaptorImpl final : public AudioNetworkAdaptor {
 
   void StopDebugDump() override;
 
+  ANAStats GetStats() const override;
+
  private:
   void DumpNetworkMetrics();
 

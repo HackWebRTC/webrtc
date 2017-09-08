@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_INCLUDE_AUDIO_NETWORK_ADAPTOR_H_
 #define WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_INCLUDE_AUDIO_NETWORK_ADAPTOR_H_
 
+#include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/optional.h"
 
 namespace webrtc {
@@ -38,7 +39,6 @@ struct AudioEncoderRuntimeConfig {
 // encoder based on network metrics.
 class AudioNetworkAdaptor {
  public:
-
   virtual ~AudioNetworkAdaptor() = default;
 
   virtual void SetUplinkBandwidth(int uplink_bandwidth_bps) = 0;
@@ -60,6 +60,8 @@ class AudioNetworkAdaptor {
   virtual void StartDebugDump(FILE* file_handle) = 0;
 
   virtual void StopDebugDump() = 0;
+
+  virtual ANAStats GetStats() const = 0;
 };
 
 }  // namespace webrtc

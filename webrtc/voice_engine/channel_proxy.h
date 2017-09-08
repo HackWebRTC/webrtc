@@ -81,6 +81,7 @@ class ChannelProxy : public RtpPacketSinkInterface {
   virtual std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const;
   virtual NetworkStatistics GetNetworkStatistics() const;
   virtual AudioDecodingCallStats GetDecodingCallStatistics() const;
+  virtual ANAStats GetANAStatistics() const;
   virtual int GetSpeechOutputLevel() const;
   virtual int GetSpeechOutputLevelFullRange() const;
   // See description of "totalAudioEnergy" in the WebRTC stats spec:

@@ -27,6 +27,33 @@ namespace webrtc {
 class Clock;
 class RtcEventLog;
 
+// Statistics related to Audio Network Adaptation.
+struct ANAStats {
+  ANAStats();
+  ANAStats(const ANAStats&);
+  ~ANAStats();
+  // Number of actions taken by the ANA bitrate controller since the start of
+  // the call. If this value is not set, it indicates that the bitrate
+  // controller is disabled.
+  rtc::Optional<uint32_t> bitrate_action_counter;
+  // Number of actions taken by the ANA channel controller since the start of
+  // the call. If this value is not set, it indicates that the channel
+  // controller is disabled.
+  rtc::Optional<uint32_t> channel_action_counter;
+  // Number of actions taken by the ANA DTX controller since the start of the
+  // call. If this value is not set, it indicates that the DTX controller is
+  // disabled.
+  rtc::Optional<uint32_t> dtx_action_counter;
+  // Number of actions taken by the ANA FEC controller since the start of the
+  // call. If this value is not set, it indicates that the FEC controller is
+  // disabled.
+  rtc::Optional<uint32_t> fec_action_counter;
+  // Number of actions taken by the ANA frame length controller since the start
+  // of the call. If this value is not set, it indicates that the frame length
+  // controller is disabled.
+  rtc::Optional<uint32_t> frame_length_action_counter;
+};
+
 // This is the interface class for encoders in AudioCoding module. Each codec
 // type must have an implementation of this class.
 class AudioEncoder {
@@ -202,6 +229,9 @@ class AudioEncoder {
   // length range that receivers can accept.
   virtual void SetReceiverFrameLengthRange(int min_frame_length_ms,
                                            int max_frame_length_ms);
+
+  // Get statistics related to audio network adaptation.
+  virtual ANAStats GetANAStats() const;
 
  protected:
   // Subclasses implement this to perform the actual encoding. Called by

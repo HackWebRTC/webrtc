@@ -430,6 +430,37 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
       report, StatsReport::kStatsValueNameTypingNoiseState, &value_in_report));
   std::string typing_detected = sinfo.typing_noise_detected ? "true" : "false";
   EXPECT_EQ(typing_detected, value_in_report);
+  EXPECT_TRUE(GetValue(report,
+                       StatsReport::kStatsValueNameAnaBitrateActionCounter,
+                       &value_in_report));
+  ASSERT_TRUE(sinfo.ana_statistics.bitrate_action_counter);
+  EXPECT_EQ(
+      rtc::ToString<uint32_t>(*sinfo.ana_statistics.bitrate_action_counter),
+      value_in_report);
+  EXPECT_TRUE(GetValue(report,
+                       StatsReport::kStatsValueNameAnaChannelActionCounter,
+                       &value_in_report));
+  ASSERT_TRUE(sinfo.ana_statistics.channel_action_counter);
+  EXPECT_EQ(
+      rtc::ToString<uint32_t>(*sinfo.ana_statistics.channel_action_counter),
+      value_in_report);
+  EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAnaDtxActionCounter,
+                       &value_in_report));
+  ASSERT_TRUE(sinfo.ana_statistics.dtx_action_counter);
+  EXPECT_EQ(rtc::ToString<uint32_t>(*sinfo.ana_statistics.dtx_action_counter),
+            value_in_report);
+  EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAnaFecActionCounter,
+                       &value_in_report));
+  ASSERT_TRUE(sinfo.ana_statistics.fec_action_counter);
+  EXPECT_EQ(rtc::ToString<uint32_t>(*sinfo.ana_statistics.fec_action_counter),
+            value_in_report);
+  EXPECT_TRUE(GetValue(report,
+                       StatsReport::kStatsValueNameAnaFrameLengthActionCounter,
+                       &value_in_report));
+  ASSERT_TRUE(sinfo.ana_statistics.frame_length_action_counter);
+  EXPECT_EQ(rtc::ToString<uint32_t>(
+                *sinfo.ana_statistics.frame_length_action_counter),
+            value_in_report);
 }
 
 // Helper methods to avoid duplication of code.
@@ -450,6 +481,16 @@ void InitVoiceSenderInfo(cricket::VoiceSenderInfo* voice_sender_info) {
   voice_sender_info->echo_delay_std_ms = 111;
   voice_sender_info->aec_quality_min = 112.0f;
   voice_sender_info->typing_noise_detected = false;
+  voice_sender_info->ana_statistics.bitrate_action_counter =
+      rtc::Optional<uint32_t>(113);
+  voice_sender_info->ana_statistics.channel_action_counter =
+      rtc::Optional<uint32_t>(114);
+  voice_sender_info->ana_statistics.dtx_action_counter =
+      rtc::Optional<uint32_t>(115);
+  voice_sender_info->ana_statistics.fec_action_counter =
+      rtc::Optional<uint32_t>(116);
+  voice_sender_info->ana_statistics.frame_length_action_counter =
+      rtc::Optional<uint32_t>(117);
 }
 
 void UpdateVoiceSenderInfoFromAudioTrack(
@@ -1988,6 +2029,7 @@ TEST_F(StatsCollectorTest, TwoLocalTracksWithSameSsrc) {
   stats.AddLocalAudioTrack(audio_track_, kSsrcOfTrack);
 
   cricket::VoiceSenderInfo voice_sender_info;
+  InitVoiceSenderInfo(&voice_sender_info);
   voice_sender_info.add_ssrc(kSsrcOfTrack);
 
   cricket::VoiceMediaInfo stats_read;
