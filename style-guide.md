@@ -1,5 +1,15 @@
 # WebRTC coding style guide
 
+## General advice
+
+Some older parts of the code violate the style guide in various ways.
+
+* If making small changes to such code, follow the style guide when
+  it’s reasonable to do so, but in matters of formatting etc., it is
+  often better to be consistent with the surrounding code.
+* If making large changes to such code, consider first cleaning it up
+  in a separate CL.
+
 ## C++
 
 WebRTC follows the [Chromium][chr-style] and [Google][goog-style] C++
@@ -9,14 +19,6 @@ both.
 
 [chr-style]: https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/c++/c++.md
 [goog-style]: https://google.github.io/styleguide/cppguide.html
-
-Some older parts of the code violate the style guide in various ways.
-
-* If making small changes to such code, follow the style guide when
-  it’s reasonable to do so, but in matters of formatting etc., it is
-  often better to be consistent with the surrounding code.
-* If making large changes to such code, consider first cleaning it up
-  in a separate CL.
 
 ### ArrayView
 
@@ -45,6 +47,25 @@ pre-dates the use of the current C++ style guide for this code base.
   surrounding code.
 * If making large changes to C code, consider converting the whole
   thing to C++ first.
+
+## Java
+
+WebRTC follows the [Google Java style guide][goog-java-style].
+
+[goog-java-style]: https://google.github.io/styleguide/javaguide.html
+
+## Objective-C and Objective-C++
+
+WebRTC follows the
+[Chromium Objective-C and Objective-C++ style guide][chr-objc-style].
+
+[chr-objc-style]: https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/objective-c/objective-c.md
+
+## Python
+
+WebRTC follows [Chromium’s Python style][chr-py-style].
+
+[chr-py-style]: https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/styleguide.md#python
 
 ## Build files
 
