@@ -14,6 +14,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/stringutils.h"
@@ -269,8 +270,63 @@ bool RTPPayloadRegistry::RtxEnabled() const {
   return rtx_;
 }
 
+bool RTPPayloadRegistry::IsRtx(const RTPHeader& header) const {
+  rtc::CritScope cs(&crit_sect_);
+  return IsRtxInternal(header);
+}
+
 bool RTPPayloadRegistry::IsRtxInternal(const RTPHeader& header) const {
   return rtx_ && ssrc_rtx_ == header.ssrc;
+}
+
+bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
+                                               const uint8_t* packet,
+                                               size_t* packet_length,
+                                               uint32_t original_ssrc,
+                                               const RTPHeader& header) {
+  if (kRtxHeaderSize + header.headerLength + header.paddingLength >
+      *packet_length) {
+    return false;
+  }
+  const uint8_t* rtx_header = packet + header.headerLength;
+  uint16_t original_sequence_number = (rtx_header[0] << 8) + rtx_header[1];
+
+  // Copy the packet into the restored packet, except for the RTX header.
+  memcpy(restored_packet, packet, header.headerLength);
+  memcpy(restored_packet + header.headerLength,
+         packet + header.headerLength + kRtxHeaderSize,
+         *packet_length - header.headerLength - kRtxHeaderSize);
+  *packet_length -= kRtxHeaderSize;
+
+  // Replace the SSRC and the sequence number with the originals.
+  ByteWriter<uint16_t>::WriteBigEndian(restored_packet + 2,
+                                       original_sequence_number);
+  ByteWriter<uint32_t>::WriteBigEndian(restored_packet + 8, original_ssrc);
+
+  rtc::CritScope cs(&crit_sect_);
+  if (!rtx_)
+    return true;
+
+  auto apt_mapping = rtx_payload_type_map_.find(header.payloadType);
+  if (apt_mapping == rtx_payload_type_map_.end()) {
+    // No associated payload type found. Warn, unless we have already done so.
+    if (payload_types_with_suppressed_warnings_.find(header.payloadType) ==
+        payload_types_with_suppressed_warnings_.end()) {
+      LOG(LS_WARNING)
+          << "No RTX associated payload type mapping was available; "
+             "not able to restore original packet from RTX packet "
+             "with payload type: "
+          << static_cast<int>(header.payloadType) << ". "
+          << "Suppressing further warnings for this payload type.";
+      payload_types_with_suppressed_warnings_.insert(header.payloadType);
+    }
+    return false;
+  }
+  restored_packet[1] = static_cast<uint8_t>(apt_mapping->second);
+  if (header.markerBit) {
+    restored_packet[1] |= kRtpMarkerBitMask;  // Marker bit is set.
+  }
+  return true;
 }
 
 void RTPPayloadRegistry::SetRtxSsrc(uint32_t ssrc) {
@@ -301,6 +357,10 @@ bool RTPPayloadRegistry::IsRed(const RTPHeader& header) const {
   rtc::CritScope cs(&crit_sect_);
   auto it = payload_type_map_.find(header.payloadType);
   return it != payload_type_map_.end() && _stricmp(it->second.name, "red") == 0;
+}
+
+bool RTPPayloadRegistry::IsEncapsulated(const RTPHeader& header) const {
+  return IsRed(header) || IsRtx(header);
 }
 
 bool RTPPayloadRegistry::GetPayloadSpecifics(uint8_t payload_type,
