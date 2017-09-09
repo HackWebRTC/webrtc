@@ -14,6 +14,7 @@
 
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/timeutils.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -40,7 +41,17 @@ AudioNetworkAdaptorImpl::AudioNetworkAdaptorImpl(
                                    kEventLogMinBitrateChangeBps,
                                    kEventLogMinBitrateChangeFraction,
                                    kEventLogMinPacketLossChangeFraction)
-              : nullptr) {
+              : nullptr),
+      enable_bitrate_adaptation_(
+          webrtc::field_trial::IsEnabled("WebRTC-Audio-BitrateAdaptation")),
+      enable_dtx_adaptation_(
+          webrtc::field_trial::IsEnabled("WebRTC-Audio-DtxAdaptation")),
+      enable_fec_adaptation_(
+          webrtc::field_trial::IsEnabled("WebRTC-Audio-FecAdaptation")),
+      enable_channel_adaptation_(
+          webrtc::field_trial::IsEnabled("WebRTC-Audio-ChannelAdaptation")),
+      enable_frame_length_adaptation_(webrtc::field_trial::IsEnabled(
+          "WebRTC-Audio-FrameLengthAdaptation")) {
   RTC_DCHECK(controller_manager_);
 }
 
@@ -118,6 +129,55 @@ AudioEncoderRuntimeConfig AudioNetworkAdaptorImpl::GetEncoderRuntimeConfig() {
        controller_manager_->GetSortedControllers(last_metrics_))
     controller->MakeDecision(&config);
 
+  // Update ANA stats.
+  auto increment_opt = [](rtc::Optional<uint32_t>& a) {
+    a = rtc::Optional<uint32_t>(a.value_or(0) + 1);
+  };
+  if (prev_config_) {
+    if (config.bitrate_bps != prev_config_->bitrate_bps) {
+      increment_opt(stats_.bitrate_action_counter);
+    }
+    if (config.enable_dtx != prev_config_->enable_dtx) {
+      increment_opt(stats_.dtx_action_counter);
+    }
+    if (config.enable_fec != prev_config_->enable_fec) {
+      increment_opt(stats_.fec_action_counter);
+    }
+    if (config.frame_length_ms && prev_config_->frame_length_ms) {
+      if (*config.frame_length_ms > *prev_config_->frame_length_ms) {
+        increment_opt(stats_.frame_length_increase_counter);
+      } else if (*config.frame_length_ms < *prev_config_->frame_length_ms) {
+        increment_opt(stats_.frame_length_decrease_counter);
+      }
+    }
+    if (config.num_channels != prev_config_->num_channels) {
+      increment_opt(stats_.channel_action_counter);
+    }
+    if (config.uplink_packet_loss_fraction) {
+      stats_.uplink_packet_loss_fraction =
+          rtc::Optional<float>(*config.uplink_packet_loss_fraction);
+    }
+  }
+  prev_config_ = rtc::Optional<AudioEncoderRuntimeConfig>(config);
+
+  // Prevent certain controllers from taking action (determined by field trials)
+  if (!enable_bitrate_adaptation_ && config.bitrate_bps) {
+    config.bitrate_bps.reset();
+  }
+  if (!enable_dtx_adaptation_ && config.enable_dtx) {
+    config.enable_dtx.reset();
+  }
+  if (!enable_fec_adaptation_ && config.enable_fec) {
+    config.enable_fec.reset();
+    config.uplink_packet_loss_fraction.reset();
+  }
+  if (!enable_frame_length_adaptation_ && config.frame_length_ms) {
+    config.frame_length_ms.reset();
+  }
+  if (!enable_channel_adaptation_ && config.num_channels) {
+    config.num_channels.reset();
+  }
+
   if (debug_dump_writer_)
     debug_dump_writer_->DumpEncoderRuntimeConfig(config, rtc::TimeMillis());
 
@@ -136,9 +196,7 @@ void AudioNetworkAdaptorImpl::StopDebugDump() {
 }
 
 ANAStats AudioNetworkAdaptorImpl::GetStats() const {
-  // TODO(ivoc): Actually implement the stat.
-  // Tracking bug: https://crbug.com/webrtc/8127
-  return ANAStats();
+  return stats_;
 }
 
 void AudioNetworkAdaptorImpl::DumpNetworkMetrics() {

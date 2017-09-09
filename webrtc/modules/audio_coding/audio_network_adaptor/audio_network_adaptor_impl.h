@@ -75,6 +75,16 @@ class AudioNetworkAdaptorImpl final : public AudioNetworkAdaptor {
 
   Controller::NetworkMetrics last_metrics_;
 
+  rtc::Optional<AudioEncoderRuntimeConfig> prev_config_;
+
+  ANAStats stats_;
+
+  const bool enable_bitrate_adaptation_;
+  const bool enable_dtx_adaptation_;
+  const bool enable_fec_adaptation_;
+  const bool enable_channel_adaptation_;
+  const bool enable_frame_length_adaptation_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioNetworkAdaptorImpl);
 };
 
