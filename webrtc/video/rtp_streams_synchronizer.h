@@ -52,13 +52,13 @@ class RtpStreamsSynchronizer : public Module {
   Syncable* syncable_video_;
 
   rtc::CriticalSection crit_;
-  Syncable* syncable_audio_ GUARDED_BY(crit_);
-  std::unique_ptr<StreamSynchronization> sync_ GUARDED_BY(crit_);
-  StreamSynchronization::Measurements audio_measurement_ GUARDED_BY(crit_);
-  StreamSynchronization::Measurements video_measurement_ GUARDED_BY(crit_);
+  Syncable* syncable_audio_ RTC_GUARDED_BY(crit_);
+  std::unique_ptr<StreamSynchronization> sync_ RTC_GUARDED_BY(crit_);
+  StreamSynchronization::Measurements audio_measurement_ RTC_GUARDED_BY(crit_);
+  StreamSynchronization::Measurements video_measurement_ RTC_GUARDED_BY(crit_);
 
   rtc::ThreadChecker process_thread_checker_;
-  int64_t last_sync_time_ ACCESS_ON(&process_thread_checker_);
+  int64_t last_sync_time_ RTC_ACCESS_ON(&process_thread_checker_);
 };
 
 }  // namespace webrtc

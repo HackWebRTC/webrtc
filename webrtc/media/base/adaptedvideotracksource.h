@@ -74,7 +74,7 @@ class AdaptedVideoTrackSource
   cricket::VideoAdapter video_adapter_;
 
   rtc::CriticalSection stats_crit_;
-  rtc::Optional<Stats> stats_ GUARDED_BY(stats_crit_);
+  rtc::Optional<Stats> stats_ RTC_GUARDED_BY(stats_crit_);
 
   VideoBroadcaster broadcaster_;
 };

@@ -49,8 +49,8 @@ class VcmCapturer
   void Destroy();
 
   rtc::CriticalSection crit_;
-  bool started_ GUARDED_BY(crit_);
-  rtc::VideoSinkInterface<VideoFrame>* sink_ GUARDED_BY(crit_);
+  bool started_ RTC_GUARDED_BY(crit_);
+  rtc::VideoSinkInterface<VideoFrame>* sink_ RTC_GUARDED_BY(crit_);
   rtc::scoped_refptr<VideoCaptureModule> vcm_;
   VideoCaptureCapability capability_;
 };

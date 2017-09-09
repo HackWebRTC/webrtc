@@ -236,7 +236,8 @@ class TaskQueue::Impl : public RefCountInterface {
   TaskQueue* const queue_;
   WorkerThread thread_;
   rtc::CriticalSection pending_lock_;
-  std::queue<std::unique_ptr<QueuedTask>> pending_ GUARDED_BY(pending_lock_);
+  std::queue<std::unique_ptr<QueuedTask>> pending_
+      RTC_GUARDED_BY(pending_lock_);
   HANDLE in_queue_;
 };
 

@@ -89,7 +89,7 @@ class CpuOveruseDetectorProxy : public OveruseFrameDetector {
 
  private:
   rtc::CriticalSection lock_;
-  int last_target_framerate_fps_ GUARDED_BY(lock_);
+  int last_target_framerate_fps_ RTC_GUARDED_BY(lock_);
 };
 
 class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
@@ -218,8 +218,8 @@ class AdaptingFrameForwarder : public test::FrameForwarder {
     test::FrameForwarder::AddOrUpdateSink(sink, wants);
   }
   cricket::VideoAdapter adapter_;
-  bool adaptation_enabled_ GUARDED_BY(crit_);
-  rtc::VideoSinkWants last_wants_ GUARDED_BY(crit_);
+  bool adaptation_enabled_ RTC_GUARDED_BY(crit_);
+  rtc::VideoSinkWants last_wants_ RTC_GUARDED_BY(crit_);
 };
 
 class MockableSendStatisticsProxy : public SendStatisticsProxy {
@@ -248,7 +248,7 @@ class MockableSendStatisticsProxy : public SendStatisticsProxy {
 
  private:
   rtc::CriticalSection lock_;
-  rtc::Optional<VideoSendStream::Stats> mock_stats_ GUARDED_BY(lock_);
+  rtc::Optional<VideoSendStream::Stats> mock_stats_ RTC_GUARDED_BY(lock_);
 };
 
 class MockBitrateObserver : public VideoBitrateAllocationObserver {
@@ -551,16 +551,16 @@ class VideoStreamEncoderTest : public ::testing::Test {
     }
 
     rtc::CriticalSection local_crit_sect_;
-    bool block_next_encode_ GUARDED_BY(local_crit_sect_) = false;
+    bool block_next_encode_ RTC_GUARDED_BY(local_crit_sect_) = false;
     rtc::Event continue_encode_event_;
-    uint32_t timestamp_ GUARDED_BY(local_crit_sect_) = 0;
-    int64_t ntp_time_ms_ GUARDED_BY(local_crit_sect_) = 0;
-    int last_input_width_ GUARDED_BY(local_crit_sect_) = 0;
-    int last_input_height_ GUARDED_BY(local_crit_sect_) = 0;
-    bool quality_scaling_ GUARDED_BY(local_crit_sect_) = true;
+    uint32_t timestamp_ RTC_GUARDED_BY(local_crit_sect_) = 0;
+    int64_t ntp_time_ms_ RTC_GUARDED_BY(local_crit_sect_) = 0;
+    int last_input_width_ RTC_GUARDED_BY(local_crit_sect_) = 0;
+    int last_input_height_ RTC_GUARDED_BY(local_crit_sect_) = 0;
+    bool quality_scaling_ RTC_GUARDED_BY(local_crit_sect_) = true;
     std::vector<std::unique_ptr<TemporalLayers>> allocated_temporal_layers_
-        GUARDED_BY(local_crit_sect_);
-    bool force_init_encode_failed_ GUARDED_BY(local_crit_sect_) = false;
+        RTC_GUARDED_BY(local_crit_sect_);
+    bool force_init_encode_failed_ RTC_GUARDED_BY(local_crit_sect_) = false;
   };
 
   class TestSink : public VideoStreamEncoder::EncoderSink {

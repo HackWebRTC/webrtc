@@ -81,7 +81,7 @@ class TraceImpl : public Trace {
 
   bool UpdateFileName(
       char file_name_with_counter_utf8[FileWrapper::kMaxFileNameSize],
-      const uint32_t new_count) const EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      const uint32_t new_count) const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   bool CreateFileName(
     const char file_name_utf8[FileWrapper::kMaxFileNameSize],
@@ -89,14 +89,14 @@ class TraceImpl : public Trace {
     const uint32_t new_count) const;
 
   void WriteToFile(const char* msg, uint16_t length)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  TraceCallback* callback_ GUARDED_BY(crit_);
-  uint32_t row_count_text_ GUARDED_BY(crit_);
-  uint32_t file_count_text_ GUARDED_BY(crit_);
+  TraceCallback* callback_ RTC_GUARDED_BY(crit_);
+  uint32_t row_count_text_ RTC_GUARDED_BY(crit_);
+  uint32_t file_count_text_ RTC_GUARDED_BY(crit_);
 
-  const std::unique_ptr<FileWrapper> trace_file_ GUARDED_BY(crit_);
-  std::string trace_file_path_ GUARDED_BY(crit_);
+  const std::unique_ptr<FileWrapper> trace_file_ RTC_GUARDED_BY(crit_);
+  std::string trace_file_path_ RTC_GUARDED_BY(crit_);
   rtc::CriticalSection crit_;
 };
 

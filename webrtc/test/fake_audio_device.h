@@ -121,19 +121,19 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
   static bool Run(void* obj);
   void ProcessAudio();
 
-  const std::unique_ptr<Capturer> capturer_ GUARDED_BY(lock_);
-  const std::unique_ptr<Renderer> renderer_ GUARDED_BY(lock_);
+  const std::unique_ptr<Capturer> capturer_ RTC_GUARDED_BY(lock_);
+  const std::unique_ptr<Renderer> renderer_ RTC_GUARDED_BY(lock_);
   const float speed_;
 
   rtc::CriticalSection lock_;
-  AudioTransport* audio_callback_ GUARDED_BY(lock_);
-  bool rendering_ GUARDED_BY(lock_);
-  bool capturing_ GUARDED_BY(lock_);
+  AudioTransport* audio_callback_ RTC_GUARDED_BY(lock_);
+  bool rendering_ RTC_GUARDED_BY(lock_);
+  bool capturing_ RTC_GUARDED_BY(lock_);
   rtc::Event done_rendering_;
   rtc::Event done_capturing_;
 
-  std::vector<int16_t> playout_buffer_ GUARDED_BY(lock_);
-  rtc::BufferT<int16_t> recording_buffer_ GUARDED_BY(lock_);
+  std::vector<int16_t> playout_buffer_ RTC_GUARDED_BY(lock_);
+  rtc::BufferT<int16_t> recording_buffer_ RTC_GUARDED_BY(lock_);
 
   std::unique_ptr<EventTimerWrapper> tick_;
   rtc::PlatformThread thread_;

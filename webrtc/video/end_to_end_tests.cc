@@ -540,7 +540,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
     std::set<uint16_t> retransmitted_packets_;
     uint64_t sent_rtp_packets_;
     int packets_left_to_drop_;
-    int nacks_left_ GUARDED_BY(&crit_);
+    int nacks_left_ RTC_GUARDED_BY(&crit_);
   } test;
 
   RunBaseTest(&test);
@@ -710,11 +710,11 @@ TEST_F(EndToEndTest, ReceivesUlpfec) {
     rtc::CriticalSection crit_;
     std::unique_ptr<VideoEncoder> encoder_;
     std::unique_ptr<VideoDecoder> decoder_;
-    std::set<uint32_t> dropped_sequence_numbers_ GUARDED_BY(crit_);
+    std::set<uint32_t> dropped_sequence_numbers_ RTC_GUARDED_BY(crit_);
     // Several packets can have the same timestamp.
-    std::multiset<uint32_t> dropped_timestamps_ GUARDED_BY(crit_);
+    std::multiset<uint32_t> dropped_timestamps_ RTC_GUARDED_BY(crit_);
     Random random_;
-    int num_packets_sent_ GUARDED_BY(crit_);
+    int num_packets_sent_ RTC_GUARDED_BY(crit_);
   } test;
 
   RunBaseTest(&test);
@@ -887,12 +887,12 @@ class FlexfecRenderObserver : public test::EndToEndTest,
   }
 
   rtc::CriticalSection crit_;
-  std::set<uint32_t> dropped_sequence_numbers_ GUARDED_BY(crit_);
+  std::set<uint32_t> dropped_sequence_numbers_ RTC_GUARDED_BY(crit_);
   // Several packets can have the same timestamp.
-  std::multiset<uint32_t> dropped_timestamps_ GUARDED_BY(crit_);
+  std::multiset<uint32_t> dropped_timestamps_ RTC_GUARDED_BY(crit_);
   const bool enable_nack_;
   const bool expect_flexfec_rtcp_;
-  bool received_flexfec_rtcp_ GUARDED_BY(crit_);
+  bool received_flexfec_rtcp_ RTC_GUARDED_BY(crit_);
   Random random_;
   int num_packets_sent_;
 };
@@ -1069,7 +1069,7 @@ TEST_F(EndToEndTest, ReceivedUlpfecPacketsNotNacked) {
     } state_;
 
     rtc::CriticalSection crit_;
-    uint16_t ulpfec_sequence_number_ GUARDED_BY(&crit_);
+    uint16_t ulpfec_sequence_number_ RTC_GUARDED_BY(&crit_);
     bool has_last_sequence_number_;
     uint16_t last_sequence_number_;
     std::unique_ptr<webrtc::VideoEncoder> encoder_;
@@ -1224,8 +1224,8 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
     std::unique_ptr<VideoEncoder> encoder_;
     const std::string payload_name_;
     int marker_bits_observed_;
-    uint32_t retransmitted_timestamp_ GUARDED_BY(&crit_);
-    std::vector<uint32_t> rendered_timestamps_ GUARDED_BY(&crit_);
+    uint32_t retransmitted_timestamp_ RTC_GUARDED_BY(&crit_);
+    std::vector<uint32_t> rendered_timestamps_ RTC_GUARDED_BY(&crit_);
   } test(enable_rtx, enable_red);
 
   RunBaseTest(&test);
@@ -1319,9 +1319,9 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
     rtc::CriticalSection crit_;
     int rtp_history_ms_;
     bool nack_enabled_;
-    uint32_t highest_dropped_timestamp_ GUARDED_BY(&crit_);
-    int frames_to_drop_ GUARDED_BY(&crit_);
-    bool received_pli_ GUARDED_BY(&crit_);
+    uint32_t highest_dropped_timestamp_ RTC_GUARDED_BY(&crit_);
+    int frames_to_drop_ RTC_GUARDED_BY(&crit_);
+    bool received_pli_ RTC_GUARDED_BY(&crit_);
   } test(rtp_history_ms);
 
   RunBaseTest(&test);
@@ -1479,8 +1479,8 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
     rtc::CriticalSection crit_;
     // Must be protected since RTCP can be sent by both the process thread
     // and the pacer thread.
-    int sent_rtp_ GUARDED_BY(&crit_);
-    int sent_rtcp_ GUARDED_BY(&crit_);
+    int sent_rtp_ RTC_GUARDED_BY(&crit_);
+    int sent_rtcp_ RTC_GUARDED_BY(&crit_);
   } test(rtcp_mode);
 
   RunBaseTest(&test);
@@ -2075,8 +2075,8 @@ TEST_F(EndToEndTest, StopsSendingMediaWithoutFeedback) {
     const size_t num_video_streams_;
     const size_t num_audio_streams_;
     rtc::CriticalSection crit_;
-    int media_sent_ GUARDED_BY(crit_);
-    int padding_sent_ GUARDED_BY(crit_);
+    int media_sent_ RTC_GUARDED_BY(crit_);
+    int padding_sent_ RTC_GUARDED_BY(crit_);
   } test(1, 0);
   RunBaseTest(&test);
 }
@@ -2623,7 +2623,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
       return SEND_PACKET;
     }
 
-    void VerifyStats() EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
+    void VerifyStats() RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
       if (!dropped_rtp_packet_requested_)
         return;
       int send_stream_nack_packets = 0;
@@ -2680,8 +2680,8 @@ TEST_F(EndToEndTest, VerifyNackStats) {
     test::FakeVideoRenderer fake_renderer_;
     rtc::CriticalSection crit_;
     uint64_t sent_rtp_packets_;
-    uint16_t dropped_rtp_packet_ GUARDED_BY(&crit_);
-    bool dropped_rtp_packet_requested_ GUARDED_BY(&crit_);
+    uint16_t dropped_rtp_packet_ RTC_GUARDED_BY(&crit_);
+    bool dropped_rtp_packet_requested_ RTC_GUARDED_BY(&crit_);
     std::vector<VideoReceiveStream*> receive_streams_;
     VideoSendStream* send_stream_;
     int64_t start_runtime_ms_;
@@ -2803,7 +2803,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
     Call* sender_call_;
     Call* receiver_call_;
     int64_t start_runtime_ms_;
-    int num_frames_received_ GUARDED_BY(&crit_);
+    int num_frames_received_ RTC_GUARDED_BY(&crit_);
   } test(use_rtx, use_red, screenshare);
 
   metrics::Reset();
@@ -2973,7 +2973,7 @@ TEST_F(EndToEndTest, MAYBE_ContentTypeSwitches) {
     }
 
     rtc::CriticalSection crit_;
-    int num_frames_received_ GUARDED_BY(&crit_);
+    int num_frames_received_ RTC_GUARDED_BY(&crit_);
   } test;
 
   metrics::Reset();
@@ -3277,7 +3277,7 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
     test::SingleThreadedTaskQueueForTesting* const task_queue_;
     rtc::CriticalSection crit_;
     VideoSendStream* send_stream_;
-    uint32_t bitrate_kbps_ GUARDED_BY(crit_);
+    uint32_t bitrate_kbps_ RTC_GUARDED_BY(crit_);
   } test(&task_queue_);
 
   RunBaseTest(&test);
@@ -3762,9 +3762,9 @@ class RtcpXrObserver : public test::EndToEndTest {
   const bool enable_rrtr_;
   const bool enable_target_bitrate_;
   int sent_rtcp_sr_;
-  int sent_rtcp_rr_ GUARDED_BY(&crit_);
-  int sent_rtcp_rrtr_ GUARDED_BY(&crit_);
-  bool sent_rtcp_target_bitrate_ GUARDED_BY(&crit_);
+  int sent_rtcp_rr_ RTC_GUARDED_BY(&crit_);
+  int sent_rtcp_rrtr_ RTC_GUARDED_BY(&crit_);
+  bool sent_rtcp_target_bitrate_ RTC_GUARDED_BY(&crit_);
   int sent_rtcp_dlrr_;
 };
 
@@ -3994,7 +3994,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
     void ValidateTimestampGap(uint32_t ssrc,
                               uint32_t timestamp,
                               bool only_padding)
-        EXCLUSIVE_LOCKS_REQUIRED(crit_) {
+        RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_) {
       static const int32_t kMaxTimestampGap = kDefaultTimeoutMs * 90;
       auto timestamp_it = last_observed_timestamp_.find(ssrc);
       if (timestamp_it == last_observed_timestamp_.end()) {
@@ -4083,8 +4083,8 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
     std::map<uint32_t, bool> ssrc_is_rtx_;
 
     rtc::CriticalSection crit_;
-    size_t ssrcs_to_observe_ GUARDED_BY(crit_);
-    std::map<uint32_t, bool> ssrc_observed_ GUARDED_BY(crit_);
+    size_t ssrcs_to_observe_ RTC_GUARDED_BY(crit_);
+    std::map<uint32_t, bool> ssrc_observed_ RTC_GUARDED_BY(crit_);
   } observer(use_rtx);
 
   std::unique_ptr<test::PacketTransport> send_transport;
@@ -4276,9 +4276,10 @@ TEST_F(EndToEndTest, MAYBE_TestFlexfecRtpStatePreservation) {
       return SEND_PACKET;
     }
 
-    rtc::Optional<uint16_t> last_observed_sequence_number_ GUARDED_BY(crit_);
-    rtc::Optional<uint32_t> last_observed_timestamp_ GUARDED_BY(crit_);
-    size_t num_flexfec_packets_sent_ GUARDED_BY(crit_);
+    rtc::Optional<uint16_t> last_observed_sequence_number_
+        RTC_GUARDED_BY(crit_);
+    rtc::Optional<uint32_t> last_observed_timestamp_ RTC_GUARDED_BY(crit_);
+    size_t num_flexfec_packets_sent_ RTC_GUARDED_BY(crit_);
     rtc::CriticalSection crit_;
   } observer;
 
@@ -4595,12 +4596,12 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     rtc::Event packet_event_;
     Call* sender_call_;
     Call* receiver_call_;
-    NetworkState sender_state_ GUARDED_BY(test_crit_);
-    int sender_rtp_ GUARDED_BY(test_crit_);
-    int sender_padding_ GUARDED_BY(test_crit_);
-    int sender_rtcp_ GUARDED_BY(test_crit_);
-    int receiver_rtcp_ GUARDED_BY(test_crit_);
-    int down_frames_ GUARDED_BY(test_crit_);
+    NetworkState sender_state_ RTC_GUARDED_BY(test_crit_);
+    int sender_rtp_ RTC_GUARDED_BY(test_crit_);
+    int sender_padding_ RTC_GUARDED_BY(test_crit_);
+    int sender_rtcp_ RTC_GUARDED_BY(test_crit_);
+    int receiver_rtcp_ RTC_GUARDED_BY(test_crit_);
+    int down_frames_ RTC_GUARDED_BY(test_crit_);
   } test(&task_queue_);
 
   RunBaseTest(&test);
@@ -5016,7 +5017,7 @@ TEST_F(EndToEndLogTest, LogsEncodedFramesWhenRequested) {
     std::unique_ptr<VideoEncoder> encoder_;
     std::unique_ptr<VideoDecoder> decoder_;
     rtc::CriticalSection crit_;
-    int recorded_frames_ GUARDED_BY(crit_);
+    int recorded_frames_ RTC_GUARDED_BY(crit_);
   } test(this);
 
   RunBaseTest(&test);

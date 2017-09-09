@@ -67,7 +67,7 @@ class TestController : public sigslot::has_slots<> {
   const std::string config_file_path_;
   PacketLogger packet_logger_;
   rtc::CriticalSection local_test_done_lock_;
-  bool local_test_done_ GUARDED_BY(local_test_done_lock_);
+  bool local_test_done_ RTC_GUARDED_BY(local_test_done_lock_);
   bool remote_test_done_;
   std::array<char, kEthernetMtu> send_data_;
   std::unique_ptr<cricket::UdpTransport> udp_transport_;

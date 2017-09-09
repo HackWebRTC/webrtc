@@ -184,10 +184,10 @@ class RtpVideoStreamReceiver : public RtpData,
   std::unique_ptr<UlpfecReceiver> ulpfec_receiver_;
 
   rtc::SequencedTaskChecker worker_task_checker_;
-  bool receiving_ GUARDED_BY(worker_task_checker_);
-  uint8_t restored_packet_[IP_PACKET_SIZE] GUARDED_BY(worker_task_checker_);
-  bool restored_packet_in_use_ GUARDED_BY(worker_task_checker_);
-  int64_t last_packet_log_ms_ GUARDED_BY(worker_task_checker_);
+  bool receiving_ RTC_GUARDED_BY(worker_task_checker_);
+  uint8_t restored_packet_[IP_PACKET_SIZE] RTC_GUARDED_BY(worker_task_checker_);
+  bool restored_packet_in_use_ RTC_GUARDED_BY(worker_task_checker_);
+  int64_t last_packet_log_ms_ RTC_GUARDED_BY(worker_task_checker_);
 
   const std::unique_ptr<RtpRtcp> rtp_rtcp_;
 
@@ -200,7 +200,7 @@ class RtpVideoStreamReceiver : public RtpData,
   std::unique_ptr<video_coding::RtpFrameReferenceFinder> reference_finder_;
   rtc::CriticalSection last_seq_num_cs_;
   std::map<int64_t, uint16_t> last_seq_num_for_pic_id_
-      GUARDED_BY(last_seq_num_cs_);
+      RTC_GUARDED_BY(last_seq_num_cs_);
   video_coding::H264SpsPpsTracker tracker_;
   // TODO(johan): Remove pt_codec_params_ once
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=6883 is resolved.
@@ -211,7 +211,7 @@ class RtpVideoStreamReceiver : public RtpData,
   bool has_received_frame_;
 
   std::vector<RtpPacketSinkInterface*> secondary_sinks_
-      GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(worker_task_checker_);
 };
 
 }  // namespace webrtc

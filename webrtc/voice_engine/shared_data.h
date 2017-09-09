@@ -71,7 +71,7 @@ protected:
  std::unique_ptr<ProcessThread> _moduleProcessThreadPtr;
  // |encoder_queue| is defined last to ensure all pending tasks are cancelled
  // and deleted before any other members.
- rtc::TaskQueue encoder_queue_ ACCESS_ON(construction_thread_);
+ rtc::TaskQueue encoder_queue_ RTC_ACCESS_ON(construction_thread_);
 
  SharedData();
  virtual ~SharedData();

@@ -131,7 +131,7 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
   const int64_t creation_time_ms_;
   int64_t first_time_in_sync_;
   rtc::CriticalSection crit_;
-  VideoReceiveStream* receive_stream_ GUARDED_BY(crit_);
+  VideoReceiveStream* receive_stream_ RTC_GUARDED_BY(crit_);
   std::vector<int> sync_offset_ms_list_;
 };
 
@@ -463,7 +463,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
     bool rtp_start_timestamp_set_;
     uint32_t rtp_start_timestamp_;
     typedef std::map<uint32_t, uint32_t> FrameCaptureTimeList;
-    FrameCaptureTimeList capture_time_list_ GUARDED_BY(&crit_);
+    FrameCaptureTimeList capture_time_list_ RTC_GUARDED_BY(&crit_);
     std::vector<int> time_offset_ms_list_;
   } test(net_config, threshold_ms, start_time_ms, run_time_ms);
 

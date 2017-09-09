@@ -55,7 +55,7 @@ class AudioState final : public webrtc::AudioState,
   // The critical section isn't strictly needed in this case, but xSAN bots may
   // trigger on unprotected cross-thread access.
   rtc::CriticalSection crit_sect_;
-  bool typing_noise_detected_ GUARDED_BY(crit_sect_) = false;
+  bool typing_noise_detected_ RTC_GUARDED_BY(crit_sect_) = false;
 
   // Reference count; implementation copied from rtc::RefCountedObject.
   mutable volatile int ref_count_ = 0;

@@ -93,7 +93,7 @@ class RtcHistogram {
   rtc::CriticalSection crit_;
   const int min_;
   const int max_;
-  SampleInfo info_ GUARDED_BY(crit_);
+  SampleInfo info_ RTC_GUARDED_BY(crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtcHistogram);
 };
@@ -165,7 +165,8 @@ class RtcHistogramMap {
 
  private:
   rtc::CriticalSection crit_;
-  std::map<std::string, std::unique_ptr<RtcHistogram>> map_ GUARDED_BY(crit_);
+  std::map<std::string, std::unique_ptr<RtcHistogram>> map_
+      RTC_GUARDED_BY(crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtcHistogramMap);
 };

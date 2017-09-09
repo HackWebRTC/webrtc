@@ -162,30 +162,29 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     SampleCounter vp9;   // QP range: 0-255.
     SampleCounter h264;  // QP range: 0-51.
   };
-  void PurgeOldStats() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void PurgeOldStats() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   void SetAdaptTimer(const VideoStreamEncoder::AdaptCounts& counts,
-                     StatsTimer* timer)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+                     StatsTimer* timer) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void UpdateAdaptationStats(
       const VideoStreamEncoder::AdaptCounts& cpu_counts,
       const VideoStreamEncoder::AdaptCounts& quality_counts)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   Clock* const clock_;
   const std::string payload_name_;
   const VideoSendStream::Config::Rtp rtp_config_;
   rtc::CriticalSection crit_;
-  VideoEncoderConfig::ContentType content_type_ GUARDED_BY(crit_);
+  VideoEncoderConfig::ContentType content_type_ RTC_GUARDED_BY(crit_);
   const int64_t start_ms_;
-  VideoSendStream::Stats stats_ GUARDED_BY(crit_);
-  uint32_t last_sent_frame_timestamp_ GUARDED_BY(crit_);
-  std::map<uint32_t, StatsUpdateTimes> update_times_ GUARDED_BY(crit_);
-  rtc::ExpFilter encode_time_ GUARDED_BY(crit_);
-  int quality_downscales_ GUARDED_BY(crit_);
-  int cpu_downscales_ GUARDED_BY(crit_);
+  VideoSendStream::Stats stats_ RTC_GUARDED_BY(crit_);
+  uint32_t last_sent_frame_timestamp_ RTC_GUARDED_BY(crit_);
+  std::map<uint32_t, StatsUpdateTimes> update_times_ RTC_GUARDED_BY(crit_);
+  rtc::ExpFilter encode_time_ RTC_GUARDED_BY(crit_);
+  int quality_downscales_ RTC_GUARDED_BY(crit_);
+  int cpu_downscales_ RTC_GUARDED_BY(crit_);
 
   // Contains stats used for UMA histograms. These stats will be reset if
   // content type changes between real-time video and screenshare, since these
@@ -240,7 +239,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
         qp_counters_;  // QP counters mapped by spatial idx.
   };
 
-  std::unique_ptr<UmaSamplesContainer> uma_container_ GUARDED_BY(crit_);
+  std::unique_ptr<UmaSamplesContainer> uma_container_ RTC_GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

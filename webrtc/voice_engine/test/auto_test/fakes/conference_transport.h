@@ -137,8 +137,9 @@ class ConferenceTransport: public webrtc::Transport {
   unsigned int rtt_ms_;
   unsigned int stream_count_;
 
-  std::map<unsigned int, std::pair<int, int>> streams_ GUARDED_BY(stream_crit_);
-  std::deque<Packet> packet_queue_ GUARDED_BY(pq_crit_);
+  std::map<unsigned int, std::pair<int, int>> streams_
+      RTC_GUARDED_BY(stream_crit_);
+  std::deque<Packet> packet_queue_ RTC_GUARDED_BY(pq_crit_);
 
   int local_sender_;  // Channel Id of local sender
   int reflector_;

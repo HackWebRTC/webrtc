@@ -153,20 +153,20 @@ class BitrateAllocator {
                                     uint32_t sum_min_bitrates);
 
   rtc::SequencedTaskChecker sequenced_checker_;
-  LimitObserver* const limit_observer_ GUARDED_BY(&sequenced_checker_);
+  LimitObserver* const limit_observer_ RTC_GUARDED_BY(&sequenced_checker_);
   // Stored in a list to keep track of the insertion order.
-  ObserverConfigs bitrate_observer_configs_ GUARDED_BY(&sequenced_checker_);
-  uint32_t last_bitrate_bps_ GUARDED_BY(&sequenced_checker_);
-  uint32_t last_non_zero_bitrate_bps_ GUARDED_BY(&sequenced_checker_);
-  uint8_t last_fraction_loss_ GUARDED_BY(&sequenced_checker_);
-  int64_t last_rtt_ GUARDED_BY(&sequenced_checker_);
-  int64_t last_bwe_period_ms_ GUARDED_BY(&sequenced_checker_);
+  ObserverConfigs bitrate_observer_configs_ RTC_GUARDED_BY(&sequenced_checker_);
+  uint32_t last_bitrate_bps_ RTC_GUARDED_BY(&sequenced_checker_);
+  uint32_t last_non_zero_bitrate_bps_ RTC_GUARDED_BY(&sequenced_checker_);
+  uint8_t last_fraction_loss_ RTC_GUARDED_BY(&sequenced_checker_);
+  int64_t last_rtt_ RTC_GUARDED_BY(&sequenced_checker_);
+  int64_t last_bwe_period_ms_ RTC_GUARDED_BY(&sequenced_checker_);
   // Number of mute events based on too low BWE, not network up/down.
-  int num_pause_events_ GUARDED_BY(&sequenced_checker_);
-  Clock* const clock_ GUARDED_BY(&sequenced_checker_);
-  int64_t last_bwe_log_time_ GUARDED_BY(&sequenced_checker_);
-  uint32_t total_requested_padding_bitrate_ GUARDED_BY(&sequenced_checker_);
-  uint32_t total_requested_min_bitrate_ GUARDED_BY(&sequenced_checker_);
+  int num_pause_events_ RTC_GUARDED_BY(&sequenced_checker_);
+  Clock* const clock_ RTC_GUARDED_BY(&sequenced_checker_);
+  int64_t last_bwe_log_time_ RTC_GUARDED_BY(&sequenced_checker_);
+  uint32_t total_requested_padding_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
+  uint32_t total_requested_min_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_CALL_BITRATE_ALLOCATOR_H_

@@ -45,13 +45,13 @@ class AudioLevel {
 
   rtc::CriticalSection crit_sect_;
 
-  int16_t abs_max_ GUARDED_BY(crit_sect_);
-  int16_t count_ GUARDED_BY(crit_sect_);
-  int8_t current_level_ GUARDED_BY(crit_sect_);
-  int16_t current_level_full_range_ GUARDED_BY(crit_sect_);
+  int16_t abs_max_ RTC_GUARDED_BY(crit_sect_);
+  int16_t count_ RTC_GUARDED_BY(crit_sect_);
+  int8_t current_level_ RTC_GUARDED_BY(crit_sect_);
+  int16_t current_level_full_range_ RTC_GUARDED_BY(crit_sect_);
 
-  double total_energy_ GUARDED_BY(crit_sect_) = 0.0;
-  double total_duration_ GUARDED_BY(crit_sect_) = 0.0;
+  double total_energy_ RTC_GUARDED_BY(crit_sect_) = 0.0;
+  double total_duration_ RTC_GUARDED_BY(crit_sect_) = 0.0;
 };
 
 }  // namespace voe

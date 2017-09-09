@@ -64,7 +64,7 @@ class RtpStreamReceiverController
   // by a single, but possibly distinct, thread. But applications not
   // using Call may have use threads differently.
   rtc::CriticalSection lock_;
-  RtpDemuxer demuxer_ GUARDED_BY(&lock_);
+  RtpDemuxer demuxer_ RTC_GUARDED_BY(&lock_);
 };
 
 }  // namespace webrtc

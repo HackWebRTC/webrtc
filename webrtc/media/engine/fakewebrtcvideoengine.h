@@ -172,8 +172,8 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
  private:
   rtc::CriticalSection crit_;
   rtc::Event init_encode_event_;
-  int num_frames_encoded_ GUARDED_BY(crit_);
-  webrtc::VideoCodec codec_settings_ GUARDED_BY(crit_);
+  int num_frames_encoded_ RTC_GUARDED_BY(crit_);
+  webrtc::VideoCodec codec_settings_ RTC_GUARDED_BY(crit_);
 };
 
 // Fake class for mocking out WebRtcVideoEncoderFactory.
@@ -250,8 +250,8 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
   rtc::CriticalSection crit_;
   rtc::Event created_video_encoder_event_;
   std::vector<cricket::VideoCodec> codecs_;
-  std::vector<FakeWebRtcVideoEncoder*> encoders_ GUARDED_BY(crit_);
-  int num_created_encoders_ GUARDED_BY(crit_);
+  std::vector<FakeWebRtcVideoEncoder*> encoders_ RTC_GUARDED_BY(crit_);
+  int num_created_encoders_ RTC_GUARDED_BY(crit_);
   bool encoders_have_internal_sources_;
 };
 

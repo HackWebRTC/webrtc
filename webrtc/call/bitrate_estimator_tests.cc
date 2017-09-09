@@ -83,8 +83,8 @@ class LogObserver {
    private:
     typedef std::list<std::string> Strings;
     rtc::CriticalSection crit_sect_;
-    Strings received_log_lines_ GUARDED_BY(crit_sect_);
-    Strings expected_log_lines_ GUARDED_BY(crit_sect_);
+    Strings received_log_lines_ RTC_GUARDED_BY(crit_sect_);
+    Strings expected_log_lines_ RTC_GUARDED_BY(crit_sect_);
     rtc::Event done_;
   };
 

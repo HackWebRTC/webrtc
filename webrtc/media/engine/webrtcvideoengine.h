@@ -241,11 +241,11 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
       webrtc::FlexfecReceiveStream::Config* flexfec_config,
       const StreamParams& sp) const;
   bool ValidateSendSsrcAvailability(const StreamParams& sp) const
-      EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
   bool ValidateReceiveSsrcAvailability(const StreamParams& sp) const
-      EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
   void DeleteReceiveStream(WebRtcVideoReceiveStream* stream)
-      EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
 
   static std::string CodecSettingsVectorToString(
       const std::vector<VideoCodecSettings>& codecs);
@@ -326,38 +326,38 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     void UpdateSendState();
 
     webrtc::VideoSendStream::DegradationPreference GetDegradationPreference()
-        const EXCLUSIVE_LOCKS_REQUIRED(&thread_checker_);
+        const RTC_EXCLUSIVE_LOCKS_REQUIRED(&thread_checker_);
 
     rtc::ThreadChecker thread_checker_;
     rtc::AsyncInvoker invoker_;
     rtc::Thread* worker_thread_;
-    const std::vector<uint32_t> ssrcs_ ACCESS_ON(&thread_checker_);
-    const std::vector<SsrcGroup> ssrc_groups_ ACCESS_ON(&thread_checker_);
+    const std::vector<uint32_t> ssrcs_ RTC_ACCESS_ON(&thread_checker_);
+    const std::vector<SsrcGroup> ssrc_groups_ RTC_ACCESS_ON(&thread_checker_);
     webrtc::Call* const call_;
     const bool enable_cpu_overuse_detection_;
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source_
-        ACCESS_ON(&thread_checker_);
+        RTC_ACCESS_ON(&thread_checker_);
     std::unique_ptr<EncoderFactoryAdapter> encoder_factory_
-        ACCESS_ON(&thread_checker_);
+        RTC_ACCESS_ON(&thread_checker_);
 
-    webrtc::VideoSendStream* stream_ ACCESS_ON(&thread_checker_);
+    webrtc::VideoSendStream* stream_ RTC_ACCESS_ON(&thread_checker_);
     rtc::VideoSinkInterface<webrtc::VideoFrame>* encoder_sink_
-        ACCESS_ON(&thread_checker_);
+        RTC_ACCESS_ON(&thread_checker_);
     // Contains settings that are the same for all streams in the MediaChannel,
     // such as codecs, header extensions, and the global bitrate limit for the
     // entire channel.
-    VideoSendStreamParameters parameters_ ACCESS_ON(&thread_checker_);
+    VideoSendStreamParameters parameters_ RTC_ACCESS_ON(&thread_checker_);
     // Contains settings that are unique for each stream, such as max_bitrate.
     // Does *not* contain codecs, however.
     // TODO(skvlad): Move ssrcs_ and ssrc_groups_ into rtp_parameters_.
     // TODO(skvlad): Combine parameters_ and rtp_parameters_ once we have only
     // one stream per MediaChannel.
-    webrtc::RtpParameters rtp_parameters_ ACCESS_ON(&thread_checker_);
+    webrtc::RtpParameters rtp_parameters_ RTC_ACCESS_ON(&thread_checker_);
     std::unique_ptr<webrtc::VideoEncoder> allocated_encoder_
-        ACCESS_ON(&thread_checker_);
-    VideoCodec allocated_codec_ ACCESS_ON(&thread_checker_);
+        RTC_ACCESS_ON(&thread_checker_);
+    VideoCodec allocated_codec_ RTC_ACCESS_ON(&thread_checker_);
 
-    bool sending_ ACCESS_ON(&thread_checker_);
+    bool sending_ RTC_ACCESS_ON(&thread_checker_);
   };
 
   // Wrapper for the receiver part, contains configs etc. that are needed to
@@ -437,15 +437,16 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     std::vector<AllocatedDecoder> allocated_decoders_;
 
     rtc::CriticalSection sink_lock_;
-    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink_ GUARDED_BY(sink_lock_);
+    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink_
+        RTC_GUARDED_BY(sink_lock_);
     // Expands remote RTP timestamps to int64_t to be able to estimate how long
     // the stream has been running.
     rtc::TimestampWrapAroundHandler timestamp_wraparound_handler_
-        GUARDED_BY(sink_lock_);
-    int64_t first_frame_timestamp_ GUARDED_BY(sink_lock_);
+        RTC_GUARDED_BY(sink_lock_);
+    int64_t first_frame_timestamp_ RTC_GUARDED_BY(sink_lock_);
     // Start NTP time is estimated as current remote NTP time (estimated from
     // RTCP) minus the elapsed time, as soon as remote NTP time is available.
-    int64_t estimated_remote_start_ntp_time_ms_ GUARDED_BY(sink_lock_);
+    int64_t estimated_remote_start_ntp_time_ms_ RTC_GUARDED_BY(sink_lock_);
   };
 
   void Construct(webrtc::Call* call, WebRtcVideoEngine* engine);
@@ -487,11 +488,11 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   rtc::CriticalSection stream_crit_;
   // Using primary-ssrc (first ssrc) as key.
   std::map<uint32_t, WebRtcVideoSendStream*> send_streams_
-      GUARDED_BY(stream_crit_);
+      RTC_GUARDED_BY(stream_crit_);
   std::map<uint32_t, WebRtcVideoReceiveStream*> receive_streams_
-      GUARDED_BY(stream_crit_);
-  std::set<uint32_t> send_ssrcs_ GUARDED_BY(stream_crit_);
-  std::set<uint32_t> receive_ssrcs_ GUARDED_BY(stream_crit_);
+      RTC_GUARDED_BY(stream_crit_);
+  std::set<uint32_t> send_ssrcs_ RTC_GUARDED_BY(stream_crit_);
+  std::set<uint32_t> receive_ssrcs_ RTC_GUARDED_BY(stream_crit_);
 
   rtc::Optional<VideoCodecSettings> send_codec_;
   rtc::Optional<std::vector<webrtc::RtpExtension>> send_rtp_extensions_;

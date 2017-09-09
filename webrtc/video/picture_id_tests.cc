@@ -124,12 +124,12 @@ class PictureIdObserver : public test::RtpRtcpObserver {
   }
 
   rtc::CriticalSection crit_;
-  std::map<uint32_t, uint32_t> last_observed_timestamp_ GUARDED_BY(crit_);
-  std::map<uint32_t, uint16_t> last_observed_picture_id_ GUARDED_BY(crit_);
-  std::map<uint32_t, size_t> num_packets_sent_ GUARDED_BY(crit_);
-  int max_expected_picture_id_gap_ GUARDED_BY(crit_);
-  size_t num_ssrcs_to_observe_ GUARDED_BY(crit_);
-  std::set<uint32_t> observed_ssrcs_ GUARDED_BY(crit_);
+  std::map<uint32_t, uint32_t> last_observed_timestamp_ RTC_GUARDED_BY(crit_);
+  std::map<uint32_t, uint16_t> last_observed_picture_id_ RTC_GUARDED_BY(crit_);
+  std::map<uint32_t, size_t> num_packets_sent_ RTC_GUARDED_BY(crit_);
+  int max_expected_picture_id_gap_ RTC_GUARDED_BY(crit_);
+  size_t num_ssrcs_to_observe_ RTC_GUARDED_BY(crit_);
+  std::set<uint32_t> observed_ssrcs_ RTC_GUARDED_BY(crit_);
 };
 
 class PictureIdTest : public test::CallTest {

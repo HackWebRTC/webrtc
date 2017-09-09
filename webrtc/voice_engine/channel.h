@@ -440,7 +440,7 @@ class Channel
                                 unsigned char id);
 
   void UpdateOverheadForEncoder()
-      EXCLUSIVE_LOCKS_REQUIRED(overhead_per_packet_lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(overhead_per_packet_lock_);
 
   int GetRtpTimestampRateHz() const;
   int64_t GetRTT(bool allow_associate_channel) const;
@@ -482,16 +482,16 @@ class Channel
   int _outputFilePlayerId;
   int _outputFileRecorderId;
   bool _outputFileRecording;
-  uint32_t _timeStamp ACCESS_ON(encoder_queue_);
+  uint32_t _timeStamp RTC_ACCESS_ON(encoder_queue_);
 
-  RemoteNtpTimeEstimator ntp_estimator_ GUARDED_BY(ts_stats_lock_);
+  RemoteNtpTimeEstimator ntp_estimator_ RTC_GUARDED_BY(ts_stats_lock_);
 
   // Timestamp of the audio pulled from NetEq.
   rtc::Optional<uint32_t> jitter_buffer_playout_timestamp_;
 
   rtc::CriticalSection video_sync_lock_;
-  uint32_t playout_timestamp_rtp_ GUARDED_BY(video_sync_lock_);
-  uint32_t playout_delay_ms_ GUARDED_BY(video_sync_lock_);
+  uint32_t playout_timestamp_rtp_ RTC_GUARDED_BY(video_sync_lock_);
+  uint32_t playout_delay_ms_ RTC_GUARDED_BY(video_sync_lock_);
   uint16_t send_sequence_number_;
 
   rtc::CriticalSection ts_stats_lock_;
@@ -501,7 +501,7 @@ class Channel
   int64_t capture_start_rtp_time_stamp_;
   // The capture ntp time (in local timebase) of the first played out audio
   // frame.
-  int64_t capture_start_ntp_time_ms_ GUARDED_BY(ts_stats_lock_);
+  int64_t capture_start_ntp_time_ms_ RTC_GUARDED_BY(ts_stats_lock_);
 
   // uses
   Statistics* _engineStatisticsPtr;
@@ -511,18 +511,19 @@ class Channel
   VoiceEngineObserver* _voiceEngineObserverPtr;  // owned by base
   rtc::CriticalSection* _callbackCritSectPtr;    // owned by base
   Transport* _transportPtr;  // WebRtc socket or external transport
-  RmsLevel rms_level_ ACCESS_ON(encoder_queue_);
-  bool input_mute_ GUARDED_BY(volume_settings_critsect_);
-  bool previous_frame_muted_ ACCESS_ON(encoder_queue_);
-  float _outputGain GUARDED_BY(volume_settings_critsect_);
+  RmsLevel rms_level_ RTC_ACCESS_ON(encoder_queue_);
+  bool input_mute_ RTC_GUARDED_BY(volume_settings_critsect_);
+  bool previous_frame_muted_ RTC_ACCESS_ON(encoder_queue_);
+  float _outputGain RTC_GUARDED_BY(volume_settings_critsect_);
   // VoEBase
   bool _mixFileWithMicrophone;
   // VoeRTP_RTCP
   // TODO(henrika): can today be accessed on the main thread and on the
   // task queue; hence potential race.
   bool _includeAudioLevelIndication;
-  size_t transport_overhead_per_packet_ GUARDED_BY(overhead_per_packet_lock_);
-  size_t rtp_overhead_per_packet_ GUARDED_BY(overhead_per_packet_lock_);
+  size_t transport_overhead_per_packet_
+      RTC_GUARDED_BY(overhead_per_packet_lock_);
+  size_t rtp_overhead_per_packet_ RTC_GUARDED_BY(overhead_per_packet_lock_);
   rtc::CriticalSection overhead_per_packet_lock_;
   // VoENetwork
   AudioFrame::SpeechType _outputSpeechType;
@@ -530,7 +531,7 @@ class Channel
   std::unique_ptr<VoERtcpObserver> rtcp_observer_;
   // An associated send channel.
   rtc::CriticalSection assoc_send_channel_lock_;
-  ChannelOwner associate_send_channel_ GUARDED_BY(assoc_send_channel_lock_);
+  ChannelOwner associate_send_channel_ RTC_GUARDED_BY(assoc_send_channel_lock_);
 
   bool pacing_enabled_;
   PacketRouter* packet_router_ = nullptr;
@@ -550,7 +551,7 @@ class Channel
 
   rtc::CriticalSection encoder_queue_lock_;
 
-  bool encoder_queue_is_active_ GUARDED_BY(encoder_queue_lock_) = false;
+  bool encoder_queue_is_active_ RTC_GUARDED_BY(encoder_queue_lock_) = false;
 
   rtc::TaskQueue* encoder_queue_ = nullptr;
 };

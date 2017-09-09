@@ -293,7 +293,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   rtc::CriticalSection encoder_activity_crit_sect_;
   CheckEncoderActivityTask* check_encoder_activity_task_
-      GUARDED_BY(encoder_activity_crit_sect_);
+      RTC_GUARDED_BY(encoder_activity_crit_sect_);
 
   CallStats* const call_stats_;
   RtpTransportControllerSendInterface* const transport_;
@@ -303,8 +303,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   std::unique_ptr<FlexfecSender> flexfec_sender_;
 
   rtc::CriticalSection ivf_writers_crit_;
-  std::unique_ptr<IvfFileWriter> file_writers_[kMaxSimulcastStreams] GUARDED_BY(
-      ivf_writers_crit_);
+  std::unique_ptr<IvfFileWriter>
+      file_writers_[kMaxSimulcastStreams] RTC_GUARDED_BY(ivf_writers_crit_);
 
   int max_padding_bitrate_;
   int encoder_min_bitrate_bps_;
@@ -329,7 +329,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   rtc::WeakPtrFactory<VideoSendStreamImpl> weak_ptr_factory_;
 
   rtc::CriticalSection overhead_bytes_per_packet_crit_;
-  size_t overhead_bytes_per_packet_ GUARDED_BY(overhead_bytes_per_packet_crit_);
+  size_t overhead_bytes_per_packet_
+      RTC_GUARDED_BY(overhead_bytes_per_packet_crit_);
   size_t transport_overhead_bytes_per_packet_;
 };
 

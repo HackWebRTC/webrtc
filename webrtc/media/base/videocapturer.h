@@ -271,9 +271,9 @@ class VideoCapturer : public sigslot::has_slots<>,
 
   rtc::CriticalSection frame_stats_crit_;
   // The captured frame size before potential adapation.
-  bool input_size_valid_ GUARDED_BY(frame_stats_crit_) = false;
-  int input_width_ GUARDED_BY(frame_stats_crit_);
-  int input_height_ GUARDED_BY(frame_stats_crit_);
+  bool input_size_valid_ RTC_GUARDED_BY(frame_stats_crit_) = false;
+  int input_width_ RTC_GUARDED_BY(frame_stats_crit_);
+  int input_height_ RTC_GUARDED_BY(frame_stats_crit_);
 
   // Whether capturer should apply rotation to the frame before
   // passing it on to the registered sinks.

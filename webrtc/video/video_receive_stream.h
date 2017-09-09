@@ -134,7 +134,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   RtpStreamsSynchronizer rtp_stream_sync_;
 
   rtc::CriticalSection ivf_writer_lock_;
-  std::unique_ptr<IvfFileWriter> ivf_writer_ GUARDED_BY(ivf_writer_lock_);
+  std::unique_ptr<IvfFileWriter> ivf_writer_ RTC_GUARDED_BY(ivf_writer_lock_);
 
   // Members for the new jitter buffer experiment.
   std::unique_ptr<VCMJitterEstimator> jitter_estimator_;

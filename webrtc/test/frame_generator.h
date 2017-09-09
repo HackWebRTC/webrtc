@@ -42,8 +42,8 @@ class FrameForwarder : public rtc::VideoSourceInterface<VideoFrame> {
   void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
 
   rtc::CriticalSection crit_;
-  rtc::VideoSinkInterface<VideoFrame>* sink_ GUARDED_BY(crit_);
-  rtc::VideoSinkWants sink_wants_ GUARDED_BY(crit_);
+  rtc::VideoSinkInterface<VideoFrame>* sink_ RTC_GUARDED_BY(crit_);
+  rtc::VideoSinkWants sink_wants_ RTC_GUARDED_BY(crit_);
 };
 
 class FrameGenerator {

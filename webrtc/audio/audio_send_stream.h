@@ -115,7 +115,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   rtc::CriticalSection packet_loss_tracker_cs_;
   TransportFeedbackPacketLossTracker packet_loss_tracker_
-      GUARDED_BY(&packet_loss_tracker_cs_);
+      RTC_GUARDED_BY(&packet_loss_tracker_cs_);
 
   RtpRtcp* rtp_rtcp_module_;
   rtc::Optional<RtpState> const suspended_rtp_state_;

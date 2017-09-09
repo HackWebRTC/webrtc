@@ -342,7 +342,7 @@ class VideoStreamEncoder::VideoSourceProxy {
 
  private:
   rtc::VideoSinkWants GetActiveSinkWantsInternal()
-      EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
     rtc::VideoSinkWants wants = sink_wants_;
     // Clear any constraints from the current sink wants that don't apply to
     // the used degradation_preference.
@@ -367,10 +367,10 @@ class VideoStreamEncoder::VideoSourceProxy {
   rtc::CriticalSection crit_;
   rtc::SequencedTaskChecker main_checker_;
   VideoStreamEncoder* const video_stream_encoder_;
-  rtc::VideoSinkWants sink_wants_ GUARDED_BY(&crit_);
+  rtc::VideoSinkWants sink_wants_ RTC_GUARDED_BY(&crit_);
   VideoSendStream::DegradationPreference degradation_preference_
-      GUARDED_BY(&crit_);
-  rtc::VideoSourceInterface<VideoFrame>* source_ GUARDED_BY(&crit_);
+      RTC_GUARDED_BY(&crit_);
+  rtc::VideoSourceInterface<VideoFrame>* source_ RTC_GUARDED_BY(&crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoSourceProxy);
 };

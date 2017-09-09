@@ -192,7 +192,7 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
 
  private:
   rtc::CriticalSection crit_;
-  RtcEventLog* event_log_ GUARDED_BY(crit_);
+  RtcEventLog* event_log_ RTC_GUARDED_BY(crit_);
   RTC_DISALLOW_COPY_AND_ASSIGN(RtcEventLogProxy);
 };
 
@@ -220,7 +220,7 @@ class RtcpRttStatsProxy final : public RtcpRttStats {
 
  private:
   rtc::CriticalSection crit_;
-  RtcpRttStats* rtcp_rtt_stats_ GUARDED_BY(crit_);
+  RtcpRttStats* rtcp_rtt_stats_ RTC_GUARDED_BY(crit_);
   RTC_DISALLOW_COPY_AND_ASSIGN(RtcpRttStatsProxy);
 };
 
@@ -265,7 +265,7 @@ class TransportFeedbackProxy : public TransportFeedbackObserver {
   rtc::ThreadChecker thread_checker_;
   rtc::ThreadChecker pacer_thread_;
   rtc::ThreadChecker network_thread_;
-  TransportFeedbackObserver* feedback_observer_ GUARDED_BY(&crit_);
+  TransportFeedbackObserver* feedback_observer_ RTC_GUARDED_BY(&crit_);
 };
 
 class TransportSequenceNumberProxy : public TransportSequenceNumberAllocator {
@@ -294,7 +294,7 @@ class TransportSequenceNumberProxy : public TransportSequenceNumberAllocator {
   rtc::CriticalSection crit_;
   rtc::ThreadChecker thread_checker_;
   rtc::ThreadChecker pacer_thread_;
-  TransportSequenceNumberAllocator* seq_num_allocator_ GUARDED_BY(&crit_);
+  TransportSequenceNumberAllocator* seq_num_allocator_ RTC_GUARDED_BY(&crit_);
 };
 
 class RtpPacketSenderProxy : public RtpPacketSender {
@@ -324,7 +324,7 @@ class RtpPacketSenderProxy : public RtpPacketSender {
  private:
   rtc::ThreadChecker thread_checker_;
   rtc::CriticalSection crit_;
-  RtpPacketSender* rtp_packet_sender_ GUARDED_BY(&crit_);
+  RtpPacketSender* rtp_packet_sender_ RTC_GUARDED_BY(&crit_);
 };
 
 class VoERtcpObserver : public RtcpBandwidthObserver {
@@ -398,7 +398,7 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
   // Maps remote side ssrc to extended highest sequence number received.
   std::map<uint32_t, uint32_t> extended_max_sequence_number_;
   rtc::CriticalSection crit_;
-  RtcpBandwidthObserver* bandwidth_observer_ GUARDED_BY(crit_);
+  RtcpBandwidthObserver* bandwidth_observer_ RTC_GUARDED_BY(crit_);
 };
 
 class Channel::ProcessAndEncodeAudioTask : public rtc::QueuedTask {

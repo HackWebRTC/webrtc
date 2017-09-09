@@ -236,11 +236,11 @@ class Call : public webrtc::Call,
                             size_t length,
                             const PacketTime& packet_time);
   void ConfigureSync(const std::string& sync_group)
-      EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
 
   void NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
                                  MediaType media_type)
-      SHARED_LOCKS_REQUIRED(receive_crit_);
+      RTC_SHARED_LOCKS_REQUIRED(receive_crit_);
 
   rtc::Optional<RtpPacketReceived> ParseRtpPacket(
       const uint8_t* packet,
@@ -248,7 +248,7 @@ class Call : public webrtc::Call,
       const PacketTime* packet_time) const;
 
   void UpdateSendHistograms(int64_t first_sent_packet_ms)
-      EXCLUSIVE_LOCKS_REQUIRED(&bitrate_crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&bitrate_crit_);
   void UpdateReceiveHistograms();
   void UpdateHistograms();
   void UpdateAggregateNetworkState();
@@ -274,12 +274,12 @@ class Call : public webrtc::Call,
   // Audio, Video, and FlexFEC receive streams are owned by the client that
   // creates them.
   std::set<AudioReceiveStream*> audio_receive_streams_
-      GUARDED_BY(receive_crit_);
+      RTC_GUARDED_BY(receive_crit_);
   std::set<VideoReceiveStream*> video_receive_streams_
-      GUARDED_BY(receive_crit_);
+      RTC_GUARDED_BY(receive_crit_);
 
   std::map<std::string, AudioReceiveStream*> sync_stream_mapping_
-      GUARDED_BY(receive_crit_);
+      RTC_GUARDED_BY(receive_crit_);
 
   // TODO(nisse): Should eventually be injected at creation,
   // with a single object in the bundled case.
@@ -308,19 +308,21 @@ class Call : public webrtc::Call,
     bool use_send_side_bwe = false;
   };
   std::map<uint32_t, ReceiveRtpConfig> receive_rtp_config_
-      GUARDED_BY(receive_crit_);
+      RTC_GUARDED_BY(receive_crit_);
 
   std::unique_ptr<RWLockWrapper> send_crit_;
   // Audio and Video send streams are owned by the client that creates them.
-  std::map<uint32_t, AudioSendStream*> audio_send_ssrcs_ GUARDED_BY(send_crit_);
-  std::map<uint32_t, VideoSendStream*> video_send_ssrcs_ GUARDED_BY(send_crit_);
-  std::set<VideoSendStream*> video_send_streams_ GUARDED_BY(send_crit_);
+  std::map<uint32_t, AudioSendStream*> audio_send_ssrcs_
+      RTC_GUARDED_BY(send_crit_);
+  std::map<uint32_t, VideoSendStream*> video_send_ssrcs_
+      RTC_GUARDED_BY(send_crit_);
+  std::set<VideoSendStream*> video_send_streams_ RTC_GUARDED_BY(send_crit_);
 
   using RtpStateMap = std::map<uint32_t, RtpState>;
   RtpStateMap suspended_audio_send_ssrcs_
-      GUARDED_BY(configuration_sequence_checker_);
+      RTC_GUARDED_BY(configuration_sequence_checker_);
   RtpStateMap suspended_video_send_ssrcs_
-      GUARDED_BY(configuration_sequence_checker_);
+      RTC_GUARDED_BY(configuration_sequence_checker_);
 
   webrtc::RtcEventLog* event_log_;
 
@@ -340,10 +342,11 @@ class Call : public webrtc::Call,
   // TODO(holmer): Remove this lock once BitrateController no longer calls
   // OnNetworkChanged from multiple threads.
   rtc::CriticalSection bitrate_crit_;
-  uint32_t min_allocated_send_bitrate_bps_ GUARDED_BY(&bitrate_crit_);
-  uint32_t configured_max_padding_bitrate_bps_ GUARDED_BY(&bitrate_crit_);
-  AvgCounter estimated_send_bitrate_kbps_counter_ GUARDED_BY(&bitrate_crit_);
-  AvgCounter pacer_bitrate_kbps_counter_ GUARDED_BY(&bitrate_crit_);
+  uint32_t min_allocated_send_bitrate_bps_ RTC_GUARDED_BY(&bitrate_crit_);
+  uint32_t configured_max_padding_bitrate_bps_ RTC_GUARDED_BY(&bitrate_crit_);
+  AvgCounter estimated_send_bitrate_kbps_counter_
+      RTC_GUARDED_BY(&bitrate_crit_);
+  AvgCounter pacer_bitrate_kbps_counter_ RTC_GUARDED_BY(&bitrate_crit_);
 
   std::map<std::string, rtc::NetworkRoute> network_routes_;
 

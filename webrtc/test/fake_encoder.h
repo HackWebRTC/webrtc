@@ -51,12 +51,12 @@ class FakeEncoder : public VideoEncoder {
 
  protected:
   Clock* const clock_;
-  VideoCodec config_ GUARDED_BY(crit_sect_);
-  EncodedImageCallback* callback_ GUARDED_BY(crit_sect_);
-  BitrateAllocation target_bitrate_ GUARDED_BY(crit_sect_);
-  int configured_input_framerate_ GUARDED_BY(crit_sect_);
-  int max_target_bitrate_kbps_ GUARDED_BY(crit_sect_);
-  bool pending_keyframe_ GUARDED_BY(crit_sect_);
+  VideoCodec config_ RTC_GUARDED_BY(crit_sect_);
+  EncodedImageCallback* callback_ RTC_GUARDED_BY(crit_sect_);
+  BitrateAllocation target_bitrate_ RTC_GUARDED_BY(crit_sect_);
+  int configured_input_framerate_ RTC_GUARDED_BY(crit_sect_);
+  int max_target_bitrate_kbps_ RTC_GUARDED_BY(crit_sect_);
+  bool pending_keyframe_ RTC_GUARDED_BY(crit_sect_);
   rtc::CriticalSection crit_sect_;
 
   uint8_t encoded_buffer_[100000];
@@ -79,8 +79,8 @@ class FakeH264Encoder : public FakeEncoder, public EncodedImageCallback {
                         const RTPFragmentationHeader* fragments) override;
 
  private:
-  EncodedImageCallback* callback_ GUARDED_BY(local_crit_sect_);
-  int idr_counter_ GUARDED_BY(local_crit_sect_);
+  EncodedImageCallback* callback_ RTC_GUARDED_BY(local_crit_sect_);
+  int idr_counter_ RTC_GUARDED_BY(local_crit_sect_);
   rtc::CriticalSection local_crit_sect_;
 };
 
@@ -95,7 +95,7 @@ class DelayedEncoder : public test::FakeEncoder {
                  const std::vector<FrameType>* frame_types) override;
 
  private:
-  int delay_ms_ ACCESS_ON(sequence_checker_);
+  int delay_ms_ RTC_ACCESS_ON(sequence_checker_);
   rtc::SequencedTaskChecker sequence_checker_;
 };
 
@@ -125,9 +125,9 @@ class MultithreadedFakeH264Encoder : public test::FakeH264Encoder {
  protected:
   class EncodeTask;
 
-  int current_queue_ ACCESS_ON(sequence_checker_);
-  std::unique_ptr<rtc::TaskQueue> queue1_ ACCESS_ON(sequence_checker_);
-  std::unique_ptr<rtc::TaskQueue> queue2_ ACCESS_ON(sequence_checker_);
+  int current_queue_ RTC_ACCESS_ON(sequence_checker_);
+  std::unique_ptr<rtc::TaskQueue> queue1_ RTC_ACCESS_ON(sequence_checker_);
+  std::unique_ptr<rtc::TaskQueue> queue2_ RTC_ACCESS_ON(sequence_checker_);
   rtc::SequencedTaskChecker sequence_checker_;
 };
 

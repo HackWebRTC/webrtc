@@ -168,15 +168,16 @@ class RtcEventLogImpl final : public RtcEventLog {
 
   // History containing all past configuration events.
   std::vector<std::unique_ptr<rtclog::Event>> config_history_
-      ACCESS_ON(task_queue_);
+      RTC_ACCESS_ON(task_queue_);
 
   // History containing the most recent (non-configuration) events (~10s).
-  std::deque<std::unique_ptr<rtclog::Event>> history_ ACCESS_ON(task_queue_);
+  std::deque<std::unique_ptr<rtclog::Event>> history_
+      RTC_ACCESS_ON(task_queue_);
 
-  std::unique_ptr<FileWrapper> file_ ACCESS_ON(task_queue_);
+  std::unique_ptr<FileWrapper> file_ RTC_ACCESS_ON(task_queue_);
 
-  size_t max_size_bytes_ ACCESS_ON(task_queue_);
-  size_t written_bytes_ ACCESS_ON(task_queue_);
+  size_t max_size_bytes_ RTC_ACCESS_ON(task_queue_);
+  size_t written_bytes_ RTC_ACCESS_ON(task_queue_);
 
   // Keep this last to ensure it destructs first, or else tasks living on the
   // queue might access other members after they've been torn down.

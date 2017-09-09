@@ -97,7 +97,7 @@ class VideoStreamDecoder : public VCMReceiveCallback,
   ReceiveStatisticsProxy* const receive_stats_callback_;
   rtc::VideoSinkInterface<VideoFrame>* const incoming_video_stream_;
 
-  int64_t last_rtt_ms_ GUARDED_BY(crit_);
+  int64_t last_rtt_ms_ RTC_GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

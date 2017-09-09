@@ -71,10 +71,10 @@ class SingleThreadedTaskQueueForTesting {
   void RunLoop();
 
   rtc::CriticalSection cs_;
-  std::list<std::unique_ptr<QueuedTask>> tasks_ GUARDED_BY(cs_);
+  std::list<std::unique_ptr<QueuedTask>> tasks_ RTC_GUARDED_BY(cs_);
   rtc::ThreadChecker owner_thread_checker_;
   rtc::PlatformThread thread_;
-  bool running_ GUARDED_BY(cs_);
+  bool running_ RTC_GUARDED_BY(cs_);
 
   TaskId next_task_id_;
 

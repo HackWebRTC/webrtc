@@ -49,10 +49,10 @@ class PayloadRouter : public EncodedImageCallback {
   void OnBitrateAllocationUpdated(const BitrateAllocation& bitrate);
 
  private:
-  void UpdateModuleSendingState() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void UpdateModuleSendingState() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   rtc::CriticalSection crit_;
-  bool active_ GUARDED_BY(crit_);
+  bool active_ RTC_GUARDED_BY(crit_);
 
   // Rtp modules are assumed to be sorted in simulcast index order. Not owned.
   const std::vector<RtpRtcp*> rtp_modules_;

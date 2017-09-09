@@ -133,27 +133,28 @@ class OveruseFrameDetector {
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;
-  rtc::Optional<CpuOveruseMetrics> metrics_ GUARDED_BY(task_checker_);
+  rtc::Optional<CpuOveruseMetrics> metrics_ RTC_GUARDED_BY(task_checker_);
 
-  int64_t num_process_times_ GUARDED_BY(task_checker_);
+  int64_t num_process_times_ RTC_GUARDED_BY(task_checker_);
 
-  int64_t last_capture_time_us_ GUARDED_BY(task_checker_);
-  int64_t last_processed_capture_time_us_ GUARDED_BY(task_checker_);
+  int64_t last_capture_time_us_ RTC_GUARDED_BY(task_checker_);
+  int64_t last_processed_capture_time_us_ RTC_GUARDED_BY(task_checker_);
 
   // Number of pixels of last captured frame.
-  int num_pixels_ GUARDED_BY(task_checker_);
-  int max_framerate_ GUARDED_BY(task_checker_);
-  int64_t last_overuse_time_ms_ GUARDED_BY(task_checker_);
-  int checks_above_threshold_ GUARDED_BY(task_checker_);
-  int num_overuse_detections_ GUARDED_BY(task_checker_);
-  int64_t last_rampup_time_ms_ GUARDED_BY(task_checker_);
-  bool in_quick_rampup_ GUARDED_BY(task_checker_);
-  int current_rampup_delay_ms_ GUARDED_BY(task_checker_);
+  int num_pixels_ RTC_GUARDED_BY(task_checker_);
+  int max_framerate_ RTC_GUARDED_BY(task_checker_);
+  int64_t last_overuse_time_ms_ RTC_GUARDED_BY(task_checker_);
+  int checks_above_threshold_ RTC_GUARDED_BY(task_checker_);
+  int num_overuse_detections_ RTC_GUARDED_BY(task_checker_);
+  int64_t last_rampup_time_ms_ RTC_GUARDED_BY(task_checker_);
+  bool in_quick_rampup_ RTC_GUARDED_BY(task_checker_);
+  int current_rampup_delay_ms_ RTC_GUARDED_BY(task_checker_);
 
   // TODO(asapersson): Can these be regular members (avoid separate heap
   // allocs)?
-  const std::unique_ptr<SendProcessingUsage> usage_ GUARDED_BY(task_checker_);
-  std::list<FrameTiming> frame_timing_ GUARDED_BY(task_checker_);
+  const std::unique_ptr<SendProcessingUsage> usage_
+      RTC_GUARDED_BY(task_checker_);
+  std::list<FrameTiming> frame_timing_ RTC_GUARDED_BY(task_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
 };

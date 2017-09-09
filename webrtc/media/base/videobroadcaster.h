@@ -51,15 +51,15 @@ class VideoBroadcaster : public VideoSourceBase,
   void OnFrame(const webrtc::VideoFrame& frame) override;
 
  protected:
-  void UpdateWants() EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
+  void UpdateWants() RTC_EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
   const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& GetBlackFrameBuffer(
-      int width, int height)
-      EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
+      int width,
+      int height) RTC_EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
 
   ThreadChecker thread_checker_;
   rtc::CriticalSection sinks_and_wants_lock_;
 
-  VideoSinkWants current_wants_ GUARDED_BY(sinks_and_wants_lock_);
+  VideoSinkWants current_wants_ RTC_GUARDED_BY(sinks_and_wants_lock_);
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> black_frame_buffer_;
 };
 

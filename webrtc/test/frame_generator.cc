@@ -108,10 +108,10 @@ class SquareGenerator : public FrameGenerator {
   };
 
   rtc::CriticalSection crit_;
-  int width_ GUARDED_BY(&crit_);
-  int height_ GUARDED_BY(&crit_);
-  std::vector<std::unique_ptr<Square>> squares_ GUARDED_BY(&crit_);
-  std::unique_ptr<VideoFrame> frame_ GUARDED_BY(&crit_);
+  int width_ RTC_GUARDED_BY(&crit_);
+  int height_ RTC_GUARDED_BY(&crit_);
+  std::vector<std::unique_ptr<Square>> squares_ RTC_GUARDED_BY(&crit_);
+  std::unique_ptr<VideoFrame> frame_ RTC_GUARDED_BY(&crit_);
 };
 
 class YuvFileGenerator : public FrameGenerator {

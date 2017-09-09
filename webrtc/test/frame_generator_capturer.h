@@ -87,14 +87,14 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   Clock* const clock_;
   bool sending_;
-  rtc::VideoSinkInterface<VideoFrame>* sink_ GUARDED_BY(&lock_);
-  SinkWantsObserver* sink_wants_observer_ GUARDED_BY(&lock_);
+  rtc::VideoSinkInterface<VideoFrame>* sink_ RTC_GUARDED_BY(&lock_);
+  SinkWantsObserver* sink_wants_observer_ RTC_GUARDED_BY(&lock_);
 
   rtc::CriticalSection lock_;
   std::unique_ptr<FrameGenerator> frame_generator_;
 
-  int target_fps_ GUARDED_BY(&lock_);
-  rtc::Optional<int> wanted_fps_ GUARDED_BY(&lock_);
+  int target_fps_ RTC_GUARDED_BY(&lock_);
+  rtc::Optional<int> wanted_fps_ RTC_GUARDED_BY(&lock_);
   VideoRotation fake_rotation_ = kVideoRotation_0;
 
   int64_t first_frame_capture_time_;

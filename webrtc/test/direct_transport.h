@@ -70,7 +70,7 @@ class DirectTransport : public Transport {
 
   SingleThreadedTaskQueueForTesting* const task_queue_;
   SingleThreadedTaskQueueForTesting::TaskId next_scheduled_task_
-      GUARDED_BY(&sequence_checker_);
+      RTC_GUARDED_BY(&sequence_checker_);
 
   FakeNetworkPipe fake_network_;
 

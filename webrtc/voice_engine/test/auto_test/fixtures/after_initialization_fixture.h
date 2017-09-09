@@ -145,9 +145,9 @@ class LoopBackTransport : public webrtc::Transport {
   rtc::CriticalSection crit_;
   const std::unique_ptr<webrtc::EventWrapper> packet_event_;
   rtc::PlatformThread thread_;
-  std::deque<Packet> packet_queue_ GUARDED_BY(crit_);
+  std::deque<Packet> packet_queue_ RTC_GUARDED_BY(crit_);
   const int channel_;
-  std::map<uint32_t, int> channels_ GUARDED_BY(crit_);
+  std::map<uint32_t, int> channels_ RTC_GUARDED_BY(crit_);
   webrtc::VoENetwork* const voe_network_;
   webrtc::Atomic32 transmitted_packets_;
 };
