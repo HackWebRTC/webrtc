@@ -792,6 +792,8 @@ typedef StringRtpHeaderExtension Mid;
 
 struct RTPHeaderExtension {
   RTPHeaderExtension();
+  RTPHeaderExtension(const RTPHeaderExtension& other);
+  RTPHeaderExtension& operator=(const RTPHeaderExtension& other);
 
   bool hasTransmissionTimeOffset;
   int32_t transmissionTimeOffset;
@@ -835,6 +837,8 @@ struct RTPHeaderExtension {
 
 struct RTPHeader {
   RTPHeader();
+  RTPHeader(const RTPHeader& other);
+  RTPHeader& operator=(const RTPHeader& other);
 
   bool markerBit;
   uint8_t payloadType;

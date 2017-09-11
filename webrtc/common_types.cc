@@ -57,6 +57,12 @@ RTPHeaderExtension::RTPHeaderExtension()
       videoContentType(VideoContentType::UNSPECIFIED),
       has_video_timing(false) {}
 
+RTPHeaderExtension::RTPHeaderExtension(const RTPHeaderExtension& other) =
+    default;
+
+RTPHeaderExtension& RTPHeaderExtension::operator=(
+    const RTPHeaderExtension& other) = default;
+
 RTPHeader::RTPHeader()
     : markerBit(false),
       payloadType(0),
@@ -69,6 +75,10 @@ RTPHeader::RTPHeader()
       headerLength(0),
       payload_type_frequency(0),
       extension() {}
+
+RTPHeader::RTPHeader(const RTPHeader& other) = default;
+
+RTPHeader& RTPHeader::operator=(const RTPHeader& other) = default;
 
 VideoCodec::VideoCodec()
     : codecType(kVideoCodecUnknown),
