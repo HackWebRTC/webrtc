@@ -14,13 +14,11 @@ import static org.webrtc.MediaCodecUtils.EXYNOS_PREFIX;
 import static org.webrtc.MediaCodecUtils.INTEL_PREFIX;
 import static org.webrtc.MediaCodecUtils.QCOM_PREFIX;
 
-import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
-import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecList;
 import android.os.Build;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,20 +38,6 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   // bitrates deviates a lot from the target value.
   private static final List<String> H264_HW_EXCEPTION_MODELS =
       Arrays.asList("SAMSUNG-SGH-I337", "Nexus 7", "Nexus 4");
-
-  // Keys for H264 VideoCodecInfo properties.
-  private static final String H264_FMTP_PROFILE_LEVEL_ID = "profile-level-id";
-  private static final String H264_FMTP_LEVEL_ASYMMETRY_ALLOWED = "level-asymmetry-allowed";
-  private static final String H264_FMTP_PACKETIZATION_MODE = "packetization-mode";
-
-  // Supported H264 profile ids and levels.
-  private static final String H264_PROFILE_CONSTRAINED_BASELINE = "4200";
-  private static final String H264_PROFILE_CONSTRAINED_HIGH = "640c";
-  private static final String H264_LEVEL_3_1 = "1f"; // 31 in hex.
-  private static final String H264_CONSTRAINED_BASELINE_3_1 =
-      H264_PROFILE_CONSTRAINED_BASELINE + H264_LEVEL_3_1;
-  private static final String H264_CONSTRAINED_HIGH_3_1 =
-      H264_PROFILE_CONSTRAINED_HIGH + H264_LEVEL_3_1;
 
   private final EglBase14.Context sharedContext;
   private final boolean enableIntelVp8Encoder;
@@ -93,9 +77,9 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
             : MediaCodecUtils.TEXTURE_COLOR_FORMATS,
         info.getCapabilitiesForType(mime));
 
-    return new HardwareVideoEncoder(codecName, type, colorFormat, getKeyFrameIntervalSec(type),
-        getForcedKeyFrameIntervalMs(type, codecName), createBitrateAdjuster(type, codecName),
-        sharedContext);
+    return new HardwareVideoEncoder(codecName, type, colorFormat, input.params,
+        getKeyFrameIntervalSec(type), getForcedKeyFrameIntervalMs(type, codecName),
+        createBitrateAdjuster(type, codecName), sharedContext);
   }
 
   @Override
@@ -250,10 +234,11 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
         return new HashMap<String, String>();
       case H264:
         Map<String, String> properties = new HashMap<>();
-        properties.put(H264_FMTP_LEVEL_ASYMMETRY_ALLOWED, "1");
-        properties.put(H264_FMTP_PACKETIZATION_MODE, "1");
-        properties.put(H264_FMTP_PROFILE_LEVEL_ID,
-            highProfile ? H264_CONSTRAINED_HIGH_3_1 : H264_CONSTRAINED_BASELINE_3_1);
+        properties.put(VideoCodecInfo.H264_FMTP_LEVEL_ASYMMETRY_ALLOWED, "1");
+        properties.put(VideoCodecInfo.H264_FMTP_PACKETIZATION_MODE, "1");
+        properties.put(VideoCodecInfo.H264_FMTP_PROFILE_LEVEL_ID,
+            highProfile ? VideoCodecInfo.H264_CONSTRAINED_HIGH_3_1
+                        : VideoCodecInfo.H264_CONSTRAINED_BASELINE_3_1);
         return properties;
       default:
         throw new IllegalArgumentException("Unsupported codec: " + type);

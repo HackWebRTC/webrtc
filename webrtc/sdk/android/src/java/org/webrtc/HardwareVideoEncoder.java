@@ -20,10 +20,8 @@ import android.os.Bundle;
 import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Deque;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
@@ -40,6 +38,9 @@ class HardwareVideoEncoder implements VideoEncoder {
   // constant until API level 21.
   private static final String KEY_BITRATE_MODE = "bitrate-mode";
 
+  private static final int VIDEO_AVC_PROFILE_HIGH = 8;
+  private static final int VIDEO_AVC_LEVEL_3 = 0x100;
+
   private static final int MAX_VIDEO_FRAMERATE = 30;
 
   // See MAX_ENCODER_Q_SIZE in androidmediaencoder_jni.cc.
@@ -51,6 +52,7 @@ class HardwareVideoEncoder implements VideoEncoder {
   private final String codecName;
   private final VideoCodecType codecType;
   private final int colorFormat;
+  private final Map<String, String> params;
   private final ColorFormat inputColorFormat;
   // Base interval for generating key frames.
   private final int keyFrameIntervalSec;
@@ -115,11 +117,12 @@ class HardwareVideoEncoder implements VideoEncoder {
    * @throws IllegalArgumentException if colorFormat is unsupported
    */
   public HardwareVideoEncoder(String codecName, VideoCodecType codecType, int colorFormat,
-      int keyFrameIntervalSec, int forceKeyFrameIntervalMs, BitrateAdjuster bitrateAdjuster,
-      EglBase14.Context textureContext) {
+      Map<String, String> params, int keyFrameIntervalSec, int forceKeyFrameIntervalMs,
+      BitrateAdjuster bitrateAdjuster, EglBase14.Context textureContext) {
     this.codecName = codecName;
     this.codecType = codecType;
     this.colorFormat = colorFormat;
+    this.params = params;
     if (textureContext == null) {
       this.inputColorFormat = ColorFormat.valueOf(colorFormat);
     } else {
@@ -169,6 +172,22 @@ class HardwareVideoEncoder implements VideoEncoder {
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat);
       format.setInteger(MediaFormat.KEY_FRAME_RATE, bitrateAdjuster.getAdjustedFramerate());
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, keyFrameIntervalSec);
+      if (codecType == VideoCodecType.H264) {
+        String profileLevelId = params.get(VideoCodecInfo.H264_FMTP_PROFILE_LEVEL_ID);
+        if (profileLevelId == null) {
+          profileLevelId = VideoCodecInfo.H264_CONSTRAINED_BASELINE_3_1;
+        }
+        switch (profileLevelId) {
+          case VideoCodecInfo.H264_CONSTRAINED_HIGH_3_1:
+            format.setInteger("profile", VIDEO_AVC_PROFILE_HIGH);
+            format.setInteger("level", VIDEO_AVC_LEVEL_3);
+            break;
+          case VideoCodecInfo.H264_CONSTRAINED_BASELINE_3_1:
+            break;
+          default:
+            Logging.w(TAG, "Unknown profile level id: " + profileLevelId);
+        }
+      }
       Logging.d(TAG, "Format: " + format);
       codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 
