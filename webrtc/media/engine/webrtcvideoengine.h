@@ -20,6 +20,7 @@
 #include "webrtc/api/call/transport.h"
 #include "webrtc/api/optional.h"
 #include "webrtc/api/video/video_frame.h"
+#include "webrtc/api/video_codecs/sdp_video_format.h"
 #include "webrtc/call/call.h"
 #include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/call/video_receive_stream.h"
@@ -47,6 +48,7 @@ class Thread;
 
 namespace cricket {
 
+class DecoderFactoryAdapter;
 class EncoderFactoryAdapter;
 class VideoCapturer;
 class VideoProcessor;
@@ -121,7 +123,7 @@ class WebRtcVideoEngine {
  private:
   bool initialized_;
 
-  WebRtcVideoDecoderFactory* external_decoder_factory_;
+  std::unique_ptr<DecoderFactoryAdapter> decoder_factory_;
   std::unique_ptr<EncoderFactoryAdapter> encoder_factory_;
 };
 
@@ -131,7 +133,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
                      const MediaConfig& config,
                      const VideoOptions& options,
                      const EncoderFactoryAdapter& encoder_factory,
-                     WebRtcVideoDecoderFactory* external_decoder_factory);
+                     const DecoderFactoryAdapter& decoder_factory);
   ~WebRtcVideoChannel() override;
 
   // VideoMediaChannel implementation
@@ -369,7 +371,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
         webrtc::Call* call,
         const StreamParams& sp,
         webrtc::VideoReceiveStream::Config config,
-        WebRtcVideoDecoderFactory* external_decoder_factory,
+        const DecoderFactoryAdapter& decoder_factory,
         bool default_stream,
         const std::vector<VideoCodecSettings>& recv_codecs,
         const webrtc::FlexfecReceiveStream::Config& flexfec_config);
@@ -394,16 +396,17 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     VideoReceiverInfo GetVideoReceiverInfo(bool log_stats);
 
    private:
-    struct AllocatedDecoder {
-      AllocatedDecoder(webrtc::VideoDecoder* decoder,
-                       webrtc::VideoCodecType type,
-                       bool external);
-      webrtc::VideoDecoder* decoder;
-      // Decoder wrapped into a fallback decoder to permit software fallback.
-      webrtc::VideoDecoder* external_decoder;
-      webrtc::VideoCodecType type;
-      bool external;
+    struct SdpVideoFormatCompare {
+      bool operator()(const webrtc::SdpVideoFormat& lhs,
+                      const webrtc::SdpVideoFormat& rhs) const {
+        return std::tie(lhs.name, lhs.parameters) <
+               std::tie(rhs.name, rhs.parameters);
+      }
     };
+    typedef std::map<webrtc::SdpVideoFormat,
+                     std::unique_ptr<webrtc::VideoDecoder>,
+                     SdpVideoFormatCompare>
+        DecoderMap;
 
     void RecreateWebRtcVideoStream();
     void MaybeRecreateWebRtcFlexfecStream();
@@ -412,12 +415,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     void MaybeDissociateFlexfecFromVideo();
 
     void ConfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs,
-                         std::vector<AllocatedDecoder>* old_codecs);
+                         DecoderMap* old_codecs);
     void ConfigureFlexfecCodec(int flexfec_payload_type);
-    AllocatedDecoder CreateOrReuseVideoDecoder(
-        std::vector<AllocatedDecoder>* old_decoder,
-        const VideoCodec& codec);
-    void ClearDecoders(std::vector<AllocatedDecoder>* allocated_decoders);
 
     std::string GetCodecNameFromPayloadType(int payload_type);
 
@@ -433,8 +432,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     webrtc::FlexfecReceiveStream::Config flexfec_config_;
     webrtc::FlexfecReceiveStream* flexfec_stream_;
 
-    WebRtcVideoDecoderFactory* const external_decoder_factory_;
-    std::vector<AllocatedDecoder> allocated_decoders_;
+    std::unique_ptr<DecoderFactoryAdapter> decoder_factory_;
+    DecoderMap allocated_decoders_;
 
     rtc::CriticalSection sink_lock_;
     rtc::VideoSinkInterface<webrtc::VideoFrame>* sink_
@@ -498,7 +497,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   rtc::Optional<std::vector<webrtc::RtpExtension>> send_rtp_extensions_;
 
   std::unique_ptr<EncoderFactoryAdapter> encoder_factory_;
-  WebRtcVideoDecoderFactory* const external_decoder_factory_;
+  std::unique_ptr<DecoderFactoryAdapter> decoder_factory_;
   std::vector<VideoCodecSettings> recv_codecs_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
   // See reason for keeping track of the FlexFEC payload type separately in
