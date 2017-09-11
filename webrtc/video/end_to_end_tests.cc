@@ -1184,7 +1184,9 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
         send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
         (*receive_configs)[0].rtp.rtx_ssrc = kSendRtxSsrcs[0];
         (*receive_configs)[0]
-            .rtp.rtx_associated_payload_types[kSendRtxPayloadType] =
+            .rtp.rtx_associated_payload_types[(payload_type_ == kRedPayloadType)
+                                                  ? kRtxRedPayloadType
+                                                  : kSendRtxPayloadType] =
             payload_type_;
       }
       // Configure encoding and decoding with VP8, since generic packetization

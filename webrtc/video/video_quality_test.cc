@@ -1555,6 +1555,9 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
             video_send_config_.rtp.ulpfec.ulpfec_payload_type;
         it->rtp.ulpfec.red_rtx_payload_type =
             video_send_config_.rtp.ulpfec.red_rtx_payload_type;
+        it->rtp.rtx_associated_payload_types[video_send_config_.rtp.ulpfec
+                                                 .red_rtx_payload_type] =
+            video_send_config_.rtp.ulpfec.red_payload_type;
       }
     } else {
       video_receive_configs_[params_.ss.selected_stream]
@@ -1566,6 +1569,10 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
       video_receive_configs_[params_.ss.selected_stream]
           .rtp.ulpfec.red_rtx_payload_type =
           video_send_config_.rtp.ulpfec.red_rtx_payload_type;
+      video_receive_configs_[params_.ss.selected_stream]
+          .rtp.rtx_associated_payload_types[video_send_config_.rtp.ulpfec
+                                                .red_rtx_payload_type] =
+          video_send_config_.rtp.ulpfec.red_payload_type;
     }
   }
 }

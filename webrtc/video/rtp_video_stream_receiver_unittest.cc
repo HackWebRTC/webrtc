@@ -126,11 +126,14 @@ class RtpVideoStreamReceiverTest : public testing::Test {
         process_thread_(ProcessThread::Create("TestThread")) {}
 
   void SetUp() {
-    rtp_video_stream_receiver_.reset(new RtpVideoStreamReceiver(
+    rtp_receive_statistics_ =
+        rtc::WrapUnique(ReceiveStatistics::Create(Clock::GetRealTimeClock()));
+    rtp_video_stream_receiver_ = rtc::MakeUnique<RtpVideoStreamReceiver>(
         &mock_transport_, nullptr, &packet_router_, &config_,
-        nullptr, process_thread_.get(), &mock_nack_sender_,
+        rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
+        &mock_nack_sender_,
         &mock_key_frame_request_sender_, &mock_on_complete_frame_callback_,
-        &timing_));
+        &timing_);
   }
 
   WebRtcRTPHeader GetDefaultPacket() {
@@ -196,6 +199,7 @@ class RtpVideoStreamReceiverTest : public testing::Test {
   PacketRouter packet_router_;
   VCMTiming timing_;
   std::unique_ptr<ProcessThread> process_thread_;
+  std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   std::unique_ptr<RtpVideoStreamReceiver> rtp_video_stream_receiver_;
 };
 

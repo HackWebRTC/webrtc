@@ -11,17 +11,21 @@
 #include <utility>
 
 #include "webrtc/call/rtx_receive_stream.h"
+#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 
-RtxReceiveStream::RtxReceiveStream(RtpPacketSinkInterface* media_sink,
-                                   std::map<int, int> associated_payload_types,
-                                   uint32_t media_ssrc)
+RtxReceiveStream::RtxReceiveStream(
+    RtpPacketSinkInterface* media_sink,
+    std::map<int, int> associated_payload_types,
+    uint32_t media_ssrc,
+    ReceiveStatistics* rtp_receive_statistics /* = nullptr */)
     : media_sink_(media_sink),
       associated_payload_types_(std::move(associated_payload_types)),
-      media_ssrc_(media_ssrc) {
+      media_ssrc_(media_ssrc),
+      rtp_receive_statistics_(rtp_receive_statistics) {
   if (associated_payload_types_.empty()) {
     LOG(LS_WARNING)
         << "RtxReceiveStream created with empty payload type mapping.";
@@ -31,6 +35,12 @@ RtxReceiveStream::RtxReceiveStream(RtpPacketSinkInterface* media_sink,
 RtxReceiveStream::~RtxReceiveStream() = default;
 
 void RtxReceiveStream::OnRtpPacket(const RtpPacketReceived& rtx_packet) {
+  if (rtp_receive_statistics_) {
+    RTPHeader header;
+    rtx_packet.GetHeader(&header);
+    rtp_receive_statistics_->IncomingPacket(header, rtx_packet.size(),
+                                            false /* retransmitted */);
+  }
   rtc::ArrayView<const uint8_t> payload = rtx_packet.payload();
 
   if (payload.size() < kRtxHeaderSize) {
