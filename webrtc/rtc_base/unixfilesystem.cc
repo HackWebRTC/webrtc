@@ -57,39 +57,6 @@ UnixFilesystem::UnixFilesystem() {}
 
 UnixFilesystem::~UnixFilesystem() {}
 
-bool UnixFilesystem::CreateFolder(const Pathname &path, mode_t mode) {
-  std::string pathname(path.pathname());
-  int len = pathname.length();
-  if ((len == 0) || (pathname[len - 1] != '/'))
-    return false;
-
-  struct stat st;
-  int res = ::stat(pathname.c_str(), &st);
-  if (res == 0) {
-    // Something exists at this location, check if it is a directory
-    return S_ISDIR(st.st_mode) != 0;
-  } else if (errno != ENOENT) {
-    // Unexpected error
-    return false;
-  }
-
-  // Directory doesn't exist, look up one directory level
-  do {
-    --len;
-  } while ((len > 0) && (pathname[len - 1] != '/'));
-
-  if (!CreateFolder(Pathname(pathname.substr(0, len)), mode)) {
-    return false;
-  }
-
-  LOG(LS_INFO) << "Creating folder: " << pathname;
-  return (0 == ::mkdir(pathname.c_str(), mode));
-}
-
-bool UnixFilesystem::CreateFolder(const Pathname &path) {
-  return CreateFolder(path, 0755);
-}
-
 bool UnixFilesystem::DeleteFile(const Pathname &filename) {
   LOG(LS_INFO) << "Deleting file:" << filename.pathname();
 

@@ -33,36 +33,6 @@
 
 namespace rtc {
 
-bool Win32Filesystem::CreateFolder(const Pathname &pathname) {
-  if (pathname.pathname().empty() || !pathname.filename().empty())
-    return false;
-
-  std::wstring path16;
-  if (!Utf8ToWindowsFilename(pathname.pathname(), &path16))
-    return false;
-
-  DWORD res = ::GetFileAttributes(path16.c_str());
-  if (res != INVALID_FILE_ATTRIBUTES) {
-    // Something exists at this location, check if it is a directory
-    return ((res & FILE_ATTRIBUTE_DIRECTORY) != 0);
-  } else if ((GetLastError() != ERROR_FILE_NOT_FOUND)
-              && (GetLastError() != ERROR_PATH_NOT_FOUND)) {
-    // Unexpected error
-    return false;
-  }
-
-  // Directory doesn't exist, look up one directory level
-  if (!pathname.parent_folder().empty()) {
-    Pathname parent(pathname);
-    parent.SetFolder(pathname.parent_folder());
-    if (!CreateFolder(parent)) {
-      return false;
-    }
-  }
-
-  return (::CreateDirectory(path16.c_str(), nullptr) != 0);
-}
-
 bool Win32Filesystem::DeleteFile(const Pathname &filename) {
   LOG(LS_INFO) << "Deleting file " << filename.pathname();
   if (!IsFile(filename)) {
