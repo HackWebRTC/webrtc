@@ -376,8 +376,8 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t samples_per_channel) {
   }
   // Update playout stats which is used as base for periodic logging of the
   // audio output state.
-  UpdatePlayStats(max_abs, num_samples_out);
-  return static_cast<int32_t>(num_samples_out);
+  UpdatePlayStats(max_abs, num_samples_out / play_channels_);
+  return static_cast<int32_t>(num_samples_out / play_channels_);
 }
 
 int32_t AudioDeviceBuffer::GetPlayoutData(void* audio_buffer) {

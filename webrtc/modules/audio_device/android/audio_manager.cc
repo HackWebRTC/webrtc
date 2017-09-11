@@ -220,6 +220,18 @@ bool AudioManager::IsProAudioSupported() const {
   return pro_audio_;
 }
 
+bool AudioManager::IsStereoPlayoutSupported() const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  ALOGD("IsStereoPlayoutSupported()");
+  return (playout_parameters_.channels() == 2);
+}
+
+bool AudioManager::IsStereoRecordSupported() const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  ALOGD("IsStereoRecordSupported()");
+  return (record_parameters_.channels() == 2);
+}
+
 int AudioManager::GetDelayEstimateInMilliseconds() const {
   return delay_estimate_in_milliseconds_;
 }

@@ -136,6 +136,16 @@ TEST_F(AudioManagerTest, IsProAudioSupported) {
         audio_manager()->IsProAudioSupported() ? "Yes" : "No");
 }
 
+// Verify that playout side is configured for mono by default.
+TEST_F(AudioManagerTest, IsStereoPlayoutSupported) {
+  EXPECT_FALSE(audio_manager()->IsStereoPlayoutSupported());
+}
+
+// Verify that recording side is configured for mono by default.
+TEST_F(AudioManagerTest, IsStereoRecordSupported) {
+  EXPECT_FALSE(audio_manager()->IsStereoRecordSupported());
+}
+
 TEST_F(AudioManagerTest, ShowAudioParameterInfo) {
   const bool low_latency_out = audio_manager()->IsLowLatencyPlayoutSupported();
   const bool low_latency_in = audio_manager()->IsLowLatencyRecordSupported();

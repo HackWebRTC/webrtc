@@ -331,41 +331,48 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return -1;
   }
 
+  // Returns true if the audio manager has been configured to support stereo
+  // and false otherwised. Default is mono.
   int32_t StereoPlayoutIsAvailable(bool& available) override {
     LOG(INFO) << __FUNCTION__;
-    available = false;
+    available = audio_manager_->IsStereoPlayoutSupported();
     return 0;
   }
 
-  // TODO(henrika): add support.
   int32_t SetStereoPlayout(bool enable) override {
     LOG(INFO) << __FUNCTION__;
-    // Allow disabling stereo playout, as that matches returning false(0) from
-    // StereoPlayoutIsAvailable and is the default case.
-    return enable ? -1 : 0;
+    bool available = audio_manager_->IsStereoPlayoutSupported();
+    // Android does not support changes between mono and stero on the fly.
+    // Instead, the native audio layer is configured via the audio manager
+    // to either support mono or stereo. It is allowed to call this method
+    // if that same state is not modified.
+    return (enable == available) ? 0 : -1;
   }
 
-  // TODO(henrika): add support.
   int32_t StereoPlayout(bool& enabled) const override {
-    enabled = false;
-    FATAL() << "Should never be called";
-    return -1;
+    enabled = audio_manager_->IsStereoPlayoutSupported();
+    return 0;
   }
 
   int32_t StereoRecordingIsAvailable(bool& available) override {
     LOG(INFO) << __FUNCTION__;
-    available = false;
+    available = audio_manager_->IsStereoRecordSupported();
     return 0;
   }
 
   int32_t SetStereoRecording(bool enable) override {
     LOG(INFO) << __FUNCTION__;
-    return -1;
+    bool available = audio_manager_->IsStereoRecordSupported();
+    // Android does not support changes between mono and stero on the fly.
+    // Instead, the native audio layer is configured via the audio manager
+    // to either support mono or stereo. It is allowed to call this method
+    // if that same state is not modified.
+    return (enable == available) ? 0 : -1;
   }
 
   int32_t StereoRecording(bool& enabled) const override {
     LOG(INFO) << __FUNCTION__;
-    enabled = false;
+    enabled = audio_manager_->IsStereoRecordSupported();
     return 0;
   }
 

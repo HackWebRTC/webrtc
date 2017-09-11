@@ -76,6 +76,11 @@ OpenSLESRecorder::~OpenSLESRecorder() {
 int OpenSLESRecorder::Init() {
   ALOGD("Init%s", GetThreadInfo().c_str());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (audio_parameters_.channels() == 2) {
+    // TODO(henrika): FineAudioBuffer needs more work to support stereo.
+    ALOGE("OpenSLESRecorder does not support stereo");
+    return -1;
+  }
   return 0;
 }
 

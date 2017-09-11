@@ -103,6 +103,14 @@ class AudioManager {
   bool IsLowLatencyPlayoutSupported() const;
   bool IsLowLatencyRecordSupported() const;
 
+  // Returns true if the device supports (and has been configured for) stereo.
+  // Call the Java API WebRtcAudioManager.setStereoOutput/Input() with true as
+  // paramter to enable stereo. Default is mono in both directions and the
+  // setting is set once and for all when the audio manager object is created.
+  // TODO(henrika): stereo is not supported in combination with OpenSL ES.
+  bool IsStereoPlayoutSupported() const;
+  bool IsStereoRecordSupported() const;
+
   // Returns true if the device supports pro-audio features in combination with
   // OpenSL ES.
   bool IsProAudioSupported() const;
