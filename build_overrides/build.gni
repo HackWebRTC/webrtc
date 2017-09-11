@@ -35,5 +35,14 @@ lint_suppressions_file = "//tools_webrtc/android/suppressions.xml"
 # so we just ignore that assert. See https://crbug.com/648948 for more info.
 ignore_elf32_limitations = true
 
-# Use bundled hermetic Xcode installation maintainted by Chromium.
-use_system_xcode = false
+# Use bundled hermetic Xcode installation maintainted by Chromium,
+# except for local iOS builds where it's unsupported.
+if (host_os == "mac") {
+  _result = exec_script("//build/mac/should_use_hermetic_xcode.py",
+                        [ target_os ],
+                        "value")
+  assert(_result != 2,
+         "Do not allow building targets with the default" +
+             "hermetic toolchain if the minimum OS version is not met.")
+  use_system_xcode = _result == 0
+}
