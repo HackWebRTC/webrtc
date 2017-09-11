@@ -42,10 +42,10 @@ class RenderDelayControllerImpl final : public RenderDelayController {
  private:
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
-  size_t delay_ = 0;
+  size_t delay_ = kMinEchoPathDelayBlocks;
   EchoPathDelayEstimator delay_estimator_;
   size_t blocks_since_last_delay_estimate_ = 300000;
-  int echo_path_delay_samples_ = 0;
+  int echo_path_delay_samples_ = kMinEchoPathDelayBlocks * kBlockSize;
   size_t align_call_counter_ = 0;
   rtc::Optional<size_t> headroom_samples_;
   RenderDelayControllerMetrics metrics_;
@@ -85,7 +85,7 @@ RenderDelayControllerImpl::~RenderDelayControllerImpl() = default;
 void RenderDelayControllerImpl::Reset() {
   delay_ = kMinEchoPathDelayBlocks;
   blocks_since_last_delay_estimate_ = 300000;
-  echo_path_delay_samples_ = 0;
+  echo_path_delay_samples_ = delay_ * kBlockSize;
   align_call_counter_ = 0;
   headroom_samples_ = rtc::Optional<size_t>();
 
@@ -124,8 +124,6 @@ size_t RenderDelayControllerImpl::GetDelay(
       RTC_DCHECK_LE(0, headroom);
       headroom_samples_ = rtc::Optional<size_t>(headroom);
     }
-  } else if (++blocks_since_last_delay_estimate_ > 20 * kNumBlocksPerSecond) {
-    headroom_samples_ = rtc::Optional<size_t>();
   }
 
   metrics_.Update(echo_path_delay_samples, delay_);

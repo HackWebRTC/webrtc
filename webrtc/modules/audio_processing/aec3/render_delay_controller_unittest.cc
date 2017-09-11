@@ -53,8 +53,9 @@ TEST(RenderDelayController, NoRenderSignal) {
         RenderDelayController::Create(AudioProcessing::Config::EchoCanceller3(),
                                       rate));
     for (size_t k = 0; k < 100; ++k) {
-      EXPECT_EQ(0u, delay_controller->GetDelay(
-                        delay_buffer->GetDownsampledRenderBuffer(), block));
+      EXPECT_EQ(kMinEchoPathDelayBlocks,
+                delay_controller->GetDelay(
+                    delay_buffer->GetDownsampledRenderBuffer(), block));
     }
   }
 }
@@ -78,7 +79,7 @@ TEST(RenderDelayController, BasicApiCalls) {
           render_delay_buffer->GetDownsampledRenderBuffer(), capture_block);
     }
     EXPECT_FALSE(delay_controller->AlignmentHeadroomSamples());
-    EXPECT_EQ(0u, delay_blocks);
+    EXPECT_EQ(kMinEchoPathDelayBlocks, delay_blocks);
   }
 }
 
@@ -113,9 +114,6 @@ TEST(RenderDelayController, Alignment) {
       size_t expected_delay_blocks =
           std::max(0, static_cast<int>(delay_samples / kBlockSize) -
                           kDelayHeadroomBlocks);
-      if (expected_delay_blocks < 2) {
-        expected_delay_blocks = 0;
-      }
 
       EXPECT_EQ(expected_delay_blocks, delay_blocks);
 
