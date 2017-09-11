@@ -40,13 +40,6 @@ class AudioDeviceModule : public RefCountedModule {
     kDefaultDevice = -2
   };
 
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  enum BufferType {
-    kFixedBufferSize  = 0,
-    kAdaptiveBufferSize = 1
-  };
-
   enum ChannelType {
     kChannelLeft = 0,
     kChannelRight = 1,
@@ -110,13 +103,6 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t SetAGC(bool enable) = 0;
   virtual bool AGC() const = 0;
 
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  virtual int32_t SetWaveOutVolume(uint16_t volumeLeft,
-                                   uint16_t volumeRight) { return -1; }
-  virtual int32_t WaveOutVolume(uint16_t* volumeLeft,
-                                uint16_t* volumeRight) const { return -1; }
-
   // Audio mixer initialization
   virtual int32_t InitSpeaker() = 0;
   virtual bool SpeakerIsInitialized() const = 0;
@@ -129,9 +115,6 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t SpeakerVolume(uint32_t* volume) const = 0;
   virtual int32_t MaxSpeakerVolume(uint32_t* maxVolume) const = 0;
   virtual int32_t MinSpeakerVolume(uint32_t* minVolume) const = 0;
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  virtual int32_t SpeakerVolumeStepSize(uint16_t* stepSize) const { return -1; }
 
   // Microphone volume controls
   virtual int32_t MicrophoneVolumeIsAvailable(bool* available) = 0;
@@ -139,11 +122,6 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t MicrophoneVolume(uint32_t* volume) const = 0;
   virtual int32_t MaxMicrophoneVolume(uint32_t* maxVolume) const = 0;
   virtual int32_t MinMicrophoneVolume(uint32_t* minVolume) const = 0;
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  virtual int32_t MicrophoneVolumeStepSize(uint16_t* stepSize) const {
-    return -1;
-  }
 
   // Speaker mute control
   virtual int32_t SpeakerMuteIsAvailable(bool* available) = 0;
@@ -155,12 +133,6 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t SetMicrophoneMute(bool enable) = 0;
   virtual int32_t MicrophoneMute(bool* enabled) const = 0;
 
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  virtual int32_t MicrophoneBoostIsAvailable(bool* available) { return -1; }
-  virtual int32_t SetMicrophoneBoost(bool enable) { return -1; }
-  virtual int32_t MicrophoneBoost(bool* enabled) const { return -1; }
-
   // Stereo support
   virtual int32_t StereoPlayoutIsAvailable(bool* available) const = 0;
   virtual int32_t SetStereoPlayout(bool enable) = 0;
@@ -171,39 +143,15 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t SetRecordingChannel(const ChannelType channel) = 0;
   virtual int32_t RecordingChannel(ChannelType* channel) const = 0;
 
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  virtual int32_t SetPlayoutBuffer(const BufferType type,
-                                   uint16_t sizeMS = 0) { return -1; }
-  virtual int32_t PlayoutBuffer(BufferType* type, uint16_t* sizeMS) const {
-    return -1;
-  }
   // Delay information and control
   virtual int32_t PlayoutDelay(uint16_t* delayMS) const = 0;
   virtual int32_t RecordingDelay(uint16_t* delayMS) const = 0;
-
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  virtual int32_t CPULoad(uint16_t* load) const { return -1; }
-
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  virtual int32_t StartRawOutputFileRecording(
-      const char pcmFileNameUTF8[kAdmMaxFileNameSize]) { return -1; }
-  virtual int32_t StopRawOutputFileRecording() { return -1; }
-  virtual int32_t StartRawInputFileRecording(
-      const char pcmFileNameUTF8[kAdmMaxFileNameSize]) { return -1; }
-  virtual int32_t StopRawInputFileRecording() { return -1; }
 
   // Native sample rate controls (samples/sec)
   virtual int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) = 0;
   virtual int32_t RecordingSampleRate(uint32_t* samplesPerSec) const = 0;
   virtual int32_t SetPlayoutSampleRate(const uint32_t samplesPerSec) = 0;
   virtual int32_t PlayoutSampleRate(uint32_t* samplesPerSec) const = 0;
-
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  virtual int32_t ResetAudioDevice() { return -1; }
 
   // Mobile device specific functions
   virtual int32_t SetLoudspeakerStatus(bool enable) = 0;
