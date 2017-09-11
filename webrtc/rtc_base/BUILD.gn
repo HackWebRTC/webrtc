@@ -31,12 +31,6 @@ group("base") {
   }
 }
 
-config("rtc_base_approved_all_dependent_config") {
-  if (is_mac && !build_with_chromium) {
-    libs = [ "Foundation.framework" ]  # needed for logging_mac.mm
-  }
-}
-
 config("rtc_base_chromium_config") {
   defines = [ "NO_MAIN_THREAD_WRAPPING" ]
 }
@@ -86,8 +80,22 @@ source_set("compile_assert_c") {
   ]
 }
 
+rtc_source_set("rtc_base_approved") {
+  public_deps = [
+    ":rtc_base_approved_generic",
+  ]
+  if (is_mac && !build_with_chromium) {
+    public_deps += [ ":rtc_base_approved_objc" ]
+  }
+}
+
 # The subset of rtc_base approved for use outside of libjingle.
-rtc_static_library("rtc_base_approved") {
+rtc_source_set("rtc_base_approved_generic") {
+  visibility = [
+    ":rtc_base_approved",
+    ":rtc_base_approved_objc",
+  ]
+
   # TODO(kjellander): Remove (bugs.webrtc.org/7480)
   # Enabling GN check triggers a cyclic dependency caused by rate_limiter.cc:
   #   :rtc_base_approved -> ../system_wrappers -> :rtc_base_approved
@@ -95,7 +103,6 @@ rtc_static_library("rtc_base_approved") {
   defines = []
   libs = []
   deps = []
-  all_dependent_configs = [ ":rtc_base_approved_all_dependent_config" ]
 
   sources = [
     "array_view.h",
@@ -209,7 +216,6 @@ rtc_static_library("rtc_base_approved") {
     sources += [
       "logging.cc",
       "logging.h",
-      "logging_mac.mm",
     ]
   }
   if (is_component_build && is_win) {
@@ -286,6 +292,24 @@ rtc_static_library("rtc_base_approved") {
   }
   if (is_nacl) {
     deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
+  }
+}
+
+if (is_mac && !build_with_chromium) {
+  config("rtc_base_approved_objc_all_dependent_config") {
+    visibility = [ ":rtc_base_approved_objc" ]
+    libs = [ "Foundation.framework" ]  # needed for logging_mac.mm
+  }
+
+  rtc_source_set("rtc_base_approved_objc") {
+    visibility = [ ":rtc_base_approved" ]
+    all_dependent_configs = [ ":rtc_base_approved_objc_all_dependent_config" ]
+    sources = [
+      "logging_mac.mm",
+    ]
+    deps = [
+      ":rtc_base_approved_generic",
+    ]
   }
 }
 
