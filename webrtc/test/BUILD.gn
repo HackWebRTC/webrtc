@@ -119,6 +119,9 @@ if (is_ios) {
       "ios/test_support.h",
       "ios/test_support.mm",
     ]
+    deps = [
+      "../sdk:common_objc",
+    ]
   }
 }
 
