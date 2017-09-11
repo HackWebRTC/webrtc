@@ -24,8 +24,8 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/constructormagic.h"
 #include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/race_checker.h"
 #include "webrtc/rtc_base/rate_statistics.h"
-#include "webrtc/rtc_base/thread_checker.h"
 
 namespace webrtc {
 
@@ -114,7 +114,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
 
   void TimeoutStreams(int64_t now_ms) RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_);
 
-  rtc::ThreadChecker network_thread_;
+  rtc::RaceChecker network_race_;
   const Clock* const clock_;
   RemoteBitrateObserver* const observer_;
   std::unique_ptr<InterArrival> inter_arrival_;

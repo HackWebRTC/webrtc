@@ -94,7 +94,6 @@ bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
         uma_recorded_(false) {
     RTC_DCHECK(observer_);
     LOG(LS_INFO) << "RemoteBitrateEstimatorAbsSendTime: Instantiating.";
-    network_thread_.DetachFromThread();
 }
 
 void RemoteBitrateEstimatorAbsSendTime::ComputeClusters(
@@ -211,7 +210,7 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacket(
     int64_t arrival_time_ms,
     size_t payload_size,
     const RTPHeader& header) {
-  RTC_DCHECK(network_thread_.CalledOnValidThread());
+  RTC_DCHECK_RUNS_SERIALIZED(&network_race_);
   if (!header.extension.hasAbsoluteSendTime) {
     LOG(LS_WARNING) << "RemoteBitrateEstimatorAbsSendTimeImpl: Incoming packet "
                        "is missing absolute send time extension!";
