@@ -54,7 +54,7 @@ class FakePacketBuffer : public PacketBuffer {
 class TestRtpFrameReferenceFinder : public ::testing::Test,
                                     public OnCompleteFrameCallback {
  protected:
-  static constexpr uint64_t kUnwrappedSequenceStart = 10000000000000000000UL;
+  static constexpr uint64_t kUnwrappedSequenceStart = 1000000000000000000UL;
 
   TestRtpFrameReferenceFinder()
       : rand_(0x8739211),

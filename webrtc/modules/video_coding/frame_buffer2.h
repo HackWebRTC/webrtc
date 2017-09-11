@@ -76,19 +76,19 @@ class FrameBuffer {
 
  private:
   struct FrameKey {
-    FrameKey() : picture_id(0), spatial_layer(0) {}
-    FrameKey(uint16_t picture_id, uint8_t spatial_layer)
+    FrameKey() : picture_id(-1), spatial_layer(0) {}
+    FrameKey(int64_t picture_id, uint8_t spatial_layer)
         : picture_id(picture_id), spatial_layer(spatial_layer) {}
 
     bool operator<(const FrameKey& rhs) const {
       if (picture_id == rhs.picture_id)
         return spatial_layer < rhs.spatial_layer;
-      return AheadOf(rhs.picture_id, picture_id);
+      return picture_id < rhs.picture_id;
     }
 
     bool operator<=(const FrameKey& rhs) const { return !(rhs < *this); }
 
-    uint16_t picture_id;
+    int64_t picture_id;
     uint8_t spatial_layer;
   };
 
