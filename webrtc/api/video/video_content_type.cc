@@ -48,8 +48,7 @@ static constexpr uint8_t kTotalBitsSize =
     kScreenshareBitsSize + kSimulcastBitsSize + kExperimentBitsSize;
 }  // namespace
 
-bool SetExperimentId(VideoContentType* content_type,
-                                              uint8_t experiment_id) {
+bool SetExperimentId(VideoContentType* content_type, uint8_t experiment_id) {
   // Store in bits 2-4.
   if (experiment_id >= (1 << kExperimentBitsSize))
     return false;
@@ -59,8 +58,7 @@ bool SetExperimentId(VideoContentType* content_type,
   return true;
 }
 
-bool SetSimulcastId(VideoContentType* content_type,
-                                             uint8_t simulcast_id) {
+bool SetSimulcastId(VideoContentType* content_type, uint8_t simulcast_id) {
   // Store in bits 5-6.
   if (simulcast_id >= (1 << kSimulcastBitsSize))
     return false;
