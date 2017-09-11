@@ -511,17 +511,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     // overridden in specialized classes
   }
 
-  // Creates a cricket::SessionDescription with one MediaContent and one stream.
+  // Creates a MediaContent with one stream.
   // kPcmuCodec is used as audio codec and kH264Codec is used as video codec.
-  cricket::SessionDescription* CreateSessionDescriptionWithStream(
-      uint32_t ssrc) {
-     typename T::Content content;
-     cricket::SessionDescription* sdesc = new cricket::SessionDescription();
-     CreateContent(SECURE, kPcmuCodec, kH264Codec, &content);
-     AddLegacyStreamInContent(ssrc, 0, &content);
-     sdesc->AddContent("DUMMY_CONTENT_NAME",
-                       cricket::NS_JINGLE_RTP, content.Copy());
-     return sdesc;
+  typename T::Content* CreateMediaContentWithStream(uint32_t ssrc) {
+    typename T::Content* content = new typename T::Content();
+    CreateContent(SECURE, kPcmuCodec, kH264Codec, content);
+    AddLegacyStreamInContent(ssrc, 0, content);
+    return content;
   }
 
   // Will manage the lifetime of a CallThread, making sure it's
@@ -1829,41 +1825,39 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void TestSetContentFailure() {
     CreateChannels(0, 0);
 
-    auto sdesc = cricket::SessionDescription();
-    sdesc.AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP,
-                     new cricket::AudioContentDescription());
-    sdesc.AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP,
-                     new cricket::VideoContentDescription());
-
     std::string err;
+    std::unique_ptr<typename T::Content> content(
+        CreateMediaContentWithStream(1));
+
     media_channel1_->set_fail_set_recv_codecs(true);
-    EXPECT_FALSE(channel1_->PushdownLocalDescription(
-        &sdesc, cricket::CA_OFFER, &err));
-    EXPECT_FALSE(channel1_->PushdownLocalDescription(
-        &sdesc, cricket::CA_ANSWER, &err));
+    EXPECT_FALSE(
+        channel1_->SetLocalContent(content.get(), cricket::CA_OFFER, &err));
+    EXPECT_FALSE(
+        channel1_->SetLocalContent(content.get(), cricket::CA_ANSWER, &err));
 
     media_channel1_->set_fail_set_send_codecs(true);
-    EXPECT_FALSE(channel1_->PushdownRemoteDescription(
-        &sdesc, cricket::CA_OFFER, &err));
+    EXPECT_FALSE(
+        channel1_->SetRemoteContent(content.get(), cricket::CA_OFFER, &err));
+
     media_channel1_->set_fail_set_send_codecs(true);
-    EXPECT_FALSE(channel1_->PushdownRemoteDescription(
-        &sdesc, cricket::CA_ANSWER, &err));
+    EXPECT_FALSE(
+        channel1_->SetRemoteContent(content.get(), cricket::CA_ANSWER, &err));
   }
 
   void TestSendTwoOffers() {
     CreateChannels(0, 0);
 
     std::string err;
-    std::unique_ptr<cricket::SessionDescription> sdesc1(
-        CreateSessionDescriptionWithStream(1));
-    EXPECT_TRUE(channel1_->PushdownLocalDescription(
-        sdesc1.get(), cricket::CA_OFFER, &err));
+    std::unique_ptr<typename T::Content> content1(
+        CreateMediaContentWithStream(1));
+    EXPECT_TRUE(
+        channel1_->SetLocalContent(content1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
 
-    std::unique_ptr<cricket::SessionDescription> sdesc2(
-        CreateSessionDescriptionWithStream(2));
-    EXPECT_TRUE(channel1_->PushdownLocalDescription(
-        sdesc2.get(), cricket::CA_OFFER, &err));
+    std::unique_ptr<typename T::Content> content2(
+        CreateMediaContentWithStream(2));
+    EXPECT_TRUE(
+        channel1_->SetLocalContent(content2.get(), cricket::CA_OFFER, &err));
     EXPECT_FALSE(media_channel1_->HasSendStream(1));
     EXPECT_TRUE(media_channel1_->HasSendStream(2));
   }
@@ -1872,16 +1866,16 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(0, 0);
 
     std::string err;
-    std::unique_ptr<cricket::SessionDescription> sdesc1(
-        CreateSessionDescriptionWithStream(1));
-    EXPECT_TRUE(channel1_->PushdownRemoteDescription(
-        sdesc1.get(), cricket::CA_OFFER, &err));
+    std::unique_ptr<typename T::Content> content1(
+        CreateMediaContentWithStream(1));
+    EXPECT_TRUE(
+        channel1_->SetRemoteContent(content1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
 
-    std::unique_ptr<cricket::SessionDescription> sdesc2(
-        CreateSessionDescriptionWithStream(2));
-    EXPECT_TRUE(channel1_->PushdownRemoteDescription(
-        sdesc2.get(), cricket::CA_OFFER, &err));
+    std::unique_ptr<typename T::Content> content2(
+        CreateMediaContentWithStream(2));
+    EXPECT_TRUE(
+        channel1_->SetRemoteContent(content2.get(), cricket::CA_OFFER, &err));
     EXPECT_FALSE(media_channel1_->HasRecvStream(1));
     EXPECT_TRUE(media_channel1_->HasRecvStream(2));
   }
@@ -1891,25 +1885,25 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     std::string err;
     // Receive offer
-    std::unique_ptr<cricket::SessionDescription> sdesc1(
-        CreateSessionDescriptionWithStream(1));
-    EXPECT_TRUE(channel1_->PushdownRemoteDescription(
-        sdesc1.get(), cricket::CA_OFFER, &err));
+    std::unique_ptr<typename T::Content> content1(
+        CreateMediaContentWithStream(1));
+    EXPECT_TRUE(
+        channel1_->SetRemoteContent(content1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
 
     // Send PR answer
-    std::unique_ptr<cricket::SessionDescription> sdesc2(
-        CreateSessionDescriptionWithStream(2));
-    EXPECT_TRUE(channel1_->PushdownLocalDescription(
-        sdesc2.get(), cricket::CA_PRANSWER, &err));
+    std::unique_ptr<typename T::Content> content2(
+        CreateMediaContentWithStream(2));
+    EXPECT_TRUE(
+        channel1_->SetLocalContent(content2.get(), cricket::CA_PRANSWER, &err));
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
     EXPECT_TRUE(media_channel1_->HasSendStream(2));
 
     // Send answer
-    std::unique_ptr<cricket::SessionDescription> sdesc3(
-        CreateSessionDescriptionWithStream(3));
-    EXPECT_TRUE(channel1_->PushdownLocalDescription(
-        sdesc3.get(), cricket::CA_ANSWER, &err));
+    std::unique_ptr<typename T::Content> content3(
+        CreateMediaContentWithStream(3));
+    EXPECT_TRUE(
+        channel1_->SetLocalContent(content3.get(), cricket::CA_ANSWER, &err));
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
     EXPECT_FALSE(media_channel1_->HasSendStream(2));
     EXPECT_TRUE(media_channel1_->HasSendStream(3));
@@ -1920,25 +1914,25 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     std::string err;
     // Send offer
-    std::unique_ptr<cricket::SessionDescription> sdesc1(
-        CreateSessionDescriptionWithStream(1));
-    EXPECT_TRUE(channel1_->PushdownLocalDescription(
-        sdesc1.get(), cricket::CA_OFFER, &err));
+    std::unique_ptr<typename T::Content> content1(
+        CreateMediaContentWithStream(1));
+    EXPECT_TRUE(
+        channel1_->SetLocalContent(content1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
 
     // Receive PR answer
-    std::unique_ptr<cricket::SessionDescription> sdesc2(
-        CreateSessionDescriptionWithStream(2));
-    EXPECT_TRUE(channel1_->PushdownRemoteDescription(
-        sdesc2.get(), cricket::CA_PRANSWER, &err));
+    std::unique_ptr<typename T::Content> content2(
+        CreateMediaContentWithStream(2));
+    EXPECT_TRUE(channel1_->SetRemoteContent(content2.get(),
+                                            cricket::CA_PRANSWER, &err));
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
     EXPECT_TRUE(media_channel1_->HasRecvStream(2));
 
     // Receive answer
-    std::unique_ptr<cricket::SessionDescription> sdesc3(
-        CreateSessionDescriptionWithStream(3));
-    EXPECT_TRUE(channel1_->PushdownRemoteDescription(
-        sdesc3.get(), cricket::CA_ANSWER, &err));
+    std::unique_ptr<typename T::Content> content3(
+        CreateMediaContentWithStream(3));
+    EXPECT_TRUE(
+        channel1_->SetRemoteContent(content3.get(), cricket::CA_ANSWER, &err));
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
     EXPECT_FALSE(media_channel1_->HasRecvStream(2));
     EXPECT_TRUE(media_channel1_->HasRecvStream(3));

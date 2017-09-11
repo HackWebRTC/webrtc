@@ -111,13 +111,6 @@ static bool IsSendContentDirection(MediaContentDirection direction) {
   return direction == MD_SENDRECV || direction == MD_SENDONLY;
 }
 
-static const MediaContentDescription* GetContentDescription(
-    const ContentInfo* cinfo) {
-  if (cinfo == NULL)
-    return NULL;
-  return static_cast<const MediaContentDescription*>(cinfo->description);
-}
-
 template <class Codec>
 void RtpParametersFromMediaDescription(
     const MediaContentDescriptionImpl<Codec>* desc,
@@ -744,34 +737,6 @@ void BaseChannel::ProcessPacket(bool rtcp,
   } else {
     media_channel_->OnPacketReceived(&data, packet_time);
   }
-}
-
-bool BaseChannel::PushdownLocalDescription(
-    const SessionDescription* local_desc, ContentAction action,
-    std::string* error_desc) {
-  const ContentInfo* content_info = GetFirstContent(local_desc);
-  const MediaContentDescription* content_desc =
-      GetContentDescription(content_info);
-  if (content_desc && content_info && !content_info->rejected &&
-      !SetLocalContent(content_desc, action, error_desc)) {
-    LOG(LS_ERROR) << "Failure in SetLocalContent with action " << action;
-    return false;
-  }
-  return true;
-}
-
-bool BaseChannel::PushdownRemoteDescription(
-    const SessionDescription* remote_desc, ContentAction action,
-    std::string* error_desc) {
-  const ContentInfo* content_info = GetFirstContent(remote_desc);
-  const MediaContentDescription* content_desc =
-      GetContentDescription(content_info);
-  if (content_desc && content_info && !content_info->rejected &&
-      !SetRemoteContent(content_desc, action, error_desc)) {
-    LOG(LS_ERROR) << "Failure in SetRemoteContent with action " << action;
-    return false;
-  }
-  return true;
 }
 
 void BaseChannel::EnableMedia_w() {
@@ -1728,11 +1693,6 @@ void VoiceChannel::UpdateMediaSendRecvState_w() {
   LOG(LS_INFO) << "Changing voice state, recv=" << recv << " send=" << send;
 }
 
-const ContentInfo* VoiceChannel::GetFirstContent(
-    const SessionDescription* sdesc) {
-  return GetFirstAudioContent(sdesc);
-}
-
 bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
                                      ContentAction action,
                                      std::string* error_desc) {
@@ -2015,11 +1975,6 @@ void VideoChannel::StopMediaMonitor() {
   }
 }
 
-const ContentInfo* VideoChannel::GetFirstContent(
-    const SessionDescription* sdesc) {
-  return GetFirstVideoContent(sdesc);
-}
-
 bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
                                      ContentAction action,
                                      std::string* error_desc) {
@@ -2199,11 +2154,6 @@ bool RtpDataChannel::SendData(const SendDataParams& params,
   return InvokeOnWorker<bool>(
       RTC_FROM_HERE, Bind(&DataMediaChannel::SendData, media_channel(), params,
                           payload, result));
-}
-
-const ContentInfo* RtpDataChannel::GetFirstContent(
-    const SessionDescription* sdesc) {
-  return GetFirstDataContent(sdesc);
 }
 
 bool RtpDataChannel::CheckDataChannelTypeFromContent(

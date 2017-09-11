@@ -121,12 +121,6 @@ class BaseChannel
                      DtlsTransportInternal* rtcp_dtls_transport);
   void SetTransports(rtc::PacketTransportInternal* rtp_packet_transport,
                      rtc::PacketTransportInternal* rtcp_packet_transport);
-  bool PushdownLocalDescription(const SessionDescription* local_desc,
-                                ContentAction action,
-                                std::string* error_desc);
-  bool PushdownRemoteDescription(const SessionDescription* remote_desc,
-                                ContentAction action,
-                                std::string* error_desc);
   // Channel control
   bool SetLocalContent(const MediaContentDescription* content,
                        ContentAction action,
@@ -302,9 +296,6 @@ class BaseChannel
   void UpdateMediaSendRecvState();
   virtual void UpdateMediaSendRecvState_w() = 0;
 
-  // Gets the content info appropriate to the channel (audio or video).
-  virtual const ContentInfo* GetFirstContent(
-      const SessionDescription* sdesc) = 0;
   bool UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
                             ContentAction action,
                             std::string* error_desc);
@@ -509,7 +500,6 @@ class VoiceChannel : public BaseChannel {
                         rtc::CopyOnWriteBuffer* packet,
                         const rtc::PacketTime& packet_time) override;
   void UpdateMediaSendRecvState_w() override;
-  const ContentInfo* GetFirstContent(const SessionDescription* sdesc) override;
   bool SetLocalContent_w(const MediaContentDescription* content,
                          ContentAction action,
                          std::string* error_desc) override;
@@ -589,7 +579,6 @@ class VideoChannel : public BaseChannel {
  private:
   // overrides from BaseChannel
   void UpdateMediaSendRecvState_w() override;
-  const ContentInfo* GetFirstContent(const SessionDescription* sdesc) override;
   bool SetLocalContent_w(const MediaContentDescription* content,
                          ContentAction action,
                          std::string* error_desc) override;
@@ -699,7 +688,6 @@ class RtpDataChannel : public BaseChannel {
   typedef rtc::TypedMessageData<bool> DataChannelReadyToSendMessageData;
 
   // overrides from BaseChannel
-  const ContentInfo* GetFirstContent(const SessionDescription* sdesc) override;
   // Checks that data channel type is RTP.
   bool CheckDataChannelTypeFromContent(const DataContentDescription* content,
                                        std::string* error_desc);

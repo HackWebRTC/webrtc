@@ -393,6 +393,9 @@ class WebRtcSession :
     kAnswer,
   };
 
+  // Return all managed, non-null channels.
+  std::vector<cricket::BaseChannel*> Channels() const;
+
   // Non-const versions of local_description()/remote_description(), for use
   // internally.
   SessionDescriptionInterface* mutable_local_description() {

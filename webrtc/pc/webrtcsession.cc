@@ -847,6 +847,21 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
   return true;
 }
 
+// TODO(steveanton): Eventually it'd be nice to store the channels as a single
+// vector of BaseChannel pointers instead of separate voice and video channel
+// vectors. At that point, this will become a simple getter.
+std::vector<cricket::BaseChannel*> WebRtcSession::Channels() const {
+  std::vector<cricket::BaseChannel*> channels;
+  channels.insert(channels.end(), voice_channels_.begin(),
+                  voice_channels_.end());
+  channels.insert(channels.end(), video_channels_.begin(),
+                  video_channels_.end());
+  if (rtp_data_channel_) {
+    channels.push_back(rtp_data_channel_.get());
+  }
+  return channels;
+}
+
 void WebRtcSession::LogState(State old_state, State new_state) {
   LOG(LS_INFO) << "Session:" << id()
                << " Old state:" << GetStateString(old_state)
@@ -953,30 +968,40 @@ bool WebRtcSession::PushdownMediaDescription(
     cricket::ContentAction action,
     cricket::ContentSource source,
     std::string* err) {
-  auto set_content = [this, action, source, err](cricket::BaseChannel* ch) {
-    if (!ch) {
-      return true;
-    } else if (source == cricket::CS_LOCAL) {
-      return ch->PushdownLocalDescription(local_description()->description(),
-                                          action, err);
-    } else {
-      return ch->PushdownRemoteDescription(remote_description()->description(),
-                                           action, err);
+  const SessionDescription* sdesc =
+      (source == cricket::CS_LOCAL ? local_description() : remote_description())
+          ->description();
+  RTC_DCHECK(sdesc);
+  bool all_success = true;
+  for (auto* channel : Channels()) {
+    // TODO(steveanton): Add support for multiple channels of the same type.
+    const ContentInfo* content_info =
+        cricket::GetFirstMediaContent(sdesc->contents(), channel->media_type());
+    if (!content_info) {
+      continue;
     }
-  };
-
-  bool ret = (set_content(voice_channel()) && set_content(video_channel()) &&
-              set_content(rtp_data_channel()));
+    const MediaContentDescription* content_desc =
+        static_cast<const MediaContentDescription*>(content_info->description);
+    if (content_desc && !content_info->rejected) {
+      bool success = (source == cricket::CS_LOCAL)
+                         ? channel->SetLocalContent(content_desc, action, err)
+                         : channel->SetRemoteContent(content_desc, action, err);
+      if (!success) {
+        all_success = false;
+        break;
+      }
+    }
+  }
   // Need complete offer/answer with an SCTP m= section before starting SCTP,
   // according to https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-19
   if (sctp_transport_ && local_description() && remote_description() &&
       cricket::GetFirstDataContent(local_description()->description()) &&
       cricket::GetFirstDataContent(remote_description()->description())) {
-    ret &= network_thread_->Invoke<bool>(
+    all_success &= network_thread_->Invoke<bool>(
         RTC_FROM_HERE,
         rtc::Bind(&WebRtcSession::PushdownSctpParameters_n, this, source));
   }
-  return ret;
+  return all_success;
 }
 
 bool WebRtcSession::PushdownSctpParameters_n(cricket::ContentSource source) {
