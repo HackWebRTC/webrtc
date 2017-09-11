@@ -24,6 +24,7 @@ copy("scripts") {
     "apm_quality_assessment.sh",
     "apm_quality_assessment_export.py",
     "apm_quality_assessment_gencfgs.py",
+    "apm_quality_assessment_optimize.py",
   ]
   outputs = [
     "$root_build_dir/py_quality_assessment/{{source_file_part}}",
@@ -53,6 +54,7 @@ copy("lib") {
   sources = [
     "quality_assessment/__init__.py",
     "quality_assessment/audioproc_wrapper.py",
+    "quality_assessment/collect_data.py",
     "quality_assessment/data_access.py",
     "quality_assessment/echo_path_simulation.py",
     "quality_assessment/echo_path_simulation_factory.py",

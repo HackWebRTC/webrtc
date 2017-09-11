@@ -6,6 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import functools
 import hashlib
 import os
 import re
@@ -79,7 +80,8 @@ class HtmlExport(object):
 
   def _BuildBody(self):
     """Builds the content of the <body> section."""
-    score_names = self._scores_data_frame.eval_score_name.unique().tolist()
+    score_names = self._scores_data_frame['eval_score_name'].drop_duplicates(
+    ).values.tolist()
 
     html = [
         ('<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header '
@@ -178,7 +180,7 @@ class HtmlExport(object):
         score_name + test_data_gen + test_data_gen_params + apm_config)
     if stats['count'] == 1:
       # Show the only available score.
-      item_id = hashlib.md5(items_id_prefix).hexdigest()
+      item_id = hashlib.md5(items_id_prefix.encode('utf-8')).hexdigest()
       html.append('<div id="single-value-{0}">{1:f}</div>'.format(
           item_id, scores['score'].mean()))
       html.append('<div class="mdl-tooltip" data-mdl-for="single-value-{}">{}'
@@ -186,7 +188,8 @@ class HtmlExport(object):
     else:
       # Show stats.
       for stat_name in ['min', 'max', 'mean', 'std dev']:
-        item_id = hashlib.md5(items_id_prefix + stat_name).hexdigest()
+        item_id = hashlib.md5(
+            (items_id_prefix + stat_name).encode('utf-8')).hexdigest()
         html.append('<div id="stats-{0}">{1:f}</div>'.format(
             item_id, stats[stat_name]))
         html.append('<div class="mdl-tooltip" data-mdl-for="stats-{}">{}'
@@ -289,7 +292,7 @@ class HtmlExport(object):
     masks.append(self._scores_data_frame.test_data_gen == test_data_gen)
     masks.append(
         self._scores_data_frame.test_data_gen_params == test_data_gen_params)
-    mask = reduce((lambda i1, i2: i1 & i2), masks)
+    mask = functools.reduce((lambda i1, i2: i1 & i2), masks)
     del masks
     return self._scores_data_frame[mask]
 
@@ -302,7 +305,7 @@ class HtmlExport(object):
     masks.append(scores.capture == capture)
     masks.append(scores.render == render)
     masks.append(scores.echo_simulator == echo_simulator)
-    mask = reduce((lambda i1, i2: i1 & i2), masks)
+    mask = functools.reduce((lambda i1, i2: i1 & i2), masks)
     del masks
 
     sliced_data = scores[mask]
@@ -333,7 +336,7 @@ class HtmlExport(object):
     return 'score-stats-dialog-' + hashlib.md5(
         'score-stats-inspector-{}-{}-{}-{}'.format(
             score_name, apm_config, test_data_gen,
-            test_data_gen_params)).hexdigest()
+            test_data_gen_params).encode('utf-8')).hexdigest()
 
   @classmethod
   def _Save(cls, output_filepath, html):

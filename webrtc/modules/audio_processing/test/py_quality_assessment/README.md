@@ -81,7 +81,7 @@ export separate reports. In this case, you can use the
 For instance:
 
 ```
-$ ./apm_quality_assessment-export.py \
+$ ./apm_quality_assessment_export.py \
   -o output/ \
   -c "(^default$)|(.*AE.*)" \
   -t \(white_noise\) \
