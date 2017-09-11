@@ -18,7 +18,6 @@
 #include "webrtc/rtc_base/copyonwritebuffer.h"
 
 namespace webrtc {
-struct RTPHeader;
 class RtpHeaderExtensionMap;
 class Random;
 
@@ -48,10 +47,6 @@ class Packet {
   uint32_t Timestamp() const;
   uint32_t Ssrc() const;
   std::vector<uint32_t> Csrcs() const;
-
-  // TODO(danilchap): Remove this function when all code update to use RtpPacket
-  // directly. Function is there just for easier backward compatibilty.
-  void GetHeader(RTPHeader* header) const;
 
   size_t headers_size() const;
 
@@ -127,7 +122,7 @@ class Packet {
   explicit Packet(const ExtensionManager* extensions);
   Packet(const Packet&);
   Packet(const ExtensionManager* extensions, size_t capacity);
-  virtual ~Packet();
+  ~Packet();
 
   Packet& operator=(const Packet&) = default;
 

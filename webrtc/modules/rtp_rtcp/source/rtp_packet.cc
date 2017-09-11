@@ -16,7 +16,6 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/random.h"
@@ -143,43 +142,6 @@ std::vector<uint32_t> Packet::Csrcs() const {
         ByteReader<uint32_t>::ReadBigEndian(&data()[kFixedHeaderSize + i * 4]);
   }
   return csrcs;
-}
-
-void Packet::GetHeader(RTPHeader* header) const {
-  header->markerBit = Marker();
-  header->payloadType = PayloadType();
-  header->sequenceNumber = SequenceNumber();
-  header->timestamp = Timestamp();
-  header->ssrc = Ssrc();
-  std::vector<uint32_t> csrcs = Csrcs();
-  header->numCSRCs = csrcs.size();
-  for (size_t i = 0; i < csrcs.size(); ++i) {
-    header->arrOfCSRCs[i] = csrcs[i];
-  }
-  header->paddingLength = padding_size();
-  header->headerLength = headers_size();
-  header->payload_type_frequency = 0;
-  header->extension.hasTransmissionTimeOffset =
-      GetExtension<TransmissionOffset>(
-          &header->extension.transmissionTimeOffset);
-  header->extension.hasAbsoluteSendTime =
-      GetExtension<AbsoluteSendTime>(&header->extension.absoluteSendTime);
-  header->extension.hasTransportSequenceNumber =
-      GetExtension<TransportSequenceNumber>(
-          &header->extension.transportSequenceNumber);
-  header->extension.hasAudioLevel = GetExtension<AudioLevel>(
-      &header->extension.voiceActivity, &header->extension.audioLevel);
-  header->extension.hasVideoRotation =
-      GetExtension<VideoOrientation>(&header->extension.videoRotation);
-  header->extension.hasVideoContentType =
-      GetExtension<VideoContentTypeExtension>(
-          &header->extension.videoContentType);
-  header->extension.has_video_timing =
-      GetExtension<VideoTimingExtension>(&header->extension.video_timing);
-  GetExtension<RtpStreamId>(&header->extension.stream_id);
-  GetExtension<RepairedRtpStreamId>(&header->extension.repaired_stream_id);
-  GetExtension<RtpMid>(&header->extension.mid);
-  GetExtension<PlayoutDelayLimits>(&header->extension.playout_delay);
 }
 
 size_t Packet::headers_size() const {

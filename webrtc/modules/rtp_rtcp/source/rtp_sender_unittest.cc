@@ -500,9 +500,6 @@ TEST_P(RtpSenderTestWithoutPacer, WritesTimestampToTimingExtension) {
   packet->SetExtension<VideoTimingExtension>(kVideoTiming);
   EXPECT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
   size_t packet_size = packet->size();
-  webrtc::RTPHeader rtp_header;
-
-  packet->GetHeader(&rtp_header);
 
   const int kStoredTimeInMs = 100;
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
@@ -513,10 +510,10 @@ TEST_P(RtpSenderTestWithoutPacer, WritesTimestampToTimingExtension) {
   EXPECT_EQ(1, transport_.packets_sent());
   EXPECT_EQ(packet_size, transport_.last_sent_packet().size());
 
-  transport_.last_sent_packet().GetHeader(&rtp_header);
-  EXPECT_TRUE(rtp_header.extension.has_video_timing);
-  EXPECT_EQ(kStoredTimeInMs,
-            rtp_header.extension.video_timing.pacer_exit_delta_ms);
+  VideoSendTiming video_timing;
+  EXPECT_TRUE(transport_.last_sent_packet().GetExtension<VideoTimingExtension>(
+      &video_timing));
+  EXPECT_EQ(kStoredTimeInMs, video_timing.pacer_exit_delta_ms);
 
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
   rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum, capture_time_ms, false,
@@ -525,10 +522,9 @@ TEST_P(RtpSenderTestWithoutPacer, WritesTimestampToTimingExtension) {
   EXPECT_EQ(2, transport_.packets_sent());
   EXPECT_EQ(packet_size, transport_.last_sent_packet().size());
 
-  transport_.last_sent_packet().GetHeader(&rtp_header);
-  EXPECT_TRUE(rtp_header.extension.has_video_timing);
-  EXPECT_EQ(kStoredTimeInMs * 2,
-            rtp_header.extension.video_timing.pacer_exit_delta_ms);
+  EXPECT_TRUE(transport_.last_sent_packet().GetExtension<VideoTimingExtension>(
+      &video_timing));
+  EXPECT_EQ(kStoredTimeInMs * 2, video_timing.pacer_exit_delta_ms);
 }
 
 TEST_P(RtpSenderTest, TrafficSmoothingWithExtensions) {

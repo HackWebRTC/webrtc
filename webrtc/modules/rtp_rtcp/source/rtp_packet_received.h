@@ -22,10 +22,9 @@ class RtpPacketReceived : public rtp::Packet {
   explicit RtpPacketReceived(const ExtensionManager* extensions)
       : Packet(extensions) {}
 
-  void GetHeader(RTPHeader* header) const {
-    Packet::GetHeader(header);
-    header->payload_type_frequency = payload_type_frequency();
-  }
+  // TODO(danilchap): Remove this function when all code update to use RtpPacket
+  // directly. Function is there just for easier backward compatibilty.
+  void GetHeader(RTPHeader* header) const;
 
   // Time in local time base as close as it can to packet arrived on the
   // network.

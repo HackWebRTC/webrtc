@@ -118,6 +118,7 @@ rtc_static_library("rtp_rtcp") {
     "source/rtp_packet.h",
     "source/rtp_packet_history.cc",
     "source/rtp_packet_history.h",
+    "source/rtp_packet_received.cc",
     "source/rtp_packet_received.h",
     "source/rtp_packet_to_send.h",
     "source/rtp_payload_registry.cc",
