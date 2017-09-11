@@ -11,10 +11,8 @@
 package org.webrtc;
 
 import android.graphics.Point;
-import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.view.View;
-import java.nio.ByteBuffer;
 
 /**
  * Static helper functions for renderer implementations.
@@ -51,109 +49,6 @@ public class RendererCommon {
      * Release all GL resources. This needs to be done manually, otherwise resources may leak.
      */
     void release();
-  }
-
-  /**
-   * Draws a VideoFrame.TextureBuffer. Calls either drawer.drawOes or drawer.drawRgb
-   * depending on the type of the buffer. You can supply an additional render matrix. This is
-   * used multiplied together with the transformation matrix of the frame. (M = renderMatrix *
-   * transformationMatrix)
-   */
-  static void drawTexture(GlDrawer drawer, VideoFrame.TextureBuffer buffer,
-      android.graphics.Matrix renderMatrix, int frameWidth, int frameHeight, int viewportX,
-      int viewportY, int viewportWidth, int viewportHeight) {
-    android.graphics.Matrix finalMatrix = new android.graphics.Matrix(buffer.getTransformMatrix());
-    finalMatrix.preConcat(renderMatrix);
-    float[] finalGlMatrix = convertMatrixFromAndroidGraphicsMatrix(finalMatrix);
-    switch (buffer.getType()) {
-      case OES:
-        drawer.drawOes(buffer.getTextureId(), finalGlMatrix, frameWidth, frameHeight, viewportX,
-            viewportY, viewportWidth, viewportHeight);
-        break;
-      case RGB:
-        drawer.drawRgb(buffer.getTextureId(), finalGlMatrix, frameWidth, frameHeight, viewportX,
-            viewportY, viewportWidth, viewportHeight);
-        break;
-      default:
-        throw new RuntimeException("Unknown texture type.");
-    }
-  }
-
-  /**
-   * Helper class for uploading YUV bytebuffer frames to textures that handles stride > width. This
-   * class keeps an internal ByteBuffer to avoid unnecessary allocations for intermediate copies.
-   */
-  public static class YuvUploader {
-    // Intermediate copy buffer for uploading yuv frames that are not packed, i.e. stride > width.
-    // TODO(magjed): Investigate when GL_UNPACK_ROW_LENGTH is available, or make a custom shader
-    // that handles stride and compare performance with intermediate copy.
-    private ByteBuffer copyBuffer;
-    private int[] yuvTextures;
-
-    /**
-     * Upload |planes| into OpenGL textures, taking stride into consideration.
-     *
-     * @return Array of three texture indices corresponding to Y-, U-, and V-plane respectively.
-     */
-    public int[] uploadYuvData(int width, int height, int[] strides, ByteBuffer[] planes) {
-      final int[] planeWidths = new int[] {width, width / 2, width / 2};
-      final int[] planeHeights = new int[] {height, height / 2, height / 2};
-      // Make a first pass to see if we need a temporary copy buffer.
-      int copyCapacityNeeded = 0;
-      for (int i = 0; i < 3; ++i) {
-        if (strides[i] > planeWidths[i]) {
-          copyCapacityNeeded = Math.max(copyCapacityNeeded, planeWidths[i] * planeHeights[i]);
-        }
-      }
-      // Allocate copy buffer if necessary.
-      if (copyCapacityNeeded > 0
-          && (copyBuffer == null || copyBuffer.capacity() < copyCapacityNeeded)) {
-        copyBuffer = ByteBuffer.allocateDirect(copyCapacityNeeded);
-      }
-      // Make sure YUV textures are allocated.
-      if (yuvTextures == null) {
-        yuvTextures = new int[3];
-        for (int i = 0; i < 3; i++) {
-          yuvTextures[i] = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
-        }
-      }
-      // Upload each plane.
-      for (int i = 0; i < 3; ++i) {
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, yuvTextures[i]);
-        // GLES only accepts packed data, i.e. stride == planeWidth.
-        final ByteBuffer packedByteBuffer;
-        if (strides[i] == planeWidths[i]) {
-          // Input is packed already.
-          packedByteBuffer = planes[i];
-        } else {
-          VideoRenderer.nativeCopyPlane(
-              planes[i], planeWidths[i], planeHeights[i], strides[i], copyBuffer, planeWidths[i]);
-          packedByteBuffer = copyBuffer;
-        }
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, planeWidths[i],
-            planeHeights[i], 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, packedByteBuffer);
-      }
-      return yuvTextures;
-    }
-
-    public int[] uploadFromBuffer(VideoFrame.I420Buffer buffer) {
-      int[] strides = {buffer.getStrideY(), buffer.getStrideU(), buffer.getStrideV()};
-      ByteBuffer[] planes = {buffer.getDataY(), buffer.getDataU(), buffer.getDataV()};
-      return uploadYuvData(buffer.getWidth(), buffer.getHeight(), strides, planes);
-    }
-
-    /**
-     * Releases cached resources. Uploader can still be used and the resources will be reallocated
-     * on first use.
-     */
-    public void release() {
-      copyBuffer = null;
-      if (yuvTextures != null) {
-        GLES20.glDeleteTextures(3, yuvTextures, 0);
-        yuvTextures = null;
-      }
-    }
   }
 
   /**
