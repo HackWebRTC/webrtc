@@ -15,43 +15,17 @@
 #include <string>
 #include <vector>
 
+// TODO(eladalon): Get rid of this later in the CL-stack.
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/common_types.h"
+// TODO(eladalon): Get rid of this later in the CL-stack.
+#include "webrtc/logging/rtc_event_log/rtc_stream_config.h"
 #include "webrtc/rtc_base/platform_file.h"
 
 namespace webrtc {
 
-// Forward declaration of storage class that is automatically generated from
-// the protobuf file.
 namespace rtclog {
-class EventStream;
-
-struct StreamConfig {
-  uint32_t local_ssrc = 0;
-  uint32_t remote_ssrc = 0;
-  uint32_t rtx_ssrc = 0;
-  std::string rsid;
-
-  bool remb = false;
-  std::vector<RtpExtension> rtp_extensions;
-
-  RtcpMode rtcp_mode = RtcpMode::kReducedSize;
-
-  struct Codec {
-    Codec(const std::string& payload_name,
-          int payload_type,
-          int rtx_payload_type)
-        : payload_name(payload_name),
-          payload_type(payload_type),
-          rtx_payload_type(rtx_payload_type) {}
-
-    std::string payload_name;
-    int payload_type;
-    int rtx_payload_type;
-  };
-  std::vector<Codec> codecs;
-};
-
+class EventStream;  // Storage class automatically generated from protobuf.
 }  // namespace rtclog
 
 class Clock;
