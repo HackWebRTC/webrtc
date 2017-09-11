@@ -99,7 +99,8 @@ public class PeerConnection {
     // List of URIs associated with this server. Valid formats are described
     // in RFC7064 and RFC7065, and more may be added in the future. The "host"
     // part of the URI may contain either an IP address or a hostname.
-    public final String uri;
+    @Deprecated public final String uri;
+    public final List<String> urls;
     public final String username;
     public final String password;
     public final TlsCertPolicy tlsCertPolicy;
@@ -136,12 +137,32 @@ public class PeerConnection {
     @Deprecated
     public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy,
         String hostname) {
-      this(uri, username, password, tlsCertPolicy, hostname, null, null);
+      this(uri, Collections.singletonList(uri), username, password, tlsCertPolicy, hostname, null,
+          null);
     }
 
-    private IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy,
-        String hostname, List<String> tlsAlpnProtocols, List<String> tlsEllipticCurves) {
+    private IceServer(String uri, List<String> urls, String username, String password,
+        TlsCertPolicy tlsCertPolicy, String hostname, List<String> tlsAlpnProtocols,
+        List<String> tlsEllipticCurves) {
+      if (uri == null || urls == null || urls.isEmpty()) {
+        throw new IllegalArgumentException("uri == null || urls == null || urls.isEmpty()");
+      }
+      for (String it : urls) {
+        if (it == null) {
+          throw new IllegalArgumentException("urls element is null: " + urls);
+        }
+      }
+      if (username == null) {
+        throw new IllegalArgumentException("username == null");
+      }
+      if (password == null) {
+        throw new IllegalArgumentException("password == null");
+      }
+      if (hostname == null) {
+        throw new IllegalArgumentException("hostname == null");
+      }
       this.uri = uri;
+      this.urls = urls;
       this.username = username;
       this.password = password;
       this.tlsCertPolicy = tlsCertPolicy;
@@ -151,16 +172,20 @@ public class PeerConnection {
     }
 
     public String toString() {
-      return uri + " [" + username + ":" + password + "] [" + tlsCertPolicy + "] [" + hostname
+      return urls + " [" + username + ":" + password + "] [" + tlsCertPolicy + "] [" + hostname
           + "] [" + tlsAlpnProtocols + "] [" + tlsEllipticCurves + "]";
     }
 
     public static Builder builder(String uri) {
-      return new Builder(uri);
+      return new Builder(Collections.singletonList(uri));
+    }
+
+    public static Builder builder(List<String> urls) {
+      return new Builder(urls);
     }
 
     public static class Builder {
-      private String uri;
+      private final List<String> urls;
       private String username = "";
       private String password = "";
       private TlsCertPolicy tlsCertPolicy = TlsCertPolicy.TLS_CERT_POLICY_SECURE;
@@ -168,8 +193,11 @@ public class PeerConnection {
       private List<String> tlsAlpnProtocols;
       private List<String> tlsEllipticCurves;
 
-      private Builder(String uri) {
-        this.uri = uri;
+      private Builder(List<String> urls) {
+        if (urls == null || urls.isEmpty()) {
+          throw new IllegalArgumentException("urls == null || urls.isEmpty(): " + urls);
+        }
+        this.urls = urls;
       }
 
       public Builder setUsername(String username) {
@@ -203,8 +231,8 @@ public class PeerConnection {
       }
 
       public IceServer createIceServer() {
-        return new IceServer(
-            uri, username, password, tlsCertPolicy, hostname, tlsAlpnProtocols, tlsEllipticCurves);
+        return new IceServer(urls.get(0), urls, username, password, tlsCertPolicy, hostname,
+            tlsAlpnProtocols, tlsEllipticCurves);
       }
     }
   }
