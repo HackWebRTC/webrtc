@@ -11,7 +11,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 
-#import "WebRTC/RTCMacros.h"
+#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCMacros.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

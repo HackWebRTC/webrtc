@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "WebRTC/RTCMacros.h"
+#include "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCMacros.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/ios/audio_session_observer.h"
 #include "webrtc/modules/audio_device/ios/voice_processing_audio_unit.h"

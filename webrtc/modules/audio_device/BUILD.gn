@@ -45,7 +45,55 @@ config("audio_device_warnings_config") {
   }
 }
 
-rtc_static_library("audio_device") {
+rtc_source_set("audio_device") {
+  public_deps = [
+    ":audio_device_generic",
+  ]
+  if (rtc_include_internal_audio_device && is_ios) {
+    public_deps += [ ":audio_device_ios_objc" ]
+  }
+}
+
+if (rtc_include_internal_audio_device && is_ios) {
+  rtc_source_set("audio_device_ios_objc") {
+    visibility = [ ":audio_device" ]
+    sources = [
+      "ios/audio_device_ios.h",
+      "ios/audio_device_ios.mm",
+      "ios/audio_device_not_implemented_ios.mm",
+      "ios/audio_session_observer.h",
+      "ios/objc/RTCAudioSessionDelegateAdapter.h",
+      "ios/objc/RTCAudioSessionDelegateAdapter.mm",
+      "ios/voice_processing_audio_unit.h",
+      "ios/voice_processing_audio_unit.mm",
+    ]
+    libs = [
+      "AudioToolbox.framework",
+      "AVFoundation.framework",
+      "Foundation.framework",
+      "UIKit.framework",
+    ]
+    deps = [
+      ":audio_device_generic",
+      "../../api:array_view",
+      "../../rtc_base:gtest_prod",
+      "../../rtc_base:rtc_base",
+      "../../sdk:audio_objc",
+      "../../sdk:common_objc",
+      "../../system_wrappers:metrics_api",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+}
+
+rtc_source_set("audio_device_generic") {
+  visibility = [
+    ":audio_device",
+    ":audio_device_ios_objc",
+  ]
   public_configs = [ ":audio_device_config" ]
 
   deps = [
@@ -176,30 +224,6 @@ rtc_static_library("audio_device") {
           "CoreGraphics.framework",
         ]
       }
-      if (is_ios) {
-        public_deps = [
-          "../../rtc_base:gtest_prod",
-          "../../rtc_base:rtc_base",
-          "../../sdk:audio_objc",
-          "../../sdk:common_objc",
-        ]
-        sources += [
-          "ios/audio_device_ios.h",
-          "ios/audio_device_ios.mm",
-          "ios/audio_device_not_implemented_ios.mm",
-          "ios/audio_session_observer.h",
-          "ios/objc/RTCAudioSessionDelegateAdapter.h",
-          "ios/objc/RTCAudioSessionDelegateAdapter.mm",
-          "ios/voice_processing_audio_unit.h",
-          "ios/voice_processing_audio_unit.mm",
-        ]
-        libs = [
-          "AudioToolbox.framework",
-          "AVFoundation.framework",
-          "Foundation.framework",
-          "UIKit.framework",
-        ]
-      }
       if (is_win) {
         sources += [
           "win/audio_device_core_win.cc",
@@ -267,6 +291,32 @@ rtc_source_set("mock_audio_device") {
 }
 
 if (rtc_include_tests) {
+  # TODO(kthelgason): Reenable these tests on simulator.
+  # See bugs.webrtc.org/7812
+  if (is_ios && !use_ios_simulator) {
+    rtc_source_set("audio_device_ios_objc_unittests") {
+      testonly = true
+      visibility = [ ":*" ]
+      sources = [
+        "ios/audio_device_unittest_ios.mm",
+      ]
+      deps = [
+        ":audio_device",
+        ":mock_audio_device",
+        "../../rtc_base:rtc_base_approved",
+        "../../sdk:audio_objc",
+        "../../system_wrappers",
+        "../../test:test_support",
+        "//testing/gmock",
+        "//third_party/ocmock",
+      ]
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+    }
+  }
+
   rtc_source_set("audio_device_unittests") {
     testonly = true
 
@@ -285,7 +335,7 @@ if (rtc_include_tests) {
       "../../api:array_view",
       "../../api:optional",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers",
+      "../../system_wrappers",
       "../../test:test_support",
       "../utility:utility",
       "//testing/gmock",
@@ -309,12 +359,6 @@ if (rtc_include_tests) {
         "../../../base",
         "../../sdk/android:libjingle_peerconnection_java",
       ]
-    }
-    if (is_ios && !use_ios_simulator) {
-      # TODO(kthelgason): Reenable these tests on simulator.
-      # See bugs.webrtc.org/7812
-      sources += [ "ios/audio_device_unittest_ios.mm" ]
-      deps += [ "//third_party/ocmock" ]
     }
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

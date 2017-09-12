@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "WebRTC/RTCAudioSession.h"
+#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCAudioSession.h"
 
 #include <vector>
 
