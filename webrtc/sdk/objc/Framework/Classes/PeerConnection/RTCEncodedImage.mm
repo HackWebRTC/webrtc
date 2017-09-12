@@ -12,6 +12,8 @@
 
 #import "RTCVideoCodec+Private.h"
 
+#include "webrtc/rtc_base/safe_conversions.h"
+
 @implementation RTCEncodedImage
 
 @synthesize buffer = _buffer;
@@ -35,16 +37,16 @@
     _buffer = [NSData dataWithBytesNoCopy:encodedImage._buffer
                                    length:encodedImage._length
                              freeWhenDone:NO];
-    _encodedWidth = encodedImage._encodedWidth;
-    _encodedHeight = encodedImage._encodedHeight;
+    _encodedWidth = rtc::dchecked_cast<int32_t>(encodedImage._encodedWidth);
+    _encodedHeight = rtc::dchecked_cast<int32_t>(encodedImage._encodedHeight);
     _timeStamp = encodedImage._timeStamp;
     _captureTimeMs = encodedImage.capture_time_ms_;
     _ntpTimeMs = encodedImage.ntp_time_ms_;
     _flags = encodedImage.timing_.flags;
     _encodeStartMs = encodedImage.timing_.encode_start_ms;
     _encodeFinishMs = encodedImage.timing_.encode_finish_ms;
-    _frameType = (RTCFrameType)encodedImage._frameType;
-    _rotation = encodedImage.rotation_;
+    _frameType = static_cast<RTCFrameType>(encodedImage._frameType);
+    _rotation = static_cast<RTCVideoRotation>(encodedImage.rotation_);
     _completeFrame = encodedImage._completeFrame;
     _qp = encodedImage.qp_ == -1 ? nil : @(encodedImage.qp_);
     _contentType = (encodedImage.content_type_ == webrtc::VideoContentType::SCREENSHARE) ?
@@ -59,8 +61,8 @@
   // Return the pointer without copying.
   webrtc::EncodedImage encodedImage(
       (uint8_t *)_buffer.bytes, (size_t)_buffer.length, (size_t)_buffer.length);
-  encodedImage._encodedWidth = _encodedWidth;
-  encodedImage._encodedHeight = _encodedHeight;
+  encodedImage._encodedWidth = rtc::dchecked_cast<uint32_t>(_encodedWidth);
+  encodedImage._encodedHeight = rtc::dchecked_cast<uint32_t>(_encodedHeight);
   encodedImage._timeStamp = _timeStamp;
   encodedImage.capture_time_ms_ = _captureTimeMs;
   encodedImage.ntp_time_ms_ = _ntpTimeMs;

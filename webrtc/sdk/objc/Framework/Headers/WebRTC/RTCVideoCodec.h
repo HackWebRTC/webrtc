@@ -11,8 +11,7 @@
 #import <Foundation/Foundation.h>
 
 #import <WebRTC/RTCMacros.h>
-
-@class RTCVideoFrame;
+#import <WebRTC/RTCVideoFrame.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -35,16 +34,16 @@ RTC_EXPORT
 @interface RTCEncodedImage : NSObject
 
 @property(nonatomic, strong) NSData *buffer;
-@property(nonatomic, assign) int encodedWidth;
-@property(nonatomic, assign) int encodedHeight;
+@property(nonatomic, assign) int32_t encodedWidth;
+@property(nonatomic, assign) int32_t encodedHeight;
 @property(nonatomic, assign) uint32_t timeStamp;
-@property(nonatomic, assign) long captureTimeMs;
-@property(nonatomic, assign) long ntpTimeMs;
+@property(nonatomic, assign) int64_t captureTimeMs;
+@property(nonatomic, assign) int64_t ntpTimeMs;
 @property(nonatomic, assign) uint8_t flags;
-@property(nonatomic, assign) long encodeStartMs;
-@property(nonatomic, assign) long encodeFinishMs;
+@property(nonatomic, assign) int64_t encodeStartMs;
+@property(nonatomic, assign) int64_t encodeFinishMs;
 @property(nonatomic, assign) RTCFrameType frameType;
-@property(nonatomic, assign) int rotation;
+@property(nonatomic, assign) RTCVideoRotation rotation;
 @property(nonatomic, assign) BOOL completeFrame;
 @property(nonatomic, strong) NSNumber *qp;
 @property(nonatomic, assign) RTCVideoContentType contentType;
