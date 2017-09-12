@@ -489,6 +489,22 @@ public class PeerConnection {
 
   public native void close();
 
+  /**
+   * Free native resources associated with this PeerConnection instance.
+   * <p>
+   * This method removes a reference count from the C++ PeerConnection object,
+   * which should result in it being destroyed. It also calls equivalent
+   * "dispose" methods on the Java objects attached to this PeerConnection
+   * (streams, senders, receivers), such that their associated C++ objects
+   * will also be destroyed.
+   * <p>
+   * Note that this method cannot be safely called from an observer callback
+   * (PeerConnection.Observer, DataChannel.Observer, etc.). If you want to, for
+   * example, destroy the PeerConnection after an "ICE failed" callback, you
+   * must do this asynchronously (in other words, unwind the stack first). See
+   * <a href="https://bugs.chromium.org/p/webrtc/issues/detail?id=3721">bug
+   * 3721</a> for more details.
+   */
   public void dispose() {
     close();
     for (MediaStream stream : localStreams) {
