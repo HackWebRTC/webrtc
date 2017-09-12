@@ -111,8 +111,11 @@ void RemoteBitrateEstimatorAbsSendTime::ComputeClusters(
         ++current.num_above_min_delta;
       }
       if (!IsWithinClusterBounds(send_delta_ms, current)) {
-        if (current.count >= kMinClusterSize)
+        if (current.count >= kMinClusterSize &&
+            current.send_mean_ms > 0.0f &&
+            current.recv_mean_ms > 0.0f) {
           AddCluster(clusters, &current);
+        }
         current = Cluster();
       }
       current.send_mean_ms += send_delta_ms;
@@ -123,8 +126,11 @@ void RemoteBitrateEstimatorAbsSendTime::ComputeClusters(
     prev_send_time = it->send_time_ms;
     prev_recv_time = it->recv_time_ms;
   }
-  if (current.count >= kMinClusterSize)
+  if (current.count >= kMinClusterSize &&
+      current.send_mean_ms > 0.0f &&
+      current.recv_mean_ms > 0.0f) {
     AddCluster(clusters, &current);
+  }
 }
 
 std::list<Cluster>::const_iterator
