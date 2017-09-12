@@ -827,20 +827,31 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   assert(codec_.maxFramerate > 0);
   uint32_t duration = 90000 / codec_.maxFramerate;
 
-  // Note we must pass 0 for |flags| field in encode call below since they are
-  // set above in |vpx_codec_control| function for each encoder/spatial layer.
-  int error = vpx_codec_encode(&encoders_[0], &raw_images_[0], timestamp_,
-                               duration, 0, VPX_DL_REALTIME);
-  // Reset specific intra frame thresholds, following the key frame.
-  if (send_key_frame) {
-    vpx_codec_control(&(encoders_[0]), VP8E_SET_MAX_INTRA_BITRATE_PCT,
-                      rc_max_intra_target_);
+  int error = WEBRTC_VIDEO_CODEC_OK;
+  int num_tries = 0;
+  // If the first try returns WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT
+  // the frame must be reencoded with the same parameters again because
+  // target bitrate is exceeded and encoder state has been reset.
+  while (num_tries == 0 ||
+      (num_tries == 1 &&
+          error == WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT)) {
+    ++num_tries;
+    // Note we must pass 0 for |flags| field in encode call below since they are
+    // set above in |vpx_codec_control| function for each encoder/spatial layer.
+    error = vpx_codec_encode(&encoders_[0], &raw_images_[0], timestamp_,
+                                 duration, 0, VPX_DL_REALTIME);
+    // Reset specific intra frame thresholds, following the key frame.
+    if (send_key_frame) {
+      vpx_codec_control(&(encoders_[0]), VP8E_SET_MAX_INTRA_BITRATE_PCT,
+                        rc_max_intra_target_);
+    }
+    if (error)
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    timestamp_ += duration;
+    // Examines frame timestamps only.
+    error = GetEncodedPartitions(tl_configs, frame);
   }
-  if (error)
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  timestamp_ += duration;
-  // Examines frame timestamps only.
-  return GetEncodedPartitions(tl_configs, frame);
+  return error;
 }
 
 void VP8EncoderImpl::PopulateCodecSpecific(

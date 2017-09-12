@@ -122,7 +122,6 @@ class VCMGenericEncoder {
   const bool internal_source_;
   rtc::CriticalSection params_lock_;
   EncoderParameters encoder_params_ RTC_GUARDED_BY(params_lock_);
-  bool is_screenshare_;
   size_t streams_or_svc_num_;
 };
 
