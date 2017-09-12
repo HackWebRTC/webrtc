@@ -13,26 +13,9 @@
 
 #include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/optional.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 
 namespace webrtc {
-
-struct AudioEncoderRuntimeConfig {
-  AudioEncoderRuntimeConfig();
-  AudioEncoderRuntimeConfig(const AudioEncoderRuntimeConfig& other);
-  ~AudioEncoderRuntimeConfig();
-  rtc::Optional<int> bitrate_bps;
-  rtc::Optional<int> frame_length_ms;
-  // Note: This is what we tell the encoder. It doesn't have to reflect
-  // the actual NetworkMetrics; it's subject to our decision.
-  rtc::Optional<float> uplink_packet_loss_fraction;
-  rtc::Optional<bool> enable_fec;
-  rtc::Optional<bool> enable_dtx;
-
-  // Some encoders can encode fewer channels than the actual input to make
-  // better use of the bandwidth. |num_channels| sets the number of channels
-  // to encode.
-  rtc::Optional<size_t> num_channels;
-};
 
 // An AudioNetworkAdaptor optimizes the audio experience by suggesting a
 // suitable runtime configuration (bit rate, frame length, FEC, etc.) to the

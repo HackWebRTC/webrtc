@@ -881,9 +881,18 @@ if (rtc_enable_protobuf) {
   }
 }
 
+rtc_static_library("audio_network_adaptor_config") {
+  sources = [
+    "audio_network_adaptor/audio_network_adaptor_config.cc",
+    "audio_network_adaptor/include/audio_network_adaptor_config.h",
+  ]
+  deps = [
+    "../../api:optional",
+  ]
+}
+
 rtc_static_library("audio_network_adaptor") {
   sources = [
-    "audio_network_adaptor/audio_network_adaptor.cc",
     "audio_network_adaptor/audio_network_adaptor_impl.cc",
     "audio_network_adaptor/audio_network_adaptor_impl.h",
     "audio_network_adaptor/bitrate_controller.cc",
@@ -908,6 +917,10 @@ rtc_static_library("audio_network_adaptor") {
     "audio_network_adaptor/frame_length_controller.h",
     "audio_network_adaptor/include/audio_network_adaptor.h",
     "audio_network_adaptor/util/threshold_curve.h",
+  ]
+
+  public_deps = [
+    ":audio_network_adaptor_config",
   ]
 
   deps = [
