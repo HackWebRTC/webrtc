@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '60110d69728e93dd4015ecd6b07f1fe19195d219',
+  'chromium_revision': '988ef967a4502948dda95c811701c3cdc518184e',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -23,7 +23,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'd5df04f53ce84b12550e46a8a9d5ff496d73bb01',
+  'catapult_revision': '4298cb322ef35220f7d3c6a195dc5f6a8e76c620',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -35,13 +35,13 @@ deps = {
   'src/base':
     Var('chromium_git') + '/chromium/src/base' + '@' + 'e381e380bc4e1b3390ca99bf1429ab570b81151b',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + 'f8d38d79b18617f857a49117fcfcb48df325fe76',
+    Var('chromium_git') + '/chromium/src/build' + '@' + 'eece4132992b5e744944d1ed8a6f5f0b8d026083',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + 'cbc33b9c0a9d1bb913895a4319a742c504a2d541',
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + '5421b9f680b370fb01c476844dae3d9b9707a3e5',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '1d31b2e7fbdbbc0952dbcc5ec424cf3297b428c7',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '829b6bf07ee93e5a09bf724ce19261d8293ad9e7',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -118,7 +118,7 @@ deps_os = {
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + '6da9b18a7480930ae4e76defa54547fd17768825',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + '5748f43c04a8568c9c168eff3abdc8a8d2e9007a',
   },
   'unix': {
     'src/third_party/lss':
