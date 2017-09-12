@@ -19,4 +19,7 @@ AudioEncoderRuntimeConfig::~AudioEncoderRuntimeConfig() = default;
 AudioEncoderRuntimeConfig::AudioEncoderRuntimeConfig(
     const AudioEncoderRuntimeConfig& other) = default;
 
+AudioEncoderRuntimeConfig& AudioEncoderRuntimeConfig::operator=(
+    const AudioEncoderRuntimeConfig& other) = default;
+
 }  // namespace webrtc

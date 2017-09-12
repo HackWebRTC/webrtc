@@ -18,6 +18,7 @@ namespace webrtc {
 struct AudioEncoderRuntimeConfig {
   AudioEncoderRuntimeConfig();
   AudioEncoderRuntimeConfig(const AudioEncoderRuntimeConfig& other);
+  AudioEncoderRuntimeConfig& operator=(const AudioEncoderRuntimeConfig& other);
   ~AudioEncoderRuntimeConfig();
   rtc::Optional<int> bitrate_bps;
   rtc::Optional<int> frame_length_ms;
