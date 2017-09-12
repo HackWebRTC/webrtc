@@ -13,6 +13,7 @@
 
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/api/jsepsessiondescription.h"
+#include "webrtc/api/webrtcsdp.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
@@ -97,7 +98,7 @@ class JsepSessionDescriptionTest : public testing::Test {
 
   SessionDescriptionInterface* DeSerialize(const std::string& sdp) {
     JsepSessionDescription* desc(new JsepSessionDescription("dummy"));
-    EXPECT_TRUE(desc->Initialize(sdp, NULL));
+    EXPECT_TRUE(webrtc::SdpDeserialize(sdp, desc, nullptr));
     return desc;
   }
 

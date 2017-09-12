@@ -35,9 +35,6 @@ class JsepSessionDescription : public SessionDescriptionInterface {
   explicit JsepSessionDescription(const std::string& type);
   virtual ~JsepSessionDescription();
 
-  // |error| may be null.
-  bool Initialize(const std::string& sdp, SdpParseError* error);
-
   // Takes ownership of |description|.
   // TODO(deadbeef): Make this use an std::unique_ptr<>, so ownership logic is
   // more clear.

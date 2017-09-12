@@ -1218,8 +1218,9 @@ class WebRtcSessionTest
                                         kSessionVersion, current_desc);
   }
 
-  JsepSessionDescription* CreateRemoteOfferWithSctpPort(
-      const char* sctp_stream_name, int new_port,
+  SessionDescriptionInterface* CreateRemoteOfferWithSctpPort(
+      const char* sctp_stream_name,
+      int new_port,
       cricket::MediaSessionOptions options) {
     options.data_channel_type = cricket::DCT_SCTP;
     GetOptionsForRemoteOffer(&options);
@@ -1227,8 +1228,9 @@ class WebRtcSessionTest
   }
 
   // Takes ownership of offer_basis (and deletes it).
-  JsepSessionDescription* ChangeSDPSctpPort(
-      int new_port, webrtc::SessionDescriptionInterface *offer_basis) {
+  SessionDescriptionInterface* ChangeSDPSctpPort(
+      int new_port,
+      webrtc::SessionDescriptionInterface* offer_basis) {
     // Stringify the input SDP, swap the 5000 for 'new_port' and create a new
     // SessionDescription from the mutated string.
     const char* default_port_str = "5000";
@@ -1239,10 +1241,9 @@ class WebRtcSessionTest
     rtc::replace_substrs(default_port_str, strlen(default_port_str),
                                new_port_str, strlen(new_port_str),
                                &offer_str);
-    JsepSessionDescription* offer = new JsepSessionDescription(
-        offer_basis->type());
+    SessionDescriptionInterface* offer =
+        CreateSessionDescription(offer_basis->type(), offer_str, nullptr);
     delete offer_basis;
-    offer->Initialize(offer_str, NULL);
     return offer;
   }
 
@@ -3683,14 +3684,16 @@ TEST_F(WebRtcSessionTest, TestDisabledRtcpMuxWithBundleEnabled) {
   rtc::replace_substrs(rtcp_mux.c_str(), rtcp_mux.length(),
                              xrtcp_mux.c_str(), xrtcp_mux.length(),
                              &offer_str);
-  JsepSessionDescription* local_offer =
-      new JsepSessionDescription(JsepSessionDescription::kOffer);
-  EXPECT_TRUE((local_offer)->Initialize(offer_str, NULL));
+  SessionDescriptionInterface* local_offer = CreateSessionDescription(
+      SessionDescriptionInterface::kOffer, offer_str, nullptr);
+  ASSERT_TRUE(local_offer);
   SetLocalDescriptionOfferExpectError(kBundleWithoutRtcpMux, local_offer);
-  JsepSessionDescription* remote_offer =
-      new JsepSessionDescription(JsepSessionDescription::kOffer);
-  EXPECT_TRUE((remote_offer)->Initialize(offer_str, NULL));
+
+  SessionDescriptionInterface* remote_offer = CreateSessionDescription(
+      SessionDescriptionInterface::kOffer, offer_str, nullptr);
+  ASSERT_TRUE(remote_offer);
   SetRemoteDescriptionOfferExpectError(kBundleWithoutRtcpMux, remote_offer);
+
   // Trying unmodified SDP.
   SetLocalDescriptionWithoutError(offer);
 }
@@ -4189,8 +4192,8 @@ TEST_P(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
   // let the session description get parsed.  That'll get the proper codecs
   // into the stream.
   cricket::MediaSessionOptions options;
-  JsepSessionDescription* offer = CreateRemoteOfferWithSctpPort(
-      "stream1", new_send_port, options);
+  SessionDescriptionInterface* offer =
+      CreateRemoteOfferWithSctpPort("stream1", new_send_port, options);
 
   // SetRemoteDescription will take the ownership of the offer.
   SetRemoteDescriptionWithoutError(offer);
