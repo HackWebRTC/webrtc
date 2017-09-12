@@ -159,9 +159,10 @@ PacedVideoSender::PacedVideoSender(PacketProcessorListener* listener,
                                    VideoSource* source,
                                    BandwidthEstimatorType estimator)
     : VideoSender(listener, source, estimator),
-      // Ugly hack to use BBR's pacer.
-      // TODO(gnish): Make pacer choice dependant on the algorithm being used.
-      pacer_(new BbrPacedSender(&clock_, this, nullptr)) {
+      pacer_(
+          estimator == kBbrEstimator
+              ? static_cast<Pacer*>(new BbrPacedSender(&clock_, this, nullptr))
+              : static_cast<Pacer*>(new PacedSender(&clock_, this, nullptr))) {
   modules_.push_back(pacer_.get());
   pacer_->SetEstimatedBitrate(source->bits_per_second());
 }
