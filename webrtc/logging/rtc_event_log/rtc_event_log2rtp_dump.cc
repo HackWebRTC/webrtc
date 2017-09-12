@@ -27,21 +27,26 @@ namespace {
 
 using MediaType = webrtc::ParsedRtcEventLog::MediaType;
 
-DEFINE_bool(noaudio,
-            false,
-            "Excludes audio packets from the converted RTPdump file.");
-DEFINE_bool(novideo,
-            false,
-            "Excludes video packets from the converted RTPdump file.");
-DEFINE_bool(nodata,
-            false,
-            "Excludes data packets from the converted RTPdump file.");
-DEFINE_bool(nortp,
-            false,
-            "Excludes RTP packets from the converted RTPdump file.");
-DEFINE_bool(nortcp,
-            false,
-            "Excludes RTCP packets from the converted RTPdump file.");
+DEFINE_bool(
+    audio,
+    true,
+    "Use --noaudio to exclude audio packets from the converted RTPdump file.");
+DEFINE_bool(
+    video,
+    true,
+    "Use --novideo to exclude video packets from the converted RTPdump file.");
+DEFINE_bool(
+    data,
+    true,
+    "Use --nodata to exclude data packets from the converted RTPdump file.");
+DEFINE_bool(
+    rtp,
+    true,
+    "Use --nortp to exclude RTP packets from the converted RTPdump file.");
+DEFINE_bool(
+    rtcp,
+    true,
+    "Use --nortcp to exclude RTCP packets from the converted RTPdump file.");
 DEFINE_string(ssrc,
               "",
               "Store only packets with this SSRC (decimal or hex, the latter "
@@ -122,7 +127,7 @@ int main(int argc, char* argv[]) {
     // some required fields and we attempt to access them. We could consider
     // a softer failure option, but it does not seem useful to generate
     // RTP dumps based on broken event logs.
-    if (!FLAG_nortp &&
+    if (FLAG_rtp &&
         parsed_stream.GetEventType(i) == webrtc::ParsedRtcEventLog::RTP_EVENT) {
       webrtc::test::RtpPacket packet;
       webrtc::PacketDirection direction;
@@ -143,11 +148,11 @@ int main(int argc, char* argv[]) {
       rtp_parser.Parse(&parsed_header);
       MediaType media_type =
           parsed_stream.GetMediaType(parsed_header.ssrc, direction);
-      if (FLAG_noaudio && media_type == MediaType::AUDIO)
+      if (!FLAG_audio && media_type == MediaType::AUDIO)
         continue;
-      if (FLAG_novideo && media_type == MediaType::VIDEO)
+      if (!FLAG_video && media_type == MediaType::VIDEO)
         continue;
-      if (FLAG_nodata && media_type == MediaType::DATA)
+      if (!FLAG_data && media_type == MediaType::DATA)
         continue;
       if (strlen(FLAG_ssrc) > 0) {
         const uint32_t packet_ssrc =
@@ -160,9 +165,8 @@ int main(int argc, char* argv[]) {
       rtp_writer->WritePacket(&packet);
       rtp_counter++;
     }
-    if (!FLAG_nortcp &&
-        parsed_stream.GetEventType(i) ==
-            webrtc::ParsedRtcEventLog::RTCP_EVENT) {
+    if (FLAG_rtcp && parsed_stream.GetEventType(i) ==
+                         webrtc::ParsedRtcEventLog::RTCP_EVENT) {
       webrtc::test::RtpPacket packet;
       webrtc::PacketDirection direction;
       parsed_stream.GetRtcpPacket(i, &direction, packet.data, &packet.length);
@@ -181,11 +185,11 @@ int main(int argc, char* argv[]) {
       const uint32_t packet_ssrc = webrtc::ByteReader<uint32_t>::ReadBigEndian(
           reinterpret_cast<const uint8_t*>(packet.data + 4));
       MediaType media_type = parsed_stream.GetMediaType(packet_ssrc, direction);
-      if (FLAG_noaudio && media_type == MediaType::AUDIO)
+      if (!FLAG_audio && media_type == MediaType::AUDIO)
         continue;
-      if (FLAG_novideo && media_type == MediaType::VIDEO)
+      if (!FLAG_video && media_type == MediaType::VIDEO)
         continue;
-      if (FLAG_nodata && media_type == MediaType::DATA)
+      if (!FLAG_data && media_type == MediaType::DATA)
         continue;
       if (strlen(FLAG_ssrc) > 0) {
         if (packet_ssrc != ssrc_filter)

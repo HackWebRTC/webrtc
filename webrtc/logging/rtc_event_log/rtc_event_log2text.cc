@@ -40,17 +40,17 @@
 
 namespace {
 
-DEFINE_bool(noconfig, false, "Excludes stream configurations.");
-DEFINE_bool(noincoming, false, "Excludes incoming packets.");
-DEFINE_bool(nooutgoing, false, "Excludes outgoing packets.");
+DEFINE_bool(config, true, "Use --noconfig to exclude stream configurations.");
+DEFINE_bool(incoming, true, "Use --noincoming to exclude incoming packets.");
+DEFINE_bool(outgoing, true, "Use --nooutgoing to exclude packets.");
 // TODO(terelius): Note that the media type doesn't work with outgoing packets.
-DEFINE_bool(noaudio, false, "Excludes audio packets.");
+DEFINE_bool(audio, true, "Use --noaudio to exclude audio packets.");
 // TODO(terelius): Note that the media type doesn't work with outgoing packets.
-DEFINE_bool(novideo, false, "Excludes video packets.");
+DEFINE_bool(video, true, "Use --novideo to exclude video packets.");
 // TODO(terelius): Note that the media type doesn't work with outgoing packets.
-DEFINE_bool(nodata, false, "Excludes data packets.");
-DEFINE_bool(nortp, false, "Excludes RTP packets.");
-DEFINE_bool(nortcp, false, "Excludes RTCP packets.");
+DEFINE_bool(data, true, "Use --nodata to exclude data packets.");
+DEFINE_bool(rtp, true, "Use --nortp to exclude RTP packets.");
+DEFINE_bool(rtcp, true, "Use --nortcp to exclude RTCP packets.");
 // TODO(terelius): Allow a list of SSRCs.
 DEFINE_string(ssrc,
               "",
@@ -84,15 +84,15 @@ bool ParseSsrc(std::string str) {
 bool ExcludePacket(webrtc::PacketDirection direction,
                    MediaType media_type,
                    uint32_t packet_ssrc) {
-  if (FLAG_nooutgoing && direction == webrtc::kOutgoingPacket)
+  if (!FLAG_outgoing && direction == webrtc::kOutgoingPacket)
     return true;
-  if (FLAG_noincoming && direction == webrtc::kIncomingPacket)
+  if (!FLAG_incoming && direction == webrtc::kIncomingPacket)
     return true;
-  if (FLAG_noaudio && media_type == MediaType::AUDIO)
+  if (!FLAG_audio && media_type == MediaType::AUDIO)
     return true;
-  if (FLAG_novideo && media_type == MediaType::VIDEO)
+  if (!FLAG_video && media_type == MediaType::VIDEO)
     return true;
-  if (FLAG_nodata && media_type == MediaType::DATA)
+  if (!FLAG_data && media_type == MediaType::DATA)
     return true;
   if (strlen(FLAG_ssrc) > 0 && packet_ssrc != filtered_ssrc)
     return true;
@@ -386,7 +386,7 @@ int main(int argc, char* argv[]) {
   }
 
   for (size_t i = 0; i < parsed_stream.GetNumberOfEvents(); i++) {
-    if (!FLAG_noconfig && !FLAG_novideo && !FLAG_noincoming &&
+    if (FLAG_config && FLAG_video && FLAG_incoming &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT) {
       webrtc::rtclog::StreamConfig config =
@@ -407,7 +407,7 @@ int main(int argc, char* argv[]) {
       }
       std::cout << "}" << std::endl;
     }
-    if (!FLAG_noconfig && !FLAG_novideo && !FLAG_nooutgoing &&
+    if (FLAG_config && FLAG_video && FLAG_outgoing &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT) {
       std::vector<webrtc::rtclog::StreamConfig> configs =
@@ -430,7 +430,7 @@ int main(int argc, char* argv[]) {
         std::cout << "}" << std::endl;
       }
     }
-    if (!FLAG_noconfig && !FLAG_noaudio && !FLAG_noincoming &&
+    if (FLAG_config && FLAG_audio && FLAG_incoming &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT) {
       webrtc::rtclog::StreamConfig config =
@@ -451,7 +451,7 @@ int main(int argc, char* argv[]) {
       }
       std::cout << "}" << std::endl;
     }
-    if (!FLAG_noconfig && !FLAG_noaudio && !FLAG_nooutgoing &&
+    if (FLAG_config && FLAG_audio && FLAG_outgoing &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT) {
       webrtc::rtclog::StreamConfig config = parsed_stream.GetAudioSendConfig(i);
@@ -470,7 +470,7 @@ int main(int argc, char* argv[]) {
       }
       std::cout << "}" << std::endl;
     }
-    if (!FLAG_nortp &&
+    if (FLAG_rtp &&
         parsed_stream.GetEventType(i) == webrtc::ParsedRtcEventLog::RTP_EVENT) {
       size_t header_length;
       size_t total_length;
@@ -521,9 +521,8 @@ int main(int argc, char* argv[]) {
       }
       std::cout << std::endl;
     }
-    if (!FLAG_nortcp &&
-        parsed_stream.GetEventType(i) ==
-            webrtc::ParsedRtcEventLog::RTCP_EVENT) {
+    if (FLAG_rtcp && parsed_stream.GetEventType(i) ==
+                         webrtc::ParsedRtcEventLog::RTCP_EVENT) {
       size_t length;
       uint8_t packet[IP_PACKET_SIZE];
       webrtc::PacketDirection direction;
