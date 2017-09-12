@@ -774,13 +774,7 @@ class FakeBaseEngine {
 
 class FakeVoiceEngine : public FakeBaseEngine {
  public:
-  FakeVoiceEngine(webrtc::AudioDeviceModule* adm,
-                  const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-                      audio_encoder_factory,
-                  const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-                      audio_decoder_factory,
-                  rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-                  rtc::scoped_refptr<webrtc::AudioProcessing> apm) {
+  FakeVoiceEngine() {
     // Add a fake audio codec. Note that the name must not be "" as there are
     // sanity checks against that.
     codecs_.push_back(AudioCodec(101, "fake_audio_codec", 0, 0, 1));
@@ -843,8 +837,6 @@ class FakeVideoEngine : public FakeBaseEngine {
     codecs_.push_back(VideoCodec(0, "fake_video_codec"));
   }
 
-  void Init() {}
-
   bool SetOptions(const VideoOptions& options) {
     options_ = options;
     options_changed_ = true;
@@ -895,55 +887,50 @@ class FakeMediaEngine :
     public CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine> {
  public:
   FakeMediaEngine()
-      : CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine>(nullptr,
-                                                               nullptr,
-                                                               nullptr,
-                                                               nullptr,
-                                                               nullptr) {}
+      : CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine>(std::tuple<>(),
+                                                               std::tuple<>()) {
+  }
+
   virtual ~FakeMediaEngine() {}
 
   void SetAudioCodecs(const std::vector<AudioCodec>& codecs) {
-    voice_.SetCodecs(codecs);
+    voice().SetCodecs(codecs);
   }
   void SetVideoCodecs(const std::vector<VideoCodec>& codecs) {
-    video_.SetCodecs(codecs);
+    video().SetCodecs(codecs);
   }
 
   void SetAudioRtpHeaderExtensions(
       const std::vector<RtpExtension>& extensions) {
-    voice_.set_rtp_header_extensions(extensions);
+    voice().set_rtp_header_extensions(extensions);
   }
   void SetVideoRtpHeaderExtensions(
       const std::vector<RtpExtension>& extensions) {
-    video_.set_rtp_header_extensions(extensions);
+    video().set_rtp_header_extensions(extensions);
   }
 
   void SetAudioRtpHeaderExtensions(
       const std::vector<cricket::RtpHeaderExtension>& extensions) {
-    voice_.set_rtp_header_extensions(extensions);
+    voice().set_rtp_header_extensions(extensions);
   }
   void SetVideoRtpHeaderExtensions(
       const std::vector<cricket::RtpHeaderExtension>& extensions) {
-    video_.set_rtp_header_extensions(extensions);
+    video().set_rtp_header_extensions(extensions);
   }
 
   FakeVoiceMediaChannel* GetVoiceChannel(size_t index) {
-    return voice_.GetChannel(index);
+    return voice().GetChannel(index);
   }
   FakeVideoMediaChannel* GetVideoChannel(size_t index) {
-    return video_.GetChannel(index);
+    return video().GetChannel(index);
   }
 
-  bool capture() const { return video_.capture_; }
-  bool options_changed() const {
-    return video_.options_changed_;
-  }
-  void clear_options_changed() {
-    video_.options_changed_ = false;
-  }
+  bool capture() const { return video().capture_; }
+  bool options_changed() const { return video().options_changed_; }
+  void clear_options_changed() { video().options_changed_ = false; }
   void set_fail_create_channel(bool fail) {
-    voice_.set_fail_create_channel(fail);
-    video_.set_fail_create_channel(fail);
+    voice().set_fail_create_channel(fail);
+    video().set_fail_create_channel(fail);
   }
 };
 

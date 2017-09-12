@@ -24,65 +24,33 @@
 
 namespace cricket {
 
-class WebRtcMediaEngine2
-#ifdef HAVE_WEBRTC_VIDEO
-    : public CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine> {
-#else
-    : public CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine> {
-#endif
- public:
-  WebRtcMediaEngine2(
-      webrtc::AudioDeviceModule* adm,
-      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-          audio_encoder_factory,
-      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-          audio_decoder_factory,
-      WebRtcVideoEncoderFactory* video_encoder_factory,
-      WebRtcVideoDecoderFactory* video_decoder_factory,
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-      rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing)
-#ifdef HAVE_WEBRTC_VIDEO
-      : CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine>(
-            adm,
-            audio_encoder_factory,
-            audio_decoder_factory,
-            audio_mixer,
-            audio_processing){
-#else
-      : CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine>(
-            adm,
-            audio_encoder_factory,
-            audio_decoder_factory,
-            audio_mixer,
-            audio_processing) {
-#endif
-            video_.SetExternalDecoderFactory(video_decoder_factory);
-  video_.SetExternalEncoderFactory(video_encoder_factory);
-  }
-};
+namespace {
 
-}  // namespace cricket
-
-cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
+MediaEngineInterface* CreateWebRtcMediaEngine(
     webrtc::AudioDeviceModule* adm,
     const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
         audio_encoder_factory,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
         audio_decoder_factory,
-    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
+    WebRtcVideoEncoderFactory* video_encoder_factory,
+    WebRtcVideoDecoderFactory* video_decoder_factory,
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
     rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
-  return new cricket::WebRtcMediaEngine2(
-      adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory, audio_mixer, audio_processing);
+#ifdef HAVE_WEBRTC_VIDEO
+  typedef WebRtcVideoEngine VideoEngine;
+  std::tuple<WebRtcVideoEncoderFactory*, WebRtcVideoDecoderFactory*> video_args(
+      video_encoder_factory, video_decoder_factory);
+#else
+  typedef NullWebRtcVideoEngine VideoEngine;
+  std::tuple<> video_args;
+#endif
+  return new CompositeMediaEngine<WebRtcVoiceEngine, VideoEngine>(
+      std::forward_as_tuple(adm, audio_encoder_factory, audio_decoder_factory,
+                            audio_mixer, audio_processing),
+      std::move(video_args));
 }
 
-void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
-  delete media_engine;
-}
-
-namespace cricket {
+}  // namespace
 
 // TODO(ossu): Backwards-compatible interface. Will be deprecated once the
 // audio decoder factory is fully plumbed and used throughout WebRTC.

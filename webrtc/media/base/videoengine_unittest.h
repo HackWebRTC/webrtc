@@ -64,7 +64,9 @@ class VideoMediaChannelTest : public testing::Test,
                               public sigslot::has_slots<> {
  protected:
   VideoMediaChannelTest<E, C>()
-      : call_(webrtc::Call::Create(webrtc::Call::Config(&event_log_))) {}
+      : call_(webrtc::Call::Create(webrtc::Call::Config(&event_log_))),
+        engine_(nullptr /* external_encoder_factory */,
+                nullptr /* external_decoder_factory */) {}
 
   virtual cricket::VideoCodec DefaultCodec() = 0;
 
@@ -73,7 +75,6 @@ class VideoMediaChannelTest : public testing::Test,
   }
 
   virtual void SetUp() {
-    engine_.Init();
     cricket::MediaConfig media_config;
     // Disabling cpu overuse detection actually disables quality scaling too; it
     // implies DegradationPreference kMaintainResolution. Automatic scaling

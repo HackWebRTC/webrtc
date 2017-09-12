@@ -109,71 +109,65 @@ class MediaEngineFactory {
 
 // CompositeMediaEngine constructs a MediaEngine from separate
 // voice and video engine classes.
-template<class VOICE, class VIDEO>
+template <class VOICE, class VIDEO>
 class CompositeMediaEngine : public MediaEngineInterface {
  public:
-  CompositeMediaEngine(
-      webrtc::AudioDeviceModule* adm,
-      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-          audio_encoder_factory,
-      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-          audio_decoder_factory,
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-      rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing)
-      : voice_(adm,
-               audio_encoder_factory,
-               audio_decoder_factory,
-               audio_mixer,
-               audio_processing) {}
+  template <class... Args1, class... Args2>
+  CompositeMediaEngine(std::tuple<Args1...> first_args,
+                       std::tuple<Args2...> second_args)
+      : engines_(std::piecewise_construct,
+                 std::move(first_args),
+                 std::move(second_args)) {}
+
   virtual ~CompositeMediaEngine() {}
   virtual bool Init() {
-    voice_.Init();
-    video_.Init();
+    voice().Init();
     return true;
   }
 
   virtual rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const {
-    return voice_.GetAudioState();
+    return voice().GetAudioState();
   }
   virtual VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                            const MediaConfig& config,
                                            const AudioOptions& options) {
-    return voice_.CreateChannel(call, config, options);
+    return voice().CreateChannel(call, config, options);
   }
   virtual VideoMediaChannel* CreateVideoChannel(webrtc::Call* call,
                                                 const MediaConfig& config,
                                                 const VideoOptions& options) {
-    return video_.CreateChannel(call, config, options);
+    return video().CreateChannel(call, config, options);
   }
 
-  virtual int GetInputLevel() {
-    return voice_.GetInputLevel();
-  }
+  virtual int GetInputLevel() { return voice().GetInputLevel(); }
   virtual const std::vector<AudioCodec>& audio_send_codecs() {
-    return voice_.send_codecs();
+    return voice().send_codecs();
   }
   virtual const std::vector<AudioCodec>& audio_recv_codecs() {
-    return voice_.recv_codecs();
+    return voice().recv_codecs();
   }
   virtual RtpCapabilities GetAudioCapabilities() {
-    return voice_.GetCapabilities();
+    return voice().GetCapabilities();
   }
-  virtual std::vector<VideoCodec> video_codecs() { return video_.codecs(); }
+  virtual std::vector<VideoCodec> video_codecs() { return video().codecs(); }
   virtual RtpCapabilities GetVideoCapabilities() {
-    return video_.GetCapabilities();
+    return video().GetCapabilities();
   }
 
   virtual bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) {
-    return voice_.StartAecDump(file, max_size_bytes);
+    return voice().StartAecDump(file, max_size_bytes);
   }
 
-  virtual void StopAecDump() {
-    voice_.StopAecDump();
-  }
+  virtual void StopAecDump() { voice().StopAecDump(); }
 
  protected:
-  VOICE voice_;
-  VIDEO video_;
+  VOICE& voice() { return engines_.first; }
+  VIDEO& video() { return engines_.second; }
+  const VOICE& voice() const { return engines_.first; }
+  const VIDEO& video() const { return engines_.second; }
+
+ private:
+  std::pair<VOICE, VIDEO> engines_;
 };
 
 enum DataChannelType { DCT_NONE = 0, DCT_RTP = 1, DCT_SCTP = 2, DCT_QUIC = 3 };

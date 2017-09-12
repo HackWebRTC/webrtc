@@ -68,8 +68,6 @@ class EncoderFactoryAdapter {
       bool is_conference_mode_screenshare) const = 0;
 
   virtual std::vector<VideoCodec> GetSupportedCodecs() const = 0;
-
-  virtual std::unique_ptr<EncoderFactoryAdapter> clone() const = 0;
 };
 
 class DecoderFactoryAdapter {
@@ -79,11 +77,12 @@ class DecoderFactoryAdapter {
   virtual std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
       const VideoCodec& codec,
       const VideoDecoderParams& decoder_params) const = 0;
-
-  virtual std::unique_ptr<DecoderFactoryAdapter> clone() const = 0;
 };
 
 namespace {
+
+std::vector<VideoCodec> AssignPayloadTypesAndAddAssociatedRtxCodecs(
+    const std::vector<VideoCodec>& input_codecs);
 
 // Wraps cricket::WebRtcVideoEncoderFactory* into common EncoderFactoryAdapter
 // interface.
@@ -107,11 +106,6 @@ class CricketEncoderFactoryAdapter : public EncoderFactoryAdapter {
 
   std::vector<VideoCodec> GetSupportedCodecs() const override;
 
-  std::unique_ptr<EncoderFactoryAdapter> clone() const override {
-    return std::unique_ptr<EncoderFactoryAdapter>(
-        new CricketEncoderFactoryAdapter(*this));
-  }
-
   const std::unique_ptr<WebRtcVideoEncoderFactory> internal_encoder_factory_;
   WebRtcVideoEncoderFactory* const external_encoder_factory_;
 };
@@ -131,11 +125,6 @@ class CricketDecoderFactoryAdapter : public DecoderFactoryAdapter {
   std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
       const VideoCodec& codec,
       const VideoDecoderParams& decoder_params) const override;
-
-  std::unique_ptr<DecoderFactoryAdapter> clone() const override {
-    return std::unique_ptr<DecoderFactoryAdapter>(
-        new CricketDecoderFactoryAdapter(*this));
-  }
 
   const std::unique_ptr<WebRtcVideoDecoderFactory> internal_decoder_factory_;
   WebRtcVideoDecoderFactory* const external_decoder_factory_;
@@ -402,12 +391,13 @@ void DefaultUnsignalledSsrcHandler::SetDefaultSink(
   }
 }
 
-WebRtcVideoEngine::WebRtcVideoEngine()
-    : initialized_(false),
-      decoder_factory_(new CricketDecoderFactoryAdapter(
-          nullptr /* external_decoder_factory */)),
-      encoder_factory_(new CricketEncoderFactoryAdapter(
-          nullptr /* external_encoder_factory */)) {
+WebRtcVideoEngine::WebRtcVideoEngine(
+    WebRtcVideoEncoderFactory* external_video_encoder_factory,
+    WebRtcVideoDecoderFactory* external_video_decoder_factory)
+    : decoder_factory_(
+          new CricketDecoderFactoryAdapter(external_video_decoder_factory)),
+      encoder_factory_(
+          new CricketEncoderFactoryAdapter(external_video_encoder_factory)) {
   LOG(LS_INFO) << "WebRtcVideoEngine::WebRtcVideoEngine()";
 }
 
@@ -415,19 +405,13 @@ WebRtcVideoEngine::~WebRtcVideoEngine() {
   LOG(LS_INFO) << "WebRtcVideoEngine::~WebRtcVideoEngine";
 }
 
-void WebRtcVideoEngine::Init() {
-  LOG(LS_INFO) << "WebRtcVideoEngine::Init";
-  initialized_ = true;
-}
-
 WebRtcVideoChannel* WebRtcVideoEngine::CreateChannel(
     webrtc::Call* call,
     const MediaConfig& config,
     const VideoOptions& options) {
-  RTC_DCHECK(initialized_);
   LOG(LS_INFO) << "CreateChannel. Options: " << options.ToString();
-  return new WebRtcVideoChannel(call, config, options, *encoder_factory_,
-                                *decoder_factory_);
+  return new WebRtcVideoChannel(call, config, options, encoder_factory_.get(),
+                                decoder_factory_.get());
 }
 
 std::vector<VideoCodec> WebRtcVideoEngine::codecs() const {
@@ -460,23 +444,12 @@ RtpCapabilities WebRtcVideoEngine::GetCapabilities() const {
   return capabilities;
 }
 
-void WebRtcVideoEngine::SetExternalDecoderFactory(
-    WebRtcVideoDecoderFactory* decoder_factory) {
-  RTC_DCHECK(!initialized_);
-  decoder_factory_.reset(new CricketDecoderFactoryAdapter(decoder_factory));
-}
-
-void WebRtcVideoEngine::SetExternalEncoderFactory(
-    WebRtcVideoEncoderFactory* encoder_factory) {
-  RTC_DCHECK(!initialized_);
-  encoder_factory_.reset(new CricketEncoderFactoryAdapter(encoder_factory));
-}
-
+namespace {
 // This function will assign dynamic payload types (in the range [96, 127]) to
 // the input codecs, and also add associated RTX codecs for recognized codecs
 // (VP8, VP9, H264, and RED). It will also add default feedback params to the
 // codecs.
-static std::vector<VideoCodec> AssignPayloadTypesAndAddAssociatedRtxCodecs(
+std::vector<VideoCodec> AssignPayloadTypesAndAddAssociatedRtxCodecs(
     const std::vector<VideoCodec>& input_codecs) {
   static const int kFirstDynamicPayloadType = 96;
   static const int kLastDynamicPayloadType = 127;
@@ -513,6 +486,7 @@ static std::vector<VideoCodec> AssignPayloadTypesAndAddAssociatedRtxCodecs(
   }
   return output_codecs;
 }
+}  // namespace
 
 std::vector<VideoCodec> CricketEncoderFactoryAdapter::GetSupportedCodecs()
     const {
@@ -540,14 +514,14 @@ WebRtcVideoChannel::WebRtcVideoChannel(
     webrtc::Call* call,
     const MediaConfig& config,
     const VideoOptions& options,
-    const EncoderFactoryAdapter& encoder_factory,
-    const DecoderFactoryAdapter& decoder_factory)
+    const EncoderFactoryAdapter* encoder_factory,
+    const DecoderFactoryAdapter* decoder_factory)
     : VideoMediaChannel(config),
       call_(call),
       unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
       video_config_(config.video),
-      encoder_factory_(encoder_factory.clone()),
-      decoder_factory_(decoder_factory.clone()),
+      encoder_factory_(encoder_factory),
+      decoder_factory_(decoder_factory),
       default_send_options_(options),
       last_stats_log_ms_(-1) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -1052,7 +1026,7 @@ bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
   config.periodic_alr_bandwidth_probing =
       video_config_.periodic_alr_bandwidth_probing;
   WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
-      call_, sp, std::move(config), default_send_options_, *encoder_factory_,
+      call_, sp, std::move(config), default_send_options_, encoder_factory_,
       video_config_.enable_cpu_overuse_detection,
       bitrate_config_.max_bitrate_bps, send_codec_, send_rtp_extensions_,
       send_params_);
@@ -1163,7 +1137,7 @@ bool WebRtcVideoChannel::AddRecvStream(const StreamParams& sp,
   config.sync_group = sp.sync_label;
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
-      call_, sp, std::move(config), *decoder_factory_, default_stream,
+      call_, sp, std::move(config), decoder_factory_, default_stream,
       recv_codecs_, flexfec_config);
 
   return true;
@@ -1502,7 +1476,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
     const StreamParams& sp,
     webrtc::VideoSendStream::Config config,
     const VideoOptions& options,
-    const EncoderFactoryAdapter& encoder_factory,
+    const EncoderFactoryAdapter* encoder_factory,
     bool enable_cpu_overuse_detection,
     int max_bitrate_bps,
     const rtc::Optional<VideoCodecSettings>& codec_settings,
@@ -1516,7 +1490,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
       call_(call),
       enable_cpu_overuse_detection_(enable_cpu_overuse_detection),
       source_(nullptr),
-      encoder_factory_(encoder_factory.clone()),
+      encoder_factory_(encoder_factory),
       stream_(nullptr),
       encoder_sink_(nullptr),
       parameters_(std::move(config), options, max_bitrate_bps, codec_settings),
@@ -2103,7 +2077,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::Call* call,
     const StreamParams& sp,
     webrtc::VideoReceiveStream::Config config,
-    const DecoderFactoryAdapter& decoder_factory,
+    const DecoderFactoryAdapter* decoder_factory,
     bool default_stream,
     const std::vector<VideoCodecSettings>& recv_codecs,
     const webrtc::FlexfecReceiveStream::Config& flexfec_config)
@@ -2114,7 +2088,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
       config_(std::move(config)),
       flexfec_config_(flexfec_config),
       flexfec_stream_(nullptr),
-      decoder_factory_(decoder_factory.clone()),
+      decoder_factory_(decoder_factory),
       sink_(NULL),
       first_frame_timestamp_(-1),
       estimated_remote_start_ntp_time_ms_(0) {

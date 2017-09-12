@@ -25,18 +25,14 @@ class WebRtcMediaEngineNullVideo
       const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
           audio_encoder_factory,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-          audio_decoder_factory,
-      WebRtcVideoEncoderFactory* video_encoder_factory,
-      WebRtcVideoDecoderFactory* video_decoder_factory)
+          audio_decoder_factory)
       : CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine>(
-            adm,
-            audio_encoder_factory,
-            audio_decoder_factory,
-            nullptr,
-            webrtc::AudioProcessing::Create()) {
-    video_.SetExternalDecoderFactory(video_decoder_factory);
-    video_.SetExternalEncoderFactory(video_encoder_factory);
-  }
+            std::forward_as_tuple(adm,
+                                  audio_encoder_factory,
+                                  audio_decoder_factory,
+                                  nullptr,
+                                  webrtc::AudioProcessing::Create()),
+            std::forward_as_tuple()) {}
 };
 
 // Simple test to check if NullWebRtcVideoEngine implements the methods
@@ -44,7 +40,7 @@ class WebRtcMediaEngineNullVideo
 TEST(NullWebRtcVideoEngineTest, CheckInterface) {
   WebRtcMediaEngineNullVideo engine(
       nullptr, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
-      webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr, nullptr);
+      webrtc::MockAudioDecoderFactory::CreateUnusedFactory());
   EXPECT_TRUE(engine.Init());
 }
 
