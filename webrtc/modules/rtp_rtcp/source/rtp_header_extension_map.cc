@@ -11,15 +11,12 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/rtc_base/arraysize.h"
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 
 namespace webrtc {
 namespace {
-
-using RtpUtility::Word32Align;
 
 struct ExtensionInfo {
   RTPExtensionType type;
@@ -102,7 +99,10 @@ size_t RtpHeaderExtensionMap::GetTotalLengthInBytes(
   }
   if (values_size == 0)
     return 0;
-  return Word32Align(kRtpOneByteHeaderLength + values_size);
+  size_t size = kRtpOneByteHeaderLength + values_size;
+  // Round up to the nearest size that is a multiple of 4.
+  // Which is same as round down (size + 3).
+  return size + 3 - (size + 3) % 4;
 }
 
 int32_t RtpHeaderExtensionMap::Deregister(RTPExtensionType type) {

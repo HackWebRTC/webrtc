@@ -8,21 +8,48 @@
 
 import("../../webrtc.gni")
 
+rtc_source_set("rtp_rtcp_format") {
+  sources = [
+    "include/rtp_cvo.h",
+    "include/rtp_header_extension_map.h",
+    "include/rtp_rtcp_defines.h",
+    "source/byte_io.h",
+    "source/rtp_header_extension_map.cc",
+    "source/rtp_header_extensions.cc",
+    "source/rtp_header_extensions.h",
+    "source/rtp_packet.cc",
+    "source/rtp_packet.h",
+    "source/rtp_packet_received.cc",
+    "source/rtp_packet_received.h",
+    "source/rtp_packet_to_send.h",
+  ]
+
+  deps = [
+    "..:module_api",
+    "../..:webrtc_common",
+    "../../api:array_view",
+    "../../api:libjingle_peerconnection_api",
+    "../../api:optional",
+    "../../common_video",
+    "../../rtc_base:rtc_base_approved",
+    "../../system_wrappers",
+  ]
+
+  # TODO(crbug.com/webrtc/1348): Fix this warning.
+  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+}
+
 rtc_static_library("rtp_rtcp") {
   sources = [
     "include/flexfec_receiver.h",
     "include/flexfec_sender.h",
     "include/receive_statistics.h",
     "include/remote_ntp_time_estimator.h",
-    "include/rtp_cvo.h",
-    "include/rtp_header_extension_map.h",
     "include/rtp_header_parser.h",
     "include/rtp_payload_registry.h",
     "include/rtp_receiver.h",
     "include/rtp_rtcp.h",
-    "include/rtp_rtcp_defines.h",
     "include/ulpfec_receiver.h",
-    "source/byte_io.h",
     "source/dtmf_queue.cc",
     "source/dtmf_queue.h",
     "source/fec_private_tables_bursty.h",
@@ -110,17 +137,9 @@ rtc_static_library("rtp_rtcp") {
     "source/rtp_format_vp8.h",
     "source/rtp_format_vp9.cc",
     "source/rtp_format_vp9.h",
-    "source/rtp_header_extension_map.cc",
-    "source/rtp_header_extensions.cc",
-    "source/rtp_header_extensions.h",
     "source/rtp_header_parser.cc",
-    "source/rtp_packet.cc",
-    "source/rtp_packet.h",
     "source/rtp_packet_history.cc",
     "source/rtp_packet_history.h",
-    "source/rtp_packet_received.cc",
-    "source/rtp_packet_received.h",
-    "source/rtp_packet_to_send.h",
     "source/rtp_payload_registry.cc",
     "source/rtp_receiver_audio.cc",
     "source/rtp_receiver_audio.h",
@@ -181,6 +200,10 @@ rtc_static_library("rtp_rtcp") {
     "../../system_wrappers",
     "../audio_coding:audio_format_conversion",
     "../remote_bitrate_estimator",
+  ]
+
+  public_deps = [
+    ":rtp_rtcp_format",
   ]
 
   # TODO(jschuh): Bug 1348: fix this warning.
