@@ -453,7 +453,7 @@ void RtpVideoStreamReceiver::ReceivePacket(const uint8_t* packet,
                                            size_t packet_length,
                                            const RTPHeader& header,
                                            bool in_order) {
-  if (rtp_payload_registry_.IsEncapsulated(header)) {
+  if (rtp_payload_registry_.IsRed(header)) {
     ParseAndHandleEncapsulatingHeader(packet, packet_length, header);
     return;
   }
@@ -485,8 +485,6 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
       return;
     }
     ulpfec_receiver_->ProcessReceivedFec();
-  } else if (rtp_payload_registry_.IsRtx(header)) {
-    LOG(LS_WARNING) << "Unexpected RTX packet on media ssrc";
   }
 }
 
