@@ -16,11 +16,24 @@
 
 #include "webrtc/rtc_base/checks.h"
 
+@interface RTCUIApplicationStatusObserver ()
+
+@property(nonatomic, assign) BOOL initialized;
+@property(nonatomic, assign) UIApplicationState state;
+
+@end
+
 @implementation RTCUIApplicationStatusObserver {
   BOOL _initialized;
   dispatch_block_t _initializeBlock;
   UIApplicationState _state;
+
+  id<NSObject> _activeObserver;
+  id<NSObject> _backgroundObserver;
 }
+
+@synthesize initialized = _initialized;
+@synthesize state = _state;
 
 + (instancetype)sharedInstance {
   static id sharedInstance;
@@ -35,30 +48,39 @@
 - (id)init {
   if (self = [super init]) {
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
-    [center addObserverForName:UIApplicationDidBecomeActiveNotification
-                        object:nil
-                         queue:[NSOperationQueue mainQueue]
-                    usingBlock:^(NSNotification *note) {
-                      _state = [UIApplication sharedApplication].applicationState;
-                    }];
+    __weak RTCUIApplicationStatusObserver *weakSelf = self;
+    _activeObserver = [center addObserverForName:UIApplicationDidBecomeActiveNotification
+                                          object:nil
+                                           queue:[NSOperationQueue mainQueue]
+                                      usingBlock:^(NSNotification *note) {
+                                        weakSelf.state =
+                                            [UIApplication sharedApplication].applicationState;
+                                      }];
 
-    [center addObserverForName:UIApplicationDidEnterBackgroundNotification
-                        object:nil
-                         queue:[NSOperationQueue mainQueue]
-                    usingBlock:^(NSNotification *note) {
-                      _state = [UIApplication sharedApplication].applicationState;
-                    }];
+    _backgroundObserver = [center addObserverForName:UIApplicationDidEnterBackgroundNotification
+                                              object:nil
+                                               queue:[NSOperationQueue mainQueue]
+                                          usingBlock:^(NSNotification *note) {
+                                            weakSelf.state =
+                                                [UIApplication sharedApplication].applicationState;
+                                          }];
 
     _initialized = NO;
     _initializeBlock = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, ^{
-      _state = [UIApplication sharedApplication].applicationState;
-      _initialized = YES;
+      weakSelf.state = [UIApplication sharedApplication].applicationState;
+      weakSelf.initialized = YES;
     });
 
     dispatch_async(dispatch_get_main_queue(), _initializeBlock);
   }
 
   return self;
+}
+
+- (void)dealloc {
+  NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+  [center removeObserver:_activeObserver];
+  [center removeObserver:_backgroundObserver];
 }
 
 - (BOOL)isApplicationActive {
