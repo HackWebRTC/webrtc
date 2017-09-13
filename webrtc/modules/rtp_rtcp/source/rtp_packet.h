@@ -30,6 +30,18 @@ class Packet {
   static constexpr int kMinExtensionId = 1;
   static constexpr int kMaxExtensionId = 14;
 
+  // |extensions| required for SetExtension/ReserveExtension functions during
+  // packet creating and used if available in Parse function.
+  // Adding and getting extensions will fail until |extensions| is
+  // provided via constructor or IdentifyExtensions function.
+  Packet();
+  explicit Packet(const ExtensionManager* extensions);
+  Packet(const Packet&);
+  Packet(const ExtensionManager* extensions, size_t capacity);
+  ~Packet();
+
+  Packet& operator=(const Packet&) = default;
+
   // Parse and copy given buffer into Packet.
   bool Parse(const uint8_t* buffer, size_t size);
   bool Parse(rtc::ArrayView<const uint8_t> packet);
@@ -112,19 +124,6 @@ class Packet {
   // Same as SetPayloadSize but doesn't guarantee to keep current payload.
   uint8_t* AllocatePayload(size_t size_bytes);
   bool SetPadding(uint8_t size_bytes, Random* random);
-
- protected:
-  // |extensions| required for SetExtension/ReserveExtension functions during
-  // packet creating and used if available in Parse function.
-  // Adding and getting extensions will fail until |extensions| is
-  // provided via constructor or IdentifyExtensions function.
-  Packet();
-  explicit Packet(const ExtensionManager* extensions);
-  Packet(const Packet&);
-  Packet(const ExtensionManager* extensions, size_t capacity);
-  ~Packet();
-
-  Packet& operator=(const Packet&) = default;
 
  private:
   struct ExtensionInfo {
