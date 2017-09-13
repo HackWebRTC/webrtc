@@ -93,7 +93,8 @@ public class VideoRenderer {
       if (rotationDegree % 90 != 0) {
         throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
       }
-      if (buffer instanceof VideoFrame.TextureBuffer) {
+      if (buffer instanceof VideoFrame.TextureBuffer
+          && ((VideoFrame.TextureBuffer) buffer).getType() == VideoFrame.TextureBuffer.Type.OES) {
         VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) buffer;
         this.yuvFrame = false;
         this.textureId = textureBuffer.getTextureId();
