@@ -178,16 +178,6 @@ VideoCodecType PayloadStringToCodecType(const std::string& name) {
   return kVideoCodecGeneric;
 }
 
-// TODO(kthelgason): Remove these methods once upstream projects
-// have been updated.
-rtc::Optional<const char*> CodecTypeToPayloadName(VideoCodecType type) {
-  return rtc::Optional<const char*>(CodecTypeToPayloadString(type));
-}
-
-rtc::Optional<VideoCodecType> PayloadNameToCodecType(const std::string& name) {
-  return rtc::Optional<VideoCodecType>(PayloadStringToCodecType(name));
-}
-
 const uint32_t BitrateAllocation::kMaxBitrateBps =
     std::numeric_limits<uint32_t>::max();
 

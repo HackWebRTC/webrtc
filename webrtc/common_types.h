@@ -554,10 +554,6 @@ enum VideoCodecType {
 // Translates from name of codec to codec type and vice versa.
 const char* CodecTypeToPayloadString(VideoCodecType type);
 VideoCodecType PayloadStringToCodecType(const std::string& name);
-// TODO(kthelgason): Remove these methods once upstream projects
-// have been updated.
-rtc::Optional<const char*> CodecTypeToPayloadName(VideoCodecType type);
-rtc::Optional<VideoCodecType> PayloadNameToCodecType(const std::string& name);
 
 union VideoCodecUnion {
   VideoCodecVP8 VP8;
