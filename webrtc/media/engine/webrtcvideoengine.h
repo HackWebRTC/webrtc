@@ -327,9 +327,9 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     webrtc::Call* const call_;
     const bool enable_cpu_overuse_detection_;
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source_
-        ACCESS_ON(&thread_checker_);
+        RTC_ACCESS_ON(&thread_checker_);
     const EncoderFactoryAdapter* const encoder_factory_
-        ACCESS_ON(&thread_checker_);
+        RTC_ACCESS_ON(&thread_checker_);
 
     webrtc::VideoSendStream* stream_ RTC_ACCESS_ON(&thread_checker_);
     rtc::VideoSinkInterface<webrtc::VideoFrame>* encoder_sink_

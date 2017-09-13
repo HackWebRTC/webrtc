@@ -17,7 +17,7 @@
 // builds with RTC_DCHECK_IS_ON so that trybots and waterfall bots
 // with this define will get the same level of thread checking as
 // debug bots.
-#define ENABLE_THREAD_CHECKER RTC_DCHECK_IS_ON
+#define RTC_ENABLE_THREAD_CHECKER RTC_DCHECK_IS_ON
 
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/constructormagic.h"
@@ -70,13 +70,13 @@ class ThreadCheckerDoNothing {
 // }
 //
 // In Release mode, CalledOnValidThread will always return true.
-#if ENABLE_THREAD_CHECKER
+#if RTC_ENABLE_THREAD_CHECKER
 class RTC_LOCKABLE ThreadChecker : public ThreadCheckerImpl {};
 #else
 class RTC_LOCKABLE ThreadChecker : public ThreadCheckerDoNothing {};
-#endif  // ENABLE_THREAD_CHECKER
+#endif  // RTC_ENABLE_THREAD_CHECKER
 
-#undef ENABLE_THREAD_CHECKER
+#undef RTC_ENABLE_THREAD_CHECKER
 
 namespace internal {
 class RTC_SCOPED_LOCKABLE AnnounceOnThread {
@@ -164,11 +164,9 @@ class RTC_SCOPED_LOCKABLE AnnounceOnThread {
 
 // Document if a variable/field is not shared and should be accessed from
 // same thread/task queue.
-#define ACCESS_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
 #define RTC_ACCESS_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
 
 // Document if a function expected to be called from same thread/task queue.
-#define RUN_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
 #define RTC_RUN_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
 
 #define RTC_DCHECK_RUN_ON(thread_like_object) \
