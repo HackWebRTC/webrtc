@@ -598,6 +598,7 @@ if (rtc_include_tests) {
       deps += [
         ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",
+        ":audioproc_test_utils",
         ":audioproc_unittest_proto",
         "../../rtc_base:rtc_task_queue",
         "aec_dump",
@@ -655,8 +656,6 @@ if (rtc_include_tests) {
         "noise_suppression_unittest.cc",
         "residual_echo_detector_unittest.cc",
         "rms_level_unittest.cc",
-        "test/bitexactness_tools.cc",
-        "test/bitexactness_tools.h",
         "test/debug_dump_replayer.cc",
         "test/debug_dump_replayer.h",
         "test/debug_dump_test.cc",
@@ -769,6 +768,8 @@ if (rtc_include_tests) {
     sources = [
       "test/audio_buffer_tools.cc",
       "test/audio_buffer_tools.h",
+      "test/bitexactness_tools.cc",
+      "test/bitexactness_tools.h",
       "test/performance_timer.cc",
       "test/performance_timer.h",
       "test/simulator_buffers.cc",
@@ -785,6 +786,9 @@ if (rtc_include_tests) {
       "../../common_audio",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
+      "../../test:test_support",
+      "../audio_coding:neteq_tools",
+      "//testing/gtest",
     ]
   }
 
