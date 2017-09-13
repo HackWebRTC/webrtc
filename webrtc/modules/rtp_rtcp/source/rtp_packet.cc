@@ -19,6 +19,7 @@
 #include "webrtc/rtc_base/checks.h"
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/random.h"
+#include "webrtc/rtc_base/safe_conversions.h"
 
 namespace webrtc {
 namespace rtp {
@@ -30,7 +31,7 @@ constexpr size_t kOneByteHeaderSize = 1;
 constexpr size_t kDefaultPacketSize = 1500;
 }  // namespace
 
-constexpr size_t Packet::kMaxExtensionHeaders;
+constexpr int Packet::kMaxExtensionHeaders;
 constexpr int Packet::kMinExtensionId;
 constexpr int Packet::kMaxExtensionId;
 
@@ -78,7 +79,7 @@ Packet::Packet(const ExtensionManager* extensions, size_t capacity)
 Packet::~Packet() {}
 
 void Packet::IdentifyExtensions(const ExtensionManager& extensions) {
-  for (size_t i = 0; i < kMaxExtensionHeaders; ++i)
+  for (int i = 0; i < kMaxExtensionHeaders; ++i)
     extension_entries_[i].type = extensions.GetType(i + 1);
 }
 
@@ -242,7 +243,7 @@ void Packet::SetCsrcs(const std::vector<uint32_t>& csrcs) {
   RTC_DCHECK_LE(csrcs.size(), 0x0fu);
   RTC_DCHECK_LE(kFixedHeaderSize + 4 * csrcs.size(), capacity());
   payload_offset_ = kFixedHeaderSize + 4 * csrcs.size();
-  WriteAt(0, (data()[0] & 0xF0) | csrcs.size());
+  WriteAt(0, (data()[0] & 0xF0) | rtc::dchecked_cast<uint8_t>(csrcs.size()));
   size_t offset = kFixedHeaderSize;
   for (uint32_t csrc : csrcs) {
     ByteWriter<uint32_t>::WriteBigEndian(WriteAt(offset), csrc);
@@ -328,12 +329,14 @@ rtc::ArrayView<uint8_t> Packet::AllocateRawExtension(int id, size_t length) {
                                          kOneByteExtensionId);
   }
 
-  WriteAt(extensions_offset + extensions_size_, (id << 4) | (length - 1));
+  uint8_t one_byte_header = rtc::dchecked_cast<uint8_t>(id) << 4;
+  one_byte_header |= rtc::dchecked_cast<uint8_t>(length - 1);
+  WriteAt(extensions_offset + extensions_size_, one_byte_header);
 
-  extension_entry->offset =
-      extensions_offset + extensions_size_ + kOneByteHeaderSize;
-  extension_entry->length = length;
-  extensions_size_ = new_extensions_size;
+  extension_entry->offset = rtc::dchecked_cast<uint16_t>(
+      extensions_offset + extensions_size_ + kOneByteHeaderSize);
+  extension_entry->length = rtc::dchecked_cast<uint8_t>(length);
+  extensions_size_ = rtc::dchecked_cast<uint16_t>(new_extensions_size);
 
   // Update header length field.
   uint16_t extensions_words = (extensions_size_ + 3) / 4;  // Wrap up to 32bit.
@@ -497,8 +500,9 @@ bool Packet::ParseBuffer(const uint8_t* buffer, size_t size) {
         }
 
         extensions_size_ += kOneByteHeaderSize;
-        extension_entries_[idx].offset = extension_offset + extensions_size_;
-        extension_entries_[idx].length = length;
+        extension_entries_[idx].offset =
+            rtc::dchecked_cast<uint16_t>(extension_offset + extensions_size_);
+        extension_entries_[idx].length = rtc::dchecked_cast<uint16_t>(length);
         extensions_size_ += length;
       }
     }
@@ -527,7 +531,7 @@ rtc::ArrayView<const uint8_t> Packet::FindExtension(ExtensionType type) const {
 
 rtc::ArrayView<uint8_t> Packet::AllocateExtension(ExtensionType type,
                                                   size_t length) {
-  for (size_t i = 0; i < kMaxExtensionHeaders; ++i) {
+  for (int i = 0; i < kMaxExtensionHeaders; ++i) {
     if (extension_entries_[i].type == type) {
       int extension_id = i + 1;
       return AllocateRawExtension(extension_id, length);

@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "webrtc/rtc_base/safe_conversions.h"
 
 namespace webrtc {
 
@@ -23,7 +24,7 @@ void RtpPacketReceived::GetHeader(RTPHeader* header) const {
   header->timestamp = Timestamp();
   header->ssrc = Ssrc();
   std::vector<uint32_t> csrcs = Csrcs();
-  header->numCSRCs = csrcs.size();
+  header->numCSRCs = rtc::dchecked_cast<uint8_t>(csrcs.size());
   for (size_t i = 0; i < csrcs.size(); ++i) {
     header->arrOfCSRCs[i] = csrcs[i];
   }

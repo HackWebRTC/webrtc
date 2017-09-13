@@ -26,7 +26,7 @@ class Packet {
  public:
   using ExtensionType = RTPExtensionType;
   using ExtensionManager = RtpHeaderExtensionMap;
-  static constexpr size_t kMaxExtensionHeaders = 14;
+  static constexpr int kMaxExtensionHeaders = 14;
   static constexpr int kMinExtensionId = 1;
   static constexpr int kMaxExtensionId = 14;
 
