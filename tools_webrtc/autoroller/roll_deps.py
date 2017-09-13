@@ -32,7 +32,7 @@ EXTRA_TRYBOTS = (
     'master.internal.tryserver.corp.webrtc:linux_internal'
 )
 
-WEBRTC_URL = 'https://chromium.googlesource.com/external/webrtc'
+WEBRTC_URL = 'https://webrtc.googlesource.com/src'
 CHROMIUM_SRC_URL = 'https://chromium.googlesource.com/chromium/src'
 CHROMIUM_COMMIT_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s'
 CHROMIUM_LOG_TEMPLATE = CHROMIUM_SRC_URL + '/+log/%s'
