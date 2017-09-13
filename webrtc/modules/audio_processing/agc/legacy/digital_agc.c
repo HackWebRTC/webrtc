@@ -524,8 +524,17 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
     // iterate over samples
     for (n = 0; n < L; n++) {
       for (i = 0; i < num_bands; ++i) {
-        tmp32 = out[i][k * L + n] * (gain32 >> 4);
-        out[i][k * L + n] = (int16_t)(tmp32 >> 16);
+        int64_t tmp64 = ((int64_t)(out[i][k * L + n])) * (gain32 >> 4);
+        tmp64 = tmp64 >> 16;
+        if (tmp64 > 32767) {
+          out[i][k * L + n] = 32767;
+        }
+        else if (tmp64 < -32768) {
+          out[i][k * L + n] = -32768;
+        }
+        else {
+          out[i][k * L + n] = (int16_t)(tmp64);
+        }
       }
       gain32 += delta;
     }
