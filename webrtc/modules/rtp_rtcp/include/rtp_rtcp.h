@@ -107,8 +107,8 @@ class RtpRtcp : public Module {
   // Receiver functions
   // **************************************************************************
 
-  virtual int32_t IncomingRtcpPacket(const uint8_t* incoming_packet,
-                                     size_t incoming_packet_length) = 0;
+  virtual void IncomingRtcpPacket(const uint8_t* incoming_packet,
+                                  size_t incoming_packet_length) = 0;
 
   virtual void SetRemoteSSRC(uint32_t ssrc) = 0;
 

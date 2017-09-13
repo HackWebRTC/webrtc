@@ -88,7 +88,7 @@ class SendTransport : public Transport,
       clock_->AdvanceTimeMilliseconds(delay_ms_);
     }
     EXPECT_TRUE(receiver_);
-    EXPECT_EQ(0, receiver_->IncomingRtcpPacket(data, len));
+    receiver_->IncomingRtcpPacket(data, len);
     return true;
   }
   int32_t OnReceivedPayloadData(const uint8_t* payload_data,
@@ -255,8 +255,7 @@ class RtpRtcpImplTest : public ::testing::Test {
     nack.SetMediaSsrc(sender ? kSenderSsrc : kReceiverSsrc);
     nack.SetPacketIds(list, kListLength);
     rtc::Buffer packet = nack.Build();
-    EXPECT_EQ(0, module->impl_->IncomingRtcpPacket(packet.data(),
-                                                   packet.size()));
+    module->impl_->IncomingRtcpPacket(packet.data(), packet.size());
   }
 };
 

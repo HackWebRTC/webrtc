@@ -97,13 +97,6 @@ TEST_F(VoENetworkTest, ReceivedTooLargeRTPPacketShouldFail) {
                     channelID, kPacket, kMaxValidSizeOfRtpPacketInBytes + 1));
 }
 
-TEST_F(VoENetworkTest, ReceivedRTCPPacketWithJunkDataShouldFail) {
-  int channelID = CreateChannelAndRegisterExternalTransport();
-  EXPECT_EQ(0, network_->ReceivedRTCPPacket(channelID, kPacketJunk,
-                                            sizeof(kPacketJunk)));
-  EXPECT_EQ(VE_SOCKET_TRANSPORT_MODULE_ERROR, base_->LastError());
-}
-
 TEST_F(VoENetworkTest, ReceivedRTCPPacketOnNonExistingChannelShouldFail) {
   EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
   EXPECT_EQ(-1, network_->ReceivedRTCPPacket(kNonExistingChannel, kPacket,

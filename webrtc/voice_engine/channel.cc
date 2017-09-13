@@ -1784,11 +1784,7 @@ int32_t Channel::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   UpdatePlayoutTimestamp(true);
 
   // Deliver RTCP packet to RTP/RTCP module for parsing
-  if (_rtpRtcpModule->IncomingRtcpPacket(data, length) == -1) {
-    _engineStatisticsPtr->SetLastError(
-        VE_SOCKET_TRANSPORT_MODULE_ERROR, kTraceWarning,
-        "Channel::IncomingRTPPacket() RTCP packet is invalid");
-  }
+  _rtpRtcpModule->IncomingRtcpPacket(data, length);
 
   int64_t rtt = GetRTT(true);
   if (rtt == 0) {

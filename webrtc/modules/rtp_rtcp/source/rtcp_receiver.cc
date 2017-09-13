@@ -134,17 +134,16 @@ RTCPReceiver::RTCPReceiver(
 
 RTCPReceiver::~RTCPReceiver() {}
 
-bool RTCPReceiver::IncomingPacket(const uint8_t* packet, size_t packet_size) {
+void RTCPReceiver::IncomingPacket(const uint8_t* packet, size_t packet_size) {
   if (packet_size == 0) {
     LOG(LS_WARNING) << "Incoming empty RTCP packet";
-    return false;
+    return;
   }
 
   PacketInformation packet_information;
   if (!ParseCompoundPacket(packet, packet + packet_size, &packet_information))
-    return false;
+    return;
   TriggerCallbacksFromRtcpPacket(packet_information);
-  return true;
 }
 
 int64_t RTCPReceiver::LastReceivedReceiverReport() const {

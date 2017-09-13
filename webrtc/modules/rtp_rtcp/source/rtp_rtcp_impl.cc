@@ -270,10 +270,9 @@ rtc::Optional<uint32_t> ModuleRtpRtcpImpl::FlexfecSsrc() const {
   return rtc::Optional<uint32_t>();
 }
 
-int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
-    const uint8_t* rtcp_packet,
-    const size_t length) {
-  return rtcp_receiver_.IncomingPacket(rtcp_packet, length) ? 0 : -1;
+void ModuleRtpRtcpImpl::IncomingRtcpPacket(const uint8_t* rtcp_packet,
+                                           const size_t length) {
+  rtcp_receiver_.IncomingPacket(rtcp_packet, length);
 }
 
 int32_t ModuleRtpRtcpImpl::RegisterSendPayload(

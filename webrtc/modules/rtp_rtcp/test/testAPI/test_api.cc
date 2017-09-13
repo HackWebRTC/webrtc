@@ -62,9 +62,7 @@ bool LoopBackTransport::SendRtp(const uint8_t* data,
 }
 
 bool LoopBackTransport::SendRtcp(const uint8_t* data, size_t len) {
-  if (rtp_rtcp_module_->IncomingRtcpPacket((const uint8_t*)data, len) < 0) {
-    return false;
-  }
+  rtp_rtcp_module_->IncomingRtcpPacket((const uint8_t*)data, len);
   return true;
 }
 

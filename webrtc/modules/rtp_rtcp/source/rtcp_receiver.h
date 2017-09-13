@@ -59,7 +59,7 @@ class RTCPReceiver {
                ModuleRtpRtcp* owner);
   virtual ~RTCPReceiver();
 
-  bool IncomingPacket(const uint8_t* packet, size_t packet_size);
+  void IncomingPacket(const uint8_t* packet, size_t packet_size);
 
   int64_t LastReceivedReceiverReport() const;
 

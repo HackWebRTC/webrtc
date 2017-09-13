@@ -42,8 +42,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   // Receiver part.
 
   // Called when we receive an RTCP packet.
-  int32_t IncomingRtcpPacket(const uint8_t* incoming_packet,
-                             size_t incoming_packet_length) override;
+  void IncomingRtcpPacket(const uint8_t* incoming_packet,
+                          size_t incoming_packet_length) override;
 
   void SetRemoteSSRC(uint32_t ssrc) override;
 

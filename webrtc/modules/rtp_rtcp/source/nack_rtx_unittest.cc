@@ -101,7 +101,8 @@ class RtxLoopBackTransport : public webrtc::Transport {
   }
 
   bool SendRtcp(const uint8_t* data, size_t len) override {
-    return module_->IncomingRtcpPacket((const uint8_t*)data, len) == 0;
+    module_->IncomingRtcpPacket((const uint8_t*)data, len);
+    return true;
   }
   int count_;
   int packet_loss_;

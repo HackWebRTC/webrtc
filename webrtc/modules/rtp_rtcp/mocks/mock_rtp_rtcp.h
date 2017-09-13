@@ -42,7 +42,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(RegisterSyncModule, int32_t(RtpRtcp* module));
   MOCK_METHOD0(DeRegisterSyncModule, int32_t());
   MOCK_METHOD2(IncomingRtcpPacket,
-               int32_t(const uint8_t* incoming_packet, size_t packet_length));
+               void(const uint8_t* incoming_packet, size_t packet_length));
   MOCK_METHOD1(SetRemoteSSRC, void(uint32_t ssrc));
   MOCK_METHOD4(IncomingAudioNTP,
                int32_t(uint32_t audio_received_ntp_secs,
