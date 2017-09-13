@@ -42,7 +42,9 @@ import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoCapturer;
+import org.webrtc.VideoFrame;
 import org.webrtc.VideoRenderer;
+import org.webrtc.VideoSink;
 
 @RunWith(BaseJUnit4ClassRunner.class)
 public class PeerConnectionClientTest implements PeerConnectionEvents {
@@ -115,6 +117,49 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
       }
       renderFrameCalled = true;
       VideoRenderer.renderFrameDone(frame);
+      doneRendering.countDown();
+    }
+
+    // This method shouldn't hold any locks or touch member variables since it
+    // blocks.
+    public boolean waitForFramesRendered(int timeoutMs) throws InterruptedException {
+      doneRendering.await(timeoutMs, TimeUnit.MILLISECONDS);
+      return (doneRendering.getCount() <= 0);
+    }
+  }
+
+  // Mock VideoSink implementation.
+  private static class MockSink implements VideoSink {
+    // These are protected by 'this' since we gets called from worker threads.
+    private String rendererName;
+    private boolean renderFrameCalled = false;
+
+    // Thread-safe in itself.
+    private CountDownLatch doneRendering;
+
+    public MockSink(int expectedFrames, String rendererName) {
+      this.rendererName = rendererName;
+      reset(expectedFrames);
+    }
+
+    // Resets render to wait for new amount of video frames.
+    public synchronized void reset(int expectedFrames) {
+      renderFrameCalled = false;
+      doneRendering = new CountDownLatch(expectedFrames);
+    }
+
+    @Override
+    public synchronized void onFrame(VideoFrame frame) {
+      if (!renderFrameCalled) {
+        if (rendererName != null) {
+          Log.d(TAG,
+              rendererName + " render frame: " + frame.getRotatedWidth() + " x "
+                  + frame.getRotatedHeight());
+        } else {
+          Log.d(TAG, "Render frame: " + frame.getRotatedWidth() + " x " + frame.getRotatedHeight());
+        }
+      }
+      renderFrameCalled = true;
       doneRendering.countDown();
     }
 
@@ -236,7 +281,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
     }
   }
 
-  PeerConnectionClient createPeerConnectionClient(MockRenderer localRenderer,
+  PeerConnectionClient createPeerConnectionClient(MockSink localRenderer,
       MockRenderer remoteRenderer, PeerConnectionParameters peerConnectionParameters,
       VideoCapturer videoCapturer) {
     List<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
@@ -333,7 +378,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   @SmallTest
   public void testSetLocalOfferMakesVideoFlowLocally() throws InterruptedException {
     Log.d(TAG, "testSetLocalOfferMakesVideoFlowLocally");
-    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
+    MockSink localRenderer = new MockSink(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     pcClient = createPeerConnectionClient(localRenderer, new MockRenderer(0, null),
         createParametersForVideoCall(VIDEO_CODEC_VP8),
         createCameraCapturer(false /* captureToTexture */));
@@ -355,11 +400,11 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   private void doLoopbackTest(PeerConnectionParameters parameters, VideoCapturer videoCapturer,
       boolean decodeToTexture) throws InterruptedException {
     loopback = true;
-    MockRenderer localRenderer = null;
+    MockSink localRenderer = null;
     MockRenderer remoteRenderer = null;
     if (parameters.videoCallEnabled) {
       Log.d(TAG, "testLoopback for video " + parameters.videoCodec);
-      localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
+      localRenderer = new MockSink(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
       remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
     } else {
       Log.d(TAG, "testLoopback for audio.");
@@ -494,7 +539,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
     Log.d(TAG, "testCameraSwitch");
     loopback = true;
 
-    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
+    MockSink localRenderer = new MockSink(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
 
     pcClient = createPeerConnectionClient(localRenderer, remoteRenderer,
@@ -542,7 +587,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
     Log.d(TAG, "testVideoSourceRestart");
     loopback = true;
 
-    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
+    MockSink localRenderer = new MockSink(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
 
     pcClient = createPeerConnectionClient(localRenderer, remoteRenderer,
@@ -591,7 +636,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
     Log.d(TAG, "testCaptureFormatChange");
     loopback = true;
 
-    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
+    MockSink localRenderer = new MockSink(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
 
     pcClient = createPeerConnectionClient(localRenderer, remoteRenderer,

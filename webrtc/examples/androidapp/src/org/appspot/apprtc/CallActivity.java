@@ -56,7 +56,9 @@ import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFileRenderer;
+import org.webrtc.VideoFrame;
 import org.webrtc.VideoRenderer;
+import org.webrtc.VideoSink;
 
 /**
  * Activity for peer connection call setup, call waiting
@@ -137,9 +139,11 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   // Peer connection statistics callback period in ms.
   private static final int STAT_CALLBACK_PERIOD = 1000;
 
-  private class ProxyRenderer implements VideoRenderer.Callbacks {
-    private VideoRenderer.Callbacks target;
+  private class ProxyRenderer<T extends VideoRenderer.Callbacks & VideoSink>
+      implements VideoRenderer.Callbacks, VideoSink {
+    private T target;
 
+    @Override
     synchronized public void renderFrame(VideoRenderer.I420Frame frame) {
       if (target == null) {
         Logging.d(TAG, "Dropping frame in proxy because target is null.");
@@ -150,7 +154,17 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       target.renderFrame(frame);
     }
 
-    synchronized public void setTarget(VideoRenderer.Callbacks target) {
+    @Override
+    synchronized public void onFrame(VideoFrame frame) {
+      if (target == null) {
+        Logging.d(TAG, "Dropping frame in proxy because target is null.");
+        return;
+      }
+
+      target.onFrame(frame);
+    }
+
+    synchronized public void setTarget(T target) {
       this.target = target;
     }
   }

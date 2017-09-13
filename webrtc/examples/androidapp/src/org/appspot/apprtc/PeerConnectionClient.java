@@ -52,6 +52,7 @@ import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoRenderer;
+import org.webrtc.VideoSink;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.voiceengine.WebRtcAudioManager;
@@ -123,7 +124,7 @@ public class PeerConnectionClient {
   private boolean videoCapturerStopped;
   private boolean isError;
   private Timer statsTimer;
-  private VideoRenderer.Callbacks localRender;
+  private VideoSink localRender;
   private List<VideoRenderer.Callbacks> remoteRenders;
   private SignalingParameters signalingParameters;
   private MediaConstraints pcConstraints;
@@ -332,13 +333,13 @@ public class PeerConnectionClient {
     });
   }
 
-  public void createPeerConnection(final VideoRenderer.Callbacks localRender,
+  public void createPeerConnection(final VideoSink localRender,
       final VideoRenderer.Callbacks remoteRender, final VideoCapturer videoCapturer,
       final SignalingParameters signalingParameters) {
     createPeerConnection(
         localRender, Collections.singletonList(remoteRender), videoCapturer, signalingParameters);
   }
-  public void createPeerConnection(final VideoRenderer.Callbacks localRender,
+  public void createPeerConnection(final VideoSink localRender,
       final List<VideoRenderer.Callbacks> remoteRenders, final VideoCapturer videoCapturer,
       final SignalingParameters signalingParameters) {
     if (peerConnectionParameters == null) {
@@ -946,7 +947,7 @@ public class PeerConnectionClient {
 
     localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
     localVideoTrack.setEnabled(renderVideo);
-    localVideoTrack.addRenderer(new VideoRenderer(localRender));
+    localVideoTrack.addSink(localRender);
     return localVideoTrack;
   }
 
