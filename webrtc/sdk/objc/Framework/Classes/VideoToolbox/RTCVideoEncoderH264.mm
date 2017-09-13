@@ -301,6 +301,10 @@ CFStringRef ExtractProfile(const cricket::VideoCodec &codec) {
     _profile = ExtractProfile([codecInfo nativeVideoCodec]);
     LOG(LS_INFO) << "Using profile " << CFStringToString(_profile);
     RTC_CHECK([codecInfo.name isEqualToString:@"H264"]);
+
+#if defined(WEBRTC_IOS)
+    [RTCUIApplicationStatusObserver prepareForUse];
+#endif
   }
   return self;
 }

@@ -26,6 +26,7 @@
 @implementation RTCUIApplicationStatusObserver {
   BOOL _initialized;
   dispatch_block_t _initializeBlock;
+  dispatch_semaphore_t _waitForInitializeSemaphore;
   UIApplicationState _state;
 
   id<NSObject> _activeObserver;
@@ -43,6 +44,12 @@
   });
 
   return sharedInstance;
+}
+
+// Method to make sure observers are added and the initialization block is
+// scheduled to run on the main queue.
++ (void)prepareForUse {
+  __unused RTCUIApplicationStatusObserver *observer = [self sharedInstance];
 }
 
 - (id)init {
@@ -65,6 +72,7 @@
                                                 [UIApplication sharedApplication].applicationState;
                                           }];
 
+    _waitForInitializeSemaphore = dispatch_semaphore_create(1);
     _initialized = NO;
     _initializeBlock = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, ^{
       weakSelf.state = [UIApplication sharedApplication].applicationState;
@@ -84,10 +92,19 @@
 }
 
 - (BOOL)isApplicationActive {
+  // NOTE: The function `dispatch_block_wait` can only legally be called once.
+  // Because of this, if several threads call the `isApplicationActive` method before
+  // the `_initializeBlock` has been executed, instead of multiple threads calling
+  // `dispatch_block_wait`, the other threads need to wait for the first waiting thread
+  // instead.
   if (!_initialized) {
-    long ret = dispatch_block_wait(_initializeBlock,
-                                   dispatch_time(DISPATCH_TIME_NOW, 10.0 * NSEC_PER_SEC));
-    RTC_DCHECK_EQ(ret, 0);
+    dispatch_semaphore_wait(_waitForInitializeSemaphore, DISPATCH_TIME_FOREVER);
+    if (!_initialized) {
+      long ret = dispatch_block_wait(_initializeBlock,
+                                     dispatch_time(DISPATCH_TIME_NOW, 10.0 * NSEC_PER_SEC));
+      RTC_DCHECK_EQ(ret, 0);
+    }
+    dispatch_semaphore_signal(_waitForInitializeSemaphore);
   }
   return _state == UIApplicationStateActive;
 }

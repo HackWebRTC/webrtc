@@ -67,6 +67,16 @@ void decompressionOutputCallback(void *decoder,
   RTCVideoDecoderCallback _callback;
 }
 
+- (instancetype)init {
+  if (self = [super init]) {
+#if defined(WEBRTC_IOS)
+    [RTCUIApplicationStatusObserver prepareForUse];
+#endif
+  }
+
+  return self;
+}
+
 - (void)dealloc {
   [self destroyDecompressionSession];
   [self setVideoFormat:nullptr];
