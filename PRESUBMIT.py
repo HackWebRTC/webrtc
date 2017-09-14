@@ -493,7 +493,7 @@ def RunPythonTests(input_api, output_api):
     return input_api.os_path.join(input_api.PresubmitLocalPath(), *args)
 
   test_directories = [
-      '/',
+      input_api.PresubmitLocalPath(),
       Join('webrtc', 'rtc_tools', 'py_event_log_analyzer'),
       Join('webrtc', 'rtc_tools'),
       Join('webrtc', 'audio', 'test', 'unittests'),

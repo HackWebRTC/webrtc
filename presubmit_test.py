@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import unittest
 
 import PRESUBMIT
@@ -10,7 +11,7 @@ class CheckBugEntryField(unittest.TestCase):
     mock_output_api = MockOutputApi()
     mock_input_api.change.BUG = 'webrtc:1234'
     errors = PRESUBMIT.CheckCommitMessageBugEntry(mock_input_api,
-                                                   mock_output_api)
+                                                  mock_output_api)
     self.assertEqual(0, len(errors))
 
   def testCommitMessageBugEntryReturnError(self):
@@ -18,7 +19,7 @@ class CheckBugEntryField(unittest.TestCase):
     mock_output_api = MockOutputApi()
     mock_input_api.change.BUG = 'webrtc:1234,webrtc=4321'
     errors = PRESUBMIT.CheckCommitMessageBugEntry(mock_input_api,
-                                                   mock_output_api)
+                                                  mock_output_api)
     self.assertEqual(1, len(errors))
     self.assertEqual(('Bogus BUG entry: webrtc=4321. Please specify'
                       ' the issue tracker prefix and the issue number,'
@@ -30,7 +31,7 @@ class CheckBugEntryField(unittest.TestCase):
     mock_output_api = MockOutputApi()
     mock_input_api.change.BUG = 'None'
     errors = PRESUBMIT.CheckCommitMessageBugEntry(mock_input_api,
-                                                   mock_output_api)
+                                                  mock_output_api)
     self.assertEqual(0, len(errors))
 
 
