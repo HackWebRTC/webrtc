@@ -44,6 +44,7 @@ class FallbackDesktopCapturerWrapper final : public DesktopCapturer,
   bool GetSourceList(SourceList* sources) override;
   bool SelectSource(SourceId id) override;
   bool FocusOnSelectedSource() override;
+  bool IsOccluded(const DesktopVector& pos) override;
 
  private:
   // DesktopCapturer::Callback interface.

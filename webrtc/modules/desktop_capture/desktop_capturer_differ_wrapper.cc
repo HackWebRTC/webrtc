@@ -181,6 +181,10 @@ bool DesktopCapturerDifferWrapper::FocusOnSelectedSource() {
   return base_capturer_->FocusOnSelectedSource();
 }
 
+bool DesktopCapturerDifferWrapper::IsOccluded(const DesktopVector& pos) {
+  return base_capturer_->IsOccluded(pos);
+}
+
 void DesktopCapturerDifferWrapper::OnCaptureResult(
     Result result,
     std::unique_ptr<DesktopFrame> input_frame) {

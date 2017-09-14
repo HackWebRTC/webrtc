@@ -149,6 +149,15 @@ bool FallbackDesktopCapturerWrapper::FocusOnSelectedSource() {
          secondary_capturer_->FocusOnSelectedSource();
 }
 
+bool FallbackDesktopCapturerWrapper::IsOccluded(const DesktopVector& pos) {
+  // Returns true if either capturer returns true.
+  if (main_capturer_permanent_error_) {
+    return secondary_capturer_->IsOccluded(pos);
+  }
+  return main_capturer_->IsOccluded(pos) ||
+         secondary_capturer_->IsOccluded(pos);
+}
+
 void FallbackDesktopCapturerWrapper::OnCaptureResult(
     Result result,
     std::unique_ptr<DesktopFrame> frame) {

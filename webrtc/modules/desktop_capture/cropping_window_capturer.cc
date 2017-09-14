@@ -100,6 +100,17 @@ void CroppingWindowCapturer::OnCaptureResult(
       CreateCroppedDesktopFrame(std::move(screen_frame), window_rect));
 }
 
+bool CroppingWindowCapturer::IsOccluded(const DesktopVector& pos) {
+  // Returns true if either capturer returns true.
+  if (window_capturer_->IsOccluded(pos)) {
+    return true;
+  }
+  if (screen_capturer_ != nullptr && screen_capturer_->IsOccluded(pos)) {
+    return true;
+  }
+  return false;
+}
+
 #if !defined(WEBRTC_WIN)
 // CroppingWindowCapturer is implemented only for windows. On other platforms
 // the regular window capturer is used.

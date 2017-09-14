@@ -45,6 +45,7 @@ class DesktopCapturerDifferWrapper : public DesktopCapturer,
   bool GetSourceList(SourceList* screens) override;
   bool SelectSource(SourceId id) override;
   bool FocusOnSelectedSource() override;
+  bool IsOccluded(const DesktopVector& pos) override;
 
  private:
   // DesktopCapturer::Callback interface.
