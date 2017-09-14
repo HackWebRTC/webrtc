@@ -130,8 +130,15 @@ bool FallbackDesktopCapturerWrapper::SelectSource(SourceId id) {
   if (main_capturer_permanent_error_) {
     return secondary_capturer_->SelectSource(id);
   }
-  return main_capturer_->SelectSource(id) &&
-         secondary_capturer_->SelectSource(id);
+  const bool main_capturer_result = main_capturer_->SelectSource(id);
+  RTC_HISTOGRAM_BOOLEAN(
+      "WebRTC.DesktopCapture.PrimaryCapturerSelectSourceError",
+      main_capturer_result);
+  if (!main_capturer_result) {
+    main_capturer_permanent_error_ = true;
+  }
+
+  return secondary_capturer_->SelectSource(id);
 }
 
 bool FallbackDesktopCapturerWrapper::FocusOnSelectedSource() {
