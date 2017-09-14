@@ -289,7 +289,6 @@ struct RtpExtension {
   bool encrypt = false;
 };
 
-// See webrtc/config.h. Has "uri" and "id" fields.
 // TODO(deadbeef): This is missing the "encrypt" flag, which is unimplemented.
 typedef RtpExtension RtpHeaderExtensionParameters;
 

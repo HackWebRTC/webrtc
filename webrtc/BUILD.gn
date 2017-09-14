@@ -350,7 +350,6 @@ rtc_static_library("webrtc_common") {
   sources = [
     "common_types.cc",
     "common_types.h",
-    "config.h",
     "typedefs.h",
   ]
 
