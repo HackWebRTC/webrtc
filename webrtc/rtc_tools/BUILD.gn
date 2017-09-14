@@ -303,6 +303,7 @@ if (rtc_include_tests) {
       "frame_analyzer/reference_less_video_analysis_unittest.cc",
       "frame_analyzer/video_quality_analysis_unittest.cc",
       "frame_editing/frame_editing_unittest.cc",
+      "sanitizers_unittest.cc",
       "simple_command_line_parser_unittest.cc",
     ]
 
@@ -319,6 +320,7 @@ if (rtc_include_tests) {
       ":frame_editing_lib",
       ":reference_less_video_analysis_lib",
       ":video_quality_analysis",
+      "../rtc_base",
       "../test:test_main",
       "//testing/gtest",
     ]
