@@ -26,4 +26,18 @@ specific_include_rules = {
   "gtest\.h": [
     "+testing/gtest/include/gtest",
   ],
+  ".*congestion_controller_feedback_fuzzer\.cc": [
+    "+webrtc/modules/congestion_controller/include/receive_side_congestion_controller.h",
+    "+webrtc/modules/pacing/packet_router.h",
+    "+webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h",
+  ],
+  ".*pseudotcp_parser_fuzzer\.cc": [
+    "+webrtc/p2p/base/pseudotcp.h",
+  ],
+  ".*stun_parser_fuzzer\.cc": [
+    "+webrtc/p2p/base/stun.h",
+  ],
+  ".*stun_validator_fuzzer\.cc": [
+    "+webrtc/p2p/base/stun.h",
+  ],
 }
