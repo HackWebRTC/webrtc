@@ -292,8 +292,6 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
   commit_msg.append('Change log: %s' % (CHROMIUM_LOG_TEMPLATE % rev_interval))
   commit_msg.append('Full diff: %s\n' % (CHROMIUM_COMMIT_TEMPLATE %
                                          rev_interval))
-  # TBR field will be empty unless in some custom cases, where some engineers
-  # are added.
   tbr_authors = ''
   if changed_deps_list:
     commit_msg.append('Changed dependencies:')
@@ -319,7 +317,8 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
   else:
     commit_msg.append('No update to Clang.\n')
 
-  commit_msg.append('TBR=%s' % tbr_authors)
+  # TBR needs to be non-empty for Gerrit to process it.
+  commit_msg.append('TBR=kjellander@webrtc.org, %s' % tbr_authors)
   commit_msg.append('BUG=None')
   commit_msg.append('CQ_INCLUDE_TRYBOTS=%s' % EXTRA_TRYBOTS)
   return '\n'.join(commit_msg)
@@ -399,20 +398,14 @@ def _LocalCommit(commit_msg, dry_run):
     _RunCommand(['git', 'commit', '-m', commit_msg])
 
 
-def _UploadCL(dry_run, rietveld_email=None):
+def _UploadCL(dry_run, skip_cq=False):
   logging.info('Uploading CL...')
   if not dry_run:
-    cmd = ['git', 'cl', 'upload', '-f']
-    if rietveld_email:
-      cmd.append('--email=%s' % rietveld_email)
+    cmd = ['git', 'cl', 'upload', '-f', '--gerrit']
+    if not skip_cq:
+      logging.info('Sending the CL to the CQ...')
+      cmd.extend(['--use-commit-queue', '--send-mail'])
     _RunCommand(cmd, extra_env={'EDITOR': 'true'})
-
-
-def _SendToCQ(dry_run, skip_cq):
-  logging.info('Sending the CL to the CQ...')
-  if not dry_run and not skip_cq:
-    _RunCommand(['git', 'cl', 'set_commit'])
-    logging.info('Sent the CL to the CQ.')
 
 
 def main():
@@ -483,8 +476,7 @@ def main():
     logging.info("No DEPS changes detected, skipping CL creation.")
   else:
     _LocalCommit(commit_msg, opts.dry_run)
-    _UploadCL(opts.dry_run, opts.rietveld_email)
-    _SendToCQ(opts.dry_run, opts.skip_cq)
+    _UploadCL(opts.dry_run, opts.skip_cq)
   return 0
 
 
