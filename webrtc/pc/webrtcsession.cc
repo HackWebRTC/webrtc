@@ -61,8 +61,12 @@ const char kBundleWithoutRtcpMux[] = "RTCP-MUX must be enabled when BUNDLE "
 const char kCreateChannelFailed[] = "Failed to create channels.";
 const char kInvalidCandidates[] = "Description contains invalid candidates.";
 const char kInvalidSdp[] = "Invalid session description.";
-const char kMlineMismatch[] =
-    "Offer and answer descriptions m-lines are not matching. Rejecting answer.";
+const char kMlineMismatchInAnswer[] =
+    "The order of m-lines in answer doesn't match order in offer. Rejecting "
+    "answer.";
+const char kMlineMismatchInSubsequentOffer[] =
+    "The order of m-lines in subsequent offer doesn't match order from "
+    "previous offer/answer.";
 const char kPushDownTDFailed[] =
     "Failed to push down transport description:";
 const char kSdpWithoutDtlsFingerprint[] =
@@ -136,29 +140,37 @@ IceCandidatePairType GetIceCandidatePairCounter(
   return kIceCandidatePairMax;
 }
 
-// Compares |answer| against |offer|. Comparision is done
-// for number of m-lines in answer against offer. If matches true will be
-// returned otherwise false.
-static bool VerifyMediaDescriptions(
-    const SessionDescription* answer, const SessionDescription* offer) {
-  if (offer->contents().size() != answer->contents().size())
+// Verify that the order of media sections in |desc1| matches |desc2|. The
+// number of m= sections could be different.
+static bool MediaSectionsInSameOrder(const SessionDescription* desc1,
+                                     const SessionDescription* desc2) {
+  if (!desc1 || !desc2) {
     return false;
-
-  for (size_t i = 0; i < offer->contents().size(); ++i) {
-    if ((offer->contents()[i].name) != answer->contents()[i].name) {
+  }
+  for (size_t i = 0;
+       i < desc1->contents().size() && i < desc2->contents().size(); ++i) {
+    if ((desc2->contents()[i].name) != desc1->contents()[i].name) {
       return false;
     }
-    const MediaContentDescription* offer_mdesc =
+    const MediaContentDescription* desc2_mdesc =
         static_cast<const MediaContentDescription*>(
-            offer->contents()[i].description);
-    const MediaContentDescription* answer_mdesc =
+            desc2->contents()[i].description);
+    const MediaContentDescription* desc1_mdesc =
         static_cast<const MediaContentDescription*>(
-            answer->contents()[i].description);
-    if (offer_mdesc->type() != answer_mdesc->type()) {
+            desc1->contents()[i].description);
+    if (desc2_mdesc->type() != desc1_mdesc->type()) {
       return false;
     }
   }
   return true;
+}
+
+static bool MediaSectionsHaveSameCount(const SessionDescription* desc1,
+                                       const SessionDescription* desc2) {
+  if (!desc1 || !desc2) {
+    return false;
+  }
+  return desc1->contents().size() == desc2->contents().size();
 }
 
 // Checks that each non-rejected content has SDES crypto keys or a DTLS
@@ -2153,12 +2165,21 @@ bool WebRtcSession::ValidateSessionDescription(
   // m-lines that do not rtcp-mux enabled.
 
   // Verify m-lines in Answer when compared against Offer.
-  if (action == kAnswer) {
+  if (action == kAnswer || action == kPrAnswer) {
     const cricket::SessionDescription* offer_desc =
         (source == cricket::CS_LOCAL) ? remote_description()->description()
                                       : local_description()->description();
-    if (!VerifyMediaDescriptions(sdesc->description(), offer_desc)) {
-      return BadAnswerSdp(source, kMlineMismatch, err_desc);
+    if (!MediaSectionsHaveSameCount(sdesc->description(), offer_desc) ||
+        !MediaSectionsInSameOrder(sdesc->description(), offer_desc)) {
+      return BadAnswerSdp(source, kMlineMismatchInAnswer, err_desc);
+    }
+  } else {
+    // The re-offers should respect the order of m= sections in current local
+    // description. See RFC3264 Section 8 paragraph 4 for more details.
+    if (local_description() &&
+        !MediaSectionsInSameOrder(sdesc->description(),
+                                  local_description()->description())) {
+      return BadOfferSdp(source, kMlineMismatchInSubsequentOffer, err_desc);
     }
   }
 

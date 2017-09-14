@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -3829,6 +3830,39 @@ TEST_F(PeerConnectionInterfaceTest, CreateAnswerWithoutRemoteDescription) {
   // Createing answer succeeds when the remote description is set.
   CreateOfferAsRemoteDescription();
   EXPECT_TRUE(DoCreateAnswer(&answer, nullptr));
+}
+
+// Test that an error is returned if a description is applied that doesn't
+// respect the order of existing media sections.
+TEST_F(PeerConnectionInterfaceTest,
+       MediaSectionOrderEnforcedForSubsequentOffers) {
+  CreatePeerConnection();
+  FakeConstraints constraints;
+  constraints.SetMandatoryReceiveAudio(true);
+  constraints.SetMandatoryReceiveVideo(true);
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
+  EXPECT_TRUE(DoSetRemoteDescription(std::move(offer)));
+
+  std::unique_ptr<SessionDescriptionInterface> answer;
+  ASSERT_TRUE(DoCreateAnswer(&answer, nullptr));
+  EXPECT_TRUE(DoSetLocalDescription(std::move(answer)));
+
+  // A remote offer with different m=line order should be rejected.
+  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
+  std::reverse(offer->description()->contents().begin(),
+               offer->description()->contents().end());
+  std::reverse(offer->description()->transport_infos().begin(),
+               offer->description()->transport_infos().end());
+  EXPECT_FALSE(DoSetRemoteDescription(std::move(offer)));
+
+  // A subsequent local offer with different m=line order should be rejected.
+  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
+  std::reverse(offer->description()->contents().begin(),
+               offer->description()->contents().end());
+  std::reverse(offer->description()->transport_infos().begin(),
+               offer->description()->transport_infos().end());
+  EXPECT_FALSE(DoSetLocalDescription(std::move(offer)));
 }
 
 class PeerConnectionMediaConfigTest : public testing::Test {
