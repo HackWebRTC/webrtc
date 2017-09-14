@@ -140,6 +140,7 @@ rtc_static_library("rtc_audio_video") {
     "engine/adm_helpers.h",
     "engine/apm_helpers.cc",
     "engine/apm_helpers.h",
+    "engine/constants.h",
     "engine/internaldecoderfactory.cc",
     "engine/internaldecoderfactory.h",
     "engine/internalencoderfactory.cc",
