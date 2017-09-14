@@ -21,8 +21,7 @@ namespace webrtc {
 class RtpHeaderExtensionMap;
 class Random;
 
-namespace rtp {
-class Packet {
+class RtpPacket {
  public:
   using ExtensionType = RTPExtensionType;
   using ExtensionManager = RtpHeaderExtensionMap;
@@ -34,13 +33,13 @@ class Packet {
   // packet creating and used if available in Parse function.
   // Adding and getting extensions will fail until |extensions| is
   // provided via constructor or IdentifyExtensions function.
-  Packet();
-  explicit Packet(const ExtensionManager* extensions);
-  Packet(const Packet&);
-  Packet(const ExtensionManager* extensions, size_t capacity);
-  ~Packet();
+  RtpPacket();
+  explicit RtpPacket(const ExtensionManager* extensions);
+  RtpPacket(const RtpPacket&);
+  RtpPacket(const ExtensionManager* extensions, size_t capacity);
+  ~RtpPacket();
 
-  Packet& operator=(const Packet&) = default;
+  RtpPacket& operator=(const RtpPacket&) = default;
 
   // Parse and copy given buffer into Packet.
   bool Parse(const uint8_t* buffer, size_t size);
@@ -79,7 +78,7 @@ class Packet {
   void Clear();
 
   // Header setters.
-  void CopyHeaderFrom(const Packet& packet);
+  void CopyHeaderFrom(const RtpPacket& packet);
   void SetMarker(bool marker_bit);
   void SetPayloadType(uint8_t payload_type);
   void SetSequenceNumber(uint16_t seq_no);
@@ -163,12 +162,12 @@ class Packet {
 };
 
 template <typename Extension>
-bool Packet::HasExtension() const {
+bool RtpPacket::HasExtension() const {
   return !FindExtension(Extension::kId).empty();
 }
 
 template <typename Extension, typename... Values>
-bool Packet::GetExtension(Values... values) const {
+bool RtpPacket::GetExtension(Values... values) const {
   auto raw = FindExtension(Extension::kId);
   if (raw.empty())
     return false;
@@ -176,7 +175,7 @@ bool Packet::GetExtension(Values... values) const {
 }
 
 template <typename Extension, typename... Values>
-bool Packet::SetExtension(Values... values) {
+bool RtpPacket::SetExtension(Values... values) {
   const size_t value_size = Extension::ValueSize(values...);
   if (value_size == 0 || value_size > 16)
     return false;
@@ -187,14 +186,14 @@ bool Packet::SetExtension(Values... values) {
 }
 
 template <typename Extension>
-bool Packet::ReserveExtension() {
+bool RtpPacket::ReserveExtension() {
   auto buffer = AllocateExtension(Extension::kId, Extension::kValueSizeBytes);
   if (buffer.empty())
     return false;
   memset(buffer.data(), 0, Extension::kValueSizeBytes);
   return true;
 }
-}  // namespace rtp
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_H_

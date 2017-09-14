@@ -22,7 +22,6 @@
 #include "webrtc/rtc_base/safe_conversions.h"
 
 namespace webrtc {
-namespace rtp {
 namespace {
 constexpr size_t kFixedHeaderSize = 12;
 constexpr uint8_t kRtpVersion = 2;
@@ -31,9 +30,9 @@ constexpr size_t kOneByteHeaderSize = 1;
 constexpr size_t kDefaultPacketSize = 1500;
 }  // namespace
 
-constexpr int Packet::kMaxExtensionHeaders;
-constexpr int Packet::kMinExtensionId;
-constexpr int Packet::kMaxExtensionId;
+constexpr int RtpPacket::kMaxExtensionHeaders;
+constexpr int RtpPacket::kMinExtensionId;
+constexpr int RtpPacket::kMaxExtensionId;
 
 //  0                   1                   2                   3
 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -57,14 +56,14 @@ constexpr int Packet::kMaxExtensionId;
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 // |               padding         | Padding size  |
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-Packet::Packet() : Packet(nullptr, kDefaultPacketSize) {}
+RtpPacket::RtpPacket() : RtpPacket(nullptr, kDefaultPacketSize) {}
 
-Packet::Packet(const ExtensionManager* extensions)
-    : Packet(extensions, kDefaultPacketSize) {}
+RtpPacket::RtpPacket(const ExtensionManager* extensions)
+    : RtpPacket(extensions, kDefaultPacketSize) {}
 
-Packet::Packet(const Packet&) = default;
+RtpPacket::RtpPacket(const RtpPacket&) = default;
 
-Packet::Packet(const ExtensionManager* extensions, size_t capacity)
+RtpPacket::RtpPacket(const ExtensionManager* extensions, size_t capacity)
     : buffer_(capacity) {
   RTC_DCHECK_GE(capacity, kFixedHeaderSize);
   Clear();
@@ -76,14 +75,14 @@ Packet::Packet(const ExtensionManager* extensions, size_t capacity)
   }
 }
 
-Packet::~Packet() {}
+RtpPacket::~RtpPacket() {}
 
-void Packet::IdentifyExtensions(const ExtensionManager& extensions) {
+void RtpPacket::IdentifyExtensions(const ExtensionManager& extensions) {
   for (int i = 0; i < kMaxExtensionHeaders; ++i)
     extension_entries_[i].type = extensions.GetType(i + 1);
 }
 
-bool Packet::Parse(const uint8_t* buffer, size_t buffer_size) {
+bool RtpPacket::Parse(const uint8_t* buffer, size_t buffer_size) {
   if (!ParseBuffer(buffer, buffer_size)) {
     Clear();
     return false;
@@ -93,11 +92,11 @@ bool Packet::Parse(const uint8_t* buffer, size_t buffer_size) {
   return true;
 }
 
-bool Packet::Parse(rtc::ArrayView<const uint8_t> packet) {
+bool RtpPacket::Parse(rtc::ArrayView<const uint8_t> packet) {
   return Parse(packet.data(), packet.size());
 }
 
-bool Packet::Parse(rtc::CopyOnWriteBuffer buffer) {
+bool RtpPacket::Parse(rtc::CopyOnWriteBuffer buffer) {
   if (!ParseBuffer(buffer.cdata(), buffer.size())) {
     Clear();
     return false;
@@ -108,33 +107,33 @@ bool Packet::Parse(rtc::CopyOnWriteBuffer buffer) {
   return true;
 }
 
-bool Packet::Marker() const {
+bool RtpPacket::Marker() const {
   RTC_DCHECK_EQ(marker_, (data()[1] & 0x80) != 0);
   return marker_;
 }
 
-uint8_t Packet::PayloadType() const {
+uint8_t RtpPacket::PayloadType() const {
   RTC_DCHECK_EQ(payload_type_, data()[1] & 0x7f);
   return payload_type_;
 }
 
-uint16_t Packet::SequenceNumber() const {
+uint16_t RtpPacket::SequenceNumber() const {
   RTC_DCHECK_EQ(sequence_number_,
                 ByteReader<uint16_t>::ReadBigEndian(data() + 2));
   return sequence_number_;
 }
 
-uint32_t Packet::Timestamp() const {
+uint32_t RtpPacket::Timestamp() const {
   RTC_DCHECK_EQ(timestamp_, ByteReader<uint32_t>::ReadBigEndian(data() + 4));
   return timestamp_;
 }
 
-uint32_t Packet::Ssrc() const {
+uint32_t RtpPacket::Ssrc() const {
   RTC_DCHECK_EQ(ssrc_, ByteReader<uint32_t>::ReadBigEndian(data() + 8));
   return ssrc_;
 }
 
-std::vector<uint32_t> Packet::Csrcs() const {
+std::vector<uint32_t> RtpPacket::Csrcs() const {
   size_t num_csrc = data()[0] & 0x0F;
   RTC_DCHECK_GE(capacity(), kFixedHeaderSize + num_csrc * 4);
   std::vector<uint32_t> csrcs(num_csrc);
@@ -145,49 +144,49 @@ std::vector<uint32_t> Packet::Csrcs() const {
   return csrcs;
 }
 
-size_t Packet::headers_size() const {
+size_t RtpPacket::headers_size() const {
   return payload_offset_;
 }
 
-size_t Packet::payload_size() const {
+size_t RtpPacket::payload_size() const {
   return payload_size_;
 }
 
-size_t Packet::padding_size() const {
+size_t RtpPacket::padding_size() const {
   return padding_size_;
 }
 
-rtc::ArrayView<const uint8_t> Packet::payload() const {
+rtc::ArrayView<const uint8_t> RtpPacket::payload() const {
   return rtc::MakeArrayView(data() + payload_offset_, payload_size_);
 }
 
-rtc::CopyOnWriteBuffer Packet::Buffer() const {
+rtc::CopyOnWriteBuffer RtpPacket::Buffer() const {
   return buffer_;
 }
 
-size_t Packet::capacity() const {
+size_t RtpPacket::capacity() const {
   return buffer_.capacity();
 }
 
-size_t Packet::size() const {
+size_t RtpPacket::size() const {
   size_t ret = payload_offset_ + payload_size_ + padding_size_;
   RTC_DCHECK_EQ(buffer_.size(), ret);
   return ret;
 }
 
-const uint8_t* Packet::data() const {
+const uint8_t* RtpPacket::data() const {
   return buffer_.cdata();
 }
 
-size_t Packet::FreeCapacity() const {
+size_t RtpPacket::FreeCapacity() const {
   return capacity() - size();
 }
 
-size_t Packet::MaxPayloadSize() const {
+size_t RtpPacket::MaxPayloadSize() const {
   return capacity() - payload_offset_;
 }
 
-void Packet::CopyHeaderFrom(const Packet& packet) {
+void RtpPacket::CopyHeaderFrom(const RtpPacket& packet) {
   RTC_DCHECK_GE(capacity(), packet.headers_size());
 
   marker_ = packet.marker_;
@@ -206,7 +205,7 @@ void Packet::CopyHeaderFrom(const Packet& packet) {
   padding_size_ = 0;
 }
 
-void Packet::SetMarker(bool marker_bit) {
+void RtpPacket::SetMarker(bool marker_bit) {
   marker_ = marker_bit;
   if (marker_) {
     WriteAt(1, data()[1] | 0x80);
@@ -215,28 +214,28 @@ void Packet::SetMarker(bool marker_bit) {
   }
 }
 
-void Packet::SetPayloadType(uint8_t payload_type) {
+void RtpPacket::SetPayloadType(uint8_t payload_type) {
   RTC_DCHECK_LE(payload_type, 0x7Fu);
   payload_type_ = payload_type;
   WriteAt(1, (data()[1] & 0x80) | payload_type);
 }
 
-void Packet::SetSequenceNumber(uint16_t seq_no) {
+void RtpPacket::SetSequenceNumber(uint16_t seq_no) {
   sequence_number_ = seq_no;
   ByteWriter<uint16_t>::WriteBigEndian(WriteAt(2), seq_no);
 }
 
-void Packet::SetTimestamp(uint32_t timestamp) {
+void RtpPacket::SetTimestamp(uint32_t timestamp) {
   timestamp_ = timestamp;
   ByteWriter<uint32_t>::WriteBigEndian(WriteAt(4), timestamp);
 }
 
-void Packet::SetSsrc(uint32_t ssrc) {
+void RtpPacket::SetSsrc(uint32_t ssrc) {
   ssrc_ = ssrc;
   ByteWriter<uint32_t>::WriteBigEndian(WriteAt(8), ssrc);
 }
 
-void Packet::SetCsrcs(const std::vector<uint32_t>& csrcs) {
+void RtpPacket::SetCsrcs(const std::vector<uint32_t>& csrcs) {
   RTC_DCHECK_EQ(extensions_size_, 0);
   RTC_DCHECK_EQ(payload_size_, 0);
   RTC_DCHECK_EQ(padding_size_, 0);
@@ -252,7 +251,7 @@ void Packet::SetCsrcs(const std::vector<uint32_t>& csrcs) {
   buffer_.SetSize(payload_offset_);
 }
 
-bool Packet::HasRawExtension(int id) const {
+bool RtpPacket::HasRawExtension(int id) const {
   if (id == ExtensionManager::kInvalidId)
     return false;
   RTC_DCHECK_GE(id, kMinExtensionId);
@@ -260,7 +259,7 @@ bool Packet::HasRawExtension(int id) const {
   return extension_entries_[id - 1].offset != 0;
 }
 
-rtc::ArrayView<const uint8_t> Packet::GetRawExtension(int id) const {
+rtc::ArrayView<const uint8_t> RtpPacket::GetRawExtension(int id) const {
   if (id == ExtensionManager::kInvalidId)
     return nullptr;
   RTC_DCHECK_GE(id, kMinExtensionId);
@@ -271,7 +270,7 @@ rtc::ArrayView<const uint8_t> Packet::GetRawExtension(int id) const {
   return rtc::MakeArrayView(data() + extension.offset, extension.length);
 }
 
-bool Packet::SetRawExtension(int id, rtc::ArrayView<const uint8_t> data) {
+bool RtpPacket::SetRawExtension(int id, rtc::ArrayView<const uint8_t> data) {
   auto buffer = AllocateRawExtension(id, data.size());
   if (buffer.empty())
     return false;
@@ -280,7 +279,7 @@ bool Packet::SetRawExtension(int id, rtc::ArrayView<const uint8_t> data) {
   return true;
 }
 
-rtc::ArrayView<uint8_t> Packet::AllocateRawExtension(int id, size_t length) {
+rtc::ArrayView<uint8_t> RtpPacket::AllocateRawExtension(int id, size_t length) {
   if (id == ExtensionManager::kInvalidId)
     return nullptr;
   RTC_DCHECK_GE(id, kMinExtensionId);
@@ -351,14 +350,14 @@ rtc::ArrayView<uint8_t> Packet::AllocateRawExtension(int id, size_t length) {
   return rtc::MakeArrayView(WriteAt(extension_entry->offset), length);
 }
 
-uint8_t* Packet::AllocatePayload(size_t size_bytes) {
+uint8_t* RtpPacket::AllocatePayload(size_t size_bytes) {
   // Reset payload size to 0. If CopyOnWrite buffer_ was shared, this will cause
   // reallocation and memcpy. Keeping just header reduces memcpy size.
   SetPayloadSize(0);
   return SetPayloadSize(size_bytes);
 }
 
-uint8_t* Packet::SetPayloadSize(size_t size_bytes) {
+uint8_t* RtpPacket::SetPayloadSize(size_t size_bytes) {
   RTC_DCHECK_EQ(padding_size_, 0);
   if (payload_offset_ + size_bytes > capacity()) {
     LOG(LS_WARNING) << "Cannot set payload, not enough space in buffer.";
@@ -369,7 +368,7 @@ uint8_t* Packet::SetPayloadSize(size_t size_bytes) {
   return WriteAt(payload_offset_);
 }
 
-bool Packet::SetPadding(uint8_t size_bytes, Random* random) {
+bool RtpPacket::SetPadding(uint8_t size_bytes, Random* random) {
   RTC_DCHECK(random);
   if (payload_offset_ + payload_size_ + size_bytes > capacity()) {
     LOG(LS_WARNING) << "Cannot set padding size " << size_bytes << ", only "
@@ -393,7 +392,7 @@ bool Packet::SetPadding(uint8_t size_bytes, Random* random) {
   return true;
 }
 
-void Packet::Clear() {
+void RtpPacket::Clear() {
   marker_ = false;
   payload_type_ = 0;
   sequence_number_ = 0;
@@ -413,7 +412,7 @@ void Packet::Clear() {
   WriteAt(0, kRtpVersion << 6);
 }
 
-bool Packet::ParseBuffer(const uint8_t* buffer, size_t size) {
+bool RtpPacket::ParseBuffer(const uint8_t* buffer, size_t size) {
   if (size < kFixedHeaderSize) {
     return false;
   }
@@ -516,7 +515,8 @@ bool Packet::ParseBuffer(const uint8_t* buffer, size_t size) {
   return true;
 }
 
-rtc::ArrayView<const uint8_t> Packet::FindExtension(ExtensionType type) const {
+rtc::ArrayView<const uint8_t> RtpPacket::FindExtension(
+    ExtensionType type) const {
   for (const ExtensionInfo& extension : extension_entries_) {
     if (extension.type == type) {
       if (extension.length == 0) {
@@ -529,8 +529,8 @@ rtc::ArrayView<const uint8_t> Packet::FindExtension(ExtensionType type) const {
   return nullptr;
 }
 
-rtc::ArrayView<uint8_t> Packet::AllocateExtension(ExtensionType type,
-                                                  size_t length) {
+rtc::ArrayView<uint8_t> RtpPacket::AllocateExtension(ExtensionType type,
+                                                     size_t length) {
   for (int i = 0; i < kMaxExtensionHeaders; ++i) {
     if (extension_entries_[i].type == type) {
       int extension_id = i + 1;
@@ -541,13 +541,12 @@ rtc::ArrayView<uint8_t> Packet::AllocateExtension(ExtensionType type,
   return nullptr;
 }
 
-uint8_t* Packet::WriteAt(size_t offset) {
+uint8_t* RtpPacket::WriteAt(size_t offset) {
   return buffer_.data() + offset;
 }
 
-void Packet::WriteAt(size_t offset, uint8_t byte) {
+void RtpPacket::WriteAt(size_t offset, uint8_t byte) {
   buffer_.data()[offset] = byte;
 }
 
-}  // namespace rtp
 }  // namespace webrtc

@@ -16,11 +16,11 @@
 
 namespace webrtc {
 // Class to hold rtp packet with metadata for receiver side.
-class RtpPacketReceived : public rtp::Packet {
+class RtpPacketReceived : public RtpPacket {
  public:
   RtpPacketReceived() = default;
   explicit RtpPacketReceived(const ExtensionManager* extensions)
-      : Packet(extensions) {}
+      : RtpPacket(extensions) {}
 
   // TODO(danilchap): Remove this function when all code update to use RtpPacket
   // directly. Function is there just for easier backward compatibilty.

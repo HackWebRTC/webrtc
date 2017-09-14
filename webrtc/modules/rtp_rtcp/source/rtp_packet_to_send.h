@@ -15,13 +15,13 @@
 
 namespace webrtc {
 // Class to hold rtp packet with metadata for sender side.
-class RtpPacketToSend : public rtp::Packet {
+class RtpPacketToSend : public RtpPacket {
  public:
   explicit RtpPacketToSend(const ExtensionManager* extensions)
-      : Packet(extensions) {}
+      : RtpPacket(extensions) {}
   RtpPacketToSend(const RtpPacketToSend& packet) = default;
   RtpPacketToSend(const ExtensionManager* extensions, size_t capacity)
-      : Packet(extensions, capacity) {}
+      : RtpPacket(extensions, capacity) {}
 
   RtpPacketToSend& operator=(const RtpPacketToSend& packet) = default;
 
