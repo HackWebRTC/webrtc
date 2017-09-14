@@ -266,10 +266,6 @@ if (rtc_include_tests) {
 
       sources = [
         "test/auto_test/automated_mode.cc",
-        "test/auto_test/fakes/conference_transport.cc",
-        "test/auto_test/fakes/conference_transport.h",
-        "test/auto_test/fakes/loudest_filter.cc",
-        "test/auto_test/fakes/loudest_filter.h",
         "test/auto_test/fixtures/after_initialization_fixture.cc",
         "test/auto_test/fixtures/after_initialization_fixture.h",
         "test/auto_test/fixtures/after_streaming_fixture.cc",
@@ -284,7 +280,6 @@ if (rtc_include_tests) {
         "test/auto_test/standard/rtp_rtcp_before_streaming_test.cc",
         "test/auto_test/standard/rtp_rtcp_extensions.cc",
         "test/auto_test/standard/rtp_rtcp_test.cc",
-        "test/auto_test/voe_conference_test.cc",
         "test/auto_test/voe_standard_test.cc",
         "test/auto_test/voe_standard_test.h",
         "test/auto_test/voe_test_defines.h",

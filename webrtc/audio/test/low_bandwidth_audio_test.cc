@@ -8,15 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
-
-#include "webrtc/audio/test/low_bandwidth_audio_test.h"
-#include "webrtc/common_audio/wav_file.h"
+#include "webrtc/audio/test/audio_end_to_end_test.h"
 #include "webrtc/rtc_base/flags.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
-
 
 DEFINE_int(sample_rate_hz, 16000,
            "Sample rate (Hz) of the produced audio files.");
@@ -25,122 +20,59 @@ DEFINE_bool(quick, false,
             "Don't do the full audio recording. "
             "Used to quickly check that the test runs without crashing.");
 
+namespace webrtc {
+namespace test {
 namespace {
-
-// Wait half a second between stopping sending and stopping receiving audio.
-constexpr int kExtraRecordTimeMs = 500;
 
 std::string FileSampleRateSuffix() {
   return std::to_string(FLAG_sample_rate_hz / 1000);
 }
 
-}  // namespace
+class AudioQualityTest : public AudioEndToEndTest {
+ public:
+  AudioQualityTest() = default;
 
-namespace webrtc {
-namespace test {
-
-AudioQualityTest::AudioQualityTest()
-    : EndToEndTest(CallTest::kDefaultTimeoutMs) {}
-
-size_t AudioQualityTest::GetNumVideoStreams() const {
-  return 0;
-}
-size_t AudioQualityTest::GetNumAudioStreams() const {
-  return 1;
-}
-size_t AudioQualityTest::GetNumFlexfecStreams() const {
-  return 0;
-}
-
-std::string AudioQualityTest::AudioInputFile() {
-  return test::ResourcePath("voice_engine/audio_tiny" + FileSampleRateSuffix(),
-                            "wav");
-}
-
-std::string AudioQualityTest::AudioOutputFile() {
-  const ::testing::TestInfo* const test_info =
-      ::testing::UnitTest::GetInstance()->current_test_info();
-  return webrtc::test::OutputPath() + "LowBandwidth_" + test_info->name() +
-      "_" + FileSampleRateSuffix() + ".wav";
-}
-
-std::unique_ptr<test::FakeAudioDevice::Capturer>
-    AudioQualityTest::CreateCapturer() {
-  return test::FakeAudioDevice::CreateWavFileReader(AudioInputFile());
-}
-
-std::unique_ptr<test::FakeAudioDevice::Renderer>
-    AudioQualityTest::CreateRenderer() {
-  return test::FakeAudioDevice::CreateBoundedWavFileWriter(
-      AudioOutputFile(), FLAG_sample_rate_hz);
-}
-
-void AudioQualityTest::OnFakeAudioDevicesCreated(
-    test::FakeAudioDevice* send_audio_device,
-    test::FakeAudioDevice* recv_audio_device) {
-  send_audio_device_ = send_audio_device;
-}
-
-FakeNetworkPipe::Config AudioQualityTest::GetNetworkPipeConfig() {
-  return FakeNetworkPipe::Config();
-}
-
-test::PacketTransport* AudioQualityTest::CreateSendTransport(
-    SingleThreadedTaskQueueForTesting* task_queue,
-    Call* sender_call) {
-  return new test::PacketTransport(
-      task_queue, sender_call, this, test::PacketTransport::kSender,
-      test::CallTest::payload_type_map_, GetNetworkPipeConfig());
-}
-
-test::PacketTransport* AudioQualityTest::CreateReceiveTransport(
-    SingleThreadedTaskQueueForTesting* task_queue) {
-  return new test::PacketTransport(
-      task_queue, nullptr, this, test::PacketTransport::kReceiver,
-      test::CallTest::payload_type_map_, GetNetworkPipeConfig());
-}
-
-void AudioQualityTest::ModifyAudioConfigs(
-  AudioSendStream::Config* send_config,
-  std::vector<AudioReceiveStream::Config>* receive_configs) {
-  // Large bitrate by default.
-  const webrtc::SdpAudioFormat kDefaultFormat("OPUS", 48000, 2,
-                                              {{"stereo", "1"}});
-  send_config->send_codec_spec =
-      rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
-          {test::CallTest::kAudioSendPayloadType, kDefaultFormat});
-}
-
-void AudioQualityTest::PerformTest() {
-  if (FLAG_quick) {
-    // Let the recording run for a small amount of time to check if it works.
-    SleepMs(1000);
-  } else {
-    // Wait until the input audio file is done...
-    send_audio_device_->WaitForRecordingEnd();
-    // and some extra time to account for network delay.
-    SleepMs(GetNetworkPipeConfig().queue_delay_ms + kExtraRecordTimeMs);
+ private:
+  std::string AudioInputFile() const {
+    return test::ResourcePath(
+        "voice_engine/audio_tiny" + FileSampleRateSuffix(), "wav");
   }
-}
 
-void AudioQualityTest::OnTestFinished() {
-  const ::testing::TestInfo* const test_info =
-      ::testing::UnitTest::GetInstance()->current_test_info();
+  std::string AudioOutputFile() const {
+    const ::testing::TestInfo* const test_info =
+        ::testing::UnitTest::GetInstance()->current_test_info();
+    return webrtc::test::OutputPath() + "LowBandwidth_" + test_info->name() +
+        "_" + FileSampleRateSuffix() + ".wav";
+  }
 
-  // Output information about the input and output audio files so that further
-  // processing can be done by an external process.
-  printf("TEST %s %s %s\n", test_info->name(),
-         AudioInputFile().c_str(), AudioOutputFile().c_str());
-}
+  std::unique_ptr<test::FakeAudioDevice::Capturer> CreateCapturer() override {
+    return test::FakeAudioDevice::CreateWavFileReader(AudioInputFile());
+  }
 
+  std::unique_ptr<test::FakeAudioDevice::Renderer> CreateRenderer() override {
+    return test::FakeAudioDevice::CreateBoundedWavFileWriter(
+        AudioOutputFile(), FLAG_sample_rate_hz);
+  }
 
-using LowBandwidthAudioTest = CallTest;
+  void PerformTest() override {
+    if (FLAG_quick) {
+      // Let the recording run for a small amount of time to check if it works.
+      SleepMs(1000);
+    } else {
+      AudioEndToEndTest::PerformTest();
+    }
+  }
 
-TEST_F(LowBandwidthAudioTest, GoodNetworkHighBitrate) {
-  AudioQualityTest test;
-  RunBaseTest(&test);
-}
+  void OnStreamsStopped() override {
+    const ::testing::TestInfo* const test_info =
+        ::testing::UnitTest::GetInstance()->current_test_info();
 
+    // Output information about the input and output audio files so that further
+    // processing can be done by an external process.
+    printf("TEST %s %s %s\n", test_info->name(),
+           AudioInputFile().c_str(), AudioOutputFile().c_str());
+  }
+};
 
 class Mobile2GNetworkTest : public AudioQualityTest {
   void ModifyAudioConfigs(AudioSendStream::Config* send_config,
@@ -156,7 +88,7 @@ class Mobile2GNetworkTest : public AudioQualityTest {
                {"stereo", "1"}}}});
   }
 
-  FakeNetworkPipe::Config GetNetworkPipeConfig() override {
+  FakeNetworkPipe::Config GetNetworkPipeConfig() const override {
     FakeNetworkPipe::Config pipe_config;
     pipe_config.link_capacity_kbps = 12;
     pipe_config.queue_length_packets = 1500;
@@ -164,11 +96,18 @@ class Mobile2GNetworkTest : public AudioQualityTest {
     return pipe_config;
   }
 };
+}  // namespace
+
+using LowBandwidthAudioTest = CallTest;
+
+TEST_F(LowBandwidthAudioTest, GoodNetworkHighBitrate) {
+  AudioQualityTest test;
+  RunBaseTest(&test);
+}
 
 TEST_F(LowBandwidthAudioTest, Mobile2GNetwork) {
   Mobile2GNetworkTest test;
   RunBaseTest(&test);
 }
-
 }  // namespace test
 }  // namespace webrtc

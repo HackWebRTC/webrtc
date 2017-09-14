@@ -1914,6 +1914,33 @@ TEST_F(PeerConnectionIntegrationTest, GetBytesSentStatsWithOldStatsApi) {
   EXPECT_GT(caller()->OldGetStatsForTrack(video_track)->BytesSent(), 0);
 }
 
+// Test that we can get capture start ntp time.
+TEST_F(PeerConnectionIntegrationTest, GetCaptureStartNtpTimeWithOldStatsApi) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioOnlyMediaStream();
+
+  auto audio_track = callee()->CreateLocalAudioTrack();
+  callee()->AddMediaStreamFromTracks(audio_track, nullptr);
+
+  // Do offer/answer, wait for the callee to receive some frames.
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Get the remote audio track created on the receiver, so they can be used as
+  // GetStats filters.
+  StreamCollectionInterface* remote_streams = callee()->remote_streams();
+  ASSERT_EQ(1u, remote_streams->count());
+  ASSERT_EQ(1u, remote_streams->at(0)->GetAudioTracks().size());
+  MediaStreamTrackInterface* remote_audio_track =
+      remote_streams->at(0)->GetAudioTracks()[0];
+
+  // Get the audio output level stats. Note that the level is not available
+  // until an RTCP packet has been received.
+  EXPECT_TRUE_WAIT(callee()->OldGetStatsForTrack(remote_audio_track)->
+                   CaptureStartNtpTime() > 0, 2 * kMaxWaitForFramesMs);
+}
+
 // Test that we can get stats (using the new stats implemnetation) for
 // unsignaled streams. Meaning when SSRCs/MSIDs aren't signaled explicitly in
 // SDP.

@@ -7,28 +7,28 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_AUDIO_TEST_LOW_BANDWIDTH_AUDIO_TEST_H_
-#define WEBRTC_AUDIO_TEST_LOW_BANDWIDTH_AUDIO_TEST_H_
+#ifndef WEBRTC_AUDIO_TEST_AUDIO_END_TO_END_TEST_H_
+#define WEBRTC_AUDIO_TEST_AUDIO_END_TO_END_TEST_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "webrtc/test/call_test.h"
-#include "webrtc/test/fake_audio_device.h"
 
 namespace webrtc {
 namespace test {
 
-class AudioQualityTest : public test::EndToEndTest {
+class AudioEndToEndTest : public test::EndToEndTest {
  public:
-  AudioQualityTest();
+  AudioEndToEndTest();
 
  protected:
-  virtual std::string AudioInputFile();
-  virtual std::string AudioOutputFile();
+  test::FakeAudioDevice* send_audio_device() { return send_audio_device_; }
+  const AudioSendStream* send_stream() const { return send_stream_; }
+  const AudioReceiveStream* receive_stream() const { return receive_stream_; }
 
-  virtual FakeNetworkPipe::Config GetNetworkPipeConfig();
+  virtual FakeNetworkPipe::Config GetNetworkPipeConfig() const;
 
   size_t GetNumVideoStreams() const override;
   size_t GetNumAudioStreams() const override;
@@ -50,15 +50,19 @@ class AudioQualityTest : public test::EndToEndTest {
   void ModifyAudioConfigs(
       AudioSendStream::Config* send_config,
       std::vector<AudioReceiveStream::Config>* receive_configs) override;
+  void OnAudioStreamsCreated(
+      AudioSendStream* send_stream,
+      const std::vector<AudioReceiveStream*>& receive_streams) override;
 
   void PerformTest() override;
-  void OnTestFinished() override;
 
  private:
-  test::FakeAudioDevice* send_audio_device_;
+  test::FakeAudioDevice* send_audio_device_ = nullptr;
+  AudioSendStream* send_stream_ = nullptr;
+  AudioReceiveStream* receive_stream_ = nullptr;
 };
 
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_TEST_LOW_BANDWIDTH_AUDIO_TEST_H_
+#endif  // WEBRTC_AUDIO_TEST_AUDIO_END_TO_END_TEST_H_

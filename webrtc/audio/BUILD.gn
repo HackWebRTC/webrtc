@@ -58,6 +58,27 @@ rtc_static_library("audio") {
   ]
 }
 if (rtc_include_tests) {
+  rtc_source_set("audio_end_to_end_test") {
+    testonly = true
+
+    sources = [
+      "test/audio_end_to_end_test.cc",
+      "test/audio_end_to_end_test.h",
+    ]
+    deps = [
+      ":audio",
+      "../system_wrappers:system_wrappers",
+      "../test:fake_audio_device",
+      "../test:test_common",
+      "../test:test_support",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   rtc_source_set("audio_tests") {
     testonly = true
 
@@ -80,6 +101,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio",
+      ":audio_end_to_end_test",
       "../api:mock_audio_mixer",
       "../call:rtp_receiver",
       "../modules/audio_device:mock_audio_device",
@@ -96,6 +118,11 @@ if (rtc_include_tests) {
       "//testing/gtest",
     ]
 
+    if (!rtc_use_memcheck) {
+      # This test is timing dependent, which rules out running on memcheck bots.
+      sources += [ "test/audio_stats_test.cc" ]
+    }
+
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -108,10 +135,10 @@ if (rtc_include_tests) {
 
       sources = [
         "test/low_bandwidth_audio_test.cc",
-        "test/low_bandwidth_audio_test.h",
       ]
 
       deps = [
+        ":audio_end_to_end_test",
         "../common_audio",
         "../rtc_base:rtc_base_approved",
         "../system_wrappers",

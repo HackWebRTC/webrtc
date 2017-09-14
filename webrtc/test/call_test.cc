@@ -153,8 +153,9 @@ void CallTest::RunBaseTest(BaseTest* test) {
 
   test->PerformTest();
 
-  task_queue_.SendTask([this]() {
+  task_queue_.SendTask([this, test]() {
     Stop();
+    test->OnStreamsStopped();
     DestroyStreams();
     send_transport_.reset();
     receive_transport_.reset();
@@ -162,8 +163,6 @@ void CallTest::RunBaseTest(BaseTest* test) {
     if (num_audio_streams_ > 0)
       DestroyVoiceEngines();
   });
-
-  test->OnTestFinished();
 }
 
 void CallTest::CreateCalls(const Call::Config& sender_config,
@@ -223,7 +222,7 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
     audio_send_config_.rtp.ssrc = kAudioSendSsrc;
     audio_send_config_.send_codec_spec =
         rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
-            {kAudioSendPayloadType, {"OPUS", 48000, 2, {{"stereo", "1"}}}});
+            {kAudioSendPayloadType, {"opus", 48000, 2, {{"stereo", "1"}}}});
     audio_send_config_.encoder_factory = encoder_factory_;
   }
 
@@ -590,7 +589,7 @@ void BaseTest::OnFrameGeneratorCapturerCreated(
     FrameGeneratorCapturer* frame_generator_capturer) {
 }
 
-void BaseTest::OnTestFinished() {
+void BaseTest::OnStreamsStopped() {
 }
 
 SendTest::SendTest(unsigned int timeout_ms) : BaseTest(timeout_ms) {

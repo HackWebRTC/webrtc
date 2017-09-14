@@ -125,6 +125,8 @@ class MockStatsObserver : public webrtc::StatsObserver {
             &stats_.bytes_received);
         GetIntValue(r, StatsReport::kStatsValueNameBytesSent,
             &stats_.bytes_sent);
+        GetInt64Value(r, StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
+            &stats_.capture_start_ntp_time);
       } else if (r->type() == StatsReport::kStatsReportTypeBwe) {
         stats_.timestamp = r->timestamp();
         GetIntValue(r, StatsReport::kStatsValueNameAvailableReceiveBandwidth,
@@ -163,6 +165,11 @@ class MockStatsObserver : public webrtc::StatsObserver {
     return stats_.bytes_sent;
   }
 
+  int64_t CaptureStartNtpTime() const {
+    RTC_CHECK(called_);
+    return stats_.capture_start_ntp_time;
+  }
+
   int AvailableReceiveBandwidth() const {
     RTC_CHECK(called_);
     return stats_.available_receive_bandwidth;
@@ -190,6 +197,17 @@ class MockStatsObserver : public webrtc::StatsObserver {
     return v != nullptr;
   }
 
+  bool GetInt64Value(const StatsReport* report,
+                   StatsReport::StatsValueName name,
+                   int64_t* value) {
+    const StatsReport::Value* v = report->FindValue(name);
+    if (v) {
+      // TODO(tommi): We should really just be using an int here :-/
+      *value = rtc::FromString<int64_t>(v->ToString());
+    }
+    return v != nullptr;
+  }
+
   bool GetStringValue(const StatsReport* report,
                       StatsReport::StatsValueName name,
                       std::string* value) {
@@ -208,6 +226,7 @@ class MockStatsObserver : public webrtc::StatsObserver {
       audio_input_level = 0;
       bytes_received = 0;
       bytes_sent = 0;
+      capture_start_ntp_time = 0;
       available_receive_bandwidth = 0;
       dtls_cipher.clear();
       srtp_cipher.clear();
@@ -219,6 +238,7 @@ class MockStatsObserver : public webrtc::StatsObserver {
     int audio_input_level;
     int bytes_received;
     int bytes_sent;
+    int64_t capture_start_ntp_time;
     int available_receive_bandwidth;
     std::string dtls_cipher;
     std::string srtp_cipher;

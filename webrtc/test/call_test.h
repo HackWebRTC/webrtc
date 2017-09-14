@@ -223,7 +223,7 @@ class BaseTest : public RtpRtcpObserver {
   virtual void OnFrameGeneratorCapturerCreated(
       FrameGeneratorCapturer* frame_generator_capturer);
 
-  virtual void OnTestFinished();
+  virtual void OnStreamsStopped();
 
   std::unique_ptr<webrtc::RtcEventLog> event_log_;
 };
