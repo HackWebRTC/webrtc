@@ -17,8 +17,11 @@
 #include <utility>
 
 #include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/api/video_codecs/sdp_video_format.h"
 #include "webrtc/api/video_codecs/video_decoder.h"
+#include "webrtc/api/video_codecs/video_decoder_factory.h"
 #include "webrtc/api/video_codecs/video_encoder.h"
+#include "webrtc/api/video_codecs/video_encoder_factory.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/media/engine/constants.h"
@@ -86,8 +89,8 @@ std::vector<VideoCodec> AssignPayloadTypesAndAddAssociatedRtxCodecs(
 
 // Wraps cricket::WebRtcVideoEncoderFactory* into common EncoderFactoryAdapter
 // interface.
-// TODO(magjed): Add wrapper class for future webrtc::VideoEncoderFactory
-// interface, https://bugs.chromium.org/p/webrtc/issues/detail?id=7925.
+// TODO(magjed): Remove once WebRtcVideoEncoderFactory* is deprecated and
+// webrtc:7925 is fixed.
 class CricketEncoderFactoryAdapter : public EncoderFactoryAdapter {
  public:
   explicit CricketEncoderFactoryAdapter(
@@ -128,6 +131,66 @@ class CricketDecoderFactoryAdapter : public DecoderFactoryAdapter {
 
   const std::unique_ptr<WebRtcVideoDecoderFactory> internal_decoder_factory_;
   WebRtcVideoDecoderFactory* const external_decoder_factory_;
+};
+
+// Wraps webrtc::VideoEncoderFactory into common EncoderFactoryAdapter
+// interface.
+class WebRtcEncoderFactoryAdapter : public EncoderFactoryAdapter {
+ public:
+  explicit WebRtcEncoderFactoryAdapter(
+      std::unique_ptr<webrtc::VideoEncoderFactory> encoder_factory)
+      : encoder_factory_(std::move(encoder_factory)) {}
+
+ private:
+  AllocatedEncoder CreateVideoEncoder(
+      const VideoCodec& codec,
+      bool is_conference_mode_screenshare) const override {
+    if (!encoder_factory_)
+      return AllocatedEncoder();
+    const webrtc::SdpVideoFormat format(codec.name, codec.params);
+    const webrtc::VideoEncoderFactory::CodecInfo info =
+        encoder_factory_->QueryVideoEncoder(format);
+    return AllocatedEncoder(encoder_factory_->CreateVideoEncoder(format),
+                            info.is_hardware_accelerated,
+                            info.has_internal_source);
+  }
+
+  std::vector<VideoCodec> GetSupportedCodecs() const override {
+    if (!encoder_factory_)
+      return std::vector<VideoCodec>();
+    std::vector<VideoCodec> codecs;
+    for (const webrtc::SdpVideoFormat& format :
+         encoder_factory_->GetSupportedFormats()) {
+      VideoCodec codec;
+      codec.name = format.name;
+      codec.params = format.parameters;
+      codecs.push_back(codec);
+    }
+    return AssignPayloadTypesAndAddAssociatedRtxCodecs(codecs);
+  }
+
+  std::unique_ptr<webrtc::VideoEncoderFactory> encoder_factory_;
+};
+
+// Wraps webrtc::VideoDecoderFactory into common DecoderFactoryAdapter
+// interface.
+class WebRtcDecoderFactoryAdapter : public DecoderFactoryAdapter {
+ public:
+  explicit WebRtcDecoderFactoryAdapter(
+      std::unique_ptr<webrtc::VideoDecoderFactory> decoder_factory)
+      : decoder_factory_(std::move(decoder_factory)) {}
+
+ private:
+  std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
+      const VideoCodec& codec,
+      const VideoDecoderParams& decoder_params) const override {
+    return decoder_factory_
+               ? decoder_factory_->CreateVideoDecoder(
+                     webrtc::SdpVideoFormat(codec.name, codec.params))
+               : nullptr;
+  }
+
+  std::unique_ptr<webrtc::VideoDecoderFactory> decoder_factory_;
 };
 
 // If this field trial is enabled, we will enable sending FlexFEC and disable
@@ -398,6 +461,16 @@ WebRtcVideoEngine::WebRtcVideoEngine(
           new CricketDecoderFactoryAdapter(external_video_decoder_factory)),
       encoder_factory_(
           new CricketEncoderFactoryAdapter(external_video_encoder_factory)) {
+  LOG(LS_INFO) << "WebRtcVideoEngine::WebRtcVideoEngine()";
+}
+
+WebRtcVideoEngine::WebRtcVideoEngine(
+    std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory,
+    std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory)
+    : decoder_factory_(
+          new WebRtcDecoderFactoryAdapter(std::move(video_decoder_factory))),
+      encoder_factory_(
+          new WebRtcEncoderFactoryAdapter(std::move(video_encoder_factory))) {
   LOG(LS_INFO) << "WebRtcVideoEngine::WebRtcVideoEngine()";
 }
 

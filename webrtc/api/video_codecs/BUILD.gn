@@ -16,8 +16,10 @@ rtc_source_set("video_codecs_api") {
   sources = [
     "sdp_video_format.h",
     "video_decoder.h",
+    "video_decoder_factory.h",
     "video_encoder.cc",
     "video_encoder.h",
+    "video_encoder_factory.h",
   ]
 
   deps = [

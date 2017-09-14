@@ -13,7 +13,10 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/video_codecs/sdp_video_format.h"
+#include "webrtc/api/video_codecs/video_decoder_factory.h"
 #include "webrtc/api/video_codecs/video_encoder.h"
+#include "webrtc/api/video_codecs/video_encoder_factory.h"
 #include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
@@ -31,6 +34,7 @@
 #include "webrtc/rtc_base/gunit.h"
 #include "webrtc/rtc_base/stringutils.h"
 #include "webrtc/test/field_trial.h"
+#include "webrtc/test/gmock.h"
 
 using webrtc::RtpExtension;
 
@@ -184,6 +188,9 @@ class WebRtcVideoEngineTest : public ::testing::Test {
   // Used in WebRtcVideoEngineVoiceTest, but defined here so it's properly
   // initialized when the constructor is called.
   std::unique_ptr<webrtc::Call> call_;
+  // TODO(magjed): Update all tests to use new video codec factories once the
+  // old factories are deprecated,
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=7925.
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory_;
   cricket::FakeWebRtcVideoDecoderFactory decoder_factory_;
   WebRtcVideoEngine engine_;
@@ -837,6 +844,144 @@ TEST_F(WebRtcVideoEngineTest, RegisterExternalH264DecoderIfSupported) {
   EXPECT_TRUE(
       channel->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc)));
   ASSERT_EQ(1u, decoder_factory_.decoders().size());
+}
+
+class MockVideoEncoderFactory : public webrtc::VideoEncoderFactory {
+ public:
+  MOCK_CONST_METHOD0(GetSupportedFormats,
+                     std::vector<webrtc::SdpVideoFormat>());
+  MOCK_CONST_METHOD1(QueryVideoEncoder,
+                     CodecInfo(const webrtc::SdpVideoFormat&));
+
+  // We need to proxy to a return type that is copyable.
+  std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(
+      const webrtc::SdpVideoFormat& format) {
+    return std::unique_ptr<webrtc::VideoEncoder>(
+        CreateVideoEncoderProxy(format));
+  }
+  MOCK_METHOD1(CreateVideoEncoderProxy,
+               webrtc::VideoEncoder*(const webrtc::SdpVideoFormat&));
+
+  MOCK_METHOD0(Die, void());
+  ~MockVideoEncoderFactory() { Die(); }
+};
+
+class MockVideoDecoderFactory : public webrtc::VideoDecoderFactory {
+ public:
+  MOCK_CONST_METHOD0(GetSupportedFormats,
+                     std::vector<webrtc::SdpVideoFormat>());
+
+  // We need to proxy to a return type that is copyable.
+  std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
+      const webrtc::SdpVideoFormat& format) {
+    return std::unique_ptr<webrtc::VideoDecoder>(
+        CreateVideoDecoderProxy(format));
+  }
+  MOCK_METHOD1(CreateVideoDecoderProxy,
+               webrtc::VideoDecoder*(const webrtc::SdpVideoFormat&));
+
+  MOCK_METHOD0(Die, void());
+  ~MockVideoDecoderFactory() { Die(); }
+};
+
+TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, NullFactories) {
+  std::unique_ptr<webrtc::VideoEncoderFactory> encoder_factory;
+  std::unique_ptr<webrtc::VideoDecoderFactory> decoder_factory;
+  WebRtcVideoEngine engine(std::move(encoder_factory),
+                           std::move(decoder_factory));
+  EXPECT_EQ(0u, engine.codecs().size());
+}
+
+TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, EmptyFactories) {
+  // |engine| take ownership of the factories.
+  MockVideoEncoderFactory* encoder_factory = new MockVideoEncoderFactory();
+  MockVideoDecoderFactory* decoder_factory = new MockVideoDecoderFactory();
+  WebRtcVideoEngine engine(
+      (std::unique_ptr<webrtc::VideoEncoderFactory>(encoder_factory)),
+      (std::unique_ptr<webrtc::VideoDecoderFactory>(decoder_factory)));
+  EXPECT_CALL(*encoder_factory, GetSupportedFormats());
+  EXPECT_EQ(0u, engine.codecs().size());
+  EXPECT_CALL(*encoder_factory, Die());
+  EXPECT_CALL(*decoder_factory, Die());
+}
+
+// Test full behavior in the video engine when video codec factories of the new
+// type are injected supporting the single codec Vp8. Check the returned codecs
+// from the engine and that we will create a Vp8 encoder and decoder using the
+// new factories.
+TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
+  // |engine| take ownership of the factories.
+  MockVideoEncoderFactory* encoder_factory = new MockVideoEncoderFactory();
+  MockVideoDecoderFactory* decoder_factory = new MockVideoDecoderFactory();
+  WebRtcVideoEngine engine(
+      (std::unique_ptr<webrtc::VideoEncoderFactory>(encoder_factory)),
+      (std::unique_ptr<webrtc::VideoDecoderFactory>(decoder_factory)));
+  const webrtc::SdpVideoFormat vp8_format("VP8");
+  const std::vector<webrtc::SdpVideoFormat> supported_formats = {vp8_format};
+  EXPECT_CALL(*encoder_factory, GetSupportedFormats())
+      .WillRepeatedly(testing::Return(supported_formats));
+
+  // Verify the codecs from the engine.
+  const std::vector<VideoCodec> engine_codecs = engine.codecs();
+  // Verify an RTX codec has been added correctly.
+  EXPECT_EQ(2u, engine_codecs.size());
+  EXPECT_EQ("VP8", engine_codecs.at(0).name);
+  EXPECT_EQ("rtx", engine_codecs.at(1).name);
+  int associated_payload_type;
+  EXPECT_TRUE(engine_codecs.at(1).GetParam(
+      cricket::kCodecParamAssociatedPayloadType, &associated_payload_type));
+  EXPECT_EQ(engine_codecs.at(0).id, associated_payload_type);
+  // Verify default parameters has been added to the VP8 codec.
+  VerifyCodecHasDefaultFeedbackParams(engine_codecs.at(0));
+
+  // Mock encoder creation. |engine| take ownership of the encoder.
+  webrtc::VideoEncoderFactory::CodecInfo codec_info;
+  codec_info.is_hardware_accelerated = false;
+  codec_info.has_internal_source = false;
+  const webrtc::SdpVideoFormat format("VP8");
+  EXPECT_CALL(*encoder_factory, QueryVideoEncoder(format))
+      .WillRepeatedly(testing::Return(codec_info));
+  FakeWebRtcVideoEncoder* const encoder = new FakeWebRtcVideoEncoder();
+  EXPECT_CALL(*encoder_factory, CreateVideoEncoderProxy(format))
+      .WillOnce(testing::Return(encoder));
+
+  // Mock decoder creation. |engine| take ownership of the decoder.
+  FakeWebRtcVideoDecoder* const decoder = new FakeWebRtcVideoDecoder();
+  EXPECT_CALL(*decoder_factory, CreateVideoDecoderProxy(format))
+      .WillOnce(testing::Return(decoder));
+
+  // Create a call.
+  webrtc::RtcEventLogNullImpl event_log;
+  std::unique_ptr<webrtc::Call> call(
+      webrtc::Call::Create(webrtc::Call::Config(&event_log)));
+
+  // Create send channel.
+  const int send_ssrc = 123;
+  std::unique_ptr<VideoMediaChannel> send_channel(
+      engine.CreateChannel(call.get(), GetMediaConfig(), VideoOptions()));
+  cricket::VideoSendParameters send_parameters;
+  send_parameters.codecs.push_back(engine_codecs.at(0));
+  EXPECT_TRUE(send_channel->SetSendParameters(send_parameters));
+  send_channel->OnReadyToSend(true);
+  EXPECT_TRUE(
+      send_channel->AddSendStream(StreamParams::CreateLegacy(send_ssrc)));
+  EXPECT_TRUE(send_channel->SetSend(true));
+
+  // Create recv channel.
+  const int recv_ssrc = 321;
+  std::unique_ptr<VideoMediaChannel> recv_channel(
+      engine.CreateChannel(call.get(), GetMediaConfig(), VideoOptions()));
+  cricket::VideoRecvParameters recv_parameters;
+  recv_parameters.codecs.push_back(engine_codecs.at(0));
+  EXPECT_TRUE(recv_channel->SetRecvParameters(recv_parameters));
+  EXPECT_TRUE(recv_channel->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(recv_ssrc)));
+
+  // Remove streams previously added to free the encoder and decoder instance.
+  EXPECT_CALL(*encoder_factory, Die());
+  EXPECT_CALL(*decoder_factory, Die());
+  EXPECT_TRUE(send_channel->RemoveSendStream(send_ssrc));
+  EXPECT_TRUE(recv_channel->RemoveRecvStream(recv_ssrc));
 }
 
 class WebRtcVideoChannelBaseTest

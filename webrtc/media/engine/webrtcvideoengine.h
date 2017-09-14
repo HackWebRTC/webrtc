@@ -38,7 +38,9 @@
 
 namespace webrtc {
 class VideoDecoder;
+class VideoDecoderFactory;
 class VideoEncoder;
+class VideoEncoderFactory;
 struct MediaConfig;
 }
 
@@ -102,6 +104,13 @@ class WebRtcVideoEngine {
   // codecs will be added on top of the external codecs.
   WebRtcVideoEngine(WebRtcVideoEncoderFactory* external_video_encoder_factory,
                     WebRtcVideoDecoderFactory* external_video_decoder_factory);
+
+  // These video codec factories represents all video codecs, i.e. both software
+  // and external hardware codecs.
+  WebRtcVideoEngine(
+      std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory,
+      std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory);
+
   virtual ~WebRtcVideoEngine();
 
   WebRtcVideoChannel* CreateChannel(webrtc::Call* call,
