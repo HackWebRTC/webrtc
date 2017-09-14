@@ -20,9 +20,12 @@ namespace webrtc {
 
 rtc::Optional<AudioEncoderL16::Config> AudioEncoderL16::SdpToConfig(
     const SdpAudioFormat& format) {
+  if (!rtc::IsValueInRangeForNumericType<int>(format.num_channels)) {
+    return rtc::Optional<Config>();
+  }
   Config config;
   config.sample_rate_hz = format.clockrate_hz;
-  config.num_channels = rtc::checked_cast<int>(format.num_channels);
+  config.num_channels = rtc::dchecked_cast<int>(format.num_channels);
   return STR_CASE_CMP(format.name.c_str(), "L16") == 0 && config.IsOk()
              ? rtc::Optional<Config>(config)
              : rtc::Optional<Config>();
