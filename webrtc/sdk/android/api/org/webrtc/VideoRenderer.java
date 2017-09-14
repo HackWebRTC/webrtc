@@ -42,6 +42,10 @@ public class VideoRenderer {
     // to be rendered correctly.
     public int rotationDegree;
 
+    // If this I420Frame was constructed from VideoFrame.Buffer, this points to
+    // the backing buffer.
+    private final VideoFrame.Buffer backingBuffer;
+
     /**
      * Construct a frame of the given dimensions with the specified planar data.
      */
@@ -54,6 +58,7 @@ public class VideoRenderer {
       this.yuvFrame = true;
       this.rotationDegree = rotationDegree;
       this.nativeFramePointer = nativeFramePointer;
+      backingBuffer = null;
       if (rotationDegree % 90 != 0) {
         throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
       }
@@ -78,6 +83,7 @@ public class VideoRenderer {
       this.yuvFrame = false;
       this.rotationDegree = rotationDegree;
       this.nativeFramePointer = nativeFramePointer;
+      backingBuffer = null;
       if (rotationDegree % 90 != 0) {
         throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
       }
@@ -103,9 +109,8 @@ public class VideoRenderer {
 
         this.yuvStrides = null;
         this.yuvPlanes = null;
-      } else {
-        VideoFrame.I420Buffer i420Buffer = buffer.toI420();
-        buffer.release();
+      } else if (buffer instanceof VideoFrame.I420Buffer) {
+        VideoFrame.I420Buffer i420Buffer = (VideoFrame.I420Buffer) buffer;
         this.yuvFrame = true;
         this.yuvStrides =
             new int[] {i420Buffer.getStrideY(), i420Buffer.getStrideU(), i420Buffer.getStrideV()};
@@ -118,8 +123,15 @@ public class VideoRenderer {
         this.samplingMatrix = RendererCommon.verticalFlipMatrix();
 
         this.textureId = 0;
+      } else {
+        this.yuvFrame = false;
+        this.textureId = 0;
+        this.samplingMatrix = null;
+        this.yuvStrides = null;
+        this.yuvPlanes = null;
       }
       this.nativeFramePointer = nativeFramePointer;
+      backingBuffer = buffer;
     }
 
     public int rotatedWidth() {
@@ -138,9 +150,19 @@ public class VideoRenderer {
       return width + "x" + height + ", " + type;
     }
 
+    /**
+     * Convert the frame to VideoFrame. It is no longer safe to use the I420Frame after calling
+     * this.
+     */
     VideoFrame toVideoFrame() {
       final VideoFrame.Buffer buffer;
-      if (yuvFrame) {
+      if (backingBuffer != null) {
+        // We were construted from a VideoFrame.Buffer, just return it.
+        // Make sure webrtc::VideoFrame object is released.
+        backingBuffer.retain();
+        VideoRenderer.renderFrameDone(this);
+        buffer = backingBuffer;
+      } else if (yuvFrame) {
         buffer = new I420BufferImpl(width, height, yuvPlanes[0], yuvStrides[0], yuvPlanes[1],
             yuvStrides[1], yuvPlanes[2], yuvStrides[2],
             () -> { VideoRenderer.renderFrameDone(this); });
