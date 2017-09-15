@@ -15,7 +15,7 @@
 
 #include "system_wrappers/include/event_wrapper.h"
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

@@ -10,7 +10,7 @@
 
 #include "modules/audio_conference_mixer/source/audio_frame_manipulator.h"
 #include "modules/include/module_common_types.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace {
 // Linear ramping over 80 samples.

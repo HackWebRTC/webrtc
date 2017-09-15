@@ -16,9 +16,9 @@
 #ifndef MODULES_AUDIO_CODING_ACM2_ACM_CODEC_DATABASE_H_
 #define MODULES_AUDIO_CODING_ACM2_ACM_CODEC_DATABASE_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/acm2/rent_a_codec.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

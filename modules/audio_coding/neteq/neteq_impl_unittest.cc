@@ -11,7 +11,7 @@
 #include <memory>
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/accelerate.h"
 #include "modules/audio_coding/neteq/expand.h"
 #include "modules/audio_coding/neteq/include/neteq.h"

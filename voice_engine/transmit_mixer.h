@@ -14,7 +14,7 @@
 #include <memory>
 
 #include "common_audio/resampler/include/push_resampler.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_processing/typing_detection.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/criticalsection.h"

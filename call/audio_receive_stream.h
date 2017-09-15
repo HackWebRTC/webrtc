@@ -22,9 +22,9 @@
 #include "api/rtpparameters.h"
 #include "api/rtpreceiverinterface.h"
 #include "call/rtp_config.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/scoped_ref_ptr.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 class AudioSinkInterface;

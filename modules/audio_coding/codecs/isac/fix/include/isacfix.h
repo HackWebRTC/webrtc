@@ -14,7 +14,7 @@
 #include <stddef.h>
 
 #include "modules/audio_coding/codecs/isac/bandwidth_info.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 typedef struct {
   void *dummy;

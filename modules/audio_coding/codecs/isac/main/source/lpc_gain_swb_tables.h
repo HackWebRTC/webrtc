@@ -20,7 +20,7 @@
 #define MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_LPC_GAIN_SWB_TABLES_H_
 
 #include "settings.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 extern const double WebRtcIsac_kQSizeLpcGain;
 

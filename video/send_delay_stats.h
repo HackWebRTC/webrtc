@@ -15,7 +15,7 @@
 #include <memory>
 #include <set>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"

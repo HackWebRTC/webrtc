@@ -12,7 +12,7 @@
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_BWE_DEFINES_H_
 
 #include "api/optional.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #define BWE_MAX(a, b) ((a) > (b) ? (a) : (b))
 #define BWE_MIN(a, b) ((a) < (b) ? (a) : (b))

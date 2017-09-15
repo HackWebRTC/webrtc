@@ -25,7 +25,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/refcount.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

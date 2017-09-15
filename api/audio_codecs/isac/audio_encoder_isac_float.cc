@@ -10,7 +10,7 @@
 
 #include "api/audio_codecs/isac/audio_encoder_isac_float.h"
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/string_to_number.h"

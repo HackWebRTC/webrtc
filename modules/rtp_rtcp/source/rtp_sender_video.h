@@ -15,7 +15,7 @@
 #include <memory>
 
 #include "api/optional.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
@@ -28,7 +28,7 @@
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/thread_annotations.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 class RtpPacketizer;

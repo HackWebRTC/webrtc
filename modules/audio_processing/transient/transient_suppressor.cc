@@ -25,7 +25,7 @@
 #include "modules/audio_processing/transient/transient_detector.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

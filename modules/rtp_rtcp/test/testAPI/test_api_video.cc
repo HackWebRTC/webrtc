@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"

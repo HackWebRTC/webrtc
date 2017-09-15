@@ -14,14 +14,14 @@
 
 #include "audio/utility/audio_frame_operations.h"
 #include "common_audio/resampler/include/resampler.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/media_file/media_file.h"
 #include "modules/media_file/media_file_defines.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "system_wrappers/include/event_wrapper.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "voice_engine/coder.h"
 
 namespace webrtc {

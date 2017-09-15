@@ -15,7 +15,7 @@
 #include <memory>
 
 #include "api/video_codecs/video_encoder.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"

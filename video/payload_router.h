@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "api/video_codecs/video_encoder.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"

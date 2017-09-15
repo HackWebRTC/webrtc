@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_frame.h"
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"

@@ -27,7 +27,7 @@
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "rtc_base/constructormagic.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

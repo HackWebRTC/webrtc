@@ -17,7 +17,7 @@
 #include "api/video/video_frame.h"
 #include "media/base/videosourceinterface.h"
 #include "rtc_base/criticalsection.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 class Clock;

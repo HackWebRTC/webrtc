@@ -14,7 +14,7 @@
 #include <list>
 #include <vector>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/pacing/paced_sender.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"

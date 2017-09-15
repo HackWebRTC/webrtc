@@ -17,7 +17,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/md5digest.h"
 #include "rtc_base/stringencode.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

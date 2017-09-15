@@ -16,7 +16,7 @@
 
 #include "api/array_view.h"
 #include "rtc_base/buffer.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #define WEBRTC_CNG_MAX_LPC_ORDER 12
 

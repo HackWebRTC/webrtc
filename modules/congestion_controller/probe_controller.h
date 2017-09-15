@@ -13,7 +13,7 @@
 
 #include <initializer_list>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/pacing/paced_sender.h"
 #include "rtc_base/criticalsection.h"
 

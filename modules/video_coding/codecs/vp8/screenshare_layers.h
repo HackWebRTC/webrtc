@@ -15,7 +15,7 @@
 #include "modules/video_coding/utility/frame_dropper.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/timeutils.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

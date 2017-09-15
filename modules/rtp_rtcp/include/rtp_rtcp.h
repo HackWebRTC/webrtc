@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "api/optional.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"

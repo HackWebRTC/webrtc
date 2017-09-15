@@ -16,7 +16,7 @@
 
 #include "system_wrappers/include/aligned_malloc.h"
 #include "system_wrappers/include/atomic32.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 template<class MemoryType> struct MemoryPoolItem;

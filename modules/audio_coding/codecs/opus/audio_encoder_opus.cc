@@ -14,7 +14,7 @@
 #include <iterator>
 #include <utility>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"

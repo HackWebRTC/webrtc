@@ -16,7 +16,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/thread_annotations.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #if defined(WEBRTC_WIN)
 // Include winsock2.h before including <windows.h> to maintain consistency with

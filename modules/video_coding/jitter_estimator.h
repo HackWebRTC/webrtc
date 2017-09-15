@@ -13,7 +13,7 @@
 
 #include "modules/video_coding/rtt_filter.h"
 #include "rtc_base/rollingaccumulator.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

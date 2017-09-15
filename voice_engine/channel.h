@@ -18,7 +18,7 @@
 #include "api/call/audio_sink.h"
 #include "api/optional.h"
 #include "common_audio/resampler/include/push_resampler.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/acm2/codec_manager.h"
 #include "modules/audio_coding/acm2/rent_a_codec.h"
 #include "modules/audio_coding/include/audio_coding_module.h"

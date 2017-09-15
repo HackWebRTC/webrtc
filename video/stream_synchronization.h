@@ -14,7 +14,7 @@
 #include <list>
 
 #include "system_wrappers/include/rtp_to_ntp_estimator.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

@@ -10,7 +10,7 @@
 
 #include "api/audio_codecs/isac/audio_decoder_isac_fix.h"
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"
 #include "rtc_base/ptr_util.h"
 

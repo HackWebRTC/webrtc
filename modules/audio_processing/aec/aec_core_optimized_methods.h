@@ -14,7 +14,7 @@
 #include <memory>
 
 #include "modules/audio_processing/aec/aec_core.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

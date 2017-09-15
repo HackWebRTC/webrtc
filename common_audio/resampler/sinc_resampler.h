@@ -19,7 +19,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/gtest_prod_util.h"
 #include "system_wrappers/include/aligned_malloc.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

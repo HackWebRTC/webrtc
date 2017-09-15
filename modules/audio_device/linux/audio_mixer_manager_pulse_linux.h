@@ -14,7 +14,7 @@
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/linux/pulseaudiosymboltable_linux.h"
 #include "rtc_base/thread_checker.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #include <pulse/pulseaudio.h>
 #include <stdint.h>

@@ -16,7 +16,7 @@
 #include "api/optional.h"
 #include "api/ortc/packettransportinterface.h"
 #include "api/rtcerror.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

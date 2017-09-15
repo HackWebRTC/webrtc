@@ -11,7 +11,7 @@
 #ifndef MEDIA_ENGINE_WEBRTCCOMMON_H_
 #define MEDIA_ENGINE_WEBRTCCOMMON_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace cricket {
 

@@ -12,7 +12,7 @@
 #define SYSTEM_WRAPPERS_INCLUDE_TIMESTAMP_EXTRAPOLATOR_H_
 
 #include "system_wrappers/include/rw_lock_wrapper.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc
 {

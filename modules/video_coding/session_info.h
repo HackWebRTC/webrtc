@@ -17,7 +17,7 @@
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/packet.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 // Used to pass data from jitter buffer to session info.

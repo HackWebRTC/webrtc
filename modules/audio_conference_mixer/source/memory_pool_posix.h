@@ -15,7 +15,7 @@
 #include <list>
 
 #include "rtc_base/criticalsection.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 template<class MemoryType>

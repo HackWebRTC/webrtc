@@ -17,7 +17,7 @@
 #ifndef COMMON_AUDIO_SIGNAL_PROCESSING_RESAMPLE_BY_2_INTERNAL_H_
 #define COMMON_AUDIO_SIGNAL_PROCESSING_RESAMPLE_BY_2_INTERNAL_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /*******************************************************************
  * resample_by_2_fast.c

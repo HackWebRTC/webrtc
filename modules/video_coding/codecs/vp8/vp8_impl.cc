@@ -20,7 +20,7 @@
 #include "libyuv/scale.h"    // NOLINT
 #include "libyuv/convert.h"  // NOLINT
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"

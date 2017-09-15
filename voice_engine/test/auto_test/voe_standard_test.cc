@@ -16,7 +16,7 @@
 
 #include "rtc_base/flags.h"
 #include "system_wrappers/include/event_wrapper.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "voice_engine/test/auto_test/automated_mode.h"
 #include "voice_engine/test/auto_test/voe_test_defines.h"
 #include "voice_engine/voice_engine_defines.h"

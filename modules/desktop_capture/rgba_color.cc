@@ -10,7 +10,7 @@
 
 #include "modules/desktop_capture/rgba_color.h"
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

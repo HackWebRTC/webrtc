@@ -17,7 +17,7 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/task_queue.h"
 #include "test/video_capturer.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

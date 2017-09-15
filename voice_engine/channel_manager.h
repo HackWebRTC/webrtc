@@ -19,7 +19,7 @@
 #include "rtc_base/random.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "system_wrappers/include/atomic32.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "voice_engine/include/voe_base.h"
 
 namespace webrtc {

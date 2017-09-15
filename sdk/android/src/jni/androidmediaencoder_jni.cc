@@ -22,7 +22,7 @@
 #include "third_party/libyuv/include/libyuv/convert_from.h"
 #include "third_party/libyuv/include/libyuv/video_common.h"
 #include "api/video_codecs/video_encoder.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/h264/h264_common.h"
 #include "common_video/h264/profile_level_id.h"

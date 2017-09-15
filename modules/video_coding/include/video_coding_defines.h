@@ -18,7 +18,7 @@
 // For EncodedImage
 #include "common_video/include/video_frame.h"
 #include "modules/include/module_common_types.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

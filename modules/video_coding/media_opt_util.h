@@ -18,7 +18,7 @@
 
 #include "modules/video_coding/internal_defines.h"
 #include "rtc_base/numerics/exp_filter.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace media_optimization {

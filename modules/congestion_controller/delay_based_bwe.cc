@@ -24,7 +24,7 @@
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace {
 constexpr int kTimestampGroupLengthMs = 5;

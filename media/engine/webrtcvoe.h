@@ -15,7 +15,7 @@
 
 #include "media/engine/webrtccommon.h"
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_device/include/audio_device.h"
 #include "voice_engine/include/voe_base.h"
 #include "voice_engine/include/voe_codec.h"

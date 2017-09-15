@@ -14,7 +14,7 @@
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/linux/alsasymboltable_linux.h"
 #include "rtc_base/criticalsection.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #include <alsa/asoundlib.h>
 

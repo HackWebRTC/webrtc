@@ -14,7 +14,7 @@
 #include <list>
 
 #include "system_wrappers/include/ntp_time.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 // Class for converting an RTP timestamp to the NTP domain in milliseconds.

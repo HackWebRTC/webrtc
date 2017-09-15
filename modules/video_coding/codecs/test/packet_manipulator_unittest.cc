@@ -16,7 +16,7 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "test/gtest.h"
 #include "test/testsupport/unittest_utils.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

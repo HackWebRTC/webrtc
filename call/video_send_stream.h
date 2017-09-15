@@ -20,7 +20,7 @@
 #include "api/rtpparameters.h"
 #include "call/rtp_config.h"
 #include "call/video_config.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/frame_callback.h"
 #include "media/base/videosinkinterface.h"
 #include "media/base/videosourceinterface.h"

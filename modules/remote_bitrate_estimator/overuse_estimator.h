@@ -12,7 +12,7 @@
 
 #include <deque>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/constructormagic.h"
 

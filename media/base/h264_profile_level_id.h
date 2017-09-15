@@ -15,7 +15,7 @@
 #include <string>
 
 #include "api/optional.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace H264 {

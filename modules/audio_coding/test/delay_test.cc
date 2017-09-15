@@ -15,7 +15,7 @@
 #include <iostream>
 #include <memory>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
@@ -26,7 +26,7 @@
 #include "system_wrappers/include/event_wrapper.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 DEFINE_string(codec, "isac", "Codec Name");
 DEFINE_int(sample_rate_hz, 16000, "Sampling rate in Hertz.");

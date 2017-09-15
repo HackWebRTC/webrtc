@@ -16,7 +16,7 @@
 
 #include "api/optional.h"
 #include "call/video_receive_stream.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/frame_callback.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/criticalsection.h"

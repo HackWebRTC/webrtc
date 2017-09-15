@@ -17,7 +17,7 @@
 
 // TODO(eladalon): Get rid of this later in the CL-stack.
 #include "api/rtpparameters.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 // TODO(eladalon): Get rid of this later in the CL-stack.
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "rtc_base/platform_file.h"

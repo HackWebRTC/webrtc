@@ -10,7 +10,7 @@
 
 #include "api/audio_codecs/audio_format.h"
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

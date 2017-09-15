@@ -11,7 +11,7 @@
 #include "sdk/android/src/jni/videodecoderfactorywrapper.h"
 
 #include "api/video_codecs/video_decoder.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/logging.h"
 #include "sdk/android/src/jni/videodecoderwrapper.h"
 

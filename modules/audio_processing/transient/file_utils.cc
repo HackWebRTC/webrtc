@@ -13,7 +13,7 @@
 #include <memory>
 
 #include "system_wrappers/include/file_wrapper.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

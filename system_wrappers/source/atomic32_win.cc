@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <windows.h>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

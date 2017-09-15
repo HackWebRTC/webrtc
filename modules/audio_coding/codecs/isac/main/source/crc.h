@@ -18,7 +18,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_CRC_H_
 #define MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_CRC_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /****************************************************************************
  * WebRtcIsac_GetCrc(...)

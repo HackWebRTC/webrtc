@@ -16,7 +16,7 @@
 #include <string>
 
 #include "api/optional.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/tools/packet.h"
 #include "modules/audio_coding/neteq/tools/packet_source.h"
 #include "rtc_base/buffer.h"

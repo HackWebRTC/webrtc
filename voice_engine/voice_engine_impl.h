@@ -14,7 +14,7 @@
 #include <memory>
 
 #include "system_wrappers/include/atomic32.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "voice_engine/voe_base_impl.h"
 #include "voice_engine/voe_codec_impl.h"
 #include "voice_engine/voe_file_impl.h"

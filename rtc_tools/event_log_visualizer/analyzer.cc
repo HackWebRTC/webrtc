@@ -22,7 +22,7 @@
 #include "call/call.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
 #include "modules/audio_coding/neteq/tools/fake_decode_from_file.h"
 #include "modules/audio_coding/neteq/tools/neteq_delay_analyzer.h"

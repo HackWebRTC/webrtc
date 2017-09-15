@@ -14,9 +14,9 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/criticalsection.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 // Implementation of an InStream and OutStream that can read (exclusive) or
 // write from/to a file.

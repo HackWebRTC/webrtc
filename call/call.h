@@ -23,7 +23,7 @@
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/networkroute.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/socket.h"

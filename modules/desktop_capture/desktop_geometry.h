@@ -12,7 +12,7 @@
 #define MODULES_DESKTOP_CAPTURE_DESKTOP_GEOMETRY_H_
 
 #include "rtc_base/constructormagic.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

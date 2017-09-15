@@ -16,7 +16,7 @@
 #include "modules/video_coding/codec_timer.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

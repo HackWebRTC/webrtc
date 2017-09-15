@@ -15,7 +15,7 @@
 #include "modules/audio_coding/neteq/tools/neteq_performance_test.h"
 #include "rtc_base/flags.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 // Define command line flags.
 DEFINE_int(runtime_ms, 10000, "Simulated runtime in ms.");

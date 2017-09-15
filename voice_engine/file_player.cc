@@ -11,11 +11,11 @@
 #include "voice_engine/file_player.h"
 
 #include "common_audio/resampler/include/resampler.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/media_file/media_file.h"
 #include "modules/media_file/media_file_defines.h"
 #include "rtc_base/logging.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "voice_engine/coder.h"
 
 namespace webrtc {

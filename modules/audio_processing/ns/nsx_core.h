@@ -17,7 +17,7 @@
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_processing/ns/nsx_defines.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 typedef struct NoiseSuppressionFixedC_ {
   uint32_t                fs;

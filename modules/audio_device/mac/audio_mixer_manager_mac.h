@@ -14,7 +14,7 @@
 #include "modules/audio_device/include/audio_device.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #include <CoreAudio/CoreAudio.h>
 

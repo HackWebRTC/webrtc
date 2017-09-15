@@ -10,7 +10,7 @@
 #ifndef TEST_STATISTICS_H_
 #define TEST_STATISTICS_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

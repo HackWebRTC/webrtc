@@ -11,7 +11,7 @@
 #include "common_audio/include/audio_util.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace {

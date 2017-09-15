@@ -17,7 +17,7 @@
 #include "api/call/transport.h"
 #include "call/rtp_stream_receiver_controller.h"
 #include "call/rtx_receive_stream.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"

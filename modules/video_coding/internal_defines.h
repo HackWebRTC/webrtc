@@ -11,7 +11,7 @@
 #ifndef MODULES_VIDEO_CODING_INTERNAL_DEFINES_H_
 #define MODULES_VIDEO_CODING_INTERNAL_DEFINES_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

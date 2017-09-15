@@ -13,7 +13,7 @@
 
 #include "modules/include/module_common_types.h"
 #include "rtc_base/checks.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 class MixHistory;

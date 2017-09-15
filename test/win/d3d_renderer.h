@@ -16,7 +16,7 @@
 
 #include "rtc_base/scoped_ref_ptr.h"
 #include "test/video_renderer.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

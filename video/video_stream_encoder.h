@@ -19,7 +19,7 @@
 #include "api/video/video_rotation.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/call.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
 #include "media/base/videosinkinterface.h"
 #include "modules/video_coding/include/video_coding_defines.h"
@@ -30,7 +30,7 @@
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
 #include "system_wrappers/include/atomic32.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "video/overuse_frame_detector.h"
 #include "call/video_send_stream.h"
 

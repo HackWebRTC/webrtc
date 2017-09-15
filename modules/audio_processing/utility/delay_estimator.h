@@ -14,7 +14,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_H_
 #define MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 static const int32_t kMaxBitCountsQ9 = (32 << 9);  // 32 matching bits in Q9.
 

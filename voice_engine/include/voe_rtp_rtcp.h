@@ -40,7 +40,7 @@
 #define VOICE_ENGINE_VOE_RTP_RTCP_H_
 
 #include <vector>
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

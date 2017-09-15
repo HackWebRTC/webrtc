@@ -12,12 +12,12 @@
 
 #include <assert.h>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/test/utility.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #ifdef SUPPORT_RED_WB
 #undef SUPPORT_RED_WB

@@ -13,7 +13,7 @@
 
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "test/gmock.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

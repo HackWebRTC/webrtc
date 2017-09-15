@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 

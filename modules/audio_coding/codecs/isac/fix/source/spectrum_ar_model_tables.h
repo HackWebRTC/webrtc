@@ -20,7 +20,7 @@
 #define MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_SPECTRUM_AR_MODEL_TABLES_H_
 
 #include "settings.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /********************* AR Coefficient Tables ************************/
 /* cdf for quantized reflection coefficient 1 */

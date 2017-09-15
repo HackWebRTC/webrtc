@@ -20,7 +20,7 @@
 #include "modules/audio_conference_mixer/source/time_scheduler.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/criticalsection.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 class AudioProcessing;

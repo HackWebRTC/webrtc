@@ -15,7 +15,7 @@
 #include "rtc_base/sanitizer.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 class FilterBanksTest : public testing::Test {
  protected:

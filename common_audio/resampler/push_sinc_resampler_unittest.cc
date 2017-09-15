@@ -19,7 +19,7 @@
 #include "rtc_base/timeutils.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace {

@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC_LEGACY_GAIN_CONTROL_H_
 #define MODULES_AUDIO_PROCESSING_AGC_LEGACY_GAIN_CONTROL_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 // Errors
 #define AGC_UNSPECIFIED_ERROR 18000

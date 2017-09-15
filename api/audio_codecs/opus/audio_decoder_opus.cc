@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/opus/audio_decoder_opus.h"
 #include "rtc_base/ptr_util.h"
 

@@ -16,8 +16,8 @@
 #ifndef SYSTEM_WRAPPERS_INCLUDE_TRACE_H_
 #define SYSTEM_WRAPPERS_INCLUDE_TRACE_H_
 
-#include "common_types.h"
-#include "typedefs.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

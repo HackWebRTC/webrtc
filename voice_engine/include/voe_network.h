@@ -35,7 +35,7 @@
 #define VOICE_ENGINE_VOE_NETWORK_H_
 
 #include "api/call/transport.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

@@ -43,7 +43,7 @@
 #include <utility>
 
 #include "rtc_base/checks.h"
-#include "typedefs.h"  // For architecture defines
+#include "typedefs.h"  // NOLINT(build/include)  // For architecture defines
 
 namespace webrtc {
 namespace test {

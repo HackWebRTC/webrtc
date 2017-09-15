@@ -14,7 +14,7 @@
 #include <cstddef>
 
 #include "rtc_base/numerics/exp_filter.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

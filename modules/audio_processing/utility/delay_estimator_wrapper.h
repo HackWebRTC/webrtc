@@ -14,7 +14,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_WRAPPER_H_
 #define MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_WRAPPER_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 // Releases the memory allocated by WebRtc_CreateDelayEstimatorFarend(...)
 void WebRtc_FreeDelayEstimatorFarend(void* handle);

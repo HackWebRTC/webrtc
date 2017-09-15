@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "test/gtest.h"
 

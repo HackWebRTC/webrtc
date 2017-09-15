@@ -23,7 +23,7 @@
 #include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

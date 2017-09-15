@@ -13,7 +13,7 @@
 #include <algorithm>
 
 #include "modules/remote_bitrate_estimator/test/packet_sender.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace testing {

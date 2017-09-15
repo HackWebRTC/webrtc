@@ -11,7 +11,7 @@
 #ifndef MODULES_MEDIA_FILE_MEDIA_FILE_IMPL_H_
 #define MODULES_MEDIA_FILE_MEDIA_FILE_IMPL_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/media_file/media_file.h"
 #include "modules/media_file/media_file_defines.h"

@@ -20,7 +20,7 @@
 
 #include <string.h>
 #include "common_audio/signal_processing/dot_product_with_scale.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 // Macros specific for the fixed point implementation
 #define WEBRTC_SPL_WORD16_MAX       32767

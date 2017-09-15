@@ -21,7 +21,7 @@
 #include "test/constants.h"
 #include "test/direct_transport.h"
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "call/video_send_stream.h"
 
 namespace {

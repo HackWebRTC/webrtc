@@ -10,7 +10,7 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTP_PACKET_RECEIVED_H_
 #define MODULES_RTP_RTCP_SOURCE_RTP_PACKET_RECEIVED_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "system_wrappers/include/ntp_time.h"
 

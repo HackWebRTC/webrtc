@@ -11,7 +11,7 @@
 #ifndef COMMON_AUDIO_SIGNAL_PROCESSING_INCLUDE_REAL_FFT_H_
 #define COMMON_AUDIO_SIGNAL_PROCESSING_INCLUDE_REAL_FFT_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 // For ComplexFFT(), the maximum fft order is 10;
 // for OpenMax FFT in ARM, it is 12;

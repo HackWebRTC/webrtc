@@ -10,7 +10,7 @@
 
 #include "api/audio_codecs/L16/audio_decoder_L16.h"
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/pcm16b/audio_decoder_pcm16b.h"
 #include "modules/audio_coding/codecs/pcm16b/pcm16b_common.h"
 #include "rtc_base/ptr_util.h"

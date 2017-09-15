@@ -14,7 +14,7 @@
 
 #include <utility>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"

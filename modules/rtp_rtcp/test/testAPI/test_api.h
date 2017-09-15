@@ -11,7 +11,7 @@
 #define MODULES_RTP_RTCP_TEST_TESTAPI_TEST_API_H_
 
 #include "api/call/transport.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "modules/rtp_rtcp/include/rtp_payload_registry.h"

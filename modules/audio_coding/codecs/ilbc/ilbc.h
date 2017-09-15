@@ -24,7 +24,7 @@
  * Define the fixpoint numeric formats
  */
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /*
  * Solution to support multiple instances

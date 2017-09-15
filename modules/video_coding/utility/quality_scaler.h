@@ -15,7 +15,7 @@
 
 #include "api/optional.h"
 #include "api/video_codecs/video_encoder.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/utility/moving_average.h"
 #include "rtc_base/sequenced_task_checker.h"
 

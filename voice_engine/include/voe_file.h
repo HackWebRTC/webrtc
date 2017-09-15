@@ -38,7 +38,7 @@
 #ifndef VOICE_ENGINE_VOE_FILE_H_
 #define VOICE_ENGINE_VOE_FILE_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

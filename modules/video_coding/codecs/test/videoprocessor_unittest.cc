@@ -11,7 +11,7 @@
 #include <memory>
 
 #include "api/video/i420_buffer.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/test/mock/mock_packet_manipulator.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"
 #include "modules/video_coding/include/mock/mock_video_codec_interface.h"
@@ -24,7 +24,7 @@
 #include "test/testsupport/packet_reader.h"
 #include "test/testsupport/unittest_utils.h"
 #include "test/video_codec_settings.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 using ::testing::_;
 using ::testing::AtLeast;

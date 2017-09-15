@@ -15,7 +15,7 @@
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "rtc_base/constructormagic.h"
 #include "test/gmock.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

@@ -14,7 +14,7 @@
 
 #include <vector>
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 struct vpx_codec_enc_cfg;
 typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;

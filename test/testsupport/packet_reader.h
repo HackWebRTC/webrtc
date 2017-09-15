@@ -12,7 +12,7 @@
 #define TEST_TESTSUPPORT_PACKET_READER_H_
 
 #include <cstddef>
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

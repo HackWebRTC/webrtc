@@ -19,7 +19,7 @@
 #include <ostream>
 #include <string>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/test/utility.h"
 #include "rtc_base/platform_thread.h"
@@ -28,7 +28,7 @@
 #include "system_wrappers/include/trace.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

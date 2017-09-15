@@ -15,7 +15,7 @@
 #include <string>  // size_t
 
 #include "rtc_base/constructormagic.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

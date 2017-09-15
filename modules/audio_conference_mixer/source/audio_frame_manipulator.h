@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_FRAME_MANIPULATOR_H_
 #define MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_FRAME_MANIPULATOR_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 class AudioFrame;

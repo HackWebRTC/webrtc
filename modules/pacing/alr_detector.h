@@ -12,11 +12,11 @@
 #define MODULES_PACING_ALR_DETECTOR_H_
 
 #include "api/optional.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/pacing/interval_budget.h"
 #include "modules/pacing/paced_sender.h"
 #include "rtc_base/rate_statistics.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

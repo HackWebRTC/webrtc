@@ -8,7 +8,7 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gmock.h"

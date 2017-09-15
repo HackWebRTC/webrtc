@@ -12,7 +12,7 @@
 #define MODULES_MEDIA_FILE_MEDIA_FILE_DEFINES_H_
 
 #include "modules/include/module_common_types.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 // Callback class for the MediaFile class.

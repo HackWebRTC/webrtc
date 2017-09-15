@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "media/engine/webrtcvideodecoderfactory.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
 #include "modules/video_coding/codecs/test/packet_manipulator.h"

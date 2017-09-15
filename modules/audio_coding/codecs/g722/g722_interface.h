@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_G722_G722_INTERFACE_H_
 #define MODULES_AUDIO_CODING_CODECS_G722_G722_INTERFACE_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /*
  * Solution to support multiple instances

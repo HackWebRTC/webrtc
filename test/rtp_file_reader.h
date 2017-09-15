@@ -13,7 +13,7 @@
 #include <set>
 #include <string>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

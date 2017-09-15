@@ -44,7 +44,7 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/file_wrapper.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #ifdef ENABLE_RTC_EVENT_LOG
 // *.pb.h files are generated at build-time by the protobuf compiler.

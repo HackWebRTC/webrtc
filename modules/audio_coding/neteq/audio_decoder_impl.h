@@ -16,7 +16,7 @@
 #include "api/audio_codecs/audio_decoder.h"
 #include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "rtc_base/constructormagic.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #ifdef WEBRTC_CODEC_G722
 #include "modules/audio_coding/codecs/g722/g722_interface.h"

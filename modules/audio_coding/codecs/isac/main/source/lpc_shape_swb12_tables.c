@@ -18,7 +18,7 @@
 
 #include "lpc_shape_swb12_tables.h"
 #include "settings.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /*
 * Mean value of LAR

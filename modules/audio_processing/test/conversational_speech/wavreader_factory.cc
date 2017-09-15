@@ -15,7 +15,7 @@
 #include "api/array_view.h"
 #include "common_audio/wav_file.h"
 #include "rtc_base/checks.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

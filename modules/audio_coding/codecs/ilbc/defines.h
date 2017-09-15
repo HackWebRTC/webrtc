@@ -20,7 +20,7 @@
 
 #include <string.h>
 #include "signal_processing_library.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /* general codec settings */
 

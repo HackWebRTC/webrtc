@@ -11,7 +11,7 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_COMMON_TYPES_H_
 #define MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_COMMON_TYPES_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

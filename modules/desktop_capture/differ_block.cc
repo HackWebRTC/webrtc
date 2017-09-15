@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "modules/desktop_capture/differ_vector_sse2.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"
 

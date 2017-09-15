@@ -14,7 +14,7 @@
 #include <memory>
 
 #include "common_audio/resampler/include/push_resampler.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_conference_mixer/include/audio_conference_mixer.h"
 #include "modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 #include "rtc_base/criticalsection.h"

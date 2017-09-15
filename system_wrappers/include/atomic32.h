@@ -17,7 +17,7 @@
 
 #include <stddef.h>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {

@@ -13,7 +13,7 @@
 #ifndef COMMON_AUDIO_VAD_VAD_GMM_H_
 #define COMMON_AUDIO_VAD_VAD_GMM_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 // Calculates the probability for |input|, given that |input| comes from a
 // normal distribution with mean and standard deviation (|mean|, |std|).

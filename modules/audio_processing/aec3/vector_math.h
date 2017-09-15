@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_VECTOR_MATH_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_VECTOR_MATH_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #if defined(WEBRTC_HAS_NEON)
 #include <arm_neon.h>
 #endif

@@ -25,7 +25,7 @@
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace rtc {
 class AsyncPacketSocket;

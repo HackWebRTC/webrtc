@@ -16,7 +16,7 @@
 #include <string>
 
 #include "api/video/video_frame.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

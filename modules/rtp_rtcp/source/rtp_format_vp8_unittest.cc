@@ -15,7 +15,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #define CHECK_ARRAY_SIZE(expected_size, array)                     \
   static_assert(expected_size == sizeof(array) / sizeof(array[0]), \

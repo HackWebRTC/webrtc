@@ -21,7 +21,7 @@
 #include "modules/audio_coding/codecs/isac/bandwidth_info.h"
 #include "modules/audio_coding/codecs/isac/main/include/isac.h"
 #include "modules/audio_coding/codecs/isac/main/source/settings.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 typedef struct Bitstreamstruct {
 

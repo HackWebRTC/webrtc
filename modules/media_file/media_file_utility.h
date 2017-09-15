@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/media_file/media_file_defines.h"
 
 namespace webrtc {

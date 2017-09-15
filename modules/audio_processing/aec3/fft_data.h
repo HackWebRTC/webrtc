@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_FFT_DATA_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_FFT_DATA_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #include <emmintrin.h>
 #endif

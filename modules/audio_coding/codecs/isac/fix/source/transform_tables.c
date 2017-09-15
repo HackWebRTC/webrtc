@@ -14,7 +14,7 @@
  */
 
 #include "modules/audio_coding/codecs/isac/fix/source/settings.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /* Cosine table 1 in Q14. */
 const int16_t WebRtcIsacfix_kCosTab1[FRAMESAMPLES/2] = {

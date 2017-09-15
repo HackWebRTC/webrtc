@@ -11,7 +11,7 @@
 #include "common_audio/signal_processing/include/real_fft.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace {

@@ -11,7 +11,7 @@
 #include "modules/audio_processing/aec/aec_core.h"
 #include "modules/audio_processing/aec/echo_cancellation.h"
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 namespace webrtc {
 namespace {
 

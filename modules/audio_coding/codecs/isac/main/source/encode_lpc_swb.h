@@ -21,7 +21,7 @@
 
 #include "settings.h"
 #include "structs.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /******************************************************************************
  * WebRtcIsac_RemoveLarMean()

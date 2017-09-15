@@ -13,7 +13,7 @@
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace aec3 {

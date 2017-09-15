@@ -19,7 +19,7 @@
 #include "api/call/transport.h"
 #include "api/rtpparameters.h"
 #include "call/rtp_packet_sink_interface.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

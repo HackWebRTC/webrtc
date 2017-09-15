@@ -14,7 +14,7 @@
 #include <deque>
 #include <memory>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/platform_thread.h"

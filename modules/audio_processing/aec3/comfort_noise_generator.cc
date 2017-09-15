@@ -10,7 +10,7 @@
 
 #include "modules/audio_processing/aec3/comfort_noise_generator.h"
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #include <emmintrin.h>
 #endif

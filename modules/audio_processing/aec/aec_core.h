@@ -27,7 +27,7 @@ extern "C" {
 #include "modules/audio_processing/utility/block_mean_calculator.h"
 #include "modules/audio_processing/utility/ooura_fft.h"
 #include "rtc_base/constructormagic.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

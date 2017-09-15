@@ -15,7 +15,7 @@
 #include <string>
 
 #include "api/audio_codecs/audio_decoder.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/include/module_common_types.h"
 

@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "api/rtpparameters.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "media/base/mediaconstants.h"
 
 namespace cricket {

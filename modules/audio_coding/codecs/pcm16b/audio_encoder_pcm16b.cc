@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/safe_conversions.h"

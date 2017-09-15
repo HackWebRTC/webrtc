@@ -11,7 +11,7 @@
 #define VIDEO_TRANSPORT_ADAPTER_H_
 
 #include "api/call/transport.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "system_wrappers/include/atomic32.h"
 
 namespace webrtc {

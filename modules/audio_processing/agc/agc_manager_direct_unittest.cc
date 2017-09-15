@@ -10,7 +10,7 @@
 
 #include "modules/audio_processing/agc/agc_manager_direct.h"
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_processing/agc/mock_agc.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "system_wrappers/include/trace.h"

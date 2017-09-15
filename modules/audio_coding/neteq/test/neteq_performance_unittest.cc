@@ -11,7 +11,7 @@
 #include "modules/audio_coding/neteq/tools/neteq_performance_test.h"
 #include "test/gtest.h"
 #include "test/testsupport/perf_test.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "system_wrappers/include/field_trial.h"
 
 // Runs a test with 10% packet losses and 10% clock drift, to exercise

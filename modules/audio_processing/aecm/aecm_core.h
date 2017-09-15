@@ -18,7 +18,7 @@ extern "C" {
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 }
 #include "modules/audio_processing/aecm/aecm_defines.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #ifdef _MSC_VER  // visual c++
 #define ALIGN8_BEG __declspec(align(8))

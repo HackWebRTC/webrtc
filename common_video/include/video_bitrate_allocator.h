@@ -11,7 +11,7 @@
 #ifndef COMMON_VIDEO_INCLUDE_VIDEO_BITRATE_ALLOCATOR_H_
 #define COMMON_VIDEO_INCLUDE_VIDEO_BITRATE_ALLOCATOR_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

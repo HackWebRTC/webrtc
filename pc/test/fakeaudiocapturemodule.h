@@ -22,7 +22,7 @@
 
 #include <memory>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_device/include/audio_device.h"
 #include "rtc_base/basictypes.h"
 #include "rtc_base/criticalsection.h"

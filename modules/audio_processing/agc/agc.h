@@ -14,7 +14,7 @@
 #include <memory>
 
 #include "modules/audio_processing/vad/voice_activity_detector.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

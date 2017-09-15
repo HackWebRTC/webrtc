@@ -16,7 +16,7 @@
 #define VOICE_ENGINE_UTILITY_H_
 
 #include "common_audio/resampler/include/push_resampler.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

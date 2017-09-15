@@ -16,7 +16,7 @@
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_tools/frame_editing/frame_editing_lib.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

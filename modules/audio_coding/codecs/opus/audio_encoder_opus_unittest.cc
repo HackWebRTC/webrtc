@@ -13,7 +13,7 @@
 #include <utility>
 
 #include "common_audio/mocks/mock_smoothing_filter.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"

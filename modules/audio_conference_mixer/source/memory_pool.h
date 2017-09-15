@@ -13,7 +13,7 @@
 
 #include <assert.h>
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 #ifdef _WIN32
 #include "modules/audio_conference_mixer/source/memory_pool_win.h"

@@ -11,10 +11,10 @@
 #ifndef SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_H_
 #define SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "voice_engine/include/voe_base.h"
 #include "voice_engine/include/voe_codec.h"
 #include "voice_engine/include/voe_errors.h"

@@ -16,7 +16,7 @@
 #define COMMON_AUDIO_VAD_VAD_FILTERBANK_H_
 
 #include "common_audio/vad/vad_core.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 // Takes |data_length| samples of |data_in| and calculates the logarithm of the
 // energy of each of the |kNumChannels| = 6 frequency bands used by the VAD:

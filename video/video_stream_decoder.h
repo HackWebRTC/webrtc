@@ -22,7 +22,7 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

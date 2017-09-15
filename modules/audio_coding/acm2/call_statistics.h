@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_CODING_ACM2_CALL_STATISTICS_H_
 #define MODULES_AUDIO_CODING_ACM2_CALL_STATISTICS_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 
 //

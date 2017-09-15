@@ -17,7 +17,7 @@
 #include <utility>  // pair
 
 #include "call/video_config.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"

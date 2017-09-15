@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "media/base/codec.h"
 
 namespace webrtc {

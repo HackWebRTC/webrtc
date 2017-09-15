@@ -19,14 +19,14 @@
 
 #include "api/optional.h"
 #include "api/video/video_rotation.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/safe_conversions.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_capture/video_capture.h"
 #include "rtc_base/criticalsection.h"

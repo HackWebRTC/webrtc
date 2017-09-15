@@ -35,7 +35,7 @@
 #define VOICE_ENGINE_VOE_BASE_H_
 
 #include "api/audio_codecs/audio_decoder_factory.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "rtc_base/scoped_ref_ptr.h"
 

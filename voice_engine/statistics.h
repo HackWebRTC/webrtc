@@ -11,9 +11,9 @@
 #ifndef VOICE_ENGINE_STATISTICS_H_
 #define VOICE_ENGINE_STATISTICS_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/criticalsection.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 #include "voice_engine/include/voe_errors.h"
 #include "voice_engine/voice_engine_defines.h"
 

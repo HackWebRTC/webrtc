@@ -10,7 +10,7 @@
 
 #include "modules/video_coding/include/video_codec_initializer.h"
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"

@@ -33,7 +33,7 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/random.h"
 #include "rtc_base/thread_annotations.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

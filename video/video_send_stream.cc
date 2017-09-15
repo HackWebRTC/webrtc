@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "call/rtp_transport_controller_send_interface.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"

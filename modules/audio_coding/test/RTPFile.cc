@@ -23,7 +23,7 @@
 #include "system_wrappers/include/rw_lock_wrapper.h"
 // TODO(tlegrand): Consider removing usage of gtest.
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

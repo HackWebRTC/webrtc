@@ -12,7 +12,7 @@
 #define MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 
 #include "api/optional.h"
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/encoded_frame.h"
 

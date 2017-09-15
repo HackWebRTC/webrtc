@@ -15,7 +15,7 @@
 #include "modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/onetimeevent.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

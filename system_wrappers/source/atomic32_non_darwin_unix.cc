@@ -14,7 +14,7 @@
 #include <inttypes.h>
 #include <malloc.h>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

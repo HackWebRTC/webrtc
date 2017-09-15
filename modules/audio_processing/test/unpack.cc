@@ -22,7 +22,7 @@
 #include "rtc_base/flags.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/ignore_wundef.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 RTC_PUSH_IGNORING_WUNDEF()
 #include "modules/audio_processing/debug.pb.h"

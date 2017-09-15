@@ -19,7 +19,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_VQ4_H_
 #define MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_VQ4_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /*----------------------------------------------------------------*
  *  Vector quantization of order 4 (based on MSE)

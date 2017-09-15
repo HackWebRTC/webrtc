@@ -11,7 +11,7 @@
 #include "modules/audio_coding/codecs/isac/fix/source/codec.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"
 #include "test/gtest.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 class FiltersTest : public testing::Test {
  protected:

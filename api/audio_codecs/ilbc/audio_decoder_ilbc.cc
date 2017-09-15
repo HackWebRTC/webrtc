@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
 #include "rtc_base/ptr_util.h"
 

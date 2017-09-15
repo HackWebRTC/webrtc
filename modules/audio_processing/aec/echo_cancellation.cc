@@ -24,7 +24,7 @@ extern "C" {
 #include "modules/audio_processing/aec/aec_core.h"
 #include "modules/audio_processing/aec/aec_resampler.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

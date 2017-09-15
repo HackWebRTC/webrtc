@@ -12,7 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_AEC3_COMMON_H_
 
 #include <stddef.h>
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

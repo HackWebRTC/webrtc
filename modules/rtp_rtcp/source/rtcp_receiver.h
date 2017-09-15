@@ -22,7 +22,7 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/ntp_time.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 class VideoBitrateAllocationObserver;

@@ -16,9 +16,9 @@
 #ifndef VOICE_ENGINE_VOICE_ENGINE_DEFINES_H_
 #define VOICE_ENGINE_VOICE_ENGINE_DEFINES_H_
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_processing/include/audio_processing.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

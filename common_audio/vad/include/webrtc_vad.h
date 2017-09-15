@@ -18,7 +18,7 @@
 
 #include <stddef.h>
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 typedef struct WebRtcVadInst VadInst;
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 #include <string.h>
 #include <algorithm>

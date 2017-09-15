@@ -14,7 +14,7 @@
 #include <math.h>   // pow()
 #include <string.h>  // memcpy()
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/logging.h"
 #include "rtc_base/trace_event.h"
 

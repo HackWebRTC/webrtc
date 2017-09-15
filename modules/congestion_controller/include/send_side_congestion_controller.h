@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/congestion_controller/delay_based_bwe.h"
 #include "modules/congestion_controller/transport_feedback_adapter.h"
 #include "modules/include/module.h"

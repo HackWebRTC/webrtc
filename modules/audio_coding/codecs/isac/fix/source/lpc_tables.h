@@ -18,7 +18,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_LPC_TABLES_H_
 #define MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_LPC_TABLES_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 /* indices of KLT coefficients used */
 extern const uint16_t WebRtcIsacfix_kSelIndGain[12];
