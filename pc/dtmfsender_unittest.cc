@@ -15,10 +15,10 @@
 #include <string>
 #include <vector>
 
+
 #include "pc/audiotrack.h"
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
 
 using webrtc::AudioTrackInterface;
@@ -39,7 +39,6 @@ class FakeDtmfObserver : public DtmfSenderObserverInterface {
 
   // Implements DtmfSenderObserverInterface.
   void OnToneChange(const std::string& tone) override {
-    LOG(LS_VERBOSE) << "FakeDtmfObserver::OnToneChange '" << tone << "'.";
     tones_.push_back(tone);
     if (tone.empty()) {
       completed_ = true;
@@ -89,9 +88,6 @@ class FakeDtmfProvider : public DtmfProviderInterface {
     }
     last_insert_dtmf_call_ = rtc::TimeMillis();
 
-    LOG(LS_VERBOSE) << "FakeDtmfProvider::InsertDtmf code=" << code
-                    << " duration=" << duration
-                    << " gap=" << gap << ".";
     dtmf_info_queue_.push_back(DtmfInfo(code, duration, gap));
     return true;
   }

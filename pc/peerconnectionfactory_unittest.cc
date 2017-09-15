@@ -14,12 +14,10 @@
 
 #include "api/mediastreaminterface.h"
 #include "media/base/fakevideocapturer.h"
-#include "media/engine/webrtccommon.h"
-#include "media/engine/webrtcvoe.h"
 #include "p2p/base/fakeportallocator.h"
 #include "pc/peerconnectionfactory.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/thread.h"
+
 #ifdef WEBRTC_ANDROID
 #include "pc/test/androidtestinitializer.h"
 #endif

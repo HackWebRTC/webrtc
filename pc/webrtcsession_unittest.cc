@@ -15,7 +15,6 @@
 #include "api/fakemetricsobserver.h"
 #include "api/jsepicecandidate.h"
 #include "api/jsepsessiondescription.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/fakemediaengine.h"
 #include "media/base/fakevideorenderer.h"
 #include "media/base/mediachannel.h"
@@ -40,12 +39,7 @@
 #include "rtc_base/firewallsocketserver.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/network.h"
-#include "rtc_base/ssladapter.h"
-#include "rtc_base/sslidentity.h"
-#include "rtc_base/sslstreamadapter.h"
 #include "rtc_base/stringutils.h"
-#include "rtc_base/thread.h"
 #include "rtc_base/virtualsocketserver.h"
 
 using cricket::FakeVoiceMediaChannel;

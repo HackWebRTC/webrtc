@@ -15,7 +15,6 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/thread.h"
 
 using std::min;
 

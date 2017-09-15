@@ -16,16 +16,14 @@
 #include "api/jsepsessiondescription.h"
 #include "media/base/mediaconstants.h"
 #include "media/engine/webrtcvideoengine.h"
-#include "modules/video_coding/codecs/h264/include/h264.h"
 #include "p2p/base/p2pconstants.h"
 #include "pc/mediasession.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/messagedigest.h"
-#include "rtc_base/sslfingerprint.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
+
 #ifdef WEBRTC_ANDROID
 #include "pc/test/androidtestinitializer.h"
 #endif

@@ -42,13 +42,8 @@
 #include "pc/test/fakertccertificategenerator.h"
 #include "pc/test/fakevideotrackrenderer.h"
 #include "pc/test/mockpeerconnectionobservers.h"
-#include "rtc_base/asyncinvoker.h"
 #include "rtc_base/fakenetwork.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/helpers.h"
-#include "rtc_base/ssladapter.h"
-#include "rtc_base/sslstreamadapter.h"
-#include "rtc_base/thread.h"
 #include "rtc_base/virtualsocketserver.h"
 
 using cricket::ContentInfo;

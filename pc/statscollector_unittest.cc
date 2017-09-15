@@ -16,7 +16,6 @@
 #include "pc/statscollector.h"
 
 #include "api/mediastreaminterface.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/fakemediaengine.h"
 #include "media/base/test/mock_mediachannel.h"
 #include "pc/channelmanager.h"
@@ -32,7 +31,6 @@
 #include "rtc_base/base64.h"
 #include "rtc_base/fakesslidentity.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/network.h"
 #include "rtc_base/stringencode.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

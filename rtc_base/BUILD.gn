@@ -777,6 +777,7 @@ rtc_source_set("rtc_base_tests_utils") {
     "nattypes.h",
     "proxyserver.cc",
     "proxyserver.h",
+    "refcount.h",
     "sha1.cc",
     "sha1.h",
     "sha1digest.cc",

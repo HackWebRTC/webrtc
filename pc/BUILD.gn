@@ -373,7 +373,6 @@ if (rtc_include_tests) {
   }
 
   rtc_test("peerconnection_unittests") {
-    check_includes = false  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
     testonly = true
     sources = [
       "datachannel_unittest.cc",
@@ -435,15 +434,7 @@ if (rtc_include_tests) {
 
     deps = []
     if (is_android) {
-      sources += [
-        "test/androidtestinitializer.cc",
-        "test/androidtestinitializer.h",
-      ]
-      deps += [
-        "../sdk/android:libjingle_peerconnection_java",
-        "../sdk/android:libjingle_peerconnection_jni",
-        "//testing/android/native_test:native_test_support",
-      ]
+      deps += [ ":android_black_magic" ]
     }
 
     deps += [
@@ -451,19 +442,55 @@ if (rtc_include_tests) {
       ":pc_test_utils",
       "..:webrtc_common",
       "../api:fakemetricsobserver",
+      "../api:libjingle_peerconnection_test_api",
+      "../api:rtc_stats_api",
+      "../api/audio_codecs:builtin_audio_decoder_factory",
+      "../api/audio_codecs:builtin_audio_encoder_factory",
+      "../media:rtc_audio_video",
+      "../media:rtc_data",  # TODO(phoglund): AFAIK only used for one sctp constant.
+      "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
+      "../modules/audio_processing:audio_processing",
+      "../modules/utility:utility",
+      "../p2p:p2p_test_utils",
+      "../p2p:rtc_p2p",
       "../pc:rtc_pc",
+      "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_main",
       "../rtc_base:rtc_base_tests_utils",
       "../system_wrappers:metrics_default",
       "../test:audio_codec_mocks",
-      "//testing/gmock",
+      "../test:test_support",
     ]
 
     if (is_android) {
-      deps += [ "//testing/android/native_test:native_test_support" ]
+      deps += [
+        "//testing/android/native_test:native_test_support",
+
+        # We need to depend on this one directly, or classloads will fail for
+        # the voice engine BuildInfo, for instance.
+        "../sdk/android:libjingle_peerconnection_java",
+      ]
 
       shard_timeout = 900
+    }
+  }
+
+  if (is_android) {
+    rtc_source_set("android_black_magic") {
+      # The android code uses hacky includes to chromium-base and the ssl code;
+      # having this in a separate target enables us to keep the peerconnection
+      # unit tests clean.
+      check_includes = false
+      testonly = true
+      sources = [
+        "test/androidtestinitializer.cc",
+        "test/androidtestinitializer.h",
+      ]
+      deps = [
+        "../sdk/android:libjingle_peerconnection_jni",
+        "//testing/android/native_test:native_test_support",
+      ]
     }
   }
 }

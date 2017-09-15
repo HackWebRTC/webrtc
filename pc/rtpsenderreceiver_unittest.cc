@@ -12,9 +12,7 @@
 #include <string>
 #include <utility>
 
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/fakemediaengine.h"
-#include "media/base/mediachannel.h"
 #include "media/engine/fakewebrtccall.h"
 #include "p2p/base/faketransportcontroller.h"
 #include "pc/audiotrack.h"
@@ -29,7 +27,6 @@
 #include "pc/videotrack.h"
 #include "pc/videotracksource.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/sigslot.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

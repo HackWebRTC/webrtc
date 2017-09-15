@@ -40,10 +40,7 @@
 #include "pc/videocapturertracksource.h"
 #include "pc/videotrack.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ssladapter.h"
-#include "rtc_base/sslstreamadapter.h"
 #include "rtc_base/stringutils.h"
-#include "rtc_base/thread.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "test/gmock.h"
 

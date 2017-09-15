@@ -19,8 +19,6 @@
 #include "p2p/base/sessiondescription.h"
 #include "pc/mediasession.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/helpers.h"
-#include "rtc_base/ssladapter.h"
 #include "rtc_base/stringencode.h"
 
 using webrtc::IceCandidateCollection;
