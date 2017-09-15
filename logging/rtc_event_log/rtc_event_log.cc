@@ -72,6 +72,11 @@ bool IsConfigEvent(const rtclog::Event& event) {
          event_type == rtclog::Event::AUDIO_SENDER_CONFIG_EVENT;
 }
 
+// Observe a limit on the number of concurrent logs, so as not to run into
+// OS-imposed limits on open files and/or threads/task-queues.
+// TODO(eladalon): Known issue - there's a race over |rtc_event_log_count|.
+std::atomic<int> rtc_event_log_count(0);
+
 // TODO(eladalon): This class exists because C++11 doesn't allow transferring a
 // unique_ptr to a lambda (a copy constructor is required). We should get
 // rid of this when we move to C++14.
@@ -157,11 +162,6 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogToFile(std::unique_ptr<rtclog::Event> event);
   void StopLogFile(int64_t stop_time);
 
-  // Observe a limit on the number of concurrent logs, so as not to run into
-  // OS-imposed limits on open files and/or threads/task-queues.
-  // TODO(eladalon): Known issue - there's a race over |log_count_|.
-  static std::atomic<int> log_count_;
-
   // Make sure that the event log is "managed" - created/destroyed, as well
   // as started/stopped - from the same thread/task-queue.
   rtc::SequencedTaskChecker owner_sequence_checker_;
@@ -235,8 +235,6 @@ rtclog::BweProbeResult::ResultType ConvertProbeResultType(
 
 }  // namespace
 
-std::atomic<int> RtcEventLogImpl::log_count_(0);
-
 RtcEventLogImpl::RtcEventLogImpl()
     : file_(FileWrapper::Create()),
       max_size_bytes_(std::numeric_limits<decltype(max_size_bytes_)>::max()),
@@ -249,7 +247,7 @@ RtcEventLogImpl::~RtcEventLogImpl() {
   // If we're logging to the file, this will stop that. Blocking function.
   StopLogging();
 
-  int count = std::atomic_fetch_sub(&RtcEventLogImpl::log_count_, 1) - 1;
+  int count = std::atomic_fetch_sub(&rtc_event_log_count, 1) - 1;
   RTC_DCHECK_GE(count, 0);
 }
 
@@ -811,13 +809,13 @@ void RtcEventLogImpl::StopLogFile(int64_t stop_time) {
 // RtcEventLog member functions.
 std::unique_ptr<RtcEventLog> RtcEventLog::Create() {
 #ifdef ENABLE_RTC_EVENT_LOG
-  // TODO(eladalon): Known issue - there's a race over |log_count_| here.
+    // TODO(eladalon): Known issue - there's a race over |rtc_event_log_count|.
   constexpr int kMaxLogCount = 5;
-  int count = 1 + std::atomic_fetch_add(&RtcEventLogImpl::log_count_, 1);
+  int count = 1 + std::atomic_fetch_add(&rtc_event_log_count, 1);
   if (count > kMaxLogCount) {
     LOG(LS_WARNING) << "Denied creation of additional WebRTC event logs. "
                     << count - 1 << " logs open already.";
-    std::atomic_fetch_sub(&RtcEventLogImpl::log_count_, 1);
+    std::atomic_fetch_sub(&rtc_event_log_count, 1);
     return std::unique_ptr<RtcEventLog>(new RtcEventLogNullImpl());
   }
   return std::unique_ptr<RtcEventLog>(new RtcEventLogImpl());
