@@ -386,190 +386,260 @@ int main(int argc, char* argv[]) {
   }
 
   for (size_t i = 0; i < parsed_stream.GetNumberOfEvents(); i++) {
-    if (FLAG_config && FLAG_video && FLAG_incoming &&
-        parsed_stream.GetEventType(i) ==
-            webrtc::ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT) {
-      webrtc::rtclog::StreamConfig config =
-          parsed_stream.GetVideoReceiveConfig(i);
-      std::cout << parsed_stream.GetTimestamp(i) << "\tVIDEO_RECV_CONFIG"
-                << "\tssrc=" << config.remote_ssrc
-                << "\tfeedback_ssrc=" << config.local_ssrc;
-      std::cout << "\textensions={";
-      for (const auto& extension : config.rtp_extensions) {
-        std::cout << extension.ToString() << ",";
-      }
-      std::cout << "}";
-      std::cout << "\tcodecs={";
-      for (const auto& codec : config.codecs) {
-        std::cout << "{name: " << codec.payload_name
-                  << ", payload_type: " << codec.payload_type
-                  << ", rtx_payload_type: " << codec.rtx_payload_type << "}";
-      }
-      std::cout << "}" << std::endl;
-    }
-    if (FLAG_config && FLAG_video && FLAG_outgoing &&
-        parsed_stream.GetEventType(i) ==
-            webrtc::ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT) {
-      std::vector<webrtc::rtclog::StreamConfig> configs =
-          parsed_stream.GetVideoSendConfig(i);
-      for (const auto& config : configs) {
-        std::cout << parsed_stream.GetTimestamp(i) << "\tVIDEO_SEND_CONFIG";
-        std::cout << "\tssrcs=" << config.local_ssrc;
-        std::cout << "\trtx_ssrcs=" << config.rtx_ssrc;
-        std::cout << "\textensions={";
-        for (const auto& extension : config.rtp_extensions) {
-          std::cout << extension.ToString() << ",";
-        }
-        std::cout << "}";
-        std::cout << "\tcodecs={";
-        for (const auto& codec : config.codecs) {
-          std::cout << "{name: " << codec.payload_name
-                    << ", payload_type: " << codec.payload_type
-                    << ", rtx_payload_type: " << codec.rtx_payload_type << "}";
-        }
-        std::cout << "}" << std::endl;
-      }
-    }
-    if (FLAG_config && FLAG_audio && FLAG_incoming &&
-        parsed_stream.GetEventType(i) ==
-            webrtc::ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT) {
-      webrtc::rtclog::StreamConfig config =
-          parsed_stream.GetAudioReceiveConfig(i);
-      std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_RECV_CONFIG"
-                << "\tssrc=" << config.remote_ssrc
-                << "\tfeedback_ssrc=" << config.local_ssrc;
-      std::cout << "\textensions={";
-      for (const auto& extension : config.rtp_extensions) {
-        std::cout << extension.ToString() << ",";
-      }
-      std::cout << "}";
-      std::cout << "\tcodecs={";
-      for (const auto& codec : config.codecs) {
-        std::cout << "{name: " << codec.payload_name
-                  << ", payload_type: " << codec.payload_type
-                  << ", rtx_payload_type: " << codec.rtx_payload_type << "}";
-      }
-      std::cout << "}" << std::endl;
-    }
-    if (FLAG_config && FLAG_audio && FLAG_outgoing &&
-        parsed_stream.GetEventType(i) ==
-            webrtc::ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT) {
-      webrtc::rtclog::StreamConfig config = parsed_stream.GetAudioSendConfig(i);
-      std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_SEND_CONFIG"
-                << "\tssrc=" << config.local_ssrc;
-      std::cout << "\textensions={";
-      for (const auto& extension : config.rtp_extensions) {
-        std::cout << extension.ToString() << ",";
-      }
-      std::cout << "}";
-      std::cout << "\tcodecs={";
-      for (const auto& codec : config.codecs) {
-        std::cout << "{name: " << codec.payload_name
-                  << ", payload_type: " << codec.payload_type
-                  << ", rtx_payload_type: " << codec.rtx_payload_type << "}";
-      }
-      std::cout << "}" << std::endl;
-    }
-    if (FLAG_rtp &&
-        parsed_stream.GetEventType(i) == webrtc::ParsedRtcEventLog::RTP_EVENT) {
-      size_t header_length;
-      size_t total_length;
-      uint8_t header[IP_PACKET_SIZE];
-      webrtc::PacketDirection direction;
-      webrtc::RtpHeaderExtensionMap* extension_map = parsed_stream.GetRtpHeader(
-          i, &direction, header, &header_length, &total_length);
-
-      if (extension_map == nullptr)
-        extension_map = &default_map;
-
-      // Parse header to get SSRC and RTP time.
-      webrtc::RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
-      webrtc::RTPHeader parsed_header;
-      rtp_parser.Parse(&parsed_header, extension_map);
-      MediaType media_type =
-          parsed_stream.GetMediaType(parsed_header.ssrc, direction);
-
-      if (ExcludePacket(direction, media_type, parsed_header.ssrc))
+    switch (parsed_stream.GetEventType(i)) {
+      case webrtc::ParsedRtcEventLog::UNKNOWN_EVENT: {
+        // TODO(eladalon): Implement in new CL.
         continue;
+      }
 
-      std::cout << parsed_stream.GetTimestamp(i) << "\tRTP"
-                << StreamInfo(direction, media_type)
-                << "\tssrc=" << parsed_header.ssrc
-                << "\ttimestamp=" << parsed_header.timestamp;
-      if (parsed_header.extension.hasAbsoluteSendTime) {
-        std::cout << "\tAbsSendTime="
-                  << parsed_header.extension.absoluteSendTime;
+      case webrtc::ParsedRtcEventLog::LOG_START: {
+        // TODO(eladalon): Implement in new CL.
+        continue;
       }
-      if (parsed_header.extension.hasVideoContentType) {
-        std::cout << "\tContentType="
-                  << static_cast<int>(parsed_header.extension.videoContentType);
-      }
-      if (parsed_header.extension.hasVideoRotation) {
-        std::cout << "\tRotation="
-                  << static_cast<int>(parsed_header.extension.videoRotation);
-      }
-      if (parsed_header.extension.hasTransportSequenceNumber) {
-        std::cout << "\tTransportSeq="
-                  << parsed_header.extension.transportSequenceNumber;
-      }
-      if (parsed_header.extension.hasTransmissionTimeOffset) {
-        std::cout << "\tTransmTimeOffset="
-                  << parsed_header.extension.transmissionTimeOffset;
-      }
-      if (parsed_header.extension.hasAudioLevel) {
-        std::cout << "\tAudioLevel=" << parsed_header.extension.audioLevel;
-      }
-      std::cout << std::endl;
-    }
-    if (FLAG_rtcp && parsed_stream.GetEventType(i) ==
-                         webrtc::ParsedRtcEventLog::RTCP_EVENT) {
-      size_t length;
-      uint8_t packet[IP_PACKET_SIZE];
-      webrtc::PacketDirection direction;
-      parsed_stream.GetRtcpPacket(i, &direction, packet, &length);
 
-      webrtc::rtcp::CommonHeader rtcp_block;
-      const uint8_t* packet_end = packet + length;
-      for (const uint8_t* next_block = packet; next_block != packet_end;
-           next_block = rtcp_block.NextPacket()) {
-        ptrdiff_t remaining_blocks_size = packet_end - next_block;
-        RTC_DCHECK_GT(remaining_blocks_size, 0);
-        if (!rtcp_block.Parse(next_block, remaining_blocks_size)) {
-          break;
+      case webrtc::ParsedRtcEventLog::LOG_END: {
+        // TODO(eladalon): Implement in new CL.
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::RTP_EVENT: {
+        if (FLAG_rtp) {
+          size_t header_length;
+          size_t total_length;
+          uint8_t header[IP_PACKET_SIZE];
+          webrtc::PacketDirection direction;
+          webrtc::RtpHeaderExtensionMap* extension_map =
+              parsed_stream.GetRtpHeader(i, &direction, header, &header_length,
+                                         &total_length);
+
+          if (extension_map == nullptr)
+            extension_map = &default_map;
+
+          // Parse header to get SSRC and RTP time.
+          webrtc::RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
+          webrtc::RTPHeader parsed_header;
+          rtp_parser.Parse(&parsed_header, extension_map);
+          MediaType media_type =
+              parsed_stream.GetMediaType(parsed_header.ssrc, direction);
+
+          if (ExcludePacket(direction, media_type, parsed_header.ssrc))
+            continue;
+
+          std::cout << parsed_stream.GetTimestamp(i) << "\tRTP"
+                    << StreamInfo(direction, media_type)
+                    << "\tssrc=" << parsed_header.ssrc
+                    << "\ttimestamp=" << parsed_header.timestamp;
+          if (parsed_header.extension.hasAbsoluteSendTime) {
+            std::cout << "\tAbsSendTime="
+                      << parsed_header.extension.absoluteSendTime;
+          }
+          if (parsed_header.extension.hasVideoContentType) {
+            std::cout << "\tContentType="
+                      << static_cast<int>(
+                             parsed_header.extension.videoContentType);
+          }
+          if (parsed_header.extension.hasVideoRotation) {
+            std::cout << "\tRotation="
+                      << static_cast<int>(
+                             parsed_header.extension.videoRotation);
+          }
+          if (parsed_header.extension.hasTransportSequenceNumber) {
+            std::cout << "\tTransportSeq="
+                      << parsed_header.extension.transportSequenceNumber;
+          }
+          if (parsed_header.extension.hasTransmissionTimeOffset) {
+            std::cout << "\tTransmTimeOffset="
+                      << parsed_header.extension.transmissionTimeOffset;
+          }
+          if (parsed_header.extension.hasAudioLevel) {
+            std::cout << "\tAudioLevel=" << parsed_header.extension.audioLevel;
+          }
+          std::cout << std::endl;
         }
+        continue;
+      }
 
-        uint64_t log_timestamp = parsed_stream.GetTimestamp(i);
-        switch (rtcp_block.type()) {
-          case webrtc::rtcp::SenderReport::kPacketType:
-            PrintSenderReport(parsed_stream, rtcp_block, log_timestamp,
-                              direction);
-            break;
-          case webrtc::rtcp::ReceiverReport::kPacketType:
-            PrintReceiverReport(parsed_stream, rtcp_block, log_timestamp,
+      case webrtc::ParsedRtcEventLog::RTCP_EVENT: {
+        if (FLAG_rtcp) {
+          size_t length;
+          uint8_t packet[IP_PACKET_SIZE];
+          webrtc::PacketDirection direction;
+          parsed_stream.GetRtcpPacket(i, &direction, packet, &length);
+
+          webrtc::rtcp::CommonHeader rtcp_block;
+          const uint8_t* packet_end = packet + length;
+          for (const uint8_t* next_block = packet; next_block != packet_end;
+               next_block = rtcp_block.NextPacket()) {
+            ptrdiff_t remaining_blocks_size = packet_end - next_block;
+            RTC_DCHECK_GT(remaining_blocks_size, 0);
+            if (!rtcp_block.Parse(next_block, remaining_blocks_size)) {
+              break;
+            }
+
+            uint64_t log_timestamp = parsed_stream.GetTimestamp(i);
+            switch (rtcp_block.type()) {
+              case webrtc::rtcp::SenderReport::kPacketType:
+                PrintSenderReport(parsed_stream, rtcp_block, log_timestamp,
+                                  direction);
+                break;
+              case webrtc::rtcp::ReceiverReport::kPacketType:
+                PrintReceiverReport(parsed_stream, rtcp_block, log_timestamp,
+                                    direction);
+                break;
+              case webrtc::rtcp::Sdes::kPacketType:
+                PrintSdes(rtcp_block, log_timestamp, direction);
+                break;
+              case webrtc::rtcp::ExtendedReports::kPacketType:
+                PrintXr(parsed_stream, rtcp_block, log_timestamp, direction);
+                break;
+              case webrtc::rtcp::Bye::kPacketType:
+                PrintBye(parsed_stream, rtcp_block, log_timestamp, direction);
+                break;
+              case webrtc::rtcp::Rtpfb::kPacketType:
+                PrintRtpFeedback(parsed_stream, rtcp_block, log_timestamp,
+                                 direction);
+                break;
+              case webrtc::rtcp::Psfb::kPacketType:
+                PrintPsFeedback(parsed_stream, rtcp_block, log_timestamp,
                                 direction);
-            break;
-          case webrtc::rtcp::Sdes::kPacketType:
-            PrintSdes(rtcp_block, log_timestamp, direction);
-            break;
-          case webrtc::rtcp::ExtendedReports::kPacketType:
-            PrintXr(parsed_stream, rtcp_block, log_timestamp, direction);
-            break;
-          case webrtc::rtcp::Bye::kPacketType:
-            PrintBye(parsed_stream, rtcp_block, log_timestamp, direction);
-            break;
-          case webrtc::rtcp::Rtpfb::kPacketType:
-            PrintRtpFeedback(parsed_stream, rtcp_block, log_timestamp,
-                             direction);
-            break;
-          case webrtc::rtcp::Psfb::kPacketType:
-            PrintPsFeedback(parsed_stream, rtcp_block, log_timestamp,
-                            direction);
-            break;
-          default:
-            break;
+                break;
+              default:
+                break;
+            }
+          }
         }
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::AUDIO_PLAYOUT_EVENT: {
+        // TODO(eladalon): Implement in new CL.
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::LOSS_BASED_BWE_UPDATE: {
+        // TODO(eladalon): Implement in new CL.
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::DELAY_BASED_BWE_UPDATE: {
+        // TODO(eladalon): Implement in new CL.
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT: {
+        if (FLAG_config && FLAG_video && FLAG_incoming) {
+          webrtc::rtclog::StreamConfig config =
+              parsed_stream.GetVideoReceiveConfig(i);
+          std::cout << parsed_stream.GetTimestamp(i) << "\tVIDEO_RECV_CONFIG"
+                    << "\tssrc=" << config.remote_ssrc
+                    << "\tfeedback_ssrc=" << config.local_ssrc;
+          std::cout << "\textensions={";
+          for (const auto& extension : config.rtp_extensions) {
+            std::cout << extension.ToString() << ",";
+          }
+          std::cout << "}";
+          std::cout << "\tcodecs={";
+          for (const auto& codec : config.codecs) {
+            std::cout << "{name: " << codec.payload_name
+                      << ", payload_type: " << codec.payload_type
+                      << ", rtx_payload_type: " << codec.rtx_payload_type
+                      << "}";
+          }
+          std::cout << "}" << std::endl;
+        }
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT: {
+        if (FLAG_config && FLAG_video && FLAG_outgoing) {
+          std::vector<webrtc::rtclog::StreamConfig> configs =
+              parsed_stream.GetVideoSendConfig(i);
+          for (const auto& config : configs) {
+            std::cout << parsed_stream.GetTimestamp(i) << "\tVIDEO_SEND_CONFIG";
+            std::cout << "\tssrcs=" << config.local_ssrc;
+            std::cout << "\trtx_ssrcs=" << config.rtx_ssrc;
+            std::cout << "\textensions={";
+            for (const auto& extension : config.rtp_extensions) {
+              std::cout << extension.ToString() << ",";
+            }
+            std::cout << "}";
+            std::cout << "\tcodecs={";
+            for (const auto& codec : config.codecs) {
+              std::cout << "{name: " << codec.payload_name
+                        << ", payload_type: " << codec.payload_type
+                        << ", rtx_payload_type: " << codec.rtx_payload_type
+                        << "}";
+            }
+            std::cout << "}" << std::endl;
+          }
+        }
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT: {
+        if (FLAG_config && FLAG_audio && FLAG_incoming) {
+          webrtc::rtclog::StreamConfig config =
+              parsed_stream.GetAudioReceiveConfig(i);
+          std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_RECV_CONFIG"
+                    << "\tssrc=" << config.remote_ssrc
+                    << "\tfeedback_ssrc=" << config.local_ssrc;
+          std::cout << "\textensions={";
+          for (const auto& extension : config.rtp_extensions) {
+            std::cout << extension.ToString() << ",";
+          }
+          std::cout << "}";
+          std::cout << "\tcodecs={";
+          for (const auto& codec : config.codecs) {
+            std::cout << "{name: " << codec.payload_name
+                      << ", payload_type: " << codec.payload_type
+                      << ", rtx_payload_type: " << codec.rtx_payload_type
+                      << "}";
+          }
+          std::cout << "}" << std::endl;
+        }
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT: {
+        if (FLAG_config && FLAG_audio && FLAG_outgoing) {
+          webrtc::rtclog::StreamConfig config =
+              parsed_stream.GetAudioSendConfig(i);
+          std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_SEND_CONFIG"
+                    << "\tssrc=" << config.local_ssrc;
+          std::cout << "\textensions={";
+          for (const auto& extension : config.rtp_extensions) {
+            std::cout << extension.ToString() << ",";
+          }
+          std::cout << "}";
+          std::cout << "\tcodecs={";
+          for (const auto& codec : config.codecs) {
+            std::cout << "{name: " << codec.payload_name
+                      << ", payload_type: " << codec.payload_type
+                      << ", rtx_payload_type: " << codec.rtx_payload_type
+                      << "}";
+          }
+          std::cout << "}" << std::endl;
+        }
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::AUDIO_NETWORK_ADAPTATION_EVENT: {
+        // TODO(eladalon): Implement in new CL.
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::BWE_PROBE_CLUSTER_CREATED_EVENT: {
+        // TODO(eladalon): Implement in new CL.
+        continue;
+      }
+
+      case webrtc::ParsedRtcEventLog::BWE_PROBE_RESULT_EVENT: {
+        // TODO(eladalon): Implement in new CL.
+        continue;
       }
     }
+
+    RTC_NOTREACHED();
   }
   return 0;
 }
