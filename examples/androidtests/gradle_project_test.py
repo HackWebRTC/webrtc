@@ -25,8 +25,7 @@ import tempfile
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir,
-                                        os.pardir))
+SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 GENERATE_GRADLE_SCRIPT = os.path.join(SRC_DIR,
                                       'build/android/gradle/generate_gradle.py')
 GRADLEW_BIN = os.path.join(SCRIPT_DIR, 'third_party/gradle/gradlew')
