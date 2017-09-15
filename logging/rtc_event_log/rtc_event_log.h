@@ -144,16 +144,6 @@ class RtcEventLog {
   // Logs the result of an unsuccessful probing attempt.
   virtual void LogProbeResultFailure(int id,
                                      ProbeFailureReason failure_reason) = 0;
-
-  // Reads an RtcEventLog file and returns true when reading was successful.
-  // The result is stored in the given EventStream object.
-  // The order of the events in the EventStream is implementation defined.
-  // The current implementation writes a LOG_START event, then the old
-  // configurations, then the remaining events in timestamp order and finally
-  // a LOG_END event. However, this might change without further notice.
-  // TODO(terelius): Change result type to a vector?
-  static bool ParseRtcEventLog(const std::string& file_name,
-                               rtclog::EventStream* result);
 };
 
 // No-op implementation is used if flag is not set, or in tests.

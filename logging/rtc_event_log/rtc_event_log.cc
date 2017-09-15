@@ -806,22 +806,6 @@ void RtcEventLogImpl::StopLogFile(int64_t stop_time) {
   RTC_DCHECK(!file_->is_open());
 }
 
-bool RtcEventLog::ParseRtcEventLog(const std::string& file_name,
-                                   rtclog::EventStream* result) {
-  char tmp_buffer[1024];
-  int bytes_read = 0;
-  std::unique_ptr<FileWrapper> dump_file(FileWrapper::Create());
-  if (!dump_file->OpenFile(file_name.c_str(), true)) {
-    return false;
-  }
-  ProtoString dump_buffer;
-  while ((bytes_read = dump_file->Read(tmp_buffer, sizeof(tmp_buffer))) > 0) {
-    dump_buffer.append(tmp_buffer, bytes_read);
-  }
-  dump_file->CloseFile();
-  return result->ParseFromString(dump_buffer);
-}
-
 #endif  // ENABLE_RTC_EVENT_LOG
 
 // RtcEventLog member functions.
