@@ -779,8 +779,8 @@ TEST_F(FullStackTest, LargeRoomVP8_5thumb) {
   RunTest(large_room);
 }
 
-#if defined(WEBRTC_ANDROID)
-// Fails on Android:
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+// Fails on mobile devices:
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=7301
 #define MAYBE_LargeRoomVP8_50thumb DISABLED_LargeRoomVP8_50thumb
 #define MAYBE_LargeRoomVP8_15thumb DISABLED_LargeRoomVP8_15thumb
