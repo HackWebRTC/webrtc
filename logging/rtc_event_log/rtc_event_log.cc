@@ -96,12 +96,10 @@ class ResourceOwningTask final : public rtc::QueuedTask {
   std::unique_ptr<T> resource_;
   std::function<void(std::unique_ptr<T>)> handler_;
 };
-}  // namespace
 
 class RtcEventLogImpl final : public RtcEventLog {
-  friend std::unique_ptr<RtcEventLog> RtcEventLog::Create();
-
  public:
+  RtcEventLogImpl();
   ~RtcEventLogImpl() override;
 
   bool StartLogging(const std::string& file_name,
@@ -142,8 +140,6 @@ class RtcEventLogImpl final : public RtcEventLog {
  private:
   void StartLoggingInternal(std::unique_ptr<FileWrapper> file,
                             int64_t max_size_bytes);
-
-  RtcEventLogImpl();  // Creation is done by RtcEventLog::Create.
 
   void StoreEvent(std::unique_ptr<rtclog::Event> event);
   void LogProbeResult(int id,
@@ -186,11 +182,6 @@ class RtcEventLogImpl final : public RtcEventLog {
   RTC_DISALLOW_COPY_AND_ASSIGN(RtcEventLogImpl);
 };
 
-namespace {
-// The functions in this namespace convert enums from the runtime format
-// that the rest of the WebRtc project can use, to the corresponding
-// serialized enum which is defined by the protobuf.
-
 rtclog::VideoReceiveConfig_RtcpMode ConvertRtcpMode(RtcpMode rtcp_mode) {
   switch (rtcp_mode) {
     case RtcpMode::kCompound:
@@ -232,8 +223,6 @@ rtclog::BweProbeResult::ResultType ConvertProbeResultType(
   RTC_NOTREACHED();
   return rtclog::BweProbeResult::SUCCESS;
 }
-
-}  // namespace
 
 RtcEventLogImpl::RtcEventLogImpl()
     : file_(FileWrapper::Create()),
@@ -804,6 +793,8 @@ void RtcEventLogImpl::StopLogFile(int64_t stop_time) {
   RTC_DCHECK(!file_->is_open());
 }
 
+}  // namespace
+
 #endif  // ENABLE_RTC_EVENT_LOG
 
 // RtcEventLog member functions.
@@ -816,9 +807,9 @@ std::unique_ptr<RtcEventLog> RtcEventLog::Create() {
     LOG(LS_WARNING) << "Denied creation of additional WebRTC event logs. "
                     << count - 1 << " logs open already.";
     std::atomic_fetch_sub(&rtc_event_log_count, 1);
-    return std::unique_ptr<RtcEventLog>(new RtcEventLogNullImpl());
+    return CreateNull();
   }
-  return std::unique_ptr<RtcEventLog>(new RtcEventLogImpl());
+  return rtc::MakeUnique<RtcEventLogImpl>();
 #else
   return CreateNull();
 #endif  // ENABLE_RTC_EVENT_LOG
