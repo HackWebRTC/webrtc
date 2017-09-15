@@ -14,6 +14,8 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "media/engine/webrtcvoiceengine.h"
 
 #ifdef HAVE_WEBRTC_VIDEO
@@ -119,6 +121,32 @@ MediaEngineInterface* WebRtcMediaEngineFactory::Create(
   return CreateWebRtcMediaEngine(
       adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
       video_decoder_factory, audio_mixer, audio_processing);
+}
+
+std::unique_ptr<MediaEngineInterface> WebRtcMediaEngineFactory::Create(
+    rtc::scoped_refptr<webrtc::AudioDeviceModule> adm,
+    rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
+    std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory,
+    std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory,
+    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
+#ifdef HAVE_WEBRTC_VIDEO
+  typedef WebRtcVideoEngine VideoEngine;
+  std::tuple<std::unique_ptr<webrtc::VideoEncoderFactory>,
+             std::unique_ptr<webrtc::VideoDecoderFactory>>
+      video_args(std::move(video_encoder_factory),
+                 std::move(video_decoder_factory));
+#else
+  typedef NullWebRtcVideoEngine VideoEngine;
+  std::tuple<> video_args;
+#endif
+  return std::unique_ptr<MediaEngineInterface>(
+      new CompositeMediaEngine<WebRtcVoiceEngine, VideoEngine>(
+          std::forward_as_tuple(adm, audio_encoder_factory,
+                                audio_decoder_factory, audio_mixer,
+                                audio_processing),
+          std::move(video_args)));
 }
 
 namespace {
