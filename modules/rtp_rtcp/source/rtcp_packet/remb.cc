@@ -125,7 +125,7 @@ bool Remb::Create(uint8_t* packet,
     mantissa >>= 1;
     ++exponenta;
   }
-  packet[(*index)++] = ssrcs_.size();
+  packet[(*index)++] = static_cast<uint8_t>(ssrcs_.size());
   packet[(*index)++] = (exponenta << 2) | (mantissa >> 16);
   ByteWriter<uint16_t>::WriteBigEndian(packet + *index, mantissa & 0xffff);
   *index += sizeof(uint16_t);

@@ -37,6 +37,8 @@ class TargetBitrate {
   };
 
   TargetBitrate();
+  TargetBitrate(const TargetBitrate&);
+  TargetBitrate& operator=(const TargetBitrate&);
   ~TargetBitrate();
 
   void AddTargetBitrate(uint8_t spatial_layer,

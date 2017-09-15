@@ -86,7 +86,7 @@ class RtcpPacket {
   static constexpr size_t kHeaderLength = 4;
   RtcpPacket() {}
 
-  static void CreateHeader(uint8_t count_or_format,
+  static void CreateHeader(size_t count_or_format,
                            uint8_t packet_type,
                            size_t block_length,  // Payload size in 32bit words.
                            uint8_t* buffer,

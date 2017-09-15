@@ -173,8 +173,8 @@ bool Sdes::Create(uint8_t* packet,
   for (const Sdes::Chunk& chunk : chunks_) {
     ByteWriter<uint32_t>::WriteBigEndian(&packet[*index + 0], chunk.ssrc);
     ByteWriter<uint8_t>::WriteBigEndian(&packet[*index + 4], kCnameTag);
-    ByteWriter<uint8_t>::WriteBigEndian(&packet[*index + 5],
-                                        chunk.cname.size());
+    ByteWriter<uint8_t>::WriteBigEndian(
+        &packet[*index + 5], static_cast<uint8_t>(chunk.cname.size()));
     memcpy(&packet[*index + 6], chunk.cname.data(), chunk.cname.size());
     *index += (6 + chunk.cname.size());
 

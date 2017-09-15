@@ -38,7 +38,7 @@ constexpr size_t kMaxSizeBytes = (1 << 16) * 4;
 // * 8 bytes FeedbackPacket header.
 // * 2 bytes for one chunk.
 constexpr size_t kMinPayloadSizeBytes = 8 + 8 + 2;
-constexpr size_t kBaseScaleFactor =
+constexpr int kBaseScaleFactor =
     TransportFeedback::kDeltaScaleFactor * (1 << 8);
 constexpr int64_t kTimeWrapPeriodUs = (1ll << 24) * kBaseScaleFactor;
 
@@ -116,7 +116,7 @@ class TransportFeedback::LastChunk {
   void DecodeRunLength(uint16_t chunk, size_t max_size);
 
   DeltaSize delta_sizes_[kMaxVectorCapacity];
-  uint16_t size_;
+  size_t size_;
   bool all_same_;
   bool has_large_delta_;
 };
@@ -291,14 +291,14 @@ void TransportFeedback::LastChunk::DecodeTwoBit(uint16_t chunk,
 uint16_t TransportFeedback::LastChunk::EncodeRunLength() const {
   RTC_DCHECK(all_same_);
   RTC_DCHECK_LE(size_, kMaxRunLengthCapacity);
-  return (delta_sizes_[0] << 13) | size_;
+  return (delta_sizes_[0] << 13) | static_cast<uint16_t>(size_);
 }
 
 void TransportFeedback::LastChunk::DecodeRunLength(uint16_t chunk,
                                                    size_t max_count) {
   RTC_DCHECK_EQ(chunk & 0x8000, 0);
   size_ = std::min<size_t>(chunk & 0x1fff, max_count);
-  size_t delta_size = (chunk >> 13) & 0x03;
+  DeltaSize delta_size = (chunk >> 13) & 0x03;
   has_large_delta_ = delta_size >= kLarge;
   all_same_ = true;
   // To make it consistent with Add function, populate delta_sizes_ beyound 1st.
@@ -398,7 +398,7 @@ bool TransportFeedback::Parse(const CommonHeader& packet) {
   ParseCommonFeedback(payload);
 
   base_seq_no_ = ByteReader<uint16_t>::ReadBigEndian(&payload[8]);
-  size_t status_count = ByteReader<uint16_t>::ReadBigEndian(&payload[10]);
+  uint16_t status_count = ByteReader<uint16_t>::ReadBigEndian(&payload[10]);
   base_time_ticks_ = ByteReader<int32_t, 3>::ReadBigEndian(&payload[12]);
   feedback_seq_ = payload[15];
   Clear();

@@ -12,6 +12,7 @@
 
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/safe_conversions.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -61,8 +62,10 @@ TargetBitrate::BitrateItem::BitrateItem(uint8_t spatial_layer,
 //  If VP9 SVC is used, there will be only one SSRC, so each spatial and
 //  temporal layer combo used shall be specified in the TargetBitrate packet.
 
-TargetBitrate::TargetBitrate() {}
-TargetBitrate::~TargetBitrate() {}
+TargetBitrate::TargetBitrate() = default;
+TargetBitrate::TargetBitrate(const TargetBitrate&) = default;
+TargetBitrate& TargetBitrate::operator=(const TargetBitrate&) = default;
+TargetBitrate::~TargetBitrate() = default;
 
 void TargetBitrate::Parse(const uint8_t* block, uint16_t block_length) {
   // Validate block header (should already have been parsed and checked).
@@ -107,7 +110,8 @@ size_t TargetBitrate::BlockLength() const {
 void TargetBitrate::Create(uint8_t* buffer) const {
   buffer[0] = kBlockType;
   buffer[1] = 0;  // Reserved.
-  const size_t block_length_words = (BlockLength() / 4) - 1;
+  uint16_t block_length_words =
+      rtc::dchecked_cast<uint16_t>((BlockLength() / 4) - 1);
   ByteWriter<uint16_t>::WriteBigEndian(&buffer[2], block_length_words);
 
   size_t index = kTargetBitrateHeaderSizeBytes;
