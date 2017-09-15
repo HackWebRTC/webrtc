@@ -19,11 +19,16 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 namespace {
 const float kEncodeTimeWeigthFactor = 0.5f;
+
+const char kVp8ForcedFallbackEncoderFieldTrial[] =
+    "WebRTC-VP8-Forced-Fallback-Encoder";
+const char kVp8SwCodecName[] = "libvpx";
 
 // Used by histograms. Values of entries should not be changed.
 enum HistogramCodecType {
@@ -68,6 +73,38 @@ void UpdateCodecTypeHistogram(const std::string& payload_name) {
                             PayloadNameToHistogramCodecType(payload_name),
                             kVideoMax);
 }
+
+bool IsForcedFallbackPossible(const CodecSpecificInfo* codec_info) {
+  return codec_info->codecType == kVideoCodecVP8 &&
+         codec_info->codecSpecific.VP8.simulcastIdx == 0 &&
+         (codec_info->codecSpecific.VP8.temporalIdx == 0 ||
+          codec_info->codecSpecific.VP8.temporalIdx == kNoTemporalIdx);
+}
+
+rtc::Optional<int> GetFallbackIntervalFromFieldTrial() {
+  if (!webrtc::field_trial::IsEnabled(kVp8ForcedFallbackEncoderFieldTrial))
+    return rtc::Optional<int>();
+
+  std::string group =
+      webrtc::field_trial::FindFullName(kVp8ForcedFallbackEncoderFieldTrial);
+  if (group.empty())
+    return rtc::Optional<int>();
+
+  int low_kbps;
+  int high_kbps;
+  int min_low_ms;
+  int min_pixels;
+  if (sscanf(group.c_str(), "Enabled-%d,%d,%d,%d", &low_kbps, &high_kbps,
+             &min_low_ms, &min_pixels) != 4) {
+    return rtc::Optional<int>();
+  }
+
+  if (min_low_ms <= 0 || min_pixels <= 0 || low_kbps <= 0 ||
+      high_kbps <= low_kbps) {
+    return rtc::Optional<int>();
+  }
+  return rtc::Optional<int>(min_low_ms);
+}
 }  // namespace
 
 
@@ -80,6 +117,7 @@ SendStatisticsProxy::SendStatisticsProxy(
     : clock_(clock),
       payload_name_(config.encoder_settings.payload_name),
       rtp_config_(config.rtp),
+      min_first_fallback_interval_ms_(GetFallbackIntervalFromFieldTrial()),
       content_type_(content_type),
       start_ms_(clock->TimeInMilliseconds()),
       last_sent_frame_timestamp_(0),
@@ -410,6 +448,21 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     }
   }
 
+  if (fallback_info_.is_possible) {
+    // Double interval since there is some time before fallback may occur.
+    const int kMinRunTimeMs = 2 * metrics::kMinRunTimeInSeconds * 1000;
+    int64_t elapsed_ms = fallback_info_.elapsed_ms;
+    int fallback_time_percent = fallback_active_counter_.Percent(kMinRunTimeMs);
+    if (fallback_time_percent != -1 && elapsed_ms >= kMinRunTimeMs) {
+      RTC_HISTOGRAMS_PERCENTAGE(
+          kIndex, uma_prefix_ + "Encoder.ForcedSwFallbackTimeInPercent.Vp8",
+          fallback_time_percent);
+      RTC_HISTOGRAMS_COUNTS_100(
+          kIndex, uma_prefix_ + "Encoder.ForcedSwFallbackChangesPerMinute.Vp8",
+          fallback_info_.on_off_events * 60 / (elapsed_ms / 1000));
+    }
+  }
+
   AggregatedStats total_bytes_per_sec = total_byte_counter_.GetStats();
   if (total_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
     RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "BitrateSentInKbps",
@@ -620,6 +673,57 @@ void SendStatisticsProxy::OnSetEncoderTargetRate(uint32_t bitrate_bps) {
   stats_.target_media_bitrate_bps = bitrate_bps;
 }
 
+void SendStatisticsProxy::UpdateEncoderFallbackStats(
+    const CodecSpecificInfo* codec_info) {
+  if (!min_first_fallback_interval_ms_ ||
+      !uma_container_->fallback_info_.is_possible) {
+    return;
+  }
+
+  if (!IsForcedFallbackPossible(codec_info)) {
+    uma_container_->fallback_info_.is_possible = false;
+    return;
+  }
+
+  FallbackEncoderInfo* fallback_info = &uma_container_->fallback_info_;
+
+  const int64_t now_ms = clock_->TimeInMilliseconds();
+  bool is_active = fallback_info->is_active;
+  if (codec_info->codec_name != stats_.encoder_implementation_name) {
+    // Implementation changed.
+    is_active = strcmp(codec_info->codec_name, kVp8SwCodecName) == 0;
+    if (!is_active && stats_.encoder_implementation_name != kVp8SwCodecName) {
+      // First or not a VP8 SW change, update stats on next call.
+      return;
+    }
+    if (is_active && fallback_info->on_off_events == 0) {
+      // The minimum set time should have passed for the first fallback (else
+      // skip to avoid fallback due to failure).
+      int64_t elapsed_ms = fallback_info->elapsed_ms;
+      if (fallback_info->last_update_ms)
+        elapsed_ms += now_ms - *(fallback_info->last_update_ms);
+      if (elapsed_ms < *min_first_fallback_interval_ms_) {
+        fallback_info->is_possible = false;
+        return;
+      }
+    }
+    ++fallback_info->on_off_events;
+  }
+
+  if (fallback_info->last_update_ms) {
+    int64_t diff_ms = now_ms - *(fallback_info->last_update_ms);
+    // If the time diff since last update is greater than |max_frame_diff_ms|,
+    // video is considered paused/muted and the change is not included.
+    if (diff_ms < fallback_info->max_frame_diff_ms) {
+      uma_container_->fallback_active_counter_.Add(fallback_info->is_active,
+                                                   diff_ms);
+      fallback_info->elapsed_ms += diff_ms;
+    }
+  }
+  fallback_info->is_active = is_active;
+  fallback_info->last_update_ms.emplace(now_ms);
+}
+
 void SendStatisticsProxy::OnSendEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_info) {
@@ -634,6 +738,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
       simulcast_idx = codec_info->codecSpecific.generic.simulcast_idx;
     }
     if (codec_info->codec_name) {
+      UpdateEncoderFallbackStats(codec_info);
       stats_.encoder_implementation_name = codec_info->codec_name;
     }
   }

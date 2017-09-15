@@ -150,6 +150,14 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     bool last_paused_or_resumed;
     int64_t last_ms;
   };
+  struct FallbackEncoderInfo {
+    bool is_possible = true;
+    bool is_active = false;
+    int on_off_events = 0;
+    int64_t elapsed_ms = 0;
+    rtc::Optional<int64_t> last_update_ms;
+    const int max_frame_diff_ms = 2000;
+  };
   struct StatsTimer {
     void Start(int64_t now_ms);
     void Stop(int64_t now_ms);
@@ -173,9 +181,13 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
       const VideoStreamEncoder::AdaptCounts& quality_counts)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
+  void UpdateEncoderFallbackStats(const CodecSpecificInfo* codec_info)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
   Clock* const clock_;
   const std::string payload_name_;
   const VideoSendStream::Config::Rtp rtp_config_;
+  const rtc::Optional<int> min_first_fallback_interval_ms_;
   rtc::CriticalSection crit_;
   VideoEncoderConfig::ContentType content_type_ RTC_GUARDED_BY(crit_);
   const int64_t start_ms_;
@@ -232,6 +244,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     StatsTimer quality_adapt_timer_;
     BoolSampleCounter paused_time_counter_;
     TargetRateUpdates target_rate_updates_;
+    BoolSampleCounter fallback_active_counter_;
+    FallbackEncoderInfo fallback_info_;
     ReportBlockStats report_block_stats_;
     const VideoSendStream::Stats start_stats_;
 
