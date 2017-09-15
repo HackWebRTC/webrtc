@@ -75,7 +75,6 @@ ParsedRtcEventLog::EventType GetRuntimeEventType(
     case rtclog::Event::BWE_PROBE_RESULT_EVENT:
       return ParsedRtcEventLog::EventType::BWE_PROBE_RESULT_EVENT;
   }
-  RTC_NOTREACHED();
   return ParsedRtcEventLog::EventType::UNKNOWN_EVENT;
 }
 

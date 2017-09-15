@@ -167,6 +167,7 @@ if (rtc_enable_protobuf) {
 
         # TODO(kwiberg): Remove this dependency.
         "../api/audio_codecs:audio_codecs_api",
+        "../modules/audio_coding:audio_network_adaptor_config",
         "../modules/rtp_rtcp:rtp_rtcp",
       ]
       if (!build_with_chromium && is_clang) {

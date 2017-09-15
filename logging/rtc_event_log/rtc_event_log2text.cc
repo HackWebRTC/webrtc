@@ -19,6 +19,7 @@
 #include "call/video_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
+#include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
@@ -40,7 +41,10 @@
 
 namespace {
 
+DEFINE_bool(unknown, true, "Use --nounknown to exclude unknown events.");
+DEFINE_bool(startstop, true, "Use --nostartstop to exclude start/stop events.");
 DEFINE_bool(config, true, "Use --noconfig to exclude stream configurations.");
+DEFINE_bool(bwe, true, "Use --nobwe to exclude BWE events.");
 DEFINE_bool(incoming, true, "Use --noincoming to exclude incoming packets.");
 DEFINE_bool(outgoing, true, "Use --nooutgoing to exclude packets.");
 // TODO(terelius): Note that the media type doesn't work with outgoing packets.
@@ -51,6 +55,10 @@ DEFINE_bool(video, true, "Use --novideo to exclude video packets.");
 DEFINE_bool(data, true, "Use --nodata to exclude data packets.");
 DEFINE_bool(rtp, true, "Use --nortp to exclude RTP packets.");
 DEFINE_bool(rtcp, true, "Use --nortcp to exclude RTCP packets.");
+DEFINE_bool(playout, true, "Use --noplayout to exclude audio playout events.");
+DEFINE_bool(ana, true, "Use --noana to exclude ANA events.");
+DEFINE_bool(probe, true, "Use --noprobe to exclude probe events.");
+
 // TODO(terelius): Allow a list of SSRCs.
 DEFINE_string(ssrc,
               "",
@@ -386,20 +394,33 @@ int main(int argc, char* argv[]) {
   }
 
   for (size_t i = 0; i < parsed_stream.GetNumberOfEvents(); i++) {
+    bool event_recognized = false;
     switch (parsed_stream.GetEventType(i)) {
       case webrtc::ParsedRtcEventLog::UNKNOWN_EVENT: {
-        // TODO(eladalon): Implement in new CL.
-        continue;
+        if (FLAG_unknown) {
+          std::cout << parsed_stream.GetTimestamp(i) << "\tUNKNOWN_EVENT"
+                    << std::endl;
+        }
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::LOG_START: {
-        // TODO(eladalon): Implement in new CL.
-        continue;
+        if (FLAG_startstop) {
+          std::cout << parsed_stream.GetTimestamp(i) << "\tLOG_START"
+                    << std::endl;
+        }
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::LOG_END: {
-        // TODO(eladalon): Implement in new CL.
-        continue;
+        if (FLAG_startstop) {
+          std::cout << parsed_stream.GetTimestamp(i) << "\tLOG_END"
+                    << std::endl;
+        }
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::RTP_EVENT: {
@@ -422,8 +443,10 @@ int main(int argc, char* argv[]) {
           MediaType media_type =
               parsed_stream.GetMediaType(parsed_header.ssrc, direction);
 
-          if (ExcludePacket(direction, media_type, parsed_header.ssrc))
-            continue;
+          if (ExcludePacket(direction, media_type, parsed_header.ssrc)) {
+            event_recognized = true;
+            break;
+          }
 
           std::cout << parsed_stream.GetTimestamp(i) << "\tRTP"
                     << StreamInfo(direction, media_type)
@@ -456,7 +479,8 @@ int main(int argc, char* argv[]) {
           }
           std::cout << std::endl;
         }
-        continue;
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::RTCP_EVENT: {
@@ -508,22 +532,47 @@ int main(int argc, char* argv[]) {
             }
           }
         }
-        continue;
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::AUDIO_PLAYOUT_EVENT: {
-        // TODO(eladalon): Implement in new CL.
-        continue;
+        if (FLAG_playout) {
+          uint32_t ssrc;
+          parsed_stream.GetAudioPlayout(i, &ssrc);
+          std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_PLAYOUT"
+                    << "\tssrc=" << ssrc << std::endl;
+        }
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::LOSS_BASED_BWE_UPDATE: {
-        // TODO(eladalon): Implement in new CL.
-        continue;
+        if (FLAG_bwe) {
+          int32_t bitrate_bps;
+          uint8_t fraction_loss;
+          int32_t total_packets;
+          parsed_stream.GetLossBasedBweUpdate(i, &bitrate_bps, &fraction_loss,
+                                              &total_packets);
+          std::cout << parsed_stream.GetTimestamp(i) << "\tBWE(LOSS_BASED)"
+                    << "\tbitrate_bps=" << bitrate_bps
+                    << "\tfraction_loss=" << fraction_loss
+                    << "\ttotal_packets=" << total_packets << std::endl;
+        }
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::DELAY_BASED_BWE_UPDATE: {
-        // TODO(eladalon): Implement in new CL.
-        continue;
+        if (FLAG_bwe) {
+          auto bwe_update = parsed_stream.GetDelayBasedBweUpdate(i);
+          std::cout << parsed_stream.GetTimestamp(i) << "\tBWE(DELAY_BASED)"
+                    << "\tbitrate_bps=" << bwe_update.bitrate_bps
+                    << "\tdetector_state="
+                    << static_cast<int>(bwe_update.detector_state) << std::endl;
+        }
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT: {
@@ -547,7 +596,8 @@ int main(int argc, char* argv[]) {
           }
           std::cout << "}" << std::endl;
         }
-        continue;
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT: {
@@ -573,7 +623,8 @@ int main(int argc, char* argv[]) {
             std::cout << "}" << std::endl;
           }
         }
-        continue;
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT: {
@@ -597,7 +648,8 @@ int main(int argc, char* argv[]) {
           }
           std::cout << "}" << std::endl;
         }
-        continue;
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT: {
@@ -620,26 +672,80 @@ int main(int argc, char* argv[]) {
           }
           std::cout << "}" << std::endl;
         }
-        continue;
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::AUDIO_NETWORK_ADAPTATION_EVENT: {
-        // TODO(eladalon): Implement in new CL.
-        continue;
+        if (FLAG_ana) {
+          webrtc::AudioEncoderRuntimeConfig ana_config;
+          parsed_stream.GetAudioNetworkAdaptation(i, &ana_config);
+          std::stringstream ss;
+          ss << parsed_stream.GetTimestamp(i) << "\tANA_UPDATE";
+          if (ana_config.bitrate_bps) {
+            ss << "\tbitrate_bps=" << *ana_config.bitrate_bps;
+          }
+          if (ana_config.frame_length_ms) {
+            ss << "\tframe_length_ms=" << *ana_config.frame_length_ms;
+          }
+          if (ana_config.uplink_packet_loss_fraction) {
+            ss << "\tuplink_packet_loss_fraction="
+               << *ana_config.uplink_packet_loss_fraction;
+          }
+          if (ana_config.enable_fec) {
+            ss << "\tenable_fec=" << *ana_config.enable_fec;
+          }
+          if (ana_config.enable_dtx) {
+            ss << "\tenable_dtx=" << *ana_config.enable_dtx;
+          }
+          if (ana_config.num_channels) {
+            ss << "\tnum_channels=" << *ana_config.num_channels;
+          }
+          std::cout << ss.str() << std::endl;
+        }
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::BWE_PROBE_CLUSTER_CREATED_EVENT: {
-        // TODO(eladalon): Implement in new CL.
-        continue;
+        if (FLAG_probe) {
+          webrtc::ParsedRtcEventLog::BweProbeClusterCreatedEvent probe_event =
+              parsed_stream.GetBweProbeClusterCreated(i);
+          std::cout << parsed_stream.GetTimestamp(i) << "\tPROBE_CREATED("
+                    << probe_event.id << ")"
+                    << "\tbitrate_bps=" << probe_event.bitrate_bps
+                    << "\tmin_packets=" << probe_event.min_packets
+                    << "\tmin_bytes=" << probe_event.min_bytes << std::endl;
+        }
+        event_recognized = true;
+        break;
       }
 
       case webrtc::ParsedRtcEventLog::BWE_PROBE_RESULT_EVENT: {
-        // TODO(eladalon): Implement in new CL.
-        continue;
+        if (FLAG_probe) {
+          webrtc::ParsedRtcEventLog::BweProbeResultEvent probe_result =
+              parsed_stream.GetBweProbeResult(i);
+          if (probe_result.failure_reason) {
+            std::cout << parsed_stream.GetTimestamp(i) << "\tPROBE_SUCCESS("
+                      << probe_result.id << ")"
+                      << "\tfailure_reason=" << *probe_result.failure_reason
+                      << std::endl;
+          } else {
+            std::cout << parsed_stream.GetTimestamp(i) << "\tPROBE_SUCCESS("
+                      << probe_result.id << ")"
+                      << "\tbitrate_bps=" << *probe_result.bitrate_bps
+                      << std::endl;
+          }
+        }
+        event_recognized = true;
+        break;
       }
     }
 
-    RTC_NOTREACHED();
+    if (!event_recognized) {
+      std::cout << "Unrecognized event (" << parsed_stream.GetEventType(i)
+                << ")" << std::endl;
+    }
   }
   return 0;
 }
