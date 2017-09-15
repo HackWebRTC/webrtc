@@ -619,10 +619,7 @@ def CommonChecks(input_api, output_api):
   results.extend(CheckJSONParseErrors(input_api, output_api))
   results.extend(RunPythonTests(input_api, output_api))
   results.extend(CheckUsageOfGoogleProtobufNamespace(input_api, output_api))
-  # TODO(mbonadei): re-enable after the migration from src/webrtc to src/
-  #   in order to avoid to trigger an error for each orphan header (we are
-  #   moving all of them).
-  # results.extend(CheckOrphanHeaders(input_api, output_api))
+  results.extend(CheckOrphanHeaders(input_api, output_api))
   # TODO(mbonadei): check before re-enable because it seems it is reporting
   #   some false positives.
   # results.extend(CheckNewLineAtTheEndOfProtoFiles(input_api, output_api))
