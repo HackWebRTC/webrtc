@@ -38,7 +38,7 @@ LIB_TO_LICENSES_DICT = {
     'opus': ['third_party/opus/src/COPYING'],
     'protobuf': ['third_party/protobuf/LICENSE'],
     'usrsctp': ['third_party/usrsctp/LICENSE'],
-    'webrtc': ['webrtc/LICENSE', 'webrtc/LICENSE_THIRD_PARTY'],
+    'webrtc': ['LICENSE', 'LICENSE_THIRD_PARTY'],
 
     # Compile time dependencies, no license needed:
     'yasm': [],
@@ -46,7 +46,6 @@ LIB_TO_LICENSES_DICT = {
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
 CHECKOUT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
-WEBRTC_ROOT = os.path.join(CHECKOUT_ROOT, 'webrtc')
 THIRD_PARTY_LIB_REGEX = r'^.*/third_party/([\w+]+).*$'
 
 class LicenseBuilder(object):

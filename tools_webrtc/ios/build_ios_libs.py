@@ -133,7 +133,7 @@ def BuildWebRTC(output_dir, target_arch, flavor, gn_target_name,
 
   # Strip debug symbols to reduce size.
   if static_only:
-    gn_target_path = os.path.join(output_dir, 'obj', 'webrtc', 'sdk',
+    gn_target_path = os.path.join(output_dir, 'obj', 'sdk',
                                   'lib%s.a' % gn_target_name)
     cmd = ['strip', '-S', gn_target_path, '-o',
            os.path.join(output_dir, 'lib%s.a' % gn_target_name)]
