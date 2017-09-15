@@ -48,6 +48,8 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   int echo_path_delay_samples_ = kMinEchoPathDelayBlocks * kBlockSize;
   size_t align_call_counter_ = 0;
   rtc::Optional<size_t> headroom_samples_;
+  std::vector<float> capture_delay_buffer_;
+  int capture_delay_buffer_index_ = 0;
   RenderDelayControllerMetrics metrics_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderDelayControllerImpl);
 };
@@ -76,7 +78,8 @@ RenderDelayControllerImpl::RenderDelayControllerImpl(
     int sample_rate_hz)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
-      delay_estimator_(data_dumper_.get(), config) {
+      delay_estimator_(data_dumper_.get(), config),
+      capture_delay_buffer_(kBlockSize * (kMaxApiCallsJitterBlocks + 2), 0.f) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
 }
 
@@ -88,7 +91,7 @@ void RenderDelayControllerImpl::Reset() {
   echo_path_delay_samples_ = delay_ * kBlockSize;
   align_call_counter_ = 0;
   headroom_samples_ = rtc::Optional<size_t>();
-
+  std::fill(capture_delay_buffer_.begin(), capture_delay_buffer_.end(), 0.f);
   delay_estimator_.Reset();
 }
 
@@ -107,11 +110,29 @@ size_t RenderDelayControllerImpl::GetDelay(
   RTC_DCHECK_EQ(kBlockSize, capture.size());
 
   ++align_call_counter_;
-  rtc::Optional<size_t> echo_path_delay_samples =
-      delay_estimator_.EstimateDelay(render_buffer, capture);
-  if (echo_path_delay_samples) {
+
+  // Estimate the delay with a delayed capture signal in order to catch
+  // noncausal delays.
+  RTC_DCHECK_LT(capture_delay_buffer_index_ + kBlockSize - 1,
+                capture_delay_buffer_.size());
+  const rtc::Optional<size_t> echo_path_delay_samples_shifted =
+      delay_estimator_.EstimateDelay(
+          render_buffer,
+          rtc::ArrayView<const float>(
+              &capture_delay_buffer_[capture_delay_buffer_index_], kBlockSize));
+  std::copy(capture.begin(), capture.end(),
+            capture_delay_buffer_.begin() + capture_delay_buffer_index_);
+  capture_delay_buffer_index_ =
+      (capture_delay_buffer_index_ + kBlockSize) % capture_delay_buffer_.size();
+
+  if (echo_path_delay_samples_shifted) {
     blocks_since_last_delay_estimate_ = 0;
-    echo_path_delay_samples_ = *echo_path_delay_samples;
+
+    // Correct for the capture signal delay.
+    const int echo_path_delay_samples_corrected =
+        static_cast<int>(*echo_path_delay_samples_shifted) -
+        static_cast<int>(capture_delay_buffer_.size());
+    echo_path_delay_samples_ = std::max(0, echo_path_delay_samples_corrected);
 
     // Compute and set new render delay buffer delay.
     const size_t new_delay =
@@ -120,13 +141,19 @@ size_t RenderDelayControllerImpl::GetDelay(
       delay_ = new_delay;
 
       // Update render delay buffer headroom.
-      const int headroom = echo_path_delay_samples_ - delay_ * kBlockSize;
-      RTC_DCHECK_LE(0, headroom);
-      headroom_samples_ = rtc::Optional<size_t>(headroom);
+      if (echo_path_delay_samples_corrected >= 0) {
+        const int headroom = echo_path_delay_samples_ - delay_ * kBlockSize;
+        RTC_DCHECK_LE(0, headroom);
+        headroom_samples_ = rtc::Optional<size_t>(headroom);
+      } else {
+        headroom_samples_ = rtc::Optional<size_t>();
+      }
     }
-  }
 
-  metrics_.Update(echo_path_delay_samples, delay_);
+    metrics_.Update(rtc::Optional<size_t>(echo_path_delay_samples_), delay_);
+  } else {
+    metrics_.Update(rtc::Optional<size_t>(), delay_);
+  }
 
   data_dumper_->DumpRaw("aec3_render_delay_controller_delay", 1,
                         &echo_path_delay_samples_);
