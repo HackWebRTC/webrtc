@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_SOCKETADAPTERS_H_
-#define WEBRTC_RTC_BASE_SOCKETADAPTERS_H_
+#ifndef RTC_BASE_SOCKETADAPTERS_H_
+#define RTC_BASE_SOCKETADAPTERS_H_
 
 #include <map>
 #include <string>
 
-#include "webrtc/rtc_base/asyncsocket.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/cryptstring.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/asyncsocket.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/cryptstring.h"
+#include "rtc_base/logging.h"
 
 namespace rtc {
 
@@ -204,4 +204,4 @@ class AsyncSocksProxyServerSocket : public AsyncProxyServerSocket {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SOCKETADAPTERS_H_
+#endif  // RTC_BASE_SOCKETADAPTERS_H_

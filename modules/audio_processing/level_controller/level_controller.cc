@@ -8,25 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/level_controller/level_controller.h"
+#include "modules/audio_processing/level_controller/level_controller.h"
 
 #include <math.h>
 #include <algorithm>
 #include <numeric>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/level_controller/gain_applier.h"
-#include "webrtc/modules/audio_processing/level_controller/gain_selector.h"
-#include "webrtc/modules/audio_processing/level_controller/noise_level_estimator.h"
-#include "webrtc/modules/audio_processing/level_controller/peak_level_estimator.h"
-#include "webrtc/modules/audio_processing/level_controller/saturating_gain_estimator.h"
-#include "webrtc/modules/audio_processing/level_controller/signal_classifier.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "api/array_view.h"
+#include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/level_controller/gain_applier.h"
+#include "modules/audio_processing/level_controller/gain_selector.h"
+#include "modules/audio_processing/level_controller/noise_level_estimator.h"
+#include "modules/audio_processing/level_controller/peak_level_estimator.h"
+#include "modules/audio_processing/level_controller/saturating_gain_estimator.h"
+#include "modules/audio_processing/level_controller/signal_classifier.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 namespace {

@@ -12,12 +12,12 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/media/base/fakemediaengine.h"
-#include "webrtc/media/base/fakevideocapturer.h"
-#include "webrtc/media/base/fakevideorenderer.h"
-#include "webrtc/pc/videocapturertracksource.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "api/test/fakeconstraints.h"
+#include "media/base/fakemediaengine.h"
+#include "media/base/fakevideocapturer.h"
+#include "media/base/fakevideorenderer.h"
+#include "pc/videocapturertracksource.h"
+#include "rtc_base/gunit.h"
 
 using webrtc::FakeConstraints;
 using webrtc::VideoCapturerTrackSource;

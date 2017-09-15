@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/residual_echo_detector.h"
+#include "modules/audio_processing/residual_echo_detector.h"
 
 #include <algorithm>
 #include <numeric>
 
-#include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace {
 

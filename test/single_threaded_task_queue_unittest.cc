@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/single_threaded_task_queue.h"
+#include "test/single_threaded_task_queue.h"
 
 #include <atomic>
 #include <memory>
 #include <vector>
 
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/event.h"
+#include "rtc_base/ptr_util.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace test {

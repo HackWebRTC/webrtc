@@ -12,27 +12,27 @@
 #include <iterator>
 #include <utility>
 
-#include "webrtc/pc/channel.h"
+#include "pc/channel.h"
 
-#include "webrtc/api/call/audio_sink.h"
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/media/base/rtputils.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/byteorder.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
-#include "webrtc/rtc_base/dscp.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/networkroute.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "api/call/audio_sink.h"
+#include "media/base/mediaconstants.h"
+#include "media/base/rtputils.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/byteorder.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/dscp.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/networkroute.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/trace_event.h"
 // Adding 'nogncheck' to disable the gn include headers check to support modular
 // WebRTC build targets.
-#include "webrtc/media/engine/webrtcvoiceengine.h"  // nogncheck
-#include "webrtc/p2p/base/packettransportinternal.h"
-#include "webrtc/pc/channelmanager.h"
-#include "webrtc/pc/rtptransport.h"
-#include "webrtc/pc/srtptransport.h"
+#include "media/engine/webrtcvoiceengine.h"  // nogncheck
+#include "p2p/base/packettransportinternal.h"
+#include "pc/channelmanager.h"
+#include "pc/rtptransport.h"
+#include "pc/srtptransport.h"
 
 namespace cricket {
 using rtc::Bind;

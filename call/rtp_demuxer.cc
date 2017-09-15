@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/rtp_demuxer.h"
+#include "call/rtp_demuxer.h"
 
-#include "webrtc/call/rtp_packet_sink_interface.h"
-#include "webrtc/call/rtp_rtcp_demuxer_helper.h"
-#include "webrtc/call/ssrc_binding_observer.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "call/rtp_packet_sink_interface.h"
+#include "call/rtp_rtcp_demuxer_helper.h"
+#include "call/ssrc_binding_observer.h"
+#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/encoder_rtcp_feedback.h"
+#include "video/encoder_rtcp_feedback.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/video/video_stream_encoder.h"
+#include "rtc_base/checks.h"
+#include "video/video_stream_encoder.h"
 
 static const int kMinKeyFrameRequestIntervalMs = 300;
 

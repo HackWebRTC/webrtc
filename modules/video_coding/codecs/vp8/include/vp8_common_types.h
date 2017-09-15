@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_COMMON_TYPES_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_COMMON_TYPES_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_COMMON_TYPES_H_
+#define MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_COMMON_TYPES_H_
 
-#include "webrtc/common_types.h"
+#include "common_types.h"
 
 namespace webrtc {
 
@@ -26,4 +26,4 @@ static const float
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_COMMON_TYPES_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_COMMON_TYPES_H_

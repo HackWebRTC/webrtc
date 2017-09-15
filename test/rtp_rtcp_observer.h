@@ -7,22 +7,22 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_TEST_RTP_RTCP_OBSERVER_H_
-#define WEBRTC_TEST_RTP_RTCP_OBSERVER_H_
+#ifndef TEST_RTP_RTCP_OBSERVER_H_
+#define TEST_RTP_RTCP_OBSERVER_H_
 
 #include <map>
 #include <memory>
 #include <vector>
 
-#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
-#include "webrtc/test/constants.h"
-#include "webrtc/test/direct_transport.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/typedefs.h"
-#include "webrtc/call/video_send_stream.h"
+#include "modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/event.h"
+#include "system_wrappers/include/field_trial.h"
+#include "test/constants.h"
+#include "test/direct_transport.h"
+#include "test/gtest.h"
+#include "typedefs.h"
+#include "call/video_send_stream.h"
 
 namespace {
 const int kShortTimeoutMs = 500;
@@ -154,4 +154,4 @@ class PacketTransport : public test::DirectTransport {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_RTP_RTCP_OBSERVER_H_
+#endif  // TEST_RTP_RTCP_OBSERVER_H_

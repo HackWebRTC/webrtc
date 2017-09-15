@@ -8,25 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/audio/audio_receive_stream.h"
+#include "audio/audio_receive_stream.h"
 
 #include <string>
 #include <utility>
 
-#include "webrtc/api/call/audio_sink.h"
-#include "webrtc/audio/audio_send_stream.h"
-#include "webrtc/audio/audio_state.h"
-#include "webrtc/audio/conversion.h"
-#include "webrtc/call/rtp_stream_receiver_controller_interface.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/voice_engine/channel_proxy.h"
-#include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/voice_engine_impl.h"
+#include "api/call/audio_sink.h"
+#include "audio/audio_send_stream.h"
+#include "audio/audio_state.h"
+#include "audio/conversion.h"
+#include "call/rtp_stream_receiver_controller_interface.h"
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "modules/rtp_rtcp/include/rtp_receiver.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/timeutils.h"
+#include "voice_engine/channel_proxy.h"
+#include "voice_engine/include/voe_base.h"
+#include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
 

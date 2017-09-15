@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/examples/peerconnection/client/peer_connection_client.h"
+#include "examples/peerconnection/client/peer_connection_client.h"
 
-#include "webrtc/examples/peerconnection/client/defaults.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "examples/peerconnection/client/defaults.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/nethelpers.h"
+#include "rtc_base/stringutils.h"
 
 #ifdef WIN32
-#include "webrtc/rtc_base/win32socketserver.h"
+#include "rtc_base/win32socketserver.h"
 #endif
 
 using rtc::sprintfn;

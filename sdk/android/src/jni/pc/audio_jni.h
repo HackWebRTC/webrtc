@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_PC_AUDIO_JNI_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_PC_AUDIO_JNI_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_AUDIO_JNI_H_
+#define SDK_ANDROID_SRC_JNI_PC_AUDIO_JNI_H_
 
 // Adding 'nogncheck' to disable the gn include headers check.
 // We don't want this target depend on audio related targets
-#include "webrtc/api/audio_codecs/audio_decoder_factory.h"  // nogncheck
-#include "webrtc/api/audio_codecs/audio_encoder_factory.h"  // nogncheck
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "api/audio_codecs/audio_decoder_factory.h"  // nogncheck
+#include "api/audio_codecs/audio_encoder_factory.h"  // nogncheck
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 namespace jni {
@@ -27,4 +27,4 @@ rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory();
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_AUDIO_JNI_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_AUDIO_JNI_H_

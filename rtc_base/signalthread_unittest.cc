@@ -10,10 +10,10 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/signalthread.h"
-#include "webrtc/rtc_base/thread.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/signalthread.h"
+#include "rtc_base/thread.h"
 
 using namespace rtc;
 

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_TESTUTILS_H_
-#define WEBRTC_RTC_BASE_TESTUTILS_H_
+#ifndef RTC_BASE_TESTUTILS_H_
+#define RTC_BASE_TESTUTILS_H_
 
 // Utilities for testing rtc infrastructure in unittests
 
@@ -26,16 +26,16 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/asyncsocket.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/thread.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/asyncsocket.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/nethelpers.h"
+#include "rtc_base/pathutils.h"
+#include "rtc_base/stream.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 namespace testing {
@@ -563,4 +563,4 @@ inline bool IsScreencastingAvailable() {
 }  // namespace testing
 }  // namespace webrtc
 
-#endif  // WEBRTC_RTC_BASE_TESTUTILS_H_
+#endif  // RTC_BASE_TESTUTILS_H_

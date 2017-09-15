@@ -11,17 +11,17 @@
 #include <algorithm>
 #include <cmath>
 
-#include "webrtc/modules/audio_device/audio_device_buffer.h"
+#include "modules/audio_device/audio_device_buffer.h"
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_device/audio_device_config.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_device/audio_device_config.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/format_macros.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 

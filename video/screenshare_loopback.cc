@@ -10,12 +10,12 @@
 
 #include <stdio.h>
 
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/run_test.h"
-#include "webrtc/video/video_quality_test.h"
+#include "rtc_base/flags.h"
+#include "rtc_base/stringencode.h"
+#include "test/field_trial.h"
+#include "test/gtest.h"
+#include "test/run_test.h"
+#include "video/video_quality_test.h"
 
 namespace webrtc {
 namespace flags {

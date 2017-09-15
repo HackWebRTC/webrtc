@@ -10,10 +10,10 @@
 
 #include <memory>
 
-#include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "modules/audio_coding/codecs/opus/opus_interface.h"
+#include "rtc_base/format_macros.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
 
 using ::std::string;
 using ::std::tr1::tuple;

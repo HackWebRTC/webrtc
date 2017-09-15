@@ -22,17 +22,17 @@
  * false as long as there are more packets left to fetch.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
+#define MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
 
 #include <queue>
 #include <string>
 #include <vector>
 
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "modules/include/module_common_types.h"
+#include "modules/rtp_rtcp/source/rtp_format.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -197,4 +197,4 @@ class RtpDepacketizerVp8 : public RtpDepacketizer {
              size_t payload_data_length) override;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_

@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_WEAK_PTR_H_
-#define WEBRTC_RTC_BASE_WEAK_PTR_H_
+#ifndef RTC_BASE_WEAK_PTR_H_
+#define RTC_BASE_WEAK_PTR_H_
 
 #include <memory>
 
 #include <utility>
 
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/sequenced_task_checker.h"
 
 // The implementation is borrowed from chromium except that it does not
 // implement SupportsWeakPtr.
@@ -269,4 +269,4 @@ class WeakPtrFactory {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_WEAK_PTR_H_
+#endif  // RTC_BASE_WEAK_PTR_H_

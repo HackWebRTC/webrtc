@@ -11,13 +11,13 @@
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/p2p/base/pseudotcp.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/messagehandler.h"
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "p2p/base/pseudotcp.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/stream.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/timeutils.h"
 
 using cricket::PseudoTcp;
 

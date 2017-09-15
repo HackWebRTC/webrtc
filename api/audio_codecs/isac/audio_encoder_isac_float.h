@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_AUDIO_CODECS_ISAC_AUDIO_ENCODER_ISAC_FLOAT_H_
-#define WEBRTC_API_AUDIO_CODECS_ISAC_AUDIO_ENCODER_ISAC_FLOAT_H_
+#ifndef API_AUDIO_CODECS_ISAC_AUDIO_ENCODER_ISAC_FLOAT_H_
+#define API_AUDIO_CODECS_ISAC_AUDIO_ENCODER_ISAC_FLOAT_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/audio_codecs/audio_encoder.h"
-#include "webrtc/api/audio_codecs/audio_format.h"
-#include "webrtc/api/optional.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "api/audio_codecs/audio_format.h"
+#include "api/optional.h"
 
 namespace webrtc {
 
@@ -43,4 +43,4 @@ struct AudioEncoderIsacFloat {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_AUDIO_CODECS_ISAC_AUDIO_ENCODER_ISAC_FLOAT_H_
+#endif  // API_AUDIO_CODECS_ISAC_AUDIO_ENCODER_ISAC_FLOAT_H_

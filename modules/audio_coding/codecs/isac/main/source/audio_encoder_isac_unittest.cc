@@ -10,8 +10,8 @@
 
 #include <limits>
 
-#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

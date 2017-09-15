@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_EVENT_WRAPPER_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_EVENT_WRAPPER_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_EVENT_WRAPPER_H_
+#define SYSTEM_WRAPPERS_INCLUDE_EVENT_WRAPPER_H_
 
 namespace webrtc {
 enum EventTypeWrapper {
@@ -67,4 +67,4 @@ class EventTimerWrapper : public EventWrapper {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_EVENT_WRAPPER_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_EVENT_WRAPPER_H_

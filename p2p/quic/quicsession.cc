@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/quic/quicsession.h"
+#include "p2p/quic/quicsession.h"
 
 #include <string>
 #include <utility>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/messagehandler.h"
-#include "webrtc/rtc_base/messagequeue.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
 
 namespace cricket {
 

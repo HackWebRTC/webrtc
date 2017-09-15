@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/audio_codecs/opus/audio_encoder_opus_config.h"
+#include "api/audio_codecs/opus/audio_encoder_opus_config.h"
 
 namespace webrtc {
 

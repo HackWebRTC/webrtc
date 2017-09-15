@@ -12,21 +12,21 @@
 // An RtpReceiver associates a MediaStreamTrackInterface with an underlying
 // transport (provided by cricket::VoiceChannel/cricket::VideoChannel)
 
-#ifndef WEBRTC_PC_RTPRECEIVER_H_
-#define WEBRTC_PC_RTPRECEIVER_H_
+#ifndef PC_RTPRECEIVER_H_
+#define PC_RTPRECEIVER_H_
 
 #include <stdint.h>
 
 #include <string>
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/media/base/videobroadcaster.h"
-#include "webrtc/pc/channel.h"
-#include "webrtc/pc/remoteaudiosource.h"
-#include "webrtc/pc/videotracksource.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/sigslot.h"
+#include "api/mediastreaminterface.h"
+#include "api/rtpreceiverinterface.h"
+#include "media/base/videobroadcaster.h"
+#include "pc/channel.h"
+#include "pc/remoteaudiosource.h"
+#include "pc/videotracksource.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/sigslot.h"
 
 namespace webrtc {
 
@@ -166,4 +166,4 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal>,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_RTPRECEIVER_H_
+#endif  // PC_RTPRECEIVER_H_

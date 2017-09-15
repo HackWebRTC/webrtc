@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/voe_network_impl.h"
+#include "voice_engine/voe_network_impl.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/voice_engine/channel.h"
-#include "webrtc/voice_engine/include/voe_errors.h"
-#include "webrtc/voice_engine/voice_engine_impl.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/format_macros.h"
+#include "rtc_base/logging.h"
+#include "voice_engine/channel.h"
+#include "voice_engine/include/voe_errors.h"
+#include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
 

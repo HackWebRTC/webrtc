@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_device/include/fake_audio_device.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_transport.h"
-#include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/include/voe_network.h"
-#include "webrtc/voice_engine/mock/mock_voe_observer.h"
+#include "modules/audio_device/include/fake_audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "test/gtest.h"
+#include "test/mock_transport.h"
+#include "voice_engine/include/voe_base.h"
+#include "voice_engine/include/voe_network.h"
+#include "voice_engine/mock/mock_voe_observer.h"
 
 namespace webrtc {
 

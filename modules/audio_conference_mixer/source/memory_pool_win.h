@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_WINDOWS_H_
-#define WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_WINDOWS_H_
+#ifndef MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_WINDOWS_H_
+#define MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_WINDOWS_H_
 
 #include <assert.h>
 #include <windows.h>
 
-#include "webrtc/system_wrappers/include/aligned_malloc.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
-#include "webrtc/typedefs.h"
+#include "system_wrappers/include/aligned_malloc.h"
+#include "system_wrappers/include/atomic32.h"
+#include "typedefs.h"
 
 namespace webrtc {
 template<class MemoryType> struct MemoryPoolItem;
@@ -196,4 +196,4 @@ MemoryPoolItem<MemoryType>* MemoryPoolImpl<MemoryType>::CreateMemory()
 }
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_WINDOWS_H_
+#endif // MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_WINDOWS_H_

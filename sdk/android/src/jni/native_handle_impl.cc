@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
+#include "sdk/android/src/jni/native_handle_impl.h"
 
 #include <memory>
 
-#include "webrtc/common_video/include/video_frame_buffer.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/keep_ref_until_done.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/sdk/android/src/jni/wrapped_native_i420_buffer.h"
-#include "webrtc/system_wrappers/include/aligned_malloc.h"
+#include "common_video/include/video_frame_buffer.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/keep_ref_until_done.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/timeutils.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/wrapped_native_i420_buffer.h"
+#include "system_wrappers/include/aligned_malloc.h"
 
 namespace webrtc {
 namespace jni {

@@ -15,9 +15,9 @@
 #import "RTCVideoCodec+Private.h"
 #import "WebRTC/RTCVideoCodec.h"
 
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "rtc_base/timeutils.h"
+#include "sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
+#include "system_wrappers/include/field_trial.h"
 
 const char kHighProfileExperiment[] = "WebRTC-H264HighProfile";
 static NSString *kLevel31ConstrainedHigh = @"640c1f";

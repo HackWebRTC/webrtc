@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_SRTPSESSION_H_
-#define WEBRTC_PC_SRTPSESSION_H_
+#ifndef PC_SRTPSESSION_H_
+#define PC_SRTPSESSION_H_
 
 #include <vector>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/thread_checker.h"
 
 // Forward declaration to avoid pulling in libsrtp headers here
 struct srtp_event_data_t;
@@ -106,4 +106,4 @@ class SrtpSession {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_PC_SRTPSESSION_H_
+#endif  // PC_SRTPSESSION_H_

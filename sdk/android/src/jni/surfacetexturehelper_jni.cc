@@ -9,12 +9,12 @@
  */
 
 
-#include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
+#include "sdk/android/src/jni/surfacetexturehelper_jni.h"
 
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
 namespace jni {

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/bytebuffer.h"
+#include "rtc_base/bytebuffer.h"
 
 #include <string.h>
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/byteorder.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/byteorder.h"
 
 namespace rtc {
 

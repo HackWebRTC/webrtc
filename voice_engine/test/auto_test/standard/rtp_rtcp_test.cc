@@ -10,12 +10,12 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
-#include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/flags.h"
+#include "system_wrappers/include/event_wrapper.h"
+#include "test/testsupport/fileutils.h"
+#include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "voice_engine/test/auto_test/voe_standard_test.h"
 
 DECLARE_bool(include_timing_dependent_tests);
 

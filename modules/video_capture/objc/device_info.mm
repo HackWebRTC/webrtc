@@ -16,10 +16,10 @@
 
 #include <string>
 
-#include "webrtc/modules/video_capture/objc/device_info.h"
-#include "webrtc/modules/video_capture/objc/device_info_objc.h"
-#include "webrtc/modules/video_capture/video_capture_impl.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/video_capture/objc/device_info.h"
+#include "modules/video_capture/objc/device_info_objc.h"
+#include "modules/video_capture/video_capture_impl.h"
+#include "rtc_base/logging.h"
 
 using namespace webrtc;
 using namespace videocapturemodule;

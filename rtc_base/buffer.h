@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_BUFFER_H_
-#define WEBRTC_RTC_BASE_BUFFER_H_
+#ifndef RTC_BASE_BUFFER_H_
+#define RTC_BASE_BUFFER_H_
 
 #include <algorithm>
 #include <cstring>
@@ -17,9 +17,9 @@
 #include <type_traits>
 #include <utility>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/type_traits.h"
+#include "api/array_view.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/type_traits.h"
 
 namespace rtc {
 
@@ -380,4 +380,4 @@ using Buffer = BufferT<uint8_t>;
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_BUFFER_H_
+#endif  // RTC_BASE_BUFFER_H_

@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_
-#define WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_
+#ifndef VIDEO_OVERUSE_FRAME_DETECTOR_H_
+#define VIDEO_OVERUSE_FRAME_DETECTOR_H_
 
 #include <list>
 #include <memory>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/modules/video_coding/utility/quality_scaler.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/numerics/exp_filter.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "api/optional.h"
+#include "modules/video_coding/utility/quality_scaler.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/numerics/exp_filter.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -161,4 +161,4 @@ class OveruseFrameDetector {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_
+#endif  // VIDEO_OVERUSE_FRAME_DETECTOR_H_

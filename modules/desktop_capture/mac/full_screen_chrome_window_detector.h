@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_FULL_SCREEN_CHROME_WINDOW_DETECTOR_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_FULL_SCREEN_CHROME_WINDOW_DETECTOR_H_
+#ifndef MODULES_DESKTOP_CAPTURE_MAC_FULL_SCREEN_CHROME_WINDOW_DETECTOR_H_
+#define MODULES_DESKTOP_CAPTURE_MAC_FULL_SCREEN_CHROME_WINDOW_DETECTOR_H_
 
 #include <ApplicationServices/ApplicationServices.h>
 
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
+#include "modules/desktop_capture/desktop_capturer.h"
+#include "rtc_base/constructormagic.h"
+#include "system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 
@@ -66,4 +66,4 @@ class FullScreenChromeWindowDetector {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_FULL_SCREEN_CHROME_WINDOW_DETECTOR_H_
+#endif  // MODULES_DESKTOP_CAPTURE_MAC_FULL_SCREEN_CHROME_WINDOW_DETECTOR_H_

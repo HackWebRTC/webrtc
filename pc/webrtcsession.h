@@ -8,29 +8,29 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_WEBRTCSESSION_H_
-#define WEBRTC_PC_WEBRTCSESSION_H_
+#ifndef PC_WEBRTCSESSION_H_
+#define PC_WEBRTCSESSION_H_
 
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/api/statstypes.h"
-#include "webrtc/call/call.h"
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/transportcontroller.h"
-#include "webrtc/pc/datachannel.h"
-#include "webrtc/pc/mediasession.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/sslidentity.h"
-#include "webrtc/rtc_base/thread.h"
+#include "api/optional.h"
+#include "api/peerconnectioninterface.h"
+#include "api/statstypes.h"
+#include "call/call.h"
+#include "p2p/base/candidate.h"
+#include "p2p/base/transportcontroller.h"
+#include "pc/datachannel.h"
+#include "pc/mediasession.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/sslidentity.h"
+#include "rtc_base/thread.h"
 
 #ifdef HAVE_QUIC
-#include "webrtc/pc/quicdatatransport.h"
+#include "pc/quicdatatransport.h"
 #endif  // HAVE_QUIC
 
 namespace cricket {
@@ -677,4 +677,4 @@ class WebRtcSession :
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_WEBRTCSESSION_H_
+#endif  // PC_WEBRTCSESSION_H_

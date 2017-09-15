@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_MOVING_MAX_COUNTER_H_
-#define WEBRTC_RTC_BASE_MOVING_MAX_COUNTER_H_
+#ifndef RTC_BASE_MOVING_MAX_COUNTER_H_
+#define RTC_BASE_MOVING_MAX_COUNTER_H_
 
 #include <stdint.h>
 
@@ -17,9 +17,9 @@
 #include <limits>
 #include <utility>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "api/optional.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
 
 namespace rtc {
 
@@ -113,4 +113,4 @@ void MovingMaxCounter<T>::RollWindow(int64_t new_time_ms) {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_MOVING_MAX_COUNTER_H_
+#endif  // RTC_BASE_MOVING_MAX_COUNTER_H_

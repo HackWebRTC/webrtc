@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/srtpsession.h"
+#include "pc/srtpsession.h"
 
 #include <string>
 
-#include "webrtc/media/base/fakertp.h"
-#include "webrtc/pc/srtptestutil.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"  // For rtc::SRTP_*
+#include "media/base/fakertp.h"
+#include "pc/srtptestutil.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/sslstreamadapter.h"  // For rtc::SRTP_*
 
 namespace rtc {
 

@@ -871,13 +871,13 @@ if (rtc_enable_protobuf) {
     deps = [
       ":ana_config_proto",
     ]
-    proto_out_dir = "webrtc/modules/audio_coding/audio_network_adaptor"
+    proto_out_dir = "modules/audio_coding/audio_network_adaptor"
   }
   proto_library("ana_config_proto") {
     sources = [
       "audio_network_adaptor/config.proto",
     ]
-    proto_out_dir = "webrtc/modules/audio_coding/audio_network_adaptor"
+    proto_out_dir = "modules/audio_coding/audio_network_adaptor"
   }
 }
 
@@ -1461,7 +1461,7 @@ if (rtc_include_tests) {
   }  # insert_packet_with_timing
 
   audio_decoder_unittests_resources =
-      [ "../../../resources/audio_coding/testfile32kHz.pcm" ]
+      [ "../../resources/audio_coding/testfile32kHz.pcm" ]
 
   if (is_ios) {
     bundle_data("audio_decoder_unittests_bundle_data") {
@@ -1519,7 +1519,7 @@ if (rtc_include_tests) {
       sources = [
         "neteq/neteq_unittest.proto",
       ]
-      proto_out_dir = "webrtc/modules/audio_coding/neteq"
+      proto_out_dir = "modules/audio_coding/neteq"
     }
 
     rtc_test("neteq_rtpplay") {
@@ -1940,7 +1940,7 @@ if (rtc_include_tests) {
     ]
 
     data = [
-      "../../../resources/speech_and_misc_wb.pcm",
+      "../../resources/speech_and_misc_wb.pcm",
     ]
 
     if (is_win) {

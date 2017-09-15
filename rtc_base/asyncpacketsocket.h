@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_ASYNCPACKETSOCKET_H_
-#define WEBRTC_RTC_BASE_ASYNCPACKETSOCKET_H_
+#ifndef RTC_BASE_ASYNCPACKETSOCKET_H_
+#define RTC_BASE_ASYNCPACKETSOCKET_H_
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/dscp.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/socket.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/dscp.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/timeutils.h"
 
 namespace rtc {
 
@@ -140,4 +140,4 @@ class AsyncPacketSocket : public sigslot::has_slots<> {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_ASYNCPACKETSOCKET_H_
+#endif  // RTC_BASE_ASYNCPACKETSOCKET_H_

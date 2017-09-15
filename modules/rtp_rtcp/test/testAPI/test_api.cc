@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
+#include "modules/rtp_rtcp/test/testAPI/test_api.h"
 
 #include <algorithm>
 #include <memory>
 #include <vector>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/rate_limiter.h"
-#include "webrtc/test/null_transport.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/rate_limiter.h"
+#include "test/null_transport.h"
 
 namespace webrtc {
 

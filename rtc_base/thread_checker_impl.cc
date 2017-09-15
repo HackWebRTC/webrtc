@@ -10,9 +10,9 @@
 
 // Borrowed from Chromium's src/base/threading/thread_checker_impl.cc.
 
-#include "webrtc/rtc_base/thread_checker_impl.h"
+#include "rtc_base/thread_checker_impl.h"
 
-#include "webrtc/rtc_base/platform_thread.h"
+#include "rtc_base/platform_thread.h"
 
 namespace rtc {
 

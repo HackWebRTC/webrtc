@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/rtc_tools/network_tester/config_reader.h"
+#include "rtc_tools/network_tester/config_reader.h"
 
 #include <string>
 #include <vector>

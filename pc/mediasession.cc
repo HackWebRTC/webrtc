@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/mediasession.h"
+#include "pc/mediasession.h"
 
 #include <algorithm>  // For std::find_if, std::sort.
 #include <functional>
@@ -18,19 +18,19 @@
 #include <unordered_map>
 #include <utility>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/common_types.h"
-#include "webrtc/media/base/cryptoparams.h"
-#include "webrtc/media/base/h264_profile_level_id.h"
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/pc/channelmanager.h"
-#include "webrtc/pc/srtpfilter.h"
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "api/optional.h"
+#include "common_types.h"
+#include "media/base/cryptoparams.h"
+#include "media/base/h264_profile_level_id.h"
+#include "media/base/mediaconstants.h"
+#include "p2p/base/p2pconstants.h"
+#include "pc/channelmanager.h"
+#include "pc/srtpfilter.h"
+#include "rtc_base/base64.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/stringutils.h"
 
 namespace {
 const char kInline[] = "inline:";

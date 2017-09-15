@@ -10,12 +10,12 @@
 
 #include <SLES/OpenSLES_Android.h>
 
-#include "webrtc/modules/audio_device/android/audio_manager.h"
-#include "webrtc/modules/audio_device/android/build_info.h"
-#include "webrtc/modules/audio_device/android/ensure_initialized.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_device/android/audio_manager.h"
+#include "modules/audio_device/android/build_info.h"
+#include "modules/audio_device/android/ensure_initialized.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/format_macros.h"
+#include "test/gtest.h"
 
 #define PRINT(...) fprintf(stderr, __VA_ARGS__);
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_capture/linux/video_capture_linux.h"
+#include "modules/video_capture/linux/video_capture_linux.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -23,10 +23,10 @@
 #include <iostream>
 #include <new>
 
-#include "webrtc/media/base/videocommon.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/logging.h"
+#include "media/base/videocommon.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace videocapturemodule {

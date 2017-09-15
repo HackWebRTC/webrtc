@@ -28,18 +28,18 @@
 #import "WebRTC/RTCVideoCodecH264.h"
 // The no-media version PeerConnectionFactory doesn't depend on these files, but the gn check tool
 // is not smart enough to take the #ifdef into account.
-#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"  // nogncheck
-#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"  // nogncheck
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"  // nogncheck
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"  // nogncheck
 #endif
 
 #include "Video/objcvideotracksource.h"
-#include "webrtc/api/videosourceproxy.h"
+#include "api/videosourceproxy.h"
 // Adding the nogncheck to disable the including header check.
 // The no-media version PeerConnectionFactory doesn't depend on media related
 // C++ target.
 // TODO(zhihuang): Remove nogncheck once MediaEngineInterface is moved to C++
 // API layer.
-#include "webrtc/media/engine/webrtcmediaengine.h"  // nogncheck
+#include "media/engine/webrtcmediaengine.h"  // nogncheck
 
 @implementation RTCPeerConnectionFactory {
   std::unique_ptr<rtc::Thread> _networkThread;

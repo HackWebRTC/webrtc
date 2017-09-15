@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H
+#ifndef AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H_
+#define AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H_
 
 #if defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 
 #include <memory>
 
-#include "webrtc/modules/audio_device/audio_device_buffer.h"
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/criticalsection.h"
+#include "modules/audio_device/audio_device_buffer.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
 
 namespace webrtc {
 
@@ -201,4 +201,4 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
 
 #endif  // defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 
-#endif  // WEBRTC_MODULES_INTERFACE_AUDIO_DEVICE_IMPL_H_
+#endif  // MODULES_INTERFACE_AUDIO_DEVICE_IMPL_H_

@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/codecs/test/objc_codec_h264_test.h"
+#include "modules/video_coding/codecs/test/objc_codec_h264_test.h"
 
 #import "WebRTC/RTCVideoCodecH264.h"
-#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/objc_video_decoder_factory.h"
-#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/objc_video_encoder_factory.h"
+#include "sdk/objc/Framework/Classes/VideoToolbox/objc_video_decoder_factory.h"
+#include "sdk/objc/Framework/Classes/VideoToolbox/objc_video_encoder_factory.h"
 
 namespace webrtc {
 

@@ -74,7 +74,7 @@ if (rtc_enable_protobuf) {
     sources = [
       "rtc_event_log/rtc_event_log.proto",
     ]
-    proto_out_dir = "webrtc/logging/rtc_event_log"
+    proto_out_dir = "logging/rtc_event_log"
   }
 
   rtc_static_library("rtc_event_log_parser") {

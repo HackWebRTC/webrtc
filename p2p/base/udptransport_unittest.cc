@@ -14,16 +14,16 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/packettransportinternal.h"
-#include "webrtc/p2p/base/udptransport.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/ipaddress.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/socketserver.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/virtualsocketserver.h"
+#include "p2p/base/basicpacketsocketfactory.h"
+#include "p2p/base/packettransportinternal.h"
+#include "p2p/base/udptransport.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/ipaddress.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/socketserver.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/virtualsocketserver.h"
 
 namespace cricket {
 

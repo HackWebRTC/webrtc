@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/rtp_file_reader.h"
+#include "test/rtp_file_reader.h"
 
 #include <stdio.h>
 
@@ -16,11 +16,11 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/rtp_rtcp/source/rtp_utility.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/format_macros.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace test {

@@ -17,7 +17,7 @@
 
 #if defined(MIPS32_LE)
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 
 #if !defined(MIPS_DSP_R2_LE)
 // allpass filter coefficients.

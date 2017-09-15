@@ -10,21 +10,21 @@
 
 #include <vector>
 
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/gmock.h"
+#include "test/gtest.h"
+#include "test/gmock.h"
 
-#include "webrtc/api/video_codecs/video_decoder.h"
-#include "webrtc/call/rtp_stream_receiver_controller.h"
-#include "webrtc/media/base/fakevideorenderer.h"
-#include "webrtc/modules/pacing/packet_router.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
-#include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/video/call_stats.h"
-#include "webrtc/video/video_receive_stream.h"
+#include "api/video_codecs/video_decoder.h"
+#include "call/rtp_stream_receiver_controller.h"
+#include "media/base/fakevideorenderer.h"
+#include "modules/pacing/packet_router.h"
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "modules/utility/include/process_thread.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/event.h"
+#include "system_wrappers/include/clock.h"
+#include "test/field_trial.h"
+#include "video/call_stats.h"
+#include "video/video_receive_stream.h"
 
 namespace webrtc {
 namespace {

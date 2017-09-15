@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/statscollector.h"
+#include "pc/statscollector.h"
 
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "webrtc/pc/channel.h"
-#include "webrtc/pc/peerconnection.h"
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/checks.h"
+#include "pc/channel.h"
+#include "pc/peerconnection.h"
+#include "rtc_base/base64.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

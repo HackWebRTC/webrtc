@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/rtcpmuxfilter.h"
+#include "pc/rtcpmuxfilter.h"
 
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/logging.h"
 
 namespace cricket {
 

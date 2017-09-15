@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/video_coding_impl.h"
+#include "modules/video_coding/video_coding_impl.h"
 
 #include <algorithm>
 #include <utility>
 
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/include/video_bitrate_allocator.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/modules/video_coding/encoded_frame.h"
-#include "webrtc/modules/video_coding/include/video_codec_initializer.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/jitter_buffer.h"
-#include "webrtc/modules/video_coding/packet.h"
-#include "webrtc/modules/video_coding/timing.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "common_types.h"
+#include "common_video/include/video_bitrate_allocator.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/encoded_frame.h"
+#include "modules/video_coding/include/video_codec_initializer.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/jitter_buffer.h"
+#include "modules/video_coding/packet.h"
+#include "modules/video_coding/timing.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_checker.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace vcm {

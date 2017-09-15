@@ -10,10 +10,10 @@
 
 #include <algorithm>
 
-#include "webrtc/audio/test/audio_end_to_end_test.h"
-#include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/test/fake_audio_device.h"
-#include "webrtc/test/gtest.h"
+#include "audio/test/audio_end_to_end_test.h"
+#include "system_wrappers/include/sleep.h"
+#include "test/fake_audio_device.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace test {

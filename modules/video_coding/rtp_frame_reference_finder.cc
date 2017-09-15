@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/rtp_frame_reference_finder.h"
+#include "modules/video_coding/rtp_frame_reference_finder.h"
 
 #include <algorithm>
 #include <limits>
 
-#include "webrtc/modules/video_coding/frame_object.h"
-#include "webrtc/modules/video_coding/packet_buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/video_coding/frame_object.h"
+#include "modules/video_coding/packet_buffer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace video_coding {

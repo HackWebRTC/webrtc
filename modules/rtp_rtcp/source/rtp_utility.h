@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
+#define MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
 
 #include <map>
 
-#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
-#include "webrtc/rtc_base/deprecation.h"
-#include "webrtc/typedefs.h"
+#include "modules/rtp_rtcp/include/receive_statistics.h"
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
+#include "rtc_base/deprecation.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -61,4 +61,4 @@ class RtpHeaderParser {
 }  // namespace RtpUtility
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_

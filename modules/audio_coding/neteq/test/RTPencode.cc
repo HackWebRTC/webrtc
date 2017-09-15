@@ -25,12 +25,12 @@
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/checks.h"
+#include "typedefs.h"
 
 // needed for NetEqDecoder
-#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
-#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
+#include "modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "modules/audio_coding/neteq/include/neteq.h"
 
 /************************/
 /* Define payload types */
@@ -132,10 +132,10 @@ void stereoInterleave(unsigned char* data, size_t dataLen, size_t stride);
 #include "webrtc_vad.h"
 
 #if ((defined CODEC_PCM16B) || (defined NETEQ_ARBITRARY_CODEC))
-#include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
+#include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #endif
 #ifdef CODEC_G711
-#include "webrtc/modules/audio_coding/codecs/g711/g711_interface.h"
+#include "modules/audio_coding/codecs/g711/g711_interface.h"
 #endif
 #ifdef CODEC_G729
 #include "G729Interface.h"
@@ -152,19 +152,19 @@ void stereoInterleave(unsigned char* data, size_t dataLen, size_t stride);
 #include "AMRWBCreation.h"
 #endif
 #ifdef CODEC_ILBC
-#include "webrtc/modules/audio_coding/codecs/ilbc/ilbc.h"
+#include "modules/audio_coding/codecs/ilbc/ilbc.h"
 #endif
 #if (defined CODEC_ISAC || defined CODEC_ISAC_SWB)
-#include "webrtc/modules/audio_coding/codecs/isac/main/include/isac.h"
+#include "modules/audio_coding/codecs/isac/main/include/isac.h"
 #endif
 #ifdef NETEQ_ISACFIX_CODEC
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/isacfix.h"
+#include "modules/audio_coding/codecs/isac/fix/include/isacfix.h"
 #ifdef CODEC_ISAC
 #error Cannot have both ISAC and ISACfix defined. Please de-select one.
 #endif
 #endif
 #ifdef CODEC_G722
-#include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
+#include "modules/audio_coding/codecs/g722/g722_interface.h"
 #endif
 #ifdef CODEC_G722_1_24
 #include "G722_1Interface.h"
@@ -194,10 +194,10 @@ void stereoInterleave(unsigned char* data, size_t dataLen, size_t stride);
 #endif
 #if (defined(CODEC_CNGCODEC8) || defined(CODEC_CNGCODEC16) || \
      defined(CODEC_CNGCODEC32) || defined(CODEC_CNGCODEC48))
-#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #endif
 #ifdef CODEC_OPUS
-#include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
+#include "modules/audio_coding/codecs/opus/opus_interface.h"
 #endif
 
 /***********************************/

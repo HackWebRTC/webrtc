@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/overuse_frame_detector.h"
+#include "video/overuse_frame_detector.h"
 
 #include <assert.h>
 #include <math.h>
@@ -19,13 +19,13 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/common_video/include/frame_callback.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/numerics/exp_filter.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "api/video/video_frame.h"
+#include "common_video/include/frame_callback.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/numerics/exp_filter.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/field_trial.h"
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <mach/mach.h>

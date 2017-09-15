@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/examples/peerconnection/client/linux/main_wnd.h"
+#include "examples/peerconnection/client/linux/main_wnd.h"
 
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include <stddef.h>
 
 #include "libyuv/convert_from.h"
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/examples/peerconnection/client/defaults.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "api/video/i420_buffer.h"
+#include "examples/peerconnection/client/defaults.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/stringutils.h"
 
 using rtc::sprintfn;
 

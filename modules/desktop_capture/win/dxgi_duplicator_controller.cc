@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/win/dxgi_duplicator_controller.h"
+#include "modules/desktop_capture/win/dxgi_duplicator_controller.h"
 
 #include <windows.h>
 
 #include <algorithm>
 #include <string>
 
-#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
-#include "webrtc/modules/desktop_capture/win/dxgi_frame.h"
-#include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/sleep.h"
+#include "modules/desktop_capture/desktop_capture_types.h"
+#include "modules/desktop_capture/win/dxgi_frame.h"
+#include "modules/desktop_capture/win/screen_capture_utils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/sleep.h"
 
 namespace webrtc {
 

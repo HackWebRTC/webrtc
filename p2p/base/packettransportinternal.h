@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_PACKETTRANSPORTINTERNAL_H_
-#define WEBRTC_P2P_BASE_PACKETTRANSPORTINTERNAL_H_
+#ifndef P2P_BASE_PACKETTRANSPORTINTERNAL_H_
+#define P2P_BASE_PACKETTRANSPORTINTERNAL_H_
 
 #include <string>
 #include <vector>
 
 // This is included for PacketOptions.
-#include "webrtc/api/ortc/packettransportinterface.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/socket.h"
+#include "api/ortc/packettransportinterface.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/socket.h"
 
 namespace cricket {
 class TransportChannel;
@@ -97,4 +97,4 @@ class PacketTransportInternal : public virtual webrtc::PacketTransportInterface,
 
 }  // namespace rtc
 
-#endif  // WEBRTC_P2P_BASE_PACKETTRANSPORTINTERNAL_H_
+#endif  // P2P_BASE_PACKETTRANSPORTINTERNAL_H_

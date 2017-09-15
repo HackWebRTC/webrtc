@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_
+#ifndef MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_
+#define MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_
 
 #include <stddef.h>
 #include <list>
 #include <vector>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/deprecation.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/deprecation.h"
+#include "system_wrappers/include/clock.h"
+#include "typedefs.h"
 
 #define RTCP_CNAME_SIZE 256    // RFC 3550 page 44, including null termination
 #define IP_PACKET_SIZE 1500    // we assume ethernet
@@ -486,4 +486,4 @@ class TransportSequenceNumberAllocator {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_
+#endif  // MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_

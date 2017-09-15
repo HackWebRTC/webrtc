@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_TEST_FAKERTCCERTIFICATEGENERATOR_H_
-#define WEBRTC_PC_TEST_FAKERTCCERTIFICATEGENERATOR_H_
+#ifndef PC_TEST_FAKERTCCERTIFICATEGENERATOR_H_
+#define PC_TEST_FAKERTCCERTIFICATEGENERATOR_H_
 
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/rtc_base/rtccertificate.h"
-#include "webrtc/rtc_base/rtccertificategenerator.h"
+#include "api/peerconnectioninterface.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/rtccertificategenerator.h"
 
 // RSA with mod size 1024, pub exp 0x10001.
 static const rtc::RTCCertificatePEM kRsaPems[] = {
@@ -228,4 +228,4 @@ class FakeRTCCertificateGenerator
   int generated_certificates_ = 0;
 };
 
-#endif  // WEBRTC_PC_TEST_FAKERTCCERTIFICATEGENERATOR_H_
+#endif  // PC_TEST_FAKERTCCERTIFICATEGENERATOR_H_

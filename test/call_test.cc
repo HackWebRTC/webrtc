@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/call_test.h"
+#include "test/call_test.h"
 
 #include <algorithm>
 
-#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "webrtc/call/rtp_transport_controller_send.h"
-#include "webrtc/call/video_config.h"
-#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/voice_engine/include/voe_base.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "call/rtp_transport_controller_send.h"
+#include "call/video_config.h"
+#include "modules/audio_mixer/audio_mixer_impl.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/event.h"
+#include "rtc_base/ptr_util.h"
+#include "test/testsupport/fileutils.h"
+#include "voice_engine/include/voe_base.h"
 
 namespace webrtc {
 namespace test {

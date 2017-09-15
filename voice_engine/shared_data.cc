@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/shared_data.h"
+#include "voice_engine/shared_data.h"
 
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/voice_engine/channel.h"
-#include "webrtc/voice_engine/output_mixer.h"
-#include "webrtc/voice_engine/transmit_mixer.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "system_wrappers/include/trace.h"
+#include "voice_engine/channel.h"
+#include "voice_engine/output_mixer.h"
+#include "voice_engine/transmit_mixer.h"
 
 namespace webrtc {
 

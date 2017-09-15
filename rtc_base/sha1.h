@@ -7,8 +7,8 @@
 
 // Ported to C++, Google style, under namespace rtc.
 
-#ifndef WEBRTC_RTC_BASE_SHA1_H_
-#define WEBRTC_RTC_BASE_SHA1_H_
+#ifndef RTC_BASE_SHA1_H_
+#define RTC_BASE_SHA1_H_
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -30,4 +30,4 @@ void SHA1Final(SHA1_CTX* context, uint8_t digest[SHA1_DIGEST_SIZE]);
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SHA1_H_
+#endif  // RTC_BASE_SHA1_H_

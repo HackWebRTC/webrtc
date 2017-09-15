@@ -19,13 +19,13 @@
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/common_audio/resampler/sinc_resampler.h"
-#include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
-#include "webrtc/rtc_base/stringize_macros.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "common_audio/resampler/sinc_resampler.h"
+#include "common_audio/resampler/sinusoidal_linear_chirp_source.h"
+#include "rtc_base/stringize_macros.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/cpu_features_wrapper.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 
 using testing::_;
 

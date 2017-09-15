@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_SOCKETADDRESS_H_
-#define WEBRTC_RTC_BASE_SOCKETADDRESS_H_
+#ifndef RTC_BASE_SOCKETADDRESS_H_
+#define RTC_BASE_SOCKETADDRESS_H_
 
 #include <iosfwd>
 #include <string>
 #include <vector>
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/ipaddress.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/ipaddress.h"
 
 #undef SetPort
 
@@ -194,4 +194,4 @@ SocketAddress EmptySocketAddressWithFamily(int family);
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SOCKETADDRESS_H_
+#endif  // RTC_BASE_SOCKETADDRESS_H_

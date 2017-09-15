@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/channel_manager.h"
+#include "voice_engine/channel_manager.h"
 
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/voice_engine/channel.h"
+#include "rtc_base/timeutils.h"
+#include "voice_engine/channel.h"
 
 namespace webrtc {
 namespace voe {

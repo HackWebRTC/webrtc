@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_PC_ANDROIDNETWORKMONITOR_JNI_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_PC_ANDROIDNETWORKMONITOR_JNI_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_ANDROIDNETWORKMONITOR_JNI_H_
+#define SDK_ANDROID_SRC_JNI_PC_ANDROIDNETWORKMONITOR_JNI_H_
 
 #include <stdint.h>
 #include <map>
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/networkmonitor.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "rtc_base/networkmonitor.h"
+#include "rtc_base/thread_checker.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
@@ -104,4 +104,4 @@ using webrtc::jni::AndroidNetworkMonitorFactory;
 
 }  // namespace webrtc_jni
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_ANDROIDNETWORKMONITOR_JNI_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_ANDROIDNETWORKMONITOR_JNI_H_

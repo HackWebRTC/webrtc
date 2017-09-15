@@ -8,36 +8,36 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/peerconnectionfactory.h"
+#include "pc/peerconnectionfactory.h"
 
 #include <utility>
 
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/api/mediastreamproxy.h"
-#include "webrtc/api/mediastreamtrackproxy.h"
-#include "webrtc/api/peerconnectionfactoryproxy.h"
-#include "webrtc/api/peerconnectionproxy.h"
-#include "webrtc/api/videosourceproxy.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ptr_util.h"
+#include "api/mediaconstraintsinterface.h"
+#include "api/mediastreamproxy.h"
+#include "api/mediastreamtrackproxy.h"
+#include "api/peerconnectionfactoryproxy.h"
+#include "api/peerconnectionproxy.h"
+#include "api/videosourceproxy.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ptr_util.h"
 // Adding 'nogncheck' to disable the gn include headers check to support modular
 // WebRTC build targets.
 // TODO(zhihuang): This wouldn't be necessary if the interface and
 // implementation of the media engine were in separate build targets.
-#include "webrtc/media/engine/webrtcmediaengine.h"             // nogncheck
-#include "webrtc/media/engine/webrtcvideodecoderfactory.h"     // nogncheck
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"     // nogncheck
-#include "webrtc/modules/audio_device/include/audio_device.h"  // nogncheck
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/client/basicportallocator.h"
-#include "webrtc/pc/audiotrack.h"
-#include "webrtc/pc/localaudiosource.h"
-#include "webrtc/pc/mediastream.h"
-#include "webrtc/pc/peerconnection.h"
-#include "webrtc/pc/videocapturertracksource.h"
-#include "webrtc/pc/videotrack.h"
+#include "media/engine/webrtcmediaengine.h"             // nogncheck
+#include "media/engine/webrtcvideodecoderfactory.h"     // nogncheck
+#include "media/engine/webrtcvideoencoderfactory.h"     // nogncheck
+#include "modules/audio_device/include/audio_device.h"  // nogncheck
+#include "p2p/base/basicpacketsocketfactory.h"
+#include "p2p/client/basicportallocator.h"
+#include "pc/audiotrack.h"
+#include "pc/localaudiosource.h"
+#include "pc/mediastream.h"
+#include "pc/peerconnection.h"
+#include "pc/videocapturertracksource.h"
+#include "pc/videotrack.h"
 
 namespace webrtc {
 

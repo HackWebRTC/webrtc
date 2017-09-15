@@ -11,9 +11,9 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/rtc_base/asynctcpsocket.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/virtualsocketserver.h"
+#include "rtc_base/asynctcpsocket.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/virtualsocketserver.h"
 
 namespace rtc {
 

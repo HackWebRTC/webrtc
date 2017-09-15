@@ -13,12 +13,12 @@
  * A wrapper for resampling a numerous amount of sampling combinations.
  */
 
-#ifndef WEBRTC_COMMON_AUDIO_RESAMPLER_INCLUDE_RESAMPLER_H_
-#define WEBRTC_COMMON_AUDIO_RESAMPLER_INCLUDE_RESAMPLER_H_
+#ifndef COMMON_AUDIO_RESAMPLER_INCLUDE_RESAMPLER_H_
+#define COMMON_AUDIO_RESAMPLER_INCLUDE_RESAMPLER_H_
 
 #include <stddef.h>
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -89,4 +89,4 @@ class Resampler {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_COMMON_AUDIO_RESAMPLER_INCLUDE_RESAMPLER_H_
+#endif  // COMMON_AUDIO_RESAMPLER_INCLUDE_RESAMPLER_H_

@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/platform_thread.h"
+#include "rtc_base/platform_thread.h"
 
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/timeutils.h"
+#include "rtc_base/trace_event.h"
 
 #if defined(WEBRTC_LINUX)
 #include <sys/prctl.h>

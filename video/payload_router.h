@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_PAYLOAD_ROUTER_H_
-#define WEBRTC_VIDEO_PAYLOAD_ROUTER_H_
+#ifndef VIDEO_PAYLOAD_ROUTER_H_
+#define VIDEO_PAYLOAD_ROUTER_H_
 
 #include <vector>
 
-#include "webrtc/api/video_codecs/video_encoder.h"
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "api/video_codecs/video_encoder.h"
+#include "common_types.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -63,4 +63,4 @@ class PayloadRouter : public EncodedImageCallback {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_PAYLOAD_ROUTER_H_
+#endif  // VIDEO_PAYLOAD_ROUTER_H_

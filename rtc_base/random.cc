@@ -7,12 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/rtc_base/random.h"
+#include "rtc_base/random.h"
 
 #include <math.h>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/safe_conversions.h"
 
 namespace webrtc {
 

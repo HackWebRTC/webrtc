@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/test/conversational_speech/multiend_call.h"
+#include "modules/audio_processing/test/conversational_speech/multiend_call.h"
 
 #include <algorithm>
 #include <iterator>
 
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/pathutils.h"
 
 namespace webrtc {
 namespace test {

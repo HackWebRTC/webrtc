@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/frame_generator_capturer.h"
+#include "test/frame_generator_capturer.h"
 
 #include <utility>
 #include <vector>
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/platform_thread.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/frame_generator.h"
-#include "webrtc/call/video_send_stream.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/platform_thread.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/clock.h"
+#include "test/frame_generator.h"
+#include "call/video_send_stream.h"
 
 namespace webrtc {
 namespace test {

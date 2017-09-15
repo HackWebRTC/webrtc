@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/x11/window_list_utils.h"
+#include "modules/desktop_capture/x11/window_list_utils.h"
 
 #include <string.h>
 #include <X11/Xlib.h>
@@ -17,10 +17,10 @@
 
 #include <algorithm>
 
-#include "webrtc/modules/desktop_capture/x11/x_error_trap.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/desktop_capture/x11/x_error_trap.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

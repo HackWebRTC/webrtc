@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/voice_engine_fixture.h"
-#include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
+#include "voice_engine/voice_engine_fixture.h"
+#include "modules/audio_processing/include/mock_audio_processing.h"
 
 namespace webrtc {
 

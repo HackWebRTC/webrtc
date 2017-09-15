@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_video/h264/pps_parser.h"
+#include "common_video/h264/pps_parser.h"
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/rtc_base/bitbuffer.h"
-#include "webrtc/rtc_base/logging.h"
+#include "common_video/h264/h264_common.h"
+#include "rtc_base/bitbuffer.h"
+#include "rtc_base/logging.h"
 
 #define RETURN_EMPTY_ON_FAIL(x)                  \
   if (!(x)) {                                    \

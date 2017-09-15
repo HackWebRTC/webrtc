@@ -9,19 +9,19 @@
  *
  */
 
-#include "webrtc/common_video/h264/sps_vui_rewriter.h"
+#include "common_video/h264/sps_vui_rewriter.h"
 
 #include <algorithm>
 #include <memory>
 #include <vector>
 
-#include "webrtc/rtc_base/bitbuffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_minmax.h"
+#include "rtc_base/bitbuffer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/safe_minmax.h"
 
-#include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/common_video/h264/sps_parser.h"
+#include "common_video/h264/h264_common.h"
+#include "common_video/h264/sps_parser.h"
 
 namespace webrtc {
 

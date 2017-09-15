@@ -14,15 +14,15 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
-#include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
-#include "webrtc/rtc_base/rate_limiter.h"
-#include "webrtc/test/gtest.h"
+#include "common_types.h"
+#include "modules/rtp_rtcp/include/rtp_payload_registry.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/byte_io.h"
+#include "modules/rtp_rtcp/source/rtp_receiver_video.h"
+#include "modules/rtp_rtcp/test/testAPI/test_api.h"
+#include "rtc_base/rate_limiter.h"
+#include "test/gtest.h"
 
 namespace {
 

@@ -10,8 +10,8 @@
 
 #include <limits>
 
-#include "webrtc/rtc_base/safe_compare.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/safe_compare.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

@@ -10,11 +10,11 @@
 
 #include <jni.h>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
+#include "api/video/video_frame.h"
+#include "media/base/videosinkinterface.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/native_handle_impl.h"
 
 namespace webrtc {
 namespace jni {

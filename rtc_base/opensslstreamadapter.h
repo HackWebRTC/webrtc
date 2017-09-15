@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_OPENSSLSTREAMADAPTER_H_
-#define WEBRTC_RTC_BASE_OPENSSLSTREAMADAPTER_H_
+#ifndef RTC_BASE_OPENSSLSTREAMADAPTER_H_
+#define RTC_BASE_OPENSSLSTREAMADAPTER_H_
 
 #include <string>
 #include <memory>
 #include <vector>
 
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/opensslidentity.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/opensslidentity.h"
+#include "rtc_base/sslstreamadapter.h"
 
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
@@ -223,4 +223,4 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_OPENSSLSTREAMADAPTER_H_
+#endif  // RTC_BASE_OPENSSLSTREAMADAPTER_H_

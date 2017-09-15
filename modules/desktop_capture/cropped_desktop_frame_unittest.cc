@@ -11,10 +11,10 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/modules/desktop_capture/cropped_desktop_frame.h"
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/test/gtest.h"
+#include "modules/desktop_capture/cropped_desktop_frame.h"
+#include "modules/desktop_capture/desktop_frame.h"
+#include "rtc_base/ptr_util.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

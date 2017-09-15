@@ -14,9 +14,9 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/modules/audio_coding/neteq/tools/packet.h"
-#include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
-#include "webrtc/rtc_base/flags.h"
+#include "modules/audio_coding/neteq/tools/packet.h"
+#include "modules/audio_coding/neteq/tools/rtp_file_source.h"
+#include "rtc_base/flags.h"
 
 // Define command line flags.
 DEFINE_int(red, 117, "RTP payload type for RED");

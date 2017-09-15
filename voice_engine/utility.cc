@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/utility.h"
+#include "voice_engine/utility.h"
 
-#include "webrtc/audio/utility/audio_frame_operations.h"
-#include "webrtc/common_audio/resampler/include/push_resampler.h"
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/voice_engine/voice_engine_defines.h"
+#include "audio/utility/audio_frame_operations.h"
+#include "common_audio/resampler/include/push_resampler.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_types.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "voice_engine/voice_engine_defines.h"
 
 namespace webrtc {
 namespace voe {

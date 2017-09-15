@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_QUICDATACHANNEL_H_
-#define WEBRTC_PC_QUICDATACHANNEL_H_
+#ifndef PC_QUICDATACHANNEL_H_
+#define PC_QUICDATACHANNEL_H_
 
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
-#include "webrtc/api/datachannelinterface.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/thread.h"
+#include "api/datachannelinterface.h"
+#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/thread.h"
 
 namespace cricket {
 class QuicTransportChannel;
@@ -217,4 +217,4 @@ class QuicDataChannel : public rtc::RefCountedObject<DataChannelInterface>,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_QUICDATACHANNEL_H_
+#endif  // PC_QUICDATACHANNEL_H_

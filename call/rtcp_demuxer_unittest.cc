@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/rtcp_demuxer.h"
+#include "call/rtcp_demuxer.h"
 
 #include <memory>
 #include <set>
 
-#include "webrtc/call/rtcp_packet_sink_interface.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "call/rtcp_packet_sink_interface.h"
+#include "common_types.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ptr_util.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

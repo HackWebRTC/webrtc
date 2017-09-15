@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/erle_estimator.h"
+#include "modules/audio_processing/aec3/erle_estimator.h"
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/safe_minmax.h"
+#include "rtc_base/safe_minmax.h"
 
 namespace webrtc {
 

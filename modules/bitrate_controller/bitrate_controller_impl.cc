@@ -9,15 +9,15 @@
  *
  */
 
-#include "webrtc/modules/bitrate_controller/bitrate_controller_impl.h"
+#include "modules/bitrate_controller/bitrate_controller_impl.h"
 
 #include <algorithm>
 #include <utility>
 
-#include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

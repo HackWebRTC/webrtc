@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/pacing/bitrate_prober.h"
+#include "modules/pacing/bitrate_prober.h"
 
 #include <algorithm>
 
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "modules/pacing/paced_sender.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

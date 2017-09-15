@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/audio/time_interval.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/timedelta.h"
-#include "webrtc/test/gtest.h"
+#include "audio/time_interval.h"
+#include "rtc_base/fakeclock.h"
+#include "rtc_base/timedelta.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

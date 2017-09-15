@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/openssladapter.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/openssladapter.h"
 
 namespace rtc {
 

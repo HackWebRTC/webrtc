@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_THREAD_H_
-#define WEBRTC_RTC_BASE_THREAD_H_
+#ifndef RTC_BASE_THREAD_H_
+#define RTC_BASE_THREAD_H_
 
 #include <algorithm>
 #include <list>
@@ -20,13 +20,13 @@
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>
 #endif
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/platform_thread_types.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/event.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/platform_thread_types.h"
 
 #if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/win32.h"
+#include "rtc_base/win32.h"
 #endif
 
 namespace rtc {
@@ -334,4 +334,4 @@ class AutoSocketServerThread : public Thread {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_THREAD_H_
+#endif  // RTC_BASE_THREAD_H_

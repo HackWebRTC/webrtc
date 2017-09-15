@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_TIMEDELTA_H_
-#define WEBRTC_RTC_BASE_TIMEDELTA_H_
+#ifndef RTC_BASE_TIMEDELTA_H_
+#define RTC_BASE_TIMEDELTA_H_
 
 #include <stdint.h>
 
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/timeutils.h"
 
 // Convenience class to convert between different units of relative time.
 // Stores time to precision of nanoseconds, as int64_t internally.
@@ -126,4 +126,4 @@ inline TimeDelta operator*(T a, TimeDelta td) {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_TIMEDELTA_H_
+#endif  // RTC_BASE_TIMEDELTA_H_

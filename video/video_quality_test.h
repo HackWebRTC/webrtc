@@ -7,18 +7,18 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_VIDEO_VIDEO_QUALITY_TEST_H_
-#define WEBRTC_VIDEO_VIDEO_QUALITY_TEST_H_
+#ifndef VIDEO_VIDEO_QUALITY_TEST_H_
+#define VIDEO_VIDEO_QUALITY_TEST_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/media/engine/simulcast_encoder_adapter.h"
-#include "webrtc/test/call_test.h"
-#include "webrtc/test/frame_generator.h"
-#include "webrtc/test/testsupport/trace_to_stderr.h"
+#include "media/engine/simulcast_encoder_adapter.h"
+#include "test/call_test.h"
+#include "test/frame_generator.h"
+#include "test/testsupport/trace_to_stderr.h"
 
 namespace webrtc {
 
@@ -164,4 +164,4 @@ class VideoQualityTest : public test::CallTest {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_VIDEO_QUALITY_TEST_H_
+#endif  // VIDEO_VIDEO_QUALITY_TEST_H_

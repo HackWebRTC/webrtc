@@ -229,7 +229,7 @@ def main():
     # Generate the license file.
     ninja_dirs = [os.path.join(args.output_dir, arch + '_libs')
                   for arch in architectures]
-    gn_target_full_name = '//webrtc/sdk:' + gn_target_name
+    gn_target_full_name = '//sdk:' + gn_target_name
     builder = LicenseBuilder(ninja_dirs, [gn_target_full_name])
     builder.GenerateLicenseText(
         os.path.join(args.output_dir, SDK_FRAMEWORK_NAME))

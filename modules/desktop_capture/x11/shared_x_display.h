@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_X11_SHARED_X_DISPLAY_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_X11_SHARED_X_DISPLAY_H_
+#ifndef MODULES_DESKTOP_CAPTURE_X11_SHARED_X_DISPLAY_H_
+#define MODULES_DESKTOP_CAPTURE_X11_SHARED_X_DISPLAY_H_
 
 #include <map>
 #include <vector>
 
 #include <string>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "system_wrappers/include/atomic32.h"
 
 // Including Xlib.h will involve evil defines (Bool, Status, True, False), which
 // easily conflict with other headers.
@@ -84,4 +84,4 @@ class SharedXDisplay {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_X11_SHARED_X_DISPLAY_H_
+#endif  // MODULES_DESKTOP_CAPTURE_X11_SHARED_X_DISPLAY_H_

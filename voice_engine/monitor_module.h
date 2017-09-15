@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_MONITOR_MODULE_H
-#define WEBRTC_VOICE_ENGINE_MONITOR_MODULE_H
+#ifndef VOICE_ENGINE_MONITOR_MODULE_H_
+#define VOICE_ENGINE_MONITOR_MODULE_H_
 
-#include "webrtc/modules/include/module.h"
+#include "modules/include/module.h"
 
 namespace webrtc {
 namespace voe {

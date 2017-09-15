@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/srtpsession.h"
+#include "pc/srtpsession.h"
 
 #include "third_party/libsrtp/include/srtp.h"
 #include "third_party/libsrtp/include/srtp_priv.h"
-#include "webrtc/media/base/rtputils.h"
-#include "webrtc/pc/externalhmac.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
+#include "media/base/rtputils.h"
+#include "pc/externalhmac.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/sslstreamadapter.h"
 
 namespace cricket {
 

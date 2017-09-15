@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/fuzzers/audio_processing_fuzzer.h"
+#include "test/fuzzers/audio_processing_fuzzer.h"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

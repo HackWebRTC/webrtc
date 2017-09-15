@@ -15,8 +15,8 @@
  *
  */
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/rtc_base/sanitizer.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "rtc_base/sanitizer.h"
 
 #define SPL_LEVINSON_MAXORDER 20
 

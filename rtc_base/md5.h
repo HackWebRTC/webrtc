@@ -20,8 +20,8 @@
 // Changes(hellner): added rtc namespace
 // Changes(pbos): Reverted types back to uint32(8)_t with _t suffix.
 
-#ifndef WEBRTC_RTC_BASE_MD5_H_
-#define WEBRTC_RTC_BASE_MD5_H_
+#ifndef RTC_BASE_MD5_H_
+#define RTC_BASE_MD5_H_
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -41,4 +41,4 @@ void MD5Transform(uint32_t buf[4], const uint32_t in[16]);
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_MD5_H_
+#endif  // RTC_BASE_MD5_H_

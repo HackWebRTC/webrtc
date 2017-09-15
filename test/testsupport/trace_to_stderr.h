@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_TEST_SUPPORT_TRACE_TO_STDERR_H_
-#define WEBRTC_TEST_TEST_SUPPORT_TRACE_TO_STDERR_H_
+#ifndef TEST_TEST_SUPPORT_TRACE_TO_STDERR_H_
+#define TEST_TEST_SUPPORT_TRACE_TO_STDERR_H_
 
-#include "webrtc/system_wrappers/include/trace.h"
+#include "system_wrappers/include/trace.h"
 
 namespace webrtc {
 namespace test {
@@ -49,4 +49,4 @@ class TraceToStderr : public TraceCallback {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_TEST_SUPPORT_TRACE_TO_STDERR_H_
+#endif  // TEST_TEST_SUPPORT_TRACE_TO_STDERR_H_

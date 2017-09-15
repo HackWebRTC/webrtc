@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_WIN32_H_
-#define WEBRTC_RTC_BASE_WIN32_H_
+#ifndef RTC_BASE_WIN32_H_
+#define RTC_BASE_WIN32_H_
 
 #if defined(WEBRTC_WIN)
 
@@ -38,8 +38,8 @@ typedef struct _TOKEN_MANDATORY_LABEL {
 
 #include <string>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/stringutils.h"
 
 namespace rtc {
 
@@ -125,4 +125,4 @@ inline bool IsCurrentProcessLowIntegrity() {
 }  // namespace rtc
 
 #endif  // WEBRTC_WIN
-#endif  // WEBRTC_RTC_BASE_WIN32_H_
+#endif  // RTC_BASE_WIN32_H_

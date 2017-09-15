@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_JITTER_BUFFER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_JITTER_BUFFER_H_
+#ifndef MODULES_VIDEO_CODING_JITTER_BUFFER_H_
+#define MODULES_VIDEO_CODING_JITTER_BUFFER_H_
 
 #include <list>
 #include <map>
@@ -17,19 +17,19 @@
 #include <set>
 #include <vector>
 
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/modules/video_coding/decoding_state.h"
-#include "webrtc/modules/video_coding/include/video_coding.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_coding/inter_frame_delay.h"
-#include "webrtc/modules/video_coding/jitter_buffer_common.h"
-#include "webrtc/modules/video_coding/jitter_estimator.h"
-#include "webrtc/modules/video_coding/nack_module.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/typedefs.h"
+#include "modules/include/module_common_types.h"
+#include "modules/utility/include/process_thread.h"
+#include "modules/video_coding/decoding_state.h"
+#include "modules/video_coding/include/video_coding.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/inter_frame_delay.h"
+#include "modules/video_coding/jitter_buffer_common.h"
+#include "modules/video_coding/jitter_estimator.h"
+#include "modules/video_coding/nack_module.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -378,4 +378,4 @@ class VCMJitterBuffer {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_JITTER_BUFFER_H_
+#endif  // MODULES_VIDEO_CODING_JITTER_BUFFER_H_

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_
-#define WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_
+#ifndef COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_
+#define COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_
 
 #include <memory>
 
-#include "webrtc/api/video/video_frame_buffer.h"
-#include "webrtc/rtc_base/callback.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "api/video/video_frame_buffer.h"
+#include "rtc_base/callback.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
@@ -92,4 +92,4 @@ rtc::scoped_refptr<PlanarYuvBuffer> WrapYuvBuffer(
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_
+#endif  // COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_

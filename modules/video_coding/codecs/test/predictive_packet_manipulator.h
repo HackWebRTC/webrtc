@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PREDICTIVE_PACKET_MANIPULATOR_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PREDICTIVE_PACKET_MANIPULATOR_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_TEST_PREDICTIVE_PACKET_MANIPULATOR_H_
+#define MODULES_VIDEO_CODING_CODECS_TEST_PREDICTIVE_PACKET_MANIPULATOR_H_
 
 #include <queue>
 
-#include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
-#include "webrtc/test/testsupport/packet_reader.h"
+#include "modules/video_coding/codecs/test/packet_manipulator.h"
+#include "test/testsupport/packet_reader.h"
 
 namespace webrtc {
 namespace test {
@@ -43,4 +43,4 @@ class PredictivePacketManipulator : public PacketManipulatorImpl {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PREDICTIVE_PACKET_MANIPULATOR_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_TEST_PREDICTIVE_PACKET_MANIPULATOR_H_

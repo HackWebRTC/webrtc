@@ -9,12 +9,12 @@
 /*
 * This file defines the interface for doing temporal layers with VP8.
 */
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
+#define MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
 
 #include <vector>
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 struct vpx_codec_enc_cfg;
 typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;
@@ -148,4 +148,4 @@ class TemporalLayersListener {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/quic/reliablequicstream.h"
+#include "p2p/quic/reliablequicstream.h"
 
 #include <memory>
 #include <string>
@@ -17,11 +17,11 @@
 #include "net/quic/quic_connection.h"
 #include "net/quic/quic_protocol.h"
 #include "net/quic/quic_session.h"
-#include "webrtc/p2p/quic/quicconnectionhelper.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/stream.h"
+#include "p2p/quic/quicconnectionhelper.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/stream.h"
 
 using cricket::QuicConnectionHelper;
 using cricket::ReliableQuicStream;

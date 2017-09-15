@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_CONFIG_H_
-#define WEBRTC_API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_CONFIG_H_
+#ifndef API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_CONFIG_H_
+#define API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_CONFIG_H_
 
 #include <stddef.h>
 
 #include <vector>
 
-#include "webrtc/api/optional.h"
+#include "api/optional.h"
 
 namespace webrtc {
 
@@ -70,4 +70,4 @@ struct AudioEncoderOpusConfig {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_CONFIG_H_
+#endif  // API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_CONFIG_H_

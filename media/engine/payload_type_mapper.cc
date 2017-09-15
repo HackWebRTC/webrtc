@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/payload_type_mapper.h"
+#include "media/engine/payload_type_mapper.h"
 
-#include "webrtc/api/audio_codecs/audio_format.h"
-#include "webrtc/common_types.h"
-#include "webrtc/media/base/mediaconstants.h"
+#include "api/audio_codecs/audio_format.h"
+#include "common_types.h"
+#include "media/base/mediaconstants.h"
 
 namespace cricket {
 

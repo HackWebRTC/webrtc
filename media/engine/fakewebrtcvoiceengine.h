@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_FAKEWEBRTCVOICEENGINE_H_
-#define WEBRTC_MEDIA_ENGINE_FAKEWEBRTCVOICEENGINE_H_
+#ifndef MEDIA_ENGINE_FAKEWEBRTCVOICEENGINE_H_
+#define MEDIA_ENGINE_FAKEWEBRTCVOICEENGINE_H_
 
 #include <map>
 #include <vector>
 
-#include "webrtc/media/engine/webrtcvoe.h"
-#include "webrtc/rtc_base/checks.h"
+#include "media/engine/webrtcvoe.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace voe {
@@ -132,4 +132,4 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_ENGINE_FAKEWEBRTCVOICEENGINE_H_
+#endif  // MEDIA_ENGINE_FAKEWEBRTCVOICEENGINE_H_

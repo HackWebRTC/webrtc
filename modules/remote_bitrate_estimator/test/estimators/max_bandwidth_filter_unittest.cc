@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/test/estimators/max_bandwidth_filter.h"
+#include "modules/remote_bitrate_estimator/test/estimators/max_bandwidth_filter.h"
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace testing {

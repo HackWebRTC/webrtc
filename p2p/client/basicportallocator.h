@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_CLIENT_BASICPORTALLOCATOR_H_
-#define WEBRTC_P2P_CLIENT_BASICPORTALLOCATOR_H_
+#ifndef P2P_CLIENT_BASICPORTALLOCATOR_H_
+#define P2P_CLIENT_BASICPORTALLOCATOR_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/portallocator.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/thread.h"
+#include "p2p/base/portallocator.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/network.h"
+#include "rtc_base/thread.h"
 
 namespace cricket {
 
@@ -380,4 +380,4 @@ class AllocationSequence : public rtc::MessageHandler,
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_CLIENT_BASICPORTALLOCATOR_H_
+#endif  // P2P_CLIENT_BASICPORTALLOCATOR_H_

@@ -12,9 +12,9 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_DEVICE_H_
-#define WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_DEVICE_H_
+#ifndef MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_DEVICE_H_
+#define MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_DEVICE_H_
 
 #include <string>
 
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/test/gmock.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 namespace test {
@@ -113,4 +113,4 @@ class MockAudioDeviceModule : public AudioDeviceModule {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_DEVICE_H_
+#endif  // MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_DEVICE_H_

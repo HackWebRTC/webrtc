@@ -9,18 +9,18 @@
  *
  */
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_BBR_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_BBR_H_
+#ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_BBR_H_
+#define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_BBR_H_
 
 #include <list>
 #include <map>
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
-#include "webrtc/modules/video_coding/sequence_number_util.h"
-#include "webrtc/rtc_base/random.h"
+#include "api/optional.h"
+#include "modules/remote_bitrate_estimator/test/bwe.h"
+#include "modules/video_coding/sequence_number_util.h"
+#include "rtc_base/random.h"
 
 namespace webrtc {
 namespace testing {
@@ -239,4 +239,4 @@ class BbrBweReceiver : public BweReceiver {
 }  // namespace testing
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_BBR_H_
+#endif  // MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_BBR_H_

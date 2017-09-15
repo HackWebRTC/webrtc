@@ -8,22 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
-#define WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
+#ifndef VOICE_ENGINE_TRANSMIT_MIXER_H_
+#define VOICE_ENGINE_TRANSMIT_MIXER_H_
 
 #include <memory>
 
-#include "webrtc/common_audio/resampler/include/push_resampler.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_processing/typing_detection.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/voice_engine/audio_level.h"
-#include "webrtc/voice_engine/file_player.h"
-#include "webrtc/voice_engine/file_recorder.h"
-#include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/monitor_module.h"
-#include "webrtc/voice_engine/voice_engine_defines.h"
+#include "common_audio/resampler/include/push_resampler.h"
+#include "common_types.h"
+#include "modules/audio_processing/typing_detection.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/criticalsection.h"
+#include "voice_engine/audio_level.h"
+#include "voice_engine/file_player.h"
+#include "voice_engine/file_recorder.h"
+#include "voice_engine/include/voe_base.h"
+#include "voice_engine/monitor_module.h"
+#include "voice_engine/voice_engine_defines.h"
 
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
 #define WEBRTC_VOICE_ENGINE_TYPING_DETECTION 1
@@ -217,4 +217,4 @@ private:
 }  // namespace voe
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
+#endif  // VOICE_ENGINE_TRANSMIT_MIXER_H_

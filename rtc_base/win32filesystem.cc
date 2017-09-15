@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/win32filesystem.h"
+#include "rtc_base/win32filesystem.h"
 
 #include <shellapi.h>
 #include <shlobj.h>
 #include <tchar.h>
-#include "webrtc/rtc_base/win32.h"
+#include "rtc_base/win32.h"
 
 #include <memory>
 
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/pathutils.h"
+#include "rtc_base/stream.h"
+#include "rtc_base/stringutils.h"
 
 // In several places in this file, we test the integrity level of the process
 // before calling GetLongPathName. We do this because calling GetLongPathName

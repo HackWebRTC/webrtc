@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_
+#define MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_
 
 #include <algorithm>
 #include <memory>
 #include <string>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/neteq/tools/packet.h"
-#include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
-#include "webrtc/rtc_base/buffer.h"
+#include "api/optional.h"
+#include "common_types.h"
+#include "modules/audio_coding/neteq/tools/packet.h"
+#include "modules/audio_coding/neteq/tools/packet_source.h"
+#include "rtc_base/buffer.h"
 
 namespace webrtc {
 namespace test {
@@ -80,4 +80,4 @@ class NetEqInput {
 
 }  // namespace test
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_
+#endif  // MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_

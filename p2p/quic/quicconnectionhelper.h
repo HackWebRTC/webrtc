@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_QUIC_QUICCONNECTIONHELPER_H_
-#define WEBRTC_P2P_QUIC_QUICCONNECTIONHELPER_H_
+#ifndef P2P_QUIC_QUICCONNECTIONHELPER_H_
+#define P2P_QUIC_QUICCONNECTIONHELPER_H_
 
 #include "net/quic/crypto/quic_random.h"
 #include "net/quic/quic_alarm.h"
 #include "net/quic/quic_clock.h"
 #include "net/quic/quic_connection.h"
 #include "net/quic/quic_simple_buffer_allocator.h"
-#include "webrtc/rtc_base/thread.h"
+#include "rtc_base/thread.h"
 
 namespace cricket {
 
@@ -69,4 +69,4 @@ class QuicConnectionHelper : public net::QuicConnectionHelperInterface {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_QUIC_QUICCONNECTIONHELPER_H_
+#endif  // P2P_QUIC_QUICCONNECTIONHELPER_H_

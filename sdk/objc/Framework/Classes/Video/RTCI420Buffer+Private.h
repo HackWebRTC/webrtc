@@ -10,7 +10,7 @@
 
 #import "WebRTC/RTCVideoFrameBuffer.h"
 
-#include "webrtc/api/video/i420_buffer.h"
+#include "api/video/i420_buffer.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

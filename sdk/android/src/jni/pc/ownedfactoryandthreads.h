@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_PC_OWNEDFACTORYANDTHREADS_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_PC_OWNEDFACTORYANDTHREADS_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_OWNEDFACTORYANDTHREADS_H_
+#define SDK_ANDROID_SRC_JNI_PC_OWNEDFACTORYANDTHREADS_H_
 
 #include <jni.h>
 #include <memory>
 #include <utility>
 
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/rtc_base/thread.h"
+#include "api/peerconnectioninterface.h"
+#include "rtc_base/thread.h"
 
 using cricket::WebRtcVideoDecoderFactory;
 using cricket::WebRtcVideoEncoderFactory;
@@ -78,4 +78,4 @@ class OwnedFactoryAndThreads {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_OWNEDFACTORYANDTHREADS_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_OWNEDFACTORYANDTHREADS_H_

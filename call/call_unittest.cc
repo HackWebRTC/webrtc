@@ -13,22 +13,22 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/api/test/mock_audio_mixer.h"
-#include "webrtc/call/audio_state.h"
-#include "webrtc/call/call.h"
-#include "webrtc/call/fake_rtp_transport_controller_send.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/modules/audio_device/include/mock_audio_device.h"
-#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
-#include "webrtc/modules/congestion_controller/include/mock/mock_send_side_congestion_controller.h"
-#include "webrtc/modules/pacing/mock/mock_paced_sender.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/test/fake_encoder.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_audio_decoder_factory.h"
-#include "webrtc/test/mock_transport.h"
-#include "webrtc/test/mock_voice_engine.h"
+#include "api/test/mock_audio_mixer.h"
+#include "call/audio_state.h"
+#include "call/call.h"
+#include "call/fake_rtp_transport_controller_send.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "modules/audio_device/include/mock_audio_device.h"
+#include "modules/audio_mixer/audio_mixer_impl.h"
+#include "modules/congestion_controller/include/mock/mock_send_side_congestion_controller.h"
+#include "modules/pacing/mock/mock_paced_sender.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "rtc_base/ptr_util.h"
+#include "test/fake_encoder.h"
+#include "test/gtest.h"
+#include "test/mock_audio_decoder_factory.h"
+#include "test/mock_transport.h"
+#include "test/mock_voice_engine.h"
 
 namespace {
 

@@ -113,7 +113,7 @@ deps_os = {
     'src/third_party/ub-uiautomator/lib':
       Var('chromium_git') + '/chromium/third_party/ub-uiautomator.git' + '@' + '00270549ce3161ae72ceb24712618ea28b4f9434',
     # Gradle 3.5.0. Used for testing Android Studio project generation for WebRTC.
-    'src/webrtc/examples/androidtests/third_party/gradle':
+    'src/examples/androidtests/third_party/gradle':
       Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
       '941559e020f6c357ebb08d5c67acdb858a3defc2',
   },
@@ -554,26 +554,26 @@ include_rules = [
   "+libyuv",
   "-webrtc",  # Has to be disabled; otherwise all dirs below will be allowed.
   # Individual headers that will be moved out of here, see webrtc:4243.
-  "+webrtc/call/rtp_config.h",
-  "+webrtc/common_types.h",
-  "+webrtc/transport.h",
-  "+webrtc/typedefs.h",
-  "+webrtc/voice_engine_configurations.h",
+  "+call/rtp_config.h",
+  "+common_types.h",
+  "+transport.h",
+  "+typedefs.h",
+  "+voice_engine_configurations.h",
 
   "+WebRTC",
-  "+webrtc/api",
-  "+webrtc/modules/include",
-  "+webrtc/rtc_base",
-  "+webrtc/test",
-  "+webrtc/rtc_tools",
+  "+api",
+  "+modules/include",
+  "+rtc_base",
+  "+test",
+  "+rtc_tools",
 ]
 
 # The below rules will be removed when webrtc:4243 is fixed.
 specific_include_rules = {
   "video_receive_stream\.h": [
-    "+webrtc/call/video_receive_stream.h",
+    "+call/video_receive_stream.h",
   ],
   "video_send_stream\.h": [
-    "+webrtc/call/video_send_stream.h",
+    "+call/video_send_stream.h",
   ],
 }

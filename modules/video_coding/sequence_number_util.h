@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_SEQUENCE_NUMBER_UTIL_H_
-#define WEBRTC_MODULES_VIDEO_CODING_SEQUENCE_NUMBER_UTIL_H_
+#ifndef MODULES_VIDEO_CODING_SEQUENCE_NUMBER_UTIL_H_
+#define MODULES_VIDEO_CODING_SEQUENCE_NUMBER_UTIL_H_
 
 #include <limits>
 #include <type_traits>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/rtc_base/mod_ops.h"
-#include "webrtc/rtc_base/safe_compare.h"
+#include "api/optional.h"
+#include "rtc_base/mod_ops.h"
+#include "rtc_base/safe_compare.h"
 
 namespace webrtc {
 
@@ -125,4 +125,4 @@ class SeqNumUnwrapper {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_SEQUENCE_NUMBER_UTIL_H_
+#endif  // MODULES_VIDEO_CODING_SEQUENCE_NUMBER_UTIL_H_

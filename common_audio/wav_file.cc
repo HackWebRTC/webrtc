@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/wav_file.h"
+#include "common_audio/wav_file.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 #include <sstream>
 
-#include "webrtc/common_audio/include/audio_util.h"
-#include "webrtc/common_audio/wav_header.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "common_audio/include/audio_util.h"
+#include "common_audio/wav_header.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/safe_conversions.h"
 
 namespace webrtc {
 

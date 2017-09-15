@@ -375,7 +375,7 @@ if (rtc_enable_protobuf) {
       "debug.proto",
     ]
 
-    proto_out_dir = "webrtc/modules/audio_processing"
+    proto_out_dir = "modules/audio_processing"
   }
 }
 
@@ -863,7 +863,7 @@ if (rtc_include_tests) {
       sources = [
         "test/unittest.proto",
       ]
-      proto_out_dir = "webrtc/modules/audio_processing/test"
+      proto_out_dir = "modules/audio_processing/test"
     }
 
     rtc_static_library("audioproc_protobuf_utils") {

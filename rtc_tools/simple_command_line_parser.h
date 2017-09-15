@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
-#define WEBRTC_RTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
+#ifndef RTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
+#define RTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
 
 #include <map>
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/gtest_prod_util.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/gtest_prod_util.h"
 
 // This is a very basic command line parsing class. We pass the command line
 // arguments and their number and the class forms a vector out of these. Than we
@@ -97,4 +97,4 @@ class CommandLineParser {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_RTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_
+#endif  // RTC_TOOLS_SIMPLE_COMMAND_LINE_PARSER_H_

@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_
-#define WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_
+#ifndef MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_
+#define MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/audio/audio_mixer.h"
-#include "webrtc/modules/audio_mixer/frame_combiner.h"
-#include "webrtc/modules/audio_mixer/output_rate_calculator.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/race_checker.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/typedefs.h"
+#include "api/audio/audio_mixer.h"
+#include "modules/audio_mixer/frame_combiner.h"
+#include "modules/audio_mixer/output_rate_calculator.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/race_checker.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread_annotations.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -111,4 +111,4 @@ class AudioMixerImpl : public AudioMixer {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_
+#endif  // MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_

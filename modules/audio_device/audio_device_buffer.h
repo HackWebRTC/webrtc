@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
+#ifndef MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
+#define MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
 
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/system_wrappers/include/file_wrapper.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker.h"
+#include "system_wrappers/include/file_wrapper.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -260,4 +260,4 @@ class AudioDeviceBuffer {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
+#endif  // MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_

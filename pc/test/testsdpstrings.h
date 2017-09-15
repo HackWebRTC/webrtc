@@ -10,8 +10,8 @@
 
 // This file contain SDP strings used for testing.
 
-#ifndef WEBRTC_PC_TEST_TESTSDPSTRINGS_H_
-#define WEBRTC_PC_TEST_TESTSDPSTRINGS_H_
+#ifndef PC_TEST_TESTSDPSTRINGS_H_
+#define PC_TEST_TESTSDPSTRINGS_H_
 
 namespace webrtc {
 
@@ -129,4 +129,4 @@ static const char kAudioSdpWithUnsupportedCodecs[] =
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_TEST_TESTSDPSTRINGS_H_
+#endif  // PC_TEST_TESTSDPSTRINGS_H_

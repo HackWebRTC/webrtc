@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
-#define WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
+#ifndef MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
+#define MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/video/video_frame.h"
+#include "api/video/video_frame.h"
 // For EncodedImage
-#include "webrtc/common_video/include/video_frame.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/typedefs.h"
+#include "common_video/include/video_frame.h"
+#include "modules/include/module_common_types.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -173,4 +173,4 @@ class KeyFrameRequestSender {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
+#endif  // MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_

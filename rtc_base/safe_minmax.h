@@ -73,15 +73,15 @@
 // result, then everything's fine, and the return type is as requested. But if
 // the requested type is too small, a static_assert is triggered.
 
-#ifndef WEBRTC_RTC_BASE_SAFE_MINMAX_H_
-#define WEBRTC_RTC_BASE_SAFE_MINMAX_H_
+#ifndef RTC_BASE_SAFE_MINMAX_H_
+#define RTC_BASE_SAFE_MINMAX_H_
 
 #include <limits>
 #include <type_traits>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_compare.h"
-#include "webrtc/rtc_base/type_traits.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/safe_compare.h"
+#include "rtc_base/type_traits.h"
 
 namespace rtc {
 
@@ -332,4 +332,4 @@ R2 SafeClamp(T x, L min, H max) {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SAFE_MINMAX_H_
+#endif  // RTC_BASE_SAFE_MINMAX_H_

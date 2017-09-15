@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/stats/rtcstatsreport.h"
+#include "api/stats/rtcstatsreport.h"
 
 #include <sstream>
 

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_BASE_VIDEOSINKINTERFACE_H_
-#define WEBRTC_MEDIA_BASE_VIDEOSINKINTERFACE_H_
+#ifndef MEDIA_BASE_VIDEOSINKINTERFACE_H_
+#define MEDIA_BASE_VIDEOSINKINTERFACE_H_
 
 // TODO(nisse): Consider moving this interface (and possibly
 // VideoSourceInterface too) from media/base to common_video, to
@@ -26,4 +26,4 @@ class VideoSinkInterface {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_MEDIA_BASE_VIDEOSINKINTERFACE_H_
+#endif  // MEDIA_BASE_VIDEOSINKINTERFACE_H_

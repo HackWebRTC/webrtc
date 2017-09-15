@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_TIMESTAMPALIGNER_H_
-#define WEBRTC_RTC_BASE_TIMESTAMPALIGNER_H_
+#ifndef RTC_BASE_TIMESTAMPALIGNER_H_
+#define RTC_BASE_TIMESTAMPALIGNER_H_
 
 #include <stdint.h>
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "rtc_base/constructormagic.h"
 
 namespace rtc {
 
@@ -71,4 +71,4 @@ class TimestampAligner {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_TIMESTAMPALIGNER_H_
+#endif  // RTC_BASE_TIMESTAMPALIGNER_H_

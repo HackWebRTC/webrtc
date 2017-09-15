@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_STREAM_H_
-#define WEBRTC_RTC_BASE_STREAM_H_
+#ifndef RTC_BASE_STREAM_H_
+#define RTC_BASE_STREAM_H_
 
 #include <stdio.h>
 
 #include <memory>
 
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/messagehandler.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/sigslot.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/sigslot.h"
 
 namespace rtc {
 
@@ -713,4 +713,4 @@ StreamResult Flow(StreamInterface* source,
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_STREAM_H_
+#endif  // RTC_BASE_STREAM_H_

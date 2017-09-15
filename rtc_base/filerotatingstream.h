@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_FILEROTATINGSTREAM_H_
-#define WEBRTC_RTC_BASE_FILEROTATINGSTREAM_H_
+#ifndef RTC_BASE_FILEROTATINGSTREAM_H_
+#define RTC_BASE_FILEROTATINGSTREAM_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/stream.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/stream.h"
 
 namespace rtc {
 
@@ -170,4 +170,4 @@ class CallSessionFileRotatingStream : public FileRotatingStream {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_FILEROTATINGSTREAM_H_
+#endif  // RTC_BASE_FILEROTATINGSTREAM_H_

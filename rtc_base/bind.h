@@ -58,14 +58,14 @@
 //   }
 //
 
-#ifndef WEBRTC_RTC_BASE_BIND_H_
-#define WEBRTC_RTC_BASE_BIND_H_
+#ifndef RTC_BASE_BIND_H_
+#define RTC_BASE_BIND_H_
 
 #include <tuple>
 #include <type_traits>
 
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/template_util.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/template_util.h"
 
 #define NONAME
 
@@ -281,4 +281,4 @@ Functor<FP_T(NONAME), R, Args...> Bind(
 
 #undef NONAME
 
-#endif  // WEBRTC_RTC_BASE_BIND_H_
+#endif  // RTC_BASE_BIND_H_

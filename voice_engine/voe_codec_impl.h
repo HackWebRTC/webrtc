@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_VOE_CODEC_IMPL_H
-#define WEBRTC_VOICE_ENGINE_VOE_CODEC_IMPL_H
+#ifndef VOICE_ENGINE_VOE_CODEC_IMPL_H_
+#define VOICE_ENGINE_VOE_CODEC_IMPL_H_
 
-#include "webrtc/voice_engine/include/voe_codec.h"
+#include "voice_engine/include/voe_codec.h"
 
-#include "webrtc/voice_engine/shared_data.h"
+#include "voice_engine/shared_data.h"
 
 namespace webrtc {
 
@@ -70,4 +70,4 @@ class VoECodecImpl : public VoECodec {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_VOE_CODEC_IMPL_H
+#endif  // VOICE_ENGINE_VOE_CODEC_IMPL_H_

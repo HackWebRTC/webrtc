@@ -13,12 +13,12 @@
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/screen_drawer.h"
-#include "webrtc/modules/desktop_capture/screen_drawer_lock_posix.h"
-#include "webrtc/modules/desktop_capture/x11/shared_x_display.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/system_wrappers/include/sleep.h"
+#include "modules/desktop_capture/screen_drawer.h"
+#include "modules/desktop_capture/screen_drawer_lock_posix.h"
+#include "modules/desktop_capture/x11/shared_x_display.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ptr_util.h"
+#include "system_wrappers/include/sleep.h"
 
 namespace webrtc {
 

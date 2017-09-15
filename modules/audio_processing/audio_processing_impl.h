@@ -8,26 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
+#ifndef MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
+#define MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
 
 #include <list>
 #include <memory>
 #include <vector>
 
-#include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/include/aec_dump.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/modules/audio_processing/render_queue_item_verifier.h"
-#include "webrtc/modules/audio_processing/rms_level.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/function_view.h"
-#include "webrtc/rtc_base/gtest_prod_util.h"
-#include "webrtc/rtc_base/ignore_wundef.h"
-#include "webrtc/rtc_base/protobuf_utils.h"
-#include "webrtc/rtc_base/swap_queue.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/system_wrappers/include/file_wrapper.h"
+#include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/include/aec_dump.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/render_queue_item_verifier.h"
+#include "modules/audio_processing/rms_level.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/function_view.h"
+#include "rtc_base/gtest_prod_util.h"
+#include "rtc_base/ignore_wundef.h"
+#include "rtc_base/protobuf_utils.h"
+#include "rtc_base/swap_queue.h"
+#include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/file_wrapper.h"
 
 namespace webrtc {
 
@@ -415,4 +415,4 @@ class AudioProcessingImpl : public AudioProcessing {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
+#endif  // MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_

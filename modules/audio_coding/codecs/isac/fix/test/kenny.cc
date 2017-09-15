@@ -14,9 +14,9 @@
 #include <time.h>
 #include <ctype.h>
 
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/isacfix.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/perf_test.h"
+#include "modules/audio_coding/codecs/isac/fix/include/isacfix.h"
+#include "test/gtest.h"
+#include "test/testsupport/perf_test.h"
 
 // TODO(kma): Clean up the code and change benchmarking the whole codec to
 // separate encoder and decoder.

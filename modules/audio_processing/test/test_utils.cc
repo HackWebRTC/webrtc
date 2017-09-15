@@ -10,8 +10,8 @@
 
 #include <utility>
 
-#include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_processing/test/test_utils.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

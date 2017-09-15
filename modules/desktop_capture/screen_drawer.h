@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_H_
+#ifndef MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_H_
+#define MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_H_
 
 #include <stdint.h>
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/rgba_color.h"
-#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/rgba_color.h"
+#include "modules/desktop_capture/desktop_capture_types.h"
+#include "modules/desktop_capture/desktop_geometry.h"
 
 namespace webrtc {
 
@@ -80,4 +80,4 @@ class ScreenDrawer {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_H_
+#endif  // MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_H_

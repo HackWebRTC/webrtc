@@ -10,10 +10,10 @@
 
 #include <memory>
 
-#include "webrtc/pc/datachannel.h"
-#include "webrtc/pc/sctputils.h"
-#include "webrtc/pc/test/fakedatachannelprovider.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "pc/datachannel.h"
+#include "pc/sctputils.h"
+#include "pc/test/fakedatachannelprovider.h"
+#include "rtc_base/gunit.h"
 
 using webrtc::DataChannel;
 using webrtc::SctpSidAllocator;

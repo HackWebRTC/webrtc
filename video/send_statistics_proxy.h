@@ -8,27 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_SEND_STATISTICS_PROXY_H_
-#define WEBRTC_VIDEO_SEND_STATISTICS_PROXY_H_
+#ifndef VIDEO_SEND_STATISTICS_PROXY_H_
+#define VIDEO_SEND_STATISTICS_PROXY_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/numerics/exp_filter.h"
-#include "webrtc/rtc_base/ratetracker.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/video/overuse_frame_detector.h"
-#include "webrtc/video/report_block_stats.h"
-#include "webrtc/video/stats_counter.h"
-#include "webrtc/video/video_stream_encoder.h"
-#include "webrtc/call/video_send_stream.h"
+#include "common_types.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/numerics/exp_filter.h"
+#include "rtc_base/ratetracker.h"
+#include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/clock.h"
+#include "video/overuse_frame_detector.h"
+#include "video/report_block_stats.h"
+#include "video/stats_counter.h"
+#include "video/video_stream_encoder.h"
+#include "call/video_send_stream.h"
 
 namespace webrtc {
 
@@ -243,4 +243,4 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_VIDEO_SEND_STATISTICS_PROXY_H_
+#endif  // VIDEO_SEND_STATISTICS_PROXY_H_

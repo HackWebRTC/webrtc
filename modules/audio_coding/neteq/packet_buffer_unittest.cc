@@ -10,14 +10,14 @@
 
 // Unit tests for PacketBuffer class.
 
-#include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
-#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
-#include "webrtc/modules/audio_coding/neteq/mock/mock_statistics_calculator.h"
-#include "webrtc/modules/audio_coding/neteq/packet.h"
-#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_coding/neteq/packet_buffer.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
+#include "modules/audio_coding/neteq/mock/mock_statistics_calculator.h"
+#include "modules/audio_coding/neteq/packet.h"
+#include "modules/audio_coding/neteq/tick_timer.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 
 using ::testing::Return;
 using ::testing::StrictMock;

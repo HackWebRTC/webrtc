@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
+#ifndef MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
+#define MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
 
 #include <memory>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/system_wrappers/include/rtp_to_ntp_estimator.h"
+#include "rtc_base/constructormagic.h"
+#include "system_wrappers/include/rtp_to_ntp_estimator.h"
 
 namespace webrtc {
 
@@ -50,4 +50,4 @@ class RemoteNtpTimeEstimator {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
+#endif  // MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_

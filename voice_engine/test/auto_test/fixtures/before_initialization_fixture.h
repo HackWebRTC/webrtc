@@ -11,17 +11,17 @@
 #ifndef SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_H_
 #define SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_H_
 
-#include "webrtc/common_types.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/typedefs.h"
-#include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/include/voe_codec.h"
-#include "webrtc/voice_engine/include/voe_errors.h"
-#include "webrtc/voice_engine/include/voe_file.h"
-#include "webrtc/voice_engine/include/voe_network.h"
-#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
-#include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
+#include "common_types.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "typedefs.h"
+#include "voice_engine/include/voe_base.h"
+#include "voice_engine/include/voe_codec.h"
+#include "voice_engine/include/voe_errors.h"
+#include "voice_engine/include/voe_file.h"
+#include "voice_engine/include/voe_network.h"
+#include "voice_engine/include/voe_rtp_rtcp.h"
+#include "voice_engine/test/auto_test/voe_test_common.h"
 
 // This convenient fixture sets up all voice engine interfaces automatically for
 // use by testing subclasses. It allocates each interface and releases it once

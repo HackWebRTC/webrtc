@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/metrics_default.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/trace_to_stderr.h"
+#include "rtc_base/flags.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/metrics_default.h"
+#include "test/field_trial.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
+#include "test/testsupport/trace_to_stderr.h"
 
 #if defined(WEBRTC_IOS)
-#include "webrtc/test/ios/test_support.h"
+#include "test/ios/test_support.h"
 
 DEFINE_string(NSTreatUnknownArgumentsAsOpen, "",
     "Intentionally ignored flag intended for iOS simulator.");

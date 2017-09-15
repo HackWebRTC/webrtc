@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_VIRTUALSOCKETSERVER_H_
-#define WEBRTC_RTC_BASE_VIRTUALSOCKETSERVER_H_
+#ifndef RTC_BASE_VIRTUALSOCKETSERVER_H_
+#define RTC_BASE_VIRTUALSOCKETSERVER_H_
 
 #include <deque>
 #include <map>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/socketserver.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/event.h"
+#include "rtc_base/fakeclock.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/socketserver.h"
 
 namespace rtc {
 
@@ -402,4 +402,4 @@ class VirtualSocket : public AsyncSocket,
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_VIRTUALSOCKETSERVER_H_
+#endif  // RTC_BASE_VIRTUALSOCKETSERVER_H_

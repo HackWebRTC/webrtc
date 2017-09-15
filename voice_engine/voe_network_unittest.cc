@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/include/voe_network.h"
+#include "voice_engine/include/voe_network.h"
 
-#include "webrtc/test/gtest.h"
-#include "webrtc/voice_engine/include/voe_errors.h"
-#include "webrtc/voice_engine/voice_engine_fixture.h"
+#include "test/gtest.h"
+#include "voice_engine/include/voe_errors.h"
+#include "voice_engine/voice_engine_fixture.h"
 
 namespace webrtc {
 

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_STREAM_CONFIG_H_
-#define WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_STREAM_CONFIG_H_
+#ifndef LOGGING_RTC_EVENT_LOG_RTC_STREAM_CONFIG_H_
+#define LOGGING_RTC_EVENT_LOG_RTC_STREAM_CONFIG_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/common_types.h"
+#include "api/rtpparameters.h"
+#include "common_types.h"
 
 namespace webrtc {
 namespace rtclog {
@@ -50,4 +50,4 @@ struct StreamConfig {
 }  // namespace rtclog
 }  // namespace webrtc
 
-#endif  // WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_STREAM_CONFIG_H_
+#endif  // LOGGING_RTC_EVENT_LOG_RTC_STREAM_CONFIG_H_

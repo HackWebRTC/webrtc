@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_NACK_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_NACK_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_NACK_H_
+#define MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_NACK_H_
 
 #include <vector>
 
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
-#include "webrtc/rtc_base/basictypes.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
+#include "rtc_base/basictypes.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -55,4 +55,4 @@ class Nack : public Rtpfb {
 
 }  // namespace rtcp
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_NACK_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_NACK_H_

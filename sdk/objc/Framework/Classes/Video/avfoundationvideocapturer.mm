@@ -19,12 +19,12 @@
 
 #include "avfoundationformatmapper.h"
 
-#include "webrtc/api/video/video_rotation.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
+#include "api/video/video_rotation.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
+#include "sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
 
 namespace webrtc {
 

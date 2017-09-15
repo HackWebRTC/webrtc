@@ -10,11 +10,11 @@
 
 #include <memory>
 
-#include "webrtc/common_audio/sparse_fir_filter.h"
+#include "common_audio/sparse_fir_filter.h"
 
-#include "webrtc/common_audio/fir_filter.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/test/gtest.h"
+#include "common_audio/fir_filter.h"
+#include "rtc_base/arraysize.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace {

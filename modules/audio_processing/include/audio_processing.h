@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
+#ifndef MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
+#define MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
 
 // MSVC++ requires this to be set before any other includes to get M_PI.
 #define _USE_MATH_DEFINES
@@ -20,12 +20,12 @@
 #include <string.h>
 #include <vector>
 
-#include "webrtc/modules/audio_processing/beamformer/array_util.h"
-#include "webrtc/modules/audio_processing/include/config.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/platform_file.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_processing/beamformer/array_util.h"
+#include "modules/audio_processing/include/config.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/platform_file.h"
+#include "rtc_base/refcount.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -1138,4 +1138,4 @@ class VoiceDetection {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
+#endif  // MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_

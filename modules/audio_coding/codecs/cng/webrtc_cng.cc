@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 
 #include <algorithm>
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "rtc_base/safe_conversions.h"
 
 namespace webrtc {
 

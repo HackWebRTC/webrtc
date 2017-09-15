@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_FUNCTION_VIEW_H_
-#define WEBRTC_RTC_BASE_FUNCTION_VIEW_H_
+#ifndef RTC_BASE_FUNCTION_VIEW_H_
+#define RTC_BASE_FUNCTION_VIEW_H_
 
 #include <type_traits>
 #include <utility>
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 // Just like std::function, FunctionView will wrap any callable and hide its
 // actual type, exposing only its signature. But unlike std::function,
@@ -127,4 +127,4 @@ class FunctionView<RetT(ArgT...)> final {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_FUNCTION_VIEW_H_
+#endif  // RTC_BASE_FUNCTION_VIEW_H_

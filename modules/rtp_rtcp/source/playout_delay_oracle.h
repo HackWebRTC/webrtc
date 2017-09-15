@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_PLAYOUT_DELAY_ORACLE_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_PLAYOUT_DELAY_ORACLE_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_PLAYOUT_DELAY_ORACLE_H_
+#define MODULES_RTP_RTCP_SOURCE_PLAYOUT_DELAY_ORACLE_H_
 
 #include <stdint.h>
 
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "modules/include/module_common_types.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -78,4 +78,4 @@ class PlayoutDelayOracle {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_PLAYOUT_DELAY_ORACLE_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_PLAYOUT_DELAY_ORACLE_H_

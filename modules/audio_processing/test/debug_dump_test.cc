@@ -14,13 +14,13 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
-#include "webrtc/modules/audio_processing/aec_dump/aec_dump_factory.h"
-#include "webrtc/modules/audio_processing/test/debug_dump_replayer.h"
-#include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "modules/audio_coding/neteq/tools/resample_input_audio_file.h"
+#include "modules/audio_processing/aec_dump/aec_dump_factory.h"
+#include "modules/audio_processing/test/debug_dump_replayer.h"
+#include "modules/audio_processing/test/test_utils.h"
+#include "rtc_base/task_queue.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
 
 namespace webrtc {
 namespace test {

@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_CONFERENCE_MIXER_IMPL_H_
-#define WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_CONFERENCE_MIXER_IMPL_H_
+#ifndef MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_CONFERENCE_MIXER_IMPL_H_
+#define MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_CONFERENCE_MIXER_IMPL_H_
 
 #include <list>
 #include <map>
 #include <memory>
 
-#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
-#include "webrtc/modules/audio_conference_mixer/source/memory_pool.h"
-#include "webrtc/modules/audio_conference_mixer/source/time_scheduler.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_conference_mixer/include/audio_conference_mixer.h"
+#include "modules/audio_conference_mixer/source/memory_pool.h"
+#include "modules/audio_conference_mixer/source/time_scheduler.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/criticalsection.h"
+#include "typedefs.h"
 
 namespace webrtc {
 class AudioProcessing;
@@ -189,4 +189,4 @@ private:
 };
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_CONFERENCE_MIXER_IMPL_H_
+#endif // MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_CONFERENCE_MIXER_IMPL_H_

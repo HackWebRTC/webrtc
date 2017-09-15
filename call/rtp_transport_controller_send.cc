@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/rtp_transport_controller_send.h"
+#include "call/rtp_transport_controller_send.h"
 
 namespace webrtc {
 

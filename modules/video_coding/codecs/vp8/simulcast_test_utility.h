@@ -8,25 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_UTILITY_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_UTILITY_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_UTILITY_H_
+#define MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_UTILITY_H_
 
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/common_video/include/video_frame.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/test/gtest.h"
+#include "api/video/i420_buffer.h"
+#include "api/video/video_frame.h"
+#include "common_video/include/video_frame.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
+#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/include/mock/mock_video_codec_interface.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "rtc_base/checks.h"
+#include "test/gtest.h"
 
 using ::testing::_;
 using ::testing::AllOf;
@@ -752,4 +752,4 @@ class TestVp8Simulcast : public ::testing::Test {
 }  // namespace testing
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_UTILITY_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_UTILITY_H_

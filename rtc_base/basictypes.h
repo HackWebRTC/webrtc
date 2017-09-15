@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_BASICTYPES_H_
-#define WEBRTC_RTC_BASE_BASICTYPES_H_
+#ifndef RTC_BASE_BASICTYPES_H_
+#define RTC_BASE_BASICTYPES_H_
 
 #include <stddef.h>  // for NULL, size_t
 #include <stdint.h>  // for uintptr_t and (u)int_t types.
@@ -67,4 +67,4 @@ typedef int socklen_t;
 
 #endif  // __cplusplus
 
-#endif  // WEBRTC_RTC_BASE_BASICTYPES_H_
+#endif  // RTC_BASE_BASICTYPES_H_

@@ -13,16 +13,16 @@
 
 #include <memory>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/modules/audio_coding/test/Channel.h"
-#include "webrtc/modules/audio_coding/test/PCMFile.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "common_types.h"
+#include "modules/audio_coding/codecs/audio_format_conversion.h"
+#include "modules/audio_coding/include/audio_coding_module.h"
+#include "modules/audio_coding/test/Channel.h"
+#include "modules/audio_coding/test/PCMFile.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/flags.h"
+#include "system_wrappers/include/clock.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
 
 // Codec.
 DEFINE_string(codec, "opus", "Codec Name");

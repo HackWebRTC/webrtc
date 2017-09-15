@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/packet_buffer.h"
+#include "modules/video_coding/packet_buffer.h"
 
 #include <algorithm>
 #include <limits>
 #include <utility>
 
-#include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/modules/video_coding/frame_object.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "common_video/h264/h264_common.h"
+#include "modules/video_coding/frame_object.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace video_coding {

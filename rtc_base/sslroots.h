@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_SSLROOTS_H_
-#define WEBRTC_RTC_BASE_SSLROOTS_H_
+#ifndef RTC_BASE_SSLROOTS_H_
+#define RTC_BASE_SSLROOTS_H_
 
 // This file is the root certificates in C form that are needed to connect to
 // Google.
@@ -4277,4 +4277,4 @@ const size_t kSSLCertCertificateSizeList[] = {
   1122,
 };
 
-#endif  // WEBRTC_RTC_BASE_SSLROOTS_H_
+#endif  // RTC_BASE_SSLROOTS_H_

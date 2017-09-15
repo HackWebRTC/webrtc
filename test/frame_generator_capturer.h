@@ -7,17 +7,17 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_TEST_FRAME_GENERATOR_CAPTURER_H_
-#define WEBRTC_TEST_FRAME_GENERATOR_CAPTURER_H_
+#ifndef TEST_FRAME_GENERATOR_CAPTURER_H_
+#define TEST_FRAME_GENERATOR_CAPTURER_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/test/video_capturer.h"
-#include "webrtc/typedefs.h"
+#include "api/video/video_frame.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/task_queue.h"
+#include "test/video_capturer.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -105,4 +105,4 @@ class FrameGeneratorCapturer : public VideoCapturer {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_FRAME_GENERATOR_CAPTURER_H_
+#endif  // TEST_FRAME_GENERATOR_CAPTURER_H_

@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H_
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H_
+#ifndef AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H_
+#define AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H_
 
 #if (_MSC_VER >= 1400)  // only include for VS 2005 and higher
 
-#include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "modules/audio_device/audio_device_generic.h"
 
 #include <wmcodecdsp.h>      // CLSID_CWMAudioAEC
                              // (must be before audioclient.h)
@@ -24,8 +24,8 @@
 #include <endpointvolume.h>
 #include <mediaobj.h>        // IMediaObject
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 // Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
 #pragma comment( lib, "avrt.lib" )
@@ -348,4 +348,4 @@ private:
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H_
+#endif  // AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H_

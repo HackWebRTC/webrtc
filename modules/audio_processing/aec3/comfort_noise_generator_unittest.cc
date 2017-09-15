@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/comfort_noise_generator.h"
+#include "modules/audio_processing/aec3/comfort_noise_generator.h"
 
 #include <algorithm>
 #include <numeric>
 
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/random.h"
+#include "system_wrappers/include/cpu_features_wrapper.h"
+#include "test/gtest.h"
+#include "typedefs.h"
 
 namespace webrtc {
 namespace aec3 {

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "rtc_base/stream.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/pathutils.h"
 
 namespace rtc {
 

@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
+#ifndef SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
+#define SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
 
 #include <android/log.h>
 #include <string>
 
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
@@ -86,4 +86,4 @@ static inline bool CheckException(JNIEnv* jni) {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
+#endif  // SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_

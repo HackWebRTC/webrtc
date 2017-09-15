@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_AEC_DUMP_BASED_SIMULATOR_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_AEC_DUMP_BASED_SIMULATOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_TEST_AEC_DUMP_BASED_SIMULATOR_H_
+#define MODULES_AUDIO_PROCESSING_TEST_AEC_DUMP_BASED_SIMULATOR_H_
 
-#include "webrtc/modules/audio_processing/test/audio_processing_simulator.h"
+#include "modules/audio_processing/test/audio_processing_simulator.h"
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/ignore_wundef.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/ignore_wundef.h"
 
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
 #else
-#include "webrtc/modules/audio_processing/debug.pb.h"
+#include "modules/audio_processing/debug.pb.h"
 #endif
 RTC_POP_IGNORING_WUNDEF()
 
@@ -65,4 +65,4 @@ class AecDumpBasedSimulator final : public AudioProcessingSimulator {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_TEST_AEC_DUMP_BASED_SIMULATOR_H_
+#endif  // MODULES_AUDIO_PROCESSING_TEST_AEC_DUMP_BASED_SIMULATOR_H_

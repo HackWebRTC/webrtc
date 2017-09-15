@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
-#include "webrtc/voice_engine/voice_engine_impl.h"
+#include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "voice_engine/voice_engine_impl.h"
 
 AfterStreamingFixture::AfterStreamingFixture()
     : BeforeStreamingFixture() {

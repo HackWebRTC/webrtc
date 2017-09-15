@@ -11,9 +11,9 @@
 #include <algorithm>
 #include <climits>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/numerics/percentile_filter.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/numerics/percentile_filter.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/test/fakeaudiocapturemodule.h"
+#include "pc/test/fakeaudiocapturemodule.h"
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/thread.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread.h"
 
 using std::min;
 

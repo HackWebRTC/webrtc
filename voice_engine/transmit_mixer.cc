@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/transmit_mixer.h"
+#include "voice_engine/transmit_mixer.h"
 
 #include <memory>
 
-#include "webrtc/audio/utility/audio_frame_operations.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/location.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/voice_engine/channel.h"
-#include "webrtc/voice_engine/channel_manager.h"
-#include "webrtc/voice_engine/statistics.h"
-#include "webrtc/voice_engine/utility.h"
-#include "webrtc/voice_engine/voe_base_impl.h"
+#include "audio/utility/audio_frame_operations.h"
+#include "rtc_base/format_macros.h"
+#include "rtc_base/location.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/event_wrapper.h"
+#include "system_wrappers/include/trace.h"
+#include "voice_engine/channel.h"
+#include "voice_engine/channel_manager.h"
+#include "voice_engine/statistics.h"
+#include "voice_engine/utility.h"
+#include "voice_engine/voe_base_impl.h"
 
 namespace webrtc {
 namespace voe {

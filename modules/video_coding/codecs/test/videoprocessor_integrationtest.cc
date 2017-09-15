@@ -8,33 +8,33 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/codecs/test/videoprocessor_integrationtest.h"
+#include "modules/video_coding/codecs/test/videoprocessor_integrationtest.h"
 
 #include <utility>
 
 #if defined(WEBRTC_ANDROID)
-#include "webrtc/modules/video_coding/codecs/test/android_test_initializer.h"
-#include "webrtc/sdk/android/src/jni/androidmediadecoder_jni.h"
-#include "webrtc/sdk/android/src/jni/androidmediaencoder_jni.h"
+#include "modules/video_coding/codecs/test/android_test_initializer.h"
+#include "sdk/android/src/jni/androidmediadecoder_jni.h"
+#include "sdk/android/src/jni/androidmediaencoder_jni.h"
 #elif defined(WEBRTC_IOS)
-#include "webrtc/modules/video_coding/codecs/test/objc_codec_h264_test.h"
+#include "modules/video_coding/codecs/test/objc_codec_h264_test.h"
 #endif
 
-#include "webrtc/media/engine/internaldecoderfactory.h"
-#include "webrtc/media/engine/internalencoderfactory.h"
-#include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
-#include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/include/video_coding.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/file.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/metrics/video_metrics.h"
-#include "webrtc/test/video_codec_settings.h"
+#include "media/engine/internaldecoderfactory.h"
+#include "media/engine/internalencoderfactory.h"
+#include "media/engine/videoencodersoftwarefallbackwrapper.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_coding.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/event.h"
+#include "rtc_base/file.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
+#include "system_wrappers/include/sleep.h"
+#include "test/testsupport/fileutils.h"
+#include "test/testsupport/metrics/video_metrics.h"
+#include "test/video_codec_settings.h"
 
 namespace webrtc {
 namespace test {

@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/stunport.h"
+#include "p2p/base/stunport.h"
 
-#include "webrtc/p2p/base/common.h"
-#include "webrtc/p2p/base/portallocator.h"
-#include "webrtc/p2p/base/stun.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/ipaddress.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/nethelpers.h"
+#include "p2p/base/common.h"
+#include "p2p/base/portallocator.h"
+#include "p2p/base/stun.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/ipaddress.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/nethelpers.h"
 
 namespace cricket {
 

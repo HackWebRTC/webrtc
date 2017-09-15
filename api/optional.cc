@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/optional.h"
+#include "api/optional.h"
 
 namespace rtc {
 namespace optional_internal {

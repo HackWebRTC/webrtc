@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/webrtcmediaengine.h"
+#include "media/engine/webrtcmediaengine.h"
 
 #include <algorithm>
 
-#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "webrtc/media/engine/webrtcvoiceengine.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "media/engine/webrtcvoiceengine.h"
 
 #ifdef HAVE_WEBRTC_VIDEO
-#include "webrtc/media/engine/webrtcvideoengine.h"
+#include "media/engine/webrtcvideoengine.h"
 #else
-#include "webrtc/media/engine/nullwebrtcvideoengine.h"
+#include "media/engine/nullwebrtcvideoengine.h"
 #endif
 
 namespace cricket {

@@ -10,7 +10,7 @@
 
 #ifdef HAVE_WEBRTC_VOICE
 
-#include "webrtc/media/engine/webrtcvoiceengine.h"
+#include "media/engine/webrtcvoiceengine.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -18,32 +18,32 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/call/audio_sink.h"
-#include "webrtc/media/base/audiosource.h"
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/media/base/streamparams.h"
-#include "webrtc/media/engine/adm_helpers.h"
-#include "webrtc/media/engine/apm_helpers.h"
-#include "webrtc/media/engine/payload_type_mapper.h"
-#include "webrtc/media/engine/webrtcmediaengine.h"
-#include "webrtc/media/engine/webrtcvoe.h"
-#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
-#include "webrtc/modules/audio_processing/aec_dump/aec_dump_factory.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/byteorder.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/race_checker.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/trace_event.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
-#include "webrtc/system_wrappers/include/metrics.h"
-#include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/voice_engine/transmit_mixer.h"
+#include "api/call/audio_sink.h"
+#include "media/base/audiosource.h"
+#include "media/base/mediaconstants.h"
+#include "media/base/streamparams.h"
+#include "media/engine/adm_helpers.h"
+#include "media/engine/apm_helpers.h"
+#include "media/engine/payload_type_mapper.h"
+#include "media/engine/webrtcmediaengine.h"
+#include "media/engine/webrtcvoe.h"
+#include "modules/audio_mixer/audio_mixer_impl.h"
+#include "modules/audio_processing/aec_dump/aec_dump_factory.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/base64.h"
+#include "rtc_base/byteorder.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/race_checker.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/trace_event.h"
+#include "system_wrappers/include/field_trial.h"
+#include "system_wrappers/include/metrics.h"
+#include "system_wrappers/include/trace.h"
+#include "voice_engine/transmit_mixer.h"
 
 namespace cricket {
 namespace {

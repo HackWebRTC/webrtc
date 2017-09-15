@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_PC_VIDEO_JNI_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_PC_VIDEO_JNI_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_VIDEO_JNI_H_
+#define SDK_ANDROID_SRC_JNI_PC_VIDEO_JNI_H_
 
 #include <jni.h>
 
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace cricket {
 class WebRtcVideoEncoderFactory;
@@ -39,4 +39,4 @@ jobject GetJavaSurfaceTextureHelper(
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_VIDEO_JNI_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_VIDEO_JNI_H_

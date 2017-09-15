@@ -10,9 +10,9 @@
 
 #import "WebRTC/RTCVideoFrameBuffer.h"
 
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 @implementation RTCCVPixelBuffer {
   int _width;

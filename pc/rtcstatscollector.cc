@@ -8,25 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/rtcstatscollector.h"
+#include "pc/rtcstatscollector.h"
 
 #include <memory>
 #include <sstream>
 #include <utility>
 #include <vector>
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/pc/peerconnection.h"
-#include "webrtc/pc/webrtcsession.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "api/mediastreaminterface.h"
+#include "api/peerconnectioninterface.h"
+#include "media/base/mediachannel.h"
+#include "p2p/base/candidate.h"
+#include "p2p/base/p2pconstants.h"
+#include "p2p/base/port.h"
+#include "pc/peerconnection.h"
+#include "pc/webrtcsession.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/timeutils.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 

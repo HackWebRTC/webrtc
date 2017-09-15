@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/audio/test/audio_end_to_end_test.h"
-#include "webrtc/rtc_base/safe_compare.h"
-#include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/test/gtest.h"
+#include "audio/test/audio_end_to_end_test.h"
+#include "rtc_base/safe_compare.h"
+#include "system_wrappers/include/sleep.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace test {

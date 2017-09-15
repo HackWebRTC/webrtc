@@ -10,9 +10,9 @@
 
 // Unit tests for test InputAudioFile class.
 
-#include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
+#include "modules/audio_coding/neteq/tools/input_audio_file.h"
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace test {

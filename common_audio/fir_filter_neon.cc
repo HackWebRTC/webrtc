@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/fir_filter_neon.h"
+#include "common_audio/fir_filter_neon.h"
 
 #include <arm_neon.h>
 #include <string.h>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/system_wrappers/include/aligned_malloc.h"
+#include "rtc_base/checks.h"
+#include "system_wrappers/include/aligned_malloc.h"
 
 namespace webrtc {
 

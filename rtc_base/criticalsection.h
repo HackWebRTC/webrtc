@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_CRITICALSECTION_H_
-#define WEBRTC_RTC_BASE_CRITICALSECTION_H_
+#ifndef RTC_BASE_CRITICALSECTION_H_
+#define RTC_BASE_CRITICALSECTION_H_
 
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/platform_thread_types.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/platform_thread_types.h"
+#include "rtc_base/thread_annotations.h"
+#include "typedefs.h"
 
 #if defined(WEBRTC_WIN)
 // Include winsock2.h before including <windows.h> to maintain consistency with
@@ -156,4 +156,4 @@ class RTC_SCOPED_LOCKABLE GlobalLockScope {
 
 } // namespace rtc
 
-#endif // WEBRTC_RTC_BASE_CRITICALSECTION_H_
+#endif // RTC_BASE_CRITICALSECTION_H_

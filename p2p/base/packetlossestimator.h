@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_PACKETLOSSESTIMATOR_H_
-#define WEBRTC_P2P_BASE_PACKETLOSSESTIMATOR_H_
+#ifndef P2P_BASE_PACKETLOSSESTIMATOR_H_
+#define P2P_BASE_PACKETLOSSESTIMATOR_H_
 
 #include <stdint.h>
 #include <string>
@@ -83,4 +83,4 @@ class PacketLossEstimator {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_PACKETLOSSESTIMATOR_H_
+#endif  // P2P_BASE_PACKETLOSSESTIMATOR_H_

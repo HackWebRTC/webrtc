@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/video_codecs/video_encoder.h"
+#include "api/video_codecs/video_encoder.h"
 
 namespace webrtc {
 

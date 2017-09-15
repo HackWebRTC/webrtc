@@ -8,22 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/frame_buffer2.h"
+#include "modules/video_coding/frame_buffer2.h"
 
 #include <algorithm>
 #include <cstring>
 #include <limits>
 #include <vector>
 
-#include "webrtc/modules/video_coding/frame_object.h"
-#include "webrtc/modules/video_coding/jitter_estimator.h"
-#include "webrtc/modules/video_coding/sequence_number_util.h"
-#include "webrtc/modules/video_coding/timing.h"
-#include "webrtc/rtc_base/platform_thread.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "modules/video_coding/frame_object.h"
+#include "modules/video_coding/jitter_estimator.h"
+#include "modules/video_coding/sequence_number_util.h"
+#include "modules/video_coding/timing.h"
+#include "rtc_base/platform_thread.h"
+#include "rtc_base/random.h"
+#include "system_wrappers/include/clock.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 
 using testing::_;
 using testing::Return;

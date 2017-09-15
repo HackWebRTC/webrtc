@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_WINDOW_H_
-#define WEBRTC_RTC_BASE_WINDOW_H_
+#ifndef RTC_BASE_WINDOW_H_
+#define RTC_BASE_WINDOW_H_
 
 #include <stdint.h>
 
-#include "webrtc/rtc_base/stringencode.h"
+#include "rtc_base/stringencode.h"
 
 // Define platform specific window types.
 #if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
 typedef unsigned long Window;  // Avoid include <X11/Xlib.h>.
 #elif defined(WEBRTC_WIN)
 // We commonly include win32.h in webrtc/rtc_base so just include it here.
-#include "webrtc/rtc_base/win32.h"  // Include HWND, HMONITOR.
+#include "rtc_base/win32.h"  // Include HWND, HMONITOR.
 #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 typedef unsigned int CGWindowID;
 typedef unsigned int CGDirectDisplayID;
@@ -75,4 +75,4 @@ inline std::string ToString(const WindowId& window) {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_WINDOW_H_
+#endif  // RTC_BASE_WINDOW_H_

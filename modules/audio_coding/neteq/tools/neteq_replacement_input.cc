@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/tools/neteq_replacement_input.h"
+#include "modules/audio_coding/neteq/tools/neteq_replacement_input.h"
 
-#include "webrtc/modules/audio_coding/neteq/tools/fake_decode_from_file.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_coding/neteq/tools/fake_decode_from_file.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

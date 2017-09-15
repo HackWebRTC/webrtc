@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_VIDEOENCODERWRAPPER_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_VIDEOENCODERWRAPPER_H_
+#ifndef SDK_ANDROID_SRC_JNI_VIDEOENCODERWRAPPER_H_
+#define SDK_ANDROID_SRC_JNI_VIDEOENCODERWRAPPER_H_
 
 #include <jni.h>
 #include <deque>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/video_codecs/video_encoder.h"
-#include "webrtc/common_video/h264/h264_bitstream_parser.h"
-#include "webrtc/modules/video_coding/codecs/vp9/include/vp9_globals.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
+#include "api/video_codecs/video_encoder.h"
+#include "common_video/h264/h264_bitstream_parser.h"
+#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
+#include "rtc_base/task_queue.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/native_handle_impl.h"
 
 namespace webrtc {
 namespace jni {
@@ -145,4 +145,4 @@ class VideoEncoderWrapper : public VideoEncoder {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_VIDEOENCODERWRAPPER_H_
+#endif  // SDK_ANDROID_SRC_JNI_VIDEOENCODERWRAPPER_H_

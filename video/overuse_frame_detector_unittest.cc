@@ -10,14 +10,14 @@
 
 #include <memory>
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/common_video/include/video_frame.h"
-#include "webrtc/modules/video_coding/utility/quality_scaler.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/video/overuse_frame_detector.h"
+#include "api/video/i420_buffer.h"
+#include "common_video/include/video_frame.h"
+#include "modules/video_coding/utility/quality_scaler.h"
+#include "rtc_base/event.h"
+#include "rtc_base/fakeclock.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "video/overuse_frame_detector.h"
 
 namespace webrtc {
 

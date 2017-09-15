@@ -10,12 +10,12 @@
 
 #include <utility>
 
-#include "webrtc/p2p/base/fakeportallocator.h"
-#include "webrtc/pc/test/fakeperiodicvideocapturer.h"
-#include "webrtc/pc/test/fakertccertificategenerator.h"
-#include "webrtc/pc/test/mockpeerconnectionobservers.h"
-#include "webrtc/pc/test/peerconnectiontestwrapper.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "p2p/base/fakeportallocator.h"
+#include "pc/test/fakeperiodicvideocapturer.h"
+#include "pc/test/fakertccertificategenerator.h"
+#include "pc/test/mockpeerconnectionobservers.h"
+#include "pc/test/peerconnectiontestwrapper.h"
+#include "rtc_base/gunit.h"
 
 static const char kStreamLabelBase[] = "stream_label";
 static const char kVideoTrackLabelBase[] = "video_track";

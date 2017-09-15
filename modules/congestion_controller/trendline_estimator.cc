@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/congestion_controller/trendline_estimator.h"
+#include "modules/congestion_controller/trendline_estimator.h"
 
 #include <algorithm>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
-#include "webrtc/rtc_base/checks.h"
+#include "api/optional.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

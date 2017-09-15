@@ -11,11 +11,11 @@
 #include <stdio.h>
 
 
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/test/testsupport/frame_writer.h"
+#include "common_types.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "test/testsupport/frame_writer.h"
 
 extern "C" {
 #if defined(USE_SYSTEM_LIBJPEG)

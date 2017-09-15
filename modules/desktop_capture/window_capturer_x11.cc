@@ -14,18 +14,18 @@
 
 #include <utility>
 
-#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
-#include "webrtc/modules/desktop_capture/window_finder_x11.h"
-#include "webrtc/modules/desktop_capture/x11/shared_x_display.h"
-#include "webrtc/modules/desktop_capture/x11/window_list_utils.h"
-#include "webrtc/modules/desktop_capture/x11/x_atom_cache.h"
-#include "webrtc/modules/desktop_capture/x11/x_server_pixel_buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "modules/desktop_capture/desktop_capture_options.h"
+#include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/window_finder_x11.h"
+#include "modules/desktop_capture/x11/shared_x_display.h"
+#include "modules/desktop_capture/x11/window_list_utils.h"
+#include "modules/desktop_capture/x11/x_atom_cache.h"
+#include "modules/desktop_capture/x11/x_server_pixel_buffer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

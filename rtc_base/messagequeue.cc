@@ -9,13 +9,13 @@
  */
 #include <algorithm>
 
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/trace_event.h"
 
 namespace rtc {
 namespace {

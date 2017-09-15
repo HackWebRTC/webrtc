@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/bundlefilter.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "pc/bundlefilter.h"
+#include "rtc_base/gunit.h"
 
 using cricket::StreamParams;
 

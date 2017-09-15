@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_
+#define MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_
 
 #include <stdint.h>
 
-#include "webrtc/system_wrappers/include/ntp_time.h"
+#include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 
@@ -40,4 +40,4 @@ inline uint32_t CompactNtp(NtpTime ntp) {
 int64_t CompactNtpRttToMs(uint32_t compact_ntp_interval);
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_

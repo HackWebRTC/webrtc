@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/subtractor.h"
+#include "modules/audio_processing/aec3/subtractor.h"
 
 #include <algorithm>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_minmax.h"
+#include "api/array_view.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/safe_minmax.h"
 
 namespace webrtc {
 

@@ -20,7 +20,7 @@ Updating prebuilt_apprtc.zip:
 - Remove unneeded files:
     - `rm -rf .git node_modules browsers`
 - `zip -r prebuilt_apprtc.zip apprtc/`
-- `mv prebuilt_apprtc.zip webrtc/src/webrtc/rtc_tools/testing/prebuilt_apprtc.zip`
+- `mv prebuilt_apprtc.zip webrtc/src/rtc_tools/testing/prebuilt_apprtc.zip`
 
 Updating golang/*:
 
@@ -32,7 +32,7 @@ Updating golang/*:
 
 After updating the archives:
 
-- `cd webrtc/src/webrtc/rtc_tools/testing`
+- `cd webrtc/src/rtc_tools/testing`
 - For each updated archive:
     - `upload_to_google_storage.py file.zip --bucket=chromium-webrtc-resources`
 - `git commit -a && git cl upload`

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/quicdatachannel.h"
+#include "pc/quicdatachannel.h"
 
-#include "webrtc/p2p/quic/quictransportchannel.h"
-#include "webrtc/p2p/quic/reliablequicstream.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/bytebuffer.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
-#include "webrtc/rtc_base/logging.h"
+#include "p2p/quic/quictransportchannel.h"
+#include "p2p/quic/reliablequicstream.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/bytebuffer.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

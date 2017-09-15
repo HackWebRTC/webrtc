@@ -11,17 +11,17 @@
 #include <map>
 #include <memory>
 
-#include "webrtc/p2p/base/dtlstransport.h"
-#include "webrtc/p2p/base/fakeportallocator.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
-#include "webrtc/p2p/base/p2ptransportchannel.h"
-#include "webrtc/p2p/base/portallocator.h"
-#include "webrtc/p2p/base/transportcontroller.h"
-#include "webrtc/rtc_base/fakesslidentity.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/sslidentity.h"
-#include "webrtc/rtc_base/thread.h"
+#include "p2p/base/dtlstransport.h"
+#include "p2p/base/fakeportallocator.h"
+#include "p2p/base/faketransportcontroller.h"
+#include "p2p/base/p2ptransportchannel.h"
+#include "p2p/base/portallocator.h"
+#include "p2p/base/transportcontroller.h"
+#include "rtc_base/fakesslidentity.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/sslidentity.h"
+#include "rtc_base/thread.h"
 
 static const int kTimeout = 100;
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";

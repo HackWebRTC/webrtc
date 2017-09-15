@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_TEST_PEERCONNECTIONTESTWRAPPER_H_
-#define WEBRTC_PC_TEST_PEERCONNECTIONTESTWRAPPER_H_
+#ifndef PC_TEST_PEERCONNECTIONTESTWRAPPER_H_
+#define PC_TEST_PEERCONNECTIONTESTWRAPPER_H_
 
 #include <memory>
 
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/pc/test/fakeaudiocapturemodule.h"
-#include "webrtc/pc/test/fakevideotrackrenderer.h"
-#include "webrtc/rtc_base/sigslot.h"
+#include "api/peerconnectioninterface.h"
+#include "api/test/fakeconstraints.h"
+#include "pc/test/fakeaudiocapturemodule.h"
+#include "pc/test/fakevideotrackrenderer.h"
+#include "rtc_base/sigslot.h"
 
 class PeerConnectionTestWrapper
     : public webrtc::PeerConnectionObserver,
@@ -107,4 +107,4 @@ class PeerConnectionTestWrapper
   std::unique_ptr<webrtc::FakeVideoTrackRenderer> renderer_;
 };
 
-#endif  // WEBRTC_PC_TEST_PEERCONNECTIONTESTWRAPPER_H_
+#endif  // PC_TEST_PEERCONNECTIONTESTWRAPPER_H_

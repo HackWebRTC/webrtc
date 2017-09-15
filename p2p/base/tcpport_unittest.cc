@@ -11,11 +11,11 @@
 #include <list>
 #include <memory>
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/tcpport.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/virtualsocketserver.h"
+#include "p2p/base/basicpacketsocketfactory.h"
+#include "p2p/base/tcpport.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/virtualsocketserver.h"
 
 using rtc::SocketAddress;
 using cricket::Connection;

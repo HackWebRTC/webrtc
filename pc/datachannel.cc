@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/datachannel.h"
+#include "pc/datachannel.h"
 
 #include <memory>
 #include <string>
 
-#include "webrtc/media/sctp/sctptransportinternal.h"
-#include "webrtc/pc/sctputils.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/refcount.h"
+#include "media/sctp/sctptransportinternal.h"
+#include "pc/sctputils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/refcount.h"
 
 namespace webrtc {
 

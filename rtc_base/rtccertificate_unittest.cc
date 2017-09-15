@@ -11,15 +11,15 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fakesslidentity.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/rtccertificate.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/rtc_base/sslidentity.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/fakesslidentity.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/safe_conversions.h"
+#include "rtc_base/sslidentity.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/timeutils.h"
 
 namespace rtc {
 

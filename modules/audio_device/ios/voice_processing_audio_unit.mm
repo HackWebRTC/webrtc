@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "webrtc/modules/audio_device/ios/voice_processing_audio_unit.h"
+#import "modules/audio_device/ios/voice_processing_audio_unit.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "rtc_base/checks.h"
+#include "system_wrappers/include/metrics.h"
 
 #import "WebRTC/RTCLogging.h"
-#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h"
+#import "sdk/objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h"
 
 #if !defined(NDEBUG)
 static void LogStreamDescription(AudioStreamBasicDescription description) {

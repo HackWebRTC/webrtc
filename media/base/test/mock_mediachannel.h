@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_BASE_TEST_MOCK_MEDIACHANNEL_H_
-#define WEBRTC_MEDIA_BASE_TEST_MOCK_MEDIACHANNEL_H_
+#ifndef MEDIA_BASE_TEST_MOCK_MEDIACHANNEL_H_
+#define MEDIA_BASE_TEST_MOCK_MEDIACHANNEL_H_
 
-#include "webrtc/media/base/fakemediaengine.h"
-#include "webrtc/test/gmock.h"
+#include "media/base/fakemediaengine.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 
@@ -32,4 +32,4 @@ class MockVoiceMediaChannel : public cricket::FakeVoiceMediaChannel {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MEDIA_BASE_TEST_MOCK_MEDIACHANNEL_H_
+#endif  // MEDIA_BASE_TEST_MOCK_MEDIACHANNEL_H_

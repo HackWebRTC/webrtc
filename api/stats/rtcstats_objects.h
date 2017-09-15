@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_STATS_RTCSTATS_OBJECTS_H_
-#define WEBRTC_API_STATS_RTCSTATS_OBJECTS_H_
+#ifndef API_STATS_RTCSTATS_OBJECTS_H_
+#define API_STATS_RTCSTATS_OBJECTS_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/stats/rtcstats.h"
+#include "api/stats/rtcstats.h"
 
 namespace webrtc {
 
@@ -415,4 +415,4 @@ class RTCTransportStats final : public RTCStats {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_STATS_RTCSTATS_OBJECTS_H_
+#endif  // API_STATS_RTCSTATS_OBJECTS_H_

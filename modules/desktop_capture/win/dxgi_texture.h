@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_H_
 
 #include <D3D11.h>
 #include <DXGI1_2.h>
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/desktop_geometry.h"
 
 namespace webrtc {
 
@@ -70,4 +70,4 @@ class DxgiTexture {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_H_
+#endif  // MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_H_

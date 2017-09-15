@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_BASE_H264_PROFILE_LEVEL_ID_H_
-#define WEBRTC_MEDIA_BASE_H264_PROFILE_LEVEL_ID_H_
+#ifndef MEDIA_BASE_H264_PROFILE_LEVEL_ID_H_
+#define MEDIA_BASE_H264_PROFILE_LEVEL_ID_H_
 
 #include <map>
 #include <string>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/common_types.h"
+#include "api/optional.h"
+#include "common_types.h"
 
 namespace webrtc {
 namespace H264 {
@@ -99,4 +99,4 @@ void GenerateProfileLevelIdForAnswer(
 }  // namespace H264
 }  // namespace webrtc
 
-#endif  // WEBRTC_MEDIA_BASE_H264_PROFILE_LEVEL_ID_H_
+#endif  // MEDIA_BASE_H264_PROFILE_LEVEL_ID_H_

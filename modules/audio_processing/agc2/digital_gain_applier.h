@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC2_DIGITAL_GAIN_APPLIER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC2_DIGITAL_GAIN_APPLIER_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC2_DIGITAL_GAIN_APPLIER_H_
+#define MODULES_AUDIO_PROCESSING_AGC2_DIGITAL_GAIN_APPLIER_H_
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "api/array_view.h"
+#include "modules/audio_processing/audio_buffer.h"
 
 namespace webrtc {
 
@@ -29,4 +29,4 @@ class DigitalGainApplier {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC2_DIGITAL_GAIN_APPLIER_H_
+#endif  // MODULES_AUDIO_PROCESSING_AGC2_DIGITAL_GAIN_APPLIER_H_

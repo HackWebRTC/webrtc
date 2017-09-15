@@ -10,9 +10,9 @@
 
 #include <utility>
 
-#include "webrtc/common_audio/mocks/mock_smoothing_filter.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_plr_based.h"
-#include "webrtc/test/gtest.h"
+#include "common_audio/mocks/mock_smoothing_filter.h"
+#include "modules/audio_coding/audio_network_adaptor/fec_controller_plr_based.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

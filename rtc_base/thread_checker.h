@@ -10,8 +10,8 @@
 
 // Borrowed from Chromium's src/base/threading/thread_checker.h.
 
-#ifndef WEBRTC_RTC_BASE_THREAD_CHECKER_H_
-#define WEBRTC_RTC_BASE_THREAD_CHECKER_H_
+#ifndef RTC_BASE_THREAD_CHECKER_H_
+#define RTC_BASE_THREAD_CHECKER_H_
 
 // Apart from debug builds, we also enable the thread checker in
 // builds with RTC_DCHECK_IS_ON so that trybots and waterfall bots
@@ -19,10 +19,10 @@
 // debug bots.
 #define RTC_ENABLE_THREAD_CHECKER RTC_DCHECK_IS_ON
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/thread_checker_impl.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker_impl.h"
 
 namespace rtc {
 
@@ -173,4 +173,4 @@ class RTC_SCOPED_LOCKABLE AnnounceOnThread {
   rtc::internal::AnnounceOnThread thread_announcer(thread_like_object); \
   RTC_DCHECK(rtc::internal::AnnounceOnThread::IsCurrent(thread_like_object))
 
-#endif  // WEBRTC_RTC_BASE_THREAD_CHECKER_H_
+#endif  // RTC_BASE_THREAD_CHECKER_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_QUIC_QUICTRANSPORTCHANNEL_H_
-#define WEBRTC_P2P_QUIC_QUICTRANSPORTCHANNEL_H_
+#ifndef P2P_QUIC_QUICTRANSPORTCHANNEL_H_
+#define P2P_QUIC_QUICTRANSPORTCHANNEL_H_
 
 #include <memory>
 #include <string>
@@ -17,11 +17,11 @@
 
 #include "net/quic/quic_crypto_client_stream.h"
 #include "net/quic/quic_packet_writer.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/p2p/base/transportchannelimpl.h"
-#include "webrtc/p2p/quic/quicconnectionhelper.h"
-#include "webrtc/p2p/quic/quicsession.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "api/optional.h"
+#include "p2p/base/transportchannelimpl.h"
+#include "p2p/quic/quicconnectionhelper.h"
+#include "p2p/quic/quicsession.h"
+#include "rtc_base/constructormagic.h"
 
 namespace cricket {
 
@@ -305,4 +305,4 @@ class QuicTransportChannel : public TransportChannelImpl,
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_QUIC_QUICTRANSPORTCHANNEL_H_
+#endif  // P2P_QUIC_QUICTRANSPORTCHANNEL_H_

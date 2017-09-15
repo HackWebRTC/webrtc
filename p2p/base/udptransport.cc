@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/udptransport.h"
+#include "p2p/base/udptransport.h"
 
 #include <string>
 #include <utility>  // For std::move.
 
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/asyncudpsocket.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/asyncudpsocket.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/thread_checker.h"
 
 namespace cricket {
 

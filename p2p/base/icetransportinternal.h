@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_ICETRANSPORTINTERNAL_H_
-#define WEBRTC_P2P_BASE_ICETRANSPORTINTERNAL_H_
+#ifndef P2P_BASE_ICETRANSPORTINTERNAL_H_
+#define P2P_BASE_ICETRANSPORTINTERNAL_H_
 
 #include <string>
 
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/candidatepairinterface.h"
-#include "webrtc/p2p/base/jseptransport.h"
-#include "webrtc/p2p/base/packettransportinternal.h"
-#include "webrtc/p2p/base/transportdescription.h"
-#include "webrtc/rtc_base/stringencode.h"
+#include "p2p/base/candidate.h"
+#include "p2p/base/candidatepairinterface.h"
+#include "p2p/base/jseptransport.h"
+#include "p2p/base/packettransportinternal.h"
+#include "p2p/base/transportdescription.h"
+#include "rtc_base/stringencode.h"
 
 namespace webrtc {
 class MetricsObserverInterface;
@@ -147,4 +147,4 @@ class IceTransportInternal : public rtc::PacketTransportInternal {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_ICETRANSPORTINTERNAL_H_
+#endif  // P2P_BASE_ICETRANSPORTINTERNAL_H_

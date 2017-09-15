@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_IGNORE_WUNDEF_H_
-#define WEBRTC_RTC_BASE_IGNORE_WUNDEF_H_
+#ifndef RTC_BASE_IGNORE_WUNDEF_H_
+#define RTC_BASE_IGNORE_WUNDEF_H_
 
 // If a header file uses #if on possibly undefined macros (and it's for some
 // reason not possible to just fix the header file), include it like this:
@@ -30,4 +30,4 @@
 #define RTC_POP_IGNORING_WUNDEF()
 #endif  // __clang__
 
-#endif  // WEBRTC_RTC_BASE_IGNORE_WUNDEF_H_
+#endif  // RTC_BASE_IGNORE_WUNDEF_H_

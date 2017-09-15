@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/main_filter_update_gain.h"
+#include "modules/audio_processing/aec3/main_filter_update_gain.h"
 
 #include <algorithm>
 #include <numeric>
 #include <string>
 
-#include "webrtc/modules/audio_processing/aec3/adaptive_fir_filter.h"
-#include "webrtc/modules/audio_processing/aec3/aec_state.h"
-#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
-#include "webrtc/modules/audio_processing/aec3/render_signal_analyzer.h"
-#include "webrtc/modules/audio_processing/aec3/shadow_filter_update_gain.h"
-#include "webrtc/modules/audio_processing/aec3/subtractor_output.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/rtc_base/safe_minmax.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_processing/aec3/adaptive_fir_filter.h"
+#include "modules/audio_processing/aec3/aec_state.h"
+#include "modules/audio_processing/aec3/render_buffer.h"
+#include "modules/audio_processing/aec3/render_signal_analyzer.h"
+#include "modules/audio_processing/aec3/shadow_filter_update_gain.h"
+#include "modules/audio_processing/aec3/subtractor_output.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "modules/audio_processing/test/echo_canceller_test_tools.h"
+#include "rtc_base/random.h"
+#include "rtc_base/safe_minmax.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace {

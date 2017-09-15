@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
+#include "modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ignore_wundef.h"
-#include "webrtc/rtc_base/protobuf_utils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ignore_wundef.h"
+#include "rtc_base/protobuf_utils.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/debug_dump.pb.h"
 #else
-#include "webrtc/modules/audio_coding/audio_network_adaptor/debug_dump.pb.h"
+#include "modules/audio_coding/audio_network_adaptor/debug_dump.pb.h"
 #endif
 RTC_POP_IGNORING_WUNDEF()
 #endif

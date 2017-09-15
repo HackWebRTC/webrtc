@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/crc32.h"
+#include "rtc_base/crc32.h"
 
-#include "webrtc/rtc_base/arraysize.h"
+#include "rtc_base/arraysize.h"
 
 namespace rtc {
 

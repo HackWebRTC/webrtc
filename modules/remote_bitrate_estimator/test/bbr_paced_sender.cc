@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/test/bbr_paced_sender.h"
+#include "modules/remote_bitrate_estimator/test/bbr_paced_sender.h"
 
 #include <algorithm>
 #include <queue>
 #include <set>
 #include <vector>
 
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/estimators/congestion_window.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "modules/pacing/paced_sender.h"
+#include "modules/remote_bitrate_estimator/test/estimators/congestion_window.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 

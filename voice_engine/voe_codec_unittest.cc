@@ -10,13 +10,13 @@
 
 #include <memory>
 
-#include "webrtc/voice_engine/include/voe_codec.h"
+#include "voice_engine/include/voe_codec.h"
 
-#include "webrtc/modules/audio_device/include/fake_audio_device.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/voice_engine_defines.h"
+#include "modules/audio_device/include/fake_audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "test/gtest.h"
+#include "voice_engine/include/voe_base.h"
+#include "voice_engine/voice_engine_defines.h"
 
 namespace webrtc {
 namespace voe {

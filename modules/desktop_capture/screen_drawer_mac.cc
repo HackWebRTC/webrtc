@@ -10,9 +10,9 @@
 
 // TODO(zijiehe): Implement ScreenDrawerMac
 
-#include "webrtc/modules/desktop_capture/screen_drawer.h"
-#include "webrtc/modules/desktop_capture/screen_drawer_lock_posix.h"
-#include "webrtc/rtc_base/ptr_util.h"
+#include "modules/desktop_capture/screen_drawer.h"
+#include "modules/desktop_capture/screen_drawer_lock_posix.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 

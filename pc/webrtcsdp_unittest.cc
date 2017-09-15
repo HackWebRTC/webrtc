@@ -13,23 +13,23 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/jsepsessiondescription.h"
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/media/engine/webrtcvideoengine.h"
-#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
-#include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/pc/mediasession.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/sslfingerprint.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "api/jsepsessiondescription.h"
+#include "media/base/mediaconstants.h"
+#include "media/engine/webrtcvideoengine.h"
+#include "modules/video_coding/codecs/h264/include/h264.h"
+#include "p2p/base/p2pconstants.h"
+#include "pc/mediasession.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/messagedigest.h"
+#include "rtc_base/sslfingerprint.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/stringutils.h"
 #ifdef WEBRTC_ANDROID
-#include "webrtc/pc/test/androidtestinitializer.h"
+#include "pc/test/androidtestinitializer.h"
 #endif
-#include "webrtc/pc/webrtcsdp.h"
+#include "pc/webrtcsdp.h"
 
 using cricket::AudioCodec;
 using cricket::AudioContentDescription;

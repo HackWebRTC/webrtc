@@ -9,10 +9,10 @@
  */
 
 
-#ifndef WEBRTC_RTC_BASE_HTTPBASE_H_
-#define WEBRTC_RTC_BASE_HTTPBASE_H_
+#ifndef RTC_BASE_HTTPBASE_H_
+#define RTC_BASE_HTTPBASE_H_
 
-#include "webrtc/rtc_base/httpcommon.h"
+#include "rtc_base/httpcommon.h"
 
 namespace rtc {
 
@@ -184,4 +184,4 @@ private:
 
 } // namespace rtc
 
-#endif // WEBRTC_RTC_BASE_HTTPBASE_H_
+#endif // RTC_BASE_HTTPBASE_H_

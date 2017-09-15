@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_DSCP_H_
-#define WEBRTC_RTC_BASE_DSCP_H_
+#ifndef RTC_BASE_DSCP_H_
+#define RTC_BASE_DSCP_H_
 
 namespace rtc {
 // Differentiated Services Code Point.
@@ -42,4 +42,4 @@ enum DiffServCodePoint {
 
 }  // namespace rtc
 
- #endif  // WEBRTC_RTC_BASE_DSCP_H_
+ #endif  // RTC_BASE_DSCP_H_

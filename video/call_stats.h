@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_CALL_STATS_H_
-#define WEBRTC_VIDEO_CALL_STATS_H_
+#ifndef VIDEO_CALL_STATS_H_
+#define VIDEO_CALL_STATS_H_
 
 #include <list>
 #include <memory>
 
-#include "webrtc/modules/include/module.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "modules/include/module.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -85,4 +85,4 @@ class CallStats : public Module {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_CALL_STATS_H_
+#endif  // VIDEO_CALL_STATS_H_

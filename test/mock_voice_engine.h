@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_MOCK_VOICE_ENGINE_H_
-#define WEBRTC_AUDIO_MOCK_VOICE_ENGINE_H_
+#ifndef AUDIO_MOCK_VOICE_ENGINE_H_
+#define AUDIO_MOCK_VOICE_ENGINE_H_
 
 #include <memory>
 
-#include "webrtc/modules/audio_device/include/mock_audio_device.h"
-#include "webrtc/modules/audio_device/include/mock_audio_transport.h"
-#include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/mock_voe_channel_proxy.h"
-#include "webrtc/voice_engine/voice_engine_impl.h"
+#include "modules/audio_device/include/mock_audio_device.h"
+#include "modules/audio_device/include/mock_audio_transport.h"
+#include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
+#include "test/gmock.h"
+#include "test/mock_voe_channel_proxy.h"
+#include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
 namespace voe {
@@ -258,4 +258,4 @@ class MockVoiceEngine : public VoiceEngineImpl {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_MOCK_VOICE_ENGINE_H_
+#endif  // AUDIO_MOCK_VOICE_ENGINE_H_

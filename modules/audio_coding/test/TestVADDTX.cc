@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/test/TestVADDTX.h"
+#include "modules/audio_coding/test/TestVADDTX.h"
 
 #include <string>
 
-#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
-#include "webrtc/modules/audio_coding/test/PCMFile.h"
-#include "webrtc/modules/audio_coding/test/utility.h"
-#include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_coding/codecs/audio_format_conversion.h"
+#include "modules/audio_coding/test/PCMFile.h"
+#include "modules/audio_coding/test/utility.h"
+#include "test/testsupport/fileutils.h"
+#include "typedefs.h"
 
 namespace webrtc {
 

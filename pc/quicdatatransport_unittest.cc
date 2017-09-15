@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/quicdatatransport.h"
+#include "pc/quicdatatransport.h"
 
 #include <memory>
 #include <set>
@@ -16,12 +16,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "webrtc/p2p/base/faketransportcontroller.h"
-#include "webrtc/p2p/quic/quictransportchannel.h"
-#include "webrtc/p2p/quic/reliablequicstream.h"
-#include "webrtc/pc/quicdatachannel.h"
-#include "webrtc/rtc_base/bytebuffer.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "p2p/base/faketransportcontroller.h"
+#include "p2p/quic/quictransportchannel.h"
+#include "p2p/quic/reliablequicstream.h"
+#include "pc/quicdatachannel.h"
+#include "rtc_base/bytebuffer.h"
+#include "rtc_base/gunit.h"
 
 using webrtc::DataBuffer;
 using webrtc::DataChannelInit;

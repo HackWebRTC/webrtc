@@ -10,9 +10,9 @@
 
 #include <memory>
 
-#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
-#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
-#include "webrtc/test/gmock.h"
+#include "modules/audio_conference_mixer/include/audio_conference_mixer.h"
+#include "modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 

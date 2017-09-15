@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
   */
 
-#include "webrtc/modules/audio_processing/aec3/matched_filter_lag_aggregator.h"
+#include "modules/audio_processing/aec3/matched_filter_lag_aggregator.h"
 
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/test/gtest.h"
+#include "api/array_view.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace {

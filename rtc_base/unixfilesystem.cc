@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/unixfilesystem.h"
+#include "rtc_base/unixfilesystem.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -20,7 +20,7 @@
 #include <CoreServices/CoreServices.h>
 #include <IOKit/IOCFBundle.h>
 #include <sys/statvfs.h>
-#include "webrtc/rtc_base/macutils.h"
+#include "rtc_base/macutils.h"
 #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS)
 
 #if defined(WEBRTC_POSIX) && !defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
@@ -44,12 +44,12 @@
 #include <sys/syslimits.h>
 #endif
 
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/pathutils.h"
+#include "rtc_base/stream.h"
+#include "rtc_base/stringutils.h"
 
 namespace rtc {
 

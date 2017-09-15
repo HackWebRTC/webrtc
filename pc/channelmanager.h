@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_CHANNELMANAGER_H_
-#define WEBRTC_PC_CHANNELMANAGER_H_
+#ifndef PC_CHANNELMANAGER_H_
+#define PC_CHANNELMANAGER_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/media/base/mediaengine.h"
-#include "webrtc/pc/voicechannel.h"
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/thread.h"
+#include "media/base/mediaengine.h"
+#include "pc/voicechannel.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/thread.h"
 
 namespace cricket {
 
@@ -223,4 +223,4 @@ class ChannelManager {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_PC_CHANNELMANAGER_H_
+#endif  // PC_CHANNELMANAGER_H_

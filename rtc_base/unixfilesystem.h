@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_UNIXFILESYSTEM_H_
-#define WEBRTC_RTC_BASE_UNIXFILESYSTEM_H_
+#ifndef RTC_BASE_UNIXFILESYSTEM_H_
+#define RTC_BASE_UNIXFILESYSTEM_H_
 
 #include <sys/types.h>
 
-#include "webrtc/rtc_base/fileutils.h"
+#include "rtc_base/fileutils.h"
 
 namespace rtc {
 
@@ -55,4 +55,4 @@ class UnixFilesystem : public FilesystemInterface {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_UNIXFILESYSTEM_H_
+#endif  // RTC_BASE_UNIXFILESYSTEM_H_

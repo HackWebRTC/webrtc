@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
-#define WEBRTC_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
+#ifndef P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
+#define P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
 
-#include "webrtc/p2p/base/transportdescription.h"
-#include "webrtc/rtc_base/rtccertificate.h"
+#include "p2p/base/transportdescription.h"
+#include "rtc_base/rtccertificate.h"
 
 namespace rtc {
 class SSLIdentity;
@@ -75,4 +75,4 @@ class TransportDescriptionFactory {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
+#endif  // P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_

@@ -9,7 +9,7 @@
  */
 
 #if defined(WEBRTC_ANDROID)
-#include "webrtc/rtc_base/ifaddrs-android.h"
+#include "rtc_base/ifaddrs-android.h"
 #include <errno.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>

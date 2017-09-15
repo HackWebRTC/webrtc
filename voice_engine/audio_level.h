@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_AUDIO_LEVEL_H_
-#define WEBRTC_VOICE_ENGINE_AUDIO_LEVEL_H_
+#ifndef VOICE_ENGINE_AUDIO_LEVEL_H_
+#define VOICE_ENGINE_AUDIO_LEVEL_H_
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -57,4 +57,4 @@ class AudioLevel {
 }  // namespace voe
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_AUDIO_LEVEL_H_
+#endif  // VOICE_ENGINE_AUDIO_LEVEL_H_

@@ -49,14 +49,14 @@
 // The variant defined with BEGIN_OWNED_PROXY_MAP does not use
 // refcounting, and instead just takes ownership of the object being proxied.
 
-#ifndef WEBRTC_API_PROXY_H_
-#define WEBRTC_API_PROXY_H_
+#ifndef API_PROXY_H_
+#define API_PROXY_H_
 
 #include <memory>
 #include <utility>
 
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/thread.h"
+#include "rtc_base/event.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 
@@ -579,4 +579,4 @@ class MethodCall5 : public rtc::Message,
 
 }  // namespace webrtc
 
-#endif  //  WEBRTC_API_PROXY_H_
+#endif  //  API_PROXY_H_

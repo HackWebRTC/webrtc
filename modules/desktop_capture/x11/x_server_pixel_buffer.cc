@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/x11/x_server_pixel_buffer.h"
+#include "modules/desktop_capture/x11/x_server_pixel_buffer.h"
 
 #include <string.h>
 #include <sys/shm.h>
 
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
-#include "webrtc/modules/desktop_capture/x11/window_list_utils.h"
-#include "webrtc/modules/desktop_capture/x11/x_error_trap.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/x11/window_list_utils.h"
+#include "modules/desktop_capture/x11/x_error_trap.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

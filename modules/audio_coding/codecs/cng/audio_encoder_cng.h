@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_AUDIO_ENCODER_CNG_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_AUDIO_ENCODER_CNG_H_
+#ifndef MODULES_AUDIO_CODING_CODECS_CNG_AUDIO_ENCODER_CNG_H_
+#define MODULES_AUDIO_CODING_CODECS_CNG_AUDIO_ENCODER_CNG_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/audio_codecs/audio_encoder.h"
-#include "webrtc/common_audio/vad/include/vad.h"
-#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "common_audio/vad/include/vad.h"
+#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -93,4 +93,4 @@ class AudioEncoderCng final : public AudioEncoder {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_AUDIO_ENCODER_CNG_H_
+#endif  // MODULES_AUDIO_CODING_CODECS_CNG_AUDIO_ENCODER_CNG_H_

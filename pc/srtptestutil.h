@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_SRTPTESTUTIL_H_
-#define WEBRTC_PC_SRTPTESTUTIL_H_
+#ifndef PC_SRTPTESTUTIL_H_
+#define PC_SRTPTESTUTIL_H_
 
 #include <string>
 
@@ -42,4 +42,4 @@ static int rtcp_auth_tag_len(const std::string& cs) {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_PC_SRTPTESTUTIL_H_
+#endif  // PC_SRTPTESTUTIL_H_

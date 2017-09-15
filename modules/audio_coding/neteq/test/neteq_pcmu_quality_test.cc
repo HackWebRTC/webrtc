@@ -10,12 +10,12 @@
 
 #include <memory>
 
-#include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
-#include "webrtc/modules/audio_coding/neteq/tools/neteq_quality_test.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
+#include "modules/audio_coding/neteq/tools/neteq_quality_test.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/flags.h"
+#include "rtc_base/safe_conversions.h"
+#include "test/testsupport/fileutils.h"
 
 using testing::InitGoogleTest;
 

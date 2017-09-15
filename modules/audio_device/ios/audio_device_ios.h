@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
-#define WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
+#ifndef MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
+#define MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
 
 #include <memory>
 
-#include "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCMacros.h"
-#include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/modules/audio_device/ios/audio_session_observer.h"
-#include "webrtc/modules/audio_device/ios/voice_processing_audio_unit.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/gtest_prod_util.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "sdk/objc/Framework/Headers/WebRTC/RTCMacros.h"
+#include "modules/audio_device/audio_device_generic.h"
+#include "modules/audio_device/ios/audio_session_observer.h"
+#include "modules/audio_device/ios/voice_processing_audio_unit.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/gtest_prod_util.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker.h"
 
 RTC_FWD_DECL_OBJC_CLASS(RTCAudioSessionDelegateAdapter);
 
@@ -304,4 +304,4 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
+#endif  // MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_

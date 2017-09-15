@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_GENERIC_H_
-#define WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_GENERIC_H_
+#ifndef MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_GENERIC_H_
+#define MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_GENERIC_H_
 
 #include <assert.h>
 #include <list>
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/criticalsection.h"
+#include "typedefs.h"
 
 namespace webrtc {
 template<class MemoryType>
@@ -153,4 +153,4 @@ int32_t MemoryPoolImpl<MemoryType>::CreateMemory(
 }
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_GENERIC_H_
+#endif // MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_GENERIC_H_

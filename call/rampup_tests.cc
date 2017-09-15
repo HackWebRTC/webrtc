@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/rampup_tests.h"
+#include "call/rampup_tests.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/platform_thread.h"
-#include "webrtc/test/encoder_settings.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/perf_test.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/platform_thread.h"
+#include "test/encoder_settings.h"
+#include "test/gtest.h"
+#include "test/testsupport/perf_test.h"
 
 namespace webrtc {
 namespace {

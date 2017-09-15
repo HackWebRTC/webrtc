@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/include/rtp_to_ntp_estimator.h"
-#include "webrtc/test/gtest.h"
+#include "system_wrappers/include/rtp_to_ntp_estimator.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace {

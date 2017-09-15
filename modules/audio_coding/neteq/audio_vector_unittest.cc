@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/audio_vector.h"
+#include "modules/audio_coding/neteq/audio_vector.h"
 
 #include <assert.h>
 #include <stdlib.h>
 
 #include <string>
 
-#include "webrtc/test/gtest.h"
-#include "webrtc/typedefs.h"
+#include "test/gtest.h"
+#include "typedefs.h"
 
 namespace webrtc {
 

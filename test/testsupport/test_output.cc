@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/testsupport/test_output.h"
+#include "test/testsupport/test_output.h"
 
 #include <string.h>
 
-#include "webrtc/rtc_base/file.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "rtc_base/file.h"
+#include "rtc_base/flags.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/pathutils.h"
+#include "test/testsupport/fileutils.h"
 
 namespace {
 const std::string& DefaultOutputPath() {

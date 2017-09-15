@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/examples/unityplugin/video_observer.h"
+#include "examples/unityplugin/video_observer.h"
 
 void VideoObserver::SetVideoCallback(I420FRAMEREADY_CALLBACK callback) {
   std::lock_guard<std::mutex> lock(mutex);

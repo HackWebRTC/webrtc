@@ -11,7 +11,7 @@
 #include <map>
 #include <string>
 
-#include "webrtc/modules/audio_coding/neteq/neteq_decoder_enum.h"
+#include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 
 namespace webrtc {
 

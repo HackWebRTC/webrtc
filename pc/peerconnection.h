@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_PEERCONNECTION_H_
-#define WEBRTC_PC_PEERCONNECTION_H_
+#ifndef PC_PEERCONNECTION_H_
+#define PC_PEERCONNECTION_H_
 
 #include <string>
 #include <map>
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/pc/iceserverparsing.h"
-#include "webrtc/pc/peerconnectionfactory.h"
-#include "webrtc/pc/rtcstatscollector.h"
-#include "webrtc/pc/rtpreceiver.h"
-#include "webrtc/pc/rtpsender.h"
-#include "webrtc/pc/statscollector.h"
-#include "webrtc/pc/streamcollection.h"
-#include "webrtc/pc/webrtcsession.h"
+#include "api/peerconnectioninterface.h"
+#include "pc/iceserverparsing.h"
+#include "pc/peerconnectionfactory.h"
+#include "pc/rtcstatscollector.h"
+#include "pc/rtpreceiver.h"
+#include "pc/rtpsender.h"
+#include "pc/statscollector.h"
+#include "pc/streamcollection.h"
+#include "pc/webrtcsession.h"
 
 namespace webrtc {
 
@@ -446,4 +446,4 @@ class PeerConnection : public PeerConnectionInterface,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_PEERCONNECTION_H_
+#endif  // PC_PEERCONNECTION_H_

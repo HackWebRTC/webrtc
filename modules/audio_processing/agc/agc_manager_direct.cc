@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
+#include "modules/audio_processing/agc/agc_manager_direct.h"
 
 #include <cmath>
 
@@ -16,13 +16,13 @@
 #include <cstdio>
 #endif
 
-#include "webrtc/modules/audio_processing/agc/gain_map_internal.h"
-#include "webrtc/modules/audio_processing/gain_control_impl.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_minmax.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "modules/audio_processing/agc/gain_map_internal.h"
+#include "modules/audio_processing/gain_control_impl.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/safe_minmax.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 

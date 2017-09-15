@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_TASK_QUEUE_H_
-#define WEBRTC_RTC_BASE_TASK_QUEUE_H_
+#ifndef RTC_BASE_TASK_QUEUE_H_
+#define RTC_BASE_TASK_QUEUE_H_
 
 #include <list>
 #include <memory>
 #include <queue>
 #include <type_traits>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace rtc {
 
@@ -240,4 +240,4 @@ class RTC_LOCKABLE TaskQueue {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_TASK_QUEUE_H_
+#endif  // RTC_BASE_TASK_QUEUE_H_

@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_BY_4_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_BY_4_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_BY_4_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_BY_4_H_
 
 #include <array>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/modules/audio_processing/aec3/cascaded_biquad_filter.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "api/array_view.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/cascaded_biquad_filter.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -35,4 +35,4 @@ class DecimatorBy4 {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_BY_4_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_BY_4_H_

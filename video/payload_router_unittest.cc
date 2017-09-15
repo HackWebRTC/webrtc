@@ -10,13 +10,13 @@
 
 #include <memory>
 
-#include "webrtc/call/video_config.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/video/payload_router.h"
+#include "call/video_config.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "video/payload_router.h"
 
 using ::testing::_;
 using ::testing::AnyNumber;

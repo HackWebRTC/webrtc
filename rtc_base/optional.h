@@ -11,9 +11,9 @@
 // This header is for backwards compatibility only, and will be removed soon.
 // Include webrtc/api/optional.h instead.
 
-#ifndef WEBRTC_RTC_BASE_OPTIONAL_H_
-#define WEBRTC_RTC_BASE_OPTIONAL_H_
+#ifndef RTC_BASE_OPTIONAL_H_
+#define RTC_BASE_OPTIONAL_H_
 
-#include "webrtc/api/optional.h"
+#include "api/optional.h"
 
-#endif  // WEBRTC_RTC_BASE_OPTIONAL_H_
+#endif  // RTC_BASE_OPTIONAL_H_

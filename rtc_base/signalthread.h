@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_SIGNALTHREAD_H_
-#define WEBRTC_RTC_BASE_SIGNALTHREAD_H_
+#ifndef RTC_BASE_SIGNALTHREAD_H_
+#define RTC_BASE_SIGNALTHREAD_H_
 
 #include <string>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/nullsocketserver.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/thread.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/nullsocketserver.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/thread.h"
 
 namespace rtc {
 
@@ -158,4 +158,4 @@ class SignalThread
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SIGNALTHREAD_H_
+#endif  // RTC_BASE_SIGNALTHREAD_H_

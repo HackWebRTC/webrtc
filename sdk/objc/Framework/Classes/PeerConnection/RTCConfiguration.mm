@@ -16,8 +16,8 @@
 #import "RTCIntervalRange+Private.h"
 #import "WebRTC/RTCLogging.h"
 
-#include "webrtc/rtc_base/rtccertificategenerator.h"
-#include "webrtc/rtc_base/sslidentity.h"
+#include "rtc_base/rtccertificategenerator.h"
+#include "rtc_base/sslidentity.h"
 
 @implementation RTCConfiguration
 

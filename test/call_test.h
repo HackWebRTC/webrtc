@@ -7,23 +7,23 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_TEST_CALL_TEST_H_
-#define WEBRTC_TEST_CALL_TEST_H_
+#ifndef TEST_CALL_TEST_H_
+#define TEST_CALL_TEST_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/call/call.h"
-#include "webrtc/call/rtp_transport_controller_send.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/test/encoder_settings.h"
-#include "webrtc/test/fake_audio_device.h"
-#include "webrtc/test/fake_decoder.h"
-#include "webrtc/test/fake_encoder.h"
-#include "webrtc/test/fake_videorenderer.h"
-#include "webrtc/test/frame_generator_capturer.h"
-#include "webrtc/test/rtp_rtcp_observer.h"
-#include "webrtc/test/single_threaded_task_queue.h"
+#include "call/call.h"
+#include "call/rtp_transport_controller_send.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "test/encoder_settings.h"
+#include "test/fake_audio_device.h"
+#include "test/fake_decoder.h"
+#include "test/fake_encoder.h"
+#include "test/fake_videorenderer.h"
+#include "test/frame_generator_capturer.h"
+#include "test/rtp_rtcp_observer.h"
+#include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
 
@@ -246,4 +246,4 @@ class EndToEndTest : public BaseTest {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_CALL_TEST_H_
+#endif  // TEST_CALL_TEST_H_

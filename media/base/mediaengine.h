@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_BASE_MEDIAENGINE_H_
-#define WEBRTC_MEDIA_BASE_MEDIAENGINE_H_
+#ifndef MEDIA_BASE_MEDIAENGINE_H_
+#define MEDIA_BASE_MEDIAENGINE_H_
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <CoreAudio/CoreAudio.h>
@@ -18,14 +18,14 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/audio_codecs/audio_decoder_factory.h"
-#include "webrtc/api/audio_codecs/audio_encoder_factory.h"
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/call/audio_state.h"
-#include "webrtc/media/base/codec.h"
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/videocommon.h"
-#include "webrtc/rtc_base/fileutils.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/rtpparameters.h"
+#include "call/audio_state.h"
+#include "media/base/codec.h"
+#include "media/base/mediachannel.h"
+#include "media/base/videocommon.h"
+#include "rtc_base/fileutils.h"
 
 #if defined(GOOGLE_CHROME_BUILD) || defined(CHROMIUM_BUILD)
 #define DISABLE_MEDIA_ENGINE_FACTORY
@@ -183,4 +183,4 @@ webrtc::RtpParameters CreateRtpParametersWithOneEncoding();
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_BASE_MEDIAENGINE_H_
+#endif  // MEDIA_BASE_MEDIAENGINE_H_

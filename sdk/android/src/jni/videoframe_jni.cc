@@ -12,7 +12,7 @@
 
 #include "libyuv/scale.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace jni {

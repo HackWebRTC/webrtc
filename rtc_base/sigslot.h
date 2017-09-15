@@ -93,8 +93,8 @@
 // If signalx is single threaded the user must ensure that disconnect, connect
 // or signal is not happening concurrently or data race may occur.
 
-#ifndef WEBRTC_RTC_BASE_SIGSLOT_H_
-#define WEBRTC_RTC_BASE_SIGSLOT_H_
+#ifndef RTC_BASE_SIGSLOT_H_
+#define RTC_BASE_SIGSLOT_H_
 
 #include <stdlib.h>
 #include <cstring>
@@ -113,7 +113,7 @@
 #if !defined(WIN32_LEAN_AND_MEAN)
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include "webrtc/rtc_base/win32.h"
+#include "rtc_base/win32.h"
 #elif defined(__GNUG__) || defined(SIGSLOT_USE_POSIX_THREADS)
 #define _SIGSLOT_HAS_POSIX_THREADS
 #include <pthread.h>
@@ -644,4 +644,4 @@ using signal8 =
 
 }  // namespace sigslot
 
-#endif  // WEBRTC_RTC_BASE_SIGSLOT_H_
+#endif  // RTC_BASE_SIGSLOT_H_

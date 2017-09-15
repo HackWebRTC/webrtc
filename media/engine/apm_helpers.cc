@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/apm_helpers.h"
+#include "media/engine/apm_helpers.h"
 
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/voice_engine/transmit_mixer.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/logging.h"
+#include "voice_engine/transmit_mixer.h"
 
 namespace webrtc {
 namespace apm_helpers {

@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_PACKET_BUFFER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_PACKET_BUFFER_H_
+#ifndef MODULES_VIDEO_CODING_PACKET_BUFFER_H_
+#define MODULES_VIDEO_CODING_PACKET_BUFFER_H_
 
 #include <memory>
 #include <set>
 #include <vector>
 
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_coding/packet.h"
-#include "webrtc/modules/video_coding/rtp_frame_reference_finder.h"
-#include "webrtc/modules/video_coding/sequence_number_util.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "modules/include/module_common_types.h"
+#include "modules/video_coding/packet.h"
+#include "modules/video_coding/rtp_frame_reference_finder.h"
+#include "modules/video_coding/sequence_number_util.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -166,4 +166,4 @@ class PacketBuffer {
 }  // namespace video_coding
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_PACKET_BUFFER_H_
+#endif  // MODULES_VIDEO_CODING_PACKET_BUFFER_H_

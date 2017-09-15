@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
+#include "p2p/base/basicpacketsocketfactory.h"
 
 #include <string>
 
-#include "webrtc/p2p/base/asyncstuntcpsocket.h"
-#include "webrtc/p2p/base/stun.h"
-#include "webrtc/rtc_base/asynctcpsocket.h"
-#include "webrtc/rtc_base/asyncudpsocket.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/physicalsocketserver.h"
-#include "webrtc/rtc_base/socketadapters.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/thread.h"
+#include "p2p/base/asyncstuntcpsocket.h"
+#include "p2p/base/stun.h"
+#include "rtc_base/asynctcpsocket.h"
+#include "rtc_base/asyncudpsocket.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/nethelpers.h"
+#include "rtc_base/physicalsocketserver.h"
+#include "rtc_base/socketadapters.h"
+#include "rtc_base/ssladapter.h"
+#include "rtc_base/thread.h"
 
 namespace rtc {
 

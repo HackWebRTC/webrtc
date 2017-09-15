@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODEC_DATABASE_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODEC_DATABASE_H_
+#ifndef MODULES_VIDEO_CODING_CODEC_DATABASE_H_
+#define MODULES_VIDEO_CODING_CODEC_DATABASE_H_
 
 #include <map>
 #include <memory>
 
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/include/video_coding.h"
-#include "webrtc/modules/video_coding/generic_decoder.h"
-#include "webrtc/modules/video_coding/generic_encoder.h"
-#include "webrtc/typedefs.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_coding.h"
+#include "modules/video_coding/generic_decoder.h"
+#include "modules/video_coding/generic_encoder.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -150,4 +150,4 @@ class VCMCodecDataBase {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODEC_DATABASE_H_
+#endif  // MODULES_VIDEO_CODING_CODEC_DATABASE_H_

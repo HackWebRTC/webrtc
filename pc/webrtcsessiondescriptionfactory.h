@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
-#define WEBRTC_PC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
+#ifndef PC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
+#define PC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
 
 #include <memory>
 
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/p2p/base/transportdescriptionfactory.h"
-#include "webrtc/pc/mediasession.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/messagehandler.h"
-#include "webrtc/rtc_base/rtccertificate.h"
-#include "webrtc/rtc_base/rtccertificategenerator.h"
+#include "api/peerconnectioninterface.h"
+#include "p2p/base/transportdescriptionfactory.h"
+#include "pc/mediasession.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/rtccertificategenerator.h"
 
 namespace cricket {
 class ChannelManager;
@@ -170,4 +170,4 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
+#endif  // PC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_

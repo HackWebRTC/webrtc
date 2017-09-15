@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_TIME_INTERVAL_H_
-#define WEBRTC_AUDIO_TIME_INTERVAL_H_
+#ifndef AUDIO_TIME_INTERVAL_H_
+#define AUDIO_TIME_INTERVAL_H_
 
 #include <stdint.h>
 
-#include "webrtc/api/optional.h"
+#include "api/optional.h"
 
 namespace webrtc {
 
@@ -62,4 +62,4 @@ class TimeInterval {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_TIME_INTERVAL_H_
+#endif  // AUDIO_TIME_INTERVAL_H_

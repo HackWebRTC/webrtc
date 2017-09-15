@@ -36,11 +36,11 @@
 //  rtp_rtcp->Release();
 //  VoiceEngine::Delete(voe);
 //
-#ifndef WEBRTC_VOICE_ENGINE_VOE_RTP_RTCP_H
-#define WEBRTC_VOICE_ENGINE_VOE_RTP_RTCP_H
+#ifndef VOICE_ENGINE_VOE_RTP_RTCP_H_
+#define VOICE_ENGINE_VOE_RTP_RTCP_H_
 
 #include <vector>
-#include "webrtc/common_types.h"
+#include "common_types.h"
 
 namespace webrtc {
 
@@ -148,4 +148,4 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
 
 }  // namespace webrtc
 
-#endif  // #ifndef WEBRTC_VOICE_ENGINE_VOE_RTP_RTCP_H
+#endif  // #ifndef VOICE_ENGINE_VOE_RTP_RTCP_H_

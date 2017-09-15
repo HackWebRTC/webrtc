@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
+#include "modules/desktop_capture/shared_desktop_frame.h"
 
 #include <memory>
 #include <utility>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/ptr_util.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 

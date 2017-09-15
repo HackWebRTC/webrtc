@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_video/include/video_frame.h"
+#include "common_video/include/video_frame.h"
 
 #include <string.h>
 
 #include <algorithm>  // swap
 
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

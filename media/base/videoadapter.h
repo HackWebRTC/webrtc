@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_BASE_VIDEOADAPTER_H_
-#define WEBRTC_MEDIA_BASE_VIDEOADAPTER_H_
+#ifndef MEDIA_BASE_VIDEOADAPTER_H_
+#define MEDIA_BASE_VIDEOADAPTER_H_
 
-#include "webrtc/api/optional.h"
-#include "webrtc/media/base/videocommon.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
+#include "api/optional.h"
+#include "media/base/videocommon.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
 
 namespace cricket {
 
@@ -95,4 +95,4 @@ class VideoAdapter {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_BASE_VIDEOADAPTER_H_
+#endif  // MEDIA_BASE_VIDEOADAPTER_H_

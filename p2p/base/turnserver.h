@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_TURNSERVER_H_
-#define WEBRTC_P2P_BASE_TURNSERVER_H_
+#ifndef P2P_BASE_TURNSERVER_H_
+#define P2P_BASE_TURNSERVER_H_
 
 #include <list>
 #include <map>
@@ -18,12 +18,12 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/portinterface.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/socketaddress.h"
+#include "p2p/base/portinterface.h"
+#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/socketaddress.h"
 
 namespace rtc {
 class ByteBufferWriter;
@@ -301,4 +301,4 @@ class TurnServer : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TURNSERVER_H_
+#endif  // P2P_BASE_TURNSERVER_H_

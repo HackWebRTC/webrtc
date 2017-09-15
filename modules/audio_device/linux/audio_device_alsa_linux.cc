@@ -10,12 +10,12 @@
 
 #include <assert.h>
 
-#include "webrtc/modules/audio_device/audio_device_config.h"
-#include "webrtc/modules/audio_device/linux/audio_device_alsa_linux.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/audio_device/audio_device_config.h"
+#include "modules/audio_device/linux/audio_device_alsa_linux.h"
+#include "rtc_base/logging.h"
 
-#include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/sleep.h"
+#include "system_wrappers/include/event_wrapper.h"
+#include "system_wrappers/include/sleep.h"
 webrtc::adm_linux_alsa::AlsaSymbolTable AlsaSymbolTable;
 
 // Accesses ALSA functions through our late-binding symbol table instead of

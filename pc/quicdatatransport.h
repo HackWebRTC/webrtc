@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_QUICDATATRANSPORT_H_
-#define WEBRTC_PC_QUICDATATRANSPORT_H_
+#ifndef PC_QUICDATATRANSPORT_H_
+#define PC_QUICDATATRANSPORT_H_
 
 #include <string>
 #include <unordered_map>
 
-#include "webrtc/api/datachannelinterface.h"
-#include "webrtc/p2p/base/transportcontroller.h"
-#include "webrtc/pc/quicdatachannel.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/thread.h"
+#include "api/datachannelinterface.h"
+#include "p2p/base/transportcontroller.h"
+#include "pc/quicdatachannel.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/thread.h"
 
 namespace cricket {
 class QuicTransportChannel;
@@ -112,4 +112,4 @@ class QuicDataTransport : public sigslot::has_slots<> {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_QUICDATATRANSPORT_H_
+#endif  // PC_QUICDATATRANSPORT_H_

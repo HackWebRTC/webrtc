@@ -13,12 +13,12 @@
  *  platform specific settings.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_VOICE_ENGINE_DEFINES_H
-#define WEBRTC_VOICE_ENGINE_VOICE_ENGINE_DEFINES_H
+#ifndef VOICE_ENGINE_VOICE_ENGINE_DEFINES_H_
+#define VOICE_ENGINE_VOICE_ENGINE_DEFINES_H_
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -97,4 +97,4 @@ inline int VoEChannelId(int moduleId) {
 #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE 0
 #endif  // #if (defined(_WIN32)
 
-#endif  // WEBRTC_VOICE_ENGINE_VOICE_ENGINE_DEFINES_H
+#endif  // VOICE_ENGINE_VOICE_ENGINE_DEFINES_H_

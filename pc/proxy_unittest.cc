@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/proxy.h"
+#include "api/proxy.h"
 
 #include <memory>
 #include <string>
 
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/test/gmock.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/thread.h"
+#include "test/gmock.h"
 
 using ::testing::_;
 using ::testing::DoAll;

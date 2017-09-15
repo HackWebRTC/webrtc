@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_PACING_PACED_SENDER_H_
-#define WEBRTC_MODULES_PACING_PACED_SENDER_H_
+#ifndef MODULES_PACING_PACED_SENDER_H_
+#define MODULES_PACING_PACED_SENDER_H_
 
 #include <list>
 #include <memory>
 #include <set>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/modules/pacing/pacer.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "modules/pacing/pacer.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
+#include "typedefs.h"
 
 namespace webrtc {
 class AlrDetector;
@@ -199,4 +199,4 @@ class PacedSender : public Pacer {
   int64_t queue_time_limit RTC_GUARDED_BY(critsect_);
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_PACING_PACED_SENDER_H_
+#endif  // MODULES_PACING_PACED_SENDER_H_

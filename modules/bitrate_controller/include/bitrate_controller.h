@@ -12,15 +12,15 @@
  *  and push the result to the encoders via BitrateObserver(s).
  */
 
-#ifndef WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
-#define WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
+#ifndef MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
+#define MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
 
 #include <map>
 
-#include "webrtc/modules/congestion_controller/delay_based_bwe.h"
-#include "webrtc/modules/include/module.h"
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/congestion_controller/delay_based_bwe.h"
+#include "modules/include/module.h"
+#include "modules/pacing/paced_sender.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
@@ -97,4 +97,4 @@ class BitrateController : public Module, public RtcpBandwidthObserver {
                                     int64_t* rtt) = 0;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
+#endif  // MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_

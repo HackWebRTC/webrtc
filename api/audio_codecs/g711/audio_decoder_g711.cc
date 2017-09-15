@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/audio_codecs/g711/audio_decoder_g711.h"
+#include "api/audio_codecs/g711/audio_decoder_g711.h"
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "common_types.h"
+#include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/safe_conversions.h"
 
 namespace webrtc {
 

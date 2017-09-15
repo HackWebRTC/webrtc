@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
+#define SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
 
 #include <list>
 
-#include "webrtc/system_wrappers/include/ntp_time.h"
-#include "webrtc/typedefs.h"
+#include "system_wrappers/include/ntp_time.h"
+#include "typedefs.h"
 
 namespace webrtc {
 // Class for converting an RTP timestamp to the NTP domain in milliseconds.
@@ -72,4 +72,4 @@ int CheckForWrapArounds(uint32_t new_timestamp, uint32_t old_timestamp);
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_

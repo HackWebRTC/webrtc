@@ -8,25 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_
-#define WEBRTC_MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_
+#ifndef MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_
+#define MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_
 
 #include <map>
 #include <set>
 #include <vector>
 #include <string>
 
-#include "webrtc/api/video_codecs/video_decoder.h"
-#include "webrtc/api/video_codecs/video_encoder.h"
-#include "webrtc/media/base/codec.h"
-#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/modules/video_coding/include/video_error_codes.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "api/video_codecs/video_decoder.h"
+#include "api/video_codecs/video_encoder.h"
+#include "media/base/codec.h"
+#include "media/engine/webrtcvideodecoderfactory.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
+#include "modules/video_coding/include/video_error_codes.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace cricket {
 static const int kEventTimeoutMs = 10000;
@@ -257,4 +257,4 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_
+#endif  // MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_

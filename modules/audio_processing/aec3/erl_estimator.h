@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ERL_ESTIMATOR_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ERL_ESTIMATOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_ERL_ESTIMATOR_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_ERL_ESTIMATOR_H_
 
 #include <array>
 
-#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -40,4 +40,4 @@ class ErlEstimator {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ERL_ESTIMATOR_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_ERL_ESTIMATOR_H_

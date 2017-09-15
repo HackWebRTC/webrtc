@@ -10,9 +10,9 @@
 
 #include <memory>
 
-#include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/event_log_writer.h"
-#include "webrtc/test/gtest.h"
+#include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
+#include "modules/audio_coding/audio_network_adaptor/event_log_writer.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

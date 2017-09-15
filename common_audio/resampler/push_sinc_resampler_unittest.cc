@@ -13,13 +13,13 @@
 #include <cstring>
 #include <memory>
 
-#include "webrtc/common_audio/include/audio_util.h"
-#include "webrtc/common_audio/resampler/push_sinc_resampler.h"
-#include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/typedefs.h"
+#include "common_audio/include/audio_util.h"
+#include "common_audio/resampler/push_sinc_resampler.h"
+#include "common_audio/resampler/sinusoidal_linear_chirp_source.h"
+#include "rtc_base/timeutils.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "typedefs.h"
 
 namespace webrtc {
 namespace {

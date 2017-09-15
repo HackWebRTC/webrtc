@@ -10,10 +10,10 @@
 
 #include <limits>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/timestampaligner.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/timestampaligner.h"
+#include "rtc_base/timeutils.h"
 
 namespace rtc {
 

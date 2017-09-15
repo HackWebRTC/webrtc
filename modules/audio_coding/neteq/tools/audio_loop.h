@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_LOOP_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_LOOP_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_LOOP_H_
+#define MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_LOOP_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "api/array_view.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"
 
 namespace webrtc {
 namespace test {
@@ -56,4 +56,4 @@ class AudioLoop {
 
 }  // namespace test
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_LOOP_H_
+#endif  // MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_LOOP_H_

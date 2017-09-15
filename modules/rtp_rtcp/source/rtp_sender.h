@@ -8,31 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
+#define MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 
 #include <map>
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/api/call/transport.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/playout_delay_oracle.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/deprecation.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/rtc_base/rate_statistics.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "api/array_view.h"
+#include "api/call/transport.h"
+#include "api/optional.h"
+#include "common_types.h"
+#include "modules/rtp_rtcp/include/flexfec_sender.h"
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/playout_delay_oracle.h"
+#include "modules/rtp_rtcp/source/rtp_packet_history.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
+#include "modules/rtp_rtcp/source/rtp_utility.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/deprecation.h"
+#include "rtc_base/random.h"
+#include "rtc_base/rate_statistics.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -334,4 +334,4 @@ class RTPSender {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_

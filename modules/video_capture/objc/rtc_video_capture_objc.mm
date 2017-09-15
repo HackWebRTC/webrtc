@@ -17,10 +17,10 @@
 #import <UIKit/UIKit.h>
 #endif
 
-#import "webrtc/modules/video_capture/objc/device_info_objc.h"
-#import "webrtc/modules/video_capture/objc/rtc_video_capture_objc.h"
+#import "modules/video_capture/objc/device_info_objc.h"
+#import "modules/video_capture/objc/rtc_video_capture_objc.h"
 
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/logging.h"
 
 using namespace webrtc;
 using namespace webrtc::videocapturemodule;

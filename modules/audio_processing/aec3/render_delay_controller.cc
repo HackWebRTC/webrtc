@@ -7,19 +7,19 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/modules/audio_processing/aec3/render_delay_controller.h"
+#include "modules/audio_processing/aec3/render_delay_controller.h"
 
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/modules/audio_processing/aec3/echo_path_delay_estimator.h"
-#include "webrtc/modules/audio_processing/aec3/render_delay_controller_metrics.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/echo_path_delay_estimator.h"
+#include "modules/audio_processing/aec3/render_delay_controller_metrics.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

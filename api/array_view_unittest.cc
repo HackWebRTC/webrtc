@@ -13,11 +13,11 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/test/gmock.h"
+#include "api/array_view.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/gunit.h"
+#include "test/gmock.h"
 
 namespace rtc {
 

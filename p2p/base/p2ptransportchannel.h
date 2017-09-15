@@ -17,8 +17,8 @@
 // When all of the available connections become invalid (non-writable), we
 // kick off a process of determining more candidates and more connections.
 //
-#ifndef WEBRTC_P2P_BASE_P2PTRANSPORTCHANNEL_H_
-#define WEBRTC_P2P_BASE_P2PTRANSPORTCHANNEL_H_
+#ifndef P2P_BASE_P2PTRANSPORTCHANNEL_H_
+#define P2P_BASE_P2PTRANSPORTCHANNEL_H_
 
 #include <map>
 #include <memory>
@@ -26,15 +26,15 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/candidatepairinterface.h"
-#include "webrtc/p2p/base/icetransportinternal.h"
-#include "webrtc/p2p/base/portallocator.h"
-#include "webrtc/p2p/base/portinterface.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/rtc_base/sigslot.h"
+#include "p2p/base/candidate.h"
+#include "p2p/base/candidatepairinterface.h"
+#include "p2p/base/icetransportinternal.h"
+#include "p2p/base/portallocator.h"
+#include "p2p/base/portinterface.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/random.h"
+#include "rtc_base/sigslot.h"
 
 namespace cricket {
 
@@ -407,4 +407,4 @@ class P2PTransportChannel : public IceTransportInternal,
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_P2PTRANSPORTCHANNEL_H_
+#endif  // P2P_BASE_P2PTRANSPORTCHANNEL_H_

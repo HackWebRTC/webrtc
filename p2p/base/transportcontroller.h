@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_TRANSPORTCONTROLLER_H_
-#define WEBRTC_P2P_BASE_TRANSPORTCONTROLLER_H_
+#ifndef P2P_BASE_TRANSPORTCONTROLLER_H_
+#define P2P_BASE_TRANSPORTCONTROLLER_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/dtlstransport.h"
-#include "webrtc/p2p/base/jseptransport.h"
-#include "webrtc/p2p/base/p2ptransportchannel.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/refcountedobject.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
+#include "p2p/base/candidate.h"
+#include "p2p/base/dtlstransport.h"
+#include "p2p/base/jseptransport.h"
+#include "p2p/base/p2ptransportchannel.h"
+#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/sslstreamadapter.h"
 
 namespace rtc {
 class Thread;
@@ -276,4 +276,4 @@ class TransportController : public sigslot::has_slots<>,
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TRANSPORTCONTROLLER_H_
+#endif  // P2P_BASE_TRANSPORTCONTROLLER_H_

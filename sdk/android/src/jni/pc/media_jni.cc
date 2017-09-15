@@ -7,12 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/sdk/android/src/jni/pc/media_jni.h"
+#include "sdk/android/src/jni/pc/media_jni.h"
 
-#include "webrtc/call/callfactoryinterface.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log_factory_interface.h"
-#include "webrtc/media/engine/webrtcmediaengine.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "call/callfactoryinterface.h"
+#include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
+#include "media/engine/webrtcmediaengine.h"
+#include "modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 namespace jni {

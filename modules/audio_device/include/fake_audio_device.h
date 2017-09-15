@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_FAKE_AUDIO_DEVICE_H_
-#define WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_FAKE_AUDIO_DEVICE_H_
+#ifndef MODULES_AUDIO_DEVICE_INCLUDE_FAKE_AUDIO_DEVICE_H_
+#define MODULES_AUDIO_DEVICE_INCLUDE_FAKE_AUDIO_DEVICE_H_
 
-#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "modules/audio_device/include/audio_device.h"
 
 namespace webrtc {
 
@@ -153,4 +153,4 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_FAKE_AUDIO_DEVICE_H_
+#endif  // MODULES_AUDIO_DEVICE_INCLUDE_FAKE_AUDIO_DEVICE_H_

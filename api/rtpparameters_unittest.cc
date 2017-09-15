@@ -10,8 +10,8 @@
 
 #include <utility>
 
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/test/gtest.h"
+#include "api/rtpparameters.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

@@ -14,9 +14,9 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/rtc_tools/frame_editing/frame_editing_lib.h"
-#include "webrtc/typedefs.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "rtc_tools/frame_editing/frame_editing_lib.h"
+#include "typedefs.h"
 
 namespace webrtc {
 

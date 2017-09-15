@@ -11,8 +11,8 @@
 #include <set>
 #include <string>
 
-#include "webrtc/media/engine/payload_type_mapper.h"
-#include "webrtc/test/gtest.h"
+#include "media/engine/payload_type_mapper.h"
+#include "test/gtest.h"
 
 namespace cricket {
 

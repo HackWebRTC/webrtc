@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_EVENT_H_
-#define WEBRTC_RTC_BASE_EVENT_H_
+#ifndef RTC_BASE_EVENT_H_
+#define RTC_BASE_EVENT_H_
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "rtc_base/constructormagic.h"
 #if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/win32.h"  // NOLINT: consider this a system header.
+#include "rtc_base/win32.h"  // NOLINT: consider this a system header.
 #elif defined(WEBRTC_POSIX)
 #include <pthread.h>
 #else
@@ -51,4 +51,4 @@ class Event {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_EVENT_H_
+#endif  // RTC_BASE_EVENT_H_

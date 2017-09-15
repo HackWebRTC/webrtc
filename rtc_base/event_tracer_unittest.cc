@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/event_tracer.h"
+#include "rtc_base/event_tracer.h"
 
-#include "webrtc/rtc_base/trace_event.h"
-#include "webrtc/system_wrappers/include/static_instance.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/trace_event.h"
+#include "system_wrappers/include/static_instance.h"
+#include "test/gtest.h"
 
 namespace {
 

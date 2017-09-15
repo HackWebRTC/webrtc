@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
+#define MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
 
 #include <vector>
 
-#include "webrtc/common_types.h"
+#include "common_types.h"
 
 namespace webrtc {
 namespace test {
@@ -73,4 +73,4 @@ class Stats {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_

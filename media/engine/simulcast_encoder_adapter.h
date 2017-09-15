@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_SIMULCAST_ENCODER_ADAPTER_H_
-#define WEBRTC_MEDIA_ENGINE_SIMULCAST_ENCODER_ADAPTER_H_
+#ifndef MEDIA_ENGINE_SIMULCAST_ENCODER_ADAPTER_H_
+#define MEDIA_ENGINE_SIMULCAST_ENCODER_ADAPTER_H_
 
 #include <memory>
 #include <stack>
@@ -18,10 +18,10 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
+#include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/sequenced_task_checker.h"
 
 namespace webrtc {
 
@@ -112,4 +112,4 @@ class SimulcastEncoderAdapter : public VP8Encoder {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MEDIA_ENGINE_SIMULCAST_ENCODER_ADAPTER_H_
+#endif  // MEDIA_ENGINE_SIMULCAST_ENCODER_ADAPTER_H_

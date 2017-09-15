@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
-#define WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
+#ifndef RTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
+#define RTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
 
 #include <map>
 #include <memory>
@@ -18,12 +18,12 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
-#include "webrtc/rtc_base/function_view.h"
-#include "webrtc/rtc_tools/event_log_visualizer/plot_base.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
+#include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtcp_packet.h"
+#include "rtc_base/function_view.h"
+#include "rtc_tools/event_log_visualizer/plot_base.h"
 
 namespace webrtc {
 namespace plotting {
@@ -204,4 +204,4 @@ class EventLogAnalyzer {
 }  // namespace plotting
 }  // namespace webrtc
 
-#endif  // WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
+#endif  // RTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_

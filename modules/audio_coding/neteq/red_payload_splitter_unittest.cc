@@ -10,18 +10,18 @@
 
 // Unit tests for RedPayloadSplitter class.
 
-#include "webrtc/modules/audio_coding/neteq/red_payload_splitter.h"
+#include "modules/audio_coding/neteq/red_payload_splitter.h"
 
 #include <assert.h>
 
 #include <memory>
 #include <utility>  // pair
 
-#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
-#include "webrtc/modules/audio_coding/neteq/packet.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
+#include "modules/audio_coding/neteq/packet.h"
+#include "test/gtest.h"
+#include "test/mock_audio_decoder_factory.h"
 
 using ::testing::Return;
 using ::testing::ReturnNull;

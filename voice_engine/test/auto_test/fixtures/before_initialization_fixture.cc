@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/test/auto_test/fixtures/before_initialization_fixture.h"
+#include "voice_engine/test/auto_test/fixtures/before_initialization_fixture.h"
 
-#include "webrtc/system_wrappers/include/sleep.h"
+#include "system_wrappers/include/sleep.h"
 
 BeforeInitializationFixture::BeforeInitializationFixture()
     : voice_engine_(webrtc::VoiceEngine::Create()) {

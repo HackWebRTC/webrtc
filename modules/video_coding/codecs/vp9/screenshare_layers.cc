@@ -7,9 +7,9 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "webrtc/modules/video_coding/codecs/vp9/screenshare_layers.h"
+#include "modules/video_coding/codecs/vp9/screenshare_layers.h"
 #include <algorithm>
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

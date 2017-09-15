@@ -11,26 +11,26 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/media/base/mediaengine.h"
-#include "webrtc/modules/utility/include/jvm_android.h"
-#include "webrtc/rtc_base/event_tracer.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/sdk/android/src/jni/pc/androidnetworkmonitor_jni.h"
-#include "webrtc/sdk/android/src/jni/pc/audio_jni.h"
-#include "webrtc/sdk/android/src/jni/pc/java_native_conversion.h"
-#include "webrtc/sdk/android/src/jni/pc/media_jni.h"
-#include "webrtc/sdk/android/src/jni/pc/ownedfactoryandthreads.h"
-#include "webrtc/sdk/android/src/jni/pc/peerconnectionobserver_jni.h"
-#include "webrtc/sdk/android/src/jni/pc/video_jni.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "api/peerconnectioninterface.h"
+#include "media/base/mediaengine.h"
+#include "modules/utility/include/jvm_android.h"
+#include "rtc_base/event_tracer.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/thread.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/pc/androidnetworkmonitor_jni.h"
+#include "sdk/android/src/jni/pc/audio_jni.h"
+#include "sdk/android/src/jni/pc/java_native_conversion.h"
+#include "sdk/android/src/jni/pc/media_jni.h"
+#include "sdk/android/src/jni/pc/ownedfactoryandthreads.h"
+#include "sdk/android/src/jni/pc/peerconnectionobserver_jni.h"
+#include "sdk/android/src/jni/pc/video_jni.h"
+#include "system_wrappers/include/field_trial.h"
 // Adding 'nogncheck' to disable the gn include headers check.
 // We don't want to depend on 'system_wrappers:field_trial_default' because
 // clients should be able to provide their own implementation.
-#include "webrtc/system_wrappers/include/field_trial_default.h"  // nogncheck
-#include "webrtc/system_wrappers/include/trace.h"
+#include "system_wrappers/include/field_trial_default.h"  // nogncheck
+#include "system_wrappers/include/trace.h"
 
 namespace webrtc {
 namespace jni {

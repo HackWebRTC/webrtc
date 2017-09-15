@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_FORMAT_MACROS_H_
-#define WEBRTC_RTC_BASE_FORMAT_MACROS_H_
+#ifndef RTC_BASE_FORMAT_MACROS_H_
+#define RTC_BASE_FORMAT_MACROS_H_
 
 // This file defines the format macros for some integer types and is derived
 // from Chromium's base/format_macros.h.
@@ -24,7 +24,7 @@
 //   printf("xyz: %" PRIuS, size);
 // The "u" in the macro corresponds to %u, and S is for "size".
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 #if defined(WEBRTC_POSIX)
 
@@ -93,4 +93,4 @@
 
 #endif
 
-#endif  // WEBRTC_RTC_BASE_FORMAT_MACROS_H_
+#endif  // RTC_BASE_FORMAT_MACROS_H_

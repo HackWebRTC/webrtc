@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
+#include "modules/remote_bitrate_estimator/test/packet_sender.h"
 
 #include <algorithm>
 #include <list>
 #include <sstream>
 
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/pacing/pacer.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/bbr_paced_sender.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/metric_recorder.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/include/module_common_types.h"
+#include "modules/pacing/pacer.h"
+#include "modules/remote_bitrate_estimator/test/bbr_paced_sender.h"
+#include "modules/remote_bitrate_estimator/test/bwe.h"
+#include "modules/remote_bitrate_estimator/test/metric_recorder.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace testing {

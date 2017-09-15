@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/quic/quicconnectionhelper.h"
+#include "p2p/quic/quicconnectionhelper.h"
 
 namespace cricket {
 

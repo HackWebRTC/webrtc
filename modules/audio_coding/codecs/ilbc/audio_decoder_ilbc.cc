@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
+#include "modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
 
 #include <utility>
 
-#include "webrtc/modules/audio_coding/codecs/ilbc/ilbc.h"
-#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/audio_coding/codecs/ilbc/ilbc.h"
+#include "modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/client/basicportallocator.h"
+#include "p2p/client/basicportallocator.h"
 
 #include <algorithm>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/umametrics.h"
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/common.h"
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/relayport.h"
-#include "webrtc/p2p/base/stunport.h"
-#include "webrtc/p2p/base/tcpport.h"
-#include "webrtc/p2p/base/turnport.h"
-#include "webrtc/p2p/base/udpport.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
+#include "api/umametrics.h"
+#include "p2p/base/basicpacketsocketfactory.h"
+#include "p2p/base/common.h"
+#include "p2p/base/port.h"
+#include "p2p/base/relayport.h"
+#include "p2p/base/stunport.h"
+#include "p2p/base/tcpport.h"
+#include "p2p/base/turnport.h"
+#include "p2p/base/udpport.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/logging.h"
 
 using rtc::CreateRandomId;
 

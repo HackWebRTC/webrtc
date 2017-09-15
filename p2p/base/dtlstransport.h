@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_DTLSTRANSPORT_H_
-#define WEBRTC_P2P_BASE_DTLSTRANSPORT_H_
+#ifndef P2P_BASE_DTLSTRANSPORT_H_
+#define P2P_BASE_DTLSTRANSPORT_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/dtlstransportinternal.h"
-#include "webrtc/p2p/base/icetransportinternal.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/bufferqueue.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
-#include "webrtc/rtc_base/stream.h"
+#include "p2p/base/dtlstransportinternal.h"
+#include "p2p/base/icetransportinternal.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/bufferqueue.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/stream.h"
 
 namespace rtc {
 class PacketTransportInternal;
@@ -236,4 +236,4 @@ class DtlsTransport : public DtlsTransportInternal {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_DTLSTRANSPORT_H_
+#endif  // P2P_BASE_DTLSTRANSPORT_H_

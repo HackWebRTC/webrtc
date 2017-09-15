@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/relayserver.h"
+#include "p2p/base/relayserver.h"
 
 #ifdef WEBRTC_POSIX
 #include <errno.h>
@@ -16,11 +16,11 @@
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/asynctcpsocket.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/socketadapters.h"
+#include "rtc_base/asynctcpsocket.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/socketadapters.h"
 
 namespace cricket {
 

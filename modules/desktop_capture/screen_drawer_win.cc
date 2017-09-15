@@ -12,8 +12,8 @@
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/screen_drawer.h"
-#include "webrtc/system_wrappers/include/sleep.h"
+#include "modules/desktop_capture/screen_drawer.h"
+#include "system_wrappers/include/sleep.h"
 
 namespace webrtc {
 

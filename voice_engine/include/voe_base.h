@@ -31,13 +31,13 @@
 //  base->Release();
 //  VoiceEngine::Delete(voe);
 //
-#ifndef WEBRTC_VOICE_ENGINE_VOE_BASE_H
-#define WEBRTC_VOICE_ENGINE_VOE_BASE_H
+#ifndef VOICE_ENGINE_VOE_BASE_H_
+#define VOICE_ENGINE_VOE_BASE_H_
 
-#include "webrtc/api/audio_codecs/audio_decoder_factory.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "common_types.h"
+#include "modules/audio_coding/include/audio_coding_module.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
@@ -203,4 +203,4 @@ class WEBRTC_DLLEXPORT VoEBase {
 
 }  // namespace webrtc
 
-#endif  //  WEBRTC_VOICE_ENGINE_VOE_BASE_H
+#endif  //  VOICE_ENGINE_VOE_BASE_H_

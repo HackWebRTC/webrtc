@@ -60,8 +60,8 @@
 //   }
 //
 
-#ifndef WEBRTC_RTC_BASE_SCOPED_REF_PTR_H_
-#define WEBRTC_RTC_BASE_SCOPED_REF_PTR_H_
+#ifndef RTC_BASE_SCOPED_REF_PTR_H_
+#define RTC_BASE_SCOPED_REF_PTR_H_
 
 #include <memory>
 
@@ -160,4 +160,4 @@ class scoped_refptr {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SCOPED_REF_PTR_H_
+#endif  // RTC_BASE_SCOPED_REF_PTR_H_

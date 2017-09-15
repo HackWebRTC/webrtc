@@ -28,8 +28,8 @@
 // zero; in the remaining cases, it is just a few machine instructions (no
 // branches).
 
-#ifndef WEBRTC_RTC_BASE_SAFE_COMPARE_H_
-#define WEBRTC_RTC_BASE_SAFE_COMPARE_H_
+#ifndef RTC_BASE_SAFE_COMPARE_H_
+#define RTC_BASE_SAFE_COMPARE_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -37,7 +37,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "webrtc/rtc_base/type_traits.h"
+#include "rtc_base/type_traits.h"
 
 namespace rtc {
 
@@ -173,4 +173,4 @@ RTC_SAFECMP_MAKE_FUN(Ge)
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SAFE_COMPARE_H_
+#endif  // RTC_BASE_SAFE_COMPARE_H_

@@ -7,17 +7,17 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_TEST_SINGLE_THREADED_TASK_QUEUE_H_
-#define WEBRTC_TEST_SINGLE_THREADED_TASK_QUEUE_H_
+#ifndef TEST_SINGLE_THREADED_TASK_QUEUE_H_
+#define TEST_SINGLE_THREADED_TASK_QUEUE_H_
 
 #include <functional>
 #include <list>
 #include <memory>
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/platform_thread.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/event.h"
+#include "rtc_base/platform_thread.h"
+#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 namespace test {
@@ -94,4 +94,4 @@ class SingleThreadedTaskQueueForTesting {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_SINGLE_THREADED_TASK_QUEUE_H_
+#endif  // TEST_SINGLE_THREADED_TASK_QUEUE_H_

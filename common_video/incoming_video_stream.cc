@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_video/include/incoming_video_stream.h"
+#include "common_video/include/incoming_video_stream.h"
 
 #include <memory>
 
-#include "webrtc/common_video/video_render_frames.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_base/trace_event.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "common_video/video_render_frames.h"
+#include "rtc_base/timeutils.h"
+#include "rtc_base/trace_event.h"
+#include "system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
 namespace {

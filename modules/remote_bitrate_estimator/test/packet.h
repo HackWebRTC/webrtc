@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_H_
+#ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_H_
+#define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_H_
 
 #include <list>
 #include <map>
 #include <utility>
 #include <vector>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "common_types.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 
 namespace webrtc {
 namespace testing {
@@ -217,4 +217,4 @@ typedef std::list<Packet*>::const_iterator PacketsConstIt;
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_H_
+#endif  // MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_H_

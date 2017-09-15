@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_DUMMY_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_DUMMY_H
+#ifndef AUDIO_DEVICE_AUDIO_DEVICE_DUMMY_H_
+#define AUDIO_DEVICE_AUDIO_DEVICE_DUMMY_H_
 
 #include <stdio.h>
 
-#include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "modules/audio_device/audio_device_generic.h"
 
 namespace webrtc {
 
@@ -125,4 +125,4 @@ class AudioDeviceDummy : public AudioDeviceGeneric {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_DUMMY_H
+#endif  // AUDIO_DEVICE_AUDIO_DEVICE_DUMMY_H_

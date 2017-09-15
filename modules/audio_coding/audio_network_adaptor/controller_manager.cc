@@ -8,28 +8,28 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
+#include "modules/audio_coding/audio_network_adaptor/controller_manager.h"
 
 #include <cmath>
 #include <utility>
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/bitrate_controller.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/channel_controller.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/dtx_controller.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_plr_based.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_rplr_based.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/frame_length_controller.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/util/threshold_curve.h"
-#include "webrtc/rtc_base/ignore_wundef.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "modules/audio_coding/audio_network_adaptor/bitrate_controller.h"
+#include "modules/audio_coding/audio_network_adaptor/channel_controller.h"
+#include "modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
+#include "modules/audio_coding/audio_network_adaptor/dtx_controller.h"
+#include "modules/audio_coding/audio_network_adaptor/fec_controller_plr_based.h"
+#include "modules/audio_coding/audio_network_adaptor/fec_controller_rplr_based.h"
+#include "modules/audio_coding/audio_network_adaptor/frame_length_controller.h"
+#include "modules/audio_coding/audio_network_adaptor/util/threshold_curve.h"
+#include "rtc_base/ignore_wundef.h"
+#include "rtc_base/timeutils.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/config.pb.h"
 #else
-#include "webrtc/modules/audio_coding/audio_network_adaptor/config.pb.h"
+#include "modules/audio_coding/audio_network_adaptor/config.pb.h"
 #endif
 RTC_POP_IGNORING_WUNDEF()
 #endif

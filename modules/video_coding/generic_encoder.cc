@@ -8,20 +8,20 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "webrtc/modules/video_coding/generic_encoder.h"
+#include "modules/video_coding/generic_encoder.h"
 
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/modules/pacing/alr_detector.h"
-#include "webrtc/modules/video_coding/encoded_frame.h"
-#include "webrtc/modules/video_coding/media_optimization.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_base/trace_event.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "api/optional.h"
+#include "api/video/i420_buffer.h"
+#include "modules/pacing/alr_detector.h"
+#include "modules/video_coding/encoded_frame.h"
+#include "modules/video_coding/media_optimization.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/timeutils.h"
+#include "rtc_base/trace_event.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 

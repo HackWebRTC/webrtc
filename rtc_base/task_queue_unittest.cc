@@ -18,11 +18,11 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/event.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/timeutils.h"
 
 namespace rtc {
 namespace {

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
-#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/rtp_rtcp/source/byte_io.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace rtcp {

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/dtmfsenderinterface.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "api/dtmfsenderinterface.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {

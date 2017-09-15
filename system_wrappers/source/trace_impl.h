@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_IMPL_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_IMPL_H_
+#ifndef SYSTEM_WRAPPERS_SOURCE_TRACE_IMPL_H_
+#define SYSTEM_WRAPPERS_SOURCE_TRACE_IMPL_H_
 
 #include <memory>
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/platform_thread.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/file_wrapper.h"
-#include "webrtc/system_wrappers/include/static_instance.h"
-#include "webrtc/system_wrappers/include/trace.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/platform_thread.h"
+#include "system_wrappers/include/event_wrapper.h"
+#include "system_wrappers/include/file_wrapper.h"
+#include "system_wrappers/include/static_instance.h"
+#include "system_wrappers/include/trace.h"
 
 namespace webrtc {
 
@@ -102,4 +102,4 @@ class TraceImpl : public Trace {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_IMPL_H_
+#endif  // SYSTEM_WRAPPERS_SOURCE_TRACE_IMPL_H_

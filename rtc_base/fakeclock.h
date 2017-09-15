@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_FAKECLOCK_H_
-#define WEBRTC_RTC_BASE_FAKECLOCK_H_
+#ifndef RTC_BASE_FAKECLOCK_H_
+#define RTC_BASE_FAKECLOCK_H_
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/timedelta.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/timedelta.h"
+#include "rtc_base/timeutils.h"
 
 namespace rtc {
 
@@ -68,4 +68,4 @@ class ScopedRealClock {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_FAKECLOCK_H_
+#endif  // RTC_BASE_FAKECLOCK_H_

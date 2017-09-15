@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_SSLSTREAMADAPTER_H_
-#define WEBRTC_RTC_BASE_SSLSTREAMADAPTER_H_
+#ifndef RTC_BASE_SSLSTREAMADAPTER_H_
+#define RTC_BASE_SSLSTREAMADAPTER_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/sslidentity.h"
-#include "webrtc/rtc_base/stream.h"
+#include "rtc_base/sslidentity.h"
+#include "rtc_base/stream.h"
 
 namespace rtc {
 
@@ -276,4 +276,4 @@ class SSLStreamAdapter : public StreamAdapterInterface {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SSLSTREAMADAPTER_H_
+#endif  // RTC_BASE_SSLSTREAMADAPTER_H_

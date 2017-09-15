@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
+#ifndef MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
+#define MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
 
 #include <cstddef>
 
-#include "webrtc/rtc_base/numerics/exp_filter.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/numerics/exp_filter.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -96,4 +96,4 @@ class FrameDropper {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
+#endif  // MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_

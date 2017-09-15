@@ -9,14 +9,14 @@
  *
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/test/estimators/bbr.h"
+#include "modules/remote_bitrate_estimator/test/estimators/bbr.h"
 
 #include <stdlib.h>
 #include <algorithm>
 
-#include "webrtc/modules/remote_bitrate_estimator/test/estimators/congestion_window.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/estimators/max_bandwidth_filter.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/estimators/min_rtt_filter.h"
+#include "modules/remote_bitrate_estimator/test/estimators/congestion_window.h"
+#include "modules/remote_bitrate_estimator/test/estimators/max_bandwidth_filter.h"
+#include "modules/remote_bitrate_estimator/test/estimators/min_rtt_filter.h"
 
 namespace webrtc {
 namespace testing {

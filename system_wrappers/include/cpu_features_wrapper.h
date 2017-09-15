@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_
+#define SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
 #endif
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 // List of features in x86.
 typedef enum {
@@ -48,4 +48,4 @@ extern uint64_t WebRtc_GetCPUFeaturesARM(void);
 }  // extern "C"
 #endif
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_
+#endif // SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_

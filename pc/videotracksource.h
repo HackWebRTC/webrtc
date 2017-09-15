@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_VIDEOTRACKSOURCE_H_
-#define WEBRTC_PC_VIDEOTRACKSOURCE_H_
+#ifndef PC_VIDEOTRACKSOURCE_H_
+#define PC_VIDEOTRACKSOURCE_H_
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/notifier.h"
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "api/mediastreaminterface.h"
+#include "api/notifier.h"
+#include "media/base/mediachannel.h"
+#include "media/base/videosinkinterface.h"
+#include "rtc_base/thread_checker.h"
 
 // VideoTrackSource implements VideoTrackSourceInterface.
 namespace webrtc {
@@ -52,4 +52,4 @@ class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
 
 }  // namespace webrtc
 
-#endif  //  WEBRTC_PC_VIDEOTRACKSOURCE_H_
+#endif  //  PC_VIDEOTRACKSOURCE_H_

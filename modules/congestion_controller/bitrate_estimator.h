@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_BITRATE_ESTIMATOR_H_
-#define WEBRTC_MODULES_CONGESTION_CONTROLLER_BITRATE_ESTIMATOR_H_
+#ifndef MODULES_CONGESTION_CONTROLLER_BITRATE_ESTIMATOR_H_
+#define MODULES_CONGESTION_CONTROLLER_BITRATE_ESTIMATOR_H_
 
 #include <vector>
 
-#include "webrtc/api/optional.h"
+#include "api/optional.h"
 
 namespace webrtc {
 
@@ -43,4 +43,4 @@ class BitrateEstimator {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_CONGESTION_CONTROLLER_BITRATE_ESTIMATOR_H_
+#endif  // MODULES_CONGESTION_CONTROLLER_BITRATE_ESTIMATOR_H_

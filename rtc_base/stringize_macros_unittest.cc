@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/stringize_macros.h"
+#include "rtc_base/stringize_macros.h"
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 // Macros as per documentation in header file.
 #define PREPROCESSOR_UTIL_UNITTEST_A FOO

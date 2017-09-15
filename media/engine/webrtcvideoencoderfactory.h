@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
-#define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
+#ifndef MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
+#define MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
 
 #include <vector>
 
-#include "webrtc/common_types.h"
-#include "webrtc/media/base/codec.h"
+#include "common_types.h"
+#include "media/base/codec.h"
 
 namespace webrtc {
 class VideoEncoder;
@@ -48,4 +48,4 @@ class WebRtcVideoEncoderFactory {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
+#endif  // MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_

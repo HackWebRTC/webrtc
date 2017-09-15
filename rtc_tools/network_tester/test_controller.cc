@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_tools/network_tester/test_controller.h"
+#include "rtc_tools/network_tester/test_controller.h"
 
 namespace webrtc {
 

@@ -11,8 +11,8 @@
 // This file contains structures used for retrieving statistics from an ongoing
 // libjingle session.
 
-#ifndef WEBRTC_API_STATSTYPES_H_
-#define WEBRTC_API_STATSTYPES_H_
+#ifndef API_STATSTYPES_H_
+#define API_STATSTYPES_H_
 
 #include <algorithm>
 #include <list>
@@ -20,12 +20,12 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 
@@ -441,4 +441,4 @@ class StatsCollection {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_STATSTYPES_H_
+#endif  // API_STATSTYPES_H_

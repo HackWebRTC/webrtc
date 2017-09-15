@@ -9,11 +9,11 @@
  *
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_H_
+#define MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_H_
 
-#include "webrtc/media/base/codec.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "media/base/codec.h"
+#include "modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
 
@@ -42,4 +42,4 @@ class H264Decoder : public VideoDecoder {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_H_

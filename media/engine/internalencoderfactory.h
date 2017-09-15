@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_INTERNALENCODERFACTORY_H_
-#define WEBRTC_MEDIA_ENGINE_INTERNALENCODERFACTORY_H_
+#ifndef MEDIA_ENGINE_INTERNALENCODERFACTORY_H_
+#define MEDIA_ENGINE_INTERNALENCODERFACTORY_H_
 
 #include <vector>
 
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
 
 namespace cricket {
 
@@ -34,4 +34,4 @@ class InternalEncoderFactory : public WebRtcVideoEncoderFactory {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_ENGINE_INTERNALENCODERFACTORY_H_
+#endif  // MEDIA_ENGINE_INTERNALENCODERFACTORY_H_

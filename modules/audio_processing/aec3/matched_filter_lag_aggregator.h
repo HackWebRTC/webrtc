@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_LAG_AGGREGATOR_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_LAG_AGGREGATOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_LAG_AGGREGATOR_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_LAG_AGGREGATOR_H_
 
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/modules/audio_processing/aec3/matched_filter.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "api/optional.h"
+#include "modules/audio_processing/aec3/matched_filter.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -46,4 +46,4 @@ class MatchedFilterLagAggregator {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_LAG_AGGREGATOR_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_LAG_AGGREGATOR_H_

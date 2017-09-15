@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
+#include "modules/audio_mixer/audio_mixer_impl.h"
 
 #include <algorithm>
 #include <functional>
 #include <iterator>
 #include <utility>
 
-#include "webrtc/modules/audio_mixer/audio_frame_manipulator.h"
-#include "webrtc/modules/audio_mixer/default_output_rate_calculator.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/audio_mixer/audio_frame_manipulator.h"
+#include "modules/audio_mixer/default_output_rate_calculator.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace {

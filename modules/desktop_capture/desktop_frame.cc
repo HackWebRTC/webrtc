@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/desktop_frame.h"
 
 #include <utility>
 
 #include <string.h>
 
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ptr_util.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 

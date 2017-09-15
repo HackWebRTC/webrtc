@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_LOCK_POSIX_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_LOCK_POSIX_H_
+#ifndef MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_LOCK_POSIX_H_
+#define MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_LOCK_POSIX_H_
 
 #include <semaphore.h>
 
-#include "webrtc/modules/desktop_capture/screen_drawer.h"
+#include "modules/desktop_capture/screen_drawer.h"
 
 namespace webrtc {
 
@@ -35,4 +35,4 @@ class ScreenDrawerLockPosix final : public ScreenDrawerLock {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_LOCK_POSIX_H_
+#endif  // MODULES_DESKTOP_CAPTURE_SCREEN_DRAWER_LOCK_POSIX_H_

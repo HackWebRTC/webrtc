@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/currentspeakermonitor.h"
+#include "pc/currentspeakermonitor.h"
 
 #include <vector>
 
-#include "webrtc/media/base/streamparams.h"
-#include "webrtc/pc/audiomonitor.h"
-#include "webrtc/rtc_base/logging.h"
+#include "media/base/streamparams.h"
+#include "pc/audiomonitor.h"
+#include "rtc_base/logging.h"
 
 namespace cricket {
 

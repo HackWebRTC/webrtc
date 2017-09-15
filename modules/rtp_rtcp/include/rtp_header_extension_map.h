@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_EXTENSION_MAP_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_EXTENSION_MAP_H_
+#ifndef MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_EXTENSION_MAP_H_
+#define MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_EXTENSION_MAP_H_
 
 #include <string>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/checks.h"
+#include "api/array_view.h"
+#include "api/rtpparameters.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -77,4 +77,4 @@ class RtpHeaderExtensionMap {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_EXTENSION_MAP_H_
+#endif  // MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_EXTENSION_MAP_H_

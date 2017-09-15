@@ -408,7 +408,7 @@ def FlipAndCropRecordings(options, test_file_name, test_file_location,
 
 
 def CompareVideos(options, cropped_ref_file, cropped_test_file):
-  """Runs the compare_video.py script from src/webrtc/rtc_tools using path.
+  """Runs the compare_video.py script from src/rtc_tools using path.
 
   Uses the path from recording_result and writes the output to a file named
   <options.app_name + '_' + CURRENT_TIME + '_result.txt> in the reference video

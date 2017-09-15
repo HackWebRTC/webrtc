@@ -1,6 +1,6 @@
 include_rules = [
-  "+webrtc/common_audio",
-  "+webrtc/system_wrappers",
+  "+common_audio",
+  "+system_wrappers",
 ]
 
 specific_include_rules = {
@@ -8,24 +8,24 @@ specific_include_rules = {
     "+base/android",
   ],
   "audio_device_ios\.h": [
-    "+webrtc/sdk/objc",
+    "+sdk/objc",
   ],
   "audio_device_ios\.mm": [
-    "+webrtc/sdk/objc",
+    "+sdk/objc",
   ],
   "audio_device_unittest_ios\.mm": [
-    "+webrtc/sdk/objc",
+    "+sdk/objc",
   ],
   "RTCAudioSession\.h": [
-    "+webrtc/sdk/objc",
+    "+sdk/objc",
   ],
   "RTCAudioSessionConfiguration\.h": [
-    "+webrtc/sdk/objc",
+    "+sdk/objc",
   ],
   "RTCAudioSessionDelegateAdapter\.h": [
-    "+webrtc/sdk/objc",
+    "+sdk/objc",
   ],
   "voice_processing_audio_unit\.mm": [
-    "+webrtc/sdk/objc",
+    "+sdk/objc",
   ],
 }

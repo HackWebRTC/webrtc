@@ -13,11 +13,11 @@
  *  messages. Apply filtering to avoid that.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_TRACE_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_TRACE_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_TRACE_H_
+#define SYSTEM_WRAPPERS_INCLUDE_TRACE_H_
 
-#include "webrtc/common_types.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -86,4 +86,4 @@ class Trace {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_TRACE_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_TRACE_H_

@@ -13,8 +13,8 @@
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/modules/audio_coding/neteq/test/NETEQTEST_DummyRTPpacket.h"
-#include "webrtc/modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
+#include "modules/audio_coding/neteq/test/NETEQTEST_DummyRTPpacket.h"
+#include "modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
 
 #define FIRSTLINELEN 40
 //#define WEBRTC_DUMMY_RTP

@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_TESTSUPPORT_FRAME_WRITER_H_
-#define WEBRTC_TEST_TESTSUPPORT_FRAME_WRITER_H_
+#ifndef TEST_TESTSUPPORT_FRAME_WRITER_H_
+#define TEST_TESTSUPPORT_FRAME_WRITER_H_
 
 #include <stdio.h>
 
 #include <string>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/typedefs.h"
+#include "api/video/video_frame.h"
+#include "typedefs.h"
 
 namespace webrtc {
 namespace test {
@@ -102,4 +102,4 @@ class JpegFrameWriter {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_TESTSUPPORT_FRAME_WRITER_H_
+#endif  // TEST_TESTSUPPORT_FRAME_WRITER_H_

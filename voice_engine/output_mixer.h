@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_OUTPUT_MIXER_H_
-#define WEBRTC_VOICE_ENGINE_OUTPUT_MIXER_H_
+#ifndef VOICE_ENGINE_OUTPUT_MIXER_H_
+#define VOICE_ENGINE_OUTPUT_MIXER_H_
 
 #include <memory>
 
-#include "webrtc/common_audio/resampler/include/push_resampler.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
-#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/voice_engine/file_recorder.h"
+#include "common_audio/resampler/include/push_resampler.h"
+#include "common_types.h"
+#include "modules/audio_conference_mixer/include/audio_conference_mixer.h"
+#include "modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
+#include "rtc_base/criticalsection.h"
+#include "voice_engine/file_recorder.h"
 
 namespace webrtc {
 

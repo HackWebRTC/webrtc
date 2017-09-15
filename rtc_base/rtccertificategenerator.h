@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_RTCCERTIFICATEGENERATOR_H_
-#define WEBRTC_RTC_BASE_RTCCERTIFICATEGENERATOR_H_
+#ifndef RTC_BASE_RTCCERTIFICATEGENERATOR_H_
+#define RTC_BASE_RTCCERTIFICATEGENERATOR_H_
 
-#include "webrtc/api/optional.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/rtccertificate.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/sslidentity.h"
-#include "webrtc/rtc_base/thread.h"
+#include "api/optional.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/sslidentity.h"
+#include "rtc_base/thread.h"
 
 namespace rtc {
 
@@ -83,4 +83,4 @@ class RTCCertificateGenerator : public RTCCertificateGeneratorInterface {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_RTCCERTIFICATEGENERATOR_H_
+#endif  // RTC_BASE_RTCCERTIFICATEGENERATOR_H_

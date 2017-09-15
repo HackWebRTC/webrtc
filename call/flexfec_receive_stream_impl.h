@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
-#define WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
+#ifndef CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
+#define CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
 
 #include <memory>
 
-#include "webrtc/call/flexfec_receive_stream.h"
-#include "webrtc/call/rtp_packet_sink_interface.h"
+#include "call/flexfec_receive_stream.h"
+#include "call/rtp_packet_sink_interface.h"
 
 namespace webrtc {
 
@@ -61,4 +61,4 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
+#endif  // CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_

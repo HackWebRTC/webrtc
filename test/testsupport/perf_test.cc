@@ -12,7 +12,7 @@
 // ResultsToString(), PrintResult(size_t value) and AppendResult(size_t value)
 // have been modified. The remainder are identical to the Chromium version.
 
-#include "webrtc/test/testsupport/perf_test.h"
+#include "test/testsupport/perf_test.h"
 
 #include <sstream>
 #include <stdio.h>

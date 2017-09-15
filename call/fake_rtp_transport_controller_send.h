@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_FAKE_RTP_TRANSPORT_CONTROLLER_SEND_H_
-#define WEBRTC_CALL_FAKE_RTP_TRANSPORT_CONTROLLER_SEND_H_
+#ifndef CALL_FAKE_RTP_TRANSPORT_CONTROLLER_SEND_H_
+#define CALL_FAKE_RTP_TRANSPORT_CONTROLLER_SEND_H_
 
-#include "webrtc/call/rtp_transport_controller_send_interface.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
-#include "webrtc/modules/pacing/packet_router.h"
+#include "call/rtp_transport_controller_send_interface.h"
+#include "common_types.h"
+#include "modules/congestion_controller/include/send_side_congestion_controller.h"
+#include "modules/pacing/packet_router.h"
 
 namespace webrtc {
 
@@ -65,4 +65,4 @@ class FakeRtpTransportControllerSend
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_FAKE_RTP_TRANSPORT_CONTROLLER_SEND_H_
+#endif  // CALL_FAKE_RTP_TRANSPORT_CONTROLLER_SEND_H_

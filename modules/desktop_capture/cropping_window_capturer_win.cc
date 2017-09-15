@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/cropping_window_capturer.h"
+#include "modules/desktop_capture/cropping_window_capturer.h"
 
-#include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
-#include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/win32.h"
+#include "modules/desktop_capture/win/screen_capture_utils.h"
+#include "modules/desktop_capture/win/window_capture_utils.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/win32.h"
 
 namespace webrtc {
 

@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/simulcast_encoder_adapter.h"
+#include "media/engine/simulcast_encoder_adapter.h"
 
 #include <algorithm>
 
 // NOTE(ajm): Path provided by gyp.
 #include "libyuv/scale.h"  // NOLINT
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/media/engine/scopedvideoencoder.h"
-#include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
-#include "webrtc/modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "api/video/i420_buffer.h"
+#include "media/engine/scopedvideoencoder.h"
+#include "modules/video_coding/codecs/vp8/screenshare_layers.h"
+#include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
+#include "rtc_base/checks.h"
+#include "system_wrappers/include/clock.h"
 
 namespace {
 

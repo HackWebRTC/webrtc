@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_MATHUTILS_H_
-#define WEBRTC_RTC_BASE_MATHUTILS_H_
+#ifndef RTC_BASE_MATHUTILS_H_
+#define RTC_BASE_MATHUTILS_H_
 
 #include <math.h>
 #include <type_traits>
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265359f
@@ -36,4 +36,4 @@ typename std::make_unsigned<T>::type unsigned_difference(T x, T y) {
   return static_cast<unsigned_type>(x) - static_cast<unsigned_type>(y);
 }
 
-#endif  // WEBRTC_RTC_BASE_MATHUTILS_H_
+#endif  // RTC_BASE_MATHUTILS_H_

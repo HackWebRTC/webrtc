@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_STUN_H_
-#define WEBRTC_P2P_BASE_STUN_H_
+#ifndef P2P_BASE_STUN_H_
+#define P2P_BASE_STUN_H_
 
 // This file contains classes for dealing with the STUN protocol, as specified
 // in RFC 5389, and its descendants.
@@ -17,9 +17,9 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/bytebuffer.h"
-#include "webrtc/rtc_base/socketaddress.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/bytebuffer.h"
+#include "rtc_base/socketaddress.h"
 
 namespace cricket {
 
@@ -641,4 +641,4 @@ class IceMessage : public StunMessage {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_STUN_H_
+#endif  // P2P_BASE_STUN_H_

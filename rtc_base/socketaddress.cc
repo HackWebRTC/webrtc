@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/safe_conversions.h"
 
 #if defined(WEBRTC_POSIX)
 #include <sys/types.h>
@@ -28,13 +28,13 @@
 
 #include <sstream>
 
-#include "webrtc/rtc_base/byteorder.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/nethelpers.h"
+#include "rtc_base/byteorder.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/nethelpers.h"
 
 #if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/win32.h"
+#include "rtc_base/win32.h"
 #endif
 
 namespace rtc {

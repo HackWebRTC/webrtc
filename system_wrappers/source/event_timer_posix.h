@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
+#ifndef SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
+#define SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
 
-#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "system_wrappers/include/event_wrapper.h"
 
 #include <memory>
 
 #include <pthread.h>
 #include <time.h>
 
-#include "webrtc/rtc_base/platform_thread.h"
+#include "rtc_base/platform_thread.h"
 
 namespace webrtc {
 
@@ -64,4 +64,4 @@ class EventTimerPosix : public EventTimerWrapper {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
+#endif  // SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_

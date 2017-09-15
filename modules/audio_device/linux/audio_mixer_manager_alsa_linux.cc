@@ -10,8 +10,8 @@
 
 #include <assert.h>
 
-#include "webrtc/modules/audio_device/linux/audio_mixer_manager_alsa_linux.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/audio_device/linux/audio_mixer_manager_alsa_linux.h"
+#include "rtc_base/logging.h"
 
 extern webrtc::adm_linux_alsa::AlsaSymbolTable AlsaSymbolTable;
 

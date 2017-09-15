@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_DEPRECATION_H_
-#define WEBRTC_RTC_BASE_DEPRECATION_H_
+#ifndef RTC_BASE_DEPRECATION_H_
+#define RTC_BASE_DEPRECATION_H_
 
 // Annotate the declarations of deprecated functions with this to cause a
 // compiler warning when they're used. Like so:
@@ -42,4 +42,4 @@
 #define RTC_DEPRECATED
 #endif
 
-#endif  // WEBRTC_RTC_BASE_DEPRECATION_H_
+#endif  // RTC_BASE_DEPRECATION_H_

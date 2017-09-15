@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/objc/Framework/Classes/Video/corevideo_frame_buffer.h"
+#include "sdk/objc/Framework/Classes/Video/corevideo_frame_buffer.h"
 
 #include "libyuv/convert.h"
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "api/video/i420_buffer.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

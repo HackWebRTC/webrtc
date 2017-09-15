@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_IFADDRS_ANDROID_H_
-#define WEBRTC_RTC_BASE_IFADDRS_ANDROID_H_
+#ifndef RTC_BASE_IFADDRS_ANDROID_H_
+#define RTC_BASE_IFADDRS_ANDROID_H_
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -36,4 +36,4 @@ void freeifaddrs(struct ifaddrs* addrs);
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_IFADDRS_ANDROID_H_
+#endif  // RTC_BASE_IFADDRS_ANDROID_H_

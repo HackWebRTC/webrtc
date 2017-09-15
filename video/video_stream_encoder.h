@@ -8,31 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_VIDEO_STREAM_ENCODER_H_
-#define WEBRTC_VIDEO_VIDEO_STREAM_ENCODER_H_
+#ifndef VIDEO_VIDEO_STREAM_ENCODER_H_
+#define VIDEO_VIDEO_STREAM_ENCODER_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/video/video_rotation.h"
-#include "webrtc/api/video_codecs/video_encoder.h"
-#include "webrtc/call/call.h"
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/include/video_bitrate_allocator.h"
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_coding/utility/quality_scaler.h"
-#include "webrtc/modules/video_coding/video_coding_impl.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
-#include "webrtc/typedefs.h"
-#include "webrtc/video/overuse_frame_detector.h"
-#include "webrtc/call/video_send_stream.h"
+#include "api/video/video_rotation.h"
+#include "api/video_codecs/video_encoder.h"
+#include "call/call.h"
+#include "common_types.h"
+#include "common_video/include/video_bitrate_allocator.h"
+#include "media/base/videosinkinterface.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/utility/quality_scaler.h"
+#include "modules/video_coding/video_coding_impl.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/event.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/task_queue.h"
+#include "system_wrappers/include/atomic32.h"
+#include "typedefs.h"
+#include "video/overuse_frame_detector.h"
+#include "call/video_send_stream.h"
 
 namespace webrtc {
 
@@ -316,4 +316,4 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_VIDEO_STREAM_ENCODER_H_
+#endif  // VIDEO_VIDEO_STREAM_ENCODER_H_

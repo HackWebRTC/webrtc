@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/fir_filter.h"
+#include "common_audio/fir_filter.h"
 
 #include <string.h>
 
 #include <memory>
 
-#include "webrtc/common_audio/fir_filter_neon.h"
-#include "webrtc/common_audio/fir_filter_sse.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
+#include "common_audio/fir_filter_neon.h"
+#include "common_audio/fir_filter_sse.h"
+#include "rtc_base/checks.h"
+#include "system_wrappers/include/cpu_features_wrapper.h"
 
 namespace webrtc {
 

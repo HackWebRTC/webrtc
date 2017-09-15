@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_RATE_STATISTICS_H_
-#define WEBRTC_RTC_BASE_RATE_STATISTICS_H_
+#ifndef RTC_BASE_RATE_STATISTICS_H_
+#define RTC_BASE_RATE_STATISTICS_H_
 
 #include <memory>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -81,4 +81,4 @@ class RateStatistics {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_RTC_BASE_RATE_STATISTICS_H_
+#endif  // RTC_BASE_RATE_STATISTICS_H_

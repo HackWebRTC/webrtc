@@ -3,12 +3,12 @@
 // found in the LICENSE file under third_party_mods/chromium or at:
 // http://src.chromium.org/svn/trunk/src/LICENSE
 
-#ifndef WEBRTC_RTC_BASE_TRACE_EVENT_H_
-#define WEBRTC_RTC_BASE_TRACE_EVENT_H_
+#ifndef RTC_BASE_TRACE_EVENT_H_
+#define RTC_BASE_TRACE_EVENT_H_
 
 #include <string>
 
-#include "webrtc/rtc_base/event_tracer.h"
+#include "rtc_base/event_tracer.h"
 
 #if defined(TRACE_EVENT0)
 #error "Another copy of trace_event.h has already been included."
@@ -913,4 +913,4 @@ class TraceEndOnScopeClose {
 }  // namespace trace_event_internal
 }  // namespace webrtc
 
-#endif  // WEBRTC_RTC_BASE_TRACE_EVENT_H_
+#endif  // RTC_BASE_TRACE_EVENT_H_

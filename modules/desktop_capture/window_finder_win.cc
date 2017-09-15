@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/window_finder_win.h"
+#include "modules/desktop_capture/window_finder_win.h"
 
 #include <windows.h>
 
-#include "webrtc/rtc_base/ptr_util.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 

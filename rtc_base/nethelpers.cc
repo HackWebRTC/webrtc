@@ -8,27 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/nethelpers.h"
+#include "rtc_base/nethelpers.h"
 
 #include <memory>
 
 #if defined(WEBRTC_WIN)
 #include <ws2spi.h>
 #include <ws2tcpip.h>
-#include "webrtc/rtc_base/win32.h"
+#include "rtc_base/win32.h"
 #endif
 #if defined(WEBRTC_POSIX) && !defined(__native_client__)
 #if defined(WEBRTC_ANDROID)
-#include "webrtc/rtc_base/ifaddrs-android.h"
+#include "rtc_base/ifaddrs-android.h"
 #else
 #include <ifaddrs.h>
 #endif
 #endif  // defined(WEBRTC_POSIX) && !defined(__native_client__)
 
-#include "webrtc/rtc_base/byteorder.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/signalthread.h"
+#include "rtc_base/byteorder.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/signalthread.h"
 
 namespace rtc {
 

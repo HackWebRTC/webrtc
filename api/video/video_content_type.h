@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_VIDEO_VIDEO_CONTENT_TYPE_H_
-#define WEBRTC_API_VIDEO_VIDEO_CONTENT_TYPE_H_
+#ifndef API_VIDEO_VIDEO_CONTENT_TYPE_H_
+#define API_VIDEO_VIDEO_CONTENT_TYPE_H_
 
 #include <stdint.h>
 
@@ -38,4 +38,4 @@ const char* ToString(const VideoContentType& content_type);
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_VIDEO_VIDEO_CONTENT_TYPE_H_
+#endif  // API_VIDEO_VIDEO_CONTENT_TYPE_H_

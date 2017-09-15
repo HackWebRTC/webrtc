@@ -10,11 +10,11 @@
 
 #include <assert.h>
 
-#include "webrtc/modules/audio_device/audio_device_config.h"
-#include "webrtc/modules/audio_device/linux/audio_device_pulse_linux.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "modules/audio_device/audio_device_config.h"
+#include "modules/audio_device/linux/audio_device_pulse_linux.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/event_wrapper.h"
 
 webrtc::adm_linux_pulse::PulseAudioSymbolTable PaSymbolTable;
 

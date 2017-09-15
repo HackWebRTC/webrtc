@@ -14,8 +14,8 @@
 #include <numeric>
 #include <vector>
 
-#include "webrtc/rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
-#include "webrtc/rtc_tools/frame_analyzer/video_quality_analysis.h"
+#include "rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
+#include "rtc_tools/frame_analyzer/video_quality_analysis.h"
 
 #define STATS_LINE_LENGTH 28
 #define PSNR_FREEZE_THRESHOLD 47
@@ -90,7 +90,7 @@ void print_freezing_metrics(const std::vector<double>& psnr_per_frame,
    * 5) Total different identical frames found.
    *
    * Sample output:
-   *  Printing metrics for file: /src/webrtc/rtc_tools/test_3.y4m
+   *  Printing metrics for file: /src/rtc_tools/test_3.y4m
       =============================
       Total number of frames received: 74
       Total identical frames: 5

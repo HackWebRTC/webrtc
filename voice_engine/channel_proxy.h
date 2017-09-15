@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
-#define WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
+#ifndef VOICE_ENGINE_CHANNEL_PROXY_H_
+#define VOICE_ENGINE_CHANNEL_PROXY_H_
 
-#include "webrtc/api/audio/audio_mixer.h"
-#include "webrtc/api/audio_codecs/audio_encoder.h"
-#include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/call/rtp_packet_sink_interface.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/race_checker.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/voice_engine/channel_manager.h"
-#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
+#include "api/audio/audio_mixer.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "api/rtpreceiverinterface.h"
+#include "call/rtp_packet_sink_interface.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/race_checker.h"
+#include "rtc_base/thread_checker.h"
+#include "voice_engine/channel_manager.h"
+#include "voice_engine/include/voe_rtp_rtcp.h"
 
 #include <memory>
 #include <string>
@@ -149,4 +149,4 @@ class ChannelProxy : public RtpPacketSinkInterface {
 }  // namespace voe
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
+#endif  // VOICE_ENGINE_CHANNEL_PROXY_H_

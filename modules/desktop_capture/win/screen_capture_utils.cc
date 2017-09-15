@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
+#include "modules/desktop_capture/win/screen_capture_utils.h"
 
 #include <windows.h>
 
 #include <string>
 #include <vector>
 
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/win32.h"
+#include "modules/desktop_capture/desktop_capturer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/win32.h"
 
 namespace webrtc {
 

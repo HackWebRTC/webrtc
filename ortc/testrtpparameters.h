@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_ORTC_TESTRTPPARAMETERS_H_
-#define WEBRTC_ORTC_TESTRTPPARAMETERS_H_
+#ifndef ORTC_TESTRTPPARAMETERS_H_
+#define ORTC_TESTRTPPARAMETERS_H_
 
-#include "webrtc/api/ortc/rtptransportinterface.h"
-#include "webrtc/api/rtpparameters.h"
+#include "api/ortc/rtptransportinterface.h"
+#include "api/rtpparameters.h"
 
 namespace webrtc {
 
@@ -69,4 +69,4 @@ RtpParameters MakeFullVp9Parameters();
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_ORTC_TESTRTPPARAMETERS_H_
+#endif  // ORTC_TESTRTPPARAMETERS_H_

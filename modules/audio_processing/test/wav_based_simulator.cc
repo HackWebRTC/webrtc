@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/test/wav_based_simulator.h"
+#include "modules/audio_processing/test/wav_based_simulator.h"
 
 #include <stdio.h>
 #include <iostream>
 
-#include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/test/testsupport/trace_to_stderr.h"
+#include "modules/audio_processing/test/test_utils.h"
+#include "rtc_base/checks.h"
+#include "test/testsupport/trace_to_stderr.h"
 
 namespace webrtc {
 namespace test {

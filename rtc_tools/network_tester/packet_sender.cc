@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_tools/network_tester/packet_sender.h"
+#include "rtc_tools/network_tester/packet_sender.h"
 
 #include <algorithm>
 #include <string>
 #include <utility>
 
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_tools/network_tester/config_reader.h"
-#include "webrtc/rtc_tools/network_tester/test_controller.h"
+#include "rtc_base/timeutils.h"
+#include "rtc_tools/network_tester/config_reader.h"
+#include "rtc_tools/network_tester/test_controller.h"
 
 namespace webrtc {
 

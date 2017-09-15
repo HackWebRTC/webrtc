@@ -209,8 +209,8 @@ rtc_source_set("rtc_base_approved_generic") {
     # Dependency on chromium's logging (in //base).
     deps += [ "//base:base" ]
     sources += [
-      "../../webrtc_overrides/webrtc/rtc_base/logging.cc",
-      "../../webrtc_overrides/webrtc/rtc_base/logging.h",
+      "../../webrtc_overrides/rtc_base/logging.cc",
+      "../../webrtc_overrides/rtc_base/logging.h",
     ]
   } else {
     sources += [
@@ -335,7 +335,7 @@ rtc_source_set("rtc_task_queue") {
 rtc_source_set("rtc_task_queue_api") {
   if (build_with_chromium) {
     sources = [
-      "../../webrtc_overrides/webrtc/rtc_base/task_queue.h",
+      "../../webrtc_overrides/rtc_base/task_queue.h",
     ]
   } else {
     sources = [
@@ -354,7 +354,7 @@ rtc_source_set("rtc_task_queue_impl") {
   ]
   if (build_with_chromium) {
     sources = [
-      "../../webrtc_overrides/webrtc/rtc_base/task_queue.cc",
+      "../../webrtc_overrides/rtc_base/task_queue.cc",
     ]
   } else {
     if (rtc_build_libevent) {
@@ -600,7 +600,7 @@ rtc_static_library("rtc_base_generic") {
 
   if (build_with_chromium) {
     if (is_win) {
-      sources += [ "../../webrtc_overrides/webrtc/rtc_base/win32socketinit.cc" ]
+      sources += [ "../../webrtc_overrides/rtc_base/win32socketinit.cc" ]
     }
     include_dirs = [ "../../boringssl/src/include" ]
     public_configs += [ ":rtc_base_chromium_config" ]

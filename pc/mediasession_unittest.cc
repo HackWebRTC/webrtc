@@ -12,18 +12,18 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/media/base/codec.h"
-#include "webrtc/media/base/testutils.h"
-#include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/p2p/base/transportdescription.h"
-#include "webrtc/p2p/base/transportinfo.h"
-#include "webrtc/pc/mediasession.h"
-#include "webrtc/pc/srtpfilter.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fakesslidentity.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/ssladapter.h"
+#include "media/base/codec.h"
+#include "media/base/testutils.h"
+#include "p2p/base/p2pconstants.h"
+#include "p2p/base/transportdescription.h"
+#include "p2p/base/transportinfo.h"
+#include "pc/mediasession.h"
+#include "pc/srtpfilter.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/fakesslidentity.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/messagedigest.h"
+#include "rtc_base/ssladapter.h"
 
 #define ASSERT_CRYPTO(cd, s, cs) \
     ASSERT_EQ(s, cd->cryptos().size()); \

@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_BASE_RTPDATAENGINE_H_
-#define WEBRTC_MEDIA_BASE_RTPDATAENGINE_H_
+#ifndef MEDIA_BASE_RTPDATAENGINE_H_
+#define MEDIA_BASE_RTPDATAENGINE_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/media/base/mediaengine.h"
+#include "media/base/mediachannel.h"
+#include "media/base/mediaconstants.h"
+#include "media/base/mediaengine.h"
 
 namespace cricket {
 
@@ -108,4 +108,4 @@ class RtpDataMediaChannel : public DataMediaChannel {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_BASE_RTPDATAENGINE_H_
+#endif  // MEDIA_BASE_RTPDATAENGINE_H_

@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/ortc/ortcrtpsenderadapter.h"
+#include "ortc/ortcrtpsenderadapter.h"
 
 #include <utility>
 
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/ortc/rtptransportadapter.h"
-#include "webrtc/rtc_base/checks.h"
+#include "media/base/mediaconstants.h"
+#include "ortc/rtptransportadapter.h"
+#include "rtc_base/checks.h"
 
 namespace {
 

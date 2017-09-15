@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/webrtcvideoengine.h"
+#include "media/engine/webrtcvideoengine.h"
 
 #include <stdio.h>
 #include <algorithm>
@@ -16,32 +16,32 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/api/video_codecs/sdp_video_format.h"
-#include "webrtc/api/video_codecs/video_decoder.h"
-#include "webrtc/api/video_codecs/video_decoder_factory.h"
-#include "webrtc/api/video_codecs/video_encoder.h"
-#include "webrtc/api/video_codecs/video_encoder_factory.h"
-#include "webrtc/call/call.h"
-#include "webrtc/common_video/h264/profile_level_id.h"
-#include "webrtc/media/engine/constants.h"
-#include "webrtc/media/engine/internaldecoderfactory.h"
-#include "webrtc/media/engine/internalencoderfactory.h"
-#include "webrtc/media/engine/scopedvideodecoder.h"
-#include "webrtc/media/engine/scopedvideoencoder.h"
-#include "webrtc/media/engine/simulcast.h"
-#include "webrtc/media/engine/simulcast_encoder_adapter.h"
-#include "webrtc/media/engine/videodecodersoftwarefallbackwrapper.h"
-#include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
-#include "webrtc/media/engine/webrtcmediaengine.h"
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/media/engine/webrtcvoiceengine.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_base/trace_event.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "api/video/i420_buffer.h"
+#include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_decoder.h"
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder.h"
+#include "api/video_codecs/video_encoder_factory.h"
+#include "call/call.h"
+#include "common_video/h264/profile_level_id.h"
+#include "media/engine/constants.h"
+#include "media/engine/internaldecoderfactory.h"
+#include "media/engine/internalencoderfactory.h"
+#include "media/engine/scopedvideodecoder.h"
+#include "media/engine/scopedvideoencoder.h"
+#include "media/engine/simulcast.h"
+#include "media/engine/simulcast_encoder_adapter.h"
+#include "media/engine/videodecodersoftwarefallbackwrapper.h"
+#include "media/engine/videoencodersoftwarefallbackwrapper.h"
+#include "media/engine/webrtcmediaengine.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
+#include "media/engine/webrtcvoiceengine.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/timeutils.h"
+#include "rtc_base/trace_event.h"
+#include "system_wrappers/include/field_trial.h"
 
 using DegradationPreference = webrtc::VideoSendStream::DegradationPreference;
 

@@ -10,7 +10,7 @@
 
 #import "RTCIntervalRange+Private.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 @implementation RTCIntervalRange
 

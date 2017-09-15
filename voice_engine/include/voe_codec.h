@@ -28,10 +28,10 @@
 //  codec->Release();
 //  VoiceEngine::Delete(voe);
 //
-#ifndef WEBRTC_VOICE_ENGINE_VOE_CODEC_H
-#define WEBRTC_VOICE_ENGINE_VOE_CODEC_H
+#ifndef VOICE_ENGINE_VOE_CODEC_H_
+#define VOICE_ENGINE_VOE_CODEC_H_
 
-#include "webrtc/common_types.h"
+#include "common_types.h"
 
 namespace webrtc {
 
@@ -144,4 +144,4 @@ class WEBRTC_DLLEXPORT VoECodec {
 
 }  // namespace webrtc
 
-#endif  //  WEBRTC_VOICE_ENGINE_VOE_CODEC_H
+#endif  //  VOICE_ENGINE_VOE_CODEC_H_

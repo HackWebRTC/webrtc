@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/rtcpmuxfilter.h"
-#include "webrtc/media/base/testutils.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "pc/rtcpmuxfilter.h"
+#include "media/base/testutils.h"
+#include "rtc_base/gunit.h"
 
 TEST(RtcpMuxFilterTest, IsActiveSender) {
   cricket::RtcpMuxFilter filter;

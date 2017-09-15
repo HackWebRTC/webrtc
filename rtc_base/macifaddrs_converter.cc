@@ -14,9 +14,9 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ifaddrs_converter.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ifaddrs_converter.h"
+#include "rtc_base/logging.h"
 
 #if !defined(WEBRTC_IOS)
 #include <net/if_media.h>

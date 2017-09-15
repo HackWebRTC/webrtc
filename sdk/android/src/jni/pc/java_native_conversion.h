@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_PC_JAVA_NATIVE_CONVERSION_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_PC_JAVA_NATIVE_CONVERSION_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_JAVA_NATIVE_CONVERSION_H_
+#define SDK_ANDROID_SRC_JNI_PC_JAVA_NATIVE_CONVERSION_H_
 
 #include <vector>
 
-#include "webrtc/api/datachannelinterface.h"
-#include "webrtc/api/jsep.h"
-#include "webrtc/api/jsepicecandidate.h"
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/mediatypes.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/rtc_base/sslidentity.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "api/datachannelinterface.h"
+#include "api/jsep.h"
+#include "api/jsepicecandidate.h"
+#include "api/mediastreaminterface.h"
+#include "api/mediatypes.h"
+#include "api/peerconnectioninterface.h"
+#include "api/rtpparameters.h"
+#include "rtc_base/sslidentity.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 // This file contains helper methods for converting between simple C++ and Java
 // PeerConnection-related structures. Similar to some methods in jni_helpers.h,
@@ -108,4 +108,4 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni, const RtpParameters& parameters);
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_JAVA_NATIVE_CONVERSION_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_JAVA_NATIVE_CONVERSION_H_

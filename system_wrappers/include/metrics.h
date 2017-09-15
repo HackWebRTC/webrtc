@@ -8,14 +8,14 @@
 // be found in the AUTHORS file in the root of the source tree.
 //
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
+#define SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
 
 #include <string>
 
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/checks.h"
+#include "common_types.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/checks.h"
 
 // Macros for allowing WebRTC clients (e.g. Chrome) to gather and aggregate
 // statistics.
@@ -271,4 +271,4 @@ void HistogramAdd(Histogram* histogram_pointer, int sample);
 }  // namespace metrics
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_METRICS_H_

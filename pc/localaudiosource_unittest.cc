@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/localaudiosource.h"
+#include "pc/localaudiosource.h"
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/media/base/fakemediaengine.h"
-#include "webrtc/media/base/fakevideorenderer.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "api/test/fakeconstraints.h"
+#include "media/base/fakemediaengine.h"
+#include "media/base/fakevideorenderer.h"
+#include "rtc_base/gunit.h"
 
 using webrtc::LocalAudioSource;
 using webrtc::MediaConstraintsInterface;

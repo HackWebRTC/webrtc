@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_MD5DIGEST_H_
-#define WEBRTC_RTC_BASE_MD5DIGEST_H_
+#ifndef RTC_BASE_MD5DIGEST_H_
+#define RTC_BASE_MD5DIGEST_H_
 
-#include "webrtc/rtc_base/md5.h"
-#include "webrtc/rtc_base/messagedigest.h"
+#include "rtc_base/md5.h"
+#include "rtc_base/messagedigest.h"
 
 namespace rtc {
 
@@ -33,4 +33,4 @@ class Md5Digest : public MessageDigest {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_MD5DIGEST_H_
+#endif  // RTC_BASE_MD5DIGEST_H_

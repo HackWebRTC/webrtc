@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/source/filterbank_internal.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/source/filterbank_tables.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
-#include "webrtc/rtc_base/sanitizer.h"
-#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/typedefs.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/codecs/isac/fix/source/filterbank_internal.h"
+#include "modules/audio_coding/codecs/isac/fix/source/filterbank_tables.h"
+#include "modules/audio_coding/codecs/isac/fix/source/settings.h"
+#include "rtc_base/sanitizer.h"
+#include "system_wrappers/include/cpu_features_wrapper.h"
+#include "test/gtest.h"
+#include "typedefs.h"
 
 class FilterBanksTest : public testing::Test {
  protected:

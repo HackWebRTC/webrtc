@@ -9,7 +9,7 @@
  *
  */
 
-#include "webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.h"
+#include "modules/video_coding/codecs/h264/h264_decoder_impl.h"
 
 #include <algorithm>
 #include <limits>
@@ -20,13 +20,13 @@ extern "C" {
 #include "third_party/ffmpeg/libavutil/imgutils.h"
 }  // extern "C"
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/common_video/include/video_frame_buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/keep_ref_until_done.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "api/video/i420_buffer.h"
+#include "common_video/include/video_frame_buffer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/keep_ref_until_done.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 

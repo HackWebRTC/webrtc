@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_FILE_AUDIO_DEVICE_H
-#define WEBRTC_AUDIO_DEVICE_FILE_AUDIO_DEVICE_H
+#ifndef AUDIO_DEVICE_FILE_AUDIO_DEVICE_H_
+#define AUDIO_DEVICE_FILE_AUDIO_DEVICE_H_
 
 #include <stdio.h>
 
 #include <memory>
 #include <string>
 
-#include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/file_wrapper.h"
+#include "modules/audio_device/audio_device_generic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/file_wrapper.h"
 
 namespace rtc {
 class PlatformThread;
@@ -179,4 +179,4 @@ class FileAudioDevice : public AudioDeviceGeneric {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_FILE_AUDIO_DEVICE_H
+#endif  // AUDIO_DEVICE_FILE_AUDIO_DEVICE_H_

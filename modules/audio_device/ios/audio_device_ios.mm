@@ -11,28 +11,28 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 
-#include "webrtc/modules/audio_device/ios/audio_device_ios.h"
+#include "modules/audio_device/ios/audio_device_ios.h"
 
 #include <cmath>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/modules/audio_device/fine_audio_buffer.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/sdk/objc/Framework/Classes/Common/helpers.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "api/array_view.h"
+#include "modules/audio_device/fine_audio_buffer.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/timeutils.h"
+#include "sdk/objc/Framework/Classes/Common/helpers.h"
+#include "system_wrappers/include/metrics.h"
 
 #import "WebRTC/RTCLogging.h"
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionDelegateAdapter.h"
-#import "webrtc/sdk/objc/Framework/Classes/Audio/RTCAudioSession+Private.h"
-#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCAudioSession.h"
-#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h"
+#import "modules/audio_device/ios/objc/RTCAudioSessionDelegateAdapter.h"
+#import "sdk/objc/Framework/Classes/Audio/RTCAudioSession+Private.h"
+#import "sdk/objc/Framework/Headers/WebRTC/RTCAudioSession.h"
+#import "sdk/objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h"
 
 
 namespace webrtc {

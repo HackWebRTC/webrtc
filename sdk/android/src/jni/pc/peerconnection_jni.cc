@@ -29,21 +29,21 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/api/rtpsenderinterface.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/sdk/android/src/jni/pc/java_native_conversion.h"
-#include "webrtc/sdk/android/src/jni/pc/mediaconstraints_jni.h"
-#include "webrtc/sdk/android/src/jni/pc/peerconnectionobserver_jni.h"
-#include "webrtc/sdk/android/src/jni/pc/rtcstatscollectorcallbackwrapper.h"
-#include "webrtc/sdk/android/src/jni/pc/sdpobserver_jni.h"
-#include "webrtc/sdk/android/src/jni/pc/statsobserver_jni.h"
-#include "webrtc/system_wrappers/include/trace.h"
+#include "api/mediaconstraintsinterface.h"
+#include "api/peerconnectioninterface.h"
+#include "api/rtpreceiverinterface.h"
+#include "api/rtpsenderinterface.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/pc/java_native_conversion.h"
+#include "sdk/android/src/jni/pc/mediaconstraints_jni.h"
+#include "sdk/android/src/jni/pc/peerconnectionobserver_jni.h"
+#include "sdk/android/src/jni/pc/rtcstatscollectorcallbackwrapper.h"
+#include "sdk/android/src/jni/pc/sdpobserver_jni.h"
+#include "sdk/android/src/jni/pc/statsobserver_jni.h"
+#include "system_wrappers/include/trace.h"
 
 namespace webrtc {
 namespace jni {

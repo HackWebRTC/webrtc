@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/videocapturertracksource.h"
+#include "pc/videocapturertracksource.h"
 
 #include <cstdlib>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
+#include "api/mediaconstraintsinterface.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
 
 using cricket::CaptureState;
 using webrtc::MediaConstraintsInterface;

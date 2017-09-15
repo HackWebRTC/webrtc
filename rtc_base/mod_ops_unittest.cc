@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/mod_ops.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/mod_ops.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 class TestModOps : public ::testing::Test {

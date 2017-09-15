@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/h264_sps_pps_tracker.h"
+#include "modules/video_coding/h264_sps_pps_tracker.h"
 
 #include <string>
 #include <utility>
 
-#include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/common_video/h264/pps_parser.h"
-#include "webrtc/common_video/h264/sps_parser.h"
-#include "webrtc/modules/video_coding/frame_object.h"
-#include "webrtc/modules/video_coding/packet_buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "common_video/h264/h264_common.h"
+#include "common_video/h264/pps_parser.h"
+#include "common_video/h264/sps_parser.h"
+#include "modules/video_coding/frame_object.h"
+#include "modules/video_coding/packet_buffer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace video_coding {

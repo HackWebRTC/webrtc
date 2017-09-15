@@ -7,12 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_CALL_RTP_STREAM_RECEIVER_CONTROLLER_INTERFACE_H_
-#define WEBRTC_CALL_RTP_STREAM_RECEIVER_CONTROLLER_INTERFACE_H_
+#ifndef CALL_RTP_STREAM_RECEIVER_CONTROLLER_INTERFACE_H_
+#define CALL_RTP_STREAM_RECEIVER_CONTROLLER_INTERFACE_H_
 
 #include <memory>
 
-#include "webrtc/call/rtp_packet_sink_interface.h"
+#include "call/rtp_packet_sink_interface.h"
 
 namespace webrtc {
 
@@ -44,4 +44,4 @@ class RtpStreamReceiverControllerInterface {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_RTP_STREAM_RECEIVER_CONTROLLER_INTERFACE_H_
+#endif  // CALL_RTP_STREAM_RECEIVER_CONTROLLER_INTERFACE_H_

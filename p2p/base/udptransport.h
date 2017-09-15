@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_UDPTRANSPORT_H_
-#define WEBRTC_P2P_BASE_UDPTRANSPORT_H_
+#ifndef P2P_BASE_UDPTRANSPORT_H_
+#define P2P_BASE_UDPTRANSPORT_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/api/ortc/udptransportinterface.h"
-#include "webrtc/p2p/base/packettransportinternal.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"  // For PacketOptions.
-#include "webrtc/rtc_base/thread_checker.h"
+#include "api/optional.h"
+#include "api/ortc/udptransportinterface.h"
+#include "p2p/base/packettransportinternal.h"
+#include "rtc_base/asyncpacketsocket.h"  // For PacketOptions.
+#include "rtc_base/thread_checker.h"
 
 namespace rtc {
 class AsyncPacketSocket;
@@ -86,4 +86,4 @@ class UdpTransport : public rtc::PacketTransportInternal,
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_UDPTRANSPORT_H_
+#endif  // P2P_BASE_UDPTRANSPORT_H_

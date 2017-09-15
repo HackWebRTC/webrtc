@@ -153,9 +153,9 @@ if (rtc_include_tests) {
       }
 
       data = [
-        "../../resources/voice_engine/audio_tiny16.wav",
-        "../../resources/voice_engine/audio_tiny48.wav",
-        "../../resources/voice_engine/audio_dtx16.wav",
+        "../resources/voice_engine/audio_tiny16.wav",
+        "../resources/voice_engine/audio_tiny48.wav",
+        "../resources/voice_engine/audio_dtx16.wav",
       ]
 
       if (!build_with_chromium && is_clang) {

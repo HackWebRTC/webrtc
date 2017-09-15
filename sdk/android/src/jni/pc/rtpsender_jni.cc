@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/rtpsenderinterface.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/sdk/android/src/jni/pc/java_native_conversion.h"
+#include "api/rtpsenderinterface.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/pc/java_native_conversion.h"
 
 namespace webrtc {
 namespace jni {

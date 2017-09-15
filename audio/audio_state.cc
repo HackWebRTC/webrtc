@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/audio/audio_state.h"
+#include "audio/audio_state.h"
 
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/voice_engine/include/voe_errors.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "voice_engine/include/voe_errors.h"
 
 namespace webrtc {
 namespace internal {

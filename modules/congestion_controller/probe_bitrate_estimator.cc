@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/congestion_controller/probe_bitrate_estimator.h"
+#include "modules/congestion_controller/probe_bitrate_estimator.h"
 
 #include <algorithm>
 
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace {
 // The minumum number of probes we need to receive feedback about in percent

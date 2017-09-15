@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 
 #include <string.h>
 
@@ -16,10 +16,10 @@
 #include <set>
 #include <string>
 
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "api/rtpparameters.h"
+#include "common_types.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 #ifdef _WIN32
 // Disable warning C4355: 'this' : used in base member initializer list.

@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_STUNPORT_H_
-#define WEBRTC_P2P_BASE_STUNPORT_H_
+#ifndef P2P_BASE_STUNPORT_H_
+#define P2P_BASE_STUNPORT_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/stunrequest.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
+#include "p2p/base/port.h"
+#include "p2p/base/stunrequest.h"
+#include "rtc_base/asyncpacketsocket.h"
 
 // TODO(mallinath) - Rename stunport.cc|h to udpport.cc|h.
 namespace rtc {
@@ -305,4 +305,4 @@ class StunPort : public UDPPort {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_STUNPORT_H_
+#endif  // P2P_BASE_STUNPORT_H_

@@ -7,10 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/rtc_tools/network_tester/packet_logger.h"
+#include "rtc_tools/network_tester/packet_logger.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/protobuf_utils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/protobuf_utils.h"
 
 namespace webrtc {
 

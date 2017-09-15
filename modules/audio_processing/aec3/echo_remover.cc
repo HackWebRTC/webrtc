@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/modules/audio_processing/aec3/echo_remover.h"
+#include "modules/audio_processing/aec3/echo_remover.h"
 
 #include <math.h>
 #include <algorithm>
@@ -15,23 +15,23 @@
 #include <numeric>
 #include <string>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/modules/audio_processing/aec3/aec_state.h"
-#include "webrtc/modules/audio_processing/aec3/comfort_noise_generator.h"
-#include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
-#include "webrtc/modules/audio_processing/aec3/echo_remover_metrics.h"
-#include "webrtc/modules/audio_processing/aec3/fft_data.h"
-#include "webrtc/modules/audio_processing/aec3/output_selector.h"
-#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
-#include "webrtc/modules/audio_processing/aec3/render_delay_buffer.h"
-#include "webrtc/modules/audio_processing/aec3/residual_echo_estimator.h"
-#include "webrtc/modules/audio_processing/aec3/subtractor.h"
-#include "webrtc/modules/audio_processing/aec3/suppression_filter.h"
-#include "webrtc/modules/audio_processing/aec3/suppression_gain.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "api/array_view.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/aec_state.h"
+#include "modules/audio_processing/aec3/comfort_noise_generator.h"
+#include "modules/audio_processing/aec3/echo_path_variability.h"
+#include "modules/audio_processing/aec3/echo_remover_metrics.h"
+#include "modules/audio_processing/aec3/fft_data.h"
+#include "modules/audio_processing/aec3/output_selector.h"
+#include "modules/audio_processing/aec3/render_buffer.h"
+#include "modules/audio_processing/aec3/render_delay_buffer.h"
+#include "modules/audio_processing/aec3/residual_echo_estimator.h"
+#include "modules/audio_processing/aec3/subtractor.h"
+#include "modules/audio_processing/aec3/suppression_filter.h"
+#include "modules/audio_processing/aec3/suppression_gain.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/video/video_send_stream.h"
+#include "video/video_send_stream.h"
 
 #include <algorithm>
 #include <cmath>
@@ -16,27 +16,27 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/call/rtp_transport_controller_send_interface.h"
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/include/video_bitrate_allocator.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
-#include "webrtc/modules/pacing/alr_detector.h"
-#include "webrtc/modules/pacing/packet_router.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
-#include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/file.h"
-#include "webrtc/rtc_base/location.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/trace_event.h"
-#include "webrtc/rtc_base/weak_ptr.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
-#include "webrtc/video/call_stats.h"
-#include "webrtc/video/payload_router.h"
-#include "webrtc/call/video_send_stream.h"
+#include "call/rtp_transport_controller_send_interface.h"
+#include "common_types.h"
+#include "common_video/include/video_bitrate_allocator.h"
+#include "modules/bitrate_controller/include/bitrate_controller.h"
+#include "modules/congestion_controller/include/send_side_congestion_controller.h"
+#include "modules/pacing/alr_detector.h"
+#include "modules/pacing/packet_router.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "modules/rtp_rtcp/source/rtp_sender.h"
+#include "modules/utility/include/process_thread.h"
+#include "modules/video_coding/utility/ivf_file_writer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/file.h"
+#include "rtc_base/location.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/trace_event.h"
+#include "rtc_base/weak_ptr.h"
+#include "system_wrappers/include/field_trial.h"
+#include "video/call_stats.h"
+#include "video/payload_router.h"
+#include "call/video_send_stream.h"
 
 namespace webrtc {
 

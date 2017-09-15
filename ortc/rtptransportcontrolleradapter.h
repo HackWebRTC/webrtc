@@ -8,26 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_ORTC_RTPTRANSPORTCONTROLLERADAPTER_H_
-#define WEBRTC_ORTC_RTPTRANSPORTCONTROLLERADAPTER_H_
+#ifndef ORTC_RTPTRANSPORTCONTROLLERADAPTER_H_
+#define ORTC_RTPTRANSPORTCONTROLLERADAPTER_H_
 
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/ortc/ortcrtpreceiverinterface.h"
-#include "webrtc/api/ortc/ortcrtpsenderinterface.h"
-#include "webrtc/api/ortc/rtptransportcontrollerinterface.h"
-#include "webrtc/api/ortc/srtptransportinterface.h"
-#include "webrtc/call/call.h"
-#include "webrtc/call/rtp_transport_controller_send.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/media/base/mediachannel.h"  // For MediaConfig.
-#include "webrtc/pc/channelmanager.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/thread.h"
+#include "api/ortc/ortcrtpreceiverinterface.h"
+#include "api/ortc/ortcrtpsenderinterface.h"
+#include "api/ortc/rtptransportcontrollerinterface.h"
+#include "api/ortc/srtptransportinterface.h"
+#include "call/call.h"
+#include "call/rtp_transport_controller_send.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/base/mediachannel.h"  // For MediaConfig.
+#include "pc/channelmanager.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 
@@ -221,4 +221,4 @@ class RtpTransportControllerAdapter : public RtpTransportControllerInterface,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_ORTC_RTPTRANSPORTCONTROLLERADAPTER_H_
+#endif  // ORTC_RTPTRANSPORTCONTROLLERADAPTER_H_

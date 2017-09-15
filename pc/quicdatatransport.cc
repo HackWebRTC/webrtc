@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/quicdatatransport.h"
+#include "pc/quicdatatransport.h"
 
-#include "webrtc/p2p/quic/quictransportchannel.h"
-#include "webrtc/p2p/quic/reliablequicstream.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/logging.h"
+#include "p2p/quic/quictransportchannel.h"
+#include "p2p/quic/reliablequicstream.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

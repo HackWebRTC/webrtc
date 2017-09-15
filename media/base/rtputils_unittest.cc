@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/base/rtputils.h"
-#include "webrtc/media/base/fakertp.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "media/base/rtputils.h"
+#include "media/base/fakertp.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/gunit.h"
 
 namespace cricket {
 

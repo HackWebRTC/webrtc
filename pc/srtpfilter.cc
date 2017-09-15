@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/srtpfilter.h"
+#include "pc/srtpfilter.h"
 
 #include <string.h>
 
 #include <algorithm>
 
-#include "webrtc/media/base/rtputils.h"
-#include "webrtc/pc/srtpsession.h"
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/byteorder.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "media/base/rtputils.h"
+#include "pc/srtpsession.h"
+#include "rtc_base/base64.h"
+#include "rtc_base/byteorder.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/timeutils.h"
 
 namespace cricket {
 

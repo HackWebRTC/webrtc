@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_OPTIONSFILE_H_
-#define WEBRTC_RTC_BASE_OPTIONSFILE_H_
+#ifndef RTC_BASE_OPTIONSFILE_H_
+#define RTC_BASE_OPTIONSFILE_H_
 
 #include <map>
 #include <string>
@@ -47,4 +47,4 @@ class OptionsFile {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_OPTIONSFILE_H_
+#endif  // RTC_BASE_OPTIONSFILE_H_

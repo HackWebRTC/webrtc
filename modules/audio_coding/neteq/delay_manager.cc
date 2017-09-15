@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/delay_manager.h"
+#include "modules/audio_coding/neteq/delay_manager.h"
 
 #include <assert.h>
 #include <math.h>
 
 #include <algorithm>  // max, min
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_coding/neteq/delay_peak_detector.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/neteq/delay_peak_detector.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/safe_conversions.h"
 
 namespace webrtc {
 

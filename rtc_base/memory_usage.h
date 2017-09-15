@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_RTC_BASE_MEMORY_USAGE_H_
-#define WEBRTC_RTC_BASE_MEMORY_USAGE_H_
+#ifndef RTC_BASE_MEMORY_USAGE_H_
+#define RTC_BASE_MEMORY_USAGE_H_
 
 #include <stdint.h>
 
@@ -21,4 +21,4 @@ int64_t GetProcessResidentSizeBytes();
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_MEMORY_USAGE_H_
+#endif  // RTC_BASE_MEMORY_USAGE_H_

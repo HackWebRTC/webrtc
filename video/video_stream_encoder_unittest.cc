@@ -12,21 +12,21 @@
 #include <limits>
 #include <utility>
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/media/base/videoadapter.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/metrics_default.h"
-#include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/test/encoder_settings.h"
-#include "webrtc/test/fake_encoder.h"
-#include "webrtc/test/frame_generator.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/video/send_statistics_proxy.h"
-#include "webrtc/video/video_stream_encoder.h"
+#include "api/video/i420_buffer.h"
+#include "media/base/videoadapter.h"
+#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/utility/default_video_bitrate_allocator.h"
+#include "rtc_base/fakeclock.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/metrics_default.h"
+#include "system_wrappers/include/sleep.h"
+#include "test/encoder_settings.h"
+#include "test/fake_encoder.h"
+#include "test/frame_generator.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "video/send_statistics_proxy.h"
+#include "video/video_stream_encoder.h"
 
 namespace {
 const int kMinPixelsPerFrame = 320 * 180;

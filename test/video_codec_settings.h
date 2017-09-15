@@ -7,10 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_TEST_VIDEO_CODEC_SETTINGS_H_
-#define WEBRTC_TEST_VIDEO_CODEC_SETTINGS_H_
+#ifndef TEST_VIDEO_CODEC_SETTINGS_H_
+#define TEST_VIDEO_CODEC_SETTINGS_H_
 
-#include "webrtc/api/video_codecs/video_encoder.h"
+#include "api/video_codecs/video_encoder.h"
 
 namespace webrtc {
 namespace test {
@@ -108,4 +108,4 @@ static void CodecSettings(VideoCodecType codec_type, VideoCodec* settings) {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_VIDEO_CODEC_SETTINGS_H_
+#endif  // TEST_VIDEO_CODEC_SETTINGS_H_

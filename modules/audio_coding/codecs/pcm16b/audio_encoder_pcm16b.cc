@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
+#include "modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
 
 #include <algorithm>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "common_types.h"
+#include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/safe_conversions.h"
 
 namespace webrtc {
 

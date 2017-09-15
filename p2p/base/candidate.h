@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_CANDIDATE_H_
-#define WEBRTC_P2P_BASE_CANDIDATE_H_
+#ifndef P2P_BASE_CANDIDATE_H_
+#define P2P_BASE_CANDIDATE_H_
 
 #include <limits.h>
 #include <math.h>
@@ -20,11 +20,11 @@
 #include <sstream>
 #include <string>
 
-#include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/socketaddress.h"
+#include "p2p/base/p2pconstants.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/network.h"
+#include "rtc_base/socketaddress.h"
 
 namespace cricket {
 
@@ -304,4 +304,4 @@ class CandidateTranslator {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_CANDIDATE_H_
+#endif  // P2P_BASE_CANDIDATE_H_

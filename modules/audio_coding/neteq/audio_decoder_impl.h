@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_DECODER_IMPL_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_DECODER_IMPL_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_AUDIO_DECODER_IMPL_H_
+#define MODULES_AUDIO_CODING_NETEQ_AUDIO_DECODER_IMPL_H_
 
 #include <assert.h>
 
-#include "webrtc/api/audio_codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/neteq/neteq_decoder_enum.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "api/audio_codecs/audio_decoder.h"
+#include "modules/audio_coding/neteq/neteq_decoder_enum.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"
 
 #ifdef WEBRTC_CODEC_G722
-#include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
+#include "modules/audio_coding/codecs/g722/g722_interface.h"
 #endif
 
 namespace webrtc {
@@ -28,4 +28,4 @@ namespace webrtc {
 bool CodecSupported(NetEqDecoder codec_type);
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_DECODER_IMPL_H_
+#endif  // MODULES_AUDIO_CODING_NETEQ_AUDIO_DECODER_IMPL_H_

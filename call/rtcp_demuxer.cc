@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/rtcp_demuxer.h"
+#include "call/rtcp_demuxer.h"
 
-#include "webrtc/call/rtcp_packet_sink_interface.h"
-#include "webrtc/call/rtp_rtcp_demuxer_helper.h"
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/checks.h"
+#include "call/rtcp_packet_sink_interface.h"
+#include "call/rtp_rtcp_demuxer_helper.h"
+#include "common_types.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

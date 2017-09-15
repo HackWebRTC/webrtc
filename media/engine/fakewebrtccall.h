@@ -17,22 +17,22 @@
 //   webrtc::VideoSendStream
 //   webrtc::VideoReceiveStream
 
-#ifndef WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_
-#define WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_
+#ifndef MEDIA_ENGINE_FAKEWEBRTCCALL_H_
+#define MEDIA_ENGINE_FAKEWEBRTCCALL_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/call/audio_receive_stream.h"
-#include "webrtc/call/audio_send_stream.h"
-#include "webrtc/call/call.h"
-#include "webrtc/call/flexfec_receive_stream.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/call/video_receive_stream.h"
-#include "webrtc/call/video_send_stream.h"
+#include "api/video/video_frame.h"
+#include "call/audio_receive_stream.h"
+#include "call/audio_send_stream.h"
+#include "call/call.h"
+#include "call/flexfec_receive_stream.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "rtc_base/buffer.h"
+#include "call/video_receive_stream.h"
+#include "call/video_send_stream.h"
 
 namespace cricket {
 class FakeAudioSendStream final : public webrtc::AudioSendStream {
@@ -325,4 +325,4 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
 };
 
 }  // namespace cricket
-#endif  // WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_
+#endif  // MEDIA_ENGINE_FAKEWEBRTCCALL_H_

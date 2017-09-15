@@ -11,16 +11,16 @@
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 
-#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/objc_video_encoder_factory.h"
+#include "sdk/objc/Framework/Classes/VideoToolbox/objc_video_encoder_factory.h"
 
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
 #import "WebRTC/RTCVideoFrameBuffer.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/include/video_error_codes.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
+#include "modules/include/module_common_types.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_error_codes.h"
+#include "rtc_base/gunit.h"
+#include "sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
 
 id<RTCVideoEncoderFactory> CreateEncoderFactoryReturning(int return_code) {
   id encoderMock = OCMProtocolMock(@protocol(RTCVideoEncoder));

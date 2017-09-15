@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_TESTSUPPORT_MOCK_MOCK_FRAME_WRITER_H_
-#define WEBRTC_TEST_TESTSUPPORT_MOCK_MOCK_FRAME_WRITER_H_
+#ifndef TEST_TESTSUPPORT_MOCK_MOCK_FRAME_WRITER_H_
+#define TEST_TESTSUPPORT_MOCK_MOCK_FRAME_WRITER_H_
 
-#include "webrtc/test/testsupport/frame_writer.h"
+#include "test/testsupport/frame_writer.h"
 
-#include "webrtc/test/gmock.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 namespace test {
@@ -29,4 +29,4 @@ class MockFrameWriter : public FrameWriter {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_TESTSUPPORT_MOCK_MOCK_FRAME_WRITER_H_
+#endif  // TEST_TESTSUPPORT_MOCK_MOCK_FRAME_WRITER_H_

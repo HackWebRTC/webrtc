@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_LOCATION_H_
-#define WEBRTC_RTC_BASE_LOCATION_H_
+#ifndef RTC_BASE_LOCATION_H_
+#define RTC_BASE_LOCATION_H_
 
 #include <string>
 
-#include "webrtc/rtc_base/stringize_macros.h"
+#include "rtc_base/stringize_macros.h"
 
 namespace rtc {
 
@@ -54,4 +54,4 @@ class Location {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_LOCATION_H_
+#endif  // RTC_BASE_LOCATION_H_

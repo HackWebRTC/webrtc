@@ -18,7 +18,7 @@ enum PreservedErrno {
 };
 }
 
-#include "webrtc/media/sctp/sctptransport.h"
+#include "media/sctp/sctptransport.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -27,18 +27,18 @@ enum PreservedErrno {
 #include <sstream>
 
 #include "usrsctplib/usrsctp.h"
-#include "webrtc/media/base/codec.h"
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/media/base/streamparams.h"
-#include "webrtc/p2p/base/dtlstransportinternal.h"  // For PF_NORMAL
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "media/base/codec.h"
+#include "media/base/mediaconstants.h"
+#include "media/base/streamparams.h"
+#include "p2p/base/dtlstransportinternal.h"  // For PF_NORMAL
+#include "rtc_base/arraysize.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/safe_conversions.h"
+#include "rtc_base/thread_checker.h"
+#include "rtc_base/trace_event.h"
 
 namespace {
 

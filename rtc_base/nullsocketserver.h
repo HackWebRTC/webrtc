@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_NULLSOCKETSERVER_H_
-#define WEBRTC_RTC_BASE_NULLSOCKETSERVER_H_
+#ifndef RTC_BASE_NULLSOCKETSERVER_H_
+#define RTC_BASE_NULLSOCKETSERVER_H_
 
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/socketserver.h"
+#include "rtc_base/event.h"
+#include "rtc_base/socketserver.h"
 
 namespace rtc {
 
@@ -35,4 +35,4 @@ class NullSocketServer : public SocketServer {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_NULLSOCKETSERVER_H_
+#endif  // RTC_BASE_NULLSOCKETSERVER_H_

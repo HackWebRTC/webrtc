@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/blank_detector_desktop_capturer_wrapper.h"
+#include "modules/desktop_capture/blank_detector_desktop_capturer_wrapper.h"
 
 #include <algorithm>
 #include <utility>
 
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "rtc_base/checks.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 

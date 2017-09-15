@@ -13,9 +13,9 @@
 #include <iostream>
 #include <vector>
 
-#include "webrtc/rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
 
 class ReferenceLessVideoAnalysisTest : public ::testing::Test {
  public:

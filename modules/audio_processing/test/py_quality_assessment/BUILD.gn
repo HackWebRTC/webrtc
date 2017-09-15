@@ -34,7 +34,7 @@ copy("scripts") {
     ":lib",
     ":output",
     "../..:audioproc_f",
-    "../../../../../resources/audio_processing/test/py_quality_assessment:probing_signals",
+    "../../../../resources/audio_processing/test/py_quality_assessment:probing_signals",
   ]
 }
 
@@ -77,7 +77,7 @@ copy("lib") {
     "$root_build_dir/py_quality_assessment/quality_assessment/{{source_file_part}}",
   ]
   deps = [
-    "../../../../../resources/audio_processing/test/py_quality_assessment:noise_tracks",
+    "../../../../resources/audio_processing/test/py_quality_assessment:noise_tracks",
   ]
 }
 

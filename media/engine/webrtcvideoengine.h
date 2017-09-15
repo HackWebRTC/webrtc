@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOENGINE_H_
-#define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOENGINE_H_
+#ifndef MEDIA_ENGINE_WEBRTCVIDEOENGINE_H_
+#define MEDIA_ENGINE_WEBRTCVIDEOENGINE_H_
 
 #include <map>
 #include <memory>
@@ -17,24 +17,24 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/call/transport.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/api/video_codecs/sdp_video_format.h"
-#include "webrtc/call/call.h"
-#include "webrtc/call/flexfec_receive_stream.h"
-#include "webrtc/call/video_receive_stream.h"
-#include "webrtc/call/video_send_stream.h"
-#include "webrtc/media/base/mediaengine.h"
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/media/base/videosourceinterface.h"
-#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/networkroute.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "api/call/transport.h"
+#include "api/optional.h"
+#include "api/video/video_frame.h"
+#include "api/video_codecs/sdp_video_format.h"
+#include "call/call.h"
+#include "call/flexfec_receive_stream.h"
+#include "call/video_receive_stream.h"
+#include "call/video_send_stream.h"
+#include "media/base/mediaengine.h"
+#include "media/base/videosinkinterface.h"
+#include "media/base/videosourceinterface.h"
+#include "media/engine/webrtcvideodecoderfactory.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
+#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/networkroute.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 class VideoDecoder;
@@ -534,4 +534,4 @@ class EncoderStreamFactory
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOENGINE_H_
+#endif  // MEDIA_ENGINE_WEBRTCVIDEOENGINE_H_

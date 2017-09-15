@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_BUFFERQUEUE_H_
-#define WEBRTC_RTC_BASE_BUFFERQUEUE_H_
+#ifndef RTC_BASE_BUFFERQUEUE_H_
+#define RTC_BASE_BUFFERQUEUE_H_
 
 #include <deque>
 #include <vector>
 
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
 
 namespace rtc {
 
@@ -58,4 +58,4 @@ class BufferQueue {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_BUFFERQUEUE_H_
+#endif  // RTC_BASE_BUFFERQUEUE_H_

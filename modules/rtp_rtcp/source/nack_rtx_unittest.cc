@@ -14,16 +14,16 @@
 #include <memory>
 #include <set>
 
-#include "webrtc/api/call/transport.h"
-#include "webrtc/call/rtp_stream_receiver_controller.h"
-#include "webrtc/call/rtx_receive_stream.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "webrtc/rtc_base/rate_limiter.h"
-#include "webrtc/test/gtest.h"
+#include "api/call/transport.h"
+#include "call/rtp_stream_receiver_controller.h"
+#include "call/rtx_receive_stream.h"
+#include "common_types.h"
+#include "modules/rtp_rtcp/include/receive_statistics.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "rtc_base/rate_limiter.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

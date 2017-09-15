@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/examples/unityplugin/simple_peer_connection.h"
+#include "examples/unityplugin/simple_peer_connection.h"
 
 #include <utility>
 
-#include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/api/videosourceproxy.h"
-#include "webrtc/media/engine/webrtcvideocapturerfactory.h"
-#include "webrtc/modules/video_capture/video_capture_factory.h"
+#include "api/test/fakeconstraints.h"
+#include "api/videosourceproxy.h"
+#include "media/engine/webrtcvideocapturerfactory.h"
+#include "modules/video_capture/video_capture_factory.h"
 
 #if defined(WEBRTC_ANDROID)
-#include "webrtc/examples/unityplugin/classreferenceholder.h"
-#include "webrtc/sdk/android/src/jni/androidvideotracksource.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "examples/unityplugin/classreferenceholder.h"
+#include "sdk/android/src/jni/androidvideotracksource.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 #endif
 
 // Names used for media stream labels.

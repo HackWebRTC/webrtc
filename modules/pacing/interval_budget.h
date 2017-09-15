@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_PACING_INTERVAL_BUDGET_H_
-#define WEBRTC_MODULES_PACING_INTERVAL_BUDGET_H_
+#ifndef MODULES_PACING_INTERVAL_BUDGET_H_
+#define MODULES_PACING_INTERVAL_BUDGET_H_
 
-#include "webrtc/common_types.h"
+#include "common_types.h"
 
 namespace webrtc {
 
@@ -40,4 +40,4 @@ class IntervalBudget {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_PACING_INTERVAL_BUDGET_H_
+#endif  // MODULES_PACING_INTERVAL_BUDGET_H_

@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_H_
 
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
-#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "api/optional.h"
+#include "modules/audio_processing/aec3/echo_path_variability.h"
+#include "modules/audio_processing/aec3/render_buffer.h"
+#include "modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 
@@ -45,4 +45,4 @@ class EchoRemover {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_H_

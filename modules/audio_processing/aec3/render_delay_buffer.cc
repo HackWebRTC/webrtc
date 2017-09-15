@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/render_delay_buffer.h"
+#include "modules/audio_processing/aec3/render_delay_buffer.h"
 
 #include <string.h>
 #include <algorithm>
 
-#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/modules/audio_processing/aec3/block_processor.h"
-#include "webrtc/modules/audio_processing/aec3/decimator_by_4.h"
-#include "webrtc/modules/audio_processing/aec3/fft_data.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/block_processor.h"
+#include "modules/audio_processing/aec3/decimator_by_4.h"
+#include "modules/audio_processing/aec3/fft_data.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace {

@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/codecs/i420/include/i420.h"
+#include "modules/video_coding/codecs/i420/include/i420.h"
 
 #include <limits>
 #include <string>
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "api/video/i420_buffer.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 
 namespace {
 const size_t kI420HeaderSize = 4;

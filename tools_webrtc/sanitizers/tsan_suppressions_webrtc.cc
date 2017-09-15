@@ -44,17 +44,17 @@ char kTSanDefaultSuppressions[] =
 "race:rtc::MessageQueueManager::Clear\n"
 "race:rtc::Thread::Clear\n"
 // https://code.google.com/p/webrtc/issues/detail?id=2080
-"race:webrtc/rtc_base/logging.cc\n"
-"race:webrtc/rtc_base/sharedexclusivelock_unittest.cc\n"
-"race:webrtc/rtc_base/signalthread_unittest.cc\n"
+"race:rtc_base/logging.cc\n"
+"race:rtc_base/sharedexclusivelock_unittest.cc\n"
+"race:rtc_base/signalthread_unittest.cc\n"
 // https://code.google.com/p/webrtc/issues/detail?id=4456
 "deadlock:rtc::MessageQueueManager::Clear\n"
 "deadlock:rtc::MessageQueueManager::ClearInternal\n"
 
 // rtc_pc_unittests
 // https://code.google.com/p/webrtc/issues/detail?id=2079
-"race:webrtc/rtc_base/testclient.cc\n"
-"race:webrtc/rtc_base/virtualsocketserver.cc\n"
+"race:rtc_base/testclient.cc\n"
+"race:rtc_base/virtualsocketserver.cc\n"
 "race:talk/p2p/base/stunserver_unittest.cc\n"
 
 // third_party/usrsctp

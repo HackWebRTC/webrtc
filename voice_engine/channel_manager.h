@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_CHANNEL_MANAGER_H
-#define WEBRTC_VOICE_ENGINE_CHANNEL_MANAGER_H
+#ifndef VOICE_ENGINE_CHANNEL_MANAGER_H_
+#define VOICE_ENGINE_CHANNEL_MANAGER_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
-#include "webrtc/typedefs.h"
-#include "webrtc/voice_engine/include/voe_base.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/random.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "system_wrappers/include/atomic32.h"
+#include "typedefs.h"
+#include "voice_engine/include/voe_base.h"
 
 namespace webrtc {
 
@@ -125,4 +125,4 @@ class ChannelManager {
 }  // namespace voe
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_CHANNEL_MANAGER_H
+#endif  // VOICE_ENGINE_CHANNEL_MANAGER_H_

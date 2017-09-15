@@ -10,9 +10,9 @@
 
 #include <string>
 
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/weak_ptr.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/weak_ptr.h"
 
 namespace rtc {
 

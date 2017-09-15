@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
-#define WEBRTC_MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
+#ifndef MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
+#define MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
 
 #include <assert.h>
 #include <string.h>  // memcpy
@@ -17,16 +17,16 @@
 #include <algorithm>
 #include <limits>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/api/video/video_rotation.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/video_coding/codecs/h264/include/h264_globals.h"
-#include "webrtc/modules/video_coding/codecs/vp8/include/vp8_globals.h"
-#include "webrtc/modules/video_coding/codecs/vp9/include/vp9_globals.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/deprecation.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "api/video/video_rotation.h"
+#include "common_types.h"
+#include "modules/video_coding/codecs/h264/include/h264_globals.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
+#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/deprecation.h"
+#include "rtc_base/safe_conversions.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -644,4 +644,4 @@ struct PacedPacketInfo {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
+#endif  // MODULES_INCLUDE_MODULE_COMMON_TYPES_H_

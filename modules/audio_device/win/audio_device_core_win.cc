@@ -18,11 +18,11 @@
 #pragma message(">> INFO: Windows Core Audio is not supported in VS 2003")
 #endif
 
-#include "webrtc/modules/audio_device/audio_device_config.h"
+#include "modules/audio_device/audio_device_config.h"
 
 #ifdef WEBRTC_WINDOWS_CORE_AUDIO_BUILD
 
-#include "webrtc/modules/audio_device/win/audio_device_core_win.h"
+#include "modules/audio_device/win/audio_device_core_win.h"
 
 #include <assert.h>
 #include <string.h>
@@ -37,9 +37,9 @@
 
 #include <iomanip>
 
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/platform_thread.h"
-#include "webrtc/system_wrappers/include/sleep.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/platform_thread.h"
+#include "system_wrappers/include/sleep.h"
 
 // Macro that calls a COM method returning HRESULT value.
 #define EXIT_ON_ERROR(hres)    do { if (FAILED(hres)) goto Exit; } while(0)

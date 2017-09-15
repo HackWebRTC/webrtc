@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/base/h264_profile_level_id.h"
+#include "media/base/h264_profile_level_id.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "webrtc/rtc_base/arraysize.h"
+#include "rtc_base/arraysize.h"
 
 namespace webrtc {
 namespace H264 {

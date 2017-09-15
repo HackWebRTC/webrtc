@@ -10,7 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
-#include "webrtc/rtc_base/gunit.h"
+#include "rtc_base/gunit.h"
 
 #import "RTCIntervalRange+Private.h"
 #import "WebRTC/RTCIntervalRange.h"

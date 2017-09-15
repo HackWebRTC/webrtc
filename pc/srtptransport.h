@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_SRTPTRANSPORT_H_
-#define WEBRTC_PC_SRTPTRANSPORT_H_
+#ifndef PC_SRTPTRANSPORT_H_
+#define PC_SRTPTRANSPORT_H_
 
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "webrtc/pc/rtptransportinternal.h"
-#include "webrtc/pc/srtpfilter.h"
-#include "webrtc/pc/srtpsession.h"
-#include "webrtc/rtc_base/checks.h"
+#include "pc/rtptransportinternal.h"
+#include "pc/srtpfilter.h"
+#include "pc/srtpsession.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -195,4 +195,4 @@ class SrtpTransport : public RtpTransportInternal {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_SRTPTRANSPORT_H_
+#endif  // PC_SRTPTRANSPORT_H_

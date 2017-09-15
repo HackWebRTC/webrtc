@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/codecs/test/video_codec_test.h"
+#include "modules/video_coding/codecs/test/video_codec_test.h"
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/modules/video_coding/include/video_error_codes.h"
-#include "webrtc/test/frame_utils.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "api/video/i420_buffer.h"
+#include "modules/video_coding/include/video_error_codes.h"
+#include "test/frame_utils.h"
+#include "test/testsupport/fileutils.h"
 
 static const int kEncodeTimeoutMs = 100;
 static const int kDecodeTimeoutMs = 25;

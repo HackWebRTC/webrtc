@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/downsampled_render_buffer.h"
+#include "modules/audio_processing/aec3/downsampled_render_buffer.h"
 
 namespace webrtc {
 

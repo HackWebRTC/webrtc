@@ -14,7 +14,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "webrtc/rtc_tools/converter/converter.h"
+#include "rtc_tools/converter/converter.h"
 
 #ifdef WIN32
 #define SEPARATOR '\\'

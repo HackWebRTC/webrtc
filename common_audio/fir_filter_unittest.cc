@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/fir_filter.h"
+#include "common_audio/fir_filter.h"
 
 #include <string.h>
 
 #include <memory>
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace {

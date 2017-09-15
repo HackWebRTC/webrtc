@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/win/dxgi_texture_mapping.h"
+#include "modules/desktop_capture/win/dxgi_texture_mapping.h"
 
 #include <comdef.h>
 #include <DXGI.h>
 #include <DXGI1_2.h>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

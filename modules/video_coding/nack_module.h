@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_NACK_MODULE_H_
-#define WEBRTC_MODULES_VIDEO_CODING_NACK_MODULE_H_
+#ifndef MODULES_VIDEO_CODING_NACK_MODULE_H_
+#define MODULES_VIDEO_CODING_NACK_MODULE_H_
 
 #include <map>
 #include <vector>
 #include <set>
 
-#include "webrtc/modules/include/module.h"
-#include "webrtc/modules/video_coding/histogram.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_coding/packet.h"
-#include "webrtc/modules/video_coding/sequence_number_util.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "modules/include/module.h"
+#include "modules/video_coding/histogram.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/packet.h"
+#include "modules/video_coding/sequence_number_util.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -99,4 +99,4 @@ class NackModule : public Module {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_NACK_MODULE_H_
+#endif  // MODULES_VIDEO_CODING_NACK_MODULE_H_

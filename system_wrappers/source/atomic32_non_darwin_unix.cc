@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/include/atomic32.h"
+#include "system_wrappers/include/atomic32.h"
 
 #include <assert.h>
 #include <inttypes.h>
 #include <malloc.h>
 
-#include "webrtc/common_types.h"
+#include "common_types.h"
 
 namespace webrtc {
 

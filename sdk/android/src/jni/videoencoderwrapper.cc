@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/videoencoderwrapper.h"
+#include "sdk/android/src/jni/videoencoderwrapper.h"
 
 #include <utility>
 
-#include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/include/video_error_codes.h"
-#include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
-#include "webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "common_video/h264/h264_common.h"
+#include "modules/include/module_common_types.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_error_codes.h"
+#include "modules/video_coding/utility/vp8_header_parser.h"
+#include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/random.h"
+#include "rtc_base/timeutils.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
 namespace jni {

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/adm_helpers.h"
+#include "media/engine/adm_helpers.h"
 
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace adm_helpers {

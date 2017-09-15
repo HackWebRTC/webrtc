@@ -1,4 +1,4 @@
 include_rules = [
-  "+webrtc/audio/utility/audio_frame_operations.h",
-  "+webrtc/system_wrappers",
+  "+audio/utility/audio_frame_operations.h",
+  "+system_wrappers",
 ]

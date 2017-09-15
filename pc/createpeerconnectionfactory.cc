@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/call/callfactoryinterface.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log_factory_interface.h"
-#include "webrtc/media/engine/webrtcmediaengine.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/thread.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/peerconnectioninterface.h"
+#include "call/callfactoryinterface.h"
+#include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
+#include "media/engine/webrtcmediaengine.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 

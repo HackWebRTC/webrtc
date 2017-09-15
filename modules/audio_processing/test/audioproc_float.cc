@@ -13,11 +13,11 @@
 
 #include <string.h>
 
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/modules/audio_processing/test/aec_dump_based_simulator.h"
-#include "webrtc/modules/audio_processing/test/audio_processing_simulator.h"
-#include "webrtc/modules/audio_processing/test/wav_based_simulator.h"
-#include "webrtc/rtc_base/flags.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/test/aec_dump_based_simulator.h"
+#include "modules/audio_processing/test/audio_processing_simulator.h"
+#include "modules/audio_processing/test/wav_based_simulator.h"
+#include "rtc_base/flags.h"
 
 namespace webrtc {
 namespace test {

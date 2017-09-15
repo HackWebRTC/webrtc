@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/isacfix.h"
-#include "webrtc/modules/audio_coding/neteq/tools/neteq_quality_test.h"
-#include "webrtc/rtc_base/flags.h"
+#include "modules/audio_coding/codecs/isac/fix/include/isacfix.h"
+#include "modules/audio_coding/neteq/tools/neteq_quality_test.h"
+#include "rtc_base/flags.h"
 
 using testing::InitGoogleTest;
 

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/base/codec.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "media/base/codec.h"
+#include "rtc_base/gunit.h"
 
 using cricket::AudioCodec;
 using cricket::Codec;

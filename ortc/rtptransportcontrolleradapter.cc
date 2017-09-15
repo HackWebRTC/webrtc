@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/ortc/rtptransportcontrolleradapter.h"
+#include "ortc/rtptransportcontrolleradapter.h"
 
 #include <algorithm>  // For "remove", "find".
 #include <set>
@@ -16,13 +16,13 @@
 #include <unordered_map>
 #include <utility>  // For std::move.
 
-#include "webrtc/api/proxy.h"
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/ortc/ortcrtpreceiveradapter.h"
-#include "webrtc/ortc/ortcrtpsenderadapter.h"
-#include "webrtc/ortc/rtpparametersconversion.h"
-#include "webrtc/ortc/rtptransportadapter.h"
-#include "webrtc/rtc_base/checks.h"
+#include "api/proxy.h"
+#include "media/base/mediaconstants.h"
+#include "ortc/ortcrtpreceiveradapter.h"
+#include "ortc/ortcrtpsenderadapter.h"
+#include "ortc/rtpparametersconversion.h"
+#include "ortc/rtptransportadapter.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

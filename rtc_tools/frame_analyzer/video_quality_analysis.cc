@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_tools/frame_analyzer/video_quality_analysis.h"
+#include "rtc_tools/frame_analyzer/video_quality_analysis.h"
 
 #include <assert.h>
 #include <stdio.h>

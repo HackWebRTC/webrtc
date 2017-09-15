@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_types.h"
+#include "common_types.h"
 
 #include <string.h>
 #include <algorithm>
 #include <limits>
 #include <type_traits>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/stringutils.h"
 
 namespace webrtc {
 

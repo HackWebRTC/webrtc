@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/vad/vad_audio_proc.h"
+#include "modules/audio_processing/vad/vad_audio_proc.h"
 
 #include <math.h>
 #include <stdio.h>
 
-#include "webrtc/common_audio/fft4g.h"
-#include "webrtc/modules/audio_processing/vad/pitch_internal.h"
-#include "webrtc/modules/audio_processing/vad/pole_zero_filter.h"
-#include "webrtc/modules/audio_processing/vad/vad_audio_proc_internal.h"
-#include "webrtc/rtc_base/checks.h"
+#include "common_audio/fft4g.h"
+#include "modules/audio_processing/vad/pitch_internal.h"
+#include "modules/audio_processing/vad/pole_zero_filter.h"
+#include "modules/audio_processing/vad/vad_audio_proc_internal.h"
+#include "rtc_base/checks.h"
 extern "C" {
-#include "webrtc/modules/audio_coding/codecs/isac/main/source/codec.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/source/lpc_analysis.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/source/pitch_estimator.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/source/structs.h"
+#include "modules/audio_coding/codecs/isac/main/source/codec.h"
+#include "modules/audio_coding/codecs/isac/main/source/lpc_analysis.h"
+#include "modules/audio_coding/codecs/isac/main/source/pitch_estimator.h"
+#include "modules/audio_coding/codecs/isac/main/source/structs.h"
 }
-#include "webrtc/modules/include/module_common_types.h"
+#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 

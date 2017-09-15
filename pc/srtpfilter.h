@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_SRTPFILTER_H_
-#define WEBRTC_PC_SRTPFILTER_H_
+#ifndef PC_SRTPFILTER_H_
+#define PC_SRTPFILTER_H_
 
 #include <list>
 #include <map>
@@ -17,15 +17,15 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/media/base/cryptoparams.h"
-#include "webrtc/p2p/base/sessiondescription.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "api/optional.h"
+#include "media/base/cryptoparams.h"
+#include "p2p/base/sessiondescription.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/thread_checker.h"
 
 // Forward declaration to avoid pulling in libsrtp headers here
 struct srtp_event_data_t;
@@ -140,4 +140,4 @@ class SrtpFilter {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_PC_SRTPFILTER_H_
+#endif  // PC_SRTPFILTER_H_

@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_VIDEO_VIDEO_FRAME_BUFFER_H_
-#define WEBRTC_API_VIDEO_VIDEO_FRAME_BUFFER_H_
+#ifndef API_VIDEO_VIDEO_FRAME_BUFFER_H_
+#define API_VIDEO_VIDEO_FRAME_BUFFER_H_
 
 #include <stdint.h>
 
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
@@ -123,4 +123,4 @@ class I444BufferInterface : public PlanarYuvBuffer {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_VIDEO_VIDEO_FRAME_BUFFER_H_
+#endif  // API_VIDEO_VIDEO_FRAME_BUFFER_H_

@@ -26,8 +26,8 @@
 #include <sys/timeb.h>
 #endif
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/timeutils.h"
 
 namespace rtc {
 

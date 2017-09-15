@@ -17,15 +17,15 @@
 
 #include <memory>
 
-#include "webrtc/modules/audio_processing/test/protobuf_utils.h"
-#include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/ignore_wundef.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_processing/test/protobuf_utils.h"
+#include "modules/audio_processing/test/test_utils.h"
+#include "rtc_base/flags.h"
+#include "rtc_base/format_macros.h"
+#include "rtc_base/ignore_wundef.h"
+#include "typedefs.h"
 
 RTC_PUSH_IGNORING_WUNDEF()
-#include "webrtc/modules/audio_processing/debug.pb.h"
+#include "modules/audio_processing/debug.pb.h"
 RTC_POP_IGNORING_WUNDEF()
 
 // TODO(andrew): unpack more of the data.

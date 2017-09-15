@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "rtc_base/refcount.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc_jni {
 

@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/test/conversational_speech/simulator.h"
+#include "modules/audio_processing/test/conversational_speech/simulator.h"
 
 #include <set>
 #include <utility>
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/common_audio/wav_file.h"
-#include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_interface.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/ptr_util.h"
+#include "api/array_view.h"
+#include "common_audio/wav_file.h"
+#include "modules/audio_processing/test/conversational_speech/wavreader_interface.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/pathutils.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 namespace test {

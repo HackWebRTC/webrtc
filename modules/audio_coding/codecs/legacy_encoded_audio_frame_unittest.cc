@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
-#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_coding/acm2/rent_a_codec.h"
+#include "modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

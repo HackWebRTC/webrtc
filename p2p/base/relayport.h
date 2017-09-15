@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_RELAYPORT_H_
-#define WEBRTC_P2P_BASE_RELAYPORT_H_
+#ifndef P2P_BASE_RELAYPORT_H_
+#define P2P_BASE_RELAYPORT_H_
 
 #include <deque>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/stunrequest.h"
+#include "p2p/base/port.h"
+#include "p2p/base/stunrequest.h"
 
 namespace cricket {
 
@@ -119,4 +119,4 @@ class RelayPort : public Port {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_RELAYPORT_H_
+#endif  // P2P_BASE_RELAYPORT_H_

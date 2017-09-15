@@ -10,10 +10,10 @@
 
 #include <assert.h>
 
-#include "webrtc/modules/media_file/media_file_impl.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/file_wrapper.h"
+#include "modules/media_file/media_file_impl.h"
+#include "rtc_base/format_macros.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/file_wrapper.h"
 
 namespace webrtc {
 MediaFile* MediaFile::CreateMediaFile(const int32_t id)

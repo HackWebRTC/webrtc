@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/codecs/test/stats.h"
+#include "modules/video_coding/codecs/test/stats.h"
 
 #include <stdio.h>
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/format_macros.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/format_macros.h"
 
 namespace webrtc {
 namespace test {

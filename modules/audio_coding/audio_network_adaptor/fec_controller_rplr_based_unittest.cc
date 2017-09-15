@@ -11,8 +11,8 @@
 #include <random>
 #include <utility>
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_rplr_based.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_coding/audio_network_adaptor/fec_controller_rplr_based.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

@@ -16,18 +16,18 @@
 #include <map>
 #include <memory>
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/stunprober/stunprober.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "p2p/base/basicpacketsocketfactory.h"
+#include "p2p/stunprober/stunprober.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/flags.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/nethelpers.h"
+#include "rtc_base/network.h"
+#include "rtc_base/ssladapter.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/timeutils.h"
 
 using stunprober::StunProber;
 using stunprober::AsyncCallback;

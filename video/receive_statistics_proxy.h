@@ -8,26 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_RECEIVE_STATISTICS_PROXY_H_
-#define WEBRTC_VIDEO_RECEIVE_STATISTICS_PROXY_H_
+#ifndef VIDEO_RECEIVE_STATISTICS_PROXY_H_
+#define VIDEO_RECEIVE_STATISTICS_PROXY_H_
 
 #include <map>
 #include <string>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/call/video_receive_stream.h"
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/include/frame_callback.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/moving_max_counter.h"
-#include "webrtc/rtc_base/rate_statistics.h"
-#include "webrtc/rtc_base/ratetracker.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/video/quality_threshold.h"
-#include "webrtc/video/report_block_stats.h"
-#include "webrtc/video/stats_counter.h"
-#include "webrtc/video/video_stream_decoder.h"
+#include "api/optional.h"
+#include "call/video_receive_stream.h"
+#include "common_types.h"
+#include "common_video/include/frame_callback.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/moving_max_counter.h"
+#include "rtc_base/rate_statistics.h"
+#include "rtc_base/ratetracker.h"
+#include "rtc_base/thread_annotations.h"
+#include "video/quality_threshold.h"
+#include "video/report_block_stats.h"
+#include "video/stats_counter.h"
+#include "video/video_stream_decoder.h"
 
 namespace webrtc {
 
@@ -185,4 +185,4 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_VIDEO_RECEIVE_STATISTICS_PROXY_H_
+#endif  // VIDEO_RECEIVE_STATISTICS_PROXY_H_

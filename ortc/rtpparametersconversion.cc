@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/ortc/rtpparametersconversion.h"
+#include "ortc/rtpparametersconversion.h"
 
 #include <set>
 #include <sstream>
 #include <utility>
 
-#include "webrtc/media/base/rtputils.h"
+#include "media/base/rtputils.h"
 
 namespace webrtc {
 

@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
+#define MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
 
 #include <string.h>  // Provide access to size_t.
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "common_types.h"
+#include "modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -311,4 +311,4 @@ class NetEq {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
+#endif  // MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_

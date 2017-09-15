@@ -10,8 +10,8 @@
 
 #include <math.h>
 
-#include "webrtc/rtc_base/numerics/exp_filter.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/numerics/exp_filter.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

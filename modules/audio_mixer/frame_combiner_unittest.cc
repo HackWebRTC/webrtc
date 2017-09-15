@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_mixer/frame_combiner.h"
+#include "modules/audio_mixer/frame_combiner.h"
 
 #include <numeric>
 #include <sstream>
 #include <string>
 
-#include "webrtc/audio/utility/audio_frame_operations.h"
-#include "webrtc/modules/audio_mixer/gain_change_calculator.h"
-#include "webrtc/modules/audio_mixer/sine_wave_generator.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/test/gtest.h"
+#include "audio/utility/audio_frame_operations.h"
+#include "modules/audio_mixer/gain_change_calculator.h"
+#include "modules/audio_mixer/sine_wave_generator.h"
+#include "rtc_base/checks.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

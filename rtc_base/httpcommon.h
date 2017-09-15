@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_HTTPCOMMON_H_
-#define WEBRTC_RTC_BASE_HTTPCOMMON_H_
+#ifndef RTC_BASE_HTTPCOMMON_H_
+#define RTC_BASE_HTTPCOMMON_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/stream.h"
+#include "rtc_base/stringutils.h"
 
 namespace rtc {
 
@@ -455,4 +455,4 @@ HttpAuthResult HttpAuthenticate(
 
 } // namespace rtc
 
-#endif // WEBRTC_RTC_BASE_HTTPCOMMON_H_
+#endif // RTC_BASE_HTTPCOMMON_H_

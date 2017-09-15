@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/audio_codecs/audio_encoder.h"
+#include "api/audio_codecs/audio_encoder.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 

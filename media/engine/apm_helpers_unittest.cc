@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/apm_helpers.h"
+#include "media/engine/apm_helpers.h"
 
-#include "webrtc/media/engine/webrtcvoe.h"
-#include "webrtc/modules/audio_device/include/mock_audio_device.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_audio_decoder_factory.h"
-#include "webrtc/voice_engine/transmit_mixer.h"
+#include "media/engine/webrtcvoe.h"
+#include "modules/audio_device/include/mock_audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "test/mock_audio_decoder_factory.h"
+#include "voice_engine/transmit_mixer.h"
 
 namespace webrtc {
 namespace {

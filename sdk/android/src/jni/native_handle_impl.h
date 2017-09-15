@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_
+#ifndef SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_
+#define SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_
 
 #include <jni.h>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/api/video/video_frame_buffer.h"
-#include "webrtc/api/video/video_rotation.h"
-#include "webrtc/rtc_base/callback.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video/video_rotation.h"
+#include "rtc_base/callback.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
@@ -194,4 +194,4 @@ class JavaVideoFrameFactory {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_
+#endif  // SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_

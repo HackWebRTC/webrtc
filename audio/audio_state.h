@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_AUDIO_STATE_H_
-#define WEBRTC_AUDIO_AUDIO_STATE_H_
+#ifndef AUDIO_AUDIO_STATE_H_
+#define AUDIO_AUDIO_STATE_H_
 
-#include "webrtc/audio/audio_transport_proxy.h"
-#include "webrtc/audio/scoped_voe_interface.h"
-#include "webrtc/call/audio_state.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/voice_engine/include/voe_base.h"
+#include "audio/audio_transport_proxy.h"
+#include "audio/scoped_voe_interface.h"
+#include "call/audio_state.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_checker.h"
+#include "voice_engine/include/voe_base.h"
 
 namespace webrtc {
 namespace internal {
@@ -69,4 +69,4 @@ class AudioState final : public webrtc::AudioState,
 }  // namespace internal
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_AUDIO_STATE_H_
+#endif  // AUDIO_AUDIO_STATE_H_

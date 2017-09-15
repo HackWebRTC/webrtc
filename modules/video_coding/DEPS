@@ -2,22 +2,22 @@ include_rules = [
   "+third_party/ffmpeg",
   "+third_party/openh264",
   "+vpx",
-  "+webrtc/call",
-  "+webrtc/common_video",
-  "+webrtc/system_wrappers",
-  "+webrtc/rtc_tools",
+  "+call",
+  "+common_video",
+  "+system_wrappers",
+  "+rtc_tools",
 ]
 
 specific_include_rules = {
   "android_test_initializer\.cc": [
     "+base/android",
-    "+webrtc/sdk",
+    "+sdk",
   ],
   "(.*test\.cc|.*test\.h|.*test\.mm)": [
-     "+webrtc/media/engine",
-     "+webrtc/sdk",
+     "+media/engine",
+     "+sdk",
   ],
   ".*h264\.h": [
-    "+webrtc/media/base/codec.h"
+    "+media/base/codec.h"
   ],
 }

@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/srtptransport.h"
+#include "pc/srtptransport.h"
 
 #include <string>
 
-#include "webrtc/media/base/rtputils.h"
-#include "webrtc/pc/rtptransport.h"
-#include "webrtc/pc/srtpsession.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "media/base/rtputils.h"
+#include "pc/rtptransport.h"
+#include "pc/srtpsession.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/base64.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 

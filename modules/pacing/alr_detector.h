@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_PACING_ALR_DETECTOR_H_
-#define WEBRTC_MODULES_PACING_ALR_DETECTOR_H_
+#ifndef MODULES_PACING_ALR_DETECTOR_H_
+#define MODULES_PACING_ALR_DETECTOR_H_
 
-#include "webrtc/api/optional.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/pacing/interval_budget.h"
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/rtc_base/rate_statistics.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "common_types.h"
+#include "modules/pacing/interval_budget.h"
+#include "modules/pacing/paced_sender.h"
+#include "rtc_base/rate_statistics.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -80,4 +80,4 @@ class AlrDetector {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_PACING_ALR_DETECTOR_H_
+#endif  // MODULES_PACING_ALR_DETECTOR_H_

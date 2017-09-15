@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_SCOPEDVIDEODECODER_H_
-#define WEBRTC_MEDIA_ENGINE_SCOPEDVIDEODECODER_H_
+#ifndef MEDIA_ENGINE_SCOPEDVIDEODECODER_H_
+#define MEDIA_ENGINE_SCOPEDVIDEODECODER_H_
 
 #include <memory>
 
-#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
+#include "media/engine/webrtcvideodecoderfactory.h"
 
 namespace cricket {
 
@@ -31,4 +31,4 @@ std::unique_ptr<webrtc::VideoDecoder> CreateScopedVideoDecoder(
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_ENGINE_SCOPEDVIDEODECODER_H_
+#endif  // MEDIA_ENGINE_SCOPEDVIDEODECODER_H_

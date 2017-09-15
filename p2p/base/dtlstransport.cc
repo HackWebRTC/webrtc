@@ -12,17 +12,17 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/p2p/base/dtlstransport.h"
+#include "p2p/base/dtlstransport.h"
 
-#include "webrtc/p2p/base/common.h"
-#include "webrtc/p2p/base/packettransportinternal.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/dscp.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/thread.h"
+#include "p2p/base/common.h"
+#include "p2p/base/packettransportinternal.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/dscp.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/stream.h"
+#include "rtc_base/thread.h"
 
 namespace cricket {
 

@@ -10,10 +10,10 @@
 
 #include <algorithm>
 
-#include "webrtc/pc/srtpfilter.h"
+#include "pc/srtpfilter.h"
 
-#include "webrtc/media/base/cryptoparams.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "media/base/cryptoparams.h"
+#include "rtc_base/gunit.h"
 
 using cricket::CryptoParams;
 using cricket::CS_LOCAL;

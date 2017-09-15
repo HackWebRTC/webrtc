@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/rtpsender.h"
+#include "pc/rtpsender.h"
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/pc/localaudiosource.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "api/mediastreaminterface.h"
+#include "pc/localaudiosource.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 

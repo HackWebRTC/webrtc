@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/decoder_database.h"
+#include "modules/audio_coding/neteq/decoder_database.h"
 
 #include <assert.h>
 #include <stdlib.h>
 
 #include <string>
 
-#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_audio_decoder.h"
-#include "webrtc/test/mock_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "test/mock_audio_decoder.h"
+#include "test/mock_audio_decoder_factory.h"
 
 using testing::_;
 using testing::Invoke;

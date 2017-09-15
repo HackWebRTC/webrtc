@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_FILEUTILS_H_
-#define WEBRTC_RTC_BASE_FILEUTILS_H_
+#ifndef RTC_BASE_FILEUTILS_H_
+#define RTC_BASE_FILEUTILS_H_
 
 #include <string>
 
@@ -21,9 +21,9 @@
 #include <unistd.h>
 #endif
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/platform_file.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/platform_file.h"
 
 namespace rtc {
 
@@ -153,4 +153,4 @@ class Filesystem {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_FILEUTILS_H_
+#endif  // RTC_BASE_FILEUTILS_H_

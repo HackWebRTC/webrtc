@@ -10,10 +10,10 @@
 
 #include <vector>
 
-#include "webrtc/modules/video_coding/encoded_frame.h"
-#include "webrtc/modules/video_coding/generic_encoder.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/test/gtest.h"
+#include "modules/video_coding/encoded_frame.h"
+#include "modules/video_coding/generic_encoder.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace test {

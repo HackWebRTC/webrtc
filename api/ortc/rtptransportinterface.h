@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_ORTC_RTPTRANSPORTINTERFACE_H_
-#define WEBRTC_API_ORTC_RTPTRANSPORTINTERFACE_H_
+#ifndef API_ORTC_RTPTRANSPORTINTERFACE_H_
+#define API_ORTC_RTPTRANSPORTINTERFACE_H_
 
 #include <string>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/api/ortc/packettransportinterface.h"
-#include "webrtc/api/rtcerror.h"
-#include "webrtc/common_types.h"
+#include "api/optional.h"
+#include "api/ortc/packettransportinterface.h"
+#include "api/rtcerror.h"
+#include "common_types.h"
 
 namespace webrtc {
 
@@ -120,4 +120,4 @@ class RtpTransportInterface {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_ORTC_RTPTRANSPORTINTERFACE_H_
+#endif  // API_ORTC_RTPTRANSPORTINTERFACE_H_

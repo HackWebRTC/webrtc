@@ -21,16 +21,16 @@
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/cryptstring.h"
-#include "webrtc/rtc_base/httpcommon-inl.h"
-#include "webrtc/rtc_base/httpcommon.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/base64.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/cryptstring.h"
+#include "rtc_base/httpcommon-inl.h"
+#include "rtc_base/httpcommon.h"
+#include "rtc_base/messagedigest.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/stringutils.h"
 
 namespace rtc {
 

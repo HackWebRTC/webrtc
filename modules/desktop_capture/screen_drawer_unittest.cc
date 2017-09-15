@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/screen_drawer.h"
+#include "modules/desktop_capture/screen_drawer.h"
 
 #include <atomic>
 #include <stdint.h>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/function_view.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/rtc_base/platform_thread.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/function_view.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/random.h"
+#include "rtc_base/platform_thread.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/sleep.h"
+#include "test/gtest.h"
 
 #if defined(WEBRTC_POSIX)
-#include "webrtc/modules/desktop_capture/screen_drawer_lock_posix.h"
+#include "modules/desktop_capture/screen_drawer_lock_posix.h"
 #endif
 
 namespace webrtc {

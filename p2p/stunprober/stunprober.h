@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_STUNPROBER_STUNPROBER_H_
-#define WEBRTC_P2P_STUNPROBER_STUNPROBER_H_
+#ifndef P2P_STUNPROBER_STUNPROBER_H_
+#define P2P_STUNPROBER_STUNPROBER_H_
 
 #include <set>
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/bytebuffer.h"
-#include "webrtc/rtc_base/callback.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/ipaddress.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/bytebuffer.h"
+#include "rtc_base/callback.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/ipaddress.h"
+#include "rtc_base/network.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/thread_checker.h"
+#include "typedefs.h"
 
 namespace rtc {
 class AsyncPacketSocket;
@@ -253,4 +253,4 @@ class StunProber : public sigslot::has_slots<> {
 
 }  // namespace stunprober
 
-#endif  // WEBRTC_P2P_STUNPROBER_STUNPROBER_H_
+#endif  // P2P_STUNPROBER_STUNPROBER_H_

@@ -7,15 +7,15 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTP_PACKET_H_
+#define MODULES_RTP_RTCP_SOURCE_RTP_PACKET_H_
 
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
+#include "api/array_view.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/copyonwritebuffer.h"
 
 namespace webrtc {
 class RtpHeaderExtensionMap;
@@ -196,4 +196,4 @@ bool RtpPacket::ReserveExtension() {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_RTP_PACKET_H_

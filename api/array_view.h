@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_ARRAY_VIEW_H_
-#define WEBRTC_API_ARRAY_VIEW_H_
+#ifndef API_ARRAY_VIEW_H_
+#define API_ARRAY_VIEW_H_
 
 #include <algorithm>
 #include <type_traits>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/type_traits.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/type_traits.h"
 
 namespace rtc {
 
@@ -260,4 +260,4 @@ inline ArrayView<T> MakeArrayView(T* data, size_t size) {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_API_ARRAY_VIEW_H_
+#endif  // API_ARRAY_VIEW_H_

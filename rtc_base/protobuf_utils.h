@@ -10,8 +10,8 @@
 
 #include <string>
 
-#ifndef WEBRTC_RTC_BASE_PROTOBUF_UTILS_H_
-#define WEBRTC_RTC_BASE_PROTOBUF_UTILS_H_
+#ifndef RTC_BASE_PROTOBUF_UTILS_H_
+#define RTC_BASE_PROTOBUF_UTILS_H_
 
 namespace webrtc {
 
@@ -33,4 +33,4 @@ using google::protobuf::RepeatedPtrField;
 
 #endif  // WEBRTC_ENABLE_PROTOBUF
 
-#endif  // WEBRTC_RTC_BASE_PROTOBUF_UTILS_H_
+#endif  // RTC_BASE_PROTOBUF_UTILS_H_

@@ -10,7 +10,7 @@
 
 #import "WebRTC/RTCPeerConnectionFactory.h"
 
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

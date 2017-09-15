@@ -11,12 +11,12 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/media/base/fakemediaengine.h"
-#include "webrtc/media/base/fakevideocapturer.h"
-#include "webrtc/pc/test/fakevideotrackrenderer.h"
-#include "webrtc/pc/videocapturertracksource.h"
-#include "webrtc/pc/videotrack.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "media/base/fakemediaengine.h"
+#include "media/base/fakevideocapturer.h"
+#include "pc/test/fakevideotrackrenderer.h"
+#include "pc/videocapturertracksource.h"
+#include "pc/videotrack.h"
+#include "rtc_base/gunit.h"
 
 using webrtc::FakeVideoTrackRenderer;
 using webrtc::MediaSourceInterface;

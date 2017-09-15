@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/video/video_rotation.h"
-#include "webrtc/api/videosourceproxy.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/sdk/android/src/jni/androidvideotracksource.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "api/video/video_rotation.h"
+#include "api/videosourceproxy.h"
+#include "rtc_base/logging.h"
+#include "sdk/android/src/jni/androidvideotracksource.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
 

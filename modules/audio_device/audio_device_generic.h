@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H
+#ifndef AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H_
+#define AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H_
 
-#include "webrtc/modules/audio_device/audio_device_buffer.h"
-#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "modules/audio_device/audio_device_buffer.h"
+#include "modules/audio_device/include/audio_device.h"
 
 namespace webrtc {
 
@@ -158,4 +158,4 @@ class AudioDeviceGeneric {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H
+#endif  // AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H_

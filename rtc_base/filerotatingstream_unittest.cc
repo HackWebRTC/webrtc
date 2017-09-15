@@ -10,13 +10,13 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/filerotatingstream.h"
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/filerotatingstream.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/pathutils.h"
+#include "test/testsupport/fileutils.h"
 
 namespace rtc {
 

@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/desktop_capturer_differ_wrapper.h"
+#include "modules/desktop_capture/desktop_capturer_differ_wrapper.h"
 
 #include <string.h>
 
 #include <algorithm>
 #include <utility>
 
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/modules/desktop_capture/differ_block.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/differ_block.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/timeutils.h"
 
 namespace webrtc {
 

@@ -16,15 +16,15 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/media/sctp/sctptransport.h"
-#include "webrtc/p2p/base/fakedtlstransport.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/thread.h"
+#include "media/sctp/sctptransport.h"
+#include "p2p/base/fakedtlstransport.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/ssladapter.h"
+#include "rtc_base/thread.h"
 
 namespace {
 static const int kDefaultTimeout = 10000;  // 10 seconds.

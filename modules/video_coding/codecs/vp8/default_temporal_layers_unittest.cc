@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/codecs/vp8/default_temporal_layers.h"
+#include "modules/video_coding/codecs/vp8/default_temporal_layers.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
-#include "webrtc/modules/video_coding/codecs/vp8/vp8_impl.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/test/gtest.h"
+#include "modules/video_coding/codecs/vp8/vp8_impl.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "test/field_trial.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace test {

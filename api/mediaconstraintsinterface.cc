@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/mediaconstraintsinterface.h"
+#include "api/mediaconstraintsinterface.h"
 
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/rtc_base/stringencode.h"
+#include "api/peerconnectioninterface.h"
+#include "rtc_base/stringencode.h"
 
 namespace {
 

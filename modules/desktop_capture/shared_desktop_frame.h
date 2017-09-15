@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
+#ifndef MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
+#define MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
 
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "modules/desktop_capture/desktop_frame.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
@@ -59,4 +59,4 @@ class SharedDesktopFrame : public DesktopFrame {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
+#endif  // MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_

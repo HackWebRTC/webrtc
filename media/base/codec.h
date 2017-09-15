@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_BASE_CODEC_H_
-#define WEBRTC_MEDIA_BASE_CODEC_H_
+#ifndef MEDIA_BASE_CODEC_H_
+#define MEDIA_BASE_CODEC_H_
 
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/common_types.h"
-#include "webrtc/media/base/mediaconstants.h"
+#include "api/rtpparameters.h"
+#include "common_types.h"
+#include "media/base/mediaconstants.h"
 
 namespace cricket {
 
@@ -254,4 +254,4 @@ const VideoCodec* FindMatchingCodec(
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_BASE_CODEC_H_
+#endif  // MEDIA_BASE_CODEC_H_

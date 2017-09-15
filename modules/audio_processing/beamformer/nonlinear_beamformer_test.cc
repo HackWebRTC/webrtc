@@ -10,13 +10,13 @@
 
 #include <vector>
 
-#include "webrtc/common_audio/channel_buffer.h"
-#include "webrtc/common_audio/wav_file.h"
-#include "webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h"
-#include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/rtc_base/format_macros.h"
+#include "common_audio/channel_buffer.h"
+#include "common_audio/wav_file.h"
+#include "modules/audio_processing/beamformer/nonlinear_beamformer.h"
+#include "modules/audio_processing/test/test_utils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/flags.h"
+#include "rtc_base/format_macros.h"
 
 DEFINE_string(i, "", "The name of the input file to read from.");
 DEFINE_string(o, "out.wav", "Name of the output file to write to.");

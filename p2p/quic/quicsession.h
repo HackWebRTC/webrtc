@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_QUIC_QUICSESSION_H_
-#define WEBRTC_P2P_QUIC_QUICSESSION_H_
+#ifndef P2P_QUIC_QUICSESSION_H_
+#define P2P_QUIC_QUICSESSION_H_
 
 #include <memory>
 #include <string>
@@ -18,10 +18,10 @@
 #include "net/quic/quic_crypto_server_stream.h"
 #include "net/quic/quic_crypto_stream.h"
 #include "net/quic/quic_session.h"
-#include "webrtc/p2p/quic/reliablequicstream.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/sslidentity.h"
+#include "p2p/quic/reliablequicstream.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/sslidentity.h"
 
 namespace cricket {
 
@@ -94,4 +94,4 @@ class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_QUIC_QUICSESSION_H_
+#endif  // P2P_QUIC_QUICSESSION_H_

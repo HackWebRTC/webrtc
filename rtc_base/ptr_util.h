@@ -10,8 +10,8 @@
 
 // This implementation is borrowed from chromium.
 
-#ifndef WEBRTC_RTC_BASE_PTR_UTIL_H_
-#define WEBRTC_RTC_BASE_PTR_UTIL_H_
+#ifndef RTC_BASE_PTR_UTIL_H_
+#define RTC_BASE_PTR_UTIL_H_
 
 #include <memory>
 #include <utility>
@@ -79,4 +79,4 @@ typename internal::MakeUniqueResult<T>::Invalid MakeUnique(Args&&... args) =
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_PTR_UTIL_H_
+#endif  // RTC_BASE_PTR_UTIL_H_

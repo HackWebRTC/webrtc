@@ -190,7 +190,7 @@ if (!build_with_chromium) {
       sources = [
         "event_log_visualizer/chart.proto",
       ]
-      proto_out_dir = "webrtc/rtc_tools/event_log_visualizer"
+      proto_out_dir = "rtc_tools/event_log_visualizer"
     }
 
     rtc_static_library("event_log_visualizer_utils") {
@@ -281,9 +281,9 @@ if (rtc_include_tests) {
   }
 
   tools_unittests_resources = [
-    "../../resources/foreman_cif.yuv",
-    "../../resources/reference_less_video_test_file.y4m",
-    "../../resources/video_quality_analysis_frame.txt",
+    "../resources/foreman_cif.yuv",
+    "../resources/reference_less_video_test_file.y4m",
+    "../resources/video_quality_analysis_frame.txt",
   ]
 
   if (is_ios) {

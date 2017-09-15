@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/quic/quicsession.h"
+#include "p2p/quic/quicsession.h"
 
 #include <memory>
 #include <string>
@@ -23,10 +23,10 @@
 #include "net/quic/crypto/quic_random.h"
 #include "net/quic/quic_crypto_client_stream.h"
 #include "net/quic/quic_crypto_server_stream.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
-#include "webrtc/p2p/quic/quicconnectionhelper.h"
-#include "webrtc/p2p/quic/reliablequicstream.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "p2p/base/faketransportcontroller.h"
+#include "p2p/quic/quicconnectionhelper.h"
+#include "p2p/quic/reliablequicstream.h"
+#include "rtc_base/gunit.h"
 
 using net::IPAddress;
 using net::IPEndPoint;

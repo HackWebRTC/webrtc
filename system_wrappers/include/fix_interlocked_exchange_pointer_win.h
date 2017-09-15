@@ -14,8 +14,8 @@
 // The original code can be found here:
 // http://src.chromium.org/svn/trunk/src/base/fix_wp64.h
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_FIX_INTERLOCKED_EXCHANGE_POINTER_WINDOWS_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_FIX_INTERLOCKED_EXCHANGE_POINTER_WINDOWS_H_
+#ifndef SYSTEM_WRAPPERS_SOURCE_FIX_INTERLOCKED_EXCHANGE_POINTER_WINDOWS_H_
+#define SYSTEM_WRAPPERS_SOURCE_FIX_INTERLOCKED_EXCHANGE_POINTER_WINDOWS_H_
 
 #include <windows.h>
 
@@ -36,4 +36,4 @@ inline void* InterlockedExchangePointer(void* volatile* target, void* value) {
 
 #endif // #if !defined(_WIN64) && defined(_Wp64)
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_FIX_INTERLOCKED_EXCHANGE_POINTER_WINDOWS_H_
+#endif // SYSTEM_WRAPPERS_SOURCE_FIX_INTERLOCKED_EXCHANGE_POINTER_WINDOWS_H_

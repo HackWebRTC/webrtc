@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_VIDEO_RECEIVE_STREAM_H_
-#define WEBRTC_CALL_VIDEO_RECEIVE_STREAM_H_
+#ifndef CALL_VIDEO_RECEIVE_STREAM_H_
+#define CALL_VIDEO_RECEIVE_STREAM_H_
 
 #include <limits>
 #include <map>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/call/transport.h"
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/call/rtp_config.h"
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/include/frame_callback.h"
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/rtc_base/platform_file.h"
+#include "api/call/transport.h"
+#include "api/rtpparameters.h"
+#include "call/rtp_config.h"
+#include "common_types.h"
+#include "common_video/include/frame_callback.h"
+#include "media/base/videosinkinterface.h"
+#include "rtc_base/platform_file.h"
 
 namespace webrtc {
 
@@ -257,4 +257,4 @@ class VideoReceiveStream {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_VIDEO_RECEIVE_STREAM_H_
+#endif  // CALL_VIDEO_RECEIVE_STREAM_H_

@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_MOCK_VOE_OBSERVER_H_
-#define WEBRTC_VOICE_ENGINE_MOCK_VOE_OBSERVER_H_
+#ifndef VOICE_ENGINE_MOCK_VOE_OBSERVER_H_
+#define VOICE_ENGINE_MOCK_VOE_OBSERVER_H_
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/voice_engine/include/voe_base.h"
+#include "test/gmock.h"
+#include "voice_engine/include/voe_base.h"
 
 namespace webrtc {
 
@@ -26,4 +26,4 @@ class MockVoEObserver: public VoiceEngineObserver {
 
 }
 
-#endif  // WEBRTC_VOICE_ENGINE_MOCK_VOE_OBSERVER_H_
+#endif  // VOICE_ENGINE_MOCK_VOE_OBSERVER_H_

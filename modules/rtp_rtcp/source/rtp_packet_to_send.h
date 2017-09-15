@@ -7,11 +7,11 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_TO_SEND_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_TO_SEND_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTP_PACKET_TO_SEND_H_
+#define MODULES_RTP_RTCP_SOURCE_RTP_PACKET_TO_SEND_H_
 
-#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet.h"
+#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "modules/rtp_rtcp/source/rtp_packet.h"
 
 namespace webrtc {
 // Class to hold rtp packet with metadata for sender side.
@@ -59,4 +59,4 @@ class RtpPacketToSend : public RtpPacket {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PACKET_TO_SEND_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_RTP_PACKET_TO_SEND_H_

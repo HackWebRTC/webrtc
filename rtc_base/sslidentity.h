@@ -10,18 +10,18 @@
 
 // Handling of certificates and keypairs for SSLStreamAdapter's peer mode.
 
-#ifndef WEBRTC_RTC_BASE_SSLIDENTITY_H_
-#define WEBRTC_RTC_BASE_SSLIDENTITY_H_
+#ifndef RTC_BASE_SSLIDENTITY_H_
+#define RTC_BASE_SSLIDENTITY_H_
 
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/messagedigest.h"
+#include "rtc_base/timeutils.h"
 
 namespace rtc {
 
@@ -271,4 +271,4 @@ extern const char kPemTypeEcPrivateKey[];
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SSLIDENTITY_H_
+#endif  // RTC_BASE_SSLIDENTITY_H_

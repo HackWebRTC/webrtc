@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/win/dxgi_texture.h"
+#include "modules/desktop_capture/win/dxgi_texture.h"
 
 #include <comdef.h>
 #include <wrl/client.h>
 #include <D3D11.h>
 
-#include "webrtc/modules/desktop_capture/desktop_region.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/desktop_capture/desktop_region.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 using Microsoft::WRL::ComPtr;
 

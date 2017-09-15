@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_MAC_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_MAC_H
+#ifndef AUDIO_DEVICE_AUDIO_DEVICE_MAC_H_
+#define AUDIO_DEVICE_AUDIO_DEVICE_MAC_H_
 
 #include <memory>
 
-#include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/modules/audio_device/mac/audio_mixer_manager_mac.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "modules/audio_device/audio_device_generic.h"
+#include "modules/audio_device/mac/audio_mixer_manager_mac.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/event_wrapper.h"
 
 #include <AudioToolbox/AudioConverter.h>
 #include <CoreAudio/CoreAudio.h>

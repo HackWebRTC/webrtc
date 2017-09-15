@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/quic/quictransportchannel.h"
+#include "p2p/quic/quictransportchannel.h"
 
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/faketransportcontroller.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/sslidentity.h"
+#include "p2p/base/faketransportcontroller.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/sslidentity.h"
 
 using cricket::ConnectionRole;
 using cricket::IceRole;

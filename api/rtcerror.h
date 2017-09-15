@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_RTCERROR_H_
-#define WEBRTC_API_RTCERROR_H_
+#ifndef API_RTCERROR_H_
+#define API_RTCERROR_H_
 
 #include <ostream>
 #include <string>
 #include <utility>  // For std::move.
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
@@ -297,4 +297,4 @@ class RTCErrorOr {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_RTCERROR_H_
+#endif  // API_RTCERROR_H_

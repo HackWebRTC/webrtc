@@ -23,8 +23,8 @@
 //
 // Parameters for the above two functions are described in trace_event.h.
 
-#ifndef WEBRTC_RTC_BASE_EVENT_TRACER_H_
-#define WEBRTC_RTC_BASE_EVENT_TRACER_H_
+#ifndef RTC_BASE_EVENT_TRACER_H_
+#define RTC_BASE_EVENT_TRACER_H_
 
 #include <stdio.h>
 
@@ -82,4 +82,4 @@ void ShutdownInternalTracer();
 }  // namespace tracing
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_EVENT_TRACER_H_
+#endif  // RTC_BASE_EVENT_TRACER_H_

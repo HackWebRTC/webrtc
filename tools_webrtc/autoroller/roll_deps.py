@@ -24,7 +24,7 @@ import urllib
 DONT_AUTOROLL_THESE = [
   'src/third_party/gflags/src',
   'src/third_party/winsdk_samples',
-  'src/webrtc/examples/androidtests/third_party/gradle',
+  'src/examples/androidtests/third_party/gradle',
 ]
 
 # Run these CQ trybots in addition to the default ones in infra/config/cq.cfg.

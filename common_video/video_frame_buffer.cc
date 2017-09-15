@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/common_video/include/video_frame_buffer.h"
+#include "common_video/include/video_frame_buffer.h"
 
 #include <string.h>
 
@@ -16,8 +16,8 @@
 #include "libyuv/convert.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/scale.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/keep_ref_until_done.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/keep_ref_until_done.h"
 
 namespace webrtc {
 

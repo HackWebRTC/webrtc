@@ -9,15 +9,15 @@
  *
  */
 
-#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
+#include "modules/video_coding/codecs/h264/include/h264.h"
 
 #if defined(WEBRTC_USE_H264)
-#include "webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.h"
-#include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
+#include "modules/video_coding/codecs/h264/h264_decoder_impl.h"
+#include "modules/video_coding/codecs/h264/h264_encoder_impl.h"
 #endif
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

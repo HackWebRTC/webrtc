@@ -222,8 +222,8 @@ if (rtc_include_tests) {
     ]
 
     data = [
-      "../../resources/utility/encapsulated_pcm16b_8khz.wav",
-      "../../resources/utility/encapsulated_pcmu_8khz.wav",
+      "../resources/utility/encapsulated_pcm16b_8khz.wav",
+      "../resources/utility/encapsulated_pcmu_8khz.wav",
     ]
 
     if (is_win) {

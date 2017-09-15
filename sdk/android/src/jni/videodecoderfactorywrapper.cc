@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/videodecoderfactorywrapper.h"
+#include "sdk/android/src/jni/videodecoderfactorywrapper.h"
 
-#include "webrtc/api/video_codecs/video_decoder.h"
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/sdk/android/src/jni/videodecoderwrapper.h"
+#include "api/video_codecs/video_decoder.h"
+#include "common_types.h"
+#include "rtc_base/logging.h"
+#include "sdk/android/src/jni/videodecoderwrapper.h"
 
 namespace webrtc {
 namespace jni {

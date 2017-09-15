@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 
 #include <string.h>
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 // TODO(nisse): Only needed for the deprecated ConvertToI420.
-#include "webrtc/api/video/i420_buffer.h"
+#include "api/video/i420_buffer.h"
 
 // NOTE(ajm): Path provided by gn.
 #include "libyuv.h"  // NOLINT

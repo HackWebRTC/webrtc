@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_NETWORKROUTE_H_
-#define WEBRTC_RTC_BASE_NETWORKROUTE_H_
+#ifndef RTC_BASE_NETWORKROUTE_H_
+#define RTC_BASE_NETWORKROUTE_H_
 
 // TODO(honghaiz): Make a directory that describes the interfaces and structs
 // the media code can rely on and the network code can implement, and both can
@@ -50,4 +50,4 @@ struct NetworkRoute {
 };
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_NETWORKROUTE_H_
+#endif  // RTC_BASE_NETWORKROUTE_H_

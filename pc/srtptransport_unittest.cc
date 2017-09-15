@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/srtptransport.h"
+#include "pc/srtptransport.h"
 
-#include "webrtc/media/base/fakertp.h"
-#include "webrtc/p2p/base/dtlstransportinternal.h"
-#include "webrtc/p2p/base/fakepackettransport.h"
-#include "webrtc/pc/rtptransport.h"
-#include "webrtc/pc/rtptransporttestutil.h"
-#include "webrtc/pc/srtptestutil.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
+#include "media/base/fakertp.h"
+#include "p2p/base/dtlstransportinternal.h"
+#include "p2p/base/fakepackettransport.h"
+#include "pc/rtptransport.h"
+#include "pc/rtptransporttestutil.h"
+#include "pc/srtptestutil.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/sslstreamadapter.h"
 
 using rtc::kTestKey1;
 using rtc::kTestKey2;

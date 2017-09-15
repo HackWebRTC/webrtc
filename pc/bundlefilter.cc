@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/bundlefilter.h"
+#include "pc/bundlefilter.h"
 
-#include "webrtc/media/base/rtputils.h"
-#include "webrtc/rtc_base/logging.h"
+#include "media/base/rtputils.h"
+#include "rtc_base/logging.h"
 
 namespace cricket {
 

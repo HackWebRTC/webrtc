@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_RELAYSERVER_H_
-#define WEBRTC_P2P_BASE_RELAYSERVER_H_
+#ifndef P2P_BASE_RELAYSERVER_H_
+#define P2P_BASE_RELAYSERVER_H_
 
 #include <map>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/stun.h"
-#include "webrtc/rtc_base/asyncudpsocket.h"
-#include "webrtc/rtc_base/socketaddresspair.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "p2p/base/port.h"
+#include "p2p/base/stun.h"
+#include "rtc_base/asyncudpsocket.h"
+#include "rtc_base/socketaddresspair.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/timeutils.h"
 
 namespace cricket {
 
@@ -233,4 +233,4 @@ class RelayServerBinding : public rtc::MessageHandler {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_RELAYSERVER_H_
+#endif  // P2P_BASE_RELAYSERVER_H_

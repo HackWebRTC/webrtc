@@ -8,29 +8,29 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/video_stream_encoder.h"
+#include "video/video_stream_encoder.h"
 
 #include <algorithm>
 #include <limits>
 #include <numeric>
 #include <utility>
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/common_video/include/video_bitrate_allocator.h"
-#include "webrtc/common_video/include/video_frame.h"
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/modules/video_coding/include/video_codec_initializer.h"
-#include "webrtc/modules/video_coding/include/video_coding.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/location.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_base/trace_event.h"
-#include "webrtc/video/overuse_frame_detector.h"
-#include "webrtc/video/send_statistics_proxy.h"
+#include "api/video/i420_buffer.h"
+#include "common_video/include/video_bitrate_allocator.h"
+#include "common_video/include/video_frame.h"
+#include "modules/pacing/paced_sender.h"
+#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/include/video_codec_initializer.h"
+#include "modules/video_coding/include/video_coding.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/location.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/timeutils.h"
+#include "rtc_base/trace_event.h"
+#include "video/overuse_frame_detector.h"
+#include "video/send_statistics_proxy.h"
 
 namespace webrtc {
 

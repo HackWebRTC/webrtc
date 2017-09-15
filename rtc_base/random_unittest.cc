@@ -13,9 +13,9 @@
 #include <limits>
 #include <vector>
 
-#include "webrtc/rtc_base/mathutils.h"  // unsigned difference
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/mathutils.h"  // unsigned difference
+#include "rtc_base/random.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_WIN32SOCKETSERVER_H_
-#define WEBRTC_RTC_BASE_WIN32SOCKETSERVER_H_
+#ifndef RTC_BASE_WIN32SOCKETSERVER_H_
+#define RTC_BASE_WIN32SOCKETSERVER_H_
 
 #if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/asyncsocket.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/socket.h"
-#include "webrtc/rtc_base/socketfactory.h"
-#include "webrtc/rtc_base/socketserver.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/win32window.h"
+#include "rtc_base/asyncsocket.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/socketfactory.h"
+#include "rtc_base/socketserver.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/win32window.h"
 
 namespace rtc {
 
@@ -159,4 +159,4 @@ class Win32Thread : public Thread {
 
 #endif  // WEBRTC_WIN
 
-#endif  // WEBRTC_RTC_BASE_WIN32SOCKETSERVER_H_
+#endif  // RTC_BASE_WIN32SOCKETSERVER_H_

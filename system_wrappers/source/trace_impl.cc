@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/source/trace_impl.h"
+#include "system_wrappers/source/trace_impl.h"
 
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/platform_thread.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/platform_thread.h"
 #ifdef _WIN32
-#include "webrtc/system_wrappers/source/trace_win.h"
+#include "system_wrappers/source/trace_win.h"
 #else
-#include "webrtc/system_wrappers/source/trace_posix.h"
+#include "system_wrappers/source/trace_posix.h"
 #endif  // _WIN32
 
 #define KEY_LEN_CHARS 31

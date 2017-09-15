@@ -13,8 +13,8 @@
 // stack.  Consequently, we only look up all classes once in app/webrtc.
 // http://developer.android.com/training/articles/perf-jni.html#faq_FindClass
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_
+#ifndef SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_
+#define SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_
 
 #include <jni.h>
 #include <map>
@@ -43,4 +43,4 @@ using webrtc::jni::FreeGlobalClassReferenceHolder;
 
 }  // namespace webrtc_jni
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_
+#endif  // SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_

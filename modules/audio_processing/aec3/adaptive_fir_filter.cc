@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/adaptive_fir_filter.h"
+#include "modules/audio_processing/aec3/adaptive_fir_filter.h"
 
 #if defined(WEBRTC_HAS_NEON)
 #include <arm_neon.h>
 #endif
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #include <emmintrin.h>
 #endif
 #include <algorithm>
 #include <functional>
 
-#include "webrtc/modules/audio_processing/aec3/fft_data.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_processing/aec3/fft_data.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_SEND_DELAY_STATS_H_
-#define WEBRTC_VIDEO_SEND_DELAY_STATS_H_
+#ifndef VIDEO_SEND_DELAY_STATS_H_
+#define VIDEO_SEND_DELAY_STATS_H_
 
 #include <map>
 #include <memory>
 #include <set>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/video/stats_counter.h"
-#include "webrtc/call/video_send_stream.h"
+#include "common_types.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/clock.h"
+#include "video/stats_counter.h"
+#include "call/video_send_stream.h"
 
 namespace webrtc {
 
@@ -83,4 +83,4 @@ class SendDelayStats : public SendPacketObserver {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_VIDEO_SEND_DELAY_STATS_H_
+#endif  // VIDEO_SEND_DELAY_STATS_H_

@@ -10,10 +10,10 @@
 
 #include <string>
 
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/ssladapter.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/ssladapter.h"
 
 namespace rtc {
 

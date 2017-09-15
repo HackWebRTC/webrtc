@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_WIN32WINDOW_H_
-#define WEBRTC_RTC_BASE_WIN32WINDOW_H_
+#ifndef RTC_BASE_WIN32WINDOW_H_
+#define RTC_BASE_WIN32WINDOW_H_
 
 #if defined(WEBRTC_WIN)
 
-#include "webrtc/rtc_base/win32.h"
+#include "rtc_base/win32.h"
 
 namespace rtc {
 
@@ -57,4 +57,4 @@ class Win32Window {
 
 #endif  // WEBRTC_WIN
 
-#endif  // WEBRTC_RTC_BASE_WIN32WINDOW_H_
+#endif  // RTC_BASE_WIN32WINDOW_H_

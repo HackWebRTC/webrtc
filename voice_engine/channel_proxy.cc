@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/channel_proxy.h"
+#include "voice_engine/channel_proxy.h"
 
 #include <utility>
 
-#include "webrtc/api/call/audio_sink.h"
-#include "webrtc/call/rtp_transport_controller_send_interface.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_minmax.h"
-#include "webrtc/voice_engine/channel.h"
+#include "api/call/audio_sink.h"
+#include "call/rtp_transport_controller_send_interface.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/safe_minmax.h"
+#include "voice_engine/channel.h"
 
 namespace webrtc {
 namespace voe {

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_SENDER_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_SENDER_H_
+#ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_SENDER_H_
+#define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_SENDER_H_
 
 #include <list>
 #include <limits>
@@ -17,10 +17,10 @@
 #include <set>
 #include <string>
 
-#include "webrtc/modules/include/module.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "modules/include/module.h"
+#include "modules/remote_bitrate_estimator/test/bwe.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_framework.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 namespace testing {
@@ -204,4 +204,4 @@ class TcpSender : public PacketSender {
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_SENDER_H_
+#endif  // MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_SENDER_H_

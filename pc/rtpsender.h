@@ -12,22 +12,22 @@
 // An RtpSender associates a MediaStreamTrackInterface with an underlying
 // transport (provided by AudioProviderInterface/VideoProviderInterface)
 
-#ifndef WEBRTC_PC_RTPSENDER_H_
-#define WEBRTC_PC_RTPSENDER_H_
+#ifndef PC_RTPSENDER_H_
+#define PC_RTPSENDER_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/rtpsenderinterface.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/criticalsection.h"
+#include "api/mediastreaminterface.h"
+#include "api/rtpsenderinterface.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/criticalsection.h"
 // Adding 'nogncheck' to disable the gn include headers check to support modular
 // WebRTC build targets.
-#include "webrtc/media/base/audiosource.h"  // nogncheck
-#include "webrtc/pc/channel.h"
-#include "webrtc/pc/dtmfsender.h"
-#include "webrtc/pc/statscollector.h"
+#include "media/base/audiosource.h"  // nogncheck
+#include "pc/channel.h"
+#include "pc/dtmfsender.h"
+#include "pc/statscollector.h"
 
 namespace webrtc {
 
@@ -258,4 +258,4 @@ class VideoRtpSender : public ObserverInterface,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_RTPSENDER_H_
+#endif  // PC_RTPSENDER_H_

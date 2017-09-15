@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RW_LOCK_WRAPPER_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RW_LOCK_WRAPPER_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_RW_LOCK_WRAPPER_H_
+#define SYSTEM_WRAPPERS_INCLUDE_RW_LOCK_WRAPPER_H_
 
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "rtc_base/thread_annotations.h"
 
 // Note, Windows pre-Vista version of RW locks are not supported natively. For
 // these OSs regular critical sections have been used to approximate RW lock
@@ -61,4 +61,4 @@ class RTC_SCOPED_LOCKABLE WriteLockScoped {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RW_LOCK_WRAPPER_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_RW_LOCK_WRAPPER_H_

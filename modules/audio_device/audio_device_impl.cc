@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_device/audio_device_impl.h"
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_device/audio_device_config.h"
-#include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "modules/audio_device/audio_device_impl.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_device/audio_device_config.h"
+#include "modules/audio_device/audio_device_generic.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/metrics.h"
 
 #include <assert.h>
 #include <string.h>
@@ -27,12 +27,12 @@
 #endif
 #elif defined(WEBRTC_ANDROID)
 #include <stdlib.h>
-#include "webrtc/modules/audio_device/android/audio_device_template.h"
-#include "webrtc/modules/audio_device/android/audio_manager.h"
-#include "webrtc/modules/audio_device/android/audio_record_jni.h"
-#include "webrtc/modules/audio_device/android/audio_track_jni.h"
-#include "webrtc/modules/audio_device/android/opensles_player.h"
-#include "webrtc/modules/audio_device/android/opensles_recorder.h"
+#include "modules/audio_device/android/audio_device_template.h"
+#include "modules/audio_device/android/audio_manager.h"
+#include "modules/audio_device/android/audio_record_jni.h"
+#include "modules/audio_device/android/audio_track_jni.h"
+#include "modules/audio_device/android/opensles_player.h"
+#include "modules/audio_device/android/opensles_recorder.h"
 #elif defined(WEBRTC_LINUX)
 #if defined(LINUX_ALSA)
 #include "audio_device_alsa_linux.h"
@@ -47,11 +47,11 @@
 #endif
 
 #if defined(WEBRTC_DUMMY_FILE_DEVICES)
-#include "webrtc/modules/audio_device/dummy/file_audio_device_factory.h"
+#include "modules/audio_device/dummy/file_audio_device_factory.h"
 #endif
 
-#include "webrtc/modules/audio_device/dummy/audio_device_dummy.h"
-#include "webrtc/modules/audio_device/dummy/file_audio_device.h"
+#include "modules/audio_device/dummy/audio_device_dummy.h"
+#include "modules/audio_device/dummy/file_audio_device.h"
 
 #define CHECK_INITIALIZED() \
   {                         \

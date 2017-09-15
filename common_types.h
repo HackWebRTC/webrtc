@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_COMMON_TYPES_H_
-#define WEBRTC_COMMON_TYPES_H_
+#ifndef COMMON_TYPES_H_
+#define COMMON_TYPES_H_
 
 #include <stddef.h>
 #include <string.h>
@@ -17,14 +17,14 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/api/video/video_content_type.h"
-#include "webrtc/api/video/video_rotation.h"
-#include "webrtc/api/video/video_timing.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/deprecation.h"
-#include "webrtc/typedefs.h"
+#include "api/array_view.h"
+#include "api/optional.h"
+#include "api/video/video_content_type.h"
+#include "api/video/video_rotation.h"
+#include "api/video/video_timing.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/deprecation.h"
+#include "typedefs.h"
 
 #if defined(_MSC_VER)
 // Disable "new behavior: elements of array will be default initialized"
@@ -972,4 +972,4 @@ struct RtpKeepAliveConfig final {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_COMMON_TYPES_H_
+#endif  // COMMON_TYPES_H_

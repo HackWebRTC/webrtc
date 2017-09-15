@@ -20,11 +20,11 @@
 // The implementation only relies and basic C++ functionality
 // and needs no special library or STL support.
 
-#ifndef WEBRTC_RTC_BASE_FLAGS_H_
-#define WEBRTC_RTC_BASE_FLAGS_H_
+#ifndef RTC_BASE_FLAGS_H_
+#define RTC_BASE_FLAGS_H_
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
 
 namespace rtc {
 

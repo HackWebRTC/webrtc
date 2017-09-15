@@ -10,8 +10,8 @@
 
 // Borrowed from Chromium's src/base/numerics/safe_conversions_impl.h.
 
-#ifndef WEBRTC_RTC_BASE_SAFE_CONVERSIONS_IMPL_H_
-#define WEBRTC_RTC_BASE_SAFE_CONVERSIONS_IMPL_H_
+#ifndef RTC_BASE_SAFE_CONVERSIONS_IMPL_H_
+#define RTC_BASE_SAFE_CONVERSIONS_IMPL_H_
 
 #include <limits>
 
@@ -185,4 +185,4 @@ inline RangeCheckResult RangeCheck(Src value) {
 }  // namespace internal
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SAFE_CONVERSIONS_IMPL_H_
+#endif  // RTC_BASE_SAFE_CONVERSIONS_IMPL_H_

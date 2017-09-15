@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_TRANSPORTCHANNELIMPL_H_
-#define WEBRTC_P2P_BASE_TRANSPORTCHANNELIMPL_H_
+#ifndef P2P_BASE_TRANSPORTCHANNELIMPL_H_
+#define P2P_BASE_TRANSPORTCHANNELIMPL_H_
 
 #include <string>
 
-#include "webrtc/p2p/base/icetransportinternal.h"
-#include "webrtc/p2p/base/transportchannel.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "p2p/base/icetransportinternal.h"
+#include "p2p/base/transportchannel.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 class MetricsObserverInterface;
@@ -120,4 +120,4 @@ class TransportChannelImpl : public TransportChannel {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TRANSPORTCHANNELIMPL_H_
+#endif  // P2P_BASE_TRANSPORTCHANNELIMPL_H_

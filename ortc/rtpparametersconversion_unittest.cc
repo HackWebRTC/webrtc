@@ -10,9 +10,9 @@
 
 #include <algorithm>
 
-#include "webrtc/ortc/rtpparametersconversion.h"
-#include "webrtc/ortc/testrtpparameters.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "ortc/rtpparametersconversion.h"
+#include "ortc/testrtpparameters.h"
+#include "rtc_base/gunit.h"
 
 namespace webrtc {
 

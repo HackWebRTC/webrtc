@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/messagequeue.h"
+#include "rtc_base/messagequeue.h"
 
 #include <functional>
 
-#include "webrtc/rtc_base/atomicops.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/nullsocketserver.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/refcountedobject.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/atomicops.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/event.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/nullsocketserver.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/timeutils.h"
 
 using namespace rtc;
 

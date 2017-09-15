@@ -10,8 +10,8 @@
 
 #include <algorithm>
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/channel_controller.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_coding/audio_network_adaptor/channel_controller.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

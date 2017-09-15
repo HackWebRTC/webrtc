@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/test/fuzzers/audio_processing_fuzzer.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "test/fuzzers/audio_processing_fuzzer.h"
 
-#include "webrtc/api/optional.h"
+#include "api/optional.h"
 
 namespace webrtc {
 

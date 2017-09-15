@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/mediaconstraintsinterface.h"
+#include "api/mediaconstraintsinterface.h"
 
-#include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "api/test/fakeconstraints.h"
+#include "rtc_base/gunit.h"
 
 namespace webrtc {
 

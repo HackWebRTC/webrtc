@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_VIDEO_VIDEO_TIMING_H_
-#define WEBRTC_API_VIDEO_VIDEO_TIMING_H_
+#ifndef API_VIDEO_VIDEO_TIMING_H_
+#define API_VIDEO_VIDEO_TIMING_H_
 
 #include <stdint.h>
 
 #include <limits>
 #include <string>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/safe_conversions.h"
 
 namespace webrtc {
 
@@ -117,4 +117,4 @@ struct TimingFrameInfo {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_VIDEO_VIDEO_TIMING_H_
+#endif  // API_VIDEO_VIDEO_TIMING_H_

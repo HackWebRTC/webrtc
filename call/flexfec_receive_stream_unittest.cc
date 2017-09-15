@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/flexfec_receive_stream_impl.h"
+#include "call/flexfec_receive_stream_impl.h"
 
 #include <stdint.h>
 #include <memory>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/call/rtp_stream_receiver_controller.h"
-#include "webrtc/modules/pacing/packet_router.h"
-#include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
-#include "webrtc/modules/rtp_rtcp/mocks/mock_recovered_packet_receiver.h"
-#include "webrtc/modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
-#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
-#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_transport.h"
+#include "api/array_view.h"
+#include "call/rtp_stream_receiver_controller.h"
+#include "modules/pacing/packet_router.h"
+#include "modules/rtp_rtcp/include/flexfec_receiver.h"
+#include "modules/rtp_rtcp/mocks/mock_recovered_packet_receiver.h"
+#include "modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
+#include "modules/rtp_rtcp/source/byte_io.h"
+#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "modules/utility/include/mock/mock_process_thread.h"
+#include "rtc_base/ptr_util.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "test/mock_transport.h"
 
 namespace webrtc {
 

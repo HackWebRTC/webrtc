@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_FAKE_ENCODER_H_
-#define WEBRTC_TEST_FAKE_ENCODER_H_
+#ifndef TEST_FAKE_ENCODER_H_
+#define TEST_FAKE_ENCODER_H_
 
 #include <vector>
 #include <memory>
 
-#include "webrtc/api/video_codecs/video_encoder.h"
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "api/video_codecs/video_encoder.h"
+#include "common_types.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/task_queue.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace test {
@@ -134,4 +134,4 @@ class MultithreadedFakeH264Encoder : public test::FakeH264Encoder {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_FAKE_ENCODER_H_
+#endif  // TEST_FAKE_ENCODER_H_

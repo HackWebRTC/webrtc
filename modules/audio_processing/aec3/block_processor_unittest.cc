@@ -8,22 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/block_processor.h"
+#include "modules/audio_processing/aec3/block_processor.h"
 
 #include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/modules/audio_processing/aec3/mock/mock_echo_remover.h"
-#include "webrtc/modules/audio_processing/aec3/mock/mock_render_delay_buffer.h"
-#include "webrtc/modules/audio_processing/aec3/mock/mock_render_delay_controller.h"
-#include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/mock/mock_echo_remover.h"
+#include "modules/audio_processing/aec3/mock/mock_render_delay_buffer.h"
+#include "modules/audio_processing/aec3/mock/mock_render_delay_controller.h"
+#include "modules/audio_processing/test/echo_canceller_test_tools.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/random.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace {

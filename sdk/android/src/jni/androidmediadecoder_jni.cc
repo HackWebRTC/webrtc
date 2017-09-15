@@ -15,25 +15,25 @@
 
 // NOTICE: androidmediadecoder_jni.h must be included before
 // androidmediacodeccommon.h to avoid build errors.
-#include "webrtc/sdk/android/src/jni/androidmediadecoder_jni.h"
+#include "sdk/android/src/jni/androidmediadecoder_jni.h"
 
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
 #include "third_party/libyuv/include/libyuv/video_common.h"
-#include "webrtc/common_video/h264/h264_bitstream_parser.h"
-#include "webrtc/common_video/include/i420_buffer_pool.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/sdk/android/src/jni/androidmediacodeccommon.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
-#include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
+#include "common_video/h264/h264_bitstream_parser.h"
+#include "common_video/include/i420_buffer_pool.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/utility/vp8_header_parser.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/timeutils.h"
+#include "sdk/android/src/jni/androidmediacodeccommon.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/native_handle_impl.h"
+#include "sdk/android/src/jni/surfacetexturehelper_jni.h"
 
 using rtc::Bind;
 using rtc::Thread;

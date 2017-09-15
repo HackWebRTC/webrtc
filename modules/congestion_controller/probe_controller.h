@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_PROBE_CONTROLLER_H_
-#define WEBRTC_MODULES_CONGESTION_CONTROLLER_PROBE_CONTROLLER_H_
+#ifndef MODULES_CONGESTION_CONTROLLER_PROBE_CONTROLLER_H_
+#define MODULES_CONGESTION_CONTROLLER_PROBE_CONTROLLER_H_
 
 #include <initializer_list>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/rtc_base/criticalsection.h"
+#include "common_types.h"
+#include "modules/pacing/paced_sender.h"
+#include "rtc_base/criticalsection.h"
 
 namespace webrtc {
 
@@ -91,4 +91,4 @@ class ProbeController {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_CONGESTION_CONTROLLER_PROBE_CONTROLLER_H_
+#endif  // MODULES_CONGESTION_CONTROLLER_PROBE_CONTROLLER_H_

@@ -8,28 +8,28 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/window_finder.h"
+#include "modules/desktop_capture/window_finder.h"
 
 #include <stdint.h>
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/modules/desktop_capture/screen_drawer.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/test/gtest.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/screen_drawer.h"
+#include "rtc_base/logging.h"
+#include "test/gtest.h"
 
 #if defined(USE_X11)
-#include "webrtc/modules/desktop_capture/x11/shared_x_display.h"
-#include "webrtc/modules/desktop_capture/x11/x_atom_cache.h"
-#include "webrtc/rtc_base/ptr_util.h"
+#include "modules/desktop_capture/x11/shared_x_display.h"
+#include "modules/desktop_capture/x11/x_atom_cache.h"
+#include "rtc_base/ptr_util.h"
 #endif
 
 #if defined(WEBRTC_WIN)
 #include <windows.h>
 
-#include "webrtc/modules/desktop_capture/window_finder_win.h"
-#include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
+#include "modules/desktop_capture/window_finder_win.h"
+#include "modules/desktop_capture/win/window_capture_utils.h"
 #endif
 
 namespace webrtc {

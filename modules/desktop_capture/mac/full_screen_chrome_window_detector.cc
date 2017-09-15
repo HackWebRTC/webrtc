@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/mac/full_screen_chrome_window_detector.h"
+#include "modules/desktop_capture/mac/full_screen_chrome_window_detector.h"
 
 #include <assert.h>
 #include <libproc.h>
 #include <string>
 
-#include "webrtc/modules/desktop_capture/mac/window_list_utils.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/macutils.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "modules/desktop_capture/mac/window_list_utils.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/macutils.h"
+#include "rtc_base/timeutils.h"
 
 namespace webrtc {
 

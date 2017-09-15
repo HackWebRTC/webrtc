@@ -13,8 +13,8 @@
 
 #include <string>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 // Copies characters from a CFStringRef into a std::string.
 std::string CFStringToString(const CFStringRef cf_string) {

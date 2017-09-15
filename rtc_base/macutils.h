@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_MACUTILS_H_
-#define WEBRTC_RTC_BASE_MACUTILS_H_
+#ifndef RTC_BASE_MACUTILS_H_
+#define RTC_BASE_MACUTILS_H_
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <string>
@@ -47,4 +47,4 @@ MacOSVersionName GetOSVersionName();
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_MACUTILS_H_
+#endif  // RTC_BASE_MACUTILS_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/win/dxgi_context.h"
-#include "webrtc/modules/desktop_capture/win/dxgi_duplicator_controller.h"
+#include "modules/desktop_capture/win/dxgi_context.h"
+#include "modules/desktop_capture/win/dxgi_duplicator_controller.h"
 
 namespace webrtc {
 

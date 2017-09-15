@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/gain_control_impl.h"
+#include "modules/audio_processing/gain_control_impl.h"
 
-#include "webrtc/api/optional.h"
-#include "webrtc/modules/audio_processing/agc/legacy/gain_control.h"
-#include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "api/optional.h"
+#include "modules/audio_processing/agc/legacy/gain_control.h"
+#include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

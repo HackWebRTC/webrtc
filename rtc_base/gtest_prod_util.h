@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_GTEST_PROD_UTIL_H_
-#define WEBRTC_RTC_BASE_GTEST_PROD_UTIL_H_
+#ifndef RTC_BASE_GTEST_PROD_UTIL_H_
+#define RTC_BASE_GTEST_PROD_UTIL_H_
 
 // Define our own version of FRIEND_TEST here rather than including
 // gtest_prod.h to avoid depending on any part of GTest in production code.
@@ -35,4 +35,4 @@ friend class test_case_name##_##test_name##_Test
   FRIEND_TEST_WEBRTC(test_case_name, FLAKY_##test_name); \
   FRIEND_TEST_WEBRTC(test_case_name, FAILS_##test_name)
 
-#endif  // WEBRTC_RTC_BASE_GTEST_PROD_UTIL_H_
+#endif  // RTC_BASE_GTEST_PROD_UTIL_H_

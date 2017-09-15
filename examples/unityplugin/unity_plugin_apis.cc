@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/examples/unityplugin/unity_plugin_apis.h"
+#include "examples/unityplugin/unity_plugin_apis.h"
 
 #include <map>
 #include <string>
 
-#include "webrtc/examples/unityplugin/simple_peer_connection.h"
+#include "examples/unityplugin/simple_peer_connection.h"
 
 namespace {
 static int g_peer_connection_id = 1;

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/gtest.h"
-#include "webrtc/rtc_tools/simple_command_line_parser.h"
+#include "test/gtest.h"
+#include "rtc_tools/simple_command_line_parser.h"
 
 namespace webrtc {
 namespace test {

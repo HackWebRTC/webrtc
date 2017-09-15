@@ -1,4 +1,4 @@
 include_rules = [
   "+net",
-  "+webrtc/system_wrappers",
+  "+system_wrappers",
 ]

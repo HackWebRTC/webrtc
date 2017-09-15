@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
+#ifndef MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
+#define MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
 
 #include <stdio.h>
 #include <map>
 #include <vector>
 
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_coding_defines.h"
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/race_checker.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/race_checker.h"
 
 namespace webrtc {
 
@@ -127,4 +127,4 @@ class VCMGenericEncoder {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
+#endif  // MODULES_VIDEO_CODING_GENERIC_ENCODER_H_

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_FILE_PLAYER_H_
-#define WEBRTC_VOICE_ENGINE_FILE_PLAYER_H_
+#ifndef VOICE_ENGINE_FILE_PLAYER_H_
+#define VOICE_ENGINE_FILE_PLAYER_H_
 
 #include <memory>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"
+#include "modules/include/module_common_types.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -77,4 +77,4 @@ class FilePlayer {
   virtual int32_t SetAudioScaling(float scaleFactor) = 0;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_VOICE_ENGINE_FILE_PLAYER_H_
+#endif  // VOICE_ENGINE_FILE_PLAYER_H_

@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/pc/statsobserver_jni.h"
+#include "sdk/android/src/jni/pc/statsobserver_jni.h"
 
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
 namespace jni {

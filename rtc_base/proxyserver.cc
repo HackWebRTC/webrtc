@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/proxyserver.h"
+#include "rtc_base/proxyserver.h"
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/socketfactory.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/socketfactory.h"
 
 namespace rtc {
 

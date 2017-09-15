@@ -6,7 +6,7 @@
 // the proviso that the author takes on no responsibility or liability for any
 // use.
 
-#include "webrtc/rtc_base/sigslot.h"
+#include "rtc_base/sigslot.h"
 
 namespace sigslot {
 

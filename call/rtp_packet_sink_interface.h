@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_CALL_RTP_PACKET_SINK_INTERFACE_H_
-#define WEBRTC_CALL_RTP_PACKET_SINK_INTERFACE_H_
+#ifndef CALL_RTP_PACKET_SINK_INTERFACE_H_
+#define CALL_RTP_PACKET_SINK_INTERFACE_H_
 
 namespace webrtc {
 
@@ -23,4 +23,4 @@ class RtpPacketSinkInterface {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_RTP_PACKET_SINK_INTERFACE_H_
+#endif  // CALL_RTP_PACKET_SINK_INTERFACE_H_

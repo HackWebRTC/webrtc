@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/pc/rtcstatscollectorcallbackwrapper.h"
+#include "sdk/android/src/jni/pc/rtcstatscollectorcallbackwrapper.h"
 
 #include <string>
 #include <vector>
 
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
 namespace jni {

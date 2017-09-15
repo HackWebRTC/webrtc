@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_DELAY_ANALYZER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_DELAY_ANALYZER_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_DELAY_ANALYZER_H_
+#define MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_DELAY_ANALYZER_H_
 
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/modules/audio_coding/neteq/tools/neteq_input.h"
-#include "webrtc/modules/audio_coding/neteq/tools/neteq_test.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "modules/audio_coding/neteq/tools/neteq_input.h"
+#include "modules/audio_coding/neteq/tools/neteq_test.h"
+#include "typedefs.h"
 
 namespace webrtc {
 namespace test {
@@ -68,4 +68,4 @@ class NetEqDelayAnalyzer : public test::NetEqPostInsertPacket,
 
 }  // namespace test
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_DELAY_ANALYZER_H_
+#endif  // MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_DELAY_ANALYZER_H_

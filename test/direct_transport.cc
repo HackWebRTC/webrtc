@@ -7,12 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/test/direct_transport.h"
+#include "test/direct_transport.h"
 
-#include "webrtc/call/call.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/single_threaded_task_queue.h"
+#include "call/call.h"
+#include "rtc_base/ptr_util.h"
+#include "system_wrappers/include/clock.h"
+#include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
 namespace test {

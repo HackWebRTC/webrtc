@@ -12,9 +12,9 @@
 
 #include <memory>
 
-#include "webrtc/modules/utility/include/jvm_android.h"
+#include "modules/utility/include/jvm_android.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 #define TAG "JVM"
 #define ALOGD(...) __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__)

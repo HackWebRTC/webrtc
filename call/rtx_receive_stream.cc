@@ -10,10 +10,10 @@
 
 #include <utility>
 
-#include "webrtc/call/rtx_receive_stream.h"
-#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "webrtc/rtc_base/logging.h"
+#include "call/rtx_receive_stream.h"
+#include "modules/rtp_rtcp/include/receive_statistics.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

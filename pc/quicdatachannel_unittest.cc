@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/quicdatachannel.h"
+#include "pc/quicdatachannel.h"
 
 #include <map>
 #include <memory>
@@ -16,12 +16,12 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/faketransportcontroller.h"
-#include "webrtc/p2p/quic/quictransportchannel.h"
-#include "webrtc/p2p/quic/reliablequicstream.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "p2p/base/faketransportcontroller.h"
+#include "p2p/quic/quictransportchannel.h"
+#include "p2p/quic/reliablequicstream.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 using cricket::FakeTransportChannel;
 using cricket::QuicTransportChannel;

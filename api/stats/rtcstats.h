@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_STATS_RTCSTATS_H_
-#define WEBRTC_API_STATS_RTCSTATS_H_
+#ifndef API_STATS_RTCSTATS_H_
+#define API_STATS_RTCSTATS_H_
 
 #include <map>
 #include <memory>
@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -329,4 +329,4 @@ class RTCStatsMember : public RTCStatsMemberInterface {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_STATS_RTCSTATS_H_
+#endif  // API_STATS_RTCSTATS_H_

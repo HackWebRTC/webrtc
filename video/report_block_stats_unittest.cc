@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/gtest.h"
-#include "webrtc/video/report_block_stats.h"
+#include "test/gtest.h"
+#include "video/report_block_stats.h"
 
 namespace webrtc {
 

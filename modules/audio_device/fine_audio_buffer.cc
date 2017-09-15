@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_device/fine_audio_buffer.h"
+#include "modules/audio_device/fine_audio_buffer.h"
 
 #include <memory.h>
 #include <stdio.h>
 #include <algorithm>
 
-#include "webrtc/modules/audio_device/audio_device_buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/audio_device/audio_device_buffer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

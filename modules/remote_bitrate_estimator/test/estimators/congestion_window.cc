@@ -9,11 +9,11 @@
  *
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/test/estimators/congestion_window.h"
+#include "modules/remote_bitrate_estimator/test/estimators/congestion_window.h"
 
 #include <algorithm>
 
-#include "webrtc/modules/remote_bitrate_estimator/test/estimators/bbr.h"
+#include "modules/remote_bitrate_estimator/test/estimators/bbr.h"
 
 namespace webrtc {
 namespace testing {

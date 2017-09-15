@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/transportdescriptionfactory.h"
+#include "p2p/base/transportdescriptionfactory.h"
 
 #include <memory>
 
-#include "webrtc/p2p/base/transportdescription.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/sslfingerprint.h"
+#include "p2p/base/transportdescription.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/messagedigest.h"
+#include "rtc_base/sslfingerprint.h"
 
 namespace cricket {
 

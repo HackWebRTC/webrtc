@@ -11,9 +11,9 @@
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "webrtc/modules/bitrate_controller/send_side_bandwidth_estimation.h"
-#include "webrtc/test/gtest.h"
+#include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
+#include "modules/bitrate_controller/send_side_bandwidth_estimation.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/turnport.h"
+#include "p2p/base/turnport.h"
 
 #include <algorithm>
 #include <functional>
 
-#include "webrtc/p2p/base/common.h"
-#include "webrtc/p2p/base/stun.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/byteorder.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/stringencode.h"
+#include "p2p/base/common.h"
+#include "p2p/base/stun.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/byteorder.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/nethelpers.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/stringencode.h"
 
 namespace cricket {
 

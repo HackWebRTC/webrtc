@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_REMOTEAUDIOSOURCE_H_
-#define WEBRTC_PC_REMOTEAUDIOSOURCE_H_
+#ifndef PC_REMOTEAUDIOSOURCE_H_
+#define PC_REMOTEAUDIOSOURCE_H_
 
 #include <list>
 #include <string>
 
-#include "webrtc/api/call/audio_sink.h"
-#include "webrtc/api/notifier.h"
-#include "webrtc/pc/channel.h"
-#include "webrtc/rtc_base/criticalsection.h"
+#include "api/call/audio_sink.h"
+#include "api/notifier.h"
+#include "pc/channel.h"
+#include "rtc_base/criticalsection.h"
 
 namespace rtc {
 struct Message;
@@ -73,4 +73,4 @@ class RemoteAudioSource : public Notifier<AudioSourceInterface> {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_REMOTEAUDIOSOURCE_H_
+#endif  // PC_REMOTEAUDIOSOURCE_H_

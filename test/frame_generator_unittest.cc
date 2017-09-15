@@ -13,9 +13,9 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/test/frame_generator.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "test/frame_generator.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
 
 namespace webrtc {
 namespace test {

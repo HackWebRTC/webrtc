@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/nullwebrtcvideoengine.h"
-#include "webrtc/media/engine/webrtcvoiceengine.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_audio_decoder_factory.h"
-#include "webrtc/test/mock_audio_encoder_factory.h"
+#include "media/engine/nullwebrtcvideoengine.h"
+#include "media/engine/webrtcvoiceengine.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "test/gtest.h"
+#include "test/mock_audio_decoder_factory.h"
+#include "test/mock_audio_encoder_factory.h"
 
 namespace cricket {
 

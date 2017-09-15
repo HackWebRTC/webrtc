@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
+#ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
+#define MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/modules/desktop_capture/desktop_region.h"
-#include "webrtc/modules/desktop_capture/shared_memory.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "modules/desktop_capture/desktop_capture_types.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/desktop_region.h"
+#include "modules/desktop_capture/shared_memory.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -184,5 +184,5 @@ class SharedMemoryDesktopFrame : public DesktopFrame {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
+#endif  // MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
 

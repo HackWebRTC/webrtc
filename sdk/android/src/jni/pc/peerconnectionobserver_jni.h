@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONOBSERVER_JNI_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONOBSERVER_JNI_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONOBSERVER_JNI_H_
+#define SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONOBSERVER_JNI_H_
 
 #include <map>
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/sdk/android/src/jni/pc/mediaconstraints_jni.h"
+#include "api/peerconnectioninterface.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/pc/mediaconstraints_jni.h"
 
 namespace webrtc {
 namespace jni {
@@ -92,4 +92,4 @@ class PeerConnectionObserverJni : public PeerConnectionObserver {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONOBSERVER_JNI_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONOBSERVER_JNI_H_

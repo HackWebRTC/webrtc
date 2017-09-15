@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_INTEGRATIONTEST_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_INTEGRATIONTEST_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_INTEGRATIONTEST_H_
+#define MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_INTEGRATIONTEST_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/common_types.h"
-#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
-#include "webrtc/modules/video_coding/codecs/test/stats.h"
-#include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
-#include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/frame_reader.h"
-#include "webrtc/test/testsupport/frame_writer.h"
-#include "webrtc/test/testsupport/packet_reader.h"
+#include "common_types.h"
+#include "media/engine/webrtcvideodecoderfactory.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
+#include "modules/video_coding/codecs/test/packet_manipulator.h"
+#include "modules/video_coding/codecs/test/stats.h"
+#include "modules/video_coding/codecs/test/videoprocessor.h"
+#include "modules/video_coding/utility/ivf_file_writer.h"
+#include "test/gtest.h"
+#include "test/testsupport/frame_reader.h"
+#include "test/testsupport/frame_writer.h"
+#include "test/testsupport/packet_reader.h"
 
 namespace webrtc {
 namespace test {
@@ -189,4 +189,4 @@ class VideoProcessorIntegrationTest : public testing::Test {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_INTEGRATIONTEST_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_INTEGRATIONTEST_H_

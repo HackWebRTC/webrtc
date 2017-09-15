@@ -12,10 +12,10 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/call/bitrate_allocator.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "call/bitrate_allocator.h"
+#include "modules/bitrate_controller/include/bitrate_controller.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 
 using testing::NiceMock;
 

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
+#ifndef MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
+#define MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
 
 #include <ApplicationServices/ApplicationServices.h>
 #include <vector>
 
-#include "webrtc/typedefs.h"
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
+#include "typedefs.h"
+#include "modules/desktop_capture/desktop_geometry.h"
 
 namespace webrtc {
 
@@ -87,4 +87,4 @@ struct MacDesktopConfiguration {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
+#endif  // MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_

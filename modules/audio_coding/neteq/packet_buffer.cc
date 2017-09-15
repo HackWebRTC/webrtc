@@ -12,15 +12,15 @@
 // an STL list. The list is kept sorted at all times so that the next packet to
 // decode is at the beginning of the list.
 
-#include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
+#include "modules/audio_coding/neteq/packet_buffer.h"
 
 #include <algorithm>  // find_if()
 
-#include "webrtc/api/audio_codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/neteq/decoder_database.h"
-#include "webrtc/modules/audio_coding/neteq/statistics_calculator.h"
-#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
-#include "webrtc/rtc_base/logging.h"
+#include "api/audio_codecs/audio_decoder.h"
+#include "modules/audio_coding/neteq/decoder_database.h"
+#include "modules/audio_coding/neteq/statistics_calculator.h"
+#include "modules/audio_coding/neteq/tick_timer.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace {

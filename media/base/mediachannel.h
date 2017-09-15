@@ -8,35 +8,35 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_BASE_MEDIACHANNEL_H_
-#define WEBRTC_MEDIA_BASE_MEDIACHANNEL_H_
+#ifndef MEDIA_BASE_MEDIACHANNEL_H_
+#define MEDIA_BASE_MEDIACHANNEL_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/audio_codecs/audio_encoder.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/api/video/video_timing.h"
-#include "webrtc/call/video_config.h"
-#include "webrtc/media/base/codec.h"
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/media/base/streamparams.h"
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/media/base/videosourceinterface.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
-#include "webrtc/rtc_base/dscp.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/networkroute.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/socket.h"
-#include "webrtc/rtc_base/window.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "api/optional.h"
+#include "api/rtpparameters.h"
+#include "api/rtpreceiverinterface.h"
+#include "api/video/video_timing.h"
+#include "call/video_config.h"
+#include "media/base/codec.h"
+#include "media/base/mediaconstants.h"
+#include "media/base/streamparams.h"
+#include "media/base/videosinkinterface.h"
+#include "media/base/videosourceinterface.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/dscp.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/networkroute.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/window.h"
 // TODO(juberti): re-evaluate this include
-#include "webrtc/pc/audiomonitor.h"
+#include "pc/audiomonitor.h"
 
 namespace rtc {
 class RateLimiter;
@@ -1254,4 +1254,4 @@ class DataMediaChannel : public MediaChannel {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_BASE_MEDIACHANNEL_H_
+#endif  // MEDIA_BASE_MEDIACHANNEL_H_

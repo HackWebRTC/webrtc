@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_OPTIONAL_H_
-#define WEBRTC_API_OPTIONAL_H_
+#ifndef API_OPTIONAL_H_
+#define API_OPTIONAL_H_
 
 #include <algorithm>
 #include <memory>
@@ -20,9 +20,9 @@
 #include <ostream>
 #endif  // UNIT_TEST
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/sanitizer.h"
+#include "api/array_view.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/sanitizer.h"
 
 namespace rtc {
 
@@ -404,4 +404,4 @@ void PrintTo(const rtc::Optional<T>& opt, std::ostream* os) {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_API_OPTIONAL_H_
+#endif  // API_OPTIONAL_H_

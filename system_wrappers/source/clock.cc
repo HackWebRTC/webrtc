@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/include/clock.h"
+#include "system_wrappers/include/clock.h"
 
 #if defined(_WIN32)
 // Windows needs to be included before mmsystem.h
-#include "webrtc/rtc_base/win32.h"
+#include "rtc_base/win32.h"
 #include <MMSystem.h>
 #elif ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
 #include <sys/time.h>
 #include <time.h>
 #endif
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/rw_lock_wrapper.h"
 
 namespace webrtc {
 

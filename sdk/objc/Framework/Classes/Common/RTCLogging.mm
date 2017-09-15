@@ -10,7 +10,7 @@
 
 #import "WebRTC/RTCLogging.h"
 
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/logging.h"
 
 rtc::LoggingSeverity RTCGetNativeLoggingSeverity(RTCLoggingSeverity severity) {
   switch (severity) {

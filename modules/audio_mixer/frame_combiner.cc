@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_mixer/frame_combiner.h"
+#include "modules/audio_mixer/frame_combiner.h"
 
 #include <algorithm>
 #include <array>
 #include <functional>
 #include <memory>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/audio/utility/audio_frame_operations.h"
-#include "webrtc/modules/audio_mixer/audio_frame_manipulator.h"
-#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "api/array_view.h"
+#include "audio/utility/audio_frame_operations.h"
+#include "modules/audio_mixer/audio_frame_manipulator.h"
+#include "modules/audio_mixer/audio_mixer_impl.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace {

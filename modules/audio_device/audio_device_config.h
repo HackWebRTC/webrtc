@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_CONFIG_H_
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_CONFIG_H_
+#ifndef AUDIO_DEVICE_AUDIO_DEVICE_CONFIG_H_
+#define AUDIO_DEVICE_AUDIO_DEVICE_CONFIG_H_
 
 // Enumerators
 //
@@ -26,5 +26,5 @@ enum { GET_MIC_VOLUME_INTERVAL_MS = 1000 };
 #endif
 #endif
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_CONFIG_H_
+#endif  // AUDIO_DEVICE_AUDIO_DEVICE_CONFIG_H_
 

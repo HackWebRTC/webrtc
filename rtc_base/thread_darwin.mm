@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/thread.h"
+#include "rtc_base/thread.h"
 
 #import <Foundation/Foundation.h>
 
-#include "webrtc/rtc_base/platform_thread.h"
+#include "rtc_base/platform_thread.h"
 
 /*
  * This file contains platform-specific implementations for several

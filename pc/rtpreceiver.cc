@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/rtpreceiver.h"
+#include "pc/rtpreceiver.h"
 
-#include "webrtc/api/mediastreamtrackproxy.h"
-#include "webrtc/api/videosourceproxy.h"
-#include "webrtc/pc/audiotrack.h"
-#include "webrtc/pc/videotrack.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "api/mediastreamtrackproxy.h"
+#include "api/videosourceproxy.h"
+#include "pc/audiotrack.h"
+#include "pc/videotrack.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 

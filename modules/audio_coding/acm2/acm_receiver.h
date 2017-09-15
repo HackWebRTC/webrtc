@@ -8,25 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_RECEIVER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_RECEIVER_H_
+#ifndef MODULES_AUDIO_CODING_ACM2_ACM_RECEIVER_H_
+#define MODULES_AUDIO_CODING_ACM2_ACM_RECEIVER_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/common_audio/vad/include/webrtc_vad.h"
-#include "webrtc/modules/audio_coding/acm2/acm_resampler.h"
-#include "webrtc/modules/audio_coding/acm2/call_statistics.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/typedefs.h"
+#include "api/array_view.h"
+#include "api/optional.h"
+#include "common_audio/vad/include/webrtc_vad.h"
+#include "modules/audio_coding/acm2/acm_resampler.h"
+#include "modules/audio_coding/acm2/call_statistics.h"
+#include "modules/audio_coding/include/audio_coding_module.h"
+#include "modules/audio_coding/neteq/include/neteq.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -291,4 +291,4 @@ class AcmReceiver {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_RECEIVER_H_
+#endif  // MODULES_AUDIO_CODING_ACM2_ACM_RECEIVER_H_

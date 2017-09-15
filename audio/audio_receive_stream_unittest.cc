@@ -12,19 +12,19 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/test/mock_audio_mixer.h"
-#include "webrtc/audio/audio_receive_stream.h"
-#include "webrtc/audio/conversion.h"
-#include "webrtc/call/rtp_stream_receiver_controller.h"
-#include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
-#include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
-#include "webrtc/modules/pacing/packet_router.h"
-#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_audio_decoder_factory.h"
-#include "webrtc/test/mock_voe_channel_proxy.h"
-#include "webrtc/test/mock_voice_engine.h"
+#include "api/test/mock_audio_mixer.h"
+#include "audio/audio_receive_stream.h"
+#include "audio/conversion.h"
+#include "call/rtp_stream_receiver_controller.h"
+#include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
+#include "modules/audio_processing/include/mock_audio_processing.h"
+#include "modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
+#include "modules/pacing/packet_router.h"
+#include "modules/rtp_rtcp/source/byte_io.h"
+#include "test/gtest.h"
+#include "test/mock_audio_decoder_factory.h"
+#include "test/mock_voe_channel_proxy.h"
+#include "test/mock_voice_engine.h"
 
 namespace webrtc {
 namespace test {

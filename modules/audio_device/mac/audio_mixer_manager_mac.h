@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_MIXER_MANAGER_MAC_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_MIXER_MANAGER_MAC_H
+#ifndef AUDIO_DEVICE_AUDIO_MIXER_MANAGER_MAC_H_
+#define AUDIO_DEVICE_AUDIO_MIXER_MANAGER_MAC_H_
 
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/logging.h"
+#include "typedefs.h"
 
 #include <CoreAudio/CoreAudio.h>
 

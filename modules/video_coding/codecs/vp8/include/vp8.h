@@ -10,10 +10,10 @@
  *  WEBRTC VP8 wrapper interface
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_H_
+#define MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_H_
 
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
 
@@ -32,4 +32,4 @@ class VP8Decoder : public VideoDecoder {
 };  // end of VP8Decoder class
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_H_

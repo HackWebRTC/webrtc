@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
+#include "modules/audio_processing/intelligibility/intelligibility_enhancer.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -16,11 +16,11 @@
 #include <limits>
 #include <numeric>
 
-#include "webrtc/common_audio/include/audio_util.h"
-#include "webrtc/common_audio/window_generator.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_minmax.h"
+#include "common_audio/include/audio_util.h"
+#include "common_audio/window_generator.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/safe_minmax.h"
 
 namespace webrtc {
 

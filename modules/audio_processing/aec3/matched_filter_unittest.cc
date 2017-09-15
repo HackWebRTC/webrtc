@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
   */
 
-#include "webrtc/modules/audio_processing/aec3/matched_filter.h"
+#include "modules/audio_processing/aec3/matched_filter.h"
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #include <emmintrin.h>
 #endif
@@ -18,14 +18,14 @@
 #include <sstream>
 #include <string>
 
-#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/modules/audio_processing/aec3/decimator_by_4.h"
-#include "webrtc/modules/audio_processing/aec3/render_delay_buffer.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/decimator_by_4.h"
+#include "modules/audio_processing/aec3/render_delay_buffer.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "modules/audio_processing/test/echo_canceller_test_tools.h"
+#include "rtc_base/random.h"
+#include "system_wrappers/include/cpu_features_wrapper.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace aec3 {

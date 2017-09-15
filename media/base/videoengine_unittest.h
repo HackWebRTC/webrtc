@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_BASE_VIDEOENGINE_UNITTEST_H_  // NOLINT
-#define WEBRTC_MEDIA_BASE_VIDEOENGINE_UNITTEST_H_
+#ifndef MEDIA_BASE_VIDEOENGINE_UNITTEST_H_  // NOLINT
+#define MEDIA_BASE_VIDEOENGINE_UNITTEST_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/call/call.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/media/base/fakenetworkinterface.h"
-#include "webrtc/media/base/fakevideocapturer.h"
-#include "webrtc/media/base/fakevideorenderer.h"
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/streamparams.h"
-#include "webrtc/media/engine/fakewebrtccall.h"
-#include "webrtc/rtc_base/bytebuffer.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "call/call.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/base/fakenetworkinterface.h"
+#include "media/base/fakevideocapturer.h"
+#include "media/base/fakevideorenderer.h"
+#include "media/base/mediachannel.h"
+#include "media/base/streamparams.h"
+#include "media/engine/fakewebrtccall.h"
+#include "rtc_base/bytebuffer.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/timeutils.h"
 
 #define EXPECT_FRAME_WAIT(c, w, h, t) \
   EXPECT_EQ_WAIT((c), renderer_.num_rendered_frames(), (t)); \
@@ -943,4 +943,4 @@ class VideoMediaChannelTest : public testing::Test,
   cricket::FakeVideoRenderer renderer2_;
 };
 
-#endif  // WEBRTC_MEDIA_BASE_VIDEOENGINE_UNITTEST_H_  NOLINT
+#endif  // MEDIA_BASE_VIDEOENGINE_UNITTEST_H_  NOLINT

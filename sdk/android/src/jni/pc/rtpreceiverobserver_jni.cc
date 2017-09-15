@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/pc/rtpreceiverobserver_jni.h"
+#include "sdk/android/src/jni/pc/rtpreceiverobserver_jni.h"
 
-#include "webrtc/sdk/android/src/jni/pc/java_native_conversion.h"
+#include "sdk/android/src/jni/pc/java_native_conversion.h"
 
 namespace webrtc {
 namespace jni {

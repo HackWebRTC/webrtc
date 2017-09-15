@@ -17,14 +17,14 @@
 // from WebRTC too.
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=5617
 
-#ifndef WEBRTC_API_MEDIACONSTRAINTSINTERFACE_H_
-#define WEBRTC_API_MEDIACONSTRAINTSINTERFACE_H_
+#ifndef API_MEDIACONSTRAINTSINTERFACE_H_
+#define API_MEDIACONSTRAINTSINTERFACE_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/api/peerconnectioninterface.h"
+#include "api/optional.h"
+#include "api/peerconnectioninterface.h"
 
 namespace webrtc {
 
@@ -151,4 +151,4 @@ void CopyConstraintsIntoAudioOptions(
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_MEDIACONSTRAINTSINTERFACE_H_
+#endif  // API_MEDIACONSTRAINTSINTERFACE_H_

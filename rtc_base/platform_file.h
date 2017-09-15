@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_PLATFORM_FILE_H_
-#define WEBRTC_RTC_BASE_PLATFORM_FILE_H_
+#ifndef RTC_BASE_PLATFORM_FILE_H_
+#define RTC_BASE_PLATFORM_FILE_H_
 
 #include <stdio.h>
 #include <string>
 
 #if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/win32.h"
+#include "rtc_base/win32.h"
 #endif
 
 namespace rtc {
@@ -53,4 +53,4 @@ PlatformFile CreatePlatformFile(const std::string& path);
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_PLATFORM_FILE_H_
+#endif  // RTC_BASE_PLATFORM_FILE_H_

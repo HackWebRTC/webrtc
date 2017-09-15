@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_VOE_STANDARD_TEST_H
-#define WEBRTC_VOICE_ENGINE_VOE_STANDARD_TEST_H
+#ifndef VOICE_ENGINE_VOE_STANDARD_TEST_H_
+#define VOICE_ENGINE_VOE_STANDARD_TEST_H_
 
 #include <stdio.h>
 #include <string>
 
-#include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
+#include "test/testsupport/fileutils.h"
+#include "voice_engine/test/auto_test/voe_test_common.h"
 
 namespace webrtc {
 namespace voetest {
@@ -49,4 +49,4 @@ class SubAPIManager {
 }  // namespace voetest
 }  // namespace webrtc
 
-#endif // WEBRTC_VOICE_ENGINE_VOE_STANDARD_TEST_H
+#endif // VOICE_ENGINE_VOE_STANDARD_TEST_H_

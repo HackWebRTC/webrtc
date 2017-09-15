@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_ATOMICOPS_H_
-#define WEBRTC_RTC_BASE_ATOMICOPS_H_
+#ifndef RTC_BASE_ATOMICOPS_H_
+#define RTC_BASE_ATOMICOPS_H_
 
 #if defined(WEBRTC_WIN)
 // Include winsock2.h before including <windows.h> to maintain consistency with
@@ -84,4 +84,4 @@ class AtomicOps {
 
 }
 
-#endif  // WEBRTC_RTC_BASE_ATOMICOPS_H_
+#endif  // RTC_BASE_ATOMICOPS_H_

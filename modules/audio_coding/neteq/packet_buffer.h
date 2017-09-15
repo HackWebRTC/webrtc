@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
+#define MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
 
-#include "webrtc/api/optional.h"
-#include "webrtc/modules/audio_coding/neteq/packet.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "modules/audio_coding/neteq/packet.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -145,4 +145,4 @@ class PacketBuffer {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
+#endif  // MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_

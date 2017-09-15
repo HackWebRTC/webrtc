@@ -10,21 +10,21 @@
 
 #include <memory>
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/video_coding/codecs/test/mock/mock_packet_manipulator.h"
-#include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
-#include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
-#include "webrtc/modules/video_coding/include/video_coding.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/mock/mock_frame_reader.h"
-#include "webrtc/test/testsupport/mock/mock_frame_writer.h"
-#include "webrtc/test/testsupport/packet_reader.h"
-#include "webrtc/test/testsupport/unittest_utils.h"
-#include "webrtc/test/video_codec_settings.h"
-#include "webrtc/typedefs.h"
+#include "api/video/i420_buffer.h"
+#include "common_types.h"
+#include "modules/video_coding/codecs/test/mock/mock_packet_manipulator.h"
+#include "modules/video_coding/codecs/test/videoprocessor.h"
+#include "modules/video_coding/include/mock/mock_video_codec_interface.h"
+#include "modules/video_coding/include/video_coding.h"
+#include "rtc_base/ptr_util.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "test/testsupport/mock/mock_frame_reader.h"
+#include "test/testsupport/mock/mock_frame_writer.h"
+#include "test/testsupport/packet_reader.h"
+#include "test/testsupport/unittest_utils.h"
+#include "test/video_codec_settings.h"
+#include "typedefs.h"
 
 using ::testing::_;
 using ::testing::AtLeast;

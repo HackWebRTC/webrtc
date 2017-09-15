@@ -10,14 +10,14 @@
 
 #include <string>
 
-#include "webrtc/pc/audiotrack.h"
-#include "webrtc/pc/mediastream.h"
-#include "webrtc/pc/test/fakevideotracksource.h"
-#include "webrtc/pc/videotrack.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "pc/audiotrack.h"
+#include "pc/mediastream.h"
+#include "pc/test/fakevideotracksource.h"
+#include "pc/videotrack.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/refcount.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kVideoTrackId[] = "dummy_video_cam_1";

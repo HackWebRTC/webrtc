@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_
+#ifndef MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_
+#define MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_
 
 #include <ApplicationServices/ApplicationServices.h>
 
-#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
-#include "webrtc/rtc_base/function_view.h"
+#include "modules/desktop_capture/desktop_capture_types.h"
+#include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/mac/desktop_configuration.h"
+#include "rtc_base/function_view.h"
 
 namespace webrtc {
 
@@ -65,4 +65,4 @@ DesktopRect GetWindowBounds(CGWindowID id);
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_
+#endif  // MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_

@@ -7,11 +7,11 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/media/engine/internalencoderfactory.h"
-#include "webrtc/media/engine/simulcast_encoder_adapter.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
-#include "webrtc/modules/video_coding/sequence_number_util.h"
-#include "webrtc/test/call_test.h"
+#include "media/engine/internalencoderfactory.h"
+#include "media/engine/simulcast_encoder_adapter.h"
+#include "modules/rtp_rtcp/source/rtp_format.h"
+#include "modules/video_coding/sequence_number_util.h"
+#include "test/call_test.h"
 
 namespace webrtc {
 

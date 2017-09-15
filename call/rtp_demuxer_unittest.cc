@@ -8,25 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/rtp_demuxer.h"
+#include "call/rtp_demuxer.h"
 
 #include <memory>
 #include <set>
 #include <string>
 
-#include "webrtc/call/ssrc_binding_observer.h"
-#include "webrtc/call/test/mock_rtp_packet_sink_interface.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "call/ssrc_binding_observer.h"
+#include "call/test/mock_rtp_packet_sink_interface.h"
+#include "common_types.h"
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/safe_conversions.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

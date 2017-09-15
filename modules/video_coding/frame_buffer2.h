@@ -8,22 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_FRAME_BUFFER2_H_
-#define WEBRTC_MODULES_VIDEO_CODING_FRAME_BUFFER2_H_
+#ifndef MODULES_VIDEO_CODING_FRAME_BUFFER2_H_
+#define MODULES_VIDEO_CODING_FRAME_BUFFER2_H_
 
 #include <array>
 #include <map>
 #include <memory>
 #include <utility>
 
-#include "webrtc/modules/video_coding/frame_object.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_coding/inter_frame_delay.h"
-#include "webrtc/modules/video_coding/sequence_number_util.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "modules/video_coding/frame_object.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/inter_frame_delay.h"
+#include "modules/video_coding/sequence_number_util.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/event.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -186,4 +186,4 @@ class FrameBuffer {
 }  // namespace video_coding
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_FRAME_BUFFER2_H_
+#endif  // MODULES_VIDEO_CODING_FRAME_BUFFER2_H_

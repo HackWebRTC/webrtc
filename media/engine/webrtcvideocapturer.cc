@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/webrtcvideocapturer.h"
+#include "media/engine/webrtcvideocapturer.h"
 
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/safe_conversions.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/timeutils.h"
 
-#include "webrtc/modules/video_capture/video_capture_factory.h"
-#include "webrtc/rtc_base/win32.h"  // Need this to #include the impl files.
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "modules/video_capture/video_capture_factory.h"
+#include "rtc_base/win32.h"  // Need this to #include the impl files.
+#include "system_wrappers/include/field_trial.h"
 
 namespace cricket {
 

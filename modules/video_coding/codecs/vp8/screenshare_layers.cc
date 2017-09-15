@@ -7,7 +7,7 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
+#include "modules/video_coding/codecs/vp8/screenshare_layers.h"
 
 #include <stdlib.h>
 
@@ -15,10 +15,10 @@
 
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/checks.h"
+#include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 

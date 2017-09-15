@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_NATSOCKETFACTORY_H_
-#define WEBRTC_RTC_BASE_NATSOCKETFACTORY_H_
+#ifndef RTC_BASE_NATSOCKETFACTORY_H_
+#define RTC_BASE_NATSOCKETFACTORY_H_
 
 #include <string>
 #include <map>
 #include <memory>
 #include <set>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/natserver.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/socketserver.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/natserver.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/socketserver.h"
 
 namespace rtc {
 
@@ -165,4 +165,4 @@ size_t UnpackAddressFromNAT(const char* buf, size_t buf_size,
                             SocketAddress* remote_addr);
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_NATSOCKETFACTORY_H_
+#endif  // RTC_BASE_NATSOCKETFACTORY_H_

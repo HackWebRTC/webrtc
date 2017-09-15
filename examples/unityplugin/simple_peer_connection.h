@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_EXAMPLES_UNITYPLUGIN_SIMPLE_PEER_CONNECTION_H_
-#define WEBRTC_EXAMPLES_UNITYPLUGIN_SIMPLE_PEER_CONNECTION_H_
+#ifndef EXAMPLES_UNITYPLUGIN_SIMPLE_PEER_CONNECTION_H_
+#define EXAMPLES_UNITYPLUGIN_SIMPLE_PEER_CONNECTION_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/datachannelinterface.h"
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/examples/unityplugin/unity_plugin_apis.h"
-#include "webrtc/examples/unityplugin/video_observer.h"
+#include "api/datachannelinterface.h"
+#include "api/mediastreaminterface.h"
+#include "api/peerconnectioninterface.h"
+#include "examples/unityplugin/unity_plugin_apis.h"
+#include "examples/unityplugin/video_observer.h"
 
 class SimplePeerConnection : public webrtc::PeerConnectionObserver,
                              public webrtc::CreateSessionDescriptionObserver,
@@ -133,4 +133,4 @@ class SimplePeerConnection : public webrtc::PeerConnectionObserver,
   SimplePeerConnection& operator=(const SimplePeerConnection&) = delete;
 };
 
-#endif  // WEBRTC_EXAMPLES_UNITYPLUGIN_SIMPLE_PEER_CONNECTION_H_
+#endif  // EXAMPLES_UNITYPLUGIN_SIMPLE_PEER_CONNECTION_H_

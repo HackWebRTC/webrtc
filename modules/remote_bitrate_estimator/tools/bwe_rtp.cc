@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/tools/bwe_rtp.h"
+#include "modules/remote_bitrate_estimator/tools/bwe_rtp.h"
 
 #include <stdio.h>
 
@@ -16,12 +16,12 @@
 #include <sstream>
 #include <string>
 
-#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
-#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/test/rtp_file_reader.h"
+#include "modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
+#include "modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
+#include "modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "modules/rtp_rtcp/include/rtp_payload_registry.h"
+#include "rtc_base/flags.h"
+#include "test/rtp_file_reader.h"
 
 namespace flags {
 

@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_CODER_H_
-#define WEBRTC_VOICE_ENGINE_CODER_H_
+#ifndef VOICE_ENGINE_CODER_H_
+#define VOICE_ENGINE_CODER_H_
 
 #include <memory>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/acm2/codec_manager.h"
-#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"
+#include "modules/audio_coding/acm2/codec_manager.h"
+#include "modules/audio_coding/acm2/rent_a_codec.h"
+#include "modules/audio_coding/include/audio_coding_module.h"
+#include "typedefs.h"
 
 namespace webrtc {
 class AudioFrame;
@@ -65,4 +65,4 @@ class AudioCoder : public AudioPacketizationCallback {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_CODER_H_
+#endif  // VOICE_ENGINE_CODER_H_

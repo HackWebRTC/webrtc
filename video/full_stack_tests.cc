@@ -9,10 +9,10 @@
  */
 #include <stdio.h>
 
-#include "webrtc/modules/pacing/alr_detector.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/video/video_quality_test.h"
+#include "modules/pacing/alr_detector.h"
+#include "test/field_trial.h"
+#include "test/gtest.h"
+#include "video/video_quality_test.h"
 
 namespace webrtc {
 

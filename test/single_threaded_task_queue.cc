@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/single_threaded_task_queue.h"
+#include "test/single_threaded_task_queue.h"
 
 #include <utility>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/safe_conversions.h"
+#include "rtc_base/timeutils.h"
 
 namespace webrtc {
 namespace test {

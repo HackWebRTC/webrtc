@@ -11,11 +11,11 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/common_audio/vad/mock/mock_vad.h"
-#include "webrtc/modules/audio_coding/codecs/cng/audio_encoder_cng.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_audio_encoder.h"
+#include "common_audio/vad/mock/mock_vad.h"
+#include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
+#include "rtc_base/constructormagic.h"
+#include "test/gtest.h"
+#include "test/mock_audio_encoder.h"
 
 using ::testing::Return;
 using ::testing::_;

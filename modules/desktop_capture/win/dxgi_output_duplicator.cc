@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/win/dxgi_output_duplicator.h"
+#include "modules/desktop_capture/win/dxgi_output_duplicator.h"
 
 #include <string.h>
 
@@ -19,11 +19,11 @@
 
 #include <algorithm>
 
-#include "webrtc/modules/desktop_capture/win/dxgi_texture_mapping.h"
-#include "webrtc/modules/desktop_capture/win/dxgi_texture_staging.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/win32.h"
+#include "modules/desktop_capture/win/dxgi_texture_mapping.h"
+#include "modules/desktop_capture/win/dxgi_texture_staging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/win32.h"
 
 namespace webrtc {
 

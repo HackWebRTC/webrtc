@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_
+#define MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_
 
-#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
+#include "modules/rtp_rtcp/include/receive_statistics.h"
 
 #include <algorithm>
 #include <map>
 #include <vector>
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/rate_statistics.h"
-#include "webrtc/system_wrappers/include/ntp_time.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/rate_statistics.h"
+#include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 
@@ -135,4 +135,4 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
   StreamDataCountersCallback* rtp_stats_callback_;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_

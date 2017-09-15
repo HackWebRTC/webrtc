@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_device/include/audio_device_data_observer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/refcountedobject.h"
+#include "modules/audio_device/include/audio_device_data_observer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/refcountedobject.h"
 
 namespace webrtc {
 

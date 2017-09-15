@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
+#include "modules/video_coding/codecs/test/packet_manipulator.h"
 
 #include <assert.h>
 #include <stdio.h>
 
-#include "webrtc/rtc_base/format_macros.h"
+#include "rtc_base/format_macros.h"
 
 namespace webrtc {
 namespace test {

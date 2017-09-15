@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/fake_network_pipe.h"
+#include "test/fake_network_pipe.h"
 
 #include <assert.h>
 #include <math.h>
@@ -17,10 +17,10 @@
 #include <algorithm>
 #include <cmath>
 
-#include "webrtc/call/call.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "call/call.h"
+#include "modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 

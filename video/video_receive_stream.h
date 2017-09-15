@@ -8,27 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_VIDEO_RECEIVE_STREAM_H_
-#define WEBRTC_VIDEO_VIDEO_RECEIVE_STREAM_H_
+#ifndef VIDEO_VIDEO_RECEIVE_STREAM_H_
+#define VIDEO_VIDEO_RECEIVE_STREAM_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/call/rtp_packet_sink_interface.h"
-#include "webrtc/call/syncable.h"
-#include "webrtc/call/video_receive_stream.h"
-#include "webrtc/common_video/include/incoming_video_stream.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
-#include "webrtc/modules/video_coding/frame_buffer2.h"
-#include "webrtc/modules/video_coding/video_coding_impl.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/video/receive_statistics_proxy.h"
-#include "webrtc/video/rtp_streams_synchronizer.h"
-#include "webrtc/video/rtp_video_stream_receiver.h"
-#include "webrtc/video/transport_adapter.h"
-#include "webrtc/video/video_stream_decoder.h"
+#include "call/rtp_packet_sink_interface.h"
+#include "call/syncable.h"
+#include "call/video_receive_stream.h"
+#include "common_video/include/incoming_video_stream.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/rtp_rtcp/include/flexfec_receiver.h"
+#include "modules/video_coding/frame_buffer2.h"
+#include "modules/video_coding/video_coding_impl.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "system_wrappers/include/clock.h"
+#include "video/receive_statistics_proxy.h"
+#include "video/rtp_streams_synchronizer.h"
+#include "video/rtp_video_stream_receiver.h"
+#include "video/transport_adapter.h"
+#include "video/video_stream_decoder.h"
 
 namespace webrtc {
 
@@ -159,4 +159,4 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 }  // namespace internal
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_VIDEO_RECEIVE_STREAM_H_
+#endif  // VIDEO_VIDEO_RECEIVE_STREAM_H_

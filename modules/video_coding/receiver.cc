@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/receiver.h"
+#include "modules/video_coding/receiver.h"
 
 #include <assert.h>
 
@@ -16,12 +16,12 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/modules/video_coding/encoded_frame.h"
-#include "webrtc/modules/video_coding/internal_defines.h"
-#include "webrtc/modules/video_coding/media_opt_util.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/trace_event.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "modules/video_coding/encoded_frame.h"
+#include "modules/video_coding/internal_defines.h"
+#include "modules/video_coding/media_opt_util.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/trace_event.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 

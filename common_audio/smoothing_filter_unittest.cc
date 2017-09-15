@@ -11,9 +11,9 @@
 #include <cmath>
 #include <memory>
 
-#include "webrtc/common_audio/smoothing_filter.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/test/gtest.h"
+#include "common_audio/smoothing_filter.h"
+#include "rtc_base/fakeclock.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

@@ -8,22 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_SHARED_DATA_H
-#define WEBRTC_VOICE_ENGINE_SHARED_DATA_H
+#ifndef VOICE_ENGINE_SHARED_DATA_H_
+#define VOICE_ENGINE_SHARED_DATA_H_
 
 #include <memory>
 
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/voice_engine/channel_manager.h"
-#include "webrtc/voice_engine/statistics.h"
-#include "webrtc/voice_engine/voice_engine_defines.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "modules/utility/include/process_thread.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker.h"
+#include "voice_engine/channel_manager.h"
+#include "voice_engine/statistics.h"
+#include "voice_engine/voice_engine_defines.h"
 
 class ProcessThread;
 
@@ -79,4 +79,4 @@ protected:
 
 }  // namespace voe
 }  // namespace webrtc
-#endif // WEBRTC_VOICE_ENGINE_SHARED_DATA_H
+#endif // VOICE_ENGINE_SHARED_DATA_H_

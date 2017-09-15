@@ -12,19 +12,19 @@
 
 #include <memory>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_coding/codecs/test/video_codec_test.h"
-#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/test/frame_utils.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/video_codec_settings.h"
+#include "api/optional.h"
+#include "api/video/i420_buffer.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_coding/codecs/test/video_codec_test.h"
+#include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/timeutils.h"
+#include "test/field_trial.h"
+#include "test/frame_utils.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
+#include "test/video_codec_settings.h"
 
 namespace webrtc {
 

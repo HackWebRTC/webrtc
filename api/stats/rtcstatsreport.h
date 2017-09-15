@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_STATS_RTCSTATSREPORT_H_
-#define WEBRTC_API_STATS_RTCSTATSREPORT_H_
+#ifndef API_STATS_RTCSTATSREPORT_H_
+#define API_STATS_RTCSTATSREPORT_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/stats/rtcstats.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "api/stats/rtcstats.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
@@ -96,4 +96,4 @@ class RTCStatsReport : public rtc::RefCountInterface {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_STATS_RTCSTATSREPORT_H_
+#endif  // API_STATS_RTCSTATSREPORT_H_

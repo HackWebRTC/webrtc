@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_WAV_BASED_SIMULATOR_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_WAV_BASED_SIMULATOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_TEST_WAV_BASED_SIMULATOR_H_
+#define MODULES_AUDIO_PROCESSING_TEST_WAV_BASED_SIMULATOR_H_
 
 #include <vector>
 
-#include "webrtc/modules/audio_processing/test/audio_processing_simulator.h"
+#include "modules/audio_processing/test/audio_processing_simulator.h"
 
-#include "webrtc/rtc_base/constructormagic.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 namespace test {
@@ -53,4 +53,4 @@ class WavBasedSimulator final : public AudioProcessingSimulator {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_TEST_WAV_BASED_SIMULATOR_H_
+#endif  // MODULES_AUDIO_PROCESSING_TEST_WAV_BASED_SIMULATOR_H_

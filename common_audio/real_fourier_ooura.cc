@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/real_fourier_ooura.h"
+#include "common_audio/real_fourier_ooura.h"
 
 #include <cmath>
 #include <algorithm>
 
-#include "webrtc/common_audio/fft4g.h"
-#include "webrtc/rtc_base/checks.h"
+#include "common_audio/fft4g.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

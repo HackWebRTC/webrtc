@@ -6,16 +6,16 @@
 *  in the file PATENTS.  All contributing project authors may
 *  be found in the AUTHORS file in the root of the source tree.
 */
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
+#define MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
 
 #include <vector>
 
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/modules/video_coding/utility/frame_dropper.h"
-#include "webrtc/rtc_base/rate_statistics.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/typedefs.h"
+#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/utility/frame_dropper.h"
+#include "rtc_base/rate_statistics.h"
+#include "rtc_base/timeutils.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -124,4 +124,4 @@ class ScreenshareLayers : public TemporalLayers {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_

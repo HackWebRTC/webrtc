@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/trackmediainfomap.h"
+#include "pc/trackmediainfomap.h"
 
 #include <initializer_list>
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/api/rtpsenderinterface.h"
-#include "webrtc/api/test/mock_rtpreceiver.h"
-#include "webrtc/api/test/mock_rtpsender.h"
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/pc/audiotrack.h"
-#include "webrtc/pc/test/fakevideotracksource.h"
-#include "webrtc/pc/videotrack.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/test/gtest.h"
+#include "api/rtpreceiverinterface.h"
+#include "api/rtpsenderinterface.h"
+#include "api/test/mock_rtpreceiver.h"
+#include "api/test/mock_rtpsender.h"
+#include "media/base/mediachannel.h"
+#include "pc/audiotrack.h"
+#include "pc/test/fakevideotracksource.h"
+#include "pc/videotrack.h"
+#include "rtc_base/refcount.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

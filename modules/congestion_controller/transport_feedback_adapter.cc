@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/congestion_controller/transport_feedback_adapter.h"
+#include "modules/congestion_controller/transport_feedback_adapter.h"
 
 #include <algorithm>
 
-#include "webrtc/modules/congestion_controller/delay_based_bwe.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/mod_ops.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "modules/congestion_controller/delay_based_bwe.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/mod_ops.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 

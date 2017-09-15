@@ -13,14 +13,14 @@
 
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
-#include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
-#include "webrtc/modules/video_coding/codecs/vp8/vp8_impl.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/utility/mock/mock_frame_dropper.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/metrics.h"
-#include "webrtc/system_wrappers/include/metrics_default.h"
-#include "webrtc/test/gtest.h"
+#include "modules/video_coding/codecs/vp8/screenshare_layers.h"
+#include "modules/video_coding/codecs/vp8/vp8_impl.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/utility/mock/mock_frame_dropper.h"
+#include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/metrics.h"
+#include "system_wrappers/include/metrics_default.h"
+#include "test/gtest.h"
 
 using ::testing::_;
 using ::testing::ElementsAre;

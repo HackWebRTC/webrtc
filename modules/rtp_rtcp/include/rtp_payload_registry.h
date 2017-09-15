@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
+#ifndef MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
+#define MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
 
 #include <map>
 #include <set>
 
-#include "webrtc/api/audio_codecs/audio_format.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/rtc_base/criticalsection.h"
+#include "api/audio_codecs/audio_format.h"
+#include "modules/rtp_rtcp/source/rtp_utility.h"
+#include "rtc_base/criticalsection.h"
 
 namespace webrtc {
 
@@ -127,4 +127,4 @@ class RTPPayloadRegistry {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
+#endif  // MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_

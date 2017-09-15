@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_SSLFINGERPRINT_H_
-#define WEBRTC_RTC_BASE_SSLFINGERPRINT_H_
+#ifndef RTC_BASE_SSLFINGERPRINT_H_
+#define RTC_BASE_SSLFINGERPRINT_H_
 
 #include <string>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
-#include "webrtc/rtc_base/rtccertificate.h"
-#include "webrtc/rtc_base/sslidentity.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/sslidentity.h"
 
 namespace rtc {
 
@@ -54,4 +54,4 @@ struct SSLFingerprint {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_SSLFINGERPRINT_H_
+#endif  // RTC_BASE_SSLFINGERPRINT_H_

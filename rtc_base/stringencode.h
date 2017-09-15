@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_STRINGENCODE_H_
-#define WEBRTC_RTC_BASE_STRINGENCODE_H_
+#ifndef RTC_BASE_STRINGENCODE_H_
+#define RTC_BASE_STRINGENCODE_H_
 
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace rtc {
 
@@ -225,4 +225,4 @@ char make_char_safe_for_filename(char c);
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_STRINGENCODE_H__
+#endif  // RTC_BASE_STRINGENCODE_H__

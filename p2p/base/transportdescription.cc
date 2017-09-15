@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/transportdescription.h"
+#include "p2p/base/transportdescription.h"
 
-#include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "p2p/base/p2pconstants.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/stringutils.h"
 
 namespace cricket {
 

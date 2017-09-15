@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_RTPPARAMETERS_H_
-#define WEBRTC_API_RTPPARAMETERS_H_
+#ifndef API_RTPPARAMETERS_H_
+#define API_RTPPARAMETERS_H_
 
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "webrtc/api/mediatypes.h"
-#include "webrtc/api/optional.h"
+#include "api/mediatypes.h"
+#include "api/optional.h"
 
 namespace webrtc {
 
@@ -546,4 +546,4 @@ struct RtpParameters {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_RTPPARAMETERS_H_
+#endif  // API_RTPPARAMETERS_H_

@@ -12,15 +12,15 @@
  * WebRTC's wrapper to libyuv.
  */
 
-#ifndef WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
-#define WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
+#ifndef COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
+#define COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
 
 #include <stdio.h>
 #include <vector>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/common_types.h"  // VideoTypes.
-#include "webrtc/typedefs.h"
+#include "api/video/video_frame.h"
+#include "common_types.h"  // VideoTypes.
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -149,4 +149,4 @@ class NV12ToI420Scaler {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
+#endif  // COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_

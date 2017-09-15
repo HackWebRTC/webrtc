@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_VOE_TEST_DEFINES_H
-#define WEBRTC_VOICE_ENGINE_VOE_TEST_DEFINES_H
+#ifndef VOICE_ENGINE_VOE_TEST_DEFINES_H_
+#define VOICE_ENGINE_VOE_TEST_DEFINES_H_
 
-#include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
+#include "voice_engine/test/auto_test/voe_test_common.h"
 
 // Select the tests to execute, list order below is same as they will be
 // executed. Note that, all settings below will be overriden by sub-API
@@ -108,4 +108,4 @@
         TEST_LOG("\n>>> Incomplete test at line: %i <<<\n\n",__LINE__);  \
     }
 
-#endif // WEBRTC_VOICE_ENGINE_VOE_TEST_DEFINES_H
+#endif // VOICE_ENGINE_VOE_TEST_DEFINES_H_

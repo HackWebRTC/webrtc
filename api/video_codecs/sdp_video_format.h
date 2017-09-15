@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_VIDEO_CODECS_SDP_VIDEO_FORMAT_H_
-#define WEBRTC_API_VIDEO_CODECS_SDP_VIDEO_FORMAT_H_
+#ifndef API_VIDEO_CODECS_SDP_VIDEO_FORMAT_H_
+#define API_VIDEO_CODECS_SDP_VIDEO_FORMAT_H_
 
 #include <map>
 #include <string>
@@ -39,4 +39,4 @@ struct SdpVideoFormat {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_VIDEO_CODECS_SDP_VIDEO_FORMAT_H_
+#endif  // API_VIDEO_CODECS_SDP_VIDEO_FORMAT_H_

@@ -16,23 +16,23 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/modules/audio_device/audio_device_impl.h"
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/modules/audio_device/include/mock_audio_transport.h"
-#include "webrtc/modules/audio_device/ios/audio_device_ios.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "modules/audio_device/audio_device_impl.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_device/include/mock_audio_transport.h"
+#include "modules/audio_device/ios/audio_device_ios.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/format_macros.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/event_wrapper.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
 
-#import "webrtc/sdk/objc/Framework/Classes/Audio/RTCAudioSession+Private.h"
-#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCAudioSession.h"
+#import "sdk/objc/Framework/Classes/Audio/RTCAudioSession+Private.h"
+#import "sdk/objc/Framework/Headers/WebRTC/RTCAudioSession.h"
 
 using std::cout;
 using std::endl;

@@ -12,8 +12,8 @@
 // Several functions have been removed; the prototypes of the remainder have
 // not been changed.
 
-#ifndef WEBRTC_TEST_TESTSUPPORT_PERF_TEST_H_
-#define WEBRTC_TEST_TESTSUPPORT_PERF_TEST_H_
+#ifndef TEST_TESTSUPPORT_PERF_TEST_H_
+#define TEST_TESTSUPPORT_PERF_TEST_H_
 
 #include <sstream>
 #include <string>
@@ -137,4 +137,4 @@ std::string ValuesToString(const Container& container) {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_TESTSUPPORT_PERF_TEST_H_
+#endif  // TEST_TESTSUPPORT_PERF_TEST_H_

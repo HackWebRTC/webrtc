@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/base/videosourceinterface.h"
+#include "media/base/videosourceinterface.h"
 namespace rtc {
 
 VideoSinkWants::VideoSinkWants() = default;

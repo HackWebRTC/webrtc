@@ -8,29 +8,29 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_ORTC_ORTCFACTORYINTERFACE_H_
-#define WEBRTC_API_ORTC_ORTCFACTORYINTERFACE_H_
+#ifndef API_ORTC_ORTCFACTORYINTERFACE_H_
+#define API_ORTC_ORTCFACTORYINTERFACE_H_
 
 #include <memory>
 #include <string>
 #include <utility>  // For std::move.
 
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/mediatypes.h"
-#include "webrtc/api/ortc/ortcrtpreceiverinterface.h"
-#include "webrtc/api/ortc/ortcrtpsenderinterface.h"
-#include "webrtc/api/ortc/packettransportinterface.h"
-#include "webrtc/api/ortc/rtptransportcontrollerinterface.h"
-#include "webrtc/api/ortc/rtptransportinterface.h"
-#include "webrtc/api/ortc/srtptransportinterface.h"
-#include "webrtc/api/ortc/udptransportinterface.h"
-#include "webrtc/api/rtcerror.h"
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/p2p/base/packetsocketfactory.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/thread.h"
+#include "api/mediaconstraintsinterface.h"
+#include "api/mediastreaminterface.h"
+#include "api/mediatypes.h"
+#include "api/ortc/ortcrtpreceiverinterface.h"
+#include "api/ortc/ortcrtpsenderinterface.h"
+#include "api/ortc/packettransportinterface.h"
+#include "api/ortc/rtptransportcontrollerinterface.h"
+#include "api/ortc/rtptransportinterface.h"
+#include "api/ortc/srtptransportinterface.h"
+#include "api/ortc/udptransportinterface.h"
+#include "api/rtcerror.h"
+#include "api/rtpparameters.h"
+#include "p2p/base/packetsocketfactory.h"
+#include "rtc_base/network.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 
@@ -236,4 +236,4 @@ class OrtcFactoryInterface {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_ORTC_ORTCFACTORYINTERFACE_H_
+#endif  // API_ORTC_ORTCFACTORYINTERFACE_H_

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/buffer.h"
+#include "rtc_base/buffer.h"
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "api/array_view.h"
+#include "rtc_base/gunit.h"
 
 #include <type_traits>
 #include <utility>

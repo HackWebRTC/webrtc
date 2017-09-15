@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_STATIC_INSTANCE_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_STATIC_INSTANCE_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_STATIC_INSTANCE_H_
+#define SYSTEM_WRAPPERS_INCLUDE_STATIC_INSTANCE_H_
 
 #include <assert.h>
 
-#include "webrtc/rtc_base/criticalsection.h"
+#include "rtc_base/criticalsection.h"
 #ifdef _WIN32
-#include "webrtc/system_wrappers/include/fix_interlocked_exchange_pointer_win.h"
+#include "system_wrappers/include/fix_interlocked_exchange_pointer_win.h"
 #endif
 
 namespace webrtc {
@@ -144,4 +144,4 @@ static T* GetStaticInstance(CountOperation count_operation) {
 
 }  // namspace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_STATIC_INSTANCE_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_STATIC_INSTANCE_H_

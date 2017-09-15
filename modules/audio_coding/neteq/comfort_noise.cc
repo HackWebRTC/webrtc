@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/comfort_noise.h"
+#include "modules/audio_coding/neteq/comfort_noise.h"
 
 #include <assert.h>
 
-#include "webrtc/api/audio_codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/neteq/decoder_database.h"
-#include "webrtc/modules/audio_coding/neteq/dsp_helper.h"
-#include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
-#include "webrtc/rtc_base/logging.h"
+#include "api/audio_codecs/audio_decoder.h"
+#include "modules/audio_coding/neteq/decoder_database.h"
+#include "modules/audio_coding/neteq/dsp_helper.h"
+#include "modules/audio_coding/neteq/sync_buffer.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

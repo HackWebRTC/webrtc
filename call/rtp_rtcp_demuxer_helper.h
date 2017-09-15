@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_RTP_RTCP_DEMUXER_HELPER_H_
-#define WEBRTC_CALL_RTP_RTCP_DEMUXER_HELPER_H_
+#ifndef CALL_RTP_RTCP_DEMUXER_HELPER_H_
+#define CALL_RTP_RTCP_DEMUXER_HELPER_H_
 
 #include <algorithm>
 #include <map>
 #include <utility>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/rtc_base/basictypes.h"
+#include "api/array_view.h"
+#include "api/optional.h"
+#include "rtc_base/basictypes.h"
 
 namespace webrtc {
 
@@ -95,4 +95,4 @@ rtc::Optional<uint32_t> ParseRtcpPacketSenderSsrc(
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_RTP_RTCP_DEMUXER_HELPER_H_
+#endif  // CALL_RTP_RTCP_DEMUXER_HELPER_H_

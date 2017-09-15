@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_BYTEBUFFER_H_
-#define WEBRTC_RTC_BASE_BYTEBUFFER_H_
+#ifndef RTC_BASE_BYTEBUFFER_H_
+#define RTC_BASE_BYTEBUFFER_H_
 
 #include <string>
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/constructormagic.h"
 
 namespace rtc {
 
@@ -136,4 +136,4 @@ class ByteBufferReader : public ByteBuffer {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_BYTEBUFFER_H_
+#endif  // RTC_BASE_BYTEBUFFER_H_

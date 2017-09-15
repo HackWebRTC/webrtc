@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_tools/frame_analyzer/video_quality_analysis.h"
-#include "webrtc/rtc_tools/simple_command_line_parser.h"
+#include "rtc_tools/frame_analyzer/video_quality_analysis.h"
+#include "rtc_tools/simple_command_line_parser.h"
 
 #define MAX_NUM_FRAMES_PER_FILE INT_MAX
 

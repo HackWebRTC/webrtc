@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 
 #include <stdio.h>
 
 #include <sstream>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/safe_minmax.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/safe_minmax.h"
 
 namespace webrtc {
 namespace testing {

@@ -8,27 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_
+#define MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_
 
 #include <map>
 #include <memory>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/modules/rtp_rtcp/source/ulpfec_generator.h"
-#include "webrtc/modules/rtp_rtcp/source/video_codec_information.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/onetimeevent.h"
-#include "webrtc/rtc_base/rate_statistics.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "common_types.h"
+#include "modules/rtp_rtcp/include/flexfec_sender.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
+#include "modules/rtp_rtcp/source/rtp_sender.h"
+#include "modules/rtp_rtcp/source/rtp_utility.h"
+#include "modules/rtp_rtcp/source/ulpfec_generator.h"
+#include "modules/rtp_rtcp/source/video_codec_information.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/onetimeevent.h"
+#include "rtc_base/rate_statistics.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/thread_annotations.h"
+#include "typedefs.h"
 
 namespace webrtc {
 class RtpPacketizer;
@@ -164,4 +164,4 @@ class RTPSenderVideo {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_

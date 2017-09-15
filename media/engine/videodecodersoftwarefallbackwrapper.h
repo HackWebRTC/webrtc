@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_VIDEODECODERSOFTWAREFALLBACKWRAPPER_H_
-#define WEBRTC_MEDIA_ENGINE_VIDEODECODERSOFTWAREFALLBACKWRAPPER_H_
+#ifndef MEDIA_ENGINE_VIDEODECODERSOFTWAREFALLBACKWRAPPER_H_
+#define MEDIA_ENGINE_VIDEODECODERSOFTWAREFALLBACKWRAPPER_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/api/video_codecs/video_decoder.h"
+#include "api/video_codecs/video_decoder.h"
 
 namespace webrtc {
 
@@ -59,4 +59,4 @@ class VideoDecoderSoftwareFallbackWrapper : public VideoDecoder {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MEDIA_ENGINE_VIDEODECODERSOFTWAREFALLBACKWRAPPER_H_
+#endif  // MEDIA_ENGINE_VIDEODECODERSOFTWAREFALLBACKWRAPPER_H_

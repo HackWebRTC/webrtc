@@ -12,7 +12,7 @@
 
 #import "RTCVideoCodec+Private.h"
 
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "rtc_base/safe_conversions.h"
 
 @implementation RTCEncodedImage
 

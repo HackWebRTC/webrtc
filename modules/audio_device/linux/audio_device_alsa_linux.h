@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ALSA_LINUX_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ALSA_LINUX_H
+#ifndef AUDIO_DEVICE_AUDIO_DEVICE_ALSA_LINUX_H_
+#define AUDIO_DEVICE_AUDIO_DEVICE_ALSA_LINUX_H_
 
 #include <memory>
 
-#include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/modules/audio_device/linux/audio_mixer_manager_alsa_linux.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/platform_thread.h"
+#include "modules/audio_device/audio_device_generic.h"
+#include "modules/audio_device/linux/audio_mixer_manager_alsa_linux.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/platform_thread.h"
 
 #if defined(USE_X11)
 #include <X11/Xlib.h>

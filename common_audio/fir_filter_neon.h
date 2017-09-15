@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_COMMON_AUDIO_FIR_FILTER_NEON_H_
-#define WEBRTC_COMMON_AUDIO_FIR_FILTER_NEON_H_
+#ifndef COMMON_AUDIO_FIR_FILTER_NEON_H_
+#define COMMON_AUDIO_FIR_FILTER_NEON_H_
 
 #include <memory>
 
-#include "webrtc/common_audio/fir_filter.h"
-#include "webrtc/system_wrappers/include/aligned_malloc.h"
+#include "common_audio/fir_filter.h"
+#include "system_wrappers/include/aligned_malloc.h"
 
 namespace webrtc {
 
@@ -35,4 +35,4 @@ class FIRFilterNEON : public FIRFilter {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_COMMON_AUDIO_FIR_FILTER_NEON_H_
+#endif  // COMMON_AUDIO_FIR_FILTER_NEON_H_

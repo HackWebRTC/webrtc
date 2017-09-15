@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_QUIC_RELIABLEQUICSTREAM_H_
-#define WEBRTC_P2P_QUIC_RELIABLEQUICSTREAM_H_
+#ifndef P2P_QUIC_RELIABLEQUICSTREAM_H_
+#define P2P_QUIC_RELIABLEQUICSTREAM_H_
 
 #include "net/quic/reliable_quic_stream.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/stream.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/stream.h"
 
 namespace cricket {
 
@@ -53,4 +53,4 @@ class ReliableQuicStream : public net::ReliableQuicStream,
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_QUIC_RELIABLEQUICSTREAM_H_
+#endif  // P2P_QUIC_RELIABLEQUICSTREAM_H_

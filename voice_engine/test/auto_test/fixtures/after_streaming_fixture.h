@@ -13,8 +13,8 @@
 
 #include <memory>
 
-#include "webrtc/voice_engine/channel_proxy.h"
-#include "webrtc/voice_engine/test/auto_test/fixtures/before_streaming_fixture.h"
+#include "voice_engine/channel_proxy.h"
+#include "voice_engine/test/auto_test/fixtures/before_streaming_fixture.h"
 
 // This fixture will, in addition to the work done by its superclasses,
 // start play back on construction.

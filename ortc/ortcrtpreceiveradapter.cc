@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/ortc/ortcrtpreceiveradapter.h"
+#include "ortc/ortcrtpreceiveradapter.h"
 
 #include <utility>
 
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/ortc/rtptransportadapter.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"  // For "CreateRandomX".
+#include "media/base/mediaconstants.h"
+#include "ortc/rtptransportadapter.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/helpers.h"  // For "CreateRandomX".
 
 namespace {
 

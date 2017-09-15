@@ -10,8 +10,8 @@
 
 #include <memory>
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/dtx_controller.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_coding/audio_network_adaptor/dtx_controller.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

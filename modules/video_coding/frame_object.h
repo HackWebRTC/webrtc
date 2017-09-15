@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
-#define WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
+#ifndef MODULES_VIDEO_CODING_FRAME_OBJECT_H_
+#define MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 
-#include "webrtc/api/optional.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_coding/encoded_frame.h"
+#include "api/optional.h"
+#include "common_types.h"
+#include "modules/include/module_common_types.h"
+#include "modules/video_coding/encoded_frame.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -101,4 +101,4 @@ class RtpFrameObject : public FrameObject {
 }  // namespace video_coding
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
+#endif  // MODULES_VIDEO_CODING_FRAME_OBJECT_H_

@@ -11,21 +11,21 @@
 #include <set>
 #include <vector>
 
-#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "webrtc/api/datachannelinterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/api/stats/rtcstats_objects.h"
-#include "webrtc/api/stats/rtcstatsreport.h"
-#include "webrtc/pc/test/peerconnectiontestwrapper.h"
-#include "webrtc/pc/test/rtcstatsobtainer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/event_tracer.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/refcountedobject.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/trace_event.h"
-#include "webrtc/rtc_base/virtualsocketserver.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/datachannelinterface.h"
+#include "api/peerconnectioninterface.h"
+#include "api/stats/rtcstats_objects.h"
+#include "api/stats/rtcstatsreport.h"
+#include "pc/test/peerconnectiontestwrapper.h"
+#include "pc/test/rtcstatsobtainer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/event_tracer.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/trace_event.h"
+#include "rtc_base/virtualsocketserver.h"
 
 namespace webrtc {
 

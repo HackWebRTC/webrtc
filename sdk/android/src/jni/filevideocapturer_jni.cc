@@ -11,8 +11,8 @@
 #include <jni.h>
 
 #include "third_party/libyuv/include/libyuv/convert_from.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace jni {

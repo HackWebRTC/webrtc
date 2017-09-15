@@ -11,13 +11,13 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/rtc_base/fakesslidentity.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/sslfingerprint.h"
-#include "webrtc/rtc_base/sslidentity.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "rtc_base/fakesslidentity.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/ssladapter.h"
+#include "rtc_base/sslfingerprint.h"
+#include "rtc_base/sslidentity.h"
+#include "rtc_base/stringutils.h"
 
 using rtc::SSLIdentity;
 

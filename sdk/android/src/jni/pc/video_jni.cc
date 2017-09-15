@@ -10,18 +10,18 @@
 
 #include <jni.h>
 
-#include "webrtc/api/videosourceproxy.h"
-#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/sdk/android/src/jni/androidmediadecoder_jni.h"
-#include "webrtc/sdk/android/src/jni/androidmediaencoder_jni.h"
-#include "webrtc/sdk/android/src/jni/androidvideotracksource.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-#include "webrtc/sdk/android/src/jni/pc/ownedfactoryandthreads.h"
-#include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
-#include "webrtc/sdk/android/src/jni/videodecoderfactorywrapper.h"
-#include "webrtc/sdk/android/src/jni/videoencoderfactorywrapper.h"
+#include "api/videosourceproxy.h"
+#include "media/engine/webrtcvideodecoderfactory.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
+#include "rtc_base/logging.h"
+#include "sdk/android/src/jni/androidmediadecoder_jni.h"
+#include "sdk/android/src/jni/androidmediaencoder_jni.h"
+#include "sdk/android/src/jni/androidvideotracksource.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/pc/ownedfactoryandthreads.h"
+#include "sdk/android/src/jni/surfacetexturehelper_jni.h"
+#include "sdk/android/src/jni/videodecoderfactorywrapper.h"
+#include "sdk/android/src/jni/videoencoderfactorywrapper.h"
 
 namespace webrtc {
 namespace jni {

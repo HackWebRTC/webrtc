@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_VIDEOENCODERFACTORYWRAPPER_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_VIDEOENCODERFACTORYWRAPPER_H_
+#ifndef SDK_ANDROID_SRC_JNI_VIDEOENCODERFACTORYWRAPPER_H_
+#define SDK_ANDROID_SRC_JNI_VIDEOENCODERFACTORYWRAPPER_H_
 
 #include <jni.h>
 #include <vector>
 
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
@@ -62,4 +62,4 @@ class VideoEncoderFactoryWrapper : public cricket::WebRtcVideoEncoderFactory {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_VIDEOENCODERFACTORYWRAPPER_H_
+#endif  // SDK_ANDROID_SRC_JNI_VIDEOENCODERFACTORYWRAPPER_H_

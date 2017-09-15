@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/audio_codecs/audio_decoder_factory_template.h"
-#include "webrtc/api/audio_codecs/L16/audio_decoder_L16.h"
-#include "webrtc/api/audio_codecs/g711/audio_decoder_g711.h"
-#include "webrtc/api/audio_codecs/g722/audio_decoder_g722.h"
-#include "webrtc/api/audio_codecs/ilbc/audio_decoder_ilbc.h"
-#include "webrtc/api/audio_codecs/isac/audio_decoder_isac_fix.h"
-#include "webrtc/api/audio_codecs/isac/audio_decoder_isac_float.h"
-#include "webrtc/api/audio_codecs/opus/audio_decoder_opus.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_audio_decoder.h"
+#include "api/audio_codecs/audio_decoder_factory_template.h"
+#include "api/audio_codecs/L16/audio_decoder_L16.h"
+#include "api/audio_codecs/g711/audio_decoder_g711.h"
+#include "api/audio_codecs/g722/audio_decoder_g722.h"
+#include "api/audio_codecs/ilbc/audio_decoder_ilbc.h"
+#include "api/audio_codecs/isac/audio_decoder_isac_fix.h"
+#include "api/audio_codecs/isac/audio_decoder_isac_float.h"
+#include "api/audio_codecs/opus/audio_decoder_opus.h"
+#include "rtc_base/ptr_util.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "test/mock_audio_decoder.h"
 
 namespace webrtc {
 

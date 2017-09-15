@@ -10,10 +10,10 @@
 
 #include <memory>
 
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/system_wrappers/include/logcat_trace_context.h"
-#include "webrtc/system_wrappers/include/trace.h"
+#include "rtc_base/logging.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "system_wrappers/include/logcat_trace_context.h"
+#include "system_wrappers/include/trace.h"
 
 namespace webrtc {
 namespace jni {

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_LOGCAT_TRACE_CONTEXT_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_LOGCAT_TRACE_CONTEXT_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_LOGCAT_TRACE_CONTEXT_H_
+#define SYSTEM_WRAPPERS_INCLUDE_LOGCAT_TRACE_CONTEXT_H_
 
-#include "webrtc/system_wrappers/include/trace.h"
+#include "system_wrappers/include/trace.h"
 
 #ifndef ANDROID
 #error This file only makes sense to include on Android!
@@ -32,4 +32,4 @@ class LogcatTraceContext : public webrtc::TraceCallback {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_LOGCAT_TRACE_CONTEXT_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_LOGCAT_TRACE_CONTEXT_H_

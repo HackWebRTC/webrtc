@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/testsupport/test_output.h"
+#include "test/testsupport/test_output.h"
 
 #include <string.h>
 
 #include <string>
 
-#include "webrtc/rtc_base/file.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/platform_file.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/file.h"
+#include "rtc_base/flags.h"
+#include "rtc_base/pathutils.h"
+#include "rtc_base/platform_file.h"
+#include "test/gtest.h"
 
 DECLARE_string(test_output_dir);
 

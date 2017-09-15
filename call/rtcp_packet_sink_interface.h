@@ -7,10 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_CALL_RTCP_PACKET_SINK_INTERFACE_H_
-#define WEBRTC_CALL_RTCP_PACKET_SINK_INTERFACE_H_
+#ifndef CALL_RTCP_PACKET_SINK_INTERFACE_H_
+#define CALL_RTCP_PACKET_SINK_INTERFACE_H_
 
-#include "webrtc/api/array_view.h"
+#include "api/array_view.h"
 
 namespace webrtc {
 
@@ -26,4 +26,4 @@ class RtcpPacketSinkInterface {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_RTCP_PACKET_SINK_INTERFACE_H_
+#endif  // CALL_RTCP_PACKET_SINK_INTERFACE_H_

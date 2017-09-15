@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
+#ifndef MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
+#define MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
 
 #include <map>
 #include <vector>
 
-#include "webrtc/modules/include/module.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
-#include "webrtc/typedefs.h"
+#include "modules/include/module.h"
+#include "modules/include/module_common_types.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -92,4 +92,4 @@ class ReceiveStatistics : public ReceiveStatisticsProvider {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
+#endif  // MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_

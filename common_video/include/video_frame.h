@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_FRAME_H_
-#define WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_FRAME_H_
+#ifndef COMMON_VIDEO_INCLUDE_VIDEO_FRAME_H_
+#define COMMON_VIDEO_INCLUDE_VIDEO_FRAME_H_
 
 // TODO(nisse): This header file should eventually be deleted. The
 // EncodedImage class stays in this file until we have figured out how
 // to refactor and clean up related interfaces, at which point it
 // should be moved to somewhere under api/.
 
-#include "webrtc/common_types.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -80,4 +80,4 @@ class EncodedImage {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_FRAME_H_
+#endif  // COMMON_VIDEO_INCLUDE_VIDEO_FRAME_H_

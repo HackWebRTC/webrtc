@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_OPENSSLADAPTER_H_
-#define WEBRTC_RTC_BASE_OPENSSLADAPTER_H_
+#ifndef RTC_BASE_OPENSSLADAPTER_H_
+#define RTC_BASE_OPENSSLADAPTER_H_
 
 #include <map>
 #include <string>
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/messagehandler.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/opensslidentity.h"
-#include "webrtc/rtc_base/ssladapter.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/opensslidentity.h"
+#include "rtc_base/ssladapter.h"
 
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
@@ -176,4 +176,4 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_OPENSSLADAPTER_H_
+#endif  // RTC_BASE_OPENSSLADAPTER_H_

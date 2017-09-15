@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
-#define WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
+#ifndef API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
+#define API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
 
 #include <jni.h>
 
-#include "webrtc/common_video/include/i420_buffer_pool.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/media/base/adaptedvideotracksource.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/rtc_base/timestampaligner.h"
-#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
-#include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
+#include "common_video/include/i420_buffer_pool.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "media/base/adaptedvideotracksource.h"
+#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/thread_checker.h"
+#include "rtc_base/timestampaligner.h"
+#include "sdk/android/src/jni/native_handle_impl.h"
+#include "sdk/android/src/jni/surfacetexturehelper_jni.h"
 
 namespace webrtc {
 namespace jni {
@@ -93,4 +93,4 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
+#endif  // API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_

@@ -14,27 +14,27 @@
 // interfaces must be used only with PeerConnection. PeerConnectionManager
 // interface provides the factory methods to create MediaStream and MediaTracks.
 
-#ifndef WEBRTC_API_MEDIASTREAMINTERFACE_H_
-#define WEBRTC_API_MEDIASTREAMINTERFACE_H_
+#ifndef API_MEDIASTREAMINTERFACE_H_
+#define API_MEDIASTREAMINTERFACE_H_
 
 #include <stddef.h>
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/api/video/video_frame.h"
+#include "api/optional.h"
+#include "api/video/video_frame.h"
 // TODO(zhihuang): Remove unrelated headers once downstream applications stop
 // relying on them; they were previously transitively included by
 // mediachannel.h, which is no longer a dependency of this file.
-#include "webrtc/media/base/streamparams.h"
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/media/base/videosourceinterface.h"
-#include "webrtc/rtc_base/ratetracker.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "media/base/streamparams.h"
+#include "media/base/videosinkinterface.h"
+#include "media/base/videosourceinterface.h"
+#include "rtc_base/ratetracker.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/timeutils.h"
 
 namespace webrtc {
 
@@ -321,4 +321,4 @@ class MediaStreamInterface : public rtc::RefCountInterface,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_MEDIASTREAMINTERFACE_H_
+#endif  // API_MEDIASTREAMINTERFACE_H_

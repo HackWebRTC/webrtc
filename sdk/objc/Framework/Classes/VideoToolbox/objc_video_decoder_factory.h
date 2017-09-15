@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_PEERCONNECTION_OBJC_VIDEO_DECODER_FACTORY_H_
-#define WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_PEERCONNECTION_OBJC_VIDEO_DECODER_FACTORY_H_
+#ifndef SDK_OBJC_FRAMEWORK_CLASSES_PEERCONNECTION_OBJC_VIDEO_DECODER_FACTORY_H_
+#define SDK_OBJC_FRAMEWORK_CLASSES_PEERCONNECTION_OBJC_VIDEO_DECODER_FACTORY_H_
 
-#include "webrtc/media/base/codec.h"
-#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
+#include "media/base/codec.h"
+#include "media/engine/webrtcvideodecoderfactory.h"
 
 @protocol RTCVideoDecoderFactory;
 
@@ -38,4 +38,4 @@ class ObjCVideoDecoderFactory : public cricket::WebRtcVideoDecoderFactory {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_PEERCONNECTION_OBJC_VIDEO_DECODER_FACTORY_H_
+#endif  // SDK_OBJC_FRAMEWORK_CLASSES_PEERCONNECTION_OBJC_VIDEO_DECODER_FACTORY_H_

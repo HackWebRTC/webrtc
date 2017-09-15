@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_FAKE_NETWORK_PIPE_H_
-#define WEBRTC_TEST_FAKE_NETWORK_PIPE_H_
+#ifndef TEST_FAKE_NETWORK_PIPE_H_
+#define TEST_FAKE_NETWORK_PIPE_H_
 
 #include <string.h>
 #include <map>
@@ -17,11 +17,11 @@
 #include <queue>
 #include <set>
 
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/random.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -183,4 +183,4 @@ class FakeNetworkPipe {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_FAKE_NETWORK_PIPE_H_
+#endif  // TEST_FAKE_NETWORK_PIPE_H_

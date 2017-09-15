@@ -10,7 +10,7 @@
 
 #import "WebRTC/RTCIntervalRange.h"
 
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/timeutils.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

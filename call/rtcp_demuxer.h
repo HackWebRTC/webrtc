@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_RTCP_DEMUXER_H_
-#define WEBRTC_CALL_RTCP_DEMUXER_H_
+#ifndef CALL_RTCP_DEMUXER_H_
+#define CALL_RTCP_DEMUXER_H_
 
 #include <map>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/call/ssrc_binding_observer.h"
-#include "webrtc/rtc_base/basictypes.h"
+#include "api/array_view.h"
+#include "call/ssrc_binding_observer.h"
+#include "rtc_base/basictypes.h"
 
 namespace webrtc {
 
@@ -82,4 +82,4 @@ class RtcpDemuxer : public SsrcBindingObserver {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_RTCP_DEMUXER_H_
+#endif  // CALL_RTCP_DEMUXER_H_

@@ -10,14 +10,14 @@
 
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/modules/audio_processing/level_controller/level_controller.h"
-#include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
-#include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
-#include "webrtc/test/gtest.h"
+#include "api/array_view.h"
+#include "api/optional.h"
+#include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/level_controller/level_controller.h"
+#include "modules/audio_processing/test/audio_buffer_tools.h"
+#include "modules/audio_processing/test/bitexactness_tools.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace {

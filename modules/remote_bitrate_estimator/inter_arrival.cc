@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"
+#include "modules/remote_bitrate_estimator/inter_arrival.h"
 
 #include <algorithm>
 #include <cassert>
 
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

@@ -15,9 +15,9 @@
 #include <fstream>
 #include <string>
 
-#include "webrtc/rtc_tools/frame_analyzer/video_quality_analysis.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "rtc_tools/frame_analyzer/video_quality_analysis.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
 
 namespace webrtc {
 namespace test {

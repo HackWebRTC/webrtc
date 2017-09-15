@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_VIDEO_CONFIG_H_
-#define WEBRTC_CALL_VIDEO_CONFIG_H_
+#ifndef CALL_VIDEO_CONFIG_H_
+#define CALL_VIDEO_CONFIG_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "common_types.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -154,4 +154,4 @@ class VideoEncoderConfig {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_VIDEO_CONFIG_H_
+#endif  // CALL_VIDEO_CONFIG_H_

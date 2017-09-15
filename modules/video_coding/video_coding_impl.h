@@ -8,30 +8,30 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_
-#define WEBRTC_MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_
+#ifndef MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_
+#define MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_
 
-#include "webrtc/modules/video_coding/include/video_coding.h"
+#include "modules/video_coding/include/video_coding.h"
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/common_video/include/frame_callback.h"
-#include "webrtc/modules/video_coding/codec_database.h"
-#include "webrtc/modules/video_coding/frame_buffer.h"
-#include "webrtc/modules/video_coding/generic_decoder.h"
-#include "webrtc/modules/video_coding/generic_encoder.h"
-#include "webrtc/modules/video_coding/jitter_buffer.h"
-#include "webrtc/modules/video_coding/media_optimization.h"
-#include "webrtc/modules/video_coding/qp_parser.h"
-#include "webrtc/modules/video_coding/receiver.h"
-#include "webrtc/modules/video_coding/timing.h"
-#include "webrtc/rtc_base/onetimeevent.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "common_video/include/frame_callback.h"
+#include "modules/video_coding/codec_database.h"
+#include "modules/video_coding/frame_buffer.h"
+#include "modules/video_coding/generic_decoder.h"
+#include "modules/video_coding/generic_encoder.h"
+#include "modules/video_coding/jitter_buffer.h"
+#include "modules/video_coding/media_optimization.h"
+#include "modules/video_coding/qp_parser.h"
+#include "modules/video_coding/receiver.h"
+#include "modules/video_coding/timing.h"
+#include "rtc_base/onetimeevent.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -234,4 +234,4 @@ class VideoReceiver : public Module {
 
 }  // namespace vcm
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_
+#endif  // MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_

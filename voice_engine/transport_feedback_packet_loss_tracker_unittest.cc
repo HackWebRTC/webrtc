@@ -13,12 +13,12 @@
 #include <numeric>
 #include <vector>
 
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/voice_engine/transport_feedback_packet_loss_tracker.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
+#include "rtc_base/checks.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "voice_engine/transport_feedback_packet_loss_tracker.h"
 
 namespace webrtc {
 

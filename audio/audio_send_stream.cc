@@ -8,30 +8,30 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/audio/audio_send_stream.h"
+#include "audio/audio_send_stream.h"
 
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "webrtc/audio/audio_state.h"
-#include "webrtc/audio/conversion.h"
-#include "webrtc/audio/scoped_voe_interface.h"
-#include "webrtc/call/rtp_transport_controller_send_interface.h"
-#include "webrtc/modules/audio_coding/codecs/cng/audio_encoder_cng.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/function_view.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/voice_engine/channel_proxy.h"
-#include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/transmit_mixer.h"
-#include "webrtc/voice_engine/voice_engine_impl.h"
+#include "audio/audio_state.h"
+#include "audio/conversion.h"
+#include "audio/scoped_voe_interface.h"
+#include "call/rtp_transport_controller_send_interface.h"
+#include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
+#include "modules/bitrate_controller/include/bitrate_controller.h"
+#include "modules/congestion_controller/include/send_side_congestion_controller.h"
+#include "modules/pacing/paced_sender.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/event.h"
+#include "rtc_base/function_view.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/timeutils.h"
+#include "voice_engine/channel_proxy.h"
+#include "voice_engine/include/voe_base.h"
+#include "voice_engine/transmit_mixer.h"
+#include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
 

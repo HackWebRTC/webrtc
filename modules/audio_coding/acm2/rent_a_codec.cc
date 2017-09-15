@@ -8,39 +8,39 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
+#include "modules/audio_coding/acm2/rent_a_codec.h"
 
 #include <memory>
 #include <utility>
 
-#include "webrtc/modules/audio_coding/codecs/cng/audio_encoder_cng.h"
-#include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
+#include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
+#include "rtc_base/logging.h"
 #ifdef WEBRTC_CODEC_G722
-#include "webrtc/modules/audio_coding/codecs/g722/audio_encoder_g722.h"
+#include "modules/audio_coding/codecs/g722/audio_encoder_g722.h"
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-#include "webrtc/modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
+#include "modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"  // nogncheck
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"  // nogncheck
+#include "modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"  // nogncheck
+#include "modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"  // nogncheck
 #endif
 #ifdef WEBRTC_CODEC_ISAC
-#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_decoder_isac.h"  // nogncheck
-#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"  // nogncheck
+#include "modules/audio_coding/codecs/isac/main/include/audio_decoder_isac.h"  // nogncheck
+#include "modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"  // nogncheck
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-#include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
+#include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #endif
-#include "webrtc/modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
+#include "modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
 #ifdef WEBRTC_CODEC_RED
-#include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
+#include "modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
 #endif
-#include "webrtc/modules/audio_coding/acm2/acm_codec_database.h"
+#include "modules/audio_coding/acm2/acm_codec_database.h"
 
 #if defined(WEBRTC_CODEC_ISACFX) || defined(WEBRTC_CODEC_ISAC)
-#include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
+#include "modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
 #endif
 
 namespace webrtc {

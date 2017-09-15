@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_OPENSSLIDENTITY_H_
-#define WEBRTC_RTC_BASE_OPENSSLIDENTITY_H_
+#ifndef RTC_BASE_OPENSSLIDENTITY_H_
+#define RTC_BASE_OPENSSLIDENTITY_H_
 
 #include <openssl/evp.h>
 #include <openssl/x509.h>
@@ -17,9 +17,9 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/sslidentity.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/sslidentity.h"
 
 typedef struct ssl_ctx_st SSL_CTX;
 
@@ -144,4 +144,4 @@ class OpenSSLIdentity : public SSLIdentity {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_OPENSSLIDENTITY_H_
+#endif  // RTC_BASE_OPENSSLIDENTITY_H_

@@ -11,9 +11,9 @@
 // This header is for backwards compatibility only, and will be removed soon.
 // Include webrtc/api/array_view.h instead.
 
-#ifndef WEBRTC_RTC_BASE_ARRAY_VIEW_H_
-#define WEBRTC_RTC_BASE_ARRAY_VIEW_H_
+#ifndef RTC_BASE_ARRAY_VIEW_H_
+#define RTC_BASE_ARRAY_VIEW_H_
 
-#include "webrtc/api/array_view.h"
+#include "api/array_view.h"
 
-#endif  // WEBRTC_RTC_BASE_ARRAY_VIEW_H_
+#endif  // RTC_BASE_ARRAY_VIEW_H_

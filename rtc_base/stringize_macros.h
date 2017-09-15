@@ -15,8 +15,8 @@
 // symbols (or their output) and manipulating preprocessor symbols
 // that define strings.
 
-#ifndef WEBRTC_RTC_BASE_STRINGIZE_MACROS_H_
-#define WEBRTC_RTC_BASE_STRINGIZE_MACROS_H_
+#ifndef RTC_BASE_STRINGIZE_MACROS_H_
+#define RTC_BASE_STRINGIZE_MACROS_H_
 
 // This is not very useful as it does not expand defined symbols if
 // called directly. Use its counterpart without the _NO_EXPANSION
@@ -35,4 +35,4 @@
 //   STRINGIZE(B(y)) produces "myobj->FunctionCall(y)"
 #define STRINGIZE(x) STRINGIZE_NO_EXPANSION(x)
 
-#endif  // WEBRTC_RTC_BASE_STRINGIZE_MACROS_H_
+#endif  // RTC_BASE_STRINGIZE_MACROS_H_

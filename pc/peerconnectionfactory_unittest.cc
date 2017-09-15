@@ -12,19 +12,19 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/media/base/fakevideocapturer.h"
-#include "webrtc/media/engine/webrtccommon.h"
-#include "webrtc/media/engine/webrtcvoe.h"
-#include "webrtc/p2p/base/fakeportallocator.h"
-#include "webrtc/pc/peerconnectionfactory.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/thread.h"
+#include "api/mediastreaminterface.h"
+#include "media/base/fakevideocapturer.h"
+#include "media/engine/webrtccommon.h"
+#include "media/engine/webrtcvoe.h"
+#include "p2p/base/fakeportallocator.h"
+#include "pc/peerconnectionfactory.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/thread.h"
 #ifdef WEBRTC_ANDROID
-#include "webrtc/pc/test/androidtestinitializer.h"
+#include "pc/test/androidtestinitializer.h"
 #endif
-#include "webrtc/pc/test/fakertccertificategenerator.h"
-#include "webrtc/pc/test/fakevideotrackrenderer.h"
+#include "pc/test/fakertccertificategenerator.h"
+#include "pc/test/fakevideotrackrenderer.h"
 
 using webrtc::DataChannelInterface;
 using webrtc::FakeVideoTrackRenderer;

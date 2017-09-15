@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/audio/test/audio_bwe_integration_test.h"
+#include "audio/test/audio_bwe_integration_test.h"
 
-#include "webrtc/common_audio/wav_file.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "common_audio/wav_file.h"
+#include "rtc_base/ptr_util.h"
+#include "system_wrappers/include/sleep.h"
+#include "test/field_trial.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
 
 namespace webrtc {
 namespace test {

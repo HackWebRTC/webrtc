@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
+#include "modules/desktop_capture/mac/desktop_configuration_monitor.h"
 
-#include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "modules/desktop_capture/mac/desktop_configuration.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
 

@@ -43,8 +43,8 @@
 //     to output logging data at the desired level.
 // Lastly, PLOG(sev, err) is an alias for LOG_ERR_EX.
 
-#ifndef WEBRTC_RTC_BASE_LOGGING_H_
-#define WEBRTC_RTC_BASE_LOGGING_H_
+#ifndef RTC_BASE_LOGGING_H_
+#define RTC_BASE_LOGGING_H_
 
 #include <errno.h>
 
@@ -57,9 +57,9 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace rtc {
 
@@ -367,4 +367,4 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_LOGGING_H_
+#endif  // RTC_BASE_LOGGING_H_

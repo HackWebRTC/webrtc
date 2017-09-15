@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/quic/reliablequicstream.h"
+#include "p2p/quic/reliablequicstream.h"
 
 #include <string>
 
 #include "net/quic/quic_session.h"
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace cricket {
 

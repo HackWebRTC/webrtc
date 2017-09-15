@@ -10,13 +10,13 @@
 
 #include <iostream>
 
-#include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/rtc_tools/event_log_visualizer/analyzer.h"
-#include "webrtc/rtc_tools/event_log_visualizer/plot_base.h"
-#include "webrtc/rtc_tools/event_log_visualizer/plot_python.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
+#include "rtc_base/flags.h"
+#include "rtc_tools/event_log_visualizer/analyzer.h"
+#include "rtc_tools/event_log_visualizer/plot_base.h"
+#include "rtc_tools/event_log_visualizer/plot_python.h"
+#include "test/field_trial.h"
+#include "test/testsupport/fileutils.h"
 
 DEFINE_string(plot_profile,
               "default",

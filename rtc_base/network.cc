@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/network.h"
+#include "rtc_base/network.h"
 
 #if defined(WEBRTC_POSIX)
 // linux/if.h can't be included at the same time as the posix sys/if.h, and
@@ -23,10 +23,10 @@
 #endif  // WEBRTC_POSIX
 
 #if defined(WEBRTC_WIN)
-#include "webrtc/rtc_base/win32.h"
+#include "rtc_base/win32.h"
 #include <Iphlpapi.h>
 #elif !defined(__native_client__)
-#include "webrtc/rtc_base/ifaddrs_converter.h"
+#include "rtc_base/ifaddrs_converter.h"
 #endif
 
 #include <stdio.h>
@@ -34,13 +34,13 @@
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/networkmonitor.h"
-#include "webrtc/rtc_base/socket.h"  // includes something that makes windows happy
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/thread.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/networkmonitor.h"
+#include "rtc_base/socket.h"  // includes something that makes windows happy
+#include "rtc_base/stream.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/thread.h"
 
 namespace rtc {
 namespace {

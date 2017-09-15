@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/g722/audio_decoder_g722.h"
+#include "modules/audio_coding/codecs/g722/audio_decoder_g722.h"
 
 #include <string.h>
 
-#include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
-#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_coding/codecs/g722/g722_interface.h"
+#include "modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

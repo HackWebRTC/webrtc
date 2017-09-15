@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_VOE_TEST_COMMON_H_
-#define WEBRTC_VOICE_ENGINE_VOE_TEST_COMMON_H_
+#ifndef VOICE_ENGINE_VOE_TEST_COMMON_H_
+#define VOICE_ENGINE_VOE_TEST_COMMON_H_
 
 #ifdef WEBRTC_ANDROID
 #include <android/log.h>
@@ -28,4 +28,4 @@
 // Time in ms to test each packet size for each codec
 #define CODEC_TEST_TIME 400
 
-#endif  // WEBRTC_VOICE_ENGINE_VOE_TEST_COMMON_H_
+#endif  // VOICE_ENGINE_VOE_TEST_COMMON_H_

@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_TCPPORT_H_
-#define WEBRTC_P2P_BASE_TCPPORT_H_
+#ifndef P2P_BASE_TCPPORT_H_
+#define P2P_BASE_TCPPORT_H_
 
 #include <list>
 #include <memory>
 #include <string>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
+#include "p2p/base/port.h"
+#include "rtc_base/asyncpacketsocket.h"
 
 namespace cricket {
 
@@ -185,4 +185,4 @@ class TCPConnection : public Connection {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TCPPORT_H_
+#endif  // P2P_BASE_TCPPORT_H_

@@ -10,20 +10,20 @@
 
 #include <utility>
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_debug_dump_writer.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/ignore_wundef.h"
-#include "webrtc/rtc_base/protobuf_utils.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_coding/audio_network_adaptor/controller_manager.h"
+#include "modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"
+#include "modules/audio_coding/audio_network_adaptor/mock/mock_debug_dump_writer.h"
+#include "rtc_base/fakeclock.h"
+#include "rtc_base/ignore_wundef.h"
+#include "rtc_base/protobuf_utils.h"
+#include "test/gtest.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/config.pb.h"
 #else
-#include "webrtc/modules/audio_coding/audio_network_adaptor/config.pb.h"
+#include "modules/audio_coding/audio_network_adaptor/config.pb.h"
 #endif
 RTC_POP_IGNORING_WUNDEF()
 #endif

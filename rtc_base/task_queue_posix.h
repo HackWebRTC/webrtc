@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_TASK_QUEUE_POSIX_H_
-#define WEBRTC_RTC_BASE_TASK_QUEUE_POSIX_H_
+#ifndef RTC_BASE_TASK_QUEUE_POSIX_H_
+#define RTC_BASE_TASK_QUEUE_POSIX_H_
 
 #include <pthread.h>
 
@@ -33,4 +33,4 @@ pthread_key_t GetQueuePtrTls();
 }  // namespace internal
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_TASK_QUEUE_POSIX_H_
+#endif  // RTC_BASE_TASK_QUEUE_POSIX_H_

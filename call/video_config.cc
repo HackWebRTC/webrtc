@@ -7,13 +7,13 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/call/video_config.h"
+#include "call/video_config.h"
 
 #include <algorithm>
 #include <sstream>
 #include <string>
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 VideoStream::VideoStream()

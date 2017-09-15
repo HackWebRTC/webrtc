@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_TOOLS_CONVERTER_CONVERTER_H_
-#define WEBRTC_RTC_TOOLS_CONVERTER_CONVERTER_H_
+#ifndef RTC_TOOLS_CONVERTER_CONVERTER_H_
+#define RTC_TOOLS_CONVERTER_CONVERTER_H_
 
 #include <string>
 
@@ -106,4 +106,4 @@ class Converter {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_RTC_TOOLS_CONVERTER_CONVERTER_H_
+#endif  // RTC_TOOLS_CONVERTER_CONVERTER_H_

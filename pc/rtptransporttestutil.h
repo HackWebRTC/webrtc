@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_RTPTRANSPORTTESTUTIL_H_
-#define WEBRTC_PC_RTPTRANSPORTTESTUTIL_H_
+#ifndef PC_RTPTRANSPORTTESTUTIL_H_
+#define PC_RTPTRANSPORTTESTUTIL_H_
 
-#include "webrtc/pc/rtptransportinternal.h"
-#include "webrtc/rtc_base/sigslot.h"
+#include "pc/rtptransportinternal.h"
+#include "rtc_base/sigslot.h"
 
 namespace webrtc {
 
@@ -41,4 +41,4 @@ class SignalPacketReceivedCounter : public sigslot::has_slots<> {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_RTPTRANSPORTTESTUTIL_H_
+#endif  // PC_RTPTRANSPORTTESTUTIL_H_

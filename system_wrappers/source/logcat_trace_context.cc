@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/include/logcat_trace_context.h"
+#include "system_wrappers/include/logcat_trace_context.h"
 
 #include <android/log.h>
 #include <assert.h>
 
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

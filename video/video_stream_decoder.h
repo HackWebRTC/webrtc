@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_VIDEO_STREAM_DECODER_H_
-#define WEBRTC_VIDEO_VIDEO_STREAM_DECODER_H_
+#ifndef VIDEO_VIDEO_STREAM_DECODER_H_
+#define VIDEO_VIDEO_STREAM_DECODER_H_
 
 #include <list>
 #include <map>
 #include <memory>
 #include <vector>
 
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/platform_thread.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/typedefs.h"
+#include "media/base/videosinkinterface.h"
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/platform_thread.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -102,4 +102,4 @@ class VideoStreamDecoder : public VCMReceiveCallback,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_VIDEO_STREAM_DECODER_H_
+#endif  // VIDEO_VIDEO_STREAM_DECODER_H_

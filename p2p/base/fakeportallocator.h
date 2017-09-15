@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_FAKEPORTALLOCATOR_H_
-#define WEBRTC_P2P_BASE_FAKEPORTALLOCATOR_H_
+#ifndef P2P_BASE_FAKEPORTALLOCATOR_H_
+#define P2P_BASE_FAKEPORTALLOCATOR_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/portallocator.h"
-#include "webrtc/p2p/base/udpport.h"
-#include "webrtc/rtc_base/nethelpers.h"
+#include "p2p/base/basicpacketsocketfactory.h"
+#include "p2p/base/portallocator.h"
+#include "p2p/base/udpport.h"
+#include "rtc_base/nethelpers.h"
 
 namespace rtc {
 class SocketFactory;
@@ -250,4 +250,4 @@ class FakePortAllocator : public cricket::PortAllocator {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_FAKEPORTALLOCATOR_H_
+#endif  // P2P_BASE_FAKEPORTALLOCATOR_H_

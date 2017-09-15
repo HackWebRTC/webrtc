@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/file_player.h"
+#include "voice_engine/file_player.h"
 
-#include "webrtc/common_audio/resampler/include/resampler.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/media_file/media_file.h"
-#include "webrtc/modules/media_file/media_file_defines.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/typedefs.h"
-#include "webrtc/voice_engine/coder.h"
+#include "common_audio/resampler/include/resampler.h"
+#include "common_types.h"
+#include "modules/media_file/media_file.h"
+#include "modules/media_file/media_file_defines.h"
+#include "rtc_base/logging.h"
+#include "typedefs.h"
+#include "voice_engine/coder.h"
 
 namespace webrtc {
 

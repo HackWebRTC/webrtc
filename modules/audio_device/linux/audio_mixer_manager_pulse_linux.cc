@@ -10,9 +10,9 @@
 
 #include <assert.h>
 
-#include "webrtc/modules/audio_device/linux/audio_mixer_manager_pulse_linux.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/audio_device/linux/audio_mixer_manager_pulse_linux.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 extern webrtc::adm_linux_pulse::PulseAudioSymbolTable PaSymbolTable;
 

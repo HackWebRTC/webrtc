@@ -10,14 +10,14 @@
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/httpcommon-inl.h"
+#include "rtc_base/httpcommon-inl.h"
 
-#include "webrtc/rtc_base/asyncsocket.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/httpserver.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/socketstream.h"
-#include "webrtc/rtc_base/thread.h"
+#include "rtc_base/asyncsocket.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/httpserver.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/socketstream.h"
+#include "rtc_base/thread.h"
 
 namespace rtc {
 

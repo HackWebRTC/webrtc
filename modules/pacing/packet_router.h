@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_PACING_PACKET_ROUTER_H_
-#define WEBRTC_MODULES_PACING_PACKET_ROUTER_H_
+#ifndef MODULES_PACING_PACKET_ROUTER_H_
+#define MODULES_PACING_PACKET_ROUTER_H_
 
 #include <list>
 #include <vector>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/race_checker.h"
-#include "webrtc/rtc_base/thread_annotations.h"
+#include "common_types.h"
+#include "modules/pacing/paced_sender.h"
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/race_checker.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -128,4 +128,4 @@ class PacketRouter : public PacedSender::PacketSender,
   RTC_DISALLOW_COPY_AND_ASSIGN(PacketRouter);
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_PACING_PACKET_ROUTER_H_
+#endif  // MODULES_PACING_PACKET_ROUTER_H_

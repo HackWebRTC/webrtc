@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "modules/audio_coding/neteq/audio_decoder_impl.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -17,23 +17,23 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/audio_codecs/opus/audio_encoder_opus.h"
-#include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
-#include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
-#include "webrtc/modules/audio_coding/codecs/g722/audio_decoder_g722.h"
-#include "webrtc/modules/audio_coding/codecs/g722/audio_encoder_g722.h"
-#include "webrtc/modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
-#include "webrtc/modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_decoder_isac.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
-#include "webrtc/modules/audio_coding/codecs/opus/audio_decoder_opus.h"
-#include "webrtc/modules/audio_coding/codecs/pcm16b/audio_decoder_pcm16b.h"
-#include "webrtc/modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
-#include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "api/audio_codecs/opus/audio_encoder_opus.h"
+#include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
+#include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
+#include "modules/audio_coding/codecs/g722/audio_decoder_g722.h"
+#include "modules/audio_coding/codecs/g722/audio_encoder_g722.h"
+#include "modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
+#include "modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
+#include "modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"
+#include "modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"
+#include "modules/audio_coding/codecs/isac/main/include/audio_decoder_isac.h"
+#include "modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
+#include "modules/audio_coding/codecs/opus/audio_decoder_opus.h"
+#include "modules/audio_coding/codecs/pcm16b/audio_decoder_pcm16b.h"
+#include "modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
+#include "modules/audio_coding/neteq/tools/resample_input_audio_file.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
 
 namespace webrtc {
 

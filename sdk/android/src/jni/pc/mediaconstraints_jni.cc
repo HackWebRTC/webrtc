@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/pc/mediaconstraints_jni.h"
+#include "sdk/android/src/jni/pc/mediaconstraints_jni.h"
 
 namespace webrtc {
 namespace jni {

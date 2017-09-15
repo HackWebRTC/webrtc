@@ -7,10 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_COMMON_HEADER_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_COMMON_HEADER_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_COMMON_HEADER_H_
+#define MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_COMMON_HEADER_H_
 
-#include "webrtc/rtc_base/basictypes.h"
+#include "rtc_base/basictypes.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -43,4 +43,4 @@ class CommonHeader {
 };
 }  // namespace rtcp
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_COMMON_HEADER_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_COMMON_HEADER_H_

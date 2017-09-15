@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_JSEPTRANSPORT_H_
-#define WEBRTC_P2P_BASE_JSEPTRANSPORT_H_
+#ifndef P2P_BASE_JSEPTRANSPORT_H_
+#define P2P_BASE_JSEPTRANSPORT_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/p2p/base/sessiondescription.h"
-#include "webrtc/p2p/base/transportinfo.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/messagequeue.h"
-#include "webrtc/rtc_base/rtccertificate.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
+#include "api/optional.h"
+#include "p2p/base/candidate.h"
+#include "p2p/base/p2pconstants.h"
+#include "p2p/base/sessiondescription.h"
+#include "p2p/base/transportinfo.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/sslstreamadapter.h"
 
 namespace cricket {
 
@@ -380,4 +380,4 @@ class JsepTransport : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_JSEPTRANSPORT_H_
+#endif  // P2P_BASE_JSEPTRANSPORT_H_

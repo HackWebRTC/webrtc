@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/fakewebrtccall.h"
+#include "media/engine/fakewebrtccall.h"
 
 #include <algorithm>
 #include <utility>
 
-#include "webrtc/api/call/audio_sink.h"
-#include "webrtc/media/base/rtputils.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/platform_file.h"
+#include "api/call/audio_sink.h"
+#include "media/base/rtputils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/platform_file.h"
 
 namespace cricket {
 FakeAudioSendStream::FakeAudioSendStream(

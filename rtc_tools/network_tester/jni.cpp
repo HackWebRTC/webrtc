@@ -13,7 +13,7 @@
 #define JNIEXPORT __attribute__((visibility("default")))
 #include <string>
 
-#include "webrtc/rtc_tools/network_tester/test_controller.h"
+#include "rtc_tools/network_tester/test_controller.h"
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_google_media_networktester_NetworkTester_CreateTestController(

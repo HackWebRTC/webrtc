@@ -12,17 +12,17 @@
 #include <memory>
 #include <set>
 
-#include "webrtc/p2p/base/dtlstransport.h"
-#include "webrtc/p2p/base/fakeicetransport.h"
-#include "webrtc/p2p/base/packettransportinternal.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/dscp.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/sslidentity.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "p2p/base/dtlstransport.h"
+#include "p2p/base/fakeicetransport.h"
+#include "p2p/base/packettransportinternal.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/dscp.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/ssladapter.h"
+#include "rtc_base/sslidentity.h"
+#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/stringutils.h"
 
 #define MAYBE_SKIP_TEST(feature)                              \
   if (!(rtc::SSLStreamAdapter::feature())) {                  \

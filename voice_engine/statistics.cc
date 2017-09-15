@@ -11,9 +11,9 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "webrtc/voice_engine/statistics.h"
+#include "voice_engine/statistics.h"
 
-#include "webrtc/system_wrappers/include/trace.h"
+#include "system_wrappers/include/trace.h"
 
 namespace webrtc {
 

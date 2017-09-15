@@ -11,11 +11,11 @@
 #include <algorithm>
 #include <limits>
 
-#include "webrtc/modules/video_coding/nack_module.h"
+#include "modules/video_coding/nack_module.h"
 
-#include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/utility/include/process_thread.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

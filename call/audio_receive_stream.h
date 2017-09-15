@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_AUDIO_RECEIVE_STREAM_H_
-#define WEBRTC_CALL_AUDIO_RECEIVE_STREAM_H_
+#ifndef CALL_AUDIO_RECEIVE_STREAM_H_
+#define CALL_AUDIO_RECEIVE_STREAM_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/audio_codecs/audio_decoder_factory.h"
-#include "webrtc/api/call/transport.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/call/rtp_config.h"
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/typedefs.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/call/transport.h"
+#include "api/optional.h"
+#include "api/rtpparameters.h"
+#include "api/rtpreceiverinterface.h"
+#include "call/rtp_config.h"
+#include "common_types.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "typedefs.h"
 
 namespace webrtc {
 class AudioSinkInterface;
@@ -155,4 +155,4 @@ class AudioReceiveStream {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_AUDIO_RECEIVE_STREAM_H_
+#endif  // CALL_AUDIO_RECEIVE_STREAM_H_

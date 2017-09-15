@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_PORTALLOCATOR_H_
-#define WEBRTC_P2P_BASE_PORTALLOCATOR_H_
+#ifndef P2P_BASE_PORTALLOCATOR_H_
+#define P2P_BASE_PORTALLOCATOR_H_
 
 #include <deque>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/portinterface.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/proxyinfo.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/thread.h"
+#include "p2p/base/port.h"
+#include "p2p/base/portinterface.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/proxyinfo.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 class MetricsObserverInterface;
@@ -510,4 +510,4 @@ class PortAllocator : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_PORTALLOCATOR_H_
+#endif  // P2P_BASE_PORTALLOCATOR_H_

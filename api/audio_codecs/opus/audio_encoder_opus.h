@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
-#define WEBRTC_API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
+#ifndef API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
+#define API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
 
-#include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
+#include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 
 namespace webrtc {
 
@@ -37,4 +37,4 @@ struct AudioEncoderOpus {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
+#endif  // API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_

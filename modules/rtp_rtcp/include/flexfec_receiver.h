@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_FLEXFEC_RECEIVER_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_FLEXFEC_RECEIVER_H_
+#ifndef MODULES_RTP_RTCP_INCLUDE_FLEXFEC_RECEIVER_H_
+#define MODULES_RTP_RTCP_INCLUDE_FLEXFEC_RECEIVER_H_
 
 #include <memory>
 
-#include "webrtc/modules/rtp_rtcp/include/ulpfec_receiver.h"
-#include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "modules/rtp_rtcp/include/ulpfec_receiver.h"
+#include "modules/rtp_rtcp/source/forward_error_correction.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -66,4 +66,4 @@ class FlexfecReceiver {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_FLEXFEC_RECEIVER_H_
+#endif  // MODULES_RTP_RTCP_INCLUDE_FLEXFEC_RECEIVER_H_

@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
+#include "modules/audio_coding/codecs/audio_format_conversion.h"
 
 #include <string.h>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/rtc_base/sanitizer.h"
+#include "api/array_view.h"
+#include "api/optional.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/safe_conversions.h"
+#include "rtc_base/sanitizer.h"
 
 namespace webrtc {
 

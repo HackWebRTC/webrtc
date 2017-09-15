@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_GUNIT_H_
-#define WEBRTC_RTC_BASE_GUNIT_H_
+#ifndef RTC_BASE_GUNIT_H_
+#define RTC_BASE_GUNIT_H_
 
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread.h"
+#include "rtc_base/fakeclock.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
 #if defined(GTEST_RELATIVE_PATH)
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 #else
 #include "testing/base/public/gunit.h"
 #endif
@@ -157,4 +157,4 @@
   } else                                                 \
     GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : ASSERT_EQ(v1, v2)
 
-#endif  // WEBRTC_RTC_BASE_GUNIT_H_
+#endif  // RTC_BASE_GUNIT_H_

@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_MONITOR_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_MONITOR_H_
+#ifndef MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_MONITOR_H_
+#define MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_MONITOR_H_
 
 #include <ApplicationServices/ApplicationServices.h>
 
 #include <memory>
 #include <set>
 
-#include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
+#include "modules/desktop_capture/mac/desktop_configuration.h"
+#include "rtc_base/constructormagic.h"
+#include "system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 
@@ -64,4 +64,4 @@ class DesktopConfigurationMonitor {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_MONITOR_H_
+#endif  // MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_MONITOR_H_

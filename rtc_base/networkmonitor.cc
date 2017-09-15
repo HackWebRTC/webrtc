@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/networkmonitor.h"
+#include "rtc_base/networkmonitor.h"
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace {
 const uint32_t UPDATE_NETWORKS_MESSAGE = 1;

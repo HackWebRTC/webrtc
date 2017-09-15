@@ -31,11 +31,11 @@
 //  netw->Release();
 //  VoiceEngine::Delete(voe);
 //
-#ifndef WEBRTC_VOICE_ENGINE_VOE_NETWORK_H
-#define WEBRTC_VOICE_ENGINE_VOE_NETWORK_H
+#ifndef VOICE_ENGINE_VOE_NETWORK_H_
+#define VOICE_ENGINE_VOE_NETWORK_H_
 
-#include "webrtc/api/call/transport.h"
-#include "webrtc/common_types.h"
+#include "api/call/transport.h"
+#include "common_types.h"
 
 namespace webrtc {
 
@@ -92,4 +92,4 @@ class WEBRTC_DLLEXPORT VoENetwork {
 
 }  // namespace webrtc
 
-#endif  //  WEBRTC_VOICE_ENGINE_VOE_NETWORK_H
+#endif  //  VOICE_ENGINE_VOE_NETWORK_H_

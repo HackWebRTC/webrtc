@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_VIDEO_CODECS_VIDEO_ENCODER_H_
-#define WEBRTC_API_VIDEO_CODECS_VIDEO_ENCODER_H_
+#ifndef API_VIDEO_CODECS_VIDEO_ENCODER_H_
+#define API_VIDEO_CODECS_VIDEO_ENCODER_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/include/video_frame.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "api/video/video_frame.h"
+#include "common_types.h"
+#include "common_video/include/video_frame.h"
+#include "rtc_base/checks.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -180,4 +180,4 @@ class VideoEncoder {
   virtual const char* ImplementationName() const;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_API_VIDEO_CODECS_VIDEO_ENCODER_H_
+#endif  // API_VIDEO_CODECS_VIDEO_ENCODER_H_

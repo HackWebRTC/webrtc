@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_PORT_H_
-#define WEBRTC_P2P_BASE_PORT_H_
+#ifndef P2P_BASE_PORT_H_
+#define P2P_BASE_PORT_H_
 
 #include <map>
 #include <memory>
@@ -17,23 +17,23 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/candidatepairinterface.h"
-#include "webrtc/p2p/base/jseptransport.h"
-#include "webrtc/p2p/base/packetlossestimator.h"
-#include "webrtc/p2p/base/packetsocketfactory.h"
-#include "webrtc/p2p/base/portinterface.h"
-#include "webrtc/p2p/base/stun.h"
-#include "webrtc/p2p/base/stunrequest.h"
-#include "webrtc/rtc_base/asyncpacketsocket.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/proxyinfo.h"
-#include "webrtc/rtc_base/ratetracker.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/thread.h"
+#include "api/optional.h"
+#include "p2p/base/candidate.h"
+#include "p2p/base/candidatepairinterface.h"
+#include "p2p/base/jseptransport.h"
+#include "p2p/base/packetlossestimator.h"
+#include "p2p/base/packetsocketfactory.h"
+#include "p2p/base/portinterface.h"
+#include "p2p/base/stun.h"
+#include "p2p/base/stunrequest.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/network.h"
+#include "rtc_base/proxyinfo.h"
+#include "rtc_base/ratetracker.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/thread.h"
 
 namespace cricket {
 
@@ -754,4 +754,4 @@ class ProxyConnection : public Connection {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_PORT_H_
+#endif  // P2P_BASE_PORT_H_

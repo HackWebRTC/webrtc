@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/fallback_desktop_capturer_wrapper.h"
+#include "modules/desktop_capture/fallback_desktop_capturer_wrapper.h"
 
 #include <utility>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "rtc_base/checks.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 

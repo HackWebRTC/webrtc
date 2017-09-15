@@ -8,30 +8,30 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "modules/audio_coding/neteq/audio_decoder_impl.h"
 
 #include <assert.h>
 
-#include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
+#include "rtc_base/checks.h"
 #ifdef WEBRTC_CODEC_G722
-#include "webrtc/modules/audio_coding/codecs/g722/audio_decoder_g722.h"
+#include "modules/audio_coding/codecs/g722/audio_decoder_g722.h"
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-#include "webrtc/modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
+#include "modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"  // nogncheck
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"  // nogncheck
+#include "modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"  // nogncheck
+#include "modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"  // nogncheck
 #endif
 #ifdef WEBRTC_CODEC_ISAC
-#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_decoder_isac.h"  // nogncheck
-#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"  // nogncheck
+#include "modules/audio_coding/codecs/isac/main/include/audio_decoder_isac.h"  // nogncheck
+#include "modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"  // nogncheck
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-#include "webrtc/modules/audio_coding/codecs/opus/audio_decoder_opus.h"
+#include "modules/audio_coding/codecs/opus/audio_decoder_opus.h"
 #endif
-#include "webrtc/modules/audio_coding/codecs/pcm16b/audio_decoder_pcm16b.h"
+#include "modules/audio_coding/codecs/pcm16b/audio_decoder_pcm16b.h"
 
 namespace webrtc {
 

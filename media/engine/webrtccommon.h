@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_WEBRTCCOMMON_H_
-#define WEBRTC_MEDIA_ENGINE_WEBRTCCOMMON_H_
+#ifndef MEDIA_ENGINE_WEBRTCCOMMON_H_
+#define MEDIA_ENGINE_WEBRTCCOMMON_H_
 
-#include "webrtc/common_types.h"
+#include "common_types.h"
 
 namespace cricket {
 
@@ -55,4 +55,4 @@ namespace cricket {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_ENGINE_WEBRTCCOMMON_H_
+#endif  // MEDIA_ENGINE_WEBRTCCOMMON_H_

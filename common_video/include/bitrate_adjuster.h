@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_COMMON_VIDEO_INCLUDE_BITRATE_ADJUSTER_H_
-#define WEBRTC_COMMON_VIDEO_INCLUDE_BITRATE_ADJUSTER_H_
+#ifndef COMMON_VIDEO_INCLUDE_BITRATE_ADJUSTER_H_
+#define COMMON_VIDEO_INCLUDE_BITRATE_ADJUSTER_H_
 
 #include <functional>
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/rate_statistics.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/rate_statistics.h"
 
 namespace webrtc {
 
@@ -87,4 +87,4 @@ class BitrateAdjuster {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_COMMON_VIDEO_INCLUDE_BITRATE_ADJUSTER_H_
+#endif  // COMMON_VIDEO_INCLUDE_BITRATE_ADJUSTER_H_

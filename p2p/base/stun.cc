@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/stun.h"
+#include "p2p/base/stun.h"
 
 #include <string.h>
 
 #include <memory>
 
-#include "webrtc/rtc_base/byteorder.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/crc32.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/messagedigest.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/stringencode.h"
+#include "rtc_base/byteorder.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/crc32.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/messagedigest.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/stringencode.h"
 
 using rtc::ByteBufferReader;
 using rtc::ByteBufferWriter;

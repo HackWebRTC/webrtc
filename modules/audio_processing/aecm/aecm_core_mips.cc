@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aecm/aecm_core.h"
+#include "modules/audio_processing/aecm/aecm_core.h"
 
-#include "webrtc/modules/audio_processing/aecm/echo_control_mobile.h"
-#include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_processing/aecm/echo_control_mobile.h"
+#include "modules/audio_processing/utility/delay_estimator_wrapper.h"
+#include "rtc_base/checks.h"
 
 static const ALIGN8_BEG int16_t WebRtcAecm_kSqrtHanning[] ALIGN8_END = {
   0, 399, 798, 1196, 1594, 1990, 2386, 2780, 3172,

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_STRINGUTILS_H_
-#define WEBRTC_RTC_BASE_STRINGUTILS_H_
+#ifndef RTC_BASE_STRINGUTILS_H_
+#define RTC_BASE_STRINGUTILS_H_
 
 #include <ctype.h>
 #include <stdarg.h>
@@ -313,4 +313,4 @@ std::string string_trim(const std::string& s);
 
 }  // namespace rtc
 
-#endif // WEBRTC_RTC_BASE_STRINGUTILS_H_
+#endif // RTC_BASE_STRINGUTILS_H_

@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_mixer/sine_wave_generator.h"
+#include "modules/audio_mixer/sine_wave_generator.h"
 
 #include <math.h>
 
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "rtc_base/safe_conversions.h"
 
 namespace webrtc {
 

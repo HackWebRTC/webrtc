@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/echo_remover_metrics.h"
+#include "modules/audio_processing/aec3/echo_remover_metrics.h"
 
 #include <math.h>
 
-#include "webrtc/modules/audio_processing/aec3/aec_state.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
-#include "webrtc/test/gtest.h"
+#include "modules/audio_processing/aec3/aec_state.h"
+#include "modules/audio_processing/aec3/aec3_fft.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

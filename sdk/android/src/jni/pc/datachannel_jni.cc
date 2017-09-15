@@ -10,9 +10,9 @@
 
 #include <memory>
 
-#include "webrtc/api/datachannelinterface.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/sdk/android/src/jni/pc/datachannelobserver_jni.h"
+#include "api/datachannelinterface.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/pc/datachannelobserver_jni.h"
 
 namespace webrtc {
 namespace jni {

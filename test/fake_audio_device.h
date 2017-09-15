@@ -7,20 +7,20 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_TEST_FAKE_AUDIO_DEVICE_H_
-#define WEBRTC_TEST_FAKE_AUDIO_DEVICE_H_
+#ifndef TEST_FAKE_AUDIO_DEVICE_H_
+#define TEST_FAKE_AUDIO_DEVICE_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/modules/audio_device/include/fake_audio_device.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/platform_thread.h"
-#include "webrtc/typedefs.h"
+#include "api/array_view.h"
+#include "modules/audio_device/include/fake_audio_device.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/event.h"
+#include "rtc_base/platform_thread.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -141,4 +141,4 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_FAKE_AUDIO_DEVICE_H_
+#endif  // TEST_FAKE_AUDIO_DEVICE_H_

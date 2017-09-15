@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/dtmfsender.h"
+#include "pc/dtmfsender.h"
 
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "webrtc/pc/audiotrack.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "pc/audiotrack.h"
+#include "rtc_base/fakeclock.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/timeutils.h"
 
 using webrtc::AudioTrackInterface;
 using webrtc::AudioTrack;

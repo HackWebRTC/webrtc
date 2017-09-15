@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/audio_converter.h"
+#include "common_audio/audio_converter.h"
 
 #include <cstring>
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "webrtc/common_audio/channel_buffer.h"
-#include "webrtc/common_audio/resampler/push_sinc_resampler.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions.h"
+#include "common_audio/channel_buffer.h"
+#include "common_audio/resampler/push_sinc_resampler.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/safe_conversions.h"
 
 using rtc::checked_cast;
 

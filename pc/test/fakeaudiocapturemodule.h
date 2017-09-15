@@ -17,17 +17,17 @@
 // Note P postfix of a function indicates that it should only be called by the
 // processing thread.
 
-#ifndef WEBRTC_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
-#define WEBRTC_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#ifndef PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#define PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
 
 #include <memory>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/messagehandler.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "common_types.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace rtc {
 class Thread;
@@ -254,4 +254,4 @@ class FakeAudioCaptureModule
   rtc::CriticalSection crit_callback_;
 };
 
-#endif  // WEBRTC_PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#endif  // PC_TEST_FAKEAUDIOCAPTUREMODULE_H_

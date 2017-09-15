@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_VOICE_ENGINE_IMPL_H
-#define WEBRTC_VOICE_ENGINE_VOICE_ENGINE_IMPL_H
+#ifndef VOICE_ENGINE_VOICE_ENGINE_IMPL_H_
+#define VOICE_ENGINE_VOICE_ENGINE_IMPL_H_
 
 #include <memory>
 
-#include "webrtc/system_wrappers/include/atomic32.h"
-#include "webrtc/typedefs.h"
-#include "webrtc/voice_engine/voe_base_impl.h"
-#include "webrtc/voice_engine/voe_codec_impl.h"
-#include "webrtc/voice_engine/voe_file_impl.h"
-#include "webrtc/voice_engine/voe_network_impl.h"
-#include "webrtc/voice_engine/voe_rtp_rtcp_impl.h"
+#include "system_wrappers/include/atomic32.h"
+#include "typedefs.h"
+#include "voice_engine/voe_base_impl.h"
+#include "voice_engine/voe_codec_impl.h"
+#include "voice_engine/voe_file_impl.h"
+#include "voice_engine/voe_network_impl.h"
+#include "voice_engine/voe_rtp_rtcp_impl.h"
 
 namespace webrtc {
 namespace voe {
@@ -61,4 +61,4 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_VOICE_ENGINE_IMPL_H
+#endif  // VOICE_ENGINE_VOICE_ENGINE_IMPL_H_

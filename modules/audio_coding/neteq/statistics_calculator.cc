@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/statistics_calculator.h"
+#include "modules/audio_coding/neteq/statistics_calculator.h"
 
 #include <assert.h>
 #include <string.h>  // memset
 #include <algorithm>
 
-#include "webrtc/modules/audio_coding/neteq/decision_logic.h"
-#include "webrtc/modules/audio_coding/neteq/delay_manager.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/safe_conversions.h"
-#include "webrtc/system_wrappers/include/metrics.h"
+#include "modules/audio_coding/neteq/decision_logic.h"
+#include "modules/audio_coding/neteq/delay_manager.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/safe_conversions.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 

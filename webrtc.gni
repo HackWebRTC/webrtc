@@ -205,7 +205,7 @@ rtc_desktop_capture_supported = is_win || is_mac || (is_linux && use_x11)
 # Templates
 #
 
-# Points to //webrtc/ in webrtc stand-alone or to //third_party/webrtc/ in
+# Points to // in webrtc stand-alone or to //third_party/webrtc/ in
 # chromium.
 # We need absolute paths for all configs in templates as they are shared in
 # different subdirectories.

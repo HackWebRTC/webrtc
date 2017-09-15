@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_STATISTICS_H
-#define WEBRTC_VOICE_ENGINE_STATISTICS_H
+#ifndef VOICE_ENGINE_STATISTICS_H_
+#define VOICE_ENGINE_STATISTICS_H_
 
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/typedefs.h"
-#include "webrtc/voice_engine/include/voe_errors.h"
-#include "webrtc/voice_engine/voice_engine_defines.h"
+#include "common_types.h"
+#include "rtc_base/criticalsection.h"
+#include "typedefs.h"
+#include "voice_engine/include/voe_errors.h"
+#include "voice_engine/voice_engine_defines.h"
 
 namespace webrtc {
 namespace voe {
@@ -49,4 +49,4 @@ class Statistics
 
 }  // namespace webrtc
 
-#endif // WEBRTC_VOICE_ENGINE_STATISTICS_H
+#endif // VOICE_ENGINE_STATISTICS_H_

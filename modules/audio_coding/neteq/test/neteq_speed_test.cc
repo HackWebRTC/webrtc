@@ -12,10 +12,10 @@
 
 #include <iostream>
 
-#include "webrtc/modules/audio_coding/neteq/tools/neteq_performance_test.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_coding/neteq/tools/neteq_performance_test.h"
+#include "rtc_base/flags.h"
+#include "test/testsupport/fileutils.h"
+#include "typedefs.h"
 
 // Define command line flags.
 DEFINE_int(runtime_ms, 10000, "Simulated runtime in ms.");

@@ -11,18 +11,18 @@
 // This file contains interfaces for RtpReceivers
 // http://w3c.github.io/webrtc-pc/#rtcrtpreceiver-interface
 
-#ifndef WEBRTC_API_RTPRECEIVERINTERFACE_H_
-#define WEBRTC_API_RTPRECEIVERINTERFACE_H_
+#ifndef API_RTPRECEIVERINTERFACE_H_
+#define API_RTPRECEIVERINTERFACE_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/mediatypes.h"
-#include "webrtc/api/proxy.h"
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/rtc_base/refcount.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
+#include "api/mediastreaminterface.h"
+#include "api/mediatypes.h"
+#include "api/proxy.h"
+#include "api/rtpparameters.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
@@ -140,4 +140,4 @@ BEGIN_SIGNALING_PROXY_MAP(RtpReceiver)
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_RTPRECEIVERINTERFACE_H_
+#endif  // API_RTPRECEIVERINTERFACE_H_

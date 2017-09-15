@@ -10,16 +10,16 @@
 
 #include <memory>
 
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/media/base/fakemediaengine.h"
-#include "webrtc/media/base/fakevideocapturer.h"
-#include "webrtc/media/base/testutils.h"
-#include "webrtc/media/engine/fakewebrtccall.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
-#include "webrtc/pc/channelmanager.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/base/fakemediaengine.h"
+#include "media/base/fakevideocapturer.h"
+#include "media/base/testutils.h"
+#include "media/engine/fakewebrtccall.h"
+#include "p2p/base/faketransportcontroller.h"
+#include "pc/channelmanager.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
 
 namespace {
 const bool kDefaultSrtpRequired = true;

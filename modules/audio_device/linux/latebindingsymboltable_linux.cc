@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_device/linux/latebindingsymboltable_linux.h"
+#include "modules/audio_device/linux/latebindingsymboltable_linux.h"
 
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/logging.h"
 
 #ifdef WEBRTC_LINUX
 #include <dlfcn.h>

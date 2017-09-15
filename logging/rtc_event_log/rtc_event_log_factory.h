@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_FACTORY_H_
-#define WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_FACTORY_H_
+#ifndef LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_FACTORY_H_
+#define LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_FACTORY_H_
 
 #include <memory>
 
-#include "webrtc/logging/rtc_event_log/rtc_event_log_factory_interface.h"
+#include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 
 namespace webrtc {
 
@@ -27,4 +27,4 @@ class RtcEventLogFactory : public RtcEventLogFactoryInterface {
 std::unique_ptr<RtcEventLogFactoryInterface> CreateRtcEventLogFactory();
 }  // namespace webrtc
 
-#endif  // WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_FACTORY_H_
+#endif  // LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_FACTORY_H_

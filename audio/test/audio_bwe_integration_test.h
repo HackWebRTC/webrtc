@@ -7,15 +7,15 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_AUDIO_TEST_AUDIO_BWE_INTEGRATION_TEST_H_
-#define WEBRTC_AUDIO_TEST_AUDIO_BWE_INTEGRATION_TEST_H_
+#ifndef AUDIO_TEST_AUDIO_BWE_INTEGRATION_TEST_H_
+#define AUDIO_TEST_AUDIO_BWE_INTEGRATION_TEST_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/test/call_test.h"
-#include "webrtc/test/fake_audio_device.h"
-#include "webrtc/test/single_threaded_task_queue.h"
+#include "test/call_test.h"
+#include "test/fake_audio_device.h"
+#include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
 namespace test {
@@ -54,4 +54,4 @@ class AudioBweTest : public test::EndToEndTest {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_TEST_AUDIO_BWE_INTEGRATION_TEST_H_
+#endif  // AUDIO_TEST_AUDIO_BWE_INTEGRATION_TEST_H_

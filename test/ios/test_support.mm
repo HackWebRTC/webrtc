@@ -10,9 +10,9 @@
 
 #import <UIKit/UIKit.h>
 
-#include "webrtc/test/ios/test_support.h"
+#include "test/ios/test_support.h"
 
-#import "webrtc/sdk/objc/Framework/Classes/Common/RTCUIApplicationStatusObserver.h"
+#import "sdk/objc/Framework/Classes/Common/RTCUIApplicationStatusObserver.h"
 
 // Springboard will kill any iOS app that fails to check in after launch within
 // a given time. Starting a UIApplication before invoking TestSuite::Run

@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/videodecodersoftwarefallbackwrapper.h"
-#include "webrtc/api/video_codecs/video_decoder.h"
-#include "webrtc/modules/video_coding/include/video_error_codes.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/test/gtest.h"
+#include "media/engine/videodecodersoftwarefallbackwrapper.h"
+#include "api/video_codecs/video_decoder.h"
+#include "modules/video_coding/include/video_error_codes.h"
+#include "rtc_base/checks.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

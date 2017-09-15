@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_HTTPCOMMON_INL_H_
-#define WEBRTC_RTC_BASE_HTTPCOMMON_INL_H_
+#ifndef RTC_BASE_HTTPCOMMON_INL_H_
+#define RTC_BASE_HTTPCOMMON_INL_H_
 
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/httpcommon.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/httpcommon.h"
 
 namespace rtc {
 
@@ -129,4 +129,4 @@ bool Url<CTYPE>::get_attribute(const string& name, string* value) const {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_HTTPCOMMON_INL_H_
+#endif  // RTC_BASE_HTTPCOMMON_INL_H_

@@ -13,12 +13,12 @@
 #include <set>
 #include <utility>
 
-#include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/modules/video_coding/frame_object.h"
-#include "webrtc/modules/video_coding/packet_buffer.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/gtest.h"
+#include "common_video/h264/h264_common.h"
+#include "modules/video_coding/frame_object.h"
+#include "modules/video_coding/packet_buffer.h"
+#include "rtc_base/random.h"
+#include "system_wrappers/include/clock.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace video_coding {

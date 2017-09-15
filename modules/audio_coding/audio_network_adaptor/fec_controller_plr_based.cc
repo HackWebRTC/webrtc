@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_plr_based.h"
+#include "modules/audio_coding/audio_network_adaptor/fec_controller_plr_based.h"
 
 #include <limits>
 #include <utility>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "rtc_base/checks.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 

@@ -7,17 +7,17 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_TEST_VCM_CAPTURER_H_
-#define WEBRTC_TEST_VCM_CAPTURER_H_
+#ifndef TEST_VCM_CAPTURER_H_
+#define TEST_VCM_CAPTURER_H_
 
 #include <memory>
 
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_capture/video_capture.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/test/video_capturer.h"
+#include "common_types.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_capture/video_capture.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "test/video_capturer.h"
 
 namespace webrtc {
 namespace test {
@@ -58,4 +58,4 @@ class VcmCapturer
 }  // test
 }  // webrtc
 
-#endif  // WEBRTC_TEST_VCM_CAPTURER_H_
+#endif  // TEST_VCM_CAPTURER_H_

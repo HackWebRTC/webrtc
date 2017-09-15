@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/h264_sps_pps_tracker.h"
+#include "modules/video_coding/h264_sps_pps_tracker.h"
 
 #include <vector>
 
-#include "webrtc/modules/video_coding/packet.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/common_video/h264/h264_common.h"
+#include "modules/video_coding/packet.h"
+#include "test/gtest.h"
+#include "common_video/h264/h264_common.h"
 
 namespace webrtc {
 namespace video_coding {

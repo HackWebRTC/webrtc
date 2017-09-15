@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_
 
-#include "webrtc/modules/audio_processing/aec3/block_framer.h"
-#include "webrtc/modules/audio_processing/aec3/block_processor.h"
-#include "webrtc/modules/audio_processing/aec3/cascaded_biquad_filter.h"
-#include "webrtc/modules/audio_processing/aec3/frame_blocker.h"
-#include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/race_checker.h"
-#include "webrtc/rtc_base/swap_queue.h"
+#include "modules/audio_processing/aec3/block_framer.h"
+#include "modules/audio_processing/aec3/block_processor.h"
+#include "modules/audio_processing/aec3/cascaded_biquad_filter.h"
+#include "modules/audio_processing/aec3/frame_blocker.h"
+#include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/race_checker.h"
+#include "rtc_base/swap_queue.h"
 
 namespace webrtc {
 
@@ -135,4 +135,4 @@ class EchoCanceller3 {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_

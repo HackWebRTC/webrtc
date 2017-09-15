@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_VOE_BASE_IMPL_H
-#define WEBRTC_VOICE_ENGINE_VOE_BASE_IMPL_H
+#ifndef VOICE_ENGINE_VOE_BASE_IMPL_H_
+#define VOICE_ENGINE_VOE_BASE_IMPL_H_
 
-#include "webrtc/voice_engine/include/voe_base.h"
+#include "voice_engine/include/voe_base.h"
 
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/voice_engine/shared_data.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/criticalsection.h"
+#include "voice_engine/shared_data.h"
 
 namespace webrtc {
 
@@ -124,4 +124,4 @@ class VoEBaseImpl : public VoEBase,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_VOE_BASE_IMPL_H
+#endif  // VOICE_ENGINE_VOE_BASE_IMPL_H_

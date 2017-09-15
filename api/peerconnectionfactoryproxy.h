@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_PEERCONNECTIONFACTORYPROXY_H_
-#define WEBRTC_API_PEERCONNECTIONFACTORYPROXY_H_
+#ifndef API_PEERCONNECTIONFACTORYPROXY_H_
+#define API_PEERCONNECTIONFACTORYPROXY_H_
 
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/api/proxy.h"
-#include "webrtc/rtc_base/bind.h"
+#include "api/peerconnectioninterface.h"
+#include "api/proxy.h"
+#include "rtc_base/bind.h"
 
 namespace webrtc {
 
@@ -75,4 +75,4 @@ END_PROXY_MAP()
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_PEERCONNECTIONFACTORYPROXY_H_
+#endif  // API_PEERCONNECTIONFACTORYPROXY_H_

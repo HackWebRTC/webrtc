@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/audio_codecs/isac/audio_decoder_isac_fix.h"
+#include "api/audio_codecs/isac/audio_decoder_isac_fix.h"
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"
-#include "webrtc/rtc_base/ptr_util.h"
+#include "common_types.h"
+#include "modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 

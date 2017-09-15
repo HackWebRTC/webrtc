@@ -11,12 +11,12 @@
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/pacing/mock/mock_paced_sender.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/test/gtest.h"
+#include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
+#include "modules/bitrate_controller/include/bitrate_controller.h"
+#include "modules/pacing/mock/mock_paced_sender.h"
+#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "test/field_trial.h"
+#include "test/gtest.h"
 
 using ::testing::Exactly;
 using ::testing::Return;

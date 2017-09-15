@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/engine/scopedvideodecoder.h"
+#include "media/engine/scopedvideodecoder.h"
 
 #include <vector>
 
-#include "webrtc/api/video_codecs/video_decoder.h"
+#include "api/video_codecs/video_decoder.h"
 
 namespace cricket {
 

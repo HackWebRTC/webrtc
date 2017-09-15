@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/memory_usage.h"
+#include "rtc_base/memory_usage.h"
 
 #if defined(WEBRTC_LINUX)
 #include <unistd.h>
@@ -22,7 +22,7 @@
 #include <psapi.h>
 #endif
 
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/logging.h"
 
 namespace rtc {
 

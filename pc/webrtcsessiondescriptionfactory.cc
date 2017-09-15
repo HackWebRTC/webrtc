@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/webrtcsessiondescriptionfactory.h"
+#include "pc/webrtcsessiondescriptionfactory.h"
 
 #include <utility>
 
-#include "webrtc/api/jsep.h"
-#include "webrtc/api/jsepsessiondescription.h"
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/pc/webrtcsession.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/sslidentity.h"
+#include "api/jsep.h"
+#include "api/jsepsessiondescription.h"
+#include "api/mediaconstraintsinterface.h"
+#include "pc/webrtcsession.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/sslidentity.h"
 
 using cricket::MediaSessionOptions;
 

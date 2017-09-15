@@ -12,11 +12,11 @@
 #include <stdio.h>
 #include <random>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/nullsocketserver.h"
-#include "webrtc/rtc_base/ptr_util.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/nullsocketserver.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/thread.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

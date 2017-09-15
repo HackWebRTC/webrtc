@@ -10,13 +10,13 @@
 
 // Implementation file of class VideoCapturer.
 
-#include "webrtc/media/base/videocapturer.h"
+#include "media/base/videocapturer.h"
 
 #include <algorithm>
 
-#include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/rtc_base/logging.h"
+#include "api/video/i420_buffer.h"
+#include "api/video/video_frame.h"
+#include "rtc_base/logging.h"
 
 namespace cricket {
 

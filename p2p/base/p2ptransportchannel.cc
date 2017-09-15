@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/p2ptransportchannel.h"
+#include "p2p/base/p2ptransportchannel.h"
 
 #include <algorithm>
 #include <iterator>
 #include <set>
 
-#include "webrtc/api/umametrics.h"
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/candidatepairinterface.h"
-#include "webrtc/p2p/base/common.h"
-#include "webrtc/p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
-#include "webrtc/p2p/base/stunport.h"   // For STUN_PORT_TYPE.
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/crc32.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
+#include "api/umametrics.h"
+#include "p2p/base/candidate.h"
+#include "p2p/base/candidatepairinterface.h"
+#include "p2p/base/common.h"
+#include "p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
+#include "p2p/base/stunport.h"   // For STUN_PORT_TYPE.
+#include "rtc_base/checks.h"
+#include "rtc_base/crc32.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace {
 

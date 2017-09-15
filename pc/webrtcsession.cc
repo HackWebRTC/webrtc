@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/webrtcsession.h"
+#include "pc/webrtcsession.h"
 
 #include <limits.h>
 
@@ -17,29 +17,29 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/api/call/audio_sink.h"
-#include "webrtc/api/jsepicecandidate.h"
-#include "webrtc/api/jsepsessiondescription.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/call/call.h"
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/media/sctp/sctptransportinternal.h"
-#include "webrtc/p2p/base/portallocator.h"
-#include "webrtc/pc/channel.h"
-#include "webrtc/pc/channelmanager.h"
-#include "webrtc/pc/mediasession.h"
-#include "webrtc/pc/sctputils.h"
-#include "webrtc/pc/webrtcsessiondescriptionfactory.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/helpers.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/stringutils.h"
+#include "api/call/audio_sink.h"
+#include "api/jsepicecandidate.h"
+#include "api/jsepsessiondescription.h"
+#include "api/peerconnectioninterface.h"
+#include "call/call.h"
+#include "media/base/mediaconstants.h"
+#include "media/sctp/sctptransportinternal.h"
+#include "p2p/base/portallocator.h"
+#include "pc/channel.h"
+#include "pc/channelmanager.h"
+#include "pc/mediasession.h"
+#include "pc/sctputils.h"
+#include "pc/webrtcsessiondescriptionfactory.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/stringutils.h"
 
 #ifdef HAVE_QUIC
-#include "webrtc/p2p/quic/quictransportchannel.h"
+#include "p2p/quic/quictransportchannel.h"
 #endif  // HAVE_QUIC
 
 using cricket::ContentInfo;

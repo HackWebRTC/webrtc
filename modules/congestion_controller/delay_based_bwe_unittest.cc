@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/congestion_controller/delay_based_bwe.h"
-#include "webrtc/modules/congestion_controller/delay_based_bwe_unittest_helper.h"
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/test/gtest.h"
+#include "modules/congestion_controller/delay_based_bwe.h"
+#include "modules/congestion_controller/delay_based_bwe_unittest_helper.h"
+#include "modules/pacing/paced_sender.h"
+#include "rtc_base/constructormagic.h"
+#include "system_wrappers/include/clock.h"
+#include "test/field_trial.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
+#include "modules/desktop_capture/win/window_capture_utils.h"
 
-#include "webrtc/modules/desktop_capture/win/scoped_gdi_object.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/win32.h"
+#include "modules/desktop_capture/win/scoped_gdi_object.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/win32.h"
 
 namespace webrtc {
 

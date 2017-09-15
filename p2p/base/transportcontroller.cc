@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/transportcontroller.h"
+#include "p2p/base/transportcontroller.h"
 
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/thread.h"
+#include "p2p/base/port.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/thread.h"
 
 namespace {
 

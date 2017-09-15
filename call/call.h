@@ -7,26 +7,26 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_CALL_CALL_H_
-#define WEBRTC_CALL_CALL_H_
+#ifndef CALL_CALL_H_
+#define CALL_CALL_H_
 
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/api/rtcerror.h"
-#include "webrtc/call/audio_receive_stream.h"
-#include "webrtc/call/audio_send_stream.h"
-#include "webrtc/call/audio_state.h"
-#include "webrtc/call/flexfec_receive_stream.h"
-#include "webrtc/call/rtp_transport_controller_send_interface.h"
-#include "webrtc/call/video_receive_stream.h"
-#include "webrtc/call/video_send_stream.h"
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/networkroute.h"
-#include "webrtc/rtc_base/platform_file.h"
-#include "webrtc/rtc_base/socket.h"
+#include "api/rtcerror.h"
+#include "call/audio_receive_stream.h"
+#include "call/audio_send_stream.h"
+#include "call/audio_state.h"
+#include "call/flexfec_receive_stream.h"
+#include "call/rtp_transport_controller_send_interface.h"
+#include "call/video_receive_stream.h"
+#include "call/video_send_stream.h"
+#include "common_types.h"
+#include "rtc_base/networkroute.h"
+#include "rtc_base/platform_file.h"
+#include "rtc_base/socket.h"
 
 namespace webrtc {
 
@@ -204,4 +204,4 @@ class Call {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_CALL_H_
+#endif  // CALL_CALL_H_

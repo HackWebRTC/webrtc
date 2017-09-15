@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/media/base/videoadapter.h"
+#include "media/base/videoadapter.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
 
-#include "webrtc/api/optional.h"
-#include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/media/base/videocommon.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "api/optional.h"
+#include "media/base/mediaconstants.h"
+#include "media/base/videocommon.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace {
 struct Fraction {

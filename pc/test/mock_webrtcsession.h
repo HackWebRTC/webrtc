@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_TEST_MOCK_WEBRTCSESSION_H_
-#define WEBRTC_PC_TEST_MOCK_WEBRTCSESSION_H_
+#ifndef PC_TEST_MOCK_WEBRTCSESSION_H_
+#define PC_TEST_MOCK_WEBRTCSESSION_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/pc/webrtcsession.h"
-#include "webrtc/media/sctp/sctptransportinternal.h"
-#include "webrtc/test/gmock.h"
+#include "pc/webrtcsession.h"
+#include "media/sctp/sctptransportinternal.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 
@@ -69,4 +69,4 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_TEST_MOCK_WEBRTCSESSION_H_
+#endif  // PC_TEST_MOCK_WEBRTCSESSION_H_

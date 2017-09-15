@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_TOOLS_NETWORK_TESTER_PACKET_SENDER_H_
-#define WEBRTC_RTC_TOOLS_NETWORK_TESTER_PACKET_SENDER_H_
+#ifndef RTC_TOOLS_NETWORK_TESTER_PACKET_SENDER_H_
+#define RTC_TOOLS_NETWORK_TESTER_PACKET_SENDER_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/ignore_wundef.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/rtc_base/task_queue.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/ignore_wundef.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/task_queue.h"
 
 #ifdef WEBRTC_NETWORK_TESTER_PROTO
 RTC_PUSH_IGNORING_WUNDEF()
-#include "webrtc/rtc_tools/network_tester/network_tester_packet.pb.h"
+#include "rtc_tools/network_tester/network_tester_packet.pb.h"
 RTC_POP_IGNORING_WUNDEF()
 using webrtc::network_tester::packet::NetworkTesterPacket;
 #else
@@ -62,4 +62,4 @@ class PacketSender {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_RTC_TOOLS_NETWORK_TESTER_PACKET_SENDER_H_
+#endif  // RTC_TOOLS_NETWORK_TESTER_PACKET_SENDER_H_

@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_device/android/audio_manager.h"
+#include "modules/audio_device/android/audio_manager.h"
 
 #include <utility>
 
 #include <android/log.h>
 
-#include "webrtc/modules/audio_device/android/audio_common.h"
-#include "webrtc/modules/utility/include/helpers_android.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_device/android/audio_common.h"
+#include "modules/utility/include/helpers_android.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
 
 #define TAG "AudioManager"
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)

@@ -10,11 +10,11 @@
 
 #include <jni.h>
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
+#include "api/mediastreaminterface.h"
+#include "rtc_base/logging.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/native_handle_impl.h"
 
 namespace webrtc {
 namespace jni {

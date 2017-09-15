@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
+#define MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
 
 #include <deque>
 #include <string>
 
-#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_coding/neteq/include/neteq.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -182,4 +182,4 @@ class StatisticsCalculator {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
+#endif  // MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_

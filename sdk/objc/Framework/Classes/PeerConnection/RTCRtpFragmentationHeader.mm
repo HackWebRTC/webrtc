@@ -10,7 +10,7 @@
 
 #import "WebRTC/RTCVideoCodec.h"
 
-#include "webrtc/modules/include/module_common_types.h"
+#include "modules/include/module_common_types.h"
 
 @implementation RTCRtpFragmentationHeader
 

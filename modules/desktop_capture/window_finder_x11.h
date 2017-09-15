@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_FINDER_X11_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_FINDER_X11_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WINDOW_FINDER_X11_H_
+#define MODULES_DESKTOP_CAPTURE_WINDOW_FINDER_X11_H_
 
-#include "webrtc/modules/desktop_capture/window_finder.h"
+#include "modules/desktop_capture/window_finder.h"
 
 namespace webrtc {
 
@@ -32,4 +32,4 @@ class WindowFinderX11 final : public WindowFinder {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_FINDER_X11_H_
+#endif  // MODULES_DESKTOP_CAPTURE_WINDOW_FINDER_X11_H_

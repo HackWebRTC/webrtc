@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_TOOLS_NETWORK_TESTER_TEST_CONTROLLER_H_
-#define WEBRTC_RTC_TOOLS_NETWORK_TESTER_TEST_CONTROLLER_H_
+#ifndef RTC_TOOLS_NETWORK_TESTER_TEST_CONTROLLER_H_
+#define RTC_TOOLS_NETWORK_TESTER_TEST_CONTROLLER_H_
 
 #include <array>
 #include <limits>
@@ -17,16 +17,16 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/udptransport.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/ignore_wundef.h"
-#include "webrtc/rtc_tools/network_tester/packet_logger.h"
-#include "webrtc/rtc_tools/network_tester/packet_sender.h"
+#include "p2p/base/basicpacketsocketfactory.h"
+#include "p2p/base/udptransport.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/ignore_wundef.h"
+#include "rtc_tools/network_tester/packet_logger.h"
+#include "rtc_tools/network_tester/packet_sender.h"
 
 #ifdef WEBRTC_NETWORK_TESTER_PROTO
 RTC_PUSH_IGNORING_WUNDEF()
-#include "webrtc/rtc_tools/network_tester/network_tester_packet.pb.h"
+#include "rtc_tools/network_tester/network_tester_packet.pb.h"
 RTC_POP_IGNORING_WUNDEF()
 using webrtc::network_tester::packet::NetworkTesterPacket;
 #else
@@ -78,4 +78,4 @@ class TestController : public sigslot::has_slots<> {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_RTC_TOOLS_NETWORK_TESTER_TEST_CONTROLLER_H_
+#endif  // RTC_TOOLS_NETWORK_TESTER_TEST_CONTROLLER_H_

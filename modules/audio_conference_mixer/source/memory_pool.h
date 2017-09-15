@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_H_
-#define WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_H_
+#ifndef MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_H_
+#define MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_H_
 
 #include <assert.h>
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 #ifdef _WIN32
-#include "webrtc/modules/audio_conference_mixer/source/memory_pool_win.h"
+#include "modules/audio_conference_mixer/source/memory_pool_win.h"
 #else
-#include "webrtc/modules/audio_conference_mixer/source/memory_pool_posix.h"
+#include "modules/audio_conference_mixer/source/memory_pool_posix.h"
 #endif
 
 namespace webrtc {
@@ -119,4 +119,4 @@ int32_t MemoryPool<MemoryType>::PushMemory(MemoryType*& memory)
 }
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_H_
+#endif // MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_MEMORY_POOL_H_

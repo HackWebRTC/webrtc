@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/test/androidtestinitializer.h"
+#include "pc/test/androidtestinitializer.h"
 
 #include <pthread.h>
 
-#include "webrtc/rtc_base/ignore_wundef.h"
+#include "rtc_base/ignore_wundef.h"
 
 // Note: this dependency is dangerous since it reaches into Chromium's base.
 // There's a risk of e.g. macro clashes. This file may only be used in tests.
@@ -22,9 +22,9 @@ RTC_PUSH_IGNORING_WUNDEF()
 #include "base/android/jni_android.h"
 RTC_POP_IGNORING_WUNDEF()
 
-#include "webrtc/modules/utility/include/jvm_android.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/ssladapter.h"
+#include "modules/utility/include/jvm_android.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ssladapter.h"
 
 namespace webrtc {
 

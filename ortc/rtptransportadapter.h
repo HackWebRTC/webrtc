@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_ORTC_RTPTRANSPORTADAPTER_H_
-#define WEBRTC_ORTC_RTPTRANSPORTADAPTER_H_
+#ifndef ORTC_RTPTRANSPORTADAPTER_H_
+#define ORTC_RTPTRANSPORTADAPTER_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/ortc/srtptransportinterface.h"
-#include "webrtc/api/rtcerror.h"
-#include "webrtc/media/base/streamparams.h"
-#include "webrtc/ortc/rtptransportcontrolleradapter.h"
-#include "webrtc/pc/channel.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/sigslot.h"
+#include "api/ortc/srtptransportinterface.h"
+#include "api/rtcerror.h"
+#include "media/base/streamparams.h"
+#include "ortc/rtptransportcontrolleradapter.h"
+#include "pc/channel.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/sigslot.h"
 
 namespace webrtc {
 
@@ -106,4 +106,4 @@ class RtpTransportAdapter : public SrtpTransportInterface {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_ORTC_RTPTRANSPORTADAPTER_H_
+#endif  // ORTC_RTPTRANSPORTADAPTER_H_

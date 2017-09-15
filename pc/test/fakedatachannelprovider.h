@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_TEST_FAKEDATACHANNELPROVIDER_H_
-#define WEBRTC_PC_TEST_FAKEDATACHANNELPROVIDER_H_
+#ifndef PC_TEST_FAKEDATACHANNELPROVIDER_H_
+#define PC_TEST_FAKEDATACHANNELPROVIDER_H_
 
-#include "webrtc/pc/datachannel.h"
-#include "webrtc/rtc_base/checks.h"
+#include "pc/datachannel.h"
+#include "rtc_base/checks.h"
 
 class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
  public:
@@ -145,4 +145,4 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   std::set<uint32_t> send_ssrcs_;
   std::set<uint32_t> recv_ssrcs_;
 };
-#endif  // WEBRTC_PC_TEST_FAKEDATACHANNELPROVIDER_H_
+#endif  // PC_TEST_FAKEDATACHANNELPROVIDER_H_

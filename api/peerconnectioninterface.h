@@ -64,37 +64,37 @@
 // 7. Once a candidate has been gathered, the PeerConnection will call the
 // observer function OnIceCandidate. Send these candidates to the remote peer.
 
-#ifndef WEBRTC_API_PEERCONNECTIONINTERFACE_H_
-#define WEBRTC_API_PEERCONNECTIONINTERFACE_H_
+#ifndef API_PEERCONNECTIONINTERFACE_H_
+#define API_PEERCONNECTIONINTERFACE_H_
 
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "webrtc/api/audio_codecs/audio_decoder_factory.h"
-#include "webrtc/api/audio_codecs/audio_encoder_factory.h"
-#include "webrtc/api/datachannelinterface.h"
-#include "webrtc/api/dtmfsenderinterface.h"
-#include "webrtc/api/jsep.h"
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/rtcerror.h"
-#include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/api/rtpsenderinterface.h"
-#include "webrtc/api/stats/rtcstatscollectorcallback.h"
-#include "webrtc/api/statstypes.h"
-#include "webrtc/api/umametrics.h"
-#include "webrtc/call/callfactoryinterface.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log_factory_interface.h"
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/videocapturer.h"
-#include "webrtc/p2p/base/portallocator.h"
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/rtccertificate.h"
-#include "webrtc/rtc_base/rtccertificategenerator.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/datachannelinterface.h"
+#include "api/dtmfsenderinterface.h"
+#include "api/jsep.h"
+#include "api/mediastreaminterface.h"
+#include "api/rtcerror.h"
+#include "api/rtpreceiverinterface.h"
+#include "api/rtpsenderinterface.h"
+#include "api/stats/rtcstatscollectorcallback.h"
+#include "api/statstypes.h"
+#include "api/umametrics.h"
+#include "call/callfactoryinterface.h"
+#include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
+#include "media/base/mediachannel.h"
+#include "media/base/videocapturer.h"
+#include "p2p/base/portallocator.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/network.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/rtccertificategenerator.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/sslstreamadapter.h"
 
 namespace rtc {
 class SSLIdentity;
@@ -1224,4 +1224,4 @@ CreateModularPeerConnectionFactory(
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_PEERCONNECTIONINTERFACE_H_
+#endif  // API_PEERCONNECTIONINTERFACE_H_

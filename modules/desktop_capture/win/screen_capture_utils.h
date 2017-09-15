@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_
 
 #include <vector>
 #include <string>
 
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/desktop_capturer.h"
 
 namespace webrtc {
 
@@ -44,4 +44,4 @@ DesktopRect GetScreenRect(DesktopCapturer::SourceId screen,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_
+#endif  // MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_

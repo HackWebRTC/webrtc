@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_VOE_ERRORS_H
-#define WEBRTC_VOICE_ENGINE_VOE_ERRORS_H
+#ifndef VOICE_ENGINE_VOE_ERRORS_H_
+#define VOICE_ENGINE_VOE_ERRORS_H_
 
 // Warnings
 #define VE_PORT_NOT_DEFINED 8001
@@ -162,4 +162,4 @@
 // Warnings for other platforms (reserved range 8061-8080)
 #define VE_IGNORED_FUNCTION 8061
 
-#endif  //  WEBRTC_VOICE_ENGINE_VOE_ERRORS_H
+#endif  //  VOICE_ENGINE_VOE_ERRORS_H_

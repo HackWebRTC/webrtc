@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
+#define MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
 
 #include <stdlib.h>
 
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/test/testsupport/packet_reader.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/criticalsection.h"
+#include "test/testsupport/packet_reader.h"
 
 namespace webrtc {
 namespace test {
@@ -112,4 +112,4 @@ class PacketManipulatorImpl : public PacketManipulator {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_

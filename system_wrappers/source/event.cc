@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "system_wrappers/include/event_wrapper.h"
 
 #if defined(_WIN32)
 #include <windows.h>
-#include "webrtc/system_wrappers/source/event_timer_win.h"
+#include "system_wrappers/source/event_timer_win.h"
 #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <ApplicationServices/ApplicationServices.h>
 #include <pthread.h>
-#include "webrtc/system_wrappers/source/event_timer_posix.h"
+#include "system_wrappers/source/event_timer_posix.h"
 #else
 #include <pthread.h>
-#include "webrtc/system_wrappers/source/event_timer_posix.h"
+#include "system_wrappers/source/event_timer_posix.h"
 #endif
 
-#include "webrtc/rtc_base/event.h"
+#include "rtc_base/event.h"
 
 namespace webrtc {
 

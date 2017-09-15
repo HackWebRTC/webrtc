@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_MIXER_MANAGER_ALSA_LINUX_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_MIXER_MANAGER_ALSA_LINUX_H
+#ifndef AUDIO_DEVICE_AUDIO_MIXER_MANAGER_ALSA_LINUX_H_
+#define AUDIO_DEVICE_AUDIO_MIXER_MANAGER_ALSA_LINUX_H_
 
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/modules/audio_device/linux/alsasymboltable_linux.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_device/linux/alsasymboltable_linux.h"
+#include "rtc_base/criticalsection.h"
+#include "typedefs.h"
 
 #include <alsa/asoundlib.h>
 

@@ -11,8 +11,8 @@
 #include <algorithm>
 #include <limits>
 
-#include "webrtc/rtc_base/safe_minmax.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/safe_minmax.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

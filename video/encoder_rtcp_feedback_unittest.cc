@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/encoder_rtcp_feedback.h"
+#include "video/encoder_rtcp_feedback.h"
 
 #include <memory>
 
-#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/video/send_statistics_proxy.h"
-#include "webrtc/video/video_stream_encoder.h"
+#include "modules/utility/include/mock/mock_process_thread.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
+#include "video/send_statistics_proxy.h"
+#include "video/video_stream_encoder.h"
 
 using ::testing::NiceMock;
 

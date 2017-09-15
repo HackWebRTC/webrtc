@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/audio/test/audio_end_to_end_test.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "audio/test/audio_end_to_end_test.h"
+#include "rtc_base/flags.h"
+#include "system_wrappers/include/sleep.h"
+#include "test/testsupport/fileutils.h"
 
 DEFINE_int(sample_rate_hz, 16000,
            "Sample rate (Hz) of the produced audio files.");

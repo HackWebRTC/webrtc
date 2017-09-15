@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/externalhmac.h"
+#include "pc/externalhmac.h"
 
 #include <stdlib.h>  // For malloc/free.
 
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/logging.h"
 
 #include "third_party/libsrtp/crypto/include/crypto_kernel.h"
 #include "third_party/libsrtp/include/srtp.h"

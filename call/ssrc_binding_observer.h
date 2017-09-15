@@ -7,12 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_CALL_SSRC_BINDING_OBSERVER_H_
-#define WEBRTC_CALL_SSRC_BINDING_OBSERVER_H_
+#ifndef CALL_SSRC_BINDING_OBSERVER_H_
+#define CALL_SSRC_BINDING_OBSERVER_H_
 
 #include <string>
 
-#include "webrtc/rtc_base/basictypes.h"
+#include "rtc_base/basictypes.h"
 
 namespace webrtc {
 
@@ -39,4 +39,4 @@ class SsrcBindingObserver {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_SSRC_BINDING_OBSERVER_H_
+#endif  // CALL_SSRC_BINDING_OBSERVER_H_

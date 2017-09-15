@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC2_GAIN_CONTROLLER2_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC2_GAIN_CONTROLLER2_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC2_GAIN_CONTROLLER2_H_
+#define MODULES_AUDIO_PROCESSING_AGC2_GAIN_CONTROLLER2_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/modules/audio_processing/agc2/digital_gain_applier.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "modules/audio_processing/agc2/digital_gain_applier.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -53,4 +53,4 @@ class GainController2 {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC2_GAIN_CONTROLLER2_H_
+#endif  // MODULES_AUDIO_PROCESSING_AGC2_GAIN_CONTROLLER2_H_

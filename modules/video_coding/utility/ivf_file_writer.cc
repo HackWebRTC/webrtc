@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
+#include "modules/video_coding/utility/ivf_file_writer.h"
 
 #include <string>
 #include <utility>
 
-#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/rtp_rtcp/source/byte_io.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 // TODO(palmkvist): make logging more informative in the absence of a file name
 // (or get one)

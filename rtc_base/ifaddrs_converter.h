@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_IFADDRS_CONVERTER_H_
-#define WEBRTC_RTC_BASE_IFADDRS_CONVERTER_H_
+#ifndef RTC_BASE_IFADDRS_CONVERTER_H_
+#define RTC_BASE_IFADDRS_CONVERTER_H_
 
 #if defined(WEBRTC_ANDROID)
-#include "webrtc/rtc_base/ifaddrs-android.h"
+#include "rtc_base/ifaddrs-android.h"
 #else
 #include <ifaddrs.h>
 #endif  // WEBRTC_ANDROID
 
-#include "webrtc/rtc_base/ipaddress.h"
+#include "rtc_base/ipaddress.h"
 
 namespace rtc {
 
@@ -42,4 +42,4 @@ IfAddrsConverter* CreateIfAddrsConverter();
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_IFADDRS_CONVERTER_H_
+#endif  // RTC_BASE_IFADDRS_CONVERTER_H_

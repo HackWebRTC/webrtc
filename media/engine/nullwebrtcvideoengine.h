@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_NULLWEBRTCVIDEOENGINE_H_
-#define WEBRTC_MEDIA_ENGINE_NULLWEBRTCVIDEOENGINE_H_
+#ifndef MEDIA_ENGINE_NULLWEBRTCVIDEOENGINE_H_
+#define MEDIA_ENGINE_NULLWEBRTCVIDEOENGINE_H_
 
 #include <vector>
 
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/mediaengine.h"
+#include "media/base/mediachannel.h"
+#include "media/base/mediaengine.h"
 
 namespace webrtc {
 
@@ -46,4 +46,4 @@ class NullWebRtcVideoEngine {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_ENGINE_NULLWEBRTCVIDEOENGINE_H_
+#endif  // MEDIA_ENGINE_NULLWEBRTCVIDEOENGINE_H_

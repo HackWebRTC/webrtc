@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/mac/window_list_utils.h"
+#include "modules/desktop_capture/mac/window_list_utils.h"
 
 #include <ApplicationServices/ApplicationServices.h>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/macutils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/macutils.h"
 
 static_assert(
     static_cast<webrtc::WindowId>(kCGNullWindowID) == webrtc::kNullWindowId,

@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec3/suppression_gain.h"
+#include "modules/audio_processing/aec3/suppression_gain.h"
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #include <emmintrin.h>
 #endif
@@ -19,8 +19,8 @@
 #include <functional>
 #include <numeric>
 
-#include "webrtc/modules/audio_processing/aec3/vector_math.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_processing/aec3/vector_math.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

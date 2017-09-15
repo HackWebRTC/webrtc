@@ -10,10 +10,10 @@
 
 #include <memory>
 
-#include "webrtc/p2p/quic/quicconnectionhelper.h"
+#include "p2p/quic/quicconnectionhelper.h"
 
 #include "net/quic/quic_time.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "rtc_base/gunit.h"
 
 using cricket::QuicAlarm;
 using cricket::QuicConnectionHelper;

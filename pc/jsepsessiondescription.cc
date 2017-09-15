@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/jsepsessiondescription.h"
+#include "api/jsepsessiondescription.h"
 
 #include <memory>
 
-#include "webrtc/pc/mediasession.h"
-#include "webrtc/pc/webrtcsdp.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/stringencode.h"
+#include "pc/mediasession.h"
+#include "pc/webrtcsdp.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/stringencode.h"
 
 using cricket::SessionDescription;
 

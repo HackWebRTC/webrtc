@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/ortc/testrtpparameters.h"
+#include "ortc/testrtpparameters.h"
 
 #include <algorithm>
 #include <utility>

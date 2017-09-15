@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "modules/audio_device/include/audio_device.h"
 
 using webrtc::AudioDeviceModule;
 

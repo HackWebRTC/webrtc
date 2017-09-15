@@ -9,9 +9,9 @@
  */
 
 
-#include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8_test_helper.h"
+#include "modules/rtp_rtcp/source/rtp_format_vp8_test_helper.h"
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

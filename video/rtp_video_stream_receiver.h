@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
-#define WEBRTC_VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
+#ifndef VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
+#define VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
 
 #include <list>
 #include <map>
@@ -17,23 +17,23 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/call/rtp_packet_sink_interface.h"
-#include "webrtc/call/video_receive_stream.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
-#include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/video_coding/h264_sps_pps_tracker.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_coding/packet_buffer.h"
-#include "webrtc/modules/video_coding/rtp_frame_reference_finder.h"
-#include "webrtc/modules/video_coding/sequence_number_util.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/typedefs.h"
+#include "call/rtp_packet_sink_interface.h"
+#include "call/video_receive_stream.h"
+#include "modules/include/module_common_types.h"
+#include "modules/rtp_rtcp/include/receive_statistics.h"
+#include "modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
+#include "modules/rtp_rtcp/include/rtp_payload_registry.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/video_coding/h264_sps_pps_tracker.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/packet_buffer.h"
+#include "modules/video_coding/rtp_frame_reference_finder.h"
+#include "modules/video_coding/sequence_number_util.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -215,4 +215,4 @@ class RtpVideoStreamReceiver : public RtpData,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
+#endif  // VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_

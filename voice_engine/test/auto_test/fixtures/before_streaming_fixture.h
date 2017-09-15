@@ -12,7 +12,7 @@
 #define SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_BEFORE_STREAMING_H_
 
 #include <string>
-#include "webrtc/voice_engine/test/auto_test/fixtures/after_initialization_fixture.h"
+#include "voice_engine/test/auto_test/fixtures/after_initialization_fixture.h"
 
 // This fixture will, in addition to the work done by its superclasses,
 // create a channel and prepare playing a file through the fake microphone

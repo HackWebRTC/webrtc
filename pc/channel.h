@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_CHANNEL_H_
-#define WEBRTC_PC_CHANNEL_H_
+#ifndef PC_CHANNEL_H_
+#define PC_CHANNEL_H_
 
 #include <map>
 #include <memory>
@@ -18,28 +18,28 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/api/call/audio_sink.h"
-#include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/mediaengine.h"
-#include "webrtc/media/base/streamparams.h"
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/media/base/videosourceinterface.h"
-#include "webrtc/p2p/base/dtlstransportinternal.h"
-#include "webrtc/p2p/base/packettransportinternal.h"
-#include "webrtc/p2p/base/transportcontroller.h"
-#include "webrtc/p2p/client/socketmonitor.h"
-#include "webrtc/pc/audiomonitor.h"
-#include "webrtc/pc/mediamonitor.h"
-#include "webrtc/pc/mediasession.h"
-#include "webrtc/pc/rtcpmuxfilter.h"
-#include "webrtc/pc/srtpfilter.h"
-#include "webrtc/rtc_base/asyncinvoker.h"
-#include "webrtc/rtc_base/asyncudpsocket.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/window.h"
+#include "api/call/audio_sink.h"
+#include "api/rtpreceiverinterface.h"
+#include "media/base/mediachannel.h"
+#include "media/base/mediaengine.h"
+#include "media/base/streamparams.h"
+#include "media/base/videosinkinterface.h"
+#include "media/base/videosourceinterface.h"
+#include "p2p/base/dtlstransportinternal.h"
+#include "p2p/base/packettransportinternal.h"
+#include "p2p/base/transportcontroller.h"
+#include "p2p/client/socketmonitor.h"
+#include "pc/audiomonitor.h"
+#include "pc/mediamonitor.h"
+#include "pc/mediasession.h"
+#include "pc/rtcpmuxfilter.h"
+#include "pc/srtpfilter.h"
+#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/asyncudpsocket.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/network.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/window.h"
 
 namespace webrtc {
 class AudioSinkInterface;
@@ -723,4 +723,4 @@ class RtpDataChannel : public BaseChannel {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_PC_CHANNEL_H_
+#endif  // PC_CHANNEL_H_

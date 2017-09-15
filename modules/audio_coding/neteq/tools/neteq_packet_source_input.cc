@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/tools/neteq_packet_source_input.h"
+#include "modules/audio_coding/neteq/tools/neteq_packet_source_input.h"
 
 #include <algorithm>
 #include <limits>
 
-#include "webrtc/modules/audio_coding/neteq/tools/rtc_event_log_source.h"
-#include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
-#include "webrtc/rtc_base/checks.h"
+#include "modules/audio_coding/neteq/tools/rtc_event_log_source.h"
+#include "modules/audio_coding/neteq/tools/rtp_file_source.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

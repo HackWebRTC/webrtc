@@ -12,20 +12,20 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/modules/audio_coding/test/APITest.h"
-#include "webrtc/modules/audio_coding/test/EncodeDecodeTest.h"
-#include "webrtc/modules/audio_coding/test/PacketLossTest.h"
-#include "webrtc/modules/audio_coding/test/TestAllCodecs.h"
-#include "webrtc/modules/audio_coding/test/TestRedFec.h"
-#include "webrtc/modules/audio_coding/test/TestStereo.h"
-#include "webrtc/modules/audio_coding/test/TestVADDTX.h"
-#include "webrtc/modules/audio_coding/test/TwoWayCommunication.h"
-#include "webrtc/modules/audio_coding/test/iSACTest.h"
-#include "webrtc/modules/audio_coding/test/opus_test.h"
-#include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "modules/audio_coding/include/audio_coding_module.h"
+#include "modules/audio_coding/test/APITest.h"
+#include "modules/audio_coding/test/EncodeDecodeTest.h"
+#include "modules/audio_coding/test/PacketLossTest.h"
+#include "modules/audio_coding/test/TestAllCodecs.h"
+#include "modules/audio_coding/test/TestRedFec.h"
+#include "modules/audio_coding/test/TestStereo.h"
+#include "modules/audio_coding/test/TestVADDTX.h"
+#include "modules/audio_coding/test/TwoWayCommunication.h"
+#include "modules/audio_coding/test/iSACTest.h"
+#include "modules/audio_coding/test/opus_test.h"
+#include "system_wrappers/include/trace.h"
+#include "test/gtest.h"
+#include "test/testsupport/fileutils.h"
 
 using webrtc::Trace;
 

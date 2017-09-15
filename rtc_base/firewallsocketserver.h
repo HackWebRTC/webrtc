@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_FIREWALLSOCKETSERVER_H_
-#define WEBRTC_RTC_BASE_FIREWALLSOCKETSERVER_H_
+#ifndef RTC_BASE_FIREWALLSOCKETSERVER_H_
+#define RTC_BASE_FIREWALLSOCKETSERVER_H_
 
 #include <vector>
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/socketserver.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/socketserver.h"
 
 namespace rtc {
 
@@ -122,4 +122,4 @@ class FirewallManager {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_FIREWALLSOCKETSERVER_H_
+#endif  // RTC_BASE_FIREWALLSOCKETSERVER_H_

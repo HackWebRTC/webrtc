@@ -1,4 +1,4 @@
 include_rules = [
-  "+webrtc/api",
-  "+webrtc/media",
+  "+api",
+  "+media",
 ]

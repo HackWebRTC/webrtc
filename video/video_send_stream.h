@@ -8,25 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
-#define WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
+#ifndef VIDEO_VIDEO_SEND_STREAM_H_
+#define VIDEO_VIDEO_SEND_STREAM_H_
 
 #include <map>
 #include <memory>
 #include <vector>
 
-#include "webrtc/call/bitrate_allocator.h"
-#include "webrtc/call/video_receive_stream.h"
-#include "webrtc/call/video_send_stream.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_coding/protection_bitrate_calculator.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/task_queue.h"
-#include "webrtc/video/encoder_rtcp_feedback.h"
-#include "webrtc/video/send_delay_stats.h"
-#include "webrtc/video/send_statistics_proxy.h"
-#include "webrtc/video/video_stream_encoder.h"
+#include "call/bitrate_allocator.h"
+#include "call/video_receive_stream.h"
+#include "call/video_send_stream.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_coding/protection_bitrate_calculator.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/event.h"
+#include "rtc_base/task_queue.h"
+#include "video/encoder_rtcp_feedback.h"
+#include "video/send_delay_stats.h"
+#include "video/send_statistics_proxy.h"
+#include "video/video_stream_encoder.h"
 
 namespace webrtc {
 
@@ -108,4 +108,4 @@ class VideoSendStream : public webrtc::VideoSendStream {
 }  // namespace internal
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
+#endif  // VIDEO_VIDEO_SEND_STREAM_H_

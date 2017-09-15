@@ -10,11 +10,11 @@
 
 #include <memory>
 
-#include "webrtc/audio/audio_state.h"
-#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
-#include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/mock_voice_engine.h"
+#include "audio/audio_state.h"
+#include "modules/audio_mixer/audio_mixer_impl.h"
+#include "modules/audio_processing/include/mock_audio_processing.h"
+#include "test/gtest.h"
+#include "test/mock_voice_engine.h"
 
 namespace webrtc {
 namespace test {

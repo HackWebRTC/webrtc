@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/utility/quality_scaler.h"
+#include "modules/video_coding/utility/quality_scaler.h"
 
 #include <math.h>
 
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/task_queue.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/task_queue.h"
 
 // TODO(kthelgason): Some versions of Android have issues with log2.
 // See https://code.google.com/p/android/issues/detail?id=212634 for details

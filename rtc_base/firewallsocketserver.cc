@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/firewallsocketserver.h"
+#include "rtc_base/firewallsocketserver.h"
 
 #include <algorithm>
 
-#include "webrtc/rtc_base/asyncsocket.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/asyncsocket.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace rtc {
 

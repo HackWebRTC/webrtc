@@ -10,11 +10,11 @@
 
 #include <memory>
 
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
-#include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/voice_engine/test/auto_test/fixtures/before_streaming_fixture.h"
+#include "modules/include/module_common_types.h"
+#include "modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "system_wrappers/include/atomic32.h"
+#include "system_wrappers/include/sleep.h"
+#include "voice_engine/test/auto_test/fixtures/before_streaming_fixture.h"
 
 using ::testing::_;
 using ::testing::AtLeast;

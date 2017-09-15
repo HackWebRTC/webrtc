@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/android/src/jni/pc/java_native_conversion.h"
+#include "sdk/android/src/jni/pc/java_native_conversion.h"
 
 #include <string>
 
-#include "webrtc/pc/webrtcsdp.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "pc/webrtcsdp.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
 namespace jni {

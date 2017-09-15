@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
+#define MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
 
 #include <memory>
 
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/random.h"
+#include "modules/include/module_common_types.h"
+#include "modules/rtp_rtcp/source/forward_error_correction.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/random.h"
 
 namespace webrtc {
 namespace test {
@@ -131,4 +131,4 @@ class UlpfecPacketGenerator : public AugmentedPacketGenerator {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_

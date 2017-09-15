@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_FILE_RECORDER_H_
-#define WEBRTC_VOICE_ENGINE_FILE_RECORDER_H_
+#ifndef VOICE_ENGINE_FILE_RECORDER_H_
+#define VOICE_ENGINE_FILE_RECORDER_H_
 
 #include <memory>
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/media_file/media_file_defines.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"
+#include "modules/include/module_common_types.h"
+#include "modules/media_file/media_file_defines.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -54,4 +54,4 @@ class FileRecorder {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_VOICE_ENGINE_FILE_RECORDER_H_
+#endif  // VOICE_ENGINE_FILE_RECORDER_H_

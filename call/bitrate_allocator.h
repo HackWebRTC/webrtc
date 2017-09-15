@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_BITRATE_ALLOCATOR_H_
-#define WEBRTC_CALL_BITRATE_ALLOCATOR_H_
+#ifndef CALL_BITRATE_ALLOCATOR_H_
+#define CALL_BITRATE_ALLOCATOR_H_
 
 #include <stdint.h>
 
@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/rtc_base/sequenced_task_checker.h"
+#include "rtc_base/sequenced_task_checker.h"
 
 namespace webrtc {
 
@@ -169,4 +169,4 @@ class BitrateAllocator {
   uint32_t total_requested_min_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
 };
 }  // namespace webrtc
-#endif  // WEBRTC_CALL_BITRATE_ALLOCATOR_H_
+#endif  // CALL_BITRATE_ALLOCATOR_H_

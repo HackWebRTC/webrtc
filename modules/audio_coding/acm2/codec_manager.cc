@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/acm2/codec_manager.h"
+#include "modules/audio_coding/acm2/codec_manager.h"
 
-#include "webrtc/rtc_base/checks.h"
-//#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/checks.h"
+//#include "rtc_base/format_macros.h"
+#include "modules/audio_coding/acm2/rent_a_codec.h"
+#include "rtc_base/logging.h"
+#include "typedefs.h"
 
 namespace webrtc {
 namespace acm2 {

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/channel_buffer.h"
-#include "webrtc/common_audio/include/audio_util.h"
-#include "webrtc/common_audio/wav_file.h"
-#include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
-#include "webrtc/modules/audio_processing/noise_suppression_impl.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/flags.h"
+#include "common_audio/channel_buffer.h"
+#include "common_audio/include/audio_util.h"
+#include "common_audio/wav_file.h"
+#include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/intelligibility/intelligibility_enhancer.h"
+#include "modules/audio_processing/noise_suppression_impl.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/flags.h"
 
 using std::complex;
 

@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_VIDEOTRACK_H_
-#define WEBRTC_PC_VIDEOTRACK_H_
+#ifndef PC_VIDEOTRACK_H_
+#define PC_VIDEOTRACK_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/media/base/videosourcebase.h"
-#include "webrtc/pc/mediastreamtrack.h"
-#include "webrtc/rtc_base/scoped_ref_ptr.h"
-#include "webrtc/rtc_base/thread_checker.h"
+#include "media/base/videosourcebase.h"
+#include "pc/mediastreamtrack.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 
@@ -60,4 +60,4 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_VIDEOTRACK_H_
+#endif  // PC_VIDEOTRACK_H_

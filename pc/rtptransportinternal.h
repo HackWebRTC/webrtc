@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_PC_RTPTRANSPORTINTERNAL_H_
-#define WEBRTC_PC_RTPTRANSPORTINTERNAL_H_
+#ifndef PC_RTPTRANSPORTINTERNAL_H_
+#define PC_RTPTRANSPORTINTERNAL_H_
 
-#include "webrtc/api/ortc/rtptransportinterface.h"
-#include "webrtc/rtc_base/sigslot.h"
+#include "api/ortc/rtptransportinterface.h"
+#include "rtc_base/sigslot.h"
 
 namespace rtc {
 class CopyOnWriteBuffer;
@@ -69,4 +69,4 @@ class RtpTransportInternal : public RtpTransportInterface,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_PC_RTPTRANSPORTINTERNAL_H_
+#endif  // PC_RTPTRANSPORTINTERNAL_H_

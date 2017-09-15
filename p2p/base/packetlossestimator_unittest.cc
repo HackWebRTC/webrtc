@@ -10,8 +10,8 @@
 
 #include <utility>
 
-#include "webrtc/p2p/base/packetlossestimator.h"
-#include "webrtc/rtc_base/gunit.h"
+#include "p2p/base/packetlossestimator.h"
+#include "rtc_base/gunit.h"
 
 using cricket::PacketLossEstimator;
 

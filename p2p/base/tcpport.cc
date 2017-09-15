@@ -64,11 +64,11 @@
  *
  */
 
-#include "webrtc/p2p/base/tcpport.h"
+#include "p2p/base/tcpport.h"
 
-#include "webrtc/p2p/base/common.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "p2p/base/common.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace cricket {
 

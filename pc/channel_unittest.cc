@@ -10,21 +10,21 @@
 
 #include <memory>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/media/base/fakemediaengine.h"
-#include "webrtc/media/base/fakertp.h"
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/testutils.h"
-#include "webrtc/p2p/base/fakecandidatepair.h"
-#include "webrtc/p2p/base/fakedtlstransport.h"
-#include "webrtc/p2p/base/fakepackettransport.h"
-#include "webrtc/pc/channel.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
+#include "api/array_view.h"
+#include "media/base/fakemediaengine.h"
+#include "media/base/fakertp.h"
+#include "media/base/mediachannel.h"
+#include "media/base/testutils.h"
+#include "p2p/base/fakecandidatepair.h"
+#include "p2p/base/fakedtlstransport.h"
+#include "p2p/base/fakepackettransport.h"
+#include "pc/channel.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/fakeclock.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/sslstreamadapter.h"
 
 using cricket::CA_OFFER;
 using cricket::CA_PRANSWER;

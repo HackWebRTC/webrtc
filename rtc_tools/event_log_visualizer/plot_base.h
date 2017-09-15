@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_BASE_H_
-#define WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_BASE_H_
+#ifndef RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_BASE_H_
+#define RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_BASE_H_
 
 #include <memory>
 #include <string>
@@ -164,4 +164,4 @@ class PlotCollection {
 }  // namespace plotting
 }  // namespace webrtc
 
-#endif  // WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_BASE_H_
+#endif  // RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_BASE_H_

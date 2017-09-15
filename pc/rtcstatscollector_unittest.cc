@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/rtcstatscollector.h"
+#include "pc/rtcstatscollector.h"
 
 #include <initializer_list>
 #include <memory>
@@ -16,32 +16,32 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/jsepsessiondescription.h"
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/api/stats/rtcstats_objects.h"
-#include "webrtc/api/stats/rtcstatsreport.h"
-#include "webrtc/api/test/mock_rtpreceiver.h"
-#include "webrtc/api/test/mock_rtpsender.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/media/base/fakemediaengine.h"
-#include "webrtc/media/base/test/mock_mediachannel.h"
-#include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/pc/mediastream.h"
-#include "webrtc/pc/mediastreamtrack.h"
-#include "webrtc/pc/test/mock_datachannel.h"
-#include "webrtc/pc/test/mock_peerconnection.h"
-#include "webrtc/pc/test/mock_webrtcsession.h"
-#include "webrtc/pc/test/rtcstatsobtainer.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/fakeclock.h"
-#include "webrtc/rtc_base/fakesslidentity.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/rtc_base/timedelta.h"
-#include "webrtc/rtc_base/timeutils.h"
+#include "api/jsepsessiondescription.h"
+#include "api/rtpparameters.h"
+#include "api/stats/rtcstats_objects.h"
+#include "api/stats/rtcstatsreport.h"
+#include "api/test/mock_rtpreceiver.h"
+#include "api/test/mock_rtpsender.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/base/fakemediaengine.h"
+#include "media/base/test/mock_mediachannel.h"
+#include "p2p/base/p2pconstants.h"
+#include "p2p/base/port.h"
+#include "pc/mediastream.h"
+#include "pc/mediastreamtrack.h"
+#include "pc/test/mock_datachannel.h"
+#include "pc/test/mock_peerconnection.h"
+#include "pc/test/mock_webrtcsession.h"
+#include "pc/test/rtcstatsobtainer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/fakeclock.h"
+#include "rtc_base/fakesslidentity.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/thread_checker.h"
+#include "rtc_base/timedelta.h"
+#include "rtc_base/timeutils.h"
 
 using testing::_;
 using testing::Invoke;

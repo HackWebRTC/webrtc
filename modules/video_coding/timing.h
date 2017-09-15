@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_TIMING_H_
-#define WEBRTC_MODULES_VIDEO_CODING_TIMING_H_
+#ifndef MODULES_VIDEO_CODING_TIMING_H_
+#define MODULES_VIDEO_CODING_TIMING_H_
 
 #include <memory>
 
-#include "webrtc/modules/video_coding/codec_timer.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/typedefs.h"
+#include "modules/video_coding/codec_timer.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -144,4 +144,4 @@ class VCMTiming {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_TIMING_H_
+#endif  // MODULES_VIDEO_CODING_TIMING_H_

@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
+#include "modules/audio_coding/neteq/timestamp_scaler.h"
 
-#include "webrtc/modules/audio_coding/neteq/decoder_database.h"
+#include "modules/audio_coding/neteq/decoder_database.h"
 
 namespace webrtc {
 

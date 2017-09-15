@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVOE_H_
-#define WEBRTC_MEDIA_ENGINE_WEBRTCVOE_H_
+#ifndef MEDIA_ENGINE_WEBRTCVOE_H_
+#define MEDIA_ENGINE_WEBRTCVOE_H_
 
 #include <memory>
 
-#include "webrtc/media/engine/webrtccommon.h"
+#include "media/engine/webrtccommon.h"
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/include/voe_codec.h"
-#include "webrtc/voice_engine/include/voe_errors.h"
+#include "common_types.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "voice_engine/include/voe_base.h"
+#include "voice_engine/include/voe_codec.h"
+#include "voice_engine/include/voe_errors.h"
 
 namespace cricket {
 // automatically handles lifetime of WebRtc VoiceEngine
@@ -91,4 +91,4 @@ class VoEWrapper {
 };
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_ENGINE_WEBRTCVOE_H_
+#endif  // MEDIA_ENGINE_WEBRTCVOE_H_

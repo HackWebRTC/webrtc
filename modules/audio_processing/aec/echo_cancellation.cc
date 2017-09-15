@@ -11,20 +11,20 @@
 /*
  * Contains the API functions for the AEC.
  */
-#include "webrtc/modules/audio_processing/aec/echo_cancellation.h"
+#include "modules/audio_processing/aec/echo_cancellation.h"
 
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
 extern "C" {
-#include "webrtc/common_audio/ring_buffer.h"
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_audio/ring_buffer.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 }
-#include "webrtc/modules/audio_processing/aec/aec_core.h"
-#include "webrtc/modules/audio_processing/aec/aec_resampler.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_processing/aec/aec_core.h"
+#include "modules/audio_processing/aec/aec_resampler.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "typedefs.h"
 
 namespace webrtc {
 

@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_QUIC_QUICTRANSPORT_H_
-#define WEBRTC_P2P_QUIC_QUICTRANSPORT_H_
+#ifndef P2P_QUIC_QUICTRANSPORT_H_
+#define P2P_QUIC_QUICTRANSPORT_H_
 
 #include <string>
 #include <map>
 #include <memory>
 
-#include "webrtc/p2p/base/jseptransport.h"
-#include "webrtc/p2p/quic/quictransportchannel.h"
+#include "p2p/base/jseptransport.h"
+#include "p2p/quic/quictransportchannel.h"
 
 namespace cricket {
 
@@ -65,4 +65,4 @@ class QuicTransport : public Transport {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_QUIC_QUICTRANSPORT_H_
+#endif  // P2P_QUIC_QUICTRANSPORT_H_

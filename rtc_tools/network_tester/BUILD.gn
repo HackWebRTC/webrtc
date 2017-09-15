@@ -14,14 +14,14 @@ if (rtc_enable_protobuf) {
     sources = [
       "network_tester_config.proto",
     ]
-    proto_out_dir = "webrtc/rtc_tools/network_tester"
+    proto_out_dir = "rtc_tools/network_tester"
   }
 
   proto_library("network_tester_packet_proto") {
     sources = [
       "network_tester_packet.proto",
     ]
-    proto_out_dir = "webrtc/rtc_tools/network_tester"
+    proto_out_dir = "rtc_tools/network_tester"
   }
 
   rtc_static_library("network_tester") {
@@ -56,8 +56,8 @@ if (rtc_enable_protobuf) {
   }
 
   network_tester_unittests_resources = [
-    "../../../resources/network_tester/client_config.dat",
-    "../../../resources/network_tester/server_config.dat",
+    "../../resources/network_tester/client_config.dat",
+    "../../resources/network_tester/server_config.dat",
   ]
 
   if (is_ios) {

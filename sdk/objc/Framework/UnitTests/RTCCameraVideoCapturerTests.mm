@@ -14,7 +14,7 @@
 #import <UIKit/UIKit.h>
 #endif
 
-#include "webrtc/rtc_base/gunit.h"
+#include "rtc_base/gunit.h"
 
 #import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCDispatcher.h>

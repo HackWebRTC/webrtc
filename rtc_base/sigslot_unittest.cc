@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/sigslot.h"
+#include "rtc_base/sigslot.h"
 
-#include "webrtc/rtc_base/gunit.h"
+#include "rtc_base/gunit.h"
 
 // This function, when passed a has_slots or signalx, will break the build if
 // its threading requirement is not single threaded

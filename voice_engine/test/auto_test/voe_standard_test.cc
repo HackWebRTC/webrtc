@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
+#include "voice_engine/test/auto_test/voe_standard_test.h"
 
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/typedefs.h"
-#include "webrtc/voice_engine/test/auto_test/automated_mode.h"
-#include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"
-#include "webrtc/voice_engine/voice_engine_defines.h"
+#include "rtc_base/flags.h"
+#include "system_wrappers/include/event_wrapper.h"
+#include "typedefs.h"
+#include "voice_engine/test/auto_test/automated_mode.h"
+#include "voice_engine/test/auto_test/voe_test_defines.h"
+#include "voice_engine/voice_engine_defines.h"
 
 DEFINE_bool(include_timing_dependent_tests, true,
             "If true, we will include tests / parts of tests that are known "

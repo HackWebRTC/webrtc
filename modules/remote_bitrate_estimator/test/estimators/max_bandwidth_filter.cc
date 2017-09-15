@@ -9,7 +9,7 @@
  *
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/test/estimators/max_bandwidth_filter.h"
+#include "modules/remote_bitrate_estimator/test/estimators/max_bandwidth_filter.h"
 
 namespace webrtc {
 namespace testing {

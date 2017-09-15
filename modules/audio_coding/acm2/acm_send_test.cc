@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/acm2/acm_send_test.h"
+#include "modules/audio_coding/acm2/acm_send_test.h"
 
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "webrtc/api/audio_codecs/audio_encoder.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
-#include "webrtc/modules/audio_coding/neteq/tools/packet.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/test/gtest.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "modules/audio_coding/include/audio_coding_module.h"
+#include "modules/audio_coding/neteq/tools/input_audio_file.h"
+#include "modules/audio_coding/neteq/tools/packet.h"
+#include "rtc_base/checks.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace test {

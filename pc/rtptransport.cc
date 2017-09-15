@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/rtptransport.h"
+#include "pc/rtptransport.h"
 
-#include "webrtc/media/base/rtputils.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/copyonwritebuffer.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "media/base/rtputils.h"
+#include "p2p/base/packettransportinterface.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 

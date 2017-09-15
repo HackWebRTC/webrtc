@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_
-#define WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_
+#ifndef LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_
+#define LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
 // TODO(eladalon): Get rid of this later in the CL-stack.
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/common_types.h"
+#include "api/rtpparameters.h"
+#include "common_types.h"
 // TODO(eladalon): Get rid of this later in the CL-stack.
-#include "webrtc/logging/rtc_event_log/rtc_stream_config.h"
-#include "webrtc/rtc_base/platform_file.h"
+#include "logging/rtc_event_log/rtc_stream_config.h"
+#include "rtc_base/platform_file.h"
 
 namespace webrtc {
 
@@ -203,4 +203,4 @@ class RtcEventLogNullImpl : public RtcEventLog {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_
+#endif  // LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_

@@ -11,15 +11,15 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/ipaddress.h"
-#include "webrtc/rtc_base/socketstream.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/sslidentity.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
-#include "webrtc/rtc_base/stream.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/virtualsocketserver.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/ipaddress.h"
+#include "rtc_base/socketstream.h"
+#include "rtc_base/ssladapter.h"
+#include "rtc_base/sslidentity.h"
+#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/stream.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/virtualsocketserver.h"
 
 static const int kTimeout = 5000;
 

@@ -7,19 +7,19 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_TEST_DIRECT_TRANSPORT_H_
-#define WEBRTC_TEST_DIRECT_TRANSPORT_H_
+#ifndef TEST_DIRECT_TRANSPORT_H_
+#define TEST_DIRECT_TRANSPORT_H_
 
 #include <assert.h>
 
 #include <memory>
 
-#include "webrtc/api/call/transport.h"
-#include "webrtc/call/call.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/rtc_base/thread_annotations.h"
-#include "webrtc/test/fake_network_pipe.h"
-#include "webrtc/test/single_threaded_task_queue.h"
+#include "api/call/transport.h"
+#include "call/call.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/thread_annotations.h"
+#include "test/fake_network_pipe.h"
+#include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
 
@@ -79,4 +79,4 @@ class DirectTransport : public Transport {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_DIRECT_TRANSPORT_H_
+#endif  // TEST_DIRECT_TRANSPORT_H_

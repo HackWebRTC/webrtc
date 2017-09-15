@@ -12,9 +12,9 @@
 
 #import "WebRTC/RTCVideoCodecH264.h"
 
-#include "webrtc/common_video/include/video_frame.h"
-#include "webrtc/media/base/codec.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "common_video/include/video_frame.h"
+#include "media/base/codec.h"
+#include "modules/video_coding/include/video_codec_interface.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

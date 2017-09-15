@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_POSIX_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_POSIX_H_
+#ifndef SYSTEM_WRAPPERS_SOURCE_TRACE_POSIX_H_
+#define SYSTEM_WRAPPERS_SOURCE_TRACE_POSIX_H_
 
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/system_wrappers/source/trace_impl.h"
+#include "rtc_base/criticalsection.h"
+#include "system_wrappers/source/trace_impl.h"
 
 namespace webrtc {
 
@@ -36,4 +36,4 @@ class TracePosix : public TraceImpl {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_POSIX_H_
+#endif  // SYSTEM_WRAPPERS_SOURCE_TRACE_POSIX_H_

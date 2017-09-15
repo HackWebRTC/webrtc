@@ -7,14 +7,14 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PROTOBUF_H_
-#define WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PROTOBUF_H_
+#ifndef RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PROTOBUF_H_
+#define RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PROTOBUF_H_
 
-#include "webrtc/rtc_base/ignore_wundef.h"
+#include "rtc_base/ignore_wundef.h"
 RTC_PUSH_IGNORING_WUNDEF()
-#include "webrtc/rtc_tools/event_log_visualizer/chart.pb.h"
+#include "rtc_tools/event_log_visualizer/chart.pb.h"
 RTC_POP_IGNORING_WUNDEF()
-#include "webrtc/rtc_tools/event_log_visualizer/plot_base.h"
+#include "rtc_tools/event_log_visualizer/plot_base.h"
 
 namespace webrtc {
 namespace plotting {
@@ -39,4 +39,4 @@ class ProtobufPlotCollection final : public PlotCollection {
 }  // namespace plotting
 }  // namespace webrtc
 
-#endif  // WEBRTC_RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PROTOBUF_H_
+#endif  // RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PROTOBUF_H_

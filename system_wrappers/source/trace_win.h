@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_WIN_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_WIN_H_
+#ifndef SYSTEM_WRAPPERS_SOURCE_TRACE_WIN_H_
+#define SYSTEM_WRAPPERS_SOURCE_TRACE_WIN_H_
 
 #include <stdio.h>
 #include <windows.h>
 
-#include "webrtc/system_wrappers/source/trace_impl.h"
+#include "system_wrappers/source/trace_impl.h"
 
 namespace webrtc {
 
@@ -33,4 +33,4 @@ class TraceWindows : public TraceImpl {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_WIN_H_
+#endif  // SYSTEM_WRAPPERS_SOURCE_TRACE_WIN_H_

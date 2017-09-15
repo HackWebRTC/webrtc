@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_RTC_BASE_PROXYSERVER_H_
-#define WEBRTC_RTC_BASE_PROXYSERVER_H_
+#ifndef RTC_BASE_PROXYSERVER_H_
+#define RTC_BASE_PROXYSERVER_H_
 
 #include <list>
 #include <memory>
-#include "webrtc/rtc_base/asyncsocket.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/rtc_base/socketadapters.h"
-#include "webrtc/rtc_base/socketaddress.h"
-#include "webrtc/rtc_base/stream.h"
+#include "rtc_base/asyncsocket.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/socketadapters.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/stream.h"
 
 namespace rtc {
 
@@ -97,4 +97,4 @@ class SocksProxyServer : public ProxyServer {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_RTC_BASE_PROXYSERVER_H_
+#endif  // RTC_BASE_PROXYSERVER_H_

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/level_controller/noise_spectrum_estimator.h"
+#include "modules/audio_processing/level_controller/noise_spectrum_estimator.h"
 
 #include <string.h>
 #include <algorithm>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/rtc_base/arraysize.h"
+#include "api/array_view.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "rtc_base/arraysize.h"
 
 namespace webrtc {
 namespace {

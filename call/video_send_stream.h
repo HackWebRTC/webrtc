@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_VIDEO_SEND_STREAM_H_
-#define WEBRTC_CALL_VIDEO_SEND_STREAM_H_
+#ifndef CALL_VIDEO_SEND_STREAM_H_
+#define CALL_VIDEO_SEND_STREAM_H_
 
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "webrtc/api/call/transport.h"
-#include "webrtc/api/rtpparameters.h"
-#include "webrtc/call/rtp_config.h"
-#include "webrtc/call/video_config.h"
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/include/frame_callback.h"
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/media/base/videosourceinterface.h"
-#include "webrtc/rtc_base/platform_file.h"
+#include "api/call/transport.h"
+#include "api/rtpparameters.h"
+#include "call/rtp_config.h"
+#include "call/video_config.h"
+#include "common_types.h"
+#include "common_video/include/frame_callback.h"
+#include "media/base/videosinkinterface.h"
+#include "media/base/videosourceinterface.h"
+#include "rtc_base/platform_file.h"
 
 namespace webrtc {
 
@@ -283,4 +283,4 @@ class VideoSendStream {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_VIDEO_SEND_STREAM_H_
+#endif  // CALL_VIDEO_SEND_STREAM_H_

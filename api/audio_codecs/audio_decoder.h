@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_AUDIO_CODECS_AUDIO_DECODER_H_
-#define WEBRTC_API_AUDIO_CODECS_AUDIO_DECODER_H_
+#ifndef API_AUDIO_CODECS_AUDIO_DECODER_H_
+#define API_AUDIO_CODECS_AUDIO_DECODER_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/array_view.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/rtc_base/buffer.h"
-#include "webrtc/rtc_base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "api/array_view.h"
+#include "api/optional.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -174,4 +174,4 @@ class AudioDecoder {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_API_AUDIO_CODECS_AUDIO_DECODER_H_
+#endif  // API_AUDIO_CODECS_AUDIO_DECODER_H_

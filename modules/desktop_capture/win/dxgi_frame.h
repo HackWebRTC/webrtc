@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_FRAME_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_FRAME_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_DXGI_FRAME_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_DXGI_FRAME_H_
 
 #include <memory>
 #include <vector>
 
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
-#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/modules/desktop_capture/resolution_tracker.h"
-#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
-#include "webrtc/modules/desktop_capture/shared_memory.h"
-#include "webrtc/modules/desktop_capture/win/dxgi_context.h"
+#include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/desktop_capture_types.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/resolution_tracker.h"
+#include "modules/desktop_capture/shared_desktop_frame.h"
+#include "modules/desktop_capture/shared_memory.h"
+#include "modules/desktop_capture/win/dxgi_context.h"
 
 namespace webrtc {
 
@@ -60,4 +60,4 @@ class DxgiFrame final {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_FRAME_H_
+#endif  // MODULES_DESKTOP_CAPTURE_WIN_DXGI_FRAME_H_

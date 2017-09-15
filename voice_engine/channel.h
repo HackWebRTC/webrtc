@@ -8,36 +8,36 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_CHANNEL_H_
-#define WEBRTC_VOICE_ENGINE_CHANNEL_H_
+#ifndef VOICE_ENGINE_CHANNEL_H_
+#define VOICE_ENGINE_CHANNEL_H_
 
 #include <memory>
 
-#include "webrtc/api/audio/audio_mixer.h"
-#include "webrtc/api/audio_codecs/audio_encoder.h"
-#include "webrtc/api/call/audio_sink.h"
-#include "webrtc/api/optional.h"
-#include "webrtc/common_audio/resampler/include/push_resampler.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/acm2/codec_manager.h"
-#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
-#include "webrtc/modules/audio_processing/rms_level.h"
-#include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/event.h"
-#include "webrtc/rtc_base/thread_checker.h"
-#include "webrtc/voice_engine/audio_level.h"
-#include "webrtc/voice_engine/file_player.h"
-#include "webrtc/voice_engine/file_recorder.h"
-#include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/include/voe_network.h"
-#include "webrtc/voice_engine/shared_data.h"
-#include "webrtc/voice_engine/voice_engine_defines.h"
+#include "api/audio/audio_mixer.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "api/call/audio_sink.h"
+#include "api/optional.h"
+#include "common_audio/resampler/include/push_resampler.h"
+#include "common_types.h"
+#include "modules/audio_coding/acm2/codec_manager.h"
+#include "modules/audio_coding/acm2/rent_a_codec.h"
+#include "modules/audio_coding/include/audio_coding_module.h"
+#include "modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
+#include "modules/audio_processing/rms_level.h"
+#include "modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
+#include "modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "modules/rtp_rtcp/include/rtp_receiver.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/event.h"
+#include "rtc_base/thread_checker.h"
+#include "voice_engine/audio_level.h"
+#include "voice_engine/file_player.h"
+#include "voice_engine/file_recorder.h"
+#include "voice_engine/include/voe_base.h"
+#include "voice_engine/include/voe_network.h"
+#include "voice_engine/shared_data.h"
+#include "voice_engine/voice_engine_defines.h"
 
 namespace rtc {
 class TimestampWrapAroundHandler;
@@ -559,4 +559,4 @@ class Channel
 }  // namespace voe
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_CHANNEL_H_
+#endif  // VOICE_ENGINE_CHANNEL_H_

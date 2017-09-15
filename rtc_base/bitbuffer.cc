@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/rtc_base/bitbuffer.h"
+#include "rtc_base/bitbuffer.h"
 
 #include <algorithm>
 #include <limits>
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace {
 

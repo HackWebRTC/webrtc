@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
+#include "sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
 
 #import "WebRTC/RTCVideoFrameBuffer.h"
 

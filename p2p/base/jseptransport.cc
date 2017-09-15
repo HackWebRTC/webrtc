@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/jseptransport.h"
+#include "p2p/base/jseptransport.h"
 
 #include <memory>
 #include <utility>  // for std::pair
 
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/dtlstransport.h"
-#include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/p2p/base/p2ptransportchannel.h"
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "p2p/base/candidate.h"
+#include "p2p/base/dtlstransport.h"
+#include "p2p/base/p2pconstants.h"
+#include "p2p/base/p2ptransportchannel.h"
+#include "p2p/base/port.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace cricket {
 

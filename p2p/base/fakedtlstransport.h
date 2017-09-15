@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_FAKEDTLSTRANSPORT_H_
-#define WEBRTC_P2P_BASE_FAKEDTLSTRANSPORT_H_
+#ifndef P2P_BASE_FAKEDTLSTRANSPORT_H_
+#define P2P_BASE_FAKEDTLSTRANSPORT_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/dtlstransportinternal.h"
-#include "webrtc/p2p/base/fakeicetransport.h"
-#include "webrtc/rtc_base/fakesslidentity.h"
+#include "p2p/base/dtlstransportinternal.h"
+#include "p2p/base/fakeicetransport.h"
+#include "rtc_base/fakesslidentity.h"
 
 namespace cricket {
 
@@ -251,4 +251,4 @@ class FakeDtlsTransport : public DtlsTransportInternal {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_FAKEDTLSTRANSPORT_H_
+#endif  // P2P_BASE_FAKEDTLSTRANSPORT_H_

@@ -9,14 +9,14 @@
  *
  */
 
-#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
+#include "sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <memory>
 #include <vector>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/pc/channelmanager.h"
+#include "pc/channelmanager.h"
 
 #include <algorithm>
 
-#include "webrtc/media/base/device.h"
-#include "webrtc/media/base/rtpdataengine.h"
-#include "webrtc/pc/srtpfilter.h"
-#include "webrtc/rtc_base/bind.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "media/base/device.h"
+#include "media/base/rtpdataengine.h"
+#include "pc/srtpfilter.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/trace_event.h"
 
 namespace cricket {
 

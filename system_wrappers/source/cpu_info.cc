@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/include/cpu_info.h"
+#include "system_wrappers/include/cpu_info.h"
 
 #if defined(WEBRTC_WIN)
 #include <winsock2.h>
@@ -23,7 +23,7 @@
 #include <sys/sysctl.h>
 #endif
 
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/logging.h"
 
 namespace internal {
 static int DetectNumberOfCores() {

@@ -14,17 +14,17 @@
 #include <crtdbg.h>
 #endif
 
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/flags.h"
-#include "webrtc/rtc_base/gunit.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/ssladapter.h"
-#include "webrtc/rtc_base/sslstreamadapter.h"
-#include "webrtc/test/field_trial.h"
-#include "webrtc/test/testsupport/fileutils.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/flags.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/ssladapter.h"
+#include "rtc_base/sslstreamadapter.h"
+#include "test/field_trial.h"
+#include "test/testsupport/fileutils.h"
 
 #if defined(WEBRTC_IOS)
-#include "webrtc/test/ios/test_support.h"
+#include "test/ios/test_support.h"
 #endif
 
 DEFINE_bool(help, false, "prints this message");

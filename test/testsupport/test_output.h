@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_TESTSUPPORT_TEST_OUTPUT_H_
-#define WEBRTC_TEST_TESTSUPPORT_TEST_OUTPUT_H_
+#ifndef TEST_TESTSUPPORT_TEST_OUTPUT_H_
+#define TEST_TESTSUPPORT_TEST_OUTPUT_H_
 
 #include <stdlib.h>
 
@@ -36,4 +36,4 @@ bool WriteToTestOutput(const char* filename, const std::string& content);
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_TESTSUPPORT_TEST_OUTPUT_H_
+#endif  // TEST_TESTSUPPORT_TEST_OUTPUT_H_

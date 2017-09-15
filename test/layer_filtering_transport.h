@@ -7,13 +7,13 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_TEST_LAYER_FILTERING_TRANSPORT_H_
-#define WEBRTC_TEST_LAYER_FILTERING_TRANSPORT_H_
+#ifndef TEST_LAYER_FILTERING_TRANSPORT_H_
+#define TEST_LAYER_FILTERING_TRANSPORT_H_
 
-#include "webrtc/call/call.h"
-#include "webrtc/test/direct_transport.h"
-#include "webrtc/test/fake_network_pipe.h"
-#include "webrtc/test/single_threaded_task_queue.h"
+#include "call/call.h"
+#include "test/direct_transport.h"
+#include "test/fake_network_pipe.h"
+#include "test/single_threaded_task_queue.h"
 
 #include <map>
 
@@ -50,4 +50,4 @@ class LayerFilteringTransport : public test::DirectTransport {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_LAYER_FILTERING_TRANSPORT_H_
+#endif  // TEST_LAYER_FILTERING_TRANSPORT_H_

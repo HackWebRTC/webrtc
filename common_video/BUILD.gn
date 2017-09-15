@@ -78,7 +78,7 @@ rtc_static_library("common_video") {
 }
 
 if (rtc_include_tests) {
-  common_video_resources = [ "../../resources/foreman_cif.yuv" ]
+  common_video_resources = [ "../resources/foreman_cif.yuv" ]
 
   if (is_ios) {
     bundle_data("common_video_unittests_bundle_data") {

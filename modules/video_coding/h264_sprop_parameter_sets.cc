@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/h264_sprop_parameter_sets.h"
+#include "modules/video_coding/h264_sprop_parameter_sets.h"
 
 #include <string>
 #include <vector>
 
-#include "webrtc/rtc_base/base64.h"
-#include "webrtc/rtc_base/basictypes.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/base64.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/logging.h"
 
 namespace {
 

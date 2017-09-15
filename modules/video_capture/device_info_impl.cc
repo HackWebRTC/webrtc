@@ -11,9 +11,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "webrtc/modules/video_capture/device_info_impl.h"
-#include "webrtc/modules/video_capture/video_capture_config.h"
-#include "webrtc/rtc_base/logging.h"
+#include "modules/video_capture/device_info_impl.h"
+#include "modules/video_capture/video_capture_config.h"
+#include "rtc_base/logging.h"
 
 #ifndef abs
 #define abs(a) (a>=0?a:-a)

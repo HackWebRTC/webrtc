@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/smoothing_filter.h"
+#include "common_audio/smoothing_filter.h"
 
 #include <cmath>
 
-#include "webrtc/rtc_base/timeutils.h"
+#include "rtc_base/timeutils.h"
 
 namespace webrtc {
 

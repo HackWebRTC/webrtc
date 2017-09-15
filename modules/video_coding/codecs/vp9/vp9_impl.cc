@@ -9,7 +9,7 @@
  *
  */
 
-#include "webrtc/modules/video_coding/codecs/vp9/vp9_impl.h"
+#include "modules/video_coding/codecs/vp9/vp9_impl.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -21,15 +21,15 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
-#include "webrtc/common_video/include/video_frame_buffer.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_coding/codecs/vp9/screenshare_layers.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/keep_ref_until_done.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/random.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_base/trace_event.h"
+#include "common_video/include/video_frame_buffer.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_coding/codecs/vp9/screenshare_layers.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/keep_ref_until_done.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/random.h"
+#include "rtc_base/timeutils.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 

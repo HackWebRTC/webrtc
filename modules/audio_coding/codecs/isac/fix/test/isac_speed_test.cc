@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/isacfix.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
-#include "webrtc/modules/audio_coding/codecs/tools/audio_codec_speed_test.h"
+#include "modules/audio_coding/codecs/isac/fix/include/isacfix.h"
+#include "modules/audio_coding/codecs/isac/fix/source/settings.h"
+#include "modules/audio_coding/codecs/tools/audio_codec_speed_test.h"
 
 using ::std::string;
 

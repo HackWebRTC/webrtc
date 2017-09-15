@@ -8,25 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_
 
 #include <array>
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/modules/audio_processing/aec3/adaptive_fir_filter.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
-#include "webrtc/modules/audio_processing/aec3/aec_state.h"
-#include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
-#include "webrtc/modules/audio_processing/aec3/main_filter_update_gain.h"
-#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
-#include "webrtc/modules/audio_processing/aec3/shadow_filter_update_gain.h"
-#include "webrtc/modules/audio_processing/aec3/subtractor_output.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/modules/audio_processing/utility/ooura_fft.h"
-#include "webrtc/rtc_base/constructormagic.h"
+#include "modules/audio_processing/aec3/adaptive_fir_filter.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/aec3_fft.h"
+#include "modules/audio_processing/aec3/aec_state.h"
+#include "modules/audio_processing/aec3/echo_path_variability.h"
+#include "modules/audio_processing/aec3/main_filter_update_gain.h"
+#include "modules/audio_processing/aec3/render_buffer.h"
+#include "modules/audio_processing/aec3/shadow_filter_update_gain.h"
+#include "modules/audio_processing/aec3/subtractor_output.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "modules/audio_processing/utility/ooura_fft.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -71,4 +71,4 @@ class Subtractor {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_

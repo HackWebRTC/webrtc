@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/voe_base_impl.h"
+#include "voice_engine/voe_base_impl.h"
 
-#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/modules/audio_device/audio_device_impl.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/rtc_base/format_macros.h"
-#include "webrtc/rtc_base/location.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/system_wrappers/include/file_wrapper.h"
-#include "webrtc/voice_engine/channel.h"
-#include "webrtc/voice_engine/include/voe_errors.h"
-#include "webrtc/voice_engine/output_mixer.h"
-#include "webrtc/voice_engine/transmit_mixer.h"
-#include "webrtc/voice_engine/utility.h"
-#include "webrtc/voice_engine/voice_engine_impl.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/include/audio_coding_module.h"
+#include "modules/audio_device/audio_device_impl.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/format_macros.h"
+#include "rtc_base/location.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/file_wrapper.h"
+#include "voice_engine/channel.h"
+#include "voice_engine/include/voe_errors.h"
+#include "voice_engine/output_mixer.h"
+#include "voice_engine/transmit_mixer.h"
+#include "voice_engine/utility.h"
+#include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
 

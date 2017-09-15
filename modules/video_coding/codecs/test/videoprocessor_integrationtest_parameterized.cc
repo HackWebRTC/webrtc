@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/codecs/test/videoprocessor_integrationtest.h"
+#include "modules/video_coding/codecs/test/videoprocessor_integrationtest.h"
 
-#include "webrtc/test/testsupport/fileutils.h"
+#include "test/testsupport/fileutils.h"
 
 namespace webrtc {
 namespace test {
