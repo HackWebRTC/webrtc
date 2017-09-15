@@ -1096,7 +1096,7 @@ int AudioCodingModuleImpl::IncomingPacket(const uint8_t* incoming_payload,
 // Minimum playout delay (Used for lip-sync).
 int AudioCodingModuleImpl::SetMinimumPlayoutDelay(int time_ms) {
   if ((time_ms < 0) || (time_ms > 10000)) {
-    LOG(LS_ERROR) << "Delay must be in the range of 0-1000 milliseconds.";
+    LOG(LS_ERROR) << "Delay must be in the range of 0-10000 milliseconds.";
     return -1;
   }
   return receiver_.SetMinimumDelay(time_ms);
@@ -1104,7 +1104,7 @@ int AudioCodingModuleImpl::SetMinimumPlayoutDelay(int time_ms) {
 
 int AudioCodingModuleImpl::SetMaximumPlayoutDelay(int time_ms) {
   if ((time_ms < 0) || (time_ms > 10000)) {
-    LOG(LS_ERROR) << "Delay must be in the range of 0-1000 milliseconds.";
+    LOG(LS_ERROR) << "Delay must be in the range of 0-10000 milliseconds.";
     return -1;
   }
   return receiver_.SetMaximumDelay(time_ms);

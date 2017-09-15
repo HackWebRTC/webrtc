@@ -282,7 +282,7 @@ void NetEqImpl::RemoveAllPayloadTypes() {
 
 bool NetEqImpl::SetMinimumDelay(int delay_ms) {
   rtc::CritScope lock(&crit_sect_);
-  if (delay_ms >= 0 && delay_ms < 10000) {
+  if (delay_ms >= 0 && delay_ms <= 10000) {
     assert(delay_manager_.get());
     return delay_manager_->SetMinimumDelay(delay_ms);
   }
@@ -291,7 +291,7 @@ bool NetEqImpl::SetMinimumDelay(int delay_ms) {
 
 bool NetEqImpl::SetMaximumDelay(int delay_ms) {
   rtc::CritScope lock(&crit_sect_);
-  if (delay_ms >= 0 && delay_ms < 10000) {
+  if (delay_ms >= 0 && delay_ms <= 10000) {
     assert(delay_manager_.get());
     return delay_manager_->SetMaximumDelay(delay_ms);
   }
