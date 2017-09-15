@@ -13,6 +13,7 @@
 namespace webrtc {
 namespace test {
 
+const int kAudioLevelExtensionId = 5;
 const int kTOffsetExtensionId = 6;
 const int kAbsSendTimeExtensionId = 7;
 const int kTransportSequenceNumberExtensionId = 8;

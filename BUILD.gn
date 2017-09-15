@@ -338,9 +338,6 @@ if (!build_with_chromium) {
       } else {
         deps += [ "modules/video_capture:video_capture_tests" ]
       }
-      if (!is_ios) {
-        deps += [ "voice_engine:voe_auto_test" ]
-      }
       if (rtc_enable_protobuf) {
         deps += [
           "audio:low_bandwidth_audio_test",

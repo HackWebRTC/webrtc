@@ -95,6 +95,7 @@ if (rtc_include_tests) {
 
     sources = [
       "audio_receive_stream_unittest.cc",
+      "audio_send_stream_tests.cc",
       "audio_send_stream_unittest.cc",
       "audio_state_unittest.cc",
       "time_interval_unittest.cc",
