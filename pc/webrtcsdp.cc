@@ -1508,6 +1508,12 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     AddLine(os.str(), message);
   }
 
+  if (media_desc->conference_mode()) {
+    InitAttrLine(kAttributeXGoogleFlag, &os);
+    os << kSdpDelimiterColon << kValueConference;
+    AddLine(os.str(), message);
+  }
+
   // RFC 4568
   // a=crypto:<tag> <crypto-suite> <key-params> [<session-params>]
   for (std::vector<CryptoParams>::const_iterator it =

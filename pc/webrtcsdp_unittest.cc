@@ -2777,6 +2777,27 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithConferenceFlag) {
   EXPECT_TRUE(video->conference_mode());
 }
 
+TEST_F(WebRtcSdpTest, SerializeSdpWithConferenceFlag) {
+  JsepSessionDescription jdesc(kDummyString);
+
+  // We tested deserialization already above, so just test that if we serialize
+  // and deserialize the flag doesn't disappear.
+  EXPECT_TRUE(SdpDeserialize(kSdpConferenceString, &jdesc));
+  std::string reserialized = webrtc::SdpSerialize(jdesc, false);
+  EXPECT_TRUE(SdpDeserialize(reserialized, &jdesc));
+
+  // Verify.
+  cricket::AudioContentDescription* audio =
+      static_cast<AudioContentDescription*>(
+          jdesc.description()->GetContentDescriptionByName(cricket::CN_AUDIO));
+  EXPECT_TRUE(audio->conference_mode());
+
+  cricket::VideoContentDescription* video =
+      static_cast<VideoContentDescription*>(
+          jdesc.description()->GetContentDescriptionByName(cricket::CN_VIDEO));
+  EXPECT_TRUE(video->conference_mode());
+}
+
 TEST_F(WebRtcSdpTest, DeserializeBrokenSdp) {
   const char kSdpDestroyer[] = "!@#$%^&";
   const char kSdpEmptyType[] = " =candidate";
