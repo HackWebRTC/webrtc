@@ -43,9 +43,8 @@ enum {
 const int PHASE_UDP = 0;
 const int PHASE_RELAY = 1;
 const int PHASE_TCP = 2;
-const int PHASE_SSLTCP = 3;
 
-const int kNumPhases = 4;
+const int kNumPhases = 3;
 
 // Gets protocol priority: UDP > TCP > SSLTCP == TLS.
 int GetProtocolPriority(cricket::ProtocolType protocol) {
@@ -406,11 +405,6 @@ void BasicPortAllocatorSession::GetCandidatesFromPort(
   RTC_CHECK(candidates != nullptr);
   for (const Candidate& candidate : data.port()->Candidates()) {
     if (!CheckCandidateFilter(candidate)) {
-      continue;
-    }
-    ProtocolType pvalue;
-    if (!StringToProto(candidate.protocol().c_str(), &pvalue) ||
-        !data.sequence()->ProtocolEnabled(pvalue)) {
       continue;
     }
     candidates->push_back(SanitizeRelatedAddress(candidate));
@@ -817,18 +811,10 @@ void BasicPortAllocatorSession::OnCandidateReady(
     }
   }
 
-  ProtocolType pvalue;
-  bool candidate_protocol_enabled =
-      StringToProto(c.protocol().c_str(), &pvalue) &&
-      data->sequence()->ProtocolEnabled(pvalue);
-
-  if (data->ready() && CheckCandidateFilter(c) && candidate_protocol_enabled) {
+  if (data->ready() && CheckCandidateFilter(c)) {
     std::vector<Candidate> candidates;
     candidates.push_back(SanitizeRelatedAddress(c));
     SignalCandidatesReady(this, candidates);
-  } else if (!candidate_protocol_enabled) {
-    LOG(LS_INFO)
-        << "Not yet signaling candidate because protocol is not yet enabled.";
   } else {
     LOG(LS_INFO) << "Discarding candidate because it doesn't match filter.";
   }
@@ -923,36 +909,6 @@ void BasicPortAllocatorSession::OnPortError(Port* port) {
   data->set_error();
   // Send candidate allocation complete signal if this was the last port.
   MaybeSignalCandidatesAllocationDone();
-}
-
-void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
-                                                  ProtocolType proto) {
-  std::vector<Candidate> candidates;
-  for (std::vector<PortData>::iterator it = ports_.begin();
-       it != ports_.end(); ++it) {
-    if (it->sequence() != seq)
-      continue;
-
-    const std::vector<Candidate>& potentials = it->port()->Candidates();
-    for (size_t i = 0; i < potentials.size(); ++i) {
-      if (!CheckCandidateFilter(potentials[i])) {
-        continue;
-      }
-      ProtocolType pvalue;
-      bool candidate_protocol_enabled =
-          StringToProto(potentials[i].protocol().c_str(), &pvalue) &&
-          pvalue == proto;
-      if (candidate_protocol_enabled) {
-        LOG(LS_INFO) << "Signaling candidate because protocol was enabled: "
-                     << potentials[i].ToSensitiveString();
-        candidates.push_back(potentials[i]);
-      }
-    }
-  }
-
-  if (!candidates.empty()) {
-    SignalCandidatesReady(this, candidates);
-  }
 }
 
 bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) const {
@@ -1189,9 +1145,7 @@ void AllocationSequence::OnMessage(rtc::Message* msg) {
   RTC_DCHECK(rtc::Thread::Current() == session_->network_thread());
   RTC_DCHECK(msg->message_id == MSG_ALLOCATION_PHASE);
 
-  const char* const PHASE_NAMES[kNumPhases] = {
-    "Udp", "Relay", "Tcp", "SslTcp"
-  };
+  const char* const PHASE_NAMES[kNumPhases] = {"Udp", "Relay", "Tcp"};
 
   // Perform all of the phases in the current step.
   LOG_J(LS_INFO, network_) << "Allocation Phase="
@@ -1201,7 +1155,6 @@ void AllocationSequence::OnMessage(rtc::Message* msg) {
     case PHASE_UDP:
       CreateUDPPorts();
       CreateStunPorts();
-      EnableProtocol(PROTO_UDP);
       break;
 
     case PHASE_RELAY:
@@ -1210,12 +1163,7 @@ void AllocationSequence::OnMessage(rtc::Message* msg) {
 
     case PHASE_TCP:
       CreateTCPPorts();
-      EnableProtocol(PROTO_TCP);
-      break;
-
-    case PHASE_SSLTCP:
       state_ = kCompleted;
-      EnableProtocol(PROTO_SSLTCP);
       break;
 
     default:
@@ -1233,22 +1181,6 @@ void AllocationSequence::OnMessage(rtc::Message* msg) {
     session_->network_thread()->Clear(this, MSG_ALLOCATION_PHASE);
     SignalPortAllocationComplete(this);
   }
-}
-
-void AllocationSequence::EnableProtocol(ProtocolType proto) {
-  if (!ProtocolEnabled(proto)) {
-    protocols_.push_back(proto);
-    session_->OnProtocolEnabled(this, proto);
-  }
-}
-
-bool AllocationSequence::ProtocolEnabled(ProtocolType proto) const {
-  for (ProtocolList::const_iterator it = protocols_.begin();
-       it != protocols_.end(); ++it) {
-    if (*it == proto)
-      return true;
-  }
-  return false;
 }
 
 void AllocationSequence::CreateUDPPorts() {

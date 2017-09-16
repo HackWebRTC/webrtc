@@ -961,17 +961,15 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsWithOneSecondStepDelay) {
   session_->StartGettingPorts();
   ASSERT_EQ_SIMULATED_WAIT(2U, candidates_.size(), 1000, fake_clock);
   EXPECT_EQ(2U, ports_.size());
-  ASSERT_EQ_SIMULATED_WAIT(4U, candidates_.size(), 2000, fake_clock);
+  ASSERT_EQ_SIMULATED_WAIT(6U, candidates_.size(), 2000, fake_clock);
   EXPECT_EQ(3U, ports_.size());
   EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpIntAddr);
   EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpExtAddr);
-  ASSERT_EQ_SIMULATED_WAIT(6U, candidates_.size(), 1500, fake_clock);
   EXPECT_PRED4(HasCandidate, candidates_, "relay", "tcp", kRelayTcpIntAddr);
-  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
-  EXPECT_EQ(4U, ports_.size());
-  ASSERT_EQ_SIMULATED_WAIT(7U, candidates_.size(), 2000, fake_clock);
   EXPECT_PRED4(HasCandidate, candidates_, "relay", "ssltcp",
                kRelaySslTcpIntAddr);
+  ASSERT_EQ_SIMULATED_WAIT(7U, candidates_.size(), 1500, fake_clock);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
   EXPECT_EQ(4U, ports_.size());
   EXPECT_TRUE(candidate_allocation_done_);
   // If we Stop gathering now, we shouldn't get a second "done" callback.

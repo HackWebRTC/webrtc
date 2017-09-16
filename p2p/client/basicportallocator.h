@@ -329,9 +329,6 @@ class AllocationSequence : public rtc::MessageHandler,
   // MessageHandler
   void OnMessage(rtc::Message* msg);
 
-  void EnableProtocol(ProtocolType proto);
-  bool ProtocolEnabled(ProtocolType proto) const;
-
   // Signal from AllocationSequence, when it's done with allocating ports.
   // This signal is useful, when port allocation fails which doesn't result
   // in any candidates. Using this signal BasicPortAllocatorSession can send

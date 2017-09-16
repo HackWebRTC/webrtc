@@ -448,6 +448,12 @@ class PortAllocator : public sigslot::has_slots<> {
   void set_max_ipv6_networks(int networks) { max_ipv6_networks_ = networks; }
   int max_ipv6_networks() { return max_ipv6_networks_; }
 
+  // Delay between different candidate gathering phases (UDP, TURN, TCP).
+  // Defaults to 1 second, but PeerConnection sets it to 50ms.
+  // TODO(deadbeef): Get rid of this. Its purpose is to avoid sending too many
+  // STUN transactions at once, but that's already happening if you configure
+  // multiple STUN servers or have multiple network interfaces. We should
+  // implement some global pacing logic instead if that's our goal.
   uint32_t step_delay() const { return step_delay_; }
   void set_step_delay(uint32_t delay) { step_delay_ = delay; }
 
