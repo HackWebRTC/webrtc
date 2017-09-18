@@ -71,21 +71,13 @@ TEST_F(ReceiveStatisticsTest, TwoIncomingSsrcs) {
   EXPECT_EQ(600u, bytes_received);
   EXPECT_EQ(2u, packets_received);
 
-  StatisticianMap statisticians = receive_statistics_->GetActiveStatisticians();
-  EXPECT_EQ(2u, statisticians.size());
+  EXPECT_EQ(2u, receive_statistics_->RtcpReportBlocks(3).size());
   // Add more incoming packets and verify that they are registered in both
   // access methods.
   receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
   ++header1_.sequenceNumber;
   receive_statistics_->IncomingPacket(header2_, kPacketSize2, false);
   ++header2_.sequenceNumber;
-
-  statisticians[kSsrc1]->GetDataCounters(&bytes_received, &packets_received);
-  EXPECT_EQ(300u, bytes_received);
-  EXPECT_EQ(3u, packets_received);
-  statisticians[kSsrc2]->GetDataCounters(&bytes_received, &packets_received);
-  EXPECT_EQ(900u, bytes_received);
-  EXPECT_EQ(3u, packets_received);
 
   receive_statistics_->GetStatistician(kSsrc1)->GetDataCounters(
       &bytes_received, &packets_received);
@@ -103,26 +95,22 @@ TEST_F(ReceiveStatisticsTest, ActiveStatisticians) {
   clock_.AdvanceTimeMilliseconds(1000);
   receive_statistics_->IncomingPacket(header2_, kPacketSize2, false);
   ++header2_.sequenceNumber;
-  StatisticianMap statisticians = receive_statistics_->GetActiveStatisticians();
   // Nothing should time out since only 1000 ms has passed since the first
   // packet came in.
-  EXPECT_EQ(2u, statisticians.size());
+  EXPECT_EQ(2u, receive_statistics_->RtcpReportBlocks(3).size());
 
   clock_.AdvanceTimeMilliseconds(7000);
   // kSsrc1 should have timed out.
-  statisticians = receive_statistics_->GetActiveStatisticians();
-  EXPECT_EQ(1u, statisticians.size());
+  EXPECT_EQ(1u, receive_statistics_->RtcpReportBlocks(3).size());
 
   clock_.AdvanceTimeMilliseconds(1000);
   // kSsrc2 should have timed out.
-  statisticians = receive_statistics_->GetActiveStatisticians();
-  EXPECT_EQ(0u, statisticians.size());
+  EXPECT_EQ(0u, receive_statistics_->RtcpReportBlocks(3).size());
 
   receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
   ++header1_.sequenceNumber;
   // kSsrc1 should be active again and the data counters should have survived.
-  statisticians = receive_statistics_->GetActiveStatisticians();
-  EXPECT_EQ(1u, statisticians.size());
+  EXPECT_EQ(1u, receive_statistics_->RtcpReportBlocks(3).size());
   StreamStatistician* statistician =
       receive_statistics_->GetStatistician(kSsrc1);
   ASSERT_TRUE(statistician != NULL);

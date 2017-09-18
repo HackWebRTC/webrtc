@@ -55,8 +55,6 @@ class StreamStatistician {
   virtual bool IsPacketInOrder(uint16_t sequence_number) const = 0;
 };
 
-typedef std::map<uint32_t, StreamStatistician*> StatisticianMap;
-
 class ReceiveStatistics : public ReceiveStatisticsProvider {
  public:
   ~ReceiveStatistics() override = default;
@@ -71,10 +69,6 @@ class ReceiveStatistics : public ReceiveStatisticsProvider {
   // Increment counter for number of FEC packets received.
   virtual void FecPacketReceived(const RTPHeader& header,
                                  size_t packet_length) = 0;
-
-  // Returns a map of all statisticians which have seen an incoming packet
-  // during the last two seconds.
-  virtual StatisticianMap GetActiveStatisticians() const = 0;
 
   // Returns a pointer to the statistician of an ssrc.
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const = 0;
