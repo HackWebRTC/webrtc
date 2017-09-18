@@ -174,42 +174,25 @@ bool SrtpTransport::SetRtpParams(int send_cs,
                                  int recv_cs,
                                  const uint8_t* recv_key,
                                  int recv_key_len) {
-  // If parameters are being set for the first time, we should create new SRTP
-  // sessions and call "SetSend/SetRecv". Otherwise we should call
-  // "UpdateSend"/"UpdateRecv" on the existing sessions, which will internally
-  // call "srtp_update".
-  bool new_sessions = false;
-  if (!send_session_) {
-    RTC_DCHECK(!recv_session_);
-    CreateSrtpSessions();
-    new_sessions = true;
-  }
-
+  CreateSrtpSessions();
   send_session_->SetEncryptedHeaderExtensionIds(
       send_encrypted_header_extension_ids_);
   if (external_auth_enabled_) {
     send_session_->EnableExternalAuth();
   }
-  bool ret = new_sessions
-                 ? send_session_->SetSend(send_cs, send_key, send_key_len)
-                 : send_session_->UpdateSend(send_cs, send_key, send_key_len);
-  if (!ret) {
+  if (!send_session_->SetSend(send_cs, send_key, send_key_len)) {
     ResetParams();
     return false;
   }
 
   recv_session_->SetEncryptedHeaderExtensionIds(
       recv_encrypted_header_extension_ids_);
-  ret = new_sessions
-            ? recv_session_->SetRecv(recv_cs, recv_key, recv_key_len)
-            : recv_session_->UpdateRecv(recv_cs, recv_key, recv_key_len);
-  if (!ret) {
+  if (!recv_session_->SetRecv(recv_cs, recv_key, recv_key_len)) {
     ResetParams();
     return false;
   }
 
-  LOG(LS_INFO) << "SRTP " << (new_sessions ? "updated" : "activated")
-               << " with negotiated parameters:"
+  LOG(LS_INFO) << "SRTP activated with negotiated parameters:"
                << " send cipher_suite " << send_cs << " recv cipher_suite "
                << recv_cs;
   return true;
