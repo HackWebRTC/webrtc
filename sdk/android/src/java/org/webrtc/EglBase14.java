@@ -43,8 +43,16 @@ class EglBase14 extends EglBase {
     return (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION);
   }
 
-  public static class Context extends EglBase.Context {
+  public static class Context implements EglBase.Context {
     private final android.opengl.EGLContext egl14Context;
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public long getNativeEglContext() {
+      return CURRENT_SDK_VERSION >= android.os.Build.VERSION_CODES.LOLLIPOP
+          ? egl14Context.getNativeHandle()
+          : egl14Context.getHandle();
+    }
 
     public Context(android.opengl.EGLContext eglContext) {
       this.egl14Context = eglContext;

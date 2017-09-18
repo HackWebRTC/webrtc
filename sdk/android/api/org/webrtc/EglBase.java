@@ -21,7 +21,7 @@ import javax.microedition.khronos.egl.EGL10;
  */
 public abstract class EglBase {
   // EGL wrapper for an actual EGLContext.
-  public static class Context {}
+  public interface Context { long getNativeEglContext(); }
 
   // According to the documentation, EGL can be used from multiple threads at the same time if each
   // thread has its own EGLContext, but in practice it deadlocks on some devices when doing this.

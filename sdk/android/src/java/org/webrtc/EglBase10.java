@@ -37,8 +37,17 @@ class EglBase10 extends EglBase {
   private EGLSurface eglSurface = EGL10.EGL_NO_SURFACE;
 
   // EGL wrapper for an actual EGLContext.
-  public static class Context extends EglBase.Context {
+  public static class Context implements EglBase.Context {
     private final EGLContext eglContext;
+
+    @Override
+    public long getNativeEglContext() {
+      // TODO(magjed): Implement. There is no easy way of getting the native context for EGL 1.0. We
+      // need to make sure to have an EglSurface, then make the context current using that surface,
+      // and then call into JNI and call the native version of eglGetCurrentContext. Then we need to
+      // restore the state and return the native context.
+      throw new RuntimeException("getNativeEglContext is not implemented for EGL 1.0");
+    }
 
     public Context(EGLContext eglContext) {
       this.eglContext = eglContext;
