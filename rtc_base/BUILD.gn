@@ -105,7 +105,6 @@ rtc_source_set("rtc_base_approved_generic") {
   deps = []
 
   sources = [
-    "array_view.h",
     "arraysize.h",
     "atomicops.h",
     "base64.cc",
