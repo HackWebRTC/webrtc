@@ -336,6 +336,7 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
   NetEqLifetimeStatistics neteq_lifetime_stat = neteq_->GetLifetimeStatistics();
   acm_stat->totalSamplesReceived = neteq_lifetime_stat.total_samples_received;
   acm_stat->concealedSamples = neteq_lifetime_stat.concealed_samples;
+  acm_stat->concealmentEvents = neteq_lifetime_stat.concealment_events;
 }
 
 int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,

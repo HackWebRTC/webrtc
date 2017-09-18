@@ -50,18 +50,14 @@ class AudioReceiveStream {
     uint32_t jitter_buffer_preferred_ms = 0;
     uint32_t delay_estimate_ms = 0;
     int32_t audio_level = -1;
-    // See description of "totalAudioEnergy" in the WebRTC stats spec:
-    // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
+    // Stats below correspond to similarly-named fields in the WebRTC stats
+    // spec. https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats
     double total_output_energy = 0.0;
-    // See description of "totalSamplesReceived" in the WebRTC stats spec:
-    // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalsamplesreceived
     uint64_t total_samples_received = 0;
-    // See description of "totalSamplesDuration" in the WebRTC stats spec:
-    // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalsamplesduration
     double total_output_duration = 0.0;
-    // See description of "concealedSamples" in the WebRTC stats spec:
-    // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-concealedsamples
     uint64_t concealed_samples = 0;
+    uint64_t concealment_events = 0;
+    // Stats below DO NOT correspond directly to anything in the WebRTC stats
     float expand_rate = 0.0f;
     float speech_expand_rate = 0.0f;
     float secondary_decoded_rate = 0.0f;

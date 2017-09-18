@@ -375,6 +375,10 @@ struct NetworkStatistics {
   // conceal packet loss.
   // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-concealedsamples
   uint64_t concealedSamples;
+  // Number of times a concealed sample is synthesized after a non-concealed
+  // sample.
+  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-concealmentevents
+  uint64_t concealmentEvents;
   // Loss rate (network + late); fraction between 0 and 1, scaled to Q14.
   uint16_t currentPacketLossRate;
   // Late loss rate; fraction between 0 and 1, scaled to Q14.

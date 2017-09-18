@@ -373,6 +373,8 @@ const char* StatsReport::Value::display_name() const {
       return "bytesSent";
     case kStatsValueNameConcealedSamples:
       return "concealedSamples";
+    case kStatsValueNameConcealmentEvents:
+      return "concealmentEvents";
     case kStatsValueNamePacketsSent:
       return "packetsSent";
     case kStatsValueNameBytesReceived:

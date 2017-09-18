@@ -61,13 +61,11 @@ struct NetEqNetworkStatistics {
 // NetEq statistics that persist over the lifetime of the class.
 // These metrics are never reset.
 struct NetEqLifetimeStatistics {
-  // Total number of audio samples received, including synthesized samples.
-  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalsamplesreceived
+  // Stats below correspond to similarly-named fields in the WebRTC stats spec.
+  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats
   uint64_t total_samples_received = 0;
-  // Total number of inbound audio samples that are based on synthesized data to
-  // conceal packet loss.
-  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-concealedsamples
   uint64_t concealed_samples = 0;
+  uint64_t concealment_events = 0;
 };
 
 enum NetEqPlayoutMode {

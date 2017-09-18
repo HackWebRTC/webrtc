@@ -383,7 +383,8 @@ WEBRTC_RTCSTATS_IMPL(RTCMediaStreamTrackStats, RTCStats, "track",
                      &echo_return_loss_enhancement,
                      &total_samples_received,
                      &total_samples_duration,
-                     &concealed_samples);
+                     &concealed_samples,
+                     &concealment_events);
 // clang-format on
 
 RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
@@ -416,7 +417,8 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(std::string&& id,
       echo_return_loss_enhancement("echoReturnLossEnhancement"),
       total_samples_received("totalSamplesReceived"),
       total_samples_duration("totalSamplesDuration"),
-      concealed_samples("concealedSamples") {
+      concealed_samples("concealedSamples"),
+      concealment_events("concealmentEvents") {
   RTC_DCHECK(kind == RTCMediaStreamTrackKind::kAudio ||
              kind == RTCMediaStreamTrackKind::kVideo);
 }
@@ -445,7 +447,8 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
       echo_return_loss_enhancement(other.echo_return_loss_enhancement),
       total_samples_received(other.total_samples_received),
       total_samples_duration(other.total_samples_duration),
-      concealed_samples(other.concealed_samples) {}
+      concealed_samples(other.concealed_samples),
+      concealment_events(other.concealment_events) {}
 
 RTCMediaStreamTrackStats::~RTCMediaStreamTrackStats() {
 }

@@ -560,17 +560,20 @@ class RTCStatsReportVerifier {
       verifier.MarkMemberTested(
           media_stream_track.echo_return_loss_enhancement, true);
     }
-    // totalSamplesReceived and concealedSamples are only present on inbound
-    // audio tracks.
+    // totalSamplesReceived, concealedSamples and concealmentEvents are only
+    // present on inbound audio tracks.
     if (*media_stream_track.kind == RTCMediaStreamTrackKind::kAudio &&
         *media_stream_track.remote_source) {
       verifier.TestMemberIsNonNegative<uint64_t>(
           media_stream_track.total_samples_received);
       verifier.TestMemberIsNonNegative<uint64_t>(
           media_stream_track.concealed_samples);
+      verifier.TestMemberIsNonNegative<uint64_t>(
+          media_stream_track.concealment_events);
     } else {
       verifier.TestMemberIsUndefined(media_stream_track.total_samples_received);
       verifier.TestMemberIsUndefined(media_stream_track.concealed_samples);
+      verifier.TestMemberIsUndefined(media_stream_track.concealment_events);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();
   }

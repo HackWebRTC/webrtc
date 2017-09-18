@@ -847,7 +847,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
             : timestamp_scaler_->ToExternal(playout_timestamp_) -
                   static_cast<uint32_t>(audio_frame->samples_per_channel_);
     audio_frame->num_channels_ = sync_buffer_->Channels();
-    stats_.ExpandedNoiseSamples(output_size_samples_);
+    stats_.ExpandedNoiseSamples(output_size_samples_, false);
     *muted = true;
     return 0;
   }
@@ -1573,14 +1573,15 @@ int NetEqImpl::DoExpand(bool play_dtmf) {
     algorithm_buffer_->Clear();
     int return_value = expand_->Process(algorithm_buffer_.get());
     size_t length = algorithm_buffer_->Size();
+    bool is_new_concealment_event = (last_mode_ != kModeExpand);
 
     // Update in-call and post-call statistics.
     if (expand_->MuteFactor(0) == 0) {
       // Expand operation generates only noise.
-      stats_.ExpandedNoiseSamples(length);
+      stats_.ExpandedNoiseSamples(length, is_new_concealment_event);
     } else {
       // Expand operation generates more than only noise.
-      stats_.ExpandedVoiceSamples(length);
+      stats_.ExpandedVoiceSamples(length, is_new_concealment_event);
     }
 
     last_mode_ = kModeExpand;

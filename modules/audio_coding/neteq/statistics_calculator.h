@@ -39,11 +39,11 @@ class StatisticsCalculator {
 
   // Reports that |num_samples| samples were produced through expansion, and
   // that the expansion produced other than just noise samples.
-  void ExpandedVoiceSamples(size_t num_samples);
+  void ExpandedVoiceSamples(size_t num_samples, bool is_new_concealment_event);
 
   // Reports that |num_samples| samples were produced through expansion, and
   // that the expansion produced only noise samples.
-  void ExpandedNoiseSamples(size_t num_samples);
+  void ExpandedNoiseSamples(size_t num_samples, bool is_new_concealment_event);
 
   // Corrects the statistics for number of samples produced through non-noise
   // expansion by adding |num_samples| (negative or positive) to the current
