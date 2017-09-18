@@ -48,10 +48,11 @@ FlexfecReceiver::~FlexfecReceiver() = default;
 
 void FlexfecReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  if (!AddReceivedPacket(packet)) {
+  std::unique_ptr<ReceivedPacket> received_packet = AddReceivedPacket(packet);
+  if (!received_packet)
     return;
-  }
-  ProcessReceivedPackets();
+
+  ProcessReceivedPacket(*received_packet);
 }
 
 FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
@@ -61,7 +62,8 @@ FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
 
 // TODO(eladalon): Consider using packet.recovered() to avoid processing
 // recovered packets here.
-bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
+std::unique_ptr<ReceivedPacket> FlexfecReceiver::AddReceivedPacket(
+    const RtpPacketReceived& packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   // RTP packets with a full base header (12 bytes), but without payload,
@@ -77,7 +79,7 @@ bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
     // This is a FlexFEC packet.
     if (packet.payload_size() < kMinFlexfecHeaderSize) {
       LOG(LS_WARNING) << "Truncated FlexFEC packet, discarding.";
-      return false;
+      return nullptr;
     }
     received_packet->is_fec = true;
     ++packet_counter_.num_fec_packets;
@@ -93,7 +95,7 @@ bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
     // This is a media packet, or a FlexFEC packet belonging to some
     // other FlexFEC stream.
     if (received_packet->ssrc != protected_media_ssrc_) {
-      return false;
+      return nullptr;
     }
     received_packet->is_fec = false;
 
@@ -104,10 +106,9 @@ bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
     received_packet->pkt->length = packet.size();
   }
 
-  received_packets_.push_back(std::move(received_packet));
   ++packet_counter_.num_packets;
 
-  return true;
+  return received_packet;
 }
 
 // Note that the implementation of this member function and the implementation
@@ -119,16 +120,13 @@ bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
 // Here, however, the received media pipeline is more decoupled from the
 // FlexFEC decoder, and we therefore do not interfere with the reception
 // of non-recovered media packets.
-bool FlexfecReceiver::ProcessReceivedPackets() {
+void FlexfecReceiver::ProcessReceivedPacket(
+    const ReceivedPacket& received_packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   // Decode.
-  if (!received_packets_.empty()) {
-    if (erasure_code_->DecodeFec(&received_packets_, &recovered_packets_) !=
-        0) {
-      return false;
-    }
-  }
+  erasure_code_->DecodeFec(received_packet, &recovered_packets_);
+
   // Return recovered packets through callback.
   for (const auto& recovered_packet : recovered_packets_) {
     if (recovered_packet->returned) {
@@ -150,7 +148,6 @@ bool FlexfecReceiver::ProcessReceivedPackets() {
       last_recovered_packet_ms_ = now_ms;
     }
   }
-  return true;
 }
 
 }  // namespace webrtc

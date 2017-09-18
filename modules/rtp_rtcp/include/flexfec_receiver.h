@@ -39,8 +39,10 @@ class FlexfecReceiver {
 
   // Protected to aid testing.
  protected:
-  bool AddReceivedPacket(const RtpPacketReceived& packet);
-  bool ProcessReceivedPackets();
+  std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> AddReceivedPacket(
+      const RtpPacketReceived& packet);
+  void ProcessReceivedPacket(
+      const ForwardErrorCorrection::ReceivedPacket& received_packet);
 
  private:
   // Config.
@@ -49,8 +51,6 @@ class FlexfecReceiver {
 
   // Erasure code interfacing and callback.
   std::unique_ptr<ForwardErrorCorrection> erasure_code_
-      RTC_GUARDED_BY(sequence_checker_);
-  ForwardErrorCorrection::ReceivedPacketList received_packets_
       RTC_GUARDED_BY(sequence_checker_);
   ForwardErrorCorrection::RecoveredPacketList recovered_packets_
       RTC_GUARDED_BY(sequence_checker_);

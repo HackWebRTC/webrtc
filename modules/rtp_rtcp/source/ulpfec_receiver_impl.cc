@@ -216,23 +216,22 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
   return 0;
 }
 
+// TODO(nisse): Drop always-zero return value.
 int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
   crit_sect_.Enter();
-  if (!received_packets_.empty()) {
+  for (const auto& received_packet : received_packets_) {
     // Send received media packet to VCM.
-    if (!received_packets_.front()->is_fec) {
-      ForwardErrorCorrection::Packet* packet = received_packets_.front()->pkt;
+    if (!received_packet->is_fec) {
+      ForwardErrorCorrection::Packet* packet = received_packet->pkt;
       crit_sect_.Leave();
       recovered_packet_callback_->OnRecoveredPacket(packet->data,
                                                     packet->length);
       crit_sect_.Enter();
     }
-    if (fec_->DecodeFec(&received_packets_, &recovered_packets_) != 0) {
-      crit_sect_.Leave();
-      return -1;
-    }
-    RTC_DCHECK(received_packets_.empty());
+    fec_->DecodeFec(*received_packet, &recovered_packets_);
   }
+  received_packets_.clear();
+
   // Send any recovered media packets to VCM.
   for (const auto& recovered_packet : recovered_packets_) {
     if (recovered_packet->returned) {

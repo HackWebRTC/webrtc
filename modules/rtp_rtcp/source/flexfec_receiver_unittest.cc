@@ -54,7 +54,7 @@ class FlexfecReceiverForTest : public FlexfecReceiver {
   }
   // Expose methods for tests.
   using FlexfecReceiver::AddReceivedPacket;
-  using FlexfecReceiver::ProcessReceivedPackets;
+  using FlexfecReceiver::ProcessReceivedPacket;
 };
 
 class FlexfecReceiverTest : public ::testing::Test {
@@ -113,8 +113,10 @@ TEST_F(FlexfecReceiverTest, ReceivesMediaPacket) {
   std::unique_ptr<Packet> media_packet(
       packet_generator_.NextPacket(0, kPayloadLength));
 
-  EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
-  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
+  std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet =
+      receiver_.AddReceivedPacket(ParsePacket(*media_packet));
+  ASSERT_TRUE(received_packet);
+  receiver_.ProcessReceivedPacket(*received_packet);
 }
 
 TEST_F(FlexfecReceiverTest, ReceivesMediaAndFecPackets) {
@@ -127,10 +129,13 @@ TEST_F(FlexfecReceiverTest, ReceivesMediaAndFecPackets) {
   const auto& media_packet = media_packets.front();
   auto fec_packet = packet_generator_.BuildFlexfecPacket(*fec_packets.front());
 
-  EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
-  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
-  EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*fec_packet)));
-  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
+  std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet =
+      receiver_.AddReceivedPacket(ParsePacket(*media_packet));
+  ASSERT_TRUE(received_packet);
+  receiver_.ProcessReceivedPacket(*received_packet);
+  received_packet = receiver_.AddReceivedPacket(ParsePacket(*fec_packet));
+  ASSERT_TRUE(received_packet);
+  receiver_.ProcessReceivedPacket(*received_packet);
 }
 
 TEST_F(FlexfecReceiverTest, FailsOnTruncatedFecPacket) {
@@ -145,8 +150,10 @@ TEST_F(FlexfecReceiverTest, FailsOnTruncatedFecPacket) {
   fec_packets.front()->length = 1;
   auto fec_packet = packet_generator_.BuildFlexfecPacket(*fec_packets.front());
 
-  EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
-  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
+  std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet =
+      receiver_.AddReceivedPacket(ParsePacket(*media_packet));
+  ASSERT_TRUE(received_packet);
+  receiver_.ProcessReceivedPacket(*received_packet);
   EXPECT_FALSE(receiver_.AddReceivedPacket(ParsePacket(*fec_packet)));
 }
 
@@ -180,8 +187,10 @@ TEST_F(FlexfecReceiverTest, FailsOnUnknownFecSsrc) {
   fec_packet->data[10] = 6;
   fec_packet->data[11] = 7;
 
-  EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
-  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
+  std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet =
+      receiver_.AddReceivedPacket(ParsePacket(*media_packet));
+  ASSERT_TRUE(received_packet);
+  receiver_.ProcessReceivedPacket(*received_packet);
   EXPECT_FALSE(receiver_.AddReceivedPacket(ParsePacket(*fec_packet)));
 }
 
@@ -195,17 +204,20 @@ TEST_F(FlexfecReceiverTest, ReceivesMultiplePackets) {
 
   // Receive all media packets.
   for (const auto& media_packet : media_packets) {
-    EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
-    EXPECT_TRUE(receiver_.ProcessReceivedPackets());
+    std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet =
+        receiver_.AddReceivedPacket(ParsePacket(*media_packet));
+    ASSERT_TRUE(received_packet);
+    receiver_.ProcessReceivedPacket(*received_packet);
   }
 
   // Receive FEC packet.
   auto fec_packet = fec_packets.front();
   std::unique_ptr<Packet> packet_with_rtp_header =
       packet_generator_.BuildFlexfecPacket(*fec_packet);
-  EXPECT_TRUE(
-      receiver_.AddReceivedPacket(ParsePacket(*packet_with_rtp_header)));
-  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
+  std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet =
+      receiver_.AddReceivedPacket(ParsePacket(*packet_with_rtp_header));
+  ASSERT_TRUE(received_packet);
+  receiver_.ProcessReceivedPacket(*received_packet);
 }
 
 TEST_F(FlexfecReceiverTest, RecoversFromSingleMediaLoss) {

@@ -12,6 +12,7 @@
 #define MODULES_RTP_RTCP_SOURCE_ULPFEC_RECEIVER_IMPL_H_
 
 #include <memory>
+#include <vector>
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/include/ulpfec_receiver.h"
@@ -41,10 +42,12 @@ class UlpfecReceiverImpl : public UlpfecReceiver {
   rtc::CriticalSection crit_sect_;
   RecoveredPacketReceiver* recovered_packet_callback_;
   std::unique_ptr<ForwardErrorCorrection> fec_;
-  // TODO(holmer): In the current version |received_packets_| is never more
-  // than one packet, since we process FEC every time a new packet
-  // arrives. We should remove the list.
-  ForwardErrorCorrection::ReceivedPacketList received_packets_;
+  // TODO(nisse): The AddReceivedRedPacket method adds one or two packets to
+  // this list at a time, after which it is emptied by ProcessReceivedFec. It
+  // will make things simpler to merge AddReceivedRedPacket and
+  // ProcessReceivedFec into a single method, and we can then delete this list.
+  std::vector<std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>>
+      received_packets_;
   ForwardErrorCorrection::RecoveredPacketList recovered_packets_;
   FecPacketCounter packet_counter_;
 };

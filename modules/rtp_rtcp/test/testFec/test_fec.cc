@@ -35,8 +35,10 @@ namespace test {
 using fec_private_tables::kPacketMaskBurstyTbl;
 
 void ReceivePackets(
-    ForwardErrorCorrection::ReceivedPacketList* to_decode_list,
-    ForwardErrorCorrection::ReceivedPacketList* received_packet_list,
+    std::vector<std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>>*
+        to_decode_list,
+    std::vector<std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>>*
+        received_packet_list,
     size_t num_packets_to_decode,
     float reorder_rate,
     float duplicate_rate,
@@ -103,8 +105,10 @@ void RunTest(bool use_flexfec) {
 
   ForwardErrorCorrection::PacketList media_packet_list;
   std::list<ForwardErrorCorrection::Packet*> fec_packet_list;
-  ForwardErrorCorrection::ReceivedPacketList to_decode_list;
-  ForwardErrorCorrection::ReceivedPacketList received_packet_list;
+  std::vector<std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>>
+      to_decode_list;
+  std::vector<std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>>
+      received_packet_list;
   ForwardErrorCorrection::RecoveredPacketList recovered_packet_list;
   std::list<uint8_t*> fec_mask_list;
 
@@ -403,11 +407,10 @@ void RunTest(bool use_flexfec) {
                   }
                 }
               }
-              ASSERT_EQ(0,
-                        fec->DecodeFec(&to_decode_list, &recovered_packet_list))
-                  << "DecodeFec() failed";
-              ASSERT_TRUE(to_decode_list.empty())
-                  << "Received packet list is not empty.";
+              for (const auto& received_packet : to_decode_list) {
+                fec->DecodeFec(*received_packet, &recovered_packet_list);
+              }
+              to_decode_list.clear();
             }
             media_packet_idx = 0;
             for (const auto& media_packet : media_packet_list) {
