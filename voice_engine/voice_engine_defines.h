@@ -64,11 +64,6 @@ enum { kVoiceEngineMaxRtpExtensionId = 14 };
 
 }  // namespace webrtc
 
-#define NOT_SUPPORTED(stat)                 \
-  LOG_F(LS_ERROR) << "not supported";       \
-  stat.SetLastError(VE_FUNC_NOT_SUPPORTED); \
-  return -1;
-
 namespace webrtc {
 
 inline int VoEId(int veId, int chId) {

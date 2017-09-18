@@ -14,7 +14,6 @@
 #include "test/mock_transport.h"
 #include "voice_engine/include/voe_base.h"
 #include "voice_engine/include/voe_network.h"
-#include "voice_engine/mock/mock_voe_observer.h"
 
 namespace webrtc {
 
@@ -26,7 +25,6 @@ class VoiceEngineFixture : public ::testing::Test {
   VoiceEngine* voe_;
   VoEBase* base_;
   VoENetwork* network_;
-  MockVoEObserver observer_;
   FakeAudioDeviceModule adm_;
   MockTransport transport_;
   rtc::scoped_refptr<AudioProcessing> apm_;

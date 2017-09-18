@@ -44,19 +44,12 @@ class VoEBaseImpl : public VoEBase,
   int CreateChannel(const ChannelConfig& config) override;
   int DeleteChannel(int channel) override;
 
-  int StartReceive(int channel) override;
   int StartPlayout(int channel) override;
   int StartSend(int channel) override;
   int StopPlayout(int channel) override;
   int StopSend(int channel) override;
 
-  int GetVersion(char version[1024]) override;
-
-  int LastError() override;
-
   AudioTransport* audio_transport() override { return this; }
-
-  int AssociateSendChannel(int channel, int accociate_send_channel) override;
 
   // AudioTransport
   int32_t RecordedDataIsAvailable(const void* audio_data,

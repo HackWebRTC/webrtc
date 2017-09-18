@@ -98,16 +98,10 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
     channels_.erase(channel);
     return 0;
   }
-  WEBRTC_STUB(StartReceive, (int channel));
   WEBRTC_STUB(StartPlayout, (int channel));
   WEBRTC_STUB(StartSend, (int channel));
-  WEBRTC_STUB(StopReceive, (int channel));
   WEBRTC_STUB(StopPlayout, (int channel));
   WEBRTC_STUB(StopSend, (int channel));
-  WEBRTC_STUB(GetVersion, (char version[1024]));
-  WEBRTC_STUB(LastError, ());
-  WEBRTC_STUB(AssociateSendChannel, (int channel,
-                                     int accociate_send_channel));
 
   size_t GetNetEqCapacity() const {
     auto ch = channels_.find(last_channel_);

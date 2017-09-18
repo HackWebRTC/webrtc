@@ -74,40 +74,6 @@ VoiceEngine* VoiceEngine::Create() {
   return GetVoiceEngine();
 }
 
-int VoiceEngine::SetTraceFilter(unsigned int filter) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
-               VoEId(gVoiceEngineInstanceCounter, -1),
-               "SetTraceFilter(filter=0x%x)", filter);
-
-  // Remember old filter
-  uint32_t oldFilter = Trace::level_filter();
-  Trace::set_level_filter(filter);
-
-  // If previous log was ignored, log again after changing filter
-  if (kTraceNone == oldFilter) {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, -1, "SetTraceFilter(filter=0x%x)",
-                 filter);
-  }
-
-  return 0;
-}
-
-int VoiceEngine::SetTraceFile(const char* fileNameUTF8, bool addFileCounter) {
-  int ret = Trace::SetTraceFile(fileNameUTF8, addFileCounter);
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
-               VoEId(gVoiceEngineInstanceCounter, -1),
-               "SetTraceFile(fileNameUTF8=%s, addFileCounter=%d)", fileNameUTF8,
-               addFileCounter);
-  return (ret);
-}
-
-int VoiceEngine::SetTraceCallback(TraceCallback* callback) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
-               VoEId(gVoiceEngineInstanceCounter, -1),
-               "SetTraceCallback(callback=0x%x)", callback);
-  return (Trace::SetTraceCallback(callback));
-}
-
 bool VoiceEngine::Delete(VoiceEngine*& voiceEngine) {
   if (voiceEngine == NULL)
     return false;
@@ -127,13 +93,4 @@ bool VoiceEngine::Delete(VoiceEngine*& voiceEngine) {
 
   return true;
 }
-
-std::string VoiceEngine::GetVersionString() {
-  std::string version = "VoiceEngine 4.1.0";
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
-  version += " (External transport build)";
-#endif
-  return version;
-}
-
 }  // namespace webrtc

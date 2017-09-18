@@ -107,17 +107,11 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD0(CreateChannel, int());
   MOCK_METHOD1(CreateChannel, int(const ChannelConfig& config));
   MOCK_METHOD1(DeleteChannel, int(int channel));
-  MOCK_METHOD1(StartReceive, int(int channel));
-  MOCK_METHOD1(StopReceive, int(int channel));
   MOCK_METHOD1(StartPlayout, int(int channel));
   MOCK_METHOD1(StopPlayout, int(int channel));
   MOCK_METHOD1(StartSend, int(int channel));
   MOCK_METHOD1(StopSend, int(int channel));
-  MOCK_METHOD1(GetVersion, int(char version[1024]));
-  MOCK_METHOD0(LastError, int());
   MOCK_METHOD0(audio_transport, AudioTransport*());
-  MOCK_METHOD2(AssociateSendChannel,
-               int(int channel, int accociate_send_channel));
 
   // VoECodec
   MOCK_METHOD0(NumOfCodecs, int());

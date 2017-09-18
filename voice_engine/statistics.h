@@ -36,7 +36,6 @@ class Statistics
     int32_t SetLastError(int32_t error,
                          TraceLevel level,
                          const char* msg) const;
-    int32_t LastError() const;
 
  private:
     rtc::CriticalSection lock_;

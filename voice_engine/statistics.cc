@@ -81,18 +81,6 @@ int32_t Statistics::SetLastError(
     return 0;
 }
 
-int32_t Statistics::LastError() const
-{
-    int32_t ret;
-    {
-        rtc::CritScope cs(&lock_);
-        ret = _lastError;
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "LastError() => %d", ret);
-    return ret;
-}
-
 }  // namespace voe
 
 }  // namespace webrtc

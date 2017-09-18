@@ -290,7 +290,6 @@ void WebRtcVoiceEngine::Init() {
   // Temporarily turn logging level up for the Init() call.
   webrtc::Trace::SetTraceCallback(this);
   webrtc::Trace::set_level_filter(kElevatedTraceFilter);
-  LOG(LS_INFO) << webrtc::VoiceEngine::GetVersionString();
   RTC_CHECK_EQ(0,
                voe_wrapper_->base()->Init(adm_.get(), apm(), decoder_factory_));
   webrtc::Trace::set_level_filter(kDefaultTraceFilter);
@@ -628,14 +627,18 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     LOG(LS_INFO) << "Recording sample rate is "
                  << *options.recording_sample_rate;
     if (adm()->SetRecordingSampleRate(*options.recording_sample_rate)) {
-      LOG_RTCERR1(SetRecordingSampleRate, *options.recording_sample_rate);
+      LOG(LS_WARNING) << "SetRecordingSampleRate("
+                      << *options.recording_sample_rate << ") failed, err="
+                      << adm()->LastError();
     }
   }
 
   if (options.playout_sample_rate) {
     LOG(LS_INFO) << "Playout sample rate is " << *options.playout_sample_rate;
     if (adm()->SetPlayoutSampleRate(*options.playout_sample_rate)) {
-      LOG_RTCERR1(SetPlayoutSampleRate, *options.playout_sample_rate);
+      LOG(LS_WARNING) << "SetPlayoutSampleRate("
+                      << *options.playout_sample_rate << ") failed, err="
+                      << adm()->LastError();
     }
   }
   return true;
@@ -671,11 +674,6 @@ RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
         webrtc::RtpExtension::kTransportSequenceNumberDefaultId));
   }
   return capabilities;
-}
-
-int WebRtcVoiceEngine::GetLastEngineError() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return voe_wrapper_->error();
 }
 
 void WebRtcVoiceEngine::Print(webrtc::TraceLevel level, const char* trace,
@@ -1832,7 +1830,7 @@ bool WebRtcVoiceMediaChannel::SetAudioSend(uint32_t ssrc,
 int WebRtcVoiceMediaChannel::CreateVoEChannel() {
   int id = engine()->CreateVoEChannel();
   if (id == -1) {
-    LOG_RTCERR0(CreateVoEChannel);
+    LOG(LS_WARNING) << "CreateVoEChannel() failed.";
     return -1;
   }
 
@@ -1841,7 +1839,7 @@ int WebRtcVoiceMediaChannel::CreateVoEChannel() {
 
 bool WebRtcVoiceMediaChannel::DeleteVoEChannel(int channel) {
   if (engine()->voe()->base()->DeleteChannel(channel) == -1) {
-    LOG_RTCERR1(DeleteChannel, channel);
+    LOG(LS_WARNING) << "DeleteChannel(" << channel << ") failed.";
     return false;
   }
   return true;

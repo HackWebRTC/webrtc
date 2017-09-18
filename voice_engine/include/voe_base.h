@@ -73,20 +73,6 @@ class WEBRTC_DLLEXPORT VoiceEngine {
   // references have been released.
   static bool Delete(VoiceEngine*& voiceEngine);
 
-  // Specifies the amount and type of trace information which will be
-  // created by the VoiceEngine.
-  static int SetTraceFilter(unsigned int filter);
-
-  // Sets the name of the trace file and enables non-encrypted trace messages.
-  static int SetTraceFile(const char* fileNameUTF8,
-                          bool addFileCounter = false);
-
-  // Installs the TraceCallback implementation to ensure that the user
-  // receives callbacks for generated trace messages.
-  static int SetTraceCallback(TraceCallback* callback);
-
-  static std::string GetVersionString();
-
  protected:
   VoiceEngine() {}
   ~VoiceEngine() {}
@@ -158,13 +144,6 @@ class WEBRTC_DLLEXPORT VoEBase {
   // Returns -1 in case of an error, 0 otherwise.
   virtual int DeleteChannel(int channel) = 0;
 
-  // Prepares and initiates the VoiceEngine for reception of
-  // incoming RTP/RTCP packets on the specified |channel|.
-  virtual int StartReceive(int channel) = 0;
-
-  // Stops receiving incoming RTP/RTCP packets on the specified |channel|.
-  virtual int StopReceive(int channel)  { return 0; }
-
   // Starts forwarding the packets to the mixer/soundcard for a
   // specified |channel|.
   virtual int StartPlayout(int channel) = 0;
@@ -180,21 +159,9 @@ class WEBRTC_DLLEXPORT VoEBase {
   // Stops sending packets from a specified |channel|.
   virtual int StopSend(int channel) = 0;
 
-  // Gets the version information for VoiceEngine and its components.
-  virtual int GetVersion(char version[1024]) = 0;
-
-  // Gets the last VoiceEngine error code.
-  virtual int LastError() = 0;
-
   // TODO(xians): Make the interface pure virtual after libjingle
   // implements the interface in its FakeWebRtcVoiceEngine.
   virtual AudioTransport* audio_transport() { return NULL; }
-
-  // Associate a send channel to a receive channel.
-  // Used for obtaining RTT for a receive-only channel.
-  // One should be careful not to crate a circular association, e.g.,
-  // 1 <- 2 <- 1.
-  virtual int AssociateSendChannel(int channel, int accociate_send_channel) = 0;
 
  protected:
   VoEBase() {}

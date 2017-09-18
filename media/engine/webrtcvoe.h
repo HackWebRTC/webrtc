@@ -13,8 +13,6 @@
 
 #include <memory>
 
-#include "media/engine/webrtccommon.h"
-
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_device/include/audio_device.h"
 #include "voice_engine/include/voe_base.h"
@@ -83,7 +81,6 @@ class VoEWrapper {
   ~VoEWrapper() {}
   webrtc::VoiceEngine* engine() const { return engine_.get(); }
   webrtc::VoEBase* base() const { return base_.get(); }
-  int error() { return base_->LastError(); }
 
  private:
   scoped_voe_engine engine_;

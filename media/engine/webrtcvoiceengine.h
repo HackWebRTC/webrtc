@@ -22,7 +22,6 @@
 #include "call/call.h"
 #include "media/base/rtputils.h"
 #include "media/engine/apm_helpers.h"
-#include "media/engine/webrtccommon.h"
 #include "media/engine/webrtcvoe.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "pc/channel.h"
@@ -89,7 +88,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   void UnregisterChannel(WebRtcVoiceMediaChannel* channel);
 
   VoEWrapper* voe() { return voe_wrapper_.get(); }
-  int GetLastEngineError();
 
   // Starts AEC dump using an existing file. A maximum file size in bytes can be
   // specified. When the maximum file size is reached, logging is stopped and
@@ -249,7 +247,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool MuteStream(uint32_t ssrc, bool mute);
 
   WebRtcVoiceEngine* engine() { return engine_; }
-  int GetLastEngineError() { return engine()->GetLastEngineError(); }
   void ChangePlayout(bool playout);
   int CreateVoEChannel();
   bool DeleteVoEChannel(int channel);

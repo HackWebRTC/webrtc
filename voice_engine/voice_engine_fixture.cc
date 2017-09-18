@@ -19,13 +19,11 @@ VoiceEngineFixture::VoiceEngineFixture()
       network_(VoENetwork::GetInterface(voe_)) {
   EXPECT_NE(nullptr, base_);
   EXPECT_NE(nullptr, network_);
-  EXPECT_EQ(0, base_->RegisterVoiceEngineObserver(observer_));
   apm_ = new rtc::RefCountedObject<test::MockAudioProcessing>();
 }
 
 VoiceEngineFixture::~VoiceEngineFixture() {
   EXPECT_EQ(2, network_->Release());
-  EXPECT_EQ(0, base_->DeRegisterVoiceEngineObserver());
   EXPECT_EQ(0, base_->Terminate());
   EXPECT_EQ(1, base_->Release());
   EXPECT_TRUE(VoiceEngine::Delete(voe_));
