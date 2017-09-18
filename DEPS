@@ -552,13 +552,11 @@ include_rules = [
   "+external/webrtc/webrtc",  # Android platform build.
   "+gflags",
   "+libyuv",
-  "-webrtc",  # Has to be disabled; otherwise all dirs below will be allowed.
   # Individual headers that will be moved out of here, see webrtc:4243.
   "+call/rtp_config.h",
   "+common_types.h",
   "+transport.h",
   "+typedefs.h",
-  "+voice_engine_configurations.h",
 
   "+WebRTC",
   "+api",
