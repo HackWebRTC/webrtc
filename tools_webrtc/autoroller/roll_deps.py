@@ -409,7 +409,7 @@ def _UploadCL(dry_run, skip_cq=False):
     if not skip_cq:
       logging.info('Sending the CL to the CQ...')
       cmd.extend(['--use-commit-queue', '--send-mail'])
-    _RunCommand(cmd, extra_env={'EDITOR': 'true', 'SKIP_GCE_AUTH_FOR_GIT': 1})
+    _RunCommand(cmd, extra_env={'EDITOR': 'true', 'SKIP_GCE_AUTH_FOR_GIT': '1'})
 
 
 def main():
