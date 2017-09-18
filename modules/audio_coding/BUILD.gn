@@ -153,10 +153,7 @@ rtc_static_library("legacy_encoded_audio_frame") {
 }
 
 config("cng_config") {
-  include_dirs = [
-    "../../..",
-    "codecs/cng/include",
-  ]
+  include_dirs = [ "codecs/cng/include" ]
 }
 
 rtc_static_library("cng") {
@@ -198,10 +195,7 @@ rtc_static_library("red") {
 }
 
 config("g711_config") {
-  include_dirs = [
-    "../../..",
-    "codecs/g711/include",
-  ]
+  include_dirs = [ "codecs/g711/include" ]
 }
 
 rtc_static_library("g711") {
@@ -239,10 +233,7 @@ rtc_source_set("g711_c") {
 }
 
 config("g722_config") {
-  include_dirs = [
-    "../../..",
-    "codecs/g722/include",
-  ]
+  include_dirs = [ "codecs/g722/include" ]
 }
 
 rtc_static_library("g722") {
@@ -282,10 +273,7 @@ rtc_source_set("g722_c") {
 }
 
 config("ilbc_config") {
-  include_dirs = [
-    "../../..",
-    "codecs/ilbc/include",
-  ]
+  include_dirs = [ "codecs/ilbc/include" ]
 }
 
 rtc_static_library("ilbc") {
@@ -480,10 +468,7 @@ rtc_static_library("isac_common") {
 }
 
 config("isac_config") {
-  include_dirs = [
-    "../../..",
-    "codecs/isac/main/include",
-  ]
+  include_dirs = [ "codecs/isac/main/include" ]
 }
 
 rtc_static_library("isac") {
@@ -574,10 +559,7 @@ rtc_static_library("isac_c") {
 }
 
 config("isac_fix_config") {
-  include_dirs = [
-    "../../..",
-    "codecs/isac/fix/include",
-  ]
+  include_dirs = [ "codecs/isac/fix/include" ]
 }
 
 rtc_static_library("isac_fix") {
@@ -760,10 +742,7 @@ if (rtc_build_with_neon) {
 }
 
 config("pcm16b_config") {
-  include_dirs = [
-    "../../..",
-    "codecs/pcm16b/include",
-  ]
+  include_dirs = [ "codecs/pcm16b/include" ]
 }
 
 rtc_static_library("pcm16b") {
@@ -800,10 +779,6 @@ rtc_source_set("pcm16b_c") {
   deps = [
     "../..:webrtc_common",
   ]
-}
-
-config("opus_config") {
-  include_dirs = [ "../../.." ]
 }
 
 rtc_static_library("webrtc_opus") {
@@ -1690,7 +1665,6 @@ if (rtc_include_tests) {
     include_dirs = [
       "neteq/include",
       "neteq/test",
-      "../../",
     ]
 
     if (is_win) {
