@@ -116,14 +116,6 @@ class RtpRtcp : public Module {
   // Sender
   // **************************************************************************
 
-  // TODO(nisse): Deprecated. Kept temporarily, as an alias for the
-  // new function which has slighly different semantics. Delete as
-  // soon as known applications are updated.
-  virtual int32_t SetMaxTransferUnit(uint16_t size) {
-    SetMaxRtpPacketSize(size);
-    return 0;
-  }
-
   // Sets the maximum size of an RTP packet, including RTP headers.
   virtual void SetMaxRtpPacketSize(size_t size) = 0;
 
