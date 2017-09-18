@@ -127,44 +127,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD3(ReceivedRTCPPacket,
                int(int channel, const void* data, size_t length));
 
-  // VoERTP_RTCP
-  MOCK_METHOD2(SetLocalSSRC, int(int channel, unsigned int ssrc));
-  MOCK_METHOD2(GetLocalSSRC, int(int channel, unsigned int& ssrc));
-  MOCK_METHOD2(GetRemoteSSRC, int(int channel, unsigned int& ssrc));
-  MOCK_METHOD3(SetSendAudioLevelIndicationStatus,
-               int(int channel, bool enable, unsigned char id));
-  MOCK_METHOD3(SetReceiveAudioLevelIndicationStatus,
-               int(int channel, bool enable, unsigned char id));
-  MOCK_METHOD3(SetSendAbsoluteSenderTimeStatus,
-               int(int channel, bool enable, unsigned char id));
-  MOCK_METHOD3(SetReceiveAbsoluteSenderTimeStatus,
-               int(int channel, bool enable, unsigned char id));
-  MOCK_METHOD2(SetRTCPStatus, int(int channel, bool enable));
-  MOCK_METHOD2(GetRTCPStatus, int(int channel, bool& enabled));
-  MOCK_METHOD2(SetRTCP_CNAME, int(int channel, const char cName[256]));
-  MOCK_METHOD2(GetRTCP_CNAME, int(int channel, char cName[256]));
-  MOCK_METHOD2(GetRemoteRTCP_CNAME, int(int channel, char cName[256]));
-  MOCK_METHOD7(GetRemoteRTCPData,
-               int(int channel,
-                   unsigned int& NTPHigh,
-                   unsigned int& NTPLow,
-                   unsigned int& timestamp,
-                   unsigned int& playoutTimestamp,
-                   unsigned int* jitter,
-                   unsigned short* fraction_lost));
-  MOCK_METHOD4(GetRTPStatistics,
-               int(int channel,
-                   unsigned int& averageJitterMs,
-                   unsigned int& maxJitterMs,
-                   unsigned int& discardedPackets));
-  MOCK_METHOD2(GetRTCPStatistics, int(int channel, CallStatistics& stats));
-  MOCK_METHOD2(GetRemoteRTCPReportBlocks,
-               int(int channel, std::vector<ReportBlock>* receive_blocks));
-  MOCK_METHOD3(SetREDStatus, int(int channel, bool enable, int redPayloadtype));
-  MOCK_METHOD3(GetREDStatus,
-               int(int channel, bool& enable, int& redPayloadtype));
-  MOCK_METHOD3(SetNACKStatus, int(int channel, bool enable, int maxNoPackets));
-
  private:
   // TODO(ossu): I'm not particularly happy about keeping the decoder factory
   // here, but due to how gmock is implemented, I cannot just keep it in the

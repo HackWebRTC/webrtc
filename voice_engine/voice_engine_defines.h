@@ -56,12 +56,6 @@ enum { kVoiceEngineMinMinPlayoutDelayMs = 0 };
 // Highest minimum playout delay
 enum { kVoiceEngineMaxMinPlayoutDelayMs = 10000 };
 
-// RTP/RTCP
-// Min 4-bit ID for RTP extension (see section 4.2 in RFC 5285)
-enum { kVoiceEngineMinRtpExtensionId = 1 };
-// Max 4-bit ID for RTP extension
-enum { kVoiceEngineMaxRtpExtensionId = 14 };
-
 }  // namespace webrtc
 
 namespace webrtc {

@@ -56,12 +56,36 @@ class RtpPacketReceived;
 class RtpRtcp;
 class RtpTransportControllerSendInterface;
 class TelephoneEventHandler;
-class VoERTPObserver;
 class VoiceEngineObserver;
 
-struct CallStatistics;
-struct ReportBlock;
 struct SenderInfo;
+
+struct CallStatistics {
+  unsigned short fractionLost;
+  unsigned int cumulativeLost;
+  unsigned int extendedMax;
+  unsigned int jitterSamples;
+  int64_t rttMs;
+  size_t bytesSent;
+  int packetsSent;
+  size_t bytesReceived;
+  int packetsReceived;
+  // The capture ntp time (in local timebase) of the first played out audio
+  // frame.
+  int64_t capture_start_ntp_time_ms_;
+};
+
+// See section 6.4.2 in http://www.ietf.org/rfc/rfc3550.txt for details.
+struct ReportBlock {
+  uint32_t sender_SSRC;  // SSRC of sender
+  uint32_t source_SSRC;
+  uint8_t fraction_lost;
+  uint32_t cumulative_num_packets_lost;
+  uint32_t extended_highest_sequence_number;
+  uint32_t interarrival_jitter;
+  uint32_t last_SR_timestamp;
+  uint32_t delay_since_last_SR;
+};
 
 namespace voe {
 
@@ -215,10 +239,8 @@ class Channel
   int SendTelephoneEventOutband(int event, int duration_ms);
   int SetSendTelephoneEventPayloadType(int payload_type, int payload_frequency);
 
-  // VoERTP_RTCP
+  // RTP+RTCP
   int SetLocalSSRC(unsigned int ssrc);
-  int GetLocalSSRC(unsigned int& ssrc);
-  int GetRemoteSSRC(unsigned int& ssrc);
   int SetSendAudioLevelIndicationStatus(bool enable, unsigned char id);
   int SetReceiveAudioLevelIndicationStatus(bool enable, unsigned char id);
   void EnableSendTransportSequenceNumber(int id);
@@ -231,13 +253,7 @@ class Channel
   void ResetSenderCongestionControlObjects();
   void ResetReceiverCongestionControlObjects();
   void SetRTCPStatus(bool enable);
-  int GetRTCPStatus(bool& enabled);
   int SetRTCP_CNAME(const char cName[256]);
-  int GetRemoteRTCP_CNAME(char cName[256]);
-  int SendApplicationDefinedRTCPPacket(unsigned char subType,
-                                       unsigned int name,
-                                       const char* data,
-                                       unsigned short dataLengthInBytes);
   int GetRemoteRTCPReportBlocks(std::vector<ReportBlock>* report_blocks);
   int GetRTPStatistics(CallStatistics& stats);
   void SetNACKStatus(bool enable, int maxNumberOfPackets);
@@ -343,6 +359,7 @@ class Channel
  private:
   class ProcessAndEncodeAudioTask;
 
+  int GetRemoteSSRC(unsigned int& ssrc);
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
   bool OnRtpPacketWithHeader(const uint8_t* received_packet,

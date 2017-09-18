@@ -18,8 +18,8 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/thread_checker.h"
+#include "voice_engine/channel.h"
 #include "voice_engine/channel_manager.h"
-#include "voice_engine/include/voe_rtp_rtcp.h"
 
 #include <memory>
 #include <string>
@@ -41,8 +41,6 @@ class Transport;
 class TransportFeedbackObserver;
 
 namespace voe {
-
-class Channel;
 
 // This class provides the "view" of a voe::Channel that we need to implement
 // webrtc::AudioSendStream and webrtc::AudioReceiveStream. It serves two

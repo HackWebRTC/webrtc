@@ -17,7 +17,6 @@
 #include "typedefs.h"  // NOLINT(build/include)
 #include "voice_engine/voe_base_impl.h"
 #include "voice_engine/voe_network_impl.h"
-#include "voice_engine/voe_rtp_rtcp_impl.h"
 
 namespace webrtc {
 namespace voe {
@@ -27,13 +26,11 @@ class ChannelProxy;
 class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
                         public VoiceEngine,
                         public VoENetworkImpl,
-                        public VoERTP_RTCPImpl,
                         public VoEBaseImpl {
  public:
   VoiceEngineImpl()
       : SharedData(),
         VoENetworkImpl(this),
-        VoERTP_RTCPImpl(this),
         VoEBaseImpl(this),
         _ref_count(0) {}
   ~VoiceEngineImpl() override { assert(_ref_count.Value() == 0); }

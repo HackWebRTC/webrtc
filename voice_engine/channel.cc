@@ -39,7 +39,6 @@
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/trace.h"
-#include "voice_engine/include/voe_rtp_rtcp.h"
 #include "voice_engine/output_mixer.h"
 #include "voice_engine/statistics.h"
 #include "voice_engine/utility.h"
@@ -1576,11 +1575,6 @@ int Channel::SetLocalSSRC(unsigned int ssrc) {
   return 0;
 }
 
-int Channel::GetLocalSSRC(unsigned int& ssrc) {
-  ssrc = _rtpRtcpModule->SSRC();
-  return 0;
-}
-
 int Channel::GetRemoteSSRC(unsigned int& ssrc) {
   ssrc = rtp_receiver_->SSRC();
   return 0;
@@ -1671,12 +1665,6 @@ void Channel::SetRTCPStatus(bool enable) {
   _rtpRtcpModule->SetRTCPStatus(enable ? RtcpMode::kCompound : RtcpMode::kOff);
 }
 
-int Channel::GetRTCPStatus(bool& enabled) {
-  RtcpMode method = _rtpRtcpModule->RTCP();
-  enabled = (method != RtcpMode::kOff);
-  return 0;
-}
-
 int Channel::SetRTCP_CNAME(const char cName[256]) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetRTCP_CNAME()");
@@ -1684,69 +1672,6 @@ int Channel::SetRTCP_CNAME(const char cName[256]) {
     _engineStatisticsPtr->SetLastError(
         VE_RTP_RTCP_MODULE_ERROR, kTraceError,
         "SetRTCP_CNAME() failed to set RTCP CNAME");
-    return -1;
-  }
-  return 0;
-}
-
-int Channel::GetRemoteRTCP_CNAME(char cName[256]) {
-  if (cName == NULL) {
-    _engineStatisticsPtr->SetLastError(
-        VE_INVALID_ARGUMENT, kTraceError,
-        "GetRemoteRTCP_CNAME() invalid CNAME input buffer");
-    return -1;
-  }
-  char cname[RTCP_CNAME_SIZE];
-  const uint32_t remoteSSRC = rtp_receiver_->SSRC();
-  if (_rtpRtcpModule->RemoteCNAME(remoteSSRC, cname) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_CANNOT_RETRIEVE_CNAME, kTraceError,
-        "GetRemoteRTCP_CNAME() failed to retrieve remote RTCP CNAME");
-    return -1;
-  }
-  strcpy(cName, cname);
-  return 0;
-}
-
-int Channel::SendApplicationDefinedRTCPPacket(
-    unsigned char subType,
-    unsigned int name,
-    const char* data,
-    unsigned short dataLengthInBytes) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SendApplicationDefinedRTCPPacket()");
-  if (!channel_state_.Get().sending) {
-    _engineStatisticsPtr->SetLastError(
-        VE_NOT_SENDING, kTraceError,
-        "SendApplicationDefinedRTCPPacket() not sending");
-    return -1;
-  }
-  if (NULL == data) {
-    _engineStatisticsPtr->SetLastError(
-        VE_INVALID_ARGUMENT, kTraceError,
-        "SendApplicationDefinedRTCPPacket() invalid data value");
-    return -1;
-  }
-  if (dataLengthInBytes % 4 != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_INVALID_ARGUMENT, kTraceError,
-        "SendApplicationDefinedRTCPPacket() invalid length value");
-    return -1;
-  }
-  RtcpMode status = _rtpRtcpModule->RTCP();
-  if (status == RtcpMode::kOff) {
-    _engineStatisticsPtr->SetLastError(
-        VE_RTCP_ERROR, kTraceError,
-        "SendApplicationDefinedRTCPPacket() RTCP is disabled");
-    return -1;
-  }
-
-  // Create and schedule the RTCP APP packet for transmission
-  if (_rtpRtcpModule->SetRTCPApplicationSpecificData(
-          subType, name, (const unsigned char*)data, dataLengthInBytes) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_SEND_ERROR, kTraceError,
-        "SendApplicationDefinedRTCPPacket() failed to send RTCP packet");
     return -1;
   }
   return 0;
