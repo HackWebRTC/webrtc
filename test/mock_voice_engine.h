@@ -134,55 +134,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD2(SetOpusMaxPlaybackRate, int(int channel, int frequency_hz));
   MOCK_METHOD2(SetOpusDtx, int(int channel, bool enable_dtx));
 
-  // VoEFile
-  MOCK_METHOD7(StartPlayingFileLocally,
-               int(int channel,
-                   const char fileNameUTF8[1024],
-                   bool loop,
-                   FileFormats format,
-                   float volumeScaling,
-                   int startPointMs,
-                   int stopPointMs));
-  MOCK_METHOD6(StartPlayingFileLocally,
-               int(int channel,
-                   InStream* stream,
-                   FileFormats format,
-                   float volumeScaling,
-                   int startPointMs,
-                   int stopPointMs));
-  MOCK_METHOD1(StopPlayingFileLocally, int(int channel));
-  MOCK_METHOD1(IsPlayingFileLocally, int(int channel));
-  MOCK_METHOD6(StartPlayingFileAsMicrophone,
-               int(int channel,
-                   const char fileNameUTF8[1024],
-                   bool loop,
-                   bool mixWithMicrophone,
-                   FileFormats format,
-                   float volumeScaling));
-  MOCK_METHOD5(StartPlayingFileAsMicrophone,
-               int(int channel,
-                   InStream* stream,
-                   bool mixWithMicrophone,
-                   FileFormats format,
-                   float volumeScaling));
-  MOCK_METHOD1(StopPlayingFileAsMicrophone, int(int channel));
-  MOCK_METHOD1(IsPlayingFileAsMicrophone, int(int channel));
-  MOCK_METHOD4(StartRecordingPlayout,
-               int(int channel,
-                   const char* fileNameUTF8,
-                   CodecInst* compression,
-                   int maxSizeBytes));
-  MOCK_METHOD1(StopRecordingPlayout, int(int channel));
-  MOCK_METHOD3(StartRecordingPlayout,
-               int(int channel, OutStream* stream, CodecInst* compression));
-  MOCK_METHOD3(StartRecordingMicrophone,
-               int(const char* fileNameUTF8,
-                   CodecInst* compression,
-                   int maxSizeBytes));
-  MOCK_METHOD2(StartRecordingMicrophone,
-               int(OutStream* stream, CodecInst* compression));
-  MOCK_METHOD0(StopRecordingMicrophone, int());
-
   // VoENetwork
   MOCK_METHOD2(RegisterExternalTransport,
                int(int channel, Transport& transport));

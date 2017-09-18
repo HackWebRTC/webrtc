@@ -8,69 +8,6 @@
 
 import("../webrtc.gni")
 
-rtc_static_library("audio_coder") {
-  sources = [
-    "coder.cc",
-    "coder.h",
-  ]
-  deps = [
-    "..:webrtc_common",
-    "../api/audio_codecs:builtin_audio_decoder_factory",
-    "../api/audio_codecs:builtin_audio_encoder_factory",
-    "../modules:module_api",
-    "../modules/audio_coding",
-    "../modules/audio_coding:audio_format_conversion",
-    "../modules/audio_coding:rent_a_codec",
-  ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
-rtc_static_library("file_player") {
-  sources = [
-    "file_player.cc",
-    "file_player.h",
-  ]
-  deps = [
-    ":audio_coder",
-    "..:webrtc_common",
-    "../common_audio",
-    "../modules:module_api",
-    "../modules/media_file",
-    "../rtc_base:rtc_base_approved",
-  ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
-rtc_static_library("file_recorder") {
-  sources = [
-    "file_recorder.cc",
-    "file_recorder.h",
-  ]
-  deps = [
-    ":audio_coder",
-    "..:webrtc_common",
-    "../audio/utility:audio_frame_operations",
-    "../common_audio",
-    "../modules:module_api",
-    "../modules/media_file:media_file",
-    "../rtc_base:rtc_base_approved",
-    "../system_wrappers",
-  ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
 rtc_static_library("voice_engine") {
   sources = [
     "channel.cc",
@@ -82,7 +19,6 @@ rtc_static_library("voice_engine") {
     "include/voe_base.h",
     "include/voe_codec.h",
     "include/voe_errors.h",
-    "include/voe_file.h",
     "include/voe_network.h",
     "include/voe_rtp_rtcp.h",
     "monitor_module.h",
@@ -102,8 +38,6 @@ rtc_static_library("voice_engine") {
     "voe_base_impl.h",
     "voe_codec_impl.cc",
     "voe_codec_impl.h",
-    "voe_file_impl.cc",
-    "voe_file_impl.h",
     "voe_network_impl.cc",
     "voe_network_impl.h",
     "voe_rtp_rtcp_impl.cc",
@@ -132,8 +66,6 @@ rtc_static_library("voice_engine") {
   ]
   deps = [
     ":audio_level",
-    ":file_player",
-    ":file_recorder",
     "..:webrtc_common",
     "../api:array_view",
     "../api:audio_mixer_api",
@@ -182,7 +114,6 @@ rtc_static_library("audio_level") {
 if (rtc_include_tests) {
   rtc_test("voice_engine_unittests") {
     deps = [
-      ":file_player",
       ":voice_engine",
       "../common_audio",
       "../modules:module_api",
@@ -211,7 +142,6 @@ if (rtc_include_tests) {
 
     sources = [
       "channel_unittest.cc",
-      "file_player_unittests.cc",
       "transport_feedback_packet_loss_tracker_unittest.cc",
       "utility_unittest.cc",
       "voe_base_unittest.cc",

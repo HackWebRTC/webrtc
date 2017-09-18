@@ -19,8 +19,6 @@
 #include "modules/include/module_common_types.h"
 #include "rtc_base/criticalsection.h"
 #include "voice_engine/audio_level.h"
-#include "voice_engine/file_player.h"
-#include "voice_engine/file_recorder.h"
 #include "voice_engine/include/voe_base.h"
 #include "voice_engine/monitor_module.h"
 #include "voice_engine/voice_engine_defines.h"
@@ -41,7 +39,7 @@ class ChannelManager;
 class MixedAudio;
 class Statistics;
 
-class TransmitMixer : public FileCallback {
+class TransmitMixer {
 public:
     static int32_t Create(TransmitMixer*& mixer, uint32_t instanceId);
 
@@ -84,45 +82,6 @@ public:
     // 'virtual' to allow mocking.
     virtual double GetTotalInputDuration() const;
 
-    bool IsRecordingCall();
-
-    bool IsRecordingMic();
-
-    int StartPlayingFileAsMicrophone(const char* fileName,
-                                     bool loop,
-                                     FileFormats format,
-                                     int startPosition,
-                                     float volumeScaling,
-                                     int stopPosition,
-                                     const CodecInst* codecInst);
-
-    int StartPlayingFileAsMicrophone(InStream* stream,
-                                     FileFormats format,
-                                     int startPosition,
-                                     float volumeScaling,
-                                     int stopPosition,
-                                     const CodecInst* codecInst);
-
-    int StopPlayingFileAsMicrophone();
-
-    int IsPlayingFileAsMicrophone() const;
-
-    int StartRecordingMicrophone(const char* fileName,
-                                 const CodecInst* codecInst);
-
-    int StartRecordingMicrophone(OutStream* stream,
-                                 const CodecInst* codecInst);
-
-    int StopRecordingMicrophone();
-
-    int StartRecordingCall(const char* fileName, const CodecInst* codecInst);
-
-    int StartRecordingCall(OutStream* stream, const CodecInst* codecInst);
-
-    int StopRecordingCall();
-
-    void SetMixWithMicStatus(bool mix);
-
     int32_t RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
 
     virtual ~TransmitMixer();
@@ -131,17 +90,6 @@ public:
     // Periodic callback from the MonitorModule.
     void OnPeriodicProcess();
 #endif
-
-    // FileCallback
-    void PlayNotification(const int32_t id,
-                          const uint32_t durationMs);
-
-    void RecordNotification(const int32_t id,
-                            const uint32_t durationMs);
-
-    void PlayFileEnded(const int32_t id);
-
-    void RecordFileEnded(const int32_t id);
 
   // Virtual to allow mocking.
   virtual void EnableStereoChannelSwapping(bool enable);
@@ -165,10 +113,6 @@ private:
                             size_t nSamples,
                             size_t nChannels,
                             int samplesPerSec);
-    int32_t RecordAudioToFile(uint32_t mixingFrequency);
-
-    int32_t MixOrReplaceAudioWithFile(
-        int mixingFrequency);
 
     void ProcessAudio(int delay_ms, int clock_drift, int current_mic_level,
                       bool key_pressed);
@@ -187,15 +131,6 @@ private:
     // owns
     AudioFrame _audioFrame;
     PushResampler<int16_t> resampler_;  // ADM sample rate -> mixing rate
-    std::unique_ptr<FilePlayer> file_player_;
-    std::unique_ptr<FileRecorder> file_recorder_;
-    std::unique_ptr<FileRecorder> file_call_recorder_;
-    int _filePlayerId = 0;
-    int _fileRecorderId = 0;
-    int _fileCallRecorderId = 0;
-    bool _filePlaying = false;
-    bool _fileRecording = false;
-    bool _fileCallRecording = false;
     voe::AudioLevel _audioLevel;
     // protect file instances and their variables in MixedParticipants()
     rtc::CriticalSection _critSect;
@@ -209,7 +144,6 @@ private:
 #endif
 
     int _instanceId = 0;
-    bool _mixFileWithMicrophone = false;
     uint32_t _captureLevel = 0;
     bool stereo_codec_ = false;
     bool swap_stereo_channels_ = false;

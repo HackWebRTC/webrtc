@@ -88,41 +88,5 @@ void RemixAndResample(const int16_t* src_data,
   }
 }
 
-void MixWithSat(int16_t target[],
-                size_t target_channel,
-                const int16_t source[],
-                size_t source_channel,
-                size_t source_len) {
-  RTC_DCHECK_GE(target_channel, 1);
-  RTC_DCHECK_LE(target_channel, 2);
-  RTC_DCHECK_GE(source_channel, 1);
-  RTC_DCHECK_LE(source_channel, 2);
-
-  if (target_channel == 2 && source_channel == 1) {
-    // Convert source from mono to stereo.
-    int32_t left = 0;
-    int32_t right = 0;
-    for (size_t i = 0; i < source_len; ++i) {
-      left = source[i] + target[i * 2];
-      right = source[i] + target[i * 2 + 1];
-      target[i * 2] = WebRtcSpl_SatW32ToW16(left);
-      target[i * 2 + 1] = WebRtcSpl_SatW32ToW16(right);
-    }
-  } else if (target_channel == 1 && source_channel == 2) {
-    // Convert source from stereo to mono.
-    int32_t temp = 0;
-    for (size_t i = 0; i < source_len / 2; ++i) {
-      temp = ((source[i * 2] + source[i * 2 + 1]) >> 1) + target[i];
-      target[i] = WebRtcSpl_SatW32ToW16(temp);
-    }
-  } else {
-    int32_t temp = 0;
-    for (size_t i = 0; i < source_len; ++i) {
-      temp = source[i] + target[i];
-      target[i] = WebRtcSpl_SatW32ToW16(temp);
-    }
-  }
-}
-
 }  // namespace voe
 }  // namespace webrtc

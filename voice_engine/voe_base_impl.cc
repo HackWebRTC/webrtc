@@ -597,8 +597,7 @@ int32_t VoEBaseImpl::StartSend() {
 }
 
 int32_t VoEBaseImpl::StopSend() {
-  if (shared_->NumOfSendingChannels() == 0 &&
-      !shared_->transmit_mixer()->IsRecordingMic()) {
+  if (shared_->NumOfSendingChannels() == 0) {
     // Stop audio-device recording if no channel is recording
     if (shared_->audio_device()->StopRecording() != 0) {
       shared_->SetLastError(VE_CANNOT_STOP_RECORDING, kTraceError,

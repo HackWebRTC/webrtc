@@ -32,8 +32,6 @@
 #include "rtc_base/event.h"
 #include "rtc_base/thread_checker.h"
 #include "voice_engine/audio_level.h"
-#include "voice_engine/file_player.h"
-#include "voice_engine/file_recorder.h"
 #include "voice_engine/include/voe_base.h"
 #include "voice_engine/include/voe_network.h"
 #include "voice_engine/shared_data.h"
@@ -46,7 +44,6 @@ class TimestampWrapAroundHandler;
 namespace webrtc {
 
 class AudioDeviceModule;
-class FileWrapper;
 class PacketRouter;
 class ProcessThread;
 class RateLimiter;
@@ -85,8 +82,6 @@ class VoERtcpObserver;
 class ChannelState {
  public:
   struct State {
-    bool output_file_playing = false;
-    bool input_file_playing = false;
     bool playing = false;
     bool sending = false;
   };
@@ -102,16 +97,6 @@ class ChannelState {
   State Get() const {
     rtc::CritScope lock(&lock_);
     return state_;
-  }
-
-  void SetOutputFilePlaying(bool enable) {
-    rtc::CritScope lock(&lock_);
-    state_.output_file_playing = enable;
-  }
-
-  void SetInputFilePlaying(bool enable) {
-    rtc::CritScope lock(&lock_);
-    state_.input_file_playing = enable;
   }
 
   void SetPlaying(bool enable) {
@@ -132,8 +117,6 @@ class ChannelState {
 class Channel
     : public RtpData,
       public RtpFeedback,
-      public FileCallback,  // receiving notification from file player &
-                            // recorder
       public Transport,
       public AudioPacketizationCallback,  // receive encoded packets from the
                                           // ACM
@@ -216,44 +199,6 @@ class Channel
   // TODO(nisse, solenberg): Delete when VoENetwork is deleted.
   int32_t ReceivedRTCPPacket(const uint8_t* data, size_t length);
   void OnRtpPacket(const RtpPacketReceived& packet);
-
-  // VoEFile
-  int StartPlayingFileLocally(const char* fileName,
-                              bool loop,
-                              FileFormats format,
-                              int startPosition,
-                              float volumeScaling,
-                              int stopPosition,
-                              const CodecInst* codecInst);
-  int StartPlayingFileLocally(InStream* stream,
-                              FileFormats format,
-                              int startPosition,
-                              float volumeScaling,
-                              int stopPosition,
-                              const CodecInst* codecInst);
-  int StopPlayingFileLocally();
-  int IsPlayingFileLocally() const;
-  int RegisterFilePlayingToMixer();
-  int StartPlayingFileAsMicrophone(const char* fileName,
-                                   bool loop,
-                                   FileFormats format,
-                                   int startPosition,
-                                   float volumeScaling,
-                                   int stopPosition,
-                                   const CodecInst* codecInst);
-  int StartPlayingFileAsMicrophone(InStream* stream,
-                                   FileFormats format,
-                                   int startPosition,
-                                   float volumeScaling,
-                                   int stopPosition,
-                                   const CodecInst* codecInst);
-  int StopPlayingFileAsMicrophone();
-  int IsPlayingFileAsMicrophone() const;
-  int StartRecordingPlayout(const char* fileName, const CodecInst* codecInst);
-  int StartRecordingPlayout(OutStream* stream, const CodecInst* codecInst);
-  int StopRecordingPlayout();
-
-  void SetMixWithMicStatus(bool mix);
 
   // Muting, Volume and Level.
   void SetInputMute(bool enable);
@@ -348,12 +293,6 @@ class Channel
       int sample_rate_hz,
       AudioFrame* audio_frame);
 
-  // From FileCallback
-  void PlayNotification(int32_t id, uint32_t durationMs) override;
-  void RecordNotification(int32_t id, uint32_t durationMs) override;
-  void PlayFileEnded(int32_t id) override;
-  void RecordFileEnded(int32_t id) override;
-
   uint32_t InstanceId() const { return _instanceId; }
   int32_t ChannelId() const { return _channelId; }
   bool Playing() const { return channel_state_.Get().playing; }
@@ -430,8 +369,6 @@ class Channel
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   int ResendPackets(const uint16_t* sequence_numbers, int length);
-  int32_t MixOrReplaceAudioWithFile(AudioFrame* audio_frame);
-  int32_t MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency);
   void UpdatePlayoutTimestamp(bool rtcp);
   void RegisterReceiveCodecsToRTPModule();
 
@@ -452,7 +389,6 @@ class Channel
   uint32_t _instanceId;
   int32_t _channelId;
 
-  rtc::CriticalSection _fileCritSect;
   rtc::CriticalSection _callbackCritSect;
   rtc::CriticalSection volume_settings_critsect_;
 
@@ -475,13 +411,6 @@ class Channel
   bool _externalTransport;
   // Downsamples to the codec rate if necessary.
   PushResampler<int16_t> input_resampler_;
-  std::unique_ptr<FilePlayer> input_file_player_;
-  std::unique_ptr<FilePlayer> output_file_player_;
-  std::unique_ptr<FileRecorder> output_file_recorder_;
-  int _inputFilePlayerId;
-  int _outputFilePlayerId;
-  int _outputFileRecorderId;
-  bool _outputFileRecording;
   uint32_t _timeStamp RTC_ACCESS_ON(encoder_queue_);
 
   RemoteNtpTimeEstimator ntp_estimator_ RTC_GUARDED_BY(ts_stats_lock_);
@@ -515,8 +444,6 @@ class Channel
   bool input_mute_ RTC_GUARDED_BY(volume_settings_critsect_);
   bool previous_frame_muted_ RTC_ACCESS_ON(encoder_queue_);
   float _outputGain RTC_GUARDED_BY(volume_settings_critsect_);
-  // VoEBase
-  bool _mixFileWithMicrophone;
   // VoeRTP_RTCP
   // TODO(henrika): can today be accessed on the main thread and on the
   // task queue; hence potential race.

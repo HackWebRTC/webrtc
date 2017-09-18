@@ -18,7 +18,6 @@
 #include "modules/audio_conference_mixer/include/audio_conference_mixer.h"
 #include "modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 #include "rtc_base/criticalsection.h"
-#include "voice_engine/file_recorder.h"
 
 namespace webrtc {
 
@@ -29,8 +28,7 @@ namespace voe {
 
 class Statistics;
 
-class OutputMixer : public AudioMixerOutputReceiver,
-                    public FileCallback
+class OutputMixer : public AudioMixerOutputReceiver
 {
 public:
     static int32_t Create(OutputMixer*& mixer, uint32_t instanceId);
@@ -49,19 +47,8 @@ public:
     int32_t SetMixabilityStatus(MixerParticipant& participant,
                                 bool mixable);
 
-    int32_t SetAnonymousMixabilityStatus(MixerParticipant& participant,
-                                         bool mixable);
-
     int GetMixedAudio(int sample_rate_hz, size_t num_channels,
                       AudioFrame* audioFrame);
-
-    // VoEFile
-    int StartRecordingPlayout(const char* fileName,
-                              const CodecInst* codecInst);
-
-    int StartRecordingPlayout(OutStream* stream,
-                              const CodecInst* codecInst);
-    int StopRecordingPlayout();
 
     virtual ~OutputMixer();
 
@@ -72,14 +59,6 @@ public:
         const AudioFrame** uniqueAudioFrames,
         uint32_t size);
 
-    // For file recording
-    void PlayNotification(int32_t id, uint32_t durationMs);
-
-    void RecordNotification(int32_t id, uint32_t durationMs);
-
-    void PlayFileEnded(int32_t id);
-    void RecordFileEnded(int32_t id);
-
 private:
     OutputMixer(uint32_t instanceId);
 
@@ -87,8 +66,6 @@ private:
     Statistics* _engineStatisticsPtr;
     AudioProcessing* _audioProcessingModulePtr;
 
-    // Protects output_file_recorder_ and _outputFileRecording.
-    rtc::CriticalSection _fileCritSect;
     AudioConferenceMixer& _mixerModule;
     AudioFrame _audioFrame;
     // Converts mixed audio to the audio device output rate.
@@ -97,8 +74,6 @@ private:
     PushResampler<int16_t> audioproc_resampler_;
     int _instanceId;
     int _mixingFrequencyHz;
-    std::unique_ptr<FileRecorder> output_file_recorder_;
-    bool _outputFileRecording;
 };
 
 }  // namespace voe
