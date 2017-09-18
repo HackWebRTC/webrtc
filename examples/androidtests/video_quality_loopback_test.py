@@ -30,8 +30,7 @@ import time
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir,
-                                        os.pardir))
+SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 BAD_DEVICES_JSON = os.path.join(SRC_DIR,
                                 os.environ.get('CHROMIUM_OUT_DIR', 'out'),
                                 'bad_devices.json')
