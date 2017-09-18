@@ -6,6 +6,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+# This file is inspired to [1].
+# [1] - https://cs.chromium.org/chromium/src/PRESUBMIT_test_mocks.py
+
 
 class MockInputApi(object):
   """Mock class for the InputApi class.
@@ -16,6 +19,11 @@ class MockInputApi(object):
 
   def __init__(self):
     self.change = MockChange([])
+    self.files = []
+
+  def AffectedSourceFiles(self, file_filter=None):
+    # pylint: disable=unused-argument
+    return self.files
 
 
 class MockOutputApi(object):
@@ -39,6 +47,7 @@ class MockOutputApi(object):
       MockOutputApi.PresubmitResult.__init__(self, message, items, long_text)
       self.type = 'error'
 
+
 class MockChange(object):
   """Mock class for Change class.
 
@@ -48,3 +57,17 @@ class MockChange(object):
 
   def __init__(self, changed_files):
     self._changed_files = changed_files
+
+
+class MockFile(object):
+  """Mock class for the File class.
+
+  This class can be used to form the mock list of changed files in
+  MockInputApi for presubmit unittests.
+  """
+
+  def __init__(self, local_path):
+    self._local_path = local_path
+
+  def LocalPath(self):
+    return self._local_path
