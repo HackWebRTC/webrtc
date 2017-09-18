@@ -134,7 +134,9 @@ rtc_static_library("rtc_media_base") {
 rtc_static_library("rtc_audio_video") {
   defines = []
   libs = []
-  deps = []
+  deps = [
+    "../modules/video_coding:video_coding_utility",
+  ]
   sources = [
     "engine/adm_helpers.cc",
     "engine/adm_helpers.h",
@@ -337,6 +339,7 @@ if (rtc_include_tests) {
       "../modules/audio_coding:rent_a_codec",
       "../modules/audio_processing:audio_processing",
       "../modules/rtp_rtcp:rtp_rtcp",
+      "../modules/video_coding:video_coding_utility",
       "../p2p:rtc_p2p",
     ]
     sources = [

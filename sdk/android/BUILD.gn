@@ -151,6 +151,7 @@ rtc_static_library("video_jni") {
     "../../media:rtc_media_base",
     "../../modules:module_api",
     "../../modules/utility:utility",
+    "../../modules/video_coding:codec_globals_headers",
     "../../modules/video_coding:video_coding_utility",
     "../../rtc_base:rtc_base",
     "../../rtc_base:rtc_base_approved",

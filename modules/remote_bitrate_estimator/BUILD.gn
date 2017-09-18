@@ -151,6 +151,7 @@ if (rtc_include_tests) {
       "../congestion_controller",
       "../pacing",
       "../rtp_rtcp",
+      "../video_coding:video_coding_utility",
       "//testing/gmock",
       "//testing/gtest",
     ]

@@ -111,8 +111,33 @@ rtc_static_library("video_coding") {
   ]
 }
 
-rtc_static_library("video_coding_utility") {
+rtc_source_set("mock_headers") {
+  testonly = true
   sources = [
+    "codecs/interface/mock/mock_video_codec_interface.h",
+    "include/mock/mock_video_codec_interface.h",
+  ]
+  deps = [
+    ":video_coding_utility",
+    "../..:webrtc_common",
+    "../../test:test_support",
+  ]
+}
+
+rtc_source_set("codec_globals_headers") {
+  sources = [
+    "codecs/h264/include/h264_globals.h",
+    "codecs/interface/common_constants.h",
+    "codecs/vp8/include/vp8_globals.h",
+    "codecs/vp9/include/vp9_globals.h",
+  ]
+}
+
+rtc_source_set("video_coding_utility") {
+  sources = [
+    "codecs/interface/video_codec_interface.h",
+    "codecs/interface/video_error_codes.h",
+    "sequence_number_util.h",
     "utility/default_video_bitrate_allocator.cc",
     "utility/default_video_bitrate_allocator.h",
     "utility/frame_dropper.cc",
@@ -200,6 +225,7 @@ rtc_static_library("webrtc_i420") {
   }
 
   deps = [
+    ":video_coding_utility",
     "../..:webrtc_common",
     "../../common_video:common_video",
     "../../rtc_base:rtc_base_approved",
@@ -319,6 +345,7 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      ":mock_headers",
       ":video_coding",
       ":webrtc_vp8",
       "../../api:video_frame_api",
@@ -491,10 +518,12 @@ if (rtc_include_tests) {
       "session_info_unittest.cc",
       "test/stream_generator.cc",
       "test/stream_generator.h",
+      "test/test_util.h",
       "timing_unittest.cc",
       "utility/default_video_bitrate_allocator_unittest.cc",
       "utility/frame_dropper_unittest.cc",
       "utility/ivf_file_writer_unittest.cc",
+      "utility/mock/mock_frame_dropper.h",
       "utility/moving_average_unittest.cc",
       "utility/quality_scaler_unittest.cc",
       "utility/simulcast_rate_allocator_unittest.cc",
@@ -510,6 +539,7 @@ if (rtc_include_tests) {
       sources += [ "codecs/h264/h264_encoder_impl_unittest.cc" ]
     }
     deps = [
+      ":mock_headers",
       ":simulcast_test_utility",
       ":video_codecs_test_framework",
       ":video_coding",
