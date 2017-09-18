@@ -16,7 +16,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_device/include/audio_device.h"
 #include "voice_engine/include/voe_base.h"
-#include "voice_engine/include/voe_codec.h"
 #include "voice_engine/include/voe_errors.h"
 
 namespace cricket {

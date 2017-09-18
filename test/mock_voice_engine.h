@@ -113,27 +113,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD1(StopSend, int(int channel));
   MOCK_METHOD0(audio_transport, AudioTransport*());
 
-  // VoECodec
-  MOCK_METHOD0(NumOfCodecs, int());
-  MOCK_METHOD2(GetCodec, int(int index, CodecInst& codec));
-  MOCK_METHOD2(SetSendCodec, int(int channel, const CodecInst& codec));
-  MOCK_METHOD2(GetSendCodec, int(int channel, CodecInst& codec));
-  MOCK_METHOD2(SetBitRate, int(int channel, int bitrate_bps));
-  MOCK_METHOD2(GetRecCodec, int(int channel, CodecInst& codec));
-  MOCK_METHOD2(SetRecPayloadType, int(int channel, const CodecInst& codec));
-  MOCK_METHOD2(GetRecPayloadType, int(int channel, CodecInst& codec));
-  MOCK_METHOD3(SetSendCNPayloadType,
-               int(int channel, int type, PayloadFrequencies frequency));
-  MOCK_METHOD2(SetFECStatus, int(int channel, bool enable));
-  MOCK_METHOD2(GetFECStatus, int(int channel, bool& enabled));
-  MOCK_METHOD4(SetVADStatus,
-               int(int channel, bool enable, VadModes mode, bool disableDTX));
-  MOCK_METHOD4(
-      GetVADStatus,
-      int(int channel, bool& enabled, VadModes& mode, bool& disabledDTX));
-  MOCK_METHOD2(SetOpusMaxPlaybackRate, int(int channel, int frequency_hz));
-  MOCK_METHOD2(SetOpusDtx, int(int channel, bool enable_dtx));
-
   // VoENetwork
   MOCK_METHOD2(RegisterExternalTransport,
                int(int channel, Transport& transport));

@@ -197,13 +197,6 @@ void ChannelProxy::SetBitrate(int bitrate_bps, int64_t probing_interval_ms) {
   channel()->SetBitRate(bitrate_bps, probing_interval_ms);
 }
 
-void ChannelProxy::SetRecPayloadType(int payload_type,
-                                     const SdpAudioFormat& format) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  const int result = channel()->SetRecPayloadType(payload_type, format);
-  RTC_DCHECK_EQ(0, result);
-}
-
 void ChannelProxy::SetReceiveCodecs(
     const std::map<int, SdpAudioFormat>& codecs) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
@@ -332,11 +325,6 @@ void ChannelProxy::OnRecoverableUplinkPacketLossRate(
     float recoverable_packet_loss_rate) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel()->OnRecoverableUplinkPacketLossRate(recoverable_packet_loss_rate);
-}
-
-void ChannelProxy::RegisterLegacyReceiveCodecs() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  channel()->RegisterLegacyReceiveCodecs();
 }
 
 std::vector<RtpSource> ChannelProxy::GetSources() const {

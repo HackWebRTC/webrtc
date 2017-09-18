@@ -16,7 +16,6 @@
 #include "system_wrappers/include/atomic32.h"
 #include "typedefs.h"  // NOLINT(build/include)
 #include "voice_engine/voe_base_impl.h"
-#include "voice_engine/voe_codec_impl.h"
 #include "voice_engine/voe_network_impl.h"
 #include "voice_engine/voe_rtp_rtcp_impl.h"
 
@@ -27,14 +26,12 @@ class ChannelProxy;
 
 class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
                         public VoiceEngine,
-                        public VoECodecImpl,
                         public VoENetworkImpl,
                         public VoERTP_RTCPImpl,
                         public VoEBaseImpl {
  public:
   VoiceEngineImpl()
       : SharedData(),
-        VoECodecImpl(this),
         VoENetworkImpl(this),
         VoERTP_RTCPImpl(this),
         VoEBaseImpl(this),

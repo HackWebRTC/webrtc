@@ -912,6 +912,7 @@ int32_t Channel::Init() {
     return -1;
   }
 
+  // TODO(solenberg): Remove?
   // Register a default set of send codecs.
   const int nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
   for (int idx = 0; idx < nSupportedCodecs; idx++) {
@@ -946,51 +947,6 @@ int32_t Channel::Init() {
   }
 
   return 0;
-}
-
-void Channel::RegisterLegacyReceiveCodecs() {
-  const int nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
-  for (int idx = 0; idx < nSupportedCodecs; idx++) {
-    CodecInst codec;
-    RTC_CHECK_EQ(0, audio_coding_->Codec(idx, &codec));
-
-    // Open up the RTP/RTCP receiver for all supported codecs
-    if (rtp_receiver_->RegisterReceivePayload(codec) == -1) {
-      WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                   "Channel::Init() unable to register %s "
-                   "(%d/%d/%" PRIuS "/%d) to RTP/RTCP receiver",
-                   codec.plname, codec.pltype, codec.plfreq, codec.channels,
-                   codec.rate);
-    } else {
-      WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-                   "Channel::Init() %s (%d/%d/%" PRIuS
-                   "/%d) has been "
-                   "added to the RTP/RTCP receiver",
-                   codec.plname, codec.pltype, codec.plfreq, codec.channels,
-                   codec.rate);
-    }
-
-    // Register default PT for 'telephone-event'
-    if (STR_CASE_CMP(codec.plname, "telephone-event") == 0) {
-      if (!audio_coding_->RegisterReceiveCodec(codec.pltype,
-                                               CodecInstToSdp(codec))) {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                     "Channel::Init() failed to register inband "
-                     "'telephone-event' (%d/%d) correctly",
-                     codec.pltype, codec.plfreq);
-      }
-    }
-
-    if (STR_CASE_CMP(codec.plname, "CN") == 0) {
-      if (!audio_coding_->RegisterReceiveCodec(codec.pltype,
-                                               CodecInstToSdp(codec))) {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                     "Channel::Init() failed to register CN (%d/%d) "
-                     "correctly - 1",
-                     codec.pltype, codec.plfreq);
-      }
-    }
-  }
 }
 
 void Channel::Terminate() {
@@ -1339,196 +1295,9 @@ void Channel::OnUplinkPacketLossRate(float packet_loss_rate) {
   });
 }
 
-int32_t Channel::SetVADStatus(bool enableVAD,
-                              ACMVADMode mode,
-                              bool disableDTX) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetVADStatus(mode=%d)", mode);
-  RTC_DCHECK(!(disableDTX && enableVAD));  // disableDTX mode is deprecated.
-  if (!codec_manager_.SetVAD(enableVAD, mode) ||
-      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
-    _engineStatisticsPtr->SetLastError(VE_AUDIO_CODING_MODULE_ERROR,
-                                       kTraceError,
-                                       "SetVADStatus() failed to set VAD");
-    return -1;
-  }
-  return 0;
-}
-
-int32_t Channel::GetVADStatus(bool& enabledVAD,
-                              ACMVADMode& mode,
-                              bool& disabledDTX) {
-  const auto* params = codec_manager_.GetStackParams();
-  enabledVAD = params->use_cng;
-  mode = params->vad_mode;
-  disabledDTX = !params->use_cng;
-  return 0;
-}
-
 void Channel::SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs) {
   rtp_payload_registry_->SetAudioReceivePayloads(codecs);
   audio_coding_->SetReceiveCodecs(codecs);
-}
-
-int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
-  return SetRecPayloadType(codec.pltype, CodecInstToSdp(codec));
-}
-
-int32_t Channel::SetRecPayloadType(int payload_type,
-                                   const SdpAudioFormat& format) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetRecPayloadType()");
-
-  if (channel_state_.Get().playing) {
-    _engineStatisticsPtr->SetLastError(
-        VE_ALREADY_PLAYING, kTraceError,
-        "SetRecPayloadType() unable to set PT while playing");
-    return -1;
-  }
-
-  const CodecInst codec = SdpToCodecInst(payload_type, format);
-
-  if (payload_type == -1) {
-    // De-register the selected codec (RTP/RTCP module and ACM)
-
-    int8_t pltype(-1);
-    CodecInst rxCodec = codec;
-
-    // Get payload type for the given codec
-    rtp_payload_registry_->ReceivePayloadType(rxCodec, &pltype);
-    rxCodec.pltype = pltype;
-
-    if (rtp_receiver_->DeRegisterReceivePayload(pltype) != 0) {
-      _engineStatisticsPtr->SetLastError(
-          VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-          "SetRecPayloadType() RTP/RTCP-module deregistration "
-          "failed");
-      return -1;
-    }
-    if (audio_coding_->UnregisterReceiveCodec(rxCodec.pltype) != 0) {
-      _engineStatisticsPtr->SetLastError(
-          VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-          "SetRecPayloadType() ACM deregistration failed - 1");
-      return -1;
-    }
-    return 0;
-  }
-
-  if (rtp_receiver_->RegisterReceivePayload(codec) != 0) {
-    // First attempt to register failed => de-register and try again
-    // TODO(kwiberg): Retrying is probably not necessary, since
-    // AcmReceiver::AddCodec also retries.
-    rtp_receiver_->DeRegisterReceivePayload(codec.pltype);
-    if (rtp_receiver_->RegisterReceivePayload(codec) != 0) {
-      _engineStatisticsPtr->SetLastError(
-          VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-          "SetRecPayloadType() RTP/RTCP-module registration failed");
-      return -1;
-    }
-  }
-  if (!audio_coding_->RegisterReceiveCodec(payload_type, format)) {
-    audio_coding_->UnregisterReceiveCodec(payload_type);
-    if (!audio_coding_->RegisterReceiveCodec(payload_type, format)) {
-      _engineStatisticsPtr->SetLastError(
-          VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-          "SetRecPayloadType() ACM registration failed - 1");
-      return -1;
-    }
-  }
-  return 0;
-}
-
-int32_t Channel::GetRecPayloadType(CodecInst& codec) {
-  int8_t payloadType(-1);
-  if (rtp_payload_registry_->ReceivePayloadType(codec, &payloadType) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_RTP_RTCP_MODULE_ERROR, kTraceWarning,
-        "GetRecPayloadType() failed to retrieve RX payload type");
-    return -1;
-  }
-  codec.pltype = payloadType;
-  return 0;
-}
-
-int32_t Channel::SetSendCNPayloadType(int type, PayloadFrequencies frequency) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetSendCNPayloadType()");
-
-  CodecInst codec;
-  int32_t samplingFreqHz(-1);
-  const size_t kMono = 1;
-  if (frequency == kFreq32000Hz)
-    samplingFreqHz = 32000;
-  else if (frequency == kFreq16000Hz)
-    samplingFreqHz = 16000;
-
-  if (audio_coding_->Codec("CN", &codec, samplingFreqHz, kMono) == -1) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "SetSendCNPayloadType() failed to retrieve default CN codec "
-        "settings");
-    return -1;
-  }
-
-  // Modify the payload type (must be set to dynamic range)
-  codec.pltype = type;
-
-  if (!codec_manager_.RegisterEncoder(codec) ||
-      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "SetSendCNPayloadType() failed to register CN to ACM");
-    return -1;
-  }
-
-  if (_rtpRtcpModule->RegisterSendPayload(codec) != 0) {
-    _rtpRtcpModule->DeRegisterSendPayload(codec.pltype);
-    if (_rtpRtcpModule->RegisterSendPayload(codec) != 0) {
-      _engineStatisticsPtr->SetLastError(
-          VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-          "SetSendCNPayloadType() failed to register CN to RTP/RTCP "
-          "module");
-      return -1;
-    }
-  }
-  return 0;
-}
-
-int Channel::SetOpusMaxPlaybackRate(int frequency_hz) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetOpusMaxPlaybackRate()");
-
-  if (audio_coding_->SetOpusMaxPlaybackRate(frequency_hz) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "SetOpusMaxPlaybackRate() failed to set maximum playback rate");
-    return -1;
-  }
-  return 0;
-}
-
-int Channel::SetOpusDtx(bool enable_dtx) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetOpusDtx(%d)", enable_dtx);
-  int ret = enable_dtx ? audio_coding_->EnableOpusDtx()
-                       : audio_coding_->DisableOpusDtx();
-  if (ret != 0) {
-    _engineStatisticsPtr->SetLastError(VE_AUDIO_CODING_MODULE_ERROR,
-                                       kTraceError, "SetOpusDtx() failed");
-    return -1;
-  }
-  return 0;
-}
-
-int Channel::GetOpusDtx(bool* enabled) {
-  int success = -1;
-  audio_coding_->QueryEncoder([&](AudioEncoder const* encoder) {
-    if (encoder) {
-      *enabled = encoder->GetDtx();
-      success = 0;
-    }
-  });
-  return success;
 }
 
 bool Channel::EnableAudioNetworkAdaptor(const std::string& config_string) {
@@ -2069,24 +1838,6 @@ int Channel::GetRTPStatistics(CallStatistics& stats) {
     stats.capture_start_ntp_time_ms_ = capture_start_ntp_time_ms_;
   }
   return 0;
-}
-
-int Channel::SetCodecFECStatus(bool enable) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetCodecFECStatus()");
-
-  if (!codec_manager_.SetCodecFEC(enable) ||
-      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "SetCodecFECStatus() failed to set FEC state");
-    return -1;
-  }
-  return 0;
-}
-
-bool Channel::GetCodecFECStatus() {
-  return codec_manager_.GetStackParams()->use_codec_fec;
 }
 
 void Channel::SetNACKStatus(bool enable, int maxNumberOfPackets) {

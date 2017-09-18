@@ -136,7 +136,6 @@ class Channel
           uint32_t instanceId,
           const VoEBase::ChannelConfig& config);
   int32_t Init();
-  void RegisterLegacyReceiveCodecs();
   void Terminate();
   int32_t SetEngineInformation(Statistics& engineStatistics,
                                OutputMixer& outputMixer,
@@ -171,20 +170,11 @@ class Channel
   int32_t RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
   int32_t DeRegisterVoiceEngineObserver();
 
-  // VoECodec
+  // Codecs
   int32_t GetSendCodec(CodecInst& codec);
   int32_t GetRecCodec(CodecInst& codec);
   int32_t SetSendCodec(const CodecInst& codec);
   void SetBitRate(int bitrate_bps, int64_t probing_interval_ms);
-  int32_t SetVADStatus(bool enableVAD, ACMVADMode mode, bool disableDTX);
-  int32_t GetVADStatus(bool& enabledVAD, ACMVADMode& mode, bool& disabledDTX);
-  int32_t SetRecPayloadType(const CodecInst& codec);
-  int32_t SetRecPayloadType(int payload_type, const SdpAudioFormat& format);
-  int32_t GetRecPayloadType(CodecInst& codec);
-  int32_t SetSendCNPayloadType(int type, PayloadFrequencies frequency);
-  int SetOpusMaxPlaybackRate(int frequency_hz);
-  int SetOpusDtx(bool enable_dtx);
-  int GetOpusDtx(bool* enabled);
   bool EnableAudioNetworkAdaptor(const std::string& config_string);
   void DisableAudioNetworkAdaptor();
   void SetReceiverFrameLengthRange(int min_frame_length_ms,
@@ -250,8 +240,6 @@ class Channel
                                        unsigned short dataLengthInBytes);
   int GetRemoteRTCPReportBlocks(std::vector<ReportBlock>* report_blocks);
   int GetRTPStatistics(CallStatistics& stats);
-  int SetCodecFECStatus(bool enable);
-  bool GetCodecFECStatus();
   void SetNACKStatus(bool enable, int maxNumberOfPackets);
 
   // From AudioPacketizationCallback in the ACM
