@@ -151,22 +151,18 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
       signaling_thread_(signaling_thread),
       content_name_(content_name),
       rtcp_mux_required_(rtcp_mux_required),
+      rtp_transport_(
+          srtp_required
+              ? rtc::WrapUnique<webrtc::RtpTransportInternal>(
+                    new webrtc::SrtpTransport(rtcp_mux_required, content_name))
+              : rtc::MakeUnique<webrtc::RtpTransport>(rtcp_mux_required)),
       srtp_required_(srtp_required),
       media_channel_(media_channel),
       selected_candidate_pair_(nullptr) {
   RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
-  if (srtp_required) {
-    auto transport =
-        rtc::MakeUnique<webrtc::SrtpTransport>(rtcp_mux_required, content_name);
-    srtp_transport_ = transport.get();
-    rtp_transport_ = std::move(transport);
 #if defined(ENABLE_EXTERNAL_AUTH)
-    srtp_transport_->EnableExternalAuth();
+  srtp_filter_.EnableExternalAuth();
 #endif
-  } else {
-    rtp_transport_ = rtc::MakeUnique<webrtc::RtpTransport>(rtcp_mux_required);
-    srtp_transport_ = nullptr;
-  }
   rtp_transport_->SignalReadyToSend.connect(
       this, &BaseChannel::OnTransportReadyToSend);
   // TODO(zstein):  RtpTransport::SignalPacketReceived will probably be replaced
@@ -311,17 +307,14 @@ void BaseChannel::SetTransports_n(
     return;
   }
 
-  // When using DTLS-SRTP, we must reset the SrtpTransport every time the
-  // DtlsTransport changes and wait until the DTLS handshake is complete to set
-  // the newly negotiated parameters.
+  // When using DTLS-SRTP, we must reset the SrtpFilter every time the transport
+  // changes and wait until the DTLS handshake is complete to set the newly
+  // negotiated parameters.
   if (ShouldSetupDtlsSrtp_n()) {
     // Set |writable_| to false such that UpdateWritableState_w can set up
     // DTLS-SRTP when |writable_| becomes true again.
     writable_ = false;
-    dtls_active_ = false;
-    if (srtp_transport_) {
-      srtp_transport_->ResetParams();
-    }
+    srtp_filter_.ResetParams();
   }
 
   // If this BaseChannel doesn't require RTCP mux and we haven't fully
@@ -377,8 +370,8 @@ void BaseChannel::SetTransport_n(
   }
 
   if (rtcp && new_dtls_transport) {
-    RTC_CHECK(!(ShouldSetupDtlsSrtp_n() && srtp_active()))
-        << "Setting RTCP for DTLS/SRTP after the DTLS is active "
+    RTC_CHECK(!(ShouldSetupDtlsSrtp_n() && srtp_filter_.IsActive()))
+        << "Setting RTCP for DTLS/SRTP after SrtpFilter is active "
         << "should never happen.";
   }
 
@@ -529,7 +522,8 @@ bool BaseChannel::IsReadyToSendMedia_n() const {
   // and we have had some form of connectivity.
   return enabled() && IsReceiveContentDirection(remote_content_direction_) &&
          IsSendContentDirection(local_content_direction_) &&
-         was_ever_writable() && (srtp_active() || !ShouldSetupDtlsSrtp_n());
+         was_ever_writable() &&
+         (srtp_filter_.IsActive() || !ShouldSetupDtlsSrtp_n());
 }
 
 bool BaseChannel::SendPacket(rtc::CopyOnWriteBuffer* packet,
@@ -581,16 +575,13 @@ void BaseChannel::OnDtlsState(DtlsTransportInternal* transport,
     return;
   }
 
-  // Reset the SrtpTransport if it's not the CONNECTED state. For the CONNECTED
+  // Reset the srtp filter if it's not the CONNECTED state. For the CONNECTED
   // state, setting up DTLS-SRTP context is deferred to ChannelWritable_w to
   // cover other scenarios like the whole transport is writable (not just this
   // TransportChannel) or when TransportChannel is attached after DTLS is
   // negotiated.
   if (state != DTLS_TRANSPORT_CONNECTED) {
-    dtls_active_ = false;
-    if (srtp_transport_) {
-      srtp_transport_->ResetParams();
-    }
+    srtp_filter_.ResetParams();
   }
 }
 
@@ -664,30 +655,90 @@ bool BaseChannel::SendPacket(bool rtcp,
     return false;
   }
 
-  if (!srtp_active()) {
-    if (srtp_required_) {
-      // The audio/video engines may attempt to send RTCP packets as soon as the
-      // streams are created, so don't treat this as an error for RTCP.
-      // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=6809
-      if (rtcp) {
+  rtc::PacketOptions updated_options;
+  updated_options = options;
+  // Protect if needed.
+  if (srtp_filter_.IsActive()) {
+    TRACE_EVENT0("webrtc", "SRTP Encode");
+    bool res;
+    uint8_t* data = packet->data();
+    int len = static_cast<int>(packet->size());
+    if (!rtcp) {
+// If ENABLE_EXTERNAL_AUTH flag is on then packet authentication is not done
+// inside libsrtp for a RTP packet. A external HMAC module will be writing
+// a fake HMAC value. This is ONLY done for a RTP packet.
+// Socket layer will update rtp sendtime extension header if present in
+// packet with current time before updating the HMAC.
+#if !defined(ENABLE_EXTERNAL_AUTH)
+      res = srtp_filter_.ProtectRtp(data, len,
+                                    static_cast<int>(packet->capacity()), &len);
+#else
+      if (!srtp_filter_.IsExternalAuthActive()) {
+        res = srtp_filter_.ProtectRtp(
+            data, len, static_cast<int>(packet->capacity()), &len);
+      } else {
+        updated_options.packet_time_params.rtp_sendtime_extension_id =
+            rtp_abs_sendtime_extn_id_;
+        res = srtp_filter_.ProtectRtp(
+            data, len, static_cast<int>(packet->capacity()), &len,
+            &updated_options.packet_time_params.srtp_packet_index);
+        // If protection succeeds, let's get auth params from srtp.
+        if (res) {
+          uint8_t* auth_key = NULL;
+          int key_len;
+          res = srtp_filter_.GetRtpAuthParams(
+              &auth_key, &key_len,
+              &updated_options.packet_time_params.srtp_auth_tag_len);
+          if (res) {
+            updated_options.packet_time_params.srtp_auth_key.resize(key_len);
+            updated_options.packet_time_params.srtp_auth_key.assign(
+                auth_key, auth_key + key_len);
+          }
+        }
+      }
+#endif
+      if (!res) {
+        int seq_num = -1;
+        uint32_t ssrc = 0;
+        GetRtpSeqNum(data, len, &seq_num);
+        GetRtpSsrc(data, len, &ssrc);
+        LOG(LS_ERROR) << "Failed to protect " << content_name_
+                      << " RTP packet: size=" << len << ", seqnum=" << seq_num
+                      << ", SSRC=" << ssrc;
         return false;
       }
-      // However, there shouldn't be any RTP packets sent before SRTP is set up
-      // (and SetSend(true) is called).
-      LOG(LS_ERROR) << "Can't send outgoing RTP packet when SRTP is inactive"
-                    << " and crypto is required";
-      RTC_NOTREACHED();
+    } else {
+      res = srtp_filter_.ProtectRtcp(
+          data, len, static_cast<int>(packet->capacity()), &len);
+      if (!res) {
+        int type = -1;
+        GetRtcpType(data, len, &type);
+        LOG(LS_ERROR) << "Failed to protect " << content_name_
+                      << " RTCP packet: size=" << len << ", type=" << type;
+        return false;
+      }
+    }
+
+    // Update the length of the packet now that we've added the auth tag.
+    packet->SetSize(len);
+  } else if (srtp_required_) {
+    // The audio/video engines may attempt to send RTCP packets as soon as the
+    // streams are created, so don't treat this as an error for RTCP.
+    // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=6809
+    if (rtcp) {
       return false;
     }
-    // Bon voyage.
-    return rtcp ? rtp_transport_->SendRtcpPacket(packet, options, PF_NORMAL)
-                : rtp_transport_->SendRtpPacket(packet, options, PF_NORMAL);
+    // However, there shouldn't be any RTP packets sent before SRTP is set up
+    // (and SetSend(true) is called).
+    LOG(LS_ERROR) << "Can't send outgoing RTP packet when SRTP is inactive"
+                  << " and crypto is required";
+    RTC_NOTREACHED();
+    return false;
   }
-  RTC_DCHECK(srtp_transport_);
-  RTC_DCHECK(srtp_transport_->IsActive());
+
   // Bon voyage.
-  return rtcp ? srtp_transport_->SendRtcpPacket(packet, options, PF_SRTP_BYPASS)
-              : srtp_transport_->SendRtpPacket(packet, options, PF_SRTP_BYPASS);
+  int flags = (secure() && secure_dtls()) ? PF_SRTP_BYPASS : PF_NORMAL;
+  return rtp_transport_->SendPacket(rtcp, packet, updated_options, flags);
 }
 
 bool BaseChannel::HandlesPayloadType(int packet_type) const {
@@ -702,7 +753,37 @@ void BaseChannel::OnPacketReceived(bool rtcp,
     signaling_thread()->Post(RTC_FROM_HERE, this, MSG_FIRSTPACKETRECEIVED);
   }
 
-  if (!srtp_active() && srtp_required_) {
+  // Unprotect the packet, if needed.
+  if (srtp_filter_.IsActive()) {
+    TRACE_EVENT0("webrtc", "SRTP Decode");
+    char* data = packet->data<char>();
+    int len = static_cast<int>(packet->size());
+    bool res;
+    if (!rtcp) {
+      res = srtp_filter_.UnprotectRtp(data, len, &len);
+      if (!res) {
+        int seq_num = -1;
+        uint32_t ssrc = 0;
+        GetRtpSeqNum(data, len, &seq_num);
+        GetRtpSsrc(data, len, &ssrc);
+        LOG(LS_ERROR) << "Failed to unprotect " << content_name_
+                      << " RTP packet: size=" << len << ", seqnum=" << seq_num
+                      << ", SSRC=" << ssrc;
+        return;
+      }
+    } else {
+      res = srtp_filter_.UnprotectRtcp(data, len, &len);
+      if (!res) {
+        int type = -1;
+        GetRtcpType(data, len, &type);
+        LOG(LS_ERROR) << "Failed to unprotect " << content_name_
+                      << " RTCP packet: size=" << len << ", type=" << type;
+        return;
+      }
+    }
+
+    packet->SetSize(len);
+  } else if (srtp_required_) {
     // Our session description indicates that SRTP is required, but we got a
     // packet before our SRTP filter is active. This means either that
     // a) we got SRTP packets before we received the SDES keys, in which case
@@ -878,46 +959,47 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp) {
     recv_key = &server_write_key;
   }
 
-  if (rtcp) {
-    if (!dtls_active()) {
-      RTC_DCHECK(srtp_transport_);
-      ret = srtp_transport_->SetRtcpParams(
-          selected_crypto_suite, &(*send_key)[0],
-          static_cast<int>(send_key->size()), selected_crypto_suite,
-          &(*recv_key)[0], static_cast<int>(recv_key->size()));
+  if (!srtp_filter_.IsActive()) {
+    if (rtcp) {
+      ret = srtp_filter_.SetRtcpParams(selected_crypto_suite, &(*send_key)[0],
+                                       static_cast<int>(send_key->size()),
+                                       selected_crypto_suite, &(*recv_key)[0],
+                                       static_cast<int>(recv_key->size()));
     } else {
-      // RTCP doesn't need to call SetRtpParam because it is only used
-      // to make the updated encrypted RTP header extension IDs take effect.
-      ret = true;
+      ret = srtp_filter_.SetRtpParams(selected_crypto_suite, &(*send_key)[0],
+                                      static_cast<int>(send_key->size()),
+                                      selected_crypto_suite, &(*recv_key)[0],
+                                      static_cast<int>(recv_key->size()));
     }
   } else {
-    RTC_DCHECK(srtp_transport_);
-    ret = srtp_transport_->SetRtpParams(selected_crypto_suite, &(*send_key)[0],
-                                        static_cast<int>(send_key->size()),
-                                        selected_crypto_suite, &(*recv_key)[0],
-                                        static_cast<int>(recv_key->size()));
-    dtls_active_ = ret;
+    if (rtcp) {
+      // RTCP doesn't need to be updated because UpdateRtpParams is only used
+      // to update the set of encrypted RTP header extension IDs.
+      ret = true;
+    } else {
+      ret = srtp_filter_.UpdateRtpParams(selected_crypto_suite, &(*send_key)[0],
+                                         static_cast<int>(send_key->size()),
+                                         selected_crypto_suite, &(*recv_key)[0],
+                                         static_cast<int>(recv_key->size()));
+    }
   }
 
   if (!ret) {
     LOG(LS_WARNING) << "DTLS-SRTP key installation failed";
   } else {
+    dtls_keyed_ = true;
     UpdateTransportOverhead();
   }
   return ret;
 }
 
 void BaseChannel::MaybeSetupDtlsSrtp_n() {
-  if (dtls_active()) {
+  if (srtp_filter_.IsActive()) {
     return;
   }
 
   if (!ShouldSetupDtlsSrtp_n()) {
     return;
-  }
-
-  if (!srtp_transport_) {
-    EnableSrtpTransport_n();
   }
 
   if (!SetupDtlsSrtp_n(false)) {
@@ -1003,24 +1085,6 @@ bool BaseChannel::CheckSrtpConfig_n(const std::vector<CryptoParams>& cryptos,
   return true;
 }
 
-void BaseChannel::EnableSrtpTransport_n() {
-  if (srtp_transport_ == nullptr) {
-    rtp_transport_->SignalReadyToSend.disconnect(this);
-    rtp_transport_->SignalPacketReceived.disconnect(this);
-
-    auto transport = rtc::MakeUnique<webrtc::SrtpTransport>(
-        std::move(rtp_transport_), content_name_);
-    srtp_transport_ = transport.get();
-    rtp_transport_ = std::move(transport);
-
-    rtp_transport_->SignalReadyToSend.connect(
-        this, &BaseChannel::OnTransportReadyToSend);
-    rtp_transport_->SignalPacketReceived.connect(
-        this, &BaseChannel::OnPacketReceived);
-    LOG(LS_INFO) << "Wrapping RtpTransport in SrtpTransport.";
-  }
-}
-
 bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
                             ContentAction action,
                             ContentSource src,
@@ -1037,69 +1101,36 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
   if (!ret) {
     return false;
   }
-
-  // If SRTP was not required, but we're setting a description that uses SDES,
-  // we need to upgrade to an SrtpTransport.
-  if (!srtp_transport_ && !dtls && !cryptos.empty()) {
-    EnableSrtpTransport_n();
-  }
-  if (srtp_transport_) {
-    srtp_transport_->SetEncryptedHeaderExtensionIds(src,
-                                                    encrypted_extension_ids);
-  }
+  srtp_filter_.SetEncryptedHeaderExtensionIds(src, encrypted_extension_ids);
   switch (action) {
     case CA_OFFER:
       // If DTLS is already active on the channel, we could be renegotiating
       // here. We don't update the srtp filter.
       if (!dtls) {
-        ret = sdes_negotiator_.SetOffer(cryptos, src);
+        ret = srtp_filter_.SetOffer(cryptos, src);
       }
       break;
     case CA_PRANSWER:
       // If we're doing DTLS-SRTP, we don't want to update the filter
       // with an answer, because we already have SRTP parameters.
       if (!dtls) {
-        ret = sdes_negotiator_.SetProvisionalAnswer(cryptos, src);
+        ret = srtp_filter_.SetProvisionalAnswer(cryptos, src);
       }
       break;
     case CA_ANSWER:
       // If we're doing DTLS-SRTP, we don't want to update the filter
       // with an answer, because we already have SRTP parameters.
       if (!dtls) {
-        ret = sdes_negotiator_.SetAnswer(cryptos, src);
+        ret = srtp_filter_.SetAnswer(cryptos, src);
       }
       break;
     default:
       break;
   }
-
-  // If setting an SDES answer succeeded, apply the negotiated parameters
-  // to the SRTP transport.
-  if ((action == CA_PRANSWER || action == CA_ANSWER) && !dtls && ret) {
-    if (sdes_negotiator_.send_cipher_suite() &&
-        sdes_negotiator_.recv_cipher_suite()) {
-      ret = srtp_transport_->SetRtpParams(
-          *(sdes_negotiator_.send_cipher_suite()),
-          sdes_negotiator_.send_key().data(),
-          static_cast<int>(sdes_negotiator_.send_key().size()),
-          *(sdes_negotiator_.recv_cipher_suite()),
-          sdes_negotiator_.recv_key().data(),
-          static_cast<int>(sdes_negotiator_.recv_key().size()));
-    } else {
-      LOG(LS_INFO) << "No crypto keys are provided for SDES.";
-      if (action == CA_ANSWER && srtp_transport_) {
-        // Explicitly reset the |srtp_transport_| if no crypto param is
-        // provided in the answer. No need to call |ResetParams()| for
-        // |sdes_negotiator_| because it resets the params inside |SetAnswer|.
-        srtp_transport_->ResetParams();
-      }
-    }
-  }
-
   // Only update SRTP filter if using DTLS. SDES is handled internally
   // by the SRTP filter.
   // TODO(jbauch): Only update if encrypted extension ids have changed.
-  if (ret && dtls_active() && rtp_dtls_transport_ &&
+  if (ret && dtls_keyed_ && rtp_dtls_transport_ &&
       rtp_dtls_transport_->dtls_state() == DTLS_TRANSPORT_CONNECTED) {
     bool rtcp = false;
     ret = SetupDtlsSrtp_n(rtcp);
@@ -1143,6 +1174,7 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
             transport_name_.empty()
                 ? rtp_transport_->rtp_packet_transport()->debug_name()
                 : transport_name_;
+        ;
         LOG(LS_INFO) << "Enabling rtcp-mux for " << content_name()
                      << "; no longer need RTCP transport for " << debug_name;
         if (rtp_transport_->rtcp_packet_transport()) {
@@ -1371,13 +1403,7 @@ void BaseChannel::MaybeCacheRtpAbsSendTimeHeaderExtension_w(
 
 void BaseChannel::CacheRtpAbsSendTimeHeaderExtension_n(
     int rtp_abs_sendtime_extn_id) {
-  if (srtp_transport_) {
-    srtp_transport_->CacheRtpAbsSendTimeHeaderExtension(
-        rtp_abs_sendtime_extn_id);
-  } else {
-    LOG(LS_WARNING) << "Trying to cache the Absolute Send Time extension id "
-                       "but the SRTP is not active.";
-  }
+  rtp_abs_sendtime_extn_id_ = rtp_abs_sendtime_extn_id;
 }
 
 void BaseChannel::OnMessage(rtc::Message *pmsg) {
@@ -1661,9 +1687,9 @@ int BaseChannel::GetTransportOverheadPerPacket() const {
           ? kTcpOverhaed
           : kUdpOverhaed;
 
-  if (sdes_active()) {
+  if (secure()) {
     int srtp_overhead = 0;
-    if (srtp_transport_->GetSrtpOverhead(&srtp_overhead))
+    if (srtp_filter_.GetSrtpOverhead(&srtp_overhead))
       transport_overhead_per_packet += srtp_overhead;
   }
 

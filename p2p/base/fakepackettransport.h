@@ -86,8 +86,6 @@ class FakePacketTransport : public PacketTransportInternal {
   bool GetOption(Socket::Option opt, int* value) override { return true; }
   int GetError() override { return 0; }
 
-  const CopyOnWriteBuffer* last_sent_packet() { return &last_sent_packet_; }
-
  private:
   void set_writable(bool writable) {
     if (writable_ == writable) {
@@ -109,14 +107,12 @@ class FakePacketTransport : public PacketTransportInternal {
   }
 
   void SendPacketInternal(const CopyOnWriteBuffer& packet) {
-    last_sent_packet_ = packet;
     if (dest_) {
       dest_->SignalReadPacket(dest_, packet.data<char>(), packet.size(),
                               CreatePacketTime(0), 0);
     }
   }
 
-  CopyOnWriteBuffer last_sent_packet_;
   AsyncInvoker invoker_;
   std::string debug_name_;
   FakePacketTransport* dest_ = nullptr;
