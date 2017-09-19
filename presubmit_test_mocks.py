@@ -25,15 +25,6 @@ class MockInputApi(object):
     # pylint: disable=unused-argument
     return self.files
 
-  def ReadFile(self, affected_file, mode='rU'):
-    filename = affected_file.AbsoluteLocalPath()
-    for f in self.files:
-      if f.LocalPath() == filename:
-        with open(filename, mode) as f:
-          return f.read()
-    # Otherwise, file is not in our mock API.
-    raise IOError, "No such file or directory: '%s'" % filename
-
 
 class MockOutputApi(object):
   """Mock class for the OutputApi class.
@@ -79,7 +70,4 @@ class MockFile(object):
     self._local_path = local_path
 
   def LocalPath(self):
-    return self._local_path
-
-  def AbsoluteLocalPath(self):
     return self._local_path
