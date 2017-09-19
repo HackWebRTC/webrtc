@@ -332,15 +332,9 @@ rtc_source_set("rtc_task_queue") {
 # provided implementation should be used. An external implementation should
 # depend on rtc_task_queue_api.
 rtc_source_set("rtc_task_queue_api") {
-  if (build_with_chromium) {
-    sources = [
-      "../../webrtc_overrides/rtc_base/task_queue.h",
-    ]
-  } else {
-    sources = [
-      "task_queue.h",
-    ]
-  }
+  sources = [
+    "task_queue.h",
+  ]
   deps = [
     ":rtc_base_approved",
   ]
