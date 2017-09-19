@@ -119,20 +119,6 @@ bool TransportDescriptionFactory::SetSecurityInfo(
   if (!desc->identity_fingerprint) {
     return false;
   }
-  std::string digest_alg;
-  if (!certificate_->ssl_certificate().GetSignatureDigestAlgorithm(
-          &digest_alg)) {
-    LOG(LS_ERROR) << "Failed to retrieve the certificate's digest algorithm";
-    return false;
-  }
-
-  desc->identity_fingerprint.reset(
-      rtc::SSLFingerprint::Create(digest_alg, certificate_->identity()));
-  if (!desc->identity_fingerprint.get()) {
-    LOG(LS_ERROR) << "Failed to create identity fingerprint, alg="
-                  << digest_alg;
-    return false;
-  }
 
   // Assign security role.
   desc->connection_role = role;

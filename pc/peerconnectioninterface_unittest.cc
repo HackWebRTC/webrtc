@@ -2249,10 +2249,10 @@ TEST_F(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
 #endif
 }
 
-// Test that an offer can be received which offers DTLS with SDES fallback.
-// Regression test for issue:
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=6972
-TEST_F(PeerConnectionInterfaceTest, ReceiveDtlsSdesFallbackOffer) {
+// Test that fallback from DTLS to SDES is not supported.
+// The fallback was previously supported but was removed to simplify the code
+// and because it's non-standard.
+TEST_F(PeerConnectionInterfaceTest, DtlsSdesFallbackNotSupported) {
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
@@ -2266,8 +2266,7 @@ TEST_F(PeerConnectionInterfaceTest, ReceiveDtlsSdesFallbackOffer) {
   std::unique_ptr<SessionDescriptionInterface> desc(
       webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
                                        kDtlsSdesFallbackSdp, nullptr));
-  EXPECT_TRUE(DoSetSessionDescription(std::move(desc), false));
-  CreateAnswerAsLocalDescription();
+  EXPECT_FALSE(DoSetSessionDescription(std::move(desc), false));
 }
 
 // Test that we can create an audio only offer and receive an answer with a

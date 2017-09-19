@@ -257,6 +257,10 @@ DtlsTransportInternal* TransportController::CreateDtlsTransport_n(
   dtls->ice_transport()->SetIceRole(ice_role_);
   dtls->ice_transport()->SetIceTiebreaker(ice_tiebreaker_);
   dtls->ice_transport()->SetIceConfig(ice_config_);
+  if (certificate_) {
+    bool set_cert_success = dtls->SetLocalCertificate(certificate_);
+    RTC_DCHECK(set_cert_success);
+  }
 
   // Connect to signals offered by the channels. Currently, the DTLS channel
   // forwards signals from the ICE channel, so we only need to connect to the
@@ -535,11 +539,14 @@ bool TransportController::SetLocalCertificate_n(
   certificate_ = certificate;
 
   // Set certificate for JsepTransport, which verifies it matches the
-  // fingerprint in SDP, and only applies it to the DTLS transport if a
-  // fingerprint attribute is present in SDP. This is used for fallback from
-  // DTLS to SDES.
+  // fingerprint in SDP, and DTLS transport.
+  // Fallback from DTLS to SDES is not supported.
   for (auto& kv : transports_) {
     kv.second->SetLocalCertificate(certificate_);
+  }
+  for (auto& channel : channels_) {
+    bool set_cert_success = channel->dtls()->SetLocalCertificate(certificate_);
+    RTC_DCHECK(set_cert_success);
   }
   return true;
 }
