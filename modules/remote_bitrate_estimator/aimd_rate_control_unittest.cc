@@ -18,8 +18,9 @@ namespace {
 
 constexpr int64_t kClockInitialTime = 123456;
 
-constexpr int kMinBwePeriodMs = 500;
+constexpr int kMinBwePeriodMs = 2000;
 constexpr int kMaxBwePeriodMs = 50000;
+constexpr int kDefaultPeriodMs = 3000;
 
 // After an overuse, we back off to 85% to the received bitrate.
 constexpr double kFractionAfterOveruse = 0.85;
@@ -81,8 +82,7 @@ TEST(AimdRateControlTest, GetIncreaseRateAndBandwidthPeriod) {
                     states.simulated_clock->TimeInMilliseconds());
   EXPECT_NEAR(14000, states.aimd_rate_control->GetNearMaxIncreaseRateBps(),
               1000);
-  EXPECT_EQ(kMinBwePeriodMs,
-            states.aimd_rate_control->GetExpectedBandwidthPeriodMs());
+  EXPECT_EQ(3000, states.aimd_rate_control->GetExpectedBandwidthPeriodMs());
 }
 
 TEST(AimdRateControlTest, BweLimitedByAckedBitrate) {
@@ -124,15 +124,15 @@ TEST(AimdRateControlTest, BweNotLimitedByDecreasingAckedBitrate) {
   EXPECT_EQ(new_estimate, prev_estimate);
 }
 
-TEST(AimdRateControlTest, MinPeriodUntilFirstOveruse) {
+TEST(AimdRateControlTest, DefaultPeriodUntilFirstOveruse) {
   auto states = CreateAimdRateControlStates();
   states.aimd_rate_control->SetStartBitrate(300000);
-  EXPECT_EQ(kMinBwePeriodMs,
+  EXPECT_EQ(kDefaultPeriodMs,
             states.aimd_rate_control->GetExpectedBandwidthPeriodMs());
   states.simulated_clock->AdvanceTimeMilliseconds(100);
-  UpdateRateControl(states, BandwidthUsage::kBwOverusing, 280000,
+  UpdateRateControl(states, BandwidthUsage::kBwOverusing, 100000,
                     states.simulated_clock->TimeInMilliseconds());
-  EXPECT_NE(kMinBwePeriodMs,
+  EXPECT_NE(kDefaultPeriodMs,
             states.aimd_rate_control->GetExpectedBandwidthPeriodMs());
 }
 
@@ -152,21 +152,6 @@ TEST(AimdRateControlTest, ExpectedPeriodAfter20kbpsDropAnd5kbpsIncrease) {
   EXPECT_EQ(4000, states.aimd_rate_control->GetExpectedBandwidthPeriodMs());
 }
 
-TEST(AimdRateControlTest, MinPeriodAfterLargeBitrateDecrease) {
-  auto states = CreateAimdRateControlStates();
-  constexpr int kInitialBitrate = 110000;
-  states.aimd_rate_control->SetEstimate(
-      kInitialBitrate, states.simulated_clock->TimeInMilliseconds());
-  states.simulated_clock->AdvanceTimeMilliseconds(100);
-  // Make such a large drop in bitrate that should be treated as network
-  // degradation.
-  constexpr int kAckedBitrate = kInitialBitrate * 3 / 4 / kFractionAfterOveruse;
-  UpdateRateControl(states, BandwidthUsage::kBwOverusing, kAckedBitrate,
-                    states.simulated_clock->TimeInMilliseconds());
-  EXPECT_EQ(kMinBwePeriodMs,
-            states.aimd_rate_control->GetExpectedBandwidthPeriodMs());
-}
-
 TEST(AimdRateControlTest, BandwidthPeriodIsNotBelowMin) {
   auto states = CreateAimdRateControlStates();
   constexpr int kInitialBitrate = 10000;
@@ -182,12 +167,12 @@ TEST(AimdRateControlTest, BandwidthPeriodIsNotBelowMin) {
 
 TEST(AimdRateControlTest, BandwidthPeriodIsNotAboveMax) {
   auto states = CreateAimdRateControlStates();
-  constexpr int kInitialBitrate = 50000000;
+  constexpr int kInitialBitrate = 10010000;
   states.aimd_rate_control->SetEstimate(
       kInitialBitrate, states.simulated_clock->TimeInMilliseconds());
   states.simulated_clock->AdvanceTimeMilliseconds(100);
   // Make a large (10 Mbps) bitrate drop to 10 kbps.
-  constexpr int kAckedBitrate = 40000000 / kFractionAfterOveruse;
+  constexpr int kAckedBitrate = 10000 / kFractionAfterOveruse;
   UpdateRateControl(states, BandwidthUsage::kBwOverusing, kAckedBitrate,
                     states.simulated_clock->TimeInMilliseconds());
   EXPECT_EQ(kMaxBwePeriodMs,

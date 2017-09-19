@@ -139,6 +139,15 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
               kTargetUtilizationFraction * 4000000u, 10000u);
 }
 
+TEST_F(DelayBasedBweTest, GetExpectedBwePeriodMs) {
+  int64_t default_interval_ms = bitrate_estimator_->GetExpectedBwePeriodMs();
+  EXPECT_GT(default_interval_ms, 0);
+  CapacityDropTestHelper(1, true, 333, 0);
+  int64_t interval_ms = bitrate_estimator_->GetExpectedBwePeriodMs();
+  EXPECT_GT(interval_ms, 0);
+  EXPECT_NE(interval_ms, default_interval_ms);
+}
+
 TEST_F(DelayBasedBweTest, InitialBehavior) {
   InitialBehaviorTestHelper(730000);
 }
