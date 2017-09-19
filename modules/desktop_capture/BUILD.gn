@@ -184,6 +184,8 @@ if (is_mac) {
       "mouse_cursor_monitor_mac.mm",
       "screen_capturer_mac.mm",
       "window_capturer_mac.mm",
+      "window_finder_mac.h",
+      "window_finder_mac.mm",
     ]
     deps = [
       ":desktop_capture_generic",
@@ -292,8 +294,6 @@ rtc_static_library("desktop_capture_generic") {
     "win/window_capture_utils.h",
     "window_capturer_win.cc",
     "window_finder.h",
-    "window_finder_mac.h",
-    "window_finder_mac.mm",
     "window_finder_win.cc",
     "window_finder_win.h",
   ]
