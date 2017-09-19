@@ -18,7 +18,7 @@ import PRESUBMIT
 from presubmit_test_mocks import MockInputApi, MockOutputApi, MockFile
 
 
-class CheckBugEntryField(unittest.TestCase):
+class CheckBugEntryFieldTest(unittest.TestCase):
   def testCommitMessageBugEntryWithNoError(self):
     mock_input_api = MockInputApi()
     mock_output_api = MockOutputApi()
@@ -48,7 +48,7 @@ class CheckBugEntryField(unittest.TestCase):
     self.assertEqual(0, len(errors))
 
 
-class CheckNewlineAtTheEndOfProtoFiles(unittest.TestCase):
+class CheckNewlineAtTheEndOfProtoFilesTest(unittest.TestCase):
 
   def setUp(self):
     self.tmp_dir = tempfile.mkdtemp()
