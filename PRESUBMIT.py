@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import sys
+from collections import defaultdict
 
 
 # Files and directories that are *skipped* by cpplint in the presubmit script.
@@ -67,6 +68,7 @@ NATIVE_API_DIRS = (
   'modules/audio_device/include',
   'pc',
 )
+
 # These directories should not be used but are maintained only to avoid breaking
 # some legacy downstream code.
 LEGACY_API_DIRS = (
@@ -90,7 +92,21 @@ LEGACY_API_DIRS = (
   'system_wrappers/include',
   'voice_engine/include',
 )
+
 API_DIRS = NATIVE_API_DIRS[:] + LEGACY_API_DIRS[:]
+
+# TARGET_RE matches a GN target, and extracts the target name and the contents.
+TARGET_RE = re.compile(r'(?P<indent>\s*)\w+\("(?P<target_name>\w+)"\) {'
+                       r'(?P<target_contents>.*?)'
+                       r'(?P=indent)}',
+                       re.MULTILINE | re.DOTALL)
+
+# SOURCES_RE matches a block of sources inside a GN target.
+SOURCES_RE = re.compile(r'sources \+?= \[(?P<sources>.*?)\]',
+                        re.MULTILINE | re.DOTALL)
+
+# FILE_PATH_RE matchies a file path.
+FILE_PATH_RE = re.compile(r'"(?P<file_path>(\w|\/)+)(?P<extension>\.\w+)"')
 
 
 def _RunCommand(command, cwd):
@@ -297,33 +313,48 @@ def CheckNoSourcesAbove(input_api, gn_files, output_api):
         items=violating_gn_files)]
   return []
 
-def CheckNoMixingCAndCCSources(input_api, gn_files, output_api):
-  # Disallow mixing .c and .cc source files in the same target.
-  source_pattern = input_api.re.compile(r' +sources \+?= \[(.*?)\]',
-                                        re.MULTILINE | re.DOTALL)
-  file_pattern = input_api.re.compile(r'"(.*)"')
-  violating_gn_files = dict()
+def CheckNoMixingSources(input_api, gn_files, output_api):
+  """Disallow mixing C, C++ and Obj-C/Obj-C++ in the same target.
+
+  See bugs.webrtc.org/7743 for more context.
+  """
+  def _MoreThanOneSourceUsed(*sources_lists):
+    sources_used = 0
+    for source_list in sources_lists:
+      if len(source_list):
+        sources_used += 1
+    return sources_used > 1
+
+  errors = defaultdict(lambda: [])
   for gn_file in gn_files:
-    contents = input_api.ReadFile(gn_file)
-    for source_block_match in source_pattern.finditer(contents):
+    gn_file_content = input_api.ReadFile(gn_file)
+    for target_match in TARGET_RE.finditer(gn_file_content):
       c_files = []
       cc_files = []
-      for file_list_match in file_pattern.finditer(source_block_match.group(1)):
-        source_file = file_list_match.group(1)
-        if source_file.endswith('.c'):
-          c_files.append(source_file)
-        if source_file.endswith('.cc'):
-          cc_files.append(source_file)
-      if c_files and cc_files:
-        violating_gn_files[gn_file.LocalPath()] = sorted(c_files + cc_files)
-  if violating_gn_files:
+      objc_files = []
+      target_name = target_match.group('target_name')
+      target_contents = target_match.group('target_contents')
+      for sources_match in SOURCES_RE.finditer(target_contents):
+        for file_match in FILE_PATH_RE.finditer(sources_match.group(1)):
+          file_path = file_match.group('file_path')
+          extension = file_match.group('extension')
+          if extension == '.c':
+            c_files.append(file_path + extension)
+          if extension == '.cc':
+            cc_files.append(file_path + extension)
+          if extension in ['.m', '.mm']:
+            objc_files.append(file_path + extension)
+      if _MoreThanOneSourceUsed(c_files, cc_files, objc_files):
+        all_sources = sorted(c_files + cc_files + objc_files)
+        errors[gn_file.LocalPath()].append((target_name, all_sources))
+  if errors:
     return [output_api.PresubmitError(
-        'GN targets cannot mix .cc and .c source files. Please create a '
-        'separate target for each collection of sources.\n'
+        'GN targets cannot mix .c, .cc and .m (or .mm) source files.\n'
+        'Please create a separate target for each collection of sources.\n'
         'Mixed sources: \n'
         '%s\n'
-        'Violating GN files:' % json.dumps(violating_gn_files, indent=2),
-        items=violating_gn_files.keys())]
+        'Violating GN files:\n%s\n' % (json.dumps(errors, indent=2),
+                                       '\n'.join(errors.keys())))]
   return []
 
 def CheckNoPackageBoundaryViolations(input_api, gn_files, output_api):
@@ -350,9 +381,9 @@ def CheckGnChanges(input_api, output_api):
   result = []
   if gn_files:
     result.extend(CheckNoSourcesAbove(input_api, gn_files, output_api))
-    result.extend(CheckNoMixingCAndCCSources(input_api, gn_files, output_api))
-    result.extend(CheckNoPackageBoundaryViolations(
-        input_api, gn_files, output_api))
+    result.extend(CheckNoMixingSources(input_api, gn_files, output_api))
+    result.extend(CheckNoPackageBoundaryViolations(input_api, gn_files,
+                                                   output_api))
   return result
 
 def CheckUnwantedDependencies(input_api, output_api):
