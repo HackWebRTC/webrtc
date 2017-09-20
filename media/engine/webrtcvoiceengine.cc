@@ -2265,6 +2265,23 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
   // Get SSRC and stats for each receiver.
   RTC_DCHECK_EQ(info->receivers.size(), 0U);
   for (const auto& stream : recv_streams_) {
+    uint32_t ssrc = stream.first;
+    // When SSRCs are unsignaled, there's only one audio MediaStreamTrack, but
+    // multiple RTP streams can be received over time (if the SSRC changes for
+    // whatever reason). We only want the RTCMediaStreamTrackStats to represent
+    // the stats for the most recent stream (the one whose audio is actually
+    // routed to the MediaStreamTrack), so here we ignore any unsignaled SSRCs
+    // except for the most recent one (last in the vector). This is somewhat of
+    // a hack, and means you don't get *any* stats for these inactive streams,
+    // but it's slightly better than the previous behavior, which was "highest
+    // SSRC wins".
+    // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=8158
+    if (!unsignaled_recv_ssrcs_.empty()) {
+      auto end_it = --unsignaled_recv_ssrcs_.end();
+      if (std::find(unsignaled_recv_ssrcs_.begin(), end_it, ssrc) != end_it) {
+        continue;
+      }
+    }
     webrtc::AudioReceiveStream::Stats stats = stream.second->GetStats();
     VoiceReceiverInfo rinfo;
     rinfo.add_ssrc(stats.remote_ssrc);
