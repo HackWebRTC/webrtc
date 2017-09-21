@@ -28,6 +28,7 @@
 #include "call/rtp_stream_receiver_controller.h"
 #include "call/rtp_transport_controller_send.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/congestion_controller/include/receive_side_congestion_controller.h"
 #include "modules/rtp_rtcp/include/flexfec_receiver.h"

@@ -18,14 +18,14 @@
 // TODO(eladalon): Get rid of this later in the CL-stack.
 #include "api/rtpparameters.h"
 #include "common_types.h"  // NOLINT(build/include)
-// TODO(eladalon): Get rid of this later in the CL-stack.
-#include "logging/rtc_event_log/rtc_stream_config.h"
 #include "rtc_base/platform_file.h"
 
 namespace webrtc {
 
 namespace rtclog {
 class EventStream;  // Storage class automatically generated from protobuf.
+// TODO(eladalon): Get rid of this when deprecated methods are removed.
+struct StreamConfig;
 }  // namespace rtclog
 
 class Clock;

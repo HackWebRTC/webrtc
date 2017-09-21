@@ -14,6 +14,7 @@
 #include <string>
 
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "test/gmock.h"
 

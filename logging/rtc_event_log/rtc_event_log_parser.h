@@ -18,6 +18,7 @@
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "rtc_base/ignore_wundef.h"
