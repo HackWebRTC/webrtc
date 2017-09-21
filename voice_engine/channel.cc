@@ -1362,49 +1362,26 @@ int32_t Channel::DeRegisterExternalTransport() {
   return 0;
 }
 
-// TODO(nisse): Delete this method together with ReceivedRTPPacket.
-// It's a temporary hack to support both ReceivedRTPPacket and
-// OnRtpPacket interfaces without too much code duplication.
-bool Channel::OnRtpPacketWithHeader(const uint8_t* received_packet,
-                                    size_t length,
-                                    RTPHeader *header) {
-  // Store playout timestamp for the received RTP packet
-  UpdatePlayoutTimestamp(false);
-
-  header->payload_type_frequency =
-      rtp_payload_registry_->GetPayloadTypeFrequency(header->payloadType);
-  if (header->payload_type_frequency < 0)
-    return false;
-  bool in_order = IsPacketInOrder(*header);
-  rtp_receive_statistics_->IncomingPacket(
-      *header, length, IsPacketRetransmitted(*header, in_order));
-  rtp_payload_registry_->SetIncomingPayloadType(*header);
-
-  return ReceivePacket(received_packet, length, *header, in_order);
-}
-
-int32_t Channel::ReceivedRTPPacket(const uint8_t* received_packet,
-                                   size_t length,
-                                   const PacketTime& packet_time) {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::ReceivedRTPPacket()");
-
-  RTPHeader header;
-  if (!rtp_header_parser_->Parse(received_packet, length, &header)) {
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVoice, _channelId,
-                 "Incoming packet: invalid RTP header");
-    return -1;
-  }
-  return OnRtpPacketWithHeader(received_packet, length, &header) ? 0 : -1;
-}
-
 void Channel::OnRtpPacket(const RtpPacketReceived& packet) {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::ReceivedRTPPacket()");
+               "Channel::OnRtpPacket()");
 
   RTPHeader header;
   packet.GetHeader(&header);
-  OnRtpPacketWithHeader(packet.data(), packet.size(), &header);
+
+  // Store playout timestamp for the received RTP packet
+  UpdatePlayoutTimestamp(false);
+
+  header.payload_type_frequency =
+      rtp_payload_registry_->GetPayloadTypeFrequency(header.payloadType);
+  if (header.payload_type_frequency >= 0) {
+    bool in_order = IsPacketInOrder(header);
+    rtp_receive_statistics_->IncomingPacket(
+        header, packet.size(), IsPacketRetransmitted(header, in_order));
+    rtp_payload_registry_->SetIncomingPayloadType(header);
+
+    ReceivePacket(packet.data(), packet.size(), header, in_order);
+  }
 }
 
 bool Channel::ReceivePacket(const uint8_t* packet,

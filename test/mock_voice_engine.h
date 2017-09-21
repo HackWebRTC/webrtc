@@ -113,20 +113,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD1(StopSend, int(int channel));
   MOCK_METHOD0(audio_transport, AudioTransport*());
 
-  // VoENetwork
-  MOCK_METHOD2(RegisterExternalTransport,
-               int(int channel, Transport& transport));
-  MOCK_METHOD1(DeRegisterExternalTransport, int(int channel));
-  MOCK_METHOD3(ReceivedRTPPacket,
-               int(int channel, const void* data, size_t length));
-  MOCK_METHOD4(ReceivedRTPPacket,
-               int(int channel,
-                   const void* data,
-                   size_t length,
-                   const PacketTime& packet_time));
-  MOCK_METHOD3(ReceivedRTCPPacket,
-               int(int channel, const void* data, size_t length));
-
  private:
   // TODO(ossu): I'm not particularly happy about keeping the decoder factory
   // here, but due to how gmock is implemented, I cannot just keep it in the

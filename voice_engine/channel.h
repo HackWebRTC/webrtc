@@ -16,6 +16,7 @@
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/call/audio_sink.h"
+#include "api/call/transport.h"
 #include "api/optional.h"
 #include "common_audio/resampler/include/push_resampler.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -33,7 +34,6 @@
 #include "rtc_base/thread_checker.h"
 #include "voice_engine/audio_level.h"
 #include "voice_engine/include/voe_base.h"
-#include "voice_engine/include/voe_network.h"
 #include "voice_engine/shared_data.h"
 #include "voice_engine/voice_engine_defines.h"
 
@@ -204,12 +204,9 @@ class Channel
   void SetReceiverFrameLengthRange(int min_frame_length_ms,
                                    int max_frame_length_ms);
 
-  // VoENetwork
+  // Network
   int32_t RegisterExternalTransport(Transport* transport);
   int32_t DeRegisterExternalTransport();
-  int32_t ReceivedRTPPacket(const uint8_t* received_packet,
-                            size_t length,
-                            const PacketTime& packet_time);
   // TODO(nisse, solenberg): Delete when VoENetwork is deleted.
   int32_t ReceivedRTCPPacket(const uint8_t* data, size_t length);
   void OnRtpPacket(const RtpPacketReceived& packet);
@@ -362,9 +359,6 @@ class Channel
   int GetRemoteSSRC(unsigned int& ssrc);
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
-  bool OnRtpPacketWithHeader(const uint8_t* received_packet,
-                             size_t length,
-                             RTPHeader *header);
   bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length);
 
   bool ReceivePacket(const uint8_t* packet,

@@ -18,7 +18,6 @@ rtc_static_library("voice_engine") {
     "channel_proxy.h",
     "include/voe_base.h",
     "include/voe_errors.h",
-    "include/voe_network.h",
     "monitor_module.h",
     "output_mixer.cc",
     "output_mixer.h",
@@ -34,8 +33,6 @@ rtc_static_library("voice_engine") {
     "utility.h",
     "voe_base_impl.cc",
     "voe_base_impl.h",
-    "voe_network_impl.cc",
-    "voe_network_impl.h",
     "voice_engine_defines.h",
     "voice_engine_impl.cc",
     "voice_engine_impl.h",
@@ -139,9 +136,6 @@ if (rtc_include_tests) {
       "transport_feedback_packet_loss_tracker_unittest.cc",
       "utility_unittest.cc",
       "voe_base_unittest.cc",
-      "voe_network_unittest.cc",
-      "voice_engine_fixture.cc",
-      "voice_engine_fixture.h",
     ]
 
     data = [
