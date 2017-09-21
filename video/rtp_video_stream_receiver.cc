@@ -460,13 +460,12 @@ void RtpVideoStreamReceiver::ReceivePacket(const uint8_t* packet,
   const uint8_t* payload = packet + header.headerLength;
   assert(packet_length >= header.headerLength);
   size_t payload_length = packet_length - header.headerLength;
-  PayloadUnion payload_specific;
-  if (!rtp_payload_registry_.GetPayloadSpecifics(header.payloadType,
-                                                 &payload_specific)) {
-    return;
+  const auto pl =
+      rtp_payload_registry_.PayloadTypeToPayload(header.payloadType);
+  if (pl) {
+    rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
+                                     pl->typeSpecific, in_order);
   }
-  rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
-                                   payload_specific, in_order);
 }
 
 void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
@@ -501,13 +500,13 @@ void RtpVideoStreamReceiver::NotifyReceiverOfFecPacket(
   rtp_header.header = header;
   rtp_header.header.payloadType = last_media_payload_type;
   rtp_header.header.paddingLength = 0;
-  PayloadUnion payload_specific;
-  if (!rtp_payload_registry_.GetPayloadSpecifics(last_media_payload_type,
-                                                 &payload_specific)) {
+  const auto pl =
+      rtp_payload_registry_.PayloadTypeToPayload(last_media_payload_type);
+  if (!pl) {
     LOG(LS_WARNING) << "Failed to get payload specifics.";
     return;
   }
-  rtp_header.type.Video.codec = payload_specific.Video.videoCodecType;
+  rtp_header.type.Video.codec = pl->typeSpecific.Video.videoCodecType;
   rtp_header.type.Video.rotation = kVideoRotation_0;
   if (header.extension.hasVideoRotation) {
     rtp_header.type.Video.rotation = header.extension.videoRotation;

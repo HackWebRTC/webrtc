@@ -48,9 +48,9 @@ bool LoopBackTransport::SendRtp(const uint8_t* data,
   if (!parser->Parse(data, len, &header)) {
     return false;
   }
-  PayloadUnion payload_specific;
-  if (!rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
-                                                  &payload_specific)) {
+  const auto pl =
+      rtp_payload_registry_->PayloadTypeToPayload(header.payloadType);
+  if (!pl) {
     return false;
   }
   const uint8_t* payload = data + header.headerLength;
@@ -58,7 +58,7 @@ bool LoopBackTransport::SendRtp(const uint8_t* data,
   const size_t payload_length = len - header.headerLength;
   receive_statistics_->IncomingPacket(header, len, false);
   return rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
-                                          payload_specific, true);
+                                          pl->typeSpecific, true);
 }
 
 bool LoopBackTransport::SendRtcp(const uint8_t* data, size_t len) {

@@ -303,22 +303,9 @@ bool RTPPayloadRegistry::IsRed(const RTPHeader& header) const {
   return it != payload_type_map_.end() && _stricmp(it->second.name, "red") == 0;
 }
 
-bool RTPPayloadRegistry::GetPayloadSpecifics(uint8_t payload_type,
-                                             PayloadUnion* payload) const {
-  rtc::CritScope cs(&crit_sect_);
-  auto it = payload_type_map_.find(payload_type);
-
-  // Check that this is a registered payload type.
-  if (it == payload_type_map_.end()) {
-    return false;
-  }
-  *payload = it->second.typeSpecific;
-  return true;
-}
-
 int RTPPayloadRegistry::GetPayloadTypeFrequency(
     uint8_t payload_type) const {
-  const RtpUtility::Payload* payload = PayloadTypeToPayload(payload_type);
+  const auto payload = PayloadTypeToPayload(payload_type);
   if (!payload) {
     return -1;
   }
@@ -327,18 +314,13 @@ int RTPPayloadRegistry::GetPayloadTypeFrequency(
                         : kVideoPayloadTypeFrequency;
 }
 
-const RtpUtility::Payload* RTPPayloadRegistry::PayloadTypeToPayload(
+rtc::Optional<RtpUtility::Payload> RTPPayloadRegistry::PayloadTypeToPayload(
     uint8_t payload_type) const {
   rtc::CritScope cs(&crit_sect_);
-
-  auto it = payload_type_map_.find(payload_type);
-
-  // Check that this is a registered payload type.
-  if (it == payload_type_map_.end()) {
-    return nullptr;
-  }
-
-  return &it->second;
+  const auto it = payload_type_map_.find(payload_type);
+  return it == payload_type_map_.end()
+             ? rtc::Optional<RtpUtility::Payload>()
+             : rtc::Optional<RtpUtility::Payload>(it->second);
 }
 
 void RTPPayloadRegistry::SetIncomingPayloadType(const RTPHeader& header) {

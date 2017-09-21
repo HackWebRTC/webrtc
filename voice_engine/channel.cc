@@ -1391,13 +1391,13 @@ bool Channel::ReceivePacket(const uint8_t* packet,
   const uint8_t* payload = packet + header.headerLength;
   assert(packet_length >= header.headerLength);
   size_t payload_length = packet_length - header.headerLength;
-  PayloadUnion payload_specific;
-  if (!rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
-                                                  &payload_specific)) {
+  const auto pl =
+      rtp_payload_registry_->PayloadTypeToPayload(header.payloadType);
+  if (!pl) {
     return false;
   }
   return rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
-                                          payload_specific, in_order);
+                                          pl->typeSpecific, in_order);
 }
 
 bool Channel::IsPacketInOrder(const RTPHeader& header) const {

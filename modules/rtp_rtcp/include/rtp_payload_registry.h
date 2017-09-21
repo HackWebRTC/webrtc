@@ -15,6 +15,7 @@
 #include <set>
 
 #include "api/audio_codecs/audio_format.h"
+#include "api/optional.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/criticalsection.h"
 
@@ -55,11 +56,10 @@ class RTPPayloadRegistry {
 
   bool IsRed(const RTPHeader& header) const;
 
-  bool GetPayloadSpecifics(uint8_t payload_type, PayloadUnion* payload) const;
-
   int GetPayloadTypeFrequency(uint8_t payload_type) const;
 
-  const RtpUtility::Payload* PayloadTypeToPayload(uint8_t payload_type) const;
+  rtc::Optional<RtpUtility::Payload> PayloadTypeToPayload(
+      uint8_t payload_type) const;
 
   void ResetLastReceivedPayloadTypes() {
     rtc::CritScope cs(&crit_sect_);

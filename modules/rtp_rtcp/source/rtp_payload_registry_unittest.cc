@@ -42,7 +42,7 @@ TEST(RtpPayloadRegistryTest,
 
   EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(video_codec));
 
-  const RtpUtility::Payload* retrieved_payload =
+  const auto retrieved_payload =
       rtp_payload_registry.PayloadTypeToPayload(payload_type);
   EXPECT_TRUE(retrieved_payload);
 
@@ -68,7 +68,7 @@ TEST(RtpPayloadRegistryTest,
 
   EXPECT_TRUE(new_payload_created) << "A new payload WAS created.";
 
-  const RtpUtility::Payload* retrieved_payload =
+  const auto retrieved_payload =
       rtp_payload_registry.PayloadTypeToPayload(payload_type);
   EXPECT_TRUE(retrieved_payload);
 
@@ -102,7 +102,7 @@ TEST(RtpPayloadRegistryTest, AudioRedWorkProperly) {
 
   EXPECT_EQ(kRedPayloadType, rtp_payload_registry.red_payload_type());
 
-  const RtpUtility::Payload* retrieved_payload =
+  const auto retrieved_payload =
       rtp_payload_registry.PayloadTypeToPayload(kRedPayloadType);
   EXPECT_TRUE(retrieved_payload);
   EXPECT_TRUE(retrieved_payload->audio);
@@ -140,22 +140,23 @@ TEST(RtpPayloadRegistryTest,
       << "With a different payload type is fine though.";
 
   // Ensure both payloads are preserved.
-  const RtpUtility::Payload* retrieved_payload =
+  const auto retrieved_payload1 =
       rtp_payload_registry.PayloadTypeToPayload(payload_type);
-  EXPECT_TRUE(retrieved_payload);
-  EXPECT_STREQ(kTypicalPayloadName, retrieved_payload->name);
-  EXPECT_TRUE(retrieved_payload->audio);
-  EXPECT_EQ(kTypicalFrequency, retrieved_payload->typeSpecific.Audio.frequency);
-  EXPECT_EQ(kTypicalChannels, retrieved_payload->typeSpecific.Audio.channels);
+  EXPECT_TRUE(retrieved_payload1);
+  EXPECT_STREQ(kTypicalPayloadName, retrieved_payload1->name);
+  EXPECT_TRUE(retrieved_payload1->audio);
+  EXPECT_EQ(kTypicalFrequency,
+            retrieved_payload1->typeSpecific.Audio.frequency);
+  EXPECT_EQ(kTypicalChannels, retrieved_payload1->typeSpecific.Audio.channels);
 
-  retrieved_payload =
+  const auto retrieved_payload2 =
       rtp_payload_registry.PayloadTypeToPayload(payload_type - 1);
-  EXPECT_TRUE(retrieved_payload);
-  EXPECT_STREQ(kTypicalPayloadName, retrieved_payload->name);
-  EXPECT_TRUE(retrieved_payload->audio);
+  EXPECT_TRUE(retrieved_payload2);
+  EXPECT_STREQ(kTypicalPayloadName, retrieved_payload2->name);
+  EXPECT_TRUE(retrieved_payload2->audio);
   EXPECT_EQ(kTypicalFrequency + 1,
-            retrieved_payload->typeSpecific.Audio.frequency);
-  EXPECT_EQ(kTypicalChannels, retrieved_payload->typeSpecific.Audio.channels);
+            retrieved_payload2->typeSpecific.Audio.frequency);
+  EXPECT_EQ(kTypicalChannels, retrieved_payload2->typeSpecific.Audio.channels);
 
   // Ok, update the rate for one of the codecs. If either the incoming rate or
   // the stored rate is zero it's not really an error to register the same

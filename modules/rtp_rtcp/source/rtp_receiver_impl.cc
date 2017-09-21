@@ -294,7 +294,7 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
         if (rtp_header.payloadType == last_received_payload_type) {
           re_initialize_decoder = true;
 
-          const Payload* payload = rtp_payload_registry_->PayloadTypeToPayload(
+          const auto payload = rtp_payload_registry_->PayloadTypeToPayload(
               rtp_header.payloadType);
           if (!payload) {
             return;
@@ -382,7 +382,7 @@ int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
         return 0;
       }
 
-      const Payload* payload =
+      const auto payload =
           rtp_payload_registry_->PayloadTypeToPayload(payload_type);
       if (!payload) {
         // Not a registered payload type.

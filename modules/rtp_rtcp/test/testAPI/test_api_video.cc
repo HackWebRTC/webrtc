@@ -165,14 +165,13 @@ TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {
       RTPHeader header;
       std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
       EXPECT_TRUE(parser->Parse(padding_packet, packet_size, &header));
-      PayloadUnion payload_specific;
-      EXPECT_TRUE(rtp_payload_registry_.GetPayloadSpecifics(header.payloadType,
-                                                            &payload_specific));
+      const auto pl =
+          rtp_payload_registry_.PayloadTypeToPayload(header.payloadType);
+      EXPECT_TRUE(pl);
       const uint8_t* payload = padding_packet + header.headerLength;
       const size_t payload_length = packet_size - header.headerLength;
-      EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, payload,
-                                                   payload_length,
-                                                   payload_specific, true));
+      EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+          header, payload, payload_length, pl->typeSpecific, true));
       EXPECT_EQ(0u, receiver_->payload_size());
       EXPECT_EQ(payload_length, receiver_->rtp_header().header.paddingLength);
     }
