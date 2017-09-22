@@ -3,7 +3,7 @@
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': 'd4c912f9895cd2120c9f9f032bc09ddd4f2bdaf7',
+  'chromium_revision': '008fb813c3afc34d217dbb46aa1dc0ed491f59c3',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -24,7 +24,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': '703485470a88380b828a6ec8f75e0fe11e371e17',
+  'catapult_revision': 'b233ea0e0e23e18000a6e7b6c7232cb67dbee7de',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -34,7 +34,7 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + 'c0b4f622bcb7892cf4ccab017a5d29c5eadedb0b',
+    Var('chromium_git') + '/chromium/src/base' + '@' + 'c18a0c6f247961602e19685460f000b301064b14',
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + '59ac1990b6b760c8201b5c46bce046df5a633414',
   'src/buildtools':
@@ -42,7 +42,7 @@ deps = {
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + '1f35ec36f2c6b0a983af718722e84fa3266860eb',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'b1ead0d952d7b59dbf8d587d57d23ca6ab74b3df',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '7e981769b0f30c4aefe9f4639d0393a0bf0c51f0',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
