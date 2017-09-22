@@ -109,7 +109,7 @@ class NoLossTest : public AudioEndToEndTest {
 
 using AudioStatsTest = CallTest;
 
-TEST_F(AudioStatsTest, NoLoss) {
+TEST_F(AudioStatsTest, DISABLED_NoLoss) {
   NoLossTest test;
   RunBaseTest(&test);
 }
