@@ -46,11 +46,6 @@ class Atomic32 {
   }
 
  private:
-  // Disable the + and - operator since it's unclear what these operations
-  // should do.
-  Atomic32 operator+(const Atomic32& other);
-  Atomic32 operator-(const Atomic32& other);
-
   // Checks if |_value| is 32bit aligned.
   inline bool Is32bitAligned() const {
     return (reinterpret_cast<ptrdiff_t>(&value_) & 3) == 0;
