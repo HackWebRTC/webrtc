@@ -276,6 +276,8 @@ void Loopback() {
                   flags::MaxBitrateKbps() * 1000,
                   flags::FLAG_suspend_below_min_bitrate,
                   flags::Codec(),
+                  false,  // No HW encoder.
+                  false,  // No SW fallback encoder.
                   flags::NumTemporalLayers(),
                   flags::SelectedTL(),
                   0,  // No min transmit bitrate.

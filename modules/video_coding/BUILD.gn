@@ -393,6 +393,23 @@ if (rtc_include_tests) {
     ]
   }
 
+  if (is_android) {
+    rtc_source_set("codecs_test_android_test_initializer") {
+      testonly = true
+
+      sources = [
+        "codecs/test/android_test_initializer.cc",
+        "codecs/test/android_test_initializer.h",
+      ]
+
+      deps = [
+        "../../rtc_base:rtc_base_approved",
+        "../../sdk/android:libjingle_peerconnection_jni",
+        "//base",
+      ]
+    }
+  }
+
   video_coding_modules_tests_resources = [
     "../../resources/foreman_128x96.yuv",
     "../../resources/foreman_160x120.yuv",
@@ -454,15 +471,9 @@ if (rtc_include_tests) {
     data = video_coding_modules_tests_resources
 
     if (is_android) {
-      sources += [
-        "codecs/test/android_test_initializer.cc",
-        "codecs/test/android_test_initializer.h",
-        "codecs/test/videoprocessor_integrationtest_mediacodec.cc",
-      ]
-
       deps += [
-        "../../sdk/android:libjingle_peerconnection_jni",
-        "//base",
+        ":codecs_test_android_test_initializer",
+        "../../sdk/android:video_jni",
       ]
     }
 
@@ -470,8 +481,6 @@ if (rtc_include_tests) {
       deps += [
         ":codec_test_objc",
         ":video_coding_modules_tests_resources_bundle_data",
-        "../../media:rtc_media_base",
-        "../../sdk:videotoolbox_objc",
       ]
     }
 

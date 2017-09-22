@@ -18,10 +18,20 @@
 #include <string>
 #include <vector>
 
+#if defined(WEBRTC_ANDROID)
+#include "modules/video_coding/codecs/test/android_test_initializer.h"
+#include "sdk/android/src/jni/androidmediadecoder_jni.h"
+#include "sdk/android/src/jni/androidmediaencoder_jni.h"
+#elif defined(WEBRTC_IOS)
+#include "modules/video_coding/codecs/test/objc_codec_h264_test.h"
+#endif
+
 #include "api/optional.h"
 #include "call/call.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/engine/internalencoderfactory.h"
+#include "media/engine/videoencodersoftwarefallbackwrapper.h"
 #include "media/engine/webrtcvideoengine.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -1128,35 +1138,6 @@ class VideoAnalyzer : public PacketReceiver,
   const int64_t start_ms_;
 };
 
-class Vp8EncoderFactory : public cricket::WebRtcVideoEncoderFactory {
- public:
-  Vp8EncoderFactory() {
-    supported_codecs_.push_back(cricket::VideoCodec("VP8"));
-  }
-  ~Vp8EncoderFactory() override { RTC_CHECK(live_encoders_.empty()); }
-
-  const std::vector<cricket::VideoCodec>& supported_codecs() const override {
-    return supported_codecs_;
-  }
-
-  VideoEncoder* CreateVideoEncoder(const cricket::VideoCodec& codec) override {
-    VideoEncoder* encoder = VP8Encoder::Create();
-    live_encoders_.insert(encoder);
-    return encoder;
-  }
-
-  void DestroyVideoEncoder(VideoEncoder* encoder) override {
-    auto it = live_encoders_.find(encoder);
-    RTC_CHECK(it != live_encoders_.end());
-    live_encoders_.erase(it);
-    delete encoder;
-  }
-
- private:
-  std::vector<cricket::VideoCodec> supported_codecs_;
-  std::set<VideoEncoder*> live_encoders_;
-};
-
 VideoQualityTest::VideoQualityTest()
     : clock_(Clock::GetRealTimeClock()), receive_logs_(0), send_logs_(0) {
   payload_type_map_ = test::CallTest::payload_type_map_;
@@ -1169,12 +1150,16 @@ VideoQualityTest::VideoQualityTest()
   payload_type_map_[kPayloadTypeH264] = webrtc::MediaType::VIDEO;
   payload_type_map_[kPayloadTypeVP8] = webrtc::MediaType::VIDEO;
   payload_type_map_[kPayloadTypeVP9] = webrtc::MediaType::VIDEO;
+
+#if defined(WEBRTC_ANDROID)
+  InitializeAndroidObjects();
+#endif
 }
 
 VideoQualityTest::Params::Params()
     : call({false, Call::Config::BitrateConfig(), 0}),
-      video({false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
-             false, ""}),
+      video({false, 640, 480, 30, 50, 800, 800, false, "VP8", false, false, 1,
+             -1, 0, false, false, ""}),
       audio({false, false, false}),
       screenshare({false, false, 10, 0}),
       analyzer({"", 0.0, 0.0, 0, "", ""}),
@@ -1413,28 +1398,51 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   size_t num_flexfec_streams = params_.video.flexfec ? 1 : 0;
   CreateSendConfig(num_video_streams, 0, num_flexfec_streams, send_transport);
 
+  if (params_.video.hw_encoder) {
+#if defined(WEBRTC_ANDROID)
+    video_encoder_factory_.reset(new jni::MediaCodecVideoEncoderFactory());
+#elif defined(WEBRTC_IOS)
+    video_encoder_factory_ = CreateObjCEncoderFactory();
+#else
+    RTC_NOTREACHED() << "Only support HW encoder on Android and iOS.";
+#endif
+  } else {
+    video_encoder_factory_.reset(new cricket::InternalEncoderFactory());
+  }
+
+  cricket::VideoCodec codec;
   int payload_type;
   if (params_.video.codec == "H264") {
-    video_encoder_.reset(H264Encoder::Create(cricket::VideoCodec("H264")));
+    // TODO(brandtr): Add support for high profile here.
+    codec = cricket::VideoCodec(cricket::kH264CodecName);
+    video_encoder_.reset(video_encoder_factory_->CreateVideoEncoder(codec));
     payload_type = kPayloadTypeH264;
   } else if (params_.video.codec == "VP8") {
+    codec = cricket::VideoCodec(cricket::kVp8CodecName);
     if (params_.screenshare.enabled && params_.ss.streams.size() > 1) {
-      // Simulcast screenshare needs a simulcast encoder adapter to work, since
-      // encoders usually can't natively do simulcast with different frame rates
-      // for the different layers.
+      // Simulcast screenshare needs a simulcast encoder adapter to work,
+      // since encoders usually can't natively do simulcast with
+      // different frame rates for the different layers.
       video_encoder_.reset(
-          new SimulcastEncoderAdapter(new Vp8EncoderFactory()));
+          new SimulcastEncoderAdapter(video_encoder_factory_.get()));
     } else {
-      video_encoder_.reset(VP8Encoder::Create());
+      video_encoder_.reset(video_encoder_factory_->CreateVideoEncoder(codec));
     }
     payload_type = kPayloadTypeVP8;
   } else if (params_.video.codec == "VP9") {
-    video_encoder_.reset(VP9Encoder::Create());
+    codec = cricket::VideoCodec(cricket::kVp9CodecName);
+    video_encoder_.reset(video_encoder_factory_->CreateVideoEncoder(codec));
     payload_type = kPayloadTypeVP9;
   } else {
     RTC_NOTREACHED() << "Codec not supported!";
     return;
   }
+
+  if (params_.video.sw_fallback_encoder) {
+    video_encoder_ = rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
+        codec, std::move(video_encoder_));
+  }
+
   video_send_config_.encoder_settings.encoder = video_encoder_.get();
   video_send_config_.encoder_settings.payload_name = params_.video.codec;
   video_send_config_.encoder_settings.payload_type = payload_type;
@@ -1971,7 +1979,7 @@ void VideoQualityTest::SetupAudio(int send_channel_id,
            {"OPUS", 48000, 2,
             {{"usedtx", (params_.audio.dtx ? "1" : "0")},
               {"stereo", "1"}}}});
-  audio_send_config_.encoder_factory = encoder_factory_;
+  audio_send_config_.encoder_factory = audio_encoder_factory_;
   audio_send_stream_ = sender_call_->CreateAudioSendStream(audio_send_config_);
 
   AudioReceiveStream::Config audio_config;
@@ -1981,7 +1989,7 @@ void VideoQualityTest::SetupAudio(int send_channel_id,
   audio_config.rtp.remote_ssrc = audio_send_config_.rtp.ssrc;
   audio_config.rtp.transport_cc = params_.call.send_side_bwe;
   audio_config.rtp.extensions = audio_send_config_.rtp.extensions;
-  audio_config.decoder_factory = decoder_factory_;
+  audio_config.decoder_factory = audio_decoder_factory_;
   audio_config.decoder_map = {{kAudioSendPayloadType, {"OPUS", 48000, 2}}};
   if (params_.video.enabled && params_.audio.sync_video)
     audio_config.sync_group = kSyncGroup;
@@ -2011,7 +2019,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
         webrtc::AudioProcessing::Create());
 
     if (params_.audio.enabled) {
-      CreateVoiceEngine(&voe, audio_processing.get(), decoder_factory_);
+      CreateVoiceEngine(&voe, audio_processing.get(), audio_decoder_factory_);
       AudioState::Config audio_state_config;
       audio_state_config.voice_engine = voe.voice_engine;
       audio_state_config.audio_mixer = AudioMixerImpl::Create();

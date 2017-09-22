@@ -42,8 +42,8 @@ CallTest::CallTest()
       num_video_streams_(1),
       num_audio_streams_(0),
       num_flexfec_streams_(0),
-      decoder_factory_(CreateBuiltinAudioDecoderFactory()),
-      encoder_factory_(CreateBuiltinAudioEncoderFactory()),
+      audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()),
+      audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()),
       task_queue_("CallTestTaskQueue"),
       fake_send_audio_device_(nullptr),
       fake_recv_audio_device_(nullptr) {}
@@ -223,7 +223,7 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
     audio_send_config_.send_codec_spec =
         rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
             {kAudioSendPayloadType, {"opus", 48000, 2, {{"stereo", "1"}}}});
-    audio_send_config_.encoder_factory = encoder_factory_;
+    audio_send_config_.encoder_factory = audio_encoder_factory_;
   }
 
   // TODO(brandtr): Update this when we support multistream protection.
@@ -268,7 +268,7 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
     audio_config.rtcp_send_transport = rtcp_send_transport;
     audio_config.voe_channel_id = voe_recv_.channel_id;
     audio_config.rtp.remote_ssrc = audio_send_config_.rtp.ssrc;
-    audio_config.decoder_factory = decoder_factory_;
+    audio_config.decoder_factory = audio_decoder_factory_;
     audio_config.decoder_map = {{kAudioSendPayloadType, {"opus", 48000, 2}}};
     audio_receive_configs_.push_back(audio_config);
   }
@@ -428,7 +428,7 @@ void CallTest::CreateVoiceEngines() {
   voe_send_.voice_engine = VoiceEngine::Create();
   voe_send_.base = VoEBase::GetInterface(voe_send_.voice_engine);
   EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(),
-                                    apm_send_.get(), decoder_factory_));
+                                    apm_send_.get(), audio_decoder_factory_));
   VoEBase::ChannelConfig config;
   config.enable_voice_pacing = true;
   voe_send_.channel_id = voe_send_.base->CreateChannel(config);
@@ -437,7 +437,7 @@ void CallTest::CreateVoiceEngines() {
   voe_recv_.voice_engine = VoiceEngine::Create();
   voe_recv_.base = VoEBase::GetInterface(voe_recv_.voice_engine);
   EXPECT_EQ(0, voe_recv_.base->Init(fake_recv_audio_device_.get(),
-                                    apm_recv_.get(), decoder_factory_));
+                                    apm_recv_.get(), audio_decoder_factory_));
   voe_recv_.channel_id = voe_recv_.base->CreateChannel();
   EXPECT_GE(voe_recv_.channel_id, 0);
 }
