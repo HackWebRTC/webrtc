@@ -1539,6 +1539,9 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
           RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
     }
     flexfec_receive_configs_.push_back(flexfec_receive_config);
+    if (num_video_streams > 0) {
+      video_receive_configs_[0].rtp.protected_by_flexfec = true;
+    }
   }
 
   if (params_.video.ulpfec) {

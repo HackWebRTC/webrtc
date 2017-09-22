@@ -256,6 +256,8 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
       video_config.rtp.remote_ssrc = video_send_config_.rtp.ssrcs[i];
       video_receive_configs_.push_back(video_config.Copy());
     }
+    video_receive_configs_[0].rtp.protected_by_flexfec =
+        (num_flexfec_streams_ == 1);
   }
 
   RTC_DCHECK_GE(1, num_audio_streams_);

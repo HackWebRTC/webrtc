@@ -2654,6 +2654,13 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest, SetDefaultRecvCodecsWithSsrc) {
   EXPECT_EQ(kFlexfecSsrc, config.remote_ssrc);
   ASSERT_EQ(1U, config.protected_media_ssrcs.size());
   EXPECT_EQ(kSsrcs1[0], config.protected_media_ssrcs[0]);
+
+  const std::vector<FakeVideoReceiveStream*>& video_streams =
+      fake_call_->GetVideoReceiveStreams();
+  ASSERT_EQ(1U, video_streams.size());
+  const webrtc::VideoReceiveStream::Config& video_config =
+      video_streams.front()->GetConfig();
+  EXPECT_TRUE(video_config.rtp.protected_by_flexfec);
 }
 
 TEST_F(WebRtcVideoChannelFlexfecRecvTest,
