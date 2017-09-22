@@ -16,7 +16,6 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace {
@@ -102,15 +101,11 @@ void BlockProcessorImpl::ProcessCapture(
     // been a render buffer overrun as the buffer alignment may be noncausal.
     delay_controller_->Reset();
     render_buffer_->Reset();
-    LOG(LS_WARNING) << "Reset due to detected render buffer overrun.";
   }
 
   // Update the render buffers with new render data, filling the buffers with
   // empty blocks when there is no render data available.
   render_buffer_underrun = !render_buffer_->UpdateBuffers();
-  if (render_buffer_underrun) {
-    LOG(LS_WARNING) << "Render API jitter buffer underrun.";
-  }
 
   // Compute and and apply the render delay required to achieve proper signal
   // alignment.
@@ -132,7 +127,6 @@ void BlockProcessorImpl::ProcessCapture(
     delay_controller_->Reset();
     render_buffer_->Reset();
     delay_change = true;
-    LOG(LS_WARNING) << "Reset due to noncausal delay.";
   }
 
   // Remove the echo from the capture signal.
@@ -170,9 +164,6 @@ void BlockProcessorImpl::BufferRender(
 
   // Buffer the render data.
   render_buffer_overrun_occurred_ = !render_buffer_->Insert(block);
-  if (render_buffer_overrun_occurred_) {
-    LOG(LS_WARNING) << "Render API jitter buffer overrun.";
-  }
 
   // Update the metrics.
   metrics_.UpdateRender(render_buffer_overrun_occurred_);
