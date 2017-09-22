@@ -120,11 +120,18 @@ public class WebRtcAudioTrack {
         // This priming will avoid an immediate underrun, but is not required.
         // TODO(henrika): initial tests have shown that priming is not required.
         audioTrack.play();
-        assertTrue(audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING);
       } catch (IllegalStateException e) {
         reportWebRtcAudioTrackStartError("AudioTrack.play failed: " + e.getMessage());
         releaseAudioResources();
         return;
+      }
+      // We have seen reports that AudioTrack.play() can sometimes start in a
+      // paued mode (e.g. when application is in background mode).
+      // TODO(henrika): consider calling reportWebRtcAudioTrackStartError()
+      // and release audio resources here as well. For now, let the thread start
+      // and hope that the audio session can be restored later.
+      if (audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
+        Logging.w(TAG, "AudioTrack failed to enter playing state.");
       }
 
       // Fixed size in bytes of each 10ms block of audio data that we ask for
