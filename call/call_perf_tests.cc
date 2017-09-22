@@ -177,7 +177,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
         FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000),
         FakeAudioDevice::CreateDiscardRenderer(48000), audio_rtp_speed);
     EXPECT_EQ(0, voe_base->Init(fake_audio_device.get(), audio_processing.get(),
-                                audio_decoder_factory_));
+                                decoder_factory_));
     VoEBase::ChannelConfig config;
     config.enable_voice_pacing = true;
     send_channel_id = voe_base->CreateChannel(config);
@@ -251,7 +251,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     audio_recv_config.rtp.local_ssrc = kAudioRecvSsrc;
     audio_recv_config.voe_channel_id = recv_channel_id;
     audio_recv_config.sync_group = kSyncGroup;
-    audio_recv_config.decoder_factory = audio_decoder_factory_;
+    audio_recv_config.decoder_factory = decoder_factory_;
     audio_recv_config.decoder_map = {
         {kAudioSendPayloadType, {"ISAC", 16000, 1}}};
 
