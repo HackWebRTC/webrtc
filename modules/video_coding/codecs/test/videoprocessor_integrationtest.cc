@@ -10,6 +10,7 @@
 
 #include "modules/video_coding/codecs/test/videoprocessor_integrationtest.h"
 
+#include <algorithm>
 #include <utility>
 
 #if defined(WEBRTC_ANDROID)
@@ -41,7 +42,7 @@ namespace test {
 
 namespace {
 
-const int kPercTargetvsActualMismatch = 20;
+const int kMaxBitrateMismatchPercent = 20;
 const int kBaseKeyFrameInterval = 3000;
 
 // Parameters from VP8 wrapper, which control target size of key frames.
@@ -56,6 +57,13 @@ void VerifyQuality(const QualityMetricsResult& psnr_result,
   EXPECT_GT(psnr_result.min, quality_thresholds.min_min_psnr);
   EXPECT_GT(ssim_result.average, quality_thresholds.min_avg_ssim);
   EXPECT_GT(ssim_result.min, quality_thresholds.min_min_ssim);
+}
+
+void PrintQualityMetrics(const QualityMetricsResult& psnr_result,
+                         const QualityMetricsResult& ssim_result) {
+  printf("PSNR avg: %f, min: %f\n", psnr_result.average, psnr_result.min);
+  printf("SSIM avg: %f, min: %f\n", ssim_result.average, ssim_result.min);
+  printf("\n");
 }
 
 int NumberOfTemporalLayers(const VideoCodec& codec_settings) {
@@ -140,10 +148,10 @@ void VideoProcessorIntegrationTest::SetRateProfile(
 
 void VideoProcessorIntegrationTest::AddRateControlThresholds(
     int max_num_dropped_frames,
-    int max_key_frame_size_mismatch,
-    int max_delta_frame_size_mismatch,
-    int max_encoding_rate_mismatch,
-    int max_time_hit_target,
+    int max_key_framesize_mismatch_percent,
+    int max_delta_framesize_mismatch_percent,
+    int max_bitrate_mismatch_percent,
+    int max_num_frames_to_hit_target,
     int num_spatial_resizes,
     int num_key_frames,
     std::vector<RateControlThresholds>* rc_thresholds) {
@@ -152,10 +160,12 @@ void VideoProcessorIntegrationTest::AddRateControlThresholds(
   rc_thresholds->emplace_back();
   RateControlThresholds* rc_threshold = &rc_thresholds->back();
   rc_threshold->max_num_dropped_frames = max_num_dropped_frames;
-  rc_threshold->max_key_frame_size_mismatch = max_key_frame_size_mismatch;
-  rc_threshold->max_delta_frame_size_mismatch = max_delta_frame_size_mismatch;
-  rc_threshold->max_encoding_rate_mismatch = max_encoding_rate_mismatch;
-  rc_threshold->max_time_hit_target = max_time_hit_target;
+  rc_threshold->max_key_framesize_mismatch_percent =
+      max_key_framesize_mismatch_percent;
+  rc_threshold->max_delta_framesize_mismatch_percent =
+      max_delta_framesize_mismatch_percent;
+  rc_threshold->max_bitrate_mismatch_percent = max_bitrate_mismatch_percent;
+  rc_threshold->max_num_frames_to_hit_target = max_num_frames_to_hit_target;
   rc_threshold->num_spatial_resizes = num_spatial_resizes;
   rc_threshold->num_key_frames = num_key_frames;
 }
@@ -218,19 +228,20 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
   ReleaseAndCloseObjects(&task_queue);
 
   // Calculate and print rate control statistics.
-  rate_update_index = 0;
-  frame_number = 0;
-  ResetRateControlMetrics(rate_update_index, rate_profile);
   std::vector<int> num_dropped_frames;
-  std::vector<int> num_resize_actions;
+  std::vector<int> num_spatial_resizes;
   sync_event.Reset();
   task_queue.PostTask(
-      [this, &num_dropped_frames, &num_resize_actions, &sync_event]() {
+      [this, &num_dropped_frames, &num_spatial_resizes, &sync_event]() {
         num_dropped_frames = processor_->NumberDroppedFramesPerRateUpdate();
-        num_resize_actions = processor_->NumberSpatialResizesPerRateUpdate();
+        num_spatial_resizes = processor_->NumberSpatialResizesPerRateUpdate();
         sync_event.Set();
       });
   sync_event.Wait(rtc::Event::kForever);
+
+  rate_update_index = 0;
+  frame_number = 0;
+  ResetRateControlMetrics(rate_update_index, rate_profile);
   while (frame_number < num_frames) {
     UpdateRateControlMetrics(frame_number);
 
@@ -238,15 +249,19 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
 
     if (frame_number ==
         rate_profile.frame_index_rate_update[rate_update_index + 1]) {
-      PrintAndMaybeVerifyRateControlMetrics(rate_update_index, rc_thresholds,
-                                            num_dropped_frames,
-                                            num_resize_actions);
+      PrintRateControlMetrics(rate_update_index, num_dropped_frames,
+                              num_spatial_resizes);
+      VerifyRateControlMetrics(rate_update_index, rc_thresholds,
+                               num_dropped_frames, num_spatial_resizes);
       ++rate_update_index;
       ResetRateControlMetrics(rate_update_index, rate_profile);
     }
   }
-  PrintAndMaybeVerifyRateControlMetrics(rate_update_index, rc_thresholds,
-                                        num_dropped_frames, num_resize_actions);
+
+  PrintRateControlMetrics(rate_update_index, num_dropped_frames,
+                          num_spatial_resizes);
+  VerifyRateControlMetrics(rate_update_index, rc_thresholds, num_dropped_frames,
+                           num_spatial_resizes);
 
   // Calculate and print other statistics.
   EXPECT_EQ(num_frames, static_cast<int>(stats_.size()));
@@ -263,9 +278,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
   if (quality_thresholds) {
     VerifyQuality(psnr_result, ssim_result, *quality_thresholds);
   }
-  printf("PSNR avg: %f, min: %f\nSSIM avg: %f, min: %f\n", psnr_result.average,
-         psnr_result.min, ssim_result.average, ssim_result.min);
-  printf("\n");
+  PrintQualityMetrics(psnr_result, ssim_result);
 
   // Remove analysis file.
   if (remove(config_.output_filename.c_str()) < 0) {
@@ -438,134 +451,120 @@ void VideoProcessorIntegrationTest::UpdateRateControlMetrics(int frame_number) {
   RTC_CHECK_GE(frame_number, 0);
 
   const int tl_idx = TemporalLayerIndexForFrame(frame_number);
-  ++num_frames_per_update_[tl_idx];
-  ++num_frames_total_;
+  ++actual_.num_frames_layer[tl_idx];
+  ++actual_.num_frames;
 
   const FrameStatistic* frame_stat = stats_.GetFrame(frame_number);
   FrameType frame_type = frame_stat->frame_type;
-  float encoded_size_kbits =
-      frame_stat->encoded_frame_size_bytes * 8.0f / 1000.0f;
+  float framesize_kbits = frame_stat->encoded_frame_size_bytes * 8.0f / 1000.0f;
 
-  // Update layer data.
-  // Update rate mismatch relative to per-frame bandwidth for delta frames.
+  // Update rate mismatch relative to per-frame bandwidth.
   if (frame_type == kVideoFrameDelta) {
     // TODO(marpan): Should we count dropped (zero size) frames in mismatch?
-    sum_frame_size_mismatch_[tl_idx] +=
-        fabs(encoded_size_kbits - per_frame_bandwidth_[tl_idx]) /
-        per_frame_bandwidth_[tl_idx];
+    actual_.sum_delta_framesize_mismatch_layer[tl_idx] +=
+        fabs(framesize_kbits - target_.framesize_kbits_layer[tl_idx]) /
+        target_.framesize_kbits_layer[tl_idx];
   } else {
-    float target_size = (frame_number == 0) ? target_size_key_frame_initial_
-                                            : target_size_key_frame_;
-    sum_key_frame_size_mismatch_ +=
-        fabs(encoded_size_kbits - target_size) / target_size;
-    num_key_frames_ += 1;
+    float key_framesize_kbits = (frame_number == 0)
+                                    ? target_.key_framesize_kbits_initial
+                                    : target_.key_framesize_kbits;
+    actual_.sum_key_framesize_mismatch +=
+        fabs(framesize_kbits - key_framesize_kbits) / key_framesize_kbits;
+    ++actual_.num_key_frames;
   }
-  sum_encoded_frame_size_[tl_idx] += encoded_size_kbits;
-  // Encoding bit rate per temporal layer: from the start of the update/run
-  // to the current frame.
-  encoding_bitrate_[tl_idx] = sum_encoded_frame_size_[tl_idx] *
-                              framerate_layer_[tl_idx] /
-                              num_frames_per_update_[tl_idx];
-  // Total encoding rate: from the start of the update/run to current frame.
-  sum_encoded_frame_size_total_ += encoded_size_kbits;
-  encoding_bitrate_total_ =
-      sum_encoded_frame_size_total_ * framerate_ / num_frames_total_;
-  perc_encoding_rate_mismatch_ =
-      100 * fabs(encoding_bitrate_total_ - bitrate_kbps_) / bitrate_kbps_;
-  if (perc_encoding_rate_mismatch_ < kPercTargetvsActualMismatch &&
-      !encoding_rate_within_target_) {
-    num_frames_to_hit_target_ = num_frames_total_;
-    encoding_rate_within_target_ = true;
+  actual_.sum_framesize_kbits += framesize_kbits;
+  actual_.sum_framesize_kbits_layer[tl_idx] += framesize_kbits;
+
+  // Encoded bitrate: from the start of the update/run to current frame.
+  actual_.kbps = actual_.sum_framesize_kbits * target_.fps / actual_.num_frames;
+  actual_.kbps_layer[tl_idx] = actual_.sum_framesize_kbits_layer[tl_idx] *
+                               target_.fps_layer[tl_idx] /
+                               actual_.num_frames_layer[tl_idx];
+
+  // Number of frames to hit target bitrate.
+  if (actual_.BitrateMismatchPercent(target_.kbps) <
+      kMaxBitrateMismatchPercent) {
+    actual_.num_frames_to_hit_target =
+        std::min(actual_.num_frames, actual_.num_frames_to_hit_target);
   }
 }
 
-// Verify expected behavior of rate control and print out data.
-void VideoProcessorIntegrationTest::PrintAndMaybeVerifyRateControlMetrics(
+// Verify expected behavior of rate control.
+void VideoProcessorIntegrationTest::VerifyRateControlMetrics(
     int rate_update_index,
     const std::vector<RateControlThresholds>* rc_thresholds,
     const std::vector<int>& num_dropped_frames,
-    const std::vector<int>& num_resize_actions) {
-  printf(
-      "Rate update #%d:\n"
-      " Target bitrate         : %d\n"
-      " Encoded bitrate        : %f\n"
-      " Frame rate             : %d\n",
-      rate_update_index, bitrate_kbps_, encoding_bitrate_total_, framerate_);
-  printf(
-      " # processed frames     : %d\n"
-      " # frames to convergence: %d\n"
-      " # dropped frames       : %d\n"
-      " # spatial resizes      : %d\n",
-      num_frames_total_, num_frames_to_hit_target_,
-      num_dropped_frames[rate_update_index],
-      num_resize_actions[rate_update_index]);
+    const std::vector<int>& num_spatial_resizes) const {
+  if (!rc_thresholds)
+    return;
 
-  const RateControlThresholds* rc_threshold = nullptr;
-  if (rc_thresholds) {
-    rc_threshold = &(*rc_thresholds)[rate_update_index];
+  const RateControlThresholds& rc_threshold =
+      (*rc_thresholds)[rate_update_index];
 
-    EXPECT_LE(perc_encoding_rate_mismatch_,
-              rc_threshold->max_encoding_rate_mismatch);
-  }
-  if (num_key_frames_ > 0) {
-    int perc_key_frame_size_mismatch =
-        100 * sum_key_frame_size_mismatch_ / num_key_frames_;
-    printf(
-        " # key frames           : %d\n"
-        " Key frame rate mismatch: %d\n",
-        num_key_frames_, perc_key_frame_size_mismatch);
-    if (rc_threshold) {
-      EXPECT_LE(perc_key_frame_size_mismatch,
-                rc_threshold->max_key_frame_size_mismatch);
-    }
-  }
+  EXPECT_LE(num_dropped_frames[rate_update_index],
+            rc_threshold.max_num_dropped_frames);
+  EXPECT_EQ(rc_threshold.num_spatial_resizes,
+            num_spatial_resizes[rate_update_index]);
+
+  EXPECT_LE(actual_.num_frames_to_hit_target,
+            rc_threshold.max_num_frames_to_hit_target);
+  EXPECT_EQ(rc_threshold.num_key_frames, actual_.num_key_frames);
+  EXPECT_LE(actual_.KeyFrameSizeMismatchPercent(),
+            rc_threshold.max_key_framesize_mismatch_percent);
+  EXPECT_LE(actual_.BitrateMismatchPercent(target_.kbps),
+            rc_threshold.max_bitrate_mismatch_percent);
 
   const int num_temporal_layers =
       NumberOfTemporalLayers(config_.codec_settings);
-  for (int i = 0; i < num_temporal_layers; i++) {
-    int perc_frame_size_mismatch =
-        100 * sum_frame_size_mismatch_[i] / num_frames_per_update_[i];
-    int perc_encoding_rate_mismatch =
-        100 * fabs(encoding_bitrate_[i] - bitrate_layer_[i]) /
-        bitrate_layer_[i];
-    printf(
-        " Temporal layer #%d:\n"
-        "  Target layer bitrate                : %f\n"
-        "  Layer frame rate                    : %f\n"
-        "  Layer per frame bandwidth           : %f\n"
-        "  Layer encoding bitrate              : %f\n"
-        "  Layer percent frame size mismatch   : %d\n"
-        "  Layer percent encoding rate mismatch: %d\n"
-        "  # frames processed per layer        : %d\n",
-        i, bitrate_layer_[i], framerate_layer_[i], per_frame_bandwidth_[i],
-        encoding_bitrate_[i], perc_frame_size_mismatch,
-        perc_encoding_rate_mismatch, num_frames_per_update_[i]);
-    if (rc_threshold) {
-      EXPECT_LE(perc_frame_size_mismatch,
-                rc_threshold->max_delta_frame_size_mismatch);
-      EXPECT_LE(perc_encoding_rate_mismatch,
-                rc_threshold->max_encoding_rate_mismatch);
-    }
+  for (int i = 0; i < num_temporal_layers; ++i) {
+    EXPECT_LE(actual_.DeltaFrameSizeMismatchPercent(i),
+              rc_threshold.max_delta_framesize_mismatch_percent);
+    EXPECT_LE(actual_.BitrateMismatchPercent(i, target_.kbps_layer[i]),
+              rc_threshold.max_bitrate_mismatch_percent);
+  }
+}
+
+void VideoProcessorIntegrationTest::PrintRateControlMetrics(
+    int rate_update_index,
+    const std::vector<int>& num_dropped_frames,
+    const std::vector<int>& num_spatial_resizes) const {
+  printf("Rate update #%d:\n", rate_update_index);
+  printf(" Target bitrate         : %d\n", target_.kbps);
+  printf(" Encoded bitrate        : %f\n", actual_.kbps);
+  printf(" Frame rate             : %d\n", target_.fps);
+  printf(" # processed frames     : %d\n", actual_.num_frames);
+  printf(" # frames to convergence: %d\n", actual_.num_frames_to_hit_target);
+  printf(" # dropped frames       : %d\n",
+         num_dropped_frames[rate_update_index]);
+  printf(" # spatial resizes      : %d\n",
+         num_spatial_resizes[rate_update_index]);
+  printf(" # key frames           : %d\n", actual_.num_key_frames);
+  printf(" Key frame rate mismatch: %d\n",
+         actual_.KeyFrameSizeMismatchPercent());
+
+  const int num_temporal_layers =
+      NumberOfTemporalLayers(config_.codec_settings);
+  for (int i = 0; i < num_temporal_layers; ++i) {
+    printf(" Temporal layer #%d:\n", i);
+    printf("  Layer target bitrate        : %f\n", target_.kbps_layer[i]);
+    printf("  Layer frame rate            : %f\n", target_.fps_layer[i]);
+    printf("  Layer per frame bandwidth   : %f\n",
+           target_.framesize_kbits_layer[i]);
+    printf("  Layer encoded bitrate       : %f\n", actual_.kbps_layer[i]);
+    printf("  Layer frame size %% mismatch : %d\n",
+           actual_.DeltaFrameSizeMismatchPercent(i));
+    printf("  Layer bitrate %% mismatch    : %d\n",
+           actual_.BitrateMismatchPercent(i, target_.kbps_layer[i]));
+    printf("  # processed frames per layer: %d\n", actual_.num_frames_layer[i]);
   }
   printf("\n");
-
-  if (rc_threshold) {
-    EXPECT_LE(num_frames_to_hit_target_, rc_threshold->max_time_hit_target);
-    EXPECT_LE(num_dropped_frames[rate_update_index],
-              rc_threshold->max_num_dropped_frames);
-    EXPECT_EQ(rc_threshold->num_spatial_resizes,
-              num_resize_actions[rate_update_index]);
-    EXPECT_EQ(rc_threshold->num_key_frames, num_key_frames_);
-  }
 }
 
 // Temporal layer index corresponding to frame number, for up to 3 layers.
 int VideoProcessorIntegrationTest::TemporalLayerIndexForFrame(
     int frame_number) const {
-  const int num_temporal_layers =
-      NumberOfTemporalLayers(config_.codec_settings);
   int tl_idx = -1;
-  switch (num_temporal_layers) {
+  switch (NumberOfTemporalLayers(config_.codec_settings)) {
     case 1:
       tl_idx = 0;
       break;
@@ -598,59 +597,58 @@ void VideoProcessorIntegrationTest::ResetRateControlMetrics(
     int rate_update_index,
     const RateProfile& rate_profile) {
   // Set new rates.
-  bitrate_kbps_ = rate_profile.target_bit_rate[rate_update_index];
-  framerate_ = rate_profile.input_frame_rate[rate_update_index];
-  const int num_temporal_layers =
-      NumberOfTemporalLayers(config_.codec_settings);
-  RTC_DCHECK_LE(num_temporal_layers, kMaxNumTemporalLayers);
-  for (int i = 0; i < num_temporal_layers; i++) {
-    float bit_rate_ratio = kVp8LayerRateAlloction[num_temporal_layers - 1][i];
-    if (i > 0) {
-      float bit_rate_delta_ratio =
-          kVp8LayerRateAlloction[num_temporal_layers - 1][i] -
-          kVp8LayerRateAlloction[num_temporal_layers - 1][i - 1];
-      bitrate_layer_[i] = bitrate_kbps_ * bit_rate_delta_ratio;
-    } else {
-      bitrate_layer_[i] = bitrate_kbps_ * bit_rate_ratio;
-    }
-    framerate_layer_[i] =
-        framerate_ / static_cast<float>(1 << (num_temporal_layers - 1));
-  }
-  if (num_temporal_layers == 3) {
-    framerate_layer_[2] = framerate_ / 2.0f;
-  }
+  target_.kbps = rate_profile.target_bit_rate[rate_update_index];
+  target_.fps = rate_profile.input_frame_rate[rate_update_index];
+  SetRatesPerTemporalLayer();
+
+  // Set key frame target sizes.
   if (rate_update_index == 0) {
-    target_size_key_frame_initial_ =
-        0.5 * kInitialBufferSize * bitrate_layer_[0];
+    target_.key_framesize_kbits_initial =
+        0.5 * kInitialBufferSize * target_.kbps_layer[0];
   }
 
-  // Reset rate control metrics.
-  for (int i = 0; i < num_temporal_layers; i++) {
-    num_frames_per_update_[i] = 0;
-    sum_frame_size_mismatch_[i] = 0.0f;
-    sum_encoded_frame_size_[i] = 0.0f;
-    encoding_bitrate_[i] = 0.0f;
-    // Update layer per-frame-bandwidth.
-    per_frame_bandwidth_[i] = static_cast<float>(bitrate_layer_[i]) /
-                              static_cast<float>(framerate_layer_[i]);
-  }
   // Set maximum size of key frames, following setting in the VP8 wrapper.
-  float max_key_size = kScaleKeyFrameSize * kOptimalBufferSize * framerate_;
+  float max_key_size = kScaleKeyFrameSize * kOptimalBufferSize * target_.fps;
   // We don't know exact target size of the key frames (except for first one),
   // but the minimum in libvpx is ~|3 * per_frame_bandwidth| and maximum is
   // set by |max_key_size_ * per_frame_bandwidth|. Take middle point/average
   // as reference for mismatch. Note key frames always correspond to base
   // layer frame in this test.
-  target_size_key_frame_ = 0.5 * (3 + max_key_size) * per_frame_bandwidth_[0];
-  num_frames_total_ = 0;
-  sum_encoded_frame_size_total_ = 0.0f;
-  encoding_bitrate_total_ = 0.0f;
-  perc_encoding_rate_mismatch_ = 0.0f;
-  num_frames_to_hit_target_ =
+  target_.key_framesize_kbits =
+      0.5 * (3 + max_key_size) * target_.framesize_kbits_layer[0];
+
+  // Reset rate control metrics.
+  actual_ = TestResults();
+  actual_.num_frames_to_hit_target =  // Set to max number of frames.
       rate_profile.frame_index_rate_update[rate_update_index + 1];
-  encoding_rate_within_target_ = false;
-  sum_key_frame_size_mismatch_ = 0.0;
-  num_key_frames_ = 0;
+}
+
+void VideoProcessorIntegrationTest::SetRatesPerTemporalLayer() {
+  const int num_temporal_layers =
+      NumberOfTemporalLayers(config_.codec_settings);
+  RTC_DCHECK_LE(num_temporal_layers, kMaxNumTemporalLayers);
+
+  for (int i = 0; i < num_temporal_layers; ++i) {
+    float bitrate_ratio;
+    if (i > 0) {
+      bitrate_ratio = kVp8LayerRateAlloction[num_temporal_layers - 1][i] -
+                      kVp8LayerRateAlloction[num_temporal_layers - 1][i - 1];
+    } else {
+      bitrate_ratio = kVp8LayerRateAlloction[num_temporal_layers - 1][i];
+    }
+    target_.kbps_layer[i] = target_.kbps * bitrate_ratio;
+    target_.fps_layer[i] =
+        target_.fps / static_cast<float>(1 << (num_temporal_layers - 1));
+  }
+  if (num_temporal_layers == 3) {
+    target_.fps_layer[2] = target_.fps / 2.0f;
+  }
+
+  // Update layer per-frame-bandwidth.
+  for (int i = 0; i < num_temporal_layers; ++i) {
+    target_.framesize_kbits_layer[i] =
+        target_.kbps_layer[i] / target_.fps_layer[i];
+  }
 }
 
 }  // namespace test

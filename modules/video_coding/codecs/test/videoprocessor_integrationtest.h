@@ -31,8 +31,7 @@ namespace webrtc {
 namespace test {
 
 // The sequence of bit rate and frame rate changes for the encoder, the frame
-// number where the changes are made, and the total number of frames for the
-// test.
+// number where the changes are made, and the total number of frames to process.
 struct RateProfile {
   static const int kMaxNumRateUpdates = 3;
 
@@ -42,17 +41,16 @@ struct RateProfile {
   int num_frames;
 };
 
-// Thresholds for the rate control metrics. The rate mismatch thresholds are
-// defined as percentages. |max_time_hit_target| is defined as number of frames,
-// after a rate update is made to the encoder, for the encoder to reach within
-// |kPercTargetvsActualMismatch| of new target rate. The thresholds are defined
-// for each rate update sequence.
+// Thresholds for the rate control metrics. The thresholds are defined for each
+// rate update sequence. |max_num_frames_to_hit_target| is defined as number of
+// frames, after a rate update is made to the encoder, for the encoder to reach
+// |kMaxBitrateMismatchPercent| of new target rate.
 struct RateControlThresholds {
   int max_num_dropped_frames;
-  int max_key_frame_size_mismatch;
-  int max_delta_frame_size_mismatch;
-  int max_encoding_rate_mismatch;
-  int max_time_hit_target;
+  int max_key_framesize_mismatch_percent;
+  int max_delta_framesize_mismatch_percent;
+  int max_bitrate_mismatch_percent;
+  int max_num_frames_to_hit_target;
   int num_spatial_resizes;
   int num_key_frames;
 };
@@ -112,10 +110,10 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   static void AddRateControlThresholds(
       int max_num_dropped_frames,
-      int max_key_frame_size_mismatch,
-      int max_delta_frame_size_mismatch,
-      int max_encoding_rate_mismatch,
-      int max_time_hit_target,
+      int max_key_framesize_mismatch_percent,
+      int max_delta_framesize_mismatch_percent,
+      int max_bitrate_mismatch_percent,
+      int max_num_frames_to_hit_target,
       int num_spatial_resizes,
       int num_key_frames,
       std::vector<RateControlThresholds>* rc_thresholds);
@@ -132,6 +130,44 @@ class VideoProcessorIntegrationTest : public testing::Test {
  private:
   static const int kMaxNumTemporalLayers = 3;
 
+  struct TestResults {
+    int KeyFrameSizeMismatchPercent() const {
+      if (num_key_frames == 0) {
+        return -1;
+      }
+      return 100 * sum_key_framesize_mismatch / num_key_frames;
+    }
+    int DeltaFrameSizeMismatchPercent(int i) const {
+      return 100 * sum_delta_framesize_mismatch_layer[i] / num_frames_layer[i];
+    }
+    int BitrateMismatchPercent(float target_kbps) const {
+      return 100 * fabs(kbps - target_kbps) / target_kbps;
+    }
+    int BitrateMismatchPercent(int i, float target_kbps_layer) const {
+      return 100 * fabs(kbps_layer[i] - target_kbps_layer) / target_kbps_layer;
+    }
+    int num_frames = 0;
+    int num_frames_layer[kMaxNumTemporalLayers] = {0};
+    int num_key_frames = 0;
+    int num_frames_to_hit_target = 0;
+    float sum_framesize_kbits = 0.0f;
+    float sum_framesize_kbits_layer[kMaxNumTemporalLayers] = {0};
+    float kbps = 0.0f;
+    float kbps_layer[kMaxNumTemporalLayers] = {0};
+    float sum_key_framesize_mismatch = 0.0f;
+    float sum_delta_framesize_mismatch_layer[kMaxNumTemporalLayers] = {0};
+  };
+
+  struct TargetRates {
+    int kbps;
+    int fps;
+    float kbps_layer[kMaxNumTemporalLayers];
+    float fps_layer[kMaxNumTemporalLayers];
+    float framesize_kbits_layer[kMaxNumTemporalLayers];
+    float key_framesize_kbits_initial;
+    float key_framesize_kbits;
+  };
+
   void CreateEncoderAndDecoder();
   void DestroyEncoderAndDecoder();
   void SetUpAndInitObjects(rtc::TaskQueue* task_queue,
@@ -139,15 +175,22 @@ class VideoProcessorIntegrationTest : public testing::Test {
                            const int initial_framerate_fps,
                            const VisualizationParams* visualization_params);
   void ReleaseAndCloseObjects(rtc::TaskQueue* task_queue);
+  int TemporalLayerIndexForFrame(int frame_number) const;
+
+  // Rate control metrics.
+  void ResetRateControlMetrics(int rate_update_index,
+                               const RateProfile& rate_profile);
+  void SetRatesPerTemporalLayer();
   void UpdateRateControlMetrics(int frame_number);
-  void PrintAndMaybeVerifyRateControlMetrics(
+  void PrintRateControlMetrics(
+      int rate_update_index,
+      const std::vector<int>& num_dropped_frames,
+      const std::vector<int>& num_spatial_resizes) const;
+  void VerifyRateControlMetrics(
       int rate_update_index,
       const std::vector<RateControlThresholds>* rc_thresholds,
       const std::vector<int>& num_dropped_frames,
-      const std::vector<int>& num_resize_actions);
-  int TemporalLayerIndexForFrame(int frame_number) const;
-  void ResetRateControlMetrics(int rate_update_index,
-                               const RateProfile& rate_profile);
+      const std::vector<int>& num_spatial_resizes) const;
 
   // Codecs.
   std::unique_ptr<VideoEncoder> encoder_;
@@ -164,26 +207,11 @@ class VideoProcessorIntegrationTest : public testing::Test {
   Stats stats_;
   std::unique_ptr<VideoProcessor> processor_;
 
-  // Quantities defined/updated for every encoder rate update.
-  int num_frames_per_update_[kMaxNumTemporalLayers];
-  float sum_frame_size_mismatch_[kMaxNumTemporalLayers];
-  float sum_encoded_frame_size_[kMaxNumTemporalLayers];
-  float encoding_bitrate_[kMaxNumTemporalLayers];
-  float per_frame_bandwidth_[kMaxNumTemporalLayers];
-  float bitrate_layer_[kMaxNumTemporalLayers];
-  float framerate_layer_[kMaxNumTemporalLayers];
-  int num_frames_total_;
-  float sum_encoded_frame_size_total_;
-  float encoding_bitrate_total_;
-  float perc_encoding_rate_mismatch_;
-  int num_frames_to_hit_target_;
-  bool encoding_rate_within_target_;
-  int bitrate_kbps_;
-  int framerate_;
-  float target_size_key_frame_initial_;
-  float target_size_key_frame_;
-  float sum_key_frame_size_mismatch_;
-  int num_key_frames_;
+  // Quantities updated for every encoded frame.
+  TestResults actual_;
+
+  // Rates set for every encoder rate update.
+  TargetRates target_;
 };
 
 }  // namespace test
