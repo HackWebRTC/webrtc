@@ -22,7 +22,6 @@ CPPLINT_BLACKLIST = [
   'examples/objc',
   'media',
   'modules/audio_coding',
-  'modules/audio_conference_mixer',
   'modules/audio_device',
   'modules/audio_processing',
   'modules/desktop_capture',
@@ -74,7 +73,6 @@ NATIVE_API_DIRS = (
 LEGACY_API_DIRS = (
   'common_audio/include',
   'modules/audio_coding/include',
-  'modules/audio_conference_mixer/include',
   'modules/audio_processing/include',
   'modules/bitrate_controller/include',
   'modules/congestion_controller/include',

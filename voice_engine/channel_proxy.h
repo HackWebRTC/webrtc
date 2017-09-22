@@ -107,7 +107,7 @@ class ChannelProxy : public RtpPacketSinkInterface {
   virtual AudioMixer::Source::AudioFrameInfo GetAudioFrameWithInfo(
       int sample_rate_hz,
       AudioFrame* audio_frame);
-  virtual int NeededFrequency() const;
+  virtual int PreferredSampleRate() const;
   virtual void SetTransportOverhead(int transport_overhead_per_packet);
   virtual void AssociateSendChannel(const ChannelProxy& send_channel_proxy);
   virtual void DisassociateSendChannel();

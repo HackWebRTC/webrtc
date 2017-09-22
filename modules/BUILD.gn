@@ -12,7 +12,6 @@ import("audio_coding/audio_coding.gni")
 group("modules") {
   public_deps = [
     "audio_coding",
-    "audio_conference_mixer",
     "audio_device",
     "audio_mixer",
     "audio_processing",
@@ -232,7 +231,6 @@ if (rtc_include_tests) {
       ":module_api",
       "../test:test_main",
       "audio_coding:audio_coding_unittests",
-      "audio_conference_mixer:audio_conference_mixer_unittests",
       "audio_device:audio_device_unittests",
       "audio_mixer:audio_mixer_unittests",
       "audio_processing:audio_processing_unittests",

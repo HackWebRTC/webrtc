@@ -13,7 +13,6 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "system_wrappers/include/trace.h"
 #include "voice_engine/channel.h"
-#include "voice_engine/output_mixer.h"
 #include "voice_engine/transmit_mixer.h"
 
 namespace webrtc {
@@ -30,9 +29,6 @@ SharedData::SharedData()
       _moduleProcessThreadPtr(ProcessThread::Create("VoiceProcessThread")),
       encoder_queue_("AudioEncoderQueue") {
   Trace::CreateTrace();
-  if (OutputMixer::Create(_outputMixerPtr, _gInstanceCounter) == 0) {
-    _outputMixerPtr->SetEngineInformation(_engineStatistics);
-  }
   if (TransmitMixer::Create(_transmitMixerPtr, _gInstanceCounter) == 0) {
     _transmitMixerPtr->SetEngineInformation(*_moduleProcessThreadPtr,
                                             _engineStatistics, _channelManager);
@@ -41,7 +37,6 @@ SharedData::SharedData()
 
 SharedData::~SharedData()
 {
-    OutputMixer::Destroy(_outputMixerPtr);
     TransmitMixer::Destroy(_transmitMixerPtr);
     if (_audioDevicePtr) {
         _audioDevicePtr->Release();
@@ -62,7 +57,6 @@ void SharedData::set_audio_device(
 
 void SharedData::set_audio_processing(AudioProcessing* audioproc) {
   _transmitMixerPtr->SetAudioProcessingModule(audioproc);
-  _outputMixerPtr->SetAudioProcessingModule(audioproc);
 }
 
 int SharedData::NumOfSendingChannels() {

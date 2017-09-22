@@ -31,7 +31,6 @@ namespace webrtc {
 namespace voe {
 
 class TransmitMixer;
-class OutputMixer;
 
 class SharedData
 {
@@ -45,7 +44,6 @@ public:
         const rtc::scoped_refptr<AudioDeviceModule>& audio_device);
     void set_audio_processing(AudioProcessing* audio_processing);
     TransmitMixer* transmit_mixer() { return _transmitMixerPtr; }
-    OutputMixer* output_mixer() { return _outputMixerPtr; }
     rtc::CriticalSection* crit_sec() { return &_apiCritPtr; }
     ProcessThread* process_thread() { return _moduleProcessThreadPtr.get(); }
     rtc::TaskQueue* encoder_queue();
@@ -66,7 +64,6 @@ protected:
  ChannelManager _channelManager;
  Statistics _engineStatistics;
  rtc::scoped_refptr<AudioDeviceModule> _audioDevicePtr;
- OutputMixer* _outputMixerPtr;
  TransmitMixer* _transmitMixerPtr;
  std::unique_ptr<ProcessThread> _moduleProcessThreadPtr;
  // |encoder_queue| is defined last to ensure all pending tasks are cancelled

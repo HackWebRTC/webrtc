@@ -247,7 +247,7 @@ int AudioReceiveStream::Ssrc() const {
 }
 
 int AudioReceiveStream::PreferredSampleRate() const {
-  return channel_proxy_->NeededFrequency();
+  return channel_proxy_->PreferredSampleRate();
 }
 
 int AudioReceiveStream::id() const {

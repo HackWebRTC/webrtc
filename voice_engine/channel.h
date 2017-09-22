@@ -23,7 +23,6 @@
 #include "modules/audio_coding/acm2/codec_manager.h"
 #include "modules/audio_coding/acm2/rent_a_codec.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
-#include "modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 #include "modules/audio_processing/rms_level.h"
 #include "modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -89,7 +88,6 @@ struct ReportBlock {
 
 namespace voe {
 
-class OutputMixer;
 class RtcEventLogProxy;
 class RtcpRttStatsProxy;
 class RtpPacketSenderProxy;
@@ -144,7 +142,6 @@ class Channel
       public Transport,
       public AudioPacketizationCallback,  // receive encoded packets from the
                                           // ACM
-      public MixerParticipant,  // supplies output mixer with audio frames
       public OverheadObserver {
  public:
   friend class VoERtcpObserver;
@@ -162,7 +159,6 @@ class Channel
   int32_t Init();
   void Terminate();
   int32_t SetEngineInformation(Statistics& engineStatistics,
-                               OutputMixer& outputMixer,
                                ProcessThread& moduleProcessThread,
                                AudioDeviceModule& audioDeviceModule,
                                VoiceEngineObserver* voiceEngineObserver,
@@ -283,16 +279,12 @@ class Channel
                const PacketOptions& packet_options) override;
   bool SendRtcp(const uint8_t* data, size_t len) override;
 
-  // From MixerParticipant
-  MixerParticipant::AudioFrameInfo GetAudioFrameWithMuted(
-      int32_t id,
-      AudioFrame* audioFrame) override;
-  int32_t NeededFrequency(int32_t id) const override;
-
   // From AudioMixer::Source.
   AudioMixer::Source::AudioFrameInfo GetAudioFrameWithInfo(
       int sample_rate_hz,
       AudioFrame* audio_frame);
+
+  int PreferredSampleRate() const;
 
   uint32_t InstanceId() const { return _instanceId; }
   int32_t ChannelId() const { return _channelId; }
@@ -433,7 +425,6 @@ class Channel
 
   // uses
   Statistics* _engineStatisticsPtr;
-  OutputMixer* _outputMixerPtr;
   ProcessThread* _moduleProcessThreadPtr;
   AudioDeviceModule* _audioDeviceModulePtr;
   VoiceEngineObserver* _voiceEngineObserverPtr;  // owned by base

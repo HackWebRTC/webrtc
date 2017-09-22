@@ -39,7 +39,6 @@
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/trace.h"
-#include "voice_engine/output_mixer.h"
 #include "voice_engine/statistics.h"
 #include "voice_engine/utility.h"
 
@@ -619,15 +618,17 @@ bool Channel::OnRecoveredPacket(const uint8_t* rtp_packet,
   return ReceivePacket(rtp_packet, rtp_packet_length, header, false);
 }
 
-MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
-    int32_t id,
-    AudioFrame* audioFrame) {
+AudioMixer::Source::AudioFrameInfo Channel::GetAudioFrameWithInfo(
+    int sample_rate_hz,
+    AudioFrame* audio_frame) {
+  audio_frame->sample_rate_hz_ = sample_rate_hz;
+
   unsigned int ssrc;
   RTC_CHECK_EQ(GetRemoteSSRC(ssrc), 0);
   event_log_proxy_->LogAudioPlayout(ssrc);
   // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
   bool muted;
-  if (audio_coding_->PlayoutData10Ms(audioFrame->sample_rate_hz_, audioFrame,
+  if (audio_coding_->PlayoutData10Ms(audio_frame->sample_rate_hz_, audio_frame,
                                      &muted) == -1) {
     WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::GetAudioFrame() PlayoutData10Ms() failed!");
@@ -635,20 +636,20 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
     // error so that the audio mixer module doesn't add it to the mix. As
     // a result, it won't be played out and the actions skipped here are
     // irrelevant.
-    return MixerParticipant::AudioFrameInfo::kError;
+    return AudioMixer::Source::AudioFrameInfo::kError;
   }
 
   if (muted) {
     // TODO(henrik.lundin): We should be able to do better than this. But we
     // will have to go through all the cases below where the audio samples may
     // be used, and handle the muted case in some way.
-    AudioFrameOperations::Mute(audioFrame);
+    AudioFrameOperations::Mute(audio_frame);
   }
 
   // Convert module ID to internal VoE channel ID
-  audioFrame->id_ = VoEChannelId(audioFrame->id_);
+  audio_frame->id_ = VoEChannelId(audio_frame->id_);
   // Store speech type for dead-or-alive detection
-  _outputSpeechType = audioFrame->speech_type_;
+  _outputSpeechType = audio_frame->speech_type_;
 
   {
     // Pass the audio buffers to an optional sink callback, before applying
@@ -658,9 +659,9 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
     rtc::CritScope cs(&_callbackCritSect);
     if (audio_sink_) {
       AudioSinkInterface::Data data(
-          audioFrame->data(), audioFrame->samples_per_channel_,
-          audioFrame->sample_rate_hz_, audioFrame->num_channels_,
-          audioFrame->timestamp_);
+          audio_frame->data(), audio_frame->samples_per_channel_,
+          audio_frame->sample_rate_hz_, audio_frame->num_channels_,
+          audio_frame->timestamp_);
       audio_sink_->OnData(data);
     }
   }
@@ -674,89 +675,53 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
   // Output volume scaling
   if (output_gain < 0.99f || output_gain > 1.01f) {
     // TODO(solenberg): Combine with mute state - this can cause clicks!
-    AudioFrameOperations::ScaleWithSat(output_gain, audioFrame);
+    AudioFrameOperations::ScaleWithSat(output_gain, audio_frame);
   }
 
   // Measure audio level (0-9)
   // TODO(henrik.lundin) Use the |muted| information here too.
   // TODO(deadbeef): Use RmsLevel for |_outputAudioLevel| (see
   // https://crbug.com/webrtc/7517).
-  _outputAudioLevel.ComputeLevel(*audioFrame, kAudioSampleDurationSeconds);
+  _outputAudioLevel.ComputeLevel(*audio_frame, kAudioSampleDurationSeconds);
 
-  if (capture_start_rtp_time_stamp_ < 0 && audioFrame->timestamp_ != 0) {
+  if (capture_start_rtp_time_stamp_ < 0 && audio_frame->timestamp_ != 0) {
     // The first frame with a valid rtp timestamp.
-    capture_start_rtp_time_stamp_ = audioFrame->timestamp_;
+    capture_start_rtp_time_stamp_ = audio_frame->timestamp_;
   }
 
   if (capture_start_rtp_time_stamp_ >= 0) {
-    // audioFrame.timestamp_ should be valid from now on.
+    // audio_frame.timestamp_ should be valid from now on.
 
     // Compute elapsed time.
     int64_t unwrap_timestamp =
-        rtp_ts_wraparound_handler_->Unwrap(audioFrame->timestamp_);
-    audioFrame->elapsed_time_ms_ =
+        rtp_ts_wraparound_handler_->Unwrap(audio_frame->timestamp_);
+    audio_frame->elapsed_time_ms_ =
         (unwrap_timestamp - capture_start_rtp_time_stamp_) /
         (GetRtpTimestampRateHz() / 1000);
 
     {
       rtc::CritScope lock(&ts_stats_lock_);
       // Compute ntp time.
-      audioFrame->ntp_time_ms_ =
-          ntp_estimator_.Estimate(audioFrame->timestamp_);
+      audio_frame->ntp_time_ms_ =
+          ntp_estimator_.Estimate(audio_frame->timestamp_);
       // |ntp_time_ms_| won't be valid until at least 2 RTCP SRs are received.
-      if (audioFrame->ntp_time_ms_ > 0) {
+      if (audio_frame->ntp_time_ms_ > 0) {
         // Compute |capture_start_ntp_time_ms_| so that
         // |capture_start_ntp_time_ms_| + |elapsed_time_ms_| == |ntp_time_ms_|
         capture_start_ntp_time_ms_ =
-            audioFrame->ntp_time_ms_ - audioFrame->elapsed_time_ms_;
+            audio_frame->ntp_time_ms_ - audio_frame->elapsed_time_ms_;
       }
     }
   }
 
-  return muted ? MixerParticipant::AudioFrameInfo::kMuted
-               : MixerParticipant::AudioFrameInfo::kNormal;
+  return muted ? AudioMixer::Source::AudioFrameInfo::kMuted
+               : AudioMixer::Source::AudioFrameInfo::kNormal;
 }
 
-AudioMixer::Source::AudioFrameInfo Channel::GetAudioFrameWithInfo(
-    int sample_rate_hz,
-    AudioFrame* audio_frame) {
-  audio_frame->sample_rate_hz_ = sample_rate_hz;
-
-  const auto frame_info = GetAudioFrameWithMuted(-1, audio_frame);
-
-  using FrameInfo = AudioMixer::Source::AudioFrameInfo;
-  FrameInfo new_audio_frame_info = FrameInfo::kError;
-  switch (frame_info) {
-    case MixerParticipant::AudioFrameInfo::kNormal:
-      new_audio_frame_info = FrameInfo::kNormal;
-      break;
-    case MixerParticipant::AudioFrameInfo::kMuted:
-      new_audio_frame_info = FrameInfo::kMuted;
-      break;
-    case MixerParticipant::AudioFrameInfo::kError:
-      new_audio_frame_info = FrameInfo::kError;
-      break;
-  }
-  return new_audio_frame_info;
-}
-
-int32_t Channel::NeededFrequency(int32_t id) const {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::NeededFrequency(id=%d)", id);
-
-  int highestNeeded = 0;
-
-  // Determine highest needed receive frequency
-  int32_t receiveFrequency = audio_coding_->ReceiveFrequency();
-
+int Channel::PreferredSampleRate() const {
   // Return the bigger of playout and receive frequency in the ACM.
-  if (audio_coding_->PlayoutFrequency() > receiveFrequency) {
-    highestNeeded = audio_coding_->PlayoutFrequency();
-  } else {
-    highestNeeded = receiveFrequency;
-  }
-
-  return highestNeeded;
+  return std::max(audio_coding_->ReceiveFrequency(),
+                  audio_coding_->PlayoutFrequency());
 }
 
 int32_t Channel::CreateChannel(Channel*& channel,
@@ -806,7 +771,6 @@ Channel::Channel(int32_t channelId,
       capture_start_rtp_time_stamp_(-1),
       capture_start_ntp_time_ms_(-1),
       _engineStatisticsPtr(NULL),
-      _outputMixerPtr(NULL),
       _moduleProcessThreadPtr(NULL),
       _audioDeviceModulePtr(NULL),
       _voiceEngineObserverPtr(NULL),
@@ -983,7 +947,6 @@ void Channel::Terminate() {
 }
 
 int32_t Channel::SetEngineInformation(Statistics& engineStatistics,
-                                      OutputMixer& outputMixer,
                                       ProcessThread& moduleProcessThread,
                                       AudioDeviceModule& audioDeviceModule,
                                       VoiceEngineObserver* voiceEngineObserver,
@@ -994,7 +957,6 @@ int32_t Channel::SetEngineInformation(Statistics& engineStatistics,
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetEngineInformation()");
   _engineStatisticsPtr = &engineStatistics;
-  _outputMixerPtr = &outputMixer;
   _moduleProcessThreadPtr = &moduleProcessThread;
   _audioDeviceModulePtr = &audioDeviceModule;
   _voiceEngineObserverPtr = voiceEngineObserver;
@@ -1020,14 +982,6 @@ int32_t Channel::StartPlayout() {
     return 0;
   }
 
-  // Add participant as candidates for mixing.
-  if (_outputMixerPtr->SetMixabilityStatus(*this, true) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
-        "StartPlayout() failed to add participant to mixer");
-    return -1;
-  }
-
   channel_state_.SetPlaying(true);
 
   return 0;
@@ -1038,14 +992,6 @@ int32_t Channel::StopPlayout() {
                "Channel::StopPlayout()");
   if (!channel_state_.Get().playing) {
     return 0;
-  }
-
-  // Remove participant as candidates for mixing
-  if (_outputMixerPtr->SetMixabilityStatus(*this, false) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
-        "StopPlayout() failed to remove participant from mixer");
-    return -1;
   }
 
   channel_state_.SetPlaying(false);

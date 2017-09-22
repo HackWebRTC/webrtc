@@ -1,4 +1,0 @@
-include_rules = [
-  "+audio/utility/audio_frame_operations.h",
-  "+system_wrappers",
-]

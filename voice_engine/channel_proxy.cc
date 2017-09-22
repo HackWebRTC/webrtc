@@ -257,9 +257,9 @@ AudioMixer::Source::AudioFrameInfo ChannelProxy::GetAudioFrameWithInfo(
   return channel()->GetAudioFrameWithInfo(sample_rate_hz, audio_frame);
 }
 
-int ChannelProxy::NeededFrequency() const {
+int ChannelProxy::PreferredSampleRate() const {
   RTC_DCHECK_RUNS_SERIALIZED(&audio_thread_race_checker_);
-  return static_cast<int>(channel()->NeededFrequency(-1));
+  return channel()->PreferredSampleRate();
 }
 
 void ChannelProxy::SetTransportOverhead(int transport_overhead_per_packet) {

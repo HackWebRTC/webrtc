@@ -18,12 +18,9 @@
 #include "rtc_base/format_macros.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/file_wrapper.h"
 #include "voice_engine/channel.h"
 #include "voice_engine/include/voe_errors.h"
-#include "voice_engine/output_mixer.h"
 #include "voice_engine/transmit_mixer.h"
-#include "voice_engine/utility.h"
 #include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
@@ -148,9 +145,7 @@ int32_t VoEBaseImpl::NeedMorePlayData(const size_t nSamples,
                                       size_t& nSamplesOut,
                                       int64_t* elapsed_time_ms,
                                       int64_t* ntp_time_ms) {
-  GetPlayoutData(static_cast<int>(samplesPerSec), nChannels, nSamples, true,
-                 audioSamples, elapsed_time_ms, ntp_time_ms);
-  nSamplesOut = audioFrame_.samples_per_channel_;
+  RTC_NOTREACHED();
   return 0;
 }
 
@@ -177,11 +172,7 @@ void VoEBaseImpl::PullRenderData(int bits_per_sample,
                                  size_t number_of_frames,
                                  void* audio_data, int64_t* elapsed_time_ms,
                                  int64_t* ntp_time_ms) {
-  assert(bits_per_sample == 16);
-  assert(number_of_frames == static_cast<size_t>(sample_rate / 100));
-
-  GetPlayoutData(sample_rate, number_of_channels, number_of_frames, false,
-                 audio_data, elapsed_time_ms, ntp_time_ms);
+  RTC_NOTREACHED();
 }
 
 int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer) {
@@ -418,7 +409,7 @@ int VoEBaseImpl::CreateChannel(const ChannelConfig& config) {
 
 int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner) {
   if (channel_owner->channel()->SetEngineInformation(
-          shared_->statistics(), *shared_->output_mixer(),
+          shared_->statistics(),
           *shared_->process_thread(), *shared_->audio_device(),
           voiceEngineObserverPtr_, &callbackCritSect_,
           shared_->encoder_queue()) != 0) {
@@ -653,34 +644,4 @@ int32_t VoEBaseImpl::TerminateInternal() {
 
   return shared_->statistics().SetUnInitialized();
 }
-
-void VoEBaseImpl::GetPlayoutData(int sample_rate, size_t number_of_channels,
-                                 size_t number_of_frames, bool feed_data_to_apm,
-                                 void* audio_data, int64_t* elapsed_time_ms,
-                                 int64_t* ntp_time_ms) {
-  assert(shared_->output_mixer() != nullptr);
-
-  // TODO(andrew): if the device is running in mono, we should tell the mixer
-  // here so that it will only request mono from AudioCodingModule.
-  // Perform mixing of all active participants (channel-based mixing)
-  shared_->output_mixer()->MixActiveChannels();
-
-  // Additional operations on the combined signal
-  shared_->output_mixer()->DoOperationsOnCombinedSignal(feed_data_to_apm);
-
-  // Retrieve the final output mix (resampled to match the ADM)
-  shared_->output_mixer()->GetMixedAudio(sample_rate, number_of_channels,
-                                         &audioFrame_);
-
-  assert(number_of_frames == audioFrame_.samples_per_channel_);
-  assert(sample_rate == audioFrame_.sample_rate_hz_);
-
-  // Deliver audio (PCM) samples to the ADM
-  memcpy(audio_data, audioFrame_.data(),
-         sizeof(int16_t) * number_of_frames * number_of_channels);
-
-  *elapsed_time_ms = audioFrame_.elapsed_time_ms_;
-  *ntp_time_ms = audioFrame_.ntp_time_ms_;
-}
-
 }  // namespace webrtc

@@ -3,7 +3,6 @@ include_rules = [
   "+call",
   "+common_audio",
   "+modules/audio_coding",
-  "+modules/audio_conference_mixer",
   "+modules/audio_device",
   "+modules/audio_processing",
   "+modules/media_file",

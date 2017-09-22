@@ -62,27 +62,27 @@ class VoEBaseImpl : public VoEBase,
                                   const uint32_t volume,
                                   const bool key_pressed,
                                   uint32_t& new_mic_volume) override;
-  int32_t NeedMorePlayData(const size_t nSamples,
-                           const size_t nBytesPerSample,
-                           const size_t nChannels,
-                           const uint32_t samplesPerSec,
-                           void* audioSamples,
-                           size_t& nSamplesOut,
-                           int64_t* elapsed_time_ms,
-                           int64_t* ntp_time_ms) override;
+  RTC_DEPRECATED int32_t NeedMorePlayData(const size_t nSamples,
+                                          const size_t nBytesPerSample,
+                                          const size_t nChannels,
+                                          const uint32_t samplesPerSec,
+                                          void* audioSamples,
+                                          size_t& nSamplesOut,
+                                          int64_t* elapsed_time_ms,
+                                          int64_t* ntp_time_ms) override;
   void PushCaptureData(int voe_channel,
                        const void* audio_data,
                        int bits_per_sample,
                        int sample_rate,
                        size_t number_of_channels,
                        size_t number_of_frames) override;
-  void PullRenderData(int bits_per_sample,
-                      int sample_rate,
-                      size_t number_of_channels,
-                      size_t number_of_frames,
-                      void* audio_data,
-                      int64_t* elapsed_time_ms,
-                      int64_t* ntp_time_ms) override;
+  RTC_DEPRECATED void PullRenderData(int bits_per_sample,
+                                     int sample_rate,
+                                     size_t number_of_channels,
+                                     size_t number_of_frames,
+                                     void* audio_data,
+                                     int64_t* elapsed_time_ms,
+                                     int64_t* ntp_time_ms) override;
 
   // AudioDeviceObserver
   void OnErrorIsReported(const ErrorCode error) override;
