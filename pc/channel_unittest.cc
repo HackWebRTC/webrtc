@@ -577,7 +577,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Basic sanity check.
   void TestInit() {
     CreateChannels(0, 0);
-    EXPECT_FALSE(channel1_->secure());
+    EXPECT_FALSE(channel1_->srtp_active());
     EXPECT_FALSE(media_channel1_->sending());
     if (verify_playout_) {
       EXPECT_FALSE(media_channel1_->playout());
@@ -892,8 +892,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(channel2_->SetRemoteContent(&content4, CA_ANSWER, NULL));
     EXPECT_EQ(0u, media_channel2_->recv_streams().size());
 
-    EXPECT_TRUE(channel1_->secure());
-    EXPECT_TRUE(channel2_->secure());
+    EXPECT_TRUE(channel1_->srtp_active());
+    EXPECT_TRUE(channel2_->srtp_active());
     SendCustomRtp2(kSsrc2, 0);
     WaitForThreads();
     EXPECT_TRUE(CheckCustomRtp1(kSsrc2, 0));
@@ -1249,14 +1249,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Test setting up a call.
   void TestCallSetup() {
     CreateChannels(0, 0);
-    EXPECT_FALSE(channel1_->secure());
+    EXPECT_FALSE(channel1_->srtp_active());
     EXPECT_TRUE(SendInitiate());
     if (verify_playout_) {
       EXPECT_TRUE(media_channel1_->playout());
     }
     EXPECT_FALSE(media_channel1_->sending());
     EXPECT_TRUE(SendAccept());
-    EXPECT_FALSE(channel1_->secure());
+    EXPECT_FALSE(channel1_->srtp_active());
     EXPECT_TRUE(media_channel1_->sending());
     EXPECT_EQ(1U, media_channel1_->codecs().size());
     if (verify_playout_) {
@@ -1531,17 +1531,17 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     bool dtls1 = !!(flags1_in & DTLS);
     bool dtls2 = !!(flags2_in & DTLS);
     CreateChannels(flags1, flags2);
-    EXPECT_FALSE(channel1_->secure());
-    EXPECT_FALSE(channel2_->secure());
+    EXPECT_FALSE(channel1_->srtp_active());
+    EXPECT_FALSE(channel2_->srtp_active());
     EXPECT_TRUE(SendInitiate());
     WaitForThreads();
     EXPECT_TRUE(channel1_->writable());
     EXPECT_TRUE(channel2_->writable());
     EXPECT_TRUE(SendAccept());
-    EXPECT_TRUE(channel1_->secure());
-    EXPECT_TRUE(channel2_->secure());
-    EXPECT_EQ(dtls1 && dtls2, channel1_->secure_dtls());
-    EXPECT_EQ(dtls1 && dtls2, channel2_->secure_dtls());
+    EXPECT_TRUE(channel1_->srtp_active());
+    EXPECT_TRUE(channel2_->srtp_active());
+    EXPECT_EQ(dtls1 && dtls2, channel1_->dtls_active());
+    EXPECT_EQ(dtls1 && dtls2, channel2_->dtls_active());
     SendRtp1();
     SendRtp2();
     SendRtcp1();
@@ -1560,12 +1560,12 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Test that we properly handling SRTP negotiating down to RTP.
   void SendSrtpToRtp() {
     CreateChannels(SECURE, 0);
-    EXPECT_FALSE(channel1_->secure());
-    EXPECT_FALSE(channel2_->secure());
+    EXPECT_FALSE(channel1_->srtp_active());
+    EXPECT_FALSE(channel2_->srtp_active());
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    EXPECT_FALSE(channel1_->secure());
-    EXPECT_FALSE(channel2_->secure());
+    EXPECT_FALSE(channel1_->srtp_active());
+    EXPECT_FALSE(channel2_->srtp_active());
     SendRtp1();
     SendRtp2();
     SendRtcp1();
@@ -1590,8 +1590,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                      SSRC_MUX | RTCP_MUX | SECURE);
       EXPECT_TRUE(SendOffer());
       EXPECT_TRUE(SendProvisionalAnswer());
-      EXPECT_TRUE(channel1_->secure());
-      EXPECT_TRUE(channel2_->secure());
+      EXPECT_TRUE(channel1_->srtp_active());
+      EXPECT_TRUE(channel2_->srtp_active());
       EXPECT_TRUE(channel1_->NeedsRtcpTransport());
       EXPECT_TRUE(channel2_->NeedsRtcpTransport());
       WaitForThreads();  // Wait for 'sending' flag go through network thread.
@@ -1616,8 +1616,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       EXPECT_FALSE(channel2_->NeedsRtcpTransport());
       EXPECT_EQ(1, rtcp_mux_activated_callbacks1_);
       EXPECT_EQ(1, rtcp_mux_activated_callbacks2_);
-      EXPECT_TRUE(channel1_->secure());
-      EXPECT_TRUE(channel2_->secure());
+      EXPECT_TRUE(channel1_->srtp_active());
+      EXPECT_TRUE(channel2_->srtp_active());
       SendCustomRtcp1(kSsrc1);
       SendCustomRtp1(kSsrc1, ++sequence_number1_1);
       SendCustomRtcp2(kSsrc2);

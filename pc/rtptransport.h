@@ -56,10 +56,13 @@ class RtpTransport : public RtpTransportInternal {
 
   bool IsWritable(bool rtcp) const override;
 
-  bool SendPacket(bool rtcp,
-                  rtc::CopyOnWriteBuffer* packet,
-                  const rtc::PacketOptions& options,
-                  int flags) override;
+  bool SendRtpPacket(rtc::CopyOnWriteBuffer* packet,
+                     const rtc::PacketOptions& options,
+                     int flags) override;
+
+  bool SendRtcpPacket(rtc::CopyOnWriteBuffer* packet,
+                      const rtc::PacketOptions& options,
+                      int flags) override;
 
   bool HandlesPayloadType(int payload_type) const override;
 
@@ -79,6 +82,11 @@ class RtpTransport : public RtpTransportInternal {
   void SetReadyToSend(bool rtcp, bool ready);
 
   void MaybeSignalReadyToSend();
+
+  bool SendPacket(bool rtcp,
+                  rtc::CopyOnWriteBuffer* packet,
+                  const rtc::PacketOptions& options,
+                  int flags);
 
   void OnReadPacket(rtc::PacketTransportInternal* transport,
                     const char* data,
