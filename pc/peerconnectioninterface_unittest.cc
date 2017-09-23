@@ -660,7 +660,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
 
     return new rtc::RefCountedObject<PeerConnectionFactoryForTest>(
         rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
-        nullptr, nullptr, std::move(media_engine), std::move(call_factory),
+        std::move(media_engine), std::move(call_factory),
         std::move(event_log_factory));
   }
 
@@ -668,16 +668,12 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread,
       rtc::Thread* signaling_thread,
-      cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
-      cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
       std::unique_ptr<cricket::MediaEngineInterface> media_engine,
       std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
       std::unique_ptr<webrtc::RtcEventLogFactoryInterface> event_log_factory)
       : webrtc::PeerConnectionFactory(network_thread,
                                       worker_thread,
                                       signaling_thread,
-                                      video_encoder_factory,
-                                      video_decoder_factory,
                                       std::move(media_engine),
                                       std::move(call_factory),
                                       std::move(event_log_factory)) {}

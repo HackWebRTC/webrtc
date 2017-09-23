@@ -40,8 +40,11 @@ MediaEngineInterface* CreateWebRtcMediaEngine(
     rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
 #ifdef HAVE_WEBRTC_VIDEO
   typedef WebRtcVideoEngine VideoEngine;
-  std::tuple<WebRtcVideoEncoderFactory*, WebRtcVideoDecoderFactory*> video_args(
-      video_encoder_factory, video_decoder_factory);
+  std::tuple<std::unique_ptr<WebRtcVideoEncoderFactory>,
+             std::unique_ptr<WebRtcVideoDecoderFactory>>
+      video_args(
+          (std::unique_ptr<WebRtcVideoEncoderFactory>(video_encoder_factory)),
+          (std::unique_ptr<WebRtcVideoDecoderFactory>(video_decoder_factory)));
 #else
   typedef NullWebRtcVideoEngine VideoEngine;
   std::tuple<> video_args;

@@ -46,16 +46,14 @@ CreateModularPeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
-    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
     std::unique_ptr<cricket::MediaEngineInterface> media_engine,
     std::unique_ptr<CallFactoryInterface> call_factory,
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory) {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
       new rtc::RefCountedObject<PeerConnectionFactory>(
           network_thread, worker_thread, signaling_thread,
-          video_encoder_factory, video_decoder_factory, std::move(media_engine),
-          std::move(call_factory), std::move(event_log_factory)));
+          std::move(media_engine), std::move(call_factory),
+          std::move(event_log_factory)));
 
   // Call Initialize synchronously but make sure it is executed on
   // |signaling_thread|.
@@ -74,8 +72,6 @@ PeerConnectionFactory::PeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
-    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
     std::unique_ptr<cricket::MediaEngineInterface> media_engine,
     std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory)
@@ -83,8 +79,6 @@ PeerConnectionFactory::PeerConnectionFactory(
       network_thread_(network_thread),
       worker_thread_(worker_thread),
       signaling_thread_(signaling_thread),
-      video_encoder_factory_(video_encoder_factory),
-      video_decoder_factory_(video_decoder_factory),
       media_engine_(std::move(media_engine)),
       call_factory_(std::move(call_factory)),
       event_log_factory_(std::move(event_log_factory)) {

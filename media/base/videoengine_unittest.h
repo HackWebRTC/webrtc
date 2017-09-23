@@ -27,6 +27,11 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/timeutils.h"
 
+namespace cricket {
+class WebRtcVideoEncoderFactory;
+class WebRtcVideoDecoderFactory;
+}  // namespace cricket
+
 #define EXPECT_FRAME_WAIT(c, w, h, t) \
   EXPECT_EQ_WAIT((c), renderer_.num_rendered_frames(), (t)); \
   EXPECT_EQ((w), renderer_.width()); \
@@ -65,8 +70,8 @@ class VideoMediaChannelTest : public testing::Test,
  protected:
   VideoMediaChannelTest<E, C>()
       : call_(webrtc::Call::Create(webrtc::Call::Config(&event_log_))),
-        engine_(nullptr /* external_encoder_factory */,
-                nullptr /* external_decoder_factory */) {}
+        engine_(std::unique_ptr<cricket::WebRtcVideoEncoderFactory>(),
+                std::unique_ptr<cricket::WebRtcVideoDecoderFactory>()) {}
 
   virtual cricket::VideoCodec DefaultCodec() = 0;
 

@@ -87,22 +87,18 @@ namespace {
 std::vector<VideoCodec> AssignPayloadTypesAndAddAssociatedRtxCodecs(
     const std::vector<VideoCodec>& input_codecs);
 
-// Wraps cricket::WebRtcVideoEncoderFactory* into common EncoderFactoryAdapter
+// Wraps cricket::WebRtcVideoEncoderFactory into common EncoderFactoryAdapter
 // interface.
-// TODO(magjed): Remove once WebRtcVideoEncoderFactory* is deprecated and
+// TODO(magjed): Remove once WebRtcVideoEncoderFactory is deprecated and
 // webrtc:7925 is fixed.
 class CricketEncoderFactoryAdapter : public EncoderFactoryAdapter {
  public:
   explicit CricketEncoderFactoryAdapter(
-      WebRtcVideoEncoderFactory* external_encoder_factory)
+      std::unique_ptr<WebRtcVideoEncoderFactory> external_encoder_factory)
       : internal_encoder_factory_(new InternalEncoderFactory()),
-        external_encoder_factory_(external_encoder_factory) {}
+        external_encoder_factory_(std::move(external_encoder_factory)) {}
 
  private:
-  explicit CricketEncoderFactoryAdapter(
-      const CricketEncoderFactoryAdapter& other)
-      : CricketEncoderFactoryAdapter(other.external_encoder_factory_) {}
-
   AllocatedEncoder CreateVideoEncoder(
       const VideoCodec& codec,
       bool is_conference_mode_screenshare) const override;
@@ -110,27 +106,23 @@ class CricketEncoderFactoryAdapter : public EncoderFactoryAdapter {
   std::vector<VideoCodec> GetSupportedCodecs() const override;
 
   const std::unique_ptr<WebRtcVideoEncoderFactory> internal_encoder_factory_;
-  WebRtcVideoEncoderFactory* const external_encoder_factory_;
+  const std::unique_ptr<WebRtcVideoEncoderFactory> external_encoder_factory_;
 };
 
 class CricketDecoderFactoryAdapter : public DecoderFactoryAdapter {
  public:
   explicit CricketDecoderFactoryAdapter(
-      WebRtcVideoDecoderFactory* external_decoder_factory)
+      std::unique_ptr<WebRtcVideoDecoderFactory> external_decoder_factory)
       : internal_decoder_factory_(new InternalDecoderFactory()),
-        external_decoder_factory_(external_decoder_factory) {}
+        external_decoder_factory_(std::move(external_decoder_factory)) {}
 
  private:
-  explicit CricketDecoderFactoryAdapter(
-      const CricketDecoderFactoryAdapter& other)
-      : CricketDecoderFactoryAdapter(other.external_decoder_factory_) {}
-
   std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
       const VideoCodec& codec,
       const VideoDecoderParams& decoder_params) const override;
 
   const std::unique_ptr<WebRtcVideoDecoderFactory> internal_decoder_factory_;
-  WebRtcVideoDecoderFactory* const external_decoder_factory_;
+  const std::unique_ptr<WebRtcVideoDecoderFactory> external_decoder_factory_;
 };
 
 // Wraps webrtc::VideoEncoderFactory into common EncoderFactoryAdapter
@@ -455,12 +447,12 @@ void DefaultUnsignalledSsrcHandler::SetDefaultSink(
 }
 
 WebRtcVideoEngine::WebRtcVideoEngine(
-    WebRtcVideoEncoderFactory* external_video_encoder_factory,
-    WebRtcVideoDecoderFactory* external_video_decoder_factory)
-    : decoder_factory_(
-          new CricketDecoderFactoryAdapter(external_video_decoder_factory)),
-      encoder_factory_(
-          new CricketEncoderFactoryAdapter(external_video_encoder_factory)) {
+    std::unique_ptr<WebRtcVideoEncoderFactory> external_video_encoder_factory,
+    std::unique_ptr<WebRtcVideoDecoderFactory> external_video_decoder_factory)
+    : decoder_factory_(new CricketDecoderFactoryAdapter(
+          std::move(external_video_decoder_factory))),
+      encoder_factory_(new CricketEncoderFactoryAdapter(
+          std::move(external_video_encoder_factory))) {
   LOG(LS_INFO) << "WebRtcVideoEngine::WebRtcVideoEngine()";
 }
 
@@ -1707,10 +1699,10 @@ CricketEncoderFactoryAdapter::CreateVideoEncoder(
     if (CodecNamesEq(codec.name.c_str(), kVp8CodecName)) {
       // If it's a codec type we can simulcast, create a wrapped encoder.
       external_encoder = std::unique_ptr<webrtc::VideoEncoder>(
-          new webrtc::SimulcastEncoderAdapter(external_encoder_factory_));
+          new webrtc::SimulcastEncoderAdapter(external_encoder_factory_.get()));
     } else {
       external_encoder =
-          CreateScopedVideoEncoder(external_encoder_factory_, codec);
+          CreateScopedVideoEncoder(external_encoder_factory_.get(), codec);
     }
     if (external_encoder) {
       std::unique_ptr<webrtc::VideoEncoder> internal_encoder(
@@ -2207,7 +2199,7 @@ CricketDecoderFactoryAdapter::CreateVideoDecoder(
     const VideoDecoderParams& decoder_params) const {
   if (external_decoder_factory_ != nullptr) {
     std::unique_ptr<webrtc::VideoDecoder> external_decoder =
-        CreateScopedVideoDecoder(external_decoder_factory_, codec,
+        CreateScopedVideoDecoder(external_decoder_factory_.get(), codec,
                                  decoder_params);
     if (external_decoder) {
       webrtc::VideoCodecType type =

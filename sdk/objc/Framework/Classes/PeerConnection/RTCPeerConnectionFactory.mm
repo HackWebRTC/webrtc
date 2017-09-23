@@ -110,8 +110,6 @@
         _networkThread.get(),
         _workerThread.get(),
         _signalingThread.get(),
-        nullptr,  // video_encoder_factory
-        nullptr,  // video_decoder_factory
         std::unique_ptr<cricket::MediaEngineInterface>(),
         std::unique_ptr<webrtc::CallFactoryInterface>(),
         std::unique_ptr<webrtc::RtcEventLogFactoryInterface>());
