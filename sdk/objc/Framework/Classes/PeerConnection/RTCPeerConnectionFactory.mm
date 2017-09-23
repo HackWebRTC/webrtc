@@ -110,12 +110,8 @@
         _networkThread.get(),
         _workerThread.get(),
         _signalingThread.get(),
-        nullptr,  // default_adm
-        nullptr,  // audio_encoder_factory
-        nullptr,  // audio_decoder_factory
         nullptr,  // video_encoder_factory
         nullptr,  // video_decoder_factory
-        nullptr,  // audio_mixer
         std::unique_ptr<cricket::MediaEngineInterface>(),
         std::unique_ptr<webrtc::CallFactoryInterface>(),
         std::unique_ptr<webrtc::RtcEventLogFactoryInterface>());

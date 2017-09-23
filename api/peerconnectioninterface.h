@@ -1229,12 +1229,8 @@ CreateModularPeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
-    AudioDeviceModule* default_adm,
-    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
-    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
     cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<AudioMixer> audio_mixer,
     std::unique_ptr<cricket::MediaEngineInterface> media_engine,
     std::unique_ptr<CallFactoryInterface> call_factory,
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory);

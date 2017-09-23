@@ -109,12 +109,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread,
       rtc::Thread* signaling_thread,
-      AudioDeviceModule* default_adm,
-      rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
-      rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
       cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
       cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-      rtc::scoped_refptr<AudioMixer> audio_mixer,
       std::unique_ptr<cricket::MediaEngineInterface> media_engine,
       std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
       std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory);
@@ -131,10 +127,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   std::unique_ptr<rtc::Thread> owned_network_thread_;
   std::unique_ptr<rtc::Thread> owned_worker_thread_;
   Options options_;
-  // External Audio device used for audio playback.
-  rtc::scoped_refptr<AudioDeviceModule> default_adm_;
-  rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory_;
-  rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
   // External Video encoder factory. This can be NULL if the client has not
   // injected any. In that case, video engine will use the internal SW encoder.
@@ -144,9 +136,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   std::unique_ptr<cricket::WebRtcVideoDecoderFactory> video_decoder_factory_;
   std::unique_ptr<rtc::BasicNetworkManager> default_network_manager_;
   std::unique_ptr<rtc::BasicPacketSocketFactory> default_socket_factory_;
-  // External audio mixer. This can be NULL. In that case, internal audio mixer
-  // will be created and used.
-  rtc::scoped_refptr<AudioMixer> external_audio_mixer_;
   std::unique_ptr<cricket::MediaEngineInterface> media_engine_;
   std::unique_ptr<webrtc::CallFactoryInterface> call_factory_;
   std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory_;

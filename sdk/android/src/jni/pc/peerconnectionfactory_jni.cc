@@ -197,10 +197,8 @@ JNI_FUNCTION_DECLARATION(
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       CreateModularPeerConnectionFactory(
           network_thread.get(), worker_thread.get(), signaling_thread.get(),
-          adm, audio_encoder_factory, audio_decoder_factory,
-          video_encoder_factory, video_decoder_factory, audio_mixer,
-          std::move(media_engine), std::move(call_factory),
-          std::move(rtc_event_log_factory)));
+          video_encoder_factory, video_decoder_factory, std::move(media_engine),
+          std::move(call_factory), std::move(rtc_event_log_factory)));
   RTC_CHECK(factory) << "Failed to create the peer connection factory; "
                      << "WebRTC/libjingle init likely failed on this device";
   // TODO(honghaiz): Maybe put the options as the argument of

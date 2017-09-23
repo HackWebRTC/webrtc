@@ -660,9 +660,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
 
     return new rtc::RefCountedObject<PeerConnectionFactoryForTest>(
         rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
-        FakeAudioCaptureModule::Create(), audio_encoder_factory,
-        audio_decoder_factory, nullptr, nullptr, nullptr,
-        std::move(media_engine), std::move(call_factory),
+        nullptr, nullptr, std::move(media_engine), std::move(call_factory),
         std::move(event_log_factory));
   }
 
@@ -670,24 +668,16 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread,
       rtc::Thread* signaling_thread,
-      rtc::scoped_refptr<FakeAudioCaptureModule> fake_adm,
-      rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
-      rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
       cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
       cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
       std::unique_ptr<cricket::MediaEngineInterface> media_engine,
       std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
       std::unique_ptr<webrtc::RtcEventLogFactoryInterface> event_log_factory)
       : webrtc::PeerConnectionFactory(network_thread,
                                       worker_thread,
                                       signaling_thread,
-                                      fake_adm,
-                                      audio_encoder_factory,
-                                      audio_decoder_factory,
                                       video_encoder_factory,
                                       video_decoder_factory,
-                                      audio_mixer,
                                       std::move(media_engine),
                                       std::move(call_factory),
                                       std::move(event_log_factory)) {}

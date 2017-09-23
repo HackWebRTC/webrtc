@@ -46,20 +46,15 @@ CreateModularPeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
-    AudioDeviceModule* default_adm,
-    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
-    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
     cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<AudioMixer> audio_mixer,
     std::unique_ptr<cricket::MediaEngineInterface> media_engine,
     std::unique_ptr<CallFactoryInterface> call_factory,
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory) {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
       new rtc::RefCountedObject<PeerConnectionFactory>(
-          network_thread, worker_thread, signaling_thread, default_adm,
-          audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-          video_decoder_factory, audio_mixer, std::move(media_engine),
+          network_thread, worker_thread, signaling_thread,
+          video_encoder_factory, video_decoder_factory, std::move(media_engine),
           std::move(call_factory), std::move(event_log_factory)));
 
   // Call Initialize synchronously but make sure it is executed on
@@ -79,12 +74,8 @@ PeerConnectionFactory::PeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
-    AudioDeviceModule* default_adm,
-    rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
-    rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
     cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<AudioMixer> audio_mixer,
     std::unique_ptr<cricket::MediaEngineInterface> media_engine,
     std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory)
@@ -92,12 +83,8 @@ PeerConnectionFactory::PeerConnectionFactory(
       network_thread_(network_thread),
       worker_thread_(worker_thread),
       signaling_thread_(signaling_thread),
-      default_adm_(default_adm),
-      audio_encoder_factory_(audio_encoder_factory),
-      audio_decoder_factory_(audio_decoder_factory),
       video_encoder_factory_(video_encoder_factory),
       video_decoder_factory_(video_decoder_factory),
-      external_audio_mixer_(audio_mixer),
       media_engine_(std::move(media_engine)),
       call_factory_(std::move(call_factory)),
       event_log_factory_(std::move(event_log_factory)) {

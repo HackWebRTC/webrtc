@@ -32,10 +32,6 @@ class FakePeerConnectionFactory
             rtc::Thread::Current(),
             nullptr,
             nullptr,
-            nullptr,
-            nullptr,
-            nullptr,
-            nullptr,
             std::unique_ptr<cricket::MediaEngineInterface>(),
             std::unique_ptr<webrtc::CallFactoryInterface>(),
             std::unique_ptr<RtcEventLogFactoryInterface>()) {}
