@@ -359,6 +359,7 @@ dist_jar("libwebrtc") {
   output = "${root_out_dir}/lib.java${_target_dir_name}/${target_name}.jar"
   direct_deps_only = true
   use_interface_jars = false
+  requires_android = true
   deps = [
     ":libjingle_peerconnection_java",
     ":libjingle_peerconnection_metrics_default_java",
