@@ -49,6 +49,8 @@
 
 @end
 
+namespace {  // anonymous namespace
+
 // The ratio between kVTCompressionPropertyKey_DataRateLimits and
 // kVTCompressionPropertyKey_AverageBitRate. The data rate limit is set higher
 // than the average bit rate to avoid undershooting the target.
@@ -268,6 +270,7 @@ CFStringRef ExtractProfile(const cricket::VideoCodec &codec) {
       }
   }
 }
+}  // namespace
 
 @implementation RTCVideoEncoderH264 {
   RTCVideoCodecInfo *_codecInfo;
