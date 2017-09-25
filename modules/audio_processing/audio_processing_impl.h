@@ -39,8 +39,10 @@ class AudioProcessingImpl : public AudioProcessing {
   // Methods forcing APM to run in a single-threaded manner.
   // Acquires both the render and capture locks.
   explicit AudioProcessingImpl(const webrtc::Config& config);
-  // AudioProcessingImpl takes ownership of beamformer.
+  // AudioProcessingImpl takes ownership of capture post processor and
+  // beamformer.
   AudioProcessingImpl(const webrtc::Config& config,
+                      std::unique_ptr<PostProcessing> capture_post_processor,
                       NonlinearBeamformer* beamformer);
   ~AudioProcessingImpl() override;
   int Initialize() override;
@@ -141,7 +143,7 @@ class AudioProcessingImpl : public AudioProcessing {
 
   class ApmSubmoduleStates {
    public:
-    ApmSubmoduleStates();
+    explicit ApmSubmoduleStates(bool capture_post_processor_enabled);
     // Updates the submodule state and returns true if it has changed.
     bool Update(bool low_cut_filter_enabled,
                 bool echo_canceller_enabled,
@@ -164,6 +166,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool RenderMultiBandProcessingActive() const;
 
    private:
+    const bool capture_post_processor_enabled_ = false;
     bool low_cut_filter_enabled_ = false;
     bool echo_canceller_enabled_ = false;
     bool mobile_echo_controller_enabled_ = false;
@@ -218,7 +221,8 @@ class AudioProcessingImpl : public AudioProcessing {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeLowCutFilter() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeEchoCanceller3() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  void InitializeGainController2();
+  void InitializeGainController2() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializePostProcessor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   void EmptyQueuedRenderAudio();
   void AllocateRenderQueue()

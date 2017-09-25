@@ -23,6 +23,7 @@
 #include "modules/audio_processing/beamformer/array_util.h"
 #include "modules/audio_processing/include/config.h"
 #include "rtc_base/arraysize.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/refcount.h"
 #include "typedefs.h"  // NOLINT(build/include)
@@ -32,6 +33,7 @@ namespace webrtc {
 struct AecCore;
 
 class AecDump;
+class AudioBuffer;
 class AudioFrame;
 
 class NonlinearBeamformer;
@@ -45,6 +47,7 @@ class GainControl;
 class HighPassFilter;
 class LevelEstimator;
 class NoiseSuppression;
+class PostProcessing;
 class VoiceDetection;
 
 // Use to enable the extended filter mode in the AEC, along with robustness
@@ -359,9 +362,15 @@ class AudioProcessing : public rtc::RefCountInterface {
   static AudioProcessing* Create();
   // Allows passing in an optional configuration at create-time.
   static AudioProcessing* Create(const webrtc::Config& config);
-  // Only for testing.
+  // Deprecated. Use the Create below, with nullptr PostProcessing.
+  RTC_DEPRECATED
   static AudioProcessing* Create(const webrtc::Config& config,
                                  NonlinearBeamformer* beamformer);
+  // Allows passing in optional user-defined processing modules.
+  static AudioProcessing* Create(
+      const webrtc::Config& config,
+      std::unique_ptr<PostProcessing> capture_post_processor,
+      NonlinearBeamformer* beamformer);
   ~AudioProcessing() override {}
 
   // Initializes internal states, while retaining all user settings. This
@@ -1085,6 +1094,19 @@ class NoiseSuppression {
 
  protected:
   virtual ~NoiseSuppression() {}
+};
+
+// Interface for a post processing submodule.
+class PostProcessing {
+ public:
+  // (Re-)Initializes the submodule.
+  virtual void Initialize(int sample_rate_hz, int num_channels) = 0;
+  // Processes the given capture or render signal.
+  virtual void Process(AudioBuffer* audio) = 0;
+  // Returns a string representation of the module state.
+  virtual std::string ToString() const = 0;
+
+  virtual ~PostProcessing() {}
 };
 
 // The voice activity detection (VAD) component analyzes the stream to
