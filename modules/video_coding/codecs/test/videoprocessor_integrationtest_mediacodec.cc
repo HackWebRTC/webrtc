@@ -39,7 +39,7 @@ class VideoProcessorIntegrationTestMediaCodec
   }
 };
 
-TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
+TEST_F(VideoProcessorIntegrationTestMediaCodec, DISABLED_ForemanCif500kbpsVp8) {
   SetCodecSettings(&config_, kVideoCodecVP8, 1, false, false, false, false,
                    false, 352, 288);
 
