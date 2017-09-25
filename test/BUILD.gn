@@ -27,7 +27,7 @@ group("test") {
     ":video_test_common",
   ]
 
-  if (!build_with_chromium) {
+  if (rtc_include_tests) {
     deps += [
       ":test_main",
       ":test_support_unittests",
@@ -175,9 +175,7 @@ rtc_source_set("test_support") {
   }
 }
 
-if (!build_with_chromium) {
-  # This target used to depend on //third_party/gflags which Chromium does not
-  # provide. TODO(oprypin): remove the conditional.
+if (rtc_include_tests) {
   rtc_source_set("test_main") {
     testonly = true
     sources = [
