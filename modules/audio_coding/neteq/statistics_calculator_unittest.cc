@@ -63,4 +63,45 @@ TEST(LifetimeStatistics, NoUpdateOnTimeStretch) {
   EXPECT_EQ(200u, stats.GetLifetimeStatistics().concealed_samples);
 }
 
+TEST(StatisticsCalculator, ExpandedSamplesCorrection) {
+  StatisticsCalculator stats;
+  NetEqNetworkStatistics stats_output;
+  constexpr int kSampleRateHz = 48000;
+  constexpr int k10MsSamples = kSampleRateHz / 100;
+  constexpr int kPacketSizeMs = 20;
+  constexpr size_t kSamplesPerPacket = kPacketSizeMs * kSampleRateHz / 1000;
+  // Assume 2 packets in the buffer.
+  constexpr size_t kNumSamplesInBuffer = 2 * kSamplesPerPacket;
+
+  // Advance time by 10 ms.
+  stats.IncreaseCounter(k10MsSamples, kSampleRateHz);
+
+  stats.GetNetworkStatistics(kSampleRateHz, kNumSamplesInBuffer,
+                             kSamplesPerPacket, &stats_output);
+
+  EXPECT_EQ(0u, stats_output.expand_rate);
+  EXPECT_EQ(0u, stats_output.speech_expand_rate);
+
+  // Correct with a negative value.
+  stats.ExpandedVoiceSamplesCorrection(-100);
+  stats.ExpandedNoiseSamplesCorrection(-100);
+  stats.IncreaseCounter(k10MsSamples, kSampleRateHz);
+  stats.GetNetworkStatistics(kSampleRateHz, kNumSamplesInBuffer,
+                             kSamplesPerPacket, &stats_output);
+  // Expect no change, since negative values are disallowed.
+  EXPECT_EQ(0u, stats_output.expand_rate);
+  EXPECT_EQ(0u, stats_output.speech_expand_rate);
+
+  // Correct with a positive value.
+  stats.ExpandedVoiceSamplesCorrection(50);
+  stats.ExpandedNoiseSamplesCorrection(200);
+  stats.IncreaseCounter(k10MsSamples, kSampleRateHz);
+  stats.GetNetworkStatistics(kSampleRateHz, kNumSamplesInBuffer,
+                             kSamplesPerPacket, &stats_output);
+  // Calculate expected rates in Q14. Expand rate is noise + voice, while
+  // speech expand rate is only voice.
+  EXPECT_EQ(((50u + 200u) << 14) / k10MsSamples, stats_output.expand_rate);
+  EXPECT_EQ((50u << 14) / k10MsSamples, stats_output.speech_expand_rate);
+}
+
 }  // namespace webrtc

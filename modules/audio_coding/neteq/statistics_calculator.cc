@@ -14,7 +14,6 @@
 #include <string.h>  // memset
 #include <algorithm>
 
-#include "modules/audio_coding/neteq/decision_logic.h"
 #include "modules/audio_coding/neteq/delay_manager.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/safe_conversions.h"
@@ -255,24 +254,13 @@ void StatisticsCalculator::GetNetworkStatistics(
     int fs_hz,
     size_t num_samples_in_buffers,
     size_t samples_per_packet,
-    const DelayManager& delay_manager,
-    const DecisionLogic& decision_logic,
     NetEqNetworkStatistics *stats) {
-  if (fs_hz <= 0 || !stats) {
-    assert(false);
-    return;
-  }
+  RTC_DCHECK_GT(fs_hz, 0);
+  RTC_DCHECK(stats);
 
   stats->added_zero_samples = added_zero_samples_;
   stats->current_buffer_size_ms =
       static_cast<uint16_t>(num_samples_in_buffers * 1000 / fs_hz);
-  const int ms_per_packet = rtc::dchecked_cast<int>(
-      decision_logic.packet_length_samples() / (fs_hz / 1000));
-  stats->preferred_buffer_size_ms = (delay_manager.TargetLevel() >> 8) *
-      ms_per_packet;
-  stats->jitter_peaks_found = delay_manager.PeakFound();
-  stats->clockdrift_ppm =
-      rtc::saturated_cast<int32_t>(delay_manager.EstimatedClockDriftPpm());
 
   stats->packet_loss_rate =
       CalculateQ14Ratio(lost_timestamps_, timestamps_since_last_report_);
@@ -329,6 +317,18 @@ void StatisticsCalculator::GetNetworkStatistics(
   // Reset counters.
   ResetMcu();
   Reset();
+}
+
+void StatisticsCalculator::PopulateDelayManagerStats(
+    int ms_per_packet,
+    const DelayManager& delay_manager,
+    NetEqNetworkStatistics* stats) {
+  RTC_DCHECK(stats);
+  stats->preferred_buffer_size_ms =
+      (delay_manager.TargetLevel() >> 8) * ms_per_packet;
+  stats->jitter_peaks_found = delay_manager.PeakFound();
+  stats->clockdrift_ppm =
+      rtc::saturated_cast<int32_t>(delay_manager.EstimatedClockDriftPpm());
 }
 
 NetEqLifetimeStatistics StatisticsCalculator::GetLifetimeStatistics() const {

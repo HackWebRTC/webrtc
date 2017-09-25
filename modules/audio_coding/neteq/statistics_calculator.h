@@ -20,8 +20,6 @@
 
 namespace webrtc {
 
-// Forward declarations.
-class DecisionLogic;
 class DelayManager;
 
 // This class handles various network statistics in NetEq.
@@ -91,13 +89,21 @@ class StatisticsCalculator {
   // Returns the current network statistics in |stats|. The current sample rate
   // is |fs_hz|, the total number of samples in packet buffer and sync buffer
   // yet to play out is |num_samples_in_buffers|, and the number of samples per
-  // packet is |samples_per_packet|.
+  // packet is |samples_per_packet|. The method does not populate
+  // |preferred_buffer_size_ms|, |jitter_peaks_found| or |clockdrift_ppm|; use
+  // the PopulateDelayManagerStats method for those.
   void GetNetworkStatistics(int fs_hz,
                             size_t num_samples_in_buffers,
                             size_t samples_per_packet,
-                            const DelayManager& delay_manager,
-                            const DecisionLogic& decision_logic,
                             NetEqNetworkStatistics *stats);
+
+  // Populates |preferred_buffer_size_ms|, |jitter_peaks_found| and
+  // |clockdrift_ppm| in |stats|. This is a convenience method, and does not
+  // strictly have to be in the StatisticsCalculator class, but it makes sense
+  // since all other stats fields are populated by that class.
+  static void PopulateDelayManagerStats(int ms_per_packet,
+                                        const DelayManager& delay_manager,
+                                        NetEqNetworkStatistics* stats);
 
   // Returns a copy of this class's lifetime statistics. These statistics are
   // never reset.

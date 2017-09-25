@@ -374,9 +374,11 @@ int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
       sync_buffer_->FutureLength();
   assert(delay_manager_.get());
   assert(decision_logic_.get());
+  const int ms_per_packet = rtc::dchecked_cast<int>(
+      decision_logic_->packet_length_samples() / (fs_hz_ / 1000));
+  stats_.PopulateDelayManagerStats(ms_per_packet, *delay_manager_.get(), stats);
   stats_.GetNetworkStatistics(fs_hz_, total_samples_in_buffers,
-                              decoder_frame_length_, *delay_manager_.get(),
-                              *decision_logic_.get(), stats);
+                              decoder_frame_length_, stats);
   return 0;
 }
 
