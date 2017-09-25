@@ -26,6 +26,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/safe_conversions.h"
+#include "rtc_base/timeutils.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -336,6 +337,17 @@ class AudioFrame {
 
   void CopyFrom(const AudioFrame& src);
 
+  // Sets a wall-time clock timestamp in milliseconds to be used for profiling
+  // of time between two points in the audio chain.
+  // Example:
+  //   t0: UpdateProfileTimeStamp()
+  //   t1: ElapsedProfileTimeMs() => t1 - t0 [msec]
+  void UpdateProfileTimeStamp();
+  // Returns the time difference between now and when UpdateProfileTimeStamp()
+  // was last called. Returns -1 if UpdateProfileTimeStamp() has not yet been
+  // called.
+  int64_t ElapsedProfileTimeMs() const;
+
   // data() returns a zeroed static buffer if the frame is muted.
   // mutable_frame() always returns a non-static buffer; the first call to
   // mutable_frame() zeros the non-static buffer and marks the frame unmuted.
@@ -368,6 +380,12 @@ class AudioFrame {
   size_t num_channels_ = 0;
   SpeechType speech_type_ = kUndefined;
   VADActivity vad_activity_ = kVadUnknown;
+  // Monotonically increasing timestamp intended for profiling of audio frames.
+  // Typically used for measuring elapsed time between two different points in
+  // the audio path. No lock is used to save resources and we are thread safe
+  // by design. Also, rtc::Optional is not used since it will cause a "complex
+  // class/struct needs an explicit out-of-line destructor" build error.
+  int64_t profile_timestamp_ms_ = 0;
 
  private:
   // A permamently zeroed out buffer to represent muted frames. This is a
@@ -407,6 +425,7 @@ inline void AudioFrame::ResetWithoutMuting() {
   num_channels_ = 0;
   speech_type_ = kUndefined;
   vad_activity_ = kVadUnknown;
+  profile_timestamp_ms_ = 0;
 }
 
 inline void AudioFrame::UpdateFrame(int id,
@@ -455,6 +474,18 @@ inline void AudioFrame::CopyFrom(const AudioFrame& src) {
     memcpy(data_, src.data(), sizeof(int16_t) * length);
     muted_ = false;
   }
+}
+
+inline void AudioFrame::UpdateProfileTimeStamp() {
+  profile_timestamp_ms_ = rtc::TimeMillis();
+}
+
+inline int64_t AudioFrame::ElapsedProfileTimeMs() const {
+  if (profile_timestamp_ms_ == 0) {
+    // Profiling has not been activated.
+    return -1;
+  }
+  return rtc::TimeSince(profile_timestamp_ms_);
 }
 
 inline const int16_t* AudioFrame::data() const {
