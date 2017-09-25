@@ -9,11 +9,6 @@
 import("../../webrtc.gni")
 
 rtc_static_library("remote_bitrate_estimator") {
-  # TODO(mbonadei): Remove (bugs.webrtc.org/6828)
-  # Errors on cyclic dependency with:
-  # rtp_rtcp:rtp_rtcp if enabled.
-  check_includes = false
-
   sources = [
     "aimd_rate_control.cc",
     "aimd_rate_control.h",
@@ -51,7 +46,9 @@ rtc_static_library("remote_bitrate_estimator") {
 
   deps = [
     "../..:webrtc_common",
-    "../../rtc_base:rtc_base",
+    "../../api:optional",
+    "../../modules:module_api",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
   ]

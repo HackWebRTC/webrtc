@@ -13,8 +13,6 @@
 #include <limits>
 #include <algorithm>
 
-#include "modules/pacing/packet_router.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -34,10 +32,11 @@ const int RemoteEstimatorProxy::kDefaultSendIntervalMs = 100;
 static constexpr int64_t kMaxTimeMs =
     std::numeric_limits<int64_t>::max() / 1000;
 
-RemoteEstimatorProxy::RemoteEstimatorProxy(const Clock* clock,
-                                           PacketRouter* packet_router)
+RemoteEstimatorProxy::RemoteEstimatorProxy(
+    const Clock* clock,
+    TransportFeedbackSenderInterface* feedback_sender)
     : clock_(clock),
-      packet_router_(packet_router),
+      feedback_sender_(feedback_sender),
       last_process_time_ms_(-1),
       media_ssrc_(0),
       feedback_sequence_(0),
@@ -83,8 +82,8 @@ void RemoteEstimatorProxy::Process() {
   while (more_to_build) {
     rtcp::TransportFeedback feedback_packet;
     if (BuildFeedbackPacket(&feedback_packet)) {
-      RTC_DCHECK(packet_router_ != nullptr);
-      packet_router_->SendTransportFeedback(&feedback_packet);
+      RTC_DCHECK(feedback_sender_ != nullptr);
+      feedback_sender_->SendTransportFeedback(&feedback_packet);
     } else {
       more_to_build = false;
     }

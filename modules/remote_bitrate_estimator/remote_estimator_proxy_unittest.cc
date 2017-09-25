@@ -50,7 +50,7 @@ std::vector<int64_t> TimestampsMs(
   return timestamps;
 }
 
-class MockPacketRouter : public PacketRouter {
+class MockTransportFeedbackSender : public TransportFeedbackSenderInterface {
  public:
   MOCK_METHOD1(SendTransportFeedback,
                bool(rtcp::TransportFeedback* feedback_packet));
@@ -76,7 +76,7 @@ class RemoteEstimatorProxyTest : public ::testing::Test {
   }
 
   SimulatedClock clock_;
-  testing::StrictMock<MockPacketRouter> router_;
+  testing::StrictMock<MockTransportFeedbackSender> router_;
   RemoteEstimatorProxy proxy_;
 };
 

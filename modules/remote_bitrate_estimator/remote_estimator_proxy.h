@@ -32,7 +32,8 @@ class TransportFeedback;
 
 class RemoteEstimatorProxy : public RemoteBitrateEstimator {
  public:
-  RemoteEstimatorProxy(const Clock* clock, PacketRouter* packet_router);
+  RemoteEstimatorProxy(const Clock* clock,
+                       TransportFeedbackSenderInterface* feedback_sender);
   virtual ~RemoteEstimatorProxy();
 
   void IncomingPacket(int64_t arrival_time_ms,
@@ -58,7 +59,7 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
   bool BuildFeedbackPacket(rtcp::TransportFeedback* feedback_packet);
 
   const Clock* const clock_;
-  PacketRouter* const packet_router_;
+  TransportFeedbackSenderInterface* const feedback_sender_;
   int64_t last_process_time_ms_;
 
   rtc::CriticalSection lock_;

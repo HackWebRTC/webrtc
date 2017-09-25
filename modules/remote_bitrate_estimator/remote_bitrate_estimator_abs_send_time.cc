@@ -14,7 +14,6 @@
 
 #include <algorithm>
 
-#include "modules/pacing/paced_sender.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
