@@ -971,6 +971,7 @@ int32_t AudioDeviceMac::RecordingIsAvailable(bool& available) {
 }
 
 int32_t AudioDeviceMac::InitPlayout() {
+  LOG(LS_INFO) << "InitPlayout";
   rtc::CritScope lock(&_critSect);
 
   if (_playing) {
@@ -1106,6 +1107,7 @@ int32_t AudioDeviceMac::InitPlayout() {
 }
 
 int32_t AudioDeviceMac::InitRecording() {
+  LOG(LS_INFO) << "InitRecording";
   rtc::CritScope lock(&_critSect);
 
   if (_recording) {
@@ -1301,6 +1303,7 @@ int32_t AudioDeviceMac::InitRecording() {
 }
 
 int32_t AudioDeviceMac::StartRecording() {
+  LOG(LS_INFO) << "StartRecording";
   rtc::CritScope lock(&_critSect);
 
   if (!_recIsInitialized) {
@@ -1337,6 +1340,7 @@ int32_t AudioDeviceMac::StartRecording() {
 }
 
 int32_t AudioDeviceMac::StopRecording() {
+  LOG(LS_INFO) << "StopRecording";
   rtc::CritScope lock(&_critSect);
 
   if (!_recIsInitialized) {
@@ -1344,11 +1348,10 @@ int32_t AudioDeviceMac::StopRecording() {
   }
 
   OSStatus err = noErr;
-
-  // Stop device
   int32_t captureDeviceIsAlive = AtomicGet32(&_captureDeviceIsAlive);
-  if (_twoDevices) {
-    if (_recording && captureDeviceIsAlive == 1) {
+  if (_twoDevices && captureDeviceIsAlive == 1) {
+    // Recording side uses its own dedicated device and IOProc.
+    if (_recording) {
       _recording = false;
       _doStopRec = true;  // Signal to io proc to stop audio device
       _critSect.Leave();  // Cannot be under lock, risk of deadlock
@@ -1357,14 +1360,17 @@ int32_t AudioDeviceMac::StopRecording() {
         LOG(LS_WARNING)
             << "Timed out stopping the capture IOProc."
             << "We may have failed to detect a device removal.";
-
         WEBRTC_CA_LOG_WARN(AudioDeviceStop(_inputDeviceID, _inDeviceIOProcID));
         WEBRTC_CA_LOG_WARN(
-            AudioDeviceDestroyIOProcID(_inputDeviceID, _inDeviceIOProcID));
+          AudioDeviceDestroyIOProcID(_inputDeviceID, _inDeviceIOProcID));
       }
       _critSect.Enter();
       _doStopRec = false;
-      LOG(LS_VERBOSE) << "Recording stopped";
+      LOG(LS_INFO) << "Recording stopped (input device)";
+    } else if (_recIsInitialized) {
+      WEBRTC_CA_LOG_WARN(
+          AudioDeviceDestroyIOProcID(_inputDeviceID, _inDeviceIOProcID));
+      LOG(LS_INFO) << "Recording uninitialized (input device)";
     }
   } else {
     // We signal a stop for a shared device even when rendering has
@@ -1383,7 +1389,6 @@ int32_t AudioDeviceMac::StopRecording() {
         LOG(LS_WARNING)
             << "Timed out stopping the shared IOProc."
             << "We may have failed to detect a device removal.";
-
         // We assume rendering on a shared device has stopped as well if
         // the IOProc times out.
         WEBRTC_CA_LOG_WARN(AudioDeviceStop(_outputDeviceID, _deviceIOProcID));
@@ -1392,7 +1397,11 @@ int32_t AudioDeviceMac::StopRecording() {
       }
       _critSect.Enter();
       _doStop = false;
-      LOG(LS_VERBOSE) << "Recording stopped (shared)";
+      LOG(LS_INFO) << "Recording stopped (shared device)";
+    } else if (_recIsInitialized && !_playing && !_playIsInitialized) {
+      WEBRTC_CA_LOG_WARN(
+            AudioDeviceDestroyIOProcID(_outputDeviceID, _deviceIOProcID));
+      LOG(LS_INFO) << "Recording uninitialized (shared device)";
     }
   }
 
@@ -1437,6 +1446,7 @@ bool AudioDeviceMac::PlayoutIsInitialized() const {
 }
 
 int32_t AudioDeviceMac::StartPlayout() {
+  LOG(LS_INFO) << "StartPlayout";
   rtc::CritScope lock(&_critSect);
 
   if (!_playIsInitialized) {
@@ -1463,6 +1473,7 @@ int32_t AudioDeviceMac::StartPlayout() {
 }
 
 int32_t AudioDeviceMac::StopPlayout() {
+  LOG(LS_INFO) << "StopPlayout";
   rtc::CritScope lock(&_critSect);
 
   if (!_playIsInitialized) {
@@ -1470,7 +1481,6 @@ int32_t AudioDeviceMac::StopPlayout() {
   }
 
   OSStatus err = noErr;
-
   int32_t renderDeviceIsAlive = AtomicGet32(&_renderDeviceIsAlive);
   if (_playing && renderDeviceIsAlive == 1) {
     // We signal a stop for a shared device even when capturing has not
@@ -1497,7 +1507,15 @@ int32_t AudioDeviceMac::StopPlayout() {
     }
     _critSect.Enter();
     _doStop = false;
-    LOG(LS_VERBOSE) << "Playout stopped";
+    LOG(LS_INFO) << "Playout stopped";
+  } else if (_twoDevices && _playIsInitialized) {
+    WEBRTC_CA_LOG_WARN(
+          AudioDeviceDestroyIOProcID(_outputDeviceID, _deviceIOProcID));
+    LOG(LS_INFO) << "Playout uninitialized (output device)";
+  } else if (!_twoDevices && _playIsInitialized && !_recIsInitialized) {
+    WEBRTC_CA_LOG_WARN(
+          AudioDeviceDestroyIOProcID(_outputDeviceID, _deviceIOProcID));
+    LOG(LS_INFO) << "Playout uninitialized (shared device)";
   }
 
   // Setting this signal will allow the worker thread to be stopped.
@@ -1840,9 +1858,9 @@ int32_t AudioDeviceMac::InitDevice(const uint16_t userDeviceIndex,
                                                      0, NULL, &size, devManf));
 
   if (isInput) {
-    LOG(LS_VERBOSE) << "Input device: " << devManf << " " << devName;
+    LOG(LS_INFO) << "Input device: " << devManf << " " << devName;
   } else {
-    LOG(LS_VERBOSE) << "Output device: " << devManf << " " << devName;
+    LOG(LS_INFO) << "Output device: " << devManf << " " << devName;
   }
 
   return 0;

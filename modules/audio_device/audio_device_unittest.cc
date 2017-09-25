@@ -574,6 +574,52 @@ TEST_F(AudioDeviceTest, StartStopRecording) {
   StopRecording();
 }
 
+// Tests Init/Stop/Init recording without any registered audio callback.
+// See https://bugs.chromium.org/p/webrtc/issues/detail?id=8041 for details
+// on why this test is useful.
+TEST_F(AudioDeviceTest, InitStopInitRecording) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  EXPECT_EQ(0, audio_device()->InitRecording());
+  EXPECT_TRUE(audio_device()->RecordingIsInitialized());
+  StopRecording();
+  EXPECT_EQ(0, audio_device()->InitRecording());
+  StopRecording();
+}
+
+// Tests Init/Stop/Init recording while playout is active.
+TEST_F(AudioDeviceTest, InitStopInitRecordingWhilePlaying) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  StartPlayout();
+  EXPECT_EQ(0, audio_device()->InitRecording());
+  EXPECT_TRUE(audio_device()->RecordingIsInitialized());
+  StopRecording();
+  EXPECT_EQ(0, audio_device()->InitRecording());
+  StopRecording();
+  StopPlayout();
+}
+
+// Tests Init/Stop/Init playout without any registered audio callback.
+TEST_F(AudioDeviceTest, InitStopInitPlayout) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  EXPECT_EQ(0, audio_device()->InitPlayout());
+  EXPECT_TRUE(audio_device()->PlayoutIsInitialized());
+  StopPlayout();
+  EXPECT_EQ(0, audio_device()->InitPlayout());
+  StopPlayout();
+}
+
+// Tests Init/Stop/Init playout while recording is active.
+TEST_F(AudioDeviceTest, InitStopInitPlayoutWhileRecording) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  StartRecording();
+  EXPECT_EQ(0, audio_device()->InitPlayout());
+  EXPECT_TRUE(audio_device()->PlayoutIsInitialized());
+  StopPlayout();
+  EXPECT_EQ(0, audio_device()->InitPlayout());
+  StopPlayout();
+  StopRecording();
+}
+
 // Start playout and verify that the native audio layer starts asking for real
 // audio samples to play out using the NeedMorePlayData() callback.
 // Note that we can't add expectations on audio parameters in EXPECT_CALL
