@@ -159,11 +159,18 @@ class StatisticsCalculator {
     int counter_ = 0;
   };
 
+  // Corrects the concealed samples counter in lifetime_stats_. The value of
+  // num_samples_ is added directly to the stat if the correction is positive.
+  // If the correction is negative, it is cached and will be subtracted against
+  // future additions to the counter. This is meant to be called from
+  // Expanded{Voice,Noise}Samples{Correction}.
+  void ConcealedSamplesCorrection(int num_samples);
+
   // Calculates numerator / denominator, and returns the value in Q14.
   static uint16_t CalculateQ14Ratio(size_t numerator, uint32_t denominator);
 
-  // TODO(steveanton): Add unit tests for the lifetime stats.
   NetEqLifetimeStatistics lifetime_stats_;
+  size_t concealed_samples_correction_ = 0;
   size_t preemptive_samples_;
   size_t accelerate_samples_;
   size_t added_zero_samples_;

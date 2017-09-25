@@ -368,6 +368,8 @@ void NetEqDecodingTest::DecodeAndCompare(
 
   packet_ = rtp_source_->NextPacket();
   int i = 0;
+  uint64_t last_concealed_samples = 0;
+  uint64_t last_total_samples_received = 0;
   while (packet_) {
     std::ostringstream ss;
     ss << "Lap number " << i++ << " in DecodeAndCompare while loop";
@@ -386,6 +388,20 @@ void NetEqDecodingTest::DecodeAndCompare(
       // Compare with CurrentDelay, which should be identical.
       EXPECT_EQ(current_network_stats.current_buffer_size_ms,
                 neteq_->CurrentDelayMs());
+
+      // Verify that liftime stats and network stats report similar loss
+      // concealment rates.
+      auto lifetime_stats = neteq_->GetLifetimeStatistics();
+      const uint64_t delta_concealed_samples =
+          lifetime_stats.concealed_samples - last_concealed_samples;
+      last_concealed_samples = lifetime_stats.concealed_samples;
+      const uint64_t delta_total_samples_received =
+          lifetime_stats.total_samples_received - last_total_samples_received;
+      last_total_samples_received = lifetime_stats.total_samples_received;
+      // The tolerance is 1% but expressed in Q14.
+      EXPECT_NEAR(
+          (delta_concealed_samples << 14) / delta_total_samples_received,
+          current_network_stats.expand_rate, (2 << 14) / 100.0);
 
       // Process RTCPstat.
       RtcpStatistics current_rtcp_stats;

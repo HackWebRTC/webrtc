@@ -2141,6 +2141,7 @@ if (rtc_include_tests) {
       "neteq/post_decode_vad_unittest.cc",
       "neteq/random_vector_unittest.cc",
       "neteq/red_payload_splitter_unittest.cc",
+      "neteq/statistics_calculator_unittest.cc",
       "neteq/sync_buffer_unittest.cc",
       "neteq/tick_timer_unittest.cc",
       "neteq/time_stretch_unittest.cc",
