@@ -15,7 +15,6 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
@@ -46,7 +45,7 @@ class EglBase10 extends EglBase {
       // need to make sure to have an EglSurface, then make the context current using that surface,
       // and then call into JNI and call the native version of eglGetCurrentContext. Then we need to
       // restore the state and return the native context.
-      throw new RuntimeException("getNativeEglContext is not implemented for EGL 1.0");
+      return 0 /* EGL_NO_CONTEXT */;
     }
 
     public Context(EGLContext eglContext) {
