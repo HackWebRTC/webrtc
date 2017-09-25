@@ -47,6 +47,18 @@ class CheckBugEntryFieldTest(unittest.TestCase):
                                                   mock_output_api)
     self.assertEqual(0, len(errors))
 
+  def testCommitMessageBugEntrySupportInternalBugReference(self):
+    mock_input_api = MockInputApi()
+    mock_output_api = MockOutputApi()
+    mock_input_api.change.BUG = 'b/12345'
+    errors = PRESUBMIT.CheckCommitMessageBugEntry(mock_input_api,
+                                                  mock_output_api)
+    self.assertEqual(0, len(errors))
+    mock_input_api.change.BUG = 'b/12345, webrtc:1234'
+    errors = PRESUBMIT.CheckCommitMessageBugEntry(mock_input_api,
+                                                  mock_output_api)
+    self.assertEqual(0, len(errors))
+
 
 class CheckNewlineAtTheEndOfProtoFilesTest(unittest.TestCase):
 

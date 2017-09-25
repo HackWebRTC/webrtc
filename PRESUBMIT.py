@@ -480,7 +480,7 @@ def CheckCommitMessageBugEntry(input_api, output_api):
     bug = bug.strip()
     if bug.lower() == 'none':
       continue
-    if ':' not in bug:
+    if 'b/' not in bug and ':' not in bug:
       try:
         if int(bug) > 100000:
           # Rough indicator for current chromium bugs.
@@ -491,7 +491,7 @@ def CheckCommitMessageBugEntry(input_api, output_api):
                        (prefix_guess, bug))
       except ValueError:
         results.append(bogus_bug_msg % bug)
-    elif not re.match(r'\w+:\d+', bug):
+    elif not (re.match(r'\w+:\d+', bug) or re.match(r'b/\d+', bug)):
       results.append(bogus_bug_msg % bug)
   return [output_api.PresubmitError(r) for r in results]
 
