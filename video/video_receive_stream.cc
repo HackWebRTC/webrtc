@@ -176,6 +176,7 @@ void VideoReceiveStream::Start() {
 
   frame_buffer_->Start();
   call_stats_->RegisterStatsObserver(&rtp_video_stream_receiver_);
+  call_stats_->RegisterStatsObserver(this);
 
   if (rtp_video_stream_receiver_.IsRetransmissionsEnabled() &&
       protected_by_fec) {
@@ -225,6 +226,7 @@ void VideoReceiveStream::Stop() {
   rtp_video_stream_receiver_.StopReceive();
 
   frame_buffer_->Stop();
+  call_stats_->DeregisterStatsObserver(this);
   call_stats_->DeregisterStatsObserver(&rtp_video_stream_receiver_);
   process_thread_->DeRegisterModule(&video_receiver_);
 
@@ -345,6 +347,10 @@ void VideoReceiveStream::OnCompleteFrame(
   int last_continuous_pid = frame_buffer_->InsertFrame(std::move(frame));
   if (last_continuous_pid != -1)
     rtp_video_stream_receiver_.FrameContinuous(last_continuous_pid);
+}
+
+void VideoReceiveStream::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
+  frame_buffer_->UpdateRtt(max_rtt_ms);
 }
 
 int VideoReceiveStream::id() const {
