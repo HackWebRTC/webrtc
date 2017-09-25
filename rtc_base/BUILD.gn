@@ -1075,9 +1075,6 @@ if (rtc_include_tests) {
         "win32window_unittest.cc",
       ]
     }
-    if (is_mac) {
-      sources += [ "macutils_unittest.cc" ]
-    }
     if (is_posix) {
       sources += [
         "openssladapter_unittest.cc",

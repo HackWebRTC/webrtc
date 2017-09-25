@@ -95,11 +95,6 @@ MouseCursorMonitorMac::MouseCursorMonitorMac(
       full_screen_chrome_window_detector_(
           options.full_screen_chrome_window_detector()) {
   assert(window_id == kCGNullWindowID || screen_id == kInvalidScreenId);
-  if (screen_id != kInvalidScreenId &&
-      rtc::GetOSVersionName() < rtc::kMacOSLion) {
-    // Single screen capture is not supported on pre OS X 10.7.
-    screen_id_ = kFullDesktopScreenId;
-  }
 }
 
 MouseCursorMonitorMac::~MouseCursorMonitorMac() {}
