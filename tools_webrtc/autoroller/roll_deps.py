@@ -22,7 +22,6 @@ import urllib
 
 # Skip these dependencies (list without solution name prefix).
 DONT_AUTOROLL_THESE = [
-  'src/third_party/gflags/src',
   'src/third_party/winsdk_samples',
   'src/examples/androidtests/third_party/gradle',
 ]

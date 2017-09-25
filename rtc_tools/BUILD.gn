@@ -234,7 +234,6 @@ if (!build_with_chromium) {
   }
 }
 
-# Exclude tools depending on gflags since that's not available in Chromium.
 if (rtc_include_tests) {
   if (rtc_enable_protobuf) {
     rtc_executable("event_log_visualizer") {
