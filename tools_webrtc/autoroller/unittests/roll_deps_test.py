@@ -107,7 +107,7 @@ class TestRollChromiumRevision(unittest.TestCase):
       self.assertEquals(vars_dict[variable_name], TEST_DATA_VARS[variable_name])
     AssertVar('chromium_git')
     AssertVar('chromium_revision')
-    self.assertEquals(len(local_scope['deps']), 2)
+    self.assertEquals(len(local_scope['deps']), 3)
     self.assertEquals(len(local_scope['deps_os']), 1)
 
   def testGetMatchingDepsEntriesReturnsPathInSimpleCase(self):

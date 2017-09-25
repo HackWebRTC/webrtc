@@ -83,6 +83,10 @@ deps = {
   'src/tools/swarming_client':
     Var('chromium_git') + '/infra/luci/client-py.git' + '@' +  Var('swarming_revision'),
   # WebRTC-only dependencies (not present in Chromium).
+  'src/third_party/gflags':
+    Var('webrtc_git') + '/deps/third_party/gflags' + '@' + '892576179b45861b53e04a112996a738309cf364',
+  'src/third_party/gflags/src':
+    Var('chromium_git') + '/external/github.com/gflags/gflags' + '@' + '03bebcb065c83beff83d50ae025a55a4bf94dfca',
   'src/third_party/gtest-parallel':
     Var('chromium_git') + '/external/github.com/google/gtest-parallel' + '@' + 'ee2027381105650fb1c66b2b121ba00b79e84d5c',
 }
@@ -546,6 +550,7 @@ include_rules = [
   "-base",
   "-chromium",
   "+external/webrtc/webrtc",  # Android platform build.
+  "+gflags",
   "+libyuv",
   # Individual headers that will be moved out of here, see webrtc:4243.
   "+call/rtp_config.h",

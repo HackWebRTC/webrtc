@@ -67,8 +67,4 @@ default_args = {
 
   # WebRTC relies on Chromium's Android test infrastructure.
   use_cxx11_on_android = false
-
-  # WebRTC does not provide the gflags dependency. Because libyuv uses it only
-  # for unittests, it can be disabled (see third_party/libyuv/BUILD.gn)
-  libyuv_use_gflags = false
 }

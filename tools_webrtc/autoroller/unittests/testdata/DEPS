@@ -13,6 +13,10 @@ deps = {
   # Entry that's also a DEPS entry in the Chromium DEPS file.
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '64e38f0cebdde27aa0cfb405f330063582f9ac76',
+
+  # Entry only present in WebRTC, not Chromium.
+  'src/third_party/gflags/src':
+    Var('chromium_git') + '/external/github.com/gflags/gflags@03bebcb065c83beff83d50ae025a55a4bf94dfca',
 }
 
 deps_os = {
