@@ -89,6 +89,12 @@ bool DxgiAdapterDuplicator::DoInitialize() {
 
         duplicators_.push_back(std::move(duplicator));
         desktop_rect_.UnionWith(duplicators_.back().desktop_rect());
+      } else {
+        LOG(LS_ERROR) << (desc.AttachedToDesktop ? "Attached" : "Detached")
+                      << " output " << i << " (" << desc.DesktopCoordinates.top
+                      << ", " << desc.DesktopCoordinates.left << ") - ("
+                      << desc.DesktopCoordinates.bottom << ", "
+                      << desc.DesktopCoordinates.right << ") is ignored.";
       }
     } else {
       LOG(LS_WARNING) << "Failed to get output description of device " << i

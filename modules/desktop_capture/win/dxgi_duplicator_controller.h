@@ -68,6 +68,10 @@ class DxgiDuplicatorController {
     INVALID_MONITOR_ID,
   };
 
+  // Converts |result| into user-friendly string representation. The return
+  // value should not be used to identify error types.
+  static std::string ResultName(Result result);
+
   // Returns the singleton instance of DxgiDuplicatorController.
   static rtc::scoped_refptr<DxgiDuplicatorController> Instance();
 

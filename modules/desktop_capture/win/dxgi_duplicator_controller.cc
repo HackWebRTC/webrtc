@@ -26,6 +26,27 @@
 namespace webrtc {
 
 // static
+std::string DxgiDuplicatorController::ResultName(
+    DxgiDuplicatorController::Result result) {
+  switch (result) {
+    case Result::SUCCEEDED:
+      return "Succeeded";
+    case Result::UNSUPPORTED_SESSION:
+      return "Unsupported session";
+    case Result::FRAME_PREPARE_FAILED:
+      return "Frame preparation failed";
+    case Result::INITIALIZATION_FAILED:
+      return "Initialization failed";
+    case Result::DUPLICATION_FAILED:
+      return "Duplication failed";
+    case Result::INVALID_MONITOR_ID:
+      return "Invalid monitor id";
+    default:
+      return "Unknown error";
+  }
+}
+
+// static
 rtc::scoped_refptr<DxgiDuplicatorController>
 DxgiDuplicatorController::Instance() {
   // The static instance won't be deleted to ensure it can be used by other
@@ -305,7 +326,7 @@ bool DxgiDuplicatorController::DoDuplicateUnlocked(Context* context,
   }
 
   if (result) {
-    target->set_dpi(dpi());
+    target->set_dpi(dpi_);
     return true;
   }
 
@@ -439,6 +460,8 @@ bool DxgiDuplicatorController::EnsureFrameCaptured(Context* context,
       return false;
     }
     if (rtc::TimeMillis() - start_ms > timeout_ms) {
+      LOG(LS_ERROR) << "Failed to capture " << frames_to_skip << " frames "
+                       "within " << timeout_ms << " milliseconds.";
       return false;
     }
   }

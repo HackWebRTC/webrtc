@@ -135,6 +135,11 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
   }
 
   using DuplicateResult = DxgiDuplicatorController::Result;
+  if (result != DuplicateResult::SUCCEEDED) {
+    LOG(LS_ERROR) << "DxgiDuplicatorController failed to capture desktop, "
+                     "error code "
+                  << DxgiDuplicatorController::ResultName(result);
+  }
   switch (result) {
     case DuplicateResult::UNSUPPORTED_SESSION: {
       LOG(LS_ERROR) << "Current binary is running on a session not supported "
@@ -150,6 +155,7 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
       break;
     }
     case DuplicateResult::INVALID_MONITOR_ID: {
+      LOG(LS_ERROR) << "Invalid monitor id " << current_screen_id_;
       callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
       break;
     }
