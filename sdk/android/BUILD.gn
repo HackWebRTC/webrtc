@@ -39,6 +39,8 @@ rtc_source_set("base_jni") {
     "src/jni/classreferenceholder.cc",
     "src/jni/classreferenceholder.h",
     "src/jni/jni_common.cc",
+    "src/jni/jni_generator_helper.cc",
+    "src/jni/jni_generator_helper.h",
     "src/jni/jni_helpers.cc",
     "src/jni/jni_helpers.h",
     "src/jni/pc/audio_jni.h",
