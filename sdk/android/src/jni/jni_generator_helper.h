@@ -29,7 +29,7 @@ inline void CheckException(JNIEnv* env) {
 }
 }  // namespace jni_generator
 
-namespace {
+namespace {  // NOLINT(build/namespaces)
 // Bypass JniIntWrapper.
 // TODO(magjed): Start using Chromium's JniIntWrapper.
 typedef jint JniIntWrapper;
@@ -58,7 +58,7 @@ class JavaRef {
   T obj() const { return obj_; }
 
   // Implicit on purpose.
-  JavaRef(const T& obj) : obj_(obj) {}
+  JavaRef(const T& obj) : obj_(obj) {}  // NOLINT(runtime/explicit)
   operator T() const { return obj_; }
 
  private:
