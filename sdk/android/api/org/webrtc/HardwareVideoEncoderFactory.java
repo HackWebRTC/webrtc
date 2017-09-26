@@ -72,13 +72,13 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
 
     String codecName = info.getName();
     String mime = type.mimeType();
-    Integer surfaceColorFormat = MediaCodecUtils.selectColorFormat(
-        MediaCodecUtils.TEXTURE_COLOR_FORMATS, info.getCapabilitiesForType(mime));
-    Integer yuvColorFormat = MediaCodecUtils.selectColorFormat(
-        MediaCodecUtils.ENCODER_COLOR_FORMATS, info.getCapabilitiesForType(mime));
+    int colorFormat = MediaCodecUtils.selectColorFormat(sharedContext == null
+            ? MediaCodecUtils.ENCODER_COLOR_FORMATS
+            : MediaCodecUtils.TEXTURE_COLOR_FORMATS,
+        info.getCapabilitiesForType(mime));
 
-    return new HardwareVideoEncoder(codecName, type, surfaceColorFormat, yuvColorFormat,
-        input.params, getKeyFrameIntervalSec(type), getForcedKeyFrameIntervalMs(type, codecName),
+    return new HardwareVideoEncoder(codecName, type, colorFormat, input.params,
+        getKeyFrameIntervalSec(type), getForcedKeyFrameIntervalMs(type, codecName),
         createBitrateAdjuster(type, codecName), sharedContext);
   }
 
@@ -128,8 +128,10 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
       return false;
     }
     // Check for a supported color format.
-    if (MediaCodecUtils.selectColorFormat(
-            MediaCodecUtils.ENCODER_COLOR_FORMATS, info.getCapabilitiesForType(type.mimeType()))
+    if (MediaCodecUtils.selectColorFormat(sharedContext == null
+                ? MediaCodecUtils.ENCODER_COLOR_FORMATS
+                : MediaCodecUtils.TEXTURE_COLOR_FORMATS,
+            info.getCapabilitiesForType(type.mimeType()))
         == null) {
       return false;
     }

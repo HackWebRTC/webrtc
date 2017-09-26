@@ -33,7 +33,7 @@
 
     <!-- tools:ignore needed for chromium-junit4 tag. crbug.com/640116
          TODO(sakal): Remove once the tag is no longer needed. -->
-    <instrumentation android:name="org.chromium.base.test.BaseChromiumAndroidJUnitRunner"
+    <instrumentation android:name="android.support.test.runner.AndroidJUnitRunner"
         tools:ignore="MissingPrefix"
         android:targetPackage="org.webrtc"
         android:label="Tests for WebRTC Android SDK"
