@@ -3,7 +3,7 @@
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': '81f3a6b9554d7f31aefb68c747a72b407a9ca922',
+  'chromium_revision': 'f1b84062d58fd80832fccfb828b2d5c25b6b7388',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -24,7 +24,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'ccb28b4fd165b20d44cb903f5223fdf8146376d0',
+  'catapult_revision': 'ae4cc909a3bb9b54c09107a87f2d3682d762e077',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -36,13 +36,13 @@ deps = {
   'src/base':
     Var('chromium_git') + '/chromium/src/base' + '@' + 'e625867a858312f059391569b7a019070d9dc7e2',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + 'e7d7f7845a87885e02e316501e6b09f7793db672',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '355b4cd32a1799849c00e019cf9ada16cd5e1371',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + 'f6d165d9d842ddd29056c127a5f3a3c5d8e0d2e3',
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + 'b2e21746c4021d06d152ad453460b89cdafa43a1',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'b069ea1fa4f54731e6ca152d1016fa88a2b8e5f7',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'b4b9062f2fffda92ff3d0df6b6b67a93cb5834a1',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '267142120062284dadd59d7793d00662c617f1e3',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -89,7 +89,7 @@ deps = {
 deps_os = {
   'android': {
     'src/third_party/android_tools':
-      Var('chromium_git') + '/android_tools.git' + '@' + 'aadb2fed04af8606545b0afe4e3060bc1a15fad7',
+      Var('chromium_git') + '/android_tools.git' + '@' + 'ca9dc7245b888c75307f0619e4a39fb46a82de66',
     'src/third_party/ced/src':
       Var('chromium_git') + '/external/github.com/google/compact_enc_det.git' + '@' + '94c367a1fe3a13207f4b22604fcfd1d9f9ddf6d9',
     'src/third_party/icu':
