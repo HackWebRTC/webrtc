@@ -47,7 +47,7 @@
     "label": "//modules/audio_coding:isac_fix_test",
     "type": "console_test_launcher",
     "args": [
-      "32000", "../resources/speech_and_misc_wb.pcm",
+      "32000", "../../resources/speech_and_misc_wb.pcm",
       "isac_speech_and_misc_wb.pcm",
     ]
   },
