@@ -387,6 +387,8 @@ if (rtc_include_tests) {
       "peerconnectionendtoend_unittest.cc",
       "peerconnectionfactory_unittest.cc",
       "peerconnectioninterface_unittest.cc",
+      "peerconnectionwrapper.cc",
+      "peerconnectionwrapper.h",
       "proxy_unittest.cc",
       "rtcstats_integrationtest.cc",
       "rtcstatscollector_unittest.cc",

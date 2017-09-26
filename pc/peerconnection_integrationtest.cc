@@ -158,6 +158,8 @@ class MockRtpReceiverObserver : public webrtc::RtpReceiverObserverInterface {
 // Uses a fake network, fake A/V capture, and optionally fake
 // encoders/decoders, though they aren't used by default since they don't
 // advertise support of any codecs.
+// TODO(steveanton): See how this could become a subclass of
+// PeerConnectionWrapper defined in peerconnectionwrapper.h .
 class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
                               public SignalingMessageReceiver,
                               public ObserverInterface {

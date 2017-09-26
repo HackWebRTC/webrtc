@@ -9,6 +9,7 @@
  */
 
 // This file contains mock implementations of observers used in PeerConnection.
+// TODO(steveanton): These aren't really mocks and should be renamed.
 
 #ifndef PC_TEST_MOCKPEERCONNECTIONOBSERVERS_H_
 #define PC_TEST_MOCKPEERCONNECTIONOBSERVERS_H_
@@ -17,9 +18,117 @@
 #include <string>
 
 #include "api/datachannelinterface.h"
+#include "pc/streamcollection.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
+
+class MockPeerConnectionObserver : public PeerConnectionObserver {
+ public:
+  MockPeerConnectionObserver() : remote_streams_(StreamCollection::Create()) {}
+  virtual ~MockPeerConnectionObserver() {}
+  void SetPeerConnectionInterface(PeerConnectionInterface* pc) {
+    pc_ = pc;
+    if (pc) {
+      state_ = pc_->signaling_state();
+    }
+  }
+  void OnSignalingChange(
+      PeerConnectionInterface::SignalingState new_state) override {
+    RTC_DCHECK(pc_->signaling_state() == new_state);
+    state_ = new_state;
+  }
+
+  MediaStreamInterface* RemoteStream(const std::string& label) {
+    return remote_streams_->find(label);
+  }
+  StreamCollectionInterface* remote_streams() const { return remote_streams_; }
+  void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) override {
+    last_added_stream_ = stream;
+    remote_streams_->AddStream(stream);
+  }
+  void OnRemoveStream(
+      rtc::scoped_refptr<MediaStreamInterface> stream) override {
+    last_removed_stream_ = stream;
+    remote_streams_->RemoveStream(stream);
+  }
+  void OnRenegotiationNeeded() override { renegotiation_needed_ = true; }
+  void OnDataChannel(
+      rtc::scoped_refptr<DataChannelInterface> data_channel) override {
+    last_datachannel_ = data_channel;
+  }
+
+  void OnIceConnectionChange(
+      PeerConnectionInterface::IceConnectionState new_state) override {
+    RTC_DCHECK(pc_->ice_connection_state() == new_state);
+    callback_triggered_ = true;
+  }
+  void OnIceGatheringChange(
+      PeerConnectionInterface::IceGatheringState new_state) override {
+    RTC_DCHECK(pc_->ice_gathering_state() == new_state);
+    ice_complete_ = new_state == PeerConnectionInterface::kIceGatheringComplete;
+    callback_triggered_ = true;
+  }
+  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
+    RTC_DCHECK(PeerConnectionInterface::kIceGatheringNew !=
+               pc_->ice_gathering_state());
+
+    std::string sdp;
+    bool success = candidate->ToString(&sdp);
+    RTC_DCHECK(success);
+    RTC_DCHECK(!sdp.empty());
+    last_candidate_.reset(webrtc::CreateIceCandidate(
+        candidate->sdp_mid(), candidate->sdp_mline_index(), sdp, NULL));
+    RTC_DCHECK(last_candidate_);
+    callback_triggered_ = true;
+  }
+
+  void OnIceCandidatesRemoved(
+      const std::vector<cricket::Candidate>& candidates) override {
+    callback_triggered_ = true;
+  }
+
+  void OnIceConnectionReceivingChange(bool receiving) override {
+    callback_triggered_ = true;
+  }
+
+  void OnAddTrack(
+      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+      const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
+          streams) override {
+    RTC_DCHECK(receiver);
+    num_added_tracks_++;
+    last_added_track_label_ = receiver->id();
+  }
+
+  // Returns the label of the last added stream.
+  // Empty string if no stream have been added.
+  std::string GetLastAddedStreamLabel() {
+    if (last_added_stream_.get())
+      return last_added_stream_->label();
+    return "";
+  }
+  std::string GetLastRemovedStreamLabel() {
+    if (last_removed_stream_.get())
+      return last_removed_stream_->label();
+    return "";
+  }
+
+  rtc::scoped_refptr<PeerConnectionInterface> pc_;
+  PeerConnectionInterface::SignalingState state_;
+  std::unique_ptr<IceCandidateInterface> last_candidate_;
+  rtc::scoped_refptr<DataChannelInterface> last_datachannel_;
+  rtc::scoped_refptr<StreamCollection> remote_streams_;
+  bool renegotiation_needed_ = false;
+  bool ice_complete_ = false;
+  bool callback_triggered_ = false;
+  int num_added_tracks_ = 0;
+  std::string last_added_track_label_;
+
+ private:
+  rtc::scoped_refptr<MediaStreamInterface> last_added_stream_;
+  rtc::scoped_refptr<MediaStreamInterface> last_removed_stream_;
+};
 
 class MockCreateSessionDescriptionObserver
     : public webrtc::CreateSessionDescriptionObserver {
