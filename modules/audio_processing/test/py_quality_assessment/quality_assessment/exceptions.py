@@ -32,3 +32,9 @@ class InputSignalCreatorException(Exception):
   """Input signal creator exeception.
   """
   pass
+
+
+class EvaluationScoreException(Exception):
+  """Evaluation score exeception.
+  """
+  pass

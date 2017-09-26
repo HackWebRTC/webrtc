@@ -149,6 +149,13 @@ class SignalProcessingUtils(object):
         volume=0.0)
 
   @classmethod
+  def AudioSegmentToRawData(cls, signal):
+    samples = signal.get_array_of_samples()
+    if samples.typecode != 'h':
+      raise exceptions.SignalProcessingException('Unsupported samples type')
+    return np.array(signal.get_array_of_samples(), np.int16)
+
+  @classmethod
   def DetectHardClipping(cls, signal, threshold=2):
     """Detects hard clipping.
 
@@ -169,13 +176,7 @@ class SignalProcessingUtils(object):
     if signal.sample_width != 2:  # Note that signal.sample_width is in bytes.
       raise exceptions.SignalProcessingException(
           'hard-clipping detection only supported for 16 bit samples')
-
-    # Get raw samples, check type, cast.
-    samples = signal.get_array_of_samples()
-    if samples.typecode != 'h':
-      raise exceptions.SignalProcessingException(
-          'hard-clipping detection only supported for 16 bit samples')
-    samples = np.array(signal.get_array_of_samples(), np.int16)
+    samples = cls.AudioSegmentToRawData(signal)
 
     # Detect adjacent clipped samples.
     samples_type_info = np.iinfo(samples.dtype)

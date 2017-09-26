@@ -33,6 +33,12 @@ reference one used for evaluation.
  - Go to `out/Default/py_quality_assessment` and check that
    `apm_quality_assessment.py` exists
 
+## Unit tests
+
+ - Compile WebRTC
+ - Go to `out/Default/py_quality_assessment`
+ - Run `python -m unittest -p "*_unittest.py" discover`
+
 ## First time setup
 
  - Deploy PolqaOem64 and set the `POLQA_PATH` environment variable

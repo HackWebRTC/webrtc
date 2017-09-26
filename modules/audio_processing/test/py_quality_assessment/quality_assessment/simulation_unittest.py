@@ -9,6 +9,7 @@
 """Unit tests for the simulation module.
 """
 
+import logging
 import os
 import shutil
 import sys
@@ -33,8 +34,9 @@ class TestApmModuleSimulator(unittest.TestCase):
   """
 
   def setUp(self):
-    """Create temporary folder and fake audio track."""
+    """Create temporary folders and fake audio track."""
     self._output_path = tempfile.mkdtemp()
+    self._tmp_path = tempfile.mkdtemp()
 
     silence = pydub.AudioSegment.silent(duration=1000, frame_rate=48000)
     fake_signal = signal_processing.SignalProcessingUtils.GenerateWhiteNoise(
@@ -46,6 +48,7 @@ class TestApmModuleSimulator(unittest.TestCase):
   def tearDown(self):
     """Recursively delete temporary folders."""
     shutil.rmtree(self._output_path)
+    shutil.rmtree(self._tmp_path)
 
   def testSimulation(self):
     # Instance dependencies to inject and mock.
@@ -87,3 +90,39 @@ class TestApmModuleSimulator(unittest.TestCase):
                             min_number_of_simulations)
     self.assertGreaterEqual(len(evaluator.Run.call_args_list),
                             min_number_of_simulations)
+
+  def testPureToneGenerationWithTotalHarmonicDistorsion(self):
+    logging.warning = mock.MagicMock(name='warning')
+
+    # Instance simulator.
+    simulator = simulation.ApmModuleSimulator(
+        aechen_ir_database_path='',
+        polqa_tool_bin_path=os.path.join(
+            os.path.dirname(__file__), 'fake_polqa'),
+        ap_wrapper=audioproc_wrapper.AudioProcWrapper(),
+        evaluator=evaluation.ApmModuleEvaluator())
+
+    # What to simulate.
+    config_files = ['apm_configs/default.json']
+    input_files = [os.path.join(self._tmp_path, 'pure_tone-440_1000.wav')]
+    eval_scores = ['thd']
+
+    # Should work.
+    simulator.Run(
+        config_filepaths=config_files,
+        capture_input_filepaths=input_files,
+        test_data_generator_names=['identity'],
+        eval_score_names=eval_scores,
+        output_dir=self._output_path)
+    self.assertFalse(logging.warning.called)
+
+    # Warning expected.
+    simulator.Run(
+        config_filepaths=config_files,
+        capture_input_filepaths=input_files,
+        test_data_generator_names=['white_noise'],  # Not allowed with THD.
+        eval_score_names=eval_scores,
+        output_dir=self._output_path)
+    logging.warning.assert_called_with('the evaluation failed: %s', (
+        'The THD score cannot be used with any test data generator other than '
+        '"identity"'))

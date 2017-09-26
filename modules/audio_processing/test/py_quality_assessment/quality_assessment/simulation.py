@@ -17,6 +17,7 @@ from . import echo_path_simulation
 from . import echo_path_simulation_factory
 from . import eval_scores
 from . import eval_scores_factory
+from . import exceptions
 from . import input_mixer
 from . import test_data_generation
 from . import test_data_generation_factory
@@ -248,9 +249,20 @@ class ApmModuleSimulator(object):
         test_data_cache_path=test_data_cache_path,
         base_output_path=output_path)
 
+    # Extract metadata linked to the clean input file (if any).
+    apm_input_metadata = None
+    try:
+      apm_input_metadata = data_access.Metadata.LoadFileMetadata(
+          clean_capture_input_filepath)
+    except IOError as e:
+      apm_input_metadata = {}
+    apm_input_metadata['test_data_gen_name'] = test_data_generators.NAME
+    apm_input_metadata['test_data_gen_config'] = None
+
     # For each test data pair, simulate a call and evaluate.
     for config_name in test_data_generators.config_names:
       logging.info(' - test data generator config: <%s>', config_name)
+      apm_input_metadata['test_data_gen_config'] = config_name
 
       # Paths to the test data generator output.
       # Note that the reference signal does not depend on the render input
@@ -278,23 +290,28 @@ class ApmModuleSimulator(object):
           render_input_filepath=render_input_filepath,
           output_path=evaluation_output_path)
 
-      # Evaluate.
-      self._evaluator.Run(
-          evaluation_score_workers=self._evaluation_score_workers,
-          apm_output_filepath=self._audioproc_wrapper.output_filepath,
-          reference_input_filepath=reference_signal_filepath,
-          output_path=evaluation_output_path)
+      try:
+        # Evaluate.
+        self._evaluator.Run(
+            evaluation_score_workers=self._evaluation_score_workers,
+            apm_input_metadata=apm_input_metadata,
+            apm_output_filepath=self._audioproc_wrapper.output_filepath,
+            reference_input_filepath=reference_signal_filepath,
+            output_path=evaluation_output_path)
 
-      # Save simulation metadata.
-      data_access.Metadata.SaveAudioTestDataPaths(
-          output_path=evaluation_output_path,
-          clean_capture_input_filepath=clean_capture_input_filepath,
-          echo_free_capture_filepath=noisy_capture_input_filepath,
-          echo_filepath=echo_path_filepath,
-          render_filepath=render_input_filepath,
-          capture_filepath=apm_input_filepath,
-          apm_output_filepath=self._audioproc_wrapper.output_filepath,
-          apm_reference_filepath=reference_signal_filepath)
+        # Save simulation metadata.
+        data_access.Metadata.SaveAudioTestDataPaths(
+            output_path=evaluation_output_path,
+            clean_capture_input_filepath=clean_capture_input_filepath,
+            echo_free_capture_filepath=noisy_capture_input_filepath,
+            echo_filepath=echo_path_filepath,
+            render_filepath=render_input_filepath,
+            capture_filepath=apm_input_filepath,
+            apm_output_filepath=self._audioproc_wrapper.output_filepath,
+            apm_reference_filepath=reference_signal_filepath)
+      except exceptions.EvaluationScoreException as e:
+        logging.warning('the evaluation failed: %s', e.message)
+        continue
 
   def _SetTestInputSignalFilePaths(self, capture_input_filepaths,
                                    render_input_filepaths):

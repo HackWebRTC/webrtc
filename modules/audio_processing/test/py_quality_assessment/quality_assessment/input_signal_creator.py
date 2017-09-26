@@ -18,25 +18,35 @@ class InputSignalCreator(object):
   """
 
   @classmethod
-  def Create(cls, name, params):
-    """Creates a input signal.
+  def Create(cls, name, raw_params):
+    """Creates a input signal and its metadata.
 
     Args:
       name: Input signal creator name.
-      params: Tuple of parameters to pass to the specific signal creator.
+      raw_params: Tuple of parameters to pass to the specific signal creator.
 
     Returns:
-      AudioSegment instance.
+      (AudioSegment, dict) tuple.
     """
     try:
+      signal = {}
+      params = {}
+
       if name == 'pure_tone':
-        return cls._CreatePureTone(float(params[0]), int(params[1]))
+        params['frequency'] = float(raw_params[0])
+        params['duration'] = int(raw_params[1])
+        signal = cls._CreatePureTone(params['frequency'], params['duration'])
+      else:
+        raise exceptions.InputSignalCreatorException(
+            'Invalid input signal creator name')
+
+      # Complete metadata.
+      params['signal'] = name
+
+      return signal, params
     except (TypeError, AssertionError) as e:
       raise exceptions.InputSignalCreatorException(
           'Invalid signal creator parameters: {}'.format(e))
-
-    raise exceptions.InputSignalCreatorException(
-        'Invalid input signal creator name')
 
   @classmethod
   def _CreatePureTone(cls, frequency, duration):

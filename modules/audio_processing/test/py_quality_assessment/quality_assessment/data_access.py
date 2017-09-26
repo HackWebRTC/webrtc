@@ -31,7 +31,32 @@ class Metadata(object):
   def __init__(self):
     pass
 
+  _GENERIC_METADATA_SUFFIX = '.mdata'
   _AUDIO_TEST_DATA_FILENAME = 'audio_test_data.json'
+
+  @classmethod
+  def LoadFileMetadata(cls, filepath):
+    """Loads generic metadata linked to a file.
+
+    Args:
+      filepath: path to the metadata file to read.
+
+    Returns:
+      A dict.
+    """
+    with open(filepath + cls._GENERIC_METADATA_SUFFIX) as f:
+      return json.load(f)
+
+  @classmethod
+  def SaveFileMetadata(cls, filepath, metadata):
+    """Saves generic metadata linked to a file.
+
+    Args:
+      filepath: path to the metadata file to write.
+      metadata: a dict.
+    """
+    with open(filepath + cls._GENERIC_METADATA_SUFFIX, 'w') as f:
+      json.dump(metadata, f)
 
   @classmethod
   def LoadAudioTestDataPaths(cls, metadata_path):

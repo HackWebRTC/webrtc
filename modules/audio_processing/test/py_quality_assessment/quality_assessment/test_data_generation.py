@@ -147,11 +147,12 @@ class TestDataGenerator(object):
       raise exceptions.InputSignalCreatorException(
           'Cannot parse input signal file name')
 
-    signal = input_signal_creator.InputSignalCreator.Create(
+    signal, metadata = input_signal_creator.InputSignalCreator.Create(
         filename_parts[0], filename_parts[1].split('_'))
 
     signal_processing.SignalProcessingUtils.SaveWav(
         input_signal_filepath, signal)
+    data_access.Metadata.SaveFileMetadata(input_signal_filepath, metadata)
 
   def _Generate(
       self, input_signal_filepath, test_data_cache_path, base_output_path):
