@@ -15,9 +15,8 @@ import logging
 import os
 import sys
 
-import apm_quality_assessment_collect_data as collect_data
+import quality_assessment.collect_data as collect_data
 import quality_assessment.export as export
-
 
 
 def _BuildOutputFilename(filename_suffix):
