@@ -30,8 +30,7 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
                          bool is_red,
                          const uint8_t* packet,
                          size_t packet_length,
-                         int64_t timestamp,
-                         bool is_first_packet) override;
+                         int64_t timestamp) override;
 
   TelephoneEventHandler* GetTelephoneEventHandler() override { return NULL; }
 

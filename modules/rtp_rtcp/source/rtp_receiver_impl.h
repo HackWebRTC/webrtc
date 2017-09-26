@@ -89,8 +89,6 @@ class RtpReceiverImpl : public RtpReceiver {
   RtpFeedback* cb_rtp_feedback_;
 
   rtc::CriticalSection critical_section_rtp_receiver_;
-  int64_t last_receive_time_;
-  size_t last_received_payload_length_;
 
   // SSRCs.
   uint32_t ssrc_;
@@ -99,7 +97,6 @@ class RtpReceiverImpl : public RtpReceiver {
 
   uint32_t last_received_timestamp_;
   int64_t last_received_frame_time_ms_;
-  uint16_t last_received_sequence_number_;
 
   std::unordered_map<uint32_t, std::list<RtpSource>::iterator>
       iterator_by_csrc_;

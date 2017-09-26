@@ -49,8 +49,7 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
                          bool is_red,
                          const uint8_t* packet,
                          size_t payload_length,
-                         int64_t timestamp_ms,
-                         bool is_first_packet) override;
+                         int64_t timestamp_ms) override;
 
   RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const override;
 

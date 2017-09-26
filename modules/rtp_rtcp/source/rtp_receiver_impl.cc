@@ -65,14 +65,11 @@ RtpReceiverImpl::RtpReceiverImpl(Clock* clock,
       rtp_payload_registry_(rtp_payload_registry),
       rtp_media_receiver_(rtp_media_receiver),
       cb_rtp_feedback_(incoming_messages_callback),
-      last_receive_time_(0),
-      last_received_payload_length_(0),
       ssrc_(0),
       num_csrcs_(0),
       current_remote_csrc_(),
       last_received_timestamp_(0),
-      last_received_frame_time_ms_(-1),
-      last_received_sequence_number_(0) {
+      last_received_frame_time_ms_(-1) {
   assert(incoming_messages_callback);
 
   memset(current_remote_csrc_, 0, sizeof(current_remote_csrc_));
@@ -169,23 +166,9 @@ bool RtpReceiverImpl::IncomingRtpPacket(
           : rtc::Optional<uint8_t>();
   UpdateSources(audio_level);
 
-  size_t payload_data_length = payload_length - rtp_header.paddingLength;
-
-  bool is_first_packet_in_frame = false;
-  {
-    rtc::CritScope lock(&critical_section_rtp_receiver_);
-    if (HaveReceivedFrame()) {
-      is_first_packet_in_frame =
-          last_received_sequence_number_ + 1 == rtp_header.sequenceNumber &&
-          last_received_timestamp_ != rtp_header.timestamp;
-    } else {
-      is_first_packet_in_frame = true;
-    }
-  }
-
   int32_t ret_val = rtp_media_receiver_->ParseRtpPacket(
       &webrtc_rtp_header, payload_specific, is_red, payload, payload_length,
-      clock_->TimeInMilliseconds(), is_first_packet_in_frame);
+      clock_->TimeInMilliseconds());
 
   if (ret_val < 0) {
     return false;
@@ -194,15 +177,11 @@ bool RtpReceiverImpl::IncomingRtpPacket(
   {
     rtc::CritScope lock(&critical_section_rtp_receiver_);
 
-    last_receive_time_ = clock_->TimeInMilliseconds();
-    last_received_payload_length_ = payload_data_length;
-
     if (in_order) {
       if (last_received_timestamp_ != rtp_header.timestamp) {
         last_received_timestamp_ = rtp_header.timestamp;
         last_received_frame_time_ms_ = clock_->TimeInMilliseconds();
       }
-      last_received_sequence_number_ = rtp_header.sequenceNumber;
     }
   }
   return true;
@@ -285,7 +264,6 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
       new_ssrc = true;
 
       last_received_timestamp_ = 0;
-      last_received_sequence_number_ = 0;
       last_received_frame_time_ms_ = -1;
 
       // Do we have a SSRC? Then the stream is restarted.

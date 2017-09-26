@@ -36,15 +36,13 @@ class RTPReceiverStrategy {
   // Implementations are encouraged to use the provided packet buffer and RTP
   // header as arguments to the callback; implementations are also allowed to
   // make changes in the data as necessary. The specific_payload argument
-  // provides audio or video-specific data. The is_first_packet argument is true
-  // if this packet is either the first packet ever or the first in its frame.
+  // provides audio or video-specific data.
   virtual int32_t ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                  const PayloadUnion& specific_payload,
                                  bool is_red,
                                  const uint8_t* payload,
                                  size_t payload_length,
-                                 int64_t timestamp_ms,
-                                 bool is_first_packet) = 0;
+                                 int64_t timestamp_ms) = 0;
 
   virtual TelephoneEventHandler* GetTelephoneEventHandler() = 0;
 

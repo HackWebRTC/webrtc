@@ -54,8 +54,7 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                          bool is_red,
                                          const uint8_t* payload,
                                          size_t payload_length,
-                                         int64_t timestamp_ms,
-                                         bool is_first_packet) {
+                                         int64_t timestamp_ms) {
   TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "Video::ParseRtp",
                "seqnum", rtp_header->header.sequenceNumber, "timestamp",
                rtp_header->header.timestamp);
@@ -82,7 +81,6 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
     return -1;
   }
 
-  rtp_header->type.Video.is_first_packet_in_frame = is_first_packet;
   RtpDepacketizer::ParsedPayload parsed_payload;
   if (!depacketizer->Parse(&parsed_payload, payload, payload_data_length))
     return -1;
