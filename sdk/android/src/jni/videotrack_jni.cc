@@ -11,6 +11,7 @@
 #include <jni.h>
 
 #include "api/mediastreaminterface.h"
+#include "jni/VideoSink_jni.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/jni_helpers.h"
@@ -29,24 +30,18 @@ class VideoSinkWrapper : public rtc::VideoSinkInterface<VideoFrame> {
  private:
   void OnFrame(const VideoFrame& frame) override;
 
-  jmethodID j_on_frame_method_;
-
   const JavaVideoFrameFactory java_video_frame_factory_;
   const ScopedGlobalRef<jobject> j_sink_;
 };
 
 VideoSinkWrapper::VideoSinkWrapper(JNIEnv* jni, jobject j_sink)
-    : java_video_frame_factory_(jni), j_sink_(jni, j_sink) {
-  jclass j_video_sink_class = FindClass(jni, "org/webrtc/VideoSink");
-  j_on_frame_method_ = jni->GetMethodID(j_video_sink_class, "onFrame",
-                                        "(Lorg/webrtc/VideoFrame;)V");
-}
+    : java_video_frame_factory_(jni), j_sink_(jni, j_sink) {}
 
 void VideoSinkWrapper::OnFrame(const VideoFrame& frame) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
-  jni->CallVoidMethod(*j_sink_, j_on_frame_method_,
-                      java_video_frame_factory_.ToJavaFrame(jni, frame));
+  Java_VideoSink_onFrame(jni, *j_sink_,
+                         java_video_frame_factory_.ToJavaFrame(jni, frame));
 }
 
 }  // namespace

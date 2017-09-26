@@ -9,6 +9,7 @@ include_rules = [
   "+modules/include",
   "+modules/utility/include/jvm_android.h",
   "+modules/video_coding",
+  "+jni", # folder for generated JNI headers
   "+pc",
   "+system_wrappers/include",
   "+voice_engine/include/voe_base.h",
