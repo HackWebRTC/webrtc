@@ -154,6 +154,9 @@ class SendSideCongestionController : public CallStatsObserver,
 
   rtc::RaceChecker worker_race_;
 
+  bool pacer_pushback_experiment_ = false;
+  float encoding_rate_ = 1.0;
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendSideCongestionController);
 };
 

@@ -8,22 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/congestion_controller/congestion_controller_unittests_helper.h"
 #include "modules/congestion_controller/include/mock/mock_congestion_observer.h"
+#include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "modules/pacing/mock/mock_paced_sender.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/socket.h"
 #include "system_wrappers/include/clock.h"
+#include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
 using testing::_;
 using testing::AtLeast;
+using testing::Ge;
 using testing::NiceMock;
 using testing::Return;
 using testing::SaveArg;
@@ -455,5 +457,44 @@ TEST_F(SendSideCongestionControllerTest, UpdatesDelayBasedEstimate) {
   PacketTransmissionAndFeedbackBlock(&seq_num, kRunTimeMs, 50);
   EXPECT_LT(*target_bitrate_bps_, bitrate_before_delay);
 }
+
+TEST_F(SendSideCongestionControllerTest, PacerQueueEncodeRatePushback) {
+  ScopedFieldTrials pushback_field_trial(
+      "WebRTC-PacerPushbackExperiment/Enabled/");
+  SetUp();
+
+  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs()).WillOnce(Return(0));
+  controller_->Process();
+
+  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs()).WillOnce(Return(100));
+  EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps * 0.9, _, _, _));
+  controller_->Process();
+
+  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs()).WillOnce(Return(50));
+  controller_->Process();
+
+  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs()).WillOnce(Return(0));
+  EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps, _, _, _));
+  controller_->Process();
+
+  const uint32_t kMinAdjustedBps = 50000;
+  int expected_queue_threshold =
+      1000 - kMinAdjustedBps * 1000.0 / kInitialBitrateBps;
+
+  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs())
+      .WillOnce(Return(expected_queue_threshold));
+  EXPECT_CALL(observer_, OnNetworkChanged(Ge(kMinAdjustedBps), _, _, _));
+  controller_->Process();
+
+  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs())
+      .WillOnce(Return(expected_queue_threshold + 1));
+  EXPECT_CALL(observer_, OnNetworkChanged(0, _, _, _));
+  controller_->Process();
+
+  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs()).WillOnce(Return(0));
+  EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps, _, _, _));
+  controller_->Process();
+}
+
 }  // namespace test
 }  // namespace webrtc

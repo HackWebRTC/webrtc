@@ -32,6 +32,7 @@ namespace webrtc {
 namespace {
 
 const char kCwndExperiment[] = "WebRTC-CwndExperiment";
+const char kPacerPushbackExperiment[] = "WebRTC-PacerPushbackExperiment";
 const int64_t kDefaultAcceptedQueueMs = 250;
 
 bool CwndExperimentEnabled() {
@@ -122,7 +123,9 @@ SendSideCongestionController::SendSideCongestionController(
       delay_based_bwe_(new DelayBasedBwe(event_log_, clock_)),
       in_cwnd_experiment_(CwndExperimentEnabled()),
       accepted_queue_ms_(kDefaultAcceptedQueueMs),
-      was_in_alr_(0) {
+      was_in_alr_(false),
+      pacer_pushback_experiment_(
+          webrtc::field_trial::IsEnabled(kPacerPushbackExperiment)) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
@@ -159,7 +162,9 @@ SendSideCongestionController::SendSideCongestionController(
       delay_based_bwe_(new DelayBasedBwe(event_log_, clock_)),
       in_cwnd_experiment_(CwndExperimentEnabled()),
       accepted_queue_ms_(kDefaultAcceptedQueueMs),
-      was_in_alr_(0) {
+      was_in_alr_(false),
+      pacer_pushback_experiment_(
+          webrtc::field_trial::IsEnabled(kPacerPushbackExperiment)) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
@@ -416,7 +421,26 @@ void SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
     retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
   }
 
-  bitrate_bps = IsNetworkDown() || IsSendQueueFull() ? 0 : bitrate_bps;
+  if (!pacer_pushback_experiment_) {
+    bitrate_bps = IsNetworkDown() || IsSendQueueFull() ? 0 : bitrate_bps;
+  } else {
+    if (IsNetworkDown()) {
+      bitrate_bps = 0;
+    } else {
+      int64_t queue_length_ms = pacer_->ExpectedQueueTimeMs();
+
+      if (queue_length_ms == 0) {
+        encoding_rate_ = 1.0;
+      } else if (queue_length_ms > 50) {
+        float encoding_rate = 1.0 - queue_length_ms / 1000.0;
+        encoding_rate_ = std::min(encoding_rate_, encoding_rate);
+        encoding_rate_ = std::max(encoding_rate_, 0.0f);
+      }
+
+      bitrate_bps *= encoding_rate_;
+      bitrate_bps = bitrate_bps < 50000 ? 0 : bitrate_bps;
+    }
+  }
 
   if (HasNetworkParametersToReportChanged(bitrate_bps, fraction_loss, rtt)) {
     int64_t probing_interval_ms;
