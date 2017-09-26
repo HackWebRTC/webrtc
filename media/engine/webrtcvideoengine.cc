@@ -2228,6 +2228,7 @@ CricketDecoderFactoryAdapter::CreateVideoDecoder(
 void WebRtcVideoChannel::WebRtcVideoReceiveStream::ConfigureCodecs(
     const std::vector<VideoCodecSettings>& recv_codecs,
     DecoderMap* old_decoders) {
+  RTC_DCHECK(!recv_codecs.empty());
   *old_decoders = std::move(allocated_decoders_);
   config_.decoders.clear();
   config_.rtp.rtx_associated_payload_types.clear();
@@ -2263,14 +2264,15 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::ConfigureCodecs(
     RTC_CHECK(did_insert);
   }
 
-  config_.rtp.ulpfec = recv_codecs.front().ulpfec;
+  const auto& codec = recv_codecs.front();
+  config_.rtp.ulpfec_payload_type = codec.ulpfec.ulpfec_payload_type;
+  config_.rtp.red_payload_type = codec.ulpfec.red_payload_type;
 
-  config_.rtp.nack.rtp_history_ms =
-      HasNack(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
-  if (config_.rtp.ulpfec.red_rtx_payload_type != -1) {
+  config_.rtp.nack.rtp_history_ms = HasNack(codec.codec) ? kNackHistoryMs : 0;
+  if (codec.ulpfec.red_rtx_payload_type != -1) {
     config_.rtp
-        .rtx_associated_payload_types[config_.rtp.ulpfec.red_rtx_payload_type] =
-        config_.rtp.ulpfec.red_payload_type;
+        .rtx_associated_payload_types[codec.ulpfec.red_rtx_payload_type] =
+        codec.ulpfec.red_payload_type;
   }
 }
 

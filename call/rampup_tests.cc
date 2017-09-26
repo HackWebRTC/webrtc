@@ -202,9 +202,9 @@ void RampUpTester::ModifyVideoConfigs(
     recv_config.rtp.nack.rtp_history_ms = send_config->rtp.nack.rtp_history_ms;
 
     if (red_) {
-      recv_config.rtp.ulpfec.red_payload_type =
+      recv_config.rtp.red_payload_type =
           send_config->rtp.ulpfec.red_payload_type;
-      recv_config.rtp.ulpfec.ulpfec_payload_type =
+      recv_config.rtp.ulpfec_payload_type =
           send_config->rtp.ulpfec.ulpfec_payload_type;
       if (rtx_) {
         recv_config.rtp.rtx_associated_payload_types

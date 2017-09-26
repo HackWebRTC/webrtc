@@ -1552,26 +1552,20 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     if (decode_all_receive_streams) {
       for (auto it = video_receive_configs_.begin();
            it != video_receive_configs_.end(); ++it) {
-        it->rtp.ulpfec.red_payload_type =
+        it->rtp.red_payload_type =
             video_send_config_.rtp.ulpfec.red_payload_type;
-        it->rtp.ulpfec.ulpfec_payload_type =
+        it->rtp.ulpfec_payload_type =
             video_send_config_.rtp.ulpfec.ulpfec_payload_type;
-        it->rtp.ulpfec.red_rtx_payload_type =
-            video_send_config_.rtp.ulpfec.red_rtx_payload_type;
         it->rtp.rtx_associated_payload_types[video_send_config_.rtp.ulpfec
                                                  .red_rtx_payload_type] =
             video_send_config_.rtp.ulpfec.red_payload_type;
       }
     } else {
-      video_receive_configs_[params_.ss.selected_stream]
-          .rtp.ulpfec.red_payload_type =
+      video_receive_configs_[params_.ss.selected_stream].rtp.red_payload_type =
           video_send_config_.rtp.ulpfec.red_payload_type;
       video_receive_configs_[params_.ss.selected_stream]
-          .rtp.ulpfec.ulpfec_payload_type =
+          .rtp.ulpfec_payload_type =
           video_send_config_.rtp.ulpfec.ulpfec_payload_type;
-      video_receive_configs_[params_.ss.selected_stream]
-          .rtp.ulpfec.red_rtx_payload_type =
-          video_send_config_.rtp.ulpfec.red_rtx_payload_type;
       video_receive_configs_[params_.ss.selected_stream]
           .rtp.rtx_associated_payload_types[video_send_config_.rtp.ulpfec
                                                 .red_rtx_payload_type] =

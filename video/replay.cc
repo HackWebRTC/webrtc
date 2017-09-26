@@ -215,8 +215,8 @@ void RtpReplay() {
   receive_config.rtp.rtx_ssrc = flags::SsrcRtx();
   receive_config.rtp.rtx_associated_payload_types[flags::PayloadTypeRtx()] =
       flags::PayloadType();
-  receive_config.rtp.ulpfec.ulpfec_payload_type = flags::FecPayloadType();
-  receive_config.rtp.ulpfec.red_payload_type = flags::RedPayloadType();
+  receive_config.rtp.ulpfec_payload_type = flags::FecPayloadType();
+  receive_config.rtp.red_payload_type = flags::RedPayloadType();
   receive_config.rtp.nack.rtp_history_ms = 1000;
   if (flags::TransmissionOffsetId() != -1) {
     receive_config.rtp.extensions.push_back(RtpExtension(

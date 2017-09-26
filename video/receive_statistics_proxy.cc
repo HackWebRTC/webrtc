@@ -366,7 +366,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                                  static_cast<int>(rtx.transmitted.TotalBytes() *
                                                   8 / elapsed_sec / 1000));
     }
-    if (config_.rtp.ulpfec.ulpfec_payload_type != -1) {
+    if (config_.rtp.ulpfec_payload_type != -1) {
       RTC_HISTOGRAM_COUNTS_10000(
           "WebRTC.Video.FecBitrateReceivedInKbps",
           static_cast<int>(rtp_rtx.fec.TotalBytes() * 8 / elapsed_sec / 1000));

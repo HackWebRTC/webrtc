@@ -520,9 +520,9 @@ class UlpfecObserver : public test::EndToEndTest {
       send_config->rtp.extensions.push_back(RtpExtension(
           RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
     }
-    (*receive_configs)[0].rtp.ulpfec.red_payload_type =
+    (*receive_configs)[0].rtp.red_payload_type =
         send_config->rtp.ulpfec.red_payload_type;
-    (*receive_configs)[0].rtp.ulpfec.ulpfec_payload_type =
+    (*receive_configs)[0].rtp.ulpfec_payload_type =
         send_config->rtp.ulpfec.ulpfec_payload_type;
   }
 

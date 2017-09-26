@@ -148,7 +148,7 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     VideoCodec ulpfec_codec = {};
     ulpfec_codec.codecType = kVideoCodecULPFEC;
     strncpy(ulpfec_codec.plName, "ulpfec", sizeof(ulpfec_codec.plName));
-    ulpfec_codec.plType = config_.rtp.ulpfec.ulpfec_payload_type;
+    ulpfec_codec.plType = config_.rtp.ulpfec_payload_type;
     RTC_CHECK(AddReceiveCodec(ulpfec_codec));
   }
 
@@ -156,7 +156,7 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     VideoCodec red_codec = {};
     red_codec.codecType = kVideoCodecRED;
     strncpy(red_codec.plName, "red", sizeof(red_codec.plName));
-    red_codec.plType = config_.rtp.ulpfec.red_payload_type;
+    red_codec.plType = config_.rtp.red_payload_type;
     RTC_CHECK(AddReceiveCodec(red_codec));
   }
 
@@ -362,11 +362,11 @@ int32_t RtpVideoStreamReceiver::RequestKeyFrame() {
 }
 
 bool RtpVideoStreamReceiver::IsUlpfecEnabled() const {
-  return config_.rtp.ulpfec.ulpfec_payload_type != -1;
+  return config_.rtp.ulpfec_payload_type != -1;
 }
 
 bool RtpVideoStreamReceiver::IsRedEnabled() const {
-  return config_.rtp.ulpfec.red_payload_type != -1;
+  return config_.rtp.red_payload_type != -1;
 }
 
 bool RtpVideoStreamReceiver::IsRetransmissionsEnabled() const {
