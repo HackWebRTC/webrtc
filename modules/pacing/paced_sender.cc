@@ -37,201 +37,7 @@ const int64_t kMaxIntervalTimeMs = 30;
 
 }  // namespace
 
-// TODO(sprang): Move at least PacketQueue out to separate files, so that we can
-// more easily test them.
-
 namespace webrtc {
-namespace paced_sender {
-struct Packet {
-  Packet(RtpPacketSender::Priority priority,
-         uint32_t ssrc,
-         uint16_t seq_number,
-         int64_t capture_time_ms,
-         int64_t enqueue_time_ms,
-         size_t length_in_bytes,
-         bool retransmission,
-         uint64_t enqueue_order)
-      : priority(priority),
-        ssrc(ssrc),
-        sequence_number(seq_number),
-        capture_time_ms(capture_time_ms),
-        enqueue_time_ms(enqueue_time_ms),
-        sum_paused_ms(0),
-        bytes(length_in_bytes),
-        retransmission(retransmission),
-        enqueue_order(enqueue_order) {}
-
-  RtpPacketSender::Priority priority;
-  uint32_t ssrc;
-  uint16_t sequence_number;
-  int64_t capture_time_ms;  // Absolute time of frame capture.
-  int64_t enqueue_time_ms;  // Absolute time of pacer queue entry.
-  int64_t sum_paused_ms;    // Sum of time spent in queue while pacer is paused.
-  size_t bytes;
-  bool retransmission;
-  uint64_t enqueue_order;
-  std::list<Packet>::iterator this_it;
-};
-
-// Used by priority queue to sort packets.
-struct Comparator {
-  bool operator()(const Packet* first, const Packet* second) {
-    // Highest prio = 0.
-    if (first->priority != second->priority)
-      return first->priority > second->priority;
-
-    // Retransmissions go first.
-    if (second->retransmission != first->retransmission)
-      return second->retransmission;
-
-    // Older frames have higher prio.
-    if (first->capture_time_ms != second->capture_time_ms)
-      return first->capture_time_ms > second->capture_time_ms;
-
-    return first->enqueue_order > second->enqueue_order;
-  }
-};
-
-// Class encapsulating a priority queue with some extensions.
-class PacketQueue {
- public:
-  explicit PacketQueue(const Clock* clock)
-      : bytes_(0),
-        clock_(clock),
-        queue_time_sum_(0),
-        time_last_updated_(clock_->TimeInMilliseconds()),
-        paused_(false) {}
-  virtual ~PacketQueue() {}
-
-  void Push(const Packet& packet) {
-    if (!AddToDupeSet(packet))
-      return;
-
-    UpdateQueueTime(packet.enqueue_time_ms);
-
-    // Store packet in list, use pointers in priority queue for cheaper moves.
-    // Packets have a handle to its own iterator in the list, for easy removal
-    // when popping from queue.
-    packet_list_.push_front(packet);
-    std::list<Packet>::iterator it = packet_list_.begin();
-    it->this_it = it;          // Handle for direct removal from list.
-    prio_queue_.push(&(*it));  // Pointer into list.
-    bytes_ += packet.bytes;
-  }
-
-  const Packet& BeginPop() {
-    const Packet& packet = *prio_queue_.top();
-    prio_queue_.pop();
-    return packet;
-  }
-
-  void CancelPop(const Packet& packet) { prio_queue_.push(&(*packet.this_it)); }
-
-  void FinalizePop(const Packet& packet) {
-    RemoveFromDupeSet(packet);
-    bytes_ -= packet.bytes;
-    int64_t packet_queue_time_ms = time_last_updated_ - packet.enqueue_time_ms;
-    RTC_DCHECK_LE(packet.sum_paused_ms, packet_queue_time_ms);
-    packet_queue_time_ms -= packet.sum_paused_ms;
-    RTC_DCHECK_LE(packet_queue_time_ms, queue_time_sum_);
-    queue_time_sum_ -= packet_queue_time_ms;
-    packet_list_.erase(packet.this_it);
-    RTC_DCHECK_EQ(packet_list_.size(), prio_queue_.size());
-    if (packet_list_.empty())
-      RTC_DCHECK_EQ(0, queue_time_sum_);
-  }
-
-  bool Empty() const { return prio_queue_.empty(); }
-
-  size_t SizeInPackets() const { return prio_queue_.size(); }
-
-  uint64_t SizeInBytes() const { return bytes_; }
-
-  int64_t OldestEnqueueTimeMs() const {
-    auto it = packet_list_.rbegin();
-    if (it == packet_list_.rend())
-      return 0;
-    return it->enqueue_time_ms;
-  }
-
-  void UpdateQueueTime(int64_t timestamp_ms) {
-    RTC_DCHECK_GE(timestamp_ms, time_last_updated_);
-    if (timestamp_ms == time_last_updated_)
-      return;
-
-    int64_t delta_ms = timestamp_ms - time_last_updated_;
-
-    if (paused_) {
-      // Increase per-packet accumulators of time spent in queue while paused,
-      // so that we can disregard that when subtracting main accumulator when
-      // popping packet from the queue.
-      for (auto& it : packet_list_) {
-        it.sum_paused_ms += delta_ms;
-      }
-    } else {
-      // Use packet packet_list_.size() not prio_queue_.size() here, as there
-      // might be an outstanding element popped from prio_queue_ currently in
-      // the SendPacket() call, while packet_list_ will always be correct.
-      queue_time_sum_ += delta_ms * packet_list_.size();
-    }
-    time_last_updated_ = timestamp_ms;
-  }
-
-  void SetPauseState(bool paused, int64_t timestamp_ms) {
-    if (paused_ == paused)
-      return;
-    UpdateQueueTime(timestamp_ms);
-    paused_ = paused;
-  }
-
-  int64_t AverageQueueTimeMs() const {
-    if (prio_queue_.empty())
-      return 0;
-    return queue_time_sum_ / packet_list_.size();
-  }
-
- private:
-  // Try to add a packet to the set of ssrc/seqno identifiers currently in the
-  // queue. Return true if inserted, false if this is a duplicate.
-  bool AddToDupeSet(const Packet& packet) {
-    SsrcSeqNoMap::iterator it = dupe_map_.find(packet.ssrc);
-    if (it == dupe_map_.end()) {
-      // First for this ssrc, just insert.
-      dupe_map_[packet.ssrc].insert(packet.sequence_number);
-      return true;
-    }
-
-    // Insert returns a pair, where second is a bool set to true if new element.
-    return it->second.insert(packet.sequence_number).second;
-  }
-
-  void RemoveFromDupeSet(const Packet& packet) {
-    SsrcSeqNoMap::iterator it = dupe_map_.find(packet.ssrc);
-    RTC_DCHECK(it != dupe_map_.end());
-    it->second.erase(packet.sequence_number);
-    if (it->second.empty()) {
-      dupe_map_.erase(it);
-    }
-  }
-
-  // List of packets, in the order the were enqueued. Since dequeueing may
-  // occur out of order, use list instead of vector.
-  std::list<Packet> packet_list_;
-  // Priority queue of the packets, sorted according to Comparator.
-  // Use pointers into list, to avoid moving whole struct within heap.
-  std::priority_queue<Packet*, std::vector<Packet*>, Comparator> prio_queue_;
-  // Total number of bytes in the queue.
-  uint64_t bytes_;
-  // Map<ssrc, std::set<seq_no> >, for checking duplicates.
-  typedef std::map<uint32_t, std::set<uint16_t> > SsrcSeqNoMap;
-  SsrcSeqNoMap dupe_map_;
-  const Clock* const clock_;
-  int64_t queue_time_sum_;
-  int64_t time_last_updated_;
-  bool paused_;
-};
-
-}  // namespace paced_sender
 
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
@@ -253,7 +59,7 @@ PacedSender::PacedSender(const Clock* clock,
       pacing_bitrate_kbps_(0),
       time_last_update_us_(clock->TimeInMicroseconds()),
       first_sent_packet_ms_(-1),
-      packets_(new paced_sender::PacketQueue(clock)),
+      packets_(new PacketQueue(clock)),
       packet_counter_(0),
       pacing_factor_(kDefaultPaceMultiplier),
       queue_time_limit(kMaxQueueLengthMs) {
@@ -342,9 +148,9 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
   if (capture_time_ms < 0)
     capture_time_ms = now_ms;
 
-  packets_->Push(paced_sender::Packet(priority, ssrc, sequence_number,
-                                      capture_time_ms, now_ms, bytes,
-                                      retransmission, packet_counter_++));
+  packets_->Push(PacketQueue::Packet(priority, ssrc, sequence_number,
+                                     capture_time_ms, now_ms, bytes,
+                                     retransmission, packet_counter_++));
 }
 
 int64_t PacedSender::ExpectedQueueTimeMs() const {
@@ -455,7 +261,7 @@ void PacedSender::Process() {
     // Since we need to release the lock in order to send, we first pop the
     // element from the priority queue but keep it in storage, so that we can
     // reinsert it if send fails.
-    const paced_sender::Packet& packet = packets_->BeginPop();
+    const PacketQueue::Packet& packet = packets_->BeginPop();
 
     if (SendPacket(packet, pacing_info)) {
       // Send succeeded, remove it from the queue.
@@ -496,7 +302,7 @@ void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
   process_thread_ = process_thread;
 }
 
-bool PacedSender::SendPacket(const paced_sender::Packet& packet,
+bool PacedSender::SendPacket(const PacketQueue::Packet& packet,
                              const PacedPacketInfo& pacing_info) {
   RTC_DCHECK(!paused_);
   if (media_budget_->bytes_remaining() == 0 &&

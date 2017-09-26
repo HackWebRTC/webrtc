@@ -19,6 +19,8 @@ rtc_static_library("pacing") {
     "paced_sender.cc",
     "paced_sender.h",
     "pacer.h",
+    "packet_queue.cc",
+    "packet_queue.h",
     "packet_router.cc",
     "packet_router.h",
   ]

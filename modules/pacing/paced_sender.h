@@ -11,12 +11,11 @@
 #ifndef MODULES_PACING_PACED_SENDER_H_
 #define MODULES_PACING_PACED_SENDER_H_
 
-#include <list>
 #include <memory>
-#include <set>
 
 #include "api/optional.h"
 #include "modules/pacing/pacer.h"
+#include "modules/pacing/packet_queue.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
 #include "typedefs.h"  // NOLINT(build/include)
@@ -28,12 +27,6 @@ class Clock;
 class ProbeClusterCreatedObserver;
 class RtcEventLog;
 class IntervalBudget;
-
-namespace paced_sender {
-class IntervalBudget;
-struct Packet;
-class PacketQueue;
-}  // namespace paced_sender
 
 class PacedSender : public Pacer {
  public:
@@ -159,7 +152,7 @@ class PacedSender : public Pacer {
   void UpdateBudgetWithBytesSent(size_t bytes)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  bool SendPacket(const paced_sender::Packet& packet,
+  bool SendPacket(const PacketQueue::Packet& packet,
                   const PacedPacketInfo& cluster_info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   size_t SendPadding(size_t padding_needed, const PacedPacketInfo& cluster_info)
@@ -191,7 +184,7 @@ class PacedSender : public Pacer {
   int64_t time_last_update_us_ RTC_GUARDED_BY(critsect_);
   int64_t first_sent_packet_ms_ RTC_GUARDED_BY(critsect_);
 
-  std::unique_ptr<paced_sender::PacketQueue> packets_ RTC_GUARDED_BY(critsect_);
+  std::unique_ptr<PacketQueue> packets_ RTC_GUARDED_BY(critsect_);
   uint64_t packet_counter_;
   ProcessThread* process_thread_ = nullptr;
 
