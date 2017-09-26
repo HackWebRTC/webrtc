@@ -48,18 +48,6 @@ namespace voe {
 class TransmitMixer;
 }  // namespace voe
 
-// VoiceEngineObserver
-class WEBRTC_DLLEXPORT VoiceEngineObserver {
- public:
-  // This method will be called after the occurrence of any runtime error
-  // code, or warning notification, when the observer interface has been
-  // installed using VoEBase::RegisterVoiceEngineObserver().
-  virtual void CallbackOnError(int channel, int errCode) = 0;
-
- protected:
-  virtual ~VoiceEngineObserver() {}
-};
-
 // VoiceEngine
 class WEBRTC_DLLEXPORT VoiceEngine {
  public:
@@ -95,14 +83,6 @@ class WEBRTC_DLLEXPORT VoEBase {
   // counter. Returns the new reference count. This value should be zero
   // for all sub-APIs before the VoiceEngine object can be safely deleted.
   virtual int Release() = 0;
-
-  // Installs the observer class to enable runtime error control and
-  // warning notifications. Returns -1 in case of an error, 0 otherwise.
-  virtual int RegisterVoiceEngineObserver(VoiceEngineObserver& observer) = 0;
-
-  // Removes and disables the observer class for runtime error control
-  // and warning notifications. Returns 0.
-  virtual int DeRegisterVoiceEngineObserver() = 0;
 
   // Initializes all common parts of the VoiceEngine; e.g. all
   // encoders/decoders, the sound card and core receiving components.

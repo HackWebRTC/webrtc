@@ -25,9 +25,6 @@ class VoEBaseImpl : public VoEBase,
                     public AudioTransport,
                     public AudioDeviceObserver {
  public:
-  int RegisterVoiceEngineObserver(VoiceEngineObserver& observer) override;
-  int DeRegisterVoiceEngineObserver() override;
-
   int Init(
       AudioDeviceModule* external_adm,
       AudioProcessing* audio_processing,
@@ -107,7 +104,6 @@ class VoEBaseImpl : public VoEBase,
   // Initialize channel by setting Engine Information then initializing
   // channel.
   int InitializeChannel(voe::ChannelOwner* channel_owner);
-  VoiceEngineObserver* voiceEngineObserverPtr_;
   rtc::CriticalSection callbackCritSect_;
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 

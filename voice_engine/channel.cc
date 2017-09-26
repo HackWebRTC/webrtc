@@ -773,7 +773,6 @@ Channel::Channel(int32_t channelId,
       _engineStatisticsPtr(NULL),
       _moduleProcessThreadPtr(NULL),
       _audioDeviceModulePtr(NULL),
-      _voiceEngineObserverPtr(NULL),
       _callbackCritSectPtr(NULL),
       _transportPtr(NULL),
       input_mute_(false),
@@ -949,7 +948,6 @@ void Channel::Terminate() {
 int32_t Channel::SetEngineInformation(Statistics& engineStatistics,
                                       ProcessThread& moduleProcessThread,
                                       AudioDeviceModule& audioDeviceModule,
-                                      VoiceEngineObserver* voiceEngineObserver,
                                       rtc::CriticalSection* callbackCritSect,
                                       rtc::TaskQueue* encoder_queue) {
   RTC_DCHECK(encoder_queue);
@@ -959,7 +957,6 @@ int32_t Channel::SetEngineInformation(Statistics& engineStatistics,
   _engineStatisticsPtr = &engineStatistics;
   _moduleProcessThreadPtr = &moduleProcessThread;
   _audioDeviceModulePtr = &audioDeviceModule;
-  _voiceEngineObserverPtr = voiceEngineObserver;
   _callbackCritSectPtr = callbackCritSect;
   encoder_queue_ = encoder_queue;
   return 0;
@@ -1122,36 +1119,6 @@ bool Channel::SetEncoder(int payload_type,
 void Channel::ModifyEncoder(
     rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
   audio_coding_->ModifyEncoder(modifier);
-}
-
-int32_t Channel::RegisterVoiceEngineObserver(VoiceEngineObserver& observer) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::RegisterVoiceEngineObserver()");
-  rtc::CritScope cs(&_callbackCritSect);
-
-  if (_voiceEngineObserverPtr) {
-    _engineStatisticsPtr->SetLastError(
-        VE_INVALID_OPERATION, kTraceError,
-        "RegisterVoiceEngineObserver() observer already enabled");
-    return -1;
-  }
-  _voiceEngineObserverPtr = &observer;
-  return 0;
-}
-
-int32_t Channel::DeRegisterVoiceEngineObserver() {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::DeRegisterVoiceEngineObserver()");
-  rtc::CritScope cs(&_callbackCritSect);
-
-  if (!_voiceEngineObserverPtr) {
-    _engineStatisticsPtr->SetLastError(
-        VE_INVALID_OPERATION, kTraceWarning,
-        "DeRegisterVoiceEngineObserver() observer already disabled");
-    return 0;
-  }
-  _voiceEngineObserverPtr = NULL;
-  return 0;
 }
 
 int32_t Channel::GetSendCodec(CodecInst& codec) {

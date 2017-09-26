@@ -18,7 +18,6 @@ rtc_static_library("voice_engine") {
     "channel_proxy.h",
     "include/voe_base.h",
     "include/voe_errors.h",
-    "monitor_module.h",
     "shared_data.cc",
     "shared_data.h",
     "statistics.cc",

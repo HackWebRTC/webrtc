@@ -94,8 +94,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   }
 
   // VoEBase
-  MOCK_METHOD1(RegisterVoiceEngineObserver, int(VoiceEngineObserver& observer));
-  MOCK_METHOD0(DeRegisterVoiceEngineObserver, int());
   MOCK_METHOD3(
       Init,
       int(AudioDeviceModule* external_adm,

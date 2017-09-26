@@ -14,7 +14,7 @@
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "voice_engine/include/voe_errors.h"
+#include "voice_engine/transmit_mixer.h"
 
 namespace webrtc {
 namespace internal {
@@ -28,9 +28,6 @@ AudioState::AudioState(const AudioState::Config& config)
   process_thread_checker_.DetachFromThread();
   RTC_DCHECK(config_.audio_mixer);
 
-  // Only one AudioState should be created per VoiceEngine.
-  RTC_CHECK(voe_base_->RegisterVoiceEngineObserver(*this) != -1);
-
   auto* const device = voe_base_->audio_device_module();
   RTC_DCHECK(device);
 
@@ -41,7 +38,6 @@ AudioState::AudioState(const AudioState::Config& config)
 
 AudioState::~AudioState() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  voe_base_->DeRegisterVoiceEngineObserver();
 }
 
 VoiceEngine* AudioState::voice_engine() {
@@ -56,8 +52,11 @@ rtc::scoped_refptr<AudioMixer> AudioState::mixer() {
 
 bool AudioState::typing_noise_detected() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  rtc::CritScope lock(&crit_sect_);
-  return typing_noise_detected_;
+  // TODO(solenberg): Remove const_cast once AudioState owns transmit mixer
+  //                  functionality.
+  voe::TransmitMixer* transmit_mixer =
+      const_cast<AudioState*>(this)->voe_base_->transmit_mixer();
+  return transmit_mixer->typing_noise_detected();
 }
 
 // Reference count; implementation copied from rtc::RefCountedObject.
@@ -72,22 +71,6 @@ int AudioState::Release() const {
     delete this;
   }
   return count;
-}
-
-void AudioState::CallbackOnError(int channel_id, int err_code) {
-  RTC_DCHECK(process_thread_checker_.CalledOnValidThread());
-
-  // All call sites in VoE, as of this writing, specify -1 as channel_id.
-  RTC_DCHECK(channel_id == -1);
-  LOG(LS_INFO) << "VoiceEngine error " << err_code << " reported on channel "
-               << channel_id << ".";
-  if (err_code == VE_TYPING_NOISE_WARNING) {
-    rtc::CritScope lock(&crit_sect_);
-    typing_noise_detected_ = true;
-  } else if (err_code == VE_TYPING_NOISE_OFF_WARNING) {
-    rtc::CritScope lock(&crit_sect_);
-    typing_noise_detected_ = false;
-  }
 }
 }  // namespace internal
 

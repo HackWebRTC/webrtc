@@ -75,10 +75,6 @@ struct ConfigHelper {
         audio_mixer_(new rtc::RefCountedObject<MockAudioMixer>()) {
     using testing::Invoke;
 
-    EXPECT_CALL(voice_engine_,
-        RegisterVoiceEngineObserver(_)).WillOnce(Return(0));
-    EXPECT_CALL(voice_engine_,
-        DeRegisterVoiceEngineObserver()).WillOnce(Return(0));
     EXPECT_CALL(voice_engine_, audio_device_module());
     EXPECT_CALL(voice_engine_, audio_transport());
 

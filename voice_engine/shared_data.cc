@@ -30,8 +30,7 @@ SharedData::SharedData()
       encoder_queue_("AudioEncoderQueue") {
   Trace::CreateTrace();
   if (TransmitMixer::Create(_transmitMixerPtr, _gInstanceCounter) == 0) {
-    _transmitMixerPtr->SetEngineInformation(*_moduleProcessThreadPtr,
-                                            _engineStatistics, _channelManager);
+    _transmitMixerPtr->SetEngineInformation(&_channelManager);
   }
 }
 

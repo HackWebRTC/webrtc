@@ -20,7 +20,6 @@
 #include "rtc_base/criticalsection.h"
 #include "voice_engine/audio_level.h"
 #include "voice_engine/include/voe_base.h"
-#include "voice_engine/monitor_module.h"
 #include "voice_engine/voice_engine_defines.h"
 
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
@@ -45,12 +44,9 @@ public:
 
     static void Destroy(TransmitMixer*& mixer);
 
-    int32_t SetEngineInformation(ProcessThread& processThread,
-                                 Statistics& engineStatistics,
-                                 ChannelManager& channelManager);
+    void SetEngineInformation(ChannelManager* channelManager);
 
-    int32_t SetAudioProcessingModule(
-        AudioProcessing* audioProcessingModule);
+    int32_t SetAudioProcessingModule(AudioProcessing* audioProcessingModule);
 
     int32_t PrepareDemux(const void* audioSamples,
                          size_t nSamples,
@@ -82,25 +78,17 @@ public:
     // 'virtual' to allow mocking.
     virtual double GetTotalInputDuration() const;
 
-    int32_t RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
-
     virtual ~TransmitMixer();
-
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    // Periodic callback from the MonitorModule.
-    void OnPeriodicProcess();
-#endif
 
   // Virtual to allow mocking.
   virtual void EnableStereoChannelSwapping(bool enable);
   bool IsStereoChannelSwappingEnabled();
 
+  // Virtual to allow mocking.
+  virtual bool typing_noise_detected() const;
+
 protected:
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    TransmitMixer() : _monitorModule(this) {}
-#else
     TransmitMixer() = default;
-#endif
 
 private:
     TransmitMixer(uint32_t instanceId);
@@ -118,30 +106,24 @@ private:
                       bool key_pressed);
 
 #if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    void TypingDetection(bool keyPressed);
+    void TypingDetection(bool key_pressed);
 #endif
 
     // uses
-    Statistics* _engineStatisticsPtr = nullptr;
     ChannelManager* _channelManagerPtr = nullptr;
     AudioProcessing* audioproc_ = nullptr;
-    VoiceEngineObserver* _voiceEngineObserverPtr = nullptr;
-    ProcessThread* _processThreadPtr = nullptr;
 
     // owns
     AudioFrame _audioFrame;
     PushResampler<int16_t> resampler_;  // ADM sample rate -> mixing rate
     voe::AudioLevel _audioLevel;
-    // protect file instances and their variables in MixedParticipants()
-    rtc::CriticalSection _critSect;
-    rtc::CriticalSection _callbackCritSect;
 
 #if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    MonitorModule<TransmitMixer> _monitorModule;
-    webrtc::TypingDetection _typingDetection;
-    bool _typingNoiseWarningPending = false;
-    bool _typingNoiseDetected = false;
+    webrtc::TypingDetection typing_detection_;
 #endif
+
+    rtc::CriticalSection lock_;
+    bool typing_noise_detected_ RTC_GUARDED_BY(lock_) = false;
 
     int _instanceId = 0;
     uint32_t _captureLevel = 0;

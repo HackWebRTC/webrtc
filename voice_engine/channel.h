@@ -55,7 +55,6 @@ class RtpPacketReceived;
 class RtpRtcp;
 class RtpTransportControllerSendInterface;
 class TelephoneEventHandler;
-class VoiceEngineObserver;
 
 struct SenderInfo;
 
@@ -161,7 +160,6 @@ class Channel
   int32_t SetEngineInformation(Statistics& engineStatistics,
                                ProcessThread& moduleProcessThread,
                                AudioDeviceModule& audioDeviceModule,
-                               VoiceEngineObserver* voiceEngineObserver,
                                rtc::CriticalSection* callbackCritSect,
                                rtc::TaskQueue* encoder_queue);
 
@@ -187,8 +185,6 @@ class Channel
   int32_t StopPlayout();
   int32_t StartSend();
   void StopSend();
-  int32_t RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
-  int32_t DeRegisterVoiceEngineObserver();
 
   // Codecs
   int32_t GetSendCodec(CodecInst& codec);
@@ -427,7 +423,6 @@ class Channel
   Statistics* _engineStatisticsPtr;
   ProcessThread* _moduleProcessThreadPtr;
   AudioDeviceModule* _audioDeviceModulePtr;
-  VoiceEngineObserver* _voiceEngineObserverPtr;  // owned by base
   rtc::CriticalSection* _callbackCritSectPtr;    // owned by base
   Transport* _transportPtr;  // WebRtc socket or external transport
   RmsLevel rms_level_ RTC_ACCESS_ON(encoder_queue_);

@@ -22,50 +22,11 @@
 #include "voice_engine/channel_manager.h"
 #include "voice_engine/statistics.h"
 #include "voice_engine/utility.h"
-#include "voice_engine/voe_base_impl.h"
 
 namespace webrtc {
 namespace voe {
 
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-// TODO(ajm): The thread safety of this is dubious...
-void TransmitMixer::OnPeriodicProcess()
-{
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
-                 "TransmitMixer::OnPeriodicProcess()");
-
-    bool send_typing_noise_warning = false;
-    bool typing_noise_detected = false;
-    {
-      rtc::CritScope cs(&_critSect);
-      if (_typingNoiseWarningPending) {
-        send_typing_noise_warning = true;
-        typing_noise_detected = _typingNoiseDetected;
-        _typingNoiseWarningPending = false;
-      }
-    }
-    if (send_typing_noise_warning) {
-        rtc::CritScope cs(&_callbackCritSect);
-        if (_voiceEngineObserverPtr) {
-            if (typing_noise_detected) {
-                WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                             "TransmitMixer::OnPeriodicProcess() => "
-                             "CallbackOnError(VE_TYPING_NOISE_WARNING)");
-                _voiceEngineObserverPtr->CallbackOnError(
-                    -1,
-                    VE_TYPING_NOISE_WARNING);
-            } else {
-                WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                             "TransmitMixer::OnPeriodicProcess() => "
-                             "CallbackOnError(VE_TYPING_NOISE_OFF_WARNING)");
-                _voiceEngineObserverPtr->CallbackOnError(
-                    -1,
-                    VE_TYPING_NOISE_OFF_WARNING);
-            }
-        }
-    }
-}
-#endif  // WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+// TODO(solenberg): The thread safety in this class is dubious.
 
 int32_t
 TransmitMixer::Create(TransmitMixer*& mixer, uint32_t instanceId)
@@ -94,59 +55,16 @@ TransmitMixer::Destroy(TransmitMixer*& mixer)
 }
 
 TransmitMixer::TransmitMixer(uint32_t instanceId) :
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    _monitorModule(this),
-#endif
     _instanceId(instanceId)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::TransmitMixer() - ctor");
 }
 
-TransmitMixer::~TransmitMixer()
-{
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
-                 "TransmitMixer::~TransmitMixer() - dtor");
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    if (_processThreadPtr)
-        _processThreadPtr->DeRegisterModule(&_monitorModule);
-#endif
-}
+TransmitMixer::~TransmitMixer() = default;
 
-int32_t
-TransmitMixer::SetEngineInformation(ProcessThread& processThread,
-                                    Statistics& engineStatistics,
-                                    ChannelManager& channelManager)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "TransmitMixer::SetEngineInformation()");
-
-    _processThreadPtr = &processThread;
-    _engineStatisticsPtr = &engineStatistics;
-    _channelManagerPtr = &channelManager;
-
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    _processThreadPtr->RegisterModule(&_monitorModule, RTC_FROM_HERE);
-#endif
-    return 0;
-}
-
-int32_t
-TransmitMixer::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "TransmitMixer::RegisterVoiceEngineObserver()");
-    rtc::CritScope cs(&_callbackCritSect);
-
-    if (_voiceEngineObserverPtr)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceError,
-            "RegisterVoiceEngineObserver() observer already enabled");
-        return -1;
-    }
-    _voiceEngineObserverPtr = &observer;
-    return 0;
+void TransmitMixer::SetEngineInformation(ChannelManager* channelManager) {
+  _channelManagerPtr = channelManager;
 }
 
 int32_t
@@ -323,27 +241,18 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
 }
 
 #if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-void TransmitMixer::TypingDetection(bool keyPressed)
+void TransmitMixer::TypingDetection(bool key_pressed)
 {
   // We let the VAD determine if we're using this feature or not.
   if (_audioFrame.vad_activity_ == AudioFrame::kVadUnknown) {
     return;
   }
 
-  bool vadActive = _audioFrame.vad_activity_ == AudioFrame::kVadActive;
-  if (_typingDetection.Process(keyPressed, vadActive)) {
-    rtc::CritScope cs(&_critSect);
-    _typingNoiseWarningPending = true;
-    _typingNoiseDetected = true;
-  } else {
-    rtc::CritScope cs(&_critSect);
-    // If there is already a warning pending, do not change the state.
-    // Otherwise set a warning pending if last callback was for noise detected.
-    if (!_typingNoiseWarningPending && _typingNoiseDetected) {
-      _typingNoiseWarningPending = true;
-      _typingNoiseDetected = false;
-    }
-  }
+  bool vad_active = _audioFrame.vad_activity_ == AudioFrame::kVadActive;
+  bool typing_detected = typing_detection_.Process(key_pressed, vad_active);
+
+  rtc::CritScope cs(&lock_);
+  typing_noise_detected_ = typing_detected;
 }
 #endif
 
@@ -353,6 +262,11 @@ void TransmitMixer::EnableStereoChannelSwapping(bool enable) {
 
 bool TransmitMixer::IsStereoChannelSwappingEnabled() {
   return swap_stereo_channels_;
+}
+
+bool TransmitMixer::typing_noise_detected() const {
+  rtc::CritScope cs(&lock_);
+  return typing_noise_detected_;
 }
 
 }  // namespace voe

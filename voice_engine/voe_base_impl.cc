@@ -35,8 +35,7 @@ VoEBase* VoEBase::GetInterface(VoiceEngine* voiceEngine) {
 }
 
 VoEBaseImpl::VoEBaseImpl(voe::SharedData* shared)
-    : voiceEngineObserverPtr_(nullptr),
-      shared_(shared) {}
+    : shared_(shared) {}
 
 VoEBaseImpl::~VoEBaseImpl() {
   TerminateInternal();
@@ -44,33 +43,19 @@ VoEBaseImpl::~VoEBaseImpl() {
 
 void VoEBaseImpl::OnErrorIsReported(const ErrorCode error) {
   rtc::CritScope cs(&callbackCritSect_);
-  int errCode = 0;
   if (error == AudioDeviceObserver::kRecordingError) {
-    errCode = VE_RUNTIME_REC_ERROR;
     LOG_F(LS_ERROR) << "VE_RUNTIME_REC_ERROR";
   } else if (error == AudioDeviceObserver::kPlayoutError) {
-    errCode = VE_RUNTIME_PLAY_ERROR;
     LOG_F(LS_ERROR) << "VE_RUNTIME_PLAY_ERROR";
-  }
-  if (voiceEngineObserverPtr_) {
-    // Deliver callback (-1 <=> no channel dependency)
-    voiceEngineObserverPtr_->CallbackOnError(-1, errCode);
   }
 }
 
 void VoEBaseImpl::OnWarningIsReported(const WarningCode warning) {
   rtc::CritScope cs(&callbackCritSect_);
-  int warningCode = 0;
   if (warning == AudioDeviceObserver::kRecordingWarning) {
-    warningCode = VE_RUNTIME_REC_WARNING;
     LOG_F(LS_WARNING) << "VE_RUNTIME_REC_WARNING";
   } else if (warning == AudioDeviceObserver::kPlayoutWarning) {
-    warningCode = VE_RUNTIME_PLAY_WARNING;
     LOG_F(LS_WARNING) << "VE_RUNTIME_PLAY_WARNING";
-  }
-  if (voiceEngineObserverPtr_) {
-    // Deliver callback (-1 <=> no channel dependency)
-    voiceEngineObserverPtr_->CallbackOnError(-1, warningCode);
   }
 }
 
@@ -173,45 +158,6 @@ void VoEBaseImpl::PullRenderData(int bits_per_sample,
                                  void* audio_data, int64_t* elapsed_time_ms,
                                  int64_t* ntp_time_ms) {
   RTC_NOTREACHED();
-}
-
-int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer) {
-  rtc::CritScope cs(&callbackCritSect_);
-  if (voiceEngineObserverPtr_) {
-    shared_->SetLastError(
-        VE_INVALID_OPERATION, kTraceError,
-        "RegisterVoiceEngineObserver() observer already enabled");
-    return -1;
-  }
-
-  // Register the observer in all active channels
-  for (voe::ChannelManager::Iterator it(&shared_->channel_manager());
-       it.IsValid(); it.Increment()) {
-    it.GetChannel()->RegisterVoiceEngineObserver(observer);
-  }
-
-  shared_->transmit_mixer()->RegisterVoiceEngineObserver(observer);
-  voiceEngineObserverPtr_ = &observer;
-  return 0;
-}
-
-int VoEBaseImpl::DeRegisterVoiceEngineObserver() {
-  rtc::CritScope cs(&callbackCritSect_);
-  if (!voiceEngineObserverPtr_) {
-    shared_->SetLastError(
-        VE_INVALID_OPERATION, kTraceError,
-        "DeRegisterVoiceEngineObserver() observer already disabled");
-    return 0;
-  }
-  voiceEngineObserverPtr_ = nullptr;
-
-  // Deregister the observer in all active channels
-  for (voe::ChannelManager::Iterator it(&shared_->channel_manager());
-       it.IsValid(); it.Increment()) {
-    it.GetChannel()->DeRegisterVoiceEngineObserver();
-  }
-
-  return 0;
 }
 
 int VoEBaseImpl::Init(
@@ -411,8 +357,7 @@ int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner) {
   if (channel_owner->channel()->SetEngineInformation(
           shared_->statistics(),
           *shared_->process_thread(), *shared_->audio_device(),
-          voiceEngineObserverPtr_, &callbackCritSect_,
-          shared_->encoder_queue()) != 0) {
+          &callbackCritSect_, shared_->encoder_queue()) != 0) {
     shared_->SetLastError(
         VE_CHANNEL_NOT_CREATED, kTraceError,
         "CreateChannel() failed to associate engine and channel."

@@ -87,6 +87,7 @@ class MockTransmitMixer : public voe::TransmitMixer {
   MOCK_CONST_METHOD0(AudioLevelFullRange, int16_t());
   MOCK_CONST_METHOD0(GetTotalInputEnergy, double());
   MOCK_CONST_METHOD0(GetTotalInputDuration, double());
+  MOCK_CONST_METHOD0(typing_noise_detected, bool());
 };
 
 std::unique_ptr<MockAudioEncoder> SetupAudioEncoderMock(
@@ -146,10 +147,6 @@ struct ConfigHelper {
         audio_encoder_(nullptr) {
     using testing::Invoke;
 
-    EXPECT_CALL(voice_engine_,
-        RegisterVoiceEngineObserver(_)).WillOnce(Return(0));
-    EXPECT_CALL(voice_engine_,
-        DeRegisterVoiceEngineObserver()).WillOnce(Return(0));
     EXPECT_CALL(voice_engine_, audio_device_module());
     EXPECT_CALL(voice_engine_, audio_transport());
 
@@ -312,6 +309,8 @@ struct ConfigHelper {
         .WillRepeatedly(Return(kTotalInputEnergy));
     EXPECT_CALL(transmit_mixer_, GetTotalInputDuration())
         .WillRepeatedly(Return(kTotalInputDuration));
+    EXPECT_CALL(transmit_mixer_, typing_noise_detected())
+        .WillRepeatedly(Return(true));
 
     // We have to set the instantaneous value, the average, min and max. We only
     // care about the instantaneous value, so we set all to the same value.
@@ -456,26 +455,7 @@ TEST(AudioSendStreamTest, GetStats) {
   EXPECT_EQ(kEchoReturnLoss, stats.echo_return_loss);
   EXPECT_EQ(kEchoReturnLossEnhancement, stats.echo_return_loss_enhancement);
   EXPECT_EQ(kResidualEchoLikelihood, stats.residual_echo_likelihood);
-  EXPECT_FALSE(stats.typing_noise_detected);
-}
-
-TEST(AudioSendStreamTest, GetStatsTypingNoiseDetected) {
-  ConfigHelper helper(false, true);
-  internal::AudioSendStream send_stream(
-      helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
-  helper.SetupMockForGetStats();
-  EXPECT_FALSE(send_stream.GetStats().typing_noise_detected);
-
-  internal::AudioState* internal_audio_state =
-      static_cast<internal::AudioState*>(helper.audio_state().get());
-  VoiceEngineObserver* voe_observer =
-      static_cast<VoiceEngineObserver*>(internal_audio_state);
-  voe_observer->CallbackOnError(-1, VE_TYPING_NOISE_WARNING);
-  EXPECT_TRUE(send_stream.GetStats().typing_noise_detected);
-  voe_observer->CallbackOnError(-1, VE_TYPING_NOISE_OFF_WARNING);
-  EXPECT_FALSE(send_stream.GetStats().typing_noise_detected);
+  EXPECT_TRUE(stats.typing_noise_detected);
 }
 
 TEST(AudioSendStreamTest, SendCodecAppliesAudioNetworkAdaptor) {

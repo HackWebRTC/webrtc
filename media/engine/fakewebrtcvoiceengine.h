@@ -57,9 +57,6 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
   WEBRTC_STUB(Release, ());
 
   // webrtc::VoEBase
-  WEBRTC_STUB(RegisterVoiceEngineObserver, (
-      webrtc::VoiceEngineObserver& observer));
-  WEBRTC_STUB(DeRegisterVoiceEngineObserver, ());
   WEBRTC_FUNC(Init,
               (webrtc::AudioDeviceModule* adm,
                webrtc::AudioProcessing* audioproc,

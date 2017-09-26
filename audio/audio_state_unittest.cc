@@ -26,10 +26,6 @@ const int kBytesPerSample = 2;
 
 struct ConfigHelper {
   ConfigHelper() : audio_mixer(AudioMixerImpl::Create()) {
-    EXPECT_CALL(mock_voice_engine, RegisterVoiceEngineObserver(testing::_))
-        .WillOnce(testing::Return(0));
-    EXPECT_CALL(mock_voice_engine, DeRegisterVoiceEngineObserver())
-        .WillOnce(testing::Return(0));
     EXPECT_CALL(mock_voice_engine, audio_device_module())
         .Times(testing::AtLeast(1));
     EXPECT_CALL(mock_voice_engine, audio_transport())
@@ -99,28 +95,6 @@ TEST(AudioStateTest, GetVoiceEngine) {
   std::unique_ptr<internal::AudioState> audio_state(
       new internal::AudioState(helper.config()));
   EXPECT_EQ(audio_state->voice_engine(), &helper.voice_engine());
-}
-
-TEST(AudioStateTest, TypingNoiseDetected) {
-  ConfigHelper helper;
-  std::unique_ptr<internal::AudioState> audio_state(
-      new internal::AudioState(helper.config()));
-  VoiceEngineObserver* voe_observer =
-      static_cast<VoiceEngineObserver*>(audio_state.get());
-  EXPECT_FALSE(audio_state->typing_noise_detected());
-
-  voe_observer->CallbackOnError(-1, VE_NOT_INITED);
-  EXPECT_FALSE(audio_state->typing_noise_detected());
-
-  voe_observer->CallbackOnError(-1, VE_TYPING_NOISE_WARNING);
-  EXPECT_TRUE(audio_state->typing_noise_detected());
-  voe_observer->CallbackOnError(-1, VE_NOT_INITED);
-  EXPECT_TRUE(audio_state->typing_noise_detected());
-
-  voe_observer->CallbackOnError(-1, VE_TYPING_NOISE_OFF_WARNING);
-  EXPECT_FALSE(audio_state->typing_noise_detected());
-  voe_observer->CallbackOnError(-1, VE_NOT_INITED);
-  EXPECT_FALSE(audio_state->typing_noise_detected());
 }
 
 // Test that RecordedDataIsAvailable calls get to the original transport.
