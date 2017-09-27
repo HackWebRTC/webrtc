@@ -70,7 +70,8 @@ class RtpReceiverImpl : public RtpReceiver {
   }
 
  private:
-  bool HaveReceivedFrame() const;
+  bool HaveReceivedFrame() const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtp_receiver_);
 
   void CheckSSRCChanged(const RTPHeader& rtp_header);
   void CheckCSRC(const WebRtcRTPHeader& rtp_header);
@@ -83,20 +84,24 @@ class RtpReceiverImpl : public RtpReceiver {
   void RemoveOutdatedSources(int64_t now_ms);
 
   Clock* clock_;
-  RTPPayloadRegistry* rtp_payload_registry_;
-  std::unique_ptr<RTPReceiverStrategy> rtp_media_receiver_;
-
-  RtpFeedback* cb_rtp_feedback_;
-
   rtc::CriticalSection critical_section_rtp_receiver_;
 
-  // SSRCs.
-  uint32_t ssrc_;
-  uint8_t num_csrcs_;
-  uint32_t current_remote_csrc_[kRtpCsrcSize];
+  RTPPayloadRegistry* const rtp_payload_registry_
+      RTC_PT_GUARDED_BY(critical_section_rtp_receiver_);
+  const std::unique_ptr<RTPReceiverStrategy> rtp_media_receiver_;
 
-  uint32_t last_received_timestamp_;
-  int64_t last_received_frame_time_ms_;
+  RtpFeedback* const cb_rtp_feedback_;
+
+  // SSRCs.
+  uint32_t ssrc_ RTC_GUARDED_BY(critical_section_rtp_receiver_);
+  uint8_t num_csrcs_ RTC_GUARDED_BY(critical_section_rtp_receiver_);
+  uint32_t current_remote_csrc_[kRtpCsrcSize] RTC_GUARDED_BY(
+      critical_section_rtp_receiver_);
+
+  uint32_t last_received_timestamp_
+      RTC_GUARDED_BY(critical_section_rtp_receiver_);
+  int64_t last_received_frame_time_ms_
+      RTC_GUARDED_BY(critical_section_rtp_receiver_);
 
   std::unordered_map<uint32_t, std::list<RtpSource>::iterator>
       iterator_by_csrc_;
