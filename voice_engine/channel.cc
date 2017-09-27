@@ -874,40 +874,6 @@ int32_t Channel::Init() {
     return -1;
   }
 
-  // TODO(solenberg): Remove?
-  // Register a default set of send codecs.
-  const int nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
-  for (int idx = 0; idx < nSupportedCodecs; idx++) {
-    CodecInst codec;
-    RTC_CHECK_EQ(0, audio_coding_->Codec(idx, &codec));
-
-    // Ensure that PCMU is used as default send codec.
-    if (STR_CASE_CMP(codec.plname, "PCMU") == 0 && codec.channels == 1) {
-      SetSendCodec(codec);
-    }
-
-    // Register default PT for 'telephone-event'
-    if (STR_CASE_CMP(codec.plname, "telephone-event") == 0) {
-      if (_rtpRtcpModule->RegisterSendPayload(codec) == -1) {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                     "Channel::Init() failed to register outband "
-                     "'telephone-event' (%d/%d) correctly",
-                     codec.pltype, codec.plfreq);
-      }
-    }
-
-    if (STR_CASE_CMP(codec.plname, "CN") == 0) {
-      if (!codec_manager_.RegisterEncoder(codec) ||
-          !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get()) ||
-          _rtpRtcpModule->RegisterSendPayload(codec) == -1) {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                     "Channel::Init() failed to register CN (%d/%d) "
-                     "correctly - 1",
-                     codec.pltype, codec.plfreq);
-      }
-    }
-  }
-
   return 0;
 }
 
@@ -929,12 +895,6 @@ void Channel::Terminate() {
   if (audio_coding_->RegisterTransportCallback(NULL) == -1) {
     WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Terminate() failed to de-register transport callback"
-                 " (Audio coding module)");
-  }
-
-  if (audio_coding_->RegisterVADCallback(NULL) == -1) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Terminate() failed to de-register VAD callback"
                  " (Audio coding module)");
   }
 
