@@ -87,15 +87,6 @@ rtc_static_library("null_audio_jni") {
   ]
 }
 
-generate_jni("generated_video_jni") {
-  sources = [
-    "api/org/webrtc/VideoEncoder.java",
-    "api/org/webrtc/VideoSink.java",
-  ]
-  jni_package = "video"
-  jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
-}
-
 rtc_static_library("video_jni") {
   sources = [
     "src/jni/androidmediacodeccommon.h",
@@ -107,7 +98,6 @@ rtc_static_library("video_jni") {
     "src/jni/androidvideotracksource.h",
     "src/jni/androidvideotracksource_jni.cc",
     "src/jni/filevideocapturer_jni.cc",
-    "src/jni/jni_generator_helper.h",
     "src/jni/native_handle_impl.cc",
     "src/jni/native_handle_impl.h",
     "src/jni/nv12buffer_jni.cc",
@@ -153,7 +143,6 @@ rtc_static_library("video_jni") {
 
   deps = [
     ":base_jni",
-    ":generated_video_jni",
     ":peerconnection_jni",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",

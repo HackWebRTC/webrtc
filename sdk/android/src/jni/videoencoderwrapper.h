@@ -96,6 +96,14 @@ class VideoEncoderWrapper : public VideoEncoder {
   const ScopedGlobalRef<jclass> bitrate_allocation_class_;
   const ScopedGlobalRef<jclass> int_array_class_;
 
+  jmethodID init_encode_method_;
+  jmethodID release_method_;
+  jmethodID encode_method_;
+  jmethodID set_channel_parameters_method_;
+  jmethodID set_rate_allocation_method_;
+  jmethodID get_scaling_settings_method_;
+  jmethodID get_implementation_name_method_;
+
   jmethodID settings_constructor_;
 
   jmethodID encode_info_constructor_;

@@ -19,5 +19,5 @@ public interface VideoSink {
    * this function returns. Each call to retain() should be followed by a call to frame.release()
    * when the reference is no longer needed.
    */
-  @CalledByNative void onFrame(VideoFrame frame);
+  void onFrame(VideoFrame frame);
 }
