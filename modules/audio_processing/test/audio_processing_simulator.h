@@ -20,6 +20,7 @@
 #include "api/optional.h"
 #include "common_audio/channel_buffer.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/test/fake_recording_device.h"
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/task_queue.h"
@@ -76,6 +77,9 @@ struct SimulationSettings {
   rtc::Optional<int> vad_likelihood;
   rtc::Optional<int> ns_level;
   rtc::Optional<bool> use_refined_adaptive_filter;
+  int initial_mic_level;
+  bool simulate_mic_gain = false;
+  rtc::Optional<int> simulated_mic_kind;
   bool report_performance = false;
   bool report_bitexactness = false;
   bool use_verbose_logging = false;
@@ -166,6 +170,7 @@ class AudioProcessingSimulator {
   AudioFrame rev_frame_;
   AudioFrame fwd_frame_;
   bool bitexact_output_ = true;
+  int aec_dump_mic_level_ = 0;
 
  private:
   void SetupOutput();
@@ -177,6 +182,8 @@ class AudioProcessingSimulator {
   std::unique_ptr<ChannelBufferWavWriter> reverse_buffer_writer_;
   TickIntervalStats proc_time_;
   std::ofstream residual_echo_likelihood_graph_writer_;
+  int analog_mic_level_;
+  FakeRecordingDevice fake_recording_device_;
 
   rtc::TaskQueue worker_queue_;
 

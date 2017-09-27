@@ -69,8 +69,7 @@ AecDumpBasedSimulator::AecDumpBasedSimulator(const SimulationSettings& settings)
 AecDumpBasedSimulator::~AecDumpBasedSimulator() = default;
 
 void AecDumpBasedSimulator::PrepareProcessStreamCall(
-    const webrtc::audioproc::Stream& msg,
-    bool* set_stream_analog_level_called) {
+    const webrtc::audioproc::Stream& msg) {
   if (msg.has_input_data()) {
     // Fixed interface processing.
     // Verify interface invariance.
@@ -159,15 +158,9 @@ void AecDumpBasedSimulator::PrepareProcessStreamCall(
     ap_->set_stream_key_pressed(*settings_.use_ts);
   }
 
-  // TODO(peah): Add support for controlling the analog level via the
-  // command-line.
-  if (msg.has_level()) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->gain_control()->set_stream_analog_level(msg.level()));
-    *set_stream_analog_level_called = true;
-  } else {
-    *set_stream_analog_level_called = false;
-  }
+  // Level is always logged in AEC dumps.
+  RTC_CHECK(msg.has_level());
+  aec_dump_mic_level_ = msg.level();
 }
 
 void AecDumpBasedSimulator::VerifyProcessStreamBitExactness(
@@ -565,14 +558,8 @@ void AecDumpBasedSimulator::HandleMessage(const webrtc::audioproc::Init& msg) {
 
 void AecDumpBasedSimulator::HandleMessage(
     const webrtc::audioproc::Stream& msg) {
-  bool set_stream_analog_level_called = false;
-  PrepareProcessStreamCall(msg, &set_stream_analog_level_called);
+  PrepareProcessStreamCall(msg);
   ProcessStream(interface_used_ == InterfaceType::kFixedInterface);
-  if (set_stream_analog_level_called) {
-    // Call stream analog level to ensure that any side-effects are triggered.
-    (void)ap_->gain_control()->stream_analog_level();
-  }
-
   VerifyProcessStreamBitExactness(msg);
 }
 

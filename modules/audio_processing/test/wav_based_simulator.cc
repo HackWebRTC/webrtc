@@ -79,10 +79,6 @@ void WavBasedSimulator::PrepareProcessStreamCall() {
 
   ap_->echo_cancellation()->set_stream_drift_samples(
       settings_.stream_drift_samples ? *settings_.stream_drift_samples : 0);
-
-  RTC_CHECK_EQ(AudioProcessing::kNoError,
-               ap_->gain_control()->set_stream_analog_level(
-                   last_specified_microphone_level_));
 }
 
 void WavBasedSimulator::PrepareReverseProcessStreamCall() {
@@ -143,10 +139,6 @@ bool WavBasedSimulator::HandleProcessStreamCall() {
   if (samples_left_to_process) {
     PrepareProcessStreamCall();
     ProcessStream(settings_.fixed_interface);
-    // Call stream analog level to ensure that any side-effects are triggered.
-    (void)ap_->gain_control()->stream_analog_level();
-    last_specified_microphone_level_ =
-        ap_->gain_control()->stream_analog_level();
   }
   return samples_left_to_process;
 }

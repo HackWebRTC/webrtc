@@ -161,6 +161,13 @@ DEFINE_int(stream_delay,
 DEFINE_int(stream_drift_samples,
            kParameterNotSpecifiedValue,
            "Specify the number of stream drift samples to use");
+DEFINE_int(initial_mic_level, 100, "Initial mic level (0-255)");
+DEFINE_int(simulate_mic_gain,
+           0,
+           "Activate (1) or deactivate(0) the analog mic gain simulation");
+DEFINE_int(simulated_mic_kind,
+           kParameterNotSpecifiedValue,
+           "Specify which microphone kind to use for microphone simulation");
 DEFINE_bool(performance_report, false, "Report the APM performance ");
 DEFINE_bool(verbose, false, "Produce verbose output");
 DEFINE_bool(bitexactness_report,
@@ -269,6 +276,9 @@ SimulationSettings CreateSettings() {
                         &settings.stream_drift_samples);
   SetSettingIfSpecified(FLAG_custom_call_order_file,
                         &settings.custom_call_order_filename);
+  settings.initial_mic_level = FLAG_initial_mic_level;
+  settings.simulate_mic_gain = FLAG_simulate_mic_gain;
+  SetSettingIfSpecified(FLAG_simulated_mic_kind, &settings.simulated_mic_kind);
   settings.report_performance = FLAG_performance_report;
   settings.use_verbose_logging = FLAG_verbose;
   settings.report_bitexactness = FLAG_bitexactness_report;
@@ -384,6 +394,20 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       settings.custom_call_order_filename && settings.aec_dump_input_filename,
       "Error: --custom_call_order_file cannot be used when operating on an "
       "aecdump\n");
+
+  ReportConditionalErrorAndExit(
+      (settings.initial_mic_level < 0 || settings.initial_mic_level > 255),
+      "Error: --initial_mic_level must be specified between 0 and 255.\n");
+
+  ReportConditionalErrorAndExit(
+      settings.simulated_mic_kind && !settings.simulate_mic_gain,
+      "Error: --simulated_mic_kind cannot be specified when mic simulation is "
+      "disabled\n");
+
+  ReportConditionalErrorAndExit(
+      !settings.simulated_mic_kind && settings.simulate_mic_gain,
+      "Error: --simulated_mic_kind must be specified when mic simulation is "
+      "enabled\n");
 
   auto valid_wav_name = [](const std::string& wav_file_name) {
     if (wav_file_name.size() < 5) {

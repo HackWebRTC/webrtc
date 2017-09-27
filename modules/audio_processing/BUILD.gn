@@ -497,6 +497,7 @@ if (rtc_include_tests) {
         ":audioproc_f",
         ":audioproc_unittest_proto",
         ":unpack_aecdump",
+        "aec_dump:aec_dump_unittests",
         "test/conversational_speech",
         "test/py_quality_assessment",
       ]
@@ -527,6 +528,7 @@ if (rtc_include_tests) {
       "config_unittest.cc",
       "echo_cancellation_impl_unittest.cc",
       "splitting_filter_unittest.cc",
+      "test/fake_recording_device_unittest.cc",
       "transient/dyadic_decimator_unittest.cc",
       "transient/file_utils.cc",
       "transient/file_utils.h",
@@ -549,6 +551,7 @@ if (rtc_include_tests) {
     ]
 
     deps = [
+      ":analog_mic_simulation",
       ":audio_processing",
       ":audioproc_test_utils",
       "..:module_api",
@@ -711,6 +714,19 @@ if (rtc_include_tests) {
     }
   }
 
+  rtc_source_set("analog_mic_simulation") {
+    sources = [
+      "test/fake_recording_device.cc",
+      "test/fake_recording_device.h",
+    ]
+    deps = [
+      "../../api:array_view",
+      "../../common_audio:common_audio",
+      "../../modules:module_api",
+      "../../rtc_base:rtc_base_approved",
+    ]
+  }
+
   if (rtc_enable_protobuf) {
     rtc_executable("unpack_aecdump") {
       testonly = true
@@ -744,6 +760,7 @@ if (rtc_include_tests) {
       ]
 
       deps = [
+        ":analog_mic_simulation",
         ":audio_processing",
         ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",

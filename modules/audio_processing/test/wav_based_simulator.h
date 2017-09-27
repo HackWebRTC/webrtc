@@ -45,7 +45,6 @@ class WavBasedSimulator final : public AudioProcessingSimulator {
       const std::string& filename);
 
   std::vector<SimulationEventType> call_chain_;
-  int last_specified_microphone_level_ = 100;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WavBasedSimulator);
 };
