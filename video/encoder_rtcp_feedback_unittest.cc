@@ -12,7 +12,6 @@
 
 #include <memory>
 
-#include "modules/utility/include/mock/mock_process_thread.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "video/send_statistics_proxy.h"

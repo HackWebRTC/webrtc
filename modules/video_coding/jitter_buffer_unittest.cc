@@ -195,16 +195,6 @@ TEST_F(Vp9SsMapTest, UpdatePacket) {
   EXPECT_EQ(2, packet_.video_header.codecHeader.VP9.pid_diff[1]);
 }
 
-class ProcessThreadMock : public ProcessThread {
- public:
-  MOCK_METHOD0(Start, void());
-  MOCK_METHOD0(Stop, void());
-  MOCK_METHOD1(WakeUp, void(Module* module));
-  MOCK_METHOD2(RegisterModule, void(Module* module, const rtc::Location&));
-  MOCK_METHOD1(DeRegisterModule, void(Module* module));
-  void PostTask(std::unique_ptr<rtc::QueuedTask> task) /*override*/ {}
-};
-
 class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
                               public NackSender,
                               public KeyFrameRequestSender {
@@ -216,7 +206,6 @@ class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
 
   void RequestKeyFrame() override { ++keyframe_requests_; }
 
-  ::testing::NiceMock<ProcessThreadMock> process_thread_mock_;
   std::vector<uint16_t> nack_sent_;
   int keyframe_requests_;
 
@@ -332,7 +321,6 @@ class TestRunningJitterBuffer : public ::testing::TestWithParam<std::string>,
 
   void RequestKeyFrame() { ++keyframe_requests_; }
 
-  ::testing::NiceMock<ProcessThreadMock> process_thread_mock_;
   std::vector<uint16_t> nack_sent_;
   int keyframe_requests_;
 
