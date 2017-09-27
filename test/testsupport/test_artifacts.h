@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_TESTSUPPORT_TEST_OUTPUT_H_
-#define TEST_TESTSUPPORT_TEST_OUTPUT_H_
+#ifndef TEST_TESTSUPPORT_TEST_ARTIFACTS_H_
+#define TEST_TESTSUPPORT_TEST_ARTIFACTS_H_
 
 #include <stdlib.h>
 
@@ -18,22 +18,22 @@
 namespace webrtc {
 namespace test {
 
-// If the test_output_dir flag is set, returns true and copies the location of
-// the dir to |out_dir|. Otherwise, return false.
-bool GetTestOutputDir(std::string* out_dir);
+// If the test_artifacts_dir flag is set, returns true and copies the location
+// of the dir to |out_dir|. Otherwise, return false.
+bool GetTestArtifactsDir(std::string* out_dir);
 
 // Writes a |length| bytes array |buffer| to |filename| in isolated output
 // directory defined by swarming. If the file is existing, content will be
 // appended. Otherwise a new file will be created. This function returns false
 // if isolated output directory has not been defined, or |filename| indicates an
 // invalid or non-writable file, or underlying file system errors.
-bool WriteToTestOutput(const char* filename,
-                       const uint8_t* buffer,
-                       size_t length);
+bool WriteToTestArtifactsDir(const char* filename,
+                             const uint8_t* buffer,
+                             size_t length);
 
-bool WriteToTestOutput(const char* filename, const std::string& content);
+bool WriteToTestArtifactsDir(const char* filename, const std::string& content);
 
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_TESTSUPPORT_TEST_OUTPUT_H_
+#endif  // TEST_TESTSUPPORT_TEST_ARTIFACTS_H_

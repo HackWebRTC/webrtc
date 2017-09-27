@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/testsupport/test_output.h"
+#include "test/testsupport/test_artifacts.h"
 
 #include <string.h>
 
@@ -20,29 +20,29 @@
 #include "rtc_base/platform_file.h"
 #include "test/gtest.h"
 
-DECLARE_string(test_output_dir);
+DECLARE_string(test_artifacts_dir);
 
 namespace webrtc {
 namespace test {
 
 TEST(IsolatedOutputTest, ShouldRejectInvalidIsolatedOutDir) {
-  const char* backup = FLAG_test_output_dir;
-  FLAG_test_output_dir = "";
-  ASSERT_FALSE(WriteToTestOutput("a-file", "some-contents"));
-  FLAG_test_output_dir = backup;
+  const char* backup = FLAG_test_artifacts_dir;
+  FLAG_test_artifacts_dir = "";
+  ASSERT_FALSE(WriteToTestArtifactsDir("a-file", "some-contents"));
+  FLAG_test_artifacts_dir = backup;
 }
 
 TEST(IsolatedOutputTest, ShouldRejectInvalidFileName) {
-  ASSERT_FALSE(WriteToTestOutput(nullptr, "some-contents"));
-  ASSERT_FALSE(WriteToTestOutput("", "some-contents"));
+  ASSERT_FALSE(WriteToTestArtifactsDir(nullptr, "some-contents"));
+  ASSERT_FALSE(WriteToTestArtifactsDir("", "some-contents"));
 }
 
 // Sets isolated_out_dir=<a-writable-path> to execute this test.
 TEST(IsolatedOutputTest, ShouldBeAbleToWriteContent) {
   const char* filename = "a-file";
   const char* content = "some-contents";
-  if (WriteToTestOutput(filename, content)) {
-    rtc::Pathname out_file(FLAG_test_output_dir, filename);
+  if (WriteToTestArtifactsDir(filename, content)) {
+    rtc::Pathname out_file(FLAG_test_artifacts_dir, filename);
     rtc::File input = rtc::File::Open(out_file);
     EXPECT_TRUE(input.IsOpen());
     EXPECT_TRUE(input.Seek(0));

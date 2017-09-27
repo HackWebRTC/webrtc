@@ -50,7 +50,7 @@
 #include "test/statistics.h"
 #include "test/testsupport/fileutils.h"
 #include "test/testsupport/frame_writer.h"
-#include "test/testsupport/test_output.h"
+#include "test/testsupport/test_artifacts.h"
 #include "test/vcm_capturer.h"
 #include "test/video_renderer.h"
 #include "voice_engine/include/voe_base.h"
@@ -60,7 +60,7 @@
 DEFINE_bool(save_worst_frame,
             false,
             "Enable saving a frame with the lowest PSNR to a jpeg file in the "
-            "test_output_dir");
+            "test_artifacts_dir");
 
 namespace {
 
@@ -840,7 +840,7 @@ class VideoAnalyzer : public PacketReceiver,
     // jpeg is used here.
     if (FLAG_save_worst_frame && worst_frame_) {
       std::string output_dir;
-      test::GetTestOutputDir(&output_dir);
+      test::GetTestArtifactsDir(&output_dir);
       std::string output_path =
           rtc::Pathname(output_dir, test_label_ + ".jpg").pathname();
       LOG(LS_INFO) << "Saving worst frame to " << output_path;
