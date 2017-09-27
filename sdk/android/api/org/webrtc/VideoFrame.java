@@ -57,8 +57,20 @@ public class VideoFrame {
    * Interface for I420 buffers.
    */
   public interface I420Buffer extends Buffer {
+    /**
+     * Returns a direct ByteBuffer containing Y-plane data. The buffer size is at least getStrideY()
+     * * getHeight() bytes.
+     */
     ByteBuffer getDataY();
+    /**
+     * Returns a direct ByteBuffer containing U-plane data. The buffer size is at least getStrideU()
+     * * ((getHeight() + 1) / 2) bytes.
+     */
     ByteBuffer getDataU();
+    /**
+     * Returns a direct ByteBuffer containing V-plane data. The buffer size is at least getStrideV()
+     * * ((getHeight() + 1) / 2) bytes.
+     */
     ByteBuffer getDataV();
 
     int getStrideY();
