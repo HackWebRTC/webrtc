@@ -585,7 +585,7 @@ TEST_F(RampUpTest, UpDownUpTransportSequenceNumberRtx) {
 // TODO(holmer): Tests which don't report perf stats should be moved to a
 // different executable since they per definition are not perf tests.
 // Crashes on Linux only, see webrtc:7919.
-#if defined(WEBRTC_LINUX)
+#if defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
 #define MAYBE_UpDownUpTransportSequenceNumberPacketLoss \
     DISABLED_UpDownUpTransportSequenceNumberPacketLoss
 #else
