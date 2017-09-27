@@ -1098,6 +1098,7 @@ class MetaBuildWrapper(object):
         ]
         sep = '\\' if self.platform == 'win32' else '/'
         output_dir = '${ISOLATED_OUTDIR}' + sep + 'test_logs'
+        timeout = isolate_map[target].get('timeout', 900)
         gtest_parallel_wrapper = [
             '../../tools_webrtc/gtest-parallel-wrapper.py',
             '--output_dir=%s' % output_dir,
@@ -1105,7 +1106,7 @@ class MetaBuildWrapper(object):
             # We tell gtest-parallel to interrupt the test after 900 seconds,
             # so it can exit cleanly and report results, instead of being
             # interrupted by swarming and not reporting anything.
-            '--timeout=900',
+            '--timeout=%s' % timeout,
             '--retry_failed=3',
         ]
 

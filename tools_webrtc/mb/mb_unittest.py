@@ -419,6 +419,54 @@ class UnitTest(unittest.TestCase):
         '--store-tombstones',
     ])
 
+  def test_gn_gen_timeout(self):
+    test_files = {
+      '/tmp/swarming_targets': 'base_unittests\n',
+      '/fake_src/testing/buildbot/gn_isolate_map.pyl': (
+          "{'base_unittests': {"
+          "  'label': '//base:base_unittests',"
+          "  'type': 'non_parallel_console_test_launcher',"
+          "  'timeout': 500,"
+          "}}\n"
+      ),
+      '/fake_src/out/Default/base_unittests.runtime_deps': (
+          "base_unittests\n"
+      ),
+    }
+    mbw = self.check(['gen', '-c', 'gn_debug_goma', '//out/Default',
+                      '--swarming-targets-file', '/tmp/swarming_targets',
+                      '--isolate-map-file',
+                      '/fake_src/testing/buildbot/gn_isolate_map.pyl'],
+                     files=test_files, ret=0)
+
+    isolate_file = mbw.files['/fake_src/out/Default/base_unittests.isolate']
+    isolate_file_contents = ast.literal_eval(isolate_file)
+    files = isolate_file_contents['variables']['files']
+    command = isolate_file_contents['variables']['command']
+
+    self.assertEqual(files, [
+        '../../testing/test_env.py',
+        '../../third_party/gtest-parallel/gtest-parallel',
+        '../../third_party/gtest-parallel/gtest_parallel.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
+        'base_unittests',
+    ])
+    self.assertEqual(command, [
+        '../../testing/test_env.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
+        '--output_dir=${ISOLATED_OUTDIR}/test_logs',
+        '--gtest_color=no',
+        '--timeout=500',
+        '--retry_failed=3',
+        './base_unittests',
+        '--workers=1',
+        '--',
+        '--asan=0',
+        '--lsan=0',
+        '--msan=0',
+        '--tsan=0',
+    ])
+
   def test_gn_gen_non_parallel_console_test_launcher(self):
     test_files = {
       '/tmp/swarming_targets': 'base_unittests\n',

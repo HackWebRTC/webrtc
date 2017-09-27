@@ -120,6 +120,7 @@
   },
   "webrtc_perf_tests": {
     "label": "//:webrtc_perf_tests",
+    "timeout": 3600,  # 1 hour
     "type": "non_parallel_console_test_launcher",
   },
 }
