@@ -178,10 +178,10 @@ void ModuleRtpRtcpImpl::Process() {
 
   bool process_rtt = now >= last_rtt_process_time_ + kRtpRtcpRttProcessTimeMs;
   if (rtcp_sender_.Sending()) {
-    // Process RTT if we have received a receiver report and we haven't
+    // Process RTT if we have received a report block and we haven't
     // processed RTT for at least |kRtpRtcpRttProcessTimeMs| milliseconds.
-    if (rtcp_receiver_.LastReceivedReceiverReport() >
-        last_rtt_process_time_ && process_rtt) {
+    if (rtcp_receiver_.LastReceivedReportBlockMs() > last_rtt_process_time_ &&
+        process_rtt) {
       std::vector<RTCPReportBlock> receive_blocks;
       rtcp_receiver_.StatisticsReceived(&receive_blocks);
       int64_t max_rtt = 0;

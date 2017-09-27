@@ -123,7 +123,7 @@ RTCPReceiver::RTCPReceiver(
       xr_rrtr_status_(false),
       xr_rr_rtt_ms_(0),
       oldest_tmmbr_info_ms_(0),
-      last_received_rr_ms_(0),
+      last_received_rb_ms_(0),
       last_increased_sequence_number_ms_(0),
       stats_callback_(nullptr),
       packet_type_counter_observer_(packet_type_counter_observer),
@@ -146,9 +146,9 @@ void RTCPReceiver::IncomingPacket(const uint8_t* packet, size_t packet_size) {
   TriggerCallbacksFromRtcpPacket(packet_information);
 }
 
-int64_t RTCPReceiver::LastReceivedReceiverReport() const {
+int64_t RTCPReceiver::LastReceivedReportBlockMs() const {
   rtc::CritScope lock(&rtcp_receiver_lock_);
-  return last_received_rr_ms_;
+  return last_received_rb_ms_;
 }
 
 void RTCPReceiver::SetRemoteSSRC(uint32_t ssrc) {
@@ -422,8 +422,6 @@ void RTCPReceiver::HandleReceiverReport(const CommonHeader& rtcp_block,
     return;
   }
 
-  last_received_rr_ms_ = clock_->TimeInMilliseconds();
-
   const uint32_t remote_ssrc = receiver_report.sender_ssrc();
 
   packet_information->remote_ssrc = remote_ssrc;
@@ -454,6 +452,8 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
   // Filter out all report blocks that are not for us.
   if (registered_ssrcs_.count(report_block.source_ssrc()) == 0)
     return;
+
+  last_received_rb_ms_ = clock_->TimeInMilliseconds();
 
   ReportBlockWithRtt* report_block_info =
       &received_report_blocks_[report_block.source_ssrc()][remote_ssrc];
@@ -534,13 +534,13 @@ RTCPReceiver::TmmbrInformation* RTCPReceiver::GetTmmbrInformation(
 
 bool RTCPReceiver::RtcpRrTimeout(int64_t rtcp_interval_ms) {
   rtc::CritScope lock(&rtcp_receiver_lock_);
-  if (last_received_rr_ms_ == 0)
+  if (last_received_rb_ms_ == 0)
     return false;
 
   int64_t time_out_ms = kRrTimeoutIntervals * rtcp_interval_ms;
-  if (clock_->TimeInMilliseconds() > last_received_rr_ms_ + time_out_ms) {
+  if (clock_->TimeInMilliseconds() > last_received_rb_ms_ + time_out_ms) {
     // Reset the timer to only trigger one log.
-    last_received_rr_ms_ = 0;
+    last_received_rb_ms_ = 0;
     return true;
   }
   return false;
