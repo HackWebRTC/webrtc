@@ -70,7 +70,6 @@ class AudioCodingModule {
     Config(const Config&);
     ~Config();
 
-    int id;
     NetEq::Config neteq_config;
     Clock* clock;
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
@@ -83,8 +82,8 @@ class AudioCodingModule {
   // injected into ACM. ACM will take the ownership of the object clock and
   // delete it when destroyed.
   //
-  static AudioCodingModule* Create(int id);
-  static AudioCodingModule* Create(int id, Clock* clock);
+  static AudioCodingModule* Create();
+  static AudioCodingModule* Create(Clock* clock);
   static AudioCodingModule* Create(const Config& config);
   virtual ~AudioCodingModule() = default;
 

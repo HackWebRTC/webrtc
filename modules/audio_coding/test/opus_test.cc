@@ -27,7 +27,7 @@
 namespace webrtc {
 
 OpusTest::OpusTest()
-    : acm_receiver_(AudioCodingModule::Create(0)),
+    : acm_receiver_(AudioCodingModule::Create()),
       channel_a2b_(NULL),
       counter_(0),
       payload_type_(255),

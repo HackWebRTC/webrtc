@@ -48,8 +48,8 @@ namespace {
 }
 
 TestRedFec::TestRedFec()
-    : _acmA(AudioCodingModule::Create(0)),
-      _acmB(AudioCodingModule::Create(1)),
+    : _acmA(AudioCodingModule::Create()),
+      _acmB(AudioCodingModule::Create()),
       _channelA2B(NULL),
       _testCntr(0) {
 }

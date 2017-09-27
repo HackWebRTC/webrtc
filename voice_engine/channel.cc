@@ -646,8 +646,6 @@ AudioMixer::Source::AudioFrameInfo Channel::GetAudioFrameWithInfo(
     AudioFrameOperations::Mute(audio_frame);
   }
 
-  // Convert module ID to internal VoE channel ID
-  audio_frame->id_ = VoEChannelId(audio_frame->id_);
   // Store speech type for dead-or-alive detection
   _outputSpeechType = audio_frame->speech_type_;
 
@@ -796,7 +794,6 @@ Channel::Channel(int32_t channelId,
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::Channel() - ctor");
   AudioCodingModule::Config acm_config(config.acm_config);
-  acm_config.id = VoEModuleId(instanceId, channelId);
   acm_config.neteq_config.enable_muted_state = true;
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
@@ -1642,7 +1639,6 @@ void Channel::ProcessAndEncodeAudio(const AudioFrame& audio_input) {
   // TODO(henrika): try to avoid copying by moving ownership of audio frame
   // either into pool of frames or into the task itself.
   audio_frame->CopyFrom(audio_input);
-  audio_frame->id_ = ChannelId();
   encoder_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(
       new ProcessAndEncodeAudioTask(std::move(audio_frame), this)));
 }
@@ -1659,7 +1655,6 @@ void Channel::ProcessAndEncodeAudio(const int16_t* audio_data,
   CodecInst codec;
   const int result = GetSendCodec(codec);
   std::unique_ptr<AudioFrame> audio_frame(new AudioFrame());
-  audio_frame->id_ = ChannelId();
   // TODO(ossu): Investigate how this could happen. b/62909493
   if (result == 0) {
     audio_frame->sample_rate_hz_ = std::min(codec.plfreq, sample_rate);
@@ -1680,7 +1675,6 @@ void Channel::ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input) {
   RTC_DCHECK_RUN_ON(encoder_queue_);
   RTC_DCHECK_GT(audio_input->samples_per_channel_, 0);
   RTC_DCHECK_LE(audio_input->num_channels_, 2);
-  RTC_DCHECK_EQ(audio_input->id_, ChannelId());
 
   bool is_muted = InputMute();
   AudioFrameOperations::Mute(audio_input, previous_frame_muted_, is_muted);

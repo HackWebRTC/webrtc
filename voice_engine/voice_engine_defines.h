@@ -16,23 +16,13 @@
 #ifndef VOICE_ENGINE_VOICE_ENGINE_DEFINES_H_
 #define VOICE_ENGINE_VOICE_ENGINE_DEFINES_H_
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_processing/include/audio_processing.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 
 // VolumeControl
 enum { kMinVolumeLevel = 0 };
 enum { kMaxVolumeLevel = 255 };
-// Min scale factor for per-channel volume scaling
-const float kMinOutputVolumeScaling = 0.0f;
-// Max scale factor for per-channel volume scaling
-const float kMaxOutputVolumeScaling = 10.0f;
-// Min scale factor for output volume panning
-const float kMinOutputVolumePanning = 0.0f;
-// Max scale factor for output volume panning
-const float kMaxOutputVolumePanning = 1.0f;
 
 // Audio processing
 const NoiseSuppression::Level kDefaultNsMode = NoiseSuppression::kModerate;
@@ -48,7 +38,6 @@ const bool kDefaultAgcState =
 #else
     true;
 #endif
-const GainControl::Mode kDefaultRxAgcMode = GainControl::kAdaptiveDigital;
 
 // VideoSync
 // Lowest minimum playout delay
@@ -66,15 +55,6 @@ inline int VoEId(int veId, int chId) {
     return (int)((veId << 16) + dummyChannel);
   }
   return (int)((veId << 16) + chId);
-}
-
-inline int VoEModuleId(int veId, int chId) {
-  return (int)((veId << 16) + chId);
-}
-
-// Convert module ID to internal VoE channel ID
-inline int VoEChannelId(int moduleId) {
-  return (int)(moduleId & 0xffff);
 }
 
 }  // namespace webrtc

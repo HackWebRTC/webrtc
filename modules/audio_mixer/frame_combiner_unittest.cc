@@ -53,8 +53,7 @@ AudioFrame audio_frame_for_mixing;
 
 void SetUpFrames(int sample_rate_hz, int number_of_channels) {
   for (auto* frame : {&frame1, &frame2}) {
-    frame->UpdateFrame(-1, 0, nullptr,
-                       rtc::CheckedDivExact(sample_rate_hz, 100),
+    frame->UpdateFrame(0, nullptr, rtc::CheckedDivExact(sample_rate_hz, 100),
                        sample_rate_hz, AudioFrame::kNormalSpeech,
                        AudioFrame::kVadActive, number_of_channels);
   }

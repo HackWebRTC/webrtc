@@ -330,7 +330,18 @@ class AudioFrame {
   // ResetWithoutMuting() to skip this wasteful zeroing.
   void ResetWithoutMuting();
 
-  void UpdateFrame(int id, uint32_t timestamp, const int16_t* data,
+  // TODO(solenberg): Remove once downstream users of AudioFrame have updated.
+  RTC_DEPRECATED
+      void UpdateFrame(int id, uint32_t timestamp, const int16_t* data,
+                       size_t samples_per_channel, int sample_rate_hz,
+                       SpeechType speech_type, VADActivity vad_activity,
+                       size_t num_channels = 1) {
+    RTC_UNUSED(id);
+    UpdateFrame(timestamp, data, samples_per_channel, sample_rate_hz,
+                speech_type, vad_activity, num_channels);
+  }
+
+  void UpdateFrame(uint32_t timestamp, const int16_t* data,
                    size_t samples_per_channel, int sample_rate_hz,
                    SpeechType speech_type, VADActivity vad_activity,
                    size_t num_channels = 1);
@@ -366,7 +377,6 @@ class AudioFrame {
   RTC_DEPRECATED AudioFrame& operator>>=(const int rhs);
   RTC_DEPRECATED AudioFrame& operator+=(const AudioFrame& rhs);
 
-  int id_;
   // RTP timestamp of the first sample in the AudioFrame.
   uint32_t timestamp_ = 0;
   // Time since the first frame in milliseconds.
@@ -414,7 +424,6 @@ inline void AudioFrame::Reset() {
 }
 
 inline void AudioFrame::ResetWithoutMuting() {
-  id_ = -1;
   // TODO(wu): Zero is a valid value for |timestamp_|. We should initialize
   // to an invalid value, or add a new member to indicate invalidity.
   timestamp_ = 0;
@@ -428,15 +437,13 @@ inline void AudioFrame::ResetWithoutMuting() {
   profile_timestamp_ms_ = 0;
 }
 
-inline void AudioFrame::UpdateFrame(int id,
-                                    uint32_t timestamp,
+inline void AudioFrame::UpdateFrame(uint32_t timestamp,
                                     const int16_t* data,
                                     size_t samples_per_channel,
                                     int sample_rate_hz,
                                     SpeechType speech_type,
                                     VADActivity vad_activity,
                                     size_t num_channels) {
-  id_ = id;
   timestamp_ = timestamp;
   samples_per_channel_ = samples_per_channel;
   sample_rate_hz_ = sample_rate_hz;
@@ -457,7 +464,6 @@ inline void AudioFrame::UpdateFrame(int id,
 inline void AudioFrame::CopyFrom(const AudioFrame& src) {
   if (this == &src) return;
 
-  id_ = src.id_;
   timestamp_ = src.timestamp_;
   elapsed_time_ms_ = src.elapsed_time_ms_;
   ntp_time_ms_ = src.ntp_time_ms_;

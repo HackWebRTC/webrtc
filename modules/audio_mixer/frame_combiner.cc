@@ -193,7 +193,7 @@ void FrameCombiner::Combine(const std::vector<AudioFrame*>& mix_list,
   // value '0', because it is only supported in the one channel case and
   // is then updated in the helper functions.
   audio_frame_for_mixing->UpdateFrame(
-      -1, 0, nullptr, samples_per_channel, sample_rate, AudioFrame::kUndefined,
+      0, nullptr, samples_per_channel, sample_rate, AudioFrame::kUndefined,
       AudioFrame::kVadUnknown, number_of_channels);
 
   const bool use_limiter_this_round = use_apm_limiter_ && number_of_streams > 1;

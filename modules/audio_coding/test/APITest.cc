@@ -48,8 +48,8 @@ void APITest::Wait(uint32_t waitLengthMs) {
 }
 
 APITest::APITest()
-    : _acmA(AudioCodingModule::Create(1)),
-      _acmB(AudioCodingModule::Create(2)),
+    : _acmA(AudioCodingModule::Create()),
+      _acmB(AudioCodingModule::Create()),
       _channel_A2B(NULL),
       _channel_B2A(NULL),
       _writeToFile(true),

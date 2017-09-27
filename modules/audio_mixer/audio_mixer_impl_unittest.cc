@@ -35,12 +35,10 @@ namespace webrtc {
 namespace {
 
 constexpr int kDefaultSampleRateHz = 48000;
-constexpr int kId = 1;
 
 // Utility function that resets the frame member variables with
 // sensible defaults.
 void ResetFrame(AudioFrame* frame) {
-  frame->id_ = kId;
   frame->sample_rate_hz_ = kDefaultSampleRateHz;
   frame->num_channels_ = 1;
 
