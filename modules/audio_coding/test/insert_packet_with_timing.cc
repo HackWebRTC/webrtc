@@ -61,8 +61,8 @@ class InsertPacketWithTiming {
   InsertPacketWithTiming()
       : sender_clock_(new SimulatedClock(0)),
         receiver_clock_(new SimulatedClock(0)),
-        send_acm_(AudioCodingModule::Create(sender_clock_)),
-        receive_acm_(AudioCodingModule::Create(receiver_clock_)),
+        send_acm_(AudioCodingModule::Create(0, sender_clock_)),
+        receive_acm_(AudioCodingModule::Create(0, receiver_clock_)),
         channel_(new Channel),
         seq_num_fid_(fopen(FLAG_seq_num, "rt")),
         send_ts_fid_(fopen(FLAG_send_ts, "rt")),

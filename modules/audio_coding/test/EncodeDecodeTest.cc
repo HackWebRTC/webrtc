@@ -281,7 +281,7 @@ void EncodeDecodeTest::Perform() {
   codePars[1] = 0;
   codePars[2] = 0;
 
-  std::unique_ptr<AudioCodingModule> acm(AudioCodingModule::Create());
+  std::unique_ptr<AudioCodingModule> acm(AudioCodingModule::Create(0));
   struct CodecInst sendCodecTmp;
   numCodecs = acm->NumberOfCodecs();
 
@@ -337,7 +337,7 @@ std::string EncodeDecodeTest::EncodeToFile(int fileType,
                                            int codeId,
                                            int* codePars,
                                            int testMode) {
-  std::unique_ptr<AudioCodingModule> acm(AudioCodingModule::Create());
+  std::unique_ptr<AudioCodingModule> acm(AudioCodingModule::Create(1));
   RTPFile rtpFile;
   std::string fileName = webrtc::test::TempFilename(webrtc::test::OutputPath(),
                                                     "encode_decode_rtp");

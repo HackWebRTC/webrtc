@@ -34,14 +34,16 @@ namespace webrtc {
 #define MAX_FILE_NAME_LENGTH_BYTE 500
 
 TwoWayCommunication::TwoWayCommunication(int testMode)
-    : _acmA(AudioCodingModule::Create()),
-      _acmRefA(AudioCodingModule::Create()),
+    : _acmA(AudioCodingModule::Create(1)),
+      _acmRefA(AudioCodingModule::Create(3)),
       _testMode(testMode) {
   AudioCodingModule::Config config;
   // The clicks will be more obvious in FAX mode. TODO(henrik.lundin) Really?
   config.neteq_config.playout_mode = kPlayoutFax;
+  config.id = 2;
   config.decoder_factory = CreateBuiltinAudioDecoderFactory();
   _acmB.reset(AudioCodingModule::Create(config));
+  config.id = 4;
   _acmRefB.reset(AudioCodingModule::Create(config));
 }
 
@@ -60,7 +62,7 @@ TwoWayCommunication::~TwoWayCommunication() {
 
 void TwoWayCommunication::ChooseCodec(uint8_t* codecID_A,
                                       uint8_t* codecID_B) {
-  std::unique_ptr<AudioCodingModule> tmpACM(AudioCodingModule::Create());
+  std::unique_ptr<AudioCodingModule> tmpACM(AudioCodingModule::Create(0));
   uint8_t noCodec = tmpACM->NumberOfCodecs();
   CodecInst codecInst;
   printf("List of Supported Codecs\n");

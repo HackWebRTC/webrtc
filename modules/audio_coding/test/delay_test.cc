@@ -64,8 +64,8 @@ struct TestSettings {
 class DelayTest {
  public:
   DelayTest()
-      : acm_a_(AudioCodingModule::Create()),
-        acm_b_(AudioCodingModule::Create()),
+      : acm_a_(AudioCodingModule::Create(0)),
+        acm_b_(AudioCodingModule::Create(1)),
         channel_a2b_(new Channel),
         test_cntr_(0),
         encoding_sample_rate_hz_(8000) {}

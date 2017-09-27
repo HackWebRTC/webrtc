@@ -22,7 +22,7 @@ namespace webrtc {
 
 class TargetDelayTest : public ::testing::Test {
  protected:
-  TargetDelayTest() : acm_(AudioCodingModule::Create()) {}
+  TargetDelayTest() : acm_(AudioCodingModule::Create(0)) {}
 
   ~TargetDelayTest() {}
 

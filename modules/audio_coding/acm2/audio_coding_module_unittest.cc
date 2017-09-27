@@ -157,7 +157,8 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
 class AudioCodingModuleTestOldApi : public ::testing::Test {
  protected:
   AudioCodingModuleTestOldApi()
-      : rtp_utility_(new RtpUtility(kFrameSizeSamples, kPayloadType)),
+      : id_(1),
+        rtp_utility_(new RtpUtility(kFrameSizeSamples, kPayloadType)),
         clock_(Clock::GetRealTimeClock()) {}
 
   ~AudioCodingModuleTestOldApi() {}
@@ -165,7 +166,7 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   void TearDown() {}
 
   void SetUp() {
-    acm_.reset(AudioCodingModule::Create(clock_));
+    acm_.reset(AudioCodingModule::Create(id_, clock_));
 
     rtp_utility_->Populate(&rtp_header_);
 
@@ -229,6 +230,7 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
     VerifyEncoding();
   }
 
+  const int id_;
   std::unique_ptr<RtpUtility> rtp_utility_;
   std::unique_ptr<AudioCodingModule> acm_;
   PacketizationCallbackStubOldApi packet_cb_;
@@ -312,6 +314,7 @@ TEST_F(AudioCodingModuleTestOldApi, VerifyOutputFrame) {
   bool muted;
   EXPECT_EQ(0, acm_->PlayoutData10Ms(kSampleRateHz, &audio_frame, &muted));
   ASSERT_FALSE(muted);
+  EXPECT_EQ(id_, audio_frame.id_);
   EXPECT_EQ(0u, audio_frame.timestamp_);
   EXPECT_GT(audio_frame.num_channels_, 0u);
   EXPECT_EQ(static_cast<size_t>(kSampleRateHz / 100),
