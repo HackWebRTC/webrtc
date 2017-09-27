@@ -1105,9 +1105,29 @@ void AllocationSequence::DisableEquivalentPhases(rtc::Network* network,
 
   // Else turn off the stuff that we've already got covered.
 
-  // Every config implicitly specifies local, so turn that off right away.
-  *flags |= PORTALLOCATOR_DISABLE_UDP;
-  *flags |= PORTALLOCATOR_DISABLE_TCP;
+  // Every config implicitly specifies local, so turn that off right away if we
+  // already have a port of the corresponding type. Look for a port that
+  // matches this AllocationSequence's network, is the right protocol, and
+  // hasn't encountered an error.
+  // TODO(deadbeef): This doesn't take into account that there may be another
+  // AllocationSequence that's ABOUT to allocate a UDP port, but hasn't yet.
+  // This can happen if, say, there's a network change event right before an
+  // application-triggered ICE restart. Hopefully this problem will just go
+  // away if we get rid of the gathering "phases" though, which is planned.
+  if (std::any_of(session_->ports_.begin(), session_->ports_.end(),
+                  [this](const BasicPortAllocatorSession::PortData& p) {
+                    return p.port()->Network() == network_ &&
+                           p.port()->GetProtocol() == PROTO_UDP && !p.error();
+                  })) {
+    *flags |= PORTALLOCATOR_DISABLE_UDP;
+  }
+  if (std::any_of(session_->ports_.begin(), session_->ports_.end(),
+                  [this](const BasicPortAllocatorSession::PortData& p) {
+                    return p.port()->Network() == network_ &&
+                           p.port()->GetProtocol() == PROTO_TCP && !p.error();
+                  })) {
+    *flags |= PORTALLOCATOR_DISABLE_TCP;
+  }
 
   if (config_ && config) {
     if (config_->StunServers() == config->StunServers()) {

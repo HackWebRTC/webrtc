@@ -500,12 +500,9 @@ void RelayEntry::Connect() {
     LOG(LS_WARNING) << "Unknown protocol (" << ra->proto << ")";
   }
 
-  if (!socket) {
-    LOG(LS_WARNING) << "Socket creation failed";
-  }
-
   // If we failed to get a socket, move on to the next protocol.
   if (!socket) {
+    LOG(LS_WARNING) << "Socket creation failed";
     port()->thread()->Post(RTC_FROM_HERE, this, kMessageConnectTimeout);
     return;
   }

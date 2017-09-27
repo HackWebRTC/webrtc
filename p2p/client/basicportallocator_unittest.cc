@@ -752,17 +752,15 @@ TEST_F(BasicPortAllocatorTest, TestIgnoreNetworksAccordingToIgnoreMask) {
   EXPECT_EQ(0x12345602U, candidates_[0].address().ip());
 }
 
-// Test that high cost networks are filtered if the flag
-// PORTALLOCATOR_DISABLE_COSTLY_NETWORKS is set.
-TEST_F(BasicPortAllocatorTest, TestGatherLowCostNetworkOnly) {
-  SocketAddress addr_wifi(IPAddress(0x12345600U), 0);
-  SocketAddress addr_cellular(IPAddress(0x12345601U), 0);
-  SocketAddress addr_unknown1(IPAddress(0x12345602U), 0);
-  SocketAddress addr_unknown2(IPAddress(0x12345603U), 0);
-  // If both Wi-Fi and cellular interfaces are present, only gather on the Wi-Fi
-  // interface.
-  AddInterface(addr_wifi, "test_wlan0", rtc::ADAPTER_TYPE_WIFI);
-  AddInterface(addr_cellular, "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
+// Test that when the PORTALLOCATOR_DISABLE_COSTLY_NETWORKS flag is set and
+// both Wi-Fi and cell interfaces are available, only Wi-Fi is used.
+TEST_F(BasicPortAllocatorTest,
+       WifiUsedInsteadOfCellWhenCostlyNetworksDisabled) {
+  SocketAddress wifi(IPAddress(0x12345600U), 0);
+  SocketAddress cell(IPAddress(0x12345601U), 0);
+  AddInterface(wifi, "test_wlan0", rtc::ADAPTER_TYPE_WIFI);
+  AddInterface(cell, "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
+  // Disable all but UDP candidates to make the test simpler.
   allocator().set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
                         cricket::PORTALLOCATOR_DISABLE_RELAY |
                         cricket::PORTALLOCATOR_DISABLE_TCP |
@@ -771,35 +769,84 @@ TEST_F(BasicPortAllocatorTest, TestGatherLowCostNetworkOnly) {
   session_->StartGettingPorts();
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
+  // Should only get one Wi-Fi candidate.
   EXPECT_EQ(1U, candidates_.size());
-  EXPECT_TRUE(addr_wifi.EqualIPs(candidates_[0].address()));
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", wifi);
+}
 
-  // If both cellular and unknown interfaces are present, only gather on the
-  // unknown interfaces.
-  candidates_.clear();
-  candidate_allocation_done_ = false;
-  RemoveInterface(addr_wifi);
-  AddInterface(addr_unknown1, "test_unknown0", rtc::ADAPTER_TYPE_UNKNOWN);
-  AddInterface(addr_unknown2, "test_unknown1", rtc::ADAPTER_TYPE_UNKNOWN);
+// Test that when the PORTALLOCATOR_DISABLE_COSTLY_NETWORKS flag is set and
+// both "unknown" and cell interfaces are available, only the unknown are used.
+// The unknown interface may be something that ultimately uses Wi-Fi, so we do
+// this to be on the safe side.
+TEST_F(BasicPortAllocatorTest,
+       UnknownInterfaceUsedInsteadOfCellWhenCostlyNetworksDisabled) {
+  SocketAddress cell(IPAddress(0x12345601U), 0);
+  SocketAddress unknown1(IPAddress(0x12345602U), 0);
+  SocketAddress unknown2(IPAddress(0x12345603U), 0);
+  AddInterface(cell, "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
+  AddInterface(unknown1, "test_unknown0", rtc::ADAPTER_TYPE_UNKNOWN);
+  AddInterface(unknown2, "test_unknown1", rtc::ADAPTER_TYPE_UNKNOWN);
+  // Disable all but UDP candidates to make the test simpler.
+  allocator().set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY |
+                        cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
+  // Should only get two candidates, none of which is cell.
   EXPECT_EQ(2U, candidates_.size());
-  EXPECT_TRUE((addr_unknown1.EqualIPs(candidates_[0].address()) &&
-               addr_unknown2.EqualIPs(candidates_[1].address())) ||
-              (addr_unknown1.EqualIPs(candidates_[1].address()) &&
-               addr_unknown2.EqualIPs(candidates_[0].address())));
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", unknown1);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", unknown2);
+}
 
-  // If Wi-Fi, cellular, unknown interfaces are all present, only gather on the
-  // Wi-Fi interface.
-  candidates_.clear();
-  candidate_allocation_done_ = false;
-  AddInterface(addr_wifi, "test_wlan0", rtc::ADAPTER_TYPE_WIFI);
+// Test that when the PORTALLOCATOR_DISABLE_COSTLY_NETWORKS flag is set and
+// there are a mix of Wi-Fi, "unknown" and cell interfaces, only the Wi-Fi
+// interface is used.
+TEST_F(BasicPortAllocatorTest,
+       WifiUsedInsteadOfUnknownOrCellWhenCostlyNetworksDisabled) {
+  SocketAddress wifi(IPAddress(0x12345600U), 0);
+  SocketAddress cellular(IPAddress(0x12345601U), 0);
+  SocketAddress unknown1(IPAddress(0x12345602U), 0);
+  SocketAddress unknown2(IPAddress(0x12345603U), 0);
+  AddInterface(wifi, "test_wlan0", rtc::ADAPTER_TYPE_WIFI);
+  AddInterface(cellular, "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
+  AddInterface(unknown1, "test_unknown0", rtc::ADAPTER_TYPE_UNKNOWN);
+  AddInterface(unknown2, "test_unknown1", rtc::ADAPTER_TYPE_UNKNOWN);
+  // Disable all but UDP candidates to make the test simpler.
+  allocator().set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY |
+                        cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
+  // Should only get one Wi-Fi candidate.
   EXPECT_EQ(1U, candidates_.size());
-  EXPECT_TRUE(addr_wifi.EqualIPs(candidates_[0].address()));
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", wifi);
+}
+
+// Test that if the PORTALLOCATOR_DISABLE_COSTLY_NETWORKS flag is set, but the
+// only interface available is cellular, it ends up used anyway. A costly
+// connection is always better than no connection.
+TEST_F(BasicPortAllocatorTest,
+       CellUsedWhenCostlyNetworksDisabledButThereAreNoOtherInterfaces) {
+  SocketAddress cellular(IPAddress(0x12345601U), 0);
+  AddInterface(cellular, "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
+  // Disable all but UDP candidates to make the test simpler.
+  allocator().set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY |
+                        cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  // Make sure we got the cell candidate.
+  EXPECT_EQ(1U, candidates_.size());
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", cellular);
 }
 
 // Test that no more than allocator.max_ipv6_networks() IPv6 networks are used
@@ -951,6 +998,46 @@ TEST_F(BasicPortAllocatorTest, TestSameNetworkDownAndUpWhenSessionStopped) {
   SIMULATED_WAIT(false, 1000, fake_clock);
   EXPECT_EQ(0U, candidates_.size());
   EXPECT_EQ(0U, ports_.size());
+}
+
+// Similar to the above tests, but tests a situation when sockets can't be
+// bound to a network interface, then after a network change event can be.
+// Related bug: https://bugs.chromium.org/p/webrtc/issues/detail?id=8256
+TEST_F(BasicPortAllocatorTest, CandidatesRegatheredAfterBindingFails) {
+  // Only test local ports to simplify test.
+  ResetWithNoServersOrNat();
+  // Provide a situation where the interface appears to be available, but
+  // binding the sockets fails. See bug for description of when this can
+  // happen.
+  std::string if_name("test_net0");
+  AddInterface(kClientAddr, if_name);
+  fss_->set_tcp_sockets_enabled(false);
+  fss_->set_udp_sockets_enabled(false);
+  EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  // Make sure we actually prevented candidates from being gathered (other than
+  // a single TCP active candidate, since that doesn't require creating a
+  // socket).
+  ASSERT_EQ(1U, candidates_.size());
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
+  candidate_allocation_done_ = false;
+
+  // Now simulate the interface coming up, with the newfound ability to bind
+  // sockets.
+  fss_->set_tcp_sockets_enabled(true);
+  fss_->set_udp_sockets_enabled(true);
+  AddInterface(kClientAddr, if_name);
+  ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  // Should get UDP and TCP candidate.
+  ASSERT_EQ(2U, candidates_.size());
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  // TODO(deadbeef): This is actually the same active TCP candidate as before.
+  // We should extend this test to also verify that a server candidate is
+  // gathered.
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
 }
 
 // Verify candidates with default step delay of 1sec.
