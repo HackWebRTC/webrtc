@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-"""Class implementing a wrapper for audioproc_f.
+"""Class implementing a wrapper for APM simulators.
 """
 
 import cProfile
@@ -19,18 +19,24 @@ from . import exceptions
 
 
 class AudioProcWrapper(object):
-  """Wrapper for audioproc_f.
+  """Wrapper for APM simulators.
   """
 
-  OUTPUT_FILENAME = 'output.wav'
-  _AUDIOPROC_F_BIN_PATH = os.path.abspath(os.path.join(
+  DEFAULT_APM_SIMULATOR_BIN_PATH = os.path.abspath(os.path.join(
       os.pardir, 'audioproc_f'))
+  OUTPUT_FILENAME = 'output.wav'
 
-  def __init__(self):
+  def __init__(self, simulator_bin_path):
+    """Ctor.
+
+    Args:
+      simulator_bin_path: path to the APM simulator binary.
+    """
+    self._simulator_bin_path = simulator_bin_path
     self._config = None
     self._output_signal_filepath = None
 
-    # Profiler instance to measure audioproc_f running time.
+    # Profiler instance to measure running time.
     self._profiler = cProfile.Profile()
 
   @property
@@ -39,11 +45,11 @@ class AudioProcWrapper(object):
 
   def Run(self, config_filepath, capture_input_filepath, output_path,
           render_input_filepath=None):
-    """Run audioproc_f.
+    """Runs APM simulator.
 
     Args:
-      config_filepath: path to the configuration file specifing the arguments
-                       for audioproc_f.
+      config_filepath: path to the configuration file specifying the arguments
+                       for the APM simulator.
       capture_input_filepath: path to the capture audio track input file (aka
                               forward or near-end).
       output_path: path of the audio track output file.
@@ -63,7 +69,7 @@ class AudioProcWrapper(object):
     # Load configuration.
     self._config = data_access.AudioProcConfigFile.Load(config_filepath)
 
-    # Set remaining parametrs.
+    # Set remaining parameters.
     if not os.path.exists(capture_input_filepath):
       raise exceptions.FileNotFoundError('cannot find capture input file')
     self._config['-i'] = capture_input_filepath
@@ -74,7 +80,7 @@ class AudioProcWrapper(object):
       self._config['-ri'] = render_input_filepath
 
     # Build arguments list.
-    args = [self._AUDIOPROC_F_BIN_PATH]
+    args = [self._simulator_bin_path]
     for param_name in self._config:
       args.append(param_name)
       if self._config[param_name] is not None:

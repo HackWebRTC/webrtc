@@ -8,7 +8,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 """Generate .json files with which the APM module can be tested using the
-   apm_quality_assessment.py script.
+   apm_quality_assessment.py script and audioproc_f as APM simulator.
 """
 
 import logging

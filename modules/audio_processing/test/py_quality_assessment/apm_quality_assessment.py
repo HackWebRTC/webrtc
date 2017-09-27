@@ -8,7 +8,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 """Perform APM module quality assessment on one or more input files using one or
-   more audioproc_f configuration files and one or more test data generators.
+   more APM simulator configuration files and one or more test data generators.
 
 Usage: apm_quality_assessment.py -i audio1.wav [audio2.wav ...]
                                  -c cfg1.json [cfg2.json ...]
@@ -47,12 +47,12 @@ def _InstanceArgumentsParser():
   """
   parser = argparse.ArgumentParser(description=(
       'Perform APM module quality assessment on one or more input files using '
-      'one or more audioproc_f configuration files and one or more '
+      'one or more APM simulator configuration files and one or more '
       'test data generators.'))
 
   parser.add_argument('-c', '--config_files', nargs='+', required=False,
                       help=('path to the configuration files defining the '
-                            'arguments with which the audioproc_f tool is '
+                            'arguments with which the APM simulator tool is '
                             'called'),
                       default=[_DEFAULT_CONFIG_FILE])
 
@@ -93,6 +93,10 @@ def _InstanceArgumentsParser():
   parser.add_argument('--air_db_path', required=True,
                       help='path to the Aechen IR database')
 
+  parser.add_argument(
+      '--apm_sim_path', required=False, help='path to the APM simulator tool',
+      default=audioproc_wrapper.AudioProcWrapper.DEFAULT_APM_SIMULATOR_BIN_PATH)
+
   return parser
 
 
@@ -115,7 +119,7 @@ def main():
   simulator = simulation.ApmModuleSimulator(
       aechen_ir_database_path=args.air_db_path,
       polqa_tool_bin_path=os.path.join(args.polqa_path, _POLQA_BIN_NAME),
-      ap_wrapper=audioproc_wrapper.AudioProcWrapper(),
+      ap_wrapper=audioproc_wrapper.AudioProcWrapper(args.apm_sim_path),
       evaluator=evaluation.ApmModuleEvaluator())
   simulator.Run(
       config_filepaths=args.config_files,

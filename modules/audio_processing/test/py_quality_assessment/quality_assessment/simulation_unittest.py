@@ -52,7 +52,8 @@ class TestApmModuleSimulator(unittest.TestCase):
 
   def testSimulation(self):
     # Instance dependencies to inject and mock.
-    ap_wrapper = audioproc_wrapper.AudioProcWrapper()
+    ap_wrapper = audioproc_wrapper.AudioProcWrapper(
+        audioproc_wrapper.AudioProcWrapper.DEFAULT_APM_SIMULATOR_BIN_PATH)
     evaluator = evaluation.ApmModuleEvaluator()
     ap_wrapper.Run = mock.MagicMock(name='Run')
     evaluator.Run = mock.MagicMock(name='Run')
@@ -81,8 +82,8 @@ class TestApmModuleSimulator(unittest.TestCase):
 
     # Check.
     # TODO(alessiob): Once the TestDataGenerator classes can be configured by
-    # the client code (e.g., number of SNR pairs for the white noise teste data
-    # gnerator), the exact number of calls to ap_wrapper.Run and evaluator.Run
+    # the client code (e.g., number of SNR pairs for the white noise test data
+    # generator), the exact number of calls to ap_wrapper.Run and evaluator.Run
     # is known; use that with assertEqual.
     min_number_of_simulations = len(config_files) * len(input_files) * len(
         test_data_generators)
@@ -99,7 +100,8 @@ class TestApmModuleSimulator(unittest.TestCase):
         aechen_ir_database_path='',
         polqa_tool_bin_path=os.path.join(
             os.path.dirname(__file__), 'fake_polqa'),
-        ap_wrapper=audioproc_wrapper.AudioProcWrapper(),
+        ap_wrapper=audioproc_wrapper.AudioProcWrapper(
+            audioproc_wrapper.AudioProcWrapper.DEFAULT_APM_SIMULATOR_BIN_PATH),
         evaluator=evaluation.ApmModuleEvaluator())
 
     # What to simulate.

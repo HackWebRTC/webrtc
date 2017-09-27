@@ -89,7 +89,7 @@ class Metadata(object):
 
 
 class AudioProcConfigFile(object):
-  """Data access to load/save audioproc_f argument lists.
+  """Data access to load/save APM simulator argument lists.
 
   The arguments stored in the config files are used to control the APM flags.
   """
@@ -99,7 +99,7 @@ class AudioProcConfigFile(object):
 
   @classmethod
   def Load(cls, filepath):
-    """Loads a configuration file for audioproc_f.
+    """Loads a configuration file for an APM simulator.
 
     Args:
       filepath: path to the configuration file.
@@ -112,7 +112,7 @@ class AudioProcConfigFile(object):
 
   @classmethod
   def Save(cls, filepath, config):
-    """Saves a configuration file for audioproc_f.
+    """Saves a configuration file for an APM simulator.
 
     Args:
       filepath: path to the configuration file.

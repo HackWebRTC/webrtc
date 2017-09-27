@@ -1,14 +1,13 @@
 # APM Quality Assessment tool
 
-Python wrapper of `audioproc_f` with which quality assessment can be
-automatized. The tool allows to simulate different noise conditions, input
-signals, APM configurations and it computes different scores.
+Python wrapper of APM simulators (e.g., `audioproc_f`) with which quality
+assessment can be automatized. The tool allows to simulate different noise
+conditions, input signals, APM configurations and it computes different scores.
 Once the scores are computed, the results can be easily exported to an HTML page
 which allows to listen to the APM input and output signals and also the
 reference one used for evaluation.
 
 ## Dependencies
-
  - OS: Linux
  - Python 2.7
  - Python libraries: numpy, scipy, pydub (0.17.0+), pandas (0.20.1+)
@@ -28,19 +27,16 @@ reference one used for evaluation.
  - Input probing signals and noise tracks (you can make your own dataset - *1)
 
 ## Build
-
  - Compile WebRTC
  - Go to `out/Default/py_quality_assessment` and check that
    `apm_quality_assessment.py` exists
 
 ## Unit tests
-
  - Compile WebRTC
  - Go to `out/Default/py_quality_assessment`
  - Run `python -m unittest -p "*_unittest.py" discover`
 
 ## First time setup
-
  - Deploy PolqaOem64 and set the `POLQA_PATH` environment variable
    - e.g., `$ export POLQA_PATH=/var/opt/PolqaOem64`
  - Deploy the AIR Database and set the `AECHEN_IR_DATABASE_PATH` environment
@@ -59,7 +55,6 @@ converted and exported with Audacity).
 `out/Default/py_quality_assessment/quality_assessment/test_data_generation.py`.
 
 ## Usage (scores computation)
-
  - Go to `out/Default/py_quality_assessment`
  - Check the `apm_quality_assessment.sh` as an example script to parallelize the
    experiments
@@ -69,7 +64,6 @@ converted and exported with Audacity).
    scores
 
 ## Usage (export reports)
-
 Showing all the results at once can be confusing. You therefore may want to
 export separate reports. In this case, you can use the
 `apm_quality_assessment_export.py` script as follows:
@@ -96,7 +90,6 @@ $ ./apm_quality_assessment_export.py \
 ```
 
 ## Troubleshooting
-
 The input wav file must be:
   - sampled at a sample rate that is a multiple of 100 (required by POLQA)
   - in the 16 bit format (required by `audioproc_f`)
