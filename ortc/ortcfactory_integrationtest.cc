@@ -471,6 +471,7 @@ TEST_F(OrtcFactoryIntegrationTest, SetTrackWhileSending) {
 //
 // Uses muxed RTCP, and minimal parameters with hard-coded configs that are
 // known to work.
+#if !(defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_64_BITS) && !defined(NDEBUG))
 TEST_F(OrtcFactoryIntegrationTest,
        BasicTwoWayAudioVideoRtpSendersAndReceivers) {
   auto udp_transports = CreateAndConnectUdpTransportPair();
@@ -481,7 +482,6 @@ TEST_F(OrtcFactoryIntegrationTest,
                                         expect_success);
 }
 
-#if !(defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_64_BITS) && !defined(NDEBUG))
 TEST_F(OrtcFactoryIntegrationTest,
        BasicTwoWayAudioVideoSrtpSendersAndReceivers) {
   auto udp_transports = CreateAndConnectUdpTransportPair();
