@@ -194,8 +194,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   // Codecs.
   std::unique_ptr<VideoEncoder> encoder_;
-  std::unique_ptr<cricket::WebRtcVideoDecoderFactory> decoder_factory_;
-  VideoDecoder* decoder_;
+  std::unique_ptr<VideoDecoder> decoder_;
 
   // Helper objects.
   std::unique_ptr<FrameReader> analysis_frame_reader_;

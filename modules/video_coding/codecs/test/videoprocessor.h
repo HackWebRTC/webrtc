@@ -99,8 +99,7 @@ struct TestConfig {
 
   // Should the hardware codecs be wrapped in software fallbacks?
   bool sw_fallback_encoder = false;
-  // TODO(brandtr): Add support for SW decoder fallbacks, when
-  // webrtc::VideoDecoder's can be wrapped in std::unique_ptr's.
+  bool sw_fallback_decoder = false;
 };
 
 // Handles encoding/decoding of video using the VideoEncoder/VideoDecoder

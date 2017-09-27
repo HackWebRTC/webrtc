@@ -23,6 +23,7 @@
 
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
+#include "media/engine/videodecodersoftwarefallbackwrapper.h"
 #include "media/engine/videoencodersoftwarefallbackwrapper.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -302,18 +303,19 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
     encoder_factory.reset(new cricket::InternalEncoderFactory());
   }
 
+  std::unique_ptr<cricket::WebRtcVideoDecoderFactory> decoder_factory;
   if (config_.hw_decoder) {
 #if defined(WEBRTC_ANDROID)
-    decoder_factory_.reset(new jni::MediaCodecVideoDecoderFactory());
+    decoder_factory.reset(new jni::MediaCodecVideoDecoderFactory());
 #elif defined(WEBRTC_IOS)
     EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
         << "iOS HW codecs only support H264.";
-    decoder_factory_ = CreateObjCDecoderFactory();
+    decoder_factory = CreateObjCDecoderFactory();
 #else
     RTC_NOTREACHED() << "Only support HW decoder on Android and iOS.";
 #endif
   } else {
-    decoder_factory_.reset(new cricket::InternalDecoderFactory());
+    decoder_factory.reset(new cricket::InternalDecoderFactory());
   }
 
   cricket::VideoCodec codec;
@@ -322,21 +324,21 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
     case kVideoCodecVP8:
       codec = cricket::VideoCodec(cricket::kVp8CodecName);
       encoder_.reset(encoder_factory->CreateVideoEncoder(codec));
-      decoder_ =
-          decoder_factory_->CreateVideoDecoderWithParams(codec, decoder_params);
+      decoder_.reset(
+          decoder_factory->CreateVideoDecoderWithParams(codec, decoder_params));
       break;
     case kVideoCodecVP9:
       codec = cricket::VideoCodec(cricket::kVp9CodecName);
       encoder_.reset(encoder_factory->CreateVideoEncoder(codec));
-      decoder_ =
-          decoder_factory_->CreateVideoDecoderWithParams(codec, decoder_params);
+      decoder_.reset(
+          decoder_factory->CreateVideoDecoderWithParams(codec, decoder_params));
       break;
     case kVideoCodecH264:
       // TODO(brandtr): Generalize so that we support multiple profiles here.
       codec = cricket::VideoCodec(cricket::kH264CodecName);
       encoder_.reset(encoder_factory->CreateVideoEncoder(codec));
-      decoder_ =
-          decoder_factory_->CreateVideoDecoderWithParams(codec, decoder_params);
+      decoder_.reset(
+          decoder_factory->CreateVideoDecoderWithParams(codec, decoder_params));
       break;
     default:
       RTC_NOTREACHED();
@@ -347,6 +349,10 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
     encoder_ = rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
         codec, std::move(encoder_));
   }
+  if (config_.sw_fallback_decoder) {
+    decoder_ = rtc::MakeUnique<VideoDecoderSoftwareFallbackWrapper>(
+        config_.codec_settings.codecType, std::move(decoder_));
+  }
 
   EXPECT_TRUE(encoder_) << "Encoder not successfully created.";
   EXPECT_TRUE(decoder_) << "Decoder not successfully created.";
@@ -354,7 +360,7 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
 
 void VideoProcessorIntegrationTest::DestroyEncoderAndDecoder() {
   encoder_.reset();
-  decoder_factory_->DestroyVideoDecoder(decoder_);
+  decoder_.reset();
 }
 
 void VideoProcessorIntegrationTest::SetUpAndInitObjects(
@@ -407,12 +413,8 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
 
   rtc::Event sync_event(false, false);
   task_queue->PostTask([this, &sync_event]() {
-    // TODO(brandtr): std::move |encoder_| and |decoder_| into the
-    // VideoProcessor when we are able to store |decoder_| in a
-    // std::unique_ptr. That is, when https://codereview.webrtc.org/3009973002
-    // has been relanded.
     processor_ = rtc::MakeUnique<VideoProcessor>(
-        encoder_.get(), decoder_, analysis_frame_reader_.get(),
+        encoder_.get(), decoder_.get(), analysis_frame_reader_.get(),
         analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
         &stats_, encoded_frame_writer_.get(), decoded_frame_writer_.get());
     processor_->Init();
