@@ -422,7 +422,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
     frame->num_references = codec_header.num_ref_pics;
     for (size_t i = 0; i < frame->num_references; ++i) {
       frame->references[i] =
-          Subtract<1 << 16>(frame->picture_id, codec_header.pid_diff[i]);
+          Subtract<kPicIdLength>(frame->picture_id, codec_header.pid_diff[i]);
     }
 
     UnwrapPictureIds(frame);

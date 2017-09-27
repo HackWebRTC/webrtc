@@ -1313,5 +1313,12 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9FlexibleModeTwoSpatialLayersReordered) {
   CheckReferencesVp9(8, 1, 7);
 }
 
+TEST_F(TestRtpFrameReferenceFinder, WrappingFlexReference) {
+  InsertVp9Flex(0, 0, false, 0, 0, 0, 0, false, {1});
+
+  ASSERT_EQ(1UL, frames_from_callback_.size());
+  CheckReferencesVp9(1, 0, 0);
+}
+
 }  // namespace video_coding
 }  // namespace webrtc
