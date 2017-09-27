@@ -37,11 +37,11 @@ import zipfile
 SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
 DEFAULT_ARCHS = ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64']
 NEEDED_SO_FILES = ['libjingle_peerconnection_so.so']
-JAR_FILE = 'lib.java/webrtc/sdk/android/libwebrtc.jar'
-MANIFEST_FILE = 'webrtc/sdk/android/AndroidManifest.xml'
+JAR_FILE = 'lib.java/sdk/android/libwebrtc.jar'
+MANIFEST_FILE = 'sdk/android/AndroidManifest.xml'
 TARGETS = [
-  'webrtc/sdk/android:libwebrtc',
-  'webrtc/sdk/android:libjingle_peerconnection_so',
+  'sdk/android:libwebrtc',
+  'sdk/android:libjingle_peerconnection_so',
 ]
 
 sys.path.append(os.path.join(SCRIPT_DIR, '..', 'libs'))
