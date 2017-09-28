@@ -151,11 +151,11 @@ int SimulcastEncoderAdapter::Release() {
   while (!streaminfos_.empty()) {
     std::unique_ptr<VideoEncoder> encoder =
         std::move(streaminfos_.back().encoder);
-    encoder->Release();
     // Even though it seems very unlikely, there are no guarantees that the
-    // encoder will not call back after being Release()'d. Therefore, we disable
-    // the callbacks here.
+    // encoder will not call back after being Release()'d. Therefore, we first
+    // disable the callbacks here.
     encoder->RegisterEncodeCompleteCallback(nullptr);
+    encoder->Release();
     streaminfos_.pop_back();  // Deletes callback adapter.
     stored_encoders_.push(std::move(encoder));
   }

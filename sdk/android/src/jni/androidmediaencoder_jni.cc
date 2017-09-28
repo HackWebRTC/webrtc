@@ -1018,6 +1018,8 @@ int32_t MediaCodecVideoEncoder::Release() {
   }
   use_surface_ = false;
   ALOGD << "EncoderRelease done.";
+  // It's legal to move the encoder to another queue now.
+  encoder_queue_checker_.Detach();
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
