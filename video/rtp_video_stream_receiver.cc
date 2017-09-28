@@ -500,7 +500,7 @@ void RtpVideoStreamReceiver::NotifyReceiverOfFecPacket(
     LOG(LS_WARNING) << "Failed to get payload specifics.";
     return;
   }
-  rtp_header.type.Video.codec = pl->typeSpecific.Video.videoCodecType;
+  rtp_header.type.Video.codec = pl->typeSpecific.video_payload().videoCodecType;
   rtp_header.type.Video.rotation = kVideoRotation_0;
   if (header.extension.hasVideoRotation) {
     rtp_header.type.Video.rotation = header.extension.videoRotation;

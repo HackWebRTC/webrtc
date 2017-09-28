@@ -237,15 +237,16 @@ int32_t RTPSender::RegisterPayload(
     // Check if it's the same as we already have.
     if (RtpUtility::StringCompare(
             payload->name, payload_name, RTP_PAYLOAD_NAME_SIZE - 1)) {
-      if (audio_configured_ && payload->audio &&
-          payload->typeSpecific.Audio.frequency == frequency &&
-          (payload->typeSpecific.Audio.rate == rate ||
-           payload->typeSpecific.Audio.rate == 0 || rate == 0)) {
-        payload->typeSpecific.Audio.rate = rate;
-        // Ensure that we update the rate if new or old is zero.
-        return 0;
+      if (audio_configured_ && payload->typeSpecific.is_audio()) {
+        auto& p = payload->typeSpecific.audio_payload();
+        if (p.frequency == frequency &&
+            (p.rate == rate || p.rate == 0 || rate == 0)) {
+          p.rate = rate;
+          // Ensure that we update the rate if new or old is zero.
+          return 0;
+        }
       }
-      if (!audio_configured_ && !payload->audio) {
+      if (!audio_configured_ && !payload->typeSpecific.is_audio()) {
         return 0;
       }
     }
@@ -356,9 +357,10 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
   SetSendPayloadType(payload_type);
   RtpUtility::Payload* payload = it->second;
   RTC_DCHECK(payload);
-  if (!payload->audio && !audio_configured_) {
-    video_->SetVideoCodecType(payload->typeSpecific.Video.videoCodecType);
-    *video_type = payload->typeSpecific.Video.videoCodecType;
+  if (payload->typeSpecific.is_video() && !audio_configured_) {
+    video_->SetVideoCodecType(
+        payload->typeSpecific.video_payload().videoCodecType);
+    *video_type = payload->typeSpecific.video_payload().videoCodecType;
   }
   return 0;
 }

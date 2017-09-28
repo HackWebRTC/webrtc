@@ -24,23 +24,24 @@ namespace {
 
 bool PayloadIsCompatible(const RtpUtility::Payload& payload,
                          const CodecInst& audio_codec) {
-  if (!payload.audio)
+  if (!payload.typeSpecific.is_audio())
     return false;
   if (_stricmp(payload.name, audio_codec.plname) != 0)
     return false;
-  const AudioPayload& audio_payload = payload.typeSpecific.Audio;
+  const AudioPayload& audio_payload = payload.typeSpecific.audio_payload();
   return audio_payload.frequency == static_cast<uint32_t>(audio_codec.plfreq) &&
          audio_payload.channels == audio_codec.channels;
 }
 
 bool PayloadIsCompatible(const RtpUtility::Payload& payload,
                          const VideoCodec& video_codec) {
-  if (payload.audio || _stricmp(payload.name, video_codec.plName) != 0)
+  if (!payload.typeSpecific.is_video() ||
+      _stricmp(payload.name, video_codec.plName) != 0)
     return false;
   // For H264, profiles must match as well.
   if (video_codec.codecType == kVideoCodecH264) {
     return video_codec.H264().profile ==
-           payload.typeSpecific.Video.h264_profile;
+           payload.typeSpecific.video_payload().h264_profile;
   }
   return true;
 }
@@ -154,7 +155,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(const CodecInst& audio_codec,
     // We already use this payload type. Check if it's the same as we already
     // have. If same, ignore sending an error.
     if (PayloadIsCompatible(it->second, audio_codec)) {
-      it->second.typeSpecific.Audio.rate = 0;
+      it->second.typeSpecific.audio_payload().rate = 0;
       return 0;
     }
     LOG(LS_ERROR) << "Payload type already registered: " << audio_codec.pltype;
@@ -306,8 +307,9 @@ int RTPPayloadRegistry::GetPayloadTypeFrequency(
     return -1;
   }
   rtc::CritScope cs(&crit_sect_);
-  return payload->audio ? payload->typeSpecific.Audio.frequency
-                        : kVideoPayloadTypeFrequency;
+  return payload->typeSpecific.is_audio()
+             ? payload->typeSpecific.audio_payload().frequency
+             : kVideoPayloadTypeFrequency;
 }
 
 rtc::Optional<RtpUtility::Payload> RTPPayloadRegistry::PayloadTypeToPayload(

@@ -279,9 +279,9 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
           }
           payload_name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
           strncpy(payload_name, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
-          if (payload->audio) {
-            channels = payload->typeSpecific.Audio.channels;
-            rate = payload->typeSpecific.Audio.rate;
+          if (payload->typeSpecific.is_audio()) {
+            channels = payload->typeSpecific.audio_payload().channels;
+            rate = payload->typeSpecific.audio_payload().rate;
           }
         }
       }
@@ -376,7 +376,7 @@ int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
       rtp_media_receiver_->SetLastMediaSpecificPayload(payload->typeSpecific);
       rtp_media_receiver_->GetLastMediaSpecificPayload(specific_payload);
 
-      if (!payload->audio) {
+      if (!payload->typeSpecific.is_audio()) {
         bool media_type_unchanged =
             rtp_payload_registry_->ReportMediaPayloadType(payload_type);
         if (media_type_unchanged) {

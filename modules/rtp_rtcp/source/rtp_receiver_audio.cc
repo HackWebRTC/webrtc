@@ -150,11 +150,8 @@ int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
     LOG(LS_INFO) << "Received first audio RTP packet";
   }
 
-  return ParseAudioCodecSpecific(rtp_header,
-                                 payload,
-                                 payload_length,
-                                 specific_payload.Audio,
-                                 is_red);
+  return ParseAudioCodecSpecific(rtp_header, payload, payload_length,
+                                 specific_payload.audio_payload(), is_red);
 }
 
 RTPAliveType RTPReceiverAudio::ProcessDeadOrAlive(
@@ -193,10 +190,9 @@ int32_t RTPReceiverAudio::InvokeOnInitializeDecoder(
     int8_t payload_type,
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const PayloadUnion& specific_payload) const {
-  if (-1 ==
-      callback->OnInitializeDecoder(
-          payload_type, payload_name, specific_payload.Audio.frequency,
-          specific_payload.Audio.channels, specific_payload.Audio.rate)) {
+  const auto& ap = specific_payload.audio_payload();
+  if (callback->OnInitializeDecoder(payload_type, payload_name, ap.frequency,
+                                    ap.channels, ap.rate) == -1) {
     LOG(LS_ERROR) << "Failed to create decoder for payload type: "
                   << payload_name << "/" << static_cast<int>(payload_type);
     return -1;
