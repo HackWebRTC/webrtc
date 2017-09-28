@@ -97,6 +97,8 @@ VideoEncoderWrapper::VideoEncoderWrapper(JNIEnv* jni, jobject j_encoder)
 
   implementation_name_ = GetImplementationName(jni);
 
+  encoder_queue_ = rtc::TaskQueue::Current();
+
   initialized_ = false;
   num_resets_ = 0;
 
@@ -114,7 +116,6 @@ int32_t VideoEncoderWrapper::InitEncode(const VideoCodec* codec_settings,
   number_of_cores_ = number_of_cores;
   codec_settings_ = *codec_settings;
   num_resets_ = 0;
-  encoder_queue_ = rtc::TaskQueue::Current();
 
   return InitEncodeInternal(jni);
 }
@@ -166,7 +167,6 @@ int32_t VideoEncoderWrapper::Release() {
   jobject ret = jni->CallObjectMethod(*encoder_, release_method_);
   frame_extra_infos_.clear();
   initialized_ = false;
-  encoder_queue_ = nullptr;
   return HandleReturnCode(jni, ret);
 }
 

@@ -36,8 +36,6 @@ import org.webrtc.AudioTrack;
 import org.webrtc.CameraVideoCapturer;
 import org.webrtc.DataChannel;
 import org.webrtc.EglBase;
-import org.webrtc.HardwareVideoDecoderFactory;
-import org.webrtc.HardwareVideoEncoderFactory;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.MediaConstraints;
@@ -341,7 +339,6 @@ public class PeerConnectionClient {
     createPeerConnection(
         localRender, Collections.singletonList(remoteRender), videoCapturer, signalingParameters);
   }
-
   public void createPeerConnection(final VideoSink localRender,
       final List<VideoRenderer.Callbacks> remoteRenders, final VideoCapturer videoCapturer,
       final SignalingParameters signalingParameters) {
@@ -512,12 +509,7 @@ public class PeerConnectionClient {
     if (options != null) {
       Log.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
     }
-    final boolean enableH264HighProfile =
-        peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_H264_HIGH);
-    factory = new PeerConnectionFactory(options,
-        new HardwareVideoEncoderFactory(rootEglBase.getEglBaseContext(),
-            true /* enableIntelVp8Encoder */, enableH264HighProfile),
-        new HardwareVideoDecoderFactory(rootEglBase.getEglBaseContext()));
+    factory = new PeerConnectionFactory(options);
     Log.d(TAG, "Peer connection factory created.");
   }
 
