@@ -588,9 +588,9 @@ rtc::scoped_refptr<RTCStatsCollector> RTCStatsCollector::Create(
 RTCStatsCollector::RTCStatsCollector(PeerConnection* pc,
                                      int64_t cache_lifetime_us)
     : pc_(pc),
-      signaling_thread_(pc->session()->signaling_thread()),
-      worker_thread_(pc->session()->worker_thread()),
-      network_thread_(pc->session()->network_thread()),
+      signaling_thread_(pc->signaling_thread()),
+      worker_thread_(pc->worker_thread()),
+      network_thread_(pc->network_thread()),
       num_pending_partial_reports_(0),
       partial_report_timestamp_us_(0),
       cache_timestamp_us_(0),
@@ -636,26 +636,25 @@ void RTCStatsCollector::GetStatsReport(
     // Prepare |channel_name_pairs_| for use in
     // |ProducePartialResultsOnNetworkThread|.
     channel_name_pairs_.reset(new ChannelNamePairs());
-    if (pc_->session()->voice_channel()) {
+    if (pc_->voice_channel()) {
       channel_name_pairs_->voice = rtc::Optional<ChannelNamePair>(
-          ChannelNamePair(pc_->session()->voice_channel()->content_name(),
-                          pc_->session()->voice_channel()->transport_name()));
+          ChannelNamePair(pc_->voice_channel()->content_name(),
+                          pc_->voice_channel()->transport_name()));
     }
-    if (pc_->session()->video_channel()) {
+    if (pc_->video_channel()) {
       channel_name_pairs_->video = rtc::Optional<ChannelNamePair>(
-          ChannelNamePair(pc_->session()->video_channel()->content_name(),
-                          pc_->session()->video_channel()->transport_name()));
+          ChannelNamePair(pc_->video_channel()->content_name(),
+                          pc_->video_channel()->transport_name()));
     }
-    if (pc_->session()->rtp_data_channel()) {
+    if (pc_->rtp_data_channel()) {
+      channel_name_pairs_->data = rtc::Optional<ChannelNamePair>(
+          ChannelNamePair(pc_->rtp_data_channel()->content_name(),
+                          pc_->rtp_data_channel()->transport_name()));
+    }
+    if (pc_->sctp_content_name()) {
       channel_name_pairs_->data =
           rtc::Optional<ChannelNamePair>(ChannelNamePair(
-              pc_->session()->rtp_data_channel()->content_name(),
-              pc_->session()->rtp_data_channel()->transport_name()));
-    }
-    if (pc_->session()->sctp_content_name()) {
-      channel_name_pairs_->data = rtc::Optional<ChannelNamePair>(
-          ChannelNamePair(*pc_->session()->sctp_content_name(),
-                          *pc_->session()->sctp_transport_name()));
+              *pc_->sctp_content_name(), *pc_->sctp_transport_name()));
     }
     // Prepare |track_media_info_map_| for use in
     // |ProducePartialResultsOnNetworkThread| and
@@ -670,7 +669,7 @@ void RTCStatsCollector::GetStatsReport(
     // thread.
     // TODO(holmer): To avoid the hop we could move BWE and BWE stats to the
     // network thread, where it more naturally belongs.
-    call_stats_ = pc_->session()->GetCallStats();
+    call_stats_ = pc_->GetCallStats();
 
     invoker_.AsyncInvoke<void>(
         RTC_FROM_HERE, network_thread_,
@@ -716,7 +715,7 @@ void RTCStatsCollector::ProducePartialResultsOnNetworkThread(
       timestamp_us);
 
   std::unique_ptr<SessionStats> session_stats =
-      pc_->session()->GetStats(*channel_name_pairs_);
+      pc_->GetSessionStats(*channel_name_pairs_);
   if (session_stats) {
     std::map<std::string, CertificateStatsPair> transport_cert_stats =
         PrepareTransportCertificateStats_n(*session_stats);
@@ -976,7 +975,7 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
   // Audio
   if (track_media_info_map.voice_media_info()) {
     std::string transport_id = RTCTransportStatsIDFromBaseChannel(
-        session_stats.proxy_to_transport, *pc_->session()->voice_channel());
+        session_stats.proxy_to_transport, *pc_->voice_channel());
     RTC_DCHECK(!transport_id.empty());
     // Inbound
     for (const cricket::VoiceReceiverInfo& voice_receiver_info :
@@ -1038,7 +1037,7 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
   // Video
   if (track_media_info_map.video_media_info()) {
     std::string transport_id = RTCTransportStatsIDFromBaseChannel(
-        session_stats.proxy_to_transport, *pc_->session()->video_channel());
+        session_stats.proxy_to_transport, *pc_->video_channel());
     RTC_DCHECK(!transport_id.empty());
     // Inbound
     for (const cricket::VideoReceiverInfo& video_receiver_info :
@@ -1173,14 +1172,13 @@ RTCStatsCollector::PrepareTransportCertificateStats_n(
   for (const auto& transport_stats : session_stats.transport_stats) {
     CertificateStatsPair certificate_stats_pair;
     rtc::scoped_refptr<rtc::RTCCertificate> local_certificate;
-    if (pc_->session()->GetLocalCertificate(
-        transport_stats.second.transport_name, &local_certificate)) {
+    if (pc_->GetLocalCertificate(transport_stats.second.transport_name,
+                                 &local_certificate)) {
       certificate_stats_pair.local =
           local_certificate->ssl_certificate().GetStats();
     }
     std::unique_ptr<rtc::SSLCertificate> remote_certificate =
-        pc_->session()->GetRemoteSSLCertificate(
-            transport_stats.second.transport_name);
+        pc_->GetRemoteSSLCertificate(transport_stats.second.transport_name);
     if (remote_certificate) {
       certificate_stats_pair.remote = remote_certificate->GetStats();
     }
@@ -1195,16 +1193,16 @@ std::unique_ptr<TrackMediaInfoMap>
 RTCStatsCollector::PrepareTrackMediaInfoMap_s() const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   std::unique_ptr<cricket::VoiceMediaInfo> voice_media_info;
-  if (pc_->session()->voice_channel()) {
+  if (pc_->voice_channel()) {
     voice_media_info.reset(new cricket::VoiceMediaInfo());
-    if (!pc_->session()->voice_channel()->GetStats(voice_media_info.get())) {
+    if (!pc_->voice_channel()->GetStats(voice_media_info.get())) {
       voice_media_info.reset();
     }
   }
   std::unique_ptr<cricket::VideoMediaInfo> video_media_info;
-  if (pc_->session()->video_channel()) {
+  if (pc_->video_channel()) {
     video_media_info.reset(new cricket::VideoMediaInfo());
-    if (!pc_->session()->video_channel()->GetStats(video_media_info.get())) {
+    if (!pc_->video_channel()->GetStats(video_media_info.get())) {
       video_media_info.reset();
     }
   }
