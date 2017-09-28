@@ -16,8 +16,20 @@
 #
 # Headers close to the top of the list are candidates for removal.
 
+# If the name includes at most one directory, keep name unchanged,
+# otherwise strip directories. Needed to work with relative #includes
+# which are used in some parts of the tree, while still avoiding,
+# e.g., api/foo.h to match includes of pc/foo.h.
+simplify_name () {
+  if expr "$1" : '.*/.*/' > /dev/null ; then
+    basename "$1"
+  else
+    echo "$1"
+  fi
+}
+
 git ls-files '*.h' '*.hpp' | while read header ; do
-  name="$(basename "${header}")"
+  name="$(simplify_name "${header}")"
   count="$(git grep -l -F  "${name}" \
            | grep -v -e '\.gn' -e '\.gyp'  \
            | wc -l)"
