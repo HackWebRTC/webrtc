@@ -56,6 +56,7 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/Common/RTCUIApplicationStatusObserver.m",
       "objc/Framework/Classes/Common/helpers.h",
       "objc/Framework/Classes/Common/helpers.mm",
+      "objc/Framework/Classes/Common/scoped_cftyperef.h",
       "objc/Framework/Headers/WebRTC/RTCDispatcher.h",
       "objc/Framework/Headers/WebRTC/RTCFieldTrials.h",
       "objc/Framework/Headers/WebRTC/RTCLogging.h",
