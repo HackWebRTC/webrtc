@@ -38,6 +38,7 @@
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
+#include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/trace.h"
 #include "voice_engine/statistics.h"
 #include "voice_engine/utility.h"
@@ -1643,6 +1644,9 @@ void Channel::ProcessAndEncodeAudio(const AudioFrame& audio_input) {
   // either into pool of frames or into the task itself.
   audio_frame->CopyFrom(audio_input);
   audio_frame->id_ = ChannelId();
+  // Profile time between when the audio frame is added to the task queue and
+  // when the task is actually executed.
+  audio_frame->UpdateProfileTimeStamp();
   encoder_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(
       new ProcessAndEncodeAudioTask(std::move(audio_frame), this)));
 }
@@ -1681,6 +1685,12 @@ void Channel::ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input) {
   RTC_DCHECK_GT(audio_input->samples_per_channel_, 0);
   RTC_DCHECK_LE(audio_input->num_channels_, 2);
   RTC_DCHECK_EQ(audio_input->id_, ChannelId());
+
+  // Measure time between when the audio frame is added to the task queue and
+  // when the task is actually executed. Goal is to keep track of unwanted
+  // extra latency added by the task queue.
+  RTC_HISTOGRAM_COUNTS_10000("WebRTC.Audio.EncodingTaskQueueLatencyMs",
+                             audio_input->ElapsedProfileTimeMs());
 
   bool is_muted = InputMute();
   AudioFrameOperations::Mute(audio_input, previous_frame_muted_, is_muted);
