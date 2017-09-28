@@ -210,10 +210,8 @@ def BuildDepsentryDict(deps_dict):
   def AddDepsEntries(deps_subdict):
     for path, deps_url in deps_subdict.iteritems():
       if isinstance(deps_url, dict):
-        # We don't support deps conditional on a variable.
-        # This is needed after http://crrev.com/9f8b8eb2
-        continue
-      elif not result.has_key(path):
+        deps_url = deps_url['url']
+      if not result.has_key(path):
         url, revision = deps_url.split('@') if deps_url else (None, None)
         result[path] = DepsEntry(path, url, revision)
 

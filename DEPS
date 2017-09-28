@@ -88,30 +88,52 @@ deps = {
 }
 deps_os = {
   'android': {
-    'src/third_party/android_tools':
-      Var('chromium_git') + '/android_tools.git' + '@' + 'ca9dc7245b888c75307f0619e4a39fb46a82de66',
-    'src/third_party/ced/src':
-      Var('chromium_git') + '/external/github.com/google/compact_enc_det.git' + '@' + '94c367a1fe3a13207f4b22604fcfd1d9f9ddf6d9',
-    'src/third_party/icu':
-      Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '08cb956852a5ccdba7f9c941728bb833529ba3c6',
-    'src/third_party/jsr-305/src':
-      Var('chromium_git') + '/external/jsr-305.git' + '@' + '642c508235471f7220af6d5df2d3210e3bfc0919',
-    'src/third_party/junit/src':
-      Var('chromium_git') + '/external/junit.git' + '@' + '64155f8a9babcfcf4263cf4d08253a1556e75481',
-    'src/third_party/lss':
-      Var('chromium_git') + '/linux-syscall-support.git' + '@' + Var('lss_revision'),
-    'src/third_party/mockito/src':
-      Var('chromium_git') + '/external/mockito/mockito.git' + '@' + 'de83ad4598ad4cf5ea53c69a8a8053780b04b850',
-    'src/third_party/requests/src':
-      Var('chromium_git') + '/external/github.com/kennethreitz/requests.git' + '@' + 'f172b30356d821d180fa4ecfa3e71c7274a32de4',
-    'src/third_party/robolectric/robolectric':
-      Var('chromium_git') + '/external/robolectric.git' + '@' + 'b02c65cc6d7465f58f0de48a39914aa905692afa',
-    'src/third_party/ub-uiautomator/lib':
-      Var('chromium_git') + '/chromium/third_party/ub-uiautomator.git' + '@' + '00270549ce3161ae72ceb24712618ea28b4f9434',
+    'src/third_party/android_tools': {
+      'url': Var('chromium_git') + '/android_tools.git' + '@' + 'ca9dc7245b888c75307f0619e4a39fb46a82de66',
+      'condition': 'checkout_android',
+    },
+    'src/third_party/ced/src': {
+      'url': Var('chromium_git') + '/external/github.com/google/compact_enc_det.git' + '@' + '94c367a1fe3a13207f4b22604fcfd1d9f9ddf6d9',
+      'condition': 'checkout_android',
+    },
+    'src/third_party/icu': {
+      'url': Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '08cb956852a5ccdba7f9c941728bb833529ba3c6',
+      'condition': 'checkout_android',
+    },
+    'src/third_party/jsr-305/src': {
+      'url': Var('chromium_git') + '/external/jsr-305.git' + '@' + '642c508235471f7220af6d5df2d3210e3bfc0919',
+      'condition': 'checkout_android',
+    },
+    'src/third_party/junit/src': {
+      'url': Var('chromium_git') + '/external/junit.git' + '@' + '64155f8a9babcfcf4263cf4d08253a1556e75481',
+      'condition': 'checkout_android',
+    },
+    'src/third_party/lss': {
+      'url': Var('chromium_git') + '/linux-syscall-support.git' + '@' + Var('lss_revision'),
+      'condition': 'checkout_android',
+    },
+    'src/third_party/mockito/src': {
+      'url': Var('chromium_git') + '/external/mockito/mockito.git' + '@' + 'de83ad4598ad4cf5ea53c69a8a8053780b04b850',
+      'condition': 'checkout_android',
+    },
+    'src/third_party/requests/src': {
+      'url': Var('chromium_git') + '/external/github.com/kennethreitz/requests.git' + '@' + 'f172b30356d821d180fa4ecfa3e71c7274a32de4',
+      'condition': 'checkout_android',
+    },
+    'src/third_party/robolectric/robolectric': {
+      'url': Var('chromium_git') + '/external/robolectric.git' + '@' + 'b02c65cc6d7465f58f0de48a39914aa905692afa',
+      'condition': 'checkout_android',
+    },
+    'src/third_party/ub-uiautomator/lib': {
+      'url': Var('chromium_git') + '/chromium/third_party/ub-uiautomator.git' + '@' + '00270549ce3161ae72ceb24712618ea28b4f9434',
+      'condition': 'checkout_android',
+    },
     # Gradle 3.5.0. Used for testing Android Studio project generation for WebRTC.
-    'src/examples/androidtests/third_party/gradle':
-      Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
-      '941559e020f6c357ebb08d5c67acdb858a3defc2',
+    'src/examples/androidtests/third_party/gradle': {
+      'url': Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
+        '941559e020f6c357ebb08d5c67acdb858a3defc2',
+      'condition': 'checkout_android',
+    },
   },
   'ios': {
     'src/ios':
