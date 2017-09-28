@@ -33,26 +33,17 @@ class WebRtcVideoDecoderFactory {
   // by calling DestroyVideoDecoder().
   virtual webrtc::VideoDecoder* CreateVideoDecoderWithParams(
       const VideoCodec& codec,
-      VideoDecoderParams params) {
-    // Default implementation that delegates to old version in order to preserve
-    // backwards-compatability.
-    webrtc::VideoCodecType type = webrtc::PayloadStringToCodecType(codec.name);
-    return CreateVideoDecoderWithParams(type, params);
-  }
+      VideoDecoderParams params);
+
   // DEPRECATED.
   // These methods should not be used by new code and will eventually be
   // removed. See http://crbug.com/webrtc/8140.
-  virtual webrtc::VideoDecoder* CreateVideoDecoder(
-      webrtc::VideoCodecType type) {
-    RTC_NOTREACHED();
-    return nullptr;
-  };
+  virtual webrtc::VideoDecoder* CreateVideoDecoder(webrtc::VideoCodecType type);
 
   virtual webrtc::VideoDecoder* CreateVideoDecoderWithParams(
       webrtc::VideoCodecType type,
-      VideoDecoderParams params) {
-    return CreateVideoDecoder(type);
-  }
+      VideoDecoderParams params);
+
   virtual ~WebRtcVideoDecoderFactory() {}
 
   virtual void DestroyVideoDecoder(webrtc::VideoDecoder* decoder) = 0;

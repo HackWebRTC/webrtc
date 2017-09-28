@@ -47,6 +47,7 @@ class FeedbackParam {
 
 class FeedbackParams {
  public:
+  FeedbackParams();
   bool operator==(const FeedbackParams& other) const;
 
   bool Has(const FeedbackParam& param) const;
@@ -126,7 +127,7 @@ struct AudioCodec : public Codec {
   AudioCodec();
   AudioCodec(const AudioCodec& c);
   AudioCodec(AudioCodec&& c);
-  virtual ~AudioCodec() = default;
+  ~AudioCodec() override = default;
 
   // Indicates if this codec is compatible with the specified codec.
   bool Matches(const AudioCodec& codec) const;
@@ -176,7 +177,7 @@ struct VideoCodec : public Codec {
   VideoCodec();
   VideoCodec(const VideoCodec& c);
   VideoCodec(VideoCodec&& c);
-  virtual ~VideoCodec() = default;
+  ~VideoCodec() override = default;
 
   // Indicates if this video codec is the same as the other video codec, e.g. if
   // they are both VP8 or VP9, or if they are both H264 with the same H264
@@ -222,7 +223,7 @@ struct DataCodec : public Codec {
   DataCodec();
   DataCodec(const DataCodec& c);
   DataCodec(DataCodec&& c);
-  virtual ~DataCodec() = default;
+  ~DataCodec() override = default;
 
   DataCodec& operator=(const DataCodec& c);
   DataCodec& operator=(DataCodec&& c);

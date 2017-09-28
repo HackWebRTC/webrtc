@@ -39,9 +39,7 @@ class WebRtcVideoEncoderFactory {
   // Returns true if encoders created by this factory of the given codec type
   // will use internal camera sources, meaning that they don't require/expect
   // frames to be delivered via webrtc::VideoEncoder::Encode.
-  virtual bool EncoderTypeHasInternalSource(webrtc::VideoCodecType type) const {
-    return false;
-  }
+  virtual bool EncoderTypeHasInternalSource(webrtc::VideoCodecType type) const;
 
   virtual void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) = 0;
 };

@@ -32,6 +32,8 @@ static bool IsSameH264Profile(const CodecParameterMap& params1,
          profile_level_id->profile == other_profile_level_id->profile;
 }
 
+FeedbackParams::FeedbackParams() = default;
+
 bool FeedbackParam::operator==(const FeedbackParam& other) const {
   return _stricmp(other.id().c_str(), id().c_str()) == 0 &&
       _stricmp(other.param().c_str(), param().c_str()) == 0;
