@@ -77,7 +77,7 @@ class VideoProcessorIntegrationTestParameterized
     rate_profile.frame_index_rate_update[1] = kNumFrames + 1;
     rate_profile.num_frames = kNumFrames;
 
-    ProcessFramesAndMaybeVerify(rate_profile, nullptr, nullptr,
+    ProcessFramesAndMaybeVerify(rate_profile, nullptr, nullptr, nullptr,
                                 &kVisualizationParams);
   }
 

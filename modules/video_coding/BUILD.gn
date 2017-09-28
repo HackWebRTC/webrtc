@@ -377,6 +377,7 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      ":codec_globals_headers",
       ":video_coding",
       ":video_coding_utility",
       ":webrtc_vp8",

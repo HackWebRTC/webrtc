@@ -176,6 +176,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
     const RateProfile& rate_profile,
     const std::vector<RateControlThresholds>* rc_thresholds,
     const QualityThresholds* quality_thresholds,
+    const BitstreamThresholds* bs_thresholds,
     const VisualizationParams* visualization_params) {
   // The Android HW codec needs to be run on a task queue, so we simply always
   // run the test on a task queue.
@@ -245,6 +246,10 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
   ResetRateControlMetrics(rate_update_index, rate_profile);
   while (frame_number < num_frames) {
     UpdateRateControlMetrics(frame_number);
+
+    if (bs_thresholds) {
+      VerifyBitstream(frame_number, *bs_thresholds);
+    }
 
     ++frame_number;
 
@@ -336,6 +341,13 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
     case kVideoCodecH264:
       // TODO(brandtr): Generalize so that we support multiple profiles here.
       codec = cricket::VideoCodec(cricket::kH264CodecName);
+      if (config_.packetization_mode == H264PacketizationMode::NonInterleaved) {
+        codec.SetParam(cricket::kH264FmtpPacketizationMode, "1");
+      } else {
+        RTC_CHECK_EQ(config_.packetization_mode,
+                     H264PacketizationMode::SingleNalUnit);
+        codec.SetParam(cricket::kH264FmtpPacketizationMode, "0");
+      }
       encoder_.reset(encoder_factory->CreateVideoEncoder(codec));
       decoder_.reset(
           decoder_factory->CreateVideoDecoderWithParams(codec, decoder_params));
@@ -560,6 +572,14 @@ void VideoProcessorIntegrationTest::PrintRateControlMetrics(
     printf("  # processed frames per layer: %d\n", actual_.num_frames_layer[i]);
   }
   printf("\n");
+}
+
+void VideoProcessorIntegrationTest::VerifyBitstream(
+    int frame_number,
+    const BitstreamThresholds& bs_thresholds) {
+  RTC_CHECK_GE(frame_number, 0);
+  const FrameStatistic* frame_stat = stats_.GetFrame(frame_number);
+  EXPECT_LE(*(frame_stat->max_nalu_length), bs_thresholds.max_nalu_length);
 }
 
 // Temporal layer index corresponding to frame number, for up to 3 layers.

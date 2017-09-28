@@ -18,6 +18,7 @@
 
 #include "api/video/video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/test/packet_manipulator.h"
 #include "modules/video_coding/codecs/test/stats.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -100,6 +101,10 @@ struct TestConfig {
   // Should the hardware codecs be wrapped in software fallbacks?
   bool sw_fallback_encoder = false;
   bool sw_fallback_decoder = false;
+
+  // RTP H264 packetization mode.
+  H264PacketizationMode packetization_mode =
+      H264PacketizationMode::NonInterleaved;
 };
 
 // Handles encoding/decoding of video using the VideoEncoder/VideoDecoder

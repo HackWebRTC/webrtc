@@ -32,6 +32,9 @@ struct FrameStatistic {
   size_t encoded_frame_size_bytes = 0;
   webrtc::FrameType frame_type = kVideoFrameDelta;
 
+  // H264 specific.
+  rtc::Optional<size_t> max_nalu_length;
+
   // Decoding.
   int64_t decode_start_ns = 0;
   int decode_return_code = 0;

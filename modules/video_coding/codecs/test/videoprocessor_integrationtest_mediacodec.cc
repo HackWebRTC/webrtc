@@ -57,7 +57,7 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
   QualityThresholds quality_thresholds(30.0, 14.0, 0.86, 0.39);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 TEST_F(VideoProcessorIntegrationTestMediaCodec,
@@ -89,7 +89,7 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec,
   QualityThresholds quality_thresholds(33.0, 30.0, 0.90, 0.85);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 #endif  // defined(WEBRTC_ANDROID)

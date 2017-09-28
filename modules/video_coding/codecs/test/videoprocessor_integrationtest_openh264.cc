@@ -53,7 +53,7 @@ class VideoProcessorIntegrationTestOpenH264
 // these unittests appears to drop "packets" in a way that is not compatible
 // with H264. Therefore ProcessXPercentPacketLossH264, X != 0, unittests have
 // not been added.
-TEST_F(VideoProcessorIntegrationTestOpenH264, Process0PercentPacketLossH264) {
+TEST_F(VideoProcessorIntegrationTestOpenH264, Process0PercentPacketLoss) {
   SetCodecSettings(&config_, kVideoCodecH264, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
@@ -68,7 +68,32 @@ TEST_F(VideoProcessorIntegrationTestOpenH264, Process0PercentPacketLossH264) {
   QualityThresholds quality_thresholds(35.0, 25.0, 0.93, 0.70);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
+}
+
+// H264: Enable SingleNalUnit packetization mode. Encoder should split
+// large frames into multiple slices and limit length of NAL units.
+TEST_F(VideoProcessorIntegrationTestOpenH264, ProcessNoLossSingleNalUnit) {
+  config_.packetization_mode = H264PacketizationMode::SingleNalUnit;
+  config_.networking_config.max_payload_size_in_bytes = 500;
+  SetCodecSettings(&config_, kVideoCodecH264, 1, false, false, true, false,
+                   kResilienceOn, kCifWidth, kCifHeight);
+
+  RateProfile rate_profile;
+  SetRateProfile(&rate_profile, 0, 500, 30, 0);
+  rate_profile.frame_index_rate_update[1] = kNumFrames + 1;
+  rate_profile.num_frames = kNumFrames;
+
+  std::vector<RateControlThresholds> rc_thresholds;
+  AddRateControlThresholds(2, 60, 30, 10, 20, 0, 1, &rc_thresholds);
+
+  QualityThresholds quality_thresholds(35.0, 25.0, 0.93, 0.70);
+
+  BitstreamThresholds bs_thresholds(
+      config_.networking_config.max_payload_size_in_bytes);
+
+  ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
+                              &bs_thresholds, kNoVisualizationParams);
 }
 
 #endif  // defined(WEBRTC_USE_H264)

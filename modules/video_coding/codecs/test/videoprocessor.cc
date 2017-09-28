@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -19,6 +20,7 @@
 
 #include "api/video/i420_buffer.h"
 #include "common_types.h"  // NOLINT(build/include)
+#include "common_video/h264/h264_common.h"
 #include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
@@ -106,6 +108,24 @@ void VerifyQpParser(const EncodedImage& encoded_frame,
     return;
   }
   EXPECT_EQ(encoded_frame.qp_, qp) << "Encoder QP != parsed bitstream QP.";
+}
+
+rtc::Optional<size_t> GetMaxNaluLength(const EncodedImage& encoded_frame,
+                                       const TestConfig& config) {
+  if (config.codec_settings.codecType != kVideoCodecH264)
+    return rtc::Optional<size_t>();
+
+  std::vector<webrtc::H264::NaluIndex> nalu_indices =
+      webrtc::H264::FindNaluIndices(encoded_frame._buffer,
+                                    encoded_frame._length);
+
+  RTC_CHECK(!nalu_indices.empty());
+
+  size_t max_length = 0;
+  for (const webrtc::H264::NaluIndex& index : nalu_indices)
+    max_length = std::max(max_length, index.payload_size);
+
+  return rtc::Optional<size_t>(max_length);
 }
 
 int GetElapsedTimeMicroseconds(int64_t start_ns, int64_t stop_ns) {
@@ -350,6 +370,8 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
   frame_stat->total_packets =
       encoded_image._length / config_.networking_config.packet_size_in_bytes +
       1;
+
+  frame_stat->max_nalu_length = GetMaxNaluLength(encoded_image, config_);
 
   // Simulate packet loss.
   bool exclude_this_frame = false;

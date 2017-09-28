@@ -71,6 +71,12 @@ struct QualityThresholds {
   double min_min_ssim;
 };
 
+struct BitstreamThresholds {
+  explicit BitstreamThresholds(size_t max_nalu_length)
+      : max_nalu_length(max_nalu_length) {}
+  size_t max_nalu_length;
+};
+
 // Should video files be saved persistently to disk for post-run visualization?
 struct VisualizationParams {
   bool save_encoded_ivf;
@@ -122,6 +128,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
       const RateProfile& rate_profile,
       const std::vector<RateControlThresholds>* rc_thresholds,
       const QualityThresholds* quality_thresholds,
+      const BitstreamThresholds* bs_thresholds,
       const VisualizationParams* visualization_params);
 
   // Config.
@@ -191,6 +198,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
       const std::vector<RateControlThresholds>* rc_thresholds,
       const std::vector<int>& num_dropped_frames,
       const std::vector<int>& num_spatial_resizes) const;
+
+  void VerifyBitstream(int frame_number,
+                       const BitstreamThresholds& bs_thresholds);
 
   // Codecs.
   std::unique_ptr<VideoEncoder> encoder_;

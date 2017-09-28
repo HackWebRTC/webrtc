@@ -70,7 +70,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, Process0PercentPacketLossVP9) {
   QualityThresholds quality_thresholds(37.0, 36.0, 0.93, 0.92);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 // VP9: Run with 5% packet loss and fixed bitrate. Quality should be a bit
@@ -91,7 +91,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, Process5PercentPacketLossVP9) {
   QualityThresholds quality_thresholds(17.0, 14.0, 0.45, 0.36);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 // VP9: Run with no packet loss, with varying bitrate (3 rate updates):
@@ -117,7 +117,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossChangeBitRateVP9) {
   QualityThresholds quality_thresholds(35.5, 30.0, 0.90, 0.85);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 // VP9: Run with no packet loss, with an update (decrease) in frame rate.
@@ -147,7 +147,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
   QualityThresholds quality_thresholds(31.5, 18.0, 0.80, 0.43);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 // VP9: Run with no packet loss and denoiser on. One key frame (first frame).
@@ -166,7 +166,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossDenoiserOnVP9) {
   QualityThresholds quality_thresholds(36.8, 35.8, 0.92, 0.91);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 // Run with no packet loss, at low bitrate.
@@ -188,7 +188,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
   QualityThresholds quality_thresholds(24.0, 13.0, 0.65, 0.37);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 // TODO(marpan): Add temporal layer test for VP9, once changes are in
@@ -214,7 +214,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessZeroPacketLoss) {
   QualityThresholds quality_thresholds(34.95, 33.0, 0.90, 0.89);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 // VP8: Run with 5% packet loss and fixed bitrate. Quality should be a bit
@@ -235,7 +235,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, Process5PercentPacketLoss) {
   QualityThresholds quality_thresholds(20.0, 16.0, 0.60, 0.40);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 // VP8: Run with 10% packet loss and fixed bitrate. Quality should be lower.
@@ -256,7 +256,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, Process10PercentPacketLoss) {
   QualityThresholds quality_thresholds(19.0, 16.0, 0.50, 0.35);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 #endif  // !defined(WEBRTC_IOS)
@@ -301,7 +301,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
   QualityThresholds quality_thresholds(34.0, 32.0, 0.85, 0.80);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 // VP8: Run with no packet loss, with an update (decrease) in frame rate.
@@ -339,7 +339,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
   QualityThresholds quality_thresholds(31.0, 22.0, 0.80, 0.65);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 // VP8: Run with no packet loss, with 3 temporal layers, with a rate update in
@@ -372,7 +372,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
   QualityThresholds quality_thresholds(32.5, 30.0, 0.85, 0.80);
 
   ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              kNoVisualizationParams);
+                              nullptr, kNoVisualizationParams);
 }
 
 }  // namespace test
