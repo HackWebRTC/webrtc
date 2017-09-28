@@ -62,6 +62,28 @@
   return codec;
 }
 
+- (BOOL)isEqualToCodecInfo:(RTCVideoCodecInfo *)info {
+  if (!info ||
+      self.payload != info.payload ||
+      ![self.name isEqualToString:info.name] ||
+      ![self.parameters isEqualToDictionary:info.parameters]) {
+    return NO;
+  }
+  return YES;
+}
+
+- (BOOL)isEqual:(id)object {
+  if (self == object)
+    return YES;
+  if (![object isKindOfClass:[self class]])
+    return NO;
+  return [self isEqualToCodecInfo:object];
+}
+
+- (NSUInteger)hash {
+  return [self.name hash] ^ self.payload ^ [self.parameters hash];
+}
+
 @end
 
 @implementation RTCVideoEncoderQpThresholds

@@ -105,6 +105,8 @@ RTC_EXPORT
                   parameters:(nullable NSDictionary<NSString *, NSString *> *)parameters
     NS_DESIGNATED_INITIALIZER;
 
+- (BOOL)isEqualToCodecInfo:(RTCVideoCodecInfo *)info;
+
 @property(nonatomic, readonly) NSInteger payload;
 @property(nonatomic, readonly) NSString *name;
 @property(nonatomic, readonly) NSDictionary<NSString *, NSString *> *parameters;
