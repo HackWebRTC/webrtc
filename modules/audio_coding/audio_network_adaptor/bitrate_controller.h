@@ -20,10 +20,15 @@ namespace audio_network_adaptor {
 class BitrateController final : public Controller {
  public:
   struct Config {
-    Config(int initial_bitrate_bps, int initial_frame_length_ms);
+    Config(int initial_bitrate_bps,
+           int initial_frame_length_ms,
+           int fl_increase_overhead_offset,
+           int fl_decrease_overhead_offset);
     ~Config();
     int initial_bitrate_bps;
     int initial_frame_length_ms;
+    int fl_increase_overhead_offset;
+    int fl_decrease_overhead_offset;
   };
 
   explicit BitrateController(const Config& config);

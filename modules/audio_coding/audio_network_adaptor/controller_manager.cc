@@ -137,11 +137,20 @@ std::unique_ptr<FrameLengthController> CreateFrameLengthController(
         config.fl_120ms_to_60ms_bandwidth_bps()));
   }
 
+  int fl_increase_overhead_offset = 0;
+  if (config.has_fl_increase_overhead_offset()) {
+    fl_increase_overhead_offset = config.fl_increase_overhead_offset();
+  }
+  int fl_decrease_overhead_offset = 0;
+  if (config.has_fl_decrease_overhead_offset()) {
+    fl_decrease_overhead_offset = config.fl_decrease_overhead_offset();
+  }
+
   FrameLengthController::Config ctor_config(
       std::vector<int>(), initial_frame_length_ms, min_encoder_bitrate_bps,
       config.fl_increasing_packet_loss_fraction(),
-      config.fl_decreasing_packet_loss_fraction(),
-      std::move(fl_changing_bandwidths_bps));
+      config.fl_decreasing_packet_loss_fraction(), fl_increase_overhead_offset,
+      fl_decrease_overhead_offset, std::move(fl_changing_bandwidths_bps));
 
   for (auto frame_length : encoder_frame_lengths_ms)
     ctor_config.encoder_frame_lengths_ms.push_back(frame_length);
@@ -176,10 +185,21 @@ std::unique_ptr<DtxController> CreateDtxController(
 
 using audio_network_adaptor::BitrateController;
 std::unique_ptr<BitrateController> CreateBitrateController(
+    const audio_network_adaptor::config::BitrateController& bitrate_config,
     int initial_bitrate_bps,
     int initial_frame_length_ms) {
-  return std::unique_ptr<BitrateController>(new BitrateController(
-      BitrateController::Config(initial_bitrate_bps, initial_frame_length_ms)));
+  int fl_increase_overhead_offset = 0;
+  if (bitrate_config.has_fl_increase_overhead_offset()) {
+    fl_increase_overhead_offset = bitrate_config.fl_increase_overhead_offset();
+  }
+  int fl_decrease_overhead_offset = 0;
+  if (bitrate_config.has_fl_decrease_overhead_offset()) {
+    fl_decrease_overhead_offset = bitrate_config.fl_decrease_overhead_offset();
+  }
+  return std::unique_ptr<BitrateController>(
+      new BitrateController(BitrateController::Config(
+          initial_bitrate_bps, initial_frame_length_ms,
+          fl_increase_overhead_offset, fl_decrease_overhead_offset)));
 }
 #endif  // WEBRTC_ENABLE_PROTOBUF
 
@@ -257,8 +277,9 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
                                          initial_dtx_enabled);
         break;
       case audio_network_adaptor::config::Controller::kBitrateController:
-        controller = CreateBitrateController(initial_bitrate_bps,
-                                             initial_frame_length_ms);
+        controller = CreateBitrateController(
+            controller_config.bitrate_controller(), initial_bitrate_bps,
+            initial_frame_length_ms);
         break;
       default:
         RTC_NOTREACHED();

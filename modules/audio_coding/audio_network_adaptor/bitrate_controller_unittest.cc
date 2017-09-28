@@ -55,8 +55,8 @@ TEST(AnaBitrateControllerTest, OutputInitValueWhenTargetBitrateUnknown) {
   constexpr int kInitialBitrateBps = 32000;
   constexpr int kInitialFrameLengthMs = 20;
   constexpr size_t kOverheadBytesPerPacket = 64;
-  BitrateController controller(
-      BitrateController::Config(kInitialBitrateBps, kInitialFrameLengthMs));
+  BitrateController controller(BitrateController::Config(
+      kInitialBitrateBps, kInitialFrameLengthMs, 0, 0));
   UpdateNetworkMetrics(&controller, rtc::Optional<int>(),
                        rtc::Optional<size_t>(kOverheadBytesPerPacket));
   CheckDecision(&controller, rtc::Optional<int>(kInitialFrameLengthMs * 2),
@@ -67,8 +67,8 @@ TEST(AnaBitrateControllerTest, OutputInitValueWhenOverheadUnknown) {
   constexpr int kInitialBitrateBps = 32000;
   constexpr int kInitialFrameLengthMs = 20;
   constexpr int kTargetBitrateBps = 48000;
-  BitrateController controller(
-      BitrateController::Config(kInitialBitrateBps, kInitialFrameLengthMs));
+  BitrateController controller(BitrateController::Config(
+      kInitialBitrateBps, kInitialFrameLengthMs, 0, 0));
   UpdateNetworkMetrics(&controller, rtc::Optional<int>(kTargetBitrateBps),
                        rtc::Optional<size_t>());
   CheckDecision(&controller, rtc::Optional<int>(kInitialFrameLengthMs * 2),
@@ -80,7 +80,7 @@ TEST(AnaBitrateControllerTest, ChangeBitrateOnTargetBitrateChanged) {
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
   constexpr int kInitialFrameLengthMs = 20;
   BitrateController controller(
-      BitrateController::Config(32000, kInitialFrameLengthMs));
+      BitrateController::Config(32000, kInitialFrameLengthMs, 0, 0));
   constexpr int kTargetBitrateBps = 48000;
   constexpr size_t kOverheadBytesPerPacket = 64;
   constexpr int kBitrateBps =
@@ -106,7 +106,7 @@ TEST(AnaBitrateControllerTest, UpdateMultipleNetworkMetricsAtOnce) {
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
   constexpr int kInitialFrameLengthMs = 20;
   BitrateController controller(
-      BitrateController::Config(32000, kInitialFrameLengthMs));
+      BitrateController::Config(32000, kInitialFrameLengthMs, 0, 0));
   constexpr int kTargetBitrateBps = 48000;
   constexpr size_t kOverheadBytesPerPacket = 64;
   constexpr int kBitrateBps =
@@ -127,7 +127,7 @@ TEST(AnaBitrateControllerTest, TreatUnknownFrameLengthAsFrameLengthUnchanged) {
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
   constexpr int kInitialFrameLengthMs = 20;
   BitrateController controller(
-      BitrateController::Config(32000, kInitialFrameLengthMs));
+      BitrateController::Config(32000, kInitialFrameLengthMs, 0, 0));
   constexpr int kTargetBitrateBps = 48000;
   constexpr size_t kOverheadBytesPerPacket = 64;
   constexpr int kBitrateBps =
@@ -143,7 +143,7 @@ TEST(AnaBitrateControllerTest, IncreaseBitrateOnFrameLengthIncreased) {
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
   constexpr int kInitialFrameLengthMs = 20;
   BitrateController controller(
-      BitrateController::Config(32000, kInitialFrameLengthMs));
+      BitrateController::Config(32000, kInitialFrameLengthMs, 0, 0));
 
   constexpr int kTargetBitrateBps = 48000;
   constexpr size_t kOverheadBytesPerPacket = 64;
@@ -169,7 +169,7 @@ TEST(AnaBitrateControllerTest, DecreaseBitrateOnFrameLengthDecreased) {
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
   constexpr int kInitialFrameLengthMs = 60;
   BitrateController controller(
-      BitrateController::Config(32000, kInitialFrameLengthMs));
+      BitrateController::Config(32000, kInitialFrameLengthMs, 0, 0));
 
   constexpr int kTargetBitrateBps = 48000;
   constexpr size_t kOverheadBytesPerPacket = 64;
@@ -193,7 +193,7 @@ TEST(AnaBitrateControllerTest, DecreaseBitrateOnFrameLengthDecreased) {
 TEST(AnaBitrateControllerTest, BitrateNeverBecomesNegative) {
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
-  BitrateController controller(BitrateController::Config(32000, 20));
+  BitrateController controller(BitrateController::Config(32000, 20, 0, 0));
   constexpr size_t kOverheadBytesPerPacket = 64;
   constexpr int kFrameLengthMs = 60;
   // Set a target rate smaller than overhead rate, the bitrate is bounded by 0.
@@ -207,7 +207,7 @@ TEST(AnaBitrateControllerTest, BitrateNeverBecomesNegative) {
 TEST(AnaBitrateControllerTest, CheckBehaviorOnChangingCondition) {
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
-  BitrateController controller(BitrateController::Config(32000, 20));
+  BitrateController controller(BitrateController::Config(32000, 20, 0, 0));
 
   // Start from an arbitrary overall bitrate.
   int overall_bitrate = 34567;

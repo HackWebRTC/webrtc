@@ -32,6 +32,15 @@ struct AudioEncoderRuntimeConfig {
   // better use of the bandwidth. |num_channels| sets the number of channels
   // to encode.
   rtc::Optional<size_t> num_channels;
+
+  // This is true if the last frame length change was an increase, and otherwise
+  // false.
+  // The value of this boolean is used to apply a different offset to the
+  // per-packet overhead that is reported by the BWE. The exact offset value
+  // is most important right after a frame length change, because the frame
+  // length change affects the overhead. In the steady state, the exact value is
+  // not important because the BWE will compensate.
+  bool last_fl_change_increase = false;
 };
 
 }  // namespace webrtc

@@ -10,6 +10,7 @@
 
 #include "modules/audio_coding/audio_network_adaptor/frame_length_controller.h"
 
+#include <algorithm>
 #include <utility>
 
 #include "rtc_base/checks.h"
@@ -32,12 +33,16 @@ FrameLengthController::Config::Config(
     int min_encoder_bitrate_bps,
     float fl_increasing_packet_loss_fraction,
     float fl_decreasing_packet_loss_fraction,
+    int fl_increase_overhead_offset,
+    int fl_decrease_overhead_offset,
     std::map<FrameLengthChange, int> fl_changing_bandwidths_bps)
     : encoder_frame_lengths_ms(encoder_frame_lengths_ms),
       initial_frame_length_ms(initial_frame_length_ms),
       min_encoder_bitrate_bps(min_encoder_bitrate_bps),
       fl_increasing_packet_loss_fraction(fl_increasing_packet_loss_fraction),
       fl_decreasing_packet_loss_fraction(fl_decreasing_packet_loss_fraction),
+      fl_increase_overhead_offset(fl_increase_overhead_offset),
+      fl_decrease_overhead_offset(fl_decrease_overhead_offset),
       fl_changing_bandwidths_bps(std::move(fl_changing_bandwidths_bps)) {}
 
 FrameLengthController::Config::Config(const Config& other) = default;
@@ -71,9 +76,12 @@ void FrameLengthController::MakeDecision(AudioEncoderRuntimeConfig* config) {
 
   if (FrameLengthIncreasingDecision(*config)) {
     ++frame_length_ms_;
+    prev_decision_increase_ = true;
   } else if (FrameLengthDecreasingDecision(*config)) {
     --frame_length_ms_;
+    prev_decision_increase_ = false;
   }
+  config->last_fl_change_increase = prev_decision_increase_;
   config->frame_length_ms = rtc::Optional<int>(*frame_length_ms_);
 }
 
@@ -110,10 +118,22 @@ bool FrameLengthController::FrameLengthIncreasingDecision(
   if (increase_threshold == config_.fl_changing_bandwidths_bps.end())
     return false;
 
+  // Check that
+  // -(*overhead_bytes_per_packet_) <= offset <= (*overhead_bytes_per_packet_)
+  RTC_DCHECK(
+      !overhead_bytes_per_packet_ ||
+      (overhead_bytes_per_packet_ &&
+       static_cast<size_t>(std::max(0, -config_.fl_increase_overhead_offset)) <=
+           *overhead_bytes_per_packet_ &&
+       static_cast<size_t>(std::max(0, config_.fl_increase_overhead_offset)) <=
+           *overhead_bytes_per_packet_));
+
   if (uplink_bandwidth_bps_ && overhead_bytes_per_packet_ &&
       *uplink_bandwidth_bps_ <=
           config_.min_encoder_bitrate_bps + kPreventOveruseMarginBps +
-              OverheadRateBps(*overhead_bytes_per_packet_, *frame_length_ms_)) {
+              OverheadRateBps(*overhead_bytes_per_packet_ +
+                                  config_.fl_increase_overhead_offset,
+                              *frame_length_ms_)) {
     return true;
   }
 
@@ -145,10 +165,11 @@ bool FrameLengthController::FrameLengthDecreasingDecision(
     return false;
 
   if (uplink_bandwidth_bps_ && overhead_bytes_per_packet_ &&
-      *uplink_bandwidth_bps_ <= config_.min_encoder_bitrate_bps +
-                                    kPreventOveruseMarginBps +
-                                    OverheadRateBps(*overhead_bytes_per_packet_,
-                                                    *shorter_frame_length_ms)) {
+      *uplink_bandwidth_bps_ <=
+          config_.min_encoder_bitrate_bps + kPreventOveruseMarginBps +
+              OverheadRateBps(*overhead_bytes_per_packet_ +
+                                  config_.fl_decrease_overhead_offset,
+                              *shorter_frame_length_ms)) {
     return false;
   }
 

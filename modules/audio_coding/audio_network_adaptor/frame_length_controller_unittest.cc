@@ -20,6 +20,8 @@ namespace {
 
 constexpr float kFlIncreasingPacketLossFraction = 0.04f;
 constexpr float kFlDecreasingPacketLossFraction = 0.05f;
+constexpr int kFlIncreaseOverheadOffset = 0;
+constexpr int kFlDecreaseOverheadOffset = 0;
 constexpr int kMinEncoderBitrateBps = 6000;
 constexpr int kPreventOveruseMarginBps = 5000;
 constexpr size_t kOverheadBytesPerPacket = 20;
@@ -46,7 +48,8 @@ std::unique_ptr<FrameLengthController> CreateController(
       new FrameLengthController(FrameLengthController::Config(
           encoder_frame_lengths_ms, initial_frame_length_ms,
           kMinEncoderBitrateBps, kFlIncreasingPacketLossFraction,
-          kFlDecreasingPacketLossFraction, frame_length_change_criteria)));
+          kFlDecreasingPacketLossFraction, kFlIncreaseOverheadOffset,
+          kFlDecreaseOverheadOffset, frame_length_change_criteria)));
 
   return controller;
 }
