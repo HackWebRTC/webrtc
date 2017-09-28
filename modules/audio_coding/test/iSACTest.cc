@@ -67,8 +67,8 @@ int16_t SetISAConfig(ACMTestISACConfig& isacConfig, AudioCodingModule* acm,
 }
 
 ISACTest::ISACTest(int testMode)
-    : _acmA(AudioCodingModule::Create(1)),
-      _acmB(AudioCodingModule::Create(2)),
+    : _acmA(AudioCodingModule::Create()),
+      _acmB(AudioCodingModule::Create()),
       _testMode(testMode) {}
 
 ISACTest::~ISACTest() {}

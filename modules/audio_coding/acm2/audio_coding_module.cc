@@ -269,7 +269,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   rtc::CriticalSection acm_crit_sect_;
   rtc::Buffer encode_buffer_ RTC_GUARDED_BY(acm_crit_sect_);
-  int id_;  // TODO(henrik.lundin) Make const.
   uint32_t expected_codec_ts_ RTC_GUARDED_BY(acm_crit_sect_);
   uint32_t expected_in_ts_ RTC_GUARDED_BY(acm_crit_sect_);
   acm2::ACMResampler resampler_ RTC_GUARDED_BY(acm_crit_sect_);
@@ -456,8 +455,7 @@ void AudioCodingModuleImpl::ChangeLogger::MaybeLog(int value) {
 
 AudioCodingModuleImpl::AudioCodingModuleImpl(
     const AudioCodingModule::Config& config)
-    : id_(config.id),
-      expected_codec_ts_(0xD87F3F9F),
+    : expected_codec_ts_(0xD87F3F9F),
       expected_in_ts_(0xD87F3F9F),
       receiver_(config),
       bitrate_logger_("WebRTC.Audio.TargetBitrateInKbps"),
@@ -1120,7 +1118,6 @@ int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,
     LOG(LS_ERROR) << "PlayoutData failed, RecOut Failed";
     return -1;
   }
-  audio_frame->id_ = id_;
   return 0;
 }
 
@@ -1286,7 +1283,7 @@ ANAStats AudioCodingModuleImpl::GetANAStats() const {
 }  // namespace
 
 AudioCodingModule::Config::Config()
-    : id(0), neteq_config(), clock(Clock::GetRealTimeClock()) {
+    : neteq_config(), clock(Clock::GetRealTimeClock()) {
   // Post-decode VAD is disabled by default in NetEq, however, Audio
   // Conference Mixer relies on VAD decisions and fails without them.
   neteq_config.enable_post_decode_vad = true;
@@ -1295,18 +1292,21 @@ AudioCodingModule::Config::Config()
 AudioCodingModule::Config::Config(const Config&) = default;
 AudioCodingModule::Config::~Config() = default;
 
-// Create module
 AudioCodingModule* AudioCodingModule::Create(int id) {
+  RTC_UNUSED(id);
+  return Create();
+}
+
+// Create module
+AudioCodingModule* AudioCodingModule::Create() {
   Config config;
-  config.id = id;
   config.clock = Clock::GetRealTimeClock();
   config.decoder_factory = CreateBuiltinAudioDecoderFactory();
   return Create(config);
 }
 
-AudioCodingModule* AudioCodingModule::Create(int id, Clock* clock) {
+AudioCodingModule* AudioCodingModule::Create(Clock* clock) {
   Config config;
-  config.id = id;
   config.clock = clock;
   config.decoder_factory = CreateBuiltinAudioDecoderFactory();
   return Create(config);

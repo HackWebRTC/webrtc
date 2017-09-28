@@ -62,8 +62,8 @@ void ActivityMonitor::GetStatistics(uint32_t* counter) {
 }
 
 TestVadDtx::TestVadDtx()
-    : acm_send_(AudioCodingModule::Create(0)),
-      acm_receive_(AudioCodingModule::Create(1)),
+    : acm_send_(AudioCodingModule::Create()),
+      acm_receive_(AudioCodingModule::Create()),
       channel_(new Channel),
       monitor_(new ActivityMonitor) {
   EXPECT_EQ(0, acm_send_->RegisterTransportCallback(channel_.get()));

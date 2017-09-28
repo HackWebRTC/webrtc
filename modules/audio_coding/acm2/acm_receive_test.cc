@@ -110,7 +110,6 @@ AudioCodingModule::Config MakeAcmConfig(
     Clock* clock,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory) {
   AudioCodingModule::Config config;
-  config.id = 0;
   config.clock = clock;
   config.decoder_factory = std::move(decoder_factory);
   return config;
