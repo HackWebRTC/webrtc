@@ -351,10 +351,7 @@ std::string OpenSSLStreamAdapter::SslCipherSuiteToName(int cipher_suite) {
   if (!ssl_cipher) {
     return std::string();
   }
-  char* cipher_name = SSL_CIPHER_get_rfc_name(ssl_cipher);
-  std::string rfc_name = std::string(cipher_name);
-  OPENSSL_free(cipher_name);
-  return rfc_name;
+  return SSL_CIPHER_standard_name(ssl_cipher);
 #else
   for (const SslCipherMapEntry* entry = kSslCipherMap; entry->rfc_name;
        ++entry) {
