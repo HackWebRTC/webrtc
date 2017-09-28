@@ -132,4 +132,9 @@ static NSString *const shaderSource = MTL_STRINGIFY(
   [renderEncoder setFragmentTexture:_CrCbTexture atIndex:1];
 }
 
+- (void)dealloc {
+  if (_textureCache) {
+    CFRelease(_textureCache);
+  }
+}
 @end
