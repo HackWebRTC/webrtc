@@ -15,20 +15,20 @@
 namespace webrtc {
 
 RTPReceiverStrategy::RTPReceiverStrategy(RtpData* data_callback)
-    : data_callback_(data_callback) {
-  memset(&last_payload_, 0, sizeof(last_payload_));
-}
+    : data_callback_(data_callback) {}
 
 void RTPReceiverStrategy::GetLastMediaSpecificPayload(
     PayloadUnion* payload) const {
   rtc::CritScope cs(&crit_sect_);
-  memcpy(payload, &last_payload_, sizeof(*payload));
+  if (last_payload_) {
+    *payload = *last_payload_;
+  }
 }
 
 void RTPReceiverStrategy::SetLastMediaSpecificPayload(
     const PayloadUnion& payload) {
   rtc::CritScope cs(&crit_sect_);
-  memcpy(&last_payload_, &payload, sizeof(last_payload_));
+  last_payload_.emplace(payload);
 }
 
 void RTPReceiverStrategy::CheckPayloadChanged(int8_t payload_type,

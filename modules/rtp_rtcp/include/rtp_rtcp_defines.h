@@ -51,9 +51,39 @@ struct VideoPayload {
   H264::Profile h264_profile;
 };
 
-union PayloadUnion {
-    AudioPayload Audio;
-    VideoPayload Video;
+class PayloadUnion {
+ public:
+  explicit PayloadUnion(const AudioPayload& payload)
+      : Audio(payload), is_audio_(true) {}
+  explicit PayloadUnion(const VideoPayload& payload)
+      : Video(payload), is_audio_(false) {}
+
+  bool is_audio() const { return is_audio_; }
+  bool is_video() const { return !is_audio_; }
+  const AudioPayload& audio_payload() const {
+    RTC_DCHECK(is_audio_);
+    return Audio;
+  }
+  const VideoPayload& video_payload() const {
+    RTC_DCHECK(!is_audio_);
+    return Video;
+  }
+  AudioPayload& audio_payload() {
+    RTC_DCHECK(is_audio_);
+    return Audio;
+  }
+  VideoPayload& video_payload() {
+    RTC_DCHECK(!is_audio_);
+    return Video;
+  }
+
+ public:
+  // These two are public for backwards compatibilty. They'll go private soon.
+  AudioPayload Audio;
+  VideoPayload Video;
+
+ private:
+  bool is_audio_;
 };
 
 enum RTPAliveType { kRtpDead = 0, kRtpNoRtp = 1, kRtpAlive = 2 };

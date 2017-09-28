@@ -35,7 +35,7 @@ RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback)
       cng_fb_payload_type_(-1),
       num_energy_(0),
       current_remote_energy_() {
-  last_payload_.Audio.channels = 1;
+  last_payload_.emplace(AudioPayload{0, 1, 0});
   memset(current_remote_energy_, 0, sizeof(current_remote_energy_));
 }
 

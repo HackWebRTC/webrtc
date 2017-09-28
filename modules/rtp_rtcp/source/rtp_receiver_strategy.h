@@ -89,7 +89,7 @@ class RTPReceiverStrategy {
   explicit RTPReceiverStrategy(RtpData* data_callback);
 
   rtc::CriticalSection crit_sect_;
-  PayloadUnion last_payload_;
+  rtc::Optional<PayloadUnion> last_payload_;
   RtpData* data_callback_;
 };
 }  // namespace webrtc

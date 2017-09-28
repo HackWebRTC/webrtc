@@ -90,7 +90,7 @@ TEST_F(RtpReceiverTest, GetSources) {
   header.numCSRCs = 2;
   header.arrOfCSRCs[0] = kCsrc1;
   header.arrOfCSRCs[1] = kCsrc2;
-  PayloadUnion payload_specific = {AudioPayload()};
+  const PayloadUnion payload_specific{AudioPayload()};
 
   EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
       header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
@@ -140,7 +140,7 @@ TEST_F(RtpReceiverTest, GetSourcesChangeSSRC) {
   header.payloadType = kPcmuPayloadType;
   header.ssrc = kSsrc1;
   header.timestamp = rtp_timestamp(now_ms);
-  PayloadUnion payload_specific = {AudioPayload()};
+  const PayloadUnion payload_specific{AudioPayload()};
 
   EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
       header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
@@ -191,7 +191,7 @@ TEST_F(RtpReceiverTest, GetSourcesRemoveOutdatedSource) {
   RTPHeader header;
   header.payloadType = kPcmuPayloadType;
   header.timestamp = rtp_timestamp(now_ms);
-  PayloadUnion payload_specific = {AudioPayload()};
+  const PayloadUnion payload_specific{AudioPayload()};
   header.numCSRCs = 1;
   size_t kSourceListSize = 20;
 
@@ -265,7 +265,7 @@ TEST_F(RtpReceiverTest, GetSourcesContainsAudioLevelExtension) {
   header.timestamp = rtp_timestamp(time1_ms);
   header.extension.hasAudioLevel = true;
   header.extension.audioLevel = 10;
-  PayloadUnion payload_specific = {AudioPayload()};
+  const PayloadUnion payload_specific{AudioPayload()};
 
   EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
       header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
@@ -317,7 +317,7 @@ TEST_F(RtpReceiverTest,
   header.timestamp = rtp_timestamp(time1_ms);
   header.extension.hasAudioLevel = true;
   header.extension.audioLevel = 10;
-  PayloadUnion payload_specific = {AudioPayload()};
+  const PayloadUnion payload_specific{AudioPayload()};
 
   EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
       header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));

@@ -65,13 +65,8 @@ int32_t RTPSenderAudio::RegisterAudioPayload(
     dtmf_payload_freq_ = frequency;
     return 0;
   }
-  *payload = new RtpUtility::Payload;
-  (*payload)->typeSpecific.Audio.frequency = frequency;
-  (*payload)->typeSpecific.Audio.channels = channels;
-  (*payload)->typeSpecific.Audio.rate = rate;
-  (*payload)->audio = true;
-  (*payload)->name[RTP_PAYLOAD_NAME_SIZE - 1] = '\0';
-  strncpy((*payload)->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+  *payload = new RtpUtility::Payload(
+      payloadName, PayloadUnion(AudioPayload{frequency, channels, rate}));
   return 0;
 }
 

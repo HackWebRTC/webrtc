@@ -92,12 +92,9 @@ RtpUtility::Payload* RTPSenderVideo::CreateVideoPayload(
   } else {
     video_type = kRtpVideoGeneric;
   }
-  RtpUtility::Payload* payload = new RtpUtility::Payload();
-  payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-  strncpy(payload->name, payload_name, RTP_PAYLOAD_NAME_SIZE - 1);
-  payload->typeSpecific.Video.videoCodecType = video_type;
-  payload->audio = false;
-  return payload;
+  VideoPayload vp;
+  vp.videoCodecType = video_type;
+  return new RtpUtility::Payload(payload_name, PayloadUnion(vp));
 }
 
 void RTPSenderVideo::SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
