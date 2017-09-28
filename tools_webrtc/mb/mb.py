@@ -833,19 +833,14 @@ class MetaBuildWrapper(object):
           runtime_deps_targets = ['browser_tests.exe.runtime_deps']
         else:
           runtime_deps_targets = ['browser_tests.runtime_deps']
-      elif (isolate_map[target]['type'] == 'script' or
-            isolate_map[target].get('label_type') == 'group'):
-        # For script targets, the build target is usually a group,
-        # for which gn generates the runtime_deps next to the stamp file
-        # for the label, which lives under the obj/ directory, but it may
-        # also be an executable.
-        label = isolate_map[target]['label']
+      elif isolate_map[target]['type'] == 'script':
+        label = isolate_map[target]['label'].split(':')[1]
         runtime_deps_targets = [
-            'obj/%s.stamp.runtime_deps' % label.replace(':', '/')]
+            '%s.runtime_deps' % label]
         if self.platform == 'win32':
-          runtime_deps_targets += [ target + '.exe.runtime_deps' ]
+          runtime_deps_targets += [ label + '.exe.runtime_deps' ]
         else:
-          runtime_deps_targets += [ target + '.runtime_deps' ]
+          runtime_deps_targets += [ label + '.runtime_deps' ]
       elif self.platform == 'win32':
         runtime_deps_targets = [target + '.exe.runtime_deps']
       else:
@@ -1047,7 +1042,7 @@ class MetaBuildWrapper(object):
                                 output_path=None)
     if test_type not in ('console_test_launcher', 'windowed_test_launcher',
                          'non_parallel_console_test_launcher',
-                         'additional_compile_target', 'junit_test'):
+                         'additional_compile_target', 'junit_test', 'script'):
       self.WriteFailureAndRaise('No command line for %s found (test type %s).'
                                 % (target, test_type), output_path=None)
 
@@ -1063,6 +1058,8 @@ class MetaBuildWrapper(object):
 
       if test_type != 'junit_test':
         cmdline += ['--target-devices-file', '${SWARMING_BOT_FILE}']
+    elif test_type == "script":
+      cmdline = ['../../' + self.ToSrcRelPath(isolate_map[target]['script'])]
     else:
       extra_files = ['../../testing/test_env.py']
 

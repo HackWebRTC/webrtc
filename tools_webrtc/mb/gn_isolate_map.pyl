@@ -62,6 +62,14 @@
       "--quick",
     ],
   },
+  "low_bandwidth_audio_perf_test": {
+    "label": "//audio:low_bandwidth_audio_test",
+    "type": "script",
+    "script": "//audio/test/low_bandwidth_audio_test.py",
+    "args": [
+      ".", "--remove",
+    ],
+  },
   "modules_tests": {
     "label": "//modules:modules_tests",
     "type": "console_test_launcher",

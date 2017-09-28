@@ -467,6 +467,41 @@ class UnitTest(unittest.TestCase):
         '--tsan=0',
     ])
 
+  def test_gn_gen_script(self):
+    test_files = {
+      '/tmp/swarming_targets': 'base_unittests_script\n',
+      '/fake_src/testing/buildbot/gn_isolate_map.pyl': (
+          "{'base_unittests_script': {"
+          "  'label': '//base:base_unittests',"
+          "  'type': 'script',"
+          "  'script': '//base/base_unittests_script.py',"
+          "}}\n"
+      ),
+      '/fake_src/out/Default/base_unittests.runtime_deps': (
+          "base_unittests\n"
+          "base_unittests_script.py\n"
+      ),
+    }
+    mbw = self.check(['gen', '-c', 'gn_debug_goma', '//out/Default',
+                      '--swarming-targets-file', '/tmp/swarming_targets',
+                      '--isolate-map-file',
+                      '/fake_src/testing/buildbot/gn_isolate_map.pyl'],
+                     files=test_files, ret=0)
+
+    isolate_file = (
+        mbw.files['/fake_src/out/Default/base_unittests_script.isolate'])
+    isolate_file_contents = ast.literal_eval(isolate_file)
+    files = isolate_file_contents['variables']['files']
+    command = isolate_file_contents['variables']['command']
+
+    self.assertEqual(files, [
+        'base_unittests',
+        'base_unittests_script.py',
+    ])
+    self.assertEqual(command, [
+        '../../base/base_unittests_script.py',
+    ])
+
   def test_gn_gen_non_parallel_console_test_launcher(self):
     test_files = {
       '/tmp/swarming_targets': 'base_unittests\n',
