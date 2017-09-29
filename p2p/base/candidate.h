@@ -8,28 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_CANDIDATE_H_
-#define API_CANDIDATE_H_
+#ifndef P2P_BASE_CANDIDATE_H_
+#define P2P_BASE_CANDIDATE_H_
 
 #include <limits.h>
+#include <math.h>
 #include <stdint.h>
 
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
+#include "p2p/base/p2pconstants.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/network_constants.h"
+#include "rtc_base/network.h"
 #include "rtc_base/socketaddress.h"
 
 namespace cricket {
 
 // Candidate for ICE based connection discovery.
-// TODO(phoglund): remove things in here that are not needed in the public API.
 
 class Candidate {
  public:
-  // TODO(pthatcher): Match the ordering and param list as per RFC 5245
+  // TODO: Match the ordering and param list as per RFC 5245
   // candidate-attribute syntax. http://tools.ietf.org/html/rfc5245#section-15.1
   Candidate()
       : id_(rtc::CreateRandomString(8)),
@@ -170,12 +173,11 @@ class Candidate {
     related_address_ = related_address;
   }
   const std::string& tcptype() const { return tcptype_; }
-  void set_tcptype(const std::string& tcptype) {
+  void set_tcptype(const std::string& tcptype){
     tcptype_ = tcptype;
   }
 
   // The name of the transport channel of this candidate.
-  // TODO(phoglund): remove.
   const std::string& transport_name() const { return transport_name_; }
   void set_transport_name(const std::string& transport_name) {
     transport_name_ = transport_name;
@@ -288,6 +290,18 @@ class Candidate {
   std::string url_;
 };
 
+// Used during parsing and writing to map component to channel name
+// and back.  This is primarily for converting old G-ICE candidate
+// signalling to new ICE candidate classes.
+class CandidateTranslator {
+ public:
+  virtual ~CandidateTranslator() {}
+  virtual bool GetChannelNameFromComponent(
+      int component, std::string* channel_name) const = 0;
+  virtual bool GetComponentFromChannelName(
+      const std::string& channel_name, int* component) const = 0;
+};
+
 }  // namespace cricket
 
-#endif  // API_CANDIDATE_H_
+#endif  // P2P_BASE_CANDIDATE_H_

@@ -20,7 +20,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "api/candidate.h"
 #include "api/jsepicecandidate.h"
 #include "api/jsepsessiondescription.h"
 // for RtpExtension
@@ -30,6 +29,7 @@
 #include "media/base/mediaconstants.h"
 #include "media/base/rtputils.h"
 #include "media/sctp/sctptransportinternal.h"
+#include "p2p/base/candidate.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/port.h"
 #include "pc/mediasession.h"
