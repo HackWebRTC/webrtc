@@ -56,9 +56,6 @@ PacketQueue::PacketQueue(const Clock* clock)
 PacketQueue::~PacketQueue() {}
 
 void PacketQueue::Push(const Packet& packet) {
-  if (!AddToDupeSet(packet))
-    return;
-
   UpdateQueueTime(packet.enqueue_time_ms);
 
   // Store packet in list, use pointers in priority queue for cheaper moves.
@@ -82,7 +79,6 @@ void PacketQueue::CancelPop(const PacketQueue::Packet& packet) {
 }
 
 void PacketQueue::FinalizePop(const PacketQueue::Packet& packet) {
-  RemoveFromDupeSet(packet);
   bytes_ -= packet.bytes;
   int64_t packet_queue_time_ms = time_last_updated_ - packet.enqueue_time_ms;
   RTC_DCHECK_LE(packet.sum_paused_ms, packet_queue_time_ms);
@@ -148,27 +144,6 @@ int64_t PacketQueue::AverageQueueTimeMs() const {
   if (prio_queue_.empty())
     return 0;
   return queue_time_sum_ / packet_list_.size();
-}
-
-bool PacketQueue::AddToDupeSet(const PacketQueue::Packet& packet) {
-  SsrcSeqNoMap::iterator it = dupe_map_.find(packet.ssrc);
-  if (it == dupe_map_.end()) {
-    // First for this ssrc, just insert.
-    dupe_map_[packet.ssrc].insert(packet.sequence_number);
-    return true;
-  }
-
-  // Insert returns a pair, where second is a bool set to true if new element.
-  return it->second.insert(packet.sequence_number).second;
-}
-
-void PacketQueue::RemoveFromDupeSet(const PacketQueue::Packet& packet) {
-  SsrcSeqNoMap::iterator it = dupe_map_.find(packet.ssrc);
-  RTC_DCHECK(it != dupe_map_.end());
-  it->second.erase(packet.sequence_number);
-  if (it->second.empty()) {
-    dupe_map_.erase(it);
-  }
 }
 
 }  // namespace webrtc

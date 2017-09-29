@@ -255,60 +255,18 @@ TEST_F(PacedSenderTest, PaceQueuedPackets) {
   EXPECT_EQ(1u, send_bucket_->QueueSizePackets());
 }
 
-TEST_F(PacedSenderTest, PaceQueuedPacketsWithDuplicates) {
-  uint32_t ssrc = 12345;
-  uint16_t sequence_number = 1234;
-  uint16_t queued_sequence_number;
-
-  // Due to the multiplicative factor we can send 5 packets during a send
-  // interval. (network capacity * multiplier / (8 bits per byte *
-  // (packet size * #send intervals per second)
-  const size_t packets_to_send_per_interval =
-      kTargetBitrateBps * PacedSender::kDefaultPaceMultiplier / (8 * 250 * 200);
-  for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), 250, false);
-  }
-  queued_sequence_number = sequence_number;
-
-  for (size_t j = 0; j < packets_to_send_per_interval * 10; ++j) {
-    // Send in duplicate packets.
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number, clock_.TimeInMilliseconds(),
-                               250, false);
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, clock_.TimeInMilliseconds(),
-                               250, false);
-  }
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
-  send_bucket_->Process();
-  for (int k = 0; k < 10; ++k) {
-    EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
+TEST_F(PacedSenderTest, RepeatedRetransmissionsAllowed) {
+  // Send one packet, then two retransmissions of that packet.
+  for (size_t i = 0; i < 3; i++) {
+    constexpr uint32_t ssrc = 333;
+    constexpr uint16_t sequence_number = 444;
+    constexpr size_t bytes = 250;
+    bool is_retransmission = (i != 0);  // Original followed by retransmissions.
+    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number,
+                        clock_.TimeInMilliseconds(), bytes, is_retransmission);
     clock_.AdvanceTimeMilliseconds(5);
-
-    for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-      EXPECT_CALL(callback_,
-                  TimeToSendPacket(ssrc, queued_sequence_number++, _, false, _))
-          .Times(1)
-          .WillRepeatedly(Return(true));
-    }
-    EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-    send_bucket_->Process();
   }
-  EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  clock_.AdvanceTimeMilliseconds(5);
-  EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   send_bucket_->Process();
-
-  for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), 250, false);
-  }
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                             sequence_number++, clock_.TimeInMilliseconds(),
-                             250, false);
-  send_bucket_->Process();
-  EXPECT_EQ(1u, send_bucket_->QueueSizePackets());
 }
 
 TEST_F(PacedSenderTest, CanQueuePacketsWithSameSequenceNumberOnDifferentSsrcs) {
