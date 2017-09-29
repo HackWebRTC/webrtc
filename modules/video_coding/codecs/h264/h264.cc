@@ -11,6 +11,8 @@
 
 #include "modules/video_coding/codecs/h264/include/h264.h"
 
+#include "api/video_codecs/sdp_video_format.h"
+
 #if defined(WEBRTC_USE_H264)
 #include "modules/video_coding/codecs/h264/h264_decoder_impl.h"
 #include "modules/video_coding/codecs/h264/h264_encoder_impl.h"
@@ -27,6 +29,15 @@ namespace {
 bool g_rtc_use_h264 = true;
 #endif
 
+// If any H.264 codec is supported (iOS HW or OpenH264/FFmpeg).
+bool IsH264CodecSupported() {
+#if defined(WEBRTC_USE_H264)
+  return g_rtc_use_h264;
+#else
+  return false;
+#endif
+}
+
 }  // namespace
 
 void DisableRtcUseH264() {
@@ -35,13 +46,18 @@ void DisableRtcUseH264() {
 #endif
 }
 
-// If any H.264 codec is supported (iOS HW or OpenH264/FFmpeg).
-bool IsH264CodecSupported() {
-#if defined(WEBRTC_USE_H264)
-  return g_rtc_use_h264;
-#else
-  return false;
-#endif
+std::vector<SdpVideoFormat> SupportedH264Codecs() {
+  if (!IsH264CodecSupported())
+    return std::vector<SdpVideoFormat>();
+  std::vector<SdpVideoFormat> codecs;
+
+  codecs.push_back(SdpVideoFormat(
+      cricket::kH264CodecName, {{cricket::kH264FmtpProfileLevelId,
+                                 cricket::kH264ProfileLevelConstrainedBaseline},
+                                {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
+                                {cricket::kH264FmtpPacketizationMode, "1"}}));
+
+  return codecs;
 }
 
 H264Encoder* H264Encoder::Create(const cricket::VideoCodec& codec) {

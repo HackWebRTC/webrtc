@@ -34,24 +34,18 @@ bool IsFlexfecAdvertisedFieldTrialEnabled() {
 }  // namespace
 
 InternalEncoderFactory::InternalEncoderFactory() {
-  supported_codecs_.push_back(cricket::VideoCodec(kVp8CodecName));
+  supported_codecs_.push_back(VideoCodec(kVp8CodecName));
   if (webrtc::VP9Encoder::IsSupported())
-    supported_codecs_.push_back(cricket::VideoCodec(kVp9CodecName));
-  if (webrtc::H264Encoder::IsSupported()) {
-    cricket::VideoCodec codec(kH264CodecName);
-    // TODO(magjed): Move setting these parameters into webrtc::H264Encoder
-    // instead.
-    codec.SetParam(kH264FmtpProfileLevelId,
-                   kH264ProfileLevelConstrainedBaseline);
-    codec.SetParam(kH264FmtpLevelAsymmetryAllowed, "1");
-    supported_codecs_.push_back(std::move(codec));
-  }
+    supported_codecs_.push_back(VideoCodec(kVp9CodecName));
 
-  supported_codecs_.push_back(cricket::VideoCodec(kRedCodecName));
-  supported_codecs_.push_back(cricket::VideoCodec(kUlpfecCodecName));
+  for (const webrtc::SdpVideoFormat& format : webrtc::SupportedH264Codecs())
+    supported_codecs_.push_back(VideoCodec(format));
+
+  supported_codecs_.push_back(VideoCodec(kRedCodecName));
+  supported_codecs_.push_back(VideoCodec(kUlpfecCodecName));
 
   if (IsFlexfecAdvertisedFieldTrialEnabled()) {
-    cricket::VideoCodec flexfec_codec(kFlexfecCodecName);
+    VideoCodec flexfec_codec(kFlexfecCodecName);
     // This value is currently arbitrarily set to 10 seconds. (The unit
     // is microseconds.) This parameter MUST be present in the SDP, but
     // we never use the actual value anywhere in our code however.
@@ -69,7 +63,7 @@ InternalEncoderFactory::~InternalEncoderFactory() {}
 
 // WebRtcVideoEncoderFactory implementation.
 webrtc::VideoEncoder* InternalEncoderFactory::CreateVideoEncoder(
-    const cricket::VideoCodec& codec) {
+    const VideoCodec& codec) {
   const webrtc::VideoCodecType codec_type =
       webrtc::PayloadStringToCodecType(codec.name);
   switch (codec_type) {
@@ -84,7 +78,7 @@ webrtc::VideoEncoder* InternalEncoderFactory::CreateVideoEncoder(
   }
 }
 
-const std::vector<cricket::VideoCodec>&
+const std::vector<VideoCodec>&
 InternalEncoderFactory::supported_codecs() const {
   return supported_codecs_;
 }
