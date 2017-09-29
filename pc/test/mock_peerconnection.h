@@ -47,6 +47,7 @@ class MockPeerConnection
                rtc::scoped_refptr<StreamCollectionInterface>());
   MOCK_METHOD0(remote_streams,
                rtc::scoped_refptr<StreamCollectionInterface>());
+  MOCK_METHOD0(session, WebRtcSession*());
   MOCK_CONST_METHOD0(GetSenders,
                      std::vector<rtc::scoped_refptr<RtpSenderInterface>>());
   MOCK_CONST_METHOD0(GetReceivers,

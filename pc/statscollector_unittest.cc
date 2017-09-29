@@ -573,12 +573,12 @@ class StatsCollectorTest : public testing::Test {
             network_thread_)),
 
         session_(channel_manager_.get(), cricket::MediaConfig()) {
-    pc_.set_session_for_testing(&session_);
     // By default, we ignore session GetStats calls.
     EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(ReturnNull());
     // Add default returns for mock classes.
     EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
     EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
+    EXPECT_CALL(pc_, session()).WillRepeatedly(Return(&session_));
     EXPECT_CALL(pc_, sctp_data_channels())
         .WillRepeatedly(ReturnRef(data_channels_));
     EXPECT_CALL(pc_, GetSenders()).WillRepeatedly(Return(

@@ -286,10 +286,10 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
             network_thread_)),
         session_(channel_manager_.get(), cricket::MediaConfig()),
         pc_() {
-    pc_.set_session_for_testing(&session_);
     // Default return values for mocks.
     EXPECT_CALL(pc_, local_streams()).WillRepeatedly(Return(nullptr));
     EXPECT_CALL(pc_, remote_streams()).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(pc_, session()).WillRepeatedly(Return(&session_));
     EXPECT_CALL(pc_, GetSenders()).WillRepeatedly(Return(
         std::vector<rtc::scoped_refptr<RtpSenderInterface>>()));
     EXPECT_CALL(pc_, GetReceivers()).WillRepeatedly(Return(
@@ -561,11 +561,14 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
   }
 
  protected:
-  FakeRTCStatsCollector(PeerConnection* pc, int64_t cache_lifetime)
+  FakeRTCStatsCollector(
+      PeerConnection* pc,
+      int64_t cache_lifetime)
       : RTCStatsCollector(pc, cache_lifetime),
-        signaling_thread_(pc->signaling_thread()),
-        worker_thread_(pc->worker_thread()),
-        network_thread_(pc->network_thread()) {}
+        signaling_thread_(pc->session()->signaling_thread()),
+        worker_thread_(pc->session()->worker_thread()),
+        network_thread_(pc->session()->network_thread()) {
+  }
 
   void ProducePartialResultsOnSignalingThread(int64_t timestamp_us) override {
     EXPECT_TRUE(signaling_thread_->IsCurrent());
