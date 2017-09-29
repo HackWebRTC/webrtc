@@ -421,12 +421,13 @@ PeerConnection::~PeerConnection() {
   // Now destroy session_ before destroying other members,
   // because its destruction fires signals (such as VoiceChannelDestroyed)
   // which will trigger some final actions in PeerConnection...
-  session_.reset(nullptr);
+  owned_session_.reset(nullptr);
+  session_ = nullptr;
   // port_allocator_ lives on the network thread and should be destroyed there.
   network_thread()->Invoke<void>(RTC_FROM_HERE,
                                  [this] { port_allocator_.reset(); });
   // call_ and event_log_ must be destroyed on the worker thread.
-  factory_->worker_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
+  worker_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
     call_.reset();
     event_log_.reset();
   });
@@ -467,12 +468,9 @@ bool PeerConnection::Initialize(
     return false;
   }
 
-
-  session_.reset(new WebRtcSession(
+  owned_session_.reset(new WebRtcSession(
       call_.get(), factory_->channel_manager(), configuration.media_config,
-      event_log_.get(),
-      factory_->network_thread(),
-      factory_->worker_thread(), factory_->signaling_thread(),
+      event_log_.get(), network_thread(), worker_thread(), signaling_thread(),
       port_allocator_.get(),
       std::unique_ptr<cricket::TransportController>(
           factory_->CreateTransportController(
@@ -480,11 +478,12 @@ bool PeerConnection::Initialize(
               configuration.redetermine_role_on_ice_restart)),
 #ifdef HAVE_SCTP
       std::unique_ptr<cricket::SctpTransportInternalFactory>(
-          new cricket::SctpTransportFactory(factory_->network_thread()))
+          new cricket::SctpTransportFactory(network_thread()))
 #else
       nullptr
 #endif
           ));
+  session_ = owned_session_.get();
 
   stats_.reset(new StatsCollector(this));
   stats_collector_ = RTCStatsCollector::Create(this);
@@ -1240,9 +1239,8 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
 }
 
 RTCError PeerConnection::SetBitrate(const BitrateParameters& bitrate) {
-  rtc::Thread* worker_thread = factory_->worker_thread();
-  if (!worker_thread->IsCurrent()) {
-    return worker_thread->Invoke<RTCError>(
+  if (!worker_thread()->IsCurrent()) {
+    return worker_thread()->Invoke<RTCError>(
         RTC_FROM_HERE, rtc::Bind(&PeerConnection::SetBitrate, this, bitrate));
   }
 
@@ -1289,13 +1287,13 @@ RTCError PeerConnection::SetBitrate(const BitrateParameters& bitrate) {
 
 bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
                                       int64_t max_size_bytes) {
-  return factory_->worker_thread()->Invoke<bool>(
+  return worker_thread()->Invoke<bool>(
       RTC_FROM_HERE, rtc::Bind(&PeerConnection::StartRtcEventLog_w, this, file,
                                max_size_bytes));
 }
 
 void PeerConnection::StopRtcEventLog() {
-  factory_->worker_thread()->Invoke<void>(
+  worker_thread()->Invoke<void>(
       RTC_FROM_HERE, rtc::Bind(&PeerConnection::StopRtcEventLog_w, this));
 }
 
@@ -1339,7 +1337,7 @@ void PeerConnection::Close() {
       rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
                 port_allocator_.get()));
 
-  factory_->worker_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
+  worker_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
     call_.reset();
     // The event log must outlive call (and any other object that uses it).
     event_log_.reset();
@@ -1437,7 +1435,7 @@ void PeerConnection::CreateVideoReceiver(MediaStreamInterface* stream,
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
       receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
           signaling_thread(),
-          new VideoRtpReceiver(track_id, factory_->worker_thread(), ssrc,
+          new VideoRtpReceiver(track_id, worker_thread(), ssrc,
                                session_->video_channel()));
   stream->AddTrack(
       static_cast<VideoTrackInterface*>(receiver->internal()->track().get()));
@@ -2241,7 +2239,7 @@ rtc::scoped_refptr<DataChannel> PeerConnection::InternalCreateDataChannel(
   }
 
   rtc::scoped_refptr<DataChannel> channel(DataChannel::Create(
-      session_.get(), session_->data_channel_type(), label, new_config));
+      session_, session_->data_channel_type(), label, new_config));
   if (!channel) {
     sid_allocator_.ReleaseSid(new_config.id);
     return nullptr;

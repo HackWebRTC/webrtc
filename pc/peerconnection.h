@@ -65,7 +65,10 @@ class PeerConnection : public PeerConnectionInterface,
       std::vector<MediaStreamInterface*> streams) override;
   bool RemoveTrack(RtpSenderInterface* sender) override;
 
-  virtual WebRtcSession* session() { return session_.get(); }
+  // TODO(steveanton): Remove this once all clients have switched to using the
+  // PeerConnection shims for WebRtcSession methods instead of the methods
+  // directly via this getter.
+  virtual WebRtcSession* session() { return session_; }
 
   rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
       AudioTrackInterface* track) override;
@@ -146,6 +149,64 @@ class PeerConnection : public PeerConnectionInterface,
     return sctp_data_channels_;
   }
 
+  // TODO(steveanton): These methods are temporarily added to facilitate work
+  // towards merging WebRtcSession into PeerConnection. To make this easier, we
+  // want only PeerConnection to interact with WebRtcSession so they can be
+  // merged easily. A few outside classes still access WebRtcSession methods
+  // directly, so these have been added to PeerConnection to remove the
+  // dependency from WebRtcSession.
+
+  rtc::Thread* network_thread() const { return factory_->network_thread(); }
+  rtc::Thread* worker_thread() const { return factory_->worker_thread(); }
+  rtc::Thread* signaling_thread() const { return factory_->signaling_thread(); }
+  virtual const std::string& session_id() const { return session_->id(); }
+  virtual bool session_created() const { return session_ != nullptr; }
+  virtual bool initial_offerer() const { return session_->initial_offerer(); }
+  virtual std::unique_ptr<SessionStats> GetSessionStats_s() {
+    return session_->GetStats_s();
+  }
+  virtual std::unique_ptr<SessionStats> GetSessionStats(
+      const ChannelNamePairs& channel_name_pairs) {
+    return session_->GetStats(channel_name_pairs);
+  }
+  virtual bool GetLocalCertificate(
+      const std::string& transport_name,
+      rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
+    return session_->GetLocalCertificate(transport_name, certificate);
+  }
+  virtual std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
+      const std::string& transport_name) {
+    return session_->GetRemoteSSLCertificate(transport_name);
+  }
+  virtual Call::Stats GetCallStats() { return session_->GetCallStats(); }
+  virtual cricket::VoiceChannel* voice_channel() {
+    return session_->voice_channel();
+  }
+  virtual cricket::VideoChannel* video_channel() {
+    return session_->video_channel();
+  }
+  virtual cricket::RtpDataChannel* rtp_data_channel() {
+    return session_->rtp_data_channel();
+  }
+  virtual rtc::Optional<std::string> sctp_content_name() const {
+    return session_->sctp_content_name();
+  }
+  virtual rtc::Optional<std::string> sctp_transport_name() const {
+    return session_->sctp_transport_name();
+  }
+  virtual bool GetLocalTrackIdBySsrc(uint32_t ssrc, std::string* track_id) {
+    return session_->GetLocalTrackIdBySsrc(ssrc, track_id);
+  }
+  virtual bool GetRemoteTrackIdBySsrc(uint32_t ssrc, std::string* track_id) {
+    return session_->GetRemoteTrackIdBySsrc(ssrc, track_id);
+  }
+
+  // This is needed for stats tests to inject a MockWebRtcSession. Once
+  // WebRtcSession has been merged in, this will no longer be needed.
+  void set_session_for_testing(WebRtcSession* session) {
+    session_ = session;
+  }
+
  protected:
   ~PeerConnection() override;
 
@@ -209,12 +270,6 @@ class PeerConnection : public PeerConnectionInterface,
                          MediaStreamInterface* stream);
   void OnVideoTrackRemoved(VideoTrackInterface* track,
                            MediaStreamInterface* stream);
-
-  rtc::Thread* signaling_thread() const {
-    return factory_->signaling_thread();
-  }
-
-  rtc::Thread* network_thread() const { return factory_->network_thread(); }
 
   void PostSetSessionDescriptionFailure(SetSessionDescriptionObserver* observer,
                                         const std::string& error);
@@ -433,7 +488,8 @@ class PeerConnection : public PeerConnectionInterface,
   bool remote_peer_supports_msid_ = false;
 
   std::unique_ptr<Call> call_;
-  std::unique_ptr<WebRtcSession> session_;
+  WebRtcSession* session_;
+  std::unique_ptr<WebRtcSession> owned_session_;
   std::unique_ptr<StatsCollector> stats_;  // A pointer is passed to senders_
   rtc::scoped_refptr<RTCStatsCollector> stats_collector_;
 
