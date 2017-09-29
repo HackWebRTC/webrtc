@@ -20,7 +20,7 @@ TARGET_RE = re.compile(r'(?P<indent>\s*)\w+\("(?P<target_name>\w+)"\) {'
 
 # SOURCES_RE matches a block of sources inside a GN target.
 SOURCES_RE = re.compile(
-    r'(sources|common_objc_headers) \+?= \[(?P<sources>.*?)\]',
+    r'(sources|public|common_objc_headers) \+?= \[(?P<sources>.*?)\]',
     re.MULTILINE | re.DOTALL)
 
 SOURCE_FILE_RE = re.compile(r'.*\"(?P<source_file>.*)\"')
