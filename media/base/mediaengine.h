@@ -25,7 +25,7 @@
 #include "media/base/codec.h"
 #include "media/base/mediachannel.h"
 #include "media/base/videocommon.h"
-#include "rtc_base/fileutils.h"
+#include "rtc_base/platform_file.h"
 
 #if defined(GOOGLE_CHROME_BUILD) || defined(CHROMIUM_BUILD)
 #define DISABLE_MEDIA_ENGINE_FACTORY

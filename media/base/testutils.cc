@@ -17,7 +17,6 @@
 #include "api/video/video_frame.h"
 #include "media/base/videocapturer.h"
 #include "rtc_base/bytebuffer.h"
-#include "rtc_base/fileutils.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/pathutils.h"
 #include "rtc_base/stream.h"

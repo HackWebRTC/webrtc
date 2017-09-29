@@ -89,7 +89,6 @@
 #include "media/base/mediachannel.h"
 #include "media/base/videocapturer.h"
 #include "p2p/base/portallocator.h"
-#include "rtc_base/fileutils.h"
 #include "rtc_base/network.h"
 #include "rtc_base/rtccertificate.h"
 #include "rtc_base/rtccertificategenerator.h"

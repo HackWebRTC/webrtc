@@ -14,7 +14,6 @@
 #include <crtdbg.h>
 #endif
 
-#include "rtc_base/fileutils.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"

@@ -17,7 +17,6 @@
 
 #include "media/base/mediaengine.h"
 #include "pc/voicechannel.h"
-#include "rtc_base/fileutils.h"
 #include "rtc_base/thread.h"
 
 namespace cricket {

@@ -9,7 +9,6 @@
  */
 
 #include "rtc_base/stream.h"
-#include "rtc_base/fileutils.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/pathutils.h"
 
