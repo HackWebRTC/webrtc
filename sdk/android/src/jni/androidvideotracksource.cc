@@ -192,7 +192,7 @@ void AndroidVideoTrackSource::OnFrameCaptured(JNIEnv* jni,
       video_buffer_factory_.WrapBuffer(jni, j_adapted_video_frame_buffer);
 
   // AdaptedVideoTrackSource handles applying rotation for I420 frames.
-  if (apply_rotation()) {
+  if (apply_rotation() && rotation != kVideoRotation_0) {
     buffer = buffer->ToI420();
   }
 
