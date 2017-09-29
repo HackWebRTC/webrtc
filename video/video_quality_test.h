@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "media/engine/simulcast_encoder_adapter.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
 #include "test/call_test.h"
 #include "test/frame_generator.h"
 #include "test/testsupport/trace_to_stderr.h"
@@ -46,6 +47,8 @@ class VideoQualityTest : public test::CallTest {
       int max_bitrate_bps;
       bool suspend_below_min_bitrate;
       std::string codec;
+      bool hw_encoder;
+      bool sw_fallback_encoder;
       int num_temporal_layers;
       int selected_tl;
       int min_transmit_bps;
@@ -142,8 +145,8 @@ class VideoQualityTest : public test::CallTest {
   std::vector<std::unique_ptr<test::VideoCapturer>> thumbnail_capturers_;
   std::unique_ptr<test::TraceToStderr> trace_to_stderr_;
   std::unique_ptr<test::FrameGenerator> frame_generator_;
+  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> video_encoder_factory_;
   std::unique_ptr<VideoEncoder> video_encoder_;
-  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> vp8_encoder_factory_;
 
   std::vector<std::unique_ptr<VideoEncoder>> thumbnail_encoders_;
   std::vector<VideoSendStream::Config> thumbnail_send_configs_;

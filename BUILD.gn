@@ -477,6 +477,8 @@ if (rtc_include_tests) {
     "resources/audio_coding/testfile32kHz.pcm",
     "resources/ConferenceMotion_1280_720_50.yuv",
     "resources/difficult_photo_1850_1110.yuv",
+    "resources/foreman_128x96.yuv",
+    "resources/foreman_320x240.yuv",
     "resources/foreman_cif.yuv",
     "resources/google-wifi-3mbps.rx",
     "resources/paris_qcif.yuv",
@@ -513,7 +515,13 @@ if (rtc_include_tests) {
 
     data = webrtc_perf_tests_resources
     if (is_android) {
-      deps += [ "//testing/android/native_test:native_test_native_code" ]
+      deps += [
+        # Including Java classes seems only to be possible from rtc_test
+        # targets. Therefore we include this target here, instead of
+        # in video_full_stack_tests, where it is actually used.
+        "sdk/android:libjingle_peerconnection_java",
+        "//testing/android/native_test:native_test_native_code",
+      ]
       shard_timeout = 2700
     }
     if (is_ios) {
