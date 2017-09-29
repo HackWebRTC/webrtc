@@ -133,8 +133,8 @@ class CallTest : public ::testing::Test {
   size_t num_video_streams_;
   size_t num_audio_streams_;
   size_t num_flexfec_streams_;
-  rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory_;
-  rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory_;
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
+  rtc::scoped_refptr<AudioEncoderFactory> encoder_factory_;
   test::FakeVideoRenderer fake_renderer_;
 
   SingleThreadedTaskQueueForTesting task_queue_;

@@ -124,15 +124,6 @@ if (rtc_include_tests) {
       "../voice_engine",
       "//testing/gtest",
     ]
-    if (is_android) {
-      deps += [
-        "../modules/video_coding:codecs_test_android_test_initializer",
-        "../sdk/android:video_jni",
-      ]
-    }
-    if (is_ios || is_mac) {
-      deps += [ "../modules/video_coding:codec_test_objc" ]
-    }
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]

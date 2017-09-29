@@ -14,7 +14,6 @@ include_rules = [
   "+modules/video_coding",
   "+modules/video_capture",
   "+modules/video_processing",
-  "+sdk",
   "+system_wrappers",
   "+voice_engine",
 ]
