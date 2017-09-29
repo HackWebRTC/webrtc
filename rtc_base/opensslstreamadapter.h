@@ -169,11 +169,9 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   SSL_CTX* SetupSSLContext();
   // Verify the peer certificate matches the signaled digest.
   bool VerifyPeerCertificate();
-  // SSL certification verification error handler, called back from
-  // the openssl library. Returns an int interpreted as a boolean in
-  // the C style: zero means verification failure, non-zero means
-  // passed.
-  static int SSLVerifyCallback(int ok, X509_STORE_CTX* store);
+  // SSL certificate verification callback. See
+  // SSL_CTX_set_cert_verify_callback.
+  static int SSLVerifyCallback(X509_STORE_CTX* store, void* arg);
 
   bool waiting_to_verify_peer_certificate() const {
     return client_auth_enabled() && !peer_certificate_verified_;

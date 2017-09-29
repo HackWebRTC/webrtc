@@ -1050,8 +1050,13 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
     mode |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
   }
 
-  SSL_CTX_set_verify(ctx, mode, SSLVerifyCallback);
-  SSL_CTX_set_verify_depth(ctx, 4);
+  // Configure a custom certificate verification callback to check the peer
+  // certificate digest. Note the second argument to SSL_CTX_set_verify is to
+  // override individual errors in the default verification logic, which is not
+  // what we want here.
+  SSL_CTX_set_verify(ctx, mode, nullptr);
+  SSL_CTX_set_cert_verify_callback(ctx, SSLVerifyCallback, nullptr);
+
   // Select list of available ciphers. Note that !SHA256 and !SHA384 only
   // remove HMAC-SHA256 and HMAC-SHA384 cipher suites, not GCM cipher suites
   // with SHA256 or SHA384 as the handshake hash.
@@ -1097,28 +1102,17 @@ bool OpenSSLStreamAdapter::VerifyPeerCertificate() {
   return true;
 }
 
-int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
-  // Get our SSL structure from the store
+int OpenSSLStreamAdapter::SSLVerifyCallback(X509_STORE_CTX* store, void* arg) {
+  // Get our SSL structure and OpenSSLStreamAdapter from the store.
   SSL* ssl = reinterpret_cast<SSL*>(
       X509_STORE_CTX_get_ex_data(store, SSL_get_ex_data_X509_STORE_CTX_idx()));
-  X509* cert = X509_STORE_CTX_get_current_cert(store);
-  int depth = X509_STORE_CTX_get_error_depth(store);
-
-  // For now we ignore the parent certificates and verify the leaf against
-  // the digest.
-  //
-  // TODO(jiayl): Verify the chain is a proper chain and report the chain to
-  // |stream->peer_certificate_|.
-  if (depth > 0) {
-    LOG(LS_INFO) << "Ignored chained certificate at depth " << depth;
-    return 1;
-  }
-
   OpenSSLStreamAdapter* stream =
       reinterpret_cast<OpenSSLStreamAdapter*>(SSL_get_app_data(ssl));
 
   // Record the peer's certificate.
+  X509* cert = SSL_get_peer_certificate(ssl);
   stream->peer_certificate_.reset(new OpenSSLCertificate(cert));
+  X509_free(cert);
 
   // If the peer certificate digest isn't known yet, we'll wait to verify
   // until it's known, and for now just return a success status.
@@ -1127,7 +1121,12 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
     return 1;
   }
 
-  return stream->VerifyPeerCertificate();
+  if (!stream->VerifyPeerCertificate()) {
+    X509_STORE_CTX_set_error(store, X509_V_ERR_CERT_REJECTED);
+    return 0;
+  }
+
+  return 1;
 }
 
 bool OpenSSLStreamAdapter::IsBoringSsl() {
