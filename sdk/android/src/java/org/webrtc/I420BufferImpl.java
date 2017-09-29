@@ -81,17 +81,20 @@ class I420BufferImpl implements VideoFrame.I420Buffer {
 
   @Override
   public ByteBuffer getDataY() {
-    return dataY;
+    // Return a slice to prevent relative reads from changing the position.
+    return dataY.slice();
   }
 
   @Override
   public ByteBuffer getDataU() {
-    return dataU;
+    // Return a slice to prevent relative reads from changing the position.
+    return dataU.slice();
   }
 
   @Override
   public ByteBuffer getDataV() {
-    return dataV;
+    // Return a slice to prevent relative reads from changing the position.
+    return dataV.slice();
   }
 
   @Override
