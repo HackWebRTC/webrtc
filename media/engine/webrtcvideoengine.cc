@@ -153,10 +153,7 @@ class WebRtcEncoderFactoryAdapter : public EncoderFactoryAdapter {
     std::vector<VideoCodec> codecs;
     for (const webrtc::SdpVideoFormat& format :
          encoder_factory_->GetSupportedFormats()) {
-      VideoCodec codec;
-      codec.name = format.name;
-      codec.params = format.parameters;
-      codecs.push_back(codec);
+      codecs.push_back(VideoCodec(format));
     }
     return AssignPayloadTypesAndAddAssociatedRtxCodecs(codecs);
   }

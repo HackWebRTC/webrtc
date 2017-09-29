@@ -231,6 +231,11 @@ VideoCodec::VideoCodec() : Codec() {
   clockrate = kVideoCodecClockrate;
 }
 
+VideoCodec::VideoCodec(const webrtc::SdpVideoFormat& c)
+    : Codec(0 /* id */, c.name, kVideoCodecClockrate) {
+  params = c.parameters;
+}
+
 VideoCodec::VideoCodec(const VideoCodec& c) = default;
 VideoCodec::VideoCodec(VideoCodec&& c) = default;
 VideoCodec& VideoCodec::operator=(const VideoCodec& c) = default;
