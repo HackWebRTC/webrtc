@@ -60,9 +60,12 @@ class SSLCertificate {
   virtual ~SSLCertificate() {}
 
   // Returns a new SSLCertificate object instance wrapping the same
-  // underlying certificate, including its chain if present.
-  // Caller is responsible for freeing the returned object.
+  // underlying certificate, including its chain if present.  Caller is
+  // responsible for freeing the returned object. Use GetUniqueReference
+  // instead.
   virtual SSLCertificate* GetReference() const = 0;
+
+  std::unique_ptr<SSLCertificate> GetUniqueReference() const;
 
   // Provides the cert chain, or null. The chain includes a copy of each
   // certificate, excluding the leaf.
@@ -103,6 +106,7 @@ class SSLCertificate {
 // SSLCertificate pointers.
 class SSLCertChain {
  public:
+  explicit SSLCertChain(std::vector<std::unique_ptr<SSLCertificate>> certs);
   // These constructors copy the provided SSLCertificate(s), so the caller
   // retains ownership.
   explicit SSLCertChain(const std::vector<SSLCertificate*>& certs);
@@ -117,20 +121,10 @@ class SSLCertChain {
 
   // Returns a new SSLCertChain object instance wrapping the same underlying
   // certificate chain.  Caller is responsible for freeing the returned object.
-  SSLCertChain* Copy() const {
-    return new SSLCertChain(certs_);
-  }
+  SSLCertChain* Copy() const;
 
  private:
-  // Helper function for duplicating a vector of certificates.
-  static SSLCertificate* DupCert(const SSLCertificate* cert) {
-    return cert->GetReference();
-  }
-
-  // Helper function for deleting a vector of certificates.
-  static void DeleteCert(SSLCertificate* cert) { delete cert; }
-
-  std::vector<SSLCertificate*> certs_;
+  std::vector<std::unique_ptr<SSLCertificate>> certs_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
 };

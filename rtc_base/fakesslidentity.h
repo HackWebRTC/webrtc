@@ -17,6 +17,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/messagedigest.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/sslidentity.h"
 
 namespace rtc {
@@ -72,16 +73,14 @@ class FakeSSLCertificate : public rtc::SSLCertificate {
   std::unique_ptr<SSLCertChain> GetChain() const override {
     if (certs_.empty())
       return nullptr;
-    std::vector<SSLCertificate*> new_certs(certs_.size());
+    std::vector<std::unique_ptr<SSLCertificate>> new_certs(certs_.size());
     std::transform(certs_.begin(), certs_.end(), new_certs.begin(), DupCert);
-    std::unique_ptr<SSLCertChain> chain(new SSLCertChain(new_certs));
-    std::for_each(new_certs.begin(), new_certs.end(), DeleteCert);
-    return chain;
+    return MakeUnique<SSLCertChain>(std::move(new_certs));
   }
 
  private:
-  static FakeSSLCertificate* DupCert(FakeSSLCertificate cert) {
-    return cert.GetReference();
+  static std::unique_ptr<SSLCertificate> DupCert(FakeSSLCertificate cert) {
+    return cert.GetUniqueReference();
   }
   static void DeleteCert(SSLCertificate* cert) { delete cert; }
   std::string data_;
