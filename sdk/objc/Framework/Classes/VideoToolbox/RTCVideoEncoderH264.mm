@@ -274,7 +274,7 @@ CFStringRef ExtractProfile(const cricket::VideoCodec &codec) {
 
 @implementation RTCVideoEncoderH264 {
   RTCVideoCodecInfo *_codecInfo;
-  webrtc::BitrateAdjuster *_bitrateAdjuster;
+  std::unique_ptr<webrtc::BitrateAdjuster> _bitrateAdjuster;
   uint32_t _targetBitrateBps;
   uint32_t _encoderBitrateBps;
   RTCH264PacketizationMode _packetizationMode;
@@ -299,7 +299,8 @@ CFStringRef ExtractProfile(const cricket::VideoCodec &codec) {
 - (instancetype)initWithCodecInfo:(RTCVideoCodecInfo *)codecInfo {
   if (self = [super init]) {
     _codecInfo = codecInfo;
-    _bitrateAdjuster = new webrtc::BitrateAdjuster(webrtc::Clock::GetRealTimeClock(), .5, .95);
+    _bitrateAdjuster.reset(new webrtc::BitrateAdjuster(
+        webrtc::Clock::GetRealTimeClock(), .5, .95));
     _packetizationMode = RTCH264PacketizationModeNonInterleaved;
     _profile = ExtractProfile([codecInfo nativeVideoCodec]);
     LOG(LS_INFO) << "Using profile " << CFStringToString(_profile);
