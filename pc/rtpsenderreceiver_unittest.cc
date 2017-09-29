@@ -14,7 +14,6 @@
 
 #include "media/base/fakemediaengine.h"
 #include "media/engine/fakewebrtccall.h"
-#include "p2p/base/faketransportcontroller.h"
 #include "pc/audiotrack.h"
 #include "pc/channelmanager.h"
 #include "pc/localaudiosource.h"
@@ -23,6 +22,7 @@
 #include "pc/rtpreceiver.h"
 #include "pc/rtpsender.h"
 #include "pc/streamcollection.h"
+#include "pc/test/faketransportcontroller.h"
 #include "pc/test/fakevideotracksource.h"
 #include "pc/videotrack.h"
 #include "pc/videotracksource.h"

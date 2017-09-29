@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/transportcontroller.h"
+#include "pc/transportcontroller.h"
 
 #include <algorithm>
 #include <memory>
@@ -36,7 +36,7 @@ struct CandidatesData : public rtc::MessageData {
   cricket::Candidates candidates;
 };
 
-}  // namespace {
+}  // namespace
 
 namespace cricket {
 
@@ -840,9 +840,8 @@ void TransportController::UpdateAggregateStates_n() {
   bool all_done_gathering = !channels_.empty();
   for (const auto& channel : channels_) {
     any_receiving = any_receiving || channel->dtls()->receiving();
-    any_failed = any_failed ||
-                 channel->dtls()->ice_transport()->GetState() ==
-                     IceTransportState::STATE_FAILED;
+    any_failed = any_failed || channel->dtls()->ice_transport()->GetState() ==
+                                   IceTransportState::STATE_FAILED;
     all_connected = all_connected && channel->dtls()->writable();
     all_completed =
         all_completed && channel->dtls()->writable() &&

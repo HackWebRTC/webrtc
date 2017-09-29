@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_FAKETRANSPORTCONTROLLER_H_
-#define P2P_BASE_FAKETRANSPORTCONTROLLER_H_
+#ifndef PC_TEST_FAKETRANSPORTCONTROLLER_H_
+#define PC_TEST_FAKETRANSPORTCONTROLLER_H_
 
 #include <memory>
 #include <string>
@@ -17,7 +17,7 @@
 
 #include "p2p/base/fakedtlstransport.h"
 #include "p2p/base/fakeicetransport.h"
-#include "p2p/base/transportcontroller.h"
+#include "pc/transportcontroller.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/sslfingerprint.h"
 #include "rtc_base/thread.h"
@@ -156,4 +156,4 @@ class FakeTransportController : public TransportController {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_FAKETRANSPORTCONTROLLER_H_
+#endif  // PC_TEST_FAKETRANSPORTCONTROLLER_H_

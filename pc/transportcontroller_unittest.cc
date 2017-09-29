@@ -13,10 +13,10 @@
 
 #include "p2p/base/dtlstransport.h"
 #include "p2p/base/fakeportallocator.h"
-#include "p2p/base/faketransportcontroller.h"
 #include "p2p/base/p2ptransportchannel.h"
 #include "p2p/base/portallocator.h"
-#include "p2p/base/transportcontroller.h"
+#include "pc/test/faketransportcontroller.h"
+#include "pc/transportcontroller.h"
 #include "rtc_base/fakesslidentity.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
@@ -906,4 +906,4 @@ TEST_F(TransportControllerTest, NeedsIceRestart) {
   EXPECT_TRUE(transport_controller_->NeedsIceRestart("video"));
 }
 
-}  // namespace cricket {
+}  // namespace cricket
