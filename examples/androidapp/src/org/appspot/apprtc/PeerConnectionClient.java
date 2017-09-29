@@ -378,14 +378,6 @@ public class PeerConnectionClient {
   }
 
   private void createPeerConnectionFactoryInternal(Context context) {
-    PeerConnectionFactory.initializeInternalTracer();
-    if (peerConnectionParameters.tracing) {
-      PeerConnectionFactory.startInternalTracingCapture(
-          Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
-          + "webrtc-trace.txt");
-    }
-    Log.d(TAG,
-        "Create peer connection factory. Use video: " + peerConnectionParameters.videoCallEnabled);
     isError = false;
 
     // Initialize field trials.
@@ -424,8 +416,21 @@ public class PeerConnectionClient {
       }
     }
     Log.d(TAG, "Preferred video codec: " + preferredVideoCodec);
-    PeerConnectionFactory.initializeFieldTrials(fieldTrials);
-    Log.d(TAG, "Field trials: " + fieldTrials);
+
+    // Initialize WebRTC
+    Log.d(TAG,
+        "Initialize WebRTC. Field trials: " + fieldTrials + " Enable video HW acceleration: "
+            + peerConnectionParameters.videoCodecHwAcceleration);
+    PeerConnectionFactory.initialize(
+        PeerConnectionFactory.InitializationOptions.builder(context)
+            .setFieldTrials(fieldTrials)
+            .setEnableVideoHwAcceleration(peerConnectionParameters.videoCodecHwAcceleration)
+            .createInitializationOptions());
+    if (peerConnectionParameters.tracing) {
+      PeerConnectionFactory.startInternalTracingCapture(
+          Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
+          + "webrtc-trace.txt");
+    }
 
     // Check if ISAC is used by default.
     preferIsac = peerConnectionParameters.audioCodec != null
@@ -504,8 +509,6 @@ public class PeerConnectionClient {
     });
 
     // Create peer connection factory.
-    PeerConnectionFactory.initializeAndroidGlobals(
-        context, peerConnectionParameters.videoCodecHwAcceleration);
     if (options != null) {
       Log.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
     }
