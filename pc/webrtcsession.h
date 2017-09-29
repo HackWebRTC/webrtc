@@ -16,11 +16,11 @@
 #include <string>
 #include <vector>
 
+#include "api/candidate.h"
 #include "api/optional.h"
 #include "api/peerconnectioninterface.h"
 #include "api/statstypes.h"
 #include "call/call.h"
-#include "p2p/base/candidate.h"
 #include "p2p/base/transportcontroller.h"
 #include "pc/datachannel.h"
 #include "pc/mediasession.h"

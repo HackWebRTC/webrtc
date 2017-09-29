@@ -38,12 +38,6 @@ class Network;
 class NetworkMonitorInterface;
 class Thread;
 
-static const uint16_t kNetworkCostMax = 999;
-static const uint16_t kNetworkCostHigh = 900;
-static const uint16_t kNetworkCostUnknown = 50;
-static const uint16_t kNetworkCostLow = 10;
-static const uint16_t kNetworkCostMin = 0;
-
 // By default, ignore loopback interfaces on the host.
 const int kDefaultNetworkIgnoreMask = ADAPTER_TYPE_LOOPBACK;
 

@@ -12,6 +12,7 @@
 #define RTC_BASE_NETWORKMONITOR_H_
 
 #include "rtc_base/logging.h"
+#include "rtc_base/network_constants.h"
 #include "rtc_base/sigslot.h"
 #include "rtc_base/thread.h"
 
@@ -25,16 +26,6 @@ enum class NetworkBindingResult {
   NOT_IMPLEMENTED = -2,
   ADDRESS_NOT_FOUND = -3,
   NETWORK_CHANGED = -4
-};
-
-enum AdapterType {
-  // This enum resembles the one in Chromium net::ConnectionType.
-  ADAPTER_TYPE_UNKNOWN = 0,
-  ADAPTER_TYPE_ETHERNET = 1 << 0,
-  ADAPTER_TYPE_WIFI = 1 << 1,
-  ADAPTER_TYPE_CELLULAR = 1 << 2,
-  ADAPTER_TYPE_VPN = 1 << 3,
-  ADAPTER_TYPE_LOOPBACK = 1 << 4
 };
 
 class NetworkBinderInterface {
