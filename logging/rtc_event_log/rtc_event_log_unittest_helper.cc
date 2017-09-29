@@ -18,6 +18,7 @@
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/checks.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
@@ -349,25 +350,23 @@ void RtcEventLogTestHelper::VerifyAudioSendStreamConfig(
   VerifyStreamConfigsAreEqual(config, parsed_config);
 }
 
-void RtcEventLogTestHelper::VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,
-                                           size_t index,
-                                           PacketDirection direction,
-                                           const uint8_t* header,
-                                           size_t header_size,
-                                           size_t total_size) {
+void RtcEventLogTestHelper::VerifyIncomingRtpEvent(
+    const ParsedRtcEventLog& parsed_log,
+    size_t index,
+    const RtpPacketReceived& expected_packet) {
   const rtclog::Event& event = parsed_log.events_[index];
   ASSERT_TRUE(IsValidBasicEvent(event));
   ASSERT_EQ(rtclog::Event::RTP_EVENT, event.type());
   const rtclog::RtpPacket& rtp_packet = event.rtp_packet();
   ASSERT_TRUE(rtp_packet.has_incoming());
-  EXPECT_EQ(direction == kIncomingPacket, rtp_packet.incoming());
+  EXPECT_TRUE(rtp_packet.incoming());
   ASSERT_TRUE(rtp_packet.has_packet_length());
-  EXPECT_EQ(total_size, rtp_packet.packet_length());
+  EXPECT_EQ(expected_packet.size(), rtp_packet.packet_length());
+  size_t header_size = expected_packet.headers_size();
   ASSERT_TRUE(rtp_packet.has_header());
-  ASSERT_EQ(header_size, rtp_packet.header().size());
-  for (size_t i = 0; i < header_size; i++) {
-    EXPECT_EQ(header[i], static_cast<uint8_t>(rtp_packet.header()[i]));
-  }
+  EXPECT_THAT(testing::make_tuple(expected_packet.data(), header_size),
+              testing::ElementsAreArray(rtp_packet.header().data(),
+                                        rtp_packet.header().size()));
 
   // Check consistency of the parser.
   PacketDirection parsed_direction;
@@ -375,10 +374,40 @@ void RtcEventLogTestHelper::VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,
   size_t parsed_header_size, parsed_total_size;
   parsed_log.GetRtpHeader(index, &parsed_direction, parsed_header,
                           &parsed_header_size, &parsed_total_size);
-  EXPECT_EQ(direction, parsed_direction);
-  ASSERT_EQ(header_size, parsed_header_size);
-  EXPECT_EQ(0, std::memcmp(header, parsed_header, header_size));
-  EXPECT_EQ(total_size, parsed_total_size);
+  EXPECT_EQ(kIncomingPacket, parsed_direction);
+  EXPECT_THAT(testing::make_tuple(expected_packet.data(), header_size),
+              testing::ElementsAreArray(parsed_header, parsed_header_size));
+  EXPECT_EQ(expected_packet.size(), parsed_total_size);
+}
+
+void RtcEventLogTestHelper::VerifyOutgoingRtpEvent(
+    const ParsedRtcEventLog& parsed_log,
+    size_t index,
+    const RtpPacketToSend& expected_packet) {
+  const rtclog::Event& event = parsed_log.events_[index];
+  ASSERT_TRUE(IsValidBasicEvent(event));
+  ASSERT_EQ(rtclog::Event::RTP_EVENT, event.type());
+  const rtclog::RtpPacket& rtp_packet = event.rtp_packet();
+  ASSERT_TRUE(rtp_packet.has_incoming());
+  EXPECT_FALSE(rtp_packet.incoming());
+  ASSERT_TRUE(rtp_packet.has_packet_length());
+  EXPECT_EQ(expected_packet.size(), rtp_packet.packet_length());
+  size_t header_size = expected_packet.headers_size();
+  ASSERT_TRUE(rtp_packet.has_header());
+  EXPECT_THAT(testing::make_tuple(expected_packet.data(), header_size),
+              testing::ElementsAreArray(rtp_packet.header().data(),
+                                        rtp_packet.header().size()));
+
+  // Check consistency of the parser.
+  PacketDirection parsed_direction;
+  uint8_t parsed_header[1500];
+  size_t parsed_header_size, parsed_total_size;
+  parsed_log.GetRtpHeader(index, &parsed_direction, parsed_header,
+                          &parsed_header_size, &parsed_total_size);
+  EXPECT_EQ(kOutgoingPacket, parsed_direction);
+  EXPECT_THAT(testing::make_tuple(expected_packet.data(), header_size),
+              testing::ElementsAreArray(parsed_header, parsed_header_size));
+  EXPECT_EQ(expected_packet.size(), parsed_total_size);
 }
 
 void RtcEventLogTestHelper::VerifyRtcpEvent(const ParsedRtcEventLog& parsed_log,

@@ -33,6 +33,8 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/event.h"
@@ -112,16 +114,27 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) override;
   void LogAudioReceiveStreamConfig(const rtclog::StreamConfig& config) override;
   void LogAudioSendStreamConfig(const rtclog::StreamConfig& config) override;
+  // TODO(terelius): This can be removed as soon as the interface has been
+  // updated.
   void LogRtpHeader(PacketDirection direction,
                     const uint8_t* header,
                     size_t packet_length) override;
+  // TODO(terelius): This can be made private, non-virtual as soon as the
+  // interface has been updated.
   void LogRtpHeader(PacketDirection direction,
                     const uint8_t* header,
                     size_t packet_length,
                     int probe_cluster_id) override;
+  void LogIncomingRtpHeader(const RtpPacketReceived& packet) override;
+  void LogOutgoingRtpHeader(const RtpPacketToSend& packet,
+                            int probe_cluster_id) override;
+  // TODO(terelius): This can be made private, non-virtual as soon as the
+  // interface has been updated.
   void LogRtcpPacket(PacketDirection direction,
                      const uint8_t* packet,
                      size_t length) override;
+  void LogIncomingRtcpPacket(rtc::ArrayView<const uint8_t> packet) override;
+  void LogOutgoingRtcpPacket(rtc::ArrayView<const uint8_t> packet) override;
   void LogAudioPlayout(uint32_t ssrc) override;
   void LogLossBasedBweUpdate(int32_t bitrate_bps,
                              uint8_t fraction_loss,
@@ -418,6 +431,16 @@ void RtcEventLogImpl::LogAudioSendStreamConfig(
   StoreEvent(std::move(event));
 }
 
+void RtcEventLogImpl::LogIncomingRtpHeader(const RtpPacketReceived& packet) {
+  LogRtpHeader(kIncomingPacket, packet.data(), packet.size(),
+               PacedPacketInfo::kNotAProbe);
+}
+
+void RtcEventLogImpl::LogOutgoingRtpHeader(const RtpPacketToSend& packet,
+                                           int probe_cluster_id) {
+  LogRtpHeader(kOutgoingPacket, packet.data(), packet.size(), probe_cluster_id);
+}
+
 void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
                                    const uint8_t* header,
                                    size_t packet_length) {
@@ -453,6 +476,16 @@ void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
   if (probe_cluster_id != PacedPacketInfo::kNotAProbe)
     rtp_event->mutable_rtp_packet()->set_probe_cluster_id(probe_cluster_id);
   StoreEvent(std::move(rtp_event));
+}
+
+void RtcEventLogImpl::LogIncomingRtcpPacket(
+    rtc::ArrayView<const uint8_t> packet) {
+  LogRtcpPacket(kIncomingPacket, packet.data(), packet.size());
+}
+
+void RtcEventLogImpl::LogOutgoingRtcpPacket(
+    rtc::ArrayView<const uint8_t> packet) {
+  LogRtcpPacket(kOutgoingPacket, packet.data(), packet.size());
 }
 
 void RtcEventLogImpl::LogRtcpPacket(PacketDirection direction,

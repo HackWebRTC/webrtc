@@ -11,7 +11,10 @@
 #include "voice_engine/channel.h"
 
 #include <algorithm>
+#include <map>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "api/array_view.h"
 #include "audio/utility/audio_frame_operations.h"
@@ -98,29 +101,32 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
     }
   }
 
-  void LogRtpHeader(webrtc::PacketDirection direction,
-                    const uint8_t* header,
-                    size_t packet_length) override {
-    LogRtpHeader(direction, header, packet_length, PacedPacketInfo::kNotAProbe);
-  }
-
-  void LogRtpHeader(webrtc::PacketDirection direction,
-                    const uint8_t* header,
-                    size_t packet_length,
-                    int probe_cluster_id) override {
+  void LogIncomingRtpHeader(const RtpPacketReceived& packet) override {
     rtc::CritScope lock(&crit_);
     if (event_log_) {
-      event_log_->LogRtpHeader(direction, header, packet_length,
-                               probe_cluster_id);
+      event_log_->LogIncomingRtpHeader(packet);
     }
   }
 
-  void LogRtcpPacket(webrtc::PacketDirection direction,
-                     const uint8_t* packet,
-                     size_t length) override {
+  void LogOutgoingRtpHeader(const RtpPacketToSend& packet,
+                            int probe_cluster_id) override {
     rtc::CritScope lock(&crit_);
     if (event_log_) {
-      event_log_->LogRtcpPacket(direction, packet, length);
+      event_log_->LogOutgoingRtpHeader(packet, probe_cluster_id);
+    }
+  }
+
+  void LogIncomingRtcpPacket(rtc::ArrayView<const uint8_t> packet) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogIncomingRtcpPacket(packet);
+    }
+  }
+
+  void LogOutgoingRtcpPacket(rtc::ArrayView<const uint8_t> packet) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogOutgoingRtcpPacket(packet);
     }
   }
 

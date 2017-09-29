@@ -16,6 +16,8 @@
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "test/gmock.h"
 
 namespace webrtc {
@@ -42,21 +44,16 @@ class MockRtcEventLog : public RtcEventLog {
   MOCK_METHOD1(LogAudioSendStreamConfig,
                void(const rtclog::StreamConfig& config));
 
-  MOCK_METHOD3(LogRtpHeader,
-               void(PacketDirection direction,
-                    const uint8_t* header,
-                    size_t packet_length));
+  MOCK_METHOD1(LogIncomingRtpHeader, void(const RtpPacketReceived& packet));
 
-  MOCK_METHOD4(LogRtpHeader,
-               void(PacketDirection direction,
-                    const uint8_t* header,
-                    size_t packet_length,
-                    int probe_cluster_id));
+  MOCK_METHOD2(LogOutgoingRtpHeader,
+               void(const RtpPacketToSend& packet, int probe_cluster_id));
 
-  MOCK_METHOD3(LogRtcpPacket,
-               void(PacketDirection direction,
-                    const uint8_t* packet,
-                    size_t length));
+  MOCK_METHOD1(LogIncomingRtcpPacket,
+               void(rtc::ArrayView<const uint8_t> packet));
+
+  MOCK_METHOD1(LogOutgoingRtcpPacket,
+               void(rtc::ArrayView<const uint8_t> packet));
 
   MOCK_METHOD1(LogAudioPlayout, void(uint32_t ssrc));
 

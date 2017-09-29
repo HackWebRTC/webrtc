@@ -31,6 +31,7 @@ rtc_source_set("rtc_event_log_api") {
   ]
   deps = [
     "..:webrtc_common",
+    "../api:array_view",
     "../api:libjingle_peerconnection_api",
     "../call:video_stream_api",
     "../rtc_base:rtc_base_approved",
