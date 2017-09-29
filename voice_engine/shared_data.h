@@ -22,7 +22,6 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "voice_engine/channel_manager.h"
-#include "voice_engine/statistics.h"
 #include "voice_engine/voice_engine_defines.h"
 
 class ProcessThread;
@@ -37,7 +36,6 @@ class SharedData
 public:
     // Public accessors.
     uint32_t instance_id() const { return _instanceId; }
-    Statistics& statistics() { return _engineStatistics; }
     ChannelManager& channel_manager() { return _channelManager; }
     AudioDeviceModule* audio_device() { return _audioDevicePtr.get(); }
     void set_audio_device(
@@ -51,18 +49,11 @@ public:
     int NumOfSendingChannels();
     int NumOfPlayingChannels();
 
-    // Convenience methods for calling statistics().SetLastError().
-    void SetLastError(int32_t error) const;
-    void SetLastError(int32_t error, TraceLevel level) const;
-    void SetLastError(int32_t error, TraceLevel level,
-                      const char* msg) const;
-
 protected:
  rtc::ThreadChecker construction_thread_;
  const uint32_t _instanceId;
  rtc::CriticalSection _apiCritPtr;
  ChannelManager _channelManager;
- Statistics _engineStatistics;
  rtc::scoped_refptr<AudioDeviceModule> _audioDevicePtr;
  TransmitMixer* _transmitMixerPtr;
  std::unique_ptr<ProcessThread> _moduleProcessThreadPtr;

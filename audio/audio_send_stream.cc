@@ -120,7 +120,7 @@ AudioSendStream::~AudioSendStream() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "~AudioSendStream: " << config_.ToString();
   transport_->send_side_cc()->DeRegisterPacketFeedbackObserver(this);
-  channel_proxy_->DeRegisterExternalTransport();
+  channel_proxy_->RegisterTransport(nullptr);
   channel_proxy_->ResetSenderCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);
   channel_proxy_->SetRtcpRttStats(nullptr);
@@ -164,7 +164,7 @@ void AudioSendStream::ConfigureStream(
   if (first_time ||
       new_config.send_transport != old_config.send_transport) {
     if (old_config.send_transport) {
-      channel_proxy->DeRegisterExternalTransport();
+      channel_proxy->RegisterTransport(nullptr);
     }
     if (new_config.send_transport) {
       stream->timed_send_transport_adapter_.reset(new TimedTransport(
@@ -172,7 +172,7 @@ void AudioSendStream::ConfigureStream(
     } else {
       stream->timed_send_transport_adapter_.reset(nullptr);
     }
-    channel_proxy->RegisterExternalTransport(
+    channel_proxy->RegisterTransport(
         stream->timed_send_transport_adapter_.get());
   }
 

@@ -104,7 +104,6 @@ class VoEBaseImpl : public VoEBase,
   // Initialize channel by setting Engine Information then initializing
   // channel.
   int InitializeChannel(voe::ChannelOwner* channel_owner);
-  rtc::CriticalSection callbackCritSect_;
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 
   AudioFrame audioFrame_;

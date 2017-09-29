@@ -42,7 +42,6 @@ VoEBaseImpl::~VoEBaseImpl() {
 }
 
 void VoEBaseImpl::OnErrorIsReported(const ErrorCode error) {
-  rtc::CritScope cs(&callbackCritSect_);
   if (error == AudioDeviceObserver::kRecordingError) {
     LOG_F(LS_ERROR) << "VE_RUNTIME_REC_ERROR";
   } else if (error == AudioDeviceObserver::kPlayoutError) {
@@ -51,7 +50,6 @@ void VoEBaseImpl::OnErrorIsReported(const ErrorCode error) {
 }
 
 void VoEBaseImpl::OnWarningIsReported(const WarningCode warning) {
-  rtc::CritScope cs(&callbackCritSect_);
   if (warning == AudioDeviceObserver::kRecordingWarning) {
     LOG_F(LS_WARNING) << "VE_RUNTIME_REC_WARNING";
   } else if (warning == AudioDeviceObserver::kPlayoutWarning) {
@@ -167,9 +165,6 @@ int VoEBaseImpl::Init(
   RTC_DCHECK(audio_processing);
   rtc::CritScope cs(shared_->crit_sec());
   WebRtcSpl_Init();
-  if (shared_->statistics().Initialized()) {
-    return 0;
-  }
   if (shared_->process_thread()) {
     shared_->process_thread()->Start();
   }
@@ -185,8 +180,7 @@ int VoEBaseImpl::Init(
         VoEId(shared_->instance_id(), -1),
         AudioDeviceModule::kPlatformDefaultAudio));
     if (shared_->audio_device() == nullptr) {
-      shared_->SetLastError(VE_NO_MEMORY, kTraceCritical,
-                            "Init() failed to create the ADM");
+      LOG(LS_ERROR) << "Init() failed to create the ADM";
       return -1;
     }
 #endif  // WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE
@@ -211,55 +205,44 @@ int VoEBaseImpl::Init(
 
   // Register the AudioObserver implementation
   if (shared_->audio_device()->RegisterEventObserver(this) != 0) {
-    shared_->SetLastError(
-        VE_AUDIO_DEVICE_MODULE_ERROR, kTraceWarning,
-        "Init() failed to register event observer for the ADM");
+    LOG(LS_ERROR) << "Init() failed to register event observer for the ADM";
   }
 
   // Register the AudioTransport implementation
   if (shared_->audio_device()->RegisterAudioCallback(this) != 0) {
-    shared_->SetLastError(
-        VE_AUDIO_DEVICE_MODULE_ERROR, kTraceWarning,
-        "Init() failed to register audio callback for the ADM");
+    LOG(LS_ERROR) << "Init() failed to register audio callback for the ADM";
   }
 
   // ADM initialization
   if (shared_->audio_device()->Init() != 0) {
-    shared_->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,
-                          "Init() failed to initialize the ADM");
+    LOG(LS_ERROR) << "Init() failed to initialize the ADM";
     return -1;
   }
 
   // Initialize the default speaker
   if (shared_->audio_device()->SetPlayoutDevice(
           WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE) != 0) {
-    shared_->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceInfo,
-                          "Init() failed to set the default output device");
+    LOG(LS_ERROR) << "Init() failed to set the default output device";
   }
   if (shared_->audio_device()->InitSpeaker() != 0) {
-    shared_->SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL, kTraceInfo,
-                          "Init() failed to initialize the speaker");
+    LOG(LS_ERROR) << "Init() failed to initialize the speaker";
   }
 
   // Initialize the default microphone
   if (shared_->audio_device()->SetRecordingDevice(
           WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE) != 0) {
-    shared_->SetLastError(VE_SOUNDCARD_ERROR, kTraceInfo,
-                          "Init() failed to set the default input device");
+    LOG(LS_ERROR) << "Init() failed to set the default input device";
   }
   if (shared_->audio_device()->InitMicrophone() != 0) {
-    shared_->SetLastError(VE_CANNOT_ACCESS_MIC_VOL, kTraceInfo,
-                          "Init() failed to initialize the microphone");
+    LOG(LS_ERROR) << "Init() failed to initialize the microphone";
   }
 
   // Set number of channels
   if (shared_->audio_device()->StereoPlayoutIsAvailable(&available) != 0) {
-    shared_->SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-                          "Init() failed to query stereo playout mode");
+    LOG(LS_ERROR) << "Init() failed to query stereo playout mode";
   }
   if (shared_->audio_device()->SetStereoPlayout(available) != 0) {
-    shared_->SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-                          "Init() failed to set mono/stereo playout mode");
+    LOG(LS_ERROR) << "Init() failed to set mono/stereo playout mode";
   }
 
   // TODO(andrew): These functions don't tell us whether stereo recording
@@ -271,14 +254,11 @@ int VoEBaseImpl::Init(
   // http://code.google.com/p/webrtc/issues/detail?id=204
   shared_->audio_device()->StereoRecordingIsAvailable(&available);
   if (shared_->audio_device()->SetStereoRecording(available) != 0) {
-    shared_->SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-                          "Init() failed to set mono/stereo recording mode");
+    LOG(LS_ERROR) << "Init() failed to set mono/stereo recording mode";
   }
 
   shared_->set_audio_processing(audio_processing);
 
-  // Set the error state for any failures in this block.
-  shared_->SetLastError(VE_APM_ERROR);
   // Configure AudioProcessing components.
   // TODO(peah): Move this initialization to webrtcvoiceengine.cc.
   if (audio_processing->high_pass_filter()->Enable(true) != 0) {
@@ -309,14 +289,12 @@ int VoEBaseImpl::Init(
     LOG_F(LS_ERROR) << "Failed to set agc state: " << kDefaultAgcState;
     return -1;
   }
-  shared_->SetLastError(0);  // Clear error state.
 
 #ifdef WEBRTC_VOICE_ENGINE_AGC
   bool agc_enabled =
       agc->mode() == GainControl::kAdaptiveAnalog && agc->is_enabled();
   if (shared_->audio_device()->SetAGC(agc_enabled) != 0) {
     LOG_F(LS_ERROR) << "Failed to set agc to enabled: " << agc_enabled;
-    shared_->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR);
     // TODO(ajm): No error return here due to
     // https://code.google.com/p/webrtc/issues/detail?id=1464
   }
@@ -327,7 +305,7 @@ int VoEBaseImpl::Init(
   else
     decoder_factory_ = CreateBuiltinAudioDecoderFactory();
 
-  return shared_->statistics().SetInitialized();
+  return 0;
 }
 
 int VoEBaseImpl::Terminate() {
@@ -341,11 +319,6 @@ int VoEBaseImpl::CreateChannel() {
 
 int VoEBaseImpl::CreateChannel(const ChannelConfig& config) {
   rtc::CritScope cs(shared_->crit_sec());
-  if (!shared_->statistics().Initialized()) {
-    shared_->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-
   ChannelConfig config_copy(config);
   config_copy.acm_config.decoder_factory = decoder_factory_;
   voe::ChannelOwner channel_owner =
@@ -355,21 +328,16 @@ int VoEBaseImpl::CreateChannel(const ChannelConfig& config) {
 
 int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner) {
   if (channel_owner->channel()->SetEngineInformation(
-          shared_->statistics(),
           *shared_->process_thread(), *shared_->audio_device(),
-          &callbackCritSect_, shared_->encoder_queue()) != 0) {
-    shared_->SetLastError(
-        VE_CHANNEL_NOT_CREATED, kTraceError,
-        "CreateChannel() failed to associate engine and channel."
-        " Destroying channel.");
+          shared_->encoder_queue()) != 0) {
+    LOG(LS_ERROR) << "CreateChannel() failed to associate engine and channel."
+                     " Destroying channel.";
     shared_->channel_manager().DestroyChannel(
         channel_owner->channel()->ChannelId());
     return -1;
   } else if (channel_owner->channel()->Init() != 0) {
-    shared_->SetLastError(
-        VE_CHANNEL_NOT_CREATED, kTraceError,
-        "CreateChannel() failed to initialize channel. Destroying"
-        " channel.");
+    LOG(LS_ERROR) << "CreateChannel() failed to initialize channel. Destroying"
+                     " channel.";
     shared_->channel_manager().DestroyChannel(
         channel_owner->channel()->ChannelId());
     return -1;
@@ -379,17 +347,11 @@ int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner) {
 
 int VoEBaseImpl::DeleteChannel(int channel) {
   rtc::CritScope cs(shared_->crit_sec());
-  if (!shared_->statistics().Initialized()) {
-    shared_->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-
   {
     voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
     voe::Channel* channelPtr = ch.channel();
     if (channelPtr == nullptr) {
-      shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                            "DeleteChannel() failed to locate channel");
+      LOG(LS_ERROR) << "DeleteChannel() failed to locate channel";
       return -1;
     }
   }
@@ -406,23 +368,17 @@ int VoEBaseImpl::DeleteChannel(int channel) {
 
 int VoEBaseImpl::StartPlayout(int channel) {
   rtc::CritScope cs(shared_->crit_sec());
-  if (!shared_->statistics().Initialized()) {
-    shared_->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
   voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == nullptr) {
-    shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "StartPlayout() failed to locate channel");
+    LOG(LS_ERROR) << "StartPlayout() failed to locate channel";
     return -1;
   }
   if (channelPtr->Playing()) {
     return 0;
   }
   if (StartPlayout() != 0) {
-    shared_->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,
-                          "StartPlayout() failed to start playout");
+    LOG(LS_ERROR) << "StartPlayout() failed to start playout";
     return -1;
   }
   return channelPtr->StartPlayout();
@@ -430,15 +386,10 @@ int VoEBaseImpl::StartPlayout(int channel) {
 
 int VoEBaseImpl::StopPlayout(int channel) {
   rtc::CritScope cs(shared_->crit_sec());
-  if (!shared_->statistics().Initialized()) {
-    shared_->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
   voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == nullptr) {
-    shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "StopPlayout() failed to locate channel");
+    LOG(LS_ERROR) << "StopPlayout() failed to locate channel";
     return -1;
   }
   if (channelPtr->StopPlayout() != 0) {
@@ -450,23 +401,17 @@ int VoEBaseImpl::StopPlayout(int channel) {
 
 int VoEBaseImpl::StartSend(int channel) {
   rtc::CritScope cs(shared_->crit_sec());
-  if (!shared_->statistics().Initialized()) {
-    shared_->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
   voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == nullptr) {
-    shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "StartSend() failed to locate channel");
+    LOG(LS_ERROR) << "StartSend() failed to locate channel";
     return -1;
   }
   if (channelPtr->Sending()) {
     return 0;
   }
   if (StartSend() != 0) {
-    shared_->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,
-                          "StartSend() failed to start recording");
+    LOG(LS_ERROR) << "StartSend() failed to start recording";
     return -1;
   }
   return channelPtr->StartSend();
@@ -474,15 +419,10 @@ int VoEBaseImpl::StartSend(int channel) {
 
 int VoEBaseImpl::StopSend(int channel) {
   rtc::CritScope cs(shared_->crit_sec());
-  if (!shared_->statistics().Initialized()) {
-    shared_->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
   voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == nullptr) {
-    shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "StopSend() failed to locate channel");
+    LOG(LS_ERROR) << "StopSend() failed to locate channel";
     return -1;
   }
   channelPtr->StopSend();
@@ -507,8 +447,7 @@ int32_t VoEBaseImpl::StopPlayout() {
   // Stop audio-device playing if no channel is playing out
   if (shared_->NumOfPlayingChannels() == 0) {
     if (shared_->audio_device()->StopPlayout() != 0) {
-      shared_->SetLastError(VE_CANNOT_STOP_PLAYOUT, kTraceError,
-                            "StopPlayout() failed to stop playout");
+      LOG(LS_ERROR) << "StopPlayout() failed to stop playout";
       return -1;
     }
   }
@@ -536,8 +475,7 @@ int32_t VoEBaseImpl::StopSend() {
   if (shared_->NumOfSendingChannels() == 0) {
     // Stop audio-device recording if no channel is recording
     if (shared_->audio_device()->StopRecording() != 0) {
-      shared_->SetLastError(VE_CANNOT_STOP_RECORDING, kTraceError,
-                            "StopSend() failed to stop recording");
+      LOG(LS_ERROR) << "StopSend() failed to stop recording";
       return -1;
     }
     shared_->transmit_mixer()->StopSend();
@@ -559,34 +497,27 @@ int32_t VoEBaseImpl::TerminateInternal() {
 
   if (shared_->audio_device()) {
     if (shared_->audio_device()->StopPlayout() != 0) {
-      shared_->SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-                            "TerminateInternal() failed to stop playout");
+      LOG(LS_ERROR) << "TerminateInternal() failed to stop playout";
     }
     if (shared_->audio_device()->StopRecording() != 0) {
-      shared_->SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-                            "TerminateInternal() failed to stop recording");
+      LOG(LS_ERROR) << "TerminateInternal() failed to stop recording";
     }
     if (shared_->audio_device()->RegisterEventObserver(nullptr) != 0) {
-      shared_->SetLastError(
-          VE_AUDIO_DEVICE_MODULE_ERROR, kTraceWarning,
-          "TerminateInternal() failed to de-register event observer "
-          "for the ADM");
+      LOG(LS_ERROR) << "TerminateInternal() failed to de-register event "
+                       "observer for the ADM";
     }
     if (shared_->audio_device()->RegisterAudioCallback(nullptr) != 0) {
-      shared_->SetLastError(
-          VE_AUDIO_DEVICE_MODULE_ERROR, kTraceWarning,
-          "TerminateInternal() failed to de-register audio callback "
-          "for the ADM");
+      LOG(LS_ERROR) << "TerminateInternal() failed to de-register audio "
+                       "callback for the ADM";
     }
     if (shared_->audio_device()->Terminate() != 0) {
-      shared_->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,
-                            "TerminateInternal() failed to terminate the ADM");
+      LOG(LS_ERROR) << "TerminateInternal() failed to terminate the ADM";
     }
     shared_->set_audio_device(nullptr);
   }
 
   shared_->set_audio_processing(nullptr);
 
-  return shared_->statistics().SetUnInitialized();
+  return 0;
 }
 }  // namespace webrtc

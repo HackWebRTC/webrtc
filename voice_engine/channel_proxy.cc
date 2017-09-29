@@ -213,15 +213,9 @@ void ChannelProxy::SetInputMute(bool muted) {
   channel()->SetInputMute(muted);
 }
 
-void ChannelProxy::RegisterExternalTransport(Transport* transport) {
+void ChannelProxy::RegisterTransport(Transport* transport) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int error = channel()->RegisterExternalTransport(transport);
-  RTC_DCHECK_EQ(0, error);
-}
-
-void ChannelProxy::DeRegisterExternalTransport() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  channel()->DeRegisterExternalTransport();
+  channel()->RegisterTransport(transport);
 }
 
 void ChannelProxy::OnRtpPacket(const RtpPacketReceived& packet) {

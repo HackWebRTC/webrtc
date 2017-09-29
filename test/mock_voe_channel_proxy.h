@@ -65,8 +65,7 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   // TODO(solenberg): Talk the compiler into accepting this mock method:
   // MOCK_METHOD1(SetSink, void(std::unique_ptr<AudioSinkInterface> sink));
   MOCK_METHOD1(SetInputMute, void(bool muted));
-  MOCK_METHOD1(RegisterExternalTransport, void(Transport* transport));
-  MOCK_METHOD0(DeRegisterExternalTransport, void());
+  MOCK_METHOD1(RegisterTransport, void(Transport* transport));
   MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived& packet));
   MOCK_METHOD2(ReceivedRTCPPacket, bool(const uint8_t* packet, size_t length));
   MOCK_CONST_METHOD0(GetAudioDecoderFactory,

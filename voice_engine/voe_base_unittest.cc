@@ -41,11 +41,6 @@ TEST_F(VoEBaseTest, InitWithExternalAudioDevice) {
   EXPECT_EQ(0, base_->Init(&adm_, apm_.get()));
 }
 
-TEST_F(VoEBaseTest, CreateChannelBeforeInitShouldFail) {
-  int channelID = base_->CreateChannel();
-  EXPECT_EQ(channelID, -1);
-}
-
 TEST_F(VoEBaseTest, CreateChannelAfterInit) {
   EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
   int channelID = base_->CreateChannel();

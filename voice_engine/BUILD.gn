@@ -20,8 +20,6 @@ rtc_static_library("voice_engine") {
     "include/voe_errors.h",
     "shared_data.cc",
     "shared_data.h",
-    "statistics.cc",
-    "statistics.h",
     "transmit_mixer.cc",
     "transmit_mixer.h",
     "transport_feedback_packet_loss_tracker.cc",

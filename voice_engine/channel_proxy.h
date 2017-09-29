@@ -94,8 +94,7 @@ class ChannelProxy : public RtpPacketSinkInterface {
   virtual void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs);
   virtual void SetSink(std::unique_ptr<AudioSinkInterface> sink);
   virtual void SetInputMute(bool muted);
-  virtual void RegisterExternalTransport(Transport* transport);
-  virtual void DeRegisterExternalTransport();
+  virtual void RegisterTransport(Transport* transport);
 
   // Implements RtpPacketSinkInterface
   void OnRtpPacket(const RtpPacketReceived& packet) override;

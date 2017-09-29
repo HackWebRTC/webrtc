@@ -20,7 +20,6 @@
 #include "system_wrappers/include/trace.h"
 #include "voice_engine/channel.h"
 #include "voice_engine/channel_manager.h"
-#include "voice_engine/statistics.h"
 #include "voice_engine/utility.h"
 
 namespace webrtc {

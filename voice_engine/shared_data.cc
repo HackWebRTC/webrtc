@@ -24,7 +24,6 @@ static int32_t _gInstanceCounter = 0;
 SharedData::SharedData()
     : _instanceId(++_gInstanceCounter),
       _channelManager(_gInstanceCounter),
-      _engineStatistics(_gInstanceCounter),
       _audioDevicePtr(NULL),
       _moduleProcessThreadPtr(ProcessThread::Create("VoiceProcessThread")),
       encoder_queue_("AudioEncoderQueue") {
@@ -82,20 +81,6 @@ int SharedData::NumOfPlayingChannels() {
   }
 
   return playout_channels;
-}
-
-void SharedData::SetLastError(int32_t error) const {
-  _engineStatistics.SetLastError(error);
-}
-
-void SharedData::SetLastError(int32_t error,
-                              TraceLevel level) const {
-  _engineStatistics.SetLastError(error, level);
-}
-
-void SharedData::SetLastError(int32_t error, TraceLevel level,
-                              const char* msg) const {
-  _engineStatistics.SetLastError(error, level, msg);
 }
 
 }  // namespace voe

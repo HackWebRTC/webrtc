@@ -90,7 +90,6 @@ namespace voe {
 class RtcEventLogProxy;
 class RtcpRttStatsProxy;
 class RtpPacketSenderProxy;
-class Statistics;
 class TransportFeedbackProxy;
 class TransportSequenceNumberProxy;
 class VoERtcpObserver;
@@ -157,10 +156,8 @@ class Channel
           const VoEBase::ChannelConfig& config);
   int32_t Init();
   void Terminate();
-  int32_t SetEngineInformation(Statistics& engineStatistics,
-                               ProcessThread& moduleProcessThread,
+  int32_t SetEngineInformation(ProcessThread& moduleProcessThread,
                                AudioDeviceModule& audioDeviceModule,
-                               rtc::CriticalSection* callbackCritSect,
                                rtc::TaskQueue* encoder_queue);
 
   void SetSink(std::unique_ptr<AudioSinkInterface> sink);
@@ -197,8 +194,7 @@ class Channel
                                    int max_frame_length_ms);
 
   // Network
-  int32_t RegisterExternalTransport(Transport* transport);
-  int32_t DeRegisterExternalTransport();
+  void RegisterTransport(Transport* transport);
   // TODO(nisse, solenberg): Delete when VoENetwork is deleted.
   int32_t ReceivedRTCPPacket(const uint8_t* data, size_t length);
   void OnRtpPacket(const RtpPacketReceived& packet);
@@ -286,10 +282,6 @@ class Channel
   int32_t ChannelId() const { return _channelId; }
   bool Playing() const { return channel_state_.Get().playing; }
   bool Sending() const { return channel_state_.Get().sending; }
-  bool ExternalTransport() const {
-    rtc::CritScope cs(&_callbackCritSect);
-    return _externalTransport;
-  }
   RtpRtcp* RtpRtcpModulePtr() const { return _rtpRtcpModule.get(); }
   int8_t OutputEnergyLevel() const { return _outputAudioLevel.Level(); }
 
@@ -395,7 +387,6 @@ class Channel
   acm2::RentACodec rent_a_codec_;
   std::unique_ptr<AudioSinkInterface> audio_sink_;
   AudioLevel _outputAudioLevel;
-  bool _externalTransport;
   // Downsamples to the codec rate if necessary.
   PushResampler<int16_t> input_resampler_;
   uint32_t _timeStamp RTC_ACCESS_ON(encoder_queue_);
@@ -420,10 +411,8 @@ class Channel
   int64_t capture_start_ntp_time_ms_ RTC_GUARDED_BY(ts_stats_lock_);
 
   // uses
-  Statistics* _engineStatisticsPtr;
   ProcessThread* _moduleProcessThreadPtr;
   AudioDeviceModule* _audioDeviceModulePtr;
-  rtc::CriticalSection* _callbackCritSectPtr;    // owned by base
   Transport* _transportPtr;  // WebRtc socket or external transport
   RmsLevel rms_level_ RTC_ACCESS_ON(encoder_queue_);
   bool input_mute_ RTC_GUARDED_BY(volume_settings_critsect_);

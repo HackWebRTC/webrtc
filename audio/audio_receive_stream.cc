@@ -94,7 +94,7 @@ AudioReceiveStream::AudioReceiveStream(
   RTC_CHECK_EQ(config.decoder_factory,
                channel_proxy_->GetAudioDecoderFactory());
 
-  channel_proxy_->RegisterExternalTransport(config.rtcp_send_transport);
+  channel_proxy_->RegisterTransport(config.rtcp_send_transport);
   channel_proxy_->SetReceiveCodecs(config.decoder_map);
 
   for (const auto& extension : config.rtp.extensions) {
@@ -122,7 +122,7 @@ AudioReceiveStream::~AudioReceiveStream() {
     Stop();
   }
   channel_proxy_->DisassociateSendChannel();
-  channel_proxy_->DeRegisterExternalTransport();
+  channel_proxy_->RegisterTransport(nullptr);
   channel_proxy_->ResetReceiverCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);
 }

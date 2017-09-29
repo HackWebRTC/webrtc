@@ -235,8 +235,7 @@ struct ConfigHelper {
         .Times(1);
     EXPECT_CALL(*channel_proxy_, ResetSenderCongestionControlObjects())
         .Times(1);
-    EXPECT_CALL(*channel_proxy_, RegisterExternalTransport(nullptr)).Times(1);
-    EXPECT_CALL(*channel_proxy_, DeRegisterExternalTransport()).Times(1);
+    EXPECT_CALL(*channel_proxy_, RegisterTransport(nullptr)).Times(2);
     EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::NotNull())).Times(1);
     EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::IsNull()))
         .Times(1);  // Destructor resets the event log

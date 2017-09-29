@@ -36,7 +36,6 @@ namespace voe {
 
 class ChannelManager;
 class MixedAudio;
-class Statistics;
 
 class TransmitMixer {
 public:
