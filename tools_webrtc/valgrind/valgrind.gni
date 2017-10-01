@@ -12,7 +12,6 @@ valgrind_dependencies = [
   "../tools/valgrind/asan/asan_symbolize.py",
   "../tools/valgrind/asan/third_party/__init__.py",
   "../tools/valgrind/asan/third_party/asan_symbolize.py",
-  "../tools/valgrind/browser_wrapper_win.py",
   "../tools/valgrind/fixed_suppressions.sh",
   "../tools/valgrind/memcheck/suppressions.txt",
   "../tools/valgrind/memcheck/suppressions_linux.txt",
