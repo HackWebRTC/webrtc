@@ -658,6 +658,7 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
         total_output_duration(0.0),
         concealed_samples(0),
         concealment_events(0),
+        jitter_buffer_delay_seconds(0),
         expand_rate(0),
         speech_expand_rate(0),
         secondary_decoded_rate(0),
@@ -686,6 +687,7 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   double total_output_duration;
   uint64_t concealed_samples;
   uint64_t concealment_events;
+  double jitter_buffer_delay_seconds;
   // Stats below DO NOT correspond directly to anything in the WebRTC stats
   // fraction of synthesized audio inserted through expansion.
   float expand_rate;

@@ -229,6 +229,11 @@ void StatisticsCalculator::IncreaseCounter(size_t num_samples, int fs_hz) {
   lifetime_stats_.total_samples_received += num_samples;
 }
 
+void StatisticsCalculator::JitterBufferDelay(size_t num_samples,
+                                             uint64_t waiting_time_ms) {
+  lifetime_stats_.jitter_buffer_delay_ms += waiting_time_ms * num_samples;
+}
+
 void StatisticsCalculator::SecondaryDecodedSamples(int num_samples) {
   secondary_decoded_samples_ += num_samples;
 }

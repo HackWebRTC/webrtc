@@ -522,6 +522,7 @@ class NetEqDecodingTestFaxMode : public NetEqDecodingTest {
   NetEqDecodingTestFaxMode() : NetEqDecodingTest() {
     config_.playout_mode = kPlayoutFax;
   }
+  void TestJitterBufferDelay(bool apply_packet_loss);
 };
 
 TEST_F(NetEqDecodingTestFaxMode, TestFrameWaitingTimeStatistics) {
@@ -1682,6 +1683,66 @@ TEST_F(NetEqDecodingTest, TestConcealmentEvents) {
   // Check number of concealment events.
   NetEqLifetimeStatistics stats = neteq_->GetLifetimeStatistics();
   EXPECT_EQ(kNumConcealmentEvents, static_cast<int>(stats.concealment_events));
+}
+
+// Test that the jitter buffer delay stat is computed correctly.
+void NetEqDecodingTestFaxMode::TestJitterBufferDelay(bool apply_packet_loss) {
+  const int kNumPackets = 10;
+  const int kDelayInNumPackets = 2;
+  const int kPacketLenMs = 10;  // All packets are of 10 ms size.
+  const size_t kSamples = kPacketLenMs * 16;
+  const size_t kPayloadBytes = kSamples * 2;
+  RTPHeader rtp_info;
+  rtp_info.ssrc = 0x1234;     // Just an arbitrary SSRC.
+  rtp_info.payloadType = 94;  // PCM16b WB codec.
+  rtp_info.markerBit = 0;
+  const uint8_t payload[kPayloadBytes] = {0};
+  bool muted;
+  int packets_sent = 0;
+  int packets_received = 0;
+  int expected_delay = 0;
+  while (packets_received < kNumPackets) {
+    // Insert packet.
+    if (packets_sent < kNumPackets) {
+      rtp_info.sequenceNumber = packets_sent++;
+      rtp_info.timestamp = rtp_info.sequenceNumber * kSamples;
+      neteq_->InsertPacket(rtp_info, payload, 0);
+    }
+
+    // Get packet.
+    if (packets_sent > kDelayInNumPackets) {
+      neteq_->GetAudio(&out_frame_, &muted);
+      packets_received++;
+
+      // The delay reported by the jitter buffer never exceeds
+      // the number of samples previously fetched with GetAudio
+      // (hence the min()).
+      int packets_delay = std::min(packets_received, kDelayInNumPackets + 1);
+
+      // The increase of the expected delay is the product of
+      // the current delay of the jitter buffer in ms * the
+      // number of samples that are sent for play out.
+      int current_delay_ms = packets_delay * kPacketLenMs;
+      expected_delay += current_delay_ms * kSamples;
+    }
+  }
+
+  if (apply_packet_loss) {
+    // Extra call to GetAudio to cause concealment.
+    neteq_->GetAudio(&out_frame_, &muted);
+  }
+
+  // Check jitter buffer delay.
+  NetEqLifetimeStatistics stats = neteq_->GetLifetimeStatistics();
+  EXPECT_EQ(expected_delay, static_cast<int>(stats.jitter_buffer_delay_ms));
+}
+
+TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithoutLoss) {
+  TestJitterBufferDelay(false);
+}
+
+TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithLoss) {
+  TestJitterBufferDelay(true);
 }
 
 }  // namespace webrtc

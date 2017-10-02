@@ -368,17 +368,13 @@ struct NetworkStatistics {
   uint16_t preferredBufferSize;
   // adding extra delay due to "peaky jitter"
   bool jitterPeaksFound;
-  // Total number of audio samples received, including synthesized samples.
-  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalsamplesreceived
+  // Stats below correspond to similarly-named fields in the WebRTC stats spec.
+  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats
   uint64_t totalSamplesReceived;
-  // Total number of inbound audio samples that are based on synthesized data to
-  // conceal packet loss.
-  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-concealedsamples
   uint64_t concealedSamples;
-  // Number of times a concealed sample is synthesized after a non-concealed
-  // sample.
-  // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-concealmentevents
   uint64_t concealmentEvents;
+  uint64_t jitterBufferDelayMs;
+  // Stats below DO NOT correspond directly to anything in the WebRTC stats
   // Loss rate (network + late); fraction between 0 and 1, scaled to Q14.
   uint16_t currentPacketLossRate;
   // Late loss rate; fraction between 0 and 1, scaled to Q14.

@@ -562,8 +562,11 @@ class RTCStatsReportVerifier {
     }
     // totalSamplesReceived, concealedSamples and concealmentEvents are only
     // present on inbound audio tracks.
+    // jitterBufferDelay is currently only implemented for audio.
     if (*media_stream_track.kind == RTCMediaStreamTrackKind::kAudio &&
         *media_stream_track.remote_source) {
+      verifier.TestMemberIsNonNegative<double>(
+          media_stream_track.jitter_buffer_delay);
       verifier.TestMemberIsNonNegative<uint64_t>(
           media_stream_track.total_samples_received);
       verifier.TestMemberIsNonNegative<uint64_t>(
@@ -571,6 +574,7 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsNonNegative<uint64_t>(
           media_stream_track.concealment_events);
     } else {
+      verifier.TestMemberIsUndefined(media_stream_track.jitter_buffer_delay);
       verifier.TestMemberIsUndefined(media_stream_track.total_samples_received);
       verifier.TestMemberIsUndefined(media_stream_track.concealed_samples);
       verifier.TestMemberIsUndefined(media_stream_track.concealment_events);

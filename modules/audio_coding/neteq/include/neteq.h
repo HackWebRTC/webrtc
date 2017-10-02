@@ -66,6 +66,7 @@ struct NetEqLifetimeStatistics {
   uint64_t total_samples_received = 0;
   uint64_t concealed_samples = 0;
   uint64_t concealment_events = 0;
+  uint64_t jitter_buffer_delay_ms = 0;
 };
 
 enum NetEqPlayoutMode {
