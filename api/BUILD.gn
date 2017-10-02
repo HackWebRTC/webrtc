@@ -34,12 +34,9 @@ rtc_source_set("call_api") {
 }
 
 rtc_static_library("libjingle_peerconnection_api") {
-  # Cannot have GN check enabled since that would introduce dependency cycles
-  # TODO(kjellander): Remove (bugs.webrtc.org/7504)
-  check_includes = false
   cflags = []
   sources = [
-    "datachannel.h",
+    "candidate.h",
     "datachannelinterface.h",
     "dtmfsenderinterface.h",
     "jsep.h",
@@ -47,17 +44,14 @@ rtc_static_library("libjingle_peerconnection_api") {
     "jsepsessiondescription.h",
     "mediaconstraintsinterface.cc",
     "mediaconstraintsinterface.h",
-    "mediastream.h",
     "mediastreaminterface.cc",
     "mediastreaminterface.h",
     "mediastreamproxy.h",
-    "mediastreamtrack.h",
     "mediastreamtrackproxy.h",
     "mediatypes.cc",
     "mediatypes.h",
     "notifier.h",
     "peerconnectionfactoryproxy.h",
-    "peerconnectioninterface.h",
     "peerconnectionproxy.h",
     "proxy.h",
     "rtcerror.cc",
@@ -65,15 +59,11 @@ rtc_static_library("libjingle_peerconnection_api") {
     "rtpparameters.cc",
     "rtpparameters.h",
     "rtpreceiverinterface.h",
-    "rtpsender.h",
     "rtpsenderinterface.h",
     "statstypes.cc",
     "statstypes.h",
-    "streamcollection.h",
     "umametrics.h",
     "videosourceproxy.h",
-    "videotracksource.h",
-    "webrtcsdp.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -81,8 +71,15 @@ rtc_static_library("libjingle_peerconnection_api") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
+  public_deps = [
+    ":libjingle_api_deprecated_headers",
+    ":peerconnection_and_implicit_call_api",
+  ]
+
   deps = [
+    ":optional",
     ":rtc_stats_api",
+    ":video_frame_api",
     "..:webrtc_common",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
@@ -95,6 +92,34 @@ rtc_static_library("libjingle_peerconnection_api") {
   if (is_nacl) {
     deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
   }
+}
+
+rtc_source_set("peerconnection_and_implicit_call_api") {
+  # The peerconnectioninterface.h file pulls in call/callfactoryinterface.h
+  # and the entire call module with it. We need to either get rid of this
+  # dependency or pull most of call/ into the API. For now, silence the warnings
+  # this creates since it creates a circular dependency (call very much depends
+  # on API). See bugs.webrtc.org/7504.
+  check_includes = false
+  sources = [
+    "peerconnectioninterface.h",
+  ]
+}
+
+rtc_source_set("libjingle_api_deprecated_headers") {
+  # We need to include headers from undeclared targets here, since they cause
+  # circular dependencies. These deprecated headers are going away anyway.
+  # See http://bugs.webrtc.org/5883.
+  check_includes = false
+  sources = [
+    "datachannel.h",
+    "mediastream.h",
+    "mediastreamtrack.h",
+    "rtpsender.h",
+    "streamcollection.h",
+    "videotracksource.h",
+    "webrtcsdp.h",
+  ]
 }
 
 rtc_source_set("ortc_api") {
