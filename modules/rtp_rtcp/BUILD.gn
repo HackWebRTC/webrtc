@@ -41,6 +41,7 @@ rtc_source_set("rtp_rtcp_format") {
     "source/rtcp_packet/transport_feedback.h",
     "source/rtcp_packet/voip_metric.h",
     "source/rtp_header_extensions.h",
+    "source/rtp_packet.h",
     "source/rtp_packet_received.h",
     "source/rtp_packet_to_send.h",
   ]
@@ -75,7 +76,6 @@ rtc_source_set("rtp_rtcp_format") {
     "source/rtp_header_extension_map.cc",
     "source/rtp_header_extensions.cc",
     "source/rtp_packet.cc",
-    "source/rtp_packet.h",
     "source/rtp_packet_received.cc",
   ]
 
