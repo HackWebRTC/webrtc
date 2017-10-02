@@ -427,14 +427,6 @@
    ...
 }
 {
-   bug_5986
-   Memcheck:Unaddressable
-   fun:silk_stereo_LR_to_MS
-   fun:silk_Encode
-   fun:opus_encode_native
-   ...
-}
-{
    bug_5987
    Memcheck:Leak
    fun:_Znw*
