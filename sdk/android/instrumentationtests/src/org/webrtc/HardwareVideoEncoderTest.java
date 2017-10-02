@@ -265,7 +265,7 @@ public class HardwareVideoEncoderTest {
 
   private VideoEncoder createEncoder() {
     VideoEncoderFactory factory =
-        createEncoderFactory(useTextures ? eglBase.getEglBaseContext() : null);
+        createEncoderFactory(useEglContext ? eglBase.getEglBaseContext() : null);
     VideoCodecInfo[] supportedCodecs = factory.getSupportedCodecs();
     return factory.createEncoder(supportedCodecs[0]);
   }
