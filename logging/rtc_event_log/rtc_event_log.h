@@ -19,6 +19,9 @@
 // TODO(eladalon): Get rid of this later in the CL-stack.
 #include "api/rtpparameters.h"
 #include "common_types.h"  // NOLINT(build/include)
+// TODO(eladalon): This is here because of ProbeFailureReason; remove this
+// dependency along with the deprecated LogProbeResultFailure().
+#include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
 #include "rtc_base/platform_file.h"
 
 namespace webrtc {
@@ -38,11 +41,6 @@ enum class MediaType;
 enum class BandwidthUsage;
 
 enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
-enum ProbeFailureReason {
-  kInvalidSendReceiveInterval,
-  kInvalidSendReceiveRatio,
-  kTimeout
-};
 
 class RtcEventLog {
  public:

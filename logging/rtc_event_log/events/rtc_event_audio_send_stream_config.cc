@@ -10,7 +10,17 @@
 
 #include "logging/rtc_event_log/events/rtc_event_audio_send_stream_config.h"
 
+#include <utility>
+
+#include "logging/rtc_event_log/rtc_stream_config.h"
+
 namespace webrtc {
+
+RtcEventAudioSendStreamConfig::RtcEventAudioSendStreamConfig(
+    std::unique_ptr<rtclog::StreamConfig> config)
+    : config_(std::move(config)) {}
+
+RtcEventAudioSendStreamConfig::~RtcEventAudioSendStreamConfig() = default;
 
 RtcEvent::Type RtcEventAudioSendStreamConfig::GetType() const {
   return RtcEvent::Type::AudioSendStreamConfig;

@@ -15,13 +15,23 @@
 
 namespace webrtc {
 
+enum ProbeFailureReason {
+  kInvalidSendReceiveInterval,
+  kInvalidSendReceiveRatio,
+  kTimeout
+};
+
 class RtcEventProbeResultFailure final : public RtcEvent {
  public:
+  RtcEventProbeResultFailure(int id, ProbeFailureReason failure_reason);
   ~RtcEventProbeResultFailure() override = default;
 
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
+
+  const int id_;
+  const ProbeFailureReason failure_reason_;
 };
 
 }  // namespace webrtc

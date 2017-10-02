@@ -10,7 +10,17 @@
 
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_incoming.h"
 
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+
 namespace webrtc {
+
+RtcEventRtpPacketIncoming::RtcEventRtpPacketIncoming(
+    const RtpPacketReceived& packet)
+    : packet_length_(packet.size()) {
+  header_.CopyHeaderFrom(packet);
+}
+
+RtcEventRtpPacketIncoming::~RtcEventRtpPacketIncoming() = default;
 
 RtcEvent::Type RtcEventRtpPacketIncoming::GetType() const {
   return RtcEvent::Type::RtpPacketIncoming;

@@ -11,17 +11,24 @@
 #ifndef LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_VIDEO_SEND_STREAM_CONFIG_H_
 #define LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_VIDEO_SEND_STREAM_CONFIG_H_
 
+#include <memory>
+
 #include "logging/rtc_event_log/events/rtc_event.h"
+#include "logging/rtc_event_log/rtc_stream_config.h"
 
 namespace webrtc {
 
 class RtcEventVideoSendStreamConfig final : public RtcEvent {
  public:
-  ~RtcEventVideoSendStreamConfig() override = default;
+  explicit RtcEventVideoSendStreamConfig(
+      std::unique_ptr<rtclog::StreamConfig> config);
+  ~RtcEventVideoSendStreamConfig() override;
 
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
+
+  const std::unique_ptr<const rtclog::StreamConfig> config_;
 };
 
 }  // namespace webrtc

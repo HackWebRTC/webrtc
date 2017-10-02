@@ -12,6 +12,11 @@
 
 namespace webrtc {
 
+RtcEventProbeResultFailure::RtcEventProbeResultFailure(
+    int id,
+    ProbeFailureReason failure_reason)
+    : id_(id), failure_reason_(failure_reason) {}
+
 RtcEvent::Type RtcEventProbeResultFailure::GetType() const {
   return RtcEvent::Type::ProbeResultFailure;
 }

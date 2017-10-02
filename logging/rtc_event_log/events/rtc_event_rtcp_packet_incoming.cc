@@ -12,6 +12,12 @@
 
 namespace webrtc {
 
+RtcEventRtcpPacketIncoming::RtcEventRtcpPacketIncoming(
+    rtc::ArrayView<const uint8_t> packet)
+    : packet_(packet.data(), packet.size()) {}
+
+RtcEventRtcpPacketIncoming::~RtcEventRtcpPacketIncoming() = default;
+
 RtcEvent::Type RtcEventRtcpPacketIncoming::GetType() const {
   return RtcEvent::Type::RtcpPacketIncoming;
 }

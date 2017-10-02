@@ -12,6 +12,15 @@
 
 namespace webrtc {
 
+RtcEventBweUpdateLossBased::RtcEventBweUpdateLossBased(int32_t bitrate_bps,
+                                                       uint8_t fraction_loss,
+                                                       int32_t total_packets)
+    : bitrate_bps_(bitrate_bps),
+      fraction_loss_(fraction_loss),
+      total_packets_(total_packets) {}
+
+RtcEventBweUpdateLossBased::~RtcEventBweUpdateLossBased() = default;
+
 RtcEvent::Type RtcEventBweUpdateLossBased::GetType() const {
   return RtcEvent::Type::BweUpdateLossBased;
 }

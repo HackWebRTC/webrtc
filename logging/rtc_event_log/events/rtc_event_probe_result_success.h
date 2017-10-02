@@ -17,11 +17,15 @@ namespace webrtc {
 
 class RtcEventProbeResultSuccess final : public RtcEvent {
  public:
+  RtcEventProbeResultSuccess(int id, int bitrate_bps);
   ~RtcEventProbeResultSuccess() override = default;
 
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
+
+  const int id_;
+  const int bitrate_bps_;
 };
 
 }  // namespace webrtc

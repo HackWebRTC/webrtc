@@ -12,6 +12,15 @@
 
 namespace webrtc {
 
+RtcEventProbeClusterCreated::RtcEventProbeClusterCreated(int id,
+                                                         int bitrate_bps,
+                                                         int min_probes,
+                                                         int min_bytes)
+    : id_(id),
+      bitrate_bps_(bitrate_bps),
+      min_probes_(min_probes),
+      min_bytes_(min_bytes) {}
+
 RtcEvent::Type RtcEventProbeClusterCreated::GetType() const {
   return RtcEvent::Type::ProbeClusterCreated;
 }

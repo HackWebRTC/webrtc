@@ -10,7 +10,15 @@
 
 #include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
 
+#include <utility>
+
 namespace webrtc {
+
+RtcEventVideoReceiveStreamConfig::RtcEventVideoReceiveStreamConfig(
+    std::unique_ptr<rtclog::StreamConfig> config)
+    : config_(std::move(config)) {}
+
+RtcEventVideoReceiveStreamConfig::~RtcEventVideoReceiveStreamConfig() = default;
 
 RtcEvent::Type RtcEventVideoReceiveStreamConfig::GetType() const {
   return Type::VideoReceiveStreamConfig;

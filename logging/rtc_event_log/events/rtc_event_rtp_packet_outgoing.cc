@@ -10,7 +10,18 @@
 
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
 
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+
 namespace webrtc {
+
+RtcEventRtpPacketOutgoing::RtcEventRtpPacketOutgoing(
+    const RtpPacketToSend& packet,
+    int probe_cluster_id)
+    : packet_length_(packet.size()), probe_cluster_id_(probe_cluster_id) {
+  header_.CopyHeaderFrom(packet);
+}
+
+RtcEventRtpPacketOutgoing::~RtcEventRtpPacketOutgoing() = default;
 
 RtcEvent::Type RtcEventRtpPacketOutgoing::GetType() const {
   return RtcEvent::Type::RtpPacketOutgoing;

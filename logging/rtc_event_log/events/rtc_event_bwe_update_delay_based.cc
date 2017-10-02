@@ -10,7 +10,16 @@
 
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_delay_based.h"
 
+#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+
 namespace webrtc {
+
+RtcEventBweUpdateDelayBased::RtcEventBweUpdateDelayBased(
+    int32_t bitrate_bps,
+    BandwidthUsage detector_state)
+    : bitrate_bps_(bitrate_bps), detector_state_(detector_state) {}
+
+RtcEventBweUpdateDelayBased::~RtcEventBweUpdateDelayBased() = default;
 
 RtcEvent::Type RtcEventBweUpdateDelayBased::GetType() const {
   return RtcEvent::Type::BweUpdateDelayBased;

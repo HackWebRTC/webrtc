@@ -15,13 +15,20 @@
 
 namespace webrtc {
 
+enum class BandwidthUsage;
+
 class RtcEventBweUpdateDelayBased final : public RtcEvent {
  public:
-  ~RtcEventBweUpdateDelayBased() override = default;
+  RtcEventBweUpdateDelayBased(int32_t bitrate_bps,
+                              BandwidthUsage detector_state);
+  ~RtcEventBweUpdateDelayBased() override;
 
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
+
+  const int32_t bitrate_bps_;
+  const BandwidthUsage detector_state_;
 };
 
 }  // namespace webrtc

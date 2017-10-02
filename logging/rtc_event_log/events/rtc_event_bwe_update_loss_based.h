@@ -17,11 +17,18 @@ namespace webrtc {
 
 class RtcEventBweUpdateLossBased final : public RtcEvent {
  public:
-  ~RtcEventBweUpdateLossBased() override = default;
+  RtcEventBweUpdateLossBased(int32_t bitrate_bps_,
+                             uint8_t fraction_loss_,
+                             int32_t total_packets_);
+  ~RtcEventBweUpdateLossBased() override;
 
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
+
+  const int32_t bitrate_bps_;
+  const uint8_t fraction_loss_;
+  const int32_t total_packets_;
 };
 
 }  // namespace webrtc

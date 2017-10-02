@@ -12,6 +12,9 @@
 
 namespace webrtc {
 
+RtcEventProbeResultSuccess::RtcEventProbeResultSuccess(int id, int bitrate_bps)
+    : id_(id), bitrate_bps_(bitrate_bps) {}
+
 RtcEvent::Type RtcEventProbeResultSuccess::GetType() const {
   return RtcEvent::Type::ProbeResultSuccess;
 }

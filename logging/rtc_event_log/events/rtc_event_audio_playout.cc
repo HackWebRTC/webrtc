@@ -12,6 +12,8 @@
 
 namespace webrtc {
 
+RtcEventAudioPlayout::RtcEventAudioPlayout(uint32_t ssrc) : ssrc_(ssrc) {}
+
 RtcEvent::Type RtcEventAudioPlayout::GetType() const {
   return RtcEvent::Type::AudioPlayout;
 }

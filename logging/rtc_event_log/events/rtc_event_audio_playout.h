@@ -17,11 +17,14 @@ namespace webrtc {
 
 class RtcEventAudioPlayout final : public RtcEvent {
  public:
+  explicit RtcEventAudioPlayout(uint32_t ssrc);
   ~RtcEventAudioPlayout() override = default;
 
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
+
+  const uint32_t ssrc_;
 };
 
 }  // namespace webrtc

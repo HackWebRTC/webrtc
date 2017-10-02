@@ -11,17 +11,25 @@
 #ifndef LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_AUDIO_NETWORK_ADAPTATION_H_
 #define LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_AUDIO_NETWORK_ADAPTATION_H_
 
+#include <memory>
+
 #include "logging/rtc_event_log/events/rtc_event.h"
 
 namespace webrtc {
 
+struct AudioEncoderRuntimeConfig;
+
 class RtcEventAudioNetworkAdaptation final : public RtcEvent {
  public:
-  ~RtcEventAudioNetworkAdaptation() override = default;
+  explicit RtcEventAudioNetworkAdaptation(
+      std::unique_ptr<AudioEncoderRuntimeConfig> config);
+  ~RtcEventAudioNetworkAdaptation() override;
 
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
+
+  const std::unique_ptr<const AudioEncoderRuntimeConfig> config_;
 };
 
 }  // namespace webrtc

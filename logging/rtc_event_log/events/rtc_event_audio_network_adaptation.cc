@@ -10,7 +10,17 @@
 
 #include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
 
+#include <utility>
+
+#include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
+
 namespace webrtc {
+
+RtcEventAudioNetworkAdaptation::RtcEventAudioNetworkAdaptation(
+    std::unique_ptr<AudioEncoderRuntimeConfig> config)
+    : config_(std::move(config)) {}
+
+RtcEventAudioNetworkAdaptation::~RtcEventAudioNetworkAdaptation() = default;
 
 RtcEvent::Type RtcEventAudioNetworkAdaptation::GetType() const {
   return RtcEvent::Type::AudioNetworkAdaptation;
