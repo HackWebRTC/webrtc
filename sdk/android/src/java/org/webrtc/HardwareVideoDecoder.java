@@ -125,8 +125,8 @@ class HardwareVideoDecoder
     }
   }
 
-  // Metadata for the last frame rendered to the texture.  Only accessed on the texture helper's
-  // thread.
+  // Metadata for the last frame rendered to the texture.
+  private Object renderedTextureMetadataLock = new Object();
   private DecodedTextureMetadata renderedTextureMetadata;
 
   // Decoding proceeds asynchronously.  This callback returns decoded frames to the caller.  Valid
@@ -320,6 +320,9 @@ class HardwareVideoDecoder
       surfaceTextureHelper.dispose();
       surfaceTextureHelper = null;
     }
+    synchronized (renderedTextureMetadataLock) {
+      renderedTextureMetadata = null;
+    }
     callback = null;
     frameInfos.clear();
     return status;
@@ -424,25 +427,35 @@ class HardwareVideoDecoder
       height = this.height;
     }
 
-    surfaceTextureHelper.getHandler().post(new Runnable() {
-      @Override
-      public void run() {
-        renderedTextureMetadata = new DecodedTextureMetadata(
-            width, height, rotation, info.presentationTimeUs, decodeTimeMs);
-        codec.releaseOutputBuffer(index, true);
+    synchronized (renderedTextureMetadataLock) {
+      if (renderedTextureMetadata != null) {
+        return; // We are still waiting for texture for the previous frame, drop this one.
       }
-    });
+      renderedTextureMetadata = new DecodedTextureMetadata(
+          width, height, rotation, info.presentationTimeUs, decodeTimeMs);
+      codec.releaseOutputBuffer(index, true);
+    }
   }
 
   @Override
   public void onTextureFrameAvailable(int oesTextureId, float[] transformMatrix, long timestampNs) {
-    VideoFrame.TextureBuffer oesBuffer = surfaceTextureHelper.createTextureBuffer(
-        renderedTextureMetadata.width, renderedTextureMetadata.height,
-        RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
+    final VideoFrame frame;
+    final int decodeTimeMs;
+    synchronized (renderedTextureMetadataLock) {
+      if (renderedTextureMetadata == null) {
+        throw new IllegalStateException(
+            "Rendered texture metadata was null in onTextureFrameAvailable.");
+      }
+      VideoFrame.TextureBuffer oesBuffer = surfaceTextureHelper.createTextureBuffer(
+          renderedTextureMetadata.width, renderedTextureMetadata.height,
+          RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
+      frame = new VideoFrame(oesBuffer, renderedTextureMetadata.rotation,
+          renderedTextureMetadata.presentationTimestampUs * 1000);
+      decodeTimeMs = renderedTextureMetadata.decodeTimeMs;
+      renderedTextureMetadata = null;
+    }
 
-    VideoFrame frame = new VideoFrame(oesBuffer, renderedTextureMetadata.rotation,
-        renderedTextureMetadata.presentationTimestampUs * 1000);
-    callback.onDecodedFrame(frame, renderedTextureMetadata.decodeTimeMs, null /* qp */);
+    callback.onDecodedFrame(frame, decodeTimeMs, null /* qp */);
     frame.release();
   }
 
