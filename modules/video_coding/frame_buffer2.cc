@@ -21,6 +21,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -148,7 +149,8 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
         timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
         timing_->UpdateCurrentDelay(frame->RenderTime(), now_ms);
       } else {
-        jitter_estimator_->FrameNacked();
+        if (webrtc::field_trial::IsEnabled("WebRTC-AddRttToPlayoutDelay"))
+          jitter_estimator_->FrameNacked();
       }
 
       // Gracefully handle bad RTP timestamps and render time issues.
