@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "api/candidate.h"
+#include "p2p/base/candidate.h"
 #include "p2p/base/candidatepairinterface.h"
 #include "p2p/base/jseptransport.h"
 #include "p2p/base/packettransportinternal.h"

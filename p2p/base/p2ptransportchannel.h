@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 
-#include "api/candidate.h"
+#include "p2p/base/candidate.h"
 #include "p2p/base/candidatepairinterface.h"
 #include "p2p/base/icetransportinternal.h"
 #include "p2p/base/portallocator.h"

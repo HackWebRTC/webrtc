@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "api/candidate.h"
+#include "p2p/base/candidate.h"
 #include "p2p/base/dtlstransport.h"
 #include "p2p/base/jseptransport.h"
 #include "p2p/base/p2ptransportchannel.h"

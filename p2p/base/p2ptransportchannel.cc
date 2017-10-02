@@ -14,8 +14,8 @@
 #include <iterator>
 #include <set>
 
-#include "api/candidate.h"
 #include "api/umametrics.h"
+#include "p2p/base/candidate.h"
 #include "p2p/base/candidatepairinterface.h"
 #include "p2p/base/common.h"
 #include "p2p/base/relayport.h"  // For RELAY_PORT_TYPE.

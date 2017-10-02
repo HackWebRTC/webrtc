@@ -17,8 +17,8 @@
 #include <string>
 #include <vector>
 
-#include "api/candidate.h"
 #include "api/optional.h"
+#include "p2p/base/candidate.h"
 #include "p2p/base/candidatepairinterface.h"
 #include "p2p/base/jseptransport.h"
 #include "p2p/base/packetlossestimator.h"
