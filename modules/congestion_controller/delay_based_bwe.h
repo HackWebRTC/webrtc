@@ -85,8 +85,8 @@ class DelayBasedBwe {
   double trendline_smoothing_coeff_;
   double trendline_threshold_gain_;
   int consecutive_delayed_feedbacks_;
-  uint32_t last_logged_bitrate_;
-  BandwidthUsage last_logged_state_;
+  uint32_t prev_bitrate_;
+  BandwidthUsage prev_state_;
   bool in_sparse_update_experiment_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBasedBwe);
