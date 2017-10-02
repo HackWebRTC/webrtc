@@ -43,7 +43,6 @@
 #include "sdk/android/src/jni/pc/rtcstatscollectorcallbackwrapper.h"
 #include "sdk/android/src/jni/pc/sdpobserver_jni.h"
 #include "sdk/android/src/jni/pc/statsobserver_jni.h"
-#include "system_wrappers/include/trace.h"
 
 namespace webrtc {
 namespace jni {
