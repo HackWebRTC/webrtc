@@ -65,6 +65,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_base_tests_utils",
       "../../system_wrappers:system_wrappers",
+      "../../test:field_trial",
       "../../test:test_support",
       "../rtp_rtcp",
       "../rtp_rtcp:mock_rtp_rtcp",

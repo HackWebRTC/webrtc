@@ -83,8 +83,9 @@ AlrDetector::ParseAlrSettingsFromFieldTrial(const char* experiment_name) {
   std::string group_name = field_trial::FindFullName(experiment_name);
 
   const std::string kIgnoredSuffix = "_Dogfood";
-  if (group_name.rfind(kIgnoredSuffix) ==
-      group_name.length() - kIgnoredSuffix.length()) {
+  std::string::size_type suffix_pos = group_name.rfind(kIgnoredSuffix);
+  if (suffix_pos != std::string::npos &&
+      suffix_pos == group_name.length() - kIgnoredSuffix.length()) {
     group_name.resize(group_name.length() - kIgnoredSuffix.length());
   }
 

@@ -10,6 +10,7 @@
 
 #include "modules/pacing/alr_detector.h"
 
+#include "test/field_trial.h"
 #include "test/gtest.h"
 
 namespace {
@@ -140,6 +141,30 @@ TEST_F(AlrDetectorTest, BandwidthEstimateChanges) {
       .ForTimeMs(1000)
       .AtPercentOfEstimatedBitrate(50);
   EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
+}
+
+TEST_F(AlrDetectorTest, ParseControlFieldTrial) {
+  webrtc::test::ScopedFieldTrials field_trial(
+      "WebRTC-ProbingScreenshareBwe/Control/");
+  rtc::Optional<AlrDetector::AlrExperimentSettings> parsed_params =
+      AlrDetector::ParseAlrSettingsFromFieldTrial(
+          "WebRTC-ProbingScreenshareBwe");
+  EXPECT_FALSE(static_cast<bool>(parsed_params));
+}
+
+TEST_F(AlrDetectorTest, ParseActiveFieldTrial) {
+  webrtc::test::ScopedFieldTrials field_trial(
+      "WebRTC-ProbingScreenshareBwe/1.1,2875,85,20,-20,1/");
+  rtc::Optional<AlrDetector::AlrExperimentSettings> parsed_params =
+      AlrDetector::ParseAlrSettingsFromFieldTrial(
+          "WebRTC-ProbingScreenshareBwe");
+  ASSERT_TRUE(static_cast<bool>(parsed_params));
+  EXPECT_EQ(1.1f, parsed_params->pacing_factor);
+  EXPECT_EQ(2875, parsed_params->max_paced_queue_time);
+  EXPECT_EQ(85, parsed_params->alr_bandwidth_usage_percent);
+  EXPECT_EQ(20, parsed_params->alr_start_budget_level_percent);
+  EXPECT_EQ(-20, parsed_params->alr_stop_budget_level_percent);
+  EXPECT_EQ(1, parsed_params->group_id);
 }
 
 }  // namespace webrtc
