@@ -67,6 +67,8 @@
   <string>Camera access needed for video calling</string>
   <key>NSMicrophoneUsageDescription</key>
   <string>Microphone access needed for video calling</string>
+  <key>UIFileSharingEnabled</key>
+  <true/>
   <key>UILaunchImages</key>
   <array>
     <dict>
