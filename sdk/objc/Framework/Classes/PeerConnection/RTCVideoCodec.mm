@@ -20,6 +20,10 @@
 @synthesize name = _name;
 @synthesize parameters = _parameters;
 
+- (instancetype)initWithName:(NSString *)name {
+  return [self initWithName:name parameters:nil];
+}
+
 - (instancetype)initWithName:(NSString *)name
                   parameters:(nullable NSDictionary<NSString *, NSString *> *)parameters {
   if (self = [super init]) {

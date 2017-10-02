@@ -101,6 +101,8 @@ RTC_EXPORT
 
 - (instancetype)init NS_UNAVAILABLE;
 
+- (instancetype)initWithName:(NSString *)name;
+
 - (instancetype)initWithName:(NSString *)name
                   parameters:(nullable NSDictionary<NSString *, NSString *> *)parameters
     NS_DESIGNATED_INITIALIZER;
