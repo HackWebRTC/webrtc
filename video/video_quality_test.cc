@@ -1912,6 +1912,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
   analyzer->Wait();
 
+  event_log_->StopLogging();
+
   task_queue_.SendTask([&]() {
     for (std::unique_ptr<test::VideoCapturer>& video_caputurer :
          thumbnail_capturers_)
@@ -1929,7 +1931,6 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     DestroyStreams();
     DestroyThumbnailStreams();
 
-    event_log_->StopLogging();
     if (graph_data_output_file)
       fclose(graph_data_output_file);
 
