@@ -297,16 +297,18 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithLoss) {
 }
 
 // Verify that we don't use an old FEC packet for FEC decoding.
-TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapTwoFrames) {
+TYPED_TEST(RtpFecTest, NoFecRecoveryWithOldFecPacket) {
   constexpr int kNumImportantPackets = 0;
   constexpr bool kUseUnequalProtection = false;
   constexpr uint8_t kProtectionFactor = 20;
 
   // Two frames: first frame (old) with two media packets and 1 FEC packet.
-  // Second frame (new) with 3 media packets, and no FEC packets.
-  //       ---Frame 1----                     ----Frame 2------
-  //  #0(media) #1(media) #2(FEC)     #65535(media) #0(media) #1(media).
-  // If we lose either packet 0 or 1 of second frame, FEC decoding should not
+  // Third frame (new) with 3 media packets, and no FEC packets.
+  //
+  //  #0(media) #1(media) #2(FEC)              ----Frame 1-----
+  //  #32767(media) 32768(media) 32769(media)  ----Frame 2-----
+  //  #65535(media) #0(media) #1(media).       ----Frame 3-----
+  // If we lose either packet 0 or 1 of third frame, FEC decoding should not
   // try to decode using "old" FEC packet #2.
 
   // Construct media packets for first frame, starting at sequence number 0.
@@ -327,6 +329,17 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapTwoFrames) {
 
   // Construct media packets for second frame, with sequence number wrap.
   this->media_packets_ =
+      this->media_packet_generator_.ConstructMediaPackets(3, 32767);
+
+  // Expect 3 media packets for this frame.
+  EXPECT_EQ(3u, this->media_packets_.size());
+
+  // No packets lost
+  memset(this->media_loss_mask_, 0, sizeof(this->media_loss_mask_));
+  this->ReceivedPackets(this->media_packets_, this->media_loss_mask_, false);
+
+  // Construct media packets for third frame, with sequence number wrap.
+  this->media_packets_ =
       this->media_packet_generator_.ConstructMediaPackets(3, 65535);
 
   // Expect 3 media packets for this frame.
@@ -343,10 +356,11 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapTwoFrames) {
                          &this->recovered_packets_);
   }
 
-  // Expect that no decoding is done to get missing packet (seq#0) of second
+  // Expect that no decoding is done to get missing packet (seq#0) of third
   // frame, using old FEC packet (seq#2) from first (old) frame. So number of
-  // recovered packets is 2, and not equal to number of media packets (=3).
-  EXPECT_EQ(2u, this->recovered_packets_.size());
+  // recovered packets is 5 (0 from first frame, three from second frame, and 2
+  // for the third frame, with no packets recovered via FEC).
+  EXPECT_EQ(5u, this->recovered_packets_.size());
   EXPECT_TRUE(this->recovered_packets_.size() != this->media_packets_.size());
 }
 
