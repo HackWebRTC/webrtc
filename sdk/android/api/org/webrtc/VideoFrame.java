@@ -58,21 +58,24 @@ public class VideoFrame {
    */
   public interface I420Buffer extends Buffer {
     /**
-     * Returns a direct ByteBuffer containing Y-plane data. The buffer size is at least getStrideY()
-     * * getHeight() bytes. Callers may mutate the ByteBuffer (eg. through relative-read
-     * operations), so implementations must return a new ByteBuffer or slice for each call.
+     * Returns a direct ByteBuffer containing Y-plane data. The buffer capacity is at least
+     * getStrideY() * getHeight() bytes. The position of the returned buffer is ignored and must
+     * be 0. Callers may mutate the ByteBuffer (eg. through relative-read operations), so
+     * implementations must return a new ByteBuffer or slice for each call.
      */
     ByteBuffer getDataY();
     /**
-     * Returns a direct ByteBuffer containing U-plane data. The buffer size is at least getStrideU()
-     * * ((getHeight() + 1) / 2) bytes. Callers may mutate the ByteBuffer (eg. through relative-read
-     * operations), so implementations must return a new ByteBuffer or slice for each call.
+     * Returns a direct ByteBuffer containing U-plane data. The buffer capacity is at least
+     * getStrideU() * ((getHeight() + 1) / 2) bytes. The position of the returned buffer is ignored
+     * and must be 0. Callers may mutate the ByteBuffer (eg. through relative-read operations), so
+     * implementations must return a new ByteBuffer or slice for each call.
      */
     ByteBuffer getDataU();
     /**
-     * Returns a direct ByteBuffer containing V-plane data. The buffer size is at least getStrideV()
-     * * ((getHeight() + 1) / 2) bytes. Callers may mutate the ByteBuffer (eg. through relative-read
-     * operations), so implementations must return a new ByteBuffer or slice for each call.
+     * Returns a direct ByteBuffer containing V-plane data. The buffer capacity is at least
+     * getStrideV() * ((getHeight() + 1) / 2) bytes. The position of the returned buffer is ignored
+     * and must be 0. Callers may mutate the ByteBuffer (eg. through relative-read operations), so
+     * implementations must return a new ByteBuffer or slice for each call.
      */
     ByteBuffer getDataV();
 

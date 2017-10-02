@@ -621,9 +621,24 @@ public class MediaCodecVideoEncoder {
         eglBase.swapBuffers(frame.getTimestampNs());
       } else {
         VideoFrame.I420Buffer i420Buffer = buffer.toI420();
-        nativeFillBuffer(nativeEncoder, bufferIndex, i420Buffer.getDataY(), i420Buffer.getStrideY(),
-            i420Buffer.getDataU(), i420Buffer.getStrideU(), i420Buffer.getDataV(),
-            i420Buffer.getStrideV());
+        final int chromaHeight = (height + 1) / 2;
+        final ByteBuffer dataY = i420Buffer.getDataY();
+        final ByteBuffer dataU = i420Buffer.getDataU();
+        final ByteBuffer dataV = i420Buffer.getDataV();
+        final int strideY = i420Buffer.getStrideY();
+        final int strideU = i420Buffer.getStrideU();
+        final int strideV = i420Buffer.getStrideV();
+        if (dataY.capacity() < strideY * height) {
+          throw new RuntimeException("Y-plane buffer size too small.");
+        }
+        if (dataU.capacity() < strideU * chromaHeight) {
+          throw new RuntimeException("U-plane buffer size too small.");
+        }
+        if (dataV.capacity() < strideV * chromaHeight) {
+          throw new RuntimeException("V-plane buffer size too small.");
+        }
+        nativeFillBuffer(
+            nativeEncoder, bufferIndex, dataY, strideY, dataU, strideU, dataV, strideV);
         i420Buffer.release();
         // I420 consists of one full-resolution and two half-resolution planes.
         // 1 + 1 / 4 + 1 / 4 = 3 / 2

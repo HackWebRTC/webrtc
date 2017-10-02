@@ -1478,6 +1478,13 @@ JNI_FUNCTION_DECLARATION(void,
   uint8_t* buffer_v =
       static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_buffer_v));
 
+  RTC_DCHECK(buffer_y) << "GetDirectBufferAddress returned null. Ensure that "
+                          "getDataY returns a direct ByteBuffer.";
+  RTC_DCHECK(buffer_u) << "GetDirectBufferAddress returned null. Ensure that "
+                          "getDataU returns a direct ByteBuffer.";
+  RTC_DCHECK(buffer_v) << "GetDirectBufferAddress returned null. Ensure that "
+                          "getDataV returns a direct ByteBuffer.";
+
   reinterpret_cast<MediaCodecVideoEncoder*>(native_encoder)
       ->FillInputBuffer(jni, input_buffer, buffer_y, stride_y, buffer_u,
                         stride_u, buffer_v, stride_v);
