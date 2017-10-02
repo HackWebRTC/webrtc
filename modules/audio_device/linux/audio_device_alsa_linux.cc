@@ -89,7 +89,11 @@ AudioDeviceLinuxALSA::AudioDeviceLinuxALSA() :
     _playIsInitialized(false),
     _AGC(false),
     _recordingDelay(0),
-    _playoutDelay(0)
+    _playoutDelay(0),
+    _playWarning(0),
+    _playError(0),
+    _recWarning(0),
+    _recError(0)
 {
     memset(_oldKeyState, 0, sizeof(_oldKeyState));
     LOG(LS_INFO) << __FUNCTION__ << " created";
@@ -162,6 +166,10 @@ AudioDeviceGeneric::InitStatus AudioDeviceLinuxALSA::Init() {
           << "failed to open X display, typing detection will not work";
     }
 #endif
+    _playWarning = 0;
+    _playError = 0;
+    _recWarning = 0;
+    _recError = 0;
 
     _initialized = true;
 
@@ -1006,6 +1014,8 @@ int32_t AudioDeviceLinuxALSA::InitPlayout()
         _handlePlayout, _playoutFramesIn10MS);
 
     // Init varaibles used for play
+    _playWarning = 0;
+    _playError = 0;
 
     if (_handlePlayout != NULL)
     {
@@ -1435,6 +1445,54 @@ int32_t AudioDeviceLinuxALSA::RecordingDelay(uint16_t& delayMS) const
 bool AudioDeviceLinuxALSA::Playing() const
 {
     return (_playing);
+}
+
+bool AudioDeviceLinuxALSA::PlayoutWarning() const
+{
+    rtc::CritScope lock(&_critSect);
+    return (_playWarning > 0);
+}
+
+bool AudioDeviceLinuxALSA::PlayoutError() const
+{
+    rtc::CritScope lock(&_critSect);
+    return (_playError > 0);
+}
+
+bool AudioDeviceLinuxALSA::RecordingWarning() const
+{
+    rtc::CritScope lock(&_critSect);
+    return (_recWarning > 0);
+}
+
+bool AudioDeviceLinuxALSA::RecordingError() const
+{
+    rtc::CritScope lock(&_critSect);
+    return (_recError > 0);
+}
+
+void AudioDeviceLinuxALSA::ClearPlayoutWarning()
+{
+    rtc::CritScope lock(&_critSect);
+    _playWarning = 0;
+}
+
+void AudioDeviceLinuxALSA::ClearPlayoutError()
+{
+    rtc::CritScope lock(&_critSect);
+    _playError = 0;
+}
+
+void AudioDeviceLinuxALSA::ClearRecordingWarning()
+{
+    rtc::CritScope lock(&_critSect);
+    _recWarning = 0;
+}
+
+void AudioDeviceLinuxALSA::ClearRecordingError()
+{
+    rtc::CritScope lock(&_critSect);
+    _recError = 0;
 }
 
 // ============================================================================

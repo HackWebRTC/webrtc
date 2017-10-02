@@ -391,6 +391,30 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return 0;
   }
 
+  bool PlayoutWarning() const override {
+    return false;
+  }
+
+  bool PlayoutError() const override {
+    return false;
+  }
+
+  bool RecordingWarning() const override {
+    return false;
+  }
+
+  bool RecordingError() const override {
+    return false;
+  }
+
+  void ClearPlayoutWarning() override { LOG(INFO) << __FUNCTION__; }
+
+  void ClearPlayoutError() override { LOG(INFO) << __FUNCTION__; }
+
+  void ClearRecordingWarning() override { LOG(INFO) << __FUNCTION__; }
+
+  void ClearRecordingError() override { LOG(INFO) << __FUNCTION__; }
+
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override {
     LOG(INFO) << __FUNCTION__;
     output_.AttachAudioBuffer(audioBuffer);

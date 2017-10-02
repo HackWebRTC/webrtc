@@ -44,11 +44,15 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   AudioDeviceModuleImpl(const int32_t id, const AudioLayer audioLayer);
   ~AudioDeviceModuleImpl() override;
 
+  int64_t TimeUntilNextProcess() override;
+  void Process() override;
+
   // Retrieve the currently utilized audio layer
   int32_t ActiveAudioLayer(AudioLayer* audioLayer) const override;
 
   // Error handling
   ErrorCode LastError() const override;
+  int32_t RegisterEventObserver(AudioDeviceObserver* eventCallback) override;
 
   // Full-duplex transportation of PCM audio
   int32_t RegisterAudioCallback(AudioTransport* audioCallback) override;
@@ -174,7 +178,10 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   AudioLayer PlatformAudioLayer() const;
 
   rtc::CriticalSection _critSect;
+  rtc::CriticalSection _critSectEventCb;
   rtc::CriticalSection _critSectAudioCb;
+
+  AudioDeviceObserver* _ptrCbAudioDeviceObserver;
 
   AudioDeviceGeneric* _ptrAudioDevice;
 
@@ -184,6 +191,7 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
 #endif
   int32_t _id;
   AudioLayer _platformAudioLayer;
+  int64_t _lastProcessTime;
   PlatformType _platformType;
   bool _initialized;
   mutable ErrorCode _lastError;

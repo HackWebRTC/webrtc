@@ -91,6 +91,22 @@ int32_t AudioDeviceIOS::SetPlayoutDevice(AudioDeviceModule::WindowsDeviceType) {
   return -1;
 }
 
+bool AudioDeviceIOS::PlayoutWarning() const {
+  return false;
+}
+
+bool AudioDeviceIOS::PlayoutError() const {
+  return false;
+}
+
+bool AudioDeviceIOS::RecordingWarning() const {
+  return false;
+}
+
+bool AudioDeviceIOS::RecordingError() const {
+  return false;
+}
+
 int32_t AudioDeviceIOS::InitMicrophone() {
   return 0;
 }

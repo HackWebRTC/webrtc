@@ -54,6 +54,10 @@ AudioDeviceLinuxPulse::AudioDeviceLinuxPulse()
       _sndCardPlayDelay(0),
       _sndCardRecDelay(0),
       _writeErrors(0),
+      _playWarning(0),
+      _playError(0),
+      _recWarning(0),
+      _recError(0),
       _deviceIndex(-1),
       _numPlayDevices(0),
       _numRecDevices(0),
@@ -155,6 +159,11 @@ AudioDeviceGeneric::InitStatus AudioDeviceLinuxPulse::Init() {
     }
     return InitStatus::OTHER_ERROR;
   }
+
+  _playWarning = 0;
+  _playError = 0;
+  _recWarning = 0;
+  _recError = 0;
 
   // Get X display handle for typing detection
   _XDisplay = XOpenDisplay(NULL);
@@ -1283,6 +1292,46 @@ bool AudioDeviceLinuxPulse::Playing() const {
   return (_playing);
 }
 
+bool AudioDeviceLinuxPulse::PlayoutWarning() const {
+  rtc::CritScope lock(&_critSect);
+  return (_playWarning > 0);
+}
+
+bool AudioDeviceLinuxPulse::PlayoutError() const {
+  rtc::CritScope lock(&_critSect);
+  return (_playError > 0);
+}
+
+bool AudioDeviceLinuxPulse::RecordingWarning() const {
+  rtc::CritScope lock(&_critSect);
+  return (_recWarning > 0);
+}
+
+bool AudioDeviceLinuxPulse::RecordingError() const {
+  rtc::CritScope lock(&_critSect);
+  return (_recError > 0);
+}
+
+void AudioDeviceLinuxPulse::ClearPlayoutWarning() {
+  rtc::CritScope lock(&_critSect);
+  _playWarning = 0;
+}
+
+void AudioDeviceLinuxPulse::ClearPlayoutError() {
+  rtc::CritScope lock(&_critSect);
+  _playError = 0;
+}
+
+void AudioDeviceLinuxPulse::ClearRecordingWarning() {
+  rtc::CritScope lock(&_critSect);
+  _recWarning = 0;
+}
+
+void AudioDeviceLinuxPulse::ClearRecordingError() {
+  rtc::CritScope lock(&_critSect);
+  _recError = 0;
+}
+
 // ============================================================================
 //                                 Private Methods
 // ============================================================================
@@ -2142,7 +2191,12 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess() {
               NULL, (int64_t)0, PA_SEEK_RELATIVE) != PA_OK) {
         _writeErrors++;
         if (_writeErrors > 10) {
-          LOG(LS_ERROR) << "Playout error: _writeErrors="
+          if (_playError == 1) {
+            LOG(LS_WARNING) << "pending playout error exists";
+          }
+          // Triggers callback from module process thread.
+          _playError = 1;
+          LOG(LS_ERROR) << "kPlayoutError message posted: _writeErrors="
                         << _writeErrors
                         << ", error=" << LATE(pa_context_errno)(_paContext);
           _writeErrors = 0;
@@ -2186,7 +2240,12 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess() {
                                 NULL, (int64_t)0, PA_SEEK_RELATIVE) != PA_OK) {
         _writeErrors++;
         if (_writeErrors > 10) {
-          LOG(LS_ERROR) << "Playout error: _writeErrors="
+          if (_playError == 1) {
+            LOG(LS_WARNING) << "pending playout error exists";
+          }
+          // Triggers callback from module process thread.
+          _playError = 1;
+          LOG(LS_ERROR) << "kPlayoutError message posted: _writeErrors="
                         << _writeErrors
                         << ", error=" << LATE(pa_context_errno)(_paContext);
           _writeErrors = 0;
@@ -2299,7 +2358,8 @@ bool AudioDeviceLinuxPulse::RecThreadProcess() {
       size_t sampleDataSize;
 
       if (LATE(pa_stream_peek)(_recStream, &sampleData, &sampleDataSize) != 0) {
-        LOG(LS_ERROR) << "RECORD_ERROR, error = "
+        _recError = 1;  // triggers callback from module process thread
+        LOG(LS_ERROR) << "RECORD_ERROR message posted, error = "
                       << LATE(pa_context_errno)(_paContext);
         break;
       }

@@ -41,6 +41,22 @@ VoEBaseImpl::~VoEBaseImpl() {
   TerminateInternal();
 }
 
+void VoEBaseImpl::OnErrorIsReported(const ErrorCode error) {
+  if (error == AudioDeviceObserver::kRecordingError) {
+    LOG_F(LS_ERROR) << "VE_RUNTIME_REC_ERROR";
+  } else if (error == AudioDeviceObserver::kPlayoutError) {
+    LOG_F(LS_ERROR) << "VE_RUNTIME_PLAY_ERROR";
+  }
+}
+
+void VoEBaseImpl::OnWarningIsReported(const WarningCode warning) {
+  if (warning == AudioDeviceObserver::kRecordingWarning) {
+    LOG_F(LS_WARNING) << "VE_RUNTIME_REC_WARNING";
+  } else if (warning == AudioDeviceObserver::kPlayoutWarning) {
+    LOG_F(LS_WARNING) << "VE_RUNTIME_PLAY_WARNING";
+  }
+}
+
 int32_t VoEBaseImpl::RecordedDataIsAvailable(
     const void* audio_data,
     const size_t number_of_frames,
@@ -175,10 +191,22 @@ int VoEBaseImpl::Init(
         << "An external ADM implementation will be used in VoiceEngine";
   }
 
+  // Register the ADM to the process thread, which will drive the error
+  // callback mechanism
+  if (shared_->process_thread()) {
+    shared_->process_thread()->RegisterModule(shared_->audio_device(),
+                                              RTC_FROM_HERE);
+  }
+
   bool available = false;
 
   // --------------------
   // Reinitialize the ADM
+
+  // Register the AudioObserver implementation
+  if (shared_->audio_device()->RegisterEventObserver(this) != 0) {
+    LOG(LS_ERROR) << "Init() failed to register event observer for the ADM";
+  }
 
   // Register the AudioTransport implementation
   if (shared_->audio_device()->RegisterAudioCallback(this) != 0) {
@@ -461,6 +489,9 @@ int32_t VoEBaseImpl::TerminateInternal() {
   shared_->channel_manager().DestroyAllChannels();
 
   if (shared_->process_thread()) {
+    if (shared_->audio_device()) {
+      shared_->process_thread()->DeRegisterModule(shared_->audio_device());
+    }
     shared_->process_thread()->Stop();
   }
 
@@ -470,6 +501,10 @@ int32_t VoEBaseImpl::TerminateInternal() {
     }
     if (shared_->audio_device()->StopRecording() != 0) {
       LOG(LS_ERROR) << "TerminateInternal() failed to stop recording";
+    }
+    if (shared_->audio_device()->RegisterEventObserver(nullptr) != 0) {
+      LOG(LS_ERROR) << "TerminateInternal() failed to de-register event "
+                       "observer for the ADM";
     }
     if (shared_->audio_device()->RegisterAudioCallback(nullptr) != 0) {
       LOG(LS_ERROR) << "TerminateInternal() failed to de-register audio "

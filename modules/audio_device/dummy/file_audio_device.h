@@ -132,6 +132,15 @@ class FileAudioDevice : public AudioDeviceGeneric {
   int32_t PlayoutDelay(uint16_t& delayMS) const override;
   int32_t RecordingDelay(uint16_t& delayMS) const override;
 
+  bool PlayoutWarning() const override;
+  bool PlayoutError() const override;
+  bool RecordingWarning() const override;
+  bool RecordingError() const override;
+  void ClearPlayoutWarning() override;
+  void ClearPlayoutError() override;
+  void ClearRecordingWarning() override;
+  void ClearRecordingError() override;
+
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
  private:

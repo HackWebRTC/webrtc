@@ -133,6 +133,14 @@ class FakeAdmTest : public testing::Test,
   size_t rec_buffer_bytes_;
 };
 
+TEST_F(FakeAdmTest, TestProcess) {
+  // Next process call must be some time in the future (or now).
+  EXPECT_LE(0, fake_audio_capture_module_->TimeUntilNextProcess());
+  // Process call updates TimeUntilNextProcess() but there are no guarantees on
+  // timing so just check that Process can be called successfully.
+  fake_audio_capture_module_->Process();
+}
+
 TEST_F(FakeAdmTest, PlayoutTest) {
   EXPECT_EQ(0, fake_audio_capture_module_->RegisterAudioCallback(this));
 

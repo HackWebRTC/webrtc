@@ -22,7 +22,8 @@ namespace webrtc {
 class ProcessThread;
 
 class VoEBaseImpl : public VoEBase,
-                    public AudioTransport {
+                    public AudioTransport,
+                    public AudioDeviceObserver {
  public:
   int Init(
       AudioDeviceModule* external_adm,
@@ -79,6 +80,10 @@ class VoEBaseImpl : public VoEBase,
                                      void* audio_data,
                                      int64_t* elapsed_time_ms,
                                      int64_t* ntp_time_ms) override;
+
+  // AudioDeviceObserver
+  void OnErrorIsReported(const ErrorCode error) override;
+  void OnWarningIsReported(const WarningCode warning) override;
 
  protected:
   VoEBaseImpl(voe::SharedData* shared);

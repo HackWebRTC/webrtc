@@ -21,12 +21,18 @@ namespace test {
 
 class MockAudioDeviceModule : public AudioDeviceModule {
  public:
-  // RefCounted
+  // Module.
+  MOCK_METHOD0(TimeUntilNextProcess, int64_t());
+  MOCK_METHOD0(Process, void());
+  MOCK_METHOD1(ProcessThreadAttached, void(ProcessThread*));
+  // RefCountedModule.
   MOCK_CONST_METHOD0(AddRef, int32_t());
   MOCK_CONST_METHOD0(Release, int32_t());
   // AudioDeviceModule.
   MOCK_CONST_METHOD1(ActiveAudioLayer, int32_t(AudioLayer* audioLayer));
   MOCK_CONST_METHOD0(LastError, ErrorCode());
+  MOCK_METHOD1(RegisterEventObserver,
+               int32_t(AudioDeviceObserver* eventCallback));
   MOCK_METHOD1(RegisterAudioCallback, int32_t(AudioTransport* audioCallback));
   MOCK_METHOD0(Init, int32_t());
   MOCK_METHOD0(Terminate, int32_t());

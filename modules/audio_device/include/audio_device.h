@@ -12,12 +12,12 @@
 #define MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 
 #include "modules/audio_device/include/audio_device_defines.h"
+#include "modules/include/module.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/refcount.h"
 
 namespace webrtc {
 
-class AudioDeviceModule : public rtc::RefCountInterface {
+class AudioDeviceModule : public RefCountedModule {
  public:
   enum ErrorCode {
     kAdmErrNone = 0,
@@ -52,11 +52,21 @@ class AudioDeviceModule : public rtc::RefCountInterface {
       const int32_t id,
       const AudioLayer audio_layer);
 
+  // TODO(solenberg): Remove temporary implementation of Module interface.
+  int64_t TimeUntilNextProcess() override {
+    // Make sure Process() isn't called very often.
+    return 1000000;
+  }
+  void Process() override {}
+
   // Retrieve the currently utilized audio layer
   virtual int32_t ActiveAudioLayer(AudioLayer* audioLayer) const = 0;
 
   // Error handling
   virtual ErrorCode LastError() const = 0;
+  virtual int32_t RegisterEventObserver(AudioDeviceObserver* eventCallback) {
+    return 0;
+  }
 
   // Full-duplex transportation of PCM audio
   virtual int32_t RegisterAudioCallback(AudioTransport* audioCallback) = 0;

@@ -52,9 +52,18 @@ class FakeAudioCaptureModule
   // pulled frame was generated/pushed from a FakeAudioCaptureModule.
   int frames_received() const;
 
+  // Following functions are inherited from webrtc::AudioDeviceModule.
+  // Only functions called by PeerConnection are implemented, the rest do
+  // nothing and return success. If a function is not expected to be called by
+  // PeerConnection an assertion is triggered if it is in fact called.
+  int64_t TimeUntilNextProcess() override;
+  void Process() override;
+
   int32_t ActiveAudioLayer(AudioLayer* audio_layer) const override;
 
   ErrorCode LastError() const override;
+  int32_t RegisterEventObserver(
+      webrtc::AudioDeviceObserver* event_callback) override;
 
   // Note: Calling this method from a callback may result in deadlock.
   int32_t RegisterAudioCallback(
@@ -200,6 +209,10 @@ class FakeAudioCaptureModule
   void ReceiveFrameP();
   // Pushes frames to the registered webrtc::AudioTransport.
   void SendFrameP();
+
+  // The time in milliseconds when Process() was last called or 0 if no call
+  // has been made.
+  int64_t last_process_time_ms_;
 
   // Callback for playout and recording.
   webrtc::AudioTransport* audio_callback_;

@@ -13,6 +13,7 @@
 
 // Enumerators
 //
+enum { kAdmMaxIdleTimeProcess = 1000 };
 enum { GET_MIC_VOLUME_INTERVAL_MS = 1000 };
 
 // Platform specifics

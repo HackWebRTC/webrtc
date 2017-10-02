@@ -142,6 +142,15 @@ class AudioDeviceGeneric {
   virtual int GetRecordAudioParameters(AudioParameters* params) const;
 #endif  // WEBRTC_IOS
 
+  virtual bool PlayoutWarning() const = 0;
+  virtual bool PlayoutError() const = 0;
+  virtual bool RecordingWarning() const = 0;
+  virtual bool RecordingError() const = 0;
+  virtual void ClearPlayoutWarning() = 0;
+  virtual void ClearPlayoutError() = 0;
+  virtual void ClearRecordingWarning() = 0;
+  virtual void ClearRecordingError() = 0;
+
   virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) = 0;
 
   virtual ~AudioDeviceGeneric() {}

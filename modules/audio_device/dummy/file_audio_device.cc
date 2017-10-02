@@ -398,6 +398,22 @@ int32_t FileAudioDevice::PlayoutDelay(uint16_t& delayMS) const {
 
 int32_t FileAudioDevice::RecordingDelay(uint16_t& delayMS) const { return -1; }
 
+bool FileAudioDevice::PlayoutWarning() const { return false; }
+
+bool FileAudioDevice::PlayoutError() const { return false; }
+
+bool FileAudioDevice::RecordingWarning() const { return false; }
+
+bool FileAudioDevice::RecordingError() const { return false; }
+
+void FileAudioDevice::ClearPlayoutWarning() {}
+
+void FileAudioDevice::ClearPlayoutError() {}
+
+void FileAudioDevice::ClearRecordingWarning() {}
+
+void FileAudioDevice::ClearRecordingError() {}
+
 void FileAudioDevice::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   rtc::CritScope lock(&_critSect);
 

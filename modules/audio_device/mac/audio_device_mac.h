@@ -153,6 +153,15 @@ class AudioDeviceMac : public AudioDeviceGeneric {
   virtual int32_t PlayoutDelay(uint16_t& delayMS) const;
   virtual int32_t RecordingDelay(uint16_t& delayMS) const;
 
+  virtual bool PlayoutWarning() const;
+  virtual bool PlayoutError() const;
+  virtual bool RecordingWarning() const;
+  virtual bool RecordingError() const;
+  virtual void ClearPlayoutWarning();
+  virtual void ClearPlayoutError();
+  virtual void ClearRecordingWarning();
+  virtual void ClearRecordingError();
+
   virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
  private:
@@ -323,6 +332,11 @@ class AudioDeviceMac : public AudioDeviceGeneric {
   mutable int32_t _renderDelayUs;
 
   int32_t _renderDelayOffsetSamples;
+
+  uint16_t _playWarning;
+  uint16_t _playError;
+  uint16_t _recWarning;
+  uint16_t _recError;
 
   PaUtilRingBuffer* _paCaptureBuffer;
   PaUtilRingBuffer* _paRenderBuffer;

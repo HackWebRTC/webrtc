@@ -23,6 +23,9 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   virtual int32_t Release() const { return 0; }
 
  private:
+  virtual int32_t RegisterEventObserver(AudioDeviceObserver* eventCallback) {
+    return 0;
+  }
   virtual int32_t RegisterAudioCallback(AudioTransport* audioCallback) {
     return 0;
   }

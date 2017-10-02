@@ -139,6 +139,14 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   int32_t StereoRecordingIsAvailable(bool& available) override;
   int32_t SetStereoRecording(bool enable) override;
   int32_t StereoRecording(bool& enabled) const override;
+  bool PlayoutWarning() const override;
+  bool PlayoutError() const override;
+  bool RecordingWarning() const override;
+  bool RecordingError() const override;
+  void ClearPlayoutWarning() override {}
+  void ClearPlayoutError() override {}
+  void ClearRecordingWarning() override {}
+  void ClearRecordingError() override {}
 
   // AudioSessionObserver methods. May be called from any thread.
   void OnInterruptionBegin() override;

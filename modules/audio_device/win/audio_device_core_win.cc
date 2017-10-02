@@ -464,6 +464,10 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore()
       _speakerIsInitialized(false),
       _microphoneIsInitialized(false),
       _AGC(false),
+      _playWarning(0),
+      _playError(0),
+      _recWarning(0),
+      _recError(0),
       _playBufDelay(80),
       _usingInputDeviceIndex(false),
       _usingOutputDeviceIndex(false),
@@ -680,6 +684,11 @@ AudioDeviceGeneric::InitStatus AudioDeviceWindowsCore::Init() {
   if (_initialized) {
     return InitStatus::OK;
   }
+
+  _playWarning = 0;
+  _playError = 0;
+  _recWarning = 0;
+  _recError = 0;
 
   // Enumerate all audio rendering and capturing endpoint devices.
   // Note that, some of these will not be able to select by the user.
@@ -3052,6 +3061,78 @@ bool AudioDeviceWindowsCore::Playing() const
     return (_playing);
 }
 
+// ----------------------------------------------------------------------------
+//  PlayoutWarning
+// ----------------------------------------------------------------------------
+
+bool AudioDeviceWindowsCore::PlayoutWarning() const
+{
+    return ( _playWarning > 0);
+}
+
+// ----------------------------------------------------------------------------
+//  PlayoutError
+// ----------------------------------------------------------------------------
+
+bool AudioDeviceWindowsCore::PlayoutError() const
+{
+    return ( _playError > 0);
+}
+
+// ----------------------------------------------------------------------------
+//  RecordingWarning
+// ----------------------------------------------------------------------------
+
+bool AudioDeviceWindowsCore::RecordingWarning() const
+{
+    return ( _recWarning > 0);
+}
+
+// ----------------------------------------------------------------------------
+//  RecordingError
+// ----------------------------------------------------------------------------
+
+bool AudioDeviceWindowsCore::RecordingError() const
+{
+    return ( _recError > 0);
+}
+
+// ----------------------------------------------------------------------------
+//  ClearPlayoutWarning
+// ----------------------------------------------------------------------------
+
+void AudioDeviceWindowsCore::ClearPlayoutWarning()
+{
+    _playWarning = 0;
+}
+
+// ----------------------------------------------------------------------------
+//  ClearPlayoutError
+// ----------------------------------------------------------------------------
+
+void AudioDeviceWindowsCore::ClearPlayoutError()
+{
+    _playError = 0;
+}
+
+// ----------------------------------------------------------------------------
+//  ClearRecordingWarning
+// ----------------------------------------------------------------------------
+
+void AudioDeviceWindowsCore::ClearRecordingWarning()
+{
+    _recWarning = 0;
+}
+
+// ----------------------------------------------------------------------------
+//  ClearRecordingError
+// ----------------------------------------------------------------------------
+
+void AudioDeviceWindowsCore::ClearRecordingError()
+{
+    _recError = 0;
+}
+
 // ============================================================================
 //                                 Private Methods
 // ============================================================================
@@ -3441,8 +3522,11 @@ Exit:
                 _TraceCOMError(hr);
             }
         }
+        // Trigger callback from module process thread
+        _playError = 1;
         LOG(LS_ERROR)
-            << "Playout error: rendering thread has ended pre-maturely";
+            << "kPlayoutError message posted: rendering thread has ended"
+            << " pre-maturely";
     }
     else
     {
@@ -3625,8 +3709,10 @@ DWORD AudioDeviceWindowsCore::DoCaptureThreadPollDMO()
 
     if (FAILED(hr))
     {
-        LOG(LS_ERROR)
-            << "Recording error: capturing thread has ended prematurely";
+        // Trigger callback from module process thread
+        _recError = 1;
+        LOG(LS_ERROR) << "kRecordingError message posted: capturing thread has"
+                      << " ended prematurely";
     }
     else
     {
@@ -3926,8 +4012,11 @@ Exit:
             }
         }
 
+        // Trigger callback from module process thread
+        _recError = 1;
         LOG(LS_ERROR)
-            << "Recording error: capturing thread has ended pre-maturely";
+            << "kRecordingError message posted: capturing thread has ended"
+            << " pre-maturely";
     }
     else
     {

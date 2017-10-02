@@ -116,9 +116,11 @@ rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
 
 AudioDeviceModuleImpl::AudioDeviceModuleImpl(const int32_t id,
                                              const AudioLayer audioLayer)
-    : _ptrAudioDevice(NULL),
+    : _ptrCbAudioDeviceObserver(NULL),
+      _ptrAudioDevice(NULL),
       _id(id),
       _platformAudioLayer(audioLayer),
+      _lastProcessTime(rtc::TimeMillis()),
       _platformType(kPlatformNotSupported),
       _initialized(false),
       _lastError(kAdmErrNone) {
@@ -354,6 +356,78 @@ AudioDeviceModuleImpl::~AudioDeviceModuleImpl() {
   if (_ptrAudioDevice) {
     delete _ptrAudioDevice;
     _ptrAudioDevice = NULL;
+  }
+}
+
+// ============================================================================
+//                                  Module
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+//  Module::TimeUntilNextProcess
+//
+//  Returns the number of milliseconds until the module want a worker thread
+//  to call Process().
+// ----------------------------------------------------------------------------
+
+int64_t AudioDeviceModuleImpl::TimeUntilNextProcess() {
+  int64_t now = rtc::TimeMillis();
+  int64_t deltaProcess = kAdmMaxIdleTimeProcess - (now - _lastProcessTime);
+  return deltaProcess;
+}
+
+// ----------------------------------------------------------------------------
+//  Module::Process
+//
+//  Check for posted error and warning reports. Generate callbacks if
+//  new reports exists.
+// ----------------------------------------------------------------------------
+
+void AudioDeviceModuleImpl::Process() {
+  _lastProcessTime = rtc::TimeMillis();
+
+  // kPlayoutWarning
+  if (_ptrAudioDevice->PlayoutWarning()) {
+    rtc::CritScope lock(&_critSectEventCb);
+    if (_ptrCbAudioDeviceObserver) {
+      LOG(WARNING) << "=> OnWarningIsReported(kPlayoutWarning)";
+      _ptrCbAudioDeviceObserver->OnWarningIsReported(
+          AudioDeviceObserver::kPlayoutWarning);
+    }
+    _ptrAudioDevice->ClearPlayoutWarning();
+  }
+
+  // kPlayoutError
+  if (_ptrAudioDevice->PlayoutError()) {
+    rtc::CritScope lock(&_critSectEventCb);
+    if (_ptrCbAudioDeviceObserver) {
+      LOG(LERROR) << "=> OnErrorIsReported(kPlayoutError)";
+      _ptrCbAudioDeviceObserver->OnErrorIsReported(
+          AudioDeviceObserver::kPlayoutError);
+    }
+    _ptrAudioDevice->ClearPlayoutError();
+  }
+
+  // kRecordingWarning
+  if (_ptrAudioDevice->RecordingWarning()) {
+    rtc::CritScope lock(&_critSectEventCb);
+    if (_ptrCbAudioDeviceObserver) {
+      LOG(WARNING) << "=> OnWarningIsReported(kRecordingWarning)";
+      _ptrCbAudioDeviceObserver->OnWarningIsReported(
+          AudioDeviceObserver::kRecordingWarning);
+    }
+    _ptrAudioDevice->ClearRecordingWarning();
+  }
+
+  // kRecordingError
+  if (_ptrAudioDevice->RecordingError()) {
+    rtc::CritScope lock(&_critSectEventCb);
+    if (_ptrCbAudioDeviceObserver) {
+      LOG(LERROR) << "=> OnErrorIsReported(kRecordingError)";
+      _ptrCbAudioDeviceObserver->OnErrorIsReported(
+          AudioDeviceObserver::kRecordingError);
+    }
+    _ptrAudioDevice->ClearRecordingError();
   }
 }
 
@@ -1244,6 +1318,19 @@ bool AudioDeviceModuleImpl::Recording() const {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED_BOOL();
   return (_ptrAudioDevice->Recording());
+}
+
+// ----------------------------------------------------------------------------
+//  RegisterEventObserver
+// ----------------------------------------------------------------------------
+
+int32_t AudioDeviceModuleImpl::RegisterEventObserver(
+    AudioDeviceObserver* eventCallback) {
+  LOG(INFO) << __FUNCTION__;
+  rtc::CritScope lock(&_critSectEventCb);
+  _ptrCbAudioDeviceObserver = eventCallback;
+
+  return 0;
 }
 
 // ----------------------------------------------------------------------------
