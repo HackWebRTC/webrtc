@@ -45,6 +45,7 @@ rtc_source_set("rtp_rtcp_format") {
     "source/rtp_packet_to_send.h",
   ]
   sources = [
+    "include/rtp_rtcp_defines.cc",
     "source/rtcp_packet.cc",
     "source/rtcp_packet/app.cc",
     "source/rtcp_packet/bye.cc",

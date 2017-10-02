@@ -30,13 +30,11 @@ RtpFeedback* NullObjectRtpFeedback();
 namespace RtpUtility {
 
 struct Payload {
-  Payload(const char* name, const PayloadUnion& pu)
-      : audio(pu.is_audio()), typeSpecific(pu) {
+  Payload(const char* name, const PayloadUnion& pu) : typeSpecific(pu) {
     std::strncpy(this->name, name, sizeof(this->name) - 1);
     this->name[sizeof(this->name) - 1] = '\0';
   }
   char name[RTP_PAYLOAD_NAME_SIZE];
-  bool audio;
   PayloadUnion typeSpecific;
 };
 
