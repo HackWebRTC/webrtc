@@ -432,10 +432,6 @@ TEST(CallBitrateTest,
 TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
   constexpr uint32_t kSSRC = 12345;
   testing::NiceMock<test::MockAudioDeviceModule> mock_adm;
-  // Reply with a 10ms timer every time TimeUntilNextProcess is called to
-  // avoid entering a tight loop on the process thread.
-  EXPECT_CALL(mock_adm, TimeUntilNextProcess())
-       .WillRepeatedly(testing::Return(10));
   rtc::scoped_refptr<test::MockAudioMixer> mock_mixer(
       new rtc::RefCountedObject<test::MockAudioMixer>);
 

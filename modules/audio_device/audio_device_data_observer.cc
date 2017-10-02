@@ -36,12 +36,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   // Make sure we have a valid ADM before returning it to user.
   bool IsValid() { return is_valid_; }
 
-  // RefCountedModule methods overrides.
-  int64_t TimeUntilNextProcess() override {
-    return impl_->TimeUntilNextProcess();
-  }
-  void Process() override { return impl_->Process(); }
-
   // AudioTransport methods overrides.
   int32_t RecordedDataIsAvailable(const void* audioSamples,
                                   const size_t nSamples,
@@ -127,9 +121,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
     return impl_->ActiveAudioLayer(audio_layer);
   }
   ErrorCode LastError() const override { return impl_->LastError(); }
-  int32_t RegisterEventObserver(AudioDeviceObserver* event_callback) override {
-    return impl_->RegisterEventObserver(event_callback);
-  }
   int32_t Init() override { return impl_->Init(); }
   int32_t Terminate() override { return impl_->Terminate(); }
   bool Initialized() const override { return impl_->Initialized(); }

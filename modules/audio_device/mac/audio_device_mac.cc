@@ -144,10 +144,6 @@ AudioDeviceMac::AudioDeviceMac()
       _captureDelayUs(0),
       _renderDelayUs(0),
       _renderDelayOffsetSamples(0),
-      _playWarning(0),
-      _playError(0),
-      _recWarning(0),
-      _recError(0),
       _paCaptureBuffer(NULL),
       _paRenderBuffer(NULL),
       _captureBufSizeSamples(0),
@@ -339,11 +335,6 @@ AudioDeviceGeneric::InitStatus AudioDeviceMac::Init() {
       _macBookPro = true;
     }
   }
-
-  _playWarning = 0;
-  _playError = 0;
-  _recWarning = 0;
-  _recError = 0;
 
   get_mic_volume_counter_ms_ = 0;
 
@@ -1573,38 +1564,6 @@ bool AudioDeviceMac::Playing() const {
   return (_playing);
 }
 
-bool AudioDeviceMac::PlayoutWarning() const {
-  return (_playWarning > 0);
-}
-
-bool AudioDeviceMac::PlayoutError() const {
-  return (_playError > 0);
-}
-
-bool AudioDeviceMac::RecordingWarning() const {
-  return (_recWarning > 0);
-}
-
-bool AudioDeviceMac::RecordingError() const {
-  return (_recError > 0);
-}
-
-void AudioDeviceMac::ClearPlayoutWarning() {
-  _playWarning = 0;
-}
-
-void AudioDeviceMac::ClearPlayoutError() {
-  _playError = 0;
-}
-
-void AudioDeviceMac::ClearRecordingWarning() {
-  _recWarning = 0;
-}
-
-void AudioDeviceMac::ClearRecordingError() {
-  _recError = 0;
-}
-
 // ============================================================================
 //                                 Private Methods
 // ============================================================================
@@ -2017,10 +1976,6 @@ int32_t AudioDeviceMac::HandleDeviceChange() {
       LOG(LS_WARNING) << "Capture device is not alive (probably removed)";
       AtomicSet32(&_captureDeviceIsAlive, 0);
       _mixerManager.CloseMicrophone();
-      if (_recError == 1) {
-        LOG(LS_WARNING) << "pending recording error exists";
-      }
-      _recError = 1;  // triggers callback from module process thread
     } else if (err != noErr) {
       logCAMsg(rtc::LS_ERROR,
                "Error in AudioDeviceGetProperty()", (const char*)&err);
@@ -2040,10 +1995,6 @@ int32_t AudioDeviceMac::HandleDeviceChange() {
       LOG(LS_WARNING) << "Render device is not alive (probably removed)";
       AtomicSet32(&_renderDeviceIsAlive, 0);
       _mixerManager.CloseSpeaker();
-      if (_playError == 1) {
-        LOG(LS_WARNING) << "pending playout error exists";
-      }
-      _playError = 1;  // triggers callback from module process thread
     } else if (err != noErr) {
       logCAMsg(rtc::LS_ERROR,
                "Error in AudioDeviceGetProperty()", (const char*)&err);

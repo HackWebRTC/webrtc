@@ -63,8 +63,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
           return proxy;
         }));
 
-    ON_CALL(mock_audio_device_, TimeUntilNextProcess())
-        .WillByDefault(testing::Return(1000));
     ON_CALL(*this, audio_device_module())
         .WillByDefault(testing::Return(&mock_audio_device_));
     ON_CALL(*this, audio_transport())

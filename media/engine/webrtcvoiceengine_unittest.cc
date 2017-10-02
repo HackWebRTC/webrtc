@@ -3341,9 +3341,6 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
   testing::NiceMock<webrtc::test::MockAudioDeviceModule> adm;
   EXPECT_CALL(adm, AddRef()).Times(3).WillRepeatedly(Return(0));
   EXPECT_CALL(adm, Release()).Times(3).WillRepeatedly(Return(0));
-  // Return 100ms just in case this function gets called.  If we don't,
-  // we could enter a tight loop since the mock would return 0.
-  EXPECT_CALL(adm, TimeUntilNextProcess()).WillRepeatedly(Return(100));
   {
     rtc::scoped_refptr<webrtc::AudioProcessing> apm =
         webrtc::AudioProcessing::Create();
