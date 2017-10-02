@@ -176,7 +176,7 @@ void GainToNoAudibleEcho(
     const std::array<float, kFftLengthBy2Plus1>& one_by_echo,
     std::array<float, kFftLengthBy2Plus1>* gain) {
   const float nearend_masking_margin =
-      low_noise_render ? 0.1f
+      low_noise_render ? 0.3f
                        : (saturated_echo ? config.param.gain_mask.m2
                                          : config.param.gain_mask.m3);
 
