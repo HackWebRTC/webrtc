@@ -18,10 +18,10 @@
 
 // NOTE: This include order must remain to avoid compile errors, even though
 //       it breaks the style guide.
-#include "vpx/vpx_encoder.h"
-#include "vpx/vpx_decoder.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
+#include "vpx/vpx_decoder.h"
+#include "vpx/vpx_encoder.h"
 
 #include "api/video/video_frame.h"
 #include "common_video/include/i420_buffer_pool.h"
@@ -105,6 +105,7 @@ class VP8EncoderImpl : public VP8Encoder {
   int number_of_cores_;
   uint32_t rc_max_intra_target_;
   std::vector<std::unique_ptr<TemporalLayers>> temporal_layers_;
+  std::vector<std::unique_ptr<TemporalLayersChecker>> temporal_layers_checkers_;
   std::vector<uint16_t> picture_id_;
   std::vector<uint8_t> tl0_pic_idx_;
   std::vector<bool> key_frame_request_;

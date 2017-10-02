@@ -1,11 +1,11 @@
 /* Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
-*
-*  Use of this source code is governed by a BSD-style license
-*  that can be found in the LICENSE file in the root of the source
-*  tree. An additional intellectual property rights grant can be found
-*  in the file PATENTS.  All contributing project authors may
-*  be found in the AUTHORS file in the root of the source tree.
-*/
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 
 #include "modules/video_coding/codecs/vp8/default_temporal_layers.h"
 
@@ -13,16 +13,19 @@
 #include <string.h>
 
 #include <algorithm>
+#include <memory>
+#include <set>
 #include <vector>
 
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 
-#include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
+#include "vpx/vpx_encoder.h"
 
 namespace webrtc {
 
@@ -424,8 +427,166 @@ TemporalLayers* TemporalLayersFactory::Create(
   return tl;
 }
 
+std::unique_ptr<TemporalLayersChecker> TemporalLayersFactory::CreateChecker(
+    int /*simulcast_id*/,
+    int temporal_layers,
+    uint8_t initial_tl0_pic_idx) const {
+  TemporalLayersChecker* tlc =
+      new DefaultTemporalLayersChecker(temporal_layers, initial_tl0_pic_idx);
+  return std::unique_ptr<TemporalLayersChecker>(tlc);
+}
+
 void TemporalLayersFactory::SetListener(TemporalLayersListener* listener) {
   listener_ = listener;
+}
+
+// Returns list of temporal dependencies for each frame in the temporal pattern.
+// Values are lists of indecies in the pattern.
+std::vector<std::set<uint8_t>> GetTemporalDependencies(
+    int num_temporal_layers) {
+  switch (num_temporal_layers) {
+    case 1:
+      return {{0}};
+    case 2:
+      return {{6}, {0}, {0}, {1, 2}, {2}, {3, 4}, {4}, {5, 6}};
+    case 3:
+      if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
+        return {{0}, {0}, {0}, {0, 1, 2}};
+      } else {
+        return {{4}, {0}, {0}, {0, 2}, {0}, {2, 4}, {2, 4}, {4, 6}};
+      }
+    case 4:
+      return {{8},    {0},         {0},         {0, 2},
+              {0},    {0, 2, 4},   {0, 2, 4},   {0, 4, 6},
+              {0},    {4, 6, 8},   {4, 6, 8},   {4, 8, 10},
+              {4, 8}, {8, 10, 12}, {8, 10, 12}, {8, 12, 14}};
+    default:
+      RTC_NOTREACHED();
+      return {};
+  }
+}
+
+DefaultTemporalLayersChecker::DefaultTemporalLayersChecker(
+    int num_temporal_layers,
+    uint8_t initial_tl0_pic_idx)
+    : num_layers_(std::max(1, num_temporal_layers)),
+      temporal_ids_(GetTemporalIds(num_layers_)),
+      temporal_dependencies_(GetTemporalDependencies(num_layers_)),
+      pattern_idx_(255) {
+  int i = 0;
+  while (temporal_ids_.size() < temporal_dependencies_.size()) {
+    temporal_ids_.push_back(temporal_ids_[i++]);
+  }
+}
+
+bool DefaultTemporalLayersChecker::CheckTemporalConfig(
+    bool frame_is_keyframe,
+    const TemporalLayers::FrameConfig& frame_config) {
+  ++pattern_idx_;
+  if (pattern_idx_ == temporal_ids_.size()) {
+    // All non key-frame buffers should be updated each pattern cycle.
+    if (!last_.is_keyframe && !last_.is_updated_this_cycle) {
+      LOG(LS_ERROR) << "Last buffer was not updated during pattern cycle.";
+      return false;
+    }
+    if (!arf_.is_keyframe && !arf_.is_updated_this_cycle) {
+      LOG(LS_ERROR) << "Arf buffer was not updated during pattern cycle.";
+      return false;
+    }
+    if (!golden_.is_keyframe && !golden_.is_updated_this_cycle) {
+      LOG(LS_ERROR) << "Golden buffer was not updated during pattern cycle.";
+      return false;
+    }
+    last_.is_updated_this_cycle = false;
+    arf_.is_updated_this_cycle = false;
+    golden_.is_updated_this_cycle = false;
+    pattern_idx_ = 0;
+  }
+  uint8_t expected_tl_idx = temporal_ids_[pattern_idx_];
+  if (frame_config.packetizer_temporal_idx != expected_tl_idx) {
+    LOG(LS_ERROR) << "Frame has an incorrect temporal index. Expected: "
+                  << static_cast<int>(expected_tl_idx) << " Actual: "
+                  << static_cast<int>(frame_config.packetizer_temporal_idx);
+    return false;
+  }
+
+  bool need_sync = temporal_ids_[pattern_idx_] > 0 &&
+                   temporal_ids_[pattern_idx_] != kNoTemporalIdx;
+  std::vector<int> dependencies;
+
+  if (frame_config.last_buffer_flags &
+      TemporalLayers::BufferFlags::kReference) {
+    uint8_t referenced_layer = temporal_ids_[last_.pattern_idx];
+    if (referenced_layer > 0) {
+      need_sync = false;
+    }
+    if (!last_.is_keyframe) {
+      dependencies.push_back(last_.pattern_idx);
+    }
+  }
+
+  if (frame_config.arf_buffer_flags & TemporalLayers::BufferFlags::kReference) {
+    uint8_t referenced_layer = temporal_ids_[arf_.pattern_idx];
+    if (referenced_layer > 0) {
+      need_sync = false;
+    }
+    if (!arf_.is_keyframe) {
+      dependencies.push_back(arf_.pattern_idx);
+    }
+  }
+
+  if (frame_config.golden_buffer_flags &
+      TemporalLayers::BufferFlags::kReference) {
+    uint8_t referenced_layer = temporal_ids_[golden_.pattern_idx];
+    if (referenced_layer > 0) {
+      need_sync = false;
+    }
+    if (!golden_.is_keyframe) {
+      dependencies.push_back(golden_.pattern_idx);
+    }
+  }
+
+  if (need_sync != frame_config.layer_sync) {
+    LOG(LS_ERROR) << "Sync bit is set incorrectly on a frame. Expected: "
+                  << need_sync << " Actual: " << frame_config.layer_sync;
+    return false;
+  }
+
+  if (!frame_is_keyframe) {
+    size_t i;
+    for (i = 0; i < dependencies.size(); ++i) {
+      if (temporal_dependencies_[pattern_idx_].find(dependencies[i]) ==
+          temporal_dependencies_[pattern_idx_].end()) {
+        LOG(LS_ERROR) << "Illegal temporal dependency out of defined pattern "
+                         "from position "
+                      << static_cast<int>(pattern_idx_) << " to position "
+                      << static_cast<int>(dependencies[i]);
+        return false;
+      }
+    }
+  }
+
+  if (frame_config.last_buffer_flags & TemporalLayers::BufferFlags::kUpdate) {
+    last_.is_updated_this_cycle = true;
+    last_.pattern_idx = pattern_idx_;
+    last_.is_keyframe = false;
+  }
+  if (frame_config.arf_buffer_flags & TemporalLayers::BufferFlags::kUpdate) {
+    arf_.is_updated_this_cycle = true;
+    arf_.pattern_idx = pattern_idx_;
+    arf_.is_keyframe = false;
+  }
+  if (frame_config.golden_buffer_flags & TemporalLayers::BufferFlags::kUpdate) {
+    golden_.is_updated_this_cycle = true;
+    golden_.pattern_idx = pattern_idx_;
+    golden_.is_keyframe = false;
+  }
+  if (frame_is_keyframe) {
+    last_.is_keyframe = true;
+    arf_.is_keyframe = true;
+    golden_.is_keyframe = true;
+  }
+  return true;
 }
 
 }  // namespace webrtc

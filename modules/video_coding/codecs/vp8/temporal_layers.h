@@ -1,21 +1,21 @@
 /* Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
-*
-*  Use of this source code is governed by a BSD-style license
-*  that can be found in the LICENSE file in the root of the source
-*  tree. An additional intellectual property rights grant can be found
-*  in the file PATENTS.  All contributing project authors may
-*  be found in the AUTHORS file in the root of the source tree.
-*/
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 /*
-* This file defines the interface for doing temporal layers with VP8.
-*/
+ * This file defines the interface for doing temporal layers with VP8.
+ */
 #ifndef MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
 #define MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
 
 #include <vector>
+#include <memory>
 
 #include "typedefs.h"  // NOLINT(build/include)
-
 struct vpx_codec_enc_cfg;
 typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;
 
@@ -115,6 +115,8 @@ class TemporalLayers {
 };
 
 class TemporalLayersListener;
+class TemporalLayersChecker;
+
 class TemporalLayersFactory {
  public:
   TemporalLayersFactory() : listener_(nullptr) {}
@@ -122,6 +124,15 @@ class TemporalLayersFactory {
   virtual TemporalLayers* Create(int simulcast_id,
                                  int temporal_layers,
                                  uint8_t initial_tl0_pic_idx) const;
+
+  // Creates helper class which performs online checks of a correctness of
+  // temporal layers dependencies returned by TemporalLayers class created in
+  // the same factory.
+  virtual std::unique_ptr<TemporalLayersChecker> CreateChecker(
+      int simulcast_id,
+      int temporal_layers,
+      uint8_t initial_tl0_pic_idx) const;
+
   void SetListener(TemporalLayersListener* listener);
 
  protected:
@@ -136,6 +147,14 @@ class ScreenshareTemporalLayersFactory : public webrtc::TemporalLayersFactory {
   webrtc::TemporalLayers* Create(int simulcast_id,
                                  int num_temporal_layers,
                                  uint8_t initial_tl0_pic_idx) const override;
+
+  // Creates helper class which performs online checks of a correctness of
+  // temporal layers dependencies returned by TemporalLayers class created in
+  // the same factory.
+  std::unique_ptr<webrtc::TemporalLayersChecker> CreateChecker(
+      int simulcast_id,
+      int temporal_layers,
+      uint8_t initial_tl0_pic_idx) const override;
 };
 
 class TemporalLayersListener {
@@ -145,6 +164,19 @@ class TemporalLayersListener {
 
   virtual void OnTemporalLayersCreated(int simulcast_id,
                                        TemporalLayers* layers) = 0;
+};
+
+// Used only inside RTC_DCHECK(). It checks correctness of temporal layers
+// dependencies and sync bits. The only method of this class is called after
+// each UpdateLayersConfig() of a corresponding TemporalLayers class.
+class TemporalLayersChecker {
+ public:
+  TemporalLayersChecker() {}
+  virtual ~TemporalLayersChecker() {}
+
+  virtual bool CheckTemporalConfig(
+      bool frame_is_keyframe,
+      const TemporalLayers::FrameConfig& frame_config) = 0;
 };
 
 }  // namespace webrtc

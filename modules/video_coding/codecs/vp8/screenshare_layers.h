@@ -1,11 +1,11 @@
 /* Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
-*
-*  Use of this source code is governed by a BSD-style license
-*  that can be found in the LICENSE file in the root of the source
-*  tree. An additional intellectual property rights grant can be found
-*  in the file PATENTS.  All contributing project authors may
-*  be found in the AUTHORS file in the root of the source tree.
-*/
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 #ifndef MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
 #define MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_
 
@@ -121,6 +121,15 @@ class ScreenshareLayers : public TemporalLayers {
     int64_t tl0_target_bitrate_sum_ = 0;
     int64_t tl1_target_bitrate_sum_ = 0;
   } stats_;
+};
+
+class ScreenshareTemporalLayersChecker : public TemporalLayersChecker {
+ public:
+  ScreenshareTemporalLayersChecker(int number_of_temporal_layers,
+                                   uint8_t initial_tl0_pic_idx);
+  bool CheckTemporalConfig(
+      bool frame_is_keyframe,
+      const TemporalLayers::FrameConfig& frame_config) override;
 };
 }  // namespace webrtc
 

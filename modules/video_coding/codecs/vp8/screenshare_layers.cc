@@ -1,24 +1,25 @@
 /* Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
-*
-*  Use of this source code is governed by a BSD-style license
-*  that can be found in the LICENSE file in the root of the source
-*  tree. An additional intellectual property rights grant can be found
-*  in the file PATENTS.  All contributing project authors may
-*  be found in the AUTHORS file in the root of the source tree.
-*/
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"
 
 #include <stdlib.h>
 
 #include <algorithm>
+#include <memory>
 
-#include "vpx/vp8cx.h"
-#include "vpx/vpx_encoder.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
+#include "vpx/vp8cx.h"
+#include "vpx/vpx_encoder.h"
 
 namespace webrtc {
 
@@ -52,6 +53,23 @@ webrtc::TemporalLayers* ScreenshareTemporalLayersFactory::Create(
   if (listener_)
     listener_->OnTemporalLayersCreated(simulcast_id, tl);
   return tl;
+}
+
+std::unique_ptr<webrtc::TemporalLayersChecker>
+ScreenshareTemporalLayersFactory::CreateChecker(
+    int simulcast_id,
+    int temporal_layers,
+    uint8_t initial_tl0_pic_idx) const {
+  webrtc::TemporalLayersChecker* tlc;
+  if (simulcast_id == 0) {
+    tlc = new webrtc::ScreenshareTemporalLayersChecker(temporal_layers,
+                                                       initial_tl0_pic_idx);
+  } else {
+    TemporalLayersFactory rt_tl_factory;
+    return rt_tl_factory.CreateChecker(simulcast_id, temporal_layers,
+                                       initial_tl0_pic_idx);
+  }
+  return std::unique_ptr<webrtc::TemporalLayersChecker>(tlc);
 }
 
 ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
@@ -433,8 +451,9 @@ void ScreenshareLayers::UpdateHistograms() {
     int total_frames = stats_.num_tl0_frames_ + stats_.num_tl1_frames_;
     RTC_HISTOGRAM_COUNTS_10000(
         "WebRTC.Video.Screenshare.FramesPerDrop",
-        (stats_.num_dropped_frames_ == 0 ? 0 : total_frames /
-                                                   stats_.num_dropped_frames_));
+        (stats_.num_dropped_frames_ == 0
+             ? 0
+             : total_frames / stats_.num_dropped_frames_));
     RTC_HISTOGRAM_COUNTS_10000(
         "WebRTC.Video.Screenshare.FramesPerOvershoot",
         (stats_.num_overshoots_ == 0 ? 0
@@ -454,6 +473,18 @@ void ScreenshareLayers::UpdateHistograms() {
           stats_.tl1_target_bitrate_sum_ / stats_.num_tl1_frames_);
     }
   }
+}
+
+ScreenshareTemporalLayersChecker::ScreenshareTemporalLayersChecker(
+    int /*num_temporal_layers*/,
+    uint8_t /*initial_tl0_pic_idx*/) {}
+
+// TODO(ilnik): Implement layers dependency checks here. Keep track of
+// last/golden/arf buffers and sync bits.
+bool ScreenshareTemporalLayersChecker::CheckTemporalConfig(
+    bool /*frame_is_keyframe*/,
+    const TemporalLayers::FrameConfig& /*frame_config*/) {
+  return true;
 }
 
 }  // namespace webrtc

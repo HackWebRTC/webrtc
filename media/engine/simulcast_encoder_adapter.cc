@@ -118,6 +118,13 @@ class TemporalLayersFactoryAdapter : public webrtc::TemporalLayersFactory {
     return tl_factory_.Create(adapted_simulcast_id_, temporal_layers,
                               initial_tl0_pic_idx);
   }
+  std::unique_ptr<webrtc::TemporalLayersChecker> CreateChecker(
+      int simulcast_id,
+      int temporal_layers,
+      uint8_t initial_tl0_pic_idx) const override {
+    return tl_factory_.CreateChecker(adapted_simulcast_id_, temporal_layers,
+                                     initial_tl0_pic_idx);
+  }
 
   const int adapted_simulcast_id_;
   const TemporalLayersFactory& tl_factory_;

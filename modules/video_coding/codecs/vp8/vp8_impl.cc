@@ -17,8 +17,8 @@
 #include <string>
 
 // NOTE(ajm): Path provided by gyp.
-#include "libyuv/scale.h"    // NOLINT
 #include "libyuv/convert.h"  // NOLINT
+#include "libyuv/scale.h"    // NOLINT
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -224,6 +224,7 @@ VP8EncoderImpl::VP8EncoderImpl()
     tl0_pic_idx_.push_back(random.Rand<uint8_t>());
   }
   temporal_layers_.reserve(kMaxSimulcastStreams);
+  temporal_layers_checkers_.reserve(kMaxSimulcastStreams);
   raw_images_.reserve(kMaxSimulcastStreams);
   encoded_images_.reserve(kMaxSimulcastStreams);
   send_stream_.reserve(kMaxSimulcastStreams);
@@ -263,6 +264,7 @@ int VP8EncoderImpl::Release() {
     tl0_pic_idx_[i] = temporal_layers_[i]->Tl0PicIdx();
   }
   temporal_layers_.clear();
+  temporal_layers_checkers_.clear();
   inited_ = false;
   return ret_val;
 }
@@ -332,8 +334,7 @@ const char* VP8EncoderImpl::ImplementationName() const {
   return "libvpx";
 }
 
-void VP8EncoderImpl::SetStreamState(bool send_stream,
-                                            int stream_idx) {
+void VP8EncoderImpl::SetStreamState(bool send_stream, int stream_idx) {
   if (send_stream && !send_stream_[stream_idx]) {
     // Need a key frame if we have not sent this stream before.
     key_frame_request_[stream_idx] = true;
@@ -349,6 +350,8 @@ void VP8EncoderImpl::SetupTemporalLayers(int num_streams,
   if (num_streams == 1) {
     temporal_layers_.emplace_back(
         tl_factory->Create(0, num_temporal_layers, tl0_pic_idx_[0]));
+    temporal_layers_checkers_.emplace_back(
+        tl_factory->CreateChecker(0, num_temporal_layers, tl0_pic_idx_[0]));
   } else {
     for (int i = 0; i < num_streams; ++i) {
       RTC_CHECK_GT(num_temporal_layers, 0);
@@ -356,6 +359,8 @@ void VP8EncoderImpl::SetupTemporalLayers(int num_streams,
                             codec.simulcastStream[i].numberOfTemporalLayers);
       temporal_layers_.emplace_back(
           tl_factory->Create(i, layers, tl0_pic_idx_[i]));
+      temporal_layers_checkers_.emplace_back(
+          tl_factory->CreateChecker(i, layers, tl0_pic_idx_[i]));
     }
   }
 }
@@ -754,17 +759,6 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
         raw_images_[i].stride[VPX_PLANE_V], raw_images_[i].d_w,
         raw_images_[i].d_h, libyuv::kFilterBilinear);
   }
-  vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
-  TemporalLayers::FrameConfig tl_configs[kMaxSimulcastStreams];
-  for (size_t i = 0; i < encoders_.size(); ++i) {
-    tl_configs[i] = temporal_layers_[i]->UpdateLayerConfig(frame.timestamp());
-
-    if (tl_configs[i].drop_frame) {
-      // Drop this frame.
-      return WEBRTC_VIDEO_CODEC_OK;
-    }
-    flags[i] = EncodeFlags(tl_configs[i]);
-  }
   bool send_key_frame = false;
   for (size_t i = 0; i < key_frame_request_.size() && i < send_stream_.size();
        ++i) {
@@ -781,6 +775,18 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
         break;
       }
     }
+  }
+  vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
+  TemporalLayers::FrameConfig tl_configs[kMaxSimulcastStreams];
+  for (size_t i = 0; i < encoders_.size(); ++i) {
+    tl_configs[i] = temporal_layers_[i]->UpdateLayerConfig(frame.timestamp());
+    RTC_DCHECK(temporal_layers_checkers_[i]->CheckTemporalConfig(
+        send_key_frame, tl_configs[i]));
+    if (tl_configs[i].drop_frame) {
+      // Drop this frame.
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+    flags[i] = EncodeFlags(tl_configs[i]);
   }
   if (send_key_frame) {
     // Adapt the size of the key frame when in screenshare with 1 temporal
@@ -833,13 +839,13 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   // the frame must be reencoded with the same parameters again because
   // target bitrate is exceeded and encoder state has been reset.
   while (num_tries == 0 ||
-      (num_tries == 1 &&
+         (num_tries == 1 &&
           error == WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT)) {
     ++num_tries;
     // Note we must pass 0 for |flags| field in encode call below since they are
     // set above in |vpx_codec_control| function for each encoder/spatial layer.
     error = vpx_codec_encode(&encoders_[0], &raw_images_[0], timestamp_,
-                                 duration, 0, VPX_DL_REALTIME);
+                             duration, 0, VPX_DL_REALTIME);
     // Reset specific intra frame thresholds, following the key frame.
     if (send_key_frame) {
       vpx_codec_control(&(encoders_[0]), VP8E_SET_MAX_INTRA_BITRATE_PCT,
@@ -1233,8 +1239,8 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
                    img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],
                    buffer->MutableDataY(), buffer->StrideY(),
                    buffer->MutableDataU(), buffer->StrideU(),
-                   buffer->MutableDataV(), buffer->StrideV(),
-                   img->d_w, img->d_h);
+                   buffer->MutableDataV(), buffer->StrideV(), img->d_w,
+                   img->d_h);
 
   VideoFrame decoded_image(buffer, timestamp, 0, kVideoRotation_0);
   decoded_image.set_ntp_time_ms(ntp_time_ms);
