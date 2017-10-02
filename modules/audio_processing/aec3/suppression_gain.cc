@@ -192,6 +192,9 @@ void GainToNoAudibleEcho(
   }
 }
 
+// TODO(peah): Make adaptive to take the actual filter error into account.
+constexpr size_t kUpperAccurateBandPlus1 = 29;
+
 // Computes the signal output power that masks the echo signal.
 void MaskingPower(const AudioProcessing::Config::EchoCanceller3& config,
                   const std::array<float, kFftLengthBy2Plus1>& nearend,
@@ -205,9 +208,29 @@ void MaskingPower(const AudioProcessing::Config::EchoCanceller3& config,
     (*masker)[k] =
         comfort_noise[k] + config.param.gain_mask.m4 * last_masker[k];
   }
-  for (size_t k = 1; k < gain.size() - 1; ++k) {
+
+  // Apply masking only between lower frequency bands.
+  RTC_DCHECK_LT(kUpperAccurateBandPlus1, gain.size());
+  for (size_t k = 1; k < kUpperAccurateBandPlus1; ++k) {
     (*masker)[k] += 0.1f * (side_band_masker[k - 1] + side_band_masker[k + 1]);
   }
+}
+
+// Limits the gain in the frequencies for which the adaptive filter has not
+// converged. Currently, these frequencies are not hardcoded to the frequencies
+// which are typically not excited by speech.
+// TODO(peah): Make adaptive to take the actual filter error into account.
+void AdjustNonConvergedFrequencies(
+    std::array<float, kFftLengthBy2Plus1>* gain) {
+  constexpr float oneByBandsInSum =
+      1 / static_cast<float>(kUpperAccurateBandPlus1 - 20);
+  const float hf_gain_bound =
+      std::accumulate(gain->begin() + 20,
+                      gain->begin() + kUpperAccurateBandPlus1, 0.f) *
+      oneByBandsInSum;
+
+  std::for_each(gain->begin() + kUpperAccurateBandPlus1, gain->end(),
+                [hf_gain_bound](float& a) { a = std::min(a, hf_gain_bound); });
 }
 
 }  // namespace
@@ -269,6 +292,9 @@ void SuppressionGain::LowerBandGain(
       NarrowBandAttenuation(*narrow_peak_band, gain);
     }
   }
+
+  // Adjust the gain for frequencies which have not yet converged.
+  AdjustNonConvergedFrequencies(gain);
 
   // Update the allowed maximum gain increase.
   UpdateMaxGainIncrease(config_, no_saturation_counter_, low_noise_render,
