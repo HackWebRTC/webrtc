@@ -364,9 +364,9 @@ rtc::Optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
 
   RtpReceiver* rtp_receiver = rtp_video_stream_receiver_.GetRtpReceiver();
   RTC_DCHECK(rtp_receiver);
-  if (!rtp_receiver->Timestamp(&info.latest_received_capture_timestamp))
-    return rtc::Optional<Syncable::Info>();
-  if (!rtp_receiver->LastReceivedTimeMs(&info.latest_receive_time_ms))
+  if (!rtp_receiver->GetLatestTimestamps(
+          &info.latest_received_capture_timestamp,
+          &info.latest_receive_time_ms))
     return rtc::Optional<Syncable::Info>();
 
   RtpRtcp* rtp_rtcp = rtp_video_stream_receiver_.rtp_rtcp();

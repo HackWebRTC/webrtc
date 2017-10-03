@@ -225,24 +225,16 @@ std::vector<RtpSource> RtpReceiverImpl::GetSources() const {
   return sources;
 }
 
-bool RtpReceiverImpl::Timestamp(uint32_t* timestamp) const {
+bool RtpReceiverImpl::GetLatestTimestamps(uint32_t* timestamp,
+                                          int64_t* receive_time_ms) const {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
-  if (!HaveReceivedFrame())
+  if (last_received_frame_time_ms_ < 0)
     return false;
+
   *timestamp = last_received_timestamp_;
-  return true;
-}
-
-bool RtpReceiverImpl::LastReceivedTimeMs(int64_t* receive_time_ms) const {
-  rtc::CritScope lock(&critical_section_rtp_receiver_);
-  if (!HaveReceivedFrame())
-    return false;
   *receive_time_ms = last_received_frame_time_ms_;
-  return true;
-}
 
-bool RtpReceiverImpl::HaveReceivedFrame() const {
-  return last_received_frame_time_ms_ >= 0;
+  return true;
 }
 
 // Implementation note: must not hold critsect when called.

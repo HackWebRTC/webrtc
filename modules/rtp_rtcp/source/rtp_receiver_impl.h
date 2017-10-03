@@ -47,9 +47,8 @@ class RtpReceiverImpl : public RtpReceiver {
                          PayloadUnion payload_specific,
                          bool in_order) override;
 
-  // Returns the last received timestamp.
-  bool Timestamp(uint32_t* timestamp) const override;
-  bool LastReceivedTimeMs(int64_t* receive_time_ms) const override;
+  bool GetLatestTimestamps(uint32_t* timestamp,
+                           int64_t* receive_time_ms) const override;
 
   uint32_t SSRC() const override;
 
@@ -70,9 +69,6 @@ class RtpReceiverImpl : public RtpReceiver {
   }
 
  private:
-  bool HaveReceivedFrame() const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtp_receiver_);
-
   void CheckSSRCChanged(const RTPHeader& rtp_header);
   void CheckCSRC(const WebRtcRTPHeader& rtp_header);
   int32_t CheckPayloadChanged(const RTPHeader& rtp_header,
