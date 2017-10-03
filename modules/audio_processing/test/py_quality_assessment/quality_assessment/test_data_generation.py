@@ -394,7 +394,8 @@ class EnvironmentalNoiseTestDataGenerator(TestDataGenerator):
         if not os.path.exists(noisy_signal_filepath):
           # Create noisy signal.
           noisy_signal = signal_processing.SignalProcessingUtils.MixSignals(
-              input_signal, noise_signal, snr)
+              input_signal, noise_signal, snr,
+              pad_noise=signal_processing.SignalProcessingUtils.MixPadding.LOOP)
 
           # Save.
           signal_processing.SignalProcessingUtils.SaveWav(
@@ -489,7 +490,7 @@ class ReverberationTestDataGenerator(TestDataGenerator):
         if not os.path.exists(noisy_signal_filepath):
           # Create noisy signal.
           noisy_signal = signal_processing.SignalProcessingUtils.MixSignals(
-              input_signal, noise_signal, snr, bln_pad_shortest=True)
+              input_signal, noise_signal, snr)
 
           # Save.
           signal_processing.SignalProcessingUtils.SaveWav(

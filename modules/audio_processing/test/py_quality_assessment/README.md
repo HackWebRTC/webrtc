@@ -10,7 +10,7 @@ reference one used for evaluation.
 ## Dependencies
  - OS: Linux
  - Python 2.7
- - Python libraries: numpy, scipy, pydub (0.17.0+), pandas (0.20.1+)
+ - Python libraries: enum34, numpy, scipy, pydub (0.17.0+), pandas (0.20.1+)
  - It is recommended that a dedicated Python environment is used
    - install `virtualenv`
    - `$ sudo apt-get install python-virtualenv`

@@ -10,6 +10,7 @@
 """
 
 import array
+import enum
 import logging
 import os
 import sys
@@ -29,6 +30,7 @@ except ImportError:
 
 try:
   import scipy.signal
+  import scipy.fftpack
 except ImportError:
   logging.critical('Cannot import the third-party Python package scipy')
   sys.exit(1)
@@ -39,6 +41,12 @@ from . import exceptions
 class SignalProcessingUtils(object):
   """Collection of signal processing utilities.
   """
+
+  @enum.unique
+  class MixPadding(enum.Enum):
+    NO_PADDING = 0
+    ZERO_PADDING = 1
+    LOOP = 2
 
   def __init__(self):
     pass
@@ -154,6 +162,14 @@ class SignalProcessingUtils(object):
     if samples.typecode != 'h':
       raise exceptions.SignalProcessingException('Unsupported samples type')
     return np.array(signal.get_array_of_samples(), np.int16)
+
+  @classmethod
+  def Fft(cls, signal, normalize=True):
+    x = cls.AudioSegmentToRawData(signal).astype(np.float32)
+    if normalize:
+      x /= max(abs(np.max(x)), 1.0)
+    y = scipy.fftpack.fft(x)
+    return y[:len(y) / 2]
 
   @classmethod
   def DetectHardClipping(cls, signal, threshold=2):
@@ -272,18 +288,24 @@ class SignalProcessingUtils(object):
         })
 
   @classmethod
-  def MixSignals(cls, signal, noise, target_snr=0.0, bln_pad_shortest=False):
-    """Mixes two signals with a target SNR.
+  def MixSignals(cls, signal, noise, target_snr=0.0,
+                 pad_noise=MixPadding.NO_PADDING):
+    """Mixes |signal| and |noise| with a target SNR.
 
-    Mix two signals with a desired SNR by scaling noise (noise).
+    Mix |signal| and |noise| with a desired SNR by scaling |noise|.
     If the target SNR is +/- infinite, a copy of signal/noise is returned.
+    If |signal| is shorter than |noise|, the length of the mix equals that of
+    |signal|. Otherwise, the mix length depends on whether padding is applied.
+    When padding is not applied, that is |pad_noise| is set to NO_PADDING
+    (default), the mix length equals that of |noise| - i.e., |signal| is
+    truncated. Otherwise, |noise| is extended and the resulting mix has the same
+    length of |signal|.
 
     Args:
       signal: AudioSegment instance (signal).
       noise: AudioSegment instance (noise).
       target_snr: float, numpy.Inf or -numpy.Inf (dB).
-      bln_pad_shortest: if True, it pads the shortest signal with silence at the
-                        end.
+      pad_noise: SignalProcessingUtils.MixPadding, default: NO_PADDING.
 
     Returns:
       An AudioSegment instance.
@@ -310,28 +332,23 @@ class SignalProcessingUtils(object):
       raise exceptions.SignalProcessingException(
           'cannot mix a signal with -Inf power')
 
-    # Pad signal (if necessary). If noise is the shortest, the AudioSegment
-    # overlay() method implictly pads noise. Hence, the only case to handle
-    # is signal shorter than noise and bln_pad_shortest True.
-    if bln_pad_shortest:
-      signal_duration = len(signal)
-      noise_duration = len(noise)
-      logging.warning('mix signals with padding')
-      logging.warning('  signal: %d ms', signal_duration)
-      logging.warning('  noise: %d ms', noise_duration)
-      padding_duration = noise_duration - signal_duration
-      if padding_duration > 0:  # That is signal_duration < noise_duration.
-        logging.debug('  padding: %d ms', padding_duration)
-        padding = pydub.AudioSegment.silent(
-            duration=padding_duration,
-            frame_rate=signal.frame_rate)
-        logging.debug('  signal (pre): %d ms', len(signal))
-        signal = signal + padding
-        logging.debug('  signal (post): %d ms', len(signal))
-
-        # Update power.
-        signal_power = float(signal.dBFS)
-
-    # Mix signals using the target SNR.
+    # Mix.
     gain_db = signal_power - noise_power - target_snr
-    return cls.Normalize(signal.overlay(noise.apply_gain(gain_db)))
+    signal_duration = len(signal)
+    noise_duration = len(noise)
+    if signal_duration <= noise_duration:
+      # Ignore |pad_noise|, |noise| is truncated if longer that |signal|, the
+      # mix will have the same length of |signal|.
+      return signal.overlay(noise.apply_gain(gain_db))
+    elif pad_noise == cls.MixPadding.NO_PADDING:
+      # |signal| is longer than |noise|, but no padding is applied to |noise|.
+      # Truncate |signal|.
+      return noise.overlay(signal, gain_during_overlay=gain_db)
+    elif pad_noise == cls.MixPadding.ZERO_PADDING:
+      # TODO(alessiob): Check that this works as expected.
+      return signal.overlay(noise.apply_gain(gain_db))
+    elif pad_noise == cls.MixPadding.LOOP:
+      # |signal| is longer than |noise|, extend |noise| by looping.
+      return signal.overlay(noise.apply_gain(gain_db), loop=True)
+    else:
+      raise exceptions.SignalProcessingException('invalid padding type')
