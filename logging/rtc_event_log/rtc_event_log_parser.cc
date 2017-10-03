@@ -280,7 +280,8 @@ webrtc::RtpHeaderExtensionMap* ParsedRtcEventLog::GetRtpHeader(
     PacketDirection* incoming,
     uint8_t* header,
     size_t* header_length,
-    size_t* total_length) const {
+    size_t* total_length,
+    int* probe_cluster_id) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
   const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());
@@ -315,6 +316,14 @@ webrtc::RtpHeaderExtensionMap* ParsedRtcEventLog::GetRtpHeader(
     auto it = rtp_extensions_maps_.find(stream_id);
     if (it != rtp_extensions_maps_.end()) {
       return it->second;
+    }
+  }
+  if (probe_cluster_id != nullptr) {
+    if (rtp_packet.has_probe_cluster_id()) {
+      *probe_cluster_id = rtp_packet.probe_cluster_id();
+      RTC_CHECK_NE(*probe_cluster_id, PacedPacketInfo::kNotAProbe);
+    } else {
+      *probe_cluster_id = PacedPacketInfo::kNotAProbe;
     }
   }
   return nullptr;
@@ -627,14 +636,15 @@ ParsedRtcEventLog::BweProbeResultEvent ParsedRtcEventLog::GetBweProbeResult(
     res.bitrate_bps = rtc::Optional<uint64_t>(pr_event.bitrate_bps());
   } else if (pr_event.result() ==
              rtclog::BweProbeResult::INVALID_SEND_RECEIVE_INTERVAL) {
-    res.failure_reason =
-        rtc::Optional<ProbeFailureReason>(kInvalidSendReceiveInterval);
+    res.failure_reason = rtc::Optional<ProbeFailureReason>(
+        ProbeFailureReason::kInvalidSendReceiveInterval);
   } else if (pr_event.result() ==
              rtclog::BweProbeResult::INVALID_SEND_RECEIVE_RATIO) {
-    res.failure_reason =
-        rtc::Optional<ProbeFailureReason>(kInvalidSendReceiveRatio);
+    res.failure_reason = rtc::Optional<ProbeFailureReason>(
+        ProbeFailureReason::kInvalidSendReceiveRatio);
   } else if (pr_event.result() == rtclog::BweProbeResult::TIMEOUT) {
-    res.failure_reason = rtc::Optional<ProbeFailureReason>(kTimeout);
+    res.failure_reason =
+        rtc::Optional<ProbeFailureReason>(ProbeFailureReason::kTimeout);
   } else {
     RTC_NOTREACHED();
   }

@@ -112,7 +112,8 @@ class ParsedRtcEventLog {
                                               PacketDirection* incoming,
                                               uint8_t* header,
                                               size_t* header_length,
-                                              size_t* total_length) const;
+                                              size_t* total_length,
+                                              int* probe_cluster_id) const;
 
   // Reads packet, direction and packet length from the RTCP event at |index|,
   // and stores the values in the corresponding output parameters.

@@ -103,8 +103,8 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                  << "] [send interval: " << send_interval_ms << " ms]"
                  << " [receive interval: " << receive_interval_ms << " ms]";
     if (event_log_) {
-      event_log_->LogProbeResultFailure(cluster_id,
-                                        kInvalidSendReceiveInterval);
+      event_log_->LogProbeResultFailure(
+          cluster_id, ProbeFailureReason::kInvalidSendReceiveInterval);
     }
     return -1;
   }
@@ -135,7 +135,8 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                  << send_bps / 1000 << " = " << ratio << " > kMaxValidRatio ("
                  << kMaxValidRatio << ")]";
     if (event_log_)
-      event_log_->LogProbeResultFailure(cluster_id, kInvalidSendReceiveRatio);
+      event_log_->LogProbeResultFailure(
+          cluster_id, ProbeFailureReason::kInvalidSendReceiveRatio);
     return -1;
   }
   LOG(LS_INFO) << "Probing successful"

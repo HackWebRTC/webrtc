@@ -17,6 +17,13 @@ StreamConfig::StreamConfig() {}
 
 StreamConfig::~StreamConfig() {}
 
+bool StreamConfig::operator==(const StreamConfig& other) const {
+  return local_ssrc == other.local_ssrc && remote_ssrc == other.remote_ssrc &&
+         rtx_ssrc == other.rtx_ssrc && rsid == other.rsid &&
+         remb == other.remb && rtcp_mode == other.rtcp_mode &&
+         rtp_extensions == other.rtp_extensions && codecs == other.codecs;
+}
+
 StreamConfig::Codec::Codec(const std::string& payload_name,
                            int payload_type,
                            int rtx_payload_type)
@@ -24,6 +31,11 @@ StreamConfig::Codec::Codec(const std::string& payload_name,
           payload_type(payload_type),
           rtx_payload_type(rtx_payload_type) {}
 
+bool StreamConfig::Codec::operator==(const Codec& other) const {
+  return payload_name == other.payload_name &&
+         payload_type == other.payload_type &&
+         rtx_payload_type == other.rtx_payload_type;
+}
 
 }  // namespace rtclog
 }  // namespace webrtc

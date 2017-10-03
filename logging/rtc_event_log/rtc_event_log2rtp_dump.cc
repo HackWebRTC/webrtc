@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
       webrtc::test::RtpPacket packet;
       webrtc::PacketDirection direction;
       parsed_stream.GetRtpHeader(i, &direction, packet.data, &packet.length,
-                                 &packet.original_length);
+                                 &packet.original_length, nullptr);
       if (packet.original_length > packet.length)
         header_only = true;
       packet.time_ms = parsed_stream.GetTimestamp(i) / 1000;

@@ -373,7 +373,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
       }
       case ParsedRtcEventLog::RTP_EVENT: {
         RtpHeaderExtensionMap* extension_map = parsed_log_.GetRtpHeader(
-            i, &direction, header, &header_length, &total_length);
+            i, &direction, header, &header_length, &total_length, nullptr);
         RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
         RTPHeader parsed_header;
         if (extension_map != nullptr) {
@@ -923,7 +923,8 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
   for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
     ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
     if (event_type == ParsedRtcEventLog::RTP_EVENT) {
-      parsed_log_.GetRtpHeader(i, &direction, nullptr, nullptr, &total_length);
+      parsed_log_.GetRtpHeader(i, &direction, nullptr, nullptr, &total_length,
+                               nullptr);
       if (direction == desired_direction) {
         uint64_t timestamp = parsed_log_.GetTimestamp(i);
         packets.push_back(TimestampSize(timestamp, total_length));
@@ -999,6 +1000,8 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
           case BandwidthUsage::kBwOverusing:
             last_series = &overusing_series;
             break;
+          case BandwidthUsage::kLast:
+            RTC_NOTREACHED();
         }
       }
 

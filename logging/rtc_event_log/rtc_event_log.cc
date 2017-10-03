@@ -219,6 +219,8 @@ rtclog::DelayBasedBweUpdate::DetectorState ConvertDetectorState(
       return rtclog::DelayBasedBweUpdate::BWE_UNDERUSING;
     case BandwidthUsage::kBwOverusing:
       return rtclog::DelayBasedBweUpdate::BWE_OVERUSING;
+    case BandwidthUsage::kLast:
+      RTC_NOTREACHED();
   }
   RTC_NOTREACHED();
   return rtclog::DelayBasedBweUpdate::BWE_NORMAL;
@@ -227,12 +229,14 @@ rtclog::DelayBasedBweUpdate::DetectorState ConvertDetectorState(
 rtclog::BweProbeResult::ResultType ConvertProbeResultType(
     ProbeFailureReason failure_reason) {
   switch (failure_reason) {
-    case kInvalidSendReceiveInterval:
+    case ProbeFailureReason::kInvalidSendReceiveInterval:
       return rtclog::BweProbeResult::INVALID_SEND_RECEIVE_INTERVAL;
-    case kInvalidSendReceiveRatio:
+    case ProbeFailureReason::kInvalidSendReceiveRatio:
       return rtclog::BweProbeResult::INVALID_SEND_RECEIVE_RATIO;
-    case kTimeout:
+    case ProbeFailureReason::kTimeout:
       return rtclog::BweProbeResult::TIMEOUT;
+    case ProbeFailureReason::kLast:
+      RTC_NOTREACHED();
   }
   RTC_NOTREACHED();
   return rtclog::BweProbeResult::SUCCESS;

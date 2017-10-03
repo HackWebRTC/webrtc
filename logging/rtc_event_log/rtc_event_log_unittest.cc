@@ -36,13 +36,6 @@
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
-// Files generated at build-time by the protobuf compiler.
-#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/webrtc/logging/rtc_event_log/rtc_event_log.pb.h"
-#else
-#include "logging/rtc_event_log/rtc_event_log.pb.h"
-#endif
-
 namespace webrtc {
 
 namespace {

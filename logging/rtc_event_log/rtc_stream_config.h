@@ -24,6 +24,8 @@ struct StreamConfig {
   StreamConfig();
   ~StreamConfig();
 
+  bool operator==(const StreamConfig& other) const;
+
   uint32_t local_ssrc = 0;
   uint32_t remote_ssrc = 0;
   uint32_t rtx_ssrc = 0;
@@ -38,6 +40,8 @@ struct StreamConfig {
     Codec(const std::string& payload_name,
           int payload_type,
           int rtx_payload_type);
+
+    bool operator==(const Codec& other) const;
 
     std::string payload_name;
     int payload_type;

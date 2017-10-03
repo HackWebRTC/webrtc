@@ -50,12 +50,14 @@ BandwidthUsage GetRuntimeDetectorState(
 rtclog::BweProbeResult::ResultType GetProbeResultType(
     ProbeFailureReason failure_reason) {
   switch (failure_reason) {
-    case kInvalidSendReceiveInterval:
+    case ProbeFailureReason::kInvalidSendReceiveInterval:
       return rtclog::BweProbeResult::INVALID_SEND_RECEIVE_INTERVAL;
-    case kInvalidSendReceiveRatio:
+    case ProbeFailureReason::kInvalidSendReceiveRatio:
       return rtclog::BweProbeResult::INVALID_SEND_RECEIVE_RATIO;
-    case kTimeout:
+    case ProbeFailureReason::kTimeout:
       return rtclog::BweProbeResult::TIMEOUT;
+    case ProbeFailureReason::kLast:
+      RTC_NOTREACHED();
   }
   RTC_NOTREACHED();
   return rtclog::BweProbeResult::SUCCESS;
@@ -373,7 +375,7 @@ void RtcEventLogTestHelper::VerifyIncomingRtpEvent(
   uint8_t parsed_header[1500];
   size_t parsed_header_size, parsed_total_size;
   parsed_log.GetRtpHeader(index, &parsed_direction, parsed_header,
-                          &parsed_header_size, &parsed_total_size);
+                          &parsed_header_size, &parsed_total_size, nullptr);
   EXPECT_EQ(kIncomingPacket, parsed_direction);
   EXPECT_THAT(testing::make_tuple(expected_packet.data(), header_size),
               testing::ElementsAreArray(parsed_header, parsed_header_size));
@@ -403,7 +405,7 @@ void RtcEventLogTestHelper::VerifyOutgoingRtpEvent(
   uint8_t parsed_header[1500];
   size_t parsed_header_size, parsed_total_size;
   parsed_log.GetRtpHeader(index, &parsed_direction, parsed_header,
-                          &parsed_header_size, &parsed_total_size);
+                          &parsed_header_size, &parsed_total_size, nullptr);
   EXPECT_EQ(kOutgoingPacket, parsed_direction);
   EXPECT_THAT(testing::make_tuple(expected_packet.data(), header_size),
               testing::ElementsAreArray(parsed_header, parsed_header_size));

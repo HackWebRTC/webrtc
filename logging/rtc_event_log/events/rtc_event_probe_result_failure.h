@@ -15,10 +15,11 @@
 
 namespace webrtc {
 
-enum ProbeFailureReason {
-  kInvalidSendReceiveInterval,
+enum class ProbeFailureReason {
+  kInvalidSendReceiveInterval = 0,
   kInvalidSendReceiveRatio,
-  kTimeout
+  kTimeout,
+  kLast
 };
 
 class RtcEventProbeResultFailure final : public RtcEvent {

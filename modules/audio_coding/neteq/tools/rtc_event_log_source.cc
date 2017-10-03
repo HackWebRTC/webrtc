@@ -47,7 +47,7 @@ std::unique_ptr<Packet> RtcEventLogSource::NextPacket() {
       size_t packet_length;
       uint64_t timestamp_us = parsed_stream_.GetTimestamp(rtp_packet_index_);
       parsed_stream_.GetRtpHeader(rtp_packet_index_, &direction, nullptr,
-                                  &header_length, &packet_length);
+                                  &header_length, &packet_length, nullptr);
 
       if (direction != kIncomingPacket) {
         continue;
@@ -55,7 +55,7 @@ std::unique_ptr<Packet> RtcEventLogSource::NextPacket() {
 
       uint8_t* packet_header = new uint8_t[header_length];
       parsed_stream_.GetRtpHeader(rtp_packet_index_, nullptr, packet_header,
-                                  nullptr, nullptr);
+                                  nullptr, nullptr, nullptr);
       std::unique_ptr<Packet> packet(
           new Packet(packet_header, header_length, packet_length,
                      static_cast<double>(timestamp_us) / 1000, *parser_.get()));

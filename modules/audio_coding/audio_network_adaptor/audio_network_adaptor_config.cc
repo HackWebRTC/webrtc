@@ -14,12 +14,21 @@ namespace webrtc {
 
 AudioEncoderRuntimeConfig::AudioEncoderRuntimeConfig() = default;
 
-AudioEncoderRuntimeConfig::~AudioEncoderRuntimeConfig() = default;
-
 AudioEncoderRuntimeConfig::AudioEncoderRuntimeConfig(
     const AudioEncoderRuntimeConfig& other) = default;
 
+AudioEncoderRuntimeConfig::~AudioEncoderRuntimeConfig() = default;
+
 AudioEncoderRuntimeConfig& AudioEncoderRuntimeConfig::operator=(
     const AudioEncoderRuntimeConfig& other) = default;
+
+bool AudioEncoderRuntimeConfig::operator==(
+    const AudioEncoderRuntimeConfig& other) const {
+  return bitrate_bps == other.bitrate_bps &&
+         frame_length_ms == other.frame_length_ms &&
+         uplink_packet_loss_fraction == other.uplink_packet_loss_fraction &&
+         enable_fec == other.enable_fec && enable_dtx == other.enable_dtx &&
+         num_channels == other.num_channels;
+}
 
 }  // namespace webrtc

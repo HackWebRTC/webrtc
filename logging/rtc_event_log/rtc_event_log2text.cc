@@ -431,7 +431,7 @@ int main(int argc, char* argv[]) {
           webrtc::PacketDirection direction;
           webrtc::RtpHeaderExtensionMap* extension_map =
               parsed_stream.GetRtpHeader(i, &direction, header, &header_length,
-                                         &total_length);
+                                         &total_length, nullptr);
 
           if (extension_map == nullptr)
             extension_map = &default_map;
@@ -728,7 +728,8 @@ int main(int argc, char* argv[]) {
           if (probe_result.failure_reason) {
             std::cout << parsed_stream.GetTimestamp(i) << "\tPROBE_SUCCESS("
                       << probe_result.id << ")"
-                      << "\tfailure_reason=" << *probe_result.failure_reason
+                      << "\tfailure_reason="
+                      << static_cast<int>(*probe_result.failure_reason)
                       << std::endl;
           } else {
             std::cout << parsed_stream.GetTimestamp(i) << "\tPROBE_SUCCESS("
