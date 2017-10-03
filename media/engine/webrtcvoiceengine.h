@@ -48,7 +48,7 @@ class WebRtcVoiceMediaChannel;
 
 // WebRtcVoiceEngine is a class to be used with CompositeMediaEngine.
 // It uses the WebRtc VoiceEngine library for audio handling.
-class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
+class WebRtcVoiceEngine final {
   friend class WebRtcVoiceMediaChannel;
  public:
   WebRtcVoiceEngine(
@@ -65,7 +65,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
       rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
       rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing,
       VoEWrapper* voe_wrapper);
-  ~WebRtcVoiceEngine() override;
+  ~WebRtcVoiceEngine();
 
   // Does initialization that needs to occur on the worker thread.
   void Init();
@@ -107,9 +107,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // ignored. This allows us to selectively turn on and off different options
   // easily at any time.
   bool ApplyOptions(const AudioOptions& options);
-
-  // webrtc::TraceCallback:
-  void Print(webrtc::TraceLevel level, const char* trace, int length) override;
 
   void StartAecDump(const std::string& filename);
   int CreateVoEChannel();
