@@ -106,7 +106,6 @@ AudioSendStream::AudioSendStream(
   channel_proxy_->SetRtcEventLog(event_log_);
   channel_proxy_->SetRtcpRttStats(rtcp_rtt_stats);
   channel_proxy_->SetRTCPStatus(true);
-  transport_->send_side_cc()->RegisterPacketFeedbackObserver(this);
   RtpReceiver* rtpReceiver = nullptr;  // Unused, but required for call.
   channel_proxy_->GetRtpRtcp(&rtp_rtcp_module_, &rtpReceiver);
   RTC_DCHECK(rtp_rtcp_module_);
@@ -114,6 +113,8 @@ AudioSendStream::AudioSendStream(
   ConfigureStream(this, config, true);
 
   pacer_thread_checker_.DetachFromThread();
+  // Signal congestion controller this object is ready for OnPacket* callbacks.
+  transport_->send_side_cc()->RegisterPacketFeedbackObserver(this);
 }
 
 AudioSendStream::~AudioSendStream() {
