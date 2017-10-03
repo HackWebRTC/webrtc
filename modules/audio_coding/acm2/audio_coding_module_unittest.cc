@@ -37,7 +37,6 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/md5digest.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/refcountedobject.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/event_wrapper.h"

@@ -14,7 +14,6 @@
 #include <memory>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/refcountedobject.h"
 #include "rtc_base/sslidentity.h"
 
 namespace rtc {

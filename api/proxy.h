@@ -56,7 +56,6 @@
 #include <utility>
 
 #include "rtc_base/event.h"
-#include "rtc_base/refcountedobject.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {

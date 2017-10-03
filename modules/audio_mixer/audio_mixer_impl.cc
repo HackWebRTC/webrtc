@@ -18,7 +18,6 @@
 #include "modules/audio_mixer/audio_frame_manipulator.h"
 #include "modules/audio_mixer/default_output_rate_calculator.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/refcountedobject.h"
 
 namespace webrtc {
 namespace {

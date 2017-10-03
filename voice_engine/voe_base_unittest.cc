@@ -12,7 +12,6 @@
 
 #include "modules/audio_device/include/fake_audio_device.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
-#include "rtc_base/refcountedobject.h"
 #include "test/gtest.h"
 
 namespace webrtc {

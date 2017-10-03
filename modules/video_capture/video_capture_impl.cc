@@ -18,7 +18,6 @@
 #include "modules/video_capture/video_capture_config.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/refcount.h"
-#include "rtc_base/refcountedobject.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
