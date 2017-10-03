@@ -27,6 +27,18 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 
+NO_TOOLS_ERROR_MESSAGE = (
+  'Could not find PESQ or POLQA at %s.\n'
+  '\n'
+  'To fix this run:\n'
+  '  python %s %s\n'
+  '\n'
+  'Note that these tools are Google-internal due to licensing, so in order to '
+  'use them you will have to get your own license and manually put them in the '
+  'right location.\n'
+  'See https://cs.chromium.org/chromium/src/third_party/webrtc/tools_webrtc/'
+  'download_tools.py?rcl=bbceb76f540159e2dba0701ac03c514f01624130&l=13')
+
 
 def _LogCommand(command):
   logging.info('Running %r', command)
@@ -55,17 +67,20 @@ def _GetPlatform():
     return 'linux'
 
 
-def _DownloadTools():
+def _GetPathToTools():
   tools_dir = os.path.join(SRC_DIR, 'tools_webrtc')
   toolchain_dir = os.path.join(tools_dir, 'audio_quality')
 
-  # Download PESQ and POLQA.
-  download_script = os.path.join(tools_dir, 'download_tools.py')
-  command = [sys.executable, download_script, toolchain_dir]
-  subprocess.check_call(_LogCommand(command))
-
   pesq_path = os.path.join(toolchain_dir, _GetPlatform(), 'pesq')
   polqa_path = os.path.join(toolchain_dir, _GetPlatform(), 'PolqaOem64')
+
+  if not os.path.isfile(pesq_path) or not os.path.isfile(polqa_path):
+    logging.error(NO_TOOLS_ERROR_MESSAGE,
+                  toolchain_dir,
+                  os.path.join(tools_dir, 'download_tools.py'),
+                  toolchain_dir)
+    return None, None
+
   return pesq_path, polqa_path
 
 
@@ -140,15 +155,8 @@ def _RunPolqa(executable_path, reference_file, degraded_file):
   # Analyze audio.
   command = [executable_path, '-q', '-LC', 'NB',
              '-Ref', reference_file, '-Test', degraded_file]
-  try:
-    process = subprocess.Popen(_LogCommand(command),
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  except OSError as e:
-    if e.errno == os.errno.ENOENT:
-      logging.warning('POLQA executable missing, skipping test.')
-      return {}
-    else:
-      raise
+  process = subprocess.Popen(_LogCommand(command),
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   out, err = process.communicate()
 
   # Find the scores in stdout of POLQA.
@@ -176,7 +184,9 @@ def main():
 
   args = _ParseArgs()
 
-  pesq_path, polqa_path = _DownloadTools()
+  pesq_path, polqa_path = _GetPathToTools()
+  if pesq_path is None:
+    return 1
 
   out_dir = os.path.join(args.build_dir, '..')
   if args.android:
