@@ -21,7 +21,8 @@ class RtcEventLogFactory : public RtcEventLogFactoryInterface {
  public:
   ~RtcEventLogFactory() override {}
 
-  std::unique_ptr<RtcEventLog> CreateRtcEventLog() override;
+  std::unique_ptr<RtcEventLog> CreateRtcEventLog(
+      RtcEventLog::EncodingType encoding_type) override;
 };
 
 std::unique_ptr<RtcEventLogFactoryInterface> CreateRtcEventLogFactory();

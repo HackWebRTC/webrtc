@@ -24,7 +24,8 @@ class RtcEventLogFactoryInterface {
  public:
   virtual ~RtcEventLogFactoryInterface() {}
 
-  virtual std::unique_ptr<RtcEventLog> CreateRtcEventLog() = 0;
+  virtual std::unique_ptr<RtcEventLog> CreateRtcEventLog(
+      RtcEventLog::EncodingType encoding_type) = 0;
 };
 
 std::unique_ptr<RtcEventLogFactoryInterface> CreateRtcEventLogFactory();

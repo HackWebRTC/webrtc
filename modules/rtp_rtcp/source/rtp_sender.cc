@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
@@ -26,6 +27,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/safe_minmax.h"
 #include "rtc_base/timeutils.h"
@@ -644,7 +646,8 @@ bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
                      ? static_cast<int>(packet.size())
                      : -1;
     if (event_log_ && bytes_sent > 0) {
-      event_log_->LogOutgoingRtpHeader(packet, pacing_info.probe_cluster_id);
+      event_log_->Log(rtc::MakeUnique<RtcEventRtpPacketOutgoing>(
+          packet, pacing_info.probe_cluster_id));
     }
   }
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),

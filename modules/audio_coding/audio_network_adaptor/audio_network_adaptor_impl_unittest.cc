@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+#include "logging/rtc_event_log/events/rtc_event.h"
+#include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"
@@ -42,6 +44,14 @@ MATCHER_P(NetworkMetricsIs, metric, "") {
              metric.uplink_packet_loss_fraction &&
          arg.uplink_recoverable_packet_loss_fraction ==
              metric.uplink_recoverable_packet_loss_fraction;
+}
+
+MATCHER_P(IsRtcEventAnaConfigEqualTo, config, "") {
+  if (arg->GetType() != RtcEvent::Type::AudioNetworkAdaptation) {
+    return false;
+  }
+  auto ana_event = static_cast<RtcEventAudioNetworkAdaptation*>(arg);
+  return *ana_event->config_ == config;
 }
 
 MATCHER_P(EncoderRuntimeConfigIs, config, "") {
@@ -271,8 +281,7 @@ TEST(AudioNetworkAdaptorImplTest, LogRuntimeConfigOnGetEncoderRuntimeConfig) {
   EXPECT_CALL(*states.mock_controllers[0], MakeDecision(_))
       .WillOnce(SetArgPointee<0>(config));
 
-  EXPECT_CALL(*states.event_log,
-              LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(config)))
+  EXPECT_CALL(*states.event_log, LogProxy(IsRtcEventAnaConfigEqualTo(config)))
       .Times(1);
   states.audio_network_adaptor->GetEncoderRuntimeConfig();
 }

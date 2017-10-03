@@ -373,6 +373,7 @@ if (rtc_include_tests) {
       "../../api:transport_api",
       "../../call:rtp_receiver",
       "../../common_video:common_video",
+      "../../logging:rtc_event_log_api",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:field_trial",

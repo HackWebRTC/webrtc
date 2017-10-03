@@ -11,11 +11,28 @@
 #include <algorithm>
 #include <vector>
 
+#include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/bitrate_controller/send_side_bandwidth_estimation.h"
 #include "test/gtest.h"
 
 namespace webrtc {
+
+MATCHER(LossBasedBweUpdateWithBitrateOnly, "") {
+  if (arg->GetType() != RtcEvent::Type::BweUpdateLossBased) {
+    return false;
+  }
+  auto bwe_event = static_cast<RtcEventBweUpdateLossBased*>(arg);
+  return bwe_event->bitrate_bps_ > 0 && bwe_event->fraction_loss_ == 0;
+}
+
+MATCHER(LossBasedBweUpdateWithBitrateAndLossFraction, "") {
+  if (arg->GetType() != RtcEvent::Type::BweUpdateLossBased) {
+    return false;
+  }
+  auto bwe_event = static_cast<RtcEventBweUpdateLossBased*>(arg);
+  return bwe_event->bitrate_bps_ > 0 && bwe_event->fraction_loss_ > 0;
+}
 
 void TestProbing(bool use_delay_based) {
   MockRtcEventLog event_log;
@@ -65,9 +82,10 @@ TEST(SendSideBweTest, InitialDelayBasedBweWithProbing) {
 
 TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
   MockRtcEventLog event_log;
-  EXPECT_CALL(event_log, LogLossBasedBweUpdate(testing::Gt(0), 0, 0)).Times(1);
+  EXPECT_CALL(event_log, LogProxy(LossBasedBweUpdateWithBitrateOnly()))
+      .Times(1);
   EXPECT_CALL(event_log,
-              LogLossBasedBweUpdate(testing::Gt(0), testing::Gt(0), 0))
+              LogProxy(LossBasedBweUpdateWithBitrateAndLossFraction()))
       .Times(2);
   SendSideBandwidthEstimation bwe(&event_log);
   static const int kMinBitrateBps = 100000;

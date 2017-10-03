@@ -27,6 +27,12 @@
 #include "call/flexfec_receive_stream_impl.h"
 #include "call/rtp_stream_receiver_controller.h"
 #include "call/rtp_transport_controller_send.h"
+#include "logging/rtc_event_log/events/rtc_event_audio_receive_stream_config.h"
+#include "logging/rtc_event_log/events/rtc_event_audio_send_stream_config.h"
+#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_incoming.h"
+#include "logging/rtc_event_log/events/rtc_event_rtp_packet_incoming.h"
+#include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
+#include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
@@ -609,7 +615,8 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
-  event_log_->LogAudioSendStreamConfig(*CreateRtcLogStreamConfig(config));
+  event_log_->Log(rtc::MakeUnique<RtcEventAudioSendStreamConfig>(
+      CreateRtcLogStreamConfig(config)));
 
   rtc::Optional<RtpState> suspended_rtp_state;
   {
@@ -675,7 +682,8 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
-  event_log_->LogAudioReceiveStreamConfig(*CreateRtcLogStreamConfig(config));
+  event_log_->Log(rtc::MakeUnique<RtcEventAudioReceiveStreamConfig>(
+      CreateRtcLogStreamConfig(config)));
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
       &audio_receiver_controller_, transport_send_->packet_router(), config,
       config_.audio_state, event_log_);
@@ -735,8 +743,8 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   video_send_delay_stats_->AddSsrcs(config);
   for (size_t ssrc_index = 0; ssrc_index < config.rtp.ssrcs.size();
        ++ssrc_index) {
-    event_log_->LogVideoSendStreamConfig(
-        *CreateRtcLogStreamConfig(config, ssrc_index));
+    event_log_->Log(rtc::MakeUnique<RtcEventVideoSendStreamConfig>(
+        CreateRtcLogStreamConfig(config, ssrc_index)));
   }
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
@@ -826,7 +834,8 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   }
   receive_stream->SignalNetworkState(video_network_state_);
   UpdateAggregateNetworkState();
-  event_log_->LogVideoReceiveStreamConfig(*CreateRtcLogStreamConfig(config));
+  event_log_->Log(rtc::MakeUnique<RtcEventVideoReceiveStreamConfig>(
+      CreateRtcLogStreamConfig(config)));
   return receive_stream;
 }
 
@@ -1302,8 +1311,10 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
     }
   }
 
-  if (rtcp_delivered)
-    event_log_->LogIncomingRtcpPacket(rtc::MakeArrayView(packet, length));
+  if (rtcp_delivered) {
+    event_log_->Log(rtc::MakeUnique<RtcEventRtcpPacketIncoming>(
+        rtc::MakeArrayView(packet, length)));
+  }
 
   return rtcp_delivered ? DELIVERY_OK : DELIVERY_PACKET_ERROR;
 }
@@ -1352,7 +1363,8 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     if (audio_receiver_controller_.OnRtpPacket(*parsed_packet)) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_audio_bytes_per_second_counter_.Add(static_cast<int>(length));
-      event_log_->LogIncomingRtpHeader(*parsed_packet);
+      event_log_->Log(
+          rtc::MakeUnique<RtcEventRtpPacketIncoming>(*parsed_packet));
       const int64_t arrival_time_ms = parsed_packet->arrival_time_ms();
       if (!first_received_rtp_audio_ms_) {
         first_received_rtp_audio_ms_.emplace(arrival_time_ms);
@@ -1364,7 +1376,8 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     if (video_receiver_controller_.OnRtpPacket(*parsed_packet)) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_video_bytes_per_second_counter_.Add(static_cast<int>(length));
-      event_log_->LogIncomingRtpHeader(*parsed_packet);
+      event_log_->Log(
+          rtc::MakeUnique<RtcEventRtpPacketIncoming>(*parsed_packet));
       const int64_t arrival_time_ms = parsed_packet->arrival_time_ms();
       if (!first_received_rtp_video_ms_) {
         first_received_rtp_video_ms_.emplace(arrival_time_ms);

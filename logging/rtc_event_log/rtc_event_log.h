@@ -13,7 +13,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "api/array_view.h"
 // TODO(eladalon): Get rid of this later in the CL-stack.
@@ -22,6 +21,8 @@
 // TODO(eladalon): This is here because of ProbeFailureReason; remove this
 // dependency along with the deprecated LogProbeResultFailure().
 #include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
+// TODO(eladalon): Remove this in an upcoming CL, that will modularize the
+// log output into its own class.
 #include "rtc_base/platform_file.h"
 
 namespace webrtc {
@@ -33,26 +34,35 @@ struct StreamConfig;
 }  // namespace rtclog
 
 class Clock;
+// TODO(eladalon): The following may be removed when the deprecated methods
+// are removed.
 struct AudioEncoderRuntimeConfig;
 class RtpPacketReceived;
 class RtpPacketToSend;
-
-enum class MediaType;
 enum class BandwidthUsage;
-
 enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
 
 class RtcEventLog {
  public:
+  // TODO(eladalon): Two stages are upcoming.
+  // 1. Extend this to actually support the new encoding.
+  // 2. Get rid of the legacy encoding, allowing us to get rid of this enum.
+  enum class EncodingType { Legacy };
+
   virtual ~RtcEventLog() {}
 
   // Factory method to create an RtcEventLog object.
-  static std::unique_ptr<RtcEventLog> Create();
+  // TODO(eladalon): Get rid of the default value after internal projects fixed.
+  static std::unique_ptr<RtcEventLog> Create(
+      EncodingType encoding_type = EncodingType::Legacy);
   // TODO(nisse): webrtc::Clock is deprecated. Delete this method and
   // above forward declaration of Clock when
-  // system_wrappers/include/clock.h is deleted.
-  static std::unique_ptr<RtcEventLog> Create(const Clock* clock) {
-    return Create();
+  // webrtc/system_wrappers/include/clock.h is deleted.
+  // TODO(eladalon): Get rid of the default value after internal projects fixed.
+  static std::unique_ptr<RtcEventLog> Create(
+      const Clock* clock,
+      EncodingType encoding_type = EncodingType::Legacy) {
+    return Create(encoding_type);
   }
 
   // Create an RtcEventLog object that does nothing.
@@ -85,19 +95,24 @@ class RtcEventLog {
   // which it would be permissible to read and/or modify it.
   virtual void StopLogging() = 0;
 
+  // Log an RTC event (the type of event is determined by the subclass).
+  virtual void Log(std::unique_ptr<RtcEvent> event) = 0;
+
   // Logs configuration information for a video receive stream.
-  virtual void LogVideoReceiveStreamConfig(
+  RTC_DEPRECATED virtual void LogVideoReceiveStreamConfig(
       const rtclog::StreamConfig& config) = 0;
 
   // Logs configuration information for a video send stream.
-  virtual void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) = 0;
+  RTC_DEPRECATED virtual void LogVideoSendStreamConfig(
+      const rtclog::StreamConfig& config) = 0;
 
   // Logs configuration information for an audio receive stream.
-  virtual void LogAudioReceiveStreamConfig(
+  RTC_DEPRECATED virtual void LogAudioReceiveStreamConfig(
       const rtclog::StreamConfig& config) = 0;
 
   // Logs configuration information for an audio send stream.
-  virtual void LogAudioSendStreamConfig(const rtclog::StreamConfig& config) = 0;
+  RTC_DEPRECATED virtual void LogAudioSendStreamConfig(
+      const rtclog::StreamConfig& config) = 0;
 
   RTC_DEPRECATED virtual void LogRtpHeader(PacketDirection direction,
                                            const uint8_t* header,
@@ -110,51 +125,58 @@ class RtcEventLog {
 
   // Logs the header of an incoming RTP packet. |packet_length|
   // is the total length of the packet, including both header and payload.
-  virtual void LogIncomingRtpHeader(const RtpPacketReceived& packet) = 0;
+  RTC_DEPRECATED virtual void LogIncomingRtpHeader(
+      const RtpPacketReceived& packet) = 0;
 
   // Logs the header of an incoming RTP packet. |packet_length|
   // is the total length of the packet, including both header and payload.
-  virtual void LogOutgoingRtpHeader(const RtpPacketToSend& packet,
-                                    int probe_cluster_id) = 0;
+  RTC_DEPRECATED virtual void LogOutgoingRtpHeader(
+      const RtpPacketToSend& packet,
+      int probe_cluster_id) = 0;
 
   RTC_DEPRECATED virtual void LogRtcpPacket(PacketDirection direction,
                                             const uint8_t* header,
                                             size_t packet_length) {}
 
   // Logs an incoming RTCP packet.
-  virtual void LogIncomingRtcpPacket(rtc::ArrayView<const uint8_t> packet) = 0;
+  RTC_DEPRECATED virtual void LogIncomingRtcpPacket(
+      rtc::ArrayView<const uint8_t> packet) = 0;
 
   // Logs an outgoing RTCP packet.
-  virtual void LogOutgoingRtcpPacket(rtc::ArrayView<const uint8_t> packet) = 0;
+  RTC_DEPRECATED virtual void LogOutgoingRtcpPacket(
+      rtc::ArrayView<const uint8_t> packet) = 0;
 
   // Logs an audio playout event.
-  virtual void LogAudioPlayout(uint32_t ssrc) = 0;
+  RTC_DEPRECATED virtual void LogAudioPlayout(uint32_t ssrc) = 0;
 
   // Logs a bitrate update from the bandwidth estimator based on packet loss.
-  virtual void LogLossBasedBweUpdate(int32_t bitrate_bps,
-                                     uint8_t fraction_loss,
-                                     int32_t total_packets) = 0;
+  RTC_DEPRECATED virtual void LogLossBasedBweUpdate(int32_t bitrate_bps,
+                                                    uint8_t fraction_loss,
+                                                    int32_t total_packets) = 0;
 
   // Logs a bitrate update from the bandwidth estimator based on delay changes.
-  virtual void LogDelayBasedBweUpdate(int32_t bitrate_bps,
-                                      BandwidthUsage detector_state) = 0;
+  RTC_DEPRECATED virtual void LogDelayBasedBweUpdate(
+      int32_t bitrate_bps,
+      BandwidthUsage detector_state) = 0;
 
   // Logs audio encoder re-configuration driven by audio network adaptor.
-  virtual void LogAudioNetworkAdaptation(
+  RTC_DEPRECATED virtual void LogAudioNetworkAdaptation(
       const AudioEncoderRuntimeConfig& config) = 0;
 
   // Logs when a probe cluster is created.
-  virtual void LogProbeClusterCreated(int id,
-                                      int bitrate_bps,
-                                      int min_probes,
-                                      int min_bytes) = 0;
+  RTC_DEPRECATED virtual void LogProbeClusterCreated(int id,
+                                                     int bitrate_bps,
+                                                     int min_probes,
+                                                     int min_bytes) = 0;
 
   // Logs the result of a successful probing attempt.
-  virtual void LogProbeResultSuccess(int id, int bitrate_bps) = 0;
+  RTC_DEPRECATED virtual void LogProbeResultSuccess(int id,
+                                                    int bitrate_bps) = 0;
 
   // Logs the result of an unsuccessful probing attempt.
-  virtual void LogProbeResultFailure(int id,
-                                     ProbeFailureReason failure_reason) = 0;
+  RTC_DEPRECATED virtual void LogProbeResultFailure(
+      int id,
+      ProbeFailureReason failure_reason) = 0;
 };
 
 // No-op implementation is used if flag is not set, or in tests.
@@ -169,6 +191,7 @@ class RtcEventLogNullImpl : public RtcEventLog {
     return false;
   }
   void StopLogging() override {}
+  void Log(std::unique_ptr<RtcEvent> event) override {}
   void LogVideoReceiveStreamConfig(
       const rtclog::StreamConfig& config) override {}
   void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) override {}

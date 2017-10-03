@@ -11,6 +11,7 @@
 #ifndef LOGGING_RTC_EVENT_LOG_MOCK_MOCK_RTC_EVENT_LOG_H_
 #define LOGGING_RTC_EVENT_LOG_MOCK_MOCK_RTC_EVENT_LOG_H_
 
+#include <memory>
 #include <string>
 
 #include "logging/rtc_event_log/rtc_event_log.h"
@@ -31,6 +32,11 @@ class MockRtcEventLog : public RtcEventLog {
                bool(rtc::PlatformFile log_file, int64_t max_size_bytes));
 
   MOCK_METHOD0(StopLogging, void());
+
+  virtual void Log(std::unique_ptr<RtcEvent> event) {
+    return LogProxy(event.get());
+  }
+  MOCK_METHOD1(LogProxy, void(RtcEvent*));
 
   MOCK_METHOD1(LogVideoReceiveStreamConfig,
                void(const rtclog::StreamConfig& config));

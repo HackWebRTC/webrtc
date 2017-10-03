@@ -12,10 +12,12 @@
 
 #include <algorithm>
 
+#include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/pacing/paced_sender.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -101,10 +103,10 @@ void BitrateProber::CreateProbeCluster(int bitrate_bps, int64_t now_ms) {
   cluster.pace_info.probe_cluster_id = next_cluster_id_++;
   clusters_.push(cluster);
   if (event_log_)
-    event_log_->LogProbeClusterCreated(
+    event_log_->Log(rtc::MakeUnique<RtcEventProbeClusterCreated>(
         cluster.pace_info.probe_cluster_id, cluster.pace_info.send_bitrate_bps,
         cluster.pace_info.probe_cluster_min_probes,
-        cluster.pace_info.probe_cluster_min_bytes);
+        cluster.pace_info.probe_cluster_min_bytes));
 
   LOG(LS_INFO) << "Probe cluster (bitrate:min bytes:min packets): ("
                << cluster.pace_info.send_bitrate_bps << ":"

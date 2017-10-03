@@ -15,10 +15,12 @@
 #include <limits>
 #include <string>
 
+#include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
@@ -412,8 +414,9 @@ void SendSideBandwidthEstimation::CapBitrateToThresholds(int64_t now_ms,
   if (bitrate_bps != current_bitrate_bps_ ||
       last_fraction_loss_ != last_logged_fraction_loss_ ||
       now_ms - last_rtc_event_log_ms_ > kRtcEventLogPeriodMs) {
-    event_log_->LogLossBasedBweUpdate(bitrate_bps, last_fraction_loss_,
-                                      expected_packets_since_last_loss_update_);
+    event_log_->Log(rtc::MakeUnique<RtcEventBweUpdateLossBased>(
+        bitrate_bps, last_fraction_loss_,
+        expected_packets_since_last_loss_update_));
     last_logged_fraction_loss_ = last_fraction_loss_;
     last_rtc_event_log_ms_ = now_ms;
   }

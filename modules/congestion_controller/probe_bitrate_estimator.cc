@@ -12,9 +12,12 @@
 
 #include <algorithm>
 
+#include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
+#include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 
 namespace {
 // The minumum number of probes we need to receive feedback about in percent
@@ -103,8 +106,8 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                  << "] [send interval: " << send_interval_ms << " ms]"
                  << " [receive interval: " << receive_interval_ms << " ms]";
     if (event_log_) {
-      event_log_->LogProbeResultFailure(
-          cluster_id, ProbeFailureReason::kInvalidSendReceiveInterval);
+      event_log_->Log(rtc::MakeUnique<RtcEventProbeResultFailure>(
+          cluster_id, ProbeFailureReason::kInvalidSendReceiveInterval));
     }
     return -1;
   }
@@ -134,9 +137,10 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                  << " [ratio: " << receive_bps / 1000 << " / "
                  << send_bps / 1000 << " = " << ratio << " > kMaxValidRatio ("
                  << kMaxValidRatio << ")]";
-    if (event_log_)
-      event_log_->LogProbeResultFailure(
-          cluster_id, ProbeFailureReason::kInvalidSendReceiveRatio);
+    if (event_log_) {
+      event_log_->Log(rtc::MakeUnique<RtcEventProbeResultFailure>(
+          cluster_id, ProbeFailureReason::kInvalidSendReceiveRatio));
+    }
     return -1;
   }
   LOG(LS_INFO) << "Probing successful"
@@ -155,8 +159,10 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
     RTC_DCHECK_GT(send_bps, receive_bps);
     res = kTargetUtilizationFraction * receive_bps;
   }
-  if (event_log_)
-    event_log_->LogProbeResultSuccess(cluster_id, res);
+  if (event_log_) {
+    event_log_->Log(
+        rtc::MakeUnique<RtcEventProbeResultSuccess>(cluster_id, res));
+  }
   estimated_bitrate_bps_ = rtc::Optional<int>(res);
   return *estimated_bitrate_bps_;
 }

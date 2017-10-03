@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "api/video/video_timing.h"
+#include "logging/rtc_event_log/events/rtc_event.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
@@ -104,6 +105,10 @@ class LoopbackTransportTest : public webrtc::Transport {
  private:
   RtpHeaderExtensionMap receivers_extensions_;
 };
+
+MATCHER_P(SameRtcEventTypeAs, value, "") {
+  return value == arg->GetType();
+}
 
 }  // namespace
 
@@ -530,7 +535,8 @@ TEST_P(RtpSenderTestWithoutPacer, WritesTimestampToTimingExtension) {
 TEST_P(RtpSenderTest, TrafficSmoothingWithExtensions) {
   EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kNormalPriority,
                                                kSsrc, kSeqNum, _, _, _));
-  EXPECT_CALL(mock_rtc_event_log_, LogOutgoingRtpHeader(_, _));
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)));
 
   rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
@@ -574,7 +580,8 @@ TEST_P(RtpSenderTest, TrafficSmoothingWithExtensions) {
 TEST_P(RtpSenderTest, TrafficSmoothingRetransmits) {
   EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kNormalPriority,
                                                kSsrc, kSeqNum, _, _, _));
-  EXPECT_CALL(mock_rtc_event_log_, LogOutgoingRtpHeader(_, _));
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)));
 
   rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
@@ -627,7 +634,9 @@ TEST_P(RtpSenderTest, SendPadding) {
   // Make all (non-padding) packets go to send queue.
   EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kNormalPriority,
                                                kSsrc, kSeqNum, _, _, _));
-  EXPECT_CALL(mock_rtc_event_log_, LogOutgoingRtpHeader(_, _)).Times(1 + 4 + 1);
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
+      .Times(1 + 4 + 1);
 
   uint16_t seq_num = kSeqNum;
   uint32_t timestamp = kTimestamp;
@@ -826,7 +835,8 @@ TEST_P(RtpSenderTest, SendRedundantPayloads) {
   EXPECT_CALL(mock_paced_sender_,
               InsertPacket(RtpPacketSender::kNormalPriority, kSsrc, _, _, _, _))
       .Times(kNumPayloadSizes);
-  EXPECT_CALL(mock_rtc_event_log_, LogOutgoingRtpHeader(_, _))
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
       .Times(kNumPayloadSizes);
 
   // Send 10 packets of increasing size.
@@ -839,7 +849,8 @@ TEST_P(RtpSenderTest, SendRedundantPayloads) {
     fake_clock_.AdvanceTimeMilliseconds(33);
   }
 
-  EXPECT_CALL(mock_rtc_event_log_, LogOutgoingRtpHeader(_, _))
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
       .Times(::testing::AtLeast(4));
 
   // The amount of padding to send it too small to send a payload packet.
@@ -935,7 +946,9 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
                                                kFlexfecSsrc, _, _, _, false))
       .WillOnce(testing::SaveArg<2>(&flexfec_seq_num));
   SendGenericPayload();
-  EXPECT_CALL(mock_rtc_event_log_, LogOutgoingRtpHeader(_, _)).Times(2);
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
+      .Times(2);
   EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum,
                                             fake_clock_.TimeInMilliseconds(),
                                             false, PacedPacketInfo()));
@@ -1010,7 +1023,9 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
       sizeof(kPayloadData), nullptr, &video_header, nullptr,
       kDefaultExpectedRetransmissionTimeMs));
 
-  EXPECT_CALL(mock_rtc_event_log_, LogOutgoingRtpHeader(_, _)).Times(1);
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
+      .Times(1);
   EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum,
                                             fake_clock_.TimeInMilliseconds(),
                                             false, PacedPacketInfo()));
@@ -1034,7 +1049,9 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
       kPayloadData, sizeof(kPayloadData), nullptr, &video_header, nullptr,
       kDefaultExpectedRetransmissionTimeMs));
 
-  EXPECT_CALL(mock_rtc_event_log_, LogOutgoingRtpHeader(_, _)).Times(2);
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
+      .Times(2);
   EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum + 1,
                                             fake_clock_.TimeInMilliseconds(),
                                             false, PacedPacketInfo()));
@@ -1080,7 +1097,9 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
   params.fec_mask_type = kFecMaskRandom;
   rtp_sender_->SetFecParameters(params, params);
 
-  EXPECT_CALL(mock_rtc_event_log_, LogOutgoingRtpHeader(_, _)).Times(2);
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
+      .Times(2);
   SendGenericPayload();
   ASSERT_EQ(2, transport_.packets_sent());
   const RtpPacketReceived& media_packet = transport_.sent_packets_[0];

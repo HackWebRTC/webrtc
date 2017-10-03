@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "common_types.h"  // NOLINT(build/include)
+#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
@@ -36,6 +37,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
@@ -99,8 +101,8 @@ class PacketContainer : public rtcp::CompoundPacket,
     if (transport_->SendRtcp(data, length)) {
       bytes_sent_ += length;
       if (event_log_) {
-        event_log_->LogOutgoingRtcpPacket(
-            rtc::ArrayView<const uint8_t>(data, length));
+        event_log_->Log(rtc::MakeUnique<RtcEventRtcpPacketOutgoing>(
+            rtc::ArrayView<const uint8_t>(data, length)));
       }
     }
   }
@@ -963,8 +965,8 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
     void OnPacketReady(uint8_t* data, size_t length) override {
       if (transport_->SendRtcp(data, length)) {
         if (event_log_) {
-          event_log_->LogOutgoingRtcpPacket(
-              rtc::ArrayView<const uint8_t>(data, length));
+          event_log_->Log(rtc::MakeUnique<RtcEventRtcpPacketOutgoing>(
+              rtc::ArrayView<const uint8_t>(data, length)));
         }
       } else {
         send_failure_ = true;

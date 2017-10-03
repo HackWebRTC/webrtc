@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/audio_coding/audio_network_adaptor/event_log_writer.h"
 #include "test/gtest.h"
@@ -30,14 +31,12 @@ constexpr bool kEnableDtx = true;
 constexpr float kPacketLossFraction = 0.05f;
 constexpr size_t kNumChannels = 1;
 
-MATCHER_P(EncoderRuntimeConfigIs, config, "") {
-  return arg.bitrate_bps == config.bitrate_bps &&
-         arg.frame_length_ms == config.frame_length_ms &&
-         arg.uplink_packet_loss_fraction ==
-             config.uplink_packet_loss_fraction &&
-         arg.enable_fec == config.enable_fec &&
-         arg.enable_dtx == config.enable_dtx &&
-         arg.num_channels == config.num_channels;
+MATCHER_P(IsRtcEventAnaConfigEqualTo, config, "") {
+  if (arg->GetType() != RtcEvent::Type::AudioNetworkAdaptation) {
+    return false;
+  }
+  auto ana_event = static_cast<RtcEventAudioNetworkAdaptation*>(arg);
+  return *ana_event->config_ == config;
 }
 
 struct EventLogWriterStates {
@@ -65,18 +64,16 @@ EventLogWriterStates CreateEventLogWriter() {
 
 TEST(EventLogWriterTest, FirstConfigIsLogged) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 }
 
 TEST(EventLogWriterTest, SameConfigIsNotLogged) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
@@ -84,73 +81,64 @@ TEST(EventLogWriterTest, SameConfigIsNotLogged) {
 
 TEST(EventLogWriterTest, LogFecStateChange) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 
   state.runtime_config.enable_fec = rtc::Optional<bool>(!kEnableFec);
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 }
 
 TEST(EventLogWriterTest, LogDtxStateChange) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 
   state.runtime_config.enable_dtx = rtc::Optional<bool>(!kEnableDtx);
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 }
 
 TEST(EventLogWriterTest, LogChannelChange) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 
   state.runtime_config.num_channels = rtc::Optional<size_t>(kNumChannels + 1);
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 }
 
 TEST(EventLogWriterTest, LogFrameLengthChange) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 
   state.runtime_config.frame_length_ms = rtc::Optional<int>(20);
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 }
 
 TEST(EventLogWriterTest, DoNotLogSmallBitrateChange) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
   state.runtime_config.bitrate_bps =
@@ -160,9 +148,8 @@ TEST(EventLogWriterTest, DoNotLogSmallBitrateChange) {
 
 TEST(EventLogWriterTest, LogLargeBitrateChange) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
   // At high bitrate, the min fraction rule requires a larger change than the
@@ -171,9 +158,8 @@ TEST(EventLogWriterTest, LogLargeBitrateChange) {
                 kMinBitrateChangeBps);
   state.runtime_config.bitrate_bps =
       rtc::Optional<int>(kHighBitrateBps + kMinBitrateChangeBps);
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 }
@@ -181,27 +167,24 @@ TEST(EventLogWriterTest, LogLargeBitrateChange) {
 TEST(EventLogWriterTest, LogMinBitrateChangeFractionOnLowBitrateChange) {
   auto state = CreateEventLogWriter();
   state.runtime_config.bitrate_bps = rtc::Optional<int>(kLowBitrateBps);
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
   // At high bitrate, the min change rule requires a larger change than the min
   // fraction rule. We make sure that the min fraction rule applies.
   state.runtime_config.bitrate_bps = rtc::Optional<int>(
       kLowBitrateBps + kLowBitrateBps * kMinBitrateChangeFraction);
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 }
 
 TEST(EventLogWriterTest, DoNotLogSmallPacketLossFractionChange) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
   state.runtime_config.uplink_packet_loss_fraction = rtc::Optional<float>(
@@ -212,49 +195,43 @@ TEST(EventLogWriterTest, DoNotLogSmallPacketLossFractionChange) {
 
 TEST(EventLogWriterTest, LogLargePacketLossFractionChange) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
   state.runtime_config.uplink_packet_loss_fraction = rtc::Optional<float>(
       kPacketLossFraction + kMinPacketLossChangeFraction * kPacketLossFraction);
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 }
 
 TEST(EventLogWriterTest, LogJustOnceOnMultipleChanges) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
   state.runtime_config.uplink_packet_loss_fraction = rtc::Optional<float>(
       kPacketLossFraction + kMinPacketLossChangeFraction * kPacketLossFraction);
   state.runtime_config.frame_length_ms = rtc::Optional<int>(20);
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
 }
 
 TEST(EventLogWriterTest, LogAfterGradualChange) {
   auto state = CreateEventLogWriter();
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   state.event_log_writer->MaybeLogEncoderConfig(state.runtime_config);
   state.runtime_config.bitrate_bps =
       rtc::Optional<int>(kHighBitrateBps + kMinBitrateChangeBps);
-  EXPECT_CALL(
-      *state.event_log,
-      LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(state.runtime_config)))
+  EXPECT_CALL(*state.event_log,
+              LogProxy(IsRtcEventAnaConfigEqualTo(state.runtime_config)))
       .Times(1);
   for (int bitrate_bps = kHighBitrateBps;
        bitrate_bps <= kHighBitrateBps + kMinBitrateChangeBps; bitrate_bps++) {

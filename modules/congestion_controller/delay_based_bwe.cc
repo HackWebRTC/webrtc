@@ -14,6 +14,7 @@
 #include <cmath>
 #include <string>
 
+#include "logging/rtc_event_log/events/rtc_event_bwe_update_delay_based.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/pacing/paced_sender.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -21,6 +22,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
@@ -256,8 +258,10 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
 
     BWE_TEST_LOGGING_PLOT(1, "target_bitrate_bps", now_ms, bitrate_bps);
 
-    if (event_log_)
-      event_log_->LogDelayBasedBweUpdate(bitrate_bps, detector_.State());
+    if (event_log_) {
+      event_log_->Log(rtc::MakeUnique<RtcEventBweUpdateDelayBased>(
+          bitrate_bps, detector_.State()));
+    }
 
     prev_bitrate_ = bitrate_bps;
     prev_state_ = detector_.State();
