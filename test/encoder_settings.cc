@@ -15,6 +15,7 @@
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
+#include "rtc_base/refcountedobject.h"
 #include "test/fake_decoder.h"
 
 namespace webrtc {

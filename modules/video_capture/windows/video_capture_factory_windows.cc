@@ -11,6 +11,7 @@
 #include "modules/video_capture/windows/video_capture_ds.h"
 #include "modules/video_capture/windows/video_capture_mf.h"
 #include "rtc_base/refcount.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {

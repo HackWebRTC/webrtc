@@ -32,6 +32,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_file.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/trace_event.h"
 #if WEBRTC_INTELLIGIBILITY_ENHANCER
 #include "modules/audio_processing/intelligibility/intelligibility_enhancer.h"
