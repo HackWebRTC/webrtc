@@ -1285,6 +1285,18 @@ RTCError PeerConnection::SetBitrate(const BitrateParameters& bitrate) {
   return RTCError::OK();
 }
 
+std::unique_ptr<rtc::SSLCertificate>
+PeerConnection::GetRemoteAudioSSLCertificate() {
+  if (!session_) {
+    return nullptr;
+  }
+  auto* voice_channel = session_->voice_channel();
+  if (!voice_channel) {
+    return nullptr;
+  }
+  return GetRemoteSSLCertificate(voice_channel->transport_name());
+}
+
 bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
                                       int64_t max_size_bytes) {
   return worker_thread()->Invoke<bool>(

@@ -25,6 +25,7 @@
 #include "api/fakemetricsobserver.h"
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
+#include "api/peerconnectionproxy.h"
 #include "api/test/fakeconstraints.h"
 #include "media/engine/fakewebrtcvideoengine.h"
 #include "p2p/base/p2pconstants.h"
@@ -66,8 +67,10 @@ using webrtc::MockDataChannelObserver;
 using webrtc::MockSetSessionDescriptionObserver;
 using webrtc::MockStatsObserver;
 using webrtc::ObserverInterface;
+using webrtc::PeerConnection;
 using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionFactory;
+using webrtc::PeerConnectionProxy;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollectionInterface;
 
@@ -1288,6 +1291,55 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithSdes) {
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
       kMaxWaitForFramesMs);
+}
+
+// Tests that the GetRemoteAudioSSLCertificate method returns the remote DTLS
+// certificate once the DTLS handshake has finished.
+TEST_F(PeerConnectionIntegrationTest,
+       GetRemoteAudioSSLCertificateReturnsExchangedCertificate) {
+  auto GetRemoteAudioSSLCertificate = [](PeerConnectionWrapper* wrapper) {
+    auto pci = reinterpret_cast<PeerConnectionProxy*>(wrapper->pc());
+    auto pc = reinterpret_cast<PeerConnection*>(pci->internal());
+    return pc->GetRemoteAudioSSLCertificate();
+  };
+
+  auto caller_cert = rtc::RTCCertificate::FromPEM(kRsaPems[0]);
+  auto callee_cert = rtc::RTCCertificate::FromPEM(kRsaPems[1]);
+
+  // Configure each side with a known certificate so they can be compared later.
+  PeerConnectionInterface::RTCConfiguration caller_config;
+  caller_config.enable_dtls_srtp.emplace(true);
+  caller_config.certificates.push_back(caller_cert);
+  PeerConnectionInterface::RTCConfiguration callee_config;
+  callee_config.enable_dtls_srtp.emplace(true);
+  callee_config.certificates.push_back(callee_cert);
+  ASSERT_TRUE(
+      CreatePeerConnectionWrappersWithConfig(caller_config, callee_config));
+  ConnectFakeSignaling();
+
+  // When first initialized, there should not be a remote SSL certificate (and
+  // calling this method should not crash).
+  EXPECT_EQ(nullptr, GetRemoteAudioSSLCertificate(caller()));
+  EXPECT_EQ(nullptr, GetRemoteAudioSSLCertificate(callee()));
+
+  caller()->AddAudioOnlyMediaStream();
+  callee()->AddAudioOnlyMediaStream();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_TRUE_WAIT(DtlsConnected(), kDefaultTimeout);
+
+  // Once DTLS has been connected, each side should return the other's SSL
+  // certificate when calling GetRemoteAudioSSLCertificate.
+
+  auto caller_remote_cert = GetRemoteAudioSSLCertificate(caller());
+  ASSERT_TRUE(caller_remote_cert);
+  EXPECT_EQ(callee_cert->ssl_certificate().ToPEMString(),
+            caller_remote_cert->ToPEMString());
+
+  auto callee_remote_cert = GetRemoteAudioSSLCertificate(callee());
+  ASSERT_TRUE(callee_remote_cert);
+  EXPECT_EQ(caller_cert->ssl_certificate().ToPEMString(),
+            callee_remote_cert->ToPEMString());
 }
 
 // This test sets up a call between two parties (using DTLS) and tests that we
