@@ -16,7 +16,7 @@
 
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
+#include "system_wrappers/include/trace.h"
 #include "voice_engine/channel_proxy.h"
 #include "voice_engine/voice_engine_impl.h"
 
@@ -46,7 +46,8 @@ int VoiceEngineImpl::Release() {
   int new_ref = --_ref_count;
   assert(new_ref >= 0);
   if (new_ref == 0) {
-    LOG_T_F(LS_INFO) << "VoiceEngineImpl self deleting";
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, -1,
+                 "VoiceEngineImpl self deleting (voiceEngine=0x%p)", this);
 
     // Clear any pointers before starting destruction. Otherwise worker-
     // threads will still have pointers to a partially destructed object.
@@ -77,8 +78,18 @@ bool VoiceEngine::Delete(VoiceEngine*& voiceEngine) {
     return false;
 
   VoiceEngineImpl* s = static_cast<VoiceEngineImpl*>(voiceEngine);
-  s->Release();
+  // Release the reference that was added in GetVoiceEngine.
+  int ref = s->Release();
   voiceEngine = NULL;
+
+  if (ref != 0) {
+    WEBRTC_TRACE(
+        kTraceWarning, kTraceVoice, -1,
+        "VoiceEngine::Delete did not release the very last reference.  "
+        "%d references remain.",
+        ref);
+  }
+
   return true;
 }
 }  // namespace webrtc

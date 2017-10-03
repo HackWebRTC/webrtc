@@ -597,6 +597,12 @@ public class PeerConnectionTest {
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     options.networkIgnoreMask = 0;
     PeerConnectionFactory factory = new PeerConnectionFactory(options);
+    // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
+    // NOTE: this _must_ happen while |factory| is alive!
+    // Logging.enableTracing(
+    //     "/tmp/PeerConnectionTest-log.txt",
+    //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
+    //     Logging.Severity.LS_SENSITIVE);
 
     MediaConstraints pcConstraints = new MediaConstraints();
     pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));

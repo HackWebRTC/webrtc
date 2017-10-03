@@ -39,7 +39,7 @@ class MixedAudio;
 
 class TransmitMixer {
 public:
-    static int32_t Create(TransmitMixer*& mixer);
+    static int32_t Create(TransmitMixer*& mixer, uint32_t instanceId);
 
     static void Destroy(TransmitMixer*& mixer);
 
@@ -90,6 +90,8 @@ protected:
     TransmitMixer() = default;
 
 private:
+    TransmitMixer(uint32_t instanceId);
+
     // Gets the maximum sample rate and number of channels over all currently
     // sending codecs.
     void GetSendCodecInfo(int* max_sample_rate, size_t* max_channels);
@@ -122,6 +124,7 @@ private:
     rtc::CriticalSection lock_;
     bool typing_noise_detected_ RTC_GUARDED_BY(lock_) = false;
 
+    int _instanceId = 0;
     uint32_t _captureLevel = 0;
     bool stereo_codec_ = false;
     bool swap_stereo_channels_ = false;

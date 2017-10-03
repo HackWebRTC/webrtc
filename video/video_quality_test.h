@@ -18,6 +18,7 @@
 #include "media/engine/simulcast_encoder_adapter.h"
 #include "test/call_test.h"
 #include "test/frame_generator.h"
+#include "test/testsupport/trace_to_stderr.h"
 
 namespace webrtc {
 
@@ -139,6 +140,7 @@ class VideoQualityTest : public test::CallTest {
   // We need a more general capturer than the FrameGeneratorCapturer.
   std::unique_ptr<test::VideoCapturer> video_capturer_;
   std::vector<std::unique_ptr<test::VideoCapturer>> thumbnail_capturers_;
+  std::unique_ptr<test::TraceToStderr> trace_to_stderr_;
   std::unique_ptr<test::FrameGenerator> frame_generator_;
   std::unique_ptr<VideoEncoder> video_encoder_;
   std::unique_ptr<cricket::WebRtcVideoEncoderFactory> vp8_encoder_factory_;

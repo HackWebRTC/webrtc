@@ -17,6 +17,7 @@
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/event_wrapper.h"
+#include "system_wrappers/include/trace.h"
 #include "voice_engine/channel.h"
 #include "voice_engine/channel_manager.h"
 #include "voice_engine/utility.h"
@@ -27,13 +28,16 @@ namespace voe {
 // TODO(solenberg): The thread safety in this class is dubious.
 
 int32_t
-TransmitMixer::Create(TransmitMixer*& mixer)
+TransmitMixer::Create(TransmitMixer*& mixer, uint32_t instanceId)
 {
-    mixer = new TransmitMixer();
+    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId, -1),
+                 "TransmitMixer::Create(instanceId=%d)", instanceId);
+    mixer = new TransmitMixer(instanceId);
     if (mixer == NULL)
     {
-        LOG(LS_ERROR) << "TransmitMixer::Create() unable to allocate memory "
-                         "for mixer";
+        WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId, -1),
+                     "TransmitMixer::Create() unable to allocate memory"
+                     "for mixer");
         return -1;
     }
     return 0;
@@ -49,6 +53,13 @@ TransmitMixer::Destroy(TransmitMixer*& mixer)
     }
 }
 
+TransmitMixer::TransmitMixer(uint32_t instanceId) :
+    _instanceId(instanceId)
+{
+    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
+                 "TransmitMixer::TransmitMixer() - ctor");
+}
+
 TransmitMixer::~TransmitMixer() = default;
 
 void TransmitMixer::SetEngineInformation(ChannelManager* channelManager) {
@@ -58,6 +69,10 @@ void TransmitMixer::SetEngineInformation(ChannelManager* channelManager) {
 int32_t
 TransmitMixer::SetAudioProcessingModule(AudioProcessing* audioProcessingModule)
 {
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
+                 "TransmitMixer::SetAudioProcessingModule("
+                 "audioProcessingModule=0x%x)",
+                 audioProcessingModule);
     audioproc_ = audioProcessingModule;
     return 0;
 }
@@ -94,6 +109,13 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
                             uint16_t currentMicLevel,
                             bool keyPressed)
 {
+    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
+                 "TransmitMixer::PrepareDemux(nSamples=%" PRIuS ", "
+                 "nChannels=%" PRIuS ", samplesPerSec=%u, totalDelayMS=%u, "
+                 "clockDrift=%d, currentMicLevel=%u)",
+                 nSamples, nChannels, samplesPerSec, totalDelayMS, clockDrift,
+                 currentMicLevel);
+
     // --- Resample input audio and create/store the initial audio frame
     GenerateAudioFrame(static_cast<const int16_t*>(audioSamples),
                        nSamples,
@@ -138,6 +160,8 @@ uint32_t TransmitMixer::CaptureLevel() const
 int32_t
 TransmitMixer::StopSend()
 {
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
+               "TransmitMixer::StopSend()");
     _audioLevel.Clear();
     return 0;
 }
