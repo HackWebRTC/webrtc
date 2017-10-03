@@ -345,26 +345,32 @@ rtc_source_set("rtc_task_queue_impl") {
     ":rtc_base_approved",
     ":rtc_task_queue_api",
   ]
-  if (rtc_build_libevent) {
-    deps += [ "//base/third_party/libevent" ]
-  }
-  if (rtc_enable_libevent) {
+  if (build_with_chromium) {
     sources = [
-      "task_queue_libevent.cc",
-      "task_queue_posix.cc",
-      "task_queue_posix.h",
+      "../../webrtc_overrides/rtc_base/task_queue.cc",
     ]
   } else {
-    if (is_mac || is_ios) {
-      sources = [
-        "task_queue_gcd.cc",
-        "task_queue_posix.cc",
-      ]
+    if (rtc_build_libevent) {
+      deps += [ "//base/third_party/libevent" ]
     }
-    if (is_win) {
+    if (rtc_enable_libevent) {
       sources = [
-        "task_queue_win.cc",
+        "task_queue_libevent.cc",
+        "task_queue_posix.cc",
+        "task_queue_posix.h",
       ]
+    } else {
+      if (is_mac || is_ios) {
+        sources = [
+          "task_queue_gcd.cc",
+          "task_queue_posix.cc",
+        ]
+      }
+      if (is_win) {
+        sources = [
+          "task_queue_win.cc",
+        ]
+      }
     }
   }
 }
