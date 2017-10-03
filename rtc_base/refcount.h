@@ -10,8 +10,6 @@
 #ifndef RTC_BASE_REFCOUNT_H_
 #define RTC_BASE_REFCOUNT_H_
 
-#include "rtc_base/refcountedobject.h"
-
 namespace rtc {
 
 // Reference count interface.

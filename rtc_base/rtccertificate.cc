@@ -13,6 +13,7 @@
 #include "rtc_base/rtccertificate.h"
 
 #include "rtc_base/checks.h"
+#include "rtc_base/refcountedobject.h"
 
 namespace rtc {
 

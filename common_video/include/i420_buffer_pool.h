@@ -16,6 +16,7 @@
 
 #include "api/video/i420_buffer.h"
 #include "rtc_base/race_checker.h"
+#include "rtc_base/refcountedobject.h"
 
 namespace webrtc {
 
