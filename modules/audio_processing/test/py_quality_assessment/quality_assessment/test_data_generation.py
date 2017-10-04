@@ -258,14 +258,10 @@ class WhiteNoiseTestDataGenerator(TestDataGenerator):
     # Load the input signal.
     input_signal = signal_processing.SignalProcessingUtils.LoadWav(
         input_signal_filepath)
-    input_signal = signal_processing.SignalProcessingUtils.Normalize(
-      input_signal)
 
     # Create the noise track.
     noise_signal = signal_processing.SignalProcessingUtils.GenerateWhiteNoise(
         input_signal)
-    noise_signal = signal_processing.SignalProcessingUtils.Normalize(
-        noise_signal)
 
     # Create the noisy mixes (once for each unique SNR value).
     noisy_mix_filepaths = {}
@@ -365,8 +361,6 @@ class EnvironmentalNoiseTestDataGenerator(TestDataGenerator):
     # Load the input signal.
     input_signal = signal_processing.SignalProcessingUtils.LoadWav(
         input_signal_filepath)
-    input_signal = signal_processing.SignalProcessingUtils.Normalize(
-        input_signal)
 
     noisy_mix_filepaths = {}
     for noise_track_filename in self._NOISE_TRACKS:
@@ -380,8 +374,6 @@ class EnvironmentalNoiseTestDataGenerator(TestDataGenerator):
 
       noise_signal = signal_processing.SignalProcessingUtils.LoadWav(
           noise_track_filepath)
-      noise_signal = signal_processing.SignalProcessingUtils.Normalize(
-          noise_signal)
 
       # Create the noisy mixes (once for each unique SNR value).
       noisy_mix_filepaths[noise_track_name] = {}
