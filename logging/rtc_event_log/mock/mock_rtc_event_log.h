@@ -25,6 +25,11 @@ namespace webrtc {
 
 class MockRtcEventLog : public RtcEventLog {
  public:
+  virtual bool StartLogging(std::unique_ptr<RtcEventLogOutput> output) {
+    return StartLoggingProxy(output.get());
+  }
+  MOCK_METHOD1(StartLoggingProxy, bool(RtcEventLogOutput*));
+
   MOCK_METHOD2(StartLogging,
                bool(const std::string& file_name, int64_t max_size_bytes));
 

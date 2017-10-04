@@ -59,11 +59,15 @@ rtc_source_set("rtc_event_log_api") {
     "rtc_event_log/events/rtc_event_video_receive_stream_config.h",
     "rtc_event_log/events/rtc_event_video_send_stream_config.cc",
     "rtc_event_log/events/rtc_event_video_send_stream_config.h",
+    "rtc_event_log/output/rtc_event_log_output.h",
+    "rtc_event_log/output/rtc_event_log_output_file.cc",
+    "rtc_event_log/output/rtc_event_log_output_file.h",
     "rtc_event_log/rtc_event_log.h",
     "rtc_event_log/rtc_event_log_factory_interface.h",
     "rtc_event_log/rtc_stream_config.cc",
     "rtc_event_log/rtc_stream_config.h",
   ]
+
   deps = [
     "..:webrtc_common",
     "../api:array_view",
@@ -73,7 +77,14 @@ rtc_source_set("rtc_event_log_api") {
     "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../rtc_base:rtc_base_approved",
+    "../system_wrappers",
   ]
+
+  # TODO(eladalon): Remove this.
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
 }
 
 rtc_static_library("rtc_event_log_impl") {
@@ -105,6 +116,8 @@ rtc_static_library("rtc_event_log_impl") {
     defines += [ "ENABLE_RTC_EVENT_LOG" ]
     deps += [ ":rtc_event_log_proto" ]
   }
+
+  # TODO(eladalon): Remove this.
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -153,6 +166,7 @@ if (rtc_enable_protobuf) {
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       sources = [
         "rtc_event_log/encoder/rtc_event_log_encoder_unittest.cc",
+        "rtc_event_log/output/rtc_event_log_output_file_unittest.cc",
         "rtc_event_log/rtc_event_log_unittest.cc",
         "rtc_event_log/rtc_event_log_unittest_helper.cc",
         "rtc_event_log/rtc_event_log_unittest_helper.h",

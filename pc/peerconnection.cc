@@ -20,6 +20,7 @@
 #include "api/mediastreamproxy.h"
 #include "api/mediastreamtrackproxy.h"
 #include "call/call.h"
+#include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/sctp/sctptransport.h"
 #include "pc/audiotrack.h"
@@ -36,6 +37,8 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/safe_conversions.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/trace_event.h"
@@ -2533,7 +2536,14 @@ bool PeerConnection::StartRtcEventLog_w(rtc::PlatformFile file,
   if (!event_log_) {
     return false;
   }
-  return event_log_->StartLogging(file, max_size_bytes);
+
+  // TODO(eladalon): It would be better to not allow negative values into PC.
+  const size_t max_size = (max_size_bytes < 0)
+                              ? RtcEventLog::kUnlimitedOutput
+                              : rtc::saturated_cast<size_t>(max_size_bytes);
+
+  return event_log_->StartLogging(
+      rtc::MakeUnique<RtcEventLogOutputFile>(file, max_size));
 }
 
 void PeerConnection::StopRtcEventLog_w() {

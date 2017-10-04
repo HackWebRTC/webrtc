@@ -14,15 +14,16 @@
 #include <memory>
 #include <string>
 
+// TODO(eladalon): Remove this include once LogIncomingRtcpPacket(), etc., have
+// been removed (they are currently deprecated).
 #include "api/array_view.h"
-// TODO(eladalon): Get rid of this later in the CL-stack.
-#include "api/rtpparameters.h"
 #include "common_types.h"  // NOLINT(build/include)
+#include "logging/rtc_event_log/output/rtc_event_log_output.h"
 // TODO(eladalon): This is here because of ProbeFailureReason; remove this
 // dependency along with the deprecated LogProbeResultFailure().
 #include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
-// TODO(eladalon): Remove this in an upcoming CL, that will modularize the
-// log output into its own class.
+// TODO(eladalon): Remove this #include once the deprecated versions of
+// StartLogging() have been removed.
 #include "rtc_base/platform_file.h"
 
 namespace webrtc {
@@ -44,6 +45,8 @@ enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
 
 class RtcEventLog {
  public:
+  enum : size_t { kUnlimitedOutput = 0 };
+
   // TODO(eladalon): Two stages are upcoming.
   // 1. Extend this to actually support the new encoding.
   // 2. Get rid of the legacy encoding, allowing us to get rid of this enum.
@@ -68,18 +71,22 @@ class RtcEventLog {
   // Create an RtcEventLog object that does nothing.
   static std::unique_ptr<RtcEventLog> CreateNull();
 
+  // Starts logging to a given output. The output might be limited in size,
+  // and may close itself once it has reached the maximum size.
+  virtual bool StartLogging(std::unique_ptr<RtcEventLogOutput> output) = 0;
+
   // Starts logging a maximum of max_size_bytes bytes to the specified file.
   // If the file already exists it will be overwritten.
   // If max_size_bytes <= 0, logging will be active until StopLogging is called.
   // The function has no effect and returns false if we can't start a new log
   // e.g. because we are already logging or the file cannot be opened.
-  virtual bool StartLogging(const std::string& file_name,
-                            int64_t max_size_bytes) = 0;
+  RTC_DEPRECATED virtual bool StartLogging(const std::string& file_name,
+                                           int64_t max_size_bytes) = 0;
 
   // Same as above. The RtcEventLog takes ownership of the file if the call
   // is successful, i.e. if it returns true.
-  virtual bool StartLogging(rtc::PlatformFile platform_file,
-                            int64_t max_size_bytes) = 0;
+  RTC_DEPRECATED virtual bool StartLogging(rtc::PlatformFile platform_file,
+                                           int64_t max_size_bytes) = 0;
 
   // Deprecated. Pass an explicit file size limit.
   RTC_DEPRECATED bool StartLogging(const std::string& file_name) {
@@ -182,6 +189,9 @@ class RtcEventLog {
 // No-op implementation is used if flag is not set, or in tests.
 class RtcEventLogNullImpl : public RtcEventLog {
  public:
+  bool StartLogging(std::unique_ptr<RtcEventLogOutput> output) override {
+    return false;
+  }
   bool StartLogging(const std::string& file_name,
                     int64_t max_size_bytes) override {
     return false;

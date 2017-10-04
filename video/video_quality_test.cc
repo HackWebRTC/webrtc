@@ -21,6 +21,7 @@
 #include "api/optional.h"
 #include "call/call.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/engine/webrtcvideoengine.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
@@ -1818,7 +1819,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   if (!params.logging.rtc_event_log_name.empty()) {
     event_log_ = RtcEventLog::Create(clock_, RtcEventLog::EncodingType::Legacy);
     bool event_log_started =
-        event_log_->StartLogging(params.logging.rtc_event_log_name, -1);
+        event_log_->StartLogging(rtc::MakeUnique<RtcEventLogOutputFile>(
+            params.logging.rtc_event_log_name, RtcEventLog::kUnlimitedOutput));
     RTC_DCHECK(event_log_started);
   }
 
