@@ -38,7 +38,6 @@
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/event_wrapper.h"
-#include "system_wrappers/include/trace.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
@@ -351,11 +350,9 @@ class ApmTest : public ::testing::Test {
   virtual void TearDown();
 
   static void SetUpTestCase() {
-    Trace::CreateTrace();
   }
 
   static void TearDownTestCase() {
-    Trace::ReturnTrace();
     ClearTempFiles();
   }
 

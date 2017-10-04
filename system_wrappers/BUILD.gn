@@ -28,7 +28,6 @@ rtc_static_library("system_wrappers") {
     "include/sleep.h",
     "include/static_instance.h",
     "include/timestamp_extrapolator.h",
-    "include/trace.h",
     "source/aligned_malloc.cc",
     "source/atomic32_win.cc",
     "source/clock.cc",
@@ -48,12 +47,6 @@ rtc_static_library("system_wrappers") {
     "source/rw_lock_win.h",
     "source/sleep.cc",
     "source/timestamp_extrapolator.cc",
-    "source/trace_impl.cc",
-    "source/trace_impl.h",
-    "source/trace_posix.cc",
-    "source/trace_posix.h",
-    "source/trace_win.cc",
-    "source/trace_win.h",
   ]
 
   defines = []
@@ -68,11 +61,6 @@ rtc_static_library("system_wrappers") {
   ]
 
   if (is_android) {
-    sources += [
-      "include/logcat_trace_context.h",
-      "source/logcat_trace_context.cc",
-    ]
-
     defines += [ "WEBRTC_THREAD_RR" ]
 
     deps += [ ":cpu_features_android" ]

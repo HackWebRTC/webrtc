@@ -57,7 +57,6 @@
 #include "system_wrappers/include/cpu_info.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/rw_lock_wrapper.h"
-#include "system_wrappers/include/trace.h"
 #include "video/call_stats.h"
 #include "video/send_delay_stats.h"
 #include "video/stats_counter.h"
@@ -440,7 +439,6 @@ Call::Call(const Call::Config& config,
     RTC_DCHECK_GE(config.bitrate_config.max_bitrate_bps,
                   config.bitrate_config.start_bitrate_bps);
   }
-  Trace::CreateTrace();
   transport_send->send_side_cc()->RegisterNetworkObserver(this);
   transport_send_ = std::move(transport_send);
   transport_send_->send_side_cc()->SignalNetworkState(kNetworkDown);
@@ -500,8 +498,6 @@ Call::~Call() {
   }
   UpdateReceiveHistograms();
   UpdateHistograms();
-
-  Trace::ReturnTrace();
 }
 
 rtc::Optional<RtpPacketReceived> Call::ParseRtpPacket(

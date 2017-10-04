@@ -624,9 +624,8 @@ public class PeerConnectionClient {
     }
     isInitiator = false;
 
-    // Set default WebRTC tracing and INFO libjingle logging.
+    // Set INFO libjingle logging.
     // NOTE: this _must_ happen while |factory| is alive!
-    Logging.enableTracing("logcat:", EnumSet.of(Logging.TraceLevel.TRACE_DEFAULT));
     Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO);
 
     mediaStream = factory.createLocalMediaStream("ARDAMS");

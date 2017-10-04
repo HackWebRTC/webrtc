@@ -42,19 +42,12 @@
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
-#include "system_wrappers/include/trace.h"
 #include "voice_engine/transmit_mixer.h"
 
 namespace cricket {
 namespace {
 
 constexpr size_t kMaxUnsignaledRecvStreams = 4;
-
-const int kDefaultTraceFilter = webrtc::kTraceNone | webrtc::kTraceTerseInfo |
-                                webrtc::kTraceWarning | webrtc::kTraceError |
-                                webrtc::kTraceCritical;
-const int kElevatedTraceFilter = kDefaultTraceFilter | webrtc::kTraceStateInfo |
-                                 webrtc::kTraceInfo;
 
 constexpr int kNackRtpHistoryMs = 5000;
 
@@ -254,7 +247,6 @@ WebRtcVoiceEngine::~WebRtcVoiceEngine() {
   if (initialized_) {
     StopAecDump();
     voe_wrapper_->base()->Terminate();
-    webrtc::Trace::SetTraceCallback(nullptr);
   }
 }
 
@@ -287,12 +279,8 @@ void WebRtcVoiceEngine::Init() {
 
   channel_config_.enable_voice_pacing = true;
 
-  // Temporarily turn logging level up for the Init() call.
-  webrtc::Trace::SetTraceCallback(this);
-  webrtc::Trace::set_level_filter(kElevatedTraceFilter);
   RTC_CHECK_EQ(0,
                voe_wrapper_->base()->Init(adm_.get(), apm(), decoder_factory_));
-  webrtc::Trace::set_level_filter(kDefaultTraceFilter);
 
   // No ADM supplied? Get the default one from VoE.
   if (!adm_) {
@@ -674,30 +662,6 @@ RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
         webrtc::RtpExtension::kTransportSequenceNumberDefaultId));
   }
   return capabilities;
-}
-
-void WebRtcVoiceEngine::Print(webrtc::TraceLevel level, const char* trace,
-                              int length) {
-  // Note: This callback can happen on any thread!
-  rtc::LoggingSeverity sev = rtc::LS_VERBOSE;
-  if (level == webrtc::kTraceError || level == webrtc::kTraceCritical)
-    sev = rtc::LS_ERROR;
-  else if (level == webrtc::kTraceWarning)
-    sev = rtc::LS_WARNING;
-  else if (level == webrtc::kTraceStateInfo || level == webrtc::kTraceInfo)
-    sev = rtc::LS_INFO;
-  else if (level == webrtc::kTraceTerseInfo)
-    sev = rtc::LS_INFO;
-
-  // Skip past boilerplate prefix text.
-  if (length < 72) {
-    std::string msg(trace, length);
-    LOG(LS_ERROR) << "Malformed webrtc log message: ";
-    LOG_V(sev) << msg;
-  } else {
-    std::string msg(trace + 71, length - 72);
-    LOG_V(sev) << "webrtc: " << msg;
-  }
 }
 
 void WebRtcVoiceEngine::RegisterChannel(WebRtcVoiceMediaChannel* channel) {
