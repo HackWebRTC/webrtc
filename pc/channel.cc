@@ -680,8 +680,9 @@ bool BaseChannel::SendPacket(bool rtcp,
       return false;
     }
     // Bon voyage.
-    return rtcp ? rtp_transport_->SendRtcpPacket(packet, options, PF_NORMAL)
-                : rtp_transport_->SendRtpPacket(packet, options, PF_NORMAL);
+    return rtcp
+               ? rtp_transport_->SendRtcpPacket(packet, options, PF_SRTP_BYPASS)
+               : rtp_transport_->SendRtpPacket(packet, options, PF_SRTP_BYPASS);
   }
   RTC_DCHECK(srtp_transport_);
   RTC_DCHECK(srtp_transport_->IsActive());
@@ -1661,7 +1662,7 @@ int BaseChannel::GetTransportOverheadPerPacket() const {
           ? kTcpOverhaed
           : kUdpOverhaed;
 
-  if (sdes_active()) {
+  if (srtp_active()) {
     int srtp_overhead = 0;
     if (srtp_transport_->GetSrtpOverhead(&srtp_overhead))
       transport_overhead_per_packet += srtp_overhead;
