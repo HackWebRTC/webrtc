@@ -359,6 +359,9 @@ void PacedSender::UpdateBudgetWithBytesSent(size_t bytes_sent) {
 void PacedSender::SetPacingFactor(float pacing_factor) {
   rtc::CritScope cs(&critsect_);
   pacing_factor_ = pacing_factor;
+  // Make sure new padding factor is applied immediately, otherwise we need to
+  // wait for the send bitrate estimate to be updated before this takes effect.
+  SetEstimatedBitrate(estimated_bitrate_bps_);
 }
 
 void PacedSender::SetQueueTimeLimit(int limit_ms) {
