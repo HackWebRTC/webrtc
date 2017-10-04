@@ -63,6 +63,17 @@ class UnitTest(unittest.TestCase):
   def testAllBuildFiles(self):
     self.RunTest(os.path.join(TESTDATA_DIR, 'all_build_files'), True)
 
+  def testSanitizeFilename(self):
+    # The `dangerous_filename` test case contains a directory with '++' in its
+    # name. If it's not properly escaped, a regex error would be raised.
+    self.RunTest(os.path.join(TESTDATA_DIR, 'dangerous_filename'), True)
+
+  def testRelativeFilename(self):
+    test_dir = os.path.join(TESTDATA_DIR, 'all_build_files')
+    logger = Logger(test_dir)
+    with self.assertRaises(AssertionError):
+      CheckPackageBoundaries(test_dir, logger, ["BUILD.gn"])
+
 
 if __name__ == '__main__':
   unittest.main()

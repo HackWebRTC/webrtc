@@ -57,7 +57,7 @@ def _BuildSubpackagesPattern(packages, query):
   query += os.path.sep
   length = len(query)
   pattern = r'(?P<line_number>\d+)\$\s*"(?P<source_file>(?P<subpackage>'
-  pattern += '|'.join(package[length:].replace(os.path.sep, '/')
+  pattern += '|'.join(re.escape(package[length:].replace(os.path.sep, '/'))
                       for package in packages if package.startswith(query))
   pattern += r')/[\w\./]*)"'
   return re.compile(pattern)
@@ -100,10 +100,13 @@ def _CheckBuildFile(build_file_path, packages, logger):
 def CheckPackageBoundaries(root_dir, logger, build_files=None):
   packages = [root for root, _, files in os.walk(root_dir)
               if 'BUILD.gn' in files]
-  default_build_files = [os.path.join(package, 'BUILD.gn')
-                         for package in packages]
 
-  build_files = build_files or default_build_files
+  if build_files is not None:
+    for build_file_path in build_files:
+      assert build_file_path.startswith(root_dir)
+  else:
+    build_files = [os.path.join(package, 'BUILD.gn') for package in packages]
+
   return any([_CheckBuildFile(build_file_path, packages, logger)
               for build_file_path in build_files])
 
