@@ -23,14 +23,9 @@ namespace webrtc {
 namespace {
 
 bool PayloadIsCompatible(const RtpUtility::Payload& payload,
-                         const CodecInst& audio_codec) {
-  if (!payload.typeSpecific.is_audio())
-    return false;
-  if (_stricmp(payload.name, audio_codec.plname) != 0)
-    return false;
-  const AudioPayload& audio_payload = payload.typeSpecific.audio_payload();
-  return audio_payload.frequency == static_cast<uint32_t>(audio_codec.plfreq) &&
-         audio_payload.channels == audio_codec.channels;
+                         const SdpAudioFormat& audio_format) {
+  return payload.typeSpecific.is_audio() &&
+         audio_format.Matches(payload.typeSpecific.audio_payload().format);
 }
 
 bool PayloadIsCompatible(const RtpUtility::Payload& payload,
@@ -46,12 +41,10 @@ bool PayloadIsCompatible(const RtpUtility::Payload& payload,
   return true;
 }
 
-RtpUtility::Payload CreatePayloadType(const CodecInst& audio_codec) {
-  RTC_DCHECK_GE(audio_codec.plfreq, 1000);
-  return {audio_codec.plname,
-          PayloadUnion(
-              AudioPayload{rtc::dchecked_cast<uint32_t>(audio_codec.plfreq),
-                           audio_codec.channels, 0})};
+RtpUtility::Payload CreatePayloadType(const SdpAudioFormat& audio_format) {
+  RTC_DCHECK_GE(audio_format.clockrate_hz, 1000);
+  return {audio_format.name.c_str(),
+          PayloadUnion(AudioPayload{audio_format, 0})};
 }
 
 RtpVideoCodecTypes ConvertToRtpVideoCodecType(VideoCodecType type) {
@@ -125,10 +118,9 @@ void RTPPayloadRegistry::SetAudioReceivePayloads(
   for (const auto& kv : codecs) {
     const int& rtp_payload_type = kv.first;
     const SdpAudioFormat& audio_format = kv.second;
-    const CodecInst ci = SdpToCodecInst(rtp_payload_type, audio_format);
     RTC_DCHECK(IsPayloadTypeValid(rtp_payload_type));
-    payload_type_map_.insert(
-        std::make_pair(rtp_payload_type, CreatePayloadType(ci)));
+    payload_type_map_.emplace(rtp_payload_type,
+                              CreatePayloadType(audio_format));
   }
 
   // Clear the value of last received payload type since it might mean
@@ -137,8 +129,10 @@ void RTPPayloadRegistry::SetAudioReceivePayloads(
   last_received_media_payload_type_ = -1;
 }
 
-int32_t RTPPayloadRegistry::RegisterReceivePayload(const CodecInst& audio_codec,
-                                                   bool* created_new_payload) {
+int32_t RTPPayloadRegistry::RegisterReceivePayload(
+    int payload_type,
+    const SdpAudioFormat& audio_format,
+    bool* created_new_payload) {
   rtc::CritScope cs(&crit_sect_);
 
 #if RTC_DCHECK_IS_ON
@@ -147,26 +141,26 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(const CodecInst& audio_codec,
 #endif
 
   *created_new_payload = false;
-  if (!IsPayloadTypeValid(audio_codec.pltype))
+  if (!IsPayloadTypeValid(payload_type))
     return -1;
 
-  auto it = payload_type_map_.find(audio_codec.pltype);
+  const auto it = payload_type_map_.find(payload_type);
   if (it != payload_type_map_.end()) {
     // We already use this payload type. Check if it's the same as we already
     // have. If same, ignore sending an error.
-    if (PayloadIsCompatible(it->second, audio_codec)) {
+    if (PayloadIsCompatible(it->second, audio_format)) {
       it->second.typeSpecific.audio_payload().rate = 0;
       return 0;
     }
-    LOG(LS_ERROR) << "Payload type already registered: " << audio_codec.pltype;
+    LOG(LS_ERROR) << "Payload type already registered: " << payload_type;
     return -1;
   }
 
   // Audio codecs must be unique.
-  DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(audio_codec);
+  DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(audio_format);
 
-  const auto insert_status = payload_type_map_.emplace(
-      audio_codec.pltype, CreatePayloadType(audio_codec));
+  const auto insert_status =
+      payload_type_map_.emplace(payload_type, CreatePayloadType(audio_format));
   RTC_DCHECK(insert_status.second);  // Insertion succeeded.
   *created_new_payload = true;
 
@@ -222,10 +216,10 @@ int32_t RTPPayloadRegistry::DeRegisterReceivePayload(
 // for audio codecs, but there can for video.
 // Always called from within a critical section.
 void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
-    const CodecInst& audio_codec) {
+    const SdpAudioFormat& audio_format) {
   for (auto iterator = payload_type_map_.begin();
        iterator != payload_type_map_.end(); ++iterator) {
-    if (PayloadIsCompatible(iterator->second, audio_codec)) {
+    if (PayloadIsCompatible(iterator->second, audio_format)) {
       // Remove old setting.
       payload_type_map_.erase(iterator);
       break;
@@ -233,13 +227,14 @@ void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
   }
 }
 
-int32_t RTPPayloadRegistry::ReceivePayloadType(const CodecInst& audio_codec,
-                                               int8_t* payload_type) const {
+int32_t RTPPayloadRegistry::ReceivePayloadType(
+    const SdpAudioFormat& audio_format,
+    int8_t* payload_type) const {
   assert(payload_type);
   rtc::CritScope cs(&crit_sect_);
 
   for (const auto& it : payload_type_map_) {
-    if (PayloadIsCompatible(it.second, audio_codec)) {
+    if (PayloadIsCompatible(it.second, audio_format)) {
       *payload_type = it.first;
       return 0;
     }
@@ -308,7 +303,7 @@ int RTPPayloadRegistry::GetPayloadTypeFrequency(
   }
   rtc::CritScope cs(&crit_sect_);
   return payload->typeSpecific.is_audio()
-             ? payload->typeSpecific.audio_payload().frequency
+             ? payload->typeSpecific.audio_payload().format.clockrate_hz
              : kVideoPayloadTypeFrequency;
 }
 

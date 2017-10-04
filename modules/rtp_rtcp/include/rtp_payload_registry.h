@@ -21,7 +21,6 @@
 
 namespace webrtc {
 
-struct CodecInst;
 class VideoCodec;
 
 class RTPPayloadRegistry {
@@ -35,13 +34,14 @@ class RTPPayloadRegistry {
   // Replace all audio receive payload types with the given map.
   void SetAudioReceivePayloads(std::map<int, SdpAudioFormat> codecs);
 
-  int32_t RegisterReceivePayload(const CodecInst& audio_codec,
+  int32_t RegisterReceivePayload(int payload_type,
+                                 const SdpAudioFormat& audio_format,
                                  bool* created_new_payload_type);
   int32_t RegisterReceivePayload(const VideoCodec& video_codec);
 
   int32_t DeRegisterReceivePayload(int8_t payload_type);
 
-  int32_t ReceivePayloadType(const CodecInst& audio_codec,
+  int32_t ReceivePayloadType(const SdpAudioFormat& audio_format,
                              int8_t* payload_type) const;
   int32_t ReceivePayloadType(const VideoCodec& video_codec,
                              int8_t* payload_type) const;
@@ -96,7 +96,7 @@ class RTPPayloadRegistry {
  private:
   // Prunes the payload type map of the specific payload type, if it exists.
   void DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
-      const CodecInst& audio_codec);
+      const SdpAudioFormat& audio_format);
 
   bool IsRtxInternal(const RTPHeader& header) const;
   // Returns the payload type for the payload with name |payload_name|, or -1 if

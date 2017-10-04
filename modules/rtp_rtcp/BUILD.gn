@@ -85,6 +85,7 @@ rtc_source_set("rtp_rtcp_format") {
     "../../api:array_view",
     "../../api:libjingle_peerconnection_api",
     "../../api:optional",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../common_video",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
@@ -380,6 +381,7 @@ if (rtc_include_tests) {
       "../../test:rtp_test_utils",
       "../../test:test_common",
       "../../test:test_support",
+      "../audio_coding:audio_format_conversion",
       "//testing/gmock",
     ]
 

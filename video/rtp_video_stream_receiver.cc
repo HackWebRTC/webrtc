@@ -287,10 +287,8 @@ void RtpVideoStreamReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
 // TODO(pbos): Remove as soon as audio can handle a changing payload type
 // without this callback.
 int32_t RtpVideoStreamReceiver::OnInitializeDecoder(
-    const int8_t payload_type,
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const int frequency,
-    const size_t channels,
+    const int payload_type,
+    const SdpAudioFormat& audio_format,
     const uint32_t rate) {
   RTC_NOTREACHED();
   return 0;

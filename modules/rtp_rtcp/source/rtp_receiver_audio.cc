@@ -35,7 +35,6 @@ RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback)
       cng_fb_payload_type_(-1),
       num_energy_(0),
       current_remote_energy_() {
-  last_payload_.emplace(AudioPayload{0, 1, 0});
   memset(current_remote_energy_, 0, sizeof(current_remote_energy_));
 }
 
@@ -104,22 +103,24 @@ bool RTPReceiverAudio::ShouldReportCsrcChanges(uint8_t payload_type) const {
 // -
 // -   G7221     frame         N/A
 int32_t RTPReceiverAudio::OnNewPayloadTypeCreated(
-    const CodecInst& audio_codec) {
+    int payload_type,
+    const SdpAudioFormat& audio_format) {
   rtc::CritScope lock(&crit_sect_);
 
-  if (RtpUtility::StringCompare(audio_codec.plname, "telephone-event", 15)) {
-    telephone_event_payload_type_ = audio_codec.pltype;
+  if (RtpUtility::StringCompare(audio_format.name.c_str(), "telephone-event",
+                                15)) {
+    telephone_event_payload_type_ = payload_type;
   }
-  if (RtpUtility::StringCompare(audio_codec.plname, "cn", 2)) {
+  if (RtpUtility::StringCompare(audio_format.name.c_str(), "cn", 2)) {
     // We support comfort noise at four different frequencies.
-    if (audio_codec.plfreq == 8000) {
-      cng_nb_payload_type_ = audio_codec.pltype;
-    } else if (audio_codec.plfreq == 16000) {
-      cng_wb_payload_type_ = audio_codec.pltype;
-    } else if (audio_codec.plfreq == 32000) {
-      cng_swb_payload_type_ = audio_codec.pltype;
-    } else if (audio_codec.plfreq == 48000) {
-      cng_fb_payload_type_ = audio_codec.pltype;
+    if (audio_format.clockrate_hz == 8000) {
+      cng_nb_payload_type_ = payload_type;
+    } else if (audio_format.clockrate_hz == 16000) {
+      cng_wb_payload_type_ = payload_type;
+    } else if (audio_format.clockrate_hz == 32000) {
+      cng_swb_payload_type_ = payload_type;
+    } else if (audio_format.clockrate_hz == 48000) {
+      cng_fb_payload_type_ = payload_type;
     } else {
       assert(false);
       return -1;
@@ -191,8 +192,7 @@ int32_t RTPReceiverAudio::InvokeOnInitializeDecoder(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const PayloadUnion& specific_payload) const {
   const auto& ap = specific_payload.audio_payload();
-  if (callback->OnInitializeDecoder(payload_type, payload_name, ap.frequency,
-                                    ap.channels, ap.rate) == -1) {
+  if (callback->OnInitializeDecoder(payload_type, ap.format, ap.rate) == -1) {
     LOG(LS_ERROR) << "Failed to create decoder for payload type: "
                   << payload_name << "/" << static_cast<int>(payload_type);
     return -1;
@@ -301,7 +301,7 @@ int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
         payload_data + 1, payload_data_length - 1, rtp_header);
   }
 
-  rtp_header->type.Audio.channel = audio_specific.channels;
+  rtp_header->type.Audio.channel = audio_specific.format.num_channels;
   return data_callback_->OnReceivedPayloadData(payload_data,
                                                payload_data_length, rtp_header);
 }

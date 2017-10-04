@@ -51,12 +51,8 @@ class RtpReceiverTest : public ::testing::Test {
                                              &mock_rtp_data_,
                                              nullptr,
                                              &rtp_payload_registry_)) {
-    CodecInst voice_codec = {};
-    voice_codec.pltype = kPcmuPayloadType;
-    voice_codec.plfreq = 8000;
-    voice_codec.rate = kTestRate;
-    memcpy(voice_codec.plname, "PCMU", 5);
-    rtp_receiver_->RegisterReceivePayload(voice_codec);
+    rtp_receiver_->RegisterReceivePayload(kPcmuPayloadType,
+                                          SdpAudioFormat("PCMU", 8000, 1));
   }
   ~RtpReceiverTest() {}
 
@@ -90,7 +86,8 @@ TEST_F(RtpReceiverTest, GetSources) {
   header.numCSRCs = 2;
   header.arrOfCSRCs[0] = kCsrc1;
   header.arrOfCSRCs[1] = kCsrc2;
-  const PayloadUnion payload_specific{AudioPayload()};
+  const PayloadUnion payload_specific{
+      AudioPayload{SdpAudioFormat("foo", 8000, 1), 0}};
 
   EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
       header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
@@ -140,7 +137,8 @@ TEST_F(RtpReceiverTest, GetSourcesChangeSSRC) {
   header.payloadType = kPcmuPayloadType;
   header.ssrc = kSsrc1;
   header.timestamp = rtp_timestamp(now_ms);
-  const PayloadUnion payload_specific{AudioPayload()};
+  const PayloadUnion payload_specific{
+      AudioPayload{SdpAudioFormat("foo", 8000, 1), 0}};
 
   EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
       header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
@@ -191,7 +189,8 @@ TEST_F(RtpReceiverTest, GetSourcesRemoveOutdatedSource) {
   RTPHeader header;
   header.payloadType = kPcmuPayloadType;
   header.timestamp = rtp_timestamp(now_ms);
-  const PayloadUnion payload_specific{AudioPayload()};
+  const PayloadUnion payload_specific{
+      AudioPayload{SdpAudioFormat("foo", 8000, 1), 0}};
   header.numCSRCs = 1;
   size_t kSourceListSize = 20;
 
@@ -265,7 +264,8 @@ TEST_F(RtpReceiverTest, GetSourcesContainsAudioLevelExtension) {
   header.timestamp = rtp_timestamp(time1_ms);
   header.extension.hasAudioLevel = true;
   header.extension.audioLevel = 10;
-  const PayloadUnion payload_specific{AudioPayload()};
+  const PayloadUnion payload_specific{
+      AudioPayload{SdpAudioFormat("foo", 8000, 1), 0}};
 
   EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
       header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
@@ -317,7 +317,8 @@ TEST_F(RtpReceiverTest,
   header.timestamp = rtp_timestamp(time1_ms);
   header.extension.hasAudioLevel = true;
   header.extension.audioLevel = 10;
-  const PayloadUnion payload_specific{AudioPayload()};
+  const PayloadUnion payload_specific{
+      AudioPayload{SdpAudioFormat("foo", 8000, 1), 0}};
 
   EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
       header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));

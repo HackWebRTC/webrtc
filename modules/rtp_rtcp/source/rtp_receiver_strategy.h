@@ -56,7 +56,9 @@ class RTPReceiverStrategy {
 
   // Notifies the strategy that we have created a new non-RED audio payload type
   // in the payload registry.
-  virtual int32_t OnNewPayloadTypeCreated(const CodecInst& audio_codec) = 0;
+  virtual int32_t OnNewPayloadTypeCreated(
+      int payload_type,
+      const SdpAudioFormat& audio_format) = 0;
 
   // Invokes the OnInitializeDecoder callback in a media-specific way.
   virtual int32_t InvokeOnInitializeDecoder(

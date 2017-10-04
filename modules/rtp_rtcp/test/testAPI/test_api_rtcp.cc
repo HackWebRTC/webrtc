@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
+#include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -133,9 +134,11 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     memcpy(voice_codec.plname, "PCMU", 5);
 
     EXPECT_EQ(0, module1->RegisterSendPayload(voice_codec));
-    EXPECT_EQ(0, rtp_receiver1_->RegisterReceivePayload(voice_codec));
+    EXPECT_EQ(0, rtp_receiver1_->RegisterReceivePayload(
+                     voice_codec.pltype, CodecInstToSdp(voice_codec)));
     EXPECT_EQ(0, module2->RegisterSendPayload(voice_codec));
-    EXPECT_EQ(0, rtp_receiver2_->RegisterReceivePayload(voice_codec));
+    EXPECT_EQ(0, rtp_receiver2_->RegisterReceivePayload(
+                     voice_codec.pltype, CodecInstToSdp(voice_codec)));
 
     // We need to send one RTP packet to get the RTCP packet to be accepted by
     // the receiving module.

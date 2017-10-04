@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
+#include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_receiver_strategy.h"
@@ -57,6 +58,11 @@ RtpReceiver* RtpReceiver::CreateAudioReceiver(
       RTPReceiverStrategy::CreateAudioStrategy(incoming_payload_callback));
 }
 
+int32_t RtpReceiver::RegisterReceivePayload(const CodecInst& audio_codec) {
+  return RegisterReceivePayload(audio_codec.pltype,
+                                CodecInstToSdp(audio_codec));
+}
+
 RtpReceiverImpl::RtpReceiverImpl(Clock* clock,
                                  RtpFeedback* incoming_messages_callback,
                                  RTPPayloadRegistry* rtp_payload_registry,
@@ -81,7 +87,9 @@ RtpReceiverImpl::~RtpReceiverImpl() {
   }
 }
 
-int32_t RtpReceiverImpl::RegisterReceivePayload(const CodecInst& audio_codec) {
+int32_t RtpReceiverImpl::RegisterReceivePayload(
+    int payload_type,
+    const SdpAudioFormat& audio_format) {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
 
   // TODO(phoglund): Try to streamline handling of the RED codec and some other
@@ -89,11 +97,12 @@ int32_t RtpReceiverImpl::RegisterReceivePayload(const CodecInst& audio_codec) {
   // payload or not.
   bool created_new_payload = false;
   int32_t result = rtp_payload_registry_->RegisterReceivePayload(
-      audio_codec, &created_new_payload);
+      payload_type, audio_format, &created_new_payload);
   if (created_new_payload) {
-    if (rtp_media_receiver_->OnNewPayloadTypeCreated(audio_codec) != 0) {
-      LOG(LS_ERROR) << "Failed to register payload: " << audio_codec.plname
-                    << "/" << static_cast<int>(audio_codec.pltype);
+    if (rtp_media_receiver_->OnNewPayloadTypeCreated(payload_type,
+                                                     audio_format) != 0) {
+      LOG(LS_ERROR) << "Failed to register payload: " << audio_format.name
+                    << "/" << payload_type;
       return -1;
     }
   }
@@ -240,10 +249,7 @@ bool RtpReceiverImpl::GetLatestTimestamps(uint32_t* timestamp,
 // Implementation note: must not hold critsect when called.
 void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
   bool new_ssrc = false;
-  bool re_initialize_decoder = false;
-  char payload_name[RTP_PAYLOAD_NAME_SIZE];
-  size_t channels = 1;
-  uint32_t rate = 0;
+  rtc::Optional<AudioPayload> reinitialize_audio_payload;
 
   {
     rtc::CritScope lock(&critical_section_rtp_receiver_);
@@ -262,18 +268,16 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
       if (ssrc_ != 0) {
         // Do we have the same codec? Then re-initialize coder.
         if (rtp_header.payloadType == last_received_payload_type) {
-          re_initialize_decoder = true;
-
           const auto payload = rtp_payload_registry_->PayloadTypeToPayload(
               rtp_header.payloadType);
           if (!payload) {
             return;
           }
-          payload_name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-          strncpy(payload_name, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
           if (payload->typeSpecific.is_audio()) {
-            channels = payload->typeSpecific.audio_payload().channels;
-            rate = payload->typeSpecific.audio_payload().rate;
+            reinitialize_audio_payload.emplace(
+                payload->typeSpecific.audio_payload());
+          } else {
+            // OnInitializeDecoder() is only used for audio.
           }
         }
       }
@@ -287,11 +291,10 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
     cb_rtp_feedback_->OnIncomingSSRCChanged(rtp_header.ssrc);
   }
 
-  if (re_initialize_decoder) {
-    if (-1 ==
-        cb_rtp_feedback_->OnInitializeDecoder(
-            rtp_header.payloadType, payload_name,
-            rtp_header.payload_type_frequency, channels, rate)) {
+  if (reinitialize_audio_payload) {
+    if (-1 == cb_rtp_feedback_->OnInitializeDecoder(
+                  rtp_header.payloadType, reinitialize_audio_payload->format,
+                  reinitialize_audio_payload->rate)) {
       // New stream, same codec.
       LOG(LS_ERROR) << "Failed to create decoder for payload type: "
                     << static_cast<int>(rtp_header.payloadType);

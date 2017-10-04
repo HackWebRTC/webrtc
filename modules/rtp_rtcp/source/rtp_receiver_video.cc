@@ -44,7 +44,8 @@ bool RTPReceiverVideo::ShouldReportCsrcChanges(uint8_t payload_type) const {
 }
 
 int32_t RTPReceiverVideo::OnNewPayloadTypeCreated(
-    const CodecInst& audio_codec) {
+    int payload_type,
+    const SdpAudioFormat& audio_format) {
   RTC_NOTREACHED();
   return 0;
 }

@@ -241,7 +241,7 @@ int32_t RTPSender::RegisterPayload(
             payload->name, payload_name, RTP_PAYLOAD_NAME_SIZE - 1)) {
       if (audio_configured_ && payload->typeSpecific.is_audio()) {
         auto& p = payload->typeSpecific.audio_payload();
-        if (p.frequency == frequency &&
+        if (rtc::SafeEq(p.format.clockrate_hz, frequency) &&
             (p.rate == rate || p.rate == 0 || rate == 0)) {
           p.rate = rate;
           // Ensure that we update the rate if new or old is zero.

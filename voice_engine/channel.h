@@ -257,10 +257,8 @@ class Channel
                                 const WebRtcRTPHeader* rtpHeader) override;
 
   // From RtpFeedback in the RTP/RTCP module
-  int32_t OnInitializeDecoder(int8_t payloadType,
-                              const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-                              int frequency,
-                              size_t channels,
+  int32_t OnInitializeDecoder(int payload_type,
+                              const SdpAudioFormat& audio_format,
                               uint32_t rate) override;
   void OnIncomingSSRCChanged(uint32_t ssrc) override;
   void OnIncomingCSRCChanged(uint32_t CSRC, bool added) override;

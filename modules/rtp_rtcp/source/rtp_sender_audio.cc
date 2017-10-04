@@ -66,7 +66,9 @@ int32_t RTPSenderAudio::RegisterAudioPayload(
     return 0;
   }
   *payload = new RtpUtility::Payload(
-      payloadName, PayloadUnion(AudioPayload{frequency, channels, rate}));
+      payloadName,
+      PayloadUnion(AudioPayload{
+          SdpAudioFormat(payloadName, frequency, channels), rate}));
   return 0;
 }
 

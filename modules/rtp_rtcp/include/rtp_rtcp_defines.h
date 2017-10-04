@@ -15,6 +15,7 @@
 #include <list>
 #include <vector>
 
+#include "api/audio_codecs/audio_format.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "rtc_base/deprecation.h"
@@ -40,9 +41,8 @@ const int kBogusRtpRateForAudioRtcp = 8000;
 const uint8_t kRtpHeaderSize = 12;
 
 struct AudioPayload {
-    uint32_t    frequency;
-    size_t      channels;
-    uint32_t    rate;
+  SdpAudioFormat format;
+  uint32_t rate;
 };
 
 struct VideoPayload {
@@ -271,12 +271,9 @@ class RtpFeedback {
   /*
   *   channels    - number of channels in codec (1 = mono, 2 = stereo)
   */
-  virtual int32_t OnInitializeDecoder(
-      int8_t payload_type,
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      int frequency,
-      size_t channels,
-      uint32_t rate) = 0;
+  virtual int32_t OnInitializeDecoder(int payload_type,
+                                      const SdpAudioFormat& audio_format,
+                                      uint32_t rate) = 0;
 
   virtual void OnIncomingSSRCChanged(uint32_t ssrc) = 0;
 
@@ -452,10 +449,8 @@ class NullRtpFeedback : public RtpFeedback {
  public:
   ~NullRtpFeedback() override {}
 
-  int32_t OnInitializeDecoder(int8_t payload_type,
-                              const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-                              int frequency,
-                              size_t channels,
+  int32_t OnInitializeDecoder(int payload_type,
+                              const SdpAudioFormat& audio_format,
                               uint32_t rate) override;
 
   void OnIncomingSSRCChanged(uint32_t ssrc) override {}
@@ -463,10 +458,8 @@ class NullRtpFeedback : public RtpFeedback {
 };
 
 inline int32_t NullRtpFeedback::OnInitializeDecoder(
-    int8_t payload_type,
-    const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-    int frequency,
-    size_t channels,
+    int payload_type,
+    const SdpAudioFormat& audio_format,
     uint32_t rate) {
   return 0;
 }

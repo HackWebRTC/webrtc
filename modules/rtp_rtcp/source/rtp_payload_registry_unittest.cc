@@ -24,13 +24,6 @@ using ::testing::Return;
 using ::testing::StrEq;
 using ::testing::_;
 
-static const char* kTypicalPayloadName = "name";
-static const size_t kTypicalChannels = 1;
-static const uint32_t kTypicalFrequency = 44000;
-static const CodecInst kTypicalAudioCodec = {-1 /* pltype */, "name",
-                                             kTypicalFrequency, 0 /* pacsize */,
-                                             kTypicalChannels};
-
 TEST(RtpPayloadRegistryTest,
      RegistersAndRemembersVideoPayloadsUntilDeregistered) {
   RTPPayloadRegistry rtp_payload_registry;
@@ -60,12 +53,11 @@ TEST(RtpPayloadRegistryTest,
 TEST(RtpPayloadRegistryTest,
      RegistersAndRemembersAudioPayloadsUntilDeregistered) {
   RTPPayloadRegistry rtp_payload_registry;
-  uint8_t payload_type = 97;
+  constexpr int payload_type = 97;
+  const SdpAudioFormat audio_format("name", 44000, 1);
   bool new_payload_created = false;
-  CodecInst audio_codec = kTypicalAudioCodec;
-  audio_codec.pltype = payload_type;
   EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
-                   audio_codec, &new_payload_created));
+                   payload_type, audio_format, &new_payload_created));
 
   EXPECT_TRUE(new_payload_created) << "A new payload WAS created.";
 
@@ -74,12 +66,10 @@ TEST(RtpPayloadRegistryTest,
   EXPECT_TRUE(retrieved_payload);
 
   // We should get back the corresponding payload that we registered.
-  EXPECT_STREQ(kTypicalPayloadName, retrieved_payload->name);
+  EXPECT_STREQ("name", retrieved_payload->name);
   EXPECT_TRUE(retrieved_payload->typeSpecific.is_audio());
-  EXPECT_EQ(kTypicalFrequency,
-            retrieved_payload->typeSpecific.audio_payload().frequency);
-  EXPECT_EQ(kTypicalChannels,
-            retrieved_payload->typeSpecific.audio_payload().channels);
+  EXPECT_EQ(audio_format,
+            retrieved_payload->typeSpecific.audio_payload().format);
 
   // Now forget about it and verify it's gone.
   EXPECT_EQ(0, rtp_payload_registry.DeRegisterReceivePayload(payload_type));
@@ -87,103 +77,77 @@ TEST(RtpPayloadRegistryTest,
 }
 
 TEST(RtpPayloadRegistryTest, AudioRedWorkProperly) {
-  const uint8_t kRedPayloadType = 127;
-  const int kRedSampleRate = 8000;
-  const size_t kRedChannels = 1;
-
   RTPPayloadRegistry rtp_payload_registry;
-
   bool new_payload_created = false;
-  CodecInst red_audio_codec;
-  strncpy(red_audio_codec.plname, "red", RTP_PAYLOAD_NAME_SIZE);
-  red_audio_codec.pltype = kRedPayloadType;
-  red_audio_codec.plfreq = kRedSampleRate;
-  red_audio_codec.channels = kRedChannels;
+  const SdpAudioFormat red_format("red", 8000, 1);
+
   EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
-                   red_audio_codec, &new_payload_created));
+                   127, red_format, &new_payload_created));
   EXPECT_TRUE(new_payload_created);
 
-  EXPECT_EQ(kRedPayloadType, rtp_payload_registry.red_payload_type());
+  EXPECT_EQ(127, rtp_payload_registry.red_payload_type());
 
-  const auto retrieved_payload =
-      rtp_payload_registry.PayloadTypeToPayload(kRedPayloadType);
+  const auto retrieved_payload = rtp_payload_registry.PayloadTypeToPayload(127);
   EXPECT_TRUE(retrieved_payload);
   EXPECT_TRUE(retrieved_payload->typeSpecific.is_audio());
-  EXPECT_STRCASEEQ("red", retrieved_payload->name);
-
-  // Sample rate is correctly registered.
-  EXPECT_EQ(kRedSampleRate,
-            rtp_payload_registry.GetPayloadTypeFrequency(kRedPayloadType));
+  EXPECT_EQ(red_format, retrieved_payload->typeSpecific.audio_payload().format);
 }
 
 TEST(RtpPayloadRegistryTest,
      DoesNotAcceptSamePayloadTypeTwiceExceptIfPayloadIsCompatible) {
-  uint8_t payload_type = 97;
+  constexpr int payload_type = 97;
   RTPPayloadRegistry rtp_payload_registry;
 
   bool ignored = false;
-  CodecInst audio_codec = kTypicalAudioCodec;
-  audio_codec.pltype = payload_type;
-  EXPECT_EQ(0,
-            rtp_payload_registry.RegisterReceivePayload(audio_codec, &ignored));
+  const SdpAudioFormat audio_format("name", 44000, 1);
+  EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
+                   payload_type, audio_format, &ignored));
 
-  CodecInst audio_codec_2 = kTypicalAudioCodec;
-  audio_codec_2.pltype = payload_type;
-  // Make |audio_codec_2| incompatible with |audio_codec| by changing
-  // the frequency.
-  audio_codec_2.plfreq = kTypicalFrequency + 1;
-  EXPECT_EQ(
-      -1, rtp_payload_registry.RegisterReceivePayload(audio_codec_2, &ignored))
+  const SdpAudioFormat audio_format_2("name", 44001, 1);  // Not compatible.
+  EXPECT_EQ(-1, rtp_payload_registry.RegisterReceivePayload(
+                    payload_type, audio_format_2, &ignored))
       << "Adding incompatible codec with same payload type = bad.";
 
   // Change payload type.
-  audio_codec_2.pltype = payload_type - 1;
-  EXPECT_EQ(
-      0, rtp_payload_registry.RegisterReceivePayload(audio_codec_2, &ignored))
+  EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
+                   payload_type - 1, audio_format_2, &ignored))
       << "With a different payload type is fine though.";
 
   // Ensure both payloads are preserved.
   const auto retrieved_payload1 =
       rtp_payload_registry.PayloadTypeToPayload(payload_type);
   EXPECT_TRUE(retrieved_payload1);
-  EXPECT_STREQ(kTypicalPayloadName, retrieved_payload1->name);
+  EXPECT_STREQ("name", retrieved_payload1->name);
   EXPECT_TRUE(retrieved_payload1->typeSpecific.is_audio());
-  EXPECT_EQ(kTypicalFrequency,
-            retrieved_payload1->typeSpecific.audio_payload().frequency);
-  EXPECT_EQ(kTypicalChannels,
-            retrieved_payload1->typeSpecific.audio_payload().channels);
+  EXPECT_EQ(audio_format,
+            retrieved_payload1->typeSpecific.audio_payload().format);
 
   const auto retrieved_payload2 =
       rtp_payload_registry.PayloadTypeToPayload(payload_type - 1);
   EXPECT_TRUE(retrieved_payload2);
-  EXPECT_STREQ(kTypicalPayloadName, retrieved_payload2->name);
+  EXPECT_STREQ("name", retrieved_payload2->name);
   EXPECT_TRUE(retrieved_payload2->typeSpecific.is_audio());
-  EXPECT_EQ(kTypicalFrequency + 1,
-            retrieved_payload2->typeSpecific.audio_payload().frequency);
-  EXPECT_EQ(kTypicalChannels,
-            retrieved_payload2->typeSpecific.audio_payload().channels);
+  EXPECT_EQ(audio_format_2,
+            retrieved_payload2->typeSpecific.audio_payload().format);
 
   // Ok, update the rate for one of the codecs. If either the incoming rate or
   // the stored rate is zero it's not really an error to register the same
   // codec twice, and in that case roughly the following happens.
-  EXPECT_EQ(0,
-            rtp_payload_registry.RegisterReceivePayload(audio_codec, &ignored));
+  EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
+                   payload_type, audio_format, &ignored));
 }
 
 TEST(RtpPayloadRegistryTest,
      RemovesCompatibleCodecsOnRegistryIfCodecsMustBeUnique) {
-  uint8_t payload_type = 97;
+  constexpr int payload_type = 97;
   RTPPayloadRegistry rtp_payload_registry;
 
   bool ignored = false;
-  CodecInst audio_codec = kTypicalAudioCodec;
-  audio_codec.pltype = payload_type;
-  EXPECT_EQ(0,
-            rtp_payload_registry.RegisterReceivePayload(audio_codec, &ignored));
-  CodecInst audio_codec_2 = kTypicalAudioCodec;
-  audio_codec_2.pltype = payload_type - 1;
-  EXPECT_EQ(
-      0, rtp_payload_registry.RegisterReceivePayload(audio_codec_2, &ignored));
+  const SdpAudioFormat audio_format("name", 44000, 1);
+  EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
+                   payload_type, audio_format, &ignored));
+  EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
+                   payload_type - 1, audio_format, &ignored));
 
   EXPECT_FALSE(rtp_payload_registry.PayloadTypeToPayload(payload_type))
       << "The first payload should be "
@@ -191,13 +155,11 @@ TEST(RtpPayloadRegistryTest,
   EXPECT_TRUE(rtp_payload_registry.PayloadTypeToPayload(payload_type - 1))
       << "The second payload should still be registered though.";
 
-  // Now ensure non-compatible codecs aren't removed. Make |audio_codec_3|
+  // Now ensure non-compatible codecs aren't removed. Make |audio_format_2|
   // incompatible by changing the frequency.
-  CodecInst audio_codec_3 = kTypicalAudioCodec;
-  audio_codec_3.pltype = payload_type + 1;
-  audio_codec_3.plfreq = kTypicalFrequency + 1;
-  EXPECT_EQ(
-      0, rtp_payload_registry.RegisterReceivePayload(audio_codec_3, &ignored));
+  const SdpAudioFormat audio_format_2("name", 44001, 1);
+  EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
+                   payload_type + 1, audio_format_2, &ignored));
 
   EXPECT_TRUE(rtp_payload_registry.PayloadTypeToPayload(payload_type - 1))
       << "Not compatible; both payloads should be kept.";
@@ -217,10 +179,10 @@ TEST(RtpPayloadRegistryTest,
   EXPECT_TRUE(media_type_unchanged);
 
   bool ignored;
-  CodecInst audio_codec = kTypicalAudioCodec;
-  audio_codec.pltype = 34;
-  EXPECT_EQ(0,
-            rtp_payload_registry.RegisterReceivePayload(audio_codec, &ignored));
+  constexpr int payload_type = 34;
+  const SdpAudioFormat audio_format("name", 44000, 1);
+  EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
+                   payload_type, audio_format, &ignored));
 
   EXPECT_EQ(-1, rtp_payload_registry.last_received_payload_type());
   media_type_unchanged = rtp_payload_registry.ReportMediaPayloadType(18);
@@ -235,13 +197,10 @@ TEST_P(ParameterizedRtpPayloadRegistryTest,
   RTPPayloadRegistry rtp_payload_registry;
 
   bool ignored;
-  CodecInst audio_codec;
-  strncpy(audio_codec.plname, "whatever", RTP_PAYLOAD_NAME_SIZE);
-  audio_codec.pltype = GetParam();
-  audio_codec.plfreq = 1900;
-  audio_codec.channels = 1;
-  EXPECT_EQ(-1,
-            rtp_payload_registry.RegisterReceivePayload(audio_codec, &ignored));
+  const int payload_type = GetParam();
+  const SdpAudioFormat audio_format("whatever", 1900, 1);
+  EXPECT_EQ(-1, rtp_payload_registry.RegisterReceivePayload(
+                    payload_type, audio_format, &ignored));
 }
 
 INSTANTIATE_TEST_CASE_P(TestKnownBadPayloadTypes,
@@ -254,14 +213,10 @@ TEST_P(RtpPayloadRegistryGenericTest, RegisterGenericReceivePayloadType) {
   RTPPayloadRegistry rtp_payload_registry;
 
   bool ignored;
-  CodecInst audio_codec;
-  // Dummy values, except for payload_type.
-  strncpy(audio_codec.plname, "generic-codec", RTP_PAYLOAD_NAME_SIZE);
-  audio_codec.pltype = GetParam();
-  audio_codec.plfreq = 1900;
-  audio_codec.channels = 1;
-  EXPECT_EQ(0,
-            rtp_payload_registry.RegisterReceivePayload(audio_codec, &ignored));
+  const int payload_type = GetParam();
+  const SdpAudioFormat audio_format("generic-codec", 1900, 1);  // Dummy values.
+  EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
+                   payload_type, audio_format, &ignored));
 }
 
 INSTANTIATE_TEST_CASE_P(TestDynamicRange,
