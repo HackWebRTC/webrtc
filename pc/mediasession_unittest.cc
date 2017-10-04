@@ -2129,10 +2129,6 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_EQ(vp8_offerer_rtx, codecs[1]);
   EXPECT_EQ(vp9, codecs[2]);
   EXPECT_EQ(vp9_rtx, codecs[3]);
-  LOG(LS_INFO) << "Offer codecs: ";
-  for (auto codec : codecs) {
-    LOG(LS_INFO) << codec.ToString();
-  }
 }
 
 // Create an updated offer that adds video after creating an audio only answer
