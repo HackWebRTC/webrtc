@@ -17,6 +17,7 @@
  * Per design, the file capturer can only be run once and once stopped it cannot run again.
  * To run another file capture session, create new instance of the class.
  */
+NS_CLASS_AVAILABLE_IOS(10)
 @interface RTCFileVideoCapturer : RTCVideoCapturer
 
 - (void)startCapturingFromFileNamed:(NSString *)nameOfFile;
