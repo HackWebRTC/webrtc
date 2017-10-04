@@ -58,7 +58,7 @@ def _ParseArgs():
   # Ignore Chromium-specific flags
   parser.add_argument('--isolated-script-test-output',
                       type=str, default=None)
-  parser.add_argument('--isolated-script-test-chartjson-output',
+  parser.add_argument('--isolated-script-test-perf-output',
                       type=str, default=None)
   args = parser.parse_args()
 
