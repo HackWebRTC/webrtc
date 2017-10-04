@@ -122,15 +122,6 @@ class ScreenshareLayers : public TemporalLayers {
     int64_t tl1_target_bitrate_sum_ = 0;
   } stats_;
 };
-
-class ScreenshareTemporalLayersChecker : public TemporalLayersChecker {
- public:
-  ScreenshareTemporalLayersChecker(int number_of_temporal_layers,
-                                   uint8_t initial_tl0_pic_idx);
-  bool CheckTemporalConfig(
-      bool frame_is_keyframe,
-      const TemporalLayers::FrameConfig& frame_config) override;
-};
 }  // namespace webrtc
 
 #endif  // MODULES_VIDEO_CODING_CODECS_VP8_SCREENSHARE_LAYERS_H_

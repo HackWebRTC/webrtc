@@ -469,7 +469,8 @@ std::vector<std::set<uint8_t>> GetTemporalDependencies(
 DefaultTemporalLayersChecker::DefaultTemporalLayersChecker(
     int num_temporal_layers,
     uint8_t initial_tl0_pic_idx)
-    : num_layers_(std::max(1, num_temporal_layers)),
+    : TemporalLayersChecker(num_temporal_layers, initial_tl0_pic_idx),
+      num_layers_(std::max(1, num_temporal_layers)),
       temporal_ids_(GetTemporalIds(num_layers_)),
       temporal_dependencies_(GetTemporalDependencies(num_layers_)),
       pattern_idx_(255) {
@@ -482,6 +483,13 @@ DefaultTemporalLayersChecker::DefaultTemporalLayersChecker(
 bool DefaultTemporalLayersChecker::CheckTemporalConfig(
     bool frame_is_keyframe,
     const TemporalLayers::FrameConfig& frame_config) {
+  if (!TemporalLayersChecker::CheckTemporalConfig(frame_is_keyframe,
+                                                  frame_config)) {
+    return false;
+  }
+  if (frame_config.drop_frame) {
+    return true;
+  }
   ++pattern_idx_;
   if (pattern_idx_ == temporal_ids_.size()) {
     // All non key-frame buffers should be updated each pattern cycle.

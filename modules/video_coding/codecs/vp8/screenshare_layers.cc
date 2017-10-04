@@ -16,6 +16,7 @@
 
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
 #include "vpx/vp8cx.h"
@@ -62,8 +63,8 @@ ScreenshareTemporalLayersFactory::CreateChecker(
     uint8_t initial_tl0_pic_idx) const {
   webrtc::TemporalLayersChecker* tlc;
   if (simulcast_id == 0) {
-    tlc = new webrtc::ScreenshareTemporalLayersChecker(temporal_layers,
-                                                       initial_tl0_pic_idx);
+    tlc =
+        new webrtc::TemporalLayersChecker(temporal_layers, initial_tl0_pic_idx);
   } else {
     TemporalLayersFactory rt_tl_factory;
     return rt_tl_factory.CreateChecker(simulcast_id, temporal_layers,
@@ -474,17 +475,4 @@ void ScreenshareLayers::UpdateHistograms() {
     }
   }
 }
-
-ScreenshareTemporalLayersChecker::ScreenshareTemporalLayersChecker(
-    int /*num_temporal_layers*/,
-    uint8_t /*initial_tl0_pic_idx*/) {}
-
-// TODO(ilnik): Implement layers dependency checks here. Keep track of
-// last/golden/arf buffers and sync bits.
-bool ScreenshareTemporalLayersChecker::CheckTemporalConfig(
-    bool /*frame_is_keyframe*/,
-    const TemporalLayers::FrameConfig& /*frame_config*/) {
-  return true;
-}
-
 }  // namespace webrtc

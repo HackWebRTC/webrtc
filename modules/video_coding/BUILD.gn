@@ -244,6 +244,7 @@ rtc_static_library("webrtc_vp8") {
     "codecs/vp8/screenshare_layers.h",
     "codecs/vp8/simulcast_rate_allocator.cc",
     "codecs/vp8/simulcast_rate_allocator.h",
+    "codecs/vp8/temporal_layers.cc",
     "codecs/vp8/temporal_layers.h",
     "codecs/vp8/vp8_impl.cc",
     "codecs/vp8/vp8_impl.h",
