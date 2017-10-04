@@ -30,7 +30,6 @@
 // We don't want to depend on 'system_wrappers:field_trial_default' because
 // clients should be able to provide their own implementation.
 #include "system_wrappers/include/field_trial_default.h"  // nogncheck
-#include "system_wrappers/include/trace.h"
 
 namespace webrtc {
 namespace jni {
@@ -147,7 +146,6 @@ JNI_FUNCTION_DECLARATION(
   // webrtc/rtc_base/ are convoluted, we simply wrap here to avoid having to
   // think about ramifications of auto-wrapping there.
   rtc::ThreadManager::Instance()->WrapCurrentThread();
-  Trace::CreateTrace();
 
   std::unique_ptr<rtc::Thread> network_thread =
       rtc::Thread::CreateWithSocketServer();
@@ -225,7 +223,6 @@ JNI_FUNCTION_DECLARATION(void,
     delete field_trials_init_string;
     field_trials_init_string = NULL;
   }
-  Trace::ReturnTrace();
 }
 
 JNI_FUNCTION_DECLARATION(void,
