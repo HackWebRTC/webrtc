@@ -24,12 +24,8 @@ import java.util.logging.Logger;
  * - Logging.enableLogTimeStamps
  * - Logging.enableLogToDebugOutput
  *
- * Using these APIs requires that the native library is loaded. For example:
- *
- * System.loadLibrary("jingle_peerconnection_so")
- *
- * Many objects (such as PeerConnectionFactory) do this automatically when
- * constructed.
+ * Using these APIs requires that the native library is loaded, using
+ * PeerConnectionFactory.initialize.
  */
 public class Logging {
   private static final Logger fallbackLogger = createFallbackLogger();
