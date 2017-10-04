@@ -11,7 +11,6 @@
 #include "rtc_base/event_tracer.h"
 
 #include "rtc_base/trace_event.h"
-#include "system_wrappers/include/static_instance.h"
 #include "test/gtest.h"
 
 namespace {
