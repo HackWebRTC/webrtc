@@ -104,7 +104,7 @@ class HtmlExport(object):
     html.append('</div>')
 
     html.append('</header>')
-    html.append('<main class="mdl-layout__content">')
+    html.append('<main class="mdl-layout__content" style="overflow-x: auto;">')
 
     # Tabs content.
     for tab_index, score_name in enumerate(score_names):
