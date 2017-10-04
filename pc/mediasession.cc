@@ -833,6 +833,12 @@ static bool FindMatchingCodec(const std::vector<C>& codecs1,
                               const std::vector<C>& codecs2,
                               const C& codec_to_match,
                               C* found_codec) {
+  // |codec_to_match| should be a member of |codecs1|, in order to look up RTX
+  // codecs' associated codecs correctly. If not, that's a programming error.
+  RTC_DCHECK(std::find_if(codecs1.begin(), codecs1.end(),
+                          [&codec_to_match](const C& codec) {
+                            return &codec == &codec_to_match;
+                          }) != codecs1.end());
   for (const C& potential_match : codecs2) {
     if (potential_match.Matches(codec_to_match)) {
       if (IsRtxCodec(codec_to_match)) {
@@ -1859,8 +1865,8 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
         static_cast<const AudioContentDescription*>(
             current_content->description);
     for (const AudioCodec& codec : acd->codecs()) {
-      if (FindMatchingCodec<AudioCodec>(supported_audio_codecs, audio_codecs,
-                                        codec, nullptr)) {
+      if (FindMatchingCodec<AudioCodec>(acd->codecs(), audio_codecs, codec,
+                                        nullptr)) {
         filtered_codecs.push_back(codec);
       }
     }
@@ -1937,7 +1943,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
         static_cast<const VideoContentDescription*>(
             current_content->description);
     for (const VideoCodec& codec : vcd->codecs()) {
-      if (FindMatchingCodec<VideoCodec>(video_codecs_, video_codecs, codec,
+      if (FindMatchingCodec<VideoCodec>(vcd->codecs(), video_codecs, codec,
                                         nullptr)) {
         filtered_codecs.push_back(codec);
       }
@@ -2100,8 +2106,8 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
         static_cast<const AudioContentDescription*>(
             current_content->description);
     for (const AudioCodec& codec : acd->codecs()) {
-      if (FindMatchingCodec<AudioCodec>(supported_audio_codecs, audio_codecs,
-                                        codec, nullptr)) {
+      if (FindMatchingCodec<AudioCodec>(acd->codecs(), audio_codecs, codec,
+                                        nullptr)) {
         filtered_codecs.push_back(codec);
       }
     }
@@ -2183,7 +2189,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
         static_cast<const VideoContentDescription*>(
             current_content->description);
     for (const VideoCodec& codec : vcd->codecs()) {
-      if (FindMatchingCodec<VideoCodec>(video_codecs_, video_codecs, codec,
+      if (FindMatchingCodec<VideoCodec>(vcd->codecs(), video_codecs, codec,
                                         nullptr)) {
         filtered_codecs.push_back(codec);
       }

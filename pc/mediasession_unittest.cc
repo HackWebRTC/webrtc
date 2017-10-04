@@ -2077,6 +2077,64 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_EQ(expected_codecs, updated_vcd->codecs());
 }
 
+// Regression test for:
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=8332
+// Existing codecs should always appear before new codecs in re-offers. But
+// under a specific set of circumstances, the existing RTX codec was ending up
+// added to the end of the list.
+TEST_F(MediaSessionDescriptionFactoryTest,
+       RespondentCreatesOfferAfterCreatingAnswerWithRemappedRtxPayloadType) {
+  MediaSessionOptions opts;
+  AddMediaSection(MEDIA_TYPE_VIDEO, "video", cricket::MD_RECVONLY, kActive,
+                  &opts);
+  // We specifically choose different preferred payload types for VP8 to
+  // trigger the issue.
+  cricket::VideoCodec vp8_offerer(100, "VP8");
+  cricket::VideoCodec vp8_offerer_rtx =
+      VideoCodec::CreateRtxCodec(101, vp8_offerer.id);
+  cricket::VideoCodec vp8_answerer(110, "VP8");
+  cricket::VideoCodec vp8_answerer_rtx =
+      VideoCodec::CreateRtxCodec(111, vp8_answerer.id);
+  cricket::VideoCodec vp9(120, "VP9");
+  cricket::VideoCodec vp9_rtx = VideoCodec::CreateRtxCodec(121, vp9.id);
+
+  std::vector<VideoCodec> f1_codecs = {vp8_offerer, vp8_offerer_rtx};
+  // We also specifically cause the answerer to prefer VP9, such that if it
+  // *doesn't* honor the existing preferred codec (VP8) we'll notice.
+  std::vector<VideoCodec> f2_codecs = {vp9, vp9_rtx, vp8_answerer,
+                                       vp8_answerer_rtx};
+
+  f1_.set_video_codecs(f1_codecs);
+  f2_.set_video_codecs(f2_codecs);
+  std::vector<AudioCodec> audio_codecs;
+  f1_.set_audio_codecs(audio_codecs, audio_codecs);
+  f2_.set_audio_codecs(audio_codecs, audio_codecs);
+
+  // Offer will be {VP8, RTX for VP8}. Answer will be the same.
+  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  std::unique_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), opts, NULL));
+
+  // Updated offer *should* be {VP8, RTX for VP8, VP9, RTX for VP9}.
+  // But if the bug is triggered, RTX for VP8 ends up last.
+  std::unique_ptr<SessionDescription> updated_offer(
+      f2_.CreateOffer(opts, answer.get()));
+
+  const VideoContentDescription* vcd =
+      GetFirstVideoContentDescription(updated_offer.get());
+  std::vector<cricket::VideoCodec> codecs = vcd->codecs();
+  ASSERT_EQ(4u, codecs.size());
+  EXPECT_EQ(vp8_offerer, codecs[0]);
+  EXPECT_EQ(vp8_offerer_rtx, codecs[1]);
+  EXPECT_EQ(vp9, codecs[2]);
+  EXPECT_EQ(vp9_rtx, codecs[3]);
+  LOG(LS_INFO) << "Offer codecs: ";
+  for (auto codec : codecs) {
+    LOG(LS_INFO) << codec.ToString();
+  }
+}
+
 // Create an updated offer that adds video after creating an audio only answer
 // to the original offer. This test verifies that if a video codec and the RTX
 // codec have the same default payload type as an audio codec that is already in
