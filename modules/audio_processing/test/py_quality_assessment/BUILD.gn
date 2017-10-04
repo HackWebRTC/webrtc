@@ -22,6 +22,7 @@ copy("scripts") {
     "README.md",
     "apm_quality_assessment.py",
     "apm_quality_assessment.sh",
+    "apm_quality_assessment_boxplot.py",
     "apm_quality_assessment_export.py",
     "apm_quality_assessment_gencfgs.py",
     "apm_quality_assessment_optimize.py",

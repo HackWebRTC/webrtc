@@ -36,6 +36,8 @@ def main():
   # Init.
   logging.basicConfig(level=logging.DEBUG)  # TODO(alessio): INFO once debugged.
   parser = collect_data.InstanceArgumentsParser()
+  parser.add_argument('-f', '--filename_suffix',
+                      help=('suffix of the exported file'))
   parser.description = ('Exports pre-computed APM module quality assessment '
                         'results into HTML tables')
   args = parser.parse_args()

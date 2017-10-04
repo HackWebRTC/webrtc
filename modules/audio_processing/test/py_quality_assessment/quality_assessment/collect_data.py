@@ -53,9 +53,6 @@ def InstanceArgumentsParser():
                       help=('the same base path used with the '
                             'apm_quality_assessment tool'))
 
-  parser.add_argument('-f', '--filename_suffix',
-                      help=('suffix of the exported file'))
-
   parser.add_argument('-c', '--config_names', type=re.compile,
                       help=('regular expression to filter the APM configuration'
                             ' names'))
