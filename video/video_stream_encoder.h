@@ -126,7 +126,7 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // be called on |encoder_queue_|.
   rtc::TaskQueue* encoder_queue() { return &encoder_queue_; }
 
-  // webrtc::ScalingObserverInterface implementation.
+  // AdaptationObserverInterface implementation.
   // These methods are protected for easier testing.
   void AdaptUp(AdaptReason reason) override;
   void AdaptDown(AdaptReason reason) override;

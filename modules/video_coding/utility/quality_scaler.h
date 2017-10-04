@@ -39,8 +39,8 @@ class AdaptationObserverInterface {
 };
 
 // QualityScaler runs asynchronously and monitors QP values of encoded frames.
-// It holds a reference to a ScalingObserverInterface implementation to signal
-// an intent to scale up or down.
+// It holds a reference to an AdaptationObserverInterface implementation to
+// signal an intent to scale up or down.
 class QualityScaler {
  public:
   // Construct a QualityScaler with a given |observer|.
