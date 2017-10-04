@@ -248,11 +248,6 @@ class Call : public webrtc::Call,
                                  MediaType media_type)
       RTC_SHARED_LOCKS_REQUIRED(receive_crit_);
 
-  rtc::Optional<RtpPacketReceived> ParseRtpPacket(
-      const uint8_t* packet,
-      size_t length,
-      const PacketTime* packet_time) const;
-
   void UpdateSendHistograms(int64_t first_sent_packet_ms)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(&bitrate_crit_);
   void UpdateReceiveHistograms();
@@ -502,25 +497,6 @@ Call::~Call() {
   }
   UpdateReceiveHistograms();
   UpdateHistograms();
-}
-
-rtc::Optional<RtpPacketReceived> Call::ParseRtpPacket(
-    const uint8_t* packet,
-    size_t length,
-    const PacketTime* packet_time) const {
-  RtpPacketReceived parsed_packet;
-  if (!parsed_packet.Parse(packet, length))
-    return rtc::Optional<RtpPacketReceived>();
-
-  int64_t arrival_time_ms;
-  if (packet_time && packet_time->timestamp != -1) {
-    arrival_time_ms = (packet_time->timestamp + 500) / 1000;
-  } else {
-    arrival_time_ms = clock_->TimeInMilliseconds();
-  }
-  parsed_packet.set_arrival_time_ms(arrival_time_ms);
-
-  return rtc::Optional<RtpPacketReceived>(std::move(parsed_packet));
 }
 
 void Call::UpdateHistograms() {
@@ -1329,28 +1305,29 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
                                                 const PacketTime& packet_time) {
   TRACE_EVENT0("webrtc", "Call::DeliverRtp");
 
-  // TODO(nisse): We should parse the RTP header only here, and pass
-  // on parsed_packet to the receive streams.
-  rtc::Optional<RtpPacketReceived> parsed_packet =
-      ParseRtpPacket(packet, length, &packet_time);
+  RtpPacketReceived parsed_packet;
+  if (!parsed_packet.Parse(packet, length))
+    return DELIVERY_PACKET_ERROR;
+
+  if (packet_time.timestamp != -1) {
+    parsed_packet.set_arrival_time_ms((packet_time.timestamp + 500) / 1000);
+  } else {
+    parsed_packet.set_arrival_time_ms(clock_->TimeInMilliseconds());
+  }
 
   // We might get RTP keep-alive packets in accordance with RFC6263 section 4.6.
   // These are empty (zero length payload) RTP packets with an unsignaled
   // payload type.
-  const bool is_keep_alive_packet =
-      parsed_packet && parsed_packet->payload_size() == 0;
+  const bool is_keep_alive_packet = parsed_packet.payload_size() == 0;
 
   RTC_DCHECK(media_type == MediaType::AUDIO || media_type == MediaType::VIDEO ||
              is_keep_alive_packet);
 
-  if (!parsed_packet)
-    return DELIVERY_PACKET_ERROR;
-
   ReadLockScoped read_lock(*receive_crit_);
-  auto it = receive_rtp_config_.find(parsed_packet->Ssrc());
+  auto it = receive_rtp_config_.find(parsed_packet.Ssrc());
   if (it == receive_rtp_config_.end()) {
     LOG(LS_ERROR) << "receive_rtp_config_ lookup failed for ssrc "
-                  << parsed_packet->Ssrc();
+                  << parsed_packet.Ssrc();
     // Destruction of the receive stream, including deregistering from the
     // RtpDemuxer, is not protected by the |receive_crit_| lock. But
     // deregistering in the |receive_rtp_config_| map is protected by that lock.
@@ -1359,17 +1336,17 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     // which is being torned down.
     return DELIVERY_UNKNOWN_SSRC;
   }
-  parsed_packet->IdentifyExtensions(it->second.extensions);
+  parsed_packet.IdentifyExtensions(it->second.extensions);
 
-  NotifyBweOfReceivedPacket(*parsed_packet, media_type);
+  NotifyBweOfReceivedPacket(parsed_packet, media_type);
 
   if (media_type == MediaType::AUDIO) {
-    if (audio_receiver_controller_.OnRtpPacket(*parsed_packet)) {
+    if (audio_receiver_controller_.OnRtpPacket(parsed_packet)) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_audio_bytes_per_second_counter_.Add(static_cast<int>(length));
       event_log_->Log(
-          rtc::MakeUnique<RtcEventRtpPacketIncoming>(*parsed_packet));
-      const int64_t arrival_time_ms = parsed_packet->arrival_time_ms();
+          rtc::MakeUnique<RtcEventRtpPacketIncoming>(parsed_packet));
+      const int64_t arrival_time_ms = parsed_packet.arrival_time_ms();
       if (!first_received_rtp_audio_ms_) {
         first_received_rtp_audio_ms_.emplace(arrival_time_ms);
       }
@@ -1377,12 +1354,12 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
       return DELIVERY_OK;
     }
   } else if (media_type == MediaType::VIDEO) {
-    if (video_receiver_controller_.OnRtpPacket(*parsed_packet)) {
+    if (video_receiver_controller_.OnRtpPacket(parsed_packet)) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_video_bytes_per_second_counter_.Add(static_cast<int>(length));
       event_log_->Log(
-          rtc::MakeUnique<RtcEventRtpPacketIncoming>(*parsed_packet));
-      const int64_t arrival_time_ms = parsed_packet->arrival_time_ms();
+          rtc::MakeUnique<RtcEventRtpPacketIncoming>(parsed_packet));
+      const int64_t arrival_time_ms = parsed_packet.arrival_time_ms();
       if (!first_received_rtp_video_ms_) {
         first_received_rtp_video_ms_.emplace(arrival_time_ms);
       }
@@ -1406,18 +1383,17 @@ PacketReceiver::DeliveryStatus Call::DeliverPacket(
 }
 
 void Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
-  rtc::Optional<RtpPacketReceived> parsed_packet =
-      ParseRtpPacket(packet, length, nullptr);
-  if (!parsed_packet)
+  RtpPacketReceived parsed_packet;
+  if (!parsed_packet.Parse(packet, length))
     return;
 
-  parsed_packet->set_recovered(true);
+  parsed_packet.set_recovered(true);
 
   ReadLockScoped read_lock(*receive_crit_);
-  auto it = receive_rtp_config_.find(parsed_packet->Ssrc());
+  auto it = receive_rtp_config_.find(parsed_packet.Ssrc());
   if (it == receive_rtp_config_.end()) {
     LOG(LS_ERROR) << "receive_rtp_config_ lookup failed for ssrc "
-                  << parsed_packet->Ssrc();
+                  << parsed_packet.Ssrc();
     // Destruction of the receive stream, including deregistering from the
     // RtpDemuxer, is not protected by the |receive_crit_| lock. But
     // deregistering in the |receive_rtp_config_| map is protected by that lock.
@@ -1426,10 +1402,10 @@ void Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
     // which is being torned down.
     return;
   }
-  parsed_packet->IdentifyExtensions(it->second.extensions);
+  parsed_packet.IdentifyExtensions(it->second.extensions);
 
   // TODO(brandtr): Update here when we support protecting audio packets too.
-  video_receiver_controller_.OnRtpPacket(*parsed_packet);
+  video_receiver_controller_.OnRtpPacket(parsed_packet);
 }
 
 void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
