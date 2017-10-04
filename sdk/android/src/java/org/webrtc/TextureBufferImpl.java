@@ -101,7 +101,7 @@ class TextureBufferImpl implements VideoFrame.TextureBuffer {
     ByteBuffer dataV = buffer.slice();
 
     // SurfaceTextureHelper uses the same stride for Y, U, and V data.
-    return new I420BufferImpl(width, height, dataY, stride, dataU, stride, dataV, stride, null);
+    return JavaI420Buffer.wrap(width, height, dataY, stride, dataU, stride, dataV, stride, null);
   }
 
   @Override

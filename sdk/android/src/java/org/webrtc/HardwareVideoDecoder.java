@@ -535,7 +535,7 @@ class HardwareVideoDecoder
     final int vPos = uPos + uvStride * sliceHeight / 2;
     final int vEnd = vPos + uvStride * (sliceHeight / 2);
 
-    VideoFrame.I420Buffer frameBuffer = I420BufferImpl.allocate(width, height);
+    VideoFrame.I420Buffer frameBuffer = JavaI420Buffer.allocate(width, height);
 
     ByteBuffer dataY = frameBuffer.getDataY();
     dataY.position(0); // Ensure we are in the beginning.
@@ -605,7 +605,7 @@ class HardwareVideoDecoder
     buffer.limit(vEnd);
     ByteBuffer dataV = buffer.slice();
 
-    return new I420BufferImpl(
+    return JavaI420Buffer.wrap(
         width, height, dataY, stride, dataU, uvStride, dataV, uvStride, releaseCallback);
   }
 

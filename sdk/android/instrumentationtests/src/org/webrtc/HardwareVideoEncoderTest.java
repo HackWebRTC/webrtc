@@ -179,7 +179,7 @@ public class HardwareVideoEncoderTest {
 
     @Override
     public VideoFrame.I420Buffer toI420() {
-      return I420BufferImpl.allocate(width, height);
+      return JavaI420Buffer.allocate(width, height);
     }
 
     @Override
@@ -191,12 +191,12 @@ public class HardwareVideoEncoderTest {
   }
 
   private static class MockI420Buffer extends MockBufferBase implements VideoFrame.I420Buffer {
-    private final I420BufferImpl realBuffer;
+    private final JavaI420Buffer realBuffer;
 
     public MockI420Buffer(int width, int height, Runnable releaseCallback) {
       super(width, height, releaseCallback);
       // We never release this but it is not a problem in practice because the release is a no-op.
-      realBuffer = I420BufferImpl.allocate(width, height);
+      realBuffer = JavaI420Buffer.allocate(width, height);
     }
 
     @Override

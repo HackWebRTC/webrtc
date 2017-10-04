@@ -163,7 +163,7 @@ public class VideoRenderer {
         VideoRenderer.renderFrameDone(this);
         buffer = backingBuffer;
       } else if (yuvFrame) {
-        buffer = new I420BufferImpl(width, height, yuvPlanes[0], yuvStrides[0], yuvPlanes[1],
+        buffer = JavaI420Buffer.wrap(width, height, yuvPlanes[0], yuvStrides[0], yuvPlanes[1],
             yuvStrides[1], yuvPlanes[2], yuvStrides[2],
             () -> { VideoRenderer.renderFrameDone(this); });
       } else {

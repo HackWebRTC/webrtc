@@ -122,7 +122,7 @@ public final class HardwareVideoDecoderTest {
         VideoCodecStatus.OK);
 
     // First, encode a frame.
-    VideoFrame.I420Buffer buffer = I420BufferImpl.allocate(SETTINGS.width, SETTINGS.height);
+    VideoFrame.I420Buffer buffer = JavaI420Buffer.allocate(SETTINGS.width, SETTINGS.height);
     VideoFrame frame = new VideoFrame(buffer, rotation, presentationTimestampUs * 1000);
     VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
         new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
@@ -197,7 +197,7 @@ public final class HardwareVideoDecoderTest {
         VideoCodecStatus.OK);
 
     // First, encode a frame.
-    VideoFrame.I420Buffer buffer = I420BufferImpl.allocate(SETTINGS.width, SETTINGS.height);
+    VideoFrame.I420Buffer buffer = JavaI420Buffer.allocate(SETTINGS.width, SETTINGS.height);
     VideoFrame frame = new VideoFrame(buffer, rotation, presentationTimestampUs * 1000);
     VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
         new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});

@@ -37,33 +37,32 @@ import org.junit.runner.RunWith;
 // EmptyActivity is needed for the surface.
 @RunWith(BaseJUnit4ClassRunner.class)
 public class EglRendererTest {
-  final static String TAG = "EglRendererTest";
-  final static int RENDER_WAIT_MS = 1000;
-  final static int SURFACE_WAIT_MS = 1000;
-  final static int TEST_FRAME_WIDTH = 4;
-  final static int TEST_FRAME_HEIGHT = 4;
-  final static int REMOVE_FRAME_LISTENER_RACY_NUM_TESTS = 10;
+  private final static String TAG = "EglRendererTest";
+  private final static int RENDER_WAIT_MS = 1000;
+  private final static int SURFACE_WAIT_MS = 1000;
+  private final static int TEST_FRAME_WIDTH = 4;
+  private final static int TEST_FRAME_HEIGHT = 4;
+  private final static int REMOVE_FRAME_LISTENER_RACY_NUM_TESTS = 10;
   // Some arbitrary frames.
-  final static ByteBuffer[][] TEST_FRAMES = {
+  private final static byte[][][] TEST_FRAMES_DATA = {
       {
-          ByteBuffer.wrap(new byte[] {
-              11, -12, 13, -14, -15, 16, -17, 18, 19, -110, 111, -112, -113, 114, -115, 116}),
-          ByteBuffer.wrap(new byte[] {117, 118, 119, 120}),
-          ByteBuffer.wrap(new byte[] {121, 122, 123, 124}),
+          new byte[] {
+              11, -12, 13, -14, -15, 16, -17, 18, 19, -110, 111, -112, -113, 114, -115, 116},
+          new byte[] {117, 118, 119, 120}, new byte[] {121, 122, 123, 124},
       },
       {
-          ByteBuffer.wrap(new byte[] {-11, -12, -13, -14, -15, -16, -17, -18, -19, -110, -111, -112,
-              -113, -114, -115, -116}),
-          ByteBuffer.wrap(new byte[] {-121, -122, -123, -124}),
-          ByteBuffer.wrap(new byte[] {-117, -118, -119, -120}),
+          new byte[] {-11, -12, -13, -14, -15, -16, -17, -18, -19, -110, -111, -112, -113, -114,
+              -115, -116},
+          new byte[] {-121, -122, -123, -124}, new byte[] {-117, -118, -119, -120},
       },
       {
-          ByteBuffer.wrap(new byte[] {-11, -12, -13, -14, -15, -16, -17, -18, -19, -110, -111, -112,
-              -113, -114, -115, -116}),
-          ByteBuffer.wrap(new byte[] {117, 118, 119, 120}),
-          ByteBuffer.wrap(new byte[] {121, 122, 123, 124}),
+          new byte[] {-11, -12, -13, -14, -15, -16, -17, -18, -19, -110, -111, -112, -113, -114,
+              -115, -116},
+          new byte[] {117, 118, 119, 120}, new byte[] {121, 122, 123, 124},
       },
   };
+  private final static ByteBuffer[][] TEST_FRAMES =
+      copyTestDataToDirectByteBuffers(TEST_FRAMES_DATA);
 
   private class TestFrameListener implements EglRenderer.FrameListener {
     final private ArrayList<Bitmap> bitmaps = new ArrayList<Bitmap>();
@@ -334,5 +333,19 @@ public class EglRendererTest {
         testFrameListener, 1f /* scaleFactor */, null, true /* applyFpsReduction */);
     feedFrame(1);
     assertFalse(testFrameListener.waitForBitmap(RENDER_WAIT_MS));
+  }
+
+  private static ByteBuffer[][] copyTestDataToDirectByteBuffers(byte[][][] testData) {
+    final ByteBuffer[][] result = new ByteBuffer[testData.length][];
+
+    for (int i = 0; i < testData.length; i++) {
+      result[i] = new ByteBuffer[testData[i].length];
+      for (int j = 0; j < testData[i].length; j++) {
+        result[i][j] = ByteBuffer.allocateDirect(testData[i][j].length);
+        result[i][j].put(testData[i][j]);
+        result[i][j].rewind();
+      }
+    }
+    return result;
   }
 }

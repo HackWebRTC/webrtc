@@ -173,17 +173,12 @@ public class VideoFrame {
       dataV.position(cropX / 2 + cropY / 2 * buffer.getStrideV());
 
       buffer.retain();
-      return new I420BufferImpl(buffer.getWidth(), buffer.getHeight(), dataY.slice(),
+      return JavaI420Buffer.wrap(buffer.getWidth(), buffer.getHeight(), dataY.slice(),
           buffer.getStrideY(), dataU.slice(), buffer.getStrideU(), dataV.slice(),
-          buffer.getStrideV(), new Runnable() {
-            @Override
-            public void run() {
-              buffer.release();
-            }
-          });
+          buffer.getStrideV(), buffer::release);
     }
 
-    I420BufferImpl newBuffer = I420BufferImpl.allocate(scaleWidth, scaleHeight);
+    JavaI420Buffer newBuffer = JavaI420Buffer.allocate(scaleWidth, scaleHeight);
     nativeCropAndScaleI420(buffer.getDataY(), buffer.getStrideY(), buffer.getDataU(),
         buffer.getStrideU(), buffer.getDataV(), buffer.getStrideV(), cropX, cropY, cropWidth,
         cropHeight, newBuffer.getDataY(), newBuffer.getStrideY(), newBuffer.getDataU(),
