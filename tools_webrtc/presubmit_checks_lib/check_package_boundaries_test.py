@@ -25,54 +25,46 @@ def ReadPylFile(file_path):
     return ast.literal_eval(f.read())
 
 
-class Logger(object):
-  def __init__(self, test_dir):
-    self.messages = []
-    self.test_dir = test_dir
-
-  def Log(self, build_file_path, line_number, target_name, source_file,
-          subpackage):
-    build_file_path = os.path.relpath(build_file_path, self.test_dir)
-    build_file_path = build_file_path.replace(os.path.sep, '/')
-    self.messages.append([build_file_path, line_number, target_name,
-                          source_file, subpackage])
-
-
 class UnitTest(unittest.TestCase):
-  def RunTest(self, test_dir, check_all_build_files=False):
-    logger = Logger(test_dir)
+  def _RunTest(self, test_dir, check_all_build_files=False):
     build_files = [os.path.join(test_dir, 'BUILD.gn')]
     if check_all_build_files:
       build_files = None
-    CheckPackageBoundaries(test_dir, logger, build_files)
+
+    messages = []
+    for violation in CheckPackageBoundaries(test_dir, build_files):
+      build_file_path = os.path.relpath(violation.build_file_path, test_dir)
+      build_file_path = build_file_path.replace(os.path.sep, '/')
+      messages.append(violation._replace(build_file_path=build_file_path))
+
     expected_messages = ReadPylFile(os.path.join(test_dir, 'expected.pyl'))
-    self.assertListEqual(sorted(expected_messages), sorted(logger.messages))
+    self.assertListEqual(sorted(expected_messages), sorted(messages))
 
   def testNoErrors(self):
-    self.RunTest(os.path.join(TESTDATA_DIR, 'no_errors'))
+    self._RunTest(os.path.join(TESTDATA_DIR, 'no_errors'))
 
   def testMultipleErrorsSingleTarget(self):
-    self.RunTest(os.path.join(TESTDATA_DIR, 'multiple_errors_single_target'))
+    self._RunTest(os.path.join(TESTDATA_DIR, 'multiple_errors_single_target'))
 
   def testMultipleErrorsMultipleTargets(self):
-    self.RunTest(os.path.join(TESTDATA_DIR, 'multiple_errors_multiple_targets'))
+    self._RunTest(os.path.join(TESTDATA_DIR,
+                               'multiple_errors_multiple_targets'))
 
   def testCommonPrefix(self):
-    self.RunTest(os.path.join(TESTDATA_DIR, 'common_prefix'))
+    self._RunTest(os.path.join(TESTDATA_DIR, 'common_prefix'))
 
   def testAllBuildFiles(self):
-    self.RunTest(os.path.join(TESTDATA_DIR, 'all_build_files'), True)
+    self._RunTest(os.path.join(TESTDATA_DIR, 'all_build_files'), True)
 
   def testSanitizeFilename(self):
     # The `dangerous_filename` test case contains a directory with '++' in its
     # name. If it's not properly escaped, a regex error would be raised.
-    self.RunTest(os.path.join(TESTDATA_DIR, 'dangerous_filename'), True)
+    self._RunTest(os.path.join(TESTDATA_DIR, 'dangerous_filename'), True)
 
   def testRelativeFilename(self):
     test_dir = os.path.join(TESTDATA_DIR, 'all_build_files')
-    logger = Logger(test_dir)
     with self.assertRaises(AssertionError):
-      CheckPackageBoundaries(test_dir, logger, ["BUILD.gn"])
+      CheckPackageBoundaries(test_dir, ["BUILD.gn"])
 
 
 if __name__ == '__main__':

@@ -9,9 +9,9 @@
 import json
 import os
 import re
-import subprocess
 import sys
 from collections import defaultdict
+from contextlib import contextmanager
 
 
 # Files and directories that are *skipped* by cpplint in the presubmit script.
@@ -107,16 +107,15 @@ SOURCES_RE = re.compile(r'sources \+?= \[(?P<sources>.*?)\]',
 FILE_PATH_RE = re.compile(r'"(?P<file_path>(\w|\/)+)(?P<extension>\.\w+)"')
 
 
-def _RunCommand(command, cwd):
-  """Runs a command and returns the output from that command."""
-  p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                       cwd=cwd)
-  stdout = p.stdout.read()
-  stderr = p.stderr.read()
-  p.wait()
-  p.stdout.close()
-  p.stderr.close()
-  return p.returncode, stdout, stderr
+@contextmanager
+def _AddToPath(*paths):
+  original_sys_path = sys.path
+  sys.path.extend(paths)
+  try:
+    yield
+  finally:
+    # Restore sys.path to what it was before.
+    sys.path = original_sys_path
 
 
 def VerifyNativeApiHeadersListIsValid(input_api, output_api):
@@ -379,15 +378,15 @@ def CheckNoMixingSources(input_api, gn_files, output_api):
 
 def CheckNoPackageBoundaryViolations(input_api, gn_files, output_api):
   cwd = input_api.PresubmitLocalPath()
-  script_path = os.path.join('tools_webrtc', 'presubmit_checks_lib',
-                             'check_package_boundaries.py')
-  command = [sys.executable, script_path, cwd]
-  command += [os.path.join(cwd, gn_file.LocalPath()) for gn_file in gn_files]
-  returncode, _, stderr = _RunCommand(command, cwd)
-  if returncode:
+  with _AddToPath(input_api.os_path.join(
+      cwd, 'tools_webrtc', 'presubmit_checks_lib')):
+    from check_package_boundaries import CheckPackageBoundaries
+  build_files = [os.path.join(cwd, gn_file.LocalPath()) for gn_file in gn_files]
+  errors = CheckPackageBoundaries(cwd, build_files)[:5]
+  if errors:
     return [output_api.PresubmitError(
-        'There are package boundary violations in the following GN files:\n\n'
-        '%s' % stderr)]
+        'There are package boundary violations in the following GN files:',
+        long_text='\n\n'.join(str(err) for err in errors))]
   return []
 
 def CheckGnChanges(input_api, output_api):
@@ -417,21 +416,16 @@ def CheckUnwantedDependencies(input_api, output_api):
   # We need to wait until we have an input_api object and use this
   # roundabout construct to import checkdeps because this file is
   # eval-ed and thus doesn't have __file__.
-  original_sys_path = sys.path
-  try:
-    checkdeps_path = input_api.os_path.join(input_api.PresubmitLocalPath(),
-                                            'buildtools', 'checkdeps')
-    if not os.path.exists(checkdeps_path):
-      return [output_api.PresubmitError(
-          'Cannot find checkdeps at %s\nHave you run "gclient sync" to '
-          'download Chromium and setup the symlinks?' % checkdeps_path)]
-    sys.path.append(checkdeps_path)
+  checkdeps_path = input_api.os_path.join(input_api.PresubmitLocalPath(),
+                                          'buildtools', 'checkdeps')
+  if not os.path.exists(checkdeps_path):
+    return [output_api.PresubmitError(
+        'Cannot find checkdeps at %s\nHave you run "gclient sync" to '
+        'download all the DEPS entries?' % checkdeps_path)]
+  with _AddToPath(checkdeps_path):
     import checkdeps
     from cpp_checker import CppChecker
     from rules import Rule
-  finally:
-    # Restore sys.path to what it was before.
-    sys.path = original_sys_path
 
   added_includes = []
   for f in input_api.AffectedFiles():
@@ -708,15 +702,10 @@ def CheckOrphanHeaders(input_api, output_api):
   error_msg = """Header file {} is not listed in any GN target.
   Please create a target or add it to an existing one in {}"""
   results = []
-  original_sys_path = sys.path
-  try:
-    sys.path = sys.path + [input_api.os_path.join(
-        input_api.PresubmitLocalPath(), 'tools_webrtc', 'presubmit_checks_lib')]
+  with _AddToPath(input_api.os_path.join(
+      input_api.PresubmitLocalPath(), 'tools_webrtc', 'presubmit_checks_lib')):
     from check_orphan_headers import GetBuildGnPathFromFilePath
     from check_orphan_headers import IsHeaderInBuildGn
-  finally:
-    # Restore sys.path to what it was before.
-    sys.path = original_sys_path
 
   for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
     if f.LocalPath().endswith('.h') and f.Action() == 'A':

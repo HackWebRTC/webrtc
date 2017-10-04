@@ -9,14 +9,11 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import argparse
-import logging
+import collections
 import os
 import re
 import sys
 
-
-DISPLAY_LEVEL = 1
-IGNORE_LEVEL = 0
 
 # TARGET_RE matches a GN target, and extracts the target name and the contents.
 TARGET_RE = re.compile(r'\d+\$(?P<indent>\s*)\w+\("(?P<target_name>\w+)"\) {'
@@ -28,27 +25,16 @@ TARGET_RE = re.compile(r'\d+\$(?P<indent>\s*)\w+\("(?P<target_name>\w+)"\) {'
 SOURCES_RE = re.compile(r'sources \+?= \[(?P<sources>.*?)\]',
                         re.MULTILINE | re.DOTALL)
 
-LOG_FORMAT = '%(message)s'
-ERROR_MESSAGE = ("{}:{} in target '{}':\n"
-                 "  Source file '{}'\n"
-                 "  crosses boundary of package '{}'.\n")
+ERROR_MESSAGE = ("{build_file_path}:{line_number} in target '{target_name}':\n"
+                 "  Source file '{source_file}'\n"
+                 "  crosses boundary of package '{subpackage}'.")
 
 
-class Logger(object):
-  def __init__(self, messages_left=None):
-    self.log_level = DISPLAY_LEVEL
-    self.messages_left = messages_left
-
-  def Log(self, build_file_path, line_number, target_name, source_file,
-          subpackage):
-    if self.messages_left is not None:
-      if not self.messages_left:
-        self.log_level = IGNORE_LEVEL
-      else:
-        self.messages_left -= 1
-    message = ERROR_MESSAGE.format(build_file_path, line_number, target_name,
-                                   source_file, subpackage)
-    logging.log(self.log_level, message)
+class PackageBoundaryViolation(
+    collections.namedtuple('PackageBoundaryViolation',
+        'build_file_path line_number target_name source_file subpackage')):
+  def __str__(self):
+    return ERROR_MESSAGE.format(**self._asdict())
 
 
 def _BuildSubpackagesPattern(packages, query):
@@ -70,12 +56,11 @@ def _ReadFileAndPrependLines(file_path):
                    for line_number, line in enumerate(f, 1))
 
 
-def _CheckBuildFile(build_file_path, packages, logger):
-  """Iterates oven all the targets of the given BUILD.gn file, and verifies that
+def _CheckBuildFile(build_file_path, packages):
+  """Iterates over all the targets of the given BUILD.gn file, and verifies that
   the source files referenced by it don't belong to any of it's subpackages.
-  Returns True if a package boundary violation was found.
+  Returns an iterator over PackageBoundaryViolations for this package.
   """
-  found_violations = False
   package = os.path.dirname(build_file_path)
   subpackages_re = _BuildSubpackagesPattern(packages, package)
 
@@ -90,14 +75,11 @@ def _CheckBuildFile(build_file_path, packages, logger):
         source_file = subpackages_match.group('source_file')
         line_number = subpackages_match.group('line_number')
         if subpackage:
-          found_violations = True
-          logger.Log(build_file_path, line_number, target_name, source_file,
-                     subpackage)
-
-  return found_violations
+          yield PackageBoundaryViolation(build_file_path, line_number,
+                                         target_name, source_file, subpackage)
 
 
-def CheckPackageBoundaries(root_dir, logger, build_files=None):
+def CheckPackageBoundaries(root_dir, build_files=None):
   packages = [root for root, _, files in os.walk(root_dir)
               if 'BUILD.gn' in files]
 
@@ -107,11 +89,13 @@ def CheckPackageBoundaries(root_dir, logger, build_files=None):
   else:
     build_files = [os.path.join(package, 'BUILD.gn') for package in packages]
 
-  return any([_CheckBuildFile(build_file_path, packages, logger)
-              for build_file_path in build_files])
+  messages = []
+  for build_file_path in build_files:
+    messages.extend(_CheckBuildFile(build_file_path, packages))
+  return messages
 
 
-def main():
+def main(argv):
   parser = argparse.ArgumentParser(
       description='Script that checks package boundary violations in GN '
                   'build files.')
@@ -127,14 +111,18 @@ def main():
                       help='If set, the maximum number of violations to be '
                            'displayed.')
 
-  args = parser.parse_args()
+  args = parser.parse_args(argv)
 
-  logging.basicConfig(format=LOG_FORMAT)
-  logging.getLogger().setLevel(DISPLAY_LEVEL)
-  logger = Logger(args.max_messages)
+  messages = CheckPackageBoundaries(args.root_dir, args.build_files)
+  messages = messages[:args.max_messages]
 
-  return CheckPackageBoundaries(args.root_dir, logger, args.build_files)
+  for i, message in enumerate(messages):
+    if i > 0:
+      print
+    print message
+
+  return bool(messages)
 
 
 if __name__ == '__main__':
-  sys.exit(main())
+  sys.exit(main(sys.argv[1:]))
