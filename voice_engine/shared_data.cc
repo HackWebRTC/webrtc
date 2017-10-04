@@ -11,6 +11,7 @@
 #include "voice_engine/shared_data.h"
 
 #include "modules/audio_processing/include/audio_processing.h"
+#include "system_wrappers/include/trace.h"
 #include "voice_engine/channel.h"
 #include "voice_engine/transmit_mixer.h"
 
@@ -26,7 +27,8 @@ SharedData::SharedData()
       _audioDevicePtr(NULL),
       _moduleProcessThreadPtr(ProcessThread::Create("VoiceProcessThread")),
       encoder_queue_("AudioEncoderQueue") {
-  if (TransmitMixer::Create(_transmitMixerPtr) == 0) {
+  Trace::CreateTrace();
+  if (TransmitMixer::Create(_transmitMixerPtr, _gInstanceCounter) == 0) {
     _transmitMixerPtr->SetEngineInformation(&_channelManager);
   }
 }
@@ -38,6 +40,7 @@ SharedData::~SharedData()
         _audioDevicePtr->Release();
     }
     _moduleProcessThreadPtr->Stop();
+    Trace::ReturnTrace();
 }
 
 rtc::TaskQueue* SharedData::encoder_queue() {

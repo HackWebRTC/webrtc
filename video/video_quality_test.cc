@@ -1406,6 +1406,9 @@ void VideoQualityTest::FillScalabilitySettings(
 
 void VideoQualityTest::SetupVideo(Transport* send_transport,
                                   Transport* recv_transport) {
+  if (params_.logging.logs)
+    trace_to_stderr_.reset(new test::TraceToStderr);
+
   size_t num_video_streams = params_.ss.streams.size();
   size_t num_flexfec_streams = params_.video.flexfec ? 1 : 0;
   CreateSendConfig(num_video_streams, 0, num_flexfec_streams, send_transport);

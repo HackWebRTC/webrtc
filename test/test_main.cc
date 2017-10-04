@@ -15,6 +15,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
+#include "test/testsupport/trace_to_stderr.h"
 
 #if defined(WEBRTC_IOS)
 #include "test/ios/test_support.h"
@@ -56,6 +57,9 @@ int main(int argc, char* argv[]) {
   webrtc::metrics::Enable();
 
   rtc::LogMessage::SetLogToStderr(FLAG_logs);
+  std::unique_ptr<webrtc::test::TraceToStderr> trace_to_stderr;
+  if (FLAG_logs)
+      trace_to_stderr.reset(new webrtc::test::TraceToStderr);
 #if defined(WEBRTC_IOS)
   rtc::test::InitTestSuite(RUN_ALL_TESTS, argc, argv);
   rtc::test::RunTestsFromIOSApp();

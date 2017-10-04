@@ -22,6 +22,7 @@ import java.util.logging.Logger;
  * app:
  * - Logging.enableLogThreads
  * - Logging.enableLogTimeStamps
+ * - Logging.enableTracing
  * - Logging.enableLogToDebugOutput
  *
  * Using these APIs requires that the native library is loaded. For example:
@@ -33,6 +34,7 @@ import java.util.logging.Logger;
  */
 public class Logging {
   private static final Logger fallbackLogger = createFallbackLogger();
+  private static volatile boolean tracingEnabled;
   private static volatile boolean loggingEnabled;
 
   private static Logger createFallbackLogger() {
@@ -41,8 +43,7 @@ public class Logging {
     return fallbackLogger;
   }
 
-  // TODO(solenberg): Remove once dependent projects updated.
-  @Deprecated
+  // Keep in sync with webrtc/common_types.h:TraceLevel.
   public enum TraceLevel {
     TRACE_NONE(0x0000),
     TRACE_STATEINFO(0x0001),
@@ -77,9 +78,19 @@ public class Logging {
     nativeEnableLogTimeStamps();
   }
 
-  // TODO(solenberg): Remove once dependent projects updated.
-  @Deprecated
-  public static void enableTracing(String path, EnumSet<TraceLevel> levels) {
+  // Enable tracing to |path| of messages of |levels|.
+  // On Android, use "logcat:" for |path| to send output there.
+  // Note: this function controls the output of the WEBRTC_TRACE() macros.
+  public static synchronized void enableTracing(String path, EnumSet<TraceLevel> levels) {
+    if (tracingEnabled) {
+      return;
+    }
+    int nativeLevel = 0;
+    for (TraceLevel level : levels) {
+      nativeLevel |= level.level;
+    }
+    nativeEnableTracing(path, nativeLevel);
+    tracingEnabled = true;
   }
 
   // Enable diagnostic logging for messages of |severity| to the platform debug
@@ -154,6 +165,7 @@ public class Logging {
     return sw.toString();
   }
 
+  private static native void nativeEnableTracing(String path, int nativeLevels);
   private static native void nativeEnableLogToDebugOutput(int nativeSeverity);
   private static native void nativeEnableLogThreads();
   private static native void nativeEnableLogTimeStamps();

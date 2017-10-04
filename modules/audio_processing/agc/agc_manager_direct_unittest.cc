@@ -13,8 +13,10 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_processing/agc/mock_agc.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
+#include "system_wrappers/include/trace.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/testsupport/trace_to_stderr.h"
 
 using ::testing::_;
 using ::testing::DoAll;
@@ -92,6 +94,7 @@ class AgcManagerDirectTest : public ::testing::Test {
   test::MockGainControl gctrl_;
   TestVolumeCallbacks volume_;
   AgcManagerDirect manager_;
+  test::TraceToStderr trace_to_stderr;
 };
 
 TEST_F(AgcManagerDirectTest, StartupMinVolumeConfigurationIsRespected) {

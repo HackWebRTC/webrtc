@@ -19,6 +19,7 @@
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/test/utility.h"
+#include "system_wrappers/include/trace.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
@@ -175,6 +176,9 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream,
 void Receiver::Teardown() {
   delete[] _playoutBuffer;
   _pcmFile.Close();
+  if (testMode > 1) {
+    Trace::ReturnTrace();
+  }
 }
 
 bool Receiver::IncomingPacket() {
@@ -250,6 +254,9 @@ void Receiver::Run() {
 
 EncodeDecodeTest::EncodeDecodeTest() {
   _testMode = 2;
+  Trace::CreateTrace();
+  Trace::SetTraceFile(
+      (webrtc::test::OutputPath() + "acm_encdec_trace.txt").c_str());
 }
 
 EncodeDecodeTest::EncodeDecodeTest(int testMode) {
@@ -257,6 +264,11 @@ EncodeDecodeTest::EncodeDecodeTest(int testMode) {
   //testMode == 1 for testing all codecs/parameters
   //testMode > 1 for specific user-input test (as it was used before)
   _testMode = testMode;
+  if (_testMode != 0) {
+    Trace::CreateTrace();
+    Trace::SetTraceFile(
+        (webrtc::test::OutputPath() + "acm_encdec_trace.txt").c_str());
+  }
 }
 
 void EncodeDecodeTest::Perform() {
@@ -313,6 +325,11 @@ void EncodeDecodeTest::Perform() {
       _receiver.Teardown();
       rtpFile.Close();
     }
+  }
+
+  // End tracing.
+  if (_testMode == 1) {
+    Trace::ReturnTrace();
   }
 }
 

@@ -14,6 +14,7 @@
 
 #include "modules/audio_processing/test/protobuf_utils.h"
 #include "rtc_base/checks.h"
+#include "test/testsupport/trace_to_stderr.h"
 
 namespace webrtc {
 namespace test {
@@ -209,6 +210,11 @@ void AecDumpBasedSimulator::PrepareReverseProcessStreamCall(
 }
 
 void AecDumpBasedSimulator::Process() {
+  std::unique_ptr<test::TraceToStderr> trace_to_stderr;
+  if (settings_.use_verbose_logging) {
+    trace_to_stderr.reset(new test::TraceToStderr(true));
+  }
+
   CreateAudioProcessor();
   dump_input_file_ = OpenFile(settings_.aec_dump_input_filename->c_str(), "rb");
 
@@ -229,6 +235,8 @@ void AecDumpBasedSimulator::Process() {
 
   webrtc::audioproc::Event event_msg;
   int num_forward_chunks_processed = 0;
+  const float kOneBykChunksPerSecond =
+      1.f / AudioProcessingSimulator::kChunksPerSecond;
   while (ReadMessageFromFile(dump_input_file_, &event_msg)) {
     switch (event_msg.type()) {
       case webrtc::audioproc::Event::INIT:
@@ -250,6 +258,10 @@ void AecDumpBasedSimulator::Process() {
         break;
       default:
         RTC_CHECK(false);
+    }
+    if (trace_to_stderr) {
+      trace_to_stderr->SetTimeSeconds(num_forward_chunks_processed *
+                                      kOneBykChunksPerSecond);
     }
   }
 
