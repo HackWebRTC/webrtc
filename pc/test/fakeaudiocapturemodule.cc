@@ -21,10 +21,6 @@
 // Even simpler buffers would likely just contain audio sample values of 0.
 static const int kHighSampleValue = 10000;
 
-// Same value as src/modules/audio_device/main/source/audio_device_config.h in
-// https://code.google.com/p/webrtc/
-static const int kAdmMaxIdleTimeProcess = 1000;
-
 // Constants here are derived by running VoE using a real ADM.
 // The constants correspond to 10ms of mono audio at 44kHz.
 static const int kTimePerFrameMs = 10;
@@ -40,8 +36,7 @@ enum {
 };
 
 FakeAudioCaptureModule::FakeAudioCaptureModule()
-    : last_process_time_ms_(0),
-      audio_callback_(nullptr),
+    : audio_callback_(nullptr),
       recording_(false),
       playing_(false),
       play_is_initialized_(false),
@@ -72,23 +67,6 @@ int FakeAudioCaptureModule::frames_received() const {
   return frames_received_;
 }
 
-int64_t FakeAudioCaptureModule::TimeUntilNextProcess() {
-  const int64_t current_time = rtc::TimeMillis();
-  if (current_time < last_process_time_ms_) {
-    // TODO: wraparound could be handled more gracefully.
-    return 0;
-  }
-  const int64_t elapsed_time = current_time - last_process_time_ms_;
-  if (kAdmMaxIdleTimeProcess < elapsed_time) {
-    return 0;
-  }
-  return kAdmMaxIdleTimeProcess - elapsed_time;
-}
-
-void FakeAudioCaptureModule::Process() {
-  last_process_time_ms_ = rtc::TimeMillis();
-}
-
 int32_t FakeAudioCaptureModule::ActiveAudioLayer(
     AudioLayer* /*audio_layer*/) const {
   RTC_NOTREACHED();
@@ -98,13 +76,6 @@ int32_t FakeAudioCaptureModule::ActiveAudioLayer(
 webrtc::AudioDeviceModule::ErrorCode FakeAudioCaptureModule::LastError() const {
   RTC_NOTREACHED();
   return webrtc::AudioDeviceModule::kAdmErrNone;
-}
-
-int32_t FakeAudioCaptureModule::RegisterEventObserver(
-    webrtc::AudioDeviceObserver* /*event_callback*/) {
-  // Only used to report warnings and errors. This fake implementation won't
-  // generate any so discard this callback.
-  return 0;
 }
 
 int32_t FakeAudioCaptureModule::RegisterAudioCallback(
@@ -505,7 +476,6 @@ bool FakeAudioCaptureModule::Initialize() {
   // sent to it. Note that the audio processing pipeline will likely distort the
   // original signal.
   SetSendBuffer(kHighSampleValue);
-  last_process_time_ms_ = rtc::TimeMillis();
   return true;
 }
 

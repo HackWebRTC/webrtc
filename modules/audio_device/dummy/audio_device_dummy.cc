@@ -158,21 +158,5 @@ int32_t AudioDeviceDummy::PlayoutDelay(uint16_t& delayMS) const { return -1; }
 
 int32_t AudioDeviceDummy::RecordingDelay(uint16_t& delayMS) const { return -1; }
 
-bool AudioDeviceDummy::PlayoutWarning() const { return false; }
-
-bool AudioDeviceDummy::PlayoutError() const { return false; }
-
-bool AudioDeviceDummy::RecordingWarning() const { return false; }
-
-bool AudioDeviceDummy::RecordingError() const { return false; }
-
-void AudioDeviceDummy::ClearPlayoutWarning() {}
-
-void AudioDeviceDummy::ClearPlayoutError() {}
-
-void AudioDeviceDummy::ClearRecordingWarning() {}
-
-void AudioDeviceDummy::ClearRecordingError() {}
-
 void AudioDeviceDummy::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {}
 }  // namespace webrtc

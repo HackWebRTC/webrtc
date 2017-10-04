@@ -178,16 +178,6 @@ public:
     virtual int32_t EnableBuiltInAEC(bool enable);
 
 public:
-    virtual bool PlayoutWarning() const;
-    virtual bool PlayoutError() const;
-    virtual bool RecordingWarning() const;
-    virtual bool RecordingError() const;
-    virtual void ClearPlayoutWarning();
-    virtual void ClearPlayoutError();
-    virtual void ClearRecordingWarning();
-    virtual void ClearRecordingError();
-
-public:
     virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
 private:
@@ -331,11 +321,6 @@ private:
     uint16_t                          _outputDeviceIndex;
 
     bool                                    _AGC;
-
-    uint16_t                          _playWarning;
-    uint16_t                          _playError;
-    uint16_t                          _recWarning;
-    uint16_t                          _recError;
 
     uint16_t                          _playBufDelay;
 

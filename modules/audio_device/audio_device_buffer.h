@@ -28,8 +28,6 @@ const size_t kMaxDeltaTimeInMs = 500;
 // TODO(henrika): remove when no longer used by external client.
 const size_t kMaxBufferSizeBytes = 3840;  // 10ms in stereo @ 96kHz
 
-class AudioDeviceObserver;
-
 class AudioDeviceBuffer {
  public:
   enum LogState {

@@ -25,11 +25,6 @@ constexpr AgcConfig kDefaultAgcConfig = { 3, 9, true };
 
 struct TestHelper {
   TestHelper() {
-    // Reply with a 10ms timer every time TimeUntilNextProcess is called to
-    // avoid entering a tight loop on the process thread.
-    EXPECT_CALL(mock_audio_device_, TimeUntilNextProcess())
-        .WillRepeatedly(testing::Return(10));
-
     // This replicates the conditions from voe_auto_test.
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));

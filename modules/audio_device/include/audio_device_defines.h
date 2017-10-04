@@ -25,22 +25,6 @@ static const int kAdmMinPlayoutBufferSizeMs = 10;
 static const int kAdmMaxPlayoutBufferSizeMs = 250;
 
 // ----------------------------------------------------------------------------
-//  AudioDeviceObserver
-// ----------------------------------------------------------------------------
-
-class AudioDeviceObserver {
- public:
-  enum ErrorCode { kRecordingError = 0, kPlayoutError = 1 };
-  enum WarningCode { kRecordingWarning = 0, kPlayoutWarning = 1 };
-
-  virtual void OnErrorIsReported(const ErrorCode error) = 0;
-  virtual void OnWarningIsReported(const WarningCode warning) = 0;
-
- protected:
-  virtual ~AudioDeviceObserver() {}
-};
-
-// ----------------------------------------------------------------------------
 //  AudioTransport
 // ----------------------------------------------------------------------------
 
