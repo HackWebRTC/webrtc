@@ -54,7 +54,14 @@ def _ParseArgs():
   parser.add_argument('--android', action='store_true',
       help='Perform the test on a connected Android device instead.')
   parser.add_argument('--adb-path', help='Path to adb binary.', default='adb')
+
+  # Ignore Chromium-specific flags
+  parser.add_argument('--isolated-script-test-output',
+                      type=str, default=None)
+  parser.add_argument('--isolated-script-test-chartjson-output',
+                      type=str, default=None)
   args = parser.parse_args()
+
   return args
 
 
