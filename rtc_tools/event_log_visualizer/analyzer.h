@@ -90,7 +90,8 @@ class EventLogAnalyzer {
 
   void CreateStreamBitrateGraph(PacketDirection desired_direction, Plot* plot);
 
-  void CreateBweSimulationGraph(Plot* plot);
+  void CreateSendSideBweSimulationGraph(Plot* plot);
+  void CreateReceiveSideBweSimulationGraph(Plot* plot);
 
   void CreateNetworkDelayFeedbackGraph(Plot* plot);
   void CreateTimestampGraph(Plot* plot);

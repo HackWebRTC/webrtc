@@ -30,6 +30,7 @@
 #include "modules/audio_coding/neteq/tools/neteq_replacement_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
 #include "modules/audio_coding/neteq/tools/resample_input_audio_file.h"
+#include "modules/congestion_controller/include/receive_side_congestion_controller.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -1107,7 +1108,7 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(
   }
 }
 
-void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
+void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   std::multimap<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
   std::multimap<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
 
@@ -1226,7 +1227,85 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 10, "Bitrate (kbps)", kBottomMargin, kTopMargin);
-  plot->SetTitle("Simulated BWE behavior");
+  plot->SetTitle("Simulated send-side BWE behavior");
+}
+
+void EventLogAnalyzer::CreateReceiveSideBweSimulationGraph(Plot* plot) {
+  class RembInterceptingPacketRouter : public PacketRouter {
+   public:
+    void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                                 uint32_t bitrate_bps) override {
+      last_bitrate_bps_ = bitrate_bps;
+      bitrate_updated_ = true;
+      PacketRouter::OnReceiveBitrateChanged(ssrcs, bitrate_bps);
+    }
+    uint32_t last_bitrate_bps() const { return last_bitrate_bps_; }
+    bool GetAndResetBitrateUpdated() {
+      bool bitrate_updated = bitrate_updated_;
+      bitrate_updated_ = false;
+      return bitrate_updated;
+    }
+
+   private:
+    uint32_t last_bitrate_bps_;
+    bool bitrate_updated_;
+  };
+
+  std::multimap<uint64_t, const LoggedRtpPacket*> incoming_rtp;
+
+  for (const auto& kv : rtp_packets_) {
+    if (kv.first.GetDirection() == PacketDirection::kIncomingPacket &&
+        IsVideoSsrc(kv.first)) {
+      for (const LoggedRtpPacket& rtp_packet : kv.second)
+        incoming_rtp.insert(std::make_pair(rtp_packet.timestamp, &rtp_packet));
+    }
+  }
+
+  SimulatedClock clock(0);
+  RembInterceptingPacketRouter packet_router;
+  // TODO(terelius): The PacketRrouter is the used as the RemoteBitrateObserver.
+  // Is this intentional?
+  ReceiveSideCongestionController rscc(&clock, &packet_router);
+  // TODO(holmer): Log the call config and use that here instead.
+  // static const uint32_t kDefaultStartBitrateBps = 300000;
+  // rscc.SetBweBitrates(0, kDefaultStartBitrateBps, -1);
+
+  TimeSeries time_series("Receive side estimate", LINE_DOT_GRAPH);
+  TimeSeries acked_time_series("Received bitrate", LINE_GRAPH);
+
+  RateStatistics acked_bitrate(250, 8000);
+  int64_t last_update_us = 0;
+  for (const auto& kv : incoming_rtp) {
+    const LoggedRtpPacket& packet = *kv.second;
+    int64_t arrival_time_ms = packet.timestamp / 1000;
+    size_t payload = packet.total_length; /*Should subtract header?*/
+    clock.AdvanceTimeMicroseconds(packet.timestamp -
+                                  clock.TimeInMicroseconds());
+    rscc.OnReceivedPacket(arrival_time_ms, payload, packet.header);
+    acked_bitrate.Update(payload, arrival_time_ms);
+    rtc::Optional<uint32_t> bitrate_bps = acked_bitrate.Rate(arrival_time_ms);
+    if (bitrate_bps) {
+      uint32_t y = *bitrate_bps / 1000;
+      float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
+                1000000;
+      acked_time_series.points.emplace_back(x, y);
+    }
+    if (packet_router.GetAndResetBitrateUpdated() ||
+        clock.TimeInMicroseconds() - last_update_us >= 1e6) {
+      uint32_t y = packet_router.last_bitrate_bps() / 1000;
+      float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
+                1000000;
+      time_series.points.emplace_back(x, y);
+      last_update_us = clock.TimeInMicroseconds();
+    }
+  }
+  // Add the data set to the plot.
+  plot->AppendTimeSeries(std::move(time_series));
+  plot->AppendTimeSeries(std::move(acked_time_series));
+
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 10, "Bitrate (kbps)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Simulated receive-side BWE behavior");
 }
 
 void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {

@@ -71,6 +71,10 @@ DEFINE_bool(plot_incoming_stream_bitrate,
 DEFINE_bool(plot_outgoing_stream_bitrate,
             true,
             "Plot the bitrate used by each outgoing stream.");
+DEFINE_bool(plot_simulated_receiveside_bwe,
+            false,
+            "Run the receive-side bandwidth estimator with the incoming rtp "
+            "packets and plot the resulting estimate.");
 DEFINE_bool(plot_simulated_sendside_bwe,
             false,
             "Run the send-side bandwidth estimator with the outgoing rtp and "
@@ -227,8 +231,11 @@ int main(int argc, char* argv[]) {
     analyzer.CreateStreamBitrateGraph(webrtc::PacketDirection::kOutgoingPacket,
                                       collection->AppendNewPlot());
   }
+  if (FLAG_plot_simulated_receiveside_bwe) {
+    analyzer.CreateReceiveSideBweSimulationGraph(collection->AppendNewPlot());
+  }
   if (FLAG_plot_simulated_sendside_bwe) {
-    analyzer.CreateBweSimulationGraph(collection->AppendNewPlot());
+    analyzer.CreateSendSideBweSimulationGraph(collection->AppendNewPlot());
   }
   if (FLAG_plot_network_delay_feedback) {
     analyzer.CreateNetworkDelayFeedbackGraph(collection->AppendNewPlot());
@@ -290,6 +297,7 @@ void SetAllPlotFlags(bool setting) {
   FLAG_plot_outgoing_bitrate = setting;
   FLAG_plot_incoming_stream_bitrate = setting;
   FLAG_plot_outgoing_stream_bitrate = setting;
+  FLAG_plot_simulated_receiveside_bwe = setting;
   FLAG_plot_simulated_sendside_bwe = setting;
   FLAG_plot_network_delay_feedback = setting;
   FLAG_plot_fraction_loss_feedback = setting;
