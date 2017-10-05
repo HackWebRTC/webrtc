@@ -88,19 +88,18 @@ $ ./apm_quality_assessment_export.py \
 
 ## Usage (boxplot)
 After generating stats, it can help to visualize how a score depends on a
-certain audioproc_f parameter. The `apm_quality_assessment_boxplot.py` script
-helps with that, producing plots similar
-to
-[this one](https://matplotlib.org/mpl_examples/pylab_examples/boxplot_demo_06.png).
+certain APM simulator parameter. The `apm_quality_assessment_boxplot.py` script
+helps with that, producing plots similar to [this
+one](https://matplotlib.org/mpl_examples/pylab_examples/boxplot_demo_06.png).
 
-Suppose some POLQA scores come from running `audioproc_f` with or without the
-intelligibility enhancer: `--ie=1` or `--ie=0`. Then two boxplots side by side
-can be generated with
+Suppose some scores come from running the APM simulator `audioproc_f` with
+or without the intelligibility enhancer: `--ie=1` or `--ie=0`. Then two boxplots
+side by side can be generated with
 
 ```
 $ ./apm_quality_assessment_boxplot.py \
       -o /path/to/output
-      -v polqa
+      -v <score_name>
       -n /path/to/dir/with/apm_configs
       -z ie
 ```

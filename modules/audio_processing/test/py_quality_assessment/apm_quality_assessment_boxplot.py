@@ -71,7 +71,6 @@ def FilterScoresByParams(data_frame, filter_params, score_name, config_dir):
   Returns: dictionary, key is a param value, result is all scores for
     that param value (see `filter_params` for explanation).
   """
-
   results = collections.defaultdict(dict)
   config_names = data_frame['apm_config'].drop_duplicates().values.tolist()
 
@@ -79,7 +78,6 @@ def FilterScoresByParams(data_frame, filter_params, score_name, config_dir):
     config_json = data_access.AudioProcConfigFile.Load(
         os.path.join(config_dir, config_name + '.json'))
     data_with_config = data_frame[data_frame.apm_config == config_name]
-
     data_cell_scores = data_with_config[data_with_config.eval_score_name ==
                                         score_name]
 
