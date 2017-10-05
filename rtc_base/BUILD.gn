@@ -554,6 +554,7 @@ rtc_static_library("rtc_base_generic") {
     "signalthread.h",
     "sigslot.cc",
     "sigslot.h",
+    "sigslotrepeater.h",
     "socket.h",
     "socketadapters.cc",
     "socketadapters.h",
