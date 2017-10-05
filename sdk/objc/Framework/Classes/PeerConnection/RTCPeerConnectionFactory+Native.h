@@ -16,6 +16,8 @@ namespace webrtc {
 
 class AudioEncoderFactory;
 class AudioDecoderFactory;
+class VideoEncoderFactory;
+class VideoDecoderFactory;
 
 }  // namespace webrtc
 
@@ -33,16 +35,31 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface RTCPeerConnectionFactory ()
 
+- (instancetype)initNative NS_DESIGNATED_INITIALIZER;
+
+/* Initializer used when WebRTC is compiled with no media support */
+- (instancetype)initWithNoMedia;
+
 /* Initialize object with injectable native audio/video encoder/decoder factories */
 - (instancetype)initWithNativeAudioEncoderFactory:
                     (rtc::scoped_refptr<webrtc::AudioEncoderFactory>)audioEncoderFactory
                         nativeAudioDecoderFactory:
                             (rtc::scoped_refptr<webrtc::AudioDecoderFactory>)audioDecoderFactory
                         nativeVideoEncoderFactory:
-                            (nullable cricket::WebRtcVideoEncoderFactory *)videoEncoderFactory
+                            (std::unique_ptr<webrtc::VideoEncoderFactory>)videoEncoderFactory
                         nativeVideoDecoderFactory:
-                            (nullable cricket::WebRtcVideoDecoderFactory *)videoDecoderFactory
-    NS_DESIGNATED_INITIALIZER;
+                            (std::unique_ptr<webrtc::VideoDecoderFactory>)videoDecoderFactory;
+
+/* Initialize object with legacy injectable native audio/video encoder/decoder factories
+   TODO(andersc): Remove this when backwards compatiblity is no longer needed.
+ */
+- (instancetype)
+    initWithNativeAudioEncoderFactory:
+        (rtc::scoped_refptr<webrtc::AudioEncoderFactory>)audioEncoderFactory
+            nativeAudioDecoderFactory:
+                (rtc::scoped_refptr<webrtc::AudioDecoderFactory>)audioDecoderFactory
+      legacyNativeVideoEncoderFactory:(cricket::WebRtcVideoEncoderFactory*)videoEncoderFactory
+      legacyNativeVideoDecoderFactory:(cricket::WebRtcVideoDecoderFactory*)videoDecoderFactory;
 
 @end
 

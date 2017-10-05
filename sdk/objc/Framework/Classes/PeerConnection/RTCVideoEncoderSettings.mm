@@ -48,4 +48,19 @@
   return self;
 }
 
+- (webrtc::VideoCodec)nativeVideoCodec {
+  webrtc::VideoCodec videoCodec;
+  videoCodec.width = _width;
+  videoCodec.height = _height;
+  videoCodec.startBitrate = _startBitrate;
+  videoCodec.maxBitrate = _maxBitrate;
+  videoCodec.minBitrate = _minBitrate;
+  videoCodec.targetBitrate = _targetBitrate;
+  videoCodec.maxBitrate = _maxBitrate;
+  videoCodec.qpMax = _qpMax;
+  videoCodec.mode = (webrtc::VideoCodecMode)_mode;
+
+  return videoCodec;
+}
+
 @end

@@ -15,21 +15,21 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/** RTCVideoEncoderFactory is an Objective-C version of cricket::WebRtcVideoEncoderFactory. */
+/** RTCVideoEncoderFactory is an Objective-C version of webrtc::VideoEncoderFactory. */
 RTC_EXPORT
 @protocol RTCVideoEncoderFactory <NSObject>
 
 - (id<RTCVideoEncoder>)createEncoder:(RTCVideoCodecInfo *)info;
-- (NSArray<RTCVideoCodecInfo *> *)supportedCodecs;
+- (NSArray<RTCVideoCodecInfo *> *)supportedCodecs;  // TODO(andersc): "supportedFormats" instead?
 
 @end
 
-/** RTCVideoDecoderFactory is an Objective-C version of cricket::WebRtcVideoDecoderFactory. */
+/** RTCVideoDecoderFactory is an Objective-C version of webrtc::VideoDecoderFactory. */
 RTC_EXPORT
 @protocol RTCVideoDecoderFactory <NSObject>
 
 - (id<RTCVideoDecoder>)createDecoder:(RTCVideoCodecInfo *)info;
-- (NSArray<RTCVideoCodecInfo *> *)supportedCodecs;
+- (NSArray<RTCVideoCodecInfo *> *)supportedCodecs;  // TODO(andersc): "supportedFormats" instead?
 
 @end
 

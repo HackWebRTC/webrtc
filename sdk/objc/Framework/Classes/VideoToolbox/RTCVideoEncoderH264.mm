@@ -169,9 +169,9 @@ void compressionOutputCallback(void *encoder,
 // specific VideoToolbox profile for the specified level, AutoLevel will be
 // returned. The user must initialize the encoder with a resolution and
 // framerate conforming to the selected H264 level regardless.
-CFStringRef ExtractProfile(const cricket::VideoCodec &codec) {
+CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
-      webrtc::H264::ParseSdpProfileLevelId(codec.params);
+      webrtc::H264::ParseSdpProfileLevelId(videoFormat.parameters);
   RTC_DCHECK(profile_level_id);
   switch (profile_level_id->profile) {
     case webrtc::H264::kProfileConstrainedBaseline:
@@ -302,7 +302,7 @@ CFStringRef ExtractProfile(const cricket::VideoCodec &codec) {
     _bitrateAdjuster.reset(new webrtc::BitrateAdjuster(
         webrtc::Clock::GetRealTimeClock(), .5, .95));
     _packetizationMode = RTCH264PacketizationModeNonInterleaved;
-    _profile = ExtractProfile([codecInfo nativeVideoCodec]);
+    _profile = ExtractProfile([codecInfo nativeSdpVideoFormat]);
     LOG(LS_INFO) << "Using profile " << CFStringToString(_profile);
     RTC_CHECK([codecInfo.name isEqualToString:@"H264"]);
 

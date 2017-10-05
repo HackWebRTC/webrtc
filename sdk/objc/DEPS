@@ -15,4 +15,6 @@ include_rules = [
   "+modules/video_coding",
   "+pc",
   "+system_wrappers",
+  "+modules/audio_device",
+  "+modules/audio_processing",
 ]

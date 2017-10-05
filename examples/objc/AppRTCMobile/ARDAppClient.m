@@ -32,6 +32,8 @@
 #import "ARDSignalingMessage.h"
 #import "ARDTURNClient+Internal.h"
 #import "ARDUtilities.h"
+#import "ARDVideoDecoderFactory.h"
+#import "ARDVideoEncoderFactory.h"
 #import "ARDWebSocketChannel.h"
 #import "RTCIceCandidate+JSON.h"
 #import "RTCSessionDescription+JSON.h"
@@ -163,7 +165,10 @@ static int const kKbpsMultiplier = 1000;
 }
 
 - (void)configure {
-  _factory = [[RTCPeerConnectionFactory alloc] init];
+  ARDVideoDecoderFactory *decoderFactory = [[ARDVideoDecoderFactory alloc] init];
+  ARDVideoEncoderFactory *encoderFactory = [[ARDVideoEncoderFactory alloc] init];
+  _factory = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
+                                                       decoderFactory:decoderFactory];
   _messageQueue = [NSMutableArray array];
   _iceServers = [NSMutableArray array];
   _fileLogger = [[RTCFileLogger alloc] init];
