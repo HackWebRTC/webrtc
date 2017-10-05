@@ -171,26 +171,33 @@ def GenerateLicenses(output_dir, build_dir, archs):
   builder.GenerateLicenseText(output_dir)
 
 
+def BuildAar(archs, output_file, use_goma=False, extra_gn_args=None,
+             ext_build_dir=None):
+  extra_gn_args = extra_gn_args or []
+  build_dir = ext_build_dir if ext_build_dir else tempfile.mkdtemp()
+
+  for arch in archs:
+    Build(build_dir, arch, use_goma, extra_gn_args)
+
+  with zipfile.ZipFile(output_file, 'w') as aar_file:
+    # Architecture doesn't matter here, arbitrarily using the first one.
+    CollectCommon(aar_file, build_dir, archs[0])
+    for arch in archs:
+      Collect(aar_file, build_dir, arch)
+
+  license_dir = os.path.dirname(os.path.realpath(output_file))
+  GenerateLicenses(license_dir, build_dir, archs)
+
+  if not ext_build_dir:
+    shutil.rmtree(build_dir, True)
+
+
 def main():
   args = _ParseArgs()
   logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
 
-  build_dir = args.build_dir if args.build_dir else tempfile.mkdtemp()
-
-  for arch in args.arch:
-    Build(build_dir, arch, args.use_goma, args.extra_gn_args)
-
-  with zipfile.ZipFile(args.output, 'w') as aar_file:
-    # Architecture doesn't matter here, arbitrarily using the first one.
-    CollectCommon(aar_file, build_dir, args.arch[0])
-    for arch in args.arch:
-      Collect(aar_file, build_dir, arch)
-
-  license_dir = os.path.dirname(os.path.realpath(args.output))
-  GenerateLicenses(license_dir, build_dir, args.arch)
-
-  if not args.build_dir:
-    shutil.rmtree(build_dir, True)
+  BuildAar(args.arch, args.output, args.use_goma, args.extra_gn_args,
+           args.build_dir)
 
 
 if __name__ == '__main__':
