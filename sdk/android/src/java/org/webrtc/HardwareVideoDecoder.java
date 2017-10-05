@@ -83,10 +83,6 @@ class HardwareVideoDecoder
   private volatile boolean running = false;
   private volatile Exception shutdownException = null;
 
-  // Prevents the decoder from being released before all output buffers have been released.
-  private final Object activeOutputBuffersLock = new Object();
-  private int activeOutputBuffers = 0; // Guarded by activeOutputBuffersLock
-
   // Dimensions (width, height, stride, and sliceHeight) may be accessed by either the decode thread
   // or the output thread.  Accesses should be protected with this lock.
   private final Object dimensionLock = new Object();
@@ -488,19 +484,15 @@ class HardwareVideoDecoder
     buffer.position(info.offset);
     buffer.limit(info.offset + info.size);
     buffer = buffer.slice();
-    final VideoFrame.Buffer frameBuffer;
 
+    final VideoFrame.Buffer frameBuffer;
     if (colorFormat == CodecCapabilities.COLOR_FormatYUV420Planar) {
-      if (sliceHeight % 2 == 0) {
-        frameBuffer = wrapI420Buffer(buffer, result, stride, sliceHeight, width, height);
-      } else {
-        // WebRTC rounds chroma plane size conversions up so we have to repeat the last row.
-        frameBuffer = copyI420Buffer(buffer, result, stride, sliceHeight, width, height);
-      }
+      frameBuffer = copyI420Buffer(buffer, stride, sliceHeight, width, height);
     } else {
       // All other supported color formats are NV12.
-      frameBuffer = wrapNV12Buffer(buffer, result, stride, sliceHeight, width, height);
+      frameBuffer = copyNV12ToI420Buffer(buffer, stride, sliceHeight, width, height);
     }
+    codec.releaseOutputBuffer(result, false);
 
     long presentationTimeNs = info.presentationTimeUs * 1000;
     VideoFrame frame = new VideoFrame(frameBuffer, rotation, presentationTimeNs);
@@ -510,23 +502,15 @@ class HardwareVideoDecoder
     frame.release();
   }
 
-  private VideoFrame.Buffer wrapNV12Buffer(ByteBuffer buffer, int outputBufferIndex, int stride,
-      int sliceHeight, int width, int height) {
-    synchronized (activeOutputBuffersLock) {
-      activeOutputBuffers++;
-    }
-
-    return new NV12Buffer(width, height, stride, sliceHeight, buffer, () -> {
-      codec.releaseOutputBuffer(outputBufferIndex, false);
-      synchronized (activeOutputBuffersLock) {
-        activeOutputBuffers--;
-        activeOutputBuffersLock.notifyAll();
-      }
-    });
+  private VideoFrame.Buffer copyNV12ToI420Buffer(
+      ByteBuffer buffer, int stride, int sliceHeight, int width, int height) {
+    // toI420 copies the buffer.
+    return new NV12Buffer(width, height, stride, sliceHeight, buffer, null /* releaseCallback */)
+        .toI420();
   }
 
-  private VideoFrame.Buffer copyI420Buffer(ByteBuffer buffer, int outputBufferIndex, int stride,
-      int sliceHeight, int width, int height) {
+  private VideoFrame.Buffer copyI420Buffer(
+      ByteBuffer buffer, int stride, int sliceHeight, int width, int height) {
     final int uvStride = stride / 2;
 
     final int yPos = 0;
@@ -538,14 +522,11 @@ class HardwareVideoDecoder
     VideoFrame.I420Buffer frameBuffer = JavaI420Buffer.allocate(width, height);
 
     ByteBuffer dataY = frameBuffer.getDataY();
-    dataY.position(0); // Ensure we are in the beginning.
     buffer.position(yPos);
     buffer.limit(uPos);
     dataY.put(buffer);
-    dataY.position(0); // Go back to beginning.
 
     ByteBuffer dataU = frameBuffer.getDataU();
-    dataU.position(0); // Ensure we are in the beginning.
     buffer.position(uPos);
     buffer.limit(uEnd);
     dataU.put(buffer);
@@ -553,10 +534,8 @@ class HardwareVideoDecoder
       buffer.position(uEnd - uvStride); // Repeat the last row.
       dataU.put(buffer);
     }
-    dataU.position(0); // Go back to beginning.
 
-    ByteBuffer dataV = frameBuffer.getDataU();
-    dataV.position(0); // Ensure we are in the beginning.
+    ByteBuffer dataV = frameBuffer.getDataV();
     buffer.position(vPos);
     buffer.limit(vEnd);
     dataV.put(buffer);
@@ -564,49 +543,8 @@ class HardwareVideoDecoder
       buffer.position(vEnd - uvStride); // Repeat the last row.
       dataV.put(buffer);
     }
-    dataV.position(0); // Go back to beginning.
-
-    codec.releaseOutputBuffer(outputBufferIndex, false);
 
     return frameBuffer;
-  }
-
-  private VideoFrame.Buffer wrapI420Buffer(ByteBuffer buffer, int outputBufferIndex, int stride,
-      int sliceHeight, int width, int height) {
-    final int uvStride = stride / 2;
-
-    final int yPos = 0;
-    final int uPos = yPos + stride * sliceHeight;
-    final int uEnd = uPos + uvStride * (sliceHeight / 2);
-    final int vPos = uPos + uvStride * sliceHeight / 2;
-    final int vEnd = vPos + uvStride * (sliceHeight / 2);
-
-    synchronized (activeOutputBuffersLock) {
-      activeOutputBuffers++;
-    }
-
-    Runnable releaseCallback = () -> {
-      codec.releaseOutputBuffer(outputBufferIndex, false);
-      synchronized (activeOutputBuffersLock) {
-        activeOutputBuffers--;
-        activeOutputBuffersLock.notifyAll();
-      }
-    };
-
-    buffer.position(yPos);
-    buffer.limit(uPos);
-    ByteBuffer dataY = buffer.slice();
-
-    buffer.position(uPos);
-    buffer.limit(uEnd);
-    ByteBuffer dataU = buffer.slice();
-
-    buffer.position(vPos);
-    buffer.limit(vEnd);
-    ByteBuffer dataV = buffer.slice();
-
-    return JavaI420Buffer.wrap(
-        width, height, dataY, stride, dataU, uvStride, dataV, uvStride, releaseCallback);
   }
 
   private void reformat(MediaFormat format) {
@@ -665,7 +603,6 @@ class HardwareVideoDecoder
   private void releaseCodecOnOutputThread() {
     outputThreadChecker.checkIsOnValidThread();
     Logging.d(TAG, "Releasing MediaCodec on output thread");
-    waitOutputBuffersReleasedOnOutputThread();
     try {
       codec.stop();
     } catch (Exception e) {
@@ -679,21 +616,6 @@ class HardwareVideoDecoder
       shutdownException = e;
     }
     Logging.d(TAG, "Release on output thread done");
-  }
-
-  private void waitOutputBuffersReleasedOnOutputThread() {
-    outputThreadChecker.checkIsOnValidThread();
-    synchronized (activeOutputBuffersLock) {
-      while (activeOutputBuffers > 0) {
-        Logging.d(TAG, "Waiting for all frames to be released.");
-        try {
-          activeOutputBuffersLock.wait();
-        } catch (InterruptedException e) {
-          Logging.e(TAG, "Interrupted while waiting for output buffers to be released.", e);
-          return;
-        }
-      }
-    }
   }
 
   private void stopOnOutputThread(Exception e) {
