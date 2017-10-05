@@ -1032,16 +1032,20 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // use the equivalent function on PeerConnectionInterface.
   // TODO(ivoc) Remove after Chrome is updated.
   virtual bool StartRtcEventLog(rtc::PlatformFile file,
-                                int64_t max_size_bytes) = 0;
+                                int64_t max_size_bytes) {
+    return false;
+  }
   // This function is deprecated and will be removed when Chrome is updated to
   // use the equivalent function on PeerConnectionInterface.
   // TODO(ivoc) Remove after Chrome is updated.
-  virtual bool StartRtcEventLog(rtc::PlatformFile file) = 0;
+  virtual bool StartRtcEventLog(rtc::PlatformFile file) {
+    return false;
+  }
 
   // This function is deprecated and will be removed when Chrome is updated to
   // use the equivalent function on PeerConnectionInterface.
   // TODO(ivoc) Remove after Chrome is updated.
-  virtual void StopRtcEventLog() = 0;
+  virtual void StopRtcEventLog() {}
 
  protected:
   // Dtor and ctor protected as objects shouldn't be created or deleted via
