@@ -25,8 +25,8 @@
 namespace webrtc {
 
 static const int kOneSecond90Khz = 90000;
-static const int kMinTimeBetweenSyncs = kOneSecond90Khz * 5;
-static const int kMaxTimeBetweenSyncs = kOneSecond90Khz * 10;
+static const int kMinTimeBetweenSyncs = kOneSecond90Khz * 2;
+static const int kMaxTimeBetweenSyncs = kOneSecond90Khz * 4;
 static const int kQpDeltaThresholdForSync = 8;
 static const int kMinBitrateKbpsForQpBoost = 500;
 

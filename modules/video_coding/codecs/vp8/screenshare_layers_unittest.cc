@@ -35,8 +35,8 @@ const int kDefaultQp = 54;
 const int kDefaultTl0BitrateKbps = 200;
 const int kDefaultTl1BitrateKbps = 2000;
 const int kFrameRate = 5;
-const int kSyncPeriodSeconds = 5;
-const int kMaxSyncPeriodSeconds = 10;
+const int kSyncPeriodSeconds = 2;
+const int kMaxSyncPeriodSeconds = 4;
 
 // Expected flags for corresponding temporal layers.
 const int kTl0Flags = VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF |
