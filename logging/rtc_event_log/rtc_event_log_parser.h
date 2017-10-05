@@ -17,6 +17,7 @@
 
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
+#include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
@@ -34,7 +35,10 @@ RTC_POP_IGNORING_WUNDEF()
 
 namespace webrtc {
 
+enum class BandwidthUsage;
 enum class MediaType;
+
+struct AudioEncoderRuntimeConfig;
 
 class ParsedRtcEventLog {
   friend class RtcEventLogTestHelper;
