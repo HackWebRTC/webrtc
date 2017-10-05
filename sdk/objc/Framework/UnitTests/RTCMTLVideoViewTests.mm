@@ -29,7 +29,6 @@
 
 @interface RTCMTLVideoViewTests : NSObject
 @property(nonatomic, strong) id classMock;
-@property(nonatomic, strong) id metalViewMock;
 @property(nonatomic, strong) id rendererNV12Mock;
 @property(nonatomic, strong) id rendererI420Mock;
 @property(nonatomic, strong) id frameMock;
@@ -38,25 +37,23 @@
 @implementation RTCMTLVideoViewTests
 
 @synthesize classMock = _classMock;
-@synthesize metalViewMock = _metalViewMock;
 @synthesize rendererNV12Mock = _rendererNV12Mock;
 @synthesize rendererI420Mock = _rendererI420Mock;
 @synthesize frameMock = _frameMock;
 
 - (void)setup {
   self.classMock = OCMClassMock([RTCMTLVideoView class]);
+  [self startMockingNilView];
 }
 
 - (void)tearDown {
   [self.classMock stopMocking];
   [self.rendererI420Mock stopMocking];
   [self.rendererNV12Mock stopMocking];
-  [self.metalViewMock stopMocking];
   [self.frameMock stopMocking];
   self.classMock = nil;
   self.rendererI420Mock = nil;
   self.rendererNV12Mock = nil;
-  self.metalViewMock = nil;
   self.frameMock = nil;
 }
 
@@ -85,6 +82,11 @@
   return rendererMock;
 }
 
+- (void)startMockingNilView {
+  // Use OCMock 2 syntax here until OCMock is upgraded to 3.4
+  [[[self.classMock stub] andReturn:nil] createMetalView:CGRectZero];
+}
+
 #pragma mark - Test cases
 - (void)testInitAssertsIfMetalUnavailabe {
   // given
@@ -105,6 +107,7 @@
 - (void)testRTCVideoRenderNilFrameCallback {
   // given
   OCMStub([self.classMock isMetalAvailable]).andReturn(YES);
+
   RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] init];
   self.frameMock = OCMClassMock([RTCVideoFrame class]);
 
@@ -114,7 +117,7 @@
 
   // when
   [realView renderFrame:nil];
-  [realView drawInMTKView:self.metalViewMock];
+  [realView drawInMTKView:nil];
 
   // then
   [self.frameMock verify];
@@ -135,7 +138,7 @@
 
   // when
   [realView renderFrame:self.frameMock];
-  [realView drawInMTKView:self.metalViewMock];
+  [realView drawInMTKView:nil];
 
   // then
   [self.rendererI420Mock verify];
@@ -156,7 +159,7 @@
 
   // when
   [realView renderFrame:self.frameMock];
-  [realView drawInMTKView:self.metalViewMock];
+  [realView drawInMTKView:nil];
 
   // then
   [self.rendererNV12Mock verify];
