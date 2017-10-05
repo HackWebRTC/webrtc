@@ -22,10 +22,8 @@
 #if WEBRTC_USE_BUILTIN_ILBC
 #include "api/audio_codecs/ilbc/audio_decoder_ilbc.h"  // nogncheck
 #endif
-#if WEBRTC_USE_BUILTIN_ISAC_FIX
-#include "api/audio_codecs/isac/audio_decoder_isac_fix.h"  // nogncheck
-#elif WEBRTC_USE_BUILTIN_ISAC_FLOAT
-#include "api/audio_codecs/isac/audio_decoder_isac_float.h"  // nogncheck
+#if WEBRTC_USE_BUILTIN_ISAC
+#include "api/audio_codecs/isac/audio_decoder_isac.h"  // nogncheck
 #endif
 #if WEBRTC_USE_BUILTIN_OPUS
 #include "api/audio_codecs/opus/audio_decoder_opus.h"  // nogncheck
@@ -59,10 +57,8 @@ rtc::scoped_refptr<AudioDecoderFactory> CreateBuiltinAudioDecoderFactory() {
       AudioDecoderOpus,
 #endif
 
-#if WEBRTC_USE_BUILTIN_ISAC_FIX
-      AudioDecoderIsacFix,
-#elif WEBRTC_USE_BUILTIN_ISAC_FLOAT
-      AudioDecoderIsacFloat,
+#if WEBRTC_USE_BUILTIN_ISAC
+      AudioDecoderIsac,
 #endif
 
 #if WEBRTC_USE_BUILTIN_G722

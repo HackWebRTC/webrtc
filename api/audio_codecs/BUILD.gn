@@ -60,25 +60,17 @@ rtc_static_library("builtin_audio_decoder_factory") {
   if (build_with_mozilla) {
     defines += [
       "WEBRTC_USE_BUILTIN_G722=0",
-      "WEBRTC_USE_BUILTIN_ISAC_FIX=0",
-      "WEBRTC_USE_BUILTIN_ISAC_FLOAT=0",
+      "WEBRTC_USE_BUILTIN_ISAC=0",
     ]
   } else {
-    if (current_cpu == "arm") {
-      deps += [ "isac:audio_decoder_isac_fix" ]
-      defines += [
-        "WEBRTC_USE_BUILTIN_ISAC_FIX=1",
-        "WEBRTC_USE_BUILTIN_ISAC_FLOAT=0",
-      ]
-    } else {
-      deps += [ "isac:audio_decoder_isac_float" ]
-      defines += [
-        "WEBRTC_USE_BUILTIN_ISAC_FIX=0",
-        "WEBRTC_USE_BUILTIN_ISAC_FLOAT=1",
-      ]
-    }
-    deps += [ "g722:audio_decoder_g722" ]
-    defines += [ "WEBRTC_USE_BUILTIN_G722=1" ]
+    deps += [
+      "g722:audio_decoder_g722",
+      "isac:audio_decoder_isac",
+    ]
+    defines += [
+      "WEBRTC_USE_BUILTIN_G722=1",
+      "WEBRTC_USE_BUILTIN_ISAC=1",
+    ]
   }
 }
 
@@ -109,24 +101,16 @@ rtc_static_library("builtin_audio_encoder_factory") {
   if (build_with_mozilla) {
     defines += [
       "WEBRTC_USE_BUILTIN_G722=0",
-      "WEBRTC_USE_BUILTIN_ISAC_FIX=0",
-      "WEBRTC_USE_BUILTIN_ISAC_FLOAT=0",
+      "WEBRTC_USE_BUILTIN_ISAC=0",
     ]
   } else {
-    if (current_cpu == "arm") {
-      deps += [ "isac:audio_encoder_isac_fix" ]
-      defines += [
-        "WEBRTC_USE_BUILTIN_ISAC_FIX=1",
-        "WEBRTC_USE_BUILTIN_ISAC_FLOAT=0",
-      ]
-    } else {
-      deps += [ "isac:audio_encoder_isac_float" ]
-      defines += [
-        "WEBRTC_USE_BUILTIN_ISAC_FIX=0",
-        "WEBRTC_USE_BUILTIN_ISAC_FLOAT=1",
-      ]
-    }
-    deps += [ "g722:audio_encoder_g722" ]
-    defines += [ "WEBRTC_USE_BUILTIN_G722=1" ]
+    deps += [
+      "g722:audio_encoder_g722",
+      "isac:audio_encoder_isac",
+    ]
+    defines += [
+      "WEBRTC_USE_BUILTIN_G722=1",
+      "WEBRTC_USE_BUILTIN_ISAC=1",
+    ]
   }
 }
