@@ -138,4 +138,28 @@ TEST_F(RtcEventLogOutputFileTest, AllowReasonableFileSizeLimits) {
   EXPECT_TRUE(output_file->IsActive());
 }
 
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+#if !defined(WEBRTC_USE_MEMCHECK)  // Crashing expected to leak memory.
+TEST_F(RtcEventLogOutputFileTest, WritingToInactiveFileForbidden) {
+  RtcEventLogOutputFile output_file(output_file_name_, 2);
+  ASSERT_FALSE(output_file.Write("abc"));
+  ASSERT_FALSE(output_file.IsActive());
+  EXPECT_DEATH(output_file.Write("abc"), "");
+}
+
+TEST_F(RtcEventLogOutputFileTest, DisallowUnreasonableFileSizeLimits) {
+  // Keeping in a temporary unique_ptr to make it clearer that the death is
+  // triggered by construction, not destruction.
+  std::unique_ptr<RtcEventLogOutputFile> output_file;
+  auto create_output_file = [&] {
+    const size_t unreasonable_size =
+        RtcEventLogOutputFile::kMaxReasonableFileSize + 1;
+    output_file = rtc::MakeUnique<RtcEventLogOutputFile>(output_file_name_,
+                                                         unreasonable_size);
+  };
+  EXPECT_DEATH(create_output_file(), "");
+}
+#endif  // !WEBRTC_USE_MEMCHECK
+#endif
+
 }  // namespace webrtc
