@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -20,24 +21,7 @@
 #include "audio/utility/audio_frame_operations.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-// TODO(eladalon): Remove events/* after removing the deprecated functions.
-#include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
-#include "logging/rtc_event_log/events/rtc_event_audio_receive_stream_config.h"
-#include "logging/rtc_event_log/events/rtc_event_audio_send_stream_config.h"
-#include "logging/rtc_event_log/events/rtc_event_bwe_update_delay_based.h"
-#include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
-#include "logging/rtc_event_log/events/rtc_event_logging_started.h"
-#include "logging/rtc_event_log/events/rtc_event_logging_stopped.h"
-#include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
-#include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
-#include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
-#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_incoming.h"
-#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
-#include "logging/rtc_event_log/events/rtc_event_rtp_packet_incoming.h"
-#include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
-#include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
-#include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_device/include/audio_device.h"
@@ -86,18 +70,6 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
     return false;
   }
 
-  bool StartLogging(const std::string& file_name,
-                    int64_t max_size_bytes) override {
-    RTC_NOTREACHED();
-    return false;
-  }
-
-  bool StartLogging(rtc::PlatformFile log_file,
-                    int64_t max_size_bytes) override {
-    RTC_NOTREACHED();
-    return false;
-  }
-
   void StopLogging() override { RTC_NOTREACHED(); }
 
   void Log(std::unique_ptr<RtcEvent> event) override {
@@ -106,126 +78,6 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
       event_log_->Log(std::move(event));
     }
   }
-
-  void LogVideoReceiveStreamConfig(
-      const webrtc::rtclog::StreamConfig&) override {
-    RTC_NOTREACHED();
-  }
-
-  void LogVideoSendStreamConfig(const webrtc::rtclog::StreamConfig&) override {
-    RTC_NOTREACHED();
-  }
-
-  void LogAudioReceiveStreamConfig(
-      const webrtc::rtclog::StreamConfig& config) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventAudioReceiveStreamConfig>(
-          rtc::MakeUnique<webrtc::rtclog::StreamConfig>(config)));
-    }
-  }
-
-  void LogAudioSendStreamConfig(
-      const webrtc::rtclog::StreamConfig& config) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventAudioSendStreamConfig>(
-          rtc::MakeUnique<webrtc::rtclog::StreamConfig>(config)));
-    }
-  }
-
-  void LogIncomingRtpHeader(const RtpPacketReceived& packet) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventRtpPacketIncoming>(packet));
-    }
-  }
-
-  void LogOutgoingRtpHeader(const RtpPacketToSend& packet,
-                            int probe_cluster_id) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(
-          rtc::MakeUnique<RtcEventRtpPacketOutgoing>(packet, probe_cluster_id));
-    }
-  }
-
-  void LogIncomingRtcpPacket(rtc::ArrayView<const uint8_t> packet) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventRtcpPacketIncoming>(packet));
-    }
-  }
-
-  void LogOutgoingRtcpPacket(rtc::ArrayView<const uint8_t> packet) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventRtcpPacketOutgoing>(packet));
-    }
-  }
-
-  void LogAudioPlayout(uint32_t ssrc) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventAudioPlayout>(ssrc));
-    }
-  }
-
-  void LogLossBasedBweUpdate(int32_t bitrate_bps,
-                             uint8_t fraction_loss,
-                             int32_t total_packets) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventBweUpdateLossBased>(
-          bitrate_bps, fraction_loss, total_packets));
-    }
-  }
-
-  void LogDelayBasedBweUpdate(int32_t bitrate_bps,
-                              BandwidthUsage detector_state) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventBweUpdateDelayBased>(
-          bitrate_bps, detector_state));
-    }
-  }
-
-  void LogAudioNetworkAdaptation(
-      const AudioEncoderRuntimeConfig& config) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventAudioNetworkAdaptation>(
-          rtc::MakeUnique<AudioEncoderRuntimeConfig>(config)));
-    }
-  }
-
-  void LogProbeClusterCreated(int id,
-                              int bitrate_bps,
-                              int min_probes,
-                              int min_bytes) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventProbeClusterCreated>(
-          id, bitrate_bps, min_probes, min_bytes));
-    }
-  };
-
-  void LogProbeResultSuccess(int id, int bitrate_bps) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(
-          rtc::MakeUnique<RtcEventProbeResultSuccess>(id, bitrate_bps));
-    }
-  };
-
-  void LogProbeResultFailure(int id,
-                             ProbeFailureReason failure_reason) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(
-          rtc::MakeUnique<RtcEventProbeResultFailure>(id, failure_reason));
-    }
-  };
 
   void SetEventLog(RtcEventLog* event_log) {
     rtc::CritScope lock(&crit_);
