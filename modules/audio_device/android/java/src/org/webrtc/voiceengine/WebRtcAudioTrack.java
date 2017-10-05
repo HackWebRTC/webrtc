@@ -267,9 +267,8 @@ public class WebRtcAudioTrack {
             sampleRate, channelConfig, minBufferSizeInBytes);
       } else {
         // Use default constructor for API levels below 21.
-        // Note that, this constructor will be deprecated in API level O (25).
-        audioTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL, sampleRate, channelConfig,
-            AudioFormat.ENCODING_PCM_16BIT, minBufferSizeInBytes, AudioTrack.MODE_STREAM);
+        audioTrack =
+            createAudioTrackOnLowerThanLollipop(sampleRate, channelConfig, minBufferSizeInBytes);
       }
     } catch (IllegalArgumentException e) {
       reportWebRtcAudioTrackInitError(e.getMessage());
@@ -369,8 +368,8 @@ public class WebRtcAudioTrack {
   // It allows certain platforms or routing policies to use this information for more
   // refined volume or routing decisions.
   @TargetApi(21)
-  private AudioTrack createAudioTrackOnLollipopOrHigher(
-    int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
+  private static AudioTrack createAudioTrackOnLollipopOrHigher(
+      int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
     Logging.d(TAG, "createAudioTrackOnLollipopOrHigher");
     // TODO(henrika): use setPerformanceMode(int) with PERFORMANCE_MODE_LOW_LATENCY to control
     // performance when Android O is supported. Add some logging in the mean time.
@@ -397,6 +396,13 @@ public class WebRtcAudioTrack {
         bufferSizeInBytes,
         AudioTrack.MODE_STREAM,
         AudioManager.AUDIO_SESSION_ID_GENERATE);
+  }
+
+  @SuppressWarnings("deprecation") // Deprecated in API level 25.
+  private static AudioTrack createAudioTrackOnLowerThanLollipop(
+      int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
+    return new AudioTrack(AudioManager.STREAM_VOICE_CALL, sampleRateInHz, channelConfig,
+        AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
   }
 
   @TargetApi(24)

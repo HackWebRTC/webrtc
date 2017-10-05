@@ -10,25 +10,22 @@
 
 package org.appspot.apprtc;
 
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-import org.appspot.apprtc.util.AsyncHttpURLConnection;
-import org.appspot.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
-
 import android.util.Log;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.webrtc.IceCandidate;
-import org.webrtc.PeerConnection;
-import org.webrtc.SessionDescription;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.Scanner;
+import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+import org.appspot.apprtc.util.AsyncHttpURLConnection;
+import org.appspot.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.webrtc.IceCandidate;
+import org.webrtc.PeerConnection;
+import org.webrtc.SessionDescription;
 
 /**
  * AsyncTask that converts an AppRTC room URL into the set of signaling
@@ -133,9 +130,11 @@ public class RoomParametersFetcher {
       boolean isTurnPresent = false;
       for (PeerConnection.IceServer server : iceServers) {
         Log.d(TAG, "IceServer: " + server);
-        if (server.uri.startsWith("turn:")) {
-          isTurnPresent = true;
-          break;
+        for (String uri : server.urls) {
+          if (uri.startsWith("turn:")) {
+            isTurnPresent = true;
+            break;
+          }
         }
       }
       // Request TURN servers.

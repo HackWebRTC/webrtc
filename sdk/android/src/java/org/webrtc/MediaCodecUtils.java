@@ -17,6 +17,8 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 
 /** Container class for static constants and helpers used with MediaCodec. */
 @TargetApi(18)
+// We are forced to use the old API because we want to support API level < 21.
+@SuppressWarnings("deprecation")
 class MediaCodecUtils {
   private static final String TAG = "MediaCodecUtils";
 
