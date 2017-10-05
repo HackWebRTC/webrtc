@@ -78,9 +78,9 @@ public class HardwareVideoEncoderTest {
   // # Mock classes
   /**
    * Mock encoder callback that allows easy verification of the general properties of the encoded
-   * frame such as width and height.
+   * frame such as width and height. Also used from HardwareVideoDecoderTest.
    */
-  private static class MockEncoderCallback implements VideoEncoder.Callback {
+  static class MockEncoderCallback implements VideoEncoder.Callback {
     private BlockingQueue<EncodedImage> frameQueue = new LinkedBlockingQueue<>();
 
     public void onEncodedFrame(EncodedImage frame, VideoEncoder.CodecSpecificInfo info) {
@@ -294,7 +294,7 @@ public class HardwareVideoEncoderTest {
     return useTextures ? generateTextureFrame(width, height) : generateI420Frame(width, height);
   }
 
-  private void testEncodeFrame(
+  static void testEncodeFrame(
       VideoEncoder encoder, VideoFrame frame, VideoEncoder.EncodeInfo info) {
     int numTries = 0;
 

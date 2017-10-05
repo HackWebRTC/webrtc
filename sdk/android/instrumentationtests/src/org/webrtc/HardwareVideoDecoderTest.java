@@ -14,220 +14,174 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import android.annotation.TargetApi;
-import android.graphics.Matrix;
-import android.support.test.filters.MediumTest;
-import android.util.Log;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-import org.chromium.base.test.BaseJUnit4ClassRunner;
+import android.support.test.filters.SmallTest;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import org.chromium.base.test.params.BaseJUnit4RunnerDelegate;
+import org.chromium.base.test.params.ParameterAnnotations.ClassParameter;
+import org.chromium.base.test.params.ParameterAnnotations.UseRunnerDelegate;
+import org.chromium.base.test.params.ParameterSet;
+import org.chromium.base.test.params.ParameterizedRunner;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /** Unit tests for {@link HardwareVideoDecoder}. */
-@TargetApi(16)
-@RunWith(BaseJUnit4ClassRunner.class)
+@RunWith(ParameterizedRunner.class)
+@UseRunnerDelegate(BaseJUnit4RunnerDelegate.class)
 public final class HardwareVideoDecoderTest {
+  @ClassParameter private static List<ParameterSet> CLASS_PARAMS = new ArrayList<>();
+
+  static {
+    CLASS_PARAMS.add(new ParameterSet()
+                         .value("VP8" /* codecType */, false /* useEglContext */)
+                         .name("VP8WithoutEglContext"));
+    CLASS_PARAMS.add(new ParameterSet()
+                         .value("VP8" /* codecType */, true /* useEglContext */)
+                         .name("VP8WithEglContext"));
+  }
+
+  private final String codecType;
+  private final boolean useEglContext;
+
+  public HardwareVideoDecoderTest(String codecType, boolean useEglContext) {
+    this.codecType = codecType;
+    this.useEglContext = useEglContext;
+  }
+
   private static final String TAG = "HardwareVideoDecoderTest";
+
+  private static final int TEST_FRAME_COUNT = 10;
+  private static final int TEST_FRAME_WIDTH = 640;
+  private static final int TEST_FRAME_HEIGHT = 360;
+  private static final VideoFrame.I420Buffer[] TEST_FRAMES = generateTestFrames();
 
   private static final boolean ENABLE_INTEL_VP8_ENCODER = true;
   private static final boolean ENABLE_H264_HIGH_PROFILE = true;
+  private static final VideoEncoder.Settings ENCODER_SETTINGS =
+      new VideoEncoder.Settings(1 /* core */, 640 /* width */, 480 /* height */, 300 /* kbps */,
+          30 /* fps */, true /* automaticResizeOn */);
+
+  private static final int DECODE_TIMEOUT_MS = 1000;
   private static final VideoDecoder.Settings SETTINGS =
       new VideoDecoder.Settings(1 /* core */, 640 /* width */, 480 /* height */);
 
+  private static class MockDecodeCallback implements VideoDecoder.Callback {
+    private BlockingQueue<VideoFrame> frameQueue = new LinkedBlockingQueue<>();
+
+    @Override
+    public void onDecodedFrame(VideoFrame frame, Integer decodeTimeMs, Integer qp) {
+      assertNotNull(frame);
+      frameQueue.offer(frame);
+    }
+
+    public void assertFrameDecoded(EncodedImage testImage, VideoFrame.I420Buffer testBuffer) {
+      VideoFrame decodedFrame = poll();
+      VideoFrame.Buffer decodedBuffer = decodedFrame.getBuffer();
+      assertEquals(testImage.encodedWidth, decodedBuffer.getWidth());
+      assertEquals(testImage.encodedHeight, decodedBuffer.getHeight());
+      // TODO(sakal): Decoder looses the nanosecond precision. This is not a problem in practice
+      // because C++ EncodedImage stores the timestamp in milliseconds.
+      assertEquals(testImage.captureTimeNs / 1000, decodedFrame.getTimestampNs() / 1000);
+      assertEquals(testImage.rotation, decodedFrame.getRotation());
+    }
+
+    public VideoFrame poll() {
+      try {
+        VideoFrame frame = frameQueue.poll(DECODE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        assertNotNull("Timed out waiting for the frame to be decoded.", frame);
+        return frame;
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private static VideoFrame.I420Buffer[] generateTestFrames() {
+    VideoFrame.I420Buffer[] result = new VideoFrame.I420Buffer[TEST_FRAME_COUNT];
+    for (int i = 0; i < TEST_FRAME_COUNT; i++) {
+      result[i] = JavaI420Buffer.allocate(TEST_FRAME_WIDTH, TEST_FRAME_HEIGHT);
+      // TODO(sakal): Generate content for the test frames.
+    }
+    return result;
+  }
+
+  private final EncodedImage[] encodedTestFrames = new EncodedImage[TEST_FRAME_COUNT];
+  private EglBase14 eglBase;
+
+  private VideoDecoderFactory createDecoderFactory(EglBase.Context eglContext) {
+    return new HardwareVideoDecoderFactory(eglContext);
+  }
+
+  private VideoDecoder createDecoder() {
+    VideoDecoderFactory factory =
+        createDecoderFactory(useEglContext ? eglBase.getEglBaseContext() : null);
+    return factory.createDecoder(codecType);
+  }
+
+  private void encodeTestFrames() {
+    VideoEncoderFactory encoderFactory = new HardwareVideoEncoderFactory(
+        eglBase.getEglBaseContext(), ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
+    VideoEncoder encoder = encoderFactory.createEncoder(
+        new VideoCodecInfo(0 /* payload*/, codecType, new HashMap<>()));
+    HardwareVideoEncoderTest.MockEncoderCallback encodeCallback =
+        new HardwareVideoEncoderTest.MockEncoderCallback();
+    assertEquals(VideoCodecStatus.OK, encoder.initEncode(ENCODER_SETTINGS, encodeCallback));
+
+    long lastTimestampNs = 0;
+    for (int i = 0; i < TEST_FRAME_COUNT; i++) {
+      lastTimestampNs += TimeUnit.SECONDS.toNanos(1) / ENCODER_SETTINGS.maxFramerate;
+      VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
+          new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameDelta});
+      HardwareVideoEncoderTest.testEncodeFrame(
+          encoder, new VideoFrame(TEST_FRAMES[i], 0 /* rotation */, lastTimestampNs), info);
+      encodedTestFrames[i] = encodeCallback.poll();
+    }
+
+    assertEquals(VideoCodecStatus.OK, encoder.release());
+  }
+
+  @Before
+  public void setUp() {
+    eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
+    eglBase.createDummyPbufferSurface();
+    eglBase.makeCurrent();
+
+    encodeTestFrames();
+  }
+
+  @After
+  public void tearDown() {
+    eglBase.release();
+  }
+
   @Test
-  @MediumTest
+  @SmallTest
   public void testInitialize() {
-    HardwareVideoEncoderFactory encoderFactory =
-        new HardwareVideoEncoderFactory(ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
-    VideoCodecInfo[] supportedCodecs = encoderFactory.getSupportedCodecs();
-    if (supportedCodecs.length == 0) {
-      Log.i(TAG, "No hardware encoding support, skipping testInitialize");
-      return;
-    }
-
-    HardwareVideoDecoderFactory decoderFactory = new HardwareVideoDecoderFactory(null);
-
-    VideoDecoder decoder = decoderFactory.createDecoder(supportedCodecs[0].name);
-    assertEquals(decoder.initDecode(SETTINGS, null), VideoCodecStatus.OK);
-    assertEquals(decoder.release(), VideoCodecStatus.OK);
+    VideoDecoder decoder = createDecoder();
+    assertEquals(VideoCodecStatus.OK, decoder.initDecode(SETTINGS, null /* decodeCallback */));
+    assertEquals(VideoCodecStatus.OK, decoder.release());
   }
 
   @Test
-  @MediumTest
-  public void testInitializeUsingTextures() {
-    HardwareVideoEncoderFactory encoderFactory =
-        new HardwareVideoEncoderFactory(ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
-    VideoCodecInfo[] supportedCodecs = encoderFactory.getSupportedCodecs();
-    if (supportedCodecs.length == 0) {
-      Log.i(TAG, "No hardware encoding support, skipping testInitialize");
-      return;
+  @SmallTest
+  public void testDecode() {
+    VideoDecoder decoder = createDecoder();
+    MockDecodeCallback callback = new MockDecodeCallback();
+    assertEquals(VideoCodecStatus.OK, decoder.initDecode(SETTINGS, callback));
+
+    for (int i = 0; i < TEST_FRAME_COUNT; i++) {
+      assertEquals(VideoCodecStatus.OK,
+          decoder.decode(encodedTestFrames[i],
+              new VideoDecoder.DecodeInfo(false /* isMissingFrames */, 0 /* renderTimeMs */)));
+      callback.assertFrameDecoded(encodedTestFrames[i], TEST_FRAMES[i]);
     }
 
-    EglBase14 eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
-    HardwareVideoDecoderFactory decoderFactory =
-        new HardwareVideoDecoderFactory(eglBase.getEglBaseContext());
-
-    VideoDecoder decoder = decoderFactory.createDecoder(supportedCodecs[0].name);
-    assertEquals(decoder.initDecode(SETTINGS, null), VideoCodecStatus.OK);
-    assertEquals(decoder.release(), VideoCodecStatus.OK);
-
-    eglBase.release();
-  }
-
-  @Test
-  @MediumTest
-  public void testDecode() throws InterruptedException {
-    HardwareVideoEncoderFactory encoderFactory =
-        new HardwareVideoEncoderFactory(ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
-    VideoCodecInfo[] supportedCodecs = encoderFactory.getSupportedCodecs();
-    if (supportedCodecs.length == 0) {
-      Log.i(TAG, "No hardware encoding support, skipping testEncodeYuvBuffer");
-      return;
-    }
-
-    // Set up the decoder.
-    HardwareVideoDecoderFactory decoderFactory = new HardwareVideoDecoderFactory(null);
-    VideoDecoder decoder = decoderFactory.createDecoder(supportedCodecs[0].name);
-
-    final long presentationTimestampUs = 20000;
-    final int rotation = 270;
-
-    final CountDownLatch decodeDone = new CountDownLatch(1);
-    final AtomicReference<VideoFrame> decoded = new AtomicReference<>();
-    VideoDecoder.Callback decodeCallback = new VideoDecoder.Callback() {
-      @Override
-      public void onDecodedFrame(VideoFrame frame, Integer decodeTimeMs, Integer qp) {
-        frame.retain();
-        decoded.set(frame);
-        decodeDone.countDown();
-      }
-    };
-    assertEquals(decoder.initDecode(SETTINGS, decodeCallback), VideoCodecStatus.OK);
-
-    // Set up an encoder to produce a valid encoded frame.
-    VideoEncoder encoder = encoderFactory.createEncoder(supportedCodecs[0]);
-    final CountDownLatch encodeDone = new CountDownLatch(1);
-    final AtomicReference<EncodedImage> encoded = new AtomicReference<>();
-    VideoEncoder.Callback encodeCallback = new VideoEncoder.Callback() {
-      @Override
-      public void onEncodedFrame(EncodedImage image, VideoEncoder.CodecSpecificInfo info) {
-        encoded.set(image);
-        encodeDone.countDown();
-      }
-    };
-    assertEquals(encoder.initEncode(new VideoEncoder.Settings(1, SETTINGS.width, SETTINGS.height,
-                                        300, 30, true /* automaticResizeOn */),
-                     encodeCallback),
-        VideoCodecStatus.OK);
-
-    // First, encode a frame.
-    VideoFrame.I420Buffer buffer = JavaI420Buffer.allocate(SETTINGS.width, SETTINGS.height);
-    VideoFrame frame = new VideoFrame(buffer, rotation, presentationTimestampUs * 1000);
-    VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
-        new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
-
-    assertEquals(encoder.encode(frame, info), VideoCodecStatus.OK);
-
-    ThreadUtils.awaitUninterruptibly(encodeDone);
-
-    // Now decode the frame.
-    assertEquals(
-        decoder.decode(encoded.get(), new VideoDecoder.DecodeInfo(false, 0)), VideoCodecStatus.OK);
-
-    ThreadUtils.awaitUninterruptibly(decodeDone);
-
-    frame = decoded.get();
-    assertEquals(frame.getRotation(), rotation);
-    assertEquals(frame.getTimestampNs(), presentationTimestampUs * 1000);
-    assertEquals(frame.getBuffer().getWidth(), SETTINGS.width);
-    assertEquals(frame.getBuffer().getHeight(), SETTINGS.height);
-
-    frame.release();
-    assertEquals(decoder.release(), VideoCodecStatus.OK);
-    assertEquals(encoder.release(), VideoCodecStatus.OK);
-  }
-
-  @Test
-  @MediumTest
-  public void testDecodeUsingTextures() throws InterruptedException {
-    HardwareVideoEncoderFactory encoderFactory =
-        new HardwareVideoEncoderFactory(ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
-    VideoCodecInfo[] supportedCodecs = encoderFactory.getSupportedCodecs();
-    if (supportedCodecs.length == 0) {
-      Log.i(TAG, "No hardware encoding support, skipping testEncodeYuvBuffer");
-      return;
-    }
-
-    // Set up the decoder.
-    EglBase14 eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
-    HardwareVideoDecoderFactory decoderFactory =
-        new HardwareVideoDecoderFactory(eglBase.getEglBaseContext());
-    VideoDecoder decoder = decoderFactory.createDecoder(supportedCodecs[0].name);
-
-    final long presentationTimestampUs = 20000;
-    final int rotation = 270;
-
-    final CountDownLatch decodeDone = new CountDownLatch(1);
-    final AtomicReference<VideoFrame> decoded = new AtomicReference<>();
-    VideoDecoder.Callback decodeCallback = new VideoDecoder.Callback() {
-      @Override
-      public void onDecodedFrame(VideoFrame frame, Integer decodeTimeMs, Integer qp) {
-        frame.retain();
-        decoded.set(frame);
-        decodeDone.countDown();
-      }
-    };
-    assertEquals(decoder.initDecode(SETTINGS, decodeCallback), VideoCodecStatus.OK);
-
-    // Set up an encoder to produce a valid encoded frame.
-    VideoEncoder encoder = encoderFactory.createEncoder(supportedCodecs[0]);
-    final CountDownLatch encodeDone = new CountDownLatch(1);
-    final AtomicReference<EncodedImage> encoded = new AtomicReference<>();
-    VideoEncoder.Callback encodeCallback = new VideoEncoder.Callback() {
-      @Override
-      public void onEncodedFrame(EncodedImage image, VideoEncoder.CodecSpecificInfo info) {
-        encoded.set(image);
-        encodeDone.countDown();
-      }
-    };
-    assertEquals(encoder.initEncode(new VideoEncoder.Settings(1, SETTINGS.width, SETTINGS.height,
-                                        300, 30, true /* automaticResizeOn */),
-                     encodeCallback),
-        VideoCodecStatus.OK);
-
-    // First, encode a frame.
-    VideoFrame.I420Buffer buffer = JavaI420Buffer.allocate(SETTINGS.width, SETTINGS.height);
-    VideoFrame frame = new VideoFrame(buffer, rotation, presentationTimestampUs * 1000);
-    VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
-        new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameKey});
-
-    assertEquals(encoder.encode(frame, info), VideoCodecStatus.OK);
-
-    ThreadUtils.awaitUninterruptibly(encodeDone);
-
-    // Now decode the frame.
-    assertEquals(
-        decoder.decode(encoded.get(), new VideoDecoder.DecodeInfo(false, 0)), VideoCodecStatus.OK);
-
-    ThreadUtils.awaitUninterruptibly(decodeDone);
-
-    frame = decoded.get();
-    assertEquals(frame.getRotation(), rotation);
-    assertEquals(frame.getTimestampNs(), presentationTimestampUs * 1000);
-
-    assertTrue(frame.getBuffer() instanceof VideoFrame.TextureBuffer);
-    VideoFrame.TextureBuffer textureBuffer = (VideoFrame.TextureBuffer) frame.getBuffer();
-    // TODO(mellem):  Compare the matrix to whatever we expect to get back?
-    assertNotNull(textureBuffer.getTransformMatrix());
-    assertEquals(textureBuffer.getWidth(), SETTINGS.width);
-    assertEquals(textureBuffer.getHeight(), SETTINGS.height);
-    assertEquals(textureBuffer.getType(), VideoFrame.TextureBuffer.Type.OES);
-
-    assertEquals(decoder.release(), VideoCodecStatus.OK);
-    assertEquals(encoder.release(), VideoCodecStatus.OK);
-
-    frame.release();
-    eglBase.release();
+    assertEquals(VideoCodecStatus.OK, decoder.release());
   }
 }
