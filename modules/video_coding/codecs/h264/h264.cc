@@ -12,6 +12,7 @@
 #include "modules/video_coding/codecs/h264/include/h264.h"
 
 #include "api/video_codecs/sdp_video_format.h"
+#include "media/base/h264_profile_level_id.h"
 
 #if defined(WEBRTC_USE_H264)
 #include "modules/video_coding/codecs/h264/h264_decoder_impl.h"
@@ -29,13 +30,23 @@ namespace {
 bool g_rtc_use_h264 = true;
 #endif
 
-// If any H.264 codec is supported (iOS HW or OpenH264/FFmpeg).
+// If H.264 OpenH264/FFmpeg codec is supported.
 bool IsH264CodecSupported() {
 #if defined(WEBRTC_USE_H264)
   return g_rtc_use_h264;
 #else
   return false;
 #endif
+}
+
+SdpVideoFormat CreateH264Format(H264::Profile profile, H264::Level level) {
+  const rtc::Optional<std::string> profile_string =
+      H264::ProfileLevelIdToString(H264::ProfileLevelId(profile, level));
+  RTC_CHECK(profile_string);
+  return SdpVideoFormat(cricket::kH264CodecName,
+                        {{cricket::kH264FmtpProfileLevelId, *profile_string},
+                         {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
+                         {cricket::kH264FmtpPacketizationMode, "1"}});
 }
 
 }  // namespace
@@ -49,15 +60,15 @@ void DisableRtcUseH264() {
 std::vector<SdpVideoFormat> SupportedH264Codecs() {
   if (!IsH264CodecSupported())
     return std::vector<SdpVideoFormat>();
-  std::vector<SdpVideoFormat> codecs;
-
-  codecs.push_back(SdpVideoFormat(
-      cricket::kH264CodecName, {{cricket::kH264FmtpProfileLevelId,
-                                 cricket::kH264ProfileLevelConstrainedBaseline},
-                                {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
-                                {cricket::kH264FmtpPacketizationMode, "1"}}));
-
-  return codecs;
+  // We only support encoding Constrained Baseline Profile (CBP), but the
+  // decoder supports more profiles. We can list all profiles here that are
+  // supported by the decoder and that are also supersets of CBP, i.e. the
+  // decoder for that profile is required to be able to decode CBP. This means
+  // we can encode and send CBP even though we negotiated a potentially
+  // higher profile. See the H264 spec for more information.
+  return {CreateH264Format(H264::kProfileHigh, H264::kLevel3_1),
+          CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1),
+          CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1)};
 }
 
 H264Encoder* H264Encoder::Create(const cricket::VideoCodec& codec) {
