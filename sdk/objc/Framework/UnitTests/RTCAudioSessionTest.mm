@@ -18,6 +18,22 @@
 #import "WebRTC/RTCAudioSession.h"
 #import "WebRTC/RTCAudioSessionConfiguration.h"
 
+@interface RTCAudioSession (UnitTesting)
+
+- (instancetype)initWithAudioSession:(id)audioSession;
+
+@end
+
+@interface MockAVAudioSession : NSObject
+
+@property (nonatomic, readwrite, assign) float outputVolume;
+
+@end
+
+@implementation MockAVAudioSession
+@synthesize outputVolume = _outputVolume;
+@end
+
 @interface RTCAudioSessionTestDelegate : NSObject <RTCAudioSessionDelegate>
 
 @property (nonatomic, readonly) float outputVolume;
@@ -265,20 +281,16 @@ OCMLocation *OCMMakeLocation(id testCase, const char *fileCString, int line){
 }
 
 - (void)testAudioVolumeDidNotify {
-  RTCAudioSession *session = [RTCAudioSession sharedInstance];
+  MockAVAudioSession *mockAVAudioSession = [[MockAVAudioSession alloc] init];
+  RTCAudioSession *session = [[RTCAudioSession alloc] initWithAudioSession:mockAVAudioSession];
   RTCAudioSessionTestDelegate *delegate =
       [[RTCAudioSessionTestDelegate alloc] init];
   [session addDelegate:delegate];
 
-  [session observeValueForKeyPath:@"outputVolume"
-                         ofObject:[AVAudioSession sharedInstance]
-                           change:
-        @{NSKeyValueChangeNewKey :
-            @([AVAudioSession sharedInstance].outputVolume) }
-                          context:nil];
+  float expectedVolume = 0.75;
+  mockAVAudioSession.outputVolume = expectedVolume;
 
-  EXPECT_NE(delegate.outputVolume, -1);
-  EXPECT_EQ([AVAudioSession sharedInstance].outputVolume, delegate.outputVolume);
+  EXPECT_EQ(expectedVolume, delegate.outputVolume);
 }
 
 @end

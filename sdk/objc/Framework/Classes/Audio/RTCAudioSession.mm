@@ -56,8 +56,13 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
 }
 
 - (instancetype)init {
+  return [self initWithAudioSession:[AVAudioSession sharedInstance]];
+}
+
+/** This initializer provides a way for unit tests to inject a fake/mock audio session. */
+- (instancetype)initWithAudioSession:(id)audioSession {
   if (self = [super init]) {
-    _session = [AVAudioSession sharedInstance];
+    _session = audioSession;
 
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     [center addObserver:self
@@ -91,7 +96,7 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
     [_session addObserver:self
                forKeyPath:kRTCAudioSessionOutputVolumeSelector
                   options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld
-                  context:nil];
+                  context:(__bridge void*)RTCAudioSession.class];
 
     RTCLog(@"RTCAudioSession (%p): init.", self);
   }
@@ -100,7 +105,9 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
 
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
-  [_session removeObserver:self forKeyPath:kRTCAudioSessionOutputVolumeSelector context:nil];
+  [_session removeObserver:self
+                forKeyPath:kRTCAudioSessionOutputVolumeSelector
+                   context:(__bridge void*)RTCAudioSession.class];
   RTCLog(@"RTCAudioSession (%p): dealloc.", self);
 }
 
@@ -815,10 +822,12 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
                       ofObject:(id)object
                         change:(NSDictionary *)change
                        context:(void *)context {
-  if (object == _session) {
-    NSNumber *newVolume = change[NSKeyValueChangeNewKey];
-    RTCLog(@"OutputVolumeDidChange to %f", newVolume.floatValue);
-    [self notifyDidChangeOutputVolume:newVolume.floatValue];
+  if (context == (__bridge void*)RTCAudioSession.class) {
+    if (object == _session) {
+      NSNumber *newVolume = change[NSKeyValueChangeNewKey];
+      RTCLog(@"OutputVolumeDidChange to %f", newVolume.floatValue);
+      [self notifyDidChangeOutputVolume:newVolume.floatValue];
+    }
   } else {
     [super observeValueForKeyPath:keyPath
                          ofObject:object
