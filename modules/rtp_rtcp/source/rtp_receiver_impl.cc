@@ -20,12 +20,33 @@
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
+#include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
+
+namespace {
+bool InOrderPacket(rtc::Optional<uint16_t> latest_sequence_number,
+                   uint16_t current_sequence_number) {
+  if (!latest_sequence_number)
+    return true;
+
+  // We need to distinguish between a late or retransmitted packet,
+  // and a sequence number discontinuity.
+  if (IsNewerSequenceNumber(current_sequence_number, *latest_sequence_number)) {
+    return true;
+  } else {
+    // If we have a restart of the remote side this packet is still in order.
+    return !IsNewerSequenceNumber(
+        current_sequence_number,
+        *latest_sequence_number - kDefaultMaxReorderingThreshold);
+  }
+}
+
+}  // namespace
 
 using RtpUtility::Payload;
 
@@ -142,12 +163,10 @@ int32_t RtpReceiverImpl::Energy(
   return rtp_media_receiver_->Energy(array_of_energy);
 }
 
-bool RtpReceiverImpl::IncomingRtpPacket(
-  const RTPHeader& rtp_header,
-  const uint8_t* payload,
-  size_t payload_length,
-  PayloadUnion payload_specific,
-  bool in_order) {
+bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
+                                        const uint8_t* payload,
+                                        size_t payload_length,
+                                        PayloadUnion payload_specific) {
   // Trigger our callbacks.
   CheckSSRCChanged(rtp_header);
 
@@ -186,13 +205,18 @@ bool RtpReceiverImpl::IncomingRtpPacket(
   {
     rtc::CritScope lock(&critical_section_rtp_receiver_);
 
-    if (in_order) {
-      if (last_received_timestamp_ != rtp_header.timestamp) {
-        last_received_timestamp_ = rtp_header.timestamp;
-        last_received_frame_time_ms_ = clock_->TimeInMilliseconds();
-      }
+    // TODO(nisse): Do not rely on InOrderPacket for recovered packets, when
+    // packet is passed as RtpPacketReceived and that information is available.
+    // We should ideally never record timestamps for retransmitted or recovered
+    // packets.
+    if (InOrderPacket(last_received_sequence_number_,
+                      rtp_header.sequenceNumber)) {
+      last_received_sequence_number_.emplace(rtp_header.sequenceNumber);
+      last_received_timestamp_ = rtp_header.timestamp;
+      last_received_frame_time_ms_ = clock_->TimeInMilliseconds();
     }
   }
+
   return true;
 }
 
@@ -237,7 +261,7 @@ std::vector<RtpSource> RtpReceiverImpl::GetSources() const {
 bool RtpReceiverImpl::GetLatestTimestamps(uint32_t* timestamp,
                                           int64_t* receive_time_ms) const {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
-  if (last_received_frame_time_ms_ < 0)
+  if (!last_received_sequence_number_)
     return false;
 
   *timestamp = last_received_timestamp_;

@@ -280,8 +280,7 @@ void RtpVideoStreamReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
 
   RTPHeader header;
   packet.GetHeader(&header);
-  bool in_order = IsPacketInOrder(header);
-  ReceivePacket(rtp_packet, rtp_packet_length, header, in_order);
+  ReceivePacket(rtp_packet, rtp_packet_length, header);
 }
 
 // TODO(pbos): Remove as soon as audio can handle a changing payload type
@@ -339,7 +338,7 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
     // TODO(nisse): Why isn't this done for recovered packets?
     rtp_payload_registry_.SetIncomingPayloadType(header);
   }
-  ReceivePacket(packet.data(), packet.size(), header, in_order);
+  ReceivePacket(packet.data(), packet.size(), header);
   // Update receive statistics after ReceivePacket.
   // Receive statistics will be reset if the payload type changes (make sure
   // that the first packet is included in the stats).
@@ -443,8 +442,7 @@ void RtpVideoStreamReceiver::RemoveSecondarySink(
 
 void RtpVideoStreamReceiver::ReceivePacket(const uint8_t* packet,
                                            size_t packet_length,
-                                           const RTPHeader& header,
-                                           bool in_order) {
+                                           const RTPHeader& header) {
   if (rtp_payload_registry_.IsRed(header)) {
     ParseAndHandleEncapsulatingHeader(packet, packet_length, header);
     return;
@@ -456,7 +454,7 @@ void RtpVideoStreamReceiver::ReceivePacket(const uint8_t* packet,
       rtp_payload_registry_.PayloadTypeToPayload(header.payloadType);
   if (pl) {
     rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
-                                     pl->typeSpecific, in_order);
+                                     pl->typeSpecific);
   }
 }
 

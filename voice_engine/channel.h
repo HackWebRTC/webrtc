@@ -341,8 +341,7 @@ class Channel
 
   bool ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
-                     const RTPHeader& header,
-                     bool in_order);
+                     const RTPHeader& header);
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   int ResendPackets(const uint16_t* sequence_numbers, int length);

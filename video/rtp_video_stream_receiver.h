@@ -154,8 +154,7 @@ class RtpVideoStreamReceiver : public RtpData,
   bool AddReceiveCodec(const VideoCodec& video_codec);
   void ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
-                     const RTPHeader& header,
-                     bool in_order);
+                     const RTPHeader& header);
   // Parses and handles for instance RTX and RED headers.
   // This function assumes that it's being called from only one thread.
   void ParseAndHandleEncapsulatingHeader(const uint8_t* packet,

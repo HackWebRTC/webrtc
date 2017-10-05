@@ -595,7 +595,8 @@ bool Channel::OnRecoveredPacket(const uint8_t* rtp_packet,
       rtp_payload_registry_->GetPayloadTypeFrequency(header.payloadType);
   if (header.payload_type_frequency < 0)
     return false;
-  return ReceivePacket(rtp_packet, rtp_packet_length, header, false);
+  // TODO(nisse): Pass RtpPacketReceived with |recovered()| true.
+  return ReceivePacket(rtp_packet, rtp_packet_length, header);
 }
 
 AudioMixer::Source::AudioFrameInfo Channel::GetAudioFrameWithInfo(
@@ -1148,14 +1149,13 @@ void Channel::OnRtpPacket(const RtpPacketReceived& packet) {
         header, packet.size(), IsPacketRetransmitted(header, in_order));
     rtp_payload_registry_->SetIncomingPayloadType(header);
 
-    ReceivePacket(packet.data(), packet.size(), header, in_order);
+    ReceivePacket(packet.data(), packet.size(), header);
   }
 }
 
 bool Channel::ReceivePacket(const uint8_t* packet,
                             size_t packet_length,
-                            const RTPHeader& header,
-                            bool in_order) {
+                            const RTPHeader& header) {
   const uint8_t* payload = packet + header.headerLength;
   assert(packet_length >= header.headerLength);
   size_t payload_length = packet_length - header.headerLength;
@@ -1165,7 +1165,7 @@ bool Channel::ReceivePacket(const uint8_t* packet,
     return false;
   }
   return rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
-                                          pl->typeSpecific, in_order);
+                                          pl->typeSpecific);
 }
 
 bool Channel::IsPacketInOrder(const RTPHeader& header) const {

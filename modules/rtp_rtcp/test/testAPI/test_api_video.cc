@@ -171,7 +171,7 @@ TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {
       const uint8_t* payload = padding_packet + header.headerLength;
       const size_t payload_length = packet_size - header.headerLength;
       EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
-          header, payload, payload_length, pl->typeSpecific, true));
+          header, payload, payload_length, pl->typeSpecific));
       EXPECT_EQ(0u, receiver_->payload_size());
       EXPECT_EQ(payload_length, receiver_->rtp_header().header.paddingLength);
     }

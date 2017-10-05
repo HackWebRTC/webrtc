@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "api/optional.h"
 #include "modules/rtp_rtcp/include/rtp_receiver.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_receiver_strategy.h"
@@ -45,8 +46,7 @@ class RtpReceiverImpl : public RtpReceiver {
   bool IncomingRtpPacket(const RTPHeader& rtp_header,
                          const uint8_t* payload,
                          size_t payload_length,
-                         PayloadUnion payload_specific,
-                         bool in_order) override;
+                         PayloadUnion payload_specific) override;
 
   bool GetLatestTimestamps(uint32_t* timestamp,
                            int64_t* receive_time_ms) const override;
@@ -95,6 +95,9 @@ class RtpReceiverImpl : public RtpReceiver {
   uint32_t current_remote_csrc_[kRtpCsrcSize] RTC_GUARDED_BY(
       critical_section_rtp_receiver_);
 
+  // Sequence number and timestamps for the latest in-order packet.
+  rtc::Optional<uint16_t> last_received_sequence_number_
+      RTC_GUARDED_BY(critical_section_rtp_receiver_);
   uint32_t last_received_timestamp_
       RTC_GUARDED_BY(critical_section_rtp_receiver_);
   int64_t last_received_frame_time_ms_

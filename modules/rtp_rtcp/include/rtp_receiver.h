@@ -79,8 +79,17 @@ class RtpReceiver {
   virtual bool IncomingRtpPacket(const RTPHeader& rtp_header,
                                  const uint8_t* payload,
                                  size_t payload_length,
-                                 PayloadUnion payload_specific,
-                                 bool in_order) = 0;
+                                 PayloadUnion payload_specific) = 0;
+  // TODO(nisse): Deprecated version, delete as soon as downstream
+  // applications are updated.
+  bool IncomingRtpPacket(const RTPHeader& rtp_header,
+                         const uint8_t* payload,
+                         size_t payload_length,
+                         PayloadUnion payload_specific,
+                         bool in_order /* Ignored */) {
+    return IncomingRtpPacket(rtp_header, payload, payload_length,
+                             payload_specific);
+  }
 
   // Gets the RTP timestamp and the corresponding monotonic system
   // time for the most recent in-order packet. Returns true on
