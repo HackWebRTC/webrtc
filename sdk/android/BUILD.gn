@@ -97,7 +97,6 @@ rtc_static_library("video_jni") {
     "src/jni/androidvideotracksource.cc",
     "src/jni/androidvideotracksource.h",
     "src/jni/androidvideotracksource_jni.cc",
-    "src/jni/filevideocapturer_jni.cc",
     "src/jni/native_handle_impl.cc",
     "src/jni/native_handle_impl.h",
     "src/jni/nv12buffer_jni.cc",
