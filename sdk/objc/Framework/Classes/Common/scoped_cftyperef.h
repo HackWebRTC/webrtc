@@ -15,25 +15,41 @@
 #include <CoreFoundation/CoreFoundation.h>
 namespace rtc {
 
-template <typename T>
-class ScopedCFTypeRef {
- public:
-  // RETAIN: ScopedCFTypeRef should retain the object when it takes
-  // ownership.
-  // ASSUME: Assume the object already has already been retained.
-  // ScopedCFTypeRef takes over ownership.
-  enum class RetainPolicy { RETAIN, ASSUME };
+// RETAIN: ScopedTypeRef should retain the object when it takes
+// ownership.
+// ASSUME: Assume the object already has already been retained.
+// ScopedTypeRef takes over ownership.
+enum class RetainPolicy { RETAIN, ASSUME };
 
-  ScopedCFTypeRef() : ptr_(nullptr) {}
-  explicit ScopedCFTypeRef(T ptr) : ptr_(ptr) {}
-  ScopedCFTypeRef(T ptr, RetainPolicy policy) : ScopedCFTypeRef(ptr) {
+namespace internal {
+template <typename T>
+struct CFTypeRefTraits {
+  static T InvalidValue() { return nullptr; }
+  static void Release(T ref) { CFRelease(ref); }
+  static T Retain(T ref) {
+    CFRetain(ref);
+    return ref;
+  }
+};
+
+template <typename T, typename Traits>
+class ScopedTypeRef {
+ public:
+  ScopedTypeRef() : ptr_(Traits::InvalidValue()) {}
+  explicit ScopedTypeRef(T ptr) : ptr_(ptr) {}
+  ScopedTypeRef(T ptr, RetainPolicy policy) : ScopedTypeRef(ptr) {
     if (ptr_ && policy == RetainPolicy::RETAIN)
-      CFRetain(ptr_);
+      Traits::Retain(ptr_);
   }
 
-  ~ScopedCFTypeRef() {
+  ScopedTypeRef(const ScopedTypeRef<T, Traits>& rhs) : ptr_(rhs.ptr_) {
+    if (ptr_)
+      ptr_ = Traits::Retain(ptr_);
+  }
+
+  ~ScopedTypeRef() {
     if (ptr_) {
-      CFRelease(ptr_);
+      Traits::Release(ptr_);
     }
   }
 
@@ -43,14 +59,14 @@ class ScopedCFTypeRef {
 
   bool operator!() const { return !ptr_; }
 
-  ScopedCFTypeRef& operator=(const T& rhs) {
+  ScopedTypeRef& operator=(const T& rhs) {
     if (ptr_)
-      CFRelease(ptr_);
+      Traits::Release(ptr_);
     ptr_ = rhs;
     return *this;
   }
 
-  ScopedCFTypeRef& operator=(const ScopedCFTypeRef<T>& rhs) {
+  ScopedTypeRef& operator=(const ScopedTypeRef<T, Traits>& rhs) {
     reset(rhs.get(), RetainPolicy::RETAIN);
     return *this;
   }
@@ -64,21 +80,26 @@ class ScopedCFTypeRef {
 
   void reset(T ptr, RetainPolicy policy = RetainPolicy::ASSUME) {
     if (ptr && policy == RetainPolicy::RETAIN)
-      CFRetain(ptr);
+      Traits::Retain(ptr);
     if (ptr_)
-      CFRelease(ptr_);
+      Traits::Release(ptr_);
     ptr_ = ptr;
   }
 
   T release() {
     T temp = ptr_;
-    ptr_ = nullptr;
+    ptr_ = Traits::InvalidValue();
     return temp;
   }
 
  private:
   T ptr_;
 };
+}  // namespace internal
+
+template <typename T>
+using ScopedCFTypeRef =
+    internal::ScopedTypeRef<T, internal::CFTypeRefTraits<T>>;
 
 template <typename T>
 static ScopedCFTypeRef<T> AdoptCF(T cftype) {

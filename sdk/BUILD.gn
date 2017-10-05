@@ -524,6 +524,7 @@ if (is_ios || is_mac) {
           "objc/Framework/UnitTests/avformatmappertests.mm",
           "objc/Framework/UnitTests/objc_video_decoder_factory_tests.mm",
           "objc/Framework/UnitTests/objc_video_encoder_factory_tests.mm",
+          "objc/Framework/UnitTests/scoped_cftyperef_tests.mm",
         ]
         if (is_ios &&
             !(use_ios_simulator &&
@@ -540,6 +541,7 @@ if (is_ios || is_mac) {
 
         defines = [ "GTEST_RELATIVE_PATH" ]
         deps = [
+          ":common_objc",
           ":peerconnection_objc",
           ":peerconnectionfactory_objc",
           ":videotoolbox_objc",
@@ -549,6 +551,7 @@ if (is_ios || is_mac) {
           "../modules:module_api",
           "../rtc_base:rtc_base_tests_utils",
           "../system_wrappers:system_wrappers_default",
+          "//test:test_support",
           "//third_party/ocmock",
         ]
 
