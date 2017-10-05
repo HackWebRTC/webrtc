@@ -25,7 +25,13 @@ rtc_static_library("webrtc_fuzzer_main") {
 template("webrtc_fuzzer_test") {
   fuzzer_test(target_name) {
     forward_variables_from(invoker, "*")
-    deps += [ ":webrtc_fuzzer_main" ]
+    deps += [
+      ":webrtc_fuzzer_main",
+
+      # Link unconditionally with webrtc's TaskQueue, regardless of
+      # rtc_link_task_queue_impl flag.
+      "../../rtc_base:rtc_task_queue_impl",
+    ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs = [ "//build/config/clang:find_bad_constructs" ]
