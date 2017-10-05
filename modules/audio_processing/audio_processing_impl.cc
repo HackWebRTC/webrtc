@@ -302,7 +302,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<LowCutFilter> low_cut_filter;
   std::unique_ptr<LevelController> level_controller;
   std::unique_ptr<ResidualEchoDetector> residual_echo_detector;
-  std::unique_ptr<EchoCanceller3> echo_canceller3;
+  std::unique_ptr<EchoControl> echo_canceller3;
   std::unique_ptr<PostProcessing> capture_post_processor;
 };
 

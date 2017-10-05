@@ -60,7 +60,7 @@ class Aec3RenderQueueItemVerifier {
 //
 // The class is supposed to be used in a non-concurrent manner apart from the
 // AnalyzeRender call which can be called concurrently with the other methods.
-class EchoCanceller3 {
+class EchoCanceller3 : public EchoControl {
  public:
   // Normal c-tor to use.
   EchoCanceller3(const AudioProcessing::Config::EchoCanceller3& config,
@@ -70,15 +70,15 @@ class EchoCanceller3 {
   EchoCanceller3(int sample_rate_hz,
                  bool use_highpass_filter,
                  std::unique_ptr<BlockProcessor> block_processor);
-  ~EchoCanceller3();
+  ~EchoCanceller3() override;
   // Analyzes and stores an internal copy of the split-band domain render
   // signal.
-  void AnalyzeRender(AudioBuffer* farend);
+  void AnalyzeRender(AudioBuffer* farend) override;
   // Analyzes the full-band domain capture signal to detect signal saturation.
-  void AnalyzeCapture(AudioBuffer* capture);
+  void AnalyzeCapture(AudioBuffer* capture) override;
   // Processes the split-band domain capture signal in order to remove any echo
   // present in the signal.
-  void ProcessCapture(AudioBuffer* capture, bool level_change);
+  void ProcessCapture(AudioBuffer* capture, bool level_change) override;
 
   // Signals whether an external detector has detected echo leakage from the
   // echo canceller.
