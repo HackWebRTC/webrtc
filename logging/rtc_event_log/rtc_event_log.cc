@@ -19,9 +19,44 @@
 #include <vector>
 
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
+// TODO(eladalon): Remove events/* when the deprecated functions are removed.
+#include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
+#include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
+#include "logging/rtc_event_log/events/rtc_event_audio_receive_stream_config.h"
+#include "logging/rtc_event_log/events/rtc_event_audio_send_stream_config.h"
+#include "logging/rtc_event_log/events/rtc_event_bwe_update_delay_based.h"
+#include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
 #include "logging/rtc_event_log/events/rtc_event_logging_started.h"
 #include "logging/rtc_event_log/events/rtc_event_logging_stopped.h"
+#include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
+#include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
+#include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
+#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_incoming.h"
+#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
+#include "logging/rtc_event_log/events/rtc_event_rtp_packet_incoming.h"
+#include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
+#include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
+#include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
+#include "logging/rtc_event_log/output/rtc_event_log_output.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
+#include "logging/rtc_event_log/rtc_stream_config.h"
+// TODO(eladalon): Remove these when deprecated functions are removed.
+#include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
+#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/byte_io.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/app.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/psfb.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/sdes.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/event.h"
@@ -31,6 +66,7 @@
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 
@@ -81,12 +117,58 @@ class RtcEventLogImpl final : public RtcEventLog {
   explicit RtcEventLogImpl(std::unique_ptr<RtcEventLogEncoder> event_encoder);
   ~RtcEventLogImpl() override;
 
+  bool StartLogging(const std::string& file_name,
+                    int64_t max_size_bytes) override;
+  bool StartLogging(rtc::PlatformFile platform_file,
+                    int64_t max_size_bytes) override;
+
   // TODO(eladalon): We should change these name to reflect that what we're
   // actually starting/stopping is the output of the log, not the log itself.
   bool StartLogging(std::unique_ptr<RtcEventLogOutput> output) override;
   void StopLogging() override;
 
   void Log(std::unique_ptr<RtcEvent> event) override;
+
+  void LogVideoReceiveStreamConfig(const rtclog::StreamConfig& config) override;
+  void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) override;
+  void LogAudioReceiveStreamConfig(const rtclog::StreamConfig& config) override;
+  void LogAudioSendStreamConfig(const rtclog::StreamConfig& config) override;
+  // TODO(terelius): This can be removed as soon as the interface has been
+  // updated.
+  void LogRtpHeader(PacketDirection direction,
+                    const uint8_t* header,
+                    size_t packet_length) override;
+  // TODO(terelius): This can be made private, non-virtual as soon as the
+  // interface has been updated.
+  void LogRtpHeader(PacketDirection direction,
+                    const uint8_t* header,
+                    size_t packet_length,
+                    int probe_cluster_id) override;
+  void LogIncomingRtpHeader(const RtpPacketReceived& packet) override;
+  void LogOutgoingRtpHeader(const RtpPacketToSend& packet,
+                            int probe_cluster_id) override;
+  // TODO(terelius): This can be made private, non-virtual as soon as the
+  // interface has been updated.
+  void LogRtcpPacket(PacketDirection direction,
+                     const uint8_t* packet,
+                     size_t length) override;
+  void LogIncomingRtcpPacket(rtc::ArrayView<const uint8_t> packet) override;
+  void LogOutgoingRtcpPacket(rtc::ArrayView<const uint8_t> packet) override;
+  void LogAudioPlayout(uint32_t ssrc) override;
+  void LogLossBasedBweUpdate(int32_t bitrate_bps,
+                             uint8_t fraction_loss,
+                             int32_t total_packets) override;
+  void LogDelayBasedBweUpdate(int32_t bitrate_bps,
+                              BandwidthUsage detector_state) override;
+  void LogAudioNetworkAdaptation(
+      const AudioEncoderRuntimeConfig& config) override;
+  void LogProbeClusterCreated(int id,
+                              int bitrate_bps,
+                              int min_probes,
+                              int min_bytes) override;
+  void LogProbeResultSuccess(int id, int bitrate_bps) override;
+  void LogProbeResultFailure(int id,
+                             ProbeFailureReason failure_reason) override;
 
  private:
   // Appends an event to the output protobuf string, returning true on success.
@@ -148,6 +230,20 @@ RtcEventLogImpl::~RtcEventLogImpl() {
 
   int count = std::atomic_fetch_sub(&rtc_event_log_count, 1) - 1;
   RTC_DCHECK_GE(count, 0);
+}
+
+bool RtcEventLogImpl::StartLogging(const std::string& file_name,
+                                   int64_t max_size_bytes) {
+  RTC_CHECK(max_size_bytes > 0 || max_size_bytes == kUnlimitedOutput);
+  return StartLogging(rtc::MakeUnique<RtcEventLogOutputFile>(
+      file_name, rtc::saturated_cast<size_t>(max_size_bytes)));
+}
+
+bool RtcEventLogImpl::StartLogging(rtc::PlatformFile platform_file,
+                                   int64_t max_size_bytes) {
+  RTC_CHECK(max_size_bytes > 0 || max_size_bytes == kUnlimitedOutput);
+  return StartLogging(rtc::MakeUnique<RtcEventLogOutputFile>(
+      platform_file, rtc::saturated_cast<size_t>(max_size_bytes)));
 }
 
 bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output) {
@@ -212,6 +308,124 @@ void RtcEventLogImpl::Log(std::unique_ptr<RtcEvent> event) {
 
   task_queue_.PostTask(rtc::MakeUnique<ResourceOwningTask<RtcEvent>>(
       std::move(event), event_handler));
+}
+
+void RtcEventLogImpl::LogVideoReceiveStreamConfig(
+    const rtclog::StreamConfig& config) {
+  Log(rtc::MakeUnique<RtcEventVideoReceiveStreamConfig>(
+      rtc::MakeUnique<rtclog::StreamConfig>(config)));
+}
+
+void RtcEventLogImpl::LogVideoSendStreamConfig(
+    const rtclog::StreamConfig& config) {
+  Log(rtc::MakeUnique<RtcEventVideoSendStreamConfig>(
+      rtc::MakeUnique<rtclog::StreamConfig>(config)));
+}
+
+void RtcEventLogImpl::LogAudioReceiveStreamConfig(
+    const rtclog::StreamConfig& config) {
+  Log(rtc::MakeUnique<RtcEventAudioReceiveStreamConfig>(
+      rtc::MakeUnique<rtclog::StreamConfig>(config)));
+}
+
+void RtcEventLogImpl::LogAudioSendStreamConfig(
+    const rtclog::StreamConfig& config) {
+  Log(rtc::MakeUnique<RtcEventAudioSendStreamConfig>(
+      rtc::MakeUnique<rtclog::StreamConfig>(config)));
+}
+
+void RtcEventLogImpl::LogIncomingRtpHeader(const RtpPacketReceived& packet) {
+  Log(rtc::MakeUnique<RtcEventRtpPacketIncoming>(packet));
+}
+
+void RtcEventLogImpl::LogOutgoingRtpHeader(const RtpPacketToSend& packet,
+                                           int probe_cluster_id) {
+  Log(rtc::MakeUnique<RtcEventRtpPacketOutgoing>(packet, probe_cluster_id));
+}
+
+void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
+                                   const uint8_t* header,
+                                   size_t packet_length) {
+  LogRtpHeader(direction, header, packet_length, PacedPacketInfo::kNotAProbe);
+}
+
+void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
+                                   const uint8_t* header,
+                                   size_t packet_length,
+                                   int probe_cluster_id) {
+  // TODO(eladalon): This is highly inefficient. We're only doing this for
+  // the deprecated interface. We should remove this soon.
+  if (direction == PacketDirection::kIncomingPacket) {
+    RtpPacketReceived packet;
+    packet.Parse(header, packet_length);
+    Log(rtc::MakeUnique<RtcEventRtpPacketIncoming>(packet));
+  } else {
+    RTC_CHECK_EQ(direction, PacketDirection::kOutgoingPacket);
+    RtpPacketToSend packet(nullptr);
+    packet.Parse(header, packet_length);
+    Log(rtc::MakeUnique<RtcEventRtpPacketOutgoing>(packet, probe_cluster_id));
+  }
+}
+
+void RtcEventLogImpl::LogIncomingRtcpPacket(
+    rtc::ArrayView<const uint8_t> packet) {
+  Log(rtc::MakeUnique<RtcEventRtcpPacketIncoming>(packet));
+}
+
+void RtcEventLogImpl::LogOutgoingRtcpPacket(
+    rtc::ArrayView<const uint8_t> packet) {
+  Log(rtc::MakeUnique<RtcEventRtcpPacketOutgoing>(packet));
+}
+
+void RtcEventLogImpl::LogRtcpPacket(PacketDirection direction,
+                                    const uint8_t* packet,
+                                    size_t length) {
+  if (direction == PacketDirection::kIncomingPacket) {
+    LogIncomingRtcpPacket(rtc::ArrayView<const uint8_t>(packet, length));
+  } else {
+    RTC_CHECK_EQ(direction, PacketDirection::kOutgoingPacket);
+    LogOutgoingRtcpPacket(rtc::ArrayView<const uint8_t>(packet, length));
+  }
+}
+
+void RtcEventLogImpl::LogAudioPlayout(uint32_t ssrc) {
+  Log(rtc::MakeUnique<RtcEventAudioPlayout>(ssrc));
+}
+
+void RtcEventLogImpl::LogLossBasedBweUpdate(int32_t bitrate_bps,
+                                            uint8_t fraction_loss,
+                                            int32_t total_packets) {
+  Log(rtc::MakeUnique<RtcEventBweUpdateLossBased>(bitrate_bps, fraction_loss,
+                                                  total_packets));
+}
+
+void RtcEventLogImpl::LogDelayBasedBweUpdate(int32_t bitrate_bps,
+                                             BandwidthUsage detector_state) {
+  Log(rtc::MakeUnique<RtcEventBweUpdateDelayBased>(bitrate_bps,
+                                                   detector_state));
+}
+
+void RtcEventLogImpl::LogAudioNetworkAdaptation(
+    const AudioEncoderRuntimeConfig& config) {
+  Log(rtc::MakeUnique<RtcEventAudioNetworkAdaptation>(
+      rtc::MakeUnique<AudioEncoderRuntimeConfig>(config)));
+}
+
+void RtcEventLogImpl::LogProbeClusterCreated(int id,
+                                             int bitrate_bps,
+                                             int min_probes,
+                                             int min_bytes) {
+  Log(rtc::MakeUnique<RtcEventProbeClusterCreated>(id, bitrate_bps, min_probes,
+                                                   min_bytes));
+}
+
+void RtcEventLogImpl::LogProbeResultSuccess(int id, int bitrate_bps) {
+  Log(rtc::MakeUnique<RtcEventProbeResultSuccess>(id, bitrate_bps));
+}
+
+void RtcEventLogImpl::LogProbeResultFailure(int id,
+                                            ProbeFailureReason failure_reason) {
+  Log(rtc::MakeUnique<RtcEventProbeResultFailure>(id, failure_reason));
 }
 
 bool RtcEventLogImpl::AppendEventToString(const RtcEvent& event,
