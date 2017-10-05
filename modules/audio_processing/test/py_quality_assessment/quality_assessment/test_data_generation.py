@@ -313,26 +313,20 @@ class NarrowBandNoiseTestDataGenerator(TestDataGenerator):
 
 
 @TestDataGenerator.RegisterClass
-class EnvironmentalNoiseTestDataGenerator(TestDataGenerator):
-  """Generator that adds environmental noise.
+class AdditiveNoiseTestDataGenerator(TestDataGenerator):
+  """Generator that adds noise loops.
 
-  TODO(alessiob): Make the class more generic e.g.,
-  MixNoiseTrackTestDataGenerator.
+  This generator uses all the wav files in a given path (default: noise_tracks/)
+  and mixes them to the clean speech with different target SNRs (hard-coded).
   """
 
-  NAME = 'environmental_noise'
+  NAME = 'additive_noise'
   _NOISY_SIGNAL_FILENAME_TEMPLATE = '{0}_{1:d}_SNR.wav'
 
-  # TODO(alessiob): allow the user to store the noise tracks in a custom path.
-  _NOISE_TRACKS_PATH = os.path.join(
+  DEFAULT_NOISE_TRACKS_PATH = os.path.join(
       os.path.dirname(__file__), os.pardir, 'noise_tracks')
 
-  # TODO(alessiob): Allow the user to have custom noise tracks.
-  # TODO(alessiob): Exploit TestDataGeneratorFactory.GetInstance().
-  _NOISE_TRACKS = [
-      'city.wav'
-  ]
-
+  # TODO(alessiob): Make the list of SNR pairs customizable.
   # Each pair indicates the clean vs. noisy and reference vs. noisy SNRs.
   # The reference (second value of each pair) always has a lower amount of noise
   # - i.e., the SNR is 10 dB higher.
@@ -343,8 +337,15 @@ class EnvironmentalNoiseTestDataGenerator(TestDataGenerator):
       [0, 10],  # Largest noise.
   ]
 
-  def __init__(self, output_directory_prefix):
+  def __init__(self, output_directory_prefix, noise_tracks_path):
     TestDataGenerator.__init__(self, output_directory_prefix)
+    self._noise_tracks_path = noise_tracks_path
+    self._noise_tracks_file_names = [n for n in os.listdir(
+        self._noise_tracks_path) if n.lower().endswith('.wav')]
+    if len(self._noise_tracks_file_names) == 0:
+      raise exceptions.InitializationException(
+          'No wav files found in the noise tracks path %s' % (
+              self._noise_tracks_path))
 
   def _Generate(
       self, input_signal_filepath, test_data_cache_path, base_output_path):
@@ -363,11 +364,11 @@ class EnvironmentalNoiseTestDataGenerator(TestDataGenerator):
         input_signal_filepath)
 
     noisy_mix_filepaths = {}
-    for noise_track_filename in self._NOISE_TRACKS:
+    for noise_track_filename in self._noise_tracks_file_names:
       # Load the noise track.
       noise_track_name, _ = os.path.splitext(noise_track_filename)
       noise_track_filepath = os.path.join(
-          self._NOISE_TRACKS_PATH, noise_track_filename)
+          self._noise_tracks_path, noise_track_filename)
       if not os.path.exists(noise_track_filepath):
         logging.error('cannot find the <%s> noise track', noise_track_filename)
         raise exceptions.FileNotFoundError()

@@ -16,11 +16,9 @@ from . import data_access
 from . import echo_path_simulation
 from . import echo_path_simulation_factory
 from . import eval_scores
-from . import eval_scores_factory
 from . import exceptions
 from . import input_mixer
 from . import test_data_generation
-from . import test_data_generation_factory
 
 
 class ApmModuleSimulator(object):
@@ -39,21 +37,18 @@ class ApmModuleSimulator(object):
   _PREFIX_TEST_DATA_GEN_PARAMS = 'datagen_params-'
   _PREFIX_SCORE = 'score-'
 
-  def __init__(self, aechen_ir_database_path, polqa_tool_bin_path,
+  def __init__(self, test_data_generator_factory, evaluation_score_factory,
                ap_wrapper, evaluator):
-    # Init.
+    self._test_data_generator_factory = test_data_generator_factory
+    self._evaluation_score_factory = evaluation_score_factory
     self._audioproc_wrapper = ap_wrapper
     self._evaluator = evaluator
 
-    # Instance factory objects.
-    self._test_data_generator_factory = (
-        test_data_generation_factory.TestDataGeneratorFactory(
-            output_directory_prefix=self._PREFIX_TEST_DATA_GEN_PARAMS,
-            aechen_ir_database_path=aechen_ir_database_path))
-    self._evaluation_score_factory = (
-        eval_scores_factory.EvaluationScoreWorkerFactory(
-            score_filename_prefix=self._PREFIX_SCORE,
-            polqa_tool_bin_path=polqa_tool_bin_path))
+    # Init.
+    self._test_data_generator_factory.SetOutputDirectoryPrefix(
+        self._PREFIX_TEST_DATA_GEN_PARAMS)
+    self._evaluation_score_factory.SetScoreFilenamePrefix(
+        self._PREFIX_SCORE)
 
     # Properties for each run.
     self._base_output_path = None

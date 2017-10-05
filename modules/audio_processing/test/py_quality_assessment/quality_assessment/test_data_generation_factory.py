@@ -11,6 +11,7 @@
 
 import logging
 
+from . import exceptions
 from . import test_data_generation
 
 
@@ -21,9 +22,13 @@ class TestDataGeneratorFactory(object):
   generators will be produced.
   """
 
-  def __init__(self, output_directory_prefix, aechen_ir_database_path):
-    self._output_directory_prefix = output_directory_prefix
+  def __init__(self, aechen_ir_database_path, noise_tracks_path):
+    self._output_directory_prefix = None
     self._aechen_ir_database_path = aechen_ir_database_path
+    self._noise_tracks_path = noise_tracks_path
+
+  def SetOutputDirectoryPrefix(self, prefix):
+    self._output_directory_prefix = prefix
 
   def GetInstance(self, test_data_generators_class):
     """Creates an TestDataGenerator instance given a class object.
@@ -35,10 +40,18 @@ class TestDataGeneratorFactory(object):
     Returns:
       TestDataGenerator instance.
     """
+    if self._output_directory_prefix is None:
+      raise exceptions.InitializationException(
+          'The output directory prefix for test data generators is not set')
     logging.debug('factory producing %s', test_data_generators_class)
+
     if test_data_generators_class == (
         test_data_generation.ReverberationTestDataGenerator):
       return test_data_generation.ReverberationTestDataGenerator(
           self._output_directory_prefix, self._aechen_ir_database_path)
+    elif test_data_generators_class == (
+        test_data_generation.AdditiveNoiseTestDataGenerator):
+      return test_data_generation.AdditiveNoiseTestDataGenerator(
+          self._output_directory_prefix, self._noise_tracks_path)
     else:
       return test_data_generators_class(self._output_directory_prefix)

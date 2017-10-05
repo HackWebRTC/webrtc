@@ -24,9 +24,11 @@ import mock
 import pydub
 
 from . import audioproc_wrapper
+from . import eval_scores_factory
 from . import evaluation
 from . import signal_processing
 from . import simulation
+from . import test_data_generation_factory
 
 
 class TestApmModuleSimulator(unittest.TestCase):
@@ -51,18 +53,26 @@ class TestApmModuleSimulator(unittest.TestCase):
     shutil.rmtree(self._tmp_path)
 
   def testSimulation(self):
-    # Instance dependencies to inject and mock.
+    # Instance dependencies to mock and inject.
     ap_wrapper = audioproc_wrapper.AudioProcWrapper(
         audioproc_wrapper.AudioProcWrapper.DEFAULT_APM_SIMULATOR_BIN_PATH)
     evaluator = evaluation.ApmModuleEvaluator()
     ap_wrapper.Run = mock.MagicMock(name='Run')
     evaluator.Run = mock.MagicMock(name='Run')
 
+    # Instance non-mocked dependencies.
+    test_data_generator_factory = (
+        test_data_generation_factory.TestDataGeneratorFactory(
+            aechen_ir_database_path='',
+            noise_tracks_path=''))
+    evaluation_score_factory = eval_scores_factory.EvaluationScoreWorkerFactory(
+        polqa_tool_bin_path=os.path.join(
+            os.path.dirname(__file__), 'fake_polqa'))
+
     # Instance simulator.
     simulator = simulation.ApmModuleSimulator(
-        aechen_ir_database_path='',
-        polqa_tool_bin_path=os.path.join(
-            os.path.dirname(__file__), 'fake_polqa'),
+        test_data_generator_factory=test_data_generator_factory,
+        evaluation_score_factory=evaluation_score_factory,
         ap_wrapper=ap_wrapper,
         evaluator=evaluator)
 
@@ -97,9 +107,14 @@ class TestApmModuleSimulator(unittest.TestCase):
 
     # Instance simulator.
     simulator = simulation.ApmModuleSimulator(
-        aechen_ir_database_path='',
-        polqa_tool_bin_path=os.path.join(
-            os.path.dirname(__file__), 'fake_polqa'),
+        test_data_generator_factory=(
+            test_data_generation_factory.TestDataGeneratorFactory(
+                aechen_ir_database_path='',
+                noise_tracks_path='')),
+        evaluation_score_factory=(
+            eval_scores_factory.EvaluationScoreWorkerFactory(
+                polqa_tool_bin_path=os.path.join(
+                    os.path.dirname(__file__), 'fake_polqa'))),
         ap_wrapper=audioproc_wrapper.AudioProcWrapper(
             audioproc_wrapper.AudioProcWrapper.DEFAULT_APM_SIMULATOR_BIN_PATH),
         evaluator=evaluation.ApmModuleEvaluator())

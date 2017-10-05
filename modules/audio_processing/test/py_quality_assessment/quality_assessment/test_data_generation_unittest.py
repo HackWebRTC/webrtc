@@ -83,10 +83,12 @@ class TestTestDataGenerators(unittest.TestCase):
     self.assertGreater(len(registered_classes), 0)
 
     # Instance generators factory.
-    generators_factory = (
-        test_data_generation_factory.TestDataGeneratorFactory(
-            output_directory_prefix='datagen-',
-            aechen_ir_database_path=self._fake_air_db_path))
+    generators_factory = test_data_generation_factory.TestDataGeneratorFactory(
+        aechen_ir_database_path=self._fake_air_db_path,
+        noise_tracks_path=test_data_generation.  \
+                          AdditiveNoiseTestDataGenerator.  \
+                          DEFAULT_NOISE_TRACKS_PATH)
+    generators_factory.SetOutputDirectoryPrefix('datagen-')
 
     # Use a sample input file as clean input signal.
     input_signal_filepath = os.path.join(

@@ -51,9 +51,6 @@ reference one used for evaluation.
 encoded in the 16 bit signed format (it is recommended that the tracks are
 converted and exported with Audacity).
 
-(*2) Adapt `EnvironmentalNoiseTestDataGenerator._NOISE_TRACKS` accordingly in
-`out/Default/py_quality_assessment/quality_assessment/test_data_generation.py`.
-
 ## Usage (scores computation)
  - Go to `out/Default/py_quality_assessment`
  - Check the `apm_quality_assessment.sh` as an example script to parallelize the

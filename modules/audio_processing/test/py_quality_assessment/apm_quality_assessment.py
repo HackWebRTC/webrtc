@@ -26,7 +26,10 @@ import quality_assessment.audioproc_wrapper as audioproc_wrapper
 import quality_assessment.echo_path_simulation as echo_path_simulation
 import quality_assessment.eval_scores as eval_scores
 import quality_assessment.evaluation as evaluation
+import quality_assessment.eval_scores_factory as eval_scores_factory
 import quality_assessment.test_data_generation as test_data_generation
+import quality_assessment.test_data_generation_factory as  \
+    test_data_generation_factory
 import quality_assessment.simulation as simulation
 
 _ECHO_PATH_SIMULATOR_NAMES = (
@@ -76,6 +79,12 @@ def _InstanceArgumentsParser():
                       choices=_TEST_DATA_GENERATORS_NAMES,
                       default=_TEST_DATA_GENERATORS_NAMES)
 
+  parser.add_argument('--additive_noise_tracks_path', required=False,
+                      help='path to the wav files for the additive',
+                      default=test_data_generation.  \
+                              AdditiveNoiseTestDataGenerator.  \
+                              DEFAULT_NOISE_TRACKS_PATH)
+
   parser.add_argument('-e', '--eval_scores', nargs='+', required=False,
                       help='custom list of evaluation scores to use',
                       choices=_EVAL_SCORE_WORKER_NAMES,
@@ -93,32 +102,42 @@ def _InstanceArgumentsParser():
   parser.add_argument('--air_db_path', required=True,
                       help='path to the Aechen IR database')
 
-  parser.add_argument(
-      '--apm_sim_path', required=False, help='path to the APM simulator tool',
-      default=audioproc_wrapper.AudioProcWrapper.DEFAULT_APM_SIMULATOR_BIN_PATH)
+  parser.add_argument('--apm_sim_path', required=False,
+                      help='path to the APM simulator tool',
+                      default=audioproc_wrapper.  \
+                              AudioProcWrapper.  \
+                              DEFAULT_APM_SIMULATOR_BIN_PATH)
 
   return parser
 
 
-def main():
-  # TODO(alessiob): level = logging.INFO once debugged.
-  logging.basicConfig(level=logging.DEBUG)
-
-  parser = _InstanceArgumentsParser()
-  args = parser.parse_args()
+def _ValidateArguments(args, parser):
   if args.capture_input_files and args.render_input_files and (
       len(args.capture_input_files) != len(args.render_input_files)):
     parser.error('--render_input_files and --capture_input_files must be lists '
                  'having the same length')
     sys.exit(1)
+
   if args.render_input_files and not args.echo_path_simulator:
     parser.error('when --render_input_files is set, --echo_path_simulator is '
                  'also required')
     sys.exit(1)
 
+
+def main():
+  # TODO(alessiob): level = logging.INFO once debugged.
+  logging.basicConfig(level=logging.DEBUG)
+  parser = _InstanceArgumentsParser()
+  args = parser.parse_args()
+  _ValidateArguments(args, parser)
+
   simulator = simulation.ApmModuleSimulator(
-      aechen_ir_database_path=args.air_db_path,
-      polqa_tool_bin_path=os.path.join(args.polqa_path, _POLQA_BIN_NAME),
+      test_data_generator_factory=(
+          test_data_generation_factory.TestDataGeneratorFactory(
+              aechen_ir_database_path=args.air_db_path,
+              noise_tracks_path=args.additive_noise_tracks_path)),
+      evaluation_score_factory=eval_scores_factory.EvaluationScoreWorkerFactory(
+          polqa_tool_bin_path=os.path.join(args.polqa_path, _POLQA_BIN_NAME)),
       ap_wrapper=audioproc_wrapper.AudioProcWrapper(args.apm_sim_path),
       evaluator=evaluation.ApmModuleEvaluator())
   simulator.Run(
@@ -129,7 +148,6 @@ def main():
       test_data_generator_names=args.test_data_generators,
       eval_score_names=args.eval_scores,
       output_dir=args.output_dir)
-
   sys.exit(0)
 
 
