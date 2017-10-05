@@ -15,10 +15,10 @@
 #include <utility>
 #include <vector>
 
-#include "api/candidate.h"
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
 #include "media/base/mediachannel.h"
+#include "p2p/base/candidate.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/port.h"
 #include "pc/peerconnection.h"

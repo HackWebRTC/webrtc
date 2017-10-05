@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "api/candidate.h"
+#include "p2p/base/candidate.h"
 #include "p2p/base/candidatepairinterface.h"
 
 namespace cricket {

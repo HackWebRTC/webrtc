@@ -18,9 +18,9 @@
 #include <string>
 #include <vector>
 
-#include "api/candidate.h"
 #include "api/jsep.h"
 #include "api/jsepicecandidate.h"
+#include "p2p/base/candidate.h"
 #include "rtc_base/constructormagic.h"
 
 namespace cricket {

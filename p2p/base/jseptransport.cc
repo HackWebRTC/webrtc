@@ -13,7 +13,7 @@
 #include <memory>
 #include <utility>  // for std::pair
 
-#include "api/candidate.h"
+#include "p2p/base/candidate.h"
 #include "p2p/base/dtlstransport.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/p2ptransportchannel.h"

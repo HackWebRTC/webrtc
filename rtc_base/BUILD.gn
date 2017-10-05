@@ -526,7 +526,6 @@ rtc_static_library("rtc_base_generic") {
     "nethelpers.h",
     "network.cc",
     "network.h",
-    "network_constants.h",
     "networkmonitor.cc",
     "networkmonitor.h",
     "nullsocketserver.cc",
