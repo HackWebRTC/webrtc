@@ -406,6 +406,22 @@ def CheckGnChanges(input_api, output_api):
                                                    output_api))
   return result
 
+def CheckGnGen(input_api, output_api):
+  """Runs `gn gen --check` with default args to detect mismatches between
+  #includes and dependencies in the BUILD.gn files, as well as general build
+  errors.
+  """
+  with _AddToPath(input_api.os_path.join(
+      input_api.PresubmitLocalPath(), 'tools_webrtc', 'presubmit_checks_lib')):
+    from gn_check import RunGnCheck
+  errors = RunGnCheck(input_api.PresubmitLocalPath())[:5]
+  if errors:
+    return [output_api.PresubmitPromptWarning(
+        'Some #includes do not match the build dependency graph. Please run:\n'
+        '  gn gen --check <out_dir>',
+        long_text='\n\n'.join(errors))]
+  return []
+
 def CheckUnwantedDependencies(input_api, output_api):
   """Runs checkdeps on #include statements added in this
   change. Breaking - rules is an error, breaking ! rules is a
@@ -673,6 +689,7 @@ def CommonChecks(input_api, output_api):
 def CheckChangeOnUpload(input_api, output_api):
   results = []
   results.extend(CommonChecks(input_api, output_api))
+  results.extend(CheckGnGen(input_api, output_api))
   results.extend(
       input_api.canned_checks.CheckGNFormatted(input_api, output_api))
   return results
