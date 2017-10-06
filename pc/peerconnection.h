@@ -438,10 +438,10 @@ class PeerConnection : public PeerConnectionInterface,
       int candidate_pool_size,
       bool prune_turn_ports);
 
-  // Starts recording an Rtc EventLog using the supplied platform file.
+  // Starts recording an RTC event log using the supplied platform file.
   // This function should only be called from the worker thread.
   bool StartRtcEventLog_w(rtc::PlatformFile file, int64_t max_size_bytes);
-  // Starts recording an Rtc EventLog using the supplied platform file.
+  // Stops recording an RTC event log.
   // This function should only be called from the worker thread.
   void StopRtcEventLog_w();
 
