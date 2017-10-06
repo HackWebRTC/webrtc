@@ -48,11 +48,23 @@ constexpr double kDefaultTrendlineThresholdGain = 4.0;
 constexpr int kMaxConsecutiveFailedLookups = 5;
 
 const char kBweSparseUpdateExperiment[] = "WebRTC-BweSparseUpdateExperiment";
+const char kBweWindowSizeInPacketsExperiment[] =
+    "WebRTC-BweWindowSizeInPackets";
 
-bool BweSparseUpdateExperimentIsEnabled() {
+size_t ReadTrendlineFilterWindowSize() {
   std::string experiment_string =
-      webrtc::field_trial::FindFullName(kBweSparseUpdateExperiment);
-  return experiment_string == "Enabled";
+      webrtc::field_trial::FindFullName(kBweWindowSizeInPacketsExperiment);
+  size_t window_size;
+  int parsed_values =
+      sscanf(experiment_string.c_str(), "Enabled-%zu", &window_size);
+  if (parsed_values == 1) {
+    if (window_size > 1)
+      return window_size;
+    LOG(WARNING) << "Window size must be greater than 1.";
+  }
+  LOG(LS_WARNING) << "Failed to parse parameters for BweTrendlineFilter "
+                     "experiment from field trial string. Using default.";
+  return kDefaultTrendlineWindowSize;
 }
 }  // namespace
 
@@ -81,14 +93,20 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
       last_seen_packet_ms_(-1),
       uma_recorded_(false),
       probe_bitrate_estimator_(event_log),
-      trendline_window_size_(kDefaultTrendlineWindowSize),
+      trendline_window_size_(
+          webrtc::field_trial::IsEnabled(kBweWindowSizeInPacketsExperiment)
+              ? ReadTrendlineFilterWindowSize()
+              : kDefaultTrendlineWindowSize),
       trendline_smoothing_coeff_(kDefaultTrendlineSmoothingCoeff),
       trendline_threshold_gain_(kDefaultTrendlineThresholdGain),
       consecutive_delayed_feedbacks_(0),
       prev_bitrate_(0),
       prev_state_(BandwidthUsage::kBwNormal),
-      in_sparse_update_experiment_(BweSparseUpdateExperimentIsEnabled()) {
-  LOG(LS_INFO) << "Using Trendline filter for delay change estimation.";
+      in_sparse_update_experiment_(
+          webrtc::field_trial::IsEnabled(kBweSparseUpdateExperiment)) {
+  LOG(LS_INFO)
+      << "Using Trendline filter for delay change estimation with window size "
+      << trendline_window_size_;
 }
 
 DelayBasedBwe::~DelayBasedBwe() {}

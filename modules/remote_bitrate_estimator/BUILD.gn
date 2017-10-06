@@ -170,6 +170,7 @@ if (rtc_include_tests) {
       ":bwe_simulator_lib",
       ":remote_bitrate_estimator",
       "../../rtc_base:rtc_base_approved",
+      "../../test:field_trial",
       "../../test:test_support",
     ]
     if (!build_with_chromium && is_clang) {

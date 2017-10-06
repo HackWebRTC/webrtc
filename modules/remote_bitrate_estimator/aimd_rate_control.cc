@@ -13,19 +13,45 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <string>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/safe_minmax.h"
 
-#include "modules/remote_bitrate_estimator/overuse_detector.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "modules/remote_bitrate_estimator/overuse_detector.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "rtc_base/logging.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
 static const int64_t kDefaultRttMs = 200;
 static const int64_t kMaxFeedbackIntervalMs = 1000;
+static const float kDefaultBackoffFactor = 0.85f;
+
+const char kBweBackOffFactorExperiment[] = "WebRTC-BweBackOffFactor";
+
+float ReadTrendlineFilterWindowSize() {
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName(kBweBackOffFactorExperiment);
+  float backoff_factor;
+  int parsed_values =
+      sscanf(experiment_string.c_str(), "Enabled-%f", &backoff_factor);
+  if (parsed_values == 1) {
+    if (backoff_factor < 1.0f) {
+      LOG(WARNING) << "Back-off factor must be less than 1.";
+    } else if (backoff_factor > 0.0f) {
+      LOG(WARNING) << "Back-off factor must be greater than 0.";
+    } else {
+      return backoff_factor;
+    }
+  }
+  LOG(LS_WARNING) << "Failed to parse parameters for AimdRateControl "
+                     "experiment from field trial string. Using default.";
+  return kDefaultBackoffFactor;
+}
 
 AimdRateControl::AimdRateControl()
     : min_configured_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
@@ -38,9 +64,13 @@ AimdRateControl::AimdRateControl()
       time_last_bitrate_change_(-1),
       time_first_incoming_estimate_(-1),
       bitrate_is_initialized_(false),
-      beta_(0.85f),
+      beta_(webrtc::field_trial::IsEnabled(kBweBackOffFactorExperiment)
+                ? ReadTrendlineFilterWindowSize()
+                : kDefaultBackoffFactor),
       rtt_(kDefaultRttMs),
-      in_experiment_(!AdaptiveThresholdExperimentIsDisabled()) {}
+      in_experiment_(!AdaptiveThresholdExperimentIsDisabled()) {
+  LOG(LS_INFO) << "Using aimd rate control with back off factor " << beta_;
+}
 
 AimdRateControl::~AimdRateControl() {}
 
