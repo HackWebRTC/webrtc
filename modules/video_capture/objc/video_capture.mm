@@ -15,6 +15,7 @@
 #include "modules/video_capture/objc/device_info_objc.h"
 #include "modules/video_capture/objc/rtc_video_capture_objc.h"
 #include "rtc_base/refcount.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 using namespace webrtc;

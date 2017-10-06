@@ -10,6 +10,8 @@
 #ifndef RTC_BASE_REFCOUNT_H_
 #define RTC_BASE_REFCOUNT_H_
 
+// TODO(nisse): Delete this include. We plan to let refcountedobject.h
+// include this file, rather than the other way around.
 #include "rtc_base/refcountedobject.h"
 
 namespace rtc {

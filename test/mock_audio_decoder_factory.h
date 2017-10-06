@@ -16,6 +16,7 @@
 
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "test/gmock.h"
 

@@ -14,6 +14,7 @@
 #include "modules/desktop_capture/desktop_frame.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/refcount.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
