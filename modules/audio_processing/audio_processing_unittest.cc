@@ -34,7 +34,6 @@
 #include "rtc_base/gtest_prod_util.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/protobuf_utils.h"
-#include "rtc_base/refcountedobject.h"
 #include "rtc_base/safe_minmax.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"

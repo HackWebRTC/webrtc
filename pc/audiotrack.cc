@@ -11,7 +11,6 @@
 #include "pc/audiotrack.h"
 
 #include "rtc_base/checks.h"
-#include "rtc_base/refcountedobject.h"
 
 using rtc::scoped_refptr;
 

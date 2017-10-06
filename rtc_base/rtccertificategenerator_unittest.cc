@@ -16,7 +16,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/refcountedobject.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {

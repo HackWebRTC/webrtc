@@ -13,7 +13,6 @@
 #include <string.h>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/refcountedobject.h"
 
 // TODO(tommi): Could we have a static map of value name -> expected type
 // and use this to RTC_DCHECK on correct usage (somewhat strongly typed values)?

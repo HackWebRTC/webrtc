@@ -9,7 +9,6 @@
  */
 
 #include "pc/videotrack.h"
-#include "rtc_base/refcountedobject.h"
 
 #include <string>
 

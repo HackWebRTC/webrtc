@@ -9,7 +9,7 @@
  */
 
 // To generate callback.h from callback.h.pump, execute:
-// ../third_party/googletest/src/googletest/scripts/pump.py callback.h.pump
+// /home/build/google3/third_party/gtest/scripts/pump.py callback.h.pump
 
 // Callbacks are callable object containers. They can hold a function pointer
 // or a function object and behave like a value type. Internally, data is
@@ -58,7 +58,6 @@
 #define RTC_BASE_CALLBACK_H_
 
 #include "rtc_base/refcount.h"
-#include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace rtc {
