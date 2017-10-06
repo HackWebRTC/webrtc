@@ -703,8 +703,9 @@ TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   StopPlayout();
   // This thresholds is set rather high to accommodate differences in hardware
   // in several devices. The main idea is to capture cases where a very large
-  // latency is built up.
-  EXPECT_LE(audio_stream.average_size(), 5u);
+  // latency is built up. See http://bugs.webrtc.org/7744 for examples on
+  // bots where relatively large average latencies can happen.
+  EXPECT_LE(audio_stream.average_size(), 25u);
   PRINT("\n");
 }
 
