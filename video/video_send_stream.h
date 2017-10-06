@@ -48,17 +48,19 @@ class VideoSendStreamImpl;
 // |worker_queue|.
 class VideoSendStream : public webrtc::VideoSendStream {
  public:
-  VideoSendStream(int num_cpu_cores,
-                  ProcessThread* module_process_thread,
-                  rtc::TaskQueue* worker_queue,
-                  CallStats* call_stats,
-                  RtpTransportControllerSendInterface* transport,
-                  BitrateAllocator* bitrate_allocator,
-                  SendDelayStats* send_delay_stats,
-                  RtcEventLog* event_log,
-                  VideoSendStream::Config config,
-                  VideoEncoderConfig encoder_config,
-                  const std::map<uint32_t, RtpState>& suspended_ssrcs);
+  VideoSendStream(
+      int num_cpu_cores,
+      ProcessThread* module_process_thread,
+      rtc::TaskQueue* worker_queue,
+      CallStats* call_stats,
+      RtpTransportControllerSendInterface* transport,
+      BitrateAllocator* bitrate_allocator,
+      SendDelayStats* send_delay_stats,
+      RtcEventLog* event_log,
+      VideoSendStream::Config config,
+      VideoEncoderConfig encoder_config,
+      const std::map<uint32_t, RtpState>& suspended_ssrcs,
+      const std::map<uint32_t, RtpPayloadState>& suspended_payload_states);
 
   ~VideoSendStream() override;
 
@@ -76,6 +78,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
   Stats GetStats() override;
 
   typedef std::map<uint32_t, RtpState> RtpStateMap;
+  typedef std::map<uint32_t, RtpPayloadState> RtpPayloadStateMap;
 
   // Takes ownership of each file, is responsible for closing them later.
   // Calling this method will close and finalize any current logs.
@@ -86,7 +89,8 @@ class VideoSendStream : public webrtc::VideoSendStream {
   void EnableEncodedFrameRecording(const std::vector<rtc::PlatformFile>& files,
                                    size_t byte_limit) override;
 
-  RtpStateMap StopPermanentlyAndGetRtpStates();
+  void StopPermanentlyAndGetRtpStates(RtpStateMap* rtp_state_map,
+                                      RtpPayloadStateMap* payload_state_map);
 
   void SetTransportOverhead(size_t transport_overhead_per_packet);
 

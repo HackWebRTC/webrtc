@@ -208,18 +208,20 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                             public VideoStreamEncoder::EncoderSink,
                             public VideoBitrateAllocationObserver {
  public:
-  VideoSendStreamImpl(SendStatisticsProxy* stats_proxy,
-                      rtc::TaskQueue* worker_queue,
-                      CallStats* call_stats,
-                      RtpTransportControllerSendInterface* transport,
-                      BitrateAllocator* bitrate_allocator,
-                      SendDelayStats* send_delay_stats,
-                      VideoStreamEncoder* video_stream_encoder,
-                      RtcEventLog* event_log,
-                      const VideoSendStream::Config* config,
-                      int initial_encoder_max_bitrate,
-                      std::map<uint32_t, RtpState> suspended_ssrcs,
-                      VideoEncoderConfig::ContentType content_type);
+  VideoSendStreamImpl(
+      SendStatisticsProxy* stats_proxy,
+      rtc::TaskQueue* worker_queue,
+      CallStats* call_stats,
+      RtpTransportControllerSendInterface* transport,
+      BitrateAllocator* bitrate_allocator,
+      SendDelayStats* send_delay_stats,
+      VideoStreamEncoder* video_stream_encoder,
+      RtcEventLog* event_log,
+      const VideoSendStream::Config* config,
+      int initial_encoder_max_bitrate,
+      std::map<uint32_t, RtpState> suspended_ssrcs,
+      std::map<uint32_t, RtpPayloadState> suspended_payload_states,
+      VideoEncoderConfig::ContentType content_type);
   ~VideoSendStreamImpl() override;
 
   // RegisterProcessThread register |module_process_thread| with those objects
@@ -236,6 +238,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void Stop();
 
   VideoSendStream::RtpStateMap GetRtpStates() const;
+  VideoSendStream::RtpPayloadStateMap GetRtpPayloadStates() const;
 
   void EnableEncodedFrameRecording(const std::vector<rtc::PlatformFile>& files,
                                    size_t byte_limit);
@@ -338,20 +341,22 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 // an object on the correct task queue.
 class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
  public:
-  ConstructionTask(std::unique_ptr<VideoSendStreamImpl>* send_stream,
-                   rtc::Event* done_event,
-                   SendStatisticsProxy* stats_proxy,
-                   VideoStreamEncoder* video_stream_encoder,
-                   ProcessThread* module_process_thread,
-                   CallStats* call_stats,
-                   RtpTransportControllerSendInterface* transport,
-                   BitrateAllocator* bitrate_allocator,
-                   SendDelayStats* send_delay_stats,
-                   RtcEventLog* event_log,
-                   const VideoSendStream::Config* config,
-                   int initial_encoder_max_bitrate,
-                   const std::map<uint32_t, RtpState>& suspended_ssrcs,
-                   VideoEncoderConfig::ContentType content_type)
+  ConstructionTask(
+      std::unique_ptr<VideoSendStreamImpl>* send_stream,
+      rtc::Event* done_event,
+      SendStatisticsProxy* stats_proxy,
+      VideoStreamEncoder* video_stream_encoder,
+      ProcessThread* module_process_thread,
+      CallStats* call_stats,
+      RtpTransportControllerSendInterface* transport,
+      BitrateAllocator* bitrate_allocator,
+      SendDelayStats* send_delay_stats,
+      RtcEventLog* event_log,
+      const VideoSendStream::Config* config,
+      int initial_encoder_max_bitrate,
+      const std::map<uint32_t, RtpState>& suspended_ssrcs,
+      const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
+      VideoEncoderConfig::ContentType content_type)
       : send_stream_(send_stream),
         done_event_(done_event),
         stats_proxy_(stats_proxy),
@@ -364,6 +369,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         config_(config),
         initial_encoder_max_bitrate_(initial_encoder_max_bitrate),
         suspended_ssrcs_(suspended_ssrcs),
+        suspended_payload_states_(suspended_payload_states),
         content_type_(content_type) {}
 
   ~ConstructionTask() override { done_event_->Set(); }
@@ -374,7 +380,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         stats_proxy_, rtc::TaskQueue::Current(), call_stats_, transport_,
         bitrate_allocator_, send_delay_stats_, video_stream_encoder_,
         event_log_, config_, initial_encoder_max_bitrate_,
-        std::move(suspended_ssrcs_), content_type_));
+        std::move(suspended_ssrcs_), std::move(suspended_payload_states_),
+        content_type_));
     return true;
   }
 
@@ -390,15 +397,19 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   const VideoSendStream::Config* config_;
   int initial_encoder_max_bitrate_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
+  std::map<uint32_t, RtpPayloadState> suspended_payload_states_;
   const VideoEncoderConfig::ContentType content_type_;
 };
 
 class VideoSendStream::DestructAndGetRtpStateTask : public rtc::QueuedTask {
  public:
-  DestructAndGetRtpStateTask(VideoSendStream::RtpStateMap* state_map,
-                             std::unique_ptr<VideoSendStreamImpl> send_stream,
-                             rtc::Event* done_event)
+  DestructAndGetRtpStateTask(
+      VideoSendStream::RtpStateMap* state_map,
+      VideoSendStream::RtpPayloadStateMap* payload_state_map,
+      std::unique_ptr<VideoSendStreamImpl> send_stream,
+      rtc::Event* done_event)
       : state_map_(state_map),
+        payload_state_map_(payload_state_map),
         send_stream_(std::move(send_stream)),
         done_event_(done_event) {}
 
@@ -408,12 +419,14 @@ class VideoSendStream::DestructAndGetRtpStateTask : public rtc::QueuedTask {
   bool Run() override {
     send_stream_->Stop();
     *state_map_ = send_stream_->GetRtpStates();
+    *payload_state_map_ = send_stream_->GetRtpPayloadStates();
     send_stream_.reset();
     done_event_->Set();
     return true;
   }
 
   VideoSendStream::RtpStateMap* state_map_;
+  VideoSendStream::RtpPayloadStateMap* payload_state_map_;
   std::unique_ptr<VideoSendStreamImpl> send_stream_;
   rtc::Event* done_event_;
 };
@@ -503,7 +516,8 @@ VideoSendStream::VideoSendStream(
     RtcEventLog* event_log,
     VideoSendStream::Config config,
     VideoEncoderConfig encoder_config,
-    const std::map<uint32_t, RtpState>& suspended_ssrcs)
+    const std::map<uint32_t, RtpState>& suspended_ssrcs,
+    const std::map<uint32_t, RtpPayloadState>& suspended_payload_states)
     : worker_queue_(worker_queue),
       thread_sync_event_(false /* manual_reset */, false),
       stats_proxy_(Clock::GetRealTimeClock(),
@@ -521,7 +535,7 @@ VideoSendStream::VideoSendStream(
       &send_stream_, &thread_sync_event_, &stats_proxy_,
       video_stream_encoder_.get(), module_process_thread, call_stats, transport,
       bitrate_allocator, send_delay_stats, event_log, &config_,
-      encoder_config.max_bitrate_bps, suspended_ssrcs,
+      encoder_config.max_bitrate_bps, suspended_ssrcs, suspended_payload_states,
       encoder_config.content_type)));
 
   // Wait for ConstructionTask to complete so that |send_stream_| can be used.
@@ -597,17 +611,18 @@ void VideoSendStream::SignalNetworkState(NetworkState state) {
       [send_stream, state] { send_stream->SignalNetworkState(state); });
 }
 
-VideoSendStream::RtpStateMap VideoSendStream::StopPermanentlyAndGetRtpStates() {
+void VideoSendStream::StopPermanentlyAndGetRtpStates(
+    VideoSendStream::RtpStateMap* rtp_state_map,
+    VideoSendStream::RtpPayloadStateMap* payload_state_map) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   video_stream_encoder_->Stop();
   video_stream_encoder_->DeRegisterProcessThread();
-  VideoSendStream::RtpStateMap state_map;
   send_stream_->DeRegisterProcessThread();
   worker_queue_->PostTask(
       std::unique_ptr<rtc::QueuedTask>(new DestructAndGetRtpStateTask(
-          &state_map, std::move(send_stream_), &thread_sync_event_)));
+          rtp_state_map, payload_state_map, std::move(send_stream_),
+          &thread_sync_event_)));
   thread_sync_event_.Wait(rtc::Event::kForever);
-  return state_map;
 }
 
 void VideoSendStream::SetTransportOverhead(
@@ -642,6 +657,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     const VideoSendStream::Config* config,
     int initial_encoder_max_bitrate,
     std::map<uint32_t, RtpState> suspended_ssrcs,
+    std::map<uint32_t, RtpPayloadState> suspended_payload_states,
     VideoEncoderConfig::ContentType content_type)
     : send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
@@ -682,7 +698,9 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           config_->rtp.ssrcs.size(),
           transport->keepalive_config())),
       payload_router_(rtp_rtcp_modules_,
-                      config_->encoder_settings.payload_type),
+                      config_->rtp.ssrcs,
+                      config_->encoder_settings.payload_type,
+                      suspended_payload_states),
       weak_ptr_factory_(this),
       overhead_bytes_per_packet_(0),
       transport_overhead_bytes_per_packet_(0) {
@@ -1121,6 +1139,12 @@ std::map<uint32_t, RtpState> VideoSendStreamImpl::GetRtpStates() const {
   }
 
   return rtp_states;
+}
+
+std::map<uint32_t, RtpPayloadState> VideoSendStreamImpl::GetRtpPayloadStates()
+    const {
+  RTC_DCHECK_RUN_ON(worker_queue_);
+  return payload_router_.GetRtpPayloadStates();
 }
 
 void VideoSendStreamImpl::SignalNetworkState(NetworkState state) {

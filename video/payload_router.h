@@ -11,6 +11,7 @@
 #ifndef VIDEO_PAYLOAD_ROUTER_H_
 #define VIDEO_PAYLOAD_ROUTER_H_
 
+#include <map>
 #include <vector>
 
 #include "api/video_codecs/video_encoder.h"
@@ -31,13 +32,17 @@ class PayloadRouter : public EncodedImageCallback {
  public:
   // Rtp modules are assumed to be sorted in simulcast index order.
   PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules,
-                int payload_type);
+                const std::vector<uint32_t>& ssrcs,
+                int payload_type,
+                const std::map<uint32_t, RtpPayloadState>& states);
   ~PayloadRouter();
 
   // PayloadRouter will only route packets if being active, all packets will be
   // dropped otherwise.
   void SetActive(bool active);
   bool IsActive();
+
+  std::map<uint32_t, RtpPayloadState> GetRtpPayloadStates() const;
 
   // Implements EncodedImageCallback.
   // Returns 0 if the packet was routed / sent, -1 otherwise.
@@ -49,6 +54,8 @@ class PayloadRouter : public EncodedImageCallback {
   void OnBitrateAllocationUpdated(const BitrateAllocation& bitrate);
 
  private:
+  class RtpPayloadParams;
+
   void UpdateModuleSendingState() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   rtc::CriticalSection crit_;
@@ -57,6 +64,9 @@ class PayloadRouter : public EncodedImageCallback {
   // Rtp modules are assumed to be sorted in simulcast index order. Not owned.
   const std::vector<RtpRtcp*> rtp_modules_;
   const int payload_type_;
+
+  const bool forced_fallback_enabled_;
+  std::vector<RtpPayloadParams> params_ RTC_GUARDED_BY(crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PayloadRouter);
 };
