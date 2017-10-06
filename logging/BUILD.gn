@@ -59,7 +59,6 @@ rtc_source_set("rtc_event_log_api") {
     "rtc_event_log/events/rtc_event_video_receive_stream_config.h",
     "rtc_event_log/events/rtc_event_video_send_stream_config.cc",
     "rtc_event_log/events/rtc_event_video_send_stream_config.h",
-    "rtc_event_log/output/rtc_event_log_output.h",
     "rtc_event_log/output/rtc_event_log_output_file.cc",
     "rtc_event_log/output/rtc_event_log_output_file.h",
     "rtc_event_log/rtc_event_log.h",
@@ -71,6 +70,7 @@ rtc_source_set("rtc_event_log_api") {
   deps = [
     "..:webrtc_common",
     "../api:array_view",
+    "../api:libjingle_logging_api",
     "../api:libjingle_peerconnection_api",
     "../call:video_stream_api",
     "../modules/audio_coding:audio_network_adaptor_config",
