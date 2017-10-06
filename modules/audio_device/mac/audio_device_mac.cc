@@ -2035,6 +2035,12 @@ int32_t AudioDeviceMac::HandleStreamFormatChange(
     return -1;
   }
 
+  if (_ptrAudioBuffer && streamFormat.mChannelsPerFrame != _recChannels) {
+    LOG(LS_ERROR) << "Changing channels not supported (mChannelsPerFrame = "
+                  << streamFormat.mChannelsPerFrame << ")";
+    return -1;
+  }
+
   LOG(LS_VERBOSE) << "Stream format:";
   LOG(LS_VERBOSE) << "mSampleRate = " << streamFormat.mSampleRate
                   << ", mChannelsPerFrame = " << streamFormat.mChannelsPerFrame;
@@ -2066,12 +2072,6 @@ int32_t AudioDeviceMac::HandleStreamFormatChange(
       _inDesiredFormat.mChannelsPerFrame = 1;
       _recChannels = 1;
       LOG(LS_VERBOSE) << "Stereo recording unavailable on this device";
-    }
-
-    if (_ptrAudioBuffer) {
-      // Update audio buffer with the selected parameters
-      _ptrAudioBuffer->SetRecordingSampleRate(N_REC_SAMPLES_PER_SEC);
-      _ptrAudioBuffer->SetRecordingChannels((uint8_t)_recChannels);
     }
 
     // Recreate the converter with the new format
