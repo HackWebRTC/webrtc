@@ -1028,25 +1028,6 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // Stops logging the AEC dump.
   virtual void StopAecDump() = 0;
 
-  // This function is deprecated and will be removed when Chrome is updated to
-  // use the equivalent function on PeerConnectionInterface.
-  // TODO(ivoc) Remove after Chrome is updated.
-  virtual bool StartRtcEventLog(rtc::PlatformFile file,
-                                int64_t max_size_bytes) {
-    return false;
-  }
-  // This function is deprecated and will be removed when Chrome is updated to
-  // use the equivalent function on PeerConnectionInterface.
-  // TODO(ivoc) Remove after Chrome is updated.
-  virtual bool StartRtcEventLog(rtc::PlatformFile file) {
-    return false;
-  }
-
-  // This function is deprecated and will be removed when Chrome is updated to
-  // use the equivalent function on PeerConnectionInterface.
-  // TODO(ivoc) Remove after Chrome is updated.
-  virtual void StopRtcEventLog() {}
-
  protected:
   // Dtor and ctor protected as objects shouldn't be created or deleted via
   // this interface.
