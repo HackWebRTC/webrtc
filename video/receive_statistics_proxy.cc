@@ -50,6 +50,11 @@ const int kMovingMaxWindowMs = 10000;
 // How large window we use to calculate the framerate/bitrate.
 const int kRateStatisticsWindowSizeMs = 1000;
 
+// Some sane ballpark estimate for maximum common value of inter-frame delay.
+// Values below that will be stored explicitly in the array,
+// values above - in the map.
+const int kMaxCommonInterframeDelayMs = 500;
+
 std::string UmaPrefixForContentType(VideoContentType content_type) {
   std::stringstream ss;
   ss << "WebRTC.Video";
@@ -279,6 +284,16 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
           interframe_delay_max_ms);
       LOG(LS_INFO) << uma_prefix << ".InterframeDelayMaxInMs" << uma_suffix
                    << " " << interframe_delay_max_ms;
+    }
+
+    rtc::Optional<uint32_t> interframe_delay_95p_ms =
+        stats.interframe_delay_percentiles.GetPercentile(0.95f);
+    if (interframe_delay_95p_ms && interframe_delay_ms != -1) {
+      RTC_HISTOGRAM_COUNTS_SPARSE_10000(
+          uma_prefix + ".InterframeDelay95PercentileInMs" + uma_suffix,
+          *interframe_delay_95p_ms);
+      LOG(LS_INFO) << uma_prefix << ".InterframeDelay95PercentileInMs"
+                   << uma_suffix << " " << *interframe_delay_95p_ms;
     }
 
     int width = stats.received_width.Avg(kMinRequiredSamples);
@@ -643,6 +658,8 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
     RTC_DCHECK_GE(interframe_delay_ms, 0);
     interframe_delay_max_moving_.Add(interframe_delay_ms, now);
     content_specific_stats->interframe_delay_counter.Add(interframe_delay_ms);
+    content_specific_stats->interframe_delay_percentiles.Add(
+        interframe_delay_ms);
     content_specific_stats->flow_duration_ms += interframe_delay_ms;
   }
   last_decoded_frame_time_ms_.emplace(now);
@@ -788,6 +805,9 @@ void ReceiveStatisticsProxy::OnRttUpdate(int64_t avg_rtt_ms,
   avg_rtt_ms_ = avg_rtt_ms;
 }
 
+ReceiveStatisticsProxy::ContentSpecificStats::ContentSpecificStats()
+    : interframe_delay_percentiles(kMaxCommonInterframeDelayMs) {}
+
 void ReceiveStatisticsProxy::ContentSpecificStats::Add(
     const ContentSpecificStats& other) {
   e2e_delay_counter.Add(other.e2e_delay_counter);
@@ -799,6 +819,71 @@ void ReceiveStatisticsProxy::ContentSpecificStats::Add(
   qp_counter.Add(other.qp_counter);
   frame_counts.key_frames += other.frame_counts.key_frames;
   frame_counts.delta_frames += other.frame_counts.delta_frames;
+  interframe_delay_percentiles.Add(other.interframe_delay_percentiles);
 }
 
+ReceiveStatisticsProxy::HistogramPercentileCounter::HistogramPercentileCounter(
+    size_t long_tail_boundary)
+    : histogram_low_(long_tail_boundary),
+      long_tail_boundary_(long_tail_boundary),
+      total_elements_(0),
+      total_elements_low_(0) {}
+
+void ReceiveStatisticsProxy::HistogramPercentileCounter::Add(
+    const HistogramPercentileCounter& other) {
+  uint32_t value;
+  for (value = 0; value < other.long_tail_boundary_; ++value) {
+    Add(value, other.histogram_low_[value]);
+  }
+  for (auto it = other.histogram_high_.begin();
+       it != other.histogram_high_.end(); ++it) {
+    Add(it->first, it->second);
+  }
+}
+
+void ReceiveStatisticsProxy::HistogramPercentileCounter::Add(uint32_t value,
+                                                             size_t count) {
+  if (value < long_tail_boundary_) {
+    histogram_low_[value] += count;
+    total_elements_low_ += count;
+  } else {
+    histogram_high_[value] += count;
+  }
+  total_elements_ += count;
+}
+
+void ReceiveStatisticsProxy::HistogramPercentileCounter::Add(uint32_t value) {
+  Add(value, 1);
+}
+
+rtc::Optional<uint32_t>
+ReceiveStatisticsProxy::HistogramPercentileCounter::GetPercentile(
+    float fraction) {
+  RTC_CHECK_LE(fraction, 1);
+  RTC_CHECK_GE(fraction, 0);
+  if (total_elements_ == 0)
+    return rtc::Optional<uint32_t>();
+  int elements_to_skip =
+      static_cast<int>(std::ceil(total_elements_ * fraction)) - 1;
+  if (elements_to_skip < 0)
+    elements_to_skip = 0;
+  if (elements_to_skip >= static_cast<int>(total_elements_))
+    elements_to_skip = total_elements_ - 1;
+  if (elements_to_skip < static_cast<int>(total_elements_low_)) {
+    for (uint32_t value = 0; value < long_tail_boundary_; ++value) {
+      elements_to_skip -= histogram_low_[value];
+      if (elements_to_skip < 0)
+        return rtc::Optional<uint32_t>(value);
+    }
+  } else {
+    elements_to_skip -= total_elements_low_;
+    for (auto it = histogram_high_.begin(); it != histogram_high_.end(); ++it) {
+      elements_to_skip -= it->second;
+      if (elements_to_skip < 0)
+        return rtc::Optional<uint32_t>(it->first);
+    }
+  }
+  RTC_NOTREACHED();
+  return rtc::Optional<uint32_t>();
+}
 }  // namespace webrtc

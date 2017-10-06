@@ -12,6 +12,7 @@
 
 #include <limits>
 #include <memory>
+#include <utility>
 
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
@@ -805,7 +806,7 @@ TEST_P(ReceiveStatisticsProxyTest, InterFrameDelaysAreReported) {
     statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   }
-  // One extra with with double the interval.
+  // One extra with double the interval.
   fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
 
@@ -826,6 +827,36 @@ TEST_P(ReceiveStatisticsProxyTest, InterFrameDelaysAreReported) {
               metrics::MinSample("WebRTC.Video.InterframeDelayInMs"));
     EXPECT_EQ(kInterFrameDelayMs * 2,
               metrics::MinSample("WebRTC.Video.InterframeDelayMaxInMs"));
+  }
+}
+
+TEST_P(ReceiveStatisticsProxyTest, InterFrameDelaysPercentilesAreReported) {
+  const VideoContentType content_type = GetParam();
+  const int kInterFrameDelayMs = 33;
+  const int kLastFivePercentsSamples = kMinRequiredSamples * 5 / 100;
+  for (int i = 0; i <= kMinRequiredSamples - kLastFivePercentsSamples; ++i) {
+    fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
+  }
+  // Last 5% of intervals are double in size.
+  for (int i = 0; i < kLastFivePercentsSamples; ++i) {
+    fake_clock_.AdvanceTimeMilliseconds(2 * kInterFrameDelayMs);
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
+  }
+  // Final sample is outlier and 10 times as big.
+  fake_clock_.AdvanceTimeMilliseconds(10 * kInterFrameDelayMs);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), content_type);
+
+  statistics_proxy_.reset();
+  const int kExpectedInterFrame = kInterFrameDelayMs * 2;
+  if (videocontenttypehelpers::IsScreenshare(content_type)) {
+    EXPECT_EQ(kExpectedInterFrame,
+              metrics::MinSample(
+                  "WebRTC.Video.Screenshare.InterframeDelay95PercentileInMs"));
+  } else {
+    EXPECT_EQ(
+        kExpectedInterFrame,
+        metrics::MinSample("WebRTC.Video.InterframeDelay95PercentileInMs"));
   }
 }
 
@@ -966,6 +997,27 @@ TEST_P(ReceiveStatisticsProxyTest, StatsAreSlicedOnSimulcastAndExperiment) {
     EXPECT_EQ((kInterFrameDelayMs1 + kInterFrameDelayMs2) / 2,
               metrics::MinSample(
                   "WebRTC.Video.InterframeDelayInMs.ExperimentGroup0"));
+  }
+}
+
+TEST_F(ReceiveStatisticsProxyTest, PercentileCounterReturnsCorrectPercentiles) {
+  ReceiveStatisticsProxy::HistogramPercentileCounter counter(10);
+  const std::vector<int> kTestValues = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
+                                        11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+
+  EXPECT_FALSE(counter.GetPercentile(0.5f));
+  // Pairs of {fraction, percentile value} computed by hand
+  // for |kTestValues|.
+  const std::vector<std::pair<float, uint32_t>> kTestPercentiles = {
+      {0.0f, 1},   {0.01f, 1},  {0.5f, 10}, {0.9f, 18},
+      {0.95f, 19}, {0.99f, 20}, {1.0f, 20}};
+  size_t i;
+  for (i = 0; i < kTestValues.size(); ++i) {
+    counter.Add(kTestValues[i]);
+  }
+  for (i = 0; i < kTestPercentiles.size(); ++i) {
+    EXPECT_EQ(kTestPercentiles[i].second,
+              counter.GetPercentile(kTestPercentiles[i].first).value_or(0));
   }
 }
 
