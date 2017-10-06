@@ -960,7 +960,13 @@ TEST_F(AudioDeviceTest, RunPlayoutWithFileAsSource) {
 // recording side and decreased by the playout side.
 // TODO(henrika): tune the final test parameters after running tests on several
 // different devices.
-TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
+// Disabling this test on bots since it is difficult to come up with a robust
+// test condition that all worked as intended. The main issue is that, when
+// swarming is used, an initial latency can be built up when the both sides
+// starts at different times. Hence, the test can fail even if audio works
+// as intended. Keeping the test so it can be enabled manually.
+// http://bugs.webrtc.org/7744
+TEST_F(AudioDeviceTest, DISABLED_RunPlayoutAndRecordingInFullDuplex) {
   EXPECT_EQ(record_channels(), playout_channels());
   EXPECT_EQ(record_sample_rate(), playout_sample_rate());
   NiceMock<MockAudioTransportAndroid> mock(kPlayout | kRecording);
