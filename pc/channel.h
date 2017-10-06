@@ -185,9 +185,6 @@ class BaseChannel
 
   virtual cricket::MediaType media_type() = 0;
 
-  // This function returns true if we require SRTP for call setup.
-  bool srtp_required_for_testing() const { return srtp_required_; }
-
   // Public for testing.
   // TODO(zstein): Remove this once channels register themselves with
   // an RtpTransport in a more explicit way.

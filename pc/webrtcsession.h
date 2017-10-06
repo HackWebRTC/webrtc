@@ -241,8 +241,6 @@ class WebRtcSession :
 
   cricket::BaseChannel* GetChannel(const std::string& content_name);
 
-  cricket::SecurePolicy SdesPolicy() const;
-
   // Get current SSL role used by SCTP's underlying transport.
   bool GetSctpSslRole(rtc::SSLRole* role);
   // Get SSL role for an arbitrary m= section (handles bundling correctly).

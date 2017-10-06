@@ -391,6 +391,7 @@ if (rtc_include_tests) {
       "localaudiosource_unittest.cc",
       "mediaconstraintsinterface_unittest.cc",
       "mediastream_unittest.cc",
+      "peerconnection_crypto_unittest.cc",
       "peerconnection_integrationtest.cc",
       "peerconnectionendtoend_unittest.cc",
       "peerconnectionfactory_unittest.cc",

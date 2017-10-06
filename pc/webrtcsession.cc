@@ -667,10 +667,6 @@ cricket::BaseChannel* WebRtcSession::GetChannel(
   return nullptr;
 }
 
-cricket::SecurePolicy WebRtcSession::SdesPolicy() const {
-  return webrtc_session_desc_factory_->SdesPolicy();
-}
-
 bool WebRtcSession::GetSctpSslRole(rtc::SSLRole* role) {
   if (!local_description() || !remote_description()) {
     LOG(LS_INFO) << "Local and Remote descriptions must be applied to get the "

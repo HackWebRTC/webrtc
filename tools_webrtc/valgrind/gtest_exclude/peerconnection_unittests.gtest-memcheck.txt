@@ -4,4 +4,5 @@ DtmfSenderTest.*
 PeerConnectionIntegrationTest.*
 PeerConnectionEndToEndTest.*
 PeerConnectionInterfaceTest.*
+PeerConnectionCryptoUnitTest.*
 RTCStatsIntegrationTest.*
