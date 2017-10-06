@@ -10,7 +10,6 @@
 
 #include "modules/rtp_rtcp/source/rtp_format_vp8.h"
 
-#include <assert.h>  // assert
 #include <string.h>  // memcpy
 
 #include <limits>
@@ -18,6 +17,7 @@
 #include <vector>
 
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
@@ -26,7 +26,6 @@ int ParseVP8PictureID(RTPVideoHeaderVP8* vp8,
                       const uint8_t** data,
                       size_t* data_length,
                       size_t* parsed_bytes) {
-  assert(vp8 != NULL);
   if (*data_length == 0)
     return -1;
 
@@ -49,7 +48,6 @@ int ParseVP8Tl0PicIdx(RTPVideoHeaderVP8* vp8,
                       const uint8_t** data,
                       size_t* data_length,
                       size_t* parsed_bytes) {
-  assert(vp8 != NULL);
   if (*data_length == 0)
     return -1;
 
@@ -66,7 +64,6 @@ int ParseVP8TIDAndKeyIdx(RTPVideoHeaderVP8* vp8,
                          size_t* parsed_bytes,
                          bool has_tid,
                          bool has_key_idx) {
-  assert(vp8 != NULL);
   if (*data_length == 0)
     return -1;
 
@@ -86,8 +83,7 @@ int ParseVP8TIDAndKeyIdx(RTPVideoHeaderVP8* vp8,
 int ParseVP8Extension(RTPVideoHeaderVP8* vp8,
                       const uint8_t* data,
                       size_t data_length) {
-  assert(vp8 != NULL);
-  assert(data_length > 0);
+  RTC_DCHECK_GT(data_length, 0);
   size_t parsed_bytes = 0;
   // Optional X field is present.
   bool has_picture_id = (*data & 0x80) ? true : false;   // I bit
@@ -125,7 +121,6 @@ int ParseVP8Extension(RTPVideoHeaderVP8* vp8,
 int ParseVP8FrameSize(RtpDepacketizer::ParsedPayload* parsed_payload,
                       const uint8_t* data,
                       size_t data_length) {
-  assert(parsed_payload != NULL);
   if (parsed_payload->frame_type != kVideoFrameKey) {
     // Included in payload header for I-frames.
     return 0;
@@ -139,6 +134,29 @@ int ParseVP8FrameSize(RtpDepacketizer::ParsedPayload* parsed_payload,
   parsed_payload->type.Video.height = ((data[9] << 8) + data[8]) & 0x3FFF;
   return 0;
 }
+
+bool ValidateHeader(const RTPVideoHeaderVP8& hdr_info) {
+  if (hdr_info.pictureId != kNoPictureId) {
+    RTC_DCHECK_GE(hdr_info.pictureId, 0);
+    RTC_DCHECK_LE(hdr_info.pictureId, 0x7FFF);
+  }
+  if (hdr_info.tl0PicIdx != kNoTl0PicIdx) {
+    RTC_DCHECK_GE(hdr_info.tl0PicIdx, 0);
+    RTC_DCHECK_LE(hdr_info.tl0PicIdx, 0xFF);
+  }
+  if (hdr_info.temporalIdx != kNoTemporalIdx) {
+    RTC_DCHECK_GE(hdr_info.temporalIdx, 0);
+    RTC_DCHECK_LE(hdr_info.temporalIdx, 3);
+  } else {
+    RTC_DCHECK(!hdr_info.layerSync);
+  }
+  if (hdr_info.keyIdx != kNoKeyIdx) {
+    RTC_DCHECK_GE(hdr_info.keyIdx, 0);
+    RTC_DCHECK_LE(hdr_info.keyIdx, 0x1F);
+  }
+  return true;
+}
+
 }  // namespace
 
 RtpPacketizerVp8::RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info,
@@ -152,7 +170,9 @@ RtpPacketizerVp8::RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info,
       hdr_info_(hdr_info),
       num_partitions_(0),
       max_payload_len_(max_payload_len),
-      last_packet_reduction_len_(last_packet_reduction_len) {}
+      last_packet_reduction_len_(last_packet_reduction_len) {
+  RTC_DCHECK(ValidateHeader(hdr_info));
+}
 
 RtpPacketizerVp8::RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info,
                                    size_t max_payload_len,
@@ -165,7 +185,9 @@ RtpPacketizerVp8::RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info,
       hdr_info_(hdr_info),
       num_partitions_(0),
       max_payload_len_(max_payload_len),
-      last_packet_reduction_len_(last_packet_reduction_len) {}
+      last_packet_reduction_len_(last_packet_reduction_len) {
+  RTC_DCHECK(ValidateHeader(hdr_info));
+}
 
 RtpPacketizerVp8::~RtpPacketizerVp8() {
 }
@@ -421,7 +443,7 @@ int RtpPacketizerVp8::WriteHeaderAndPayload(const InfoStruct& packet_info,
   // T/K: |TID:Y|  KEYIDX   | (optional)
   //      +-+-+-+-+-+-+-+-+-+
 
-  assert(packet_info.size > 0);
+  RTC_DCHECK_GT(packet_info.size, 0);
   buffer[0] = 0;
   if (XFieldPresent())
     buffer[0] |= kXBit;
@@ -469,7 +491,7 @@ int RtpPacketizerVp8::WriteExtensionFields(uint8_t* buffer,
         return -1;
       }
     }
-    assert(extension_length == PayloadDescriptorExtraLength());
+    RTC_DCHECK_EQ(extension_length, PayloadDescriptorExtraLength());
   }
   return static_cast<int>(extension_length);
 }
@@ -479,8 +501,8 @@ int RtpPacketizerVp8::WritePictureIDFields(uint8_t* x_field,
                                            size_t buffer_length,
                                            size_t* extension_length) const {
   *x_field |= kIBit;
-  assert(buffer_length >=
-      vp8_fixed_payload_descriptor_bytes_ + *extension_length);
+  RTC_DCHECK_GE(buffer_length,
+                vp8_fixed_payload_descriptor_bytes_ + *extension_length);
   const int pic_id_length = WritePictureID(
       buffer + vp8_fixed_payload_descriptor_bytes_ + *extension_length,
       buffer_length - vp8_fixed_payload_descriptor_bytes_ - *extension_length);
@@ -533,7 +555,6 @@ int RtpPacketizerVp8::WriteTIDAndKeyIdxFields(uint8_t* x_field,
   *data_field = 0;
   if (TIDFieldPresent()) {
     *x_field |= kTBit;
-    assert(hdr_info_.temporalIdx <= 3);
     *data_field |= hdr_info_.temporalIdx << 6;
     *data_field |= hdr_info_.layerSync ? kYBit : 0;
   }
@@ -569,8 +590,6 @@ bool RtpPacketizerVp8::XFieldPresent() const {
 }
 
 bool RtpPacketizerVp8::TIDFieldPresent() const {
-  assert((hdr_info_.layerSync == false) ||
-         (hdr_info_.temporalIdx != kNoTemporalIdx));
   return (hdr_info_.temporalIdx != kNoTemporalIdx);
 }
 
@@ -609,7 +628,7 @@ bool RtpPacketizerVp8::TL0PicIdxFieldPresent() const {
 bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
                                const uint8_t* payload_data,
                                size_t payload_data_length) {
-  assert(parsed_payload != NULL);
+  RTC_DCHECK(parsed_payload);
   if (payload_data_length == 0) {
     LOG(LS_ERROR) << "Empty payload.";
     return false;
