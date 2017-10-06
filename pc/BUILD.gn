@@ -139,6 +139,8 @@ rtc_static_library("peerconnection") {
     "rtpsender.h",
     "sctputils.cc",
     "sctputils.h",
+    "sdputils.cc",
+    "sdputils.h",
     "statscollector.cc",
     "statscollector.h",
     "streamcollection.h",

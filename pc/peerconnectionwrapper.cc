@@ -16,6 +16,7 @@
 
 #include "api/jsepsessiondescription.h"
 #include "media/base/fakevideocapturer.h"
+#include "pc/sdputils.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/ptr_util.h"
 
@@ -127,16 +128,6 @@ bool PeerConnectionWrapper::SetSdp(
     EXPECT_EQ_WAIT(true, observer->called(), kWaitTimeout);
   }
   return observer->result();
-}
-
-std::unique_ptr<SessionDescriptionInterface>
-PeerConnectionWrapper::CloneSessionDescription(
-    const SessionDescriptionInterface* desc) {
-  std::unique_ptr<JsepSessionDescription> clone(
-      new JsepSessionDescription(desc->type()));
-  RTC_DCHECK(clone->Initialize(desc->description()->Copy(), desc->session_id(),
-                               desc->session_version()));
-  return clone;
 }
 
 void PeerConnectionWrapper::AddAudioStream(const std::string& stream_label,

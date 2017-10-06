@@ -95,8 +95,6 @@ class PeerConnectionWrapper {
   std::unique_ptr<SessionDescriptionInterface> CreateSdp(
       std::function<void(CreateSessionDescriptionObserver*)> fn);
   bool SetSdp(std::function<void(SetSessionDescriptionObserver*)> fn);
-  std::unique_ptr<SessionDescriptionInterface> CloneSessionDescription(
-      const SessionDescriptionInterface* desc);
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
   rtc::scoped_refptr<PeerConnectionInterface> pc_;
