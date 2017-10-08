@@ -334,8 +334,9 @@ void P2PTransportChannel::SetIceParameters(const IceParameters& ice_params) {
 void P2PTransportChannel::SetRemoteIceParameters(
     const IceParameters& ice_params) {
   RTC_DCHECK(network_thread_ == rtc::Thread::Current());
-  LOG(LS_INFO) << "Remote supports ICE renomination ? "
-               << ice_params.renomination;
+  LOG(LS_INFO) << "Received remote ICE parameters: ufrag=" << ice_params.ufrag
+               << ", renomination "
+               << (ice_params.renomination ? "enabled" : "disabled");
   IceParameters* current_ice = remote_ice();
   if (!current_ice || *current_ice != ice_params) {
     // Keep the ICE credentials so that newer connections

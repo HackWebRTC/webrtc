@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <functional>
 
+#include "api/optional.h"
 #include "p2p/base/common.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/asyncpacketsocket.h"
@@ -147,10 +148,15 @@ class TurnEntry : public sigslot::has_slots<> {
   const rtc::SocketAddress& address() const { return ext_addr_; }
   BindState state() const { return state_; }
 
-  int64_t destruction_timestamp() { return destruction_timestamp_; }
-  void set_destruction_timestamp(int64_t destruction_timestamp) {
-    destruction_timestamp_ = destruction_timestamp;
+  // If the destruction timestamp is set, that means destruction has been
+  // scheduled (will occur TURN_PERMISSION_TIMEOUT after it's scheduled).
+  rtc::Optional<int64_t> destruction_timestamp() {
+    return destruction_timestamp_;
   }
+  void set_destruction_timestamp(int64_t destruction_timestamp) {
+    destruction_timestamp_.emplace(destruction_timestamp);
+  }
+  void reset_destruction_timestamp() { destruction_timestamp_.reset(); }
 
   // Helper methods to send permission and channel bind requests.
   void SendCreatePermissionRequest(int delay);
@@ -174,11 +180,11 @@ class TurnEntry : public sigslot::has_slots<> {
   int channel_id_;
   rtc::SocketAddress ext_addr_;
   BindState state_;
-  // A non-zero value indicates that this entry is scheduled to be destroyed.
-  // It is also used as an ID of the event scheduling. When the destruction
-  // event actually fires, the TurnEntry will be destroyed only if the
-  // timestamp here matches the one in the firing event.
-  int64_t destruction_timestamp_ = 0;
+  // An unset value indicates that this entry is scheduled to be destroyed. It
+  // is also used as an ID of the event scheduling. When the destruction event
+  // actually fires, the TurnEntry will be destroyed only if the timestamp here
+  // matches the one in the firing event.
+  rtc::Optional<int64_t> destruction_timestamp_;
 };
 
 TurnPort::TurnPort(rtc::Thread* thread,
@@ -1040,9 +1046,21 @@ void TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr) {
     entry = new TurnEntry(this, next_channel_number_++, addr);
     entries_.push_back(entry);
   } else {
-    // The channel binding request for the entry will be refreshed automatically
-    // until the entry is destroyed.
-    CancelEntryDestruction(entry);
+    if (entry->destruction_timestamp()) {
+      // Destruction should have only been scheduled (indicated by
+      // destruction_timestamp being set) if there were no connections using
+      // this address.
+      RTC_DCHECK(!GetConnection(addr));
+      // Resetting the destruction timestamp will ensure that any queued
+      // destruction tasks, when executed, will see that the timestamp doesn't
+      // match and do nothing. We do this because (currently) there's not a
+      // convenient way to cancel queued tasks.
+      entry->reset_destruction_timestamp();
+    } else {
+      // The only valid reason for destruction not being scheduled is that
+      // there's still one connection.
+      RTC_DCHECK(GetConnection(addr));
+    }
   }
 }
 
@@ -1057,8 +1075,12 @@ void TurnPort::DestroyEntryIfNotCancelled(TurnEntry* entry, int64_t timestamp) {
   if (!EntryExists(entry)) {
     return;
   }
-  bool cancelled = timestamp != entry->destruction_timestamp();
-  if (!cancelled) {
+  // The destruction timestamp is used to manage pending destructions. Proceed
+  // with destruction if it's set, and matches the timestamp from the posted
+  // task. Note that CreateOrRefreshEntry will unset the timestamp, canceling
+  // destruction.
+  if (entry->destruction_timestamp() &&
+      timestamp == *entry->destruction_timestamp()) {
     DestroyEntry(entry);
   }
 }
@@ -1073,18 +1095,13 @@ void TurnPort::HandleConnectionDestroyed(Connection* conn) {
 }
 
 void TurnPort::ScheduleEntryDestruction(TurnEntry* entry) {
-  RTC_DCHECK(entry->destruction_timestamp() == 0);
+  RTC_DCHECK(!entry->destruction_timestamp().has_value());
   int64_t timestamp = rtc::TimeMillis();
   entry->set_destruction_timestamp(timestamp);
   invoker_.AsyncInvokeDelayed<void>(
       RTC_FROM_HERE, thread(),
       rtc::Bind(&TurnPort::DestroyEntryIfNotCancelled, this, entry, timestamp),
       TURN_PERMISSION_TIMEOUT);
-}
-
-void TurnPort::CancelEntryDestruction(TurnEntry* entry) {
-  RTC_DCHECK(entry->destruction_timestamp() != 0);
-  entry->set_destruction_timestamp(0);
 }
 
 bool TurnPort::SetEntryChannelId(const rtc::SocketAddress& address,

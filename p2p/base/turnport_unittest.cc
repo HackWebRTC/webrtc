@@ -1423,6 +1423,19 @@ TEST_F(TurnPortTest, TestTurnTLSReleaseAllocation) {
   TestTurnReleaseAllocation(PROTO_TLS);
 }
 
+// Test that nothing bad happens if we try to create a connection to the same
+// remote address twice. Previously there was a bug that caused this to hit a
+// DCHECK.
+TEST_F(TurnPortTest, CanCreateTwoConnectionsToSameAddress) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  PrepareTurnAndUdpPorts(PROTO_UDP);
+  Connection* conn1 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
+                                                   Port::ORIGIN_MESSAGE);
+  Connection* conn2 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
+                                                   Port::ORIGIN_MESSAGE);
+  EXPECT_NE(conn1, conn2);
+}
+
 // This test verifies any FD's are not leaked after TurnPort is destroyed.
 // https://code.google.com/p/webrtc/issues/detail?id=2651
 #if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
