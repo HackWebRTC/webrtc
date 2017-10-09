@@ -303,7 +303,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<LowCutFilter> low_cut_filter;
   std::unique_ptr<LevelController> level_controller;
   std::unique_ptr<ResidualEchoDetector> residual_echo_detector;
-  std::unique_ptr<EchoControl> echo_canceller3;
+  std::unique_ptr<EchoControl> echo_controller;
   std::unique_ptr<PostProcessing> capture_post_processor;
 };
 
@@ -1154,11 +1154,11 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
                                 levels.peak, 1, RmsLevel::kMinLevelDb, 64);
   }
 
-  if (private_submodules_->echo_canceller3) {
+  if (private_submodules_->echo_controller) {
     // TODO(peah): Reactivate analogue AGC gain detection once the analogue AGC
     // issues have been addressed.
     capture_.echo_path_gain_change = false;
-    private_submodules_->echo_canceller3->AnalyzeCapture(capture_buffer);
+    private_submodules_->echo_controller->AnalyzeCapture(capture_buffer);
   }
 
   if (constants_.use_experimental_agc &&
@@ -1174,7 +1174,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     capture_buffer->SplitIntoFrequencyBands();
   }
 
-  if (private_submodules_->echo_canceller3) {
+  if (private_submodules_->echo_controller) {
     // Force down-mixing of the number of channels after the detection of
     // capture signal saturation.
     // TODO(peah): Look into ensuring that this kind of tampering with the
@@ -1191,7 +1191,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   // TODO(peah): Move the AEC3 low-cut filter to this place.
   if (private_submodules_->low_cut_filter &&
-      !private_submodules_->echo_canceller3) {
+      !private_submodules_->echo_controller) {
     private_submodules_->low_cut_filter->Process(capture_buffer);
   }
   RETURN_ON_ERR(
@@ -1205,8 +1205,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     return AudioProcessing::kStreamParameterNotSetError;
   }
 
-  if (private_submodules_->echo_canceller3) {
-    private_submodules_->echo_canceller3->ProcessCapture(
+  if (private_submodules_->echo_controller) {
+    private_submodules_->echo_controller->ProcessCapture(
         capture_buffer, capture_.echo_path_gain_change);
   } else {
     RETURN_ON_ERR(public_submodules_->echo_cancellation->ProcessCaptureAudio(
@@ -1240,7 +1240,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     return AudioProcessing::kStreamParameterNotSetError;
   }
 
-  if (!(private_submodules_->echo_canceller3 ||
+  if (!(private_submodules_->echo_controller ||
         public_submodules_->echo_cancellation->is_enabled())) {
     RETURN_ON_ERR(public_submodules_->echo_control_mobile->ProcessCaptureAudio(
         capture_buffer, stream_delay_ms()));
@@ -1460,8 +1460,8 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
   }
 
   // TODO(peah): Perform the queueing ínside QueueRenderAudiuo().
-  if (private_submodules_->echo_canceller3) {
-    private_submodules_->echo_canceller3->AnalyzeRender(render_buffer);
+  if (private_submodules_->echo_controller) {
+    private_submodules_->echo_controller->AnalyzeRender(render_buffer);
   }
 
   if (submodule_states_.RenderMultiBandProcessingActive() &&
@@ -1698,10 +1698,10 @@ void AudioProcessingImpl::InitializeLowCutFilter() {
 
 void AudioProcessingImpl::InitializeEchoCanceller3() {
   if (capture_nonlocked_.echo_canceller3_enabled) {
-    private_submodules_->echo_canceller3.reset(new EchoCanceller3(
+    private_submodules_->echo_controller.reset(new EchoCanceller3(
         config_.echo_canceller3, proc_sample_rate_hz(), true));
   } else {
-    private_submodules_->echo_canceller3.reset();
+    private_submodules_->echo_controller.reset();
   }
 }
 
