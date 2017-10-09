@@ -42,10 +42,11 @@ class RenderDelayControllerImpl final : public RenderDelayController {
  private:
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
-  size_t delay_ = kMinEchoPathDelayBlocks;
+  const size_t default_delay_;
+  size_t delay_;
   EchoPathDelayEstimator delay_estimator_;
   size_t blocks_since_last_delay_estimate_ = 300000;
-  int echo_path_delay_samples_ = kMinEchoPathDelayBlocks * kBlockSize;
+  int echo_path_delay_samples_;
   size_t align_call_counter_ = 0;
   rtc::Optional<size_t> headroom_samples_;
   std::vector<float> capture_delay_buffer_;
@@ -78,7 +79,11 @@ RenderDelayControllerImpl::RenderDelayControllerImpl(
     int sample_rate_hz)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
+      default_delay_(
+          std::max(config.param.delay.default_delay, kMinEchoPathDelayBlocks)),
+      delay_(default_delay_),
       delay_estimator_(data_dumper_.get(), config),
+      echo_path_delay_samples_(default_delay_ * kBlockSize),
       capture_delay_buffer_(kBlockSize * (kMaxApiCallsJitterBlocks + 2), 0.f) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
 }
@@ -86,7 +91,7 @@ RenderDelayControllerImpl::RenderDelayControllerImpl(
 RenderDelayControllerImpl::~RenderDelayControllerImpl() = default;
 
 void RenderDelayControllerImpl::Reset() {
-  delay_ = kMinEchoPathDelayBlocks;
+  delay_ = default_delay_;
   blocks_since_last_delay_estimate_ = 300000;
   echo_path_delay_samples_ = delay_ * kBlockSize;
   align_call_counter_ = 0;
