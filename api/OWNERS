@@ -8,5 +8,5 @@ tommi@webrtc.org
 deadbeef@webrtc.org
 kwiberg@webrtc.org
 
-per-file *.gn=kjellander@webrtc.org
-per-file *.gni=kjellander@webrtc.org
+per-file *.gn=phoglund@webrtc.org
+per-file *.gni=phoglund@webrtc.org
