@@ -1055,9 +1055,6 @@ class MetaBuildWrapper(object):
                  '--logdog-bin-cmd', '../../bin/logdog_butler',
                  '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
                  '--store-tombstones']
-
-      if test_type != 'junit_test':
-        cmdline += ['--target-devices-file', '${SWARMING_BOT_FILE}']
     elif test_type == "script":
       cmdline = ['../../' + self.ToSrcRelPath(isolate_map[target]['script'])]
     else:

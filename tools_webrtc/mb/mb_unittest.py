@@ -383,7 +383,6 @@ class UnitTest(unittest.TestCase):
         '--logdog-bin-cmd', '../../bin/logdog_butler',
         '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
         '--store-tombstones',
-        '--target-devices-file', '${SWARMING_BOT_FILE}',
     ])
 
   def test_gn_gen_swarming_android_junit_test(self):
