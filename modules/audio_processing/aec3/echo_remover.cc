@@ -183,18 +183,17 @@ void EchoRemoverImpl::ProcessCapture(
   const auto& E2 = output_selector_.UseSubtractorOutput() ? E2_main : Y2;
 
   // Estimate the residual echo power.
-  residual_echo_estimator_.Estimate(output_selector_.UseSubtractorOutput(),
-                                    aec_state_, render_buffer, S2_linear, Y2,
+  residual_echo_estimator_.Estimate(aec_state_, render_buffer, S2_linear, Y2,
                                     &R2);
 
   // Estimate the comfort noise.
   cng_.Compute(aec_state_, Y2, &comfort_noise, &high_band_comfort_noise);
 
   // A choose and apply echo suppression gain.
-  suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(),
-                            render_signal_analyzer_, aec_state_.SaturatedEcho(),
-                            x, aec_state_.ForcedZeroGain(), &high_bands_gain,
-                            &G);
+  suppression_gain_.GetGain(
+      E2, R2, cng_.NoiseSpectrum(), render_signal_analyzer_,
+      aec_state_.SaturatedEcho(), x, aec_state_.ForcedZeroGain(),
+      aec_state_.LinearEchoEstimate(), &high_bands_gain, &G);
   suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
                                 high_bands_gain, y);
 

@@ -30,8 +30,7 @@ class ResidualEchoEstimator {
       const AudioProcessing::Config::EchoCanceller3& config);
   ~ResidualEchoEstimator();
 
-  void Estimate(bool using_subtractor_output,
-                const AecState& aec_state,
+  void Estimate(const AecState& aec_state,
                 const RenderBuffer& render_buffer,
                 const std::array<float, kFftLengthBy2Plus1>& S2_linear,
                 const std::array<float, kFftLengthBy2Plus1>& Y2,

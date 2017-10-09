@@ -32,6 +32,7 @@ class SuppressionGain {
                bool saturated_echo,
                const std::vector<std::vector<float>>& render,
                bool force_zero_gain,
+               bool linear_echo_estimate,
                float* high_bands_gain,
                std::array<float, kFftLengthBy2Plus1>* low_band_gain);
 
@@ -39,6 +40,7 @@ class SuppressionGain {
   void LowerBandGain(bool stationary_with_low_power,
                      const rtc::Optional<int>& narrow_peak_band,
                      bool saturated_echo,
+                     bool linear_echo_estimate,
                      const std::array<float, kFftLengthBy2Plus1>& nearend,
                      const std::array<float, kFftLengthBy2Plus1>& echo,
                      const std::array<float, kFftLengthBy2Plus1>& comfort_noise,

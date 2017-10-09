@@ -92,6 +92,12 @@ class AecState {
     echo_audibility_.UpdateWithOutput(e);
   }
 
+  // Returns whether the echo subtractor can be used to determine the residual
+  // echo.
+  bool LinearEchoEstimate() const {
+    return UsableLinearEstimate() && !HeadsetDetected();
+  }
+
   // Updates the aec state.
   void Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                   adaptive_filter_frequency_response,

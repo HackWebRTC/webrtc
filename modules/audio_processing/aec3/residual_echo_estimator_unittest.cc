@@ -29,10 +29,9 @@ TEST(ResidualEchoEstimator, NullResidualEchoPowerOutput) {
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2;
   std::array<float, kFftLengthBy2Plus1> S2_linear;
   std::array<float, kFftLengthBy2Plus1> Y2;
-  EXPECT_DEATH(
-      ResidualEchoEstimator(AudioProcessing::Config::EchoCanceller3{})
-          .Estimate(true, aec_state, render_buffer, S2_linear, Y2, nullptr),
-      "");
+  EXPECT_DEATH(ResidualEchoEstimator(AudioProcessing::Config::EchoCanceller3{})
+                   .Estimate(aec_state, render_buffer, S2_linear, Y2, nullptr),
+               "");
 }
 
 #endif
@@ -87,7 +86,7 @@ TEST(ResidualEchoEstimator, BasicTest) {
     aec_state.Update(H2, h, rtc::Optional<size_t>(2), render_buffer, E2_main,
                      Y2, x[0], s, false);
 
-    estimator.Estimate(true, aec_state, render_buffer, S2_linear, Y2, &R2);
+    estimator.Estimate(aec_state, render_buffer, S2_linear, Y2, &R2);
   }
   std::for_each(R2.begin(), R2.end(),
                 [&](float a) { EXPECT_NEAR(kLevel, a, 0.1f); });
