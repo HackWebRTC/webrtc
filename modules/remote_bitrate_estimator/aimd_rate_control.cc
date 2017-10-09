@@ -68,7 +68,9 @@ AimdRateControl::AimdRateControl()
                 ? ReadTrendlineFilterWindowSize()
                 : kDefaultBackoffFactor),
       rtt_(kDefaultRttMs),
-      in_experiment_(!AdaptiveThresholdExperimentIsDisabled()) {
+      in_experiment_(!AdaptiveThresholdExperimentIsDisabled()),
+      smoothing_experiment_(
+          webrtc::field_trial::IsEnabled("WebRTC-Audio-BandwidthSmoothing")) {
   LOG(LS_INFO) << "Using aimd rate control with back off factor " << beta_;
 }
 
@@ -166,13 +168,13 @@ int AimdRateControl::GetNearMaxIncreaseRateBps() const {
 }
 
 int AimdRateControl::GetExpectedBandwidthPeriodMs() const {
-  constexpr int kMinPeriodMs = 2000;
+  const int kMinPeriodMs = smoothing_experiment_ ? 500 : 2000;
   constexpr int kDefaultPeriodMs = 3000;
   constexpr int kMaxPeriodMs = 50000;
 
   int increase_rate = GetNearMaxIncreaseRateBps();
   if (!last_decrease_)
-    return kDefaultPeriodMs;
+    return smoothing_experiment_ ? kMinPeriodMs : kDefaultPeriodMs;
 
   return std::min(kMaxPeriodMs,
                   std::max<int>(1000 * static_cast<int64_t>(*last_decrease_) /
@@ -241,8 +243,18 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
 
       if (bitrate_is_initialized_ &&
           incoming_bitrate_bps < current_bitrate_bps_) {
-        last_decrease_ =
-            rtc::Optional<int>(current_bitrate_bps_ - new_bitrate_bps);
+        constexpr float kDegradationFactor = 0.9f;
+        if (smoothing_experiment_ &&
+            new_bitrate_bps <
+                kDegradationFactor * beta_ * current_bitrate_bps_) {
+          // If bitrate decreases more than a normal back off after overuse, it
+          // indicates a real network degradation. We do not let such a decrease
+          // to determine the bandwidth estimation period.
+          last_decrease_ = rtc::Optional<int>();
+        } else {
+          last_decrease_ =
+              rtc::Optional<int>(current_bitrate_bps_ - new_bitrate_bps);
+        }
       }
       if (incoming_bitrate_kbps <
           avg_max_bitrate_kbps_ - 3 * std_max_bit_rate) {
