@@ -181,8 +181,10 @@ void GainToNoAudibleEcho(
                                          : config.param.gain_mask.m3);
 
   for (size_t k = 0; k < gain->size(); ++k) {
-    RTC_DCHECK_LE(0.f, nearend_masking_margin * nearend[k]);
-    if (echo[k] <= nearend_masking_margin * nearend[k]) {
+    const float unity_gain_masker = std::max(nearend[k], masker[k]);
+    RTC_DCHECK_LE(0.f, nearend_masking_margin * unity_gain_masker);
+    if (echo[k] <= nearend_masking_margin * unity_gain_masker ||
+        unity_gain_masker <= 0.f) {
       (*gain)[k] = 1.f;
     } else {
       (*gain)[k] = config.param.gain_mask.m1 * masker[k] * one_by_echo[k];
@@ -203,8 +205,12 @@ void MaskingPower(const AudioProcessing::Config::EchoCanceller3& config,
                   const std::array<float, kFftLengthBy2Plus1>& gain,
                   std::array<float, kFftLengthBy2Plus1>* masker) {
   std::array<float, kFftLengthBy2Plus1> side_band_masker;
+  float max_nearend_after_gain = 0.f;
   for (size_t k = 0; k < gain.size(); ++k) {
-    side_band_masker[k] = nearend[k] * gain[k] + comfort_noise[k];
+    const float nearend_after_gain = nearend[k] * gain[k];
+    max_nearend_after_gain =
+        std::max(max_nearend_after_gain, nearend_after_gain);
+    side_band_masker[k] = nearend_after_gain + comfort_noise[k];
     (*masker)[k] =
         comfort_noise[k] + config.param.gain_mask.m4 * last_masker[k];
   }
@@ -212,8 +218,14 @@ void MaskingPower(const AudioProcessing::Config::EchoCanceller3& config,
   // Apply masking only between lower frequency bands.
   RTC_DCHECK_LT(kUpperAccurateBandPlus1, gain.size());
   for (size_t k = 1; k < kUpperAccurateBandPlus1; ++k) {
-    (*masker)[k] += 0.1f * (side_band_masker[k - 1] + side_band_masker[k + 1]);
+    (*masker)[k] += config.param.gain_mask.m5 *
+                    (side_band_masker[k - 1] + side_band_masker[k + 1]);
   }
+
+  // Add full-band masking as a minimum value for the masker.
+  const float min_masker = max_nearend_after_gain * config.param.gain_mask.m6;
+  std::for_each(masker->begin(), masker->end(),
+                [min_masker](float& a) { a = std::max(a, min_masker); });
 }
 
 // Limits the gain in the frequencies for which the adaptive filter has not

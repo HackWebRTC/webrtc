@@ -290,6 +290,8 @@ class AudioProcessing : public rtc::RefCountInterface {
           float m2 = 0.001f;
           float m3 = 0.02f;  // Do not change.
           float m4 = 0.3f;
+          float m5 = 0.3f;
+          float m6 = 0.0001f;
         } gain_mask;
 
         struct EchoAudibility {
