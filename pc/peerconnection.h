@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/peerconnectioninterface.h"
+#include "api/turncustomizer.h"
 #include "pc/iceserverparsing.h"
 #include "pc/peerconnectionfactory.h"
 #include "pc/rtcstatscollector.h"
@@ -436,7 +437,8 @@ class PeerConnection : public PeerConnectionInterface,
       const std::vector<cricket::RelayServerConfig>& turn_servers,
       IceTransportsType type,
       int candidate_pool_size,
-      bool prune_turn_ports);
+      bool prune_turn_ports,
+      webrtc::TurnCustomizer* turn_customizer);
 
   // Starts recording an RTC event log using the supplied platform file.
   // This function should only be called from the worker thread.

@@ -67,9 +67,18 @@ bool StunMessage::SetTransactionID(const std::string& str) {
   return true;
 }
 
+static bool ImplementationDefinedRange(int attr_type)
+{
+  return attr_type >= 0xC000 && attr_type <= 0xFFFF;
+}
+
 void StunMessage::AddAttribute(std::unique_ptr<StunAttribute> attr) {
-  // Fail any attributes that aren't valid for this type of message.
-  RTC_DCHECK_EQ(attr->value_type(), GetAttributeValueType(attr->type()));
+  // Fail any attributes that aren't valid for this type of message,
+  // but allow any type for the range that is "implementation defined"
+  // in the RFC.
+  if (!ImplementationDefinedRange(attr->type())) {
+    RTC_DCHECK_EQ(attr->value_type(), GetAttributeValueType(attr->type()));
+  }
 
   attr->SetOwner(this);
   size_t attr_length = attr->length();
@@ -398,8 +407,16 @@ StunAttributeValueType StunMessage::GetAttributeValueType(int type) const {
 
 StunAttribute* StunMessage::CreateAttribute(int type, size_t length) /*const*/ {
   StunAttributeValueType value_type = GetAttributeValueType(type);
-  return StunAttribute::Create(value_type, type, static_cast<uint16_t>(length),
-                               this);
+  if (value_type != STUN_VALUE_UNKNOWN) {
+    return StunAttribute::Create(value_type, type,
+                                 static_cast<uint16_t>(length), this);
+  } else if (ImplementationDefinedRange(type)) {
+    // Read unknown attributes as STUN_VALUE_BYTE_STRING
+    return StunAttribute::Create(STUN_VALUE_BYTE_STRING, type,
+                                 static_cast<uint16_t>(length), this);
+  } else {
+    return NULL;
+  }
 }
 
 const StunAttribute* StunMessage::GetAttribute(int type) const {

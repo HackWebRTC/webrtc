@@ -61,6 +61,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "rtpsenderinterface.h",
     "statstypes.cc",
     "statstypes.h",
+    "turncustomizer.h",
     "umametrics.h",
     "videosourceproxy.h",
   ]

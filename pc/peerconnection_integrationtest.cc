@@ -31,6 +31,7 @@
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/portinterface.h"
 #include "p2p/base/sessiondescription.h"
+#include "p2p/base/testturncustomizer.h"
 #include "p2p/base/testturnserver.h"
 #include "p2p/client/basicportallocator.h"
 #include "pc/dtmfsender.h"
@@ -2992,6 +2993,7 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndConnectionTimeWithTurnTurnPair) {
   cricket::TestTurnServer turn_server_2(network_thread(),
                                         turn_server_2_internal_address,
                                         turn_server_2_external_address);
+
   // Bypass permission check on received packets so media can be sent before
   // the candidate is signaled.
   turn_server_1.set_enable_permission_checks(false);
@@ -3032,6 +3034,71 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndConnectionTimeWithTurnTurnPair) {
   caller()->CreateAndSetAndSignalOffer();
   EXPECT_TRUE_SIMULATED_WAIT(DtlsConnected(), total_connection_time_ms,
                              fake_clock);
+  // Need to free the clients here since they're using things we created on
+  // the stack.
+  delete SetCallerPcWrapperAndReturnCurrent(nullptr);
+  delete SetCalleePcWrapperAndReturnCurrent(nullptr);
+}
+
+// Verify that a TurnCustomizer passed in through RTCConfiguration
+// is actually used by the underlying TURN candidate pair.
+// Note that turnport_unittest.cc contains more detailed, lower-level tests.
+TEST_F(PeerConnectionIntegrationTest,           \
+       TurnCustomizerUsedForTurnConnections) {
+  static const rtc::SocketAddress turn_server_1_internal_address{"88.88.88.0",
+                                                                 3478};
+  static const rtc::SocketAddress turn_server_1_external_address{"88.88.88.1",
+                                                                 0};
+  static const rtc::SocketAddress turn_server_2_internal_address{"99.99.99.0",
+                                                                 3478};
+  static const rtc::SocketAddress turn_server_2_external_address{"99.99.99.1",
+                                                                 0};
+  cricket::TestTurnServer turn_server_1(network_thread(),
+                                        turn_server_1_internal_address,
+                                        turn_server_1_external_address);
+  cricket::TestTurnServer turn_server_2(network_thread(),
+                                        turn_server_2_internal_address,
+                                        turn_server_2_external_address);
+
+  PeerConnectionInterface::RTCConfiguration client_1_config;
+  webrtc::PeerConnectionInterface::IceServer ice_server_1;
+  ice_server_1.urls.push_back("turn:88.88.88.0:3478");
+  ice_server_1.username = "test";
+  ice_server_1.password = "test";
+  client_1_config.servers.push_back(ice_server_1);
+  client_1_config.type = webrtc::PeerConnectionInterface::kRelay;
+  auto customizer1 = rtc::MakeUnique<cricket::TestTurnCustomizer>();
+  client_1_config.turn_customizer = customizer1.get();
+
+  PeerConnectionInterface::RTCConfiguration client_2_config;
+  webrtc::PeerConnectionInterface::IceServer ice_server_2;
+  ice_server_2.urls.push_back("turn:99.99.99.0:3478");
+  ice_server_2.username = "test";
+  ice_server_2.password = "test";
+  client_2_config.servers.push_back(ice_server_2);
+  client_2_config.type = webrtc::PeerConnectionInterface::kRelay;
+  auto customizer2 = rtc::MakeUnique<cricket::TestTurnCustomizer>();
+  client_2_config.turn_customizer = customizer2.get();
+
+  ASSERT_TRUE(
+      CreatePeerConnectionWrappersWithConfig(client_1_config, client_2_config));
+  ConnectFakeSignaling();
+
+  // Set "offer to receive audio/video" without adding any tracks, so we just
+  // set up ICE/DTLS with no media.
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.offer_to_receive_audio = 1;
+  options.offer_to_receive_video = 1;
+  caller()->SetOfferAnswerOptions(options);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(DtlsConnected(), kDefaultTimeout);
+
+  EXPECT_GT(customizer1->allow_channel_data_cnt_, 0u);
+  EXPECT_GT(customizer1->modify_cnt_, 0u);
+
+  EXPECT_GT(customizer2->allow_channel_data_cnt_, 0u);
+  EXPECT_GT(customizer2->modify_cnt_, 0u);
+
   // Need to free the clients here since they're using things we created on
   // the stack.
   delete SetCallerPcWrapperAndReturnCurrent(nullptr);

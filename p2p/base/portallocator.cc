@@ -33,7 +33,8 @@ bool PortAllocator::SetConfiguration(
     const ServerAddresses& stun_servers,
     const std::vector<RelayServerConfig>& turn_servers,
     int candidate_pool_size,
-    bool prune_turn_ports) {
+    bool prune_turn_ports,
+    webrtc::TurnCustomizer* turn_customizer) {
   bool ice_servers_changed =
       (stun_servers != stun_servers_ || turn_servers != turn_servers_);
   stun_servers_ = stun_servers;
@@ -61,6 +62,8 @@ bool PortAllocator::SetConfiguration(
   if (ice_servers_changed) {
     pooled_sessions_.clear();
   }
+
+  turn_customizer_ = turn_customizer;
 
   // If |candidate_pool_size_| is less than the number of pooled sessions, get
   // rid of the extras.
