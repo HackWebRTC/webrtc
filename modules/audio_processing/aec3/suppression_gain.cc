@@ -187,12 +187,19 @@ void GainToNoAudibleEcho(
   float nearend_masking_margin = 0.f;
   if (linear_echo_estimate) {
     nearend_masking_margin = low_noise_render
-                                 ? 0.3f
+                                 ? config.param.gain_mask.m9
                                  : (saturated_echo ? config.param.gain_mask.m2
                                                    : config.param.gain_mask.m3);
   } else {
     nearend_masking_margin = config.param.gain_mask.m7;
   }
+  RTC_DCHECK_LE(0.f, nearend_masking_margin);
+  RTC_DCHECK_GT(1.f, nearend_masking_margin);
+  const float one_by_one_minus_nearend_masking_margin =
+      1.f / (1.0f - nearend_masking_margin);
+
+  const float masker_margin = linear_echo_estimate ? config.param.gain_mask.m1
+                                                   : config.param.gain_mask.m8;
 
   for (size_t k = 0; k < gain->size(); ++k) {
     const float unity_gain_masker = std::max(nearend[k], masker[k]);
@@ -201,7 +208,11 @@ void GainToNoAudibleEcho(
         unity_gain_masker <= 0.f) {
       (*gain)[k] = 1.f;
     } else {
-      (*gain)[k] = config.param.gain_mask.m1 * masker[k] * one_by_echo[k];
+      RTC_DCHECK_LT(0.f, unity_gain_masker);
+      (*gain)[k] = std::max(0.f, (1.f - echo[k] / unity_gain_masker) *
+                                     one_by_one_minus_nearend_masking_margin);
+      (*gain)[k] =
+          std::max(masker_margin * masker[k] * one_by_echo[k], (*gain)[k]);
     }
 
     (*gain)[k] = std::min(std::max((*gain)[k], min_gain[k]), max_gain[k]);
