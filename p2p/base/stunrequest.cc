@@ -207,10 +207,6 @@ const StunMessage* StunRequest::msg() const {
   return msg_;
 }
 
-StunMessage* StunRequest::mutable_msg() {
-  return msg_;
-}
-
 int StunRequest::Elapsed() const {
   return static_cast<int>(rtc::TimeMillis() - tstamp_);
 }

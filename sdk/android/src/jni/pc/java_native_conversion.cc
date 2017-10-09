@@ -478,15 +478,6 @@ void JavaToNativeRTCConfiguration(
   jmethodID get_max_id =
       GetMethodID(jni, j_interval_range_class, "getMax", "()I");
 
-  jfieldID j_turn_customizer_type_id = GetFieldID(
-      jni, j_rtc_config_class, "turnCustomizer", "Lorg/webrtc/TurnCustomizer;");
-  jobject j_turn_customizer =
-      GetNullableObjectField(jni, j_rtc_config, j_turn_customizer_type_id);
-
-  jclass j_turn_customizer_class = jni->FindClass("org/webrtc/TurnCustomizer");
-  jfieldID j_native_turn_customizer_id =
-      GetFieldID(jni, j_turn_customizer_class, "nativeTurnCustomizer", "J");
-
   rtc_config->type = JavaToNativeIceTransportsType(jni, j_ice_transports_type);
   rtc_config->bundle_policy = JavaToNativeBundlePolicy(jni, j_bundle_policy);
   rtc_config->rtcp_mux_policy =
@@ -530,11 +521,6 @@ void JavaToNativeRTCConfiguration(
     int min = jni->CallIntMethod(j_ice_regather_interval_range, get_min_id);
     int max = jni->CallIntMethod(j_ice_regather_interval_range, get_max_id);
     rtc_config->ice_regather_interval_range.emplace(min, max);
-  }
-
-  if (!IsNull(jni, j_turn_customizer)) {
-    rtc_config->turn_customizer = reinterpret_cast<webrtc::TurnCustomizer*>(
-        GetLongField(jni, j_turn_customizer, j_native_turn_customizer_id));
   }
 }
 

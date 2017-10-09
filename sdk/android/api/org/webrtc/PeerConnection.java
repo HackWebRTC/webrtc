@@ -304,9 +304,6 @@ public class PeerConnection {
     public int maxIPv6Networks;
     public IntervalRange iceRegatherIntervalRange;
 
-    // This is an optional wrapper for the C++ webrtc::TurnCustomizer.
-    public TurnCustomizer turnCustomizer;
-
     // TODO(deadbeef): Instead of duplicating the defaults here, we should do
     // something to pick up the defaults from C++. The Objective-C equivalent
     // of RTCConfiguration does that.

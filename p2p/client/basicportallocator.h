@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "api/turncustomizer.h"
 #include "p2p/base/portallocator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/messagequeue.h"
@@ -27,8 +26,7 @@ namespace cricket {
 class BasicPortAllocator : public PortAllocator {
  public:
   BasicPortAllocator(rtc::NetworkManager* network_manager,
-                     rtc::PacketSocketFactory* socket_factory,
-                     webrtc::TurnCustomizer* customizer);
+                     rtc::PacketSocketFactory* socket_factory);
   explicit BasicPortAllocator(rtc::NetworkManager* network_manager);
   BasicPortAllocator(rtc::NetworkManager* network_manager,
                      rtc::PacketSocketFactory* socket_factory,

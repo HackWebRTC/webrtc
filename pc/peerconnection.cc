@@ -277,7 +277,6 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool redetermine_role_on_ice_restart;
     rtc::Optional<int> ice_check_min_interval;
     rtc::Optional<rtc::IntervalRange> ice_regather_interval_range;
-    webrtc::TurnCustomizer* turn_customizer;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
                 "Did you add something to RTCConfiguration and forget to "
@@ -313,8 +312,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          enable_ice_renomination == o.enable_ice_renomination &&
          redetermine_role_on_ice_restart == o.redetermine_role_on_ice_restart &&
          ice_check_min_interval == o.ice_check_min_interval &&
-         ice_regather_interval_range == o.ice_regather_interval_range &&
-         turn_customizer == o.turn_customizer;
+         ice_regather_interval_range == o.ice_regather_interval_range;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(
@@ -456,7 +454,6 @@ bool PeerConnection::Initialize(
                   << "This shouldn't happen if using PeerConnectionFactory.";
     return false;
   }
-
   if (!observer) {
     // TODO(deadbeef): Why do we do this?
     LOG(LS_ERROR) << "PeerConnection initialized without a "
@@ -1150,7 +1147,6 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
       configuration.ice_candidate_pool_size;
   modified_config.prune_turn_ports = configuration.prune_turn_ports;
   modified_config.ice_check_min_interval = configuration.ice_check_min_interval;
-  modified_config.turn_customizer = configuration.turn_customizer;
   if (configuration != modified_config) {
     LOG(LS_ERROR) << "Modifying the configuration in an unsupported way.";
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
@@ -1184,8 +1180,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
           rtc::Bind(&PeerConnection::ReconfigurePortAllocator_n, this,
                     stun_servers, turn_servers, modified_config.type,
                     modified_config.ice_candidate_pool_size,
-                    modified_config.prune_turn_ports,
-                    modified_config.turn_customizer))) {
+                    modified_config.prune_turn_ports))) {
     LOG(LS_ERROR) << "Failed to apply configuration to PortAllocator.";
     return SafeSetError(RTCErrorType::INTERNAL_ERROR, error);
   }
@@ -2518,8 +2513,7 @@ bool PeerConnection::InitializePortAllocator_n(
   // properties set above.
   port_allocator_->SetConfiguration(stun_servers, turn_servers,
                                     configuration.ice_candidate_pool_size,
-                                    configuration.prune_turn_ports,
-                                    configuration.turn_customizer);
+                                    configuration.prune_turn_ports);
   return true;
 }
 
@@ -2528,15 +2522,13 @@ bool PeerConnection::ReconfigurePortAllocator_n(
     const std::vector<cricket::RelayServerConfig>& turn_servers,
     IceTransportsType type,
     int candidate_pool_size,
-    bool prune_turn_ports,
-    webrtc::TurnCustomizer* turn_customizer) {
+    bool prune_turn_ports) {
   port_allocator_->set_candidate_filter(
       ConvertIceTransportTypeToCandidateFilter(type));
   // Call this last since it may create pooled allocator sessions using the
   // candidate filter set above.
   return port_allocator_->SetConfiguration(
-      stun_servers, turn_servers, candidate_pool_size, prune_turn_ports,
-      turn_customizer);
+      stun_servers, turn_servers, candidate_pool_size, prune_turn_ports);
 }
 
 bool PeerConnection::StartRtcEventLog_w(rtc::PlatformFile file,

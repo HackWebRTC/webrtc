@@ -105,9 +105,6 @@ class StunRequest : public rtc::MessageHandler {
   // Returns a const pointer to |msg_|.
   const StunMessage* msg() const;
 
-  // Returns a mutable pointer to |msg_|.
-  StunMessage* mutable_msg();
-
   // Time elapsed since last send (in ms)
   int Elapsed() const;
 

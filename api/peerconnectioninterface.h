@@ -83,7 +83,6 @@
 #include "api/rtpsenderinterface.h"
 #include "api/stats/rtcstatscollectorcallback.h"
 #include "api/statstypes.h"
-#include "api/turncustomizer.h"
 #include "api/umametrics.h"
 #include "call/callfactoryinterface.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
@@ -474,12 +473,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // starting a new ICE generation. The regathering happens continuously with
     // interval specified in milliseconds by the uniform distribution [a, b].
     rtc::Optional<rtc::IntervalRange> ice_regather_interval_range;
-
-    // Optional TurnCustomizer.
-    // With this class one can modify outgoing TURN messages.
-    // The object passed in must remain valid until PeerConnection::Close() is
-    // called.
-    webrtc::TurnCustomizer* turn_customizer = nullptr;
 
     //
     // Don't forget to update operator== if adding something.

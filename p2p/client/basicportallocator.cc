@@ -96,15 +96,11 @@ const uint32_t DISABLE_ALL_PHASES =
     PORTALLOCATOR_DISABLE_STUN | PORTALLOCATOR_DISABLE_RELAY;
 
 // BasicPortAllocator
-BasicPortAllocator::BasicPortAllocator(
-    rtc::NetworkManager* network_manager,
-    rtc::PacketSocketFactory* socket_factory,
-    webrtc::TurnCustomizer* customizer)
+BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
+                                       rtc::PacketSocketFactory* socket_factory)
     : network_manager_(network_manager), socket_factory_(socket_factory) {
   RTC_DCHECK(network_manager_ != nullptr);
   RTC_DCHECK(socket_factory_ != nullptr);
-  SetConfiguration(ServerAddresses(), std::vector<RelayServerConfig>(),
-                   0, false, customizer);
   Construct();
 }
 
@@ -119,8 +115,7 @@ BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
                                        const ServerAddresses& stun_servers)
     : network_manager_(network_manager), socket_factory_(socket_factory) {
   RTC_DCHECK(socket_factory_ != NULL);
-  SetConfiguration(stun_servers, std::vector<RelayServerConfig>(), 0, false,
-                   nullptr);
+  SetConfiguration(stun_servers, std::vector<RelayServerConfig>(), 0, false);
   Construct();
 }
 
@@ -147,7 +142,7 @@ BasicPortAllocator::BasicPortAllocator(
     turn_servers.push_back(config);
   }
 
-  SetConfiguration(stun_servers, turn_servers, 0, false, nullptr);
+  SetConfiguration(stun_servers, turn_servers, 0, false);
   Construct();
 }
 
@@ -193,7 +188,7 @@ void BasicPortAllocator::AddTurnServer(const RelayServerConfig& turn_server) {
   std::vector<RelayServerConfig> new_turn_servers = turn_servers();
   new_turn_servers.push_back(turn_server);
   SetConfiguration(stun_servers(), new_turn_servers, candidate_pool_size(),
-                   prune_turn_ports(), turn_customizer());
+                   prune_turn_ports());
 }
 
 // BasicPortAllocatorSession
@@ -1379,6 +1374,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
       continue;
     }
 
+
     // Shared socket mode must be enabled only for UDP based ports. Hence
     // don't pass shared socket for ports which will create TCP sockets.
     // TODO(mallinath) - Enable shared socket mode for TURN ports. Disabled
@@ -1390,8 +1386,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
                               network_, udp_socket_.get(),
                               session_->username(), session_->password(),
                               *relay_port, config.credentials, config.priority,
-                              session_->allocator()->origin(),
-                              session_->allocator()->turn_customizer());
+                              session_->allocator()->origin());
       turn_ports_.push_back(port);
       // Listen to the port destroyed signal, to allow AllocationSequence to
       // remove entrt from it's map.
@@ -1402,8 +1397,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
           session_->allocator()->min_port(), session_->allocator()->max_port(),
           session_->username(), session_->password(), *relay_port,
           config.credentials, config.priority, session_->allocator()->origin(),
-          config.tls_alpn_protocols, config.tls_elliptic_curves,
-          session_->allocator()->turn_customizer());
+          config.tls_alpn_protocols, config.tls_elliptic_curves);
     }
     RTC_DCHECK(port != NULL);
     port->SetTlsCertPolicy(config.tls_cert_policy);

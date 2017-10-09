@@ -25,7 +25,6 @@
 
 namespace webrtc {
 class MetricsObserverInterface;
-class TurnCustomizer;
 }
 
 namespace cricket {
@@ -363,8 +362,7 @@ class PortAllocator : public sigslot::has_slots<> {
   bool SetConfiguration(const ServerAddresses& stun_servers,
                         const std::vector<RelayServerConfig>& turn_servers,
                         int candidate_pool_size,
-                        bool prune_turn_ports,
-                        webrtc::TurnCustomizer* turn_customizer = nullptr);
+                        bool prune_turn_ports);
 
   const ServerAddresses& stun_servers() const { return stun_servers_; }
 
@@ -479,10 +477,6 @@ class PortAllocator : public sigslot::has_slots<> {
     metrics_observer_ = observer;
   }
 
-  webrtc::TurnCustomizer* turn_customizer() {
-    return turn_customizer_;
-  }
-
  protected:
   virtual PortAllocatorSession* CreateSessionInternal(
       const std::string& content_name,
@@ -518,11 +512,6 @@ class PortAllocator : public sigslot::has_slots<> {
   bool prune_turn_ports_ = false;
 
   webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
-
-  // Customizer for TURN messages.
-  // The instance is owned by application and will be shared among
-  // all TurnPort(s) created.
-  webrtc::TurnCustomizer* turn_customizer_ = nullptr;
 };
 
 }  // namespace cricket
