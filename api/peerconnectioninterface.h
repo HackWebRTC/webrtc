@@ -868,12 +868,30 @@ class PeerConnectionObserver {
   // Called when the ICE connection receiving status changes.
   virtual void OnIceConnectionReceivingChange(bool receiving) {}
 
-  // Called when a track is added to streams.
-  // TODO(zhihuang) Make this a pure virtual method when all its subclasses
-  // implement it.
+  // This is called when a receiver and its track is created.
+  // TODO(zhihuang): Make this pure virtual when all subclasses implement it.
   virtual void OnAddTrack(
       rtc::scoped_refptr<RtpReceiverInterface> receiver,
       const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {}
+
+  // TODO(hbos,deadbeef): Add |OnAssociatedStreamsUpdated| with |receiver| and
+  // |streams| as arguments. This should be called when an existing receiver its
+  // associated streams updated. https://crbug.com/webrtc/8315
+  // This may be blocked on supporting multiple streams per sender or else
+  // this may count as the removal and addition of a track?
+  // https://crbug.com/webrtc/7932
+
+  // Called when a receiver is completely removed. This is current (Plan B SDP)
+  // behavior that occurs when processing the removal of a remote track, and is
+  // called when the receiver is removed and the track is muted. When Unified
+  // Plan SDP is supported, transceivers can change direction (and receivers
+  // stopped) but receivers are never removed.
+  // https://w3c.github.io/webrtc-pc/#process-remote-track-removal
+  // TODO(hbos,deadbeef): When Unified Plan SDP is supported and receivers are
+  // no longer removed, deprecate and remove this callback.
+  // TODO(hbos,deadbeef): Make pure virtual when all subclasses implement it.
+  virtual void OnRemoveTrack(
+      rtc::scoped_refptr<RtpReceiverInterface> receiver) {}
 
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.

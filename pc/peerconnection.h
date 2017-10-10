@@ -246,7 +246,8 @@ class PeerConnection : public PeerConnectionInterface,
   void CreateVideoReceiver(MediaStreamInterface* stream,
                            const std::string& track_id,
                            uint32_t ssrc);
-  void DestroyReceiver(const std::string& track_id);
+  rtc::scoped_refptr<RtpReceiverInterface> RemoveAndStopReceiver(
+      const std::string& track_id);
 
   // May be called either by AddStream/RemoveStream, or when a track is
   // added/removed from a stream previously added via AddStream.
