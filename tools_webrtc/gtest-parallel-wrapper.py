@@ -24,14 +24,25 @@ executable.
 The exception is that --isolated-script-test-output and
 --isolated-script-test-chartson-output are expected to be after '--', so they
 are processed and removed from there.
+
+If the --store-test-artifacts flag is set, an --output_dir must be also
+specified.
+The test artifacts will then be stored in a 'test_artifacts' subdirectory of the
+output dir, and will be compressed into a zip file once the test finishes
+executing.
+This is useful when running the tests in swarming, since the output directory
+is not known beforehand.
+
 For example:
 
   gtest-parallel-wrapper.py some_test \
       --some_flag=some_value \
       --another_flag \
+      --output_dir=SOME_OUTPUT_DIR
       -- \
-      --isolated-script-test-output=some_dir \
-      --isolated-script-test-perf-output=some_other_dir \
+      --store-test-artifacts
+      --isolated-script-test-output=SOME_DIR \
+      --isolated-script-test-perf-output=SOME_OTHER_DIR \
       --foo=bar \
       --baz
 
@@ -42,20 +53,29 @@ Will be converted into:
       --shard_index 0 \
       --some_flag=some_value \
       --another_flag \
-      --dump_json_test_results=some_dir \
+      --output_dir=SOME_OUTPUT_DIR \
+      --dump_json_test_results=SOME_DIR \
       -- \
-      --foo=bar
+      --test_artifacts_dir=SOME_OUTPUT_DIR/test_artifacts \
+      --foo=bar \
       --baz
 
 """
 
 import argparse
+import collections
 import os
+import shutil
 import subprocess
 import sys
 
 
-def CatFiles(file_list, output_file):
+Args = collections.namedtuple('Args',
+                              ['gtest_parallel_args', 'test_env', 'output_dir',
+                               'test_artifacts_dir'])
+
+
+def _CatFiles(file_list, output_file):
   with open(output_file, 'w') as output_file:
     for filename in file_list:
       with open(filename) as input_file:
@@ -63,7 +83,14 @@ def CatFiles(file_list, output_file):
       os.remove(filename)
 
 
-def get_args_and_env():
+def _GetOutputDir(gtest_parallel_args):
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--output_dir', type=str, default=None)
+  options, _ = parser.parse_known_args(gtest_parallel_args)
+  return options.output_dir
+
+
+def _ParseArgs():
   if '--' in sys.argv:
     argv_index = sys.argv.index('--')
   else:
@@ -74,6 +101,11 @@ def get_args_and_env():
 
   parser = argparse.ArgumentParser()
   parser.add_argument('--isolated-script-test-output', type=str, default=None)
+
+  # Needed when the test wants to store test artifacts, because it doesn't know
+  # what will be the swarming output dir.
+  parser.add_argument('--store-test-artifacts', action='store_true',
+                      default=False)
 
   # We don't need to implement this flag, and possibly can't, since it's
   # intended for results of Telemetry tests. See
@@ -99,6 +131,21 @@ def get_args_and_env():
         options.isolated_script_test_output,
     ]
 
+  output_dir = _GetOutputDir(gtest_parallel_args)
+  test_artifacts_dir = None
+
+  if options.store_test_artifacts:
+    assert output_dir, (
+        '--output_dir must be specified for storing test artifacts.')
+    test_artifacts_dir = os.path.join(output_dir, 'test_artifacts')
+    if not os.path.isdir(test_artifacts_dir):
+      os.makedirs(test_artifacts_dir)
+
+    executable_args += [
+        '--test_artifacts_dir',
+        test_artifacts_dir,
+    ]
+
   # GTEST_SHARD_INDEX and GTEST_TOTAL_SHARDS must be removed from the
   # environment. Otherwise it will be picked up by the binary, causing a bug
   # where only tests in the first shard are executed.
@@ -113,14 +160,7 @@ def get_args_and_env():
       gtest_shard_index,
   ] + ['--'] + executable_args
 
-  return gtest_parallel_args, test_env
-
-
-def get_output_dir(gtest_parallel_args):
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--output_dir', type=str, default=None)
-  options, _ = parser.parse_known_args(gtest_parallel_args)
-  return options.output_dir
+  return Args(gtest_parallel_args, test_env, output_dir, test_artifacts_dir)
 
 
 def main():
@@ -128,28 +168,32 @@ def main():
   gtest_parallel_path = os.path.join(
       webrtc_root, 'third_party', 'gtest-parallel', 'gtest-parallel')
 
-  gtest_parallel_args, test_env = get_args_and_env()
+  args = _ParseArgs()
 
   command = [
       sys.executable,
       gtest_parallel_path,
-  ] + gtest_parallel_args
+  ] + args.gtest_parallel_args
 
   print 'gtest-parallel-wrapper: Executing command %s' % ' '.join(command)
   sys.stdout.flush()
 
-  exit_code = subprocess.call(command, env=test_env, cwd=os.getcwd())
+  exit_code = subprocess.call(command, env=args.test_env, cwd=os.getcwd())
 
-  output_dir = get_output_dir(gtest_parallel_args)
-  if output_dir:
+  if args.output_dir:
     for test_status in 'passed', 'failed', 'interrupted':
-      logs_dir = os.path.join(output_dir, 'gtest-parallel-logs', test_status)
+      logs_dir = os.path.join(args.output_dir, 'gtest-parallel-logs',
+                              test_status)
       if not os.path.isdir(logs_dir):
         continue
       logs = [os.path.join(logs_dir, log) for log in os.listdir(logs_dir)]
-      log_file = os.path.join(output_dir, '%s-tests.log' % test_status)
-      CatFiles(logs, log_file)
+      log_file = os.path.join(args.output_dir, '%s-tests.log' % test_status)
+      _CatFiles(logs, log_file)
       os.rmdir(logs_dir)
+
+  if args.test_artifacts_dir:
+    shutil.make_archive(args.test_artifacts_dir, 'zip', args.test_artifacts_dir)
+    shutil.rmtree(args.test_artifacts_dir)
 
   return exit_code
 
