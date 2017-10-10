@@ -10,6 +10,10 @@
 
 #include <memory>
 
+#include "api/audio_codecs/L16/audio_decoder_L16.h"
+#include "api/audio_codecs/L16/audio_encoder_L16.h"
+#include "api/audio_codecs/audio_decoder_factory_template.h"
+#include "api/audio_codecs/audio_encoder_factory_template.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "rtc_base/gunit.h"
@@ -174,6 +178,8 @@ class PeerConnectionEndToEndTest
   webrtc::PeerConnectionInterface::RTCConfiguration config_;
 };
 
+namespace {
+
 std::unique_ptr<webrtc::AudioDecoder> CreateForwardingMockDecoder(
     std::unique_ptr<webrtc::AudioDecoder> real_decoder) {
   class ForwardingMockDecoder : public StrictMock<webrtc::MockAudioDecoder> {
@@ -257,12 +263,84 @@ CreateForwardingMockDecoderFactory(
   return mock_decoder_factory;
 }
 
+struct AudioEncoderUnicornSparklesRainbow {
+  using Config = webrtc::AudioEncoderL16::Config;
+  static rtc::Optional<Config> SdpToConfig(webrtc::SdpAudioFormat format) {
+    if (STR_CASE_CMP(format.name.c_str(), "UnicornSparklesRainbow") == 0) {
+      const webrtc::SdpAudioFormat::Parameters expected_params = {
+          {"num_horns", "1"}};
+      EXPECT_EQ(expected_params, format.parameters);
+      format.parameters.clear();
+      format.name = "L16";
+      return webrtc::AudioEncoderL16::SdpToConfig(format);
+    } else {
+      return rtc::Optional<Config>();
+    }
+  }
+  static void AppendSupportedEncoders(
+      std::vector<webrtc::AudioCodecSpec>* specs) {
+    std::vector<webrtc::AudioCodecSpec> new_specs;
+    webrtc::AudioEncoderL16::AppendSupportedEncoders(&new_specs);
+    for (auto& spec : new_specs) {
+      spec.format.name = "UnicornSparklesRainbow";
+      EXPECT_TRUE(spec.format.parameters.empty());
+      spec.format.parameters.emplace("num_horns", "1");
+      specs->push_back(spec);
+    }
+  }
+  static webrtc::AudioCodecInfo QueryAudioEncoder(const Config& config) {
+    return webrtc::AudioEncoderL16::QueryAudioEncoder(config);
+  }
+  static std::unique_ptr<webrtc::AudioEncoder> MakeAudioEncoder(
+      const Config& config,
+      int payload_type) {
+    return webrtc::AudioEncoderL16::MakeAudioEncoder(config, payload_type);
+  }
+};
+
+struct AudioDecoderUnicornSparklesRainbow {
+  using Config = webrtc::AudioDecoderL16::Config;
+  static rtc::Optional<Config> SdpToConfig(webrtc::SdpAudioFormat format) {
+    if (STR_CASE_CMP(format.name.c_str(), "UnicornSparklesRainbow") == 0) {
+      const webrtc::SdpAudioFormat::Parameters expected_params = {
+          {"num_horns", "1"}};
+      EXPECT_EQ(expected_params, format.parameters);
+      format.parameters.clear();
+      format.name = "L16";
+      return webrtc::AudioDecoderL16::SdpToConfig(format);
+    } else {
+      return rtc::Optional<Config>();
+    }
+  }
+  static void AppendSupportedDecoders(
+      std::vector<webrtc::AudioCodecSpec>* specs) {
+    std::vector<webrtc::AudioCodecSpec> new_specs;
+    webrtc::AudioDecoderL16::AppendSupportedDecoders(&new_specs);
+    for (auto& spec : new_specs) {
+      spec.format.name = "UnicornSparklesRainbow";
+      EXPECT_TRUE(spec.format.parameters.empty());
+      spec.format.parameters.emplace("num_horns", "1");
+      specs->push_back(spec);
+    }
+  }
+  static std::unique_ptr<webrtc::AudioDecoder> MakeAudioDecoder(
+      const Config& config) {
+    return webrtc::AudioDecoderL16::MakeAudioDecoder(config);
+  }
+};
+
+}  // namespace
+
 // Disabled for TSan v2, see
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=4719 for details.
 // Disabled for Mac, see
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=5231 for details.
-#if !defined(THREAD_SANITIZER) && !defined(WEBRTC_MAC)
-TEST_F(PeerConnectionEndToEndTest, Call) {
+#if defined(THREAD_SANITIZER) || defined(WEBRTC_MAC)
+#define MAYBE_Call DISABLED_Call
+#else
+#define MAYBE_Call Call
+#endif
+TEST_F(PeerConnectionEndToEndTest, MAYBE_Call) {
   rtc::scoped_refptr<webrtc::AudioDecoderFactory> real_decoder_factory =
       webrtc::CreateBuiltinAudioDecoderFactory();
   CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
@@ -271,7 +349,6 @@ TEST_F(PeerConnectionEndToEndTest, Call) {
   Negotiate();
   WaitForCallEstablished();
 }
-#endif // if !defined(THREAD_SANITIZER) && !defined(WEBRTC_MAC)
 
 #if !defined(ADDRESS_SANITIZER)
 TEST_F(PeerConnectionEndToEndTest, CallWithLegacySdp) {
@@ -285,6 +362,16 @@ TEST_F(PeerConnectionEndToEndTest, CallWithLegacySdp) {
   WaitForCallEstablished();
 }
 #endif  // !defined(ADDRESS_SANITIZER)
+
+TEST_F(PeerConnectionEndToEndTest, CallWithCustomCodec) {
+  CreatePcs(
+      nullptr,
+      webrtc::CreateAudioEncoderFactory<AudioEncoderUnicornSparklesRainbow>(),
+      webrtc::CreateAudioDecoderFactory<AudioDecoderUnicornSparklesRainbow>());
+  GetAndAddUserMedia();
+  Negotiate();
+  WaitForCallEstablished();
+}
 
 #ifdef HAVE_SCTP
 // Verifies that a DataChannel created before the negotiation can transition to
