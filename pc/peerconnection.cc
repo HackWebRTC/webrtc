@@ -1462,18 +1462,15 @@ void PeerConnection::CreateVideoReceiver(MediaStreamInterface* stream,
 
 // TODO(deadbeef): Keep RtpReceivers around even if track goes away in remote
 // description.
-rtc::scoped_refptr<RtpReceiverInterface> PeerConnection::RemoveAndStopReceiver(
-    const std::string& track_id) {
+void PeerConnection::DestroyReceiver(const std::string& track_id) {
   auto it = FindReceiverForTrack(track_id);
   if (it == receivers_.end()) {
     LOG(LS_WARNING) << "RtpReceiver for track with id " << track_id
                     << " doesn't exist.";
-    return nullptr;
+  } else {
+    (*it)->internal()->Stop();
+    receivers_.erase(it);
   }
-  (*it)->internal()->Stop();
-  rtc::scoped_refptr<RtpReceiverInterface> receiver = *it;
-  receivers_.erase(it);
-  return receiver;
 }
 
 void PeerConnection::AddAudioTrack(AudioTrackInterface* track,
@@ -2015,11 +2012,10 @@ void PeerConnection::OnRemoteTrackRemoved(const std::string& stream_label,
                                           cricket::MediaType media_type) {
   MediaStreamInterface* stream = remote_streams_->find(stream_label);
 
-  rtc::scoped_refptr<RtpReceiverInterface> receiver;
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     // When the MediaEngine audio channel is destroyed, the RemoteAudioSource
     // will be notified which will end the AudioRtpReceiver::track().
-    receiver = RemoveAndStopReceiver(track_id);
+    DestroyReceiver(track_id);
     rtc::scoped_refptr<AudioTrackInterface> audio_track =
         stream->FindAudioTrack(track_id);
     if (audio_track) {
@@ -2028,7 +2024,7 @@ void PeerConnection::OnRemoteTrackRemoved(const std::string& stream_label,
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     // Stopping or destroying a VideoRtpReceiver will end the
     // VideoRtpReceiver::track().
-    receiver = RemoveAndStopReceiver(track_id);
+    DestroyReceiver(track_id);
     rtc::scoped_refptr<VideoTrackInterface> video_track =
         stream->FindVideoTrack(track_id);
     if (video_track) {
@@ -2038,9 +2034,6 @@ void PeerConnection::OnRemoteTrackRemoved(const std::string& stream_label,
     }
   } else {
     RTC_NOTREACHED() << "Invalid media type";
-  }
-  if (receiver) {
-    observer_->OnRemoveTrack(receiver);
   }
 }
 
