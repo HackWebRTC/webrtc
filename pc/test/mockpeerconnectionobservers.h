@@ -25,6 +25,16 @@ namespace webrtc {
 
 class MockPeerConnectionObserver : public PeerConnectionObserver {
  public:
+  struct AddTrackEvent {
+    explicit AddTrackEvent(
+        rtc::scoped_refptr<RtpReceiverInterface> receiver,
+        std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams)
+        : receiver(std::move(receiver)), streams(std::move(streams)) {}
+
+    rtc::scoped_refptr<RtpReceiverInterface> receiver;
+    std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
+  };
+
   MockPeerConnectionObserver() : remote_streams_(StreamCollection::Create()) {}
   virtual ~MockPeerConnectionObserver() {}
   void SetPeerConnectionInterface(PeerConnectionInterface* pc) {
@@ -92,13 +102,26 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     callback_triggered_ = true;
   }
 
-  void OnAddTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
-      const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
-          streams) override {
+  void OnAddTrack(rtc::scoped_refptr<RtpReceiverInterface> receiver,
+                  const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
+                      streams) override {
     RTC_DCHECK(receiver);
     num_added_tracks_++;
     last_added_track_label_ = receiver->id();
+    add_track_events_.push_back(AddTrackEvent(receiver, streams));
+  }
+
+  void OnRemoveTrack(
+      rtc::scoped_refptr<RtpReceiverInterface> receiver) override {
+    remove_track_events_.push_back(receiver);
+  }
+
+  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetAddTrackReceivers() {
+    std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers;
+    for (const AddTrackEvent& event : add_track_events_) {
+      receivers.push_back(event.receiver);
+    }
+    return receivers;
   }
 
   // Returns the label of the last added stream.
@@ -124,6 +147,8 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   bool callback_triggered_ = false;
   int num_added_tracks_ = 0;
   std::string last_added_track_label_;
+  std::vector<AddTrackEvent> add_track_events_;
+  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> remove_track_events_;
 
  private:
   rtc::scoped_refptr<MediaStreamInterface> last_added_stream_;

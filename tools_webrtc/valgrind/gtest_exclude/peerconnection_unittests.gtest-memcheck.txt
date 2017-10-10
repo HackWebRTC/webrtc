@@ -1,8 +1,9 @@
 # Tests that are failing when run under memcheck.
 # https://code.google.com/p/webrtc/issues/detail?id=4387
 DtmfSenderTest.*
-PeerConnectionIntegrationTest.*
 PeerConnectionEndToEndTest.*
-PeerConnectionInterfaceTest.*
 PeerConnectionCryptoUnitTest.*
+PeerConnectionIntegrationTest.*
+PeerConnectionInterfaceTest.*
+PeerConnectionRtpTest.*
 RTCStatsIntegrationTest.*
