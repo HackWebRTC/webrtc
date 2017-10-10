@@ -305,6 +305,8 @@ void PrintRtpFeedback(const webrtc::ParsedRtcEventLog& parsed_stream,
       break;
     }
     default:
+      std::cout << log_timestamp << "\t"
+                << "RTCP_RTPFB(UNKNOWN)" << std::endl;
       break;
   }
 }
@@ -354,6 +356,8 @@ void PrintPsFeedback(const webrtc::ParsedRtcEventLog& parsed_stream,
       break;
     }
     default:
+      std::cout << log_timestamp << "\t"
+                << "RTCP_PSFB(UNKNOWN)" << std::endl;
       break;
   }
 }
