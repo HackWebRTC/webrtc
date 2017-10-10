@@ -11,6 +11,10 @@ td.selected-score {
   background-color: #DDD;
 }
 
+td.single-score-cell{
+  text-align: center;
+}
+
 .audio-inspector {
   text-align: center;
 }

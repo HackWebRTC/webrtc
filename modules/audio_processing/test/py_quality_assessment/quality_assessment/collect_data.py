@@ -42,6 +42,7 @@ RE_TEST_DATA_GEN_PARAMS = re.compile(
 RE_SCORE_NAME = re.compile(
     sim.ApmModuleSimulator.GetPrefixScore() + r'(.+)(\..+)')
 
+
 def InstanceArgumentsParser():
   """Arguments parser factory.
   """
