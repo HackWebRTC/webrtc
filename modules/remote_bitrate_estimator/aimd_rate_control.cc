@@ -40,9 +40,9 @@ float ReadTrendlineFilterWindowSize() {
   int parsed_values =
       sscanf(experiment_string.c_str(), "Enabled-%f", &backoff_factor);
   if (parsed_values == 1) {
-    if (backoff_factor < 1.0f) {
+    if (backoff_factor >= 1.0f) {
       LOG(WARNING) << "Back-off factor must be less than 1.";
-    } else if (backoff_factor > 0.0f) {
+    } else if (backoff_factor <= 0.0f) {
       LOG(WARNING) << "Back-off factor must be greater than 0.";
     } else {
       return backoff_factor;
