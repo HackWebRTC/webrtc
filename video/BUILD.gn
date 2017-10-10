@@ -58,6 +58,7 @@ rtc_static_library("video") {
     "../api:optional",
     "../api:transport_api",
     "../api/video_codecs:video_codecs_api",
+    "../call:bitrate_allocator",
     "../call:call_interfaces",
     "../call:rtp_interfaces",
     "../call:video_stream_api",
