@@ -379,6 +379,7 @@ Iterable::Iterator::Iterator(JNIEnv* jni, jobject iterable) : jni_(jni) {
   jclass iterator_class = GetObjectClass(jni, iterator_);
   has_next_id_ = GetMethodID(jni, iterator_class, "hasNext", "()Z");
   next_id_ = GetMethodID(jni, iterator_class, "next", "()Ljava/lang/Object;");
+  remove_id_ = GetMethodID(jni, iterator_class, "remove", "()V");
 
   // Start at the first element in the collection.
   ++(*this);
@@ -412,6 +413,11 @@ Iterable::Iterator& Iterable::Iterator::operator++() {
   value_ = jni_->CallObjectMethod(iterator_, next_id_);
   CHECK_EXCEPTION(jni_) << "error during CallObjectMethod";
   return *this;
+}
+
+void Iterable::Iterator::Remove() {
+  jni_->CallVoidMethod(iterator_, remove_id_);
+  CHECK_EXCEPTION(jni_) << "error during CallVoidMethod";
 }
 
 // Provides a way to compare the iterator with itself and with the end iterator.

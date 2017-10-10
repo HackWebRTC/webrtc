@@ -184,6 +184,10 @@ class Iterable {
     // Advances the iterator one step.
     Iterator& operator++();
 
+    // Removes the element the iterator is pointing to. Must still advance the
+    // iterator afterwards.
+    void Remove();
+
     // Provides a way to compare the iterator with itself and with the end
     // iterator.
     // Note: all other comparison results are undefined, just like for C++ input
@@ -200,6 +204,7 @@ class Iterable {
     jobject value_ = nullptr;
     jmethodID has_next_id_ = nullptr;
     jmethodID next_id_ = nullptr;
+    jmethodID remove_id_ = nullptr;
     rtc::ThreadChecker thread_checker_;
 
     RTC_DISALLOW_COPY_AND_ASSIGN(Iterator);

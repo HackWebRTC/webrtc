@@ -158,7 +158,7 @@ public class PeerConnectionTest {
       }
 
       if (expectedIceConnectionChanges.isEmpty()) {
-        System.out.println(name + "Got an unexpected ice connection change " + newState);
+        System.out.println(name + "Got an unexpected ICE connection change " + newState);
         return;
       }
 
@@ -167,7 +167,7 @@ public class PeerConnectionTest {
 
     @Override
     public synchronized void onIceConnectionReceivingChange(boolean receiving) {
-      System.out.println(name + "Got an ice connection receiving change " + receiving);
+      System.out.println(name + "Got an ICE connection receiving change " + receiving);
     }
 
     public synchronized void expectIceGatheringChange(IceGatheringState newState) {
@@ -182,6 +182,9 @@ public class PeerConnectionTest {
       if (newState == IceGatheringState.GATHERING) {
         return;
       }
+      if (expectedIceGatheringChanges.isEmpty()) {
+        System.out.println(name + "Got an unexpected ICE gathering change " + newState);
+      }
       assertEquals(expectedIceGatheringChanges.removeFirst(), newState);
     }
 
@@ -192,15 +195,15 @@ public class PeerConnectionTest {
     @Override
     public synchronized void onAddStream(MediaStream stream) {
       assertEquals(expectedAddStreamLabels.removeFirst(), stream.label());
-      assertEquals(1, stream.videoTracks.size());
-      assertEquals(1, stream.audioTracks.size());
-      assertTrue(stream.videoTracks.get(0).id().endsWith("VideoTrack"));
-      assertTrue(stream.audioTracks.get(0).id().endsWith("AudioTrack"));
-      assertEquals("video", stream.videoTracks.get(0).kind());
-      assertEquals("audio", stream.audioTracks.get(0).kind());
-      VideoRenderer renderer = createVideoRenderer(this);
-      stream.videoTracks.get(0).addRenderer(renderer);
-      assertNull(renderers.put(stream, new WeakReference<VideoRenderer>(renderer)));
+      for (AudioTrack track : stream.audioTracks) {
+        assertEquals("audio", track.kind());
+      }
+      for (VideoTrack track : stream.videoTracks) {
+        assertEquals("video", track.kind());
+        VideoRenderer renderer = createVideoRenderer(this);
+        track.addRenderer(renderer);
+        assertNull(renderers.put(stream, new WeakReference<VideoRenderer>(renderer)));
+      }
       gotRemoteStreams.add(stream);
     }
 
@@ -619,7 +622,7 @@ public class PeerConnectionTest {
     // instead of in addTracksToPC.
     final CameraEnumerator enumerator = new Camera1Enumerator(false /* captureToTexture */);
     final VideoCapturer videoCapturer =
-        enumerator.createCapturer(enumerator.getDeviceNames()[0], null);
+        enumerator.createCapturer(enumerator.getDeviceNames()[0], null /* eventsHandler */);
     final VideoSource videoSource = factory.createVideoSource(videoCapturer);
     videoCapturer.startCapture(640, 480, 30);
 
@@ -1007,7 +1010,7 @@ public class PeerConnectionTest {
     // instead of in addTracksToPC.
     final CameraEnumerator enumerator = new Camera1Enumerator(false /* captureToTexture */);
     final VideoCapturer videoCapturer =
-        enumerator.createCapturer(enumerator.getDeviceNames()[0], null);
+        enumerator.createCapturer(enumerator.getDeviceNames()[0], null /* eventsHandler */);
     final VideoSource videoSource = factory.createVideoSource(videoCapturer);
     videoCapturer.startCapture(640, 480, 30);
 
@@ -1163,6 +1166,133 @@ public class PeerConnectionTest {
     System.gc();
   }
 
+  /**
+   * Test that a Java MediaStream is updated when the native stream is.
+   * <p>
+   * Specifically, test that when remote tracks are indicated as being added or
+   * removed from a MediaStream (via "a=ssrc" or "a=msid" in a remote
+   * description), the existing remote MediaStream object is updated.
+   * <p>
+   * This test starts with just an audio track, adds a video track, then
+   * removes it. It only applies remote offers, which is sufficient to test
+   * this functionality and simplifies the test. This means that no media will
+   * actually be sent/received; we're just testing that the Java MediaStream
+   * object gets updated when the native object changes.
+   */
+  @Test
+  @MediumTest
+  public void testRemoteStreamUpdatedWhenTracksAddedOrRemoved() throws Exception {
+    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
+    PeerConnectionFactory factory = new PeerConnectionFactory(options);
+
+    // This test is fine with default PC constraints and no ICE servers.
+    MediaConstraints pcConstraints = new MediaConstraints();
+    LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
+
+    // Use OfferToReceiveAudio/Video to ensure every offer has an audio and
+    // video m= section. Simplifies the test because it means we don't have to
+    // actually apply the offer to "offeringPC"; it's just used as an SDP
+    // factory.
+    MediaConstraints offerConstraints = new MediaConstraints();
+    offerConstraints.mandatory.add(
+        new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
+    offerConstraints.mandatory.add(
+        new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
+
+    // This PeerConnection will only be used to generate offers.
+    ObserverExpectations offeringExpectations = new ObserverExpectations("offerer");
+    PeerConnection offeringPC =
+        factory.createPeerConnection(iceServers, pcConstraints, offeringExpectations);
+    assertNotNull(offeringPC);
+
+    ObserverExpectations expectations = new ObserverExpectations("PC under test");
+    PeerConnection pcUnderTest =
+        factory.createPeerConnection(iceServers, pcConstraints, expectations);
+    assertNotNull(pcUnderTest);
+
+    // Add offerer media stream with just an audio track.
+    MediaStream localStream = factory.createLocalMediaStream("stream");
+    AudioTrack localAudioTrack =
+        factory.createAudioTrack("audio", factory.createAudioSource(new MediaConstraints()));
+    localStream.addTrack(localAudioTrack);
+    // TODO(deadbeef): Use addTrack once that's available.
+    offeringExpectations.expectRenegotiationNeeded();
+    offeringPC.addStream(localStream);
+    // Create offer.
+    SdpObserverLatch sdpLatch = new SdpObserverLatch();
+    offeringPC.createOffer(sdpLatch, offerConstraints);
+    assertTrue(sdpLatch.await());
+    SessionDescription offerSdp = sdpLatch.getSdp();
+
+    // Apply remote offer to PC under test.
+    sdpLatch = new SdpObserverLatch();
+    expectations.expectSignalingChange(SignalingState.HAVE_REMOTE_OFFER);
+    expectations.expectAddStream("stream");
+    pcUnderTest.setRemoteDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    // Sanity check that we get one remote stream with one audio track.
+    MediaStream remoteStream = expectations.gotRemoteStreams.iterator().next();
+    assertEquals(remoteStream.audioTracks.size(), 1);
+    assertEquals(remoteStream.videoTracks.size(), 0);
+
+    // Add a video track...
+    final CameraEnumerator enumerator = new Camera1Enumerator(false /* captureToTexture */);
+    final VideoCapturer videoCapturer =
+        enumerator.createCapturer(enumerator.getDeviceNames()[0], null /* eventsHandler */);
+    final VideoSource videoSource = factory.createVideoSource(videoCapturer);
+    VideoTrack videoTrack = factory.createVideoTrack("video", videoSource);
+    offeringExpectations.expectRenegotiationNeeded();
+    localStream.addTrack(videoTrack);
+    // ... and create an updated offer.
+    sdpLatch = new SdpObserverLatch();
+    offeringPC.createOffer(sdpLatch, offerConstraints);
+    assertTrue(sdpLatch.await());
+    offerSdp = sdpLatch.getSdp();
+
+    // Apply remote offer with new video track to PC under test.
+    sdpLatch = new SdpObserverLatch();
+    pcUnderTest.setRemoteDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    // The remote stream should now have a video track.
+    assertEquals(remoteStream.audioTracks.size(), 1);
+    assertEquals(remoteStream.videoTracks.size(), 1);
+
+    // Finally, create another offer with the audio track removed.
+    offeringExpectations.expectRenegotiationNeeded();
+    localStream.removeTrack(localAudioTrack);
+    localAudioTrack.dispose();
+    sdpLatch = new SdpObserverLatch();
+    offeringPC.createOffer(sdpLatch, offerConstraints);
+    assertTrue(sdpLatch.await());
+    offerSdp = sdpLatch.getSdp();
+
+    // Apply remote offer with just a video track to PC under test.
+    sdpLatch = new SdpObserverLatch();
+    pcUnderTest.setRemoteDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    // The remote stream should no longer have an audio track.
+    assertEquals(remoteStream.audioTracks.size(), 0);
+    assertEquals(remoteStream.videoTracks.size(), 1);
+
+    // Free the Java-land objects. Video capturer and source aren't owned by
+    // the PeerConnection and need to be disposed separately.
+    // TODO(deadbeef): Should all these events really occur on disposal?
+    // "Gathering complete" is especially odd since gathering never started.
+    // Note that this test isn't meant to test these events, but we must do
+    // this or otherwise it will crash.
+    offeringExpectations.expectIceConnectionChange(IceConnectionState.CLOSED);
+    offeringExpectations.expectSignalingChange(SignalingState.CLOSED);
+    offeringExpectations.expectIceGatheringChange(IceGatheringState.COMPLETE);
+    offeringPC.dispose();
+    expectations.expectIceConnectionChange(IceConnectionState.CLOSED);
+    expectations.expectSignalingChange(SignalingState.CLOSED);
+    expectations.expectIceGatheringChange(IceGatheringState.COMPLETE);
+    pcUnderTest.dispose();
+    videoCapturer.dispose();
+    videoSource.dispose();
+    factory.dispose();
+  }
+
   private static void negotiate(PeerConnection offeringPC,
       ObserverExpectations offeringExpectations, PeerConnection answeringPC,
       ObserverExpectations answeringExpectations) {
@@ -1229,7 +1359,7 @@ public class PeerConnectionTest {
 
     // Call getStats (old implementation) before shutting down PC.
     expectations.expectOldStatsCallback();
-    assertTrue(pc.getStats(expectations, null));
+    assertTrue(pc.getStats(expectations, null /* track */));
     assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
 
     // Call the new getStats implementation as well.
@@ -1245,7 +1375,7 @@ public class PeerConnectionTest {
     // Call getStats (old implementation) after calling close(). Should still
     // work.
     expectations.expectOldStatsCallback();
-    assertTrue(pc.getStats(expectations, null));
+    assertTrue(pc.getStats(expectations, null /* track */));
     assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
 
     System.out.println("FYI stats: ");

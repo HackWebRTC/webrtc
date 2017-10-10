@@ -78,6 +78,7 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$VideoCodecType");
   LoadClass(jni, "org/webrtc/MediaSource$State");
   LoadClass(jni, "org/webrtc/MediaStream");
+  LoadClass(jni, "org/webrtc/MediaStreamTrack");
   LoadClass(jni, "org/webrtc/MediaStreamTrack$MediaType");
   LoadClass(jni, "org/webrtc/MediaStreamTrack$State");
   LoadClass(jni, "org/webrtc/NetworkMonitor");
