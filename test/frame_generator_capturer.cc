@@ -97,6 +97,20 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::Create(int width,
   return capturer.release();
 }
 
+FrameGeneratorCapturer* FrameGeneratorCapturer::Create(int width,
+                                                       int height,
+                                                       int num_squares,
+                                                       int target_fps,
+                                                       Clock* clock) {
+  std::unique_ptr<FrameGeneratorCapturer> capturer(new FrameGeneratorCapturer(
+      clock, FrameGenerator::CreateSquareGenerator(width, height, num_squares),
+      target_fps));
+  if (!capturer->Init())
+    return nullptr;
+
+  return capturer.release();
+}
+
 FrameGeneratorCapturer* FrameGeneratorCapturer::CreateFromYuvFile(
     const std::string& file_name,
     size_t width,

@@ -28,14 +28,14 @@ namespace webrtc {
 namespace test {
 namespace {
 
-// SquareGenerator is a FrameGenerator that draws 10 randomly sized and colored
-// squares. Between each new generated frame, the squares are moved slightly
-// towards the lower right corner.
+// SquareGenerator is a FrameGenerator that draws a given amount of randomly
+// sized and colored squares. Between each new generated frame, the squares
+// are moved slightly towards the lower right corner.
 class SquareGenerator : public FrameGenerator {
  public:
-  SquareGenerator(int width, int height) {
+  SquareGenerator(int width, int height, int num_squares) {
     ChangeResolution(width, height);
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < num_squares; ++i) {
       squares_.emplace_back(new Square(width, height, i + 1));
     }
   }
@@ -397,7 +397,14 @@ bool FrameForwarder::has_sinks() const {
 std::unique_ptr<FrameGenerator> FrameGenerator::CreateSquareGenerator(
     int width,
     int height) {
-  return std::unique_ptr<FrameGenerator>(new SquareGenerator(width, height));
+  return std::unique_ptr<FrameGenerator>(
+      new SquareGenerator(width, height, 10));
+}
+
+std::unique_ptr<FrameGenerator>
+FrameGenerator::CreateSquareGenerator(int width, int height, int num_squares) {
+  return std::unique_ptr<FrameGenerator>(
+      new SquareGenerator(width, height, num_squares));
 }
 
 std::unique_ptr<FrameGenerator> FrameGenerator::CreateSlideGenerator(
