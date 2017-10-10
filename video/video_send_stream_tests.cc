@@ -1444,8 +1444,8 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
                           "bps",
                           false);
         if (total_bitrate_bps > kHighBitrateBps) {
-          rtp_rtcp_->SetREMBData(kRembBitrateBps,
-                                 std::vector<uint32_t>(1, header.ssrc));
+          rtp_rtcp_->SetRemb(kRembBitrateBps,
+                             std::vector<uint32_t>(1, header.ssrc));
           rtp_rtcp_->Process();
           bitrate_capped_ = true;
         } else if (bitrate_capped_ &&
@@ -1465,7 +1465,6 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
       config.outgoing_transport = feedback_transport_.get();
       config.retransmission_rate_limiter = &retranmission_rate_limiter_;
       rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
-      rtp_rtcp_->SetREMBStatus(true);
       rtp_rtcp_->SetRTCPStatus(RtcpMode::kReducedSize);
     }
 

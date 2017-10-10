@@ -2317,7 +2317,6 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
       rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
       rtp_rtcp_->SetRemoteSSRC((*receive_configs)[0].rtp.remote_ssrc);
       rtp_rtcp_->SetSSRC((*receive_configs)[0].rtp.local_ssrc);
-      rtp_rtcp_->SetREMBStatus(true);
       rtp_rtcp_->SetRTCPStatus(RtcpMode::kReducedSize);
     }
 
@@ -2338,7 +2337,7 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
               if (stats.send_bandwidth_bps >= remb_bitrate_bps_) {
                 state_ = kWaitForRemb;
                 remb_bitrate_bps_ /= 2;
-                rtp_rtcp_->SetREMBData(
+                rtp_rtcp_->SetRemb(
                     remb_bitrate_bps_,
                     std::vector<uint32_t>(&sender_ssrc_, &sender_ssrc_ + 1));
                 rtp_rtcp_->SendRTCP(kRtcpRr);
@@ -2349,7 +2348,7 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
               if (stats.send_bandwidth_bps == remb_bitrate_bps_) {
                 state_ = kWaitForSecondRampUp;
                 remb_bitrate_bps_ *= 2;
-                rtp_rtcp_->SetREMBData(
+                rtp_rtcp_->SetRemb(
                     remb_bitrate_bps_,
                     std::vector<uint32_t>(&sender_ssrc_, &sender_ssrc_ + 1));
                 rtp_rtcp_->SendRTCP(kRtcpRr);

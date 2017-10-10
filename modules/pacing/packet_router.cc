@@ -209,11 +209,9 @@ bool PacketRouter::SendRemb(uint32_t bitrate_bps,
     return false;
   }
 
-  // The Add* and Remove* methods above ensure that this (and only this) module
-  // has REMB enabled. REMB should be disabled on all other modules, because
-  // otherwise, they will send REMB with stale info.
-  RTC_DCHECK(active_remb_module_->REMB());
-  active_remb_module_->SetREMBData(bitrate_bps, ssrcs);
+  // The Add* and Remove* methods above ensure that REMB is disabled on all
+  // other modules, because otherwise, they will send REMB with stale info.
+  active_remb_module_->SetRemb(bitrate_bps, ssrcs);
 
   return true;
 }
@@ -266,8 +264,7 @@ void PacketRouter::MaybeRemoveRembModuleCandidate(RtpRtcp* candidate_module,
 
 void PacketRouter::UnsetActiveRembModule() {
   RTC_CHECK(active_remb_module_);
-  RTC_DCHECK(active_remb_module_->REMB());
-  active_remb_module_->SetREMBStatus(false);
+  active_remb_module_->UnsetRemb();
   active_remb_module_ = nullptr;
 }
 
@@ -277,27 +274,21 @@ void PacketRouter::DetermineActiveRembModule() {
   // When adding the first sender module, we should change the active REMB
   // module to be that. Otherwise, we remain with the current active module.
 
-  RtpRtcp* new_active_remb_module_;
+  RtpRtcp* new_active_remb_module;
 
   if (!sender_remb_candidates_.empty()) {
-    new_active_remb_module_ = sender_remb_candidates_.front();
+    new_active_remb_module = sender_remb_candidates_.front();
   } else if (!receiver_remb_candidates_.empty()) {
-    new_active_remb_module_ = receiver_remb_candidates_.front();
+    new_active_remb_module = receiver_remb_candidates_.front();
   } else {
-    new_active_remb_module_ = nullptr;
+    new_active_remb_module = nullptr;
   }
 
-  if (new_active_remb_module_ != active_remb_module_) {
-    if (active_remb_module_) {
-      UnsetActiveRembModule();
-    }
-    if (new_active_remb_module_) {
-      RTC_DCHECK(!new_active_remb_module_->REMB());
-      new_active_remb_module_->SetREMBStatus(true);
-    }
+  if (new_active_remb_module != active_remb_module_ && active_remb_module_) {
+    UnsetActiveRembModule();
   }
 
-  active_remb_module_ = new_active_remb_module_;
+  active_remb_module_ = new_active_remb_module;
 }
 
 }  // namespace webrtc

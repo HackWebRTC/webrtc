@@ -157,10 +157,9 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetRTCPVoIPMetrics, int32_t(const RTCPVoIPMetric* voip_metric));
   MOCK_METHOD1(SetRtcpXrRrtrStatus, void(bool enable));
   MOCK_CONST_METHOD0(RtcpXrRrtrStatus, bool());
-  MOCK_CONST_METHOD0(REMB, bool());
-  MOCK_METHOD1(SetREMBStatus, void(bool enable));
-  MOCK_METHOD2(SetREMBData,
+  MOCK_METHOD2(SetRemb,
                void(uint32_t bitrate, const std::vector<uint32_t>& ssrcs));
+  MOCK_METHOD0(UnsetRemb, void());
   MOCK_CONST_METHOD0(TMMBR, bool());
   MOCK_METHOD1(SetTMMBRStatus, void(bool enable));
   MOCK_METHOD1(OnBandwidthEstimateUpdate, void(uint16_t bandwidth_kbit));
