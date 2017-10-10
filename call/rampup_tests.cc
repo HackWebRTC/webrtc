@@ -584,15 +584,9 @@ TEST_F(RampUpTest, UpDownUpTransportSequenceNumberRtx) {
 
 // TODO(holmer): Tests which don't report perf stats should be moved to a
 // different executable since they per definition are not perf tests.
-// Crashes on Linux only, see webrtc:7919.
-#if defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-#define MAYBE_UpDownUpTransportSequenceNumberPacketLoss \
-    DISABLED_UpDownUpTransportSequenceNumberPacketLoss
-#else
-#define MAYBE_UpDownUpTransportSequenceNumberPacketLoss \
-    UpDownUpTransportSequenceNumberPacketLoss
-#endif
-TEST_F(RampUpTest, MAYBE_UpDownUpTransportSequenceNumberPacketLoss) {
+// This test is disabled because it crashes on Linux, and is flaky on other
+// platforms. See: crbug.com/webrtc/7919
+TEST_F(RampUpTest, DISABLED_UpDownUpTransportSequenceNumberPacketLoss) {
   std::vector<int> loss_rates = {20, 0, 0, 0};
   RampUpDownUpTester test(1, 0, 1, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,
