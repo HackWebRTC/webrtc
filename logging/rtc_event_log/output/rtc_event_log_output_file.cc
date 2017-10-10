@@ -55,8 +55,8 @@ RtcEventLogOutputFile::RtcEventLogOutputFile(rtc::PlatformFile file,
     // and needs to be closed.
     if (!rtc::ClosePlatformFile(file)) {
       LOG(LS_ERROR) << "Can't close file.";
-      file_.reset();
     }
+    file_.reset();
     return;
   }
 
