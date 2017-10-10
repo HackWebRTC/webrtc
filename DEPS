@@ -2,6 +2,10 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
+  # By default, we should check out everything needed to run on the main
+  # chromium waterfalls. More info at: crbug.com/570091.
+  'checkout_configuration': 'default',
+  'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
   'chromium_revision': 'c6405066cc384ad8a623c2e54fcee6d7ce3aebb9',
   'boringssl_git': 'https://boringssl.googlesource.com',
@@ -349,13 +353,28 @@ hooks = [
     ],
   },
   {
-    # Pull sanitizer-instrumented third-party libraries if requested via
-    # GYP_DEFINES.
-    # See src/third_party/instrumented_libraries/scripts/download_binaries.py.
-    # TODO(kjellander): Update comment when GYP is completely cleaned up.
-    'name': 'instrumented_libraries',
-    'pattern': '\\.sha1',
-    'action': ['python', 'src/third_party/instrumented_libraries/scripts/download_binaries.py'],
+    'name': 'msan_chained_origins',
+    'pattern': '.',
+    'condition': 'checkout_instrumented_libraries',
+    'action': [ 'python',
+                'src/third_party/depot_tools/download_from_google_storage.py',
+                "--no_resume",
+                "--no_auth",
+                "--bucket", "chromium-instrumented-libraries",
+                "-s", "src/third_party/instrumented_libraries/binaries/msan-chained-origins-trusty.tgz.sha1",
+              ],
+  },
+  {
+    'name': 'msan_no_origins',
+    'pattern': '.',
+    'condition': 'checkout_instrumented_libraries',
+    'action': [ 'python',
+                'src/third_party/depot_tools/download_from_google_storage.py',
+                "--no_resume",
+                "--no_auth",
+                "--bucket", "chromium-instrumented-libraries",
+                "-s", "src/third_party/instrumented_libraries/binaries/msan-no-origins-trusty.tgz.sha1",
+              ],
   },
   {
     # Download test resources, i.e. video and audio files from Google Storage.
