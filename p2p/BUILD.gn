@@ -148,6 +148,7 @@ if (rtc_include_tests) {
       "base/mockicetransport.h",
       "base/testrelayserver.h",
       "base/teststunserver.h",
+      "base/testturncustomizer.h",
       "base/testturnserver.h",
     ]
     deps = [

@@ -211,6 +211,9 @@ void TurnServer::OnInternalPacket(rtc::AsyncPacketSocket* socket,
     if (allocation) {
       allocation->HandleChannelData(data, size);
     }
+    if (stun_message_observer_ != nullptr) {
+      stun_message_observer_->ReceivedChannelData(data, size);
+    }
   }
 }
 
@@ -221,6 +224,10 @@ void TurnServer::HandleStunMessage(TurnServerConnection* conn, const char* data,
   if (!msg.Read(&buf) || (buf.Length() > 0)) {
     LOG(LS_WARNING) << "Received invalid STUN message";
     return;
+  }
+
+  if (stun_message_observer_ != nullptr) {
+    stun_message_observer_->ReceivedMessage(&msg);
   }
 
   // If it's a STUN binding request, handle that specially.

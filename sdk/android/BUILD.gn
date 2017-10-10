@@ -249,6 +249,7 @@ rtc_static_library("peerconnection_jni") {
     "src/jni/pc/sdpobserver_jni.h",
     "src/jni/pc/statsobserver_jni.cc",
     "src/jni/pc/statsobserver_jni.h",
+    "src/jni/pc/turncustomizer_jni.cc",
   ]
 
   configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
@@ -420,6 +421,7 @@ android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/StatsReport.java",
     "api/org/webrtc/SurfaceTextureHelper.java",
     "api/org/webrtc/SurfaceViewRenderer.java",
+    "api/org/webrtc/TurnCustomizer.java",
     "api/org/webrtc/VideoCapturer.java",
     "api/org/webrtc/VideoCodecInfo.java",
     "api/org/webrtc/VideoCodecStatus.java",

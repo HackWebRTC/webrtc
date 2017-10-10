@@ -17,6 +17,7 @@
 #include "api/mediastreamtrackproxy.h"
 #include "api/peerconnectionfactoryproxy.h"
 #include "api/peerconnectionproxy.h"
+#include "api/turncustomizer.h"
 #include "api/videosourceproxy.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/bind.h"
@@ -236,7 +237,8 @@ PeerConnectionFactory::CreatePeerConnection(
 
   if (!allocator) {
     allocator.reset(new cricket::BasicPortAllocator(
-        default_network_manager_.get(), default_socket_factory_.get()));
+        default_network_manager_.get(), default_socket_factory_.get(),
+        configuration.turn_customizer));
   }
   network_thread_->Invoke<void>(
       RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask,

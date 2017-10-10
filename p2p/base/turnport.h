@@ -26,6 +26,10 @@ class AsyncResolver;
 class SignalThread;
 }
 
+namespace webrtc {
+class TurnCustomizer;
+}
+
 namespace cricket {
 
 extern const char TURN_PORT_TYPE[];
@@ -52,9 +56,11 @@ class TurnPort : public Port {
                           const ProtocolAddress& server_address,
                           const RelayCredentials& credentials,
                           int server_priority,
-                          const std::string& origin) {
+                          const std::string& origin,
+                          webrtc::TurnCustomizer* customizer) {
     return new TurnPort(thread, factory, network, socket, username, password,
-                        server_address, credentials, server_priority, origin);
+                        server_address, credentials, server_priority, origin,
+                        customizer);
   }
 
   // Create a TURN port that will use a new socket, bound to |network| and
@@ -71,10 +77,12 @@ class TurnPort : public Port {
                           int server_priority,
                           const std::string& origin,
                           const std::vector<std::string>& tls_alpn_protocols,
-                          const std::vector<std::string>& tls_elliptic_curves) {
+                          const std::vector<std::string>& tls_elliptic_curves,
+                          webrtc::TurnCustomizer* customizer) {
     return new TurnPort(thread, factory, network, min_port, max_port, username,
                         password, server_address, credentials, server_priority,
-                        origin, tls_alpn_protocols, tls_elliptic_curves);
+                        origin, tls_alpn_protocols, tls_elliptic_curves,
+                        customizer);
   }
 
   virtual ~TurnPort();
@@ -184,7 +192,8 @@ class TurnPort : public Port {
            const ProtocolAddress& server_address,
            const RelayCredentials& credentials,
            int server_priority,
-           const std::string& origin);
+           const std::string& origin,
+           webrtc::TurnCustomizer* customizer);
 
   TurnPort(rtc::Thread* thread,
            rtc::PacketSocketFactory* factory,
@@ -198,7 +207,8 @@ class TurnPort : public Port {
            int server_priority,
            const std::string& origin,
            const std::vector<std::string>& tls_alpn_protocols,
-           const std::vector<std::string>& tls_elliptic_curves);
+           const std::vector<std::string>& tls_elliptic_curves,
+           webrtc::TurnCustomizer* customizer);
 
  private:
   enum {
@@ -275,6 +285,10 @@ class TurnPort : public Port {
   // Reconstruct the URL of the server which the candidate is gathered from.
   std::string ReconstructedServerUrl();
 
+  void TurnCustomizerMaybeModifyOutgoingStunMessage(StunMessage* message);
+  bool TurnCustomizerAllowChannelData(const void* data,
+                                      size_t size, bool payload);
+
   ProtocolAddress server_address_;
   TlsCertPolicy tls_cert_policy_ = TlsCertPolicy::TLS_CERT_POLICY_SECURE;
   std::vector<std::string> tls_alpn_protocols_;
@@ -304,6 +318,9 @@ class TurnPort : public Port {
   size_t allocate_mismatch_retries_;
 
   rtc::AsyncInvoker invoker_;
+
+  // Optional TurnCustomizer that can modify outgoing messages.
+  webrtc::TurnCustomizer *turn_customizer_ = nullptr;
 
   friend class TurnEntry;
   friend class TurnAllocateRequest;
