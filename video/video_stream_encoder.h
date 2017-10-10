@@ -50,7 +50,6 @@ class VideoBitrateAllocationObserver;
 //  Call Stop() when done.
 class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
                            public EncodedImageCallback,
-                           public VCMSendStatisticsCallback,
                            public AdaptationObserverInterface {
  public:
   // Interface for receiving encoded video frames and notifications about
@@ -160,10 +159,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
   // Implements VideoSinkInterface.
   void OnFrame(const VideoFrame& video_frame) override;
-
-  // Implements VideoSendStatisticsCallback.
-  void SendStatistics(uint32_t bit_rate,
-                      uint32_t frame_rate) override;
 
   void EncodeVideoFrame(const VideoFrame& frame,
                         int64_t time_when_posted_in_ms);
