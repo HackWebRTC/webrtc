@@ -25,7 +25,7 @@
 namespace webrtc {
 namespace {
 const float kEncodeTimeWeigthFactor = 0.5f;
-const size_t kMaxEncodedFrameMapSize = 150;
+const size_t kMaxEncodedFrameMapSize = 1000;
 const int64_t kMaxEncodedFrameWindowMs = 800;
 const int64_t kBucketSizeMs = 100;
 const size_t kBucketCount = 10;
