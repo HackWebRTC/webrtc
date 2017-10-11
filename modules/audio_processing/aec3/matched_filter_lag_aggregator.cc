@@ -27,7 +27,6 @@ void MatchedFilterLagAggregator::Reset() {
   histogram_.fill(0);
   histogram_data_.fill(0);
   histogram_data_index_ = 0;
-  filled_histogram_ = false;
 }
 
 rtc::Optional<size_t> MatchedFilterLagAggregator::Aggregate(
@@ -62,7 +61,6 @@ rtc::Optional<size_t> MatchedFilterLagAggregator::Aggregate(
 
     histogram_data_index_ =
         (histogram_data_index_ + 1) % histogram_data_.size();
-    filled_histogram_ = filled_histogram_ || histogram_data_index_ == 0;
 
     const int candidate =
         std::distance(histogram_.begin(),
