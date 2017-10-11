@@ -67,12 +67,10 @@ class StreamStatisticianImpl : public StreamStatistician {
   // Stats on received RTP packets.
   uint32_t jitter_q4_;
   uint32_t cumulative_loss_;
-  uint32_t jitter_q4_transmission_time_offset_;
 
   int64_t last_receive_time_ms_;
   NtpTime last_receive_time_ntp_;
   uint32_t last_received_timestamp_;
-  int32_t last_received_transmission_time_offset_;
   uint16_t received_seq_first_;
   uint16_t received_seq_max_;
   uint16_t received_seq_wraps_;

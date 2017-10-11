@@ -40,10 +40,8 @@ StreamStatisticianImpl::StreamStatisticianImpl(
       max_reordering_threshold_(kDefaultMaxReorderingThreshold),
       jitter_q4_(0),
       cumulative_loss_(0),
-      jitter_q4_transmission_time_offset_(0),
       last_receive_time_ms_(0),
       last_received_timestamp_(0),
-      last_received_transmission_time_offset_(0),
       received_seq_first_(0),
       received_seq_max_(0),
       received_seq_wraps_(0),
@@ -132,24 +130,6 @@ void StreamStatisticianImpl::UpdateJitter(const RTPHeader& header,
     // Note we calculate in Q4 to avoid using float.
     int32_t jitter_diff_q4 = (time_diff_samples << 4) - jitter_q4_;
     jitter_q4_ += ((jitter_diff_q4 + 8) >> 4);
-  }
-
-  // Extended jitter report, RFC 5450.
-  // Actual network jitter, excluding the source-introduced jitter.
-  int32_t time_diff_samples_ext =
-    (receive_time_rtp - last_receive_time_rtp) -
-    ((header.timestamp +
-      header.extension.transmissionTimeOffset) -
-     (last_received_timestamp_ +
-      last_received_transmission_time_offset_));
-
-  time_diff_samples_ext = std::abs(time_diff_samples_ext);
-
-  if (time_diff_samples_ext < 450000) {
-    int32_t jitter_diffQ4TransmissionTimeOffset =
-      (time_diff_samples_ext << 4) - jitter_q4_transmission_time_offset_;
-    jitter_q4_transmission_time_offset_ +=
-      ((jitter_diffQ4TransmissionTimeOffset + 8) >> 4);
   }
 }
 
