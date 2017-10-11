@@ -23,6 +23,7 @@
 #include "modules/audio_processing/beamformer/array_util.h"
 #include "modules/audio_processing/include/config.h"
 #include "rtc_base/arraysize.h"
+#include "rtc_base/callback.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/refcount.h"
@@ -43,6 +44,7 @@ class ProcessingConfig;
 
 class EchoCancellation;
 class EchoControlMobile;
+class EchoControl;
 class GainControl;
 class HighPassFilter;
 class LevelEstimator;
@@ -376,10 +378,15 @@ class AudioProcessing : public rtc::RefCountInterface {
   RTC_DEPRECATED
   static AudioProcessing* Create(const webrtc::Config& config,
                                  NonlinearBeamformer* beamformer);
+  static AudioProcessing* Create(
+      const webrtc::Config& config,
+      std::unique_ptr<PostProcessing> capture_post_processor,
+      NonlinearBeamformer* beamformer);
   // Allows passing in optional user-defined processing modules.
   static AudioProcessing* Create(
       const webrtc::Config& config,
       std::unique_ptr<PostProcessing> capture_post_processor,
+      rtc::Callback1<EchoControl*, int> echo_control_factory,
       NonlinearBeamformer* beamformer);
   ~AudioProcessing() override {}
 
