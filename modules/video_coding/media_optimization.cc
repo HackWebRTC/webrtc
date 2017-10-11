@@ -13,10 +13,26 @@
 #include <limits>
 
 #include "modules/video_coding/utility/frame_dropper.h"
+#include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace media_optimization {
+const int kMsPerSec = 1000;
+const int kBitsPerByte = 8;
+
+struct MediaOptimization::EncodedFrameSample {
+  EncodedFrameSample(size_t size_bytes,
+                     uint32_t timestamp,
+                     int64_t time_complete_ms)
+      : size_bytes(size_bytes),
+        timestamp(timestamp),
+        time_complete_ms(time_complete_ms) {}
+
+  size_t size_bytes;
+  uint32_t timestamp;
+  int64_t time_complete_ms;
+};
 
 MediaOptimization::MediaOptimization(Clock* clock)
     : clock_(clock),
@@ -24,7 +40,9 @@ MediaOptimization::MediaOptimization(Clock* clock)
       user_frame_rate_(0),
       frame_dropper_(new FrameDropper),
       video_target_bitrate_(0),
-      incoming_frame_rate_(0) {
+      incoming_frame_rate_(0),
+      encoded_frame_samples_(),
+      avg_sent_framerate_(0) {
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
 }
 
@@ -40,6 +58,7 @@ void MediaOptimization::Reset() {
   frame_dropper_->SetRates(0, 0);
   video_target_bitrate_ = 0;
   user_frame_rate_ = 0;
+  encoded_frame_samples_.clear();
 }
 
 void MediaOptimization::SetEncodingData(int32_t max_bit_rate,
@@ -98,14 +117,51 @@ uint32_t MediaOptimization::InputFrameRateInternal() {
   return framerate;
 }
 
+uint32_t MediaOptimization::SentFrameRate() {
+  rtc::CritScope lock(&crit_sect_);
+  return SentFrameRateInternal();
+}
+
+uint32_t MediaOptimization::SentFrameRateInternal() {
+  PurgeOldFrameSamples(clock_->TimeInMilliseconds() - kBitrateAverageWinMs);
+  UpdateSentFramerate();
+  return avg_sent_framerate_;
+}
+
+uint32_t MediaOptimization::SentBitRate() {
+  rtc::CritScope lock(&crit_sect_);
+  PurgeOldFrameSamples(clock_->TimeInMilliseconds() - kBitrateAverageWinMs);
+  size_t sent_bytes = 0;
+  for (auto& frame_sample : encoded_frame_samples_) {
+    sent_bytes += frame_sample.size_bytes;
+  }
+  return sent_bytes * kBitsPerByte * kMsPerSec / kBitrateAverageWinMs;
+}
+
 int32_t MediaOptimization::UpdateWithEncodedData(
     const EncodedImage& encoded_image) {
   size_t encoded_length = encoded_image._length;
+  uint32_t timestamp = encoded_image._timeStamp;
   rtc::CritScope lock(&crit_sect_);
+  const int64_t now_ms = clock_->TimeInMilliseconds();
+  PurgeOldFrameSamples(now_ms - kBitrateAverageWinMs);
+  if (encoded_frame_samples_.size() > 0 &&
+      encoded_frame_samples_.back().timestamp == timestamp) {
+    // Frames having the same timestamp are generated from the same input
+    // frame. We don't want to double count them, but only increment the
+    // size_bytes.
+    encoded_frame_samples_.back().size_bytes += encoded_length;
+    encoded_frame_samples_.back().time_complete_ms = now_ms;
+  } else {
+    encoded_frame_samples_.push_back(
+        EncodedFrameSample(encoded_length, timestamp, now_ms));
+  }
+  UpdateSentFramerate();
   if (encoded_length > 0) {
     const bool delta_frame = encoded_image._frameType != kVideoFrameKey;
     frame_dropper_->Fill(encoded_length, delta_frame);
   }
+
   return VCM_OK;
 }
 
@@ -134,6 +190,31 @@ void MediaOptimization::UpdateIncomingFrameRate() {
   }
   incoming_frame_times_[0] = now;
   ProcessIncomingFrameRate(now);
+}
+
+void MediaOptimization::PurgeOldFrameSamples(int64_t threshold_ms) {
+  while (!encoded_frame_samples_.empty()) {
+    if (encoded_frame_samples_.front().time_complete_ms < threshold_ms) {
+      encoded_frame_samples_.pop_front();
+    } else {
+      break;
+    }
+  }
+}
+
+void MediaOptimization::UpdateSentFramerate() {
+  if (encoded_frame_samples_.size() <= 1) {
+    avg_sent_framerate_ = encoded_frame_samples_.size();
+    return;
+  }
+  int denom = encoded_frame_samples_.back().timestamp -
+              encoded_frame_samples_.front().timestamp;
+  if (denom > 0) {
+    avg_sent_framerate_ =
+        (90000 * (encoded_frame_samples_.size() - 1) + denom / 2) / denom;
+  } else {
+    avg_sent_framerate_ = encoded_frame_samples_.size();
+  }
 }
 
 // Allowing VCM to keep track of incoming frame rate.

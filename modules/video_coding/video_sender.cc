@@ -52,15 +52,14 @@ VideoSender::VideoSender(Clock* clock,
 
 VideoSender::~VideoSender() {}
 
-// TODO(asapersson): Remove _sendStatsTimer and send_stats_callback_.
 void VideoSender::Process() {
   if (_sendStatsTimer.TimeUntilProcess() == 0) {
     // |_sendStatsTimer.Processed()| must be called. Otherwise
     // VideoSender::Process() will be called in an infinite loop.
     _sendStatsTimer.Processed();
     if (send_stats_callback_) {
-      uint32_t bitRate = 0;
-      uint32_t frameRate = 0;
+      uint32_t bitRate = _mediaOpt.SentBitRate();
+      uint32_t frameRate = _mediaOpt.SentFrameRate();
       send_stats_callback_->SendStatistics(bitRate, frameRate);
     }
   }

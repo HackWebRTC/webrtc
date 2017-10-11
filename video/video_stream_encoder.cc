@@ -375,13 +375,12 @@ class VideoStreamEncoder::VideoSourceProxy {
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoSourceProxy);
 };
 
-VideoStreamEncoder::VideoStreamEncoder(
-    uint32_t number_of_cores,
-    SendStatisticsProxy* stats_proxy,
-    const VideoSendStream::Config::EncoderSettings& settings,
-    rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
-    EncodedFrameObserver* encoder_timing,
-    std::unique_ptr<OveruseFrameDetector> overuse_detector)
+VideoStreamEncoder::VideoStreamEncoder(uint32_t number_of_cores,
+                       SendStatisticsProxy* stats_proxy,
+                       const VideoSendStream::Config::EncoderSettings& settings,
+                       rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
+                       EncodedFrameObserver* encoder_timing,
+                       std::unique_ptr<OveruseFrameDetector> overuse_detector)
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
       initial_rampup_(0),
@@ -389,7 +388,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       sink_(nullptr),
       settings_(settings),
       codec_type_(PayloadStringToCodecType(settings.payload_name)),
-      video_sender_(Clock::GetRealTimeClock(), this, nullptr),
+      video_sender_(Clock::GetRealTimeClock(), this, this),
       overuse_detector_(
           overuse_detector.get()
               ? overuse_detector.release()
@@ -867,6 +866,12 @@ void VideoStreamEncoder::OnDroppedFrame() {
     if (quality_scaler_)
       quality_scaler_->ReportDroppedFrame();
   });
+}
+
+void VideoStreamEncoder::SendStatistics(uint32_t bit_rate,
+                                        uint32_t frame_rate) {
+  RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
+  stats_proxy_->OnEncoderStatsUpdate(frame_rate, bit_rate);
 }
 
 void VideoStreamEncoder::OnReceivedIntraFrameRequest(size_t stream_index) {

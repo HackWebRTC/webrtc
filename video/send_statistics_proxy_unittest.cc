@@ -185,6 +185,17 @@ TEST_F(SendStatisticsProxyTest, RtcpStatistics) {
   ExpectEqual(expected_, stats);
 }
 
+TEST_F(SendStatisticsProxyTest, EncodedBitrateAndFramerate) {
+  int media_bitrate_bps = 500;
+  int encode_fps = 29;
+
+  statistics_proxy_->OnEncoderStatsUpdate(encode_fps, media_bitrate_bps);
+
+  VideoSendStream::Stats stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(media_bitrate_bps, stats.media_bitrate_bps);
+  EXPECT_EQ(encode_fps, stats.encode_frame_rate);
+}
+
 TEST_F(SendStatisticsProxyTest, Suspended) {
   // Verify that the value is false by default.
   EXPECT_FALSE(statistics_proxy_->GetStats().suspended);
@@ -808,36 +819,13 @@ TEST_F(SendStatisticsProxyTest, InputResolutionHistogramsAreUpdated) {
 }
 
 TEST_F(SendStatisticsProxyTest, SentResolutionHistogramsAreUpdated) {
-  const int64_t kMaxEncodedFrameWindowMs = 800;
-  const int kFps = 20;
-  const int kNumFramesPerWindow = kFps * kMaxEncodedFrameWindowMs / 1000;
-  const int kMinSamples =  // Sample added when removed from EncodedFrameMap.
-      SendStatisticsProxy::kMinRequiredMetricsSamples + kNumFramesPerWindow;
   EncodedImage encoded_image;
-
-  // Not enough samples, stats should not be updated.
-  for (int i = 0; i < kMinSamples - 1; ++i) {
-    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    ++encoded_image._timeStamp;
+  encoded_image._encodedWidth = kWidth;
+  encoded_image._encodedHeight = kHeight;
+  for (int i = 0; i <= SendStatisticsProxy::kMinRequiredMetricsSamples; ++i) {
+    encoded_image._timeStamp = i + 1;
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
   }
-  SetUp();  // Reset stats proxy also causes histograms to be reported.
-  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.SentWidthInPixels"));
-  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.SentHeightInPixels"));
-
-  // Enough samples, max resolution per frame should be reported.
-  encoded_image._timeStamp = 0xfffffff0;  // Will wrap.
-  for (int i = 0; i < kMinSamples; ++i) {
-    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    ++encoded_image._timeStamp;
-    encoded_image._encodedWidth = kWidth;
-    encoded_image._encodedHeight = kHeight;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-    encoded_image._encodedWidth = kWidth / 2;
-    encoded_image._encodedHeight = kHeight / 2;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-  }
-
   statistics_proxy_.reset();
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.SentWidthInPixels"));
   EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.SentWidthInPixels", kWidth));
@@ -863,11 +851,9 @@ TEST_F(SendStatisticsProxyTest, SentFpsHistogramIsUpdated) {
   const int kFps = 20;
   const int kMinPeriodicSamples = 6;
   int frames = kMinPeriodicSamples * kFpsPeriodicIntervalMs * kFps / 1000 + 1;
-  for (int i = 0; i < frames; ++i) {
+  for (int i = 0; i <= frames; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    ++encoded_image._timeStamp;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-    // Frame with same timestamp should not be counted.
+    encoded_image._timeStamp = i + 1;
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
   }
   statistics_proxy_.reset();
@@ -904,7 +890,7 @@ TEST_F(SendStatisticsProxyTest, SentFpsHistogramExcludesSuspendedTime) {
   const int kSuspendTimeMs = 10000;
   const int kMinPeriodicSamples = 6;
   int frames = kMinPeriodicSamples * kFpsPeriodicIntervalMs * kFps / 1000;
-  for (int i = 0; i < frames; ++i) {
+  for (int i = 0; i <= frames; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
     encoded_image._timeStamp = i + 1;
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
@@ -913,7 +899,7 @@ TEST_F(SendStatisticsProxyTest, SentFpsHistogramExcludesSuspendedTime) {
   statistics_proxy_->OnSuspendChange(true);
   fake_clock_.AdvanceTimeMilliseconds(kSuspendTimeMs);
 
-  for (int i = 0; i < frames; ++i) {
+  for (int i = 0; i <= frames; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
     encoded_image._timeStamp = i + 1;
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
