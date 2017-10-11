@@ -21,7 +21,8 @@
 DEFINE_string(plot_profile,
               "default",
               "A profile that selects a certain subset of the plots. Currently "
-              "defined profiles are \"all\", \"none\" and \"default\"");
+              "defined profiles are \"all\", \"none\", \"sendside_bwe\","
+              "\"receiveside_bwe\" and \"default\"");
 
 DEFINE_bool(plot_incoming_packet_sizes,
             false,
@@ -108,6 +109,7 @@ DEFINE_bool(plot_audio_encoder_num_channels,
 DEFINE_bool(plot_audio_jitter_buffer,
             false,
             "Plot the audio jitter buffer delay profile.");
+
 DEFINE_string(
     force_fieldtrials,
     "",
@@ -143,6 +145,23 @@ int main(int argc, char* argv[]) {
     SetAllPlotFlags(true);
   } else if (strcmp(FLAG_plot_profile, "none") == 0) {
     SetAllPlotFlags(false);
+  } else if (strcmp(FLAG_plot_profile, "sendside_bwe") == 0) {
+    SetAllPlotFlags(false);
+    FLAG_plot_outgoing_packet_sizes = true;
+    FLAG_plot_outgoing_bitrate = true;
+    FLAG_plot_outgoing_stream_bitrate = true;
+    FLAG_plot_simulated_sendside_bwe = true;
+    FLAG_plot_network_delay_feedback = true;
+    FLAG_plot_fraction_loss_feedback = true;
+  } else if (strcmp(FLAG_plot_profile, "receiveside_bwe") == 0) {
+    SetAllPlotFlags(false);
+    FLAG_plot_incoming_packet_sizes = true;
+    FLAG_plot_incoming_delay_delta = true;
+    FLAG_plot_incoming_delay = true;
+    FLAG_plot_incoming_loss_rate = true;
+    FLAG_plot_incoming_bitrate = true;
+    FLAG_plot_incoming_stream_bitrate = true;
+    FLAG_plot_simulated_receiveside_bwe = true;
   } else if (strcmp(FLAG_plot_profile, "default") == 0) {
     // Do nothing.
   } else {
