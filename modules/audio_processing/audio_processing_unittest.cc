@@ -308,6 +308,19 @@ void ClearTempFiles() {
     remove(kv.second.c_str());
 }
 
+// Only remove "out" files. Keep "ref" files.
+void ClearTempOutFiles() {
+  for (auto it = temp_filenames.begin(); it != temp_filenames.end();) {
+    const std::string& filename = it->first;
+    if (filename.substr(0, 3).compare("out") == 0) {
+      remove(it->second.c_str());
+      temp_filenames.erase(it++);
+    } else {
+      it++;
+    }
+  }
+}
+
 void OpenFileAndReadMessage(const std::string& filename, MessageLite* msg) {
   FILE* file = fopen(filename.c_str(), "rb");
   ASSERT_TRUE(file != NULL);
@@ -2420,6 +2433,11 @@ class AudioProcessingTest
         }
       }
     }
+  }
+
+  void TearDown() {
+    // Remove "out" files after each test.
+    ClearTempOutFiles();
   }
 
   static void TearDownTestCase() {
