@@ -32,13 +32,13 @@ void MatchedFilterLagAggregator::Reset() {
 
 rtc::Optional<size_t> MatchedFilterLagAggregator::Aggregate(
     rtc::ArrayView<const MatchedFilter::LagEstimate> lag_estimates) {
-  // hoose the strongest lag estimate as the best one.
+  // Choose the strongest lag estimate as the best one.
   float best_accuracy = 0.f;
   int best_lag_estimate_index = -1;
   for (size_t k = 0; k < lag_estimates.size(); ++k) {
     if (lag_estimates[k].updated && lag_estimates[k].reliable) {
       if (lag_estimates[k].accuracy > best_accuracy) {
-        best_accuracy = std::max(0.f, lag_estimates[k].accuracy);
+        best_accuracy = lag_estimates[k].accuracy;
         best_lag_estimate_index = static_cast<int>(k);
       }
     }
