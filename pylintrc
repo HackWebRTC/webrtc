@@ -27,7 +27,6 @@ disable=
   exec-used,
   fixme,
   import-error,
-  invalid-name,
   missing-docstring,
   no-init,
   no-member,
