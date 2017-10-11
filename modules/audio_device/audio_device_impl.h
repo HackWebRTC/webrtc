@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H_
-#define AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H_
+#ifndef MODULES_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H_
+#define MODULES_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H_
 
 #if defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 
@@ -160,37 +160,33 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   int GetRecordAudioParameters(AudioParameters* params) const override;
 #endif  // WEBRTC_IOS
 
-  int32_t Id() { return _id; }
+  int32_t Id() const { return id_; }
 #if defined(WEBRTC_ANDROID)
   // Only use this acccessor for test purposes on Android.
   AudioManager* GetAndroidAudioManagerForTest() {
-    return _audioManagerAndroid.get();
+    return audio_manager_android_.get();
   }
 #endif
-  AudioDeviceBuffer* GetAudioDeviceBuffer() { return &_audioDeviceBuffer; }
+  AudioDeviceBuffer* GetAudioDeviceBuffer() { return &audio_device_buffer_; }
 
  private:
   PlatformType Platform() const;
   AudioLayer PlatformAudioLayer() const;
 
-  rtc::CriticalSection _critSect;
-  rtc::CriticalSection _critSectAudioCb;
-
-  AudioDeviceGeneric* _ptrAudioDevice;
-
-  AudioDeviceBuffer _audioDeviceBuffer;
+  const int32_t id_;
+  AudioLayer audio_layer_;
+  PlatformType platform_type_ = kPlatformNotSupported;
+  bool initialized_ = false;
 #if defined(WEBRTC_ANDROID)
-  std::unique_ptr<AudioManager> _audioManagerAndroid;
+  // Should be declared first to ensure that it outlives other resources.
+  std::unique_ptr<AudioManager> audio_manager_android_;
 #endif
-  int32_t _id;
-  AudioLayer _platformAudioLayer;
-  PlatformType _platformType;
-  bool _initialized;
-  mutable ErrorCode _lastError;
+  AudioDeviceBuffer audio_device_buffer_;
+  std::unique_ptr<AudioDeviceGeneric> audio_device_;
 };
 
 }  // namespace webrtc
 
 #endif  // defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 
-#endif  // MODULES_INTERFACE_AUDIO_DEVICE_IMPL_H_
+#endif  // MODULES_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H_

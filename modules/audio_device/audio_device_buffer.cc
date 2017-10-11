@@ -68,6 +68,7 @@ AudioDeviceBuffer::AudioDeviceBuffer()
   phase_ = 0.0;
   LOG(WARNING) << "AUDIO_DEVICE_PLAYS_SINUS_TONE is defined!";
 #endif
+  WebRtcSpl_Init();
   playout_thread_checker_.DetachFromThread();
   recording_thread_checker_.DetachFromThread();
 }
