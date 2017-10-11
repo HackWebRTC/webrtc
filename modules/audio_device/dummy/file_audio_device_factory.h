@@ -23,7 +23,7 @@ class FileAudioDevice;
 // intended for test tools which use the audio device module.
 class FileAudioDeviceFactory {
  public:
-  static FileAudioDevice* CreateFileAudioDevice(const int32_t id);
+  static FileAudioDevice* CreateFileAudioDevice();
 
   // The input file must be a readable 48k stereo raw file. The output
   // file must be writable. The strings will be copied.

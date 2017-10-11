@@ -41,7 +41,7 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   int32_t CreatePlatformSpecificObjects();
   int32_t AttachAudioBuffer();
 
-  AudioDeviceModuleImpl(const int32_t id, const AudioLayer audioLayer);
+  AudioDeviceModuleImpl(const AudioLayer audioLayer);
   ~AudioDeviceModuleImpl() override;
 
   // Retrieve the currently utilized audio layer
@@ -160,7 +160,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   int GetRecordAudioParameters(AudioParameters* params) const override;
 #endif  // WEBRTC_IOS
 
-  int32_t Id() const { return id_; }
 #if defined(WEBRTC_ANDROID)
   // Only use this acccessor for test purposes on Android.
   AudioManager* GetAndroidAudioManagerForTest() {
@@ -173,7 +172,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   PlatformType Platform() const;
   AudioLayer PlatformAudioLayer() const;
 
-  const int32_t id_;
   AudioLayer audio_layer_;
   PlatformType platform_type_ = kPlatformNotSupported;
   bool initialized_ = false;

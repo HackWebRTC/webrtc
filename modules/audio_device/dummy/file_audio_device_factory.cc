@@ -22,8 +22,7 @@ bool FileAudioDeviceFactory::_isConfigured = false;
 char FileAudioDeviceFactory::_inputAudioFilename[MAX_FILENAME_LEN] = "";
 char FileAudioDeviceFactory::_outputAudioFilename[MAX_FILENAME_LEN] = "";
 
-FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice(
-    const int32_t id) {
+FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice() {
   // Bail out here if the files haven't been set explicitly.
   // audio_device_impl.cc should then fall back to dummy audio.
   if (!_isConfigured) {
@@ -33,7 +32,7 @@ FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice(
 
     return nullptr;
   }
-  return new FileAudioDevice(id, _inputAudioFilename, _outputAudioFilename);
+  return new FileAudioDevice(_inputAudioFilename, _outputAudioFilename);
 }
 
 void FileAudioDeviceFactory::SetFilenamesToUse(

@@ -76,7 +76,6 @@ class AudioDeviceBuffer {
   AudioDeviceBuffer();
   virtual ~AudioDeviceBuffer();
 
-  void SetId(uint32_t id) {};
   int32_t RegisterAudioCallback(AudioTransport* audio_callback);
 
   void StartPlayout();

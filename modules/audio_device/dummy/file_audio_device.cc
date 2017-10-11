@@ -25,8 +25,7 @@ const size_t kPlayoutBufferSize =
 const size_t kRecordingBufferSize =
     kRecordingFixedSampleRate / 100 * kRecordingNumChannels * 2;
 
-FileAudioDevice::FileAudioDevice(const int32_t id,
-                                 const char* inputFilename,
+FileAudioDevice::FileAudioDevice(const char* inputFilename,
                                  const char* outputFilename):
     _ptrAudioBuffer(NULL),
     _recordingBuffer(NULL),
