@@ -25,8 +25,7 @@ class ApmDataDumper;
 // reliable combined lag estimate.
 class MatchedFilterLagAggregator {
  public:
-  MatchedFilterLagAggregator(ApmDataDumper* data_dumper,
-                             size_t num_lag_estimates);
+  explicit MatchedFilterLagAggregator(ApmDataDumper* data_dumper);
   ~MatchedFilterLagAggregator();
 
   // Resets the aggregator.
@@ -38,9 +37,10 @@ class MatchedFilterLagAggregator {
 
  private:
   ApmDataDumper* const data_dumper_;
-  std::vector<size_t> lag_updates_in_a_row_;
-  size_t candidate_ = 0;
-  size_t candidate_counter_ = 0;
+  std::array<int, 1664> histogram_;
+  std::array<int, 250> histogram_data_;
+  int histogram_data_index_ = 0;
+  bool filled_histogram_ = false;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MatchedFilterLagAggregator);
 };

@@ -34,8 +34,7 @@ EchoPathDelayEstimator::EchoPathDelayEstimator(
                       kNumMatchedFilters,
                       kMatchedFilterAlignmentShiftSizeSubBlocks,
                       config.param.render_levels.poor_excitation_render_limit),
-      matched_filter_lag_aggregator_(data_dumper_,
-                                     matched_filter_.NumLagEstimates()) {
+      matched_filter_lag_aggregator_(data_dumper_) {
   RTC_DCHECK(data_dumper);
 }
 

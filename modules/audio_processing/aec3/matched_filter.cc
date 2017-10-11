@@ -368,7 +368,7 @@ void MatchedFilter::Update(const DownsampledRenderBuffer& render_buffer,
             [](float a, float b) -> bool { return a * a < b * b; }));
 
     // Update the lag estimates for the matched filter.
-    const float kMatchingFilterThreshold = 0.1f;
+    const float kMatchingFilterThreshold = 0.2f;
     lag_estimates_[n] = LagEstimate(
         error_sum_anchor - error_sum,
         (lag_estimate > 2 && lag_estimate < (filters_[n].size() - 10) &&
