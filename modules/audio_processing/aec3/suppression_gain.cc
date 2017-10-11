@@ -209,7 +209,7 @@ void GainToNoAudibleEcho(
       (*gain)[k] = 1.f;
     } else {
       RTC_DCHECK_LT(0.f, unity_gain_masker);
-      (*gain)[k] = std::max(0.f, (1.f - echo[k] / unity_gain_masker) *
+      (*gain)[k] = std::max(0.f, (1.f - 5.f * echo[k] / unity_gain_masker) *
                                      one_by_one_minus_nearend_masking_margin);
       (*gain)[k] =
           std::max(masker_margin * masker[k] * one_by_echo[k], (*gain)[k]);
@@ -339,6 +339,12 @@ void SuppressionGain::LowerBandGain(
   UpdateMaxGainIncrease(config_, no_saturation_counter_, low_noise_render,
                         linear_echo_estimate, last_echo_, echo, last_gain_,
                         *gain, &gain_increase_);
+
+  // Adjust gain dynamics.
+  const float gain_bound =
+      std::max(0.001f, *std::min_element(gain->begin(), gain->end()) * 10000.f);
+  std::for_each(gain->begin(), gain->end(),
+                [gain_bound](float& a) { a = std::min(a, gain_bound); });
 
   // Store data required for the gain computation of the next block.
   std::copy(echo.begin(), echo.end(), last_echo_.begin());
