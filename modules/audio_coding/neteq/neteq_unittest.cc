@@ -52,11 +52,16 @@ namespace webrtc {
 namespace {
 
 const std::string& PlatformChecksum(const std::string& checksum_general,
-                                    const std::string& checksum_android,
+                                    const std::string& checksum_android_32,
+                                    const std::string& checksum_android_64,
                                     const std::string& checksum_win_32,
                                     const std::string& checksum_win_64) {
 #if defined(WEBRTC_ANDROID)
-    return checksum_android;
+  #ifdef WEBRTC_ARCH_64_BITS
+    return checksum_android_64;
+  #else
+    return checksum_android_32;
+  #endif  // WEBRTC_ARCH_64_BITS
 #elif defined(WEBRTC_WIN)
   #ifdef WEBRTC_ARCH_64_BITS
     return checksum_win_64;
@@ -457,18 +462,21 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
   const std::string output_checksum = PlatformChecksum(
       "09fa7646e2ad032a0b156177b95f09012430f81f",
       "1c64eb8b55ce8878676c6a1e6ddd78f48de0668b",
+      "not used",
       "09fa7646e2ad032a0b156177b95f09012430f81f",
       "759fef89a5de52bd17e733dc255c671ce86be909");
 
   const std::string network_stats_checksum =
       PlatformChecksum("5b4262ca328e5f066af5d34f3380521583dd20de",
                        "80235b6d727281203acb63b98f9a9e85d95f7ec0",
+                       "not used",
                        "5b4262ca328e5f066af5d34f3380521583dd20de",
                        "5b4262ca328e5f066af5d34f3380521583dd20de");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
       "b8880bf9fed2487efbddcb8d94b9937a29ae521d",
       "f3f7b3d3e71d7e635240b5373b57df6a7e4ce9d4",
+      "not used",
       "b8880bf9fed2487efbddcb8d94b9937a29ae521d",
       "b8880bf9fed2487efbddcb8d94b9937a29ae521d");
 
@@ -479,7 +487,7 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
                    FLAG_gen_ref);
 }
 
-#if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID) &&             \
+#if !defined(WEBRTC_IOS) &&                                         \
     defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) &&                      \
     defined(WEBRTC_CODEC_OPUS)
 #define MAYBE_TestOpusBitExactness TestOpusBitExactness
@@ -492,17 +500,20 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
 
   const std::string output_checksum = PlatformChecksum(
       "721e1e0c6effe4b2401536a4eef11512c9fb709c",
-      "721e1e0c6effe4b2401536a4eef11512c9fb709c",
+      "2e3c3e451532967e981fbc39b8cfb55e1df1ff7f",
+      "f403940a1936bff040d1d158624f69bdccbc3423",
       "721e1e0c6effe4b2401536a4eef11512c9fb709c",
       "721e1e0c6effe4b2401536a4eef11512c9fb709c");
 
   const std::string network_stats_checksum =
       PlatformChecksum("4e749c46e2611877120ac7a20cbbe555cfbd70ea",
-                       "4e749c46e2611877120ac7a20cbbe555cfbd70ea",
+                       "1edee6d07e0005327c32a77f9b3c0c1f03780e9f",
+                       "ff806c574f82a089dec4c37ea1224b1eb0822d23",
                        "4e749c46e2611877120ac7a20cbbe555cfbd70ea",
                        "4e749c46e2611877120ac7a20cbbe555cfbd70ea");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
+      "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
