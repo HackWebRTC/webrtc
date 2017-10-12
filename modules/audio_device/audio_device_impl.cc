@@ -208,22 +208,9 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
     LOG(INFO) << "Attempting to use Linux PulseAudio APIs...";
     // Linux PulseAudio implementation.
     audio_device_.reset(new AudioDeviceLinuxPulse());
-    if (audio_device_->Init() == AudioDeviceGeneric::InitStatus::OK) {
-      LOG(INFO) << "Linux PulseAudio APIs will be utilized";
-    } else {
-      LOG(WARNING) << "Failed to initialize Linux PulseAudio "
-                      "implementation.";
-      audio_device_.reset(nullptr);
-#endif
-#if defined(LINUX_ALSA)
-      // Revert to Linux ALSA implementation instead.
-      audio_device_.reset(new AudioDeviceLinuxALSA());
-      audio_layer_ = kLinuxAlsaAudio;
-      LOG(WARNING) << "Linux PulseAudio is not supported => ALSA APIs will "
-                      "be utilized instead.";
+    LOG(INFO) << "Linux PulseAudio APIs will be utilized";
 #endif
 #if defined(LINUX_PULSE)
-    }
 #endif
   } else if (audio_layer == kLinuxAlsaAudio) {
 #if defined(LINUX_ALSA)

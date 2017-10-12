@@ -466,12 +466,16 @@ class AudioDeviceTest : public ::testing::Test {
     AudioDeviceModule::AudioLayer audio_layer;
     int got_platform_audio_layer =
         audio_device_->ActiveAudioLayer(&audio_layer);
-    if (got_platform_audio_layer != 0 ||
-        audio_layer == AudioDeviceModule::kLinuxAlsaAudio) {
+    // First, ensure that a valid audio layer can be activated.
+    if (got_platform_audio_layer != 0) {
       requirements_satisfied_ = false;
     }
+    // Next, verify that the ADM can be initialized.
     if (requirements_satisfied_) {
-      EXPECT_EQ(0, audio_device_->Init());
+      requirements_satisfied_ = (audio_device_->Init() == 0);
+    }
+    // Finally, ensure that at least one valid device exists in each direction.
+    if (requirements_satisfied_) {
       const int16_t num_playout_devices = audio_device_->PlayoutDevices();
       const int16_t num_record_devices = audio_device_->RecordingDevices();
       requirements_satisfied_ =

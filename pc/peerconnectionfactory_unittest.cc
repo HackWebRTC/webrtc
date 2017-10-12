@@ -16,6 +16,7 @@
 #include "media/base/fakevideocapturer.h"
 #include "p2p/base/fakeportallocator.h"
 #include "pc/peerconnectionfactory.h"
+#include "pc/test/fakeaudiocapturemodule.h"
 #include "rtc_base/gunit.h"
 
 #ifdef WEBRTC_ANDROID
@@ -85,9 +86,12 @@ class PeerConnectionFactoryTest : public testing::Test {
 #ifdef WEBRTC_ANDROID
     webrtc::InitializeAndroidObjects();
 #endif
+    // Use fake audio device module since we're only testing the interface
+    // level, and using a real one could make tests flaky e.g. when run in
+    // parallel.
     factory_ = webrtc::CreatePeerConnectionFactory(
-        rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
-        nullptr, nullptr, nullptr);
+        rtc::Thread::Current(), rtc::Thread::Current(),
+        FakeAudioCaptureModule::Create(), nullptr, nullptr);
 
     ASSERT_TRUE(factory_.get() != NULL);
     port_allocator_.reset(
@@ -127,7 +131,11 @@ class PeerConnectionFactoryTest : public testing::Test {
 
 // Verify creation of PeerConnection using internal ADM, video factory and
 // internal libjingle threads.
-TEST(PeerConnectionFactoryTestInternal, CreatePCUsingInternalModules) {
+// TODO(henrika): disabling this test since relying on real audio can result in
+// flaky tests and focus on details that are out of scope for you might expect
+// for a PeerConnectionFactory unit test.
+// See https://bugs.chromium.org/p/webrtc/issues/detail?id=7806 for details.
+TEST(PeerConnectionFactoryTestInternal, DISABLED_CreatePCUsingInternalModules) {
 #ifdef WEBRTC_ANDROID
   webrtc::InitializeAndroidObjects();
 #endif
