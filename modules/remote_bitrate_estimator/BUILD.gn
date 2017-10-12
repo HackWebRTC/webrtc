@@ -246,11 +246,6 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//testing/gtest",
     ]
-    data = [
-      "//resources/sprint-uplink.rx",
-      "//resources/verizon4g-downlink.rx",
-      "//resources/google-wifi-3mbps.rx",
-    ]
 
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
