@@ -23,7 +23,6 @@
 #include "modules/audio_processing/beamformer/array_util.h"
 #include "modules/audio_processing/include/config.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/callback.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/refcount.h"
@@ -44,7 +43,7 @@ class ProcessingConfig;
 
 class EchoCancellation;
 class EchoControlMobile;
-class EchoControl;
+class EchoControlFactory;
 class GainControl;
 class HighPassFilter;
 class LevelEstimator;
@@ -386,7 +385,7 @@ class AudioProcessing : public rtc::RefCountInterface {
   static AudioProcessing* Create(
       const webrtc::Config& config,
       std::unique_ptr<PostProcessing> capture_post_processor,
-      rtc::Callback1<EchoControl*, int> echo_control_factory,
+      std::unique_ptr<EchoControlFactory> echo_control_factory,
       NonlinearBeamformer* beamformer);
   ~AudioProcessing() override {}
 
@@ -969,6 +968,13 @@ class EchoControl {
   virtual void ProcessCapture(AudioBuffer* capture, bool echo_path_change) = 0;
 
   virtual ~EchoControl() {}
+};
+
+// Interface for a factory that creates EchoControllers.
+class EchoControlFactory {
+ public:
+  virtual std::unique_ptr<EchoControl> Create(int sample_rate_hz) = 0;
+  virtual ~EchoControlFactory() = default;
 };
 
 // The automatic gain control (AGC) component brings the signal to an

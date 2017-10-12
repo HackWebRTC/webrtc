@@ -1316,8 +1316,8 @@ TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
   config.Set<Beamforming>(new Beamforming(true, geometry));
   testing::NiceMock<MockNonlinearBeamformer>* beamformer =
       new testing::NiceMock<MockNonlinearBeamformer>(geometry, 1u);
-  std::unique_ptr<AudioProcessing> apm(AudioProcessing::Create(
-      config, nullptr, rtc::Callback1<EchoControl*, int>(), beamformer));
+  std::unique_ptr<AudioProcessing> apm(
+      AudioProcessing::Create(config, nullptr, nullptr, beamformer));
   EXPECT_EQ(kNoErr, apm->gain_control()->Enable(true));
   ChannelBuffer<float> src_buf(kSamplesPerChannel, kNumInputChannels);
   ChannelBuffer<float> dest_buf(kSamplesPerChannel, kNumOutputChannels);
@@ -2915,9 +2915,8 @@ TEST(ApmConfiguration, EnablePostProcessing) {
       new testing::NiceMock<test::MockPostProcessing>();
   auto mock_post_processor =
       std::unique_ptr<PostProcessing>(mock_post_processor_ptr);
-  rtc::scoped_refptr<AudioProcessing> apm =
-      AudioProcessing::Create(webrtc_config, std::move(mock_post_processor),
-                              rtc::Callback1<EchoControl*, int>(), nullptr);
+  rtc::scoped_refptr<AudioProcessing> apm = AudioProcessing::Create(
+      webrtc_config, std::move(mock_post_processor), nullptr, nullptr);
 
   AudioFrame audio;
   audio.num_channels_ = 1;
@@ -2927,4 +2926,31 @@ TEST(ApmConfiguration, EnablePostProcessing) {
   apm->ProcessStream(&audio);
 }
 
+class MyEchoControlFactory : public EchoControlFactory {
+ public:
+  std::unique_ptr<EchoControl> Create(int sample_rate_hz) {
+    auto ec = new test::MockEchoControl();
+    EXPECT_CALL(*ec, AnalyzeRender(testing::_)).Times(1);
+    EXPECT_CALL(*ec, AnalyzeCapture(testing::_)).Times(2);
+    EXPECT_CALL(*ec, ProcessCapture(testing::_, testing::_)).Times(2);
+    return std::unique_ptr<EchoControl>(ec);
+  }
+};
+
+TEST(ApmConfiguration, EchoControlInjection) {
+  // Verify that apm uses an injected echo controller if one is provided.
+  webrtc::Config webrtc_config;
+  std::unique_ptr<EchoControlFactory> echo_control_factory(
+      new MyEchoControlFactory());
+
+  rtc::scoped_refptr<AudioProcessing> apm = AudioProcessing::Create(
+      webrtc_config, nullptr, std::move(echo_control_factory), nullptr);
+
+  AudioFrame audio;
+  audio.num_channels_ = 1;
+  SetFrameSampleRate(&audio, AudioProcessing::NativeRate::kSampleRate16kHz);
+  apm->ProcessStream(&audio);
+  apm->ProcessReverseStream(&audio);
+  apm->ProcessStream(&audio);
+}
 }  // namespace webrtc

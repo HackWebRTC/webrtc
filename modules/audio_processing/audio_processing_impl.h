@@ -43,7 +43,7 @@ class AudioProcessingImpl : public AudioProcessing {
   // beamformer.
   AudioProcessingImpl(const webrtc::Config& config,
                       std::unique_ptr<PostProcessing> capture_post_processor,
-                      rtc::Callback1<EchoControl*, int> echo_control_factory,
+                      std::unique_ptr<EchoControlFactory> echo_control_factory,
                       NonlinearBeamformer* beamformer);
   ~AudioProcessingImpl() override;
   int Initialize() override;
@@ -142,8 +142,8 @@ class AudioProcessingImpl : public AudioProcessing {
   // Submodule interface implementations.
   std::unique_ptr<HighPassFilter> high_pass_filter_impl_;
 
-  // EchoControl factory method.
-  rtc::Callback1<EchoControl*, int> echo_control_factory_;
+  // EchoControl factory.
+  std::unique_ptr<EchoControlFactory> echo_control_factory_;
 
   class ApmSubmoduleStates {
    public:

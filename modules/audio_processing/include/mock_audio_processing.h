@@ -112,6 +112,15 @@ class MockPostProcessing : public PostProcessing {
   MOCK_CONST_METHOD0(ToString, std::string());
 };
 
+class MockEchoControl : public EchoControl {
+ public:
+  virtual ~MockEchoControl() {}
+  MOCK_METHOD1(AnalyzeRender, void(AudioBuffer* render));
+  MOCK_METHOD1(AnalyzeCapture, void(AudioBuffer* capture));
+  MOCK_METHOD2(ProcessCapture,
+               void(AudioBuffer* capture, bool echo_path_change));
+};
+
 class MockVoiceDetection : public VoiceDetection {
  public:
   virtual ~MockVoiceDetection() {}

@@ -309,35 +309,33 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
 
 AudioProcessing* AudioProcessing::Create() {
   webrtc::Config config;
-  return Create(config, nullptr, rtc::Callback1<EchoControl*, int>(), nullptr);
+  return Create(config, nullptr, nullptr, nullptr);
 }
 
 AudioProcessing* AudioProcessing::Create(const webrtc::Config& config) {
-  return Create(config, nullptr, rtc::Callback1<EchoControl*, int>(), nullptr);
+  return Create(config, nullptr, nullptr, nullptr);
 }
 
 AudioProcessing* AudioProcessing::Create(const webrtc::Config& config,
                                          NonlinearBeamformer* beamformer) {
-  return Create(config, nullptr, rtc::Callback1<EchoControl*, int>(),
-                beamformer);
+  return Create(config, nullptr, nullptr, beamformer);
 }
 
 AudioProcessing* AudioProcessing::Create(
     const webrtc::Config& config,
     std::unique_ptr<PostProcessing> capture_post_processor,
     NonlinearBeamformer* beamformer) {
-  return Create(config, std::move(capture_post_processor),
-                rtc::Callback1<EchoControl*, int>(), beamformer);
+  return Create(config, std::move(capture_post_processor), nullptr, beamformer);
 }
 
 AudioProcessing* AudioProcessing::Create(
     const webrtc::Config& config,
     std::unique_ptr<PostProcessing> capture_post_processor,
-    rtc::Callback1<EchoControl*, int> echo_control_factory,
+    std::unique_ptr<EchoControlFactory> echo_control_factory,
     NonlinearBeamformer* beamformer) {
   AudioProcessingImpl* apm = new rtc::RefCountedObject<AudioProcessingImpl>(
-      config, std::move(capture_post_processor), echo_control_factory,
-      beamformer);
+      config, std::move(capture_post_processor),
+      std::move(echo_control_factory), beamformer);
   if (apm->Initialize() != kNoError) {
     delete apm;
     apm = nullptr;
@@ -347,18 +345,15 @@ AudioProcessing* AudioProcessing::Create(
 }
 
 AudioProcessingImpl::AudioProcessingImpl(const webrtc::Config& config)
-    : AudioProcessingImpl(config,
-                          nullptr,
-                          rtc::Callback1<EchoControl*, int>(),
-                          nullptr) {}
+    : AudioProcessingImpl(config, nullptr, nullptr, nullptr) {}
 
 AudioProcessingImpl::AudioProcessingImpl(
     const webrtc::Config& config,
     std::unique_ptr<PostProcessing> capture_post_processor,
-    rtc::Callback1<EchoControl*, int> echo_control_factory,
+    std::unique_ptr<EchoControlFactory> echo_control_factory,
     NonlinearBeamformer* beamformer)
     : high_pass_filter_impl_(new HighPassFilterImpl(this)),
-      echo_control_factory_(echo_control_factory),
+      echo_control_factory_(std::move(echo_control_factory)),
       submodule_states_(!!capture_post_processor),
       public_submodules_(new ApmPublicSubmodules()),
       private_submodules_(
@@ -1715,9 +1710,9 @@ void AudioProcessingImpl::InitializeLowCutFilter() {
 }
 
 void AudioProcessingImpl::InitializeEchoCanceller3() {
-  if (!echo_control_factory_.empty()) {
-    private_submodules_->echo_controller.reset(
-        echo_control_factory_(proc_sample_rate_hz()));
+  if (echo_control_factory_) {
+    private_submodules_->echo_controller =
+        echo_control_factory_->Create(proc_sample_rate_hz());
   } else if (capture_nonlocked_.echo_canceller3_enabled) {
     // TODO(gustaf): Remove once injection is used.
     private_submodules_->echo_controller.reset(new EchoCanceller3(
