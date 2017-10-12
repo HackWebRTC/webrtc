@@ -8,26 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#import <XCTest/XCTest.h>
+
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 
-#include "rtc_base/gunit.h"
-
-#include <Metal/RTCMTLNV12Renderer.h>
 #include <WebRTC/RTCMTLVideoView.h>
 #include <WebRTC/RTCVideoFrameBuffer.h>
+
+#include "Metal/RTCMTLNV12Renderer.h"
 
 // Extension of RTCMTLVideoView for testing purposes.
 @interface RTCMTLVideoView (Testing)
 
 + (BOOL)isMetalAvailable;
-+ (UIView*)createMetalView:(CGRect)frame;
++ (UIView *)createMetalView:(CGRect)frame;
 + (id<RTCMTLRenderer>)createNV12Renderer;
 + (id<RTCMTLRenderer>)createI420Renderer;
 - (void)drawInMTKView:(id)view;
 @end
 
-@interface RTCMTLVideoViewTests : NSObject
+@interface RTCMTLVideoViewTests : XCTestCase
 @property(nonatomic, strong) id classMock;
 @property(nonatomic, strong) id rendererNV12Mock;
 @property(nonatomic, strong) id rendererI420Mock;
@@ -41,7 +42,7 @@
 @synthesize rendererI420Mock = _rendererI420Mock;
 @synthesize frameMock = _frameMock;
 
-- (void)setup {
+- (void)setUp {
   self.classMock = OCMClassMock([RTCMTLVideoView class]);
   [self startMockingNilView];
 }
@@ -101,7 +102,7 @@
     asserts = YES;
   }
 
-  EXPECT_TRUE(asserts);
+  XCTAssertTrue(asserts);
 }
 
 - (void)testRTCVideoRenderNilFrameCallback {
@@ -165,35 +166,5 @@
   [self.rendererNV12Mock verify];
   [self.classMock verify];
 }
+
 @end
-
-TEST(RTCMTLVideoViewTests, InitAssertsIfMetalUnavailabe) {
-  RTCMTLVideoViewTests *test = [[RTCMTLVideoViewTests alloc] init];
-  [test setup];
-
-  [test testInitAssertsIfMetalUnavailabe];
-  [test tearDown];
-}
-
-TEST(RTCMTLVideoViewTests, RTCVideoRenderNilFrameCallback) {
-  RTCMTLVideoViewTests *test = [[RTCMTLVideoViewTests alloc] init];
-  [test setup];
-  [test testRTCVideoRenderNilFrameCallback];
-  [test tearDown];
-}
-
-TEST(RTCMTLVideoViewTests, RTCVideoRenderFrameCallbackI420) {
-  RTCMTLVideoViewTests *test = [[RTCMTLVideoViewTests alloc] init];
-  [test setup];
-
-  [test testRTCVideoRenderFrameCallbackI420];
-  [test tearDown];
-}
-
-TEST(RTCMTLVideoViewTests, RTCVideoRenderFrameCallbackNV12) {
-  RTCMTLVideoViewTests *test = [[RTCMTLVideoViewTests alloc] init];
-  [test setup];
-
-  [test testRTCVideoRenderFrameCallbackNV12];
-  [test tearDown];
-}
