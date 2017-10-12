@@ -39,6 +39,7 @@ class VideoProcessorIntegrationTestOpenH264
     config_.input_filename = ResourcePath(config_.filename, "yuv");
     config_.output_filename =
         TempFilename(OutputPath(), "videoprocessor_integrationtest_libvpx");
+    config_.num_frames = kNumFrames;
     config_.networking_config.packet_loss_probability = 0.0;
     // Only allow encoder/decoder to use single core, for predictability.
     config_.use_single_core = true;
@@ -57,18 +58,16 @@ TEST_F(VideoProcessorIntegrationTestOpenH264, Process0PercentPacketLoss) {
   SetCodecSettings(&config_, kVideoCodecH264, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
-  RateProfile rate_profile;
-  SetRateProfile(&rate_profile, 0, 500, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNumFrames + 1;
-  rate_profile.num_frames = kNumFrames;
+  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFrames + 1}};
 
-  std::vector<RateControlThresholds> rc_thresholds;
-  AddRateControlThresholds(2, 60, 20, 10, 20, 0, 1, &rc_thresholds);
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {2, 60, 20, 10, 20, 0, 1}};
 
   QualityThresholds quality_thresholds(35.0, 25.0, 0.93, 0.70);
 
-  ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              nullptr, kNoVisualizationParams);
+  ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
+                              &quality_thresholds, nullptr,
+                              kNoVisualizationParams);
 }
 
 // H264: Enable SingleNalUnit packetization mode. Encoder should split
@@ -79,21 +78,19 @@ TEST_F(VideoProcessorIntegrationTestOpenH264, ProcessNoLossSingleNalUnit) {
   SetCodecSettings(&config_, kVideoCodecH264, 1, false, false, true, false,
                    kResilienceOn, kCifWidth, kCifHeight);
 
-  RateProfile rate_profile;
-  SetRateProfile(&rate_profile, 0, 500, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNumFrames + 1;
-  rate_profile.num_frames = kNumFrames;
+  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFrames + 1}};
 
-  std::vector<RateControlThresholds> rc_thresholds;
-  AddRateControlThresholds(2, 60, 30, 10, 20, 0, 1, &rc_thresholds);
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {2, 60, 30, 10, 20, 0, 1}};
 
   QualityThresholds quality_thresholds(35.0, 25.0, 0.93, 0.70);
 
   BitstreamThresholds bs_thresholds(
       config_.networking_config.max_payload_size_in_bytes);
 
-  ProcessFramesAndMaybeVerify(rate_profile, &rc_thresholds, &quality_thresholds,
-                              &bs_thresholds, kNoVisualizationParams);
+  ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
+                              &quality_thresholds, &bs_thresholds,
+                              kNoVisualizationParams);
 }
 
 #endif  // defined(WEBRTC_USE_H264)

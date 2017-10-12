@@ -30,15 +30,11 @@
 namespace webrtc {
 namespace test {
 
-// The sequence of bit rate and frame rate changes for the encoder, the frame
-// number where the changes are made, and the total number of frames to process.
+// Rates for the encoder and the frame number when to change profile.
 struct RateProfile {
-  static const int kMaxNumRateUpdates = 3;
-
-  int target_bit_rate[kMaxNumRateUpdates];
-  int input_frame_rate[kMaxNumRateUpdates];
-  int frame_index_rate_update[kMaxNumRateUpdates + 1];
-  int num_frames;
+  int target_kbps;
+  int input_fps;
+  int frame_index_rate_update;
 };
 
 // Thresholds for the rate control metrics. The thresholds are defined for each
@@ -108,24 +104,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
                                int width,
                                int height);
 
-  static void SetRateProfile(RateProfile* rate_profile,
-                             int rate_update_index,
-                             int bitrate_kbps,
-                             int framerate_fps,
-                             int frame_index_rate_update);
-
-  static void AddRateControlThresholds(
-      int max_num_dropped_frames,
-      int max_key_framesize_mismatch_percent,
-      int max_delta_framesize_mismatch_percent,
-      int max_bitrate_mismatch_percent,
-      int max_num_frames_to_hit_target,
-      int num_spatial_resizes,
-      int num_key_frames,
-      std::vector<RateControlThresholds>* rc_thresholds);
-
   void ProcessFramesAndMaybeVerify(
-      const RateProfile& rate_profile,
+      const std::vector<RateProfile>& rate_profiles,
       const std::vector<RateControlThresholds>* rc_thresholds,
       const QualityThresholds* quality_thresholds,
       const BitstreamThresholds* bs_thresholds,
@@ -186,7 +166,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   // Rate control metrics.
   void ResetRateControlMetrics(int rate_update_index,
-                               const RateProfile& rate_profile);
+                               const std::vector<RateProfile>& rate_profiles);
   void SetRatesPerTemporalLayer();
   void UpdateRateControlMetrics(int frame_number);
   void PrintRateControlMetrics(

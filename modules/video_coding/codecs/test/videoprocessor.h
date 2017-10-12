@@ -64,6 +64,9 @@ struct TestConfig {
   // in the YUV format.
   std::string output_filename;
 
+  // Number of frames to process.
+  int num_frames = 0;
+
   // Configurations related to networking.
   NetworkingConfig networking_config;
 

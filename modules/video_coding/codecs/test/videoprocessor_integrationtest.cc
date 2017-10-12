@@ -135,67 +135,32 @@ void VideoProcessorIntegrationTest::SetCodecSettings(TestConfig* config,
   }
 }
 
-void VideoProcessorIntegrationTest::SetRateProfile(
-    RateProfile* rate_profile,
-    int rate_update_index,
-    int bitrate_kbps,
-    int framerate_fps,
-    int frame_index_rate_update) {
-  rate_profile->target_bit_rate[rate_update_index] = bitrate_kbps;
-  rate_profile->input_frame_rate[rate_update_index] = framerate_fps;
-  rate_profile->frame_index_rate_update[rate_update_index] =
-      frame_index_rate_update;
-}
-
-void VideoProcessorIntegrationTest::AddRateControlThresholds(
-    int max_num_dropped_frames,
-    int max_key_framesize_mismatch_percent,
-    int max_delta_framesize_mismatch_percent,
-    int max_bitrate_mismatch_percent,
-    int max_num_frames_to_hit_target,
-    int num_spatial_resizes,
-    int num_key_frames,
-    std::vector<RateControlThresholds>* rc_thresholds) {
-  RTC_DCHECK(rc_thresholds);
-
-  rc_thresholds->emplace_back();
-  RateControlThresholds* rc_threshold = &rc_thresholds->back();
-  rc_threshold->max_num_dropped_frames = max_num_dropped_frames;
-  rc_threshold->max_key_framesize_mismatch_percent =
-      max_key_framesize_mismatch_percent;
-  rc_threshold->max_delta_framesize_mismatch_percent =
-      max_delta_framesize_mismatch_percent;
-  rc_threshold->max_bitrate_mismatch_percent = max_bitrate_mismatch_percent;
-  rc_threshold->max_num_frames_to_hit_target = max_num_frames_to_hit_target;
-  rc_threshold->num_spatial_resizes = num_spatial_resizes;
-  rc_threshold->num_key_frames = num_key_frames;
-}
-
 // Processes all frames in the clip and verifies the result.
 void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
-    const RateProfile& rate_profile,
+    const std::vector<RateProfile>& rate_profiles,
     const std::vector<RateControlThresholds>* rc_thresholds,
     const QualityThresholds* quality_thresholds,
     const BitstreamThresholds* bs_thresholds,
     const VisualizationParams* visualization_params) {
+  RTC_DCHECK(!rate_profiles.empty());
   // The Android HW codec needs to be run on a task queue, so we simply always
   // run the test on a task queue.
   rtc::TaskQueue task_queue("VidProc TQ");
   rtc::Event sync_event(false, false);
 
-  SetUpAndInitObjects(&task_queue, rate_profile.target_bit_rate[0],
-                      rate_profile.input_frame_rate[0], visualization_params);
+  SetUpAndInitObjects(&task_queue, rate_profiles[0].target_kbps,
+                      rate_profiles[0].input_fps, visualization_params);
 
   // Set initial rates.
   int rate_update_index = 0;
-  task_queue.PostTask([this, &rate_profile, rate_update_index] {
-    processor_->SetRates(rate_profile.target_bit_rate[rate_update_index],
-                         rate_profile.input_frame_rate[rate_update_index]);
+  task_queue.PostTask([this, &rate_profiles, rate_update_index] {
+    processor_->SetRates(rate_profiles[rate_update_index].target_kbps,
+                         rate_profiles[rate_update_index].input_fps);
   });
 
   // Process all frames.
   int frame_number = 0;
-  const int num_frames = rate_profile.num_frames;
+  const int num_frames = config_.num_frames;
   RTC_DCHECK_GE(num_frames, 1);
   while (frame_number < num_frames) {
     // In order to not overwhelm the OpenMAX buffers in the Android
@@ -204,7 +169,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
 #if defined(WEBRTC_ANDROID)
     if (config_.hw_encoder || config_.hw_decoder) {
       SleepMs(rtc::kNumMillisecsPerSec /
-              rate_profile.input_frame_rate[rate_update_index]);
+              rate_profiles[rate_update_index].input_fps);
     }
 #endif
 
@@ -212,12 +177,13 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
     ++frame_number;
 
     if (frame_number ==
-        rate_profile.frame_index_rate_update[rate_update_index + 1]) {
+        rate_profiles[rate_update_index].frame_index_rate_update) {
       ++rate_update_index;
+      RTC_DCHECK_GT(rate_profiles.size(), rate_update_index);
 
-      task_queue.PostTask([this, &rate_profile, rate_update_index] {
-        processor_->SetRates(rate_profile.target_bit_rate[rate_update_index],
-                             rate_profile.input_frame_rate[rate_update_index]);
+      task_queue.PostTask([this, &rate_profiles, rate_update_index] {
+        processor_->SetRates(rate_profiles[rate_update_index].target_kbps,
+                             rate_profiles[rate_update_index].input_fps);
       });
     }
   }
@@ -243,7 +209,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
 
   rate_update_index = 0;
   frame_number = 0;
-  ResetRateControlMetrics(rate_update_index, rate_profile);
+  ResetRateControlMetrics(rate_update_index, rate_profiles);
   while (frame_number < num_frames) {
     UpdateRateControlMetrics(frame_number);
 
@@ -254,13 +220,13 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
     ++frame_number;
 
     if (frame_number ==
-        rate_profile.frame_index_rate_update[rate_update_index + 1]) {
+        rate_profiles[rate_update_index].frame_index_rate_update) {
       PrintRateControlMetrics(rate_update_index, num_dropped_frames,
                               num_spatial_resizes);
       VerifyRateControlMetrics(rate_update_index, rc_thresholds,
                                num_dropped_frames, num_spatial_resizes);
       ++rate_update_index;
-      ResetRateControlMetrics(rate_update_index, rate_profile);
+      ResetRateControlMetrics(rate_update_index, rate_profiles);
     }
   }
 
@@ -617,10 +583,11 @@ int VideoProcessorIntegrationTest::TemporalLayerIndexForFrame(
 // Reset quantities before each encoder rate update.
 void VideoProcessorIntegrationTest::ResetRateControlMetrics(
     int rate_update_index,
-    const RateProfile& rate_profile) {
+    const std::vector<RateProfile>& rate_profiles) {
+  RTC_DCHECK_GT(rate_profiles.size(), rate_update_index);
   // Set new rates.
-  target_.kbps = rate_profile.target_bit_rate[rate_update_index];
-  target_.fps = rate_profile.input_frame_rate[rate_update_index];
+  target_.kbps = rate_profiles[rate_update_index].target_kbps;
+  target_.fps = rate_profiles[rate_update_index].input_fps;
   SetRatesPerTemporalLayer();
 
   // Set key frame target sizes.
@@ -642,7 +609,7 @@ void VideoProcessorIntegrationTest::ResetRateControlMetrics(
   // Reset rate control metrics.
   actual_ = TestResults();
   actual_.num_frames_to_hit_target =  // Set to max number of frames.
-      rate_profile.frame_index_rate_update[rate_update_index + 1];
+      rate_profiles[rate_update_index].frame_index_rate_update;
 }
 
 void VideoProcessorIntegrationTest::SetRatesPerTemporalLayer() {

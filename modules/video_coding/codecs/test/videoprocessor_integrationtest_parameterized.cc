@@ -65,19 +65,15 @@ class VideoProcessorIntegrationTestParameterized
     config_.verbose = true;
     config_.hw_encoder = hw_codec_;
     config_.hw_decoder = hw_codec_;
+    config_.num_frames = kNumFrames;
     SetCodecSettings(&config_, codec_type_, kNumTemporalLayers,
                      kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
                      kSpatialResizeOn, kResilienceOn, width, height);
 
-    RateProfile rate_profile;
-    SetRateProfile(&rate_profile,
-                   0,  // update_index
-                   bitrate_, framerate,
-                   0);  // frame_index_rate_update
-    rate_profile.frame_index_rate_update[1] = kNumFrames + 1;
-    rate_profile.num_frames = kNumFrames;
+    std::vector<RateProfile> rate_profiles = {
+        {bitrate_, framerate, kNumFrames + 1}};
 
-    ProcessFramesAndMaybeVerify(rate_profile, nullptr, nullptr, nullptr,
+    ProcessFramesAndMaybeVerify(rate_profiles, nullptr, nullptr, nullptr,
                                 &kVisualizationParams);
   }
 
