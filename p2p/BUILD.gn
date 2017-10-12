@@ -26,6 +26,7 @@ rtc_static_library("rtc_p2p") {
     "base/basicpacketsocketfactory.cc",
     "base/basicpacketsocketfactory.h",
     "base/candidate.h",
+    "base/candidatepairinterface.h",
     "base/common.h",
     "base/dtlstransport.cc",
     "base/dtlstransport.h",
@@ -116,11 +117,14 @@ rtc_static_library("rtc_p2p") {
     }
   }
 
+  # TODO(deadbeef): code under p2p/quic and base/transportchannelimpl.h should be
+  # removed. See bugs.webrtc.org/8385.
   if (rtc_use_quic) {
     deps = [
       "//third_party/libquic",
     ]
     sources += [
+      "base/transportchannelimpl.h",
       "quic/quicconnectionhelper.cc",
       "quic/quicconnectionhelper.h",
       "quic/quicsession.cc",
@@ -225,6 +229,7 @@ if (rtc_include_tests) {
 rtc_static_library("libstunprober") {
   sources = [
     "stunprober/stunprober.cc",
+    "stunprober/stunprober.h",
   ]
 
   if (!build_with_chromium && is_clang) {
