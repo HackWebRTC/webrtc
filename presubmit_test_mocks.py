@@ -18,7 +18,7 @@ class MockInputApi(object):
   """
 
   def __init__(self):
-    self.change = MockChange([])
+    self.change = MockChange([], [])
     self.files = []
 
   def AffectedSourceFiles(self, file_filter=None):
@@ -64,8 +64,12 @@ class MockChange(object):
   current change.
   """
 
-  def __init__(self, changed_files):
+  def __init__(self, changed_files, bugs_from_description):
     self._changed_files = changed_files
+    self._bugs_from_description = bugs_from_description
+
+  def BugsFromDescription(self):
+    return self._bugs_from_description
 
 
 class MockFile(object):

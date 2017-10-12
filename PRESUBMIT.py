@@ -484,10 +484,10 @@ def CheckUnwantedDependencies(input_api, output_api):
 def CheckCommitMessageBugEntry(input_api, output_api):
   """Check that bug entries are well-formed in commit message."""
   bogus_bug_msg = (
-      'Bogus BUG entry: %s. Please specify the issue tracker prefix and the '
+      'Bogus Bug entry: %s. Please specify the issue tracker prefix and the '
       'issue number, separated by a colon, e.g. webrtc:123 or chromium:12345.')
   results = []
-  for bug in (input_api.change.BUG or '').split(','):
+  for bug in input_api.change.BugsFromDescription():
     bug = bug.strip()
     if bug.lower() == 'none':
       continue
@@ -498,7 +498,7 @@ def CheckCommitMessageBugEntry(input_api, output_api):
           prefix_guess = 'chromium'
         else:
           prefix_guess = 'webrtc'
-        results.append('BUG entry requires issue tracker prefix, e.g. %s:%s' %
+        results.append('Bug entry requires issue tracker prefix, e.g. %s:%s' %
                        (prefix_guess, bug))
       except ValueError:
         results.append(bogus_bug_msg % bug)
@@ -507,20 +507,23 @@ def CheckCommitMessageBugEntry(input_api, output_api):
   return [output_api.PresubmitError(r) for r in results]
 
 def CheckChangeHasBugField(input_api, output_api):
-  """Requires that the changelist have a BUG= field.
+  """Requires that the changelist is associated with a bug.
 
   This check is stricter than the one in depot_tools/presubmit_canned_checks.py
-  since it fails the presubmit if the BUG= field is missing or doesn't contain
+  since it fails the presubmit if the bug field is missing or doesn't contain
   a bug reference.
+
+  This supports both 'BUG=' and 'Bug:' since we are in the process of migrating
+  to Gerrit and it encourages the usage of 'Bug:'.
   """
-  if input_api.change.BUG:
+  if input_api.change.BugsFromDescription():
     return []
   else:
     return [output_api.PresubmitError(
-        'The BUG=[bug number] field is mandatory. Please create a bug and '
+        'The "Bug: [bug number]" footer is mandatory. Please create a bug and '
         'reference it using either of:\n'
-        ' * https://bugs.webrtc.org - reference it using BUG=webrtc:XXXX\n'
-        ' * https://crbug.com - reference it using BUG=chromium:XXXXXX')]
+        ' * https://bugs.webrtc.org - reference it using Bug: webrtc:XXXX\n'
+        ' * https://crbug.com - reference it using Bug: chromium:XXXXXX')]
 
 def CheckJSONParseErrors(input_api, output_api):
   """Check that JSON files do not contain syntax errors."""
