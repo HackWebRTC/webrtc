@@ -21,6 +21,7 @@
 #include "common_video/include/frame_callback.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/histogram_percentile_counter.h"
 #include "rtc_base/moving_max_counter.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/ratetracker.h"
@@ -95,25 +96,6 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   // Implements CallStatsObserver.
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
-  class HistogramPercentileCounter {
-   public:
-    // Values below |long_tail_boundary| are stored in the array.
-    // Values above - in the map.
-    explicit HistogramPercentileCounter(size_t long_tail_boundary);
-    void Add(uint32_t value);
-    void Add(uint32_t value, size_t count);
-    void Add(const HistogramPercentileCounter& other);
-    // Argument should be from 0 to 1.
-    rtc::Optional<uint32_t> GetPercentile(float fraction);
-
-   private:
-    std::vector<size_t> histogram_low_;
-    std::map<uint32_t, size_t> histogram_high_;
-    const size_t long_tail_boundary_;
-    size_t total_elements_;
-    size_t total_elements_low_;
-  };
-
  private:
   struct SampleCounter {
     SampleCounter() : sum(0), num_samples(0) {}
@@ -146,7 +128,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
     SampleCounter received_height;
     SampleCounter qp_counter;
     FrameCounts frame_counts;
-    HistogramPercentileCounter interframe_delay_percentiles;
+    rtc::HistogramPercentileCounter interframe_delay_percentiles;
   };
 
   void UpdateHistograms() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
