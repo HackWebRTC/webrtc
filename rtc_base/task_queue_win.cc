@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <queue>
+#include <utility>
 
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
@@ -170,10 +171,11 @@ class TaskQueue::Impl : public RefCountInterface {
   bool IsCurrent() const;
 
   template <class Closure,
-            typename std::enable_if<
-                std::is_copy_constructible<Closure>::value>::type* = nullptr>
-  void PostTask(const Closure& closure) {
-    PostTask(std::unique_ptr<QueuedTask>(new ClosureTask<Closure>(closure)));
+            typename std::enable_if<!std::is_convertible<
+                Closure,
+                std::unique_ptr<QueuedTask>>::value>::type* = nullptr>
+  void PostTask(Closure&& closure) {
+    PostTask(NewClosure(std::forward<Closure>(closure)));
   }
 
   void PostTask(std::unique_ptr<QueuedTask> task);

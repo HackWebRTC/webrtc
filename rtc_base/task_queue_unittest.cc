@@ -239,7 +239,7 @@ TEST(TaskQueueTest, PostAndReuse) {
     Event* const event_;
   };
 
-  std::unique_ptr<QueuedTask> task(
+  std::unique_ptr<ReusedTask> task(
       new ReusedTask(&call_count, &reply_queue, &event));
 
   post_queue.PostTask(std::move(task));
@@ -258,6 +258,105 @@ TEST(TaskQueueTest, PostAndReplyLambda) {
                               [&event]() { event.Set(); }, &reply_queue);
   EXPECT_TRUE(event.Wait(1000));
   EXPECT_TRUE(my_flag);
+}
+
+TEST(TaskQueueTest, PostCopyableClosure) {
+  struct CopyableClosure {
+    CopyableClosure(int* num_copies, int* num_moves, Event* event)
+        : num_copies(num_copies), num_moves(num_moves), event(event) {}
+    CopyableClosure(const CopyableClosure& other)
+        : num_copies(other.num_copies),
+          num_moves(other.num_moves),
+          event(other.event) {
+      ++*num_copies;
+    }
+    CopyableClosure(CopyableClosure&& other)
+        : num_copies(other.num_copies),
+          num_moves(other.num_moves),
+          event(other.event) {
+      ++*num_moves;
+    }
+    void operator()() { event->Set(); }
+
+    int* num_copies;
+    int* num_moves;
+    Event* event;
+  };
+
+  int num_copies = 0;
+  int num_moves = 0;
+  Event event(false, false);
+
+  static const char kPostQueue[] = "PostCopyableClosure";
+  TaskQueue post_queue(kPostQueue);
+  {
+    CopyableClosure closure(&num_copies, &num_moves, &event);
+    post_queue.PostTask(closure);
+    // Destroy closure to check with msan and tsan posted task has own copy.
+  }
+
+  EXPECT_TRUE(event.Wait(1000));
+  EXPECT_EQ(num_copies, 1);
+  EXPECT_EQ(num_moves, 0);
+}
+
+TEST(TaskQueueTest, PostMoveOnlyClosure) {
+  struct SomeState {
+    explicit SomeState(Event* event) : event(event) {}
+    ~SomeState() { event->Set(); }
+    Event* event;
+  };
+  struct MoveOnlyClosure {
+    MoveOnlyClosure(int* num_moves, std::unique_ptr<SomeState> state)
+        : num_moves(num_moves), state(std::move(state)) {}
+    MoveOnlyClosure(const MoveOnlyClosure&) = delete;
+    MoveOnlyClosure(MoveOnlyClosure&& other)
+        : num_moves(other.num_moves), state(std::move(other.state)) {
+      ++*num_moves;
+    }
+    void operator()() { state.reset(); }
+
+    int* num_moves;
+    std::unique_ptr<SomeState> state;
+  };
+
+  int num_moves = 0;
+  Event event(false, false);
+  std::unique_ptr<SomeState> state(new SomeState(&event));
+
+  static const char kPostQueue[] = "PostMoveOnlyClosure";
+  TaskQueue post_queue(kPostQueue);
+  post_queue.PostTask(MoveOnlyClosure(&num_moves, std::move(state)));
+
+  EXPECT_TRUE(event.Wait(1000));
+  EXPECT_EQ(num_moves, 1);
+}
+
+TEST(TaskQueueTest, PostMoveOnlyCleanup) {
+  struct SomeState {
+    explicit SomeState(Event* event) : event(event) {}
+    ~SomeState() { event->Set(); }
+    Event* event;
+  };
+  struct MoveOnlyClosure {
+    void operator()() { state.reset(); }
+
+    std::unique_ptr<SomeState> state;
+  };
+
+  Event event_run(false, false);
+  Event event_cleanup(false, false);
+  std::unique_ptr<SomeState> state_run(new SomeState(&event_run));
+  std::unique_ptr<SomeState> state_cleanup(new SomeState(&event_cleanup));
+
+  static const char kPostQueue[] = "PostMoveOnlyCleanup";
+  TaskQueue post_queue(kPostQueue);
+  post_queue.PostTask(NewClosure(MoveOnlyClosure{std::move(state_run)},
+                                 MoveOnlyClosure{std::move(state_cleanup)}));
+
+  EXPECT_TRUE(event_cleanup.Wait(1000));
+  // Expect run closure to complete before cleanup closure.
+  EXPECT_TRUE(event_run.Wait(0));
 }
 
 // This test covers a particular bug that we had in the libevent implementation

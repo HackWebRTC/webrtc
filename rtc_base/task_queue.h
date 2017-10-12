@@ -15,9 +15,11 @@
 #include <memory>
 #include <queue>
 #include <type_traits>
+#include <utility>
 
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace rtc {
@@ -45,7 +47,8 @@ class QueuedTask {
 template <class Closure>
 class ClosureTask : public QueuedTask {
  public:
-  explicit ClosureTask(const Closure& closure) : closure_(closure) {}
+  explicit ClosureTask(Closure&& closure)
+      : closure_(std::forward<Closure>(closure)) {}
 
  private:
   bool Run() override {
@@ -53,7 +56,8 @@ class ClosureTask : public QueuedTask {
     return true;
   }
 
-  Closure closure_;
+  typename std::remove_const<
+      typename std::remove_reference<Closure>::type>::type closure_;
 };
 
 // Extends ClosureTask to also allow specifying cleanup code.
@@ -62,27 +66,29 @@ class ClosureTask : public QueuedTask {
 template <class Closure, class Cleanup>
 class ClosureTaskWithCleanup : public ClosureTask<Closure> {
  public:
-  ClosureTaskWithCleanup(const Closure& closure, Cleanup cleanup)
-      : ClosureTask<Closure>(closure), cleanup_(cleanup) {}
+  ClosureTaskWithCleanup(Closure&& closure, Cleanup&& cleanup)
+      : ClosureTask<Closure>(std::forward<Closure>(closure)),
+        cleanup_(std::forward<Cleanup>(cleanup)) {}
   ~ClosureTaskWithCleanup() { cleanup_(); }
 
  private:
-  Cleanup cleanup_;
+  typename std::remove_const<
+      typename std::remove_reference<Cleanup>::type>::type cleanup_;
 };
 
 // Convenience function to construct closures that can be passed directly
 // to methods that support std::unique_ptr<QueuedTask> but not template
 // based parameters.
 template <class Closure>
-static std::unique_ptr<QueuedTask> NewClosure(const Closure& closure) {
-  return std::unique_ptr<QueuedTask>(new ClosureTask<Closure>(closure));
+static std::unique_ptr<QueuedTask> NewClosure(Closure&& closure) {
+  return rtc::MakeUnique<ClosureTask<Closure>>(std::forward<Closure>(closure));
 }
 
 template <class Closure, class Cleanup>
-static std::unique_ptr<QueuedTask> NewClosure(const Closure& closure,
-                                              const Cleanup& cleanup) {
-  return std::unique_ptr<QueuedTask>(
-      new ClosureTaskWithCleanup<Closure, Cleanup>(closure, cleanup));
+static std::unique_ptr<QueuedTask> NewClosure(Closure&& closure,
+                                              Cleanup&& cleanup) {
+  return rtc::MakeUnique<ClosureTaskWithCleanup<Closure, Cleanup>>(
+      std::forward<Closure>(closure), std::forward<Cleanup>(cleanup));
 }
 
 // Implements a task queue that asynchronously executes tasks in a way that
@@ -185,50 +191,44 @@ class RTC_LOCKABLE TaskQueue {
   // std::unique_ptr<SomeClassDerivedFromQueuedTask> would not end up being
   // caught by this template.
   template <class Closure,
-            typename std::enable_if<
-                std::is_copy_constructible<Closure>::value>::type* = nullptr>
-  void PostTask(const Closure& closure) {
-    PostTask(std::unique_ptr<QueuedTask>(new ClosureTask<Closure>(closure)));
+            typename std::enable_if<!std::is_convertible<
+                Closure,
+                std::unique_ptr<QueuedTask>>::value>::type* = nullptr>
+  void PostTask(Closure&& closure) {
+    PostTask(NewClosure(std::forward<Closure>(closure)));
   }
 
   // See documentation above for performance expectations.
-  template <class Closure>
-  void PostDelayedTask(const Closure& closure, uint32_t milliseconds) {
-    PostDelayedTask(
-        std::unique_ptr<QueuedTask>(new ClosureTask<Closure>(closure)),
-        milliseconds);
+  template <class Closure,
+            typename std::enable_if<!std::is_convertible<
+                Closure,
+                std::unique_ptr<QueuedTask>>::value>::type* = nullptr>
+  void PostDelayedTask(Closure&& closure, uint32_t milliseconds) {
+    PostDelayedTask(NewClosure(std::forward<Closure>(closure)), milliseconds);
   }
 
   template <class Closure1, class Closure2>
-  void PostTaskAndReply(const Closure1& task,
-                        const Closure2& reply,
+  void PostTaskAndReply(Closure1&& task,
+                        Closure2&& reply,
                         TaskQueue* reply_queue) {
-    PostTaskAndReply(
-        std::unique_ptr<QueuedTask>(new ClosureTask<Closure1>(task)),
-        std::unique_ptr<QueuedTask>(new ClosureTask<Closure2>(reply)),
-        reply_queue);
+    PostTaskAndReply(NewClosure(std::forward<Closure1>(task)),
+                     NewClosure(std::forward<Closure2>(reply)), reply_queue);
   }
 
   template <class Closure>
-  void PostTaskAndReply(std::unique_ptr<QueuedTask> task,
-                        const Closure& reply) {
-    PostTaskAndReply(std::move(task), std::unique_ptr<QueuedTask>(
-                                          new ClosureTask<Closure>(reply)));
+  void PostTaskAndReply(std::unique_ptr<QueuedTask> task, Closure&& reply) {
+    PostTaskAndReply(std::move(task), NewClosure(std::forward<Closure>(reply)));
   }
 
   template <class Closure>
-  void PostTaskAndReply(const Closure& task,
-                        std::unique_ptr<QueuedTask> reply) {
-    PostTaskAndReply(
-        std::unique_ptr<QueuedTask>(new ClosureTask<Closure>(task)),
-        std::move(reply));
+  void PostTaskAndReply(Closure&& task, std::unique_ptr<QueuedTask> reply) {
+    PostTaskAndReply(NewClosure(std::forward<Closure>(task)), std::move(reply));
   }
 
   template <class Closure1, class Closure2>
-  void PostTaskAndReply(const Closure1& task, const Closure2& reply) {
-    PostTaskAndReply(
-        std::unique_ptr<QueuedTask>(new ClosureTask<Closure1>(task)),
-        std::unique_ptr<QueuedTask>(new ClosureTask<Closure2>(reply)));
+  void PostTaskAndReply(Closure1&& task, Closure2&& reply) {
+    PostTaskAndReply(NewClosure(std::forward(task)),
+                     NewClosure(std::forward(reply)));
   }
 
  private:
