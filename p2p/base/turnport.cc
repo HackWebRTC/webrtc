@@ -956,7 +956,6 @@ bool TurnPort::ScheduleRefresh(int lifetime) {
 }
 
 void TurnPort::SendRequest(StunRequest* req, int delay) {
-  TurnCustomizerMaybeModifyOutgoingStunMessage(req->mutable_msg());
   request_manager_.SendDelayed(req, delay);
 }
 
@@ -1180,6 +1179,7 @@ void TurnAllocateRequest::Prepare(StunMessage* request) {
   if (!port_->hash().empty()) {
     port_->AddRequestAuthInfo(request);
   }
+  port_->TurnCustomizerMaybeModifyOutgoingStunMessage(request);
 }
 
 void TurnAllocateRequest::OnSent() {
@@ -1354,6 +1354,7 @@ void TurnRefreshRequest::Prepare(StunMessage* request) {
   }
 
   port_->AddRequestAuthInfo(request);
+  port_->TurnCustomizerMaybeModifyOutgoingStunMessage(request);
 }
 
 void TurnRefreshRequest::OnSent() {
@@ -1422,6 +1423,7 @@ void TurnCreatePermissionRequest::Prepare(StunMessage* request) {
   request->AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_));
   port_->AddRequestAuthInfo(request);
+  port_->TurnCustomizerMaybeModifyOutgoingStunMessage(request);
 }
 
 void TurnCreatePermissionRequest::OnSent() {
@@ -1484,6 +1486,7 @@ void TurnChannelBindRequest::Prepare(StunMessage* request) {
   request->AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_));
   port_->AddRequestAuthInfo(request);
+  port_->TurnCustomizerMaybeModifyOutgoingStunMessage(request);
 }
 
 void TurnChannelBindRequest::OnSent() {
