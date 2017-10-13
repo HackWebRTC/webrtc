@@ -21,6 +21,8 @@ rtc_static_library("pacing") {
     "pacer.h",
     "packet_queue.cc",
     "packet_queue.h",
+    "packet_queue2.cc",
+    "packet_queue2.h",
     "packet_router.cc",
     "packet_router.h",
   ]
