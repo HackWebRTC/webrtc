@@ -325,13 +325,6 @@ AudioProcessing* AudioProcessing::Create(const webrtc::Config& config,
 AudioProcessing* AudioProcessing::Create(
     const webrtc::Config& config,
     std::unique_ptr<PostProcessing> capture_post_processor,
-    NonlinearBeamformer* beamformer) {
-  return Create(config, std::move(capture_post_processor), nullptr, beamformer);
-}
-
-AudioProcessing* AudioProcessing::Create(
-    const webrtc::Config& config,
-    std::unique_ptr<PostProcessing> capture_post_processor,
     std::unique_ptr<EchoControlFactory> echo_control_factory,
     NonlinearBeamformer* beamformer) {
   AudioProcessingImpl* apm = new rtc::RefCountedObject<AudioProcessingImpl>(

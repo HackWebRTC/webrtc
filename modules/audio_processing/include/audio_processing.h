@@ -378,10 +378,6 @@ class AudioProcessing : public rtc::RefCountInterface {
   RTC_DEPRECATED
   static AudioProcessing* Create(const webrtc::Config& config,
                                  NonlinearBeamformer* beamformer);
-  static AudioProcessing* Create(
-      const webrtc::Config& config,
-      std::unique_ptr<PostProcessing> capture_post_processor,
-      NonlinearBeamformer* beamformer);
   // Allows passing in optional user-defined processing modules.
   static AudioProcessing* Create(
       const webrtc::Config& config,
