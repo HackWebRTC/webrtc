@@ -24,6 +24,7 @@ import subprocess
 LIB_TO_LICENSES_DICT = {
     'android_tools': ['third_party/android_tools/LICENSE'],
     'boringssl': ['third_party/boringssl/src/LICENSE'],
+    'errorprone': ['third_party/errorprone/LICENSE'],
     'expat': ['third_party/expat/files/COPYING'],
     'ijar': ['third_party/ijar/LICENSE'],
     'jsoncpp': ['third_party/jsoncpp/LICENSE'],
