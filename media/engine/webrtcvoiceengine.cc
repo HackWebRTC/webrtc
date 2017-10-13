@@ -809,6 +809,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       webrtc::AudioTransport* voe_audio_transport,
       uint32_t ssrc,
       const std::string& c_name,
+      const std::string track_id,
       const rtc::Optional<webrtc::AudioSendStream::Config::SendCodecSpec>&
           send_codec_spec,
       const std::vector<webrtc::RtpExtension>& extensions,
@@ -835,6 +836,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.rtp.extensions = extensions;
     config_.audio_network_adaptor_config = audio_network_adaptor_config;
     config_.encoder_factory = encoder_factory;
+    config_.track_id = track_id;
     rtp_parameters_.encodings[0].ssrc = rtc::Optional<uint32_t>(ssrc);
 
     if (send_codec_spec) {
@@ -1836,7 +1838,7 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   rtc::Optional<std::string> audio_network_adaptor_config =
       GetAudioNetworkAdaptorConfig(options_);
   WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
-      channel, audio_transport, ssrc, sp.cname, send_codec_spec_,
+      channel, audio_transport, ssrc, sp.cname, sp.id, send_codec_spec_,
       send_rtp_extensions_, max_send_bitrate_bps_, audio_network_adaptor_config,
       call_, this, engine()->encoder_factory_);
   send_streams_.insert(std::make_pair(ssrc, stream));

@@ -1597,6 +1597,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
   }
 
   parameters_.config.rtp.c_name = sp.cname;
+  parameters_.config.track_id = sp.id;
   if (rtp_extensions) {
     parameters_.config.rtp.extensions = *rtp_extensions;
   }

@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include <map>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -82,7 +83,8 @@ class BitrateAllocator {
                    uint32_t min_bitrate_bps,
                    uint32_t max_bitrate_bps,
                    uint32_t pad_up_bitrate_bps,
-                   bool enforce_min_bitrate);
+                   bool enforce_min_bitrate,
+                   std::string track_id);
 
   // Removes a previously added observer, but will not trigger a new bitrate
   // allocation.
@@ -99,14 +101,16 @@ class BitrateAllocator {
                    uint32_t min_bitrate_bps,
                    uint32_t max_bitrate_bps,
                    uint32_t pad_up_bitrate_bps,
-                   bool enforce_min_bitrate)
+                   bool enforce_min_bitrate,
+                   std::string track_id)
         : observer(observer),
           min_bitrate_bps(min_bitrate_bps),
           max_bitrate_bps(max_bitrate_bps),
           pad_up_bitrate_bps(pad_up_bitrate_bps),
           enforce_min_bitrate(enforce_min_bitrate),
           allocated_bitrate_bps(-1),
-          media_ratio(1.0) {}
+          media_ratio(1.0),
+          track_id(track_id) {}
 
     BitrateAllocatorObserver* observer;
     uint32_t min_bitrate_bps;
@@ -115,6 +119,7 @@ class BitrateAllocator {
     bool enforce_min_bitrate;
     int64_t allocated_bitrate_bps;
     double media_ratio;  // Part of the total bitrate used for media [0.0, 1.0].
+    std::string track_id;
   };
 
   // Calculates the minimum requested send bitrate and max padding bitrate and

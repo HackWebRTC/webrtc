@@ -131,6 +131,9 @@ class AudioSendStream {
 
     rtc::Optional<SendCodecSpec> send_codec_spec;
     rtc::scoped_refptr<AudioEncoderFactory> encoder_factory;
+
+    // Track ID as specified during track creation.
+    std::string track_id;
   };
 
   virtual ~AudioSendStream() = default;

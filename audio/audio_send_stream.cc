@@ -627,7 +627,7 @@ void AudioSendStream::ConfigureBitrateObserver(int min_bitrate_bps,
     config_.min_bitrate_bps = min_bitrate_bps;
     config_.max_bitrate_bps = max_bitrate_bps;
     bitrate_allocator_->AddObserver(this, min_bitrate_bps, max_bitrate_bps, 0,
-                                    true);
+                                    true, config_.track_id);
     thread_sync_event.Set();
   });
   thread_sync_event.Wait(rtc::Event::kForever);

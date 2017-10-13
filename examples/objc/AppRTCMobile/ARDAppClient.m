@@ -538,8 +538,7 @@ static int const kKbpsMultiplier = 1000;
                                                   constraints:constraints
                                                      delegate:self];
   // Create AV senders.
-  [self createAudioSender];
-  [self createVideoSender];
+  [self createMediaSenders];
   if (_isInitiator) {
     // Send offer.
     __weak ARDAppClient *weakSelf = self;
@@ -663,19 +662,6 @@ static int const kKbpsMultiplier = 1000;
   }
 }
 
-- (RTCRtpSender *)createVideoSender {
-  RTCRtpSender *sender =
-      [_peerConnection senderWithKind:kRTCMediaStreamTrackKindVideo
-                             streamId:kARDMediaStreamId];
-  _localVideoTrack = [self createLocalVideoTrack];
-  if (_localVideoTrack) {
-    sender.track = _localVideoTrack;
-    [_delegate appClient:self didReceiveLocalVideoTrack:_localVideoTrack];
-  }
-
-  return sender;
-}
-
 - (void)setMaxBitrateForPeerConnectionVideoSender {
   for (RTCRtpSender *sender in _peerConnection.senders) {
     if (sender.track != nil) {
@@ -698,16 +684,18 @@ static int const kKbpsMultiplier = 1000;
   [sender setParameters:parametersToModify];
 }
 
-- (RTCRtpSender *)createAudioSender {
+- (void)createMediaSenders {
   RTCMediaConstraints *constraints = [self defaultMediaAudioConstraints];
   RTCAudioSource *source = [_factory audioSourceWithConstraints:constraints];
   RTCAudioTrack *track = [_factory audioTrackWithSource:source
                                                 trackId:kARDAudioTrackId];
-  RTCRtpSender *sender =
-      [_peerConnection senderWithKind:kRTCMediaStreamTrackKindAudio
-                             streamId:kARDMediaStreamId];
-  sender.track = track;
-  return sender;
+  RTCMediaStream *stream = [_factory mediaStreamWithStreamId:kARDMediaStreamId];
+  [stream addAudioTrack:track];
+  _localVideoTrack = [self createLocalVideoTrack];
+  if (_localVideoTrack) {
+    [stream addVideoTrack:_localVideoTrack];
+  }
+  [_peerConnection addStream:stream];
 }
 
 - (RTCVideoTrack *)createLocalVideoTrack {

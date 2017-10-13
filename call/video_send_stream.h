@@ -220,6 +220,9 @@ class VideoSendStream {
     // Enables periodic bandwidth probing in application-limited region.
     bool periodic_alr_bandwidth_probing = false;
 
+    // Track ID as specified during track creation.
+    std::string track_id;
+
    private:
     // Access to the copy constructor is private to force use of the Copy()
     // method for those exceptional cases where we do use it.
