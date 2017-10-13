@@ -1860,7 +1860,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   AudioCodecs filtered_codecs;
   // Add the codecs from current content if exists.
   if (current_content) {
-    RTC_DCHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
+    RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
     const AudioContentDescription* acd =
         static_cast<const AudioContentDescription*>(
             current_content->description);
@@ -1938,7 +1938,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
   VideoCodecs filtered_codecs;
   // Add the codecs from current content if exists.
   if (current_content) {
-    RTC_DCHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
+    RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
     const VideoContentDescription* vcd =
         static_cast<const VideoContentDescription*>(
             current_content->description);
@@ -2002,6 +2002,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
   // If the DataChannel type is not specified, use the DataChannel type in
   // the current description.
   if (session_options.data_channel_type == DCT_NONE && current_content) {
+    RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_DATA));
     is_sctp = (static_cast<const DataContentDescription*>(
                    current_content->description)
                    ->protocol() == kMediaProtocolSctp);
@@ -2077,6 +2078,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     const AudioCodecs& audio_codecs,
     StreamParamsVec* current_streams,
     SessionDescription* answer) const {
+  RTC_CHECK(IsMediaContentOfType(offer_content, MEDIA_TYPE_AUDIO));
   const AudioContentDescription* offer_audio_description =
       static_cast<const AudioContentDescription*>(offer_content->description);
 
@@ -2101,7 +2103,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   AudioCodecs filtered_codecs;
   // Add the codecs from current content if exists.
   if (current_content) {
-    RTC_DCHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
+    RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
     const AudioContentDescription* acd =
         static_cast<const AudioContentDescription*>(
             current_content->description);
@@ -2170,6 +2172,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     const VideoCodecs& video_codecs,
     StreamParamsVec* current_streams,
     SessionDescription* answer) const {
+  RTC_CHECK(IsMediaContentOfType(offer_content, MEDIA_TYPE_VIDEO));
   const VideoContentDescription* offer_video_description =
       static_cast<const VideoContentDescription*>(offer_content->description);
 
@@ -2184,7 +2187,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
   VideoCodecs filtered_codecs;
   // Add the codecs from current content if exists.
   if (current_content) {
-    RTC_DCHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
+    RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
     const VideoContentDescription* vcd =
         static_cast<const VideoContentDescription*>(
             current_content->description);
@@ -2270,19 +2273,18 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
       data_transport->secure() ? cricket::SEC_DISABLED : secure();
   bool bundle_enabled = offer_description->HasGroup(GROUP_TYPE_BUNDLE) &&
                         session_options.bundle_enabled;
+  RTC_CHECK(IsMediaContentOfType(offer_content, MEDIA_TYPE_DATA));
+  const DataContentDescription* offer_data_description =
+      static_cast<const DataContentDescription*>(offer_content->description);
   if (!CreateMediaContentAnswer(
-          static_cast<const DataContentDescription*>(
-              offer_content->description),
-          media_description_options, session_options, data_codecs, sdes_policy,
-          GetCryptos(current_content), RtpHeaderExtensions(),
-          enable_encrypted_rtp_header_extensions_, current_streams,
-          bundle_enabled, data_answer.get())) {
+          offer_data_description, media_description_options, session_options,
+          data_codecs, sdes_policy, GetCryptos(current_content),
+          RtpHeaderExtensions(), enable_encrypted_rtp_header_extensions_,
+          current_streams, bundle_enabled, data_answer.get())) {
     return false;  // Fails the session setup.
   }
 
   // Respond with sctpmap if the offer uses sctpmap.
-  const DataContentDescription* offer_data_description =
-      static_cast<const DataContentDescription*>(offer_content->description);
   bool offer_uses_sctpmap = offer_data_description->use_sctpmap();
   data_answer->set_use_sctpmap(offer_uses_sctpmap);
 
