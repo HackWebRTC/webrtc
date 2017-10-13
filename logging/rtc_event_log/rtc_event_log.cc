@@ -37,7 +37,10 @@ namespace webrtc {
 #ifdef ENABLE_RTC_EVENT_LOG
 
 namespace {
-const int kEventsInHistory = 10000;
+constexpr size_t kMaxEventsInHistory = 10000;
+// The config-history is supposed to be unbounded, but needs to have some bound
+// to prevent an attack via unreasonable memory use.
+constexpr size_t kMaxEventsInConfigHistory = 1000;
 
 // Observe a limit on the number of concurrent logs, so as not to run into
 // OS-imposed limits on open files and/or threads/task-queues.
@@ -114,7 +117,7 @@ class RtcEventLogImpl final : public RtcEventLog {
   rtc::SequencedTaskChecker owner_sequence_checker_;
 
   // History containing all past configuration events.
-  std::vector<std::unique_ptr<RtcEvent>> config_history_
+  std::deque<std::unique_ptr<RtcEvent>> config_history_
       RTC_ACCESS_ON(task_queue_);
 
   // History containing the most recent (non-configuration) events (~10s).
@@ -237,14 +240,15 @@ bool RtcEventLogImpl::AppendEventToString(const RtcEvent& event,
 void RtcEventLogImpl::LogToMemory(std::unique_ptr<RtcEvent> event) {
   RTC_DCHECK(!event_output_);
 
-  if (event->IsConfigEvent()) {
-    config_history_.push_back(std::move(event));
-  } else {
-    history_.push_back(std::move(event));
-    if (history_.size() > kEventsInHistory) {
-      history_.pop_front();
-    }
+  std::deque<std::unique_ptr<RtcEvent>>& container =
+      event->IsConfigEvent() ? config_history_ : history_;
+  const size_t container_max_size =
+      event->IsConfigEvent() ? kMaxEventsInHistory : kMaxEventsInConfigHistory;
+
+  if (container.size() >= container_max_size) {
+    container.pop_front();
   }
+  container.push_back(std::move(event));
 }
 
 void RtcEventLogImpl::LogEventsFromMemoryToOutput() {
