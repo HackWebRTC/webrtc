@@ -10,19 +10,15 @@
 
 #include "pc/srtpsession.h"
 
-#include "third_party/libsrtp/include/srtp.h"
-#include "third_party/libsrtp/include/srtp_priv.h"
 #include "media/base/rtputils.h"
 #include "pc/externalhmac.h"
+#include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/sslstreamadapter.h"
+#include "third_party/libsrtp/include/srtp.h"
+#include "third_party/libsrtp/include/srtp_priv.h"
 
 namespace cricket {
-
-bool SrtpSession::inited_ = false;
-
-// This lock protects SrtpSession::inited_.
-rtc::GlobalLockPod SrtpSession::lock_;
 
 SrtpSession::SrtpSession() {}
 
@@ -30,6 +26,9 @@ SrtpSession::~SrtpSession() {
   if (session_) {
     srtp_set_user_data(session_, nullptr);
     srtp_dealloc(session_);
+  }
+  if (inited_) {
+    DecrementLibsrtpUsageCountAndMaybeDeinit();
   }
 }
 
@@ -300,7 +299,11 @@ bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
     return false;
   }
 
-  if (!Init()) {
+  // This is the first time we need to actually interact with libsrtp, so
+  // initialize it if needed.
+  if (IncrementLibsrtpUsageCountAndMaybeInit()) {
+    inited_ = true;
+  } else {
     return false;
   }
 
@@ -323,10 +326,15 @@ void SrtpSession::SetEncryptedHeaderExtensionIds(
   encrypted_header_extension_ids_ = encrypted_header_extension_ids;
 }
 
-bool SrtpSession::Init() {
-  rtc::GlobalLockScope ls(&lock_);
+int g_libsrtp_usage_count = 0;
+rtc::GlobalLockPod g_libsrtp_lock;
 
-  if (!inited_) {
+// static
+bool SrtpSession::IncrementLibsrtpUsageCountAndMaybeInit() {
+  rtc::GlobalLockScope ls(&g_libsrtp_lock);
+
+  RTC_DCHECK_GE(g_libsrtp_usage_count, 0);
+  if (g_libsrtp_usage_count == 0) {
     int err;
     err = srtp_init();
     if (err != srtp_err_status_ok) {
@@ -345,22 +353,21 @@ bool SrtpSession::Init() {
       LOG(LS_ERROR) << "Failed to initialize fake auth, err=" << err;
       return false;
     }
-    inited_ = true;
   }
-
+  ++g_libsrtp_usage_count;
   return true;
 }
 
-void SrtpSession::Terminate() {
-  rtc::GlobalLockScope ls(&lock_);
+// static
+void SrtpSession::DecrementLibsrtpUsageCountAndMaybeDeinit() {
+  rtc::GlobalLockScope ls(&g_libsrtp_lock);
 
-  if (inited_) {
+  RTC_DCHECK_GE(g_libsrtp_usage_count, 1);
+  if (--g_libsrtp_usage_count == 0) {
     int err = srtp_shutdown();
     if (err) {
       LOG(LS_ERROR) << "srtp_shutdown failed. err=" << err;
-      return;
     }
-    inited_ = false;
   }
 }
 

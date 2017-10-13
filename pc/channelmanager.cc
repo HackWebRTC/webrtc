@@ -58,12 +58,6 @@ void ChannelManager::Construct(std::unique_ptr<MediaEngineInterface> me,
 ChannelManager::~ChannelManager() {
   if (initialized_) {
     Terminate();
-    // If srtp is initialized (done by the Channel) then we must call
-    // srtp_shutdown to free all crypto kernel lists. But we need to make sure
-    // shutdown always called at the end, after channels are destroyed.
-    // ChannelManager d'tor is always called last, it's safe place to call
-    // shutdown.
-    ShutdownSrtp();
   }
   // The media engine needs to be deleted on the worker thread for thread safe
   // destruction,

@@ -25,13 +25,6 @@
 
 namespace cricket {
 
-// NOTE: This is called from ChannelManager D'tor.
-void ShutdownSrtp() {
-  // If srtp_dealloc is not executed then this will clear all existing sessions.
-  // This should be called when application is shutting down.
-  SrtpSession::Terminate();
-}
-
 SrtpFilter::SrtpFilter() {
 }
 
