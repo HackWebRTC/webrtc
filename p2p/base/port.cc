@@ -10,6 +10,8 @@
 
 #include "p2p/base/port.h"
 
+#include <math.h>
+
 #include <algorithm>
 #include <vector>
 
