@@ -76,6 +76,8 @@ VideoDecoderWrapper::VideoDecoderWrapper(JNIEnv* jni, jobject decoder)
   initialized_ = false;
   // QP parsing starts enabled and we disable it if the decoder provides frames.
   qp_parsing_enabled_ = true;
+
+  implementation_name_ = GetImplementationName(jni);
 }
 
 int32_t VideoDecoderWrapper::InitDecode(const VideoCodec* codec_settings,
@@ -163,11 +165,7 @@ bool VideoDecoderWrapper::PrefersLateDecoding() const {
 }
 
 const char* VideoDecoderWrapper::ImplementationName() const {
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(jni);
-  jstring jname = reinterpret_cast<jstring>(
-      jni->CallObjectMethod(*decoder_, get_implementation_name_method_));
-  return JavaToStdString(jni, jname).c_str();
+  return implementation_name_.c_str();
 }
 
 void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* jni,
@@ -296,6 +294,12 @@ rtc::Optional<uint8_t> VideoDecoderWrapper::ParseQP(
       break;  // Default is to not provide QP.
   }
   return qp;
+}
+
+std::string VideoDecoderWrapper::GetImplementationName(JNIEnv* jni) const {
+  jstring jname = reinterpret_cast<jstring>(
+      jni->CallObjectMethod(*decoder_, get_implementation_name_method_));
+  return JavaToStdString(jni, jname);
 }
 
 JNI_FUNCTION_DECLARATION(void,

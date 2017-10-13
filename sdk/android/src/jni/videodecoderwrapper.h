@@ -72,6 +72,8 @@ class VideoDecoderWrapper : public VideoDecoder {
 
   rtc::Optional<uint8_t> ParseQP(const EncodedImage& input_image);
 
+  std::string GetImplementationName(JNIEnv* jni) const;
+
   VideoCodec codec_settings_;
   int32_t number_of_cores_;
 
@@ -80,6 +82,7 @@ class VideoDecoderWrapper : public VideoDecoder {
   std::deque<FrameExtraInfo> frame_extra_infos_;
   bool qp_parsing_enabled_;
   H264BitstreamParser h264_bitstream_parser_;
+  std::string implementation_name_;
 
   DecodedImageCallback* callback_;
 
