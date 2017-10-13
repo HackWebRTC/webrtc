@@ -74,6 +74,7 @@ struct SimulationSettings {
   rtc::Optional<int> agc_target_level;
   rtc::Optional<bool> use_agc_limiter;
   rtc::Optional<int> agc_compression_gain;
+  float agc2_fixed_gain_db;
   rtc::Optional<int> vad_likelihood;
   rtc::Optional<int> ns_level;
   rtc::Optional<bool> use_refined_adaptive_filter;

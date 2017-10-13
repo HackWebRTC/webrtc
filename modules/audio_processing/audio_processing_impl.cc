@@ -253,7 +253,8 @@ bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandProcessingActive()
 
 bool AudioProcessingImpl::ApmSubmoduleStates::CaptureFullBandProcessingActive()
     const {
-  return level_controller_enabled_ || capture_post_processor_enabled_;
+  return level_controller_enabled_ || gain_controller2_enabled_ ||
+         capture_post_processor_enabled_;
 }
 
 bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandSubModulesActive()
@@ -400,6 +401,10 @@ AudioProcessingImpl::AudioProcessingImpl(
     // TODO(peah): Move this creation to happen only when the level controller
     // is enabled.
     private_submodules_->level_controller.reset(new LevelController());
+
+    // TODO(alessiob): Move the injected gain controller once injection is
+    // implemented.
+    private_submodules_->gain_controller2.reset(new GainController2());
 
     LOG(LS_INFO) << "Capture post processor activated: "
                  << !!private_submodules_->capture_post_processor;
@@ -714,21 +719,16 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   config_ok = GainController2::Validate(config_.gain_controller2);
   if (!config_ok) {
     LOG(LS_ERROR) << "AudioProcessing module config error" << std::endl
-                  << "gain_controller2: "
+                  << "Gain Controller 2: "
                   << GainController2::ToString(config_.gain_controller2)
                   << std::endl
                   << "Reverting to default parameter set";
     config_.gain_controller2 = AudioProcessing::Config::GainController2();
   }
-
-  if (config.gain_controller2.enabled !=
-      capture_nonlocked_.gain_controller2_enabled) {
-    capture_nonlocked_.gain_controller2_enabled =
-        config_.gain_controller2.enabled;
-    InitializeGainController2();
-    LOG(LS_INFO) << "Gain controller 2 activated: "
-                 << capture_nonlocked_.gain_controller2_enabled;
-  }
+  InitializeGainController2();
+  private_submodules_->gain_controller2->ApplyConfig(config_.gain_controller2);
+  LOG(LS_INFO) << "Gain Controller 2 activated: "
+               << config_.gain_controller2.enabled;
 }
 
 void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {
@@ -1305,7 +1305,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
         capture_.key_pressed);
   }
 
-  if (capture_nonlocked_.gain_controller2_enabled) {
+  if (config_.gain_controller2.enabled) {
     private_submodules_->gain_controller2->Process(capture_buffer);
   }
 
@@ -1657,7 +1657,7 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       capture_nonlocked_.intelligibility_enabled,
       capture_nonlocked_.beamformer_enabled,
       public_submodules_->gain_control->is_enabled(),
-      capture_nonlocked_.gain_controller2_enabled,
+      config_.gain_controller2.enabled,
       capture_nonlocked_.level_controller_enabled,
       capture_nonlocked_.echo_canceller3_enabled,
       public_submodules_->voice_detection->is_enabled(),
@@ -1723,11 +1723,8 @@ void AudioProcessingImpl::InitializeEchoCanceller3() {
 }
 
 void AudioProcessingImpl::InitializeGainController2() {
-  if (capture_nonlocked_.gain_controller2_enabled) {
-    private_submodules_->gain_controller2.reset(
-        new GainController2(proc_sample_rate_hz()));
-  } else {
-    private_submodules_->gain_controller2.reset();
+  if (config_.gain_controller2.enabled) {
+    private_submodules_->gain_controller2->Initialize(proc_sample_rate_hz());
   }
 }
 
@@ -1750,7 +1747,7 @@ void AudioProcessingImpl::MaybeUpdateHistograms() {
   static const int kMinDiffDelayMs = 60;
 
   if (echo_cancellation()->is_enabled()) {
-    // Activate delay_jumps_ counters if we know echo_cancellation is runnning.
+    // Activate delay_jumps_ counters if we know echo_cancellation is running.
     // If a stream has echo we know that the echo_cancellation is in process.
     if (capture_.stream_delay_jumps == -1 &&
         echo_cancellation()->stream_has_echo()) {
@@ -1835,6 +1832,9 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
   }
   if (capture_nonlocked_.echo_canceller3_enabled) {
     experiments_description += "EchoCanceller3;";
+  }
+  if (config_.gain_controller2.enabled) {
+    experiments_description += "GainController2;";
   }
 
   InternalAPMConfig apm_config;

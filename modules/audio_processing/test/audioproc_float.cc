@@ -149,6 +149,7 @@ DEFINE_int(agc_limiter,
 DEFINE_int(agc_compression_gain,
            kParameterNotSpecifiedValue,
            "Specify the AGC compression gain (0-90)");
+DEFINE_float(agc2_fixed_gain_db, 0.f, "AGC2 fixed gain (dB) to apply");
 DEFINE_int(vad_likelihood,
            kParameterNotSpecifiedValue,
            "Specify the VAD likelihood (0-3)");
@@ -214,6 +215,7 @@ SimulationSettings CreateSettings() {
     settings.use_ns = rtc::Optional<bool>(true);
     settings.use_hpf = rtc::Optional<bool>(true);
     settings.use_agc = rtc::Optional<bool>(true);
+    settings.use_agc2 = rtc::Optional<bool>(false);
     settings.use_aec = rtc::Optional<bool>(true);
     settings.use_aecm = rtc::Optional<bool>(false);
     settings.use_ed = rtc::Optional<bool>(false);
@@ -269,6 +271,7 @@ SimulationSettings CreateSettings() {
   SetSettingIfFlagSet(FLAG_agc_limiter, &settings.use_agc_limiter);
   SetSettingIfSpecified(FLAG_agc_compression_gain,
                         &settings.agc_compression_gain);
+  settings.agc2_fixed_gain_db = FLAG_agc2_fixed_gain_db;
   SetSettingIfSpecified(FLAG_vad_likelihood, &settings.vad_likelihood);
   SetSettingIfSpecified(FLAG_ns_level, &settings.ns_level);
   SetSettingIfSpecified(FLAG_stream_delay, &settings.stream_delay);
@@ -374,6 +377,17 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       settings.agc_compression_gain && ((*settings.agc_compression_gain) < 0 ||
                                         (*settings.agc_compression_gain) > 90),
       "Error: --agc_compression_gain must be specified between 0 and 90.\n");
+
+  ReportConditionalErrorAndExit(
+      settings.use_agc && *settings.use_agc && settings.use_agc2 &&
+          *settings.use_agc2,
+      "Error: --agc and --agc2 cannot be both active.\n");
+
+  ReportConditionalErrorAndExit(
+      settings.use_agc2 && *settings.use_agc2 &&
+          ((settings.agc2_fixed_gain_db) < 0 ||
+           (settings.agc2_fixed_gain_db) > 90),
+      "Error: --agc2_fixed_gain_db must be specified between 0 and 90.\n");
 
   ReportConditionalErrorAndExit(
       settings.vad_likelihood &&

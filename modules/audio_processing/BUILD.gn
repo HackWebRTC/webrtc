@@ -108,8 +108,6 @@ rtc_static_library("audio_processing") {
     "agc/loudness_histogram.h",
     "agc/utility.cc",
     "agc/utility.h",
-    "agc2/digital_gain_applier.cc",
-    "agc2/digital_gain_applier.h",
     "agc2/gain_controller2.cc",
     "agc2/gain_controller2.h",
     "audio_buffer.cc",

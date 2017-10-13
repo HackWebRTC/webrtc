@@ -374,7 +374,6 @@ class AudioProcessingImpl : public AudioProcessing {
     bool intelligibility_enabled;
     bool level_controller_enabled = false;
     bool echo_canceller3_enabled = false;
-    bool gain_controller2_enabled = false;
   } capture_nonlocked_;
 
   struct ApmRenderState {

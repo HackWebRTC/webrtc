@@ -340,6 +340,7 @@ class AudioProcessing : public rtc::RefCountInterface {
     // does not yet have the desired behavior.
     struct GainController2 {
       bool enabled = false;
+      float fixed_gain_db = 0.f;
     } gain_controller2;
 
     // Explicit copy assignment implementation to avoid issues with memory
