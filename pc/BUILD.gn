@@ -462,6 +462,7 @@ if (rtc_include_tests) {
       "../api/audio_codecs:builtin_audio_encoder_factory",
       "../api/audio_codecs/L16:audio_decoder_L16",
       "../api/audio_codecs/L16:audio_encoder_L16",
+      "../logging:rtc_event_log_api",
       "../media:rtc_audio_video",
       "../media:rtc_data",  # TODO(phoglund): AFAIK only used for one sctp constant.
       "../media:rtc_media_base",

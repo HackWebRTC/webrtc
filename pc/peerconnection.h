@@ -145,8 +145,9 @@ class PeerConnection : public PeerConnectionInterface,
 
   RTCError SetBitrate(const BitrateParameters& bitrate) override;
 
-  bool StartRtcEventLog(rtc::PlatformFile file,
-                        int64_t max_size_bytes) override;
+  RTC_DEPRECATED bool StartRtcEventLog(rtc::PlatformFile file,
+                                       int64_t max_size_bytes) override;
+  bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output) override;
   void StopRtcEventLog() override;
 
   void Close() override;
@@ -441,9 +442,10 @@ class PeerConnection : public PeerConnectionInterface,
       bool prune_turn_ports,
       webrtc::TurnCustomizer* turn_customizer);
 
-  // Starts recording an RTC event log using the supplied platform file.
+  // Starts output of an RTC event log to the given output object.
   // This function should only be called from the worker thread.
-  bool StartRtcEventLog_w(rtc::PlatformFile file, int64_t max_size_bytes);
+  bool StartRtcEventLog_w(std::unique_ptr<RtcEventLogOutput> output);
+
   // Stops recording an RTC event log.
   // This function should only be called from the worker thread.
   void StopRtcEventLog_w();

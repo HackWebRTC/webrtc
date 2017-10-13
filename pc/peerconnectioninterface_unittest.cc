@@ -22,6 +22,7 @@
 #include "api/rtpreceiverinterface.h"
 #include "api/rtpsenderinterface.h"
 #include "api/test/fakeconstraints.h"
+#include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "media/base/fakevideocapturer.h"
 #include "media/engine/webrtcmediaengine.h"
 #include "media/sctp/sctptransportinternal.h"
@@ -40,6 +41,7 @@
 #include "pc/videocapturertracksource.h"
 #include "pc/videotrack.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "test/gmock.h"
@@ -3202,8 +3204,9 @@ TEST_F(PeerConnectionInterfaceTest, CurrentAndPendingDescriptions) {
 
 // Tests that it won't crash when calling StartRtcEventLog or StopRtcEventLog
 // after the PeerConnection is closed.
+// This version tests the StartRtcEventLog version that receives a file.
 TEST_F(PeerConnectionInterfaceTest,
-       StartAndStopLoggingAfterPeerConnectionClosed) {
+       StartAndStopLoggingToFileAfterPeerConnectionClosed) {
   CreatePeerConnection();
   // The RtcEventLog will be reset when the PeerConnection is closed.
   pc_->Close();
@@ -3221,6 +3224,23 @@ TEST_F(PeerConnectionInterfaceTest,
   // Cleanup.
   rtc::ClosePlatformFile(file);
   rtc::RemoveFile(filename);
+}
+
+// Tests that it won't crash when calling StartRtcEventLog or StopRtcEventLog
+// after the PeerConnection is closed.
+// This version tests the StartRtcEventLog version that receives an object
+// of type |RtcEventLogOutput|.
+TEST_F(PeerConnectionInterfaceTest,
+       StartAndStopLoggingToOutputAfterPeerConnectionClosed) {
+  CreatePeerConnection();
+  // The RtcEventLog will be reset when the PeerConnection is closed.
+  pc_->Close();
+
+  rtc::PlatformFile file = 0;
+  int64_t max_size_bytes = 1024;
+  EXPECT_FALSE(pc_->StartRtcEventLog(
+      rtc::MakeUnique<webrtc::RtcEventLogOutputFile>(file, max_size_bytes)));
+  pc_->StopRtcEventLog();
 }
 
 // Test that generated offers/answers include "ice-option:trickle".

@@ -1307,9 +1307,25 @@ PeerConnection::GetRemoteAudioSSLCertificate() {
 
 bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
                                       int64_t max_size_bytes) {
-  return worker_thread()->Invoke<bool>(
-      RTC_FROM_HERE, rtc::Bind(&PeerConnection::StartRtcEventLog_w, this, file,
-                               max_size_bytes));
+  // TODO(eladalon): It would be better to not allow negative values into PC.
+  const size_t max_size = (max_size_bytes < 0)
+                              ? RtcEventLog::kUnlimitedOutput
+                              : rtc::saturated_cast<size_t>(max_size_bytes);
+  return StartRtcEventLog(
+      rtc::MakeUnique<RtcEventLogOutputFile>(file, max_size));
+}
+
+bool PeerConnection::StartRtcEventLog(
+    std::unique_ptr<RtcEventLogOutput> output) {
+  // This code assumes that the functor would be executed. Otherwise, this
+  // could leak.
+  // TODO(eladalon): When we switch to C++14 (or later), we can get rid of this
+  // conversion to a raw pointer, passing the unique_ptr directly to the lambda.
+  RtcEventLogOutput* output_raw = output.release();
+  auto functor = [this, output_raw]() {
+    return StartRtcEventLog_w(rtc::WrapUnique<RtcEventLogOutput>(output_raw));
+  };
+  return worker_thread()->Invoke<bool>(RTC_FROM_HERE, functor);
 }
 
 void PeerConnection::StopRtcEventLog() {
@@ -2546,19 +2562,12 @@ bool PeerConnection::ReconfigurePortAllocator_n(
       turn_customizer);
 }
 
-bool PeerConnection::StartRtcEventLog_w(rtc::PlatformFile file,
-                                        int64_t max_size_bytes) {
+bool PeerConnection::StartRtcEventLog_w(
+    std::unique_ptr<RtcEventLogOutput> output) {
   if (!event_log_) {
     return false;
   }
-
-  // TODO(eladalon): It would be better to not allow negative values into PC.
-  const size_t max_size = (max_size_bytes < 0)
-                              ? RtcEventLog::kUnlimitedOutput
-                              : rtc::saturated_cast<size_t>(max_size_bytes);
-
-  return event_log_->StartLogging(
-      rtc::MakeUnique<RtcEventLogOutputFile>(file, max_size));
+  return event_log_->StartLogging(std::move(output));
 }
 
 void PeerConnection::StopRtcEventLog_w() {

@@ -47,6 +47,7 @@
 #include "rtc_base/fakenetwork.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/virtualsocketserver.h"
+#include "test/gmock.h"
 
 using cricket::ContentInfo;
 using cricket::FakeWebRtcVideoDecoder;
@@ -923,6 +924,13 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   rtc::AsyncInvoker invoker_;
 
   friend class PeerConnectionIntegrationTest;
+};
+
+class MockRtcEventLogOutput : public webrtc::RtcEventLogOutput {
+ public:
+  virtual ~MockRtcEventLogOutput() = default;
+  MOCK_CONST_METHOD0(IsActive, bool());
+  MOCK_METHOD1(Write, bool(const std::string&));
 };
 
 // Tests two PeerConnections connecting to each other end-to-end, using a
@@ -3207,6 +3215,21 @@ TEST_F(PeerConnectionIntegrationTest, RemoveAndAddTrackWithNewStreamId) {
   // Wait for additional audio frames to be received by the callee.
   ExpectNewFramesReceivedWithWait(0, 0, kDefaultExpectedAudioFrameCount, 0,
                                   kMaxWaitForFramesMs);
+}
+
+TEST_F(PeerConnectionIntegrationTest, RtcEventLogOutputWriteCalled) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+
+  auto output = rtc::MakeUnique<testing::NiceMock<MockRtcEventLogOutput>>();
+  ON_CALL(*output, IsActive()).WillByDefault(testing::Return(true));
+  ON_CALL(*output, Write(::testing::_)).WillByDefault(testing::Return(true));
+  EXPECT_CALL(*output, Write(::testing::_)).Times(::testing::AtLeast(1));
+  EXPECT_TRUE(caller()->pc()->StartRtcEventLog(std::move(output)));
+
+  caller()->AddAudioVideoMediaStream();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
 }
 
 }  // namespace
