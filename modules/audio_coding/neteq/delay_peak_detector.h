@@ -66,6 +66,7 @@ class DelayPeakDetector {
   int peak_detection_threshold_;
   const TickTimer* tick_timer_;
   std::unique_ptr<TickTimer::Stopwatch> peak_period_stopwatch_;
+  const bool frame_length_change_experiment_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DelayPeakDetector);
 };

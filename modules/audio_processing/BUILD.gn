@@ -563,7 +563,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
-      "../audio_coding:neteq_tools",
+      "../audio_coding:neteq_input_audio_tools",
       "aec_dump:mock_aec_dump_unittests",
       "test/conversational_speech:unittest",
       "//testing/gmock",
@@ -802,7 +802,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
-      "../audio_coding:neteq_tools",
+      "../audio_coding:neteq_input_audio_tools",
       "//testing/gtest",
     ]
   }
