@@ -101,6 +101,7 @@ public class TCPChannelClientTest {
   // Disabled because it fails when IPv6 is not supported on the bot.
   // TODO(ehmaldonado): Enable when bugs.webrtc.org/6437 is fixed.
   @DisabledTest
+  @SuppressWarnings("JUnit4TestNotRun")
   public void testConnectIPv6() {
     setUpIPv6Server();
     try {

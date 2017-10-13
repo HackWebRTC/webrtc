@@ -280,7 +280,7 @@ public class PeerConnectionTest {
     @Override
     public synchronized void onComplete(StatsReport[] reports) {
       if (--expectedOldStatsCallbacks < 0) {
-        throw new RuntimeException("Unexpected stats report: " + reports);
+        throw new RuntimeException("Unexpected stats report: " + Arrays.toString(reports));
       }
       gotStatsReports.add(reports);
     }
