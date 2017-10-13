@@ -35,6 +35,7 @@ class ScreenCapturerTest : public testing::Test {
   void SetUp() override {
     capturer_ = DesktopCapturer::CreateScreenCapturer(
         DesktopCaptureOptions::CreateDefault());
+    RTC_DCHECK(capturer_);
   }
 
  protected:
@@ -109,11 +110,22 @@ TEST_F(ScreenCapturerTest, GetScreenListAndSelectScreen) {
   }
 }
 
-TEST_F(ScreenCapturerTest, StartCapturer) {
+// Flaky on Linux. See: crbug.com/webrtc/7830
+#if defined(WEBRTC_LINUX)
+#define MAYBE_StartCapturer DISABLED_StartCaptuerer
+#else
+#define MAYBE_StartCapturer StartCapturer
+#endif
+TEST_F(ScreenCapturerTest, MAYBE_StartCapturer) {
   capturer_->Start(&callback_);
 }
 
-TEST_F(ScreenCapturerTest, Capture) {
+#if defined(WEBRTC_LINUX)
+#define MAYBE_Capture DISABLED_Capture
+#else
+#define MAYBE_Capture Capture
+#endif
+TEST_F(ScreenCapturerTest, MAYBE_Capture) {
   // Assume that Start() treats the screen as invalid initially.
   std::unique_ptr<DesktopFrame> frame;
   EXPECT_CALL(callback_,
