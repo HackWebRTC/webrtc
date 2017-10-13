@@ -1578,7 +1578,7 @@ TEST_F(PeerConnectionInterfaceTest, RenegotiateAudioOnly) {
 TEST_F(PeerConnectionInterfaceTest, IceCandidates) {
   CreatePeerConnectionWithoutDtls();
 
-  EXPECT_FALSE(pc_->AddIceCandidate(observer_.last_candidate_.get()));
+  EXPECT_FALSE(pc_->AddIceCandidate(observer_.last_candidate()));
   // SetRemoteDescription takes ownership of offer.
   std::unique_ptr<SessionDescriptionInterface> offer;
   AddVideoStream(kStreamLabel1);
@@ -1590,10 +1590,10 @@ TEST_F(PeerConnectionInterfaceTest, IceCandidates) {
   EXPECT_TRUE(DoCreateAnswer(&answer, nullptr));
   EXPECT_TRUE(DoSetLocalDescription(std::move(answer)));
 
-  EXPECT_TRUE_WAIT(observer_.last_candidate_.get() != NULL, kTimeout);
+  EXPECT_TRUE_WAIT(observer_.last_candidate() != nullptr, kTimeout);
   EXPECT_TRUE_WAIT(observer_.ice_complete_, kTimeout);
 
-  EXPECT_TRUE(pc_->AddIceCandidate(observer_.last_candidate_.get()));
+  EXPECT_TRUE(pc_->AddIceCandidate(observer_.last_candidate()));
 }
 
 // Test that CreateOffer and CreateAnswer will fail if the track labels are

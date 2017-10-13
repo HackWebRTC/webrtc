@@ -392,6 +392,7 @@ if (rtc_include_tests) {
       "mediaconstraintsinterface_unittest.cc",
       "mediastream_unittest.cc",
       "peerconnection_crypto_unittest.cc",
+      "peerconnection_ice_unittest.cc",
       "peerconnection_integrationtest.cc",
       "peerconnection_rtp_unittest.cc",
       "peerconnectionendtoend_unittest.cc",

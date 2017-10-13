@@ -694,8 +694,13 @@ bool TransportController::RemoveRemoteCandidates_n(const Candidates& candidates,
 
   std::map<std::string, Candidates> candidates_by_transport_name;
   for (const Candidate& cand : candidates) {
-    RTC_DCHECK(!cand.transport_name().empty());
-    candidates_by_transport_name[cand.transport_name()].push_back(cand);
+    if (!cand.transport_name().empty()) {
+      candidates_by_transport_name[cand.transport_name()].push_back(cand);
+    } else {
+      LOG(LS_ERROR) << "Not removing candidate because it does not have a "
+                       "transport name set: "
+                    << cand.ToString();
+    }
   }
 
   bool result = true;

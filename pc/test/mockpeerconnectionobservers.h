@@ -18,8 +18,10 @@
 #include <string>
 
 #include "api/datachannelinterface.h"
+#include "api/jsepicecandidate.h"
 #include "pc/streamcollection.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -79,22 +81,18 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     ice_complete_ = new_state == PeerConnectionInterface::kIceGatheringComplete;
     callback_triggered_ = true;
   }
-  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
+  void OnIceCandidate(const IceCandidateInterface* candidate) override {
     RTC_DCHECK(PeerConnectionInterface::kIceGatheringNew !=
                pc_->ice_gathering_state());
-
-    std::string sdp;
-    bool success = candidate->ToString(&sdp);
-    RTC_DCHECK(success);
-    RTC_DCHECK(!sdp.empty());
-    last_candidate_.reset(webrtc::CreateIceCandidate(
-        candidate->sdp_mid(), candidate->sdp_mline_index(), sdp, NULL));
-    RTC_DCHECK(last_candidate_);
+    candidates_.push_back(rtc::MakeUnique<JsepIceCandidate>(
+        candidate->sdp_mid(), candidate->sdp_mline_index(),
+        candidate->candidate()));
     callback_triggered_ = true;
   }
 
   void OnIceCandidatesRemoved(
       const std::vector<cricket::Candidate>& candidates) override {
+    num_candidates_removed_++;
     callback_triggered_ = true;
   }
 
@@ -137,9 +135,27 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     return "";
   }
 
+  IceCandidateInterface* last_candidate() {
+    if (candidates_.empty()) {
+      return nullptr;
+    } else {
+      return candidates_.back().get();
+    }
+  }
+
+  std::vector<IceCandidateInterface*> GetCandidatesByMline(int mline_index) {
+    std::vector<IceCandidateInterface*> candidates;
+    for (const auto& candidate : candidates_) {
+      if (candidate->sdp_mline_index() == mline_index) {
+        candidates.push_back(candidate.get());
+      }
+    }
+    return candidates;
+  }
+
   rtc::scoped_refptr<PeerConnectionInterface> pc_;
   PeerConnectionInterface::SignalingState state_;
-  std::unique_ptr<IceCandidateInterface> last_candidate_;
+  std::vector<std::unique_ptr<IceCandidateInterface>> candidates_;
   rtc::scoped_refptr<DataChannelInterface> last_datachannel_;
   rtc::scoped_refptr<StreamCollection> remote_streams_;
   bool renegotiation_needed_ = false;
@@ -149,6 +165,7 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   std::string last_added_track_label_;
   std::vector<AddTrackEvent> add_track_events_;
   std::vector<rtc::scoped_refptr<RtpReceiverInterface>> remove_track_events_;
+  int num_candidates_removed_ = 0;
 
  private:
   rtc::scoped_refptr<MediaStreamInterface> last_added_stream_;

@@ -166,4 +166,8 @@ void PeerConnectionWrapper::AddAudioVideoStream(
   observer()->renegotiation_needed_ = false;
 }
 
+bool PeerConnectionWrapper::IsIceGatheringDone() {
+  return observer()->ice_complete_;
+}
+
 }  // namespace webrtc

@@ -91,6 +91,9 @@ class PeerConnectionWrapper {
                            const std::string& audio_track_label,
                            const std::string& video_track_label);
 
+  // Returns true if ICE has finished gathering candidates.
+  bool IsIceGatheringDone();
+
  private:
   std::unique_ptr<SessionDescriptionInterface> CreateSdp(
       std::function<void(CreateSessionDescriptionObserver*)> fn);
