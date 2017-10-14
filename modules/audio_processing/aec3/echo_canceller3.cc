@@ -359,4 +359,18 @@ void EchoCanceller3::EmptyRenderQueue() {
   }
 }
 
+EchoCanceller3Factory::EchoCanceller3Factory(
+    const AudioProcessing::Config::EchoCanceller3& config)
+    : config_(config) {
+  // Revert to default configuration if needed.
+  if (!EchoCanceller3::Validate(config_)) {
+    config_ = AudioProcessing::Config::EchoCanceller3();
+  }
+}
+
+std::unique_ptr<EchoControl> EchoCanceller3Factory::Create(int sample_rate_hz) {
+  return std::unique_ptr<EchoControl>(
+      new EchoCanceller3(config_, sample_rate_hz, true));
+}
+
 }  // namespace webrtc

@@ -133,6 +133,16 @@ class EchoCanceller3 : public EchoControl {
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoCanceller3);
 };
+
+class EchoCanceller3Factory : public EchoControlFactory {
+ public:
+  EchoCanceller3Factory();
+  EchoCanceller3Factory(const AudioProcessing::Config::EchoCanceller3& config);
+  std::unique_ptr<EchoControl> Create(int sample_rate_hz) override;
+
+ private:
+  AudioProcessing::Config::EchoCanceller3 config_;
+};
 }  // namespace webrtc
 
 #endif  // MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_

@@ -553,7 +553,7 @@ int AudioProcessingImpl::InitializeLocked() {
   public_submodules_->level_estimator->Initialize();
   InitializeLevelController();
   InitializeResidualEchoDetector();
-  InitializeEchoCanceller3();
+  InitializeEchoController();
   InitializeGainController2();
   InitializePostProcessor();
 
@@ -688,23 +688,13 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   LOG(LS_INFO) << "Highpass filter activated: "
                << config_.high_pass_filter.enabled;
 
-  // TODO(gustaf): Do this outside of APM.
-  config_ok = EchoCanceller3::Validate(config_.echo_canceller3);
-  if (!config_ok) {
-    LOG(LS_ERROR) << "AudioProcessing module config error" << std::endl
-                  << "echo canceller 3: "
-                  << EchoCanceller3::ToString(config_.echo_canceller3)
-                  << std::endl
-                  << "Reverting to default parameter set";
-    config_.echo_canceller3 = AudioProcessing::Config::EchoCanceller3();
-  }
-
-  // TODO(gustaf): Enable EchoCanceller3 by injection, not configuration.
-  if (config.echo_canceller3.enabled !=
-      capture_nonlocked_.echo_canceller3_enabled) {
+  // Inject EchoCanceller3 if requested.
+  if (config.echo_canceller3.enabled && !echo_control_factory_) {
     capture_nonlocked_.echo_canceller3_enabled =
         config_.echo_canceller3.enabled;
-    InitializeEchoCanceller3();
+    echo_control_factory_ = std::unique_ptr<EchoControlFactory>(
+        new EchoCanceller3Factory(config.echo_canceller3));
+    InitializeEchoController();
     LOG(LS_INFO) << "Echo canceller 3 activated: "
                  << capture_nonlocked_.echo_canceller3_enabled;
   }
@@ -1702,14 +1692,10 @@ void AudioProcessingImpl::InitializeLowCutFilter() {
   }
 }
 
-void AudioProcessingImpl::InitializeEchoCanceller3() {
+void AudioProcessingImpl::InitializeEchoController() {
   if (echo_control_factory_) {
     private_submodules_->echo_controller =
         echo_control_factory_->Create(proc_sample_rate_hz());
-  } else if (capture_nonlocked_.echo_canceller3_enabled) {
-    // TODO(gustaf): Remove once injection is used.
-    private_submodules_->echo_controller.reset(new EchoCanceller3(
-        config_.echo_canceller3, proc_sample_rate_hz(), true));
   } else {
     private_submodules_->echo_controller.reset();
   }
