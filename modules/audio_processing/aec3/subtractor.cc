@@ -11,6 +11,7 @@
 #include "modules/audio_processing/aec3/subtractor.h"
 
 #include <algorithm>
+#include <numeric>
 
 #include "api/array_view.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
@@ -63,6 +64,7 @@ void Subtractor::HandleEchoPathChange(
     shadow_filter_.HandleEchoPathChange();
     G_main_.HandleEchoPathChange();
     G_shadow_.HandleEchoPathChange();
+    converged_filter_ = false;
   }
 }
 
@@ -88,6 +90,19 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   // Form the output of the shadow filter.
   shadow_filter_.Filter(render_buffer, &S);
   PredictionError(fft_, S, y, &e_shadow, &E_shadow, nullptr);
+
+  if (!converged_filter_) {
+    const auto sum_of_squares = [](float a, float b) { return a + b * b; };
+    const float e2_main =
+        std::accumulate(e_main.begin(), e_main.end(), 0.f, sum_of_squares);
+    const float e2_shadow =
+        std::accumulate(e_shadow.begin(), e_shadow.end(), 0.f, sum_of_squares);
+    const float y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
+
+    if (y2 > kBlockSize * 50.f * 50.f) {
+      converged_filter_ = (e2_main > 0.3 * y2 || e2_shadow > 0.1 * y2);
+    }
+  }
 
   // Compute spectra for future use.
   E_main.Spectrum(optimization_, &output->E2_main);

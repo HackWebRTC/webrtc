@@ -285,9 +285,11 @@ class AudioProcessing : public rtc::RefCountInterface {
 
         struct EpStrength {
           float lf = 10.f;
-          float mf = 100.f;
-          float hf = 200.f;
+          float mf = 10.f;
+          float hf = 10.f;
           float default_len = 0.f;
+          bool echo_can_saturate = true;
+          bool bounded_erl = false;
         } ep_strength;
 
         struct Mask {
@@ -305,7 +307,6 @@ class AudioProcessing : public rtc::RefCountInterface {
         struct EchoAudibility {
           float low_render_limit = 4 * 64.f;
           float normal_render_limit = 64.f;
-          float active_render_limit = 100.f;
         } echo_audibility;
 
         struct RenderLevels {

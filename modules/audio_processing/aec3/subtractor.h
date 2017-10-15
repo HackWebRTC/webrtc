@@ -57,6 +57,8 @@ class Subtractor {
     return main_filter_.FilterImpulseResponse();
   }
 
+  bool ConvergedFilter() const { return converged_filter_; }
+
  private:
   const Aec3Fft fft_;
   ApmDataDumper* data_dumper_;
@@ -65,6 +67,7 @@ class Subtractor {
   AdaptiveFirFilter shadow_filter_;
   MainFilterUpdateGain G_main_;
   ShadowFilterUpdateGain G_shadow_;
+  bool converged_filter_ = false;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Subtractor);
 };

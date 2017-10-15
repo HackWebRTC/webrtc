@@ -83,8 +83,8 @@ TEST(ResidualEchoEstimator, BasicTest) {
     render_buffer.Insert(x);
 
     aec_state.HandleEchoPathChange(echo_path_variability);
-    aec_state.Update(H2, h, rtc::Optional<size_t>(2), render_buffer, E2_main,
-                     Y2, x[0], s, false);
+    aec_state.Update(H2, h, true, rtc::Optional<size_t>(2), render_buffer,
+                     E2_main, Y2, x[0], s, false);
 
     estimator.Estimate(aec_state, render_buffer, S2_linear, Y2, &R2);
   }

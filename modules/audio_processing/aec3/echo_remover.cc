@@ -172,11 +172,12 @@ void EchoRemoverImpl::ProcessCapture(
   // Update the AEC state information.
   aec_state_.Update(subtractor_.FilterFrequencyResponse(),
                     subtractor_.FilterImpulseResponse(),
-                    echo_path_delay_samples, render_buffer, E2_main, Y2, x0,
-                    subtractor_output.s_main, echo_leakage_detected_);
+                    subtractor_.ConvergedFilter(), echo_path_delay_samples,
+                    render_buffer, E2_main, Y2, x0, subtractor_output.s_main,
+                    echo_leakage_detected_);
 
   // Choose the linear output.
-  output_selector_.FormLinearOutput(!aec_state_.HeadsetDetected(), e_main, y0);
+  output_selector_.FormLinearOutput(!aec_state_.TransparentMode(), e_main, y0);
   data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0],
                         LowestBandRate(sample_rate_hz_), 1);
   data_dumper_->DumpRaw("aec3_output_linear", y0);

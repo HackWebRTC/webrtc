@@ -74,9 +74,6 @@ void RenderNoisePower(
   }
 }
 
-// Assume a minimum echo path gain of -33 dB for headsets.
-constexpr float kHeadsetEchoPathGain = 0.0005f;
-
 }  // namespace
 
 ResidualEchoEstimator::ResidualEchoEstimator(
@@ -95,24 +92,29 @@ void ResidualEchoEstimator::Estimate(
     std::array<float, kFftLengthBy2Plus1>* R2) {
   RTC_DCHECK(R2);
 
-  const rtc::Optional<size_t> delay =
-      aec_state.ExternalDelay()
-          ? (aec_state.FilterDelay() ? aec_state.FilterDelay()
-                                     : aec_state.ExternalDelay())
-          : rtc::Optional<size_t>();
-
   // Estimate the power of the stationary noise in the render signal.
   RenderNoisePower(render_buffer, &X2_noise_floor_, &X2_noise_floor_counter_);
 
   // Estimate the residual echo power.
-
   if (aec_state.LinearEchoEstimate()) {
     RTC_DCHECK(aec_state.FilterDelay());
     const int filter_delay = *aec_state.FilterDelay();
     LinearEstimate(S2_linear, aec_state.Erle(), filter_delay, R2);
     AddEchoReverb(S2_linear, aec_state.SaturatedEcho(), filter_delay,
                   aec_state.ReverbDecay(), R2);
+
+    // If the echo is saturated, estimate the echo power as the maximum echo
+    // power with a leakage factor.
+    if (aec_state.SaturatedEcho()) {
+      R2->fill((*std::max_element(R2->begin(), R2->end())) * 100.f);
+    }
   } else {
+    const rtc::Optional<size_t> delay =
+        aec_state.ExternalDelay()
+            ? (aec_state.FilterDelay() ? aec_state.FilterDelay()
+                                       : aec_state.ExternalDelay())
+            : rtc::Optional<size_t>();
+
     // Estimate the echo generating signal power.
     std::array<float, kFftLengthBy2Plus1> X2;
     if (aec_state.ExternalDelay() && aec_state.FilterDelay()) {
@@ -120,14 +122,17 @@ void ResidualEchoEstimator::Estimate(
       const int delay_use = static_cast<int>(*delay);
 
       // Computes the spectral power over the blocks surrounding the delay.
-      RTC_DCHECK_LT(delay_use, kResidualEchoPowerRenderWindowSize);
+      constexpr int kKnownDelayRenderWindowSize = 5;
+      static_assert(
+          kUnknownDelayRenderWindowSize >= kKnownDelayRenderWindowSize,
+          "Requirement to ensure that the render buffer is overrun");
       EchoGeneratingPower(
           render_buffer, std::max(0, delay_use - 1),
-          std::min(kResidualEchoPowerRenderWindowSize - 1, delay_use + 1), &X2);
+          std::min(kKnownDelayRenderWindowSize - 1, delay_use + 1), &X2);
     } else {
       // Computes the spectral power over the latest blocks.
-      EchoGeneratingPower(render_buffer, 0,
-                          kResidualEchoPowerRenderWindowSize - 1, &X2);
+      EchoGeneratingPower(render_buffer, 0, kUnknownDelayRenderWindowSize - 1,
+                          &X2);
     }
 
     // Subtract the stationary noise power to avoid stationary noise causing
@@ -136,23 +141,25 @@ void ResidualEchoEstimator::Estimate(
         X2.begin(), X2.end(), X2_noise_floor_.begin(), X2.begin(),
         [](float a, float b) { return std::max(0.f, a - 10.f * b); });
 
-    NonLinearEstimate(aec_state.HeadsetDetected(), X2, Y2, R2);
-    AddEchoReverb(*R2, aec_state.SaturatedEcho(),
-                  std::min(static_cast<size_t>(kAdaptiveFilterLength),
-                           delay.value_or(kAdaptiveFilterLength)),
-                  aec_state.ReverbDecay(), R2);
+    NonLinearEstimate(
+        aec_state.SufficientFilterUpdates(), aec_state.SaturatedEcho(),
+        config_.param.ep_strength.bounded_erl, aec_state.TransparentMode(),
+        aec_state.InitialState(), X2, Y2, R2);
+
+    if (aec_state.ExternalDelay() && aec_state.FilterDelay() &&
+        aec_state.SaturatedEcho()) {
+      AddEchoReverb(*R2, aec_state.SaturatedEcho(),
+                    std::min(static_cast<size_t>(kAdaptiveFilterLength),
+                             delay.value_or(kAdaptiveFilterLength)),
+                    aec_state.ReverbDecay(), R2);
+    }
   }
 
   // If the echo is deemed inaudible, set the residual echo to zero.
-  if (aec_state.InaudibleEcho() &&
-      (aec_state.ExternalDelay() || aec_state.HeadsetDetected())) {
+  if (aec_state.InaudibleEcho()) {
     R2->fill(0.f);
-  }
-
-  // If the echo is saturated, estimate the echo power as the maximum echo power
-  // with a leakage factor.
-  if (aec_state.SaturatedEcho()) {
-    R2->fill((*std::max_element(R2->begin(), R2->end())) * 100.f);
+    R2_old_.fill(0.f);
+    R2_hold_counter_.fill(0.f);
   }
 
   std::copy(R2->begin(), R2->end(), R2_old_.begin());
@@ -183,17 +190,39 @@ void ResidualEchoEstimator::LinearEstimate(
 }
 
 void ResidualEchoEstimator::NonLinearEstimate(
-    bool headset_detected,
+    bool sufficient_filter_updates,
+    bool saturated_echo,
+    bool bounded_erl,
+    bool transparent_mode,
+    bool initial_state,
     const std::array<float, kFftLengthBy2Plus1>& X2,
     const std::array<float, kFftLengthBy2Plus1>& Y2,
     std::array<float, kFftLengthBy2Plus1>* R2) {
-  // Choose gains.
-  const float echo_path_gain_lf =
-      headset_detected ? kHeadsetEchoPathGain : config_.param.ep_strength.lf;
-  const float echo_path_gain_mf =
-      headset_detected ? kHeadsetEchoPathGain : config_.param.ep_strength.mf;
-  const float echo_path_gain_hf =
-      headset_detected ? kHeadsetEchoPathGain : config_.param.ep_strength.hf;
+  float echo_path_gain_lf;
+  float echo_path_gain_mf;
+  float echo_path_gain_hf;
+
+  // Set echo path gains.
+  if (saturated_echo) {
+    // If the echo could be saturated, use a very conservative gain.
+    echo_path_gain_lf = echo_path_gain_mf = echo_path_gain_hf = 10000.f;
+  } else if (sufficient_filter_updates && !bounded_erl) {
+    // If the filter should have been able to converge, and no assumption is
+    // possible on the ERL, use a low gain.
+    echo_path_gain_lf = echo_path_gain_mf = echo_path_gain_hf = 0.01f;
+  } else if ((sufficient_filter_updates && bounded_erl) || transparent_mode) {
+    // If the filter should have been able to converge, and and it is known that
+    // the ERL is bounded, use a very low gain.
+    echo_path_gain_lf = echo_path_gain_mf = echo_path_gain_hf = 0.001f;
+  } else if (!initial_state) {
+    // If the AEC is no longer in an initial state, assume a weak echo path.
+    echo_path_gain_lf = echo_path_gain_mf = echo_path_gain_hf = 0.01f;
+  } else {
+    // In the initial state, use conservative gains.
+    echo_path_gain_lf = config_.param.ep_strength.lf;
+    echo_path_gain_mf = config_.param.ep_strength.mf;
+    echo_path_gain_hf = config_.param.ep_strength.hf;
+  }
 
   // Compute preliminary residual echo.
   std::transform(

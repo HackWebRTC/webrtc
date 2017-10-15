@@ -106,7 +106,7 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(size_t num_bands)
       fft_buffer_(
           optimization_,
           num_bands,
-          std::max(kResidualEchoPowerRenderWindowSize, kAdaptiveFilterLength),
+          std::max(kUnknownDelayRenderWindowSize, kAdaptiveFilterLength),
           std::vector<size_t>(1, kAdaptiveFilterLength)),
       api_call_jitter_buffer_(num_bands),
       zero_block_(num_bands, std::vector<float>(kBlockSize, 0.f)) {
