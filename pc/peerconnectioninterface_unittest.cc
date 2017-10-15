@@ -3740,7 +3740,7 @@ TEST_F(PeerConnectionInterfaceTest, CreateAnswerWithoutRemoteDescription) {
   EXPECT_TRUE(DoCreateAnswer(&answer, nullptr));
 }
 
-// Tests that an error is returned if a description is applied that doesn't
+// Test that an error is returned if a description is applied that doesn't
 // respect the order of existing media sections.
 TEST_F(PeerConnectionInterfaceTest,
        MediaSectionOrderEnforcedForSubsequentOffers) {
@@ -3770,37 +3770,6 @@ TEST_F(PeerConnectionInterfaceTest,
                offer->description()->contents().end());
   std::reverse(offer->description()->transport_infos().begin(),
                offer->description()->transport_infos().end());
-  EXPECT_FALSE(DoSetLocalDescription(std::move(offer)));
-}
-
-// Tests that an error is returned if a description is applied that has fewer
-// media sections than the existing description.
-TEST_F(PeerConnectionInterfaceTest,
-       MediaSectionCountEnforcedForSubsequentOffer) {
-  CreatePeerConnection();
-  FakeConstraints constraints;
-  constraints.SetMandatoryReceiveAudio(true);
-  constraints.SetMandatoryReceiveVideo(true);
-  std::unique_ptr<SessionDescriptionInterface> offer;
-  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
-  EXPECT_TRUE(DoSetRemoteDescription(std::move(offer)));
-
-  // A remote offer with fewer media sections should be rejected.
-  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
-  offer->description()->contents().pop_back();
-  offer->description()->contents().pop_back();
-  ASSERT_TRUE(offer->description()->contents().empty());
-  EXPECT_FALSE(DoSetRemoteDescription(std::move(offer)));
-
-  std::unique_ptr<SessionDescriptionInterface> answer;
-  ASSERT_TRUE(DoCreateAnswer(&answer, nullptr));
-  EXPECT_TRUE(DoSetLocalDescription(std::move(answer)));
-
-  // A subsequent local offer with fewer media sections should be rejected.
-  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
-  offer->description()->contents().pop_back();
-  offer->description()->contents().pop_back();
-  ASSERT_TRUE(offer->description()->contents().empty());
   EXPECT_FALSE(DoSetLocalDescription(std::move(offer)));
 }
 
