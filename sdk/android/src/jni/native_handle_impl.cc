@@ -306,6 +306,8 @@ rtc::scoped_refptr<I420BufferInterface> AndroidTextureBuffer::ToI420() {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
+  // TODO(sakal): This call to a deperecated method will be removed when
+  // AndroidTextureBuffer is removed.
   jmethodID transform_mid = GetMethodID(
       jni,
       GetObjectClass(jni, surface_texture_helper_),

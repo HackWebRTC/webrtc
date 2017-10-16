@@ -11,6 +11,8 @@
 package org.webrtc;
 
 import android.graphics.Matrix;
+import android.opengl.GLES11Ext;
+import android.opengl.GLES20;
 import java.nio.ByteBuffer;
 
 /**
@@ -88,7 +90,20 @@ public class VideoFrame {
    * Interface for buffers that are stored as a single texture, either in OES or RGB format.
    */
   public interface TextureBuffer extends Buffer {
-    enum Type { OES, RGB }
+    enum Type {
+      OES(GLES11Ext.GL_TEXTURE_EXTERNAL_OES),
+      RGB(GLES20.GL_TEXTURE_2D);
+
+      private final int glTarget;
+
+      private Type(final int glTarget) {
+        this.glTarget = glTarget;
+      }
+
+      public int getGlTarget() {
+        return glTarget;
+      }
+    }
 
     Type getType();
     int getTextureId();

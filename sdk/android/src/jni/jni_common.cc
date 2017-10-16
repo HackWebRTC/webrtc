@@ -11,7 +11,8 @@
 #include "rtc_base/refcount.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 JNI_FUNCTION_DECLARATION(void,
                          JniCommon_nativeAddRef,
@@ -31,4 +32,24 @@ JNI_FUNCTION_DECLARATION(void,
       ->Release();
 }
 
-}  // namespace webrtc_jni
+JNI_FUNCTION_DECLARATION(jobject,
+                         JniCommon_allocateNativeByteBuffer,
+                         JNIEnv* jni,
+                         jclass,
+                         jint size) {
+  void* new_data = ::operator new(size);
+  jobject byte_buffer = jni->NewDirectByteBuffer(new_data, size);
+  return byte_buffer;
+}
+
+JNI_FUNCTION_DECLARATION(void,
+                         JniCommon_freeNativeByteBuffer,
+                         JNIEnv* jni,
+                         jclass,
+                         jobject byte_buffer) {
+  void* data = jni->GetDirectBufferAddress(byte_buffer);
+  ::operator delete(data);
+}
+
+}  // namespace jni
+}  // namespace webrtc

@@ -15,8 +15,8 @@ import android.os.HandlerThread;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CountDownLatch;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Can be used to save the video frames to file.
@@ -94,7 +94,7 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
     final float[] texMatrix = RendererCommon.multiplyMatrices(rotatedSamplingMatrix, layoutMatrix);
 
     try {
-      ByteBuffer buffer = nativeCreateNativeByteBuffer(outputFrameSize);
+      ByteBuffer buffer = JniCommon.allocateNativeByteBuffer(outputFrameSize);
       if (!frame.yuvFrame) {
         yuvConverter.convert(outputFrameBuffer, outputFileWidth, outputFileHeight, outputFileWidth,
             frame.textureId, texMatrix);
@@ -153,7 +153,7 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
 
         videoOutFile.write(data);
 
-        nativeFreeNativeByteBuffer(buffer);
+        JniCommon.freeNativeByteBuffer(buffer);
       }
       videoOutFile.close();
       Logging.d(TAG, "Video written to disk as " + outputFileName + ". Number frames are "
@@ -167,8 +167,4 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
   public static native void nativeI420Scale(ByteBuffer srcY, int strideY, ByteBuffer srcU,
       int strideU, ByteBuffer srcV, int strideV, int width, int height, ByteBuffer dst,
       int dstWidth, int dstHeight);
-
-  public static native ByteBuffer nativeCreateNativeByteBuffer(int size);
-
-  public static native void nativeFreeNativeByteBuffer(ByteBuffer buffer);
 }

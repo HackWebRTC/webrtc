@@ -67,41 +67,7 @@ class TextureBufferImpl implements VideoFrame.TextureBuffer {
 
   @Override
   public VideoFrame.I420Buffer toI420() {
-    if (type == Type.RGB) {
-      throw new RuntimeException("toI420 for RGB frames not implemented yet");
-    }
-    // SurfaceTextureHelper requires a stride that is divisible by 8.  Round width up.
-    // See SurfaceTextureHelper for details on the size and format.
-    int stride = ((width + 7) / 8) * 8;
-    int uvHeight = (height + 1) / 2;
-    // Due to the layout used by SurfaceTextureHelper, vPos + stride * uvHeight would overrun the
-    // buffer.  Add one row at the bottom to compensate for this.  There will never be data in the
-    // extra row, but now other code does not have to deal with v stride * v height exceeding the
-    // buffer's capacity.
-    int size = stride * (height + uvHeight + 1);
-    ByteBuffer buffer = ByteBuffer.allocateDirect(size);
-    surfaceTextureHelper.textureToYUV(buffer, width, height, stride, id,
-        RendererCommon.convertMatrixFromAndroidGraphicsMatrix(transformMatrix));
-
-    int yPos = 0;
-    int uPos = yPos + stride * height;
-    // Rows of U and V alternate in the buffer, so V data starts after the first row of U.
-    int vPos = uPos + stride / 2;
-
-    buffer.position(yPos);
-    buffer.limit(yPos + stride * height);
-    ByteBuffer dataY = buffer.slice();
-
-    buffer.position(uPos);
-    buffer.limit(uPos + stride * uvHeight);
-    ByteBuffer dataU = buffer.slice();
-
-    buffer.position(vPos);
-    buffer.limit(vPos + stride * uvHeight);
-    ByteBuffer dataV = buffer.slice();
-
-    // SurfaceTextureHelper uses the same stride for Y, U, and V data.
-    return JavaI420Buffer.wrap(width, height, dataY, stride, dataU, stride, dataV, stride, null);
+    return surfaceTextureHelper.textureToYuv(this);
   }
 
   @Override

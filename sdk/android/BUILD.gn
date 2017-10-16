@@ -436,6 +436,7 @@ android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/VideoSink.java",
     "api/org/webrtc/VideoSource.java",
     "api/org/webrtc/VideoTrack.java",
+    "api/org/webrtc/YuvConverter.java",
     "src/java/org/webrtc/AndroidVideoTrackSourceObserver.java",
     "src/java/org/webrtc/BaseBitrateAdjuster.java",
     "src/java/org/webrtc/BitrateAdjuster.java",
@@ -461,7 +462,6 @@ android_library("libjingle_peerconnection_java") {
     "src/java/org/webrtc/VideoDecoderWrapperCallback.java",
     "src/java/org/webrtc/VideoEncoderWrapperCallback.java",
     "src/java/org/webrtc/WrappedNativeI420Buffer.java",
-    "src/java/org/webrtc/YuvConverter.java",
   ]
 
   deps = [

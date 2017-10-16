@@ -22,6 +22,7 @@ import android.support.test.filters.SmallTest;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -93,6 +94,12 @@ public class SurfaceTextureHelperTest {
       return;
     fail("Not close enough, threshold " + threshold + ". Expected: " + expected + " Actual: "
         + actual);
+  }
+
+  @Before
+  public void setUp() {
+    // Load the JNI library for textureToYuv.
+    NativeLibrary.initialize(new NativeLibrary.DefaultLoader());
   }
 
   /**
@@ -428,7 +435,7 @@ public class SurfaceTextureHelperTest {
 
   @Test
   @MediumTest
-  public void testTexturetoYUV() throws InterruptedException {
+  public void testTexturetoYuv() throws InterruptedException {
     final int width = 16;
     final int height = 16;
 
@@ -482,21 +489,33 @@ public class SurfaceTextureHelperTest {
       //    ...
       //    368 UUUUUUUU VVVVVVVV
       //    384 buffer end
-      ByteBuffer buffer = ByteBuffer.allocateDirect(width * height * 3 / 2);
-      surfaceTextureHelper.textureToYUV(
-          buffer, width, height, width, listener.oesTextureId, listener.transformMatrix);
+      final VideoFrame.I420Buffer i420 =
+          surfaceTextureHelper.textureToYuv(surfaceTextureHelper.createTextureBuffer(width, height,
+              RendererCommon.convertMatrixToAndroidGraphicsMatrix(listener.transformMatrix)));
 
       surfaceTextureHelper.returnTextureFrame();
 
       // Allow off-by-one differences due to different rounding.
-      while (buffer.position() < width * height) {
-        assertClose(1, buffer.get() & 0xff, ref_y[i]);
+      final ByteBuffer dataY = i420.getDataY();
+      final int strideY = i420.getStrideY();
+      for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+          assertClose(1, ref_y[i], dataY.get(y * strideY + x) & 0xFF);
+        }
       }
-      while (buffer.hasRemaining()) {
-        if (buffer.position() % width < width / 2)
-          assertClose(1, buffer.get() & 0xff, ref_u[i]);
-        else
-          assertClose(1, buffer.get() & 0xff, ref_v[i]);
+
+      final int chromaWidth = width / 2;
+      final int chromaHeight = height / 2;
+
+      final ByteBuffer dataU = i420.getDataU();
+      final ByteBuffer dataV = i420.getDataV();
+      final int strideU = i420.getStrideU();
+      final int strideV = i420.getStrideV();
+      for (int y = 0; y < chromaHeight; y++) {
+        for (int x = 0; x < chromaWidth; x++) {
+          assertClose(1, ref_u[i], dataU.get(y * strideU + x) & 0xFF);
+          assertClose(1, ref_v[i], dataV.get(y * strideV + x) & 0xFF);
+        }
       }
     }
 
