@@ -38,8 +38,8 @@ class MessageHandler {
 template <class ReturnT, class FunctorT>
 class FunctorMessageHandler : public MessageHandler {
  public:
-  explicit FunctorMessageHandler(const FunctorT& functor)
-      : functor_(functor) {}
+  explicit FunctorMessageHandler(FunctorT&& functor)
+      : functor_(std::forward<FunctorT>(functor)) {}
   virtual void OnMessage(Message* msg) {
     result_ = functor_();
   }

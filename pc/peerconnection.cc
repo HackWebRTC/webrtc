@@ -1317,15 +1317,14 @@ bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
 
 bool PeerConnection::StartRtcEventLog(
     std::unique_ptr<RtcEventLogOutput> output) {
-  // This code assumes that the functor would be executed. Otherwise, this
-  // could leak.
-  // TODO(eladalon): When we switch to C++14 (or later), we can get rid of this
-  // conversion to a raw pointer, passing the unique_ptr directly to the lambda.
-  RtcEventLogOutput* output_raw = output.release();
-  auto functor = [this, output_raw]() {
-    return StartRtcEventLog_w(rtc::WrapUnique<RtcEventLogOutput>(output_raw));
+  // TODO(eladalon): In C++14, this can be done with a lambda.
+  struct Functor {
+    bool operator()() { return pc->StartRtcEventLog_w(std::move(output)); }
+    PeerConnection* const pc;
+    std::unique_ptr<RtcEventLogOutput> output;
   };
-  return worker_thread()->Invoke<bool>(RTC_FROM_HERE, functor);
+  return worker_thread()->Invoke<bool>(RTC_FROM_HERE,
+                                       Functor{this, std::move(output)});
 }
 
 void PeerConnection::StopRtcEventLog() {

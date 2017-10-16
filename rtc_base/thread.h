@@ -15,6 +15,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #if defined(WEBRTC_POSIX)
@@ -175,8 +176,9 @@ class RTC_LOCKABLE Thread : public MessageQueue {
   // NOTE: This function can only be called when synchronous calls are allowed.
   // See ScopedDisallowBlockingCalls for details.
   template <class ReturnT, class FunctorT>
-  ReturnT Invoke(const Location& posted_from, const FunctorT& functor) {
-    FunctorMessageHandler<ReturnT, FunctorT> handler(functor);
+  ReturnT Invoke(const Location& posted_from, FunctorT&& functor) {
+    FunctorMessageHandler<ReturnT, FunctorT> handler(
+        std::forward<FunctorT>(functor));
     InvokeInternal(posted_from, &handler);
     return handler.MoveResult();
   }
