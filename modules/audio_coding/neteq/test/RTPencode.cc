@@ -29,7 +29,6 @@
 #include "typedefs.h"  // NOLINT(build/include)
 
 // needed for NetEqDecoder
-#include "modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 
 /************************/

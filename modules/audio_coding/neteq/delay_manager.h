@@ -16,7 +16,6 @@
 #include <memory>
 #include <vector>
 
-#include "modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "modules/audio_coding/neteq/tick_timer.h"
 #include "rtc_base/constructormagic.h"
 #include "typedefs.h"  // NOLINT(build/include)

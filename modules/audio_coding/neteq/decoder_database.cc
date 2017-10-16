@@ -58,6 +58,17 @@ DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
 DecoderDatabase::DecoderInfo::DecoderInfo(DecoderInfo&&) = default;
 DecoderDatabase::DecoderInfo::~DecoderInfo() = default;
 
+bool DecoderDatabase::DecoderInfo::CanGetDecoder() const {
+  if (subtype_ == Subtype::kNormal && !external_decoder_ && !decoder_) {
+    // TODO(ossu): Keep a check here for now, since a number of tests create
+    // DecoderInfos without factories.
+    RTC_DCHECK(factory_);
+    return factory_->IsSupportedDecoder(audio_format_);
+  } else {
+    return true;
+  }
+}
+
 AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder() const {
   if (subtype_ != Subtype::kNormal) {
     // These are handled internally, so they have no AudioDecoder objects.
@@ -161,16 +172,17 @@ int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
   if (rtp_payload_type > 0x7F) {
     return kInvalidRtpPayloadType;
   }
-  // kCodecArbitrary is only supported through InsertExternal.
-  if (codec_type == NetEqDecoder::kDecoderArbitrary ||
-      !CodecSupported(codec_type)) {
-    return kCodecNotSupported;
+  if (codec_type == NetEqDecoder::kDecoderArbitrary) {
+    return kCodecNotSupported;  // Only supported through InsertExternal.
   }
   const auto opt_format = NetEqDecoderToSdpAudioFormat(codec_type);
   if (!opt_format) {
     return kCodecNotSupported;
   }
   DecoderInfo info(*opt_format, decoder_factory_, name);
+  if (!info.CanGetDecoder()) {
+    return kCodecNotSupported;
+  }
   auto ret =
       decoders_.insert(std::make_pair(rtp_payload_type, std::move(info)));
   if (ret.second == false) {

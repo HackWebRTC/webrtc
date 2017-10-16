@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_coding/neteq/audio_decoder_impl.h"
-
 #include <assert.h>
 #include <stdlib.h>
 
@@ -627,67 +625,6 @@ TEST_F(AudioDecoderOpusStereoTest, EncodeDecode) {
 
 TEST_F(AudioDecoderOpusStereoTest, SetTargetBitrate) {
   TestOpusSetTargetBitrates(audio_encoder_.get());
-}
-
-namespace {
-#ifdef WEBRTC_CODEC_ILBC
-const bool has_ilbc = true;
-#else
-const bool has_ilbc = false;
-#endif
-#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
-const bool has_isac = true;
-#else
-const bool has_isac = false;
-#endif
-#ifdef WEBRTC_CODEC_ISAC
-const bool has_isac_swb = true;
-#else
-const bool has_isac_swb = false;
-#endif
-#ifdef WEBRTC_CODEC_G722
-const bool has_g722 = true;
-#else
-const bool has_g722 = false;
-#endif
-#ifdef WEBRTC_CODEC_OPUS
-const bool has_opus = true;
-#else
-const bool has_opus = false;
-#endif
-}  // namespace
-
-TEST(AudioDecoder, CodecSupported) {
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCMu));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCMa));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCMu_2ch));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCMa_2ch));
-  EXPECT_EQ(has_ilbc, CodecSupported(NetEqDecoder::kDecoderILBC));
-  EXPECT_EQ(has_isac, CodecSupported(NetEqDecoder::kDecoderISAC));
-  EXPECT_EQ(has_isac_swb, CodecSupported(NetEqDecoder::kDecoderISACswb));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCM16B));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCM16Bwb));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCM16Bswb32kHz));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCM16Bswb48kHz));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCM16B_2ch));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCM16Bwb_2ch));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCM16Bswb32kHz_2ch));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCM16Bswb48kHz_2ch));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCM16B_5ch));
-  EXPECT_EQ(has_g722, CodecSupported(NetEqDecoder::kDecoderG722));
-  EXPECT_EQ(has_g722, CodecSupported(NetEqDecoder::kDecoderG722_2ch));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderRED));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderAVT));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderAVT16kHz));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderAVT32kHz));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderAVT48kHz));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderCNGnb));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderCNGwb));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderCNGswb32kHz));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderCNGswb48kHz));
-  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderArbitrary));
-  EXPECT_EQ(has_opus, CodecSupported(NetEqDecoder::kDecoderOpus));
-  EXPECT_EQ(has_opus, CodecSupported(NetEqDecoder::kDecoderOpus_2ch));
 }
 
 }  // namespace webrtc

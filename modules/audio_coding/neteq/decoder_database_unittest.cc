@@ -34,7 +34,14 @@ TEST(DecoderDatabase, CreateAndDestroy) {
 }
 
 TEST(DecoderDatabase, InsertAndRemove) {
-  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  rtc::scoped_refptr<MockAudioDecoderFactory> factory(
+      new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  EXPECT_CALL(*factory, IsSupportedDecoder(_))
+      .WillOnce(Invoke([](const SdpAudioFormat& format) {
+        EXPECT_EQ("pcmu", format.name);
+        return true;
+      }));
+  DecoderDatabase db(factory);
   const uint8_t kPayloadType = 0;
   const std::string kCodecName = "Robert\'); DROP TABLE Students;";
   EXPECT_EQ(
@@ -48,7 +55,18 @@ TEST(DecoderDatabase, InsertAndRemove) {
 }
 
 TEST(DecoderDatabase, InsertAndRemoveAll) {
-  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  rtc::scoped_refptr<MockAudioDecoderFactory> factory(
+      new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  EXPECT_CALL(*factory, IsSupportedDecoder(_))
+      .WillOnce(Invoke([](const SdpAudioFormat& format) {
+        EXPECT_EQ("pcmu", format.name);
+        return true;
+      }))
+      .WillOnce(Invoke([](const SdpAudioFormat& format) {
+        EXPECT_EQ("pcma", format.name);
+        return true;
+      }));
+  DecoderDatabase db(factory);
   const std::string kCodecName1 = "Robert\'); DROP TABLE Students;";
   const std::string kCodecName2 = "https://xkcd.com/327/";
   EXPECT_EQ(DecoderDatabase::kOK,
@@ -65,6 +83,11 @@ TEST(DecoderDatabase, InsertAndRemoveAll) {
 TEST(DecoderDatabase, GetDecoderInfo) {
   rtc::scoped_refptr<MockAudioDecoderFactory> factory(
       new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  EXPECT_CALL(*factory, IsSupportedDecoder(_))
+      .WillOnce(Invoke([](const SdpAudioFormat& format) {
+        EXPECT_EQ("pcmu", format.name);
+        return true;
+      }));
   auto* decoder = new MockAudioDecoder;
   EXPECT_CALL(*factory, MakeAudioDecoderMock(_, _))
       .WillOnce(Invoke([decoder](const SdpAudioFormat& format,
@@ -100,7 +123,14 @@ TEST(DecoderDatabase, GetDecoder) {
 }
 
 TEST(DecoderDatabase, TypeTests) {
-  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  rtc::scoped_refptr<MockAudioDecoderFactory> factory(
+      new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  EXPECT_CALL(*factory, IsSupportedDecoder(_))
+      .WillOnce(Invoke([](const SdpAudioFormat& format) {
+        EXPECT_EQ("pcmu", format.name);
+        return true;
+      }));
+  DecoderDatabase db(factory);
   const uint8_t kPayloadTypePcmU = 0;
   const uint8_t kPayloadTypeCng = 13;
   const uint8_t kPayloadTypeDtmf = 100;
@@ -163,11 +193,19 @@ TEST(DecoderDatabase, ExternalDecoder) {
 }
 
 TEST(DecoderDatabase, CheckPayloadTypes) {
-  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  constexpr int kNumPayloads = 10;
+  rtc::scoped_refptr<MockAudioDecoderFactory> factory(
+      new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  EXPECT_CALL(*factory, IsSupportedDecoder(_))
+      .Times(kNumPayloads)
+      .WillRepeatedly(Invoke([](const SdpAudioFormat& format) {
+        EXPECT_EQ("pcmu", format.name);
+        return true;
+      }));
+  DecoderDatabase db(factory);
   // Load a number of payloads into the database. Payload types are 0, 1, ...,
   // while the decoder type is the same for all payload types (this does not
   // matter for the test).
-  const int kNumPayloads = 10;
   for (uint8_t payload_type = 0; payload_type < kNumPayloads; ++payload_type) {
     EXPECT_EQ(DecoderDatabase::kOK,
               db.RegisterPayload(payload_type, NetEqDecoder::kDecoderPCMu, ""));

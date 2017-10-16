@@ -938,8 +938,6 @@ rtc_static_library("neteq") {
   sources = [
     "neteq/accelerate.cc",
     "neteq/accelerate.h",
-    "neteq/audio_decoder_impl.cc",
-    "neteq/audio_decoder_impl.h",
     "neteq/audio_multi_vector.cc",
     "neteq/audio_multi_vector.h",
     "neteq/audio_vector.cc",
@@ -1012,10 +1010,7 @@ rtc_static_library("neteq") {
   deps = [
     ":audio_coding_module_typedefs",
     ":cng",
-    ":g711",
-    ":isac_fix",
     ":neteq_decoder_enum",
-    ":pcm16b",
     "..:module_api",
     "../..:webrtc_common",
     "../../api:optional",
@@ -1025,28 +1020,6 @@ rtc_static_library("neteq") {
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
   ]
-
-  defines = []
-
-  if (rtc_include_ilbc) {
-    defines += [ "WEBRTC_CODEC_ILBC" ]
-    deps += [ ":ilbc" ]
-  }
-  if (rtc_include_opus) {
-    defines += [ "WEBRTC_CODEC_OPUS" ]
-    deps += [ ":webrtc_opus" ]
-  }
-  if (!build_with_mozilla) {
-    if (current_cpu == "arm") {
-      defines += [ "WEBRTC_CODEC_ISACFX" ]
-      deps += [ ":isac_fix" ]
-    } else {
-      defines += [ "WEBRTC_CODEC_ISAC" ]
-      deps += [ ":isac" ]
-    }
-    defines += [ "WEBRTC_CODEC_G722" ]
-    deps += [ ":g722" ]
-  }
 }
 
 # Although providing only test support, this target must be outside of the

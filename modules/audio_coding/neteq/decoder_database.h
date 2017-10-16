@@ -19,7 +19,7 @@
 #include "api/audio_codecs/audio_format.h"
 #include "common_types.h"  // NOLINT(build/include)  // NULL
 #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
-#include "modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/scoped_ref_ptr.h"
@@ -54,6 +54,10 @@ class DecoderDatabase {
                 const std::string& codec_name);
     DecoderInfo(DecoderInfo&&);
     ~DecoderInfo();
+
+    // Was this info object created with a specification that allows us to
+    // actually produce a decoder?
+    bool CanGetDecoder() const;
 
     // Get the AudioDecoder object, creating it first if necessary.
     AudioDecoder* GetDecoder() const;

@@ -24,7 +24,6 @@
 #include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
-#include "modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "modules/audio_coding/neteq/tools/audio_checksum.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
 #include "modules/audio_coding/neteq/tools/constant_pcm_packet_source.h"
