@@ -267,7 +267,9 @@ template("rtc_test") {
                              "configs",
                              "public_configs",
                              "suppressed_configs",
+                             "visibility",
                            ])
+    forward_variables_from(invoker, [ "visibility" ])
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
@@ -290,7 +292,9 @@ template("rtc_source_set") {
                              "configs",
                              "public_configs",
                              "suppressed_configs",
+                             "visibility",
                            ])
+    forward_variables_from(invoker, [ "visibility" ])
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
@@ -310,7 +314,9 @@ template("rtc_executable") {
                              "configs",
                              "public_configs",
                              "suppressed_configs",
+                             "visibility",
                            ])
+    forward_variables_from(invoker, [ "visibility" ])
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
@@ -334,7 +340,9 @@ template("rtc_static_library") {
                              "configs",
                              "public_configs",
                              "suppressed_configs",
+                             "visibility",
                            ])
+    forward_variables_from(invoker, [ "visibility" ])
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
@@ -353,7 +361,9 @@ template("rtc_shared_library") {
                              "configs",
                              "public_configs",
                              "suppressed_configs",
+                             "visibility",
                            ])
+    forward_variables_from(invoker, [ "visibility" ])
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
@@ -378,7 +388,9 @@ if (is_ios) {
                                "configs",
                                "public_configs",
                                "suppressed_configs",
+                               "visibility",
                              ])
+      forward_variables_from(invoker, [ "visibility" ])
       configs += invoker.configs
       configs -= rtc_remove_configs
       configs -= invoker.suppressed_configs
