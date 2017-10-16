@@ -11,6 +11,7 @@
 #include "modules/audio_processing/aec3/aec_state.h"
 
 #include <math.h>
+
 #include <numeric>
 #include <vector>
 
@@ -258,9 +259,9 @@ void AecState::EchoAudibility::Update(rtc::ArrayView<const float> x,
   auto result_x = std::minmax_element(x.begin(), x.end());
   auto result_s = std::minmax_element(s.begin(), s.end());
   const float x_abs =
-      std::max(std::abs(*result_x.first), std::abs(*result_x.second));
+      std::max(fabsf(*result_x.first), fabsf(*result_x.second));
   const float s_abs =
-      std::max(std::abs(*result_s.first), std::abs(*result_s.second));
+      std::max(fabsf(*result_s.first), fabsf(*result_s.second));
 
   if (converged_filter) {
     if (x_abs < 20.f) {
@@ -290,7 +291,7 @@ void AecState::EchoAudibility::Update(rtc::ArrayView<const float> x,
 void AecState::EchoAudibility::UpdateWithOutput(rtc::ArrayView<const float> e) {
   const float e_max = *std::max_element(e.begin(), e.end());
   const float e_min = *std::min_element(e.begin(), e.end());
-  const float e_abs = std::max(std::abs(e_max), std::abs(e_min));
+  const float e_abs = std::max(fabsf(e_max), fabsf(e_min));
 
   if (max_nearend_ < e_abs) {
     max_nearend_ = e_abs;
