@@ -186,7 +186,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     bool adaptive_gain_controller_enabled,
     bool gain_controller2_enabled,
     bool level_controller_enabled,
-    bool echo_canceller3_enabled,
+    bool echo_controller_enabled,
     bool voice_activity_detector_enabled,
     bool level_estimator_enabled,
     bool transient_suppressor_enabled) {
@@ -206,7 +206,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
   changed |=
       (gain_controller2_enabled != gain_controller2_enabled_);
   changed |= (level_controller_enabled != level_controller_enabled_);
-  changed |= (echo_canceller3_enabled != echo_canceller3_enabled_);
+  changed |= (echo_controller_enabled != echo_controller_enabled_);
   changed |= (level_estimator_enabled != level_estimator_enabled_);
   changed |=
       (voice_activity_detector_enabled != voice_activity_detector_enabled_);
@@ -222,7 +222,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     adaptive_gain_controller_enabled_ = adaptive_gain_controller_enabled;
     gain_controller2_enabled_ = gain_controller2_enabled;
     level_controller_enabled_ = level_controller_enabled;
-    echo_canceller3_enabled_ = echo_canceller3_enabled;
+    echo_controller_enabled_ = echo_controller_enabled;
     level_estimator_enabled_ = level_estimator_enabled;
     voice_activity_detector_enabled_ = voice_activity_detector_enabled;
     transient_suppressor_enabled_ = transient_suppressor_enabled;
@@ -248,7 +248,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandProcessingActive()
   return low_cut_filter_enabled_ || echo_canceller_enabled_ ||
          mobile_echo_controller_enabled_ || noise_suppressor_enabled_ ||
          beamformer_enabled_ || adaptive_gain_controller_enabled_ ||
-         echo_canceller3_enabled_;
+         echo_controller_enabled_;
 }
 
 bool AudioProcessingImpl::ApmSubmoduleStates::CaptureFullBandProcessingActive()
@@ -261,7 +261,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandSubModulesActive()
     const {
   return RenderMultiBandProcessingActive() || echo_canceller_enabled_ ||
          mobile_echo_controller_enabled_ || adaptive_gain_controller_enabled_ ||
-         echo_canceller3_enabled_;
+         echo_controller_enabled_;
 }
 
 bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandProcessingActive()
@@ -372,6 +372,10 @@ AudioProcessingImpl::AudioProcessingImpl(
   {
     rtc::CritScope cs_render(&crit_render_);
     rtc::CritScope cs_capture(&crit_capture_);
+
+    // Mark Echo Controller enabled if a factory is injected.
+    capture_nonlocked_.echo_controller_enabled =
+        static_cast<bool>(echo_control_factory_);
 
     public_submodules_->echo_cancellation.reset(
         new EchoCancellationImpl(&crit_render_, &crit_capture_));
@@ -690,13 +694,13 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   // Inject EchoCanceller3 if requested.
   if (config.echo_canceller3.enabled && !echo_control_factory_) {
-    capture_nonlocked_.echo_canceller3_enabled =
+    capture_nonlocked_.echo_controller_enabled =
         config_.echo_canceller3.enabled;
     echo_control_factory_ = std::unique_ptr<EchoControlFactory>(
         new EchoCanceller3Factory(config.echo_canceller3));
     InitializeEchoController();
     LOG(LS_INFO) << "Echo canceller 3 activated: "
-                 << capture_nonlocked_.echo_canceller3_enabled;
+                 << capture_nonlocked_.echo_controller_enabled;
   }
 
   config_ok = GainController2::Validate(config_.gain_controller2);
@@ -773,7 +777,7 @@ size_t AudioProcessingImpl::num_input_channels() const {
 size_t AudioProcessingImpl::num_proc_channels() const {
   // Used as callback from submodules, hence locking is not allowed.
   return (capture_nonlocked_.beamformer_enabled ||
-          capture_nonlocked_.echo_canceller3_enabled)
+          capture_nonlocked_.echo_controller_enabled)
              ? 1
              : num_output_channels();
 }
@@ -1642,7 +1646,7 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       public_submodules_->gain_control->is_enabled(),
       config_.gain_controller2.enabled,
       capture_nonlocked_.level_controller_enabled,
-      capture_nonlocked_.echo_canceller3_enabled,
+      capture_nonlocked_.echo_controller_enabled,
       public_submodules_->voice_detection->is_enabled(),
       public_submodules_->level_estimator->is_enabled(),
       capture_.transient_suppressor_enabled);
@@ -1809,8 +1813,8 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
   if (constants_.agc_clipped_level_min != kClippedLevelMin) {
     experiments_description += "AgcClippingLevelExperiment;";
   }
-  if (capture_nonlocked_.echo_canceller3_enabled) {
-    experiments_description += "EchoCanceller3;";
+  if (capture_nonlocked_.echo_controller_enabled) {
+    experiments_description += "EchoController;";
   }
   if (config_.gain_controller2.enabled) {
     experiments_description += "GainController2;";

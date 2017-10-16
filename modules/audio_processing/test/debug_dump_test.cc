@@ -402,7 +402,7 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringInclusive) {
       ASSERT_TRUE(msg->has_experiments_description());
       EXPECT_PRED_FORMAT2(testing::IsSubstring, "RefinedAdaptiveFilter",
                           msg->experiments_description().c_str());
-      EXPECT_PRED_FORMAT2(testing::IsSubstring, "EchoCanceller3",
+      EXPECT_PRED_FORMAT2(testing::IsSubstring, "EchoController",
                           msg->experiments_description().c_str());
       EXPECT_PRED_FORMAT2(testing::IsSubstring, "AgcClippingLevelExperiment",
                           msg->experiments_description().c_str());
@@ -457,7 +457,7 @@ TEST_F(DebugDumpTest, VerifyAec3ExperimentalString) {
     if (event->type() == audioproc::Event::CONFIG) {
       const audioproc::Config* msg = &event->config();
       ASSERT_TRUE(msg->has_experiments_description());
-      EXPECT_PRED_FORMAT2(testing::IsSubstring, "EchoCanceller3",
+      EXPECT_PRED_FORMAT2(testing::IsSubstring, "EchoController",
                           msg->experiments_description().c_str());
     }
   }
