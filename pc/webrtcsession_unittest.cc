@@ -77,9 +77,6 @@ typedef PeerConnectionInterface::RTCOfferAnswerOptions RTCOfferAnswerOptions;
 
 static const int kClientAddrPort = 0;
 static const char kClientAddrHost1[] = "11.11.11.11";
-static const char kClientIPv6AddrHost1[] =
-    "2620:0:aaaa:bbbb:cccc:dddd:eeee:ffff";
-static const char kClientAddrHost2[] = "22.22.22.22";
 static const char kStunAddrHost[] = "99.99.99.1";
 
 static const char kSessionVersion[] = "1";
@@ -369,9 +366,6 @@ class WebRtcSessionTest
 
   void AddInterface(const SocketAddress& addr) {
     network_manager_.AddInterface(addr);
-  }
-  void RemoveInterface(const SocketAddress& addr) {
-    network_manager_.RemoveInterface(addr);
   }
 
   // If |cert_generator| != null or |rtc_configuration| contains |certificates|
@@ -1057,99 +1051,6 @@ class WebRtcSessionTest
     }
     return false;
   }
-  // Helper class to configure loopback network and verify Best
-  // Connection using right IP protocol for TestLoopbackCall
-  // method. LoopbackNetworkManager applies firewall rules to block
-  // all ping traffic once ICE completed, and remove them to observe
-  // ICE reconnected again. This LoopbackNetworkConfiguration struct
-  // verifies the best connection is using the right IP protocol after
-  // initial ICE convergences.
-
-  class LoopbackNetworkConfiguration {
-   public:
-    LoopbackNetworkConfiguration()
-        : test_ipv6_network_(false),
-          test_extra_ipv4_network_(false),
-          best_connection_after_initial_ice_converged_(1, 0) {}
-
-    // Used to track the expected best connection count in each IP protocol.
-    struct ExpectedBestConnection {
-      ExpectedBestConnection(int ipv4_count, int ipv6_count)
-          : ipv4_count_(ipv4_count),
-            ipv6_count_(ipv6_count) {}
-
-      int ipv4_count_;
-      int ipv6_count_;
-    };
-
-    bool test_ipv6_network_;
-    bool test_extra_ipv4_network_;
-    ExpectedBestConnection best_connection_after_initial_ice_converged_;
-
-    void VerifyBestConnectionAfterIceConverge(
-        const rtc::scoped_refptr<FakeMetricsObserver> metrics_observer) const {
-      Verify(metrics_observer, best_connection_after_initial_ice_converged_);
-    }
-
-   private:
-    void Verify(const rtc::scoped_refptr<FakeMetricsObserver> metrics_observer,
-                const ExpectedBestConnection& expected) const {
-      EXPECT_EQ(
-          metrics_observer->GetEnumCounter(webrtc::kEnumCounterAddressFamily,
-                                           webrtc::kBestConnections_IPv4),
-          expected.ipv4_count_);
-      EXPECT_EQ(
-          metrics_observer->GetEnumCounter(webrtc::kEnumCounterAddressFamily,
-                                           webrtc::kBestConnections_IPv6),
-          expected.ipv6_count_);
-      // This is used in the loopback call so there is only single host to host
-      // candidate pair.
-      EXPECT_EQ(metrics_observer->GetEnumCounter(
-                    webrtc::kEnumCounterIceCandidatePairTypeUdp,
-                    webrtc::kIceCandidatePairHostHost),
-                0);
-      EXPECT_EQ(metrics_observer->GetEnumCounter(
-                    webrtc::kEnumCounterIceCandidatePairTypeUdp,
-                    webrtc::kIceCandidatePairHostPublicHostPublic),
-                1);
-    }
-  };
-
-  class LoopbackNetworkManager {
-   public:
-    LoopbackNetworkManager(WebRtcSessionTest* session,
-                           const LoopbackNetworkConfiguration& config)
-        : config_(config) {
-      session->AddInterface(
-          rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-      if (config_.test_extra_ipv4_network_) {
-        session->AddInterface(
-            rtc::SocketAddress(kClientAddrHost2, kClientAddrPort));
-      }
-      if (config_.test_ipv6_network_) {
-        session->AddInterface(
-            rtc::SocketAddress(kClientIPv6AddrHost1, kClientAddrPort));
-      }
-    }
-
-    void ApplyFirewallRules(rtc::FirewallSocketServer* fss) {
-      fss->AddRule(false, rtc::FP_ANY, rtc::FD_ANY,
-                   rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-      if (config_.test_extra_ipv4_network_) {
-        fss->AddRule(false, rtc::FP_ANY, rtc::FD_ANY,
-                     rtc::SocketAddress(kClientAddrHost2, kClientAddrPort));
-      }
-      if (config_.test_ipv6_network_) {
-        fss->AddRule(false, rtc::FP_ANY, rtc::FD_ANY,
-                     rtc::SocketAddress(kClientIPv6AddrHost1, kClientAddrPort));
-      }
-    }
-
-    void ClearRules(rtc::FirewallSocketServer* fss) { fss->ClearRules(); }
-
-   private:
-    LoopbackNetworkConfiguration config_;
-  };
 
   // The method sets up a call from the session to itself, in a loopback
   // arrangement.  It also uses a firewall rule to create a temporary
@@ -1195,50 +1096,8 @@ class WebRtcSessionTest
                    observer_.ice_connection_state_, kIceCandidatesTimeout);
   }
 
-  void TestLoopbackCall(const LoopbackNetworkConfiguration& config) {
-    LoopbackNetworkManager loopback_network_manager(this, config);
-    SetupLoopbackCall();
-    config.VerifyBestConnectionAfterIceConverge(metrics_observer_);
-    // Adding firewall rule to block ping requests, which should cause
-    // transport channel failure.
-
-    loopback_network_manager.ApplyFirewallRules(fss_.get());
-
-    LOG(LS_INFO) << "Firewall Rules applied";
-    EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
-                   observer_.ice_connection_state_,
-                   kIceCandidatesTimeout);
-
-    metrics_observer_->Reset();
-
-    // Clearing the rules, session should move back to completed state.
-    loopback_network_manager.ClearRules(fss_.get());
-
-    LOG(LS_INFO) << "Firewall Rules cleared";
-    EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
-                   observer_.ice_connection_state_,
-                   kIceCandidatesTimeout);
-
-    // Now we block ping requests and wait until the ICE connection transitions
-    // to the Failed state.  This will take at least 30 seconds because it must
-    // wait for the Port to timeout.
-    int port_timeout = 30000;
-
-    loopback_network_manager.ApplyFirewallRules(fss_.get());
-    LOG(LS_INFO) << "Firewall Rules applied again";
-    EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
-                   observer_.ice_connection_state_,
-                   kIceCandidatesTimeout + port_timeout);
-  }
-
-  void TestLoopbackCall() {
-    LoopbackNetworkConfiguration config;
-    TestLoopbackCall(config);
-  }
-
   void TestPacketOptions() {
-    LoopbackNetworkConfiguration config;
-    LoopbackNetworkManager loopback_network_manager(this, config);
+    AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
 
     SetupLoopbackCall();
 
@@ -2481,8 +2340,7 @@ TEST_F(WebRtcSessionTest, TestMaxBundleWithSetRemoteDescriptionFirst) {
 // disconnected non-bundle transport and then replacing it. The application
 // should not receive any changes in the ICE state.
 TEST_F(WebRtcSessionTest, TestAddChannelToConnectedBundle) {
-  LoopbackNetworkConfiguration config;
-  LoopbackNetworkManager loopback_network_manager(this, config);
+  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
   // Both BUNDLE and RTCP-mux need to be enabled for the ICE state to remain
   // connected. Disabling either of these two means that we need to wait for the
   // answer to find out if more transports are needed.
@@ -2721,37 +2579,6 @@ TEST_F(WebRtcSessionTest, TestSessionContentError) {
   SetLocalDescriptionExpectError("", "ERROR_CONTENT", offer);
 }
 
-// Runs the loopback call test with BUNDLE and STUN disabled.
-TEST_F(WebRtcSessionTest, TestIceStatesBasic) {
-  // Lets try with only UDP ports.
-  allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
-                        cricket::PORTALLOCATOR_DISABLE_STUN |
-                        cricket::PORTALLOCATOR_DISABLE_RELAY);
-  TestLoopbackCall();
-}
-
-TEST_F(WebRtcSessionTest, TestIceStatesBasicIPv6) {
-  allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
-                        cricket::PORTALLOCATOR_DISABLE_STUN |
-                        cricket::PORTALLOCATOR_ENABLE_IPV6 |
-                        cricket::PORTALLOCATOR_DISABLE_RELAY);
-
-  // best connection is IPv6 since it has higher network preference.
-  LoopbackNetworkConfiguration config;
-  config.test_ipv6_network_ = true;
-  config.best_connection_after_initial_ice_converged_ =
-      LoopbackNetworkConfiguration::ExpectedBestConnection(0, 1);
-
-  TestLoopbackCall(config);
-}
-
-// Runs the loopback call test with BUNDLE and STUN enabled.
-TEST_F(WebRtcSessionTest, TestIceStatesBundle) {
-  allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
-                        cricket::PORTALLOCATOR_DISABLE_RELAY);
-  TestLoopbackCall();
-}
-
 TEST_F(WebRtcSessionTest, TestRtpDataChannel) {
   configuration_.enable_rtp_data_channel = true;
   Init();
@@ -2943,64 +2770,6 @@ TEST_F(WebRtcSessionTest, TestCombinedAudioVideoBweConstraint) {
   ASSERT_TRUE(voice_channel_ != NULL);
   const cricket::AudioOptions& audio_options = voice_channel_->options();
   EXPECT_EQ(rtc::Optional<bool>(true), audio_options.combined_audio_video_bwe);
-}
-
-// Tests that we can renegotiate new media content with ICE candidates in the
-// new remote SDP.
-TEST_P(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesInSdp) {
-  InitWithDtls(GetParam());
-  SetFactoryDtlsSrtp();
-
-  SendAudioOnlyStream2();
-  SessionDescriptionInterface* offer = CreateOffer();
-  SetLocalDescriptionWithoutError(offer);
-
-  SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
-  SetRemoteDescriptionWithoutError(answer);
-
-  cricket::MediaSessionOptions options;
-  GetOptionsForRemoteOffer(&options);
-  offer = CreateRemoteOffer(options, cricket::SEC_DISABLED);
-
-  cricket::Candidate candidate1;
-  candidate1.set_address(rtc::SocketAddress("1.1.1.1", 5000));
-  candidate1.set_component(1);
-  JsepIceCandidate ice_candidate(kMediaContentName1, kMediaContentIndex1,
-                                 candidate1);
-  EXPECT_TRUE(offer->AddCandidate(&ice_candidate));
-  SetRemoteDescriptionWithoutError(offer);
-
-  answer = CreateAnswer();
-  SetLocalDescriptionWithoutError(answer);
-}
-
-// Tests that we can renegotiate new media content with ICE candidates separated
-// from the remote SDP.
-TEST_P(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesSeparated) {
-  InitWithDtls(GetParam());
-  SetFactoryDtlsSrtp();
-
-  SendAudioOnlyStream2();
-  SessionDescriptionInterface* offer = CreateOffer();
-  SetLocalDescriptionWithoutError(offer);
-
-  SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
-  SetRemoteDescriptionWithoutError(answer);
-
-  cricket::MediaSessionOptions options;
-  GetOptionsForRemoteOffer(&options);
-  offer = CreateRemoteOffer(options, cricket::SEC_DISABLED);
-  SetRemoteDescriptionWithoutError(offer);
-
-  cricket::Candidate candidate1;
-  candidate1.set_address(rtc::SocketAddress("1.1.1.1", 5000));
-  candidate1.set_component(1);
-  JsepIceCandidate ice_candidate(kMediaContentName1, kMediaContentIndex1,
-                                 candidate1);
-  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate));
-
-  answer = CreateAnswer();
-  SetLocalDescriptionWithoutError(answer);
 }
 
 #ifdef HAVE_QUIC

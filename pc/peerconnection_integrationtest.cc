@@ -31,6 +31,7 @@
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/portinterface.h"
 #include "p2p/base/sessiondescription.h"
+#include "p2p/base/teststunserver.h"
 #include "p2p/base/testturncustomizer.h"
 #include "p2p/base/testturnserver.h"
 #include "p2p/client/basicportallocator.h"
@@ -45,6 +46,7 @@
 #include "pc/test/fakevideotrackrenderer.h"
 #include "pc/test/mockpeerconnectionobservers.h"
 #include "rtc_base/fakenetwork.h"
+#include "rtc_base/firewallsocketserver.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "test/gmock.h"
@@ -55,6 +57,9 @@ using cricket::FakeWebRtcVideoDecoderFactory;
 using cricket::FakeWebRtcVideoEncoder;
 using cricket::FakeWebRtcVideoEncoderFactory;
 using cricket::MediaContentDescription;
+using rtc::SocketAddress;
+using ::testing::ElementsAre;
+using ::testing::Values;
 using webrtc::DataBuffer;
 using webrtc::DataChannelInterface;
 using webrtc::DtmfSender;
@@ -93,6 +98,8 @@ static const char kDataChannelLabel[] = "data_channel";
 // default changes.
 static const int kDefaultSrtpCryptoSuite = rtc::SRTP_AES128_CM_SHA1_32;
 static const int kDefaultSrtpCryptoSuiteGcm = rtc::SRTP_AEAD_AES_256_GCM;
+
+static const SocketAddress kDefaultLocalAddress("192.168.1.1", 0);
 
 // Helper function for constructing offer/answer options to initiate an ICE
 // restart.
@@ -277,10 +284,16 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     generated_sdp_munger_ = munger;
   }
 
-  // Number of times the gathering state has transitioned to "gathering".
-  // Useful for telling if an ICE restart occurred as expected.
-  int transitions_to_gathering_state() const {
-    return transitions_to_gathering_state_;
+  // Every ICE connection state in order that has been seen by the observer.
+  std::vector<PeerConnectionInterface::IceConnectionState>
+  ice_connection_state_history() const {
+    return ice_connection_state_history_;
+  }
+
+  // Every ICE gathering state in order that has been seen by the observer.
+  std::vector<PeerConnectionInterface::IceGatheringState>
+  ice_gathering_state_history() const {
+    return ice_gathering_state_history_;
   }
 
   // TODO(deadbeef): Switch the majority of these tests to use AddTrack instead
@@ -538,6 +551,11 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     }
   }
 
+  rtc::FakeNetworkManager* network() const {
+    return fake_network_manager_.get();
+  }
+  cricket::PortAllocator* port_allocator() const { return port_allocator_; }
+
  private:
   explicit PeerConnectionWrapper(const std::string& debug_name)
       : debug_name_(debug_name) {}
@@ -554,10 +572,11 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     RTC_DCHECK(!peer_connection_factory_);
 
     fake_network_manager_.reset(new rtc::FakeNetworkManager());
-    fake_network_manager_->AddInterface(rtc::SocketAddress("192.168.1.1", 0));
+    fake_network_manager_->AddInterface(kDefaultLocalAddress);
 
     std::unique_ptr<cricket::PortAllocator> port_allocator(
         new cricket::BasicPortAllocator(fake_network_manager_.get()));
+    port_allocator_ = port_allocator.get();
     fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
     if (!fake_audio_capture_module_) {
       return false;
@@ -611,6 +630,10 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   }
 
   void set_signaling_delay_ms(int delay_ms) { signaling_delay_ms_ = delay_ms; }
+
+  void set_signal_ice_candidates(bool signal) {
+    signal_ice_candidates_ = signal;
+  }
 
   void EnableVideoDecoderFactory() {
     video_decoder_factory_enabled_ = true;
@@ -818,20 +841,19 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   void OnIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) override {
     EXPECT_EQ(pc()->ice_connection_state(), new_state);
+    ice_connection_state_history_.push_back(new_state);
   }
   void OnIceGatheringChange(
       webrtc::PeerConnectionInterface::IceGatheringState new_state) override {
-    if (new_state == PeerConnectionInterface::kIceGatheringGathering) {
-      ++transitions_to_gathering_state_;
-    }
     EXPECT_EQ(pc()->ice_gathering_state(), new_state);
+    ice_gathering_state_history_.push_back(new_state);
   }
   void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
     LOG(LS_INFO) << debug_name_ << ": OnIceCandidate";
 
     std::string ice_sdp;
     EXPECT_TRUE(candidate->ToString(&ice_sdp));
-    if (signaling_message_receiver_ == nullptr) {
+    if (signaling_message_receiver_ == nullptr || !signal_ice_candidates_) {
       // Remote party may be deleted.
       return;
     }
@@ -886,6 +908,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
 
+  cricket::PortAllocator* port_allocator_;
   // Needed to keep track of number of frames sent.
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
   // Needed to keep track of number of frames received.
@@ -903,6 +926,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   // For remote peer communication.
   SignalingMessageReceiver* signaling_message_receiver_ = nullptr;
   int signaling_delay_ms_ = 0;
+  bool signal_ice_candidates_ = true;
 
   // Store references to the video capturers we've created, so that we can stop
   // them, if required.
@@ -919,7 +943,10 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   std::vector<std::unique_ptr<MockRtpReceiverObserver>> rtp_receiver_observers_;
 
-  int transitions_to_gathering_state_ = 0;
+  std::vector<PeerConnectionInterface::IceConnectionState>
+      ice_connection_state_history_;
+  std::vector<PeerConnectionInterface::IceGatheringState>
+      ice_gathering_state_history_;
 
   rtc::AsyncInvoker invoker_;
 
@@ -941,7 +968,8 @@ class PeerConnectionIntegrationTest : public testing::Test {
  public:
   PeerConnectionIntegrationTest()
       : ss_(new rtc::VirtualSocketServer()),
-        network_thread_(new rtc::Thread(ss_.get())),
+        fss_(new rtc::FirewallSocketServer(ss_.get())),
+        network_thread_(new rtc::Thread(fss_.get())),
         worker_thread_(rtc::Thread::Create()) {
     RTC_CHECK(network_thread_->Start());
     RTC_CHECK(worker_thread_->Start());
@@ -1030,9 +1058,22 @@ class PeerConnectionIntegrationTest : public testing::Test {
     callee_->set_signaling_message_receiver(caller_.get());
   }
 
+  // Once called, SDP blobs will be automatically signaled between
+  // PeerConnections. Note that ICE candidates will not be signaled unless they
+  // are in the exchanged SDP blobs.
+  void ConnectFakeSignalingForSdpOnly() {
+    ConnectFakeSignaling();
+    SetSignalIceCandidates(false);
+  }
+
   void SetSignalingDelayMs(int delay_ms) {
     caller_->set_signaling_delay_ms(delay_ms);
     callee_->set_signaling_delay_ms(delay_ms);
+  }
+
+  void SetSignalIceCandidates(bool signal) {
+    caller_->set_signal_ice_candidates(signal);
+    callee_->set_signal_ice_candidates(signal);
   }
 
   void EnableVideoDecoderFactory() {
@@ -1075,6 +1116,8 @@ class PeerConnectionIntegrationTest : public testing::Test {
     callee_.reset(wrapper);
     return old;
   }
+
+  rtc::FirewallSocketServer* firewall() const { return fss_.get(); }
 
   // Expects the provided number of new frames to be received within |wait_ms|.
   // "New frames" meaning that it waits for the current frame counts to
@@ -1146,6 +1189,7 @@ class PeerConnectionIntegrationTest : public testing::Test {
  private:
   // |ss_| is used by |network_thread_| so it must be destroyed later.
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
+  std::unique_ptr<rtc::FirewallSocketServer> fss_;
   // |network_thread_| and |worker_thread_| are used by both
   // |caller_| and |callee_| so they must be destroyed
   // later.
@@ -2720,6 +2764,207 @@ TEST_F(PeerConnectionIntegrationTest, IceStatesReachCompletion) {
                  callee()->ice_connection_state(), kDefaultTimeout);
 }
 
+// Test that firewalling the ICE connection causes the clients to identify the
+// disconnected state and then removing the firewall causes them to reconnect.
+class PeerConnectionIntegrationIceStatesTest
+    : public PeerConnectionIntegrationTest,
+      public ::testing::WithParamInterface<std::tuple<std::string, uint32_t>> {
+ protected:
+  PeerConnectionIntegrationIceStatesTest() {
+    port_allocator_flags_ = std::get<1>(GetParam());
+  }
+
+  void StartStunServer(const SocketAddress& server_address) {
+    stun_server_.reset(
+        cricket::TestStunServer::Create(network_thread(), server_address));
+  }
+
+  bool TestIPv6() {
+    return (port_allocator_flags_ & cricket::PORTALLOCATOR_ENABLE_IPV6);
+  }
+
+  void SetPortAllocatorFlags() {
+    caller()->port_allocator()->set_flags(port_allocator_flags_);
+    callee()->port_allocator()->set_flags(port_allocator_flags_);
+  }
+
+  std::vector<SocketAddress> CallerAddresses() {
+    std::vector<SocketAddress> addresses;
+    addresses.push_back(SocketAddress("1.1.1.1", 0));
+    if (TestIPv6()) {
+      addresses.push_back(SocketAddress("1111:0:a:b:c:d:e:f", 0));
+    }
+    return addresses;
+  }
+
+  std::vector<SocketAddress> CalleeAddresses() {
+    std::vector<SocketAddress> addresses;
+    addresses.push_back(SocketAddress("2.2.2.2", 0));
+    if (TestIPv6()) {
+      addresses.push_back(SocketAddress("2222:0:a:b:c:d:e:f", 0));
+    }
+    return addresses;
+  }
+
+  void SetUpNetworkInterfaces() {
+    // Remove the default interfaces added by the test infrastructure.
+    caller()->network()->RemoveInterface(kDefaultLocalAddress);
+    callee()->network()->RemoveInterface(kDefaultLocalAddress);
+
+    // Add network addresses for test.
+    for (const auto& caller_address : CallerAddresses()) {
+      caller()->network()->AddInterface(caller_address);
+    }
+    for (const auto& callee_address : CalleeAddresses()) {
+      callee()->network()->AddInterface(callee_address);
+    }
+  }
+
+ private:
+  uint32_t port_allocator_flags_;
+  std::unique_ptr<cricket::TestStunServer> stun_server_;
+};
+
+// Tests that the PeerConnection goes through all the ICE gathering/connection
+// states over the duration of the call. This includes Disconnected and Failed
+// states, induced by putting a firewall between the peers and waiting for them
+// to time out.
+TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
+  rtc::ScopedFakeClock fake_clock;
+  // Some things use a time of "0" as a special value, so we need to start out
+  // the fake clock at a nonzero time.
+  // TODO(deadbeef): Fix this.
+  fake_clock.AdvanceTime(rtc::TimeDelta::FromSeconds(1));
+
+  const SocketAddress kStunServerAddress =
+      SocketAddress("99.99.99.1", cricket::STUN_SERVER_PORT);
+  StartStunServer(kStunServerAddress);
+
+  PeerConnectionInterface::RTCConfiguration config;
+  PeerConnectionInterface::IceServer ice_stun_server;
+  ice_stun_server.urls.push_back(
+      "stun:" + kStunServerAddress.HostAsURIString() + ":" +
+      kStunServerAddress.PortAsString());
+  config.servers.push_back(ice_stun_server);
+
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
+  ConnectFakeSignaling();
+  SetPortAllocatorFlags();
+  SetUpNetworkInterfaces();
+  caller()->AddAudioVideoMediaStream();
+  callee()->AddAudioVideoMediaStream();
+
+  // Initial state before anything happens.
+  ASSERT_EQ(PeerConnectionInterface::kIceGatheringNew,
+            caller()->ice_gathering_state());
+  ASSERT_EQ(PeerConnectionInterface::kIceConnectionNew,
+            caller()->ice_connection_state());
+
+  // Start the call by creating the offer, setting it as the local description,
+  // then sending it to the peer who will respond with an answer. This happens
+  // asynchronously so that we can watch the states as it runs in the
+  // background.
+  caller()->CreateAndSetAndSignalOffer();
+
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                           caller()->ice_connection_state(), kDefaultTimeout,
+                           fake_clock);
+
+  // Verify that the observer was notified of the intermediate transitions.
+  EXPECT_THAT(caller()->ice_connection_state_history(),
+              ElementsAre(PeerConnectionInterface::kIceConnectionChecking,
+                          PeerConnectionInterface::kIceConnectionConnected,
+                          PeerConnectionInterface::kIceConnectionCompleted));
+  EXPECT_THAT(caller()->ice_gathering_state_history(),
+              ElementsAre(PeerConnectionInterface::kIceGatheringGathering,
+                          PeerConnectionInterface::kIceGatheringComplete));
+
+  // Block connections to/from the caller and wait for ICE to become
+  // disconnected.
+  for (const auto& caller_address : CallerAddresses()) {
+    firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
+  }
+  LOG(LS_INFO) << "Firewall rules applied";
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
+                           caller()->ice_connection_state(), kDefaultTimeout,
+                           fake_clock);
+
+  // Let ICE re-establish by removing the firewall rules.
+  firewall()->ClearRules();
+  LOG(LS_INFO) << "Firewall rules cleared";
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                           caller()->ice_connection_state(), kDefaultTimeout,
+                           fake_clock);
+
+  // According to RFC7675, if there is no response within 30 seconds then the
+  // peer should consider the other side to have rejected the connection. This
+  // is signalled by the state transitioning to "failed".
+  constexpr int kConsentTimeout = 30000;
+  for (const auto& caller_address : CallerAddresses()) {
+    firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
+  }
+  LOG(LS_INFO) << "Firewall rules applied again";
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+                           caller()->ice_connection_state(), kConsentTimeout,
+                           fake_clock);
+}
+
+// Tests that the best connection is set to the appropriate IPv4/IPv6 connection
+// and that the statistics in the metric observers are updated correctly.
+TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyBestConnection) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  SetPortAllocatorFlags();
+  SetUpNetworkInterfaces();
+  caller()->AddAudioVideoMediaStream();
+  callee()->AddAudioVideoMediaStream();
+
+  rtc::scoped_refptr<webrtc::FakeMetricsObserver> metrics_observer(
+      new rtc::RefCountedObject<webrtc::FakeMetricsObserver>());
+  caller()->pc()->RegisterUMAObserver(metrics_observer.get());
+
+  caller()->CreateAndSetAndSignalOffer();
+
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  const int num_best_ipv4 = metrics_observer->GetEnumCounter(
+      webrtc::kEnumCounterAddressFamily, webrtc::kBestConnections_IPv4);
+  const int num_best_ipv6 = metrics_observer->GetEnumCounter(
+      webrtc::kEnumCounterAddressFamily, webrtc::kBestConnections_IPv6);
+  if (TestIPv6()) {
+    // When IPv6 is enabled, we should prefer an IPv6 connection over an IPv4
+    // connection.
+    EXPECT_EQ(0u, num_best_ipv4);
+    EXPECT_EQ(1u, num_best_ipv6);
+  } else {
+    EXPECT_EQ(1u, num_best_ipv4);
+    EXPECT_EQ(0u, num_best_ipv6);
+  }
+
+  EXPECT_EQ(0u, metrics_observer->GetEnumCounter(
+                    webrtc::kEnumCounterIceCandidatePairTypeUdp,
+                    webrtc::kIceCandidatePairHostHost));
+  EXPECT_EQ(1u, metrics_observer->GetEnumCounter(
+                    webrtc::kEnumCounterIceCandidatePairTypeUdp,
+                    webrtc::kIceCandidatePairHostPublicHostPublic));
+}
+
+constexpr uint32_t kFlagsIPv4NoStun = cricket::PORTALLOCATOR_DISABLE_TCP |
+                                      cricket::PORTALLOCATOR_DISABLE_STUN |
+                                      cricket::PORTALLOCATOR_DISABLE_RELAY;
+constexpr uint32_t kFlagsIPv6NoStun =
+    cricket::PORTALLOCATOR_DISABLE_TCP | cricket::PORTALLOCATOR_DISABLE_STUN |
+    cricket::PORTALLOCATOR_ENABLE_IPV6 | cricket::PORTALLOCATOR_DISABLE_RELAY;
+constexpr uint32_t kFlagsIPv4Stun =
+    cricket::PORTALLOCATOR_DISABLE_TCP | cricket::PORTALLOCATOR_DISABLE_RELAY;
+
+INSTANTIATE_TEST_CASE_P(PeerConnectionIntegrationTest,
+                        PeerConnectionIntegrationIceStatesTest,
+                        Values(std::make_pair("IPv4 no STUN", kFlagsIPv4NoStun),
+                               std::make_pair("IPv6 no STUN", kFlagsIPv6NoStun),
+                               std::make_pair("IPv4 with STUN",
+                                              kFlagsIPv4Stun)));
+
 // This test sets up a call between two parties with audio and video.
 // During the call, the caller restarts ICE and the test verifies that
 // new ICE candidates are generated and audio and video still can flow, and the
@@ -3230,6 +3475,38 @@ TEST_F(PeerConnectionIntegrationTest, RtcEventLogOutputWriteCalled) {
   caller()->AddAudioVideoMediaStream();
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+}
+
+// Test that if candidates are only signaled by applying full session
+// descriptions (instead of using AddIceCandidate), the peers can connect to
+// each other and exchange media.
+TEST_F(PeerConnectionIntegrationTest, MediaFlowsWhenCandidatesSetOnlyInSdp) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  // Each side will signal the session descriptions but not candidates.
+  ConnectFakeSignalingForSdpOnly();
+
+  // Add audio video track and exchange the initial offer/answer with media
+  // information only. This will start ICE gathering on each side.
+  caller()->AddAudioVideoMediaStream();
+  callee()->AddAudioVideoMediaStream();
+  caller()->CreateAndSetAndSignalOffer();
+
+  // Wait for all candidates to be gathered on both the caller and callee.
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceGatheringComplete,
+                 caller()->ice_gathering_state(), kDefaultTimeout);
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceGatheringComplete,
+                 callee()->ice_gathering_state(), kDefaultTimeout);
+
+  // The candidates will now be included in the session description, so
+  // signaling them will start the ICE connection.
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that media flows in both directions.
+  ExpectNewFramesReceivedWithWait(
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kMaxWaitForFramesMs);
 }
 
 }  // namespace
