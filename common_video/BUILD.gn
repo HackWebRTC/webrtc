@@ -11,7 +11,7 @@ import("../webrtc.gni")
 config("common_video_config") {
   include_dirs = [
     "include",
-    "libyuv/include",
+    "$rtc_libyuv_dir/include",
   ]
 }
 
