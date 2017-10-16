@@ -20,8 +20,6 @@
 #include "api/optional.h"
 #include "common_audio/resampler/include/push_resampler.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "modules/audio_coding/acm2/codec_manager.h"
-#include "modules/audio_coding/acm2/rent_a_codec.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_processing/rms_level.h"
 #include "modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
@@ -184,9 +182,12 @@ class Channel
   void StopSend();
 
   // Codecs
-  int32_t GetSendCodec(CodecInst& codec);
+  struct EncoderProps {
+    int sample_rate_hz;
+    size_t num_channels;
+  };
+  rtc::Optional<EncoderProps> GetEncoderProps() const;
   int32_t GetRecCodec(CodecInst& codec);
-  int32_t SetSendCodec(const CodecInst& codec);
   void SetBitRate(int bitrate_bps, int64_t probing_interval_ms);
   bool EnableAudioNetworkAdaptor(const std::string& config_string);
   void DisableAudioNetworkAdaptor();
@@ -380,8 +381,6 @@ class Channel
   TelephoneEventHandler* telephone_event_handler_;
   std::unique_ptr<RtpRtcp> _rtpRtcpModule;
   std::unique_ptr<AudioCodingModule> audio_coding_;
-  acm2::CodecManager codec_manager_;
-  acm2::RentACodec rent_a_codec_;
   std::unique_ptr<AudioSinkInterface> audio_sink_;
   AudioLevel _outputAudioLevel;
   // Downsamples to the codec rate if necessary.
@@ -441,7 +440,7 @@ class Channel
   // TODO(ossu): Remove once GetAudioDecoderFactory() is no longer needed.
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 
-  rtc::Optional<CodecInst> cached_send_codec_;
+  rtc::Optional<EncoderProps> cached_encoder_props_;
 
   rtc::ThreadChecker construction_thread_;
 

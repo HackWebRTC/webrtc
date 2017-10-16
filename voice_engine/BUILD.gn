@@ -69,7 +69,6 @@ rtc_static_library("voice_engine") {
     "../modules:module_api",
     "../modules/audio_coding:audio_format_conversion",
     "../modules/audio_coding:audio_network_adaptor_config",
-    "../modules/audio_coding:rent_a_codec",
     "../modules/audio_device",
     "../modules/audio_processing",
     "../modules/bitrate_controller",

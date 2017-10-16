@@ -848,11 +848,8 @@ bool Channel::SetEncoder(int payload_type,
   rtp_codec.channels = encoder->NumChannels();
   rtp_codec.rate = 0;
 
-  // For audio encoding we need, instead, the actual sample rate of the codec.
-  // The rest of the information should be the same.
-  CodecInst send_codec = rtp_codec;
-  send_codec.plfreq = encoder->SampleRateHz();
-  cached_send_codec_.emplace(send_codec);
+  cached_encoder_props_.emplace(
+      EncoderProps{encoder->SampleRateHz(), encoder->NumChannels()});
 
   if (_rtpRtcpModule->RegisterSendPayload(rtp_codec) != 0) {
     _rtpRtcpModule->DeRegisterSendPayload(payload_type);
@@ -864,7 +861,6 @@ bool Channel::SetEncoder(int payload_type,
   }
 
   audio_coding_->SetEncoder(std::move(encoder));
-  codec_manager_.UnsetCodecInst();
   return true;
 }
 
@@ -873,43 +869,12 @@ void Channel::ModifyEncoder(
   audio_coding_->ModifyEncoder(modifier);
 }
 
-int32_t Channel::GetSendCodec(CodecInst& codec) {
-  if (cached_send_codec_) {
-    codec = *cached_send_codec_;
-    return 0;
-  } else {
-    const CodecInst* send_codec = codec_manager_.GetCodecInst();
-    if (send_codec) {
-      codec = *send_codec;
-      return 0;
-    }
-  }
-  return -1;
+rtc::Optional<Channel::EncoderProps> Channel::GetEncoderProps() const {
+  return cached_encoder_props_;
 }
 
 int32_t Channel::GetRecCodec(CodecInst& codec) {
   return (audio_coding_->ReceiveCodec(&codec));
-}
-
-int32_t Channel::SetSendCodec(const CodecInst& codec) {
-  if (!codec_manager_.RegisterEncoder(codec) ||
-      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
-    LOG(LS_ERROR) << "SetSendCodec() failed to register codec to ACM";
-    return -1;
-  }
-
-  if (_rtpRtcpModule->RegisterSendPayload(codec) != 0) {
-    _rtpRtcpModule->DeRegisterSendPayload(codec.pltype);
-    if (_rtpRtcpModule->RegisterSendPayload(codec) != 0) {
-      LOG(LS_ERROR)
-          << "SetSendCodec() failed to register codec to RTP/RTCP module";
-      return -1;
-    }
-  }
-
-  cached_send_codec_.reset();
-
-  return 0;
 }
 
 void Channel::SetBitRate(int bitrate_bps, int64_t probing_interval_ms) {
@@ -1387,19 +1352,12 @@ void Channel::ProcessAndEncodeAudio(const int16_t* audio_data,
   if (!encoder_queue_is_active_) {
     return;
   }
-  CodecInst codec;
-  const int result = GetSendCodec(codec);
   std::unique_ptr<AudioFrame> audio_frame(new AudioFrame());
-  // TODO(ossu): Investigate how this could happen. b/62909493
-  if (result == 0) {
-    audio_frame->sample_rate_hz_ = std::min(codec.plfreq, sample_rate);
-    audio_frame->num_channels_ = std::min(number_of_channels, codec.channels);
-  } else {
-    audio_frame->sample_rate_hz_ = sample_rate;
-    audio_frame->num_channels_ = number_of_channels;
-    LOG(LS_WARNING) << "Unable to get send codec for channel " << ChannelId();
-    RTC_NOTREACHED();
-  }
+  const auto props = GetEncoderProps();
+  RTC_CHECK(props);
+  audio_frame->sample_rate_hz_ = std::min(props->sample_rate_hz, sample_rate);
+  audio_frame->num_channels_ =
+      std::min(props->num_channels, number_of_channels);
   RemixAndResample(audio_data, number_of_frames, number_of_channels,
                    sample_rate, &input_resampler_, audio_frame.get());
   encoder_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(
