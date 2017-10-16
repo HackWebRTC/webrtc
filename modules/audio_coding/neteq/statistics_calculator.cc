@@ -153,14 +153,14 @@ void StatisticsCalculator::ResetMcu() {
 void StatisticsCalculator::ExpandedVoiceSamples(size_t num_samples,
                                                 bool is_new_concealment_event) {
   expanded_speech_samples_ += num_samples;
-  ConcealedSamplesCorrection(num_samples);
+  ConcealedSamplesCorrection(rtc::dchecked_cast<int>(num_samples));
   lifetime_stats_.concealment_events += is_new_concealment_event;
 }
 
 void StatisticsCalculator::ExpandedNoiseSamples(size_t num_samples,
                                                 bool is_new_concealment_event) {
   expanded_noise_samples_ += num_samples;
-  ConcealedSamplesCorrection(num_samples);
+  ConcealedSamplesCorrection(rtc::dchecked_cast<int>(num_samples));
   lifetime_stats_.concealment_events += is_new_concealment_event;
 }
 
