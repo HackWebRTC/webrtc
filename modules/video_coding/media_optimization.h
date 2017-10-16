@@ -57,22 +57,12 @@ class MediaOptimization {
 
   // InputFrameRate 0 = no frame rate estimate available.
   uint32_t InputFrameRate();
-  uint32_t SentFrameRate();
-  uint32_t SentBitRate();
 
  private:
   enum { kFrameCountHistorySize = 90 };
   enum { kFrameHistoryWinMs = 2000 };
-  enum { kBitrateAverageWinMs = 1000 };
-
-  struct EncodedFrameSample;
-  typedef std::list<EncodedFrameSample> FrameSampleList;
 
   void UpdateIncomingFrameRate() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-  void PurgeOldFrameSamples(int64_t threshold_ms)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-  void UpdateSentFramerate() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
   void ProcessIncomingFrameRate(int64_t now)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
@@ -88,8 +78,6 @@ class MediaOptimization {
 
   uint32_t InputFrameRateInternal() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  uint32_t SentFrameRateInternal() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
   // Protect all members.
   rtc::CriticalSection crit_sect_;
 
@@ -101,9 +89,6 @@ class MediaOptimization {
   float incoming_frame_rate_ RTC_GUARDED_BY(crit_sect_);
   int64_t incoming_frame_times_[kFrameCountHistorySize] RTC_GUARDED_BY(
       crit_sect_);
-  std::list<EncodedFrameSample> encoded_frame_samples_
-      RTC_GUARDED_BY(crit_sect_);
-  uint32_t avg_sent_framerate_ RTC_GUARDED_BY(crit_sect_);
 };
 }  // namespace media_optimization
 }  // namespace webrtc

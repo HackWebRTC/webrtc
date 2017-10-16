@@ -25,6 +25,10 @@
 namespace webrtc {
 namespace {
 const float kEncodeTimeWeigthFactor = 0.5f;
+const size_t kMaxEncodedFrameMapSize = 150;
+const int64_t kMaxEncodedFrameWindowMs = 800;
+const int64_t kBucketSizeMs = 100;
+const size_t kBucketCount = 10;
 
 const char kVp8ForcedFallbackEncoderFieldTrial[] =
     "WebRTC-VP8-Forced-Fallback-Encoder";
@@ -120,10 +124,11 @@ SendStatisticsProxy::SendStatisticsProxy(
       min_first_fallback_interval_ms_(GetFallbackIntervalFromFieldTrial()),
       content_type_(content_type),
       start_ms_(clock->TimeInMilliseconds()),
-      last_sent_frame_timestamp_(0),
       encode_time_(kEncodeTimeWeigthFactor),
       quality_downscales_(-1),
       cpu_downscales_(-1),
+      media_byte_rate_tracker_(kBucketSizeMs, kBucketCount),
+      encoded_frame_rate_tracker_(kBucketSizeMs, kBucketCount),
       uma_container_(
           new UmaSamplesContainer(GetUmaPrefix(content_type_), stats_, clock)) {
 }
@@ -146,8 +151,6 @@ SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
     Clock* const clock)
     : uma_prefix_(prefix),
       clock_(clock),
-      max_sent_width_per_timestamp_(0),
-      max_sent_height_per_timestamp_(0),
       input_frame_rate_tracker_(100, 10u),
       input_fps_counter_(clock, nullptr, true),
       sent_fps_counter_(clock, nullptr, true),
@@ -184,6 +187,44 @@ void SendStatisticsProxy::UmaSamplesContainer::InitializeBitrateCounters(
                                   ssrc);
     }
   }
+}
+
+void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(int64_t now_ms) {
+  while (!encoded_frames_.empty()) {
+    auto it = encoded_frames_.begin();
+    if (now_ms - it->second.send_ms < kMaxEncodedFrameWindowMs)
+      break;
+
+    // Use max per timestamp.
+    sent_width_counter_.Add(it->second.max_width);
+    sent_height_counter_.Add(it->second.max_height);
+    encoded_frames_.erase(it);
+  }
+}
+
+bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
+    const EncodedImage& encoded_frame) {
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  RemoveOld(now_ms);
+  if (encoded_frames_.size() > kMaxEncodedFrameMapSize) {
+    encoded_frames_.clear();
+  }
+
+  auto it = encoded_frames_.find(encoded_frame._timeStamp);
+  if (it == encoded_frames_.end()) {
+    // First frame with this timestamp.
+    encoded_frames_.insert(std::make_pair(
+        encoded_frame._timeStamp, Frame(now_ms, encoded_frame._encodedWidth,
+                                        encoded_frame._encodedHeight)));
+    sent_fps_counter_.Add(1);
+    return true;
+  }
+
+  it->second.max_width =
+      std::max(it->second.max_width, encoded_frame._encodedWidth);
+  it->second.max_height =
+      std::max(it->second.max_height, encoded_frame._encodedHeight);
+  return false;
 }
 
 void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
@@ -535,13 +576,6 @@ void SendStatisticsProxy::OnEncoderReconfigured(
   }
 }
 
-void SendStatisticsProxy::OnEncoderStatsUpdate(uint32_t framerate,
-                                               uint32_t bitrate) {
-  rtc::CritScope lock(&crit_);
-  stats_.encode_frame_rate = framerate;
-  stats_.media_bitrate_bps = bitrate;
-}
-
 void SendStatisticsProxy::OnEncodedFrameTimeMeasured(
     int encode_time_ms,
     const CpuOveruseMetrics& metrics) {
@@ -596,6 +630,8 @@ VideoSendStream::Stats SendStatisticsProxy::GetStats() {
       content_type_ == VideoEncoderConfig::ContentType::kRealtimeVideo
           ? VideoContentType::UNSPECIFIED
           : VideoContentType::SCREENSHARE;
+  stats_.encode_frame_rate = round(encoded_frame_rate_tracker_.ComputeRate());
+  stats_.media_bitrate_bps = media_byte_rate_tracker_.ComputeRate() * 8;
   return stats_;
 }
 
@@ -802,31 +838,14 @@ void SendStatisticsProxy::OnSendEncodedImage(
     }
   }
 
-  // TODO(asapersson): This is incorrect if simulcast layers are encoded on
-  // different threads and there is no guarantee that one frame of all layers
-  // are encoded before the next start.
-  if (last_sent_frame_timestamp_ > 0 &&
-      encoded_image._timeStamp != last_sent_frame_timestamp_) {
-    uma_container_->sent_fps_counter_.Add(1);
-    uma_container_->sent_width_counter_.Add(
-        uma_container_->max_sent_width_per_timestamp_);
-    uma_container_->sent_height_counter_.Add(
-        uma_container_->max_sent_height_per_timestamp_);
-    uma_container_->max_sent_width_per_timestamp_ = 0;
-    uma_container_->max_sent_height_per_timestamp_ = 0;
-  }
-  last_sent_frame_timestamp_ = encoded_image._timeStamp;
-  uma_container_->max_sent_width_per_timestamp_ =
-      std::max(uma_container_->max_sent_width_per_timestamp_,
-               static_cast<int>(encoded_image._encodedWidth));
-  uma_container_->max_sent_height_per_timestamp_ =
-      std::max(uma_container_->max_sent_height_per_timestamp_,
-               static_cast<int>(encoded_image._encodedHeight));
+  media_byte_rate_tracker_.AddSamples(encoded_image._length);
+  if (uma_container_->InsertEncodedFrame(encoded_image))
+    encoded_frame_rate_tracker_.AddSamples(1);
 }
 
 int SendStatisticsProxy::GetSendFrameRate() const {
   rtc::CritScope lock(&crit_);
-  return stats_.encode_frame_rate;
+  return round(encoded_frame_rate_tracker_.ComputeRate());
 }
 
 void SendStatisticsProxy::OnIncomingFrame(int width, int height) {

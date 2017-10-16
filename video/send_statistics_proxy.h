@@ -68,7 +68,6 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
       const VideoStreamEncoder::AdaptCounts& cpu_counts,
       const VideoStreamEncoder::AdaptCounts& quality_counts);
 
-  void OnEncoderStatsUpdate(uint32_t framerate, uint32_t bitrate);
   void OnSuspendChange(bool is_suspended);
   void OnInactiveSsrc(uint32_t ssrc);
 
@@ -170,6 +169,25 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     SampleCounter vp9;   // QP range: 0-255.
     SampleCounter h264;  // QP range: 0-51.
   };
+
+  // Map holding encoded frames (mapped by timestamp).
+  // If simulcast layers are encoded on different threads, there is no guarantee
+  // that one frame of all layers are encoded before the next start.
+  struct TimestampOlderThan {
+    bool operator()(uint32_t ts1, uint32_t ts2) const {
+      return IsNewerTimestamp(ts2, ts1);
+    }
+  };
+  struct Frame {
+    Frame(int64_t send_ms, uint32_t width, uint32_t height)
+        : send_ms(send_ms), max_width(width), max_height(height) {}
+    const int64_t
+        send_ms;          // Time when first frame with this timestamp is sent.
+    uint32_t max_width;   // Max width with this timestamp.
+    uint32_t max_height;  // Max height with this timestamp.
+  };
+  typedef std::map<uint32_t, Frame, TimestampOlderThan> EncodedFrameMap;
+
   void PurgeOldStats() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
@@ -192,11 +210,12 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   VideoEncoderConfig::ContentType content_type_ RTC_GUARDED_BY(crit_);
   const int64_t start_ms_;
   VideoSendStream::Stats stats_ RTC_GUARDED_BY(crit_);
-  uint32_t last_sent_frame_timestamp_ RTC_GUARDED_BY(crit_);
   std::map<uint32_t, StatsUpdateTimes> update_times_ RTC_GUARDED_BY(crit_);
   rtc::ExpFilter encode_time_ RTC_GUARDED_BY(crit_);
   int quality_downscales_ RTC_GUARDED_BY(crit_);
   int cpu_downscales_ RTC_GUARDED_BY(crit_);
+  rtc::RateTracker media_byte_rate_tracker_ RTC_GUARDED_BY(crit_);
+  rtc::RateTracker encoded_frame_rate_tracker_ RTC_GUARDED_BY(crit_);
 
   // Contains stats used for UMA histograms. These stats will be reset if
   // content type changes between real-time video and screenshare, since these
@@ -212,10 +231,11 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
     void InitializeBitrateCounters(const VideoSendStream::Stats& stats);
 
+    bool InsertEncodedFrame(const EncodedImage& encoded_frame);
+    void RemoveOld(int64_t now_ms);
+
     const std::string uma_prefix_;
     Clock* const clock_;
-    int max_sent_width_per_timestamp_;
-    int max_sent_height_per_timestamp_;
     SampleCounter input_width_counter_;
     SampleCounter input_height_counter_;
     SampleCounter sent_width_counter_;
@@ -248,6 +268,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     FallbackEncoderInfo fallback_info_;
     ReportBlockStats report_block_stats_;
     const VideoSendStream::Stats start_stats_;
+    EncodedFrameMap encoded_frames_;
 
     std::map<int, QpCounters>
         qp_counters_;  // QP counters mapped by spatial idx.
