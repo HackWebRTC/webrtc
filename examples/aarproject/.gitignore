@@ -1,7 +1,8 @@
 # Default ignores by Android Studio
 *.iml
 .gradle
-/local.properties
+# We want to specify our own SDK.
+# /local.properties
 /.idea/workspace.xml
 /.idea/libraries
 .DS_Store
