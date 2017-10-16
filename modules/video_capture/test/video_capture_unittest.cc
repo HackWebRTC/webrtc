@@ -74,7 +74,7 @@ class TestVideoCaptureCallback
     rtc::CritScope cs(&capture_cs_);
     int height = videoFrame.height();
     int width = videoFrame.width();
-#if defined(ANDROID) && ANDROID
+#if defined(WEBRTC_ANDROID) && WEBRTC_ANDROID
     // Android camera frames may be rotated depending on test device
     // orientation.
     EXPECT_TRUE(height == capability_.height || height == capability_.width);
@@ -282,7 +282,7 @@ TEST_F(VideoCaptureTest, MAYBE_Capabilities) {
     EXPECT_EQ(0, module->StopCapture());
   }
 
-#if defined(ANDROID) && ANDROID
+#if defined(WEBRTC_ANDROID) && WEBRTC_ANDROID
   // There's no reason for this to _necessarily_ be true, but in practice all
   // Android devices this test runs on in fact do support multiple capture
   // resolutions and multiple frame-rates per captured resolution, so we assert
@@ -297,7 +297,7 @@ TEST_F(VideoCaptureTest, MAYBE_Capabilities) {
        ++it) {
     EXPECT_GT(it->second.size(), 1U) << it->first;
   }
-#endif  // ANDROID
+#endif  // WEBRTC_ANDROID
 }
 
 // NOTE: flaky, crashes sometimes.

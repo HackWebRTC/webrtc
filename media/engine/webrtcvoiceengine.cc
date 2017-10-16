@@ -367,7 +367,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   options.echo_cancellation = rtc::Optional<bool>(false);
   options.extended_filter_aec = rtc::Optional<bool>(false);
   LOG(LS_INFO) << "Always disable AEC on iOS. Use built-in instead.";
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
   ec_mode = webrtc::kEcAecm;
   options.extended_filter_aec = rtc::Optional<bool>(false);
 #endif
@@ -393,7 +393,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   options.typing_detection = rtc::Optional<bool>(false);
   options.experimental_ns = rtc::Optional<bool>(false);
   LOG(LS_INFO) << "Always disable NS on iOS. Use built-in instead.";
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
   options.typing_detection = rtc::Optional<bool>(false);
   options.experimental_ns = rtc::Optional<bool>(false);
 #endif
@@ -404,12 +404,16 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   options.auto_gain_control = rtc::Optional<bool>(false);
   options.experimental_agc = rtc::Optional<bool>(false);
   LOG(LS_INFO) << "Always disable AGC on iOS. Use built-in instead.";
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
   options.experimental_agc = rtc::Optional<bool>(false);
 #endif
 
 #if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
-  // Turn off the gain control if specified by the field trial. The purpose of the field trial is to reduce the amount of resampling performed inside the audio processing module on mobile platforms by whenever possible turning off the fixed AGC mode and the high-pass filter. (https://bugs.chromium.org/p/webrtc/issues/detail?id=6181).
+  // Turn off the gain control if specified by the field trial.
+  // The purpose of the field trial is to reduce the amount of resampling
+  // performed inside the audio processing module on mobile platforms by
+  // whenever possible turning off the fixed AGC mode and the high-pass filter.
+  // (https://bugs.chromium.org/p/webrtc/issues/detail?id=6181).
   if (webrtc::field_trial::IsEnabled(
           "WebRTC-Audio-MinimizeResamplingOnMobile")) {
     options.auto_gain_control = rtc::Optional<bool>(false);
@@ -450,7 +454,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
     webrtc::apm_helpers::SetEcStatus(
         apm(), *options.echo_cancellation, ec_mode);
-#if !defined(ANDROID)
+#if !defined(WEBRTC_ANDROID)
     webrtc::apm_helpers::SetEcMetricsStatus(apm(), *options.echo_cancellation);
 #endif
     if (ec_mode == webrtc::kEcAecm) {
