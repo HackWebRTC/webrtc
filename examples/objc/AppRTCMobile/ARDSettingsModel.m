@@ -10,14 +10,11 @@
 
 #import "ARDSettingsModel+Private.h"
 #import "ARDSettingsStore.h"
+#import "ARDVideoEncoderFactory.h"
 #import "WebRTC/RTCCameraVideoCapturer.h"
 #import "WebRTC/RTCMediaConstraints.h"
 
 NS_ASSUME_NONNULL_BEGIN
-
-static NSArray<NSString *> *videoCodecsStaticValues() {
-  return @[ @"H264", @"VP8", @"VP9" ];
-}
 
 @interface ARDSettingsModel () {
   ARDSettingsStore *_settingsStore;
@@ -68,20 +65,24 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
   return YES;
 }
 
-- (NSArray<NSString *> *)availableVideoCodecs {
-  return videoCodecsStaticValues();
+- (NSArray<RTCVideoCodecInfo *> *)availableVideoCodecs {
+  NSArray<RTCVideoCodecInfo *> *supportedCodecs =
+      [[[ARDVideoEncoderFactory alloc] init] supportedCodecs];
+  return supportedCodecs;
 }
 
-- (NSString *)currentVideoCodecSettingFromStore {
+- (RTCVideoCodecInfo *)currentVideoCodecSettingFromStore {
   [self registerStoreDefaults];
-  return [[self settingsStore] videoCodec];
+  NSData *codecData = [[self settingsStore] videoCodec];
+  return [NSKeyedUnarchiver unarchiveObjectWithData:codecData];
 }
 
-- (BOOL)storeVideoCodecSetting:(NSString *)videoCodec {
+- (BOOL)storeVideoCodecSetting:(RTCVideoCodecInfo *)videoCodec {
   if (![[self availableVideoCodecs] containsObject:videoCodec]) {
     return NO;
   }
-  [[self settingsStore] setVideoCodec:videoCodec];
+  NSData *codecData = [NSKeyedArchiver archivedDataWithRootObject:videoCodec];
+  [[self settingsStore] setVideoCodec:codecData];
   return YES;
 }
 
@@ -153,8 +154,8 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
   return [self availableVideoResolutions][0];
 }
 
-- (NSString *)defaultVideoCodecSetting {
-  return videoCodecsStaticValues()[0];
+- (RTCVideoCodecInfo *)defaultVideoCodecSetting {
+  return [self availableVideoCodecs][0];
 }
 
 - (int)videoResolutionComponentAtIndex:(int)index inString:(NSString *)resolution {
@@ -169,8 +170,9 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
 }
 
 - (void)registerStoreDefaults {
+  NSData *codecData = [NSKeyedArchiver archivedDataWithRootObject:[self defaultVideoCodecSetting]];
   [ARDSettingsStore setDefaultsForVideoResolution:[self defaultVideoResolutionSetting]
-                                       videoCodec:[self defaultVideoCodecSetting]
+                                       videoCodec:codecData
                                           bitrate:nil
                                         audioOnly:NO
                                     createAecDump:NO

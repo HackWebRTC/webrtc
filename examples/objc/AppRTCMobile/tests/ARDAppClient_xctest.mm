@@ -21,7 +21,6 @@
 #import "ARDAppClient+Internal.h"
 #import "ARDJoinResponse+Internal.h"
 #import "ARDMessageResponse+Internal.h"
-#import "ARDSDPUtils.h"
 #import "ARDSettingsModel.h"
 
 @interface ARDAppClientTest : XCTestCase

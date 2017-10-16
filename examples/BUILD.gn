@@ -217,8 +217,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCMobile/ARDMessageResponse.h",
       "objc/AppRTCMobile/ARDMessageResponse.m",
       "objc/AppRTCMobile/ARDRoomServerClient.h",
-      "objc/AppRTCMobile/ARDSDPUtils.h",
-      "objc/AppRTCMobile/ARDSDPUtils.m",
       "objc/AppRTCMobile/ARDSettingsModel+Private.h",
       "objc/AppRTCMobile/ARDSettingsModel.h",
       "objc/AppRTCMobile/ARDSettingsModel.m",
@@ -279,6 +277,8 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objc/AppRTCMobile/ios/ARDVideoCallView.m",
         "objc/AppRTCMobile/ios/ARDVideoCallViewController.h",
         "objc/AppRTCMobile/ios/ARDVideoCallViewController.m",
+        "objc/AppRTCMobile/ios/RTCVideoCodecInfo+HumanReadable.h",
+        "objc/AppRTCMobile/ios/RTCVideoCodecInfo+HumanReadable.m",
         "objc/AppRTCMobile/ios/UIImage+ARDUtilities.h",
         "objc/AppRTCMobile/ios/UIImage+ARDUtilities.m",
       ]
@@ -436,7 +436,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         testonly = true
         sources = [
           "objc/AppRTCMobile/tests/ARDAppClient_xctest.mm",
-          "objc/AppRTCMobile/tests/ARDSDPUtils_xctest.mm",
           "objc/AppRTCMobile/tests/ARDSettingsModel_xctest.mm",
         ]
         deps = [

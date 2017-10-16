@@ -10,6 +10,7 @@
 
 #import "ARDVideoEncoderFactory.h"
 
+#import "ARDSettingsModel.h"
 #import "WebRTC/RTCVideoCodecH264.h"
 #import "WebRTC/RTCVideoEncoderVP8.h"
 #import "WebRTC/RTCVideoEncoderVP9.h"
@@ -18,6 +19,8 @@ static NSString *kLevel31ConstrainedHigh = @"640c1f";
 static NSString *kLevel31ConstrainedBaseline = @"42e01f";
 
 @implementation ARDVideoEncoderFactory
+
+@synthesize preferredCodec;
 
 - (id<RTCVideoEncoder>)createEncoder:(RTCVideoCodecInfo *)info {
   if ([info.name isEqualToString:@"H264"]) {
@@ -58,7 +61,15 @@ static NSString *kLevel31ConstrainedBaseline = @"42e01f";
   RTCVideoCodecInfo *vp9Info = [[RTCVideoCodecInfo alloc] initWithName:@"VP9" parameters:nil];
   [codecs addObject:vp9Info];
 
-  return [codecs copy];
+  NSMutableArray<RTCVideoCodecInfo *> *orderedCodecs = [NSMutableArray array];
+  NSUInteger index = [codecs indexOfObject:self.preferredCodec];
+  if (index != NSNotFound) {
+    [orderedCodecs addObject:[codecs objectAtIndex:index]];
+    [codecs removeObjectAtIndex:index];
+  }
+  [orderedCodecs addObjectsFromArray:codecs];
+
+  return [orderedCodecs copy];
 }
 
 @end

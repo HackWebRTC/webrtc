@@ -8,11 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import <Foundation/Foundation.h>
-#import "WebRTC/RTCVideoCodecFactory.h"
+#import "WebRTC/RTCVideoCodec.h"
 
-@interface ARDVideoEncoderFactory : NSObject<RTCVideoEncoderFactory>
+@interface RTCVideoCodecInfo (HumanReadable)
 
-@property(nonatomic, retain) RTCVideoCodecInfo* preferredCodec;
+- (NSString *)humanReadableDescription;
 
 @end

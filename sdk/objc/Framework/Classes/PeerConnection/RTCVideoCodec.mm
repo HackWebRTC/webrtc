@@ -89,6 +89,18 @@
   return codec;
 }
 
+#pragma mark - NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)decoder {
+  return [self initWithName:[decoder decodeObjectForKey:@"name"]
+                 parameters:[decoder decodeObjectForKey:@"parameters"]];
+}
+
+- (void)encodeWithCoder:(NSCoder *)encoder {
+  [encoder encodeObject:_name forKey:@"name"];
+  [encoder encodeObject:_parameters forKey:@"parameters"];
+}
+
 @end
 
 @implementation RTCVideoEncoderQpThresholds
