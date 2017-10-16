@@ -144,9 +144,9 @@ TEST_F(ReceiveStatisticsProxyTest, ReportsMaxInterframeDelay) {
 }
 
 TEST_F(ReceiveStatisticsProxyTest, ReportInterframeDelayInWindow) {
-  const int64_t kInterframeDelayMs1 = 9000;
-  const int64_t kInterframeDelayMs2 = 7500;
-  const int64_t kInterframeDelayMs3 = 7000;
+  const int64_t kInterframeDelayMs1 = 900;
+  const int64_t kInterframeDelayMs2 = 750;
+  const int64_t kInterframeDelayMs3 = 700;
   EXPECT_EQ(-1, statistics_proxy_->GetStats().interframe_delay_max_ms);
   statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(3u),
                                     VideoContentType::UNSPECIFIED);

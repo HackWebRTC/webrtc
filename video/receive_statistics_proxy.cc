@@ -45,7 +45,9 @@ const int kLowVarianceThreshold = 1;
 const int kHighVarianceThreshold = 2;
 
 // Some metrics are reported as a maximum over this period.
-const int kMovingMaxWindowMs = 10000;
+// This should be synchronized with a typical getStats polling interval in
+// the clients.
+const int kMovingMaxWindowMs = 1000;
 
 // How large window we use to calculate the framerate/bitrate.
 const int kRateStatisticsWindowSizeMs = 1000;
