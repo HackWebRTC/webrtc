@@ -35,6 +35,7 @@ import zipfile
 
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
+SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 DEFAULT_ARCHS = ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64']
 NEEDED_SO_FILES = ['libjingle_peerconnection_so.so']
 JAR_FILE = 'lib.java/sdk/android/libwebrtc.jar'
@@ -46,6 +47,10 @@ TARGETS = [
 
 sys.path.append(os.path.join(SCRIPT_DIR, '..', 'libs'))
 from generate_licenses import LicenseBuilder
+
+sys.path.append(os.path.join(SRC_DIR, 'build'))
+import find_depot_tools
+
 
 
 def _ParseArgs():
@@ -66,14 +71,16 @@ def _ParseArgs():
 
 
 def _RunGN(args):
-  cmd = ['gn']
+  cmd = [sys.executable,
+         os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, 'gn.py')]
   cmd.extend(args)
   logging.debug('Running: %r', cmd)
   subprocess.check_call(cmd)
 
 
 def _RunNinja(output_directory, args):
-  cmd = ['ninja', '-C', output_directory]
+  cmd = [os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, 'ninja'),
+         '-C', output_directory]
   cmd.extend(args)
   logging.debug('Running: %r', cmd)
   subprocess.check_call(cmd)

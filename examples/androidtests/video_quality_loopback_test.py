@@ -34,6 +34,8 @@ SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 BAD_DEVICES_JSON = os.path.join(SRC_DIR,
                                 os.environ.get('CHROMIUM_OUT_DIR', 'out'),
                                 'bad_devices.json')
+sys.path.append(os.path.join(SRC_DIR, 'build'))
+import find_depot_tools
 
 
 class Error(Exception):
@@ -95,8 +97,13 @@ def main():
 
   if not build_dir_x86:
     build_dir_x86 = os.path.join(temp_dir, 'LocalBuild')
-    _RunCommand(['gn', 'gen', build_dir_x86])
-    _RunCommand(['ninja', '-C', build_dir_x86, 'frame_analyzer'])
+
+    def DepotToolPath(*args):
+      return os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, *args)
+
+    _RunCommand([sys.executable, DepotToolPath('gn.py'), 'gen', build_dir_x86])
+    _RunCommand([DepotToolPath('ninja'), '-C', build_dir_x86,
+                 'frame_analyzer'])
 
   tools_dir = os.path.join(SRC_DIR, 'tools_webrtc')
   toolchain_dir = os.path.join(tools_dir, 'video_quality_toolchain')

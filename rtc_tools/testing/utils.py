@@ -18,6 +18,14 @@ import time
 import zipfile
 
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SRC_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
+sys.path.append(os.path.join(SRC_DIR, 'build'))
+
+
+import find_depot_tools
+
+
 def RunSubprocessWithRetry(cmd):
   """Invokes the subprocess and backs off exponentially on fail."""
   for i in range(5):
@@ -36,10 +44,14 @@ def RunSubprocessWithRetry(cmd):
 def DownloadFilesFromGoogleStorage(path, auto_platform=True):
   print 'Downloading files in %s...' % path
 
-  extension = 'bat' if 'win32' in sys.platform else 'py'
-  cmd = ['download_from_google_storage.%s' % extension,
-         '--bucket=chromium-webrtc-resources',
-         '--directory', path]
+  cmd = [
+    sys.executable,
+    os.path.join(find_depot_tools.DEPOT_TOOLS_PATH,
+                 'download_from_google_storage.py'),
+    '--bucket=chromium-webrtc-resources',
+    '--directory',
+    path,
+  ]
   if auto_platform:
     cmd += ['--auto_platform', '--recursive']
   subprocess.check_call(cmd)

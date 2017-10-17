@@ -36,6 +36,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 SRC_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 sys.path = [os.path.join(SRC_DIR, 'build')] + sys.path
 
+import find_depot_tools
 import gn_helpers
 
 
@@ -1405,7 +1406,11 @@ class MetaBuildWrapper(object):
 
   def Build(self, target):
     build_dir = self.ToSrcRelPath(self.args.path[0])
-    ninja_cmd = ['ninja', '-C', build_dir]
+    ninja_cmd = [
+      os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, 'ninja'),
+      '-C',
+      build_dir,
+    ]
     if self.args.jobs:
       ninja_cmd.extend(['-j', '%d' % self.args.jobs])
     ninja_cmd.append(target)

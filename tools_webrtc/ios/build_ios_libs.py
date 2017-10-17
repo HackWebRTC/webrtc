@@ -25,8 +25,11 @@ import sys
 os.environ['PATH'] = '/usr/libexec' + os.pathsep + os.environ['PATH']
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-WEBRTC_SRC_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
-SDK_OUTPUT_DIR = os.path.join(WEBRTC_SRC_DIR, 'out_ios_libs')
+SRC_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
+sys.path.append(os.path.join(SRC_DIR, 'build'))
+import find_depot_tools
+
+SDK_OUTPUT_DIR = os.path.join(SRC_DIR, 'out_ios_libs')
 SDK_LIB_NAME = 'librtc_sdk_objc.a'
 SDK_FRAMEWORK_NAME = 'WebRTC.framework'
 
@@ -75,7 +78,7 @@ def _ParseArgs():
 
 def _RunCommand(cmd):
   logging.debug('Running: %r', cmd)
-  subprocess.check_call(cmd, cwd=WEBRTC_SRC_DIR)
+  subprocess.check_call(cmd, cwd=SRC_DIR)
 
 
 def _CleanArtifacts(output_dir):
@@ -122,11 +125,22 @@ def BuildWebRTC(output_dir, target_arch, flavor, gn_target_name,
   args_string = ' '.join(gn_args + extra_gn_args)
   logging.info('Building WebRTC with args: %s', args_string)
 
-  cmd = ['gn', 'gen', output_dir, '--args=' + args_string]
+  cmd = [
+    sys.executable,
+    os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, 'gn.py'),
+    'gen',
+    output_dir,
+    '--args=' + args_string,
+  ]
   _RunCommand(cmd)
   logging.info('Building target: %s', gn_target_name)
 
-  cmd = ['ninja', '-C', output_dir, gn_target_name]
+  cmd = [
+    os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, 'ninja'),
+    '-C',
+    output_dir,
+    gn_target_name,
+  ]
   if use_goma:
     cmd.extend(['-j', '200'])
   _RunCommand(cmd)

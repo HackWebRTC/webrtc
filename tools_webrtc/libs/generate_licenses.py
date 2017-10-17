@@ -47,6 +47,9 @@ LIB_TO_LICENSES_DICT = {
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
 CHECKOUT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
+sys.path.append(os.path.join(CHECKOUT_ROOT, 'build'))
+import find_depot_tools
+
 THIRD_PARTY_LIB_REGEX = r'^.*/third_party/([\w+]+).*$'
 
 class LicenseBuilder(object):
@@ -72,8 +75,15 @@ class LicenseBuilder(object):
 
   @staticmethod
   def _RunGN(buildfile_dir, target):
-    cmd = ['gn', 'desc', '--all', '--format=json',
-        os.path.abspath(buildfile_dir), target]
+    cmd = [
+      sys.executable,
+      os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, 'gn.py'),
+      'desc',
+      '--all',
+      '--format=json',
+      os.path.abspath(buildfile_dir),
+      target,
+    ]
     logging.debug("Running: %r", cmd)
     output_json = subprocess.check_output(cmd, cwd=CHECKOUT_ROOT)
     logging.debug("Output: %s", output_json)

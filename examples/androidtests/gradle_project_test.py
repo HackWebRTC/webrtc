@@ -60,10 +60,15 @@ def main():
   project_dir = os.path.abspath(project_dir)
 
   try:
+    env = os.environ.copy()
+    env['PATH'] = os.pathsep.join([
+        os.path.join(SRC_DIR, 'third_party', 'depot_tools'), env.get('PATH', '')
+    ])
     _RunCommand([GENERATE_GRADLE_SCRIPT, '--output-directory', output_dir,
         '--target', '//examples:AppRTCMobile',
         '--project-dir', project_dir,
-        '--use-gradle-process-resources', '--split-projects', '--canary'])
+        '--use-gradle-process-resources', '--split-projects', '--canary'],
+        env=env)
     _RunCommand([GRADLEW_BIN, 'assembleDebug'], project_dir)
   finally:
     # Do not delete temporary directory if user specified it manually.

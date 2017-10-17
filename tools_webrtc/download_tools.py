@@ -20,10 +20,11 @@ import sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
-DEPOT_TOOLS_DIR = os.path.join(SRC_DIR, 'third_party', 'depot_tools')
-sys.path.insert(0, DEPOT_TOOLS_DIR)
+sys.path.append(os.path.join(SRC_DIR, 'build'))
 
 
+import find_depot_tools
+find_depot_tools.add_depot_tools_to_path()
 import gclient_utils
 import subprocess2
 
@@ -35,7 +36,8 @@ def main(directories):
   for path in directories:
     cmd = [
       sys.executable,
-      os.path.join(DEPOT_TOOLS_DIR, 'download_from_google_storage.py'),
+      os.path.join(find_depot_tools.DEPOT_TOOLS_PATH,
+                   'download_from_google_storage.py'),
       '--directory',
       '--num_threads=10',
       '--bucket', 'chrome-webrtc-resources',

@@ -6,10 +6,18 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
+
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
+sys.path.append(os.path.join(SRC_DIR, 'build'))
+import find_depot_tools
 
 
 # GN_ERROR_RE matches the summary of an error output by `gn check`.
@@ -27,7 +35,13 @@ def RunGnCheck(root_dir=None):
   """
   out_dir = tempfile.mkdtemp('gn')
   try:
-    command = ['gn', 'gen', '--check', out_dir]
+    command = [
+      sys.executable,
+      os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, 'gn.py'),
+      'gen',
+      '--check',
+      out_dir,
+    ]
     subprocess.check_output(command, cwd=root_dir)
   except subprocess.CalledProcessError as err:
     return GN_ERROR_RE.findall(err.output)
