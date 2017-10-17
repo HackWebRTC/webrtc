@@ -786,6 +786,13 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // to the provided value.
   virtual RTCError SetBitrate(const BitrateParameters& bitrate) = 0;
 
+  // Sets current strategy. If not set default WebRTC allocator will be used.
+  // May be changed during an active session. The strategy
+  // ownership is passed with std::unique_ptr
+  virtual void SetBitrateAllocationStrategy(
+      std::unique_ptr<rtc::BitrateAllocationStrategy>
+          bitrate_allocation_strategy) = 0;
+
   // Returns the current SignalingState.
   virtual SignalingState signaling_state() = 0;
   virtual IceConnectionState ice_connection_state() = 0;
