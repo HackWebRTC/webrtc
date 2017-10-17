@@ -395,8 +395,6 @@ int32_t FileAudioDevice::PlayoutDelay(uint16_t& delayMS) const {
   return 0;
 }
 
-int32_t FileAudioDevice::RecordingDelay(uint16_t& delayMS) const { return -1; }
-
 void FileAudioDevice::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   rtc::CritScope lock(&_critSect);
 

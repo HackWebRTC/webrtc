@@ -620,8 +620,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
                  << *options.recording_sample_rate;
     if (adm()->SetRecordingSampleRate(*options.recording_sample_rate)) {
       LOG(LS_WARNING) << "SetRecordingSampleRate("
-                      << *options.recording_sample_rate << ") failed, err="
-                      << adm()->LastError();
+                      << *options.recording_sample_rate << ") failed.";
     }
   }
 
@@ -629,8 +628,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     LOG(LS_INFO) << "Playout sample rate is " << *options.playout_sample_rate;
     if (adm()->SetPlayoutSampleRate(*options.playout_sample_rate)) {
       LOG(LS_WARNING) << "SetPlayoutSampleRate("
-                      << *options.playout_sample_rate << ") failed, err="
-                      << adm()->LastError();
+                      << *options.playout_sample_rate << ") failed.";
     }
   }
   return true;

@@ -1425,13 +1425,6 @@ int32_t AudioDeviceLinuxALSA::PlayoutDelay(uint16_t& delayMS) const
     return 0;
 }
 
-int32_t AudioDeviceLinuxALSA::RecordingDelay(uint16_t& delayMS) const
-{
-    // Adding 10ms adjusted value to the record delay due to 10ms buffering.
-    delayMS = (uint16_t)(10 + _recordingDelay * 1000 / _recordingFreq);
-    return 0;
-}
-
 bool AudioDeviceLinuxALSA::Playing() const
 {
     return (_playing);

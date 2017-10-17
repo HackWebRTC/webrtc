@@ -115,7 +115,6 @@ class AudioDeviceGeneric {
 
   // Delay information and control
   virtual int32_t PlayoutDelay(uint16_t& delayMS) const = 0;
-  virtual int32_t RecordingDelay(uint16_t& delayMS) const = 0;
 
   // Native sample rate controls (samples/sec)
   virtual int32_t SetRecordingSampleRate(const uint32_t samplesPerSec);

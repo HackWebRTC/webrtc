@@ -383,14 +383,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return 0;
   }
 
-  int32_t RecordingDelay(uint16_t& delay_ms) const override {
-    // Best guess we can do is to use half of the estimated total delay.
-    LOG(INFO) << __FUNCTION__;
-    delay_ms = audio_manager_->GetDelayEstimateInMilliseconds() / 2;
-    RTC_DCHECK_GT(delay_ms, 0);
-    return 0;
-  }
-
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override {
     LOG(INFO) << __FUNCTION__;
     output_.AttachAudioBuffer(audioBuffer);

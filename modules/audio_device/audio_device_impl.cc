@@ -272,13 +272,6 @@ int32_t AudioDeviceModuleImpl::ActiveAudioLayer(AudioLayer* audioLayer) const {
   return 0;
 }
 
-// TODO(henrika): remove this API.
-AudioDeviceModule::ErrorCode AudioDeviceModuleImpl::LastError() const {
-  LOG(INFO) << __FUNCTION__;
-  LOG(WARNING) << "Not supported";
-  return kAdmErrNone;
-}
-
 int32_t AudioDeviceModuleImpl::Init() {
   LOG(INFO) << __FUNCTION__;
   if (initialized_)
@@ -855,19 +848,6 @@ int32_t AudioDeviceModuleImpl::PlayoutDelay(uint16_t* delayMS) const {
     return -1;
   }
   *delayMS = delay;
-  return 0;
-}
-
-int32_t AudioDeviceModuleImpl::RecordingDelay(uint16_t* delayMS) const {
-  LOG(INFO) << __FUNCTION__;
-  CHECKinitialized_();
-  uint16_t delay = 0;
-  if (audio_device_->RecordingDelay(delay) == -1) {
-    LOG(LERROR) << "failed to retrieve the recording delay";
-    return -1;
-  }
-  *delayMS = delay;
-  LOG(INFO) << "output: " << *delayMS;
   return 0;
 }
 

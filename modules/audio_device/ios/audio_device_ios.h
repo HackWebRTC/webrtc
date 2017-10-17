@@ -83,7 +83,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   // A/V-sync is not supported on iOS. However, we avoid adding error messages
   // the log by using these dummy implementations instead.
   int32_t PlayoutDelay(uint16_t& delayMS) const override;
-  int32_t RecordingDelay(uint16_t& delayMS) const override;
 
   // Native audio parameters stored during construction.
   // These methods are unique for the iOS implementation.

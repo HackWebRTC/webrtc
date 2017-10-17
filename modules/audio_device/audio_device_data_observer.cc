@@ -120,7 +120,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   int32_t ActiveAudioLayer(AudioLayer* audio_layer) const override {
     return impl_->ActiveAudioLayer(audio_layer);
   }
-  ErrorCode LastError() const override { return impl_->LastError(); }
   int32_t Init() override { return impl_->Init(); }
   int32_t Terminate() override { return impl_->Terminate(); }
   bool Initialized() const override { return impl_->Initialized(); }
@@ -252,9 +251,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   }
   int32_t PlayoutDelay(uint16_t* delay_ms) const override {
     return impl_->PlayoutDelay(delay_ms);
-  }
-  int32_t RecordingDelay(uint16_t* delay_ms) const override {
-    return impl_->RecordingDelay(delay_ms);
   }
   int32_t SetRecordingSampleRate(const uint32_t samples_per_sec) override {
     return impl_->SetRecordingSampleRate(samples_per_sec);

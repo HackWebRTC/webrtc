@@ -42,7 +42,6 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   int32_t Terminate() override { return 0; }
 
   int32_t ActiveAudioLayer(AudioLayer* audioLayer) const override { return 0; }
-  ErrorCode LastError() const override { return kAdmErrNone; }
   bool Initialized() const override { return true; }
   int16_t PlayoutDevices() override { return 0; }
   int16_t RecordingDevices() override { return 0; }
@@ -101,7 +100,6 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
     *delayMS = 0;
     return 0;
   }
-  int32_t RecordingDelay(uint16_t* delayMS) const override { return 0; }
   int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) override {
     return 0;
   }

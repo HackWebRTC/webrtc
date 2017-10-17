@@ -1553,13 +1553,6 @@ int32_t AudioDeviceMac::PlayoutDelay(uint16_t& delayMS) const {
   return 0;
 }
 
-int32_t AudioDeviceMac::RecordingDelay(uint16_t& delayMS) const {
-  int32_t captureDelayUs = AtomicGet32(&_captureDelayUs);
-  delayMS =
-      static_cast<uint16_t>(1e-3 * (captureDelayUs + _captureLatencyUs) + 0.5);
-  return 0;
-}
-
 bool AudioDeviceMac::Playing() const {
   return (_playing);
 }

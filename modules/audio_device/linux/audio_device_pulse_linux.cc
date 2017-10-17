@@ -1272,12 +1272,6 @@ int32_t AudioDeviceLinuxPulse::PlayoutDelay(uint16_t& delayMS) const {
   return 0;
 }
 
-int32_t AudioDeviceLinuxPulse::RecordingDelay(uint16_t& delayMS) const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  delayMS = (uint16_t)_sndCardRecDelay;
-  return 0;
-}
-
 bool AudioDeviceLinuxPulse::Playing() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return (_playing);

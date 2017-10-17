@@ -74,11 +74,6 @@ int32_t FakeAudioCaptureModule::ActiveAudioLayer(
   return 0;
 }
 
-webrtc::AudioDeviceModule::ErrorCode FakeAudioCaptureModule::LastError() const {
-  RTC_NOTREACHED();
-  return webrtc::AudioDeviceModule::kAdmErrNone;
-}
-
 int32_t FakeAudioCaptureModule::RegisterAudioCallback(
     webrtc::AudioTransport* audio_callback) {
   rtc::CritScope cs(&crit_callback_);
@@ -414,11 +409,6 @@ int32_t FakeAudioCaptureModule::RecordingChannel(ChannelType* channel) const {
 int32_t FakeAudioCaptureModule::PlayoutDelay(uint16_t* delay_ms) const {
   // No delay since audio frames are dropped.
   *delay_ms = 0;
-  return 0;
-}
-
-int32_t FakeAudioCaptureModule::RecordingDelay(uint16_t* /*delay_ms*/) const {
-  RTC_NOTREACHED();
   return 0;
 }
 

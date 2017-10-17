@@ -354,11 +354,6 @@ int32_t AudioDeviceIOS::PlayoutDelay(uint16_t& delayMS) const {
   return 0;
 }
 
-int32_t AudioDeviceIOS::RecordingDelay(uint16_t& delayMS) const {
-  delayMS = kFixedRecordDelayEstimate;
-  return 0;
-}
-
 int AudioDeviceIOS::GetPlayoutAudioParameters(AudioParameters* params) const {
   LOGI() << "GetPlayoutAudioParameters";
   RTC_DCHECK(playout_parameters_.is_valid());

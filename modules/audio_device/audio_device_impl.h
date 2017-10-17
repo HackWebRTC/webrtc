@@ -47,9 +47,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   // Retrieve the currently utilized audio layer
   int32_t ActiveAudioLayer(AudioLayer* audioLayer) const override;
 
-  // Error handling
-  ErrorCode LastError() const override;
-
   // Full-duplex transportation of PCM audio
   int32_t RegisterAudioCallback(AudioTransport* audioCallback) override;
 
@@ -136,7 +133,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
 
   // Delay information and control
   int32_t PlayoutDelay(uint16_t* delayMS) const override;
-  int32_t RecordingDelay(uint16_t* delayMS) const override;
 
   // Native sample rate controls (samples/sec)
   int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) override;
