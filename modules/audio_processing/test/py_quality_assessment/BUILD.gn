@@ -54,6 +54,7 @@ copy("lib") {
   testonly = true
   sources = [
     "quality_assessment/__init__.py",
+    "quality_assessment/annotations.py",
     "quality_assessment/audioproc_wrapper.py",
     "quality_assessment/collect_data.py",
     "quality_assessment/data_access.py",
@@ -120,6 +121,7 @@ rtc_executable("fake_polqa") {
 copy("lib_unit_tests") {
   testonly = true
   sources = [
+    "quality_assessment/annotations_unittest.py",
     "quality_assessment/echo_path_simulation_unittest.py",
     "quality_assessment/eval_scores_unittest.py",
     "quality_assessment/input_mixer_unittest.py",

@@ -12,12 +12,15 @@
 import logging
 import os
 
+from . import annotations
 from . import data_access
 from . import echo_path_simulation
 from . import echo_path_simulation_factory
 from . import eval_scores
 from . import exceptions
 from . import input_mixer
+from . import input_signal_creator
+from . import signal_processing
 from . import test_data_generation
 
 
@@ -43,6 +46,7 @@ class ApmModuleSimulator(object):
     self._evaluation_score_factory = evaluation_score_factory
     self._audioproc_wrapper = ap_wrapper
     self._evaluator = evaluator
+    self._annotator = annotations.AudioAnnotationsExtractor()
 
     # Init.
     self._test_data_generator_factory.SetOutputDirectoryPrefix(
@@ -52,6 +56,7 @@ class ApmModuleSimulator(object):
 
     # Properties for each run.
     self._base_output_path = None
+    self._output_cache_path = None
     self._test_data_generators = None
     self._evaluation_score_workers = None
     self._config_filepaths = None
@@ -116,6 +121,9 @@ class ApmModuleSimulator(object):
             'invalid echo path simulator')
     self._base_output_path = os.path.abspath(output_dir)
 
+    # Output path used to cache the data shared across simulations.
+    self._output_cache_path = os.path.join(self._base_output_path, '_cache')
+
     # Instance test data generators.
     self._test_data_generators = [self._test_data_generator_factory.GetInstance(
         test_data_generators_class=(
@@ -164,14 +172,28 @@ class ApmModuleSimulator(object):
 
       # Try different capture-render pairs.
       for capture_input_name in self._capture_input_filepaths:
+        # Output path for the capture signal annotations.
+        capture_annotations_cache_path = os.path.join(
+            self._output_cache_path,
+            self._PREFIX_CAPTURE + capture_input_name)
+        data_access.MakeDirectory(capture_annotations_cache_path)
+
+        # Capture.
         capture_input_filepath = self._capture_input_filepaths[
             capture_input_name]
+        if not os.path.exists(capture_input_filepath):
+          # If the input signal file does not exist, try to create using the
+          # available input signal creators.
+          self._CreateInputSignal(capture_input_filepath)
+        assert os.path.exists(capture_input_filepath)
+        self._ExtractCaptureAnnotations(
+            capture_input_filepath, capture_annotations_cache_path)
+
+        # Render and simulated echo path (optional).
         render_input_filepath = None if without_render_input else (
             self._render_input_filepaths[capture_input_name])
         render_input_name = '(none)' if without_render_input else (
             self._ExtractFileName(render_input_filepath))
-
-        # Instance echo path simulator (if needed).
         echo_path_simulator = (
             echo_path_simulation_factory.EchoPathSimulatorFactory.GetInstance(
                 self._echo_path_simulator_class, render_input_filepath))
@@ -184,10 +206,8 @@ class ApmModuleSimulator(object):
                        test_data_generators.NAME, echo_path_simulator.NAME)
 
           # Output path for the generated test data.
-          # The path is used to cache the signals shared across simulations.
           test_data_cache_path = os.path.join(
-              self._base_output_path, '_cache',
-              self._PREFIX_CAPTURE + capture_input_name,
+              capture_annotations_cache_path,
               self._PREFIX_TEST_DATA_GEN + test_data_generators.NAME)
           data_access.MakeDirectory(test_data_cache_path)
           logging.debug('test data cache path: <%s>', test_data_cache_path)
@@ -215,6 +235,38 @@ class ApmModuleSimulator(object):
                          render_input_filepath, test_data_cache_path,
                          echo_test_data_cache_path, output_path,
                          config_filepath, echo_path_simulator)
+
+  @staticmethod
+  def _CreateInputSignal(input_signal_filepath):
+    """Creates a missing input signal file.
+
+    The file name is parsed to extract input signal creator and params. If a
+    creator is matched and the parameters are valid, a new signal is generated
+    and written in |input_signal_filepath|.
+
+    Args:
+      input_signal_filepath: Path to the input signal audio file to write.
+
+    Raises:
+      InputSignalCreatorException
+    """
+    filename = os.path.splitext(os.path.split(input_signal_filepath)[-1])[0]
+    filename_parts = filename.split('-')
+
+    if len(filename_parts) < 2:
+      raise exceptions.InputSignalCreatorException(
+          'Cannot parse input signal file name')
+
+    signal, metadata = input_signal_creator.InputSignalCreator.Create(
+        filename_parts[0], filename_parts[1].split('_'))
+
+    signal_processing.SignalProcessingUtils.SaveWav(
+        input_signal_filepath, signal)
+    data_access.Metadata.SaveFileMetadata(input_signal_filepath, metadata)
+
+  def _ExtractCaptureAnnotations(self, input_filepath, output_path):
+    self._annotator.Extract(input_filepath)
+    self._annotator.Save(output_path)
 
   def _Simulate(self, test_data_generators, clean_capture_input_filepath,
                 render_input_filepath, test_data_cache_path,

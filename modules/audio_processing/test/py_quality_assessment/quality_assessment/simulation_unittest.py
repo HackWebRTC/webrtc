@@ -102,6 +102,39 @@ class TestApmModuleSimulator(unittest.TestCase):
     self.assertGreaterEqual(len(evaluator.Run.call_args_list),
                             min_number_of_simulations)
 
+  def testInputSignalCreation(self):
+    # Instance simulator.
+    simulator = simulation.ApmModuleSimulator(
+        test_data_generator_factory=(
+            test_data_generation_factory.TestDataGeneratorFactory(
+                aechen_ir_database_path='',
+                noise_tracks_path='')),
+        evaluation_score_factory=(
+            eval_scores_factory.EvaluationScoreWorkerFactory(
+                polqa_tool_bin_path=os.path.join(
+                    os.path.dirname(__file__), 'fake_polqa'))),
+        ap_wrapper=audioproc_wrapper.AudioProcWrapper(
+            audioproc_wrapper.AudioProcWrapper.DEFAULT_APM_SIMULATOR_BIN_PATH),
+        evaluator=evaluation.ApmModuleEvaluator())
+
+    # Inexistent input files to be silently created.
+    input_files = [
+        os.path.join(self._tmp_path, 'pure_tone-440_1000.wav'),
+        os.path.join(self._tmp_path, 'pure_tone-1000_500.wav'),
+    ]
+    self.assertFalse(any([os.path.exists(input_file) for input_file in (
+        input_files)]))
+
+    # The input files are created during the simulation.
+    simulator.Run(
+        config_filepaths=['apm_configs/default.json'],
+        capture_input_filepaths=input_files,
+        test_data_generator_names=['identity'],
+        eval_score_names=['audio_level_peak'],
+        output_dir=self._output_path)
+    self.assertTrue(all([os.path.exists(input_file) for input_file in (
+        input_files)]))
+
   def testPureToneGenerationWithTotalHarmonicDistorsion(self):
     logging.warning = mock.MagicMock(name='warning')
 
@@ -143,3 +176,21 @@ class TestApmModuleSimulator(unittest.TestCase):
     logging.warning.assert_called_with('the evaluation failed: %s', (
         'The THD score cannot be used with any test data generator other than '
         '"identity"'))
+
+  #   # Init.
+  #   generator = test_data_generation.IdentityTestDataGenerator('tmp')
+  #   input_signal_filepath = os.path.join(
+  #       self._test_data_cache_path, 'pure_tone-440_1000.wav')
+
+  #   # Check that the input signal is generated.
+  #   self.assertFalse(os.path.exists(input_signal_filepath))
+  #   generator.Generate(
+  #       input_signal_filepath=input_signal_filepath,
+  #       test_data_cache_path=self._test_data_cache_path,
+  #       base_output_path=self._base_output_path)
+  #   self.assertTrue(os.path.exists(input_signal_filepath))
+
+  #   # Check input signal properties.
+  #   input_signal = signal_processing.SignalProcessingUtils.LoadWav(
+  #       input_signal_filepath)
+  #   self.assertEqual(1000, len(input_signal))

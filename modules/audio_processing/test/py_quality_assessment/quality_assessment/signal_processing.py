@@ -165,6 +165,8 @@ class SignalProcessingUtils(object):
 
   @classmethod
   def Fft(cls, signal, normalize=True):
+    if signal.channels != 1:
+      raise NotImplementedError('multiple-channel FFT not implemented')
     x = cls.AudioSegmentToRawData(signal).astype(np.float32)
     if normalize:
       x /= max(abs(np.max(x)), 1.0)
@@ -188,7 +190,7 @@ class SignalProcessingUtils(object):
       True if hard clipping is detect, False otherwise.
     """
     if signal.channels != 1:
-      raise NotImplementedError('mutliple-channel clipping not implemented')
+      raise NotImplementedError('multiple-channel clipping not implemented')
     if signal.sample_width != 2:  # Note that signal.sample_width is in bytes.
       raise exceptions.SignalProcessingException(
           'hard-clipping detection only supported for 16 bit samples')
