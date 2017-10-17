@@ -178,6 +178,7 @@
     nativeConfig->ice_regather_interval_range =
         rtc::Optional<rtc::IntervalRange>(*nativeIntervalRange);
   }
+
   return nativeConfig.release();
 }
 

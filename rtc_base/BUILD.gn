@@ -113,8 +113,6 @@ rtc_source_set("rtc_base_approved_generic") {
     "bind.h",
     "bitbuffer.cc",
     "bitbuffer.h",
-    "bitrateallocationstrategy.cc",
-    "bitrateallocationstrategy.h",
     "buffer.h",
     "bufferqueue.cc",
     "bufferqueue.h",

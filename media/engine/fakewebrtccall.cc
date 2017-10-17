@@ -595,12 +595,6 @@ void FakeCall::SetBitrateConfigMask(
   // TODO(zstein): not implemented
 }
 
-void FakeCall::SetBitrateAllocationStrategy(
-    std::unique_ptr<rtc::BitrateAllocationStrategy>
-        bitrate_allocation_strategy){
-    // TODO(alexnarest): not implemented
-};
-
 void FakeCall::SignalChannelNetworkState(webrtc::MediaType media,
                                          webrtc::NetworkState state) {
   switch (media) {

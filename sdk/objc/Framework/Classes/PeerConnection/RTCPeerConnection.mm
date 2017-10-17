@@ -21,7 +21,6 @@
 #import "RTCRtpReceiver+Private.h"
 #import "RTCRtpSender+Private.h"
 #import "RTCSessionDescription+Private.h"
-#import "WebRTC/RTCBitrateAllocationStrategy.h"
 #import "WebRTC/RTCLogging.h"
 
 #include <memory>
@@ -384,15 +383,6 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
     params.max_bitrate_bps = rtc::Optional<int>(maxBitrateBps.intValue);
   }
   return _peerConnection->SetBitrate(params).ok();
-}
-
-- (void)setBitrateAllocationStrategy:
-        (RTCBitrateAllocationStrategy *_Nullable)bitrateAllocationStrategy {
-  if (bitrateAllocationStrategy)
-    _peerConnection->SetBitrateAllocationStrategy(
-        std::unique_ptr<rtc::BitrateAllocationStrategy>(bitrateAllocationStrategy.strategy));
-  else
-    _peerConnection->SetBitrateAllocationStrategy(nullptr);
 }
 
 - (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath

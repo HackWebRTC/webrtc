@@ -296,9 +296,6 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
       const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
   void SetBitrateConfigMask(
       const webrtc::Call::Config::BitrateConfigMask& mask) override;
-  void SetBitrateAllocationStrategy(
-      std::unique_ptr<rtc::BitrateAllocationStrategy>
-          bitrate_allocation_strategy) override;
   void OnNetworkRouteChanged(const std::string& transport_name,
                              const rtc::NetworkRoute& network_route) override {}
   void SignalChannelNetworkState(webrtc::MediaType media,

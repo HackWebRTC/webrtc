@@ -62,8 +62,7 @@ PacedSender::PacedSender(const Clock* clock,
       packets_(new PacketQueue(clock)),
       packet_counter_(0),
       pacing_factor_(kDefaultPaceMultiplier),
-      queue_time_limit(kMaxQueueLengthMs),
-      account_for_audio_(false) {
+      queue_time_limit(kMaxQueueLengthMs) {
   UpdateBudgetWithElapsedTime(kMinPacketLimitMs);
 }
 
@@ -152,11 +151,6 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
   packets_->Push(PacketQueue::Packet(priority, ssrc, sequence_number,
                                      capture_time_ms, now_ms, bytes,
                                      retransmission, packet_counter_++));
-}
-
-void PacedSender::SetAccountForAudioPackets(bool account_for_audio) {
-  rtc::CritScope cs(&critsect_);
-  account_for_audio_ = account_for_audio;
 }
 
 int64_t PacedSender::ExpectedQueueTimeMs() const {
@@ -323,7 +317,9 @@ bool PacedSender::SendPacket(const PacketQueue::Packet& packet,
   critsect_.Enter();
 
   if (success) {
-    if (packet.priority != kHighPriority || account_for_audio_) {
+    // TODO(holmer): High priority packets should only be accounted for if we
+    // are allocating bandwidth for audio.
+    if (packet.priority != kHighPriority) {
       // Update media bytes sent.
       // TODO(eladalon): TimeToSendPacket() can also return |true| in some
       // situations where nothing actually ended up being sent to the network,

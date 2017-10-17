@@ -145,10 +145,6 @@ class PeerConnection : public PeerConnectionInterface,
 
   RTCError SetBitrate(const BitrateParameters& bitrate) override;
 
-  void SetBitrateAllocationStrategy(
-      std::unique_ptr<rtc::BitrateAllocationStrategy>
-          bitrate_allocation_strategy) override;
-
   RTC_DEPRECATED bool StartRtcEventLog(rtc::PlatformFile file,
                                        int64_t max_size_bytes) override;
   bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output) override;
