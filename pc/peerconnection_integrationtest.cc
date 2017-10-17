@@ -22,6 +22,8 @@
 #include <utility>
 #include <vector>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/fakemetricsobserver.h"
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
@@ -588,7 +590,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     rtc::Thread* const signaling_thread = rtc::Thread::Current();
     peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
         network_thread, worker_thread, signaling_thread,
-        fake_audio_capture_module_, fake_video_encoder_factory_,
+        fake_audio_capture_module_, webrtc::CreateBuiltinAudioEncoderFactory(),
+        webrtc::CreateBuiltinAudioDecoderFactory(), fake_video_encoder_factory_,
         fake_video_decoder_factory_);
     if (!peer_connection_factory_) {
       return false;

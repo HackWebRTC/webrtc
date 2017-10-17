@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "p2p/base/fakeportallocator.h"
 #include "pc/mediasession.h"
 #include "pc/peerconnectionwrapper.h"
@@ -40,7 +42,8 @@ class PeerConnectionCryptoUnitTest : public ::testing::Test {
 #endif
     pc_factory_ = CreatePeerConnectionFactory(
         rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
-        FakeAudioCaptureModule::Create(), nullptr, nullptr);
+        FakeAudioCaptureModule::Create(), CreateBuiltinAudioEncoderFactory(),
+        CreateBuiltinAudioDecoderFactory(), nullptr, nullptr);
   }
 
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {

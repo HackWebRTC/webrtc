@@ -11,6 +11,8 @@
 #include <memory>
 #include <vector>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/jsep.h"
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
@@ -34,12 +36,13 @@ namespace {
 class PeerConnectionRtpTest : public testing::Test {
  public:
   PeerConnectionRtpTest()
-      :
-        pc_factory_(webrtc::CreatePeerConnectionFactory(
+      : pc_factory_(webrtc::CreatePeerConnectionFactory(
             rtc::Thread::Current(),
             rtc::Thread::Current(),
             rtc::Thread::Current(),
             FakeAudioCaptureModule::Create(),
+            webrtc::CreateBuiltinAudioEncoderFactory(),
+            webrtc::CreateBuiltinAudioDecoderFactory(),
             nullptr,
             nullptr)) {}
 

@@ -14,6 +14,8 @@
 #include <utility>
 #include <vector>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/test/fakeconstraints.h"
 #include "examples/peerconnection/client/defaults.h"
 #include "media/engine/webrtcvideocapturerfactory.h"
@@ -79,7 +81,9 @@ bool Conductor::InitializePeerConnection() {
   RTC_DCHECK(peer_connection_factory_.get() == NULL);
   RTC_DCHECK(peer_connection_.get() == NULL);
 
-  peer_connection_factory_  = webrtc::CreatePeerConnectionFactory();
+  peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
+      webrtc::CreateBuiltinAudioEncoderFactory(),
+      webrtc::CreateBuiltinAudioDecoderFactory());
 
   if (!peer_connection_factory_.get()) {
     main_wnd_->MessageBox("Error",

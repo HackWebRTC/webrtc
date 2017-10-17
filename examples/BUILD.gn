@@ -540,6 +540,8 @@ if (is_linux || is_win) {
     deps += [
       "../api:libjingle_peerconnection_test_api",
       "../api:video_frame_api",
+      "../api/audio_codecs:builtin_audio_decoder_factory",
+      "../api/audio_codecs:builtin_audio_encoder_factory",
       "../media:rtc_media",
       "../modules/video_capture:video_capture_module",
       "../pc:libjingle_peerconnection",

@@ -12,6 +12,8 @@
 #include <string>
 #include <utility>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/mediastreaminterface.h"
 #include "media/base/fakevideocapturer.h"
 #include "p2p/base/fakeportallocator.h"
@@ -91,7 +93,9 @@ class PeerConnectionFactoryTest : public testing::Test {
     // parallel.
     factory_ = webrtc::CreatePeerConnectionFactory(
         rtc::Thread::Current(), rtc::Thread::Current(),
-        FakeAudioCaptureModule::Create(), nullptr, nullptr);
+        FakeAudioCaptureModule::Create(),
+        webrtc::CreateBuiltinAudioEncoderFactory(),
+        webrtc::CreateBuiltinAudioDecoderFactory(), nullptr, nullptr);
 
     ASSERT_TRUE(factory_.get() != NULL);
     port_allocator_.reset(
@@ -141,7 +145,9 @@ TEST(PeerConnectionFactoryTestInternal, DISABLED_CreatePCUsingInternalModules) {
 #endif
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
-      webrtc::CreatePeerConnectionFactory());
+      webrtc::CreatePeerConnectionFactory(
+          webrtc::CreateBuiltinAudioEncoderFactory(),
+          webrtc::CreateBuiltinAudioDecoderFactory()));
 
   NullPeerConnectionObserver observer;
   webrtc::PeerConnectionInterface::RTCConfiguration config;
