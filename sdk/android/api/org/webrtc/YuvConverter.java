@@ -21,7 +21,7 @@ import org.webrtc.VideoFrame.TextureBuffer;
  * Class for converting OES textures to a YUV ByteBuffer. It should be constructed on a thread with
  * an active EGL context, and only be used from that thread.
  */
-class YuvConverter {
+public class YuvConverter {
   // Vertex coordinates in Normalized Device Coordinates, i.e.
   // (-1, -1) is bottom-left and (1, 1) is top-right.
   private static final FloatBuffer DEVICE_RECTANGLE = GlUtil.createFloatBuffer(new float[] {
