@@ -102,8 +102,8 @@ void PacedSender::Resume() {
 }
 
 void PacedSender::SetProbingEnabled(bool enabled) {
-  RTC_CHECK_EQ(0, packet_counter_);
   rtc::CritScope cs(&critsect_);
+  RTC_CHECK_EQ(0, packet_counter_);
   prober_->SetEnabled(enabled);
 }
 
