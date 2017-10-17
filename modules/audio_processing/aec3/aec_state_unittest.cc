@@ -161,35 +161,6 @@ TEST(AecState, NormalUsage) {
   }
 }
 
-// Verifies the a non-significant delay is correctly identified.
-TEST(AecState, NonSignificantDelay) {
-  AecState state(AudioProcessing::Config::EchoCanceller3{});
-  RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 30,
-                             std::vector<size_t>(1, 30));
-  std::array<float, kFftLengthBy2Plus1> E2_main;
-  std::array<float, kFftLengthBy2Plus1> Y2;
-  std::array<float, kBlockSize> x;
-  EchoPathVariability echo_path_variability(false, false);
-  std::array<float, kBlockSize> s;
-  s.fill(100.f);
-  x.fill(0.f);
-
-  std::vector<std::array<float, kFftLengthBy2Plus1>> frequency_response(30);
-  for (auto& v : frequency_response) {
-    v.fill(0.01f);
-  }
-
-  std::array<float, kAdaptiveFilterTimeDomainLength> impulse_response;
-  impulse_response.fill(0.f);
-
-  // Verify that a non-significant filter delay is identified correctly.
-  state.HandleEchoPathChange(echo_path_variability);
-  state.Update(frequency_response, impulse_response, true,
-               rtc::Optional<size_t>(), render_buffer, E2_main, Y2, x, s,
-               false);
-  EXPECT_FALSE(state.FilterDelay());
-}
-
 // Verifies the delay for a converged filter is correctly identified.
 TEST(AecState, ConvergedFilterDelay) {
   constexpr int kFilterLength = 10;
@@ -243,7 +214,8 @@ TEST(AecState, ExternalDelay) {
   x.fill(0.f);
   RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 30,
                              std::vector<size_t>(1, 30));
-  std::vector<std::array<float, kFftLengthBy2Plus1>> frequency_response(30);
+  std::vector<std::array<float, kFftLengthBy2Plus1>> frequency_response(
+      kAdaptiveFilterLength);
   for (auto& v : frequency_response) {
     v.fill(0.01f);
   }

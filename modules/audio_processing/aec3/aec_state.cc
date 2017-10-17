@@ -23,49 +23,27 @@ namespace webrtc {
 namespace {
 
 // Computes delay of the adaptive filter.
-rtc::Optional<size_t> EstimateFilterDelay(
+int EstimateFilterDelay(
     const std::vector<std::array<float, kFftLengthBy2Plus1>>&
         adaptive_filter_frequency_response) {
   const auto& H2 = adaptive_filter_frequency_response;
-
-  size_t reliable_delays_sum = 0;
-  size_t num_reliable_delays = 0;
-
   constexpr size_t kUpperBin = kFftLengthBy2 - 5;
-  constexpr float kMinPeakMargin = 10.f;
-  const size_t kTailPartition = H2.size() - 1;
+  RTC_DCHECK_GE(kAdaptiveFilterLength, H2.size());
+  std::array<int, kAdaptiveFilterLength> delays;
+  delays.fill(0);
   for (size_t k = 1; k < kUpperBin; ++k) {
     // Find the maximum of H2[j].
-    int peak = 0;
+    size_t peak = 0;
     for (size_t j = 0; j < H2.size(); ++j) {
       if (H2[j][k] > H2[peak][k]) {
         peak = j;
       }
     }
-
-    // Count the peak as a delay only if the peak is sufficiently larger than
-    // the tail.
-    if (kMinPeakMargin * H2[kTailPartition][k] < H2[peak][k]) {
-      reliable_delays_sum += peak;
-      ++num_reliable_delays;
-    }
+    ++delays[peak];
   }
 
-  // Return no delay if not sufficient delays have been found.
-  if (num_reliable_delays < 21) {
-    return rtc::Optional<size_t>();
-  }
-
-  const size_t delay = reliable_delays_sum / num_reliable_delays;
-  // Sanity check that the peak is not caused by a false strong DC-component in
-  // the filter.
-  for (size_t k = 1; k < kUpperBin; ++k) {
-    if (H2[delay][k] > H2[delay][0]) {
-      RTC_DCHECK_GT(H2.size(), delay);
-      return rtc::Optional<size_t>(delay);
-    }
-  }
-  return rtc::Optional<size_t>();
+  return std::distance(delays.begin(),
+                       std::max_element(delays.begin(), delays.end()));
 }
 
 }  // namespace
@@ -130,14 +108,15 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   force_zero_gain_ = (++force_zero_gain_counter_) < kNumBlocksPerSecond / 5;
 
   // Estimate delays.
-  filter_delay_ = EstimateFilterDelay(adaptive_filter_frequency_response);
+  filter_delay_ = rtc::Optional<size_t>(
+      EstimateFilterDelay(adaptive_filter_frequency_response));
   external_delay_ =
       external_delay_samples
           ? rtc::Optional<size_t>(*external_delay_samples / kBlockSize)
           : rtc::Optional<size_t>();
 
   // Update the ERL and ERLE measures.
-  if (filter_delay_ && capture_block_counter_ >= 2 * kNumBlocksPerSecond) {
+  if (converged_filter && capture_block_counter_ >= 2 * kNumBlocksPerSecond) {
     const auto& X2 = render_buffer.Spectrum(*filter_delay_);
     erle_estimator_.Update(X2, Y2, E2_main);
     erl_estimator_.Update(X2, Y2);
@@ -171,8 +150,7 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   // Flag whether the linear filter estimate is usable.
   usable_linear_estimate_ =
       (!echo_saturation_) && (converged_filter || SufficientFilterUpdates()) &&
-      filter_delay_ && capture_block_counter_ >= 2 * kNumBlocksPerSecond &&
-      external_delay_;
+      capture_block_counter_ >= 2 * kNumBlocksPerSecond && external_delay_;
 
   // After an amount of active render samples for which an echo should have been
   // detected in the capture signal if the ERL was not infinite, flag that a
