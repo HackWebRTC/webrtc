@@ -389,6 +389,11 @@ void DelayManager::RegisterEmptyPacket() {
 DelayManager::IATVector DelayManager::ScaleHistogram(const IATVector& histogram,
                                                      int old_packet_length,
                                                      int new_packet_length) {
+  if (old_packet_length == 0) {
+    // If we don't know the previous frame length, don't make any changes to the
+    // histogram.
+    return histogram;
+  }
   RTC_DCHECK_GT(new_packet_length, 0);
   RTC_DCHECK_EQ(old_packet_length % 10, 0);
   RTC_DCHECK_EQ(new_packet_length % 10, 0);
