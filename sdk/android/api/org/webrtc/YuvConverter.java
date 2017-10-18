@@ -85,7 +85,7 @@ public class YuvConverter {
         "precision mediump float;\n"
       + "varying vec2 interp_tc;\n"
       + "\n"
-      + "uniform sample2D tex;\n"
+      + "uniform sampler2D tex;\n"
       // Difference in texture coordinate corresponding to one
       // sub-pixel in the x direction.
       + "uniform vec2 xUnit;\n"
