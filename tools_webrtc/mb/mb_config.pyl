@@ -76,6 +76,27 @@
       'Win32 Release (MSVC)': 'win_msvc_release_bot_x86',
       'Win32 Release [large tests]': 'release_bot_x86',
     },
+    'client.webrtc.branches': {
+      # iOS
+      'iOS (stable)': 'ios',
+      'iOS (beta)': 'ios',
+
+      # Mac
+      'Mac (stable)': 'release_bot_x64',
+      'Mac (beta)': 'release_bot_x64',
+
+      # Linux
+      'Linux (stable)': 'release_bot_x64',
+      'Linux (beta)': 'release_bot_x64',
+
+      # Android
+      'Android (stable)': 'android_release_bot_arm',
+      'Android (beta)': 'android_release_bot_arm',
+
+      # Windows
+      'Win (stable)': 'release_bot_x86',
+      'Win (beta)': 'release_bot_x86',
+    },
     'client.webrtc.perf': {
       # Android
       'Android32 Builder': 'perf_android_release_bot_arm',
