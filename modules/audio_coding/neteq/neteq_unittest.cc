@@ -29,6 +29,7 @@
 #include "rtc_base/flags.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/protobuf_utils.h"
+#include "rtc_base/safe_conversions.h"
 #include "rtc_base/sha1digest.h"
 #include "rtc_base/stringencode.h"
 #include "test/gtest.h"
@@ -544,8 +545,8 @@ TEST_F(NetEqDecodingTestFaxMode, TestFrameWaitingTimeStatistics) {
   for (size_t i = 0; i < num_frames; ++i) {
     const uint8_t payload[kPayloadBytes] = {0};
     RTPHeader rtp_info;
-    rtp_info.sequenceNumber = i;
-    rtp_info.timestamp = i * kSamples;
+    rtp_info.sequenceNumber = rtc::checked_cast<uint16_t>(i);
+    rtp_info.timestamp = rtc::checked_cast<uint32_t>(i * kSamples);
     rtp_info.ssrc = 0x1234;     // Just an arbitrary SSRC.
     rtp_info.payloadType = 94;  // PCM16b WB codec.
     rtp_info.markerBit = 0;
@@ -974,9 +975,11 @@ class NetEqBgnTest : public NetEqDecodingTest {
       ASSERT_EQ(AudioFrame::kNormalSpeech, output.speech_type_);
 
       // Next packet.
-      rtp_info.timestamp += expected_samples_per_channel;
+      rtp_info.timestamp += rtc::checked_cast<uint32_t>(
+          expected_samples_per_channel);
       rtp_info.sequenceNumber++;
-      receive_timestamp += expected_samples_per_channel;
+      receive_timestamp += rtc::checked_cast<uint32_t>(
+          expected_samples_per_channel);
     }
 
     output.Reset();
