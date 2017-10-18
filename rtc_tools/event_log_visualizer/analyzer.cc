@@ -898,11 +898,11 @@ void EventLogAnalyzer::CreateFractionLossGraph(Plot* plot) {
     time_series.points.emplace_back(x, y);
   }
 
+  plot->AppendTimeSeries(std::move(time_series));
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 10, "Percent lost packets", kBottomMargin,
                           kTopMargin);
   plot->SetTitle("Reported packet loss");
-  plot->AppendTimeSeries(std::move(time_series));
 }
 
 // Plot the total bandwidth used by all RTP streams.
