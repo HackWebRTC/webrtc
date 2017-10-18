@@ -31,8 +31,17 @@ std::unique_ptr<AudioProcessing> CreateAPM(const uint8_t** data,
   auto hpf = ParseBool(data, remaining_size);
   auto aec3 = ParseBool(data, remaining_size);
 
+  auto use_aec = ParseBool(data, remaining_size);
+  auto use_aecm = ParseBool(data, remaining_size);
+  auto use_agc = ParseBool(data, remaining_size);
+  auto use_ns = ParseBool(data, remaining_size);
+  auto use_le = ParseBool(data, remaining_size);
+  auto use_vad = ParseBool(data, remaining_size);
+  auto use_agc_limiter = ParseBool(data, remaining_size);
+
   if (!(exp_agc && exp_ns && bf && ef && raf && da && ie && red && lc && hpf &&
-        aec3)) {
+        aec3 && use_aec && use_aecm && use_agc && use_ns && use_le && use_vad &&
+        use_agc_limiter)) {
     return nullptr;
   }
 
@@ -59,6 +68,14 @@ std::unique_ptr<AudioProcessing> CreateAPM(const uint8_t** data,
   apm_config.echo_canceller3.enabled = *aec3;
 
   apm->ApplyConfig(apm_config);
+
+  apm->echo_cancellation()->Enable(*use_aec);
+  apm->echo_control_mobile()->Enable(*use_aecm);
+  apm->gain_control()->Enable(*use_agc);
+  apm->noise_suppression()->Enable(*use_ns);
+  apm->level_estimator()->Enable(*use_le);
+  apm->voice_detection()->Enable(*use_vad);
+  apm->gain_control()->enable_limiter(*use_agc_limiter);
 
   return apm;
 }
