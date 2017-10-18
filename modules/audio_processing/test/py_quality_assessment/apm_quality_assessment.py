@@ -108,6 +108,11 @@ def _InstanceArgumentsParser():
                               AudioProcWrapper.  \
                               DEFAULT_APM_SIMULATOR_BIN_PATH)
 
+  parser.add_argument('--copy_with_identity_generator', required=False,
+                      help=('If true, the identity test data generator makes a '
+                            'copy of the clean speech input file.'),
+                      default=False)
+
   return parser
 
 
@@ -135,7 +140,8 @@ def main():
       test_data_generator_factory=(
           test_data_generation_factory.TestDataGeneratorFactory(
               aechen_ir_database_path=args.air_db_path,
-              noise_tracks_path=args.additive_noise_tracks_path)),
+              noise_tracks_path=args.additive_noise_tracks_path,
+              copy_with_identity=args.copy_with_identity_generator)),
       evaluation_score_factory=eval_scores_factory.EvaluationScoreWorkerFactory(
           polqa_tool_bin_path=os.path.join(args.polqa_path, _POLQA_BIN_NAME)),
       ap_wrapper=audioproc_wrapper.AudioProcWrapper(args.apm_sim_path),

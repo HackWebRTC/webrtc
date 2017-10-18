@@ -23,6 +23,7 @@ obtained by convolving the input signal with an impulse response.
 
 import logging
 import os
+import shutil
 import sys
 
 try:
@@ -182,13 +183,27 @@ class IdentityTestDataGenerator(TestDataGenerator):
 
   NAME = 'identity'
 
-  def __init__(self, output_directory_prefix):
+  def __init__(self, output_directory_prefix, copy_with_identity):
     TestDataGenerator.__init__(self, output_directory_prefix)
+    self._copy_with_identity = copy_with_identity
+
+  @property
+  def copy_with_identity(self):
+    return self._copy_with_identity
 
   def _Generate(
       self, input_signal_filepath, test_data_cache_path, base_output_path):
     config_name = 'default'
     output_path = self._MakeDir(base_output_path, config_name)
+
+    if self._copy_with_identity:
+      input_signal_filepath_new = os.path.join(
+          test_data_cache_path, os.path.split(input_signal_filepath)[1])
+      logging.info('copying ' + input_signal_filepath + ' to ' + (
+          input_signal_filepath_new))
+      shutil.copy(input_signal_filepath, input_signal_filepath_new)
+      input_signal_filepath = input_signal_filepath_new
+
     self._AddNoiseReferenceFilesPair(
         config_name=config_name,
         noisy_signal_filepath=input_signal_filepath,

@@ -64,7 +64,8 @@ class TestApmModuleSimulator(unittest.TestCase):
     test_data_generator_factory = (
         test_data_generation_factory.TestDataGeneratorFactory(
             aechen_ir_database_path='',
-            noise_tracks_path=''))
+            noise_tracks_path='',
+            copy_with_identity=False))
     evaluation_score_factory = eval_scores_factory.EvaluationScoreWorkerFactory(
         polqa_tool_bin_path=os.path.join(
             os.path.dirname(__file__), 'fake_polqa'))
@@ -108,7 +109,8 @@ class TestApmModuleSimulator(unittest.TestCase):
         test_data_generator_factory=(
             test_data_generation_factory.TestDataGeneratorFactory(
                 aechen_ir_database_path='',
-                noise_tracks_path='')),
+                noise_tracks_path='',
+                copy_with_identity=False)),
         evaluation_score_factory=(
             eval_scores_factory.EvaluationScoreWorkerFactory(
                 polqa_tool_bin_path=os.path.join(
@@ -143,7 +145,8 @@ class TestApmModuleSimulator(unittest.TestCase):
         test_data_generator_factory=(
             test_data_generation_factory.TestDataGeneratorFactory(
                 aechen_ir_database_path='',
-                noise_tracks_path='')),
+                noise_tracks_path='',
+                copy_with_identity=False)),
         evaluation_score_factory=(
             eval_scores_factory.EvaluationScoreWorkerFactory(
                 polqa_tool_bin_path=os.path.join(
