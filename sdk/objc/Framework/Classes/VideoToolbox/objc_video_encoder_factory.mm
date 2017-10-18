@@ -144,7 +144,8 @@ VideoEncoderFactory::CodecInfo ObjCVideoEncoderFactory::QueryVideoEncoder(
     const SdpVideoFormat &format) const {
   // TODO(andersc): This is a hack until we figure out how this should be done properly.
   NSString *formatName = [NSString stringForStdString:format.name];
-  NSSet *wrappedSoftwareFormats = [NSSet setWithObjects:@"VP8", @"VP9", nil];
+  NSSet *wrappedSoftwareFormats =
+      [NSSet setWithObjects:kVideoCodecVp8Name, kVideoCodecVp9Name, nil];
 
   CodecInfo codec_info;
   codec_info.is_hardware_accelerated = ![wrappedSoftwareFormats containsObject:formatName];

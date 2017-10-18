@@ -11,23 +11,21 @@
 #import "ARDVideoEncoderFactory.h"
 
 #import "ARDSettingsModel.h"
+#import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecH264.h"
 #import "WebRTC/RTCVideoEncoderVP8.h"
 #import "WebRTC/RTCVideoEncoderVP9.h"
-
-static NSString *kLevel31ConstrainedHigh = @"640c1f";
-static NSString *kLevel31ConstrainedBaseline = @"42e01f";
 
 @implementation ARDVideoEncoderFactory
 
 @synthesize preferredCodec;
 
 - (id<RTCVideoEncoder>)createEncoder:(RTCVideoCodecInfo *)info {
-  if ([info.name isEqualToString:@"H264"]) {
+  if ([info.name isEqualToString:kVideoCodecH264Name]) {
     return [[RTCVideoEncoderH264 alloc] initWithCodecInfo:info];
-  } else if ([info.name isEqualToString:@"VP8"]) {
+  } else if ([info.name isEqualToString:kVideoCodecVp8Name]) {
     return [RTCVideoEncoderVP8 vp8Encoder];
-  } else if ([info.name isEqualToString:@"VP9"]) {
+  } else if ([info.name isEqualToString:kVideoCodecVp9Name]) {
     return [RTCVideoEncoderVP9 vp9Encoder];
   }
 
@@ -43,7 +41,7 @@ static NSString *kLevel31ConstrainedBaseline = @"42e01f";
     @"packetization-mode" : @"1",
   };
   RTCVideoCodecInfo *constrainedHighInfo =
-      [[RTCVideoCodecInfo alloc] initWithName:@"H264" parameters:constrainedHighParams];
+      [[RTCVideoCodecInfo alloc] initWithName:kVideoCodecH264Name parameters:constrainedHighParams];
   [codecs addObject:constrainedHighInfo];
 
   NSDictionary<NSString *, NSString *> *constrainedBaselineParams = @{
@@ -52,13 +50,16 @@ static NSString *kLevel31ConstrainedBaseline = @"42e01f";
     @"packetization-mode" : @"1",
   };
   RTCVideoCodecInfo *constrainedBaselineInfo =
-      [[RTCVideoCodecInfo alloc] initWithName:@"H264" parameters:constrainedBaselineParams];
+      [[RTCVideoCodecInfo alloc] initWithName:kVideoCodecH264Name
+                                   parameters:constrainedBaselineParams];
   [codecs addObject:constrainedBaselineInfo];
 
-  RTCVideoCodecInfo *vp8Info = [[RTCVideoCodecInfo alloc] initWithName:@"VP8" parameters:nil];
+  RTCVideoCodecInfo *vp8Info =
+      [[RTCVideoCodecInfo alloc] initWithName:kVideoCodecVp8Name parameters:nil];
   [codecs addObject:vp8Info];
 
-  RTCVideoCodecInfo *vp9Info = [[RTCVideoCodecInfo alloc] initWithName:@"VP9" parameters:nil];
+  RTCVideoCodecInfo *vp9Info =
+      [[RTCVideoCodecInfo alloc] initWithName:kVideoCodecVp9Name parameters:nil];
   [codecs addObject:vp9Info];
 
   NSMutableArray<RTCVideoCodecInfo *> *orderedCodecs = [NSMutableArray array];

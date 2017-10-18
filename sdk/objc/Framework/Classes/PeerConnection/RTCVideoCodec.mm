@@ -14,6 +14,12 @@
 #import "RTCVideoCodec+Private.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
 
+NSString *const kVideoCodecVp8Name = @"VP8";
+NSString *const kVideoCodecVp9Name = @"VP9";
+NSString *const kVideoCodecH264Name = @"H264";
+NSString *const kLevel31ConstrainedHigh = @"640c1f";
+NSString *const kLevel31ConstrainedBaseline = @"42e01f";
+
 @implementation RTCVideoCodecInfo
 
 @synthesize name = _name;
