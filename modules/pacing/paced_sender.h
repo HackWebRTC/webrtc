@@ -166,19 +166,21 @@ class PacedSender : public Pacer {
 
   const Clock* const clock_;
   PacketSender* const packet_sender_;
-  std::unique_ptr<AlrDetector> alr_detector_ RTC_GUARDED_BY(critsect_);
+  const std::unique_ptr<AlrDetector> alr_detector_ RTC_PT_GUARDED_BY(critsect_);
 
   rtc::CriticalSection critsect_;
   bool paused_ RTC_GUARDED_BY(critsect_);
   // This is the media budget, keeping track of how many bits of media
   // we can pace out during the current interval.
-  std::unique_ptr<IntervalBudget> media_budget_ RTC_GUARDED_BY(critsect_);
+  const std::unique_ptr<IntervalBudget> media_budget_
+      RTC_PT_GUARDED_BY(critsect_);
   // This is the padding budget, keeping track of how many bits of padding we're
   // allowed to send out during the current interval. This budget will be
   // utilized when there's no media to send.
-  std::unique_ptr<IntervalBudget> padding_budget_ RTC_GUARDED_BY(critsect_);
+  const std::unique_ptr<IntervalBudget> padding_budget_
+      RTC_PT_GUARDED_BY(critsect_);
 
-  std::unique_ptr<BitrateProber> prober_ RTC_GUARDED_BY(critsect_);
+  const std::unique_ptr<BitrateProber> prober_ RTC_PT_GUARDED_BY(critsect_);
   bool probing_send_failure_ RTC_GUARDED_BY(critsect_);
   // Actual configured bitrates (media_budget_ may temporarily be higher in
   // order to meet pace time constraint).
@@ -190,7 +192,7 @@ class PacedSender : public Pacer {
   int64_t time_last_update_us_ RTC_GUARDED_BY(critsect_);
   int64_t first_sent_packet_ms_ RTC_GUARDED_BY(critsect_);
 
-  std::unique_ptr<PacketQueue> packets_ RTC_GUARDED_BY(critsect_);
+  const std::unique_ptr<PacketQueue> packets_ RTC_PT_GUARDED_BY(critsect_);
   uint64_t packet_counter_ RTC_GUARDED_BY(critsect_);
   ProcessThread* process_thread_ = nullptr;
 

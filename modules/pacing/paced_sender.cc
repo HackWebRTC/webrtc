@@ -23,6 +23,7 @@
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -47,11 +48,11 @@ PacedSender::PacedSender(const Clock* clock,
                          RtcEventLog* event_log)
     : clock_(clock),
       packet_sender_(packet_sender),
-      alr_detector_(new AlrDetector()),
+      alr_detector_(rtc::MakeUnique<AlrDetector>()),
       paused_(false),
-      media_budget_(new IntervalBudget(0)),
-      padding_budget_(new IntervalBudget(0)),
-      prober_(new BitrateProber(event_log)),
+      media_budget_(rtc::MakeUnique<IntervalBudget>(0)),
+      padding_budget_(rtc::MakeUnique<IntervalBudget>(0)),
+      prober_(rtc::MakeUnique<BitrateProber>(event_log)),
       probing_send_failure_(false),
       estimated_bitrate_bps_(0),
       min_send_bitrate_kbps_(0u),
@@ -59,7 +60,7 @@ PacedSender::PacedSender(const Clock* clock,
       pacing_bitrate_kbps_(0),
       time_last_update_us_(clock->TimeInMicroseconds()),
       first_sent_packet_ms_(-1),
-      packets_(new PacketQueue(clock)),
+      packets_(rtc::MakeUnique<PacketQueue>(clock)),
       packet_counter_(0),
       pacing_factor_(kDefaultPaceMultiplier),
       queue_time_limit(kMaxQueueLengthMs),
