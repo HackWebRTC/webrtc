@@ -126,7 +126,7 @@ TEST(DbMetric, Constructor) {
 // Verify the general functionality of EchoRemoverMetrics.
 TEST(EchoRemoverMetrics, NormalUsage) {
   EchoRemoverMetrics metrics;
-  AecState aec_state(AudioProcessing::Config::EchoCanceller3{});
+  AecState aec_state(EchoCanceller3Config{});
   std::array<float, kFftLengthBy2Plus1> comfort_noise_spectrum;
   std::array<float, kFftLengthBy2Plus1> suppressor_gain;
   comfort_noise_spectrum.fill(10.f);

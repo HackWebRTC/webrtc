@@ -29,8 +29,7 @@ TEST(SuppressionGain, NullOutputGains) {
   R2.fill(0.f);
   N2.fill(0.f);
   float high_bands_gain;
-  EXPECT_DEATH(SuppressionGain(AudioProcessing::Config::EchoCanceller3{},
-                               DetectOptimization())
+  EXPECT_DEATH(SuppressionGain(EchoCanceller3Config{}, DetectOptimization())
                    .GetGain(E2, R2, N2, RenderSignalAnalyzer(), false,
                             std::vector<std::vector<float>>(
                                 3, std::vector<float>(kBlockSize, 0.f)),
@@ -42,7 +41,7 @@ TEST(SuppressionGain, NullOutputGains) {
 
 // Does a sanity check that the gains are correctly computed.
 TEST(SuppressionGain, BasicGainComputation) {
-  SuppressionGain suppression_gain(AudioProcessing::Config::EchoCanceller3(),
+  SuppressionGain suppression_gain(EchoCanceller3Config(),
                                    DetectOptimization());
   RenderSignalAnalyzer analyzer;
   float high_bands_gain;

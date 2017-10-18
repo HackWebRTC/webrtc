@@ -23,13 +23,13 @@ namespace webrtc {
 
 // Verifies that the check for non-null output residual echo power works.
 TEST(ResidualEchoEstimator, NullResidualEchoPowerOutput) {
-  AecState aec_state(AudioProcessing::Config::EchoCanceller3{});
+  AecState aec_state(EchoCanceller3Config{});
   RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 10,
                              std::vector<size_t>(1, 10));
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2;
   std::array<float, kFftLengthBy2Plus1> S2_linear;
   std::array<float, kFftLengthBy2Plus1> Y2;
-  EXPECT_DEATH(ResidualEchoEstimator(AudioProcessing::Config::EchoCanceller3{})
+  EXPECT_DEATH(ResidualEchoEstimator(EchoCanceller3Config{})
                    .Estimate(aec_state, render_buffer, S2_linear, Y2, nullptr),
                "");
 }
@@ -37,9 +37,9 @@ TEST(ResidualEchoEstimator, NullResidualEchoPowerOutput) {
 #endif
 
 TEST(ResidualEchoEstimator, BasicTest) {
-  ResidualEchoEstimator estimator(AudioProcessing::Config::EchoCanceller3{});
-  AudioProcessing::Config::EchoCanceller3 config;
-  config.param.ep_strength.default_len = 0.f;
+  ResidualEchoEstimator estimator(EchoCanceller3Config{});
+  EchoCanceller3Config config;
+  config.ep_strength.default_len = 0.f;
   AecState aec_state(config);
   RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 10,
                              std::vector<size_t>(1, 10));

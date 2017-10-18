@@ -23,9 +23,8 @@ namespace webrtc {
 // Class for aligning the render and capture signal using a RenderDelayBuffer.
 class RenderDelayController {
  public:
-  static RenderDelayController* Create(
-      const AudioProcessing::Config::EchoCanceller3& config,
-      int sample_rate_hz);
+  static RenderDelayController* Create(const EchoCanceller3Config& config,
+                                       int sample_rate_hz);
   virtual ~RenderDelayController() = default;
 
   // Resets the delay controller.

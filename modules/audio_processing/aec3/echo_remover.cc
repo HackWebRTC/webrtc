@@ -49,9 +49,8 @@ void LinearEchoPower(const FftData& E,
 // Class for removing the echo from the capture signal.
 class EchoRemoverImpl final : public EchoRemover {
  public:
-  explicit EchoRemoverImpl(
-      const AudioProcessing::Config::EchoCanceller3& config,
-      int sample_rate_hz);
+  explicit EchoRemoverImpl(const EchoCanceller3Config& config,
+                           int sample_rate_hz);
   ~EchoRemoverImpl() override;
 
   // Removes the echo from a block of samples from the capture signal. The
@@ -71,7 +70,7 @@ class EchoRemoverImpl final : public EchoRemover {
 
  private:
   static int instance_count_;
-  const AudioProcessing::Config::EchoCanceller3 config_;
+  const EchoCanceller3Config config_;
   const Aec3Fft fft_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const Aec3Optimization optimization_;
@@ -92,9 +91,8 @@ class EchoRemoverImpl final : public EchoRemover {
 
 int EchoRemoverImpl::instance_count_ = 0;
 
-EchoRemoverImpl::EchoRemoverImpl(
-    const AudioProcessing::Config::EchoCanceller3& config,
-    int sample_rate_hz)
+EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
+                                 int sample_rate_hz)
     : config_(config),
       fft_(),
       data_dumper_(
@@ -242,9 +240,8 @@ void EchoRemoverImpl::ProcessCapture(
 
 }  // namespace
 
-EchoRemover* EchoRemover::Create(
-    const AudioProcessing::Config::EchoCanceller3& config,
-    int sample_rate_hz) {
+EchoRemover* EchoRemover::Create(const EchoCanceller3Config& config,
+                                 int sample_rate_hz) {
   return new EchoRemoverImpl(config, sample_rate_hz);
 }
 

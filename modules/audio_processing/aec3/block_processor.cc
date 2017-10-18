@@ -181,9 +181,8 @@ void BlockProcessorImpl::UpdateEchoLeakageStatus(bool leakage_detected) {
 
 }  // namespace
 
-BlockProcessor* BlockProcessor::Create(
-    const AudioProcessing::Config::EchoCanceller3& config,
-    int sample_rate_hz) {
+BlockProcessor* BlockProcessor::Create(const EchoCanceller3Config& config,
+                                       int sample_rate_hz) {
   std::unique_ptr<RenderDelayBuffer> render_buffer(
       RenderDelayBuffer::Create(NumBandsForRate(sample_rate_hz)));
   std::unique_ptr<RenderDelayController> delay_controller(
@@ -195,7 +194,7 @@ BlockProcessor* BlockProcessor::Create(
 }
 
 BlockProcessor* BlockProcessor::Create(
-    const AudioProcessing::Config::EchoCanceller3& config,
+    const EchoCanceller3Config& config,
     int sample_rate_hz,
     std::unique_ptr<RenderDelayBuffer> render_buffer) {
   std::unique_ptr<RenderDelayController> delay_controller(
@@ -207,7 +206,7 @@ BlockProcessor* BlockProcessor::Create(
 }
 
 BlockProcessor* BlockProcessor::Create(
-    const AudioProcessing::Config::EchoCanceller3& config,
+    const EchoCanceller3Config& config,
     int sample_rate_hz,
     std::unique_ptr<RenderDelayBuffer> render_buffer,
     std::unique_ptr<RenderDelayController> delay_controller,

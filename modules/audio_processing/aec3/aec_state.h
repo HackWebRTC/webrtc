@@ -32,7 +32,7 @@ class ApmDataDumper;
 // Handles the state and the conditions for the echo removal functionality.
 class AecState {
  public:
-  explicit AecState(const AudioProcessing::Config::EchoCanceller3& config);
+  explicit AecState(const EchoCanceller3Config& config);
   ~AecState();
 
   // Returns whether the linear filter estimate is usable.
@@ -163,7 +163,7 @@ class AecState {
   float reverb_decay_candidate_ = 0.f;
   float reverb_decay_candidate_residual_ = -1.f;
   EchoAudibility echo_audibility_;
-  const AudioProcessing::Config::EchoCanceller3 config_;
+  const EchoCanceller3Config config_;
   float reverb_decay_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AecState);

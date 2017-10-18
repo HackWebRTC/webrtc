@@ -49,6 +49,11 @@ std::unique_ptr<AudioProcessing> CreateAPM(const uint8_t** data,
   // webrtc::AudioProcessingConfig.
   Config config;
 
+  std::unique_ptr<EchoControlFactory> echo_control_factory;
+  if (*aec3) {
+    echo_control_factory.reset(new EchoCanceller3Factory());
+  }
+
   config.Set<ExperimentalAgc>(new ExperimentalAgc(*exp_agc));
   config.Set<ExperimentalNs>(new ExperimentalNs(*exp_ns));
   if (*bf) {
@@ -59,13 +64,13 @@ std::unique_ptr<AudioProcessing> CreateAPM(const uint8_t** data,
   config.Set<DelayAgnostic>(new DelayAgnostic(*da));
   config.Set<Intelligibility>(new Intelligibility(*ie));
 
-  std::unique_ptr<AudioProcessing> apm(AudioProcessing::Create(config));
+  std::unique_ptr<AudioProcessing> apm(AudioProcessing::Create(
+      config, nullptr, std::move(echo_control_factory), nullptr));
 
   webrtc::AudioProcessing::Config apm_config;
   apm_config.residual_echo_detector.enabled = *red;
   apm_config.level_controller.enabled = *lc;
   apm_config.high_pass_filter.enabled = *hpf;
-  apm_config.echo_canceller3.enabled = *aec3;
 
   apm->ApplyConfig(apm_config);
 

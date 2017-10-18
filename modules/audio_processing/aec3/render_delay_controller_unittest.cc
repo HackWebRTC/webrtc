@@ -50,8 +50,7 @@ TEST(RenderDelayController, NoRenderSignal) {
     std::unique_ptr<RenderDelayBuffer> delay_buffer(
         RenderDelayBuffer::Create(NumBandsForRate(rate)));
     std::unique_ptr<RenderDelayController> delay_controller(
-        RenderDelayController::Create(AudioProcessing::Config::EchoCanceller3(),
-                                      rate));
+        RenderDelayController::Create(EchoCanceller3Config(), rate));
     for (size_t k = 0; k < 100; ++k) {
       EXPECT_EQ(kMinEchoPathDelayBlocks,
                 delay_controller->GetDelay(
@@ -70,8 +69,7 @@ TEST(RenderDelayController, BasicApiCalls) {
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
         RenderDelayBuffer::Create(NumBandsForRate(rate)));
     std::unique_ptr<RenderDelayController> delay_controller(
-        RenderDelayController::Create(AudioProcessing::Config::EchoCanceller3(),
-                                      rate));
+        RenderDelayController::Create(EchoCanceller3Config(), rate));
     for (size_t k = 0; k < 10; ++k) {
       render_delay_buffer->Insert(render_block);
       render_delay_buffer->UpdateBuffers();
@@ -98,8 +96,7 @@ TEST(RenderDelayController, Alignment) {
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(NumBandsForRate(rate)));
       std::unique_ptr<RenderDelayController> delay_controller(
-          RenderDelayController::Create(
-              AudioProcessing::Config::EchoCanceller3(), rate));
+          RenderDelayController::Create(EchoCanceller3Config(), rate));
       DelayBuffer<float> signal_delay_buffer(delay_samples);
       for (size_t k = 0; k < (400 + delay_samples / kBlockSize); ++k) {
         RandomizeSampleVector(&random_generator, render_block[0]);
@@ -142,8 +139,7 @@ TEST(RenderDelayController, NonCausalAlignment) {
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(NumBandsForRate(rate)));
       std::unique_ptr<RenderDelayController> delay_controller(
-          RenderDelayController::Create(
-              AudioProcessing::Config::EchoCanceller3(), rate));
+          RenderDelayController::Create(EchoCanceller3Config(), rate));
       DelayBuffer<float> signal_delay_buffer(-delay_samples);
       for (int k = 0; k < (400 - delay_samples / static_cast<int>(kBlockSize));
            ++k) {
@@ -179,8 +175,7 @@ TEST(RenderDelayController, AlignmentWithJitter) {
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(NumBandsForRate(rate)));
       std::unique_ptr<RenderDelayController> delay_controller(
-          RenderDelayController::Create(
-              AudioProcessing::Config::EchoCanceller3(), rate));
+          RenderDelayController::Create(EchoCanceller3Config(), rate));
       DelayBuffer<float> signal_delay_buffer(delay_samples);
       for (size_t j = 0;
            j <
@@ -229,8 +224,7 @@ TEST(RenderDelayController, InitialHeadroom) {
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
         RenderDelayBuffer::Create(NumBandsForRate(rate)));
     std::unique_ptr<RenderDelayController> delay_controller(
-        RenderDelayController::Create(AudioProcessing::Config::EchoCanceller3(),
-                                      rate));
+        RenderDelayController::Create(EchoCanceller3Config(), rate));
     EXPECT_FALSE(delay_controller->AlignmentHeadroomSamples());
   }
 }
@@ -246,8 +240,7 @@ TEST(RenderDelayController, WrongCaptureSize) {
         RenderDelayBuffer::Create(NumBandsForRate(rate)));
     EXPECT_DEATH(
         std::unique_ptr<RenderDelayController>(
-            RenderDelayController::Create(
-                AudioProcessing::Config::EchoCanceller3(), rate))
+            RenderDelayController::Create(EchoCanceller3Config(), rate))
             ->GetDelay(render_delay_buffer->GetDownsampledRenderBuffer(),
                        block),
         "");
@@ -263,8 +256,8 @@ TEST(RenderDelayController, DISABLED_WrongSampleRate) {
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
         RenderDelayBuffer::Create(NumBandsForRate(rate)));
     EXPECT_DEATH(
-        std::unique_ptr<RenderDelayController>(RenderDelayController::Create(
-            AudioProcessing::Config::EchoCanceller3(), rate)),
+        std::unique_ptr<RenderDelayController>(
+            RenderDelayController::Create(EchoCanceller3Config(), rate)),
         "");
   }
 }

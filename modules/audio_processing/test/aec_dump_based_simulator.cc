@@ -473,10 +473,6 @@ void AecDumpBasedSimulator::HandleMessage(
           new RefinedAdaptiveFilter(*settings_.use_refined_adaptive_filter));
     }
 
-    if (settings_.use_aec3) {
-      apm_config.echo_canceller3.enabled = *settings_.use_aec3;
-    }
-
     if (settings_.use_lc) {
       apm_config.level_controller.enabled = *settings_.use_lc;
     }

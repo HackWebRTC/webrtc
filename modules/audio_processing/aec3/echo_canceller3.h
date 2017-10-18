@@ -63,7 +63,7 @@ class Aec3RenderQueueItemVerifier {
 class EchoCanceller3 : public EchoControl {
  public:
   // Normal c-tor to use.
-  EchoCanceller3(const AudioProcessing::Config::EchoCanceller3& config,
+  EchoCanceller3(const EchoCanceller3Config& config,
                  int sample_rate_hz,
                  bool use_highpass_filter);
   // Testing c-tor that is used only for testing purposes.
@@ -90,10 +90,7 @@ class EchoCanceller3 : public EchoControl {
   }
 
   // Validates a config.
-  static bool Validate(const AudioProcessing::Config::EchoCanceller3& config);
-  // Dumps a config to a string.
-  static std::string ToString(
-      const AudioProcessing::Config::EchoCanceller3& config);
+  static bool Validate(const EchoCanceller3Config& config);
 
  private:
   class RenderWriter;
@@ -132,16 +129,6 @@ class EchoCanceller3 : public EchoControl {
       RTC_GUARDED_BY(capture_race_checker_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoCanceller3);
-};
-
-class EchoCanceller3Factory : public EchoControlFactory {
- public:
-  EchoCanceller3Factory();
-  EchoCanceller3Factory(const AudioProcessing::Config::EchoCanceller3& config);
-  std::unique_ptr<EchoControl> Create(int sample_rate_hz) override;
-
- private:
-  AudioProcessing::Config::EchoCanceller3 config_;
 };
 }  // namespace webrtc
 

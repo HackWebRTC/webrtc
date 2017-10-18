@@ -26,8 +26,7 @@ namespace webrtc {
 
 class ResidualEchoEstimator {
  public:
-  explicit ResidualEchoEstimator(
-      const AudioProcessing::Config::EchoCanceller3& config);
+  explicit ResidualEchoEstimator(const EchoCanceller3Config& config);
   ~ResidualEchoEstimator();
 
   void Estimate(const AecState& aec_state,
@@ -74,7 +73,7 @@ class ResidualEchoEstimator {
       S2_old_;
   std::array<float, kFftLengthBy2Plus1> X2_noise_floor_;
   std::array<int, kFftLengthBy2Plus1> X2_noise_floor_counter_;
-  const AudioProcessing::Config::EchoCanceller3 config_;
+  const EchoCanceller3Config config_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ResidualEchoEstimator);
 };

@@ -23,7 +23,7 @@ namespace webrtc {
 
 class SuppressionGain {
  public:
-  SuppressionGain(const AudioProcessing::Config::EchoCanceller3& config,
+  SuppressionGain(const EchoCanceller3Config& config,
                   Aec3Optimization optimization);
   void GetGain(const std::array<float, kFftLengthBy2Plus1>& nearend,
                const std::array<float, kFftLengthBy2Plus1>& echo,
@@ -62,7 +62,7 @@ class SuppressionGain {
 
   LowNoiseRenderDetector low_render_detector_;
   size_t no_saturation_counter_ = 0;
-  const AudioProcessing::Config::EchoCanceller3 config_;
+  const EchoCanceller3Config config_;
   RTC_DISALLOW_COPY_AND_ASSIGN(SuppressionGain);
 };
 

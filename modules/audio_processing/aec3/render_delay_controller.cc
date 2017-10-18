@@ -27,9 +27,8 @@ namespace {
 
 class RenderDelayControllerImpl final : public RenderDelayController {
  public:
-  RenderDelayControllerImpl(
-      const AudioProcessing::Config::EchoCanceller3& config,
-      int sample_rate_hz);
+  RenderDelayControllerImpl(const EchoCanceller3Config& config,
+                            int sample_rate_hz);
   ~RenderDelayControllerImpl() override;
   void Reset() override;
   void SetDelay(size_t render_delay) override;
@@ -75,12 +74,12 @@ size_t ComputeNewBufferDelay(size_t current_delay,
 int RenderDelayControllerImpl::instance_count_ = 0;
 
 RenderDelayControllerImpl::RenderDelayControllerImpl(
-    const AudioProcessing::Config::EchoCanceller3& config,
+    const EchoCanceller3Config& config,
     int sample_rate_hz)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       default_delay_(
-          std::max(config.param.delay.default_delay, kMinEchoPathDelayBlocks)),
+          std::max(config.delay.default_delay, kMinEchoPathDelayBlocks)),
       delay_(default_delay_),
       delay_estimator_(data_dumper_.get(), config),
       echo_path_delay_samples_(default_delay_ * kBlockSize),
@@ -170,7 +169,7 @@ size_t RenderDelayControllerImpl::GetDelay(
 }  // namespace
 
 RenderDelayController* RenderDelayController::Create(
-    const AudioProcessing::Config::EchoCanceller3& config,
+    const EchoCanceller3Config& config,
     int sample_rate_hz) {
   return new RenderDelayControllerImpl(config, sample_rate_hz);
 }

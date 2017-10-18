@@ -46,7 +46,7 @@ TEST(EchoRemover, BasicApiCalls) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
-        EchoRemover::Create(AudioProcessing::Config::EchoCanceller3(), rate));
+        EchoRemover::Create(EchoCanceller3Config(), rate));
     std::unique_ptr<RenderDelayBuffer> render_buffer(
         RenderDelayBuffer::Create(NumBandsForRate(rate)));
 
@@ -75,8 +75,8 @@ TEST(EchoRemover, BasicApiCalls) {
 // TODO(peah): Re-enable the test once the issue with memory leaks during DEATH
 // tests on test bots has been fixed.
 TEST(EchoRemover, DISABLED_WrongSampleRate) {
-  EXPECT_DEATH(std::unique_ptr<EchoRemover>(EchoRemover::Create(
-                   AudioProcessing::Config::EchoCanceller3(), 8001)),
+  EXPECT_DEATH(std::unique_ptr<EchoRemover>(
+                   EchoRemover::Create(EchoCanceller3Config(), 8001)),
                "");
 }
 
@@ -85,7 +85,7 @@ TEST(EchoRemover, WrongCaptureBlockSize) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
-        EchoRemover::Create(AudioProcessing::Config::EchoCanceller3(), rate));
+        EchoRemover::Create(EchoCanceller3Config(), rate));
     std::unique_ptr<RenderDelayBuffer> render_buffer(
         RenderDelayBuffer::Create(NumBandsForRate(rate)));
     std::vector<std::vector<float>> capture(
@@ -106,7 +106,7 @@ TEST(EchoRemover, DISABLED_WrongCaptureNumBands) {
   for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
-        EchoRemover::Create(AudioProcessing::Config::EchoCanceller3(), rate));
+        EchoRemover::Create(EchoCanceller3Config(), rate));
     std::unique_ptr<RenderDelayBuffer> render_buffer(
         RenderDelayBuffer::Create(NumBandsForRate(rate)));
     std::vector<std::vector<float>> capture(
@@ -124,7 +124,7 @@ TEST(EchoRemover, DISABLED_WrongCaptureNumBands) {
 // Verifies the check for non-null capture block.
 TEST(EchoRemover, NullCapture) {
   std::unique_ptr<EchoRemover> remover(
-      EchoRemover::Create(AudioProcessing::Config::EchoCanceller3(), 8000));
+      EchoRemover::Create(EchoCanceller3Config(), 8000));
   std::unique_ptr<RenderDelayBuffer> render_buffer(
       RenderDelayBuffer::Create(3));
   EchoPathVariability echo_path_variability(false, false);
@@ -151,7 +151,7 @@ TEST(EchoRemover, BasicEchoRemoval) {
     for (size_t delay_samples : {0, 64, 150, 200, 301}) {
       SCOPED_TRACE(ProduceDebugText(rate, delay_samples));
       std::unique_ptr<EchoRemover> remover(
-          EchoRemover::Create(AudioProcessing::Config::EchoCanceller3(), rate));
+          EchoRemover::Create(EchoCanceller3Config(), rate));
       std::unique_ptr<RenderDelayBuffer> render_buffer(
           RenderDelayBuffer::Create(NumBandsForRate(rate)));
       std::vector<std::unique_ptr<DelayBuffer<float>>> delay_buffers(x.size());

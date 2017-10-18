@@ -26,14 +26,14 @@ constexpr int kDownSamplingFactor = 4;
 
 EchoPathDelayEstimator::EchoPathDelayEstimator(
     ApmDataDumper* data_dumper,
-    const AudioProcessing::Config::EchoCanceller3& config)
+    const EchoCanceller3Config& config)
     : data_dumper_(data_dumper),
       matched_filter_(data_dumper_,
                       DetectOptimization(),
                       kMatchedFilterWindowSizeSubBlocks,
                       kNumMatchedFilters,
                       kMatchedFilterAlignmentShiftSizeSubBlocks,
-                      config.param.render_levels.poor_excitation_render_limit),
+                      config.render_levels.poor_excitation_render_limit),
       matched_filter_lag_aggregator_(data_dumper_) {
   RTC_DCHECK(data_dumper);
 }

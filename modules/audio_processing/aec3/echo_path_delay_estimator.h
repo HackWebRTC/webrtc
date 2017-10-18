@@ -29,7 +29,7 @@ class ApmDataDumper;
 class EchoPathDelayEstimator {
  public:
   EchoPathDelayEstimator(ApmDataDumper* data_dumper,
-                         const AudioProcessing::Config::EchoCanceller3& config);
+                         const EchoCanceller3Config& config);
   ~EchoPathDelayEstimator();
 
   // Resets the estimation.
