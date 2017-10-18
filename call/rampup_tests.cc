@@ -418,19 +418,21 @@ RampUpDownUpTester::~RampUpDownUpTester() {}
 
 void RampUpDownUpTester::PollStats() {
   do {
-    if (send_stream_) {
+    int transmit_bitrate_bps = 0;
+    bool suspended = false;
+    if (num_video_streams_ > 0) {
       webrtc::VideoSendStream::Stats stats = send_stream_->GetStats();
-      int transmit_bitrate_bps = 0;
       for (auto it : stats.substreams) {
         transmit_bitrate_bps += it.second.total_bitrate_bps;
       }
-      EvolveTestState(transmit_bitrate_bps, stats.suspended);
-    } else if (num_audio_streams_ > 0 && sender_call_ != nullptr) {
+      suspended = stats.suspended;
+    }
+    if (num_audio_streams_ > 0 && sender_call_ != nullptr) {
       // An audio send stream doesn't have bitrate stats, so the call send BW is
       // currently used instead.
-      int transmit_bitrate_bps = sender_call_->GetStats().send_bandwidth_bps;
-      EvolveTestState(transmit_bitrate_bps, false);
+      transmit_bitrate_bps = sender_call_->GetStats().send_bandwidth_bps;
     }
+    EvolveTestState(transmit_bitrate_bps, suspended);
   } while (!stop_event_.Wait(kPollIntervalMs));
 }
 

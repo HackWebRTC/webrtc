@@ -24,6 +24,7 @@
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
+#include "rtc_base/bitrateallocationstrategy.h"
 #include "rtc_base/networkroute.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/socket.h"
@@ -182,6 +183,10 @@ class Call {
   // Assumes 0 <= min <= start <= max holds for set parameters.
   virtual void SetBitrateConfigMask(
       const Config::BitrateConfigMask& bitrate_mask) = 0;
+
+  virtual void SetBitrateAllocationStrategy(
+      std::unique_ptr<rtc::BitrateAllocationStrategy>
+          bitrate_allocation_strategy) = 0;
 
   // TODO(skvlad): When the unbundled case with multiple streams for the same
   // media type going over different networks is supported, track the state
