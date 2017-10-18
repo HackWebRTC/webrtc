@@ -154,7 +154,6 @@ RTCPSender::RTCPSender(
       transport_(outgoing_transport),
       using_nack_(false),
       sending_(false),
-      remb_enabled_(false),
       next_time_to_send_rtcp_(0),
       timestamp_offset_(0),
       last_rtp_timestamp_(0),
@@ -237,31 +236,21 @@ int32_t RTCPSender::SetSendingStatus(const FeedbackState& feedback_state,
   return 0;
 }
 
-bool RTCPSender::REMB() const {
-  rtc::CritScope lock(&critical_section_rtcp_sender_);
-  return remb_enabled_;
-}
-
-void RTCPSender::SetREMBStatus(bool enable) {
-  rtc::CritScope lock(&critical_section_rtcp_sender_);
-  remb_enabled_ = enable;
-  if (!enable) {
-    // Stop sending remb each report until it is reenabled and remb data set.
-    ConsumeFlag(kRtcpRemb, true);
-  }
-}
-
-void RTCPSender::SetREMBData(uint32_t bitrate,
-                             const std::vector<uint32_t>& ssrcs) {
+void RTCPSender::SetRemb(uint32_t bitrate, const std::vector<uint32_t>& ssrcs) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
   remb_bitrate_ = bitrate;
   remb_ssrcs_ = ssrcs;
 
-  if (remb_enabled_)
-    SetFlag(kRtcpRemb, false);
+  SetFlag(kRtcpRemb, /*is_volatile=*/false);
   // Send a REMB immediately if we have a new REMB. The frequency of REMBs is
   // throttled by the caller.
   next_time_to_send_rtcp_ = clock_->TimeInMilliseconds();
+}
+
+void RTCPSender::UnsetRemb() {
+  rtc::CritScope lock(&critical_section_rtcp_sender_);
+  // Stop sending REMB each report until it is reenabled and REMB data set.
+  ConsumeFlag(kRtcpRemb, /*forced=*/true);
 }
 
 bool RTCPSender::TMMBR() const {
