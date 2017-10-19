@@ -45,6 +45,8 @@ enum {
   // |kDefaultOutliserFrameSizePercent| in size of average frame.
   kDefaultTimingFramesDelayMs = 200,
   kDefaultOutlierFrameSizePercent = 250,
+  // Maximum number of frames for what we store encode start timing information.
+  kMaxEncodeStartTimeListSize = 50,
 };
 
 enum VCMVideoProtection {

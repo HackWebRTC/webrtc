@@ -179,6 +179,7 @@ bool VideoCapturer::AdaptFrame(int width,
             width, height, camera_time_us * rtc::kNumNanosecsPerMicrosec,
             crop_width, crop_height, out_width, out_height)) {
       // VideoAdapter dropped the frame.
+      broadcaster_.OnDiscardedFrame();
       return false;
     }
     *crop_x = (width - *crop_width) / 2;
