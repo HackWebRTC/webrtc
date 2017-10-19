@@ -529,6 +529,7 @@ AutoThread::AutoThread() : Thread(SocketServer::CreateDefault()) {
 
 AutoThread::~AutoThread() {
   Stop();
+  DoDestroy();
   if (ThreadManager::Instance()->CurrentThread() == this) {
     ThreadManager::Instance()->SetCurrentThread(nullptr);
   }
@@ -550,6 +551,12 @@ AutoSocketServerThread::~AutoSocketServerThread() {
   // P2PTransportChannelPingTest, relying on the message posted in
   // cricket::Connection::Destroy.
   ProcessMessages(0);
+  // Stop and destroy the thread before clearing it as the current thread.
+  // Sometimes there are messages left in the MessageQueue that will be
+  // destroyed by DoDestroy, and sometimes the destructors of the message and/or
+  // its contents rely on this thread still being set as the current thread.
+  Stop();
+  DoDestroy();
   rtc::ThreadManager::Instance()->SetCurrentThread(old_thread_);
   if (old_thread_) {
     MessageQueueManager::Add(old_thread_);

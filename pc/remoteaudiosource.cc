@@ -22,22 +22,6 @@
 
 namespace webrtc {
 
-class RemoteAudioSource::MessageHandler : public rtc::MessageHandler {
- public:
-  explicit MessageHandler(RemoteAudioSource* source) : source_(source) {}
-
- private:
-  ~MessageHandler() override {}
-
-  void OnMessage(rtc::Message* msg) override {
-    source_->OnMessage(msg);
-    delete this;
-  }
-
-  const rtc::scoped_refptr<RemoteAudioSource> source_;
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MessageHandler);
-};
-
 class RemoteAudioSource::Sink : public AudioSinkInterface {
  public:
   explicit Sink(RemoteAudioSource* source) : source_(source) {}
@@ -148,7 +132,13 @@ void RemoteAudioSource::OnData(const AudioSinkInterface::Data& audio) {
 void RemoteAudioSource::OnAudioChannelGone() {
   // Called when the audio channel is deleted.  It may be the worker thread
   // in libjingle or may be a different worker thread.
-  main_thread_->Post(RTC_FROM_HERE, new MessageHandler(this));
+  // This object needs to live long enough for the cleanup logic in OnMessage to
+  // run, so take a reference to it as the data. Sometimes the message may not
+  // be processed (because the thread was destroyed shortly after this call),
+  // but that is fine because the thread destructor will take care of destroying
+  // the message data which will release the reference on RemoteAudioSource.
+  main_thread_->Post(RTC_FROM_HERE, this, 0,
+                     new rtc::ScopedRefMessageData<RemoteAudioSource>(this));
 }
 
 void RemoteAudioSource::OnMessage(rtc::Message* msg) {
@@ -156,6 +146,9 @@ void RemoteAudioSource::OnMessage(rtc::Message* msg) {
   sinks_.clear();
   state_ = MediaSourceInterface::kEnded;
   FireOnChanged();
+  // Will possibly delete this RemoteAudioSource since it is reference counted
+  // in the message.
+  delete msg->pdata;
 }
 
 }  // namespace webrtc
