@@ -458,3 +458,30 @@
    fun:_ZNK6webrtc11MockRtpRtcp11FlexfecSsrcEv
    ...
 }
+
+{
+   bug_8405
+   Memcheck:Leak
+   fun:_Znw*
+   fun:_ZN6webrtc17RemoteAudioSource4SinkD0Ev
+   fun:_ZN6webrtc3voe7Channel7SetSinkESt10unique_ptrINS_18AudioSinkInterfaceESt14default_deleteIS3_EE
+   fun:_ZN6webrtc3voe12ChannelProxy7SetSinkESt10unique_ptrINS_18AudioSinkInterfaceESt14default_deleteIS3_EE
+   fun:_ZN6webrtc8internal18AudioReceiveStream7SetSinkESt10unique_ptrINS_18AudioSinkInterfaceESt14default_deleteIS3_EE
+   fun:_ZN7cricket23WebRtcVoiceMediaChannel24WebRtcAudioReceiveStream15SetRawAudioSinkESt10unique_ptrIN6webrtc18AudioSinkInterfaceESt14default_deleteIS4_EE
+   fun:_ZN7cricket23WebRtcVoiceMediaChannel16RemoveRecvStreamEj
+   fun:_ZN7cricket23WebRtcVoiceMediaChannelD1Ev
+   fun:_ZN7cricket23WebRtcVoiceMediaChannelD0Ev
+   fun:_ZN7cricket11BaseChannelD1Ev
+   fun:_ZN7cricket12VoiceChannelD1Ev
+   fun:_ZN7cricket12VoiceChannelD0Ev
+   fun:_ZN7cricket14ChannelManager21DestroyVoiceChannel_wEPNS_12VoiceChannelE
+   fun:_ZN3rtc6Thread4SendERKNS_8LocationEPNS_14MessageHandlerEjPNS_11MessageDataE
+   fun:_ZN3rtc6Thread14InvokeInternalERKNS_8LocationEPNS_14MessageHandlerE
+   fun:_ZN7cricket14ChannelManager19DestroyVoiceChannelEPNS_12VoiceChannelE
+   fun:_ZN6webrtc13WebRtcSession19DestroyVoiceChannelEPN7cricket12VoiceChannelE
+   fun:_ZN6webrtc13WebRtcSessionD1Ev
+   fun:_ZN20WebRtcSessionForTestD0Ev
+   fun:_ZN6webrtc14PeerConnectionD1Ev
+   fun:_ZN3rtc16RefCountedObjectIN6webrtc14PeerConnectionEED0Ev
+   fun:_ZNK3rtc16RefCountedObjectIN6webrtc14PeerConnectionEE7ReleaseEv
+}
