@@ -14,12 +14,10 @@
 #include <stdint.h>
 
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "rtc_base/bitrateallocationstrategy.h"
 #include "rtc_base/sequenced_task_checker.h"
 
 namespace webrtc {
@@ -96,35 +94,32 @@ class BitrateAllocator {
   // the list of added observers, a best guess is returned.
   int GetStartBitrate(BitrateAllocatorObserver* observer);
 
-  // Sets external allocation strategy. If strategy is not set default WebRTC
-  // allocation mechanism will be used. The strategy may be changed during call.
-  // Setting NULL value will restore default WEBRTC allocation strategy.
-  void SetBitrateAllocationStrategy(
-      std::unique_ptr<rtc::BitrateAllocationStrategy>
-          bitrate_allocation_strategy);
-
  private:
   // Note: All bitrates for member variables and methods are in bps.
-  struct ObserverConfig : rtc::BitrateAllocationStrategy::TrackConfig {
+  struct ObserverConfig {
     ObserverConfig(BitrateAllocatorObserver* observer,
                    uint32_t min_bitrate_bps,
                    uint32_t max_bitrate_bps,
                    uint32_t pad_up_bitrate_bps,
                    bool enforce_min_bitrate,
                    std::string track_id)
-        : TrackConfig(min_bitrate_bps,
-                      max_bitrate_bps,
-                      enforce_min_bitrate,
-                      track_id),
-          observer(observer),
+        : observer(observer),
+          min_bitrate_bps(min_bitrate_bps),
+          max_bitrate_bps(max_bitrate_bps),
           pad_up_bitrate_bps(pad_up_bitrate_bps),
+          enforce_min_bitrate(enforce_min_bitrate),
           allocated_bitrate_bps(-1),
-          media_ratio(1.0) {}
+          media_ratio(1.0),
+          track_id(track_id) {}
 
     BitrateAllocatorObserver* observer;
+    uint32_t min_bitrate_bps;
+    uint32_t max_bitrate_bps;
     uint32_t pad_up_bitrate_bps;
+    bool enforce_min_bitrate;
     int64_t allocated_bitrate_bps;
     double media_ratio;  // Part of the total bitrate used for media [0.0, 1.0].
+    std::string track_id;
   };
 
   // Calculates the minimum requested send bitrate and max padding bitrate and
@@ -177,8 +172,6 @@ class BitrateAllocator {
   int64_t last_bwe_log_time_ RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t total_requested_padding_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t total_requested_min_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
-  std::unique_ptr<rtc::BitrateAllocationStrategy> bitrate_allocation_strategy_
-      RTC_GUARDED_BY(&sequenced_checker_);
 };
 }  // namespace webrtc
 #endif  // CALL_BITRATE_ALLOCATOR_H_

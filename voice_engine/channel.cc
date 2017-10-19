@@ -215,10 +215,6 @@ class RtpPacketSenderProxy : public RtpPacketSender {
     }
   }
 
-  void SetAccountForAudioPackets(bool account_for_audio) override {
-    RTC_NOTREACHED();
-  }
-
  private:
   rtc::ThreadChecker thread_checker_;
   rtc::CriticalSection crit_;
