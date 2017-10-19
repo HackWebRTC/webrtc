@@ -115,6 +115,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   TestConfig config_;
 
  private:
+  class CpuProcessTime;
   static const int kMaxNumTemporalLayers = 3;
 
   struct TestResults {
@@ -195,6 +196,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   std::unique_ptr<PacketManipulator> packet_manipulator_;
   Stats stats_;
   std::unique_ptr<VideoProcessor> processor_;
+  std::unique_ptr<CpuProcessTime> cpu_process_time_;
 
   // Quantities updated for every encoded frame.
   TestResults actual_;

@@ -32,6 +32,7 @@ const bool kFrameDropperOn = false;
 
 // Test settings.
 const bool kUseSingleCore = false;
+const bool kMeasureCpu = false;
 const VisualizationParams kVisualizationParams = {
     false,  // save_encoded_ivf
     false,  // save_decoded_y4m
@@ -62,6 +63,7 @@ class VideoProcessorIntegrationTestParameterized
     config_.output_filename =
         TempFilename(OutputPath(), "plot_videoprocessor_integrationtest");
     config_.use_single_core = kUseSingleCore;
+    config_.measure_cpu = kMeasureCpu;
     config_.verbose = true;
     config_.hw_encoder = hw_codec_;
     config_.hw_decoder = hw_codec_;

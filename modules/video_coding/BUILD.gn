@@ -446,6 +446,7 @@ if (rtc_include_tests) {
       "../../common_video",
       "../../media:rtc_audio_video",
       "../../rtc_base:rtc_base_approved",
+      "../../rtc_base:rtc_base_tests_utils",
       "../../system_wrappers",
       "../../test:field_trial",
       "../../test:test_support",

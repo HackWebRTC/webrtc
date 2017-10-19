@@ -14,9 +14,7 @@
 
 #include <algorithm>
 #include <limits>
-#include <memory>
 #include <utility>
-#include <vector>
 
 #include "api/video/i420_buffer.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -137,16 +135,8 @@ int GetElapsedTimeMicroseconds(int64_t start_ns, int64_t stop_ns) {
 
 }  // namespace
 
-const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
-  switch (e) {
-    case kExcludeOnlyFirstKeyFrame:
-      return "ExcludeOnlyFirstKeyFrame";
-    case kExcludeAllKeyFrames:
-      return "ExcludeAllKeyFrames";
-    default:
-      RTC_NOTREACHED();
-      return "Unknown";
-  }
+int TestConfig::NumberOfCores() const {
+  return use_single_core ? 1 : CpuInfo::DetectNumberOfCores();
 }
 
 VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
@@ -201,8 +191,7 @@ void VideoProcessor::Init() {
       << "Failed to register decode complete callback";
 
   // Initialize the encoder and decoder.
-  uint32_t num_cores =
-      config_.use_single_core ? 1 : CpuInfo::DetectNumberOfCores();
+  int num_cores = config_.NumberOfCores();
   RTC_CHECK_EQ(
       encoder_->InitEncode(&config_.codec_settings, num_cores,
                            config_.networking_config.max_payload_size_in_bytes),

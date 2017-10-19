@@ -29,6 +29,7 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/cpu_time.h"
 #include "rtc_base/event.h"
 #include "rtc_base/file.h"
 #include "rtc_base/logging.h"
@@ -77,7 +78,51 @@ int NumberOfTemporalLayers(const VideoCodec& codec_settings) {
   }
 }
 
+bool RunEncodeInRealTime(const TestConfig& config) {
+  if (config.measure_cpu) {
+    return true;
+  }
+#if defined(WEBRTC_ANDROID)
+  // In order to not overwhelm the OpenMAX buffers in the Android MediaCodec.
+  return (config.hw_encoder || config.hw_decoder);
+#else
+  return false;
+#endif
+}
 }  // namespace
+
+class VideoProcessorIntegrationTest::CpuProcessTime final {
+ public:
+  explicit CpuProcessTime(const TestConfig& config) : config_(config) {}
+  ~CpuProcessTime() {}
+
+  void Start() {
+    if (config_.measure_cpu) {
+      cpu_time_ -= rtc::GetProcessCpuTimeNanos();
+      wallclock_time_ -= rtc::SystemTimeNanos();
+    }
+  }
+  void Stop() {
+    if (config_.measure_cpu) {
+      cpu_time_ += rtc::GetProcessCpuTimeNanos();
+      wallclock_time_ += rtc::SystemTimeNanos();
+    }
+  }
+  void Print() const {
+    if (config_.measure_cpu) {
+      printf("CPU usage %%: %f\n", GetUsagePercent() / config_.NumberOfCores());
+    }
+  }
+
+ private:
+  double GetUsagePercent() const {
+    return static_cast<double>(cpu_time_) / wallclock_time_ * 100.0;
+  }
+
+  const TestConfig config_;
+  int64_t cpu_time_ = 0;
+  int64_t wallclock_time_ = 0;
+};
 
 VideoProcessorIntegrationTest::VideoProcessorIntegrationTest() {
 #if defined(WEBRTC_ANDROID)
@@ -158,20 +203,18 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
                          rate_profiles[rate_update_index].input_fps);
   });
 
+  cpu_process_time_->Start();
+
   // Process all frames.
   int frame_number = 0;
   const int num_frames = config_.num_frames;
   RTC_DCHECK_GE(num_frames, 1);
   while (frame_number < num_frames) {
-    // In order to not overwhelm the OpenMAX buffers in the Android
-    // MediaCodec API, we roughly pace the frames here. The downside
-    // of this is that the encode run will be done in real-time.
-#if defined(WEBRTC_ANDROID)
-    if (config_.hw_encoder || config_.hw_decoder) {
+    if (RunEncodeInRealTime(config_)) {
+      // Roughly pace the frames.
       SleepMs(rtc::kNumMillisecsPerSec /
               rate_profiles[rate_update_index].input_fps);
     }
-#endif
 
     task_queue.PostTask([this] { processor_->ProcessFrame(); });
     ++frame_number;
@@ -193,6 +236,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
   if (config_.hw_encoder || config_.hw_decoder) {
     SleepMs(1 * rtc::kNumMillisecsPerSec);
   }
+  cpu_process_time_->Stop();
   ReleaseAndCloseObjects(&task_queue);
 
   // Calculate and print rate control statistics.
@@ -238,6 +282,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
   // Calculate and print other statistics.
   EXPECT_EQ(num_frames, static_cast<int>(stats_.size()));
   stats_.PrintSummary();
+  cpu_process_time_->Print();
 
   // Calculate and print image quality statistics.
   // TODO(marpan): Should compute these quality metrics per SetRates update.
@@ -382,6 +427,7 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
     }
   }
 
+  cpu_process_time_.reset(new CpuProcessTime(config_));
   packet_manipulator_.reset(new PacketManipulatorImpl(
       &packet_reader_, config_.networking_config, config_.verbose));
 
