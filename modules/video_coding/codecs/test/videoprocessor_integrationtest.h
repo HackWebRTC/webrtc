@@ -20,6 +20,7 @@
 #include "media/engine/webrtcvideoencoderfactory.h"
 #include "modules/video_coding/codecs/test/packet_manipulator.h"
 #include "modules/video_coding/codecs/test/stats.h"
+#include "modules/video_coding/codecs/test/test_config.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "test/gtest.h"
@@ -92,17 +93,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
  protected:
   VideoProcessorIntegrationTest();
   ~VideoProcessorIntegrationTest() override;
-
-  static void SetCodecSettings(TestConfig* config,
-                               VideoCodecType codec_type,
-                               int num_temporal_layers,
-                               bool error_concealment_on,
-                               bool denoising_on,
-                               bool frame_dropper_on,
-                               bool spatial_resize_on,
-                               bool resilience_on,
-                               int width,
-                               int height);
 
   void ProcessFramesAndMaybeVerify(
       const std::vector<RateProfile>& rate_profiles,
@@ -182,6 +172,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   void VerifyBitstream(int frame_number,
                        const BitstreamThresholds& bs_thresholds);
+
+  void MaybePrintSettings() const;
 
   // Codecs.
   std::unique_ptr<VideoEncoder> encoder_;

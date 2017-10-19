@@ -10,8 +10,6 @@
 
 #include "modules/video_coding/codecs/test/videoprocessor.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <limits>
 #include <utility>
@@ -23,9 +21,7 @@
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
-#include "system_wrappers/include/cpu_info.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -45,51 +41,6 @@ std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
   return std::unique_ptr<VideoBitrateAllocator>(
       VideoCodecInitializer::CreateBitrateAllocator(config->codec_settings,
                                                     std::move(tl_factory)));
-}
-
-void PrintCodecSettings(const VideoCodec& codec_settings) {
-  printf(" Codec settings:\n");
-  printf("  Codec type        : %s\n",
-         CodecTypeToPayloadString(codec_settings.codecType));
-  printf("  Start bitrate     : %d kbps\n", codec_settings.startBitrate);
-  printf("  Max bitrate       : %d kbps\n", codec_settings.maxBitrate);
-  printf("  Min bitrate       : %d kbps\n", codec_settings.minBitrate);
-  printf("  Width             : %d\n", codec_settings.width);
-  printf("  Height            : %d\n", codec_settings.height);
-  printf("  Max frame rate    : %d\n", codec_settings.maxFramerate);
-  printf("  QPmax             : %d\n", codec_settings.qpMax);
-  if (codec_settings.codecType == kVideoCodecVP8) {
-    printf("  Complexity        : %d\n", codec_settings.VP8().complexity);
-    printf("  Resilience        : %d\n", codec_settings.VP8().resilience);
-    printf("  # temporal layers : %d\n",
-           codec_settings.VP8().numberOfTemporalLayers);
-    printf("  Denoising         : %d\n", codec_settings.VP8().denoisingOn);
-    printf("  Error concealment : %d\n",
-           codec_settings.VP8().errorConcealmentOn);
-    printf("  Automatic resize  : %d\n",
-           codec_settings.VP8().automaticResizeOn);
-    printf("  Frame dropping    : %d\n", codec_settings.VP8().frameDroppingOn);
-    printf("  Key frame interval: %d\n", codec_settings.VP8().keyFrameInterval);
-  } else if (codec_settings.codecType == kVideoCodecVP9) {
-    printf("  Complexity        : %d\n", codec_settings.VP9().complexity);
-    printf("  Resilience        : %d\n", codec_settings.VP9().resilienceOn);
-    printf("  # temporal layers : %d\n",
-           codec_settings.VP9().numberOfTemporalLayers);
-    printf("  Denoising         : %d\n", codec_settings.VP9().denoisingOn);
-    printf("  Frame dropping    : %d\n", codec_settings.VP9().frameDroppingOn);
-    printf("  Key frame interval: %d\n", codec_settings.VP9().keyFrameInterval);
-    printf("  Adaptive QP mode  : %d\n", codec_settings.VP9().adaptiveQpMode);
-    printf("  Automatic resize  : %d\n",
-           codec_settings.VP9().automaticResizeOn);
-    printf("  # spatial layers  : %d\n",
-           codec_settings.VP9().numberOfSpatialLayers);
-    printf("  Flexible mode     : %d\n", codec_settings.VP9().flexibleMode);
-  } else if (codec_settings.codecType == kVideoCodecH264) {
-    printf("  Frame dropping    : %d\n", codec_settings.H264().frameDroppingOn);
-    printf("  Key frame interval: %d\n",
-           codec_settings.H264().keyFrameInterval);
-    printf("  Profile           : %d\n", codec_settings.H264().profile);
-  }
 }
 
 void VerifyQpParser(const EncodedImage& encoded_frame,
@@ -134,10 +85,6 @@ int GetElapsedTimeMicroseconds(int64_t start_ns, int64_t stop_ns) {
 }
 
 }  // namespace
-
-int TestConfig::NumberOfCores() const {
-  return use_single_core ? 1 : CpuInfo::DetectNumberOfCores();
-}
 
 VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                webrtc::VideoDecoder* decoder,
@@ -191,35 +138,16 @@ void VideoProcessor::Init() {
       << "Failed to register decode complete callback";
 
   // Initialize the encoder and decoder.
-  int num_cores = config_.NumberOfCores();
   RTC_CHECK_EQ(
-      encoder_->InitEncode(&config_.codec_settings, num_cores,
+      encoder_->InitEncode(&config_.codec_settings, config_.NumberOfCores(),
                            config_.networking_config.max_payload_size_in_bytes),
       WEBRTC_VIDEO_CODEC_OK)
       << "Failed to initialize VideoEncoder";
 
-  RTC_CHECK_EQ(decoder_->InitDecode(&config_.codec_settings, num_cores),
-               WEBRTC_VIDEO_CODEC_OK)
+  RTC_CHECK_EQ(
+      decoder_->InitDecode(&config_.codec_settings, config_.NumberOfCores()),
+      WEBRTC_VIDEO_CODEC_OK)
       << "Failed to initialize VideoDecoder";
-
-  if (config_.verbose) {
-    printf("Video Processor:\n");
-    printf(" Filename         : %s\n", config_.filename.c_str());
-    printf(" Total # of frames: %d\n",
-           analysis_frame_reader_->NumberOfFrames());
-    printf(" # CPU cores used : %d\n", num_cores);
-    const char* encoder_name = encoder_->ImplementationName();
-    printf(" Encoder implementation name: %s\n", encoder_name);
-    const char* decoder_name = decoder_->ImplementationName();
-    printf(" Decoder implementation name: %s\n", decoder_name);
-    if (strcmp(encoder_name, decoder_name) == 0) {
-      printf(" Codec implementation name  : %s_%s\n",
-             CodecTypeToPayloadString(config_.codec_settings.codecType),
-             encoder_->ImplementationName());
-    }
-    PrintCodecSettings(config_.codec_settings);
-    printf("\n");
-  }
 }
 
 void VideoProcessor::Release() {
@@ -269,12 +197,6 @@ void VideoProcessor::ProcessFrame() {
   frame_stat->encode_start_ns = rtc::TimeNanos();
   frame_stat->encode_return_code =
       encoder_->Encode(source_frame, nullptr, &frame_types);
-
-  if (frame_stat->encode_return_code != WEBRTC_VIDEO_CODEC_OK) {
-    LOG(LS_WARNING) << "Failed to encode frame " << last_inputed_frame_num_
-                    << ", return code: " << frame_stat->encode_return_code
-                    << ".";
-  }
 }
 
 void VideoProcessor::SetRates(int bitrate_kbps, int framerate_fps) {
@@ -457,9 +379,8 @@ void VideoProcessor::FrameDecoded(const VideoFrame& image) {
   RTC_CHECK_GT(frame_number, last_decoded_frame_num_);
   last_decoded_frame_num_ = frame_number;
 
-  // Check if frame size is different from the original size, and if so,
-  // scale back to original size. This is needed for the PSNR and SSIM
-  // calculations.
+  // Check if frame size is different from the original size, and if so, scale
+  // back to original size. This is needed for the PSNR and SSIM calculations.
   size_t extracted_length;
   rtc::Buffer extracted_buffer;
   if (image.width() != config_.codec_settings.width ||

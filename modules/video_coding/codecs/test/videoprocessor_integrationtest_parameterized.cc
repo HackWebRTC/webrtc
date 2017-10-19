@@ -68,9 +68,9 @@ class VideoProcessorIntegrationTestParameterized
     config_.hw_encoder = hw_codec_;
     config_.hw_decoder = hw_codec_;
     config_.num_frames = kNumFrames;
-    SetCodecSettings(&config_, codec_type_, kNumTemporalLayers,
-                     kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
-                     kSpatialResizeOn, kResilienceOn, width, height);
+    config_.SetCodecSettings(codec_type_, kNumTemporalLayers,
+                             kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
+                             kSpatialResizeOn, kResilienceOn, width, height);
 
     std::vector<RateProfile> rate_profiles = {
         {bitrate_, framerate, kNumFrames + 1}};

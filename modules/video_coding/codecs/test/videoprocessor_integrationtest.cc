@@ -32,12 +32,10 @@
 #include "rtc_base/cpu_time.h"
 #include "rtc_base/event.h"
 #include "rtc_base/file.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/testsupport/fileutils.h"
 #include "test/testsupport/metrics/video_metrics.h"
-#include "test/video_codec_settings.h"
 
 namespace webrtc {
 namespace test {
@@ -45,7 +43,6 @@ namespace test {
 namespace {
 
 const int kMaxBitrateMismatchPercent = 20;
-const int kBaseKeyFrameInterval = 3000;
 
 // Parameters from VP8 wrapper, which control target size of key frames.
 const float kInitialBufferSize = 0.5f;
@@ -66,16 +63,6 @@ void PrintQualityMetrics(const QualityMetricsResult& psnr_result,
   printf("PSNR avg: %f, min: %f\n", psnr_result.average, psnr_result.min);
   printf("SSIM avg: %f, min: %f\n", ssim_result.average, ssim_result.min);
   printf("\n");
-}
-
-int NumberOfTemporalLayers(const VideoCodec& codec_settings) {
-  if (codec_settings.codecType == kVideoCodecVP8) {
-    return codec_settings.VP8().numberOfTemporalLayers;
-  } else if (codec_settings.codecType == kVideoCodecVP9) {
-    return codec_settings.VP9().numberOfTemporalLayers;
-  } else {
-    return 1;
-  }
 }
 
 bool RunEncodeInRealTime(const TestConfig& config) {
@@ -132,54 +119,6 @@ VideoProcessorIntegrationTest::VideoProcessorIntegrationTest() {
 
 VideoProcessorIntegrationTest::~VideoProcessorIntegrationTest() = default;
 
-void VideoProcessorIntegrationTest::SetCodecSettings(TestConfig* config,
-                                                     VideoCodecType codec_type,
-                                                     int num_temporal_layers,
-                                                     bool error_concealment_on,
-                                                     bool denoising_on,
-                                                     bool frame_dropper_on,
-                                                     bool spatial_resize_on,
-                                                     bool resilience_on,
-                                                     int width,
-                                                     int height) {
-  webrtc::test::CodecSettings(codec_type, &config->codec_settings);
-
-  // TODO(brandtr): Move the setting of |width| and |height| to the tests, and
-  // DCHECK that they are set before initializing the codec instead.
-  config->codec_settings.width = width;
-  config->codec_settings.height = height;
-
-  switch (config->codec_settings.codecType) {
-    case kVideoCodecVP8:
-      config->codec_settings.VP8()->resilience =
-          resilience_on ? kResilientStream : kResilienceOff;
-      config->codec_settings.VP8()->numberOfTemporalLayers =
-          num_temporal_layers;
-      config->codec_settings.VP8()->denoisingOn = denoising_on;
-      config->codec_settings.VP8()->errorConcealmentOn = error_concealment_on;
-      config->codec_settings.VP8()->automaticResizeOn = spatial_resize_on;
-      config->codec_settings.VP8()->frameDroppingOn = frame_dropper_on;
-      config->codec_settings.VP8()->keyFrameInterval = kBaseKeyFrameInterval;
-      break;
-    case kVideoCodecVP9:
-      config->codec_settings.VP9()->resilienceOn = resilience_on;
-      config->codec_settings.VP9()->numberOfTemporalLayers =
-          num_temporal_layers;
-      config->codec_settings.VP9()->denoisingOn = denoising_on;
-      config->codec_settings.VP9()->frameDroppingOn = frame_dropper_on;
-      config->codec_settings.VP9()->keyFrameInterval = kBaseKeyFrameInterval;
-      config->codec_settings.VP9()->automaticResizeOn = spatial_resize_on;
-      break;
-    case kVideoCodecH264:
-      config->codec_settings.H264()->frameDroppingOn = frame_dropper_on;
-      config->codec_settings.H264()->keyFrameInterval = kBaseKeyFrameInterval;
-      break;
-    default:
-      RTC_NOTREACHED();
-      break;
-  }
-}
-
 // Processes all frames in the clip and verifies the result.
 void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
     const std::vector<RateProfile>& rate_profiles,
@@ -195,6 +134,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
 
   SetUpAndInitObjects(&task_queue, rate_profiles[0].target_kbps,
                       rate_profiles[0].input_fps, visualization_params);
+  MaybePrintSettings();
 
   // Set initial rates.
   int rate_update_index = 0;
@@ -540,8 +480,7 @@ void VideoProcessorIntegrationTest::VerifyRateControlMetrics(
   EXPECT_LE(actual_.BitrateMismatchPercent(target_.kbps),
             rc_threshold.max_bitrate_mismatch_percent);
 
-  const int num_temporal_layers =
-      NumberOfTemporalLayers(config_.codec_settings);
+  const int num_temporal_layers = config_.NumberOfTemporalLayers();
   for (int i = 0; i < num_temporal_layers; ++i) {
     EXPECT_LE(actual_.DeltaFrameSizeMismatchPercent(i),
               rc_threshold.max_delta_framesize_mismatch_percent);
@@ -568,8 +507,7 @@ void VideoProcessorIntegrationTest::PrintRateControlMetrics(
   printf(" Key frame rate mismatch: %d\n",
          actual_.KeyFrameSizeMismatchPercent());
 
-  const int num_temporal_layers =
-      NumberOfTemporalLayers(config_.codec_settings);
+  const int num_temporal_layers = config_.NumberOfTemporalLayers();
   for (int i = 0; i < num_temporal_layers; ++i) {
     printf(" Temporal layer #%d:\n", i);
     printf("  Layer target bitrate        : %f\n", target_.kbps_layer[i]);
@@ -586,6 +524,24 @@ void VideoProcessorIntegrationTest::PrintRateControlMetrics(
   printf("\n");
 }
 
+void VideoProcessorIntegrationTest::MaybePrintSettings() const {
+  if (!config_.verbose)
+    return;
+
+  config_.Print();
+  printf(" Total # of frames: %d\n", analysis_frame_reader_->NumberOfFrames());
+  const char* encoder_name = encoder_->ImplementationName();
+  const char* decoder_name = decoder_->ImplementationName();
+  printf(" Encoder implementation name: %s\n", encoder_name);
+  printf(" Decoder implementation name: %s\n", decoder_name);
+  if (strcmp(encoder_name, decoder_name) == 0) {
+    printf(" Codec implementation name  : %s_%s\n",
+           CodecTypeToPayloadString(config_.codec_settings.codecType),
+           encoder_name);
+  }
+  printf("\n");
+}
+
 void VideoProcessorIntegrationTest::VerifyBitstream(
     int frame_number,
     const BitstreamThresholds& bs_thresholds) {
@@ -598,7 +554,7 @@ void VideoProcessorIntegrationTest::VerifyBitstream(
 int VideoProcessorIntegrationTest::TemporalLayerIndexForFrame(
     int frame_number) const {
   int tl_idx = -1;
-  switch (NumberOfTemporalLayers(config_.codec_settings)) {
+  switch (config_.NumberOfTemporalLayers()) {
     case 1:
       tl_idx = 0;
       break;
@@ -659,8 +615,7 @@ void VideoProcessorIntegrationTest::ResetRateControlMetrics(
 }
 
 void VideoProcessorIntegrationTest::SetRatesPerTemporalLayer() {
-  const int num_temporal_layers =
-      NumberOfTemporalLayers(config_.codec_settings);
+  const int num_temporal_layers = config_.NumberOfTemporalLayers();
   RTC_DCHECK_LE(num_temporal_layers, kMaxNumTemporalLayers);
 
   for (int i = 0; i < num_temporal_layers; ++i) {

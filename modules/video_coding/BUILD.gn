@@ -367,6 +367,8 @@ if (rtc_include_tests) {
       "codecs/test/predictive_packet_manipulator.h",
       "codecs/test/stats.cc",
       "codecs/test/stats.h",
+      "codecs/test/test_config.cc",
+      "codecs/test/test_config.h",
       "codecs/test/video_codec_test.cc",
       "codecs/test/video_codec_test.h",
       "codecs/test/videoprocessor.cc",
@@ -501,6 +503,7 @@ if (rtc_include_tests) {
     sources = [
       "codecs/test/packet_manipulator_unittest.cc",
       "codecs/test/stats_unittest.cc",
+      "codecs/test/test_config_unittest.cc",
       "codecs/test/videoprocessor_unittest.cc",
       "codecs/vp8/default_temporal_layers_unittest.cc",
       "codecs/vp8/screenshare_layers_unittest.cc",

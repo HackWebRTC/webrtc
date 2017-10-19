@@ -57,8 +57,8 @@ class VideoProcessorIntegrationTestLibvpx
 // VP9: Run with no packet loss and fixed bitrate. Quality should be very high.
 // One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTestLibvpx, Process0PercentPacketLossVP9) {
-  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort + 1}};
@@ -78,8 +78,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, Process0PercentPacketLossVP9) {
 TEST_F(VideoProcessorIntegrationTestLibvpx, Process5PercentPacketLossVP9) {
   config_.networking_config.packet_loss_probability = 0.05f;
   config_.num_frames = kNumFramesShort;
-  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort + 1}};
 
@@ -98,8 +98,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, Process5PercentPacketLossVP9) {
 // target rate/per-frame bandwidth (for each rate update) is within limits.
 // One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossChangeBitRateVP9) {
-  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
       {200, 30, 100},  // target_kbps, input_fps, frame_index_rate_update
@@ -126,8 +126,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossChangeBitRateVP9) {
 // metrics averaged over whole sequence run.
 TEST_F(VideoProcessorIntegrationTestLibvpx,
        ProcessNoLossChangeFrameRateFrameDropVP9) {
-  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
       {100, 24, 100},  // target_kbps, input_fps, frame_index_rate_update
@@ -148,8 +148,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
 
 // VP9: Run with no packet loss and denoiser on. One key frame (first frame).
 TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossDenoiserOnVP9) {
-  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, true, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP9, 1, false, true, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort + 1}};
@@ -169,8 +169,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossDenoiserOnVP9) {
 // Resize happens on delta frame. Expect only one key frame (first frame).
 TEST_F(VideoProcessorIntegrationTestLibvpx,
        DISABLED_ProcessNoLossSpatialResizeFrameDropVP9) {
-  SetCodecSettings(&config_, kVideoCodecVP9, 1, false, false, true, true,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, true,
+                           kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {{50, 30, kNumFramesLong + 1}};
 
@@ -193,8 +193,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
 // One key frame (first frame only) in sequence. Setting |key_frame_interval|
 // to -1 below means no periodic key frames in test.
 TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessZeroPacketLoss) {
-  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort + 1}};
@@ -213,8 +213,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessZeroPacketLoss) {
 // lower. One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTestLibvpx, Process5PercentPacketLoss) {
   config_.networking_config.packet_loss_probability = 0.05f;
-  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort + 1}};
@@ -233,8 +233,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, Process5PercentPacketLoss) {
 // One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTestLibvpx, Process10PercentPacketLoss) {
   config_.networking_config.packet_loss_probability = 0.1f;
-  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort + 1}};
@@ -273,8 +273,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, Process10PercentPacketLoss) {
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx,
        MAYBE_ProcessNoLossChangeBitRateVP8) {
-  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
       {200, 30, 100},  // target_kbps, input_fps, frame_index_rate_update
@@ -309,8 +309,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx,
        MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8) {
-  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, true, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
       {80, 24, 100},  // target_kbps, input_fps, frame_index_rate_update
@@ -343,8 +343,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx,
        MAYBE_ProcessNoLossTemporalLayersVP8) {
-  SetCodecSettings(&config_, kVideoCodecVP8, 3, false, true, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecVP8, 3, false, true, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {{200, 30, 150},
                                             {400, 30, kNumFramesLong + 1}};

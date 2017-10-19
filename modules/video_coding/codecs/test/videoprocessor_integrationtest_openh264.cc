@@ -55,8 +55,8 @@ class VideoProcessorIntegrationTestOpenH264
 // with H264. Therefore ProcessXPercentPacketLossH264, X != 0, unittests have
 // not been added.
 TEST_F(VideoProcessorIntegrationTestOpenH264, Process0PercentPacketLoss) {
-  SetCodecSettings(&config_, kVideoCodecH264, 1, false, false, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecH264, 1, false, false, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFrames + 1}};
 
@@ -75,8 +75,8 @@ TEST_F(VideoProcessorIntegrationTestOpenH264, Process0PercentPacketLoss) {
 TEST_F(VideoProcessorIntegrationTestOpenH264, ProcessNoLossSingleNalUnit) {
   config_.packetization_mode = H264PacketizationMode::SingleNalUnit;
   config_.networking_config.max_payload_size_in_bytes = 500;
-  SetCodecSettings(&config_, kVideoCodecH264, 1, false, false, true, false,
-                   kResilienceOn, kCifWidth, kCifHeight);
+  config_.SetCodecSettings(kVideoCodecH264, 1, false, false, true, false,
+                           kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFrames + 1}};
 

@@ -41,8 +41,8 @@ class VideoProcessorIntegrationTestMediaCodec
 };
 
 TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
-  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, false, false, false,
-                   false, 352, 288);
+  config_.SetCodecSettings(kVideoCodecVP8, 1, false, false, false, false, false,
+                           352, 288);
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames + 1}};
 
@@ -67,8 +67,8 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec,
   config_.filename = "foreman_320x240";
   config_.input_filename = ResourcePath(config_.filename, "yuv");
   config_.sw_fallback_encoder = true;
-  SetCodecSettings(&config_, kVideoCodecVP8, 1, false, false, false, false,
-                   false, 320, 240);
+  config_.SetCodecSettings(kVideoCodecVP8, 1, false, false, false, false, false,
+                           320, 240);
 
   std::vector<RateProfile> rate_profiles = {
       {100, 10, 80},                      // Start below |low_kbps|.
