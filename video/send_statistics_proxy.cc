@@ -875,6 +875,11 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
     uma_container_->cpu_limited_frame_counter_.Add(
         stats_.cpu_limited_resolution);
   }
+  if (encoded_frame_rate_tracker_.TotalSampleCount() == 0) {
+    // Set start time now instead of when first key frame is encoded to avoid a
+    // too high initial estimate.
+    encoded_frame_rate_tracker_.AddSamples(0);
+  }
 }
 
 void SendStatisticsProxy::OnFrameDroppedBySource() {
