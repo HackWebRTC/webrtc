@@ -23,6 +23,11 @@ namespace webrtc {
 std::unique_ptr<SessionDescriptionInterface> CloneSessionDescription(
     const SessionDescriptionInterface* sdesc);
 
+// Returns a copy of the given session description with the type changed.
+std::unique_ptr<SessionDescriptionInterface> CloneSessionDescriptionAsType(
+    const SessionDescriptionInterface* sdesc,
+    const std::string& type);
+
 // Function that takes a single session description content with its
 // corresponding transport and produces a boolean.
 typedef std::function<bool(const cricket::ContentInfo*,
