@@ -12,7 +12,8 @@ package org.webrtc;
 
 /**
  * Interface for a video encoder that can be used with WebRTC. All calls will be made on the
- * encoding thread.
+ * encoding thread. The encoder may be constructed on a different thread and changing thread after
+ * calling release is allowed.
  */
 public interface VideoEncoder {
   /** Settings passed to the encoder by WebRTC. */
@@ -143,6 +144,9 @@ public interface VideoEncoder {
   VideoCodecStatus setRateAllocation(BitrateAllocation allocation, int framerate);
   /** Any encoder that wants to use WebRTC provided quality scaler must implement this method. */
   ScalingSettings getScalingSettings();
-  /** Should return a descriptive name for the implementation. Gets called once and cached. */
+  /**
+   * Should return a descriptive name for the implementation. Gets called once and cached. May be
+   * called from arbitrary thread.
+   */
   String getImplementationName();
 }

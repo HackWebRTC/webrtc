@@ -68,6 +68,9 @@ public interface VideoDecoder {
    * infinite number of frames before the decoded frame is consumed.
    */
   boolean getPrefersLateDecoding();
-  /** Should return a descriptive name for the implementation. */
+  /**
+   * Should return a descriptive name for the implementation. Gets called once and cached. May be
+   * called from arbitrary thread.
+   */
   String getImplementationName();
 }
