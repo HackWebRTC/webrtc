@@ -26,7 +26,7 @@ class TestAnnotationsExtraction(unittest.TestCase):
   """Unit tests for the annotations module.
   """
 
-  _CLEAN_TMP_OUTPUT = False
+  _CLEAN_TMP_OUTPUT = True
 
   def setUp(self):
     """Create temporary folder."""
@@ -56,12 +56,16 @@ class TestAnnotationsExtraction(unittest.TestCase):
     e = annotations.AudioAnnotationsExtractor()
     e.Extract(self._wav_file_path)
     e.Save(self._tmp_path)
-    np.testing.assert_array_equal(
-        e.GetLevel(),
-        np.load(os.path.join(self._tmp_path, e.GetLevelFileName())))
-    np.testing.assert_array_equal(
-        e.GetVad(),
-        np.load(os.path.join(self._tmp_path, e.GetVadFileName())))
-    np.testing.assert_array_equal(
-        e.GetSpeechLevel(),
-        np.load(os.path.join(self._tmp_path, e.GetSpeechLevelFileName())))
+
+    level = np.load(os.path.join(self._tmp_path, e.GetLevelFileName()))
+    np.testing.assert_array_equal(e.GetLevel(), level)
+    self.assertEqual(np.float32, level.dtype)
+
+    vad = np.load(os.path.join(self._tmp_path, e.GetVadFileName()))
+    np.testing.assert_array_equal(e.GetVad(), vad)
+    self.assertEqual(np.uint8, vad.dtype)
+
+    speech_level = np.load(os.path.join(
+        self._tmp_path, e.GetSpeechLevelFileName()))
+    np.testing.assert_array_equal(e.GetSpeechLevel(), speech_level)
+    self.assertEqual(np.float32, speech_level.dtype)
