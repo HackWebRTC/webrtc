@@ -116,7 +116,7 @@
       'Mac (swarming)': 'release_bot_x64',
 
       # Android
-      'Android (swarming)': 'android_release_bot_arm',
+      'Android Perf (swarming)': 'perf_android_release_bot_arm',
       'Android ASan (swarming)': 'android_asan_shared_release_bot_arm',
       # Windows
       'Win (swarming)': 'release_bot_x86',
