@@ -58,10 +58,6 @@ class AudioDeviceModule : public rtc::RefCountInterface {
   // Retrieve the currently utilized audio layer
   virtual int32_t ActiveAudioLayer(AudioLayer* audioLayer) const = 0;
 
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  virtual ErrorCode LastError() const { return kAdmErrNone; }
-
   // Full-duplex transportation of PCM audio
   virtual int32_t RegisterAudioCallback(AudioTransport* audioCallback) = 0;
 
@@ -148,10 +144,6 @@ class AudioDeviceModule : public rtc::RefCountInterface {
 
   // Playout delay
   virtual int32_t PlayoutDelay(uint16_t* delayMS) const = 0;
-
-  // Deprecated.
-  // TODO(henrika): to be removed.
-  virtual int32_t RecordingDelay(uint16_t* delayMS) const { return -1; }
 
   // Native sample rate controls (samples/sec)
   virtual int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) = 0;
