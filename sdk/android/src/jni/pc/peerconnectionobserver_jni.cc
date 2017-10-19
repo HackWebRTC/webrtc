@@ -304,8 +304,7 @@ void PeerConnectionObserverJni::OnDataChannel(
   // DataChannel.dispose().  Important that this be done _after_ the
   // CallVoidMethod above as Java code might call back into native code and be
   // surprised to see a refcount of 2.
-  int bumped_count = channel->AddRef();
-  RTC_CHECK(bumped_count == 2) << "Unexpected refcount OnDataChannel";
+  channel->AddRef();
 
   CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
 }

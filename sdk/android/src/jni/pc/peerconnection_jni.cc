@@ -110,8 +110,7 @@ JNI_FUNCTION_DECLARATION(jobject,
                                      nativeChannelPtr);
   CHECK_EXCEPTION(jni) << "error during NewObject";
   // Channel is now owned by Java object, and will be freed from there.
-  int bumped_count = channel->AddRef();
-  RTC_CHECK(bumped_count == 2) << "Unexpected refcount";
+  channel->AddRef();
   return j_channel;
 }
 

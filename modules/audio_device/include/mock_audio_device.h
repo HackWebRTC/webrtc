@@ -22,8 +22,8 @@ namespace test {
 class MockAudioDeviceModule : public AudioDeviceModule {
  public:
   // RefCounted
-  MOCK_CONST_METHOD0(AddRef, int32_t());
-  MOCK_CONST_METHOD0(Release, int32_t());
+  MOCK_CONST_METHOD0(AddRef, void());
+  MOCK_CONST_METHOD0(Release, rtc::RefCountReleaseStatus());
   // AudioDeviceModule.
   MOCK_CONST_METHOD1(ActiveAudioLayer, int32_t(AudioLayer* audioLayer));
   MOCK_CONST_METHOD0(LastError, ErrorCode());

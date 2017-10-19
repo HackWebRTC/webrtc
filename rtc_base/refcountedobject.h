@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "rtc_base/atomicops.h"
+#include "rtc_base/refcount.h"
 
 namespace rtc {
 
@@ -30,14 +31,14 @@ class RefCountedObject : public T {
           std::forward<P1>(p1),
           std::forward<Args>(args)...) {}
 
-  virtual int AddRef() const { return AtomicOps::Increment(&ref_count_); }
+  virtual void AddRef() const { AtomicOps::Increment(&ref_count_); }
 
-  virtual int Release() const {
-    int count = AtomicOps::Decrement(&ref_count_);
-    if (!count) {
+  virtual RefCountReleaseStatus Release() const {
+    if (AtomicOps::Decrement(&ref_count_) == 0) {
       delete this;
+      return RefCountReleaseStatus::kDroppedLastRef;
     }
-    return count;
+    return RefCountReleaseStatus::kOtherRefsRemained;
   }
 
   // Return whether the reference count is one. If the reference count is used

@@ -16,6 +16,7 @@
 #include "call/audio_state.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/refcount.h"
 #include "rtc_base/thread_checker.h"
 #include "voice_engine/include/voe_base.h"
 
@@ -38,8 +39,8 @@ class AudioState final : public webrtc::AudioState {
 
  private:
   // rtc::RefCountInterface implementation.
-  int AddRef() const override;
-  int Release() const override;
+  void AddRef() const override;
+  rtc::RefCountReleaseStatus Release() const override;
 
   rtc::ThreadChecker thread_checker_;
   rtc::ThreadChecker process_thread_checker_;

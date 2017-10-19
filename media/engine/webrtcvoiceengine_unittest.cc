@@ -84,8 +84,9 @@ class MockTransmitMixer : public webrtc::voe::TransmitMixer {
 
 void AdmSetupExpectations(webrtc::test::MockAudioDeviceModule* adm) {
   RTC_DCHECK(adm);
-  EXPECT_CALL(*adm, AddRef()).WillOnce(Return(0));
-  EXPECT_CALL(*adm, Release()).WillOnce(Return(0));
+  EXPECT_CALL(*adm, AddRef()).Times(1);
+  EXPECT_CALL(*adm, Release())
+      .WillOnce(Return(rtc::RefCountReleaseStatus::kDroppedLastRef));
 #if !defined(WEBRTC_IOS)
   EXPECT_CALL(*adm, Recording()).WillOnce(Return(false));
   EXPECT_CALL(*adm, SetRecordingChannel(webrtc::AudioDeviceModule::
@@ -3340,8 +3341,10 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
 // Tests that reference counting on the external ADM is correct.
 TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
   testing::NiceMock<webrtc::test::MockAudioDeviceModule> adm;
-  EXPECT_CALL(adm, AddRef()).Times(3).WillRepeatedly(Return(0));
-  EXPECT_CALL(adm, Release()).Times(3).WillRepeatedly(Return(0));
+  EXPECT_CALL(adm, AddRef()).Times(3);
+  EXPECT_CALL(adm, Release())
+      .Times(3)
+      .WillRepeatedly(Return(rtc::RefCountReleaseStatus::kDroppedLastRef));
   {
     rtc::scoped_refptr<webrtc::AudioProcessing> apm =
         webrtc::AudioProcessing::Create();

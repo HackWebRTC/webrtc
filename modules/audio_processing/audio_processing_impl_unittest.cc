@@ -30,8 +30,8 @@ class MockInitialize : public AudioProcessingImpl {
     return AudioProcessingImpl::InitializeLocked();
   }
 
-  MOCK_CONST_METHOD0(AddRef, int());
-  MOCK_CONST_METHOD0(Release, int());
+  MOCK_CONST_METHOD0(AddRef, void());
+  MOCK_CONST_METHOD0(Release, rtc::RefCountReleaseStatus());
 };
 
 }  // namespace

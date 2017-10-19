@@ -21,6 +21,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/refcount.h"
 #include "rtc_base/thread_checker.h"
 
 // Abort the process if |jni| has a Java exception pending.
@@ -33,8 +34,9 @@
 
 // Helper that calls ptr->Release() and aborts the process with a useful
 // message if that didn't actually delete *ptr because of extra refcounts.
-#define CHECK_RELEASE(ptr) \
-  RTC_CHECK_EQ(0, (ptr)->Release()) << "Unexpected refcount."
+#define CHECK_RELEASE(ptr)                                                   \
+  RTC_CHECK((ptr)->Release() == rtc::RefCountReleaseStatus::kDroppedLastRef) \
+      << "Unexpected refcount."
 
 // Convenience macro defining JNI-accessible methods in the org.webrtc package.
 // Eliminates unnecessary boilerplate and line-wraps, reducing visual clutter.

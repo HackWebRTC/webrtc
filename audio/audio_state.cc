@@ -60,17 +60,17 @@ bool AudioState::typing_noise_detected() const {
 }
 
 // Reference count; implementation copied from rtc::RefCountedObject.
-int AudioState::AddRef() const {
-  return rtc::AtomicOps::Increment(&ref_count_);
+void AudioState::AddRef() const {
+  rtc::AtomicOps::Increment(&ref_count_);
 }
 
 // Reference count; implementation copied from rtc::RefCountedObject.
-int AudioState::Release() const {
-  int count = rtc::AtomicOps::Decrement(&ref_count_);
-  if (!count) {
+rtc::RefCountReleaseStatus AudioState::Release() const {
+  if (rtc::AtomicOps::Decrement(&ref_count_) == 0) {
     delete this;
+    return rtc::RefCountReleaseStatus::kDroppedLastRef;
   }
-  return count;
+  return rtc::RefCountReleaseStatus::kOtherRefsRemained;
 }
 }  // namespace internal
 

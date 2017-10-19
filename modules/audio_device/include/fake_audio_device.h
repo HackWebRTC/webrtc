@@ -19,8 +19,13 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
  public:
   FakeAudioDeviceModule() {}
   virtual ~FakeAudioDeviceModule() {}
-  int32_t AddRef() const override { return 0; }
-  int32_t Release() const override { return 0; }
+
+  // TODO(nisse): Fix all users of this class to managed references using
+  // scoped_refptr. Current code doesn't always use refcounting for this class.
+  void AddRef() const override {}
+  rtc::RefCountReleaseStatus Release() const override {
+    return rtc::RefCountReleaseStatus::kDroppedLastRef;
+  }
 
  private:
   int32_t RegisterAudioCallback(AudioTransport* audioCallback) override {

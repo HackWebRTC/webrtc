@@ -310,7 +310,10 @@ void TransportController::DestroyDtlsTransport_n(
                     << ", which doesn't exist.";
     return;
   }
-  if ((*it)->Release() > 0) {
+  // Release one reference to the RefCountedChannel, and do additional cleanup
+  // only if it was the last one. Matches the AddRef logic in
+  // CreateDtlsTransport_n.
+  if ((*it)->Release() == rtc::RefCountReleaseStatus::kOtherRefsRemained) {
     return;
   }
   channels_.erase(it);
@@ -471,11 +474,14 @@ JsepTransport* TransportController::GetOrCreateJsepTransport(
 void TransportController::DestroyAllChannels_n() {
   RTC_DCHECK(network_thread_->IsCurrent());
   transports_.clear();
+  // TODO(nisse): If |channels_| were a vector of scoped_refptr, we
+  // wouldn't need this strange hack.
   for (RefCountedChannel* channel : channels_) {
     // Even though these objects are normally ref-counted, if
     // TransportController is deleted while they still have references, just
     // remove all references.
-    while (channel->Release() > 0) {
+    while (channel->Release() ==
+           rtc::RefCountReleaseStatus::kOtherRefsRemained) {
     }
   }
   channels_.clear();
