@@ -88,8 +88,8 @@ class ExpandTest : public ::testing::Test {
   void SetUp() override {
     // Fast-forward the input file until there is speech (about 1.1 second into
     // the file).
-    const size_t speech_start_samples =
-        static_cast<size_t>(test_sample_rate_hz_ * 1.1f);
+    const int speech_start_samples =
+        static_cast<int>(test_sample_rate_hz_ * 1.1f);
     ASSERT_TRUE(input_file_.Seek(speech_start_samples));
 
     // Pre-load the sync buffer with speech data.

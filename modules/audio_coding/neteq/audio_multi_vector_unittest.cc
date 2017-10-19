@@ -9,6 +9,7 @@
  */
 
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
+#include "rtc_base/safe_conversions.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -51,7 +52,7 @@ class AudioMultiVectorTest : public ::testing::TestWithParam<size_t> {
     // And so on.
     for (size_t i = 0; i < array_length(); ++i) {
       for (size_t j = 1; j <= num_channels_; ++j) {
-        *ptr = j * 100 + i;
+        *ptr = rtc::checked_cast<int16_t>(j * 100 + i);
         ++ptr;
       }
     }

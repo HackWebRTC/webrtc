@@ -9,6 +9,7 @@
  */
 
 #include "modules/audio_coding/audio_network_adaptor/bitrate_controller.h"
+#include "rtc_base/safe_conversions.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 
@@ -213,8 +214,8 @@ TEST(AnaBitrateControllerTest, CheckBehaviorOnChangingCondition) {
   int overall_bitrate = 34567;
   size_t overhead_bytes_per_packet = 64;
   int frame_length_ms = 20;
-  int current_bitrate =
-      overall_bitrate - overhead_bytes_per_packet * 8 * 1000 / frame_length_ms;
+  int current_bitrate = rtc::checked_cast<int>(
+      overall_bitrate - overhead_bytes_per_packet * 8 * 1000 / frame_length_ms);
 
   UpdateNetworkMetrics(&controller, rtc::Optional<int>(overall_bitrate),
                        rtc::Optional<size_t>(overhead_bytes_per_packet));
@@ -231,8 +232,9 @@ TEST(AnaBitrateControllerTest, CheckBehaviorOnChangingCondition) {
 
   // Next: change frame length.
   frame_length_ms = 60;
-  current_bitrate += overhead_bytes_per_packet * 8 * 1000 / 20 -
-                     overhead_bytes_per_packet * 8 * 1000 / 60;
+  current_bitrate += rtc::checked_cast<int>(
+      overhead_bytes_per_packet * 8 * 1000 / 20 -
+      overhead_bytes_per_packet * 8 * 1000 / 60);
   UpdateNetworkMetrics(&controller, rtc::Optional<int>(overall_bitrate),
                        rtc::Optional<size_t>(overhead_bytes_per_packet));
   CheckDecision(&controller, rtc::Optional<int>(frame_length_ms),
@@ -248,8 +250,9 @@ TEST(AnaBitrateControllerTest, CheckBehaviorOnChangingCondition) {
 
   // Next: change frame length.
   frame_length_ms = 20;
-  current_bitrate -= overhead_bytes_per_packet * 8 * 1000 / 20 -
-                     overhead_bytes_per_packet * 8 * 1000 / 60;
+  current_bitrate -= rtc::checked_cast<int>(
+      overhead_bytes_per_packet * 8 * 1000 / 20 -
+      overhead_bytes_per_packet * 8 * 1000 / 60);
   UpdateNetworkMetrics(&controller, rtc::Optional<int>(overall_bitrate),
                        rtc::Optional<size_t>(overhead_bytes_per_packet));
   CheckDecision(&controller, rtc::Optional<int>(frame_length_ms),
@@ -259,8 +262,9 @@ TEST(AnaBitrateControllerTest, CheckBehaviorOnChangingCondition) {
   overall_bitrate -= 100;
   current_bitrate -= 100;
   frame_length_ms = 60;
-  current_bitrate += overhead_bytes_per_packet * 8 * 1000 / 20 -
-                     overhead_bytes_per_packet * 8 * 1000 / 60;
+  current_bitrate += rtc::checked_cast<int>(
+      overhead_bytes_per_packet * 8 * 1000 / 20 -
+      overhead_bytes_per_packet * 8 * 1000 / 60);
 
   UpdateNetworkMetrics(&controller, rtc::Optional<int>(overall_bitrate),
                        rtc::Optional<size_t>(overhead_bytes_per_packet));

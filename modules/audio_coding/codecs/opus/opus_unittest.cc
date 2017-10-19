@@ -15,6 +15,7 @@
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/safe_conversions.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
@@ -334,7 +335,7 @@ void OpusTest::TestCbrEffect(bool cbr, int block_length_ms) {
       int32_t diff = std::abs((int32_t)encoded_bytes_ - prev_pkt_size);
       max_pkt_size_diff = std::max(max_pkt_size_diff, diff);
     }
-    prev_pkt_size = encoded_bytes_;
+    prev_pkt_size = rtc::checked_cast<int32_t>(encoded_bytes_);
   }
 
   if (cbr) {
@@ -736,7 +737,9 @@ TEST_P(OpusTest, OpusDecodeRepacketized) {
         WebRtcOpus_Encode(opus_encoder_, speech_block.data(),
                           rtc::CheckedDivExact(speech_block.size(), channels_),
                           kMaxBytes, bitstream_);
-    if (opus_repacketizer_cat(rp, bitstream_, encoded_bytes_) == OPUS_OK) {
+    if (opus_repacketizer_cat(
+            rp, bitstream_,
+            rtc::checked_cast<opus_int32>(encoded_bytes_)) == OPUS_OK) {
       ++num_packets;
       if (num_packets == kPackets) {
         break;

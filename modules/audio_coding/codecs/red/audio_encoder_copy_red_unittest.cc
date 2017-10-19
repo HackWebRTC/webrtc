@@ -13,6 +13,7 @@
 
 #include "modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/safe_conversions.h"
 #include "test/gtest.h"
 #include "test/mock_audio_encoder.h"
 
@@ -59,7 +60,7 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
         timestamp_,
         rtc::ArrayView<const int16_t>(audio_, num_audio_samples_10ms),
         &encoded_);
-    timestamp_ += num_audio_samples_10ms;
+    timestamp_ += rtc::checked_cast<uint32_t>(num_audio_samples_10ms);
   }
 
   MockAudioEncoder* mock_encoder_;

@@ -483,7 +483,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
         decoded[i] = next_value_++;
       }
       *speech_type = kSpeech;
-      return encoded_len;
+      return rtc::checked_cast<int>(encoded_len);
     }
 
     void Reset() override { next_value_ = 1; }
@@ -1312,7 +1312,7 @@ class Decoder120ms : public AudioDecoder {
       decoded[i] = next_value_++;
     }
     *speech_type = speech_type_;
-    return decoded_len;
+    return rtc::checked_cast<int>(decoded_len);
   }
 
   void Reset() override { next_value_ = 1; }

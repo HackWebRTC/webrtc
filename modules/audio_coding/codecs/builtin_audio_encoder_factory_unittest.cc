@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "rtc_base/safe_conversions.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -58,8 +59,8 @@ TEST_P(AudioEncoderFactoryTest, CanRunAllSupportedEncoders) {
     auto encoder = factory->MakeAudioEncoder(kTestPayloadType, spec.format);
     EXPECT_TRUE(encoder);
     encoder->Reset();
-    const int num_samples =
-        encoder->SampleRateHz() * encoder->NumChannels() / 100;
+    const int num_samples = rtc::checked_cast<int>(
+        encoder->SampleRateHz() * encoder->NumChannels() / 100);
     rtc::Buffer out;
     rtc::BufferT<int16_t> audio;
     audio.SetData(num_samples, [](rtc::ArrayView<int16_t> audio) {

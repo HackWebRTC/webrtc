@@ -108,7 +108,7 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     last_packet_send_timestamp_ = timestamp_;
     while (!packet_sent_) {
       frame.timestamp_ = timestamp_;
-      timestamp_ += frame.samples_per_channel_;
+      timestamp_ += rtc::checked_cast<uint32_t>(frame.samples_per_channel_);
       ASSERT_GE(acm_->Add10MsData(frame), 0);
     }
   }
@@ -175,8 +175,9 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_AddCodecGetCodec) {
   for (size_t n = 0; n < codecs_.size(); ++n) {
     if (n & 0x1) {  // Just add codecs with odd index.
       EXPECT_EQ(
-          0, receiver_->AddCodec(n, codecs_[n].pltype, codecs_[n].channels,
-                                 codecs_[n].plfreq, NULL, codecs_[n].plname));
+          0, receiver_->AddCodec(rtc::checked_cast<int>(n), codecs_[n].pltype,
+                                 codecs_[n].channels, codecs_[n].plfreq, NULL,
+                                 codecs_[n].plname));
     }
   }
   // Get codec and compare.
@@ -338,7 +339,7 @@ class AcmReceiverTestFaxModeOldApi : public AcmReceiverTestOldApi {
         EXPECT_EQ(0,
                   receiver_->GetAudio(output_sample_rate_hz, &frame, &muted));
         EXPECT_EQ(expected_output_ts, frame.timestamp_);
-        expected_output_ts += 10 * samples_per_ms;
+        expected_output_ts += rtc::checked_cast<uint32_t>(10 * samples_per_ms);
         EXPECT_EQ(10 * samples_per_ms, frame.samples_per_channel_);
         EXPECT_EQ(output_sample_rate_hz, frame.sample_rate_hz_);
         EXPECT_EQ(output_channels, frame.num_channels_);

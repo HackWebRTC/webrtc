@@ -37,6 +37,7 @@
 #include "rtc_base/md5digest.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/refcountedobject.h"
+#include "rtc_base/safe_conversions.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/event_wrapper.h"
@@ -122,7 +123,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
 
   int last_payload_len_bytes() const {
     rtc::CritScope lock(&crit_sect_);
-    return last_payload_vec_.size();
+    return rtc::checked_cast<int>(last_payload_vec_.size());
   }
 
   FrameType last_frame_type() const {
@@ -1158,9 +1159,9 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
   bool RegisterExternalSendCodec(AudioEncoder* external_speech_encoder,
                                  int payload_type) {
     payload_type_ = payload_type;
-    frame_size_rtp_timestamps_ =
+    frame_size_rtp_timestamps_ = rtc::checked_cast<uint32_t>(
         external_speech_encoder->Num10MsFramesInNextPacket() *
-        external_speech_encoder->RtpTimestampRateHz() / 100;
+        external_speech_encoder->RtpTimestampRateHz() / 100);
     return send_test_->RegisterExternalCodec(external_speech_encoder);
   }
 
@@ -1589,7 +1590,7 @@ class AcmSetBitRateTest : public ::testing::Test {
     int nr_bytes = 0;
     while (std::unique_ptr<test::Packet> next_packet =
                send_test_->NextPacket()) {
-      nr_bytes += next_packet->payload_length_bytes();
+      nr_bytes += rtc::checked_cast<int>(next_packet->payload_length_bytes());
     }
     EXPECT_EQ(expected_total_bits, nr_bytes * 8);
   }
@@ -1742,9 +1743,11 @@ class AcmChangeBitRateOldApi : public AcmSetBitRateOldApi {
       if (packet_counter == nr_packets / 2)
         send_test_->acm()->SetBitRate(target_bitrate_bps);
       if (packet_counter < nr_packets / 2)
-        nr_bytes_before += next_packet->payload_length_bytes();
+        nr_bytes_before += rtc::checked_cast<int>(
+            next_packet->payload_length_bytes());
       else
-        nr_bytes_after += next_packet->payload_length_bytes();
+        nr_bytes_after += rtc::checked_cast<int>(
+            next_packet->payload_length_bytes());
       packet_counter++;
     }
     EXPECT_EQ(expected_before_switch_bits, nr_bytes_before * 8);
