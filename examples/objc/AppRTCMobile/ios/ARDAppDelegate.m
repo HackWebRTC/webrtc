@@ -26,7 +26,8 @@
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
   NSDictionary *fieldTrials = @{
-    kRTCFieldTrialH264HighProfileKey: kRTCFieldTrialEnabledValue,
+    kRTCFieldTrialH264HighProfileKey : kRTCFieldTrialEnabledValue,
+    kRTCFieldTrialAudioSendSideBweKey : kRTCFieldTrialEnabledValue
   };
   RTCInitFieldTrialDictionary(fieldTrials);
   RTCInitializeSSL();

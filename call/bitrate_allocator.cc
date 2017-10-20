@@ -12,6 +12,7 @@
 #include "call/bitrate_allocator.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 
 #include "modules/bitrate_controller/include/bitrate_controller.h"
@@ -56,7 +57,8 @@ BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
       clock_(Clock::GetRealTimeClock()),
       last_bwe_log_time_(0),
       total_requested_padding_bitrate_(0),
-      total_requested_min_bitrate_(0) {
+      total_requested_min_bitrate_(0),
+      bitrate_allocation_strategy_(nullptr) {
   sequenced_checker_.Detach();
 }
 
@@ -199,6 +201,7 @@ void BitrateAllocator::UpdateAllocationLimits() {
 
 void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+
   auto it = FindObserverConfig(observer);
   if (it != bitrate_observer_configs_.end()) {
     bitrate_observer_configs_.erase(it);
@@ -224,6 +227,13 @@ int BitrateAllocator::GetStartBitrate(BitrateAllocatorObserver* observer) {
   }
 }
 
+void BitrateAllocator::SetBitrateAllocationStrategy(
+    std::unique_ptr<rtc::BitrateAllocationStrategy>
+        bitrate_allocation_strategy) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  bitrate_allocation_strategy_ = std::move(bitrate_allocation_strategy);
+}
+
 BitrateAllocator::ObserverConfigs::iterator
 BitrateAllocator::FindObserverConfig(const BitrateAllocatorObserver* observer) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
@@ -240,6 +250,25 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::AllocateBitrates(
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   if (bitrate_observer_configs_.empty())
     return ObserverAllocation();
+
+  if (bitrate_allocation_strategy_ != nullptr) {
+    std::vector<const rtc::BitrateAllocationStrategy::TrackConfig*>
+        track_configs(bitrate_observer_configs_.size());
+    int i = 0;
+    for (const auto& c : bitrate_observer_configs_) {
+      track_configs[i++] = &c;
+    }
+    std::vector<uint32_t> track_allocations =
+        bitrate_allocation_strategy_->AllocateBitrates(bitrate, track_configs);
+    // The strategy should return allocation for all tracks.
+    RTC_CHECK(track_allocations.size() == bitrate_observer_configs_.size());
+    ObserverAllocation allocation;
+    auto track_allocations_it = track_allocations.begin();
+    for (const auto& observer_config : bitrate_observer_configs_) {
+      allocation[observer_config.observer] = *track_allocations_it++;
+    }
+    return allocation;
+  }
 
   if (bitrate == 0)
     return ZeroRateAllocation();

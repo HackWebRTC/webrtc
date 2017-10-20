@@ -1331,6 +1331,24 @@ RTCError PeerConnection::SetBitrate(const BitrateParameters& bitrate) {
   return RTCError::OK();
 }
 
+void PeerConnection::SetBitrateAllocationStrategy(
+    std::unique_ptr<rtc::BitrateAllocationStrategy>
+        bitrate_allocation_strategy) {
+  rtc::Thread* worker_thread = factory_->worker_thread();
+  if (!worker_thread->IsCurrent()) {
+    rtc::BitrateAllocationStrategy* strategy_raw =
+        bitrate_allocation_strategy.release();
+    auto functor = [this, strategy_raw]() {
+      call_->SetBitrateAllocationStrategy(
+          rtc::WrapUnique<rtc::BitrateAllocationStrategy>(strategy_raw));
+    };
+    worker_thread->Invoke<void>(RTC_FROM_HERE, functor);
+    return;
+  }
+  RTC_DCHECK(call_.get());
+  call_->SetBitrateAllocationStrategy(std::move(bitrate_allocation_strategy));
+}
+
 std::unique_ptr<rtc::SSLCertificate>
 PeerConnection::GetRemoteAudioSSLCertificate() {
   if (!session_) {
