@@ -730,9 +730,12 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
     }
   }
 
+  // Calculate the number of primary (non-FEC/RED) packets.
+  const int number_of_primary_packets = std::count_if(
+      parsed_packet_list.begin(), parsed_packet_list.end(),
+      [](const Packet& in) { return in.priority.codec_level == 0; });
+
   // Insert packets in buffer.
-  const size_t buffer_length_before_insert =
-      packet_buffer_->NumPacketsInBuffer();
   const int ret = packet_buffer_->InsertPacketList(
       &parsed_packet_list, *decoder_database_, &current_rtp_payload_type_,
       &current_cng_rtp_payload_type_, &stats_);
@@ -795,13 +798,9 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
                                           dec_info->IsDtmf());
   if (delay_manager_->last_pack_cng_or_dtmf() == 0) {
     // Calculate the total speech length carried in each packet.
-    const size_t buffer_length_after_insert =
-        packet_buffer_->NumPacketsInBuffer();
-
-    if (buffer_length_after_insert > buffer_length_before_insert) {
+    if (number_of_primary_packets > 0) {
       const size_t packet_length_samples =
-          (buffer_length_after_insert - buffer_length_before_insert) *
-          decoder_frame_length_;
+          number_of_primary_packets * decoder_frame_length_;
       if (packet_length_samples != decision_logic_->packet_length_samples()) {
         decision_logic_->set_packet_length_samples(packet_length_samples);
         delay_manager_->SetPacketAudioLength(

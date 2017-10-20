@@ -342,10 +342,6 @@ TEST_F(NetEqImplTest, InsertPacket) {
       .WillRepeatedly(Return(&info));
 
   // Expectations for packet buffer.
-  EXPECT_CALL(*mock_packet_buffer_, NumPacketsInBuffer())
-      .WillOnce(Return(0))   // First packet.
-      .WillOnce(Return(1))   // Second packet.
-      .WillOnce(Return(2));  // Second packet, checking after it was inserted.
   EXPECT_CALL(*mock_packet_buffer_, Empty())
       .WillOnce(Return(false));  // Called once after first packet is inserted.
   EXPECT_CALL(*mock_packet_buffer_, Flush())
