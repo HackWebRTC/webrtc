@@ -139,6 +139,17 @@ webrtc_fuzzer_test("ulpfec_generator_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("ulpfec_receiver_fuzzer") {
+  sources = [
+    "ulpfec_receiver_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp",
+    "../../rtc_base:rtc_base_approved",
+  ]
+  libfuzzer_options = [ "max_len=2000" ]
+}
+
 webrtc_fuzzer_test("flexfec_receiver_fuzzer") {
   sources = [
     "flexfec_receiver_fuzzer.cc",
