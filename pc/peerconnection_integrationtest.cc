@@ -291,6 +291,9 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   ice_connection_state_history() const {
     return ice_connection_state_history_;
   }
+  void clear_ice_connection_state_history() {
+    ice_connection_state_history_.clear();
+  }
 
   // Every ICE gathering state in order that has been seen by the observer.
   std::vector<PeerConnectionInterface::IceGatheringState>
@@ -3080,6 +3083,31 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithIceRenomination) {
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
       kMaxWaitForFramesMs);
+}
+
+// With a max bundle policy and RTCP muxing, adding a new media description to
+// the connection should not affect ICE at all because the new media will use
+// the existing connection.
+TEST_F(PeerConnectionIntegrationTest,
+       AddMediaToConnectedBundleDoesNotRestartIce) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(
+      config, PeerConnectionInterface::RTCConfiguration()));
+  ConnectFakeSignaling();
+
+  caller()->AddAudioOnlyMediaStream();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  caller()->clear_ice_connection_state_history();
+
+  caller()->AddVideoOnlyMediaStream();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  EXPECT_EQ(0u, caller()->ice_connection_state_history().size());
 }
 
 // This test sets up a call between two parties with audio and video. It then

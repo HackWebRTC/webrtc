@@ -56,8 +56,9 @@ using cricket::PRFLX_PORT_TYPE;
 namespace webrtc {
 
 // Error messages
-const char kBundleWithoutRtcpMux[] = "RTCP-MUX must be enabled when BUNDLE "
-                                     "is enabled.";
+const char kBundleWithoutRtcpMux[] =
+    "rtcp-mux must be enabled when BUNDLE "
+    "is enabled.";
 const char kCreateChannelFailed[] = "Failed to create channels.";
 const char kInvalidCandidates[] = "Description contains invalid candidates.";
 const char kInvalidSdp[] = "Invalid session description.";
