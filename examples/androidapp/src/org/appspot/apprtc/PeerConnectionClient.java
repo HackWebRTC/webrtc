@@ -516,7 +516,7 @@ public class PeerConnectionClient {
       Log.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
     }
     final boolean enableH264HighProfile =
-        peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_H264_HIGH);
+        VIDEO_CODEC_H264_HIGH.equals(peerConnectionParameters.videoCodec);
     factory = new PeerConnectionFactory(options,
         new HardwareVideoEncoderFactory(rootEglBase.getEglBaseContext(),
             true /* enableIntelVp8Encoder */, enableH264HighProfile),
