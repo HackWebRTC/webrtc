@@ -83,9 +83,11 @@ static const char kSessionVersion[] = "1";
 
 // Media index of candidates belonging to the first media content.
 static const int kMediaContentIndex0 = 0;
+static const char kMediaContentName0[] = "audio";
 
 // Media index of candidates belonging to the second media content.
 static const int kMediaContentIndex1 = 1;
+static const char kMediaContentName1[] = "video";
 
 static const int kDefaultTimeout = 10000;  // 10 seconds.
 static const int kIceCandidatesTimeout = 10000;
@@ -396,6 +398,12 @@ class WebRtcSessionTest
       PeerConnectionInterface::BundlePolicy bundle_policy) {
     configuration_.bundle_policy = bundle_policy;
     Init();
+  }
+
+  void InitWithRtcpMuxPolicy(
+      PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy) {
+    PeerConnectionInterface::RTCConfiguration configuration;
+    Init(nullptr, rtcp_mux_policy, rtc::CryptoOptions());
   }
 
   // Successfully init with DTLS; with a certificate generated and supplied or
@@ -893,6 +901,51 @@ class WebRtcSessionTest
     return CreateRemoteAnswer(offer, options, cricket::SEC_REQUIRED);
   }
 
+  void TestSessionCandidatesWithBundleRtcpMux(bool bundle, bool rtcp_mux) {
+    AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
+    Init();
+    SendAudioVideoStream1();
+
+    PeerConnectionInterface::RTCOfferAnswerOptions options;
+    options.use_rtp_mux = bundle;
+
+    SessionDescriptionInterface* offer = CreateOffer(options);
+    // SetLocalDescription and SetRemoteDescriptions takes ownership of offer
+    // and answer.
+    SetLocalDescriptionWithoutError(offer);
+
+    std::unique_ptr<SessionDescriptionInterface> answer(
+        CreateRemoteAnswer(session_->local_description()));
+    std::string sdp;
+    EXPECT_TRUE(answer->ToString(&sdp));
+
+    size_t expected_candidate_num = 2;
+    if (!rtcp_mux) {
+      // If rtcp_mux is enabled we should expect 4 candidates - host and srflex
+      // for rtp and rtcp.
+      expected_candidate_num = 4;
+      // Disable rtcp-mux from the answer
+      const std::string kRtcpMux = "a=rtcp-mux";
+      const std::string kXRtcpMux = "a=xrtcp-mux";
+      rtc::replace_substrs(kRtcpMux.c_str(), kRtcpMux.length(),
+                                 kXRtcpMux.c_str(), kXRtcpMux.length(),
+                                 &sdp);
+    }
+
+    SessionDescriptionInterface* new_answer = CreateSessionDescription(
+        JsepSessionDescription::kAnswer, sdp, NULL);
+
+    // SetRemoteDescription to enable rtcp mux.
+    SetRemoteDescriptionWithoutError(new_answer);
+    EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
+    EXPECT_EQ(expected_candidate_num, observer_.mline_0_candidates_.size());
+    if (bundle) {
+      EXPECT_EQ(0, observer_.mline_1_candidates_.size());
+    } else {
+      EXPECT_EQ(expected_candidate_num, observer_.mline_1_candidates_.size());
+    }
+  }
+
   // The method sets up a call from the session to itself, in a loopback
   // arrangement.  It also uses a firewall rule to create a temporary
   // disconnection, and then a permanent disconnection.
@@ -1014,6 +1067,20 @@ class WebRtcSessionTest
   rtc::CryptoOptions crypto_options_;
 };
 
+TEST_F(WebRtcSessionTest, TestSessionCandidates) {
+  TestSessionCandidatesWithBundleRtcpMux(false, false);
+}
+
+// Below test cases (TestSessionCandidatesWith*) verify the candidates gathered
+// with rtcp-mux and/or bundle.
+TEST_F(WebRtcSessionTest, TestSessionCandidatesWithRtcpMux) {
+  TestSessionCandidatesWithBundleRtcpMux(false, true);
+}
+
+TEST_F(WebRtcSessionTest, TestSessionCandidatesWithBundleRtcpMux) {
+  TestSessionCandidatesWithBundleRtcpMux(true, true);
+}
+
 // Test that we can create and set an answer correctly when different
 // SSL roles have been negotiated for different transports.
 // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=4525
@@ -1075,6 +1142,466 @@ TEST_P(WebRtcSessionTest, TestCreateAnswerWithDifferentSslRoles) {
   EXPECT_EQ(cricket::CONNECTIONROLE_PASSIVE,
             video_transport_info->description.connection_role);
   SetLocalDescriptionWithoutError(answer);
+}
+
+// Test that candidates sent to the "video" transport do not get pushed down to
+// the "audio" transport channel when bundling.
+TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
+  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
+
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
+  SendAudioVideoStream1();
+
+  cricket::MediaSessionOptions offer_options;
+  GetOptionsForRemoteOffer(&offer_options);
+  offer_options.bundle_enabled = true;
+
+  SessionDescriptionInterface* offer = CreateRemoteOffer(offer_options);
+  SetRemoteDescriptionWithoutError(offer);
+
+  cricket::MediaSessionOptions answer_options;
+  answer_options.bundle_enabled = true;
+  SessionDescriptionInterface* answer = CreateAnswer(answer_options);
+  SetLocalDescriptionWithoutError(answer);
+
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+
+  cricket::BaseChannel* voice_channel = session_->voice_channel();
+  ASSERT_TRUE(voice_channel != NULL);
+
+  // Checks if one of the transport channels contains a connection using a given
+  // port.
+  auto connection_with_remote_port = [this](int port) {
+    std::unique_ptr<webrtc::SessionStats> stats = session_->GetStats_s();
+    for (auto& kv : stats->transport_stats) {
+      for (auto& chan_stat : kv.second.channel_stats) {
+        for (auto& conn_info : chan_stat.connection_infos) {
+          if (conn_info.remote_candidate.address().port() == port) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
+
+  EXPECT_FALSE(connection_with_remote_port(5000));
+  EXPECT_FALSE(connection_with_remote_port(5001));
+  EXPECT_FALSE(connection_with_remote_port(6000));
+
+  // The way the *_WAIT checks work is they only wait if the condition fails,
+  // which does not help in the case where state is not changing. This is
+  // problematic in this test since we want to verify that adding a video
+  // candidate does _not_ change state. So we interleave candidates and assume
+  // that messages are executed in the order they were posted.
+
+  // First audio candidate.
+  cricket::Candidate candidate0;
+  candidate0.set_address(rtc::SocketAddress("1.1.1.1", 5000));
+  candidate0.set_component(1);
+  candidate0.set_protocol("udp");
+  candidate0.set_type("local");
+  JsepIceCandidate ice_candidate0(kMediaContentName0, kMediaContentIndex0,
+                                  candidate0);
+  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate0));
+
+  // Video candidate.
+  cricket::Candidate candidate1;
+  candidate1.set_address(rtc::SocketAddress("1.1.1.1", 6000));
+  candidate1.set_component(1);
+  candidate1.set_protocol("udp");
+  candidate1.set_type("local");
+  JsepIceCandidate ice_candidate1(kMediaContentName1, kMediaContentIndex1,
+                                  candidate1);
+  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate1));
+
+  // Second audio candidate.
+  cricket::Candidate candidate2;
+  candidate2.set_address(rtc::SocketAddress("1.1.1.1", 5001));
+  candidate2.set_component(1);
+  candidate2.set_protocol("udp");
+  candidate2.set_type("local");
+  JsepIceCandidate ice_candidate2(kMediaContentName0, kMediaContentIndex0,
+                                  candidate2);
+  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate2));
+
+  EXPECT_TRUE_WAIT(connection_with_remote_port(5000), 1000);
+  EXPECT_TRUE_WAIT(connection_with_remote_port(5001), 1000);
+
+  // No need here for a _WAIT check since we are checking that state hasn't
+  // changed: if this is false we would be doing waits for nothing and if this
+  // is true then there will be no messages processed anyways.
+  EXPECT_FALSE(connection_with_remote_port(6000));
+}
+
+// kBundlePolicyBalanced BUNDLE policy and answer contains BUNDLE.
+TEST_F(WebRtcSessionTest, TestBalancedBundleInAnswer) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
+  SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_NE(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+
+  SendAudioVideoStream2();
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+}
+
+// kBundlePolicyBalanced BUNDLE policy but no BUNDLE in the answer.
+TEST_F(WebRtcSessionTest, TestBalancedNoBundleInAnswer) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
+  SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_NE(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+
+  SendAudioVideoStream2();
+
+  // Remove BUNDLE from the answer.
+  std::unique_ptr<SessionDescriptionInterface> answer(
+      CreateRemoteAnswer(session_->local_description()));
+  cricket::SessionDescription* answer_copy = answer->description()->Copy();
+  answer_copy->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  JsepSessionDescription* modified_answer =
+      new JsepSessionDescription(JsepSessionDescription::kAnswer);
+  modified_answer->Initialize(answer_copy, "1", "1");
+  SetRemoteDescriptionWithoutError(modified_answer);  //
+
+  EXPECT_NE(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+}
+
+// kBundlePolicyMaxBundle policy with BUNDLE in the answer.
+TEST_F(WebRtcSessionTest, TestMaxBundleBundleInAnswer) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
+  SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+
+  SendAudioVideoStream2();
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+}
+
+// kBundlePolicyMaxBundle policy with BUNDLE in the answer, but no
+// audio content in the answer.
+TEST_F(WebRtcSessionTest, TestMaxBundleRejectAudio) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
+  SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+
+  SendVideoOnlyStream2();
+  local_send_audio_ = false;
+  remote_recv_audio_ = false;
+  cricket::MediaSessionOptions recv_options;
+  GetOptionsForRemoteAnswer(&recv_options);
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description(), recv_options);
+  SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_TRUE(nullptr == session_->voice_channel());
+  EXPECT_TRUE(nullptr != session_->video_rtp_transport_channel());
+
+  session_->Close();
+  EXPECT_TRUE(nullptr == session_->voice_rtp_transport_channel());
+  EXPECT_TRUE(nullptr == session_->voice_rtcp_transport_channel());
+  EXPECT_TRUE(nullptr == session_->video_rtp_transport_channel());
+  EXPECT_TRUE(nullptr == session_->video_rtcp_transport_channel());
+}
+
+// kBundlePolicyMaxBundle policy but no BUNDLE in the answer.
+TEST_F(WebRtcSessionTest, TestMaxBundleNoBundleInAnswer) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
+  SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+
+  SendAudioVideoStream2();
+
+  // Remove BUNDLE from the answer.
+  std::unique_ptr<SessionDescriptionInterface> answer(
+      CreateRemoteAnswer(session_->local_description()));
+  cricket::SessionDescription* answer_copy = answer->description()->Copy();
+  answer_copy->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  JsepSessionDescription* modified_answer =
+      new JsepSessionDescription(JsepSessionDescription::kAnswer);
+  modified_answer->Initialize(answer_copy, "1", "1");
+  SetRemoteDescriptionWithoutError(modified_answer);
+
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+}
+
+// kBundlePolicyMaxBundle policy with BUNDLE in the remote offer.
+TEST_F(WebRtcSessionTest, TestMaxBundleBundleInRemoteOffer) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
+  SendAudioVideoStream1();
+
+  SessionDescriptionInterface* offer = CreateRemoteOffer();
+  SetRemoteDescriptionWithoutError(offer);
+
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+
+  SendAudioVideoStream2();
+  SessionDescriptionInterface* answer = CreateAnswer();
+  SetLocalDescriptionWithoutError(answer);
+
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+}
+
+// kBundlePolicyMaxBundle policy but no BUNDLE in the remote offer.
+TEST_F(WebRtcSessionTest, TestMaxBundleNoBundleInRemoteOffer) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
+  SendAudioVideoStream1();
+
+  // Remove BUNDLE from the offer.
+  std::unique_ptr<SessionDescriptionInterface> offer(CreateRemoteOffer());
+  cricket::SessionDescription* offer_copy = offer->description()->Copy();
+  offer_copy->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  JsepSessionDescription* modified_offer =
+      new JsepSessionDescription(JsepSessionDescription::kOffer);
+  modified_offer->Initialize(offer_copy, "1", "1");
+
+  // Expect an error when applying the remote description
+  SetRemoteDescriptionExpectError(JsepSessionDescription::kOffer,
+                                  kCreateChannelFailed, modified_offer);
+}
+
+// kBundlePolicyMaxCompat bundle policy and answer contains BUNDLE.
+TEST_F(WebRtcSessionTest, TestMaxCompatBundleInAnswer) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxCompat);
+  SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions rtc_options;
+  rtc_options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(rtc_options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_NE(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+
+  SendAudioVideoStream2();
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionWithoutError(answer);
+
+  // This should lead to an audio-only call but isn't implemented
+  // correctly yet.
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+}
+
+// kBundlePolicyMaxCompat BUNDLE policy but no BUNDLE in the answer.
+TEST_F(WebRtcSessionTest, TestMaxCompatNoBundleInAnswer) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxCompat);
+  SendAudioVideoStream1();
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_NE(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+
+  SendAudioVideoStream2();
+
+  // Remove BUNDLE from the answer.
+  std::unique_ptr<SessionDescriptionInterface> answer(
+      CreateRemoteAnswer(session_->local_description()));
+  cricket::SessionDescription* answer_copy = answer->description()->Copy();
+  answer_copy->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  JsepSessionDescription* modified_answer =
+      new JsepSessionDescription(JsepSessionDescription::kAnswer);
+  modified_answer->Initialize(answer_copy, "1", "1");
+  SetRemoteDescriptionWithoutError(modified_answer);  //
+
+  EXPECT_NE(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+}
+
+// kBundlePolicyMaxbundle and then we call SetRemoteDescription first.
+TEST_F(WebRtcSessionTest, TestMaxBundleWithSetRemoteDescriptionFirst) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
+  SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetRemoteDescriptionWithoutError(offer);
+
+  EXPECT_EQ(session_->voice_rtp_transport_channel(),
+            session_->video_rtp_transport_channel());
+}
+
+// Adding a new channel to a BUNDLE which is already connected should directly
+// assign the bundle transport to the channel, without first setting a
+// disconnected non-bundle transport and then replacing it. The application
+// should not receive any changes in the ICE state.
+TEST_F(WebRtcSessionTest, TestAddChannelToConnectedBundle) {
+  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
+  // Both BUNDLE and RTCP-mux need to be enabled for the ICE state to remain
+  // connected. Disabling either of these two means that we need to wait for the
+  // answer to find out if more transports are needed.
+  configuration_.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  options_.disable_encryption = true;
+  InitWithRtcpMuxPolicy(PeerConnectionInterface::kRtcpMuxPolicyRequire);
+
+  // Negotiate an audio channel with MAX_BUNDLE enabled.
+  SendAudioOnlyStream2();
+  SessionDescriptionInterface* offer = CreateOffer();
+  SetLocalDescriptionWithoutError(offer);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceGatheringComplete,
+                 observer_.ice_gathering_state_, kIceCandidatesTimeout);
+  std::string sdp;
+  offer->ToString(&sdp);
+  SessionDescriptionInterface* answer = webrtc::CreateSessionDescription(
+      JsepSessionDescription::kAnswer, sdp, nullptr);
+  ASSERT_TRUE(answer != NULL);
+  SetRemoteDescriptionWithoutError(answer);
+
+  // Wait for the ICE state to stabilize.
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                 observer_.ice_connection_state_, kIceCandidatesTimeout);
+  observer_.ice_connection_state_history_.clear();
+
+  // Now add a video channel which should be using the same bundle transport.
+  SendAudioVideoStream2();
+  offer = CreateOffer();
+  offer->ToString(&sdp);
+  SetLocalDescriptionWithoutError(offer);
+  answer = webrtc::CreateSessionDescription(JsepSessionDescription::kAnswer,
+                                            sdp, nullptr);
+  ASSERT_TRUE(answer != NULL);
+  SetRemoteDescriptionWithoutError(answer);
+
+  // Wait for ICE state to stabilize
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                 observer_.ice_connection_state_, kIceCandidatesTimeout);
+
+  // No ICE state changes are expected to happen.
+  EXPECT_EQ(0, observer_.ice_connection_state_history_.size());
+}
+
+TEST_F(WebRtcSessionTest, TestRequireRtcpMux) {
+  InitWithRtcpMuxPolicy(PeerConnectionInterface::kRtcpMuxPolicyRequire);
+  SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_TRUE(session_->voice_rtcp_transport_channel() == NULL);
+  EXPECT_TRUE(session_->video_rtcp_transport_channel() == NULL);
+
+  SendAudioVideoStream2();
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_TRUE(session_->voice_rtcp_transport_channel() == NULL);
+  EXPECT_TRUE(session_->video_rtcp_transport_channel() == NULL);
+}
+
+TEST_F(WebRtcSessionTest, TestNegotiateRtcpMux) {
+  InitWithRtcpMuxPolicy(PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
+  SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_TRUE(session_->voice_rtcp_transport_channel() != NULL);
+  EXPECT_TRUE(session_->video_rtcp_transport_channel() != NULL);
+
+  SendAudioVideoStream2();
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_TRUE(session_->voice_rtcp_transport_channel() == NULL);
+  EXPECT_TRUE(session_->video_rtcp_transport_channel() == NULL);
+}
+
+// This test verifies that SetLocalDescription and SetRemoteDescription fails
+// if BUNDLE is enabled but rtcp-mux is disabled in m-lines.
+TEST_F(WebRtcSessionTest, TestDisabledRtcpMuxWithBundleEnabled) {
+  Init();
+  SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  std::string offer_str;
+  offer->ToString(&offer_str);
+  // Disable rtcp-mux
+  const std::string rtcp_mux = "rtcp-mux";
+  const std::string xrtcp_mux = "xrtcp-mux";
+  rtc::replace_substrs(rtcp_mux.c_str(), rtcp_mux.length(),
+                             xrtcp_mux.c_str(), xrtcp_mux.length(),
+                             &offer_str);
+  SessionDescriptionInterface* local_offer = CreateSessionDescription(
+      SessionDescriptionInterface::kOffer, offer_str, nullptr);
+  ASSERT_TRUE(local_offer);
+  SetLocalDescriptionOfferExpectError(kBundleWithoutRtcpMux, local_offer);
+
+  SessionDescriptionInterface* remote_offer = CreateSessionDescription(
+      SessionDescriptionInterface::kOffer, offer_str, nullptr);
+  ASSERT_TRUE(remote_offer);
+  SetRemoteDescriptionOfferExpectError(kBundleWithoutRtcpMux, remote_offer);
+
+  // Trying unmodified SDP.
+  SetLocalDescriptionWithoutError(offer);
 }
 
 TEST_F(WebRtcSessionTest, TestRtpDataChannel) {

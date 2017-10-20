@@ -944,7 +944,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     EXPECT_TRUE(DoSetLocalDescription(std::move(new_offer)));
     EXPECT_EQ(PeerConnectionInterface::kHaveLocalOffer, observer_.state_);
     // Wait for the ice_complete message, so that SDP will have candidates.
-    EXPECT_TRUE_WAIT(observer_.ice_gathering_complete_, kTimeout);
+    EXPECT_TRUE_WAIT(observer_.ice_complete_, kTimeout);
   }
 
   void CreateAnswerAsRemoteDescription(const std::string& sdp) {
@@ -1598,7 +1598,7 @@ TEST_F(PeerConnectionInterfaceTest, IceCandidates) {
   EXPECT_TRUE(DoSetLocalDescription(std::move(answer)));
 
   EXPECT_TRUE_WAIT(observer_.last_candidate() != nullptr, kTimeout);
-  EXPECT_TRUE_WAIT(observer_.ice_gathering_complete_, kTimeout);
+  EXPECT_TRUE_WAIT(observer_.ice_complete_, kTimeout);
 
   EXPECT_TRUE(pc_->AddIceCandidate(observer_.last_candidate()));
 }

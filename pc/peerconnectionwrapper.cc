@@ -23,7 +23,7 @@
 namespace webrtc {
 
 namespace {
-const uint32_t kDefaultTimeout = 10000U;
+const uint32_t kWaitTimeout = 10000U;
 }
 
 PeerConnectionWrapper::PeerConnectionWrapper(
@@ -122,7 +122,7 @@ std::unique_ptr<SessionDescriptionInterface> PeerConnectionWrapper::CreateSdp(
   rtc::scoped_refptr<MockCreateSessionDescriptionObserver> observer(
       new rtc::RefCountedObject<MockCreateSessionDescriptionObserver>());
   fn(observer);
-  EXPECT_EQ_WAIT(true, observer->called(), kDefaultTimeout);
+  EXPECT_EQ_WAIT(true, observer->called(), kWaitTimeout);
   if (error_out && !observer->result()) {
     *error_out = observer->error();
   }
@@ -155,7 +155,7 @@ bool PeerConnectionWrapper::SetSdp(
   rtc::scoped_refptr<MockSetSessionDescriptionObserver> observer(
       new rtc::RefCountedObject<MockSetSessionDescriptionObserver>());
   fn(observer);
-  EXPECT_EQ_WAIT(true, observer->called(), kDefaultTimeout);
+  EXPECT_EQ_WAIT(true, observer->called(), kWaitTimeout);
   if (error_out && !observer->result()) {
     *error_out = observer->error();
   }
@@ -186,20 +186,7 @@ PeerConnectionWrapper::signaling_state() {
 }
 
 bool PeerConnectionWrapper::IsIceGatheringDone() {
-  return observer()->ice_gathering_complete_;
-}
-
-bool PeerConnectionWrapper::IsIceConnected() {
-  return observer()->ice_connected_;
-}
-
-rtc::scoped_refptr<const webrtc::RTCStatsReport>
-PeerConnectionWrapper::GetStats() {
-  rtc::scoped_refptr<webrtc::MockRTCStatsCollectorCallback> callback(
-      new rtc::RefCountedObject<webrtc::MockRTCStatsCollectorCallback>());
-  pc()->GetStats(callback);
-  EXPECT_TRUE_WAIT(callback->called(), kDefaultTimeout);
-  return callback->report();
+  return observer()->ice_complete_;
 }
 
 }  // namespace webrtc

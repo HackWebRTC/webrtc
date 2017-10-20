@@ -73,15 +73,12 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) override {
     RTC_DCHECK(pc_->ice_connection_state() == new_state);
-    ice_connected_ =
-        (new_state == PeerConnectionInterface::kIceConnectionConnected);
     callback_triggered_ = true;
   }
   void OnIceGatheringChange(
       PeerConnectionInterface::IceGatheringState new_state) override {
     RTC_DCHECK(pc_->ice_gathering_state() == new_state);
-    ice_gathering_complete_ =
-        new_state == PeerConnectionInterface::kIceGatheringComplete;
+    ice_complete_ = new_state == PeerConnectionInterface::kIceGatheringComplete;
     callback_triggered_ = true;
   }
   void OnIceCandidate(const IceCandidateInterface* candidate) override {
@@ -162,8 +159,7 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   rtc::scoped_refptr<DataChannelInterface> last_datachannel_;
   rtc::scoped_refptr<StreamCollection> remote_streams_;
   bool renegotiation_needed_ = false;
-  bool ice_gathering_complete_ = false;
-  bool ice_connected_ = false;
+  bool ice_complete_ = false;
   bool callback_triggered_ = false;
   int num_added_tracks_ = 0;
   std::string last_added_track_label_;

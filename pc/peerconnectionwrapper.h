@@ -107,13 +107,6 @@ class PeerConnectionWrapper {
   // Returns true if ICE has finished gathering candidates.
   bool IsIceGatheringDone();
 
-  // Returns true if ICE has established a connection.
-  bool IsIceConnected();
-
-  // Calls GetStats() on the underlying PeerConnection and returns the resulting
-  // report. If GetStats() fails, this method returns null and fails the test.
-  rtc::scoped_refptr<const RTCStatsReport> GetStats();
-
  private:
   std::unique_ptr<SessionDescriptionInterface> CreateSdp(
       std::function<void(CreateSessionDescriptionObserver*)> fn,
