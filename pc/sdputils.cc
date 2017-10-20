@@ -20,7 +20,14 @@ namespace webrtc {
 std::unique_ptr<SessionDescriptionInterface> CloneSessionDescription(
     const SessionDescriptionInterface* sdesc) {
   RTC_DCHECK(sdesc);
-  auto clone = rtc::MakeUnique<JsepSessionDescription>(sdesc->type());
+  return CloneSessionDescriptionAsType(sdesc, sdesc->type());
+}
+
+std::unique_ptr<SessionDescriptionInterface> CloneSessionDescriptionAsType(
+    const SessionDescriptionInterface* sdesc,
+    const std::string& type) {
+  RTC_DCHECK(sdesc);
+  auto clone = rtc::MakeUnique<JsepSessionDescription>(type);
   clone->Initialize(sdesc->description()->Copy(), sdesc->session_id(),
                               sdesc->session_version());
   // As of writing, our version of GCC does not allow returning a unique_ptr of
