@@ -337,7 +337,7 @@ static bool BadSdp(const std::string& source,
   if (!type.empty()) {
     desc << " " << type;
   }
-  desc << " SDP: " << reason;
+  desc << " sdp: " << reason;
 
   if (err_desc) {
     *err_desc = desc.str();
@@ -707,13 +707,15 @@ void WebRtcSession::CreateAnswer(
   webrtc_session_desc_factory_->CreateAnswer(observer, session_options);
 }
 
-bool WebRtcSession::SetLocalDescription(
-    std::unique_ptr<SessionDescriptionInterface> desc,
-    std::string* err_desc) {
+bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
+                                        std::string* err_desc) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
 
+  // Takes the ownership of |desc| regardless of the result.
+  std::unique_ptr<SessionDescriptionInterface> desc_temp(desc);
+
   // Validate SDP.
-  if (!ValidateSessionDescription(desc.get(), cricket::CS_LOCAL, err_desc)) {
+  if (!ValidateSessionDescription(desc, cricket::CS_LOCAL, err_desc)) {
     return false;
   }
 
@@ -725,19 +727,18 @@ bool WebRtcSession::SetLocalDescription(
   }
 
   if (action == kAnswer) {
-    current_local_description_ = std::move(desc);
-    pending_local_description_ = nullptr;
-    current_remote_description_ = std::move(pending_remote_description_);
+    current_local_description_.reset(desc_temp.release());
+    pending_local_description_.reset(nullptr);
+    current_remote_description_.reset(pending_remote_description_.release());
   } else {
-    pending_local_description_ = std::move(desc);
+    pending_local_description_.reset(desc_temp.release());
   }
 
   // Transport and Media channels will be created only when offer is set.
   if (action == kOffer && !CreateChannels(local_description()->description())) {
     // TODO(mallinath) - Handle CreateChannel failure, as new local description
     // is applied. Restore back to old description.
-    return BadLocalSdp(local_description()->type(), kCreateChannelFailed,
-                       err_desc);
+    return BadLocalSdp(desc->type(), kCreateChannelFailed, err_desc);
   }
 
   // Remove unused channels if MediaContentDescription is rejected.
@@ -753,54 +754,50 @@ bool WebRtcSession::SetLocalDescription(
 
   pending_ice_restarts_.clear();
   if (error() != ERROR_NONE) {
-    return BadLocalSdp(local_description()->type(), GetSessionErrorMsg(),
-                       err_desc);
+    return BadLocalSdp(desc->type(), GetSessionErrorMsg(), err_desc);
   }
   return true;
 }
 
-bool WebRtcSession::SetRemoteDescription(
-    std::unique_ptr<SessionDescriptionInterface> desc,
-    std::string* err_desc) {
+bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
+                                         std::string* err_desc) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
 
+  // Takes the ownership of |desc| regardless of the result.
+  std::unique_ptr<SessionDescriptionInterface> desc_temp(desc);
+
   // Validate SDP.
-  if (!ValidateSessionDescription(desc.get(), cricket::CS_REMOTE, err_desc)) {
+  if (!ValidateSessionDescription(desc, cricket::CS_REMOTE, err_desc)) {
     return false;
   }
-
-  // Hold this pointer so candidates can be copied to it later in the method.
-  SessionDescriptionInterface* desc_ptr = desc.get();
 
   const SessionDescriptionInterface* old_remote_description =
       remote_description();
   // Grab ownership of the description being replaced for the remainder of this
-  // method, since it's used below as |old_remote_description|.
+  // method, since it's used below.
   std::unique_ptr<SessionDescriptionInterface> replaced_remote_description;
   Action action = GetAction(desc->type());
   if (action == kAnswer) {
-    replaced_remote_description = pending_remote_description_
-                                      ? std::move(pending_remote_description_)
-                                      : std::move(current_remote_description_);
-    current_remote_description_ = std::move(desc);
-    pending_remote_description_ = nullptr;
-    current_local_description_ = std::move(pending_local_description_);
+    replaced_remote_description.reset(
+        pending_remote_description_ ? pending_remote_description_.release()
+                                    : current_remote_description_.release());
+    current_remote_description_.reset(desc_temp.release());
+    pending_remote_description_.reset(nullptr);
+    current_local_description_.reset(pending_local_description_.release());
   } else {
-    replaced_remote_description = std::move(pending_remote_description_);
-    pending_remote_description_ = std::move(desc);
+    replaced_remote_description.reset(pending_remote_description_.release());
+    pending_remote_description_.reset(desc_temp.release());
   }
 
   // Transport and Media channels will be created only when offer is set.
-  if (action == kOffer &&
-      !CreateChannels(remote_description()->description())) {
+  if (action == kOffer && !CreateChannels(desc->description())) {
     // TODO(mallinath) - Handle CreateChannel failure, as new local description
     // is applied. Restore back to old description.
-    return BadRemoteSdp(remote_description()->type(), kCreateChannelFailed,
-                        err_desc);
+    return BadRemoteSdp(desc->type(), kCreateChannelFailed, err_desc);
   }
 
   // Remove unused channels if MediaContentDescription is rejected.
-  RemoveUnusedChannels(remote_description()->description());
+  RemoveUnusedChannels(desc->description());
 
   // NOTE: Candidates allocation will be initiated only when SetLocalDescription
   // is called.
@@ -808,10 +805,8 @@ bool WebRtcSession::SetRemoteDescription(
     return false;
   }
 
-  if (local_description() &&
-      !UseCandidatesInSessionDescription(remote_description())) {
-    return BadRemoteSdp(remote_description()->type(), kInvalidCandidates,
-                        err_desc);
+  if (local_description() && !UseCandidatesInSessionDescription(desc)) {
+    return BadRemoteSdp(desc->type(), kInvalidCandidates, err_desc);
   }
 
   if (old_remote_description) {
@@ -822,7 +817,7 @@ bool WebRtcSession::SetRemoteDescription(
       // TODO(deadbeef): When we start storing both the current and pending
       // remote description, this should reset pending_ice_restarts and compare
       // against the current description.
-      if (CheckForRemoteIceRestart(old_remote_description, remote_description(),
+      if (CheckForRemoteIceRestart(old_remote_description, desc,
                                    content.name)) {
         if (action == kOffer) {
           pending_ice_restarts_.insert(content.name);
@@ -836,14 +831,13 @@ bool WebRtcSession::SetRemoteDescription(
         // description plus any candidates added since then. We should remove
         // this once we're sure it won't break anything.
         WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
-            old_remote_description, content.name, desc_ptr);
+            old_remote_description, content.name, desc);
       }
     }
   }
 
   if (error() != ERROR_NONE) {
-    return BadRemoteSdp(remote_description()->type(), GetSessionErrorMsg(),
-                        err_desc);
+    return BadRemoteSdp(desc->type(), GetSessionErrorMsg(), err_desc);
   }
 
   // Set the the ICE connection state to connecting since the connection may
@@ -854,7 +848,7 @@ bool WebRtcSession::SetRemoteDescription(
   // transport and expose a new checking() member from transport that can be
   // read to determine the current checking state. The existing SignalConnecting
   // actually means "gathering candidates", so cannot be be used here.
-  if (remote_description()->type() != SessionDescriptionInterface::kOffer &&
+  if (desc->type() != SessionDescriptionInterface::kOffer &&
       ice_connection_state_ == PeerConnectionInterface::kIceConnectionNew) {
     SetIceConnectionState(PeerConnectionInterface::kIceConnectionChecking);
   }

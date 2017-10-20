@@ -2517,9 +2517,9 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestMethods) {
   EXPECT_TRUE(pc_->remote_description() != NULL);
 
   std::unique_ptr<SessionDescriptionInterface> offer;
-  EXPECT_FALSE(DoCreateOffer(&offer, nullptr));
+  EXPECT_TRUE(DoCreateOffer(&offer, nullptr));
   std::unique_ptr<SessionDescriptionInterface> answer;
-  EXPECT_FALSE(DoCreateAnswer(&answer, nullptr));
+  EXPECT_TRUE(DoCreateAnswer(&answer, nullptr));
 
   std::string sdp;
   ASSERT_TRUE(pc_->remote_description()->ToString(&sdp));
@@ -3558,6 +3558,32 @@ TEST_F(PeerConnectionInterfaceTest, CreateOfferWithVideoOnlyOptions) {
   EXPECT_NE(nullptr, GetFirstVideoContent(offer->description()));
 }
 
+// Test that if |voice_activity_detection| is false, no CN codec is added to the
+// offer.
+TEST_F(PeerConnectionInterfaceTest, CreateOfferWithVADOptions) {
+  RTCOfferAnswerOptions rtc_options;
+  rtc_options.offer_to_receive_audio = 1;
+  rtc_options.offer_to_receive_video = 0;
+
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  CreatePeerConnection();
+  offer = CreateOfferWithOptions(rtc_options);
+  ASSERT_TRUE(offer);
+  const cricket::ContentInfo* audio_content =
+      offer->description()->GetContentByName(cricket::CN_AUDIO);
+  ASSERT_TRUE(audio_content);
+  // |voice_activity_detection| is true by default.
+  EXPECT_TRUE(HasCNCodecs(audio_content));
+
+  rtc_options.voice_activity_detection = false;
+  CreatePeerConnection();
+  offer = CreateOfferWithOptions(rtc_options);
+  ASSERT_TRUE(offer);
+  audio_content = offer->description()->GetContentByName(cricket::CN_AUDIO);
+  ASSERT_TRUE(audio_content);
+  EXPECT_FALSE(HasCNCodecs(audio_content));
+}
+
 // Test that no media content will be added to the offer if using default
 // RTCOfferAnswerOptions.
 TEST_F(PeerConnectionInterfaceTest, CreateOfferWithDefaultOfferAnswerOptions) {
@@ -3638,6 +3664,42 @@ TEST_F(PeerConnectionInterfaceTest, CreateOfferWithRtpMux) {
   EXPECT_FALSE(offer->description()->HasGroup(cricket::GROUP_TYPE_BUNDLE));
 }
 
+// If SetMandatoryReceiveAudio(false) and SetMandatoryReceiveVideo(false) are
+// called for the answer constraints, but an audio and a video section were
+// offered, there will still be an audio and a video section in the answer.
+TEST_F(PeerConnectionInterfaceTest,
+       RejectAudioAndVideoInAnswerWithConstraints) {
+  // Offer both audio and video.
+  RTCOfferAnswerOptions rtc_offer_options;
+  rtc_offer_options.offer_to_receive_audio = 1;
+  rtc_offer_options.offer_to_receive_video = 1;
+
+  CreatePeerConnection();
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  CreateOfferWithOptionsAsRemoteDescription(&offer, rtc_offer_options);
+  EXPECT_NE(nullptr, GetFirstAudioContent(offer->description()));
+  EXPECT_NE(nullptr, GetFirstVideoContent(offer->description()));
+
+  // Since an offer has been created with both audio and video,
+  // Answers will contain the media types that exist in the offer regardless of
+  // the value of |answer_options.has_audio| and |answer_options.has_video|.
+  FakeConstraints answer_c;
+  // Reject both audio and video.
+  answer_c.SetMandatoryReceiveAudio(false);
+  answer_c.SetMandatoryReceiveVideo(false);
+
+  std::unique_ptr<SessionDescriptionInterface> answer;
+  ASSERT_TRUE(DoCreateAnswer(&answer, &answer_c));
+  const cricket::ContentInfo* audio_content =
+      GetFirstAudioContent(answer->description());
+  const cricket::ContentInfo* video_content =
+      GetFirstVideoContent(answer->description());
+  ASSERT_NE(nullptr, audio_content);
+  ASSERT_NE(nullptr, video_content);
+  EXPECT_TRUE(audio_content->rejected);
+  EXPECT_TRUE(video_content->rejected);
+}
+
 // This test ensures OnRenegotiationNeeded is called when we add track with
 // MediaStream -> AddTrack in the same way it is called when we add track with
 // PeerConnection -> AddTrack.
@@ -3670,6 +3732,52 @@ TEST_F(PeerConnectionInterfaceTest, MediaStreamAddTrackRemoveTrackRenegotiate) {
   stream->RemoveTrack(video_track);
   EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
   observer_.renegotiation_needed_ = false;
+}
+
+// Tests that creating answer would fail gracefully without being crashed if the
+// remote description is unset.
+TEST_F(PeerConnectionInterfaceTest, CreateAnswerWithoutRemoteDescription) {
+  CreatePeerConnection();
+  // Creating answer fails because the remote description is unset.
+  std::unique_ptr<SessionDescriptionInterface> answer;
+  EXPECT_FALSE(DoCreateAnswer(&answer, nullptr));
+
+  // Createing answer succeeds when the remote description is set.
+  CreateOfferAsRemoteDescription();
+  EXPECT_TRUE(DoCreateAnswer(&answer, nullptr));
+}
+
+// Test that an error is returned if a description is applied that doesn't
+// respect the order of existing media sections.
+TEST_F(PeerConnectionInterfaceTest,
+       MediaSectionOrderEnforcedForSubsequentOffers) {
+  CreatePeerConnection();
+  FakeConstraints constraints;
+  constraints.SetMandatoryReceiveAudio(true);
+  constraints.SetMandatoryReceiveVideo(true);
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
+  EXPECT_TRUE(DoSetRemoteDescription(std::move(offer)));
+
+  std::unique_ptr<SessionDescriptionInterface> answer;
+  ASSERT_TRUE(DoCreateAnswer(&answer, nullptr));
+  EXPECT_TRUE(DoSetLocalDescription(std::move(answer)));
+
+  // A remote offer with different m=line order should be rejected.
+  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
+  std::reverse(offer->description()->contents().begin(),
+               offer->description()->contents().end());
+  std::reverse(offer->description()->transport_infos().begin(),
+               offer->description()->transport_infos().end());
+  EXPECT_FALSE(DoSetRemoteDescription(std::move(offer)));
+
+  // A subsequent local offer with different m=line order should be rejected.
+  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
+  std::reverse(offer->description()->contents().begin(),
+               offer->description()->contents().end());
+  std::reverse(offer->description()->transport_infos().begin(),
+               offer->description()->transport_infos().end());
+  EXPECT_FALSE(DoSetLocalDescription(std::move(offer)));
 }
 
 class PeerConnectionMediaConfigTest : public testing::Test {

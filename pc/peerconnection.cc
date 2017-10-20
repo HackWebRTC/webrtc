@@ -828,7 +828,10 @@ PeerConnection::CreateDataChannel(
 void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
                                  const MediaConstraintsInterface* constraints) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateOffer");
-
+  if (!observer) {
+    LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
+    return;
+  }
   PeerConnectionInterface::RTCOfferAnswerOptions offer_answer_options;
   // Always create an offer even if |ConvertConstraintsToOfferAnswerOptions|
   // returns false for now. Because |ConvertConstraintsToOfferAnswerOptions|
@@ -845,16 +848,8 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
 void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
                                  const RTCOfferAnswerOptions& options) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateOffer");
-
   if (!observer) {
     LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
-    return;
-  }
-
-  if (IsClosed()) {
-    std::string error = "CreateOffer called when PeerConnection is closed.";
-    LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailure(observer, error);
     return;
   }
 
@@ -874,9 +869,17 @@ void PeerConnection::CreateAnswer(
     CreateSessionDescriptionObserver* observer,
     const MediaConstraintsInterface* constraints) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateAnswer");
-
   if (!observer) {
     LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";
+    return;
+  }
+
+  if (!session_->remote_description() ||
+      session_->remote_description()->type() !=
+          SessionDescriptionInterface::kOffer) {
+    std::string error = "CreateAnswer called without remote offer.";
+    LOG(LS_ERROR) << error;
+    PostCreateSessionDescriptionFailure(observer, error);
     return;
   }
 
@@ -889,7 +892,9 @@ void PeerConnection::CreateAnswer(
     return;
   }
 
-  CreateAnswer(observer, offer_answer_options);
+  cricket::MediaSessionOptions session_options;
+  GetOptionsForAnswer(offer_answer_options, &session_options);
+  session_->CreateAnswer(observer, session_options);
 }
 
 void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
@@ -897,22 +902,6 @@ void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
   TRACE_EVENT0("webrtc", "PeerConnection::CreateAnswer");
   if (!observer) {
     LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";
-    return;
-  }
-
-  if (IsClosed()) {
-    std::string error = "CreateAnswer called when PeerConnection is closed.";
-    LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailure(observer, error);
-    return;
-  }
-
-  if (!session_->remote_description() ||
-      session_->remote_description()->type() !=
-          SessionDescriptionInterface::kOffer) {
-    std::string error = "CreateAnswer called without remote offer.";
-    LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailure(observer, error);
     return;
   }
 
@@ -926,6 +915,9 @@ void PeerConnection::SetLocalDescription(
     SetSessionDescriptionObserver* observer,
     SessionDescriptionInterface* desc) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetLocalDescription");
+  if (IsClosed()) {
+    return;
+  }
   if (!observer) {
     LOG(LS_ERROR) << "SetLocalDescription - observer is NULL.";
     return;
@@ -934,23 +926,11 @@ void PeerConnection::SetLocalDescription(
     PostSetSessionDescriptionFailure(observer, "SessionDescription is NULL.");
     return;
   }
-
-  // Takes the ownership of |desc| regardless of the result.
-  std::unique_ptr<SessionDescriptionInterface> desc_temp(desc);
-
-  if (IsClosed()) {
-    std::string error = "Failed to set local " + desc->type() +
-                        " SDP: Called in wrong state: STATE_CLOSED";
-    LOG(LS_ERROR) << error;
-    PostSetSessionDescriptionFailure(observer, error);
-    return;
-  }
-
   // Update stats here so that we have the most recent stats for tracks and
   // streams that might be removed by updating the session description.
   stats_->UpdateStats(kStatsOutputLevelStandard);
   std::string error;
-  if (!session_->SetLocalDescription(std::move(desc_temp), &error)) {
+  if (!session_->SetLocalDescription(desc, &error)) {
     PostSetSessionDescriptionFailure(observer, error);
     return;
   }
@@ -1031,6 +1011,9 @@ void PeerConnection::SetRemoteDescription(
     SetSessionDescriptionObserver* observer,
     SessionDescriptionInterface* desc) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetRemoteDescription");
+  if (IsClosed()) {
+    return;
+  }
   if (!observer) {
     LOG(LS_ERROR) << "SetRemoteDescription - observer is NULL.";
     return;
@@ -1039,23 +1022,11 @@ void PeerConnection::SetRemoteDescription(
     PostSetSessionDescriptionFailure(observer, "SessionDescription is NULL.");
     return;
   }
-
-  // Takes the ownership of |desc| regardless of the result.
-  std::unique_ptr<SessionDescriptionInterface> desc_temp(desc);
-
-  if (IsClosed()) {
-    std::string error = "Failed to set remote " + desc->type() +
-                        " SDP: Called in wrong state: STATE_CLOSED";
-    LOG(LS_ERROR) << error;
-    PostSetSessionDescriptionFailure(observer, error);
-    return;
-  }
-
   // Update stats here so that we have the most recent stats for tracks and
   // streams that might be removed by updating the session description.
   stats_->UpdateStats(kStatsOutputLevelStandard);
   std::string error;
-  if (!session_->SetRemoteDescription(std::move(desc_temp), &error)) {
+  if (!session_->SetRemoteDescription(desc, &error)) {
     PostSetSessionDescriptionFailure(observer, error);
     return;
   }
@@ -1089,15 +1060,6 @@ void PeerConnection::SetRemoteDescription(
   // We wait to signal new streams until we finish processing the description,
   // since only at that point will new streams have all their tracks.
   rtc::scoped_refptr<StreamCollection> new_streams(StreamCollection::Create());
-
-  // TODO(steveanton): When removing RTP senders/receivers in response to a
-  // rejected media section, there is some cleanup logic that expects the voice/
-  // video channel to still be set. But in this method the voice/video channel
-  // would have been destroyed by WebRtcSession's SetRemoteDescription method
-  // above, so the cleanup that relies on them fails to run. This is hard to fix
-  // with WebRtcSession and PeerConnection separated, but once the classes are
-  // merged it will be easy to call RemoveTracks right before destroying the
-  // voice/video channels.
 
   // Find all audio rtp streams and create corresponding remote AudioTracks
   // and MediaStreams.

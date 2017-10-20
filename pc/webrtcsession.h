@@ -254,9 +254,11 @@ class WebRtcSession :
       const cricket::MediaSessionOptions& session_options);
   void CreateAnswer(CreateSessionDescriptionObserver* observer,
                     const cricket::MediaSessionOptions& session_options);
-  bool SetLocalDescription(std::unique_ptr<SessionDescriptionInterface> desc,
+  // The ownership of |desc| will be transferred after this call.
+  bool SetLocalDescription(SessionDescriptionInterface* desc,
                            std::string* err_desc);
-  bool SetRemoteDescription(std::unique_ptr<SessionDescriptionInterface> desc,
+  // The ownership of |desc| will be transferred after this call.
+  bool SetRemoteDescription(SessionDescriptionInterface* desc,
                             std::string* err_desc);
 
   bool ProcessIceMessage(const IceCandidateInterface* ice_candidate);

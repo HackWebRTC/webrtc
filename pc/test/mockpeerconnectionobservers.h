@@ -177,27 +177,26 @@ class MockCreateSessionDescriptionObserver
  public:
   MockCreateSessionDescriptionObserver()
       : called_(false),
-        error_("MockCreateSessionDescriptionObserver not called") {}
+        result_(false) {}
   virtual ~MockCreateSessionDescriptionObserver() {}
   virtual void OnSuccess(SessionDescriptionInterface* desc) {
     called_ = true;
-    error_ = "";
+    result_ = true;
     desc_.reset(desc);
   }
   virtual void OnFailure(const std::string& error) {
     called_ = true;
-    error_ = error;
+    result_ = false;
   }
   bool called() const { return called_; }
-  bool result() const { return error_.empty(); }
-  const std::string& error() const { return error_; }
+  bool result() const { return result_; }
   std::unique_ptr<SessionDescriptionInterface> MoveDescription() {
     return std::move(desc_);
   }
 
  private:
   bool called_;
-  std::string error_;
+  bool result_;
   std::unique_ptr<SessionDescriptionInterface> desc_;
 };
 
@@ -206,23 +205,22 @@ class MockSetSessionDescriptionObserver
  public:
   MockSetSessionDescriptionObserver()
       : called_(false),
-        error_("MockSetSessionDescriptionObserver not called") {}
+        result_(false) {}
   virtual ~MockSetSessionDescriptionObserver() {}
   virtual void OnSuccess() {
     called_ = true;
-    error_ = "";
+    result_ = true;
   }
   virtual void OnFailure(const std::string& error) {
     called_ = true;
-    error_ = error;
+    result_ = false;
   }
   bool called() const { return called_; }
-  bool result() const { return error_.empty(); }
-  const std::string& error() const { return error_; }
+  bool result() const { return result_; }
 
  private:
   bool called_;
-  std::string error_;
+  bool result_;
 };
 
 class MockDataChannelObserver : public webrtc::DataChannelObserver {
