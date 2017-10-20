@@ -304,7 +304,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
     _packetizationMode = RTCH264PacketizationModeNonInterleaved;
     _profile = ExtractProfile([codecInfo nativeSdpVideoFormat]);
     LOG(LS_INFO) << "Using profile " << CFStringToString(_profile);
-    RTC_CHECK([codecInfo.name isEqualToString:kVideoCodecH264Name]);
+    RTC_CHECK([codecInfo.name isEqualToString:kRTCVideoCodecH264Name]);
 
 #if defined(WEBRTC_IOS)
     [RTCUIApplicationStatusObserver prepareForUse];
@@ -320,7 +320,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
 - (NSInteger)startEncodeWithSettings:(RTCVideoEncoderSettings *)settings
                        numberOfCores:(int)numberOfCores {
   RTC_DCHECK(settings);
-  RTC_DCHECK([settings.name isEqualToString:kVideoCodecH264Name]);
+  RTC_DCHECK([settings.name isEqualToString:kRTCVideoCodecH264Name]);
 
   _width = settings.width;
   _height = settings.height;

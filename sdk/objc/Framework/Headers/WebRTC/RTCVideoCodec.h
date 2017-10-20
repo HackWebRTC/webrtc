@@ -15,11 +15,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-RTC_EXPORT extern NSString *const kVideoCodecVp8Name;
-RTC_EXPORT extern NSString *const kVideoCodecVp9Name;
-RTC_EXPORT extern NSString *const kVideoCodecH264Name;
-RTC_EXPORT extern NSString *const kLevel31ConstrainedHigh;
-RTC_EXPORT extern NSString *const kLevel31ConstrainedBaseline;
+RTC_EXPORT extern NSString *const kRTCVideoCodecVp8Name;
+RTC_EXPORT extern NSString *const kRTCVideoCodecVp9Name;
+RTC_EXPORT extern NSString *const kRTCVideoCodecH264Name;
+RTC_EXPORT extern NSString *const kRTCLevel31ConstrainedHigh;
+RTC_EXPORT extern NSString *const kRTCLevel31ConstrainedBaseline;
 
 /** Represents an encoded frame's type. */
 typedef NS_ENUM(NSUInteger, RTCFrameType) {
