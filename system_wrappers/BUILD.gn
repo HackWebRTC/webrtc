@@ -27,7 +27,7 @@ rtc_static_library("system_wrappers") {
     "include/sleep.h",
     "include/timestamp_extrapolator.h",
     "source/aligned_malloc.cc",
-    "source/atomic32_win.cc",
+    "source/atomic32.cc",
     "source/clock.cc",
     "source/cpu_features.cc",
     "source/cpu_info.cc",
@@ -76,13 +76,8 @@ rtc_static_library("system_wrappers") {
     libs += [ "rt" ]
   }
 
-  if (is_linux || is_android) {
-    sources += [ "source/atomic32_non_darwin_unix.cc" ]
-  }
-
   if (is_ios || is_mac) {
     defines += [ "WEBRTC_THREAD_RR" ]
-    sources += [ "source/atomic32_darwin.cc" ]
   }
 
   # TODO(jschuh): Bug 1348: fix this warning.
