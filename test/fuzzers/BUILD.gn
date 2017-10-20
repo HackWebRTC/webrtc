@@ -305,6 +305,22 @@ webrtc_fuzzer_test("neteq_rtp_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("neteq_signal_fuzzer") {
+  sources = [
+    "neteq_signal_fuzzer.cc",
+  ]
+  deps = [
+    "../../api:array_view",
+    "../../modules/audio_coding:neteq",
+    "../../modules/audio_coding:neteq_test_tools",
+    "../../modules/audio_coding:neteq_tools_minimal",
+    "../../modules/audio_coding:pcm16b",
+    "../../modules/rtp_rtcp",
+    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:rtc_base_tests_utils",
+  ]
+}
+
 webrtc_fuzzer_test("residual_echo_detector_fuzzer") {
   sources = [
     "residual_echo_detector_fuzzer.cc",
