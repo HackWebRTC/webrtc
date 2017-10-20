@@ -14,6 +14,9 @@
 #include "api/peerconnectioninterface.h"
 #include "media/base/mediaengine.h"
 #include "modules/utility/include/jvm_android.h"
+// We don't depend on the audio processing module implementation.
+// The user may pass in a nullptr.
+#include "modules/audio_processing/include/audio_processing.h"  // nogncheck
 #include "rtc_base/event_tracer.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/thread.h"
@@ -132,14 +135,12 @@ JNI_FUNCTION_DECLARATION(void,
   rtc::tracing::ShutdownInternalTracer();
 }
 
-JNI_FUNCTION_DECLARATION(
-    jlong,
-    PeerConnectionFactory_nativeCreatePeerConnectionFactory,
+jlong CreatePeerConnectionFactoryForJava(
     JNIEnv* jni,
-    jclass,
     jobject joptions,
     jobject jencoder_factory,
-    jobject jdecoder_factory) {
+    jobject jdecoder_factory,
+    rtc::scoped_refptr<AudioProcessing> audio_processor) {
   // talk/ assumes pretty widely that the current Thread is ThreadManager'd, but
   // ThreadManager only WrapCurrentThread()s the thread where it is first
   // created.  Since the semantics around when auto-wrapping happens in
@@ -190,7 +191,7 @@ JNI_FUNCTION_DECLARATION(
       CreateRtcEventLogFactory());
   std::unique_ptr<cricket::MediaEngineInterface> media_engine(CreateMediaEngine(
       adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory, audio_mixer));
+      video_decoder_factory, audio_mixer, audio_processor));
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       CreateModularPeerConnectionFactory(
@@ -210,6 +211,35 @@ JNI_FUNCTION_DECLARATION(
       network_monitor_factory, factory.release());
   owned_factory->InvokeJavaCallbacksOnFactoryThreads();
   return jlongFromPointer(owned_factory);
+}
+
+JNI_FUNCTION_DECLARATION(
+    jlong,
+    PeerConnectionFactory_nativeCreatePeerConnectionFactory,
+    JNIEnv* jni,
+    jclass,
+    jobject joptions,
+    jobject jencoder_factory,
+    jobject jdecoder_factory) {
+  return CreatePeerConnectionFactoryForJava(jni, joptions, jencoder_factory,
+                                            jdecoder_factory,
+                                            CreateAudioProcessing());
+}
+
+JNI_FUNCTION_DECLARATION(
+    jlong,
+    PeerConnectionFactory_nativeCreatePeerConnectionFactoryWithAudioProcessing,
+    JNIEnv* jni,
+    jclass,
+    jobject joptions,
+    jobject jencoder_factory,
+    jobject jdecoder_factory,
+    jlong native_audio_processor) {
+  rtc::scoped_refptr<AudioProcessing> audio_processor =
+      reinterpret_cast<AudioProcessing*>(native_audio_processor);
+  RTC_DCHECK(audio_processor);
+  return CreatePeerConnectionFactoryForJava(jni, joptions, jencoder_factory,
+                                            jdecoder_factory, audio_processor);
 }
 
 JNI_FUNCTION_DECLARATION(void,

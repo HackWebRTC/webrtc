@@ -12,6 +12,7 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 namespace jni {
@@ -22,6 +23,10 @@ rtc::scoped_refptr<AudioDecoderFactory> CreateAudioDecoderFactory() {
 
 rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory() {
   return CreateBuiltinAudioEncoderFactory();
+}
+
+rtc::scoped_refptr<AudioProcessing> CreateAudioProcessing() {
+  return AudioProcessing::Create();
 }
 
 }  // namespace jni

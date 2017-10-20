@@ -8,22 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/pc/audio_jni.h"
+package org.webrtc;
 
-namespace webrtc {
-namespace jni {
-
-rtc::scoped_refptr<AudioDecoderFactory> CreateAudioDecoderFactory() {
-  return nullptr;
+/** Factory for creating webrtc::AudioProcessing instances. */
+public interface AudioProcessingFactory {
+  /**
+   * Dynamically allocates a webrtc::AudioProcessing instance and returns a pointer to it.
+   * The caller takes ownership of the object.
+   */
+  public long createNative();
 }
-
-rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory() {
-  return nullptr;
-}
-
-rtc::scoped_refptr<AudioProcessing> CreateAudioProcessing() {
-  return nullptr;
-}
-
-}  // namespace jni
-}  // namespace webrtc

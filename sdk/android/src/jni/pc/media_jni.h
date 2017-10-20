@@ -20,6 +20,7 @@ class AudioEncoderFactory;
 class AudioDecoderFactory;
 class RtcEventLogFactoryInterface;
 class AudioMixer;
+class AudioProcessing;
 }  // namespace webrtc
 
 namespace cricket {
@@ -40,7 +41,8 @@ cricket::MediaEngineInterface* CreateMediaEngine(
     const rtc::scoped_refptr<AudioDecoderFactory>& audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
     cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<AudioMixer> audio_mixer);
+    rtc::scoped_refptr<AudioMixer> audio_mixer,
+    rtc::scoped_refptr<AudioProcessing> audio_processor);
 
 }  // namespace jni
 }  // namespace webrtc

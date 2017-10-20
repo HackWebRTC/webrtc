@@ -125,6 +125,14 @@ public class PeerConnectionFactory {
     }
   }
 
+  private void checkInitializeHasBeenCalled() {
+    if (!NativeLibrary.isLoaded() || ContextUtils.getApplicationContext() == null) {
+      throw new IllegalStateException(
+          "PeerConnectionFactory.initialize was not called before creating a "
+          + "PeerConnectionFactory.");
+    }
+  }
+
   // Must be called at least once before creating a PeerConnectionFactory
   // (for example, at application startup time).
   private static native void nativeInitializeAndroidGlobals(
@@ -185,12 +193,22 @@ public class PeerConnectionFactory {
 
   public PeerConnectionFactory(
       Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory) {
-    if (!NativeLibrary.isLoaded() || ContextUtils.getApplicationContext() == null) {
-      throw new IllegalStateException(
-          "PeerConnectionFactory.initialize was not called before creating a "
-          + "PeerConnectionFactory.");
-    }
+    checkInitializeHasBeenCalled();
     nativeFactory = nativeCreatePeerConnectionFactory(options, encoderFactory, decoderFactory);
+    if (nativeFactory == 0) {
+      throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
+    }
+  }
+
+  public PeerConnectionFactory(Options options, VideoEncoderFactory encoderFactory,
+      VideoDecoderFactory decoderFactory, AudioProcessingFactory audioProcessingFactory) {
+    checkInitializeHasBeenCalled();
+    if (audioProcessingFactory == null) {
+      throw new NullPointerException(
+          "PeerConnectionFactory constructor does not accept a null AudioProcessingFactory.");
+    }
+    nativeFactory = nativeCreatePeerConnectionFactoryWithAudioProcessing(
+        options, encoderFactory, decoderFactory, audioProcessingFactory.createNative());
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
@@ -336,6 +354,10 @@ public class PeerConnectionFactory {
 
   private static native long nativeCreatePeerConnectionFactory(
       Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory);
+
+  private static native long nativeCreatePeerConnectionFactoryWithAudioProcessing(Options options,
+      VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory,
+      long nativeAudioProcessor);
 
   private static native long nativeCreateObserver(PeerConnection.Observer observer);
 
