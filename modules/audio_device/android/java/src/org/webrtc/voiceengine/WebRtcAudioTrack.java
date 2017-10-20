@@ -221,7 +221,7 @@ public class WebRtcAudioTrack {
   private boolean initPlayout(int sampleRate, int channels) {
     Logging.d(TAG, "initPlayout(sampleRate=" + sampleRate + ", channels=" + channels + ")");
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
-    byteBuffer = byteBuffer.allocateDirect(bytesPerFrame * (sampleRate / BUFFERS_PER_SECOND));
+    byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * (sampleRate / BUFFERS_PER_SECOND));
     Logging.d(TAG, "byteBuffer.capacity: " + byteBuffer.capacity());
     emptyBytes = new byte[byteBuffer.capacity()];
     // Rather than passing the ByteBuffer with every callback (requiring
@@ -361,7 +361,7 @@ public class WebRtcAudioTrack {
             + "channels: " + audioTrack.getChannelCount() + ", "
             + "sample rate: " + audioTrack.getSampleRate() + ", "
             // Gain (>=1.0) expressed as linear multiplier on sample values.
-            + "max gain: " + audioTrack.getMaxVolume());
+            + "max gain: " + AudioTrack.getMaxVolume());
   }
 
   // Creates and AudioTrack instance using AudioAttributes and AudioFormat as input.
