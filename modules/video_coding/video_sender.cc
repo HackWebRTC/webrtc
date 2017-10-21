@@ -324,8 +324,7 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
                     << " loss rate " << encoder_params.loss_rate << " rtt "
                     << encoder_params.rtt << " input frame rate "
                     << encoder_params.input_frame_rate;
-    post_encode_callback_->OnDroppedFrame(
-        EncodedImageCallback::DropReason::kDroppedByMediaOptimizations);
+    post_encode_callback_->OnDroppedFrame();
     return VCM_OK;
   }
   // TODO(pbos): Make sure setting send codec is synchronized with video

@@ -57,12 +57,6 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // Used to update incoming frame rate.
   void OnIncomingFrame(int width, int height);
 
-  // Dropped frame stats.
-  void OnFrameDroppedBySource();
-  void OnFrameDroppedInEncoderQueue();
-  void OnFrameDroppedByEncoder();
-  void OnFrameDroppedByMediaOptimizations();
-
   // Adaptation stats.
   void SetAdaptationStats(
       const VideoStreamEncoder::AdaptCounts& cpu_counts,

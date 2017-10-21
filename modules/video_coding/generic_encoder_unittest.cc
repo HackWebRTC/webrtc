@@ -27,8 +27,7 @@ inline size_t FrameSize(const size_t& min_frame_size,
 
 class FakeEncodedImageCallback : public EncodedImageCallback {
  public:
-  FakeEncodedImageCallback()
-      : last_frame_was_timing_(false), num_frames_dropped_(0) {}
+  FakeEncodedImageCallback() : last_frame_was_timing_(false) {}
   Result OnEncodedImage(const EncodedImage& encoded_image,
                         const CodecSpecificInfo* codec_specific_info,
                         const RTPFragmentationHeader* fragmentation) override {
@@ -37,15 +36,10 @@ class FakeEncodedImageCallback : public EncodedImageCallback {
     return Result(Result::OK);
   };
 
-  void OnDroppedFrame(DropReason reason) override { ++num_frames_dropped_; }
-
   bool WasTimingFrame() { return last_frame_was_timing_; }
-
-  size_t GetNumFramesDropped() { return num_frames_dropped_; }
 
  private:
   bool last_frame_was_timing_;
-  size_t num_frames_dropped_;
 };
 
 enum class FrameType {
@@ -194,35 +188,6 @@ TEST(TestVCMEncodedFrameCallback, NoTimingFrameIfNoEncodeStartTime) {
   image.capture_time_ms_ = ++timestamp;
   callback.OnEncodedImage(image, &codec_specific, nullptr);
   EXPECT_FALSE(sink.WasTimingFrame());
-}
-
-TEST(TestVCMEncodedFrameCallback, NotifiesAboutDroppedFrames) {
-  EncodedImage image;
-  CodecSpecificInfo codec_specific;
-  const int64_t timestamp1 = 100;
-  const int64_t timestamp2 = 110;
-  const int64_t timestamp3 = 120;
-  const int64_t timestamp4 = 130;
-  codec_specific.codecType = kVideoCodecGeneric;
-  codec_specific.codecSpecific.generic.simulcast_idx = 0;
-  FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink, nullptr);
-  callback.OnEncodeStarted(timestamp1, 0);
-  EXPECT_EQ(0u, sink.GetNumFramesDropped());
-  image.capture_time_ms_ = timestamp1;
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
-  callback.OnEncodeStarted(timestamp2, 0);
-  // No OnEncodedImageCall for timestamp2. Yet, at this moment it's not known
-  // that frame with timestamp2 was dropped.
-  EXPECT_EQ(0u, sink.GetNumFramesDropped());
-  callback.OnEncodeStarted(timestamp3, 0);
-  image.capture_time_ms_ = timestamp3;
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
-  EXPECT_EQ(1u, sink.GetNumFramesDropped());
-  callback.OnEncodeStarted(timestamp4, 0);
-  image.capture_time_ms_ = timestamp4;
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
-  EXPECT_EQ(1u, sink.GetNumFramesDropped());
 }
 
 }  // namespace test

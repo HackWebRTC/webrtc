@@ -216,20 +216,8 @@ void VCMEncodedFrameCallback::OnEncodeStarted(int64_t capture_time_ms,
   rtc::CritScope crit(&timing_params_lock_);
   if (timing_frames_info_.size() < simulcast_svc_idx + 1)
     timing_frames_info_.resize(simulcast_svc_idx + 1);
-  RTC_DCHECK(
-      timing_frames_info_[simulcast_svc_idx].encode_start_list.empty() ||
-      rtc::TimeDiff(capture_time_ms, timing_frames_info_[simulcast_svc_idx]
-                                         .encode_start_list.back()
-                                         .capture_time_ms) >= 0);
-  if (timing_frames_info_[simulcast_svc_idx].encode_start_list.size() ==
-      kMaxEncodeStartTimeListSize) {
-    LOG(LS_WARNING) << "Too many frames in the encode_start_list."
-                       " Did encoder stall?";
-    post_encode_callback_->OnDroppedFrame(DropReason::kDroppedByEncoder);
-    timing_frames_info_[simulcast_svc_idx].encode_start_list.pop_front();
-  }
-  timing_frames_info_[simulcast_svc_idx].encode_start_list.emplace_back(
-      capture_time_ms, rtc::TimeMillis());
+  timing_frames_info_[simulcast_svc_idx].encode_start_time_ms[capture_time_ms] =
+      rtc::TimeMillis();
 }
 
 EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
@@ -261,22 +249,20 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
     // OnFrameRateChanged. |timing_frames_info_| may be not filled here.
     num_simulcast_svc_streams = timing_frames_info_.size();
     if (simulcast_svc_idx < num_simulcast_svc_streams) {
-      auto encode_start_list =
-          &timing_frames_info_[simulcast_svc_idx].encode_start_list;
-      // Skip frames for which there was OnEncodeStarted but no OnEncodedImage
-      // call. These are dropped by encoder internally.
-      while (!encode_start_list->empty() &&
-             encode_start_list->front().capture_time_ms <
-                 encoded_image.capture_time_ms_) {
-        post_encode_callback_->OnDroppedFrame(DropReason::kDroppedByEncoder);
-        encode_start_list->pop_front();
-      }
-      if (encode_start_list->size() > 0 &&
-          encode_start_list->front().capture_time_ms ==
-              encoded_image.capture_time_ms_) {
-        encode_start_ms.emplace(
-            encode_start_list->front().encode_start_time_ms);
-        encode_start_list->pop_front();
+      auto encode_start_map =
+          &timing_frames_info_[simulcast_svc_idx].encode_start_time_ms;
+      auto it = encode_start_map->find(encoded_image.capture_time_ms_);
+      if (it != encode_start_map->end()) {
+        encode_start_ms.emplace(it->second);
+        // Assuming all encoders do not reorder frames within single stream,
+        // there may be some dropped frames with smaller timestamps. These
+        // should be purged.
+        encode_start_map->erase(encode_start_map->begin(), it);
+        encode_start_map->erase(it);
+      } else {
+        // Encoder is with internal source: free our records of any frames just
+        // in case to free memory.
+        encode_start_map->clear();
       }
 
       size_t target_bitrate =

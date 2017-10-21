@@ -73,12 +73,6 @@ void VideoBroadcaster::OnFrame(const webrtc::VideoFrame& frame) {
   }
 }
 
-void VideoBroadcaster::OnDiscardedFrame() {
-  for (auto& sink_pair : sink_pairs()) {
-    sink_pair.sink->OnDiscardedFrame();
-  }
-}
-
 void VideoBroadcaster::UpdateWants() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 

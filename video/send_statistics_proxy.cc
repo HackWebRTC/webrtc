@@ -560,23 +560,6 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
                    << fec_bytes_per_sec.ToStringWithMultiplier(8);
     }
   }
-  LOG(LS_INFO) << "Frames encoded " << current_stats.frames_encoded;
-  LOG(LS_INFO) << uma_prefix_ << "DroppedFrames.Capturer "
-               << current_stats.frames_dropped_by_capturer;
-  RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "DroppedFrames.Capturer",
-                             current_stats.frames_dropped_by_capturer);
-  LOG(LS_INFO) << uma_prefix_ << "DroppedFrames.EncoderQueue "
-               << current_stats.frames_dropped_by_encoder_queue;
-  RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "DroppedFrames.EncoderQueue",
-                             current_stats.frames_dropped_by_encoder_queue);
-  LOG(LS_INFO) << uma_prefix_ << "DroppedFrames.Encoder "
-               << current_stats.frames_dropped_by_encoder;
-  RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "DroppedFrames.Encoder",
-                             current_stats.frames_dropped_by_encoder);
-  LOG(LS_INFO) << uma_prefix_ << "DroppedFrames.Ratelimiter "
-               << current_stats.frames_dropped_by_rate_limiter;
-  RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "DroppedFrames.Ratelimiter",
-                             current_stats.frames_dropped_by_rate_limiter);
 }
 
 void SendStatisticsProxy::OnEncoderReconfigured(
@@ -880,26 +863,6 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
     // too high initial estimate.
     encoded_frame_rate_tracker_.AddSamples(0);
   }
-}
-
-void SendStatisticsProxy::OnFrameDroppedBySource() {
-  rtc::CritScope lock(&crit_);
-  ++stats_.frames_dropped_by_capturer;
-}
-
-void SendStatisticsProxy::OnFrameDroppedInEncoderQueue() {
-  rtc::CritScope lock(&crit_);
-  ++stats_.frames_dropped_by_encoder_queue;
-}
-
-void SendStatisticsProxy::OnFrameDroppedByEncoder() {
-  rtc::CritScope lock(&crit_);
-  ++stats_.frames_dropped_by_encoder;
-}
-
-void SendStatisticsProxy::OnFrameDroppedByMediaOptimizations() {
-  rtc::CritScope lock(&crit_);
-  ++stats_.frames_dropped_by_rate_limiter;
 }
 
 void SendStatisticsProxy::SetAdaptationStats(

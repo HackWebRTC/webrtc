@@ -63,10 +63,6 @@ class VideoSendStream {
     int avg_encode_time_ms = 0;
     int encode_usage_percent = 0;
     uint32_t frames_encoded = 0;
-    uint32_t frames_dropped_by_capturer = 0;
-    uint32_t frames_dropped_by_encoder_queue = 0;
-    uint32_t frames_dropped_by_rate_limiter = 0;
-    uint32_t frames_dropped_by_encoder = 0;
     rtc::Optional<uint64_t> qp_sum;
     // Bitrate the encoder is currently configured to use due to bandwidth
     // limitations.
