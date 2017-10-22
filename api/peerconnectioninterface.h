@@ -796,7 +796,13 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
 
   // Returns the current SignalingState.
   virtual SignalingState signaling_state() = 0;
+
+  // Returns the aggregate state of all ICE *and* DTLS transports.
+  // TODO(deadbeef): Implement "PeerConnectionState" according to the standard,
+  // to aggregate ICE+DTLS state, and change the scope of IceConnectionState to
+  // be just the ICE layer. See: crbug.com/webrtc/6145
   virtual IceConnectionState ice_connection_state() = 0;
+
   virtual IceGatheringState ice_gathering_state() = 0;
 
   // Starts RtcEventLog using existing file. Takes ownership of |file| and
