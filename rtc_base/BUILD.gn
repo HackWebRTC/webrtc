@@ -716,10 +716,6 @@ rtc_static_library("rtc_base_generic") {
     defines += [ "timezone=_timezone" ]
     sources -= [ "ifaddrs_converter.cc" ]
   }
-  if (is_win && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_source_set("gtest_prod") {
@@ -752,6 +748,7 @@ rtc_source_set("rtc_base_tests_utils") {
     "fakeclock.cc",
     "fakeclock.h",
     "fakenetwork.h",
+    "fakesslidentity.cc",
     "fakesslidentity.h",
     "firewallsocketserver.cc",
     "firewallsocketserver.h",
@@ -782,7 +779,9 @@ rtc_source_set("rtc_base_tests_utils") {
     "testbase64.h",
     "testclient.cc",
     "testclient.h",
+    "testechoserver.cc",
     "testechoserver.h",
+    "testutils.cc",
     "testutils.h",
     "timedelta.h",
     "virtualsocketserver.cc",
@@ -799,11 +798,6 @@ rtc_source_set("rtc_base_tests_utils") {
     "//testing/gmock",
     "//testing/gtest",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 if (rtc_include_tests) {
@@ -825,11 +819,6 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//testing/gtest",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("rtc_base_nonparallel_tests") {
@@ -861,11 +850,6 @@ if (rtc_include_tests) {
     ]
     if (is_win) {
       sources += [ "win32socketserver_unittest.cc" ]
-    }
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 
@@ -931,10 +915,6 @@ if (rtc_include_tests) {
       "../system_wrappers:system_wrappers",
       "../test:test_support",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("rtc_task_queue_unittests") {
@@ -957,10 +937,6 @@ if (rtc_include_tests) {
       ":rtc_task_queue",
       "../test:test_support",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("sequenced_task_checker_unittests") {
@@ -1096,10 +1072,6 @@ if (rtc_include_tests) {
       ":rtc_base",
     ]
     configs += [ ":rtc_base_unittests_config" ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     if (build_with_chromium) {
       include_dirs = [ "../../boringssl/src/include" ]
     }

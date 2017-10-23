@@ -125,7 +125,7 @@ class SigslotMTLockTest : public SigslotMTLockBase {
  protected:
   SigslotMTLockTest() {}
 
-  virtual void SetUp() {
+  void SetUp() override {
     EXPECT_EQ(0, SlotLockCount());
     SigslotMTLockBase::SetUp();
     // Connects to two signals (ST and MT). However,
@@ -134,7 +134,7 @@ class SigslotMTLockTest : public SigslotMTLockBase {
     // keep track of their own count).
     EXPECT_EQ(1, SlotLockCount());
   }
-  virtual void TearDown() {
+  void TearDown() override {
     const int previous_lock_count = SlotLockCount();
     SigslotMTLockBase::TearDown();
     // Disconnects from two signals. Note analogous to SetUp().

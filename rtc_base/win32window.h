@@ -39,8 +39,8 @@ class Win32Window {
   virtual bool OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam,
                          LRESULT& result);
 
-  virtual bool OnClose() { return true; }
-  virtual void OnNcDestroy() { }
+  virtual bool OnClose();
+  virtual void OnNcDestroy();
 
  private:
   static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam,

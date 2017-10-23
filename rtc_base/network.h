@@ -288,6 +288,7 @@ class Network {
           const IPAddress& prefix,
           int prefix_length,
           AdapterType type);
+  Network(const Network&);
   ~Network();
 
   sigslot::signal1<const Network*> SignalTypeChanged;

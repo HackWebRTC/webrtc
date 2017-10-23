@@ -24,7 +24,7 @@ class SocketTest : public testing::Test {
   SocketTest() : kIPv4Loopback(INADDR_LOOPBACK),
                  kIPv6Loopback(in6addr_loopback),
                  ss_(nullptr) {}
-  virtual void SetUp() { ss_ = Thread::Current()->socketserver(); }
+  void SetUp() override;
   void TestConnectIPv4();
   void TestConnectIPv6();
   void TestConnectWithDnsLookupIPv4();

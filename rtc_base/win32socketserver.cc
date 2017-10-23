@@ -152,9 +152,11 @@ class Win32Socket::EventSink : public Win32Window {
 
   void Dispose();
 
-  virtual bool OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam,
-                         LRESULT& result);
-  virtual void OnNcDestroy();
+  bool OnMessage(UINT uMsg,
+                 WPARAM wParam,
+                 LPARAM lParam,
+                 LRESULT& result) override;
+  void OnNcDestroy() override;
 
  private:
   bool OnSocketNotify(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT& result);
@@ -829,6 +831,22 @@ bool Win32SocketServer::MessageWindow::OnMessage(UINT wm, WPARAM wp,
     handled = true;
   }
   return handled;
+}
+
+Win32Thread::Win32Thread(SocketServer* ss) : Thread(ss), id_(0) {}
+
+Win32Thread::~Win32Thread() {
+  Stop();
+}
+
+void Win32Thread::Run() {
+  id_ = GetCurrentThreadId();
+  Thread::Run();
+  id_ = 0;
+}
+
+void Win32Thread::Quit() {
+  PostThreadMessage(id_, WM_QUIT, 0, 0);
 }
 
 }  // namespace rtc

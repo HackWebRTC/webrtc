@@ -41,6 +41,10 @@ using webrtc::testing::StreamSink;
 // Data size to be used in TcpInternal tests.
 static const size_t kTcpInternalDataSize = 1024 * 1024;  // bytes
 
+void SocketTest::SetUp() {
+  ss_ = Thread::Current()->socketserver();
+}
+
 void SocketTest::TestConnectIPv4() {
   ConnectInternal(kIPv4Loopback);
 }
@@ -637,10 +641,7 @@ void SocketTest::CloseInClosedCallbackInternal(const IPAddress& loopback) {
 
 class Sleeper : public MessageHandler {
  public:
-  Sleeper() {}
-  void OnMessage(Message* msg) {
-    Thread::Current()->SleepMs(500);
-  }
+  void OnMessage(Message* msg) override { Thread::Current()->SleepMs(500); }
 };
 
 void SocketTest::SocketServerWaitInternal(const IPAddress& loopback) {

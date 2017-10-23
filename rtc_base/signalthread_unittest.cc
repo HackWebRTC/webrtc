@@ -26,7 +26,7 @@ class SignalThreadTest : public testing::Test, public sigslot::has_slots<> {
    public:
     SlowSignalThread(SignalThreadTest* harness) : harness_(harness) {}
 
-    virtual ~SlowSignalThread() {
+    ~SlowSignalThread() override {
       EXPECT_EQ(harness_->main_thread_, Thread::Current());
       ++harness_->thread_deleted_;
     }
@@ -34,26 +34,26 @@ class SignalThreadTest : public testing::Test, public sigslot::has_slots<> {
     const SignalThreadTest* harness() { return harness_; }
 
    protected:
-    virtual void OnWorkStart() {
+    void OnWorkStart() override {
       ASSERT_TRUE(harness_ != nullptr);
       ++harness_->thread_started_;
       EXPECT_EQ(harness_->main_thread_, Thread::Current());
       EXPECT_FALSE(worker()->RunningForTest());  // not started yet
     }
 
-    virtual void OnWorkStop() {
+    void OnWorkStop() override {
       ++harness_->thread_stopped_;
       EXPECT_EQ(harness_->main_thread_, Thread::Current());
       EXPECT_TRUE(worker()->RunningForTest());  // not stopped yet
     }
 
-    virtual void OnWorkDone() {
+    void OnWorkDone() override {
       ++harness_->thread_done_;
       EXPECT_EQ(harness_->main_thread_, Thread::Current());
       EXPECT_TRUE(worker()->RunningForTest());  // not stopped yet
     }
 
-    virtual void DoWork() {
+    void DoWork() override {
       EXPECT_NE(harness_->main_thread_, Thread::Current());
       EXPECT_EQ(worker(), Thread::Current());
       Thread::Current()->socketserver()->Wait(250, false);
@@ -75,7 +75,7 @@ class SignalThreadTest : public testing::Test, public sigslot::has_slots<> {
     }
   }
 
-  virtual void SetUp() {
+  void SetUp() override {
     main_thread_ = Thread::Current();
     thread_ = new SlowSignalThread(this);
     thread_->SignalWorkDone.connect(this, &SignalThreadTest::OnWorkComplete);
@@ -86,8 +86,6 @@ class SignalThreadTest : public testing::Test, public sigslot::has_slots<> {
     thread_stopped_ = 0;
     thread_deleted_ = 0;
   }
-
-  virtual void TearDown() {}
 
   void ExpectState(int started,
                    int done,
@@ -130,9 +128,9 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
   explicit OwnerThread(SignalThreadTest* harness)
       : harness_(harness), has_run_(false) {}
 
-  virtual ~OwnerThread() { Stop(); }
+  ~OwnerThread() override { Stop(); }
 
-  virtual void Run() {
+  void Run() override {
     SignalThreadTest::SlowSignalThread* signal_thread =
         new SignalThreadTest::SlowSignalThread(harness_);
     signal_thread->SignalWorkDone.connect(this, &OwnerThread::OnWorkDone);
