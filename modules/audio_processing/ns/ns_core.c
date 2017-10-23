@@ -167,6 +167,8 @@ int WebRtcNs_InitCore(NoiseSuppressionC* self, uint32_t fs) {
   // Window time-average of input magnitude spectrum.
   self->featureData[6] = 0.f;
 
+  memset(self->parametricNoise, 0, sizeof(float) * HALF_ANAL_BLOCKL);
+
   // Histogram quantities: used to estimate/update thresholds for features.
   memset(self->histLrt, 0, sizeof(int) * HIST_PAR_EST);
   memset(self->histSpecFlat, 0, sizeof(int) * HIST_PAR_EST);
