@@ -35,15 +35,20 @@ NS_ASSUME_NONNULL_BEGIN
                    useLevelController:(BOOL)useLevelController
                  useManualAudioConfig:(BOOL)useManualAudioConfig {
   NSMutableDictionary<NSString *, id> *defaultsDictionary = [@{
-    kVideoResolutionKey : videoResolution,
-    kVideoCodecKey : videoCodec,
     kAudioOnlyKey : @(audioOnly),
     kCreateAecDumpKey : @(createAecDump),
     kUseLevelControllerKey : @(useLevelController),
     kUseManualAudioConfigKey : @(useManualAudioConfig)
   } mutableCopy];
+
+  if (videoResolution) {
+    defaultsDictionary[kVideoResolutionKey] = videoResolution;
+  }
+  if (videoCodec) {
+    defaultsDictionary[kVideoCodecKey] = videoCodec;
+  }
   if (bitrate) {
-    [defaultsDictionary setObject:bitrate forKey:kBitrateKey];
+    defaultsDictionary[kBitrateKey] = bitrate;
   }
   [[NSUserDefaults standardUserDefaults] registerDefaults:defaultsDictionary];
 }

@@ -11,6 +11,7 @@
 #import "ARDCaptureController.h"
 
 #import "ARDSettingsModel.h"
+#import "WebRTC/RTCLogging.h"
 
 @implementation ARDCaptureController {
   RTCCameraVideoCapturer *_capturer;
@@ -34,6 +35,14 @@
       _usingFrontCamera ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
   AVCaptureDevice *device = [self findDeviceForPosition:position];
   AVCaptureDeviceFormat *format = [self selectFormatForDevice:device];
+
+  if (format == nil) {
+    RTCLogError(@"No valid formats for device %@", device);
+    NSAssert(NO, @"");
+
+    return;
+  }
+
   NSInteger fps = [self selectFpsForFormat:format];
 
   [_capturer startCaptureWithDevice:device format:format fps:fps];
@@ -77,7 +86,6 @@
     }
   }
 
-  NSAssert(selectedFormat != nil, @"No suitable capture format found.");
   return selectedFormat;
 }
 
