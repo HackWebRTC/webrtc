@@ -29,10 +29,6 @@
 #include "rtc_base/sslidentity.h"
 #include "rtc_base/thread.h"
 
-#ifdef HAVE_QUIC
-#include "pc/quicdatatransport.h"
-#endif  // HAVE_QUIC
-
 namespace cricket {
 
 class ChannelManager;
@@ -42,10 +38,6 @@ class SctpTransportInternalFactory;
 class StatsReport;
 class VideoChannel;
 class VoiceChannel;
-
-#ifdef HAVE_QUIC
-class QuicTransportChannel;
-#endif  // HAVE_QUIC
 
 }  // namespace cricket
 
@@ -375,11 +367,6 @@ class WebRtcSession :
   // std::string represents the data channel label.
   sigslot::signal2<const std::string&, const InternalDataChannelInit&>
       SignalDataChannelOpenMessage;
-#ifdef HAVE_QUIC
-  QuicDataTransport* quic_data_transport() {
-    return quic_data_transport_.get();
-  }
-#endif  // HAVE_QUIC
 
  private:
   // Indicates the type of SessionDescription in a call to SetLocalDescription
@@ -643,8 +630,6 @@ class WebRtcSession :
   // not set or false, SCTP is allowed (DCT_SCTP);
   // 2. If constraint kEnableRtpDataChannels is true, RTP is allowed (DCT_RTP);
   // 3. If both 1&2 are false, data channel is not allowed (DCT_NONE).
-  // The data channel type could be DCT_QUIC if the QUIC data channel is
-  // enabled.
   cricket::DataChannelType data_channel_type_;
   // List of content names for which the remote side triggered an ICE restart.
   std::set<std::string> pending_ice_restarts_;
@@ -664,10 +649,6 @@ class WebRtcSession :
 
   bool received_first_video_packet_ = false;
   bool received_first_audio_packet_ = false;
-
-#ifdef HAVE_QUIC
-  std::unique_ptr<QuicDataTransport> quic_data_transport_;
-#endif  // HAVE_QUIC
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcSession);
 };

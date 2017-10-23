@@ -143,9 +143,6 @@ declare_args() {
   # http://www.openh264.org, https://www.ffmpeg.org/
   rtc_use_h264 = proprietary_codecs && !is_android && !is_ios
 
-  # Determines whether QUIC code will be built.
-  rtc_use_quic = false
-
   # By default, use normal platform audio support or dummy audio, but don't
   # use file-based audio playout and record.
   rtc_use_dummy_audio_file_devices = false

@@ -436,11 +436,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
 
     struct cricket::MediaConfig media_config;
 
-    // This doesn't currently work. For a while we were working on adding QUIC
-    // data channel support to PeerConnection, but decided on a different
-    // approach, and that code hasn't been updated for a while.
-    bool enable_quic = false;
-
     // If set to true, only one preferred TURN allocation will be used per
     // network interface. UDP is preferred over TCP and IPv6 over IPv4. This
     // can be used to cut down on the number of candidate pairings.
@@ -468,7 +463,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // If set, the min interval (max rate) at which we will send ICE checks
     // (STUN pings), in milliseconds.
     rtc::Optional<int> ice_check_min_interval;
-
 
     // ICE Periodic Regathering
     // If set, WebRTC will periodically create and propose candidates without

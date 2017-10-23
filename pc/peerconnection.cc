@@ -270,7 +270,6 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     ContinualGatheringPolicy continual_gathering_policy;
     bool prioritize_most_likely_ice_candidate_pairs;
     struct cricket::MediaConfig media_config;
-    bool enable_quic;
     bool prune_turn_ports;
     bool presume_writable_when_fully_relayed;
     bool enable_ice_renomination;
@@ -302,7 +301,6 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          disable_ipv6_on_wifi == o.disable_ipv6_on_wifi &&
          max_ipv6_networks == o.max_ipv6_networks &&
          enable_rtp_data_channel == o.enable_rtp_data_channel &&
-         enable_quic == o.enable_quic &&
          screencast_min_bitrate == o.screencast_min_bitrate &&
          combined_audio_video_bwe == o.combined_audio_video_bwe &&
          enable_dtls_srtp == o.enable_dtls_srtp &&
@@ -781,22 +779,6 @@ PeerConnection::CreateDataChannel(
     const std::string& label,
     const DataChannelInit* config) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateDataChannel");
-#ifdef HAVE_QUIC
-  if (session_->data_channel_type() == cricket::DCT_QUIC) {
-    // TODO(zhihuang): Handle case when config is NULL.
-    if (!config) {
-      LOG(LS_ERROR) << "Missing config for QUIC data channel.";
-      return nullptr;
-    }
-    // TODO(zhihuang): Allow unreliable or ordered QUIC data channels.
-    if (!config->reliable || config->ordered) {
-      LOG(LS_ERROR) << "QUIC data channel does not implement unreliable or "
-                       "ordered delivery.";
-      return nullptr;
-    }
-    return session_->quic_data_transport()->CreateDataChannel(label, config);
-  }
-#endif  // HAVE_QUIC
 
   bool first_datachannel = !HasDataChannels();
 
@@ -2356,13 +2338,7 @@ rtc::scoped_refptr<DataChannel> PeerConnection::InternalCreateDataChannel(
 }
 
 bool PeerConnection::HasDataChannels() const {
-#ifdef HAVE_QUIC
-  return !rtp_data_channels_.empty() || !sctp_data_channels_.empty() ||
-         (session_->quic_data_transport() &&
-          session_->quic_data_transport()->HasDataChannels());
-#else
   return !rtp_data_channels_.empty() || !sctp_data_channels_.empty();
-#endif  // HAVE_QUIC
 }
 
 void PeerConnection::AllocateSctpSids(rtc::SSLRole role) {

@@ -116,28 +116,6 @@ rtc_static_library("rtc_p2p") {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
-
-  # TODO(deadbeef): code under p2p/quic and base/transportchannelimpl.h should be
-  # removed. See bugs.webrtc.org/8385.
-  if (rtc_use_quic) {
-    deps = [
-      "//third_party/libquic",
-    ]
-    sources += [
-      "base/transportchannelimpl.h",
-      "quic/quicconnectionhelper.cc",
-      "quic/quicconnectionhelper.h",
-      "quic/quicsession.cc",
-      "quic/quicsession.h",
-      "quic/quictransport.cc",
-      "quic/quictransport.h",
-      "quic/quictransportchannel.cc",
-      "quic/quictransportchannel.h",
-      "quic/reliablequicstream.cc",
-      "quic/reliablequicstream.h",
-    ]
-    public_deps += [ "//third_party/libquic" ]
-  }
 }
 
 if (rtc_include_tests) {
@@ -197,15 +175,6 @@ if (rtc_include_tests) {
       "base/udptransport_unittest.cc",
       "client/basicportallocator_unittest.cc",
     ]
-    if (rtc_use_quic) {
-      sources += [
-        "quic/quicconnectionhelper_unittest.cc",
-        "quic/quicsession_unittest.cc",
-        "quic/quictransport_unittest.cc",
-        "quic/quictransportchannel_unittest.cc",
-        "quic/reliablequicstream_unittest.cc",
-      ]
-    }
     deps = [
       ":p2p_test_utils",
       ":rtc_p2p",

@@ -38,10 +38,6 @@
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
 
-#ifdef HAVE_QUIC
-#include "p2p/quic/quictransportchannel.h"
-#endif  // HAVE_QUIC
-
 using cricket::ContentInfo;
 using cricket::ContentInfos;
 using cricket::MediaContentDescription;
@@ -536,11 +532,6 @@ WebRtcSession::~WebRtcSession() {
     network_thread_->Invoke<void>(
         RTC_FROM_HERE, rtc::Bind(&WebRtcSession::DestroySctpTransport_n, this));
   }
-#ifdef HAVE_QUIC
-  if (quic_data_transport_) {
-    quic_data_transport_.reset();
-  }
-#endif
 
   LOG(LS_INFO) << "Session: " << id() << " is destroyed.";
 }
@@ -580,21 +571,7 @@ bool WebRtcSession::Initialize(
   // PeerConnectionFactoryInterface::Options.
   if (rtc_configuration.enable_rtp_data_channel) {
     data_channel_type_ = cricket::DCT_RTP;
-  }
-#ifdef HAVE_QUIC
-  else if (rtc_configuration.enable_quic) {
-    // Use QUIC instead of DTLS when |enable_quic| is true.
-    data_channel_type_ = cricket::DCT_QUIC;
-    transport_controller_->use_quic();
-    if (dtls_enabled_) {
-      LOG(LS_INFO) << "Using QUIC instead of DTLS";
-    }
-    quic_data_transport_.reset(
-        new QuicDataTransport(signaling_thread(), worker_thread(),
-                              network_thread(), transport_controller_.get()));
-  }
-#endif  // HAVE_QUIC
-  else {
+  } else {
     // DTLS has to be enabled to use SCTP.
     if (!options.disable_sctp_data_channels && dtls_enabled_) {
       data_channel_type_ = cricket::DCT_SCTP;
@@ -1107,14 +1084,6 @@ bool WebRtcSession::EnableBundle(const cricket::ContentGroup& bundle) {
   }
   const std::string& transport_name = *first_content_name;
 
-#ifdef HAVE_QUIC
-  if (quic_data_transport_ &&
-      bundle.HasContentName(quic_data_transport_->content_name()) &&
-      quic_data_transport_->transport_name() != transport_name) {
-    LOG(LS_ERROR) << "Unable to BUNDLE " << quic_data_transport_->content_name()
-                  << " on " << transport_name << "with QUIC.";
-  }
-#endif
   auto maybe_set_transport = [this, bundle,
                               transport_name](cricket::BaseChannel* ch) {
     if (!ch || !bundle.HasContentName(ch->content_name())) {
@@ -1723,12 +1692,6 @@ void WebRtcSession::RemoveUnusedChannels(const SessionDescription* desc) {
           RTC_FROM_HERE,
           rtc::Bind(&WebRtcSession::DestroySctpTransport_n, this));
     }
-#ifdef HAVE_QUIC
-    // Clean up the existing QuicDataTransport and its QuicTransportChannels.
-    if (quic_data_transport_) {
-      quic_data_transport_.reset();
-    }
-#endif
   }
 }
 
@@ -1897,13 +1860,6 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
                                       const std::string* bundle_transport) {
   const std::string transport_name =
       bundle_transport ? *bundle_transport : content->name;
-#ifdef HAVE_QUIC
-  if (data_channel_type_ == cricket::DCT_QUIC) {
-    RTC_DCHECK(transport_controller_->quic());
-    quic_data_transport_->SetTransports(transport_name);
-    return true;
-  }
-#endif  // HAVE_QUIC
   bool sctp = (data_channel_type_ == cricket::DCT_SCTP);
   if (sctp) {
     if (!sctp_factory_) {
@@ -2409,12 +2365,6 @@ const std::string WebRtcSession::GetTransportName(
     const std::string& content_name) {
   cricket::BaseChannel* channel = GetChannel(content_name);
   if (!channel) {
-#ifdef HAVE_QUIC
-    if (data_channel_type_ == cricket::DCT_QUIC && quic_data_transport_ &&
-        content_name == quic_data_transport_->transport_name()) {
-      return quic_data_transport_->transport_name();
-    }
-#endif
     if (sctp_transport_) {
       RTC_DCHECK(sctp_content_name_);
       RTC_DCHECK(sctp_transport_name_);

@@ -248,9 +248,6 @@ DtlsTransportInternal* TransportController::CreateDtlsTransport_n(
   // Create DTLS channel wrapping ICE channel, and configure it.
   IceTransportInternal* ice =
       CreateIceTransportChannel_n(transport_name, component);
-  // TODO(deadbeef): To support QUIC, would need to create a
-  // QuicTransportChannel here. What is "dtls" in this file would then become
-  // "dtls or quic".
   DtlsTransportInternal* dtls =
       CreateDtlsTransportChannel_n(transport_name, component, ice);
   dtls->ice_transport()->SetMetricsObserver(metrics_observer_);

@@ -127,9 +127,6 @@ class TransportController : public sigslot::has_slots<>,
   virtual void DestroyDtlsTransport_n(const std::string& transport_name,
                                       int component);
 
-  void use_quic() { quic_ = true; }
-  bool quic() const { return quic_; }
-
   // TODO(deadbeef): Remove all for_testing methods!
   const rtc::scoped_refptr<rtc::RTCCertificate>& certificate_for_testing()
       const {
@@ -267,8 +264,6 @@ class TransportController : public sigslot::has_slots<>,
   rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_12;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::AsyncInvoker invoker_;
-  // True if QUIC is used instead of DTLS.
-  bool quic_ = false;
 
   webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
 
