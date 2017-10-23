@@ -21,7 +21,6 @@
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
 #include "api/statstypes.h"
-#include "pc/webrtcsession.h"
 
 namespace webrtc {
 
@@ -139,7 +138,7 @@ class StatsCollector {
   // Raw pointer to the peer connection the statistics are gathered from.
   PeerConnection* const pc_;
   double stats_gathering_started_;
-  ProxyTransportMap proxy_to_transport_;
+  std::map<std::string, std::string> proxy_to_transport_;
 
   // TODO(tommi): We appear to be holding on to raw pointers to reference
   // counted objects?  We should be using scoped_refptr here.

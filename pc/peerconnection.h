@@ -209,6 +209,15 @@ class PeerConnection : public PeerConnectionInterface,
   virtual bool GetRemoteTrackIdBySsrc(uint32_t ssrc, std::string* track_id) {
     return session_->GetRemoteTrackIdBySsrc(ssrc, track_id);
   }
+  bool IceRestartPending(const std::string& content_name) const {
+    return session_->IceRestartPending(content_name);
+  }
+  bool NeedsIceRestart(const std::string& content_name) const {
+    return session_->NeedsIceRestart(content_name);
+  }
+  bool GetSslRole(const std::string& content_name, rtc::SSLRole* role) {
+    return session_->GetSslRole(content_name, role);
+  }
 
   // This is needed for stats tests to inject a MockWebRtcSession. Once
   // WebRtcSession has been merged in, this will no longer be needed.

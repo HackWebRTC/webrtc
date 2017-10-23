@@ -46,6 +46,7 @@ namespace webrtc {
 class IceRestartAnswerLatch;
 class JsepIceCandidate;
 class MediaStreamSignaling;
+class PeerConnection;
 class RtcEventLog;
 class WebRtcSessionDescriptionFactory;
 
@@ -99,14 +100,11 @@ class IceObserver {
 };
 
 // Statistics for all the transports of the session.
-typedef std::map<std::string, cricket::TransportStats> TransportStatsMap;
-typedef std::map<std::string, std::string> ProxyTransportMap;
-
 // TODO(pthatcher): Think of a better name for this.  We already have
 // a TransportStats in transport.h.  Perhaps TransportsStats?
 struct SessionStats {
-  ProxyTransportMap proxy_to_transport;
-  TransportStatsMap transport_stats;
+  std::map<std::string, std::string> proxy_to_transport;
+  std::map<std::string, cricket::TransportStats> transport_stats;
 };
 
 struct ChannelNamePair {
@@ -172,10 +170,11 @@ class WebRtcSession :
   // The ID of this session.
   const std::string& id() const { return sid_; }
 
-  bool Initialize(
+  void Initialize(
       const PeerConnectionFactoryInterface::Options& options,
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-      const PeerConnectionInterface::RTCConfiguration& rtc_configuration);
+      const PeerConnectionInterface::RTCConfiguration& rtc_configuration,
+      PeerConnection* pc);
   // Deletes the voice, video and data channel and changes the session state
   // to STATE_CLOSED.
   void Close();

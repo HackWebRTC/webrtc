@@ -487,10 +487,8 @@ bool PeerConnection::Initialize(
   stats_collector_ = RTCStatsCollector::Create(this);
 
   // Initialize the WebRtcSession. It creates transport channels etc.
-  if (!session_->Initialize(factory_->options(), std::move(cert_generator),
-                            configuration)) {
-    return false;
-  }
+  session_->Initialize(factory_->options(), std::move(cert_generator),
+                       configuration, this);
 
   // Register PeerConnection as receiver of local ice candidates.
   // All the callbacks will be posted to the application from PeerConnection.

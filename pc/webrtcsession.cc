@@ -536,10 +536,11 @@ WebRtcSession::~WebRtcSession() {
   LOG(LS_INFO) << "Session: " << id() << " is destroyed.";
 }
 
-bool WebRtcSession::Initialize(
+void WebRtcSession::Initialize(
     const PeerConnectionFactoryInterface::Options& options,
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-    const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
+    const PeerConnectionInterface::RTCConfiguration& rtc_configuration,
+    PeerConnection* pc) {
   bundle_policy_ = rtc_configuration.bundle_policy;
   rtcp_mux_policy_ = rtc_configuration.rtcp_mux_policy;
   transport_controller_->SetSslMaxProtocolVersion(options.ssl_max_version);
@@ -589,24 +590,20 @@ bool WebRtcSession::Initialize(
   audio_options_.audio_jitter_buffer_fast_accelerate = rtc::Optional<bool>(
       rtc_configuration.audio_jitter_buffer_fast_accelerate);
 
+  // Whether the certificate generator/certificate is null or not determines
+  // what WebRtcSessionDescriptionFactory will do, so make sure that we give it
+  // the right instructions by clearing the variables if needed.
   if (!dtls_enabled_) {
-    // Construct with DTLS disabled.
-    webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-        signaling_thread(), channel_manager_, this, id(),
-        std::unique_ptr<rtc::RTCCertificateGeneratorInterface>()));
-  } else {
-    // Construct with DTLS enabled.
-    if (!certificate) {
-      webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-          signaling_thread(), channel_manager_, this, id(),
-          std::move(cert_generator)));
-    } else {
-      // Use the already generated certificate.
-      webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-          signaling_thread(), channel_manager_, this, id(), certificate));
-    }
+    cert_generator.reset();
+    certificate = nullptr;
+  } else if (certificate) {
+    // Favor generated certificate over the certificate generator.
+    cert_generator.reset();
   }
 
+  webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
+      signaling_thread(), channel_manager_, pc, id(), std::move(cert_generator),
+      certificate));
   webrtc_session_desc_factory_->SignalCertificateReady.connect(
       this, &WebRtcSession::OnCertificateReady);
 
@@ -616,8 +613,6 @@ bool WebRtcSession::Initialize(
 
   webrtc_session_desc_factory_->set_enable_encrypted_rtp_header_extensions(
       options.crypto_options.enable_encrypted_rtp_header_extensions);
-
-  return true;
 }
 
 void WebRtcSession::Close() {

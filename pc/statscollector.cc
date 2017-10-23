@@ -50,8 +50,9 @@ typedef TypeForAdd<float> FloatForAdd;
 typedef TypeForAdd<int64_t> Int64ForAdd;
 typedef TypeForAdd<int> IntForAdd;
 
-StatsReport::Id GetTransportIdFromProxy(const ProxyTransportMap& map,
-                                        const std::string& proxy) {
+StatsReport::Id GetTransportIdFromProxy(
+    const std::map<std::string, std::string>& map,
+    const std::string& proxy) {
   RTC_DCHECK(!proxy.empty());
   auto found = map.find(proxy);
   if (found == map.end()) {

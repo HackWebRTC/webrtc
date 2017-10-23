@@ -15,7 +15,7 @@
 #include "api/jsep.h"
 #include "api/jsepsessiondescription.h"
 #include "api/mediaconstraintsinterface.h"
-#include "pc/webrtcsession.h"
+#include "pc/peerconnection.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/sslidentity.h"
 
@@ -118,7 +118,7 @@ void WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
-    WebRtcSession* session,
+    PeerConnection* pc,
     const std::string& session_id,
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate)
@@ -130,10 +130,11 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
       // |kInitSessionVersion|.
       session_version_(kInitSessionVersion),
       cert_generator_(std::move(cert_generator)),
-      session_(session),
+      pc_(pc),
       session_id_(session_id),
       certificate_request_state_(CERTIFICATE_NOT_NEEDED) {
   RTC_DCHECK(signaling_thread_);
+  RTC_DCHECK(!(cert_generator_ && certificate));
   bool dtls_enabled = cert_generator_ || certificate;
   // SRTP-SDES is disabled if DTLS is on.
   SetSdesPolicy(dtls_enabled ? cricket::SEC_DISABLED : cricket::SEC_REQUIRED);
@@ -173,36 +174,6 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     cert_generator_->GenerateCertificateAsync(
         key_params, rtc::Optional<uint64_t>(), callback);
   }
-}
-
-WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
-    rtc::Thread* signaling_thread,
-    cricket::ChannelManager* channel_manager,
-    WebRtcSession* session,
-    const std::string& session_id,
-    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator)
-    : WebRtcSessionDescriptionFactory(
-          signaling_thread,
-          channel_manager,
-          session,
-          session_id,
-          std::move(cert_generator),
-          nullptr) {
-}
-
-WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
-    rtc::Thread* signaling_thread,
-    cricket::ChannelManager* channel_manager,
-    WebRtcSession* session,
-    const std::string& session_id,
-    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate)
-    : WebRtcSessionDescriptionFactory(signaling_thread,
-                                      channel_manager,
-                                      session,
-                                      session_id,
-                                      nullptr,
-                                      certificate) {
-  RTC_DCHECK(certificate);
 }
 
 WebRtcSessionDescriptionFactory::~WebRtcSessionDescriptionFactory() {
@@ -270,14 +241,13 @@ void WebRtcSessionDescriptionFactory::CreateAnswer(
     PostCreateSessionDescriptionFailed(observer, error);
     return;
   }
-  if (!session_->remote_description()) {
+  if (!pc_->remote_description()) {
     error += " can't be called before SetRemoteDescription.";
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
     return;
   }
-  if (session_->remote_description()->type() !=
-      JsepSessionDescription::kOffer) {
+  if (pc_->remote_description()->type() != JsepSessionDescription::kOffer) {
     error += " failed because remote_description is not an offer.";
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
@@ -344,20 +314,20 @@ void WebRtcSessionDescriptionFactory::OnMessage(rtc::Message* msg) {
 
 void WebRtcSessionDescriptionFactory::InternalCreateOffer(
     CreateSessionDescriptionRequest request) {
-  if (session_->local_description()) {
+  if (pc_->local_description()) {
     // If the needs-ice-restart flag is set as described by JSEP, we should
     // generate an offer with a new ufrag/password to trigger an ICE restart.
     for (cricket::MediaDescriptionOptions& options :
          request.options.media_description_options) {
-      if (session_->NeedsIceRestart(options.mid)) {
+      if (pc_->NeedsIceRestart(options.mid)) {
         options.transport_options.ice_restart = true;
       }
     }
   }
 
   cricket::SessionDescription* desc(session_desc_factory_.CreateOffer(
-      request.options, session_->local_description()
-                           ? session_->local_description()->description()
+      request.options, pc_->local_description()
+                           ? pc_->local_description()->description()
                            : nullptr));
   // RFC 3264
   // When issuing an offer that modifies the session,
@@ -378,11 +348,11 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
                                        "Failed to initialize the offer.");
     return;
   }
-  if (session_->local_description()) {
+  if (pc_->local_description()) {
     for (const cricket::MediaDescriptionOptions& options :
          request.options.media_description_options) {
       if (!options.transport_options.ice_restart) {
-        CopyCandidatesFromSessionDescription(session_->local_description(),
+        CopyCandidatesFromSessionDescription(pc_->local_description(),
                                              options.mid, offer);
       }
     }
@@ -392,18 +362,18 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
 
 void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
     CreateSessionDescriptionRequest request) {
-  if (session_->remote_description()) {
+  if (pc_->remote_description()) {
     for (cricket::MediaDescriptionOptions& options :
          request.options.media_description_options) {
       // According to http://tools.ietf.org/html/rfc5245#section-9.2.1.1
       // an answer should also contain new ICE ufrag and password if an offer
       // has been received with new ufrag and password.
       options.transport_options.ice_restart =
-          session_->IceRestartPending(options.mid);
+          pc_->IceRestartPending(options.mid);
       // We should pass the current SSL role to the transport description
       // factory, if there is already an existing ongoing session.
       rtc::SSLRole ssl_role;
-      if (session_->GetSslRole(options.mid, &ssl_role)) {
+      if (pc_->GetSslRole(options.mid, &ssl_role)) {
         options.transport_options.prefer_passive_role =
             (rtc::SSL_SERVER == ssl_role);
       }
@@ -411,12 +381,11 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
   }
 
   cricket::SessionDescription* desc(session_desc_factory_.CreateAnswer(
-      session_->remote_description()
-          ? session_->remote_description()->description()
-          : nullptr,
-      request.options, session_->local_description()
-                           ? session_->local_description()->description()
-                           : nullptr));
+      pc_->remote_description() ? pc_->remote_description()->description()
+                                : nullptr,
+      request.options,
+      pc_->local_description() ? pc_->local_description()->description()
+                               : nullptr));
   // RFC 3264
   // If the answer is different from the offer in any way (different IP
   // addresses, ports, etc.), the origin line MUST be different in the answer.
@@ -434,13 +403,13 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
                                        "Failed to initialize the answer.");
     return;
   }
-  if (session_->local_description()) {
+  if (pc_->local_description()) {
     // Include all local ICE candidates in the SessionDescription unless
     // the remote peer has requested an ICE restart.
     for (const cricket::MediaDescriptionOptions& options :
          request.options.media_description_options) {
       if (!options.transport_options.ice_restart) {
-        CopyCandidatesFromSessionDescription(session_->local_description(),
+        CopyCandidatesFromSessionDescription(pc_->local_description(),
                                              options.mid, answer);
       }
     }
