@@ -193,12 +193,6 @@ int64_t PacedSender::QueueInMs() const {
   return clock_->TimeInMilliseconds() - oldest_packet;
 }
 
-int64_t PacedSender::AverageQueueTimeMs() {
-  rtc::CritScope cs(&critsect_);
-  packets_->UpdateQueueTime(clock_->TimeInMilliseconds());
-  return packets_->AverageQueueTimeMs();
-}
-
 int64_t PacedSender::TimeUntilNextProcess() {
   rtc::CritScope cs(&critsect_);
   int64_t elapsed_time_us = clock_->TimeInMicroseconds() - time_last_update_us_;

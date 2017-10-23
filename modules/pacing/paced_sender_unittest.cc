@@ -942,6 +942,8 @@ TEST_F(PacedSenderTest, PaddingOveruse) {
   send_bucket_->Process();
 }
 
+// TODO(philipel): Move to PacketQueue2 unittests.
+#if 0
 TEST_F(PacedSenderTest, AverageQueueTime) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
@@ -986,6 +988,7 @@ TEST_F(PacedSenderTest, AverageQueueTime) {
 
   EXPECT_EQ(0, send_bucket_->AverageQueueTimeMs());
 }
+#endif
 
 TEST_F(PacedSenderTest, ProbeClusterId) {
   uint32_t ssrc = 12346;
@@ -1060,6 +1063,8 @@ TEST_F(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
 }
 
+// TODO(philipel): Move to PacketQueue2 unittests.
+#if 0
 TEST_F(PacedSenderTest, QueueTimeWithPause) {
   const size_t kPacketSize = 1200;
   const uint32_t kSsrc = 12346;
@@ -1119,6 +1124,7 @@ TEST_F(PacedSenderTest, QueueTimePausedDuringPush) {
   clock_.AdvanceTimeMilliseconds(100);
   EXPECT_EQ(150, send_bucket_->AverageQueueTimeMs());
 }
+#endif
 
 // TODO(sprang): Extract PacketQueue from PacedSender so that we can test
 // removing elements while paused. (This is possible, but only because of semi-
