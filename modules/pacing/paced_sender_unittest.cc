@@ -10,9 +10,12 @@
 
 #include <list>
 #include <memory>
+#include <string>
 
 #include "modules/pacing/paced_sender.h"
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/field_trial.h"
+#include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -101,9 +104,9 @@ class PacedSenderProbing : public PacedSender::PacketSender {
   int padding_sent_;
 };
 
-class PacedSenderTest : public ::testing::Test {
+class PacedSenderTest : public testing::TestWithParam<std::string> {
  protected:
-  PacedSenderTest() : clock_(123456) {
+  PacedSenderTest() : clock_(123456), field_trial_(GetParam()) {
     srand(0);
     // Need to initialize PacedSender after we initialize clock.
     send_bucket_.reset(new PacedSender(&clock_, &callback_, nullptr));
@@ -134,9 +137,15 @@ class PacedSenderTest : public ::testing::Test {
   SimulatedClock clock_;
   MockPacedSenderCallback callback_;
   std::unique_ptr<PacedSender> send_bucket_;
+  test::ScopedFieldTrials field_trial_;
 };
 
-TEST_F(PacedSenderTest, FirstSentPacketTimeIsSet) {
+INSTANTIATE_TEST_CASE_P(RoundRobin,
+                        PacedSenderTest,
+                        ::testing::Values("WebRTC-RoundRobinPacing/Disabled/",
+                                          "WebRTC-RoundRobinPacing/Enabled/"));
+
+TEST_P(PacedSenderTest, FirstSentPacketTimeIsSet) {
   uint16_t sequence_number = 1234;
   const uint32_t kSsrc = 12345;
   const size_t kSizeBytes = 250;
@@ -155,7 +164,7 @@ TEST_F(PacedSenderTest, FirstSentPacketTimeIsSet) {
   EXPECT_EQ(kStartMs, send_bucket_->FirstSentPacketTimeMs());
 }
 
-TEST_F(PacedSenderTest, QueuePacket) {
+TEST_P(PacedSenderTest, QueuePacket) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
   // Due to the multiplicative factor we can send 5 packets during a send
@@ -203,7 +212,7 @@ TEST_F(PacedSenderTest, QueuePacket) {
   EXPECT_EQ(1u, send_bucket_->QueueSizePackets());
 }
 
-TEST_F(PacedSenderTest, PaceQueuedPackets) {
+TEST_P(PacedSenderTest, PaceQueuedPackets) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
 
@@ -255,7 +264,7 @@ TEST_F(PacedSenderTest, PaceQueuedPackets) {
   EXPECT_EQ(1u, send_bucket_->QueueSizePackets());
 }
 
-TEST_F(PacedSenderTest, RepeatedRetransmissionsAllowed) {
+TEST_P(PacedSenderTest, RepeatedRetransmissionsAllowed) {
   // Send one packet, then two retransmissions of that packet.
   for (size_t i = 0; i < 3; i++) {
     constexpr uint32_t ssrc = 333;
@@ -269,7 +278,7 @@ TEST_F(PacedSenderTest, RepeatedRetransmissionsAllowed) {
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, CanQueuePacketsWithSameSequenceNumberOnDifferentSsrcs) {
+TEST_P(PacedSenderTest, CanQueuePacketsWithSameSequenceNumberOnDifferentSsrcs) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
 
@@ -292,7 +301,7 @@ TEST_F(PacedSenderTest, CanQueuePacketsWithSameSequenceNumberOnDifferentSsrcs) {
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, Padding) {
+TEST_P(PacedSenderTest, Padding) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
 
@@ -332,7 +341,7 @@ TEST_F(PacedSenderTest, Padding) {
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, NoPaddingBeforeNormalPacket) {
+TEST_P(PacedSenderTest, NoPaddingBeforeNormalPacket) {
   send_bucket_->SetEstimatedBitrate(kTargetBitrateBps);
   send_bucket_->SetSendBitrateLimits(kTargetBitrateBps, kTargetBitrateBps);
 
@@ -355,7 +364,7 @@ TEST_F(PacedSenderTest, NoPaddingBeforeNormalPacket) {
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
+TEST_P(PacedSenderTest, VerifyPaddingUpToBitrate) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = 56789;
@@ -380,7 +389,7 @@ TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
   }
 }
 
-TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
+TEST_P(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = 56789;
@@ -413,7 +422,7 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
               1);
 }
 
-TEST_F(PacedSenderTest, Priority) {
+TEST_P(PacedSenderTest, Priority) {
   uint32_t ssrc_low_priority = 12345;
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
@@ -468,7 +477,7 @@ TEST_F(PacedSenderTest, Priority) {
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, RetransmissionPriority) {
+TEST_P(PacedSenderTest, RetransmissionPriority) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = 45678;
@@ -522,7 +531,7 @@ TEST_F(PacedSenderTest, RetransmissionPriority) {
   EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
 }
 
-TEST_F(PacedSenderTest, HighPrioDoesntAffectBudget) {
+TEST_P(PacedSenderTest, HighPrioDoesntAffectBudget) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = 56789;
@@ -560,7 +569,7 @@ TEST_F(PacedSenderTest, HighPrioDoesntAffectBudget) {
   EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
 }
 
-TEST_F(PacedSenderTest, Pause) {
+TEST_P(PacedSenderTest, Pause) {
   uint32_t ssrc_low_priority = 12345;
   uint32_t ssrc = 12346;
   uint32_t ssrc_high_priority = 12347;
@@ -674,7 +683,7 @@ TEST_F(PacedSenderTest, Pause) {
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
 
-TEST_F(PacedSenderTest, ResendPacket) {
+TEST_P(PacedSenderTest, ResendPacket) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = clock_.TimeInMilliseconds();
@@ -727,7 +736,7 @@ TEST_F(PacedSenderTest, ResendPacket) {
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
 
-TEST_F(PacedSenderTest, ExpectedQueueTimeMs) {
+TEST_P(PacedSenderTest, ExpectedQueueTimeMs) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kNumPackets = 60;
@@ -764,7 +773,7 @@ TEST_F(PacedSenderTest, ExpectedQueueTimeMs) {
               static_cast<int64_t>(1000 * kPacketSize * 8 / kMaxBitrate));
 }
 
-TEST_F(PacedSenderTest, QueueTimeGrowsOverTime) {
+TEST_P(PacedSenderTest, QueueTimeGrowsOverTime) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   EXPECT_EQ(0, send_bucket_->QueueInMs());
@@ -783,7 +792,7 @@ TEST_F(PacedSenderTest, QueueTimeGrowsOverTime) {
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
 
-TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
+TEST_P(PacedSenderTest, ProbingWithInsertedPackets) {
   const size_t kPacketSize = 1200;
   const int kInitialBitrateBps = 300000;
   uint32_t ssrc = 12346;
@@ -829,7 +838,7 @@ TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
               kSecondClusterBps, kBitrateProbingError);
 }
 
-TEST_F(PacedSenderTest, ProbingWithPaddingSupport) {
+TEST_P(PacedSenderTest, ProbingWithPaddingSupport) {
   const size_t kPacketSize = 1200;
   const int kInitialBitrateBps = 300000;
   uint32_t ssrc = 12346;
@@ -865,7 +874,11 @@ TEST_F(PacedSenderTest, ProbingWithPaddingSupport) {
               kFirstClusterBps, kBitrateProbingError);
 }
 
-TEST_F(PacedSenderTest, PriorityInversion) {
+TEST_P(PacedSenderTest, PriorityInversion) {
+  // In this test capture timestamps are used to order packets, capture
+  // timestamps are not used in PacketQueue2.
+  if (webrtc::field_trial::IsEnabled("WebRTC-RoundRobinPacing"))
+    return;
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = 1200;
@@ -916,7 +929,7 @@ TEST_F(PacedSenderTest, PriorityInversion) {
   }
 }
 
-TEST_F(PacedSenderTest, PaddingOveruse) {
+TEST_P(PacedSenderTest, PaddingOveruse) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = 1200;
@@ -990,7 +1003,7 @@ TEST_F(PacedSenderTest, AverageQueueTime) {
 }
 #endif
 
-TEST_F(PacedSenderTest, ProbeClusterId) {
+TEST_P(PacedSenderTest, ProbeClusterId) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = 1200;
@@ -1036,7 +1049,7 @@ TEST_F(PacedSenderTest, ProbeClusterId) {
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
+TEST_P(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = kFirstClusterBps / (8000 / 10);
@@ -1094,7 +1107,7 @@ TEST_F(PacedSenderTest, QueueTimeWithPause) {
   EXPECT_EQ(200, send_bucket_->AverageQueueTimeMs());
 }
 
-TEST_F(PacedSenderTest, QueueTimePausedDuringPush) {
+TEST_P(PacedSenderTest, QueueTimePausedDuringPush) {
   const size_t kPacketSize = 1200;
   const uint32_t kSsrc = 12346;
   uint16_t sequence_number = 1234;

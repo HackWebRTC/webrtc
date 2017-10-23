@@ -15,7 +15,7 @@
 
 #include "api/optional.h"
 #include "modules/pacing/pacer.h"
-#include "modules/pacing/packet_queue.h"
+#include "modules/pacing/packet_queue2.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
 #include "typedefs.h"  // NOLINT(build/include)

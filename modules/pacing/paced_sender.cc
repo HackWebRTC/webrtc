@@ -60,7 +60,9 @@ PacedSender::PacedSender(const Clock* clock,
       pacing_bitrate_kbps_(0),
       time_last_update_us_(clock->TimeInMicroseconds()),
       first_sent_packet_ms_(-1),
-      packets_(rtc::MakeUnique<PacketQueue>(clock)),
+      packets_(webrtc::field_trial::IsEnabled("WebRTC-RoundRobinPacing")
+                   ? rtc::MakeUnique<PacketQueue2>(clock)
+                   : rtc::MakeUnique<PacketQueue>(clock)),
       packet_counter_(0),
       pacing_factor_(kDefaultPaceMultiplier),
       queue_time_limit(kMaxQueueLengthMs),

@@ -44,6 +44,8 @@ PacketQueue::Packet::Packet(RtpPacketSender::Priority priority,
       retransmission(retransmission),
       enqueue_order(enqueue_order) {}
 
+PacketQueue::Packet::Packet(const Packet& other) = default;
+
 PacketQueue::Packet::~Packet() {}
 
 PacketQueue::PacketQueue(const Clock* clock)

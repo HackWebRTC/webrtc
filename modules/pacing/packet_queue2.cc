@@ -20,29 +20,10 @@ namespace webrtc {
 PacketQueue2::Stream::Stream() : bytes(0) {}
 PacketQueue2::Stream::~Stream() {}
 
-PacketQueue2::Packet::Packet(RtpPacketSender::Priority priority,
-                             uint32_t ssrc,
-                             uint16_t seq_number,
-                             int64_t capture_time_ms,
-                             int64_t enqueue_time_ms,
-                             size_t length_in_bytes,
-                             bool retransmission,
-                             uint64_t enqueue_order)
-    : priority(priority),
-      ssrc(ssrc),
-      sequence_number(seq_number),
-      capture_time_ms(capture_time_ms),
-      enqueue_time_ms(enqueue_time_ms),
-      bytes(length_in_bytes),
-      retransmission(retransmission),
-      enqueue_order(enqueue_order) {}
-
-PacketQueue2::Packet::Packet(const Packet& other) = default;
-
-PacketQueue2::Packet::~Packet() {}
-
 PacketQueue2::PacketQueue2(const Clock* clock)
-    : clock_(clock), time_last_updated_(clock_->TimeInMilliseconds()) {}
+    : PacketQueue(clock),
+      clock_(clock),
+      time_last_updated_(clock_->TimeInMilliseconds()) {}
 
 PacketQueue2::~PacketQueue2() {}
 
@@ -89,16 +70,31 @@ void PacketQueue2::Push(const Packet& packet_to_insert) {
   size_bytes_ += packet.bytes;
 }
 
-const PacketQueue2::Packet& PacketQueue2::Top() {
-  return GetHighestPriorityStream()->packet_queue.top();
+const PacketQueue2::Packet& PacketQueue2::BeginPop() {
+  RTC_CHECK(!pop_packet_ && !pop_stream_);
+
+  Stream* stream = GetHighestPriorityStream();
+  pop_stream_.emplace(stream);
+  pop_packet_.emplace(stream->packet_queue.top());
+  stream->packet_queue.pop();
+
+  return *pop_packet_;
 }
 
-void PacketQueue2::Pop() {
+void PacketQueue2::CancelPop(const Packet& packet) {
+  RTC_CHECK(pop_packet_ && pop_stream_);
+  (*pop_stream_)->packet_queue.push(*pop_packet_);
+  pop_packet_.reset();
+  pop_stream_.reset();
+}
+
+void PacketQueue2::FinalizePop(const Packet& packet) {
   RTC_CHECK(!paused_);
   if (!Empty()) {
-    Stream* streams_ = GetHighestPriorityStream();
-    stream_priorities_.erase(streams_->priority_it);
-    const Packet& packet = streams_->packet_queue.top();
+    RTC_CHECK(pop_packet_ && pop_stream_);
+    Stream* stream = *pop_stream_;
+    stream_priorities_.erase(stream->priority_it);
+    const Packet& packet = *pop_packet_;
 
     // Calculate the total amount of time spent by this packet in the queue
     // while in a non-paused state. Note that the |pause_time_sum_ms_| was
@@ -118,25 +114,26 @@ void PacketQueue2::Pop() {
     // case a "budget" will be built up for the stream sending at the lower
     // rate. To avoid building a too large budget we limit |bytes| to be within
     // kMaxLeading bytes of the stream that has sent the most amount of bytes.
-    streams_->bytes =
-        std::max(streams_->bytes + packet.bytes, max_bytes_ - kMaxLeadingBytes);
-    max_bytes_ = std::max(max_bytes_, streams_->bytes);
+    stream->bytes =
+        std::max(stream->bytes + packet.bytes, max_bytes_ - kMaxLeadingBytes);
+    max_bytes_ = std::max(max_bytes_, stream->bytes);
 
     size_bytes_ -= packet.bytes;
     size_packets_ -= 1;
     RTC_CHECK(size_packets_ > 0 || queue_time_sum_ms_ == 0);
-    streams_->packet_queue.pop();
 
     // If there are packets left to be sent, schedule the stream again.
-    RTC_CHECK(!IsSsrcScheduled(streams_->ssrc));
-    if (streams_->packet_queue.empty()) {
-      streams_->priority_it = stream_priorities_.end();
+    RTC_CHECK(!IsSsrcScheduled(stream->ssrc));
+    if (stream->packet_queue.empty()) {
+      stream->priority_it = stream_priorities_.end();
     } else {
-      RtpPacketSender::Priority priority =
-          streams_->packet_queue.top().priority;
-      streams_->priority_it = stream_priorities_.emplace(
-          StreamPrioKey(priority, streams_->bytes), streams_->ssrc);
+      RtpPacketSender::Priority priority = stream->packet_queue.top().priority;
+      stream->priority_it = stream_priorities_.emplace(
+          StreamPrioKey(priority, stream->bytes), stream->ssrc);
     }
+
+    pop_packet_.reset();
+    pop_stream_.reset();
   }
 }
 

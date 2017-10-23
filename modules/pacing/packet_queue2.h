@@ -15,61 +15,31 @@
 #include <queue>
 #include <set>
 
+#include "modules/pacing/packet_queue.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
-class PacketQueue2 {
+class PacketQueue2 : public PacketQueue {
  public:
   explicit PacketQueue2(const Clock* clock);
-  virtual ~PacketQueue2();
+  ~PacketQueue2() override;
 
-  struct Packet {
-    Packet(RtpPacketSender::Priority priority,
-           uint32_t ssrc,
-           uint16_t seq_number,
-           int64_t capture_time_ms,
-           int64_t enqueue_time_ms,
-           size_t length_in_bytes,
-           bool retransmission,
-           uint64_t enqueue_order);
+  using Packet = PacketQueue::Packet;
 
-    Packet(const Packet& other);
+  void Push(const Packet& packet) override;
+  const Packet& BeginPop() override;
+  void CancelPop(const Packet& packet) override;
+  void FinalizePop(const Packet& packet) override;
 
-    virtual ~Packet();
+  bool Empty() const override;
+  size_t SizeInPackets() const override;
+  uint64_t SizeInBytes() const override;
 
-    bool operator<(const Packet& other) const {
-      if (priority != other.priority)
-        return priority > other.priority;
-      if (retransmission != other.retransmission)
-        return other.retransmission;
-
-      return enqueue_order > other.enqueue_order;
-    }
-
-    RtpPacketSender::Priority priority;
-    uint32_t ssrc;
-    uint16_t sequence_number;
-    int64_t capture_time_ms;  // Absolute time of frame capture.
-    int64_t enqueue_time_ms;  // Absolute time of pacer queue entry.
-    size_t bytes;
-    bool retransmission;
-    uint64_t enqueue_order;
-    std::multiset<int64_t>::iterator enqueue_time_it;
-  };
-
-  void Push(const Packet& packet);
-  const Packet& Top();
-  void Pop();
-
-  bool Empty() const;
-  size_t SizeInPackets() const;
-  uint64_t SizeInBytes() const;
-
-  int64_t OldestEnqueueTimeMs() const;
-  int64_t AverageQueueTimeMs() const;
-  void UpdateQueueTime(int64_t timestamp_ms);
-  void SetPauseState(bool paused, int64_t timestamp_ms);
+  int64_t OldestEnqueueTimeMs() const override;
+  int64_t AverageQueueTimeMs() const override;
+  void UpdateQueueTime(int64_t timestamp_ms) override;
+  void SetPauseState(bool paused, int64_t timestamp_ms) override;
 
   struct StreamPrioKey {
     StreamPrioKey() = default;
@@ -112,11 +82,14 @@ class PacketQueue2 {
   bool IsSsrcScheduled(uint32_t ssrc) const;
 
   const Clock* const clock_;
+  int64_t time_last_updated_;
+  rtc::Optional<Packet> pop_packet_;
+  rtc::Optional<Stream*> pop_stream_;
+
   bool paused_ = false;
   size_t size_packets_ = 0;
   size_t size_bytes_ = 0;
   size_t max_bytes_ = kMaxLeadingBytes;
-  int64_t time_last_updated_;
   int64_t queue_time_sum_ms_ = 0;
   int64_t pause_time_sum_ms_ = 0;
 

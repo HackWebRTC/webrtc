@@ -13,6 +13,7 @@
 
 #include <list>
 #include <queue>
+#include <set>
 #include <vector>
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -34,31 +35,43 @@ class PacketQueue {
            bool retransmission,
            uint64_t enqueue_order);
 
+    Packet(const Packet& other);
+
     virtual ~Packet();
+
+    bool operator<(const Packet& other) const {
+      if (priority != other.priority)
+        return priority > other.priority;
+      if (retransmission != other.retransmission)
+        return other.retransmission;
+
+      return enqueue_order > other.enqueue_order;
+    }
 
     RtpPacketSender::Priority priority;
     uint32_t ssrc;
     uint16_t sequence_number;
     int64_t capture_time_ms;  // Absolute time of frame capture.
     int64_t enqueue_time_ms;  // Absolute time of pacer queue entry.
-    int64_t sum_paused_ms;  // Sum of time spent in queue while pacer is paused.
+    int64_t sum_paused_ms;
     size_t bytes;
     bool retransmission;
     uint64_t enqueue_order;
     std::list<Packet>::iterator this_it;
+    std::multiset<int64_t>::iterator enqueue_time_it;
   };
 
-  void Push(const Packet& packet);
-  const Packet& BeginPop();
-  void CancelPop(const Packet& packet);
-  void FinalizePop(const Packet& packet);
-  bool Empty() const;
-  size_t SizeInPackets() const;
-  uint64_t SizeInBytes() const;
-  int64_t OldestEnqueueTimeMs() const;
-  void UpdateQueueTime(int64_t timestamp_ms);
-  void SetPauseState(bool paused, int64_t timestamp_ms);
-  int64_t AverageQueueTimeMs() const;
+  virtual void Push(const Packet& packet);
+  virtual const Packet& BeginPop();
+  virtual void CancelPop(const Packet& packet);
+  virtual void FinalizePop(const Packet& packet);
+  virtual bool Empty() const;
+  virtual size_t SizeInPackets() const;
+  virtual uint64_t SizeInBytes() const;
+  virtual int64_t OldestEnqueueTimeMs() const;
+  virtual void UpdateQueueTime(int64_t timestamp_ms);
+  virtual void SetPauseState(bool paused, int64_t timestamp_ms);
+  virtual int64_t AverageQueueTimeMs() const;
 
  private:
   // Try to add a packet to the set of ssrc/seqno identifiers currently in the
