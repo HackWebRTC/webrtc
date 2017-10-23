@@ -417,7 +417,6 @@ if (rtc_include_tests) {
       "videocapturertracksource_unittest.cc",
       "videotrack_unittest.cc",
       "webrtcsdp_unittest.cc",
-      "webrtcsession_unittest.cc",
     ]
 
     if (rtc_enable_sctp) {

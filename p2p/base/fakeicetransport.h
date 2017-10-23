@@ -190,8 +190,19 @@ class FakeIceTransport : public IceTransportInternal {
     SignalSentPacket(this, sent_packet);
     return static_cast<int>(len);
   }
-  int SetOption(rtc::Socket::Option opt, int value) override { return true; }
-  bool GetOption(rtc::Socket::Option opt, int* value) override { return true; }
+  int SetOption(rtc::Socket::Option opt, int value) override {
+    socket_options_[opt] = value;
+    return true;
+  }
+  bool GetOption(rtc::Socket::Option opt, int* value) override {
+    auto it = socket_options_.find(opt);
+    if (it != socket_options_.end()) {
+      *value = it->second;
+      return true;
+    } else {
+      return false;
+    }
+  }
   int GetError() override { return 0; }
 
  private:
@@ -244,6 +255,7 @@ class FakeIceTransport : public IceTransportInternal {
   bool receiving_ = false;
   bool combine_outgoing_packets_ = false;
   rtc::CopyOnWriteBuffer send_packet_;
+  std::map<rtc::Socket::Option, int> socket_options_;
 };
 
 }  // namespace cricket

@@ -33,12 +33,6 @@ class MediaStreamObserver;
 class VideoRtpReceiver;
 class RtcEventLog;
 
-// TODO(zhihuang): Remove this declaration when the WebRtcSession tests don't
-// need it.
-void ExtractSharedMediaSessionOptions(
-    const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
-    cricket::MediaSessionOptions* session_options);
-
 // PeerConnection implements the PeerConnectionInterface interface.
 // It uses WebRtcSession to implement the PeerConnection functionality.
 class PeerConnection : public PeerConnectionInterface,
