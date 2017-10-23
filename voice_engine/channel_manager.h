@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/refcountedbase.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/random.h"
@@ -49,26 +50,24 @@ class Channel;
 class ChannelOwner {
  public:
   explicit ChannelOwner(Channel* channel);
-  ChannelOwner(const ChannelOwner& channel_owner);
+  ChannelOwner(const ChannelOwner& channel_owner) = default;
 
-  ~ChannelOwner();
+  ~ChannelOwner() = default;
 
-  ChannelOwner& operator=(const ChannelOwner& other);
+  ChannelOwner& operator=(const ChannelOwner& other) = default;
 
   Channel* channel() const { return channel_ref_->channel.get(); }
   bool IsValid() { return channel_ref_->channel.get() != NULL; }
-  int use_count() const { return channel_ref_->ref_count.Value(); }
  private:
   // Shared instance of a Channel. Copying ChannelOwners increase the reference
   // count and destroying ChannelOwners decrease references. Channels are
   // deleted when no references to them are held.
-  struct ChannelRef {
+  struct ChannelRef : public rtc::RefCountedBase {
     ChannelRef(Channel* channel);
     const std::unique_ptr<Channel> channel;
-    Atomic32 ref_count;
   };
 
-  ChannelRef* channel_ref_;
+  rtc::scoped_refptr<ChannelRef> channel_ref_;
 };
 
 class ChannelManager {

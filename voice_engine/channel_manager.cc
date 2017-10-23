@@ -19,31 +19,8 @@ namespace voe {
 ChannelOwner::ChannelOwner(class Channel* channel)
     : channel_ref_(new ChannelRef(channel)) {}
 
-ChannelOwner::ChannelOwner(const ChannelOwner& channel_owner)
-    : channel_ref_(channel_owner.channel_ref_) {
-  ++channel_ref_->ref_count;
-}
-
-ChannelOwner::~ChannelOwner() {
-  if (--channel_ref_->ref_count == 0)
-    delete channel_ref_;
-}
-
-ChannelOwner& ChannelOwner::operator=(const ChannelOwner& other) {
-  if (other.channel_ref_ == channel_ref_)
-    return *this;
-
-  if (--channel_ref_->ref_count == 0)
-    delete channel_ref_;
-
-  channel_ref_ = other.channel_ref_;
-  ++channel_ref_->ref_count;
-
-  return *this;
-}
-
 ChannelOwner::ChannelRef::ChannelRef(class Channel* channel)
-    : channel(channel), ref_count(1) {}
+    : channel(channel) {}
 
 ChannelManager::ChannelManager(uint32_t instance_id)
     : instance_id_(instance_id),
