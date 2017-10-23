@@ -12,7 +12,7 @@
 #define MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
 
 #include <stdio.h>
-#include <map>
+#include <list>
 #include <vector>
 
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -65,15 +65,29 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
     timing_frames_thresholds_ = thresholds;
   }
 
+  // Clears all data stored by OnEncodeStarted().
+  void Reset() {
+    rtc::CritScope crit(&timing_params_lock_);
+    timing_frames_info_.clear();
+    last_timing_frame_time_ms_ = -1;
+  }
+
  private:
   rtc::CriticalSection timing_params_lock_;
   bool internal_source_;
   EncodedImageCallback* const post_encode_callback_;
   media_optimization::MediaOptimization* const media_opt_;
 
+  struct EncodeStartTimeRecord {
+    EncodeStartTimeRecord(int64_t capture_time, int64_t encode_start_time)
+        : capture_time_ms(capture_time),
+          encode_start_time_ms(encode_start_time) {}
+    int64_t capture_time_ms;
+    int64_t encode_start_time_ms;
+  };
   struct TimingFramesLayerInfo {
     size_t target_bitrate_bytes_per_sec = 0;
-    std::map<int64_t, int64_t> encode_start_time_ms;
+    std::list<EncodeStartTimeRecord> encode_start_list;
   };
   // Separate instance for each simulcast stream or spatial layer.
   std::vector<TimingFramesLayerInfo> timing_frames_info_
@@ -111,7 +125,6 @@ class VCMGenericEncoder {
   int32_t SetPeriodicKeyFrames(bool enable);
   int32_t RequestFrame(const std::vector<FrameType>& frame_types);
   bool InternalSource() const;
-  void OnDroppedFrame();
   bool SupportsNativeHandle() const;
 
  private:

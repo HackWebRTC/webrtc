@@ -50,6 +50,8 @@ class VideoBroadcaster : public VideoSourceBase,
   // to the VideoSinkWants.
   void OnFrame(const webrtc::VideoFrame& frame) override;
 
+  void OnDiscardedFrame() override;
+
  protected:
   void UpdateWants() RTC_EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
   const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& GetBlackFrameBuffer(
