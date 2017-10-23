@@ -14,6 +14,8 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
+#include "libyuv.h"
+
 @implementation RTCCVPixelBuffer {
   int _width;
   int _height;
@@ -26,6 +28,14 @@
 @synthesize pixelBuffer = _pixelBuffer;
 @synthesize cropX = _cropX;
 @synthesize cropY = _cropY;
+
++ (NSSet<NSNumber*>*)supportedPixelFormats {
+  return [NSSet setWithObjects:@(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange),
+                               @(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange),
+                               @(kCVPixelFormatType_32BGRA),
+                               @(kCVPixelFormatType_32ARGB),
+                               nil];
+}
 
 - (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer {
   return [self initWithPixelBuffer:pixelBuffer
@@ -82,22 +92,128 @@
 }
 
 - (int)bufferSizeForCroppingAndScalingToWidth:(int)width height:(int)height {
-  int srcChromaWidth = (_cropWidth + 1) / 2;
-  int srcChromaHeight = (_cropHeight + 1) / 2;
-  int dstChromaWidth = (width + 1) / 2;
-  int dstChromaHeight = (height + 1) / 2;
+  const OSType srcPixelFormat = CVPixelBufferGetPixelFormatType(_pixelBuffer);
+  switch (srcPixelFormat) {
+    case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+    case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange: {
+      int srcChromaWidth = (_cropWidth + 1) / 2;
+      int srcChromaHeight = (_cropHeight + 1) / 2;
+      int dstChromaWidth = (width + 1) / 2;
+      int dstChromaHeight = (height + 1) / 2;
 
-  return srcChromaWidth * srcChromaHeight * 2 + dstChromaWidth * dstChromaHeight * 2;
+      return srcChromaWidth * srcChromaHeight * 2 + dstChromaWidth * dstChromaHeight * 2;
+    }
+    case kCVPixelFormatType_32BGRA:
+    case kCVPixelFormatType_32ARGB: {
+      return 0;  // Scaling RGBA frames does not require a temporary buffer.
+    }
+  }
+  RTC_NOTREACHED() << "Unsupported pixel format.";
+  return 0;
 }
 
 - (BOOL)cropAndScaleTo:(CVPixelBufferRef)outputPixelBuffer withTempBuffer:(uint8_t*)tmpBuffer {
+  const OSType srcPixelFormat = CVPixelBufferGetPixelFormatType(_pixelBuffer);
+  switch (srcPixelFormat) {
+    case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+    case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange: {
+      [self cropAndScaleNV12To:outputPixelBuffer withTempBuffer:tmpBuffer];
+      break;
+    }
+    case kCVPixelFormatType_32BGRA:
+    case kCVPixelFormatType_32ARGB: {
+      [self cropAndScaleARGBTo:outputPixelBuffer];
+      break;
+    }
+    default: { RTC_NOTREACHED() << "Unsupported pixel format."; }
+  }
+
+  return YES;
+}
+
+- (id<RTCI420Buffer>)toI420 {
+  const OSType pixelFormat = CVPixelBufferGetPixelFormatType(_pixelBuffer);
+
+  CVPixelBufferLockBaseAddress(_pixelBuffer, kCVPixelBufferLock_ReadOnly);
+
+  RTCMutableI420Buffer* i420Buffer =
+      [[RTCMutableI420Buffer alloc] initWithWidth:[self width] height:[self height]];
+
+  switch (pixelFormat) {
+    case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+    case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange: {
+      const uint8_t* srcY =
+          static_cast<const uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(_pixelBuffer, 0));
+      const int srcYStride = CVPixelBufferGetBytesPerRowOfPlane(_pixelBuffer, 0);
+      const uint8_t* srcUV =
+          static_cast<const uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(_pixelBuffer, 1));
+      const int srcUVStride = CVPixelBufferGetBytesPerRowOfPlane(_pixelBuffer, 1);
+
+      // Crop just by modifying pointers.
+      srcY += srcYStride * _cropY + _cropX;
+      srcUV += srcUVStride * (_cropY / 2) + _cropX;
+
+      // TODO(magjed): Use a frame buffer pool.
+      webrtc::NV12ToI420Scaler nv12ToI420Scaler;
+      nv12ToI420Scaler.NV12ToI420Scale(srcY,
+                                       srcYStride,
+                                       srcUV,
+                                       srcUVStride,
+                                       _cropWidth,
+                                       _cropHeight,
+                                       i420Buffer.mutableDataY,
+                                       i420Buffer.strideY,
+                                       i420Buffer.mutableDataU,
+                                       i420Buffer.strideU,
+                                       i420Buffer.mutableDataV,
+                                       i420Buffer.strideV,
+                                       i420Buffer.width,
+                                       i420Buffer.height);
+      break;
+    }
+    case kCVPixelFormatType_32BGRA:
+    case kCVPixelFormatType_32ARGB: {
+      const uint8_t* src =
+          static_cast<const uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(_pixelBuffer, 0));
+
+      uint32 libyuvPixelFormat = 0;
+      if (pixelFormat == kCVPixelFormatType_32BGRA) {
+        libyuvPixelFormat = libyuv::FOURCC_ARGB;
+      } else if (pixelFormat == kCVPixelFormatType_32ARGB) {
+        libyuvPixelFormat = libyuv::FOURCC_ABGR;
+      }
+
+      libyuv::ConvertToI420(src,
+                            0,
+                            i420Buffer.mutableDataY,
+                            i420Buffer.strideY,
+                            i420Buffer.mutableDataU,
+                            i420Buffer.strideU,
+                            i420Buffer.mutableDataV,
+                            i420Buffer.strideV,
+                            _cropX,
+                            _cropY,
+                            _cropWidth,
+                            _cropHeight,
+                            i420Buffer.width,
+                            i420Buffer.height,
+                            libyuv::kRotate0,
+                            libyuvPixelFormat);
+      break;
+    }
+    default: { RTC_NOTREACHED() << "Unsupported pixel format."; }
+  }
+
+  CVPixelBufferUnlockBaseAddress(_pixelBuffer, kCVPixelBufferLock_ReadOnly);
+
+  return i420Buffer;
+}
+
+- (void)cropAndScaleNV12To:(CVPixelBufferRef)outputPixelBuffer withTempBuffer:(uint8_t*)tmpBuffer {
   // Prepare output pointers.
-  RTC_DCHECK_EQ(CVPixelBufferGetPixelFormatType(outputPixelBuffer),
-                kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
   CVReturn cvRet = CVPixelBufferLockBaseAddress(outputPixelBuffer, 0);
   if (cvRet != kCVReturnSuccess) {
     LOG(LS_ERROR) << "Failed to lock base address: " << cvRet;
-    return NO;
   }
   const int dstWidth = CVPixelBufferGetWidth(outputPixelBuffer);
   const int dstHeight = CVPixelBufferGetHeight(outputPixelBuffer);
@@ -109,9 +225,6 @@
   const int dstUVStride = CVPixelBufferGetBytesPerRowOfPlane(outputPixelBuffer, 1);
 
   // Prepare source pointers.
-  const OSType srcPixelFormat = CVPixelBufferGetPixelFormatType(_pixelBuffer);
-  RTC_DCHECK(srcPixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange ||
-             srcPixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange);
   CVPixelBufferLockBaseAddress(_pixelBuffer, kCVPixelBufferLock_ReadOnly);
   const uint8_t* srcY =
       static_cast<const uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(_pixelBuffer, 0));
@@ -140,49 +253,40 @@
 
   CVPixelBufferUnlockBaseAddress(_pixelBuffer, kCVPixelBufferLock_ReadOnly);
   CVPixelBufferUnlockBaseAddress(outputPixelBuffer, 0);
-
-  return YES;
 }
 
-- (id<RTCI420Buffer>)toI420 {
-  const OSType pixelFormat = CVPixelBufferGetPixelFormatType(_pixelBuffer);
-  RTC_DCHECK(pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange ||
-             pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange);
+- (void)cropAndScaleARGBTo:(CVPixelBufferRef)outputPixelBuffer {
+  // Prepare output pointers.
+  CVReturn cvRet = CVPixelBufferLockBaseAddress(outputPixelBuffer, 0);
+  if (cvRet != kCVReturnSuccess) {
+    LOG(LS_ERROR) << "Failed to lock base address: " << cvRet;
+  }
+  const int dstWidth = CVPixelBufferGetWidth(outputPixelBuffer);
+  const int dstHeight = CVPixelBufferGetHeight(outputPixelBuffer);
 
+  uint8_t* dst =
+      reinterpret_cast<uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(outputPixelBuffer, 0));
+  const int dstStride = CVPixelBufferGetBytesPerRowOfPlane(outputPixelBuffer, 0);
+
+  // Prepare source pointers.
   CVPixelBufferLockBaseAddress(_pixelBuffer, kCVPixelBufferLock_ReadOnly);
-  const uint8_t* srcY =
-      static_cast<const uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(_pixelBuffer, 0));
-  const int srcYStride = CVPixelBufferGetBytesPerRowOfPlane(_pixelBuffer, 0);
-  const uint8_t* srcUV =
-      static_cast<const uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(_pixelBuffer, 1));
-  const int srcUVStride = CVPixelBufferGetBytesPerRowOfPlane(_pixelBuffer, 1);
+  const uint8_t* src = static_cast<const uint8_t*>(CVPixelBufferGetBaseAddress(_pixelBuffer));
+  const int srcStride = CVPixelBufferGetBytesPerRow(_pixelBuffer);
 
   // Crop just by modifying pointers.
-  srcY += srcYStride * _cropY + _cropX;
-  srcUV += srcUVStride * (_cropY / 2) + _cropX;
-
-  // TODO(magjed): Use a frame buffer pool.
-  webrtc::NV12ToI420Scaler nv12ToI420Scaler;
-  RTCMutableI420Buffer* i420Buffer =
-      [[RTCMutableI420Buffer alloc] initWithWidth:[self width] height:[self height]];
-  nv12ToI420Scaler.NV12ToI420Scale(srcY,
-                                   srcYStride,
-                                   srcUV,
-                                   srcUVStride,
-                                   _cropWidth,
-                                   _cropHeight,
-                                   i420Buffer.mutableDataY,
-                                   i420Buffer.strideY,
-                                   i420Buffer.mutableDataU,
-                                   i420Buffer.strideU,
-                                   i420Buffer.mutableDataV,
-                                   i420Buffer.strideV,
-                                   i420Buffer.width,
-                                   i420Buffer.height);
+  src += srcStride * _cropY + _cropX;
+  libyuv::ARGBScale(src,
+                    srcStride,
+                    _cropWidth,
+                    _cropHeight,
+                    dst,
+                    dstStride,
+                    dstWidth,
+                    dstHeight,
+                    libyuv::kFilterBox);
 
   CVPixelBufferUnlockBaseAddress(_pixelBuffer, kCVPixelBufferLock_ReadOnly);
-
-  return i420Buffer;
+  CVPixelBufferUnlockBaseAddress(outputPixelBuffer, 0);
 }
 
 @end

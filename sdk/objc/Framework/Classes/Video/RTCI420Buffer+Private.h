@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** Initialize an RTCI420Buffer with its backing I420BufferInterface. */
 - (instancetype)initWithFrameBuffer:(rtc::scoped_refptr<webrtc::I420BufferInterface>)i420Buffer;
+- (rtc::scoped_refptr<webrtc::I420BufferInterface>)nativeI420Buffer;
 
 @end
 
