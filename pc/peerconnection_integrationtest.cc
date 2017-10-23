@@ -364,7 +364,12 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   void CreateDataChannel() { CreateDataChannel(nullptr); }
 
   void CreateDataChannel(const webrtc::DataChannelInit* init) {
-    data_channel_ = pc()->CreateDataChannel(kDataChannelLabel, init);
+    CreateDataChannel(kDataChannelLabel, init);
+  }
+
+  void CreateDataChannel(const std::string& label,
+                         const webrtc::DataChannelInit* init) {
+    data_channel_ = pc()->CreateDataChannel(label, init);
     ASSERT_TRUE(data_channel_.get() != nullptr);
     data_observer_.reset(new MockDataChannelObserver(data_channel_));
   }
@@ -2592,6 +2597,24 @@ TEST_F(PeerConnectionIntegrationTest, CalleeClosesSctpDataChannel) {
   callee()->data_channel()->Close();
   EXPECT_TRUE_WAIT(!caller()->data_observer()->IsOpen(), kDefaultTimeout);
   EXPECT_TRUE_WAIT(!callee()->data_observer()->IsOpen(), kDefaultTimeout);
+}
+
+TEST_F(PeerConnectionIntegrationTest, SctpDataChannelConfigSentToOtherSide) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  webrtc::DataChannelInit init;
+  init.id = 53;
+  init.maxRetransmits = 52;
+  caller()->CreateDataChannel("data-channel", &init);
+  caller()->AddAudioVideoMediaStream();
+  callee()->AddAudioVideoMediaStream();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_TRUE(callee()->data_channel());
+  EXPECT_EQ(init.id, callee()->data_channel()->id());
+  EXPECT_EQ("data-channel", callee()->data_channel()->label());
+  EXPECT_EQ(init.maxRetransmits, callee()->data_channel()->maxRetransmits());
+  EXPECT_FALSE(callee()->data_channel()->negotiated());
 }
 
 // Test usrsctp's ability to process unordered data stream, where data actually

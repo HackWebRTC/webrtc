@@ -482,13 +482,7 @@ bool PeerConnection::Initialize(
           factory_->CreateTransportController(
               port_allocator_.get(),
               configuration.redetermine_role_on_ice_restart)),
-#ifdef HAVE_SCTP
-      std::unique_ptr<cricket::SctpTransportInternalFactory>(
-          new cricket::SctpTransportFactory(network_thread()))
-#else
-      nullptr
-#endif
-          ));
+      factory_->CreateSctpTransportInternalFactory()));
   session_ = owned_session_.get();
 
   stats_.reset(new StatsCollector(this));

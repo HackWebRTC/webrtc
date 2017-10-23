@@ -16,6 +16,7 @@
 
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
+#include "media/sctp/sctptransportinternal.h"
 #include "pc/channelmanager.h"
 #include "rtc_base/rtccertificategenerator.h"
 #include "rtc_base/scoped_ref_ptr.h"
@@ -89,6 +90,10 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   virtual cricket::TransportController* CreateTransportController(
       cricket::PortAllocator* port_allocator,
       bool redetermine_role_on_ice_restart);
+
+  virtual std::unique_ptr<cricket::SctpTransportInternalFactory>
+  CreateSctpTransportInternalFactory();
+
   virtual cricket::ChannelManager* channel_manager();
   virtual rtc::Thread* signaling_thread();
   virtual rtc::Thread* worker_thread();

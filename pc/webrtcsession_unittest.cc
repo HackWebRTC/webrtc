@@ -31,6 +31,7 @@
 #include "pc/peerconnection.h"
 #include "pc/sctputils.h"
 #include "pc/test/fakertccertificategenerator.h"
+#include "pc/test/fakesctptransport.h"
 #include "pc/videotrack.h"
 #include "pc/webrtcsession.h"
 #include "pc/webrtcsessiondescriptionfactory.h"
@@ -87,7 +88,6 @@ static const int kMediaContentIndex0 = 0;
 // Media index of candidates belonging to the second media content.
 static const int kMediaContentIndex1 = 1;
 
-static const int kDefaultTimeout = 10000;  // 10 seconds.
 static const int kIceCandidatesTimeout = 10000;
 
 static const char kStream1[] = "stream1";
@@ -159,52 +159,6 @@ class MockIceObserver : public webrtc::IceObserver {
   std::vector<PeerConnectionInterface::IceConnectionState>
       ice_connection_state_history_;
   size_t num_candidates_removed_ = 0;
-};
-
-// Used for tests in this file to verify that WebRtcSession responds to signals
-// from the SctpTransport correctly, and calls Start with the correct
-// local/remote ports.
-class FakeSctpTransport : public cricket::SctpTransportInternal {
- public:
-  void SetTransportChannel(rtc::PacketTransportInternal* channel) override {}
-  bool Start(int local_port, int remote_port) override {
-    local_port_ = local_port;
-    remote_port_ = remote_port;
-    return true;
-  }
-  bool OpenStream(int sid) override { return true; }
-  bool ResetStream(int sid) override { return true; }
-  bool SendData(const cricket::SendDataParams& params,
-                const rtc::CopyOnWriteBuffer& payload,
-                cricket::SendDataResult* result = nullptr) override {
-    return true;
-  }
-  bool ReadyToSendData() override { return true; }
-  void set_debug_name_for_testing(const char* debug_name) override {}
-
-  int local_port() const { return local_port_; }
-  int remote_port() const { return remote_port_; }
-
- private:
-  int local_port_ = -1;
-  int remote_port_ = -1;
-};
-
-class FakeSctpTransportFactory : public cricket::SctpTransportInternalFactory {
- public:
-  std::unique_ptr<cricket::SctpTransportInternal> CreateSctpTransport(
-      rtc::PacketTransportInternal*) override {
-    last_fake_sctp_transport_ = new FakeSctpTransport();
-    return std::unique_ptr<cricket::SctpTransportInternal>(
-        last_fake_sctp_transport_);
-  }
-
-  FakeSctpTransport* last_fake_sctp_transport() {
-    return last_fake_sctp_transport_;
-  }
-
- private:
-  FakeSctpTransport* last_fake_sctp_transport_ = nullptr;
 };
 
 class WebRtcSessionForTest : public webrtc::WebRtcSession {
@@ -1075,184 +1029,6 @@ TEST_P(WebRtcSessionTest, TestCreateAnswerWithDifferentSslRoles) {
   EXPECT_EQ(cricket::CONNECTIONROLE_PASSIVE,
             video_transport_info->description.connection_role);
   SetLocalDescriptionWithoutError(answer);
-}
-
-TEST_F(WebRtcSessionTest, TestRtpDataChannel) {
-  configuration_.enable_rtp_data_channel = true;
-  Init();
-  SetLocalDescriptionWithDataChannel();
-  ASSERT_TRUE(data_engine_);
-  EXPECT_NE(nullptr, data_engine_->GetChannel(0));
-}
-
-TEST_P(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
-  configuration_.enable_rtp_data_channel = true;
-  options_.disable_sctp_data_channels = false;
-
-  InitWithDtls(GetParam());
-
-  SetLocalDescriptionWithDataChannel();
-  EXPECT_NE(nullptr, data_engine_->GetChannel(0));
-}
-
-// Test that sctp_content_name/sctp_transport_name (used for stats) are correct
-// before and after BUNDLE is negotiated.
-TEST_P(WebRtcSessionTest, SctpContentAndTransportName) {
-  SetFactoryDtlsSrtp();
-  InitWithDtls(GetParam());
-
-  // Initially these fields should be empty.
-  EXPECT_FALSE(session_->sctp_content_name());
-  EXPECT_FALSE(session_->sctp_transport_name());
-
-  // Create offer with audio/video/data.
-  // Default bundle policy is "balanced", so data should be using its own
-  // transport.
-  SendAudioVideoStream1();
-  CreateDataChannel();
-  InitiateCall();
-  ASSERT_TRUE(session_->sctp_content_name());
-  ASSERT_TRUE(session_->sctp_transport_name());
-  EXPECT_EQ("data", *session_->sctp_content_name());
-  EXPECT_EQ("data", *session_->sctp_transport_name());
-
-  // Create answer that finishes BUNDLE negotiation, which means everything
-  // should be bundled on the first transport (audio).
-  cricket::MediaSessionOptions answer_options;
-  answer_options.bundle_enabled = true;
-  answer_options.data_channel_type = cricket::DCT_SCTP;
-  GetOptionsForAnswer(&answer_options);
-  SetRemoteDescriptionWithoutError(CreateRemoteAnswer(
-      session_->local_description(), answer_options, cricket::SEC_DISABLED));
-  ASSERT_TRUE(session_->sctp_content_name());
-  ASSERT_TRUE(session_->sctp_transport_name());
-  EXPECT_EQ("data", *session_->sctp_content_name());
-  EXPECT_EQ("audio", *session_->sctp_transport_name());
-}
-
-TEST_P(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
-  InitWithDtls(GetParam());
-
-  std::unique_ptr<SessionDescriptionInterface> offer(CreateOffer());
-  EXPECT_TRUE(offer->description()->GetContentByName("data") == NULL);
-  EXPECT_TRUE(offer->description()->GetTransportInfoByName("data") == NULL);
-}
-
-TEST_P(WebRtcSessionTest, TestCreateAnswerWithSctpInOfferAndNoStreams) {
-  SetFactoryDtlsSrtp();
-  InitWithDtls(GetParam());
-
-  // Create remote offer with SCTP.
-  cricket::MediaSessionOptions options;
-  options.data_channel_type = cricket::DCT_SCTP;
-  GetOptionsForRemoteOffer(&options);
-  JsepSessionDescription* offer =
-      CreateRemoteOffer(options, cricket::SEC_DISABLED);
-  SetRemoteDescriptionWithoutError(offer);
-
-  // Verifies the answer contains SCTP.
-  std::unique_ptr<SessionDescriptionInterface> answer(CreateAnswer());
-  EXPECT_TRUE(answer != NULL);
-  EXPECT_TRUE(answer->description()->GetContentByName("data") != NULL);
-  EXPECT_TRUE(answer->description()->GetTransportInfoByName("data") != NULL);
-}
-
-// Test that if DTLS is disabled, we don't end up with an SctpTransport
-// created (or an RtpDataChannel).
-TEST_P(WebRtcSessionTest, TestSctpDataChannelWithoutDtls) {
-  configuration_.enable_dtls_srtp = rtc::Optional<bool>(false);
-  InitWithDtls(GetParam());
-
-  SetLocalDescriptionWithDataChannel();
-  EXPECT_EQ(nullptr, data_engine_->GetChannel(0));
-  EXPECT_EQ(nullptr, fake_sctp_transport_factory_->last_fake_sctp_transport());
-}
-
-// Test that if DTLS is enabled, we end up with an SctpTransport created
-// (and not an RtpDataChannel).
-TEST_P(WebRtcSessionTest, TestSctpDataChannelWithDtls) {
-  InitWithDtls(GetParam());
-
-  SetLocalDescriptionWithDataChannel();
-  EXPECT_EQ(nullptr, data_engine_->GetChannel(0));
-  EXPECT_NE(nullptr, fake_sctp_transport_factory_->last_fake_sctp_transport());
-}
-
-// Test that if SCTP is disabled, we don't end up with an SctpTransport
-// created (or an RtpDataChannel).
-TEST_P(WebRtcSessionTest, TestDisableSctpDataChannels) {
-  options_.disable_sctp_data_channels = true;
-  InitWithDtls(GetParam());
-
-  SetLocalDescriptionWithDataChannel();
-  EXPECT_EQ(nullptr, data_engine_->GetChannel(0));
-  EXPECT_EQ(nullptr, fake_sctp_transport_factory_->last_fake_sctp_transport());
-}
-
-TEST_P(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
-  const int new_send_port = 9998;
-  const int new_recv_port = 7775;
-
-  InitWithDtls(GetParam());
-  SetFactoryDtlsSrtp();
-
-  // By default, don't actually add the codecs to desc_factory_; they don't
-  // actually get serialized for SCTP in BuildMediaDescription().  Instead,
-  // let the session description get parsed.  That'll get the proper codecs
-  // into the stream.
-  cricket::MediaSessionOptions options;
-  SessionDescriptionInterface* offer =
-      CreateRemoteOfferWithSctpPort("stream1", new_send_port, options);
-
-  // SetRemoteDescription will take the ownership of the offer.
-  SetRemoteDescriptionWithoutError(offer);
-
-  SessionDescriptionInterface* answer =
-      ChangeSDPSctpPort(new_recv_port, CreateAnswer());
-  ASSERT_TRUE(answer != NULL);
-
-  // Now set the local description, which'll take ownership of the answer.
-  SetLocalDescriptionWithoutError(answer);
-
-  // TEST PLAN: Set the port number to something new, set it in the SDP,
-  // and pass it all the way down.
-  EXPECT_EQ(nullptr, data_engine_->GetChannel(0));
-  CreateDataChannel();
-  ASSERT_NE(nullptr, fake_sctp_transport_factory_->last_fake_sctp_transport());
-  EXPECT_EQ(
-      new_recv_port,
-      fake_sctp_transport_factory_->last_fake_sctp_transport()->local_port());
-  EXPECT_EQ(
-      new_send_port,
-      fake_sctp_transport_factory_->last_fake_sctp_transport()->remote_port());
-}
-
-// Verifies that when a session's SctpTransport receives an OPEN message,
-// WebRtcSession signals the SctpTransport creation request with the expected
-// config.
-TEST_P(WebRtcSessionTest, TestSctpDataChannelOpenMessage) {
-  InitWithDtls(GetParam());
-
-  SetLocalDescriptionWithDataChannel();
-  EXPECT_EQ(nullptr, data_engine_->GetChannel(0));
-  ASSERT_NE(nullptr, fake_sctp_transport_factory_->last_fake_sctp_transport());
-
-  // Make the fake SCTP transport pretend it received an OPEN message.
-  webrtc::DataChannelInit config;
-  config.id = 1;
-  rtc::CopyOnWriteBuffer payload;
-  webrtc::WriteDataChannelOpenMessage("a", config, &payload);
-  cricket::ReceiveDataParams params;
-  params.ssrc = config.id;
-  params.type = cricket::DMT_CONTROL;
-  fake_sctp_transport_factory_->last_fake_sctp_transport()->SignalDataReceived(
-      params, payload);
-
-  EXPECT_EQ_WAIT("a", last_data_channel_label_, kDefaultTimeout);
-  EXPECT_EQ(config.id, last_data_channel_config_.id);
-  EXPECT_FALSE(last_data_channel_config_.negotiated);
-  EXPECT_EQ(webrtc::InternalDataChannelInit::kAcker,
-            last_data_channel_config_.open_handshake_role);
 }
 
 #ifdef HAVE_QUIC
