@@ -26,14 +26,21 @@
 
 namespace webrtc {
 
+namespace {
+DWORD GetTlsIndex() {
+  static const DWORD tls_index = TlsAlloc();
+  RTC_DCHECK(tls_index != TLS_OUT_OF_INDEXES);
+  return tls_index;
+}
+
+}  // namespace
+
 // kMagnifierWindowClass has to be "Magnifier" according to the Magnification
 // API. The other strings can be anything.
 static LPCTSTR kMagnifierHostClass = L"ScreenCapturerWinMagnifierHost";
 static LPCTSTR kHostWindowName = L"MagnifierHost";
 static LPCTSTR kMagnifierWindowClass = L"Magnifier";
 static LPCTSTR kMagnifierWindowName = L"MagnifierWindow";
-
-Atomic32 ScreenCapturerWinMagnifier::tls_index_(TLS_OUT_OF_INDEXES);
 
 ScreenCapturerWinMagnifier::ScreenCapturerWinMagnifier() = default;
 ScreenCapturerWinMagnifier::~ScreenCapturerWinMagnifier() {
@@ -152,8 +159,7 @@ bool ScreenCapturerWinMagnifier::CaptureImage(const DesktopRect& rect) {
 
   RECT native_rect = {rect.left(), rect.top(), rect.right(), rect.bottom()};
 
-  RTC_DCHECK(tls_index_.Value() != static_cast<int32_t>(TLS_OUT_OF_INDEXES));
-  TlsSetValue(tls_index_.Value(), this);
+  TlsSetValue(GetTlsIndex(), this);
   // OnCaptured will be called via OnMagImageScalingCallback and fill in the
   // frame before set_window_source_func_ returns.
   result = set_window_source_func_(magnifier_window_, native_rect);
@@ -177,11 +183,10 @@ BOOL ScreenCapturerWinMagnifier::OnMagImageScalingCallback(
     RECT unclipped,
     RECT clipped,
     HRGN dirty) {
-  RTC_DCHECK(tls_index_.Value() != static_cast<int32_t>(TLS_OUT_OF_INDEXES));
   ScreenCapturerWinMagnifier* owner =
       reinterpret_cast<ScreenCapturerWinMagnifier*>(
-          TlsGetValue(tls_index_.Value()));
-  TlsSetValue(tls_index_.Value(), nullptr);
+          TlsGetValue(GetTlsIndex()));
+  TlsSetValue(GetTlsIndex(), nullptr);
   owner->OnCaptured(srcdata, srcheader);
 
   return TRUE;
@@ -307,14 +312,6 @@ bool ScreenCapturerWinMagnifier::InitializeMagnifier() {
                         << GetLastError();
       return false;
     }
-  }
-
-  if (tls_index_.Value() == static_cast<int32_t>(TLS_OUT_OF_INDEXES)) {
-    // More than one threads may get here at the same time, but only one will
-    // write to tls_index_ using CompareExchange.
-    DWORD new_tls_index = TlsAlloc();
-    if (!tls_index_.CompareExchange(new_tls_index, TLS_OUT_OF_INDEXES))
-      TlsFree(new_tls_index);
   }
 
   magnifier_initialized_ = true;
