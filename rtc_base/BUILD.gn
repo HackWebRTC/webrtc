@@ -167,6 +167,7 @@ rtc_source_set("rtc_base_approved_generic") {
     "ratetracker.h",
     "refcount.h",
     "refcountedobject.h",
+    "refcounter.h",
     "safe_compare.h",
     "safe_conversions.h",
     "safe_conversions_impl.h",

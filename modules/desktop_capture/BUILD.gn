@@ -337,6 +337,7 @@ rtc_static_library("desktop_capture_generic") {
   deps = [
     ":primitives",
     "../..:webrtc_common",
+    "../../api:refcountedbase",
     "../../rtc_base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
     "../../system_wrappers",
     "//third_party/libyuv",

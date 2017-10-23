@@ -20,8 +20,7 @@ namespace webrtc {
 static const int64_t kDisplayConfigurationEventTimeoutMs = 10 * 1000;
 
 DesktopConfigurationMonitor::DesktopConfigurationMonitor()
-    : ref_count_(0),
-      display_configuration_capture_event_(EventWrapper::Create()) {
+    : display_configuration_capture_event_(EventWrapper::Create()) {
   CGError err = CGDisplayRegisterReconfigurationCallback(
       DesktopConfigurationMonitor::DisplaysReconfiguredCallback, this);
   if (err != kCGErrorSuccess) {

@@ -16,9 +16,9 @@
 #include <memory>
 #include <set>
 
+#include "api/refcountedbase.h"
 #include "modules/desktop_capture/mac/desktop_configuration.h"
 #include "rtc_base/constructormagic.h"
-#include "system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 
@@ -26,7 +26,7 @@ class EventWrapper;
 
 // The class provides functions to synchronize capturing and display
 // reconfiguring across threads, and the up-to-date MacDesktopConfiguration.
-class DesktopConfigurationMonitor {
+class DesktopConfigurationMonitor : public rtc::RefCountedBase {
  public:
   DesktopConfigurationMonitor();
   // Acquires a lock on the current configuration.
@@ -39,22 +39,16 @@ class DesktopConfigurationMonitor {
     return desktop_configuration_;
   }
 
-  void AddRef() { ++ref_count_; }
-  void Release() {
-    if (--ref_count_ == 0)
-      delete this;
-  }
+ protected:
+  ~DesktopConfigurationMonitor() override;
 
  private:
   static void DisplaysReconfiguredCallback(CGDirectDisplayID display,
                                            CGDisplayChangeSummaryFlags flags,
                                            void *user_parameter);
-  ~DesktopConfigurationMonitor();
-
   void DisplaysReconfigured(CGDirectDisplayID display,
                             CGDisplayChangeSummaryFlags flags);
 
-  Atomic32 ref_count_;
   std::set<CGDirectDisplayID> reconfiguring_displays_;
   MacDesktopConfiguration desktop_configuration_;
   std::unique_ptr<EventWrapper> display_configuration_capture_event_;

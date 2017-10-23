@@ -13,9 +13,9 @@
 
 #include <ApplicationServices/ApplicationServices.h>
 
+#include "api/refcountedbase.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "rtc_base/constructormagic.h"
-#include "system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 
@@ -30,15 +30,9 @@ namespace webrtc {
 // 3. The new window is full-screen.
 // 4. The new window didn't exist at least 500 millisecond ago.
 
-class FullScreenChromeWindowDetector {
+class FullScreenChromeWindowDetector : public rtc::RefCountedBase {
  public:
   FullScreenChromeWindowDetector();
-
-  void AddRef() { ++ref_count_; }
-  void Release() {
-    if (--ref_count_ == 0)
-      delete this;
-  }
 
   // Returns the full-screen window in place of the original window if all the
   // criteria are met, or kCGNullWindowID if no such window found.
@@ -48,11 +42,10 @@ class FullScreenChromeWindowDetector {
   // second.
   void UpdateWindowListIfNeeded(CGWindowID original_window);
 
+ protected:
+  ~FullScreenChromeWindowDetector() override;
+
  private:
-  ~FullScreenChromeWindowDetector();
-
-  Atomic32 ref_count_;
-
   // We cache the last two results of the window list, so
   // |previous_window_list_| is taken at least 500ms before the next Capture()
   // call. If we only save the last result, we may get false positive (i.e.

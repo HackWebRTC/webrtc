@@ -12,8 +12,9 @@
 
 #include <utility>
 
-#include "rtc_base/atomicops.h"
+#include "rtc_base/constructormagic.h"
 #include "rtc_base/refcount.h"
+#include "rtc_base/refcounter.h"
 
 namespace rtc {
 
@@ -31,14 +32,14 @@ class RefCountedObject : public T {
           std::forward<P1>(p1),
           std::forward<Args>(args)...) {}
 
-  virtual void AddRef() const { AtomicOps::Increment(&ref_count_); }
+  virtual void AddRef() const { ref_count_.IncRef(); }
 
   virtual RefCountReleaseStatus Release() const {
-    if (AtomicOps::Decrement(&ref_count_) == 0) {
+    const auto status = ref_count_.DecRef();
+    if (status == RefCountReleaseStatus::kDroppedLastRef) {
       delete this;
-      return RefCountReleaseStatus::kDroppedLastRef;
     }
-    return RefCountReleaseStatus::kOtherRefsRemained;
+    return status;
   }
 
   // Return whether the reference count is one. If the reference count is used
@@ -47,14 +48,14 @@ class RefCountedObject : public T {
   // performs the test for a reference count of one, and performs the memory
   // barrier needed for the owning thread to act on the object, knowing that it
   // has exclusive access to the object.
-  virtual bool HasOneRef() const {
-    return AtomicOps::AcquireLoad(&ref_count_) == 1;
-  }
+  virtual bool HasOneRef() const { return ref_count_.HasOneRef(); }
 
  protected:
   virtual ~RefCountedObject() {}
 
-  mutable volatile int ref_count_ = 0;
+  mutable webrtc::webrtc_impl::RefCounter ref_count_{0};
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(RefCountedObject);
 };
 
 }  // namespace rtc

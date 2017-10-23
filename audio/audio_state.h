@@ -50,6 +50,7 @@ class AudioState final : public webrtc::AudioState {
   ScopedVoEInterface<VoEBase> voe_base_;
 
   // Reference count; implementation copied from rtc::RefCountedObject.
+  // TODO(nisse): Use RefCountedObject or RefCountedBase instead.
   mutable volatile int ref_count_ = 0;
 
   // Transports mixed audio from the mixer to the audio device and
