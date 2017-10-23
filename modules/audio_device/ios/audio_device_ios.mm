@@ -705,6 +705,10 @@ void AudioDeviceIOS::UpdateAudioDeviceBuffer() {
   // AttachAudioBuffer() is called at construction by the main class but check
   // just in case.
   RTC_DCHECK(audio_device_buffer_) << "AttachAudioBuffer must be called first";
+  RTC_CHECK_GT(playout_parameters_.sample_rate(), 0);
+  RTC_CHECK_GT(record_parameters_.sample_rate(), 0);
+  RTC_CHECK_EQ(playout_parameters_.channels(), 1);
+  RTC_CHECK_EQ(record_parameters_.channels(), 1);
   // Inform the audio device buffer (ADB) about the new audio format.
   audio_device_buffer_->SetPlayoutSampleRate(playout_parameters_.sample_rate());
   audio_device_buffer_->SetPlayoutChannels(playout_parameters_.channels());
