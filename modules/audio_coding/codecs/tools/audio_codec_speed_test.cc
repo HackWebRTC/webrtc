@@ -14,7 +14,7 @@
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
-using ::std::tr1::get;
+using ::std::get;
 
 namespace webrtc {
 
