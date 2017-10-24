@@ -631,7 +631,7 @@ int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
   }
 
   // energy level (range {-32..30}) (Q10)
-  dB = (15 - zeros) << 11;
+  dB = (15 - zeros) * (1 << 11);
 
   // Update statistics
 
