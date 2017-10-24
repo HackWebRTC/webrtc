@@ -2610,7 +2610,8 @@ TEST_F(PeerConnectionIntegrationTest, SctpDataChannelConfigSentToOtherSide) {
   callee()->AddAudioVideoMediaStream();
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-  ASSERT_TRUE(callee()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
   EXPECT_EQ(init.id, callee()->data_channel()->id());
   EXPECT_EQ("data-channel", callee()->data_channel()->label());
   EXPECT_EQ(init.maxRetransmits, callee()->data_channel()->maxRetransmits());
