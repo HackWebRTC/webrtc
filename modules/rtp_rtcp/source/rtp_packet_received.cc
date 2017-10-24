@@ -17,6 +17,12 @@
 
 namespace webrtc {
 
+RtpPacketReceived::RtpPacketReceived() = default;
+RtpPacketReceived::RtpPacketReceived(const ExtensionManager* extensions)
+    : RtpPacket(extensions) {}
+
+RtpPacketReceived::~RtpPacketReceived() {}
+
 void RtpPacketReceived::GetHeader(RTPHeader* header) const {
   header->markerBit = Marker();
   header->payloadType = PayloadType();
