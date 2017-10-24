@@ -703,7 +703,7 @@ struct NegotiateAuthContext : public HttpAuthContext {
     specified_credentials(false)
   { }
 
-  ~NegotiateAuthContext() override {
+  virtual ~NegotiateAuthContext() {
     DeleteSecurityContext(&ctx);
     FreeCredentialsHandle(&cred);
   }

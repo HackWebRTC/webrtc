@@ -21,12 +21,9 @@ class TestStream : public StreamInterface {
  public:
   TestStream() : pos_(0) { }
 
-  StreamState GetState() const override { return SS_OPEN; }
-
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override {
+  virtual StreamState GetState() const { return SS_OPEN; }
+  virtual StreamResult Read(void* buffer, size_t buffer_len,
+                            size_t* read, int* error) {
     unsigned char* uc_buffer = static_cast<unsigned char*>(buffer);
     for (size_t i = 0; i < buffer_len; ++i) {
       uc_buffer[i] = static_cast<unsigned char>(pos_++);
@@ -35,31 +32,27 @@ class TestStream : public StreamInterface {
       *read = buffer_len;
     return SR_SUCCESS;
   }
-
-  StreamResult Write(const void* data,
-                     size_t data_len,
-                     size_t* written,
-                     int* error) override {
+  virtual StreamResult Write(const void* data, size_t data_len,
+                             size_t* written, int* error) {
     if (error)
       *error = -1;
     return SR_ERROR;
   }
-
-  void Close() override {}
-
-  bool SetPosition(size_t position) override {
+  virtual void Close() { }
+  virtual bool SetPosition(size_t position) {
     pos_ = position;
     return true;
   }
-
-  bool GetPosition(size_t* position) const override {
+  virtual bool GetPosition(size_t* position) const {
     if (position) *position = pos_;
     return true;
   }
-
-  bool GetSize(size_t* size) const override { return false; }
-
-  bool GetAvailable(size_t* size) const override { return false; }
+  virtual bool GetSize(size_t* size) const {
+    return false;
+  }
+  virtual bool GetAvailable(size_t* size) const {
+    return false;
+  }
 
  private:
   size_t pos_;

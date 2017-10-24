@@ -87,20 +87,10 @@ bool Win32Window::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam,
   return false;
 }
 
-bool Win32Window::OnClose() {
-  return true;
-}
-
-void Win32Window::OnNcDestroy() {
-  // Do nothing. }
-}
-
-LRESULT Win32Window::WndProc(HWND hwnd,
-                             UINT uMsg,
-                             WPARAM wParam,
-                             LPARAM lParam) {
-  Win32Window* that =
-      reinterpret_cast<Win32Window*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
+LRESULT Win32Window::WndProc(HWND hwnd, UINT uMsg,
+                             WPARAM wParam, LPARAM lParam) {
+  Win32Window* that = reinterpret_cast<Win32Window*>(
+      ::GetWindowLongPtr(hwnd, GWLP_USERDATA));
   if (!that && (WM_CREATE == uMsg)) {
     CREATESTRUCT* cs = reinterpret_cast<CREATESTRUCT*>(lParam);
     that = static_cast<Win32Window*>(cs->lpCreateParams);

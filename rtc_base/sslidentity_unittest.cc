@@ -207,7 +207,12 @@ IdentityAndInfo CreateFakeIdentityAndInfoFromDers(
 
 class SSLIdentityTest : public testing::Test {
  public:
-  void SetUp() override {
+  SSLIdentityTest() {}
+
+  ~SSLIdentityTest() {
+  }
+
+  virtual void SetUp() {
     identity_rsa1_.reset(SSLIdentity::Generate("test1", rtc::KT_RSA));
     identity_rsa2_.reset(SSLIdentity::Generate("test2", rtc::KT_RSA));
     identity_ecdsa1_.reset(SSLIdentity::Generate("test3", rtc::KT_ECDSA));
@@ -494,7 +499,7 @@ class SSLIdentityExpirationTest : public testing::Test {
     // Set use of the test RNG to get deterministic expiration timestamp.
     rtc::SetRandomTestMode(true);
   }
-  ~SSLIdentityExpirationTest() override {
+  ~SSLIdentityExpirationTest() {
     // Put it back for the next test.
     rtc::SetRandomTestMode(false);
   }

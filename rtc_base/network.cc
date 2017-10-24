@@ -907,8 +907,6 @@ Network::Network(const std::string& name,
       type_(type),
       preference_(0) {}
 
-Network::Network(const Network&) = default;
-
 Network::~Network() = default;
 
 // Sets the addresses of this network. Returns true if the address set changed.

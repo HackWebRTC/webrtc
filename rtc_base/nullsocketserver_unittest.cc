@@ -18,9 +18,12 @@ static const uint32_t kTimeout = 5000U;
 class NullSocketServerTest
     : public testing::Test,
       public MessageHandler {
+ public:
+  NullSocketServerTest() {}
  protected:
-  void OnMessage(Message* message) override { ss_.WakeUp(); }
-
+  virtual void OnMessage(Message* message) {
+    ss_.WakeUp();
+  }
   NullSocketServer ss_;
 };
 

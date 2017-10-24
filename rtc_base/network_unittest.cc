@@ -1096,7 +1096,7 @@ TEST_F(NetworkTest, MAYBE_DefaultLocalAddress) {
   std::vector<Network*> networks;
   manager.GetNetworks(&networks);
   EXPECT_TRUE(!networks.empty());
-  for (const auto* network : networks) {
+  for (auto& network : networks) {
     if (network->GetBestIP().family() == AF_INET) {
       EXPECT_TRUE(manager.QueryDefaultLocalAddress(AF_INET) != IPAddress());
     } else if (network->GetBestIP().family() == AF_INET6 &&

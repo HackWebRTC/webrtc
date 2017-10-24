@@ -30,6 +30,10 @@ static const char* kTestCertCommonName = "RTCCertificateTest's certificate";
 }  // namespace
 
 class RTCCertificateTest : public testing::Test {
+ public:
+  RTCCertificateTest() {}
+  ~RTCCertificateTest() {}
+
  protected:
   scoped_refptr<RTCCertificate> GenerateECDSA() {
     std::unique_ptr<SSLIdentity> identity(

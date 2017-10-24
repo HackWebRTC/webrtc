@@ -224,7 +224,7 @@ class MAYBE_CallSessionFileRotatingStreamTest : public ::testing::Test {
         new CallSessionFileRotatingStream(dir_path_, max_total_log_size));
   }
 
-  void TearDown() override {
+  virtual void TearDown() {
     // On windows, open files can't be removed.
     stream_->Close();
     CleanupLogDirectory(*stream_);

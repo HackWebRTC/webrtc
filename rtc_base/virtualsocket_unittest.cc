@@ -53,7 +53,7 @@ struct Sender : public MessageHandler {
     return 1000 * size / rate;
   }
 
-  void OnMessage(Message* pmsg) override {
+  void OnMessage(Message* pmsg) {
     ASSERT_EQ(1u, pmsg->message_id);
 
     if (done)
@@ -98,7 +98,9 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
     thread->PostDelayed(RTC_FROM_HERE, 1000, this, 1);
   }
 
-  ~Receiver() override { thread->Clear(this); }
+  ~Receiver() {
+    thread->Clear(this);
+  }
 
   void OnReadPacket(AsyncPacketSocket* s, const char* data, size_t size,
                     const SocketAddress& remote_addr,
@@ -117,7 +119,7 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
     samples += 1;
   }
 
-  void OnMessage(Message* pmsg) override {
+  void OnMessage(Message* pmsg) {
     ASSERT_EQ(1u, pmsg->message_id);
 
     if (done)

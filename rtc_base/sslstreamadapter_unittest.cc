@@ -241,7 +241,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
     rtc::SetRandomTestMode(true);
   }
 
-  ~SSLStreamAdapterTestBase() override {
+  ~SSLStreamAdapterTestBase() {
     // Put it back for the next test.
     rtc::SetRandomTestMode(false);
   }
