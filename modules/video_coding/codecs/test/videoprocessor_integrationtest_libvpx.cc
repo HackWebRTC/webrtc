@@ -12,6 +12,8 @@
 
 #include <vector>
 
+#include "modules/video_coding/codecs/test/test_config.h"
+#include "rtc_base/ptr_util.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -47,7 +49,28 @@ class VideoProcessorIntegrationTestLibvpx
     config_.verbose = false;
     config_.hw_encoder = false;
     config_.hw_decoder = false;
+    config_.encoded_frame_checker = &qp_frame_checker_;
   }
+
+ private:
+  // Verify that the QP parser returns the same QP as the encoder does.
+  const class QpFrameChecker : public TestConfig::EncodedFrameChecker {
+   public:
+    void CheckEncodedFrame(webrtc::VideoCodecType codec,
+                           const EncodedImage& encoded_frame) const override {
+      int qp;
+      if (codec == kVideoCodecVP8) {
+        EXPECT_TRUE(
+            vp8::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
+      } else if (codec == kVideoCodecVP9) {
+        EXPECT_TRUE(
+            vp9::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
+      } else {
+        RTC_NOTREACHED();
+      }
+      EXPECT_EQ(encoded_frame.qp_, qp) << "Encoder QP != parsed bitstream QP.";
+    }
+  } qp_frame_checker_;
 };
 
 // Fails on iOS. See webrtc:4755.

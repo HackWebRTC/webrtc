@@ -43,22 +43,6 @@ std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
                                                     std::move(tl_factory)));
 }
 
-void VerifyQpParser(const EncodedImage& encoded_frame,
-                    const TestConfig& config) {
-  if (config.hw_encoder)
-    return;
-
-  int qp;
-  if (config.codec_settings.codecType == kVideoCodecVP8) {
-    ASSERT_TRUE(vp8::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
-  } else if (config.codec_settings.codecType == kVideoCodecVP9) {
-    ASSERT_TRUE(vp9::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
-  } else {
-    return;
-  }
-  EXPECT_EQ(encoded_frame.qp_, qp) << "Encoder QP != parsed bitstream QP.";
-}
-
 rtc::Optional<size_t> GetMaxNaluLength(const EncodedImage& encoded_frame,
                                        const TestConfig& config) {
   if (config.codec_settings.codecType != kVideoCodecH264)
@@ -230,8 +214,9 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
   // time recordings should wrap the Encode call as tightly as possible.
   int64_t encode_stop_ns = rtc::TimeNanos();
 
-  // Take the opportunity to verify the QP bitstream parser.
-  VerifyQpParser(encoded_image, config_);
+  if (config_.encoded_frame_checker) {
+    config_.encoded_frame_checker->CheckEncodedFrame(codec, encoded_image);
+  }
 
   // Check for dropped frames.
   const int frame_number =

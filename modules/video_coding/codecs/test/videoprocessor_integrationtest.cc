@@ -76,7 +76,42 @@ bool RunEncodeInRealTime(const TestConfig& config) {
   return false;
 #endif
 }
+
 }  // namespace
+
+void VideoProcessorIntegrationTest::H264KeyframeChecker::CheckEncodedFrame(
+    webrtc::VideoCodecType codec,
+    const EncodedImage& encoded_frame) const {
+  EXPECT_EQ(kVideoCodecH264, codec);
+  bool contains_sps = false;
+  bool contains_pps = false;
+  bool contains_idr = false;
+  const std::vector<webrtc::H264::NaluIndex> nalu_indices =
+      webrtc::H264::FindNaluIndices(encoded_frame._buffer,
+                                    encoded_frame._length);
+  for (const webrtc::H264::NaluIndex& index : nalu_indices) {
+    webrtc::H264::NaluType nalu_type = webrtc::H264::ParseNaluType(
+        encoded_frame._buffer[index.payload_start_offset]);
+    if (nalu_type == webrtc::H264::NaluType::kSps) {
+      contains_sps = true;
+    } else if (nalu_type == webrtc::H264::NaluType::kPps) {
+      contains_pps = true;
+    } else if (nalu_type == webrtc::H264::NaluType::kIdr) {
+      contains_idr = true;
+    }
+  }
+  if (encoded_frame._frameType == kVideoFrameKey) {
+    EXPECT_TRUE(contains_sps) << "Keyframe should contain SPS.";
+    EXPECT_TRUE(contains_pps) << "Keyframe should contain PPS.";
+    EXPECT_TRUE(contains_idr) << "Keyframe should contain IDR.";
+  } else if (encoded_frame._frameType == kVideoFrameDelta) {
+    EXPECT_FALSE(contains_sps) << "Delta frame should not contain SPS.";
+    EXPECT_FALSE(contains_pps) << "Delta frame should not contain PPS.";
+    EXPECT_FALSE(contains_idr) << "Delta frame should not contain IDR.";
+  } else {
+    RTC_NOTREACHED();
+  }
+}
 
 class VideoProcessorIntegrationTest::CpuProcessTime final {
  public:

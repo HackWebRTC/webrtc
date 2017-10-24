@@ -32,6 +32,14 @@ enum ExcludeFrameTypes {
 
 // Test configuration for a test run.
 struct TestConfig {
+  class EncodedFrameChecker {
+   public:
+    virtual ~EncodedFrameChecker() = default;
+
+    virtual void CheckEncodedFrame(webrtc::VideoCodecType codec,
+                                   const EncodedImage& encoded_frame) const = 0;
+  };
+
   void SetCodecSettings(VideoCodecType codec_type,
                         int num_temporal_layers,
                         bool error_concealment_on,
@@ -103,6 +111,9 @@ struct TestConfig {
   // RTP H264 packetization mode.
   H264PacketizationMode packetization_mode =
       webrtc::H264PacketizationMode::NonInterleaved;
+
+  // Custom checker that will be called for each frame.
+  const EncodedFrameChecker* encoded_frame_checker = nullptr;
 };
 
 }  // namespace test

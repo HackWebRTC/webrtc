@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
+#include "common_video/h264/h264_common.h"
 #include "media/engine/webrtcvideodecoderfactory.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
 #include "modules/video_coding/codecs/test/packet_manipulator.h"
@@ -91,6 +92,13 @@ struct VisualizationParams {
 // or breakdown occurs.
 class VideoProcessorIntegrationTest : public testing::Test {
  protected:
+  // Verifies that all H.264 keyframes contain SPS/PPS/IDR NALUs.
+  class H264KeyframeChecker : public TestConfig::EncodedFrameChecker {
+   public:
+    void CheckEncodedFrame(webrtc::VideoCodecType codec,
+                           const EncodedImage& encoded_frame) const override;
+  };
+
   VideoProcessorIntegrationTest();
   ~VideoProcessorIntegrationTest() override;
 
@@ -103,6 +111,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   // Config.
   TestConfig config_;
+
+  // Can be used by all H.264 tests.
+  const H264KeyframeChecker h264_keyframe_checker_;
 
  private:
   class CpuProcessTime;

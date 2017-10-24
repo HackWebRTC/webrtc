@@ -46,6 +46,7 @@ class VideoProcessorIntegrationTestOpenH264
     config_.verbose = false;
     config_.hw_encoder = false;
     config_.hw_decoder = false;
+    config_.encoded_frame_checker = &h264_keyframe_checker_;
   }
 };
 

@@ -50,7 +50,27 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
   // implementations pass. If this test fails on the bots, disable it and
   // ping brandtr@.
   std::vector<RateControlThresholds> rc_thresholds = {
-      {20, 95, 22, 11, 10, 0, 1}};
+      {20, 95, 22, 11, 50, 0, 1}};
+
+  QualityThresholds quality_thresholds(30.0, 14.0, 0.86, 0.39);
+
+  ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
+                              &quality_thresholds, nullptr,
+                              kNoVisualizationParams);
+}
+
+TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsH264) {
+  config_.encoded_frame_checker = &h264_keyframe_checker_;
+  config_.SetCodecSettings(kVideoCodecH264, 1, false, false, false, false,
+                           false, 352, 288);
+
+  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames + 1}};
+
+  // The thresholds below may have to be tweaked to let even poor MediaCodec
+  // implementations pass. If this test fails on the bots, disable it and
+  // ping brandtr@.
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {20, 95, 22, 11, 20, 0, 1}};
 
   QualityThresholds quality_thresholds(30.0, 14.0, 0.86, 0.39);
 
