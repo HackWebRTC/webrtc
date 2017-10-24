@@ -46,6 +46,9 @@ class DirectTransport : public Transport {
                   Call* send_call,
                   std::unique_ptr<Demuxer> demuxer);
 
+  DirectTransport(SingleThreadedTaskQueueForTesting* task_queue,
+                  std::unique_ptr<FakeNetworkPipe> pipe, Call* send_call);
+
   ~DirectTransport() override;
 
   void SetConfig(const FakeNetworkPipe::Config& config);
@@ -64,6 +67,7 @@ class DirectTransport : public Transport {
 
  private:
   void SendPackets();
+  void Start();
 
   Call* const send_call_;
   Clock* const clock_;
@@ -72,7 +76,7 @@ class DirectTransport : public Transport {
   SingleThreadedTaskQueueForTesting::TaskId next_scheduled_task_
       RTC_GUARDED_BY(&sequence_checker_);
 
-  FakeNetworkPipe fake_network_;
+  std::unique_ptr<FakeNetworkPipe> fake_network_;
 
   rtc::SequencedTaskChecker sequence_checker_;
 };

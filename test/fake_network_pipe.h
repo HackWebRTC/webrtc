@@ -114,21 +114,20 @@ class FakeNetworkPipe {
                   const FakeNetworkPipe::Config& config,
                   std::unique_ptr<Demuxer> demuxer,
                   uint64_t seed);
-  ~FakeNetworkPipe();
-
+  virtual ~FakeNetworkPipe();
 
   // Sets a new configuration. This won't affect packets already in the pipe.
   void SetConfig(const FakeNetworkPipe::Config& config);
 
   // Sends a new packet to the link.
-  void SendPacket(const uint8_t* packet, size_t packet_length);
+  virtual void SendPacket(const uint8_t* packet, size_t packet_length);
 
   // Must not be called in parallel with SendPacket or Process.
   void SetReceiver(PacketReceiver* receiver);
 
   // Processes the network queues and trigger PacketReceiver::IncomingPacket for
   // packets ready to be delivered.
-  void Process();
+  virtual void Process();
   int64_t TimeUntilNextProcess() const;
 
   // Get statistics.
@@ -137,7 +136,7 @@ class FakeNetworkPipe {
   size_t dropped_packets() { return dropped_packets_; }
   size_t sent_packets() { return sent_packets_; }
 
- private:
+ protected:
   Clock* const clock_;
   rtc::CriticalSection lock_;
   const std::unique_ptr<Demuxer> demuxer_;

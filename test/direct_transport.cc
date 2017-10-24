@@ -46,13 +46,19 @@ DirectTransport::DirectTransport(SingleThreadedTaskQueueForTesting* task_queue,
     : send_call_(send_call),
       clock_(Clock::GetRealTimeClock()),
       task_queue_(task_queue),
-      fake_network_(clock_, config, std::move(demuxer)) {
-  RTC_DCHECK(task_queue);
-  if (send_call_) {
-    send_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
-    send_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
-  }
-  SendPackets();
+      fake_network_(rtc::MakeUnique<FakeNetworkPipe>(clock_, config,
+                                                      std::move(demuxer))) {
+  Start();
+}
+
+DirectTransport::DirectTransport(SingleThreadedTaskQueueForTesting* task_queue,
+                                 std::unique_ptr<FakeNetworkPipe> pipe,
+                                 Call* send_call)
+    : send_call_(send_call),
+      clock_(Clock::GetRealTimeClock()),
+      task_queue_(task_queue),
+      fake_network_(std::move(pipe)) {
+  Start();
 }
 
 DirectTransport::~DirectTransport() {
@@ -63,7 +69,7 @@ DirectTransport::~DirectTransport() {
 }
 
 void DirectTransport::SetConfig(const FakeNetworkPipe::Config& config) {
-  fake_network_.SetConfig(config);
+  fake_network_->SetConfig(config);
 }
 
 void DirectTransport::StopSending() {
@@ -73,7 +79,7 @@ void DirectTransport::StopSending() {
 
 void DirectTransport::SetReceiver(PacketReceiver* receiver) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  fake_network_.SetReceiver(receiver);
+  fake_network_->SetReceiver(receiver);
 }
 
 bool DirectTransport::SendRtp(const uint8_t* data,
@@ -84,25 +90,34 @@ bool DirectTransport::SendRtp(const uint8_t* data,
                                 clock_->TimeInMilliseconds());
     send_call_->OnSentPacket(sent_packet);
   }
-  fake_network_.SendPacket(data, length);
+  fake_network_->SendPacket(data, length);
   return true;
 }
 
 bool DirectTransport::SendRtcp(const uint8_t* data, size_t length) {
-  fake_network_.SendPacket(data, length);
+  fake_network_->SendPacket(data, length);
   return true;
 }
 
 int DirectTransport::GetAverageDelayMs() {
-  return fake_network_.AverageDelay();
+  return fake_network_->AverageDelay();
+}
+
+void DirectTransport::Start() {
+  RTC_DCHECK(task_queue_);
+  if (send_call_) {
+    send_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
+    send_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+  }
+  SendPackets();
 }
 
 void DirectTransport::SendPackets() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
-  fake_network_.Process();
+  fake_network_->Process();
 
-  int64_t delay_ms = fake_network_.TimeUntilNextProcess();
+  int64_t delay_ms = fake_network_->TimeUntilNextProcess();
   next_scheduled_task_ = task_queue_->PostDelayedTask([this]() {
     SendPackets();
   }, delay_ms);

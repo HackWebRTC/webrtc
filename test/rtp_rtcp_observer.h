@@ -105,6 +105,14 @@ class PacketTransport : public test::DirectTransport {
         observer_(observer),
         transport_type_(transport_type) {}
 
+  PacketTransport(SingleThreadedTaskQueueForTesting* task_queue,
+                  Call* send_call, RtpRtcpObserver* observer,
+                  TransportType transport_type,
+                  std::unique_ptr<FakeNetworkPipe> nw_pipe)
+      : test::DirectTransport(task_queue, std::move(nw_pipe), send_call),
+        observer_(observer),
+        transport_type_(transport_type) {}
+
  private:
   bool SendRtp(const uint8_t* packet,
                size_t length,
