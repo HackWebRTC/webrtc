@@ -26,7 +26,7 @@ from . import simulation
 from . import test_data_generation_factory
 
 
-class TestEchoPathSimulators(unittest.TestCase):
+class TestExport(unittest.TestCase):
   """Unit tests for the export module.
   """
 
@@ -53,8 +53,8 @@ class TestEchoPathSimulators(unittest.TestCase):
     simulator.Run(
         config_filepaths=['apm_configs/default.json'],
         capture_input_filepaths=[
-            'pure_tone-440_1000.wav',
-            'pure_tone-880_1000.wav',
+            os.path.join(self._tmp_path, 'pure_tone-440_1000.wav'),
+            os.path.join(self._tmp_path, 'pure_tone-880_1000.wav'),
         ],
         test_data_generator_names=['identity', 'white_noise'],
         eval_score_names=['audio_level_peak', 'audio_level_mean'],
