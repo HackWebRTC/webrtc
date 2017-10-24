@@ -30,6 +30,8 @@
 #include "modules/audio_coding/neteq/tools/neteq_replacement_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
 #include "modules/audio_coding/neteq/tools/resample_input_audio_file.h"
+#include "modules/congestion_controller/acknowledged_bitrate_estimator.h"
+#include "modules/congestion_controller/bitrate_estimator.h"
 #include "modules/congestion_controller/include/receive_side_congestion_controller.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "modules/include/module_common_types.h"
@@ -47,6 +49,10 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/rate_statistics.h"
+
+#ifndef BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
+#define BWE_TEST_LOGGING_COMPILE_TIME_ENABLE 0
+#endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 
 namespace webrtc {
 namespace plotting {
@@ -1138,6 +1144,8 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
 
   TimeSeries time_series("Delay-based estimate", LINE_DOT_GRAPH);
   TimeSeries acked_time_series("Acked bitrate", LINE_DOT_GRAPH);
+  TimeSeries acked_estimate_time_series("Acked bitrate estimate",
+                                        LINE_DOT_GRAPH);
 
   auto rtp_iterator = outgoing_rtp.begin();
   auto rtcp_iterator = incoming_rtcp.begin();
@@ -1164,7 +1172,17 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   };
 
   RateStatistics acked_bitrate(250, 8000);
-
+#if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
+  // The event_log_visualizer should normally not be compiled with
+  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE since the normal plots won't work.
+  // However, compiling with BWE_TEST_LOGGING, runnning with --plot_sendside_bwe
+  // and piping the output to plot_dynamics.py can be used as a hack to get the
+  // internal state of various BWE components. In this case, it is important
+  // we don't instantiate the AcknowledgedBitrateEstimator both here and in
+  // SendSideCongestionController since that would lead to duplicate outputs.
+  AcknowledgedBitrateEstimator acknowledged_bitrate_estimator(
+      rtc::MakeUnique<BitrateEstimator>());
+#endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
   int64_t time_us = std::min(NextRtpTime(), NextRtcpTime());
   int64_t last_update_us = 0;
   while (time_us != std::numeric_limits<int64_t>::max()) {
@@ -1179,16 +1197,21 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
         SortPacketFeedbackVector(&feedback);
         rtc::Optional<uint32_t> bitrate_bps;
         if (!feedback.empty()) {
+#if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
+          acknowledged_bitrate_estimator.IncomingPacketFeedbackVector(feedback);
+#endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
           for (const PacketFeedback& packet : feedback)
             acked_bitrate.Update(packet.payload_size, packet.arrival_time_ms);
           bitrate_bps = acked_bitrate.Rate(feedback.back().arrival_time_ms);
         }
-        uint32_t y = 0;
-        if (bitrate_bps)
-          y = *bitrate_bps / 1000;
         float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
                   1000000;
+        float y = bitrate_bps.value_or(0) / 1000;
         acked_time_series.points.emplace_back(x, y);
+#if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
+        y = acknowledged_bitrate_estimator.bitrate_bps().value_or(0) / 1000;
+        acked_estimate_time_series.points.emplace_back(x, y);
+#endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
       }
       ++rtcp_iterator;
     }
@@ -1223,6 +1246,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   // Add the data set to the plot.
   plot->AppendTimeSeries(std::move(time_series));
   plot->AppendTimeSeries(std::move(acked_time_series));
+  plot->AppendTimeSeriesIfNotEmpty(std::move(acked_estimate_time_series));
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 10, "Bitrate (kbps)", kBottomMargin, kTopMargin);
