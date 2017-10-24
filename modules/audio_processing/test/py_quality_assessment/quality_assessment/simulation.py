@@ -46,7 +46,8 @@ class ApmModuleSimulator(object):
     self._evaluation_score_factory = evaluation_score_factory
     self._audioproc_wrapper = ap_wrapper
     self._evaluator = evaluator
-    self._annotator = annotations.AudioAnnotationsExtractor()
+    self._annotator = annotations.AudioAnnotationsExtractor(
+        vad_type=annotations.AudioAnnotationsExtractor.VadType.WEBRTC)
 
     # Init.
     self._test_data_generator_factory.SetOutputDirectoryPrefix(
