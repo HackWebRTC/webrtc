@@ -879,7 +879,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
           accumulated_payload_(0),
           fec_packet_received_(false),
           current_size_rtp_(start_size),
-          current_size_frame_(static_cast<int32_t>(start_size)) {
+          current_size_frame_(static_cast<int>(start_size)) {
       // Fragmentation required, this test doesn't make sense without it.
       encoder_.SetFrameSize(start_size);
       RTC_DCHECK_GT(stop_size, max_packet_size);
@@ -953,6 +953,8 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
           } else if (fec_packet_received_) {
             fec_packet_received_ = false;
             ++current_size_rtp_;
+
+            rtc::CritScope lock(&mutex_);
             ++current_size_frame_;
           }
         }
@@ -983,13 +985,13 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
     }
 
     void EncodedFrameCallback(const EncodedFrame& encoded_frame) override {
+      rtc::CritScope lock(&mutex_);
       // Increase frame size for next encoded frame, in the context of the
       // encoder thread.
-      if (!use_fec_ &&
-          current_size_frame_.Value() < static_cast<int32_t>(stop_size_)) {
+      if (!use_fec_ && current_size_frame_ < static_cast<int32_t>(stop_size_)) {
         ++current_size_frame_;
       }
-      encoder_.SetFrameSize(static_cast<size_t>(current_size_frame_.Value()));
+      encoder_.SetFrameSize(static_cast<size_t>(current_size_frame_));
     }
 
     Call::Config GetSenderCallConfig() override {
@@ -1070,7 +1072,8 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
     bool fec_packet_received_;
 
     size_t current_size_rtp_;
-    Atomic32 current_size_frame_;
+    rtc::CriticalSection mutex_;
+    int current_size_frame_ RTC_GUARDED_BY(mutex_);
   };
 
   // Don't auto increment if FEC is used; continue sending frame size until

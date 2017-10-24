@@ -11,6 +11,7 @@
 #ifndef VIDEO_VIDEO_STREAM_ENCODER_H_
 #define VIDEO_VIDEO_STREAM_ENCODER_H_
 
+#include <atomic>
 #include <map>
 #include <memory>
 #include <string>
@@ -29,7 +30,6 @@
 #include "rtc_base/event.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
-#include "system_wrappers/include/atomic32.h"
 #include "typedefs.h"  // NOLINT(build/include)
 #include "video/overuse_frame_detector.h"
 #include "call/video_send_stream.h"
@@ -286,7 +286,7 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
   rtc::RaceChecker incoming_frame_race_checker_
       RTC_GUARDED_BY(incoming_frame_race_checker_);
-  Atomic32 posted_frames_waiting_for_encode_;
+  std::atomic<int> posted_frames_waiting_for_encode_;
   // Used to make sure incoming time stamp is increasing for every frame.
   int64_t last_captured_timestamp_ RTC_GUARDED_BY(incoming_frame_race_checker_);
   // Delta used for translating between NTP and internal timestamps.

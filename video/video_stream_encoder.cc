@@ -137,12 +137,13 @@ class VideoStreamEncoder::EncodeTask : public rtc::QueuedTask {
  private:
   bool Run() override {
     RTC_DCHECK_RUN_ON(&video_stream_encoder_->encoder_queue_);
-    RTC_DCHECK_GT(
-        video_stream_encoder_->posted_frames_waiting_for_encode_.Value(), 0);
     video_stream_encoder_->stats_proxy_->OnIncomingFrame(frame_.width(),
                                                          frame_.height());
     ++video_stream_encoder_->captured_frame_count_;
-    if (--video_stream_encoder_->posted_frames_waiting_for_encode_ == 0) {
+    const int posted_frames_waiting_for_encode =
+        video_stream_encoder_->posted_frames_waiting_for_encode_.fetch_sub(1);
+    RTC_DCHECK_GT(posted_frames_waiting_for_encode, 0);
+    if (posted_frames_waiting_for_encode == 1) {
       video_stream_encoder_->EncodeVideoFrame(frame_, time_when_posted_us_);
     } else {
       // There is a newer frame in flight. Do not encode this frame.
@@ -411,6 +412,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       clock_(Clock::GetRealTimeClock()),
       degradation_preference_(
           VideoSendStream::DegradationPreference::kDegradationDisabled),
+      posted_frames_waiting_for_encode_(0),
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
                              clock_->TimeInMilliseconds()),

@@ -10,9 +10,10 @@
 #ifndef VIDEO_TRANSPORT_ADAPTER_H_
 #define VIDEO_TRANSPORT_ADAPTER_H_
 
+#include <atomic>
+
 #include "api/call/transport.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 namespace internal {
@@ -31,7 +32,7 @@ class TransportAdapter : public Transport {
 
  private:
   Transport *transport_;
-  Atomic32 enabled_;
+  std::atomic<bool> enabled_;
 };
 }  // namespace internal
 }  // namespace webrtc
