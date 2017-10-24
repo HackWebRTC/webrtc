@@ -144,6 +144,7 @@ class PacedSender : public Pacer {
   // Called when the prober is associated with a process thread.
   void ProcessThreadAttached(ProcessThread* process_thread) override;
   void SetPacingFactor(float pacing_factor);
+  float GetPacingFactor() const;
   void SetQueueTimeLimit(int limit_ms);
 
  private:

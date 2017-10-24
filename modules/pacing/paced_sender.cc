@@ -365,6 +365,11 @@ void PacedSender::SetPacingFactor(float pacing_factor) {
   SetEstimatedBitrate(estimated_bitrate_bps_);
 }
 
+float PacedSender::GetPacingFactor() const {
+  rtc::CritScope cs(&critsect_);
+  return pacing_factor_;
+}
+
 void PacedSender::SetQueueTimeLimit(int limit_ms) {
   rtc::CritScope cs(&critsect_);
   queue_time_limit = limit_ms;
