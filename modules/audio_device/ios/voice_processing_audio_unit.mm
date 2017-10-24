@@ -424,7 +424,7 @@ AudioStreamBasicDescription VoiceProcessingAudioUnit::GetFormat(
   // - avoid resampling in the I/O unit by using the hardware sample rate
   // - linear PCM => noncompressed audio data format with one frame per packet
   // - no need to specify interleaving since only mono is supported
-  AudioStreamBasicDescription format = {0};
+  AudioStreamBasicDescription format;
   RTC_DCHECK_EQ(1, kRTCAudioSessionPreferredNumberOfChannels);
   format.mSampleRate = sample_rate;
   format.mFormatID = kAudioFormatLinearPCM;

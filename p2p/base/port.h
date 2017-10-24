@@ -432,7 +432,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // A virtual cost perceived by the user, usually based on the network type
   // (WiFi. vs. Cellular). It takes precedence over the priority when
   // comparing two connections.
-  uint16_t network_cost_;
+  int16_t network_cost_;
   State state_ = State::INIT;
   int64_t last_time_all_connections_removed_ = 0;
 

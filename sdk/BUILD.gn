@@ -42,6 +42,10 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/VideoToolbox",
       "objc/Framework/Headers",
     ]
+    cflags = [
+      "-Wstrict-overflow",
+      "-Wmissing-field-initializers",
+    ]
   }
 
   rtc_static_library("common_objc") {
