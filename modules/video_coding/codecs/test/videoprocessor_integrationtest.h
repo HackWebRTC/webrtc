@@ -164,7 +164,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
                            const int initial_framerate_fps,
                            const VisualizationParams* visualization_params);
   void ReleaseAndCloseObjects(rtc::TaskQueue* task_queue);
-  int TemporalLayerIndexForFrame(int frame_number) const;
 
   // Rate control metrics.
   void ResetRateControlMetrics(int rate_update_index,

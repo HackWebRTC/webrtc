@@ -68,6 +68,31 @@ int GetElapsedTimeMicroseconds(int64_t start_ns, int64_t stop_ns) {
   return static_cast<int>(diff_us);
 }
 
+void ExtractBufferWithSize(const VideoFrame& image,
+                           int width,
+                           int height,
+                           rtc::Buffer* buffer) {
+  if (image.width() != width || image.height() != height) {
+    EXPECT_DOUBLE_EQ(static_cast<double>(width) / height,
+                     static_cast<double>(image.width()) / image.height());
+    // Same aspect ratio, no cropping needed.
+    rtc::scoped_refptr<I420Buffer> scaled(I420Buffer::Create(width, height));
+    scaled->ScaleFrom(*image.video_frame_buffer()->ToI420());
+
+    size_t length =
+        CalcBufferSize(VideoType::kI420, scaled->width(), scaled->height());
+    buffer->SetSize(length);
+    RTC_CHECK_NE(ExtractBuffer(scaled, length, buffer->data()), -1);
+    return;
+  }
+
+  // No resize.
+  size_t length =
+      CalcBufferSize(VideoType::kI420, image.width(), image.height());
+  buffer->SetSize(length);
+  RTC_CHECK_NE(ExtractBuffer(image, length, buffer->data()), -1);
+}
+
 }  // namespace
 
 VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
@@ -79,8 +104,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                Stats* stats,
                                IvfFileWriter* encoded_frame_writer,
                                FrameWriter* decoded_frame_writer)
-    : initialized_(false),
-      config_(config),
+    : config_(config),
       encoder_(encoder),
       decoder_(decoder),
       bitrate_allocator_(CreateBitrateAllocator(&config_)),
@@ -104,37 +128,24 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
   RTC_DCHECK(analysis_frame_reader);
   RTC_DCHECK(analysis_frame_writer);
   RTC_DCHECK(stats);
-}
-
-VideoProcessor::~VideoProcessor() = default;
-
-void VideoProcessor::Init() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  RTC_DCHECK(!initialized_) << "VideoProcessor already initialized.";
-  initialized_ = true;
 
   // Setup required callbacks for the encoder and decoder.
   RTC_CHECK_EQ(encoder_->RegisterEncodeCompleteCallback(&encode_callback_),
-               WEBRTC_VIDEO_CODEC_OK)
-      << "Failed to register encode complete callback";
+               WEBRTC_VIDEO_CODEC_OK);
   RTC_CHECK_EQ(decoder_->RegisterDecodeCompleteCallback(&decode_callback_),
-               WEBRTC_VIDEO_CODEC_OK)
-      << "Failed to register decode complete callback";
+               WEBRTC_VIDEO_CODEC_OK);
 
   // Initialize the encoder and decoder.
   RTC_CHECK_EQ(
       encoder_->InitEncode(&config_.codec_settings, config_.NumberOfCores(),
                            config_.networking_config.max_payload_size_in_bytes),
-      WEBRTC_VIDEO_CODEC_OK)
-      << "Failed to initialize VideoEncoder";
-
+      WEBRTC_VIDEO_CODEC_OK);
   RTC_CHECK_EQ(
       decoder_->InitDecode(&config_.codec_settings, config_.NumberOfCores()),
-      WEBRTC_VIDEO_CODEC_OK)
-      << "Failed to initialize VideoDecoder";
+      WEBRTC_VIDEO_CODEC_OK);
 }
 
-void VideoProcessor::Release() {
+VideoProcessor::~VideoProcessor() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   RTC_CHECK_EQ(encoder_->Release(), WEBRTC_VIDEO_CODEC_OK);
@@ -142,13 +153,10 @@ void VideoProcessor::Release() {
 
   encoder_->RegisterEncodeCompleteCallback(nullptr);
   decoder_->RegisterDecodeCompleteCallback(nullptr);
-
-  initialized_ = false;
 }
 
 void VideoProcessor::ProcessFrame() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  RTC_DCHECK(initialized_) << "VideoProcessor not initialized.";
   ++last_inputed_frame_num_;
 
   // Get frame from file.
@@ -233,16 +241,7 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
       // For dropped frames, we write out the last decoded frame to avoid
       // getting out of sync for the computation of PSNR and SSIM.
       for (int i = 0; i < num_dropped_from_last_encode; i++) {
-        RTC_DCHECK_EQ(last_decoded_frame_buffer_.size(),
-                      analysis_frame_writer_->FrameLength());
-        RTC_CHECK(analysis_frame_writer_->WriteFrame(
-            last_decoded_frame_buffer_.data()));
-        if (decoded_frame_writer_) {
-          RTC_DCHECK_EQ(last_decoded_frame_buffer_.size(),
-                        decoded_frame_writer_->FrameLength());
-          RTC_CHECK(decoded_frame_writer_->WriteFrame(
-              last_decoded_frame_buffer_.data()));
-        }
+        WriteDecodedFrameToFile(&last_decoded_frame_buffer_);
       }
     }
     const FrameStatistic* last_encoded_frame_stat =
@@ -266,40 +265,19 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
   frame_stat->total_packets =
       encoded_image._length / config_.networking_config.packet_size_in_bytes +
       1;
-
   frame_stat->max_nalu_length = GetMaxNaluLength(encoded_image, config_);
 
-  // Simulate packet loss.
-  bool exclude_this_frame = false;
-  if (encoded_image._frameType == kVideoFrameKey) {
-    // Only keyframes can be excluded.
-    switch (config_.exclude_frame_types) {
-      case kExcludeOnlyFirstKeyFrame:
-        if (!first_key_frame_has_been_excluded_) {
-          first_key_frame_has_been_excluded_ = true;
-          exclude_this_frame = true;
-        }
-        break;
-      case kExcludeAllKeyFrames:
-        exclude_this_frame = true;
-        break;
-      default:
-        RTC_NOTREACHED();
-    }
-  }
-
-  // Make a raw copy of the |encoded_image| buffer.
+  // Make a raw copy of |encoded_image| to feed to the decoder.
   size_t copied_buffer_size = encoded_image._length +
                               EncodedImage::GetBufferPaddingBytes(codec);
   std::unique_ptr<uint8_t[]> copied_buffer(new uint8_t[copied_buffer_size]);
   memcpy(copied_buffer.get(), encoded_image._buffer, encoded_image._length);
-  // The image to feed to the decoder.
-  EncodedImage copied_image;
-  memcpy(&copied_image, &encoded_image, sizeof(copied_image));
+  EncodedImage copied_image = encoded_image;
   copied_image._size = copied_buffer_size;
   copied_image._buffer = copied_buffer.get();
 
-  if (!exclude_this_frame) {
+  // Simulate packet loss.
+  if (!ExcludeFrame(copied_image)) {
     frame_stat->packets_dropped =
         packet_manipulator_->ManipulatePackets(&copied_image);
   }
@@ -314,16 +292,7 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
   if (frame_stat->decode_return_code != WEBRTC_VIDEO_CODEC_OK) {
     // Write the last successful frame the output file to avoid getting it out
     // of sync with the source file for SSIM and PSNR comparisons.
-    RTC_DCHECK_EQ(last_decoded_frame_buffer_.size(),
-                  analysis_frame_writer_->FrameLength());
-    RTC_CHECK(
-        analysis_frame_writer_->WriteFrame(last_decoded_frame_buffer_.data()));
-    if (decoded_frame_writer_) {
-      RTC_DCHECK_EQ(last_decoded_frame_buffer_.size(),
-                    decoded_frame_writer_->FrameLength());
-      RTC_CHECK(
-          decoded_frame_writer_->WriteFrame(last_decoded_frame_buffer_.data()));
-    }
+    WriteDecodedFrameToFile(&last_decoded_frame_buffer_);
   }
 
   if (encoded_frame_writer_) {
@@ -364,39 +333,45 @@ void VideoProcessor::FrameDecoded(const VideoFrame& image) {
   RTC_CHECK_GT(frame_number, last_decoded_frame_num_);
   last_decoded_frame_num_ = frame_number;
 
-  // Check if frame size is different from the original size, and if so, scale
-  // back to original size. This is needed for the PSNR and SSIM calculations.
-  size_t extracted_length;
-  rtc::Buffer extracted_buffer;
-  if (image.width() != config_.codec_settings.width ||
-      image.height() != config_.codec_settings.height) {
-    rtc::scoped_refptr<I420Buffer> scaled_buffer(I420Buffer::Create(
-        config_.codec_settings.width, config_.codec_settings.height));
-    // Should be the same aspect ratio, no cropping needed.
-    scaled_buffer->ScaleFrom(*image.video_frame_buffer()->ToI420());
+  // If the frame size is different from the original size, scale back to the
+  // original size. This is needed for the PSNR and SSIM calculations.
+  rtc::Buffer buffer;
+  ExtractBufferWithSize(image, config_.codec_settings.width,
+                        config_.codec_settings.height, &buffer);
+  WriteDecodedFrameToFile(&buffer);
 
-    size_t length = CalcBufferSize(VideoType::kI420, scaled_buffer->width(),
-                                   scaled_buffer->height());
-    extracted_buffer.SetSize(length);
-    extracted_length =
-        ExtractBuffer(scaled_buffer, length, extracted_buffer.data());
-  } else {
-    // No resize.
-    size_t length =
-        CalcBufferSize(VideoType::kI420, image.width(), image.height());
-    extracted_buffer.SetSize(length);
-    extracted_length = ExtractBuffer(image.video_frame_buffer()->ToI420(),
-                                     length, extracted_buffer.data());
-  }
+  last_decoded_frame_buffer_ = std::move(buffer);
+}
 
-  RTC_DCHECK_EQ(extracted_length, analysis_frame_writer_->FrameLength());
-  RTC_CHECK(analysis_frame_writer_->WriteFrame(extracted_buffer.data()));
+void VideoProcessor::WriteDecodedFrameToFile(rtc::Buffer* buffer) {
+  RTC_DCHECK_EQ(buffer->size(), analysis_frame_writer_->FrameLength());
+  RTC_CHECK(analysis_frame_writer_->WriteFrame(buffer->data()));
   if (decoded_frame_writer_) {
-    RTC_DCHECK_EQ(extracted_length, decoded_frame_writer_->FrameLength());
-    RTC_CHECK(decoded_frame_writer_->WriteFrame(extracted_buffer.data()));
+    RTC_DCHECK_EQ(buffer->size(), decoded_frame_writer_->FrameLength());
+    RTC_CHECK(decoded_frame_writer_->WriteFrame(buffer->data()));
   }
+}
 
-  last_decoded_frame_buffer_ = std::move(extracted_buffer);
+bool VideoProcessor::ExcludeFrame(const EncodedImage& encoded_image) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  if (encoded_image._frameType != kVideoFrameKey) {
+    return false;
+  }
+  bool exclude_frame = false;
+  switch (config_.exclude_frame_types) {
+    case kExcludeOnlyFirstKeyFrame:
+      if (!first_key_frame_has_been_excluded_) {
+        first_key_frame_has_been_excluded_ = true;
+        exclude_frame = true;
+      }
+      break;
+    case kExcludeAllKeyFrames:
+      exclude_frame = true;
+      break;
+    default:
+      RTC_NOTREACHED();
+  }
+  return exclude_frame;
 }
 
 }  // namespace test

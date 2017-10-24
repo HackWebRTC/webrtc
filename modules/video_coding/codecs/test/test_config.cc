@@ -10,7 +10,7 @@
 
 #include "modules/video_coding/codecs/test/test_config.h"
 
-#include <string.h>
+#include <sstream>
 
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
@@ -22,6 +22,46 @@ namespace test {
 
 namespace {
 const int kBaseKeyFrameInterval = 3000;
+
+std::string CodecSpecificToString(const webrtc::VideoCodec& codec) {
+  std::stringstream ss;
+  switch (codec.codecType) {
+    case kVideoCodecVP8:
+      ss << "\n  Complexity        : " << codec.VP8().complexity;
+      ss << "\n  Resilience        : " << codec.VP8().resilience;
+      ss << "\n  # temporal layers : "
+         << static_cast<int>(codec.VP8().numberOfTemporalLayers);
+      ss << "\n  Denoising         : " << codec.VP8().denoisingOn;
+      ss << "\n  Error concealment : " << codec.VP8().errorConcealmentOn;
+      ss << "\n  Automatic resize  : " << codec.VP8().automaticResizeOn;
+      ss << "\n  Frame dropping    : " << codec.VP8().frameDroppingOn;
+      ss << "\n  Key frame interval: " << codec.VP8().keyFrameInterval;
+      break;
+    case kVideoCodecVP9:
+      ss << "\n  Complexity        : " << codec.VP9().complexity;
+      ss << "\n  Resilience        : " << codec.VP9().resilienceOn;
+      ss << "\n  # temporal layers : "
+         << static_cast<int>(codec.VP9().numberOfTemporalLayers);
+      ss << "\n  Denoising         : " << codec.VP9().denoisingOn;
+      ss << "\n  Frame dropping    : " << codec.VP9().frameDroppingOn;
+      ss << "\n  Key frame interval: " << codec.VP9().keyFrameInterval;
+      ss << "\n  Adaptive QP mode  : " << codec.VP9().adaptiveQpMode;
+      ss << "\n  Automatic resize  : " << codec.VP9().automaticResizeOn;
+      ss << "\n  # spatial layers  : "
+         << static_cast<int>(codec.VP9().numberOfSpatialLayers);
+      ss << "\n  Flexible mode     : " << codec.VP9().flexibleMode;
+      break;
+    case kVideoCodecH264:
+      ss << "\n  Frame dropping    : " << codec.H264().frameDroppingOn;
+      ss << "\n  Key frame interval: " << codec.H264().keyFrameInterval;
+      ss << "\n  Profile           : " << codec.H264().profile;
+      break;
+    default:
+      break;
+  }
+  ss << "\n";
+  return ss.str();
+}
 }  // namespace
 
 void TestConfig::SetCodecSettings(VideoCodecType codec_type,
@@ -83,57 +123,53 @@ int TestConfig::NumberOfTemporalLayers() const {
   }
 }
 
-void TestConfig::Print() const {
-  printf("Video config:\n");
-  printf(" Filename         : %s\n", filename.c_str());
-  printf(" # CPU cores used : %u\n", NumberOfCores());
-  PrintCodecSettings();
-  printf("\n");
+int TestConfig::TemporalLayerForFrame(int frame_idx) const {
+  int tl = -1;
+  switch (NumberOfTemporalLayers()) {
+    case 1:
+      tl = 0;
+      break;
+    case 2:
+      // temporal layer 1:     1     3
+      // temporal layer 0:  0     2     4 ...
+      tl = (frame_idx % 2 == 0) ? 0 : 1;
+      break;
+    case 3:
+      // temporal layer 2:     1     3     5     7
+      // temporal layer 1:        2           6
+      // temporal layer 0:  0           4           8 ...
+      if (frame_idx % 4 == 0) {
+        tl = 0;
+      } else if ((frame_idx + 2) % 4 == 0) {
+        tl = 1;
+      } else if ((frame_idx + 1) % 2 == 0) {
+        tl = 2;
+      }
+      break;
+    default:
+      RTC_NOTREACHED();
+      break;
+  }
+  return tl;
 }
 
-void TestConfig::PrintCodecSettings() const {
-  printf(" Codec settings:\n");
-  printf("  Codec type        : %s\n",
-         CodecTypeToPayloadString(codec_settings.codecType));
-  printf("  Start bitrate     : %d kbps\n", codec_settings.startBitrate);
-  printf("  Max bitrate       : %d kbps\n", codec_settings.maxBitrate);
-  printf("  Min bitrate       : %d kbps\n", codec_settings.minBitrate);
-  printf("  Width             : %d\n", codec_settings.width);
-  printf("  Height            : %d\n", codec_settings.height);
-  printf("  Max frame rate    : %d\n", codec_settings.maxFramerate);
-  printf("  QPmax             : %d\n", codec_settings.qpMax);
-  if (codec_settings.codecType == kVideoCodecVP8) {
-    printf("  Complexity        : %d\n", codec_settings.VP8().complexity);
-    printf("  Resilience        : %d\n", codec_settings.VP8().resilience);
-    printf("  # temporal layers : %d\n",
-           codec_settings.VP8().numberOfTemporalLayers);
-    printf("  Denoising         : %d\n", codec_settings.VP8().denoisingOn);
-    printf("  Error concealment : %d\n",
-           codec_settings.VP8().errorConcealmentOn);
-    printf("  Automatic resize  : %d\n",
-           codec_settings.VP8().automaticResizeOn);
-    printf("  Frame dropping    : %d\n", codec_settings.VP8().frameDroppingOn);
-    printf("  Key frame interval: %d\n", codec_settings.VP8().keyFrameInterval);
-  } else if (codec_settings.codecType == kVideoCodecVP9) {
-    printf("  Complexity        : %d\n", codec_settings.VP9().complexity);
-    printf("  Resilience        : %d\n", codec_settings.VP9().resilienceOn);
-    printf("  # temporal layers : %d\n",
-           codec_settings.VP9().numberOfTemporalLayers);
-    printf("  Denoising         : %d\n", codec_settings.VP9().denoisingOn);
-    printf("  Frame dropping    : %d\n", codec_settings.VP9().frameDroppingOn);
-    printf("  Key frame interval: %d\n", codec_settings.VP9().keyFrameInterval);
-    printf("  Adaptive QP mode  : %d\n", codec_settings.VP9().adaptiveQpMode);
-    printf("  Automatic resize  : %d\n",
-           codec_settings.VP9().automaticResizeOn);
-    printf("  # spatial layers  : %d\n",
-           codec_settings.VP9().numberOfSpatialLayers);
-    printf("  Flexible mode     : %d\n", codec_settings.VP9().flexibleMode);
-  } else if (codec_settings.codecType == kVideoCodecH264) {
-    printf("  Frame dropping    : %d\n", codec_settings.H264().frameDroppingOn);
-    printf("  Key frame interval: %d\n",
-           codec_settings.H264().keyFrameInterval);
-    printf("  Profile           : %d\n", codec_settings.H264().profile);
-  }
+std::string TestConfig::ToString() const {
+  std::stringstream ss;
+  ss << "Video config:";
+  ss << "\n Filename         : " << filename;
+  ss << "\n # CPU cores used : " << NumberOfCores();
+  ss << "\n Codec settings:";
+  ss << "\n  Codec type        : "
+     << CodecTypeToPayloadString(codec_settings.codecType);
+  ss << "\n  Start bitrate     : " << codec_settings.startBitrate << " kbps";
+  ss << "\n  Max bitrate       : " << codec_settings.maxBitrate << " kbps";
+  ss << "\n  Min bitrate       : " << codec_settings.minBitrate << " kbps";
+  ss << "\n  Width             : " << codec_settings.width;
+  ss << "\n  Height            : " << codec_settings.height;
+  ss << "\n  Max frame rate    : " << codec_settings.maxFramerate;
+  ss << "\n  QPmax             : " << codec_settings.qpMax;
+  ss << CodecSpecificToString(codec_settings);
+  return ss.str();
 }
 
 }  // namespace test

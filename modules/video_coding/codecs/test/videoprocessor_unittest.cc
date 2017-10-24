@@ -27,7 +27,6 @@
 #include "typedefs.h"  // NOLINT(build/include)
 
 using ::testing::_;
-using ::testing::AtLeast;
 using ::testing::ElementsAre;
 using ::testing::Property;
 using ::testing::Return;
@@ -40,7 +39,6 @@ namespace {
 const int kWidth = 352;
 const int kHeight = 288;
 const int kFrameSize = kWidth * kHeight * 3 / 2;  // I420.
-const int kNumFrames = 2;
 
 }  // namespace
 
@@ -52,8 +50,7 @@ class VideoProcessorTest : public testing::Test {
     config_.codec_settings.width = kWidth;
     config_.codec_settings.height = kHeight;
 
-    EXPECT_CALL(frame_reader_mock_, NumberOfFrames())
-        .WillRepeatedly(Return(kNumFrames));
+    ExpectInit();
     EXPECT_CALL(frame_reader_mock_, FrameLength())
         .WillRepeatedly(Return(kFrameSize));
     video_processor_ = rtc::MakeUnique<VideoProcessor>(
@@ -88,19 +85,15 @@ class VideoProcessorTest : public testing::Test {
 };
 
 TEST_F(VideoProcessorTest, InitRelease) {
-  ExpectInit();
-  video_processor_->Init();
-
   ExpectRelease();
-  video_processor_->Release();
 }
 
 TEST_F(VideoProcessorTest, ProcessFrames_FixedFramerate) {
-  ExpectInit();
-  video_processor_->Init();
-
   const int kBitrateKbps = 456;
   const int kFramerateFps = 31;
+  EXPECT_CALL(encoder_mock_, SetRateAllocation(_, kFramerateFps))
+      .Times(1)
+      .WillOnce(Return(0));
   video_processor_->SetRates(kBitrateKbps, kFramerateFps);
 
   EXPECT_CALL(frame_reader_mock_, ReadFrame())
@@ -118,15 +111,14 @@ TEST_F(VideoProcessorTest, ProcessFrames_FixedFramerate) {
   video_processor_->ProcessFrame();
 
   ExpectRelease();
-  video_processor_->Release();
 }
 
 TEST_F(VideoProcessorTest, ProcessFrames_VariableFramerate) {
-  ExpectInit();
-  video_processor_->Init();
-
   const int kBitrateKbps = 456;
   const int kStartFramerateFps = 27;
+  EXPECT_CALL(encoder_mock_, SetRateAllocation(_, kStartFramerateFps))
+      .Times(1)
+      .WillOnce(Return(0));
   video_processor_->SetRates(kBitrateKbps, kStartFramerateFps);
 
   EXPECT_CALL(frame_reader_mock_, ReadFrame())
@@ -138,6 +130,9 @@ TEST_F(VideoProcessorTest, ProcessFrames_VariableFramerate) {
   video_processor_->ProcessFrame();
 
   const int kNewFramerateFps = 13;
+  EXPECT_CALL(encoder_mock_, SetRateAllocation(_, kNewFramerateFps))
+      .Times(1)
+      .WillOnce(Return(0));
   video_processor_->SetRates(kBitrateKbps, kNewFramerateFps);
 
   EXPECT_CALL(encoder_mock_, Encode(Property(&VideoFrame::timestamp,
@@ -147,13 +142,9 @@ TEST_F(VideoProcessorTest, ProcessFrames_VariableFramerate) {
   video_processor_->ProcessFrame();
 
   ExpectRelease();
-  video_processor_->Release();
 }
 
 TEST_F(VideoProcessorTest, SetRates) {
-  ExpectInit();
-  video_processor_->Init();
-
   const int kBitrateKbps = 123;
   const int kFramerateFps = 17;
   EXPECT_CALL(encoder_mock_,
@@ -181,7 +172,6 @@ TEST_F(VideoProcessorTest, SetRates) {
               ElementsAre(0, 0));
 
   ExpectRelease();
-  video_processor_->Release();
 }
 
 }  // namespace test

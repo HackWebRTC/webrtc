@@ -212,9 +212,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
     SleepMs(1 * rtc::kNumMillisecsPerSec);
   }
   cpu_process_time_->Stop();
-  ReleaseAndCloseObjects(&task_queue);
 
-  // Calculate and print rate control statistics.
   std::vector<int> num_dropped_frames;
   std::vector<int> num_spatial_resizes;
   sync_event.Reset();
@@ -226,6 +224,9 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
       });
   sync_event.Wait(rtc::Event::kForever);
 
+  ReleaseAndCloseObjects(&task_queue);
+
+  // Calculate and print rate control statistics.
   rate_update_index = 0;
   frame_number = 0;
   ResetRateControlMetrics(rate_update_index, rate_profiles);
@@ -416,7 +417,6 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
         encoder_.get(), decoder_.get(), analysis_frame_reader_.get(),
         analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
         &stats_, encoded_frame_writer_.get(), decoded_frame_writer_.get());
-    processor_->Init();
     sync_event.Set();
   });
   sync_event.Wait(rtc::Event::kForever);
@@ -426,12 +426,12 @@ void VideoProcessorIntegrationTest::ReleaseAndCloseObjects(
     rtc::TaskQueue* task_queue) {
   rtc::Event sync_event(false, false);
   task_queue->PostTask([this, &sync_event]() {
-    processor_->Release();
+    processor_.reset();
     sync_event.Set();
   });
   sync_event.Wait(rtc::Event::kForever);
 
-  // The VideoProcessor must be ::Release()'d before we destroy the codecs.
+  // The VideoProcessor must be destroyed before the codecs.
   DestroyEncoderAndDecoder();
 
   // Close the analysis files before we use them for SSIM/PSNR calculations.
@@ -451,7 +451,7 @@ void VideoProcessorIntegrationTest::ReleaseAndCloseObjects(
 void VideoProcessorIntegrationTest::UpdateRateControlMetrics(int frame_number) {
   RTC_CHECK_GE(frame_number, 0);
 
-  const int tl_idx = TemporalLayerIndexForFrame(frame_number);
+  const int tl_idx = config_.TemporalLayerForFrame(frame_number);
   ++actual_.num_frames_layer[tl_idx];
   ++actual_.num_frames;
 
@@ -563,7 +563,7 @@ void VideoProcessorIntegrationTest::MaybePrintSettings() const {
   if (!config_.verbose)
     return;
 
-  config_.Print();
+  printf("%s\n", config_.ToString().c_str());
   printf(" Total # of frames: %d\n", analysis_frame_reader_->NumberOfFrames());
   const char* encoder_name = encoder_->ImplementationName();
   const char* decoder_name = decoder_->ImplementationName();
@@ -583,38 +583,6 @@ void VideoProcessorIntegrationTest::VerifyBitstream(
   RTC_CHECK_GE(frame_number, 0);
   const FrameStatistic* frame_stat = stats_.GetFrame(frame_number);
   EXPECT_LE(*(frame_stat->max_nalu_length), bs_thresholds.max_nalu_length);
-}
-
-// Temporal layer index corresponding to frame number, for up to 3 layers.
-int VideoProcessorIntegrationTest::TemporalLayerIndexForFrame(
-    int frame_number) const {
-  int tl_idx = -1;
-  switch (config_.NumberOfTemporalLayers()) {
-    case 1:
-      tl_idx = 0;
-      break;
-    case 2:
-      // temporal layer 0:  0     2     4 ...
-      // temporal layer 1:     1     3
-      tl_idx = (frame_number % 2 == 0) ? 0 : 1;
-      break;
-    case 3:
-      // temporal layer 0:  0            4            8 ...
-      // temporal layer 1:        2            6
-      // temporal layer 2:     1      3     5      7
-      if (frame_number % 4 == 0) {
-        tl_idx = 0;
-      } else if ((frame_number + 2) % 4 == 0) {
-        tl_idx = 1;
-      } else if ((frame_number + 1) % 2 == 0) {
-        tl_idx = 2;
-      }
-      break;
-    default:
-      RTC_NOTREACHED();
-      break;
-  }
-  return tl_idx;
 }
 
 // Reset quantities before each encoder rate update.

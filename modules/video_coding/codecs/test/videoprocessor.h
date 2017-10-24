@@ -70,12 +70,6 @@ class VideoProcessor {
                  FrameWriter* decoded_frame_writer);
   ~VideoProcessor();
 
-  // Sets up callbacks and initializes the encoder and decoder.
-  void Init();
-
-  // Tears down callbacks and releases the encoder and decoder.
-  void Release();
-
   // Reads a frame from the analysis frame reader and sends it to the encoder.
   // When the encode callback is received, the encoded frame is sent to the
   // decoder. The decoded frame is written to disk by the analysis frame writer.
@@ -189,7 +183,9 @@ class VideoProcessor {
   // Invoked by the callback adapter when a frame has completed decoding.
   void FrameDecoded(const webrtc::VideoFrame& image);
 
-  bool initialized_ RTC_GUARDED_BY(sequence_checker_);
+  void WriteDecodedFrameToFile(rtc::Buffer* buffer);
+  bool ExcludeFrame(const EncodedImage& encoded_image);
+
   TestConfig config_ RTC_GUARDED_BY(sequence_checker_);
 
   webrtc::VideoEncoder* const encoder_;

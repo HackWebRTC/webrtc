@@ -52,8 +52,8 @@ struct TestConfig {
 
   int NumberOfCores() const;
   int NumberOfTemporalLayers() const;
-  void Print() const;
-  void PrintCodecSettings() const;
+  int TemporalLayerForFrame(int frame_idx) const;
+  std::string ToString() const;
 
   // Plain name of YUV file to process without file extension.
   std::string filename;
