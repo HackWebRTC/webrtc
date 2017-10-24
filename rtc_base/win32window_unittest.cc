@@ -20,17 +20,17 @@ class TestWindow : public rtc::Win32Window {
   const MSG& msg() const { return msg_; }
   bool destroyed() const { return destroyed_; }
 
-  virtual bool OnMessage(UINT uMsg, WPARAM wParam,
-                         LPARAM lParam, LRESULT& result) {
+  bool OnMessage(UINT uMsg,
+                 WPARAM wParam,
+                 LPARAM lParam,
+                 LRESULT& result) override {
     msg_.message = uMsg;
     msg_.wParam = wParam;
     msg_.lParam = lParam;
     result = kDummyResult;
     return true;
   }
-  virtual void OnNcDestroy() {
-    destroyed_ = true;
-  }
+  void OnNcDestroy() override { destroyed_ = true; }
 
  private:
   MSG msg_;

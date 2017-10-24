@@ -44,7 +44,6 @@ class TestGenerator {
 
 struct TestMessage : public MessageData {
   explicit TestMessage(int v) : value(v) {}
-  virtual ~TestMessage() {}
 
   int value;
 };
@@ -60,9 +59,7 @@ class SocketClient : public TestGenerator, public sigslot::has_slots<> {
     socket_->SignalReadPacket.connect(this, &SocketClient::OnPacket);
   }
 
-  ~SocketClient() {
-    delete socket_;
-  }
+  ~SocketClient() override { delete socket_; }
 
   SocketAddress address() const { return socket_->GetLocalAddress(); }
 
@@ -90,11 +87,9 @@ class MessageClient : public MessageHandler, public TestGenerator {
       : socket_(socket) {
   }
 
-  virtual ~MessageClient() {
-    delete socket_;
-  }
+  ~MessageClient() override { delete socket_; }
 
-  virtual void OnMessage(Message *pmsg) {
+  void OnMessage(Message* pmsg) override {
     TestMessage* msg = static_cast<TestMessage*>(pmsg->pdata);
     int result = Next(msg->value);
     EXPECT_GE(socket_->Send(&result, sizeof(result)), 0);
@@ -109,7 +104,7 @@ class CustomThread : public rtc::Thread {
  public:
   CustomThread()
       : Thread(std::unique_ptr<SocketServer>(new rtc::NullSocketServer())) {}
-  virtual ~CustomThread() { Stop(); }
+  ~CustomThread() override { Stop(); }
   bool Start() { return false; }
 
   bool WrapCurrent() {
@@ -129,12 +124,12 @@ class SignalWhenDestroyedThread : public Thread {
       : Thread(std::unique_ptr<SocketServer>(new NullSocketServer())),
         event_(event) {}
 
-  virtual ~SignalWhenDestroyedThread() {
+  ~SignalWhenDestroyedThread() override {
     Stop();
     event_->Set();
   }
 
-  virtual void Run() {
+  void Run() override {
     // Do nothing.
   }
 

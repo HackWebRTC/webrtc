@@ -72,7 +72,6 @@ class RTCCertificateGeneratorTest
  public:
   RTCCertificateGeneratorTest()
       : fixture_(new RefCountedObject<RTCCertificateGeneratorFixture>()) {}
-  ~RTCCertificateGeneratorTest() {}
 
  protected:
   static const int kGenerationTimeoutMs = 10000;

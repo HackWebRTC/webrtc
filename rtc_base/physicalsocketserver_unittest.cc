@@ -506,11 +506,9 @@ class PosixSignalDeliveryTest : public testing::Test {
   }
 
  protected:
-  void SetUp() {
-    ss_.reset(new PhysicalSocketServer());
-  }
+  void SetUp() override { ss_.reset(new PhysicalSocketServer()); }
 
-  void TearDown() {
+  void TearDown() override {
     ss_.reset(nullptr);
     signals_received_.clear();
     signaled_thread_ = nullptr;
@@ -584,7 +582,7 @@ TEST_F(PosixSignalDeliveryTest, SignalDuringWait) {
 }
 
 class RaiseSigTermRunnable : public Runnable {
-  void Run(Thread *thread) {
+  void Run(Thread* thread) override {
     thread->socketserver()->Wait(1000, false);
 
     // Allow SIGTERM. This will be the only thread with it not masked so it will

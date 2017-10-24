@@ -359,14 +359,14 @@ TEST(BufferTest, TestBracketWrite) {
 TEST(BufferTest, TestBeginEnd) {
   const Buffer cbuf(kTestData);
   Buffer buf(kTestData);
-  auto b1 = cbuf.begin();
+  auto* b1 = cbuf.begin();
   for (auto& x : buf) {
     EXPECT_EQ(*b1, x);
     ++b1;
     ++x;
   }
   EXPECT_EQ(cbuf.end(), b1);
-  auto b2 = buf.begin();
+  auto* b2 = buf.begin();
   for (auto& y : cbuf) {
     EXPECT_EQ(*b2, y + 1);
     ++b2;

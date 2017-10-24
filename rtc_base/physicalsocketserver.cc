@@ -1152,7 +1152,7 @@ class EventDispatcher : public Dispatcher {
     }
   }
 
-  ~EventDispatcher() {
+  ~EventDispatcher() override {
     if (hev_ != nullptr) {
       ss_->Remove(this);
       WSACloseEvent(hev_);
@@ -1165,23 +1165,19 @@ class EventDispatcher : public Dispatcher {
       WSASetEvent(hev_);
   }
 
-  virtual uint32_t GetRequestedEvents() { return 0; }
+  uint32_t GetRequestedEvents() override { return 0; }
 
-  virtual void OnPreEvent(uint32_t ff) { WSAResetEvent(hev_); }
+  void OnPreEvent(uint32_t ff) override { WSAResetEvent(hev_); }
 
-  virtual void OnEvent(uint32_t ff, int err) {}
+  void OnEvent(uint32_t ff, int err) override {}
 
-  virtual WSAEVENT GetWSAEvent() {
-    return hev_;
-  }
+  WSAEVENT GetWSAEvent() override { return hev_; }
 
-  virtual SOCKET GetSocket() {
-    return INVALID_SOCKET;
-  }
+  SOCKET GetSocket() override { return INVALID_SOCKET; }
 
-  virtual bool CheckSignalClose() { return false; }
+  bool CheckSignalClose() override { return false; }
 
-private:
+ private:
   PhysicalSocketServer* ss_;
   WSAEVENT hev_;
 };

@@ -56,14 +56,13 @@ public:
   };
   HttpBaseTest() : mem(nullptr), obtain_stream(false), http_stream(nullptr) {}
 
-  virtual void SetUp() { }
-  virtual void TearDown() {
+  void TearDown() override {
     delete http_stream;
     // Avoid an ASSERT, in case a test doesn't clean up properly
     base.abort(HE_NONE);
   }
 
-  virtual HttpError onHttpHeaderComplete(bool chunked, size_t& data_size) {
+  HttpError onHttpHeaderComplete(bool chunked, size_t& data_size) override {
     LOG_F(LS_VERBOSE) << "chunked: " << chunked << " size: " << data_size;
     Event e = { E_HEADER_COMPLETE, chunked, data_size, HM_NONE, HE_NONE};
     events.push_back(e);
@@ -72,12 +71,12 @@ public:
     }
     return HE_NONE;
   }
-  virtual void onHttpComplete(HttpMode mode, HttpError err) {
+  void onHttpComplete(HttpMode mode, HttpError err) override {
     LOG_F(LS_VERBOSE) << "mode: " << mode << " err: " << err;
     Event e = { E_COMPLETE, false, 0, mode, err };
     events.push_back(e);
   }
-  virtual void onHttpClosed(HttpError err) {
+  void onHttpClosed(HttpError err) override {
     LOG_F(LS_VERBOSE) << "err: " << err;
     Event e = { E_CLOSED, false, 0, HM_NONE, err };
     events.push_back(e);

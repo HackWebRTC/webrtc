@@ -101,10 +101,9 @@ TEST_F(MessageQueueTest, DisposeNotLocked) {
 class DeletedMessageHandler : public MessageHandler {
  public:
   explicit DeletedMessageHandler(bool* deleted) : deleted_(deleted) { }
-  ~DeletedMessageHandler() {
-    *deleted_ = true;
-  }
-  void OnMessage(Message* msg) { }
+  ~DeletedMessageHandler() override { *deleted_ = true; }
+  void OnMessage(Message* msg) override {}
+
  private:
   bool* deleted_;
 };
