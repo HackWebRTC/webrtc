@@ -58,13 +58,12 @@ class VCMProcessTimer {
   int64_t _latestMs;
 };
 
-class VideoSender : public Module {
+class VideoSender {
  public:
   typedef VideoCodingModule::SenderNackMode SenderNackMode;
 
   VideoSender(Clock* clock,
-              EncodedImageCallback* post_encode_callback,
-              VCMSendStatisticsCallback* send_stats_callback);
+              EncodedImageCallback* post_encode_callback);
 
   ~VideoSender();
 
@@ -109,9 +108,6 @@ class VideoSender : public Module {
   int32_t IntraFrameRequest(size_t stream_index);
   int32_t EnableFrameDropper(bool enable);
 
-  int64_t TimeUntilNextProcess() override;
-  void Process() override;
-
  private:
   EncoderParameters UpdateEncoderParameters(
       const EncoderParameters& params,
@@ -120,17 +116,13 @@ class VideoSender : public Module {
   void SetEncoderParameters(EncoderParameters params, bool has_internal_source)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(encoder_crit_);
 
-  Clock* const clock_;
-
   rtc::CriticalSection encoder_crit_;
   VCMGenericEncoder* _encoder;
   media_optimization::MediaOptimization _mediaOpt;
   VCMEncodedFrameCallback _encodedFrameCallback RTC_GUARDED_BY(encoder_crit_);
   EncodedImageCallback* const post_encode_callback_;
-  VCMSendStatisticsCallback* const send_stats_callback_;
   VCMCodecDataBase _codecDataBase RTC_GUARDED_BY(encoder_crit_);
   bool frame_dropper_enabled_ RTC_GUARDED_BY(encoder_crit_);
-  VCMProcessTimer _sendStatsTimer;
 
   // Must be accessed on the construction thread of VideoSender.
   VideoCodec current_codec_;

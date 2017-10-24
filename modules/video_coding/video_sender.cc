@@ -28,17 +28,13 @@ namespace webrtc {
 namespace vcm {
 
 VideoSender::VideoSender(Clock* clock,
-                         EncodedImageCallback* post_encode_callback,
-                         VCMSendStatisticsCallback* send_stats_callback)
-    : clock_(clock),
-      _encoder(nullptr),
-      _mediaOpt(clock_),
+                         EncodedImageCallback* post_encode_callback)
+    : _encoder(nullptr),
+      _mediaOpt(clock),
       _encodedFrameCallback(post_encode_callback, &_mediaOpt),
       post_encode_callback_(post_encode_callback),
-      send_stats_callback_(send_stats_callback),
       _codecDataBase(&_encodedFrameCallback),
       frame_dropper_enabled_(true),
-      _sendStatsTimer(VCMProcessTimer::kDefaultProcessIntervalMs, clock_),
       current_codec_(),
       encoder_params_({BitrateAllocation(), 0, 0, 0}),
       encoder_has_internal_source_(false),
@@ -51,24 +47,6 @@ VideoSender::VideoSender(Clock* clock,
 }
 
 VideoSender::~VideoSender() {}
-
-// TODO(asapersson): Remove _sendStatsTimer and send_stats_callback_.
-void VideoSender::Process() {
-  if (_sendStatsTimer.TimeUntilProcess() == 0) {
-    // |_sendStatsTimer.Processed()| must be called. Otherwise
-    // VideoSender::Process() will be called in an infinite loop.
-    _sendStatsTimer.Processed();
-    if (send_stats_callback_) {
-      uint32_t bitRate = 0;
-      uint32_t frameRate = 0;
-      send_stats_callback_->SendStatistics(bitRate, frameRate);
-    }
-  }
-}
-
-int64_t VideoSender::TimeUntilNextProcess() {
-  return _sendStatsTimer.TimeUntilProcess();
-}
 
 // Register the send codec to be used.
 int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,

@@ -552,7 +552,6 @@ VideoSendStream::VideoSendStream(
     // Only signal target bitrate for screenshare streams, for now.
     video_stream_encoder_->SetBitrateObserver(send_stream_.get());
   }
-  video_stream_encoder_->RegisterProcessThread(module_process_thread);
 
   ReconfigureVideoEncoder(std::move(encoder_config));
 }
@@ -620,7 +619,6 @@ void VideoSendStream::StopPermanentlyAndGetRtpStates(
     VideoSendStream::RtpPayloadStateMap* payload_state_map) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   video_stream_encoder_->Stop();
-  video_stream_encoder_->DeRegisterProcessThread();
   send_stream_->DeRegisterProcessThread();
   worker_queue_->PostTask(
       std::unique_ptr<rtc::QueuedTask>(new DestructAndGetRtpStateTask(

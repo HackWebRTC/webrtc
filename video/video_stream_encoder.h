@@ -36,7 +36,6 @@
 
 namespace webrtc {
 
-class ProcessThread;
 class SendStatisticsProxy;
 class VideoBitrateAllocationObserver;
 
@@ -79,12 +78,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
                      EncodedFrameObserver* encoder_timing,
                      std::unique_ptr<OveruseFrameDetector> overuse_detector);
   ~VideoStreamEncoder();
-  // RegisterProcessThread register |module_process_thread| with those objects
-  // that use it. Registration has to happen on the thread where
-  // |module_process_thread| was created (libjingle's worker thread).
-  // TODO(perkj): Replace the use of |module_process_thread| with a TaskQueue.
-  void RegisterProcessThread(ProcessThread* module_process_thread);
-  void DeRegisterProcessThread();
 
   // Sets the source that will provide I420 video frames.
   // |degradation_preference| control whether or not resolution or frame rate
@@ -236,8 +229,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
   SendStatisticsProxy* const stats_proxy_;
   rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
-  ProcessThread* module_process_thread_;
-  rtc::ThreadChecker module_process_thread_checker_;
   // |thread_checker_| checks that public methods that are related to lifetime
   // of VideoStreamEncoder are called on the same thread.
   rtc::ThreadChecker thread_checker_;

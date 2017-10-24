@@ -182,7 +182,7 @@ class TestVideoSender : public ::testing::Test {
   TestVideoSender() : clock_(1000), encoded_frame_callback_(&clock_) {}
 
   void SetUp() override {
-    sender_.reset(new VideoSender(&clock_, &encoded_frame_callback_, nullptr));
+    sender_.reset(new VideoSender(&clock_, &encoded_frame_callback_));
   }
 
   void AddFrame() {

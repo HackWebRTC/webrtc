@@ -83,7 +83,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                         KeyFrameRequestSender* keyframe_request_sender,
                         EncodedImageCallback* pre_decode_image_callback)
       : VideoCodingModule(),
-        sender_(clock, &post_encode_callback_, nullptr),
+        sender_(clock, &post_encode_callback_),
         timing_(new VCMTiming(clock)),
         receiver_(clock,
                   event_factory,
@@ -95,15 +95,12 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   virtual ~VideoCodingModuleImpl() {}
 
   int64_t TimeUntilNextProcess() override {
-    int64_t sender_time = sender_.TimeUntilNextProcess();
     int64_t receiver_time = receiver_.TimeUntilNextProcess();
-    RTC_DCHECK_GE(sender_time, 0);
     RTC_DCHECK_GE(receiver_time, 0);
-    return VCM_MIN(sender_time, receiver_time);
+    return receiver_time;
   }
 
   void Process() override {
-    sender_.Process();
     receiver_.Process();
   }
 

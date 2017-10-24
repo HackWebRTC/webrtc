@@ -391,7 +391,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       sink_(nullptr),
       settings_(settings),
       codec_type_(PayloadStringToCodecType(settings.payload_name)),
-      video_sender_(Clock::GetRealTimeClock(), this, nullptr),
+      video_sender_(Clock::GetRealTimeClock(), this),
       overuse_detector_(
           overuse_detector.get()
               ? overuse_detector.release()
@@ -402,7 +402,6 @@ VideoStreamEncoder::VideoStreamEncoder(
                     stats_proxy)),
       stats_proxy_(stats_proxy),
       pre_encode_callback_(pre_encode_callback),
-      module_process_thread_(nullptr),
       max_framerate_(-1),
       pending_encoder_reconfiguration_(false),
       encoder_start_bitrate_bps_(0),
@@ -466,20 +465,6 @@ void VideoStreamEncoder::Stop() {
   });
 
   shutdown_event_.Wait(rtc::Event::kForever);
-}
-
-void VideoStreamEncoder::RegisterProcessThread(
-    ProcessThread* module_process_thread) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DCHECK(!module_process_thread_);
-  module_process_thread_ = module_process_thread;
-  module_process_thread_->RegisterModule(&video_sender_, RTC_FROM_HERE);
-  module_process_thread_checker_.DetachFromThread();
-}
-
-void VideoStreamEncoder::DeRegisterProcessThread() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  module_process_thread_->DeRegisterModule(&video_sender_);
 }
 
 void VideoStreamEncoder::SetBitrateObserver(
