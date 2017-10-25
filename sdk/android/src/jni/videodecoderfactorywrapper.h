@@ -27,7 +27,9 @@ class VideoDecoderFactoryWrapper : public cricket::WebRtcVideoDecoderFactory {
 
   // Caller takes the ownership of the returned object and it should be released
   // by calling DestroyVideoDecoder().
-  VideoDecoder* CreateVideoDecoder(VideoCodecType type) override;
+  VideoDecoder* CreateVideoDecoderWithParams(
+      const cricket::VideoCodec& codec,
+      cricket::VideoDecoderParams params) override;
   void DestroyVideoDecoder(VideoDecoder* decoder) override;
 
  private:

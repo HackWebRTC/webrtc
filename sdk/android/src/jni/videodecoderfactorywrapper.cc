@@ -27,12 +27,12 @@ VideoDecoderFactoryWrapper::VideoDecoderFactoryWrapper(JNIEnv* jni,
                        "(Ljava/lang/String;)Lorg/webrtc/VideoDecoder;");
 }
 
-VideoDecoder* VideoDecoderFactoryWrapper::CreateVideoDecoder(
-    VideoCodecType type) {
+VideoDecoder* VideoDecoderFactoryWrapper::CreateVideoDecoderWithParams(
+    const cricket::VideoCodec& codec,
+    cricket::VideoDecoderParams params) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
-  const char* type_payload = CodecTypeToPayloadString(type);
-  jstring name = jni->NewStringUTF(type_payload);
+  jstring name = JavaStringFromStdString(jni, codec.name);
   jobject decoder =
       jni->CallObjectMethod(*decoder_factory_, create_decoder_method_, name);
   return decoder != nullptr ? new VideoDecoderWrapper(jni, decoder) : nullptr;
