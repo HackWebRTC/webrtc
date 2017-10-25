@@ -129,7 +129,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossChangeBitRateVP9) {
       {700, 30, 200},
       {500, 30, kNumFramesLong + 1}};
 
-  std::vector<RateControlThresholds> rc_thresholds = {{0, 30, 20, 20, 35, 0, 1},
+  std::vector<RateControlThresholds> rc_thresholds = {{0, 35, 20, 20, 35, 0, 1},
                                                       {2, 0, 20, 20, 60, 0, 0},
                                                       {0, 0, 25, 20, 40, 0, 0}};
 
