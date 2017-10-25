@@ -201,12 +201,11 @@ void MouseCursorMonitorX11::Capture() {
       }
     }
 
-    const DesktopVector position(win_x, win_y);
     // TODO(zijiehe): Remove this overload.
-    callback_->OnMouseCursorPosition(state, position);
+    callback_->OnMouseCursorPosition(state, DesktopVector(win_x, win_y));
     // X11 always starts the coordinate from (0, 0), so we do not need to
     // translate here.
-    callback_->OnMouseCursorPosition(position);
+    callback_->OnMouseCursorPosition(DesktopVector(root_x, root_y));
   }
 }
 
