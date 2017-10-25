@@ -47,6 +47,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/rate_statistics.h"
 
@@ -594,6 +595,46 @@ std::string EventLogAnalyzer::GetStreamName(StreamId stream_id) const {
   }
   name << SsrcToString(stream_id.GetSsrc());
   return name.str();
+}
+
+// This is much more reliable for outgoing streams than for incoming streams.
+rtc::Optional<uint32_t> EventLogAnalyzer::EstimateRtpClockFrequency(
+    const std::vector<LoggedRtpPacket>& packets) const {
+  RTC_CHECK(packets.size() >= 2);
+  uint64_t end_time_us = log_segments_.empty()
+                             ? std::numeric_limits<uint64_t>::max()
+                             : log_segments_.front().second;
+  SeqNumUnwrapper<uint32_t> unwrapper;
+  uint64_t first_rtp_timestamp = unwrapper.Unwrap(packets[0].header.timestamp);
+  uint64_t first_log_timestamp = packets[0].timestamp;
+  uint64_t last_rtp_timestamp = first_rtp_timestamp;
+  uint64_t last_log_timestamp = first_log_timestamp;
+  for (size_t i = 1; i < packets.size(); i++) {
+    if (packets[i].timestamp > end_time_us)
+      break;
+    last_rtp_timestamp = unwrapper.Unwrap(packets[i].header.timestamp);
+    last_log_timestamp = packets[i].timestamp;
+  }
+  if (last_log_timestamp - first_log_timestamp < 1000000) {
+    LOG(LS_WARNING)
+        << "Failed to estimate RTP clock frequency: Stream too short. ("
+        << packets.size() << " packets, "
+        << last_log_timestamp - first_log_timestamp << " us)";
+    return rtc::Optional<uint32_t>();
+  }
+  double duration =
+      static_cast<double>(last_log_timestamp - first_log_timestamp) / 1000000;
+  double estimated_frequency =
+      (last_rtp_timestamp - first_rtp_timestamp) / duration;
+  for (uint32_t f : {8000, 16000, 32000, 48000, 90000}) {
+    if (std::fabs(estimated_frequency - f) < 0.05 * f) {
+      return rtc::Optional<uint32_t>(f);
+    }
+  }
+  LOG(LS_WARNING) << "Failed to estimate RTP clock frequency: Estimate "
+                  << estimated_frequency
+                  << "not close to any stardard RTP frequency.";
+  return rtc::Optional<uint32_t>();
 }
 
 void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
@@ -1457,6 +1498,55 @@ std::vector<std::pair<int64_t, int64_t>> EventLogAnalyzer::GetFrameTimestamps()
     }
   }
   return timestamps;
+}
+
+void EventLogAnalyzer::CreatePacerDelayGraph(Plot* plot) {
+  for (const auto& kv : rtp_packets_) {
+    const std::vector<LoggedRtpPacket>& packets = kv.second;
+    StreamId stream_id = kv.first;
+
+    if (packets.size() < 2) {
+      LOG(LS_WARNING) << "Can't estimate a the RTP clock frequency or the "
+                         "pacer delay with less than 2 packets in the stream";
+      continue;
+    }
+    rtc::Optional<uint32_t> estimated_frequency =
+        EstimateRtpClockFrequency(packets);
+    if (!estimated_frequency)
+      continue;
+    if (IsVideoSsrc(stream_id) && *estimated_frequency != 90000) {
+      LOG(LS_WARNING)
+          << "Video stream should use a 90 kHz clock but appears to use "
+          << *estimated_frequency / 1000 << ". Discarding.";
+      continue;
+    }
+
+    TimeSeries pacer_delay_series(
+        GetStreamName(stream_id) + "(" +
+            std::to_string(*estimated_frequency / 1000) + " kHz)",
+        LINE_DOT_GRAPH);
+    SeqNumUnwrapper<uint32_t> timestamp_unwrapper;
+    uint64_t first_capture_timestamp =
+        timestamp_unwrapper.Unwrap(packets.front().header.timestamp);
+    uint64_t first_send_timestamp = packets.front().timestamp;
+    for (LoggedRtpPacket packet : packets) {
+      double capture_time_ms = (static_cast<double>(timestamp_unwrapper.Unwrap(
+                                    packet.header.timestamp)) -
+                                first_capture_timestamp) /
+                               *estimated_frequency * 1000;
+      double send_time_ms =
+          static_cast<double>(packet.timestamp - first_send_timestamp) / 1000;
+      float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
+      float y = send_time_ms - capture_time_ms;
+      pacer_delay_series.points.emplace_back(x, y);
+    }
+    plot->AppendTimeSeries(std::move(pacer_delay_series));
+  }
+
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 10, "Pacer delay (ms)", kBottomMargin, kTopMargin);
+  plot->SetTitle(
+      "Delay from capture to send time. (First packet normalized to 0.)");
 }
 
 void EventLogAnalyzer::CreateTimestampGraph(Plot* plot) {

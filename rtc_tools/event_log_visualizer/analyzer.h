@@ -94,6 +94,7 @@ class EventLogAnalyzer {
   void CreateReceiveSideBweSimulationGraph(Plot* plot);
 
   void CreateNetworkDelayFeedbackGraph(Plot* plot);
+  void CreatePacerDelayGraph(Plot* plot);
   void CreateTimestampGraph(Plot* plot);
 
   void CreateAudioEncoderTargetBitrateGraph(Plot* plot);
@@ -144,7 +145,10 @@ class EventLogAnalyzer {
 
   bool IsAudioSsrc(StreamId stream_id) const;
 
-  std::string GetStreamName(StreamId) const;
+  std::string GetStreamName(StreamId stream_id) const;
+
+  rtc::Optional<uint32_t> EstimateRtpClockFrequency(
+      const std::vector<LoggedRtpPacket>& packets) const;
 
   const ParsedRtcEventLog& parsed_log_;
 

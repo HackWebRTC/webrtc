@@ -218,6 +218,7 @@ if (!build_with_chromium) {
         "../modules/audio_coding:ana_debug_dump_proto",
         "../modules/audio_coding:neteq_tools",
         "../rtc_base:rtc_base_approved",
+        "../rtc_base:rtc_numerics",
 
         # TODO(kwiberg): Remove this dependency.
         "../api/audio_codecs:audio_codecs_api",

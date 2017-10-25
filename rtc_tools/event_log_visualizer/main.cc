@@ -88,6 +88,11 @@ DEFINE_bool(plot_fraction_loss_feedback,
             true,
             "Plot packet loss in percent for outgoing packets (as perceived by "
             "the send-side bandwidth estimator).");
+DEFINE_bool(plot_pacer_delay,
+            false,
+            "Plot the time each sent packet has spent in the pacer (based on "
+            "the difference between the RTP timestamp and the send "
+            "timestamp).");
 DEFINE_bool(plot_timestamps,
             false,
             "Plot the rtp timestamps of all rtp and rtcp packets over time.");
@@ -264,6 +269,9 @@ int main(int argc, char* argv[]) {
   }
   if (FLAG_plot_timestamps) {
     analyzer.CreateTimestampGraph(collection->AppendNewPlot());
+  }
+  if (FLAG_plot_pacer_delay) {
+    analyzer.CreatePacerDelayGraph(collection->AppendNewPlot());
   }
   if (FLAG_plot_audio_encoder_bitrate_bps) {
     analyzer.CreateAudioEncoderTargetBitrateGraph(collection->AppendNewPlot());
