@@ -62,7 +62,7 @@ BLACKLIST_LINT_FILTERS = [
 #    webrtc-users@google.com (internal list).
 # 4. (later) The deprecated APIs are removed.
 NATIVE_API_DIRS = (
-  'api',
+  'api',  # All subdirectories of api/ are included as well.
   'media',
   'modules/audio_device/include',
   'pc',
@@ -160,8 +160,15 @@ def CheckNativeApiHeaderChanges(input_api, output_api):
   for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
     if f.LocalPath().endswith('.h'):
       for path in API_DIRS:
-        if os.path.dirname(f.LocalPath()) == path:
-          files.append(f)
+        dn = os.path.dirname(f.LocalPath())
+        if path == 'api':
+          # Special case: Subdirectories included.
+          if dn == 'api' or dn.startswith('api/'):
+            files.append(f)
+        else:
+          # Normal case: Subdirectories not included.
+          if dn == path:
+            files.append(f)
 
   if files:
     return [output_api.PresubmitNotifyResult(API_CHANGE_MSG, files)]
