@@ -100,6 +100,21 @@ bool ValidSimulcastResolutions(const VideoCodec& codec, int num_streams) {
       return false;
     }
   }
+  for (int i = 1; i < num_streams; ++i) {
+    if (codec.simulcastStream[i].width !=
+        codec.simulcastStream[i - 1].width * 2) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool ValidSimulcastTemporalLayers(const VideoCodec& codec, int num_streams) {
+  for (int i = 0; i < num_streams - 1; ++i) {
+    if (codec.simulcastStream[i].numberOfTemporalLayers !=
+        codec.simulcastStream[i + 1].numberOfTemporalLayers)
+      return false;
+  }
   return true;
 }
 
@@ -395,8 +410,10 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   int number_of_streams = NumberOfStreams(*inst);
   bool doing_simulcast = (number_of_streams > 1);
 
-  if (doing_simulcast && !ValidSimulcastResolutions(*inst, number_of_streams)) {
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  if (doing_simulcast &&
+      (!ValidSimulcastResolutions(*inst, number_of_streams) ||
+       !ValidSimulcastTemporalLayers(*inst, number_of_streams))) {
+    return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
   }
 
   int num_temporal_layers =

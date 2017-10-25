@@ -162,6 +162,8 @@ rtc_static_library("rtc_audio_video") {
     "engine/videodecodersoftwarefallbackwrapper.h",
     "engine/videoencodersoftwarefallbackwrapper.cc",
     "engine/videoencodersoftwarefallbackwrapper.h",
+    "engine/vp8_encoder_simulcast_proxy.cc",
+    "engine/vp8_encoder_simulcast_proxy.h",
     "engine/webrtcmediaengine.cc",
     "engine/webrtcmediaengine.h",
     "engine/webrtcvideocapturer.cc",
@@ -460,6 +462,7 @@ if (rtc_include_tests) {
       "engine/simulcast_unittest.cc",
       "engine/videodecodersoftwarefallbackwrapper_unittest.cc",
       "engine/videoencodersoftwarefallbackwrapper_unittest.cc",
+      "engine/vp8_encoder_simulcast_proxy_unittest.cc",
       "engine/webrtcmediaengine_unittest.cc",
       "engine/webrtcvideocapturer_unittest.cc",
       "engine/webrtcvideoencoderfactory_unittest.cc",
@@ -541,6 +544,7 @@ if (rtc_include_tests) {
       "../system_wrappers:metrics_default",
       "../test:audio_codec_mocks",
       "../test:test_support",
+      "../test:video_test_common",
       "../voice_engine:voice_engine",
     ]
   }

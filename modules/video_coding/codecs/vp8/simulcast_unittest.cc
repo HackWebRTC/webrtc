@@ -67,10 +67,6 @@ TEST_F(TestVp8Impl, TestSaptioTemporalLayers333PatternEncoder) {
   TestVp8Simulcast::TestSaptioTemporalLayers333PatternEncoder();
 }
 
-TEST_F(TestVp8Impl, TestSpatioTemporalLayers321PatternEncoder) {
-  TestVp8Simulcast::TestSpatioTemporalLayers321PatternEncoder();
-}
-
 TEST_F(TestVp8Impl, TestStrideEncodeDecode) {
   TestVp8Simulcast::TestStrideEncodeDecode();
 }
