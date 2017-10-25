@@ -62,7 +62,7 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
     EchoPathDelayEstimator estimator(&data_dumper, EchoCanceller3Config());
 
     rtc::Optional<size_t> estimated_delay_samples;
-    for (size_t k = 0; k < (100 + delay_samples / kBlockSize); ++k) {
+    for (size_t k = 0; k < (150 + delay_samples / kBlockSize); ++k) {
       RandomizeSampleVector(&random_generator, render[0]);
       signal_delay_buffer.Delay(render[0], capture);
       render_delay_buffer->Insert(render);

@@ -142,7 +142,7 @@ TEST(MatchedFilter, LagEstimation) {
         RenderDelayBuffer::Create(3));
 
     // Analyze the correlation between render and capture.
-    for (size_t k = 0; k < (100 + delay_samples / kSubBlockSize); ++k) {
+    for (size_t k = 0; k < (150 + delay_samples / kSubBlockSize); ++k) {
       RandomizeSampleVector(&random_generator, render[0]);
       signal_delay_buffer.Delay(render[0], capture);
       render_delay_buffer->Insert(render);
