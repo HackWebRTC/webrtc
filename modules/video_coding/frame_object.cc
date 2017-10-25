@@ -9,9 +9,13 @@
  */
 
 #include "modules/video_coding/frame_object.h"
+
+#include <sstream>
+
 #include "common_video/h264/h264_common.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -102,6 +106,19 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
         (!sps_pps_idr_is_keyframe && contains_idr)) {
       _frameType = kVideoFrameKey;
       frame_type_ = kVideoFrameKey;
+    }
+    if (contains_idr && (!contains_sps || !contains_pps)) {
+      std::stringstream ss;
+      ss << "Received H.264-IDR frame "
+         << "(SPS: " << contains_sps << ", PPS: " << contains_pps << "). ";
+      if (sps_pps_idr_is_keyframe) {
+        ss << "Treating as delta frame since WebRTC-SpsPpsIdrIsH264Keyframe is "
+              "enabled.";
+      } else {
+        ss << "Treating as key frame since WebRTC-SpsPpsIdrIsH264Keyframe is "
+              "disabled.";
+      }
+      LOG(LS_WARNING) << ss.str();
     }
   } else {
     _frameType = first_packet->frameType;
