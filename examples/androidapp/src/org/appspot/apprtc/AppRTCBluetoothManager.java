@@ -187,7 +187,7 @@ public class AppRTCBluetoothManager {
       }
       Log.d(TAG, "onReceive done: BT state=" + bluetoothState);
     }
-  };
+  }
 
   /** Construction. */
   static AppRTCBluetoothManager create(Context context, AppRTCAudioManager audioManager) {

@@ -20,7 +20,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -134,7 +133,6 @@ public class PeerConnectionClient {
   private int videoHeight;
   private int videoFps;
   private MediaConstraints audioConstraints;
-  private ParcelFileDescriptor aecDumpFileDescriptor;
   private MediaConstraints sdpMediaConstraints;
   private PeerConnectionParameters peerConnectionParameters;
   // Queued remote ICE candidates are consumed only after both local and
@@ -600,7 +598,7 @@ public class PeerConnectionClient {
     Log.d(TAG, "Create peer connection.");
 
     Log.d(TAG, "PCConstraints: " + pcConstraints.toString());
-    queuedRemoteCandidates = new LinkedList<IceCandidate>();
+    queuedRemoteCandidates = new LinkedList<>();
 
     if (videoCallEnabled) {
       factory.setVideoHwAccelerationOptions(
@@ -649,7 +647,7 @@ public class PeerConnectionClient {
 
     if (peerConnectionParameters.aecDump) {
       try {
-        aecDumpFileDescriptor =
+        ParcelFileDescriptor aecDumpFileDescriptor =
             ParcelFileDescriptor.open(new File(Environment.getExternalStorageDirectory().getPath()
                                           + File.separator + "Download/audio.aecdump"),
                 ParcelFileDescriptor.MODE_READ_WRITE | ParcelFileDescriptor.MODE_CREATE
@@ -715,11 +713,7 @@ public class PeerConnectionClient {
   }
 
   public boolean isHDVideo() {
-    if (!videoCallEnabled) {
-      return false;
-    }
-
-    return videoWidth * videoHeight >= 1280 * 720;
+    return videoCallEnabled && videoWidth * videoHeight >= 1280 * 720;
   }
 
   public EglBase.Context getRenderContext() {
@@ -1072,11 +1066,11 @@ public class PeerConnectionClient {
     }
     final List<String> header = origLineParts.subList(0, 3);
     final List<String> unpreferredPayloadTypes =
-        new ArrayList<String>(origLineParts.subList(3, origLineParts.size()));
+        new ArrayList<>(origLineParts.subList(3, origLineParts.size()));
     unpreferredPayloadTypes.removeAll(preferredPayloadTypes);
     // Reconstruct the line with |preferredPayloadTypes| moved to the beginning of the payload
     // types.
-    final List<String> newLineParts = new ArrayList<String>();
+    final List<String> newLineParts = new ArrayList<>();
     newLineParts.addAll(header);
     newLineParts.addAll(preferredPayloadTypes);
     newLineParts.addAll(unpreferredPayloadTypes);
@@ -1092,11 +1086,11 @@ public class PeerConnectionClient {
     }
     // A list with all the payload types with name |codec|. The payload types are integers in the
     // range 96-127, but they are stored as strings here.
-    final List<String> codecPayloadTypes = new ArrayList<String>();
+    final List<String> codecPayloadTypes = new ArrayList<>();
     // a=rtpmap:<payload type> <encoding name>/<clock rate> [/<encoding parameters>]
     final Pattern codecPattern = Pattern.compile("^a=rtpmap:(\\d+) " + codec + "(/\\d+)+[\r]?$");
-    for (int i = 0; i < lines.length; ++i) {
-      Matcher codecMatcher = codecPattern.matcher(lines[i]);
+    for (String line : lines) {
+      Matcher codecMatcher = codecPattern.matcher(line);
       if (codecMatcher.matches()) {
         codecPayloadTypes.add(codecMatcher.group(1));
       }
@@ -1127,7 +1121,7 @@ public class PeerConnectionClient {
 
   private void switchCameraInternal() {
     if (videoCapturer instanceof CameraVideoCapturer) {
-      if (!videoCallEnabled || isError || videoCapturer == null) {
+      if (!videoCallEnabled || isError) {
         Log.e(TAG, "Failed to switch camera. Video: " + videoCallEnabled + ". Error : " + isError);
         return; // No video is sent or only one camera is available or error happened.
       }

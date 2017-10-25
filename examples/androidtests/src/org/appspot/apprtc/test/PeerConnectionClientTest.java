@@ -79,7 +79,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   private boolean isClosed;
   private boolean isIceConnected;
   private SessionDescription localSdp;
-  private List<IceCandidate> iceCandidates = new LinkedList<IceCandidate>();
+  private List<IceCandidate> iceCandidates = new LinkedList<>();
   private final Object localSdpEvent = new Object();
   private final Object iceCandidateEvent = new Object();
   private final Object iceConnectedEvent = new Object();
@@ -284,7 +284,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   PeerConnectionClient createPeerConnectionClient(MockSink localRenderer,
       MockRenderer remoteRenderer, PeerConnectionParameters peerConnectionParameters,
       VideoCapturer videoCapturer) {
-    List<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
+    List<PeerConnection.IceServer> iceServers = new LinkedList<>();
     SignalingParameters signalingParameters =
         new SignalingParameters(iceServers, true, // iceServers, initiator.
             null, null, null, // clientId, wssUrl, wssPostUrl.
@@ -303,8 +303,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   }
 
   private PeerConnectionParameters createParametersForAudioCall() {
-    PeerConnectionParameters peerConnectionParameters = new PeerConnectionParameters(
-        false, /* videoCallEnabled */
+    return new PeerConnectionParameters(false, /* videoCallEnabled */
         true, /* loopback */
         false, /* tracing */
         // Video codec parameters.
@@ -322,8 +321,6 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
         false, /* aecDump */
         false /* useOpenSLES */, false /* disableBuiltInAEC */, false /* disableBuiltInAGC */,
         false /* disableBuiltInNS */, false /* enableLevelControl */, false /* disableWebRtcAGC */);
-
-    return peerConnectionParameters;
   }
 
   private VideoCapturer createCameraCapturer(boolean captureToTexture) {
@@ -341,8 +338,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   }
 
   private PeerConnectionParameters createParametersForVideoCall(String videoCodec) {
-    PeerConnectionParameters peerConnectionParameters = new PeerConnectionParameters(
-        true, /* videoCallEnabled */
+    return new PeerConnectionParameters(true, /* videoCallEnabled */
         true, /* loopback */
         false, /* tracing */
         // Video codec parameters.
@@ -360,8 +356,6 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
         false, /* aecDump */
         false /* useOpenSLES */, false /* disableBuiltInAEC */, false /* disableBuiltInAGC */,
         false /* disableBuiltInNS */, false /* enableLevelControl */, false /* disableWebRtcAGC */);
-
-    return peerConnectionParameters;
   }
 
   @Before

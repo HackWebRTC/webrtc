@@ -41,7 +41,6 @@ public class WebSocketChannelClient {
   private final WebSocketChannelEvents events;
   private final Handler handler;
   private WebSocketConnection ws;
-  private WebSocketObserver wsObserver;
   private String wsServerUrl;
   private String postServerUrl;
   private String roomID;
@@ -73,7 +72,7 @@ public class WebSocketChannelClient {
     this.events = events;
     roomID = null;
     clientID = null;
-    wsSendQueue = new LinkedList<String>();
+    wsSendQueue = new LinkedList<>();
     state = WebSocketConnectionState.NEW;
   }
 
@@ -93,7 +92,7 @@ public class WebSocketChannelClient {
 
     Log.d(TAG, "Connecting WebSocket to: " + wsUrl + ". Post URL: " + postUrl);
     ws = new WebSocketConnection();
-    wsObserver = new WebSocketObserver();
+    WebSocketObserver wsObserver = new WebSocketObserver();
     try {
       ws.connect(new URI(wsServerUrl), wsObserver);
     } catch (URISyntaxException e) {

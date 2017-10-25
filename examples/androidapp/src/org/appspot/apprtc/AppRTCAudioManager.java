@@ -28,7 +28,6 @@ import org.webrtc.ThreadUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -54,7 +53,7 @@ public class AppRTCAudioManager {
   }
 
   /** Selected audio device change event. */
-  public static interface AudioManagerEvents {
+  public interface AudioManagerEvents {
     // Callback fired once audio device is changed or list of available audio devices changed.
     void onAudioDeviceChanged(
         AudioDevice selectedAudioDevice, Set<AudioDevice> availableAudioDevices);
@@ -101,7 +100,7 @@ public class AppRTCAudioManager {
 
   // Contains a list of available audio devices. A Set collection is used to
   // avoid duplicate elements.
-  private Set<AudioDevice> audioDevices = new HashSet<AudioDevice>();
+  private Set<AudioDevice> audioDevices = new HashSet<>();
 
   // Broadcast receiver for wired headset intent broadcasts.
   private BroadcastReceiver wiredHeadsetReceiver;
@@ -154,7 +153,7 @@ public class AppRTCAudioManager {
       hasWiredHeadset = (state == STATE_PLUGGED);
       updateAudioDeviceState();
     }
-  };
+  }
 
   /** Construction. */
   static AppRTCAudioManager create(Context context) {
@@ -225,7 +224,7 @@ public class AppRTCAudioManager {
       // logging for now.
       @Override
       public void onAudioFocusChange(int focusChange) {
-        String typeOfChange = "AUDIOFOCUS_NOT_DEFINED";
+        final String typeOfChange;
         switch (focusChange) {
           case AudioManager.AUDIOFOCUS_GAIN:
             typeOfChange = "AUDIOFOCUS_GAIN";
@@ -388,7 +387,7 @@ public class AppRTCAudioManager {
   /** Returns current set of available/selectable audio devices. */
   public Set<AudioDevice> getAudioDevices() {
     ThreadUtils.checkIsOnMainThread();
-    return Collections.unmodifiableSet(new HashSet<AudioDevice>(audioDevices));
+    return Collections.unmodifiableSet(new HashSet<>(audioDevices));
   }
 
   /** Returns the currently selected audio device. */
@@ -560,7 +559,7 @@ public class AppRTCAudioManager {
     }
 
     // Update selected audio device.
-    AudioDevice newAudioDevice = selectedAudioDevice;
+    final AudioDevice newAudioDevice;
 
     if (bluetoothManager.getState() == AppRTCBluetoothManager.State.SCO_CONNECTED) {
       // If a Bluetooth is connected, then it should be used as output audio
