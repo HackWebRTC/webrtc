@@ -33,4 +33,22 @@ RTC_EXPORT
 
 @end
 
+#pragma mark - Default factories
+
+/** These codec factories include support for all codecs bundled with WebRTC. If using custom
+ *  codecs, create custom implementations of RTCVideoEncoderFactory and RTCVideoDecoderFactory.
+ */
+RTC_EXPORT
+@interface RTCDefaultVideoEncoderFactory : NSObject <RTCVideoEncoderFactory>
+
+@property(nonatomic, retain) RTCVideoCodecInfo *preferredCodec;
+
++ (NSArray<RTCVideoCodecInfo *> *)supportedCodecs;
+
+@end
+
+RTC_EXPORT
+@interface RTCDefaultVideoDecoderFactory : NSObject <RTCVideoDecoderFactory>
+@end
+
 NS_ASSUME_NONNULL_END

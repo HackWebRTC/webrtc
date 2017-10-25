@@ -10,9 +10,9 @@
 
 #import "ARDSettingsModel+Private.h"
 #import "ARDSettingsStore.h"
-#import "ARDVideoEncoderFactory.h"
 #import "WebRTC/RTCCameraVideoCapturer.h"
 #import "WebRTC/RTCMediaConstraints.h"
+#import "WebRTC/RTCVideoCodecFactory.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -66,9 +66,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (NSArray<RTCVideoCodecInfo *> *)availableVideoCodecs {
-  NSArray<RTCVideoCodecInfo *> *supportedCodecs =
-      [[[ARDVideoEncoderFactory alloc] init] supportedCodecs];
-  return supportedCodecs;
+  return [RTCDefaultVideoEncoderFactory supportedCodecs];
 }
 
 - (RTCVideoCodecInfo *)currentVideoCodecSettingFromStore {

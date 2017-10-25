@@ -22,6 +22,7 @@
 #import "WebRTC/RTCPeerConnectionFactory.h"
 #import "WebRTC/RTCRtpSender.h"
 #import "WebRTC/RTCTracing.h"
+#import "WebRTC/RTCVideoCodecFactory.h"
 #import "WebRTC/RTCVideoTrack.h"
 
 #import "ARDAppEngineClient.h"
@@ -32,8 +33,6 @@
 #import "ARDSignalingMessage.h"
 #import "ARDTURNClient+Internal.h"
 #import "ARDUtilities.h"
-#import "ARDVideoDecoderFactory.h"
-#import "ARDVideoEncoderFactory.h"
 #import "ARDWebSocketChannel.h"
 #import "RTCIceCandidate+JSON.h"
 #import "RTCSessionDescription+JSON.h"
@@ -221,8 +220,8 @@ static int const kKbpsMultiplier = 1000;
   _isLoopback = isLoopback;
   self.state = kARDAppClientStateConnecting;
 
-  ARDVideoDecoderFactory *decoderFactory = [[ARDVideoDecoderFactory alloc] init];
-  ARDVideoEncoderFactory *encoderFactory = [[ARDVideoEncoderFactory alloc] init];
+  RTCDefaultVideoDecoderFactory *decoderFactory = [[RTCDefaultVideoDecoderFactory alloc] init];
+  RTCDefaultVideoEncoderFactory *encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
   encoderFactory.preferredCodec = [settings currentVideoCodecSettingFromStore];
   _factory = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
                                                        decoderFactory:decoderFactory];
