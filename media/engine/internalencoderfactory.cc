@@ -51,10 +51,6 @@ InternalEncoderFactory::InternalEncoderFactory() {
     // we never use the actual value anywhere in our code however.
     // TODO(brandtr): Consider honouring this value in the sender and receiver.
     flexfec_codec.SetParam(kFlexfecFmtpRepairWindow, "10000000");
-    flexfec_codec.AddFeedbackParam(
-        FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
-    flexfec_codec.AddFeedbackParam(
-        FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
     supported_codecs_.push_back(flexfec_codec);
   }
 }

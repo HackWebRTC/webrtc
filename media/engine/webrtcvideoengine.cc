@@ -192,12 +192,18 @@ bool IsFlexfecAdvertisedFieldTrialEnabled() {
 }
 
 void AddDefaultFeedbackParams(VideoCodec* codec) {
-  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamCcm, kRtcpFbCcmParamFir));
-  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
-  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kRtcpFbNackParamPli));
+  // Don't add any feedback params for RED and ULPFEC.
+  if (codec->name == kRedCodecName || codec->name == kUlpfecCodecName)
+    return;
   codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
   codec->AddFeedbackParam(
       FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
+  // Don't add any more feedback params for FLEXFEC.
+  if (codec->name == kFlexfecCodecName)
+    return;
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamCcm, kRtcpFbCcmParamFir));
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kRtcpFbNackParamPli));
 }
 
 static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
@@ -515,10 +521,7 @@ std::vector<VideoCodec> AssignPayloadTypesAndAddAssociatedRtxCodecs(
   std::vector<VideoCodec> output_codecs;
   for (VideoCodec codec : input_codecs) {
     codec.id = payload_type;
-    if (codec.name != kRedCodecName && codec.name != kUlpfecCodecName &&
-        codec.name != kFlexfecCodecName) {
-      AddDefaultFeedbackParams(&codec);
-    }
+    AddDefaultFeedbackParams(&codec);
     output_codecs.push_back(codec);
 
     // Increment payload type.
