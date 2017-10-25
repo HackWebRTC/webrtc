@@ -1307,8 +1307,8 @@ if (rtc_include_tests) {
     deps = [
       ":neteq_test_support",
       ":neteq_test_tools",
-      ":webrtc_opus",
       "../..:webrtc_common",
+      "../../api/audio_codecs/opus:audio_encoder_opus",
       "../../rtc_base:protobuf_utils",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
@@ -2160,6 +2160,7 @@ if (rtc_include_tests) {
       "../../api/audio_codecs:audio_codecs_api",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../api/audio_codecs:builtin_audio_encoder_factory",
+      "../../api/audio_codecs/opus:audio_encoder_opus",
       "../../common_audio",
       "../../common_audio:mock_common_audio",
       "../../logging:rtc_event_log_api",

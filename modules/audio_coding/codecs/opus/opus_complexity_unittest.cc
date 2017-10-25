@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
+#include "api/audio_codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/timeutils.h"
@@ -22,13 +22,13 @@ namespace {
 int64_t RunComplexityTest(const AudioEncoderOpusConfig& config) {
   // Create encoder.
   constexpr int payload_type = 17;
-  AudioEncoderOpus encoder(config, payload_type);
+  const auto encoder = AudioEncoderOpus::MakeAudioEncoder(config, payload_type);
   // Open speech file.
   const std::string kInputFileName =
       webrtc::test::ResourcePath("audio_coding/speech_mono_32_48kHz", "pcm");
   test::AudioLoop audio_loop;
   constexpr int kSampleRateHz = 48000;
-  EXPECT_EQ(kSampleRateHz, encoder.SampleRateHz());
+  EXPECT_EQ(kSampleRateHz, encoder->SampleRateHz());
   constexpr size_t kMaxLoopLengthSamples =
       kSampleRateHz * 10;  // 10 second loop.
   constexpr size_t kInputBlockSizeSamples =
@@ -42,7 +42,7 @@ int64_t RunComplexityTest(const AudioEncoderOpusConfig& config) {
   uint32_t rtp_timestamp = 0u;
   for (size_t i = 0; i < 10000; ++i) {
     encoded.Clear();
-    info = encoder.Encode(rtp_timestamp, audio_loop.GetNextBlock(), &encoded);
+    info = encoder->Encode(rtp_timestamp, audio_loop.GetNextBlock(), &encoded);
     rtp_timestamp += kInputBlockSizeSamples;
   }
   return rtc::TimeMillis() - start_time_ms;

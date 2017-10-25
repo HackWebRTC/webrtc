@@ -30,12 +30,16 @@ rtc_static_library("audio_encoder_opus_config") {
 }
 
 rtc_source_set("audio_encoder_opus") {
-  sources = [
+  public = [
     "audio_encoder_opus.h",
+  ]
+  sources = [
+    "audio_encoder_opus.cc",
   ]
   deps = [
     ":audio_encoder_opus_config",
     "..:audio_codecs_api",
+    "../..:optional",
     "../../../modules/audio_coding:webrtc_opus",
     "../../../rtc_base:rtc_base_approved",
   ]

@@ -12,6 +12,7 @@
 #include <memory>
 #include <utility>
 
+#include "api/audio_codecs/opus/audio_encoder_opus.h"
 #include "common_audio/mocks/mock_smoothing_filter.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
@@ -54,7 +55,7 @@ AudioEncoderOpusConfig CreateConfigWithParameters(
 struct AudioEncoderOpusStates {
   std::shared_ptr<MockAudioNetworkAdaptor*> mock_audio_network_adaptor;
   MockSmoothingFilter* mock_bitrate_smoother;
-  std::unique_ptr<AudioEncoderOpus> encoder;
+  std::unique_ptr<AudioEncoderOpusImpl> encoder;
   std::unique_ptr<rtc::ScopedFakeClock> fake_clock;
   AudioEncoderOpusConfig config;
 };
@@ -67,7 +68,7 @@ AudioEncoderOpusStates CreateCodec(size_t num_channels) {
   states.fake_clock->SetTimeMicros(kInitialTimeUs);
   std::weak_ptr<MockAudioNetworkAdaptor*> mock_ptr(
       states.mock_audio_network_adaptor);
-  AudioEncoderOpus::AudioNetworkAdaptorCreator creator =
+  AudioEncoderOpusImpl::AudioNetworkAdaptorCreator creator =
       [mock_ptr](const std::string&, RtcEventLog* event_log) {
         std::unique_ptr<MockAudioNetworkAdaptor> adaptor(
             new NiceMock<MockAudioNetworkAdaptor>());
@@ -87,9 +88,9 @@ AudioEncoderOpusStates CreateCodec(size_t num_channels) {
       new MockSmoothingFilter());
   states.mock_bitrate_smoother = bitrate_smoother.get();
 
-  states.encoder.reset(new AudioEncoderOpus(states.config, codec_inst.pltype,
-                                            std::move(creator),
-                                            std::move(bitrate_smoother)));
+  states.encoder.reset(new AudioEncoderOpusImpl(
+      states.config, codec_inst.pltype, std::move(creator),
+      std::move(bitrate_smoother)));
   return states;
 }
 
@@ -111,7 +112,7 @@ AudioEncoderRuntimeConfig CreateEncoderRuntimeConfig() {
   return config;
 }
 
-void CheckEncoderRuntimeConfig(const AudioEncoderOpus* encoder,
+void CheckEncoderRuntimeConfig(const AudioEncoderOpusImpl* encoder,
                                const AudioEncoderRuntimeConfig& config) {
   EXPECT_EQ(*config.bitrate_bps, encoder->GetTargetBitrate());
   EXPECT_EQ(*config.frame_length_ms, encoder->next_frame_length_ms());
@@ -122,7 +123,7 @@ void CheckEncoderRuntimeConfig(const AudioEncoderOpus* encoder,
 
 // Create 10ms audio data blocks for a total packet size of "packet_size_ms".
 std::unique_ptr<test::AudioLoop> Create10msAudioBlocks(
-    const std::unique_ptr<AudioEncoderOpus>& encoder,
+    const std::unique_ptr<AudioEncoderOpusImpl>& encoder,
     int packet_size_ms) {
   const std::string file_name =
       test::ResourcePath("audio_coding/testfile32kHz", "pcm");
@@ -465,19 +466,23 @@ TEST(AudioEncoderOpusTest, ConfigComplexityAdaptation) {
 
   // Bitrate within hysteresis window. Expect empty output.
   config.bitrate_bps = rtc::Optional<int>(12500);
-  EXPECT_EQ(rtc::Optional<int>(), AudioEncoderOpus::GetNewComplexity(config));
+  EXPECT_EQ(rtc::Optional<int>(),
+            AudioEncoderOpusImpl::GetNewComplexity(config));
 
   // Bitrate below hysteresis window. Expect higher complexity.
   config.bitrate_bps = rtc::Optional<int>(10999);
-  EXPECT_EQ(rtc::Optional<int>(8), AudioEncoderOpus::GetNewComplexity(config));
+  EXPECT_EQ(rtc::Optional<int>(8),
+            AudioEncoderOpusImpl::GetNewComplexity(config));
 
   // Bitrate within hysteresis window. Expect empty output.
   config.bitrate_bps = rtc::Optional<int>(12500);
-  EXPECT_EQ(rtc::Optional<int>(), AudioEncoderOpus::GetNewComplexity(config));
+  EXPECT_EQ(rtc::Optional<int>(),
+            AudioEncoderOpusImpl::GetNewComplexity(config));
 
   // Bitrate above hysteresis window. Expect lower complexity.
   config.bitrate_bps = rtc::Optional<int>(14001);
-  EXPECT_EQ(rtc::Optional<int>(6), AudioEncoderOpus::GetNewComplexity(config));
+  EXPECT_EQ(rtc::Optional<int>(6),
+            AudioEncoderOpusImpl::GetNewComplexity(config));
 }
 
 TEST(AudioEncoderOpusTest, EmptyConfigDoesNotAffectEncoderSettings) {

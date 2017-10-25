@@ -11,20 +11,22 @@
 #ifndef API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
 #define API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
 
-#include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
+#include <memory>
+#include <vector>
+
+#include "api/audio_codecs/audio_encoder.h"
+#include "api/audio_codecs/audio_format.h"
+#include "api/audio_codecs/opus/audio_encoder_opus_config.h"
+#include "api/optional.h"
 
 namespace webrtc {
 
 // Opus encoder API for use as a template parameter to
 // CreateAudioEncoderFactory<...>().
 //
-// NOTE: At the moment, this struct actually resides in another file. This is a
-// temporary backwards compatibility hack; see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=7847
-//
 // NOTE: This struct is still under development and may change without notice.
-/*
 struct AudioEncoderOpus {
+  using Config = AudioEncoderOpusConfig;
   static rtc::Optional<AudioEncoderOpusConfig> SdpToConfig(
       const SdpAudioFormat& audio_format);
   static void AppendSupportedEncoders(std::vector<AudioCodecSpec>* specs);
@@ -33,7 +35,6 @@ struct AudioEncoderOpus {
       const AudioEncoderOpusConfig&,
       int payload_type);
 };
-*/
 
 }  // namespace webrtc
 

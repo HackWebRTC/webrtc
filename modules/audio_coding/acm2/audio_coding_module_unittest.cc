@@ -15,13 +15,13 @@
 
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/acm2/acm_receive_test.h"
 #include "modules/audio_coding/acm2/acm_send_test.h"
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 #include "modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
-#include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/neteq/tools/audio_checksum.h"
@@ -1491,9 +1491,10 @@ TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
 }
 
 TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms) {
-  const SdpAudioFormat kOpusFormat("opus", 48000, 2, {{"stereo", "1"}});
-  AudioEncoderOpus encoder(120, kOpusFormat);
-  ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(&encoder, 120));
+  const auto config = AudioEncoderOpus::SdpToConfig(
+      SdpAudioFormat("opus", 48000, 2, {{"stereo", "1"}}));
+  const auto encoder = AudioEncoderOpus::MakeAudioEncoder(*config, 120);
+  ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(encoder.get(), 120));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "3e285b74510e62062fbd8142dacd16e9",
           "3e285b74510e62062fbd8142dacd16e9",
@@ -1529,9 +1530,10 @@ TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms_voip) {
 }
 
 TEST_F(AcmSenderBitExactnessNewApi, OpusFromFormat_stereo_20ms_voip) {
-  const SdpAudioFormat kOpusFormat("opus", 48000, 2, {{"stereo", "1"}});
-  AudioEncoderOpus encoder(120, kOpusFormat);
-  ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(&encoder, 120));
+  const auto config = AudioEncoderOpus::SdpToConfig(
+      SdpAudioFormat("opus", 48000, 2, {{"stereo", "1"}}));
+  const auto encoder = AudioEncoderOpus::MakeAudioEncoder(*config, 120);
+  ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(encoder.get(), 120));
   // If not set, default will be kAudio in case of stereo.
   EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
@@ -1639,10 +1641,11 @@ TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_10kbps) {
 }
 
 TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_10kbps) {
-  AudioEncoderOpus encoder(
-      107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "10000"}}));
+  const auto config = AudioEncoderOpus::SdpToConfig(
+      SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "10000"}}));
+  const auto encoder = AudioEncoderOpus::MakeAudioEncoder(*config, 107);
   ASSERT_TRUE(SetUpSender());
-  ASSERT_TRUE(RegisterExternalSendCodec(&encoder, 107));
+  ASSERT_TRUE(RegisterExternalSendCodec(encoder.get(), 107));
 #if defined(WEBRTC_ANDROID)
   RunInner(8640);
 #else
@@ -1660,10 +1663,11 @@ TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
 }
 
 TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_50kbps) {
-  AudioEncoderOpus encoder(
-      107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "50000"}}));
+  const auto config = AudioEncoderOpus::SdpToConfig(
+      SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "50000"}}));
+  const auto encoder = AudioEncoderOpus::MakeAudioEncoder(*config, 107);
   ASSERT_TRUE(SetUpSender());
-  ASSERT_TRUE(RegisterExternalSendCodec(&encoder, 107));
+  ASSERT_TRUE(RegisterExternalSendCodec(encoder.get(), 107));
 #if defined(WEBRTC_ANDROID)
   RunInner(45792);
 #else
@@ -1688,10 +1692,11 @@ TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_100kbps) {
 }
 
 TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_100kbps) {
-  AudioEncoderOpus encoder(
-      107, SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "100000"}}));
+  const auto config = AudioEncoderOpus::SdpToConfig(
+      SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "100000"}}));
+  const auto encoder = AudioEncoderOpus::MakeAudioEncoder(*config, 107);
   ASSERT_TRUE(SetUpSender());
-  ASSERT_TRUE(RegisterExternalSendCodec(&encoder, 107));
+  ASSERT_TRUE(RegisterExternalSendCodec(encoder.get(), 107));
   RunInner(100832);
 }
 
