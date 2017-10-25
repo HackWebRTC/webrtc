@@ -206,7 +206,9 @@ TEST(BlockProcessor, BasicSetupAndApiCalls) {
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST(BlockProcessor, VerifyRenderBlockSizeCheck) {
+// TODO(gustaf): Re-enable the test once the issue with memory leaks during
+// DEATH tests on test bots has been fixed.
+TEST(BlockProcessor, DISABLED_VerifyRenderBlockSizeCheck) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     RunRenderBlockSizeVerificationTest(rate);
