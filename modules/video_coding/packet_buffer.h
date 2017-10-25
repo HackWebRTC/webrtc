@@ -18,8 +18,8 @@
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/packet.h"
 #include "modules/video_coding/rtp_frame_reference_finder.h"
-#include "modules/video_coding/sequence_number_util.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_annotations.h"
 

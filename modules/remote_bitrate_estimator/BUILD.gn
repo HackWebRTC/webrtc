@@ -141,6 +141,7 @@ if (rtc_include_tests) {
       "../../rtc_base:gtest_prod",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
+      "../../rtc_base:rtc_numerics",
       "../../system_wrappers",
       "../../test:test_support",
       "../../voice_engine",

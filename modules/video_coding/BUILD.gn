@@ -137,7 +137,6 @@ rtc_source_set("video_coding_utility") {
   sources = [
     "codecs/interface/video_codec_interface.h",
     "codecs/interface/video_error_codes.h",
-    "sequence_number_util.h",
     "utility/default_video_bitrate_allocator.cc",
     "utility/default_video_bitrate_allocator.h",
     "utility/frame_dropper.cc",
@@ -524,7 +523,6 @@ if (rtc_include_tests) {
       "protection_bitrate_calculator_unittest.cc",
       "receiver_unittest.cc",
       "rtp_frame_reference_finder_unittest.cc",
-      "sequence_number_util_unittest.cc",
       "session_info_unittest.cc",
       "test/stream_generator.cc",
       "test/stream_generator.h",
@@ -564,6 +562,7 @@ if (rtc_include_tests) {
       "../../common_video:common_video",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
+      "../../rtc_base:rtc_numerics",
       "../../rtc_base:rtc_task_queue",
       "../../system_wrappers:metrics_default",
       "../../system_wrappers:system_wrappers",

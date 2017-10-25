@@ -19,8 +19,8 @@
 #include "modules/video_coding/histogram.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/packet.h"
-#include "modules/video_coding/sequence_number_util.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 

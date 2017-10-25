@@ -403,9 +403,11 @@ rtc_static_library("rtc_numerics") {
     "numerics/exp_filter.cc",
     "numerics/exp_filter.h",
     "numerics/percentile_filter.h",
+    "numerics/sequence_number_util.h",
   ]
   deps = [
     ":rtc_base_approved",
+    "../api:optional",
   ]
 }
 
@@ -996,6 +998,7 @@ if (rtc_include_tests) {
     sources = [
       "numerics/exp_filter_unittest.cc",
       "numerics/percentile_filter_unittest.cc",
+      "numerics/sequence_number_util_unittest.cc",
     ]
     deps = [
       ":rtc_base_approved",

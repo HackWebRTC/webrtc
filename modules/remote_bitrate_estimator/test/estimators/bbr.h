@@ -19,7 +19,7 @@
 
 #include "api/optional.h"
 #include "modules/remote_bitrate_estimator/test/bwe.h"
-#include "modules/video_coding/sequence_number_util.h"
+#include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/random.h"
 
 namespace webrtc {

@@ -10,7 +10,7 @@
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/simulcast_encoder_adapter.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
-#include "modules/video_coding/sequence_number_util.h"
+#include "rtc_base/numerics/sequence_number_util.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
 
