@@ -129,6 +129,7 @@ if (rtc_include_tests) {
       "base/fakeportallocator.h",
       "base/mockicetransport.h",
       "base/testrelayserver.h",
+      "base/teststunserver.cc",
       "base/teststunserver.h",
       "base/testturncustomizer.h",
       "base/testturnserver.h",
@@ -201,12 +202,6 @@ rtc_static_library("libstunprober") {
     "stunprober/stunprober.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":rtc_p2p",
     "..:webrtc_common",
@@ -236,10 +231,6 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//testing/gtest",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     defines = [ "GTEST_RELATIVE_PATH" ]
   }
 }

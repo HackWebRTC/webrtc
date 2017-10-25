@@ -65,7 +65,7 @@ class StunProber::Requester : public sigslot::has_slots<> {
   Requester(StunProber* prober,
             rtc::AsyncPacketSocket* socket,
             const std::vector<rtc::SocketAddress>& server_ips);
-  virtual ~Requester();
+  ~Requester() override;
 
   // There is no callback for SendStunRequest as the underneath socket send is
   // expected to be completed immediately. Otherwise, it'll skip this request
@@ -124,7 +124,7 @@ StunProber::Requester::~Requester() {
   if (socket_) {
     socket_->Close();
   }
-  for (auto req : requests_) {
+  for (auto* req : requests_) {
     if (req) {
       delete req;
     }
@@ -220,13 +220,35 @@ void StunProber::Requester::OnStunResponseReceived(
 StunProber::Requester::Request* StunProber::Requester::GetRequestByAddress(
     const rtc::IPAddress& ipaddr) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  for (auto request : requests_) {
+  for (auto* request : requests_) {
     if (request->server_addr == ipaddr) {
       return request;
     }
   }
 
   return nullptr;
+}
+
+StunProber::Stats::Stats() = default;
+
+StunProber::Stats::~Stats() = default;
+
+StunProber::ObserverAdapter::ObserverAdapter() = default;
+
+StunProber::ObserverAdapter::~ObserverAdapter() = default;
+
+void StunProber::ObserverAdapter::OnPrepared(StunProber* stunprober,
+                                             Status status) {
+  if (status == SUCCESS) {
+    stunprober->Start(this);
+  } else {
+    callback_(stunprober, status);
+  }
+}
+
+void StunProber::ObserverAdapter::OnFinished(StunProber* stunprober,
+                                             Status status) {
+  callback_(stunprober, status);
 }
 
 StunProber::StunProber(rtc::PacketSocketFactory* socket_factory,
@@ -239,12 +261,12 @@ StunProber::StunProber(rtc::PacketSocketFactory* socket_factory,
 }
 
 StunProber::~StunProber() {
-  for (auto req : requesters_) {
+  for (auto* req : requesters_) {
     if (req) {
       delete req;
     }
   }
-  for (auto s : sockets_) {
+  for (auto* s : sockets_) {
     if (s) {
       delete s;
     }
@@ -475,7 +497,7 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) const {
 
   for (auto* requester : requesters_) {
     std::map<rtc::SocketAddress, int> num_response_per_srflx_addr;
-    for (auto request : requester->requests()) {
+    for (auto* request : requester->requests()) {
       if (request->sent_time_ms <= 0) {
         continue;
       }
@@ -539,7 +561,7 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) const {
       !srflx_addr.FromString(*(stats.srflx_addrs.begin()))) {
     return false;
   }
-  for (const auto& net : networks_) {
+  for (const auto* net : networks_) {
     if (srflx_addr.ipaddr() == net->GetBestIP()) {
       nat_type = stunprober::NATTYPE_NONE;
       stats.host_ip = net->GetBestIP().ToString();

@@ -18,10 +18,16 @@ namespace rtc {
 
 // This structure contains options required to create TCP packet sockets.
 struct PacketSocketTcpOptions {
+  PacketSocketTcpOptions();
+  ~PacketSocketTcpOptions();
+
   int opts;
   std::vector<std::string> tls_alpn_protocols;
   std::vector<std::string> tls_elliptic_curves;
 };
+
+inline PacketSocketTcpOptions::PacketSocketTcpOptions() = default;
+inline PacketSocketTcpOptions::~PacketSocketTcpOptions() = default;
 
 class AsyncPacketSocket;
 class AsyncResolverInterface;
@@ -70,16 +76,23 @@ class PacketSocketFactory {
       const SocketAddress& remote_address,
       const ProxyInfo& proxy_info,
       const std::string& user_agent,
-      const PacketSocketTcpOptions& tcp_options) {
-    return CreateClientTcpSocket(local_address, remote_address, proxy_info,
-                                 user_agent, tcp_options.opts);
-  }
+      const PacketSocketTcpOptions& tcp_options);
 
   virtual AsyncResolverInterface* CreateAsyncResolver() = 0;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(PacketSocketFactory);
 };
+
+inline AsyncPacketSocket* PacketSocketFactory::CreateClientTcpSocket(
+    const SocketAddress& local_address,
+    const SocketAddress& remote_address,
+    const ProxyInfo& proxy_info,
+    const std::string& user_agent,
+    const PacketSocketTcpOptions& tcp_options) {
+  return CreateClientTcpSocket(local_address, remote_address, proxy_info,
+                               user_agent, tcp_options.opts);
+}
 
 }  // namespace rtc
 
