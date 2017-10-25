@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/aec_state.h"
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/constructormagic.h"
@@ -29,10 +30,8 @@ class SuppressionGain {
                const std::array<float, kFftLengthBy2Plus1>& echo,
                const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
                const RenderSignalAnalyzer& render_signal_analyzer,
-               bool saturated_echo,
+               const AecState& aec_state,
                const std::vector<std::vector<float>>& render,
-               bool force_zero_gain,
-               bool linear_echo_estimate,
                float* high_bands_gain,
                std::array<float, kFftLengthBy2Plus1>* low_band_gain);
 
@@ -40,6 +39,7 @@ class SuppressionGain {
   void LowerBandGain(bool stationary_with_low_power,
                      const rtc::Optional<int>& narrow_peak_band,
                      bool saturated_echo,
+                     bool saturating_echo_path,
                      bool linear_echo_estimate,
                      const std::array<float, kFftLengthBy2Plus1>& nearend,
                      const std::array<float, kFftLengthBy2Plus1>& echo,

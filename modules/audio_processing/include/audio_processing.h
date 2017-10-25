@@ -1188,7 +1188,7 @@ struct EchoCanceller3Config {
 
     GainChanges low_noise = {3.f, 3.f, 1.5f, 1.5f, 1.5f, 1.5f};
     GainChanges normal = {2.f, 2.f, 1.5f, 1.5f, 1.2f, 1.2f};
-    GainChanges saturation = {1.2f, 1.2f, 1.5f, 1.5f, 1.f, 1.f};
+    GainChanges saturation = {1.5f, 1.5f, 1.2f, 1.2f, 1.1f, 1.1f};
     GainChanges nonlinear = {1.5f, 1.5f, 1.2f, 1.2f, 1.1f, 1.1f};
 
     float floor_first_increase = 0.0001f;

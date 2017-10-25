@@ -48,6 +48,9 @@ class Subtractor {
   // Returns the block-wise frequency response for the main adaptive filter.
   const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   FilterFrequencyResponse() const {
+    if (use_shadow_filter_frequency_response_) {
+      return shadow_filter_.FilterFrequencyResponse();
+    }
     return main_filter_.FilterFrequencyResponse();
   }
 
@@ -68,7 +71,8 @@ class Subtractor {
   MainFilterUpdateGain G_main_;
   ShadowFilterUpdateGain G_shadow_;
   bool converged_filter_ = false;
-
+  size_t converged_filter_counter_ = 0;
+  bool use_shadow_filter_frequency_response_ = false;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Subtractor);
 };
 
