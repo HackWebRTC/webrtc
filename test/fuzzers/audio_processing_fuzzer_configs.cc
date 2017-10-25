@@ -45,6 +45,11 @@ std::unique_ptr<AudioProcessing> CreateAPM(const uint8_t** data,
     return nullptr;
   }
 
+  // Filter out incompatible settings that lead to CHECK failures.
+  if (*use_aecm && *use_aec) {
+    return nullptr;
+  }
+
   // Components can be enabled through webrtc::Config and
   // webrtc::AudioProcessingConfig.
   Config config;
@@ -87,6 +92,8 @@ std::unique_ptr<AudioProcessing> CreateAPM(const uint8_t** data,
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
   auto apm = CreateAPM(&data, &size);
-  FuzzAudioProcessing(data, size, std::move(apm));
+  if (apm) {
+    FuzzAudioProcessing(data, size, std::move(apm));
+  }
 }
 }  // namespace webrtc

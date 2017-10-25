@@ -24,8 +24,7 @@ size_t ByteToNativeRate(uint8_t data) {
   using Rate = AudioProcessing::NativeRate;
   switch (data % 4) {
     case 0:
-    // Breaks AEC3.
-    // return static_cast<size_t>(Rate::kSampleRate8kHz);
+      return static_cast<size_t>(Rate::kSampleRate8kHz);
     case 1:
       return static_cast<size_t>(Rate::kSampleRate16kHz);
     case 2:
