@@ -362,8 +362,6 @@ if (rtc_include_tests) {
       "codecs/test/mock/mock_packet_manipulator.h",
       "codecs/test/packet_manipulator.cc",
       "codecs/test/packet_manipulator.h",
-      "codecs/test/predictive_packet_manipulator.cc",
-      "codecs/test/predictive_packet_manipulator.h",
       "codecs/test/stats.cc",
       "codecs/test/stats.h",
       "codecs/test/test_config.cc",
