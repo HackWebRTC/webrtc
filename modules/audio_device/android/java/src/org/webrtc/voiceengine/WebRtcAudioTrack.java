@@ -72,6 +72,7 @@ public class WebRtcAudioTrack {
 
   private final long nativeAudioTrack;
   private final AudioManager audioManager;
+  private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
 
   private ByteBuffer byteBuffer;
 
@@ -83,9 +84,15 @@ public class WebRtcAudioTrack {
   private static volatile boolean speakerMute = false;
   private byte[] emptyBytes;
 
+  // Audio playout/track error handler functions.
+  public enum AudioTrackStartErrorCode {
+    AUDIO_TRACK_START_EXCEPTION,
+    AUDIO_TRACK_START_STATE_MISMATCH,
+  }
+
   public static interface WebRtcAudioTrackErrorCallback {
     void onWebRtcAudioTrackInitError(String errorMessage);
-    void onWebRtcAudioTrackStartError(String errorMessage);
+    void onWebRtcAudioTrackStartError(AudioTrackStartErrorCode errorCode, String errorMessage);
     void onWebRtcAudioTrackError(String errorMessage);
   }
 
@@ -113,26 +120,7 @@ public class WebRtcAudioTrack {
     public void run() {
       Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
       Logging.d(TAG, "AudioTrackThread" + WebRtcAudioUtils.getThreadInfo());
-
-      try {
-        // In MODE_STREAM mode we can optionally prime the output buffer by
-        // writing up to bufferSizeInBytes (from constructor) before starting.
-        // This priming will avoid an immediate underrun, but is not required.
-        // TODO(henrika): initial tests have shown that priming is not required.
-        audioTrack.play();
-      } catch (IllegalStateException e) {
-        reportWebRtcAudioTrackStartError("AudioTrack.play failed: " + e.getMessage());
-        releaseAudioResources();
-        return;
-      }
-      // We have seen reports that AudioTrack.play() can sometimes start in a
-      // paued mode (e.g. when application is in background mode).
-      // TODO(henrika): consider calling reportWebRtcAudioTrackStartError()
-      // and release audio resources here as well. For now, let the thread start
-      // and hope that the audio session can be restored later.
-      if (audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
-        Logging.w(TAG, "AudioTrack failed to enter playing state.");
-      }
+      assertTrue(audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING);
 
       // Fixed size in bytes of each 10ms block of audio data that we ask for
       // using callbacks to the native WebRTC client.
@@ -181,10 +169,10 @@ public class WebRtcAudioTrack {
       // MODE_STREAM mode, audio will stop playing after the last buffer that
       // was written has been played.
       if (audioTrack != null) {
-        Logging.d(TAG, "Stopping the audio track...");
+        Logging.d(TAG, "Calling AudioTrack.stop...");
         try {
           audioTrack.stop();
-          Logging.d(TAG, "The audio track has now been stopped.");
+          Logging.d(TAG, "AudioTrack.stop is done.");
         } catch (IllegalStateException e) {
           Logging.e(TAG, "AudioTrack.stop failed: " + e.getMessage());
         }
@@ -200,7 +188,7 @@ public class WebRtcAudioTrack {
       return audioTrack.write(byteBuffer.array(), byteBuffer.arrayOffset(), sizeInBytes);
     }
 
-    // Stops the inner thread loop and also calls AudioTrack.pause() and flush().
+    // Stops the inner thread loop which results in calling AudioTrack.stop().
     // Does not block the calling thread.
     public void stopThread() {
       Logging.d(TAG, "stopThread");
@@ -209,6 +197,7 @@ public class WebRtcAudioTrack {
   }
 
   WebRtcAudioTrack(long nativeAudioTrack) {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.nativeAudioTrack = nativeAudioTrack;
     audioManager =
@@ -219,6 +208,7 @@ public class WebRtcAudioTrack {
   }
 
   private boolean initPlayout(int sampleRate, int channels) {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "initPlayout(sampleRate=" + sampleRate + ", channels=" + channels + ")");
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * (sampleRate / BUFFERS_PER_SECOND));
@@ -290,41 +280,66 @@ public class WebRtcAudioTrack {
   }
 
   private boolean startPlayout() {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "startPlayout");
     assertTrue(audioTrack != null);
     assertTrue(audioThread == null);
-    if (audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
-      reportWebRtcAudioTrackStartError("AudioTrack instance is not successfully initialized.");
+
+    // Starts playing an audio track.
+    try {
+      audioTrack.play();
+    } catch (IllegalStateException e) {
+      reportWebRtcAudioTrackStartError(AudioTrackStartErrorCode.AUDIO_TRACK_START_EXCEPTION,
+          "AudioTrack.play failed: " + e.getMessage());
+      releaseAudioResources();
       return false;
     }
+
+    // Verify the playout state up to two times (with a sleep in between)
+    // before returning false and reporting an error.
+    int numberOfStateChecks = 0;
+    while (audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING &&
+           ++numberOfStateChecks < 2) {
+      threadSleep(200);
+    }
+    if (audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
+      reportWebRtcAudioTrackStartError(
+          AudioTrackStartErrorCode.AUDIO_TRACK_START_STATE_MISMATCH,
+          "AudioTrack.play failed - incorrect state :"
+          + audioTrack.getPlayState());
+      releaseAudioResources();
+      return false;
+    }
+
+    // Create and start new high-priority thread which calls AudioTrack.write()
+    // and where we also call the native nativeGetPlayoutData() callback to
+    // request decoded audio from WebRTC.
     audioThread = new AudioTrackThread("AudioTrackJavaThread");
     audioThread.start();
     return true;
   }
 
   private boolean stopPlayout() {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "stopPlayout");
     assertTrue(audioThread != null);
     logUnderrunCount();
     audioThread.stopThread();
 
-    final Thread aThread = audioThread;
-    audioThread = null;
-    if (aThread != null) {
-      Logging.d(TAG, "Stopping the AudioTrackThread...");
-      aThread.interrupt();
-      if (!ThreadUtils.joinUninterruptibly(aThread, AUDIO_TRACK_THREAD_JOIN_TIMEOUT_MS)) {
-        Logging.e(TAG, "Join of AudioTrackThread timed out.");
-      }
-      Logging.d(TAG, "AudioTrackThread has now been stopped.");
+    Logging.d(TAG, "Stopping the AudioTrackThread...");
+    audioThread.interrupt();
+    if (!ThreadUtils.joinUninterruptibly(audioThread, AUDIO_TRACK_THREAD_JOIN_TIMEOUT_MS)) {
+      Logging.e(TAG, "Join of AudioTrackThread timed out.");
     }
-
+    Logging.d(TAG, "AudioTrackThread has now been stopped.");
+    audioThread = null;
     releaseAudioResources();
     return true;
   }
 
   // Get max possible volume index for a phone call audio stream.
   private int getStreamMaxVolume() {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "getStreamMaxVolume");
     assertTrue(audioManager != null);
     return audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
@@ -332,6 +347,7 @@ public class WebRtcAudioTrack {
 
   // Set current volume level for a phone call audio stream.
   private boolean setStreamVolume(int volume) {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "setStreamVolume(" + volume + ")");
     assertTrue(audioManager != null);
     if (isVolumeFixed()) {
@@ -350,6 +366,7 @@ public class WebRtcAudioTrack {
 
   /** Get current volume level for a phone call audio stream. */
   private int getStreamVolume() {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "getStreamVolume");
     assertTrue(audioManager != null);
     return audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
@@ -464,16 +481,17 @@ public class WebRtcAudioTrack {
   }
 
   private void reportWebRtcAudioTrackInitError(String errorMessage) {
-    Logging.e(TAG, "Init error: " + errorMessage);
+    Logging.e(TAG, "Init playout error: " + errorMessage);
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioTrackInitError(errorMessage);
     }
   }
 
-  private void reportWebRtcAudioTrackStartError(String errorMessage) {
-    Logging.e(TAG, "Start error: " + errorMessage);
+  private void reportWebRtcAudioTrackStartError(
+      AudioTrackStartErrorCode errorCode, String errorMessage) {
+    Logging.e(TAG, "Start playout error: "  + errorCode + ". " + errorMessage);
     if (errorCallback != null) {
-      errorCallback.onWebRtcAudioTrackStartError(errorMessage);
+      errorCallback.onWebRtcAudioTrackStartError(errorCode, errorMessage);
     }
   }
 
@@ -484,4 +502,13 @@ public class WebRtcAudioTrack {
     }
   }
 
+  // Causes the currently executing thread to sleep for the specified number
+  // of milliseconds.
+  private void threadSleep(long millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException e) {
+      Logging.e(TAG, "Thread.sleep failed: " + e.getMessage());
+    }
+  }
 }
