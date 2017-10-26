@@ -36,6 +36,7 @@ rtc_source_set("call_api") {
 rtc_static_library("libjingle_peerconnection_api") {
   cflags = []
   sources = [
+    "candidate.cc",
     "candidate.h",
     "datachannelinterface.h",
     "dtmfsenderinterface.h",
