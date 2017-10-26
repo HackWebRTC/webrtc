@@ -3124,6 +3124,8 @@ TEST_F(PeerConnectionIntegrationTest,
   caller()->AddAudioOnlyMediaStream();
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                 caller()->ice_connection_state(), kDefaultTimeout);
 
   caller()->clear_ice_connection_state_history();
 
