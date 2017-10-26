@@ -33,7 +33,8 @@ struct RtcpTransceiverConfig {
   // Ssrc to use as default sender ssrc, e.g. for transport-wide feedbacks.
   uint32_t feedback_ssrc = 1;
 
-  // Cname of the local particiapnt.
+  // Canonical End-Point Identifier of the local particiapnt.
+  // Defined in rfc3550 section 6 note 2 and section 6.5.1.
   std::string cname;
 
   // Maximum packet size outgoing transport accepts.

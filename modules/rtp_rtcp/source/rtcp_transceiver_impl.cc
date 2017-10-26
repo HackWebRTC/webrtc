@@ -19,6 +19,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -87,8 +88,13 @@ void RtcpTransceiverImpl::SendCompoundPacket() {
     rr.SetReportBlocks(std::move(report_blocks));
   }
   sender.AppendPacket(rr);
-  // TODO(danilchap): Append SDES to conform to the requirements on minimal
-  // compound RTCP packet.
+  if (!config_.cname.empty()) {
+    rtcp::Sdes sdes;
+    bool added = sdes.AddCName(config_.feedback_ssrc, config_.cname);
+    RTC_DCHECK(added) << "Failed to add cname " << config_.cname
+                      << " to rtcp sdes packet.";
+    sender.AppendPacket(sdes);
+  }
 
   sender.Send();
 }

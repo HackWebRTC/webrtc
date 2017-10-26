@@ -36,19 +36,28 @@ class MockReceiveStatisticsProvider : public webrtc::ReceiveStatisticsProvider {
   MOCK_METHOD1(RtcpReportBlocks, std::vector<ReportBlock>(size_t));
 };
 
-TEST(RtcpTransceiverImplTest, ForceSendReportEmitsRtcpPacket) {
+TEST(RtcpTransceiverImplTest, SendsMinimalCompoundPacket) {
+  const uint32_t kSenderSsrc = 12345;
   MockTransport outgoing_transport;
-  RtcpPacketParser rtcp_parser;
-  EXPECT_CALL(outgoing_transport, SendRtcp(_, _))
-      .WillOnce(Invoke(&rtcp_parser, &RtcpPacketParser::Parse));
-
   RtcpTransceiverConfig config;
+  config.feedback_ssrc = kSenderSsrc;
+  config.cname = "cname";
   config.outgoing_transport = &outgoing_transport;
   RtcpTransceiverImpl rtcp_transceiver(config);
 
-  ASSERT_EQ(rtcp_parser.receiver_report()->num_packets(), 0);
+  RtcpPacketParser rtcp_parser;
+  EXPECT_CALL(outgoing_transport, SendRtcp(_, _))
+      .WillOnce(Invoke(&rtcp_parser, &RtcpPacketParser::Parse));
   rtcp_transceiver.SendCompoundPacket();
-  EXPECT_GT(rtcp_parser.receiver_report()->num_packets(), 0);
+
+  // Minimal compound RTCP packet contains sender or receiver report and sdes
+  // with cname.
+  ASSERT_GT(rtcp_parser.receiver_report()->num_packets(), 0);
+  EXPECT_EQ(rtcp_parser.receiver_report()->sender_ssrc(), kSenderSsrc);
+  ASSERT_GT(rtcp_parser.sdes()->num_packets(), 0);
+  ASSERT_EQ(rtcp_parser.sdes()->chunks().size(), 1u);
+  EXPECT_EQ(rtcp_parser.sdes()->chunks()[0].ssrc, kSenderSsrc);
+  EXPECT_EQ(rtcp_parser.sdes()->chunks()[0].cname, config.cname);
 }
 
 TEST(RtcpTransceiverImplTest, ReceiverReportUsesReceiveStatistics) {
