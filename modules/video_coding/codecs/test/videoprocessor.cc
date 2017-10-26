@@ -30,6 +30,7 @@ namespace test {
 namespace {
 
 const int kRtpClockRateHz = 90000;
+const int64_t kNoRenderTime = 0;
 
 std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
     TestConfig* config) {
@@ -170,16 +171,11 @@ void VideoProcessor::ProcessFrame() {
                                  kRtpClockRateHz /
                                  config_.codec_settings.maxFramerate;
   rtp_timestamp_to_frame_num_[rtp_timestamp] = last_inputed_frame_num_;
-  const int64_t kNoRenderTime = 0;
   VideoFrame source_frame(buffer, rtp_timestamp, kNoRenderTime,
                           webrtc::kVideoRotation_0);
 
-  // Decide if we are going to force a keyframe.
-  std::vector<FrameType> frame_types(1, kVideoFrameDelta);
-  if (config_.keyframe_interval > 0 &&
-      last_inputed_frame_num_ % config_.keyframe_interval == 0) {
-    frame_types[0] = kVideoFrameKey;
-  }
+  std::vector<FrameType> frame_types =
+      config_.FrameTypeForFrame(last_inputed_frame_num_);
 
   // Create frame statistics object used for aggregation at end of test run.
   FrameStatistic* frame_stat = stats_->AddFrame();
@@ -321,10 +317,8 @@ void VideoProcessor::FrameDecoded(const VideoFrame& image) {
     RTC_CHECK_GE(last_decoded_frame_num_, 0);
     const FrameStatistic* last_decoded_frame_stat =
         stats_->GetFrame(last_decoded_frame_num_);
-    if (static_cast<int>(image.width()) !=
-            last_decoded_frame_stat->decoded_width ||
-        static_cast<int>(image.height()) !=
-            last_decoded_frame_stat->decoded_height) {
+    if (image.width() != last_decoded_frame_stat->decoded_width ||
+        image.height() != last_decoded_frame_stat->decoded_height) {
       RTC_CHECK_GE(rate_update_index_, 0);
       ++num_spatial_resizes_[rate_update_index_];
     }

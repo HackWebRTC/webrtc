@@ -12,6 +12,7 @@
 #define MODULES_VIDEO_CODING_CODECS_TEST_TEST_CONFIG_H_
 
 #include <string>
+#include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
@@ -53,6 +54,7 @@ struct TestConfig {
   int NumberOfCores() const;
   int NumberOfTemporalLayers() const;
   int TemporalLayerForFrame(int frame_idx) const;
+  std::vector<FrameType> FrameTypeForFrame(int frame_idx) const;
   std::string ToString() const;
 
   // Plain name of YUV file to process without file extension.

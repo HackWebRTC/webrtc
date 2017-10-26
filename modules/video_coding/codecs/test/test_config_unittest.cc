@@ -9,8 +9,11 @@
  */
 
 #include "modules/video_coding/codecs/test/test_config.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/video_codec_settings.h"
+
+using ::testing::ElementsAre;
 
 namespace webrtc {
 namespace test {
@@ -82,6 +85,25 @@ TEST(TestConfig, TemporalLayersForFrame_ThreeLayers) {
   EXPECT_EQ(2, config.TemporalLayerForFrame(5));
   EXPECT_EQ(1, config.TemporalLayerForFrame(6));
   EXPECT_EQ(2, config.TemporalLayerForFrame(7));
+}
+
+TEST(TestConfig, ForcedKeyFrameIntervalOff) {
+  TestConfig config;
+  config.keyframe_interval = 0;
+  EXPECT_THAT(config.FrameTypeForFrame(0), ElementsAre(kVideoFrameDelta));
+  EXPECT_THAT(config.FrameTypeForFrame(1), ElementsAre(kVideoFrameDelta));
+  EXPECT_THAT(config.FrameTypeForFrame(2), ElementsAre(kVideoFrameDelta));
+}
+
+TEST(TestConfig, ForcedKeyFrameIntervalOn) {
+  TestConfig config;
+  config.keyframe_interval = 3;
+  EXPECT_THAT(config.FrameTypeForFrame(0), ElementsAre(kVideoFrameKey));
+  EXPECT_THAT(config.FrameTypeForFrame(1), ElementsAre(kVideoFrameDelta));
+  EXPECT_THAT(config.FrameTypeForFrame(2), ElementsAre(kVideoFrameDelta));
+  EXPECT_THAT(config.FrameTypeForFrame(3), ElementsAre(kVideoFrameKey));
+  EXPECT_THAT(config.FrameTypeForFrame(4), ElementsAre(kVideoFrameDelta));
+  EXPECT_THAT(config.FrameTypeForFrame(5), ElementsAre(kVideoFrameDelta));
 }
 
 TEST(TestConfig, ToString_Vp8) {

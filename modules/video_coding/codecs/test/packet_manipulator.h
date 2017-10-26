@@ -24,13 +24,10 @@ namespace test {
 enum PacketLossMode {
   // Drops packets with a configured probability independently for each packet
   kUniform,
-  // Drops packets similar to uniform but when a packet is being dropped,
-  // the number of lost packets in a row is equal to the configured burst
-  // length.
+  // Drops packets similar to uniform but when a packet is being dropped, the
+  // number of lost packets in a row is equal to the configured burst length.
   kBurst
 };
-// Returns a string representation of the enum value.
-const char* PacketLossModeToStr(PacketLossMode e);
 
 // Contains configurations related to networking and simulation of
 // scenarios caused by network interference.
@@ -100,13 +97,13 @@ class PacketManipulatorImpl : public PacketManipulator {
   virtual double RandomUniform();
 
  private:
-  PacketReader* packet_reader_;
+  PacketReader* const packet_reader_;
   const NetworkingConfig& config_;
+  const bool verbose_;
   // Used to simulate a burst over several frames.
   int active_burst_packets_;
   rtc::CriticalSection critsect_;
   unsigned int random_seed_;
-  bool verbose_;
 };
 
 }  // namespace test

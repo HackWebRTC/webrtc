@@ -153,6 +153,13 @@ int TestConfig::TemporalLayerForFrame(int frame_idx) const {
   return tl;
 }
 
+std::vector<FrameType> TestConfig::FrameTypeForFrame(int frame_idx) const {
+  if (keyframe_interval > 0 && (frame_idx % keyframe_interval == 0)) {
+    return {kVideoFrameKey};
+  }
+  return {kVideoFrameDelta};
+}
+
 std::string TestConfig::ToString() const {
   std::stringstream ss;
   ss << "Video config:";
