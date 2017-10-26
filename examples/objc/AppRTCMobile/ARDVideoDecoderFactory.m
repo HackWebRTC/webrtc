@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "WebRTC/RTCVideoCodecFactory.h"
+#import "ARDVideoDecoderFactory.h"
 
 #import "WebRTC/RTCVideoCodecH264.h"
 #import "WebRTC/RTCVideoDecoderVP8.h"
 #import "WebRTC/RTCVideoDecoderVP9.h"
 
-@implementation RTCDefaultVideoDecoderFactory
+@implementation ARDVideoDecoderFactory
 
 - (id<RTCVideoDecoder>)createDecoder:(RTCVideoCodecInfo *)info {
-  if ([info.name isEqualToString:kRTCVideoCodecH264Name]) {
+  if ([info.name isEqualToString:@"H264"]) {
     return [[RTCVideoDecoderH264 alloc] init];
-  } else if ([info.name isEqualToString:kRTCVideoCodecVp8Name]) {
+  } else if ([info.name isEqualToString:@"VP8"]) {
     return [RTCVideoDecoderVP8 vp8Decoder];
-  } else if ([info.name isEqualToString:kRTCVideoCodecVp9Name]) {
+  } else if ([info.name isEqualToString:@"VP9"]) {
     return [RTCVideoDecoderVP9 vp9Decoder];
   }
 
@@ -30,9 +30,9 @@
 
 - (NSArray<RTCVideoCodecInfo *> *)supportedCodecs {
   return @[
-    [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecH264Name],
-    [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecVp8Name],
-    [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecVp9Name]
+    [[RTCVideoCodecInfo alloc] initWithName:@"H264" parameters:nil],
+    [[RTCVideoCodecInfo alloc] initWithName:@"VP8" parameters:nil],
+    [[RTCVideoCodecInfo alloc] initWithName:@"VP9" parameters:nil]
   ];
 }
 

@@ -397,8 +397,6 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/PeerConnection/RTCDataChannel.mm",
         "objc/Framework/Classes/PeerConnection/RTCDataChannelConfiguration+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCDataChannelConfiguration.mm",
-        "objc/Framework/Classes/PeerConnection/RTCDefaultVideoDecoderFactory.m",
-        "objc/Framework/Classes/PeerConnection/RTCDefaultVideoEncoderFactory.m",
         "objc/Framework/Classes/PeerConnection/RTCEncodedImage.mm",
         "objc/Framework/Classes/PeerConnection/RTCIceCandidate+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCIceCandidate.mm",
