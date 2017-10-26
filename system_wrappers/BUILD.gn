@@ -133,7 +133,7 @@ rtc_source_set("metrics_api") {
   ]
 }
 
-rtc_static_library("field_trial_default") {
+rtc_source_set("field_trial_default") {
   sources = [
     "include/field_trial_default.h",
     "source/field_trial_default.cc",
@@ -143,7 +143,7 @@ rtc_static_library("field_trial_default") {
   ]
 }
 
-rtc_static_library("metrics_default") {
+rtc_source_set("metrics_default") {
   sources = [
     "include/metrics_default.h",
     "source/metrics_default.cc",
