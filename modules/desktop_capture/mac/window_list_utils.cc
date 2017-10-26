@@ -96,6 +96,12 @@ bool GetWindowList(rtc::FunctionView<bool(CFDictionaryRef)> on_window,
       continue;
     }
 
+    // TODO(webrtc:8460): On 10.12, the name of the dock window is not "Dock"
+    // anymore. The following check should be removed soon or later.
+    if (CFStringCompare(window_title, CFSTR("Dock"), 0) == 0) {
+      continue;
+    }
+
     CFNumberRef window_id = reinterpret_cast<CFNumberRef>(
         CFDictionaryGetValue(window, kCGWindowNumber));
     if (!window_id) {
@@ -210,7 +216,10 @@ WindowId GetWindowId(CFDictionaryRef window) {
     return kNullWindowId;
   }
 
-  WindowId id;
+  // Note: WindowId is 64-bit on 64-bit system, but CGWindowID is always 32-bit.
+  // CFNumberGetValue() fills only top 32 bits, so we should use CGWindowID to
+  // receive the window id.
+  CGWindowID id;
   if (!CFNumberGetValue(window_id, kCFNumberIntType, &id)) {
     return kNullWindowId;
   }
