@@ -21,13 +21,10 @@ struct PacketSocketTcpOptions {
   PacketSocketTcpOptions();
   ~PacketSocketTcpOptions();
 
-  int opts;
+  int opts = 0;
   std::vector<std::string> tls_alpn_protocols;
   std::vector<std::string> tls_elliptic_curves;
 };
-
-inline PacketSocketTcpOptions::PacketSocketTcpOptions() = default;
-inline PacketSocketTcpOptions::~PacketSocketTcpOptions() = default;
 
 class AsyncPacketSocket;
 class AsyncResolverInterface;
@@ -47,7 +44,7 @@ class PacketSocketFactory {
   };
 
   PacketSocketFactory() { }
-  virtual ~PacketSocketFactory() { }
+  virtual ~PacketSocketFactory() = default;
 
   virtual AsyncPacketSocket* CreateUdpSocket(const SocketAddress& address,
                                              uint16_t min_port,
@@ -83,16 +80,6 @@ class PacketSocketFactory {
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(PacketSocketFactory);
 };
-
-inline AsyncPacketSocket* PacketSocketFactory::CreateClientTcpSocket(
-    const SocketAddress& local_address,
-    const SocketAddress& remote_address,
-    const ProxyInfo& proxy_info,
-    const std::string& user_agent,
-    const PacketSocketTcpOptions& tcp_options) {
-  return CreateClientTcpSocket(local_address, remote_address, proxy_info,
-                               user_agent, tcp_options.opts);
-}
 
 }  // namespace rtc
 

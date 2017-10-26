@@ -40,6 +40,7 @@ rtc_static_library("rtc_p2p") {
     "base/p2ptransportchannel.h",
     "base/packetlossestimator.cc",
     "base/packetlossestimator.h",
+    "base/packetsocketfactory.cc",
     "base/packetsocketfactory.h",
     "base/packettransportinterface.h",
     "base/packettransportinternal.h",
