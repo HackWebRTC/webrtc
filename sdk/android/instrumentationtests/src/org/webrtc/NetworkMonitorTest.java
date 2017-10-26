@@ -181,7 +181,7 @@ public class NetworkMonitorTest {
 
   private NetworkMonitorAutoDetect.ConnectionType getCurrentConnectionType() {
     final NetworkMonitorAutoDetect.NetworkState networkState = receiver.getCurrentNetworkState();
-    return receiver.getConnectionType(networkState);
+    return NetworkMonitorAutoDetect.getConnectionType(networkState);
   }
 
   @Before

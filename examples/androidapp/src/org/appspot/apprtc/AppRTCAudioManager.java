@@ -10,8 +10,6 @@
 
 package org.appspot.apprtc;
 
-import org.appspot.apprtc.util.AppRTCUtils;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -23,12 +21,11 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Log;
-
-import org.webrtc.ThreadUtils;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import org.appspot.apprtc.util.AppRTCUtils;
+import org.webrtc.ThreadUtils;
 
 /**
  * AppRTCAudioManager manages all audio related parts of the AppRTC demo.
@@ -195,6 +192,7 @@ public class AppRTCAudioManager {
     AppRTCUtils.logDeviceInfo(TAG);
   }
 
+  @SuppressWarnings("deprecation") // TODO(henrika): audioManager.requestAudioFocus() is deprecated.
   public void start(AudioManagerEvents audioManagerEvents) {
     Log.d(TAG, "start");
     ThreadUtils.checkIsOnMainThread();
@@ -292,6 +290,7 @@ public class AppRTCAudioManager {
     Log.d(TAG, "AudioManager started");
   }
 
+  @SuppressWarnings("deprecation") // TODO(henrika): audioManager.abandonAudioFocus() is deprecated.
   public void stop() {
     Log.d(TAG, "stop");
     ThreadUtils.checkIsOnMainThread();

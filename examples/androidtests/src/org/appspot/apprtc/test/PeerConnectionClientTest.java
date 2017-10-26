@@ -243,41 +243,58 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   // Helper wait functions.
   private boolean waitForLocalSDP(int timeoutMs) throws InterruptedException {
     synchronized (localSdpEvent) {
-      if (localSdp == null) {
-        localSdpEvent.wait(timeoutMs);
+      final long endTimeMs = System.currentTimeMillis() + timeoutMs;
+      while (localSdp == null) {
+        final long waitTimeMs = endTimeMs - System.currentTimeMillis();
+        if (waitTimeMs < 0) {
+          return false;
+        }
+        localSdpEvent.wait(waitTimeMs);
       }
-      return (localSdp != null);
+      return true;
     }
   }
 
   private boolean waitForIceCandidates(int timeoutMs) throws InterruptedException {
     synchronized (iceCandidateEvent) {
-      if (iceCandidates.size() == 0) {
+      final long endTimeMs = System.currentTimeMillis() + timeoutMs;
+      while (iceCandidates.size() == 0) {
+        final long waitTimeMs = endTimeMs - System.currentTimeMillis();
+        if (waitTimeMs < 0) {
+          return false;
+        }
         iceCandidateEvent.wait(timeoutMs);
       }
-      return (iceCandidates.size() > 0);
+      return true;
     }
   }
 
   private boolean waitForIceConnected(int timeoutMs) throws InterruptedException {
     synchronized (iceConnectedEvent) {
-      if (!isIceConnected) {
+      final long endTimeMs = System.currentTimeMillis() + timeoutMs;
+      while (!isIceConnected) {
+        final long waitTimeMs = endTimeMs - System.currentTimeMillis();
+        if (waitTimeMs < 0) {
+          Log.e(TAG, "ICE connection failure");
+          return false;
+        }
         iceConnectedEvent.wait(timeoutMs);
       }
-      if (!isIceConnected) {
-        Log.e(TAG, "ICE connection failure");
-      }
-
-      return isIceConnected;
+      return true;
     }
   }
 
   private boolean waitForPeerConnectionClosed(int timeoutMs) throws InterruptedException {
     synchronized (closeEvent) {
-      if (!isClosed) {
+      final long endTimeMs = System.currentTimeMillis() + timeoutMs;
+      while (!isClosed) {
+        final long waitTimeMs = endTimeMs - System.currentTimeMillis();
+        if (waitTimeMs < 0) {
+          return false;
+        }
         closeEvent.wait(timeoutMs);
       }
-      return isClosed;
+      return true;
     }
   }
 

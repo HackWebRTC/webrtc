@@ -18,7 +18,6 @@ import android.media.MediaFormat;
 import android.os.Build;
 import android.os.SystemClock;
 import android.view.Surface;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -562,6 +561,7 @@ public class MediaCodecVideoDecoder {
     }
 
     // Dequeues and returns a DecodedTextureBuffer if available, or null otherwise.
+    @SuppressWarnings("WaitNotInLoop")
     public DecodedTextureBuffer dequeueTextureBuffer(int timeoutMs) {
       synchronized (newFrameLock) {
         if (renderedBuffer == null && timeoutMs > 0 && isWaitingForTexture()) {

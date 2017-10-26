@@ -84,6 +84,9 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
     });
   }
 
+  // TODO(sakal): yuvConverter.convert is deprecated. This will be removed once this file is updated
+  // to implement VideoSink instead of VideoRenderer.Callbacks.
+  @SuppressWarnings("deprecation")
   private void renderFrameOnRenderThread(VideoRenderer.I420Frame frame) {
     final float frameAspectRatio = (float) frame.rotatedWidth() / (float) frame.rotatedHeight();
 

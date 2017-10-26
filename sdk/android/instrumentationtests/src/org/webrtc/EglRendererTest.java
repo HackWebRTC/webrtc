@@ -81,10 +81,15 @@ public class EglRendererTest {
     }
 
     public synchronized boolean waitForBitmap(int timeoutMs) throws InterruptedException {
-      if (!bitmapReceived) {
+      final long endTimeMs = System.currentTimeMillis() + timeoutMs;
+      while (!bitmapReceived) {
+        final long waitTimeMs = endTimeMs - System.currentTimeMillis();
+        if (waitTimeMs < 0) {
+          return false;
+        }
         wait(timeoutMs);
       }
-      return bitmapReceived;
+      return true;
     }
 
     public synchronized Bitmap resetAndGetBitmap() {
@@ -102,8 +107,9 @@ public class EglRendererTest {
 
   @Before
   public void setUp() throws Exception {
-    PeerConnectionFactory.initializeAndroidGlobals(
-        InstrumentationRegistry.getTargetContext(), true /* videoHwAcceleration */);
+    PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions
+                                         .builder(InstrumentationRegistry.getTargetContext())
+                                         .createInitializationOptions());
     eglRenderer = new EglRenderer("TestRenderer: ");
     eglRenderer.init(null /* sharedContext */, EglBase.CONFIG_RGBA, new GlRectDrawer());
     oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);

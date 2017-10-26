@@ -122,7 +122,7 @@ class HardwareVideoDecoder
   }
 
   // Metadata for the last frame rendered to the texture.
-  private Object renderedTextureMetadataLock = new Object();
+  private final Object renderedTextureMetadataLock = new Object();
   private DecodedTextureMetadata renderedTextureMetadata;
 
   // Decoding proceeds asynchronously.  This callback returns decoded frames to the caller.  Valid

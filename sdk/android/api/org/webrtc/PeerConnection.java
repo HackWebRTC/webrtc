@@ -315,7 +315,7 @@ public class PeerConnection {
       bundlePolicy = BundlePolicy.BALANCED;
       rtcpMuxPolicy = RtcpMuxPolicy.REQUIRE;
       tcpCandidatePolicy = TcpCandidatePolicy.ENABLED;
-      candidateNetworkPolicy = candidateNetworkPolicy.ALL;
+      candidateNetworkPolicy = CandidateNetworkPolicy.ALL;
       this.iceServers = iceServers;
       audioJitterBufferMaxPackets = 50;
       audioJitterBufferFastAccelerate = false;

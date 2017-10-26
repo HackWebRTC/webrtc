@@ -243,7 +243,7 @@ public class HardwareVideoEncoderTest {
   }
 
   // # Test fields
-  private Object referencedFramesLock = new Object();
+  private final Object referencedFramesLock = new Object();
   private int referencedFrames = 0;
 
   private Runnable releaseFrameCallback = new Runnable() {

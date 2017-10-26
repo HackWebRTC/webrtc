@@ -50,7 +50,9 @@ public class PeerConnectionTest {
 
   @Before
   public void setUp() {
-    PeerConnectionFactory.initializeAndroidGlobals(InstrumentationRegistry.getContext(), true);
+    PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions
+                                         .builder(InstrumentationRegistry.getTargetContext())
+                                         .createInitializationOptions());
   }
 
   private static class ObserverExpectations
@@ -575,9 +577,12 @@ public class PeerConnectionTest {
   public void testCreationWithConfig() throws Exception {
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     PeerConnectionFactory factory = new PeerConnectionFactory(options);
-    List<PeerConnection.IceServer> iceServers =
-        Arrays.asList(new PeerConnection.IceServer("stun:stun.l.google.com:19302"),
-            new PeerConnection.IceServer("turn:fake.example.com", "fakeUsername", "fakePassword"));
+    List<PeerConnection.IceServer> iceServers = Arrays.asList(
+        PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
+        PeerConnection.IceServer.builder("turn:fake.example.com")
+            .setUsername("fakeUsername")
+            .setPassword("fakePassword")
+            .createIceServer());
     PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(iceServers);
 
     // Test configuration options.
@@ -605,9 +610,12 @@ public class PeerConnectionTest {
     pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
     LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
-    iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302"));
     iceServers.add(
-        new PeerConnection.IceServer("turn:fake.example.com", "fakeUsername", "fakePassword"));
+        PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
+    iceServers.add(PeerConnection.IceServer.builder("turn:fake.example.com")
+                       .setUsername("fakeUsername")
+                       .setPassword("fakePassword")
+                       .createIceServer());
     ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
     PeerConnection offeringPC =
         factory.createPeerConnection(iceServers, pcConstraints, offeringExpectations);
@@ -842,9 +850,12 @@ public class PeerConnectionTest {
     pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
     LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
-    iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302"));
     iceServers.add(
-        new PeerConnection.IceServer("turn:fake.example.com", "fakeUsername", "fakePassword"));
+        PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
+    iceServers.add(PeerConnection.IceServer.builder("turn:fake.example.com")
+                       .setUsername("fakeUsername")
+                       .setPassword("fakePassword")
+                       .createIceServer());
     ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
     PeerConnection offeringPC =
         factory.createPeerConnection(iceServers, pcConstraints, offeringExpectations);
@@ -994,7 +1005,8 @@ public class PeerConnectionTest {
     pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
     LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
-    iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302"));
+    iceServers.add(
+        PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
 
     ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
     PeerConnection offeringPC =
@@ -1351,6 +1363,7 @@ public class PeerConnectionTest {
     assertTrue(info.samples.size() > 0);
   }
 
+  @SuppressWarnings("deprecation") // TODO(sakal): getStats is deprecated
   private static void shutdownPC(PeerConnection pc, ObserverExpectations expectations) {
     if (expectations.dataChannel != null) {
       expectations.dataChannel.unregisterObserver();
