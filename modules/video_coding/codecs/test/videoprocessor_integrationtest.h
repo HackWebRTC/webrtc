@@ -183,7 +183,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   void VerifyBitstream(int frame_number,
                        const BitstreamThresholds& bs_thresholds);
 
-  void MaybePrintSettings() const;
+  void PrintSettings() const;
 
   // Codecs.
   std::unique_ptr<VideoEncoder> encoder_;

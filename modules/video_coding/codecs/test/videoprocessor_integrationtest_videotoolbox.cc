@@ -33,7 +33,6 @@ class VideoProcessorIntegrationTestVideoToolbox
     config_.output_filename = TempFilename(
         OutputPath(), "videoprocessor_integrationtest_videotoolbox");
     config_.num_frames = kForemanNumFrames;
-    config_.verbose = false;
     config_.hw_encoder = true;
     config_.hw_decoder = true;
     config_.encoded_frame_checker = &h264_keyframe_checker_;

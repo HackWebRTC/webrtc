@@ -60,6 +60,7 @@ void VerifyQuality(const QualityMetricsResult& psnr_result,
 
 void PrintQualityMetrics(const QualityMetricsResult& psnr_result,
                          const QualityMetricsResult& ssim_result) {
+  printf("Quality statistics\n==\n");
   printf("PSNR avg: %f, min: %f\n", psnr_result.average, psnr_result.min);
   printf("SSIM avg: %f, min: %f\n", ssim_result.average, ssim_result.min);
   printf("\n");
@@ -133,6 +134,7 @@ class VideoProcessorIntegrationTest::CpuProcessTime final {
   void Print() const {
     if (config_.measure_cpu) {
       printf("CPU usage %%: %f\n", GetUsagePercent() / config_.NumberOfCores());
+      printf("\n");
     }
   }
 
@@ -169,7 +171,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
 
   SetUpAndInitObjects(&task_queue, rate_profiles[0].target_kbps,
                       rate_profiles[0].input_fps, visualization_params);
-  MaybePrintSettings();
+  PrintSettings();
 
   // Set initial rates.
   int rate_update_index = 0;
@@ -405,7 +407,7 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
 
   cpu_process_time_.reset(new CpuProcessTime(config_));
   packet_manipulator_.reset(new PacketManipulatorImpl(
-      &packet_reader_, config_.networking_config, config_.verbose));
+      &packet_reader_, config_.networking_config, false));
 
   config_.codec_settings.minBitrate = 0;
   config_.codec_settings.startBitrate = initial_bitrate_kbps;
@@ -528,46 +530,51 @@ void VideoProcessorIntegrationTest::PrintRateControlMetrics(
     int rate_update_index,
     const std::vector<int>& num_dropped_frames,
     const std::vector<int>& num_spatial_resizes) const {
+  if (rate_update_index == 0) {
+    printf("Rate control statistics\n==\n");
+  }
+
   printf("Rate update #%d:\n", rate_update_index);
-  printf(" Target bitrate         : %d\n", target_.kbps);
-  printf(" Encoded bitrate        : %f\n", actual_.kbps);
-  printf(" Frame rate             : %d\n", target_.fps);
-  printf(" # processed frames     : %d\n", actual_.num_frames);
-  printf(" # frames to convergence: %d\n", actual_.num_frames_to_hit_target);
-  printf(" # dropped frames       : %d\n",
+  printf(" Target bitrate          : %d\n", target_.kbps);
+  printf(" Encoded bitrate         : %f\n", actual_.kbps);
+  printf(" Frame rate              : %d\n", target_.fps);
+  printf(" # processed frames      : %d\n", actual_.num_frames);
+  printf(" # frames to convergence : %d\n", actual_.num_frames_to_hit_target);
+  printf(" # dropped frames        : %d\n",
          num_dropped_frames[rate_update_index]);
-  printf(" # spatial resizes      : %d\n",
+  printf(" # spatial resizes       : %d\n",
          num_spatial_resizes[rate_update_index]);
-  printf(" # key frames           : %d\n", actual_.num_key_frames);
-  printf(" Key frame rate mismatch: %d\n",
+  printf(" # key frames            : %d\n", actual_.num_key_frames);
+  printf(" Key frame rate mismatch : %d\n",
          actual_.KeyFrameSizeMismatchPercent());
 
   const int num_temporal_layers = config_.NumberOfTemporalLayers();
   for (int i = 0; i < num_temporal_layers; ++i) {
     printf(" Temporal layer #%d:\n", i);
-    printf("  Layer target bitrate        : %f\n", target_.kbps_layer[i]);
-    printf("  Layer frame rate            : %f\n", target_.fps_layer[i]);
-    printf("  Layer per frame bandwidth   : %f\n",
-           target_.framesize_kbits_layer[i]);
-    printf("  Layer encoded bitrate       : %f\n", actual_.kbps_layer[i]);
-    printf("  Layer frame size %% mismatch : %d\n",
+    printf("  TL%d target bitrate        : %f\n", i, target_.kbps_layer[i]);
+    printf("  TL%d encoded bitrate       : %f\n", i, actual_.kbps_layer[i]);
+    printf("  TL%d frame rate            : %f\n", i, target_.fps_layer[i]);
+    printf("  TL%d # processed frames    : %d\n", i,
+           actual_.num_frames_layer[i]);
+    printf("  TL%d frame size %% mismatch : %d\n", i,
            actual_.DeltaFrameSizeMismatchPercent(i));
-    printf("  Layer bitrate %% mismatch    : %d\n",
+    printf("  TL%d bitrate %% mismatch    : %d\n", i,
            actual_.BitrateMismatchPercent(i, target_.kbps_layer[i]));
-    printf("  # processed frames per layer: %d\n", actual_.num_frames_layer[i]);
+    printf("  TL%d per-frame bitrate     : %f\n", i,
+           target_.framesize_kbits_layer[i]);
   }
   printf("\n");
 }
 
-void VideoProcessorIntegrationTest::MaybePrintSettings() const {
-  if (!config_.verbose)
-    return;
-
+void VideoProcessorIntegrationTest::PrintSettings() const {
+  printf("VideoProcessor settings\n==\n");
+  printf(" Total # of frames: %d", analysis_frame_reader_->NumberOfFrames());
   printf("%s\n", config_.ToString().c_str());
-  printf(" Total # of frames: %d\n", analysis_frame_reader_->NumberOfFrames());
+
+  printf("VideoProcessorIntegrationTest settings\n==\n");
   const char* encoder_name = encoder_->ImplementationName();
-  const char* decoder_name = decoder_->ImplementationName();
   printf(" Encoder implementation name: %s\n", encoder_name);
+  const char* decoder_name = decoder_->ImplementationName();
   printf(" Decoder implementation name: %s\n", decoder_name);
   if (strcmp(encoder_name, decoder_name) == 0) {
     printf(" Codec implementation name  : %s_%s\n",

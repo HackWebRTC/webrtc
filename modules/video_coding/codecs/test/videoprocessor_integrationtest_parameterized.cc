@@ -64,7 +64,6 @@ class VideoProcessorIntegrationTestParameterized
         TempFilename(OutputPath(), "plot_videoprocessor_integrationtest");
     config_.use_single_core = kUseSingleCore;
     config_.measure_cpu = kMeasureCpu;
-    config_.verbose = true;
     config_.hw_encoder = hw_codec_;
     config_.hw_decoder = hw_codec_;
     config_.num_frames = kNumFrames;

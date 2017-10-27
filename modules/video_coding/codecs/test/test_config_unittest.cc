@@ -126,10 +126,9 @@ TEST(TestConfig, ToString_Vp8) {
   config.codec_settings.VP8()->keyFrameInterval = 999;
 
   EXPECT_EQ(
-      "Video config:"
       "\n Filename         : yuvfile"
       "\n # CPU cores used : 1"
-      "\n Codec settings:"
+      "\n General:"
       "\n  Codec type        : VP8"
       "\n  Start bitrate     : 400 kbps"
       "\n  Max bitrate       : 500 kbps"
@@ -138,6 +137,7 @@ TEST(TestConfig, ToString_Vp8) {
       "\n  Height            : 180"
       "\n  Max frame rate    : 35"
       "\n  QPmax             : 66"
+      "\n VP8 specific: "
       "\n  Complexity        : 0"
       "\n  Resilience        : 0"
       "\n  # temporal layers : 2"

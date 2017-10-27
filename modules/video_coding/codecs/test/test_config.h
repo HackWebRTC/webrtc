@@ -99,9 +99,6 @@ struct TestConfig {
   // Codec settings to use.
   webrtc::VideoCodec codec_settings;
 
-  // If printing of information to stdout shall be performed during processing.
-  bool verbose = true;
-
   // Should hardware accelerated codecs be used?
   bool hw_encoder = false;
   bool hw_decoder = false;

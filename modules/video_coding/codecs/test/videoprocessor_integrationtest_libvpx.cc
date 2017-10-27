@@ -46,7 +46,6 @@ class VideoProcessorIntegrationTestLibvpx
     config_.networking_config.packet_loss_probability = 0.0;
     // Only allow encoder/decoder to use single core, for predictability.
     config_.use_single_core = true;
-    config_.verbose = false;
     config_.hw_encoder = false;
     config_.hw_decoder = false;
     config_.encoded_frame_checker = &qp_frame_checker_;

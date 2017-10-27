@@ -34,7 +34,6 @@ class VideoProcessorIntegrationTestMediaCodec
     config_.output_filename =
         TempFilename(OutputPath(), "videoprocessor_integrationtest_mediacodec");
     config_.num_frames = kForemanNumFrames;
-    config_.verbose = false;
     config_.hw_encoder = true;
     config_.hw_decoder = true;
   }

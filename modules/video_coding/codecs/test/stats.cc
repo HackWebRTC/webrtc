@@ -66,6 +66,8 @@ void Stats::PrintSummary() const {
     return;
   }
 
+  printf("Encode/decode statistics\n==\n");
+
   // Calculate min, max, average and total encoding time.
   int total_encoding_time_us = 0;
   int total_decoding_time_us = 0;
@@ -179,6 +181,7 @@ void Stats::PrintSummary() const {
   }
   int avg_qp = (total_qp_count > 0) ? (total_qp / total_qp_count) : -1;
   printf("Average QP: %d\n", avg_qp);
+  printf("\n");
 }
 
 }  // namespace test
