@@ -137,25 +137,30 @@ IceCandidatePairType GetIceCandidatePairCounter(
   return kIceCandidatePairMax;
 }
 
-// Verify that the order of media sections in |desc1| matches |desc2|. The
-// number of m= sections could be different.
-static bool MediaSectionsInSameOrder(const SessionDescription* desc1,
-                                     const SessionDescription* desc2) {
-  if (!desc1 || !desc2) {
+// Verify that the order of media sections in |new_desc| matches
+// |existing_desc|. The number of m= sections in |new_desc| should be no less
+// than |existing_desc|.
+static bool MediaSectionsInSameOrder(const SessionDescription* existing_desc,
+                                     const SessionDescription* new_desc) {
+  if (!existing_desc || !new_desc) {
     return false;
   }
-  for (size_t i = 0;
-       i < desc1->contents().size() && i < desc2->contents().size(); ++i) {
-    if ((desc2->contents()[i].name) != desc1->contents()[i].name) {
+
+  if (existing_desc->contents().size() > new_desc->contents().size()) {
+    return false;
+  }
+
+  for (size_t i = 0; i < existing_desc->contents().size(); ++i) {
+    if (new_desc->contents()[i].name != existing_desc->contents()[i].name) {
       return false;
     }
-    const MediaContentDescription* desc2_mdesc =
+    const MediaContentDescription* new_desc_mdesc =
         static_cast<const MediaContentDescription*>(
-            desc2->contents()[i].description);
-    const MediaContentDescription* desc1_mdesc =
+            new_desc->contents()[i].description);
+    const MediaContentDescription* existing_desc_mdesc =
         static_cast<const MediaContentDescription*>(
-            desc1->contents()[i].description);
-    if (desc2_mdesc->type() != desc1_mdesc->type()) {
+            existing_desc->contents()[i].description);
+    if (new_desc_mdesc->type() != existing_desc_mdesc->type()) {
       return false;
     }
   }
@@ -2123,16 +2128,21 @@ bool WebRtcSession::ValidateSessionDescription(
     const cricket::SessionDescription* offer_desc =
         (source == cricket::CS_LOCAL) ? remote_description()->description()
                                       : local_description()->description();
-    if (!MediaSectionsHaveSameCount(sdesc->description(), offer_desc) ||
-        !MediaSectionsInSameOrder(sdesc->description(), offer_desc)) {
+    if (!MediaSectionsHaveSameCount(offer_desc, sdesc->description()) ||
+        !MediaSectionsInSameOrder(offer_desc, sdesc->description())) {
       return BadAnswerSdp(source, kMlineMismatchInAnswer, err_desc);
     }
   } else {
-    // The re-offers should respect the order of m= sections in current local
+    const cricket::SessionDescription* current_desc = nullptr;
+    if (source == cricket::CS_LOCAL && local_description()) {
+      current_desc = local_description()->description();
+    } else if (source == cricket::CS_REMOTE && remote_description()) {
+      current_desc = remote_description()->description();
+    }
+    // The re-offers should respect the order of m= sections in current
     // description. See RFC3264 Section 8 paragraph 4 for more details.
-    if (local_description() &&
-        !MediaSectionsInSameOrder(sdesc->description(),
-                                  local_description()->description())) {
+    if (current_desc &&
+        !MediaSectionsInSameOrder(current_desc, sdesc->description())) {
       return BadOfferSdp(source, kMlineMismatchInSubsequentOffer, err_desc);
     }
   }
