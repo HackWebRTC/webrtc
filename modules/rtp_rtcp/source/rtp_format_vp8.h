@@ -36,26 +36,10 @@
 
 namespace webrtc {
 
-enum VP8PacketizerMode {
-  kStrict = 0,  // Split partitions if too large;
-                // never aggregate, balance size.
-  kAggregate,   // Split partitions if too large; aggregate whole partitions.
-  kEqualSize,   // Split entire payload without considering partition limits.
-                // This will produce equal size packets for the whole frame.
-  kNumModes,
-};
-
 // Packetizer for VP8.
 class RtpPacketizerVp8 : public RtpPacketizer {
  public:
-  // Initialize with payload from encoder and fragmentation info.
-  // The payload_data must be exactly one encoded VP8 frame.
-  RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info,
-                   size_t max_payload_len,
-                   size_t last_packet_reduction_len,
-                   VP8PacketizerMode mode);
-
-  // Initialize without fragmentation info. Mode kEqualSize will be used.
+  // Initialize with payload from encoder.
   // The payload_data must be exactly one encoded VP8 frame.
   RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info,
                    size_t max_payload_len,
@@ -78,8 +62,7 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   typedef struct {
     size_t payload_start_pos;
     size_t size;
-    bool first_fragment;
-    size_t first_partition_ix;
+    bool first_packet;
   } InfoStruct;
   typedef std::queue<InfoStruct> InfoQueue;
 
@@ -97,26 +80,15 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   // Calculate all packet sizes and load to packet info queue.
   int GeneratePackets();
 
-  // Splits given part of payload (one or more partitions)
-  // to packets with a given capacity. If |last_partition| flag is set then the
-  // last packet should be reduced by last_packet_reduction_len_.
-  void GeneratePacketsSplitPayloadBalanced(size_t payload_offset,
-                                           size_t payload_len,
-                                           size_t capacity,
-                                           bool last_partition,
-                                           size_t part_idx);
-
-  // Aggregates partitions starting at |part_idx| to packets of
-  // given |capacity|. Last packet, if containing last partition of the frame
-  // should be reduced by last_packet_reduction_len_.
-  // Returns the first unaggregated partition index.
-  size_t GeneratePacketsAggregatePartitions(size_t part_idx, size_t capacity);
+  // Splits given part of payload to packets with a given capacity. The last
+  // packet should be reduced by last_packet_reduction_len_.
+  void GeneratePacketsSplitPayloadBalanced(size_t payload_len,
+                                           size_t capacity);
 
   // Insert packet into packet queue.
   void QueuePacket(size_t start_pos,
                    size_t packet_size,
-                   size_t first_partition_in_packet,
-                   bool start_on_new_fragment);
+                   bool first_packet);
 
   // Write the payload header and copy the payload to the buffer.
   // The info in packet_info determines which part of the payload is written
@@ -174,12 +146,9 @@ class RtpPacketizerVp8 : public RtpPacketizer {
 
   const uint8_t* payload_data_;
   size_t payload_size_;
-  RTPFragmentationHeader part_info_;
   const size_t vp8_fixed_payload_descriptor_bytes_;  // Length of VP8 payload
                                                      // descriptors' fixed part.
-  const VP8PacketizerMode mode_;
   const RTPVideoHeaderVP8 hdr_info_;
-  size_t num_partitions_;
   const size_t max_payload_len_;
   const size_t last_packet_reduction_len_;
   InfoQueue packets_;

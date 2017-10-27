@@ -372,13 +372,8 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
   StorageType storage = GetStorageType(temporal_id, retransmission_settings,
                                        expected_retransmission_time_ms);
 
-  // TODO(changbin): we currently don't support to configure the codec to
-  // output multiple partitions for VP8. Should remove below check after the
-  // issue is fixed.
-  const RTPFragmentationHeader* frag =
-      (video_type == kRtpVideoVp8) ? nullptr : fragmentation;
   size_t num_packets =
-      packetizer->SetPayloadData(payload_data, payload_size, frag);
+      packetizer->SetPayloadData(payload_data, payload_size, fragmentation);
 
   if (num_packets == 0)
     return false;
