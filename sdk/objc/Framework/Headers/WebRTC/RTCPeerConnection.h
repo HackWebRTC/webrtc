@@ -24,7 +24,6 @@
 @class RTCRtpSender;
 @class RTCSessionDescription;
 @class RTCLegacyStatsReport;
-@class RTCBitrateAllocationStrategy;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -193,13 +192,6 @@ RTC_EXPORT
 - (BOOL)setBweMinBitrateBps:(nullable NSNumber *)minBitrateBps
           currentBitrateBps:(nullable NSNumber *)currentBitrateBps
               maxBitrateBps:(nullable NSNumber *)maxBitrateBps;
-
-/** Sets current strategy. If not set default WebRTC allocator will be used.
- *   May be changed during an active session. The strategy
- *   ownership is passed with std::unique_ptr
- */
-- (void)setBitrateAllocationStrategy:
-        (RTCBitrateAllocationStrategy *_Nullable)bitrateAllocationStrategy;
 
 /** Start or stop recording an Rtc EventLog. */
 - (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath
