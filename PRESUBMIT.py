@@ -157,18 +157,19 @@ Related files:
 def CheckNativeApiHeaderChanges(input_api, output_api):
   """Checks to remind proper changing of native APIs."""
   files = []
-  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
-    if f.LocalPath().endswith('.h'):
-      for path in API_DIRS:
-        dn = os.path.dirname(f.LocalPath())
-        if path == 'api':
-          # Special case: Subdirectories included.
-          if dn == 'api' or dn.startswith('api/'):
-            files.append(f)
-        else:
-          # Normal case: Subdirectories not included.
-          if dn == path:
-            files.append(f)
+  source_file_filter = lambda x: input_api.FilterSourceFile(
+      x, white_list=[r'.+\.(gn|gni|h)$'])
+  for f in input_api.AffectedSourceFiles(source_file_filter):
+    for path in API_DIRS:
+      dn = os.path.dirname(f.LocalPath())
+      if path == 'api':
+        # Special case: Subdirectories included.
+        if dn == 'api' or dn.startswith('api/'):
+          files.append(f)
+      else:
+        # Normal case: Subdirectories not included.
+        if dn == path:
+          files.append(f)
 
   if files:
     return [output_api.PresubmitNotifyResult(API_CHANGE_MSG, files)]
