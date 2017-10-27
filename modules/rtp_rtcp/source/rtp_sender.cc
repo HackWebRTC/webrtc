@@ -417,9 +417,11 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
   if (audio_configured_) {
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", rtp_timestamp, "Send", "type",
                             FrameTypeToString(frame_type));
-
+    // The only known way to produce of RTPFragmentationHeader for audio is
+    // to use the AudioCodingModule directly.
+    RTC_DCHECK(fragmentation == nullptr);
     result = audio_->SendAudio(frame_type, payload_type, rtp_timestamp,
-                               payload_data, payload_size, fragmentation);
+                               payload_data, payload_size);
   } else {
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms,
                             "Send", "type", FrameTypeToString(frame_type));

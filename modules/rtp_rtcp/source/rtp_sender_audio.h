@@ -39,8 +39,7 @@ class RTPSenderAudio {
                  int8_t payload_type,
                  uint32_t capture_timestamp,
                  const uint8_t* payload_data,
-                 size_t payload_size,
-                 const RTPFragmentationHeader* fragmentation);
+                 size_t payload_size);
 
   // Store the audio level in dBov for
   // header-extension-for-audio-level-indication.

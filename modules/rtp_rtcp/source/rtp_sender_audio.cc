@@ -119,8 +119,7 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
                                int8_t payload_type,
                                uint32_t rtp_timestamp,
                                const uint8_t* payload_data,
-                               size_t payload_size,
-                               const RTPFragmentationHeader* fragmentation) {
+                               size_t payload_size) {
   // From RFC 4733:
   // A source has wide latitude as to how often it sends event updates. A
   // natural interval is the spacing between non-event audio packets. [...]
@@ -223,21 +222,10 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
   packet->SetExtension<AudioLevel>(frame_type == kAudioFrameSpeech,
                                    audio_level_dbov);
 
-  if (fragmentation && fragmentation->fragmentationVectorSize > 0) {
-    // Use the fragment info if we have one.
-    uint8_t* payload =
-        packet->AllocatePayload(1 + fragmentation->fragmentationLength[0]);
-    if (!payload)  // Too large payload buffer.
-      return false;
-    payload[0] = fragmentation->fragmentationPlType[0];
-    memcpy(payload + 1, payload_data + fragmentation->fragmentationOffset[0],
-           fragmentation->fragmentationLength[0]);
-  } else {
-    uint8_t* payload = packet->AllocatePayload(payload_size);
-    if (!payload)  // Too large payload buffer.
-      return false;
-    memcpy(payload, payload_data, payload_size);
-  }
+  uint8_t* payload = packet->AllocatePayload(payload_size);
+  if (!payload)  // Too large payload buffer.
+    return false;
+  memcpy(payload, payload_data, payload_size);
 
   if (!rtp_sender_->AssignSequenceNumber(packet.get()))
     return false;
