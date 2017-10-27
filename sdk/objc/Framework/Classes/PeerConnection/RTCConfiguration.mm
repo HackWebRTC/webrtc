@@ -12,6 +12,7 @@
 
 #include <memory>
 
+#import "RTCConfiguration+Native.h"
 #import "RTCIceServer+Private.h"
 #import "RTCIntervalRange+Private.h"
 #import "WebRTC/RTCLogging.h"
@@ -41,6 +42,7 @@
     _shouldPresumeWritableWhenFullyRelayed;
 @synthesize iceCheckMinInterval = _iceCheckMinInterval;
 @synthesize iceRegatherIntervalRange = _iceRegatherIntervalRange;
+@synthesize turnCustomizer = _turnCustomizer;
 
 - (instancetype)init {
   // Copy defaults.
@@ -92,6 +94,7 @@
       _iceRegatherIntervalRange =
           [[RTCIntervalRange alloc] initWithNativeIntervalRange:nativeIntervalRange];
     }
+    _turnCustomizer = config.turn_customizer;
   }
   return self;
 }
@@ -177,6 +180,9 @@
         _iceRegatherIntervalRange.nativeIntervalRange);
     nativeConfig->ice_regather_interval_range =
         rtc::Optional<rtc::IntervalRange>(*nativeIntervalRange);
+  }
+  if (_turnCustomizer) {
+    nativeConfig->turn_customizer = _turnCustomizer;
   }
   return nativeConfig.release();
 }

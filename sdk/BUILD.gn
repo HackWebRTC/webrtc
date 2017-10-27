@@ -392,6 +392,7 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/PeerConnection/RTCAudioSource.mm",
         "objc/Framework/Classes/PeerConnection/RTCAudioTrack+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCAudioTrack.mm",
+        "objc/Framework/Classes/PeerConnection/RTCConfiguration+Native.h",
         "objc/Framework/Classes/PeerConnection/RTCConfiguration+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCConfiguration.mm",
         "objc/Framework/Classes/PeerConnection/RTCDataChannel+Private.h",
