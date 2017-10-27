@@ -22,7 +22,7 @@
 #endif
 
 #if defined(WEBRTC_ANDROID)
-#define RTC_LOG_TAG "rtc"
+#define RTC_LOG_TAG_ANDROID "rtc"
 #include <android/log.h>  // NOLINT
 #endif
 
@@ -43,7 +43,7 @@ namespace rtc {
 
 void VPrintError(const char* format, va_list args) {
 #if defined(WEBRTC_ANDROID)
-  __android_log_vprint(ANDROID_LOG_ERROR, RTC_LOG_TAG, format, args);
+  __android_log_vprint(ANDROID_LOG_ERROR, RTC_LOG_TAG_ANDROID, format, args);
 #else
   vfprintf(stderr, format, args);
 #endif
