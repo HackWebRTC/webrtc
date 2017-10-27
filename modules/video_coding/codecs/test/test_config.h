@@ -56,6 +56,7 @@ struct TestConfig {
   int TemporalLayerForFrame(int frame_idx) const;
   std::vector<FrameType> FrameTypeForFrame(int frame_idx) const;
   std::string ToString() const;
+  std::string CodecName() const;
 
   // Plain name of YUV file to process without file extension.
   std::string filename;
@@ -99,6 +100,13 @@ struct TestConfig {
   // Codec settings to use.
   webrtc::VideoCodec codec_settings;
 
+  // H.264 specific settings.
+  struct H264CodecSettings {
+    H264::Profile profile = H264::kProfileConstrainedBaseline;
+    H264PacketizationMode packetization_mode =
+        webrtc::H264PacketizationMode::NonInterleaved;
+  } h264_codec_settings;
+
   // Should hardware accelerated codecs be used?
   bool hw_encoder = false;
   bool hw_decoder = false;
@@ -106,10 +114,6 @@ struct TestConfig {
   // Should the hardware codecs be wrapped in software fallbacks?
   bool sw_fallback_encoder = false;
   bool sw_fallback_decoder = false;
-
-  // RTP H264 packetization mode.
-  H264PacketizationMode packetization_mode =
-      webrtc::H264PacketizationMode::NonInterleaved;
 
   // Custom checker that will be called for each frame.
   const EncodedFrameChecker* encoded_frame_checker = nullptr;

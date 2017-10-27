@@ -21,6 +21,8 @@
 #include "modules/video_coding/codecs/test/objc_codec_h264_test.h"
 #endif
 
+#include "common_types.h"  // NOLINT(build/include)
+#include "media/base/h264_profile_level_id.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/videodecodersoftwarefallbackwrapper.h"
@@ -328,12 +330,27 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
           decoder_factory->CreateVideoDecoderWithParams(codec, decoder_params));
       break;
     case kVideoCodecH264:
-      // TODO(brandtr): Generalize so that we support multiple profiles here.
       codec = cricket::VideoCodec(cricket::kH264CodecName);
-      if (config_.packetization_mode == H264PacketizationMode::NonInterleaved) {
+      if (config_.h264_codec_settings.profile ==
+          H264::kProfileConstrainedHigh) {
+        const H264::ProfileLevelId constrained_high_profile(
+            H264::kProfileConstrainedHigh, H264::kLevel3_1);
+        codec.SetParam(cricket::kH264FmtpProfileLevelId,
+                       *H264::ProfileLevelIdToString(constrained_high_profile));
+      } else {
+        RTC_CHECK_EQ(config_.h264_codec_settings.profile,
+                     H264::kProfileConstrainedBaseline);
+        const H264::ProfileLevelId constrained_baseline_profile(
+            H264::kProfileConstrainedBaseline, H264::kLevel3_1);
+        codec.SetParam(
+            cricket::kH264FmtpProfileLevelId,
+            *H264::ProfileLevelIdToString(constrained_baseline_profile));
+      }
+      if (config_.h264_codec_settings.packetization_mode ==
+          H264PacketizationMode::NonInterleaved) {
         codec.SetParam(cricket::kH264FmtpPacketizationMode, "1");
       } else {
-        RTC_CHECK_EQ(config_.packetization_mode,
+        RTC_CHECK_EQ(config_.h264_codec_settings.packetization_mode,
                      H264PacketizationMode::SingleNalUnit);
         codec.SetParam(cricket::kH264FmtpPacketizationMode, "0");
       }
@@ -577,8 +594,7 @@ void VideoProcessorIntegrationTest::PrintSettings() const {
   const char* decoder_name = decoder_->ImplementationName();
   printf(" Decoder implementation name: %s\n", decoder_name);
   if (strcmp(encoder_name, decoder_name) == 0) {
-    printf(" Codec implementation name  : %s_%s\n",
-           CodecTypeToPayloadString(config_.codec_settings.codecType),
+    printf(" Codec implementation name : %s_%s\n", config_.CodecName().c_str(),
            encoder_name);
   }
   printf("\n");

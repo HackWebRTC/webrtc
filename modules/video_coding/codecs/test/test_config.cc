@@ -179,5 +179,19 @@ std::string TestConfig::ToString() const {
   return ss.str();
 }
 
+std::string TestConfig::CodecName() const {
+  std::string codec_name = CodecTypeToPayloadString(codec_settings.codecType);
+  if (codec_settings.codecType == kVideoCodecH264) {
+    if (h264_codec_settings.profile == H264::kProfileConstrainedHigh) {
+      codec_name += "-CHP";
+    } else {
+      RTC_DCHECK_EQ(h264_codec_settings.profile,
+                    H264::kProfileConstrainedBaseline);
+      codec_name += "-CBP";
+    }
+  }
+  return codec_name;
+}
+
 }  // namespace test
 }  // namespace webrtc

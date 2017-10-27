@@ -73,7 +73,8 @@ TEST_F(VideoProcessorIntegrationTestOpenH264, Process0PercentPacketLoss) {
 // H264: Enable SingleNalUnit packetization mode. Encoder should split
 // large frames into multiple slices and limit length of NAL units.
 TEST_F(VideoProcessorIntegrationTestOpenH264, ProcessNoLossSingleNalUnit) {
-  config_.packetization_mode = H264PacketizationMode::SingleNalUnit;
+  config_.h264_codec_settings.packetization_mode =
+      H264PacketizationMode::SingleNalUnit;
   config_.networking_config.max_payload_size_in_bytes = 500;
   config_.SetCodecSettings(kVideoCodecH264, 1, false, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);

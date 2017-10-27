@@ -12,6 +12,7 @@
 
 #include <vector>
 
+#include "test/field_trial.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -40,9 +41,10 @@ class VideoProcessorIntegrationTestVideoToolbox
 };
 
 // Since we don't currently run the iOS tests on physical devices on the bots,
-// this test is disabled.
+// the tests are disabled.
+
 TEST_F(VideoProcessorIntegrationTestVideoToolbox,
-       DISABLED_ForemanCif500kbpsH264) {
+       DISABLED_ForemanCif500kbpsH264CBP) {
   config_.SetCodecSettings(kVideoCodecH264, 1, false, false, false, false,
                            false, 352, 288);
 
@@ -50,6 +52,25 @@ TEST_F(VideoProcessorIntegrationTestVideoToolbox,
 
   std::vector<RateControlThresholds> rc_thresholds = {
       {20, 95, 60, 60, 10, 0, 1}};
+
+  QualityThresholds quality_thresholds(30.0, 14.0, 0.86, 0.39);
+
+  ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
+                              &quality_thresholds, nullptr,
+                              kNoVisualizationParams);
+}
+
+TEST_F(VideoProcessorIntegrationTestVideoToolbox,
+       DISABLED_ForemanCif500kbpsH264CHP) {
+  ScopedFieldTrials override_field_trials("WebRTC-H264HighProfile/Enabled/");
+
+  config_.h264_codec_settings.profile = H264::kProfileConstrainedHigh;
+  config_.SetCodecSettings(kVideoCodecH264, 1, false, false, false, false,
+                           false, 352, 288);
+
+  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames + 1}};
+
+  std::vector<RateControlThresholds> rc_thresholds = {{5, 75, 65, 60, 6, 0, 1}};
 
   QualityThresholds quality_thresholds(30.0, 14.0, 0.86, 0.39);
 
