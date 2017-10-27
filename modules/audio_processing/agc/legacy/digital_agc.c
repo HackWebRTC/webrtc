@@ -574,7 +574,8 @@ int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
                              const int16_t* in,  // (i) Speech signal
                              size_t nrSamples)   // (i) number of samples
 {
-  int32_t out, nrg, tmp32, tmp32b;
+  uint32_t nrg;
+  int32_t out, tmp32, tmp32b;
   uint16_t tmpU16;
   int16_t k, subfr, tmp16;
   int16_t buf1[8];
