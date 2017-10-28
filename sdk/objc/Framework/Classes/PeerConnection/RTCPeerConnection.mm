@@ -17,6 +17,7 @@
 #import "RTCLegacyStatsReport+Private.h"
 #import "RTCMediaConstraints+Private.h"
 #import "RTCMediaStream+Private.h"
+#import "RTCPeerConnection+Native.h"
 #import "RTCPeerConnectionFactory+Private.h"
 #import "RTCRtpReceiver+Private.h"
 #import "RTCRtpSender+Private.h"
@@ -383,6 +384,11 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
     params.max_bitrate_bps = rtc::Optional<int>(maxBitrateBps.intValue);
   }
   return _peerConnection->SetBitrate(params).ok();
+}
+
+- (void)setBitrateAllocationStrategy:
+        (std::unique_ptr<rtc::BitrateAllocationStrategy>)bitrateAllocationStrategy {
+  _peerConnection->SetBitrateAllocationStrategy(std::move(bitrateAllocationStrategy));
 }
 
 - (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath
