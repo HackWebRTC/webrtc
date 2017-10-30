@@ -533,12 +533,20 @@ bool RtpVideoStreamReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
   uint32_t rtp_timestamp = 0;
-  if (rtp_rtcp_->RemoteNTP(&ntp_secs, &ntp_frac, nullptr, nullptr,
-                           &rtp_timestamp) != 0) {
+  uint32_t recieved_ntp_secs = 0;
+  uint32_t recieved_ntp_frac = 0;
+  if (rtp_rtcp_->RemoteNTP(&ntp_secs, &ntp_frac, &recieved_ntp_secs,
+                           &recieved_ntp_frac, &rtp_timestamp) != 0) {
     // Waiting for RTCP.
     return true;
   }
-  ntp_estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
+  NtpTime recieved_ntp(recieved_ntp_secs, recieved_ntp_frac);
+  int64_t time_since_recieved =
+      clock_->CurrentNtpInMilliseconds() - recieved_ntp.ToMs();
+  // Don't use old SRs to estimate time.
+  if (time_since_recieved <= 1) {
+    ntp_estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
+  }
 
   return true;
 }
