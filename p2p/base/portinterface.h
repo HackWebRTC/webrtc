@@ -40,7 +40,7 @@ enum ProtocolType {
 // the other client. Various types of ports will implement this interface.
 class PortInterface {
  public:
-  virtual ~PortInterface() {}
+  virtual ~PortInterface();
 
   virtual const std::string& Type() const = 0;
   virtual rtc::Network* Network() const = 0;
@@ -124,7 +124,7 @@ class PortInterface {
   virtual std::string ToString() const = 0;
 
  protected:
-  PortInterface() {}
+  PortInterface();
 };
 
 }  // namespace cricket

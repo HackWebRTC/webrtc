@@ -246,6 +246,14 @@ int TCPPort::GetError() {
   return error_;
 }
 
+bool TCPPort::SupportsProtocol(const std::string& protocol) const {
+  return protocol == TCP_PROTOCOL_NAME || protocol == SSLTCP_PROTOCOL_NAME;
+}
+
+ProtocolType TCPPort::GetProtocol() const {
+  return PROTO_TCP;
+}
+
 void TCPPort::OnNewConnection(rtc::AsyncPacketSocket* socket,
                               rtc::AsyncPacketSocket* new_socket) {
   RTC_DCHECK(socket == socket_);

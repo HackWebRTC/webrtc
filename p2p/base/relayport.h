@@ -59,19 +59,11 @@ class RelayPort : public Port {
   int SetOption(rtc::Socket::Option opt, int value) override;
   int GetOption(rtc::Socket::Option opt, int* value) override;
   int GetError() override;
-  bool SupportsProtocol(const std::string& protocol) const override {
-    // Relay port may create both TCP and UDP connections.
-    return true;
-  }
+  bool SupportsProtocol(const std::string& protocol) const override;
+  ProtocolType GetProtocol() const override;
 
   const ProtocolAddress * ServerAddress(size_t index) const;
   bool IsReady() { return ready_; }
-
-  ProtocolType GetProtocol() const override {
-    // We shouldn't be using RelayPort, but we need to provide an
-    // implementation here.
-    return PROTO_UDP;
-  }
 
   // Used for testing.
   sigslot::signal1<const ProtocolAddress*> SignalConnectFailure;

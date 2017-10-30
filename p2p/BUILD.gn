@@ -48,6 +48,7 @@ rtc_static_library("rtc_p2p") {
     "base/port.h",
     "base/portallocator.cc",
     "base/portallocator.h",
+    "base/portinterface.cc",
     "base/portinterface.h",
     "base/pseudotcp.cc",
     "base/pseudotcp.h",

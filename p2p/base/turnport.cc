@@ -284,6 +284,26 @@ rtc::SocketAddress TurnPort::GetLocalAddress() const {
   return socket_ ? socket_->GetLocalAddress() : rtc::SocketAddress();
 }
 
+ProtocolType TurnPort::GetProtocol() const {
+  return server_address_.proto;
+}
+
+TlsCertPolicy TurnPort::GetTlsCertPolicy() const {
+  return tls_cert_policy_;
+}
+
+void TurnPort::SetTlsCertPolicy(TlsCertPolicy tls_cert_policy) {
+  tls_cert_policy_ = tls_cert_policy;
+}
+
+std::vector<std::string> TurnPort::GetTlsAlpnProtocols() const {
+  return tls_alpn_protocols_;
+}
+
+std::vector<std::string> TurnPort::GetTlsEllipticCurves() const {
+  return tls_elliptic_curves_;
+}
+
 void TurnPort::PrepareAddress() {
   if (credentials_.username.empty() ||
       credentials_.password.empty()) {
@@ -660,6 +680,10 @@ void TurnPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   }
 }
 
+bool TurnPort::SupportsProtocol(const std::string& protocol) const {
+  // Turn port only connects to UDP candidates.
+  return protocol == UDP_PROTOCOL_NAME;
+}
 
 // Update current server address port with the alternate server address port.
 bool TurnPort::SetAlternateServer(const rtc::SocketAddress& address) {

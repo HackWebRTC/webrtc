@@ -31,7 +31,7 @@ class RelayConnection : public sigslot::has_slots<> {
   RelayConnection(const ProtocolAddress* protocol_address,
                   rtc::AsyncPacketSocket* socket,
                   rtc::Thread* thread);
-  ~RelayConnection();
+  ~RelayConnection() override;
   rtc::AsyncPacketSocket* socket() const { return socket_; }
 
   const ProtocolAddress* protocol_address() {
@@ -78,7 +78,7 @@ class RelayEntry : public rtc::MessageHandler,
                    public sigslot::has_slots<> {
  public:
   RelayEntry(RelayPort* port, const rtc::SocketAddress& ext_addr);
-  ~RelayEntry();
+  ~RelayEntry() override;
 
   RelayPort* port() { return port_; }
 
@@ -125,7 +125,7 @@ class RelayEntry : public rtc::MessageHandler,
   void HandleConnectFailure(rtc::AsyncPacketSocket* socket);
 
   // Implementation of the MessageHandler Interface.
-  virtual void OnMessage(rtc::Message *pmsg);
+  void OnMessage(rtc::Message* pmsg) override;
 
  private:
   RelayPort* port_;
@@ -162,7 +162,7 @@ class RelayEntry : public rtc::MessageHandler,
 class AllocateRequest : public StunRequest {
  public:
   AllocateRequest(RelayEntry* entry, RelayConnection* connection);
-  virtual ~AllocateRequest() {}
+  ~AllocateRequest() override = default;
 
   void Prepare(StunMessage* request) override;
 
@@ -385,6 +385,17 @@ int RelayPort::GetOption(rtc::Socket::Option opt, int* value) {
 
 int RelayPort::GetError() {
   return error_;
+}
+
+bool RelayPort::SupportsProtocol(const std::string& protocol) const {
+  // Relay port may create both TCP and UDP connections.
+  return true;
+}
+
+ProtocolType RelayPort::GetProtocol() const {
+  // We shouldn't be using RelayPort, but we need to provide an implementation
+  // here.
+  return PROTO_UDP;
 }
 
 void RelayPort::OnReadPacket(

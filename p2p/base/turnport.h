@@ -85,7 +85,7 @@ class TurnPort : public Port {
                         customizer);
   }
 
-  virtual ~TurnPort();
+  ~TurnPort() override;
 
   const ProtocolAddress& server_address() const { return server_address_; }
   // Returns an empty address if the local address has not been assigned.
@@ -97,49 +97,40 @@ class TurnPort : public Port {
   }
   const RelayCredentials& credentials() const { return credentials_; }
 
-  virtual ProtocolType GetProtocol() const { return server_address_.proto; }
+  ProtocolType GetProtocol() const override;
 
-  virtual TlsCertPolicy GetTlsCertPolicy() const { return tls_cert_policy_; }
+  virtual TlsCertPolicy GetTlsCertPolicy() const;
+  virtual void SetTlsCertPolicy(TlsCertPolicy tls_cert_policy);
 
-  virtual void SetTlsCertPolicy(TlsCertPolicy tls_cert_policy) {
-    tls_cert_policy_ = tls_cert_policy;
-  }
+  virtual std::vector<std::string> GetTlsAlpnProtocols() const;
+  virtual std::vector<std::string> GetTlsEllipticCurves() const;
 
-  virtual std::vector<std::string> GetTlsAlpnProtocols() const {
-    return tls_alpn_protocols_;
-  }
+  void PrepareAddress() override;
+  Connection* CreateConnection(const Candidate& c,
+                               PortInterface::CandidateOrigin origin) override;
+  int SendTo(const void* data,
+             size_t size,
+             const rtc::SocketAddress& addr,
+             const rtc::PacketOptions& options,
+             bool payload) override;
+  int SetOption(rtc::Socket::Option opt, int value) override;
+  int GetOption(rtc::Socket::Option opt, int* value) override;
+  int GetError() override;
 
-  virtual std::vector<std::string> GetTlsEllipticCurves() const {
-    return tls_elliptic_curves_;
-  }
-
-  virtual void PrepareAddress();
-  virtual Connection* CreateConnection(
-      const Candidate& c, PortInterface::CandidateOrigin origin);
-  virtual int SendTo(const void* data, size_t size,
-                     const rtc::SocketAddress& addr,
-                     const rtc::PacketOptions& options,
-                     bool payload);
-  virtual int SetOption(rtc::Socket::Option opt, int value);
-  virtual int GetOption(rtc::Socket::Option opt, int* value);
-  virtual int GetError();
-
-  virtual bool HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
-                                    const char* data, size_t size,
-                                    const rtc::SocketAddress& remote_addr,
-                                    const rtc::PacketTime& packet_time);
+  bool HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
+                            const char* data,
+                            size_t size,
+                            const rtc::SocketAddress& remote_addr,
+                            const rtc::PacketTime& packet_time) override;
   virtual void OnReadPacket(rtc::AsyncPacketSocket* socket,
                             const char* data, size_t size,
                             const rtc::SocketAddress& remote_addr,
                             const rtc::PacketTime& packet_time);
 
-  virtual void OnSentPacket(rtc::AsyncPacketSocket* socket,
-                            const rtc::SentPacket& sent_packet);
+  void OnSentPacket(rtc::AsyncPacketSocket* socket,
+                    const rtc::SentPacket& sent_packet) override;
   virtual void OnReadyToSend(rtc::AsyncPacketSocket* socket);
-  virtual bool SupportsProtocol(const std::string& protocol) const {
-    // Turn port only connects to UDP candidates.
-    return protocol == UDP_PROTOCOL_NAME;
-  }
+  bool SupportsProtocol(const std::string& protocol) const override;
 
   void OnSocketConnect(rtc::AsyncPacketSocket* socket);
   void OnSocketClose(rtc::AsyncPacketSocket* socket, int error);
@@ -222,8 +213,8 @@ class TurnPort : public Port {
   typedef std::map<rtc::Socket::Option, int> SocketOptionsMap;
   typedef std::set<rtc::SocketAddress> AttemptedServerSet;
 
-  virtual void OnMessage(rtc::Message* pmsg);
-  virtual void HandleConnectionDestroyed(Connection* conn);
+  void OnMessage(rtc::Message* pmsg) override;
+  void HandleConnectionDestroyed(Connection* conn) override;
 
   bool CreateTurnClientSocket();
 

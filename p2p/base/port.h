@@ -161,19 +161,19 @@ class Port : public PortInterface, public rtc::MessageHandler,
        uint16_t max_port,
        const std::string& username_fragment,
        const std::string& password);
-  virtual ~Port();
+  ~Port() override;
 
-  virtual const std::string& Type() const { return type_; }
-  virtual rtc::Network* Network() const { return network_; }
+  const std::string& Type() const override;
+  rtc::Network* Network() const override;
 
   // Methods to set/get ICE role and tiebreaker values.
-  IceRole GetIceRole() const { return ice_role_; }
-  void SetIceRole(IceRole role) { ice_role_ = role; }
+  IceRole GetIceRole() const override;
+  void SetIceRole(IceRole role) override;
 
-  void SetIceTiebreaker(uint64_t tiebreaker) { tiebreaker_ = tiebreaker; }
-  uint64_t IceTiebreaker() const { return tiebreaker_; }
+  void SetIceTiebreaker(uint64_t tiebreaker) override;
+  uint64_t IceTiebreaker() const override;
 
-  virtual bool SharedSocket() const { return shared_socket_; }
+  bool SharedSocket() const override;
   void ResetSharedSocket() { shared_socket_ = false; }
 
   // Should not destroy the port even if no connection is using it. Called when
@@ -226,9 +226,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   sigslot::signal2<Port*, const Candidate&> SignalCandidateReady;
 
   // Provides all of the above information in one handy object.
-  virtual const std::vector<Candidate>& Candidates() const {
-    return candidates_;
-  }
+  const std::vector<Candidate>& Candidates() const override;
 
   // SignalPortComplete is sent when port completes the task of candidates
   // allocation.
@@ -246,8 +244,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   const AddressMap& connections() { return connections_; }
 
   // Returns the connection to the given address or NULL if none exists.
-  virtual Connection* GetConnection(
-      const rtc::SocketAddress& remote_addr);
+  Connection* GetConnection(const rtc::SocketAddress& remote_addr) override;
 
   // Called each time a connection is created.
   sigslot::signal2<Port*, Connection*> SignalConnectionCreated;
@@ -256,22 +253,21 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // to accept the packet based on the |remote_addr|. Currently only UDP
   // port implemented this method.
   // TODO(mallinath) - Make it pure virtual.
-  virtual bool HandleIncomingPacket(
-      rtc::AsyncPacketSocket* socket, const char* data, size_t size,
-      const rtc::SocketAddress& remote_addr,
-      const rtc::PacketTime& packet_time) {
-    RTC_NOTREACHED();
-    return false;
-  }
+  virtual bool HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
+                                    const char* data,
+                                    size_t size,
+                                    const rtc::SocketAddress& remote_addr,
+                                    const rtc::PacketTime& packet_time);
 
   // Sends a response message (normal or error) to the given request.  One of
   // these methods should be called as a response to SignalUnknownAddress.
   // NOTE: You MUST call CreateConnection BEFORE SendBindingResponse.
-  virtual void SendBindingResponse(StunMessage* request,
-                                   const rtc::SocketAddress& addr);
-  virtual void SendBindingErrorResponse(
-      StunMessage* request, const rtc::SocketAddress& addr,
-      int error_code, const std::string& reason);
+  void SendBindingResponse(StunMessage* request,
+                           const rtc::SocketAddress& addr) override;
+  void SendBindingErrorResponse(StunMessage* request,
+                                const rtc::SocketAddress& addr,
+                                int error_code,
+                                const std::string& reason) override;
 
   void set_proxy(const std::string& user_agent,
                  const rtc::ProxyInfo& proxy) {
@@ -281,15 +277,15 @@ class Port : public PortInterface, public rtc::MessageHandler,
   const std::string& user_agent() { return user_agent_; }
   const rtc::ProxyInfo& proxy() { return proxy_; }
 
-  virtual void EnablePortPackets();
+  void EnablePortPackets() override;
 
   // Called if the port has no connections and is no longer useful.
   void Destroy();
 
-  virtual void OnMessage(rtc::Message *pmsg);
+  void OnMessage(rtc::Message* pmsg) override;
 
   // Debugging description of this port
-  virtual std::string ToString() const;
+  std::string ToString() const override;
   uint16_t min_port() { return min_port_; }
   uint16_t max_port() { return max_port_; }
 
@@ -454,7 +450,7 @@ class Connection : public CandidatePairInterface,
     uint32_t nomination;
   };
 
-  virtual ~Connection();
+  ~Connection() override;
 
   // The local port where this connection sends and receives packets.
   Port* port() { return port_; }
@@ -462,9 +458,9 @@ class Connection : public CandidatePairInterface,
 
   // Implementation of virtual methods in CandidatePairInterface.
   // Returns the description of the local port
-  virtual const Candidate& local_candidate() const;
+  const Candidate& local_candidate() const override;
   // Returns the description of the remote port to which we communicate.
-  virtual const Candidate& remote_candidate() const;
+  const Candidate& remote_candidate() const override;
 
   // Returns the pair priority.
   uint64_t priority() const;
@@ -671,7 +667,7 @@ class Connection : public CandidatePairInterface,
 
   uint32_t nomination() const { return nomination_; }
 
-  void OnMessage(rtc::Message *pmsg);
+  void OnMessage(rtc::Message* pmsg) override;
 
   Port* port_;
   size_t local_candidate_index_;
@@ -746,7 +742,7 @@ class ProxyConnection : public Connection {
   int Send(const void* data,
            size_t size,
            const rtc::PacketOptions& options) override;
-  int GetError() override { return error_; }
+  int GetError() override;
 
  private:
   int error_ = 0;
