@@ -22,6 +22,7 @@ public class StatsReport {
       this.value = value;
     }
 
+    @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
       builder.append("[").append(name).append(": ").append(value).append("]");
@@ -42,6 +43,7 @@ public class StatsReport {
     this.values = values;
   }
 
+  @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append("id: ")

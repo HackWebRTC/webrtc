@@ -15,6 +15,7 @@ import android.os.HandlerThread;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
@@ -57,7 +58,7 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
     videoOutFile = new FileOutputStream(outputFile);
     videoOutFile.write(
         ("YUV4MPEG2 C420 W" + outputFileWidth + " H" + outputFileHeight + " Ip F30:1 A1:1\n")
-            .getBytes());
+            .getBytes(Charset.forName("US-ASCII")));
 
     renderThread = new HandlerThread(TAG);
     renderThread.start();
@@ -149,7 +150,7 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
     ThreadUtils.awaitUninterruptibly(cleanupBarrier);
     try {
       for (ByteBuffer buffer : rawFrames) {
-        videoOutFile.write("FRAME\n".getBytes());
+        videoOutFile.write("FRAME\n".getBytes(Charset.forName("US-ASCII")));
 
         byte[] data = new byte[outputFrameSize];
         buffer.get(data);

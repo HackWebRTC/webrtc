@@ -83,6 +83,7 @@ public class HardwareVideoEncoderTest {
   static class MockEncoderCallback implements VideoEncoder.Callback {
     private BlockingQueue<EncodedImage> frameQueue = new LinkedBlockingQueue<>();
 
+    @Override
     public void onEncodedFrame(EncodedImage frame, VideoEncoder.CodecSpecificInfo info) {
       assertNotNull(frame);
       assertNotNull(info);
@@ -247,6 +248,7 @@ public class HardwareVideoEncoderTest {
   private int referencedFrames = 0;
 
   private Runnable releaseFrameCallback = new Runnable() {
+    @Override
     public void run() {
       synchronized (referencedFramesLock) {
         --referencedFrames;

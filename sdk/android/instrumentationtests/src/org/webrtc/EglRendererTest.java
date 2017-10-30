@@ -64,7 +64,7 @@ public class EglRendererTest {
   private final static ByteBuffer[][] TEST_FRAMES =
       copyTestDataToDirectByteBuffers(TEST_FRAMES_DATA);
 
-  private class TestFrameListener implements EglRenderer.FrameListener {
+  private static class TestFrameListener implements EglRenderer.FrameListener {
     final private ArrayList<Bitmap> bitmaps = new ArrayList<Bitmap>();
     boolean bitmapReceived;
     Bitmap storedBitmap;

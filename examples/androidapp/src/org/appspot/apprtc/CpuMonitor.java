@@ -17,9 +17,13 @@ import android.os.BatteryManager;
 import android.os.SystemClock;
 import android.util.Log;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
@@ -68,7 +72,6 @@ import java.util.concurrent.TimeUnit;
  *      correct value, and then returns to back to correct reading.  Both when
  *      jumping up and back down we might create faulty CPU load readings.
  */
-
 class CpuMonitor {
   private static final String TAG = "CpuMonitor";
   private static final int MOVING_AVERAGE_SAMPLES = 5;
@@ -224,9 +227,10 @@ class CpuMonitor {
   }
 
   private void init() {
-    try (FileReader fin = new FileReader("/sys/devices/system/cpu/present")) {
-      BufferedReader reader = new BufferedReader(fin);
-      Scanner scanner = new Scanner(reader).useDelimiter("[-\n]");
+    try (FileInputStream fin = new FileInputStream("/sys/devices/system/cpu/present");
+         InputStreamReader streamReader = new InputStreamReader(fin, Charset.forName("UTF-8"));
+         BufferedReader reader = new BufferedReader(streamReader);
+         Scanner scanner = new Scanner(reader).useDelimiter("[-\n]");) {
       scanner.nextInt(); // Skip leading number 0.
       cpusPresent = 1 + scanner.nextInt();
       scanner.close();
@@ -432,7 +436,9 @@ class CpuMonitor {
    */
   private long readFreqFromFile(String fileName) {
     long number = 0;
-    try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+    try (FileInputStream stream = new FileInputStream(fileName);
+         InputStreamReader streamReader = new InputStreamReader(stream, Charset.forName("UTF-8"));
+         BufferedReader reader = new BufferedReader(streamReader)) {
       String line = reader.readLine();
       number = parseLong(line);
     } catch (FileNotFoundException e) {
@@ -463,7 +469,9 @@ class CpuMonitor {
     long userTime = 0;
     long systemTime = 0;
     long idleTime = 0;
-    try (BufferedReader reader = new BufferedReader(new FileReader("/proc/stat"))) {
+    try (FileInputStream stream = new FileInputStream("/proc/stat");
+         InputStreamReader streamReader = new InputStreamReader(stream, Charset.forName("UTF-8"));
+         BufferedReader reader = new BufferedReader(streamReader)) {
       // line should contain something like this:
       // cpu  5093818 271838 3512830 165934119 101374 447076 272086 0 0 0
       //       user    nice  system     idle   iowait  irq   softirq

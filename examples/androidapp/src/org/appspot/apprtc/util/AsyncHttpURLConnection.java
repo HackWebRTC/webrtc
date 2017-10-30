@@ -50,12 +50,7 @@ public class AsyncHttpURLConnection {
   }
 
   public void send() {
-    Runnable runHttp = new Runnable() {
-      public void run() {
-        sendHttpMessage();
-      }
-    };
-    new Thread(runHttp).start();
+    new Thread(this ::sendHttpMessage).start();
   }
 
   private void sendHttpMessage() {

@@ -113,6 +113,7 @@ public class WebRtcAudioManager {
         this.maxVoiceCallVolume = maxVoiceCallVolume;
       }
 
+      @Override
       public void run() {
         final int mode = audioManager.getMode();
         if (mode == AudioManager.MODE_RINGTONE) {

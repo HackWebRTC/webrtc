@@ -17,6 +17,7 @@ import android.util.Log;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1261,6 +1262,7 @@ public class PeerConnectionClient {
         return;
 
       dc.registerObserver(new DataChannel.Observer() {
+        @Override
         public void onBufferedAmountChange(long previousAmount) {
           Log.d(TAG, "Data channel buffered amount changed: " + dc.label() + ": " + dc.state());
         }
@@ -1279,7 +1281,7 @@ public class PeerConnectionClient {
           ByteBuffer data = buffer.data;
           final byte[] bytes = new byte[data.capacity()];
           data.get(bytes);
-          String strData = new String(bytes);
+          String strData = new String(bytes, Charset.forName("UTF-8"));
           Log.d(TAG, "Got msg: " + strData + " over " + dc);
         }
       });

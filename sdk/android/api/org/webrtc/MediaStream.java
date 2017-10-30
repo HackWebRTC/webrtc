@@ -88,6 +88,7 @@ public class MediaStream {
     return nativeLabel(nativeStream);
   }
 
+  @Override
   public String toString() {
     return "[" + label() + ":A=" + audioTracks.size() + ":V=" + videoTracks.size() + "]";
   }

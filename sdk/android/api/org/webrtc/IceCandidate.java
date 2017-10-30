@@ -35,6 +35,7 @@ public class IceCandidate {
     this.serverUrl = serverUrl;
   }
 
+  @Override
   public String toString() {
     return sdpMid + ":" + sdpMLineIndex + ":" + sdp + ":" + serverUrl;
   }

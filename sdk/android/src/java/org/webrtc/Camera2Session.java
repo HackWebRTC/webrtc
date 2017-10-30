@@ -293,7 +293,7 @@ class Camera2Session implements CameraSession {
     }
   }
 
-  private class CameraCaptureCallback extends CameraCaptureSession.CaptureCallback {
+  private static class CameraCaptureCallback extends CameraCaptureSession.CaptureCallback {
     @Override
     public void onCaptureFailed(
         CameraCaptureSession session, CaptureRequest request, CaptureFailure failure) {

@@ -67,6 +67,7 @@ public class RTCStats {
     return members;
   }
 
+  @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append("{ timestampUs: ")

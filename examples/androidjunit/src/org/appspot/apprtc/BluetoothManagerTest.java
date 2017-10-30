@@ -11,9 +11,9 @@
 package org.appspot.apprtc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
@@ -119,7 +119,7 @@ public class BluetoothManagerTest {
       protected boolean hasPermission(Context context, String permission) {
         Log.d(TAG, "hasPermission(" + permission + ")");
         // Ensure that the client asks for Bluetooth permission.
-        return (permission == android.Manifest.permission.BLUETOOTH);
+        return android.Manifest.permission.BLUETOOTH.equals(permission);
       }
 
       @Override

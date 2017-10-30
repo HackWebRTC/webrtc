@@ -142,8 +142,10 @@ public class SurfaceViewRendererOnMeasureTest {
         }
       }
 
+      @Override
       public void onFirstFrameRendered() {}
 
+      @Override
       public synchronized void onFrameResolutionChanged(
           int frameWidth, int frameHeight, int rotation) {
         this.frameWidth = frameWidth;

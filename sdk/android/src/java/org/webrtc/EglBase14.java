@@ -24,6 +24,7 @@ import android.view.Surface;
  * Holds EGL state and utility methods for handling an EGL14 EGLContext, an EGLDisplay,
  * and an EGLSurface.
  */
+@SuppressWarnings("ReferenceEquality") // We want to compare to EGL14 constants.
 @TargetApi(18)
 class EglBase14 extends EglBase {
   private static final String TAG = "EglBase14";

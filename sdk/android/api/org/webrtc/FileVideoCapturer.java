@@ -15,6 +15,7 @@ import android.os.SystemClock;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -90,6 +91,7 @@ public class FileVideoCapturer implements VideoCapturer {
       Logging.d(TAG, "frame dim: (" + w + ", " + h + ")");
     }
 
+    @Override
     public VideoFrame getNextFrame() {
       final long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
       final JavaI420Buffer buffer = JavaI420Buffer.allocate(frameWidth, frameHeight);
@@ -110,7 +112,7 @@ public class FileVideoCapturer implements VideoCapturer {
             throw new RuntimeException("Error looping video");
           }
         }
-        String frameDelimStr = new String(frameDelim);
+        String frameDelimStr = new String(frameDelim, Charset.forName("US-ASCII"));
         if (!frameDelimStr.equals(Y4M_FRAME_DELIMETER + "\n")) {
           throw new RuntimeException(
               "Frames should be delimited by FRAME plus newline, found delimter was: '"
@@ -127,6 +129,7 @@ public class FileVideoCapturer implements VideoCapturer {
       return new VideoFrame(buffer, 0 /* rotation */, captureTimeNs);
     }
 
+    @Override
     public void close() {
       try {
         mediaFileStream.close();

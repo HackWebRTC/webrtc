@@ -535,6 +535,7 @@ public class ConnectActivity extends Activity {
         .setCancelable(false)
         .setNeutralButton(R.string.ok,
             new DialogInterface.OnClickListener() {
+              @Override
               public void onClick(DialogInterface dialog, int id) {
                 dialog.cancel();
               }

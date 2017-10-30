@@ -36,6 +36,7 @@ public class MediaConstraints {
       return value;
     }
 
+    @Override
     public String toString() {
       return key + ": " + value;
     }
@@ -77,6 +78,7 @@ public class MediaConstraints {
     return builder.append("]").toString();
   }
 
+  @Override
   public String toString() {
     return "mandatory: " + stringifyKeyValuePairList(mandatory) + ", optional: "
         + stringifyKeyValuePairList(optional);

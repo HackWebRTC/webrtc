@@ -62,6 +62,7 @@ public class VideoTrack extends MediaStreamTrack {
     renderer.dispose();
   }
 
+  @Override
   public void dispose() {
     while (!renderers.isEmpty()) {
       removeRenderer(renderers.getFirst());

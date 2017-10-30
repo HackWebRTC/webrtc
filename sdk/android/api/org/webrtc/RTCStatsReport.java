@@ -37,6 +37,7 @@ public class RTCStatsReport {
     return stats;
   }
 
+  @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append("{ timestampUs: ").append(timestampUs).append(", stats: [\n");
