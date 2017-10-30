@@ -22,7 +22,6 @@ class VideoDecoder;
 namespace cricket {
 
 struct VideoDecoderParams {
-  VideoDecoderParams();
   std::string receive_stream_id;
 };
 

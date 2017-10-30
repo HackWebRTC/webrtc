@@ -12,8 +12,6 @@
 
 namespace cricket {
 
-VideoDecoderParams::VideoDecoderParams() = default;
-
 webrtc::VideoDecoder* WebRtcVideoDecoderFactory::CreateVideoDecoderWithParams(
     const VideoCodec& codec,
     VideoDecoderParams params) {
