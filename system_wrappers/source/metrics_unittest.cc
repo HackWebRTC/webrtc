@@ -22,11 +22,6 @@ void AddSparseSample(const std::string& name, int sample) {
 void AddSampleWithVaryingName(int index, const std::string& name, int sample) {
   RTC_HISTOGRAMS_COUNTS_100(index, name, sample);
 }
-#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-void AddSample(const std::string& name, int sample) {
-  RTC_HISTOGRAM_COUNTS_100(name, sample);
-}
-#endif  // RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 }  // namespace
 
 class MetricsTest : public ::testing::Test {
@@ -116,12 +111,5 @@ TEST_F(MetricsTest, RtcHistogramSparse_NonConstantNameWorks) {
   EXPECT_EQ(1, metrics::NumSamples("Sparse1"));
   EXPECT_EQ(1, metrics::NumSamples("Sparse2"));
 }
-
-#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST_F(MetricsTest, RtcHistogram_FailsForNonConstantName) {
-  AddSample("ConstantName1", kSample);
-  EXPECT_DEATH(AddSample("NotConstantName1", kSample), "");
-}
-#endif
 
 }  // namespace webrtc

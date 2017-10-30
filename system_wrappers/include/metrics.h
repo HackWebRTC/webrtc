@@ -164,9 +164,6 @@
                  prev_pointer == histogram_pointer);                       \
     }                                                                      \
     if (histogram_pointer) {                                               \
-      RTC_DCHECK_EQ(constant_name,                                         \
-                    webrtc::metrics::GetHistogramName(histogram_pointer))  \
-          << "The name should not vary.";                                  \
       webrtc::metrics::HistogramAdd(histogram_pointer, sample);            \
     }                                                                      \
   } while (0)
@@ -261,9 +258,6 @@ Histogram* HistogramFactoryGetCountsLinear(const std::string& name,
 // |boundary| should be above the max enumerator sample.
 Histogram* HistogramFactoryGetEnumeration(
     const std::string& name, int boundary);
-
-// Returns name of the histogram.
-const std::string& GetHistogramName(Histogram* histogram_pointer);
 
 // Function for adding a |sample| to a histogram.
 void HistogramAdd(Histogram* histogram_pointer, int sample);

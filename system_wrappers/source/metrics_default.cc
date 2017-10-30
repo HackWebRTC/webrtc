@@ -247,11 +247,6 @@ Histogram* HistogramFactoryGetEnumeration(const std::string& name,
   return map->GetEnumerationHistogram(name, boundary);
 }
 
-const std::string& GetHistogramName(Histogram* histogram_pointer) {
-  RtcHistogram* ptr = reinterpret_cast<RtcHistogram*>(histogram_pointer);
-  return ptr->name();
-}
-
 // Fast path. Adds |sample| to cached |histogram_pointer|.
 void HistogramAdd(Histogram* histogram_pointer, int sample) {
   RtcHistogram* ptr = reinterpret_cast<RtcHistogram*>(histogram_pointer);
