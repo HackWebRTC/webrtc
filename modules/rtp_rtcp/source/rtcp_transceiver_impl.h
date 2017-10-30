@@ -17,6 +17,7 @@
 #include "api/array_view.h"
 #include "modules/rtp_rtcp/source/rtcp_transceiver_config.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/weak_ptr.h"
 
 namespace webrtc {
 //
@@ -32,7 +33,13 @@ class RtcpTransceiverImpl {
   void SendCompoundPacket();
 
  private:
+  void ReschedulePeriodicCompoundPackets(int64_t delay_ms);
+  // Sends RTCP packets.
+  void SendPacket();
+
   const RtcpTransceiverConfig config_;
+
+  rtc::WeakPtrFactory<RtcpTransceiverImpl> ptr_factory_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtcpTransceiverImpl);
 };

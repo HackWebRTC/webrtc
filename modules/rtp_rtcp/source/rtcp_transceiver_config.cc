@@ -43,13 +43,18 @@ bool RtcpTransceiverConfig::Validate() const {
                   << " more than " << IP_PACKET_SIZE << " is unsupported.";
     return false;
   }
-  if (outgoing_transport == nullptr) {
+  if (!outgoing_transport) {
     LOG(LS_ERROR) << debug_id << "outgoing transport must be set";
     return false;
   }
-  if (min_periodic_report_ms <= 0) {
-    LOG(LS_ERROR) << debug_id << "period " << min_periodic_report_ms
+  if (report_period_ms <= 0) {
+    LOG(LS_ERROR) << debug_id << "period " << report_period_ms
                   << "ms between reports should be positive.";
+    return false;
+  }
+  if (schedule_periodic_compound_packets && !task_queue) {
+    LOG(LS_ERROR) << debug_id
+                  << "missing task queue for periodic compound packets";
     return false;
   }
   // TODO(danilchap): Remove or update the warning when RtcpTransceiver supports
