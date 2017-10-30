@@ -61,7 +61,9 @@
                  legacyNativeVideoEncoderFactory:new webrtc::ObjCVideoEncoderFactory(
                                                      [[RTCVideoEncoderFactoryH264 alloc] init])
                  legacyNativeVideoDecoderFactory:new webrtc::ObjCVideoDecoderFactory(
-                                                     [[RTCVideoDecoderFactoryH264 alloc] init])];
+                                                     [[RTCVideoDecoderFactoryH264 alloc] init])
+                               audioDeviceModule:nullptr];
+
 #endif
 }
 
@@ -81,7 +83,8 @@
   return [self initWithNativeAudioEncoderFactory:webrtc::CreateBuiltinAudioEncoderFactory()
                        nativeAudioDecoderFactory:webrtc::CreateBuiltinAudioDecoderFactory()
                        nativeVideoEncoderFactory:std::move(native_encoder_factory)
-                       nativeVideoDecoderFactory:std::move(native_decoder_factory)];
+                       nativeVideoDecoderFactory:std::move(native_decoder_factory)
+                               audioDeviceModule:nullptr];
 #endif
 }
 
@@ -123,7 +126,9 @@
                         nativeVideoEncoderFactory:
                             (std::unique_ptr<webrtc::VideoEncoderFactory>)videoEncoderFactory
                         nativeVideoDecoderFactory:
-                            (std::unique_ptr<webrtc::VideoDecoderFactory>)videoDecoderFactory {
+                            (std::unique_ptr<webrtc::VideoDecoderFactory>)videoDecoderFactory
+                                audioDeviceModule:
+                                    (nullable webrtc::AudioDeviceModule *)audioDeviceModule {
 #ifdef HAVE_NO_MEDIA
   return [self initWithNoMedia];
 #else
@@ -131,7 +136,7 @@
     _nativeFactory = webrtc::CreatePeerConnectionFactory(_networkThread.get(),
                                                          _workerThread.get(),
                                                          _signalingThread.get(),
-                                                         nullptr,  // audio device module
+                                                         audioDeviceModule,
                                                          audioEncoderFactory,
                                                          audioDecoderFactory,
                                                          std::move(videoEncoderFactory),
@@ -151,7 +156,8 @@
             nativeAudioDecoderFactory:
                 (rtc::scoped_refptr<webrtc::AudioDecoderFactory>)audioDecoderFactory
       legacyNativeVideoEncoderFactory:(cricket::WebRtcVideoEncoderFactory *)videoEncoderFactory
-      legacyNativeVideoDecoderFactory:(cricket::WebRtcVideoDecoderFactory *)videoDecoderFactory {
+      legacyNativeVideoDecoderFactory:(cricket::WebRtcVideoDecoderFactory *)videoDecoderFactory
+                    audioDeviceModule:(nullable webrtc::AudioDeviceModule *)audioDeviceModule {
 #ifdef HAVE_NO_MEDIA
   return [self initWithNoMedia];
 #else
@@ -159,7 +165,7 @@
     _nativeFactory = webrtc::CreatePeerConnectionFactory(_networkThread.get(),
                                                          _workerThread.get(),
                                                          _signalingThread.get(),
-                                                         nullptr,  // audio device module
+                                                         audioDeviceModule,
                                                          audioEncoderFactory,
                                                          audioDecoderFactory,
                                                          videoEncoderFactory,
