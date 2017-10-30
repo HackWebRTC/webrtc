@@ -28,10 +28,11 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
   // http://crbug.com/428099.
   explicit MockWebRtcSession(cricket::ChannelManager* channel_manager,
                              const cricket::MediaConfig& media_config)
-      : WebRtcSession(nullptr /* Call */,
+      : WebRtcSession(
+            nullptr,  // call
             channel_manager,
             media_config,
-            nullptr, // event_log
+            nullptr,  // event_log
             rtc::Thread::Current(),
             rtc::Thread::Current(),
             rtc::Thread::Current(),

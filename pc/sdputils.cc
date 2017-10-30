@@ -10,6 +10,7 @@
 
 #include "pc/sdputils.h"
 
+#include <string>
 #include <utility>
 
 #include "api/jsepsessiondescription.h"

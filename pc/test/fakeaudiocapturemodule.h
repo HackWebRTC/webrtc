@@ -164,7 +164,7 @@ class FakeAudioCaptureModule
   // exposed in which case the burden of proper instantiation would be put on
   // the creator of a FakeAudioCaptureModule instance. To create an instance of
   // this class use the Create(..) API.
-  explicit FakeAudioCaptureModule();
+  FakeAudioCaptureModule();
   // The destructor is protected because it is reference counted and should not
   // be deleted directly.
   virtual ~FakeAudioCaptureModule();
@@ -201,11 +201,11 @@ class FakeAudioCaptureModule
   // Callback for playout and recording.
   webrtc::AudioTransport* audio_callback_;
 
-  bool recording_; // True when audio is being pushed from the instance.
-  bool playing_; // True when audio is being pulled by the instance.
+  bool recording_;  // True when audio is being pushed from the instance.
+  bool playing_;    // True when audio is being pulled by the instance.
 
-  bool play_is_initialized_; // True when the instance is ready to pull audio.
-  bool rec_is_initialized_; // True when the instance is ready to push audio.
+  bool play_is_initialized_;  // True when the instance is ready to pull audio.
+  bool rec_is_initialized_;   // True when the instance is ready to push audio.
 
   // Input to and output from RecordedDataIsAvailable(..) makes it possible to
   // modify the current mic level. The implementation does not care about the

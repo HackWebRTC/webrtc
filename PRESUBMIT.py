@@ -30,7 +30,6 @@ CPPLINT_BLACKLIST = [
   'modules/utility',
   'modules/video_capture',
   'p2p',
-  'pc',
   'rtc_base',
   'sdk/android/src/jni',
   'sdk/objc',

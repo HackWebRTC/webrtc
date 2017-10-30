@@ -11,6 +11,7 @@
 #include "pc/srtptransport.h"
 
 #include <string>
+#include <vector>
 
 #include "media/base/rtputils.h"
 #include "pc/rtptransport.h"

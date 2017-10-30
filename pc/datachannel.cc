@@ -180,7 +180,7 @@ bool DataChannel::Init(const InternalDataChannelInit& config) {
     case webrtc::InternalDataChannelInit::kAcker:
       handshake_state_ = kHandshakeShouldSendAck;
       break;
-    };
+    }
 
     // Try to connect to the transport in case the transport channel already
     // exists.

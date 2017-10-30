@@ -11,6 +11,8 @@
 #ifndef PC_TEST_MOCK_DATACHANNEL_H_
 #define PC_TEST_MOCK_DATACHANNEL_H_
 
+#include <string>
+
 #include "pc/datachannel.h"
 #include "test/gmock.h"
 

@@ -14,6 +14,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "api/peerconnectioninterface.h"
 #include "pc/test/mockpeerconnectionobservers.h"

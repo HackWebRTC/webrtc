@@ -10,6 +10,8 @@
 
 #include "pc/rtpreceiver.h"
 
+#include <vector>
+
 #include "api/mediastreamtrackproxy.h"
 #include "api/videosourceproxy.h"
 #include "pc/audiotrack.h"

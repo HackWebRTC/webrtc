@@ -11,6 +11,8 @@
 #ifndef PC_TEST_FAKEDATACHANNELPROVIDER_H_
 #define PC_TEST_FAKEDATACHANNELPROVIDER_H_
 
+#include <set>
+
 #include "pc/datachannel.h"
 #include "rtc_base/checks.h"
 

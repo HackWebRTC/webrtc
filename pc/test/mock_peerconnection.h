@@ -11,6 +11,7 @@
 #ifndef PC_TEST_MOCK_PEERCONNECTION_H_
 #define PC_TEST_MOCK_PEERCONNECTION_H_
 
+#include <memory>
 #include <vector>
 
 #include "call/call.h"

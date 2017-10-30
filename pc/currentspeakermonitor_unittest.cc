@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <utility>
+
 #include "pc/currentspeakermonitor.h"
 #include "pc/audiomonitor.h"
 #include "rtc_base/gunit.h"

@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "pc/rtptransportinternal.h"
 #include "pc/srtpfilter.h"

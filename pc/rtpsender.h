@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "api/mediastreaminterface.h"
 #include "api/rtpsenderinterface.h"

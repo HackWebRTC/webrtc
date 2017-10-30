@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string>
+
 #include "pc/videotrack.h"
 #include "rtc_base/refcountedobject.h"
-
-#include <string>
 
 namespace webrtc {
 

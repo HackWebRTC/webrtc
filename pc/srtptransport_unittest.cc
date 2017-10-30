@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <vector>
+
 #include "pc/srtptransport.h"
 
 #include "media/base/fakertp.h"
@@ -141,14 +143,14 @@ class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
       TestRtpAuthParams(srtp_transport1_.get(), cipher_suite_name);
     } else {
       ASSERT_TRUE(last_recv_packet2_.data());
-      EXPECT_TRUE(
-          memcmp(last_recv_packet2_.data(), original_rtp_data, rtp_len) == 0);
+      EXPECT_EQ(0,
+                memcmp(last_recv_packet2_.data(), original_rtp_data, rtp_len));
       // Get the encrypted packet from underneath packet transport and verify
       // the data is actually encrypted.
       auto fake_rtp_packet_transport = static_cast<rtc::FakePacketTransport*>(
           srtp_transport1_->rtp_packet_transport());
-      EXPECT_FALSE(memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
-                          original_rtp_data, rtp_len) == 0);
+      EXPECT_NE(0, memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
+                          original_rtp_data, rtp_len));
     }
 
     // Do the same thing in the opposite direction;
@@ -158,12 +160,12 @@ class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
       TestRtpAuthParams(srtp_transport2_.get(), cipher_suite_name);
     } else {
       ASSERT_TRUE(last_recv_packet1_.data());
-      EXPECT_TRUE(
-          memcmp(last_recv_packet1_.data(), original_rtp_data, rtp_len) == 0);
+      EXPECT_EQ(0,
+                memcmp(last_recv_packet1_.data(), original_rtp_data, rtp_len));
       auto fake_rtp_packet_transport = static_cast<rtc::FakePacketTransport*>(
           srtp_transport2_->rtp_packet_transport());
-      EXPECT_FALSE(memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
-                          original_rtp_data, rtp_len) == 0);
+      EXPECT_NE(0, memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
+                          original_rtp_data, rtp_len));
     }
   }
 
@@ -186,25 +188,23 @@ class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
     ASSERT_TRUE(srtp_transport1_->SendRtcpPacket(&rtcp_packet1to2, options,
                                                  cricket::PF_SRTP_BYPASS));
     ASSERT_TRUE(last_recv_packet2_.data());
-    EXPECT_TRUE(memcmp(last_recv_packet2_.data(), rtcp_packet_data, rtcp_len) ==
-                0);
+    EXPECT_EQ(0, memcmp(last_recv_packet2_.data(), rtcp_packet_data, rtcp_len));
     // Get the encrypted packet from underneath packet transport and verify the
     // data is actually encrypted.
     auto fake_rtp_packet_transport = static_cast<rtc::FakePacketTransport*>(
         srtp_transport1_->rtp_packet_transport());
-    EXPECT_FALSE(memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
-                        rtcp_packet_data, rtcp_len) == 0);
+    EXPECT_NE(0, memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
+                        rtcp_packet_data, rtcp_len));
 
     // Do the same thing in the opposite direction;
     ASSERT_TRUE(srtp_transport2_->SendRtcpPacket(&rtcp_packet2to1, options,
                                                  cricket::PF_SRTP_BYPASS));
     ASSERT_TRUE(last_recv_packet1_.data());
-    EXPECT_TRUE(memcmp(last_recv_packet1_.data(), rtcp_packet_data, rtcp_len) ==
-                0);
+    EXPECT_EQ(0, memcmp(last_recv_packet1_.data(), rtcp_packet_data, rtcp_len));
     fake_rtp_packet_transport = static_cast<rtc::FakePacketTransport*>(
         srtp_transport2_->rtp_packet_transport());
-    EXPECT_FALSE(memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
-                        rtcp_packet_data, rtcp_len) == 0);
+    EXPECT_NE(0, memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
+                        rtcp_packet_data, rtcp_len));
   }
 
   void TestSendRecvPacket(bool enable_external_auth,
@@ -267,14 +267,13 @@ class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
     ASSERT_TRUE(srtp_transport1_->SendRtpPacket(&rtp_packet1to2, options,
                                                 cricket::PF_SRTP_BYPASS));
     ASSERT_TRUE(last_recv_packet2_.data());
-    EXPECT_TRUE(memcmp(last_recv_packet2_.data(), original_rtp_data, rtp_len) ==
-                0);
+    EXPECT_EQ(0, memcmp(last_recv_packet2_.data(), original_rtp_data, rtp_len));
     // Get the encrypted packet from underneath packet transport and verify the
     // data and header extension are actually encrypted.
     auto fake_rtp_packet_transport = static_cast<rtc::FakePacketTransport*>(
         srtp_transport1_->rtp_packet_transport());
-    EXPECT_FALSE(memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
-                        original_rtp_data, rtp_len) == 0);
+    EXPECT_NE(0, memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
+                        original_rtp_data, rtp_len));
     CompareHeaderExtensions(
         reinterpret_cast<const char*>(
             fake_rtp_packet_transport->last_sent_packet()->data()),
@@ -285,12 +284,11 @@ class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
     ASSERT_TRUE(srtp_transport2_->SendRtpPacket(&rtp_packet2to1, options,
                                                 cricket::PF_SRTP_BYPASS));
     ASSERT_TRUE(last_recv_packet1_.data());
-    EXPECT_TRUE(memcmp(last_recv_packet1_.data(), original_rtp_data, rtp_len) ==
-                0);
+    EXPECT_EQ(0, memcmp(last_recv_packet1_.data(), original_rtp_data, rtp_len));
     fake_rtp_packet_transport = static_cast<rtc::FakePacketTransport*>(
         srtp_transport2_->rtp_packet_transport());
-    EXPECT_FALSE(memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
-                        original_rtp_data, rtp_len) == 0);
+    EXPECT_NE(0, memcmp(fake_rtp_packet_transport->last_sent_packet()->data(),
+                        original_rtp_data, rtp_len));
     CompareHeaderExtensions(
         reinterpret_cast<const char*>(
             fake_rtp_packet_transport->last_sent_packet()->data()),

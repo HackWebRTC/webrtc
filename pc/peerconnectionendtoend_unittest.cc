@@ -184,7 +184,7 @@ std::unique_ptr<webrtc::AudioDecoder> CreateForwardingMockDecoder(
     std::unique_ptr<webrtc::AudioDecoder> real_decoder) {
   class ForwardingMockDecoder : public StrictMock<webrtc::MockAudioDecoder> {
    public:
-    ForwardingMockDecoder(std::unique_ptr<AudioDecoder> decoder)
+    explicit ForwardingMockDecoder(std::unique_ptr<AudioDecoder> decoder)
         : decoder_(std::move(decoder)) {}
 
    private:

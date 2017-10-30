@@ -2598,7 +2598,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithCorruptedSctpDataChannels) {
   // No crash is a pass.
 }
 
-void MutateJsepSctpPort(JsepSessionDescription& jdesc,
+void MutateJsepSctpPort(JsepSessionDescription* jdesc,
                         const SessionDescription& desc) {
   // take our pre-built session description and change the SCTP port.
   cricket::SessionDescription* mutant = desc.Copy();
@@ -2611,7 +2611,7 @@ void MutateJsepSctpPort(JsepSessionDescription& jdesc,
   dcdesc->set_codecs(codecs);
 
   // note: mutant's owned by jdesc now.
-  ASSERT_TRUE(jdesc.Initialize(mutant, kSessionId, kSessionVersion));
+  ASSERT_TRUE(jdesc->Initialize(mutant, kSessionId, kSessionVersion));
   mutant = NULL;
 }
 
@@ -2621,7 +2621,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndUnusualPort) {
 
   // First setup the expected JsepSessionDescription.
   JsepSessionDescription jdesc(kDummyString);
-  MutateJsepSctpPort(jdesc, desc_);
+  MutateJsepSctpPort(&jdesc, desc_);
 
   // Then get the deserialized JsepSessionDescription.
   std::string sdp_with_data = kSdpString;
@@ -2641,7 +2641,7 @@ TEST_F(WebRtcSdpTest,
   AddSctpDataChannel(use_sctpmap);
 
   JsepSessionDescription jdesc(kDummyString);
-  MutateJsepSctpPort(jdesc, desc_);
+  MutateJsepSctpPort(&jdesc, desc_);
 
   // We need to test the deserialized JsepSessionDescription from
   // kSdpSctpDataChannelStringWithSctpPort for

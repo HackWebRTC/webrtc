@@ -18,7 +18,7 @@ namespace webrtc {
 
 class FakeVideoTrackRenderer : public cricket::FakeVideoRenderer {
  public:
-  FakeVideoTrackRenderer(VideoTrackInterface* video_track)
+  explicit FakeVideoTrackRenderer(VideoTrackInterface* video_track)
       : video_track_(video_track) {
     video_track_->AddOrUpdateSink(this, rtc::VideoSinkWants());
   }

@@ -12,6 +12,7 @@
 #define PC_TEST_PEERCONNECTIONTESTWRAPPER_H_
 
 #include <memory>
+#include <string>
 
 #include "api/peerconnectioninterface.h"
 #include "api/test/fakeconstraints.h"
@@ -52,7 +53,7 @@ class PeerConnectionTestWrapper
   void OnRemoveStream(
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override {}
   void OnDataChannel(
-      rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override ;
+      rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
   void OnRenegotiationNeeded() override {}
   void OnIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) override {}

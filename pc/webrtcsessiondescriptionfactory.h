@@ -12,6 +12,8 @@
 #define PC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
 
 #include <memory>
+#include <queue>
+#include <string>
 
 #include "api/peerconnectioninterface.h"
 #include "p2p/base/transportdescriptionfactory.h"

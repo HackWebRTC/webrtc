@@ -10,7 +10,10 @@
 
 #include "pc/webrtcsessiondescriptionfactory.h"
 
+#include <algorithm>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "api/jsep.h"
 #include "api/jsepsessiondescription.h"

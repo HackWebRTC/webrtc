@@ -256,7 +256,16 @@ std::vector<MediaDescriptionOptions>::iterator FindFirstMediaDescriptionByMid(
   return std::find_if(
       opts->media_description_options.begin(),
       opts->media_description_options.end(),
-      [mid](const MediaDescriptionOptions& t) { return t.mid == mid; });
+      [&mid](const MediaDescriptionOptions& t) { return t.mid == mid; });
+}
+
+std::vector<MediaDescriptionOptions>::const_iterator
+FindFirstMediaDescriptionByMid(const std::string& mid,
+                               const MediaSessionOptions& opts) {
+  return std::find_if(
+      opts.media_description_options.begin(),
+      opts.media_description_options.end(),
+      [&mid](const MediaDescriptionOptions& t) { return t.mid == mid; });
 }
 
 // Add a media section to the |session_options|.
@@ -402,7 +411,7 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
   }
 
   void TestTransportInfo(bool offer,
-                         MediaSessionOptions& options,
+                         const MediaSessionOptions& options,
                          bool has_current_desc) {
     const std::string current_audio_ufrag = "current_audio_ufrag";
     const std::string current_audio_pwd = "current_audio_pwd";
@@ -448,7 +457,7 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
                   ti_audio->description.ice_pwd.size());
       }
       auto media_desc_options_it =
-          FindFirstMediaDescriptionByMid("audio", &options);
+          FindFirstMediaDescriptionByMid("audio", options);
       EXPECT_EQ(
           media_desc_options_it->transport_options.enable_ice_renomination,
           GetIceRenomination(ti_audio));
@@ -476,7 +485,7 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
         }
       }
       auto media_desc_options_it =
-          FindFirstMediaDescriptionByMid("video", &options);
+          FindFirstMediaDescriptionByMid("video", options);
       EXPECT_EQ(
           media_desc_options_it->transport_options.enable_ice_renomination,
           GetIceRenomination(ti_video));
@@ -503,7 +512,7 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
         }
       }
       auto media_desc_options_it =
-          FindFirstMediaDescriptionByMid("data", &options);
+          FindFirstMediaDescriptionByMid("data", options);
       EXPECT_EQ(
           media_desc_options_it->transport_options.enable_ice_renomination,
           GetIceRenomination(ti_data));

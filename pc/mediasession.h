@@ -618,10 +618,10 @@ const DataContentDescription* GetFirstDataContentDescription(
     const SessionDescription* sdesc);
 // Non-const versions of the above functions.
 // Useful when modifying an existing description.
-ContentInfo* GetFirstMediaContent(ContentInfos& contents, MediaType media_type);
-ContentInfo* GetFirstAudioContent(ContentInfos& contents);
-ContentInfo* GetFirstVideoContent(ContentInfos& contents);
-ContentInfo* GetFirstDataContent(ContentInfos& contents);
+ContentInfo* GetFirstMediaContent(ContentInfos* contents, MediaType media_type);
+ContentInfo* GetFirstAudioContent(ContentInfos* contents);
+ContentInfo* GetFirstVideoContent(ContentInfos* contents);
+ContentInfo* GetFirstDataContent(ContentInfos* contents);
 ContentInfo* GetFirstAudioContent(SessionDescription* sdesc);
 ContentInfo* GetFirstVideoContent(SessionDescription* sdesc);
 ContentInfo* GetFirstDataContent(SessionDescription* sdesc);

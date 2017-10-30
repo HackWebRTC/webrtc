@@ -10,6 +10,8 @@
 
 #include "pc/rtpsender.h"
 
+#include <vector>
+
 #include "api/mediastreaminterface.h"
 #include "pc/localaudiosource.h"
 #include "rtc_base/checks.h"

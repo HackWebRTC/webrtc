@@ -49,7 +49,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
       PeerConnectionObserver* observer) override;
 
-  virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
+  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       std::unique_ptr<cricket::PortAllocator> allocator,
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
@@ -60,13 +60,13 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   rtc::scoped_refptr<MediaStreamInterface>
       CreateLocalMediaStream(const std::string& label) override;
 
-  virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
+  rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const cricket::AudioOptions& options) override;
   // Deprecated, use version without constraints.
   rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const MediaConstraintsInterface* constraints) override;
 
-  virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
+  rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
       std::unique_ptr<cricket::VideoCapturer> capturer) override;
   // This version supports filtering on width, height and frame rate.
   // For the "constraints=null" case, use the version without constraints.

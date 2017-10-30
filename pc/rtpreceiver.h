@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include <string>
+#include <vector>
 
 #include "api/mediastreaminterface.h"
 #include "api/rtpreceiverinterface.h"

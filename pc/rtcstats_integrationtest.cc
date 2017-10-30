@@ -56,15 +56,16 @@ class RTCStatsReportTraceListener {
   }
 
  private:
-  static void AddTraceEventHandler(char phase,
-                                   const unsigned char* category_enabled,
-                                   const char* name,
-                                   unsigned long long id,
-                                   int num_args,
-                                   const char** arg_names,
-                                   const unsigned char* arg_types,
-                                   const unsigned long long* arg_values,
-                                   unsigned char flags) {
+  static void AddTraceEventHandler(
+      char phase,
+      const unsigned char* category_enabled,
+      const char* name,
+      unsigned long long id,  // NOLINT(runtime/int)
+      int num_args,
+      const char** arg_names,
+      const unsigned char* arg_types,
+      const unsigned long long* arg_values,  // NOLINT(runtime/int)
+      unsigned char flags) {
     RTC_DCHECK(traced_report_);
     EXPECT_STREQ("webrtc_stats",
                  reinterpret_cast<const char*>(category_enabled));

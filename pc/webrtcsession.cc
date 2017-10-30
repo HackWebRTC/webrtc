@@ -1872,7 +1872,7 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
             RTC_FROM_HERE, rtc::Bind(&WebRtcSession::CreateSctpTransport_n,
                                      this, content->name, transport_name))) {
       return false;
-    };
+    }
   } else {
     bool require_rtcp_mux =
         rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire;

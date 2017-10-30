@@ -11,6 +11,7 @@
 #ifndef PC_WEBRTCSESSION_H_
 #define PC_WEBRTCSESSION_H_
 
+#include <map>
 #include <memory>
 #include <set>
 #include <string>

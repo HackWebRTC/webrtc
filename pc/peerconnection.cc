@@ -206,8 +206,8 @@ template <class SENDER,
           class SENDERS,
           class RECEIVERS>
 void SetChannelOnSendersAndReceivers(CHANNEL* channel,
-                                     SENDERS& senders,
-                                     RECEIVERS& receivers,
+                                     const SENDERS& senders,
+                                     const RECEIVERS& receivers,
                                      cricket::MediaType media_type) {
   for (auto& sender : senders) {
     if (sender->media_type() == media_type) {

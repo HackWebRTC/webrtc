@@ -2430,9 +2430,9 @@ const DataContentDescription* GetFirstDataContentDescription(
 // Non-const versions of the above functions.
 //
 
-ContentInfo* GetFirstMediaContent(ContentInfos& contents,
+ContentInfo* GetFirstMediaContent(ContentInfos* contents,
                                   MediaType media_type) {
-  for (ContentInfo& content : contents) {
+  for (ContentInfo& content : *contents) {
     if (IsMediaContentOfType(&content, media_type)) {
       return &content;
     }
@@ -2440,15 +2440,15 @@ ContentInfo* GetFirstMediaContent(ContentInfos& contents,
   return nullptr;
 }
 
-ContentInfo* GetFirstAudioContent(ContentInfos& contents) {
+ContentInfo* GetFirstAudioContent(ContentInfos* contents) {
   return GetFirstMediaContent(contents, MEDIA_TYPE_AUDIO);
 }
 
-ContentInfo* GetFirstVideoContent(ContentInfos& contents) {
+ContentInfo* GetFirstVideoContent(ContentInfos* contents) {
   return GetFirstMediaContent(contents, MEDIA_TYPE_VIDEO);
 }
 
-ContentInfo* GetFirstDataContent(ContentInfos& contents) {
+ContentInfo* GetFirstDataContent(ContentInfos* contents) {
   return GetFirstMediaContent(contents, MEDIA_TYPE_DATA);
 }
 
@@ -2458,7 +2458,7 @@ static ContentInfo* GetFirstMediaContent(SessionDescription* sdesc,
     return nullptr;
   }
 
-  return GetFirstMediaContent(sdesc->contents(), media_type);
+  return GetFirstMediaContent(&sdesc->contents(), media_type);
 }
 
 ContentInfo* GetFirstAudioContent(SessionDescription* sdesc) {

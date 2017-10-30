@@ -74,13 +74,14 @@ StatsReport* AddTrackReport(StatsCollection* reports,
 }
 
 template <class TrackVector>
-void CreateTrackReports(const TrackVector& tracks, StatsCollection* reports,
-                        TrackIdMap& track_ids) {
+void CreateTrackReports(const TrackVector& tracks,
+                        StatsCollection* reports,
+                        TrackIdMap* track_ids) {
   for (const auto& track : tracks) {
     const std::string& track_id = track->id();
     StatsReport* report = AddTrackReport(reports, track_id);
     RTC_DCHECK(report != nullptr);
-    track_ids[track_id] = report;
+    (*track_ids)[track_id] = report;
   }
 }
 
@@ -463,10 +464,10 @@ void StatsCollector::AddStream(MediaStreamInterface* stream) {
   RTC_DCHECK(pc_->signaling_thread()->IsCurrent());
   RTC_DCHECK(stream != NULL);
 
-  CreateTrackReports<AudioTrackVector>(stream->GetAudioTracks(),
-                                       &reports_, track_ids_);
-  CreateTrackReports<VideoTrackVector>(stream->GetVideoTracks(),
-                                       &reports_, track_ids_);
+  CreateTrackReports<AudioTrackVector>(stream->GetAudioTracks(), &reports_,
+                                       &track_ids_);
+  CreateTrackReports<VideoTrackVector>(stream->GetVideoTracks(), &reports_,
+                                       &track_ids_);
 }
 
 void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,

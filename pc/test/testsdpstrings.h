@@ -76,7 +76,7 @@ static const char kFireFoxSdpOffer[] =
     "a=candidate:5 2 UDP 1694302206 74.95.2.170 45468 typ srflx raddr"
     " 10.0.254.2 rport 61232\r\n"
 #endif
-    ;
+    ;  // NOLINT(whitespace/semicolon)
 
 // Audio SDP with a limited set of audio codecs.
 static const char kAudioSdp[] =

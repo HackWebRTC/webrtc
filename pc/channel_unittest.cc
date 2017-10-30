@@ -525,7 +525,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   class ScopedCallThread {
    public:
     template <class FunctorT>
-    ScopedCallThread(const FunctorT& functor)
+    explicit ScopedCallThread(const FunctorT& functor)
         : thread_(rtc::Thread::Create()),
           task_(new rtc::FunctorMessageHandler<void, FunctorT>(functor)) {
       thread_->Start();

@@ -15,7 +15,9 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -174,7 +176,7 @@ static const char kNewLine = '\n';
 static const char kReturn = '\r';
 static const char kLineBreak[] = "\r\n";
 
-// TODO: Generate the Session and Time description
+// TODO(deadbeef): Generate the Session and Time description
 // instead of hardcoding.
 static const char kSessionVersion[] = "v=0";
 // RFC 4566
@@ -675,7 +677,7 @@ static int GetCandidatePreferenceFromType(const std::string& type) {
 // likely to work, typically IPv4 relay.
 // RFC 5245
 // The value of |component_id| currently supported are 1 (RTP) and 2 (RTCP).
-// TODO: Decide the default destination in webrtcsession and
+// TODO(deadbeef): Decide the default destination in webrtcsession and
 // pass it down via SessionDescription.
 static void GetDefaultDestination(
     const std::vector<Candidate>& candidates,
@@ -1179,7 +1181,8 @@ bool ParseExtmap(const std::string& line,
   bool encrypted = false;
   if (uri == RtpExtension::kEncryptHeaderExtensionsUri) {
     // RFC 6904
-    // a=extmap:<value["/"<direction>] urn:ietf:params:rtp-hdrext:encrypt <URI> <extensionattributes>
+    // a=extmap:<value["/"<direction>] urn:ietf:params:rtp-hdrext:encrypt <URI>
+    //     <extensionattributes>
     const size_t expected_min_fields_encrypted = expected_min_fields + 1;
     if (fields.size() < expected_min_fields_encrypted) {
       return ParseFailedExpectMinFieldNum(line, expected_min_fields_encrypted,
@@ -1207,7 +1210,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
   if (content_info == NULL || message == NULL) {
     return;
   }
-  // TODO: Rethink if we should use sprintfn instead of stringstream.
+  // TODO(deadbeef): Rethink if we should use sprintfn instead of stringstream.
   // According to the style guide, streams should only be used for logging.
   // http://google-styleguide.googlecode.com/svn/
   // trunk/cppguide.xml?showone=Streams#Streams
@@ -2768,7 +2771,7 @@ bool ParseContent(const std::string& message,
     }
 
     if (!IsLineType(line, kLineTypeAttributes)) {
-      // TODO: Handle other lines if needed.
+      // TODO(deadbeef): Handle other lines if needed.
       LOG(LS_INFO) << "Ignored line: " << line;
       continue;
     }
@@ -2892,7 +2895,7 @@ bool ParseContent(const std::string& message,
       } else if (HasAttribute(line, kAttributeXGoogleFlag)) {
         // Experimental attribute.  Conference mode activates more aggressive
         // AEC and NS settings.
-        // TODO: expose API to set these directly.
+        // TODO(deadbeef): expose API to set these directly.
         std::string flag_value;
         if (!GetValue(line, kAttributeXGoogleFlag, &flag_value, error)) {
           return false;

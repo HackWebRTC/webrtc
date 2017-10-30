@@ -14,6 +14,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/jsepsessiondescription.h"
@@ -181,9 +182,8 @@ class FakeAudioTrackForStats
     return audio_track_stats;
   }
 
-  FakeAudioTrackForStats(const std::string& id)
-      : MediaStreamTrack<AudioTrackInterface>(id) {
-  }
+  explicit FakeAudioTrackForStats(const std::string& id)
+      : MediaStreamTrack<AudioTrackInterface>(id) {}
 
   std::string kind() const override {
     return MediaStreamTrackInterface::kAudioKind;
@@ -209,9 +209,8 @@ class FakeVideoTrackForStats
     return video_track;
   }
 
-  FakeVideoTrackForStats(const std::string& id)
-      : MediaStreamTrack<VideoTrackInterface>(id) {
-  }
+  explicit FakeVideoTrackForStats(const std::string& id)
+      : MediaStreamTrack<VideoTrackInterface>(id) {}
 
   std::string kind() const override {
     return MediaStreamTrackInterface::kVideoKind;

@@ -106,7 +106,7 @@ PeerConnectionFactory::PeerConnectionFactory(
     }
   }
 
-  // TODO: Currently there is no way creating an external adm in
+  // TODO(deadbeef): Currently there is no way to create an external adm in
   // libjingle source tree. So we can 't currently assert if this is NULL.
   // RTC_DCHECK(default_adm != NULL);
 }

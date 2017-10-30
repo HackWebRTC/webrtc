@@ -16,6 +16,8 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "api/datachannelinterface.h"
 #include "api/jsepicecandidate.h"

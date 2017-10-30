@@ -25,7 +25,7 @@ static typename V::iterator FindTrack(V* vector,
     }
   }
   return it;
-};
+}
 
 rtc::scoped_refptr<MediaStream> MediaStream::Create(
     const std::string& label) {

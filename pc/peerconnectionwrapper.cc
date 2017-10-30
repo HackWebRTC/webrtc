@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "api/jsepsessiondescription.h"
 #include "media/base/fakevideocapturer.h"

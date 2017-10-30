@@ -9,6 +9,7 @@
  */
 
 #include <memory>
+#include <vector>
 
 #include "pc/datachannel.h"
 #include "pc/sctputils.h"

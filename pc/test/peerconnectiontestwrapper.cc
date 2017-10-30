@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string>
 #include <utility>
 
 #include "p2p/base/fakeportallocator.h"

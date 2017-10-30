@@ -80,7 +80,7 @@ srtp_err_status_t external_hmac_alloc(srtp_auth_t** a,
     return srtp_err_status_alloc_fail;
 
   // Set pointers
-  *a = (srtp_auth_t *)pointer;
+  *a = reinterpret_cast<srtp_auth_t*>(pointer);
   // |external_hmac| is const and libsrtp expects |type| to be non-const.
   // const conversion is required. |external_hmac| is constant because we don't
   // want to increase global count in Chrome.
@@ -95,7 +95,8 @@ srtp_err_status_t external_hmac_alloc(srtp_auth_t** a,
 
 srtp_err_status_t external_hmac_dealloc(srtp_auth_t* a) {
   // Zeroize entire state
-  memset((uint8_t *)a, 0, sizeof(ExternalHmacContext) + sizeof(srtp_auth_t));
+  memset(reinterpret_cast<uint8_t*>(a), 0,
+         sizeof(ExternalHmacContext) + sizeof(srtp_auth_t));
 
   // Free memory
   delete[] a;
