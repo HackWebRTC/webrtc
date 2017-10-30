@@ -368,7 +368,7 @@ if (rtc_include_tests) {
 }
 
 if (!build_with_chromium && is_android) {
-  android_library("audio_device_java") {
+  rtc_android_library("audio_device_java") {
     java_files = [
       "android/java/src/org/webrtc/voiceengine/BuildInfo.java",
       "android/java/src/org/webrtc/voiceengine/WebRtcAudioEffects.java",
@@ -380,8 +380,5 @@ if (!build_with_chromium && is_android) {
     deps = [
       "../../rtc_base:base_java",
     ]
-
-    # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
-    no_build_hooks = true
   }
 }
