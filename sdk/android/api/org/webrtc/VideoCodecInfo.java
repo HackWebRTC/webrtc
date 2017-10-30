@@ -21,7 +21,7 @@ public class VideoCodecInfo {
   public static final String H264_FMTP_LEVEL_ASYMMETRY_ALLOWED = "level-asymmetry-allowed";
   public static final String H264_FMTP_PACKETIZATION_MODE = "packetization-mode";
 
-  public static final String H264_PROFILE_CONSTRAINED_BASELINE = "4200";
+  public static final String H264_PROFILE_CONSTRAINED_BASELINE = "42e0";
   public static final String H264_PROFILE_CONSTRAINED_HIGH = "640c";
   public static final String H264_LEVEL_3_1 = "1f"; // 31 in hex.
   public static final String H264_CONSTRAINED_HIGH_3_1 =
