@@ -296,9 +296,9 @@ bool VideoTimingExtension::Parse(rtc::ArrayView<const uint8_t> data,
       data.data() + VideoSendTiming::kPacketizationFinishDeltaOffset - off);
   timing->pacer_exit_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
       data.data() + VideoSendTiming::kPacerExitDeltaOffset - off);
-  timing->network_timstamp_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
+  timing->network_timestamp_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
       data.data() + VideoSendTiming::kNetworkTimestampDeltaOffset - off);
-  timing->network2_timstamp_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
+  timing->network2_timestamp_delta_ms = ByteReader<uint16_t>::ReadBigEndian(
       data.data() + VideoSendTiming::kNetwork2TimestampDeltaOffset - off);
   return true;
 }

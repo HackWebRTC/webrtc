@@ -54,8 +54,8 @@ struct VideoSendTiming {
   uint16_t encode_finish_delta_ms;
   uint16_t packetization_finish_delta_ms;
   uint16_t pacer_exit_delta_ms;
-  uint16_t network_timstamp_delta_ms;
-  uint16_t network2_timstamp_delta_ms;
+  uint16_t network_timestamp_delta_ms;
+  uint16_t network2_timestamp_delta_ms;
   uint8_t flags;
 };
 

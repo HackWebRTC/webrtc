@@ -177,10 +177,10 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
           ntp_time_ms_ + packet.video_header.video_timing.pacer_exit_delta_ms;
       timing_.network_timestamp_ms =
           ntp_time_ms_ +
-          packet.video_header.video_timing.network_timstamp_delta_ms;
+          packet.video_header.video_timing.network_timestamp_delta_ms;
       timing_.network2_timestamp_ms =
           ntp_time_ms_ +
-          packet.video_header.video_timing.network2_timstamp_delta_ms;
+          packet.video_header.video_timing.network2_timestamp_delta_ms;
     }
     timing_.flags = packet.video_header.video_timing.flags;
   }

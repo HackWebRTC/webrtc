@@ -163,10 +163,10 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
         last_packet->video_header.video_timing.pacer_exit_delta_ms;
     timing_.network_timestamp_ms =
         ntp_time_ms_ +
-        last_packet->video_header.video_timing.network_timstamp_delta_ms;
+        last_packet->video_header.video_timing.network_timestamp_delta_ms;
     timing_.network2_timestamp_ms =
         ntp_time_ms_ +
-        last_packet->video_header.video_timing.network2_timstamp_delta_ms;
+        last_packet->video_header.video_timing.network2_timestamp_delta_ms;
 
     timing_.receive_start_ms = first_packet->receive_time_ms;
     timing_.receive_finish_ms = last_packet->receive_time_ms;

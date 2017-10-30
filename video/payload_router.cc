@@ -198,8 +198,8 @@ EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
             encoded_image.timing_.encode_finish_ms);
     rtp_video_header.video_timing.packetization_finish_delta_ms = 0;
     rtp_video_header.video_timing.pacer_exit_delta_ms = 0;
-    rtp_video_header.video_timing.network_timstamp_delta_ms = 0;
-    rtp_video_header.video_timing.network2_timstamp_delta_ms = 0;
+    rtp_video_header.video_timing.network_timestamp_delta_ms = 0;
+    rtp_video_header.video_timing.network2_timestamp_delta_ms = 0;
   }
   rtp_video_header.video_timing.flags = encoded_image.timing_.flags;
   rtp_video_header.playout_delay = encoded_image.playout_delay_;
