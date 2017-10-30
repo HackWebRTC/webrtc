@@ -38,16 +38,10 @@ class BasicPortAllocator : public PortAllocator {
                      const rtc::SocketAddress& relay_server_udp,
                      const rtc::SocketAddress& relay_server_tcp,
                      const rtc::SocketAddress& relay_server_ssl);
-  virtual ~BasicPortAllocator();
+  ~BasicPortAllocator() override;
 
   // Set to kDefaultNetworkIgnoreMask by default.
-  void SetNetworkIgnoreMask(int network_ignore_mask) override {
-    // TODO(phoglund): implement support for other types than loopback.
-    // See https://code.google.com/p/webrtc/issues/detail?id=4288.
-    // Then remove set_network_ignore_list from NetworkManager.
-    network_ignore_mask_ = network_ignore_mask;
-  }
-
+  void SetNetworkIgnoreMask(int network_ignore_mask) override;
   int network_ignore_mask() const { return network_ignore_mask_; }
 
   rtc::NetworkManager* network_manager() const { return network_manager_; }
@@ -96,9 +90,9 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
                             int component,
                             const std::string& ice_ufrag,
                             const std::string& ice_pwd);
-  ~BasicPortAllocatorSession();
+  ~BasicPortAllocatorSession() override;
 
-  virtual BasicPortAllocator* allocator() { return allocator_; }
+  virtual BasicPortAllocator* allocator();
   rtc::Thread* network_thread() { return network_thread_; }
   rtc::PacketSocketFactory* socket_factory() { return socket_factory_; }
 
@@ -106,9 +100,9 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   void StartGettingPorts() override;
   void StopGettingPorts() override;
   void ClearGettingPorts() override;
-  bool IsGettingPorts() override { return state_ == SessionState::GATHERING; }
-  bool IsCleared() const override { return state_ == SessionState::CLEARED; }
-  bool IsStopped() const override { return state_ == SessionState::STOPPED; }
+  bool IsGettingPorts() override;
+  bool IsCleared() const override;
+  bool IsStopped() const override;
   // These will all be cricket::Ports.
   std::vector<PortInterface*> ReadyPorts() const override;
   std::vector<Candidate> ReadyCandidates() const override;
@@ -269,6 +263,8 @@ struct PortConfiguration : public rtc::MessageData {
                     const std::string& username,
                     const std::string& password);
 
+  ~PortConfiguration() override;
+
   // Returns addresses of both the explicitly configured STUN servers,
   // and TURN servers that should be used as STUN servers.
   ServerAddresses StunServers();
@@ -306,7 +302,7 @@ class AllocationSequence : public rtc::MessageHandler,
                      rtc::Network* network,
                      PortConfiguration* config,
                      uint32_t flags);
-  ~AllocationSequence();
+  ~AllocationSequence() override;
   void Init();
   void Clear();
   void OnNetworkFailed();
@@ -329,7 +325,7 @@ class AllocationSequence : public rtc::MessageHandler,
   void Stop();
 
   // MessageHandler
-  void OnMessage(rtc::Message* msg);
+  void OnMessage(rtc::Message* msg) override;
 
   // Signal from AllocationSequence, when it's done with allocating ports.
   // This signal is useful, when port allocation fails which doesn't result

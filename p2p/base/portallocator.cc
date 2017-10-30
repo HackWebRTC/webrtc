@@ -13,6 +13,43 @@
 
 namespace cricket {
 
+RelayServerConfig::RelayServerConfig(RelayType type) : type(type) {}
+
+RelayServerConfig::RelayServerConfig(const rtc::SocketAddress& address,
+                                     const std::string& username,
+                                     const std::string& password,
+                                     ProtocolType proto)
+    : type(RELAY_TURN), credentials(username, password) {
+  ports.push_back(ProtocolAddress(address, proto));
+}
+
+RelayServerConfig::RelayServerConfig(const std::string& address,
+                                     int port,
+                                     const std::string& username,
+                                     const std::string& password,
+                                     ProtocolType proto)
+    : RelayServerConfig(rtc::SocketAddress(address, port),
+                        username,
+                        password,
+                        proto) {}
+
+// Legacy constructor where "secure" and PROTO_TCP implies PROTO_TLS.
+RelayServerConfig::RelayServerConfig(const std::string& address,
+                                     int port,
+                                     const std::string& username,
+                                     const std::string& password,
+                                     ProtocolType proto,
+                                     bool secure)
+    : RelayServerConfig(address,
+                        port,
+                        username,
+                        password,
+                        (proto == PROTO_TCP && secure ? PROTO_TLS : proto)) {}
+
+RelayServerConfig::RelayServerConfig(const RelayServerConfig&) = default;
+
+RelayServerConfig::~RelayServerConfig() = default;
+
 PortAllocatorSession::PortAllocatorSession(const std::string& content_name,
                                            int component,
                                            const std::string& ice_ufrag,
@@ -28,6 +65,35 @@ PortAllocatorSession::PortAllocatorSession(const std::string& content_name,
   // component, ufrag and password.
   RTC_DCHECK(ice_ufrag.empty() == ice_pwd.empty());
 }
+
+PortAllocatorSession::~PortAllocatorSession() = default;
+
+bool PortAllocatorSession::IsCleared() const {
+  return false;
+}
+
+bool PortAllocatorSession::IsStopped() const {
+  return false;
+}
+
+uint32_t PortAllocatorSession::generation() {
+  return generation_;
+}
+
+void PortAllocatorSession::set_generation(uint32_t generation) {
+  generation_ = generation;
+}
+
+PortAllocator::PortAllocator()
+    : flags_(kDefaultPortAllocatorFlags),
+      min_port_(0),
+      max_port_(0),
+      max_ipv6_networks_(kDefaultMaxIPv6Networks),
+      step_delay_(kDefaultStepDelay),
+      allow_tcp_listen_(true),
+      candidate_filter_(CF_ALL) {}
+
+PortAllocator::~PortAllocator() = default;
 
 bool PortAllocator::SetConfiguration(
     const ServerAddresses& stun_servers,

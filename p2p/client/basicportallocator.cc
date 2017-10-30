@@ -179,6 +179,13 @@ BasicPortAllocator::~BasicPortAllocator() {
   DiscardCandidatePool();
 }
 
+void BasicPortAllocator::SetNetworkIgnoreMask(int network_ignore_mask) {
+  // TODO(phoglund): implement support for other types than loopback.
+  // See https://code.google.com/p/webrtc/issues/detail?id=4288.
+  // Then remove set_network_ignore_list from NetworkManager.
+  network_ignore_mask_ = network_ignore_mask;
+}
+
 PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
     const std::string& content_name, int component,
     const std::string& ice_ufrag, const std::string& ice_pwd) {
@@ -242,6 +249,10 @@ BasicPortAllocatorSession::~BasicPortAllocatorSession() {
     delete sequences_[i];
 }
 
+BasicPortAllocator* BasicPortAllocatorSession::allocator() {
+  return allocator_;
+}
+
 void BasicPortAllocatorSession::SetCandidateFilter(uint32_t filter) {
   if (filter == candidate_filter_) {
     return;
@@ -296,6 +307,18 @@ void BasicPortAllocatorSession::ClearGettingPorts() {
   }
   network_thread_->Post(RTC_FROM_HERE, this, MSG_CONFIG_STOP);
   state_ = SessionState::CLEARED;
+}
+
+bool BasicPortAllocatorSession::IsGettingPorts() {
+  return state_ == SessionState::GATHERING;
+}
+
+bool BasicPortAllocatorSession::IsCleared() const {
+  return state_ == SessionState::CLEARED;
+}
+
+bool BasicPortAllocatorSession::IsStopped() const {
+  return state_ == SessionState::STOPPED;
 }
 
 std::vector<rtc::Network*> BasicPortAllocatorSession::GetFailedNetworks() {
@@ -1483,6 +1506,8 @@ PortConfiguration::PortConfiguration(const ServerAddresses& stun_servers,
   if (!stun_servers.empty())
     stun_address = *(stun_servers.begin());
 }
+
+PortConfiguration::~PortConfiguration() = default;
 
 ServerAddresses PortConfiguration::StunServers() {
   if (!stun_address.IsNil() &&
