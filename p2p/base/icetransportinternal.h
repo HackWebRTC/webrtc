@@ -47,7 +47,8 @@ enum IceProtocolType {
 // the IceTransportInterface will be split from this class.
 class IceTransportInternal : public rtc::PacketTransportInternal {
  public:
-  virtual ~IceTransportInternal(){};
+  IceTransportInternal();
+  ~IceTransportInternal() override;
 
   virtual IceTransportState GetState() const = 0;
 
@@ -66,14 +67,10 @@ class IceTransportInternal : public rtc::PacketTransportInternal {
   virtual void SetIceProtocolType(IceProtocolType type) {}
 
   virtual void SetIceCredentials(const std::string& ice_ufrag,
-                                 const std::string& ice_pwd) {
-    SetIceParameters(IceParameters(ice_ufrag, ice_pwd, false));
-  }
+                                 const std::string& ice_pwd);
 
   virtual void SetRemoteIceCredentials(const std::string& ice_ufrag,
-                                       const std::string& ice_pwd) {
-    SetRemoteIceParameters(IceParameters(ice_ufrag, ice_pwd, false));
-  }
+                                       const std::string& ice_pwd);
 
   // The ufrag and pwd in |ice_params| must be set
   // before candidate gathering can start.
@@ -140,9 +137,7 @@ class IceTransportInternal : public rtc::PacketTransportInternal {
   sigslot::signal1<IceTransportInternal*> SignalDestroyed;
 
   // Debugging description of this transport.
-  std::string debug_name() const override {
-    return transport_name() + " " + rtc::ToString(component());
-  }
+  std::string debug_name() const override;
 };
 
 }  // namespace cricket

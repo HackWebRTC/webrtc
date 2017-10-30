@@ -37,7 +37,7 @@ enum PacketFlags {
 // the DtlsTransportInterface will be split from this class.
 class DtlsTransportInternal : public rtc::PacketTransportInternal {
  public:
-  virtual ~DtlsTransportInternal() {}
+  ~DtlsTransportInternal() override;
 
   virtual const rtc::CryptoOptions& crypto_options() const = 0;
 
@@ -94,12 +94,10 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
 
   // Debugging description of this transport.
-  std::string debug_name() const override {
-    return transport_name() + " " + rtc::ToString(component());
-  }
+  std::string debug_name() const override;
 
  protected:
-  DtlsTransportInternal() {}
+  DtlsTransportInternal();
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(DtlsTransportInternal);

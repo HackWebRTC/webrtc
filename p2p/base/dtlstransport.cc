@@ -104,6 +104,10 @@ bool StreamInterfaceChannel::OnPacketReceived(const char* data, size_t size) {
   return ret;
 }
 
+rtc::StreamState StreamInterfaceChannel::GetState() const {
+  return state_;
+}
+
 void StreamInterfaceChannel::Close() {
   packets_.Clear();
   state_ = rtc::SS_CLOSED;
@@ -130,7 +134,27 @@ DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
       this, &DtlsTransport::OnReceivingState);
 }
 
-DtlsTransport::~DtlsTransport() {}
+DtlsTransport::~DtlsTransport() = default;
+
+const rtc::CryptoOptions& DtlsTransport::crypto_options() const {
+  return crypto_options_;
+}
+
+DtlsTransportState DtlsTransport::dtls_state() const {
+  return dtls_state_;
+}
+
+const std::string& DtlsTransport::transport_name() const {
+  return transport_name_;
+}
+
+int DtlsTransport::component() const {
+  return component_;
+}
+
+bool DtlsTransport::IsDtlsActive() const {
+  return dtls_active_;
+}
 
 bool DtlsTransport::SetLocalCertificate(
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
@@ -276,6 +300,18 @@ std::unique_ptr<rtc::SSLCertificate> DtlsTransport::GetRemoteSSLCertificate()
   return dtls_->GetPeerCertificate();
 }
 
+bool DtlsTransport::ExportKeyingMaterial(const std::string& label,
+                                         const uint8_t* context,
+                                         size_t context_len,
+                                         bool use_context,
+                                         uint8_t* result,
+                                         size_t result_len) {
+  return (dtls_.get())
+             ? dtls_->ExportKeyingMaterial(label, context, context_len,
+                                           use_context, result, result_len)
+             : false;
+}
+
 bool DtlsTransport::SetupDtls() {
   StreamInterfaceChannel* downward = new StreamInterfaceChannel(ice_transport_);
 
@@ -371,8 +407,32 @@ int DtlsTransport::SendPacket(const char* data,
   }
 }
 
+IceTransportInternal* DtlsTransport::ice_transport() {
+  return ice_transport_;
+}
+
 bool DtlsTransport::IsDtlsConnected() {
   return dtls_ && dtls_->IsTlsConnected();
+}
+
+bool DtlsTransport::receiving() const {
+  return receiving_;
+}
+
+bool DtlsTransport::writable() const {
+  return writable_;
+}
+
+int DtlsTransport::GetError() {
+  return ice_transport_->GetError();
+}
+
+bool DtlsTransport::GetOption(rtc::Socket::Option opt, int* value) {
+  return ice_transport_->GetOption(opt, value);
+}
+
+int DtlsTransport::SetOption(rtc::Socket::Option opt, int value) {
+  return ice_transport_->SetOption(opt, value);
 }
 
 // The state transition logic here is as follows:

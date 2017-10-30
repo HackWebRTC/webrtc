@@ -264,6 +264,10 @@ void P2PTransportChannel::SetIceRole(IceRole ice_role) {
   }
 }
 
+IceRole P2PTransportChannel::GetIceRole() const {
+  return ice_role_;
+}
+
 void P2PTransportChannel::SetIceTiebreaker(uint64_t tiebreaker) {
   RTC_DCHECK(network_thread_ == rtc::Thread::Current());
   if (!ports_.empty() || !pruned_ports_.empty()) {
@@ -277,6 +281,26 @@ void P2PTransportChannel::SetIceTiebreaker(uint64_t tiebreaker) {
 
 IceTransportState P2PTransportChannel::GetState() const {
   return state_;
+}
+
+const std::string& P2PTransportChannel::transport_name() const {
+  return transport_name_;
+}
+
+int P2PTransportChannel::component() const {
+  return component_;
+}
+
+bool P2PTransportChannel::writable() const {
+  return writable_;
+}
+
+bool P2PTransportChannel::receiving() const {
+  return receiving_;
+}
+
+IceGatheringState P2PTransportChannel::gathering_state() const {
+  return gathering_state_;
 }
 
 rtc::Optional<int> P2PTransportChannel::GetRttEstimate() {
@@ -1007,6 +1031,10 @@ bool P2PTransportChannel::GetOption(rtc::Socket::Option opt, int* value) {
   }
   *value = found->second;
   return true;
+}
+
+int P2PTransportChannel::GetError() {
+  return error_;
 }
 
 // Send data to the other side, using our selected connection.
@@ -2032,7 +2060,7 @@ void P2PTransportChannel::OnReadyToSend(Connection* connection) {
 Connection* P2PTransportChannel::FindOldestConnectionNeedingTriggeredCheck(
     int64_t now) {
   Connection* oldest_needing_triggered_check = nullptr;
-  for (auto conn : connections_) {
+  for (auto* conn : connections_) {
     if (!IsPingable(conn, now)) {
       continue;
     }

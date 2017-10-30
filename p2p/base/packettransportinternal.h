@@ -61,7 +61,7 @@ class PacketTransportInternal : public virtual webrtc::PacketTransportInterface,
 
   // TODO(pthatcher): Once Chrome's MockPacketTransportInterface implements
   // this, remove the default implementation.
-  virtual bool GetOption(rtc::Socket::Option opt, int* value) { return false; }
+  virtual bool GetOption(rtc::Socket::Option opt, int* value);
 
   // Returns the most recent error that occurred on this channel.
   virtual int GetError() = 0;
@@ -92,7 +92,10 @@ class PacketTransportInternal : public virtual webrtc::PacketTransportInterface,
       SignalSentPacket;
 
  protected:
-  PacketTransportInternal* GetInternal() override { return this; }
+  PacketTransportInternal();
+  ~PacketTransportInternal() override;
+
+  PacketTransportInternal* GetInternal() override;
 };
 
 }  // namespace rtc

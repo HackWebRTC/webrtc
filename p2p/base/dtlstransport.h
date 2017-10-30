@@ -39,7 +39,7 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
   bool OnPacketReceived(const char* data, size_t size);
 
   // Implementations of StreamInterface
-  rtc::StreamState GetState() const override { return state_; }
+  rtc::StreamState GetState() const override;
   void Close() override;
   rtc::StreamResult Read(void* buffer,
                          size_t buffer_len,
@@ -93,19 +93,14 @@ class DtlsTransport : public DtlsTransportInternal {
                          const rtc::CryptoOptions& crypto_options);
   ~DtlsTransport() override;
 
-  const rtc::CryptoOptions& crypto_options() const override {
-    return crypto_options_;
-  }
-
-  DtlsTransportState dtls_state() const override { return dtls_state_; }
-
-  const std::string& transport_name() const override { return transport_name_; }
-
-  int component() const override { return component_; }
+  const rtc::CryptoOptions& crypto_options() const override;
+  DtlsTransportState dtls_state() const override;
+  const std::string& transport_name() const override;
+  int component() const override;
 
   // Returns false if no local certificate was set, or if the peer doesn't
   // support DTLS.
-  bool IsDtlsActive() const override { return dtls_active_; }
+  bool IsDtlsActive() const override;
 
   bool SetLocalCertificate(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override;
@@ -121,9 +116,7 @@ class DtlsTransport : public DtlsTransportInternal {
                  const rtc::PacketOptions& options,
                  int flags) override;
 
-  bool GetOption(rtc::Socket::Option opt, int* value) override {
-    return ice_transport_->GetOption(opt, value);
-  }
+  bool GetOption(rtc::Socket::Option opt, int* value) override;
 
   virtual bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version);
 
@@ -149,29 +142,21 @@ class DtlsTransport : public DtlsTransportInternal {
                             size_t context_len,
                             bool use_context,
                             uint8_t* result,
-                            size_t result_len) override {
-    return (dtls_.get())
-               ? dtls_->ExportKeyingMaterial(label, context, context_len,
-                                             use_context, result, result_len)
-               : false;
-  }
+                            size_t result_len) override;
 
-  IceTransportInternal* ice_transport() override { return ice_transport_; }
+  IceTransportInternal* ice_transport() override;
 
   // For informational purposes. Tells if the DTLS handshake has finished.
   // This may be true even if writable() is false, if the remote fingerprint
   // has not yet been verified.
   bool IsDtlsConnected();
 
-  bool receiving() const override { return receiving_; }
+  bool receiving() const override;
+  bool writable() const override;
 
-  bool writable() const override { return writable_; }
+  int GetError() override;
 
-  int GetError() override { return ice_transport_->GetError(); }
-
-  int SetOption(rtc::Socket::Option opt, int value) override {
-    return ice_transport_->SetOption(opt, value);
-  }
+  int SetOption(rtc::Socket::Option opt, int value) override;
 
   std::string ToString() const {
     const char RECEIVING_ABBREV[2] = {'_', 'R'};

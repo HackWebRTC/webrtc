@@ -63,6 +63,15 @@ rtc::SocketAddress UdpTransport::GetRemoteAddress() const {
   return remote_address_;
 }
 
+std::string UdpTransport::debug_name() const {
+  return transport_name_;
+}
+
+bool UdpTransport::receiving() const {
+  // TODO(johan): Implement method and signal.
+  return true;
+}
+
 bool UdpTransport::writable() const {
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
   return !remote_address_.IsNil();
@@ -84,6 +93,18 @@ int UdpTransport::SendPacket(const char* data,
     LOG(LS_VERBOSE) << "SendPacket() " << result;
   }
   return result;
+}
+
+int UdpTransport::SetOption(rtc::Socket::Option opt, int value) {
+  return 0;
+}
+
+int UdpTransport::GetError() {
+  return send_error_;
+}
+
+rtc::PacketTransportInternal* UdpTransport::GetInternal() {
+  return this;
 }
 
 void UdpTransport::OnSocketReadPacket(rtc::AsyncPacketSocket* socket,
