@@ -66,6 +66,11 @@ class PacedSender : public Pacer {
               PacketSender* packet_sender,
               RtcEventLog* event_log);
 
+  PacedSender(const Clock* clock,
+              PacketSender* packet_sender,
+              RtcEventLog* event_log,
+              std::unique_ptr<PacketQueue> packets);
+
   ~PacedSender() override;
 
   virtual void CreateProbeCluster(int bitrate_bps);

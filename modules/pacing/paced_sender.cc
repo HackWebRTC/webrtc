@@ -15,6 +15,7 @@
 #include <queue>
 #include <set>
 #include <vector>
+#include <utility>
 
 #include "modules/include/module_common_types.h"
 #include "modules/pacing/alr_detector.h"
@@ -45,7 +46,16 @@ const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
 PacedSender::PacedSender(const Clock* clock,
                          PacketSender* packet_sender,
-                         RtcEventLog* event_log)
+                         RtcEventLog* event_log) :
+    PacedSender(clock, packet_sender, event_log,
+                webrtc::field_trial::IsEnabled("WebRTC-RoundRobinPacing")
+                    ? rtc::MakeUnique<PacketQueue2>(clock)
+                    : rtc::MakeUnique<PacketQueue>(clock)) {}
+
+PacedSender::PacedSender(const Clock* clock,
+                         PacketSender* packet_sender,
+                         RtcEventLog* event_log,
+                         std::unique_ptr<PacketQueue> packets)
     : clock_(clock),
       packet_sender_(packet_sender),
       alr_detector_(rtc::MakeUnique<AlrDetector>()),
@@ -60,9 +70,7 @@ PacedSender::PacedSender(const Clock* clock,
       pacing_bitrate_kbps_(0),
       time_last_update_us_(clock->TimeInMicroseconds()),
       first_sent_packet_ms_(-1),
-      packets_(webrtc::field_trial::IsEnabled("WebRTC-RoundRobinPacing")
-                   ? rtc::MakeUnique<PacketQueue2>(clock)
-                   : rtc::MakeUnique<PacketQueue>(clock)),
+      packets_(std::move(packets)),
       packet_counter_(0),
       pacing_factor_(kDefaultPaceMultiplier),
       queue_time_limit(kMaxQueueLengthMs),
