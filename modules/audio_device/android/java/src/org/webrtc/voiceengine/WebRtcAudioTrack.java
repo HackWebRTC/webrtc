@@ -309,14 +309,6 @@ public class WebRtcAudioTrack {
       releaseAudioResources();
       return false;
     }
-
-    // Verify the playout state up to two times (with a sleep in between)
-    // before returning false and reporting an error.
-    int numberOfStateChecks = 0;
-    while (audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING &&
-           ++numberOfStateChecks < 2) {
-      threadSleep(200);
-    }
     if (audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
       reportWebRtcAudioTrackStartError(
           AudioTrackStartErrorCode.AUDIO_TRACK_START_STATE_MISMATCH,
@@ -523,16 +515,6 @@ public class WebRtcAudioTrack {
     }
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioTrackError(errorMessage);
-    }
-  }
-
-  // Causes the currently executing thread to sleep for the specified number
-  // of milliseconds.
-  private void threadSleep(long millis) {
-    try {
-      Thread.sleep(millis);
-    } catch (InterruptedException e) {
-      Logging.e(TAG, "Thread.sleep failed: " + e.getMessage());
     }
   }
 }

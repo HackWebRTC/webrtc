@@ -262,14 +262,6 @@ public class WebRtcAudioRecord {
       releaseAudioResources();
       return false;
     }
-
-    // Verify the recording state up to two times (with a sleep in between)
-    // before returning false and reporting an error.
-    int numberOfStateChecks = 0;
-    while (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING &&
-           ++numberOfStateChecks < 2) {
-      threadSleep(200);
-    }
     if (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
       reportWebRtcAudioRecordStartError(
           AudioRecordStartErrorCode.AUDIO_RECORD_START_STATE_MISMATCH,
@@ -389,16 +381,6 @@ public class WebRtcAudioRecord {
     Logging.e(TAG, "Run-time recording error: " + errorMessage);
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioRecordError(errorMessage);
-    }
-  }
-
-  // Causes the currently executing thread to sleep for the specified number
-  // of milliseconds.
-  private void threadSleep(long millis) {
-    try {
-      Thread.sleep(millis);
-    } catch (InterruptedException e) {
-      Logging.e(TAG, "Thread.sleep failed: " + e.getMessage());
     }
   }
 }
