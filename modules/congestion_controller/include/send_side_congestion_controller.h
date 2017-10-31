@@ -20,7 +20,6 @@
 #include "modules/include/module.h"
 #include "modules/include/module_common_types.h"
 #include "modules/pacing/paced_sender.h"
-#include "modules/pacing/packet_router.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/networkroute.h"
@@ -58,11 +57,6 @@ class SendSideCongestionController : public CallStatsObserver,
    protected:
     virtual ~Observer() {}
   };
-  // TODO(holmer): Delete after fixing upstream projects.
-  RTC_DEPRECATED SendSideCongestionController(const Clock* clock,
-                                              Observer* observer,
-                                              RtcEventLog* event_log,
-                                              PacketRouter* packet_router);
   // TODO(nisse): Consider deleting the |observer| argument to constructors
   // once CongestionController is deleted.
   SendSideCongestionController(const Clock* clock,
@@ -128,8 +122,7 @@ class SendSideCongestionController : public CallStatsObserver,
   rtc::CriticalSection observer_lock_;
   Observer* observer_ RTC_GUARDED_BY(observer_lock_);
   RtcEventLog* const event_log_;
-  std::unique_ptr<PacedSender> owned_pacer_;
-  PacedSender* pacer_;
+  PacedSender* const pacer_;
   const std::unique_ptr<BitrateController> bitrate_controller_;
   std::unique_ptr<AcknowledgedBitrateEstimator> acknowledged_bitrate_estimator_;
   const std::unique_ptr<ProbeController> probe_controller_;

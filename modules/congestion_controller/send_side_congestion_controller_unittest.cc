@@ -14,6 +14,7 @@
 #include "modules/congestion_controller/include/mock/mock_congestion_observer.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "modules/pacing/mock/mock_paced_sender.h"
+#include "modules/pacing/packet_router.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
@@ -36,12 +37,6 @@ namespace webrtc {
 namespace {
 const webrtc::PacedPacketInfo kPacingInfo0(0, 5, 2000);
 const webrtc::PacedPacketInfo kPacingInfo1(1, 8, 4000);
-
-class MockPacketRouter : public PacketRouter {
- public:
-  MOCK_METHOD2(OnReceiveBitrateChanged,
-               void(const std::vector<uint32_t>& ssrcs, uint32_t bitrate));
-};
 
 const uint32_t kInitialBitrateBps = 60000;
 

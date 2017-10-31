@@ -98,47 +98,6 @@ SendSideCongestionController::SendSideCongestionController(
     const Clock* clock,
     Observer* observer,
     RtcEventLog* event_log,
-    PacketRouter* packet_router)
-    : clock_(clock),
-      observer_(observer),
-      event_log_(event_log),
-      owned_pacer_(
-          rtc::MakeUnique<PacedSender>(clock, packet_router, event_log)),
-      pacer_(owned_pacer_.get()),
-      bitrate_controller_(
-          BitrateController::CreateBitrateController(clock_, event_log)),
-      acknowledged_bitrate_estimator_(
-          rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
-      probe_controller_(new ProbeController(pacer_, clock_)),
-      retransmission_rate_limiter_(
-          new RateLimiter(clock, kRetransmitWindowSizeMs)),
-      transport_feedback_adapter_(clock_),
-      last_reported_bitrate_bps_(0),
-      last_reported_fraction_loss_(0),
-      last_reported_rtt_(0),
-      network_state_(kNetworkUp),
-      pause_pacer_(false),
-      pacer_paused_(false),
-      min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
-      delay_based_bwe_(new DelayBasedBwe(event_log_, clock_)),
-      in_cwnd_experiment_(CwndExperimentEnabled()),
-      accepted_queue_ms_(kDefaultAcceptedQueueMs),
-      was_in_alr_(false),
-      pacer_pushback_experiment_(
-          webrtc::field_trial::IsEnabled(kPacerPushbackExperiment)) {
-  delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
-  if (in_cwnd_experiment_ &&
-      !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
-    LOG(LS_WARNING) << "Failed to parse parameters for CwndExperiment "
-                       "from field trial string. Experiment disabled.";
-    in_cwnd_experiment_ = false;
-  }
-}
-
-SendSideCongestionController::SendSideCongestionController(
-    const Clock* clock,
-    Observer* observer,
-    RtcEventLog* event_log,
     PacedSender* pacer)
     : clock_(clock),
       observer_(observer),

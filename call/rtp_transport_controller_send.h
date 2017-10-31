@@ -14,6 +14,7 @@
 #include "call/rtp_transport_controller_send_interface.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
+#include "modules/pacing/packet_router.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
