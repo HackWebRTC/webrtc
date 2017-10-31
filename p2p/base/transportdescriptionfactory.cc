@@ -24,6 +24,8 @@ TransportDescriptionFactory::TransportDescriptionFactory()
     : secure_(SEC_DISABLED) {
 }
 
+TransportDescriptionFactory::~TransportDescriptionFactory() = default;
+
 TransportDescription* TransportDescriptionFactory::CreateOffer(
     const TransportOptions& options,
     const TransportDescription* current_description) const {

@@ -67,8 +67,12 @@ typedef std::vector<std::string> ContentNames;
 // MediaDescription.
 class ContentGroup {
  public:
-  explicit ContentGroup(const std::string& semantics) :
-      semantics_(semantics) {}
+  explicit ContentGroup(const std::string& semantics);
+  ContentGroup(const ContentGroup&);
+  ContentGroup(ContentGroup&&);
+  ContentGroup& operator=(const ContentGroup&);
+  ContentGroup& operator=(ContentGroup&&);
+  ~ContentGroup();
 
   const std::string& semantics() const { return semantics_; }
   const ContentNames& content_names() const { return content_names_; }
@@ -96,25 +100,13 @@ const ContentInfo* FindContentInfoByType(
 // contents are unique be name, but doesn't enforce that.
 class SessionDescription {
  public:
-  SessionDescription() {}
-  explicit SessionDescription(const ContentInfos& contents) :
-      contents_(contents) {}
-  SessionDescription(const ContentInfos& contents,
-                     const ContentGroups& groups) :
-      contents_(contents),
-      content_groups_(groups) {}
+  SessionDescription();
+  explicit SessionDescription(const ContentInfos& contents);
+  SessionDescription(const ContentInfos& contents, const ContentGroups& groups);
   SessionDescription(const ContentInfos& contents,
                      const TransportInfos& transports,
-                     const ContentGroups& groups) :
-      contents_(contents),
-      transport_infos_(transports),
-      content_groups_(groups) {}
-  ~SessionDescription() {
-    for (ContentInfos::iterator content = contents_.begin();
-         content != contents_.end(); ++content) {
-      delete content->description;
-    }
-  }
+                     const ContentGroups& groups);
+  ~SessionDescription();
 
   SessionDescription* Copy() const;
 
@@ -181,6 +173,8 @@ class SessionDescription {
   bool msid_supported() const { return msid_supported_; }
 
  private:
+  SessionDescription(const SessionDescription&);
+
   ContentInfos contents_;
   TransportInfos transport_infos_;
   ContentGroups content_groups_;

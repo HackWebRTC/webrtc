@@ -53,4 +53,54 @@ bool ConnectionRoleToString(const ConnectionRole& role, std::string* role_str) {
   return true;
 }
 
+TransportDescription::TransportDescription()
+    : ice_mode(ICEMODE_FULL), connection_role(CONNECTIONROLE_NONE) {}
+
+TransportDescription::TransportDescription(
+    const std::vector<std::string>& transport_options,
+    const std::string& ice_ufrag,
+    const std::string& ice_pwd,
+    IceMode ice_mode,
+    ConnectionRole role,
+    const rtc::SSLFingerprint* identity_fingerprint)
+    : transport_options(transport_options),
+      ice_ufrag(ice_ufrag),
+      ice_pwd(ice_pwd),
+      ice_mode(ice_mode),
+      connection_role(role),
+      identity_fingerprint(CopyFingerprint(identity_fingerprint)) {}
+
+TransportDescription::TransportDescription(const std::string& ice_ufrag,
+                                           const std::string& ice_pwd)
+    : ice_ufrag(ice_ufrag),
+      ice_pwd(ice_pwd),
+      ice_mode(ICEMODE_FULL),
+      connection_role(CONNECTIONROLE_NONE) {}
+
+TransportDescription::TransportDescription(const TransportDescription& from)
+    : transport_options(from.transport_options),
+      ice_ufrag(from.ice_ufrag),
+      ice_pwd(from.ice_pwd),
+      ice_mode(from.ice_mode),
+      connection_role(from.connection_role),
+      identity_fingerprint(CopyFingerprint(from.identity_fingerprint.get())) {}
+
+TransportDescription::~TransportDescription() = default;
+
+TransportDescription& TransportDescription::operator=(
+    const TransportDescription& from) {
+  // Self-assignment
+  if (this == &from)
+    return *this;
+
+  transport_options = from.transport_options;
+  ice_ufrag = from.ice_ufrag;
+  ice_pwd = from.ice_pwd;
+  ice_mode = from.ice_mode;
+  connection_role = from.connection_role;
+
+  identity_fingerprint.reset(CopyFingerprint(from.identity_fingerprint.get()));
+  return *this;
+}
+
 }  // namespace cricket
