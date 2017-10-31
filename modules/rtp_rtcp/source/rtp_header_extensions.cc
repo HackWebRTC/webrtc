@@ -319,16 +319,18 @@ bool VideoTimingExtension::Write(uint8_t* data, const VideoSendTiming& timing) {
       data + VideoSendTiming::kPacerExitDeltaOffset,
       timing.pacer_exit_delta_ms);
   ByteWriter<uint16_t>::WriteBigEndian(
-      data + VideoSendTiming::kNetworkTimestampDeltaOffset, 0);  // reserved
+      data + VideoSendTiming::kNetworkTimestampDeltaOffset,
+      timing.network_timestamp_delta_ms);
   ByteWriter<uint16_t>::WriteBigEndian(
-      data + VideoSendTiming::kNetwork2TimestampDeltaOffset, 0);  // reserved
+      data + VideoSendTiming::kNetwork2TimestampDeltaOffset,
+      timing.network2_timestamp_delta_ms);
   return true;
 }
 
 bool VideoTimingExtension::Write(uint8_t* data,
                                  uint16_t time_delta_ms,
                                  uint8_t offset) {
-  RTC_DCHECK_LT(offset, kValueSizeBytes - sizeof(uint16_t));
+  RTC_DCHECK_LE(offset, kValueSizeBytes - sizeof(uint16_t));
   ByteWriter<uint16_t>::WriteBigEndian(data + offset, time_delta_ms);
   return true;
 }
