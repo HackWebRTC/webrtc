@@ -91,13 +91,14 @@
     _metalView.delegate = self;
     [self addSubview:_metalView];
     _metalView.contentMode = UIViewContentModeScaleAspectFit;
-    _metalView.translatesAutoresizingMaskIntoConstraints = NO;
-    UILayoutGuide *margins = self.layoutMarginsGuide;
-    [_metalView.topAnchor constraintEqualToAnchor:margins.topAnchor].active = YES;
-    [_metalView.bottomAnchor constraintEqualToAnchor:margins.bottomAnchor].active = YES;
-    [_metalView.leftAnchor constraintEqualToAnchor:margins.leftAnchor].active = YES;
-    [_metalView.rightAnchor constraintEqualToAnchor:margins.rightAnchor].active = YES;
   }
+}
+
+#pragma mark - Private
+
+- (void)layoutSubviews {
+  [super layoutSubviews];
+  _metalView.frame = self.bounds;
 }
 
 #pragma mark - MTKViewDelegate methods
