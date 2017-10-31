@@ -11,6 +11,7 @@
 #include "sdk/android/src/jni/jni_generator_helper.h"
 
 #include "rtc_base/atomicops.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace base {
 namespace android {
@@ -19,7 +20,7 @@ namespace {
 // JNIEnv-helper methods that RTC_CHECK success: no Java exception thrown and
 // found object/class/method/field is non-null.
 jclass GetClass(JNIEnv* jni, const char* class_name) {
-  jclass clazz = jni->FindClass(class_name);
+  jclass clazz = webrtc::jni::FindClass(jni, class_name);
   CHECK_EXCEPTION(jni) << "error during FindClass: " << class_name;
   RTC_CHECK(clazz) << class_name;
   return clazz;
