@@ -485,7 +485,8 @@ int main(int argc, char* argv[]) {
                       << parsed_header.extension.transmissionTimeOffset;
           }
           if (parsed_header.extension.hasAudioLevel) {
-            std::cout << "\tAudioLevel=" << parsed_header.extension.audioLevel;
+            std::cout << "\tAudioLevel=" <<
+                static_cast<int>(parsed_header.extension.audioLevel);
           }
           std::cout << std::endl;
         }
