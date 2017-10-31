@@ -13,6 +13,8 @@
 #include <memory>
 #include <vector>
 
+#include "api/test/mock_video_decoder_factory.h"
+#include "api/test/mock_video_encoder_factory.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
@@ -863,44 +865,6 @@ TEST_F(WebRtcVideoEngineTest, RegisterExternalH264DecoderIfSupported) {
   ASSERT_EQ(1u, decoder_factory_->decoders().size());
 }
 
-class MockVideoEncoderFactory : public webrtc::VideoEncoderFactory {
- public:
-  MOCK_CONST_METHOD0(GetSupportedFormats,
-                     std::vector<webrtc::SdpVideoFormat>());
-  MOCK_CONST_METHOD1(QueryVideoEncoder,
-                     CodecInfo(const webrtc::SdpVideoFormat&));
-
-  // We need to proxy to a return type that is copyable.
-  std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(
-      const webrtc::SdpVideoFormat& format) {
-    return std::unique_ptr<webrtc::VideoEncoder>(
-        CreateVideoEncoderProxy(format));
-  }
-  MOCK_METHOD1(CreateVideoEncoderProxy,
-               webrtc::VideoEncoder*(const webrtc::SdpVideoFormat&));
-
-  MOCK_METHOD0(Die, void());
-  ~MockVideoEncoderFactory() { Die(); }
-};
-
-class MockVideoDecoderFactory : public webrtc::VideoDecoderFactory {
- public:
-  MOCK_CONST_METHOD0(GetSupportedFormats,
-                     std::vector<webrtc::SdpVideoFormat>());
-
-  // We need to proxy to a return type that is copyable.
-  std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
-      const webrtc::SdpVideoFormat& format) {
-    return std::unique_ptr<webrtc::VideoDecoder>(
-        CreateVideoDecoderProxy(format));
-  }
-  MOCK_METHOD1(CreateVideoDecoderProxy,
-               webrtc::VideoDecoder*(const webrtc::SdpVideoFormat&));
-
-  MOCK_METHOD0(Die, void());
-  ~MockVideoDecoderFactory() { Die(); }
-};
-
 TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, NullFactories) {
   std::unique_ptr<webrtc::VideoEncoderFactory> encoder_factory;
   std::unique_ptr<webrtc::VideoDecoderFactory> decoder_factory;
@@ -911,8 +875,10 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, NullFactories) {
 
 TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, EmptyFactories) {
   // |engine| take ownership of the factories.
-  MockVideoEncoderFactory* encoder_factory = new MockVideoEncoderFactory();
-  MockVideoDecoderFactory* decoder_factory = new MockVideoDecoderFactory();
+  webrtc::MockVideoEncoderFactory* encoder_factory =
+      new webrtc::MockVideoEncoderFactory();
+  webrtc::MockVideoDecoderFactory* decoder_factory =
+      new webrtc::MockVideoDecoderFactory();
   WebRtcVideoEngine engine(
       (std::unique_ptr<webrtc::VideoEncoderFactory>(encoder_factory)),
       (std::unique_ptr<webrtc::VideoDecoderFactory>(decoder_factory)));
@@ -928,8 +894,10 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, EmptyFactories) {
 // new factories.
 TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
   // |engine| take ownership of the factories.
-  MockVideoEncoderFactory* encoder_factory = new MockVideoEncoderFactory();
-  MockVideoDecoderFactory* decoder_factory = new MockVideoDecoderFactory();
+  webrtc::MockVideoEncoderFactory* encoder_factory =
+      new webrtc::MockVideoEncoderFactory();
+  webrtc::MockVideoDecoderFactory* decoder_factory =
+      new webrtc::MockVideoDecoderFactory();
   WebRtcVideoEngine engine(
       (std::unique_ptr<webrtc::VideoEncoderFactory>(encoder_factory)),
       (std::unique_ptr<webrtc::VideoDecoderFactory>(decoder_factory)));

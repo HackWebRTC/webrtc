@@ -304,6 +304,23 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_source_set("mock_video_codec_factory") {
+    testonly = true
+    sources = [
+      "test/mock_video_decoder_factory.h",
+      "test/mock_video_encoder_factory.h",
+    ]
+
+    public_deps = [
+      "../api/video_codecs:video_codecs_api",
+    ]
+
+    deps = [
+      "../test:test_support",
+      "//testing/gmock",
+    ]
+  }
+
   rtc_source_set("fakemetricsobserver") {
     testonly = true
     sources = [

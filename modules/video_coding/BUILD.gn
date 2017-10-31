@@ -92,6 +92,7 @@ rtc_static_library("video_coding") {
     ":video_coding_utility",
     ":webrtc_h264",
     ":webrtc_i420",
+    ":webrtc_stereo",
     ":webrtc_vp8",
     ":webrtc_vp9",
     "..:module_api",
@@ -227,6 +228,30 @@ rtc_static_library("webrtc_i420") {
   deps = [
     ":video_coding_utility",
     "../..:webrtc_common",
+    "../../common_video:common_video",
+    "../../rtc_base:rtc_base_approved",
+    "../../system_wrappers",
+  ]
+}
+
+rtc_static_library("webrtc_stereo") {
+  sources = [
+    "codecs/stereo/include/stereo_decoder_adapter.h",
+    "codecs/stereo/include/stereo_encoder_adapter.h",
+    "codecs/stereo/stereo_decoder_adapter.cc",
+    "codecs/stereo/stereo_encoder_adapter.cc",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [
+    ":video_coding_utility",
+    "..:module_api",
+    "../..:webrtc_common",
+    "../../api/video_codecs:video_codecs_api",
     "../../common_video:common_video",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
@@ -423,6 +448,7 @@ if (rtc_include_tests) {
     }
     sources = [
       "codecs/h264/test/h264_impl_unittest.cc",
+      "codecs/stereo/test/stereo_adapter_unittest.cc",
       "codecs/test/videoprocessor_integrationtest.cc",
       "codecs/test/videoprocessor_integrationtest.h",
       "codecs/test/videoprocessor_integrationtest_libvpx.cc",
@@ -437,9 +463,11 @@ if (rtc_include_tests) {
       ":video_coding",
       ":video_coding_utility",
       ":webrtc_h264",
+      ":webrtc_stereo",
       ":webrtc_vp8",
       ":webrtc_vp9",
       "../..:webrtc_common",
+      "../../api:mock_video_codec_factory",
       "../../api:optional",
       "../../api:video_frame_api",
       "../../common_video",

@@ -523,6 +523,7 @@ if (rtc_include_tests) {
       ":rtc_media",
       ":rtc_media_base",
       ":rtc_media_tests_utils",
+      "../api:mock_video_codec_factory",
       "../api:video_frame_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
       "../api/audio_codecs:builtin_audio_encoder_factory",
