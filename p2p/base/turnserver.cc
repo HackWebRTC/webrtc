@@ -61,7 +61,7 @@ enum {
 class TurnServerAllocation::Permission : public rtc::MessageHandler {
  public:
   Permission(rtc::Thread* thread, const rtc::IPAddress& peer);
-  ~Permission();
+  ~Permission() override;
 
   const rtc::IPAddress& peer() const { return peer_; }
   void Refresh();
@@ -69,7 +69,7 @@ class TurnServerAllocation::Permission : public rtc::MessageHandler {
   sigslot::signal1<Permission*> SignalDestroyed;
 
  private:
-  virtual void OnMessage(rtc::Message* msg);
+  void OnMessage(rtc::Message* msg) override;
 
   rtc::Thread* thread_;
   rtc::IPAddress peer_;
@@ -82,7 +82,7 @@ class TurnServerAllocation::Channel : public rtc::MessageHandler {
  public:
   Channel(rtc::Thread* thread, int id,
                      const rtc::SocketAddress& peer);
-  ~Channel();
+  ~Channel() override;
 
   int id() const { return id_; }
   const rtc::SocketAddress& peer() const { return peer_; }
@@ -91,7 +91,7 @@ class TurnServerAllocation::Channel : public rtc::MessageHandler {
   sigslot::signal1<Channel*> SignalDestroyed;
 
  private:
-  virtual void OnMessage(rtc::Message* msg);
+  void OnMessage(rtc::Message* msg) override;
 
   rtc::Thread* thread_;
   int id_;

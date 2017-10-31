@@ -151,8 +151,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
        rtc::Network* network,
        const rtc::IPAddress& ip,
        const std::string& username_fragment,
-       const std::string& password)
-      : Port(thread, type, factory, network, username_fragment, password) {}
+       const std::string& password);
   Port(rtc::Thread* thread,
        const std::string& type,
        rtc::PacketSocketFactory* factory,

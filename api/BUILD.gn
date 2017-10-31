@@ -53,6 +53,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "notifier.h",
     "peerconnectionfactoryproxy.h",
     "peerconnectionproxy.h",
+    "proxy.cc",
     "proxy.h",
     "rtcerror.cc",
     "rtcerror.h",
@@ -63,6 +64,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "statstypes.cc",
     "statstypes.h",
     "turncustomizer.h",
+    "umametrics.cc",
     "umametrics.h",
     "videosourceproxy.h",
   ]

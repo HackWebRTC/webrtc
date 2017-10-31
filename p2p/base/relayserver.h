@@ -34,7 +34,7 @@ class RelayServer : public rtc::MessageHandler,
  public:
   // Creates a server, which will use this thread to post messages to itself.
   explicit RelayServer(rtc::Thread* thread);
-  ~RelayServer();
+  ~RelayServer() override;
 
   rtc::Thread* thread() { return thread_; }
 
@@ -116,7 +116,7 @@ class RelayServer : public rtc::MessageHandler,
   void RemoveBinding(RelayServerBinding* binding);
 
   // Handle messages in our thread.
-  void OnMessage(rtc::Message *pmsg);
+  void OnMessage(rtc::Message* pmsg) override;
 
   // Called when the timer for checking lifetime times out.
   void OnTimeout(RelayServerBinding* binding);
@@ -185,7 +185,7 @@ class RelayServerBinding : public rtc::MessageHandler {
                      const std::string& username,
                      const std::string& password,
                      int lifetime);
-  virtual ~RelayServerBinding();
+  ~RelayServerBinding() override;
 
   RelayServer* server() { return server_; }
   int lifetime() { return lifetime_; }
@@ -214,7 +214,7 @@ class RelayServerBinding : public rtc::MessageHandler {
       const rtc::SocketAddress& ext_addr);
 
   // MessageHandler:
-  void OnMessage(rtc::Message *pmsg);
+  void OnMessage(rtc::Message* pmsg) override;
 
  private:
   RelayServer* server_;

@@ -39,6 +39,7 @@ class PacketLossEstimator {
  public:
   explicit PacketLossEstimator(int64_t consider_lost_after_ms,
                                int64_t forget_after_ms);
+  ~PacketLossEstimator();
 
   // Registers that a message with the given |id| was sent at |sent_time|.
   void ExpectResponse(std::string id, int64_t sent_time);

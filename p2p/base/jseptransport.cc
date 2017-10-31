@@ -64,6 +64,45 @@ ConnectionInfo::ConnectionInfo()
       nominated(false),
       total_round_trip_time_ms(0) {}
 
+ConnectionInfo::ConnectionInfo(const ConnectionInfo&) = default;
+
+ConnectionInfo::~ConnectionInfo() = default;
+
+TransportChannelStats::TransportChannelStats() = default;
+
+TransportChannelStats::TransportChannelStats(const TransportChannelStats&) =
+    default;
+
+TransportChannelStats::~TransportChannelStats() = default;
+
+TransportStats::TransportStats() = default;
+
+TransportStats::~TransportStats() = default;
+
+IceConfig::IceConfig() = default;
+
+IceConfig::IceConfig(int receiving_timeout_ms,
+                     int backup_connection_ping_interval,
+                     ContinualGatheringPolicy gathering_policy,
+                     bool prioritize_most_likely_candidate_pairs,
+                     int stable_writable_connection_ping_interval_ms,
+                     bool presume_writable_when_fully_relayed,
+                     int regather_on_failed_networks_interval_ms,
+                     int receiving_switching_delay_ms)
+    : receiving_timeout(receiving_timeout_ms),
+      backup_connection_ping_interval(backup_connection_ping_interval),
+      continual_gathering_policy(gathering_policy),
+      prioritize_most_likely_candidate_pairs(
+          prioritize_most_likely_candidate_pairs),
+      stable_writable_connection_ping_interval(
+          stable_writable_connection_ping_interval_ms),
+      presume_writable_when_fully_relayed(presume_writable_when_fully_relayed),
+      regather_on_failed_networks_interval(
+          regather_on_failed_networks_interval_ms),
+      receiving_switching_delay(receiving_switching_delay_ms) {}
+
+IceConfig::~IceConfig() = default;
+
 bool BadTransportDescription(const std::string& desc, std::string* err_desc) {
   if (err_desc) {
     *err_desc = desc;
@@ -127,6 +166,8 @@ JsepTransport::JsepTransport(
     const std::string& mid,
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate)
     : mid_(mid), certificate_(certificate) {}
+
+JsepTransport::~JsepTransport() = default;
 
 bool JsepTransport::AddChannel(DtlsTransportInternal* dtls, int component) {
   if (channels_.find(component) != channels_.end()) {

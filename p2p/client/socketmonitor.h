@@ -35,7 +35,7 @@ public:
   ConnectionMonitor(ConnectionStatsGetter* stats_getter,
                     rtc::Thread* network_thread,
                     rtc::Thread* monitoring_thread);
-  ~ConnectionMonitor();
+  ~ConnectionMonitor() override;
 
   void Start(int cms);
   void Stop();
@@ -44,7 +44,8 @@ public:
                    const std::vector<ConnectionInfo>&> SignalUpdate;
 
  protected:
-  void OnMessage(rtc::Message* message);
+  void OnMessage(rtc::Message* message) override;
+
  private:
   void PollConnectionStats_w();
 

@@ -172,6 +172,15 @@ Port::Port(rtc::Thread* thread,
            const std::string& type,
            rtc::PacketSocketFactory* factory,
            rtc::Network* network,
+           const rtc::IPAddress& ip,
+           const std::string& username_fragment,
+           const std::string& password)
+    : Port(thread, type, factory, network, username_fragment, password) {}
+
+Port::Port(rtc::Thread* thread,
+           const std::string& type,
+           rtc::PacketSocketFactory* factory,
+           rtc::Network* network,
            uint16_t min_port,
            uint16_t max_port,
            const std::string& username_fragment,

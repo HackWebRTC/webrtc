@@ -124,15 +124,10 @@ class MetricsObserverInterface : public rtc::RefCountInterface {
   // TODO(guoweis): Remove the implementation once the dependency's interface
   // definition is updated.
   virtual void IncrementSparseEnumCounter(PeerConnectionEnumCounterType type,
-                                          int counter) {
-    IncrementEnumCounter(type, counter, 0 /* Ignored */);
-  }
+                                          int counter);
 
   virtual void AddHistogramSample(PeerConnectionMetricsName type,
                                   int value) = 0;
-
- protected:
-  virtual ~MetricsObserverInterface() {}
 };
 
 typedef MetricsObserverInterface UMAObserver;

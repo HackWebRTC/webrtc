@@ -28,12 +28,12 @@ class AsyncStunTCPSocket : public rtc::AsyncTCPSocketBase {
       const rtc::SocketAddress& remote_address);
 
   AsyncStunTCPSocket(rtc::AsyncSocket* socket, bool listen);
-  virtual ~AsyncStunTCPSocket() {}
 
-  virtual int Send(const void* pv, size_t cb,
-                   const rtc::PacketOptions& options);
-  virtual void ProcessInput(char* data, size_t* len);
-  virtual void HandleIncomingConnection(rtc::AsyncSocket* socket);
+  int Send(const void* pv,
+           size_t cb,
+           const rtc::PacketOptions& options) override;
+  void ProcessInput(char* data, size_t* len) override;
+  void HandleIncomingConnection(rtc::AsyncSocket* socket) override;
 
  private:
   // This method returns the message hdr + length written in the header.

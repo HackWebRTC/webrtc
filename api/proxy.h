@@ -123,25 +123,14 @@ class SynchronousMethodCall
     : public rtc::MessageData,
       public rtc::MessageHandler {
  public:
-  explicit SynchronousMethodCall(rtc::MessageHandler* proxy)
-      : e_(), proxy_(proxy) {}
-  ~SynchronousMethodCall() {}
+  explicit SynchronousMethodCall(rtc::MessageHandler* proxy);
+  ~SynchronousMethodCall() override;
 
-  void Invoke(const rtc::Location& posted_from, rtc::Thread* t) {
-    if (t->IsCurrent()) {
-      proxy_->OnMessage(nullptr);
-    } else {
-      e_.reset(new rtc::Event(false, false));
-      t->Post(posted_from, this, 0);
-      e_->Wait(rtc::Event::kForever);
-    }
-  }
+  void Invoke(const rtc::Location& posted_from, rtc::Thread* t);
 
  private:
-  void OnMessage(rtc::Message*) {
-    proxy_->OnMessage(nullptr);
-    e_->Set();
-  }
+  void OnMessage(rtc::Message*) override;
+
   std::unique_ptr<rtc::Event> e_;
   rtc::MessageHandler* proxy_;
 };
