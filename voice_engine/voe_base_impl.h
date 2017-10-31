@@ -45,6 +45,9 @@ class VoEBaseImpl : public VoEBase,
   int StopPlayout(int channel) override;
   int StopSend(int channel) override;
 
+  int SetPlayout(bool enabled) override;
+  int SetRecording(bool enabled) override;
+
   AudioTransport* audio_transport() override { return this; }
 
   // AudioTransport
@@ -103,6 +106,8 @@ class VoEBaseImpl : public VoEBase,
 
   AudioFrame audioFrame_;
   voe::SharedData* shared_;
+  bool playout_enabled_ = true;
+  bool recording_enabled_ = true;
 };
 
 }  // namespace webrtc
