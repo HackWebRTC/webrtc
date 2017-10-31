@@ -11,6 +11,7 @@
 #ifndef MEDIA_BASE_MEDIACHANNEL_H_
 #define MEDIA_BASE_MEDIACHANNEL_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -1223,7 +1224,7 @@ class DataMediaChannel : public MediaChannel {
   };
 
   DataMediaChannel() {}
-  DataMediaChannel(const MediaConfig& config) : MediaChannel(config) {}
+  explicit DataMediaChannel(const MediaConfig& config) : MediaChannel(config) {}
   virtual ~DataMediaChannel() {}
 
   virtual bool SetSendParameters(const DataSendParameters& params) = 0;

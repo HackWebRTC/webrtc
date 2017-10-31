@@ -11,6 +11,9 @@
 #include "media/engine/webrtcmediaengine.h"
 
 #include <algorithm>
+#include <memory>
+#include <tuple>
+#include <utility>
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"

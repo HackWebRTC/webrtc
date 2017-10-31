@@ -11,6 +11,7 @@
 #ifndef MEDIA_ENGINE_FAKEWEBRTCDEVICEINFO_H_
 #define MEDIA_ENGINE_FAKEWEBRTCDEVICEINFO_H_
 
+#include <string>
 #include <vector>
 
 #include "media/engine/webrtcvideocapturer.h"

@@ -11,6 +11,7 @@
 #ifndef MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
 #define MEDIA_ENGINE_WEBRTCVIDEOENCODERFACTORY_H_
 
+#include <string>
 #include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)

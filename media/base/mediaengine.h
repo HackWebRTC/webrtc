@@ -16,6 +16,8 @@
 #endif
 
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "api/audio_codecs/audio_decoder_factory.h"

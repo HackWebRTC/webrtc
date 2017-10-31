@@ -11,6 +11,7 @@
 #ifndef MEDIA_BASE_RTPDATAENGINE_H_
 #define MEDIA_BASE_RTPDATAENGINE_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -61,7 +62,7 @@ class RtpClock {
 
 class RtpDataMediaChannel : public DataMediaChannel {
  public:
-  RtpDataMediaChannel(const MediaConfig& config);
+  explicit RtpDataMediaChannel(const MediaConfig& config);
   virtual ~RtpDataMediaChannel();
 
   virtual bool SetSendParameters(const DataSendParameters& params);

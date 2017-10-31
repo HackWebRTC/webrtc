@@ -10,7 +10,7 @@
 
 // Common definition for video, including fourcc and VideoFormat.
 
-#ifndef MEDIA_BASE_VIDEOCOMMON_H_  // NOLINT
+#ifndef MEDIA_BASE_VIDEOCOMMON_H_
 #define MEDIA_BASE_VIDEOCOMMON_H_
 
 #include <stdint.h>
@@ -226,4 +226,4 @@ struct VideoFormat : VideoFormatPod {
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_VIDEOCOMMON_H_  // NOLINT
+#endif  // MEDIA_BASE_VIDEOCOMMON_H_

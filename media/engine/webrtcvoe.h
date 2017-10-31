@@ -74,9 +74,7 @@ class VoEWrapper {
   VoEWrapper()
       : engine_(webrtc::VoiceEngine::Create()), base_(engine_) {
   }
-  VoEWrapper(webrtc::VoEBase* base)
-      : engine_(NULL), base_(base) {
-  }
+  explicit VoEWrapper(webrtc::VoEBase* base) : engine_(NULL), base_(base) {}
   ~VoEWrapper() {}
   webrtc::VoiceEngine* engine() const { return engine_.get(); }
   webrtc::VoEBase* base() const { return base_.get(); }

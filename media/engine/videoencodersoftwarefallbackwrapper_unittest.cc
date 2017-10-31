@@ -330,12 +330,12 @@ const int kHighKbps = 300;
 const int kMinLowDurationMs = 4000;
 const int kMinPixelsPerFrame = 1;
 const int kMinPixelsStop = 320 * 180;
-const std::string kFieldTrial = "WebRTC-VP8-Forced-Fallback-Encoder";
+const char kFieldTrial[] = "WebRTC-VP8-Forced-Fallback-Encoder";
 }  // namespace
 
 class ForcedFallbackTest : public VideoEncoderSoftwareFallbackWrapperTest {
  public:
-  ForcedFallbackTest(const std::string& field_trials)
+  explicit ForcedFallbackTest(const std::string& field_trials)
       : VideoEncoderSoftwareFallbackWrapperTest(field_trials) {}
 
   ~ForcedFallbackTest() override {}
@@ -392,7 +392,7 @@ class ForcedFallbackTest : public VideoEncoderSoftwareFallbackWrapperTest {
 class ForcedFallbackTestEnabled : public ForcedFallbackTest {
  public:
   ForcedFallbackTestEnabled()
-      : ForcedFallbackTest(kFieldTrial + "/Enabled-" +
+      : ForcedFallbackTest(std::string(kFieldTrial) + "/Enabled-" +
                            std::to_string(kLowKbps) + "," +
                            std::to_string(kHighKbps) + "," +
                            std::to_string(kMinLowDurationMs) + "," +
@@ -402,7 +402,7 @@ class ForcedFallbackTestEnabled : public ForcedFallbackTest {
 class ForcedFallbackTestDisabled : public ForcedFallbackTest {
  public:
   ForcedFallbackTestDisabled()
-      : ForcedFallbackTest(kFieldTrial + "/Disabled/") {}
+      : ForcedFallbackTest(std::string(kFieldTrial) + "/Disabled/") {}
 };
 
 TEST_F(ForcedFallbackTestDisabled, NoFallbackWithoutFieldTrial) {

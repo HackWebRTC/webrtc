@@ -11,6 +11,8 @@
 #ifndef MEDIA_BASE_DEVICE_H_
 #define MEDIA_BASE_DEVICE_H_
 
+#include <string>
+
 #include "rtc_base/stringencode.h"
 
 namespace cricket {

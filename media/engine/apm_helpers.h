@@ -11,6 +11,8 @@
 #ifndef MEDIA_ENGINE_APM_HELPERS_H_
 #define MEDIA_ENGINE_APM_HELPERS_H_
 
+#include <cstdint>
+
 namespace webrtc {
 
 class AudioProcessing;
@@ -22,8 +24,8 @@ enum EcModes {
 };
 
 struct AgcConfig {
-  unsigned short targetLeveldBOv;
-  unsigned short digitalCompressionGaindB;
+  uint16_t targetLeveldBOv;
+  uint16_t digitalCompressionGaindB;
   bool limiterEnable;
 };
 

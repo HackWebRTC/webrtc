@@ -229,9 +229,9 @@ TEST(CodecTest, TestIntersectFeedbackParams) {
   const FeedbackParam b3("b", "3");
   const FeedbackParam c3("c", "3");
   TestCodec c1;
-  c1.AddFeedbackParam(a1); // Only match with c2.
-  c1.AddFeedbackParam(b2); // Same param different values.
-  c1.AddFeedbackParam(c3); // Not in c2.
+  c1.AddFeedbackParam(a1);  // Only match with c2.
+  c1.AddFeedbackParam(b2);  // Same param different values.
+  c1.AddFeedbackParam(c3);  // Not in c2.
   TestCodec c2;
   c2.AddFeedbackParam(a1);
   c2.AddFeedbackParam(b3);

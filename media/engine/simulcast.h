@@ -11,6 +11,7 @@
 #ifndef MEDIA_ENGINE_SIMULCAST_H_
 #define MEDIA_ENGINE_SIMULCAST_H_
 
+#include <string>
 #include <vector>
 
 #include "call/video_config.h"

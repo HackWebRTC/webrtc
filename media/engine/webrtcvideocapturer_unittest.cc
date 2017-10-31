@@ -26,8 +26,8 @@
 
 using cricket::VideoFormat;
 
-static const std::string kTestDeviceName = "JuberTech FakeCam Q123";
-static const std::string kTestDeviceId = "foo://bar/baz";
+static const char kTestDeviceName[] = "JuberTech FakeCam Q123";
+static const char kTestDeviceId[] = "foo://bar/baz";
 const VideoFormat kDefaultVideoFormat =
     VideoFormat(640, 400, VideoFormat::FpsToInterval(30), cricket::FOURCC_ANY);
 
@@ -75,8 +75,7 @@ TEST_F(WebRtcVideoCapturerTest, TestInit) {
 }
 
 TEST_F(WebRtcVideoCapturerTest, TestInitVcm) {
-  EXPECT_TRUE(capturer_->Init(factory_->Create(
-      reinterpret_cast<const char*>(kTestDeviceId.c_str()))));
+  EXPECT_TRUE(capturer_->Init(factory_->Create(kTestDeviceId)));
 }
 
 TEST_F(WebRtcVideoCapturerTest, TestCapture) {
@@ -101,8 +100,7 @@ TEST_F(WebRtcVideoCapturerTest, TestCapture) {
 }
 
 TEST_F(WebRtcVideoCapturerTest, TestCaptureVcm) {
-  EXPECT_TRUE(capturer_->Init(factory_->Create(
-      reinterpret_cast<const char*>(kTestDeviceId.c_str()))));
+  EXPECT_TRUE(capturer_->Init(factory_->Create(kTestDeviceId)));
   cricket::VideoCapturerListener listener(capturer_.get());
   EXPECT_TRUE(capturer_->GetSupportedFormats()->empty());
   VideoFormat format;

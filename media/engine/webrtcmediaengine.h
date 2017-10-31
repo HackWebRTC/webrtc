@@ -11,6 +11,7 @@
 #ifndef MEDIA_ENGINE_WEBRTCMEDIAENGINE_H_
 #define MEDIA_ENGINE_WEBRTCMEDIAENGINE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 

@@ -12,6 +12,8 @@
 #ifndef MEDIA_ENGINE_WEBRTCVIDEOCAPTURERFACTORY_H_
 #define MEDIA_ENGINE_WEBRTCVIDEOCAPTURERFACTORY_H_
 
+#include <memory>
+
 #include "media/base/videocapturerfactory.h"
 
 namespace cricket {

@@ -30,7 +30,7 @@ class AdaptedVideoTrackSource
  protected:
   // Allows derived classes to initialize |video_adapter_| with a custom
   // alignment.
-  AdaptedVideoTrackSource(int required_alignment);
+  explicit AdaptedVideoTrackSource(int required_alignment);
   // Checks the apply_rotation() flag. If the frame needs rotation, and it is a
   // plain memory frame, it is rotated. Subclasses producing native frames must
   // handle apply_rotation() themselves.

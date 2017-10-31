@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/call/audio_sink.h"
@@ -77,7 +78,9 @@ const int kMaxPayloadType = 127;
 
 class ProxySink : public webrtc::AudioSinkInterface {
  public:
-  ProxySink(AudioSinkInterface* sink) : sink_(sink) { RTC_DCHECK(sink); }
+  explicit ProxySink(AudioSinkInterface* sink) : sink_(sink) {
+    RTC_DCHECK(sink);
+  }
 
   void OnData(const Data& audio) override { sink_->OnData(audio); }
 
@@ -418,7 +421,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
           "WebRTC-Audio-MinimizeResamplingOnMobile")) {
     options.auto_gain_control = rtc::Optional<bool>(false);
     LOG(LS_INFO) << "Disable AGC according to field trial.";
-    if (!(options.noise_suppression.value_or(false) or
+    if (!(options.noise_suppression.value_or(false) ||
           options.echo_cancellation.value_or(false))) {
       // If possible, turn off the high-pass filter.
       LOG(LS_INFO) << "Disable high-pass filter in response to field trial.";

@@ -26,7 +26,7 @@ class VideoSinkInterface {
 
   // Should be called by the source when it discards the frame due to rate
   // limiting.
-  virtual void OnDiscardedFrame(){};
+  virtual void OnDiscardedFrame() {}
 };
 
 }  // namespace rtc

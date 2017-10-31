@@ -10,6 +10,8 @@
 
 #include "media/engine/payload_type_mapper.h"
 
+#include <utility>
+
 #include "api/audio_codecs/audio_format.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/base/mediaconstants.h"

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits>
+
 #include "media/base/videobroadcaster.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"

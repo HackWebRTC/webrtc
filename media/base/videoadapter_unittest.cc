@@ -10,6 +10,7 @@
 
 #include <limits.h>  // For INT_MAX
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>

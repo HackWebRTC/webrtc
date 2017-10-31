@@ -114,7 +114,7 @@ void UpdateRtpAuthTag(uint8_t* rtp,
   memcpy(auth_tag, output, tag_length);
 }
 
-}
+}  // namespace
 
 bool GetUint8(const void* data, size_t offset, int* value) {
   if (!data || !value) {

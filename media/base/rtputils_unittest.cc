@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <vector>
+
 #include "media/base/rtputils.h"
 #include "media/base/fakertp.h"
 #include "rtc_base/asyncpacketsocket.h"

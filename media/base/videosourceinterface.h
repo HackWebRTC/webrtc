@@ -11,6 +11,8 @@
 #ifndef MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
 #define MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
 
+#include <limits>
+
 #include "api/optional.h"
 #include "media/base/videosinkinterface.h"
 

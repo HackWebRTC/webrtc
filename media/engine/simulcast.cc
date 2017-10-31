@@ -9,6 +9,8 @@
  */
 
 #include <stdio.h>
+#include <algorithm>
+#include <string>
 
 #include "media/base/streamparams.h"
 #include "media/engine/constants.h"

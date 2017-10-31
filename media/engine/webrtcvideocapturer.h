@@ -82,4 +82,4 @@ class WebRtcVideoCapturer : public VideoCapturer,
 
 }  // namespace cricket
 
-#endif  // MEDIA_WEBRTC_WEBRTCVIDEOCAPTURER_H_
+#endif  // MEDIA_ENGINE_WEBRTCVIDEOCAPTURER_H_

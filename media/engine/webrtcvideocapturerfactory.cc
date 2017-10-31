@@ -9,6 +9,7 @@
  */
 
 #include <memory>
+#include <utility>
 
 #include "media/engine/webrtcvideocapturer.h"
 #include "media/engine/webrtcvideocapturerfactory.h"

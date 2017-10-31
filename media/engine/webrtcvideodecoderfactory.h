@@ -11,6 +11,8 @@
 #ifndef MEDIA_ENGINE_WEBRTCVIDEODECODERFACTORY_H_
 #define MEDIA_ENGINE_WEBRTCVIDEODECODERFACTORY_H_
 
+#include <string>
+
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/base/codec.h"
 #include "rtc_base/refcount.h"

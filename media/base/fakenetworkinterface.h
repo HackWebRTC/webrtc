@@ -12,6 +12,7 @@
 #define MEDIA_BASE_FAKENETWORKINTERFACE_H_
 
 #include <map>
+#include <set>
 #include <vector>
 
 #include "media/base/mediachannel.h"

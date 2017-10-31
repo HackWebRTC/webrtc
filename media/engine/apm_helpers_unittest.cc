@@ -247,9 +247,11 @@ TEST(ApmHelpersTest, TypingDetectionStatus_DefaultMode) {
 // TODO(kthelgason): Reenable this test on simulator.
 // See bugs.webrtc.org/5569
 #if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
-#define MAYBE_TypingDetectionStatus_EnableDisable DISABLED_TypingDetectionStatus_EnableDisable
+#define MAYBE_TypingDetectionStatus_EnableDisable \
+  DISABLED_TypingDetectionStatus_EnableDisable
 #else
-#define MAYBE_TypingDetectionStatus_EnableDisable TypingDetectionStatus_EnableDisable
+#define MAYBE_TypingDetectionStatus_EnableDisable \
+  TypingDetectionStatus_EnableDisable
 #endif
 TEST(ApmHelpersTest, MAYBE_TypingDetectionStatus_EnableDisable) {
   TestHelper helper;

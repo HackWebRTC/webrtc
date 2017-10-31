@@ -22,11 +22,8 @@ class FakeWebRtcVcmFactory;
 // Fake class for mocking out webrtc::VideoCaptureModule.
 class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
  public:
-  FakeWebRtcVideoCaptureModule(FakeWebRtcVcmFactory* factory)
-      : factory_(factory),
-        callback_(NULL),
-        running_(false) {
-  }
+  explicit FakeWebRtcVideoCaptureModule(FakeWebRtcVcmFactory* factory)
+      : factory_(factory), callback_(NULL), running_(false) {}
   ~FakeWebRtcVideoCaptureModule();
   void RegisterCaptureDataCallback(
       rtc::VideoSinkInterface<webrtc::VideoFrame>* callback) override {
