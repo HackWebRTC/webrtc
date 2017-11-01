@@ -130,8 +130,8 @@ int StereoEncoderAdapter::SetRateAllocation(const BitrateAllocation& bitrate,
     // TODO(emircan): |new_framerate| is used to calculate duration for encoder
     // instances. We report the total frame rate to keep real time for now.
     // Remove this after refactoring duration logic.
-    const int rv =
-        encoder->SetRateAllocation(bitrate, encoders_.size() * framerate);
+    const int rv = encoder->SetRateAllocation(
+        bitrate, static_cast<uint32_t>(encoders_.size()) * framerate);
     if (rv)
       return rv;
   }
