@@ -82,10 +82,10 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, InitializesDecoder) {
 }
 
 TEST_F(VideoDecoderSoftwareFallbackWrapperTest,
-       UsesFallbackDecoderAfterOnInitDecodeFailure) {
+       UsesFallbackDecoderAfterAnyInitDecodeFailure) {
   VideoCodec codec = {};
   fake_decoder_->init_decode_return_code_ =
-      WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
+      WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   fallback_wrapper_.InitDecode(&codec, 2);
   EXPECT_EQ(1, fake_decoder_->init_decode_count_);
 

@@ -38,8 +38,8 @@ int32_t VideoDecoderSoftwareFallbackWrapper::InitDecode(
   codec_settings_ = *codec_settings;
   number_of_cores_ = number_of_cores;
   int32_t ret = decoder_->InitDecode(codec_settings, number_of_cores);
-  if (ret != WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE) {
-    decoder_initialized_ = (ret == WEBRTC_VIDEO_CODEC_OK);
+  if (ret == WEBRTC_VIDEO_CODEC_OK) {
+    decoder_initialized_ = true;
     return ret;
   }
   decoder_initialized_ = false;
