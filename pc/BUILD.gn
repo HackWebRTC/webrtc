@@ -183,7 +183,6 @@ rtc_static_library("peerconnection") {
     "../rtc_base:rtc_base_approved",
     "../stats",
     "../system_wrappers:system_wrappers",
-    "../voice_engine:voice_engine",
   ]
 
   public_deps = [

@@ -166,22 +166,6 @@ JNI_FUNCTION_DECLARATION(void,
       observer, JavaToNativeSessionDescription(jni, j_sdp));
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         PeerConnection_setAudioPlayout,
-                         JNIEnv* jni,
-                         jobject j_pc,
-                         jboolean playout) {
-  ExtractNativePC(jni, j_pc)->SetAudioPlayout(playout);
-}
-
-JNI_FUNCTION_DECLARATION(void,
-                         PeerConnection_setAudioRecording,
-                         JNIEnv* jni,
-                         jobject j_pc,
-                         jboolean recording) {
-  ExtractNativePC(jni, j_pc)->SetAudioRecording(recording);
-}
-
 JNI_FUNCTION_DECLARATION(jboolean,
                          PeerConnection_nativeSetConfiguration,
                          JNIEnv* jni,
