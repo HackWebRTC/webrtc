@@ -66,9 +66,8 @@ std::vector<SdpVideoFormat> SupportedH264Codecs() {
   // decoder for that profile is required to be able to decode CBP. This means
   // we can encode and send CBP even though we negotiated a potentially
   // higher profile. See the H264 spec for more information.
-  return {CreateH264Format(H264::kProfileHigh, H264::kLevel3_1),
-          CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1),
-          CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1)};
+  return {CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1),
+          CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1)};
 }
 
 H264Encoder* H264Encoder::Create(const cricket::VideoCodec& codec) {
