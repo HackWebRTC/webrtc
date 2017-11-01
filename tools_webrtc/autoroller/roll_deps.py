@@ -17,7 +17,7 @@ import os
 import re
 import subprocess
 import sys
-import urllib
+import urllib2
 
 
 # Skip these dependencies (list without solution name prefix).
@@ -170,7 +170,7 @@ def ReadRemoteCrCommit(revision):
 
 def ReadUrlContent(url):
   """Connect to a remote host and read the contents. Returns a list of lines."""
-  conn = urllib.urlopen(url)
+  conn = urllib2.urlopen(url)
   try:
     return conn.readlines()
   except IOError as e:
