@@ -44,6 +44,17 @@ class AudioState : public rtc::RefCountInterface {
 
   virtual AudioProcessing* audio_processing() = 0;
 
+  // Enable/disable playout of the audio channels. Enabled by default.
+  // This will stop playout of the underlying audio device but start a task
+  // which will poll for audio data every 10ms to ensure that audio processing
+  // happens and the audio stats are updated.
+  virtual void SetPlayout(bool enabled) = 0;
+
+  // Enable/disable recording of the audio channels. Enabled by default.
+  // This will stop recording of the underlying audio device and no audio
+  // packets will be encoded or transmitted.
+  virtual void SetRecording(bool enabled) = 0;
+
   // TODO(solenberg): Replace scoped_refptr with shared_ptr once we can use it.
   static rtc::scoped_refptr<AudioState> Create(
       const AudioState::Config& config);

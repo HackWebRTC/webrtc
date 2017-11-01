@@ -407,7 +407,7 @@ int32_t VoEBaseImpl::StartPlayout() {
       LOG_F(LS_ERROR) << "Failed to initialize playout";
       return -1;
     }
-    if (shared_->audio_device()->StartPlayout() != 0) {
+    if (playout_enabled_ && shared_->audio_device()->StartPlayout() != 0) {
       LOG_F(LS_ERROR) << "Failed to start playout";
       return -1;
     }
@@ -416,7 +416,10 @@ int32_t VoEBaseImpl::StartPlayout() {
 }
 
 int32_t VoEBaseImpl::StopPlayout() {
-  // Stop audio-device playing if no channel is playing out
+  if (!playout_enabled_) {
+    return 0;
+  }
+  // Stop audio-device playing if no channel is playing out.
   if (shared_->NumOfPlayingChannels() == 0) {
     if (shared_->audio_device()->StopPlayout() != 0) {
       LOG(LS_ERROR) << "StopPlayout() failed to stop playout";
@@ -427,15 +430,12 @@ int32_t VoEBaseImpl::StopPlayout() {
 }
 
 int32_t VoEBaseImpl::StartSend() {
-  if (!shared_->audio_device()->RecordingIsInitialized() &&
-      !shared_->audio_device()->Recording()) {
+  if (!shared_->audio_device()->Recording()) {
     if (shared_->audio_device()->InitRecording() != 0) {
       LOG_F(LS_ERROR) << "Failed to initialize recording";
       return -1;
     }
-  }
-  if (!shared_->audio_device()->Recording()) {
-    if (shared_->audio_device()->StartRecording() != 0) {
+    if (recording_enabled_ && shared_->audio_device()->StartRecording() != 0) {
       LOG_F(LS_ERROR) << "Failed to start recording";
       return -1;
     }
@@ -444,8 +444,11 @@ int32_t VoEBaseImpl::StartSend() {
 }
 
 int32_t VoEBaseImpl::StopSend() {
+  if (!recording_enabled_) {
+    return 0;
+  }
+  // Stop audio-device recording if no channel is recording.
   if (shared_->NumOfSendingChannels() == 0) {
-    // Stop audio-device recording if no channel is recording
     if (shared_->audio_device()->StopRecording() != 0) {
       LOG(LS_ERROR) << "StopSend() failed to stop recording";
       return -1;
@@ -454,6 +457,58 @@ int32_t VoEBaseImpl::StopSend() {
   }
 
   return 0;
+}
+
+int32_t VoEBaseImpl::SetPlayout(bool enabled) {
+  LOG(INFO) << "SetPlayout(" << enabled << ")";
+  if (playout_enabled_ == enabled) {
+    return 0;
+  }
+  playout_enabled_ = enabled;
+  if (shared_->NumOfPlayingChannels() == 0) {
+    // If there are no channels attempting to play out yet, there's nothing to
+    // be done; we should be in a "not playing out" state either way.
+    return 0;
+  }
+  int32_t ret;
+  if (enabled) {
+    ret = shared_->audio_device()->StartPlayout();
+    if (ret != 0) {
+      LOG(LS_ERROR) << "SetPlayout(true) failed to start playout";
+    }
+  } else {
+    ret = shared_->audio_device()->StopPlayout();
+    if (ret != 0) {
+      LOG(LS_ERROR) << "SetPlayout(false) failed to stop playout";
+    }
+  }
+  return ret;
+}
+
+int32_t VoEBaseImpl::SetRecording(bool enabled) {
+  LOG(INFO) << "SetRecording(" << enabled << ")";
+  if (recording_enabled_ == enabled) {
+    return 0;
+  }
+  recording_enabled_ = enabled;
+  if (shared_->NumOfSendingChannels() == 0) {
+    // If there are no channels attempting to record out yet, there's nothing to
+    // be done; we should be in a "not recording" state either way.
+    return 0;
+  }
+  int32_t ret;
+  if (enabled) {
+    ret = shared_->audio_device()->StartRecording();
+    if (ret != 0) {
+      LOG(LS_ERROR) << "SetRecording(true) failed to start recording";
+    }
+  } else {
+    ret = shared_->audio_device()->StopRecording();
+    if (ret != 0) {
+      LOG(LS_ERROR) << "SetRecording(false) failed to stop recording";
+    }
+  }
+  return ret;
 }
 
 int32_t VoEBaseImpl::TerminateInternal() {

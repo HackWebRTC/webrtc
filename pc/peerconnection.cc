@@ -1323,6 +1323,30 @@ void PeerConnection::SetBitrateAllocationStrategy(
   call_->SetBitrateAllocationStrategy(std::move(bitrate_allocation_strategy));
 }
 
+void PeerConnection::SetAudioPlayout(bool playout) {
+  if (!worker_thread()->IsCurrent()) {
+    worker_thread()->Invoke<void>(
+        RTC_FROM_HERE,
+        rtc::Bind(&PeerConnection::SetAudioPlayout, this, playout));
+    return;
+  }
+  auto audio_state =
+      factory_->channel_manager()->media_engine()->GetAudioState();
+  audio_state->SetPlayout(playout);
+}
+
+void PeerConnection::SetAudioRecording(bool recording) {
+  if (!worker_thread()->IsCurrent()) {
+    worker_thread()->Invoke<void>(
+        RTC_FROM_HERE,
+        rtc::Bind(&PeerConnection::SetAudioRecording, this, recording));
+    return;
+  }
+  auto audio_state =
+      factory_->channel_manager()->media_engine()->GetAudioState();
+  audio_state->SetRecording(recording);
+}
+
 std::unique_ptr<rtc::SSLCertificate>
 PeerConnection::GetRemoteAudioSSLCertificate() {
   if (!session_) {

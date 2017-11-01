@@ -11,7 +11,10 @@
 #ifndef AUDIO_AUDIO_STATE_H_
 #define AUDIO_AUDIO_STATE_H_
 
+#include <memory>
+
 #include "audio/audio_transport_proxy.h"
+#include "audio/null_audio_poller.h"
 #include "audio/scoped_voe_interface.h"
 #include "call/audio_state.h"
 #include "rtc_base/constructormagic.h"
@@ -32,6 +35,9 @@ class AudioState final : public webrtc::AudioState {
     RTC_DCHECK(config_.audio_processing);
     return config_.audio_processing.get();
   }
+
+  void SetPlayout(bool enabled) override;
+  void SetRecording(bool enabled) override;
 
   VoiceEngine* voice_engine();
   rtc::scoped_refptr<AudioMixer> mixer();
@@ -56,6 +62,11 @@ class AudioState final : public webrtc::AudioState {
   // Transports mixed audio from the mixer to the audio device and
   // recorded audio to the VoE AudioTransport.
   AudioTransportProxy audio_transport_proxy_;
+
+  // Null audio poller is used to continue polling the audio streams if audio
+  // playout is disabled so that audio processing still happens and the audio
+  // stats are still updated.
+  std::unique_ptr<NullAudioPoller> null_audio_poller_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioState);
 };
