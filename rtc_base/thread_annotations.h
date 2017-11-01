@@ -27,22 +27,16 @@
 
 // Document if a shared variable/field needs to be protected by a lock.
 // GUARDED_BY allows the user to specify a particular lock that should be
-// held when accessing the annotated variable, while GUARDED_VAR only
-// indicates a shared variable should be guarded (by any lock). GUARDED_VAR
-// is primarily used when the client cannot express the name of the lock.
+// held when accessing the annotated variable.
 #define RTC_GUARDED_BY(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
-#define RTC_GUARDED_VAR RTC_THREAD_ANNOTATION_ATTRIBUTE__(guarded_var)
 
 // Document if the memory location pointed to by a pointer should be guarded
-// by a lock when dereferencing the pointer. Similar to GUARDED_VAR,
-// PT_GUARDED_VAR is primarily used when the client cannot express the name
-// of the lock. Note that a pointer variable to a shared memory location
-// could itself be a shared variable. For example, if a shared global pointer
-// q, which is guarded by mu1, points to a shared memory location that is
-// guarded by mu2, q should be annotated as follows:
+// by a lock when dereferencing the pointer. Note that a pointer variable to a
+// shared memory location could itself be a shared variable. For example, if a
+// shared global pointer q, which is guarded by mu1, points to a shared memory
+// location that is guarded by mu2, q should be annotated as follows:
 //     int *q GUARDED_BY(mu1) PT_GUARDED_BY(mu2);
 #define RTC_PT_GUARDED_BY(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_by(x))
-#define RTC_PT_GUARDED_VAR RTC_THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_var)
 
 // Document the acquisition order between locks that can be held
 // simultaneously by a thread. For any two locks that need to be annotated

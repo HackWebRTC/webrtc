@@ -34,67 +34,50 @@ class ThreadSafe {
  public:
   ThreadSafe() {
     pt_protected_by_lock_ = new int;
-    pt_protected_by_anything_ = new int;
   }
 
   ~ThreadSafe() {
     delete pt_protected_by_lock_;
-    delete pt_protected_by_anything_;
   }
 
   void LockInOrder() {
-    anylock_.EnterWrite();
+    beforelock_.EnterWrite();
     lock_.EnterWrite();
     pt_lock_.EnterWrite();
 
     pt_lock_.Leave();
     lock_.Leave();
-    anylock_.Leave();
+    beforelock_.Leave();
   }
 
-  void UnprotectedFunction() RTC_LOCKS_EXCLUDED(anylock_, lock_, pt_lock_) {
+  void UnprotectedFunction() RTC_LOCKS_EXCLUDED(lock_, pt_lock_) {
     // Can access unprotected Value.
     unprotected_ = 15;
     // Can access pointers themself, but not data they point to.
     int* tmp = pt_protected_by_lock_;
-    pt_protected_by_lock_ = pt_protected_by_anything_;
-    pt_protected_by_anything_ = tmp;
+    pt_protected_by_lock_ = tmp;
   }
 
   void ReadProtected() {
     lock_.EnterRead();
-    unprotected_ = protected_by_anything_;
     unprotected_ = protected_by_lock_;
     lock_.Leave();
 
     if (pt_lock_.TryEnterRead()) {
-      unprotected_ = *pt_protected_by_anything_;
       unprotected_ = *pt_protected_by_lock_;
       pt_lock_.Leave();
     }
-
-    anylock_.EnterRead();
-    unprotected_ = protected_by_anything_;
-    unprotected_ = *pt_protected_by_anything_;
-    anylock_.Leave();
   }
 
   void WriteProtected() {
     lock_.EnterWrite();
-    protected_by_anything_ = unprotected_;
     protected_by_lock_ = unprotected_;
     lock_.Leave();
 
     if (pt_lock_.TryEnterWrite()) {
-      *pt_protected_by_anything_ = unprotected_;
       *pt_protected_by_lock_ = unprotected_;
       pt_lock_.Leave();
     }
-
-    anylock_.EnterWrite();
-    protected_by_anything_ = unprotected_;
-    *pt_protected_by_anything_ = unprotected_;
-    anylock_.Leave();
   }
 
   void CallReadProtectedFunction() {
@@ -125,17 +108,15 @@ class ThreadSafe {
 
   const Lock& GetLock() RTC_LOCK_RETURNED(lock_) { return lock_; }
 
-  Lock anylock_ RTC_ACQUIRED_BEFORE(lock_);
+  Lock beforelock_ RTC_ACQUIRED_BEFORE(lock_);
   Lock lock_;
   Lock pt_lock_ RTC_ACQUIRED_AFTER(lock_);
 
   int unprotected_ = 0;
 
   int protected_by_lock_ RTC_GUARDED_BY(lock_) = 0;
-  int protected_by_anything_ RTC_GUARDED_VAR = 0;
 
   int* pt_protected_by_lock_ RTC_PT_GUARDED_BY(pt_lock_);
-  int* pt_protected_by_anything_ RTC_PT_GUARDED_VAR;
 };
 
 }  // namespace
