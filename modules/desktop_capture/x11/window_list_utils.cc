@@ -237,14 +237,16 @@ bool GetWindowRect(::Display* display,
       return false;
     }
   }
+  *rect = DesktopRectFromXAttributes(*attributes);
+
   {
     XErrorTrap error_trap(display);
     ::Window child;
     if (!XTranslateCoordinates(display,
                                window,
                                attributes->root,
-                               0,
-                               0,
+                               -rect->left(),
+                               -rect->top(),
                                &offset_x,
                                &offset_y,
                                &child) ||
@@ -252,8 +254,6 @@ bool GetWindowRect(::Display* display,
       return false;
     }
   }
-
-  *rect = DesktopRectFromXAttributes(*attributes);
   rect->Translate(offset_x, offset_y);
   return true;
 }
