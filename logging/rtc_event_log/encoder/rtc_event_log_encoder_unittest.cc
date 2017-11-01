@@ -36,8 +36,10 @@
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"  // Arbitrary RTCP message.
+#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "rtc_base/arraysize.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/random.h"
 #include "rtc_base/safe_conversions.h"
@@ -46,8 +48,29 @@
 namespace webrtc {
 
 namespace {
-const char* const arbitrary_uri =  // Just a recognized URI.
-    "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
+struct ExtensionInfo {
+  RTPExtensionType type;
+  const char* uri;
+};
+
+template <typename Extension>
+constexpr ExtensionInfo CreateExtensionInfo() {
+  return {Extension::kId, Extension::kUri};
+}
+
+constexpr ExtensionInfo kExtensions[] = {
+    CreateExtensionInfo<TransmissionOffset>(),
+    CreateExtensionInfo<AudioLevel>(),
+    CreateExtensionInfo<AbsoluteSendTime>(),
+    CreateExtensionInfo<VideoOrientation>(),
+    CreateExtensionInfo<TransportSequenceNumber>(),
+    CreateExtensionInfo<PlayoutDelayLimits>(),
+    CreateExtensionInfo<VideoContentTypeExtension>(),
+    CreateExtensionInfo<VideoTimingExtension>(),
+    CreateExtensionInfo<RtpStreamId>(),
+    CreateExtensionInfo<RepairedRtpStreamId>(),
+    CreateExtensionInfo<RtpMid>(),
+};
 }  // namespace
 
 class RtcEventLogEncoderTest : public testing::TestWithParam<int> {
@@ -82,9 +105,15 @@ class RtcEventLogEncoderTest : public testing::TestWithParam<int> {
     return prng_.Rand(std::numeric_limits<uint32_t>::max());
   }
 
-  int RandomRtpExtensionId() {
-    return static_cast<int>(
-        prng_.Rand(RtpExtension::kMinId, RtpExtension::kMaxId));
+  std::vector<RtpExtension> RandomRtpExtensions() {
+    RTC_DCHECK(arraysize(kExtensions) >= 2);
+    size_t id_1 = prng_.Rand(0u, arraysize(kExtensions) - 1);
+    size_t id_2 = prng_.Rand(0u, arraysize(kExtensions) - 2);
+    if (id_2 == id_1)
+      id_2 = arraysize(kExtensions) - 1;
+    return std::vector<RtpExtension>{
+        RtpExtension(kExtensions[id_1].uri, kExtensions[id_1].type),
+        RtpExtension(kExtensions[id_2].uri, kExtensions[id_2].type)};
   }
 
   int RandomBitrate() { return RandomInt(); }
@@ -209,9 +238,11 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioReceiveStreamConfig) {
   auto stream_config = rtc::MakeUnique<rtclog::StreamConfig>();
   stream_config->local_ssrc = RandomSsrc();
   stream_config->remote_ssrc = RandomSsrc();
-  // TODO(eladalon): !!! Validate this, here and elsewhere.
-  stream_config->rtp_extensions.push_back(
-      RtpExtension(arbitrary_uri, RandomRtpExtensionId()));
+  // TODO(eladalon): Verify that the extensions are used correctly when
+  // parsing RTP packets headers. Here and elsewhere.
+  std::vector<RtpExtension> extensions = RandomRtpExtensions();
+  for (const auto& extension : extensions)
+    stream_config->rtp_extensions.push_back(extension);
 
   auto original_stream_config = *stream_config;
 
@@ -232,8 +263,9 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioReceiveStreamConfig) {
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioSendStreamConfig) {
   auto stream_config = rtc::MakeUnique<rtclog::StreamConfig>();
   stream_config->local_ssrc = RandomSsrc();
-  stream_config->rtp_extensions.push_back(
-      RtpExtension(arbitrary_uri, RandomRtpExtensionId()));
+  std::vector<RtpExtension> extensions = RandomRtpExtensions();
+  for (const auto& extension : extensions)
+    stream_config->rtp_extensions.push_back(extension);
 
   auto original_stream_config = *stream_config;
 
@@ -440,6 +472,8 @@ void RtcEventLogEncoderTest::TestRtcEventRtpPacket(PacketDirection direction) {
   packet->SetSsrc(RandomSsrc());
   packet->SetSequenceNumber(static_cast<uint16_t>(RandomInt()));
   packet->SetPayloadSize(prng_.Rand(0u, 1000u));
+  // TODO(terelius): Add marker bit, capture timestamp, CSRCs, and header
+  // extensions.
 
   std::unique_ptr<RtcEvent> event;
   if (direction == PacketDirection::kIncomingPacket) {
@@ -487,8 +521,9 @@ TEST_P(RtcEventLogEncoderTest, RtcEventVideoReceiveStreamConfig) {
   stream_config->remote_ssrc = RandomSsrc();
   stream_config->rtcp_mode = RtcpMode::kCompound;
   stream_config->remb = prng_.Rand<bool>();
-  stream_config->rtp_extensions.push_back(
-      RtpExtension(arbitrary_uri, RandomRtpExtensionId()));
+  std::vector<RtpExtension> extensions = RandomRtpExtensions();
+  for (const auto& extension : extensions)
+    stream_config->rtp_extensions.push_back(extension);
   stream_config->codecs.emplace_back("CODEC", 122, 7);
 
   auto original_stream_config = *stream_config;
@@ -510,8 +545,9 @@ TEST_P(RtcEventLogEncoderTest, RtcEventVideoReceiveStreamConfig) {
 TEST_P(RtcEventLogEncoderTest, RtcEventVideoSendStreamConfig) {
   auto stream_config = rtc::MakeUnique<rtclog::StreamConfig>();
   stream_config->local_ssrc = RandomSsrc();
-  stream_config->rtp_extensions.push_back(
-      RtpExtension(arbitrary_uri, RandomRtpExtensionId()));
+  std::vector<RtpExtension> extensions = RandomRtpExtensions();
+  for (const auto& extension : extensions)
+    stream_config->rtp_extensions.push_back(extension);
   stream_config->codecs.emplace_back("CODEC", 120, 3);
 
   auto original_stream_config = *stream_config;
