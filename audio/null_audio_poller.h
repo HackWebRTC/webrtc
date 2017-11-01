@@ -27,7 +27,7 @@ class NullAudioPoller final : public rtc::MessageHandler {
   void OnMessage(rtc::Message* msg) override;
 
  private:
-  rtc::ThreadChecker thread_checker_;
+  const rtc::ThreadChecker thread_checker_;
   AudioTransport* const audio_transport_;
   int64_t reschedule_at_;
 };
