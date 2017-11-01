@@ -402,6 +402,7 @@ rtc_static_library("rtc_numerics") {
   sources = [
     "numerics/exp_filter.cc",
     "numerics/exp_filter.h",
+    "numerics/moving_median_filter.h",
     "numerics/percentile_filter.h",
     "numerics/sequence_number_util.h",
   ]
@@ -997,6 +998,7 @@ if (rtc_include_tests) {
     }
     sources = [
       "numerics/exp_filter_unittest.cc",
+      "numerics/moving_median_filter_unittest.cc",
       "numerics/percentile_filter_unittest.cc",
       "numerics/sequence_number_util_unittest.cc",
     ]
