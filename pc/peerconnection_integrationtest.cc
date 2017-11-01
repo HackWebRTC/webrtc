@@ -3634,6 +3634,37 @@ TEST_F(PeerConnectionIntegrationTest,
   EXPECT_TRUE_WAIT(GetAudioEnergyStat(caller()) > 0, kMaxWaitForFramesMs);
 }
 
+// Test that SetAudioRecording can be used to disable audio recording from the
+// start, then later enable it. This may be useful, for example, if the caller
+// wants to ensure that no audio resources are active before a certain state
+// is reached.
+TEST_F(PeerConnectionIntegrationTest, DisableAndEnableAudioRecording) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+
+  // Set up audio-only call where audio recording is disabled on caller's side.
+  caller()->pc()->SetAudioRecording(false);
+  caller()->AddAudioOnlyMediaStream();
+  callee()->AddAudioOnlyMediaStream();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Pump messages for a second.
+  WAIT(false, 1000);
+  // Since caller has disabled audio recording, the callee shouldn't have
+  // received anything.
+  EXPECT_EQ(0, callee()->audio_frames_received());
+  // As a sanity check, make sure the caller did still see frames on its
+  // audio level since audio recording is enabled on the calle side.
+  ASSERT_GT(caller()->audio_frames_received(), 0);
+
+  // Enable audio recording again, and ensure audio starts flowing.
+  caller()->pc()->SetAudioRecording(true);
+  ExpectNewFramesReceivedWithWait(kDefaultExpectedAudioFrameCount, 0,
+                                  kDefaultExpectedAudioFrameCount, 0,
+                                  kMaxWaitForFramesMs);
+}
+
 }  // namespace
 
 #endif  // if !defined(THREAD_SANITIZER)
