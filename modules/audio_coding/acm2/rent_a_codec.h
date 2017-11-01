@@ -58,10 +58,8 @@ class RentACodec {
 #ifdef WEBRTC_CODEC_ILBC
     kILBC,
 #endif
-#ifdef WEBRTC_CODEC_G722
     kG722,      // Mono
     kG722_2ch,  // Stereo
-#endif
 #ifdef WEBRTC_CODEC_OPUS
     kOpus,  // Mono and stereo
 #endif
@@ -91,10 +89,6 @@ class RentACodec {
     kPCM16Bswb48kHz = -1,
 #ifndef WEBRTC_CODEC_ILBC
     kILBC = -1,
-#endif
-#ifndef WEBRTC_CODEC_G722
-    kG722 = -1,      // Mono
-    kG722_2ch = -1,  // Stereo
 #endif
 #ifndef WEBRTC_CODEC_OPUS
     kOpus = -1,  // Mono and stereo

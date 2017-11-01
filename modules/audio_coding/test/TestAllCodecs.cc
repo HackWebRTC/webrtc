@@ -151,7 +151,6 @@ void TestAllCodecs::Perform() {
 
   // All codecs are tested for all allowed sampling frequencies, rates and
   // packet sizes.
-#ifdef WEBRTC_CODEC_G722
   if (test_mode_ != 0) {
     printf("===============================================================\n");
   }
@@ -171,7 +170,6 @@ void TestAllCodecs::Perform() {
   RegisterSendCodec('A', codec_g722, 16000, 64000, 960, 0);
   Run(channel_a_to_b_);
   outfile_b_.Close();
-#endif
 #ifdef WEBRTC_CODEC_ILBC
   if (test_mode_ != 0) {
     printf("===============================================================\n");
@@ -324,9 +322,6 @@ void TestAllCodecs::Perform() {
 
     /* Print out all codecs that were not tested in the run */
     printf("The following codecs was not included in the test:\n");
-#ifndef WEBRTC_CODEC_G722
-    printf("   G.722\n");
-#endif
 #ifndef WEBRTC_CODEC_ILBC
     printf("   iLBC\n");
 #endif

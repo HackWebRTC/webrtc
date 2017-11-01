@@ -980,7 +980,7 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 };
 
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
-    defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
+    defined(WEBRTC_CODEC_ILBC)
 TEST_F(AcmReceiverBitExactnessOldApi, 8kHzOutput) {
   Run(8000, PlatformChecksum("2adede965c6f87de7142c51552111d08",
                              "028c0fc414b1c9ab7e582dccdf381e98",
@@ -1438,7 +1438,6 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Ilbc_30ms) {
 #else
 #define MAYBE_G722_20ms G722_20ms
 #endif
-#if defined(WEBRTC_CODEC_G722)
 TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 1, 9, 320, 160));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
@@ -1451,14 +1450,12 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_20ms) {
           "android_arm64_payload", "android_arm64_clang_payload"),
       50, test::AcmReceiveTestOldApi::kMonoOutput);
 }
-#endif
 
 #if defined(WEBRTC_ANDROID)
 #define MAYBE_G722_stereo_20ms DISABLED_G722_stereo_20ms
 #else
 #define MAYBE_G722_stereo_20ms G722_stereo_20ms
 #endif
-#if defined(WEBRTC_CODEC_G722)
 TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 2, 119, 320, 160));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
@@ -1471,7 +1468,6 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_stereo_20ms) {
           "android_arm64_payload", "android_arm64_clang_payload"),
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
-#endif
 
 TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));

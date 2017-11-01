@@ -33,6 +33,9 @@ if (is_ios) {
 }
 
 declare_args() {
+  # Include the iLBC audio codec?
+  rtc_include_ilbc = true
+
   # Disable this to avoid building the Opus audio codec.
   rtc_include_opus = true
 
@@ -173,9 +176,6 @@ declare_args() {
 # depend on the possibly overridden variables in the first
 # declare_args block.
 declare_args() {
-  # Include the iLBC audio codec?
-  rtc_include_ilbc = !(build_with_chromium || build_with_mozilla)
-
   rtc_restrict_logging = build_with_chromium
 
   # Excluded in Chromium since its prerequisites don't require Pulse Audio.

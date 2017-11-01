@@ -63,7 +63,7 @@ TEST(AudioCodingModuleTest, TestIsac) {
 #endif
 
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
-    defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
+    defined(WEBRTC_CODEC_ILBC)
 #if defined(WEBRTC_ANDROID)
 TEST(AudioCodingModuleTest, DISABLED_TwoWayCommunication) {
 #else

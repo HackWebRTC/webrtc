@@ -450,8 +450,7 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
 
 #if !defined(WEBRTC_IOS) && defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) && \
     (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) &&    \
-    defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722) &&        \
-    !defined(WEBRTC_ARCH_ARM64)
+    defined(WEBRTC_CODEC_ILBC) && !defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_TestBitExactness TestBitExactness
 #else
 #define MAYBE_TestBitExactness DISABLED_TestBitExactness

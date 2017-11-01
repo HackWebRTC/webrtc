@@ -1388,12 +1388,10 @@ int32_t ModuleFileUtility::set_codec_info(const CodecInst& codecInst)
         }
     }
 #endif
-#ifdef WEBRTC_CODEC_G722
     else if(STR_CASE_CMP(codecInst.plname, "G722") == 0)
     {
         _codecId = kCodecG722;
     }
-#endif
     if(_codecId == kCodecNoCodec)
     {
         return -1;

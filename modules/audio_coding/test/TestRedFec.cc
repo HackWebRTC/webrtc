@@ -38,13 +38,9 @@ namespace {
   const char kNamePCMU[] = "PCMU";
   const char kNameCN[] = "CN";
   const char kNameRED[] = "RED";
-
-  // These three are only used by code #ifdeffed on WEBRTC_CODEC_G722.
-#ifdef WEBRTC_CODEC_G722
   const char kNameISAC[] = "ISAC";
   const char kNameG722[] = "G722";
   const char kNameOPUS[] = "opus";
-#endif
 }
 
 TestRedFec::TestRedFec()
@@ -104,11 +100,6 @@ void TestRedFec::Perform() {
   Run();
   _outFileB.Close();
 
-#ifndef WEBRTC_CODEC_G722
-  EXPECT_TRUE(false);
-  printf("G722 needs to be activated to run this test\n");
-  return;
-#else
   EXPECT_EQ(0, RegisterSendCodec('A', kNameG722, 16000));
   EXPECT_EQ(0, RegisterSendCodec('A', kNameCN, 16000));
 
@@ -412,8 +403,6 @@ void TestRedFec::Perform() {
   EXPECT_FALSE(_acmA->REDStatus());
   EXPECT_EQ(0, _acmA->SetCodecFEC(false));
   EXPECT_FALSE(_acmA->CodecFEC());
-
-#endif  // defined(WEBRTC_CODEC_G722)
 }
 
 int32_t TestRedFec::SetVAD(bool enableDTX, bool enableVAD, ACMVADMode vadMode) {

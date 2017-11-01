@@ -22,14 +22,12 @@ if (rtc_include_ilbc) {
 if (rtc_include_opus) {
   audio_codec_deps += [ ":webrtc_opus" ]
 }
-if (!build_with_mozilla) {
-  if (current_cpu == "arm") {
-    audio_codec_deps += [ ":isac_fix" ]
-  } else {
-    audio_codec_deps += [ ":isac" ]
-  }
-  audio_codec_deps += [ ":g722" ]
+if (current_cpu == "arm") {
+  audio_codec_deps += [ ":isac_fix" ]
+} else {
+  audio_codec_deps += [ ":isac" ]
 }
+audio_codec_deps += [ ":g722" ]
 if (!build_with_mozilla && !build_with_chromium) {
   audio_codec_deps += [ ":red" ]
 }

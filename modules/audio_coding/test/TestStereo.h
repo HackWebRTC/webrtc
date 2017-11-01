@@ -98,9 +98,7 @@ class TestStereo : public ACMTest {
   char* send_codec_name_;
 
   // Payload types for stereo codecs and CNG
-#ifdef WEBRTC_CODEC_G722
   int g722_pltype_;
-#endif
   int l16_8khz_pltype_;
   int l16_16khz_pltype_;
   int l16_32khz_pltype_;

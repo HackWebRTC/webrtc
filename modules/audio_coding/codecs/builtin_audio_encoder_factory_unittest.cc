@@ -131,9 +131,7 @@ TEST(BuiltinAudioEncoderFactoryTest, SupportsTheExpectedFormats) {
 #ifdef WEBRTC_CODEC_ISAC
     {"isac", 32000, 1},
 #endif
-#ifdef WEBRTC_CODEC_G722
     {"G722", 8000, 1},
-#endif
 #ifdef WEBRTC_CODEC_ILBC
     {"ilbc", 8000, 1},
 #endif

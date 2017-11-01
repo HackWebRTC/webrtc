@@ -43,6 +43,8 @@ rtc_static_library("builtin_audio_decoder_factory") {
     "../../rtc_base:rtc_base_approved",
     "L16:audio_decoder_L16",
     "g711:audio_decoder_g711",
+    "g722:audio_decoder_g722",
+    "isac:audio_decoder_isac",
   ]
   defines = []
   if (rtc_include_ilbc) {
@@ -57,21 +59,6 @@ rtc_static_library("builtin_audio_decoder_factory") {
   } else {
     defines += [ "WEBRTC_USE_BUILTIN_OPUS=0" ]
   }
-  if (build_with_mozilla) {
-    defines += [
-      "WEBRTC_USE_BUILTIN_G722=0",
-      "WEBRTC_USE_BUILTIN_ISAC=0",
-    ]
-  } else {
-    deps += [
-      "g722:audio_decoder_g722",
-      "isac:audio_decoder_isac",
-    ]
-    defines += [
-      "WEBRTC_USE_BUILTIN_G722=1",
-      "WEBRTC_USE_BUILTIN_ISAC=1",
-    ]
-  }
 }
 
 rtc_static_library("builtin_audio_encoder_factory") {
@@ -84,6 +71,8 @@ rtc_static_library("builtin_audio_encoder_factory") {
     "../../rtc_base:rtc_base_approved",
     "L16:audio_encoder_L16",
     "g711:audio_encoder_g711",
+    "g722:audio_encoder_g722",
+    "isac:audio_encoder_isac",
   ]
   defines = []
   if (rtc_include_ilbc) {
@@ -97,20 +86,5 @@ rtc_static_library("builtin_audio_encoder_factory") {
     defines += [ "WEBRTC_USE_BUILTIN_OPUS=1" ]
   } else {
     defines += [ "WEBRTC_USE_BUILTIN_OPUS=0" ]
-  }
-  if (build_with_mozilla) {
-    defines += [
-      "WEBRTC_USE_BUILTIN_G722=0",
-      "WEBRTC_USE_BUILTIN_ISAC=0",
-    ]
-  } else {
-    deps += [
-      "g722:audio_encoder_g722",
-      "isac:audio_encoder_isac",
-    ]
-    defines += [
-      "WEBRTC_USE_BUILTIN_G722=1",
-      "WEBRTC_USE_BUILTIN_ISAC=1",
-    ]
   }
 }
