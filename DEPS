@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': 'd34d8303ef116967f7a50a2734bc43338c11deb1',
+  'chromium_revision': 'baae088436460d3c04fde7e801b435f7a0d3f294',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -50,13 +50,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'f8954511d28b332707d54bf66591e9b32bd5cae9',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '9e4709d13410dfa655f5dc90c799047ee89eb6eb',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '0ef235f027c6ed0cefc2f091fcaefc2ebc85a07f',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'e4f4b841a172fb96e2634d6bdc529fc9e6a2af41',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'ea0d6fa7086a41fdfe3f917bfc988f6b5934fdb7',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'cb1dbe8401c4a9a8f549c178f078b5b14ccb6ba5',
   'src/third_party/android_tools': {
     'url': Var('chromium_git') + '/android_tools.git' + '@' + 'ca0bd083872ad925881736fe2bedc3ff855e08f5',
     'condition': 'checkout_android',
@@ -147,7 +147,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + 'b98114e18d8b9b84586b10d24353ab8616d4c5fc',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'b22cd3d736d2039b6f9a55d9d917f3d4afd6b787',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '94121df1132a01fc68398bed34726d93996d5806',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'd61a9397e668fa9843c4aa7da9e79460fe590bfb',
   'src/tools/swarming_client':
