@@ -76,7 +76,7 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
     }
   }
 
-  private final String name;
+  protected final String name;
 
   // |renderThreadHandler| is a handler for communicating with |renderThread|, and is synchronized
   // on |handlerLock|.
