@@ -148,6 +148,8 @@ public final class HardwareVideoDecoderTest {
 
   @Before
   public void setUp() {
+    NativeLibrary.initialize(new NativeLibrary.DefaultLoader());
+
     eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
     eglBase.createDummyPbufferSurface();
     eglBase.makeCurrent();

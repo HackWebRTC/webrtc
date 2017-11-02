@@ -567,36 +567,27 @@ class HardwareVideoEncoder implements VideoEncoder {
   /**
    * Enumeration of supported YUV color formats used for MediaCodec's input.
    */
-  private static enum YuvFormat {
+  private enum YuvFormat {
     I420 {
       @Override
-      void fillBuffer(ByteBuffer inputBuffer, VideoFrame.Buffer buffer) {
-        VideoFrame.I420Buffer i420 = buffer.toI420();
-        inputBuffer.put(i420.getDataY());
-        inputBuffer.put(i420.getDataU());
-        inputBuffer.put(i420.getDataV());
+      void fillBuffer(ByteBuffer dstBuffer, VideoFrame.Buffer srcBuffer) {
+        VideoFrame.I420Buffer i420 = srcBuffer.toI420();
+        YuvHelper.I420Copy(i420.getDataY(), i420.getStrideY(), i420.getDataU(), i420.getStrideU(),
+            i420.getDataV(), i420.getStrideV(), dstBuffer, i420.getWidth(), i420.getHeight());
         i420.release();
       }
     },
     NV12 {
       @Override
-      void fillBuffer(ByteBuffer inputBuffer, VideoFrame.Buffer buffer) {
-        VideoFrame.I420Buffer i420 = buffer.toI420();
-        inputBuffer.put(i420.getDataY());
-
-        // Interleave the bytes from the U and V portions, starting with U.
-        ByteBuffer u = i420.getDataU();
-        ByteBuffer v = i420.getDataV();
-        int i = 0;
-        while (u.hasRemaining() && v.hasRemaining()) {
-          inputBuffer.put(u.get());
-          inputBuffer.put(v.get());
-        }
+      void fillBuffer(ByteBuffer dstBuffer, VideoFrame.Buffer srcBuffer) {
+        VideoFrame.I420Buffer i420 = srcBuffer.toI420();
+        YuvHelper.I420ToNV12(i420.getDataY(), i420.getStrideY(), i420.getDataU(), i420.getStrideU(),
+            i420.getDataV(), i420.getStrideV(), dstBuffer, i420.getWidth(), i420.getHeight());
         i420.release();
       }
     };
 
-    abstract void fillBuffer(ByteBuffer inputBuffer, VideoFrame.Buffer buffer);
+    abstract void fillBuffer(ByteBuffer dstBuffer, VideoFrame.Buffer srcBuffer);
 
     static YuvFormat valueOf(int colorFormat) {
       switch (colorFormat) {

@@ -131,6 +131,7 @@ rtc_static_library("video_jni") {
     "src/jni/videotrack_jni.cc",
     "src/jni/wrapped_native_i420_buffer.cc",
     "src/jni/wrapped_native_i420_buffer.h",
+    "src/jni/yuvhelper.cc",
   ]
 
   configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
@@ -386,9 +387,9 @@ dist_jar("libwebrtc") {
 
 android_library("libjingle_peerconnection_java") {
   java_files = [
+    "api/org/webrtc/AudioProcessingFactory.java",
     "api/org/webrtc/AudioSource.java",
     "api/org/webrtc/AudioTrack.java",
-    "api/org/webrtc/AudioProcessingFactory.java",
     "api/org/webrtc/CallSessionFileRotatingLogSink.java",
     "api/org/webrtc/Camera1Capturer.java",
     "api/org/webrtc/Camera1Enumerator.java",
@@ -454,6 +455,7 @@ android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/VideoSource.java",
     "api/org/webrtc/VideoTrack.java",
     "api/org/webrtc/YuvConverter.java",
+    "api/org/webrtc/YuvHelper.java",
     "src/java/org/webrtc/AndroidVideoTrackSourceObserver.java",
     "src/java/org/webrtc/BaseBitrateAdjuster.java",
     "src/java/org/webrtc/BitrateAdjuster.java",
@@ -507,16 +509,16 @@ if (rtc_include_tests) {
     android_manifest = "instrumentationtests/AndroidManifest.xml"
 
     java_files = [
-      "instrumentationtests/src/org/webrtc/DefaultAudioProcessingFactoryTest.java",
       "instrumentationtests/src/org/webrtc/Camera1CapturerUsingByteBufferTest.java",
       "instrumentationtests/src/org/webrtc/Camera1CapturerUsingTextureTest.java",
       "instrumentationtests/src/org/webrtc/Camera2CapturerTest.java",
       "instrumentationtests/src/org/webrtc/CameraVideoCapturerTestFixtures.java",
+      "instrumentationtests/src/org/webrtc/DefaultAudioProcessingFactoryTest.java",
       "instrumentationtests/src/org/webrtc/EglRendererTest.java",
       "instrumentationtests/src/org/webrtc/FileVideoCapturerTest.java",
       "instrumentationtests/src/org/webrtc/GlRectDrawerTest.java",
-      "instrumentationtests/src/org/webrtc/HardwareVideoEncoderTest.java",
       "instrumentationtests/src/org/webrtc/HardwareVideoDecoderTest.java",
+      "instrumentationtests/src/org/webrtc/HardwareVideoEncoderTest.java",
       "instrumentationtests/src/org/webrtc/MediaCodecVideoEncoderTest.java",
       "instrumentationtests/src/org/webrtc/NetworkMonitorTest.java",
       "instrumentationtests/src/org/webrtc/PeerConnectionTest.java",
@@ -525,6 +527,7 @@ if (rtc_include_tests) {
       "instrumentationtests/src/org/webrtc/SurfaceViewRendererOnMeasureTest.java",
       "instrumentationtests/src/org/webrtc/VideoFileRendererTest.java",
       "instrumentationtests/src/org/webrtc/WebRtcJniBootTest.java",
+      "instrumentationtests/src/org/webrtc/YuvHelperTest.java",
     ]
 
     data = [
