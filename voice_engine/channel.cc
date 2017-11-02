@@ -548,6 +548,17 @@ AudioMixer::Source::AudioFrameInfo Channel::GetAudioFrameWithInfo(
     }
   }
 
+  {
+    const int jitter_buffer_delay = audio_coding_->FilteredCurrentDelayMs();
+    rtc::CritScope lock(&video_sync_lock_);
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.ReceiverDelayEstimateMs",
+                              jitter_buffer_delay + playout_delay_ms_);
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.ReceiverJitterBufferDelayMs",
+                              jitter_buffer_delay);
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.ReceiverDeviceDelayMs",
+                              playout_delay_ms_);
+  }
+
   return muted ? AudioMixer::Source::AudioFrameInfo::kMuted
                : AudioMixer::Source::AudioFrameInfo::kNormal;
 }
