@@ -189,10 +189,9 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
   // If previous was comfort noise, then no merge is needed.
   if (prev_mode == kModeRfc3389Cng ||
       prev_mode == kModeCodecInternalCng) {
-    // Keep the same delay as before the CNG (or maximum 70 ms in buffer as
-    // safety precaution), but make sure that the number of samples in buffer
-    // is no higher than 4 times the optimal level. (Note that TargetLevel()
-    // is in Q8.)
+    // Keep the same delay as before the CNG, but make sure that the number of
+    // samples in buffer is no higher than 4 times the optimal level. (Note that
+    // TargetLevel() is in Q8.)
     if (static_cast<uint32_t>(generated_noise_samples + target_timestamp) >=
             available_timestamp ||
         cur_size_samples >

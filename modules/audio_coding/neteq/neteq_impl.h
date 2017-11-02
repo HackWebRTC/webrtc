@@ -440,6 +440,7 @@ class NetEqImpl : public webrtc::NetEq {
   std::unique_ptr<TickTimer::Stopwatch> generated_noise_stopwatch_
       RTC_GUARDED_BY(crit_sect_);
   std::vector<uint32_t> last_decoded_timestamps_ RTC_GUARDED_BY(crit_sect_);
+  const bool use_dtx_delay_fix_ RTC_GUARDED_BY(crit_sect_);
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);
