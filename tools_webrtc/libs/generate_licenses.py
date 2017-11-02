@@ -40,6 +40,7 @@ LIB_TO_LICENSES_DICT = {
     'protobuf': ['third_party/protobuf/LICENSE'],
     'usrsctp': ['third_party/usrsctp/LICENSE'],
     'webrtc': ['LICENSE', 'LICENSE_THIRD_PARTY'],
+    'zlib': ['LICENSE', 'third_party/zlib/LICENSE'],
 
     # Compile time dependencies, no license needed:
     'yasm': [],
