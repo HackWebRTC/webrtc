@@ -10,7 +10,6 @@
 
 #include "voice_engine/voe_base_impl.h"
 
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_device/audio_device_impl.h"
@@ -272,10 +271,8 @@ int VoEBaseImpl::Init(
   }
 #endif
 
-  if (decoder_factory)
-    decoder_factory_ = decoder_factory;
-  else
-    decoder_factory_ = CreateBuiltinAudioDecoderFactory();
+  RTC_DCHECK(decoder_factory);
+  decoder_factory_ = decoder_factory;
 
   return 0;
 }

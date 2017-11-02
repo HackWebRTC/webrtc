@@ -61,8 +61,6 @@ rtc_static_library("voice_engine") {
     "../api:refcountedbase",
     "../api:transport_api",
     "../api/audio_codecs:audio_codecs_api",
-    "../api/audio_codecs:builtin_audio_decoder_factory",
-    "../api/audio_codecs:builtin_audio_encoder_factory",
     "../audio/utility:audio_frame_operations",
     "../call:rtp_interfaces",
     "../common_audio",
@@ -101,6 +99,7 @@ if (rtc_include_tests) {
   rtc_test("voice_engine_unittests") {
     deps = [
       ":voice_engine",
+      "../api/audio_codecs:builtin_audio_decoder_factory",
       "../common_audio",
       "../modules:module_api",
       "../modules/audio_coding",

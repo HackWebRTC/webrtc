@@ -202,6 +202,7 @@ if (rtc_include_tests) {
       "..:webrtc_common",
       "../api:array_view",
       "../api:mock_audio_mixer",
+      "../api/audio_codecs:builtin_audio_decoder_factory",
       "../logging:rtc_event_log_api",
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer",

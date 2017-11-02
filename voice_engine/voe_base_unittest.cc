@@ -10,6 +10,7 @@
 
 #include "voice_engine/include/voe_base.h"
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_device/include/fake_audio_device.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "rtc_base/refcountedobject.h"
@@ -39,11 +40,13 @@ class VoEBaseTest : public ::testing::Test {
 };
 
 TEST_F(VoEBaseTest, InitWithExternalAudioDevice) {
-  EXPECT_EQ(0, base_->Init(&adm_, apm_.get()));
+  EXPECT_EQ(0,
+            base_->Init(&adm_, apm_.get(), CreateBuiltinAudioDecoderFactory()));
 }
 
 TEST_F(VoEBaseTest, CreateChannelAfterInit) {
-  EXPECT_EQ(0, base_->Init(&adm_, apm_.get(), nullptr));
+  EXPECT_EQ(0,
+            base_->Init(&adm_, apm_.get(), CreateBuiltinAudioDecoderFactory()));
   int channelID = base_->CreateChannel();
   EXPECT_NE(channelID, -1);
   EXPECT_EQ(0, base_->DeleteChannel(channelID));
