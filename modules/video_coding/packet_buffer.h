@@ -160,6 +160,10 @@ class PacketBuffer {
   std::set<uint16_t, DescendingSeqNumComp<uint16_t>> missing_packets_
       RTC_GUARDED_BY(crit_);
 
+  // Indicates if we should require SPS, PPS, and IDR for a particular
+  // RTP timestamp to treat the corresponding frame as a keyframe.
+  const bool sps_pps_idr_is_h264_keyframe_;
+
   mutable volatile int ref_count_ = 0;
 };
 

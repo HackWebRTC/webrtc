@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <sstream>
 #include <utility>
 
 #include "common_video/h264/h264_common.h"
@@ -20,6 +21,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -45,7 +47,9 @@ PacketBuffer::PacketBuffer(Clock* clock,
       is_cleared_to_first_seq_num_(false),
       data_buffer_(start_buffer_size),
       sequence_buffer_(start_buffer_size),
-      received_frame_callback_(received_frame_callback) {
+      received_frame_callback_(received_frame_callback),
+      sps_pps_idr_is_h264_keyframe_(
+          field_trial::IsEnabled("WebRTC-SpsPpsIdrIsH264Keyframe")) {
   RTC_DCHECK_LE(start_buffer_size, max_buffer_size);
   // Buffer size must always be a power of 2.
   RTC_DCHECK((start_buffer_size & (start_buffer_size - 1)) == 0);
@@ -269,10 +273,14 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       // the |frame_begin| flag is set.
       int start_index = index;
       size_t tested_packets = 0;
-
-      bool is_h264 = data_buffer_[start_index].codec == kVideoCodecH264;
-      bool is_h264_keyframe = false;
       int64_t frame_timestamp = data_buffer_[start_index].timestamp;
+
+      // Identify H.264 keyframes by means of SPS, PPS, and IDR.
+      bool is_h264 = data_buffer_[start_index].codec == kVideoCodecH264;
+      bool has_h264_sps = false;
+      bool has_h264_pps = false;
+      bool has_h264_idr = false;
+      bool is_h264_keyframe = false;
 
       while (true) {
         ++tested_packets;
@@ -287,11 +295,19 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         if (is_h264 && !is_h264_keyframe) {
           const RTPVideoHeaderH264& header =
               data_buffer_[start_index].video_header.codecHeader.H264;
-          for (size_t i = 0; i < header.nalus_length; ++i) {
-            if (header.nalus[i].type == H264::NaluType::kIdr) {
-              is_h264_keyframe = true;
-              break;
+          for (size_t j = 0; j < header.nalus_length; ++j) {
+            if (header.nalus[j].type == H264::NaluType::kSps) {
+              has_h264_sps = true;
+            } else if (header.nalus[j].type == H264::NaluType::kPps) {
+              has_h264_pps = true;
+            } else if (header.nalus[j].type == H264::NaluType::kIdr) {
+              has_h264_idr = true;
             }
+          }
+          if ((sps_pps_idr_is_h264_keyframe_ && has_h264_idr && has_h264_sps &&
+               has_h264_pps) ||
+              (!sps_pps_idr_is_h264_keyframe_ && has_h264_idr)) {
+            is_h264_keyframe = true;
           }
         }
 
@@ -315,18 +331,45 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         --start_seq_num;
       }
 
-      // If this is H264 but not a keyframe, make sure there are no gaps in the
-      // packet sequence numbers up until this point.
-      if (is_h264 && !is_h264_keyframe &&
-          missing_packets_.upper_bound(start_seq_num) !=
-              missing_packets_.begin()) {
-        uint16_t stop_index = (index + 1) % size_;
-        while (start_index != stop_index) {
-          sequence_buffer_[start_index].frame_created = false;
-          start_index = (start_index + 1) % size_;
+      if (is_h264) {
+        // Warn if this is an unsafe frame.
+        if (has_h264_idr && (!has_h264_sps || !has_h264_pps)) {
+          std::stringstream ss;
+          ss << "Received H.264-IDR frame "
+             << "(SPS: " << has_h264_sps << ", PPS: " << has_h264_pps << "). ";
+          if (sps_pps_idr_is_h264_keyframe_) {
+            ss << "Treating as delta frame since "
+                  "WebRTC-SpsPpsIdrIsH264Keyframe is enabled.";
+          } else {
+            ss << "Treating as key frame since "
+                  "WebRTC-SpsPpsIdrIsH264Keyframe is disabled.";
+          }
+          LOG(LS_WARNING) << ss.str();
         }
 
-        return found_frames;
+        // Now that we have decided whether to treat this frame as a key frame
+        // or delta frame in the frame buffer, we update the field that
+        // determines if the RtpFrameObject is a key frame or delta frame.
+        const size_t first_packet_index = start_seq_num % size_;
+        RTC_CHECK_LT(first_packet_index, size_);
+        if (is_h264_keyframe) {
+          data_buffer_[first_packet_index].frameType = kVideoFrameKey;
+        } else {
+          data_buffer_[first_packet_index].frameType = kVideoFrameDelta;
+        }
+
+        // If this is not a keyframe, make sure there are no gaps in the
+        // packet sequence numbers up until this point.
+        if (!is_h264_keyframe && missing_packets_.upper_bound(start_seq_num) !=
+                                     missing_packets_.begin()) {
+          uint16_t stop_index = (index + 1) % size_;
+          while (start_index != stop_index) {
+            sequence_buffer_[start_index].frame_created = false;
+            start_index = (start_index + 1) % size_;
+          }
+
+          return found_frames;
+        }
       }
 
       missing_packets_.erase(missing_packets_.begin(),

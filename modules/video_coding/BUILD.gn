@@ -89,6 +89,7 @@ rtc_static_library("video_coding") {
   }
 
   deps = [
+    ":codec_globals_headers",
     ":video_coding_utility",
     ":webrtc_h264",
     ":webrtc_i420",

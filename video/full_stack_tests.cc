@@ -190,9 +190,23 @@ TEST_F(FullStackTest, ForemanCifPlr5H264) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video = {true,   352, 288, 30, 30000, 500000, 2000000,      false,
                        "H264", 1,   0,   0,  false, false,  "foreman_cif"};
-  std::string fec_description;
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264", 0.0, 0.0,
                           kFullStackTestDurationSecs};
+  foreman_cif.pipe.loss_percent = 5;
+  foreman_cif.pipe.queue_delay_ms = 50;
+  RunTest(foreman_cif);
+}
+
+TEST_F(FullStackTest, ForemanCifPlr5H264SpsPpsIdrIsKeyframe) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/");
+
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true,   352, 288, 30, 30000, 500000, 2000000,      false,
+                       "H264", 1,   0,   0,  false, false,  "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264_sps_pps_idr", 0.0,
+                          0.0, kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 5;
   foreman_cif.pipe.queue_delay_ms = 50;
   RunTest(foreman_cif);

@@ -10,13 +10,9 @@
 
 #include "modules/video_coding/frame_object.h"
 
-#include <sstream>
-
 #include "common_video/h264/h264_common.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -54,6 +50,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   _payloadType = first_packet->payloadType;
   _timeStamp = first_packet->timestamp;
   ntp_time_ms_ = first_packet->ntp_time_ms_;
+  _frameType = first_packet->frameType;
 
   // Setting frame's playout delays to the same values
   // as of the first packet's.
@@ -72,58 +69,6 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
 
   _buffer = new uint8_t[_size];
   _length = frame_size;
-
-  // For H264 frames we can't determine the frame type by just looking at the
-  // first packet. Instead we consider the frame to be a keyframe if it contains
-  // an IDR, and SPS/PPS if the field trial is set.
-  if (codec_type_ == kVideoCodecH264) {
-    _frameType = kVideoFrameDelta;
-    frame_type_ = kVideoFrameDelta;
-    bool contains_sps = false;
-    bool contains_pps = false;
-    bool contains_idr = false;
-    for (uint16_t seq_num = first_seq_num;
-         seq_num != static_cast<uint16_t>(last_seq_num + 1) &&
-         _frameType == kVideoFrameDelta;
-         ++seq_num) {
-      VCMPacket* packet = packet_buffer_->GetPacket(seq_num);
-      RTC_CHECK(packet);
-      const RTPVideoHeaderH264& header = packet->video_header.codecHeader.H264;
-      for (size_t i = 0; i < header.nalus_length; ++i) {
-        if (header.nalus[i].type == H264::NaluType::kSps) {
-          contains_sps = true;
-        } else if (header.nalus[i].type == H264::NaluType::kPps) {
-          contains_pps = true;
-        } else if (header.nalus[i].type == H264::NaluType::kIdr) {
-          contains_idr = true;
-        }
-      }
-    }
-    const bool sps_pps_idr_is_keyframe =
-        field_trial::IsEnabled("WebRTC-SpsPpsIdrIsH264Keyframe");
-    if ((sps_pps_idr_is_keyframe && contains_idr && contains_sps &&
-         contains_pps) ||
-        (!sps_pps_idr_is_keyframe && contains_idr)) {
-      _frameType = kVideoFrameKey;
-      frame_type_ = kVideoFrameKey;
-    }
-    if (contains_idr && (!contains_sps || !contains_pps)) {
-      std::stringstream ss;
-      ss << "Received H.264-IDR frame "
-         << "(SPS: " << contains_sps << ", PPS: " << contains_pps << "). ";
-      if (sps_pps_idr_is_keyframe) {
-        ss << "Treating as delta frame since WebRTC-SpsPpsIdrIsH264Keyframe is "
-              "enabled.";
-      } else {
-        ss << "Treating as key frame since WebRTC-SpsPpsIdrIsH264Keyframe is "
-              "disabled.";
-      }
-      LOG(LS_WARNING) << ss.str();
-    }
-  } else {
-    _frameType = first_packet->frameType;
-    frame_type_ = first_packet->frameType;
-  }
 
   bool bitstream_copied = GetBitstream(_buffer);
   RTC_DCHECK(bitstream_copied);

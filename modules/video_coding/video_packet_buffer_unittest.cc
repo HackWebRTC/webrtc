@@ -27,8 +27,10 @@ namespace video_coding {
 class TestPacketBuffer : public ::testing::Test,
                          public OnReceivedFrameCallback {
  protected:
-  TestPacketBuffer()
-      : rand_(0x7732213),
+  TestPacketBuffer() : TestPacketBuffer("") {}
+  explicit TestPacketBuffer(std::string field_trials)
+      : scoped_field_trials_(field_trials),
+        rand_(0x7732213),
         clock_(new SimulatedClock(0)),
         packet_buffer_(
             PacketBuffer::Create(clock_.get(), kStartSize, kMaxSize, this)) {}
@@ -80,6 +82,8 @@ class TestPacketBuffer : public ::testing::Test,
 
   static constexpr int kStartSize = 16;
   static constexpr int kMaxSize = 64;
+
+  const test::ScopedFieldTrials scoped_field_trials_;
 
   Random rand_;
   std::unique_ptr<SimulatedClock> clock_;
@@ -423,15 +427,17 @@ TEST_F(TestPacketBuffer, GetBitstreamOneFrameFullBuffer) {
   EXPECT_EQ(memcmp(result, expected, kStartSize), 0);
 }
 
-class TestPacketBufferH264 : public TestPacketBuffer,
-                             public ::testing::WithParamInterface<bool> {
+// If |sps_pps_idr_is_keyframe| is true, we require keyframes to contain
+// SPS/PPS/IDR and the keyframes we create as part of the test do contain
+// SPS/PPS/IDR. If |sps_pps_idr_is_keyframe| is false, we only require and
+// create keyframes containing only IDR.
+class TestPacketBufferH264 : public TestPacketBuffer {
  protected:
-  TestPacketBufferH264() : TestPacketBufferH264(GetParam()) {}
   explicit TestPacketBufferH264(bool sps_pps_idr_is_keyframe)
-      : sps_pps_idr_is_keyframe_(sps_pps_idr_is_keyframe),
-        scoped_field_trials_(sps_pps_idr_is_keyframe_
-                                 ? "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"
-                                 : "") {}
+      : TestPacketBuffer(sps_pps_idr_is_keyframe
+                             ? "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"
+                             : ""),
+        sps_pps_idr_is_keyframe_(sps_pps_idr_is_keyframe) {}
 
   bool InsertH264(uint16_t seq_num,           // packet sequence number
                   IsKeyFrame keyframe,        // is keyframe
@@ -468,14 +474,22 @@ class TestPacketBufferH264 : public TestPacketBuffer,
   }
 
   const bool sps_pps_idr_is_keyframe_;
-  const test::ScopedFieldTrials scoped_field_trials_;
+};
+
+// This fixture is used to test the general behaviour of the packet buffer
+// in both configurations.
+class TestPacketBufferH264Parameterized
+    : public ::testing::WithParamInterface<bool>,
+      public TestPacketBufferH264 {
+ protected:
+  TestPacketBufferH264Parameterized() : TestPacketBufferH264(GetParam()) {}
 };
 
 INSTANTIATE_TEST_CASE_P(SpsPpsIdrIsKeyframe,
-                        TestPacketBufferH264,
+                        TestPacketBufferH264Parameterized,
                         ::testing::Values(false, true));
 
-TEST_P(TestPacketBufferH264, GetBitstreamOneFrameFullBuffer) {
+TEST_P(TestPacketBufferH264Parameterized, GetBitstreamOneFrameFullBuffer) {
   uint8_t* data_arr[kStartSize];
   uint8_t expected[kStartSize];
   uint8_t result[kStartSize];
@@ -501,7 +515,7 @@ TEST_P(TestPacketBufferH264, GetBitstreamOneFrameFullBuffer) {
   EXPECT_EQ(memcmp(result, expected, kStartSize), 0);
 }
 
-TEST_P(TestPacketBufferH264, GetBitstreamBufferPadding) {
+TEST_P(TestPacketBufferH264Parameterized, GetBitstreamBufferPadding) {
   uint16_t seq_num = Rand();
   uint8_t data_data[] = "some plain old data";
   uint8_t* data = new uint8_t[sizeof(data_data)];
@@ -661,7 +675,7 @@ TEST_F(TestPacketBuffer, PacketTimestamps) {
   EXPECT_FALSE(packet_keyframe_ms);
 }
 
-TEST_P(TestPacketBufferH264, OneFrameFillBuffer) {
+TEST_P(TestPacketBufferH264Parameterized, OneFrameFillBuffer) {
   InsertH264(0, kKeyFrame, kFirst, kNotLast, 1000);
   for (int i = 1; i < kStartSize - 1; ++i)
     InsertH264(i, kKeyFrame, kNotFirst, kNotLast, 1000);
@@ -671,7 +685,7 @@ TEST_P(TestPacketBufferH264, OneFrameFillBuffer) {
   CheckFrame(0);
 }
 
-TEST_P(TestPacketBufferH264, CreateFramesAfterFilledBuffer) {
+TEST_P(TestPacketBufferH264Parameterized, CreateFramesAfterFilledBuffer) {
   InsertH264(kStartSize - 2, kKeyFrame, kFirst, kLast, 0);
   ASSERT_EQ(1UL, frames_from_callback_.size());
   frames_from_callback_.clear();
@@ -688,7 +702,7 @@ TEST_P(TestPacketBufferH264, CreateFramesAfterFilledBuffer) {
   CheckFrame(kStartSize);
 }
 
-TEST_P(TestPacketBufferH264, OneFrameMaxSeqNum) {
+TEST_P(TestPacketBufferH264Parameterized, OneFrameMaxSeqNum) {
   InsertH264(65534, kKeyFrame, kFirst, kNotLast, 1000);
   InsertH264(65535, kKeyFrame, kNotFirst, kLast, 1000);
 
@@ -696,7 +710,7 @@ TEST_P(TestPacketBufferH264, OneFrameMaxSeqNum) {
   CheckFrame(65534);
 }
 
-TEST_P(TestPacketBufferH264, ClearMissingPacketsOnKeyframe) {
+TEST_P(TestPacketBufferH264Parameterized, ClearMissingPacketsOnKeyframe) {
   InsertH264(0, kKeyFrame, kFirst, kLast, 1000);
   InsertH264(2, kKeyFrame, kFirst, kLast, 3000);
   InsertH264(3, kDeltaFrame, kFirst, kNotLast, 4000);
@@ -713,7 +727,7 @@ TEST_P(TestPacketBufferH264, ClearMissingPacketsOnKeyframe) {
   CheckFrame(kStartSize + 1);
 }
 
-TEST_P(TestPacketBufferH264, FindFramesOnPadding) {
+TEST_P(TestPacketBufferH264Parameterized, FindFramesOnPadding) {
   InsertH264(0, kKeyFrame, kFirst, kLast, 1000);
   InsertH264(2, kDeltaFrame, kFirst, kLast, 1000);
 

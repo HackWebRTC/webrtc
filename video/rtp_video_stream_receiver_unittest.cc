@@ -35,8 +35,6 @@ namespace webrtc {
 
 namespace {
 
-const char kNewJitterBufferFieldTrialEnabled[] =
-    "WebRTC-NewVideoJitterBuffer/Enabled/";
 const uint8_t kH264StartCode[] = {0x00, 0x00, 0x00, 0x01};
 
 class MockTransport : public Transport {
@@ -120,8 +118,10 @@ MATCHER_P(SamePacketAs, other, "") {
 
 class RtpVideoStreamReceiverTest : public testing::Test {
  public:
-  RtpVideoStreamReceiverTest()
-      : config_(CreateConfig()),
+  RtpVideoStreamReceiverTest() : RtpVideoStreamReceiverTest("") {}
+  explicit RtpVideoStreamReceiverTest(std::string field_trials)
+      : override_field_trials_(field_trials),
+        config_(CreateConfig()),
         timing_(Clock::GetRealTimeClock()),
         process_thread_(ProcessThread::Create("TestThread")) {}
 
@@ -189,8 +189,7 @@ class RtpVideoStreamReceiverTest : public testing::Test {
     return config;
   }
 
-  webrtc::test::ScopedFieldTrials override_field_trials_{
-      kNewJitterBufferFieldTrialEnabled};
+  const webrtc::test::ScopedFieldTrials override_field_trials_;
   VideoReceiveStream::Config config_;
   MockNackSender mock_nack_sender_;
   MockKeyFrameRequestSender mock_key_frame_request_sender_;
@@ -237,7 +236,19 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
                                                     &rtp_header);
 }
 
-TEST_F(RtpVideoStreamReceiverTest, InBandSpsPps) {
+class RtpVideoStreamReceiverTestH264
+    : public RtpVideoStreamReceiverTest,
+      public testing::WithParamInterface<std::string> {
+ protected:
+  RtpVideoStreamReceiverTestH264() : RtpVideoStreamReceiverTest(GetParam()) {}
+};
+
+INSTANTIATE_TEST_CASE_P(
+    SpsPpsIdrIsKeyframe,
+    RtpVideoStreamReceiverTestH264,
+    ::testing::Values("", "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));
+
+TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
   std::vector<uint8_t> sps_data;
   WebRtcRTPHeader sps_packet = GetDefaultPacket();
   AddSps(&sps_packet, 0, &sps_data);
@@ -279,7 +290,7 @@ TEST_F(RtpVideoStreamReceiverTest, InBandSpsPps) {
       idr_data.data(), idr_data.size(), &idr_packet);
 }
 
-TEST_F(RtpVideoStreamReceiverTest, OutOfBandFmtpSpsPps) {
+TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
   constexpr int kPayloadType = 99;
   VideoCodec codec;
   codec.plType = kPayloadType;
