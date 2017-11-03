@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/peerconnectioninterface.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -33,12 +31,6 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
       audio_encoder_factory, audio_decoder_factory,
       nullptr /*video_encoder_factory*/, nullptr /*video_decoder_factory*/,
       nullptr /*audio_mixer*/);
-}
-
-rtc::scoped_refptr<PeerConnectionFactoryInterface>
-CreatePeerConnectionFactory() {
-  return CreatePeerConnectionFactory(CreateBuiltinAudioEncoderFactory(),
-                                     CreateBuiltinAudioDecoderFactory());
 }
 
 // Note: all the other CreatePeerConnectionFactory variants just end up calling
@@ -120,33 +112,6 @@ CreatePeerConnectionFactoryWithAudioMixer(
       network_thread, worker_thread, signaling_thread, default_adm,
       audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
       video_decoder_factory, audio_mixer, nullptr);
-}
-
-rtc::scoped_refptr<PeerConnectionFactoryInterface>
-CreatePeerConnectionFactoryWithAudioMixer(
-    rtc::Thread* network_thread,
-    rtc::Thread* worker_thread,
-    rtc::Thread* signaling_thread,
-    AudioDeviceModule* default_adm,
-    cricket::WebRtcVideoEncoderFactory* encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* decoder_factory,
-    rtc::scoped_refptr<AudioMixer> audio_mixer) {
-  return CreatePeerConnectionFactoryWithAudioMixer(
-      network_thread, worker_thread, signaling_thread, default_adm,
-      CreateBuiltinAudioEncoderFactory(), CreateBuiltinAudioDecoderFactory(),
-      encoder_factory, decoder_factory, audio_mixer);
-}
-
-rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
-    rtc::Thread* network_thread,
-    rtc::Thread* worker_thread,
-    rtc::Thread* signaling_thread,
-    AudioDeviceModule* default_adm,
-    cricket::WebRtcVideoEncoderFactory* encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* decoder_factory) {
-  return CreatePeerConnectionFactoryWithAudioMixer(
-      network_thread, worker_thread, signaling_thread, default_adm,
-      encoder_factory, decoder_factory, nullptr);
 }
 
 rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
