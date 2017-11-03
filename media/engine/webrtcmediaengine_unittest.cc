@@ -236,12 +236,6 @@ TEST(WebRtcMediaEngineTest, FilterRtpExtensions_RemoveRedundantBwe_3) {
   EXPECT_EQ(RtpExtension::kTimestampOffsetUri, filtered[0].uri);
 }
 
-TEST(WebRtcMediaEngineFactoryTest, CreateOldApi) {
-  std::unique_ptr<MediaEngineInterface> engine(
-      WebRtcMediaEngineFactory::Create(nullptr, nullptr, nullptr));
-  EXPECT_TRUE(engine);
-}
-
 TEST(WebRtcMediaEngineFactoryTest, CreateWithBuiltinDecoders) {
   std::unique_ptr<MediaEngineInterface> engine(WebRtcMediaEngineFactory::Create(
       nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),

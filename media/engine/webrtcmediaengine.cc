@@ -15,8 +15,6 @@
 #include <tuple>
 #include <utility>
 
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "media/engine/webrtcvoiceengine.h"
@@ -59,47 +57,6 @@ MediaEngineInterface* CreateWebRtcMediaEngine(
 }
 
 }  // namespace
-
-// TODO(ossu): Backwards-compatible interface. Will be deprecated once the
-// audio decoder factory is fully plumbed and used throughout WebRTC.
-// See: crbug.com/webrtc/6000
-MediaEngineInterface* WebRtcMediaEngineFactory::Create(
-    webrtc::AudioDeviceModule* adm,
-    WebRtcVideoEncoderFactory* video_encoder_factory,
-    WebRtcVideoDecoderFactory* video_decoder_factory) {
-  return CreateWebRtcMediaEngine(
-      adm, webrtc::CreateBuiltinAudioEncoderFactory(),
-      webrtc::CreateBuiltinAudioDecoderFactory(), video_encoder_factory,
-      video_decoder_factory, nullptr, webrtc::AudioProcessing::Create());
-}
-
-MediaEngineInterface* WebRtcMediaEngineFactory::Create(
-    webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
-    WebRtcVideoEncoderFactory* video_encoder_factory,
-    WebRtcVideoDecoderFactory* video_decoder_factory) {
-  return CreateWebRtcMediaEngine(
-      adm, webrtc::CreateBuiltinAudioEncoderFactory(), audio_decoder_factory,
-      video_encoder_factory, video_decoder_factory, nullptr,
-      webrtc::AudioProcessing::Create());
-}
-
-// Used by PeerConnectionFactory to create a media engine passed into
-// ChannelManager.
-MediaEngineInterface* WebRtcMediaEngineFactory::Create(
-    webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
-    WebRtcVideoEncoderFactory* video_encoder_factory,
-    WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
-  return CreateWebRtcMediaEngine(
-      adm, webrtc::CreateBuiltinAudioEncoderFactory(), audio_decoder_factory,
-      video_encoder_factory, video_decoder_factory, audio_mixer,
-      audio_processing);
-}
 
 MediaEngineInterface* WebRtcMediaEngineFactory::Create(
     webrtc::AudioDeviceModule* adm,
