@@ -23,9 +23,11 @@ import subprocess
 
 LIB_TO_LICENSES_DICT = {
     'android_tools': ['third_party/android_tools/LICENSE'],
+    'auto': ['third_party/auto/src/LICENSE.txt'],
     'boringssl': ['third_party/boringssl/src/LICENSE'],
     'errorprone': ['third_party/errorprone/LICENSE'],
     'expat': ['third_party/expat/files/COPYING'],
+    'guava': ['third_party/guava/LICENSE'],
     'ijar': ['third_party/ijar/LICENSE'],
     'jsoncpp': ['third_party/jsoncpp/LICENSE'],
     'libc++': ['buildtools/third_party/libc++/trunk/LICENSE.TXT'],
