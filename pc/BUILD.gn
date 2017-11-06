@@ -154,8 +154,6 @@ rtc_static_library("peerconnection") {
     "videotracksource.h",
     "webrtcsdp.cc",
     "webrtcsdp.h",
-    "webrtcsession.cc",
-    "webrtcsession.h",
     "webrtcsessiondescriptionfactory.cc",
     "webrtcsessiondescriptionfactory.h",
   ]
@@ -315,7 +313,6 @@ if (rtc_include_tests) {
       "test/fakevideotracksource.h",
       "test/mock_datachannel.h",
       "test/mock_peerconnection.h",
-      "test/mock_webrtcsession.h",
       "test/mockpeerconnectionobservers.h",
       "test/peerconnectiontestwrapper.cc",
       "test/peerconnectiontestwrapper.h",

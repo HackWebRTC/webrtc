@@ -557,23 +557,19 @@ StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
   }
   stats_gathering_started_ = time_now;
 
-  // TODO(pthatcher): Merge PeerConnection and WebRtcSession so there is no
-  // pc_->session().
-  if (pc_->session_created()) {
-    // TODO(tommi): All of these hop over to the worker thread to fetch
-    // information.  We could use an AsyncInvoker to run all of these and post
-    // the information back to the signaling thread where we can create and
-    // update stats reports.  That would also clean up the threading story a bit
-    // since we'd be creating/updating the stats report objects consistently on
-    // the same thread (this class has no locks right now).
-    ExtractSessionInfo();
-    ExtractBweInfo();
-    ExtractVoiceInfo();
-    ExtractVideoInfo(level);
-    ExtractSenderInfo();
-    ExtractDataInfo();
-    UpdateTrackReports();
-  }
+  // TODO(tommi): All of these hop over to the worker thread to fetch
+  // information.  We could use an AsyncInvoker to run all of these and post
+  // the information back to the signaling thread where we can create and
+  // update stats reports.  That would also clean up the threading story a bit
+  // since we'd be creating/updating the stats report objects consistently on
+  // the same thread (this class has no locks right now).
+  ExtractSessionInfo();
+  ExtractBweInfo();
+  ExtractVoiceInfo();
+  ExtractVideoInfo(level);
+  ExtractSenderInfo();
+  ExtractDataInfo();
+  UpdateTrackReports();
 }
 
 StatsReport* StatsCollector::PrepareReport(
