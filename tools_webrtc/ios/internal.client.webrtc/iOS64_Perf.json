@@ -16,7 +16,7 @@
   },
   "use_analyze": false,
   "additional_compile_targets": [ "all" ],
-  "configuration": "Debug",
+  "configuration": "Release",
   "bucket": "chromium-webrtc",
   "tests": [
     {
