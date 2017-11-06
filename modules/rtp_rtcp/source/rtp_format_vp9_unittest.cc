@@ -30,7 +30,8 @@ void VerifyHeader(const RTPVideoHeaderVP9& expected,
   EXPECT_EQ(expected.picture_id, actual.picture_id);
   EXPECT_EQ(expected.max_picture_id, actual.max_picture_id);
   EXPECT_EQ(expected.temporal_idx, actual.temporal_idx);
-  EXPECT_EQ(expected.spatial_idx, actual.spatial_idx);
+  EXPECT_EQ(expected.spatial_idx == kNoSpatialIdx ? 0 : expected.spatial_idx,
+      actual.spatial_idx);
   EXPECT_EQ(expected.gof_idx, actual.gof_idx);
   EXPECT_EQ(expected.tl0_pic_idx, actual.tl0_pic_idx);
   EXPECT_EQ(expected.temporal_up_switch, actual.temporal_up_switch);
