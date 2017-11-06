@@ -385,7 +385,7 @@ dist_jar("libwebrtc") {
   ]
 }
 
-android_library("libjingle_peerconnection_java") {
+rtc_android_library("libjingle_peerconnection_java") {
   java_files = [
     "api/org/webrtc/AudioProcessingFactory.java",
     "api/org/webrtc/AudioSource.java",
@@ -488,24 +488,18 @@ android_library("libjingle_peerconnection_java") {
     "../../modules/audio_device:audio_device_java",
     "../../rtc_base:base_java",
   ]
-
-  # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
-  no_build_hooks = true
 }
 
-android_library("libjingle_peerconnection_metrics_default_java") {
+rtc_android_library("libjingle_peerconnection_metrics_default_java") {
   java_files = [ "api/org/webrtc/Metrics.java" ]
 
   deps = [
     "../../rtc_base:base_java",
   ]
-
-  # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
-  no_build_hooks = true
 }
 
 if (rtc_include_tests) {
-  instrumentation_test_apk("libjingle_peerconnection_android_unittest") {
+  rtc_instrumentation_test_apk("libjingle_peerconnection_android_unittest") {
     apk_name = "libjingle_peerconnection_android_unittest"
     android_manifest = "instrumentationtests/AndroidManifest.xml"
 
@@ -547,8 +541,5 @@ if (rtc_include_tests) {
     ]
 
     shared_libraries = [ "../../sdk/android:libjingle_peerconnection_so" ]
-
-    # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
-    no_build_hooks = true
   }
 }
