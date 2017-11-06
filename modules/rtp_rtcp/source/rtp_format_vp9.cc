@@ -721,7 +721,6 @@ bool RtpDepacketizerVp9::Parse(ParsedPayload* parsed_payload,
   vp9->beginning_of_frame = b_bit ? true : false;
   vp9->end_of_frame = e_bit ? true : false;
   vp9->ss_data_available = v_bit ? true : false;
-  vp9->spatial_idx = 0;
 
   // Parse fields that are present.
   if (i_bit && !ParsePictureId(&parser, vp9)) {

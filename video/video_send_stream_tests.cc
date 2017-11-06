@@ -3114,8 +3114,23 @@ class Vp9HeaderObserver : public test::SendTest {
     EXPECT_EQ(kMaxTwoBytePictureId, vp9.max_picture_id);       // M:1
     EXPECT_NE(kNoPictureId, vp9.picture_id);                   // I:1
     EXPECT_EQ(vp9_settings_.flexibleMode, vp9.flexible_mode);  // F
-    EXPECT_GE(vp9.spatial_idx, 0);                             // S
-    EXPECT_LT(vp9.spatial_idx, vp9_settings_.numberOfSpatialLayers);
+
+    if (vp9_settings_.numberOfSpatialLayers > 1) {
+      EXPECT_LT(vp9.spatial_idx, vp9_settings_.numberOfSpatialLayers);
+    } else if (vp9_settings_.numberOfTemporalLayers > 1) {
+      EXPECT_EQ(vp9.spatial_idx, 0);
+    } else {
+      EXPECT_EQ(vp9.spatial_idx, kNoSpatialIdx);
+    }
+
+    if (vp9_settings_.numberOfTemporalLayers > 1) {
+      EXPECT_LT(vp9.temporal_idx, vp9_settings_.numberOfTemporalLayers);
+    } else if (vp9_settings_.numberOfSpatialLayers > 1) {
+      EXPECT_EQ(vp9.temporal_idx, 0);
+    } else {
+      EXPECT_EQ(vp9.temporal_idx, kNoTemporalIdx);
+    }
+
     if (vp9.ss_data_available)  // V
       VerifySsData(vp9);
 
@@ -3257,16 +3272,27 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
     }
 
     void InspectHeader(const RTPVideoHeaderVP9& vp9) override {
-      bool ss_data_expected = !vp9.inter_pic_predicted &&
-                              vp9.beginning_of_frame && vp9.spatial_idx == 0;
+      bool ss_data_expected =
+          !vp9.inter_pic_predicted && vp9.beginning_of_frame &&
+          (vp9.spatial_idx == 0 || vp9.spatial_idx == kNoSpatialIdx);
       EXPECT_EQ(ss_data_expected, vp9.ss_data_available);
-      EXPECT_EQ(vp9.spatial_idx > 0, vp9.inter_layer_predicted);  // D
+      if (num_spatial_layers_ > 1) {
+        EXPECT_EQ(vp9.spatial_idx > 0, vp9.inter_layer_predicted);
+      } else {
+        EXPECT_FALSE(vp9.inter_layer_predicted);
+      }
+
       EXPECT_EQ(!vp9.inter_pic_predicted,
                 frames_sent_ % kKeyFrameInterval == 0);
 
       if (IsNewPictureId(vp9)) {
-        EXPECT_EQ(0, vp9.spatial_idx);
-        EXPECT_EQ(num_spatial_layers_ - 1, last_vp9_.spatial_idx);
+        if (num_temporal_layers_ == 1 && num_spatial_layers_ == 1) {
+          EXPECT_EQ(kNoSpatialIdx, vp9.spatial_idx);
+        } else {
+          EXPECT_EQ(0, vp9.spatial_idx);
+        }
+        if (num_spatial_layers_ > 1)
+          EXPECT_EQ(num_spatial_layers_ - 1, last_vp9_.spatial_idx);
       }
 
       VerifyFixedTemporalLayerStructure(vp9,
