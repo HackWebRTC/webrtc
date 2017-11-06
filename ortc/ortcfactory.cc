@@ -14,8 +14,6 @@
 #include <utility>  // For std::move.
 #include <vector>
 
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/mediastreamtrackproxy.h"
 #include "api/proxy.h"
 #include "api/rtcerror.h"
@@ -137,7 +135,9 @@ RTCErrorOr<std::unique_ptr<OrtcFactoryInterface>> OrtcFactory::Create(
     rtc::NetworkManager* network_manager,
     rtc::PacketSocketFactory* socket_factory,
     AudioDeviceModule* adm,
-    std::unique_ptr<cricket::MediaEngineInterface> media_engine) {
+    std::unique_ptr<cricket::MediaEngineInterface> media_engine,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory) {
   // Hop to signaling thread if needed.
   if (signaling_thread && !signaling_thread->IsCurrent()) {
     return signaling_thread
@@ -145,10 +145,12 @@ RTCErrorOr<std::unique_ptr<OrtcFactoryInterface>> OrtcFactory::Create(
             RTC_FROM_HERE,
             rtc::Bind(&OrtcFactory::Create_s, network_thread, signaling_thread,
                       network_manager, socket_factory, adm,
-                      media_engine.release()));
+                      media_engine.release(), audio_encoder_factory,
+                      audio_decoder_factory));
   }
   return Create_s(network_thread, signaling_thread, network_manager,
-                  socket_factory, adm, media_engine.release());
+                  socket_factory, adm, media_engine.release(),
+                  audio_encoder_factory, audio_decoder_factory);
 }
 
 RTCErrorOr<std::unique_ptr<OrtcFactoryInterface>> OrtcFactoryInterface::Create(
@@ -156,24 +158,30 @@ RTCErrorOr<std::unique_ptr<OrtcFactoryInterface>> OrtcFactoryInterface::Create(
     rtc::Thread* signaling_thread,
     rtc::NetworkManager* network_manager,
     rtc::PacketSocketFactory* socket_factory,
-    AudioDeviceModule* adm) {
+    AudioDeviceModule* adm,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory) {
   return OrtcFactory::Create(network_thread, signaling_thread, network_manager,
-                             socket_factory, adm, nullptr);
+                             socket_factory, adm, nullptr,
+                             audio_encoder_factory, audio_decoder_factory);
 }
 
-OrtcFactory::OrtcFactory(rtc::Thread* network_thread,
-                         rtc::Thread* signaling_thread,
-                         rtc::NetworkManager* network_manager,
-                         rtc::PacketSocketFactory* socket_factory,
-                         AudioDeviceModule* adm)
+OrtcFactory::OrtcFactory(
+    rtc::Thread* network_thread,
+    rtc::Thread* signaling_thread,
+    rtc::NetworkManager* network_manager,
+    rtc::PacketSocketFactory* socket_factory,
+    AudioDeviceModule* adm,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory)
     : network_thread_(network_thread),
       signaling_thread_(signaling_thread),
       network_manager_(network_manager),
       socket_factory_(socket_factory),
       adm_(adm),
       null_event_log_(RtcEventLog::CreateNull()),
-      audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()),
-      audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()) {
+      audio_encoder_factory_(audio_encoder_factory),
+      audio_decoder_factory_(audio_decoder_factory) {
   if (!rtc::CreateRandomString(kDefaultRtcpCnameLength, &default_cname_)) {
     RTC_LOG(LS_ERROR) << "Failed to generate CNAME?";
     RTC_NOTREACHED();
@@ -502,12 +510,15 @@ RTCErrorOr<std::unique_ptr<OrtcFactoryInterface>> OrtcFactory::Create_s(
     rtc::NetworkManager* network_manager,
     rtc::PacketSocketFactory* socket_factory,
     AudioDeviceModule* adm,
-    cricket::MediaEngineInterface* media_engine) {
+    cricket::MediaEngineInterface* media_engine,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory) {
   // Add the unique_ptr wrapper back.
   std::unique_ptr<cricket::MediaEngineInterface> owned_media_engine(
       media_engine);
   std::unique_ptr<OrtcFactory> new_factory(new OrtcFactory(
-      network_thread, signaling_thread, network_manager, socket_factory, adm));
+      network_thread, signaling_thread, network_manager, socket_factory, adm,
+      audio_encoder_factory, audio_decoder_factory));
   RTCError err = new_factory->Initialize(std::move(owned_media_engine));
   if (!err.ok()) {
     return std::move(err);

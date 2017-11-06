@@ -34,8 +34,6 @@ rtc_static_library("ortc") {
   # libjingle_peerconnection.
   deps = [
     "../api:optional",
-    "../api/audio_codecs:builtin_audio_decoder_factory",
-    "../api/audio_codecs:builtin_audio_encoder_factory",
     "../call:call_interfaces",
     "../call:rtp_sender",
     "../logging:rtc_event_log_api",
@@ -78,6 +76,8 @@ if (rtc_include_tests) {
 
     deps = [
       ":ortc",
+      "../api/audio_codecs:builtin_audio_decoder_factory",
+      "../api/audio_codecs:builtin_audio_encoder_factory",
       "../media:rtc_media_tests_utils",
       "../p2p:p2p_test_utils",
       "../p2p:rtc_p2p",

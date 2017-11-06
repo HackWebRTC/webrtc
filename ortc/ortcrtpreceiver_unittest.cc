@@ -10,6 +10,8 @@
 
 #include <memory>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "media/base/fakemediaengine.h"
 #include "ortc/ortcfactory.h"
 #include "ortc/testrtpparameters.h"
@@ -34,7 +36,8 @@ class OrtcRtpReceiverTest : public testing::Test {
     // use FakePacketTransport.
     auto ortc_factory_result = OrtcFactory::Create(
         nullptr, nullptr, nullptr, nullptr, nullptr,
-        std::unique_ptr<cricket::MediaEngineInterface>(fake_media_engine_));
+        std::unique_ptr<cricket::MediaEngineInterface>(fake_media_engine_),
+        CreateBuiltinAudioEncoderFactory(), CreateBuiltinAudioDecoderFactory());
     ortc_factory_ = ortc_factory_result.MoveValue();
     RtpTransportParameters parameters;
     parameters.rtcp.mux = true;

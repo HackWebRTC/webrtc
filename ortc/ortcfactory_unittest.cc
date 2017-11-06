@@ -10,6 +10,8 @@
 
 #include <memory>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "media/base/fakemediaengine.h"
 #include "ortc/ortcfactory.h"
 #include "ortc/testrtpparameters.h"
@@ -32,7 +34,9 @@ class OrtcFactoryTest : public testing::Test {
         OrtcFactory::Create(&thread_, nullptr, &fake_network_manager_, nullptr,
                             nullptr,
                             std::unique_ptr<cricket::MediaEngineInterface>(
-                                new cricket::FakeMediaEngine()))
+                                new cricket::FakeMediaEngine()),
+                            CreateBuiltinAudioEncoderFactory(),
+                            CreateBuiltinAudioDecoderFactory())
             .MoveValue();
   }
 

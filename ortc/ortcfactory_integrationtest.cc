@@ -11,6 +11,8 @@
 #include <memory>
 #include <utility>  // For std::pair, std::move.
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/ortc/ortcfactoryinterface.h"
 #include "ortc/testrtpparameters.h"
 #include "p2p/base/udptransport.h"
@@ -77,14 +79,18 @@ class OrtcFactoryIntegrationTest : public testing::Test {
     virtual_socket_server_.SetDefaultRoute(kIPv4LocalHostAddress);
     network_thread_.Start();
     // Need to create after network thread is started.
-    ortc_factory1_ = OrtcFactoryInterface::Create(
-                         &network_thread_, nullptr, &fake_network_manager_,
-                         nullptr, fake_audio_capture_module1_)
-                         .MoveValue();
-    ortc_factory2_ = OrtcFactoryInterface::Create(
-                         &network_thread_, nullptr, &fake_network_manager_,
-                         nullptr, fake_audio_capture_module2_)
-                         .MoveValue();
+    ortc_factory1_ =
+        OrtcFactoryInterface::Create(
+            &network_thread_, nullptr, &fake_network_manager_, nullptr,
+            fake_audio_capture_module1_, CreateBuiltinAudioEncoderFactory(),
+            CreateBuiltinAudioDecoderFactory())
+            .MoveValue();
+    ortc_factory2_ =
+        OrtcFactoryInterface::Create(
+            &network_thread_, nullptr, &fake_network_manager_, nullptr,
+            fake_audio_capture_module2_, CreateBuiltinAudioEncoderFactory(),
+            CreateBuiltinAudioDecoderFactory())
+            .MoveValue();
   }
 
  protected:

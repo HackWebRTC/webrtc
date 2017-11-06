@@ -10,6 +10,8 @@
 
 #include <memory>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "media/base/fakemediaengine.h"
 #include "ortc/ortcfactory.h"
 #include "ortc/testrtpparameters.h"
@@ -31,10 +33,11 @@ class RtpTransportControllerTest : public testing::Test {
   RtpTransportControllerTest() {
     // Note: This doesn't need to use fake network classes, since it uses
     // FakePacketTransports.
-    auto result =
-        OrtcFactory::Create(nullptr, nullptr, nullptr, nullptr, nullptr,
-                            std::unique_ptr<cricket::MediaEngineInterface>(
-                                new cricket::FakeMediaEngine()));
+    auto result = OrtcFactory::Create(
+        nullptr, nullptr, nullptr, nullptr, nullptr,
+        std::unique_ptr<cricket::MediaEngineInterface>(
+            new cricket::FakeMediaEngine()),
+        CreateBuiltinAudioEncoderFactory(), CreateBuiltinAudioDecoderFactory());
     ortc_factory_ = result.MoveValue();
     rtp_transport_controller_ =
         ortc_factory_->CreateRtpTransportController().MoveValue();
