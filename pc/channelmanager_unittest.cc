@@ -45,6 +45,7 @@ class ChannelManagerTest : public testing::Test {
         cm_(new cricket::ChannelManager(
             std::unique_ptr<MediaEngineInterface>(fme_),
             std::unique_ptr<DataEngineInterface>(fdme_),
+            rtc::Thread::Current(),
             rtc::Thread::Current())),
         fake_call_(webrtc::Call::Config(&event_log_)),
         transport_controller_(

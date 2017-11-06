@@ -20,6 +20,7 @@
 #include "api/turncustomizer.h"
 #include "api/videosourceproxy.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/base/rtpdataengine.h"
 #include "media/sctp/sctptransport.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
@@ -139,8 +140,9 @@ bool PeerConnectionFactory::Initialize() {
     return false;
   }
 
-  channel_manager_.reset(new cricket::ChannelManager(
-      std::move(media_engine_), worker_thread_, network_thread_));
+  channel_manager_ = rtc::MakeUnique<cricket::ChannelManager>(
+      std::move(media_engine_), rtc::MakeUnique<cricket::RtpDataEngine>(),
+      worker_thread_, network_thread_);
 
   channel_manager_->SetVideoRtxEnabled(true);
   if (!channel_manager_->Init()) {

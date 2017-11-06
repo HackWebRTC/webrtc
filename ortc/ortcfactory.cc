@@ -22,6 +22,7 @@
 #include "api/videosourceproxy.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/mediaconstants.h"
+#include "media/base/rtpdataengine.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "ortc/ortcrtpreceiveradapter.h"
 #include "ortc/ortcrtpsenderadapter.h"
@@ -40,6 +41,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 
 namespace {
 
@@ -528,7 +530,8 @@ RTCError OrtcFactory::Initialize(
   }
 
   channel_manager_.reset(new cricket::ChannelManager(
-      std::move(media_engine), worker_thread_.get(), network_thread_));
+      std::move(media_engine), rtc::MakeUnique<cricket::RtpDataEngine>(),
+      worker_thread_.get(), network_thread_));
   channel_manager_->SetVideoRtxEnabled(true);
   if (!channel_manager_->Init()) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,

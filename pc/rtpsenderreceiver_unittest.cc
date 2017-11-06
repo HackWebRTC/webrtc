@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "media/base/fakemediaengine.h"
+#include "media/base/rtpdataengine.h"
 #include "media/engine/fakewebrtccall.h"
 #include "pc/audiotrack.h"
 #include "pc/channelmanager.h"
@@ -56,10 +57,10 @@ class RtpSenderReceiverTest : public testing::Test,
       :  // Create fake media engine/etc. so we can create channels to use to
          // test RtpSenders/RtpReceivers.
         media_engine_(new cricket::FakeMediaEngine()),
-        channel_manager_(
-            std::unique_ptr<cricket::MediaEngineInterface>(media_engine_),
-            rtc::Thread::Current(),
-            rtc::Thread::Current()),
+        channel_manager_(rtc::WrapUnique(media_engine_),
+                         rtc::MakeUnique<cricket::RtpDataEngine>(),
+                         rtc::Thread::Current(),
+                         rtc::Thread::Current()),
         fake_call_(Call::Config(&event_log_)),
         local_stream_(MediaStream::Create(kStreamLabel1)) {
     // Create channels to be used by the RtpSenders and RtpReceivers.
