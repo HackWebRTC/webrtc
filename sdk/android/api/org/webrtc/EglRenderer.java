@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
   private static final String TAG = "EglRenderer";
   private static final long LOG_INTERVAL_SEC = 4;
-  private static final int MAX_SURFACE_CLEAR_COUNT = 3;
 
   public interface FrameListener { void onFrame(Bitmap frame); }
 
