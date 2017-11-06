@@ -12,6 +12,7 @@
 #define PC_TEST_MOCK_PEERCONNECTION_H_
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "call/call.h"
@@ -26,12 +27,13 @@ namespace webrtc {
 class FakePeerConnectionFactory
     : public rtc::RefCountedObject<webrtc::PeerConnectionFactory> {
  public:
-  FakePeerConnectionFactory()
+  FakePeerConnectionFactory(
+      std::unique_ptr<cricket::MediaEngineInterface> media_engine)
       : rtc::RefCountedObject<webrtc::PeerConnectionFactory>(
             rtc::Thread::Current(),
             rtc::Thread::Current(),
             rtc::Thread::Current(),
-            std::unique_ptr<cricket::MediaEngineInterface>(),
+            std::move(media_engine),
             std::unique_ptr<webrtc::CallFactoryInterface>(),
             std::unique_ptr<RtcEventLogFactoryInterface>()) {}
 };
@@ -39,9 +41,9 @@ class FakePeerConnectionFactory
 class MockPeerConnection
     : public rtc::RefCountedObject<webrtc::PeerConnection> {
  public:
-  MockPeerConnection()
+  explicit MockPeerConnection(PeerConnectionFactory* factory)
       : rtc::RefCountedObject<webrtc::PeerConnection>(
-            new FakePeerConnectionFactory(),
+            factory,
             std::unique_ptr<RtcEventLog>(),
             std::unique_ptr<Call>()) {}
   MOCK_METHOD0(local_streams,

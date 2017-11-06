@@ -33,13 +33,19 @@ class MediaStreamObserver;
 class VideoRtpReceiver;
 class RtcEventLog;
 
+// TODO(steveanton): Remove once WebRtcSession is merged into PeerConnection.
+std::string GetSignalingStateString(
+    PeerConnectionInterface::SignalingState state);
+
 // PeerConnection implements the PeerConnectionInterface interface.
 // It uses WebRtcSession to implement the PeerConnection functionality.
 class PeerConnection : public PeerConnectionInterface,
-                       public IceObserver,
                        public rtc::MessageHandler,
                        public sigslot::has_slots<> {
  public:
+  // TODO(steveanton): Remove once WebRtcSession is merged into PeerConnection.
+  friend class WebRtcSession;
+
   explicit PeerConnection(PeerConnectionFactory* factory,
                           std::unique_ptr<RtcEventLog> event_log,
                           std::unique_ptr<Call> call);
@@ -171,15 +177,17 @@ class PeerConnection : public PeerConnectionInterface,
   rtc::Thread* network_thread() const { return factory_->network_thread(); }
   rtc::Thread* worker_thread() const { return factory_->worker_thread(); }
   rtc::Thread* signaling_thread() const { return factory_->signaling_thread(); }
-  virtual const std::string& session_id() const { return session_->id(); }
+  virtual const std::string& session_id() const {
+    return session_->session_id();
+  }
   virtual bool session_created() const { return session_ != nullptr; }
   virtual bool initial_offerer() const { return session_->initial_offerer(); }
   virtual std::unique_ptr<SessionStats> GetSessionStats_s() {
-    return session_->GetStats_s();
+    return session_->GetSessionStats_s();
   }
   virtual std::unique_ptr<SessionStats> GetSessionStats(
       const ChannelNamePairs& channel_name_pairs) {
-    return session_->GetStats(channel_name_pairs);
+    return session_->GetSessionStats(channel_name_pairs);
   }
   virtual bool GetLocalCertificate(
       const std::string& transport_name,
@@ -270,17 +278,16 @@ class PeerConnection : public PeerConnectionInterface,
   void RemoveVideoTrack(VideoTrackInterface* track,
                         MediaStreamInterface* stream);
 
-  // Implements IceObserver
-  void OnIceConnectionStateChange(IceConnectionState new_state) override;
-  void OnIceGatheringChange(IceGatheringState new_state) override;
-  void OnIceCandidate(
-      std::unique_ptr<IceCandidateInterface> candidate) override;
+  void SetIceConnectionState(IceConnectionState new_state);
+  // Called any time the IceGatheringState changes
+  void OnIceGatheringChange(IceGatheringState new_state);
+  // New ICE candidate has been gathered.
+  void OnIceCandidate(std::unique_ptr<IceCandidateInterface> candidate);
+  // Some local ICE candidates have been removed.
   void OnIceCandidatesRemoved(
-      const std::vector<cricket::Candidate>& candidates) override;
-  void OnIceConnectionReceivingChange(bool receiving) override;
+      const std::vector<cricket::Candidate>& candidates);
 
-  // Signals from WebRtcSession.
-  void OnSessionStateChange(WebRtcSession* session, WebRtcSession::State state);
+  // Update the state, signaling if necessary.
   void ChangeSignalingState(SignalingState signaling_state);
 
   // Signals from MediaStreamObserver.
@@ -408,15 +415,16 @@ class PeerConnection : public PeerConnectionInterface,
   void AllocateSctpSids(rtc::SSLRole role);
   void OnSctpDataChannelClosed(DataChannel* channel);
 
-  // Notifications from WebRtcSession relating to BaseChannels.
+  // Called when voice_channel_, video_channel_ and
+  // rtp_data_channel_/sctp_transport_ are created and destroyed. As a result
+  // of, for example, setting a new description.
   void OnVoiceChannelCreated();
   void OnVoiceChannelDestroyed();
   void OnVideoChannelCreated();
   void OnVideoChannelDestroyed();
   void OnDataChannelCreated();
   void OnDataChannelDestroyed();
-  // Called when the cricket::DataChannel receives a message indicating that a
-  // webrtc::DataChannel should be opened.
+  // Called when a valid data channel OPEN message is received.
   void OnDataChannelOpenMessage(const std::string& label,
                                 const InternalDataChannelInit& config);
 
@@ -466,6 +474,9 @@ class PeerConnection : public PeerConnectionInterface,
   // Returns RTCError::OK() if there are no issues.
   RTCError ValidateConfiguration(const RTCConfiguration& config) const;
 
+  cricket::ChannelManager* channel_manager() const;
+  MetricsObserverInterface* metrics_observer() const;
+
   // Storing the factory as a scoped reference pointer ensures that the memory
   // in the PeerConnectionFactoryImpl remains available as long as the
   // PeerConnection is running. It is passed to PeerConnection as a raw pointer.
@@ -473,15 +484,15 @@ class PeerConnection : public PeerConnectionInterface,
   // PeerConnectionFactoryInterface all instances created using the raw pointer
   // will refer to the same reference count.
   rtc::scoped_refptr<PeerConnectionFactory> factory_;
-  PeerConnectionObserver* observer_;
-  UMAObserver* uma_observer_;
+  PeerConnectionObserver* observer_ = nullptr;
+  UMAObserver* uma_observer_ = nullptr;
 
   // The EventLog needs to outlive |call_| (and any other object that uses it).
   std::unique_ptr<RtcEventLog> event_log_;
 
-  SignalingState signaling_state_;
-  IceConnectionState ice_connection_state_;
-  IceGatheringState ice_gathering_state_;
+  SignalingState signaling_state_ = kStable;
+  IceConnectionState ice_connection_state_ = kIceConnectionNew;
+  IceGatheringState ice_gathering_state_ = kIceGatheringNew;
   PeerConnectionInterface::RTCConfiguration configuration_;
 
   std::unique_ptr<cricket::PortAllocator> port_allocator_;
@@ -512,7 +523,7 @@ class PeerConnection : public PeerConnectionInterface,
   bool remote_peer_supports_msid_ = false;
 
   std::unique_ptr<Call> call_;
-  WebRtcSession* session_;
+  WebRtcSession* session_ = nullptr;
   std::unique_ptr<WebRtcSession> owned_session_;
   std::unique_ptr<StatsCollector> stats_;  // A pointer is passed to senders_
   rtc::scoped_refptr<RTCStatsCollector> stats_collector_;
