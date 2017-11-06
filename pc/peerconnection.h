@@ -452,14 +452,6 @@ class PeerConnection : public PeerConnectionInterface,
   void AllocateSctpSids(rtc::SSLRole role);
   void OnSctpDataChannelClosed(DataChannel* channel);
 
-  // Called when voice_channel_, video_channel_ and
-  // rtp_data_channel_/sctp_transport_ are created and destroyed. As a result
-  // of, for example, setting a new description.
-  void OnVoiceChannelCreated();
-  void OnVoiceChannelDestroyed();
-  void OnVideoChannelCreated();
-  void OnVideoChannelDestroyed();
-  void OnDataChannelCreated();
   void OnDataChannelDestroyed();
   // Called when a valid data channel OPEN message is received.
   void OnDataChannelOpenMessage(const std::string& label,
@@ -538,30 +530,13 @@ class PeerConnection : public PeerConnectionInterface,
   // Get current SSL role used by SCTP's underlying transport.
   bool GetSctpSslRole(rtc::SSLRole* role);
 
-  void CreateOffer(
-      CreateSessionDescriptionObserver* observer,
-      const PeerConnectionInterface::RTCOfferAnswerOptions& options,
-      const cricket::MediaSessionOptions& session_options);
-  void CreateAnswer(CreateSessionDescriptionObserver* observer,
-                    const cricket::MediaSessionOptions& session_options);
   bool SetLocalDescription(std::unique_ptr<SessionDescriptionInterface> desc,
                            std::string* err_desc);
   bool SetRemoteDescription(std::unique_ptr<SessionDescriptionInterface> desc,
                             std::string* err_desc);
 
-  bool ProcessIceMessage(const IceCandidateInterface* ice_candidate);
-
-  bool RemoveRemoteIceCandidates(
-      const std::vector<cricket::Candidate>& candidates);
-
   cricket::IceConfig ParseIceConfig(
       const PeerConnectionInterface::RTCConfiguration& config) const;
-
-  void SetIceConfig(const cricket::IceConfig& ice_config);
-
-  // Start gathering candidates for any new transports, or transports doing an
-  // ICE restart.
-  void MaybeStartGathering();
 
   // Implements DataChannelProviderInterface.
   bool SendData(const cricket::SendDataParams& params,
@@ -574,11 +549,6 @@ class PeerConnection : public PeerConnectionInterface,
   bool ReadyToSendData() const override;
 
   cricket::DataChannelType data_channel_type() const;
-
-  // Set the "needs-ice-restart" flag as described in JSEP. After the flag is
-  // set, offers should generate new ufrags/passwords until an ICE restart
-  // occurs.
-  void SetNeedsIceRestartFlag();
 
   // Called when an RTCCertificate is generated or retrieved by
   // WebRTCSessionDescriptionFactory. Should happen before setLocalDescription.

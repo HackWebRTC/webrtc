@@ -957,7 +957,7 @@ bool PeerConnection::Initialize(
     certificate = configuration.certificates[0];
   }
 
-  SetIceConfig(ParseIceConfig(configuration));
+  transport_controller_->SetIceConfig(ParseIceConfig(configuration));
 
   if (options.disable_encryption) {
     dtls_enabled_ = false;
@@ -1347,7 +1347,7 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
 
   cricket::MediaSessionOptions session_options;
   GetOptionsForOffer(options, &session_options);
-  CreateOffer(observer, options, session_options);
+  webrtc_session_desc_factory_->CreateOffer(observer, options, session_options);
 }
 
 void PeerConnection::CreateAnswer(
@@ -1398,7 +1398,7 @@ void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
   cricket::MediaSessionOptions session_options;
   GetOptionsForAnswer(options, &session_options);
 
-  CreateAnswer(observer, session_options);
+  webrtc_session_desc_factory_->CreateAnswer(observer, session_options);
 }
 
 void PeerConnection::SetLocalDescription(
@@ -1493,7 +1493,7 @@ void PeerConnection::SetLocalDescription(
   // MaybeStartGathering needs to be called after posting
   // MSG_SET_SESSIONDESCRIPTION_SUCCESS, so that we don't signal any candidates
   // before signaling that SetLocalDescription completed.
-  MaybeStartGathering();
+  transport_controller_->MaybeStartGathering();
 
   if (desc->type() == SessionDescriptionInterface::kAnswer) {
     // TODO(deadbeef): We already had to hop to the network thread for
@@ -1708,12 +1708,12 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   if (modified_config.servers != configuration_.servers ||
       modified_config.type != configuration_.type ||
       modified_config.prune_turn_ports != configuration_.prune_turn_ports) {
-    SetNeedsIceRestartFlag();
+    transport_controller_->SetNeedsIceRestartFlag();
   }
 
   if (modified_config.ice_check_min_interval !=
       configuration_.ice_check_min_interval) {
-    SetIceConfig(ParseIceConfig(modified_config));
+    transport_controller_->SetIceConfig(ParseIceConfig(modified_config));
   }
 
   configuration_ = modified_config;
@@ -1726,13 +1726,67 @@ bool PeerConnection::AddIceCandidate(
   if (IsClosed()) {
     return false;
   }
-  return ProcessIceMessage(ice_candidate);
+
+  if (!remote_description()) {
+    LOG(LS_ERROR) << "ProcessIceMessage: ICE candidates can't be added "
+                  << "without any remote session description.";
+    return false;
+  }
+
+  if (!ice_candidate) {
+    LOG(LS_ERROR) << "ProcessIceMessage: Candidate is NULL.";
+    return false;
+  }
+
+  bool valid = false;
+  bool ready = ReadyToUseRemoteCandidate(ice_candidate, nullptr, &valid);
+  if (!valid) {
+    return false;
+  }
+
+  // Add this candidate to the remote session description.
+  if (!mutable_remote_description()->AddCandidate(ice_candidate)) {
+    LOG(LS_ERROR) << "ProcessIceMessage: Candidate cannot be used.";
+    return false;
+  }
+
+  if (ready) {
+    return UseCandidate(ice_candidate);
+  } else {
+    LOG(LS_INFO) << "ProcessIceMessage: Not ready to use candidate.";
+    return true;
+  }
 }
 
 bool PeerConnection::RemoveIceCandidates(
     const std::vector<cricket::Candidate>& candidates) {
   TRACE_EVENT0("webrtc", "PeerConnection::RemoveIceCandidates");
-  return RemoveRemoteIceCandidates(candidates);
+  if (!remote_description()) {
+    LOG(LS_ERROR) << "RemoveRemoteIceCandidates: ICE candidates can't be "
+                  << "removed without any remote session description.";
+    return false;
+  }
+
+  if (candidates.empty()) {
+    LOG(LS_ERROR) << "RemoveRemoteIceCandidates: candidates are empty.";
+    return false;
+  }
+
+  size_t number_removed =
+      mutable_remote_description()->RemoveCandidates(candidates);
+  if (number_removed != candidates.size()) {
+    LOG(LS_ERROR) << "RemoveRemoteIceCandidates: Failed to remove candidates. "
+                  << "Requested " << candidates.size() << " but only "
+                  << number_removed << " are removed.";
+  }
+
+  // Remove the candidates from the transport controller.
+  std::string error;
+  bool res = transport_controller_->RemoveRemoteCandidates(candidates, &error);
+  if (!res && !error.empty()) {
+    LOG(LS_ERROR) << "Error when removing remote candidates: " << error;
+  }
+  return true;
 }
 
 void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
@@ -2875,34 +2929,6 @@ void PeerConnection::OnSctpDataChannelClosed(DataChannel* channel) {
   }
 }
 
-void PeerConnection::OnVoiceChannelCreated() {
-  SetChannelOnSendersAndReceivers<AudioRtpSender, AudioRtpReceiver>(
-      voice_channel(), senders_, receivers_, cricket::MEDIA_TYPE_AUDIO);
-}
-
-void PeerConnection::OnVoiceChannelDestroyed() {
-  SetChannelOnSendersAndReceivers<AudioRtpSender, AudioRtpReceiver,
-                                  cricket::VoiceChannel>(
-      nullptr, senders_, receivers_, cricket::MEDIA_TYPE_AUDIO);
-}
-
-void PeerConnection::OnVideoChannelCreated() {
-  SetChannelOnSendersAndReceivers<VideoRtpSender, VideoRtpReceiver>(
-      video_channel(), senders_, receivers_, cricket::MEDIA_TYPE_VIDEO);
-}
-
-void PeerConnection::OnVideoChannelDestroyed() {
-  SetChannelOnSendersAndReceivers<VideoRtpSender, VideoRtpReceiver,
-                                  cricket::VideoChannel>(
-      nullptr, senders_, receivers_, cricket::MEDIA_TYPE_VIDEO);
-}
-
-void PeerConnection::OnDataChannelCreated() {
-  for (const auto& channel : sctp_data_channels_) {
-    channel->OnTransportChannelCreated();
-  }
-}
-
 void PeerConnection::OnDataChannelDestroyed() {
   // Use a temporary copy of the RTP/SCTP DataChannel list because the
   // DataChannel may callback to us and try to modify the list.
@@ -3149,19 +3175,6 @@ bool PeerConnection::GetSslRole(const std::string& content_name,
 
   return transport_controller_->GetSslRole(GetTransportName(content_name),
                                            role);
-}
-
-void PeerConnection::CreateOffer(
-    CreateSessionDescriptionObserver* observer,
-    const PeerConnectionInterface::RTCOfferAnswerOptions& options,
-    const cricket::MediaSessionOptions& session_options) {
-  webrtc_session_desc_factory_->CreateOffer(observer, options, session_options);
-}
-
-void PeerConnection::CreateAnswer(
-    CreateSessionDescriptionObserver* observer,
-    const cricket::MediaSessionOptions& session_options) {
-  webrtc_session_desc_factory_->CreateAnswer(observer, session_options);
 }
 
 bool PeerConnection::SetLocalDescription(
@@ -3611,68 +3624,6 @@ bool PeerConnection::EnableBundle(const cricket::ContentGroup& bundle) {
   return true;
 }
 
-bool PeerConnection::ProcessIceMessage(const IceCandidateInterface* candidate) {
-  if (!remote_description()) {
-    LOG(LS_ERROR) << "ProcessIceMessage: ICE candidates can't be added "
-                  << "without any remote session description.";
-    return false;
-  }
-
-  if (!candidate) {
-    LOG(LS_ERROR) << "ProcessIceMessage: Candidate is NULL.";
-    return false;
-  }
-
-  bool valid = false;
-  bool ready = ReadyToUseRemoteCandidate(candidate, NULL, &valid);
-  if (!valid) {
-    return false;
-  }
-
-  // Add this candidate to the remote session description.
-  if (!mutable_remote_description()->AddCandidate(candidate)) {
-    LOG(LS_ERROR) << "ProcessIceMessage: Candidate cannot be used.";
-    return false;
-  }
-
-  if (ready) {
-    return UseCandidate(candidate);
-  } else {
-    LOG(LS_INFO) << "ProcessIceMessage: Not ready to use candidate.";
-    return true;
-  }
-}
-
-bool PeerConnection::RemoveRemoteIceCandidates(
-    const std::vector<cricket::Candidate>& candidates) {
-  if (!remote_description()) {
-    LOG(LS_ERROR) << "RemoveRemoteIceCandidates: ICE candidates can't be "
-                  << "removed without any remote session description.";
-    return false;
-  }
-
-  if (candidates.empty()) {
-    LOG(LS_ERROR) << "RemoveRemoteIceCandidates: candidates are empty.";
-    return false;
-  }
-
-  size_t number_removed =
-      mutable_remote_description()->RemoveCandidates(candidates);
-  if (number_removed != candidates.size()) {
-    LOG(LS_ERROR) << "RemoveRemoteIceCandidates: Failed to remove candidates. "
-                  << "Requested " << candidates.size() << " but only "
-                  << number_removed << " are removed.";
-  }
-
-  // Remove the candidates from the transport controller.
-  std::string error;
-  bool res = transport_controller_->RemoveRemoteCandidates(candidates, &error);
-  if (!res && !error.empty()) {
-    LOG(LS_ERROR) << "Error when removing remote candidates: " << error;
-  }
-  return true;
-}
-
 cricket::IceConfig PeerConnection::ParseIceConfig(
     const PeerConnectionInterface::RTCConfiguration& config) const {
   cricket::ContinualGatheringPolicy gathering_policy;
@@ -3702,14 +3653,6 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   ice_config.regather_all_networks_interval_range =
       config.ice_regather_interval_range;
   return ice_config;
-}
-
-void PeerConnection::SetIceConfig(const cricket::IceConfig& config) {
-  transport_controller_->SetIceConfig(config);
-}
-
-void PeerConnection::MaybeStartGathering() {
-  transport_controller_->MaybeStartGathering();
 }
 
 bool PeerConnection::GetLocalTrackIdBySsrc(uint32_t ssrc,
@@ -3865,10 +3808,6 @@ cricket::DataChannelType PeerConnection::data_channel_type() const {
 bool PeerConnection::IceRestartPending(const std::string& content_name) const {
   return pending_ice_restarts_.find(content_name) !=
          pending_ice_restarts_.end();
-}
-
-void PeerConnection::SetNeedsIceRestartFlag() {
-  transport_controller_->SetNeedsIceRestartFlag();
 }
 
 bool PeerConnection::NeedsIceRestart(const std::string& content_name) const {
@@ -4218,9 +4157,8 @@ bool PeerConnection::CreateVoiceChannel(const cricket::ContentInfo* content,
   voice_channel->SignalDtlsSrtpSetupFailure.connect(
       this, &PeerConnection::OnDtlsSrtpSetupFailure);
 
-  // TODO(steveanton): This should signal which voice channel was created since
-  // we can have multiple.
-  OnVoiceChannelCreated();
+  SetChannelOnSendersAndReceivers<AudioRtpSender, AudioRtpReceiver>(
+      voice_channel, senders_, receivers_, cricket::MEDIA_TYPE_AUDIO);
   voice_channel->SignalSentPacket.connect(this,
                                           &PeerConnection::OnSentPacket_w);
   return true;
@@ -4267,9 +4205,8 @@ bool PeerConnection::CreateVideoChannel(const cricket::ContentInfo* content,
   video_channel->SignalDtlsSrtpSetupFailure.connect(
       this, &PeerConnection::OnDtlsSrtpSetupFailure);
 
-  // TODO(steveanton): This should signal which video channel was created since
-  // we can have multiple.
-  OnVideoChannelCreated();
+  SetChannelOnSendersAndReceivers<VideoRtpSender, VideoRtpReceiver>(
+      video_channel, senders_, receivers_, cricket::MEDIA_TYPE_VIDEO);
   video_channel->SignalSentPacket.connect(this,
                                           &PeerConnection::OnSentPacket_w);
   return true;
@@ -4328,7 +4265,9 @@ bool PeerConnection::CreateDataChannel(const cricket::ContentInfo* content,
         this, &PeerConnection::OnSentPacket_w);
   }
 
-  OnDataChannelCreated();
+  for (const auto& channel : sctp_data_channels_) {
+    channel->OnTransportChannelCreated();
+  }
 
   return true;
 }
@@ -4820,9 +4759,9 @@ void PeerConnection::RemoveAndDestroyVideoChannel(
 }
 
 void PeerConnection::DestroyVideoChannel(cricket::VideoChannel* video_channel) {
-  // TODO(steveanton): This should take an identifier for the video channel
-  // since we now support more than one.
-  OnVideoChannelDestroyed();
+  SetChannelOnSendersAndReceivers<VideoRtpSender, VideoRtpReceiver,
+                                  cricket::VideoChannel>(
+      nullptr, senders_, receivers_, cricket::MEDIA_TYPE_VIDEO);
   RTC_DCHECK(video_channel->rtp_dtls_transport());
   const std::string transport_name =
       video_channel->rtp_dtls_transport()->transport_name();
@@ -4852,9 +4791,9 @@ void PeerConnection::RemoveAndDestroyVoiceChannel(
 }
 
 void PeerConnection::DestroyVoiceChannel(cricket::VoiceChannel* voice_channel) {
-  // TODO(steveanton): This should take an identifier for the voice channel
-  // since we now support more than one.
-  OnVoiceChannelDestroyed();
+  SetChannelOnSendersAndReceivers<AudioRtpSender, AudioRtpReceiver,
+                                  cricket::VoiceChannel>(
+      nullptr, senders_, receivers_, cricket::MEDIA_TYPE_AUDIO);
   RTC_DCHECK(voice_channel->rtp_dtls_transport());
   const std::string transport_name =
       voice_channel->rtp_dtls_transport()->transport_name();
