@@ -710,7 +710,7 @@ rtc_source_set("audio_codec_mocks") {
 }
 
 if (!build_with_chromium && is_android) {
-  rtc_android_library("native_test_java") {
+  android_library("native_test_java") {
     testonly = true
     java_files = [
       "android/org/webrtc/native_test/RTCNativeUnitTest.java",
@@ -720,5 +720,8 @@ if (!build_with_chromium && is_android) {
       "../rtc_base:base_java",
       "//testing/android/native_test:native_test_java",
     ]
+
+    # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
+    no_build_hooks = true
   }
 }

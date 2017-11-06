@@ -49,7 +49,7 @@ group("examples") {
 }
 
 if (is_android) {
-  rtc_android_apk("AppRTCMobile") {
+  android_apk("AppRTCMobile") {
     testonly = true
     apk_name = "AppRTCMobile"
     android_manifest = "androidapp/AndroidManifest.xml"
@@ -62,9 +62,12 @@ if (is_android) {
     ]
 
     shared_libraries = [ "../sdk/android:libjingle_peerconnection_so" ]
+
+    # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
+    no_build_hooks = true
   }
 
-  rtc_android_library("AppRTCMobile_javalib") {
+  android_library("AppRTCMobile_javalib") {
     testonly = true
     android_manifest = "androidapp/AndroidManifest.xml"
 
@@ -100,6 +103,9 @@ if (is_android) {
       "../sdk/android:libjingle_peerconnection_metrics_default_java",
       "androidapp/third_party/autobanh:autobanh_java",
     ]
+
+    # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
+    no_build_hooks = true
   }
 
   android_resources("AppRTCMobile_resources") {
@@ -108,7 +114,7 @@ if (is_android) {
     custom_package = "org.appspot.apprtc"
   }
 
-  rtc_instrumentation_test_apk("AppRTCMobileTest") {
+  instrumentation_test_apk("AppRTCMobileTest") {
     apk_name = "AppRTCMobileTest"
     android_manifest = "androidtests/AndroidManifest.xml"
 
@@ -122,9 +128,12 @@ if (is_android) {
       "//third_party/android_support_test_runner:runner_java",
       "//third_party/junit",
     ]
+
+    # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
+    no_build_hooks = true
   }
 
-  rtc_instrumentation_test_apk("AppRTCMobileTestStubbedVideoIO") {
+  instrumentation_test_apk("AppRTCMobileTestStubbedVideoIO") {
     apk_name = "AppRTCMobileTestStubbedVideoIO"
     android_manifest = "androidtests/AndroidManifest.xml"
 
@@ -145,6 +154,9 @@ if (is_android) {
     data = [
       "../resources/reference_video_640x360_30fps.y4m",
     ]
+
+    # TODO(sakal): Fix build hooks crbug.com/webrtc/8148
+    no_build_hooks = true
   }
 }
 
@@ -664,7 +676,7 @@ if (is_win || is_android) {
 }
 
 if (is_android) {
-  rtc_android_library("webrtc_unity_java") {
+  android_library("webrtc_unity_java") {
     java_files = [ "unityplugin/java/src/org/webrtc/UnityUtility.java" ]
     deps = [
       "../rtc_base:base_java",
