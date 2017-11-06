@@ -77,6 +77,8 @@ public class ScreenCapturerAndroid
   }
 
   @Override
+  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void initialize(final SurfaceTextureHelper surfaceTextureHelper,
       final Context applicationContext, final VideoCapturer.CapturerObserver capturerObserver) {
     checkNotDisposed();
@@ -96,6 +98,8 @@ public class ScreenCapturerAndroid
   }
 
   @Override
+  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void startCapture(
       final int width, final int height, final int ignoredFramerate) {
     checkNotDisposed();
@@ -115,6 +119,8 @@ public class ScreenCapturerAndroid
   }
 
   @Override
+  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void stopCapture() {
     checkNotDisposed();
     ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
@@ -140,6 +146,8 @@ public class ScreenCapturerAndroid
   }
 
   @Override
+  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void dispose() {
     isDisposed = true;
   }
@@ -153,6 +161,8 @@ public class ScreenCapturerAndroid
    * @param ignoredFramerate ignored
    */
   @Override
+  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void changeCaptureFormat(
       final int width, final int height, final int ignoredFramerate) {
     checkNotDisposed();

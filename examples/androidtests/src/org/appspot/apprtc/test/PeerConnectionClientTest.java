@@ -100,12 +100,16 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
     }
 
     // Resets render to wait for new amount of video frames.
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void reset(int expectedFrames) {
       renderFrameCalled = false;
       doneRendering = new CountDownLatch(expectedFrames);
     }
 
     @Override
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
       if (!renderFrameCalled) {
         if (rendererName != null) {
@@ -143,12 +147,16 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
     }
 
     // Resets render to wait for new amount of video frames.
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void reset(int expectedFrames) {
       renderFrameCalled = false;
       doneRendering = new CountDownLatch(expectedFrames);
     }
 
     @Override
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onFrame(VideoFrame frame) {
       if (!renderFrameCalled) {
         if (rendererName != null) {

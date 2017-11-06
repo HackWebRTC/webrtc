@@ -55,11 +55,15 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
   private class EglSurfaceCreation implements Runnable {
     private Object surface;
 
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void setSurface(Object surface) {
       this.surface = surface;
     }
 
     @Override
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void run() {
       if (surface != null && eglBase != null && !eglBase.hasSurface()) {
         if (surface instanceof Surface) {

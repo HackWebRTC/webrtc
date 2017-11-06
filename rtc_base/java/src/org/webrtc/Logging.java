@@ -104,6 +104,8 @@ public class Logging {
   // Enable diagnostic logging for messages of |severity| to the platform debug
   // output. On Android, the output will be directed to Logcat.
   // Note: this function starts collecting the output of the LOG() macros.
+  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized void enableLogToDebugOutput(Severity severity) {
     if (!loadNativeLibrary()) {
       fallbackLogger.log(Level.WARNING, "Cannot enable logging because native lib not loaded.");

@@ -70,6 +70,8 @@ public class EglRendererTest {
     Bitmap storedBitmap;
 
     @Override
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onFrame(Bitmap bitmap) {
       if (bitmapReceived) {
         fail("Unexpected bitmap was received.");
@@ -80,6 +82,8 @@ public class EglRendererTest {
       notify();
     }
 
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized boolean waitForBitmap(int timeoutMs) throws InterruptedException {
       final long endTimeMs = System.currentTimeMillis() + timeoutMs;
       while (!bitmapReceived) {
@@ -92,6 +96,8 @@ public class EglRendererTest {
       return true;
     }
 
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized Bitmap resetAndGetBitmap() {
       bitmapReceived = false;
       return storedBitmap;

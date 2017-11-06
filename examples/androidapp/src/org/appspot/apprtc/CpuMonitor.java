@@ -180,6 +180,8 @@ class CpuMonitor {
     scheduleCpuUtilizationTask();
   }
 
+  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void reset() {
     if (executor != null) {
       Log.d(TAG, "reset");
@@ -188,14 +190,20 @@ class CpuMonitor {
     }
   }
 
+  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized int getCpuUsageCurrent() {
     return doubleToPercent(userCpuUsage.getCurrent() + systemCpuUsage.getCurrent());
   }
 
+  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized int getCpuUsageAverage() {
     return doubleToPercent(userCpuUsage.getAverage() + systemCpuUsage.getAverage());
   }
 
+  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized int getFrequencyScaleAverage() {
     return doubleToPercent(frequencyScale.getAverage());
   }

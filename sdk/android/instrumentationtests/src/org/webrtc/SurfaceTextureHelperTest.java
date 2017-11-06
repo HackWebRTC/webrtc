@@ -48,6 +48,8 @@ public class SurfaceTextureHelperTest {
     }
 
     @Override
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onTextureFrameAvailable(
         int oesTextureId, float[] transformMatrix, long timestampNs) {
       if (expectedThread != null && Thread.currentThread() != expectedThread) {
@@ -62,6 +64,8 @@ public class SurfaceTextureHelperTest {
     /**
      * Wait indefinitely for a new frame.
      */
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void waitForNewFrame() throws InterruptedException {
       while (!hasNewFrame) {
         wait();
@@ -73,6 +77,8 @@ public class SurfaceTextureHelperTest {
      * Wait for a new frame, or until the specified timeout elapses. Returns true if a new frame was
      * received before the timeout.
      */
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized boolean waitForNewFrame(final long timeoutMs) throws InterruptedException {
       final long startTimeMs = SystemClock.elapsedRealtime();
       long timeRemainingMs = timeoutMs;

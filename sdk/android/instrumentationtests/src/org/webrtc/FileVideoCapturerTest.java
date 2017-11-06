@@ -40,6 +40,8 @@ public class FileVideoCapturerTest {
     }
 
     @Override
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onByteBufferFrameCaptured(
         byte[] data, int width, int height, int rotation, long timeStamp) {
       // Empty on purpose.
@@ -52,11 +54,15 @@ public class FileVideoCapturerTest {
     }
 
     @Override
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onFrameCaptured(VideoFrame frame) {
       frames.add(frame);
       notify();
     }
 
+    // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
+    @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized ArrayList<VideoFrame> getMinimumFramesBlocking(int minFrames)
         throws InterruptedException {
       while (frames.size() < minFrames) {
