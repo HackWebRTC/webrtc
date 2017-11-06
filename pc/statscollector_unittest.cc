@@ -926,9 +926,9 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
             new SessionStats(session_stats_));
       }));
 
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
+  auto* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      worker_thread_, network_thread_, nullptr, media_channel,
+      worker_thread_, network_thread_, nullptr, rtc::WrapUnique(media_channel),
       kVideoChannelName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
   StatsReports reports;  // returned values.
   cricket::VideoSenderInfo video_sender_info;
@@ -973,10 +973,11 @@ TEST_F(StatsCollectorTest, AudioBandwidthEstimationInfoIsReported) {
         return std::unique_ptr<SessionStats>(new SessionStats(session_stats_));
       }));
 
-  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  auto* media_channel = new MockVoiceMediaChannel();
   cricket::VoiceChannel voice_channel(
-      worker_thread_, network_thread_, nullptr, nullptr, media_channel,
-      kAudioChannelName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, nullptr,
+      rtc::WrapUnique(media_channel), kAudioChannelName,
+      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
 
   StatsReports reports;  // returned values.
   cricket::VoiceSenderInfo voice_sender_info;
@@ -1040,9 +1041,9 @@ TEST_F(StatsCollectorTest, VideoBandwidthEstimationInfoIsReported) {
             new SessionStats(session_stats_));
       }));
 
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
+  auto* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      worker_thread_, network_thread_, nullptr, media_channel,
+      worker_thread_, network_thread_, nullptr, rtc::WrapUnique(media_channel),
       kVideoChannelName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
 
   StatsReports reports;  // returned values.
@@ -1125,10 +1126,10 @@ TEST_F(StatsCollectorTest, OnlyOneSessionObjectExists) {
 TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
   StatsCollectorForTest stats(&pc_);
 
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
+  auto* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      worker_thread_, network_thread_, nullptr, media_channel, "video",
-      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, rtc::WrapUnique(media_channel),
+      "video", kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
   AddOutgoingVideoTrackStats();
   stats.AddStream(stream_);
 
@@ -1163,9 +1164,9 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
             new SessionStats(session_stats_));
       }));
 
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
+  auto* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      worker_thread_, network_thread_, nullptr, media_channel,
+      worker_thread_, network_thread_, nullptr, rtc::WrapUnique(media_channel),
       kVideoChannelName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
   AddOutgoingVideoTrackStats();
   stats.AddStream(stream_);
@@ -1229,12 +1230,12 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   EXPECT_CALL(pc_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
       .WillRepeatedly(Return(nullptr));
 
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
+  auto* media_channel = new MockVideoMediaChannel();
   // The transport_name known by the video channel.
   const std::string kVcName("vcname");
   cricket::VideoChannel video_channel(
-      worker_thread_, network_thread_, nullptr, media_channel, kVcName,
-      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, rtc::WrapUnique(media_channel),
+      kVcName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
   AddOutgoingVideoTrackStats();
   stats.AddStream(stream_);
 
@@ -1290,12 +1291,12 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
 TEST_F(StatsCollectorTest, RemoteSsrcInfoIsAbsent) {
   StatsCollectorForTest stats(&pc_);
 
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
+  auto* media_channel = new MockVideoMediaChannel();
   // The transport_name known by the video channel.
   const std::string kVcName("vcname");
   cricket::VideoChannel video_channel(
-      worker_thread_, network_thread_, nullptr, media_channel, kVcName,
-      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, rtc::WrapUnique(media_channel),
+      kVcName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
   AddOutgoingVideoTrackStats();
   stats.AddStream(stream_);
 
@@ -1316,12 +1317,12 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
   EXPECT_CALL(pc_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
       .WillRepeatedly(Return(nullptr));
 
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
+  auto* media_channel = new MockVideoMediaChannel();
   // The transport_name known by the video channel.
   const std::string kVcName("vcname");
   cricket::VideoChannel video_channel(
-      worker_thread_, network_thread_, nullptr, media_channel, kVcName,
-      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, rtc::WrapUnique(media_channel),
+      kVcName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
   AddOutgoingVideoTrackStats();
   stats.AddStream(stream_);
 
@@ -1377,9 +1378,9 @@ TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
             new SessionStats(session_stats_));
       }));
 
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
+  auto* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      worker_thread_, network_thread_, nullptr, media_channel,
+      worker_thread_, network_thread_, nullptr, rtc::WrapUnique(media_channel),
       kVideoChannelName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
   AddIncomingVideoTrackStats();
   stats.AddStream(stream_);
@@ -1685,12 +1686,13 @@ TEST_F(StatsCollectorTest, FilterOutNegativeInitialValues) {
   EXPECT_CALL(pc_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
       .WillRepeatedly(Return(nullptr));
 
-  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  auto* media_channel = new MockVoiceMediaChannel();
   // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(
-      worker_thread_, network_thread_, nullptr, media_engine_, media_channel,
-      kVcName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, media_engine_,
+      rtc::WrapUnique(media_channel), kVcName, kDefaultRtcpMuxRequired,
+      kDefaultSrtpRequired);
 
   // Create a local stream with a local audio track and adds it to the stats.
   if (stream_ == NULL)
@@ -1794,12 +1796,13 @@ TEST_F(StatsCollectorTest, GetStatsFromLocalAudioTrack) {
   EXPECT_CALL(pc_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
       .WillRepeatedly(Return(nullptr));
 
-  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  auto* media_channel = new MockVoiceMediaChannel();
   // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(
-      worker_thread_, network_thread_, nullptr, media_engine_, media_channel,
-      kVcName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, media_engine_,
+      rtc::WrapUnique(media_channel), kVcName, kDefaultRtcpMuxRequired,
+      kDefaultSrtpRequired);
   AddOutgoingAudioTrackStats();
   stats.AddStream(stream_);
   stats.AddLocalAudioTrack(audio_track_, kSsrcOfTrack);
@@ -1829,12 +1832,13 @@ TEST_F(StatsCollectorTest, GetStatsFromRemoteStream) {
   EXPECT_CALL(pc_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
       .WillRepeatedly(Return(nullptr));
 
-  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  auto* media_channel = new MockVoiceMediaChannel();
   // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(
-      worker_thread_, network_thread_, nullptr, media_engine_, media_channel,
-      kVcName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, media_engine_,
+      rtc::WrapUnique(media_channel), kVcName, kDefaultRtcpMuxRequired,
+      kDefaultSrtpRequired);
   AddIncomingAudioTrackStats();
   stats.AddStream(stream_);
 
@@ -1858,12 +1862,13 @@ TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
   EXPECT_CALL(pc_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
       .WillRepeatedly(Return(nullptr));
 
-  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  auto* media_channel = new MockVoiceMediaChannel();
   // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(
-      worker_thread_, network_thread_, nullptr, media_engine_, media_channel,
-      kVcName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, media_engine_,
+      rtc::WrapUnique(media_channel), kVcName, kDefaultRtcpMuxRequired,
+      kDefaultSrtpRequired);
   AddOutgoingAudioTrackStats();
   stats.AddStream(stream_);
   stats.AddLocalAudioTrack(audio_track_.get(), kSsrcOfTrack);
@@ -1921,12 +1926,13 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
   EXPECT_CALL(pc_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
       .WillRepeatedly(Return(nullptr));
 
-  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  auto* media_channel = new MockVoiceMediaChannel();
   // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(
-      worker_thread_, network_thread_, nullptr, media_engine_, media_channel,
-      kVcName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, media_engine_,
+      rtc::WrapUnique(media_channel), kVcName, kDefaultRtcpMuxRequired,
+      kDefaultSrtpRequired);
 
   // Create a local stream with a local audio track and adds it to the stats.
   AddOutgoingAudioTrackStats();
@@ -2010,12 +2016,13 @@ TEST_F(StatsCollectorTest, TwoLocalTracksWithSameSsrc) {
   EXPECT_CALL(pc_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
       .WillRepeatedly(Return(nullptr));
 
-  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  auto* media_channel = new MockVoiceMediaChannel();
   // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(
-      worker_thread_, network_thread_, nullptr, media_engine_, media_channel,
-      kVcName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      worker_thread_, network_thread_, nullptr, media_engine_,
+      rtc::WrapUnique(media_channel), kVcName, kDefaultRtcpMuxRequired,
+      kDefaultSrtpRequired);
 
   // Create a local stream with a local audio track and adds it to the stats.
   AddOutgoingAudioTrackStats();
@@ -2072,9 +2079,9 @@ TEST_F(StatsCollectorTest, VerifyVideoSendSsrcStats) {
             new SessionStats(session_stats_));
       }));
 
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
+  auto* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      worker_thread_, network_thread_, nullptr, media_channel,
+      worker_thread_, network_thread_, nullptr, rtc::WrapUnique(media_channel),
       kVideoChannelName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
   StatsReports reports;  // returned values.
   cricket::VideoSenderInfo video_sender_info;
@@ -2119,9 +2126,9 @@ TEST_F(StatsCollectorTest, VerifyVideoReceiveSsrcStats) {
             new SessionStats(session_stats_));
       }));
 
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
+  auto* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      worker_thread_, network_thread_, nullptr, media_channel,
+      worker_thread_, network_thread_, nullptr, rtc::WrapUnique(media_channel),
       kVideoChannelName, kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
   StatsReports reports;  // returned values.
   cricket::VideoReceiverInfo video_receiver_info;

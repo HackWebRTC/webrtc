@@ -210,12 +210,10 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
 
   auto voice_channel = rtc::MakeUnique<VoiceChannel>(
       worker_thread_, network_thread_, signaling_thread, media_engine_.get(),
-      media_channel, content_name, rtcp_packet_transport == nullptr,
-      srtp_required);
-  if (!voice_channel->Init_w(rtp_dtls_transport, rtcp_dtls_transport,
-                             rtp_packet_transport, rtcp_packet_transport)) {
-    return nullptr;
-  }
+      rtc::WrapUnique(media_channel), content_name,
+      rtcp_packet_transport == nullptr, srtp_required);
+  voice_channel->Init_w(rtp_dtls_transport, rtcp_dtls_transport,
+                        rtp_packet_transport, rtcp_packet_transport);
 
   VoiceChannel* voice_channel_ptr = voice_channel.get();
   voice_channels_.push_back(std::move(voice_channel));
@@ -302,12 +300,11 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
   }
 
   auto video_channel = rtc::MakeUnique<VideoChannel>(
-      worker_thread_, network_thread_, signaling_thread, media_channel,
-      content_name, rtcp_packet_transport == nullptr, srtp_required);
-  if (!video_channel->Init_w(rtp_dtls_transport, rtcp_dtls_transport,
-                             rtp_packet_transport, rtcp_packet_transport)) {
-    return nullptr;
-  }
+      worker_thread_, network_thread_, signaling_thread,
+      rtc::WrapUnique(media_channel), content_name,
+      rtcp_packet_transport == nullptr, srtp_required);
+  video_channel->Init_w(rtp_dtls_transport, rtcp_dtls_transport,
+                        rtp_packet_transport, rtcp_packet_transport);
 
   VideoChannel* video_channel_ptr = video_channel.get();
   video_channels_.push_back(std::move(video_channel));
@@ -363,13 +360,11 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel(
   }
 
   auto data_channel = rtc::MakeUnique<RtpDataChannel>(
-      worker_thread_, network_thread_, signaling_thread, media_channel,
-      content_name, rtcp_transport == nullptr, srtp_required);
-  if (!data_channel->Init_w(rtp_transport, rtcp_transport, rtp_transport,
-                            rtcp_transport)) {
-    LOG(LS_WARNING) << "Failed to init data channel.";
-    return nullptr;
-  }
+      worker_thread_, network_thread_, signaling_thread,
+      rtc::WrapUnique(media_channel), content_name, rtcp_transport == nullptr,
+      srtp_required);
+  data_channel->Init_w(rtp_transport, rtcp_transport, rtp_transport,
+                       rtcp_transport);
 
   RtpDataChannel* data_channel_ptr = data_channel.get();
   data_channels_.push_back(std::move(data_channel));

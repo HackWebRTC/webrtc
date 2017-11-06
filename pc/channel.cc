@@ -142,7 +142,7 @@ void RtpSendParametersFromMediaDescription(
 BaseChannel::BaseChannel(rtc::Thread* worker_thread,
                          rtc::Thread* network_thread,
                          rtc::Thread* signaling_thread,
-                         MediaChannel* media_channel,
+                         std::unique_ptr<MediaChannel> media_channel,
                          const std::string& content_name,
                          bool rtcp_mux_required,
                          bool srtp_required)
@@ -152,9 +152,9 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
       content_name_(content_name),
       rtcp_mux_required_(rtcp_mux_required),
       srtp_required_(srtp_required),
-      media_channel_(media_channel),
+      media_channel_(std::move(media_channel)),
       selected_candidate_pair_(nullptr) {
-  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK_RUN_ON(worker_thread_);
   if (srtp_required) {
     auto transport =
         rtc::MakeUnique<webrtc::SrtpTransport>(rtcp_mux_required, content_name);
@@ -179,7 +179,7 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
 
 BaseChannel::~BaseChannel() {
   TRACE_EVENT0("webrtc", "BaseChannel::~BaseChannel");
-  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK_RUN_ON(worker_thread_);
   Deinit();
   StopConnectionMonitor();
   // Eats any outstanding messages or packets.
@@ -188,7 +188,7 @@ BaseChannel::~BaseChannel() {
   // We must destroy the media channel before the transport channel, otherwise
   // the media channel may try to send on the dead transport channel. NULLing
   // is not an effective strategy since the sends will come on another thread.
-  delete media_channel_;
+  media_channel_.reset();
   LOG(LS_INFO) << "Destroyed channel: " << content_name_;
 }
 
@@ -217,24 +217,22 @@ void BaseChannel::DisconnectTransportChannels_n() {
   network_thread_->Clear(this);
 }
 
-bool BaseChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
+void BaseChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
                          DtlsTransportInternal* rtcp_dtls_transport,
                          rtc::PacketTransportInternal* rtp_packet_transport,
                          rtc::PacketTransportInternal* rtcp_packet_transport) {
-  if (!network_thread_->Invoke<bool>(
-          RTC_FROM_HERE, Bind(&BaseChannel::InitNetwork_n, this,
-                              rtp_dtls_transport, rtcp_dtls_transport,
-                              rtp_packet_transport, rtcp_packet_transport))) {
-    return false;
-  }
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  network_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+    return InitNetwork_n(rtp_dtls_transport, rtcp_dtls_transport,
+                         rtp_packet_transport, rtcp_packet_transport);
+  });
+
   // Both RTP and RTCP channels should be set, we can call SetInterface on
   // the media channel and it can set network options.
-  RTC_DCHECK_RUN_ON(worker_thread_);
   media_channel_->SetInterface(this);
-  return true;
 }
 
-bool BaseChannel::InitNetwork_n(
+void BaseChannel::InitNetwork_n(
     DtlsTransportInternal* rtp_dtls_transport,
     DtlsTransportInternal* rtcp_dtls_transport,
     rtc::PacketTransportInternal* rtp_packet_transport,
@@ -246,7 +244,6 @@ bool BaseChannel::InitNetwork_n(
   if (rtcp_mux_required_) {
     rtcp_mux_filter_.SetActive();
   }
-  return true;
 }
 
 void BaseChannel::Deinit() {
@@ -615,16 +612,14 @@ void BaseChannel::OnSelectedCandidatePairChanged(
 
     UpdateTransportOverhead();
   }
-  invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, worker_thread_,
-      Bind(&MediaChannel::OnNetworkRouteChanged, media_channel_, transport_name,
-           network_route));
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_, [=] {
+    media_channel_->OnNetworkRouteChanged(transport_name, network_route);
+  });
 }
 
 void BaseChannel::OnTransportReadyToSend(bool ready) {
-  invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, worker_thread_,
-      Bind(&MediaChannel::OnReadyToSend, media_channel_, ready));
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_,
+                             [=] { media_channel_->OnReadyToSend(ready); });
 }
 
 bool BaseChannel::SendPacket(bool rtcp,
@@ -1435,19 +1430,18 @@ VoiceChannel::VoiceChannel(rtc::Thread* worker_thread,
                            rtc::Thread* network_thread,
                            rtc::Thread* signaling_thread,
                            MediaEngineInterface* media_engine,
-                           VoiceMediaChannel* media_channel,
+                           std::unique_ptr<VoiceMediaChannel> media_channel,
                            const std::string& content_name,
                            bool rtcp_mux_required,
                            bool srtp_required)
     : BaseChannel(worker_thread,
                   network_thread,
                   signaling_thread,
-                  media_channel,
+                  std::move(media_channel),
                   content_name,
                   rtcp_mux_required,
                   srtp_required),
-      media_engine_(media_engine),
-      received_media_(false) {}
+      media_engine_(media_engine) {}
 
 VoiceChannel::~VoiceChannel() {
   TRACE_EVENT0("webrtc", "VoiceChannel::~VoiceChannel");
@@ -1676,7 +1670,7 @@ void BaseChannel::UpdateTransportOverhead() {
   if (transport_overhead_per_packet)
     invoker_.AsyncInvoke<void>(
         RTC_FROM_HERE, worker_thread_,
-        Bind(&MediaChannel::OnTransportOverheadChanged, media_channel_,
+        Bind(&MediaChannel::OnTransportOverheadChanged, media_channel_.get(),
              transport_overhead_per_packet));
 }
 
@@ -1852,14 +1846,14 @@ void VoiceChannel::OnAudioMonitorUpdate(AudioMonitor* monitor,
 VideoChannel::VideoChannel(rtc::Thread* worker_thread,
                            rtc::Thread* network_thread,
                            rtc::Thread* signaling_thread,
-                           VideoMediaChannel* media_channel,
+                           std::unique_ptr<VideoMediaChannel> media_channel,
                            const std::string& content_name,
                            bool rtcp_mux_required,
                            bool srtp_required)
     : BaseChannel(worker_thread,
                   network_thread,
                   signaling_thread,
-                  media_channel,
+                  std::move(media_channel),
                   content_name,
                   rtcp_mux_required,
                   srtp_required) {}
@@ -2112,14 +2106,14 @@ void VideoChannel::OnMediaMonitorUpdate(
 RtpDataChannel::RtpDataChannel(rtc::Thread* worker_thread,
                                rtc::Thread* network_thread,
                                rtc::Thread* signaling_thread,
-                               DataMediaChannel* media_channel,
+                               std::unique_ptr<DataMediaChannel> media_channel,
                                const std::string& content_name,
                                bool rtcp_mux_required,
                                bool srtp_required)
     : BaseChannel(worker_thread,
                   network_thread,
                   signaling_thread,
-                  media_channel,
+                  std::move(media_channel),
                   content_name,
                   rtcp_mux_required,
                   srtp_required) {}
@@ -2133,20 +2127,18 @@ RtpDataChannel::~RtpDataChannel() {
   Deinit();
 }
 
-bool RtpDataChannel::Init_w(
+void RtpDataChannel::Init_w(
     DtlsTransportInternal* rtp_dtls_transport,
     DtlsTransportInternal* rtcp_dtls_transport,
     rtc::PacketTransportInternal* rtp_packet_transport,
     rtc::PacketTransportInternal* rtcp_packet_transport) {
-  if (!BaseChannel::Init_w(rtp_dtls_transport, rtcp_dtls_transport,
-                           rtp_packet_transport, rtcp_packet_transport)) {
-    return false;
-  }
+  BaseChannel::Init_w(rtp_dtls_transport, rtcp_dtls_transport,
+                      rtp_packet_transport, rtcp_packet_transport);
+
   media_channel()->SignalDataReceived.connect(this,
                                               &RtpDataChannel::OnDataReceived);
   media_channel()->SignalReadyToSend.connect(
       this, &RtpDataChannel::OnDataChannelReadyToSend);
-  return true;
 }
 
 bool RtpDataChannel::SendData(const SendDataParams& params,

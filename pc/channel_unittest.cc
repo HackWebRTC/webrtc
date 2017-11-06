@@ -121,12 +121,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   void CreateChannels(int flags1, int flags2) {
-    CreateChannels(new typename T::MediaChannel(NULL, typename T::Options()),
-                   new typename T::MediaChannel(NULL, typename T::Options()),
+    CreateChannels(rtc::MakeUnique<typename T::MediaChannel>(
+                       nullptr, typename T::Options()),
+                   rtc::MakeUnique<typename T::MediaChannel>(
+                       nullptr, typename T::Options()),
                    flags1, flags2);
   }
-  void CreateChannels(typename T::MediaChannel* ch1,
-                      typename T::MediaChannel* ch2,
+  void CreateChannels(std::unique_ptr<typename T::MediaChannel> ch1,
+                      std::unique_ptr<typename T::MediaChannel> ch2,
                       int flags1,
                       int flags2) {
     // Network thread is started in CreateChannels, to allow the test to
@@ -142,8 +144,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     // channels.
     RTC_DCHECK_EQ(flags1 & RAW_PACKET_TRANSPORT, flags2 & RAW_PACKET_TRANSPORT);
     rtc::Thread* worker_thread = rtc::Thread::Current();
-    media_channel1_ = ch1;
-    media_channel2_ = ch2;
+    media_channel1_ = ch1.get();
+    media_channel2_ = ch2.get();
     rtc::PacketTransportInternal* rtp1 = nullptr;
     rtc::PacketTransportInternal* rtcp1 = nullptr;
     rtc::PacketTransportInternal* rtp2 = nullptr;
@@ -240,14 +242,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         }
       }
     }
-    channel1_.reset(
-        CreateChannel(worker_thread, network_thread_, &media_engine_, ch1,
-                      fake_rtp_dtls_transport1_.get(),
-                      fake_rtcp_dtls_transport1_.get(), rtp1, rtcp1, flags1));
-    channel2_.reset(
-        CreateChannel(worker_thread, network_thread_, &media_engine_, ch2,
-                      fake_rtp_dtls_transport2_.get(),
-                      fake_rtcp_dtls_transport2_.get(), rtp2, rtcp2, flags2));
+    channel1_ =
+        CreateChannel(worker_thread, network_thread_, &media_engine_,
+                      std::move(ch1), fake_rtp_dtls_transport1_.get(),
+                      fake_rtcp_dtls_transport1_.get(), rtp1, rtcp1, flags1);
+    channel2_ =
+        CreateChannel(worker_thread, network_thread_, &media_engine_,
+                      std::move(ch2), fake_rtp_dtls_transport2_.get(),
+                      fake_rtcp_dtls_transport2_.get(), rtp2, rtcp2, flags2);
     channel1_->SignalMediaMonitor.connect(this,
                                           &ChannelTest<T>::OnMediaMonitor1);
     channel2_->SignalMediaMonitor.connect(this,
@@ -281,30 +283,26 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       AddLegacyStreamInContent(kSsrc2, flags2, &remote_media_content2_);
     }
   }
-  typename T::Channel* CreateChannel(
+  std::unique_ptr<typename T::Channel> CreateChannel(
       rtc::Thread* worker_thread,
       rtc::Thread* network_thread,
       cricket::MediaEngineInterface* engine,
-      typename T::MediaChannel* ch,
+      std::unique_ptr<typename T::MediaChannel> ch,
       cricket::DtlsTransportInternal* fake_rtp_dtls_transport,
       cricket::DtlsTransportInternal* fake_rtcp_dtls_transport,
       rtc::PacketTransportInternal* fake_rtp_packet_transport,
       rtc::PacketTransportInternal* fake_rtcp_packet_transport,
       int flags) {
     rtc::Thread* signaling_thread = rtc::Thread::Current();
-    typename T::Channel* channel = new typename T::Channel(
-        worker_thread, network_thread, signaling_thread, engine, ch,
+    auto channel = rtc::MakeUnique<typename T::Channel>(
+        worker_thread, network_thread, signaling_thread, engine, std::move(ch),
         cricket::CN_AUDIO, (flags & RTCP_MUX_REQUIRED) != 0,
         (flags & SECURE) != 0);
     if (!channel->NeedsRtcpTransport()) {
       fake_rtcp_dtls_transport = nullptr;
     }
-    if (!channel->Init_w(fake_rtp_dtls_transport, fake_rtcp_dtls_transport,
-                         fake_rtp_packet_transport,
-                         fake_rtcp_packet_transport)) {
-      delete channel;
-      channel = NULL;
-    }
+    channel->Init_w(fake_rtp_dtls_transport, fake_rtcp_dtls_transport,
+                    fake_rtp_packet_transport, fake_rtcp_packet_transport);
     return channel;
   }
 
@@ -1280,8 +1278,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         T::MediaChannel::SendRtcp(kRtcpReport, sizeof(kRtcpReport));
       }
     };
-    CreateChannels(new LastWordMediaChannel(), new LastWordMediaChannel(),
-                   RTCP_MUX, RTCP_MUX);
+    CreateChannels(rtc::MakeUnique<LastWordMediaChannel>(),
+                   rtc::MakeUnique<LastWordMediaChannel>(), RTCP_MUX, RTCP_MUX);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     EXPECT_TRUE(Terminate());
@@ -2207,28 +2205,26 @@ class VoiceChannelWithEncryptedRtpHeaderExtensionsDoubleThreadTest
 
 // override to add NULL parameter
 template <>
-cricket::VideoChannel* ChannelTest<VideoTraits>::CreateChannel(
+std::unique_ptr<cricket::VideoChannel> ChannelTest<VideoTraits>::CreateChannel(
     rtc::Thread* worker_thread,
     rtc::Thread* network_thread,
     cricket::MediaEngineInterface* engine,
-    cricket::FakeVideoMediaChannel* ch,
+    std::unique_ptr<cricket::FakeVideoMediaChannel> ch,
     cricket::DtlsTransportInternal* fake_rtp_dtls_transport,
     cricket::DtlsTransportInternal* fake_rtcp_dtls_transport,
     rtc::PacketTransportInternal* fake_rtp_packet_transport,
     rtc::PacketTransportInternal* fake_rtcp_packet_transport,
     int flags) {
   rtc::Thread* signaling_thread = rtc::Thread::Current();
-  cricket::VideoChannel* channel = new cricket::VideoChannel(
-      worker_thread, network_thread, signaling_thread, ch, cricket::CN_VIDEO,
-      (flags & RTCP_MUX_REQUIRED) != 0, (flags & SECURE) != 0);
+  auto channel = rtc::MakeUnique<cricket::VideoChannel>(
+      worker_thread, network_thread, signaling_thread, std::move(ch),
+      cricket::CN_VIDEO, (flags & RTCP_MUX_REQUIRED) != 0,
+      (flags & SECURE) != 0);
   if (!channel->NeedsRtcpTransport()) {
     fake_rtcp_dtls_transport = nullptr;
   }
-  if (!channel->Init_w(fake_rtp_dtls_transport, fake_rtcp_dtls_transport,
-                       fake_rtp_packet_transport, fake_rtcp_packet_transport)) {
-    delete channel;
-    channel = NULL;
-  }
+  channel->Init_w(fake_rtp_dtls_transport, fake_rtcp_dtls_transport,
+                  fake_rtp_packet_transport, fake_rtcp_packet_transport);
   return channel;
 }
 
@@ -3501,28 +3497,26 @@ class RtpDataChannelDoubleThreadTest : public ChannelTest<DataTraits> {
 
 // Override to avoid engine channel parameter.
 template <>
-cricket::RtpDataChannel* ChannelTest<DataTraits>::CreateChannel(
+std::unique_ptr<cricket::RtpDataChannel> ChannelTest<DataTraits>::CreateChannel(
     rtc::Thread* worker_thread,
     rtc::Thread* network_thread,
     cricket::MediaEngineInterface* engine,
-    cricket::FakeDataMediaChannel* ch,
+    std::unique_ptr<cricket::FakeDataMediaChannel> ch,
     cricket::DtlsTransportInternal* fake_rtp_dtls_transport,
     cricket::DtlsTransportInternal* fake_rtcp_dtls_transport,
     rtc::PacketTransportInternal* fake_rtp_packet_transport,
     rtc::PacketTransportInternal* fake_rtcp_packet_transport,
     int flags) {
   rtc::Thread* signaling_thread = rtc::Thread::Current();
-  cricket::RtpDataChannel* channel = new cricket::RtpDataChannel(
-      worker_thread, network_thread, signaling_thread, ch, cricket::CN_DATA,
-      (flags & RTCP_MUX_REQUIRED) != 0, (flags & SECURE) != 0);
+  auto channel = rtc::MakeUnique<cricket::RtpDataChannel>(
+      worker_thread, network_thread, signaling_thread, std::move(ch),
+      cricket::CN_DATA, (flags & RTCP_MUX_REQUIRED) != 0,
+      (flags & SECURE) != 0);
   if (!channel->NeedsRtcpTransport()) {
     fake_rtcp_dtls_transport = nullptr;
   }
-  if (!channel->Init_w(fake_rtp_dtls_transport, fake_rtcp_dtls_transport,
-                       fake_rtp_packet_transport, fake_rtcp_packet_transport)) {
-    delete channel;
-    channel = NULL;
-  }
+  channel->Init_w(fake_rtp_dtls_transport, fake_rtcp_dtls_transport,
+                  fake_rtp_packet_transport, fake_rtcp_packet_transport);
   return channel;
 }
 
@@ -3847,16 +3841,16 @@ class BaseChannelDeathTest : public testing::Test {
       : fake_rtp_dtls_transport_("foo", cricket::ICE_CANDIDATE_COMPONENT_RTP),
         fake_rtcp_dtls_transport_("foo", cricket::ICE_CANDIDATE_COMPONENT_RTCP),
         // RTCP mux not required, SRTP required.
-        voice_channel_(
-            rtc::Thread::Current(),
-            rtc::Thread::Current(),
-            rtc::Thread::Current(),
-            &fake_media_engine_,
-            new cricket::FakeVoiceMediaChannel(nullptr,
-                                               cricket::AudioOptions()),
-            cricket::CN_AUDIO,
-            false,
-            true) {}
+        voice_channel_(rtc::Thread::Current(),
+                       rtc::Thread::Current(),
+                       rtc::Thread::Current(),
+                       &fake_media_engine_,
+                       rtc::MakeUnique<cricket::FakeVoiceMediaChannel>(
+                           nullptr,
+                           cricket::AudioOptions()),
+                       cricket::CN_AUDIO,
+                       false,
+                       true) {}
 
  protected:
   cricket::FakeMediaEngine fake_media_engine_;
@@ -3866,27 +3860,24 @@ class BaseChannelDeathTest : public testing::Test {
 };
 
 TEST_F(BaseChannelDeathTest, SetTransportsWithNullRtpTransport) {
-  ASSERT_TRUE(voice_channel_.Init_w(
-      &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
-      &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_));
+  voice_channel_.Init_w(&fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
+                        &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_);
   cricket::FakeDtlsTransport new_rtcp_transport(
       "bar", cricket::ICE_CANDIDATE_COMPONENT_RTCP);
   EXPECT_DEATH(voice_channel_.SetTransports(nullptr, &new_rtcp_transport), "");
 }
 
 TEST_F(BaseChannelDeathTest, SetTransportsWithMissingRtcpTransport) {
-  ASSERT_TRUE(voice_channel_.Init_w(
-      &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
-      &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_));
+  voice_channel_.Init_w(&fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
+                        &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_);
   cricket::FakeDtlsTransport new_rtp_transport(
       "bar", cricket::ICE_CANDIDATE_COMPONENT_RTP);
   EXPECT_DEATH(voice_channel_.SetTransports(&new_rtp_transport, nullptr), "");
 }
 
 TEST_F(BaseChannelDeathTest, SetTransportsWithUnneededRtcpTransport) {
-  ASSERT_TRUE(voice_channel_.Init_w(
-      &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
-      &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_));
+  voice_channel_.Init_w(&fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
+                        &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_);
   // Activate RTCP muxing, simulating offer/answer negotiation.
   cricket::AudioContentDescription content;
   content.set_rtcp_mux(true);
@@ -3905,9 +3896,8 @@ TEST_F(BaseChannelDeathTest, SetTransportsWithUnneededRtcpTransport) {
 // This test will probably go away if/when we move the transport name out of
 // the transport classes and into their parent classes.
 TEST_F(BaseChannelDeathTest, SetTransportsWithMismatchingTransportNames) {
-  ASSERT_TRUE(voice_channel_.Init_w(
-      &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
-      &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_));
+  voice_channel_.Init_w(&fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
+                        &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_);
   cricket::FakeDtlsTransport new_rtp_transport(
       "bar", cricket::ICE_CANDIDATE_COMPONENT_RTP);
   cricket::FakeDtlsTransport new_rtcp_transport(
@@ -3920,9 +3910,8 @@ TEST_F(BaseChannelDeathTest, SetTransportsWithMismatchingTransportNames) {
 // Not expected to support going from DtlsTransportInternal to
 // PacketTransportInternal.
 TEST_F(BaseChannelDeathTest, SetTransportsDtlsToNonDtls) {
-  ASSERT_TRUE(voice_channel_.Init_w(
-      &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
-      &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_));
+  voice_channel_.Init_w(&fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
+                        &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_);
   EXPECT_DEATH(
       voice_channel_.SetTransports(
           static_cast<rtc::PacketTransportInternal*>(&fake_rtp_dtls_transport_),
@@ -3934,8 +3923,8 @@ TEST_F(BaseChannelDeathTest, SetTransportsDtlsToNonDtls) {
 // Not expected to support going from PacketTransportInternal to
 // DtlsTransportInternal.
 TEST_F(BaseChannelDeathTest, SetTransportsNonDtlsToDtls) {
-  ASSERT_TRUE(voice_channel_.Init_w(nullptr, nullptr, &fake_rtp_dtls_transport_,
-                                    &fake_rtcp_dtls_transport_));
+  voice_channel_.Init_w(nullptr, nullptr, &fake_rtp_dtls_transport_,
+                        &fake_rtcp_dtls_transport_);
   EXPECT_DEATH(voice_channel_.SetTransports(&fake_rtp_dtls_transport_,
                                             &fake_rtp_dtls_transport_),
                "");
