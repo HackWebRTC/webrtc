@@ -20,9 +20,6 @@ import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.view.Surface;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * An implementation of VideoCapturer to capture the screen content as a video stream.
  * Capturing is done by {@code MediaProjection} on a {@code SurfaceTexture}. We interact with this
