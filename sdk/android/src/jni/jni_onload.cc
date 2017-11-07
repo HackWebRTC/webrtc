@@ -13,6 +13,7 @@
 #define JNIEXPORT __attribute__((visibility("default")))
 
 #include "rtc_base/ssladapter.h"
+#include "sdk/android/src/jni/class_loader.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
@@ -27,6 +28,8 @@ extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 
   RTC_CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
   LoadGlobalClassReferenceHolder();
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  InitClassLoader(env);
 
   return ret;
 }

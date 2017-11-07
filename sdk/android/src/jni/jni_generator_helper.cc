@@ -11,21 +11,10 @@
 #include "sdk/android/src/jni/jni_generator_helper.h"
 
 #include "rtc_base/atomicops.h"
-#include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/class_loader.h"
 
 namespace base {
 namespace android {
-
-namespace {
-// JNIEnv-helper methods that RTC_CHECK success: no Java exception thrown and
-// found object/class/method/field is non-null.
-jclass GetClass(JNIEnv* jni, const char* class_name) {
-  jclass clazz = webrtc::jni::FindClass(jni, class_name);
-  CHECK_EXCEPTION(jni) << "error during FindClass: " << class_name;
-  RTC_CHECK(clazz) << class_name;
-  return clazz;
-}
-}  // namespace
 
 // If |atomic_class_id| set, it'll return immediately. Otherwise, it will look
 // up the class and store it. If there's a race, we take care to only store one
@@ -39,8 +28,9 @@ jclass LazyGetClass(JNIEnv* env,
       rtc::AtomicOps::AcquireLoadPtr(atomic_class_id);
   if (value)
     return reinterpret_cast<jclass>(value);
-  jclass clazz =
-      static_cast<jclass>(env->NewGlobalRef(GetClass(env, class_name)));
+  jclass clazz = static_cast<jclass>(
+      env->NewGlobalRef(webrtc::jni::GetClass(env, class_name)));
+  RTC_CHECK(clazz) << class_name;
   base::subtle::AtomicWord null_aw = nullptr;
   base::subtle::AtomicWord cas_result = rtc::AtomicOps::CompareAndSwapPtr(
       atomic_class_id, null_aw,
