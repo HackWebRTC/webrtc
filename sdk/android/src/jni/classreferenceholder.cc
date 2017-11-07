@@ -111,11 +111,6 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/VideoCodecStatus");
   LoadClass(jni, "org/webrtc/VideoDecoder$Settings");
   LoadClass(jni, "org/webrtc/VideoDecoderWrapperCallback");
-  LoadClass(jni, "org/webrtc/VideoEncoder$BitrateAllocation");
-  LoadClass(jni, "org/webrtc/VideoEncoder$EncodeInfo");
-  LoadClass(jni, "org/webrtc/VideoEncoder$ScalingSettings");
-  LoadClass(jni, "org/webrtc/VideoEncoder$Settings");
-  LoadClass(jni, "org/webrtc/VideoEncoderWrapperCallback");
   LoadClass(jni, "org/webrtc/VideoFrame");
   LoadClass(jni, "org/webrtc/VideoFrame$Buffer");
   LoadClass(jni, "org/webrtc/VideoFrame$I420Buffer");

@@ -33,15 +33,6 @@ public class EncodedImage {
     public int getNative() {
       return nativeIndex;
     }
-
-    public static FrameType fromNative(int nativeIndex) {
-      for (FrameType type : FrameType.values()) {
-        if (type.nativeIndex == nativeIndex) {
-          return type;
-        }
-      }
-      throw new IllegalArgumentException("Unknown native frame type: " + nativeIndex);
-    }
   }
 
   public final ByteBuffer buffer;

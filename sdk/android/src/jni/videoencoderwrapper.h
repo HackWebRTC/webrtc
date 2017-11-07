@@ -26,9 +26,7 @@
 namespace webrtc {
 namespace jni {
 
-// Wraps a Java decoder and delegates all calls to it. Passes
-// VideoEncoderWrapperCallback to the decoder on InitDecode. Wraps the received
-// frames to AndroidVideoBuffer.
+// Wraps a Java encoder and delegates all calls to it.
 class VideoEncoderWrapper : public VideoEncoder {
  public:
   VideoEncoderWrapper(JNIEnv* jni, jobject j_encoder);
@@ -90,27 +88,8 @@ class VideoEncoderWrapper : public VideoEncoder {
   std::string GetImplementationName(JNIEnv* jni) const;
 
   const ScopedGlobalRef<jobject> encoder_;
-  const ScopedGlobalRef<jclass> settings_class_;
-  const ScopedGlobalRef<jclass> encode_info_class_;
   const ScopedGlobalRef<jclass> frame_type_class_;
-  const ScopedGlobalRef<jclass> bitrate_allocation_class_;
   const ScopedGlobalRef<jclass> int_array_class_;
-
-  jmethodID settings_constructor_;
-
-  jmethodID encode_info_constructor_;
-
-  jmethodID frame_type_from_native_method_;
-
-  jmethodID bitrate_allocation_constructor_;
-
-  jfieldID scaling_settings_on_field_;
-  jfieldID scaling_settings_low_field_;
-  jfieldID scaling_settings_high_field_;
-
-  jmethodID get_number_method_;
-
-  jmethodID int_value_method_;
 
   std::string implementation_name_;
 

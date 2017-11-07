@@ -21,8 +21,10 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/random.h"
 #include "rtc_base/timeutils.h"
+#include "sdk/android/generated_video_jni/jni/VideoCodecStatus_jni.h"
+#include "sdk/android/generated_video_jni/jni/VideoEncoderWrapper_jni.h"
 #include "sdk/android/generated_video_jni/jni/VideoEncoder_jni.h"
-#include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/class_loader.h"
 
 namespace webrtc {
 namespace jni {
@@ -31,46 +33,10 @@ static const int kMaxJavaEncoderResets = 3;
 
 VideoEncoderWrapper::VideoEncoderWrapper(JNIEnv* jni, jobject j_encoder)
     : encoder_(jni, j_encoder),
-      settings_class_(jni, FindClass(jni, "org/webrtc/VideoEncoder$Settings")),
-      encode_info_class_(jni,
-                         FindClass(jni, "org/webrtc/VideoEncoder$EncodeInfo")),
       frame_type_class_(jni,
-                        FindClass(jni, "org/webrtc/EncodedImage$FrameType")),
-      bitrate_allocation_class_(
-          jni,
-          FindClass(jni, "org/webrtc/VideoEncoder$BitrateAllocation")),
+                        GetClass(jni, "org/webrtc/EncodedImage$FrameType")),
       int_array_class_(jni, jni->FindClass("[I")),
       video_frame_factory_(jni) {
-  settings_constructor_ =
-      jni->GetMethodID(*settings_class_, "<init>", "(IIIIIZ)V");
-
-  encode_info_constructor_ = jni->GetMethodID(
-      *encode_info_class_, "<init>", "([Lorg/webrtc/EncodedImage$FrameType;)V");
-
-  frame_type_from_native_method_ =
-      jni->GetStaticMethodID(*frame_type_class_, "fromNative",
-                             "(I)Lorg/webrtc/EncodedImage$FrameType;");
-
-  bitrate_allocation_constructor_ =
-      jni->GetMethodID(*bitrate_allocation_class_, "<init>", "([[I)V");
-
-  jclass video_codec_status_class =
-      FindClass(jni, "org/webrtc/VideoCodecStatus");
-  get_number_method_ =
-      jni->GetMethodID(video_codec_status_class, "getNumber", "()I");
-
-  jclass integer_class = jni->FindClass("java/lang/Integer");
-  int_value_method_ = jni->GetMethodID(integer_class, "intValue", "()I");
-
-  jclass scaling_settings_class =
-      FindClass(jni, "org/webrtc/VideoEncoder$ScalingSettings");
-  scaling_settings_on_field_ =
-      jni->GetFieldID(scaling_settings_class, "on", "Z");
-  scaling_settings_low_field_ =
-      jni->GetFieldID(scaling_settings_class, "low", "Ljava/lang/Integer;");
-  scaling_settings_high_field_ =
-      jni->GetFieldID(scaling_settings_class, "high", "Ljava/lang/Integer;");
-
   implementation_name_ = GetImplementationName(jni);
 
   initialized_ = false;
@@ -108,23 +74,18 @@ int32_t VideoEncoderWrapper::InitEncodeInternal(JNIEnv* jni) {
       automatic_resize_on = true;
   }
 
-  jobject settings =
-      jni->NewObject(*settings_class_, settings_constructor_, number_of_cores_,
-                     codec_settings_.width, codec_settings_.height,
-                     codec_settings_.startBitrate, codec_settings_.maxFramerate,
-                     automatic_resize_on);
+  jobject settings = Java_VideoEncoderWrapper_createSettings(
+      jni, number_of_cores_, codec_settings_.width, codec_settings_.height,
+      codec_settings_.startBitrate, codec_settings_.maxFramerate,
+      automatic_resize_on);
 
-  jclass callback_class =
-      FindClass(jni, "org/webrtc/VideoEncoderWrapperCallback");
-  jmethodID callback_constructor =
-      jni->GetMethodID(callback_class, "<init>", "(J)V");
-  jobject callback = jni->NewObject(callback_class, callback_constructor,
-                                    jlongFromPointer(this));
+  jobject callback = Java_VideoEncoderWrapper_createEncoderCallback(
+      jni, jlongFromPointer(this));
 
   jobject ret =
       Java_VideoEncoder_initEncode(jni, *encoder_, settings, callback);
 
-  if (jni->CallIntMethod(ret, get_number_method_) == WEBRTC_VIDEO_CODEC_OK) {
+  if (Java_VideoCodecStatus_getNumber(jni, ret) == WEBRTC_VIDEO_CODEC_OK) {
     initialized_ = true;
   }
 
@@ -163,13 +124,12 @@ int32_t VideoEncoderWrapper::Encode(
   jobjectArray j_frame_types =
       jni->NewObjectArray(frame_types->size(), *frame_type_class_, nullptr);
   for (size_t i = 0; i < frame_types->size(); ++i) {
-    jobject j_frame_type = jni->CallStaticObjectMethod(
-        *frame_type_class_, frame_type_from_native_method_,
-        static_cast<jint>((*frame_types)[i]));
+    jobject j_frame_type = Java_VideoEncoderWrapper_createFrameType(
+        jni, static_cast<jint>((*frame_types)[i]));
     jni->SetObjectArrayElement(j_frame_types, i, j_frame_type);
   }
-  jobject encode_info = jni->NewObject(*encode_info_class_,
-                                       encode_info_constructor_, j_frame_types);
+  jobject encode_info =
+      Java_VideoEncoderWrapper_createEncodeInfo(jni, j_frame_types);
 
   FrameExtraInfo info;
   info.capture_time_ns = frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec;
@@ -210,17 +170,17 @@ VideoEncoderWrapper::ScalingSettings VideoEncoderWrapper::GetScalingSettings()
   jobject j_scaling_settings =
       Java_VideoEncoder_getScalingSettings(jni, *encoder_);
   bool on =
-      jni->GetBooleanField(j_scaling_settings, scaling_settings_on_field_);
+      Java_VideoEncoderWrapper_getScalingSettingsOn(jni, j_scaling_settings);
   jobject j_low =
-      jni->GetObjectField(j_scaling_settings, scaling_settings_low_field_);
+      Java_VideoEncoderWrapper_getScalingSettingsLow(jni, j_scaling_settings);
   jobject j_high =
-      jni->GetObjectField(j_scaling_settings, scaling_settings_high_field_);
+      Java_VideoEncoderWrapper_getScalingSettingsHigh(jni, j_scaling_settings);
 
   if (j_low != nullptr || j_high != nullptr) {
     RTC_DCHECK(j_low != nullptr);
     RTC_DCHECK(j_high != nullptr);
-    int low = jni->CallIntMethod(j_low, int_value_method_);
-    int high = jni->CallIntMethod(j_high, int_value_method_);
+    int low = Java_VideoEncoderWrapper_getIntValue(jni, j_low);
+    int high = Java_VideoEncoderWrapper_getIntValue(jni, j_high);
     return ScalingSettings(on, low, high);
   } else {
     return ScalingSettings(on);
@@ -248,7 +208,7 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
   memcpy(buffer_copy.data(), buffer, buffer_size);
   int qp = -1;
   if (j_qp != nullptr) {
-    qp = jni->CallIntMethod(j_qp, int_value_method_);
+    qp = Java_VideoEncoderWrapper_getIntValue(jni, j_qp);
   }
 
   encoder_queue_->PostTask(
@@ -293,7 +253,7 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
 }
 
 int32_t VideoEncoderWrapper::HandleReturnCode(JNIEnv* jni, jobject code) {
-  int32_t value = jni->CallIntMethod(code, get_number_method_);
+  int32_t value = Java_VideoCodecStatus_getNumber(jni, code);
   if (value < 0) {  // Any errors are represented by negative values.
     // Try resetting the codec.
     if (++num_resets_ <= kMaxJavaEncoderResets &&
@@ -433,8 +393,8 @@ jobject VideoEncoderWrapper::ToJavaBitrateAllocation(
     jni->SetObjectArrayElement(j_allocation_array, spatial_i,
                                j_array_spatial_layer);
   }
-  return jni->NewObject(*bitrate_allocation_class_,
-                        bitrate_allocation_constructor_, j_allocation_array);
+  return Java_VideoEncoderWrapper_createBitrateAllocation(jni,
+                                                          j_allocation_array);
 }
 
 std::string VideoEncoderWrapper::GetImplementationName(JNIEnv* jni) const {
@@ -443,7 +403,7 @@ std::string VideoEncoderWrapper::GetImplementationName(JNIEnv* jni) const {
 }
 
 JNI_FUNCTION_DECLARATION(void,
-                         VideoEncoderWrapperCallback_nativeOnEncodedFrame,
+                         VideoEncoderWrapper_onEncodedFrame,
                          JNIEnv* jni,
                          jclass,
                          jlong j_native_encoder,
