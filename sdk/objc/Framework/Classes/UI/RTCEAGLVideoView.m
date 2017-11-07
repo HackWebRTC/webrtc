@@ -183,7 +183,9 @@
       RTCEAGLVideoView *strongSelf = weakSelf;
       [strongSelf displayLinkTimerDidFire];
     }];
-  [self setupGL];
+  if ([[UIApplication sharedApplication] applicationState] == UIApplicationStateActive) {
+    [self setupGL];
+  }
   return YES;
 }
 
