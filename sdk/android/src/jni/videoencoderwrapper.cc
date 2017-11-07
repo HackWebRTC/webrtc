@@ -192,6 +192,7 @@ const char* VideoEncoderWrapper::ImplementationName() const {
 }
 
 void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
+                                         jobject j_caller,
                                          jobject j_buffer,
                                          jint encoded_width,
                                          jint encoded_height,
@@ -400,26 +401,6 @@ jobject VideoEncoderWrapper::ToJavaBitrateAllocation(
 std::string VideoEncoderWrapper::GetImplementationName(JNIEnv* jni) const {
   jstring jname = Java_VideoEncoder_getImplementationName(jni, *encoder_);
   return JavaToStdString(jni, jname);
-}
-
-JNI_FUNCTION_DECLARATION(void,
-                         VideoEncoderWrapper_onEncodedFrame,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_native_encoder,
-                         jobject buffer,
-                         jint encoded_width,
-                         jint encoded_height,
-                         jlong capture_time_ns,
-                         jint frame_type,
-                         jint rotation,
-                         jboolean complete_frame,
-                         jobject qp) {
-  VideoEncoderWrapper* native_encoder =
-      reinterpret_cast<VideoEncoderWrapper*>(j_native_encoder);
-  native_encoder->OnEncodedFrame(jni, buffer, encoded_width, encoded_height,
-                                 capture_time_ns, frame_type, rotation,
-                                 complete_frame, qp);
 }
 
 }  // namespace jni

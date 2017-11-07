@@ -19,9 +19,12 @@
 #include "sdk/android/src/jni/jni_helpers.h"
 
 #define CHECK_CLAZZ(env, jcaller, clazz, ...) RTC_DCHECK(clazz);
+#define CHECK_NATIVE_PTR(env, jcaller, native_ptr, method_name, ...) \
+  RTC_DCHECK(native_ptr) << method_name;
 
 #define BASE_EXPORT
 #define JNI_REGISTRATION_EXPORT __attribute__((visibility("default")))
+#define JNI_GENERATOR_EXPORT extern "C" JNIEXPORT JNICALL
 
 namespace jni_generator {
 inline void CheckException(JNIEnv* env) {
@@ -70,6 +73,8 @@ class JavaRef {
 // using DeleteLocalRef though.
 template <typename T>
 using ScopedJavaLocalRef = JavaRef<T>;
+template <typename T>
+using JavaParamRef = JavaRef<T>;
 
 // This function will initialize |atomic_class_id| to contain a global ref to
 // the given class, and will return that ref on subsequent calls. The caller is

@@ -69,12 +69,13 @@ class VideoEncoderWrapper {
   @CalledByNative
   static VideoEncoder.Callback createEncoderCallback(final long nativeEncoder) {
     return (EncodedImage frame, VideoEncoder.CodecSpecificInfo info)
-               -> onEncodedFrame(nativeEncoder, frame.buffer, frame.encodedWidth,
+               -> nativeOnEncodedFrame(nativeEncoder, frame.buffer, frame.encodedWidth,
                    frame.encodedHeight, frame.captureTimeNs, frame.frameType.getNative(),
                    frame.rotation, frame.completeFrame, frame.qp);
   }
 
-  private static native void onEncodedFrame(long nativeEncoder, ByteBuffer buffer, int encodedWidth,
-      int encodedHeight, long captureTimeNs, int frameType, int rotation, boolean completeFrame,
-      Integer qp);
+  @NativeClassQualifiedName("webrtc::jni::VideoEncoderWrapper")
+  private static native void nativeOnEncodedFrame(long nativeEncoder, ByteBuffer buffer,
+      int encodedWidth, int encodedHeight, long captureTimeNs, int frameType, int rotation,
+      boolean completeFrame, Integer qp);
 }

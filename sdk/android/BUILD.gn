@@ -488,6 +488,7 @@ rtc_android_library("libjingle_peerconnection_java") {
     "src/java/org/webrtc/Histogram.java",
     "src/java/org/webrtc/JniCommon.java",
     "src/java/org/webrtc/MediaCodecUtils.java",
+    "src/java/org/webrtc/NativeClassQualifiedName.java",
     "src/java/org/webrtc/NativeLibrary.java",
     "src/java/org/webrtc/NV12Buffer.java",
     "src/java/org/webrtc/NV21Buffer.java",
