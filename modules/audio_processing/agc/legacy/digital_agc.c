@@ -607,7 +607,12 @@ int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
       out = buf2[k] + HPstate;
       tmp32 = 600 * out;
       HPstate = (int16_t)((tmp32 >> 10) - buf2[k]);
-      nrg += (out * out) >> 6;
+
+      // Add 'out * out / 2**6' to 'nrg' in a non-overflowing
+      // way. Guaranteed to work as long as 'out * out / 2**6' fits in
+      // an int32_t.
+      nrg += out * (out / (1 << 6));
+      nrg += out * (out % (1 << 6)) / (1 << 6);
     }
   }
   state->HPstate = HPstate;
