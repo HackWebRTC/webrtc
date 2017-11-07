@@ -249,6 +249,8 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       testonly = true
       sources = [
         "objc/AppRTCMobile/ios/ARDAppDelegate.m",
+        "objc/AppRTCMobile/ios/ARDFileCaptureController.h",
+        "objc/AppRTCMobile/ios/ARDFileCaptureController.m",
         "objc/AppRTCMobile/ios/ARDMainView.h",
         "objc/AppRTCMobile/ios/ARDMainView.m",
         "objc/AppRTCMobile/ios/ARDMainViewController.h",
@@ -311,6 +313,9 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     bundle_data("AppRTCMobile_ios_bundle_data") {
       sources = [
         "objc/AppRTCMobile/ios/resources/Roboto-Regular.ttf",
+
+        # Sample video taken from https://media.xiph.org/video/derf/
+        "objc/AppRTCMobile/ios/resources/foreman.mp4",
         "objc/AppRTCMobile/ios/resources/iPhone5@2x.png",
         "objc/AppRTCMobile/ios/resources/iPhone6@2x.png",
         "objc/AppRTCMobile/ios/resources/iPhone6p@3x.png",
@@ -420,6 +425,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         testonly = true
         sources = [
           "objc/AppRTCMobile/tests/ARDAppClient_xctest.mm",
+          "objc/AppRTCMobile/tests/ARDFileCaptureController_xctest.mm",
           "objc/AppRTCMobile/tests/ARDSettingsModel_xctest.mm",
         ]
         deps = [
