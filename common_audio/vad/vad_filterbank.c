@@ -91,7 +91,7 @@ static void AllPassFilter(const int16_t* data_in, size_t data_length,
   size_t i;
   int16_t tmp16 = 0;
   int32_t tmp32 = 0;
-  int32_t state32 = ((int32_t) (*filter_state) << 16);  // Q15
+  int32_t state32 = ((int32_t) (*filter_state) * (1 << 16));  // Q15
 
   for (i = 0; i < data_length; i++) {
     tmp32 = state32 + filter_coefficient * *data_in;
