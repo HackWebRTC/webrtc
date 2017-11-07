@@ -29,9 +29,7 @@ class VoiceActivityDetector {
   VoiceActivityDetector();
   ~VoiceActivityDetector();
 
-  // Processes each audio chunk and estimates the voice probability. The maximum
-  // supported sample rate is 32kHz.
-  // TODO(aluebs): Change |length| to size_t.
+  // Processes each audio chunk and estimates the voice probability.
   void ProcessChunk(const int16_t* audio, size_t length, int sample_rate_hz);
 
   // Returns a vector of voice probabilities for each chunk. It can be empty for

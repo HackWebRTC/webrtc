@@ -47,7 +47,9 @@ class ApmModuleSimulator(object):
     self._audioproc_wrapper = ap_wrapper
     self._evaluator = evaluator
     self._annotator = annotations.AudioAnnotationsExtractor(
-        vad_type=annotations.AudioAnnotationsExtractor.VadType.WEBRTC)
+        annotations.AudioAnnotationsExtractor.VadType.ENERGY_THRESHOLD |
+        annotations.AudioAnnotationsExtractor.VadType.WEBRTC_COMMON_AUDIO |
+        annotations.AudioAnnotationsExtractor.VadType.WEBRTC_APM)
 
     # Init.
     self._test_data_generator_factory.SetOutputDirectoryPrefix(

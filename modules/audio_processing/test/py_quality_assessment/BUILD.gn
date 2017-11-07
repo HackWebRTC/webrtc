@@ -99,6 +99,7 @@ group("unit_tests") {
   testonly = true
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   deps = [
+    ":apm_vad",
     ":fake_polqa",
     ":lib_unit_tests",
     ":scripts_unit_tests",
@@ -124,6 +125,18 @@ rtc_executable("vad") {
     "quality_assessment/vad.cc",
   ]
   deps = [
+    "../../../..:webrtc_common",
+    "../../../../common_audio",
+    "../../../../rtc_base:rtc_base_approved",
+  ]
+}
+
+rtc_executable("apm_vad") {
+  sources = [
+    "quality_assessment/apm_vad.cc",
+  ]
+  deps = [
+    "../..",
     "../../../..:webrtc_common",
     "../../../../common_audio",
     "../../../../rtc_base:rtc_base_approved",

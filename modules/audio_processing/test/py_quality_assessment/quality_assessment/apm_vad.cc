@@ -10,8 +10,8 @@
 #include <fstream>
 #include <memory>
 
-#include "common_audio/vad/include/vad.h"
 #include "common_audio/wav_file.h"
+#include "modules/audio_processing/vad/voice_activity_detector.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
 
@@ -19,16 +19,14 @@ namespace webrtc {
 namespace test {
 namespace {
 
-// The allowed values are 10, 20 or 30 ms.
-constexpr uint8_t kAudioFrameLengthMilliseconds = 30;
+constexpr uint8_t kAudioFrameLengthMilliseconds = 10;
 constexpr int kMaxSampleRate = 48000;
 constexpr size_t kMaxFrameLen =
     kAudioFrameLengthMilliseconds * kMaxSampleRate / 1000;
 
-constexpr uint8_t kBitmaskBuffSize = 8;
-
 DEFINE_string(i, "", "Input wav file");
-DEFINE_string(o, "", "VAD output file");
+DEFINE_string(o_probs, "", "VAD probabilities output file");
+DEFINE_string(o_rms, "", "VAD output file");
 
 int main(int argc, char* argv[]) {
   if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true))
@@ -44,50 +42,45 @@ int main(int argc, char* argv[]) {
     LOG(LS_ERROR) << "Beyond maximum sample rate (" << kMaxSampleRate << ")";
     return 1;
   }
-  const size_t audio_frame_length = rtc::CheckedDivExact(
+  const size_t audio_frame_len = rtc::CheckedDivExact(
       kAudioFrameLengthMilliseconds * wav_reader.sample_rate(), 1000);
-  if (audio_frame_length > kMaxFrameLen) {
+  if (audio_frame_len > kMaxFrameLen) {
     LOG(LS_ERROR) << "The frame size and/or the sample rate are too large.";
     return 1;
   }
 
   // Create output file and write header.
-  std::ofstream out_file(FLAG_o, std::ofstream::binary);
-  const char audio_frame_length_ms = kAudioFrameLengthMilliseconds;
-  out_file.write(&audio_frame_length_ms, 1);  // Header.
+  std::ofstream out_probs_file(FLAG_o_probs, std::ofstream::binary);
+  std::ofstream out_rms_file(FLAG_o_rms, std::ofstream::binary);
 
   // Run VAD and write decisions.
-  std::unique_ptr<Vad> vad = CreateVad(Vad::Aggressiveness::kVadNormal);
+  VoiceActivityDetector vad;
   std::array<int16_t, kMaxFrameLen> samples;
-  char buff = 0;     // Buffer to write one bit per frame.
-  uint8_t next = 0;  // Points to the next bit to write in |buff|.
+
   while (true) {
     // Process frame.
     const auto read_samples =
-        wav_reader.ReadSamples(audio_frame_length, samples.data());
-    if (read_samples < audio_frame_length)
+        wav_reader.ReadSamples(audio_frame_len, samples.data());
+    if (read_samples < audio_frame_len) {
       break;
-    const auto is_speech = vad->VoiceActivity(
-        samples.data(), audio_frame_length, wav_reader.sample_rate());
-
+    }
+    vad.ProcessChunk(samples.data(), audio_frame_len, wav_reader.sample_rate());
     // Write output.
-    buff = is_speech ? buff | (1 << next) : buff & ~(1 << next);
-    if (++next == kBitmaskBuffSize) {
-      out_file.write(&buff, 1);  // Flush.
-      buff = 0;                  // Reset.
-      next = 0;
+    auto probs = vad.chunkwise_voice_probabilities();
+    auto rms = vad.chunkwise_rms();
+    RTC_CHECK_EQ(probs.size(), rms.size());
+    RTC_CHECK_EQ(sizeof(double), 8);
+
+    for (const auto& p : probs) {
+      out_probs_file.write(reinterpret_cast<const char*>(&p), 8);
+    }
+    for (const auto& r : rms) {
+      out_rms_file.write(reinterpret_cast<const char*>(&r), 8);
     }
   }
 
-  // Finalize.
-  char extra_bits = 0;
-  if (next > 0) {
-    extra_bits = kBitmaskBuffSize - next;
-    out_file.write(&buff, 1);  // Flush.
-  }
-  out_file.write(&extra_bits, 1);
-  out_file.close();
-
+  out_probs_file.close();
+  out_rms_file.close();
   return 0;
 }
 
