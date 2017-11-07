@@ -12,6 +12,9 @@
 
 #include <ApplicationServices/ApplicationServices.h>
 
+#include <algorithm>
+#include <iterator>
+
 #include "rtc_base/checks.h"
 #include "rtc_base/macutils.h"
 
@@ -55,6 +58,37 @@ bool GetWindowRef(CGWindowID id,
   }
   CFRelease(window_id_array);
   return result;
+}
+
+// Scales the |rect| according to the DIP to physical pixel scale of |rect|.
+// |rect| is in unscaled system coordinate, i.e. it's device-independent and the
+// primary monitor starts from (0, 0). If |rect| overlaps multiple monitors, the
+// returned size may not be accurate when monitors have different DIP settings.
+// If |rect| is entirely out of the display, this function returns |rect|.
+DesktopRect ApplyScaleFactorOfRect(
+    const MacDesktopConfiguration& desktop_config,
+    DesktopRect rect) {
+  // TODO(http://crbug.com/778049): How does Mac OSX decide the scale factor
+  // if one window is across two monitors with different DPIs.
+  float scales[] = {
+      GetScaleFactorAtPosition(desktop_config, rect.top_left()),
+      GetScaleFactorAtPosition(desktop_config,
+          DesktopVector(rect.left() + rect.width() / 2,
+                        rect.top() + rect.height() / 2)),
+      GetScaleFactorAtPosition(
+            desktop_config, DesktopVector(rect.right(), rect.bottom())),
+  };
+  // Since GetScaleFactorAtPosition() returns 1 if the position is out of the
+  // display, we always prefer a value which not equals to 1.
+  float scale = *std::max_element(std::begin(scales), std::end(scales));
+  if (scale == 1) {
+    scale = *std::min_element(std::begin(scales), std::end(scales));
+  }
+
+  return DesktopRect::MakeXYWH(rect.left() * scale,
+                               rect.top() * scale,
+                               rect.width() * scale,
+                               rect.height() * scale);
 }
 
 }  // namespace
@@ -227,6 +261,19 @@ WindowId GetWindowId(CFDictionaryRef window) {
   return id;
 }
 
+float GetScaleFactorAtPosition(const MacDesktopConfiguration& desktop_config,
+                               DesktopVector position) {
+  // Find the dpi to physical pixel scale for the screen where the mouse cursor
+  // is.
+  for (auto it = desktop_config.displays.begin();
+       it != desktop_config.displays.end(); ++it) {
+    if (it->bounds.Contains(position)) {
+      return it->dip_to_pixel_scale;
+    }
+  }
+  return 1;
+}
+
 DesktopRect GetWindowBounds(CFDictionaryRef window) {
   CFDictionaryRef window_bounds = reinterpret_cast<CFDictionaryRef>(
       CFDictionaryGetValue(window, kCGWindowBounds));
@@ -245,6 +292,12 @@ DesktopRect GetWindowBounds(CFDictionaryRef window) {
                                gc_window_rect.size.height);
 }
 
+DesktopRect GetWindowBounds(const MacDesktopConfiguration& desktop_config,
+                            CFDictionaryRef window) {
+  DesktopRect rect = GetWindowBounds(window);
+  return ApplyScaleFactorOfRect(desktop_config, rect);
+}
+
 DesktopRect GetWindowBounds(CGWindowID id) {
   DesktopRect result;
   if (GetWindowRef(id,
@@ -254,6 +307,12 @@ DesktopRect GetWindowBounds(CGWindowID id) {
     return result;
   }
   return DesktopRect();
+}
+
+DesktopRect GetWindowBounds(const MacDesktopConfiguration& desktop_config,
+                            CGWindowID id) {
+  DesktopRect rect = GetWindowBounds(id);
+  return ApplyScaleFactorOfRect(desktop_config, rect);
 }
 
 }  // namespace webrtc

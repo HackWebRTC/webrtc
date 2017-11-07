@@ -12,17 +12,24 @@
 #define MODULES_DESKTOP_CAPTURE_WINDOW_FINDER_MAC_H_
 
 #include "modules/desktop_capture/window_finder.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
+
+class DesktopConfigurationMonitor;
 
 // The implementation of WindowFinder for Mac OSX.
 class WindowFinderMac final : public WindowFinder {
  public:
-  WindowFinderMac();
+  explicit WindowFinderMac(
+      rtc::scoped_refptr<DesktopConfigurationMonitor> configuration_monitor);
   ~WindowFinderMac() override;
 
   // WindowFinder implementation.
   WindowId GetWindowUnderPoint(DesktopVector point) override;
+
+ private:
+  const rtc::scoped_refptr<DesktopConfigurationMonitor> configuration_monitor_;
 };
 
 }  // namespace webrtc

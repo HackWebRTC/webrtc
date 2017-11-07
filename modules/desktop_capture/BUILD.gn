@@ -293,6 +293,7 @@ rtc_static_library("desktop_capture_generic") {
     "win/window_capture_utils.cc",
     "win/window_capture_utils.h",
     "window_capturer_win.cc",
+    "window_finder.cc",
     "window_finder.h",
     "window_finder_win.cc",
     "window_finder_win.h",

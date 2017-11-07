@@ -12,18 +12,37 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 
+#include <utility>
+
 #include "modules/desktop_capture/mac/window_list_utils.h"
+#include "modules/desktop_capture/mac/desktop_configuration.h"
+#include "modules/desktop_capture/mac/desktop_configuration_monitor.h"
 #include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
-WindowFinderMac::WindowFinderMac() = default;
+WindowFinderMac::WindowFinderMac(
+    rtc::scoped_refptr<DesktopConfigurationMonitor> configuration_monitor)
+    : configuration_monitor_(std::move(configuration_monitor)) {}
 WindowFinderMac::~WindowFinderMac() = default;
 
 WindowId WindowFinderMac::GetWindowUnderPoint(DesktopVector point) {
   WindowId id = kNullWindowId;
-  GetWindowList([&id, point](CFDictionaryRef window) {
-                  DesktopRect bounds = GetWindowBounds(window);
+  MacDesktopConfiguration configuration_holder;
+  MacDesktopConfiguration* configuration = nullptr;
+  if (configuration_monitor_) {
+    configuration_monitor_->Lock();
+    configuration_holder = configuration_monitor_->desktop_configuration();
+    configuration_monitor_->Unlock();
+    configuration = &configuration_holder;
+  }
+  GetWindowList([&id, point, configuration](CFDictionaryRef window) {
+                  DesktopRect bounds;
+                  if (configuration) {
+                    bounds = GetWindowBounds(*configuration, window);
+                  } else {
+                    bounds = GetWindowBounds(window);
+                  }
                   if (bounds.Contains(point)) {
                     id = GetWindowId(window);
                     return false;
@@ -37,7 +56,7 @@ WindowId WindowFinderMac::GetWindowUnderPoint(DesktopVector point) {
 // static
 std::unique_ptr<WindowFinder> WindowFinder::Create(
     const WindowFinder::Options& options) {
-  return rtc::MakeUnique<WindowFinderMac>();
+  return rtc::MakeUnique<WindowFinderMac>(options.configuration_monitor);
 }
 
 }  // namespace webrtc

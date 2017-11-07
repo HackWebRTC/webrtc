@@ -24,6 +24,7 @@
 #include "modules/desktop_capture/mac/desktop_configuration.h"
 #include "modules/desktop_capture/mac/desktop_configuration_monitor.h"
 #include "modules/desktop_capture/mac/full_screen_chrome_window_detector.h"
+#include "modules/desktop_capture/mac/window_list_utils.h"
 #include "modules/desktop_capture/mouse_cursor.h"
 #include "rtc_base/macutils.h"
 #include "rtc_base/scoped_ref_ptr.h"
@@ -122,17 +123,7 @@ void MouseCursorMonitorMac::Capture() {
   MacDesktopConfiguration configuration =
       configuration_monitor_->desktop_configuration();
   configuration_monitor_->Unlock();
-  float scale = 1.0f;
-
-  // Find the dpi to physical pixel scale for the screen where the mouse cursor
-  // is.
-  for (MacDisplayConfigurations::iterator it = configuration.displays.begin();
-       it != configuration.displays.end(); ++it) {
-    if (it->bounds.Contains(position)) {
-      scale = it->dip_to_pixel_scale;
-      break;
-    }
-  }
+  float scale = GetScaleFactorAtPosition(configuration, position);
 
   CaptureImage(scale);
 

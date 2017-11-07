@@ -83,7 +83,8 @@ WindowCapturerMac::WindowCapturerMac(
     rtc::scoped_refptr<DesktopConfigurationMonitor> configuration_monitor)
     : full_screen_chrome_window_detector_(
           std::move(full_screen_chrome_window_detector)),
-      configuration_monitor_(std::move(configuration_monitor)) {}
+      configuration_monitor_(std::move(configuration_monitor)),
+      window_finder_(configuration_monitor_) {}
 
 WindowCapturerMac::~WindowCapturerMac() {}
 
@@ -204,12 +205,15 @@ void WindowCapturerMac::CaptureFrame() {
 
   frame->mutable_updated_region()->SetRect(
       DesktopRect::MakeSize(frame->size()));
-  DesktopVector top_left = GetWindowBounds(on_screen_window).top_left();
+  DesktopVector top_left;
   if (configuration_monitor_) {
     configuration_monitor_->Lock();
     auto configuration = configuration_monitor_->desktop_configuration();
     configuration_monitor_->Unlock();
+    top_left = GetWindowBounds(configuration, on_screen_window).top_left();
     top_left = top_left.subtract(configuration.bounds.top_left());
+  } else {
+    top_left = GetWindowBounds(on_screen_window).top_left();
   }
   frame->set_top_left(top_left);
 
