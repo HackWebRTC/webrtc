@@ -57,8 +57,6 @@ class SendSideCongestionController : public CallStatsObserver,
    protected:
     virtual ~Observer() {}
   };
-  // TODO(nisse): Consider deleting the |observer| argument to constructors
-  // once CongestionController is deleted.
   SendSideCongestionController(const Clock* clock,
                                Observer* observer,
                                RtcEventLog* event_log,
@@ -69,6 +67,11 @@ class SendSideCongestionController : public CallStatsObserver,
   void DeRegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
 
   // Currently, there can be at most one observer.
+  // TODO(nisse): The RegisterNetworkObserver method is needed because we first
+  // construct this object (as part of RtpTransportControllerSend), then pass a
+  // reference to Call, which then registers itself as the observer. We should
+  // try to break this circular chain of references, and make the observer a
+  // construction time constant.
   void RegisterNetworkObserver(Observer* observer);
   void DeRegisterNetworkObserver(Observer* observer);
 
