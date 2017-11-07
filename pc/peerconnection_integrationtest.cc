@@ -2134,8 +2134,17 @@ void ModifySsrcs(cricket::SessionDescription* desc) {
 // received, and a 50% chance that they'll stop updating (while
 // "concealed_samples" continues increasing, due to silence being generated for
 // the inactive stream).
+// Disabled on windows due to flakiness, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=8496
+#if defined(WEBRTC_WIN)
+#define MAYBE_TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges \
+  DISABLED_TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges
+#else
+#define MAYBE_TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges \
+  TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges
+#endif
 TEST_F(PeerConnectionIntegrationTest,
-       TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges) {
+       MAYBE_TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->AddAudioOnlyMediaStream();
@@ -2859,7 +2868,9 @@ class PeerConnectionIntegrationIceStatesTest
 // states over the duration of the call. This includes Disconnected and Failed
 // states, induced by putting a firewall between the peers and waiting for them
 // to time out.
-TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
+// Disabled due to flakiness, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=8496
+TEST_P(PeerConnectionIntegrationIceStatesTest, DISABLED_VerifyIceStates) {
   rtc::ScopedFakeClock fake_clock;
   // Some things use a time of "0" as a special value, so we need to start out
   // the fake clock at a nonzero time.
@@ -3112,8 +3123,10 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithIceRenomination) {
 // With a max bundle policy and RTCP muxing, adding a new media description to
 // the connection should not affect ICE at all because the new media will use
 // the existing connection.
+// Disabled due to flakiness, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=8496
 TEST_F(PeerConnectionIntegrationTest,
-       AddMediaToConnectedBundleDoesNotRestartIce) {
+       DISABLED_AddMediaToConnectedBundleDoesNotRestartIce) {
   PeerConnectionInterface::RTCConfiguration config;
   config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
   config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
