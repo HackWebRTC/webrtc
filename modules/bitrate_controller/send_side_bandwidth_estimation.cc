@@ -158,6 +158,7 @@ void SendSideBandwidthEstimation::SetBitrates(int send_bitrate,
 
 void SendSideBandwidthEstimation::SetSendBitrate(int bitrate) {
   RTC_DCHECK_GT(bitrate, 0);
+  delay_based_bitrate_bps_ = 0;  // Reset to avoid being capped by the estimate.
   CapBitrateToThresholds(Clock::GetRealTimeClock()->TimeInMilliseconds(),
                          bitrate);
   // Clear last sent bitrate history so the new value can be used directly

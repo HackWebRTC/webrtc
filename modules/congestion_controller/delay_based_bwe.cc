@@ -296,10 +296,8 @@ bool DelayBasedBwe::UpdateEstimate(int64_t now_ms,
   const RateControlInput input(
       overusing ? BandwidthUsage::kBwOverusing : detector_.State(),
       acked_bitrate_bps, 0);
-  uint32_t prev_target_bitrate_bps = rate_control_.LatestEstimate();
   *target_bitrate_bps = rate_control_.Update(&input, now_ms);
-  return rate_control_.ValidEstimate() &&
-         prev_target_bitrate_bps != *target_bitrate_bps;
+  return rate_control_.ValidEstimate();
 }
 
 void DelayBasedBwe::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {

@@ -136,4 +136,33 @@ TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
   EXPECT_EQ(kRttMs, rtt_ms);
 }
 
+TEST(SendSideBweTest, SettingSendBitrateOverridesDelayBasedEstimate) {
+  ::testing::NiceMock<MockRtcEventLog> event_log;
+  SendSideBandwidthEstimation bwe(&event_log);
+  static const int kMinBitrateBps = 10000;
+  static const int kMaxBitrateBps = 10000000;
+  static const int kInitialBitrateBps = 300000;
+  static const int kDelayBasedBitrateBps = 350000;
+  static const int kForcedHighBitrate = 2500000;
+
+  int64_t now_ms = 0;
+  int bitrate_bps;
+  uint8_t fraction_loss;
+  int64_t rtt_ms;
+
+  bwe.SetMinMaxBitrate(kMinBitrateBps, kMaxBitrateBps);
+  bwe.SetSendBitrate(kInitialBitrateBps);
+
+  bwe.UpdateDelayBasedEstimate(now_ms, kDelayBasedBitrateBps);
+  bwe.UpdateEstimate(now_ms);
+  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
+  EXPECT_GE(bitrate_bps, kInitialBitrateBps);
+  EXPECT_LE(bitrate_bps, kDelayBasedBitrateBps);
+
+  bwe.SetSendBitrate(kForcedHighBitrate);
+  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
+  EXPECT_EQ(bitrate_bps, kForcedHighBitrate);
+}
+
+
 }  // namespace webrtc
