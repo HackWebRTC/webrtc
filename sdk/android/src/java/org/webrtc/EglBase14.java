@@ -18,6 +18,7 @@ import android.opengl.EGLContext;
 import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
+import android.os.Build;
 import android.view.Surface;
 
 /**
@@ -49,10 +50,10 @@ class EglBase14 extends EglBase {
 
     @Override
     @SuppressWarnings("deprecation")
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public long getNativeEglContext() {
-      return CURRENT_SDK_VERSION >= android.os.Build.VERSION_CODES.LOLLIPOP
-          ? egl14Context.getNativeHandle()
-          : egl14Context.getHandle();
+      return CURRENT_SDK_VERSION >= Build.VERSION_CODES.LOLLIPOP ? egl14Context.getNativeHandle()
+                                                                 : egl14Context.getHandle();
     }
 
     public Context(android.opengl.EGLContext eglContext) {

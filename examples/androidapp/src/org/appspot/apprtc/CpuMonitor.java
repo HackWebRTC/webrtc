@@ -10,10 +10,12 @@
 
 package org.appspot.apprtc;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
+import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
 import java.io.BufferedReader;
@@ -71,6 +73,7 @@ import java.util.concurrent.TimeUnit;
  *      correct value, and then returns to back to correct reading.  Both when
  *      jumping up and back down we might create faulty CPU load readings.
  */
+@TargetApi(Build.VERSION_CODES.KITKAT)
 class CpuMonitor {
   private static final String TAG = "CpuMonitor";
   private static final int MOVING_AVERAGE_SAMPLES = 5;
@@ -153,7 +156,16 @@ class CpuMonitor {
     }
   }
 
+  public static boolean isSupported() {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
+        && Build.VERSION.SDK_INT < Build.VERSION_CODES.N;
+  }
+
   public CpuMonitor(Context context) {
+    if (!isSupported()) {
+      throw new RuntimeException("CpuMonitor is not supported on this Android version.");
+    }
+
     Log.d(TAG, "CpuMonitor ctor.");
     appContext = context.getApplicationContext();
     userCpuUsage = new MovingAverage(MOVING_AVERAGE_SAMPLES);

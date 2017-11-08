@@ -364,8 +364,10 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
         new RoomConnectionParameters(roomUri.toString(), roomId, loopback, urlParameters);
 
     // Create CPU monitor
-    cpuMonitor = new CpuMonitor(this);
-    hudFragment.setCpuMonitor(cpuMonitor);
+    if (cpuMonitor.isSupported()) {
+      cpuMonitor = new CpuMonitor(this);
+      hudFragment.setCpuMonitor(cpuMonitor);
+    }
 
     // Send intent arguments to fragments.
     callFragment.setArguments(intent.getExtras());
@@ -502,7 +504,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     if (peerConnectionClient != null && !screencaptureEnabled) {
       peerConnectionClient.stopVideoSource();
     }
-    cpuMonitor.pause();
+    if (cpuMonitor != null) {
+      cpuMonitor.pause();
+    }
   }
 
   @Override
@@ -513,7 +517,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     if (peerConnectionClient != null && !screencaptureEnabled) {
       peerConnectionClient.startVideoSource();
     }
-    cpuMonitor.resume();
+    if (cpuMonitor != null) {
+      cpuMonitor.resume();
+    }
   }
 
   @Override
