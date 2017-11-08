@@ -244,7 +244,7 @@ void RtcEventLogImpl::LogToMemory(std::unique_ptr<RtcEvent> event) {
   std::deque<std::unique_ptr<RtcEvent>>& container =
       event->IsConfigEvent() ? config_history_ : history_;
   const size_t container_max_size =
-      event->IsConfigEvent() ? kMaxEventsInHistory : kMaxEventsInConfigHistory;
+      event->IsConfigEvent() ? kMaxEventsInConfigHistory : kMaxEventsInHistory;
 
   if (container.size() >= container_max_size) {
     container.pop_front();
