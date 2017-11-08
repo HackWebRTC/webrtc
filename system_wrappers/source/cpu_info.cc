@@ -11,8 +11,8 @@
 #include "system_wrappers/include/cpu_info.h"
 
 #if defined(WEBRTC_WIN)
-#include <winsock2.h>
 #include <windows.h>
+#include <winsock2.h>
 #ifndef EXCLUDE_D3D9
 #include <d3d9.h>
 #endif
@@ -51,7 +51,7 @@ static int DetectNumberOfCores() {
 
   return number_of_cores;
 }
-}
+}  // namespace internal
 
 namespace webrtc {
 

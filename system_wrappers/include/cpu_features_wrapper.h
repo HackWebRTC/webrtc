@@ -18,17 +18,14 @@ extern "C" {
 #include "typedefs.h"  // NOLINT(build/include)
 
 // List of features in x86.
-typedef enum {
-  kSSE2,
-  kSSE3
-} CPUFeature;
+typedef enum { kSSE2, kSSE3 } CPUFeature;
 
 // List of features in ARM.
 enum {
-  kCPUFeatureARMv7       = (1 << 0),
-  kCPUFeatureVFPv3       = (1 << 1),
-  kCPUFeatureNEON        = (1 << 2),
-  kCPUFeatureLDREXSTREX  = (1 << 3)
+  kCPUFeatureARMv7 = (1 << 0),
+  kCPUFeatureVFPv3 = (1 << 1),
+  kCPUFeatureNEON = (1 << 2),
+  kCPUFeatureLDREXSTREX = (1 << 3)
 };
 
 typedef int (*WebRtc_CPUInfo)(CPUFeature feature);
@@ -48,4 +45,4 @@ extern uint64_t WebRtc_GetCPUFeaturesARM(void);
 }  // extern "C"
 #endif
 
-#endif // SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_

@@ -25,4 +25,4 @@ class CpuInfo {
 
 }  // namespace webrtc
 
-#endif // SYSTEM_WRAPPERS_INCLUDE_CPU_INFO_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_CPU_INFO_H_

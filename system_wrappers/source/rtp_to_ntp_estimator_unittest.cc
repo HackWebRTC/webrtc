@@ -86,8 +86,8 @@ TEST(WrapAroundTests, RtpWrapped) {
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
 
   int64_t timestamp_ms = -1;
-  EXPECT_TRUE(estimator.Estimate(0xFFFFFFFF - 2 * kTimestampTicksPerMs,
-                                 &timestamp_ms));
+  EXPECT_TRUE(
+      estimator.Estimate(0xFFFFFFFF - 2 * kTimestampTicksPerMs, &timestamp_ms));
   // Since this RTP packet has the same timestamp as the RTCP packet constructed
   // at time 0 it should be mapped to 0 as well.
   EXPECT_EQ(0, timestamp_ms);

@@ -22,10 +22,7 @@
 
 namespace webrtc {
 
-enum State {
-  kUp = 1,
-  kDown = 2
-};
+enum State { kUp = 1, kDown = 2 };
 
 class EventTimerPosix : public EventTimerWrapper {
  public:
@@ -47,16 +44,16 @@ class EventTimerPosix : public EventTimerWrapper {
 
   virtual rtc::PlatformThread* CreateThread();
 
-  pthread_cond_t  cond_;
+  pthread_cond_t cond_;
   pthread_mutex_t mutex_;
   bool event_set_;
 
   // TODO(pbos): Remove unique_ptr and use PlatformThread directly.
   std::unique_ptr<rtc::PlatformThread> timer_thread_;
   std::unique_ptr<EventTimerPosix> timer_event_;
-  timespec       created_at_;
+  timespec created_at_;
 
-  bool          periodic_;
+  bool periodic_;
   unsigned long time_ms_;
   unsigned long count_;
   bool is_stopping_;

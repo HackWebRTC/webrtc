@@ -30,18 +30,19 @@ int GetCPUInfoNoASM(CPUFeature feature) {
 #if defined(__pic__) && defined(__i386__)
 static inline void __cpuid(int cpu_info[4], int info_type) {
   __asm__ volatile(
-    "mov %%ebx, %%edi\n"
-    "cpuid\n"
-    "xchg %%edi, %%ebx\n"
-    : "=a"(cpu_info[0]), "=D"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
-    : "a"(info_type));
+      "mov %%ebx, %%edi\n"
+      "cpuid\n"
+      "xchg %%edi, %%ebx\n"
+      : "=a"(cpu_info[0]), "=D"(cpu_info[1]), "=c"(cpu_info[2]),
+        "=d"(cpu_info[3])
+      : "a"(info_type));
 }
 #else
 static inline void __cpuid(int cpu_info[4], int info_type) {
-  __asm__ volatile(
-    "cpuid\n"
-    : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
-    : "a"(info_type));
+  __asm__ volatile("cpuid\n"
+                   : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]),
+                     "=d"(cpu_info[3])
+                   : "a"(info_type));
 }
 #endif
 #endif  // _MSC_VER

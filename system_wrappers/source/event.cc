@@ -37,8 +37,9 @@ class EventWrapperImpl : public EventWrapper {
   }
 
   EventTypeWrapper Wait(unsigned long max_time) override {
-    int to_wait = max_time == WEBRTC_EVENT_INFINITE ?
-        rtc::Event::kForever : static_cast<int>(max_time);
+    int to_wait = max_time == WEBRTC_EVENT_INFINITE
+                      ? rtc::Event::kForever
+                      : static_cast<int>(max_time);
     return event_.Wait(to_wait) ? kEventSignaled : kEventTimeout;
   }
 

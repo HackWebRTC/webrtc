@@ -18,18 +18,18 @@ static bool native_rw_locks_supported = false;
 static bool module_load_attempted = false;
 static HMODULE library = NULL;
 
-typedef void (WINAPI* InitializeSRWLock)(PSRWLOCK);
+typedef void(WINAPI* InitializeSRWLock)(PSRWLOCK);
 
-typedef void (WINAPI* AcquireSRWLockExclusive)(PSRWLOCK);
-typedef void (WINAPI* ReleaseSRWLockExclusive)(PSRWLOCK);
+typedef void(WINAPI* AcquireSRWLockExclusive)(PSRWLOCK);
+typedef void(WINAPI* ReleaseSRWLockExclusive)(PSRWLOCK);
 
-typedef void (WINAPI* AcquireSRWLockShared)(PSRWLOCK);
-typedef void (WINAPI* ReleaseSRWLockShared)(PSRWLOCK);
+typedef void(WINAPI* AcquireSRWLockShared)(PSRWLOCK);
+typedef void(WINAPI* ReleaseSRWLockShared)(PSRWLOCK);
 
-InitializeSRWLock       initialize_srw_lock;
+InitializeSRWLock initialize_srw_lock;
 AcquireSRWLockExclusive acquire_srw_lock_exclusive;
-AcquireSRWLockShared    acquire_srw_lock_shared;
-ReleaseSRWLockShared    release_srw_lock_shared;
+AcquireSRWLockShared acquire_srw_lock_shared;
+ReleaseSRWLockShared release_srw_lock_shared;
 ReleaseSRWLockExclusive release_srw_lock_exclusive;
 
 RWLockWin::RWLockWin() {
@@ -72,18 +72,16 @@ bool RWLockWin::LoadModule() {
   LOG(LS_VERBOSE) << "Loaded Kernel.dll";
 
   initialize_srw_lock =
-    (InitializeSRWLock)GetProcAddress(library, "InitializeSRWLock");
+      (InitializeSRWLock)GetProcAddress(library, "InitializeSRWLock");
 
-  acquire_srw_lock_exclusive =
-    (AcquireSRWLockExclusive)GetProcAddress(library,
-                                            "AcquireSRWLockExclusive");
-  release_srw_lock_exclusive =
-    (ReleaseSRWLockExclusive)GetProcAddress(library,
-                                            "ReleaseSRWLockExclusive");
+  acquire_srw_lock_exclusive = (AcquireSRWLockExclusive)GetProcAddress(
+      library, "AcquireSRWLockExclusive");
+  release_srw_lock_exclusive = (ReleaseSRWLockExclusive)GetProcAddress(
+      library, "ReleaseSRWLockExclusive");
   acquire_srw_lock_shared =
-    (AcquireSRWLockShared)GetProcAddress(library, "AcquireSRWLockShared");
+      (AcquireSRWLockShared)GetProcAddress(library, "AcquireSRWLockShared");
   release_srw_lock_shared =
-    (ReleaseSRWLockShared)GetProcAddress(library, "ReleaseSRWLockShared");
+      (ReleaseSRWLockShared)GetProcAddress(library, "ReleaseSRWLockShared");
 
   if (initialize_srw_lock && acquire_srw_lock_exclusive &&
       release_srw_lock_exclusive && acquire_srw_lock_shared &&

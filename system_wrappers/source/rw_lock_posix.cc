@@ -12,8 +12,7 @@
 
 namespace webrtc {
 
-RWLockPosix::RWLockPosix() : lock_() {
-}
+RWLockPosix::RWLockPosix() : lock_() {}
 
 RWLockPosix::~RWLockPosix() {
   pthread_rwlock_destroy(&lock_);

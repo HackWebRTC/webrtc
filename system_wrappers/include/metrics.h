@@ -61,7 +61,6 @@
 // NOTE: It is recommended to do the Chromium review for modifications to
 // histograms.xml before new metrics are committed to WebRTC.
 
-
 // Macros for adding samples to a named histogram.
 
 // Histogram for counters (exponentially spaced buckets).
@@ -83,9 +82,10 @@
 #define RTC_HISTOGRAM_COUNTS_100000(name, sample) \
   RTC_HISTOGRAM_COUNTS(name, sample, 1, 100000, 50)
 
-#define RTC_HISTOGRAM_COUNTS(name, sample, min, max, bucket_count) \
-  RTC_HISTOGRAM_COMMON_BLOCK(name, sample, \
-      webrtc::metrics::HistogramFactoryGetCounts(name, min, max, bucket_count))
+#define RTC_HISTOGRAM_COUNTS(name, sample, min, max, bucket_count)       \
+  RTC_HISTOGRAM_COMMON_BLOCK(name, sample,                               \
+                             webrtc::metrics::HistogramFactoryGetCounts( \
+                                 name, min, max, bucket_count))
 
 #define RTC_HISTOGRAM_COUNTS_LINEAR(name, sample, min, max, bucket_count)      \
   RTC_HISTOGRAM_COMMON_BLOCK(name, sample,                                     \
@@ -112,9 +112,10 @@
 #define RTC_HISTOGRAM_COUNTS_SPARSE_100000(name, sample) \
   RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 100000, 50)
 
-#define RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, min, max, bucket_count) \
-  RTC_HISTOGRAM_COMMON_BLOCK_SLOW(name, sample, \
-      webrtc::metrics::HistogramFactoryGetCounts(name, min, max, bucket_count))
+#define RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, min, max, bucket_count)     \
+  RTC_HISTOGRAM_COMMON_BLOCK_SLOW(name, sample,                               \
+                                  webrtc::metrics::HistogramFactoryGetCounts( \
+                                      name, min, max, bucket_count))
 
 // Histogram for percentage (evenly spaced buckets).
 #define RTC_HISTOGRAM_PERCENTAGE_SPARSE(name, sample) \
@@ -142,7 +143,8 @@
 // Histogram for enumerators (evenly spaced buckets).
 // |boundary| should be above the max enumerator sample.
 #define RTC_HISTOGRAM_ENUMERATION(name, sample, boundary) \
-  RTC_HISTOGRAM_COMMON_BLOCK(name, sample, \
+  RTC_HISTOGRAM_COMMON_BLOCK(                             \
+      name, sample,                                       \
       webrtc::metrics::HistogramFactoryGetEnumeration(name, boundary))
 
 // The name of the histogram should not vary.
@@ -185,36 +187,36 @@
 // is cached. |index| should be different for different names. Allowed |index|
 // values are 0, 1, and 2.
 #define RTC_HISTOGRAMS_COUNTS_100(index, name, sample) \
-  RTC_HISTOGRAMS_COMMON(index, name, sample, \
-      RTC_HISTOGRAM_COUNTS(name, sample, 1, 100, 50))
+  RTC_HISTOGRAMS_COMMON(index, name, sample,           \
+                        RTC_HISTOGRAM_COUNTS(name, sample, 1, 100, 50))
 
 #define RTC_HISTOGRAMS_COUNTS_200(index, name, sample) \
-  RTC_HISTOGRAMS_COMMON(index, name, sample, \
-      RTC_HISTOGRAM_COUNTS(name, sample, 1, 200, 50))
+  RTC_HISTOGRAMS_COMMON(index, name, sample,           \
+                        RTC_HISTOGRAM_COUNTS(name, sample, 1, 200, 50))
 
 #define RTC_HISTOGRAMS_COUNTS_500(index, name, sample) \
-  RTC_HISTOGRAMS_COMMON(index, name, sample, \
-      RTC_HISTOGRAM_COUNTS(name, sample, 1, 500, 50))
+  RTC_HISTOGRAMS_COMMON(index, name, sample,           \
+                        RTC_HISTOGRAM_COUNTS(name, sample, 1, 500, 50))
 
 #define RTC_HISTOGRAMS_COUNTS_1000(index, name, sample) \
-  RTC_HISTOGRAMS_COMMON(index, name, sample, \
-      RTC_HISTOGRAM_COUNTS(name, sample, 1, 1000, 50))
+  RTC_HISTOGRAMS_COMMON(index, name, sample,            \
+                        RTC_HISTOGRAM_COUNTS(name, sample, 1, 1000, 50))
 
 #define RTC_HISTOGRAMS_COUNTS_10000(index, name, sample) \
-  RTC_HISTOGRAMS_COMMON(index, name, sample, \
-      RTC_HISTOGRAM_COUNTS(name, sample, 1, 10000, 50))
+  RTC_HISTOGRAMS_COMMON(index, name, sample,             \
+                        RTC_HISTOGRAM_COUNTS(name, sample, 1, 10000, 50))
 
 #define RTC_HISTOGRAMS_COUNTS_100000(index, name, sample) \
-  RTC_HISTOGRAMS_COMMON(index, name, sample, \
-      RTC_HISTOGRAM_COUNTS(name, sample, 1, 100000, 50))
+  RTC_HISTOGRAMS_COMMON(index, name, sample,              \
+                        RTC_HISTOGRAM_COUNTS(name, sample, 1, 100000, 50))
 
 #define RTC_HISTOGRAMS_ENUMERATION(index, name, sample, boundary) \
-  RTC_HISTOGRAMS_COMMON(index, name, sample, \
-      RTC_HISTOGRAM_ENUMERATION(name, sample, boundary))
+  RTC_HISTOGRAMS_COMMON(index, name, sample,                      \
+                        RTC_HISTOGRAM_ENUMERATION(name, sample, boundary))
 
 #define RTC_HISTOGRAMS_PERCENTAGE(index, name, sample) \
-  RTC_HISTOGRAMS_COMMON(index, name, sample, \
-      RTC_HISTOGRAM_PERCENTAGE(name, sample))
+  RTC_HISTOGRAMS_COMMON(index, name, sample,           \
+                        RTC_HISTOGRAM_PERCENTAGE(name, sample))
 
 #define RTC_HISTOGRAMS_COMMON(index, name, sample, macro_invocation) \
   do {                                                               \
@@ -245,8 +247,10 @@ class Histogram;
 // histogram).
 
 // Get histogram for counters.
-Histogram* HistogramFactoryGetCounts(
-    const std::string& name, int min, int max, int bucket_count);
+Histogram* HistogramFactoryGetCounts(const std::string& name,
+                                     int min,
+                                     int max,
+                                     int bucket_count);
 
 // Get histogram for counters with linear bucket spacing.
 Histogram* HistogramFactoryGetCountsLinear(const std::string& name,
@@ -256,8 +260,8 @@ Histogram* HistogramFactoryGetCountsLinear(const std::string& name,
 
 // Get histogram for enumerators.
 // |boundary| should be above the max enumerator sample.
-Histogram* HistogramFactoryGetEnumeration(
-    const std::string& name, int boundary);
+Histogram* HistogramFactoryGetEnumeration(const std::string& name,
+                                          int boundary);
 
 // Function for adding a |sample| to a histogram.
 void HistogramAdd(Histogram* histogram_pointer, int sample);

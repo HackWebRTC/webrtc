@@ -31,7 +31,7 @@ class EventTimerWin : public EventTimerWrapper {
   virtual bool StopTimer();
 
  private:
-  HANDLE  event_;
+  HANDLE event_;
   uint32_t timerID_;
 };
 

@@ -160,7 +160,7 @@ bool EventTimerPosix::StartTimer(bool periodic, unsigned long time_ms) {
       // Timer already started.
       pthread_mutex_unlock(&mutex_);
       return false;
-    } else  {
+    } else {
       // New one shot timer.
       time_ms_ = time_ms;
       created_at_.tv_sec = 0;
