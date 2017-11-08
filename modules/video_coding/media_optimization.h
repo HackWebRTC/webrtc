@@ -11,7 +11,6 @@
 #ifndef MODULES_VIDEO_CODING_MEDIA_OPTIMIZATION_H_
 #define MODULES_VIDEO_CODING_MEDIA_OPTIMIZATION_H_
 
-#include <list>
 #include <memory>
 
 #include "modules/include/module_common_types.h"
@@ -23,7 +22,6 @@ namespace webrtc {
 
 class Clock;
 class FrameDropper;
-class VCMContentMetricsProcessing;
 
 namespace media_optimization {
 
@@ -38,10 +36,10 @@ class MediaOptimization {
 
   // Informs media optimization of initial encoding state.
   // TODO(perkj): Deprecate SetEncodingData once its not used for stats in
-  // VieEncoder.
+  // VideoStreamEncoder.
   void SetEncodingData(int32_t max_bit_rate,
                        uint32_t bit_rate,
-                       uint32_t frame_rate);
+                       uint32_t max_frame_rate);
 
   // Sets target rates for the encoder given the channel parameters.
   // Input: |target bitrate| - the encoder target bitrate in bits/s.
@@ -52,27 +50,21 @@ class MediaOptimization {
 
   // Informs Media Optimization of encoded output.
   // TODO(perkj): Deprecate SetEncodingData once its not used for stats in
-  // VieEncoder.
-  int32_t UpdateWithEncodedData(const EncodedImage& encoded_image);
+  // VideoStreamEncoder.
+  void UpdateWithEncodedData(const EncodedImage& encoded_image);
 
   // InputFrameRate 0 = no frame rate estimate available.
   uint32_t InputFrameRate();
 
  private:
   enum { kFrameCountHistorySize = 90 };
-  enum { kFrameHistoryWinMs = 2000 };
 
   void UpdateIncomingFrameRate() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   void ProcessIncomingFrameRate(int64_t now)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  // Checks conditions for suspending the video. The method compares
-  // |video_target_bitrate_| with the threshold values for suspension, and
-  // changes the state of |video_suspended_| accordingly.
-  void CheckSuspendConditions() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
   void SetEncodingDataInternal(int32_t max_bit_rate,
-                               uint32_t frame_rate,
+                               uint32_t max_frame_rate,
                                uint32_t bit_rate)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
@@ -81,11 +73,10 @@ class MediaOptimization {
   // Protect all members.
   rtc::CriticalSection crit_sect_;
 
-  Clock* clock_ RTC_GUARDED_BY(crit_sect_);
+  Clock* const clock_ RTC_GUARDED_BY(crit_sect_);
   int32_t max_bit_rate_ RTC_GUARDED_BY(crit_sect_);
-  float user_frame_rate_ RTC_GUARDED_BY(crit_sect_);
+  float max_frame_rate_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<FrameDropper> frame_dropper_ RTC_GUARDED_BY(crit_sect_);
-  int video_target_bitrate_ RTC_GUARDED_BY(crit_sect_);
   float incoming_frame_rate_ RTC_GUARDED_BY(crit_sect_);
   int64_t incoming_frame_times_[kFrameCountHistorySize] RTC_GUARDED_BY(
       crit_sect_);

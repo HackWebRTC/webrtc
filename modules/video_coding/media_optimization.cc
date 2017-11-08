@@ -17,13 +17,15 @@
 
 namespace webrtc {
 namespace media_optimization {
+namespace {
+const int64_t kFrameHistoryWinMs = 2000;
+}  // namespace
 
 MediaOptimization::MediaOptimization(Clock* clock)
     : clock_(clock),
       max_bit_rate_(0),
-      user_frame_rate_(0),
+      max_frame_rate_(0),
       frame_dropper_(new FrameDropper),
-      video_target_bitrate_(0),
       incoming_frame_rate_(0) {
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
 }
@@ -38,52 +40,49 @@ void MediaOptimization::Reset() {
   incoming_frame_rate_ = 0.0;
   frame_dropper_->Reset();
   frame_dropper_->SetRates(0, 0);
-  video_target_bitrate_ = 0;
-  user_frame_rate_ = 0;
+  max_frame_rate_ = 0;
 }
 
 void MediaOptimization::SetEncodingData(int32_t max_bit_rate,
                                         uint32_t target_bitrate,
-                                        uint32_t frame_rate) {
+                                        uint32_t max_frame_rate) {
   rtc::CritScope lock(&crit_sect_);
-  SetEncodingDataInternal(max_bit_rate, frame_rate, target_bitrate);
+  SetEncodingDataInternal(max_bit_rate, max_frame_rate, target_bitrate);
 }
 
 void MediaOptimization::SetEncodingDataInternal(int32_t max_bit_rate,
-                                                uint32_t frame_rate,
+                                                uint32_t max_frame_rate,
                                                 uint32_t target_bitrate) {
   // Everything codec specific should be reset here since this means the codec
   // has changed.
   max_bit_rate_ = max_bit_rate;
-  video_target_bitrate_ = target_bitrate;
+  max_frame_rate_ = static_cast<float>(max_frame_rate);
   float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
   frame_dropper_->Reset();
-  frame_dropper_->SetRates(target_bitrate_kbps, static_cast<float>(frame_rate));
-  user_frame_rate_ = static_cast<float>(frame_rate);
+  frame_dropper_->SetRates(target_bitrate_kbps, max_frame_rate_);
 }
 
 uint32_t MediaOptimization::SetTargetRates(uint32_t target_bitrate) {
   rtc::CritScope lock(&crit_sect_);
 
-  video_target_bitrate_ = target_bitrate;
-
   // Cap target video bitrate to codec maximum.
-  if (max_bit_rate_ > 0 && video_target_bitrate_ > max_bit_rate_) {
-    video_target_bitrate_ = max_bit_rate_;
+  int video_target_bitrate = target_bitrate;
+  if (max_bit_rate_ > 0 && video_target_bitrate > max_bit_rate_) {
+    video_target_bitrate = max_bit_rate_;
   }
 
   // Update encoding rates following protection settings.
   float target_video_bitrate_kbps =
-      static_cast<float>(video_target_bitrate_) / 1000.0f;
+      static_cast<float>(video_target_bitrate) / 1000.0f;
   float framerate = incoming_frame_rate_;
   if (framerate == 0.0) {
     // No framerate estimate available, use configured max framerate instead.
-    framerate = user_frame_rate_;
+    framerate = max_frame_rate_;
   }
 
   frame_dropper_->SetRates(target_video_bitrate_kbps, framerate);
 
-  return video_target_bitrate_;
+  return video_target_bitrate;
 }
 
 uint32_t MediaOptimization::InputFrameRate() {
@@ -98,7 +97,7 @@ uint32_t MediaOptimization::InputFrameRateInternal() {
   return framerate;
 }
 
-int32_t MediaOptimization::UpdateWithEncodedData(
+void MediaOptimization::UpdateWithEncodedData(
     const EncodedImage& encoded_image) {
   size_t encoded_length = encoded_image._length;
   rtc::CritScope lock(&crit_sect_);
@@ -106,7 +105,6 @@ int32_t MediaOptimization::UpdateWithEncodedData(
     const bool delta_frame = encoded_image._frameType != kVideoFrameKey;
     frame_dropper_->Fill(encoded_length, delta_frame);
   }
-  return VCM_OK;
 }
 
 void MediaOptimization::EnableFrameDropper(bool enable) {
