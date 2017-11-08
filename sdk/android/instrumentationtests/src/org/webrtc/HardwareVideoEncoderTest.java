@@ -63,7 +63,7 @@ public class HardwareVideoEncoderTest {
     this.useEglContext = useEglContext;
   }
 
-  final static String TAG = "HardwareVideoEncoderTest";
+  final static String TAG = "HwVideoEncoderTest";
 
   private static final boolean ENABLE_INTEL_VP8_ENCODER = true;
   private static final boolean ENABLE_H264_HIGH_PROFILE = true;

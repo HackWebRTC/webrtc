@@ -8,7 +8,6 @@
 
   <issue id="UseSparseArrays" severity="ignore"/>
 
-  <issue id="LongLogTag" severity="ignore"/>
   <issue id="Registered" severity="ignore"/>
   <issue id="MissingPermission" severity="ignore"/>
   <issue id="ApplySharedPref" severity="ignore"/>
