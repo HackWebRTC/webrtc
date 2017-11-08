@@ -80,23 +80,6 @@ bool RunEncodeInRealTime(const TestConfig& config) {
 #endif
 }
 
-// An internal decoder factory in the old WebRtcVideoDecoderFactory format.
-// TODO(magjed): Update these tests to use new webrtc::VideoDecoderFactory
-// instead.
-class LegacyInternalDecoderFactory : public cricket::WebRtcVideoDecoderFactory {
- public:
-  // WebRtcVideoDecoderFactory implementation.
-  VideoDecoder* CreateVideoDecoderWithParams(
-      const cricket::VideoCodec& codec,
-      cricket::VideoDecoderParams params) override {
-    return InternalDecoderFactory()
-        .CreateVideoDecoder(SdpVideoFormat(codec.name, codec.params))
-        .release();
-  }
-
-  void DestroyVideoDecoder(VideoDecoder* decoder) override { delete decoder; }
-};
-
 }  // namespace
 
 void VideoProcessorIntegrationTest::H264KeyframeChecker::CheckEncodedFrame(
@@ -328,7 +311,7 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
     RTC_NOTREACHED() << "Only support HW decoder on Android and iOS.";
 #endif
   } else {
-    decoder_factory.reset(new LegacyInternalDecoderFactory());
+    decoder_factory.reset(new cricket::InternalDecoderFactory());
   }
 
   cricket::VideoCodec codec;
@@ -386,9 +369,7 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
   }
   if (config_.sw_fallback_decoder) {
     decoder_ = rtc::MakeUnique<VideoDecoderSoftwareFallbackWrapper>(
-        InternalDecoderFactory().CreateVideoDecoder(
-            SdpVideoFormat(codec.name, codec.params)),
-        std::move(decoder_));
+        config_.codec_settings.codecType, std::move(decoder_));
   }
 
   EXPECT_TRUE(encoder_) << "Encoder not successfully created.";

@@ -15,7 +15,6 @@
 
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "media/base/h264_profile_level_id.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/scopedvideodecoder.h"
@@ -31,34 +30,6 @@
 namespace cricket {
 
 namespace {
-
-bool IsSameFormat(const webrtc::SdpVideoFormat& format1,
-                  const webrtc::SdpVideoFormat& format2) {
-  // If different names (case insensitive), then not same formats.
-  if (!CodecNamesEq(format1.name, format2.name))
-    return false;
-  // For every format besides H264, comparing names is enough.
-  if (!CodecNamesEq(format1.name.c_str(), kH264CodecName))
-    return true;
-  // Compare H264 profiles.
-  const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
-      webrtc::H264::ParseSdpProfileLevelId(format1.parameters);
-  const rtc::Optional<webrtc::H264::ProfileLevelId> other_profile_level_id =
-      webrtc::H264::ParseSdpProfileLevelId(format2.parameters);
-  // Compare H264 profiles, but not levels.
-  return profile_level_id && other_profile_level_id &&
-         profile_level_id->profile == other_profile_level_id->profile;
-}
-
-bool IsFormatSupported(
-    const std::vector<webrtc::SdpVideoFormat>& supported_formats,
-    const webrtc::SdpVideoFormat& format) {
-  for (const webrtc::SdpVideoFormat& supported_format : supported_formats) {
-    if (IsSameFormat(format, supported_format))
-      return true;
-  }
-  return false;
-}
 
 class EncoderAdapter : public webrtc::VideoEncoderFactory {
  public:
@@ -167,17 +138,11 @@ class DecoderAdapter : public webrtc::VideoDecoderFactory {
  public:
   explicit DecoderAdapter(
       std::unique_ptr<WebRtcVideoDecoderFactory> external_decoder_factory)
-      : external_decoder_factory_(std::move(external_decoder_factory)) {}
+      : internal_decoder_factory_(new InternalDecoderFactory()),
+        external_decoder_factory_(std::move(external_decoder_factory)) {}
 
   std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
       const webrtc::SdpVideoFormat& format) override {
-    std::unique_ptr<webrtc::VideoDecoder> internal_decoder;
-    webrtc::InternalDecoderFactory internal_decoder_factory;
-    if (IsFormatSupported(internal_decoder_factory.GetSupportedFormats(),
-                          format)) {
-      internal_decoder = internal_decoder_factory.CreateVideoDecoder(format);
-    }
-
     const VideoCodec codec(format);
     const VideoDecoderParams params = {};
     if (external_decoder_factory_ != nullptr) {
@@ -185,16 +150,16 @@ class DecoderAdapter : public webrtc::VideoDecoderFactory {
           CreateScopedVideoDecoder(external_decoder_factory_.get(), codec,
                                    params);
       if (external_decoder) {
-        if (!internal_decoder)
-          return external_decoder;
-        // Both external and internal decoder available - create fallback
-        // wrapper.
-        return std::unique_ptr<webrtc::VideoDecoder>(
+        webrtc::VideoCodecType type =
+            webrtc::PayloadStringToCodecType(codec.name);
+        std::unique_ptr<webrtc::VideoDecoder> internal_decoder(
             new webrtc::VideoDecoderSoftwareFallbackWrapper(
-                std::move(internal_decoder), std::move(external_decoder)));
+                type, std::move(external_decoder)));
+        return internal_decoder;
       }
     }
-
+    std::unique_ptr<webrtc::VideoDecoder> internal_decoder(
+        internal_decoder_factory_->CreateVideoDecoderWithParams(codec, params));
     return internal_decoder;
   }
 
@@ -205,6 +170,7 @@ class DecoderAdapter : public webrtc::VideoDecoderFactory {
   }
 
  private:
+  const std::unique_ptr<WebRtcVideoDecoderFactory> internal_decoder_factory_;
   const std::unique_ptr<WebRtcVideoDecoderFactory> external_decoder_factory_;
 };
 
