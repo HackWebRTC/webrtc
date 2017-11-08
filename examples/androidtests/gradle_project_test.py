@@ -67,7 +67,7 @@ def main():
     _RunCommand([GENERATE_GRADLE_SCRIPT, '--output-directory', output_dir,
         '--target', '//examples:AppRTCMobile',
         '--project-dir', project_dir,
-        '--use-gradle-process-resources', '--split-projects', '--canary'],
+        '--use-gradle-process-resources', '--split-projects'],
         env=env)
     _RunCommand([GRADLEW_BIN, 'assembleDebug'], project_dir)
   finally:
