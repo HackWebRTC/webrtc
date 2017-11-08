@@ -49,6 +49,7 @@ int32_t VCMGenericEncoder::InitEncode(const VideoCodec* settings,
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   TRACE_EVENT0("webrtc", "VCMGenericEncoder::InitEncode");
   streams_or_svc_num_ = settings->numberOfSimulcastStreams;
+  codec_type_ = settings->codecType;
   if (settings->codecType == kVideoCodecVP9) {
     streams_or_svc_num_ = settings->VP9().numberOfSpatialLayers;
   }
@@ -122,9 +123,16 @@ void VCMGenericEncoder::SetEncoderParameters(const EncoderParameters& params) {
       size_t layer_bitrate_bytes_per_sec =
           params.target_bitrate.GetSpatialLayerSum(i) / 8;
       // VP9 rate control is not yet moved out of VP9Impl. Due to that rates
-      // are not split among spatial layers.
-      if (layer_bitrate_bytes_per_sec == 0)
-        layer_bitrate_bytes_per_sec = params.target_bitrate.get_sum_bps() / 8;
+      // are not split among spatial layers. Use default 1:2:4 bitrate
+      // distribution.
+      // TODO(ilnik): move bitrate per spatial layer calculations out of
+      // vp9_impl.cc and drop the check below.
+      if (codec_type_ == kVideoCodecVP9) {
+        int scaling_factor_num = 1 << i;                          // 1, 2 or 4
+        int scaling_factor_den = (1 << streams_or_svc_num_) - 1;  // 1 + 2 + 4
+        layer_bitrate_bytes_per_sec = params.target_bitrate.get_sum_bps() / 8 *
+                                      scaling_factor_num / scaling_factor_den;
+      }
       vcm_encoded_frame_callback_->OnTargetBitrateChanged(
           layer_bitrate_bytes_per_sec, i);
     }
@@ -223,6 +231,10 @@ void VCMEncodedFrameCallback::OnEncodeStarted(int64_t capture_time_ms,
       rtc::TimeDiff(capture_time_ms, timing_frames_info_[simulcast_svc_idx]
                                          .encode_start_list.back()
                                          .capture_time_ms) >= 0);
+  // If stream is disabled due to low bandwidth OnEncodeStarted still will be
+  // called and have to be ignored.
+  if (timing_frames_info_[simulcast_svc_idx].target_bitrate_bytes_per_sec == 0)
+    return;
   if (timing_frames_info_[simulcast_svc_idx].encode_start_list.size() ==
       kMaxEncodeStartTimeListSize) {
     RTC_LOG(LS_WARNING) << "Too many frames in the encode_start_list."
@@ -279,6 +291,9 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
         encode_start_ms.emplace(
             encode_start_list->front().encode_start_time_ms);
         encode_start_list->pop_front();
+      } else {
+        LOG(LS_WARNING) << "Frame with no encode started time recordings. "
+                           "Encoder may be reordering frames.";
       }
 
       size_t target_bitrate =

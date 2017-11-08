@@ -135,7 +135,8 @@ class VCMGenericEncoder {
   const bool internal_source_;
   rtc::CriticalSection params_lock_;
   EncoderParameters encoder_params_ RTC_GUARDED_BY(params_lock_);
-  size_t streams_or_svc_num_;
+  size_t streams_or_svc_num_ RTC_GUARDED_BY(race_checker_);
+  VideoCodecType codec_type_ RTC_GUARDED_BY(race_checker_);
 };
 
 }  // namespace webrtc

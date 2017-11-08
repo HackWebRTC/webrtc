@@ -185,6 +185,7 @@ TEST(TestVCMEncodedFrameCallback, NoTimingFrameIfNoEncodeStartTime) {
   VideoCodec::TimingFrameTriggerThresholds thresholds;
   thresholds.delay_ms = 1;  // Make all frames timing frames.
   callback.SetTimingFramesThresholds(thresholds);
+  callback.OnTargetBitrateChanged(500, 0);
 
   // Verify a single frame works with encode start time set.
   callback.OnEncodeStarted(timestamp, 0);
@@ -208,6 +209,8 @@ TEST(TestVCMEncodedFrameCallback, NotifiesAboutDroppedFrames) {
   codec_specific.codecSpecific.generic.simulcast_idx = 0;
   FakeEncodedImageCallback sink;
   VCMEncodedFrameCallback callback(&sink, nullptr);
+  // Any non-zero bitrate needed to be set before the first frame.
+  callback.OnTargetBitrateChanged(500, 0);
   callback.OnEncodeStarted(timestamp1, 0);
   EXPECT_EQ(0u, sink.GetNumFramesDropped());
   image.capture_time_ms_ = timestamp1;
