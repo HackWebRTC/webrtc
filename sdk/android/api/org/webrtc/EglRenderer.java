@@ -242,6 +242,7 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
           eglBase.release();
           eglBase = null;
         }
+        frameListeners.clear();
         eglCleanupBarrier.countDown();
       });
       final Looper renderLooper = renderThreadHandler.getLooper();
@@ -400,19 +401,24 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
    * @param runnable The callback to remove.
    */
   public void removeFrameListener(final FrameListener listener) {
-    if (Thread.currentThread() == renderThreadHandler.getLooper().getThread()) {
-      throw new RuntimeException("removeFrameListener must not be called on the render thread.");
-    }
     final CountDownLatch latch = new CountDownLatch(1);
-    postToRenderThread(() -> {
-      latch.countDown();
-      final Iterator<FrameListenerAndParams> iter = frameListeners.iterator();
-      while (iter.hasNext()) {
-        if (iter.next().listener == listener) {
-          iter.remove();
-        }
+    synchronized (handlerLock) {
+      if (renderThreadHandler == null) {
+        return;
       }
-    });
+      if (Thread.currentThread() == renderThreadHandler.getLooper().getThread()) {
+        throw new RuntimeException("removeFrameListener must not be called on the render thread.");
+      }
+      postToRenderThread(() -> {
+        latch.countDown();
+        final Iterator<FrameListenerAndParams> iter = frameListeners.iterator();
+        while (iter.hasNext()) {
+          if (iter.next().listener == listener) {
+            iter.remove();
+          }
+        }
+      });
+    }
     ThreadUtils.awaitUninterruptibly(latch);
   }
 
