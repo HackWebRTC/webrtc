@@ -273,8 +273,8 @@ if (is_ios || is_mac) {
       ]
       if (is_ios) {
         sources += [
+          "objc/Framework/Classes/PeerConnection/RTCFileVideoCapturer.h",
           "objc/Framework/Classes/PeerConnection/RTCFileVideoCapturer.m",
-          "objc/Framework/Headers/WebRTC/RTCFileVideoCapturer.h",
         ]
       }
       libs = [ "AVFoundation.framework" ]
@@ -520,22 +520,20 @@ if (is_ios || is_mac) {
     }
 
     if (rtc_include_tests) {
-      if (is_ios) {
+      # TODO(denicija):remove second part of this check.
+      if (is_ios && (current_cpu == "arm64" || use_ios_simulator)) {
         rtc_source_set("sdk_unittests_sources") {
           testonly = true
           include_dirs = [
             "objc/Framework/Headers",
             "objc/Framework/Classes",
           ]
-
           sources = [
-            "objc/Framework/UnitTests/RTCFileVideoCapturer_xctest.mm",
+            # TODO(denicija): Once more sources are included,
+            # move the second part of the check on line 516 here
+            # when adding this file to the sources
+            "objc/Framework/UnitTests/RTCMTLVideoView_xctest.mm",
           ]
-
-          if (current_cpu == "arm64" || use_ios_simulator) {
-            sources += [ "objc/Framework/UnitTests/RTCMTLVideoView_xctest.mm" ]
-          }
-
           if (use_ios_simulator) {
             # Only include this file on simulator, as it's already
             # included in device builds.
@@ -561,26 +559,14 @@ if (is_ios || is_mac) {
           ]
         }
 
-        bundle_data("sdk_unittests_bundle_data") {
-          # Sample video taken from https://media.xiph.org/video/derf/
-          sources = [
-            "objc/Framework/UnitTests/foreman.mp4",
-          ]
-          outputs = [
-            "{{bundle_resources_dir}}/{{source_file_part}}",
-          ]
-        }
-
         rtc_ios_xctest_test("sdk_unittests") {
           info_plist = "//test/ios/Info.plist"
           sources = [
             "objc/Framework/UnitTests/main.m",
           ]
-
           _bundle_id_suffix = ios_generic_test_bundle_id_suffix
           extra_substitutions = [ "GTEST_BUNDLE_ID_SUFFIX=$_bundle_id_suffix" ]
           deps = [
-            ":sdk_unittests_bundle_data",
             ":sdk_unittests_sources",
           ]
           ldflags = [ "-all_load" ]
@@ -674,7 +660,6 @@ if (is_ios || is_mac) {
           "objc/Framework/Headers/WebRTC/RTCDispatcher.h",
           "objc/Framework/Headers/WebRTC/RTCEAGLVideoView.h",
           "objc/Framework/Headers/WebRTC/RTCFieldTrials.h",
-          "objc/Framework/Headers/WebRTC/RTCFileVideoCapturer.h",
           "objc/Framework/Headers/WebRTC/RTCIceCandidate.h",
           "objc/Framework/Headers/WebRTC/RTCIceServer.h",
           "objc/Framework/Headers/WebRTC/RTCIntervalRange.h",

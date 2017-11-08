@@ -9,6 +9,8 @@
  */
 
 #import <Foundation/Foundation.h>
+
+#import "WebRTC/RTCCameraVideoCapturer.h"
 #import "WebRTC/RTCPeerConnection.h"
 #import "WebRTC/RTCVideoTrack.h"
 
@@ -24,8 +26,6 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 @class ARDAppClient;
 @class ARDSettingsModel;
 @class RTCMediaConstraints;
-@class RTCCameraVideoCapturer;
-@class RTCFileVideoCapturer;
 
 // The delegate is informed of pertinent events and will be called on the
 // main queue.
@@ -51,10 +51,6 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 
 - (void)appClient:(ARDAppClient *)client
       didGetStats:(NSArray *)stats;
-
-@optional
-- (void)appClient:(ARDAppClient *)client
-didCreateLocalFileCapturer:(RTCFileVideoCapturer *)fileCapturer;
 
 @end
 

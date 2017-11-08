@@ -15,7 +15,6 @@
 #import "WebRTC/RTCCameraVideoCapturer.h"
 #import "WebRTC/RTCConfiguration.h"
 #import "WebRTC/RTCFileLogger.h"
-#import "WebRTC/RTCFileVideoCapturer.h"
 #import "WebRTC/RTCIceServer.h"
 #import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCMediaConstraints.h"
@@ -691,24 +690,21 @@ static int const kKbpsMultiplier = 1000;
 }
 
 - (RTCVideoTrack *)createLocalVideoTrack {
-  if ([_settings currentAudioOnlySettingFromStore]) {
-    return nil;
-  }
-
-  RTCVideoSource *source = [_factory videoSource];
-
+  RTCVideoTrack* localVideoTrack = nil;
+  // The iOS simulator doesn't provide any sort of camera capture
+  // support or emulation (http://goo.gl/rHAnC1) so don't bother
+  // trying to open a local stream.
 #if !TARGET_IPHONE_SIMULATOR
-  RTCCameraVideoCapturer *capturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:source];
-  [_delegate appClient:self didCreateLocalCapturer:capturer];
-
-#else
-  if (@available(iOS 10, *)) {
-    RTCFileVideoCapturer *fileCapturer = [[RTCFileVideoCapturer alloc] initWithDelegate:source];
-    [_delegate appClient:self didCreateLocalFileCapturer:fileCapturer];
+  if (![_settings currentAudioOnlySettingFromStore]) {
+    RTCVideoSource *source = [_factory videoSource];
+    RTCCameraVideoCapturer *capturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:source];
+    [_delegate appClient:self didCreateLocalCapturer:capturer];
+    localVideoTrack =
+        [_factory videoTrackWithSource:source
+                               trackId:kARDVideoTrackId];
   }
 #endif
-
-  return [_factory videoTrackWithSource:source trackId:kARDVideoTrackId];
+  return localVideoTrack;
 }
 
 #pragma mark - Collider methods

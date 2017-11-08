@@ -169,12 +169,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)registerStoreDefaults {
   NSString *defaultVideoResolutionSetting = [self defaultVideoResolutionSetting];
+  BOOL audioOnly = (defaultVideoResolutionSetting.length == 0);
+
+// The iOS simulator doesn't provide any sort of camera capture
+// support or emulation (http://goo.gl/rHAnC1) so don't bother
+// trying to open a local stream.
+#if TARGET_IPHONE_SIMULATOR
+  audioOnly = YES;
+#endif
 
   NSData *codecData = [NSKeyedArchiver archivedDataWithRootObject:[self defaultVideoCodecSetting]];
   [ARDSettingsStore setDefaultsForVideoResolution:[self defaultVideoResolutionSetting]
                                        videoCodec:codecData
                                           bitrate:nil
-                                        audioOnly:NO
+                                        audioOnly:audioOnly
                                     createAecDump:NO
                                useLevelController:NO
                              useManualAudioConfig:YES];
