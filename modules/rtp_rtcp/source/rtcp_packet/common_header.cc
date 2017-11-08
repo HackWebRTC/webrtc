@@ -15,6 +15,7 @@
 
 namespace webrtc {
 namespace rtcp {
+constexpr size_t CommonHeader::kHeaderSizeBytes;
 //    0                   1           1       2                   3
 //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -27,7 +28,6 @@ namespace rtcp {
 //
 // Common header for all RTCP packets, 4 octets.
 bool CommonHeader::Parse(const uint8_t* buffer, size_t size_bytes) {
-  const size_t kHeaderSizeBytes = 4;
   const uint8_t kVersion = 2;
 
   if (size_bytes < kHeaderSizeBytes) {

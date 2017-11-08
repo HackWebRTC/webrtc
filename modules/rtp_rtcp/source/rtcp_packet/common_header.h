@@ -16,6 +16,8 @@ namespace webrtc {
 namespace rtcp {
 class CommonHeader {
  public:
+  static constexpr size_t kHeaderSizeBytes = 4;
+
   CommonHeader() {}
   CommonHeader(const CommonHeader&) = default;
   CommonHeader& operator =(const CommonHeader&) = default;
@@ -29,6 +31,9 @@ class CommonHeader {
   uint8_t count() const { return count_or_format_; }
   size_t payload_size_bytes() const { return payload_size_; }
   const uint8_t* payload() const { return payload_; }
+  size_t packet_size() const {
+    return kHeaderSizeBytes + payload_size_ + padding_size_;
+  }
   // Returns pointer to the next RTCP packet in compound packet.
   const uint8_t* NextPacket() const {
     return payload_ + payload_size_ + padding_size_;
