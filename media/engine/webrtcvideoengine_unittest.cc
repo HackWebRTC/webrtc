@@ -30,6 +30,7 @@
 #include "media/engine/constants.h"
 #include "media/engine/fakewebrtccall.h"
 #include "media/engine/fakewebrtcvideoengine.h"
+#include "media/engine/internalencoderfactory.h"
 #include "media/engine/simulcast.h"
 #include "media/engine/webrtcvideoengine.h"
 #include "media/engine/webrtcvoiceengine.h"
@@ -967,6 +968,44 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
   EXPECT_CALL(*encoder_factory, Die());
   EXPECT_CALL(*decoder_factory, Die());
   EXPECT_TRUE(send_channel->RemoveSendStream(send_ssrc));
+  EXPECT_TRUE(recv_channel->RemoveRecvStream(recv_ssrc));
+}
+
+// Test behavior when decoder factory fails to create a decoder (returns null).
+TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, NullDecoder) {
+  // |engine| take ownership of the factories.
+  webrtc::MockVideoEncoderFactory* encoder_factory =
+      new testing::StrictMock<webrtc::MockVideoEncoderFactory>();
+  webrtc::MockVideoDecoderFactory* decoder_factory =
+      new testing::StrictMock<webrtc::MockVideoDecoderFactory>();
+  WebRtcVideoEngine engine(
+      (std::unique_ptr<webrtc::VideoEncoderFactory>(encoder_factory)),
+      (std::unique_ptr<webrtc::VideoDecoderFactory>(decoder_factory)));
+  const webrtc::SdpVideoFormat vp8_format("VP8");
+  const std::vector<webrtc::SdpVideoFormat> supported_formats = {vp8_format};
+  EXPECT_CALL(*encoder_factory, GetSupportedFormats())
+      .WillRepeatedly(testing::Return(supported_formats));
+
+  // Decoder creation fails.
+  EXPECT_CALL(*decoder_factory, CreateVideoDecoderProxy(testing::_))
+      .WillOnce(testing::Return(nullptr));
+
+  // Create a call.
+  webrtc::RtcEventLogNullImpl event_log;
+  std::unique_ptr<webrtc::Call> call(
+      webrtc::Call::Create(webrtc::Call::Config(&event_log)));
+
+  // Create recv channel.
+  const int recv_ssrc = 321;
+  std::unique_ptr<VideoMediaChannel> recv_channel(
+      engine.CreateChannel(call.get(), GetMediaConfig(), VideoOptions()));
+  cricket::VideoRecvParameters recv_parameters;
+  recv_parameters.codecs.push_back(engine.codecs().front());
+  EXPECT_TRUE(recv_channel->SetRecvParameters(recv_parameters));
+  EXPECT_TRUE(recv_channel->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(recv_ssrc)));
+
+  // Remove streams previously added to free the encoder and decoder instance.
   EXPECT_TRUE(recv_channel->RemoveRecvStream(recv_ssrc));
 }
 

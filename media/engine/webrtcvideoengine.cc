@@ -29,6 +29,7 @@
 #include "media/engine/simulcast.h"
 #include "media/engine/webrtcmediaengine.h"
 #include "media/engine/webrtcvoiceengine.h"
+#include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/stringutils.h"
@@ -122,6 +123,37 @@ class DecoderFactoryAdapter {
 };
 
 namespace {
+
+// Video decoder class to be used for unknown codecs. Doesn't support decoding
+// but logs messages to LS_ERROR.
+class NullVideoDecoder : public webrtc::VideoDecoder {
+ public:
+  int32_t InitDecode(const webrtc::VideoCodec* codec_settings,
+                     int32_t number_of_cores) override {
+    LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
+
+  int32_t Decode(const webrtc::EncodedImage& input_image,
+                 bool missing_frames,
+                 const webrtc::RTPFragmentationHeader* fragmentation,
+                 const webrtc::CodecSpecificInfo* codec_specific_info,
+                 int64_t render_time_ms) override {
+    LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
+
+  int32_t RegisterDecodeCompleteCallback(
+      webrtc::DecodedImageCallback* callback) override {
+    LOG(LS_ERROR)
+        << "Can't register decode complete callback on NullVideoDecoder.";
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
+
+  int32_t Release() override { return WEBRTC_VIDEO_CODEC_OK; }
+
+  const char* ImplementationName() const override { return "NullVideoDecoder"; }
+};
 
 std::vector<VideoCodec> AssignPayloadTypesAndAddAssociatedRtxCodecs(
     const std::vector<webrtc::SdpVideoFormat>& input_formats);
@@ -2100,6 +2132,13 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::ConfigureCodecs(
       new_decoder = decoder_factory_->CreateVideoDecoder(webrtc::SdpVideoFormat(
           recv_codec.codec.name, recv_codec.codec.params));
     }
+
+    // If we still have no valid decoder, we have to create a "Null" decoder
+    // that ignores all calls. The reason we can get into this state is that
+    // the old decoder factory interface doesn't have a way to query supported
+    // codecs.
+    if (!new_decoder)
+      new_decoder.reset(new NullVideoDecoder());
 
     webrtc::VideoReceiveStream::Decoder decoder;
     decoder.decoder = new_decoder.get();

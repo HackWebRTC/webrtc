@@ -11,24 +11,20 @@
 #ifndef MEDIA_ENGINE_INTERNALDECODERFACTORY_H_
 #define MEDIA_ENGINE_INTERNALDECODERFACTORY_H_
 
+#include <memory>
 #include <vector>
 
-#include "media/engine/webrtcvideodecoderfactory.h"
+#include "api/video_codecs/video_decoder_factory.h"
 
-namespace cricket {
+namespace webrtc {
 
-class InternalDecoderFactory : public WebRtcVideoDecoderFactory {
+class InternalDecoderFactory : public VideoDecoderFactory {
  public:
-  InternalDecoderFactory();
-  virtual ~InternalDecoderFactory();
-
-  // WebRtcVideoDecoderFactory implementation.
-  webrtc::VideoDecoder* CreateVideoDecoder(
-      webrtc::VideoCodecType type) override;
-
-  void DestroyVideoDecoder(webrtc::VideoDecoder* decoder) override;
+  std::vector<SdpVideoFormat> GetSupportedFormats() const override;
+  std::unique_ptr<VideoDecoder> CreateVideoDecoder(
+      const SdpVideoFormat& format) override;
 };
 
-}  // namespace cricket
+}  // namespace webrtc
 
 #endif  // MEDIA_ENGINE_INTERNALDECODERFACTORY_H_

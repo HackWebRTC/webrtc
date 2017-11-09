@@ -10,6 +10,7 @@
 
 #include "media/engine/videodecodersoftwarefallbackwrapper.h"
 #include "api/video_codecs/video_decoder.h"
+#include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
@@ -20,7 +21,7 @@ class VideoDecoderSoftwareFallbackWrapperTest : public ::testing::Test {
  protected:
   VideoDecoderSoftwareFallbackWrapperTest()
       : fake_decoder_(new CountingFakeDecoder()),
-        fallback_wrapper_(kVideoCodecVP8,
+        fallback_wrapper_(std::unique_ptr<VideoDecoder>(VP8Decoder::Create()),
                           std::unique_ptr<VideoDecoder>(fake_decoder_)) {}
 
   class CountingFakeDecoder : public VideoDecoder {
