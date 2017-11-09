@@ -289,10 +289,10 @@ bool OpenSLESPlayer::CreateAudioPlayer() {
   SLDataSink audio_sink = {&locator_output_mix, nullptr};
 
   // Define interfaces that we indend to use and realize.
-  const SLInterfaceID interface_ids[] = {
-      SL_IID_ANDROIDCONFIGURATION, SL_IID_BUFFERQUEUE, SL_IID_VOLUME};
-  const SLboolean interface_required[] = {
-      SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
+  const SLInterfaceID interface_ids[] = {SL_IID_ANDROIDCONFIGURATION,
+                                         SL_IID_BUFFERQUEUE, SL_IID_VOLUME};
+  const SLboolean interface_required[] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE,
+                                          SL_BOOLEAN_TRUE};
 
   // Create the audio player on the engine interface.
   RETURN_ON_ERROR(

@@ -15,8 +15,7 @@
 
 namespace webrtc {
 
-int32_t AudioDeviceIOS::ActiveAudioLayer(
-    AudioDeviceModule::AudioLayer& audioLayer) const {
+int32_t AudioDeviceIOS::ActiveAudioLayer(AudioDeviceModule::AudioLayer& audioLayer) const {
   audioLayer = AudioDeviceModule::kPlatformDefaultAudio;
   return 0;
 }
@@ -199,8 +198,7 @@ int32_t AudioDeviceIOS::SetRecordingDevice(uint16_t index) {
   return 0;
 }
 
-int32_t AudioDeviceIOS::SetRecordingDevice(
-    AudioDeviceModule::WindowsDeviceType) {
+int32_t AudioDeviceIOS::SetRecordingDevice(AudioDeviceModule::WindowsDeviceType) {
   RTC_NOTREACHED() << "Not implemented";
   return -1;
 }

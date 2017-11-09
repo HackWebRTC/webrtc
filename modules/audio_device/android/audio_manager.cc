@@ -107,9 +107,9 @@ void AudioManager::SetActiveAudioLayer(
   // that the user explicitly selects the high-latency audio path, hence we use
   // the selected |audio_layer| here to set the delay estimate.
   delay_estimate_in_milliseconds_ =
-      (audio_layer == AudioDeviceModule::kAndroidJavaAudio) ?
-      kHighLatencyModeDelayEstimateInMilliseconds :
-      kLowLatencyModeDelayEstimateInMilliseconds;
+      (audio_layer == AudioDeviceModule::kAndroidJavaAudio)
+          ? kHighLatencyModeDelayEstimateInMilliseconds
+          : kLowLatencyModeDelayEstimateInMilliseconds;
   ALOGD("delay_estimate_in_milliseconds: %d", delay_estimate_in_milliseconds_);
 }
 
@@ -201,8 +201,9 @@ bool AudioManager::IsLowLatencyPlayoutSupported() const {
   ALOGD("IsLowLatencyPlayoutSupported()");
   // Some devices are blacklisted for usage of OpenSL ES even if they report
   // that low-latency playout is supported. See b/21485703 for details.
-  return j_audio_manager_->IsDeviceBlacklistedForOpenSLESUsage() ?
-      false : low_latency_playout_;
+  return j_audio_manager_->IsDeviceBlacklistedForOpenSLESUsage()
+             ? false
+             : low_latency_playout_;
 }
 
 bool AudioManager::IsLowLatencyRecordSupported() const {

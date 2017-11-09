@@ -197,7 +197,7 @@ class AudioDeviceBuffer {
   // dynamically.
   rtc::BufferT<int16_t> rec_buffer_ RTC_ACCESS_ON(recording_thread_checker_);
 
-  // AGC parameters.
+// AGC parameters.
 #if !defined(WEBRTC_WIN)
   uint32_t current_mic_level_ RTC_ACCESS_ON(recording_thread_checker_);
 #else

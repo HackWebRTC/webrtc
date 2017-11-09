@@ -19,9 +19,9 @@
 namespace webrtc {
 namespace adm_linux {
 
-inline static const char *GetDllError() {
+inline static const char* GetDllError() {
 #ifdef WEBRTC_LINUX
-  char *err = dlerror();
+  char* err = dlerror();
   if (err) {
     return err;
   } else {
@@ -64,11 +64,11 @@ void InternalUnloadDll(DllHandle handle) {
 }
 
 static bool LoadSymbol(DllHandle handle,
-                       const char *symbol_name,
-                       void **symbol) {
+                       const char* symbol_name,
+                       void** symbol) {
 #ifdef WEBRTC_LINUX
   *symbol = dlsym(handle, symbol_name);
-  char *err = dlerror();
+  char* err = dlerror();
   if (err) {
     LOG(LS_ERROR) << "Error loading symbol " << symbol_name << " : " << err;
     return false;
@@ -87,8 +87,8 @@ static bool LoadSymbol(DllHandle handle,
 // caller may later interpret as a valid address.
 bool InternalLoadSymbols(DllHandle handle,
                          int num_symbols,
-                         const char *const symbol_names[],
-                         void *symbols[]) {
+                         const char* const symbol_names[],
+                         void* symbols[]) {
 #ifdef WEBRTC_LINUX
   // Clear any old errors.
   dlerror();

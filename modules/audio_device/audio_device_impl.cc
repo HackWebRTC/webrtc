@@ -386,7 +386,7 @@ int32_t AudioDeviceModuleImpl::MinSpeakerVolume(uint32_t* minVolume) const {
 int32_t AudioDeviceModuleImpl::SpeakerMuteIsAvailable(bool* available) {
   LOG(INFO) << __FUNCTION__;
   CHECKinitialized_();
-  bool isAvailable  = false;
+  bool isAvailable = false;
   if (audio_device_->SpeakerMuteIsAvailable(isAvailable) == -1) {
     return -1;
   }

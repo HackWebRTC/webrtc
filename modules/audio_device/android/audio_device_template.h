@@ -100,18 +100,16 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return 1;
   }
 
-  int32_t PlayoutDeviceName(
-      uint16_t index,
-      char name[kAdmMaxDeviceNameSize],
-      char guid[kAdmMaxGuidSize]) override {
+  int32_t PlayoutDeviceName(uint16_t index,
+                            char name[kAdmMaxDeviceNameSize],
+                            char guid[kAdmMaxGuidSize]) override {
     FATAL() << "Should never be called";
     return -1;
   }
 
-  int32_t RecordingDeviceName(
-      uint16_t index,
-      char name[kAdmMaxDeviceNameSize],
-      char guid[kAdmMaxGuidSize]) override {
+  int32_t RecordingDeviceName(uint16_t index,
+                              char name[kAdmMaxDeviceNameSize],
+                              char guid[kAdmMaxGuidSize]) override {
     FATAL() << "Should never be called";
     return -1;
   }
@@ -215,9 +213,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return err;
   }
 
-  bool Recording() const override {
-    return input_.Recording() ;
-  }
+  bool Recording() const override { return input_.Recording(); }
 
   int32_t SetAGC(bool enable) override {
     if (enable) {
@@ -276,7 +272,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return output_.MinSpeakerVolume(minVolume);
   }
 
-  int32_t MicrophoneVolumeIsAvailable(bool& available) override{
+  int32_t MicrophoneVolumeIsAvailable(bool& available) override {
     available = false;
     return -1;
   }

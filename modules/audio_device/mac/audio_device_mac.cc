@@ -23,32 +23,29 @@
 
 namespace webrtc {
 
-#define WEBRTC_CA_RETURN_ON_ERR(expr)                                  \
+#define WEBRTC_CA_RETURN_ON_ERR(expr)                                \
+  do {                                                               \
+    err = expr;                                                      \
+    if (err != noErr) {                                              \
+      logCAMsg(rtc::LS_ERROR, "Error in " #expr, (const char*)&err); \
+      return -1;                                                     \
+    }                                                                \
+  } while (0)
+
+#define WEBRTC_CA_LOG_ERR(expr)                                      \
+  do {                                                               \
+    err = expr;                                                      \
+    if (err != noErr) {                                              \
+      logCAMsg(rtc::LS_ERROR, "Error in " #expr, (const char*)&err); \
+    }                                                                \
+  } while (0)
+
+#define WEBRTC_CA_LOG_WARN(expr)                                       \
   do {                                                                 \
     err = expr;                                                        \
     if (err != noErr) {                                                \
-      logCAMsg(rtc::LS_ERROR, "Error in " #expr,                       \
-               (const char*) & err);                                   \
-      return -1;                                                       \
+      logCAMsg(rtc::LS_WARNING, "Error in " #expr, (const char*)&err); \
     }                                                                  \
-  } while (0)
-
-#define WEBRTC_CA_LOG_ERR(expr)                                        \
-  do {                                                                 \
-    err = expr;                                                        \
-    if (err != noErr) {                                                \
-      logCAMsg(rtc::LS_ERROR, "Error in " #expr,                       \
-               (const char*) & err);                                   \
-    }                                                                  \
-  } while (0)
-
-#define WEBRTC_CA_LOG_WARN(expr)                                         \
-  do {                                                                   \
-    err = expr;                                                          \
-    if (err != noErr) {                                                  \
-      logCAMsg(rtc::LS_WARNING, "Error in " #expr,                       \
-               (const char*) & err);                                     \
-    }                                                                    \
   } while (0)
 
 enum { MaxNumberDevices = 64 };
@@ -94,7 +91,7 @@ void AudioDeviceMac::logCAMsg(const rtc::LoggingSeverity sev,
   }
 #else
   // We need to flip the characters in this case.
-   switch (sev) {
+  switch (sev) {
     case rtc::LS_ERROR:
       LOG(LS_ERROR) << msg << ": " << err[3] << err[2] << err[1] << err[0];
       break;
@@ -373,8 +370,8 @@ int32_t AudioDeviceMac::Terminate() {
 
   err = AudioHardwareUnload();
   if (err != noErr) {
-    logCAMsg(rtc::LS_ERROR,
-             "Error in AudioHardwareUnload()", (const char*)&err);
+    logCAMsg(rtc::LS_ERROR, "Error in AudioHardwareUnload()",
+             (const char*)&err);
     retVal = -1;
   }
 
@@ -1038,8 +1035,7 @@ int32_t AudioDeviceMac::InitPlayout() {
       _outputDeviceID, &propertyAddress, 0, NULL, &size, &_outStreamFormat));
 
   if (_outStreamFormat.mFormatID != kAudioFormatLinearPCM) {
-    logCAMsg(rtc::LS_ERROR,
-             "Unacceptable output stream format -> mFormatID",
+    logCAMsg(rtc::LS_ERROR, "Unacceptable output stream format -> mFormatID",
              (const char*)&_outStreamFormat.mFormatID);
     return -1;
   }
@@ -1146,8 +1142,7 @@ int32_t AudioDeviceMac::InitRecording() {
       _inputDeviceID, &propertyAddress, 0, NULL, &size, &_inStreamFormat));
 
   if (_inStreamFormat.mFormatID != kAudioFormatLinearPCM) {
-    logCAMsg(rtc::LS_ERROR,
-             "Unacceptable input stream format -> mFormatID",
+    logCAMsg(rtc::LS_ERROR, "Unacceptable input stream format -> mFormatID",
              (const char*)&_inStreamFormat.mFormatID);
     return -1;
   }
@@ -1348,12 +1343,11 @@ int32_t AudioDeviceMac::StopRecording() {
       _critSect.Leave();  // Cannot be under lock, risk of deadlock
       if (kEventTimeout == _stopEventRec.Wait(2000)) {
         rtc::CritScope critScoped(&_critSect);
-        LOG(LS_WARNING)
-            << "Timed out stopping the capture IOProc."
-            << "We may have failed to detect a device removal.";
+        LOG(LS_WARNING) << "Timed out stopping the capture IOProc."
+                        << "We may have failed to detect a device removal.";
         WEBRTC_CA_LOG_WARN(AudioDeviceStop(_inputDeviceID, _inDeviceIOProcID));
         WEBRTC_CA_LOG_WARN(
-          AudioDeviceDestroyIOProcID(_inputDeviceID, _inDeviceIOProcID));
+            AudioDeviceDestroyIOProcID(_inputDeviceID, _inDeviceIOProcID));
       }
       _critSect.Enter();
       _doStopRec = false;
@@ -1377,9 +1371,8 @@ int32_t AudioDeviceMac::StopRecording() {
       _critSect.Leave();  // Cannot be under lock, risk of deadlock
       if (kEventTimeout == _stopEvent.Wait(2000)) {
         rtc::CritScope critScoped(&_critSect);
-        LOG(LS_WARNING)
-            << "Timed out stopping the shared IOProc."
-            << "We may have failed to detect a device removal.";
+        LOG(LS_WARNING) << "Timed out stopping the shared IOProc."
+                        << "We may have failed to detect a device removal.";
         // We assume rendering on a shared device has stopped as well if
         // the IOProc times out.
         WEBRTC_CA_LOG_WARN(AudioDeviceStop(_outputDeviceID, _deviceIOProcID));
@@ -1391,7 +1384,7 @@ int32_t AudioDeviceMac::StopRecording() {
       LOG(LS_INFO) << "Recording stopped (shared device)";
     } else if (_recIsInitialized && !_playing && !_playIsInitialized) {
       WEBRTC_CA_LOG_WARN(
-            AudioDeviceDestroyIOProcID(_outputDeviceID, _deviceIOProcID));
+          AudioDeviceDestroyIOProcID(_outputDeviceID, _deviceIOProcID));
       LOG(LS_INFO) << "Recording uninitialized (shared device)";
     }
   }
@@ -1486,9 +1479,8 @@ int32_t AudioDeviceMac::StopPlayout() {
     _critSect.Leave();  // Cannot be under lock, risk of deadlock
     if (kEventTimeout == _stopEvent.Wait(2000)) {
       rtc::CritScope critScoped(&_critSect);
-      LOG(LS_WARNING)
-          << "Timed out stopping the render IOProc."
-          << "We may have failed to detect a device removal.";
+      LOG(LS_WARNING) << "Timed out stopping the render IOProc."
+                      << "We may have failed to detect a device removal.";
 
       // We assume capturing on a shared device has stopped as well if the
       // IOProc times out.
@@ -1501,11 +1493,11 @@ int32_t AudioDeviceMac::StopPlayout() {
     LOG(LS_INFO) << "Playout stopped";
   } else if (_twoDevices && _playIsInitialized) {
     WEBRTC_CA_LOG_WARN(
-          AudioDeviceDestroyIOProcID(_outputDeviceID, _deviceIOProcID));
+        AudioDeviceDestroyIOProcID(_outputDeviceID, _deviceIOProcID));
     LOG(LS_INFO) << "Playout uninitialized (output device)";
   } else if (!_twoDevices && _playIsInitialized && !_recIsInitialized) {
     WEBRTC_CA_LOG_WARN(
-          AudioDeviceDestroyIOProcID(_outputDeviceID, _deviceIOProcID));
+        AudioDeviceDestroyIOProcID(_outputDeviceID, _deviceIOProcID));
     LOG(LS_INFO) << "Playout uninitialized (shared device)";
   }
 
@@ -1829,8 +1821,8 @@ OSStatus AudioDeviceMac::SetDesiredPlayoutFormat() {
     _ptrAudioBuffer->SetPlayoutChannels((uint8_t)_playChannels);
   }
 
-  _renderDelayOffsetSamples = _renderBufSizeSamples -
-                              N_BUFFERS_OUT * ENGINE_PLAY_BUF_SIZE_IN_SAMPLES *
+  _renderDelayOffsetSamples =
+      _renderBufSizeSamples - N_BUFFERS_OUT * ENGINE_PLAY_BUF_SIZE_IN_SAMPLES *
                                   _outDesiredFormat.mChannelsPerFrame;
 
   _outDesiredFormat.mBytesPerPacket =
@@ -1909,9 +1901,9 @@ OSStatus AudioDeviceMac::SetDesiredPlayoutFormat() {
       static_cast<uint32_t>((1.0e6 * latency) / _outStreamFormat.mSampleRate);
 
   LOG(LS_VERBOSE) << "initial playout status: _renderDelayOffsetSamples="
-                  << _renderDelayOffsetSamples << ", _renderDelayUs="
-                  << _renderDelayUs << ", _renderLatencyUs="
-                  << _renderLatencyUs;
+                  << _renderDelayOffsetSamples
+                  << ", _renderDelayUs=" << _renderDelayUs
+                  << ", _renderLatencyUs=" << _renderLatencyUs;
   return 0;
 }
 
@@ -1970,8 +1962,8 @@ int32_t AudioDeviceMac::HandleDeviceChange() {
       AtomicSet32(&_captureDeviceIsAlive, 0);
       _mixerManager.CloseMicrophone();
     } else if (err != noErr) {
-      logCAMsg(rtc::LS_ERROR,
-               "Error in AudioDeviceGetProperty()", (const char*)&err);
+      logCAMsg(rtc::LS_ERROR, "Error in AudioDeviceGetProperty()",
+               (const char*)&err);
       return -1;
     }
   }
@@ -1989,8 +1981,8 @@ int32_t AudioDeviceMac::HandleDeviceChange() {
       AtomicSet32(&_renderDeviceIsAlive, 0);
       _mixerManager.CloseSpeaker();
     } else if (err != noErr) {
-      logCAMsg(rtc::LS_ERROR,
-               "Error in AudioDeviceGetProperty()", (const char*)&err);
+      logCAMsg(rtc::LS_ERROR, "Error in AudioDeviceGetProperty()",
+               (const char*)&err);
       return -1;
     }
   }
@@ -2016,8 +2008,7 @@ int32_t AudioDeviceMac::HandleStreamFormatChange(
       objectId, &propertyAddress, 0, NULL, &size, &streamFormat));
 
   if (streamFormat.mFormatID != kAudioFormatLinearPCM) {
-    logCAMsg(rtc::LS_ERROR,
-             "Unacceptable input stream format -> mFormatID",
+    logCAMsg(rtc::LS_ERROR, "Unacceptable input stream format -> mFormatID",
              (const char*)&streamFormat.mFormatID);
     return -1;
   }
@@ -2042,8 +2033,7 @@ int32_t AudioDeviceMac::HandleStreamFormatChange(
   LOG(LS_VERBOSE) << "mBytesPerFrame = " << streamFormat.mBytesPerFrame
                   << ", mBitsPerChannel = " << streamFormat.mBitsPerChannel;
   LOG(LS_VERBOSE) << "mFormatFlags = " << streamFormat.mFormatFlags;
-  logCAMsg(rtc::LS_VERBOSE, "mFormatID",
-           (const char*)&streamFormat.mFormatID);
+  logCAMsg(rtc::LS_VERBOSE, "mFormatID", (const char*)&streamFormat.mFormatID);
 
   if (propertyAddress.mScope == kAudioDevicePropertyScopeInput) {
     const int io_block_size_samples = streamFormat.mChannelsPerFrame *
@@ -2247,8 +2237,8 @@ OSStatus AudioDeviceMac::implDeviceIOProc(const AudioBufferList* inputData,
       LOG(LS_ERROR) << "Error in AudioConverterFillComplexBuffer()";
       return 1;
     } else {
-      logCAMsg(rtc::LS_ERROR,
-               "Error in AudioConverterFillComplexBuffer()", (const char*)&err);
+      logCAMsg(rtc::LS_ERROR, "Error in AudioConverterFillComplexBuffer()",
+               (const char*)&err);
       return 1;
     }
   }
@@ -2485,8 +2475,8 @@ bool AudioDeviceMac::CaptureWorkerThread() {
       // This is our own error.
       return false;
     } else {
-      logCAMsg(rtc::LS_ERROR,
-               "Error in AudioConverterFillComplexBuffer()", (const char*)&err);
+      logCAMsg(rtc::LS_ERROR, "Error in AudioConverterFillComplexBuffer()",
+               (const char*)&err);
       return false;
     }
   }

@@ -36,7 +36,8 @@ FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice() {
 }
 
 void FileAudioDeviceFactory::SetFilenamesToUse(
-    const char* inputAudioFilename, const char* outputAudioFilename) {
+    const char* inputAudioFilename,
+    const char* outputAudioFilename) {
 #ifdef WEBRTC_DUMMY_FILE_DEVICES
   RTC_DCHECK_LT(strlen(inputAudioFilename), MAX_FILENAME_LEN);
   RTC_DCHECK_LT(strlen(outputAudioFilename), MAX_FILENAME_LEN);
@@ -47,8 +48,9 @@ void FileAudioDeviceFactory::SetFilenamesToUse(
   _isConfigured = true;
 #else
   // Sanity: must be compiled with the right define to run this.
-  printf("Trying to use dummy file devices, but is not compiled "
-         "with WEBRTC_DUMMY_FILE_DEVICES. Bailing out.\n");
+  printf(
+      "Trying to use dummy file devices, but is not compiled "
+      "with WEBRTC_DUMMY_FILE_DEVICES. Bailing out.\n");
   std::exit(1);
 #endif
 }

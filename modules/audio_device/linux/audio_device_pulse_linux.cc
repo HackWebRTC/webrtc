@@ -2136,8 +2136,7 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess() {
               NULL, (int64_t)0, PA_SEEK_RELATIVE) != PA_OK) {
         _writeErrors++;
         if (_writeErrors > 10) {
-          LOG(LS_ERROR) << "Playout error: _writeErrors="
-                        << _writeErrors
+          LOG(LS_ERROR) << "Playout error: _writeErrors=" << _writeErrors
                         << ", error=" << LATE(pa_context_errno)(_paContext);
           _writeErrors = 0;
         }
@@ -2180,8 +2179,7 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess() {
                                 NULL, (int64_t)0, PA_SEEK_RELATIVE) != PA_OK) {
         _writeErrors++;
         if (_writeErrors > 10) {
-          LOG(LS_ERROR) << "Playout error: _writeErrors="
-                        << _writeErrors
+          LOG(LS_ERROR) << "Playout error: _writeErrors=" << _writeErrors
                         << ", error=" << LATE(pa_context_errno)(_paContext);
           _writeErrors = 0;
         }
