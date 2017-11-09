@@ -135,7 +135,6 @@ class WeakReferenceOwner {
   void Invalidate();
 
  private:
-  SequencedTaskChecker checker_;
   mutable scoped_refptr<RefCountedObject<WeakReference::Flag>> flag_;
 };
 

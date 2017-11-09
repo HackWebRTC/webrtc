@@ -52,16 +52,13 @@ bool WeakReference::is_valid() const {
 }
 
 WeakReferenceOwner::WeakReferenceOwner() {
-  checker_.Detach();
 }
 
 WeakReferenceOwner::~WeakReferenceOwner() {
-  RTC_DCHECK(checker_.CalledSequentially());
   Invalidate();
 }
 
 WeakReference WeakReferenceOwner::GetRef() const {
-  RTC_DCHECK(checker_.CalledSequentially());
   // If we hold the last reference to the Flag then create a new one.
   if (!HasRefs())
     flag_ = new RefCountedObject<WeakReference::Flag>();
@@ -70,7 +67,6 @@ WeakReference WeakReferenceOwner::GetRef() const {
 }
 
 void WeakReferenceOwner::Invalidate() {
-  RTC_DCHECK(checker_.CalledSequentially());
   if (flag_.get()) {
     flag_->Invalidate();
     flag_ = nullptr;

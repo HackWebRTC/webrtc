@@ -221,13 +221,21 @@ TEST(WeakPtrTest, ObjectAndWeakPtrOnDifferentThreads) {
 }
 
 TEST(WeakPtrTest, WeakPtrInitiateAndUseOnDifferentThreads) {
-  // Test that it is OK to create an object that has a WeakPtr member on one
-  // thread, but use it on another.  This tests that we do not trip runtime
-  // checks that ensure that a WeakPtr is not used by multiple threads.
-  std::unique_ptr<Arrow> arrow(NewObjectCreatedOnTaskQueue<Arrow>());
-  TargetWithFactory target;
-  arrow->target = target.factory.GetWeakPtr();
-  EXPECT_EQ(&target, arrow->target.get());
+  // Test that it is OK to create a WeakPtr on one thread, but use it on
+  // another. This tests that we do not trip runtime checks that ensure that a
+  // WeakPtr is not used by multiple threads.
+  auto target = rtc::MakeUnique<TargetWithFactory>();
+  // Create weak ptr on main thread
+  WeakPtr<Target> weak_ptr = target->factory.GetWeakPtr();
+  rtc::TaskQueue queue("queue");
+  rtc::Event done(false, false);
+  queue.PostTask([&] {
+    // Dereference and invalide weak_ptr on another thread.
+    EXPECT_EQ(weak_ptr.get(), target.get());
+    target.reset();
+    done.Set();
+  });
+  EXPECT_TRUE(done.Wait(1000));
 }
 
 }  // namespace rtc
