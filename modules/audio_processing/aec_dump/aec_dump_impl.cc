@@ -117,7 +117,6 @@ void AecDumpImpl::AddAudioProcessingState(const AudioProcessingState& state) {
 void AecDumpImpl::WriteCaptureStreamMessage() {
   auto task = capture_stream_info_.GetTask();
   RTC_DCHECK(task);
-  std::move(task);
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(std::move(task)));
   capture_stream_info_.SetTask(CreateWriteToFileTask());
 }
