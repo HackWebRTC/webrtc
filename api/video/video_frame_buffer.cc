@@ -27,6 +27,16 @@ rtc::scoped_refptr<const I420BufferInterface> VideoFrameBuffer::GetI420()
   return static_cast<const I420BufferInterface*>(this);
 }
 
+I420ABufferInterface* VideoFrameBuffer::GetI420A() {
+  RTC_CHECK(type() == Type::kI420A);
+  return static_cast<I420ABufferInterface*>(this);
+}
+
+const I420ABufferInterface* VideoFrameBuffer::GetI420A() const {
+  RTC_CHECK(type() == Type::kI420A);
+  return static_cast<const I420ABufferInterface*>(this);
+}
+
 I444BufferInterface* VideoFrameBuffer::GetI444() {
   RTC_CHECK(type() == Type::kI444);
   return static_cast<I444BufferInterface*>(this);
@@ -51,6 +61,10 @@ int I420BufferInterface::ChromaHeight() const {
 
 rtc::scoped_refptr<I420BufferInterface> I420BufferInterface::ToI420() {
   return this;
+}
+
+VideoFrameBuffer::Type I420ABufferInterface::type() const {
+  return Type::kI420A;
 }
 
 VideoFrameBuffer::Type I444BufferInterface::type() const {

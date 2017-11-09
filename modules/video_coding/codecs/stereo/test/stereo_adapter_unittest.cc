@@ -10,11 +10,14 @@
 
 #include "api/test/mock_video_decoder_factory.h"
 #include "api/test/mock_video_encoder_factory.h"
+#include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/stereo/include/stereo_decoder_adapter.h"
 #include "modules/video_coding/codecs/stereo/include/stereo_encoder_adapter.h"
 #include "modules/video_coding/codecs/test/video_codec_test.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
+#include "rtc_base/keep_ref_until_done.h"
+#include "rtc_base/ptr_util.h"
 
 using testing::_;
 using testing::Return;
@@ -42,6 +45,18 @@ class TestStereoAdapter : public VideoCodecTest {
     codec_settings.VP9()->numberOfTemporalLayers = 1;
     codec_settings.VP9()->numberOfSpatialLayers = 1;
     return codec_settings;
+  }
+
+  std::unique_ptr<VideoFrame> CreateI420AInputFrame() {
+    rtc::scoped_refptr<webrtc::I420BufferInterface> yuv_buffer =
+        input_frame_->video_frame_buffer()->ToI420();
+    rtc::scoped_refptr<I420ABufferInterface> yuva_buffer = WrapI420ABuffer(
+        yuv_buffer->width(), yuv_buffer->height(), yuv_buffer->DataY(),
+        yuv_buffer->StrideY(), yuv_buffer->DataU(), yuv_buffer->StrideU(),
+        yuv_buffer->DataV(), yuv_buffer->StrideV(), yuv_buffer->DataY(),
+        yuv_buffer->StrideY(), rtc::KeepRefUntilDone(yuv_buffer));
+    return rtc::WrapUnique<VideoFrame>(
+        new VideoFrame(yuva_buffer, kVideoRotation_0, 0));
   }
 
  private:
@@ -91,6 +106,22 @@ TEST_F(TestStereoAdapter, EncodeDecodeI420Frame) {
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
   EXPECT_GT(I420PSNR(input_frame_.get(), decoded_frame.get()), 36);
+}
+
+TEST_F(TestStereoAdapter, EncodeDecodeI420AFrame) {
+  std::unique_ptr<VideoFrame> yuva_frame = CreateI420AInputFrame();
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*yuva_frame, nullptr, nullptr));
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_specific_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            decoder_->Decode(encoded_frame, false, nullptr));
+  std::unique_ptr<VideoFrame> decoded_frame;
+  rtc::Optional<uint8_t> decoded_qp;
+  ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
+  ASSERT_TRUE(decoded_frame);
+  EXPECT_GT(I420PSNR(yuva_frame.get(), decoded_frame.get()), 36);
 }
 
 }  // namespace webrtc

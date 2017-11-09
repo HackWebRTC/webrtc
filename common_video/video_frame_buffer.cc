@@ -96,6 +96,8 @@ class WrappedYuvBuffer : public Base {
         v_stride_(v_stride),
         no_longer_used_cb_(no_longer_used) {}
 
+  ~WrappedYuvBuffer() override { no_longer_used_cb_(); }
+
   int width() const override { return width_; }
 
   int height() const override { return height_; }
@@ -115,8 +117,6 @@ class WrappedYuvBuffer : public Base {
  private:
   friend class rtc::RefCountedObject<WrappedYuvBuffer>;
 
-  ~WrappedYuvBuffer() override { no_longer_used_cb_(); }
-
   const int width_;
   const int height_;
   const uint8_t* const y_plane_;
@@ -126,6 +126,41 @@ class WrappedYuvBuffer : public Base {
   const int u_stride_;
   const int v_stride_;
   rtc::Callback0<void> no_longer_used_cb_;
+};
+
+// Template to implement a wrapped buffer for a I4??BufferInterface.
+template <typename BaseWithA>
+class WrappedYuvaBuffer : public WrappedYuvBuffer<BaseWithA> {
+ public:
+  WrappedYuvaBuffer(int width,
+                    int height,
+                    const uint8_t* y_plane,
+                    int y_stride,
+                    const uint8_t* u_plane,
+                    int u_stride,
+                    const uint8_t* v_plane,
+                    int v_stride,
+                    const uint8_t* a_plane,
+                    int a_stride,
+                    const rtc::Callback0<void>& no_longer_used)
+      : WrappedYuvBuffer<BaseWithA>(width,
+                                    height,
+                                    y_plane,
+                                    y_stride,
+                                    u_plane,
+                                    u_stride,
+                                    v_plane,
+                                    v_stride,
+                                    no_longer_used),
+        a_plane_(a_plane),
+        a_stride_(a_stride) {}
+
+  const uint8_t* DataA() const override { return a_plane_; }
+  int StrideA() const override { return a_stride_; }
+
+ private:
+  const uint8_t* const a_plane_;
+  const int a_stride_;
 };
 
 rtc::scoped_refptr<I420BufferInterface> WrapI420Buffer(
@@ -142,6 +177,24 @@ rtc::scoped_refptr<I420BufferInterface> WrapI420Buffer(
       new rtc::RefCountedObject<WrappedYuvBuffer<I420BufferInterface>>(
           width, height, y_plane, y_stride, u_plane, u_stride, v_plane,
           v_stride, no_longer_used));
+}
+
+rtc::scoped_refptr<I420ABufferInterface> WrapI420ABuffer(
+    int width,
+    int height,
+    const uint8_t* y_plane,
+    int y_stride,
+    const uint8_t* u_plane,
+    int u_stride,
+    const uint8_t* v_plane,
+    int v_stride,
+    const uint8_t* a_plane,
+    int a_stride,
+    const rtc::Callback0<void>& no_longer_used) {
+  return rtc::scoped_refptr<I420ABufferInterface>(
+      new rtc::RefCountedObject<WrappedYuvaBuffer<I420ABufferInterface>>(
+          width, height, y_plane, y_stride, u_plane, u_stride, v_plane,
+          v_stride, a_plane, a_stride, no_longer_used));
 }
 
 rtc::scoped_refptr<I444BufferInterface> WrapI444Buffer(

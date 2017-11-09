@@ -83,28 +83,30 @@ int StereoEncoderAdapter::Encode(const VideoFrame& input_image,
   if (!encoded_complete_callback_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-
-  // TODO(emircan): Extract alpha and create an alpha frame with dummy planes.
-  // Since we don't have a way of transporting alpha yet, put a dummy output for
-  // alpha consisting of YXX.
-
-  // Encode AXX
-  rtc::scoped_refptr<I420BufferInterface> yuva_buffer =
-      input_image.video_frame_buffer()->ToI420();
-  rtc::scoped_refptr<WrappedI420Buffer> alpha_buffer(
-      new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
-          input_image.width(), input_image.height(), yuva_buffer->DataY(),
-          yuva_buffer->StrideY(), stereo_dummy_planes_.data(),
-          yuva_buffer->StrideU(), stereo_dummy_planes_.data(),
-          yuva_buffer->StrideV(),
-          rtc::KeepRefUntilDone(input_image.video_frame_buffer())));
-  VideoFrame alpha_image(alpha_buffer, input_image.timestamp(),
-                         input_image.render_time_ms(), input_image.rotation());
-  encoders_[kAXXStream]->Encode(alpha_image, codec_specific_info, frame_types);
-
   // Encode YUV
   int rv = encoders_[kYUVStream]->Encode(input_image, codec_specific_info,
                                          frame_types);
+  if (rv)
+    return rv;
+
+  const bool has_alpha = input_image.video_frame_buffer()->type() ==
+                         VideoFrameBuffer::Type::kI420A;
+  if (!has_alpha)
+    return rv;
+
+  // Encode AXX
+  const I420ABufferInterface* yuva_buffer =
+      input_image.video_frame_buffer()->GetI420A();
+  rtc::scoped_refptr<I420BufferInterface> alpha_buffer =
+      WrapI420Buffer(input_image.width(), input_image.height(),
+                     yuva_buffer->DataA(), yuva_buffer->StrideA(),
+                     stereo_dummy_planes_.data(), yuva_buffer->StrideU(),
+                     stereo_dummy_planes_.data(), yuva_buffer->StrideV(),
+                     rtc::KeepRefUntilDone(input_image.video_frame_buffer()));
+  VideoFrame alpha_image(alpha_buffer, input_image.timestamp(),
+                         input_image.render_time_ms(), input_image.rotation());
+  rv = encoders_[kAXXStream]->Encode(alpha_image, codec_specific_info,
+                                     frame_types);
   return rv;
 }
 
@@ -158,6 +160,9 @@ EncodedImageCallback::Result StereoEncoderAdapter::OnEncodedImage(
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentation) {
+  if (stream_idx == kAXXStream)
+    return EncodedImageCallback::Result(EncodedImageCallback::Result::OK);
+
   // TODO(emircan): Fill |codec_specific_info| with stereo parameters.
   encoded_complete_callback_->OnEncodedImage(encodedImage, codecSpecificInfo,
                                              fragmentation);

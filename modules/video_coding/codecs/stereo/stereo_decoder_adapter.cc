@@ -11,12 +11,18 @@
 #include "modules/video_coding/codecs/stereo/include/stereo_decoder_adapter.h"
 
 #include "api/video/i420_buffer.h"
+#include "api/video/video_frame_buffer.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "common_video/include/video_frame.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/logging.h"
+
+namespace {
+void KeepBufferRefs(rtc::scoped_refptr<webrtc::VideoFrameBuffer>,
+                    rtc::scoped_refptr<webrtc::VideoFrameBuffer>) {}
+}  // anonymous namespace
 
 namespace webrtc {
 
@@ -173,11 +179,22 @@ void StereoDecoderAdapter::MergeAlphaImages(
     VideoFrame* alpha_decodedImage,
     const rtc::Optional<int32_t>& alpha_decode_time_ms,
     const rtc::Optional<uint8_t>& alpha_qp) {
-  // TODO(emircan): Merge the output and put in a VideoFrame container that can
-  // transport I420A.
-  decoded_complete_callback_->Decoded(*decodedImage, decode_time_ms, qp);
-  decoded_complete_callback_->Decoded(*alpha_decodedImage, alpha_decode_time_ms,
-                                      alpha_qp);
+  rtc::scoped_refptr<webrtc::I420BufferInterface> yuv_buffer =
+      decodedImage->video_frame_buffer()->ToI420();
+  rtc::scoped_refptr<webrtc::I420BufferInterface> alpha_buffer =
+      alpha_decodedImage->video_frame_buffer()->ToI420();
+  RTC_DCHECK_EQ(yuv_buffer->width(), alpha_buffer->width());
+  RTC_DCHECK_EQ(yuv_buffer->height(), alpha_buffer->height());
+  rtc::scoped_refptr<I420ABufferInterface> merged_buffer = WrapI420ABuffer(
+      yuv_buffer->width(), yuv_buffer->height(), yuv_buffer->DataY(),
+      yuv_buffer->StrideY(), yuv_buffer->DataU(), yuv_buffer->StrideU(),
+      yuv_buffer->DataV(), yuv_buffer->StrideV(), alpha_buffer->DataY(),
+      alpha_buffer->StrideY(),
+      rtc::Bind(&KeepBufferRefs, yuv_buffer, alpha_buffer));
+
+  VideoFrame merged_image(merged_buffer, decodedImage->timestamp(),
+                          0 /* render_time_ms */, decodedImage->rotation());
+  decoded_complete_callback_->Decoded(merged_image, decode_time_ms, qp);
 }
 
 }  // namespace webrtc
