@@ -28,8 +28,6 @@ extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 
   RTC_CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
   LoadGlobalClassReferenceHolder();
-  JNIEnv* env = AttachCurrentThreadIfNeeded();
-  InitClassLoader(env);
 
   return ret;
 }
