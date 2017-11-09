@@ -12,7 +12,6 @@
 
 #include "modules/audio_device/include/audio_device.h"
 #include "rtc_base/atomicops.h"
-#include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
@@ -82,6 +81,7 @@ void AudioState::SetPlayout(bool enabled) {
     null_audio_poller_ =
         rtc::MakeUnique<NullAudioPoller>(&audio_transport_proxy_);
   }
+  voe->Release();
 }
 
 void AudioState::SetRecording(bool enabled) {
@@ -94,6 +94,7 @@ void AudioState::SetRecording(bool enabled) {
   // remember the setting for when it receives subsequent calls of
   // StartPlayout.
   voe->SetRecording(enabled);
+  voe->Release();
 }
 
 // Reference count; implementation copied from rtc::RefCountedObject.
