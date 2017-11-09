@@ -16,11 +16,24 @@ namespace webrtc {
 namespace {
 // TODO(danilchap): Make generic, optimize and move to base.
 inline int64_t DivideRoundToNearest(int64_t x, uint32_t y) {
-  // Caller ensure x is positive by converting unsigned value into it.
-  // So this Divide doesn't need to handle negative argument case.
+  // Callers ensure x is positive and x + y / 2 doesn't overflow.
   return (x + y / 2) / y;
 }
 }  // namespace
+
+uint32_t SaturatedUsToCompactNtp(int64_t us) {
+  constexpr uint32_t kMaxCompactNtp = 0xFFFFFFFF;
+  constexpr int64_t kMicrosecondsInSecond = 1000000;
+  constexpr int kCompactNtpInSecond = 0x10000;
+  if (us <= 0)
+    return 0;
+  if (us >= kMaxCompactNtp * kMicrosecondsInSecond / kCompactNtpInSecond)
+    return kMaxCompactNtp;
+  // To convert to compact ntp need to divide by 1e6 to get seconds,
+  // then multiply by 0x10000 to get the final result.
+  // To avoid float operations, multiplication and division swapped.
+  return DivideRoundToNearest(us * kCompactNtpInSecond, kMicrosecondsInSecond);
+}
 
 int64_t CompactNtpRttToMs(uint32_t compact_ntp_interval) {
   // Interval to convert expected to be positive, e.g. rtt or delay.

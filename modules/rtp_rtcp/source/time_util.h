@@ -34,6 +34,11 @@ inline uint32_t NtpToRtp(NtpTime ntp, uint32_t freq) {
 inline uint32_t CompactNtp(NtpTime ntp) {
   return (ntp.seconds() << 16) | (ntp.fractions() >> 16);
 }
+
+// Converts interval in microseconds to compact ntp (1/2^16 seconds) resolution.
+// Negative values converted to 0, Overlarge values converted to max uint32_t.
+uint32_t SaturatedUsToCompactNtp(int64_t us);
+
 // Converts interval between compact ntp timestamps to milliseconds.
 // This interval can be up to ~9.1 hours (2^15 seconds).
 // Values close to 2^16 seconds consider negative and result in minimum rtt = 1.
