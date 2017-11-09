@@ -13,7 +13,9 @@
 #include <vector>
 
 #include "modules/rtp_rtcp/include/receive_statistics.h"
+#include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/event.h"
+#include "rtc_base/fakeclock.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/task_queue.h"
 #include "test/gmock.h"
@@ -27,10 +29,14 @@ using ::testing::_;
 using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::SizeIs;
+using ::webrtc::CompactNtp;
+using ::webrtc::CompactNtpRttToMs;
 using ::webrtc::MockTransport;
+using ::webrtc::NtpTime;
 using ::webrtc::RtcpTransceiverConfig;
 using ::webrtc::RtcpTransceiverImpl;
 using ::webrtc::rtcp::ReportBlock;
+using ::webrtc::rtcp::SenderReport;
 using ::webrtc::test::RtcpPacketParser;
 
 class MockReceiveStatisticsProvider : public webrtc::ReceiveStatisticsProvider {
@@ -231,6 +237,107 @@ TEST(RtcpTransceiverImplTest, ReceiverReportUsesReceiveStatistics) {
               SizeIs(report_blocks.size()));
   EXPECT_EQ(rtcp_parser.receiver_report()->report_blocks()[0].source_ssrc(),
             kMediaSsrc);
+}
+
+// TODO(danilchap): Write test ReceivePacket handles several rtcp_packets
+// stacked together when callbacks will be implemented that can be used for
+// cleaner expectations.
+
+TEST(RtcpTransceiverImplTest,
+     WhenSendsReceiverReportSetsLastSenderReportTimestampPerRemoteSsrc) {
+  const uint32_t kRemoteSsrc1 = 4321;
+  const uint32_t kRemoteSsrc2 = 5321;
+  MockTransport outgoing_transport;
+  std::vector<ReportBlock> statistics_report_blocks(2);
+  statistics_report_blocks[0].SetMediaSsrc(kRemoteSsrc1);
+  statistics_report_blocks[1].SetMediaSsrc(kRemoteSsrc2);
+  MockReceiveStatisticsProvider receive_statistics;
+  EXPECT_CALL(receive_statistics, RtcpReportBlocks(_))
+      .WillOnce(Return(statistics_report_blocks));
+
+  RtcpTransceiverConfig config;
+  config.schedule_periodic_compound_packets = false;
+  config.outgoing_transport = &outgoing_transport;
+  config.receive_statistics = &receive_statistics;
+  RtcpTransceiverImpl rtcp_transceiver(config);
+
+  const NtpTime kRemoteNtp(0x9876543211);
+  // Receive SenderReport for RemoteSsrc2, but no report for RemoteSsrc1.
+  SenderReport sr;
+  sr.SetSenderSsrc(kRemoteSsrc2);
+  sr.SetNtp(kRemoteNtp);
+  auto raw_packet = sr.Build();
+  rtcp_transceiver.ReceivePacket(raw_packet);
+
+  // Trigger sending ReceiverReport.
+  RtcpPacketParser rtcp_parser;
+  EXPECT_CALL(outgoing_transport, SendRtcp(_, _))
+      .WillOnce(Invoke(&rtcp_parser, &RtcpPacketParser::Parse));
+  rtcp_transceiver.SendCompoundPacket();
+
+  EXPECT_GT(rtcp_parser.receiver_report()->num_packets(), 0);
+  const auto& report_blocks = rtcp_parser.receiver_report()->report_blocks();
+  ASSERT_EQ(report_blocks.size(), 2u);
+  // RtcpTransceiverImpl doesn't guarantee order of the report blocks
+  // match result of ReceiveStatisticsProvider::RtcpReportBlocks callback,
+  // but for simplicity of the test asume it is the same.
+  ASSERT_EQ(report_blocks[0].source_ssrc(), kRemoteSsrc1);
+  // No matching Sender Report for kRemoteSsrc1, LastSR fields has to be 0.
+  EXPECT_EQ(report_blocks[0].last_sr(), 0u);
+
+  ASSERT_EQ(report_blocks[1].source_ssrc(), kRemoteSsrc2);
+  EXPECT_EQ(report_blocks[1].last_sr(), CompactNtp(kRemoteNtp));
+}
+
+TEST(RtcpTransceiverImplTest,
+     WhenSendsReceiverReportCalculatesDelaySinceLastSenderReport) {
+  const uint32_t kRemoteSsrc1 = 4321;
+  const uint32_t kRemoteSsrc2 = 5321;
+  rtc::ScopedFakeClock clock;
+  MockTransport outgoing_transport;
+  std::vector<ReportBlock> statistics_report_blocks(2);
+  statistics_report_blocks[0].SetMediaSsrc(kRemoteSsrc1);
+  statistics_report_blocks[1].SetMediaSsrc(kRemoteSsrc2);
+  MockReceiveStatisticsProvider receive_statistics;
+  EXPECT_CALL(receive_statistics, RtcpReportBlocks(_))
+      .WillOnce(Return(statistics_report_blocks));
+
+  RtcpTransceiverConfig config;
+  config.schedule_periodic_compound_packets = false;
+  config.outgoing_transport = &outgoing_transport;
+  config.receive_statistics = &receive_statistics;
+  RtcpTransceiverImpl rtcp_transceiver(config);
+
+  auto receive_sender_report = [&rtcp_transceiver](uint32_t remote_ssrc) {
+    SenderReport sr;
+    sr.SetSenderSsrc(remote_ssrc);
+    auto raw_packet = sr.Build();
+    rtcp_transceiver.ReceivePacket(raw_packet);
+  };
+
+  receive_sender_report(kRemoteSsrc1);
+  clock.AdvanceTimeMicros(100 * rtc::kNumMicrosecsPerMillisec);
+
+  receive_sender_report(kRemoteSsrc2);
+  clock.AdvanceTimeMicros(100 * rtc::kNumMicrosecsPerMillisec);
+
+  // Trigger ReceiverReport back.
+  RtcpPacketParser rtcp_parser;
+  EXPECT_CALL(outgoing_transport, SendRtcp(_, _))
+      .WillOnce(Invoke(&rtcp_parser, &RtcpPacketParser::Parse));
+  rtcp_transceiver.SendCompoundPacket();
+
+  EXPECT_GT(rtcp_parser.receiver_report()->num_packets(), 0);
+  const auto& report_blocks = rtcp_parser.receiver_report()->report_blocks();
+  ASSERT_EQ(report_blocks.size(), 2u);
+  // RtcpTransceiverImpl doesn't guarantee order of the report blocks
+  // match result of ReceiveStatisticsProvider::RtcpReportBlocks callback,
+  // but for simplicity of the test asume it is the same.
+  ASSERT_EQ(report_blocks[0].source_ssrc(), kRemoteSsrc1);
+  EXPECT_EQ(CompactNtpRttToMs(report_blocks[0].delay_since_last_sr()), 200);
+
+  ASSERT_EQ(report_blocks[1].source_ssrc(), kRemoteSsrc2);
+  EXPECT_EQ(CompactNtpRttToMs(report_blocks[1].delay_since_last_sr()), 100);
 }
 
 }  // namespace

@@ -11,13 +11,18 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTCP_TRANSCEIVER_IMPL_H_
 #define MODULES_RTP_RTCP_SOURCE_RTCP_TRANSCEIVER_IMPL_H_
 
+#include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "api/array_view.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtcp_transceiver_config.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/weak_ptr.h"
+#include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 //
@@ -29,16 +34,29 @@ class RtcpTransceiverImpl {
   explicit RtcpTransceiverImpl(const RtcpTransceiverConfig& config);
   ~RtcpTransceiverImpl();
 
+  // Handles incoming rtcp packets.
+  void ReceivePacket(rtc::ArrayView<const uint8_t> packet);
+
   // Sends RTCP packets starting with a sender or receiver report.
   void SendCompoundPacket();
 
  private:
+  struct SenderReportTimes {
+    int64_t local_received_time_us;
+    NtpTime remote_sent_time;
+  };
+
+  void HandleReceivedPacket(const rtcp::CommonHeader& rtcp_packet_header);
+
   void ReschedulePeriodicCompoundPackets(int64_t delay_ms);
   // Sends RTCP packets.
   void SendPacket();
+  // Generate Report Blocks to be send in Sender or Receiver Report.
+  std::vector<rtcp::ReportBlock> CreateReportBlocks();
 
   const RtcpTransceiverConfig config_;
 
+  std::map<uint32_t, SenderReportTimes> last_received_sender_reports_;
   rtc::WeakPtrFactory<RtcpTransceiverImpl> ptr_factory_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtcpTransceiverImpl);
