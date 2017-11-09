@@ -209,8 +209,9 @@ void BitrateControllerImpl::OnReceivedRtcpReceiverReport(
           report_block.extended_highest_sequence_number;
     }
     if (total_number_of_packets < 0) {
-      LOG(LS_WARNING) << "Received report block where extended high sequence "
-                         "number goes backwards, ignoring.";
+      RTC_LOG(LS_WARNING)
+          << "Received report block where extended high sequence "
+             "number goes backwards, ignoring.";
       return;
     }
     if (total_number_of_packets == 0)

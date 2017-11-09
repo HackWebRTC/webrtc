@@ -61,7 +61,7 @@ Java_org_webrtc_VideoFileRenderer_nativeI420Scale(JNIEnv* jni,
       width, height, dst_y, dst_stride_y, dst_u, dst_stride_u, dst_v,
       dst_stride_v, dstWidth, dstHeight, libyuv::kFilterBilinear);
   if (ret) {
-    LOG(LS_ERROR) << "Error scaling I420 frame: " << ret;
+    RTC_LOG(LS_ERROR) << "Error scaling I420 frame: " << ret;
   }
 }
 

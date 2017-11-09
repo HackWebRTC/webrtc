@@ -83,7 +83,7 @@ void ReceiveSideCongestionController::WrappingBitrateEstimator::
   if (header.extension.hasAbsoluteSendTime) {
     // If we see AST in header, switch RBE strategy immediately.
     if (!using_absolute_send_time_) {
-      LOG(LS_INFO)
+      RTC_LOG(LS_INFO)
           << "WrappingBitrateEstimator: Switching to absolute send time RBE.";
       using_absolute_send_time_ = true;
       PickEstimator();
@@ -94,8 +94,9 @@ void ReceiveSideCongestionController::WrappingBitrateEstimator::
     if (using_absolute_send_time_) {
       ++packets_since_absolute_send_time_;
       if (packets_since_absolute_send_time_ >= kTimeOffsetSwitchThreshold) {
-        LOG(LS_INFO) << "WrappingBitrateEstimator: Switching to transmission "
-                     << "time offset RBE.";
+        RTC_LOG(LS_INFO)
+            << "WrappingBitrateEstimator: Switching to transmission "
+            << "time offset RBE.";
         using_absolute_send_time_ = false;
         PickEstimator();
       }

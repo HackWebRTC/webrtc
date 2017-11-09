@@ -320,13 +320,13 @@ static struct {
 // Only added because string.compare() in gcc-3.3.3 seems to misbehave with
 // embedded nulls.
 // TODO: switch back to string.compare() if/when gcc is fixed
-#define EXPECT_EQ_ARRAY(len, x, y, msg)                      \
+#define EXPECT_EQ_ARRAY(len, x, y, msg)                        \
   for (size_t j = 0; j < len; ++j) {                           \
-    if (x[j] != y[j]) {                                     \
-        LOG(LS_ERROR) << "" # x << " != " # y                  \
-                   << " byte " << j << " msg: " << msg;     \
-      }                                                     \
-    }
+    if (x[j] != y[j]) {                                        \
+      RTC_LOG(LS_ERROR) << "" #x << " != " #y << " byte " << j \
+                        << " msg: " << msg;                    \
+    }                                                          \
+  }
 
 size_t Base64Escape(const unsigned char *src, size_t szsrc, char *dest,
                     size_t szdest) {
@@ -351,7 +351,7 @@ size_t Base64Unescape(const char *src, size_t szsrc, std::string *s) {
 }
 
 TEST(Base64, EncodeDecodeBattery) {
-  LOG(LS_VERBOSE) << "Testing base-64";
+  RTC_LOG(LS_VERBOSE) << "Testing base-64";
 
   size_t i;
 
@@ -363,7 +363,7 @@ TEST(Base64, EncodeDecodeBattery) {
     size_t decode_length;
     size_t cypher_length;
 
-    LOG(LS_VERBOSE) << "B64: " << base64_tests[i].cyphertext;
+    RTC_LOG(LS_VERBOSE) << "B64: " << base64_tests[i].cyphertext;
 
     const unsigned char* unsigned_plaintext =
       reinterpret_cast<const unsigned char*>(base64_tests[i].plaintext);
@@ -896,7 +896,7 @@ const char SpecificTest[] =
 static std::string gCommandLine;
 
 TEST(Base64, LargeSample) {
-  LOG(LS_VERBOSE) << "Testing specific base64 file";
+  RTC_LOG(LS_VERBOSE) << "Testing specific base64 file";
 
   char unescaped[64 * 1024];
 

@@ -86,9 +86,9 @@ int64_t TimestampAligner::UpdateOffset(int64_t camera_time_us,
   // below this threshold.
   static const int64_t kResetThresholdUs = 300000;
   if (std::abs(error_us) > kResetThresholdUs) {
-    LOG(LS_INFO) << "Resetting timestamp translation after averaging "
-                 << frames_seen_ << " frames. Old offset: " << offset_us_
-                 << ", new offset: " << diff_us;
+    RTC_LOG(LS_INFO) << "Resetting timestamp translation after averaging "
+                     << frames_seen_ << " frames. Old offset: " << offset_us_
+                     << ", new offset: " << diff_us;
     frames_seen_ = 0;
     clip_bias_us_ = 0;
   }
@@ -119,10 +119,10 @@ int64_t TimestampAligner::ClipTimestamp(int64_t filtered_time_us,
       // timestamps with with too short inter-frame interval. We may even return
       // duplicate timestamps in case this function is called several times with
       // exactly the same |system_time_us|.
-      LOG(LS_WARNING) << "too short translated timestamp interval: "
-                      << "system time (us) = " << system_time_us
-                      << ", interval (us) = "
-                      << system_time_us - prev_translated_time_us_;
+      RTC_LOG(LS_WARNING) << "too short translated timestamp interval: "
+                          << "system time (us) = " << system_time_us
+                          << ", interval (us) = "
+                          << system_time_us - prev_translated_time_us_;
       time_us = system_time_us;
     }
   }

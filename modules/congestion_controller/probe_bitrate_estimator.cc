@@ -101,10 +101,10 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
 
   if (send_interval_ms <= 0 || send_interval_ms > kMaxProbeIntervalMs ||
       receive_interval_ms <= 0 || receive_interval_ms > kMaxProbeIntervalMs) {
-    LOG(LS_INFO) << "Probing unsuccessful, invalid send/receive interval"
-                 << " [cluster id: " << cluster_id
-                 << "] [send interval: " << send_interval_ms << " ms]"
-                 << " [receive interval: " << receive_interval_ms << " ms]";
+    RTC_LOG(LS_INFO) << "Probing unsuccessful, invalid send/receive interval"
+                     << " [cluster id: " << cluster_id
+                     << "] [send interval: " << send_interval_ms << " ms]"
+                     << " [receive interval: " << receive_interval_ms << " ms]";
     if (event_log_) {
       event_log_->Log(rtc::MakeUnique<RtcEventProbeResultFailure>(
           cluster_id, ProbeFailureReason::kInvalidSendReceiveInterval));
@@ -127,29 +127,30 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
 
   float ratio = receive_bps / send_bps;
   if (ratio > kMaxValidRatio) {
-    LOG(LS_INFO) << "Probing unsuccessful, receive/send ratio too high"
-                 << " [cluster id: " << cluster_id << "] [send: " << send_size
-                 << " bytes / " << send_interval_ms
-                 << " ms = " << send_bps / 1000 << " kb/s]"
-                 << " [receive: " << receive_size << " bytes / "
-                 << receive_interval_ms << " ms = " << receive_bps / 1000
-                 << " kb/s]"
-                 << " [ratio: " << receive_bps / 1000 << " / "
-                 << send_bps / 1000 << " = " << ratio << " > kMaxValidRatio ("
-                 << kMaxValidRatio << ")]";
+    RTC_LOG(LS_INFO) << "Probing unsuccessful, receive/send ratio too high"
+                     << " [cluster id: " << cluster_id
+                     << "] [send: " << send_size << " bytes / "
+                     << send_interval_ms << " ms = " << send_bps / 1000
+                     << " kb/s]"
+                     << " [receive: " << receive_size << " bytes / "
+                     << receive_interval_ms << " ms = " << receive_bps / 1000
+                     << " kb/s]"
+                     << " [ratio: " << receive_bps / 1000 << " / "
+                     << send_bps / 1000 << " = " << ratio
+                     << " > kMaxValidRatio (" << kMaxValidRatio << ")]";
     if (event_log_) {
       event_log_->Log(rtc::MakeUnique<RtcEventProbeResultFailure>(
           cluster_id, ProbeFailureReason::kInvalidSendReceiveRatio));
     }
     return -1;
   }
-  LOG(LS_INFO) << "Probing successful"
-               << " [cluster id: " << cluster_id << "] [send: " << send_size
-               << " bytes / " << send_interval_ms << " ms = " << send_bps / 1000
-               << " kb/s]"
-               << " [receive: " << receive_size << " bytes / "
-               << receive_interval_ms << " ms = " << receive_bps / 1000
-               << " kb/s]";
+  RTC_LOG(LS_INFO) << "Probing successful"
+                   << " [cluster id: " << cluster_id << "] [send: " << send_size
+                   << " bytes / " << send_interval_ms
+                   << " ms = " << send_bps / 1000 << " kb/s]"
+                   << " [receive: " << receive_size << " bytes / "
+                   << receive_interval_ms << " ms = " << receive_bps / 1000
+                   << " kb/s]";
 
   float res = std::min(send_bps, receive_bps);
   // If we're receiving at significantly lower bitrate than we were sending at,

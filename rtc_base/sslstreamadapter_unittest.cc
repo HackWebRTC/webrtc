@@ -107,8 +107,8 @@ class SSLDummyStreamBase : public rtc::StreamInterface,
     int mask = (rtc::SE_READ | rtc::SE_CLOSE);
 
     if (sig & mask) {
-      LOG(LS_VERBOSE) << "SSLDummyStreamBase::OnEvent side=" << side_
-                      << " sig=" << sig << " forwarding upward";
+      RTC_LOG(LS_VERBOSE) << "SSLDummyStreamBase::OnEvent side=" << side_
+                          << " sig=" << sig << " forwarding upward";
       PostEvent(sig & mask, 0);
     }
   }
@@ -116,8 +116,8 @@ class SSLDummyStreamBase : public rtc::StreamInterface,
   // Catch writeability events on out and pass them up.
   void OnEventOut(rtc::StreamInterface* stream, int sig, int err) {
     if (sig & rtc::SE_WRITE) {
-      LOG(LS_VERBOSE) << "SSLDummyStreamBase::OnEvent side=" << side_
-                      << " sig=" << sig << " forwarding upward";
+      RTC_LOG(LS_VERBOSE) << "SSLDummyStreamBase::OnEvent side=" << side_
+                          << " sig=" << sig << " forwarding upward";
 
       PostEvent(sig & rtc::SE_WRITE, 0);
     }
@@ -133,7 +133,7 @@ class SSLDummyStreamBase : public rtc::StreamInterface,
                           size_t* written, int* error) override;
 
   void Close() override {
-    LOG(LS_INFO) << "Closing outbound stream";
+    RTC_LOG(LS_INFO) << "Closing outbound stream";
     out_->Close();
   }
 
@@ -308,7 +308,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
   }
 
   virtual void OnEvent(rtc::StreamInterface *stream, int sig, int err) {
-    LOG(LS_VERBOSE) << "SSLStreamAdapterTestBase::OnEvent sig=" << sig;
+    RTC_LOG(LS_VERBOSE) << "SSLStreamAdapterTestBase::OnEvent sig=" << sig;
 
     if (sig & rtc::SE_READ) {
       ReadData(stream);
@@ -331,7 +331,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
             ? rtc::SSLPeerCertificateDigestError::NONE
             : rtc::SSLPeerCertificateDigestError::VERIFICATION_FAILED;
 
-    LOG(LS_INFO) << "Setting peer identities by digest";
+    RTC_LOG(LS_INFO) << "Setting peer identities by digest";
 
     rv = server_identity_->certificate().ComputeDigest(
         rtc::DIGEST_SHA_1, server_digest, 20, &server_digest_len);
@@ -341,7 +341,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
     ASSERT_TRUE(rv);
 
     if (!correct) {
-      LOG(LS_INFO) << "Setting bogus digest for server cert";
+      RTC_LOG(LS_INFO) << "Setting bogus digest for server cert";
       server_digest[0]++;
     }
     rv = client_ssl_->SetPeerCertificateDigest(rtc::DIGEST_SHA_1, server_digest,
@@ -350,7 +350,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
     EXPECT_EQ(expect_success, rv);
 
     if (!correct) {
-      LOG(LS_INFO) << "Setting bogus digest for client cert";
+      RTC_LOG(LS_INFO) << "Setting bogus digest for client cert";
       client_digest[0]++;
     }
     rv = server_ssl_->SetPeerCertificateDigest(rtc::DIGEST_SHA_1, client_digest,
@@ -464,12 +464,12 @@ class SSLStreamAdapterTestBase : public testing::Test,
                                 int *error) {
     // Randomly drop loss_ percent of packets
     if (rtc::CreateRandomId() % 100 < static_cast<uint32_t>(loss_)) {
-      LOG(LS_VERBOSE) << "Randomly dropping packet, size=" << data_len;
+      RTC_LOG(LS_VERBOSE) << "Randomly dropping packet, size=" << data_len;
       *written = data_len;
       return rtc::SR_SUCCESS;
     }
     if (dtls_ && (data_len > mtu_)) {
-      LOG(LS_VERBOSE) << "Dropping packet > mtu, size=" << data_len;
+      RTC_LOG(LS_VERBOSE) << "Dropping packet > mtu, size=" << data_len;
       *written = data_len;
       return rtc::SR_SUCCESS;
     }
@@ -480,7 +480,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
     if (damage_ && (*static_cast<const unsigned char *>(data) == 23)) {
       std::vector<char> buf(data_len);
 
-      LOG(LS_VERBOSE) << "Damaging packet";
+      RTC_LOG(LS_VERBOSE) << "Damaging packet";
 
       memcpy(&buf[0], data, data_len);
       buf[data_len - 1]++;
@@ -620,7 +620,7 @@ class SSLStreamAdapterTestTLS
 
   // Test data transfer for TLS
   void TestTransfer(int size) override {
-    LOG(LS_INFO) << "Starting transfer test with " << size << " bytes";
+    RTC_LOG(LS_INFO) << "Starting transfer test with " << size << " bytes";
     // Create some dummy data to send.
     size_t received;
 
@@ -666,9 +666,9 @@ class SSLStreamAdapterTestTLS
 
         if (rv == rtc::SR_SUCCESS) {
           send_stream_.SetPosition(position + sent);
-          LOG(LS_VERBOSE) << "Sent: " << position + sent;
+          RTC_LOG(LS_VERBOSE) << "Sent: " << position + sent;
         } else if (rv == rtc::SR_BLOCK) {
-          LOG(LS_VERBOSE) << "Blocked...";
+          RTC_LOG(LS_VERBOSE) << "Blocked...";
           send_stream_.SetPosition(position);
           break;
         } else {
@@ -677,7 +677,7 @@ class SSLStreamAdapterTestTLS
         }
       } else {
         // Now close
-        LOG(LS_INFO) << "Wrote " << position << " bytes. Closing";
+        RTC_LOG(LS_INFO) << "Wrote " << position << " bytes. Closing";
         client_ssl_->Close();
         break;
       }
@@ -704,7 +704,7 @@ class SSLStreamAdapterTestTLS
         break;
 
       ASSERT_EQ(rtc::SR_SUCCESS, r);
-      LOG(LS_VERBOSE) << "Read " << bread;
+      RTC_LOG(LS_VERBOSE) << "Read " << bread;
 
       recv_stream_.Write(buffer, bread, nullptr, nullptr);
     }
@@ -763,10 +763,10 @@ class SSLStreamAdapterTestDTLS
       size_t sent;
       rtc::StreamResult rv = client_ssl_->Write(packet, packet_size_, &sent, 0);
       if (rv == rtc::SR_SUCCESS) {
-        LOG(LS_VERBOSE) << "Sent: " << sent_;
+        RTC_LOG(LS_VERBOSE) << "Sent: " << sent_;
         sent_++;
       } else if (rv == rtc::SR_BLOCK) {
-        LOG(LS_VERBOSE) << "Blocked...";
+        RTC_LOG(LS_VERBOSE) << "Blocked...";
         break;
       } else {
         ADD_FAILURE();
@@ -797,7 +797,7 @@ class SSLStreamAdapterTestDTLS
         break;
 
       ASSERT_EQ(rtc::SR_SUCCESS, r);
-      LOG(LS_VERBOSE) << "Read " << bread;
+      RTC_LOG(LS_VERBOSE) << "Read " << bread;
 
       // Now parse the datagram
       ASSERT_EQ(packet_size_, bread);
@@ -819,7 +819,7 @@ class SSLStreamAdapterTestDTLS
     WriteData();
 
     EXPECT_TRUE_WAIT(sent_ == count_, 10000);
-    LOG(LS_INFO) << "sent_ == " << sent_;
+    RTC_LOG(LS_INFO) << "sent_ == " << sent_;
 
     if (damage_) {
       WAIT(false, 2000);
@@ -827,8 +827,8 @@ class SSLStreamAdapterTestDTLS
     } else if (loss_ == 0) {
         EXPECT_EQ_WAIT(static_cast<size_t>(sent_), received_.size(), 1000);
     } else {
-      LOG(LS_INFO) << "Sent " << sent_ << " packets; received " <<
-          received_.size();
+      RTC_LOG(LS_INFO) << "Sent " << sent_ << " packets; received "
+                       << received_.size();
     }
   };
 
@@ -844,12 +844,12 @@ class SSLStreamAdapterTestDTLS
 
 rtc::StreamResult SSLDummyStreamBase::Write(const void* data, size_t data_len,
                                               size_t* written, int* error) {
-  LOG(LS_VERBOSE) << "Writing to loopback " << data_len;
+  RTC_LOG(LS_VERBOSE) << "Writing to loopback " << data_len;
 
   if (first_packet_) {
     first_packet_ = false;
     if (test_base_->GetLoseFirstPacket()) {
-      LOG(LS_INFO) << "Losing initial packet of length " << data_len;
+      RTC_LOG(LS_INFO) << "Losing initial packet of length " << data_len;
       *written = data_len;  // Fake successful writing also to writer.
       return rtc::SR_SUCCESS;
     }

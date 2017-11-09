@@ -295,7 +295,7 @@ void TransientSuppressor::UpdateKeypress(bool key_pressed) {
 
   if (keypress_counter_ > kIsTypingThreshold) {
     if (!suppression_enabled_) {
-      LOG(LS_INFO) << "[ts] Transient suppression is now enabled.";
+      RTC_LOG(LS_INFO) << "[ts] Transient suppression is now enabled.";
     }
     suppression_enabled_ = true;
     keypress_counter_ = 0;
@@ -304,7 +304,7 @@ void TransientSuppressor::UpdateKeypress(bool key_pressed) {
   if (detection_enabled_ &&
       ++chunks_since_keypress_ > kChunksUntilNotTyping) {
     if (suppression_enabled_) {
-      LOG(LS_INFO) << "[ts] Transient suppression is now disabled.";
+      RTC_LOG(LS_INFO) << "[ts] Transient suppression is now disabled.";
     }
     detection_enabled_ = false;
     suppression_enabled_ = false;

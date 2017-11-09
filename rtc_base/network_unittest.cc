@@ -25,7 +25,7 @@
 #endif  // defined(WEBRTC_POSIX)
 #include "rtc_base/gunit.h"
 #if defined(WEBRTC_WIN)
-#include "rtc_base/logging.h"  // For LOG_GLE
+#include "rtc_base/logging.h"  // For RTC_LOG_GLE
 #endif
 
 namespace rtc {
@@ -250,7 +250,8 @@ TEST_F(NetworkTest, DISABLED_TestCreateNetworks) {
                            reinterpret_cast<sockaddr*>(&storage),
                            static_cast<int>(ipsize));
 #if defined(WEBRTC_WIN)
-      if (success) LOG_GLE(LS_ERROR) << "Socket bind failed.";
+      if (success)
+        RTC_LOG_GLE(LS_ERROR) << "Socket bind failed.";
 #endif
       EXPECT_EQ(0, success);
 #if defined(WEBRTC_WIN)
@@ -899,10 +900,10 @@ TEST_F(NetworkTest, TestIgnoreNonDefaultRoutes) {
   NetworkManager::NetworkList list;
   list = GetNetworks(manager, false);
   bool found_dummy = false;
-  LOG(LS_INFO) << "Looking for dummy network: ";
+  RTC_LOG(LS_INFO) << "Looking for dummy network: ";
   for (NetworkManager::NetworkList::iterator it = list.begin();
        it != list.end(); ++it) {
-    LOG(LS_INFO) << "  Network name: " << (*it)->name();
+    RTC_LOG(LS_INFO) << "  Network name: " << (*it)->name();
     found_dummy |= (*it)->name().find("dummy0") != std::string::npos;
   }
   for (NetworkManager::NetworkList::iterator it = list.begin();
@@ -910,16 +911,16 @@ TEST_F(NetworkTest, TestIgnoreNonDefaultRoutes) {
     delete (*it);
   }
   if (!found_dummy) {
-    LOG(LS_INFO) << "No dummy found, quitting.";
+    RTC_LOG(LS_INFO) << "No dummy found, quitting.";
     return;
   }
-  LOG(LS_INFO) << "Found dummy, running again while ignoring non-default "
-               << "routes.";
+  RTC_LOG(LS_INFO) << "Found dummy, running again while ignoring non-default "
+                   << "routes.";
   manager.set_ignore_non_default_routes(true);
   list = GetNetworks(manager, false);
   for (NetworkManager::NetworkList::iterator it = list.begin();
        it != list.end(); ++it) {
-    LOG(LS_INFO) << "  Network name: " << (*it)->name();
+    RTC_LOG(LS_INFO) << "  Network name: " << (*it)->name();
     EXPECT_TRUE((*it)->name().find("dummy0") == std::string::npos);
   }
   for (NetworkManager::NetworkList::iterator it = list.begin();

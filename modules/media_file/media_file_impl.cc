@@ -40,14 +40,14 @@ MediaFileImpl::MediaFileImpl(const int32_t id)
       _openFile(false),
       _fileName(),
       _ptrCallback(NULL) {
-  LOG(LS_INFO) << "MediaFileImpl()";
+  RTC_LOG(LS_INFO) << "MediaFileImpl()";
 
   codec_info_.plname[0] = '\0';
   _fileName[0] = '\0';
 }
 
 MediaFileImpl::~MediaFileImpl() {
-  LOG(LS_INFO) << "~MediaFileImpl()";
+  RTC_LOG(LS_INFO) << "~MediaFileImpl()";
   {
     rtc::CritScope lock(&_crit);
 
@@ -71,26 +71,26 @@ MediaFileImpl::~MediaFileImpl() {
 }
 
 int64_t MediaFileImpl::TimeUntilNextProcess() {
-  LOG(LS_WARNING)
+  RTC_LOG(LS_WARNING)
       << "TimeUntilNextProcess: This method is not used by MediaFile class.";
   return -1;
 }
 
 void MediaFileImpl::Process() {
-  LOG(LS_WARNING) << "Process: This method is not used by MediaFile class.";
+  RTC_LOG(LS_WARNING) << "Process: This method is not used by MediaFile class.";
 }
 
 int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,
                                         size_t& dataLengthInBytes) {
-  LOG(LS_INFO) << "MediaFileImpl::PlayoutData(buffer= "
-               << static_cast<void*>(buffer)
-               << ", bufLen= " << dataLengthInBytes << ")";
+  RTC_LOG(LS_INFO) << "MediaFileImpl::PlayoutData(buffer= "
+                   << static_cast<void*>(buffer)
+                   << ", bufLen= " << dataLengthInBytes << ")";
 
   const size_t bufferLengthInBytes = dataLengthInBytes;
   dataLengthInBytes = 0;
 
   if (buffer == NULL || bufferLengthInBytes == 0) {
-    LOG(LS_ERROR) << "Buffer pointer or length is NULL!";
+    RTC_LOG(LS_ERROR) << "Buffer pointer or length is NULL!";
     return -1;
   }
 
@@ -99,12 +99,12 @@ int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,
     rtc::CritScope lock(&_crit);
 
     if (!_playingActive) {
-      LOG(LS_WARNING) << "Not currently playing!";
+      RTC_LOG(LS_WARNING) << "Not currently playing!";
       return -1;
     }
 
     if (!_ptrFileUtilityObj) {
-      LOG(LS_ERROR) << "Playing, but no FileUtility object!";
+      RTC_LOG(LS_ERROR) << "Playing, but no FileUtility object!";
       StopPlaying();
       return -1;
     }
@@ -134,7 +134,7 @@ int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,
         }
         break;
       default: {
-        LOG(LS_ERROR) << "Invalid file format: " << _fileFormat;
+        RTC_LOG(LS_ERROR) << "Invalid file format: " << _fileFormat;
         assert(false);
         break;
       }
@@ -182,16 +182,16 @@ void MediaFileImpl::HandlePlayCallbacks(int32_t bytesRead) {
 int32_t MediaFileImpl::PlayoutStereoData(int8_t* bufferLeft,
                                          int8_t* bufferRight,
                                          size_t& dataLengthInBytes) {
-  LOG(LS_INFO) << "MediaFileImpl::PlayoutStereoData(Left = "
-               << static_cast<void*>(bufferLeft)
-               << ", Right = " << static_cast<void*>(bufferRight)
-               << ", Len= " << dataLengthInBytes << ")";
+  RTC_LOG(LS_INFO) << "MediaFileImpl::PlayoutStereoData(Left = "
+                   << static_cast<void*>(bufferLeft)
+                   << ", Right = " << static_cast<void*>(bufferRight)
+                   << ", Len= " << dataLengthInBytes << ")";
 
   const size_t bufferLengthInBytes = dataLengthInBytes;
   dataLengthInBytes = 0;
 
   if (bufferLeft == NULL || bufferRight == NULL || bufferLengthInBytes == 0) {
-    LOG(LS_ERROR) << "A buffer pointer or the length is NULL!";
+    RTC_LOG(LS_ERROR) << "A buffer pointer or the length is NULL!";
     return -1;
   }
 
@@ -201,12 +201,13 @@ int32_t MediaFileImpl::PlayoutStereoData(int8_t* bufferLeft,
     rtc::CritScope lock(&_crit);
 
     if (!_playingActive || !_isStereo) {
-      LOG(LS_WARNING) << "Not currently playing stereo!";
+      RTC_LOG(LS_WARNING) << "Not currently playing stereo!";
       return -1;
     }
 
     if (!_ptrFileUtilityObj) {
-      LOG(LS_ERROR) << "Playing stereo, but the FileUtility objects is NULL!";
+      RTC_LOG(LS_ERROR)
+          << "Playing stereo, but the FileUtility objects is NULL!";
       StopPlaying();
       return -1;
     }
@@ -219,7 +220,7 @@ int32_t MediaFileImpl::PlayoutStereoData(int8_t* bufferLeft,
             *_ptrInStream, bufferLeft, bufferRight, bufferLengthInBytes);
         break;
       default:
-        LOG(LS_ERROR)
+        RTC_LOG(LS_ERROR)
             << "Trying to read non-WAV as stereo audio (not supported)";
         break;
     }
@@ -274,20 +275,20 @@ int32_t MediaFileImpl::StartPlayingAudioFile(const char* fileName,
   // Check that the file will play longer than notificationTimeMs ms.
   if ((startPointMs && stopPointMs && !loop) &&
       (notificationTimeMs > (stopPointMs - startPointMs))) {
-    LOG(LS_ERROR) << "specified notification time is longer than amount of"
-                  << " ms that will be played";
+    RTC_LOG(LS_ERROR) << "specified notification time is longer than amount of"
+                      << " ms that will be played";
     return -1;
   }
 
   FileWrapper* inputStream = FileWrapper::Create();
   if (inputStream == NULL) {
-    LOG(LS_INFO) << "Failed to allocate input stream for file " << fileName;
+    RTC_LOG(LS_INFO) << "Failed to allocate input stream for file " << fileName;
     return -1;
   }
 
   if (!inputStream->OpenFile(fileName, true)) {
     delete inputStream;
-    LOG(LS_ERROR) << "Could not open input file " << fileName;
+    RTC_LOG(LS_ERROR) << "Could not open input file " << fileName;
     return -1;
   }
 
@@ -333,21 +334,22 @@ int32_t MediaFileImpl::StartPlayingStream(InStream& stream,
 
   rtc::CritScope lock(&_crit);
   if (_playingActive || _recordingActive) {
-    LOG(LS_ERROR)
+    RTC_LOG(LS_ERROR)
         << "StartPlaying called, but already playing or recording file "
         << ((_fileName[0] == '\0') ? "(name not set)" : _fileName);
     return -1;
   }
 
   if (_ptrFileUtilityObj != NULL) {
-    LOG(LS_ERROR) << "StartPlaying called, but FileUtilityObj already exists!";
+    RTC_LOG(LS_ERROR)
+        << "StartPlaying called, but FileUtilityObj already exists!";
     StopPlaying();
     return -1;
   }
 
   _ptrFileUtilityObj = new ModuleFileUtility();
   if (_ptrFileUtilityObj == NULL) {
-    LOG(LS_INFO) << "Failed to create FileUtilityObj!";
+    RTC_LOG(LS_INFO) << "Failed to create FileUtilityObj!";
     return -1;
   }
 
@@ -355,7 +357,7 @@ int32_t MediaFileImpl::StartPlayingStream(InStream& stream,
     case kFileFormatWavFile: {
       if (_ptrFileUtilityObj->InitWavReading(stream, startPointMs,
                                              stopPointMs) == -1) {
-        LOG(LS_ERROR) << "Not a valid WAV file!";
+        RTC_LOG(LS_ERROR) << "Not a valid WAV file!";
         StopPlaying();
         return -1;
       }
@@ -365,7 +367,7 @@ int32_t MediaFileImpl::StartPlayingStream(InStream& stream,
     case kFileFormatCompressedFile: {
       if (_ptrFileUtilityObj->InitCompressedReading(stream, startPointMs,
                                                     stopPointMs) == -1) {
-        LOG(LS_ERROR) << "Not a valid Compressed file!";
+        RTC_LOG(LS_ERROR) << "Not a valid Compressed file!";
         StopPlaying();
         return -1;
       }
@@ -382,7 +384,7 @@ int32_t MediaFileImpl::StartPlayingStream(InStream& stream,
       if (!ValidFrequency(codecInst->plfreq) ||
           _ptrFileUtilityObj->InitPCMReading(stream, startPointMs, stopPointMs,
                                              codecInst->plfreq) == -1) {
-        LOG(LS_ERROR) << "Not a valid raw 8 or 16 KHz PCM file!";
+        RTC_LOG(LS_ERROR) << "Not a valid raw 8 or 16 KHz PCM file!";
         StopPlaying();
         return -1;
       }
@@ -395,7 +397,7 @@ int32_t MediaFileImpl::StartPlayingStream(InStream& stream,
       // prevents codecInst from being NULL here.
       assert(codecInst != NULL);
       if (_ptrFileUtilityObj->InitPreEncodedReading(stream, *codecInst) == -1) {
-        LOG(LS_ERROR) << "Not a valid PreEncoded file!";
+        RTC_LOG(LS_ERROR) << "Not a valid PreEncoded file!";
         StopPlaying();
         return -1;
       }
@@ -404,20 +406,20 @@ int32_t MediaFileImpl::StartPlayingStream(InStream& stream,
       break;
     }
     default: {
-      LOG(LS_ERROR) << "Invalid file format: " << format;
+      RTC_LOG(LS_ERROR) << "Invalid file format: " << format;
       assert(false);
       break;
     }
   }
   if (_ptrFileUtilityObj->codec_info(codec_info_) == -1) {
-    LOG(LS_ERROR) << "Failed to retrieve codec info!";
+    RTC_LOG(LS_ERROR) << "Failed to retrieve codec info!";
     StopPlaying();
     return -1;
   }
 
   _isStereo = (codec_info_.channels == 2);
   if (_isStereo && (_fileFormat != kFileFormatWavFile)) {
-    LOG(LS_WARNING) << "Stereo is only allowed for WAV files";
+    RTC_LOG(LS_WARNING) << "Stereo is only allowed for WAV files";
     StopPlaying();
     return -1;
   }
@@ -449,7 +451,7 @@ int32_t MediaFileImpl::StopPlaying() {
   codec_info_.plname[0] = '\0';
 
   if (!_playingActive) {
-    LOG(LS_WARNING) << "playing is not active!";
+    RTC_LOG(LS_WARNING) << "playing is not active!";
     return -1;
   }
 
@@ -458,19 +460,19 @@ int32_t MediaFileImpl::StopPlaying() {
 }
 
 bool MediaFileImpl::IsPlaying() {
-  LOG(LS_VERBOSE) << "MediaFileImpl::IsPlaying()";
+  RTC_LOG(LS_VERBOSE) << "MediaFileImpl::IsPlaying()";
   rtc::CritScope lock(&_crit);
   return _playingActive;
 }
 
 int32_t MediaFileImpl::IncomingAudioData(const int8_t* buffer,
                                          const size_t bufferLengthInBytes) {
-  LOG(LS_INFO) << "MediaFile::IncomingData(buffer= "
-               << static_cast<const void*>(buffer)
-               << ", bufLen= " << bufferLengthInBytes << ")";
+  RTC_LOG(LS_INFO) << "MediaFile::IncomingData(buffer= "
+                   << static_cast<const void*>(buffer)
+                   << ", bufLen= " << bufferLengthInBytes << ")";
 
   if (buffer == NULL || bufferLengthInBytes == 0) {
-    LOG(LS_ERROR) << "Buffer pointer or length is NULL!";
+    RTC_LOG(LS_ERROR) << "Buffer pointer or length is NULL!";
     return -1;
   }
 
@@ -480,11 +482,11 @@ int32_t MediaFileImpl::IncomingAudioData(const int8_t* buffer,
     rtc::CritScope lock(&_crit);
 
     if (!_recordingActive) {
-      LOG(LS_WARNING) << "Not currently recording!";
+      RTC_LOG(LS_WARNING) << "Not currently recording!";
       return -1;
     }
     if (_ptrOutStream == NULL) {
-      LOG(LS_ERROR) << "Recording is active, but output stream is NULL!";
+      RTC_LOG(LS_ERROR) << "Recording is active, but output stream is NULL!";
       assert(false);
       return -1;
     }
@@ -523,7 +525,7 @@ int32_t MediaFileImpl::IncomingAudioData(const int8_t* buffer,
               *_ptrOutStream, buffer, bufferLengthInBytes);
           break;
         default:
-          LOG(LS_ERROR) << "Invalid file format: " << _fileFormat;
+          RTC_LOG(LS_ERROR) << "Invalid file format: " << _fileFormat;
           assert(false);
           break;
       }
@@ -547,7 +549,7 @@ int32_t MediaFileImpl::IncomingAudioData(const int8_t* buffer,
       }
     }
     if (bytesWritten < (int32_t)bufferLengthInBytes) {
-      LOG(LS_WARNING) << "Failed to write all requested bytes!";
+      RTC_LOG(LS_WARNING) << "Failed to write all requested bytes!";
       StopRecording();
       recordingEnded = true;
     }
@@ -582,14 +584,14 @@ int32_t MediaFileImpl::StartRecordingAudioFile(
 
   FileWrapper* outputStream = FileWrapper::Create();
   if (outputStream == NULL) {
-    LOG(LS_INFO) << "Failed to allocate memory for output stream";
+    RTC_LOG(LS_INFO) << "Failed to allocate memory for output stream";
     return -1;
   }
 
   if (!outputStream->OpenFile(fileName, false)) {
     delete outputStream;
-    LOG(LS_ERROR) << "Could not open output file '" << fileName
-                  << "' for writing!";
+    RTC_LOG(LS_ERROR) << "Could not open output file '" << fileName
+                      << "' for writing!";
     return -1;
   }
 
@@ -623,14 +625,14 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
 
   rtc::CritScope lock(&_crit);
   if (_recordingActive || _playingActive) {
-    LOG(LS_ERROR)
+    RTC_LOG(LS_ERROR)
         << "StartRecording called, but already recording or playing file "
         << _fileName << "!";
     return -1;
   }
 
   if (_ptrFileUtilityObj != NULL) {
-    LOG(LS_ERROR)
+    RTC_LOG(LS_ERROR)
         << "StartRecording called, but fileUtilityObj already exists!";
     StopRecording();
     return -1;
@@ -638,7 +640,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
 
   _ptrFileUtilityObj = new ModuleFileUtility();
   if (_ptrFileUtilityObj == NULL) {
-    LOG(LS_INFO) << "Cannot allocate fileUtilityObj!";
+    RTC_LOG(LS_INFO) << "Cannot allocate fileUtilityObj!";
     return -1;
   }
 
@@ -647,7 +649,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
   switch (format) {
     case kFileFormatWavFile: {
       if (_ptrFileUtilityObj->InitWavWriting(stream, codecInst) == -1) {
-        LOG(LS_ERROR) << "Failed to initialize WAV file!";
+        RTC_LOG(LS_ERROR) << "Failed to initialize WAV file!";
         delete _ptrFileUtilityObj;
         _ptrFileUtilityObj = NULL;
         return -1;
@@ -658,7 +660,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
     case kFileFormatCompressedFile: {
       // Write compression codec name at beginning of file
       if (_ptrFileUtilityObj->InitCompressedWriting(stream, codecInst) == -1) {
-        LOG(LS_ERROR) << "Failed to initialize Compressed file!";
+        RTC_LOG(LS_ERROR) << "Failed to initialize Compressed file!";
         delete _ptrFileUtilityObj;
         _ptrFileUtilityObj = NULL;
         return -1;
@@ -672,7 +674,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
     case kFileFormatPcm48kHzFile: {
       if (!ValidFrequency(codecInst.plfreq) ||
           _ptrFileUtilityObj->InitPCMWriting(stream, codecInst.plfreq) == -1) {
-        LOG(LS_ERROR) << "Failed to initialize PCM file!";
+        RTC_LOG(LS_ERROR) << "Failed to initialize PCM file!";
         delete _ptrFileUtilityObj;
         _ptrFileUtilityObj = NULL;
         return -1;
@@ -682,7 +684,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
     }
     case kFileFormatPreencodedFile: {
       if (_ptrFileUtilityObj->InitPreEncodedWriting(stream, codecInst) == -1) {
-        LOG(LS_ERROR) << "Failed to initialize Pre-Encoded file!";
+        RTC_LOG(LS_ERROR) << "Failed to initialize Pre-Encoded file!";
         delete _ptrFileUtilityObj;
         _ptrFileUtilityObj = NULL;
         return -1;
@@ -692,7 +694,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
       break;
     }
     default: {
-      LOG(LS_ERROR) << "Invalid file format " << format << " specified!";
+      RTC_LOG(LS_ERROR) << "Invalid file format " << format << " specified!";
       delete _ptrFileUtilityObj;
       _ptrFileUtilityObj = NULL;
       return -1;
@@ -701,14 +703,15 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
   _isStereo = (tmpAudioCodec.channels == 2);
   if (_isStereo) {
     if (_fileFormat != kFileFormatWavFile) {
-      LOG(LS_WARNING) << "Stereo is only allowed for WAV files";
+      RTC_LOG(LS_WARNING) << "Stereo is only allowed for WAV files";
       StopRecording();
       return -1;
     }
     if ((STR_NCASE_CMP(tmpAudioCodec.plname, "L16", 4) != 0) &&
         (STR_NCASE_CMP(tmpAudioCodec.plname, "PCMU", 5) != 0) &&
         (STR_NCASE_CMP(tmpAudioCodec.plname, "PCMA", 5) != 0)) {
-      LOG(LS_WARNING) << "Stereo is only allowed for codec PCMU, PCMA and L16 ";
+      RTC_LOG(LS_WARNING)
+          << "Stereo is only allowed for codec PCMU, PCMA and L16 ";
       StopRecording();
       return -1;
     }
@@ -724,7 +727,7 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
 int32_t MediaFileImpl::StopRecording() {
   rtc::CritScope lock(&_crit);
   if (!_recordingActive) {
-    LOG(LS_WARNING) << "recording is not active!";
+    RTC_LOG(LS_WARNING) << "recording is not active!";
     return -1;
   }
 
@@ -757,7 +760,7 @@ int32_t MediaFileImpl::StopRecording() {
 }
 
 bool MediaFileImpl::IsRecording() {
-  LOG(LS_VERBOSE) << "MediaFileImpl::IsRecording()";
+  RTC_LOG(LS_VERBOSE) << "MediaFileImpl::IsRecording()";
   rtc::CritScope lock(&_crit);
   return _recordingActive;
 }
@@ -773,7 +776,7 @@ int32_t MediaFileImpl::RecordDurationMs(uint32_t& durationMs) {
 }
 
 bool MediaFileImpl::IsStereo() {
-  LOG(LS_VERBOSE) << "MediaFileImpl::IsStereo()";
+  RTC_LOG(LS_VERBOSE) << "MediaFileImpl::IsStereo()";
   rtc::CritScope lock(&_crit);
   return _isStereo;
 }
@@ -798,7 +801,7 @@ int32_t MediaFileImpl::FileDurationMs(const char* fileName,
 
   ModuleFileUtility* utilityObj = new ModuleFileUtility();
   if (utilityObj == NULL) {
-    LOG(LS_ERROR) << "failed to allocate utility object!";
+    RTC_LOG(LS_ERROR) << "failed to allocate utility object!";
     return -1;
   }
 
@@ -827,13 +830,13 @@ int32_t MediaFileImpl::PlayoutPositionMs(uint32_t& positionMs) const {
 int32_t MediaFileImpl::codec_info(CodecInst& codecInst) const {
   rtc::CritScope lock(&_crit);
   if (!_playingActive && !_recordingActive) {
-    LOG(LS_ERROR) << "Neither playout nor recording has been initialized!";
+    RTC_LOG(LS_ERROR) << "Neither playout nor recording has been initialized!";
     return -1;
   }
   if (codec_info_.pltype == 0 && codec_info_.plname[0] == '\0') {
-    LOG(LS_ERROR) << "The CodecInst for "
-                  << (_playingActive ? "Playback" : "Recording")
-                  << " is unknown!";
+    RTC_LOG(LS_ERROR) << "The CodecInst for "
+                      << (_playingActive ? "Playback" : "Recording")
+                      << " is unknown!";
     return -1;
   }
   memcpy(&codecInst, &codec_info_, sizeof(CodecInst));
@@ -847,7 +850,7 @@ bool MediaFileImpl::ValidFileFormat(const FileFormats format,
         format == kFileFormatPcm8kHzFile || format == kFileFormatPcm16kHzFile ||
         format == kFileFormatPcm32kHzFile ||
         format == kFileFormatPcm48kHzFile) {
-      LOG(LS_ERROR) << "Codec info required for file format specified!";
+      RTC_LOG(LS_ERROR) << "Codec info required for file format specified!";
       return false;
     }
   }
@@ -856,7 +859,7 @@ bool MediaFileImpl::ValidFileFormat(const FileFormats format,
 
 bool MediaFileImpl::ValidFileName(const char* fileName) {
   if ((fileName == NULL) || (fileName[0] == '\0')) {
-    LOG(LS_ERROR) << "FileName not specified!";
+    RTC_LOG(LS_ERROR) << "FileName not specified!";
     return false;
   }
   return true;
@@ -869,11 +872,11 @@ bool MediaFileImpl::ValidFilePositions(const uint32_t startPointMs,
     return true;
   }
   if (stopPointMs && (startPointMs >= stopPointMs)) {
-    LOG(LS_ERROR) << "startPointMs must be less than stopPointMs!";
+    RTC_LOG(LS_ERROR) << "startPointMs must be less than stopPointMs!";
     return false;
   }
   if (stopPointMs && ((stopPointMs - startPointMs) < 20)) {
-    LOG(LS_ERROR) << "minimum play duration for files is 20 ms!";
+    RTC_LOG(LS_ERROR) << "minimum play duration for files is 20 ms!";
     return false;
   }
   return true;
@@ -884,7 +887,7 @@ bool MediaFileImpl::ValidFrequency(const uint32_t frequency) {
       (frequency == 48000)) {
     return true;
   }
-  LOG(LS_ERROR) << "Frequency should be 8000, 16000, 32000, or 48000 (Hz)";
+  RTC_LOG(LS_ERROR) << "Frequency should be 8000, 16000, 32000, or 48000 (Hz)";
   return false;
 }
 }  // namespace webrtc

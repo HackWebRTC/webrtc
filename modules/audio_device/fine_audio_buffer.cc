@@ -29,7 +29,7 @@ FineAudioBuffer::FineAudioBuffer(AudioDeviceBuffer* device_buffer,
       bytes_per_10_ms_(samples_per_10_ms_ * sizeof(int16_t)),
       playout_buffer_(0, capacity),
       record_buffer_(0, capacity) {
-  LOG(INFO) << "samples_per_10_ms_:" << samples_per_10_ms_;
+  RTC_LOG(INFO) << "samples_per_10_ms_:" << samples_per_10_ms_;
 }
 
 FineAudioBuffer::~FineAudioBuffer() {}

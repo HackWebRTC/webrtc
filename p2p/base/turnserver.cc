@@ -222,7 +222,7 @@ void TurnServer::HandleStunMessage(TurnServerConnection* conn, const char* data,
   TurnMessage msg;
   rtc::ByteBufferReader buf(data, size);
   if (!msg.Read(&buf) || (buf.Length() > 0)) {
-    LOG(LS_WARNING) << "Received invalid STUN message";
+    RTC_LOG(LS_WARNING) << "Received invalid STUN message";
     return;
   }
 
@@ -461,8 +461,8 @@ void TurnServer::SendErrorResponse(TurnServerConnection* conn,
                                    int code, const std::string& reason) {
   TurnMessage resp;
   InitErrorResponse(req, code, reason, &resp);
-  LOG(LS_INFO) << "Sending error response, type=" << resp.type()
-               << ", code=" << code << ", reason=" << reason;
+  RTC_LOG(LS_INFO) << "Sending error response, type=" << resp.type()
+                   << ", code=" << code << ", reason=" << reason;
   SendStun(conn, &resp);
 }
 

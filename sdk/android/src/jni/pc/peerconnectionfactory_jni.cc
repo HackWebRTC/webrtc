@@ -84,7 +84,7 @@ JNI_FUNCTION_DECLARATION(void,
     field_trials_init_string = new char[init_string_length + 1];
     rtc::strcpyn(field_trials_init_string, init_string_length + 1, init_string);
     jni->ReleaseStringUTFChars(j_trials_init_string, init_string);
-    LOG(LS_INFO) << "initializeFieldTrials: " << field_trials_init_string;
+    RTC_LOG(LS_INFO) << "initializeFieldTrials: " << field_trials_init_string;
   }
   field_trial::InitFieldTrialsFromString(field_trials_init_string);
 }
@@ -115,7 +115,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 
   const char* init_string =
       jni->GetStringUTFChars(j_event_tracing_filename, NULL);
-  LOG(LS_INFO) << "Starting internal tracing to: " << init_string;
+  RTC_LOG(LS_INFO) << "Starting internal tracing to: " << init_string;
   bool ret = rtc::tracing::StartInternalCapture(init_string);
   jni->ReleaseStringUTFChars(j_event_tracing_filename, init_string);
   return ret;
@@ -383,7 +383,8 @@ JNI_FUNCTION_DECLARATION(jlong,
         rtc::RTCCertificateGenerator::GenerateCertificate(
             rtc::KeyParams(key_type), rtc::Optional<uint64_t>());
     if (!certificate) {
-      LOG(LS_ERROR) << "Failed to generate certificate. KeyType: " << key_type;
+      RTC_LOG(LS_ERROR) << "Failed to generate certificate. KeyType: "
+                        << key_type;
       return 0;
     }
     rtc_config.certificates.push_back(certificate);

@@ -200,10 +200,10 @@ void ModuleRtpRtcpImpl::Process() {
     // is increasing.
     int64_t rtcp_interval = RtcpReportInterval();
     if (rtcp_receiver_.RtcpRrTimeout(rtcp_interval)) {
-      LOG_F(LS_WARNING) << "Timeout: No RTCP RR received.";
+      RTC_LOG_F(LS_WARNING) << "Timeout: No RTCP RR received.";
     } else if (rtcp_receiver_.RtcpRrSequenceNumberTimeout(rtcp_interval)) {
-      LOG_F(LS_WARNING) <<
-          "Timeout: No increase in RTCP RR extended highest sequence number.";
+      RTC_LOG_F(LS_WARNING) << "Timeout: No increase in RTCP RR extended "
+                               "highest sequence number.";
     }
 
     if (remote_bitrate_ && rtcp_sender_.TMMBR()) {
@@ -385,7 +385,7 @@ int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
   if (rtcp_sender_.Sending() != sending) {
     // Sends RTCP BYE when going from true to false
     if (rtcp_sender_.SetSendingStatus(GetFeedbackState(), sending) != 0) {
-      LOG(LS_WARNING) << "Failed to send RTCP BYE";
+      RTC_LOG(LS_WARNING) << "Failed to send RTCP BYE";
     }
     if (sending && rtp_sender_) {
       // Update Rtcp receiver config, to track Rtx config changes from

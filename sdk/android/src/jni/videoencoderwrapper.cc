@@ -220,7 +220,7 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
         FrameExtraInfo frame_extra_info;
         do {
           if (frame_extra_infos_.empty()) {
-            LOG(LS_WARNING)
+            RTC_LOG(LS_WARNING)
                 << "Java encoder produced an unexpected frame with timestamp: "
                 << capture_time_ns;
             return;
@@ -259,11 +259,11 @@ int32_t VideoEncoderWrapper::HandleReturnCode(JNIEnv* jni, jobject code) {
     // Try resetting the codec.
     if (++num_resets_ <= kMaxJavaEncoderResets &&
         Release() == WEBRTC_VIDEO_CODEC_OK) {
-      LOG(LS_WARNING) << "Reset Java encoder: " << num_resets_;
+      RTC_LOG(LS_WARNING) << "Reset Java encoder: " << num_resets_;
       return InitEncodeInternal(jni);
     }
 
-    LOG(LS_WARNING) << "Falling back to software decoder.";
+    RTC_LOG(LS_WARNING) << "Falling back to software decoder.";
     return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
   } else {
     return value;
@@ -280,10 +280,10 @@ RTPFragmentationHeader VideoEncoderWrapper::ParseFragmentationHeader(
     const std::vector<H264::NaluIndex> nalu_idxs =
         H264::FindNaluIndices(buffer.data(), buffer.size());
     if (nalu_idxs.empty()) {
-      LOG(LS_ERROR) << "Start code is not found!";
-      LOG(LS_ERROR) << "Data:" << buffer[0] << " " << buffer[1] << " "
-                    << buffer[2] << " " << buffer[3] << " " << buffer[4] << " "
-                    << buffer[5];
+      RTC_LOG(LS_ERROR) << "Start code is not found!";
+      RTC_LOG(LS_ERROR) << "Data:" << buffer[0] << " " << buffer[1] << " "
+                        << buffer[2] << " " << buffer[3] << " " << buffer[4]
+                        << " " << buffer[5];
     }
     header.VerifyAndAllocateFragmentationHeader(nalu_idxs.size());
     for (size_t i = 0; i < nalu_idxs.size(); i++) {

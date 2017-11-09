@@ -41,8 +41,8 @@ bool TmmbItem::Parse(const uint8_t* buffer) {
 
   bool shift_overflow = (bitrate_bps_ >> exponent) != mantissa;
   if (shift_overflow) {
-    LOG(LS_ERROR) << "Invalid tmmb bitrate value : " << mantissa
-                  << "*2^" << static_cast<int>(exponent);
+    RTC_LOG(LS_ERROR) << "Invalid tmmb bitrate value : " << mantissa << "*2^"
+                      << static_cast<int>(exponent);
     return false;
   }
   packet_overhead_ = overhead;

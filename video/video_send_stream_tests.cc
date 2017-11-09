@@ -152,8 +152,9 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
         // unpopulated value we'll wait for a packet with non-zero send time.
         observation_complete_.Set();
       } else {
-        LOG(LS_WARNING) << "Got a packet with zero absoluteSendTime, waiting"
-                           " for another packet...";
+        RTC_LOG(LS_WARNING)
+            << "Got a packet with zero absoluteSendTime, waiting"
+               " for another packet...";
       }
 
       return SEND_PACKET;

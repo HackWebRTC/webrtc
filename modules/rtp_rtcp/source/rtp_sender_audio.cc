@@ -240,7 +240,7 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
   bool send_result = rtp_sender_->SendToNetwork(
       std::move(packet), kAllowRetransmission, RtpPacketSender::kHighPriority);
   if (first_packet_sent_()) {
-    LOG(LS_INFO) << "First audio RTP packet sent to pacer";
+    RTC_LOG(LS_INFO) << "First audio RTP packet sent to pacer";
   }
   return send_result;
 }

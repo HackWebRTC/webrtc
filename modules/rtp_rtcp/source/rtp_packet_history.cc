@@ -35,7 +35,8 @@ void RtpPacketHistory::SetStorePacketsStatus(bool enable,
   rtc::CritScope cs(&critsect_);
   if (enable) {
     if (store_) {
-      LOG(LS_WARNING) << "Purging packet history in order to re-set status.";
+      RTC_LOG(LS_WARNING)
+          << "Purging packet history in order to re-set status.";
       Free();
     }
     RTC_DCHECK(!store_);
@@ -130,7 +131,7 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPacketAndSetSendTime(
 
   int index = 0;
   if (!FindSeqNum(sequence_number, &index)) {
-    LOG(LS_WARNING) << "No match for getting seqNum " << sequence_number;
+    RTC_LOG(LS_WARNING) << "No match for getting seqNum " << sequence_number;
     return nullptr;
   }
   RTC_DCHECK_EQ(sequence_number,

@@ -106,7 +106,7 @@ VideoReceiveStream::VideoReceiveStream(
                                  this,  // OnCompleteFrameCallback
                                  timing_.get()),
       rtp_stream_sync_(this) {
-  LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
+  RTC_LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   RTC_DCHECK(process_thread_);
   RTC_DCHECK(call_stats_);
@@ -146,7 +146,7 @@ VideoReceiveStream::VideoReceiveStream(
 
 VideoReceiveStream::~VideoReceiveStream() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_sequence_checker_);
-  LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
+  RTC_LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
   Stop();
 
   process_thread_->DeRegisterModule(&rtp_stream_sync_);
@@ -451,8 +451,8 @@ bool VideoReceiveStream::Decode() {
         now_ms - *last_keyframe_packet_ms < kMaxWaitForKeyFrameMs;
 
     if (stream_is_active && !receiving_keyframe) {
-      LOG(LS_WARNING) << "No decodable frame in " << wait_ms
-                      << " ms, requesting keyframe.";
+      RTC_LOG(LS_WARNING) << "No decodable frame in " << wait_ms
+                          << " ms, requesting keyframe.";
       RequestKeyFrame();
     }
   }

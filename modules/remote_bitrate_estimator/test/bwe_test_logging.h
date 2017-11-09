@@ -46,8 +46,8 @@
 // Log *contexts* are names concatenated with '_' between them, with the name
 // of the logged/plotted string/value last. Plot *time* is inherited down the
 // tree. A branch is enabled by default but can be *disabled* to reduce output.
-// The difference between the LOG and PLOT macros is that PLOT prefixes the line
-// so it can be easily filtered, plus it outputs the current time.
+// The difference between the RTC_LOG and PLOT macros is that PLOT prefixes the
+// line so it can be easily filtered, plus it outputs the current time.
 
 #if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
 

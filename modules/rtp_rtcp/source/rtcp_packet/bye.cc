@@ -42,7 +42,7 @@ bool Bye::Parse(const CommonHeader& packet) {
   const uint8_t src_count = packet.count();
   // Validate packet.
   if (packet.payload_size_bytes() < 4u * src_count) {
-    LOG(LS_WARNING)
+    RTC_LOG(LS_WARNING)
         << "Packet is too small to contain CSRCs it promise to have.";
     return false;
   }
@@ -52,7 +52,7 @@ bool Bye::Parse(const CommonHeader& packet) {
   if (has_reason) {
     reason_length = payload[4u * src_count];
     if (packet.payload_size_bytes() - 4u * src_count < 1u + reason_length) {
-      LOG(LS_WARNING) << "Invalid reason length: " << reason_length;
+      RTC_LOG(LS_WARNING) << "Invalid reason length: " << reason_length;
       return false;
     }
   }
@@ -115,7 +115,7 @@ bool Bye::Create(uint8_t* packet,
 
 bool Bye::SetCsrcs(std::vector<uint32_t> csrcs) {
   if (csrcs.size() > kMaxNumberOfCsrcs) {
-    LOG(LS_WARNING) << "Too many CSRCs for Bye packet.";
+    RTC_LOG(LS_WARNING) << "Too many CSRCs for Bye packet.";
     return false;
   }
   csrcs_ = std::move(csrcs);

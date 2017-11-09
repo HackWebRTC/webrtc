@@ -84,15 +84,16 @@ int Resampler::ResetIfNeeded(int inFreq, int outFreq, size_t num_channels) {
 
 int Resampler::Reset(int inFreq, int outFreq, size_t num_channels) {
   if (num_channels != 1 && num_channels != 2) {
-    LOG(LS_WARNING)
+    RTC_LOG(LS_WARNING)
         << "Reset() called with unsupported channel count, num_channels = "
         << num_channels;
     return -1;
   }
   ResamplerMode mode;
   if (ComputeResamplerMode(inFreq, outFreq, &mode) != 0) {
-    LOG(LS_WARNING) << "Reset() called with unsupported sample rates, inFreq = "
-                    << inFreq << ", outFreq = " << outFreq;
+    RTC_LOG(LS_WARNING)
+        << "Reset() called with unsupported sample rates, inFreq = " << inFreq
+        << ", outFreq = " << outFreq;
     return -1;
   }
   // Reinitialize internal state for the frequencies and sample rates.

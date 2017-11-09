@@ -374,13 +374,13 @@ void Port::OnReadPacket(
   } else if (!msg) {
     // STUN message handled already
   } else if (msg->type() == STUN_BINDING_REQUEST) {
-    LOG(LS_INFO) << "Received STUN ping "
-                 << " id=" << rtc::hex_encode(msg->transaction_id())
-                 << " from unknown address " << addr.ToSensitiveString();
+    RTC_LOG(LS_INFO) << "Received STUN ping "
+                     << " id=" << rtc::hex_encode(msg->transaction_id())
+                     << " from unknown address " << addr.ToSensitiveString();
 
     // Check for role conflicts.
     if (!MaybeIceRoleConflict(addr, msg.get(), remote_username)) {
-      LOG(LS_INFO) << "Received conflicting role from the peer.";
+      RTC_LOG(LS_INFO) << "Received conflicting role from the peer.";
       return;
     }
 
@@ -764,10 +764,11 @@ void Port::UpdateNetworkCost() {
   if (network_cost_ == new_cost) {
     return;
   }
-  LOG(LS_INFO) << "Network cost changed from " << network_cost_
-               << " to " << new_cost
-               << ". Number of candidates created: " << candidates_.size()
-               << ". Number of connections created: " << connections_.size();
+  RTC_LOG(LS_INFO) << "Network cost changed from " << network_cost_ << " to "
+                   << new_cost
+                   << ". Number of candidates created: " << candidates_.size()
+                   << ". Number of connections created: "
+                   << connections_.size();
   network_cost_ = new_cost;
   for (cricket::Candidate& candidate : candidates_) {
     candidate.set_network_cost(network_cost_);
@@ -1058,8 +1059,9 @@ void Connection::OnReadPacket(
 
     // If timed out sending writability checks, start up again
     if (!pruned_ && (write_state_ == STATE_WRITE_TIMEOUT)) {
-      LOG(LS_WARNING) << "Received a data packet on a timed-out Connection. "
-                      << "Resetting state to STATE_WRITE_INIT.";
+      RTC_LOG(LS_WARNING)
+          << "Received a data packet on a timed-out Connection. "
+          << "Resetting state to STATE_WRITE_INIT.";
       set_write_state(STATE_WRITE_INIT);
     }
   } else if (!msg) {
@@ -1126,7 +1128,7 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
   // Check for role conflicts.
   if (!port_->MaybeIceRoleConflict(remote_addr, msg, remote_ufrag)) {
     // Received conflicting role from the peer.
-    LOG(LS_INFO) << "Received conflicting role from the peer.";
+    RTC_LOG(LS_INFO) << "Received conflicting role from the peer.";
     return;
   }
 
@@ -1147,7 +1149,7 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
     if (nomination_attr) {
       nomination = nomination_attr->value();
       if (nomination == 0) {
-        LOG(LS_ERROR) << "Invalid nomination: " << nomination;
+        RTC_LOG(LS_ERROR) << "Invalid nomination: " << nomination;
       }
     } else {
       const StunByteStringAttribute* use_candidate_attr =
@@ -1232,7 +1234,7 @@ void Connection::PrintPingsSinceLastResponse(std::string* s, size_t max) {
 void Connection::UpdateState(int64_t now) {
   int rtt = ConservativeRTTEstimate(rtt_);
 
-  if (LOG_CHECK_LEVEL(LS_VERBOSE)) {
+  if (RTC_LOG_CHECK_LEVEL(LS_VERBOSE)) {
     std::string pings;
     PrintPingsSinceLastResponse(&pings, 5);
     LOG_J(LS_VERBOSE, this) << "UpdateState()"
@@ -1447,7 +1449,7 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
 
   int rtt = request->Elapsed();
 
-  if (LOG_CHECK_LEVEL_V(sev)) {
+  if (RTC_LOG_CHECK_LEVEL_V(sev)) {
     std::string pings;
     PrintPingsSinceLastResponse(&pings, 5);
     LOG_JV(sev, this) << "Received STUN ping response"
@@ -1547,8 +1549,8 @@ void Connection::MaybeUpdatePeerReflexiveCandidate(
 
 void Connection::OnMessage(rtc::Message *pmsg) {
   RTC_DCHECK(pmsg->message_id == MSG_DELETE);
-  LOG(LS_INFO) << "Connection deleted with number of pings sent: "
-               << num_pings_sent_;
+  RTC_LOG(LS_INFO) << "Connection deleted with number of pings sent: "
+                   << num_pings_sent_;
   SignalDestroyed(this);
   delete this;
 }
@@ -1589,9 +1591,10 @@ void Connection::MaybeUpdateLocalCandidate(ConnectionRequest* request,
   const StunAddressAttribute* addr =
       response->GetAddress(STUN_ATTR_XOR_MAPPED_ADDRESS);
   if (!addr) {
-    LOG(LS_WARNING) << "Connection::OnConnectionRequestResponse - "
-                    << "No MAPPED-ADDRESS or XOR-MAPPED-ADDRESS found in the "
-                    << "stun response message";
+    RTC_LOG(LS_WARNING)
+        << "Connection::OnConnectionRequestResponse - "
+        << "No MAPPED-ADDRESS or XOR-MAPPED-ADDRESS found in the "
+        << "stun response message";
     return;
   }
 
@@ -1614,9 +1617,9 @@ void Connection::MaybeUpdateLocalCandidate(ConnectionRequest* request,
   const StunUInt32Attribute* priority_attr =
       request->msg()->GetUInt32(STUN_ATTR_PRIORITY);
   if (!priority_attr) {
-    LOG(LS_WARNING) << "Connection::OnConnectionRequestResponse - "
-                    << "No STUN_ATTR_PRIORITY found in the "
-                    << "stun response message";
+    RTC_LOG(LS_WARNING) << "Connection::OnConnectionRequestResponse - "
+                        << "No STUN_ATTR_PRIORITY found in the "
+                        << "stun response message";
     return;
   }
   const uint32_t priority = priority_attr->value();

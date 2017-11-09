@@ -41,7 +41,7 @@ bool Pli::Parse(const CommonHeader& packet) {
   RTC_DCHECK_EQ(packet.fmt(), kFeedbackMessageType);
 
   if (packet.payload_size_bytes() < kCommonFeedbackLength) {
-    LOG(LS_WARNING) << "Packet is too small to be a valid PLI packet";
+    RTC_LOG(LS_WARNING) << "Packet is too small to be a valid PLI packet";
     return false;
   }
 

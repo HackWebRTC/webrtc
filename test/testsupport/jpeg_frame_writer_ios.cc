@@ -20,8 +20,9 @@ JpegFrameWriter::JpegFrameWriter(const std::string& /*output_filename*/) {}
 
 bool JpegFrameWriter::WriteFrame(const VideoFrame& /*input_frame*/,
                                  int /*quality*/) {
-  LOG(LS_WARNING) << "Libjpeg isn't available on IOS. Jpeg frame writer is not "
-      "supported. No frame will be saved.";
+  RTC_LOG(LS_WARNING)
+      << "Libjpeg isn't available on IOS. Jpeg frame writer is not "
+         "supported. No frame will be saved.";
   // Don't fail.
   return true;
 }

@@ -264,9 +264,9 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
                               clock_->TimeInMilliseconds());
 
   if (first_frame_received_()) {
-    LOG(LS_INFO) << "Received first "
-                 << (frame->Complete() ? "complete" : "incomplete")
-                 << " decodable video frame";
+    RTC_LOG(LS_INFO) << "Received first "
+                     << (frame->Complete() ? "complete" : "incomplete")
+                     << " decodable video frame";
   }
 
   const int32_t ret = Decode(*frame);

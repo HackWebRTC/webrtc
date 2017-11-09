@@ -563,7 +563,7 @@ class SSLIdentityExpirationTest : public testing::Test {
       memcpy(buf, entry.string, length);    // Copy the ASN1 string...
       buf[length] = rtc::CreateRandomId();  // ...and terminate it with junk.
       int64_t res = rtc::ASN1TimeToSec(buf, length, entry.long_format);
-      LOG(LS_VERBOSE) << entry.string;
+      RTC_LOG(LS_VERBOSE) << entry.string;
       ASSERT_EQ(entry.want, res);
     }
     // Run all examples again, but with an invalid length.
@@ -572,7 +572,7 @@ class SSLIdentityExpirationTest : public testing::Test {
       memcpy(buf, entry.string, length);    // Copy the ASN1 string...
       buf[length] = rtc::CreateRandomId();  // ...and terminate it with junk.
       int64_t res = rtc::ASN1TimeToSec(buf, length - 1, entry.long_format);
-      LOG(LS_VERBOSE) << entry.string;
+      RTC_LOG(LS_VERBOSE) << entry.string;
       ASSERT_EQ(-1, res);
     }
   }

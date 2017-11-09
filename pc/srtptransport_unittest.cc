@@ -77,14 +77,14 @@ class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
   void OnPacketReceived1(bool rtcp,
                          rtc::CopyOnWriteBuffer* packet,
                          const rtc::PacketTime& packet_time) {
-    LOG(LS_INFO) << "SrtpTransport1 Received a packet.";
+    RTC_LOG(LS_INFO) << "SrtpTransport1 Received a packet.";
     last_recv_packet1_ = *packet;
   }
 
   void OnPacketReceived2(bool rtcp,
                          rtc::CopyOnWriteBuffer* packet,
                          const rtc::PacketTime& packet_time) {
-    LOG(LS_INFO) << "SrtpTransport2 Received a packet.";
+    RTC_LOG(LS_INFO) << "SrtpTransport2 Received a packet.";
     last_recv_packet2_ = *packet;
   }
 

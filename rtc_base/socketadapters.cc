@@ -104,7 +104,7 @@ void BufferedReadAdapter::OnReadEvent(AsyncSocket * socket) {
   }
 
   if (data_len_ >= buffer_size_) {
-    LOG(INFO) << "Input buffer overflow";
+    RTC_LOG(INFO) << "Input buffer overflow";
     RTC_NOTREACHED();
     data_len_ = 0;
   }
@@ -113,7 +113,7 @@ void BufferedReadAdapter::OnReadEvent(AsyncSocket * socket) {
       socket_->Recv(buffer_ + data_len_, buffer_size_ - data_len_, nullptr);
   if (len < 0) {
     // TODO: Do something better like forwarding the error to the user.
-    LOG_ERR(INFO) << "Recv";
+    RTC_LOG_ERR(INFO) << "Recv";
     return;
   }
 
@@ -260,8 +260,8 @@ AsyncHttpsProxySocket::~AsyncHttpsProxySocket() {
 
 int AsyncHttpsProxySocket::Connect(const SocketAddress& addr) {
   int ret;
-  LOG(LS_VERBOSE) << "AsyncHttpsProxySocket::Connect("
-                  << proxy_.ToSensitiveString() << ")";
+  RTC_LOG(LS_VERBOSE) << "AsyncHttpsProxySocket::Connect("
+                      << proxy_.ToSensitiveString() << ")";
   dest_ = addr;
   state_ = PS_INIT;
   if (ShouldIssueConnect()) {
@@ -296,7 +296,7 @@ Socket::ConnState AsyncHttpsProxySocket::GetState() const {
 }
 
 void AsyncHttpsProxySocket::OnConnectEvent(AsyncSocket * socket) {
-  LOG(LS_VERBOSE) << "AsyncHttpsProxySocket::OnConnectEvent";
+  RTC_LOG(LS_VERBOSE) << "AsyncHttpsProxySocket::OnConnectEvent";
   if (!ShouldIssueConnect()) {
     state_ = PS_TUNNEL;
     BufferedReadAdapter::OnConnectEvent(socket);
@@ -306,7 +306,7 @@ void AsyncHttpsProxySocket::OnConnectEvent(AsyncSocket * socket) {
 }
 
 void AsyncHttpsProxySocket::OnCloseEvent(AsyncSocket * socket, int err) {
-  LOG(LS_VERBOSE) << "AsyncHttpsProxySocket::OnCloseEvent(" << err << ")";
+  RTC_LOG(LS_VERBOSE) << "AsyncHttpsProxySocket::OnCloseEvent(" << err << ")";
   if ((state_ == PS_WAIT_CLOSE) && (err == 0)) {
     state_ = PS_ERROR;
     Connect(dest_);
@@ -380,11 +380,11 @@ void AsyncHttpsProxySocket::SendRequest() {
   content_length_ = 0;
   headers_.clear();
 
-  LOG(LS_VERBOSE) << "AsyncHttpsProxySocket >> " << str;
+  RTC_LOG(LS_VERBOSE) << "AsyncHttpsProxySocket >> " << str;
 }
 
 void AsyncHttpsProxySocket::ProcessLine(char * data, size_t len) {
-  LOG(LS_VERBOSE) << "AsyncHttpsProxySocket << " << data;
+  RTC_LOG(LS_VERBOSE) << "AsyncHttpsProxySocket << " << data;
 
   if (len == 0) {
     if (state_ == PS_TUNNEL_HEADERS) {
@@ -419,7 +419,7 @@ void AsyncHttpsProxySocket::ProcessLine(char * data, size_t len) {
 #endif
 #if defined(WEBRTC_POSIX)
         // TODO: Raise a signal so the UI can be separated.
-        LOG(LS_ERROR) << "Oops!\n\n" << msg;
+        RTC_LOG(LS_ERROR) << "Oops!\n\n" << msg;
 #endif
       }
       // Unexpected end of headers
@@ -455,7 +455,7 @@ void AsyncHttpsProxySocket::ProcessLine(char * data, size_t len) {
                              proxy_, "CONNECT", "/",
                              user_, pass_, context_, response, auth_method)) {
     case HAR_IGNORE:
-      LOG(LS_VERBOSE) << "Ignoring Proxy-Authenticate: " << auth_method;
+      RTC_LOG(LS_VERBOSE) << "Ignoring Proxy-Authenticate: " << auth_method;
       if (!unknown_mechanisms_.empty())
         unknown_mechanisms_.append(", ");
       unknown_mechanisms_.append(auth_method);
@@ -610,7 +610,7 @@ void AsyncSocksProxySocket::ProcessInput(char* data, size_t* len) {
       if (!response.ReadUInt32(&addr) ||
           !response.ReadUInt16(&port))
         return;
-      LOG(LS_VERBOSE) << "Bound on " << addr << ":" << port;
+      RTC_LOG(LS_VERBOSE) << "Bound on " << addr << ":" << port;
     } else if (atyp == 3) {
       uint8_t len;
       std::string addr;
@@ -618,13 +618,13 @@ void AsyncSocksProxySocket::ProcessInput(char* data, size_t* len) {
           !response.ReadString(&addr, len) ||
           !response.ReadUInt16(&port))
         return;
-      LOG(LS_VERBOSE) << "Bound on " << addr << ":" << port;
+      RTC_LOG(LS_VERBOSE) << "Bound on " << addr << ":" << port;
     } else if (atyp == 4) {
       std::string addr;
       if (!response.ReadString(&addr, 16) ||
           !response.ReadUInt16(&port))
         return;
-      LOG(LS_VERBOSE) << "Bound on <IPV6>:" << port;
+      RTC_LOG(LS_VERBOSE) << "Bound on <IPV6>:" << port;
     } else {
       Error(0);
       return;

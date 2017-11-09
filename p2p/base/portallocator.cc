@@ -109,15 +109,16 @@ bool PortAllocator::SetConfiguration(
 
   if (candidate_pool_frozen_) {
     if (candidate_pool_size != candidate_pool_size_) {
-      LOG(LS_ERROR) << "Trying to change candidate pool size after pool was "
-                    << "frozen.";
+      RTC_LOG(LS_ERROR)
+          << "Trying to change candidate pool size after pool was "
+          << "frozen.";
       return false;
     }
     return true;
   }
 
   if (candidate_pool_size < 0) {
-    LOG(LS_ERROR) << "Can't set negative pool size.";
+    RTC_LOG(LS_ERROR) << "Can't set negative pool size.";
     return false;
   }
 

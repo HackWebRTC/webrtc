@@ -164,8 +164,8 @@ void TCPPort::PrepareAddress() {
     // If socket isn't bound yet the address will be added in
     // OnAddressReady(). Socket may be in the CLOSED state if Listen()
     // failed, we still want to add the socket address.
-    LOG(LS_VERBOSE) << "Preparing TCP address, current state: "
-                    << socket_->GetState();
+    RTC_LOG(LS_VERBOSE) << "Preparing TCP address, current state: "
+                        << socket_->GetState();
     if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND ||
         socket_->GetState() == rtc::AsyncPacketSocket::STATE_CLOSED)
       AddAddress(socket_->GetLocalAddress(), socket_->GetLocalAddress(),
@@ -429,23 +429,24 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
                             << socket->GetRemoteAddress().ToSensitiveString();
   } else {
     if (socket->GetLocalAddress().IsLoopbackIP()) {
-      LOG(LS_WARNING) << "Socket is bound to the address:"
-                      << socket_address.ipaddr().ToString()
-                      << ", rather then an address associated with network:"
-                      << port_->Network()->ToString()
-                      << ". Still allowing it since it's localhost.";
+      RTC_LOG(LS_WARNING) << "Socket is bound to the address:"
+                          << socket_address.ipaddr().ToString()
+                          << ", rather then an address associated with network:"
+                          << port_->Network()->ToString()
+                          << ". Still allowing it since it's localhost.";
     } else if (IPIsAny(port_->Network()->GetBestIP())) {
-      LOG(LS_WARNING) << "Socket is bound to the address:"
-                      << socket_address.ipaddr().ToString()
-                      << ", rather then an address associated with network:"
-                      << port_->Network()->ToString()
-                      << ". Still allowing it since it's the 'any' address"
-                      << ", possibly caused by multiple_routes being disabled.";
+      RTC_LOG(LS_WARNING)
+          << "Socket is bound to the address:"
+          << socket_address.ipaddr().ToString()
+          << ", rather then an address associated with network:"
+          << port_->Network()->ToString()
+          << ". Still allowing it since it's the 'any' address"
+          << ", possibly caused by multiple_routes being disabled.";
     } else {
-      LOG(LS_WARNING) << "Dropping connection as TCP socket bound to IP "
-                      << socket_address.ipaddr().ToString()
-                      << ", rather then an address associated with network:"
-                      << port_->Network()->ToString();
+      RTC_LOG(LS_WARNING) << "Dropping connection as TCP socket bound to IP "
+                          << socket_address.ipaddr().ToString()
+                          << ", rather then an address associated with network:"
+                          << port_->Network()->ToString();
       OnClose(socket, 0);
       return;
     }

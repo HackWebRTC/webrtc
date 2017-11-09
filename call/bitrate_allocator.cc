@@ -82,7 +82,7 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
   // Periodically log the incoming BWE.
   int64_t now = clock_->TimeInMilliseconds();
   if (now > last_bwe_log_time_ + kBweLogIntervalMs) {
-    LOG(LS_INFO) << "Current BWE " << target_bitrate_bps;
+    RTC_LOG(LS_INFO) << "Current BWE " << target_bitrate_bps;
     last_bwe_log_time_ = now;
   }
 
@@ -101,17 +101,18 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
       // and protection used before this observer was muted.
       uint32_t predicted_protection_bps =
           (1.0 - config.media_ratio) * config.min_bitrate_bps;
-      LOG(LS_INFO) << "Pausing observer " << config.observer
-                   << " with configured min bitrate " << config.min_bitrate_bps
-                   << " and current estimate of " << target_bitrate_bps
-                   << " and protection bitrate " << predicted_protection_bps;
+      RTC_LOG(LS_INFO) << "Pausing observer " << config.observer
+                       << " with configured min bitrate "
+                       << config.min_bitrate_bps << " and current estimate of "
+                       << target_bitrate_bps << " and protection bitrate "
+                       << predicted_protection_bps;
     } else if (allocated_bitrate > 0 && config.allocated_bitrate_bps == 0) {
       if (target_bitrate_bps > 0)
         ++num_pause_events_;
-      LOG(LS_INFO) << "Resuming observer " << config.observer
-                   << ", configured min bitrate " << config.min_bitrate_bps
-                   << ", current allocation " << allocated_bitrate
-                   << " and protection bitrate " << protection_bitrate;
+      RTC_LOG(LS_INFO) << "Resuming observer " << config.observer
+                       << ", configured min bitrate " << config.min_bitrate_bps
+                       << ", current allocation " << allocated_bitrate
+                       << " and protection bitrate " << protection_bitrate;
     }
 
     // Only update the media ratio if the observer got an allocation.
@@ -191,10 +192,10 @@ void BitrateAllocator::UpdateAllocationLimits() {
   total_requested_min_bitrate_ = total_requested_min_bitrate;
   total_requested_padding_bitrate_ = total_requested_padding_bitrate;
 
-  LOG(LS_INFO) << "UpdateAllocationLimits : total_requested_min_bitrate: "
-               << total_requested_min_bitrate
-               << "bps, total_requested_padding_bitrate: "
-               << total_requested_padding_bitrate << "bps";
+  RTC_LOG(LS_INFO) << "UpdateAllocationLimits : total_requested_min_bitrate: "
+                   << total_requested_min_bitrate
+                   << "bps, total_requested_padding_bitrate: "
+                   << total_requested_padding_bitrate << "bps";
   limit_observer_->OnAllocationLimitsChanged(total_requested_min_bitrate,
                                              total_requested_padding_bitrate);
 }

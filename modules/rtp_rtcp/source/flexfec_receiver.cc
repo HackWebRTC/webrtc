@@ -79,7 +79,7 @@ std::unique_ptr<ReceivedPacket> FlexfecReceiver::AddReceivedPacket(
   if (received_packet->ssrc == ssrc_) {
     // This is a FlexFEC packet.
     if (packet.payload_size() < kMinFlexfecHeaderSize) {
-      LOG(LS_WARNING) << "Truncated FlexFEC packet, discarding.";
+      RTC_LOG(LS_WARNING) << "Truncated FlexFEC packet, discarding.";
       return nullptr;
     }
     received_packet->is_fec = true;
@@ -146,8 +146,8 @@ void FlexfecReceiver::ProcessReceivedPacket(
     if (now_ms - last_recovered_packet_ms_ > kPacketLogIntervalMs) {
       uint32_t media_ssrc =
           ForwardErrorCorrection::ParseSsrc(recovered_packet->pkt->data);
-      LOG(LS_VERBOSE) << "Recovered media packet with SSRC: " << media_ssrc
-                      << " from FlexFEC stream with SSRC: " << ssrc_ << ".";
+      RTC_LOG(LS_VERBOSE) << "Recovered media packet with SSRC: " << media_ssrc
+                          << " from FlexFEC stream with SSRC: " << ssrc_ << ".";
       last_recovered_packet_ms_ = now_ms;
     }
   }

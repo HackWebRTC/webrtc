@@ -50,9 +50,9 @@ namespace jni {
 #else
 #define ALOGV(...)
 #endif
-#define ALOGD LOG_TAG(rtc::LS_INFO, TAG_DECODER)
-#define ALOGW LOG_TAG(rtc::LS_WARNING, TAG_DECODER)
-#define ALOGE LOG_TAG(rtc::LS_ERROR, TAG_DECODER)
+#define ALOGD RTC_LOG_TAG(rtc::LS_INFO, TAG_DECODER)
+#define ALOGW RTC_LOG_TAG(rtc::LS_WARNING, TAG_DECODER)
+#define ALOGE RTC_LOG_TAG(rtc::LS_ERROR, TAG_DECODER)
 
 enum { kMaxWarningLogFrames = 2 };
 

@@ -86,10 +86,8 @@ TEST_F(StunServerTest, TestGood) {
   EXPECT_EQ(1, mapped_addr->family());
   EXPECT_EQ(client_addr.port(), mapped_addr->port());
   if (mapped_addr->ipaddr() != client_addr.ipaddr()) {
-    LOG(LS_WARNING) << "Warning: mapped IP ("
-                    << mapped_addr->ipaddr()
-                    << ") != local IP (" << client_addr.ipaddr()
-                    << ")";
+    RTC_LOG(LS_WARNING) << "Warning: mapped IP (" << mapped_addr->ipaddr()
+                        << ") != local IP (" << client_addr.ipaddr() << ")";
   }
 
   delete msg;

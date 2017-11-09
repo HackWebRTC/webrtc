@@ -102,14 +102,14 @@ void BlockProcessorImpl::ProcessCapture(
     // been a render buffer overrun as the buffer alignment may be noncausal.
     delay_controller_->Reset();
     render_buffer_->Reset();
-    LOG(LS_WARNING) << "Reset due to detected render buffer overrun.";
+    RTC_LOG(LS_WARNING) << "Reset due to detected render buffer overrun.";
   }
 
   // Update the render buffers with new render data, filling the buffers with
   // empty blocks when there is no render data available.
   render_buffer_underrun = !render_buffer_->UpdateBuffers();
   if (render_buffer_underrun) {
-    LOG(LS_WARNING) << "Render API jitter buffer underrun.";
+    RTC_LOG(LS_WARNING) << "Render API jitter buffer underrun.";
   }
 
   // Compute and and apply the render delay required to achieve proper signal
@@ -132,7 +132,7 @@ void BlockProcessorImpl::ProcessCapture(
     delay_controller_->Reset();
     render_buffer_->Reset();
     delay_change = true;
-    LOG(LS_WARNING) << "Reset due to noncausal delay.";
+    RTC_LOG(LS_WARNING) << "Reset due to noncausal delay.";
   }
 
   // Remove the echo from the capture signal.

@@ -40,7 +40,7 @@ bool Win32Window::Create(HWND parent, const wchar_t* title, DWORD style,
                            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                            reinterpret_cast<LPCWSTR>(&Win32Window::WndProc),
                            &instance_)) {
-      LOG_GLE(LS_ERROR) << "GetModuleHandleEx failed";
+      RTC_LOG_GLE(LS_ERROR) << "GetModuleHandleEx failed";
       return false;
     }
 
@@ -53,7 +53,7 @@ bool Win32Window::Create(HWND parent, const wchar_t* title, DWORD style,
     wcex.lpszClassName = kWindowBaseClassName;
     window_class_ = ::RegisterClassEx(&wcex);
     if (!window_class_) {
-      LOG_GLE(LS_ERROR) << "RegisterClassEx failed";
+      RTC_LOG_GLE(LS_ERROR) << "RegisterClassEx failed";
       return false;
     }
   }
@@ -113,7 +113,7 @@ LRESULT Win32Window::WndProc(HWND hwnd,
     if (WM_DESTROY == uMsg) {
       for (HWND child = ::GetWindow(hwnd, GW_CHILD); child;
            child = ::GetWindow(child, GW_HWNDNEXT)) {
-        LOG(LS_INFO) << "Child window: " << static_cast<void*>(child);
+        RTC_LOG(LS_INFO) << "Child window: " << static_cast<void*>(child);
       }
     }
     if (WM_NCDESTROY == uMsg) {

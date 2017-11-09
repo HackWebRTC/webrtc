@@ -299,7 +299,7 @@ int DelayManager::CalculateTargetLevel(int iat_packets) {
 
 int DelayManager::SetPacketAudioLength(int length_ms) {
   if (length_ms <= 0) {
-    LOG_F(LS_ERROR) << "length_ms = " << length_ms;
+    RTC_LOG_F(LS_ERROR) << "length_ms = " << length_ms;
     return -1;
   }
   if (frame_length_change_experiment_ && packet_len_ms_ != length_ms) {
@@ -353,7 +353,7 @@ void DelayManager::ResetPacketIatCount() {
 // class. They are computed from |target_level_| and used for decision making.
 void DelayManager::BufferLimits(int* lower_limit, int* higher_limit) const {
   if (!lower_limit || !higher_limit) {
-    LOG_F(LS_ERROR) << "NULL pointers supplied as input";
+    RTC_LOG_F(LS_ERROR) << "NULL pointers supplied as input";
     assert(false);
     return;
   }

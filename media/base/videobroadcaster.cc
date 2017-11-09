@@ -60,7 +60,7 @@ void VideoBroadcaster::OnFrame(const webrtc::VideoFrame& frame) {
       // When rotation_applied is set to true, one or a few frames may get here
       // with rotation still pending. Protect sinks that don't expect any
       // pending rotation.
-      LOG(LS_VERBOSE) << "Discarding frame with unexpected rotation.";
+      RTC_LOG(LS_VERBOSE) << "Discarding frame with unexpected rotation.";
       continue;
     }
     if (sink_pair.wants.black_frames) {

@@ -474,7 +474,7 @@ bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
                                size_t payload_data_length) {
   RTC_DCHECK(parsed_payload);
   if (payload_data_length == 0) {
-    LOG(LS_ERROR) << "Empty payload.";
+    RTC_LOG(LS_ERROR) << "Empty payload.";
     return false;
   }
 
@@ -508,7 +508,7 @@ bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
   // Advance payload_data and decrease remaining payload size.
   payload_data++;
   if (payload_data_length <= 1) {
-    LOG(LS_ERROR) << "Error parsing VP8 payload descriptor!";
+    RTC_LOG(LS_ERROR) << "Error parsing VP8 payload descriptor!";
     return false;
   }
   payload_data_length--;
@@ -523,7 +523,7 @@ bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
     payload_data += parsed_bytes;
     payload_data_length -= parsed_bytes;
     if (payload_data_length == 0) {
-      LOG(LS_ERROR) << "Error parsing VP8 payload descriptor!";
+      RTC_LOG(LS_ERROR) << "Error parsing VP8 payload descriptor!";
       return false;
     }
   }

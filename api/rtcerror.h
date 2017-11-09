@@ -151,8 +151,8 @@ std::ostream& operator<<(std::ostream& stream, RTCErrorType error);
 #define LOG_AND_RETURN_ERROR_EX(type, message, severity) \
   {                                                      \
     RTC_DCHECK(type != RTCErrorType::NONE);              \
-    LOG(severity) << message << " (" << type << ")";     \
-    return webrtc::RTCError(type, message);   \
+    RTC_LOG(severity) << message << " (" << type << ")"; \
+    return webrtc::RTCError(type, message);              \
   }
 
 #define LOG_AND_RETURN_ERROR(type, message) \
@@ -176,7 +176,7 @@ std::ostream& operator<<(std::ostream& stream, RTCErrorType error);
 //    std::unique_ptr<Foo> foo = result.ConsumeValue();
 //    foo->DoSomethingCool();
 //  } else {
-//    LOG(LS_ERROR) << result.error();
+//    RTC_LOG(LS_ERROR) << result.error();
 //  }
 //
 // Example factory implementation returning RTCErrorOr<std::unique_ptr<T>>:

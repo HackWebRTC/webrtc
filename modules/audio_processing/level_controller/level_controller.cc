@@ -156,21 +156,21 @@ void LevelController::Metrics::Update(float long_term_peak_level,
     const int frame_peak_level_dbfs = static_cast<int>(
         10 * log10(frame_peak_level * frame_peak_level + 1e-10f) - kdBFSOffset);
 
-    LOG(LS_INFO) << "Level Controller metrics: {"
-                 << "Max noise power: " << max_noise_power_dbfs << " dBFS, "
-                 << "Average noise power: " << average_noise_power_dbfs
-                 << " dBFS, "
-                 << "Max long term peak level: " << max_peak_level_dbfs
-                 << " dBFS, "
-                 << "Average long term peak level: " << average_peak_level_dbfs
-                 << " dBFS, "
-                 << "Max gain: " << max_gain_db << " dB, "
-                 << "Average gain: " << average_gain_db << " dB, "
-                 << "Long term peak level: " << long_term_peak_level_dbfs
-                 << " dBFS, "
-                 << "Last frame peak level: " << frame_peak_level_dbfs
-                 << " dBFS"
-                 << "}";
+    RTC_LOG(LS_INFO) << "Level Controller metrics: {"
+                     << "Max noise power: " << max_noise_power_dbfs << " dBFS, "
+                     << "Average noise power: " << average_noise_power_dbfs
+                     << " dBFS, "
+                     << "Max long term peak level: " << max_peak_level_dbfs
+                     << " dBFS, "
+                     << "Average long term peak level: "
+                     << average_peak_level_dbfs << " dBFS, "
+                     << "Max gain: " << max_gain_db << " dB, "
+                     << "Average gain: " << average_gain_db << " dB, "
+                     << "Long term peak level: " << long_term_peak_level_dbfs
+                     << " dBFS, "
+                     << "Last frame peak level: " << frame_peak_level_dbfs
+                     << " dBFS"
+                     << "}";
 
     Reset();
   }

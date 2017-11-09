@@ -160,7 +160,7 @@ CGWindowID FullScreenChromeWindowDetector::FindFullScreenWindow(
     if (static_cast<CGWindowID>(window.id) != full_screen_window_id)
       continue;
 
-    LOG(LS_WARNING) << "The full-screen window exists in the list.";
+    RTC_LOG(LS_WARNING) << "The full-screen window exists in the list.";
     return kCGNullWindowID;
   }
 

@@ -34,7 +34,7 @@ namespace test {
 
 bool GetTestArtifactsDir(std::string* out_dir) {
   if (strlen(FLAG_test_artifacts_dir) == 0) {
-    LOG(LS_WARNING) << "No test_out_dir defined.";
+    RTC_LOG(LS_WARNING) << "No test_out_dir defined.";
     return false;
   }
   *out_dir = FLAG_test_artifacts_dir;
@@ -45,12 +45,12 @@ bool WriteToTestArtifactsDir(const char* filename,
                              const uint8_t* buffer,
                              size_t length) {
   if (strlen(FLAG_test_artifacts_dir) == 0) {
-    LOG(LS_WARNING) << "No test_out_dir defined.";
+    RTC_LOG(LS_WARNING) << "No test_out_dir defined.";
     return false;
   }
 
   if (filename == nullptr || strlen(filename) == 0) {
-    LOG(LS_WARNING) << "filename must be provided.";
+    RTC_LOG(LS_WARNING) << "filename must be provided.";
     return false;
   }
 

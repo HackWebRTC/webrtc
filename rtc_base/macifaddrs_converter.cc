@@ -220,7 +220,7 @@ bool IPv6AttributesGetter::GetIPAttributes(const char* ifname,
   if (rv >= 0) {
     *native_attributes = ifr.ifr_ifru.ifru_flags;
   } else {
-    LOG(LS_ERROR) << "ioctl returns " << errno;
+    RTC_LOG(LS_ERROR) << "ioctl returns " << errno;
   }
   return (rv >= 0);
 }

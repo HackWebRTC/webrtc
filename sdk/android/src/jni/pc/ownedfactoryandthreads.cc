@@ -34,15 +34,15 @@ void OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads() {
   jclass j_factory_class = FindClass(jni, "org/webrtc/PeerConnectionFactory");
   jmethodID m = nullptr;
   if (network_thread_->IsCurrent()) {
-    LOG(LS_INFO) << "Network thread JavaCallback";
+    RTC_LOG(LS_INFO) << "Network thread JavaCallback";
     m = GetStaticMethodID(jni, j_factory_class, "onNetworkThreadReady", "()V");
   }
   if (worker_thread_->IsCurrent()) {
-    LOG(LS_INFO) << "Worker thread JavaCallback";
+    RTC_LOG(LS_INFO) << "Worker thread JavaCallback";
     m = GetStaticMethodID(jni, j_factory_class, "onWorkerThreadReady", "()V");
   }
   if (signaling_thread_->IsCurrent()) {
-    LOG(LS_INFO) << "Signaling thread JavaCallback";
+    RTC_LOG(LS_INFO) << "Signaling thread JavaCallback";
     m = GetStaticMethodID(jni, j_factory_class, "onSignalingThreadReady",
                           "()V");
   }
@@ -53,7 +53,7 @@ void OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads() {
 }
 
 void OwnedFactoryAndThreads::InvokeJavaCallbacksOnFactoryThreads() {
-  LOG(LS_INFO) << "InvokeJavaCallbacksOnFactoryThreads.";
+  RTC_LOG(LS_INFO) << "InvokeJavaCallbacksOnFactoryThreads.";
   network_thread_->Invoke<void>(RTC_FROM_HERE,
                                 [this] { JavaCallbackOnFactoryThreads(); });
   worker_thread_->Invoke<void>(RTC_FROM_HERE,

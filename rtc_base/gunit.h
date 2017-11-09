@@ -83,19 +83,19 @@
 // Version with a "soft" timeout and a margin. This logs if the timeout is
 // exceeded, but it only fails if the expression still isn't true after the
 // margin time passes.
-#define EXPECT_TRUE_WAIT_MARGIN(ex, timeout, margin)                       \
-  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                            \
-  if (bool res = true) {                                                   \
-    WAIT_(ex, timeout, res);                                               \
-    if (res)                                                               \
-      break;                                                               \
-    LOG(LS_WARNING) << "Expression " << #ex << " still not true after "    \
-                    << (timeout) << "ms; waiting an additional " << margin \
-                    << "ms";                                               \
-    WAIT_(ex, margin, res);                                                \
-    if (!res)                                                              \
-      goto GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__);                    \
-  } else                                                                   \
+#define EXPECT_TRUE_WAIT_MARGIN(ex, timeout, margin)                           \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                                \
+  if (bool res = true) {                                                       \
+    WAIT_(ex, timeout, res);                                                   \
+    if (res)                                                                   \
+      break;                                                                   \
+    RTC_LOG(LS_WARNING) << "Expression " << #ex << " still not true after "    \
+                        << (timeout) << "ms; waiting an additional " << margin \
+                        << "ms";                                               \
+    WAIT_(ex, margin, res);                                                    \
+    if (!res)                                                                  \
+      goto GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__);                        \
+  } else                                                                       \
     GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : EXPECT_TRUE(ex)
 
 // Wait until "ex" is true, or "timeout" expires, using fake clock where

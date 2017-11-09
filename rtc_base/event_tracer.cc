@@ -385,8 +385,8 @@ bool StartInternalCapture(const char* filename) {
 
   FILE* file = fopen(filename, "w");
   if (!file) {
-    LOG(LS_ERROR) << "Failed to open trace file '" << filename
-                  << "' for writing.";
+    RTC_LOG(LS_ERROR) << "Failed to open trace file '" << filename
+                      << "' for writing.";
     return false;
   }
   g_event_logger->Start(file, true);

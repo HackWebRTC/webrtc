@@ -62,11 +62,11 @@ void BitrateProber::SetEnabled(bool enable) {
   if (enable) {
     if (probing_state_ == ProbingState::kDisabled) {
       probing_state_ = ProbingState::kInactive;
-      LOG(LS_INFO) << "Bandwidth probing enabled, set to inactive";
+      RTC_LOG(LS_INFO) << "Bandwidth probing enabled, set to inactive";
     }
   } else {
     probing_state_ = ProbingState::kDisabled;
-    LOG(LS_INFO) << "Bandwidth probing disabled";
+    RTC_LOG(LS_INFO) << "Bandwidth probing disabled";
   }
 }
 
@@ -108,10 +108,10 @@ void BitrateProber::CreateProbeCluster(int bitrate_bps, int64_t now_ms) {
         cluster.pace_info.probe_cluster_min_probes,
         cluster.pace_info.probe_cluster_min_bytes));
 
-  LOG(LS_INFO) << "Probe cluster (bitrate:min bytes:min packets): ("
-               << cluster.pace_info.send_bitrate_bps << ":"
-               << cluster.pace_info.probe_cluster_min_bytes << ":"
-               << cluster.pace_info.probe_cluster_min_probes << ")";
+  RTC_LOG(LS_INFO) << "Probe cluster (bitrate:min bytes:min packets): ("
+                   << cluster.pace_info.send_bitrate_bps << ":"
+                   << cluster.pace_info.probe_cluster_min_bytes << ":"
+                   << cluster.pace_info.probe_cluster_min_probes << ")";
   // If we are already probing, continue to do so. Otherwise set it to
   // kInactive and wait for OnIncomingPacket to start the probing.
   if (probing_state_ != ProbingState::kActive)

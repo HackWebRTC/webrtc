@@ -107,7 +107,7 @@ RtpTransportControllerAdapter::CreateProxied(
 RtpTransportControllerAdapter::~RtpTransportControllerAdapter() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   if (!transport_proxies_.empty()) {
-    LOG(LS_ERROR)
+    RTC_LOG(LS_ERROR)
         << "Destroying RtpTransportControllerAdapter while RtpTransports "
            "are still using it; this is unsafe.";
   }

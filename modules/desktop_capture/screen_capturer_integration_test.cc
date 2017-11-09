@@ -102,13 +102,15 @@ class ScreenCapturerIntegrationTest : public testing::Test {
     const int kRectSize = 32;
     std::unique_ptr<ScreenDrawer> drawer = ScreenDrawer::Create();
     if (!drawer || drawer->DrawableRegion().is_empty()) {
-      LOG(LS_WARNING) << "No ScreenDrawer implementation for current platform.";
+      RTC_LOG(LS_WARNING)
+          << "No ScreenDrawer implementation for current platform.";
       return;
     }
     if (drawer->DrawableRegion().width() < kTestArea ||
         drawer->DrawableRegion().height() < kTestArea) {
-      LOG(LS_WARNING) << "ScreenDrawer::DrawableRegion() is too small for the "
-                         "CaptureUpdatedRegion tests.";
+      RTC_LOG(LS_WARNING)
+          << "ScreenDrawer::DrawableRegion() is too small for the "
+             "CaptureUpdatedRegion tests.";
       return;
     }
 
@@ -163,7 +165,7 @@ class ScreenCapturerIntegrationTest : public testing::Test {
 
   bool CreateDirectxCapturer() {
     if (!ScreenCapturerWinDirectx::IsSupported()) {
-      LOG(LS_WARNING) << "Directx capturer is not supported";
+      RTC_LOG(LS_WARNING) << "Directx capturer is not supported";
       return false;
     }
 

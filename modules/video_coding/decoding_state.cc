@@ -81,15 +81,15 @@ void VCMDecodingState::SetState(const VCMFrameBuffer* frame) {
   for (const NaluInfo& nalu : frame->GetNaluInfos()) {
     if (nalu.type == H264::NaluType::kPps) {
       if (nalu.pps_id < 0) {
-        LOG(LS_WARNING) << "Received pps without pps id.";
+        RTC_LOG(LS_WARNING) << "Received pps without pps id.";
       } else if (nalu.sps_id < 0) {
-        LOG(LS_WARNING) << "Received pps without sps id.";
+        RTC_LOG(LS_WARNING) << "Received pps without sps id.";
       } else {
         received_pps_[nalu.pps_id] = nalu.sps_id;
       }
     } else if (nalu.type == H264::NaluType::kSps) {
       if (nalu.sps_id < 0) {
-        LOG(LS_WARNING) << "Received sps without sps id.";
+        RTC_LOG(LS_WARNING) << "Received sps without sps id.";
       } else {
         received_sps_.insert(nalu.sps_id);
       }
@@ -295,8 +295,8 @@ bool VCMDecodingState::UsingFlexibleMode(const VCMFrameBuffer* frame) const {
       frame->CodecSpecific()->codecType == kVideoCodecVP9 &&
       frame->CodecSpecific()->codecSpecific.VP9.flexible_mode;
   if (is_flexible_mode && frame->PictureId() == kNoPictureId) {
-    LOG(LS_WARNING) << "Frame is marked as using flexible mode but no"
-                    << "picture id is set.";
+    RTC_LOG(LS_WARNING) << "Frame is marked as using flexible mode but no"
+                        << "picture id is set.";
     return false;
   }
   return is_flexible_mode;
@@ -326,16 +326,16 @@ bool VCMDecodingState::HaveSpsAndPps(const std::vector<NaluInfo>& nalus) const {
     switch (nalu.type) {
       case H264::NaluType::kPps:
         if (nalu.pps_id < 0) {
-          LOG(LS_WARNING) << "Received pps without pps id.";
+          RTC_LOG(LS_WARNING) << "Received pps without pps id.";
         } else if (nalu.sps_id < 0) {
-          LOG(LS_WARNING) << "Received pps without sps id.";
+          RTC_LOG(LS_WARNING) << "Received pps without sps id.";
         } else {
           new_pps[nalu.pps_id] = nalu.sps_id;
         }
         break;
       case H264::NaluType::kSps:
         if (nalu.sps_id < 0) {
-          LOG(LS_WARNING) << "Received sps without sps id.";
+          RTC_LOG(LS_WARNING) << "Received sps without sps id.";
         } else {
           new_sps.insert(nalu.sps_id);
         }

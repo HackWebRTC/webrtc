@@ -141,8 +141,8 @@ srtp_err_status_t external_crypto_init() {
   srtp_err_status_t status = srtp_replace_auth_type(
       const_cast<srtp_auth_type_t*>(&external_hmac), EXTERNAL_HMAC_SHA1);
   if (status) {
-    LOG(LS_ERROR) << "Error in replacing default auth module, error: "
-                  << status;
+    RTC_LOG(LS_ERROR) << "Error in replacing default auth module, error: "
+                      << status;
     return srtp_err_status_fail;
   }
   return srtp_err_status_ok;

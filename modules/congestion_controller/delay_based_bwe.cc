@@ -60,10 +60,10 @@ size_t ReadTrendlineFilterWindowSize() {
   if (parsed_values == 1) {
     if (window_size > 1)
       return window_size;
-    LOG(WARNING) << "Window size must be greater than 1.";
+    RTC_LOG(WARNING) << "Window size must be greater than 1.";
   }
-  LOG(LS_WARNING) << "Failed to parse parameters for BweTrendlineFilter "
-                     "experiment from field trial string. Using default.";
+  RTC_LOG(LS_WARNING) << "Failed to parse parameters for BweTrendlineFilter "
+                         "experiment from field trial string. Using default.";
   return kDefaultTrendlineWindowSize;
 }
 }  // namespace
@@ -104,7 +104,7 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
       prev_state_(BandwidthUsage::kBwNormal),
       in_sparse_update_experiment_(
           webrtc::field_trial::IsEnabled(kBweSparseUpdateExperiment)) {
-  LOG(LS_INFO)
+  RTC_LOG(LS_INFO)
       << "Using Trendline filter for delay change estimation with window size "
       << trendline_window_size_;
 }
@@ -123,7 +123,7 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
   // all acks were too late and that the send time history had
   // timed out. We should reduce the rate when this occurs.
   if (packet_feedback_vector.empty()) {
-    LOG(LS_WARNING) << "Very late feedback received.";
+    RTC_LOG(LS_WARNING) << "Very late feedback received.";
     return DelayBasedBwe::Result();
   }
 
@@ -179,8 +179,8 @@ DelayBasedBwe::Result DelayBasedBwe::OnLongFeedbackDelay(
   result.updated = true;
   result.probe = false;
   result.target_bitrate_bps = rate_control_.LatestEstimate();
-  LOG(LS_WARNING) << "Long feedback delay detected, reducing BWE to "
-                  << result.target_bitrate_bps;
+  RTC_LOG(LS_WARNING) << "Long feedback delay detected, reducing BWE to "
+                      << result.target_bitrate_bps;
   return result;
 }
 
@@ -321,7 +321,7 @@ bool DelayBasedBwe::LatestEstimate(std::vector<uint32_t>* ssrcs,
 }
 
 void DelayBasedBwe::SetStartBitrate(int start_bitrate_bps) {
-  LOG(LS_WARNING) << "BWE Setting start bitrate to: " << start_bitrate_bps;
+  RTC_LOG(LS_WARNING) << "BWE Setting start bitrate to: " << start_bitrate_bps;
   rate_control_.SetStartBitrate(start_bitrate_bps);
 }
 

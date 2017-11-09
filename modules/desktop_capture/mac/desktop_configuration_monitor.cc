@@ -24,7 +24,7 @@ DesktopConfigurationMonitor::DesktopConfigurationMonitor()
   CGError err = CGDisplayRegisterReconfigurationCallback(
       DesktopConfigurationMonitor::DisplaysReconfiguredCallback, this);
   if (err != kCGErrorSuccess) {
-    LOG(LS_ERROR) << "CGDisplayRegisterReconfigurationCallback " << err;
+    RTC_LOG(LS_ERROR) << "CGDisplayRegisterReconfigurationCallback " << err;
     abort();
   }
   display_configuration_capture_event_->Set();
@@ -37,13 +37,13 @@ DesktopConfigurationMonitor::~DesktopConfigurationMonitor() {
   CGError err = CGDisplayRemoveReconfigurationCallback(
       DesktopConfigurationMonitor::DisplaysReconfiguredCallback, this);
   if (err != kCGErrorSuccess)
-    LOG(LS_ERROR) << "CGDisplayRemoveReconfigurationCallback " << err;
+    RTC_LOG(LS_ERROR) << "CGDisplayRemoveReconfigurationCallback " << err;
 }
 
 void DesktopConfigurationMonitor::Lock() {
   if (!display_configuration_capture_event_->Wait(
               kDisplayConfigurationEventTimeoutMs)) {
-    LOG_F(LS_ERROR) << "Event wait timed out.";
+    RTC_LOG_F(LS_ERROR) << "Event wait timed out.";
     abort();
   }
 }
@@ -72,7 +72,7 @@ void DesktopConfigurationMonitor::DisplaysReconfigured(
       // from accessing display memory until the reconfiguration completes.
       if (!display_configuration_capture_event_->Wait(
               kDisplayConfigurationEventTimeoutMs)) {
-        LOG_F(LS_ERROR) << "Event wait timed out.";
+        RTC_LOG_F(LS_ERROR) << "Event wait timed out.";
         abort();
       }
     }

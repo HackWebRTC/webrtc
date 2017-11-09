@@ -103,7 +103,7 @@ void RemoteAudioSource::AddSink(AudioTrackSinkInterface* sink) {
   RTC_DCHECK(sink);
 
   if (state_ != MediaSourceInterface::kLive) {
-    LOG(LS_ERROR) << "Can't register sink as the source isn't live.";
+    RTC_LOG(LS_ERROR) << "Can't register sink as the source isn't live.";
     return;
   }
 

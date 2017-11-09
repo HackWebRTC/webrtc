@@ -224,8 +224,8 @@ void RelayPort::AddExternalAddress(const ProtocolAddress& addr) {
   for (std::vector<ProtocolAddress>::iterator it = external_addr_.begin();
        it != external_addr_.end(); ++it) {
     if ((it->address == addr.address) && (it->proto == addr.proto)) {
-      LOG(INFO) << "Redundant relay address: " << proto_name
-                << " @ " << addr.address.ToSensitiveString();
+      RTC_LOG(INFO) << "Redundant relay address: " << proto_name << " @ "
+                    << addr.address.ToSensitiveString();
       return;
     }
   }
@@ -443,8 +443,8 @@ void RelayConnection::OnSendPacket(const void* data, size_t size,
   rtc::PacketOptions options;  // Default dscp set to NO_CHANGE.
   int sent = socket_->SendTo(data, size, GetAddress(), options);
   if (sent <= 0) {
-    LOG(LS_VERBOSE) << "OnSendPacket: failed sending to " << GetAddress() <<
-        strerror(socket_->GetError());
+    RTC_LOG(LS_VERBOSE) << "OnSendPacket: failed sending to " << GetAddress()
+                        << strerror(socket_->GetError());
     RTC_DCHECK(sent < 0);
   }
 }
@@ -479,7 +479,7 @@ void RelayEntry::Connect() {
   // If we've exhausted all options, bail out.
   const ProtocolAddress* ra = port()->ServerAddress(server_index_);
   if (!ra) {
-    LOG(LS_WARNING) << "No more relay addresses left to try";
+    RTC_LOG(LS_WARNING) << "No more relay addresses left to try";
     return;
   }
 
@@ -490,8 +490,8 @@ void RelayEntry::Connect() {
   }
 
   // Try to set up our new socket.
-  LOG(LS_INFO) << "Connecting to relay via " << ProtoToString(ra->proto) <<
-      " @ " << ra->address.ToSensitiveString();
+  RTC_LOG(LS_INFO) << "Connecting to relay via " << ProtoToString(ra->proto)
+                   << " @ " << ra->address.ToSensitiveString();
 
   rtc::AsyncPacketSocket* socket = NULL;
 
@@ -508,12 +508,12 @@ void RelayEntry::Connect() {
         rtc::SocketAddress(port_->Network()->GetBestIP(), 0), ra->address,
         port_->proxy(), port_->user_agent(), opts);
   } else {
-    LOG(LS_WARNING) << "Unknown protocol (" << ra->proto << ")";
+    RTC_LOG(LS_WARNING) << "Unknown protocol (" << ra->proto << ")";
   }
 
   // If we failed to get a socket, move on to the next protocol.
   if (!socket) {
-    LOG(LS_WARNING) << "Socket creation failed";
+    RTC_LOG(LS_WARNING) << "Socket creation failed";
     port()->thread()->Post(RTC_FROM_HERE, this, kMessageConnectTimeout);
     return;
   }
@@ -556,8 +556,8 @@ void RelayEntry::OnConnect(const rtc::SocketAddress& mapped_addr,
                            RelayConnection* connection) {
   // We are connected, notify our parent.
   ProtocolType proto = PROTO_UDP;
-  LOG(INFO) << "Relay allocate succeeded: " << ProtoToString(proto)
-            << " @ " << mapped_addr.ToSensitiveString();
+  RTC_LOG(INFO) << "Relay allocate succeeded: " << ProtoToString(proto) << " @ "
+                << mapped_addr.ToSensitiveString();
   connected_ = true;
 
   port_->AddExternalAddress(ProtocolAddress(mapped_addr, proto));
@@ -651,8 +651,8 @@ void RelayEntry::OnMessage(rtc::Message *pmsg) {
   RTC_DCHECK(pmsg->message_id == kMessageConnectTimeout);
   if (current_connection_) {
     const ProtocolAddress* ra = current_connection_->protocol_address();
-    LOG(LS_WARNING) << "Relay " << ra->proto << " connection to " <<
-        ra->address << " timed out";
+    RTC_LOG(LS_WARNING) << "Relay " << ra->proto << " connection to "
+                        << ra->address << " timed out";
 
     // Currently we connect to each server address in sequence. If we
     // have more addresses to try, treat this is an error and move on to
@@ -669,8 +669,8 @@ void RelayEntry::OnMessage(rtc::Message *pmsg) {
 }
 
 void RelayEntry::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
-  LOG(INFO) << "relay tcp connected to " <<
-      socket->GetRemoteAddress().ToSensitiveString();
+  RTC_LOG(INFO) << "relay tcp connected to "
+                << socket->GetRemoteAddress().ToSensitiveString();
   if (current_connection_ != NULL) {
     current_connection_->SendAllocateRequest(this, 0);
   }
@@ -678,7 +678,7 @@ void RelayEntry::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
 
 void RelayEntry::OnSocketClose(rtc::AsyncPacketSocket* socket,
                                int error) {
-  PLOG(LERROR, error) << "Relay connection failed: socket closed";
+  RTC_PLOG(LERROR, error) << "Relay connection failed: socket closed";
   HandleConnectFailure(socket);
 }
 
@@ -692,7 +692,7 @@ void RelayEntry::OnReadPacket(
 
   if (current_connection_ == NULL || socket != current_connection_->socket()) {
     // This packet comes from an unknown address.
-    LOG(WARNING) << "Dropping packet: unknown address";
+    RTC_LOG(WARNING) << "Dropping packet: unknown address";
     return;
   }
 
@@ -702,7 +702,7 @@ void RelayEntry::OnReadPacket(
     if (locked_) {
       port_->OnReadPacket(data, size, ext_addr_, PROTO_UDP, packet_time);
     } else {
-      LOG(WARNING) << "Dropping packet: entry not locked";
+      RTC_LOG(WARNING) << "Dropping packet: entry not locked";
     }
     return;
   }
@@ -710,7 +710,7 @@ void RelayEntry::OnReadPacket(
   rtc::ByteBufferReader buf(data, size);
   RelayMessage msg;
   if (!msg.Read(&buf)) {
-    LOG(INFO) << "Incoming packet was not STUN";
+    RTC_LOG(INFO) << "Incoming packet was not STUN";
     return;
   }
 
@@ -727,7 +727,7 @@ void RelayEntry::OnReadPacket(
     }
     return;
   } else if (msg.type() != STUN_DATA_INDICATION) {
-    LOG(INFO) << "Received BAD stun type from server: " << msg.type();
+    RTC_LOG(INFO) << "Received BAD stun type from server: " << msg.type();
     return;
   }
 
@@ -736,10 +736,10 @@ void RelayEntry::OnReadPacket(
   const StunAddressAttribute* addr_attr =
       msg.GetAddress(STUN_ATTR_SOURCE_ADDRESS2);
   if (!addr_attr) {
-    LOG(INFO) << "Data indication has no source address";
+    RTC_LOG(INFO) << "Data indication has no source address";
     return;
   } else if (addr_attr->family() != 1) {
-    LOG(INFO) << "Source address has bad family";
+    RTC_LOG(INFO) << "Source address has bad family";
     return;
   }
 
@@ -747,7 +747,7 @@ void RelayEntry::OnReadPacket(
 
   const StunByteStringAttribute* data_attr = msg.GetByteString(STUN_ATTR_DATA);
   if (!data_attr) {
-    LOG(INFO) << "Data indication has no data";
+    RTC_LOG(INFO) << "Data indication has no data";
     return;
   }
 
@@ -814,9 +814,9 @@ void AllocateRequest::OnResponse(StunMessage* response) {
   const StunAddressAttribute* addr_attr =
       response->GetAddress(STUN_ATTR_MAPPED_ADDRESS);
   if (!addr_attr) {
-    LOG(INFO) << "Allocate response missing mapped address.";
+    RTC_LOG(INFO) << "Allocate response missing mapped address.";
   } else if (addr_attr->family() != 1) {
-    LOG(INFO) << "Mapped address has bad family";
+    RTC_LOG(INFO) << "Mapped address has bad family";
   } else {
     rtc::SocketAddress addr(addr_attr->ipaddr(), addr_attr->port());
     entry_->OnConnect(addr, connection_);
@@ -830,11 +830,11 @@ void AllocateRequest::OnResponse(StunMessage* response) {
 void AllocateRequest::OnErrorResponse(StunMessage* response) {
   const StunErrorCodeAttribute* attr = response->GetErrorCode();
   if (!attr) {
-    LOG(LS_ERROR) << "Missing allocate response error code.";
+    RTC_LOG(LS_ERROR) << "Missing allocate response error code.";
   } else {
-    LOG(INFO) << "Allocate error response:"
-              << " code=" << attr->code()
-              << " reason='" << attr->reason() << "'";
+    RTC_LOG(INFO) << "Allocate error response:"
+                  << " code=" << attr->code() << " reason='" << attr->reason()
+                  << "'";
   }
 
   if (rtc::TimeMillis() - start_time_ <= kRetryTimeout)
@@ -842,7 +842,7 @@ void AllocateRequest::OnErrorResponse(StunMessage* response) {
 }
 
 void AllocateRequest::OnTimeout() {
-  LOG(INFO) << "Allocate request timed out";
+  RTC_LOG(INFO) << "Allocate request timed out";
   entry_->HandleConnectFailure(connection_->socket());
 }
 

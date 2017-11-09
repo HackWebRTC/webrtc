@@ -125,9 +125,9 @@ bool StunRequestManager::CheckResponse(StunMessage* msg) {
   } else if (msg->type() == GetStunErrorResponseType(request->type())) {
     request->OnErrorResponse(msg);
   } else {
-    LOG(LERROR) << "Received response with wrong type: " << msg->type()
-                << " (expecting "
-                << GetStunSuccessResponseType(request->type()) << ")";
+    RTC_LOG(LERROR) << "Received response with wrong type: " << msg->type()
+                    << " (expecting "
+                    << GetStunSuccessResponseType(request->type()) << ")";
     return false;
   }
 
@@ -157,7 +157,8 @@ bool StunRequestManager::CheckResponse(const char* data, size_t size) {
   rtc::ByteBufferReader buf(data, size);
   std::unique_ptr<StunMessage> response(iter->second->msg_->CreateNew());
   if (!response->Read(&buf)) {
-    LOG(LS_WARNING) << "Failed to read STUN response " << rtc::hex_encode(id);
+    RTC_LOG(LS_WARNING) << "Failed to read STUN response "
+                        << rtc::hex_encode(id);
     return false;
   }
 
@@ -248,8 +249,8 @@ void StunRequest::OnSent() {
   if (retransmissions >= STUN_MAX_RETRANSMISSIONS) {
     timeout_ = true;
   }
-  LOG(LS_VERBOSE) << "Sent STUN request " << count_
-                  << "; resend delay = " << resend_delay();
+  RTC_LOG(LS_VERBOSE) << "Sent STUN request " << count_
+                      << "; resend delay = " << resend_delay();
 }
 
 int StunRequest::resend_delay() {

@@ -67,14 +67,15 @@ SSLFingerprint* SSLFingerprint::CreateFromCertificate(
     const RTCCertificate* cert) {
   std::string digest_alg;
   if (!cert->ssl_certificate().GetSignatureDigestAlgorithm(&digest_alg)) {
-    LOG(LS_ERROR) << "Failed to retrieve the certificate's digest algorithm";
+    RTC_LOG(LS_ERROR)
+        << "Failed to retrieve the certificate's digest algorithm";
     return nullptr;
   }
 
   SSLFingerprint* fingerprint = Create(digest_alg, cert->identity());
   if (!fingerprint) {
-    LOG(LS_ERROR) << "Failed to create identity fingerprint, alg="
-                  << digest_alg;
+    RTC_LOG(LS_ERROR) << "Failed to create identity fingerprint, alg="
+                      << digest_alg;
   }
   return fingerprint;
 }

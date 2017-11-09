@@ -109,13 +109,15 @@ void TestScreenDrawerLock(
 TEST(ScreenDrawerTest, DISABLED_DrawRectangles) {
   std::unique_ptr<ScreenDrawer> drawer = ScreenDrawer::Create();
   if (!drawer) {
-    LOG(LS_WARNING) << "No ScreenDrawer implementation for current platform.";
+    RTC_LOG(LS_WARNING)
+        << "No ScreenDrawer implementation for current platform.";
     return;
   }
 
   if (drawer->DrawableRegion().is_empty()) {
-    LOG(LS_WARNING) << "ScreenDrawer of current platform does not provide a "
-                       "non-empty DrawableRegion().";
+    RTC_LOG(LS_WARNING)
+        << "ScreenDrawer of current platform does not provide a "
+           "non-empty DrawableRegion().";
     return;
   }
 

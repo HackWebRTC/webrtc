@@ -113,10 +113,11 @@ int64_t WrappingDifference(uint32_t later, uint32_t earlier, int64_t modulus) {
     difference += modulus;
   }
   if (difference > max_difference / 2 || difference < min_difference / 2) {
-    LOG(LS_WARNING) << "Difference between" << later << " and " << earlier
-                    << " expected to be in the range (" << min_difference / 2
-                    << "," << max_difference / 2 << ") but is " << difference
-                    << ". Correct unwrapping is uncertain.";
+    RTC_LOG(LS_WARNING) << "Difference between" << later << " and " << earlier
+                        << " expected to be in the range ("
+                        << min_difference / 2 << "," << max_difference / 2
+                        << ") but is " << difference
+                        << ". Correct unwrapping is uncertain.";
   }
   return difference;
 }
@@ -185,16 +186,17 @@ rtc::Optional<double> NetworkDelayDiff_CaptureTime(
       static_cast<double>(recv_time_diff) / 1000 -
       static_cast<double>(send_time_diff) / kVideoSampleRate * 1000;
   if (delay_change < -10000 || 10000 < delay_change) {
-    LOG(LS_WARNING) << "Very large delay change. Timestamps correct?";
-    LOG(LS_WARNING) << "Old capture time " << old_packet.header.timestamp
-                    << ", received time " << old_packet.timestamp;
-    LOG(LS_WARNING) << "New capture time " << new_packet.header.timestamp
-                    << ", received time " << new_packet.timestamp;
-    LOG(LS_WARNING) << "Receive time difference " << recv_time_diff << " = "
-                    << static_cast<double>(recv_time_diff) / 1000000 << "s";
-    LOG(LS_WARNING) << "Send time difference " << send_time_diff << " = "
-                    << static_cast<double>(send_time_diff) / kVideoSampleRate
-                    << "s";
+    RTC_LOG(LS_WARNING) << "Very large delay change. Timestamps correct?";
+    RTC_LOG(LS_WARNING) << "Old capture time " << old_packet.header.timestamp
+                        << ", received time " << old_packet.timestamp;
+    RTC_LOG(LS_WARNING) << "New capture time " << new_packet.header.timestamp
+                        << ", received time " << new_packet.timestamp;
+    RTC_LOG(LS_WARNING) << "Receive time difference " << recv_time_diff << " = "
+                        << static_cast<double>(recv_time_diff) / 1000000 << "s";
+    RTC_LOG(LS_WARNING) << "Send time difference " << send_time_diff << " = "
+                        << static_cast<double>(send_time_diff) /
+                               kVideoSampleRate
+                        << "s";
   }
   return rtc::Optional<double>(delay_change);
 }
@@ -617,7 +619,7 @@ rtc::Optional<uint32_t> EventLogAnalyzer::EstimateRtpClockFrequency(
     last_log_timestamp = packets[i].timestamp;
   }
   if (last_log_timestamp - first_log_timestamp < 1000000) {
-    LOG(LS_WARNING)
+    RTC_LOG(LS_WARNING)
         << "Failed to estimate RTP clock frequency: Stream too short. ("
         << packets.size() << " packets, "
         << last_log_timestamp - first_log_timestamp << " us)";
@@ -632,9 +634,9 @@ rtc::Optional<uint32_t> EventLogAnalyzer::EstimateRtpClockFrequency(
       return rtc::Optional<uint32_t>(f);
     }
   }
-  LOG(LS_WARNING) << "Failed to estimate RTP clock frequency: Estimate "
-                  << estimated_frequency
-                  << "not close to any stardard RTP frequency.";
+  RTC_LOG(LS_WARNING) << "Failed to estimate RTP clock frequency: Estimate "
+                      << estimated_frequency
+                      << "not close to any stardard RTP frequency.";
   return rtc::Optional<uint32_t>();
 }
 
@@ -1507,8 +1509,9 @@ void EventLogAnalyzer::CreatePacerDelayGraph(Plot* plot) {
     StreamId stream_id = kv.first;
 
     if (packets.size() < 2) {
-      LOG(LS_WARNING) << "Can't estimate a the RTP clock frequency or the "
-                         "pacer delay with less than 2 packets in the stream";
+      RTC_LOG(LS_WARNING)
+          << "Can't estimate a the RTP clock frequency or the "
+             "pacer delay with less than 2 packets in the stream";
       continue;
     }
     rtc::Optional<uint32_t> estimated_frequency =
@@ -1516,7 +1519,7 @@ void EventLogAnalyzer::CreatePacerDelayGraph(Plot* plot) {
     if (!estimated_frequency)
       continue;
     if (IsVideoSsrc(stream_id) && *estimated_frequency != 90000) {
-      LOG(LS_WARNING)
+      RTC_LOG(LS_WARNING)
           << "Video stream should use a 90 kHz clock but appears to use "
           << *estimated_frequency / 1000 << ". Discarding.";
       continue;

@@ -63,7 +63,7 @@ bool AudioState::typing_noise_detected() const {
 }
 
 void AudioState::SetPlayout(bool enabled) {
-  LOG(INFO) << "SetPlayout(" << enabled << ")";
+  RTC_LOG(INFO) << "SetPlayout(" << enabled << ")";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   const bool currently_enabled = (null_audio_poller_ == nullptr);
   if (enabled == currently_enabled) {
@@ -85,7 +85,7 @@ void AudioState::SetPlayout(bool enabled) {
 }
 
 void AudioState::SetRecording(bool enabled) {
-  LOG(INFO) << "SetRecording(" << enabled << ")";
+  RTC_LOG(INFO) << "SetRecording(" << enabled << ")";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   // TODO(henrika): keep track of state as in SetPlayout().
   VoEBase* const voe = VoEBase::GetInterface(voice_engine());

@@ -64,7 +64,7 @@ void SendSideBweSender::GiveFeedback(const FeedbackPacket& feedback) {
     if (!send_time_history_.GetFeedback(&packet_feedback, true)) {
       int64_t now_ms = clock_->TimeInMilliseconds();
       if (now_ms - last_log_time_ms_ > 5000) {
-        LOG(LS_WARNING) << "Ack arrived too late.";
+        RTC_LOG(LS_WARNING) << "Ack arrived too late.";
         last_log_time_ms_ = now_ms;
       }
     }

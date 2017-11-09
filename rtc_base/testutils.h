@@ -471,12 +471,13 @@ inline ::testing::AssertionResult CmpHelperMemEq(
 
 // Helpers for determining if X/screencasting is available (on linux).
 
-#define MAYBE_SKIP_SCREENCAST_TEST() \
-  if (!testing::IsScreencastingAvailable()) { \
-    LOG(LS_WARNING) << "Skipping test, since it doesn't have the requisite " \
-                    << "X environment for screen capture."; \
-    return; \
-  } \
+#define MAYBE_SKIP_SCREENCAST_TEST()                             \
+  if (!testing::IsScreencastingAvailable()) {                    \
+    RTC_LOG(LS_WARNING)                                          \
+        << "Skipping test, since it doesn't have the requisite " \
+        << "X environment for screen capture.";                  \
+    return;                                                      \
+  }
 
 #if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
 struct XDisplay {
@@ -495,18 +496,18 @@ inline bool IsScreencastingAvailable() {
 #if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
   XDisplay display;
   if (!display.IsValid()) {
-    LOG(LS_WARNING) << "No X Display available.";
+    RTC_LOG(LS_WARNING) << "No X Display available.";
     return false;
   }
   int ignored_int, major_version, minor_version;
   if (!XRRQueryExtension(display, &ignored_int, &ignored_int) ||
       !XRRQueryVersion(display, &major_version, &minor_version)) {
-    LOG(LS_WARNING) << "XRandr is not supported.";
+    RTC_LOG(LS_WARNING) << "XRandr is not supported.";
     return false;
   }
   if (major_version < 1 || (major_version < 2 && minor_version < 3)) {
-    LOG(LS_WARNING) << "XRandr is too old (version: " << major_version << "."
-                    << minor_version << "). Need 1.3 or later.";
+    RTC_LOG(LS_WARNING) << "XRandr is too old (version: " << major_version
+                        << "." << minor_version << "). Need 1.3 or later.";
     return false;
   }
 #endif

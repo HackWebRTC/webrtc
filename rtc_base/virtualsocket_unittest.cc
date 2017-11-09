@@ -707,7 +707,7 @@ class VirtualSocketServerTest : public testing::Test {
   // address.
   void DelayTest(const SocketAddress& initial_addr) {
     time_t seed = ::time(nullptr);
-    LOG(LS_VERBOSE) << "seed = " << seed;
+    RTC_LOG(LS_VERBOSE) << "seed = " << seed;
     srand(static_cast<unsigned int>(seed));
 
     const uint32_t mean = 2000;
@@ -744,7 +744,8 @@ class VirtualSocketServerTest : public testing::Test {
         receiver.samples * receiver.sum_sq - receiver.sum * receiver.sum;
     double den = receiver.samples * (receiver.samples - 1);
     const double sample_stddev = sqrt(num / den);
-    LOG(LS_VERBOSE) << "mean=" << sample_mean << " stddev=" << sample_stddev;
+    RTC_LOG(LS_VERBOSE) << "mean=" << sample_mean
+                        << " stddev=" << sample_stddev;
 
     EXPECT_LE(500u, receiver.samples);
     // We initially used a 0.1 fudge factor, but on the build machine, we

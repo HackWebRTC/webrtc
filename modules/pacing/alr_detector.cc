@@ -100,19 +100,19 @@ AlrDetector::ParseAlrSettingsFromFieldTrial(const char* experiment_name) {
              &settings.alr_stop_budget_level_percent,
              &settings.group_id) == 6) {
     ret.emplace(settings);
-    LOG(LS_INFO) << "Using ALR experiment settings: "
-                    "pacing factor: "
-                 << settings.pacing_factor << ", max pacer queue length: "
-                 << settings.max_paced_queue_time
-                 << ", ALR start bandwidth usage percent: "
-                 << settings.alr_bandwidth_usage_percent
-                 << ", ALR end budget level percent: "
-                 << settings.alr_start_budget_level_percent
-                 << ", ALR end budget level percent: "
-                 << settings.alr_stop_budget_level_percent
-                 << ", ALR experiment group ID: " << settings.group_id;
+    RTC_LOG(LS_INFO) << "Using ALR experiment settings: "
+                        "pacing factor: "
+                     << settings.pacing_factor << ", max pacer queue length: "
+                     << settings.max_paced_queue_time
+                     << ", ALR start bandwidth usage percent: "
+                     << settings.alr_bandwidth_usage_percent
+                     << ", ALR end budget level percent: "
+                     << settings.alr_start_budget_level_percent
+                     << ", ALR end budget level percent: "
+                     << settings.alr_stop_budget_level_percent
+                     << ", ALR experiment group ID: " << settings.group_id;
   } else {
-    LOG(LS_INFO) << "Failed to parse ALR experiment: " << experiment_name;
+    RTC_LOG(LS_INFO) << "Failed to parse ALR experiment: " << experiment_name;
   }
 
   return ret;

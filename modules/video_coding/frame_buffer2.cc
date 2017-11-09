@@ -178,16 +178,15 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
             !frame_is_higher_spatial_layer_of_last_decoded_frame) {
           // TODO(brandtr): Consider clearing the entire buffer when we hit
           // these conditions.
-          LOG(LS_WARNING) << "Frame with (timestamp:picture_id:spatial_id) ("
-                          << frame->timestamp << ":" << frame->picture_id << ":"
-                          << static_cast<int>(frame->spatial_layer) << ")"
-                          << " sent to decoder after frame with"
-                          << " (timestamp:picture_id:spatial_id) ("
-                          << last_decoded_frame_timestamp_ << ":"
-                          << last_decoded_frame_key.picture_id << ":"
-                          << static_cast<int>(
-                                 last_decoded_frame_key.spatial_layer)
-                          << ").";
+          RTC_LOG(LS_WARNING)
+              << "Frame with (timestamp:picture_id:spatial_id) ("
+              << frame->timestamp << ":" << frame->picture_id << ":"
+              << static_cast<int>(frame->spatial_layer) << ")"
+              << " sent to decoder after frame with"
+              << " (timestamp:picture_id:spatial_id) ("
+              << last_decoded_frame_timestamp_ << ":"
+              << last_decoded_frame_key.picture_id << ":"
+              << static_cast<int>(last_decoded_frame_key.spatial_layer) << ").";
         }
       }
 
@@ -218,15 +217,15 @@ bool FrameBuffer::HasBadRenderTiming(const FrameObject& frame, int64_t now_ms) {
   }
   if (std::abs(render_time_ms - now_ms) > kMaxVideoDelayMs) {
     int frame_delay = static_cast<int>(std::abs(render_time_ms - now_ms));
-    LOG(LS_WARNING) << "A frame about to be decoded is out of the configured "
-                    << "delay bounds (" << frame_delay << " > "
-                    << kMaxVideoDelayMs
-                    << "). Resetting the video jitter buffer.";
+    RTC_LOG(LS_WARNING)
+        << "A frame about to be decoded is out of the configured "
+        << "delay bounds (" << frame_delay << " > " << kMaxVideoDelayMs
+        << "). Resetting the video jitter buffer.";
     return true;
   }
   if (static_cast<int>(timing_->TargetVideoDelay()) > kMaxVideoDelayMs) {
-    LOG(LS_WARNING) << "The video target delay has grown larger than "
-                    << kMaxVideoDelayMs << " ms.";
+    RTC_LOG(LS_WARNING) << "The video target delay has grown larger than "
+                        << kMaxVideoDelayMs << " ms.";
     return true;
   }
   return false;
@@ -302,17 +301,19 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
           : last_continuous_frame_it_->first.picture_id;
 
   if (!ValidReferences(*frame)) {
-    LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) (" << key.picture_id
-                    << ":" << static_cast<int>(key.spatial_layer)
-                    << ") has invalid frame references, dropping frame.";
+    RTC_LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
+                        << key.picture_id << ":"
+                        << static_cast<int>(key.spatial_layer)
+                        << ") has invalid frame references, dropping frame.";
     return last_continuous_picture_id;
   }
 
   if (num_frames_buffered_ >= kMaxFramesBuffered) {
-    LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) (" << key.picture_id
-                    << ":" << static_cast<int>(key.spatial_layer)
-                    << ") could not be inserted due to the frame "
-                    << "buffer being full, dropping frame.";
+    RTC_LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
+                        << key.picture_id << ":"
+                        << static_cast<int>(key.spatial_layer)
+                        << ") could not be inserted due to the frame "
+                        << "buffer being full, dropping frame.";
     return last_continuous_picture_id;
   }
 
@@ -325,18 +326,19 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
       // reconfiguration or some other reason. Even though this is not according
       // to spec we can still continue to decode from this frame if it is a
       // keyframe.
-      LOG(LS_WARNING) << "A jump in picture id was detected, clearing buffer.";
+      RTC_LOG(LS_WARNING)
+          << "A jump in picture id was detected, clearing buffer.";
       ClearFramesAndHistory();
       last_continuous_picture_id = -1;
     } else {
-      LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
-                      << key.picture_id << ":"
-                      << static_cast<int>(key.spatial_layer)
-                      << ") inserted after frame ("
-                      << last_decoded_frame_it_->first.picture_id << ":"
-                      << static_cast<int>(
-                             last_decoded_frame_it_->first.spatial_layer)
-                      << ") was handed off for decoding, dropping frame.";
+      RTC_LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
+                          << key.picture_id << ":"
+                          << static_cast<int>(key.spatial_layer)
+                          << ") inserted after frame ("
+                          << last_decoded_frame_it_->first.picture_id << ":"
+                          << static_cast<int>(
+                                 last_decoded_frame_it_->first.spatial_layer)
+                          << ") was handed off for decoding, dropping frame.";
       return last_continuous_picture_id;
     }
   }
@@ -347,7 +349,8 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   if (!frames_.empty() &&
       key < frames_.begin()->first &&
       frames_.rbegin()->first < key) {
-    LOG(LS_WARNING) << "A jump in picture id was detected, clearing buffer.";
+    RTC_LOG(LS_WARNING)
+        << "A jump in picture id was detected, clearing buffer.";
     ClearFramesAndHistory();
     last_continuous_picture_id = -1;
   }
@@ -355,9 +358,10 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   auto info = frames_.insert(std::make_pair(key, FrameInfo())).first;
 
   if (info->second.frame) {
-    LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) (" << key.picture_id
-                    << ":" << static_cast<int>(key.spatial_layer)
-                    << ") already inserted, dropping frame.";
+    RTC_LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
+                        << key.picture_id << ":"
+                        << static_cast<int>(key.spatial_layer)
+                        << ") already inserted, dropping frame.";
     return last_continuous_picture_id;
   }
 
@@ -476,7 +480,7 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
       if (ref_info == frames_.end()) {
         int64_t now_ms = clock_->TimeInMilliseconds();
         if (last_log_non_decoded_ms_ + kLogNonDecodedIntervalMs < now_ms) {
-          LOG(LS_WARNING)
+          RTC_LOG(LS_WARNING)
               << "Frame with (picture_id:spatial_id) (" << key.picture_id << ":"
               << static_cast<int>(key.spatial_layer)
               << ") depends on a non-decoded frame more previous than"

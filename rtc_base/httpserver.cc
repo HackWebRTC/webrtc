@@ -30,7 +30,7 @@ HttpServer::HttpServer() : next_connection_id_(1), closing_(false) {
 
 HttpServer::~HttpServer() {
   if (closing_) {
-    LOG(LS_WARNING) << "HttpServer::CloseAll has not completed";
+    RTC_LOG(LS_WARNING) << "HttpServer::CloseAll has not completed";
   }
   for (ConnectionMap::iterator it = connections_.begin();
        it != connections_.end();

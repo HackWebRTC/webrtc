@@ -14,7 +14,7 @@
 #include "rtc_base/logging.h"
 
 // Common log description format for jingle messages
-#define LOG_J(sev, obj) LOG(sev) << "Jingle:" << obj->ToString() << ": "
-#define LOG_JV(sev, obj) LOG_V(sev) << "Jingle:" << obj->ToString() << ": "
+#define LOG_J(sev, obj) RTC_LOG(sev) << "Jingle:" << obj->ToString() << ": "
+#define LOG_JV(sev, obj) RTC_LOG_V(sev) << "Jingle:" << obj->ToString() << ": "
 
 #endif  // P2P_BASE_COMMON_H_

@@ -57,13 +57,13 @@ ModuleFileUtility::ModuleFileUtility()
       _reading(false),
       _writing(false),
       _tempData() {
-  LOG(LS_INFO) << "ModuleFileUtility::ModuleFileUtility()";
+  RTC_LOG(LS_INFO) << "ModuleFileUtility::ModuleFileUtility()";
   memset(&codec_info_, 0, sizeof(CodecInst));
   codec_info_.pltype = -1;
 }
 
 ModuleFileUtility::~ModuleFileUtility() {
-  LOG(LS_INFO) << "ModuleFileUtility::~ModuleFileUtility()";
+  RTC_LOG(LS_INFO) << "ModuleFileUtility::~ModuleFileUtility()";
 }
 
 int32_t ModuleFileUtility::ReadWavHeader(InStream& wav) {
@@ -80,7 +80,7 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav) {
   _dataSize = 0;
   int len = wav.Read(&RIFFheaderObj, sizeof(WAVE_RIFF_header));
   if (len != static_cast<int>(sizeof(WAVE_RIFF_header))) {
-    LOG(LS_ERROR) << "Not a wave file (too short)";
+    RTC_LOG(LS_ERROR) << "Not a wave file (too short)";
     return -1;
   }
 
@@ -88,14 +88,14 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav) {
     tmpStr[i] = RIFFheaderObj.ckID[i];
   }
   if (strcmp(tmpStr, "RIFF") != 0) {
-    LOG(LS_ERROR) << "Not a wave file (does not have RIFF)";
+    RTC_LOG(LS_ERROR) << "Not a wave file (does not have RIFF)";
     return -1;
   }
   for (i = 0; i < 4; i++) {
     tmpStr[i] = RIFFheaderObj.wave_ckID[i];
   }
   if (strcmp(tmpStr, "WAVE") != 0) {
-    LOG(LS_ERROR) << "Not a wave file (does not have WAVE)";
+    RTC_LOG(LS_ERROR) << "Not a wave file (does not have WAVE)";
     return -1;
   }
 
@@ -139,14 +139,14 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav) {
           (int16_t)((uint32_t)tmpStr2[0] + (((uint32_t)tmpStr2[1]) << 8));
 
       if (CHUNKheaderObj.fmt_ckSize < sizeof(WAVE_FMTINFO_header)) {
-        LOG(LS_ERROR) << "Chunk size is too small";
+        RTC_LOG(LS_ERROR) << "Chunk size is too small";
         return -1;
       }
       for (i = 0; i < CHUNKheaderObj.fmt_ckSize - sizeof(WAVE_FMTINFO_header);
            i++) {
         len = wav.Read(&dummyRead, 1);
         if (len != 1) {
-          LOG(LS_ERROR) << "File corrupted, reached EOF (reading fmt)";
+          RTC_LOG(LS_ERROR) << "File corrupted, reached EOF (reading fmt)";
           return -1;
         }
       }
@@ -159,7 +159,7 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav) {
       for (i = 0; i < CHUNKheaderObj.fmt_ckSize; i++) {
         len = wav.Read(&dummyRead, 1);
         if (len != 1) {
-          LOG(LS_ERROR) << "File corrupted, reached EOF (reading other)";
+          RTC_LOG(LS_ERROR) << "File corrupted, reached EOF (reading other)";
           return -1;
         }
       }
@@ -180,20 +180,20 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav) {
   if ((_wavFormatObj.formatTag != kWavFormatPcm) &&
       (_wavFormatObj.formatTag != kWavFormatALaw) &&
       (_wavFormatObj.formatTag != kWavFormatMuLaw)) {
-    LOG(LS_ERROR) << "Coding formatTag value=" << _wavFormatObj.formatTag
-                  << " not supported!";
+    RTC_LOG(LS_ERROR) << "Coding formatTag value=" << _wavFormatObj.formatTag
+                      << " not supported!";
     return -1;
   }
   if ((_wavFormatObj.nChannels < 1) || (_wavFormatObj.nChannels > 2)) {
-    LOG(LS_ERROR) << "nChannels value=" << _wavFormatObj.nChannels
-                  << " not supported!";
+    RTC_LOG(LS_ERROR) << "nChannels value=" << _wavFormatObj.nChannels
+                      << " not supported!";
     return -1;
   }
 
   if ((_wavFormatObj.nBitsPerSample != 8) &&
       (_wavFormatObj.nBitsPerSample != 16)) {
-    LOG(LS_ERROR) << "nBitsPerSample value=" << _wavFormatObj.nBitsPerSample
-                  << " not supported!";
+    RTC_LOG(LS_ERROR) << "nBitsPerSample value=" << _wavFormatObj.nBitsPerSample
+                      << " not supported!";
     return -1;
   }
 
@@ -266,12 +266,12 @@ int32_t ModuleFileUtility::InitWavCodec(uint32_t samplesPerSec,
         codec_info_.pacsize = 480;
         codec_info_.plfreq = 48000;
       } else {
-        LOG(LS_ERROR) << "Unsupported PCM frequency!";
+        RTC_LOG(LS_ERROR) << "Unsupported PCM frequency!";
         return -1;
       }
       break;
     default:
-      LOG(LS_ERROR) << "unknown WAV format TAG!";
+      RTC_LOG(LS_ERROR) << "unknown WAV format TAG!";
       return -1;
       break;
   }
@@ -284,7 +284,7 @@ int32_t ModuleFileUtility::InitWavReading(InStream& wav,
   _reading = false;
 
   if (ReadWavHeader(wav) == -1) {
-    LOG(LS_ERROR) << "failed to read WAV header!";
+    RTC_LOG(LS_ERROR) << "failed to read WAV header!";
     return -1;
   }
 
@@ -302,7 +302,7 @@ int32_t ModuleFileUtility::InitWavReading(InStream& wav,
           _playoutPositionMs += 10;
         } else  // Must have reached EOF before start position!
         {
-          LOG(LS_ERROR) << "InitWavReading(), EOF before start position";
+          RTC_LOG(LS_ERROR) << "InitWavReading(), EOF before start position";
           return -1;
         }
       }
@@ -326,9 +326,9 @@ int32_t ModuleFileUtility::InitWavReading(InStream& wav,
 int32_t ModuleFileUtility::ReadWavDataAsMono(InStream& wav,
                                              int8_t* outData,
                                              const size_t bufferSize) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::ReadWavDataAsMono(wav= " << &wav
-                  << ", outData= " << static_cast<void*>(outData)
-                  << ", bufSize= " << bufferSize << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::ReadWavDataAsMono(wav= " << &wav
+                      << ", outData= " << static_cast<void*>(outData)
+                      << ", bufSize= " << bufferSize << ")";
 
   // The number of bytes that should be read from file.
   const size_t totalBytesNeeded = _readSizeBytes;
@@ -336,16 +336,16 @@ int32_t ModuleFileUtility::ReadWavDataAsMono(InStream& wav,
   const size_t bytesRequested =
       (codec_info_.channels == 2) ? totalBytesNeeded >> 1 : totalBytesNeeded;
   if (bufferSize < bytesRequested) {
-    LOG(LS_ERROR) << "ReadWavDataAsMono: output buffer is too short!";
+    RTC_LOG(LS_ERROR) << "ReadWavDataAsMono: output buffer is too short!";
     return -1;
   }
   if (outData == NULL) {
-    LOG(LS_ERROR) << "ReadWavDataAsMono: output buffer NULL!";
+    RTC_LOG(LS_ERROR) << "ReadWavDataAsMono: output buffer NULL!";
     return -1;
   }
 
   if (!_reading) {
-    LOG(LS_ERROR) << "ReadWavDataAsMono: no longer reading file.";
+    RTC_LOG(LS_ERROR) << "ReadWavDataAsMono: no longer reading file.";
     return -1;
   }
 
@@ -356,7 +356,8 @@ int32_t ModuleFileUtility::ReadWavDataAsMono(InStream& wav,
     return 0;
   }
   if (bytesRead < 0) {
-    LOG(LS_ERROR) << "ReadWavDataAsMono: failed to read data from WAV file.";
+    RTC_LOG(LS_ERROR)
+        << "ReadWavDataAsMono: failed to read data from WAV file.";
     return -1;
   }
   // Output data is should be mono.
@@ -381,22 +382,22 @@ int32_t ModuleFileUtility::ReadWavDataAsStereo(InStream& wav,
                                                int8_t* outDataLeft,
                                                int8_t* outDataRight,
                                                const size_t bufferSize) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::ReadWavDataAsStereo(wav= " << &wav
-                  << ", outLeft= " << static_cast<void*>(outDataLeft)
-                  << ", outRight= " << static_cast<void*>(outDataRight)
-                  << ", bufSize= " << bufferSize << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::ReadWavDataAsStereo(wav= " << &wav
+                      << ", outLeft= " << static_cast<void*>(outDataLeft)
+                      << ", outRight= " << static_cast<void*>(outDataRight)
+                      << ", bufSize= " << bufferSize << ")";
 
   if ((outDataLeft == NULL) || (outDataRight == NULL)) {
-    LOG(LS_ERROR) << "ReadWavDataAsStereo: an input buffer is NULL!";
+    RTC_LOG(LS_ERROR) << "ReadWavDataAsStereo: an input buffer is NULL!";
     return -1;
   }
   if (codec_info_.channels != 2) {
-    LOG(LS_ERROR)
+    RTC_LOG(LS_ERROR)
         << "ReadWavDataAsStereo: WAV file does not contain stereo data!";
     return -1;
   }
   if (!_reading) {
-    LOG(LS_ERROR) << "ReadWavDataAsStereo: no longer reading file.";
+    RTC_LOG(LS_ERROR) << "ReadWavDataAsStereo: no longer reading file.";
     return -1;
   }
 
@@ -406,14 +407,15 @@ int32_t ModuleFileUtility::ReadWavDataAsStereo(InStream& wav,
   // buffers.
   const size_t bytesRequested = totalBytesNeeded >> 1;
   if (bufferSize < bytesRequested) {
-    LOG(LS_ERROR) << "ReadWavDataAsStereo: Output buffers are too short!";
+    RTC_LOG(LS_ERROR) << "ReadWavDataAsStereo: Output buffers are too short!";
     assert(false);
     return -1;
   }
 
   int32_t bytesRead = ReadWavData(wav, _tempData, totalBytesNeeded);
   if (bytesRead <= 0) {
-    LOG(LS_ERROR) << "ReadWavDataAsStereo: failed to read data from WAV file.";
+    RTC_LOG(LS_ERROR)
+        << "ReadWavDataAsStereo: failed to read data from WAV file.";
     return -1;
   }
 
@@ -436,8 +438,8 @@ int32_t ModuleFileUtility::ReadWavDataAsStereo(InStream& wav,
       outRight[i] = sampleData[(2 * i) + 1];
     }
   } else {
-    LOG(LS_ERROR) << "ReadWavStereoData: unsupported sample size "
-                  << _bytesPerSample << "!";
+    RTC_LOG(LS_ERROR) << "ReadWavStereoData: unsupported sample size "
+                      << _bytesPerSample << "!";
     assert(false);
     return -1;
   }
@@ -447,12 +449,12 @@ int32_t ModuleFileUtility::ReadWavDataAsStereo(InStream& wav,
 int32_t ModuleFileUtility::ReadWavData(InStream& wav,
                                        uint8_t* buffer,
                                        size_t dataLengthInBytes) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::ReadWavData(wav= " << &wav
-                  << ", buffer= " << static_cast<void*>(buffer)
-                  << ", dataLen= " << dataLengthInBytes << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::ReadWavData(wav= " << &wav
+                      << ", buffer= " << static_cast<void*>(buffer)
+                      << ", dataLen= " << dataLengthInBytes << ")";
 
   if (buffer == NULL) {
-    LOG(LS_ERROR) << "ReadWavDataAsMono: output buffer NULL!";
+    RTC_LOG(LS_ERROR) << "ReadWavDataAsMono: output buffer NULL!";
     return -1;
   }
 
@@ -511,7 +513,7 @@ int32_t ModuleFileUtility::ReadWavData(InStream& wav,
 int32_t ModuleFileUtility::InitWavWriting(OutStream& wav,
                                           const CodecInst& codecInst) {
   if (set_codec_info(codecInst) != 0) {
-    LOG(LS_ERROR) << "codecInst identifies unsupported codec!";
+    RTC_LOG(LS_ERROR) << "codecInst identifies unsupported codec!";
     return -1;
   }
   _writing = false;
@@ -536,7 +538,7 @@ int32_t ModuleFileUtility::InitWavWriting(OutStream& wav,
       return -1;
     }
   } else {
-    LOG(LS_ERROR) << "codecInst identifies unsupported codec for WAV file!";
+    RTC_LOG(LS_ERROR) << "codecInst identifies unsupported codec for WAV file!";
     return -1;
   }
   _writing = true;
@@ -547,12 +549,12 @@ int32_t ModuleFileUtility::InitWavWriting(OutStream& wav,
 int32_t ModuleFileUtility::WriteWavData(OutStream& out,
                                         const int8_t* buffer,
                                         const size_t dataLength) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::WriteWavData(out= " << &out
-                  << ", buf= " << static_cast<const void*>(buffer)
-                  << ", dataLen= " << dataLength << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::WriteWavData(out= " << &out
+                      << ", buf= " << static_cast<const void*>(buffer)
+                      << ", dataLen= " << dataLength << ")";
 
   if (buffer == NULL) {
-    LOG(LS_ERROR) << "WriteWavData: input buffer NULL!";
+    RTC_LOG(LS_ERROR) << "WriteWavData: input buffer NULL!";
     return -1;
   }
 
@@ -616,11 +618,11 @@ int32_t ModuleFileUtility::InitPreEncodedReading(InStream& in,
       (MediaFileUtility_CodecType)preEncodedID;
 
   if (set_codec_info(cinst) != 0) {
-    LOG(LS_ERROR) << "Pre-encoded file send codec mismatch!";
+    RTC_LOG(LS_ERROR) << "Pre-encoded file send codec mismatch!";
     return -1;
   }
   if (codecType != _codecId) {
-    LOG(LS_ERROR) << "Pre-encoded file format codec mismatch!";
+    RTC_LOG(LS_ERROR) << "Pre-encoded file format codec mismatch!";
     return -1;
   }
   memcpy(&codec_info_, &cinst, sizeof(CodecInst));
@@ -631,12 +633,12 @@ int32_t ModuleFileUtility::InitPreEncodedReading(InStream& in,
 int32_t ModuleFileUtility::ReadPreEncodedData(InStream& in,
                                               int8_t* outData,
                                               const size_t bufferSize) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::ReadPreEncodedData(in= " << &in
-                  << ", outData= " << static_cast<void*>(outData)
-                  << ", bufferSize= " << bufferSize << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::ReadPreEncodedData(in= " << &in
+                      << ", outData= " << static_cast<void*>(outData)
+                      << ", bufferSize= " << bufferSize << ")";
 
   if (outData == NULL) {
-    LOG(LS_ERROR) << "output buffer NULL";
+    RTC_LOG(LS_ERROR) << "output buffer NULL";
   }
 
   size_t frameLen;
@@ -654,8 +656,8 @@ int32_t ModuleFileUtility::ReadPreEncodedData(InStream& in,
   }
   frameLen = buf[0] + buf[1] * 256;
   if (bufferSize < frameLen) {
-    LOG(LS_ERROR) << "buffer not large enough to read " << frameLen
-                  << " bytes of pre-encoded data!";
+    RTC_LOG(LS_ERROR) << "buffer not large enough to read " << frameLen
+                      << " bytes of pre-encoded data!";
     return -1;
   }
   return in.Read(outData, frameLen);
@@ -664,7 +666,7 @@ int32_t ModuleFileUtility::ReadPreEncodedData(InStream& in,
 int32_t ModuleFileUtility::InitPreEncodedWriting(OutStream& out,
                                                  const CodecInst& codecInst) {
   if (set_codec_info(codecInst) != 0) {
-    LOG(LS_ERROR) << "CodecInst not recognized!";
+    RTC_LOG(LS_ERROR) << "CodecInst not recognized!";
     return -1;
   }
   _writing = true;
@@ -676,12 +678,12 @@ int32_t ModuleFileUtility::InitPreEncodedWriting(OutStream& out,
 int32_t ModuleFileUtility::WritePreEncodedData(OutStream& out,
                                                const int8_t* buffer,
                                                const size_t dataLength) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::WritePreEncodedData(out= " << &out
-                  << " , inData= " << static_cast<const void*>(buffer)
-                  << ", dataLen= " << dataLength << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::WritePreEncodedData(out= " << &out
+                      << " , inData= " << static_cast<const void*>(buffer)
+                      << ", dataLen= " << dataLength << ")";
 
   if (buffer == NULL) {
-    LOG(LS_ERROR) << "buffer NULL";
+    RTC_LOG(LS_ERROR) << "buffer NULL";
   }
 
   size_t bytesWritten = 0;
@@ -704,8 +706,8 @@ int32_t ModuleFileUtility::WritePreEncodedData(OutStream& out,
 int32_t ModuleFileUtility::InitCompressedReading(InStream& in,
                                                  const uint32_t start,
                                                  const uint32_t stop) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::InitCompressedReading(in= " << &in
-                  << ", start= " << start << ", stop= " << stop << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::InitCompressedReading(in= " << &in
+                      << ", start= " << start << ", stop= " << stop << ")";
 
 #if defined(WEBRTC_CODEC_ILBC)
   int16_t read_len = 0;
@@ -780,14 +782,14 @@ int32_t ModuleFileUtility::InitCompressedReading(InStream& in,
 int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
                                               int8_t* outData,
                                               size_t bufferSize) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::ReadCompressedData(in=" << &in
-                  << ", outData=" << static_cast<void*>(outData)
-                  << ", bytes=" << bufferSize << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::ReadCompressedData(in=" << &in
+                      << ", outData=" << static_cast<void*>(outData)
+                      << ", bytes=" << bufferSize << ")";
 
   int bytesRead = 0;
 
   if (!_reading) {
-    LOG(LS_ERROR) << "not currently reading!";
+    RTC_LOG(LS_ERROR) << "not currently reading!";
     return -1;
   }
 
@@ -801,7 +803,7 @@ int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
       byteSize = 38;
     }
     if (bufferSize < byteSize) {
-      LOG(LS_ERROR)
+      RTC_LOG(LS_ERROR)
           << "output buffer is too short to read ILBC compressed data.";
       assert(false);
       return -1;
@@ -824,7 +826,8 @@ int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
   }
 #endif
   if (bytesRead == 0) {
-    LOG(LS_ERROR) << "ReadCompressedData() no bytes read, codec not supported";
+    RTC_LOG(LS_ERROR)
+        << "ReadCompressedData() no bytes read, codec not supported";
     return -1;
   }
 
@@ -841,8 +844,8 @@ int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
 
 int32_t ModuleFileUtility::InitCompressedWriting(OutStream& out,
                                                  const CodecInst& codecInst) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::InitCompressedWriting(out= " << &out
-                  << ", codecName= " << codecInst.plname << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::InitCompressedWriting(out= "
+                      << &out << ", codecName= " << codecInst.plname << ")";
 
   _writing = false;
 
@@ -855,7 +858,7 @@ int32_t ModuleFileUtility::InitCompressedWriting(OutStream& out,
       _codecId = kCodecIlbc30Ms;
       out.Write("#!iLBC30\n", 9);
     } else {
-      LOG(LS_ERROR) << "codecInst defines unsupported compression codec!";
+      RTC_LOG(LS_ERROR) << "codecInst defines unsupported compression codec!";
       return -1;
     }
     memcpy(&codec_info_, &codecInst, sizeof(CodecInst));
@@ -864,19 +867,19 @@ int32_t ModuleFileUtility::InitCompressedWriting(OutStream& out,
   }
 #endif
 
-  LOG(LS_ERROR) << "codecInst defines unsupported compression codec!";
+  RTC_LOG(LS_ERROR) << "codecInst defines unsupported compression codec!";
   return -1;
 }
 
 int32_t ModuleFileUtility::WriteCompressedData(OutStream& out,
                                                const int8_t* buffer,
                                                const size_t dataLength) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::WriteCompressedData(out= " << &out
-                  << ", buf= " << static_cast<const void*>(buffer)
-                  << ", dataLen= " << dataLength << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::WriteCompressedData(out= " << &out
+                      << ", buf= " << static_cast<const void*>(buffer)
+                      << ", dataLen= " << dataLength << ")";
 
   if (buffer == NULL) {
-    LOG(LS_ERROR) << "buffer NULL";
+    RTC_LOG(LS_ERROR) << "buffer NULL";
   }
 
   if (!out.Write(buffer, dataLength)) {
@@ -889,9 +892,9 @@ int32_t ModuleFileUtility::InitPCMReading(InStream& pcm,
                                           const uint32_t start,
                                           const uint32_t stop,
                                           uint32_t freq) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::InitPCMReading(pcm= " << &pcm
-                  << ", start=" << start << ", stop=" << stop
-                  << ", freq=" << freq << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::InitPCMReading(pcm= " << &pcm
+                      << ", start=" << start << ", stop=" << stop
+                      << ", freq=" << freq << ")";
 
   int8_t dummy[320];
   int read_len;
@@ -953,18 +956,19 @@ int32_t ModuleFileUtility::InitPCMReading(InStream& pcm,
 int32_t ModuleFileUtility::ReadPCMData(InStream& pcm,
                                        int8_t* outData,
                                        size_t bufferSize) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::ReadPCMData(pcm= " << &pcm
-                  << ", outData= " << static_cast<void*>(outData)
-                  << ", bufSize= " << bufferSize << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::ReadPCMData(pcm= " << &pcm
+                      << ", outData= " << static_cast<void*>(outData)
+                      << ", bufSize= " << bufferSize << ")";
 
   if (outData == NULL) {
-    LOG(LS_ERROR) << "buffer NULL";
+    RTC_LOG(LS_ERROR) << "buffer NULL";
   }
 
   // Readsize for 10ms of audio data (2 bytes per sample).
   size_t bytesRequested = static_cast<size_t>(2 * codec_info_.plfreq / 100);
   if (bufferSize < bytesRequested) {
-    LOG(LS_ERROR) << "ReadPCMData: buffer not long enough for a 10ms frame.";
+    RTC_LOG(LS_ERROR)
+        << "ReadPCMData: buffer not long enough for a 10ms frame.";
     assert(false);
     return -1;
   }
@@ -987,14 +991,14 @@ int32_t ModuleFileUtility::ReadPCMData(InStream& pcm,
         }
       }
       if (bytesRead <= 0) {
-        LOG(LS_ERROR) << "ReadPCMData: Failed to rewind audio file.";
+        RTC_LOG(LS_ERROR) << "ReadPCMData: Failed to rewind audio file.";
         return -1;
       }
     }
   }
 
   if (bytesRead <= 0) {
-    LOG(LS_VERBOSE) << "ReadPCMData: end of file";
+    RTC_LOG(LS_VERBOSE) << "ReadPCMData: end of file";
     return -1;
   }
   _playoutPositionMs += 10;
@@ -1049,7 +1053,7 @@ int32_t ModuleFileUtility::InitPCMWriting(OutStream& out, uint32_t freq) {
   }
   if ((_codecId != kCodecL16_8Khz) && (_codecId != kCodecL16_16kHz) &&
       (_codecId != kCodecL16_32Khz) && (_codecId != kCodecL16_48Khz)) {
-    LOG(LS_ERROR) << "CodecInst is not 8KHz, 16KHz, 32kHz or 48kHz PCM!";
+    RTC_LOG(LS_ERROR) << "CodecInst is not 8KHz, 16KHz, 32kHz or 48kHz PCM!";
     return -1;
   }
   _writing = true;
@@ -1060,12 +1064,12 @@ int32_t ModuleFileUtility::InitPCMWriting(OutStream& out, uint32_t freq) {
 int32_t ModuleFileUtility::WritePCMData(OutStream& out,
                                         const int8_t* buffer,
                                         const size_t dataLength) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::WritePCMData(out= " << &out
-                  << ", buf= " << static_cast<const void*>(buffer)
-                  << ", dataLen= " << dataLength << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::WritePCMData(out= " << &out
+                      << ", buf= " << static_cast<const void*>(buffer)
+                      << ", dataLen= " << dataLength << ")";
 
   if (buffer == NULL) {
-    LOG(LS_ERROR) << "buffer NULL";
+    RTC_LOG(LS_ERROR) << "buffer NULL";
   }
 
   if (!out.Write(buffer, dataLength)) {
@@ -1077,11 +1081,11 @@ int32_t ModuleFileUtility::WritePCMData(OutStream& out,
 }
 
 int32_t ModuleFileUtility::codec_info(CodecInst& codecInst) {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::codec_info(codecInst= " << &codecInst
-                  << ")";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::codec_info(codecInst= "
+                      << &codecInst << ")";
 
   if (!_reading && !_writing) {
-    LOG(LS_ERROR) << "CodecInst: not currently reading audio file!";
+    RTC_LOG(LS_ERROR) << "CodecInst: not currently reading audio file!";
     return -1;
   }
   memcpy(&codecInst, &codec_info_, sizeof(CodecInst));
@@ -1137,31 +1141,31 @@ int32_t ModuleFileUtility::FileDurationMs(const char* fileName,
                                           const FileFormats fileFormat,
                                           const uint32_t freqInHz) {
   if (fileName == NULL) {
-    LOG(LS_ERROR) << "filename NULL";
+    RTC_LOG(LS_ERROR) << "filename NULL";
     return -1;
   }
 
   int32_t time_in_ms = -1;
   struct stat file_size;
   if (stat(fileName, &file_size) == -1) {
-    LOG(LS_ERROR) << "failed to retrieve file size with stat!";
+    RTC_LOG(LS_ERROR) << "failed to retrieve file size with stat!";
     return -1;
   }
   FileWrapper* inStreamObj = FileWrapper::Create();
   if (inStreamObj == NULL) {
-    LOG(LS_INFO) << "failed to create InStream object!";
+    RTC_LOG(LS_INFO) << "failed to create InStream object!";
     return -1;
   }
   if (!inStreamObj->OpenFile(fileName, true)) {
     delete inStreamObj;
-    LOG(LS_ERROR) << "failed to open file " << fileName << "!";
+    RTC_LOG(LS_ERROR) << "failed to open file " << fileName << "!";
     return -1;
   }
 
   switch (fileFormat) {
     case kFileFormatWavFile: {
       if (ReadWavHeader(*inStreamObj) == -1) {
-        LOG(LS_ERROR) << "failed to read WAV file header!";
+        RTC_LOG(LS_ERROR) << "failed to read WAV file header!";
         return -1;
       }
       time_in_ms =
@@ -1214,11 +1218,11 @@ int32_t ModuleFileUtility::FileDurationMs(const char* fileName,
       break;
     }
     case kFileFormatPreencodedFile: {
-      LOG(LS_ERROR) << "cannot determine duration of Pre-Encoded file!";
+      RTC_LOG(LS_ERROR) << "cannot determine duration of Pre-Encoded file!";
       break;
     }
     default:
-      LOG(LS_ERROR) << "unsupported file format " << fileFormat << "!";
+      RTC_LOG(LS_ERROR) << "unsupported file format " << fileFormat << "!";
       break;
   }
   inStreamObj->CloseFile();
@@ -1227,7 +1231,7 @@ int32_t ModuleFileUtility::FileDurationMs(const char* fileName,
 }
 
 uint32_t ModuleFileUtility::PlayoutPositionMs() {
-  LOG(LS_VERBOSE) << "ModuleFileUtility::PlayoutPosition()";
+  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::PlayoutPosition()";
 
   return _reading ? _playoutPositionMs : 0;
 }

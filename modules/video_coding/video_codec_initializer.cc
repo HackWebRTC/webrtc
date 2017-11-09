@@ -131,7 +131,8 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
           streams.back().temporal_layer_thresholds_bps.size() + 1);
 
       if (nack_enabled && !TemporalLayersConfigured(streams)) {
-        LOG(LS_INFO) << "No temporal layers and nack enabled -> resilience off";
+        RTC_LOG(LS_INFO)
+            << "No temporal layers and nack enabled -> resilience off";
         video_codec.VP8()->resilience = kResilienceOff;
       }
       break;
@@ -151,8 +152,8 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
 
       if (nack_enabled && !TemporalLayersConfigured(streams) &&
           video_codec.VP9()->numberOfSpatialLayers == 1) {
-        LOG(LS_INFO) << "No temporal or spatial layers and nack enabled -> "
-                     << "resilience off";
+        RTC_LOG(LS_INFO) << "No temporal or spatial layers and nack enabled -> "
+                         << "resilience off";
         video_codec.VP9()->resilienceOn = false;
       }
       break;

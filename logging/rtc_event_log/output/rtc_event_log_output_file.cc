@@ -34,7 +34,7 @@ RtcEventLogOutputFile::RtcEventLogOutputFile(const std::string& file_name,
   RTC_CHECK_LE(max_size_bytes_, kMaxReasonableFileSize);
 
   if (!file_->OpenFile(file_name.c_str(), false)) {
-    LOG(LS_ERROR) << "Can't open file. WebRTC event log not started.";
+    RTC_LOG(LS_ERROR) << "Can't open file. WebRTC event log not started.";
     file_.reset();
     return;
   }
@@ -50,18 +50,18 @@ RtcEventLogOutputFile::RtcEventLogOutputFile(rtc::PlatformFile file,
 
   FILE* file_handle = rtc::FdopenPlatformFileForWriting(file);
   if (!file_handle) {
-    LOG(LS_ERROR) << "Can't open file. WebRTC event log not started.";
+    RTC_LOG(LS_ERROR) << "Can't open file. WebRTC event log not started.";
     // Even though we failed to open a FILE*, the file is still open
     // and needs to be closed.
     if (!rtc::ClosePlatformFile(file)) {
-      LOG(LS_ERROR) << "Can't close file.";
+      RTC_LOG(LS_ERROR) << "Can't close file.";
     }
     file_.reset();
     return;
   }
 
   if (!file_->OpenFromFileHandle(file_handle)) {
-    LOG(LS_ERROR) << "Can't open file. WebRTC event log not started.";
+    RTC_LOG(LS_ERROR) << "Can't open file. WebRTC event log not started.";
     file_.reset();
     return;
   }
@@ -90,10 +90,10 @@ bool RtcEventLogOutputFile::Write(const std::string& output) {
       written_bytes_ + output.length() <= max_size_bytes_) {
     written = file_->Write(output.c_str(), output.size());
     if (!written) {
-      LOG(LS_ERROR) << "FileWrapper failed to write WebRtcEventLog file.";
+      RTC_LOG(LS_ERROR) << "FileWrapper failed to write WebRtcEventLog file.";
     }
   } else {
-    LOG(LS_VERBOSE) << "Max file size reached.";
+    RTC_LOG(LS_VERBOSE) << "Max file size reached.";
   }
 
   if (written) {

@@ -119,7 +119,7 @@ static std::unique_ptr<QueuedTask> NewClosure(Closure&& closure,
 //     }
 //     ...
 //     my_class->StartWorkAndLetMeKnowWhenDone(
-//         NewClosure([]() { LOG(INFO) << "The work is done!";}));
+//         NewClosure([]() { RTC_LOG(INFO) << "The work is done!";}));
 //
 //   3) Posting a custom task on a timer.  The task posts itself again after
 //      every running:

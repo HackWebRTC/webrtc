@@ -58,7 +58,7 @@ UnixFilesystem::UnixFilesystem() {}
 UnixFilesystem::~UnixFilesystem() {}
 
 bool UnixFilesystem::DeleteFile(const Pathname &filename) {
-  LOG(LS_INFO) << "Deleting file:" << filename.pathname();
+  RTC_LOG(LS_INFO) << "Deleting file:" << filename.pathname();
 
   if (!IsFile(filename)) {
     RTC_DCHECK(IsFile(filename));
@@ -89,8 +89,8 @@ bool UnixFilesystem::MoveFile(const Pathname &old_path,
     RTC_DCHECK(IsFile(old_path));
     return false;
   }
-  LOG(LS_VERBOSE) << "Moving " << old_path.pathname()
-                  << " to " << new_path.pathname();
+  RTC_LOG(LS_VERBOSE) << "Moving " << old_path.pathname() << " to "
+                      << new_path.pathname();
   if (rename(old_path.pathname().c_str(), new_path.pathname().c_str()) != 0) {
     return false;
   }

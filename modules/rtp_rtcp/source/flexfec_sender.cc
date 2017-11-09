@@ -49,9 +49,10 @@ RtpHeaderExtensionMap RegisterBweExtensions(
     } else if (extension.uri == TransmissionOffset::kUri) {
       map.Register<TransmissionOffset>(extension.id);
     } else {
-      LOG(LS_INFO) << "FlexfecSender only supports RTP header extensions for "
-                   << "BWE, so the extension " << extension.ToString()
-                   << " will not be used.";
+      RTC_LOG(LS_INFO)
+          << "FlexfecSender only supports RTP header extensions for "
+          << "BWE, so the extension " << extension.ToString()
+          << " will not be used.";
     }
   }
   return map;
@@ -145,9 +146,9 @@ std::vector<std::unique_ptr<RtpPacketToSend>> FlexfecSender::GetFecPackets() {
   int64_t now_ms = clock_->TimeInMilliseconds();
   if (!fec_packets_to_send.empty() &&
       now_ms - last_generated_packet_ms_ > kPacketLogIntervalMs) {
-    LOG(LS_VERBOSE) << "Generated " << fec_packets_to_send.size()
-                    << " FlexFEC packets with payload type: " << payload_type_
-                    << " and SSRC: " << ssrc_ << ".";
+    RTC_LOG(LS_VERBOSE) << "Generated " << fec_packets_to_send.size()
+                        << " FlexFEC packets with payload type: "
+                        << payload_type_ << " and SSRC: " << ssrc_ << ".";
     last_generated_packet_ms_ = now_ms;
   }
 

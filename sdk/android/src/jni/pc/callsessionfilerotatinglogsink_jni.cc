@@ -25,7 +25,7 @@ JNI_FUNCTION_DECLARATION(jlong,
   rtc::CallSessionFileRotatingLogSink* sink =
       new rtc::CallSessionFileRotatingLogSink(dir_path, j_maxFileSize);
   if (!sink->Init()) {
-    LOG_V(rtc::LoggingSeverity::LS_WARNING)
+    RTC_LOG_V(rtc::LoggingSeverity::LS_WARNING)
         << "Failed to init CallSessionFileRotatingLogSink for path "
         << dir_path;
     delete sink;
@@ -56,13 +56,13 @@ JNI_FUNCTION_DECLARATION(jbyteArray,
   std::unique_ptr<rtc::CallSessionFileRotatingStream> stream(
       new rtc::CallSessionFileRotatingStream(dir_path));
   if (!stream->Open()) {
-    LOG_V(rtc::LoggingSeverity::LS_WARNING)
+    RTC_LOG_V(rtc::LoggingSeverity::LS_WARNING)
         << "Failed to open CallSessionFileRotatingStream for path " << dir_path;
     return jni->NewByteArray(0);
   }
   size_t log_size = 0;
   if (!stream->GetSize(&log_size) || log_size == 0) {
-    LOG_V(rtc::LoggingSeverity::LS_WARNING)
+    RTC_LOG_V(rtc::LoggingSeverity::LS_WARNING)
         << "CallSessionFileRotatingStream returns 0 size for path " << dir_path;
     return jni->NewByteArray(0);
   }

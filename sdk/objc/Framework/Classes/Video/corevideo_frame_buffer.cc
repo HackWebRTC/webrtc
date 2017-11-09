@@ -115,7 +115,7 @@ bool CoreVideoFrameBuffer::CropAndScaleTo(
                 kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
   CVReturn cv_ret = CVPixelBufferLockBaseAddress(output_pixel_buffer, 0);
   if (cv_ret != kCVReturnSuccess) {
-    LOG(LS_ERROR) << "Failed to lock base address: " << cv_ret;
+    RTC_LOG(LS_ERROR) << "Failed to lock base address: " << cv_ret;
     return false;
   }
   const int dst_width = CVPixelBufferGetWidth(output_pixel_buffer);

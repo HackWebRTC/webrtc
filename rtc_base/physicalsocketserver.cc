@@ -182,8 +182,8 @@ SocketAddress PhysicalSocket::GetLocalAddress() const {
   if (result >= 0) {
     SocketAddressFromSockAddrStorage(addr_storage, &address);
   } else {
-    LOG(LS_WARNING) << "GetLocalAddress: unable to get local addr, socket="
-                    << s_;
+    RTC_LOG(LS_WARNING) << "GetLocalAddress: unable to get local addr, socket="
+                        << s_;
   }
   return address;
 }
@@ -197,8 +197,8 @@ SocketAddress PhysicalSocket::GetRemoteAddress() const {
   if (result >= 0) {
     SocketAddressFromSockAddrStorage(addr_storage, &address);
   } else {
-    LOG(LS_WARNING) << "GetRemoteAddress: unable to get remote addr, socket="
-                    << s_;
+    RTC_LOG(LS_WARNING)
+        << "GetRemoteAddress: unable to get remote addr, socket=" << s_;
   }
   return address;
 }
@@ -217,19 +217,19 @@ int PhysicalSocket::Bind(const SocketAddress& bind_addr) {
       // the bind() call; bind() just needs to assign a port.
       copied_bind_addr.SetIP(GetAnyIP(copied_bind_addr.ipaddr().family()));
     } else if (result == NetworkBindingResult::NOT_IMPLEMENTED) {
-      LOG(LS_INFO) << "Can't bind socket to network because "
-                      "network binding is not implemented for this OS.";
+      RTC_LOG(LS_INFO) << "Can't bind socket to network because "
+                          "network binding is not implemented for this OS.";
     } else {
       if (bind_addr.IsLoopbackIP()) {
         // If we couldn't bind to a loopback IP (which should only happen in
         // test scenarios), continue on. This may be expected behavior.
-        LOG(LS_VERBOSE) << "Binding socket to loopback address "
-                        << bind_addr.ipaddr().ToString()
-                        << " failed; result: " << static_cast<int>(result);
+        RTC_LOG(LS_VERBOSE) << "Binding socket to loopback address "
+                            << bind_addr.ipaddr().ToString()
+                            << " failed; result: " << static_cast<int>(result);
       } else {
-        LOG(LS_WARNING) << "Binding socket to network address "
-                        << bind_addr.ipaddr().ToString()
-                        << " failed; result: " << static_cast<int>(result);
+        RTC_LOG(LS_WARNING) << "Binding socket to network address "
+                            << bind_addr.ipaddr().ToString()
+                            << " failed; result: " << static_cast<int>(result);
         // If a network binding was attempted and failed, we should stop here
         // and not try to use the socket. Otherwise, we may end up sending
         // packets with an invalid source address.
@@ -260,7 +260,7 @@ int PhysicalSocket::Connect(const SocketAddress& addr) {
     return SOCKET_ERROR;
   }
   if (addr.IsUnresolvedIP()) {
-    LOG(LS_VERBOSE) << "Resolving addr in PhysicalSocket::Connect";
+    RTC_LOG(LS_VERBOSE) << "Resolving addr in PhysicalSocket::Connect";
     resolver_ = new AsyncResolver();
     resolver_->SignalDone.connect(this, &PhysicalSocket::OnResolveResult);
     resolver_->Start(addr);
@@ -394,7 +394,7 @@ int PhysicalSocket::Recv(void* buffer, size_t length, int64_t* timestamp) {
     // Note: on graceful shutdown, recv can return 0.  In this case, we
     // pretend it is blocking, and then signal close, so that simplifying
     // assumptions can be made about Recv.
-    LOG(LS_WARNING) << "EOF from socket; deferring close event";
+    RTC_LOG(LS_WARNING) << "EOF from socket; deferring close event";
     // Must turn this back on so that the select() loop will notice the close
     // event.
     EnableEvents(DE_READ);
@@ -411,7 +411,7 @@ int PhysicalSocket::Recv(void* buffer, size_t length, int64_t* timestamp) {
     EnableEvents(DE_READ);
   }
   if (!success) {
-    LOG_F(LS_VERBOSE) << "Error = " << error;
+    RTC_LOG_F(LS_VERBOSE) << "Error = " << error;
   }
   return received;
 }
@@ -437,7 +437,7 @@ int PhysicalSocket::RecvFrom(void* buffer,
     EnableEvents(DE_READ);
   }
   if (!success) {
-    LOG_F(LS_VERBOSE) << "Error = " << error;
+    RTC_LOG_F(LS_VERBOSE) << "Error = " << error;
   }
   return received;
 }
@@ -525,7 +525,7 @@ void PhysicalSocket::OnResolveResult(AsyncResolverInterface* resolver) {
 }
 
 void PhysicalSocket::UpdateLastError() {
-  SetError(LAST_SYSTEM_ERROR);
+  SetError(RTC_LAST_SYSTEM_ERROR);
 }
 
 void PhysicalSocket::MaybeRemapSendError() {
@@ -561,7 +561,7 @@ int PhysicalSocket::TranslateOption(Option opt, int* slevel, int* sopt) {
       *sopt = IP_DONTFRAGMENT;
       break;
 #elif defined(WEBRTC_MAC) || defined(BSD) || defined(__native_client__)
-      LOG(LS_WARNING) << "Socket::OPT_DONTFRAGMENT not supported.";
+      RTC_LOG(LS_WARNING) << "Socket::OPT_DONTFRAGMENT not supported.";
       return -1;
 #elif defined(WEBRTC_POSIX)
       *slevel = IPPROTO_IP;
@@ -581,7 +581,7 @@ int PhysicalSocket::TranslateOption(Option opt, int* slevel, int* sopt) {
       *sopt = TCP_NODELAY;
       break;
     case OPT_DSCP:
-      LOG(LS_WARNING) << "Socket::OPT_DSCP not supported.";
+      RTC_LOG(LS_WARNING) << "Socket::OPT_DSCP not supported.";
       return -1;
     case OPT_RTP_SENDTIME_EXTN_ID:
       return -1;  // No logging is necessary as this not a OS socket option.
@@ -727,7 +727,7 @@ bool SocketDispatcher::IsDescriptorClosed() {
         // "connection lost"-type error as a blocking error, because typically
         // the next recv() will get EOF, so we'll still eventually notice that
         // the socket is closed.
-        LOG_ERR(LS_WARNING) << "Assuming benign blocking error";
+        RTC_LOG_ERR(LS_WARNING) << "Assuming benign blocking error";
         return false;
     }
   }
@@ -759,7 +759,7 @@ void SocketDispatcher::OnEvent(uint32_t ff, int err) {
   // something like a READ followed by a CONNECT, which would be odd.
   if (((ff & DE_CONNECT) != 0) && (id_ == cache_id)) {
     if (ff != DE_CONNECT)
-      LOG(LS_VERBOSE) << "Signalled with DE_CONNECT: " << ff;
+      RTC_LOG(LS_VERBOSE) << "Signalled with DE_CONNECT: " << ff;
     DisableEvents(DE_CONNECT);
 #if !defined(NDEBUG)
     dbg_addr_ = "Connected @ ";
@@ -895,7 +895,7 @@ class EventDispatcher : public Dispatcher {
  public:
   EventDispatcher(PhysicalSocketServer* ss) : ss_(ss), fSignaled_(false) {
     if (pipe(afd_) < 0)
-      LOG(LERROR) << "pipe failed";
+      RTC_LOG(LERROR) << "pipe failed";
     ss_->Add(this);
   }
 
@@ -1012,14 +1012,14 @@ class PosixSignalHandler {
  private:
   PosixSignalHandler() {
     if (pipe(afd_) < 0) {
-      LOG_ERR(LS_ERROR) << "pipe failed";
+      RTC_LOG_ERR(LS_ERROR) << "pipe failed";
       return;
     }
     if (fcntl(afd_[0], F_SETFL, O_NONBLOCK) < 0) {
-      LOG_ERR(LS_WARNING) << "fcntl #1 failed";
+      RTC_LOG_ERR(LS_WARNING) << "fcntl #1 failed";
     }
     if (fcntl(afd_[1], F_SETFL, O_NONBLOCK) < 0) {
-      LOG_ERR(LS_WARNING) << "fcntl #2 failed";
+      RTC_LOG_ERR(LS_WARNING) << "fcntl #2 failed";
     }
     memset(const_cast<void *>(static_cast<volatile void *>(received_signal_)),
            0,
@@ -1076,9 +1076,9 @@ class PosixSignalDispatcher : public Dispatcher {
     uint8_t b[16];
     ssize_t ret = read(GetDescriptor(), b, sizeof(b));
     if (ret < 0) {
-      LOG_ERR(LS_WARNING) << "Error in read()";
+      RTC_LOG_ERR(LS_WARNING) << "Error in read()";
     } else if (ret == 0) {
-      LOG(LS_WARNING) << "Should have read at least one byte";
+      RTC_LOG(LS_WARNING) << "Should have read at least one byte";
     }
   }
 
@@ -1092,7 +1092,7 @@ class PosixSignalDispatcher : public Dispatcher {
           // This can happen if a signal is delivered to our process at around
           // the same time as we unset our handler for it. It is not an error
           // condition, but it's unusual enough to be worth logging.
-          LOG(LS_INFO) << "Received signal with no handler: " << signum;
+          RTC_LOG(LS_INFO) << "Received signal with no handler: " << signum;
         } else {
           // Otherwise, execute our handler.
           (*i->second)(signum);
@@ -1209,7 +1209,7 @@ PhysicalSocketServer::PhysicalSocketServer()
   epoll_fd_ = epoll_create(FD_SETSIZE);
   if (epoll_fd_ == -1) {
     // Not an error, will fall back to "select" below.
-    LOG_E(LS_WARNING, EN, errno) << "epoll_create";
+    RTC_LOG_E(LS_WARNING, EN, errno) << "epoll_create";
     epoll_fd_ = INVALID_SOCKET;
   }
 #endif
@@ -1305,16 +1305,17 @@ void PhysicalSocketServer::Remove(Dispatcher *pdispatcher) {
     // invalidating the iterator in "Wait".
     if (!pending_add_dispatchers_.erase(pdispatcher) &&
         dispatchers_.find(pdispatcher) == dispatchers_.end()) {
-      LOG(LS_WARNING) << "PhysicalSocketServer asked to remove a unknown "
-                      << "dispatcher, potentially from a duplicate call to "
-                      << "Add.";
+      RTC_LOG(LS_WARNING) << "PhysicalSocketServer asked to remove a unknown "
+                          << "dispatcher, potentially from a duplicate call to "
+                          << "Add.";
       return;
     }
 
     pending_remove_dispatchers_.insert(pdispatcher);
   } else if (!dispatchers_.erase(pdispatcher)) {
-    LOG(LS_WARNING) << "PhysicalSocketServer asked to remove a unknown "
-                    << "dispatcher, potentially from a duplicate call to Add.";
+    RTC_LOG(LS_WARNING)
+        << "PhysicalSocketServer asked to remove a unknown "
+        << "dispatcher, potentially from a duplicate call to Add.";
     return;
   }
 #if defined(WEBRTC_USE_EPOLL)
@@ -1494,7 +1495,7 @@ bool PhysicalSocketServer::WaitSelect(int cmsWait, bool process_io) {
     // If error, return error.
     if (n < 0) {
       if (errno != EINTR) {
-        LOG_E(LS_ERROR, EN, errno) << "select";
+        RTC_LOG_E(LS_ERROR, EN, errno) << "select";
         return false;
       }
       // Else ignore the error and keep going. If this EINTR was for one of the
@@ -1577,7 +1578,7 @@ void PhysicalSocketServer::AddEpoll(Dispatcher* pdispatcher) {
   int err = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &event);
   RTC_DCHECK_EQ(err, 0);
   if (err == -1) {
-    LOG_E(LS_ERROR, EN, errno) << "epoll_ctl EPOLL_CTL_ADD";
+    RTC_LOG_E(LS_ERROR, EN, errno) << "epoll_ctl EPOLL_CTL_ADD";
   }
 }
 
@@ -1595,9 +1596,9 @@ void PhysicalSocketServer::RemoveEpoll(Dispatcher* pdispatcher) {
   if (err == -1) {
     if (errno == ENOENT) {
       // Socket has already been closed.
-      LOG_E(LS_VERBOSE, EN, errno) << "epoll_ctl EPOLL_CTL_DEL";
+      RTC_LOG_E(LS_VERBOSE, EN, errno) << "epoll_ctl EPOLL_CTL_DEL";
     } else {
-      LOG_E(LS_ERROR, EN, errno) << "epoll_ctl EPOLL_CTL_DEL";
+      RTC_LOG_E(LS_ERROR, EN, errno) << "epoll_ctl EPOLL_CTL_DEL";
     }
   }
 }
@@ -1616,7 +1617,7 @@ void PhysicalSocketServer::UpdateEpoll(Dispatcher* pdispatcher) {
   int err = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &event);
   RTC_DCHECK_EQ(err, 0);
   if (err == -1) {
-    LOG_E(LS_ERROR, EN, errno) << "epoll_ctl EPOLL_CTL_MOD";
+    RTC_LOG_E(LS_ERROR, EN, errno) << "epoll_ctl EPOLL_CTL_MOD";
   }
 }
 
@@ -1646,7 +1647,7 @@ bool PhysicalSocketServer::WaitEpoll(int cmsWait) {
                        static_cast<int>(tvWait));
     if (n < 0) {
       if (errno != EINTR) {
-        LOG_E(LS_ERROR, EN, errno) << "epoll";
+        RTC_LOG_E(LS_ERROR, EN, errno) << "epoll";
         return false;
       }
       // Else ignore the error and keep going. If this EINTR was for one of the
@@ -1727,7 +1728,7 @@ bool PhysicalSocketServer::WaitPoll(int cmsWait, Dispatcher* dispatcher) {
     int n = poll(&fds, 1, static_cast<int>(tvWait));
     if (n < 0) {
       if (errno != EINTR) {
-        LOG_E(LS_ERROR, EN, errno) << "poll";
+        RTC_LOG_E(LS_ERROR, EN, errno) << "poll";
         return false;
       }
       // Else ignore the error and keep going. If this EINTR was for one of the
@@ -1801,7 +1802,7 @@ bool PhysicalSocketServer::InstallSignal(int signum, void (*handler)(int)) {
   struct sigaction act;
   // It doesn't really matter what we set this mask to.
   if (sigemptyset(&act.sa_mask) != 0) {
-    LOG_ERR(LS_ERROR) << "Couldn't set mask";
+    RTC_LOG_ERR(LS_ERROR) << "Couldn't set mask";
     return false;
   }
   act.sa_handler = handler;
@@ -1814,7 +1815,7 @@ bool PhysicalSocketServer::InstallSignal(int signum, void (*handler)(int)) {
   act.sa_flags = 0;
 #endif
   if (sigaction(signum, &act, nullptr) != 0) {
-    LOG_ERR(LS_ERROR) << "Couldn't set sigaction";
+    RTC_LOG_ERR(LS_ERROR) << "Couldn't set sigaction";
     return false;
   }
   return true;
@@ -1914,28 +1915,33 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
             {
               if ((wsaEvents.lNetworkEvents & FD_READ) &&
                   wsaEvents.iErrorCode[FD_READ_BIT] != 0) {
-                LOG(WARNING) << "PhysicalSocketServer got FD_READ_BIT error "
-                             << wsaEvents.iErrorCode[FD_READ_BIT];
+                RTC_LOG(WARNING)
+                    << "PhysicalSocketServer got FD_READ_BIT error "
+                    << wsaEvents.iErrorCode[FD_READ_BIT];
               }
               if ((wsaEvents.lNetworkEvents & FD_WRITE) &&
                   wsaEvents.iErrorCode[FD_WRITE_BIT] != 0) {
-                LOG(WARNING) << "PhysicalSocketServer got FD_WRITE_BIT error "
-                             << wsaEvents.iErrorCode[FD_WRITE_BIT];
+                RTC_LOG(WARNING)
+                    << "PhysicalSocketServer got FD_WRITE_BIT error "
+                    << wsaEvents.iErrorCode[FD_WRITE_BIT];
               }
               if ((wsaEvents.lNetworkEvents & FD_CONNECT) &&
                   wsaEvents.iErrorCode[FD_CONNECT_BIT] != 0) {
-                LOG(WARNING) << "PhysicalSocketServer got FD_CONNECT_BIT error "
-                             << wsaEvents.iErrorCode[FD_CONNECT_BIT];
+                RTC_LOG(WARNING)
+                    << "PhysicalSocketServer got FD_CONNECT_BIT error "
+                    << wsaEvents.iErrorCode[FD_CONNECT_BIT];
               }
               if ((wsaEvents.lNetworkEvents & FD_ACCEPT) &&
                   wsaEvents.iErrorCode[FD_ACCEPT_BIT] != 0) {
-                LOG(WARNING) << "PhysicalSocketServer got FD_ACCEPT_BIT error "
-                             << wsaEvents.iErrorCode[FD_ACCEPT_BIT];
+                RTC_LOG(WARNING)
+                    << "PhysicalSocketServer got FD_ACCEPT_BIT error "
+                    << wsaEvents.iErrorCode[FD_ACCEPT_BIT];
               }
               if ((wsaEvents.lNetworkEvents & FD_CLOSE) &&
                   wsaEvents.iErrorCode[FD_CLOSE_BIT] != 0) {
-                LOG(WARNING) << "PhysicalSocketServer got FD_CLOSE_BIT error "
-                             << wsaEvents.iErrorCode[FD_CLOSE_BIT];
+                RTC_LOG(WARNING)
+                    << "PhysicalSocketServer got FD_CLOSE_BIT error "
+                    << wsaEvents.iErrorCode[FD_CLOSE_BIT];
               }
             }
             uint32_t ff = 0;

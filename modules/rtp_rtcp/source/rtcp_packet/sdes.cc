@@ -73,9 +73,10 @@ bool Sdes::Parse(const CommonHeader& packet) {
   size_t block_length = kHeaderLength;
 
   if (packet.payload_size_bytes() % 4 != 0) {
-    LOG(LS_WARNING) << "Invalid payload size " << packet.payload_size_bytes()
-                    << " bytes for a valid Sdes packet. Size should be"
-                       " multiple of 4 bytes";
+    RTC_LOG(LS_WARNING) << "Invalid payload size "
+                        << packet.payload_size_bytes()
+                        << " bytes for a valid Sdes packet. Size should be"
+                           " multiple of 4 bytes";
   }
   const uint8_t* const payload_end =
       packet.payload() + packet.payload_size_bytes();
@@ -84,7 +85,7 @@ bool Sdes::Parse(const CommonHeader& packet) {
   for (size_t i = 0; i < number_of_chunks;) {
     // Each chunk consumes at least 8 bytes.
     if (payload_end - looking_at < 8) {
-      LOG(LS_WARNING) << "Not enough space left for chunk #" << (i + 1);
+      RTC_LOG(LS_WARNING) << "Not enough space left for chunk #" << (i + 1);
       return false;
     }
     chunks[i].ssrc = ByteReader<uint32_t>::ReadBigEndian(looking_at);
@@ -94,22 +95,23 @@ bool Sdes::Parse(const CommonHeader& packet) {
     uint8_t item_type;
     while ((item_type = *(looking_at++)) != kTerminatorTag) {
       if (looking_at >= payload_end) {
-        LOG(LS_WARNING) << "Unexpected end of packet while reading chunk #"
-                        << (i + 1) << ". Expected to find size of the text.";
+        RTC_LOG(LS_WARNING)
+            << "Unexpected end of packet while reading chunk #" << (i + 1)
+            << ". Expected to find size of the text.";
         return false;
       }
       uint8_t item_length = *(looking_at++);
       const size_t kTerminatorSize = 1;
       if (looking_at + item_length + kTerminatorSize > payload_end) {
-        LOG(LS_WARNING) << "Unexpected end of packet while reading chunk #"
-                        << (i + 1) << ". Expected to find text of size "
-                        << item_length;
+        RTC_LOG(LS_WARNING)
+            << "Unexpected end of packet while reading chunk #" << (i + 1)
+            << ". Expected to find text of size " << item_length;
         return false;
       }
       if (item_type == kCnameTag) {
         if (cname_found) {
-          LOG(LS_WARNING) << "Found extra CNAME for same ssrc in chunk #"
-                          << (i + 1);
+          RTC_LOG(LS_WARNING)
+              << "Found extra CNAME for same ssrc in chunk #" << (i + 1);
           return false;
         }
         cname_found = true;
@@ -128,7 +130,7 @@ bool Sdes::Parse(const CommonHeader& packet) {
       // But same time it allows chunk without items.
       // So while parsing, ignore all chunks without cname,
       // but do not fail the parse.
-      LOG(LS_WARNING) << "CNAME not found for ssrc " << chunks[i].ssrc;
+      RTC_LOG(LS_WARNING) << "CNAME not found for ssrc " << chunks[i].ssrc;
       --number_of_chunks;
       chunks.resize(number_of_chunks);
     }
@@ -144,7 +146,7 @@ bool Sdes::Parse(const CommonHeader& packet) {
 bool Sdes::AddCName(uint32_t ssrc, std::string cname) {
   RTC_DCHECK_LE(cname.length(), 0xffu);
   if (chunks_.size() >= kMaxNumberOfChunks) {
-    LOG(LS_WARNING) << "Max SDES chunks reached.";
+    RTC_LOG(LS_WARNING) << "Max SDES chunks reached.";
     return false;
   }
   Chunk chunk;

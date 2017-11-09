@@ -63,10 +63,11 @@ int64_t RemoteNtpTimeEstimator::Estimate(uint32_t rtp_timestamp) {
   int64_t receiver_capture_ntp_ms = receiver_capture_ms + ntp_offset;
   int64_t now_ms = clock_->TimeInMilliseconds();
   if (now_ms - last_timing_log_ms_ > kTimingLogIntervalMs) {
-    LOG(LS_INFO) << "RTP timestamp: " << rtp_timestamp
-                 << " in NTP clock: " << sender_capture_ntp_ms
-                 << " estimated time in receiver clock: " << receiver_capture_ms
-                 << " converted to NTP clock: " << receiver_capture_ntp_ms;
+    RTC_LOG(LS_INFO) << "RTP timestamp: " << rtp_timestamp
+                     << " in NTP clock: " << sender_capture_ntp_ms
+                     << " estimated time in receiver clock: "
+                     << receiver_capture_ms
+                     << " converted to NTP clock: " << receiver_capture_ntp_ms;
     last_timing_log_ms_ = now_ms;
   }
   return receiver_capture_ntp_ms;

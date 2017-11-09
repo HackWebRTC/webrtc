@@ -44,8 +44,8 @@ TEST(LogTest, SingleStream) {
   LogMessage::AddLogToStream(&stream, LS_INFO);
   EXPECT_EQ(LS_INFO, LogMessage::GetLogToStream(&stream));
 
-  LOG(LS_INFO) << "INFO";
-  LOG(LS_VERBOSE) << "VERBOSE";
+  RTC_LOG(LS_INFO) << "INFO";
+  RTC_LOG(LS_VERBOSE) << "VERBOSE";
   EXPECT_NE(std::string::npos, str.find("INFO"));
   EXPECT_EQ(std::string::npos, str.find("VERBOSE"));
 
@@ -68,8 +68,8 @@ TEST(LogTest, MultipleStreams) {
   EXPECT_EQ(LS_INFO, LogMessage::GetLogToStream(&stream1));
   EXPECT_EQ(LS_VERBOSE, LogMessage::GetLogToStream(&stream2));
 
-  LOG(LS_INFO) << "INFO";
-  LOG(LS_VERBOSE) << "VERBOSE";
+  RTC_LOG(LS_INFO) << "INFO";
+  RTC_LOG(LS_VERBOSE) << "VERBOSE";
 
   EXPECT_NE(std::string::npos, str1.find("INFO"));
   EXPECT_EQ(std::string::npos, str1.find("VERBOSE"));
@@ -97,7 +97,7 @@ class LogThread : public Thread {
  private:
   void Run() override {
     // LS_SENSITIVE to avoid cluttering up any real logging going on
-    LOG(LS_SENSITIVE) << "LOG";
+    RTC_LOG(LS_SENSITIVE) << "RTC_LOG";
   }
 };
 
@@ -149,7 +149,7 @@ TEST(LogTest, MAYBE_Perf) {
   int64_t start = TimeMillis(), finish;
   std::string message('X', 80);
   for (int i = 0; i < 1000; ++i) {
-    LOG(LS_SENSITIVE) << message;
+    RTC_LOG(LS_SENSITIVE) << message;
   }
   finish = TimeMillis();
 
@@ -157,7 +157,7 @@ TEST(LogTest, MAYBE_Perf) {
   stream.Close();
   webrtc::test::RemoveFile(path);
 
-  LOG(LS_INFO) << "Average log time: " << TimeDiff(finish, start) << " ms";
+  RTC_LOG(LS_INFO) << "Average log time: " << TimeDiff(finish, start) << " ms";
 }
 
 }  // namespace rtc

@@ -54,12 +54,12 @@ bool Fir::Parse(const CommonHeader& packet) {
 
   // The FCI field MUST contain one or more FIR entries.
   if (packet.payload_size_bytes() < kCommonFeedbackLength + kFciLength) {
-    LOG(LS_WARNING) << "Packet is too small to be a valid FIR packet.";
+    RTC_LOG(LS_WARNING) << "Packet is too small to be a valid FIR packet.";
     return false;
   }
 
   if ((packet.payload_size_bytes() - kCommonFeedbackLength) % kFciLength != 0) {
-    LOG(LS_WARNING) << "Invalid size for a valid FIR packet.";
+    RTC_LOG(LS_WARNING) << "Invalid size for a valid FIR packet.";
     return false;
   }
 

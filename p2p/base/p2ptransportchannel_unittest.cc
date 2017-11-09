@@ -557,10 +557,10 @@ class P2PTransportChannelTestBase : public testing::Test,
         expected.connect_wait + kShortTimeout, clock);
     connect_time = rtc::TimeMillis() - connect_start;
     if (connect_time < expected.connect_wait) {
-      LOG(LS_INFO) << "Connect time: " << connect_time << " ms";
+      RTC_LOG(LS_INFO) << "Connect time: " << connect_time << " ms";
     } else {
-      LOG(LS_INFO) << "Connect time: " << "TIMEOUT ("
-                   << expected.connect_wait << " ms)";
+      RTC_LOG(LS_INFO) << "Connect time: "
+                       << "TIMEOUT (" << expected.connect_wait << " ms)";
     }
 
     // Allow a few turns of the crank for the selected connections to emerge.
@@ -582,10 +582,10 @@ class P2PTransportChannelTestBase : public testing::Test,
       converge_time = rtc::TimeMillis() - converge_start;
       int64_t converge_wait = 2000;
       if (converge_time < converge_wait) {
-        LOG(LS_INFO) << "Converge time: " << converge_time << " ms";
+        RTC_LOG(LS_INFO) << "Converge time: " << converge_time << " ms";
       } else {
-        LOG(LS_INFO) << "Converge time: " << "TIMEOUT ("
-                     << converge_wait << " ms)";
+        RTC_LOG(LS_INFO) << "Converge time: "
+                         << "TIMEOUT (" << converge_wait << " ms)";
       }
     }
     // Try sending some data to other end.
@@ -766,8 +766,8 @@ class P2PTransportChannelTestBase : public testing::Test,
             c.set_username("");
             c.set_password("");
           }
-          LOG(LS_INFO) << "Candidate(" << data->channel->component() << "->"
-                       << rch->component() << "): " << c.ToString();
+          RTC_LOG(LS_INFO) << "Candidate(" << data->channel->component() << "->"
+                           << rch->component() << "): " << c.ToString();
           rch->AddRemoteCandidate(c);
         }
         break;
@@ -780,7 +780,7 @@ class P2PTransportChannelTestBase : public testing::Test,
           return;
         }
         for (Candidate& c : data->candidates) {
-          LOG(LS_INFO) << "Removed remote candidate " << c.ToString();
+          RTC_LOG(LS_INFO) << "Removed remote candidate " << c.ToString();
           rch->RemoveRemoteCandidate(c);
         }
         break;
@@ -1113,7 +1113,7 @@ const P2PTransportChannelTest::Result*
     if (kMatrix[x][y] != NULL)                                   \
       Test(*kMatrix[x][y]);                                      \
     else                                                         \
-      LOG(LS_WARNING) << "Not yet implemented";                  \
+      RTC_LOG(LS_WARNING) << "Not yet implemented";              \
   }
 
 #define P2P_TEST(x, y) \
@@ -2294,7 +2294,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
               RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
 
   // Blackhole any traffic to or from the public addrs.
-  LOG(LS_INFO) << "Failing over...";
+  RTC_LOG(LS_INFO) << "Failing over...";
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[1]);
   // The selected connections may switch, so keep references to them.
   const Connection* selected_connection1 = ep1_ch1()->selected_connection();
@@ -2345,7 +2345,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
               RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
 
   // Blackhole any traffic to or from the public addrs.
-  LOG(LS_INFO) << "Failing over...";
+  RTC_LOG(LS_INFO) << "Failing over...";
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[0]);
   // The selected connections will switch, so keep references to them.
   const Connection* selected_connection1 = ep1_ch1()->selected_connection();
@@ -2422,7 +2422,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverWithManyConnections) {
       kMediumTimeout, clock);
 
   // Blackhole any traffic to or from the wifi on endpoint 1.
-  LOG(LS_INFO) << "Failing over...";
+  RTC_LOG(LS_INFO) << "Failing over...";
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, wifi[0]);
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, wifiIpv6[0]);
 
@@ -2502,7 +2502,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestIceRenomination) {
   EXPECT_FALSE(nominated());
 
   // Blackhole any traffic to or from the public addrs.
-  LOG(LS_INFO) << "Failing over...";
+  RTC_LOG(LS_INFO) << "Failing over...";
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[0]);
 
   // The selected connection on the controlling side should switch.
@@ -2555,7 +2555,7 @@ TEST_F(P2PTransportChannelMultihomedTest,
   reset_selected_candidate_pair_switches();
 
   // Blackhole any traffic to or from the public addrs.
-  LOG(LS_INFO) << "Failing over...";
+  RTC_LOG(LS_INFO) << "Failing over...";
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[1]);
 
   // The selected connections may switch, so keep references to them.
@@ -2613,7 +2613,7 @@ TEST_F(P2PTransportChannelMultihomedTest,
   reset_selected_candidate_pair_switches();
 
   // Blackhole any traffic to or from the public addrs.
-  LOG(LS_INFO) << "Failing over...";
+  RTC_LOG(LS_INFO) << "Failing over...";
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[0]);
   // The selected connections may switch, so keep references to them.
   const Connection* selected_connection1 = ep1_ch1()->selected_connection();
@@ -2681,7 +2681,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestRemoteFailover) {
       clock);
   reset_selected_candidate_pair_switches();
   // Blackhole any traffic to or from the remote WiFi networks.
-  LOG(LS_INFO) << "Failing over...";
+  RTC_LOG(LS_INFO) << "Failing over...";
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, wifi[1]);
 
   int num_switches = 0;
@@ -2790,7 +2790,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPingBackupConnectionRate) {
       kDefaultTimeout);
   int time_elapsed =
       backup_conn->last_ping_response_received() - last_ping_response_ms;
-  LOG(LS_INFO) << "Time elapsed: " << time_elapsed;
+  RTC_LOG(LS_INFO) << "Time elapsed: " << time_elapsed;
   EXPECT_GE(time_elapsed, backup_ping_interval);
 
   DestroyChannels();
@@ -2929,7 +2929,7 @@ TEST_F(P2PTransportChannelMultihomedTest,
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
 
   // Add the new address first and then remove the other one.
-  LOG(LS_INFO) << "Draining...";
+  RTC_LOG(LS_INFO) << "Draining...";
   AddAddress(1, kAlternateAddrs[1]);
   RemoveAddress(1, kPublicAddrs[1]);
   // We should switch to use the alternate address after an exchange of pings.
@@ -2940,7 +2940,7 @@ TEST_F(P2PTransportChannelMultihomedTest,
       kMediumTimeout, clock);
 
   // Remove one address first and then add another address.
-  LOG(LS_INFO) << "Draining again...";
+  RTC_LOG(LS_INFO) << "Draining again...";
   RemoveAddress(1, kAlternateAddrs[1]);
   AddAddress(1, kAlternateAddrs[0]);
   EXPECT_TRUE_SIMULATED_WAIT(

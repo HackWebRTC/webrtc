@@ -110,8 +110,8 @@ class XWindowProperty {
   unsigned int num_children;
   if (!XQueryTree(cache->display(), window, &root, &parent, &children,
                   &num_children)) {
-    LOG(LS_ERROR) << "Failed to query for child windows although window"
-                  << "does not have a valid WM_STATE.";
+    RTC_LOG(LS_ERROR) << "Failed to query for child windows although window"
+                      << "does not have a valid WM_STATE.";
     return 0;
   }
   ::Window app_window = 0;
@@ -196,8 +196,8 @@ bool GetWindowList(XAtomCache* cache,
                      &num_children) == 0 ||
           error_trap.GetLastErrorAndDisable() != 0) {
         failed_screens++;
-        LOG(LS_ERROR) << "Failed to query for child windows for screen "
-                      << screen;
+        RTC_LOG(LS_ERROR) << "Failed to query for child windows for screen "
+                          << screen;
         continue;
       }
     }

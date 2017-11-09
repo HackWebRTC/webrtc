@@ -77,20 +77,20 @@ void CroppingWindowCapturer::OnCaptureResult(
     DesktopCapturer::Result result,
     std::unique_ptr<DesktopFrame> screen_frame) {
   if (!ShouldUseScreenCapturer()) {
-    LOG(LS_INFO) << "Window no longer on top when ScreenCapturer finishes";
+    RTC_LOG(LS_INFO) << "Window no longer on top when ScreenCapturer finishes";
     window_capturer_->CaptureFrame();
     return;
   }
 
   if (result != Result::SUCCESS) {
-    LOG(LS_WARNING) << "ScreenCapturer failed to capture a frame";
+    RTC_LOG(LS_WARNING) << "ScreenCapturer failed to capture a frame";
     callback_->OnCaptureResult(result, nullptr);
     return;
   }
 
   DesktopRect window_rect = GetWindowRectInVirtualScreen();
   if (window_rect.is_empty()) {
-    LOG(LS_WARNING) << "Window rect is empty";
+    RTC_LOG(LS_WARNING) << "Window rect is empty";
     callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }

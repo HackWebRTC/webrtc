@@ -22,8 +22,9 @@ RtpStreamReceiverController::Receiver::Receiver(
     : controller_(controller), sink_(sink) {
   const bool sink_added = controller_->AddSink(ssrc, sink_);
   if (!sink_added) {
-    LOG(LS_ERROR) << "RtpStreamReceiverController::Receiver::Receiver: Sink "
-                  << "could not be added for SSRC=" << ssrc << ".";
+    RTC_LOG(LS_ERROR)
+        << "RtpStreamReceiverController::Receiver::Receiver: Sink "
+        << "could not be added for SSRC=" << ssrc << ".";
   }
 }
 

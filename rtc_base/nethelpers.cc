@@ -36,7 +36,7 @@ int ResolveHostname(const std::string& hostname, int family,
                     std::vector<IPAddress>* addresses) {
 #ifdef __native_client__
   RTC_NOTREACHED();
-  LOG(LS_WARNING) << "ResolveHostname() is not implemented for NaCl";
+  RTC_LOG(LS_WARNING) << "ResolveHostname() is not implemented for NaCl";
   return -1;
 #else  // __native_client__
   if (!addresses) {

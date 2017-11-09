@@ -26,9 +26,10 @@ FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice() {
   // Bail out here if the files haven't been set explicitly.
   // audio_device_impl.cc should then fall back to dummy audio.
   if (!_isConfigured) {
-    LOG(LS_WARNING) << "WebRTC configured with WEBRTC_DUMMY_FILE_DEVICES but "
-                    << "no device files supplied. Will fall back to dummy "
-                    << "audio.";
+    RTC_LOG(LS_WARNING)
+        << "WebRTC configured with WEBRTC_DUMMY_FILE_DEVICES but "
+        << "no device files supplied. Will fall back to dummy "
+        << "audio.";
 
     return nullptr;
   }

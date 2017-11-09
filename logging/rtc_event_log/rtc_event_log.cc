@@ -73,7 +73,8 @@ std::unique_ptr<RtcEventLogEncoder> CreateEncoder(
     case RtcEventLog::EncodingType::Legacy:
       return rtc::MakeUnique<RtcEventLogEncoderLegacy>();
     default:
-      LOG(LS_ERROR) << "Unknown RtcEventLog encoder type (" << int(type) << ")";
+      RTC_LOG(LS_ERROR) << "Unknown RtcEventLog encoder type (" << int(type)
+                        << ")";
       RTC_NOTREACHED();
       return std::unique_ptr<RtcEventLogEncoder>(nullptr);
   }
@@ -160,7 +161,7 @@ bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output) {
     return false;
   }
 
-  LOG(LS_INFO) << "Starting WebRTC event log.";
+  RTC_LOG(LS_INFO) << "Starting WebRTC event log.";
 
   // |start_event| captured by value. This is done here because we want the
   // timestamp to reflect when StartLogging() was called; not the queueing
@@ -186,7 +187,7 @@ bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output) {
 void RtcEventLogImpl::StopLogging() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&owner_sequence_checker_);
 
-  LOG(LS_INFO) << "Stopping WebRTC event log.";
+  RTC_LOG(LS_INFO) << "Stopping WebRTC event log.";
 
   rtc::Event output_stopped(true, false);
 
@@ -198,7 +199,7 @@ void RtcEventLogImpl::StopLogging() {
 
   output_stopped.Wait(rtc::Event::kForever);
 
-  LOG(LS_INFO) << "WebRTC event log successfully stopped.";
+  RTC_LOG(LS_INFO) << "WebRTC event log successfully stopped.";
 }
 
 void RtcEventLogImpl::Log(std::unique_ptr<RtcEvent> event) {
@@ -330,7 +331,7 @@ void RtcEventLogImpl::StopLoggingInternal() {
 void RtcEventLogImpl::WriteToOutput(const std::string& output_string) {
   RTC_DCHECK(event_output_ && event_output_->IsActive());
   if (!event_output_->Write(output_string)) {
-    LOG(LS_ERROR) << "Failed to write RTC event to output.";
+    RTC_LOG(LS_ERROR) << "Failed to write RTC event to output.";
     // The first failure closes the output.
     RTC_DCHECK(!event_output_->IsActive());
     StopOutput();  // Clean-up.
@@ -350,8 +351,8 @@ std::unique_ptr<RtcEventLog> RtcEventLog::Create(EncodingType encoding_type) {
   constexpr int kMaxLogCount = 5;
   int count = 1 + std::atomic_fetch_add(&rtc_event_log_count, 1);
   if (count > kMaxLogCount) {
-    LOG(LS_WARNING) << "Denied creation of additional WebRTC event logs. "
-                    << count - 1 << " logs open already.";
+    RTC_LOG(LS_WARNING) << "Denied creation of additional WebRTC event logs. "
+                        << count - 1 << " logs open already.";
     std::atomic_fetch_sub(&rtc_event_log_count, 1);
     return CreateNull();
   }

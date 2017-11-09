@@ -49,7 +49,7 @@ bool ExtendedJitterReport::Parse(const CommonHeader& packet) {
   const uint8_t number_of_jitters = packet.count();
 
   if (packet.payload_size_bytes() < number_of_jitters * kJitterSizeBytes) {
-    LOG(LS_WARNING) << "Packet is too small to contain all the jitter.";
+    RTC_LOG(LS_WARNING) << "Packet is too small to contain all the jitter.";
     return false;
   }
 
@@ -64,7 +64,7 @@ bool ExtendedJitterReport::Parse(const CommonHeader& packet) {
 
 bool ExtendedJitterReport::SetJitterValues(std::vector<uint32_t> values) {
   if (values.size() > kMaxNumberOfJitterValues) {
-    LOG(LS_WARNING) << "Too many inter-arrival jitter items.";
+    RTC_LOG(LS_WARNING) << "Too many inter-arrival jitter items.";
     return false;
   }
   inter_arrival_jitters_ = std::move(values);

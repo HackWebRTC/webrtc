@@ -66,7 +66,7 @@ int StereoEncoderAdapter::InitEncode(const VideoCodec* inst,
         factory_->CreateVideoEncoder(format);
     const int rv = encoder->InitEncode(inst, number_of_cores, max_payload_size);
     if (rv) {
-      LOG(LS_ERROR) << "Failed to create stere codec index " << i;
+      RTC_LOG(LS_ERROR) << "Failed to create stere codec index " << i;
       return rv;
     }
     adapter_callbacks_.emplace_back(new AdapterEncodedImageCallback(

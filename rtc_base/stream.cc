@@ -931,17 +931,17 @@ StreamResult LoggingAdapter::Write(const void* data, size_t data_len,
 void LoggingAdapter::Close() {
   LogMultiline(level_, label_.c_str(), false, nullptr, 0, hex_mode_, &lms_);
   LogMultiline(level_, label_.c_str(), true, nullptr, 0, hex_mode_, &lms_);
-  LOG_V(level_) << label_ << " Closed locally";
+  RTC_LOG_V(level_) << label_ << " Closed locally";
   StreamAdapterInterface::Close();
 }
 
 void LoggingAdapter::OnEvent(StreamInterface* stream, int events, int err) {
   if (events & SE_OPEN) {
-    LOG_V(level_) << label_ << " Open";
+    RTC_LOG_V(level_) << label_ << " Open";
   } else if (events & SE_CLOSE) {
     LogMultiline(level_, label_.c_str(), false, nullptr, 0, hex_mode_, &lms_);
     LogMultiline(level_, label_.c_str(), true, nullptr, 0, hex_mode_, &lms_);
-    LOG_V(level_) << label_ << " Closed with error: " << err;
+    RTC_LOG_V(level_) << label_ << " Closed with error: " << err;
   }
   StreamAdapterInterface::OnEvent(stream, events, err);
 }

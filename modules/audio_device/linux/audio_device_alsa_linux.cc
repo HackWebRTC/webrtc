@@ -94,7 +94,7 @@ AudioDeviceLinuxALSA::AudioDeviceLinuxALSA()
       _recordingDelay(0),
       _playoutDelay(0) {
   memset(_oldKeyState, 0, sizeof(_oldKeyState));
-  LOG(LS_INFO) << __FUNCTION__ << " created";
+  RTC_LOG(LS_INFO) << __FUNCTION__ << " created";
 }
 
 // ----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ AudioDeviceLinuxALSA::AudioDeviceLinuxALSA()
 // ----------------------------------------------------------------------------
 
 AudioDeviceLinuxALSA::~AudioDeviceLinuxALSA() {
-  LOG(LS_INFO) << __FUNCTION__ << " destroyed";
+  RTC_LOG(LS_INFO) << __FUNCTION__ << " destroyed";
 
   Terminate();
 
@@ -143,7 +143,7 @@ AudioDeviceGeneric::InitStatus AudioDeviceLinuxALSA::Init() {
   // Load libasound
   if (!AlsaSymbolTable.Load()) {
     // Alsa is not installed on this system
-    LOG(LS_ERROR) << "failed to load symbol table";
+    RTC_LOG(LS_ERROR) << "failed to load symbol table";
     return InitStatus::OTHER_ERROR;
   }
 
@@ -154,7 +154,7 @@ AudioDeviceGeneric::InitStatus AudioDeviceLinuxALSA::Init() {
   // Get X display handle for typing detection
   _XDisplay = XOpenDisplay(NULL);
   if (!_XDisplay) {
-    LOG(LS_WARNING)
+    RTC_LOG(LS_WARNING)
         << "failed to open X display, typing detection will not work";
   }
 #endif
@@ -563,7 +563,7 @@ int32_t AudioDeviceLinuxALSA::MicrophoneVolume(uint32_t& volume) const {
   uint32_t level(0);
 
   if (_mixerManager.MicrophoneVolume(level) == -1) {
-    LOG(LS_WARNING) << "failed to retrive current microphone level";
+    RTC_LOG(LS_WARNING) << "failed to retrive current microphone level";
     return -1;
   }
 
@@ -606,11 +606,12 @@ int32_t AudioDeviceLinuxALSA::SetPlayoutDevice(uint16_t index) {
   }
 
   uint32_t nDevices = GetDevicesInfo(0, true);
-  LOG(LS_VERBOSE) << "number of available audio output devices is " << nDevices;
+  RTC_LOG(LS_VERBOSE) << "number of available audio output devices is "
+                      << nDevices;
 
   if (index > (nDevices - 1)) {
-    LOG(LS_ERROR) << "device index is out of range [0," << (nDevices - 1)
-                  << "]";
+    RTC_LOG(LS_ERROR) << "device index is out of range [0," << (nDevices - 1)
+                      << "]";
     return -1;
   }
 
@@ -622,7 +623,7 @@ int32_t AudioDeviceLinuxALSA::SetPlayoutDevice(uint16_t index) {
 
 int32_t AudioDeviceLinuxALSA::SetPlayoutDevice(
     AudioDeviceModule::WindowsDeviceType /*device*/) {
-  LOG(LS_ERROR) << "WindowsDeviceType not supported";
+  RTC_LOG(LS_ERROR) << "WindowsDeviceType not supported";
   return -1;
 }
 
@@ -674,11 +675,12 @@ int32_t AudioDeviceLinuxALSA::SetRecordingDevice(uint16_t index) {
   }
 
   uint32_t nDevices = GetDevicesInfo(0, false);
-  LOG(LS_VERBOSE) << "number of availiable audio input devices is " << nDevices;
+  RTC_LOG(LS_VERBOSE) << "number of availiable audio input devices is "
+                      << nDevices;
 
   if (index > (nDevices - 1)) {
-    LOG(LS_ERROR) << "device index is out of range [0," << (nDevices - 1)
-                  << "]";
+    RTC_LOG(LS_ERROR) << "device index is out of range [0," << (nDevices - 1)
+                      << "]";
     return -1;
   }
 
@@ -694,7 +696,7 @@ int32_t AudioDeviceLinuxALSA::SetRecordingDevice(uint16_t index) {
 
 int32_t AudioDeviceLinuxALSA::SetRecordingDevice(
     AudioDeviceModule::WindowsDeviceType /*device*/) {
-  LOG(LS_ERROR) << "WindowsDeviceType not supported";
+  RTC_LOG(LS_ERROR) << "WindowsDeviceType not supported";
   return -1;
 }
 
@@ -765,7 +767,7 @@ int32_t AudioDeviceLinuxALSA::InitPlayout() {
   }
   // Initialize the speaker (devices might have been added or removed)
   if (InitSpeaker() == -1) {
-    LOG(LS_WARNING) << "InitSpeaker() failed";
+    RTC_LOG(LS_WARNING) << "InitSpeaker() failed";
   }
 
   // Start by closing any existing wave-output devices
@@ -775,8 +777,8 @@ int32_t AudioDeviceLinuxALSA::InitPlayout() {
     _handlePlayout = NULL;
     _playIsInitialized = false;
     if (errVal < 0) {
-      LOG(LS_ERROR) << "Error closing current playout sound device, error: "
-                    << LATE(snd_strerror)(errVal);
+      RTC_LOG(LS_ERROR) << "Error closing current playout sound device, error: "
+                        << LATE(snd_strerror)(errVal);
     }
   }
 
@@ -785,7 +787,7 @@ int32_t AudioDeviceLinuxALSA::InitPlayout() {
   GetDevicesInfo(2, true, _outputDeviceIndex, deviceName,
                  kAdmMaxDeviceNameSize);
 
-  LOG(LS_VERBOSE) << "InitPlayout open (" << deviceName << ")";
+  RTC_LOG(LS_VERBOSE) << "InitPlayout open (" << deviceName << ")";
 
   errVal = LATE(snd_pcm_open)(&_handlePlayout, deviceName,
                               SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
@@ -802,8 +804,8 @@ int32_t AudioDeviceLinuxALSA::InitPlayout() {
     }
   }
   if (errVal < 0) {
-    LOG(LS_ERROR) << "unable to open playback device: "
-                  << LATE(snd_strerror)(errVal) << " (" << errVal << ")";
+    RTC_LOG(LS_ERROR) << "unable to open playback device: "
+                      << LATE(snd_strerror)(errVal) << " (" << errVal << ")";
     _handlePlayout = NULL;
     return -1;
   }
@@ -824,8 +826,8 @@ int32_t AudioDeviceLinuxALSA::InitPlayout() {
                                  // in us
            )) < 0) {             /* 0.5sec */
     _playoutFramesIn10MS = 0;
-    LOG(LS_ERROR) << "unable to set playback device: "
-                  << LATE(snd_strerror)(errVal) << " (" << errVal << ")";
+    RTC_LOG(LS_ERROR) << "unable to set playback device: "
+                      << LATE(snd_strerror)(errVal) << " (" << errVal << ")";
     ErrorRecovery(errVal, _handlePlayout);
     errVal = LATE(snd_pcm_close)(_handlePlayout);
     _handlePlayout = NULL;
@@ -835,14 +837,14 @@ int32_t AudioDeviceLinuxALSA::InitPlayout() {
   errVal = LATE(snd_pcm_get_params)(_handlePlayout, &_playoutBufferSizeInFrame,
                                     &_playoutPeriodSizeInFrame);
   if (errVal < 0) {
-    LOG(LS_ERROR) << "snd_pcm_get_params: " << LATE(snd_strerror)(errVal)
-                  << " (" << errVal << ")";
+    RTC_LOG(LS_ERROR) << "snd_pcm_get_params: " << LATE(snd_strerror)(errVal)
+                      << " (" << errVal << ")";
     _playoutBufferSizeInFrame = 0;
     _playoutPeriodSizeInFrame = 0;
   } else {
-    LOG(LS_VERBOSE) << "playout snd_pcm_get_params buffer_size:"
-                    << _playoutBufferSizeInFrame
-                    << " period_size :" << _playoutPeriodSizeInFrame;
+    RTC_LOG(LS_VERBOSE) << "playout snd_pcm_get_params buffer_size:"
+                        << _playoutBufferSizeInFrame
+                        << " period_size :" << _playoutPeriodSizeInFrame;
   }
 
   if (_ptrAudioBuffer) {
@@ -886,7 +888,7 @@ int32_t AudioDeviceLinuxALSA::InitRecording() {
 
   // Initialize the microphone (devices might have been added or removed)
   if (InitMicrophone() == -1) {
-    LOG(LS_WARNING) << "InitMicrophone() failed";
+    RTC_LOG(LS_WARNING) << "InitMicrophone() failed";
   }
 
   // Start by closing any existing pcm-input devices
@@ -896,8 +898,9 @@ int32_t AudioDeviceLinuxALSA::InitRecording() {
     _handleRecord = NULL;
     _recIsInitialized = false;
     if (errVal < 0) {
-      LOG(LS_ERROR) << "Error closing current recording sound device, error: "
-                    << LATE(snd_strerror)(errVal);
+      RTC_LOG(LS_ERROR)
+          << "Error closing current recording sound device, error: "
+          << LATE(snd_strerror)(errVal);
     }
   }
 
@@ -907,7 +910,7 @@ int32_t AudioDeviceLinuxALSA::InitRecording() {
   GetDevicesInfo(2, false, _inputDeviceIndex, deviceName,
                  kAdmMaxDeviceNameSize);
 
-  LOG(LS_VERBOSE) << "InitRecording open (" << deviceName << ")";
+  RTC_LOG(LS_VERBOSE) << "InitRecording open (" << deviceName << ")";
   errVal = LATE(snd_pcm_open)(&_handleRecord, deviceName,
                               SND_PCM_STREAM_CAPTURE, SND_PCM_NONBLOCK);
 
@@ -924,8 +927,8 @@ int32_t AudioDeviceLinuxALSA::InitRecording() {
     }
   }
   if (errVal < 0) {
-    LOG(LS_ERROR) << "unable to open record device: "
-                  << LATE(snd_strerror)(errVal);
+    RTC_LOG(LS_ERROR) << "unable to open record device: "
+                      << LATE(snd_strerror)(errVal);
     _handleRecord = NULL;
     return -1;
   }
@@ -964,8 +967,8 @@ int32_t AudioDeviceLinuxALSA::InitRecording() {
                                       ALSA_CAPTURE_LATENCY  // latency in us
                                       )) < 0) {
       _recordingFramesIn10MS = 0;
-      LOG(LS_ERROR) << "unable to set record settings: "
-                    << LATE(snd_strerror)(errVal) << " (" << errVal << ")";
+      RTC_LOG(LS_ERROR) << "unable to set record settings: "
+                        << LATE(snd_strerror)(errVal) << " (" << errVal << ")";
       ErrorRecovery(errVal, _handleRecord);
       errVal = LATE(snd_pcm_close)(_handleRecord);
       _handleRecord = NULL;
@@ -976,14 +979,14 @@ int32_t AudioDeviceLinuxALSA::InitRecording() {
   errVal = LATE(snd_pcm_get_params)(_handleRecord, &_recordingBuffersizeInFrame,
                                     &_recordingPeriodSizeInFrame);
   if (errVal < 0) {
-    LOG(LS_ERROR) << "snd_pcm_get_params " << LATE(snd_strerror)(errVal) << " ("
-                  << errVal << ")";
+    RTC_LOG(LS_ERROR) << "snd_pcm_get_params " << LATE(snd_strerror)(errVal)
+                      << " (" << errVal << ")";
     _recordingBuffersizeInFrame = 0;
     _recordingPeriodSizeInFrame = 0;
   } else {
-    LOG(LS_VERBOSE) << "capture snd_pcm_get_params, buffer_size:"
-                    << _recordingBuffersizeInFrame
-                    << ", period_size:" << _recordingPeriodSizeInFrame;
+    RTC_LOG(LS_VERBOSE) << "capture snd_pcm_get_params, buffer_size:"
+                        << _recordingBuffersizeInFrame
+                        << ", period_size:" << _recordingPeriodSizeInFrame;
   }
 
   if (_ptrAudioBuffer) {
@@ -1025,7 +1028,7 @@ int32_t AudioDeviceLinuxALSA::StartRecording() {
   if (!_recordingBuffer)
     _recordingBuffer = new int8_t[_recordingBufferSizeIn10MS];
   if (!_recordingBuffer) {
-    LOG(LS_ERROR) << "failed to alloc recording buffer";
+    RTC_LOG(LS_ERROR) << "failed to alloc recording buffer";
     _recording = false;
     return -1;
   }
@@ -1038,20 +1041,20 @@ int32_t AudioDeviceLinuxALSA::StartRecording() {
 
   errVal = LATE(snd_pcm_prepare)(_handleRecord);
   if (errVal < 0) {
-    LOG(LS_ERROR) << "capture snd_pcm_prepare failed ("
-                  << LATE(snd_strerror)(errVal) << ")\n";
+    RTC_LOG(LS_ERROR) << "capture snd_pcm_prepare failed ("
+                      << LATE(snd_strerror)(errVal) << ")\n";
     // just log error
     // if snd_pcm_open fails will return -1
   }
 
   errVal = LATE(snd_pcm_start)(_handleRecord);
   if (errVal < 0) {
-    LOG(LS_ERROR) << "capture snd_pcm_start err: "
-                  << LATE(snd_strerror)(errVal);
+    RTC_LOG(LS_ERROR) << "capture snd_pcm_start err: "
+                      << LATE(snd_strerror)(errVal);
     errVal = LATE(snd_pcm_start)(_handleRecord);
     if (errVal < 0) {
-      LOG(LS_ERROR) << "capture snd_pcm_start 2nd try err: "
-                    << LATE(snd_strerror)(errVal);
+      RTC_LOG(LS_ERROR) << "capture snd_pcm_start 2nd try err: "
+                        << LATE(snd_strerror)(errVal);
       StopRecording();
       return -1;
     }
@@ -1092,14 +1095,14 @@ int32_t AudioDeviceLinuxALSA::StopRecording() {
   // Stop and close pcm recording device.
   int errVal = LATE(snd_pcm_drop)(_handleRecord);
   if (errVal < 0) {
-    LOG(LS_ERROR) << "Error stop recording: " << LATE(snd_strerror)(errVal);
+    RTC_LOG(LS_ERROR) << "Error stop recording: " << LATE(snd_strerror)(errVal);
     return -1;
   }
 
   errVal = LATE(snd_pcm_close)(_handleRecord);
   if (errVal < 0) {
-    LOG(LS_ERROR) << "Error closing record sound device, error: "
-                  << LATE(snd_strerror)(errVal);
+    RTC_LOG(LS_ERROR) << "Error closing record sound device, error: "
+                      << LATE(snd_strerror)(errVal);
     return -1;
   }
 
@@ -1142,7 +1145,7 @@ int32_t AudioDeviceLinuxALSA::StartPlayout() {
   if (!_playoutBuffer)
     _playoutBuffer = new int8_t[_playoutBufferSizeIn10MS];
   if (!_playoutBuffer) {
-    LOG(LS_ERROR) << "failed to alloc playout buf";
+    RTC_LOG(LS_ERROR) << "failed to alloc playout buf";
     _playing = false;
     return -1;
   }
@@ -1155,8 +1158,8 @@ int32_t AudioDeviceLinuxALSA::StartPlayout() {
 
   int errVal = LATE(snd_pcm_prepare)(_handlePlayout);
   if (errVal < 0) {
-    LOG(LS_ERROR) << "playout snd_pcm_prepare failed ("
-                  << LATE(snd_strerror)(errVal) << ")\n";
+    RTC_LOG(LS_ERROR) << "playout snd_pcm_prepare failed ("
+                      << LATE(snd_strerror)(errVal) << ")\n";
     // just log error
     // if snd_pcm_open fails will return -1
   }
@@ -1194,18 +1197,18 @@ int32_t AudioDeviceLinuxALSA::StopPlayout() {
   // stop and close pcm playout device
   int errVal = LATE(snd_pcm_drop)(_handlePlayout);
   if (errVal < 0) {
-    LOG(LS_ERROR) << "Error stop playing: " << LATE(snd_strerror)(errVal);
+    RTC_LOG(LS_ERROR) << "Error stop playing: " << LATE(snd_strerror)(errVal);
   }
 
   errVal = LATE(snd_pcm_close)(_handlePlayout);
   if (errVal < 0)
-    LOG(LS_ERROR) << "Error closing playout sound device, error: "
-                  << LATE(snd_strerror)(errVal);
+    RTC_LOG(LS_ERROR) << "Error closing playout sound device, error: "
+                      << LATE(snd_strerror)(errVal);
 
   // set the pcm input handle to NULL
   _playIsInitialized = false;
   _handlePlayout = NULL;
-  LOG(LS_VERBOSE) << "handle_playout is now set to NULL";
+  RTC_LOG(LS_VERBOSE) << "handle_playout is now set to NULL";
 
   return 0;
 }
@@ -1252,8 +1255,8 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(const int32_t function,
     void** hints;
     err = LATE(snd_device_name_hint)(card, "pcm", &hints);
     if (err != 0) {
-      LOG(LS_ERROR) << "GetDevicesInfo - device name hint error: "
-                    << LATE(snd_strerror)(err);
+      RTC_LOG(LS_ERROR) << "GetDevicesInfo - device name hint error: "
+                        << LATE(snd_strerror)(err);
       return -1;
     }
 
@@ -1265,8 +1268,8 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(const int32_t function,
 
       err = LATE(snd_device_name_free_hint)(hints);
       if (err != 0) {
-        LOG(LS_ERROR) << "GetDevicesInfo - device name free hint error: "
-                      << LATE(snd_strerror)(err);
+        RTC_LOG(LS_ERROR) << "GetDevicesInfo - device name free hint error: "
+                          << LATE(snd_strerror)(err);
       }
 
       return 0;
@@ -1285,7 +1288,7 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(const int32_t function,
 
       char* name = LATE(snd_device_name_get_hint)(*list, "NAME");
       if (!name) {
-        LOG(LS_ERROR) << "Device has no name";
+        RTC_LOG(LS_ERROR) << "Device has no name";
         // Skip it.
         continue;
       }
@@ -1303,7 +1306,7 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(const int32_t function,
         }
 
         if (FUNC_GET_NUM_OF_DEVICE == function) {
-          LOG(LS_VERBOSE) << "Enum device " << enumCount << " - " << name;
+          RTC_LOG(LS_VERBOSE) << "Enum device " << enumCount << " - " << name;
         }
         if ((FUNC_GET_DEVICE_NAME == function) && (enumDeviceNo == enumCount)) {
           // We have found the enum device, copy the name to buffer.
@@ -1338,8 +1341,8 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(const int32_t function,
 
     err = LATE(snd_device_name_free_hint)(hints);
     if (err != 0) {
-      LOG(LS_ERROR) << "GetDevicesInfo - device name free hint error: "
-                    << LATE(snd_strerror)(err);
+      RTC_LOG(LS_ERROR) << "GetDevicesInfo - device name free hint error: "
+                        << LATE(snd_strerror)(err);
       // Continue and return true anyway, since we did get the whole list.
     }
   }
@@ -1353,7 +1356,8 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(const int32_t function,
   if (keepSearching) {
     // If we get here for function 1 and 2, we didn't find the specified
     // enum device.
-    LOG(LS_ERROR) << "GetDevicesInfo - Could not find device name or numbers";
+    RTC_LOG(LS_ERROR)
+        << "GetDevicesInfo - Could not find device name or numbers";
     return -1;
   }
 
@@ -1362,7 +1366,7 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(const int32_t function,
 
 int32_t AudioDeviceLinuxALSA::InputSanityCheckAfterUnlockedPeriod() const {
   if (_handleRecord == NULL) {
-    LOG(LS_ERROR) << "input state has been modified during unlocked period";
+    RTC_LOG(LS_ERROR) << "input state has been modified during unlocked period";
     return -1;
   }
   return 0;
@@ -1370,7 +1374,8 @@ int32_t AudioDeviceLinuxALSA::InputSanityCheckAfterUnlockedPeriod() const {
 
 int32_t AudioDeviceLinuxALSA::OutputSanityCheckAfterUnlockedPeriod() const {
   if (_handlePlayout == NULL) {
-    LOG(LS_ERROR) << "output state has been modified during unlocked period";
+    RTC_LOG(LS_ERROR)
+        << "output state has been modified during unlocked period";
     return -1;
   }
   return 0;
@@ -1379,13 +1384,13 @@ int32_t AudioDeviceLinuxALSA::OutputSanityCheckAfterUnlockedPeriod() const {
 int32_t AudioDeviceLinuxALSA::ErrorRecovery(int32_t error,
                                             snd_pcm_t* deviceHandle) {
   int st = LATE(snd_pcm_state)(deviceHandle);
-  LOG(LS_VERBOSE) << "Trying to recover from "
-                  << ((LATE(snd_pcm_stream)(deviceHandle) ==
-                       SND_PCM_STREAM_CAPTURE)
-                          ? "capture"
-                          : "playout")
-                  << " error: " << LATE(snd_strerror)(error) << " (" << error
-                  << ") (state " << st << ")";
+  RTC_LOG(LS_VERBOSE) << "Trying to recover from "
+                      << ((LATE(snd_pcm_stream)(deviceHandle) ==
+                           SND_PCM_STREAM_CAPTURE)
+                              ? "capture"
+                              : "playout")
+                      << " error: " << LATE(snd_strerror)(error) << " ("
+                      << error << ") (state " << st << ")";
 
   // It is recommended to use snd_pcm_recover for all errors. If that function
   // cannot handle the error, the input error code will be returned, otherwise
@@ -1419,7 +1424,7 @@ int32_t AudioDeviceLinuxALSA::ErrorRecovery(int32_t error,
 
   int res = LATE(snd_pcm_recover)(deviceHandle, error, 1);
   if (0 == res) {
-    LOG(LS_VERBOSE) << "Recovery - snd_pcm_recover OK";
+    RTC_LOG(LS_VERBOSE) << "Recovery - snd_pcm_recover OK";
 
     if ((error == -EPIPE || error == -ESTRPIPE) &&  // Buf underrun/overrun.
         _recording &&
@@ -1428,7 +1433,7 @@ int32_t AudioDeviceLinuxALSA::ErrorRecovery(int32_t error,
       // to get data flowing again.
       int err = LATE(snd_pcm_start)(deviceHandle);
       if (err != 0) {
-        LOG(LS_ERROR) << "Recovery - snd_pcm_start error: " << err;
+        RTC_LOG(LS_ERROR) << "Recovery - snd_pcm_start error: " << err;
         return -1;
       }
     }
@@ -1440,15 +1445,15 @@ int32_t AudioDeviceLinuxALSA::ErrorRecovery(int32_t error,
       // data flowing again.
       int err = LATE(snd_pcm_start)(deviceHandle);
       if (err != 0) {
-        LOG(LS_ERROR) << "Recovery - snd_pcm_start error: "
-                      << LATE(snd_strerror)(err);
+        RTC_LOG(LS_ERROR) << "Recovery - snd_pcm_start error: "
+                          << LATE(snd_strerror)(err);
         return -1;
       }
     }
 
     return -EPIPE == error ? 1 : 0;
   } else {
-    LOG(LS_ERROR) << "Unrecoverable alsa stream error: " << res;
+    RTC_LOG(LS_ERROR) << "Unrecoverable alsa stream error: " << res;
   }
 
   return res;
@@ -1478,8 +1483,8 @@ bool AudioDeviceLinuxALSA::PlayThreadProcess() {
   // return a positive number of frames ready otherwise a negative error code
   avail_frames = LATE(snd_pcm_avail_update)(_handlePlayout);
   if (avail_frames < 0) {
-    LOG(LS_ERROR) << "playout snd_pcm_avail_update error: "
-                  << LATE(snd_strerror)(avail_frames);
+    RTC_LOG(LS_ERROR) << "playout snd_pcm_avail_update error: "
+                      << LATE(snd_strerror)(avail_frames);
     ErrorRecovery(avail_frames, _handlePlayout);
     UnLock();
     return true;
@@ -1489,7 +1494,7 @@ bool AudioDeviceLinuxALSA::PlayThreadProcess() {
     // maximum tixe in milliseconds to wait, a negative value means infinity
     err = LATE(snd_pcm_wait)(_handlePlayout, 2);
     if (err == 0) {  // timeout occured
-      LOG(LS_VERBOSE) << "playout snd_pcm_wait timeout";
+      RTC_LOG(LS_VERBOSE) << "playout snd_pcm_wait timeout";
     }
 
     return true;
@@ -1513,8 +1518,8 @@ bool AudioDeviceLinuxALSA::PlayThreadProcess() {
       avail_frames);
 
   if (frames < 0) {
-    LOG(LS_VERBOSE) << "playout snd_pcm_writei error: "
-                    << LATE(snd_strerror)(frames);
+    RTC_LOG(LS_VERBOSE) << "playout snd_pcm_writei error: "
+                        << LATE(snd_strerror)(frames);
     _playoutFramesLeft = 0;
     ErrorRecovery(frames, _handlePlayout);
     UnLock();
@@ -1542,8 +1547,8 @@ bool AudioDeviceLinuxALSA::RecThreadProcess() {
   // return a positive number of frames ready otherwise a negative error code
   avail_frames = LATE(snd_pcm_avail_update)(_handleRecord);
   if (avail_frames < 0) {
-    LOG(LS_ERROR) << "capture snd_pcm_avail_update error: "
-                  << LATE(snd_strerror)(avail_frames);
+    RTC_LOG(LS_ERROR) << "capture snd_pcm_avail_update error: "
+                      << LATE(snd_strerror)(avail_frames);
     ErrorRecovery(avail_frames, _handleRecord);
     UnLock();
     return true;
@@ -1553,7 +1558,7 @@ bool AudioDeviceLinuxALSA::RecThreadProcess() {
     // maximum time in milliseconds to wait, a negative value means infinity
     err = LATE(snd_pcm_wait)(_handleRecord, ALSA_CAPTURE_WAIT_TIMEOUT);
     if (err == 0)  // timeout occured
-      LOG(LS_VERBOSE) << "capture snd_pcm_wait timeout";
+      RTC_LOG(LS_VERBOSE) << "capture snd_pcm_wait timeout";
 
     return true;
   }
@@ -1564,8 +1569,8 @@ bool AudioDeviceLinuxALSA::RecThreadProcess() {
   frames = LATE(snd_pcm_readi)(_handleRecord, buffer,
                                avail_frames);  // frames to be written
   if (frames < 0) {
-    LOG(LS_ERROR) << "capture snd_pcm_readi error: "
-                  << LATE(snd_strerror)(frames);
+    RTC_LOG(LS_ERROR) << "capture snd_pcm_readi error: "
+                      << LATE(snd_strerror)(frames);
     ErrorRecovery(frames, _handleRecord);
     UnLock();
     return true;
@@ -1610,7 +1615,8 @@ bool AudioDeviceLinuxALSA::RecThreadProcess() {
         if (err < 0) {
           // TODO(xians): Shall we call ErrorRecovery() here?
           _playoutDelay = 0;
-          LOG(LS_ERROR) << "playout snd_pcm_delay: " << LATE(snd_strerror)(err);
+          RTC_LOG(LS_ERROR)
+              << "playout snd_pcm_delay: " << LATE(snd_strerror)(err);
         }
       }
 
@@ -1619,7 +1625,8 @@ bool AudioDeviceLinuxALSA::RecThreadProcess() {
       if (err < 0) {
         // TODO(xians): Shall we call ErrorRecovery() here?
         _recordingDelay = 0;
-        LOG(LS_ERROR) << "capture snd_pcm_delay: " << LATE(snd_strerror)(err);
+        RTC_LOG(LS_ERROR) << "capture snd_pcm_delay: "
+                          << LATE(snd_strerror)(err);
       }
 
       // TODO(xians): Shall we add 10ms buffer delay to the record delay?
@@ -1641,7 +1648,7 @@ bool AudioDeviceLinuxALSA::RecThreadProcess() {
           // change is needed. Set this new mic level (received from the
           // observer as return value in the callback).
           if (SetMicrophoneVolume(newMicLevel) == -1)
-            LOG(LS_WARNING)
+            RTC_LOG(LS_WARNING)
                 << "the required modification of the microphone volume failed";
         }
       }

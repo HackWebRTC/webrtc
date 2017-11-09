@@ -69,7 +69,7 @@ AudioReceiveStream::AudioReceiveStream(
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     webrtc::RtcEventLog* event_log)
     : config_(config), audio_state_(audio_state) {
-  LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
+  RTC_LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
   RTC_DCHECK(packet_router);
@@ -117,7 +117,7 @@ AudioReceiveStream::AudioReceiveStream(
 
 AudioReceiveStream::~AudioReceiveStream() {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
+  RTC_LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
   if (playing_) {
     Stop();
   }
@@ -135,12 +135,13 @@ void AudioReceiveStream::Start() {
 
   int error = SetVoiceEnginePlayout(true);
   if (error != 0) {
-    LOG(LS_ERROR) << "AudioReceiveStream::Start failed with error: " << error;
+    RTC_LOG(LS_ERROR) << "AudioReceiveStream::Start failed with error: "
+                      << error;
     return;
   }
 
   if (!audio_state()->mixer()->AddSource(this)) {
-    LOG(LS_ERROR) << "Failed to add source to mixer.";
+    RTC_LOG(LS_ERROR) << "Failed to add source to mixer.";
     SetVoiceEnginePlayout(false);
     return;
   }

@@ -328,7 +328,7 @@ void RTPSender::SetRtxPayloadType(int payload_type,
   RTC_DCHECK_LE(payload_type, 127);
   RTC_DCHECK_LE(associated_payload_type, 127);
   if (payload_type < 0) {
-    LOG(LS_ERROR) << "Invalid RTX payload type: " << payload_type << ".";
+    RTC_LOG(LS_ERROR) << "Invalid RTX payload type: " << payload_type << ".";
     return;
   }
 
@@ -340,7 +340,7 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
   rtc::CritScope lock(&send_critsect_);
 
   if (payload_type < 0) {
-    LOG(LS_ERROR) << "Invalid payload_type " << payload_type << ".";
+    RTC_LOG(LS_ERROR) << "Invalid payload_type " << payload_type << ".";
     return -1;
   }
   if (payload_type_ == payload_type) {
@@ -352,8 +352,8 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
   std::map<int8_t, RtpUtility::Payload*>::iterator it =
       payload_type_map_.find(payload_type);
   if (it == payload_type_map_.end()) {
-    LOG(LS_WARNING) << "Payload type " << static_cast<int>(payload_type)
-                    << " not registered.";
+    RTC_LOG(LS_WARNING) << "Payload type " << static_cast<int>(payload_type)
+                        << " not registered.";
     return -1;
   }
   SetSendPayloadType(payload_type);
@@ -395,8 +395,8 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
   }
   RtpVideoCodecTypes video_type = kRtpVideoGeneric;
   if (CheckPayloadType(payload_type, &video_type) != 0) {
-    LOG(LS_ERROR) << "Don't send data with unknown payload type: "
-                  << static_cast<int>(payload_type) << ".";
+    RTC_LOG(LS_ERROR) << "Don't send data with unknown payload type: "
+                      << static_cast<int>(payload_type) << ".";
     return false;
   }
 
@@ -521,7 +521,7 @@ size_t RTPSender::SendPadData(size_t bytes,
           break;
         }
         if (!ssrc_) {
-          LOG(LS_ERROR)  << "SSRC unset.";
+          RTC_LOG(LS_ERROR) << "SSRC unset.";
           return 0;
         }
 
@@ -552,7 +552,7 @@ size_t RTPSender::SendPadData(size_t bytes,
           capture_time_ms += (now_ms - last_timestamp_time_ms_);
         }
         if (!ssrc_rtx_) {
-          LOG(LS_ERROR)  << "RTX SSRC unset.";
+          RTC_LOG(LS_ERROR) << "RTX SSRC unset.";
           return 0;
         }
         RTC_DCHECK(ssrc_rtx_);
@@ -657,7 +657,7 @@ bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
                        "sent", bytes_sent);
   // TODO(pwestin): Add a separate bitrate for sent bitrate after pacer.
   if (bytes_sent <= 0) {
-    LOG(LS_WARNING) << "Transport failed to send packet.";
+    RTC_LOG(LS_WARNING) << "Transport failed to send packet.";
     return false;
   }
   return true;
@@ -686,8 +686,8 @@ void RTPSender::OnReceivedNack(
     const int32_t bytes_sent = ReSendPacket(seq_no, 5 + avg_rtt);
     if (bytes_sent < 0) {
       // Failed to send one Sequence number. Give up the rest in this nack.
-      LOG(LS_WARNING) << "Failed resending RTP packet " << seq_no
-                      << ", Discard rest of packets.";
+      RTC_LOG(LS_WARNING) << "Failed resending RTP packet " << seq_no
+                          << ", Discard rest of packets.";
       break;
     }
   }

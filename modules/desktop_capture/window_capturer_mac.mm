@@ -112,7 +112,7 @@ bool WindowCapturerMac::FocusOnSelectedSource() {
       CGWindowListCreateDescriptionFromArray(window_id_array);
   if (!window_array || 0 == CFArrayGetCount(window_array)) {
     // Could not find the window. It might have been closed.
-    LOG(LS_INFO) << "Window not found";
+    RTC_LOG(LS_INFO) << "Window not found";
     CFRelease(window_id_array);
     return false;
   }
@@ -180,7 +180,7 @@ void WindowCapturerMac::CaptureFrame() {
 
   int bits_per_pixel = CGImageGetBitsPerPixel(window_image);
   if (bits_per_pixel != 32) {
-    LOG(LS_ERROR) << "Unsupported window image depth: " << bits_per_pixel;
+    RTC_LOG(LS_ERROR) << "Unsupported window image depth: " << bits_per_pixel;
     CFRelease(window_image);
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
     return;

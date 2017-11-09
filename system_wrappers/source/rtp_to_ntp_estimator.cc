@@ -122,7 +122,7 @@ bool RtpToNtpEstimator::UpdateMeasurements(uint32_t ntp_secs,
       break;
     }
     if (timestamp_new <= measurement.rtp_timestamp) {
-      LOG(LS_WARNING)
+      RTC_LOG(LS_WARNING)
           << "Newer RTCP SR report with older RTP timestamp, dropping";
       invalid_sample = true;
       break;
@@ -133,8 +133,8 @@ bool RtpToNtpEstimator::UpdateMeasurements(uint32_t ntp_secs,
     if (consecutive_invalid_samples_ < kMaxInvalidSamples) {
       return false;
     }
-    LOG(LS_WARNING) << "Multiple consecutively invalid RTCP SR reports, "
-                       "clearing measurements.";
+    RTC_LOG(LS_WARNING) << "Multiple consecutively invalid RTCP SR reports, "
+                           "clearing measurements.";
     measurements_.clear();
   }
   consecutive_invalid_samples_ = 0;

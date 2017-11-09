@@ -24,10 +24,10 @@
 #include "rtc_base/sslstreamadapter.h"
 #include "rtc_base/stringutils.h"
 
-#define MAYBE_SKIP_TEST(feature)                              \
-  if (!(rtc::SSLStreamAdapter::feature())) {                  \
-    LOG(LS_INFO) << #feature " feature disabled... skipping"; \
-    return;                                                   \
+#define MAYBE_SKIP_TEST(feature)                                  \
+  if (!(rtc::SSLStreamAdapter::feature())) {                      \
+    RTC_LOG(LS_INFO) << #feature " feature disabled... skipping"; \
+    return;                                                       \
   }
 
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";
@@ -359,8 +359,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
   // Transport channel callbacks
   void OnTransportChannelWritableState(
       rtc::PacketTransportInternal* transport) {
-    LOG(LS_INFO) << name_ << ": Channel '" << transport->debug_name()
-                 << "' is writable";
+    RTC_LOG(LS_INFO) << name_ << ": Channel '" << transport->debug_name()
+                     << "' is writable";
   }
 
   void OnTransportChannelReadPacket(rtc::PacketTransportInternal* transport,
@@ -587,7 +587,7 @@ class DtlsTransportChannelTestBase {
   }
 
   void TestTransfer(size_t transport, size_t size, size_t count, bool srtp) {
-    LOG(LS_INFO) << "Expect packets, size=" << size;
+    RTC_LOG(LS_INFO) << "Expect packets, size=" << size;
     client2_.ExpectPackets(transport, size);
     client1_.SendPackets(transport, size, count, srtp);
     EXPECT_EQ_SIMULATED_WAIT(count, client2_.NumPacketsReceived(), kTimeout,

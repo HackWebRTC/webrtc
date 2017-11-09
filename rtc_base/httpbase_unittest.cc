@@ -63,7 +63,7 @@ public:
   }
 
   HttpError onHttpHeaderComplete(bool chunked, size_t& data_size) override {
-    LOG_F(LS_VERBOSE) << "chunked: " << chunked << " size: " << data_size;
+    RTC_LOG_F(LS_VERBOSE) << "chunked: " << chunked << " size: " << data_size;
     Event e = { E_HEADER_COMPLETE, chunked, data_size, HM_NONE, HE_NONE};
     events.push_back(e);
     if (obtain_stream) {
@@ -72,12 +72,12 @@ public:
     return HE_NONE;
   }
   void onHttpComplete(HttpMode mode, HttpError err) override {
-    LOG_F(LS_VERBOSE) << "mode: " << mode << " err: " << err;
+    RTC_LOG_F(LS_VERBOSE) << "mode: " << mode << " err: " << err;
     Event e = { E_COMPLETE, false, 0, mode, err };
     events.push_back(e);
   }
   void onHttpClosed(HttpError err) override {
-    LOG_F(LS_VERBOSE) << "err: " << err;
+    RTC_LOG_F(LS_VERBOSE) << "err: " << err;
     Event e = { E_CLOSED, false, 0, HM_NONE, err };
     events.push_back(e);
   }
@@ -115,7 +115,7 @@ public:
 };
 
 void HttpBaseTest::SetupSource(const char* http_data) {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
 
   src.SetState(SS_OPENING);
   src.QueueString(http_data);
@@ -133,11 +133,11 @@ void HttpBaseTest::SetupSource(const char* http_data) {
 
   mem = new MemoryStream;
   data.document.reset(mem);
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::VerifyHeaderComplete(size_t event_count, bool empty_doc) {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
 
   ASSERT_EQ(event_count, events.size());
   EXPECT_EQ(E_HEADER_COMPLETE, events[0].event);
@@ -165,12 +165,12 @@ void HttpBaseTest::VerifyHeaderComplete(size_t event_count, bool empty_doc) {
     EXPECT_TRUE(data.hasHeader(HH_TRANSFER_ENCODING, &header));
     EXPECT_EQ("chunked", header);
   }
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::VerifyDocumentContents(const char* expected_data,
                                           size_t expected_length) {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
 
   if (SIZE_UNKNOWN == expected_length) {
     expected_length = strlen(expected_data);
@@ -181,20 +181,20 @@ void HttpBaseTest::VerifyDocumentContents(const char* expected_data,
   mem->GetSize(&length);
   EXPECT_EQ(expected_length, length);
   EXPECT_TRUE(0 == memcmp(expected_data, mem->GetBuffer(), length));
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::ObtainDocumentStream() {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
   EXPECT_FALSE(http_stream);
   http_stream = base.GetDocumentStream();
   ASSERT_TRUE(nullptr != http_stream);
   sink.Monitor(http_stream);
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::VerifyDocumentStreamIsOpening() {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
   ASSERT_TRUE(nullptr != http_stream);
   EXPECT_EQ(0, sink.Events(http_stream));
   EXPECT_EQ(SS_OPENING, http_stream->GetState());
@@ -203,11 +203,11 @@ void HttpBaseTest::VerifyDocumentStreamIsOpening() {
   char buffer[5] = { 0 };
   EXPECT_EQ(SR_BLOCK,
             http_stream->Read(buffer, sizeof(buffer), &read, nullptr));
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::VerifyDocumentStreamOpenEvent() {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
 
   ASSERT_TRUE(nullptr != http_stream);
   EXPECT_EQ(SE_OPEN | SE_READ, sink.Events(http_stream));
@@ -216,11 +216,11 @@ void HttpBaseTest::VerifyDocumentStreamOpenEvent() {
   // HTTP headers haven't arrived yet
   EXPECT_EQ(0U, events.size());
   EXPECT_EQ(static_cast<uint32_t>(HC_INTERNAL_SERVER_ERROR), data.scode);
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::ReadDocumentStreamData(const char* expected_data) {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
 
   ASSERT_TRUE(nullptr != http_stream);
   EXPECT_EQ(SS_OPEN, http_stream->GetState());
@@ -239,11 +239,11 @@ void HttpBaseTest::ReadDocumentStreamData(const char* expected_data) {
     EXPECT_TRUE(0 == memcmp(expected_data + verified_length, buffer, read));
     verified_length += read;
   }
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::VerifyDocumentStreamIsEOS() {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
 
   ASSERT_TRUE(nullptr != http_stream);
   size_t read = 0;
@@ -253,11 +253,11 @@ void HttpBaseTest::VerifyDocumentStreamIsEOS() {
 
   // When EOS is caused by Read, we don't expect SE_CLOSE
   EXPECT_EQ(0, sink.Events(http_stream));
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::SetupDocument(const char* document_data) {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
   src.SetState(SS_OPEN);
 
   base.notify(this);
@@ -277,30 +277,30 @@ void HttpBaseTest::SetupDocument(const char* document_data) {
   data.scode = HC_OK;
   data.setHeader(HH_PROXY_AUTHORIZATION, "42");
   data.setHeader(HH_CONNECTION, "Keep-Alive");
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::VerifySourceContents(const char* expected_data,
                                         size_t expected_length) {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
   if (SIZE_UNKNOWN == expected_length) {
     expected_length = strlen(expected_data);
   }
   std::string contents = src.ReadData();
   EXPECT_EQ(expected_length, contents.length());
   EXPECT_TRUE(0 == memcmp(expected_data, contents.data(), expected_length));
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::VerifyTransferComplete(HttpMode mode, HttpError error) {
-  LOG_F(LS_VERBOSE) << "Enter";
+  RTC_LOG_F(LS_VERBOSE) << "Enter";
   // Verify that http operation has completed
   ASSERT_TRUE(events.size() > 0);
   size_t last_event = events.size() - 1;
   EXPECT_EQ(E_COMPLETE, events[last_event].event);
   EXPECT_EQ(mode, events[last_event].mode);
   EXPECT_EQ(error, events[last_event].err);
-  LOG_F(LS_VERBOSE) << "Exit";
+  RTC_LOG_F(LS_VERBOSE) << "Exit";
 }
 
 //

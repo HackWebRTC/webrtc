@@ -72,14 +72,14 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
   }
 
   if (first_packet_received_()) {
-    LOG(LS_INFO) << "Received first video RTP packet";
+    RTC_LOG(LS_INFO) << "Received first video RTP packet";
   }
 
   // We are not allowed to hold a critical section when calling below functions.
   std::unique_ptr<RtpDepacketizer> depacketizer(
       RtpDepacketizer::Create(rtp_header->type.Video.codec));
   if (depacketizer.get() == NULL) {
-    LOG(LS_ERROR) << "Failed to create depacketizer.";
+    RTC_LOG(LS_ERROR) << "Failed to create depacketizer.";
     return -1;
   }
 

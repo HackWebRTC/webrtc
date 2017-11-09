@@ -100,7 +100,7 @@ bool CopyVideoFrameToNV12PixelBuffer(id<RTCI420Buffer> frameBuffer, CVPixelBuffe
 
   CVReturn cvRet = CVPixelBufferLockBaseAddress(pixelBuffer, 0);
   if (cvRet != kCVReturnSuccess) {
-    LOG(LS_ERROR) << "Failed to lock base address: " << cvRet;
+    RTC_LOG(LS_ERROR) << "Failed to lock base address: " << cvRet;
     return false;
   }
   uint8_t *dstY = reinterpret_cast<uint8_t *>(CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0));
@@ -122,7 +122,7 @@ bool CopyVideoFrameToNV12PixelBuffer(id<RTCI420Buffer> frameBuffer, CVPixelBuffe
                                frameBuffer.height);
   CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
   if (ret) {
-    LOG(LS_ERROR) << "Error converting I420 VideoFrame to NV12 :" << ret;
+    RTC_LOG(LS_ERROR) << "Error converting I420 VideoFrame to NV12 :" << ret;
     return false;
   }
   return true;
@@ -130,13 +130,13 @@ bool CopyVideoFrameToNV12PixelBuffer(id<RTCI420Buffer> frameBuffer, CVPixelBuffe
 
 CVPixelBufferRef CreatePixelBuffer(CVPixelBufferPoolRef pixel_buffer_pool) {
   if (!pixel_buffer_pool) {
-    LOG(LS_ERROR) << "Failed to get pixel buffer pool.";
+    RTC_LOG(LS_ERROR) << "Failed to get pixel buffer pool.";
     return nullptr;
   }
   CVPixelBufferRef pixel_buffer;
   CVReturn ret = CVPixelBufferPoolCreatePixelBuffer(nullptr, pixel_buffer_pool, &pixel_buffer);
   if (ret != kCVReturnSuccess) {
-    LOG(LS_ERROR) << "Failed to create pixel buffer: " << ret;
+    RTC_LOG(LS_ERROR) << "Failed to create pixel buffer: " << ret;
     // We probably want to drop frames here, since failure probably means
     // that the pool is empty.
     return nullptr;
@@ -306,7 +306,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
         webrtc::Clock::GetRealTimeClock(), .5, .95));
     _packetizationMode = RTCH264PacketizationModeNonInterleaved;
     _profile = ExtractProfile([codecInfo nativeSdpVideoFormat]);
-    LOG(LS_INFO) << "Using profile " << CFStringToString(_profile);
+    RTC_LOG(LS_INFO) << "Using profile " << CFStringToString(_profile);
     RTC_CHECK([codecInfo.name isEqualToString:kRTCVideoCodecH264Name]);
 
 #if defined(WEBRTC_IOS)
@@ -405,7 +405,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
     }
     RTC_DCHECK(pixelBuffer);
     if (!CopyVideoFrameToNV12PixelBuffer([frame.buffer toI420], pixelBuffer)) {
-      LOG(LS_ERROR) << "Failed to copy frame data.";
+      RTC_LOG(LS_ERROR) << "Failed to copy frame data.";
       CVBufferRelease(pixelBuffer);
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
@@ -456,7 +456,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
     CVBufferRelease(pixelBuffer);
   }
   if (status != noErr) {
-    LOG(LS_ERROR) << "Failed to encode frame with code: " << status;
+    RTC_LOG(LS_ERROR) << "Failed to encode frame with code: " << status;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   return WEBRTC_VIDEO_CODEC_OK;
@@ -496,7 +496,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
     // Resetting the session when this happens fixes the issue.
     // In addition we request a keyframe so video can recover quickly.
     resetCompressionSession = YES;
-    LOG(LS_INFO) << "Resetting compression session due to invalid pool.";
+    RTC_LOG(LS_INFO) << "Resetting compression session due to invalid pool.";
   }
 #endif
 
@@ -523,7 +523,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
     if (![compressionSessionPixelFormats
             containsObject:[NSNumber numberWithLong:framePixelFormat]]) {
       resetCompressionSession = YES;
-      LOG(LS_INFO) << "Resetting compression session due to non-matching pixel format.";
+      RTC_LOG(LS_INFO) << "Resetting compression session due to non-matching pixel format.";
     }
   }
 
@@ -591,7 +591,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
     encoder_specs = nullptr;
   }
   if (status != noErr) {
-    LOG(LS_ERROR) << "Failed to create compression session: " << status;
+    RTC_LOG(LS_ERROR) << "Failed to create compression session: " << status;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
@@ -601,9 +601,9 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
                                  nullptr,
                                  &hwaccl_enabled);
   if (status == noErr && (CFBooleanGetValue(hwaccl_enabled))) {
-    LOG(LS_INFO) << "Compression session created with hw accl enabled";
+    RTC_LOG(LS_INFO) << "Compression session created with hw accl enabled";
   } else {
-    LOG(LS_INFO) << "Compression session created with hw accl disabled";
+    RTC_LOG(LS_INFO) << "Compression session created with hw accl disabled";
   }
 #endif
   [self configureCompressionSession];
@@ -674,7 +674,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
       CFRelease(dataRateLimits);
     }
     if (status != noErr) {
-      LOG(LS_ERROR) << "Failed to set data rate limit";
+      RTC_LOG(LS_ERROR) << "Failed to set data rate limit";
     }
 
     _encoderBitrateBps = bitrateBps;
@@ -691,11 +691,11 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
               timestamp:(uint32_t)timestamp
                rotation:(RTCVideoRotation)rotation {
   if (status != noErr) {
-    LOG(LS_ERROR) << "H264 encode failed.";
+    RTC_LOG(LS_ERROR) << "H264 encode failed.";
     return;
   }
   if (infoFlags & kVTEncodeInfo_FrameDropped) {
-    LOG(LS_INFO) << "H264 encode dropped frame.";
+    RTC_LOG(LS_INFO) << "H264 encode dropped frame.";
     return;
   }
 
@@ -708,7 +708,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   }
 
   if (isKeyframe) {
-    LOG(LS_INFO) << "Generated keyframe";
+    RTC_LOG(LS_INFO) << "Generated keyframe";
   }
 
   // Convert the sample buffer into a buffer suitable for RTP packetization.
@@ -745,7 +745,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
 
   BOOL res = _callback(frame, codecSpecificInfo, header);
   if (!res) {
-    LOG(LS_ERROR) << "Encode callback failed";
+    RTC_LOG(LS_ERROR) << "Encode callback failed";
     return;
   }
   _bitrateAdjuster->Update(frame.buffer.length);

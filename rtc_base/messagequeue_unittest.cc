@@ -134,9 +134,10 @@ struct UnwrapMainThreadScope {
 TEST(MessageQueueManager, Clear) {
   UnwrapMainThreadScope s;
   if (MessageQueueManager::IsInitialized()) {
-    LOG(LS_INFO) << "Unable to run MessageQueueManager::Clear test, since the "
-                 << "MessageQueueManager was already initialized by some "
-                 << "other test in this run.";
+    RTC_LOG(LS_INFO)
+        << "Unable to run MessageQueueManager::Clear test, since the "
+        << "MessageQueueManager was already initialized by some "
+        << "other test in this run.";
     return;
   }
   bool deleted = false;

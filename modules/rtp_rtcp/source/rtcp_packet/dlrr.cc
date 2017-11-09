@@ -46,7 +46,7 @@ bool Dlrr::Parse(const uint8_t* buffer, uint16_t block_length_32bits) {
   RTC_DCHECK_EQ(block_length_32bits,
                 ByteReader<uint16_t>::ReadBigEndian(&buffer[2]));
   if (block_length_32bits % 3 != 0) {
-    LOG(LS_WARNING) << "Invalid size for dlrr block.";
+    RTC_LOG(LS_WARNING) << "Invalid size for dlrr block.";
     return false;
   }
 

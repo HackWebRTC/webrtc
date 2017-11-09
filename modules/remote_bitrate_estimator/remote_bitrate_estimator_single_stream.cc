@@ -53,7 +53,7 @@ RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
       last_process_time_(-1),
       process_interval_ms_(kProcessIntervalMs),
       uma_recorded_(false) {
-  LOG(LS_INFO) << "RemoteBitrateEstimatorSingleStream: Instantiating.";
+  RTC_LOG(LS_INFO) << "RemoteBitrateEstimatorSingleStream: Instantiating.";
 }
 
 RemoteBitrateEstimatorSingleStream::~RemoteBitrateEstimatorSingleStream() {

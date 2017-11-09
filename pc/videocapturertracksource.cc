@@ -156,8 +156,8 @@ bool NewFormatWithConstraints(
     // regardless of the format.
     return true;
   }
-  LOG(LS_WARNING) << "Found unknown MediaStream constraint. Name:"
-                  << constraint.key << " Value:" << constraint.value;
+  RTC_LOG(LS_WARNING) << "Found unknown MediaStream constraint. Name:"
+                      << constraint.key << " Value:" << constraint.value;
   return false;
 }
 
@@ -338,15 +338,15 @@ void VideoCapturerTrackSource::Initialize(
   }
 
   if (formats.size() == 0) {
-    LOG(LS_WARNING) << "Failed to find a suitable video format.";
+    RTC_LOG(LS_WARNING) << "Failed to find a suitable video format.";
     SetState(kEnded);
     return;
   }
 
   if (!ExtractOption(constraints, MediaConstraintsInterface::kNoiseReduction,
                      &needs_denoising_)) {
-    LOG(LS_WARNING) << "Invalid mandatory value for"
-                    << MediaConstraintsInterface::kNoiseReduction;
+    RTC_LOG(LS_WARNING) << "Invalid mandatory value for"
+                        << MediaConstraintsInterface::kNoiseReduction;
     SetState(kEnded);
     return;
   }

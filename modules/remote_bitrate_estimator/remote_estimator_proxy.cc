@@ -49,8 +49,9 @@ void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
                                           size_t payload_size,
                                           const RTPHeader& header) {
   if (!header.extension.hasTransportSequenceNumber) {
-    LOG(LS_WARNING) << "RemoteEstimatorProxy: Incoming packet "
-                       "is missing the transport sequence number extension!";
+    RTC_LOG(LS_WARNING)
+        << "RemoteEstimatorProxy: Incoming packet "
+           "is missing the transport sequence number extension!";
     return;
   }
   rtc::CritScope cs(&lock_);
@@ -112,7 +113,7 @@ void RemoteEstimatorProxy::OnBitrateChanged(int bitrate_bps) {
 void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
                                            int64_t arrival_time) {
   if (arrival_time < 0 || arrival_time > kMaxTimeMs) {
-    LOG(LS_WARNING) << "Arrival time out of bounds: " << arrival_time;
+    RTC_LOG(LS_WARNING) << "Arrival time out of bounds: " << arrival_time;
     return;
   }
 
@@ -122,10 +123,10 @@ void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
   // calls to IsNewerSequenceNumber instead.
   int64_t seq = unwrapper_.Unwrap(sequence_number);
   if (seq > window_start_seq_ + 0xFFFF / 2) {
-    LOG(LS_WARNING) << "Skipping this sequence number (" << sequence_number
-                    << ") since it likely is reordered, but the unwrapper"
-                       "failed to handle it. Feedback window starts at "
-                    << window_start_seq_ << ".";
+    RTC_LOG(LS_WARNING) << "Skipping this sequence number (" << sequence_number
+                        << ") since it likely is reordered, but the unwrapper"
+                           "failed to handle it. Feedback window starts at "
+                        << window_start_seq_ << ".";
     return;
   }
 

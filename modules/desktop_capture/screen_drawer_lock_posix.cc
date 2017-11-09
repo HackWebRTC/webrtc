@@ -31,7 +31,7 @@ ScreenDrawerLockPosix::ScreenDrawerLockPosix()
 ScreenDrawerLockPosix::ScreenDrawerLockPosix(const char* name) {
   semaphore_ = sem_open(name, O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO, 1);
   if (semaphore_ == SEM_FAILED) {
-    LOG_ERRNO(LS_ERROR) << "Failed to create named semaphore with " << name;
+    RTC_LOG_ERRNO(LS_ERROR) << "Failed to create named semaphore with " << name;
     RTC_NOTREACHED();
   }
 

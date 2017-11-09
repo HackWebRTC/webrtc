@@ -69,7 +69,7 @@ bool RWLockWin::LoadModule() {
   if (!library) {
     return false;
   }
-  LOG(LS_VERBOSE) << "Loaded Kernel.dll";
+  RTC_LOG(LS_VERBOSE) << "Loaded Kernel.dll";
 
   initialize_srw_lock =
       (InitializeSRWLock)GetProcAddress(library, "InitializeSRWLock");
@@ -86,7 +86,7 @@ bool RWLockWin::LoadModule() {
   if (initialize_srw_lock && acquire_srw_lock_exclusive &&
       release_srw_lock_exclusive && acquire_srw_lock_shared &&
       release_srw_lock_shared) {
-    LOG(LS_VERBOSE) << "Loaded Native RW Lock";
+    RTC_LOG(LS_VERBOSE) << "Loaded Native RW Lock";
     native_rw_locks_supported = true;
   }
   return native_rw_locks_supported;

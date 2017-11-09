@@ -117,7 +117,7 @@ bool RtpDepacketizerGeneric::Parse(ParsedPayload* parsed_payload,
                                    size_t payload_data_length) {
   assert(parsed_payload != NULL);
   if (payload_data_length == 0) {
-    LOG(LS_ERROR) << "Empty payload.";
+    RTC_LOG(LS_ERROR) << "Empty payload.";
     return false;
   }
 

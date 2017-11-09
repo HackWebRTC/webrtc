@@ -74,7 +74,7 @@ H264Encoder* H264Encoder::Create(const cricket::VideoCodec& codec) {
   RTC_DCHECK(H264Encoder::IsSupported());
 #if defined(WEBRTC_USE_H264)
   RTC_CHECK(g_rtc_use_h264);
-  LOG(LS_INFO) << "Creating H264EncoderImpl.";
+  RTC_LOG(LS_INFO) << "Creating H264EncoderImpl.";
   return new H264EncoderImpl(codec);
 #else
   RTC_NOTREACHED();
@@ -90,7 +90,7 @@ H264Decoder* H264Decoder::Create() {
   RTC_DCHECK(H264Decoder::IsSupported());
 #if defined(WEBRTC_USE_H264)
   RTC_CHECK(g_rtc_use_h264);
-  LOG(LS_INFO) << "Creating H264DecoderImpl.";
+  RTC_LOG(LS_INFO) << "Creating H264DecoderImpl.";
   return new H264DecoderImpl();
 #else
   RTC_NOTREACHED();

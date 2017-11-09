@@ -73,13 +73,13 @@ static VideoEncoder::QpThresholds CodecTypeToDefaultThresholds(
 class QualityScaler::CheckQPTask : public rtc::QueuedTask {
  public:
   explicit CheckQPTask(QualityScaler* scaler) : scaler_(scaler) {
-    LOG(LS_INFO) << "Created CheckQPTask. Scheduling on queue...";
+    RTC_LOG(LS_INFO) << "Created CheckQPTask. Scheduling on queue...";
     rtc::TaskQueue::Current()->PostDelayedTask(
         std::unique_ptr<rtc::QueuedTask>(this), scaler_->GetSamplingPeriodMs());
   }
   void Stop() {
     RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-    LOG(LS_INFO) << "Stopping QP Check task.";
+    RTC_LOG(LS_INFO) << "Stopping QP Check task.";
     stop_ = true;
   }
 
@@ -122,8 +122,8 @@ QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   RTC_DCHECK(observer_ != nullptr);
   check_qp_task_ = new CheckQPTask(this);
-  LOG(LS_INFO) << "QP thresholds: low: " << thresholds_.low
-               << ", high: " << thresholds_.high;
+  RTC_LOG(LS_INFO) << "QP thresholds: low: " << thresholds_.low
+                   << ", high: " << thresholds_.high;
 }
 
 QualityScaler::~QualityScaler() {
@@ -168,7 +168,7 @@ void QualityScaler::CheckQP() {
   // Check if we should scale up or down based on QP.
   const rtc::Optional<int> avg_qp = average_qp_.GetAverage();
   if (avg_qp) {
-    LOG(LS_INFO) << "Checking average QP " << *avg_qp;
+    RTC_LOG(LS_INFO) << "Checking average QP " << *avg_qp;
     if (*avg_qp > thresholds_.high) {
       ReportQPHigh();
       return;

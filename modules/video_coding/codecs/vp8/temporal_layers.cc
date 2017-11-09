@@ -48,7 +48,7 @@ bool TemporalLayersChecker::CheckAndUpdateBufferState(
     }
     if (!frame_is_keyframe && !state->is_keyframe &&
         state->temporal_layer > temporal_layer) {
-      LOG(LS_ERROR) << "Frame is referencing higher temporal layer.";
+      RTC_LOG(LS_ERROR) << "Frame is referencing higher temporal layer.";
       return false;
     }
   }
@@ -72,9 +72,9 @@ bool TemporalLayersChecker::CheckTemporalConfig(
   if (frame_config.packetizer_temporal_idx >= num_temporal_layers_ ||
       (frame_config.packetizer_temporal_idx == kNoTemporalIdx &&
        num_temporal_layers_ > 1)) {
-    LOG(LS_ERROR) << "Incorrect temporal layer set for frame: "
-                  << frame_config.packetizer_temporal_idx
-                  << " num_temporal_layers: " << num_temporal_layers_;
+    RTC_LOG(LS_ERROR) << "Incorrect temporal layer set for frame: "
+                      << frame_config.packetizer_temporal_idx
+                      << " num_temporal_layers: " << num_temporal_layers_;
     return false;
   }
 
@@ -86,7 +86,7 @@ bool TemporalLayersChecker::CheckTemporalConfig(
           &last_, &need_sync, frame_is_keyframe,
           frame_config.packetizer_temporal_idx, frame_config.last_buffer_flags,
           sequence_number_, &lowest_sequence_referenced)) {
-    LOG(LS_ERROR) << "Error in the Last buffer";
+    RTC_LOG(LS_ERROR) << "Error in the Last buffer";
     return false;
   }
   if (!CheckAndUpdateBufferState(&golden_, &need_sync, frame_is_keyframe,
@@ -94,22 +94,22 @@ bool TemporalLayersChecker::CheckTemporalConfig(
                                  frame_config.golden_buffer_flags,
                                  sequence_number_,
                                  &lowest_sequence_referenced)) {
-    LOG(LS_ERROR) << "Error in the Golden buffer";
+    RTC_LOG(LS_ERROR) << "Error in the Golden buffer";
     return false;
   }
   if (!CheckAndUpdateBufferState(
           &arf_, &need_sync, frame_is_keyframe,
           frame_config.packetizer_temporal_idx, frame_config.arf_buffer_flags,
           sequence_number_, &lowest_sequence_referenced)) {
-    LOG(LS_ERROR) << "Error in the Arf buffer";
+    RTC_LOG(LS_ERROR) << "Error in the Arf buffer";
     return false;
   }
 
   if (lowest_sequence_referenced < last_sync_sequence_number_ &&
       !frame_is_keyframe) {
-    LOG(LS_ERROR) << "Reference past the last sync frame. Referenced "
-                  << lowest_sequence_referenced << ", but sync was at "
-                  << last_sync_sequence_number_;
+    RTC_LOG(LS_ERROR) << "Reference past the last sync frame. Referenced "
+                      << lowest_sequence_referenced << ", but sync was at "
+                      << last_sync_sequence_number_;
     return false;
   }
 
@@ -126,8 +126,8 @@ bool TemporalLayersChecker::CheckTemporalConfig(
   }
 
   if (need_sync != frame_config.layer_sync) {
-    LOG(LS_ERROR) << "Sync bit is set incorrectly on a frame. Expected: "
-                  << need_sync << " Actual: " << frame_config.layer_sync;
+    RTC_LOG(LS_ERROR) << "Sync bit is set incorrectly on a frame. Expected: "
+                      << need_sync << " Actual: " << frame_config.layer_sync;
     return false;
   }
   return true;

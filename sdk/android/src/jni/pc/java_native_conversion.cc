@@ -94,7 +94,7 @@ cricket::Candidate JavaToNativeCandidate(JNIEnv* jni, jobject j_candidate) {
       JavaToStdString(jni, GetStringField(jni, j_candidate, j_sdp_id));
   cricket::Candidate candidate;
   if (!SdpDeserializeCandidate(sdp_mid, sdp, &candidate, NULL)) {
-    LOG(LS_ERROR) << "SdpDescrializeCandidate failed with sdp " << sdp;
+    RTC_LOG(LS_ERROR) << "SdpDescrializeCandidate failed with sdp " << sdp;
   }
   return candidate;
 }

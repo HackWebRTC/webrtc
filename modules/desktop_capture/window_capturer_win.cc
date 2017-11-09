@@ -200,7 +200,7 @@ void WindowCapturerWin::Start(Callback* callback) {
 
 void WindowCapturerWin::CaptureFrame() {
   if (!window_) {
-    LOG(LS_ERROR) << "Window hasn't been selected: " << GetLastError();
+    RTC_LOG(LS_ERROR) << "Window hasn't been selected: " << GetLastError();
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
     return;
   }
@@ -214,7 +214,8 @@ void WindowCapturerWin::CaptureFrame() {
   DesktopRect cropped_rect;
   DesktopRect original_rect;
   if (!GetWindowDrawableRect(window_, &cropped_rect, &original_rect)) {
-    LOG(LS_WARNING) << "Failed to get drawable window area: " << GetLastError();
+    RTC_LOG(LS_WARNING) << "Failed to get drawable window area: "
+                        << GetLastError();
     callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }
@@ -237,7 +238,7 @@ void WindowCapturerWin::CaptureFrame() {
 
   HDC window_dc = GetWindowDC(window_);
   if (!window_dc) {
-    LOG(LS_WARNING) << "Failed to get window DC: " << GetLastError();
+    RTC_LOG(LS_WARNING) << "Failed to get window DC: " << GetLastError();
     callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }
@@ -322,7 +323,7 @@ void WindowCapturerWin::CaptureFrame() {
   if (result) {
     callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
   } else {
-    LOG(LS_ERROR) << "Both PrintWindow() and BitBlt() failed.";
+    RTC_LOG(LS_ERROR) << "Both PrintWindow() and BitBlt() failed.";
     callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
   }
 }

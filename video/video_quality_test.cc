@@ -844,7 +844,7 @@ class VideoAnalyzer : public PacketReceiver,
       test::GetTestArtifactsDir(&output_dir);
       std::string output_path =
           rtc::Pathname(output_dir, test_label_ + ".jpg").pathname();
-      LOG(LS_INFO) << "Saving worst frame to " << output_path;
+      RTC_LOG(LS_INFO) << "Saving worst frame to " << output_path;
       test::JpegFrameWriter frame_writer(output_path);
       RTC_CHECK(frame_writer.WriteFrame(worst_frame_->frame,
                                         100 /*best quality*/));

@@ -46,7 +46,7 @@ bool DxgiFrame::Prepare(DesktopSize size, DesktopCapturer::SourceId source_id) {
       frame.reset(new BasicDesktopFrame(size));
     }
     if (!frame) {
-      LOG(LS_WARNING) << "DxgiFrame cannot create a new DesktopFrame.";
+      RTC_LOG(LS_WARNING) << "DxgiFrame cannot create a new DesktopFrame.";
       return false;
     }
     // DirectX capturer won't paint each pixel in the frame due to its one

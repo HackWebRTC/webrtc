@@ -35,7 +35,7 @@ AndroidVideoTrackSource::AndroidVideoTrackSource(
           j_surface_texture_helper)),
       video_buffer_factory_(jni),
       is_screencast_(is_screencast) {
-  LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
+  RTC_LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
   camera_thread_checker_.DetachFromThread();
 
   jclass j_video_frame_buffer_class =

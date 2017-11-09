@@ -449,7 +449,7 @@ int main(int argc, char* argv[]) {
           if (extension_map == nullptr) {
             extension_map = &default_map;
             if (!default_map_used)
-              LOG(LS_WARNING) << "Using default header extension map";
+              RTC_LOG(LS_WARNING) << "Using default header extension map";
             default_map_used = true;
           }
 

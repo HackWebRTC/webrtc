@@ -184,7 +184,7 @@ void FakeNetworkPipe::Process() {
       if (!capacity_link_.empty()) {
         queueing_delay_ms = time_now - capacity_link_.front()->send_time();
       }
-      LOG(LS_INFO) << "Network queue: " << queueing_delay_ms << " ms.";
+      RTC_LOG(LS_INFO) << "Network queue: " << queueing_delay_ms << " ms.";
       last_log_time_ = time_now;
     }
     // Check the capacity link first.

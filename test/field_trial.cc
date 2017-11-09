@@ -67,7 +67,7 @@ void InitFieldTrialsFromString(const std::string& trials_string) {
       return;
     }
   }
-  // Using fprintf as LOG does not print when this is called early in main.
+  // Using fprintf as RTC_LOG does not print when this is called early in main.
   fprintf(stderr, "Invalid field trials string.\n");
 
   // Using abort so it crashes in both debug and release mode.

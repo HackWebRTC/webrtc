@@ -81,8 +81,8 @@ bool RtpHeaderExtensionMap::RegisterByUri(int id, const std::string& uri) {
   for (const ExtensionInfo& extension : kExtensions)
     if (uri == extension.uri)
       return Register(id, extension.type, extension.uri);
-  LOG(LS_WARNING) << "Unknown extension uri:'" << uri
-                  << "', id: " << id << '.';
+  RTC_LOG(LS_WARNING) << "Unknown extension uri:'" << uri << "', id: " << id
+                      << '.';
   return false;
 }
 
@@ -121,22 +121,22 @@ bool RtpHeaderExtensionMap::Register(int id,
   RTC_DCHECK_LT(type, kRtpExtensionNumberOfExtensions);
 
   if (id < kMinId || id > kMaxId) {
-    LOG(LS_WARNING) << "Failed to register extension uri:'" << uri
-                    << "' with invalid id:" << id << ".";
+    RTC_LOG(LS_WARNING) << "Failed to register extension uri:'" << uri
+                        << "' with invalid id:" << id << ".";
     return false;
   }
 
   if (GetType(id) == type) {  // Same type/id pair already registered.
-    LOG(LS_VERBOSE) << "Reregistering extension uri:'" << uri
-                    << "', id:" << id;
+    RTC_LOG(LS_VERBOSE) << "Reregistering extension uri:'" << uri
+                        << "', id:" << id;
     return true;
   }
 
   if (GetType(id) != kInvalidType) {  // |id| used by another extension type.
-    LOG(LS_WARNING) << "Failed to register extension uri:'" << uri
-                    << "', id:" << id
-                    << ". Id already in use by extension type "
-                    << static_cast<int>(GetType(id));
+    RTC_LOG(LS_WARNING) << "Failed to register extension uri:'" << uri
+                        << "', id:" << id
+                        << ". Id already in use by extension type "
+                        << static_cast<int>(GetType(id));
     return false;
   }
   RTC_DCHECK(!IsRegistered(type));

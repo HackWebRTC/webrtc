@@ -132,7 +132,7 @@ void GetHeaderExtensions(
 bool ParsedRtcEventLog::ParseFile(const std::string& filename) {
   std::ifstream file(filename, std::ios_base::in | std::ios_base::binary);
   if (!file.good() || !file.is_open()) {
-    LOG(LS_WARNING) << "Could not open file for reading.";
+    RTC_LOG(LS_WARNING) << "Could not open file for reading.";
     return false;
   }
 
@@ -174,34 +174,36 @@ bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
     const uint64_t kExpectedTag = (1 << 3) | 2;
     std::tie(tag, success) = ParseVarInt(stream);
     if (!success) {
-      LOG(LS_WARNING) << "Missing field tag from beginning of protobuf event.";
+      RTC_LOG(LS_WARNING)
+          << "Missing field tag from beginning of protobuf event.";
       return false;
     } else if (tag != kExpectedTag) {
-      LOG(LS_WARNING) << "Unexpected field tag at beginning of protobuf event.";
+      RTC_LOG(LS_WARNING)
+          << "Unexpected field tag at beginning of protobuf event.";
       return false;
     }
 
     // Read the length field.
     std::tie(message_length, success) = ParseVarInt(stream);
     if (!success) {
-      LOG(LS_WARNING) << "Missing message length after protobuf field tag.";
+      RTC_LOG(LS_WARNING) << "Missing message length after protobuf field tag.";
       return false;
     } else if (message_length > kMaxEventSize) {
-      LOG(LS_WARNING) << "Protobuf message length is too large.";
+      RTC_LOG(LS_WARNING) << "Protobuf message length is too large.";
       return false;
     }
 
     // Read the next protobuf event to a temporary char buffer.
     stream.read(tmp_buffer.data(), message_length);
     if (stream.gcount() != static_cast<int>(message_length)) {
-      LOG(LS_WARNING) << "Failed to read protobuf message from file.";
+      RTC_LOG(LS_WARNING) << "Failed to read protobuf message from file.";
       return false;
     }
 
     // Parse the protobuf event from the buffer.
     rtclog::Event event;
     if (!event.ParseFromArray(tmp_buffer.data(), message_length)) {
-      LOG(LS_WARNING) << "Failed to parse protobuf message.";
+      RTC_LOG(LS_WARNING) << "Failed to parse protobuf message.";
       return false;
     }
 
@@ -410,7 +412,7 @@ rtclog::StreamConfig ParsedRtcEventLog::GetVideoReceiveConfig(
       rtx_payload_type = rtx_it->second.rtx_payload_type();
       if (config.rtx_ssrc != 0 &&
           config.rtx_ssrc != rtx_it->second.rtx_ssrc()) {
-        LOG(LS_WARNING)
+        RTC_LOG(LS_WARNING)
             << "RtcEventLog protobuf contained different SSRCs for "
                "different received RTX payload types. Will only use "
                "rtx_ssrc = "
@@ -441,8 +443,9 @@ std::vector<rtclog::StreamConfig> ParsedRtcEventLog::GetVideoSendConfig(
   const rtclog::VideoSendConfig& sender_config = event.video_sender_config();
   if (sender_config.rtx_ssrcs_size() > 0 &&
       sender_config.ssrcs_size() != sender_config.rtx_ssrcs_size()) {
-    LOG(WARNING) << "VideoSendConfig is configured for RTX but the number of "
-                    "SSRCs doesn't match the number of RTX SSRCs.";
+    RTC_LOG(WARNING)
+        << "VideoSendConfig is configured for RTX but the number of "
+           "SSRCs doesn't match the number of RTX SSRCs.";
   }
   configs.resize(sender_config.ssrcs_size());
   for (int i = 0; i < sender_config.ssrcs_size(); i++) {

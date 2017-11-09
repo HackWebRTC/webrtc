@@ -48,7 +48,7 @@ void decompressionOutputCallback(void *decoder,
   std::unique_ptr<RTCFrameDecodeParams> decodeParams(
       reinterpret_cast<RTCFrameDecodeParams *>(params));
   if (status != noErr) {
-    LOG(LS_ERROR) << "Failed to decode frame. Status: " << status;
+    RTC_LOG(LS_ERROR) << "Failed to decode frame. Status: " << status;
     return;
   }
   // TODO(tkchin): Handle CVO properly.
@@ -126,7 +126,7 @@ void decompressionOutputCallback(void *decoder,
     // This can happen after backgrounding. We need to wait for the next
     // sps/pps before we can resume so we request a keyframe by returning an
     // error.
-    LOG(LS_WARNING) << "Missing video format. Frame with sps/pps required.";
+    RTC_LOG(LS_WARNING) << "Missing video format. Frame with sps/pps required.";
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   CMSampleBufferRef sampleBuffer = nullptr;
@@ -153,7 +153,7 @@ void decompressionOutputCallback(void *decoder,
 #endif
   CFRelease(sampleBuffer);
   if (status != noErr) {
-    LOG(LS_ERROR) << "Failed to decode frame with code: " << status;
+    RTC_LOG(LS_ERROR) << "Failed to decode frame with code: " << status;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   return WEBRTC_VIDEO_CODEC_OK;

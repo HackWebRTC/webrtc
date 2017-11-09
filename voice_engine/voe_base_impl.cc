@@ -163,14 +163,14 @@ int VoEBaseImpl::Init(
         VoEId(shared_->instance_id(), -1),
         AudioDeviceModule::kPlatformDefaultAudio));
     if (shared_->audio_device() == nullptr) {
-      LOG(LS_ERROR) << "Init() failed to create the ADM";
+      RTC_LOG(LS_ERROR) << "Init() failed to create the ADM";
       return -1;
     }
 #endif  // WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE
   } else {
     // Use the already existing external ADM implementation.
     shared_->set_audio_device(external_adm);
-    LOG_F(LS_INFO)
+    RTC_LOG_F(LS_INFO)
         << "An external ADM implementation will be used in VoiceEngine";
   }
 
@@ -181,39 +181,39 @@ int VoEBaseImpl::Init(
 
   // Register the AudioTransport implementation
   if (shared_->audio_device()->RegisterAudioCallback(this) != 0) {
-    LOG(LS_ERROR) << "Init() failed to register audio callback for the ADM";
+    RTC_LOG(LS_ERROR) << "Init() failed to register audio callback for the ADM";
   }
 
   // ADM initialization
   if (shared_->audio_device()->Init() != 0) {
-    LOG(LS_ERROR) << "Init() failed to initialize the ADM";
+    RTC_LOG(LS_ERROR) << "Init() failed to initialize the ADM";
     return -1;
   }
 
   // Initialize the default speaker
   if (shared_->audio_device()->SetPlayoutDevice(
           WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE) != 0) {
-    LOG(LS_ERROR) << "Init() failed to set the default output device";
+    RTC_LOG(LS_ERROR) << "Init() failed to set the default output device";
   }
   if (shared_->audio_device()->InitSpeaker() != 0) {
-    LOG(LS_ERROR) << "Init() failed to initialize the speaker";
+    RTC_LOG(LS_ERROR) << "Init() failed to initialize the speaker";
   }
 
   // Initialize the default microphone
   if (shared_->audio_device()->SetRecordingDevice(
           WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE) != 0) {
-    LOG(LS_ERROR) << "Init() failed to set the default input device";
+    RTC_LOG(LS_ERROR) << "Init() failed to set the default input device";
   }
   if (shared_->audio_device()->InitMicrophone() != 0) {
-    LOG(LS_ERROR) << "Init() failed to initialize the microphone";
+    RTC_LOG(LS_ERROR) << "Init() failed to initialize the microphone";
   }
 
   // Set number of channels
   if (shared_->audio_device()->StereoPlayoutIsAvailable(&available) != 0) {
-    LOG(LS_ERROR) << "Init() failed to query stereo playout mode";
+    RTC_LOG(LS_ERROR) << "Init() failed to query stereo playout mode";
   }
   if (shared_->audio_device()->SetStereoPlayout(available) != 0) {
-    LOG(LS_ERROR) << "Init() failed to set mono/stereo playout mode";
+    RTC_LOG(LS_ERROR) << "Init() failed to set mono/stereo playout mode";
   }
 
   // TODO(andrew): These functions don't tell us whether stereo recording
@@ -225,7 +225,7 @@ int VoEBaseImpl::Init(
   // http://code.google.com/p/webrtc/issues/detail?id=204
   shared_->audio_device()->StereoRecordingIsAvailable(&available);
   if (shared_->audio_device()->SetStereoRecording(available) != 0) {
-    LOG(LS_ERROR) << "Init() failed to set mono/stereo recording mode";
+    RTC_LOG(LS_ERROR) << "Init() failed to set mono/stereo recording mode";
   }
 
   shared_->set_audio_processing(audio_processing);
@@ -233,31 +233,32 @@ int VoEBaseImpl::Init(
   // Configure AudioProcessing components.
   // TODO(peah): Move this initialization to webrtcvoiceengine.cc.
   if (audio_processing->high_pass_filter()->Enable(true) != 0) {
-    LOG_F(LS_ERROR) << "Failed to enable high pass filter.";
+    RTC_LOG_F(LS_ERROR) << "Failed to enable high pass filter.";
     return -1;
   }
   if (audio_processing->echo_cancellation()->enable_drift_compensation(false) !=
       0) {
-    LOG_F(LS_ERROR) << "Failed to disable drift compensation.";
+    RTC_LOG_F(LS_ERROR) << "Failed to disable drift compensation.";
     return -1;
   }
   if (audio_processing->noise_suppression()->set_level(kDefaultNsMode) != 0) {
-    LOG_F(LS_ERROR) << "Failed to set noise suppression level: "
-        << kDefaultNsMode;
+    RTC_LOG_F(LS_ERROR) << "Failed to set noise suppression level: "
+                        << kDefaultNsMode;
     return -1;
   }
   GainControl* agc = audio_processing->gain_control();
   if (agc->set_analog_level_limits(kMinVolumeLevel, kMaxVolumeLevel) != 0) {
-    LOG_F(LS_ERROR) << "Failed to set analog level limits with minimum: "
-        << kMinVolumeLevel << " and maximum: " << kMaxVolumeLevel;
+    RTC_LOG_F(LS_ERROR) << "Failed to set analog level limits with minimum: "
+                        << kMinVolumeLevel
+                        << " and maximum: " << kMaxVolumeLevel;
     return -1;
   }
   if (agc->set_mode(kDefaultAgcMode) != 0) {
-    LOG_F(LS_ERROR) << "Failed to set mode: " << kDefaultAgcMode;
+    RTC_LOG_F(LS_ERROR) << "Failed to set mode: " << kDefaultAgcMode;
     return -1;
   }
   if (agc->Enable(kDefaultAgcState) != 0) {
-    LOG_F(LS_ERROR) << "Failed to set agc state: " << kDefaultAgcState;
+    RTC_LOG_F(LS_ERROR) << "Failed to set agc state: " << kDefaultAgcState;
     return -1;
   }
 
@@ -265,7 +266,7 @@ int VoEBaseImpl::Init(
   bool agc_enabled =
       agc->mode() == GainControl::kAdaptiveAnalog && agc->is_enabled();
   if (shared_->audio_device()->SetAGC(agc_enabled) != 0) {
-    LOG_F(LS_ERROR) << "Failed to set agc to enabled: " << agc_enabled;
+    RTC_LOG_F(LS_ERROR) << "Failed to set agc to enabled: " << agc_enabled;
     // TODO(ajm): No error return here due to
     // https://code.google.com/p/webrtc/issues/detail?id=1464
   }
@@ -299,14 +300,16 @@ int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner) {
   if (channel_owner->channel()->SetEngineInformation(
           *shared_->process_thread(), *shared_->audio_device(),
           shared_->encoder_queue()) != 0) {
-    LOG(LS_ERROR) << "CreateChannel() failed to associate engine and channel."
-                     " Destroying channel.";
+    RTC_LOG(LS_ERROR)
+        << "CreateChannel() failed to associate engine and channel."
+           " Destroying channel.";
     shared_->channel_manager().DestroyChannel(
         channel_owner->channel()->ChannelId());
     return -1;
   } else if (channel_owner->channel()->Init() != 0) {
-    LOG(LS_ERROR) << "CreateChannel() failed to initialize channel. Destroying"
-                     " channel.";
+    RTC_LOG(LS_ERROR)
+        << "CreateChannel() failed to initialize channel. Destroying"
+           " channel.";
     shared_->channel_manager().DestroyChannel(
         channel_owner->channel()->ChannelId());
     return -1;
@@ -320,7 +323,7 @@ int VoEBaseImpl::DeleteChannel(int channel) {
     voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
     voe::Channel* channelPtr = ch.channel();
     if (channelPtr == nullptr) {
-      LOG(LS_ERROR) << "DeleteChannel() failed to locate channel";
+      RTC_LOG(LS_ERROR) << "DeleteChannel() failed to locate channel";
       return -1;
     }
   }
@@ -340,14 +343,14 @@ int VoEBaseImpl::StartPlayout(int channel) {
   voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == nullptr) {
-    LOG(LS_ERROR) << "StartPlayout() failed to locate channel";
+    RTC_LOG(LS_ERROR) << "StartPlayout() failed to locate channel";
     return -1;
   }
   if (channelPtr->Playing()) {
     return 0;
   }
   if (StartPlayout() != 0) {
-    LOG(LS_ERROR) << "StartPlayout() failed to start playout";
+    RTC_LOG(LS_ERROR) << "StartPlayout() failed to start playout";
     return -1;
   }
   return channelPtr->StartPlayout();
@@ -358,12 +361,12 @@ int VoEBaseImpl::StopPlayout(int channel) {
   voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == nullptr) {
-    LOG(LS_ERROR) << "StopPlayout() failed to locate channel";
+    RTC_LOG(LS_ERROR) << "StopPlayout() failed to locate channel";
     return -1;
   }
   if (channelPtr->StopPlayout() != 0) {
-    LOG_F(LS_WARNING) << "StopPlayout() failed to stop playout for channel "
-                      << channel;
+    RTC_LOG_F(LS_WARNING) << "StopPlayout() failed to stop playout for channel "
+                          << channel;
   }
   return StopPlayout();
 }
@@ -373,14 +376,14 @@ int VoEBaseImpl::StartSend(int channel) {
   voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == nullptr) {
-    LOG(LS_ERROR) << "StartSend() failed to locate channel";
+    RTC_LOG(LS_ERROR) << "StartSend() failed to locate channel";
     return -1;
   }
   if (channelPtr->Sending()) {
     return 0;
   }
   if (StartSend() != 0) {
-    LOG(LS_ERROR) << "StartSend() failed to start recording";
+    RTC_LOG(LS_ERROR) << "StartSend() failed to start recording";
     return -1;
   }
   return channelPtr->StartSend();
@@ -391,7 +394,7 @@ int VoEBaseImpl::StopSend(int channel) {
   voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == nullptr) {
-    LOG(LS_ERROR) << "StopSend() failed to locate channel";
+    RTC_LOG(LS_ERROR) << "StopSend() failed to locate channel";
     return -1;
   }
   channelPtr->StopSend();
@@ -401,11 +404,11 @@ int VoEBaseImpl::StopSend(int channel) {
 int32_t VoEBaseImpl::StartPlayout() {
   if (!shared_->audio_device()->Playing()) {
     if (shared_->audio_device()->InitPlayout() != 0) {
-      LOG_F(LS_ERROR) << "Failed to initialize playout";
+      RTC_LOG_F(LS_ERROR) << "Failed to initialize playout";
       return -1;
     }
     if (playout_enabled_ && shared_->audio_device()->StartPlayout() != 0) {
-      LOG_F(LS_ERROR) << "Failed to start playout";
+      RTC_LOG_F(LS_ERROR) << "Failed to start playout";
       return -1;
     }
   }
@@ -419,7 +422,7 @@ int32_t VoEBaseImpl::StopPlayout() {
   // Stop audio-device playing if no channel is playing out.
   if (shared_->NumOfPlayingChannels() == 0) {
     if (shared_->audio_device()->StopPlayout() != 0) {
-      LOG(LS_ERROR) << "StopPlayout() failed to stop playout";
+      RTC_LOG(LS_ERROR) << "StopPlayout() failed to stop playout";
       return -1;
     }
   }
@@ -429,11 +432,11 @@ int32_t VoEBaseImpl::StopPlayout() {
 int32_t VoEBaseImpl::StartSend() {
   if (!shared_->audio_device()->Recording()) {
     if (shared_->audio_device()->InitRecording() != 0) {
-      LOG_F(LS_ERROR) << "Failed to initialize recording";
+      RTC_LOG_F(LS_ERROR) << "Failed to initialize recording";
       return -1;
     }
     if (recording_enabled_ && shared_->audio_device()->StartRecording() != 0) {
-      LOG_F(LS_ERROR) << "Failed to start recording";
+      RTC_LOG_F(LS_ERROR) << "Failed to start recording";
       return -1;
     }
   }
@@ -447,7 +450,7 @@ int32_t VoEBaseImpl::StopSend() {
   // Stop audio-device recording if no channel is recording.
   if (shared_->NumOfSendingChannels() == 0) {
     if (shared_->audio_device()->StopRecording() != 0) {
-      LOG(LS_ERROR) << "StopSend() failed to stop recording";
+      RTC_LOG(LS_ERROR) << "StopSend() failed to stop recording";
       return -1;
     }
     shared_->transmit_mixer()->StopSend();
@@ -457,7 +460,7 @@ int32_t VoEBaseImpl::StopSend() {
 }
 
 int32_t VoEBaseImpl::SetPlayout(bool enabled) {
-  LOG(INFO) << "SetPlayout(" << enabled << ")";
+  RTC_LOG(INFO) << "SetPlayout(" << enabled << ")";
   if (playout_enabled_ == enabled) {
     return 0;
   }
@@ -471,19 +474,19 @@ int32_t VoEBaseImpl::SetPlayout(bool enabled) {
   if (enabled) {
     ret = shared_->audio_device()->StartPlayout();
     if (ret != 0) {
-      LOG(LS_ERROR) << "SetPlayout(true) failed to start playout";
+      RTC_LOG(LS_ERROR) << "SetPlayout(true) failed to start playout";
     }
   } else {
     ret = shared_->audio_device()->StopPlayout();
     if (ret != 0) {
-      LOG(LS_ERROR) << "SetPlayout(false) failed to stop playout";
+      RTC_LOG(LS_ERROR) << "SetPlayout(false) failed to stop playout";
     }
   }
   return ret;
 }
 
 int32_t VoEBaseImpl::SetRecording(bool enabled) {
-  LOG(INFO) << "SetRecording(" << enabled << ")";
+  RTC_LOG(INFO) << "SetRecording(" << enabled << ")";
   if (recording_enabled_ == enabled) {
     return 0;
   }
@@ -497,12 +500,12 @@ int32_t VoEBaseImpl::SetRecording(bool enabled) {
   if (enabled) {
     ret = shared_->audio_device()->StartRecording();
     if (ret != 0) {
-      LOG(LS_ERROR) << "SetRecording(true) failed to start recording";
+      RTC_LOG(LS_ERROR) << "SetRecording(true) failed to start recording";
     }
   } else {
     ret = shared_->audio_device()->StopRecording();
     if (ret != 0) {
-      LOG(LS_ERROR) << "SetRecording(false) failed to stop recording";
+      RTC_LOG(LS_ERROR) << "SetRecording(false) failed to stop recording";
     }
   }
   return ret;
@@ -518,17 +521,17 @@ int32_t VoEBaseImpl::TerminateInternal() {
 
   if (shared_->audio_device()) {
     if (shared_->audio_device()->StopPlayout() != 0) {
-      LOG(LS_ERROR) << "TerminateInternal() failed to stop playout";
+      RTC_LOG(LS_ERROR) << "TerminateInternal() failed to stop playout";
     }
     if (shared_->audio_device()->StopRecording() != 0) {
-      LOG(LS_ERROR) << "TerminateInternal() failed to stop recording";
+      RTC_LOG(LS_ERROR) << "TerminateInternal() failed to stop recording";
     }
     if (shared_->audio_device()->RegisterAudioCallback(nullptr) != 0) {
-      LOG(LS_ERROR) << "TerminateInternal() failed to de-register audio "
-                       "callback for the ADM";
+      RTC_LOG(LS_ERROR) << "TerminateInternal() failed to de-register audio "
+                           "callback for the ADM";
     }
     if (shared_->audio_device()->Terminate() != 0) {
-      LOG(LS_ERROR) << "TerminateInternal() failed to terminate the ADM";
+      RTC_LOG(LS_ERROR) << "TerminateInternal() failed to terminate the ADM";
     }
     shared_->set_audio_device(nullptr);
   }

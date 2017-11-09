@@ -76,7 +76,7 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
     size_t packet_length,
     uint8_t ulpfec_payload_type) {
   if (header.ssrc != ssrc_) {
-    LOG(LS_WARNING)
+    RTC_LOG(LS_WARNING)
         << "Received RED packet with different SSRC than expected; dropping.";
     return -1;
   }
@@ -87,7 +87,7 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
   size_t payload_data_length = packet_length - header.headerLength;
 
   if (payload_data_length == 0) {
-    LOG(LS_WARNING) << "Corrupt/truncated FEC packet.";
+    RTC_LOG(LS_WARNING) << "Corrupt/truncated FEC packet.";
     return -1;
   }
 
@@ -107,7 +107,7 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
     // f bit set in RED header, i.e. there are more than one RED header blocks.
     red_header_length = 4;
     if (payload_data_length < red_header_length + 1u) {
-      LOG(LS_WARNING) << "Corrupt/truncated FEC packet.";
+      RTC_LOG(LS_WARNING) << "Corrupt/truncated FEC packet.";
       return -1;
     }
 
@@ -116,7 +116,7 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
     timestamp_offset += incoming_rtp_packet[header.headerLength + 2];
     timestamp_offset = timestamp_offset >> 2;
     if (timestamp_offset != 0) {
-      LOG(LS_WARNING) << "Corrupt payload found.";
+      RTC_LOG(LS_WARNING) << "Corrupt payload found.";
       return -1;
     }
 
@@ -125,13 +125,13 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
 
     // Check next RED header block.
     if (incoming_rtp_packet[header.headerLength + 4] & 0x80) {
-      LOG(LS_WARNING) << "More than 2 blocks in packet not supported.";
+      RTC_LOG(LS_WARNING) << "More than 2 blocks in packet not supported.";
       return -1;
     }
     // Check that the packet is long enough to contain data in the following
     // block.
     if (block_length > payload_data_length - (red_header_length + 1)) {
-      LOG(LS_WARNING) << "Block length longer than packet.";
+      RTC_LOG(LS_WARNING) << "Block length longer than packet.";
       return -1;
     }
   }

@@ -42,7 +42,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
   CMVideoFormatDescriptionRef description =
       CMSampleBufferGetFormatDescription(avcc_sample_buffer);
   if (description == nullptr) {
-    LOG(LS_ERROR) << "Failed to get sample buffer's description.";
+    RTC_LOG(LS_ERROR) << "Failed to get sample buffer's description.";
     return false;
   }
 
@@ -52,7 +52,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
   OSStatus status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
       description, 0, nullptr, nullptr, &param_set_count, &nalu_header_size);
   if (status != noErr) {
-    LOG(LS_ERROR) << "Failed to get parameter set.";
+    RTC_LOG(LS_ERROR) << "Failed to get parameter set.";
     return false;
   }
   RTC_CHECK_EQ(nalu_header_size, kAvccHeaderByteSize);
@@ -73,7 +73,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
       status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
           description, i, &param_set, &param_set_size, nullptr, nullptr);
       if (status != noErr) {
-        LOG(LS_ERROR) << "Failed to get parameter set.";
+        RTC_LOG(LS_ERROR) << "Failed to get parameter set.";
         return false;
       }
       // Update buffer.
@@ -91,7 +91,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
   CMBlockBufferRef block_buffer =
       CMSampleBufferGetDataBuffer(avcc_sample_buffer);
   if (block_buffer == nullptr) {
-    LOG(LS_ERROR) << "Failed to get sample buffer's block buffer.";
+    RTC_LOG(LS_ERROR) << "Failed to get sample buffer's block buffer.";
     return false;
   }
   CMBlockBufferRef contiguous_buffer = nullptr;
@@ -100,8 +100,8 @@ bool H264CMSampleBufferToAnnexBBuffer(
     status = CMBlockBufferCreateContiguous(
         nullptr, block_buffer, nullptr, nullptr, 0, 0, 0, &contiguous_buffer);
     if (status != noErr) {
-      LOG(LS_ERROR) << "Failed to flatten non-contiguous block buffer: "
-                    << status;
+      RTC_LOG(LS_ERROR) << "Failed to flatten non-contiguous block buffer: "
+                        << status;
       return false;
     }
   } else {
@@ -117,7 +117,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
   status = CMBlockBufferGetDataPointer(contiguous_buffer, 0, nullptr, nullptr,
                                        &data_ptr);
   if (status != noErr) {
-    LOG(LS_ERROR) << "Failed to get block buffer data.";
+    RTC_LOG(LS_ERROR) << "Failed to get block buffer data.";
     CFRelease(contiguous_buffer);
     return false;
   }
@@ -173,11 +173,11 @@ bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
     const uint8_t* data = nullptr;
     size_t data_len = 0;
     if (!reader.ReadNalu(&data, &data_len)) {
-      LOG(LS_ERROR) << "Failed to read SPS";
+      RTC_LOG(LS_ERROR) << "Failed to read SPS";
       return false;
     }
     if (!reader.ReadNalu(&data, &data_len)) {
-      LOG(LS_ERROR) << "Failed to read PPS";
+      RTC_LOG(LS_ERROR) << "Failed to read PPS";
       return false;
     }
   }
@@ -190,7 +190,7 @@ bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
       reader.BytesRemaining(), kCMBlockBufferAssureMemoryNowFlag,
       &block_buffer);
   if (status != kCMBlockBufferNoErr) {
-    LOG(LS_ERROR) << "Failed to create block buffer.";
+    RTC_LOG(LS_ERROR) << "Failed to create block buffer.";
     return false;
   }
 
@@ -200,8 +200,8 @@ bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
     status = CMBlockBufferCreateContiguous(
         nullptr, block_buffer, nullptr, nullptr, 0, 0, 0, &contiguous_buffer);
     if (status != noErr) {
-      LOG(LS_ERROR) << "Failed to flatten non-contiguous block buffer: "
-                    << status;
+      RTC_LOG(LS_ERROR) << "Failed to flatten non-contiguous block buffer: "
+                        << status;
       CFRelease(block_buffer);
       return false;
     }
@@ -216,7 +216,7 @@ bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
   status = CMBlockBufferGetDataPointer(contiguous_buffer, 0, nullptr,
                                        &block_buffer_size, &data_ptr);
   if (status != kCMBlockBufferNoErr) {
-    LOG(LS_ERROR) << "Failed to get block buffer data pointer.";
+    RTC_LOG(LS_ERROR) << "Failed to get block buffer data pointer.";
     CFRelease(contiguous_buffer);
     return false;
   }
@@ -238,7 +238,7 @@ bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
                                 nullptr, video_format, 1, 0, nullptr, 0,
                                 nullptr, out_sample_buffer);
   if (status != noErr) {
-    LOG(LS_ERROR) << "Failed to create sample buffer.";
+    RTC_LOG(LS_ERROR) << "Failed to create sample buffer.";
     CFRelease(contiguous_buffer);
     return false;
   }
@@ -284,23 +284,23 @@ CMVideoFormatDescriptionRef CreateVideoFormatDescription(
   // Skip AUD.
   if (ParseNaluType(annexb_buffer[4]) == kAud) {
     if (!reader.ReadNalu(&param_set_ptrs[0], &param_set_sizes[0])) {
-      LOG(LS_ERROR) << "Failed to read AUD";
+      RTC_LOG(LS_ERROR) << "Failed to read AUD";
       return nullptr;
     }
   }
   if (!reader.ReadNalu(&param_set_ptrs[0], &param_set_sizes[0])) {
-    LOG(LS_ERROR) << "Failed to read SPS";
+    RTC_LOG(LS_ERROR) << "Failed to read SPS";
     return nullptr;
   }
   if (!reader.ReadNalu(&param_set_ptrs[1], &param_set_sizes[1])) {
-    LOG(LS_ERROR) << "Failed to read PPS";
+    RTC_LOG(LS_ERROR) << "Failed to read PPS";
     return nullptr;
   }
   status = CMVideoFormatDescriptionCreateFromH264ParameterSets(
       kCFAllocatorDefault, 2, param_set_ptrs, param_set_sizes, 4,
       &description);
   if (status != noErr) {
-    LOG(LS_ERROR) << "Failed to create video format description.";
+    RTC_LOG(LS_ERROR) << "Failed to create video format description.";
     return nullptr;
   }
   return description;

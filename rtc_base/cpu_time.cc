@@ -41,7 +41,7 @@ int64_t GetProcessCpuTimeNanos() {
   if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts) == 0) {
     return ts.tv_sec * kNumNanosecsPerSec + ts.tv_nsec;
   } else {
-    LOG_ERR(LS_ERROR) << "clock_gettime() failed.";
+    RTC_LOG_ERR(LS_ERROR) << "clock_gettime() failed.";
   }
 #elif defined(WEBRTC_MAC)
   struct rusage rusage;
@@ -49,7 +49,7 @@ int64_t GetProcessCpuTimeNanos() {
     return rusage.ru_utime.tv_sec * kNumNanosecsPerSec +
            rusage.ru_utime.tv_usec * kNumNanosecsPerMicrosec;
   } else {
-    LOG_ERR(LS_ERROR) << "getrusage() failed.";
+    RTC_LOG_ERR(LS_ERROR) << "getrusage() failed.";
   }
 #elif defined(WEBRTC_WIN)
   FILETIME createTime;
@@ -62,7 +62,7 @@ int64_t GetProcessCpuTimeNanos() {
             userTime.dwLowDateTime) *
            kNanosecsPerFiletime;
   } else {
-    LOG_ERR(LS_ERROR) << "GetProcessTimes() failed.";
+    RTC_LOG_ERR(LS_ERROR) << "GetProcessTimes() failed.";
   }
 #else
   // Not implemented yet.
@@ -78,7 +78,7 @@ int64_t GetThreadCpuTimeNanos() {
   if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts) == 0) {
     return ts.tv_sec * kNumNanosecsPerSec + ts.tv_nsec;
   } else {
-    LOG_ERR(LS_ERROR) << "clock_gettime() failed.";
+    RTC_LOG_ERR(LS_ERROR) << "clock_gettime() failed.";
   }
 #elif defined(WEBRTC_MAC)
   thread_basic_info_data_t info;
@@ -88,7 +88,7 @@ int64_t GetThreadCpuTimeNanos() {
     return info.user_time.seconds * kNumNanosecsPerSec +
            info.user_time.microseconds * kNumNanosecsPerMicrosec;
   } else {
-    LOG_ERR(LS_ERROR) << "thread_info() failed.";
+    RTC_LOG_ERR(LS_ERROR) << "thread_info() failed.";
   }
 #elif defined(WEBRTC_WIN)
   FILETIME createTime;
@@ -101,7 +101,7 @@ int64_t GetThreadCpuTimeNanos() {
             userTime.dwLowDateTime) *
            kNanosecsPerFiletime;
   } else {
-    LOG_ERR(LS_ERROR) << "GetThreadTimes() failed.";
+    RTC_LOG_ERR(LS_ERROR) << "GetThreadTimes() failed.";
   }
 #else
   // Not implemented yet.

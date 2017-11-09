@@ -455,9 +455,9 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       codec_histogram_bins_log_(),
       number_of_consecutive_empty_packets_(0) {
   if (InitializeReceiverSafe() < 0) {
-    LOG(LS_ERROR) << "Cannot initialize receiver";
+    RTC_LOG(LS_ERROR) << "Cannot initialize receiver";
   }
-  LOG(LS_INFO) << "Created";
+  RTC_LOG(LS_INFO) << "Created";
 }
 
 AudioCodingModuleImpl::~AudioCodingModuleImpl() = default;
@@ -629,7 +629,7 @@ int AudioCodingModuleImpl::SendFrequency() const {
   rtc::CritScope lock(&acm_crit_sect_);
 
   if (!encoder_stack_) {
-    LOG(LS_ERROR) << "SendFrequency Failed, no codec is registered";
+    RTC_LOG(LS_ERROR) << "SendFrequency Failed, no codec is registered";
     return -1;
   }
 
@@ -665,26 +665,26 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
                                                InputData* input_data) {
   if (audio_frame.samples_per_channel_ == 0) {
     assert(false);
-    LOG(LS_ERROR) << "Cannot Add 10 ms audio, payload length is zero";
+    RTC_LOG(LS_ERROR) << "Cannot Add 10 ms audio, payload length is zero";
     return -1;
   }
 
   if (audio_frame.sample_rate_hz_ > 48000) {
     assert(false);
-    LOG(LS_ERROR) << "Cannot Add 10 ms audio, input frequency not valid";
+    RTC_LOG(LS_ERROR) << "Cannot Add 10 ms audio, input frequency not valid";
     return -1;
   }
 
   // If the length and frequency matches. We currently just support raw PCM.
   if (static_cast<size_t>(audio_frame.sample_rate_hz_ / 100) !=
       audio_frame.samples_per_channel_) {
-    LOG(LS_ERROR)
+    RTC_LOG(LS_ERROR)
         << "Cannot Add 10 ms audio, input frequency and length doesn't match";
     return -1;
   }
 
   if (audio_frame.num_channels_ != 1 && audio_frame.num_channels_ != 2) {
-    LOG(LS_ERROR) << "Cannot Add 10 ms audio, invalid number of channels.";
+    RTC_LOG(LS_ERROR) << "Cannot Add 10 ms audio, invalid number of channels.";
     return -1;
   }
 
@@ -757,8 +757,8 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
     expected_codec_ts_ = in_frame.timestamp_;
     first_10ms_data_ = true;
   } else if (in_frame.timestamp_ != expected_in_ts_) {
-    LOG(LS_WARNING) << "Unexpected input timestamp: " << in_frame.timestamp_
-                    << ", expected: " << expected_in_ts_;
+    RTC_LOG(LS_WARNING) << "Unexpected input timestamp: " << in_frame.timestamp_
+                        << ", expected: " << expected_in_ts_;
     expected_codec_ts_ +=
         (in_frame.timestamp_ - expected_in_ts_) *
         static_cast<uint32_t>(
@@ -816,7 +816,7 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
         dest_ptr_audio);
 
     if (samples_per_channel < 0) {
-      LOG(LS_ERROR) << "Cannot add 10 ms audio, resampling failed";
+      RTC_LOG(LS_ERROR) << "Cannot add 10 ms audio, resampling failed";
       return -1;
     }
     preprocess_frame_.samples_per_channel_ =
@@ -853,7 +853,7 @@ int AudioCodingModuleImpl::SetREDStatus(bool enable_red) {
     encoder_stack_ = encoder_factory_->rent_a_codec.RentEncoderStack(sp);
   return 0;
 #else
-  LOG(LS_WARNING) << "  WEBRTC_CODEC_RED is undefined";
+  RTC_LOG(LS_WARNING) << "  WEBRTC_CODEC_RED is undefined";
   return -1;
 #endif
 }
@@ -971,8 +971,8 @@ bool AudioCodingModuleImpl::RegisterReceiveCodec(
   RTC_DCHECK(receiver_initialized_);
 
   if (!acm2::RentACodec::IsPayloadTypeValid(rtp_payload_type)) {
-    LOG_F(LS_ERROR) << "Invalid payload-type " << rtp_payload_type
-                    << " for decoder.";
+    RTC_LOG_F(LS_ERROR) << "Invalid payload-type " << rtp_payload_type
+                        << " for decoder.";
     return false;
   }
 
@@ -998,14 +998,15 @@ int AudioCodingModuleImpl::RegisterReceiveCodecUnlocked(
     rtc::FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) {
   RTC_DCHECK(receiver_initialized_);
   if (codec.channels > 2) {
-    LOG_F(LS_ERROR) << "Unsupported number of channels: " << codec.channels;
+    RTC_LOG_F(LS_ERROR) << "Unsupported number of channels: " << codec.channels;
     return -1;
   }
 
   auto codec_id = acm2::RentACodec::CodecIdByParams(codec.plname, codec.plfreq,
                                                     codec.channels);
   if (!codec_id) {
-    LOG_F(LS_ERROR) << "Wrong codec params to be registered as receive codec";
+    RTC_LOG_F(LS_ERROR)
+        << "Wrong codec params to be registered as receive codec";
     return -1;
   }
   auto codec_index = acm2::RentACodec::CodecIndexFromId(*codec_id);
@@ -1013,8 +1014,8 @@ int AudioCodingModuleImpl::RegisterReceiveCodecUnlocked(
 
   // Check if the payload-type is valid.
   if (!acm2::RentACodec::IsPayloadTypeValid(codec.pltype)) {
-    LOG_F(LS_ERROR) << "Invalid payload type " << codec.pltype << " for "
-                    << codec.plname;
+    RTC_LOG_F(LS_ERROR) << "Invalid payload type " << codec.pltype << " for "
+                        << codec.plname;
     return -1;
   }
 
@@ -1040,14 +1041,14 @@ int AudioCodingModuleImpl::RegisterExternalReceiveCodec(
   rtc::CritScope lock(&acm_crit_sect_);
   RTC_DCHECK(receiver_initialized_);
   if (num_channels > 2 || num_channels < 0) {
-    LOG_F(LS_ERROR) << "Unsupported number of channels: " << num_channels;
+    RTC_LOG_F(LS_ERROR) << "Unsupported number of channels: " << num_channels;
     return -1;
   }
 
   // Check if the payload-type is valid.
   if (!acm2::RentACodec::IsPayloadTypeValid(rtp_payload_type)) {
-    LOG_F(LS_ERROR) << "Invalid payload-type " << rtp_payload_type
-                    << " for external decoder.";
+    RTC_LOG_F(LS_ERROR) << "Invalid payload-type " << rtp_payload_type
+                        << " for external decoder.";
     return -1;
   }
 
@@ -1079,7 +1080,7 @@ int AudioCodingModuleImpl::IncomingPacket(const uint8_t* incoming_payload,
 // Minimum playout delay (Used for lip-sync).
 int AudioCodingModuleImpl::SetMinimumPlayoutDelay(int time_ms) {
   if ((time_ms < 0) || (time_ms > 10000)) {
-    LOG(LS_ERROR) << "Delay must be in the range of 0-10000 milliseconds.";
+    RTC_LOG(LS_ERROR) << "Delay must be in the range of 0-10000 milliseconds.";
     return -1;
   }
   return receiver_.SetMinimumDelay(time_ms);
@@ -1087,7 +1088,7 @@ int AudioCodingModuleImpl::SetMinimumPlayoutDelay(int time_ms) {
 
 int AudioCodingModuleImpl::SetMaximumPlayoutDelay(int time_ms) {
   if ((time_ms < 0) || (time_ms > 10000)) {
-    LOG(LS_ERROR) << "Delay must be in the range of 0-10000 milliseconds.";
+    RTC_LOG(LS_ERROR) << "Delay must be in the range of 0-10000 milliseconds.";
     return -1;
   }
   return receiver_.SetMaximumDelay(time_ms);
@@ -1100,7 +1101,7 @@ int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,
                                            bool* muted) {
   // GetAudio always returns 10 ms, at the requested sample rate.
   if (receiver_.GetAudio(desired_freq_hz, audio_frame, muted) != 0) {
-    LOG(LS_ERROR) << "PlayoutData failed, RecOut Failed";
+    RTC_LOG(LS_ERROR) << "PlayoutData failed, RecOut Failed";
     return -1;
   }
   return 0;
@@ -1126,7 +1127,7 @@ int AudioCodingModuleImpl::GetNetworkStatistics(NetworkStatistics* statistics) {
 }
 
 int AudioCodingModuleImpl::RegisterVADCallback(ACMVADCallback* vad_callback) {
-  LOG(LS_VERBOSE) << "RegisterVADCallback()";
+  RTC_LOG(LS_VERBOSE) << "RegisterVADCallback()";
   rtc::CritScope lock(&callback_crit_sect_);
   vad_callback_ = vad_callback;
   return 0;
@@ -1196,7 +1197,7 @@ int AudioCodingModuleImpl::FilteredCurrentDelayMs() const {
 
 bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
   if (!encoder_stack_) {
-    LOG(LS_ERROR) << caller_name << " failed: No send codec is registered.";
+    RTC_LOG(LS_ERROR) << caller_name << " failed: No send codec is registered.";
     return false;
   }
   return true;
@@ -1331,7 +1332,7 @@ int AudioCodingModule::Codec(const char* payload_name,
 bool AudioCodingModule::IsCodecValid(const CodecInst& codec) {
   bool valid = acm2::RentACodec::IsCodecValid(codec);
   if (!valid)
-    LOG(LS_ERROR) << "Invalid codec setting";
+    RTC_LOG(LS_ERROR) << "Invalid codec setting";
   return valid;
 }
 

@@ -64,15 +64,17 @@ bool DxgiTextureStaging::InitializeStage(ID3D11Texture2D* texture) {
   _com_error error = device_.d3d_device()->CreateTexture2D(
       &desc, nullptr, stage_.GetAddressOf());
   if (error.Error() != S_OK || !stage_) {
-    LOG(LS_ERROR) << "Failed to create a new ID3D11Texture2D as stage, error "
-                  << error.ErrorMessage() << ", code " << error.Error();
+    RTC_LOG(LS_ERROR)
+        << "Failed to create a new ID3D11Texture2D as stage, error "
+        << error.ErrorMessage() << ", code " << error.Error();
     return false;
   }
 
   error = stage_.As(&surface_);
   if (error.Error() != S_OK || !surface_) {
-    LOG(LS_ERROR) << "Failed to convert ID3D11Texture2D to IDXGISurface, error "
-                  << error.ErrorMessage() << ", code " << error.Error();
+    RTC_LOG(LS_ERROR)
+        << "Failed to convert ID3D11Texture2D to IDXGISurface, error "
+        << error.ErrorMessage() << ", code " << error.Error();
     return false;
   }
 
@@ -108,8 +110,8 @@ bool DxgiTextureStaging::CopyFromTexture(
   _com_error error = surface_->Map(rect(), DXGI_MAP_READ);
   if (error.Error() != S_OK) {
     *rect() = {0};
-    LOG(LS_ERROR) << "Failed to map the IDXGISurface to a bitmap, error "
-                  << error.ErrorMessage() << ", code " << error.Error();
+    RTC_LOG(LS_ERROR) << "Failed to map the IDXGISurface to a bitmap, error "
+                      << error.ErrorMessage() << ", code " << error.Error();
     return false;
   }
 

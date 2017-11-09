@@ -59,7 +59,8 @@ void AudioRtpReceiver::OnSetVolume(double volume) {
   RTC_DCHECK_LE(volume, 10);
   cached_volume_ = volume;
   if (!channel_) {
-    LOG(LS_ERROR) << "AudioRtpReceiver::OnSetVolume: No audio channel exists.";
+    RTC_LOG(LS_ERROR)
+        << "AudioRtpReceiver::OnSetVolume: No audio channel exists.";
     return;
   }
   // When the track is disabled, the volume of the source, which is the
@@ -107,7 +108,8 @@ std::vector<RtpSource> AudioRtpReceiver::GetSources() const {
 void AudioRtpReceiver::Reconfigure() {
   RTC_DCHECK(!stopped_);
   if (!channel_) {
-    LOG(LS_ERROR) << "AudioRtpReceiver::Reconfigure: No audio channel exists.";
+    RTC_LOG(LS_ERROR)
+        << "AudioRtpReceiver::Reconfigure: No audio channel exists.";
     return;
   }
   if (!channel_->SetOutputVolume(ssrc_,
@@ -162,7 +164,7 @@ VideoRtpReceiver::VideoRtpReceiver(const std::string& track_id,
               worker_thread))) {
   source_->SetState(MediaSourceInterface::kLive);
   if (!channel_) {
-    LOG(LS_ERROR)
+    RTC_LOG(LS_ERROR)
         << "VideoRtpReceiver::VideoRtpReceiver: No video channel exists.";
   } else {
     if (!channel_->SetSink(ssrc_, &broadcaster_)) {
@@ -204,7 +206,7 @@ void VideoRtpReceiver::Stop() {
   source_->SetState(MediaSourceInterface::kEnded);
   source_->OnSourceDestroyed();
   if (!channel_) {
-    LOG(LS_WARNING) << "VideoRtpReceiver::Stop: No video channel exists.";
+    RTC_LOG(LS_WARNING) << "VideoRtpReceiver::Stop: No video channel exists.";
   } else {
     // Allow that SetSink fail. This is the normal case when the underlying
     // media channel has already been deleted.

@@ -27,7 +27,7 @@ class NullVideoDecoder : public webrtc::VideoDecoder {
  public:
   int32_t InitDecode(const webrtc::VideoCodec* codec_settings,
                      int32_t number_of_cores) override {
-    LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
+    RTC_LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
@@ -36,13 +36,13 @@ class NullVideoDecoder : public webrtc::VideoDecoder {
                  const webrtc::RTPFragmentationHeader* fragmentation,
                  const webrtc::CodecSpecificInfo* codec_specific_info,
                  int64_t render_time_ms) override {
-    LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
+    RTC_LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
   int32_t RegisterDecodeCompleteCallback(
       webrtc::DecodedImageCallback* callback) override {
-    LOG(LS_ERROR)
+    RTC_LOG(LS_ERROR)
         << "Can't register decode complete callback on NullVideoDecoder.";
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -68,8 +68,8 @@ webrtc::VideoDecoder* InternalDecoderFactory::CreateVideoDecoder(
       // This could happen in a software-fallback for a codec type only
       // supported externally (e.g. H.264 on iOS or Android) or in current usage
       // in WebRtcVideoEngine if the external decoder fails to be created.
-      LOG(LS_ERROR) << "Unable to create an H.264 decoder fallback. "
-                    << "Decoding of this stream will be broken.";
+      RTC_LOG(LS_ERROR) << "Unable to create an H.264 decoder fallback. "
+                        << "Decoding of this stream will be broken.";
       return new NullVideoDecoder();
     case webrtc::kVideoCodecVP8:
       return webrtc::VP8Decoder::Create();
@@ -77,7 +77,7 @@ webrtc::VideoDecoder* InternalDecoderFactory::CreateVideoDecoder(
       RTC_DCHECK(webrtc::VP9Decoder::IsSupported());
       return webrtc::VP9Decoder::Create();
     default:
-      LOG(LS_ERROR) << "Creating NullVideoDecoder for unsupported codec.";
+      RTC_LOG(LS_ERROR) << "Creating NullVideoDecoder for unsupported codec.";
       return new NullVideoDecoder();
   }
 }

@@ -853,7 +853,7 @@ void StatsCollector::ExtractVoiceInfo() {
   }
   cricket::VoiceMediaInfo voice_info;
   if (!pc_->voice_channel()->GetStats(&voice_info)) {
-    LOG(LS_ERROR) << "Failed to get voice channel stats.";
+    RTC_LOG(LS_ERROR) << "Failed to get voice channel stats.";
     return;
   }
 
@@ -864,8 +864,8 @@ void StatsCollector::ExtractVoiceInfo() {
   StatsReport::Id transport_id(GetTransportIdFromProxy(
       proxy_to_transport_, pc_->voice_channel()->content_name()));
   if (!transport_id.get()) {
-    LOG(LS_ERROR) << "Failed to get transport name for proxy "
-                  << pc_->voice_channel()->content_name();
+    RTC_LOG(LS_ERROR) << "Failed to get transport name for proxy "
+                      << pc_->voice_channel()->content_name();
     return;
   }
 
@@ -886,7 +886,7 @@ void StatsCollector::ExtractVideoInfo(
 
   cricket::VideoMediaInfo video_info;
   if (!pc_->video_channel()->GetStats(&video_info)) {
-    LOG(LS_ERROR) << "Failed to get video channel stats.";
+    RTC_LOG(LS_ERROR) << "Failed to get video channel stats.";
     return;
   }
 
@@ -897,8 +897,8 @@ void StatsCollector::ExtractVideoInfo(
   StatsReport::Id transport_id(GetTransportIdFromProxy(
       proxy_to_transport_, pc_->video_channel()->content_name()));
   if (!transport_id.get()) {
-    LOG(LS_ERROR) << "Failed to get transport name for proxy "
-                  << pc_->video_channel()->content_name();
+    RTC_LOG(LS_ERROR) << "Failed to get transport name for proxy "
+                      << pc_->video_channel()->content_name();
     return;
   }
   ExtractStatsFromList(video_info.receivers, transport_id, this,
@@ -982,7 +982,7 @@ void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
     if (report == NULL) {
       // This can happen if a local audio track is added to a stream on the
       // fly and the report has not been set up yet. Do nothing in this case.
-      LOG(LS_ERROR) << "Stats report does not exist for ssrc " << ssrc;
+      RTC_LOG(LS_ERROR) << "Stats report does not exist for ssrc " << ssrc;
       continue;
     }
 
@@ -1033,15 +1033,15 @@ bool StatsCollector::GetTrackIdBySsrc(uint32_t ssrc,
   RTC_DCHECK(pc_->signaling_thread()->IsCurrent());
   if (direction == StatsReport::kSend) {
     if (!pc_->GetLocalTrackIdBySsrc(ssrc, track_id)) {
-      LOG(LS_WARNING) << "The SSRC " << ssrc
-                      << " is not associated with a sending track";
+      RTC_LOG(LS_WARNING) << "The SSRC " << ssrc
+                          << " is not associated with a sending track";
       return false;
     }
   } else {
     RTC_DCHECK(direction == StatsReport::kReceive);
     if (!pc_->GetRemoteTrackIdBySsrc(ssrc, track_id)) {
-      LOG(LS_WARNING) << "The SSRC " << ssrc
-                      << " is not associated with a receiving track";
+      RTC_LOG(LS_WARNING) << "The SSRC " << ssrc
+                          << " is not associated with a receiving track";
       return false;
     }
   }

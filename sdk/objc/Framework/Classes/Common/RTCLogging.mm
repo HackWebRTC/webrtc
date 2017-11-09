@@ -28,7 +28,7 @@ rtc::LoggingSeverity RTCGetNativeLoggingSeverity(RTCLoggingSeverity severity) {
 void RTCLogEx(RTCLoggingSeverity severity, NSString* log_string) {
   if (log_string.length) {
     const char* utf8_string = log_string.UTF8String;
-    LOG_V(RTCGetNativeLoggingSeverity(severity)) << utf8_string;
+    RTC_LOG_V(RTCGetNativeLoggingSeverity(severity)) << utf8_string;
   }
 }
 

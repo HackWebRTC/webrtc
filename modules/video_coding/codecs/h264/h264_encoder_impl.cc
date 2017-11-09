@@ -111,9 +111,10 @@ static void RtpFragmentize(EncodedImage* encoded_image,
         VideoType::kI420, frame_buffer.width(), frame_buffer.height());
     if (encoded_image->_size < required_size) {
       // Encoded data > unencoded data. Allocate required bytes.
-      LOG(LS_WARNING) << "Encoding produced more bytes than the original image "
-                      << "data! Original bytes: " << encoded_image->_size
-                      << ", encoded bytes: " << required_size << ".";
+      RTC_LOG(LS_WARNING)
+          << "Encoding produced more bytes than the original image "
+          << "data! Original bytes: " << encoded_image->_size
+          << ", encoded bytes: " << required_size << ".";
       encoded_image->_size = required_size;
     }
     encoded_image->_buffer = new uint8_t[encoded_image->_size];
@@ -209,7 +210,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
   // Create encoder.
   if (WelsCreateSVCEncoder(&openh264_encoder_) != 0) {
     // Failed to create encoder.
-    LOG(LS_ERROR) << "Failed to create OpenH264 encoder";
+    RTC_LOG(LS_ERROR) << "Failed to create OpenH264 encoder";
     RTC_DCHECK(!openh264_encoder_);
     ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -243,7 +244,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
 
   // Initialize.
   if (openh264_encoder_->InitializeExt(&encoder_params) != 0) {
-    LOG(LS_ERROR) << "Failed to initialize OpenH264 encoder";
+    RTC_LOG(LS_ERROR) << "Failed to initialize OpenH264 encoder";
     Release();
     ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -309,8 +310,9 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   if (!encoded_image_callback_) {
-    LOG(LS_WARNING) << "InitEncode() has been called, but a callback function "
-                    << "has not been set with RegisterEncodeCompleteCallback()";
+    RTC_LOG(LS_WARNING)
+        << "InitEncode() has been called, but a callback function "
+        << "has not been set with RegisterEncodeCompleteCallback()";
     ReportError();
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -355,8 +357,8 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
   // Encode!
   int enc_ret = openh264_encoder_->EncodeFrame(&picture, &info);
   if (enc_ret != 0) {
-    LOG(LS_ERROR) << "OpenH264 frame encoding failed, EncodeFrame returned "
-                  << enc_ret << ".";
+    RTC_LOG(LS_ERROR) << "OpenH264 frame encoding failed, EncodeFrame returned "
+                      << enc_ret << ".";
     ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
@@ -449,8 +451,8 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
       encoder_params.iTargetBitrate;
   encoder_params.sSpatialLayers[0].iMaxSpatialBitrate =
       encoder_params.iMaxBitrate;
-  LOG(INFO) << "OpenH264 version is " << OPENH264_MAJOR << "."
-            << OPENH264_MINOR;
+  RTC_LOG(INFO) << "OpenH264 version is " << OPENH264_MAJOR << "."
+                << OPENH264_MINOR;
   switch (packetization_mode_) {
     case H264PacketizationMode::SingleNalUnit:
       // Limit the size of the packets produced.

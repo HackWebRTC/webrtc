@@ -663,7 +663,7 @@ TEST(ConversationalSpeechTest, DISABLED_MultiEndCallSimulator) {
   rtc::Pathname output_path(audiotracks_path);
   output_path.AppendFolder("output");
   CreateDir(output_path.pathname());
-  LOG(LS_VERBOSE) << "simulator output path: " << output_path.pathname();
+  RTC_LOG(LS_VERBOSE) << "simulator output path: " << output_path.pathname();
   auto generated_audiotrak_pairs = conversational_speech::Simulate(
       multiend_call, output_path.pathname());
   EXPECT_EQ(2u, generated_audiotrak_pairs->size());
@@ -673,7 +673,7 @@ TEST(ConversationalSpeechTest, DISABLED_MultiEndCallSimulator) {
   const MockWavReaderFactory::Params expeted_params = {
       sample_rate, 1u, sample_rate * expected_duration_seconds};
   for (const auto& it : *generated_audiotrak_pairs) {
-    LOG(LS_VERBOSE) << "checking far/near-end for <" << it.first << ">";
+    RTC_LOG(LS_VERBOSE) << "checking far/near-end for <" << it.first << ">";
     CheckAudioTrackParams(
         wav_reader_factory, it.second.near_end, expeted_params);
     CheckAudioTrackParams(

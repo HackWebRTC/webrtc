@@ -53,13 +53,13 @@ int32_t VideoDecoderSoftwareFallbackWrapper::InitDecode(
 bool VideoDecoderSoftwareFallbackWrapper::InitFallbackDecoder() {
   RTC_CHECK(codec_type_ != kVideoCodecUnknown)
       << "Decoder requesting fallback to codec not supported in software.";
-  LOG(LS_WARNING) << "Decoder falling back to software decoding.";
+  RTC_LOG(LS_WARNING) << "Decoder falling back to software decoding.";
   cricket::InternalDecoderFactory internal_decoder_factory;
   fallback_decoder_.reset(
       internal_decoder_factory.CreateVideoDecoder(codec_type_));
   if (fallback_decoder_->InitDecode(&codec_settings_, number_of_cores_) !=
       WEBRTC_VIDEO_CODEC_OK) {
-    LOG(LS_ERROR) << "Failed to initialize software-decoder fallback.";
+    RTC_LOG(LS_ERROR) << "Failed to initialize software-decoder fallback.";
     fallback_decoder_.reset();
     return false;
   }
@@ -95,7 +95,7 @@ int32_t VideoDecoderSoftwareFallbackWrapper::Decode(
     if (ret == WEBRTC_VIDEO_CODEC_OK) {
       if (fallback_decoder_) {
         // Decode OK -> stop using fallback decoder.
-        LOG(LS_WARNING)
+        RTC_LOG(LS_WARNING)
             << "Decode OK, no longer using the software fallback decoder.";
         fallback_decoder_->Release();
         fallback_decoder_.reset();
@@ -125,7 +125,7 @@ int32_t VideoDecoderSoftwareFallbackWrapper::RegisterDecodeCompleteCallback(
 
 int32_t VideoDecoderSoftwareFallbackWrapper::Release() {
   if (fallback_decoder_) {
-    LOG(LS_INFO) << "Releasing software fallback decoder.";
+    RTC_LOG(LS_INFO) << "Releasing software fallback decoder.";
     fallback_decoder_->Release();
     fallback_decoder_.reset();
   }

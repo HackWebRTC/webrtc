@@ -141,19 +141,19 @@ void ResidualEchoDetector::AnalyzeCaptureAudio(
         read_index -= kLookbackFrames;
       }
       RTC_DCHECK_LT(read_index, render_power_.size());
-      LOG_F(LS_ERROR) << "Echo detector internal state: {"
-                      << "Echo likelihood: " << echo_likelihood_
-                      << ", Best Delay: " << best_delay << ", Covariance: "
-                      << covariances_[best_delay].covariance()
-                      << ", Last capture power: " << capture_power
-                      << ", Capture mean: " << capture_mean
-                      << ", Capture_standard deviation: "
-                      << capture_std_deviation
-                      << ", Last render power: " << render_power_[read_index]
-                      << ", Render mean: " << render_power_mean_[read_index]
-                      << ", Render standard deviation: "
-                      << render_power_std_dev_[read_index]
-                      << ", Reliability: " << reliability_ << "}";
+      RTC_LOG_F(LS_ERROR) << "Echo detector internal state: {"
+                          << "Echo likelihood: " << echo_likelihood_
+                          << ", Best Delay: " << best_delay << ", Covariance: "
+                          << covariances_[best_delay].covariance()
+                          << ", Last capture power: " << capture_power
+                          << ", Capture mean: " << capture_mean
+                          << ", Capture_standard deviation: "
+                          << capture_std_deviation << ", Last render power: "
+                          << render_power_[read_index]
+                          << ", Render mean: " << render_power_mean_[read_index]
+                          << ", Render standard deviation: "
+                          << render_power_std_dev_[read_index]
+                          << ", Reliability: " << reliability_ << "}";
       log_counter_++;
     }
   }

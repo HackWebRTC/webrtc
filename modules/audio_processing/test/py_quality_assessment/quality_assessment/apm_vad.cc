@@ -35,17 +35,18 @@ int main(int argc, char* argv[]) {
   // Open wav input file and check properties.
   WavReader wav_reader(FLAG_i);
   if (wav_reader.num_channels() != 1) {
-    LOG(LS_ERROR) << "Only mono wav files supported";
+    RTC_LOG(LS_ERROR) << "Only mono wav files supported";
     return 1;
   }
   if (wav_reader.sample_rate() > kMaxSampleRate) {
-    LOG(LS_ERROR) << "Beyond maximum sample rate (" << kMaxSampleRate << ")";
+    RTC_LOG(LS_ERROR) << "Beyond maximum sample rate (" << kMaxSampleRate
+                      << ")";
     return 1;
   }
   const size_t audio_frame_len = rtc::CheckedDivExact(
       kAudioFrameLengthMilliseconds * wav_reader.sample_rate(), 1000);
   if (audio_frame_len > kMaxFrameLen) {
-    LOG(LS_ERROR) << "The frame size and/or the sample rate are too large.";
+    RTC_LOG(LS_ERROR) << "The frame size and/or the sample rate are too large.";
     return 1;
   }
 

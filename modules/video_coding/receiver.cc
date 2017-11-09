@@ -165,15 +165,16 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
     timing_error = true;
   } else if (std::abs(render_time_ms - now_ms) > max_video_delay_ms_) {
     int frame_delay = static_cast<int>(std::abs(render_time_ms - now_ms));
-    LOG(LS_WARNING) << "A frame about to be decoded is out of the configured "
-                    << "delay bounds (" << frame_delay << " > "
-                    << max_video_delay_ms_
-                    << "). Resetting the video jitter buffer.";
+    RTC_LOG(LS_WARNING)
+        << "A frame about to be decoded is out of the configured "
+        << "delay bounds (" << frame_delay << " > " << max_video_delay_ms_
+        << "). Resetting the video jitter buffer.";
     timing_error = true;
   } else if (static_cast<int>(timing_->TargetVideoDelay()) >
              max_video_delay_ms_) {
-    LOG(LS_WARNING) << "The video target delay has grown larger than "
-                    << max_video_delay_ms_ << " ms. Resetting jitter buffer.";
+    RTC_LOG(LS_WARNING) << "The video target delay has grown larger than "
+                        << max_video_delay_ms_
+                        << " ms. Resetting jitter buffer.";
     timing_error = true;
   }
 

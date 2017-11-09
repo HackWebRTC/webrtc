@@ -175,7 +175,7 @@ OrtcFactory::OrtcFactory(rtc::Thread* network_thread,
       audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()),
       audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()) {
   if (!rtc::CreateRandomString(kDefaultRtcpCnameLength, &default_cname_)) {
-    LOG(LS_ERROR) << "Failed to generate CNAME?";
+    RTC_LOG(LS_ERROR) << "Failed to generate CNAME?";
     RTC_NOTREACHED();
   }
   if (!network_thread_) {
@@ -447,8 +447,8 @@ OrtcFactory::CreateUdpTransport(int family,
     LOG_AND_RETURN_ERROR_EX(RTCErrorType::RESOURCE_EXHAUSTED,
                             "Local socket allocation failure.", LS_WARNING);
   }
-  LOG(LS_INFO) << "Created UDP socket with address "
-               << socket->GetLocalAddress().ToSensitiveString() << ".";
+  RTC_LOG(LS_INFO) << "Created UDP socket with address "
+                   << socket->GetLocalAddress().ToSensitiveString() << ".";
   // Make a unique debug name (for logging/diagnostics only).
   std::ostringstream oss;
   static int udp_id = 0;

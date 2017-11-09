@@ -149,8 +149,8 @@ TEST_F(StunRequestTest, TestBackoff) {
     EXPECT_TRUE_SIMULATED_WAIT(request_count_ != i, STUN_TOTAL_TIMEOUT,
                                fake_clock);
     int64_t elapsed = rtc::TimeMillis() - start;
-    LOG(LS_INFO) << "STUN request #" << (i + 1)
-                 << " sent at " << elapsed << " ms";
+    RTC_LOG(LS_INFO) << "STUN request #" << (i + 1) << " sent at " << elapsed
+                     << " ms";
     EXPECT_EQ(TotalDelay(i), elapsed);
   }
   EXPECT_TRUE(manager_.CheckResponse(res));

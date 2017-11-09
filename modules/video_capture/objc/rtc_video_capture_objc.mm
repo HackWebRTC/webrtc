@@ -67,7 +67,7 @@ using namespace webrtc::videocapturemodule;
     if ([_captureSession canAddOutput:captureOutput]) {
       [_captureSession addOutput:captureOutput];
     } else {
-      LOG(LS_ERROR) << __FUNCTION__ << ": Could not add output to AVCaptureSession";
+      RTC_LOG(LS_ERROR) << __FUNCTION__ << ": Could not add output to AVCaptureSession";
     }
 
 #ifdef WEBRTC_IOS
@@ -230,7 +230,7 @@ using namespace webrtc::videocapturemodule;
 - (void)onVideoError:(NSNotification*)notification {
   NSLog(@"onVideoError: %@", notification);
   // TODO(sjlee): make the specific error handling with this notification.
-  LOG(LS_ERROR) << __FUNCTION__ << ": [AVCaptureSession startRunning] error.";
+  RTC_LOG(LS_ERROR) << __FUNCTION__ << ": [AVCaptureSession startRunning] error.";
 }
 
 - (BOOL)stopCapture {
@@ -288,7 +288,7 @@ using namespace webrtc::videocapturemodule;
   if (!newCaptureInput) {
     const char* errorMessage = [[deviceError localizedDescription] UTF8String];
 
-    LOG(LS_ERROR) << __FUNCTION__ << ": deviceInputWithDevice error:" << errorMessage;
+    RTC_LOG(LS_ERROR) << __FUNCTION__ << ": deviceInputWithDevice error:" << errorMessage;
 
     return NO;
   }

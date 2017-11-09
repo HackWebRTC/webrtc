@@ -409,7 +409,7 @@ void VirtualSocket::OnMessage(Message* pmsg) {
     } else if ((SOCK_STREAM == type_) && (CS_CONNECTING == state_)) {
       CompleteConnect(data->addr, true);
     } else {
-      LOG(LS_VERBOSE) << "Socket at " << local_addr_ << " is not listening";
+      RTC_LOG(LS_VERBOSE) << "Socket at " << local_addr_ << " is not listening";
       server_->Disconnect(server_->LookupBinding(data->addr));
     }
     delete data;
@@ -804,8 +804,8 @@ int VirtualSocketServer::Connect(VirtualSocket* socket,
   uint32_t delay = use_delay ? GetTransitDelay(socket) : 0;
   VirtualSocket* remote = LookupBinding(remote_addr);
   if (!CanInteractWith(socket, remote)) {
-    LOG(LS_INFO) << "Address family mismatch between "
-                 << socket->GetLocalAddress() << " and " << remote_addr;
+    RTC_LOG(LS_INFO) << "Address family mismatch between "
+                     << socket->GetLocalAddress() << " and " << remote_addr;
     return -1;
   }
   if (remote != nullptr) {
@@ -813,7 +813,7 @@ int VirtualSocketServer::Connect(VirtualSocket* socket,
     msg_queue_->PostDelayed(RTC_FROM_HERE, delay, remote, MSG_ID_CONNECT,
                             new MessageAddress(addr));
   } else {
-    LOG(LS_INFO) << "No one listening at " << remote_addr;
+    RTC_LOG(LS_INFO) << "No one listening at " << remote_addr;
     msg_queue_->PostDelayed(RTC_FROM_HERE, delay, socket, MSG_ID_DISCONNECT);
   }
   return 0;
@@ -843,7 +843,7 @@ int VirtualSocketServer::SendUdp(VirtualSocket* socket,
 
   // See if we want to drop this packet.
   if (Random() < drop_prob_) {
-    LOG(LS_VERBOSE) << "Dropping packet: bad luck";
+    RTC_LOG(LS_VERBOSE) << "Dropping packet: bad luck";
     return static_cast<int>(data_size);
   }
 
@@ -854,17 +854,18 @@ int VirtualSocketServer::SendUdp(VirtualSocket* socket,
         CreateSocketInternal(AF_INET, SOCK_DGRAM));
     dummy_socket->SetLocalAddress(remote_addr);
     if (!CanInteractWith(socket, dummy_socket.get())) {
-      LOG(LS_VERBOSE) << "Incompatible address families: "
-                      << socket->GetLocalAddress() << " and " << remote_addr;
+      RTC_LOG(LS_VERBOSE) << "Incompatible address families: "
+                          << socket->GetLocalAddress() << " and "
+                          << remote_addr;
       return -1;
     }
-    LOG(LS_VERBOSE) << "No one listening at " << remote_addr;
+    RTC_LOG(LS_VERBOSE) << "No one listening at " << remote_addr;
     return static_cast<int>(data_size);
   }
 
   if (!CanInteractWith(socket, recipient)) {
-    LOG(LS_VERBOSE) << "Incompatible address families: "
-                    << socket->GetLocalAddress() << " and " << remote_addr;
+    RTC_LOG(LS_VERBOSE) << "Incompatible address families: "
+                        << socket->GetLocalAddress() << " and " << remote_addr;
     return -1;
   }
 
@@ -884,7 +885,7 @@ int VirtualSocketServer::SendUdp(VirtualSocket* socket,
 
     size_t packet_size = data_size + UDP_HEADER_SIZE;
     if (socket->network_size_ + packet_size > network_capacity_) {
-      LOG(LS_VERBOSE) << "Dropping packet: network capacity exceeded";
+      RTC_LOG(LS_VERBOSE) << "Dropping packet: network capacity exceeded";
       return static_cast<int>(data_size);
     }
 
@@ -912,7 +913,7 @@ void VirtualSocketServer::SendTcp(VirtualSocket* socket) {
   VirtualSocket* recipient = LookupConnection(socket->local_addr_,
                                               socket->remote_addr_);
   if (!recipient) {
-    LOG(LS_VERBOSE) << "Sending data to no one.";
+    RTC_LOG(LS_VERBOSE) << "Sending data to no one.";
     return;
   }
 
@@ -1088,7 +1089,7 @@ uint32_t VirtualSocketServer::GetTransitDelay(Socket* socket) {
   // Otherwise, use the delay from the distribution distribution.
   size_t index = rand() % delay_dist_->size();
   double delay = (*delay_dist_)[index].second;
-  // LOG_F(LS_INFO) << "random[" << index << "] = " << delay;
+  // RTC_LOG_F(LS_INFO) << "random[" << index << "] = " << delay;
   return static_cast<uint32_t>(delay);
 }
 

@@ -181,11 +181,12 @@ bool ValidateRtpExtensions(
   bool id_used[14] = {false};
   for (const auto& extension : extensions) {
     if (extension.id <= 0 || extension.id >= 15) {
-      LOG(LS_ERROR) << "Bad RTP extension ID: " << extension.ToString();
+      RTC_LOG(LS_ERROR) << "Bad RTP extension ID: " << extension.ToString();
       return false;
     }
     if (id_used[extension.id - 1]) {
-      LOG(LS_ERROR) << "Duplicate RTP extension ID: " << extension.ToString();
+      RTC_LOG(LS_ERROR) << "Duplicate RTP extension ID: "
+                        << extension.ToString();
       return false;
     }
     id_used[extension.id - 1] = true;
@@ -206,7 +207,8 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     if (supported(extension.uri)) {
       result.push_back(extension);
     } else {
-      LOG(LS_WARNING) << "Unsupported RTP extension: " << extension.ToString();
+      RTC_LOG(LS_WARNING) << "Unsupported RTP extension: "
+                          << extension.ToString();
     }
   }
 

@@ -55,7 +55,7 @@ GLuint RTCCreateShader(GLenum type, const GLchar *source) {
       std::unique_ptr<char[]> compileLog(new char[logLength]);
       // The returned string is null terminated.
       glGetShaderInfoLog(shader, logLength, NULL, compileLog.get());
-      LOG(LS_ERROR) << "Shader compile error: " << compileLog.get();
+      RTC_LOG(LS_ERROR) << "Shader compile error: " << compileLog.get();
     }
     glDeleteShader(shader);
     shader = 0;
