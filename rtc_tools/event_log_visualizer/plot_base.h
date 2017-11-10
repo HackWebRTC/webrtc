@@ -18,12 +18,16 @@
 namespace webrtc {
 namespace plotting {
 
-enum PlotStyle {
-  LINE_GRAPH,
-  LINE_DOT_GRAPH,
-  BAR_GRAPH,
-  LINE_STEP_GRAPH,
-  DOT_GRAPH
+enum class LineStyle {
+  kNone,  // No line connecting the points. Used to create scatter plots.
+  kLine,  // Straight line between consecutive points.
+  kStep,  // Horizontal line until the next value. Used for state changes.
+  kBar    // Vertical bars from the x-axis to the point.
+};
+
+enum class PointStyle {
+  kNone,      // Don't draw the points.
+  kHighlight  // Draw circles or dots to highlight the points.
 };
 
 struct TimeSeriesPoint {
@@ -33,23 +37,31 @@ struct TimeSeriesPoint {
 };
 
 struct TimeSeries {
-  TimeSeries() = default;
-  TimeSeries(const char* label, PlotStyle style) : label(label), style(style) {}
-  TimeSeries(const std::string& label, PlotStyle style)
-      : label(label), style(style) {}
+  TimeSeries() = default;  // TODO(terelius): Remove the default constructor.
+  TimeSeries(const char* label,
+             LineStyle line_style,
+             PointStyle point_style = PointStyle::kNone)
+      : label(label), line_style(line_style), point_style(point_style) {}
+  TimeSeries(const std::string& label,
+             LineStyle line_style,
+             PointStyle point_style = PointStyle::kNone)
+      : label(label), line_style(line_style), point_style(point_style) {}
   TimeSeries(TimeSeries&& other)
       : label(std::move(other.label)),
-        style(other.style),
+        line_style(other.line_style),
+        point_style(other.point_style),
         points(std::move(other.points)) {}
   TimeSeries& operator=(TimeSeries&& other) {
     label = std::move(other.label);
-    style = other.style;
+    line_style = other.line_style;
+    point_style = other.point_style;
     points = std::move(other.points);
     return *this;
   }
 
   std::string label;
-  PlotStyle style;
+  LineStyle line_style = LineStyle::kLine;
+  PointStyle point_style = PointStyle::kNone;
   std::vector<TimeSeriesPoint> points;
 };
 

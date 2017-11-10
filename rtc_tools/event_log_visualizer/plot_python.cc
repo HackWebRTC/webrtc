@@ -32,7 +32,7 @@ void PythonPlot::Draw() {
     printf(
         "hls_colors = [(i*1.0/color_count, 0.25+i*0.5/color_count, 0.8) for i "
         "in range(color_count)]\n");
-    printf("rgb_colors = [colorsys.hls_to_rgb(*hls) for hls in hls_colors]\n");
+    printf("colors = [colorsys.hls_to_rgb(*hls) for hls in hls_colors]\n");
 
     for (size_t i = 0; i < series_list_.size(); i++) {
       printf("\n# === Series: %s ===\n", series_list_[i].label.c_str());
@@ -52,37 +52,49 @@ void PythonPlot::Draw() {
         printf(", %G", series_list_[i].points[j].y);
       printf("]\n");
 
-      if (series_list_[i].style == BAR_GRAPH) {
+      if (series_list_[i].line_style == LineStyle::kBar) {
         // There is a plt.bar function that draws bar plots,
         // but it is *way* too slow to be useful.
         printf(
             "plt.vlines(x%zu, map(lambda t: min(t,0), y%zu), map(lambda t: "
-            "max(t,0), y%zu), color=rgb_colors[%zu], "
+            "max(t,0), y%zu), color=colors[%zu], "
             "label=\'%s\')\n",
             i, i, i, i, series_list_[i].label.c_str());
-      } else if (series_list_[i].style == LINE_GRAPH) {
-        printf("plt.plot(x%zu, y%zu, color=rgb_colors[%zu], label=\'%s\')\n", i,
-               i, i, series_list_[i].label.c_str());
-      } else if (series_list_[i].style == LINE_DOT_GRAPH) {
-        printf(
-            "plt.plot(x%zu, y%zu, color=rgb_colors[%zu], label=\'%s\', "
-            "marker='.')\n",
-            i, i, i, series_list_[i].label.c_str());
-      } else if (series_list_[i].style == LINE_STEP_GRAPH) {
+        if (series_list_[i].point_style == PointStyle::kHighlight) {
+          printf(
+              "plt.plot(x%zu, y%zu, color=colors[%zu], "
+              "marker='.', ls=' ')\n",
+              i, i, i);
+        }
+      } else if (series_list_[i].line_style == LineStyle::kLine) {
+        if (series_list_[i].point_style == PointStyle::kHighlight) {
+          printf(
+              "plt.plot(x%zu, y%zu, color=colors[%zu], label=\'%s\', "
+              "marker='.')\n",
+              i, i, i, series_list_[i].label.c_str());
+        } else {
+          printf("plt.plot(x%zu, y%zu, color=colors[%zu], label=\'%s\')\n", i,
+                 i, i, series_list_[i].label.c_str());
+        }
+      } else if (series_list_[i].line_style == LineStyle::kStep) {
         // Draw lines from (x[0],y[0]) to (x[1],y[0]) to (x[1],y[1]) and so on
         // to illustrate the "steps". This can be expressed by duplicating all
         // elements except the first in x and the last in y.
-        printf("x%zu = [v for dup in x%zu for v in [dup, dup]]\n", i, i);
-        printf("y%zu = [v for dup in y%zu for v in [dup, dup]]\n", i, i);
+        printf("xd%zu = [dup for v in x%zu for dup in [v, v]]\n", i, i);
+        printf("yd%zu = [dup for v in y%zu for dup in [v, v]]\n", i, i);
         printf(
-            "plt.plot(x%zu[1:], y%zu[:-1], color=rgb_colors[%zu], "
-            "path_effects=[pe.Stroke(linewidth=2, foreground='black'), "
-            "pe.Normal()], "
+            "plt.plot(xd%zu[1:], yd%zu[:-1], color=colors[%zu], "
             "label=\'%s\')\n",
             i, i, i, series_list_[i].label.c_str());
-      } else if (series_list_[i].style == DOT_GRAPH) {
+        if (series_list_[i].point_style == PointStyle::kHighlight) {
+          printf(
+              "plt.plot(x%zu, y%zu, color=colors[%zu], "
+              "marker='.', ls=' ')\n",
+              i, i, i);
+        }
+      } else if (series_list_[i].line_style == LineStyle::kNone) {
         printf(
-            "plt.plot(x%zu, y%zu, color=rgb_colors[%zu], label=\'%s\', "
+            "plt.plot(x%zu, y%zu, color=colors[%zu], label=\'%s\', "
             "marker='o', ls=' ')\n",
             i, i, i, series_list_[i].label.c_str());
       } else {
@@ -93,7 +105,7 @@ void PythonPlot::Draw() {
     // IntervalSeries
     printf("interval_colors = ['#ff8e82','#5092fc','#c4ffc4']\n");
     RTC_CHECK_LE(interval_list_.size(), 3);
-    // To get the intervals to show up in the legend we have to created patches
+    // To get the intervals to show up in the legend we have to create patches
     // for them.
     printf("legend_patches = []\n");
     for (size_t i = 0; i < interval_list_.size(); i++) {
