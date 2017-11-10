@@ -93,6 +93,8 @@ LEGACY_API_DIRS = (
   'voice_engine/include',
 )
 
+# NOTE: The set of directories in API_DIRS should be the same as those
+# listed in the table in native-api.md.
 API_DIRS = NATIVE_API_DIRS[:] + LEGACY_API_DIRS[:]
 
 # TARGET_RE matches a GN target, and extracts the target name and the contents.
