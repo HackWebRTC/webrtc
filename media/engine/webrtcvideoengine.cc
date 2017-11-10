@@ -130,7 +130,7 @@ class NullVideoDecoder : public webrtc::VideoDecoder {
  public:
   int32_t InitDecode(const webrtc::VideoCodec* codec_settings,
                      int32_t number_of_cores) override {
-    LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
+    RTC_LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
@@ -139,13 +139,13 @@ class NullVideoDecoder : public webrtc::VideoDecoder {
                  const webrtc::RTPFragmentationHeader* fragmentation,
                  const webrtc::CodecSpecificInfo* codec_specific_info,
                  int64_t render_time_ms) override {
-    LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
+    RTC_LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
   int32_t RegisterDecodeCompleteCallback(
       webrtc::DecodedImageCallback* callback) override {
-    LOG(LS_ERROR)
+    RTC_LOG(LS_ERROR)
         << "Can't register decode complete callback on NullVideoDecoder.";
     return WEBRTC_VIDEO_CODEC_OK;
   }
