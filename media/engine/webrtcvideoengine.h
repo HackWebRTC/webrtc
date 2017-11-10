@@ -65,8 +65,6 @@ class WebRtcVideoChannelSendInfo;
 class WebRtcVoiceEngine;
 class WebRtcVoiceMediaChannel;
 
-struct Device;
-
 class UnsignalledSsrcHandler {
  public:
   enum Action {

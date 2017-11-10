@@ -24,7 +24,6 @@
 
 namespace webrtc {
 
-class Clock;
 class RtcEventLog;
 
 // Statistics related to Audio Network Adaptation.
