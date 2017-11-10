@@ -65,9 +65,7 @@
 namespace webrtc {
 
 // static
-// TODO(henrika): remove id parameter when all clients are updated.
 rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
-    const int32_t id,
     const AudioLayer audio_layer) {
   RTC_LOG(INFO) << __FUNCTION__;
   // Create the generic reference counted (platform independent) implementation.
@@ -91,6 +89,14 @@ rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
   }
 
   return audioDevice;
+}
+
+// TODO(bugs.webrtc.org/7306): deprecated.
+rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
+    const int32_t id,
+    const AudioLayer audio_layer) {
+  RTC_LOG(INFO) << __FUNCTION__;
+  return AudioDeviceModule::Create(audio_layer);
 }
 
 AudioDeviceModuleImpl::AudioDeviceModuleImpl(const AudioLayer audioLayer)

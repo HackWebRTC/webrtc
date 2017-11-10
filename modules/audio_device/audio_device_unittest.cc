@@ -461,7 +461,7 @@ class AudioDeviceTest : public ::testing::Test {
     // rtc::LogMessage::LogTimestamps();
     // rtc::LogMessage::LogThreads();
     audio_device_ =
-        AudioDeviceModule::Create(0, AudioDeviceModule::kPlatformDefaultAudio);
+        AudioDeviceModule::Create(AudioDeviceModule::kPlatformDefaultAudio);
     EXPECT_NE(audio_device_.get(), nullptr);
     AudioDeviceModule::AudioLayer audio_layer;
     int got_platform_audio_layer =
