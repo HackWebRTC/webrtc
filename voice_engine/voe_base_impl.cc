@@ -160,6 +160,7 @@ int VoEBaseImpl::Init(
 #else
     // Create the internal ADM implementation.
     shared_->set_audio_device(AudioDeviceModule::Create(
+        VoEId(shared_->instance_id(), -1),
         AudioDeviceModule::kPlatformDefaultAudio));
     if (shared_->audio_device() == nullptr) {
       RTC_LOG(LS_ERROR) << "Init() failed to create the ADM";

@@ -20,8 +20,10 @@ namespace {
 // callback and redirects the PCM data to AudioDeviceDataObserver callback.
 class ADMWrapper : public AudioDeviceModule, public AudioTransport {
  public:
-  ADMWrapper(const AudioLayer audio_layer, AudioDeviceDataObserver* observer)
-      : impl_(AudioDeviceModule::Create(audio_layer)), observer_(observer) {
+  ADMWrapper(const int32_t id,
+             const AudioLayer audio_layer,
+             AudioDeviceDataObserver* observer)
+      : impl_(AudioDeviceModule::Create(id, audio_layer)), observer_(observer) {
     // Register self as the audio transport callback for underlying ADM impl.
     auto res = impl_->RegisterAudioCallback(this);
     is_valid_ = (impl_.get() != nullptr) && (res == 0);
@@ -306,10 +308,11 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
 }  // namespace
 
 rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
+    const int32_t id,
     const AudioDeviceModule::AudioLayer audio_layer,
     AudioDeviceDataObserver* observer) {
   rtc::scoped_refptr<ADMWrapper> audio_device(
-      new rtc::RefCountedObject<ADMWrapper>(audio_layer, observer));
+      new rtc::RefCountedObject<ADMWrapper>(id, audio_layer, observer));
 
   if (!audio_device->IsValid()) {
     return nullptr;
