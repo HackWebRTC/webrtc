@@ -362,35 +362,6 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 
 // TODO(?): Add an "assert" wrapper that logs in the same manner.
 
-// TODO(bugs.webrtc.org/8452): Remove these backwards compatibility wrappers.
-#ifndef LOG
-
-#define LOG(sev) RTC_LOG(sev)
-#define LOG_V(sev) RTC_LOG_V(sev)
-#define LOG_F(sev) RTC_LOG_F(sev)
-#define LOG_T_F(sev) RTC_LOG_T_F(sev)
-#define LOG_CHECK_LEVEL(sev) RTC_LOG_CHECK_LEVEL(sev)
-#define LOG_CHECK_LEVEL_V(sev) RTC_LOG_CHECK_LEVEL_V(sev)
-#define LOG_E(sev, ctx, err, ...) RTC_LOG_E(sev, ctx, err, ##__VA_ARGS__)
-#define LOG_T(sev) RTC_LOG_T(sev)
-#define LOG_ERRNO_EX(sev, err) RTC_LOG_ERRNO_EX(sev, err)
-#define LOG_ERRNO(sev) RTC_LOG_ERRNO(sev)
-
-#define LAST_SYSTEM_ERROR RTC_LAST_SYSTEM_ERROR
-#define LOG_ERR_EX(sev, err) RTC_LOG_ERR_EX(sev, err)
-#define LOG_ERR(sev) RTC_LOG_ERR(sev)
-
-#if defined(WEBRTC_WIN)
-#define LOG_GLE_EX(sev, err) RTC_LOG_GLE_EX(sev, err)
-#define LOG_GLE(sev) RTC_LOG_GLE(sev)
-#define LOG_GLEM(sev, mod) RTC_LOG_GLEM(sev, mod)
-#endif  // WEBRTC_WIN
-
-#define LOG_TAG(sev, tag) RTC_LOG_TAG(sev, tag)
-#define PLOG(sev, err) RTC_PLOG(sev, err)
-
-#endif  // LOG
-
 }  // namespace rtc
 
 #endif  // RTC_BASE_LOGGING_H_
