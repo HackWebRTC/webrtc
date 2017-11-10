@@ -33,7 +33,8 @@ class FakeEncodedImageCallback : public EncodedImageCallback {
                         const CodecSpecificInfo* codec_specific_info,
                         const RTPFragmentationHeader* fragmentation) override {
     last_frame_was_timing_ =
-        encoded_image.timing_.flags != TimingFrameFlags::kInvalid;
+        encoded_image.timing_.flags != TimingFrameFlags::kInvalid &&
+        encoded_image.timing_.flags != TimingFrameFlags::kNotTriggered;
     return Result(Result::OK);
   };
 
