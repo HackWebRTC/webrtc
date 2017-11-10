@@ -25,7 +25,6 @@ rtc_static_library("rtc_p2p") {
     "base/asyncstuntcpsocket.h",
     "base/basicpacketsocketfactory.cc",
     "base/basicpacketsocketfactory.h",
-    "base/candidate.h",
     "base/candidatepairinterface.h",
     "base/common.h",
     "base/dtlstransport.cc",
