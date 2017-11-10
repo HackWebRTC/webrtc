@@ -292,8 +292,8 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
             encode_start_list->front().encode_start_time_ms);
         encode_start_list->pop_front();
       } else {
-        LOG(LS_WARNING) << "Frame with no encode started time recordings. "
-                           "Encoder may be reordering frames.";
+        RTC_LOG(LS_WARNING) << "Frame with no encode started time recordings. "
+                               "Encoder may be reordering frames.";
       }
 
       size_t target_bitrate =
