@@ -35,9 +35,9 @@ import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraVideoCapturer;
 import org.webrtc.DataChannel;
+import org.webrtc.DefaultVideoDecoderFactory;
+import org.webrtc.DefaultVideoEncoderFactory;
 import org.webrtc.EglBase;
-import org.webrtc.HardwareVideoDecoderFactory;
-import org.webrtc.HardwareVideoEncoderFactory;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.MediaConstraints;
@@ -521,9 +521,9 @@ public class PeerConnectionClient {
     final boolean enableH264HighProfile =
         VIDEO_CODEC_H264_HIGH.equals(peerConnectionParameters.videoCodec);
     factory = new PeerConnectionFactory(options,
-        new HardwareVideoEncoderFactory(rootEglBase.getEglBaseContext(),
+        new DefaultVideoEncoderFactory(rootEglBase.getEglBaseContext(),
             true /* enableIntelVp8Encoder */, enableH264HighProfile),
-        new HardwareVideoDecoderFactory(rootEglBase.getEglBaseContext()));
+        new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext()));
     Log.d(TAG, "Peer connection factory created.");
   }
 

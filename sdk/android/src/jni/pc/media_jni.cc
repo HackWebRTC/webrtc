@@ -9,9 +9,12 @@
  */
 #include "sdk/android/src/jni/pc/media_jni.h"
 
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "call/callfactoryinterface.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "media/engine/webrtcmediaengine.h"
+#include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
@@ -36,6 +39,21 @@ cricket::MediaEngineInterface* CreateMediaEngine(
   return cricket::WebRtcMediaEngineFactory::Create(
       adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
       video_decoder_factory, audio_mixer, audio_processor);
+}
+
+cricket::MediaEngineInterface* CreateMediaEngine(
+    rtc::scoped_refptr<AudioDeviceModule> adm,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    std::unique_ptr<VideoEncoderFactory> video_encoder_factory,
+    std::unique_ptr<VideoDecoderFactory> video_decoder_factory,
+    rtc::scoped_refptr<AudioMixer> audio_mixer,
+    rtc::scoped_refptr<AudioProcessing> audio_processor) {
+  return cricket::WebRtcMediaEngineFactory::Create(
+             adm, audio_encoder_factory, audio_decoder_factory,
+             std::move(video_encoder_factory), std::move(video_decoder_factory),
+             audio_mixer, audio_processor)
+      .release();
 }
 
 }  // namespace jni

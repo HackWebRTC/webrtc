@@ -14,7 +14,8 @@
 #include <jni.h>
 #include <vector>
 
-#include "media/engine/webrtcvideoencoderfactory.h"
+#include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
@@ -22,41 +23,29 @@ namespace jni {
 
 // Wrapper for Java VideoEncoderFactory class. Delegates method calls through
 // JNI and wraps the encoder inside VideoEncoderWrapper.
-class VideoEncoderFactoryWrapper : public cricket::WebRtcVideoEncoderFactory {
+class VideoEncoderFactoryWrapper : public VideoEncoderFactory {
  public:
   VideoEncoderFactoryWrapper(JNIEnv* jni, jobject encoder_factory);
 
-  // Caller takes the ownership of the returned object and it should be released
-  // by calling DestroyVideoEncoder().
-  VideoEncoder* CreateVideoEncoder(const cricket::VideoCodec& codec) override;
+  std::unique_ptr<VideoEncoder> CreateVideoEncoder(
+      const SdpVideoFormat& format) override;
 
   // Returns a list of supported codecs in order of preference.
-  const std::vector<cricket::VideoCodec>& supported_codecs() const override {
-    return supported_codecs_;
+  std::vector<SdpVideoFormat> GetSupportedFormats() const override {
+    return supported_formats_;
   }
 
-  void DestroyVideoEncoder(VideoEncoder* encoder) override;
+  CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
 
  private:
-  std::vector<cricket::VideoCodec> GetSupportedCodecs(JNIEnv* jni) const;
-  jobject ToJavaCodecInfo(JNIEnv* jni, const cricket::VideoCodec& codec);
+  std::vector<SdpVideoFormat> GetSupportedFormats(JNIEnv* jni) const;
 
-  const ScopedGlobalRef<jclass> video_codec_info_class_;
-  const ScopedGlobalRef<jclass> hash_map_class_;
   const ScopedGlobalRef<jobject> encoder_factory_;
 
   jmethodID create_encoder_method_;
   jmethodID get_supported_codecs_method_;
 
-  jmethodID video_codec_info_constructor_;
-  jfieldID payload_field_;
-  jfieldID name_field_;
-  jfieldID params_field_;
-
-  jmethodID hash_map_constructor_;
-  jmethodID put_method_;
-
-  std::vector<cricket::VideoCodec> supported_codecs_;
+  std::vector<SdpVideoFormat> supported_formats_;
 };
 
 }  // namespace jni

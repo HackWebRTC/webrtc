@@ -29,10 +29,17 @@ public class VideoCodecInfo {
   public static final String H264_CONSTRAINED_BASELINE_3_1 =
       H264_PROFILE_CONSTRAINED_BASELINE + H264_LEVEL_3_1;
 
-  public final int payload;
   public final String name;
   public final Map<String, String> params;
+  @Deprecated public final int payload;
 
+  public VideoCodecInfo(String name, Map<String, String> params) {
+    this.payload = 0;
+    this.name = name;
+    this.params = params;
+  }
+
+  @Deprecated
   public VideoCodecInfo(int payload, String name, Map<String, String> params) {
     this.payload = payload;
     this.name = name;

@@ -21,17 +21,28 @@ class WebRtcVideoDecoderFactory;
 }  // namespace cricket
 
 namespace webrtc {
+class VideoEncoderFactory;
+class VideoDecoderFactory;
+}  // namespace webrtc
+
+namespace webrtc {
 namespace jni {
 
 class SurfaceTextureHelper;
 
-cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory(
-    JNIEnv* jni,
-    jobject j_encoder_factory);
+VideoEncoderFactory* CreateVideoEncoderFactory(JNIEnv* jni,
+                                               jobject j_encoder_factory);
 
-cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory(
-    JNIEnv* jni,
-    jobject j_decoder_factory);
+VideoDecoderFactory* CreateVideoDecoderFactory(JNIEnv* jni,
+                                               jobject j_decoder_factory);
+
+cricket::WebRtcVideoEncoderFactory* CreateLegacyVideoEncoderFactory();
+cricket::WebRtcVideoDecoderFactory* CreateLegacyVideoDecoderFactory();
+
+VideoEncoderFactory* WrapLegacyVideoEncoderFactory(
+    cricket::WebRtcVideoEncoderFactory* legacy_encoder_factory);
+VideoDecoderFactory* WrapLegacyVideoDecoderFactory(
+    cricket::WebRtcVideoDecoderFactory* legacy_decoder_factory);
 
 jobject GetJavaSurfaceTextureHelper(
     const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper);

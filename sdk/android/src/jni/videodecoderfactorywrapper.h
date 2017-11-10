@@ -13,7 +13,7 @@
 
 #include <jni.h>
 
-#include "media/engine/webrtcvideodecoderfactory.h"
+#include "api/video_codecs/video_decoder_factory.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
@@ -21,16 +21,13 @@ namespace jni {
 
 // Wrapper for Java VideoDecoderFactory class. Delegates method calls through
 // JNI and wraps the decoder inside VideoDecoderWrapper.
-class VideoDecoderFactoryWrapper : public cricket::WebRtcVideoDecoderFactory {
+class VideoDecoderFactoryWrapper : public VideoDecoderFactory {
  public:
   VideoDecoderFactoryWrapper(JNIEnv* jni, jobject decoder_factory);
 
-  // Caller takes the ownership of the returned object and it should be released
-  // by calling DestroyVideoDecoder().
-  VideoDecoder* CreateVideoDecoderWithParams(
-      const cricket::VideoCodec& codec,
-      cricket::VideoDecoderParams params) override;
-  void DestroyVideoDecoder(VideoDecoder* decoder) override;
+  std::vector<SdpVideoFormat> GetSupportedFormats() const override;
+  std::unique_ptr<VideoDecoder> CreateVideoDecoder(
+      const SdpVideoFormat& format) override;
 
  private:
   const ScopedGlobalRef<jobject> decoder_factory_;

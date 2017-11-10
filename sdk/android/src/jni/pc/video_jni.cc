@@ -10,7 +10,10 @@
 
 #include <jni.h>
 
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "api/videosourceproxy.h"
+#include "media/engine/convert_legacy_video_factory.h"
 #include "media/engine/webrtcvideodecoderfactory.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
 #include "rtc_base/logging.h"
@@ -26,35 +29,38 @@
 namespace webrtc {
 namespace jni {
 
-// TODO(sakal): Remove this once MediaCodecVideoDecoder/Encoder are no longer
-// used and all applications inject their own codecs.
-// This is semi broken if someone wants to create multiple peerconnection
-// factories.
-static bool use_media_codec_encoder_factory;
-static bool use_media_codec_decoder_factory;
-
-cricket::WebRtcVideoEncoderFactory* CreateVideoEncoderFactory(
-    JNIEnv* jni,
-    jobject j_encoder_factory) {
-  use_media_codec_encoder_factory = j_encoder_factory == nullptr;
-
-  if (use_media_codec_encoder_factory) {
-    return new MediaCodecVideoEncoderFactory();
-  } else {
-    return new VideoEncoderFactoryWrapper(jni, j_encoder_factory);
-  }
+VideoEncoderFactory* CreateVideoEncoderFactory(JNIEnv* jni,
+                                               jobject j_encoder_factory) {
+  return new VideoEncoderFactoryWrapper(jni, j_encoder_factory);
 }
 
-cricket::WebRtcVideoDecoderFactory* CreateVideoDecoderFactory(
-    JNIEnv* jni,
-    jobject j_decoder_factory) {
-  use_media_codec_decoder_factory = j_decoder_factory == nullptr;
+VideoDecoderFactory* CreateVideoDecoderFactory(JNIEnv* jni,
+                                               jobject j_decoder_factory) {
+  return new VideoDecoderFactoryWrapper(jni, j_decoder_factory);
+}
 
-  if (use_media_codec_decoder_factory) {
-    return new MediaCodecVideoDecoderFactory();
-  } else {
-    return new VideoDecoderFactoryWrapper(jni, j_decoder_factory);
-  }
+cricket::WebRtcVideoEncoderFactory* CreateLegacyVideoEncoderFactory() {
+  return new MediaCodecVideoEncoderFactory();
+}
+
+cricket::WebRtcVideoDecoderFactory* CreateLegacyVideoDecoderFactory() {
+  return new MediaCodecVideoDecoderFactory();
+}
+
+VideoEncoderFactory* WrapLegacyVideoEncoderFactory(
+    cricket::WebRtcVideoEncoderFactory* legacy_encoder_factory) {
+  return ConvertVideoEncoderFactory(
+             std::unique_ptr<cricket::WebRtcVideoEncoderFactory>(
+                 legacy_encoder_factory))
+      .release();
+}
+
+VideoDecoderFactory* WrapLegacyVideoDecoderFactory(
+    cricket::WebRtcVideoDecoderFactory* legacy_decoder_factory) {
+  return ConvertVideoDecoderFactory(
+             std::unique_ptr<cricket::WebRtcVideoDecoderFactory>(
+                 legacy_decoder_factory))
+      .release();
 }
 
 jobject GetJavaSurfaceTextureHelper(
@@ -114,21 +120,25 @@ JNI_FUNCTION_DECLARATION(
   jclass j_eglbase14_context_class =
       FindClass(jni, "org/webrtc/EglBase14$Context");
 
-  MediaCodecVideoEncoderFactory* encoder_factory =
-      static_cast<MediaCodecVideoEncoderFactory*>(
-          owned_factory->encoder_factory());
-  if (use_media_codec_encoder_factory && encoder_factory &&
-      jni->IsInstanceOf(local_egl_context, j_eglbase14_context_class)) {
-    RTC_LOG(LS_INFO) << "Set EGL context for HW encoding.";
-    encoder_factory->SetEGLContext(jni, local_egl_context);
+  if (owned_factory->legacy_encoder_factory()) {
+    MediaCodecVideoEncoderFactory* encoder_factory =
+        static_cast<MediaCodecVideoEncoderFactory*>(
+            owned_factory->legacy_encoder_factory());
+    if (encoder_factory &&
+        jni->IsInstanceOf(local_egl_context, j_eglbase14_context_class)) {
+      RTC_LOG(LS_INFO) << "Set EGL context for HW encoding.";
+      encoder_factory->SetEGLContext(jni, local_egl_context);
+    }
   }
 
-  MediaCodecVideoDecoderFactory* decoder_factory =
-      static_cast<MediaCodecVideoDecoderFactory*>(
-          owned_factory->decoder_factory());
-  if (use_media_codec_decoder_factory && decoder_factory) {
-    RTC_LOG(LS_INFO) << "Set EGL context for HW decoding.";
-    decoder_factory->SetEGLContext(jni, remote_egl_context);
+  if (owned_factory->legacy_decoder_factory()) {
+    MediaCodecVideoDecoderFactory* decoder_factory =
+        static_cast<MediaCodecVideoDecoderFactory*>(
+            owned_factory->legacy_decoder_factory());
+    if (decoder_factory) {
+      RTC_LOG(LS_INFO) << "Set EGL context for HW decoding.";
+      decoder_factory->SetEGLContext(jni, remote_egl_context);
+    }
   }
 }
 

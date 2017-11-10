@@ -127,8 +127,8 @@ public final class HardwareVideoDecoderTest {
   private void encodeTestFrames() {
     VideoEncoderFactory encoderFactory = new HardwareVideoEncoderFactory(
         eglBase.getEglBaseContext(), ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
-    VideoEncoder encoder = encoderFactory.createEncoder(
-        new VideoCodecInfo(0 /* payload*/, codecType, new HashMap<>()));
+    VideoEncoder encoder =
+        encoderFactory.createEncoder(new VideoCodecInfo(codecType, new HashMap<>()));
     HardwareVideoEncoderTest.MockEncoderCallback encodeCallback =
         new HardwareVideoEncoderTest.MockEncoderCallback();
     assertEquals(VideoCodecStatus.OK, encoder.initEncode(ENCODER_SETTINGS, encodeCallback));

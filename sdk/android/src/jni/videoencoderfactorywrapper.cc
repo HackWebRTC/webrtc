@@ -13,17 +13,16 @@
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/logging.h"
-#include "sdk/android/src/jni/classreferenceholder.h"
-#include "sdk/android/src/jni/videoencoderwrapper.h"
+#include "sdk/android/src/jni/class_loader.h"
+#include "sdk/android/src/jni/videocodecinfo.h"
+#include "sdk/android/src/jni/wrappednativecodec.h"
 
 namespace webrtc {
 namespace jni {
 
 VideoEncoderFactoryWrapper::VideoEncoderFactoryWrapper(JNIEnv* jni,
                                                        jobject encoder_factory)
-    : video_codec_info_class_(jni, FindClass(jni, "org/webrtc/VideoCodecInfo")),
-      hash_map_class_(jni, jni->FindClass("java/util/HashMap")),
-      encoder_factory_(jni, encoder_factory) {
+    : encoder_factory_(jni, encoder_factory) {
   jclass encoder_factory_class = jni->GetObjectClass(*encoder_factory_);
   create_encoder_method_ = jni->GetMethodID(
       encoder_factory_class, "createEncoder",
@@ -32,71 +31,53 @@ VideoEncoderFactoryWrapper::VideoEncoderFactoryWrapper(JNIEnv* jni,
       jni->GetMethodID(encoder_factory_class, "getSupportedCodecs",
                        "()[Lorg/webrtc/VideoCodecInfo;");
 
-  video_codec_info_constructor_ =
-      jni->GetMethodID(*video_codec_info_class_, "<init>",
-                       "(ILjava/lang/String;Ljava/util/Map;)V");
-  payload_field_ = jni->GetFieldID(*video_codec_info_class_, "payload", "I");
-  name_field_ =
-      jni->GetFieldID(*video_codec_info_class_, "name", "Ljava/lang/String;");
-  params_field_ =
-      jni->GetFieldID(*video_codec_info_class_, "params", "Ljava/util/Map;");
-
-  hash_map_constructor_ = jni->GetMethodID(*hash_map_class_, "<init>", "()V");
-  put_method_ = jni->GetMethodID(
-      *hash_map_class_, "put",
-      "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-
-  supported_codecs_ = GetSupportedCodecs(jni);
+  supported_formats_ = GetSupportedFormats(jni);
 }
 
-VideoEncoder* VideoEncoderFactoryWrapper::CreateVideoEncoder(
-    const cricket::VideoCodec& codec) {
+std::unique_ptr<VideoEncoder> VideoEncoderFactoryWrapper::CreateVideoEncoder(
+    const SdpVideoFormat& format) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
-  jobject j_codec_info = ToJavaCodecInfo(jni, codec);
+  jobject j_codec_info = SdpVideoFormatToVideoCodecInfo(jni, format);
   jobject encoder = jni->CallObjectMethod(*encoder_factory_,
                                           create_encoder_method_, j_codec_info);
-  return encoder != nullptr ? new VideoEncoderWrapper(jni, encoder) : nullptr;
+  return encoder != nullptr ? WrapOrUnwrapVideoEncoder(jni, encoder) : nullptr;
 }
 
-jobject VideoEncoderFactoryWrapper::ToJavaCodecInfo(
-    JNIEnv* jni,
-    const cricket::VideoCodec& codec) {
-  jobject j_params = jni->NewObject(*hash_map_class_, hash_map_constructor_);
-  for (auto const& param : codec.params) {
-    jni->CallObjectMethod(j_params, put_method_,
-                          JavaStringFromStdString(jni, param.first),
-                          JavaStringFromStdString(jni, param.second));
-  }
-  return jni->NewObject(*video_codec_info_class_, video_codec_info_constructor_,
-                        codec.id, JavaStringFromStdString(jni, codec.name),
-                        j_params);
+VideoEncoderFactory::CodecInfo VideoEncoderFactoryWrapper::QueryVideoEncoder(
+    const SdpVideoFormat& format) const {
+  JNIEnv* jni = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(jni);
+
+  jobject j_codec_info = SdpVideoFormatToVideoCodecInfo(jni, format);
+  jobject encoder = jni->CallObjectMethod(*encoder_factory_,
+                                          create_encoder_method_, j_codec_info);
+
+  jclass wrapped_native_encoder_class =
+      GetClass(jni, "org/webrtc/WrappedNativeVideoEncoder");
+
+  CodecInfo codec_info;
+  // Check if this is a wrapped native software encoder implementation.
+  codec_info.is_hardware_accelerated =
+      !jni->IsInstanceOf(encoder, wrapped_native_encoder_class);
+  codec_info.has_internal_source = false;
+  return codec_info;
 }
 
-std::vector<cricket::VideoCodec> VideoEncoderFactoryWrapper::GetSupportedCodecs(
+std::vector<SdpVideoFormat> VideoEncoderFactoryWrapper::GetSupportedFormats(
     JNIEnv* jni) const {
   const jobjectArray j_supported_codecs = static_cast<jobjectArray>(
       jni->CallObjectMethod(*encoder_factory_, get_supported_codecs_method_));
   const jsize supported_codecs_count = jni->GetArrayLength(j_supported_codecs);
 
-  std::vector<cricket::VideoCodec> supported_codecs;
-  supported_codecs.resize(supported_codecs_count);
+  std::vector<SdpVideoFormat> supported_formats;
   for (jsize i = 0; i < supported_codecs_count; i++) {
     jobject j_supported_codec =
         jni->GetObjectArrayElement(j_supported_codecs, i);
-    int payload = jni->GetIntField(j_supported_codec, payload_field_);
-    jobject j_params = jni->GetObjectField(j_supported_codec, params_field_);
-    jstring j_name = static_cast<jstring>(
-        jni->GetObjectField(j_supported_codec, name_field_));
-    supported_codecs[i] =
-        cricket::VideoCodec(payload, JavaToStdString(jni, j_name));
-    supported_codecs[i].params = JavaToStdMapStrings(jni, j_params);
+    supported_formats.push_back(
+        VideoCodecInfoToSdpVideoFormat(jni, j_supported_codec));
   }
-  return supported_codecs;
-}
-
-void VideoEncoderFactoryWrapper::DestroyVideoEncoder(VideoEncoder* encoder) {
-  delete encoder;
+  return supported_formats;
 }
 
 }  // namespace jni
