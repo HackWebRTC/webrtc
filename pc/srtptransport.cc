@@ -173,9 +173,11 @@ void SrtpTransport::OnPacketReceived(bool rtcp,
 bool SrtpTransport::SetRtpParams(int send_cs,
                                  const uint8_t* send_key,
                                  int send_key_len,
+                                 const std::vector<int>& send_extension_ids,
                                  int recv_cs,
                                  const uint8_t* recv_key,
-                                 int recv_key_len) {
+                                 int recv_key_len,
+                                 const std::vector<int>& recv_extension_ids) {
   // If parameters are being set for the first time, we should create new SRTP
   // sessions and call "SetSend/SetRecv". Otherwise we should call
   // "UpdateSend"/"UpdateRecv" on the existing sessions, which will internally
@@ -186,21 +188,20 @@ bool SrtpTransport::SetRtpParams(int send_cs,
     CreateSrtpSessions();
     new_sessions = true;
   }
-  send_session_->SetEncryptedHeaderExtensionIds(
-      send_encrypted_header_extension_ids_);
   bool ret = new_sessions
-                 ? send_session_->SetSend(send_cs, send_key, send_key_len)
-                 : send_session_->UpdateSend(send_cs, send_key, send_key_len);
+                 ? send_session_->SetSend(send_cs, send_key, send_key_len,
+                                          send_extension_ids)
+                 : send_session_->UpdateSend(send_cs, send_key, send_key_len,
+                                             send_extension_ids);
   if (!ret) {
     ResetParams();
     return false;
   }
 
-  recv_session_->SetEncryptedHeaderExtensionIds(
-      recv_encrypted_header_extension_ids_);
-  ret = new_sessions
-            ? recv_session_->SetRecv(recv_cs, recv_key, recv_key_len)
-            : recv_session_->UpdateRecv(recv_cs, recv_key, recv_key_len);
+  ret = new_sessions ? recv_session_->SetRecv(recv_cs, recv_key, recv_key_len,
+                                              recv_extension_ids)
+                     : recv_session_->UpdateRecv(
+                           recv_cs, recv_key, recv_key_len, recv_extension_ids);
   if (!ret) {
     ResetParams();
     return false;
@@ -216,9 +217,11 @@ bool SrtpTransport::SetRtpParams(int send_cs,
 bool SrtpTransport::SetRtcpParams(int send_cs,
                                   const uint8_t* send_key,
                                   int send_key_len,
+                                  const std::vector<int>& send_extension_ids,
                                   int recv_cs,
                                   const uint8_t* recv_key,
-                                  int recv_key_len) {
+                                  int recv_key_len,
+                                  const std::vector<int>& recv_extension_ids) {
   // This can only be called once, but can be safely called after
   // SetRtpParams
   if (send_rtcp_session_ || recv_rtcp_session_) {
@@ -227,12 +230,14 @@ bool SrtpTransport::SetRtcpParams(int send_cs,
   }
 
   send_rtcp_session_.reset(new cricket::SrtpSession());
-  if (!send_rtcp_session_->SetSend(send_cs, send_key, send_key_len)) {
+  if (!send_rtcp_session_->SetSend(send_cs, send_key, send_key_len,
+                                   send_extension_ids)) {
     return false;
   }
 
   recv_rtcp_session_.reset(new cricket::SrtpSession());
-  if (!recv_rtcp_session_->SetRecv(recv_cs, recv_key, recv_key_len)) {
+  if (!recv_rtcp_session_->SetRecv(recv_cs, recv_key, recv_key_len,
+                                   recv_extension_ids)) {
     return false;
   }
 
@@ -253,16 +258,6 @@ void SrtpTransport::ResetParams() {
   send_rtcp_session_ = nullptr;
   recv_rtcp_session_ = nullptr;
   RTC_LOG(LS_INFO) << "The params in SRTP transport are reset.";
-}
-
-void SrtpTransport::SetEncryptedHeaderExtensionIds(
-    cricket::ContentSource source,
-    const std::vector<int>& extension_ids) {
-  if (source == cricket::CS_LOCAL) {
-    recv_encrypted_header_extension_ids_ = extension_ids;
-  } else {
-    send_encrypted_header_extension_ids_ = extension_ids;
-  }
 }
 
 void SrtpTransport::CreateSrtpSessions() {

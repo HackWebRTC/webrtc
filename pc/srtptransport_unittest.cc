@@ -220,14 +220,15 @@ class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
       srtp_transport1_->EnableExternalAuth();
       srtp_transport2_->EnableExternalAuth();
     }
-    EXPECT_TRUE(
-        srtp_transport1_->SetRtpParams(cs, key1, key1_len, cs, key2, key2_len));
-    EXPECT_TRUE(
-        srtp_transport2_->SetRtpParams(cs, key2, key2_len, cs, key1, key1_len));
-    EXPECT_TRUE(srtp_transport1_->SetRtcpParams(cs, key1, key1_len, cs, key2,
-                                                key2_len));
-    EXPECT_TRUE(srtp_transport2_->SetRtcpParams(cs, key2, key2_len, cs, key1,
-                                                key1_len));
+    std::vector<int> extension_ids;
+    EXPECT_TRUE(srtp_transport1_->SetRtpParams(
+        cs, key1, key1_len, extension_ids, cs, key2, key2_len, extension_ids));
+    EXPECT_TRUE(srtp_transport2_->SetRtpParams(
+        cs, key2, key2_len, extension_ids, cs, key1, key1_len, extension_ids));
+    EXPECT_TRUE(srtp_transport1_->SetRtcpParams(
+        cs, key1, key1_len, extension_ids, cs, key2, key2_len, extension_ids));
+    EXPECT_TRUE(srtp_transport2_->SetRtcpParams(
+        cs, key2, key2_len, extension_ids, cs, key1, key1_len, extension_ids));
     EXPECT_TRUE(srtp_transport1_->IsActive());
     EXPECT_TRUE(srtp_transport2_->IsActive());
     if (rtc::IsGcmCryptoSuite(cs)) {
@@ -308,18 +309,12 @@ class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
     encrypted_headers.push_back(4);
     EXPECT_EQ(key1_len, key2_len);
     EXPECT_EQ(cs_name, rtc::SrtpCryptoSuiteToName(cs));
-    srtp_transport1_->SetEncryptedHeaderExtensionIds(cricket::CS_LOCAL,
-                                                     encrypted_headers);
-    srtp_transport1_->SetEncryptedHeaderExtensionIds(cricket::CS_REMOTE,
-                                                     encrypted_headers);
-    srtp_transport2_->SetEncryptedHeaderExtensionIds(cricket::CS_LOCAL,
-                                                     encrypted_headers);
-    srtp_transport2_->SetEncryptedHeaderExtensionIds(cricket::CS_REMOTE,
-                                                     encrypted_headers);
-    EXPECT_TRUE(
-        srtp_transport1_->SetRtpParams(cs, key1, key1_len, cs, key2, key2_len));
-    EXPECT_TRUE(
-        srtp_transport2_->SetRtpParams(cs, key2, key2_len, cs, key1, key1_len));
+    EXPECT_TRUE(srtp_transport1_->SetRtpParams(cs, key1, key1_len,
+                                               encrypted_headers, cs, key2,
+                                               key2_len, encrypted_headers));
+    EXPECT_TRUE(srtp_transport2_->SetRtpParams(cs, key2, key2_len,
+                                               encrypted_headers, cs, key1,
+                                               key1_len, encrypted_headers));
     EXPECT_TRUE(srtp_transport1_->IsActive());
     EXPECT_TRUE(srtp_transport2_->IsActive());
     EXPECT_FALSE(srtp_transport1_->IsExternalAuthActive());
@@ -409,12 +404,13 @@ INSTANTIATE_TEST_CASE_P(ExternalAuth,
 
 // Test directly setting the params with bogus keys.
 TEST_F(SrtpTransportTest, TestSetParamsKeyTooShort) {
+  std::vector<int> extension_ids;
   EXPECT_FALSE(srtp_transport1_->SetRtpParams(
-      rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen - 1,
-      rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen - 1));
+      rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen - 1, extension_ids,
+      rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen - 1, extension_ids));
   EXPECT_FALSE(srtp_transport1_->SetRtcpParams(
-      rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen - 1,
-      rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen - 1));
+      rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen - 1, extension_ids,
+      rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen - 1, extension_ids));
 }
 
 }  // namespace webrtc

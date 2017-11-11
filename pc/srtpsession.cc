@@ -32,20 +32,32 @@ SrtpSession::~SrtpSession() {
   }
 }
 
-bool SrtpSession::SetSend(int cs, const uint8_t* key, size_t len) {
-  return SetKey(ssrc_any_outbound, cs, key, len);
+bool SrtpSession::SetSend(int cs,
+                          const uint8_t* key,
+                          size_t len,
+                          const std::vector<int>& extension_ids) {
+  return SetKey(ssrc_any_outbound, cs, key, len, extension_ids);
 }
 
-bool SrtpSession::UpdateSend(int cs, const uint8_t* key, size_t len) {
-  return UpdateKey(ssrc_any_outbound, cs, key, len);
+bool SrtpSession::UpdateSend(int cs,
+                             const uint8_t* key,
+                             size_t len,
+                             const std::vector<int>& extension_ids) {
+  return UpdateKey(ssrc_any_outbound, cs, key, len, extension_ids);
 }
 
-bool SrtpSession::SetRecv(int cs, const uint8_t* key, size_t len) {
-  return SetKey(ssrc_any_inbound, cs, key, len);
+bool SrtpSession::SetRecv(int cs,
+                          const uint8_t* key,
+                          size_t len,
+                          const std::vector<int>& extension_ids) {
+  return SetKey(ssrc_any_inbound, cs, key, len, extension_ids);
 }
 
-bool SrtpSession::UpdateRecv(int cs, const uint8_t* key, size_t len) {
-  return UpdateKey(ssrc_any_inbound, cs, key, len);
+bool SrtpSession::UpdateRecv(int cs,
+                             const uint8_t* key,
+                             size_t len,
+                             const std::vector<int>& extension_ids) {
+  return UpdateKey(ssrc_any_inbound, cs, key, len, extension_ids);
 }
 
 bool SrtpSession::ProtectRtp(void* p, int in_len, int max_len, int* out_len) {
@@ -203,7 +215,11 @@ bool SrtpSession::GetSendStreamPacketIndex(void* p,
   return true;
 }
 
-bool SrtpSession::DoSetKey(int type, int cs, const uint8_t* key, size_t len) {
+bool SrtpSession::DoSetKey(int type,
+                           int cs,
+                           const uint8_t* key,
+                           size_t len,
+                           const std::vector<int>& extension_ids) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
   srtp_policy_t policy;
@@ -262,10 +278,9 @@ bool SrtpSession::DoSetKey(int type, int cs, const uint8_t* key, size_t len) {
       !rtc::IsGcmCryptoSuite(cs)) {
     policy.rtp.auth_type = EXTERNAL_HMAC_SHA1;
   }
-  if (!encrypted_header_extension_ids_.empty()) {
-    policy.enc_xtn_hdr = const_cast<int*>(&encrypted_header_extension_ids_[0]);
-    policy.enc_xtn_hdr_count =
-        static_cast<int>(encrypted_header_extension_ids_.size());
+  if (!extension_ids.empty()) {
+    policy.enc_xtn_hdr = const_cast<int*>(&extension_ids[0]);
+    policy.enc_xtn_hdr_count = static_cast<int>(extension_ids.size());
   }
   policy.next = nullptr;
 
@@ -291,7 +306,11 @@ bool SrtpSession::DoSetKey(int type, int cs, const uint8_t* key, size_t len) {
   return true;
 }
 
-bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
+bool SrtpSession::SetKey(int type,
+                         int cs,
+                         const uint8_t* key,
+                         size_t len,
+                         const std::vector<int>& extension_ids) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (session_) {
     RTC_LOG(LS_ERROR) << "Failed to create SRTP session: "
@@ -307,23 +326,21 @@ bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
     return false;
   }
 
-  return DoSetKey(type, cs, key, len);
+  return DoSetKey(type, cs, key, len, extension_ids);
 }
 
-bool SrtpSession::UpdateKey(int type, int cs, const uint8_t* key, size_t len) {
+bool SrtpSession::UpdateKey(int type,
+                            int cs,
+                            const uint8_t* key,
+                            size_t len,
+                            const std::vector<int>& extension_ids) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!session_) {
     RTC_LOG(LS_ERROR) << "Failed to update non-existing SRTP session";
     return false;
   }
 
-  return DoSetKey(type, cs, key, len);
-}
-
-void SrtpSession::SetEncryptedHeaderExtensionIds(
-    const std::vector<int>& encrypted_header_extension_ids) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  encrypted_header_extension_ids_ = encrypted_header_extension_ids;
+  return DoSetKey(type, cs, key, len, extension_ids);
 }
 
 int g_libsrtp_usage_count = 0;

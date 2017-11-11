@@ -100,9 +100,11 @@ class SrtpTransport : public RtpTransportInternal {
   bool SetRtpParams(int send_cs,
                     const uint8_t* send_key,
                     int send_key_len,
+                    const std::vector<int>& send_extension_ids,
                     int recv_cs,
                     const uint8_t* recv_key,
-                    int recv_key_len);
+                    int recv_key_len,
+                    const std::vector<int>& recv_extension_ids);
 
   // Create new send/recv sessions and set the negotiated crypto keys for RTCP
   // packet encryption. The keys can either come from SDES negotiation or DTLS
@@ -110,17 +112,13 @@ class SrtpTransport : public RtpTransportInternal {
   bool SetRtcpParams(int send_cs,
                      const uint8_t* send_key,
                      int send_key_len,
+                     const std::vector<int>& send_extension_ids,
                      int recv_cs,
                      const uint8_t* recv_key,
-                     int recv_key_len);
+                     int recv_key_len,
+                     const std::vector<int>& recv_extension_ids);
 
   void ResetParams();
-
-  // Set the header extension ids that should be encrypted for the given source.
-  // This method doesn't immediately update the SRTP session with the new IDs,
-  // and you need to call SetRtpParams for that to happen.
-  void SetEncryptedHeaderExtensionIds(cricket::ContentSource source,
-                                      const std::vector<int>& extension_ids);
 
   // If external auth is enabled, SRTP will write a dummy auth tag that then
   // later must get replaced before the packet is sent out. Only supported for
@@ -187,8 +185,6 @@ class SrtpTransport : public RtpTransportInternal {
   std::unique_ptr<cricket::SrtpSession> send_rtcp_session_;
   std::unique_ptr<cricket::SrtpSession> recv_rtcp_session_;
 
-  std::vector<int> send_encrypted_header_extension_ids_;
-  std::vector<int> recv_encrypted_header_extension_ids_;
   bool external_auth_enabled_ = false;
 
   int rtp_abs_sendtime_extn_id_ = -1;

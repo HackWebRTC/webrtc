@@ -878,13 +878,26 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp) {
     recv_key = &server_write_key;
   }
 
+  // Use an empty encrypted header extension ID vector if not set. This could
+  // happen when the DTLS handshake is completed before processing the
+  // Offer/Answer which contains the encrypted header extension IDs.
+  std::vector<int> send_extension_ids;
+  std::vector<int> recv_extension_ids;
+  if (catched_send_extension_ids_) {
+    send_extension_ids = *catched_send_extension_ids_;
+  }
+  if (catched_recv_extension_ids_) {
+    recv_extension_ids = *catched_recv_extension_ids_;
+  }
+
   if (rtcp) {
     if (!dtls_active()) {
       RTC_DCHECK(srtp_transport_);
       ret = srtp_transport_->SetRtcpParams(
           selected_crypto_suite, &(*send_key)[0],
-          static_cast<int>(send_key->size()), selected_crypto_suite,
-          &(*recv_key)[0], static_cast<int>(recv_key->size()));
+          static_cast<int>(send_key->size()), send_extension_ids,
+          selected_crypto_suite, &(*recv_key)[0],
+          static_cast<int>(recv_key->size()), recv_extension_ids);
     } else {
       // RTCP doesn't need to call SetRtpParam because it is only used
       // to make the updated encrypted RTP header extension IDs take effect.
@@ -892,10 +905,11 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp) {
     }
   } else {
     RTC_DCHECK(srtp_transport_);
-    ret = srtp_transport_->SetRtpParams(selected_crypto_suite, &(*send_key)[0],
-                                        static_cast<int>(send_key->size()),
-                                        selected_crypto_suite, &(*recv_key)[0],
-                                        static_cast<int>(recv_key->size()));
+    ret = srtp_transport_->SetRtpParams(
+        selected_crypto_suite, &(*send_key)[0],
+        static_cast<int>(send_key->size()), send_extension_ids,
+        selected_crypto_suite, &(*recv_key)[0],
+        static_cast<int>(recv_key->size()), recv_extension_ids);
     dtls_active_ = ret;
   }
 
@@ -1043,10 +1057,11 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
   if (!srtp_transport_ && !dtls && !cryptos.empty()) {
     EnableSrtpTransport_n();
   }
-  if (srtp_transport_) {
-    srtp_transport_->SetEncryptedHeaderExtensionIds(src,
-                                                    encrypted_extension_ids);
-  }
+
+  bool encrypted_header_extensions_id_changed =
+      EncryptedHeaderExtensionIdsChanged(src, encrypted_extension_ids);
+  CacheEncryptedHeaderExtensionIds(src, encrypted_extension_ids);
+
   switch (action) {
     case CA_OFFER:
       // If DTLS is already active on the channel, we could be renegotiating
@@ -1078,13 +1093,17 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
   if ((action == CA_PRANSWER || action == CA_ANSWER) && !dtls && ret) {
     if (sdes_negotiator_.send_cipher_suite() &&
         sdes_negotiator_.recv_cipher_suite()) {
+      RTC_DCHECK(catched_send_extension_ids_);
+      RTC_DCHECK(catched_recv_extension_ids_);
       ret = srtp_transport_->SetRtpParams(
           *(sdes_negotiator_.send_cipher_suite()),
           sdes_negotiator_.send_key().data(),
           static_cast<int>(sdes_negotiator_.send_key().size()),
+          *(catched_send_extension_ids_),
           *(sdes_negotiator_.recv_cipher_suite()),
           sdes_negotiator_.recv_key().data(),
-          static_cast<int>(sdes_negotiator_.recv_key().size()));
+          static_cast<int>(sdes_negotiator_.recv_key().size()),
+          *(catched_recv_extension_ids_));
     } else {
       RTC_LOG(LS_INFO) << "No crypto keys are provided for SDES.";
       if (action == CA_ANSWER && srtp_transport_) {
@@ -1096,16 +1115,16 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
     }
   }
 
-  // Only update SRTP filter if using DTLS. SDES is handled internally
+  // Only update SRTP transport if using DTLS. SDES is handled internally
   // by the SRTP filter.
-  // TODO(jbauch): Only update if encrypted extension ids have changed.
   if (ret && dtls_active() && rtp_dtls_transport_ &&
-      rtp_dtls_transport_->dtls_state() == DTLS_TRANSPORT_CONNECTED) {
-    bool rtcp = false;
-    ret = SetupDtlsSrtp_n(rtcp);
+      rtp_dtls_transport_->dtls_state() == DTLS_TRANSPORT_CONNECTED &&
+      encrypted_header_extensions_id_changed) {
+    ret = SetupDtlsSrtp_n(/*rtcp=*/false);
   }
+
   if (!ret) {
-    SafeSetError("Failed to setup SRTP filter.", error_desc);
+    SafeSetError("Failed to setup SRTP.", error_desc);
     return false;
   }
   return true;
@@ -1431,6 +1450,26 @@ void BaseChannel::SignalSentPacket_n(
 void BaseChannel::SignalSentPacket_w(const rtc::SentPacket& sent_packet) {
   RTC_DCHECK(worker_thread_->IsCurrent());
   SignalSentPacket(sent_packet);
+}
+
+void BaseChannel::CacheEncryptedHeaderExtensionIds(
+    cricket::ContentSource source,
+    const std::vector<int>& extension_ids) {
+  source == ContentSource::CS_LOCAL
+      ? catched_recv_extension_ids_.emplace(extension_ids)
+      : catched_send_extension_ids_.emplace(extension_ids);
+}
+
+bool BaseChannel::EncryptedHeaderExtensionIdsChanged(
+    cricket::ContentSource source,
+    const std::vector<int>& new_extension_ids) {
+  if (source == ContentSource::CS_LOCAL) {
+    return !catched_recv_extension_ids_ ||
+           (*catched_recv_extension_ids_) != new_extension_ids;
+  } else {
+    return !catched_send_extension_ids_ ||
+           (*catched_send_extension_ids_) != new_extension_ids;
+  }
 }
 
 VoiceChannel::VoiceChannel(rtc::Thread* worker_thread,

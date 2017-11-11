@@ -30,16 +30,25 @@ class SrtpSession {
 
   // Configures the session for sending data using the specified
   // cipher-suite and key. Receiving must be done by a separate session.
-  bool SetSend(int cs, const uint8_t* key, size_t len);
-  bool UpdateSend(int cs, const uint8_t* key, size_t len);
+  bool SetSend(int cs,
+               const uint8_t* key,
+               size_t len,
+               const std::vector<int>& extension_ids);
+  bool UpdateSend(int cs,
+                  const uint8_t* key,
+                  size_t len,
+                  const std::vector<int>& extension_ids);
 
   // Configures the session for receiving data using the specified
   // cipher-suite and key. Sending must be done by a separate session.
-  bool SetRecv(int cs, const uint8_t* key, size_t len);
-  bool UpdateRecv(int cs, const uint8_t* key, size_t len);
-
-  void SetEncryptedHeaderExtensionIds(
-      const std::vector<int>& encrypted_header_extension_ids);
+  bool SetRecv(int cs,
+               const uint8_t* key,
+               size_t len,
+               const std::vector<int>& extension_ids);
+  bool UpdateRecv(int cs,
+                  const uint8_t* key,
+                  size_t len,
+                  const std::vector<int>& extension_ids);
 
   // Encrypts/signs an individual RTP/RTCP packet, in-place.
   // If an HMAC is used, this will increase the packet size.
@@ -75,12 +84,21 @@ class SrtpSession {
   bool IsExternalAuthActive() const;
 
  private:
-  bool DoSetKey(int type, int cs, const uint8_t* key, size_t len);
-  bool SetKey(int type, int cs, const uint8_t* key, size_t len);
-  bool UpdateKey(int type, int cs, const uint8_t* key, size_t len);
-  bool SetEncryptedHeaderExtensionIds(
-      int type,
-      const std::vector<int>& encrypted_header_extension_ids);
+  bool DoSetKey(int type,
+                int cs,
+                const uint8_t* key,
+                size_t len,
+                const std::vector<int>& extension_ids);
+  bool SetKey(int type,
+              int cs,
+              const uint8_t* key,
+              size_t len,
+              const std::vector<int>& extension_ids);
+  bool UpdateKey(int type,
+                 int cs,
+                 const uint8_t* key,
+                 size_t len,
+                 const std::vector<int>& extension_ids);
   // Returns send stream current packet index from srtp db.
   bool GetSendStreamPacketIndex(void* data, int in_len, int64_t* index);
 
@@ -104,7 +122,6 @@ class SrtpSession {
   int last_send_seq_num_ = -1;
   bool external_auth_active_ = false;
   bool external_auth_enabled_ = false;
-  std::vector<int> encrypted_header_extension_ids_;
   RTC_DISALLOW_COPY_AND_ASSIGN(SrtpSession);
 };
 
