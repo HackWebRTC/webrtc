@@ -21,6 +21,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -70,12 +71,13 @@ std::vector<SdpVideoFormat> SupportedH264Codecs() {
           CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1)};
 }
 
-H264Encoder* H264Encoder::Create(const cricket::VideoCodec& codec) {
+std::unique_ptr<H264Encoder> H264Encoder::Create(
+    const cricket::VideoCodec& codec) {
   RTC_DCHECK(H264Encoder::IsSupported());
 #if defined(WEBRTC_USE_H264)
   RTC_CHECK(g_rtc_use_h264);
   RTC_LOG(LS_INFO) << "Creating H264EncoderImpl.";
-  return new H264EncoderImpl(codec);
+  return rtc::MakeUnique<H264EncoderImpl>(codec);
 #else
   RTC_NOTREACHED();
   return nullptr;
@@ -86,12 +88,12 @@ bool H264Encoder::IsSupported() {
   return IsH264CodecSupported();
 }
 
-H264Decoder* H264Decoder::Create() {
+std::unique_ptr<H264Decoder> H264Decoder::Create() {
   RTC_DCHECK(H264Decoder::IsSupported());
 #if defined(WEBRTC_USE_H264)
   RTC_CHECK(g_rtc_use_h264);
   RTC_LOG(LS_INFO) << "Creating H264DecoderImpl.";
-  return new H264DecoderImpl();
+  return rtc::MakeUnique<H264DecoderImpl>();
 #else
   RTC_NOTREACHED();
   return nullptr;

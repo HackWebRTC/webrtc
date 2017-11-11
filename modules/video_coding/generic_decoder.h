@@ -76,6 +76,7 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
 
 class VCMGenericDecoder {
  public:
+  explicit VCMGenericDecoder(std::unique_ptr<VideoDecoder> decoder);
   explicit VCMGenericDecoder(VideoDecoder* decoder, bool isExternal = false);
   ~VCMGenericDecoder();
 

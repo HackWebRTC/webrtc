@@ -20,9 +20,13 @@ constexpr uint32_t kTimestampIncrementPerFrame = 3000;
 
 class TestVp9Impl : public VideoCodecTest {
  protected:
-  VideoEncoder* CreateEncoder() override { return VP9Encoder::Create(); }
+  std::unique_ptr<VideoEncoder> CreateEncoder() override {
+    return VP9Encoder::Create();
+  }
 
-  VideoDecoder* CreateDecoder() override { return VP9Decoder::Create(); }
+  std::unique_ptr<VideoDecoder> CreateDecoder() override {
+    return VP9Decoder::Create();
+  }
 
   VideoCodec codec_settings() override {
     VideoCodec codec_settings;

@@ -12,6 +12,8 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_VP9_INCLUDE_VP9_H_
 #define MODULES_VIDEO_CODING_CODECS_VP9_INCLUDE_VP9_H_
 
+#include <memory>
+
 #include "modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
@@ -19,7 +21,7 @@ namespace webrtc {
 class VP9Encoder : public VideoEncoder {
  public:
   static bool IsSupported();
-  static VP9Encoder* Create();
+  static std::unique_ptr<VP9Encoder> Create();
 
   virtual ~VP9Encoder() {}
 };
@@ -27,7 +29,7 @@ class VP9Encoder : public VideoEncoder {
 class VP9Decoder : public VideoDecoder {
  public:
   static bool IsSupported();
-  static VP9Decoder* Create();
+  static std::unique_ptr<VP9Decoder> Create();
 
   virtual ~VP9Decoder() {}
 };

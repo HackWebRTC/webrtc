@@ -23,6 +23,7 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/engine/internalencoderfactory.h"
 #include "media/engine/webrtcvideoengine.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -1129,35 +1130,6 @@ class VideoAnalyzer : public PacketReceiver,
   const int64_t start_ms_;
 };
 
-class Vp8EncoderFactory : public cricket::WebRtcVideoEncoderFactory {
- public:
-  Vp8EncoderFactory() {
-    supported_codecs_.push_back(cricket::VideoCodec("VP8"));
-  }
-  ~Vp8EncoderFactory() override { RTC_CHECK(live_encoders_.empty()); }
-
-  const std::vector<cricket::VideoCodec>& supported_codecs() const override {
-    return supported_codecs_;
-  }
-
-  VideoEncoder* CreateVideoEncoder(const cricket::VideoCodec& codec) override {
-    VideoEncoder* encoder = VP8Encoder::Create();
-    live_encoders_.insert(encoder);
-    return encoder;
-  }
-
-  void DestroyVideoEncoder(VideoEncoder* encoder) override {
-    auto it = live_encoders_.find(encoder);
-    RTC_CHECK(it != live_encoders_.end());
-    live_encoders_.erase(it);
-    delete encoder;
-  }
-
- private:
-  std::vector<cricket::VideoCodec> supported_codecs_;
-  std::set<VideoEncoder*> live_encoders_;
-};
-
 VideoQualityTest::VideoQualityTest()
     : clock_(Clock::GetRealTimeClock()), receive_logs_(0), send_logs_(0) {
   payload_type_map_ = test::CallTest::payload_type_map_;
@@ -1413,7 +1385,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
 
   int payload_type;
   if (params_.video.codec == "H264") {
-    video_encoder_.reset(H264Encoder::Create(cricket::VideoCodec("H264")));
+    video_encoder_ = H264Encoder::Create(cricket::VideoCodec("H264"));
     payload_type = kPayloadTypeH264;
   } else if (params_.video.codec == "VP8") {
     if (params_.screenshare.enabled && params_.ss.streams.size() > 1) {
@@ -1421,13 +1393,13 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
       // encoders usually can't natively do simulcast with different frame rates
       // for the different layers.
       video_encoder_.reset(
-          new SimulcastEncoderAdapter(new Vp8EncoderFactory()));
+          new SimulcastEncoderAdapter(new cricket::InternalEncoderFactory()));
     } else {
-      video_encoder_.reset(VP8Encoder::Create());
+      video_encoder_ = VP8Encoder::Create();
     }
     payload_type = kPayloadTypeVP8;
   } else if (params_.video.codec == "VP9") {
-    video_encoder_.reset(VP9Encoder::Create());
+    video_encoder_ = VP9Encoder::Create();
     payload_type = kPayloadTypeVP9;
   } else {
     RTC_NOTREACHED() << "Codec not supported!";
