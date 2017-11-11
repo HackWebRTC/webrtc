@@ -2134,17 +2134,8 @@ void ModifySsrcs(cricket::SessionDescription* desc) {
 // received, and a 50% chance that they'll stop updating (while
 // "concealed_samples" continues increasing, due to silence being generated for
 // the inactive stream).
-// Disabled on windows due to flakiness, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=8496
-#if defined(WEBRTC_WIN)
-#define MAYBE_TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges \
-  DISABLED_TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges
-#else
-#define MAYBE_TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges \
-  TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges
-#endif
 TEST_F(PeerConnectionIntegrationTest,
-       MAYBE_TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges) {
+       TrackStatsUpdatedCorrectlyWhenUnsignaledSsrcChanges) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->AddAudioOnlyMediaStream();
@@ -2187,10 +2178,10 @@ TEST_F(PeerConnectionIntegrationTest,
   // EXPECT_GT(*track_stats[0]->total_samples_received, prev_samples_received);
 
   // Additionally, the percentage of concealed samples (samples generated to
-  // conceal packet loss) should be less than 25%%. If it's greater, that's a
+  // conceal packet loss) should be less than 50%. If it's greater, that's a
   // good sign that we're seeing stats from the old stream that's no longer
   // receiving packets, and is generating concealed samples of silence.
-  constexpr double kAcceptableConcealedSamplesPercentage = 0.25;
+  constexpr double kAcceptableConcealedSamplesPercentage = 0.50;
   ASSERT_TRUE(track_stats[0]->concealed_samples.is_defined());
   EXPECT_LT(*track_stats[0]->concealed_samples,
             *track_stats[0]->total_samples_received *
@@ -2868,14 +2859,10 @@ class PeerConnectionIntegrationIceStatesTest
 // states over the duration of the call. This includes Disconnected and Failed
 // states, induced by putting a firewall between the peers and waiting for them
 // to time out.
-// Disabled due to flakiness, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=8496
-TEST_P(PeerConnectionIntegrationIceStatesTest, DISABLED_VerifyIceStates) {
-  rtc::ScopedFakeClock fake_clock;
-  // Some things use a time of "0" as a special value, so we need to start out
-  // the fake clock at a nonzero time.
-  // TODO(deadbeef): Fix this.
-  fake_clock.AdvanceTime(rtc::TimeDelta::FromSeconds(1));
+TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
+  // TODO(bugs.webrtc.org/8295): When using a ScopedFakeClock, this test will
+  // sometimes hit a DCHECK in platform_thread.cc about the PacerThread being
+  // too busy. For now, revert to running without a fake clock.
 
   const SocketAddress kStunServerAddress =
       SocketAddress("99.99.99.1", cricket::STUN_SERVER_PORT);
@@ -2907,9 +2894,8 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, DISABLED_VerifyIceStates) {
   // background.
   caller()->CreateAndSetAndSignalOffer();
 
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
-                           caller()->ice_connection_state(), kDefaultTimeout,
-                           fake_clock);
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                 caller()->ice_connection_state(), kDefaultTimeout);
 
   // Verify that the observer was notified of the intermediate transitions.
   EXPECT_THAT(caller()->ice_connection_state_history(),
@@ -2926,28 +2912,25 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, DISABLED_VerifyIceStates) {
     firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
   }
   RTC_LOG(LS_INFO) << "Firewall rules applied";
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
-                           caller()->ice_connection_state(), kDefaultTimeout,
-                           fake_clock);
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
+                 caller()->ice_connection_state(), kDefaultTimeout);
 
   // Let ICE re-establish by removing the firewall rules.
   firewall()->ClearRules();
   RTC_LOG(LS_INFO) << "Firewall rules cleared";
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
-                           caller()->ice_connection_state(), kDefaultTimeout,
-                           fake_clock);
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                 caller()->ice_connection_state(), kDefaultTimeout);
 
   // According to RFC7675, if there is no response within 30 seconds then the
   // peer should consider the other side to have rejected the connection. This
-  // is signalled by the state transitioning to "failed".
+  // is signaled by the state transitioning to "failed".
   constexpr int kConsentTimeout = 30000;
   for (const auto& caller_address : CallerAddresses()) {
     firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
   }
   RTC_LOG(LS_INFO) << "Firewall rules applied again";
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionFailed,
-                           caller()->ice_connection_state(), kConsentTimeout,
-                           fake_clock);
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+                 caller()->ice_connection_state(), kConsentTimeout);
 }
 
 // Tests that the best connection is set to the appropriate IPv4/IPv6 connection
@@ -3123,10 +3106,8 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithIceRenomination) {
 // With a max bundle policy and RTCP muxing, adding a new media description to
 // the connection should not affect ICE at all because the new media will use
 // the existing connection.
-// Disabled due to flakiness, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=8496
 TEST_F(PeerConnectionIntegrationTest,
-       DISABLED_AddMediaToConnectedBundleDoesNotRestartIce) {
+       AddMediaToConnectedBundleDoesNotRestartIce) {
   PeerConnectionInterface::RTCConfiguration config;
   config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
   config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
