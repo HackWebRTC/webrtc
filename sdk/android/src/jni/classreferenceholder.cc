@@ -9,6 +9,7 @@
  */
 #include "sdk/android/src/jni/classreferenceholder.h"
 
+#include "sdk/android/src/jni/class_loader.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
@@ -34,8 +35,12 @@ class ClassReferenceHolder {
 static ClassReferenceHolder* g_class_reference_holder = nullptr;
 
 void LoadGlobalClassReferenceHolder() {
+  JNIEnv* env = GetEnv();
   RTC_CHECK(g_class_reference_holder == nullptr);
-  g_class_reference_holder = new ClassReferenceHolder(GetEnv());
+  g_class_reference_holder = new ClassReferenceHolder(env);
+  // TODO(magjed): This is a weird place to call the other class loader from,
+  // but the only place that will keep backwards compatibility.
+  InitClassLoader(env);
 }
 
 void FreeGlobalClassReferenceHolder() {
