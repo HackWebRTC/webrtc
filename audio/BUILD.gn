@@ -86,13 +86,6 @@ if (rtc_include_tests) {
   rtc_source_set("audio_tests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:video_engine_tests" ]
-    }
-
     # TODO(kjellander): Remove (bugs.webrtc.org/6828)
     # This needs remote_bitrate_estimator to be moved to webrtc/api first.
     check_includes = false
@@ -191,12 +184,6 @@ if (rtc_include_tests) {
   rtc_source_set("audio_perf_tests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:webrtc_perf_tests" ]
-    }
     sources = [
       "test/audio_bwe_integration_test.cc",
       "test/audio_bwe_integration_test.h",

@@ -176,12 +176,6 @@ if (rtc_include_tests) {
   rtc_source_set("call_tests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:video_engine_tests" ]
-    }
     sources = [
       "bitrate_allocator_unittest.cc",
       "bitrate_estimator_tests.cc",
@@ -234,12 +228,6 @@ if (rtc_include_tests) {
   rtc_source_set("call_perf_tests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:webrtc_perf_tests" ]
-    }
     sources = [
       "call_perf_tests.cc",
       "rampup_tests.cc",

@@ -294,12 +294,6 @@ if (rtc_include_tests) {
   rtc_source_set("rtp_rtcp_modules_tests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "../../modules:modules_tests" ]
-    }
     sources = [
       "test/testFec/test_fec.cc",
     ]
@@ -317,12 +311,6 @@ if (rtc_include_tests) {
   rtc_source_set("rtp_rtcp_unittests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:modules_unittests" ]
-    }
     sources = [
       "source/byte_io_unittest.cc",
       "source/flexfec_header_reader_writer_unittest.cc",

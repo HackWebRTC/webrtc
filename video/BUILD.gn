@@ -135,12 +135,6 @@ if (rtc_include_tests) {
   rtc_source_set("video_full_stack_tests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:webrtc_perf_tests" ]
-    }
     sources = [
       "full_stack_tests.cc",
     ]
@@ -244,12 +238,6 @@ if (rtc_include_tests) {
   rtc_source_set("video_tests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:video_engine_tests" ]
-    }
     defines = []
     sources = [
       "call_stats_unittest.cc",

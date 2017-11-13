@@ -147,12 +147,6 @@ if (rtc_include_tests) {
   rtc_source_set("rtc_p2p_unittests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:rtc_unittests" ]
-    }
     sources = [
       "base/asyncstuntcpsocket_unittest.cc",
       "base/dtlstransport_unittest.cc",
@@ -212,12 +206,6 @@ if (rtc_include_tests) {
   rtc_source_set("libstunprober_unittests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:rtc_unittests" ]
-    }
     sources = [
       "stunprober/stunprober_unittest.cc",
     ]

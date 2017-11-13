@@ -36,12 +36,6 @@ if (rtc_include_tests) {
   rtc_source_set("desktop_capture_modules_tests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:modules_tests" ]
-    }
     sources = []
     deps = []
     if (rtc_desktop_capture_supported) {
@@ -66,12 +60,6 @@ if (rtc_include_tests) {
   rtc_source_set("desktop_capture_unittests") {
     testonly = true
 
-    # Skip restricting visibility on mobile platforms since the tests on those
-    # gets additional generated targets which would require many lines here to
-    # cover (which would be confusing to read and hard to maintain).
-    if (!is_android && !is_ios) {
-      visibility = [ "..:modules_unittests" ]
-    }
     sources = [
       "blank_detector_desktop_capturer_wrapper_unittest.cc",
       "cropped_desktop_frame_unittest.cc",
