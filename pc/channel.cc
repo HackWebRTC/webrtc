@@ -595,13 +595,8 @@ void BaseChannel::OnNetworkRouteChanged(
   RTC_DCHECK(network_thread_->IsCurrent());
   rtc::NetworkRoute new_route;
   if (network_route) {
-    invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_, [=] {
-      media_channel_->OnTransportOverheadChanged(
-          network_route->packet_overhead);
-    });
     new_route = *(network_route);
   }
-
   // Note: When the RTCP-muxing is not enabled, RTCP transport and RTP transport
   // use the same transport name and MediaChannel::OnNetworkRouteChanged cannot
   // work correctly. Intentionally leave it broken to simplify the code and

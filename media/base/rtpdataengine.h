@@ -84,7 +84,6 @@ class RtpDataMediaChannel : public DataMediaChannel {
   virtual void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
                               const rtc::PacketTime& packet_time) {}
   virtual void OnReadyToSend(bool ready) {}
-  virtual void OnTransportOverheadChanged(int transport_overhead_per_packet) {}
   virtual bool SendData(
     const SendDataParams& params,
     const rtc::CopyOnWriteBuffer& payload,
