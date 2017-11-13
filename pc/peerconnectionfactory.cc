@@ -87,12 +87,14 @@ PeerConnectionFactory::PeerConnectionFactory(
       event_log_factory_(std::move(event_log_factory)) {
   if (!network_thread_) {
     owned_network_thread_ = rtc::Thread::CreateWithSocketServer();
+    owned_network_thread_->SetName("pc_network_thread", nullptr);
     owned_network_thread_->Start();
     network_thread_ = owned_network_thread_.get();
   }
 
   if (!worker_thread_) {
     owned_worker_thread_ = rtc::Thread::Create();
+    owned_worker_thread_->SetName("pc_worker_thread", nullptr);
     owned_worker_thread_->Start();
     worker_thread_ = owned_worker_thread_.get();
   }
