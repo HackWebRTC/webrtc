@@ -15,7 +15,6 @@
 #include <unistd.h>
 #include <vector>
 
-#include "sdk/android/src/jni/class_loader.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
@@ -78,8 +77,6 @@ jint InitGlobalJniVariables(JavaVM *jvm) {
   JNIEnv* jni = nullptr;
   if (jvm->GetEnv(reinterpret_cast<void**>(&jni), JNI_VERSION_1_6) != JNI_OK)
     return -1;
-
-  InitClassLoader(jni);
 
   return JNI_VERSION_1_6;
 }
