@@ -18,6 +18,7 @@
 #include "api/jsepsessiondescription.h"
 #include "media/base/fakevideocapturer.h"
 #include "pc/sdputils.h"
+#include "rtc_base/function_view.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/ptr_util.h"
 
@@ -31,7 +32,9 @@ PeerConnectionWrapper::PeerConnectionWrapper(
     rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
     rtc::scoped_refptr<PeerConnectionInterface> pc,
     std::unique_ptr<MockPeerConnectionObserver> observer)
-    : pc_factory_(pc_factory), observer_(std::move(observer)), pc_(pc) {
+    : pc_factory_(std::move(pc_factory)),
+      observer_(std::move(observer)),
+      pc_(std::move(pc)) {
   RTC_DCHECK(pc_factory_);
   RTC_DCHECK(pc_);
   RTC_DCHECK(observer_);
@@ -118,7 +121,7 @@ PeerConnectionWrapper::CreateAnswerAndSetAsLocal(
 }
 
 std::unique_ptr<SessionDescriptionInterface> PeerConnectionWrapper::CreateSdp(
-    std::function<void(CreateSessionDescriptionObserver*)> fn,
+    rtc::FunctionView<void(CreateSessionDescriptionObserver*)> fn,
     std::string* error_out) {
   rtc::scoped_refptr<MockCreateSessionDescriptionObserver> observer(
       new rtc::RefCountedObject<MockCreateSessionDescriptionObserver>());
@@ -151,7 +154,7 @@ bool PeerConnectionWrapper::SetRemoteDescription(
 }
 
 bool PeerConnectionWrapper::SetSdp(
-    std::function<void(SetSessionDescriptionObserver*)> fn,
+    rtc::FunctionView<void(SetSessionDescriptionObserver*)> fn,
     std::string* error_out) {
   rtc::scoped_refptr<MockSetSessionDescriptionObserver> observer(
       new rtc::RefCountedObject<MockSetSessionDescriptionObserver>());
@@ -168,7 +171,7 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddAudioTrack(
     std::vector<MediaStreamInterface*> streams) {
   auto media_stream_track =
       pc_factory()->CreateAudioTrack(track_label, nullptr);
-  return pc()->AddTrack(media_stream_track, streams);
+  return pc()->AddTrack(media_stream_track, std::move(streams));
 }
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddVideoTrack(
@@ -178,7 +181,7 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddVideoTrack(
       rtc::MakeUnique<cricket::FakeVideoCapturer>());
   auto media_stream_track =
       pc_factory()->CreateVideoTrack(track_label, video_source);
-  return pc()->AddTrack(media_stream_track, streams);
+  return pc()->AddTrack(media_stream_track, std::move(streams));
 }
 
 PeerConnectionInterface::SignalingState
