@@ -221,22 +221,6 @@ int32_t AudioDeviceBuffer::SetPlayoutChannels(size_t channels) {
   return 0;
 }
 
-int32_t AudioDeviceBuffer::SetRecordingChannel(
-    const AudioDeviceModule::ChannelType channel) {
-  RTC_LOG(INFO) << "SetRecordingChannel(" << channel << ")";
-  RTC_LOG(LS_WARNING) << "Not implemented";
-  // Add DCHECK to ensure that user does not try to use this API with a non-
-  // default parameter.
-  RTC_DCHECK_EQ(channel, AudioDeviceModule::kChannelBoth);
-  return -1;
-}
-
-int32_t AudioDeviceBuffer::RecordingChannel(
-    AudioDeviceModule::ChannelType& channel) const {
-  RTC_LOG(LS_WARNING) << "Not implemented";
-  return -1;
-}
-
 size_t AudioDeviceBuffer::RecordingChannels() const {
   RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
   return rec_channels_;

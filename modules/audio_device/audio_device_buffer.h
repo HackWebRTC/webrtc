@@ -92,8 +92,6 @@ class AudioDeviceBuffer {
   int32_t SetPlayoutChannels(size_t channels);
   size_t RecordingChannels() const;
   size_t PlayoutChannels() const;
-  int32_t SetRecordingChannel(const AudioDeviceModule::ChannelType channel);
-  int32_t RecordingChannel(AudioDeviceModule::ChannelType& channel) const;
 
   virtual int32_t SetRecordedBuffer(const void* audio_buffer,
                                     size_t samples_per_channel);

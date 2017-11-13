@@ -83,8 +83,6 @@ class MockAudioDeviceModule : public AudioDeviceModule {
   MOCK_CONST_METHOD1(StereoRecordingIsAvailable, int32_t(bool* available));
   MOCK_METHOD1(SetStereoRecording, int32_t(bool enable));
   MOCK_CONST_METHOD1(StereoRecording, int32_t(bool* enabled));
-  MOCK_METHOD1(SetRecordingChannel, int32_t(const ChannelType channel));
-  MOCK_CONST_METHOD1(RecordingChannel, int32_t(ChannelType* channel));
   MOCK_CONST_METHOD1(PlayoutDelay, int32_t(uint16_t* delayMS));
   MOCK_METHOD1(SetRecordingSampleRate, int32_t(const uint32_t samplesPerSec));
   MOCK_CONST_METHOD1(RecordingSampleRate, int32_t(uint32_t* samplesPerSec));

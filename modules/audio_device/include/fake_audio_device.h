@@ -99,8 +99,6 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
     return 0;
   }
   int32_t StereoRecording(bool* enabled) const override { return 0; }
-  int32_t SetRecordingChannel(const ChannelType channel) override { return 0; }
-  int32_t RecordingChannel(ChannelType* channel) const override { return 0; }
   int32_t PlayoutDelay(uint16_t* delayMS) const override {
     *delayMS = 0;
     return 0;

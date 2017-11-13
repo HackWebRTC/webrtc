@@ -128,8 +128,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   int32_t StereoRecordingIsAvailable(bool* available) const override;
   int32_t SetStereoRecording(bool enable) override;
   int32_t StereoRecording(bool* enabled) const override;
-  int32_t SetRecordingChannel(const ChannelType channel) override;
-  int32_t RecordingChannel(ChannelType* channel) const override;
 
   // Delay information and control
   int32_t PlayoutDelay(uint16_t* delayMS) const override;

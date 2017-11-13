@@ -241,12 +241,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   int32_t StereoRecording(bool* enabled) const override {
     return impl_->StereoRecording(enabled);
   }
-  int32_t SetRecordingChannel(const ChannelType channel) override {
-    return impl_->SetRecordingChannel(channel);
-  }
-  int32_t RecordingChannel(ChannelType* channel) const override {
-    return impl_->RecordingChannel(channel);
-  }
   int32_t PlayoutDelay(uint16_t* delay_ms) const override {
     return impl_->PlayoutDelay(delay_ms);
   }

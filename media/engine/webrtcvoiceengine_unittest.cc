@@ -90,8 +90,6 @@ void AdmSetupExpectations(webrtc::test::MockAudioDeviceModule* adm) {
       .WillOnce(Return(rtc::RefCountReleaseStatus::kDroppedLastRef));
 #if !defined(WEBRTC_IOS)
   EXPECT_CALL(*adm, Recording()).WillOnce(Return(false));
-  EXPECT_CALL(*adm, SetRecordingChannel(webrtc::AudioDeviceModule::
-      ChannelType::kChannelBoth)).WillOnce(Return(0));
 #if defined(WEBRTC_WIN)
   EXPECT_CALL(*adm, SetRecordingDevice(
       testing::Matcher<webrtc::AudioDeviceModule::WindowsDeviceType>(

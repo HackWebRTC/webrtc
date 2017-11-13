@@ -42,6 +42,7 @@ class AudioDeviceModule : public rtc::RefCountInterface {
     kDefaultDevice = -2
   };
 
+  // TODO(bugs.webrtc.org/7306): deprecated.
   enum ChannelType {
     kChannelLeft = 0,
     kChannelRight = 1,
@@ -141,8 +142,9 @@ class AudioDeviceModule : public rtc::RefCountInterface {
   virtual int32_t StereoRecordingIsAvailable(bool* available) const = 0;
   virtual int32_t SetStereoRecording(bool enable) = 0;
   virtual int32_t StereoRecording(bool* enabled) const = 0;
-  virtual int32_t SetRecordingChannel(const ChannelType channel) = 0;
-  virtual int32_t RecordingChannel(ChannelType* channel) const = 0;
+  // TODO(bugs.webrtc.org/7306): deprecated.
+  virtual int32_t SetRecordingChannel(const ChannelType channel) { return -1; }
+  virtual int32_t RecordingChannel(ChannelType* channel) const { return -1; }
 
   // Playout delay
   virtual int32_t PlayoutDelay(uint16_t* delayMS) const = 0;

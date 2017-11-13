@@ -42,10 +42,7 @@ void SetRecordingDevice(AudioDeviceModule* adm) {
     return;
   }
 
-  // Set device and stereo mode.
-  if (adm->SetRecordingChannel(AudioDeviceModule::kChannelBoth) != 0) {
-    RTC_LOG(LS_ERROR) << "Unable to set recording channel to kChannelBoth.";
-  }
+  // Set device to default.
   if (adm->SetRecordingDevice(AUDIO_DEVICE_ID) != 0) {
     RTC_LOG(LS_ERROR) << "Unable to set recording device.";
     return;

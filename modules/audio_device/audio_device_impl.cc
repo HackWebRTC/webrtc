@@ -524,41 +524,6 @@ int32_t AudioDeviceModuleImpl::StereoRecording(bool* enabled) const {
   return 0;
 }
 
-int32_t AudioDeviceModuleImpl::SetRecordingChannel(const ChannelType channel) {
-  if (channel == kChannelBoth) {
-    RTC_LOG(INFO) << __FUNCTION__ << "(both)";
-  } else if (channel == kChannelLeft) {
-    RTC_LOG(INFO) << __FUNCTION__ << "(left)";
-  } else {
-    RTC_LOG(INFO) << __FUNCTION__ << "(right)";
-  }
-  CHECKinitialized_();
-  bool stereo = false;
-  if (audio_device_->StereoRecording(stereo) == -1) {
-    RTC_LOG(WARNING) << "recording in stereo is not supported";
-    return -1;
-  }
-  return audio_device_buffer_.SetRecordingChannel(channel);
-}
-
-int32_t AudioDeviceModuleImpl::RecordingChannel(ChannelType* channel) const {
-  RTC_LOG(INFO) << __FUNCTION__;
-  CHECKinitialized_();
-  ChannelType chType;
-  if (audio_device_buffer_.RecordingChannel(chType) == -1) {
-    return -1;
-  }
-  *channel = chType;
-  if (*channel == kChannelBoth) {
-    RTC_LOG(INFO) << "output: both";
-  } else if (*channel == kChannelLeft) {
-    RTC_LOG(INFO) << "output: left";
-  } else {
-    RTC_LOG(INFO) << "output: right";
-  }
-  return 0;
-}
-
 int32_t AudioDeviceModuleImpl::StereoPlayoutIsAvailable(bool* available) const {
   RTC_LOG(INFO) << __FUNCTION__;
   CHECKinitialized_();

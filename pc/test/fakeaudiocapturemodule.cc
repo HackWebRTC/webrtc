@@ -388,24 +388,6 @@ int32_t FakeAudioCaptureModule::StereoRecording(bool* /*enabled*/) const {
   return 0;
 }
 
-int32_t FakeAudioCaptureModule::SetRecordingChannel(
-    const ChannelType channel) {
-  if (channel != AudioDeviceModule::kChannelBoth) {
-    // There is no right or left in mono. I.e. kChannelBoth should be used for
-    // mono.
-    RTC_NOTREACHED();
-    return -1;
-  }
-  return 0;
-}
-
-int32_t FakeAudioCaptureModule::RecordingChannel(ChannelType* channel) const {
-  // Stereo recording not supported. However, WebRTC ADM returns kChannelBoth
-  // in that case. Do the same here.
-  *channel = AudioDeviceModule::kChannelBoth;
-  return 0;
-}
-
 int32_t FakeAudioCaptureModule::PlayoutDelay(uint16_t* delay_ms) const {
   // No delay since audio frames are dropped.
   *delay_ms = 0;
