@@ -31,7 +31,7 @@ const int64_t kBucketSizeMs = 100;
 const size_t kBucketCount = 10;
 
 const char kVp8ForcedFallbackEncoderFieldTrial[] =
-    "WebRTC-VP8-Forced-Fallback-Encoder";
+    "WebRTC-VP8-Forced-Fallback-Encoder-v2";
 const char kVp8SwCodecName[] = "libvpx";
 
 // Used by histograms. Values of entries should not be changed.
@@ -85,7 +85,7 @@ bool IsForcedFallbackPossible(const CodecSpecificInfo* codec_info) {
           codec_info->codecSpecific.VP8.temporalIdx == kNoTemporalIdx);
 }
 
-rtc::Optional<int> GetFallbackIntervalFromFieldTrial() {
+rtc::Optional<int> GetFallbackMaxPixelsFromFieldTrial() {
   if (!webrtc::field_trial::IsEnabled(kVp8ForcedFallbackEncoderFieldTrial))
     return rtc::Optional<int>();
 
@@ -94,20 +94,19 @@ rtc::Optional<int> GetFallbackIntervalFromFieldTrial() {
   if (group.empty())
     return rtc::Optional<int>();
 
-  int low_kbps;
-  int high_kbps;
-  int min_low_ms;
   int min_pixels;
-  if (sscanf(group.c_str(), "Enabled-%d,%d,%d,%d", &low_kbps, &high_kbps,
-             &min_low_ms, &min_pixels) != 4) {
+  int max_pixels;
+  int min_bps;
+  if (sscanf(group.c_str(), "Enabled-%d,%d,%d", &min_pixels, &max_pixels,
+             &min_bps) != 3) {
     return rtc::Optional<int>();
   }
 
-  if (min_low_ms <= 0 || min_pixels <= 0 || low_kbps <= 0 ||
-      high_kbps <= low_kbps) {
-    return rtc::Optional<int>();
+  if (min_pixels <= 0 || max_pixels <= 0 || max_pixels < min_pixels ||
+      min_bps <= 0) {
+    return rtc::Optional<int>();  // Do not log stats.
   }
-  return rtc::Optional<int>(min_low_ms);
+  return rtc::Optional<int>(max_pixels);
 }
 }  // namespace
 
@@ -121,7 +120,7 @@ SendStatisticsProxy::SendStatisticsProxy(
     : clock_(clock),
       payload_name_(config.encoder_settings.payload_name),
       rtp_config_(config.rtp),
-      min_first_fallback_interval_ms_(GetFallbackIntervalFromFieldTrial()),
+      fallback_max_pixels_(GetFallbackMaxPixelsFromFieldTrial()),
       content_type_(content_type),
       start_ms_(clock->TimeInMilliseconds()),
       encode_time_(kEncodeTimeWeigthFactor),
@@ -728,9 +727,9 @@ void SendStatisticsProxy::OnSetEncoderTargetRate(uint32_t bitrate_bps) {
 }
 
 void SendStatisticsProxy::UpdateEncoderFallbackStats(
-    const CodecSpecificInfo* codec_info) {
-  if (!min_first_fallback_interval_ms_ ||
-      !uma_container_->fallback_info_.is_possible) {
+    const CodecSpecificInfo* codec_info,
+    int pixels) {
+  if (!fallback_max_pixels_ || !uma_container_->fallback_info_.is_possible) {
     return;
   }
 
@@ -750,16 +749,11 @@ void SendStatisticsProxy::UpdateEncoderFallbackStats(
       // First or not a VP8 SW change, update stats on next call.
       return;
     }
-    if (is_active && fallback_info->on_off_events == 0) {
-      // The minimum set time should have passed for the first fallback (else
-      // skip to avoid fallback due to failure).
-      int64_t elapsed_ms = fallback_info->elapsed_ms;
-      if (fallback_info->last_update_ms)
-        elapsed_ms += now_ms - *(fallback_info->last_update_ms);
-      if (elapsed_ms < *min_first_fallback_interval_ms_) {
-        fallback_info->is_possible = false;
-        return;
-      }
+    if (is_active && (pixels > *fallback_max_pixels_)) {
+      // Pixels should not be above |fallback_max_pixels_|. If above skip to
+      // avoid fallbacks due to failure.
+      fallback_info->is_possible = false;
+      return;
     }
     ++fallback_info->on_off_events;
   }
@@ -792,7 +786,8 @@ void SendStatisticsProxy::OnSendEncodedImage(
       simulcast_idx = codec_info->codecSpecific.generic.simulcast_idx;
     }
     if (codec_info->codec_name) {
-      UpdateEncoderFallbackStats(codec_info);
+      UpdateEncoderFallbackStats(codec_info, encoded_image._encodedWidth *
+                                                 encoded_image._encodedHeight);
       stats_.encoder_implementation_name = codec_info->codec_name;
     }
   }

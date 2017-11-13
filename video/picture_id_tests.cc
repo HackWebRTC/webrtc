@@ -26,7 +26,7 @@ const int kEncoderBitrateBps = 100000;
 const uint32_t kPictureIdWraparound = (1 << 15);
 
 const char kVp8ForcedFallbackEncoderEnabled[] =
-    "WebRTC-VP8-Forced-Fallback-Encoder/Enabled/";
+    "WebRTC-VP8-Forced-Fallback-Encoder-v2/Enabled/";
 }  // namespace
 
 class PictureIdObserver : public test::RtpRtcpObserver {

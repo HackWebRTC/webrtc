@@ -104,36 +104,6 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec,
                               kNoVisualizationParams);
 }
 
-TEST_F(VideoProcessorIntegrationTestMediaCodec,
-       Foreman240p100kbpsVp8WithForcedSwFallback) {
-  ScopedFieldTrials override_field_trials(
-      "WebRTC-VP8-Forced-Fallback-Encoder/Enabled-150,175,10000,1/");
-
-  config_.filename = "foreman_320x240";
-  config_.input_filename = ResourcePath(config_.filename, "yuv");
-  config_.sw_fallback_encoder = true;
-  config_.SetCodecSettings(kVideoCodecVP8, 1, false, false, false, false, false,
-                           320, 240);
-
-  std::vector<RateProfile> rate_profiles = {
-      {100, 10, 80},                      // Start below |low_kbps|.
-      {100, 10, 200},                     // Fallback in this bucket.
-      {200, 10, kForemanNumFrames + 1}};  // Switch back here.
-
-  // The thresholds below may have to be tweaked to let even poor MediaCodec
-  // implementations pass. If this test fails on the bots, disable it and
-  // ping brandtr@.
-  std::vector<RateControlThresholds> rc_thresholds = {{0, 50, 75, 70, 10, 0, 1},
-                                                      {0, 50, 25, 12, 60, 0, 1},
-                                                      {0, 65, 15, 5, 5, 0, 1}};
-
-  QualityThresholds quality_thresholds(33.0, 30.0, 0.90, 0.85);
-
-  ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
-}
-
 #endif  // defined(WEBRTC_ANDROID)
 
 }  // namespace test

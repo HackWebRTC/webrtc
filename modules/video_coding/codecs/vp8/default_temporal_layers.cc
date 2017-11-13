@@ -295,7 +295,8 @@ std::vector<TemporalLayers::FrameConfig> GetTemporalPattern(size_t num_layers) {
 // deregistred when deleted by SW codec (tl factory might not exist, owned by
 // SimulcastRateAllocator).
 bool ExcludeOnTemporalLayersCreated(int num_temporal_layers) {
-  return webrtc::field_trial::IsEnabled("WebRTC-VP8-Forced-Fallback-Encoder") &&
+  return webrtc::field_trial::IsEnabled(
+             "WebRTC-VP8-Forced-Fallback-Encoder-v2") &&
          num_temporal_layers == 1;
 }
 }  // namespace

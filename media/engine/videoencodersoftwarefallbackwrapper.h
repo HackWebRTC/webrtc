@@ -51,30 +51,21 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   bool InitFallbackEncoder();
 
   // If |forced_fallback_possible_| is true:
-  // The forced fallback is requested if the target bitrate is below |low_kbps|
-  // for more than |min_low_ms| and the input video resolution is not larger
-  // than |kMaxPixelsStart|.
-  // If the bitrate is above |high_kbps| and the resolution is not smaller than
-  // |kMinPixelsStop|, the forced fallback is requested to immediately be
-  // stopped.
+  // The forced fallback is requested if the resolution is less than or equal to
+  // |max_pixels_|. The resolution is allowed to be scaled down to
+  // |min_pixels_|.
   class ForcedFallbackParams {
    public:
-    bool ShouldStart(uint32_t bitrate_kbps, const VideoCodec& codec);
-    bool ShouldStop(uint32_t bitrate_kbps, const VideoCodec& codec) const;
-    void Reset() { start_ms.reset(); }
     bool IsValid(const VideoCodec& codec) const {
-      return codec.width * codec.height <= kMaxPixelsStart;
+      return codec.width * codec.height <= max_pixels_;
     }
-    rtc::Optional<int64_t> start_ms;  // Set when bitrate is below |low_kbps|.
-    uint32_t low_kbps = 100;
-    uint32_t high_kbps = 150;
-    int64_t min_low_ms = 10000;
-    const int kMaxPixelsStart = 320 * 240;
-    const int kMinPixelsStop = 320 * 180;
+
+    bool active_ = false;
+    int min_pixels_ = 320 * 180;
+    int max_pixels_ = 320 * 240;
   };
 
-  bool RequestForcedFallback();
-  bool TryReleaseForcedFallbackEncoder();
+  bool TryInitForcedFallbackEncoder();
   bool TryReInitForcedFallbackEncoder();
   void ValidateSettingsForForcedFallback();
   bool IsForcedFallbackActive() const;
@@ -100,7 +91,6 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   std::unique_ptr<webrtc::VideoEncoder> encoder_;
 
   std::unique_ptr<webrtc::VideoEncoder> fallback_encoder_;
-  std::string fallback_implementation_name_;
   EncodedImageCallback* callback_;
 
   bool forced_fallback_possible_;

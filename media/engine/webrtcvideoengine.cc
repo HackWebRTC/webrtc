@@ -317,11 +317,41 @@ int GetDefaultVp9TemporalLayers() {
   }
   return 1;
 }
+
+const char kForcedFallbackFieldTrial[] =
+    "WebRTC-VP8-Forced-Fallback-Encoder-v2";
+
+rtc::Optional<int> GetFallbackMinBpsFromFieldTrial() {
+  if (!webrtc::field_trial::IsEnabled(kForcedFallbackFieldTrial))
+    return rtc::Optional<int>();
+
+  std::string group =
+      webrtc::field_trial::FindFullName(kForcedFallbackFieldTrial);
+  if (group.empty())
+    return rtc::Optional<int>();
+
+  int min_pixels;
+  int max_pixels;
+  int min_bps;
+  if (sscanf(group.c_str(), "Enabled-%d,%d,%d", &min_pixels, &max_pixels,
+             &min_bps) != 3) {
+    return rtc::Optional<int>();
+  }
+
+  if (min_bps <= 0)
+    return rtc::Optional<int>();
+
+  return rtc::Optional<int>(min_bps);
+}
+
+int GetMinVideoBitrateBps() {
+  return GetFallbackMinBpsFromFieldTrial().value_or(kMinVideoBitrateBps);
+}
 }  // namespace
 
 // Constants defined in webrtc/media/engine/constants.h
 // TODO(pbos): Move these to a separate constants.cc file.
-const int kMinVideoBitrateKbps = 30;
+const int kMinVideoBitrateBps = 30000;
 
 const int kVideoMtu = 1200;
 const int kVideoRtpBufferSize = 65536;
@@ -2569,7 +2599,7 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   stream.width = width;
   stream.height = height;
   stream.max_framerate = max_framerate_;
-  stream.min_bitrate_bps = kMinVideoBitrateKbps * 1000;
+  stream.min_bitrate_bps = GetMinVideoBitrateBps();
   stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate_bps;
   stream.max_qp = max_qp_;
 

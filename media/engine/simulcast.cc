@@ -209,7 +209,7 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_streams,
     streams[0].height = height;
     streams[0].max_qp = max_qp;
     streams[0].max_framerate = 5;
-    streams[0].min_bitrate_bps = kMinVideoBitrateKbps * 1000;
+    streams[0].min_bitrate_bps = kMinVideoBitrateBps;
     streams[0].target_bitrate_bps = config.tl0_bitrate_kbps * 1000;
     streams[0].max_bitrate_bps = config.tl1_bitrate_kbps * 1000;
     streams[0].temporal_layer_thresholds_bps.clear();

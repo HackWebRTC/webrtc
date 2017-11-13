@@ -130,7 +130,7 @@ PayloadRouter::PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules,
       rtp_modules_(rtp_modules),
       payload_type_(payload_type),
       forced_fallback_enabled_((webrtc::field_trial::IsEnabled(
-          "WebRTC-VP8-Forced-Fallback-Encoder"))) {
+          "WebRTC-VP8-Forced-Fallback-Encoder-v2"))) {
   RTC_DCHECK_EQ(ssrcs.size(), rtp_modules.size());
   // SSRCs are assumed to be sorted in the same order as |rtp_modules|.
   for (uint32_t ssrc : ssrcs) {

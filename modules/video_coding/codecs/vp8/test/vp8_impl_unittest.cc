@@ -35,7 +35,6 @@ constexpr int64_t kInitialTimestampMs = 789;
 constexpr uint32_t kTimestampIncrement = 3000;
 constexpr int kNumCores = 1;
 constexpr size_t kMaxPayloadSize = 1440;
-constexpr int kMinPixelsPerFrame = 12345;
 constexpr int kDefaultMinPixelsPerFrame = 320 * 180;
 constexpr int kWidth = 172;
 constexpr int kHeight = 144;
@@ -502,24 +501,6 @@ TEST_F(TestVp8Impl, ScalingEnabledIfAutomaticResizeOn) {
   VideoEncoder::ScalingSettings settings = encoder_->GetScalingSettings();
   EXPECT_TRUE(settings.enabled);
   EXPECT_EQ(kDefaultMinPixelsPerFrame, settings.min_pixels_per_frame);
-}
-
-class TestVp8ImplWithForcedFallbackEnabled : public TestVp8Impl {
- public:
-  TestVp8ImplWithForcedFallbackEnabled()
-      : TestVp8Impl("WebRTC-VP8-Forced-Fallback-Encoder/Enabled-1,2,3," +
-                    std::to_string(kMinPixelsPerFrame) + "/") {}
-};
-
-TEST_F(TestVp8ImplWithForcedFallbackEnabled, MinPixelsPerFrameConfigured) {
-  codec_settings_.VP8()->frameDroppingOn = true;
-  codec_settings_.VP8()->automaticResizeOn = true;
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
-
-  VideoEncoder::ScalingSettings settings = encoder_->GetScalingSettings();
-  EXPECT_TRUE(settings.enabled);
-  EXPECT_EQ(kMinPixelsPerFrame, settings.min_pixels_per_frame);
 }
 
 }  // namespace webrtc

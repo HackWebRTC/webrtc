@@ -205,13 +205,14 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
       const VideoStreamEncoder::AdaptCounts& quality_counts)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  void UpdateEncoderFallbackStats(const CodecSpecificInfo* codec_info)
+  void UpdateEncoderFallbackStats(const CodecSpecificInfo* codec_info,
+                                  int pixels)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   Clock* const clock_;
   const std::string payload_name_;
   const VideoSendStream::Config::Rtp rtp_config_;
-  const rtc::Optional<int> min_first_fallback_interval_ms_;
+  const rtc::Optional<int> fallback_max_pixels_;
   rtc::CriticalSection crit_;
   VideoEncoderConfig::ContentType content_type_ RTC_GUARDED_BY(crit_);
   const int64_t start_ms_;

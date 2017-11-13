@@ -94,7 +94,6 @@ class VP8EncoderImpl : public VP8Encoder {
   uint32_t MaxIntraTarget(uint32_t optimal_buffer_size);
 
   const bool use_gf_boost_;
-  const rtc::Optional<int> min_pixels_per_frame_;
 
   EncodedImageCallback* encoded_complete_callback_;
   VideoCodec codec_;

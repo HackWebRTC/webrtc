@@ -42,8 +42,6 @@ namespace {
 
 const char kVp8PostProcArmFieldTrial[] = "WebRTC-VP8-Postproc-Config-Arm";
 const char kVp8GfBoostFieldTrial[] = "WebRTC-VP8-GfBoost";
-const char kVp8ForceFallbackEncoderFieldTrial[] =
-    "WebRTC-VP8-Forced-Fallback-Encoder";
 
 const int kTokenPartitions = VP8_ONE_TOKENPARTITION;
 enum { kVp8ErrorPropagationTh = 30 };
@@ -127,31 +125,6 @@ int NumStreamsDisabled(const std::vector<bool>& streams) {
   return num_disabled;
 }
 
-rtc::Optional<int> GetForcedFallbackMinPixelsFromFieldTrialGroup() {
-  if (!webrtc::field_trial::IsEnabled(kVp8ForceFallbackEncoderFieldTrial))
-    return rtc::Optional<int>();
-
-  std::string group =
-      webrtc::field_trial::FindFullName(kVp8ForceFallbackEncoderFieldTrial);
-  if (group.empty())
-    return rtc::Optional<int>();
-
-  int low_kbps;
-  int high_kbps;
-  int min_low_ms;
-  int min_pixels;
-  if (sscanf(group.c_str(), "Enabled-%d,%d,%d,%d", &low_kbps, &high_kbps,
-             &min_low_ms, &min_pixels) != 4) {
-    return rtc::Optional<int>();
-  }
-
-  if (min_low_ms <= 0 || min_pixels <= 0 || low_kbps <= 0 ||
-      high_kbps <= low_kbps) {
-    return rtc::Optional<int>();
-  }
-  return rtc::Optional<int>(min_pixels);
-}
-
 bool GetGfBoostPercentageFromFieldTrialGroup(int* boost_percentage) {
   std::string group = webrtc::field_trial::FindFullName(kVp8GfBoostFieldTrial);
   if (group.empty())
@@ -223,7 +196,6 @@ vpx_enc_frame_flags_t VP8EncoderImpl::EncodeFlags(
 
 VP8EncoderImpl::VP8EncoderImpl()
     : use_gf_boost_(webrtc::field_trial::IsEnabled(kVp8GfBoostFieldTrial)),
-      min_pixels_per_frame_(GetForcedFallbackMinPixelsFromFieldTrialGroup()),
       encoded_complete_callback_(nullptr),
       inited_(false),
       timestamp_(0),
@@ -999,10 +971,6 @@ VideoEncoder::ScalingSettings VP8EncoderImpl::GetScalingSettings() const {
   const bool enable_scaling = encoders_.size() == 1 &&
                               configurations_[0].rc_dropframe_thresh > 0 &&
                               codec_.VP8().automaticResizeOn;
-  if (enable_scaling && min_pixels_per_frame_) {
-    return VideoEncoder::ScalingSettings(enable_scaling,
-                                         *min_pixels_per_frame_);
-  }
   return VideoEncoder::ScalingSettings(enable_scaling);
 }
 

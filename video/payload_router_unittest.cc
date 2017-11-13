@@ -347,14 +347,14 @@ class PayloadRouterTest : public ::testing::Test {
 class TestWithForcedFallbackDisabled : public PayloadRouterTest {
  public:
   TestWithForcedFallbackDisabled()
-      : PayloadRouterTest("WebRTC-VP8-Forced-Fallback-Encoder/Disabled/") {}
+      : PayloadRouterTest("WebRTC-VP8-Forced-Fallback-Encoder-v2/Disabled/") {}
 };
 
 class TestWithForcedFallbackEnabled : public PayloadRouterTest {
  public:
   TestWithForcedFallbackEnabled()
       : PayloadRouterTest(
-            "WebRTC-VP8-Forced-Fallback-Encoder/Enabled-1,2,3,4/") {}
+            "WebRTC-VP8-Forced-Fallback-Encoder-v2/Enabled-1,2,3/") {}
 };
 
 TEST_F(TestWithForcedFallbackDisabled, PictureIdIsNotChangedForVp8) {

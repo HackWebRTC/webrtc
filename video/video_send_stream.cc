@@ -153,6 +153,38 @@ bool TransportSeqNumExtensionConfigured(const VideoSendStream::Config& config) {
              }) != extensions.end();
 }
 
+const char kForcedFallbackFieldTrial[] =
+    "WebRTC-VP8-Forced-Fallback-Encoder-v2";
+
+rtc::Optional<int> GetFallbackMinBpsFromFieldTrial() {
+  if (!webrtc::field_trial::IsEnabled(kForcedFallbackFieldTrial))
+    return rtc::Optional<int>();
+
+  std::string group =
+      webrtc::field_trial::FindFullName(kForcedFallbackFieldTrial);
+  if (group.empty())
+    return rtc::Optional<int>();
+
+  int min_pixels;
+  int max_pixels;
+  int min_bps;
+  if (sscanf(group.c_str(), "Enabled-%d,%d,%d", &min_pixels, &max_pixels,
+             &min_bps) != 3) {
+    return rtc::Optional<int>();
+  }
+
+  if (min_bps <= 0)
+    return rtc::Optional<int>();
+
+  return rtc::Optional<int>(min_bps);
+}
+
+int GetEncoderMinBitrateBps() {
+  const int kDefaultEncoderMinBitrateBps = 30000;
+  return GetFallbackMinBpsFromFieldTrial().value_or(
+      kDefaultEncoderMinBitrateBps);
+}
+
 bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
   const VideoCodecType codecType = PayloadStringToCodecType(payload_name);
   if (codecType == kVideoCodecVP8 || codecType == kVideoCodecVP9) {
@@ -922,9 +954,8 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
   RTC_DCHECK_GE(config_->rtp.ssrcs.size(), streams.size());
   RTC_DCHECK_RUN_ON(worker_queue_);
 
-  const int kEncoderMinBitrateBps = 30000;
   encoder_min_bitrate_bps_ =
-      std::max(streams[0].min_bitrate_bps, kEncoderMinBitrateBps);
+      std::max(streams[0].min_bitrate_bps, GetEncoderMinBitrateBps());
   encoder_max_bitrate_bps_ = 0;
   for (const auto& stream : streams)
     encoder_max_bitrate_bps_ += stream.max_bitrate_bps;

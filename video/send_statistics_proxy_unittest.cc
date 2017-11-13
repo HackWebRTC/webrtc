@@ -32,7 +32,6 @@ const int kWidth = 640;
 const int kHeight = 480;
 const int kQpIdx0 = 21;
 const int kQpIdx1 = 39;
-const int kMinFirstFallbackIntervalMs = 1500;
 const CodecSpecificInfo kDefaultCodecInfo = []() {
   CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecVP8;
@@ -1838,6 +1837,8 @@ class ForcedFallbackTest : public SendStatisticsProxyTest {
     codec_info_.codecSpecific.VP8.simulcastIdx = 0;
     codec_info_.codecSpecific.VP8.temporalIdx = 0;
     codec_info_.codec_name = "fake_codec";
+    encoded_image_._encodedWidth = kWidth;
+    encoded_image_._encodedHeight = kHeight;
   }
 
   ~ForcedFallbackTest() override {}
@@ -1866,15 +1867,14 @@ class ForcedFallbackTest : public SendStatisticsProxyTest {
 class ForcedFallbackDisabled : public ForcedFallbackTest {
  public:
   ForcedFallbackDisabled()
-      : ForcedFallbackTest("WebRTC-VP8-Forced-Fallback-Encoder/Disabled/") {}
+      : ForcedFallbackTest("WebRTC-VP8-Forced-Fallback-Encoder-v2/Disabled/") {}
 };
 
 class ForcedFallbackEnabled : public ForcedFallbackTest {
  public:
   ForcedFallbackEnabled()
-      : ForcedFallbackTest("WebRTC-VP8-Forced-Fallback-Encoder/Enabled-1,2," +
-                           std::to_string(kMinFirstFallbackIntervalMs) +
-                           ",4/") {}
+      : ForcedFallbackTest("WebRTC-VP8-Forced-Fallback-Encoder-v2/Enabled-1," +
+                           std::to_string(kWidth * kHeight) + ",3/") {}
 };
 
 TEST_F(ForcedFallbackEnabled, StatsNotUpdatedIfMinRunTimeHasNotPassed) {
@@ -1961,8 +1961,8 @@ TEST_F(ForcedFallbackEnabled, ThreeFallbackEvents) {
   EXPECT_EQ(1, metrics::NumEvents(kPrefix + "FallbackChangesPerMinute.Vp8", 3));
 }
 
-TEST_F(ForcedFallbackEnabled, NoFallbackIfMinIntervalHasNotPassed) {
-  InsertEncodedFrames(1, kMinFirstFallbackIntervalMs - 1);
+TEST_F(ForcedFallbackEnabled, NoFallbackIfAboveMaxPixels) {
+  encoded_image_._encodedWidth = kWidth + 1;
   codec_info_.codec_name = "libvpx";
   InsertEncodedFrames(kMinFrames, kFrameIntervalMs);
 
@@ -1971,8 +1971,8 @@ TEST_F(ForcedFallbackEnabled, NoFallbackIfMinIntervalHasNotPassed) {
   EXPECT_EQ(0, metrics::NumSamples(kPrefix + "FallbackChangesPerMinute.Vp8"));
 }
 
-TEST_F(ForcedFallbackEnabled, FallbackIfMinIntervalPassed) {
-  InsertEncodedFrames(1, kMinFirstFallbackIntervalMs);
+TEST_F(ForcedFallbackEnabled, FallbackIfAtMaxPixels) {
+  encoded_image_._encodedWidth = kWidth;
   codec_info_.codec_name = "libvpx";
   InsertEncodedFrames(kMinFrames, kFrameIntervalMs);
 
