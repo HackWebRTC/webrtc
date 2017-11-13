@@ -50,7 +50,9 @@ class AudioDeviceModule : public rtc::RefCountInterface {
 
  public:
   // Create an ADM.
-  // TODO(henrika): remove |id|.
+  static rtc::scoped_refptr<AudioDeviceModule> Create(
+      const AudioLayer audio_layer);
+  // TODO(bugs.webrtc.org/7306): deprecated.
   static rtc::scoped_refptr<AudioDeviceModule> Create(
       const int32_t id,
       const AudioLayer audio_layer);

@@ -25,7 +25,7 @@ using webrtc::AudioDeviceModule;
 int main(int /*argc*/, char** /*argv*/) {
   // Create and initialize the ADM.
   rtc::scoped_refptr<AudioDeviceModule> adm(
-      AudioDeviceModule::Create(1, AudioDeviceModule::kPlatformDefaultAudio));
+      AudioDeviceModule::Create(AudioDeviceModule::kPlatformDefaultAudio));
   if (!adm.get()) {
     fprintf(stderr, "Failed to create Audio Device Module.\n");
     return 1;
