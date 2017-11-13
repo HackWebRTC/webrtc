@@ -230,6 +230,7 @@ rtc_source_set("rtcp_transceiver") {
   deps = [
     ":rtp_rtcp",
     "../../api:array_view",
+    "../../api:optional",
     "../../api:transport_api",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",

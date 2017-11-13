@@ -17,7 +17,9 @@
 #include <vector>
 
 #include "api/array_view.h"
+#include "api/optional.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/remb.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtcp_transceiver_config.h"
 #include "rtc_base/constructormagic.h"
@@ -40,6 +42,12 @@ class RtcpTransceiverImpl {
   // Sends RTCP packets starting with a sender or receiver report.
   void SendCompoundPacket();
 
+  // (REMB) Receiver Estimated Max Bitrate.
+  // Includes REMB in following compound packets.
+  void SetRemb(int bitrate_bps, std::vector<uint32_t> ssrcs);
+  // Stops sending REMB in following compound packets.
+  void UnsetRemb();
+
  private:
   struct SenderReportTimes {
     int64_t local_received_time_us;
@@ -56,6 +64,7 @@ class RtcpTransceiverImpl {
 
   const RtcpTransceiverConfig config_;
 
+  rtc::Optional<rtcp::Remb> remb_;
   std::map<uint32_t, SenderReportTimes> last_received_sender_reports_;
   rtc::WeakPtrFactory<RtcpTransceiverImpl> ptr_factory_;
 

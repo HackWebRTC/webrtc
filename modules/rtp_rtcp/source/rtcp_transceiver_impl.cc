@@ -97,6 +97,21 @@ void RtcpTransceiverImpl::SendCompoundPacket() {
     ReschedulePeriodicCompoundPackets(config_.report_period_ms);
 }
 
+void RtcpTransceiverImpl::SetRemb(int bitrate_bps,
+                                  std::vector<uint32_t> ssrcs) {
+  RTC_DCHECK_GE(bitrate_bps, 0);
+  remb_.emplace();
+  remb_->SetSsrcs(std::move(ssrcs));
+  remb_->SetBitrateBps(bitrate_bps);
+  // TODO(bugs.webrtc.org/8239): Move logic from PacketRouter for sending remb
+  // immideately on large bitrate change when there is one RtcpTransceiver per
+  // rtp transport.
+}
+
+void RtcpTransceiverImpl::UnsetRemb() {
+  remb_.reset();
+}
+
 void RtcpTransceiverImpl::HandleReceivedPacket(
     const rtcp::CommonHeader& rtcp_packet_header) {
   switch (rtcp_packet_header.type()) {
@@ -149,9 +164,10 @@ void RtcpTransceiverImpl::ReschedulePeriodicCompoundPackets(int64_t delay_ms) {
 
 void RtcpTransceiverImpl::SendPacket() {
   PacketSender sender(config_.outgoing_transport, config_.max_packet_size);
+  const uint32_t sender_ssrc = config_.feedback_ssrc;
 
   rtcp::ReceiverReport receiver_report;
-  receiver_report.SetSenderSsrc(config_.feedback_ssrc);
+  receiver_report.SetSenderSsrc(sender_ssrc);
   receiver_report.SetReportBlocks(CreateReportBlocks());
   sender.AppendPacket(receiver_report);
 
@@ -161,6 +177,10 @@ void RtcpTransceiverImpl::SendPacket() {
     RTC_DCHECK(added) << "Failed to add cname " << config_.cname
                       << " to rtcp sdes packet.";
     sender.AppendPacket(sdes);
+  }
+  if (remb_) {
+    remb_->SetSenderSsrc(sender_ssrc);
+    sender.AppendPacket(*remb_);
   }
 
   sender.Send();
