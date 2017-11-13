@@ -1764,6 +1764,20 @@ void VideoQualityTest::CreateCapturer() {
   RTC_DCHECK(video_capturer_.get());
 }
 
+std::unique_ptr<test::LayerFilteringTransport>
+VideoQualityTest::CreateSendTransport() {
+  return rtc::MakeUnique<test::LayerFilteringTransport>(
+      &task_queue_, params_.pipe, sender_call_.get(), kPayloadTypeVP8,
+      kPayloadTypeVP9, params_.video.selected_tl, params_.ss.selected_sl,
+      payload_type_map_);
+}
+
+std::unique_ptr<test::DirectTransport>
+VideoQualityTest::CreateReceiveTransport() {
+  return rtc::MakeUnique<test::DirectTransport>(
+      &task_queue_, params_.pipe, receiver_call_.get(), payload_type_map_);
+}
+
 void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   std::unique_ptr<test::LayerFilteringTransport> send_transport;
   std::unique_ptr<test::DirectTransport> recv_transport;
@@ -1796,18 +1810,12 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   Call::Config call_config(event_log_.get());
   call_config.bitrate_config = params.call.call_bitrate_config;
 
-  task_queue_.SendTask([this, &call_config, &send_transport,
-                        &recv_transport]() {
-    CreateCalls(call_config, call_config);
-
-    send_transport = rtc::MakeUnique<test::LayerFilteringTransport>(
-        &task_queue_, params_.pipe, sender_call_.get(), kPayloadTypeVP8,
-        kPayloadTypeVP9, params_.video.selected_tl, params_.ss.selected_sl,
-        payload_type_map_);
-
-    recv_transport = rtc::MakeUnique<test::DirectTransport>(
-        &task_queue_, params_.pipe, receiver_call_.get(), payload_type_map_);
-  });
+  task_queue_.SendTask(
+      [this, &call_config, &send_transport, &recv_transport]() {
+        CreateCalls(call_config, call_config);
+        send_transport = CreateSendTransport();
+        recv_transport = CreateReceiveTransport();
+      });
 
   std::string graph_title = params_.analyzer.graph_title;
   if (graph_title.empty())

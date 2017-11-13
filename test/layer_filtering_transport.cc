@@ -36,6 +36,21 @@ LayerFilteringTransport::LayerFilteringTransport(
       selected_sl_(selected_sl),
       discarded_last_packet_(false) {}
 
+LayerFilteringTransport::LayerFilteringTransport(
+    SingleThreadedTaskQueueForTesting* task_queue,
+    std::unique_ptr<FakeNetworkPipe> pipe,
+    Call* send_call,
+    uint8_t vp8_video_payload_type,
+    uint8_t vp9_video_payload_type,
+    int selected_tl,
+    int selected_sl)
+    : DirectTransport(task_queue, std::move(pipe), send_call),
+      vp8_video_payload_type_(vp8_video_payload_type),
+      vp9_video_payload_type_(vp9_video_payload_type),
+      selected_tl_(selected_tl),
+      selected_sl_(selected_sl),
+      discarded_last_packet_(false) {}
+
 bool LayerFilteringTransport::DiscardedLastPacket() const {
   return discarded_last_packet_;
 }
