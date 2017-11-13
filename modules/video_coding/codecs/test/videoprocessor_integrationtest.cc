@@ -407,6 +407,10 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
     const VisualizationParams* visualization_params) {
   CreateEncoderAndDecoder();
 
+  config_.codec_settings.minBitrate = 0;
+  config_.codec_settings.startBitrate = initial_bitrate_kbps;
+  config_.codec_settings.maxFramerate = initial_framerate_fps;
+
   // Create file objects for quality analysis.
   analysis_frame_reader_.reset(new YuvFrameReaderImpl(
       config_.input_filename, config_.codec_settings.width,
@@ -418,15 +422,8 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
   EXPECT_TRUE(analysis_frame_writer_->Init());
 
   if (visualization_params) {
-    const std::string codec_name =
-        CodecTypeToPayloadString(config_.codec_settings.codecType);
-    const std::string implementation_type = config_.hw_encoder ? "hw" : "sw";
-    // clang-format off
     const std::string output_filename_base =
-        OutputPath() + config_.filename + "-" +
-        codec_name + "-" + implementation_type + "-" +
-        std::to_string(initial_bitrate_kbps);
-    // clang-format on
+        OutputPath() + config_.FilenameWithParams();
     if (visualization_params->save_encoded_ivf) {
       rtc::File post_encode_file =
           rtc::File::Create(output_filename_base + ".ivf");
@@ -444,10 +441,6 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
   cpu_process_time_.reset(new CpuProcessTime(config_));
   packet_manipulator_.reset(new PacketManipulatorImpl(
       &packet_reader_, config_.networking_config, false));
-
-  config_.codec_settings.minBitrate = 0;
-  config_.codec_settings.startBitrate = initial_bitrate_kbps;
-  config_.codec_settings.maxFramerate = initial_framerate_fps;
 
   rtc::Event sync_event(false, false);
   task_queue->PostTask([this, &sync_event]() {

@@ -57,6 +57,7 @@ struct TestConfig {
   std::vector<FrameType> FrameTypeForFrame(int frame_idx) const;
   std::string ToString() const;
   std::string CodecName() const;
+  std::string FilenameWithParams() const;
 
   // Plain name of YUV file to process without file extension.
   std::string filename;

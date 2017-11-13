@@ -62,12 +62,6 @@ class MediaOptimization {
   void UpdateIncomingFrameRate() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   void ProcessIncomingFrameRate(int64_t now)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
-  void SetEncodingDataInternal(int32_t max_bit_rate,
-                               uint32_t max_frame_rate,
-                               uint32_t bit_rate)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
   uint32_t InputFrameRateInternal() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Protect all members.

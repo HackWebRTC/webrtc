@@ -35,11 +35,11 @@ MediaOptimization::~MediaOptimization(void) {
 
 void MediaOptimization::Reset() {
   rtc::CritScope lock(&crit_sect_);
-  SetEncodingDataInternal(0, 0, 0);
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
   incoming_frame_rate_ = 0.0;
   frame_dropper_->Reset();
   frame_dropper_->SetRates(0, 0);
+  max_bit_rate_ = 0;
   max_frame_rate_ = 0;
 }
 
@@ -47,14 +47,7 @@ void MediaOptimization::SetEncodingData(int32_t max_bit_rate,
                                         uint32_t target_bitrate,
                                         uint32_t max_frame_rate) {
   rtc::CritScope lock(&crit_sect_);
-  SetEncodingDataInternal(max_bit_rate, max_frame_rate, target_bitrate);
-}
-
-void MediaOptimization::SetEncodingDataInternal(int32_t max_bit_rate,
-                                                uint32_t max_frame_rate,
-                                                uint32_t target_bitrate) {
-  // Everything codec specific should be reset here since this means the codec
-  // has changed.
+  // Everything codec specific should be reset here since the codec has changed.
   max_bit_rate_ = max_bit_rate;
   max_frame_rate_ = static_cast<float>(max_frame_rate);
   float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
@@ -70,10 +63,9 @@ uint32_t MediaOptimization::SetTargetRates(uint32_t target_bitrate) {
   if (max_bit_rate_ > 0 && video_target_bitrate > max_bit_rate_) {
     video_target_bitrate = max_bit_rate_;
   }
-
-  // Update encoding rates following protection settings.
   float target_video_bitrate_kbps =
       static_cast<float>(video_target_bitrate) / 1000.0f;
+
   float framerate = incoming_frame_rate_;
   if (framerate == 0.0) {
     // No framerate estimate available, use configured max framerate instead.

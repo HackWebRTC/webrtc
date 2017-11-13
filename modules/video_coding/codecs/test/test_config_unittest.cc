@@ -149,5 +149,14 @@ TEST(TestConfig, ToString_Vp8) {
       config.ToString());
 }
 
+TEST(TestConfig, FilenameWithParams) {
+  TestConfig config;
+  config.filename = "filename";
+  webrtc::test::CodecSettings(kVideoCodecVP8, &config.codec_settings);
+  config.hw_encoder = true;
+  config.codec_settings.startBitrate = 400;
+  EXPECT_EQ("filename_VP8_hw_400", config.FilenameWithParams());
+}
+
 }  // namespace test
 }  // namespace webrtc
