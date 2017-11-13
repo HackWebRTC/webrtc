@@ -525,8 +525,6 @@ rtc_static_library("rtc_base_generic") {
     "messagehandler.h",
     "messagequeue.cc",
     "messagequeue.h",
-    "nethelper.cc",
-    "nethelper.h",
     "nethelpers.cc",
     "nethelpers.h",
     "network.cc",

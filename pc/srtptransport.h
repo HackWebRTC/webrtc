@@ -16,7 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "p2p/base/icetransportinternal.h"
 #include "pc/rtptransportinternal.h"
 #include "pc/srtpfilter.h"
 #include "pc/srtpsession.h"
@@ -159,8 +158,8 @@ class SrtpTransport : public RtpTransportInternal {
   void OnPacketReceived(bool rtcp,
                         rtc::CopyOnWriteBuffer* packet,
                         const rtc::PacketTime& packet_time);
+
   void OnReadyToSend(bool ready) { SignalReadyToSend(ready); }
-  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route);
 
   bool ProtectRtp(void* data, int in_len, int max_len, int* out_len);
 

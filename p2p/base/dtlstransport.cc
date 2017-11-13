@@ -124,7 +124,6 @@ DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
       ssl_role_(rtc::SSL_CLIENT),
       ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_12),
       crypto_options_(crypto_options) {
-  RTC_DCHECK(ice_transport_);
   ice_transport_->SignalWritableState.connect(this,
                                               &DtlsTransport::OnWritableState);
   ice_transport_->SignalReadPacket.connect(this, &DtlsTransport::OnReadPacket);
@@ -133,8 +132,6 @@ DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
                                             &DtlsTransport::OnReadyToSend);
   ice_transport_->SignalReceivingState.connect(
       this, &DtlsTransport::OnReceivingState);
-  ice_transport_->SignalNetworkRouteChanged.connect(
-      this, &DtlsTransport::OnNetworkRouteChanged);
 }
 
 DtlsTransport::~DtlsTransport() = default;
@@ -431,10 +428,6 @@ int DtlsTransport::GetError() {
   return ice_transport_->GetError();
 }
 
-rtc::Optional<rtc::NetworkRoute> DtlsTransport::network_route() const {
-  return ice_transport_->network_route();
-}
-
 bool DtlsTransport::GetOption(rtc::Socket::Option opt, int* value) {
   return ice_transport_->GetOption(opt, value);
 }
@@ -636,11 +629,6 @@ void DtlsTransport::OnDtlsEvent(rtc::StreamInterface* dtls, int sig, int err) {
       set_dtls_state(DTLS_TRANSPORT_FAILED);
     }
   }
-}
-
-void DtlsTransport::OnNetworkRouteChanged(
-    rtc::Optional<rtc::NetworkRoute> network_route) {
-  SignalNetworkRouteChanged(network_route);
 }
 
 void DtlsTransport::MaybeStartDtls() {

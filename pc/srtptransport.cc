@@ -42,8 +42,6 @@ void SrtpTransport::ConnectToRtpTransport() {
       this, &SrtpTransport::OnPacketReceived);
   rtp_transport_->SignalReadyToSend.connect(this,
                                             &SrtpTransport::OnReadyToSend);
-  rtp_transport_->SignalNetworkRouteChanged.connect(
-      this, &SrtpTransport::OnNetworkRouteChanged);
 }
 
 bool SrtpTransport::SendRtpPacket(rtc::CopyOnWriteBuffer* packet,
@@ -170,20 +168,6 @@ void SrtpTransport::OnPacketReceived(bool rtcp,
 
   packet->SetSize(len);
   SignalPacketReceived(rtcp, packet, packet_time);
-}
-
-void SrtpTransport::OnNetworkRouteChanged(
-
-    rtc::Optional<rtc::NetworkRoute> network_route) {
-  // Only append the SRTP overhead when there is a selected network route.
-  if (network_route) {
-    int srtp_overhead = 0;
-    if (IsActive()) {
-      GetSrtpOverhead(&srtp_overhead);
-    }
-    network_route->packet_overhead += srtp_overhead;
-  }
-  SignalNetworkRouteChanged(network_route);
 }
 
 bool SrtpTransport::SetRtpParams(int send_cs,

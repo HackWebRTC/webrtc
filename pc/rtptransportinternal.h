@@ -11,11 +11,7 @@
 #ifndef PC_RTPTRANSPORTINTERNAL_H_
 #define PC_RTPTRANSPORTINTERNAL_H_
 
-#include <string>
-
 #include "api/ortc/rtptransportinterface.h"
-#include "p2p/base/icetransportinternal.h"
-#include "rtc_base/networkroute.h"
 #include "rtc_base/sigslot.h"
 
 namespace rtc {
@@ -55,10 +51,6 @@ class RtpTransportInternal : public RtpTransportInterface,
   // The first argument is true for RTCP packets and false for RTP packets.
   sigslot::signal3<bool, rtc::CopyOnWriteBuffer*, const rtc::PacketTime&>
       SignalPacketReceived;
-
-  // Called whenever the network route of the P2P layer transport changes.
-  // The argument is an optional network route.
-  sigslot::signal1<rtc::Optional<rtc::NetworkRoute>> SignalNetworkRouteChanged;
 
   virtual bool IsWritable(bool rtcp) const = 0;
 

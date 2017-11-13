@@ -127,8 +127,6 @@ class P2PTransportChannel : public IceTransportInternal,
   int receiving_timeout() const { return config_.receiving_timeout; }
   int check_receiving_interval() const { return check_receiving_interval_; }
 
-  rtc::Optional<rtc::NetworkRoute> network_route() const override;
-
   // Helper method used only in unittest.
   rtc::DiffServCodePoint DefaultDscpValue() const;
 
@@ -401,8 +399,6 @@ class P2PTransportChannel : public IceTransportInternal,
   bool writable_ = false;
 
   webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
-
-  rtc::Optional<rtc::NetworkRoute> network_route_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

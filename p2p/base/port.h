@@ -28,7 +28,6 @@
 #include "p2p/base/stunrequest.h"
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/nethelper.h"
 #include "rtc_base/network.h"
 #include "rtc_base/proxyinfo.h"
 #include "rtc_base/ratetracker.h"
@@ -45,6 +44,11 @@ extern const char LOCAL_PORT_TYPE[];
 extern const char STUN_PORT_TYPE[];
 extern const char PRFLX_PORT_TYPE[];
 extern const char RELAY_PORT_TYPE[];
+
+extern const char UDP_PROTOCOL_NAME[];
+extern const char TCP_PROTOCOL_NAME[];
+extern const char SSLTCP_PROTOCOL_NAME[];
+extern const char TLS_PROTOCOL_NAME[];
 
 // RFC 6544, TCP candidate encoding rules.
 extern const int DISCARD_PORT;

@@ -190,7 +190,6 @@ class FakeIceTransport : public IceTransportInternal {
     SignalSentPacket(this, sent_packet);
     return static_cast<int>(len);
   }
-
   int SetOption(rtc::Socket::Option opt, int value) override {
     socket_options_[opt] = value;
     return true;
@@ -204,15 +203,7 @@ class FakeIceTransport : public IceTransportInternal {
       return false;
     }
   }
-
   int GetError() override { return 0; }
-
-  rtc::Optional<rtc::NetworkRoute> network_route() const override {
-    return network_route_;
-  }
-  void SetNetworkRoute(rtc::Optional<rtc::NetworkRoute> network_route) {
-    network_route_ = network_route;
-  }
 
  private:
   void set_writable(bool writable) {
@@ -264,7 +255,6 @@ class FakeIceTransport : public IceTransportInternal {
   bool receiving_ = false;
   bool combine_outgoing_packets_ = false;
   rtc::CopyOnWriteBuffer send_packet_;
-  rtc::Optional<rtc::NetworkRoute> network_route_;
   std::map<rtc::Socket::Option, int> socket_options_;
 };
 

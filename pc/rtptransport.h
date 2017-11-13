@@ -11,8 +11,6 @@
 #ifndef PC_RTPTRANSPORT_H_
 #define PC_RTPTRANSPORT_H_
 
-#include <string>
-
 #include "pc/bundlefilter.h"
 #include "pc/rtptransportinternal.h"
 #include "rtc_base/sigslot.h"
@@ -78,7 +76,6 @@ class RtpTransport : public RtpTransportInternal {
   bool HandlesPacket(const uint8_t* data, size_t len);
 
   void OnReadyToSend(rtc::PacketTransportInternal* transport);
-  void OnNetworkRouteChange(rtc::Optional<rtc::NetworkRoute> network_route);
 
   // Updates "ready to send" for an individual channel and fires
   // SignalReadyToSend.

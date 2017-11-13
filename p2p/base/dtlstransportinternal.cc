@@ -16,4 +16,8 @@ DtlsTransportInternal::DtlsTransportInternal() = default;
 
 DtlsTransportInternal::~DtlsTransportInternal() = default;
 
+std::string DtlsTransportInternal::debug_name() const {
+  return transport_name() + " " + rtc::ToString(component());
+}
+
 }  // namespace cricket
