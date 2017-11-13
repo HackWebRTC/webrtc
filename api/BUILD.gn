@@ -81,15 +81,16 @@ rtc_static_library("libjingle_peerconnection_api") {
   ]
 
   deps = [
-    # Basically, don't add stuff here. You might break sensitive downstream
-    # targets like pnacl. API should not depend on anything, really. All these
-    # should go away, in time.
     ":optional",
     ":rtc_stats_api",
+    "audio_codecs:audio_codecs_api",
+
+    # Basically, don't add stuff here. You might break sensitive downstream
+    # targets like pnacl. API should not depend on anything outside of this
+    # file, really. All these should arguably go away in time.
     "..:webrtc_common",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
-    "audio_codecs:audio_codecs_api",
   ]
 
   # This is needed until bugs.webrtc.org/7504 is removed so this target can
@@ -214,6 +215,8 @@ rtc_source_set("transport_api") {
 
 rtc_source_set("video_frame_api") {
   sources = [
+    # TODO(phoglund): move i420 files to video_frame_api_i420 after updating
+    # downstream. See bugs.webrtc.org/7504.
     "video/i420_buffer.cc",
     "video/i420_buffer.h",
     "video/video_content_type.cc",
@@ -243,6 +246,17 @@ rtc_source_set("video_frame_api") {
     # Need to add a directory normally exported by libyuv.
     include_dirs = [ "$rtc_libyuv_dir/include" ]
   }
+}
+
+rtc_source_set("video_frame_api_i420") {
+  sources = [
+    "video/i420_buffer.h",
+  ]
+  deps = [
+    ":video_frame_api",
+    "../rtc_base:rtc_base_approved",
+    "../system_wrappers",
+  ]
 }
 
 rtc_source_set("array_view") {

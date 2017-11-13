@@ -28,6 +28,7 @@ rtc_static_library("video_capture_module") {
   deps = [
     "..:module_api",
     "../..:webrtc_common",
+    "../../api:video_frame_api_i420",
     "../../common_video",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
@@ -200,6 +201,7 @@ if (!build_with_chromium) {
       deps = [
         ":video_capture_internal_impl",
         ":video_capture_module",
+        "../../api:video_frame_api_i420",
         "../../common_video:common_video",
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers:system_wrappers",

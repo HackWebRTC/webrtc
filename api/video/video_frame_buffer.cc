@@ -10,8 +10,6 @@
 
 #include "api/video/video_frame_buffer.h"
 
-#include "libyuv/convert.h"
-#include "api/video/i420_buffer.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -77,17 +75,6 @@ int I444BufferInterface::ChromaWidth() const {
 
 int I444BufferInterface::ChromaHeight() const {
   return height();
-}
-
-rtc::scoped_refptr<I420BufferInterface> I444BufferInterface::ToI420() {
-  rtc::scoped_refptr<I420Buffer> i420_buffer =
-      I420Buffer::Create(width(), height());
-  libyuv::I444ToI420(DataY(), StrideY(), DataU(), StrideU(), DataV(), StrideV(),
-                     i420_buffer->MutableDataY(), i420_buffer->StrideY(),
-                     i420_buffer->MutableDataU(), i420_buffer->StrideU(),
-                     i420_buffer->MutableDataV(), i420_buffer->StrideV(),
-                     width(), height());
-  return i420_buffer;
 }
 
 }  // namespace webrtc

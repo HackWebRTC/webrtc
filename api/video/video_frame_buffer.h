@@ -129,8 +129,6 @@ class I444BufferInterface : public PlanarYuvBuffer {
   int ChromaWidth() const final;
   int ChromaHeight() const final;
 
-  rtc::scoped_refptr<I420BufferInterface> ToI420() final;
-
  protected:
   ~I444BufferInterface() override {}
 };

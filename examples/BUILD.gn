@@ -492,7 +492,9 @@ if (is_linux || is_win) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
-    deps = []
+    deps = [
+      "../api:video_frame_api_i420",
+    ]
     if (is_win) {
       sources += [
         "peerconnection/client/flagdefs.h",

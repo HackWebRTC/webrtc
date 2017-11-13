@@ -58,6 +58,7 @@ rtc_static_library("common_video") {
   deps = [
     "..:webrtc_common",
     "../api:optional",
+    "../api:video_frame_api_i420",
     "../media:rtc_h264_profile_id",
     "../modules:module_api",
     "../rtc_base:rtc_base",
@@ -115,6 +116,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":common_video",
+      "../api:video_frame_api_i420",
       "../modules/video_capture:video_capture",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
