@@ -382,7 +382,9 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
 
   if (config_.sw_fallback_encoder) {
     encoder_ = rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
-        codec, std::move(encoder_));
+        std::unique_ptr<VideoEncoder>(
+            cricket::InternalEncoderFactory().CreateVideoEncoder(codec)),
+        std::move(encoder_));
   }
   if (config_.sw_fallback_decoder) {
     decoder_ = rtc::MakeUnique<VideoDecoderSoftwareFallbackWrapper>(

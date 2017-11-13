@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "api/video/i420_buffer.h"
+#include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -42,7 +43,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
       const std::string& field_trials)
       : override_field_trials_(field_trials),
         fake_encoder_(new CountingFakeEncoder()),
-        fallback_wrapper_(cricket::VideoCodec("VP8"),
+        fallback_wrapper_(std::unique_ptr<VideoEncoder>(VP8Encoder::Create()),
                           std::unique_ptr<VideoEncoder>(fake_encoder_)) {}
 
   class CountingFakeEncoder : public VideoEncoder {

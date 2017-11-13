@@ -26,8 +26,8 @@ namespace webrtc {
 class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
  public:
   VideoEncoderSoftwareFallbackWrapper(
-      const cricket::VideoCodec& codec,
-      std::unique_ptr<webrtc::VideoEncoder> encoder);
+      std::unique_ptr<webrtc::VideoEncoder> sw_encoder,
+      std::unique_ptr<webrtc::VideoEncoder> hw_encoder);
 
   int32_t InitEncode(const VideoCodec* codec_settings,
                      int32_t number_of_cores,
@@ -87,10 +87,10 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   uint32_t packet_loss_;
   int64_t rtt_;
 
-  cricket::VideoCodec codec_;
-  std::unique_ptr<webrtc::VideoEncoder> encoder_;
+  bool use_fallback_encoder_;
+  const std::unique_ptr<webrtc::VideoEncoder> encoder_;
 
-  std::unique_ptr<webrtc::VideoEncoder> fallback_encoder_;
+  const std::unique_ptr<webrtc::VideoEncoder> fallback_encoder_;
   EncodedImageCallback* callback_;
 
   bool forced_fallback_possible_;
