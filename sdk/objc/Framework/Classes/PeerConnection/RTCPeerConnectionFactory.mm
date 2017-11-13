@@ -84,7 +84,8 @@
                        nativeAudioDecoderFactory:webrtc::CreateBuiltinAudioDecoderFactory()
                        nativeVideoEncoderFactory:std::move(native_encoder_factory)
                        nativeVideoDecoderFactory:std::move(native_decoder_factory)
-                               audioDeviceModule:nullptr];
+                               audioDeviceModule:nullptr
+                           audioProcessingModule:nullptr];
 #endif
 }
 
@@ -128,7 +129,9 @@
                         nativeVideoDecoderFactory:
                             (std::unique_ptr<webrtc::VideoDecoderFactory>)videoDecoderFactory
                                 audioDeviceModule:
-                                    (nullable webrtc::AudioDeviceModule *)audioDeviceModule {
+                                    (nullable webrtc::AudioDeviceModule *)audioDeviceModule
+                            audioProcessingModule:
+                                (rtc::scoped_refptr<webrtc::AudioProcessing>)audioProcessingModule {
 #ifdef HAVE_NO_MEDIA
   return [self initWithNoMedia];
 #else
@@ -142,8 +145,7 @@
                                                          std::move(videoEncoderFactory),
                                                          std::move(videoDecoderFactory),
                                                          nullptr,  // audio mixer
-                                                         nullptr   // audio processing
-                                                         );
+                                                         audioProcessingModule);
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
   }
   return self;
