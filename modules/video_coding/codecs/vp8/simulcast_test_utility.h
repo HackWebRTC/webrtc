@@ -241,12 +241,12 @@ class TestVp8Simulcast : public ::testing::Test {
   }
 
  protected:
-  virtual std::unique_ptr<VP8Encoder> CreateEncoder() = 0;
-  virtual std::unique_ptr<VP8Decoder> CreateDecoder() = 0;
+  virtual VP8Encoder* CreateEncoder() = 0;
+  virtual VP8Decoder* CreateDecoder() = 0;
 
   void SetUp() override {
-    encoder_ = CreateEncoder();
-    decoder_ = CreateDecoder();
+    encoder_.reset(CreateEncoder());
+    decoder_.reset(CreateDecoder());
     SetUpCodec(kDefaultTemporalLayerProfile);
   }
 

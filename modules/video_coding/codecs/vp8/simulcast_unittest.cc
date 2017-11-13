@@ -15,12 +15,8 @@ namespace testing {
 
 class TestVp8Impl : public TestVp8Simulcast {
  protected:
-  std::unique_ptr<VP8Encoder> CreateEncoder() override {
-    return VP8Encoder::Create();
-  }
-  std::unique_ptr<VP8Decoder> CreateDecoder() override {
-    return VP8Decoder::Create();
-  }
+  VP8Encoder* CreateEncoder() override { return VP8Encoder::Create(); }
+  VP8Decoder* CreateDecoder() override { return VP8Decoder::Create(); }
 };
 
 TEST_F(TestVp8Impl, TestKeyFrameRequestsOnAllStreams) {

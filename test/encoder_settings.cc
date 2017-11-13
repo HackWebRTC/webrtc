@@ -88,11 +88,11 @@ VideoReceiveStream::Decoder CreateMatchingDecoder(
   decoder.payload_type = encoder_settings.payload_type;
   decoder.payload_name = encoder_settings.payload_name;
   if (encoder_settings.payload_name == "H264") {
-    decoder.decoder = H264Decoder::Create().release();
+    decoder.decoder = H264Decoder::Create();
   } else if (encoder_settings.payload_name == "VP8") {
-    decoder.decoder = VP8Decoder::Create().release();
+    decoder.decoder = VP8Decoder::Create();
   } else if (encoder_settings.payload_name == "VP9") {
-    decoder.decoder = VP9Decoder::Create().release();
+    decoder.decoder = VP9Decoder::Create();
   } else {
     decoder.decoder = new FakeDecoder();
   }

@@ -22,7 +22,7 @@ bool VP9Encoder::IsSupported() {
   return false;
 }
 
-std::unique_ptr<VP9Encoder> VP9Encoder::Create() {
+VP9Encoder* VP9Encoder::Create() {
   RTC_NOTREACHED();
   return nullptr;
 }
@@ -31,7 +31,7 @@ bool VP9Decoder::IsSupported() {
   return false;
 }
 
-std::unique_ptr<VP9Decoder> VP9Decoder::Create() {
+VP9Decoder* VP9Decoder::Create() {
   RTC_NOTREACHED();
   return nullptr;
 }

@@ -64,11 +64,11 @@ webrtc::VideoEncoder* InternalEncoderFactory::CreateVideoEncoder(
       webrtc::PayloadStringToCodecType(codec.name);
   switch (codec_type) {
     case webrtc::kVideoCodecH264:
-      return webrtc::H264Encoder::Create(codec).release();
+      return webrtc::H264Encoder::Create(codec);
     case webrtc::kVideoCodecVP8:
-      return webrtc::VP8Encoder::Create().release();
+      return webrtc::VP8Encoder::Create();
     case webrtc::kVideoCodecVP9:
-      return webrtc::VP9Encoder::Create().release();
+      return webrtc::VP9Encoder::Create();
     default:
       return nullptr;
   }

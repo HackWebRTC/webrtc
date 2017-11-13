@@ -13,11 +13,9 @@
 #include <vector>
 
 #include "common_video/include/video_frame_buffer.h"
-#include "media/engine/internalencoderfactory.h"
 #include "media/engine/simulcast_encoder_adapter.h"
 #include "modules/video_coding/codecs/vp8/simulcast_test_utility.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "rtc_base/ptr_util.h"
 #include "test/gmock.h"
 
 namespace webrtc {
@@ -25,19 +23,39 @@ namespace testing {
 
 class TestSimulcastEncoderAdapter : public TestVp8Simulcast {
  public:
-  TestSimulcastEncoderAdapter()
-      : factory_(new cricket::InternalEncoderFactory()) {}
+  TestSimulcastEncoderAdapter() : factory_(new Vp8EncoderFactory()) {}
 
  protected:
-  std::unique_ptr<VP8Encoder> CreateEncoder() override {
-    return rtc::MakeUnique<SimulcastEncoderAdapter>(factory_.get());
+  class Vp8EncoderFactory : public cricket::WebRtcVideoEncoderFactory {
+   public:
+    Vp8EncoderFactory() {
+      supported_codecs_.push_back(cricket::VideoCodec("VP8"));
+    }
+
+    const std::vector<cricket::VideoCodec>& supported_codecs() const override {
+      return supported_codecs_;
+    }
+
+    VideoEncoder* CreateVideoEncoder(
+        const cricket::VideoCodec& codec) override {
+      return VP8Encoder::Create();
+    }
+
+    void DestroyVideoEncoder(VideoEncoder* encoder) override { delete encoder; }
+
+    virtual ~Vp8EncoderFactory() {}
+
+   private:
+    std::vector<cricket::VideoCodec> supported_codecs_;
+  };
+
+  VP8Encoder* CreateEncoder() override {
+    return new SimulcastEncoderAdapter(factory_.get());
   }
-  std::unique_ptr<VP8Decoder> CreateDecoder() override {
-    return VP8Decoder::Create();
-  }
+  VP8Decoder* CreateDecoder() override { return VP8Decoder::Create(); }
 
  private:
-  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> factory_;
+  std::unique_ptr<Vp8EncoderFactory> factory_;
 };
 
 TEST_F(TestSimulcastEncoderAdapter, TestKeyFrameRequestsOnAllStreams) {

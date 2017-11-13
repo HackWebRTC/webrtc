@@ -33,15 +33,15 @@ std::vector<SdpVideoFormat> InternalDecoderFactory::GetSupportedFormats()
 std::unique_ptr<VideoDecoder> InternalDecoderFactory::CreateVideoDecoder(
     const SdpVideoFormat& format) {
   if (cricket::CodecNamesEq(format.name, cricket::kVp8CodecName))
-    return VP8Decoder::Create();
+    return std::unique_ptr<VideoDecoder>(VP8Decoder::Create());
 
   if (cricket::CodecNamesEq(format.name, cricket::kVp9CodecName)) {
     RTC_DCHECK(VP9Decoder::IsSupported());
-    return VP9Decoder::Create();
+    return std::unique_ptr<VideoDecoder>(VP9Decoder::Create());
   }
 
   if (cricket::CodecNamesEq(format.name, cricket::kH264CodecName))
-    return H264Decoder::Create();
+    return std::unique_ptr<VideoDecoder>(H264Decoder::Create());
 
   RTC_LOG(LS_ERROR) << "Trying to create decoder for unsupported format";
   return nullptr;

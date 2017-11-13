@@ -27,7 +27,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/random.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
@@ -53,8 +52,8 @@ bool VP9Encoder::IsSupported() {
   return true;
 }
 
-std::unique_ptr<VP9Encoder> VP9Encoder::Create() {
-  return rtc::MakeUnique<VP9EncoderImpl>();
+VP9Encoder* VP9Encoder::Create() {
+  return new VP9EncoderImpl();
 }
 
 void VP9EncoderImpl::EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
@@ -842,8 +841,8 @@ bool VP9Decoder::IsSupported() {
   return true;
 }
 
-std::unique_ptr<VP9Decoder> VP9Decoder::Create() {
-  return rtc::MakeUnique<VP9DecoderImpl>();
+VP9Decoder* VP9Decoder::Create() {
+  return new VP9DecoderImpl();
 }
 
 VP9DecoderImpl::VP9DecoderImpl()

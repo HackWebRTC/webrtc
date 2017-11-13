@@ -12,7 +12,6 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_H_
 #define MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_H_
 
-#include <memory>
 #include <vector>
 
 #include "media/base/codec.h"
@@ -34,7 +33,7 @@ std::vector<SdpVideoFormat> SupportedH264Codecs();
 
 class H264Encoder : public VideoEncoder {
  public:
-  static std::unique_ptr<H264Encoder> Create(const cricket::VideoCodec& codec);
+  static H264Encoder* Create(const cricket::VideoCodec& codec);
   // If H.264 is supported (any implementation).
   static bool IsSupported();
 
@@ -43,7 +42,7 @@ class H264Encoder : public VideoEncoder {
 
 class H264Decoder : public VideoDecoder {
  public:
-  static std::unique_ptr<H264Decoder> Create();
+  static H264Decoder* Create();
   static bool IsSupported();
 
   ~H264Decoder() override {}

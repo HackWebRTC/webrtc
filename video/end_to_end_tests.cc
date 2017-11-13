@@ -329,16 +329,16 @@ class CodecObserver : public test::EndToEndTest,
   CodecObserver(int no_frames_to_wait_for,
                 VideoRotation rotation_to_test,
                 const std::string& payload_name,
-                std::unique_ptr<webrtc::VideoEncoder> encoder,
-                std::unique_ptr<webrtc::VideoDecoder> decoder)
+                webrtc::VideoEncoder* encoder,
+                webrtc::VideoDecoder* decoder)
       : EndToEndTest(4 * webrtc::EndToEndTest::kDefaultTimeoutMs),
         // TODO(hta): This timeout (120 seconds) is excessive.
         // https://bugs.webrtc.org/6830
         no_frames_to_wait_for_(no_frames_to_wait_for),
         expected_rotation_(rotation_to_test),
         payload_name_(payload_name),
-        encoder_(std::move(encoder)),
-        decoder_(std::move(decoder)),
+        encoder_(encoder),
+        decoder_(decoder),
         frame_counter_(0) {}
 
   void PerformTest() override {
@@ -1553,7 +1553,7 @@ class MultiStreamTest {
       receiver_transport->SetReceiver(sender_call->Receiver());
 
       for (size_t i = 0; i < kNumStreams; ++i)
-        encoders[i] = VP8Encoder::Create();
+        encoders[i].reset(VP8Encoder::Create());
 
       for (size_t i = 0; i < kNumStreams; ++i) {
         uint32_t ssrc = codec_settings[i].ssrc;
@@ -4327,7 +4327,7 @@ TEST_P(EndToEndTest, TestFlexfecRtpStatePreservation) {
     const int kNumFlexfecStreams = 1;
     CreateSendConfig(kNumVideoStreams, 0, kNumFlexfecStreams,
                      send_transport.get());
-    encoder = VP8Encoder::Create();
+    encoder = rtc::WrapUnique(VP8Encoder::Create());
     video_send_config_.encoder_settings.encoder = encoder.get();
     video_send_config_.encoder_settings.payload_name = "VP8";
     video_send_config_.encoder_settings.payload_type = kVideoSendPayloadType;
@@ -4994,8 +4994,8 @@ TEST_P(EndToEndLogTest, LogsEncodedFramesWhenRequested) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      encoder_ = VP8Encoder::Create();
-      decoder_ = VP8Decoder::Create();
+      encoder_.reset(VP8Encoder::Create());
+      decoder_.reset(VP8Decoder::Create());
 
       send_config->post_encode_callback = this;
       send_config->encoder_settings.payload_name = "VP8";

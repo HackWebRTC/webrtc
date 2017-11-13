@@ -30,7 +30,6 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/exp_filter.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/random.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
@@ -163,12 +162,12 @@ void GetPostProcParamsFromFieldTrialGroup(
 
 }  // namespace
 
-std::unique_ptr<VP8Encoder> VP8Encoder::Create() {
-  return rtc::MakeUnique<VP8EncoderImpl>();
+VP8Encoder* VP8Encoder::Create() {
+  return new VP8EncoderImpl();
 }
 
-std::unique_ptr<VP8Decoder> VP8Decoder::Create() {
-  return rtc::MakeUnique<VP8DecoderImpl>();
+VP8Decoder* VP8Decoder::Create() {
+  return new VP8DecoderImpl();
 }
 
 vpx_enc_frame_flags_t VP8EncoderImpl::EncodeFlags(

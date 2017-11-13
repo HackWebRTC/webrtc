@@ -182,9 +182,6 @@ int32_t VCMDecodedFrameCallback::Pop(uint32_t timestamp) {
   return VCM_OK;
 }
 
-VCMGenericDecoder::VCMGenericDecoder(std::unique_ptr<VideoDecoder> decoder)
-    : VCMGenericDecoder(decoder.release(), false /* isExternal */) {}
-
 VCMGenericDecoder::VCMGenericDecoder(VideoDecoder* decoder, bool isExternal)
     : _callback(NULL),
       _frameInfos(),
