@@ -26,8 +26,4 @@ void IceTransportInternal::SetRemoteIceCredentials(const std::string& ice_ufrag,
   SetRemoteIceParameters(IceParameters(ice_ufrag, ice_pwd, false));
 }
 
-std::string IceTransportInternal::debug_name() const {
-  return transport_name() + " " + rtc::ToString(component());
-}
-
 }  // namespace cricket

@@ -23,6 +23,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/crc32.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/nethelper.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
@@ -1082,6 +1083,10 @@ bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
   return true;
 }
 
+rtc::Optional<rtc::NetworkRoute> P2PTransportChannel::network_route() const {
+  return network_route_;
+}
+
 rtc::DiffServCodePoint P2PTransportChannel::DefaultDscpValue() const {
   OptionMap::const_iterator it = options_.find(rtc::Socket::OPT_DSCP);
   if (it == options_.end()) {
@@ -1467,6 +1472,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
   // destroyed, so don't use it.
   Connection* old_selected_connection = selected_connection_;
   selected_connection_ = conn;
+  network_route_.reset();
   if (selected_connection_) {
     ++nomination_;
     if (old_selected_connection) {
@@ -1485,12 +1491,23 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
         PresumedWritable(selected_connection_)) {
       SignalReadyToSend(this);
     }
+
+    network_route_.emplace(rtc::NetworkRoute());
+    network_route_->connected = ReadyToSend(selected_connection_);
+    network_route_->local_network_id =
+        selected_connection_->local_candidate().network_id();
+    network_route_->remote_network_id =
+        selected_connection_->remote_candidate().network_id();
+    network_route_->last_sent_packet_id = last_sent_packet_id_;
+    network_route_->packet_overhead =
+        GetIpOverhead(
+            selected_connection_->local_candidate().address().family()) +
+        GetProtocolOverhead(selected_connection_->local_candidate().protocol());
   } else {
     LOG_J(LS_INFO, this) << "No selected connection";
   }
-  SignalSelectedCandidatePairChanged(this, selected_connection_,
-                                     last_sent_packet_id_,
-                                     ReadyToSend(selected_connection_));
+
+  SignalNetworkRouteChanged(network_route_);
 }
 
 // Warning: UpdateState should eventually be called whenever a connection

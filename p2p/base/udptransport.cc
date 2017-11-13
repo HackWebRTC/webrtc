@@ -16,6 +16,7 @@
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/asyncudpsocket.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/nethelper.h"
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"
@@ -63,7 +64,7 @@ rtc::SocketAddress UdpTransport::GetRemoteAddress() const {
   return remote_address_;
 }
 
-std::string UdpTransport::debug_name() const {
+const std::string& UdpTransport::transport_name() const {
   return transport_name_;
 }
 
@@ -93,6 +94,13 @@ int UdpTransport::SendPacket(const char* data,
     RTC_LOG(LS_VERBOSE) << "SendPacket() " << result;
   }
   return result;
+}
+
+rtc::Optional<rtc::NetworkRoute> UdpTransport::network_route() const {
+  rtc::NetworkRoute network_route;
+  network_route.packet_overhead =
+      /*kUdpOverhead=*/8 + GetIpOverhead(GetLocalAddress().family());
+  return rtc::Optional<rtc::NetworkRoute>(network_route);
 }
 
 int UdpTransport::SetOption(rtc::Socket::Option opt, int value) {

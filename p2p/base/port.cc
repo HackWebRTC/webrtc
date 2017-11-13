@@ -99,11 +99,6 @@ const char STUN_PORT_TYPE[] = "stun";
 const char PRFLX_PORT_TYPE[] = "prflx";
 const char RELAY_PORT_TYPE[] = "relay";
 
-const char UDP_PROTOCOL_NAME[] = "udp";
-const char TCP_PROTOCOL_NAME[] = "tcp";
-const char SSLTCP_PROTOCOL_NAME[] = "ssltcp";
-const char TLS_PROTOCOL_NAME[] = "tls";
-
 static const char* const PROTO_NAMES[] = {UDP_PROTOCOL_NAME, TCP_PROTOCOL_NAME,
                                           SSLTCP_PROTOCOL_NAME,
                                           TLS_PROTOCOL_NAME};

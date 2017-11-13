@@ -1202,6 +1202,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     static constexpr uint16_t kLocalNetId = 1;
     static constexpr uint16_t kRemoteNetId = 2;
     static constexpr int kLastPacketId = 100;
+    // Ipv4(20) + UDP(8).
+    static constexpr int kTransportOverheadPerPacket = 28;
 
     CreateChannels(0, 0);
 
@@ -1209,12 +1211,17 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         static_cast<typename T::MediaChannel*>(channel1_->media_channel());
     ASSERT_TRUE(media_channel1);
 
+    // Need to wait for the threads before calling
+    // |set_num_network_route_changes| because the network route would be set
+    // when creating the channel.
+    WaitForThreads();
     media_channel1->set_num_network_route_changes(0);
     network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+      rtc::NetworkRoute network_route;
       // The transport channel becomes disconnected.
-      fake_rtp_dtls_transport1_->ice_transport()
-          ->SignalSelectedCandidatePairChanged(
-              fake_rtp_dtls_transport1_->ice_transport(), nullptr, -1, false);
+      fake_rtp_dtls_transport1_->ice_transport()->SignalNetworkRouteChanged(
+
+          rtc::Optional<rtc::NetworkRoute>(network_route));
     });
     WaitForThreads();
     EXPECT_EQ(1, media_channel1->num_network_route_changes());
@@ -1222,15 +1229,16 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     media_channel1->set_num_network_route_changes(0);
 
     network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+      rtc::NetworkRoute network_route;
+      network_route.connected = true;
+      network_route.local_network_id = kLocalNetId;
+      network_route.remote_network_id = kRemoteNetId;
+      network_route.last_sent_packet_id = kLastPacketId;
+      network_route.packet_overhead = kTransportOverheadPerPacket;
       // The transport channel becomes connected.
-      rtc::SocketAddress local_address("192.168.1.1", 1000 /* port number */);
-      rtc::SocketAddress remote_address("192.168.1.2", 2000 /* port number */);
-      auto candidate_pair = cricket::FakeCandidatePair::Create(
-          local_address, kLocalNetId, remote_address, kRemoteNetId);
-      fake_rtp_dtls_transport1_->ice_transport()
-          ->SignalSelectedCandidatePairChanged(
-              fake_rtp_dtls_transport1_->ice_transport(), candidate_pair.get(),
-              kLastPacketId, true);
+      fake_rtp_dtls_transport1_->ice_transport()->SignalNetworkRouteChanged(
+
+          rtc::Optional<rtc::NetworkRoute>(network_route));
     });
     WaitForThreads();
     EXPECT_EQ(1, media_channel1->num_network_route_changes());
@@ -1239,7 +1247,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_EQ(expected_network_route, media_channel1->last_network_route());
     EXPECT_EQ(kLastPacketId,
               media_channel1->last_network_route().last_sent_packet_id);
-    constexpr int kTransportOverheadPerPacket = 28;  // Ipv4(20) + UDP(8).
     EXPECT_EQ(kTransportOverheadPerPacket,
               media_channel1->transport_overhead_per_packet());
   }

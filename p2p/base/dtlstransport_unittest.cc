@@ -101,11 +101,11 @@ class DtlsTestClient : public sigslot::has_slots<> {
           (role == cricket::ICEROLE_CONTROLLING) ? 1 : 2);
       dtls->SetSslMaxProtocolVersion(ssl_max_version_);
       dtls->SignalWritableState.connect(
-          this, &DtlsTestClient::OnTransportChannelWritableState);
-      dtls->SignalReadPacket.connect(
-          this, &DtlsTestClient::OnTransportChannelReadPacket);
-      dtls->SignalSentPacket.connect(
-          this, &DtlsTestClient::OnTransportChannelSentPacket);
+          this, &DtlsTestClient::OnTransportWritableState);
+      dtls->SignalReadPacket.connect(this,
+                                     &DtlsTestClient::OnTransportReadPacket);
+      dtls->SignalSentPacket.connect(this,
+                                     &DtlsTestClient::OnTransportSentPacket);
       dtls_transports_.push_back(std::unique_ptr<cricket::DtlsTransport>(dtls));
       fake_ice_transports_.push_back(
           std::unique_ptr<cricket::FakeIceTransport>(fake_ice_channel));
@@ -356,18 +356,17 @@ class DtlsTestClient : public sigslot::has_slots<> {
     return (num_matches < ((static_cast<int>(size) - 5) / 10));
   }
 
-  // Transport channel callbacks
-  void OnTransportChannelWritableState(
-      rtc::PacketTransportInternal* transport) {
-    RTC_LOG(LS_INFO) << name_ << ": Channel '" << transport->debug_name()
+  // Transport callbacks
+  void OnTransportWritableState(rtc::PacketTransportInternal* transport) {
+    RTC_LOG(LS_INFO) << name_ << ": Transport '" << transport->transport_name()
                      << "' is writable";
   }
 
-  void OnTransportChannelReadPacket(rtc::PacketTransportInternal* transport,
-                                    const char* data,
-                                    size_t size,
-                                    const rtc::PacketTime& packet_time,
-                                    int flags) {
+  void OnTransportReadPacket(rtc::PacketTransportInternal* transport,
+                             const char* data,
+                             size_t size,
+                             const rtc::PacketTime& packet_time,
+                             int flags) {
     uint32_t packet_num = 0;
     ASSERT_TRUE(VerifyPacket(data, size, &packet_num));
     received_.insert(packet_num);
@@ -377,8 +376,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
     ASSERT_EQ(expected_flags, flags);
   }
 
-  void OnTransportChannelSentPacket(rtc::PacketTransportInternal* transport,
-                                    const rtc::SentPacket& sent_packet) {
+  void OnTransportSentPacket(rtc::PacketTransportInternal* transport,
+                             const rtc::SentPacket& sent_packet) {
     sent_packet_ = sent_packet;
   }
 

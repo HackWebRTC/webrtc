@@ -379,8 +379,8 @@ class P2PTransportChannelTestBase : public testing::Test,
         this, &P2PTransportChannelTestBase::OnReadPacket);
     channel->SignalRoleConflict.connect(
         this, &P2PTransportChannelTestBase::OnRoleConflict);
-    channel->SignalSelectedCandidatePairChanged.connect(
-        this, &P2PTransportChannelTestBase::OnSelectedCandidatePairChanged);
+    channel->SignalNetworkRouteChanged.connect(
+        this, &P2PTransportChannelTestBase::OnNetworkRouteChanged);
     channel->SetIceParameters(local_ice);
     if (remote_ice_parameter_source_ == FROM_SETICEPARAMETERS) {
       channel->SetRemoteIceParameters(remote_ice);
@@ -697,14 +697,12 @@ class P2PTransportChannelTestBase : public testing::Test,
                  new CandidatesData(ch, c));
     }
   }
-  void OnSelectedCandidatePairChanged(
-      IceTransportInternal* transport_channel,
-      CandidatePairInterface* selected_candidate_pair,
-      int last_sent_packet_id,
-      bool ready_to_send) {
-    // Do not count if it switches to nullptr. This may happen if all
-    // connections timed out.
-    if (selected_candidate_pair != nullptr) {
+
+  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route) {
+    // If the |network_route| is unset, don't count. This is used in the case
+    // when the network on remote side is down, the signal will be fired with an
+    // unset network route and it shouldn't trigger a connection switch.
+    if (network_route) {
       ++selected_candidate_pair_switches_;
     }
   }
@@ -3055,8 +3053,8 @@ class P2PTransportChannelPingTest : public testing::Test,
     ch->SetIceRole(ICEROLE_CONTROLLING);
     ch->SetIceParameters(kIceParams[0]);
     ch->SetRemoteIceParameters(kIceParams[1]);
-    ch->SignalSelectedCandidatePairChanged.connect(
-        this, &P2PTransportChannelPingTest::OnSelectedCandidatePairChanged);
+    ch->SignalNetworkRouteChanged.connect(
+        this, &P2PTransportChannelPingTest::OnNetworkRouteChanged);
     ch->SignalReadyToSend.connect(this,
                                   &P2PTransportChannelPingTest::OnReadyToSend);
     ch->SignalStateChanged.connect(
@@ -3142,13 +3140,11 @@ class P2PTransportChannelPingTest : public testing::Test,
     conn->SignalNominated(conn);
   }
 
-  void OnSelectedCandidatePairChanged(
-      IceTransportInternal* transport_channel,
-      CandidatePairInterface* selected_candidate_pair,
-      int last_sent_packet_id,
-      bool ready_to_send) {
-    last_selected_candidate_pair_ = selected_candidate_pair;
-    last_sent_packet_id_ = last_sent_packet_id;
+  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route) {
+    last_network_route_ = network_route;
+    if (last_network_route_) {
+      last_sent_packet_id_ = last_network_route_->last_sent_packet_id;
+    }
     ++selected_candidate_pair_switches_;
   }
 
@@ -3182,9 +3178,6 @@ class P2PTransportChannelPingTest : public testing::Test,
     channel_state_ = channel->GetState();
   }
 
-  CandidatePairInterface* last_selected_candidate_pair() {
-    return last_selected_candidate_pair_;
-  }
   int last_sent_packet_id() { return last_sent_packet_id_; }
   bool channel_ready_to_send() { return channel_ready_to_send_; }
   void reset_channel_ready_to_send() { channel_ready_to_send_ = false; }
@@ -3195,14 +3188,26 @@ class P2PTransportChannelPingTest : public testing::Test,
     return switches;
   }
 
+  // Return true if the |pair| matches the last network route.
+  bool CandidatePairMatchesNetworkRoute(CandidatePairInterface* pair) {
+    if (!pair) {
+      return !last_network_route_.has_value();
+    } else {
+      return pair->local_candidate().network_id() ==
+                 last_network_route_->local_network_id &&
+             pair->remote_candidate().network_id() ==
+                 last_network_route_->remote_network_id;
+    }
+  }
+
  private:
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
   rtc::AutoSocketServerThread thread_;
-  CandidatePairInterface* last_selected_candidate_pair_ = nullptr;
   int selected_candidate_pair_switches_ = 0;
   int last_sent_packet_id_ = -1;
   bool channel_ready_to_send_ = false;
   IceTransportState channel_state_ = IceTransportState::STATE_INIT;
+  rtc::Optional<rtc::NetworkRoute> last_network_route_;
 };
 
 TEST_F(P2PTransportChannelPingTest, TestTriggeredChecks) {
@@ -3580,7 +3585,7 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
 // The controlled side will select a connection as the "selected connection"
 // based on priority until the controlling side nominates a connection, at which
 // point the controlled side will select that connection as the
-// "selected connection". Plus, SignalSelectedCandidatePair will be fired if the
+// "selected connection". Plus, SignalNetworkRouteChanged will be fired if the
 // selected connection changes and SignalReadyToSend will be fired if the new
 // selected connection is writable.
 TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
@@ -3603,7 +3608,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   // A connection needs to be writable before it is selected for transmission.
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_WAIT(conn1, ch.selected_connection(), kDefaultTimeout);
-  EXPECT_EQ(conn1, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
   EXPECT_EQ(len, SendData(ch, data, len, ++last_packet_id));
 
   // When a higher priority candidate comes in, the new connection is chosen
@@ -3613,7 +3618,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_WAIT(conn2, ch.selected_connection(), kDefaultTimeout);
-  EXPECT_EQ(conn2, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
   EXPECT_TRUE(channel_ready_to_send());
   EXPECT_EQ(last_packet_id, last_sent_packet_id());
 
@@ -3631,7 +3636,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   // connection.
   NominateConnection(conn3);
   EXPECT_EQ(conn3, ch.selected_connection());
-  EXPECT_EQ(conn3, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn3));
   EXPECT_EQ(last_packet_id, last_sent_packet_id());
   EXPECT_TRUE(channel_ready_to_send());
 
@@ -3652,7 +3657,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   // The selected connection switches after conn4 becomes writable.
   conn4->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_WAIT(conn4, ch.selected_connection(), kDefaultTimeout);
-  EXPECT_EQ(conn4, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn4));
   EXPECT_EQ(last_packet_id, last_sent_packet_id());
   // SignalReadyToSend is fired again because conn4 is writable.
   EXPECT_TRUE(channel_ready_to_send());
@@ -3814,7 +3819,7 @@ TEST_F(P2PTransportChannelPingTest,
 
   // Initially, connections are selected based on priority.
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
-  EXPECT_EQ(conn1, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
 
   // conn2 receives data; it becomes selected.
   // Advance the clock by 1ms so that the last data receiving timestamp of
@@ -3822,12 +3827,12 @@ TEST_F(P2PTransportChannelPingTest,
   SIMULATED_WAIT(false, 1, clock);
   conn2->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
-  EXPECT_EQ(conn2, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   // conn1 also receives data; it becomes selected due to priority again.
   conn1->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
-  EXPECT_EQ(conn1, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   // conn2 received data more recently; it is selected now because it
   // received data more recently.
@@ -3836,7 +3841,7 @@ TEST_F(P2PTransportChannelPingTest,
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   conn2->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
-  EXPECT_EQ(conn2, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   // Make sure sorting won't reselect candidate pair.
   SIMULATED_WAIT(false, 10, clock);
@@ -3866,17 +3871,17 @@ TEST_F(P2PTransportChannelPingTest,
   SIMULATED_WAIT(false, 1, clock);
   conn1->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
-  EXPECT_EQ(conn1, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
 
   // conn2 is nominated; it becomes the selected connection.
   NominateConnection(conn2);
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
-  EXPECT_EQ(conn2, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   // conn1 is selected because it has higher priority and also nominated.
   NominateConnection(conn1);
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
-  EXPECT_EQ(conn1, last_selected_candidate_pair());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   // Make sure sorting won't reselect candidate pair.
   SIMULATED_WAIT(false, 10, clock);
@@ -3902,24 +3907,28 @@ TEST_F(P2PTransportChannelPingTest,
   ASSERT_TRUE(conn2 != nullptr);
 
   // conn1 is the selected connection because it has a higher priority,
-  EXPECT_EQ_SIMULATED_WAIT(conn1, last_selected_candidate_pair(),
-                           kDefaultTimeout, clock);
+  EXPECT_EQ_SIMULATED_WAIT(conn1, ch.selected_connection(), kDefaultTimeout,
+                           clock);
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
   reset_selected_candidate_pair_switches();
 
   // conn2 is nominated; it becomes selected.
   NominateConnection(conn2);
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
-  EXPECT_EQ(conn2, last_selected_candidate_pair());
+  EXPECT_EQ(conn2, ch.selected_connection());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   // conn1 is selected because of its priority.
   NominateConnection(conn1);
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
-  EXPECT_EQ(conn1, last_selected_candidate_pair());
+  EXPECT_EQ(conn1, ch.selected_connection());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
 
   // conn2 gets higher remote nomination; it is selected again.
   NominateConnection(conn2, 2U);
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
-  EXPECT_EQ(conn2, last_selected_candidate_pair());
+  EXPECT_EQ(conn2, ch.selected_connection());
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   // Make sure sorting won't reselect candidate pair.
   SIMULATED_WAIT(false, 100, clock);
@@ -3970,15 +3979,17 @@ TEST_F(P2PTransportChannelPingTest,
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_SIMULATED_WAIT(1, reset_selected_candidate_pair_switches(),
                            kDefaultTimeout, clock);
-  EXPECT_EQ_SIMULATED_WAIT(conn2, last_selected_candidate_pair(),
-                           kDefaultTimeout, clock);
+  EXPECT_EQ_SIMULATED_WAIT(conn2, ch.selected_connection(), kDefaultTimeout,
+                           clock);
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   // If conn1 is also writable, it will become selected.
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_SIMULATED_WAIT(1, reset_selected_candidate_pair_switches(),
                            kDefaultTimeout, clock);
-  EXPECT_EQ_SIMULATED_WAIT(conn1, last_selected_candidate_pair(),
-                           kDefaultTimeout, clock);
+  EXPECT_EQ_SIMULATED_WAIT(conn1, ch.selected_connection(), kDefaultTimeout,
+                           clock);
+  EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
 
   // Make sure sorting won't reselect candidate pair.
   SIMULATED_WAIT(false, 10, clock);

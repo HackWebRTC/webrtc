@@ -17,7 +17,6 @@
 #include "rtc_base/network.h"
 
 using cricket::JsepTransport;
-using cricket::TransportChannel;
 using cricket::FakeDtlsTransport;
 using cricket::FakeIceTransport;
 using cricket::IceRole;
