@@ -137,6 +137,8 @@ rtc_static_library("peerconnection") {
     "rtpreceiver.h",
     "rtpsender.cc",
     "rtpsender.h",
+    "rtptransceiver.cc",
+    "rtptransceiver.h",
     "sctputils.cc",
     "sctputils.h",
     "sdputils.cc",
