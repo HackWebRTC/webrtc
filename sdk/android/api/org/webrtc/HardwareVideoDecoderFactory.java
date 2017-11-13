@@ -42,7 +42,7 @@ public class HardwareVideoDecoderFactory implements VideoDecoderFactory {
     this(sharedContext, true /* fallbackToSoftware */);
   }
 
-  HardwareVideoDecoderFactory(EglBase.Context sharedContext, boolean fallbackToSoftware) {
+  public HardwareVideoDecoderFactory(EglBase.Context sharedContext, boolean fallbackToSoftware) {
     this.sharedContext = sharedContext;
     this.fallbackToSoftware = fallbackToSoftware;
   }
