@@ -24,4 +24,8 @@ bool PacketTransportInternal::GetOption(rtc::Socket::Option opt, int* value) {
   return false;
 }
 
+rtc::Optional<NetworkRoute> PacketTransportInternal::network_route() const {
+  return rtc::Optional<NetworkRoute>();
+}
+
 }  // namespace rtc

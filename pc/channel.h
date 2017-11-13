@@ -243,11 +243,7 @@ class BaseChannel
 
   void OnDtlsState(DtlsTransportInternal* transport, DtlsTransportState state);
 
-  void OnSelectedCandidatePairChanged(
-      IceTransportInternal* ice_transport,
-      CandidatePairInterface* selected_candidate_pair,
-      int last_sent_packet_id,
-      bool ready_to_send);
+  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route);
 
   bool PacketIsRtcp(const rtc::PacketTransportInternal* transport,
                     const char* data,
@@ -363,8 +359,6 @@ class BaseChannel
   void SignalSentPacket_w(const rtc::SentPacket& sent_packet);
   bool IsReadyToSendMedia_n() const;
   void CacheRtpAbsSendTimeHeaderExtension_n(int rtp_abs_sendtime_extn_id);
-  int GetTransportOverheadPerPacket() const;
-  void UpdateTransportOverhead();
   // Wraps the existing RtpTransport in an SrtpTransport.
   void EnableSrtpTransport_n();
 
