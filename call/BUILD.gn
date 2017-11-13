@@ -180,7 +180,6 @@ if (rtc_include_tests) {
       "bitrate_allocator_unittest.cc",
       "bitrate_estimator_tests.cc",
       "call_unittest.cc",
-      "fake_rtp_transport_controller_send.h",
       "flexfec_receive_stream_unittest.cc",
       "rtcp_demuxer_unittest.cc",
       "rtp_demuxer_unittest.cc",
@@ -266,10 +265,14 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "fake_rtp_transport_controller_send.h",
       "test/mock_rtp_packet_sink_interface.h",
     ]
     deps = [
       ":rtp_interfaces",
+      "..:webrtc_common",
+      "../modules/congestion_controller:congestion_controller",
+      "../modules/pacing:pacing",
       "../test:test_support",
       "//testing/gmock",
     ]

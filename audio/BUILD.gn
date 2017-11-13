@@ -86,10 +86,6 @@ if (rtc_include_tests) {
   rtc_source_set("audio_tests") {
     testonly = true
 
-    # TODO(kjellander): Remove (bugs.webrtc.org/6828)
-    # This needs remote_bitrate_estimator to be moved to webrtc/api first.
-    check_includes = false
-
     sources = [
       "audio_receive_stream_unittest.cc",
       "audio_send_stream_tests.cc",
@@ -101,16 +97,26 @@ if (rtc_include_tests) {
       ":audio",
       ":audio_end_to_end_test",
       "../api:mock_audio_mixer",
+      "../call:mock_rtp_interfaces",
+      "../call:rtp_interfaces",
       "../call:rtp_receiver",
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/congestion_controller:congestion_controller",
       "../modules/congestion_controller:mock_congestion_controller",
+      "../modules/pacing:mock_paced_sender",
       "../modules/pacing:pacing",
+      "../modules/rtp_rtcp:mock_rtp_rtcp",
+      "../modules/rtp_rtcp:rtp_rtcp_format",
       "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:rtc_task_queue",
+      "../system_wrappers:system_wrappers",
+      "../test:audio_codec_mocks",
+      "../test:rtp_test_utils",
       "../test:test_common",
       "../test:test_support",
+      "../voice_engine",
       "utility:utility_tests",
       "//testing/gmock",
       "//testing/gtest",
