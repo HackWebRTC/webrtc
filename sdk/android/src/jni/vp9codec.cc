@@ -20,14 +20,14 @@ JNI_FUNCTION_DECLARATION(jlong,
                          VP9Encoder_createNativeEncoder,
                          JNIEnv* jni,
                          jclass) {
-  return jlongFromPointer(VP9Encoder::Create());
+  return jlongFromPointer(VP9Encoder::Create().release());
 }
 
 JNI_FUNCTION_DECLARATION(jlong,
                          VP9Decoder_createNativeDecoder,
                          JNIEnv* jni,
                          jclass) {
-  return jlongFromPointer(VP9Decoder::Create());
+  return jlongFromPointer(VP9Decoder::Create().release());
 }
 
 }  // namespace jni
