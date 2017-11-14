@@ -346,15 +346,6 @@ class RtpRtcp : public Module {
   // Stops sending REMB on next and following sender/receiver reports.
   virtual void UnsetRemb() = 0;
 
-  RTC_DEPRECATED void SetREMBStatus(bool enable) {
-    if (!enable)
-      UnsetRemb();
-  }
-  RTC_DEPRECATED void SetREMBData(uint32_t bitrate,
-                                  const std::vector<uint32_t>& ssrcs) {
-    SetRemb(bitrate, ssrcs);
-  }
-
   // (TMMBR) Temporary Max Media Bit Rate
   virtual bool TMMBR() const = 0;
 
