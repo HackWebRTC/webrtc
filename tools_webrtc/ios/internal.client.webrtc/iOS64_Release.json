@@ -25,5 +25,6 @@
       "device type": "iPhone 7",
       "os": "11.0"
     }
-  ]
+  ],
+  "expiration_time": 3600
 }
