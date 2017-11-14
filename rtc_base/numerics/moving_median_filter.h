@@ -30,6 +30,9 @@ class MovingMedianFilter {
   // Insert a new sample.
   void Insert(const T& value);
 
+  // Removes all samples;
+  void Reset();
+
   // Get median over the latest window.
   T GetFilteredValue() const;
 
@@ -63,6 +66,13 @@ void MovingMedianFilter<T>::Insert(const T& value) {
 template <typename T>
 T MovingMedianFilter<T>::GetFilteredValue() const {
   return percentile_filter_.GetPercentileValue();
+}
+
+template <typename T>
+void MovingMedianFilter<T>::Reset() {
+  percentile_filter_.Reset();
+  samples_.clear();
+  samples_stored_ = 0;
 }
 
 }  // namespace webrtc

@@ -17,26 +17,6 @@ const uint32_t kOneMsInNtpFrac = 4294967;
 const uint32_t kTimestampTicksPerMs = 90;
 }  // namespace
 
-TEST(WrapAroundTests, NoWrap) {
-  EXPECT_EQ(0, CheckForWrapArounds(0xFFFFFFFF, 0xFFFFFFFE));
-  EXPECT_EQ(0, CheckForWrapArounds(1, 0));
-  EXPECT_EQ(0, CheckForWrapArounds(0x00010000, 0x0000FFFF));
-}
-
-TEST(WrapAroundTests, ForwardWrap) {
-  EXPECT_EQ(1, CheckForWrapArounds(0, 0xFFFFFFFF));
-  EXPECT_EQ(1, CheckForWrapArounds(0, 0xFFFF0000));
-  EXPECT_EQ(1, CheckForWrapArounds(0x0000FFFF, 0xFFFFFFFF));
-  EXPECT_EQ(1, CheckForWrapArounds(0x0000FFFF, 0xFFFF0000));
-}
-
-TEST(WrapAroundTests, BackwardWrap) {
-  EXPECT_EQ(-1, CheckForWrapArounds(0xFFFFFFFF, 0));
-  EXPECT_EQ(-1, CheckForWrapArounds(0xFFFF0000, 0));
-  EXPECT_EQ(-1, CheckForWrapArounds(0xFFFFFFFF, 0x0000FFFF));
-  EXPECT_EQ(-1, CheckForWrapArounds(0xFFFF0000, 0x0000FFFF));
-}
-
 TEST(WrapAroundTests, OldRtcpWrapped_OldRtpTimestamp) {
   RtpToNtpEstimator estimator;
   bool new_sr;
@@ -47,8 +27,29 @@ TEST(WrapAroundTests, OldRtcpWrapped_OldRtpTimestamp) {
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   ntp_frac += kOneMsInNtpFrac;
   timestamp -= kTimestampTicksPerMs;
+  // No wraparound will be detected, since we are not allowed to wrap below 0,
+  // but there will be huge rtp timestamp jump, e.g. old_timestamp = 0,
+  // new_timestamp = 4294967295, which should be detected.
+  EXPECT_FALSE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+}
+
+TEST(WrapAroundTests, OldRtcpWrapped_OldRtpTimestamp_Wraparound_Detected) {
+  RtpToNtpEstimator estimator;
+  bool new_sr;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 1;
+  uint32_t timestamp = 0xFFFFFFFE;
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  ntp_frac += 2 * kOneMsInNtpFrac;
+  timestamp += 2 * kTimestampTicksPerMs;
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp -= kTimestampTicksPerMs;
   // Expected to fail since the older RTCP has a smaller RTP timestamp than the
-  // newer (old:0, new:4294967206).
+  // newer (old:10, new:4294967206).
   EXPECT_FALSE(
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
 }
@@ -106,7 +107,7 @@ TEST(WrapAroundTests, OldRtp_RtcpsWrapped) {
   bool new_sr;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0;
+  uint32_t timestamp = 0xFFFFFFFF;
   EXPECT_TRUE(
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   ntp_frac += kOneMsInNtpFrac;
@@ -114,7 +115,7 @@ TEST(WrapAroundTests, OldRtp_RtcpsWrapped) {
   EXPECT_TRUE(
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   timestamp -= 2 * kTimestampTicksPerMs;
-  int64_t timestamp_ms = -1;
+  int64_t timestamp_ms = 0xFFFFFFFF;
   EXPECT_FALSE(estimator.Estimate(timestamp, &timestamp_ms));
 }
 
@@ -265,15 +266,15 @@ TEST(UpdateRtcpMeasurementTests, VerifyParameters) {
   EXPECT_TRUE(
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_TRUE(new_sr);
-  EXPECT_FALSE(estimator.params().calculated);
+  EXPECT_FALSE(estimator.params());
   // Add second report, parameters should be calculated.
   ntp_frac += kOneMsInNtpFrac;
   timestamp += kTimestampTicksPerMs;
   EXPECT_TRUE(
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(estimator.params().calculated);
-  EXPECT_DOUBLE_EQ(90.0, estimator.params().frequency_khz);
-  EXPECT_NE(0.0, estimator.params().offset_ms);
+  EXPECT_TRUE(estimator.params());
+  EXPECT_DOUBLE_EQ(90.0, estimator.params()->frequency_khz);
+  EXPECT_NE(0.0, estimator.params()->offset_ms);
 }
 
 TEST(RtpToNtpTests, FailsForNoParameters) {
@@ -286,7 +287,7 @@ TEST(RtpToNtpTests, FailsForNoParameters) {
       estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_TRUE(new_sr);
   // Parameters are not calculated, conversion of RTP to NTP time should fail.
-  EXPECT_FALSE(estimator.params().calculated);
+  EXPECT_FALSE(estimator.params());
   int64_t timestamp_ms = -1;
   EXPECT_FALSE(estimator.Estimate(timestamp, &timestamp_ms));
 }

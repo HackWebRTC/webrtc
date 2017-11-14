@@ -147,7 +147,7 @@ bool RtpStreamsSynchronizer::GetStreamSyncOffsetInMs(
     latest_video_ntp += time_to_render_ms;
 
   *stream_offset_ms = latest_audio_ntp - latest_video_ntp;
-  *estimated_freq_khz = video_measurement_.rtp_to_ntp.params().frequency_khz;
+  *estimated_freq_khz = video_measurement_.rtp_to_ntp.params()->frequency_khz;
   return true;
 }
 

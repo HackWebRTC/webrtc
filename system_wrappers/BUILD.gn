@@ -51,6 +51,8 @@ rtc_static_library("system_wrappers") {
   libs = []
   deps = [
     "..:webrtc_common",
+    "../api:optional",
+    "../modules:module_api_public",
   ]
   public_deps = [
     ":cpu_features_api",
