@@ -183,7 +183,9 @@ VCMEncodedFrameCallback::VCMEncodedFrameCallback(
       media_opt_(media_opt),
       framerate_(1),
       last_timing_frame_time_ms_(-1),
-      timing_frames_thresholds_({-1, 0}) {
+      timing_frames_thresholds_({-1, 0}),
+      reordered_frames_logged_messages_(0),
+      stalled_encoder_logged_messages_(0) {
   rtc::Optional<AlrDetector::AlrExperimentSettings> experiment_settings =
       AlrDetector::ParseAlrSettingsFromFieldTrial(
           AlrDetector::kStrictPacingAndProbingExperimentName);
@@ -237,8 +239,15 @@ void VCMEncodedFrameCallback::OnEncodeStarted(int64_t capture_time_ms,
     return;
   if (timing_frames_info_[simulcast_svc_idx].encode_start_list.size() ==
       kMaxEncodeStartTimeListSize) {
-    RTC_LOG(LS_WARNING) << "Too many frames in the encode_start_list."
-                           " Did encoder stall?";
+    ++stalled_encoder_logged_messages_;
+    if (stalled_encoder_logged_messages_ <= 100) {
+      RTC_LOG(LS_WARNING) << "Too many frames in the encode_start_list."
+                             " Did encoder stall?";
+      if (stalled_encoder_logged_messages_ == 100) {
+        RTC_LOG(LS_WARNING) << "Too many log messages. Further stalled encoder"
+                               "warnings will not be printed.";
+      }
+    }
     post_encode_callback_->OnDroppedFrame(DropReason::kDroppedByEncoder);
     timing_frames_info_[simulcast_svc_idx].encode_start_list.pop_front();
   }
@@ -292,8 +301,16 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
             encode_start_list->front().encode_start_time_ms);
         encode_start_list->pop_front();
       } else {
-        RTC_LOG(LS_WARNING) << "Frame with no encode started time recordings. "
-                               "Encoder may be reordering frames.";
+        ++reordered_frames_logged_messages_;
+        if (reordered_frames_logged_messages_ <= 100) {
+          RTC_LOG(LS_WARNING)
+              << "Frame with no encode started time recordings. "
+                 "Encoder may be reordering frames.";
+          if (reordered_frames_logged_messages_ == 100) {
+            RTC_LOG(LS_WARNING) << "Too many log messages. Further frames "
+                                   "reordering warnings will not be printed.";
+          }
+        }
       }
 
       size_t target_bitrate =
