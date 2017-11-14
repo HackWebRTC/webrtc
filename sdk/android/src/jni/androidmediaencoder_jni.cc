@@ -18,9 +18,6 @@
 #include <string>
 #include <utility>
 
-#include "third_party/libyuv/include/libyuv/convert.h"
-#include "third_party/libyuv/include/libyuv/convert_from.h"
-#include "third_party/libyuv/include/libyuv/video_common.h"
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_bitstream_parser.h"
@@ -43,8 +40,11 @@
 #include "sdk/android/src/jni/androidmediacodeccommon.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/native_handle_impl.h"
+#include "sdk/android/src/jni/videoframe.h"
 #include "system_wrappers/include/field_trial.h"
+#include "third_party/libyuv/include/libyuv/convert.h"
+#include "third_party/libyuv/include/libyuv/convert_from.h"
+#include "third_party/libyuv/include/libyuv/video_common.h"
 
 using rtc::Bind;
 using rtc::Thread;
@@ -230,7 +230,6 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   jfieldID j_info_is_key_frame_field_;
   jfieldID j_info_presentation_timestamp_us_field_;
 
-  const JavaVideoFrameFactory video_frame_factory_;
   ScopedGlobalRef<jclass> j_video_frame_texture_buffer_class_;
 
   // State that is valid only between InitEncode() and the next Release().
@@ -342,7 +341,6 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
                                      *j_media_codec_video_encoder_class_,
                                      "<init>",
                                      "()V"))),
-      video_frame_factory_(jni),
       j_video_frame_texture_buffer_class_(
           jni,
           FindClass(jni, "org/webrtc/VideoFrame$TextureBuffer")),
@@ -801,9 +799,9 @@ int32_t MediaCodecVideoEncoder::Encode(
         encode_status = EncodeTexture(jni, key_frame, input_frame);
         break;
       case AndroidVideoFrameBuffer::AndroidType::kJavaBuffer:
-        encode_status = EncodeJavaFrame(
-            jni, key_frame, video_frame_factory_.ToJavaFrame(jni, input_frame),
-            j_input_buffer_index);
+        encode_status =
+            EncodeJavaFrame(jni, key_frame, NativeToJavaFrame(jni, input_frame),
+                            j_input_buffer_index);
         break;
       default:
         RTC_NOTREACHED();

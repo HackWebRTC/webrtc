@@ -14,7 +14,7 @@
 #include "media/base/videosinkinterface.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/native_handle_impl.h"
+#include "sdk/android/src/jni/videoframe.h"
 
 namespace webrtc {
 namespace jni {

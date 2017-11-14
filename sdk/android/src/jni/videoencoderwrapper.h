@@ -21,7 +21,7 @@
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/task_queue.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/native_handle_impl.h"
+#include "sdk/android/src/jni/videoframe.h"
 
 namespace webrtc {
 namespace jni {
@@ -95,7 +95,6 @@ class VideoEncoderWrapper : public VideoEncoder {
   std::string implementation_name_;
 
   rtc::TaskQueue* encoder_queue_;
-  JavaVideoFrameFactory video_frame_factory_;
   std::deque<FrameExtraInfo> frame_extra_infos_;
   EncodedImageCallback* callback_;
   bool initialized_;

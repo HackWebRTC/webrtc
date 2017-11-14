@@ -17,7 +17,7 @@
 #include "api/video_codecs/video_decoder.h"
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/native_handle_impl.h"
+#include "sdk/android/src/jni/videoframe.h"
 
 namespace webrtc {
 namespace jni {
@@ -78,7 +78,6 @@ class VideoDecoderWrapper : public VideoDecoder {
   int32_t number_of_cores_;
 
   bool initialized_;
-  AndroidVideoBufferFactory android_video_buffer_factory_;
   std::deque<FrameExtraInfo> frame_extra_infos_;
   bool qp_parsing_enabled_;
   H264BitstreamParser h264_bitstream_parser_;

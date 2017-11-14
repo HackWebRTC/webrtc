@@ -20,8 +20,8 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/timestampaligner.h"
-#include "sdk/android/src/jni/native_handle_impl.h"
 #include "sdk/android/src/jni/surfacetexturehelper_jni.h"
+#include "sdk/android/src/jni/videoframe.h"
 
 namespace webrtc {
 namespace jni {
@@ -84,7 +84,6 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   NV12ToI420Scaler nv12toi420_scaler_;
   I420BufferPool buffer_pool_;
   rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper_;
-  AndroidVideoBufferFactory video_buffer_factory_;
   const bool is_screencast_;
 
   jmethodID j_crop_and_scale_id_;

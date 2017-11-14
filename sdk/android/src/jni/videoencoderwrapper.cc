@@ -35,8 +35,7 @@ VideoEncoderWrapper::VideoEncoderWrapper(JNIEnv* jni, jobject j_encoder)
     : encoder_(jni, j_encoder),
       frame_type_class_(jni,
                         GetClass(jni, "org/webrtc/EncodedImage$FrameType")),
-      int_array_class_(jni, jni->FindClass("[I")),
-      video_frame_factory_(jni) {
+      int_array_class_(jni, jni->FindClass("[I")) {
   implementation_name_ = GetImplementationName(jni);
 
   initialized_ = false;
@@ -137,8 +136,7 @@ int32_t VideoEncoderWrapper::Encode(
   frame_extra_infos_.push_back(info);
 
   jobject ret = Java_VideoEncoder_encode(
-      jni, *encoder_, video_frame_factory_.ToJavaFrame(jni, frame),
-      encode_info);
+      jni, *encoder_, NativeToJavaFrame(jni, frame), encode_info);
   return HandleReturnCode(jni, ret);
 }
 

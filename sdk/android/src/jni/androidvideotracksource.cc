@@ -33,7 +33,6 @@ AndroidVideoTrackSource::AndroidVideoTrackSource(
       surface_texture_helper_(new rtc::RefCountedObject<SurfaceTextureHelper>(
           jni,
           j_surface_texture_helper)),
-      video_buffer_factory_(jni),
       is_screencast_(is_screencast) {
   RTC_LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
   camera_thread_checker_.DetachFromThread();
@@ -189,7 +188,7 @@ void AndroidVideoTrackSource::OnFrameCaptured(JNIEnv* jni,
       crop_height, adapted_width, adapted_height);
 
   rtc::scoped_refptr<VideoFrameBuffer> buffer =
-      video_buffer_factory_.WrapBuffer(jni, j_adapted_video_frame_buffer);
+      AndroidVideoBuffer::Adopt(jni, j_adapted_video_frame_buffer);
 
   // AdaptedVideoTrackSource handles applying rotation for I420 frames.
   if (apply_rotation() && rotation != kVideoRotation_0) {

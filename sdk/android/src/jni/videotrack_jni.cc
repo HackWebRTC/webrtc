@@ -15,7 +15,7 @@
 #include "sdk/android/generated_video_jni/jni/VideoSink_jni.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/native_handle_impl.h"
+#include "sdk/android/src/jni/videoframe.h"
 
 namespace webrtc {
 namespace jni {
@@ -30,18 +30,16 @@ class VideoSinkWrapper : public rtc::VideoSinkInterface<VideoFrame> {
  private:
   void OnFrame(const VideoFrame& frame) override;
 
-  const JavaVideoFrameFactory java_video_frame_factory_;
   const ScopedGlobalRef<jobject> j_sink_;
 };
 
 VideoSinkWrapper::VideoSinkWrapper(JNIEnv* jni, jobject j_sink)
-    : java_video_frame_factory_(jni), j_sink_(jni, j_sink) {}
+    : j_sink_(jni, j_sink) {}
 
 void VideoSinkWrapper::OnFrame(const VideoFrame& frame) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
-  Java_VideoSink_onFrame(jni, *j_sink_,
-                         java_video_frame_factory_.ToJavaFrame(jni, frame));
+  Java_VideoSink_onFrame(jni, *j_sink_, NativeToJavaFrame(jni, frame));
 }
 
 }  // namespace

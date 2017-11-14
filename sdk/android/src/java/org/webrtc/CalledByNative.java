@@ -21,4 +21,9 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
-@interface CalledByNative {}
+@interface CalledByNative {
+  /*
+   *  If present, tells which inner class the method belongs to.
+   */
+  public String value() default "";
+}

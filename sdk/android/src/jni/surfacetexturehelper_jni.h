@@ -17,7 +17,7 @@
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/native_handle_impl.h"
+#include "sdk/android/src/jni/videoframe.h"
 
 namespace webrtc {
 namespace jni {

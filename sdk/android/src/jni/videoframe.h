@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_
-#define SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_
+#ifndef SDK_ANDROID_SRC_JNI_VIDEOFRAME_H_
+#define SDK_ANDROID_SRC_JNI_VIDEOFRAME_H_
 
 #include <jni.h>
 
@@ -104,34 +104,29 @@ class AndroidTextureBuffer : public AndroidVideoFrameBuffer {
 
 class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
  public:
-  // Wraps an existing reference to a Java VideoBuffer. Retain will not be
-  // called but release will be called when the C++ object is destroyed.
-  static rtc::scoped_refptr<AndroidVideoBuffer> WrapReference(
+  // Creates a native VideoFrameBuffer from a Java VideoFrame.Buffer.
+  static rtc::scoped_refptr<AndroidVideoBuffer> Create(
       JNIEnv* jni,
-      jmethodID j_release_id,
-      int width,
-      int height,
       jobject j_video_frame_buffer);
 
-  AndroidVideoBuffer(JNIEnv* jni,
-                     jmethodID j_retain_id,
-                     jmethodID j_release_id,
-                     int width,
-                     int height,
-                     jobject j_video_frame_buffer);
-  // Should not be called directly. Wraps a reference. Use
-  // AndroidVideoBuffer::WrapReference instead for clarity.
-  AndroidVideoBuffer(JNIEnv* jni,
-                     jmethodID j_release_id,
-                     int width,
-                     int height,
-                     jobject j_video_frame_buffer);
+  // Similar to the Create() above, but adopts and takes ownership of the Java
+  // VideoFrame.Buffer. I.e. retain() will not be called, but release() will be
+  // called when the returned AndroidVideoBuffer is destroyed.
+  static rtc::scoped_refptr<AndroidVideoBuffer> Adopt(
+      JNIEnv* jni,
+      jobject j_video_frame_buffer);
+
   ~AndroidVideoBuffer() override;
 
   jobject video_frame_buffer() const;
 
   // Returns an instance of VideoRenderer.I420Frame (deprecated)
   jobject ToJavaI420Frame(JNIEnv* jni, int rotation);
+
+ protected:
+  // Should not be called directly. Adopts the Java VideoFrame.Buffer. Use
+  // Create() or Adopt() instead for clarity.
+  AndroidVideoBuffer(JNIEnv* jni, jobject j_video_frame_buffer);
 
  private:
   Type type() const override;
@@ -142,56 +137,19 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
 
   AndroidType android_type() override { return AndroidType::kJavaBuffer; }
 
-  const jmethodID j_release_id_;
   const int width_;
   const int height_;
   // Holds a VideoFrame.Buffer.
   const ScopedGlobalRef<jobject> j_video_frame_buffer_;
 };
 
-class AndroidVideoBufferFactory {
- public:
-  explicit AndroidVideoBufferFactory(JNIEnv* jni);
+VideoFrame JavaToNativeFrame(JNIEnv* jni,
+                             jobject j_video_frame,
+                             uint32_t timestamp_rtp);
 
-  VideoFrame CreateFrame(JNIEnv* jni,
-                         jobject j_video_frame,
-                         uint32_t timestamp_rtp) const;
-
-  // Wraps a buffer to AndroidVideoBuffer without incrementing the reference
-  // count.
-  rtc::scoped_refptr<AndroidVideoBuffer> WrapBuffer(
-      JNIEnv* jni,
-      jobject j_video_frame_buffer) const;
-
-  rtc::scoped_refptr<AndroidVideoBuffer> CreateBuffer(
-      JNIEnv* jni,
-      jobject j_video_frame_buffer) const;
-
- private:
-  ScopedGlobalRef<jclass> j_video_frame_class_;
-  jmethodID j_get_buffer_id_;
-  jmethodID j_get_rotation_id_;
-  jmethodID j_get_timestamp_ns_id_;
-
-  ScopedGlobalRef<jclass> j_video_frame_buffer_class_;
-  jmethodID j_retain_id_;
-  jmethodID j_release_id_;
-  jmethodID j_get_width_id_;
-  jmethodID j_get_height_id_;
-};
-
-class JavaVideoFrameFactory {
- public:
-  JavaVideoFrameFactory(JNIEnv* jni);
-
-  jobject ToJavaFrame(JNIEnv* jni, const VideoFrame& frame) const;
-
- private:
-  ScopedGlobalRef<jclass> j_video_frame_class_;
-  jmethodID j_video_frame_constructor_id_;
-};
+jobject NativeToJavaFrame(JNIEnv* jni, const VideoFrame& frame);
 
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_
+#endif  // SDK_ANDROID_SRC_JNI_VIDEOFRAME_H_

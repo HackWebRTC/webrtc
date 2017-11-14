@@ -22,8 +22,7 @@ namespace webrtc {
 namespace jni {
 
 VideoDecoderWrapper::VideoDecoderWrapper(JNIEnv* jni, jobject decoder)
-    : android_video_buffer_factory_(jni),
-      decoder_(jni, decoder),
+    : decoder_(jni, decoder),
       encoded_image_class_(jni, FindClass(jni, "org/webrtc/EncodedImage")),
       frame_type_class_(jni,
                         FindClass(jni, "org/webrtc/EncodedImage$FrameType")),
@@ -187,8 +186,8 @@ void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* jni,
     // find a matching timestamp.
   } while (frame_extra_info.capture_time_ns != capture_time_ns);
 
-  VideoFrame frame = android_video_buffer_factory_.CreateFrame(
-      jni, jframe, frame_extra_info.timestamp_rtp);
+  VideoFrame frame =
+      JavaToNativeFrame(jni, jframe, frame_extra_info.timestamp_rtp);
 
   rtc::Optional<int32_t> decoding_time_ms;
   if (jdecode_time_ms != nullptr) {
