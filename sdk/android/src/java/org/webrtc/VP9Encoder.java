@@ -15,5 +15,7 @@ class VP9Encoder extends WrappedNativeVideoEncoder {
     super(createNativeEncoder());
   }
 
+  static native boolean isSupported();
+
   private static native long createNativeEncoder();
 }

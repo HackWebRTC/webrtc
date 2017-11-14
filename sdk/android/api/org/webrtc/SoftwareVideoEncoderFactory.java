@@ -10,7 +10,9 @@
 
 package org.webrtc;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class SoftwareVideoEncoderFactory implements VideoEncoderFactory {
   @Override
@@ -18,7 +20,7 @@ public class SoftwareVideoEncoderFactory implements VideoEncoderFactory {
     if (info.name.equalsIgnoreCase("VP8")) {
       return new VP8Encoder();
     }
-    if (info.name.equalsIgnoreCase("VP9")) {
+    if (info.name.equalsIgnoreCase("VP9") && VP9Encoder.isSupported()) {
       return new VP9Encoder();
     }
 
@@ -30,10 +32,14 @@ public class SoftwareVideoEncoderFactory implements VideoEncoderFactory {
     return supportedCodecs();
   }
 
-  public static VideoCodecInfo[] supportedCodecs() {
-    VideoCodecInfo vp8Info = new VideoCodecInfo("VP8", new HashMap<>());
-    VideoCodecInfo vp9Info = new VideoCodecInfo("VP9", new HashMap<>());
+  static VideoCodecInfo[] supportedCodecs() {
+    List<VideoCodecInfo> codecs = new ArrayList<VideoCodecInfo>();
 
-    return new VideoCodecInfo[] {vp8Info, vp9Info};
+    codecs.add(new VideoCodecInfo("VP8", new HashMap<>()));
+    if (VP9Encoder.isSupported()) {
+      codecs.add(new VideoCodecInfo("VP9", new HashMap<>()));
+    }
+
+    return codecs.toArray(new VideoCodecInfo[codecs.size()]);
   }
 }

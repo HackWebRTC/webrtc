@@ -23,11 +23,25 @@ JNI_FUNCTION_DECLARATION(jlong,
   return jlongFromPointer(VP9Encoder::Create().release());
 }
 
+JNI_FUNCTION_DECLARATION(jboolean,
+                         VP9Encoder_isSupported,
+                         JNIEnv* jni,
+                         jclass) {
+  return VP9Encoder::IsSupported();
+}
+
 JNI_FUNCTION_DECLARATION(jlong,
                          VP9Decoder_createNativeDecoder,
                          JNIEnv* jni,
                          jclass) {
   return jlongFromPointer(VP9Decoder::Create().release());
+}
+
+JNI_FUNCTION_DECLARATION(jboolean,
+                         VP9Decoder_isSupported,
+                         JNIEnv* jni,
+                         jclass) {
+  return VP9Decoder::IsSupported();
 }
 
 }  // namespace jni

@@ -16,7 +16,7 @@ public class SoftwareVideoDecoderFactory implements VideoDecoderFactory {
     if (codecType.equalsIgnoreCase("VP8")) {
       return new VP8Decoder();
     }
-    if (codecType.equalsIgnoreCase("VP9")) {
+    if (codecType.equalsIgnoreCase("VP9") && VP9Decoder.isSupported()) {
       return new VP9Decoder();
     }
 

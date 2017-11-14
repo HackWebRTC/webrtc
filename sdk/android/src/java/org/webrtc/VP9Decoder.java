@@ -15,5 +15,7 @@ class VP9Decoder extends WrappedNativeVideoDecoder {
     super(createNativeDecoder());
   }
 
+  static native boolean isSupported();
+
   private static native long createNativeDecoder();
 }
