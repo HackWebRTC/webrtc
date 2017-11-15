@@ -135,6 +135,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtc_p2p",
+      "../api:libjingle_peerconnection_api",
       "../api:ortc_api",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",

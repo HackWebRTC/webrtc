@@ -23,12 +23,12 @@
 #include <vector>
 
 #include "api/candidate.h"
+#include "api/cryptoparams.h"
 #include "api/jsepicecandidate.h"
 #include "api/jsepsessiondescription.h"
 // for RtpExtension
 #include "api/rtpparameters.h"
 #include "media/base/codec.h"
-#include "media/base/cryptoparams.h"
 #include "media/base/mediaconstants.h"
 #include "media/base/rtputils.h"
 #include "media/sctp/sctptransportinternal.h"

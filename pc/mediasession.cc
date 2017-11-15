@@ -18,9 +18,9 @@
 #include <unordered_map>
 #include <utility>
 
+#include "api/cryptoparams.h"
 #include "api/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "media/base/cryptoparams.h"
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/mediaconstants.h"
 #include "p2p/base/p2pconstants.h"

@@ -38,6 +38,7 @@ rtc_static_library("libjingle_peerconnection_api") {
   sources = [
     "candidate.cc",
     "candidate.h",
+    "cryptoparams.h",
     "datachannelinterface.h",
     "dtmfsenderinterface.h",
     "jsep.h",
@@ -147,7 +148,6 @@ rtc_source_set("libjingle_logging_api") {
 }
 
 rtc_source_set("ortc_api") {
-  check_includes = false  # TODO(deadbeef): Remove (bugs.webrtc.org/6828)
   sources = [
     "ortc/mediadescription.cc",
     "ortc/mediadescription.h",
@@ -167,8 +167,11 @@ rtc_source_set("ortc_api") {
   # TODO(deadbeef): Create a separate target for the common things ORTC and
   # PeerConnection code shares, so that ortc_api can depend on that instead of
   # libjingle_peerconnection_api.
-  public_deps = [
+  deps = [
     ":libjingle_peerconnection_api",
+    ":optional",
+    "..:webrtc_common",
+    "../rtc_base:rtc_base",
   ]
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

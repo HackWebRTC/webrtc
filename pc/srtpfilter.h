@@ -17,8 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "api/cryptoparams.h"
 #include "api/optional.h"
-#include "media/base/cryptoparams.h"
 #include "p2p/base/sessiondescription.h"
 #include "rtc_base/basictypes.h"
 #include "rtc_base/buffer.h"

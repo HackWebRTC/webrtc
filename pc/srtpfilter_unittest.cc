@@ -12,7 +12,7 @@
 
 #include "pc/srtpfilter.h"
 
-#include "media/base/cryptoparams.h"
+#include "api/cryptoparams.h"
 #include "rtc_base/gunit.h"
 
 using cricket::CryptoParams;

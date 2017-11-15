@@ -76,6 +76,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":ortc",
+      "../api:libjingle_peerconnection_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
       "../api/audio_codecs:builtin_audio_encoder_factory",
       "../media:rtc_media_tests_utils",

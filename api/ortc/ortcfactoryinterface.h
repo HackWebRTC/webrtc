@@ -27,7 +27,6 @@
 #include "api/ortc/udptransportinterface.h"
 #include "api/rtcerror.h"
 #include "api/rtpparameters.h"
-#include "p2p/base/packetsocketfactory.h"
 #include "rtc_base/network.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"

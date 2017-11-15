@@ -13,7 +13,7 @@
 
 #include "api/ortc/rtptransportinterface.h"
 #include "api/rtcerror.h"
-#include "media/base/cryptoparams.h"
+#include "api/cryptoparams.h"
 
 namespace webrtc {
 
