@@ -69,7 +69,6 @@ extern const char kMediaProtocolTcpDtlsSctp[];
 
 // Options to control how session descriptions are generated.
 const int kAutoBandwidth = -1;
-const int kBufferedModeDisabled = 0;
 
 // Default RTCP CNAME for unit tests.
 const char kDefaultRtcpCname[] = "DefaultRtcpCname";
@@ -294,11 +293,6 @@ class MediaContentDescription : public ContentDescription {
   void set_partial(bool partial) { partial_ = partial; }
   bool partial() const { return partial_;  }
 
-  void set_buffered_mode_latency(int latency) {
-    buffered_mode_latency_ = latency;
-  }
-  int buffered_mode_latency() const { return buffered_mode_latency_; }
-
   // https://tools.ietf.org/html/rfc4566#section-5.7
   // May be present at the media or session level of SDP. If present at both
   // levels, the media-level attribute overwrites the session-level one.
@@ -322,7 +316,6 @@ class MediaContentDescription : public ContentDescription {
   StreamParamsVec streams_;
   bool conference_mode_ = false;
   bool partial_ = false;
-  int buffered_mode_latency_ = kBufferedModeDisabled;
   MediaContentDirection direction_ = MD_SENDRECV;
   rtc::SocketAddress connection_address_;
 };

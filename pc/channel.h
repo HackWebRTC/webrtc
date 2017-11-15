@@ -415,7 +415,6 @@ class BaseChannel
   std::vector<StreamParams> remote_streams_;
   MediaContentDirection local_content_direction_ = MD_INACTIVE;
   MediaContentDirection remote_content_direction_ = MD_INACTIVE;
-  CandidatePairInterface* selected_candidate_pair_;
 
   // The cached encrypted header extension IDs.
   rtc::Optional<std::vector<int>> catched_send_extension_ids_;

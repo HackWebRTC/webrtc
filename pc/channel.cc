@@ -152,8 +152,7 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
       content_name_(content_name),
       rtcp_mux_required_(rtcp_mux_required),
       srtp_required_(srtp_required),
-      media_channel_(std::move(media_channel)),
-      selected_candidate_pair_(nullptr) {
+      media_channel_(std::move(media_channel)) {
   RTC_DCHECK_RUN_ON(worker_thread_);
   if (srtp_required) {
     auto transport =
@@ -767,13 +766,6 @@ void BaseChannel::ChannelWritable_n() {
 
   RTC_LOG(LS_INFO) << "Channel writable (" << content_name_ << ")"
                    << (was_ever_writable_ ? "" : " for the first time");
-
-  if (selected_candidate_pair_)
-    RTC_LOG(LS_INFO)
-        << "Using "
-        << selected_candidate_pair_->local_candidate().ToSensitiveString()
-        << "->"
-        << selected_candidate_pair_->remote_candidate().ToSensitiveString();
 
   was_ever_writable_ = true;
   MaybeSetupDtlsSrtp_n();
