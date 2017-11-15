@@ -132,12 +132,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   // Delay information and control
   int32_t PlayoutDelay(uint16_t* delayMS) const override;
 
-  // Native sample rate controls (samples/sec)
-  int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) override;
-  int32_t RecordingSampleRate(uint32_t* samplesPerSec) const override;
-  int32_t SetPlayoutSampleRate(const uint32_t samplesPerSec) override;
-  int32_t PlayoutSampleRate(uint32_t* samplesPerSec) const override;
-
   // Mobile device specific functions
   int32_t SetLoudspeakerStatus(bool enable) override;
   int32_t GetLoudspeakerStatus(bool* enabled) const override;

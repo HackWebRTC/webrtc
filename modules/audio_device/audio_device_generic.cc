@@ -13,17 +13,6 @@
 
 namespace webrtc {
 
-int32_t AudioDeviceGeneric::SetRecordingSampleRate(
-    const uint32_t samplesPerSec) {
-  RTC_LOG_F(LS_ERROR) << "Not supported on this platform";
-  return -1;
-}
-
-int32_t AudioDeviceGeneric::SetPlayoutSampleRate(const uint32_t samplesPerSec) {
-  RTC_LOG_F(LS_ERROR) << "Not supported on this platform";
-  return -1;
-}
-
 int32_t AudioDeviceGeneric::SetLoudspeakerStatus(bool enable) {
   RTC_LOG_F(LS_ERROR) << "Not supported on this platform";
   return -1;

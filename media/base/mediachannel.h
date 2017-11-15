@@ -169,8 +169,6 @@ struct AudioOptions {
     SetFrom(&tx_agc_digital_compression_gain,
             change.tx_agc_digital_compression_gain);
     SetFrom(&tx_agc_limiter, change.tx_agc_limiter);
-    SetFrom(&recording_sample_rate, change.recording_sample_rate);
-    SetFrom(&playout_sample_rate, change.playout_sample_rate);
     SetFrom(&combined_audio_video_bwe, change.combined_audio_video_bwe);
     SetFrom(&audio_network_adaptor, change.audio_network_adaptor);
     SetFrom(&audio_network_adaptor_config, change.audio_network_adaptor_config);
@@ -202,8 +200,6 @@ struct AudioOptions {
            tx_agc_digital_compression_gain ==
                o.tx_agc_digital_compression_gain &&
            tx_agc_limiter == o.tx_agc_limiter &&
-           recording_sample_rate == o.recording_sample_rate &&
-           playout_sample_rate == o.playout_sample_rate &&
            combined_audio_video_bwe == o.combined_audio_video_bwe &&
            audio_network_adaptor == o.audio_network_adaptor &&
            audio_network_adaptor_config == o.audio_network_adaptor_config &&
@@ -240,8 +236,6 @@ struct AudioOptions {
     ost << ToStringIfSet("tx_agc_digital_compression_gain",
         tx_agc_digital_compression_gain);
     ost << ToStringIfSet("tx_agc_limiter", tx_agc_limiter);
-    ost << ToStringIfSet("recording_sample_rate", recording_sample_rate);
-    ost << ToStringIfSet("playout_sample_rate", playout_sample_rate);
     ost << ToStringIfSet("combined_audio_video_bwe", combined_audio_video_bwe);
     ost << ToStringIfSet("audio_network_adaptor", audio_network_adaptor);
     // The adaptor config is a serialized proto buffer and therefore not human
@@ -284,8 +278,6 @@ struct AudioOptions {
   rtc::Optional<uint16_t> tx_agc_target_dbov;
   rtc::Optional<uint16_t> tx_agc_digital_compression_gain;
   rtc::Optional<bool> tx_agc_limiter;
-  rtc::Optional<uint32_t> recording_sample_rate;
-  rtc::Optional<uint32_t> playout_sample_rate;
   // Enable combined audio+bandwidth BWE.
   // TODO(pthatcher): This flag is set from the
   // "googCombinedAudioVideoBwe", but not used anywhere. So delete it,

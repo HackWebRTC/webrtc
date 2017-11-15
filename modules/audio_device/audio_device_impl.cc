@@ -823,54 +823,6 @@ int32_t AudioDeviceModuleImpl::PlayoutDelay(uint16_t* delayMS) const {
   return 0;
 }
 
-int32_t AudioDeviceModuleImpl::SetRecordingSampleRate(
-    const uint32_t samplesPerSec) {
-  RTC_LOG(INFO) << __FUNCTION__ << "(" << samplesPerSec << ")";
-  CHECKinitialized_();
-  if (audio_device_->SetRecordingSampleRate(samplesPerSec) != 0) {
-    return -1;
-  }
-  return 0;
-}
-
-int32_t AudioDeviceModuleImpl::RecordingSampleRate(
-    uint32_t* samplesPerSec) const {
-  RTC_LOG(INFO) << __FUNCTION__;
-  CHECKinitialized_();
-  int32_t sampleRate = audio_device_buffer_.RecordingSampleRate();
-  if (sampleRate == -1) {
-    RTC_LOG(LERROR) << "failed to retrieve the sample rate";
-    return -1;
-  }
-  *samplesPerSec = sampleRate;
-  RTC_LOG(INFO) << "output: " << *samplesPerSec;
-  return 0;
-}
-
-int32_t AudioDeviceModuleImpl::SetPlayoutSampleRate(
-    const uint32_t samplesPerSec) {
-  RTC_LOG(INFO) << __FUNCTION__ << "(" << samplesPerSec << ")";
-  CHECKinitialized_();
-  if (audio_device_->SetPlayoutSampleRate(samplesPerSec) != 0) {
-    return -1;
-  }
-  return 0;
-}
-
-int32_t AudioDeviceModuleImpl::PlayoutSampleRate(
-    uint32_t* samplesPerSec) const {
-  RTC_LOG(INFO) << __FUNCTION__;
-  CHECKinitialized_();
-  int32_t sampleRate = audio_device_buffer_.PlayoutSampleRate();
-  if (sampleRate == -1) {
-    RTC_LOG(LERROR) << "failed to retrieve the sample rate";
-    return -1;
-  }
-  *samplesPerSec = sampleRate;
-  RTC_LOG(INFO) << "output: " << *samplesPerSec;
-  return 0;
-}
-
 int32_t AudioDeviceModuleImpl::SetLoudspeakerStatus(bool enable) {
   RTC_LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
   CHECKinitialized_();

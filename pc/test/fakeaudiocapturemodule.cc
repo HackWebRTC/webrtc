@@ -394,30 +394,6 @@ int32_t FakeAudioCaptureModule::PlayoutDelay(uint16_t* delay_ms) const {
   return 0;
 }
 
-int32_t FakeAudioCaptureModule::SetRecordingSampleRate(
-    const uint32_t /*samples_per_sec*/) {
-  RTC_NOTREACHED();
-  return 0;
-}
-
-int32_t FakeAudioCaptureModule::RecordingSampleRate(
-    uint32_t* /*samples_per_sec*/) const {
-  RTC_NOTREACHED();
-  return 0;
-}
-
-int32_t FakeAudioCaptureModule::SetPlayoutSampleRate(
-    const uint32_t /*samples_per_sec*/) {
-  RTC_NOTREACHED();
-  return 0;
-}
-
-int32_t FakeAudioCaptureModule::PlayoutSampleRate(
-    uint32_t* /*samples_per_sec*/) const {
-  RTC_NOTREACHED();
-  return 0;
-}
-
 int32_t FakeAudioCaptureModule::SetLoudspeakerStatus(bool /*enable*/) {
   RTC_NOTREACHED();
   return 0;

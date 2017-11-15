@@ -385,12 +385,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     input_.AttachAudioBuffer(audioBuffer);
   }
 
-  // TODO(henrika): remove
-  int32_t SetPlayoutSampleRate(const uint32_t samplesPerSec) override {
-    FATAL() << "Should never be called";
-    return -1;
-  }
-
   int32_t SetLoudspeakerStatus(bool enable) override {
     FATAL() << "Should never be called";
     return -1;

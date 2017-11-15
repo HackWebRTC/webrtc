@@ -244,18 +244,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   int32_t PlayoutDelay(uint16_t* delay_ms) const override {
     return impl_->PlayoutDelay(delay_ms);
   }
-  int32_t SetRecordingSampleRate(const uint32_t samples_per_sec) override {
-    return impl_->SetRecordingSampleRate(samples_per_sec);
-  }
-  int32_t RecordingSampleRate(uint32_t* samples_per_sec) const override {
-    return impl_->RecordingSampleRate(samples_per_sec);
-  }
-  int32_t SetPlayoutSampleRate(const uint32_t samples_per_sec) override {
-    return impl_->SetPlayoutSampleRate(samples_per_sec);
-  }
-  int32_t PlayoutSampleRate(uint32_t* samples_per_sec) const override {
-    return impl_->PlayoutSampleRate(samples_per_sec);
-  }
   int32_t SetLoudspeakerStatus(bool enable) override {
     return impl_->SetLoudspeakerStatus(enable);
   }

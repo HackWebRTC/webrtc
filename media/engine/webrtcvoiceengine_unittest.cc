@@ -2238,16 +2238,6 @@ TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
   SetSendParameters(send_parameters_);
 }
 
-TEST_F(WebRtcVoiceEngineTestFake, SampleRatesViaOptions) {
-  EXPECT_TRUE(SetupSendStream());
-  EXPECT_CALL(adm_, SetRecordingSampleRate(48000)).WillOnce(Return(0));
-  EXPECT_CALL(adm_, SetPlayoutSampleRate(44100)).WillOnce(Return(0));
-  send_parameters_.options.recording_sample_rate =
-      rtc::Optional<uint32_t>(48000);
-  send_parameters_.options.playout_sample_rate = rtc::Optional<uint32_t>(44100);
-  SetSendParameters(send_parameters_);
-}
-
 TEST_F(WebRtcVoiceEngineTestFake, SetAudioNetworkAdaptorViaOptions) {
   EXPECT_TRUE(SetupSendStream());
   send_parameters_.options.audio_network_adaptor = rtc::Optional<bool>(true);

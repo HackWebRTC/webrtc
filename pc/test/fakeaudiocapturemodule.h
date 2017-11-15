@@ -128,11 +128,6 @@ class FakeAudioCaptureModule
 
   int32_t PlayoutDelay(uint16_t* delay_ms) const override;
 
-  int32_t SetRecordingSampleRate(const uint32_t samples_per_sec) override;
-  int32_t RecordingSampleRate(uint32_t* samples_per_sec) const override;
-  int32_t SetPlayoutSampleRate(const uint32_t samples_per_sec) override;
-  int32_t PlayoutSampleRate(uint32_t* samples_per_sec) const override;
-
   int32_t SetLoudspeakerStatus(bool enable) override;
   int32_t GetLoudspeakerStatus(bool* enabled) const override;
   bool BuiltInAECIsAvailable() const override { return false; }

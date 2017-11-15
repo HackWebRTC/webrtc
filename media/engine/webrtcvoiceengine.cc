@@ -625,24 +625,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   apm()->SetExtraOptions(config);
   apm()->ApplyConfig(apm_config);
-
-  if (options.recording_sample_rate) {
-    RTC_LOG(LS_INFO) << "Recording sample rate is "
-                     << *options.recording_sample_rate;
-    if (adm()->SetRecordingSampleRate(*options.recording_sample_rate)) {
-      RTC_LOG(LS_WARNING) << "SetRecordingSampleRate("
-                          << *options.recording_sample_rate << ") failed.";
-    }
-  }
-
-  if (options.playout_sample_rate) {
-    RTC_LOG(LS_INFO) << "Playout sample rate is "
-                     << *options.playout_sample_rate;
-    if (adm()->SetPlayoutSampleRate(*options.playout_sample_rate)) {
-      RTC_LOG(LS_WARNING) << "SetPlayoutSampleRate("
-                          << *options.playout_sample_rate << ") failed.";
-    }
-  }
   return true;
 }
 

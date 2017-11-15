@@ -103,18 +103,6 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
     *delayMS = 0;
     return 0;
   }
-  int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) override {
-    return 0;
-  }
-  int32_t RecordingSampleRate(uint32_t* samplesPerSec) const override {
-    return 0;
-  }
-  int32_t SetPlayoutSampleRate(const uint32_t samplesPerSec) override {
-    return 0;
-  }
-  int32_t PlayoutSampleRate(uint32_t* samplesPerSec) const override {
-    return 0;
-  }
   int32_t SetLoudspeakerStatus(bool enable) override { return 0; }
   int32_t GetLoudspeakerStatus(bool* enabled) const override { return 0; }
   bool BuiltInAECIsAvailable() const override { return false; }
