@@ -9,18 +9,32 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <WebRTC/RTCVideoCapturer.h>
+
+@class RTCFileVideoCapturer;
 
 /**
- * RTCVideoCapturer that reads buffers from file.
- *
- * Per design, the file capturer can only be run once and once stopped it cannot run again.
- * To run another file capture session, create new instance of the class.
+ * Controls a file capturer.
  */
 NS_CLASS_AVAILABLE_IOS(10)
-@interface RTCFileVideoCapturer : RTCVideoCapturer
+@interface ARDFileCaptureController : NSObject
 
-- (void)startCapturingFromFileNamed:(NSString *)nameOfFile;
+/**
+ * Creates instance of the controller.
+ *
+ * @param capturer The capturer to be controlled.
+ */
+- (instancetype)initWithCapturer:(RTCFileVideoCapturer *)capturer;
+
+/**
+ * Starts the file capturer.
+ *
+ * Possible errors produced by the capturer will be logged.
+ */
+- (void)startCapture;
+
+/**
+ * Immediately stops capturer.
+ */
 - (void)stopCapture;
 
 @end
