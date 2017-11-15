@@ -181,9 +181,13 @@ class WebRtcVideoEngineTest : public ::testing::Test {
   }
 
  protected:
+  // Find the index of the codec in the engine with the given name. The codec
+  // must be present.
+  int GetEngineCodecIndex(const std::string& name) const;
+
   // Find the codec in the engine with the given name. The codec must be
   // present.
-  cricket::VideoCodec GetEngineCodec(const std::string& name);
+  cricket::VideoCodec GetEngineCodec(const std::string& name) const;
 
   VideoMediaChannel* SetUpForExternalEncoderFactory();
 
@@ -565,9 +569,10 @@ TEST_F(WebRtcVideoEngineTest, PropagatesInputFrameTimestamp) {
   EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
 }
 
-cricket::VideoCodec WebRtcVideoEngineTest::GetEngineCodec(
-    const std::string& name) {
-  for (const cricket::VideoCodec& engine_codec : engine_.codecs()) {
+int WebRtcVideoEngineTest::GetEngineCodecIndex(const std::string& name) const {
+  const std::vector<cricket::VideoCodec> codecs = engine_.codecs();
+  for (size_t i = 0; i < codecs.size(); ++i) {
+    const cricket::VideoCodec engine_codec = codecs[i];
     if (!CodecNamesEq(name, engine_codec.name))
       continue;
     // The tests only use H264 Constrained Baseline. Make sure we don't return
@@ -580,11 +585,16 @@ cricket::VideoCodec WebRtcVideoEngineTest::GetEngineCodec(
         continue;
       }
     }
-    return engine_codec;
+    return i;
   }
   // This point should never be reached.
   ADD_FAILURE() << "Unrecognized codec name: " << name;
-  return cricket::VideoCodec();
+  return -1;
+}
+
+cricket::VideoCodec WebRtcVideoEngineTest::GetEngineCodec(
+    const std::string& name) const {
+  return engine_.codecs()[GetEngineCodecIndex(name)];
 }
 
 VideoMediaChannel* WebRtcVideoEngineTest::SetUpForExternalEncoderFactory() {
@@ -796,35 +806,39 @@ TEST_F(WebRtcVideoEngineTest,
             std::find_if(codecs_after.begin(), codecs_after.end(), is_flexfec));
 }
 
-// Test that external codecs are added to the end of the supported codec list.
+// Test that external codecs are added after internal SW codecs.
 TEST_F(WebRtcVideoEngineTest, ReportSupportedExternalCodecs) {
-  encoder_factory_->AddSupportedVideoCodecType("FakeExternalCodec");
+  const char* kFakeExternalCodecName = "FakeExternalCodec";
+  encoder_factory_->AddSupportedVideoCodecType(kFakeExternalCodecName);
 
-  std::vector<cricket::VideoCodec> codecs(engine_.codecs());
-  ASSERT_GE(codecs.size(), 2u);
-  cricket::VideoCodec internal_codec = codecs.front();
-  cricket::VideoCodec external_codec = codecs.back();
-
-  // The external codec will appear last in the vector.
-  EXPECT_EQ("VP8", internal_codec.name);
-  EXPECT_EQ("FakeExternalCodec", external_codec.name);
+  // The external codec should appear after the internal codec in the vector.
+  const int vp8_index = GetEngineCodecIndex("VP8");
+  const int fake_external_codec_index =
+      GetEngineCodecIndex(kFakeExternalCodecName);
+  EXPECT_LT(vp8_index, fake_external_codec_index);
 }
 
 // Test that an external codec that was added after the engine was initialized
 // does show up in the codec list after it was added.
 TEST_F(WebRtcVideoEngineTest, ReportSupportedExternalCodecsWithAddedCodec) {
-  // Set up external encoder factory with first codec, and initialize engine.
-  encoder_factory_->AddSupportedVideoCodecType("FakeExternalCodec1");
+  const char* kFakeExternalCodecName1 = "FakeExternalCodec1";
+  const char* kFakeExternalCodecName2 = "FakeExternalCodec2";
 
-  // The first external codec will appear last in the vector.
+  // Set up external encoder factory with first codec, and initialize engine.
+  encoder_factory_->AddSupportedVideoCodecType(kFakeExternalCodecName1);
+
   std::vector<cricket::VideoCodec> codecs_before(engine_.codecs());
-  EXPECT_EQ("FakeExternalCodec1", codecs_before.back().name);
 
   // Add second codec.
-  encoder_factory_->AddSupportedVideoCodecType("FakeExternalCodec2");
+  encoder_factory_->AddSupportedVideoCodecType(kFakeExternalCodecName2);
   std::vector<cricket::VideoCodec> codecs_after(engine_.codecs());
   EXPECT_EQ(codecs_before.size() + 1, codecs_after.size());
-  EXPECT_EQ("FakeExternalCodec2", codecs_after.back().name);
+
+  // Check that both fake codecs are present and that the second fake codec
+  // appears after the first fake codec.
+  const int fake_codec_index1 = GetEngineCodecIndex(kFakeExternalCodecName1);
+  const int fake_codec_index2 = GetEngineCodecIndex(kFakeExternalCodecName2);
+  EXPECT_LT(fake_codec_index1, fake_codec_index2);
 }
 
 TEST_F(WebRtcVideoEngineTest, RegisterExternalDecodersIfSupported) {
@@ -910,10 +924,28 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
 
   // Verify the codecs from the engine.
   const std::vector<VideoCodec> engine_codecs = engine.codecs();
-  // Verify an RTX codec has been added correctly.
-  EXPECT_EQ(2u, engine_codecs.size());
+  // Verify default codecs has been added correctly.
+  EXPECT_EQ(5u, engine_codecs.size());
   EXPECT_EQ("VP8", engine_codecs.at(0).name);
+
+  // RTX codec for VP8.
   EXPECT_EQ("rtx", engine_codecs.at(1).name);
+  int vp8_associated_payload;
+  EXPECT_TRUE(engine_codecs.at(1).GetParam(kCodecParamAssociatedPayloadType,
+                                           &vp8_associated_payload));
+  EXPECT_EQ(vp8_associated_payload, engine_codecs.at(0).id);
+
+  EXPECT_EQ(kRedCodecName, engine_codecs.at(2).name);
+
+  // RTX codec for RED.
+  EXPECT_EQ("rtx", engine_codecs.at(3).name);
+  int red_associated_payload;
+  EXPECT_TRUE(engine_codecs.at(3).GetParam(kCodecParamAssociatedPayloadType,
+                                           &red_associated_payload));
+  EXPECT_EQ(red_associated_payload, engine_codecs.at(2).id);
+
+  EXPECT_EQ(kUlpfecCodecName, engine_codecs.at(4).name);
+
   int associated_payload_type;
   EXPECT_TRUE(engine_codecs.at(1).GetParam(
       cricket::kCodecParamAssociatedPayloadType, &associated_payload_type));
