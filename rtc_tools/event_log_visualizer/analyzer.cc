@@ -11,6 +11,7 @@
 #include "rtc_tools/event_log_visualizer/analyzer.h"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <map>
 #include <sstream>

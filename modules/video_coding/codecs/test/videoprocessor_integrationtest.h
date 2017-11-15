@@ -11,6 +11,7 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_INTEGRATIONTEST_H_
 #define MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_INTEGRATIONTEST_H_
 
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -130,10 +131,11 @@ class VideoProcessorIntegrationTest : public testing::Test {
       return 100 * sum_delta_framesize_mismatch_layer[i] / num_frames_layer[i];
     }
     int BitrateMismatchPercent(float target_kbps) const {
-      return 100 * fabs(kbps - target_kbps) / target_kbps;
+      return 100 * std::fabs(kbps - target_kbps) / target_kbps;
     }
     int BitrateMismatchPercent(int i, float target_kbps_layer) const {
-      return 100 * fabs(kbps_layer[i] - target_kbps_layer) / target_kbps_layer;
+      return 100 * std::fabs(kbps_layer[i] - target_kbps_layer) /
+          target_kbps_layer;
     }
     int num_frames = 0;
     int num_frames_layer[kMaxNumTemporalLayers] = {0};
