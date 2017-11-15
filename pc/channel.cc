@@ -117,8 +117,8 @@ void RtpParametersFromMediaDescription(
     const RtpHeaderExtensions& extensions,
     RtpParameters<Codec>* params) {
   // TODO(pthatcher): Remove this once we're sure no one will give us
-  // a description without codecs (currently a CA_UPDATE with just
-  // streams can).
+  // a description without codecs. Currently the ORTC implementation is relying
+  // on this.
   if (desc->has_codecs()) {
     params->codecs = desc->codecs();
   }
@@ -950,11 +950,6 @@ bool BaseChannel::SetRtpTransportParameters(
     ContentSource src,
     const RtpHeaderExtensions& extensions,
     std::string* error_desc) {
-  if (action == CA_UPDATE) {
-    // These parameters never get changed by a CA_UDPATE.
-    return true;
-  }
-
   std::vector<int> encrypted_extension_ids;
   for (const webrtc::RtpExtension& extension : extensions) {
     if (extension.encrypt) {
@@ -1031,10 +1026,6 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
                             const std::vector<int>& encrypted_extension_ids,
                             std::string* error_desc) {
   TRACE_EVENT0("webrtc", "BaseChannel::SetSrtp_w");
-  if (action == CA_UPDATE) {
-    // no crypto params.
-    return true;
-  }
   bool ret = false;
   bool dtls = false;
   ret = CheckSrtpConfig_n(cryptos, &dtls, error_desc);
@@ -1162,10 +1153,6 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
         UpdateWritableState_n();
       }
       break;
-    case CA_UPDATE:
-      // No RTCP mux info.
-      ret = true;
-      break;
     default:
       break;
   }
@@ -1200,42 +1187,8 @@ bool BaseChannel::RemoveRecvStream_w(uint32_t ssrc) {
 bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
                                        ContentAction action,
                                        std::string* error_desc) {
-  if (!(action == CA_OFFER || action == CA_ANSWER ||
-        action == CA_PRANSWER || action == CA_UPDATE))
+  if (!(action == CA_OFFER || action == CA_ANSWER || action == CA_PRANSWER))
     return false;
-
-  // If this is an update, streams only contain streams that have changed.
-  if (action == CA_UPDATE) {
-    for (StreamParamsVec::const_iterator it = streams.begin();
-         it != streams.end(); ++it) {
-      const StreamParams* existing_stream =
-          GetStreamByIds(local_streams_, it->groupid, it->id);
-      if (!existing_stream && it->has_ssrcs()) {
-        if (media_channel()->AddSendStream(*it)) {
-          local_streams_.push_back(*it);
-          RTC_LOG(LS_INFO) << "Add send stream ssrc: " << it->first_ssrc();
-        } else {
-          std::ostringstream desc;
-          desc << "Failed to add send stream ssrc: " << it->first_ssrc();
-          SafeSetError(desc.str(), error_desc);
-          return false;
-        }
-      } else if (existing_stream && !it->has_ssrcs()) {
-        if (!media_channel()->RemoveSendStream(existing_stream->first_ssrc())) {
-          std::ostringstream desc;
-          desc << "Failed to remove send stream with ssrc "
-               << it->first_ssrc() << ".";
-          SafeSetError(desc.str(), error_desc);
-          return false;
-        }
-        RemoveStreamBySsrc(&local_streams_, existing_stream->first_ssrc());
-      } else {
-        RTC_LOG(LS_WARNING) << "Ignore unsupported stream update";
-      }
-    }
-    return true;
-  }
-  // Else streams are all the streams we want to send.
 
   // Check for streams that have been removed.
   bool ret = true;
@@ -1273,45 +1226,8 @@ bool BaseChannel::UpdateRemoteStreams_w(
     const std::vector<StreamParams>& streams,
     ContentAction action,
     std::string* error_desc) {
-  if (!(action == CA_OFFER || action == CA_ANSWER ||
-        action == CA_PRANSWER || action == CA_UPDATE))
+  if (!(action == CA_OFFER || action == CA_ANSWER || action == CA_PRANSWER))
     return false;
-
-  // If this is an update, streams only contain streams that have changed.
-  if (action == CA_UPDATE) {
-    for (StreamParamsVec::const_iterator it = streams.begin();
-         it != streams.end(); ++it) {
-      const StreamParams* existing_stream =
-          GetStreamByIds(remote_streams_, it->groupid, it->id);
-      if (!existing_stream && it->has_ssrcs()) {
-        if (AddRecvStream_w(*it)) {
-          remote_streams_.push_back(*it);
-          RTC_LOG(LS_INFO) << "Add remote stream ssrc: " << it->first_ssrc();
-        } else {
-          std::ostringstream desc;
-          desc << "Failed to add remote stream ssrc: " << it->first_ssrc();
-          SafeSetError(desc.str(), error_desc);
-          return false;
-        }
-      } else if (existing_stream && !it->has_ssrcs()) {
-        if (!RemoveRecvStream_w(existing_stream->first_ssrc())) {
-          std::ostringstream desc;
-          desc << "Failed to remove remote stream with ssrc "
-               << it->first_ssrc() << ".";
-          SafeSetError(desc.str(), error_desc);
-          return false;
-        }
-        RemoveStreamBySsrc(&remote_streams_, existing_stream->first_ssrc());
-      } else {
-        RTC_LOG(LS_WARNING)
-            << "Ignore unsupported stream update."
-            << " Stream exists? " << (existing_stream != nullptr)
-            << " new stream = " << it->ToString();
-      }
-    }
-    return true;
-  }
-  // Else streams are all the streams we want to receive.
 
   // Check for streams that have been removed.
   bool ret = true;
@@ -2225,9 +2141,8 @@ bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  // If the remote data doesn't have codecs and isn't an update, it
-  // must be empty, so ignore it.
-  if (!data->has_codecs() && action != CA_UPDATE) {
+  // If the remote data doesn't have codecs, it must be empty, so ignore it.
+  if (!data->has_codecs()) {
     return true;
   }
 

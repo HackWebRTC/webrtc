@@ -29,7 +29,6 @@
 using cricket::CA_OFFER;
 using cricket::CA_PRANSWER;
 using cricket::CA_ANSWER;
-using cricket::CA_UPDATE;
 using cricket::DtlsTransportInternal;
 using cricket::FakeVoiceMediaChannel;
 using cricket::StreamParams;
@@ -43,7 +42,6 @@ const cricket::VideoCodec kH264SvcCodec(99, "H264-SVC");
 const cricket::DataCodec kGoogleDataCodec(101, "google-data");
 const uint32_t kSsrc1 = 0x1111;
 const uint32_t kSsrc2 = 0x2222;
-const uint32_t kSsrc3 = 0x3333;
 const int kAudioPts[] = {0, 8};
 const int kVideoPts[] = {97, 99};
 enum class NetworkIsWorker { Yes, No };
@@ -651,35 +649,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_EQ(0, rtcp_mux_activated_callbacks2_);
   }
 
-  // Test that SetRemoteContent properly deals with a content update.
-  void TestSetRemoteContentUpdate() {
-    CreateChannels(0, 0);
-    typename T::Content content;
-    CreateContent(RTCP_MUX | SECURE, kPcmuCodec, kH264Codec, &content);
-    EXPECT_EQ(0U, media_channel1_->codecs().size());
-    EXPECT_TRUE(channel1_->SetLocalContent(&content, CA_OFFER, NULL));
-    EXPECT_TRUE(channel1_->SetRemoteContent(&content, CA_ANSWER, NULL));
-    ASSERT_EQ(1U, media_channel1_->codecs().size());
-    EXPECT_TRUE(CodecMatches(content.codecs()[0],
-                             media_channel1_->codecs()[0]));
-    // Now update with other codecs.
-    typename T::Content update_content;
-    update_content.set_partial(true);
-    CreateContent(0, kIsacCodec, kH264SvcCodec,
-                  &update_content);
-    EXPECT_TRUE(channel1_->SetRemoteContent(&update_content, CA_UPDATE, NULL));
-    ASSERT_EQ(1U, media_channel1_->codecs().size());
-    EXPECT_TRUE(CodecMatches(update_content.codecs()[0],
-                             media_channel1_->codecs()[0]));
-    // Now update without any codecs. This is ignored.
-    typename T::Content empty_content;
-    empty_content.set_partial(true);
-    EXPECT_TRUE(channel1_->SetRemoteContent(&empty_content, CA_UPDATE, NULL));
-    ASSERT_EQ(1U, media_channel1_->codecs().size());
-    EXPECT_TRUE(CodecMatches(update_content.codecs()[0],
-                             media_channel1_->codecs()[0]));
-  }
-
   // Test that Add/RemoveStream properly forward to the media channel.
   void TestStreams() {
     CreateChannels(0, 0);
@@ -690,141 +659,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_EQ(1U, media_channel1_->recv_streams().size());
     EXPECT_TRUE(RemoveStream1(1));
     EXPECT_EQ(0U, media_channel1_->recv_streams().size());
-  }
-
-  // Test that SetLocalContent properly handles adding and removing StreamParams
-  // to the local content description.
-  // This test uses the CA_UPDATE action that don't require a full
-  // MediaContentDescription to do an update.
-  void TestUpdateStreamsInLocalContent() {
-    cricket::StreamParams stream1;
-    stream1.groupid = "group1";
-    stream1.id = "stream1";
-    stream1.ssrcs.push_back(kSsrc1);
-    stream1.cname = "stream1_cname";
-
-    cricket::StreamParams stream2;
-    stream2.groupid = "group2";
-    stream2.id = "stream2";
-    stream2.ssrcs.push_back(kSsrc2);
-    stream2.cname = "stream2_cname";
-
-    cricket::StreamParams stream3;
-    stream3.groupid = "group3";
-    stream3.id = "stream3";
-    stream3.ssrcs.push_back(kSsrc3);
-    stream3.cname = "stream3_cname";
-
-    CreateChannels(0, 0);
-    typename T::Content content1;
-    CreateContent(0, kPcmuCodec, kH264Codec, &content1);
-    content1.AddStream(stream1);
-    EXPECT_EQ(0u, media_channel1_->send_streams().size());
-    EXPECT_TRUE(channel1_->SetLocalContent(&content1, CA_OFFER, NULL));
-
-    ASSERT_EQ(1u, media_channel1_->send_streams().size());
-    EXPECT_EQ(stream1, media_channel1_->send_streams()[0]);
-
-    // Update the local streams by adding another sending stream.
-    // Use a partial updated session description.
-    typename T::Content content2;
-    content2.AddStream(stream2);
-    content2.AddStream(stream3);
-    content2.set_partial(true);
-    EXPECT_TRUE(channel1_->SetLocalContent(&content2, CA_UPDATE, NULL));
-    ASSERT_EQ(3u, media_channel1_->send_streams().size());
-    EXPECT_EQ(stream1, media_channel1_->send_streams()[0]);
-    EXPECT_EQ(stream2, media_channel1_->send_streams()[1]);
-    EXPECT_EQ(stream3, media_channel1_->send_streams()[2]);
-
-    // Update the local streams by removing the first sending stream.
-    // This is done by removing all SSRCS for this particular stream.
-    typename T::Content content3;
-    stream1.ssrcs.clear();
-    content3.AddStream(stream1);
-    content3.set_partial(true);
-    EXPECT_TRUE(channel1_->SetLocalContent(&content3, CA_UPDATE, NULL));
-    ASSERT_EQ(2u, media_channel1_->send_streams().size());
-    EXPECT_EQ(stream2, media_channel1_->send_streams()[0]);
-    EXPECT_EQ(stream3, media_channel1_->send_streams()[1]);
-
-    // Update the local streams with a stream that does not change.
-    // THe update is ignored.
-    typename T::Content content4;
-    content4.AddStream(stream2);
-    content4.set_partial(true);
-    EXPECT_TRUE(channel1_->SetLocalContent(&content4, CA_UPDATE, NULL));
-    ASSERT_EQ(2u, media_channel1_->send_streams().size());
-    EXPECT_EQ(stream2, media_channel1_->send_streams()[0]);
-    EXPECT_EQ(stream3, media_channel1_->send_streams()[1]);
-  }
-
-  // Test that SetRemoteContent properly handles adding and removing
-  // StreamParams to the remote content description.
-  // This test uses the CA_UPDATE action that don't require a full
-  // MediaContentDescription to do an update.
-  void TestUpdateStreamsInRemoteContent() {
-    cricket::StreamParams stream1;
-    stream1.id = "Stream1";
-    stream1.groupid = "1";
-    stream1.ssrcs.push_back(kSsrc1);
-    stream1.cname = "stream1_cname";
-
-    cricket::StreamParams stream2;
-    stream2.id = "Stream2";
-    stream2.groupid = "2";
-    stream2.ssrcs.push_back(kSsrc2);
-    stream2.cname = "stream2_cname";
-
-    cricket::StreamParams stream3;
-    stream3.id = "Stream3";
-    stream3.groupid = "3";
-    stream3.ssrcs.push_back(kSsrc3);
-    stream3.cname = "stream3_cname";
-
-    CreateChannels(0, 0);
-    typename T::Content content1;
-    CreateContent(0, kPcmuCodec, kH264Codec, &content1);
-    content1.AddStream(stream1);
-    EXPECT_EQ(0u, media_channel1_->recv_streams().size());
-    EXPECT_TRUE(channel1_->SetRemoteContent(&content1, CA_OFFER, NULL));
-
-    ASSERT_EQ(1u, media_channel1_->codecs().size());
-    ASSERT_EQ(1u, media_channel1_->recv_streams().size());
-    EXPECT_EQ(stream1, media_channel1_->recv_streams()[0]);
-
-    // Update the remote streams by adding another sending stream.
-    // Use a partial updated session description.
-    typename T::Content content2;
-    content2.AddStream(stream2);
-    content2.AddStream(stream3);
-    content2.set_partial(true);
-    EXPECT_TRUE(channel1_->SetRemoteContent(&content2, CA_UPDATE, NULL));
-    ASSERT_EQ(3u, media_channel1_->recv_streams().size());
-    EXPECT_EQ(stream1, media_channel1_->recv_streams()[0]);
-    EXPECT_EQ(stream2, media_channel1_->recv_streams()[1]);
-    EXPECT_EQ(stream3, media_channel1_->recv_streams()[2]);
-
-    // Update the remote streams by removing the first stream.
-    // This is done by removing all SSRCS for this particular stream.
-    typename T::Content content3;
-    stream1.ssrcs.clear();
-    content3.AddStream(stream1);
-    content3.set_partial(true);
-    EXPECT_TRUE(channel1_->SetRemoteContent(&content3, CA_UPDATE, NULL));
-    ASSERT_EQ(2u, media_channel1_->recv_streams().size());
-    EXPECT_EQ(stream2, media_channel1_->recv_streams()[0]);
-    EXPECT_EQ(stream3, media_channel1_->recv_streams()[1]);
-
-    // Update the remote streams with a stream that does not change.
-    // The update is ignored.
-    typename T::Content content4;
-    content4.AddStream(stream2);
-    content4.set_partial(true);
-    EXPECT_TRUE(channel1_->SetRemoteContent(&content4, CA_UPDATE, NULL));
-    ASSERT_EQ(2u, media_channel1_->recv_streams().size());
-    EXPECT_EQ(stream2, media_channel1_->recv_streams()[0]);
-    EXPECT_EQ(stream3, media_channel1_->recv_streams()[1]);
   }
 
   // Test that SetLocalContent and SetRemoteContent properly
@@ -2317,20 +2151,8 @@ TEST_F(VoiceChannelSingleThreadTest, TestSetContentsRtcpMuxWithPrAnswer) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(VoiceChannelSingleThreadTest, TestSetRemoteContentUpdate) {
-  Base::TestSetRemoteContentUpdate();
-}
-
 TEST_F(VoiceChannelSingleThreadTest, TestStreams) {
   Base::TestStreams();
-}
-
-TEST_F(VoiceChannelSingleThreadTest, TestUpdateStreamsInLocalContent) {
-  Base::TestUpdateStreamsInLocalContent();
-}
-
-TEST_F(VoiceChannelSingleThreadTest, TestUpdateRemoteStreamsInContent) {
-  Base::TestUpdateStreamsInRemoteContent();
 }
 
 TEST_F(VoiceChannelSingleThreadTest, TestChangeStreamParamsInContent) {
@@ -2680,20 +2502,8 @@ TEST_F(VoiceChannelDoubleThreadTest, TestSetContentsRtcpMuxWithPrAnswer) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(VoiceChannelDoubleThreadTest, TestSetRemoteContentUpdate) {
-  Base::TestSetRemoteContentUpdate();
-}
-
 TEST_F(VoiceChannelDoubleThreadTest, TestStreams) {
   Base::TestStreams();
-}
-
-TEST_F(VoiceChannelDoubleThreadTest, TestUpdateStreamsInLocalContent) {
-  Base::TestUpdateStreamsInLocalContent();
-}
-
-TEST_F(VoiceChannelDoubleThreadTest, TestUpdateRemoteStreamsInContent) {
-  Base::TestUpdateStreamsInRemoteContent();
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, TestChangeStreamParamsInContent) {
@@ -3041,20 +2851,8 @@ TEST_F(VideoChannelSingleThreadTest, TestSetContentsRtcpMuxWithPrAnswer) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(VideoChannelSingleThreadTest, TestSetRemoteContentUpdate) {
-  Base::TestSetRemoteContentUpdate();
-}
-
 TEST_F(VideoChannelSingleThreadTest, TestStreams) {
   Base::TestStreams();
-}
-
-TEST_F(VideoChannelSingleThreadTest, TestUpdateStreamsInLocalContent) {
-  Base::TestUpdateStreamsInLocalContent();
-}
-
-TEST_F(VideoChannelSingleThreadTest, TestUpdateRemoteStreamsInContent) {
-  Base::TestUpdateStreamsInRemoteContent();
 }
 
 TEST_F(VideoChannelSingleThreadTest, TestChangeStreamParamsInContent) {
@@ -3276,20 +3074,8 @@ TEST_F(VideoChannelDoubleThreadTest, TestSetContentsRtcpMuxWithPrAnswer) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(VideoChannelDoubleThreadTest, TestSetRemoteContentUpdate) {
-  Base::TestSetRemoteContentUpdate();
-}
-
 TEST_F(VideoChannelDoubleThreadTest, TestStreams) {
   Base::TestStreams();
-}
-
-TEST_F(VideoChannelDoubleThreadTest, TestUpdateStreamsInLocalContent) {
-  Base::TestUpdateStreamsInLocalContent();
-}
-
-TEST_F(VideoChannelDoubleThreadTest, TestUpdateRemoteStreamsInContent) {
-  Base::TestUpdateStreamsInRemoteContent();
 }
 
 TEST_F(VideoChannelDoubleThreadTest, TestChangeStreamParamsInContent) {
@@ -3584,20 +3370,8 @@ TEST_F(RtpDataChannelSingleThreadTest, TestSetContentsRtcpMux) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(RtpDataChannelSingleThreadTest, TestSetRemoteContentUpdate) {
-  Base::TestSetRemoteContentUpdate();
-}
-
 TEST_F(RtpDataChannelSingleThreadTest, TestStreams) {
   Base::TestStreams();
-}
-
-TEST_F(RtpDataChannelSingleThreadTest, TestUpdateStreamsInLocalContent) {
-  Base::TestUpdateStreamsInLocalContent();
-}
-
-TEST_F(RtpDataChannelSingleThreadTest, TestUpdateRemoteStreamsInContent) {
-  Base::TestUpdateStreamsInRemoteContent();
 }
 
 TEST_F(RtpDataChannelSingleThreadTest, TestChangeStreamParamsInContent) {
@@ -3720,20 +3494,8 @@ TEST_F(RtpDataChannelDoubleThreadTest, TestSetContentsRtcpMux) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(RtpDataChannelDoubleThreadTest, TestSetRemoteContentUpdate) {
-  Base::TestSetRemoteContentUpdate();
-}
-
 TEST_F(RtpDataChannelDoubleThreadTest, TestStreams) {
   Base::TestStreams();
-}
-
-TEST_F(RtpDataChannelDoubleThreadTest, TestUpdateStreamsInLocalContent) {
-  Base::TestUpdateStreamsInLocalContent();
-}
-
-TEST_F(RtpDataChannelDoubleThreadTest, TestUpdateRemoteStreamsInContent) {
-  Base::TestUpdateStreamsInRemoteContent();
 }
 
 TEST_F(RtpDataChannelDoubleThreadTest, TestChangeStreamParamsInContent) {
