@@ -50,7 +50,7 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
         sharedContext, enableIntelVp8Encoder, enableH264HighProfile, true /* fallbackToSoftware */);
   }
 
-  public HardwareVideoEncoderFactory(EglBase.Context sharedContext, boolean enableIntelVp8Encoder,
+  HardwareVideoEncoderFactory(EglBase.Context sharedContext, boolean enableIntelVp8Encoder,
       boolean enableH264HighProfile, boolean fallbackToSoftware) {
     // Texture mode requires EglBase14.
     if (sharedContext instanceof EglBase14.Context) {
