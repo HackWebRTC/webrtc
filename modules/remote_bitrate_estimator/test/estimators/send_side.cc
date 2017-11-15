@@ -33,7 +33,7 @@ SendSideBweSender::SendSideBweSender(int kbps,
       acknowledged_bitrate_estimator_(
           rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
       bwe_(new DelayBasedBwe(nullptr, clock)),
-      feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
+      feedback_observer_(bitrate_controller_.get()),
       clock_(clock),
       send_time_history_(clock_, 10000),
       has_received_ack_(false),

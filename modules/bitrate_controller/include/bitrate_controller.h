@@ -69,8 +69,10 @@ class BitrateController : public Module, public RtcpBandwidthObserver {
 
   virtual ~BitrateController() {}
 
+  // Deprecated, use raw pointer to BitrateController instance instead.
   // Creates RtcpBandwidthObserver caller responsible to delete.
-  virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() = 0;
+  RTC_DEPRECATED virtual RtcpBandwidthObserver*
+  CreateRtcpBandwidthObserver() = 0;
 
   // Deprecated
   virtual void SetStartBitrate(int start_bitrate_bps) = 0;

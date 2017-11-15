@@ -42,7 +42,7 @@ class RembBweSender : public BweSender {
 
  protected:
   std::unique_ptr<BitrateController> bitrate_controller_;
-  std::unique_ptr<RtcpBandwidthObserver> feedback_observer_;
+  RtcpBandwidthObserver* feedback_observer_;
 
  private:
   Clock* clock_;

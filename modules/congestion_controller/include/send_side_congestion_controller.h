@@ -87,6 +87,7 @@ class SendSideCongestionController : public CallStatsObserver,
   virtual void SetTransportOverhead(size_t transport_overhead_bytes_per_packet);
 
   virtual BitrateController* GetBitrateController() const;
+  virtual RtcpBandwidthObserver* GetBandwidthObserver() const;
   virtual int64_t GetPacerQueuingDelayMs() const;
   virtual int64_t GetFirstPacketTimeMs() const;
 

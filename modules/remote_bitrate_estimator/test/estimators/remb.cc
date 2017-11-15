@@ -28,7 +28,7 @@ RembBweSender::RembBweSender(int kbps, BitrateObserver* observer, Clock* clock)
           BitrateController::CreateBitrateController(clock,
                                                      observer,
                                                      &event_log_)),
-      feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
+      feedback_observer_(bitrate_controller_.get()),
       clock_(clock) {
   assert(kbps >= kMinBitrateKbps);
   assert(kbps <= kMaxBitrateKbps);

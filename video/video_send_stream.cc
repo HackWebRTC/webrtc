@@ -356,7 +356,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   EncoderRtcpFeedback encoder_feedback_;
   ProtectionBitrateCalculator protection_bitrate_calculator_;
 
-  const std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
+  RtcpBandwidthObserver* const bandwidth_observer_;
   // RtpRtcp modules, declared here as they use other members on construction.
   const std::vector<RtpRtcp*> rtp_rtcp_modules_;
   PayloadRouter payload_router_;
@@ -716,13 +716,11 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                         config_->rtp.ssrcs,
                         video_stream_encoder),
       protection_bitrate_calculator_(Clock::GetRealTimeClock(), this),
-      bandwidth_observer_(transport->send_side_cc()
-                              ->GetBitrateController()
-                              ->CreateRtcpBandwidthObserver()),
+      bandwidth_observer_(transport->send_side_cc()->GetBandwidthObserver()),
       rtp_rtcp_modules_(CreateRtpRtcpModules(
           config_->send_transport,
           &encoder_feedback_,
-          bandwidth_observer_.get(),
+          bandwidth_observer_,
           transport,
           call_stats_->rtcp_rtt_stats(),
           flexfec_sender_.get(),

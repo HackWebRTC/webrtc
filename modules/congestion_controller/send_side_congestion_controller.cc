@@ -212,6 +212,11 @@ BitrateController* SendSideCongestionController::GetBitrateController() const {
   return bitrate_controller_.get();
 }
 
+RtcpBandwidthObserver* SendSideCongestionController::GetBandwidthObserver()
+    const {
+  return bitrate_controller_.get();
+}
+
 RateLimiter* SendSideCongestionController::GetRetransmissionRateLimiter() {
   return retransmission_rate_limiter_.get();
 }

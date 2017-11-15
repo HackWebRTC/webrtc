@@ -204,25 +204,28 @@ void AudioSendStream::ConfigureStream(
     channel_proxy->SetSendAudioLevelIndicationStatus(new_ids.audio_level != 0,
                                                      new_ids.audio_level);
   }
-  // Transport sequence number
-  if (first_time ||
-      new_ids.transport_sequence_number != old_ids.transport_sequence_number) {
+  bool transport_seq_num_id_changed =
+      new_ids.transport_sequence_number != old_ids.transport_sequence_number;
+  if (first_time || transport_seq_num_id_changed) {
     if (!first_time) {
       channel_proxy->ResetSenderCongestionControlObjects();
-      stream->bandwidth_observer_.reset();
     }
 
-    if (new_ids.transport_sequence_number != 0) {
+    RtcpBandwidthObserver* bandwidth_observer = nullptr;
+    bool has_transport_sequence_number = new_ids.transport_sequence_number != 0;
+    if (has_transport_sequence_number) {
       channel_proxy->EnableSendTransportSequenceNumber(
           new_ids.transport_sequence_number);
+      // Probing in application limited region is only used in combination with
+      // send side congestion control, wich depends on feedback packets which
+      // requires transport sequence numbers to be enabled.
       stream->transport_->send_side_cc()->EnablePeriodicAlrProbing(true);
-      stream->bandwidth_observer_.reset(stream->transport_->send_side_cc()
-                                            ->GetBitrateController()
-                                            ->CreateRtcpBandwidthObserver());
+      bandwidth_observer =
+          stream->transport_->send_side_cc()->GetBandwidthObserver();
     }
 
-    channel_proxy->RegisterSenderCongestionControlObjects(
-        stream->transport_, stream->bandwidth_observer_.get());
+    channel_proxy->RegisterSenderCongestionControlObjects(stream->transport_,
+                                                          bandwidth_observer);
   }
 
   if (!ReconfigureSendCodec(stream, new_config)) {

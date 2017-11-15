@@ -111,7 +111,6 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   BitrateAllocator* const bitrate_allocator_;
   RtpTransportControllerSendInterface* const transport_;
-  std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
 
   rtc::CriticalSection packet_loss_tracker_cs_;
   TransportFeedbackPacketLossTracker packet_loss_tracker_

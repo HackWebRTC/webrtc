@@ -40,7 +40,7 @@ class SendSideBweSender : public BweSender, public RemoteBitrateObserver {
   std::unique_ptr<BitrateController> bitrate_controller_;
   std::unique_ptr<AcknowledgedBitrateEstimator> acknowledged_bitrate_estimator_;
   std::unique_ptr<DelayBasedBwe> bwe_;
-  std::unique_ptr<RtcpBandwidthObserver> feedback_observer_;
+  RtcpBandwidthObserver* feedback_observer_;
 
  private:
   Clock* const clock_;

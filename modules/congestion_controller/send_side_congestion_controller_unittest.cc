@@ -54,8 +54,7 @@ class SendSideCongestionControllerTest : public ::testing::Test {
     pacer_.reset(new NiceMock<MockPacedSender>());
     controller_.reset(new SendSideCongestionController(
         &clock_, &observer_, &event_log_, pacer_.get()));
-    bandwidth_observer_.reset(
-        controller_->GetBitrateController()->CreateRtcpBandwidthObserver());
+    bandwidth_observer_ = controller_->GetBandwidthObserver();
 
     // Set the initial bitrate estimate and expect the |observer| and |pacer_|
     // to be updated.
@@ -135,7 +134,7 @@ class SendSideCongestionControllerTest : public ::testing::Test {
   StrictMock<MockCongestionObserver> observer_;
   TargetBitrateObserver target_bitrate_observer_;
   NiceMock<MockRtcEventLog> event_log_;
-  std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
+  RtcpBandwidthObserver* bandwidth_observer_;
   PacketRouter packet_router_;
   std::unique_ptr<NiceMock<MockPacedSender>> pacer_;
   std::unique_ptr<SendSideCongestionController> controller_;
