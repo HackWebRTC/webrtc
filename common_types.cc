@@ -181,7 +181,7 @@ VideoCodecType PayloadStringToCodecType(const std::string& name) {
 const uint32_t BitrateAllocation::kMaxBitrateBps =
     std::numeric_limits<uint32_t>::max();
 
-BitrateAllocation::BitrateAllocation() : sum_(0), bitrates_{} {}
+BitrateAllocation::BitrateAllocation() : sum_(0), bitrates_{}, has_bitrate_{} {}
 
 bool BitrateAllocation::SetBitrate(size_t spatial_index,
                                    size_t temporal_index,
@@ -196,8 +196,16 @@ bool BitrateAllocation::SetBitrate(size_t spatial_index,
     return false;
 
   bitrates_[spatial_index][temporal_index] = bitrate_bps;
+  has_bitrate_[spatial_index][temporal_index] = true;
   sum_ = static_cast<uint32_t>(new_bitrate_sum_bps);
   return true;
+}
+
+bool BitrateAllocation::HasBitrate(size_t spatial_index,
+                                   size_t temporal_index) const {
+  RTC_CHECK_LT(spatial_index, kMaxSpatialLayers);
+  RTC_CHECK_LT(temporal_index, kMaxTemporalStreams);
+  return has_bitrate_[spatial_index][temporal_index];
 }
 
 uint32_t BitrateAllocation::GetBitrate(size_t spatial_index,
@@ -205,6 +213,17 @@ uint32_t BitrateAllocation::GetBitrate(size_t spatial_index,
   RTC_CHECK_LT(spatial_index, kMaxSpatialLayers);
   RTC_CHECK_LT(temporal_index, kMaxTemporalStreams);
   return bitrates_[spatial_index][temporal_index];
+}
+
+// Whether the specific spatial layers has the bitrate set in any of its
+// temporal layers.
+bool BitrateAllocation::IsSpatialLayerUsed(size_t spatial_index) const {
+  RTC_CHECK_LT(spatial_index, kMaxSpatialLayers);
+  for (int i = 0; i < kMaxTemporalStreams; ++i) {
+    if (has_bitrate_[spatial_index][i])
+      return true;
+  }
+  return false;
 }
 
 // Get the sum of all the temporal layer for a specific spatial layer.

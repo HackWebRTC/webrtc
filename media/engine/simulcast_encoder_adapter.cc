@@ -458,7 +458,9 @@ int SimulcastEncoderAdapter::SetRateAllocation(const BitrateAllocation& bitrate,
     // the encoder handling the current simulcast stream.
     BitrateAllocation stream_allocation;
     for (int i = 0; i < kMaxTemporalStreams; ++i) {
-      stream_allocation.SetBitrate(0, i, bitrate.GetBitrate(stream_idx, i));
+      if (bitrate.HasBitrate(stream_idx, i)) {
+        stream_allocation.SetBitrate(0, i, bitrate.GetBitrate(stream_idx, i));
+      }
     }
     streaminfos_[stream_idx].encoder->SetRateAllocation(stream_allocation,
                                                         new_framerate);

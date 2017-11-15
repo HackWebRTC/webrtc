@@ -594,7 +594,13 @@ class BitrateAllocation {
                   size_t temporal_index,
                   uint32_t bitrate_bps);
 
+  bool HasBitrate(size_t spatial_index, size_t temporal_index) const;
+
   uint32_t GetBitrate(size_t spatial_index, size_t temporal_index) const;
+
+  // Whether the specific spatial layers has the bitrate set in any of its
+  // temporal layers.
+  bool IsSpatialLayerUsed(size_t spatial_index) const;
 
   // Get the sum of all the temporal layer for a specific spatial layer.
   uint32_t GetSpatialLayerSum(size_t spatial_index) const;
@@ -616,6 +622,7 @@ class BitrateAllocation {
  private:
   uint32_t sum_;
   uint32_t bitrates_[kMaxSpatialLayers][kMaxTemporalStreams];
+  bool has_bitrate_[kMaxSpatialLayers][kMaxTemporalStreams];
 };
 
 // Bandwidth over-use detector options.  These are used to drive

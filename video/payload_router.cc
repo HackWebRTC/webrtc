@@ -238,12 +238,14 @@ void PayloadRouter::OnBitrateAllocationUpdated(
       // rtp stream, moving over the temporal layer allocation.
       for (size_t si = 0; si < rtp_modules_.size(); ++si) {
         // Don't send empty TargetBitrate messages on streams not being relayed.
-        if (bitrate.GetSpatialLayerSum(si) == 0)
+        if (!bitrate.IsSpatialLayerUsed(si))
           break;
 
         BitrateAllocation layer_bitrate;
-        for (int tl = 0; tl < kMaxTemporalStreams; ++tl)
-          layer_bitrate.SetBitrate(0, tl, bitrate.GetBitrate(si, tl));
+        for (int tl = 0; tl < kMaxTemporalStreams; ++tl) {
+          if (bitrate.HasBitrate(si, tl))
+            layer_bitrate.SetBitrate(0, tl, bitrate.GetBitrate(si, tl));
+        }
         rtp_modules_[si]->SetVideoBitrateAllocation(layer_bitrate);
       }
     }

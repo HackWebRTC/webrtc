@@ -655,10 +655,10 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildExtendedReports(
 
     for (int sl = 0; sl < kMaxSpatialLayers; ++sl) {
       for (int tl = 0; tl < kMaxTemporalStreams; ++tl) {
-        uint32_t layer_bitrate_bps =
-            video_bitrate_allocation_->GetBitrate(sl, tl);
-        if (layer_bitrate_bps > 0)
-          target_bitrate.AddTargetBitrate(sl, tl, layer_bitrate_bps / 1000);
+        if (video_bitrate_allocation_->HasBitrate(sl, tl)) {
+          target_bitrate.AddTargetBitrate(
+              sl, tl, video_bitrate_allocation_->GetBitrate(sl, tl) / 1000);
+        }
       }
     }
 
