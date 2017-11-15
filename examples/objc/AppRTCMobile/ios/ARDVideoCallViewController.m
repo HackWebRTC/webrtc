@@ -63,6 +63,10 @@
   [session addDelegate:self];
 }
 
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
+  return UIInterfaceOrientationMaskAll;
+}
+
 #pragma mark - ARDAppClientDelegate
 
 - (void)appClient:(ARDAppClient *)client
