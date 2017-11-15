@@ -24,7 +24,6 @@
 
 namespace webrtc {
 
-class I420Buffer;
 
 // This is the max PSNR value our algorithms can return.
 const double kPerfectPSNR = 48.0f;
@@ -64,34 +63,6 @@ int ExtractBuffer(const rtc::scoped_refptr<I420BufferInterface>& input_frame,
                   size_t size,
                   uint8_t* buffer);
 int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer);
-// Convert To I420
-// Input:
-//   - src_video_type   : Type of input video.
-//   - src_frame        : Pointer to a source frame.
-//   - crop_x/crop_y    : Starting positions for cropping (0 for no crop).
-//   - src_width        : src width in pixels.
-//   - src_height       : src height in pixels.
-//   - sample_size      : Required only for the parsing of MJPG (set to 0 else).
-//   - rotate           : Rotation mode of output image.
-// Output:
-//   - dst_buffer       : Reference to a destination frame buffer.
-// Return value: 0 if OK, < 0 otherwise.
-
-// TODO(nisse): Delete this wrapper, and let users call libyuv directly. Most
-// calls pass |src_video_type| == kI420, and should use libyuv::I420Copy. Also
-// remember to delete the I420Buffer forward declaration above. The only
-// exception at the time of this writing is VideoCaptureImpl::IncomingFrame,
-// which still needs libyuv::ConvertToI420.
-int ConvertToI420(VideoType src_video_type,
-                  const uint8_t* src_frame,
-                  int crop_x,
-                  int crop_y,
-                  int src_width,
-                  int src_height,
-                  size_t sample_size,
-                  VideoRotation rotation,
-                  I420Buffer* dst_buffer);
-
 // Convert From I420
 // Input:
 //   - src_frame        : Reference to a source frame.
@@ -146,6 +117,9 @@ class NV12ToI420Scaler {
  private:
   std::vector<uint8_t> tmp_uv_planes_;
 };
+
+// Convert VideoType to libyuv FourCC type
+int ConvertVideoType(VideoType video_type);
 
 }  // namespace webrtc
 

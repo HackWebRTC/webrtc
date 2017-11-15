@@ -14,6 +14,7 @@
 
 #include "api/video/i420_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "libyuv.h"  // NOLINT
 #include "modules/include/module_common_types.h"
 #include "modules/video_capture/video_capture_config.h"
 #include "rtc_base/logging.h"
@@ -164,10 +165,32 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
   // TODO(nisse): Use a pool?
   rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
       target_width, abs(target_height), stride_y, stride_uv, stride_uv);
-  const int conversionResult = ConvertToI420(
-      frameInfo.videoType, videoFrame, 0, 0,  // No cropping
-      width, height, videoFrameLength,
-      apply_rotation ? _rotateFrame : kVideoRotation_0, buffer.get());
+
+  libyuv::RotationMode rotation_mode = libyuv::kRotate0;
+  if (apply_rotation) {
+    switch (_rotateFrame) {
+      case kVideoRotation_0:
+        rotation_mode = libyuv::kRotate0;
+        break;
+      case kVideoRotation_90:
+        rotation_mode = libyuv::kRotate90;
+        break;
+      case kVideoRotation_180:
+        rotation_mode = libyuv::kRotate180;
+        break;
+      case kVideoRotation_270:
+        rotation_mode = libyuv::kRotate270;
+        break;
+    }
+  }
+
+  const int conversionResult = libyuv::ConvertToI420(
+      videoFrame, videoFrameLength, buffer.get()->MutableDataY(),
+      buffer.get()->StrideY(), buffer.get()->MutableDataU(),
+      buffer.get()->StrideU(), buffer.get()->MutableDataV(),
+      buffer.get()->StrideV(), 0, 0,  // No Cropping
+      width, height, target_width, target_height, rotation_mode,
+      ConvertVideoType(frameInfo.videoType));
   if (conversionResult < 0) {
     RTC_LOG(LS_ERROR) << "Failed to convert capture frame from type "
                       << static_cast<int>(frameInfo.videoType) << "to I420.";
