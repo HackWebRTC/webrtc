@@ -23,13 +23,13 @@ namespace jni {
 /* If the j_decoder is a wrapped native decoder, unwrap it. If it is not,
  * wrap it in a VideoDecoderWrapper.
  */
-std::unique_ptr<VideoDecoder> WrapOrUnwrapVideoDecoder(JNIEnv* jni,
+std::unique_ptr<VideoDecoder> JavaToNativeVideoDecoder(JNIEnv* jni,
                                                        jobject j_decoder);
 
 /* If the j_encoder is a wrapped native encoder, unwrap it. If it is not,
  * wrap it in a VideoEncoderWrapper.
  */
-std::unique_ptr<VideoEncoder> WrapOrUnwrapVideoEncoder(JNIEnv* jni,
+std::unique_ptr<VideoEncoder> JavaToNativeVideoEncoder(JNIEnv* jni,
                                                        jobject j_encoder);
 
 }  // namespace jni

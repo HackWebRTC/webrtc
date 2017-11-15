@@ -35,7 +35,7 @@ std::unique_ptr<VideoDecoder> VideoDecoderFactoryWrapper::CreateVideoDecoder(
   jstring name = JavaStringFromStdString(jni, format.name);
   jobject decoder =
       jni->CallObjectMethod(*decoder_factory_, create_decoder_method_, name);
-  return decoder != nullptr ? WrapOrUnwrapVideoDecoder(jni, decoder) : nullptr;
+  return decoder != nullptr ? JavaToNativeVideoDecoder(jni, decoder) : nullptr;
 }
 
 std::vector<SdpVideoFormat> VideoDecoderFactoryWrapper::GetSupportedFormats()

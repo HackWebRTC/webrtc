@@ -20,7 +20,7 @@
 namespace webrtc {
 namespace jni {
 
-std::unique_ptr<VideoDecoder> WrapOrUnwrapVideoDecoder(JNIEnv* jni,
+std::unique_ptr<VideoDecoder> JavaToNativeVideoDecoder(JNIEnv* jni,
                                                        jobject j_decoder) {
   jclass wrapped_native_decoder_class =
       GetClass(jni, "org/webrtc/WrappedNativeVideoDecoder");
@@ -37,7 +37,7 @@ std::unique_ptr<VideoDecoder> WrapOrUnwrapVideoDecoder(JNIEnv* jni,
   return std::unique_ptr<VideoDecoder>(decoder);
 }
 
-std::unique_ptr<VideoEncoder> WrapOrUnwrapVideoEncoder(JNIEnv* jni,
+std::unique_ptr<VideoEncoder> JavaToNativeVideoEncoder(JNIEnv* jni,
                                                        jobject j_encoder) {
   jclass wrapped_native_encoder_class =
       GetClass(jni, "org/webrtc/WrappedNativeVideoEncoder");

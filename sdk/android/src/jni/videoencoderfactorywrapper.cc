@@ -41,7 +41,7 @@ std::unique_ptr<VideoEncoder> VideoEncoderFactoryWrapper::CreateVideoEncoder(
   jobject j_codec_info = SdpVideoFormatToVideoCodecInfo(jni, format);
   jobject encoder = jni->CallObjectMethod(*encoder_factory_,
                                           create_encoder_method_, j_codec_info);
-  return encoder != nullptr ? WrapOrUnwrapVideoEncoder(jni, encoder) : nullptr;
+  return encoder != nullptr ? JavaToNativeVideoEncoder(jni, encoder) : nullptr;
 }
 
 VideoEncoderFactory::CodecInfo VideoEncoderFactoryWrapper::QueryVideoEncoder(
