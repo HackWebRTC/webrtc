@@ -79,10 +79,13 @@
 
   for (AVCaptureDeviceFormat *format in formats) {
     CMVideoDimensions dimension = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+    FourCharCode pixelFormat = CMFormatDescriptionGetMediaSubType(format.formatDescription);
     int diff = abs(targetWidth - dimension.width) + abs(targetHeight - dimension.height);
     if (diff < currentDiff) {
       selectedFormat = format;
       currentDiff = diff;
+    } else if (diff == currentDiff && pixelFormat == [_capturer preferredOutputPixelFormat]) {
+      selectedFormat = format;
     }
   }
 

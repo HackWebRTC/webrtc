@@ -31,6 +31,8 @@ const int64_t kNanosecondsPerSecond = 1000000000;
   AVCaptureVideoDataOutput *_videoDataOutput;
   AVCaptureSession *_captureSession;
   AVCaptureDevice *_currentDevice;
+  FourCharCode _preferredOutputPixelFormat;
+  FourCharCode _outputPixelFormat;
   BOOL _hasRetriedOnFatalError;
   BOOL _isRunning;
   // Will the session be running once all asynchronous operations have been completed?
@@ -105,6 +107,10 @@ const int64_t kNanosecondsPerSecond = 1000000000;
   return device.formats;
 }
 
+- (FourCharCode)preferredOutputPixelFormat {
+  return _preferredOutputPixelFormat;
+}
+
 - (void)startCaptureWithDevice:(AVCaptureDevice *)device
                         format:(AVCaptureDeviceFormat *)format
                            fps:(NSInteger)fps {
@@ -129,6 +135,7 @@ const int64_t kNanosecondsPerSecond = 1000000000;
                       [self reconfigureCaptureSessionInput];
                       [self updateOrientation];
                       [self updateDeviceCaptureFormat:format fps:fps];
+                      [self updateVideoDataOutputPixelFormat:format];
                       [_captureSession startRunning];
                       [_currentDevice unlockForConfiguration];
                       _isRunning = YES;
@@ -385,10 +392,25 @@ const int64_t kNanosecondsPerSecond = 1000000000;
   NSNumber *pixelFormat = availablePixelFormats.firstObject;
   NSAssert(pixelFormat, @"Output device has no supported formats.");
 
+  _preferredOutputPixelFormat = [pixelFormat unsignedIntValue];
+  _outputPixelFormat = _preferredOutputPixelFormat;
   videoDataOutput.videoSettings = @{(NSString *)kCVPixelBufferPixelFormatTypeKey : pixelFormat};
   videoDataOutput.alwaysDiscardsLateVideoFrames = NO;
   [videoDataOutput setSampleBufferDelegate:self queue:self.frameQueue];
   _videoDataOutput = videoDataOutput;
+}
+
+- (void)updateVideoDataOutputPixelFormat:(AVCaptureDeviceFormat *)format {
+  FourCharCode mediaSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription);
+  if (![[RTCCVPixelBuffer supportedPixelFormats] containsObject:@(mediaSubType)]) {
+    mediaSubType = _preferredOutputPixelFormat;
+  }
+
+  if (mediaSubType != _outputPixelFormat) {
+    _outputPixelFormat = mediaSubType;
+    _videoDataOutput.videoSettings =
+        @{ (NSString *)kCVPixelBufferPixelFormatTypeKey : @(mediaSubType) };
+  }
 }
 
 #pragma mark - Private, called inside capture queue
