@@ -93,7 +93,7 @@ JNI_FUNCTION_DECLARATION(void,
 }
 
 JNI_FUNCTION_DECLARATION(void,
-                         PeerConnectionFactory_initializeInternalTracer,
+                         PeerConnectionFactory_nativeInitializeInternalTracer,
                          JNIEnv* jni,
                          jclass) {
   rtc::tracing::SetupInternalTracer();
@@ -132,7 +132,7 @@ JNI_FUNCTION_DECLARATION(void,
 }
 
 JNI_FUNCTION_DECLARATION(void,
-                         PeerConnectionFactory_shutdownInternalTracer,
+                         PeerConnectionFactory_nativeShutdownInternalTracer,
                          JNIEnv* jni,
                          jclass) {
   rtc::tracing::ShutdownInternalTracer();

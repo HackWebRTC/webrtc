@@ -29,7 +29,9 @@ public class PeerConnectionFactory {
 
   private static final String TAG = "PeerConnectionFactory";
   private static final String VIDEO_CAPTURER_THREAD_NAME = "VideoCapturerThread";
+
   private final long nativeFactory;
+  private static volatile boolean internalTracerInitialized = false;
   private static Context applicationContext;
   private static Thread networkThread;
   private static Thread workerThread;
@@ -120,7 +122,7 @@ public class PeerConnectionFactory {
     NativeLibrary.initialize(options.nativeLibraryLoader);
     nativeInitializeAndroidGlobals(options.applicationContext, options.enableVideoHwAcceleration);
     initializeFieldTrials(options.fieldTrials);
-    if (options.enableInternalTracer) {
+    if (options.enableInternalTracer && !internalTracerInitialized) {
       initializeInternalTracer();
     }
   }
@@ -154,6 +156,17 @@ public class PeerConnectionFactory {
     return true;
   }
 
+  @Deprecated
+  public static void initializeInternalTracer() {
+    internalTracerInitialized = true;
+    nativeInitializeInternalTracer();
+  }
+
+  public static void shutdownInternalTracer() {
+    internalTracerInitialized = false;
+    nativeShutdownInternalTracer();
+  }
+
   // Field trial initialization. Must be called before PeerConnectionFactory
   // is created.
   // Deprecated, use PeerConnectionFactory.initialize instead.
@@ -172,10 +185,10 @@ public class PeerConnectionFactory {
   // Internal tracing initialization. Must be called before PeerConnectionFactory is created to
   // prevent racing with tracing code.
   // Deprecated, use PeerConnectionFactory.initialize instead.
-  @Deprecated public static native void initializeInternalTracer();
+  private static native void nativeInitializeInternalTracer();
   // Internal tracing shutdown, called to prevent resource leaks. Must be called after
   // PeerConnectionFactory is gone to prevent races with code performing tracing.
-  public static native void shutdownInternalTracer();
+  private static native void nativeShutdownInternalTracer();
   // Start/stop internal capturing of internal tracing.
   public static native boolean startInternalTracingCapture(String tracing_filename);
   public static native void stopInternalTracingCapture();

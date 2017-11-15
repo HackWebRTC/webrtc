@@ -568,6 +568,7 @@ if (rtc_include_tests) {
       "instrumentationtests/src/org/webrtc/HardwareVideoEncoderTest.java",
       "instrumentationtests/src/org/webrtc/MediaCodecVideoEncoderTest.java",
       "instrumentationtests/src/org/webrtc/NetworkMonitorTest.java",
+      "instrumentationtests/src/org/webrtc/PeerConnectionFactoryTest.java",
       "instrumentationtests/src/org/webrtc/PeerConnectionTest.java",
       "instrumentationtests/src/org/webrtc/RendererCommonTest.java",
       "instrumentationtests/src/org/webrtc/SurfaceTextureHelperTest.java",
