@@ -101,10 +101,7 @@ rtc_static_library("system_wrappers") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps += [
-    "../rtc_base:rtc_base_approved",
-    "../rtc_base:rtc_numerics",
-  ]
+  deps += [ "../rtc_base:rtc_base_approved" ]
 }
 
 rtc_source_set("cpu_features_api") {
