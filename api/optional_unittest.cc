@@ -159,6 +159,16 @@ TEST(OptionalTest, TestConstructDefault) {
   EXPECT_EQ(V(), *log);
 }
 
+TEST(OptionalTest, TestConstructNullopt) {
+  auto log = Logger::Setup();
+  {
+    Optional<Logger> x(nullopt);
+    EXPECT_FALSE(x);
+    EXPECT_FALSE(x.has_value());
+  }
+  EXPECT_EQ(V(), *log);
+}
+
 TEST(OptionalTest, TestConstructCopyEmpty) {
   auto log = Logger::Setup();
   {
@@ -242,6 +252,36 @@ TEST(OptionalTest, TestCopyAssignToFullFromEmpty) {
     log->push_back("---");
     x = y;
     log->push_back("---");
+  }
+  EXPECT_EQ(
+      V("0:17. explicit constructor", "1:17. move constructor (from 0:17)",
+        "0:17. destructor", "---", "1:17. destructor", "---"),
+      *log);
+}
+
+TEST(OptionalTest, TestCopyAssignToFullFromNullopt) {
+  auto log = Logger::Setup();
+  {
+    Optional<Logger> x(Logger(17));
+    log->push_back("---");
+    x = nullopt;
+    log->push_back("---");
+    EXPECT_FALSE(x);
+  }
+  EXPECT_EQ(
+      V("0:17. explicit constructor", "1:17. move constructor (from 0:17)",
+        "0:17. destructor", "---", "1:17. destructor", "---"),
+      *log);
+}
+
+TEST(OptionalTest, TestCopyAssignToFullFromEmptyBraces) {
+  auto log = Logger::Setup();
+  {
+    Optional<Logger> x(Logger(17));
+    log->push_back("---");
+    x = {};
+    log->push_back("---");
+    EXPECT_FALSE(x);
   }
   EXPECT_EQ(
       V("0:17. explicit constructor", "1:17. move constructor (from 0:17)",
@@ -714,12 +754,45 @@ TEST(OptionalTest, TestEquality) {
       *log);
 }
 
+TEST(OptionalTest, TestEqualityWithNullopt) {
+  auto log = Logger::Setup();
+  {
+    Logger a(17);
+    Optional<Logger> ma(a), me;
+    // Using operator== and operator!= explicitly instead of EXPECT_EQ/EXPECT_NE
+    // macros because those operators are under test.
+    log->push_back("---");
+
+    EXPECT_FALSE(ma == nullopt);
+    EXPECT_FALSE(nullopt == ma);
+    EXPECT_TRUE(me == nullopt);
+    EXPECT_TRUE(nullopt == me);
+
+    EXPECT_TRUE(ma != nullopt);
+    EXPECT_TRUE(nullopt != ma);
+    EXPECT_FALSE(me != nullopt);
+    EXPECT_FALSE(nullopt != me);
+
+    log->push_back("---");
+  }
+  // clang-format off
+  EXPECT_EQ(V("0:17. explicit constructor",
+              "1:17. copy constructor (from 0:17)",
+              "---",
+              // No operators should be called when comparing to empty.
+              "---",
+              "1:17. destructor",
+              "0:17. destructor"),
+            *log);
+  // clang-format on
+}
+
 TEST(OptionalTest, TestEqualityWithObject) {
   auto log = Logger::Setup();
   {
     Logger a(17), b(42);
     Optional<Logger> ma(a), me;
-    // Using operator== and operator!= explicetly instead of EXPECT_EQ/EXPECT_NE
+    // Using operator== and operator!= explicitly instead of EXPECT_EQ/EXPECT_NE
     // macros because those operators are under test.
     log->push_back("---");
 

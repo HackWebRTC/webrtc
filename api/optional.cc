@@ -21,5 +21,14 @@ void* FunctionThatDoesNothingImpl(void* x) {
 
 #endif
 
+struct NulloptArg {
+  constexpr NulloptArg() {}
+};
+
+static NulloptArg nullopt_arg;
+
 }  // namespace optional_internal
+
+const nullopt_t nullopt(rtc::optional_internal::nullopt_arg);
+
 }  // namespace rtc
