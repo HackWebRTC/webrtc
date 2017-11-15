@@ -13,11 +13,18 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {
 // Number of RTCP SR reports to use to map between RTP and NTP.
 const size_t kNumRtcpReportsToUse = 2;
+// Number of parameters samples used to smooth.
+const size_t kNumSamplesToSmooth = 20;
+
+bool IsClockEstimationExperimentEnabled() {
+  return webrtc::field_trial::IsEnabled("WebRTC-ClockEstimation");
+}
 
 // Calculates the RTP timestamp frequency from two pairs of NTP/RTP timestamps.
 bool CalculateFrequency(int64_t ntp_ms1,
@@ -43,6 +50,28 @@ bool Contains(const std::list<RtpToNtpEstimator::RtcpMeasurement>& measurements,
 }
 }  // namespace
 
+bool RtpToNtpEstimator::Parameters::operator<(const Parameters& other) const {
+  if (frequency_khz < other.frequency_khz - 1e-6) {
+    return true;
+  } else if (frequency_khz > other.frequency_khz + 1e-6) {
+    return false;
+  } else {
+    return offset_ms < other.offset_ms - 1e-6;
+  }
+}
+
+bool RtpToNtpEstimator::Parameters::operator==(const Parameters& other) const {
+  return !(other < *this || *this < other);
+}
+
+bool RtpToNtpEstimator::Parameters::operator!=(const Parameters& other) const {
+  return other < *this || *this < other;
+}
+
+bool RtpToNtpEstimator::Parameters::operator<=(const Parameters& other) const {
+  return !(other < *this);
+}
+
 RtpToNtpEstimator::RtcpMeasurement::RtcpMeasurement(uint32_t ntp_secs,
                                                     uint32_t ntp_frac,
                                                     int64_t unwrapped_timestamp)
@@ -59,13 +88,18 @@ bool RtpToNtpEstimator::RtcpMeasurement::IsEqual(
 
 // Class for converting an RTP timestamp to the NTP domain.
 RtpToNtpEstimator::RtpToNtpEstimator()
-    : consecutive_invalid_samples_(0), params_calculated_(false) {}
+    : consecutive_invalid_samples_(0),
+      smoothing_filter_(kNumSamplesToSmooth),
+      params_calculated_(false),
+      is_experiment_enabled_(IsClockEstimationExperimentEnabled()) {}
+
 RtpToNtpEstimator::~RtpToNtpEstimator() {}
 
 void RtpToNtpEstimator::UpdateParameters() {
   if (measurements_.size() != kNumRtcpReportsToUse)
     return;
 
+  Parameters params;
   int64_t timestamp_new = measurements_.front().unwrapped_rtp_timestamp;
   int64_t timestamp_old = measurements_.back().unwrapped_rtp_timestamp;
 
@@ -73,11 +107,16 @@ void RtpToNtpEstimator::UpdateParameters() {
   int64_t ntp_ms_old = measurements_.back().ntp_time.ToMs();
 
   if (!CalculateFrequency(ntp_ms_new, timestamp_new, ntp_ms_old, timestamp_old,
-                          &params_.frequency_khz)) {
+                          &params.frequency_khz)) {
     return;
   }
-  params_.offset_ms = timestamp_new - params_.frequency_khz * ntp_ms_new;
+  params.offset_ms = timestamp_new - params.frequency_khz * ntp_ms_new;
   params_calculated_ = true;
+  if (is_experiment_enabled_) {
+    smoothing_filter_.Insert(params);
+  } else {
+    params_ = params;
+  }
 }
 
 bool RtpToNtpEstimator::UpdateMeasurements(uint32_t ntp_secs,
@@ -94,6 +133,7 @@ bool RtpToNtpEstimator::UpdateMeasurements(uint32_t ntp_secs,
     // RTCP SR report already added.
     return true;
   }
+
   if (!new_measurement.ntp_time.Valid())
     return false;
 
@@ -122,6 +162,7 @@ bool RtpToNtpEstimator::UpdateMeasurements(uint32_t ntp_secs,
     RTC_LOG(LS_WARNING) << "Multiple consecutively invalid RTCP SR reports, "
                            "clearing measurements.";
     measurements_.clear();
+    smoothing_filter_.Reset();
     params_calculated_ = false;
   }
   consecutive_invalid_samples_ = 0;
@@ -145,12 +186,15 @@ bool RtpToNtpEstimator::Estimate(int64_t rtp_timestamp,
 
   int64_t rtp_timestamp_unwrapped = unwrapper_.Unwrap(rtp_timestamp);
 
-  // params_calculated_ should not be true unless ms params_.frequency_khz has
+  Parameters params =
+      is_experiment_enabled_ ? smoothing_filter_.GetFilteredValue() : params_;
+
+  // params_calculated_ should not be true unless ms params.frequency_khz has
   // been calculated to something non zero.
-  RTC_DCHECK_NE(params_.frequency_khz, 0.0);
+  RTC_DCHECK_NE(params.frequency_khz, 0.0);
   double rtp_ms =
-      (static_cast<double>(rtp_timestamp_unwrapped) - params_.offset_ms) /
-          params_.frequency_khz +
+      (static_cast<double>(rtp_timestamp_unwrapped) - params.offset_ms) /
+          params.frequency_khz +
       0.5f;
 
   if (rtp_ms < 0)
@@ -158,5 +202,15 @@ bool RtpToNtpEstimator::Estimate(int64_t rtp_timestamp,
 
   *rtp_timestamp_ms = rtp_ms;
   return true;
+}
+
+const rtc::Optional<RtpToNtpEstimator::Parameters> RtpToNtpEstimator::params()
+    const {
+  rtc::Optional<Parameters> res;
+  if (params_calculated_) {
+    res.emplace(is_experiment_enabled_ ? smoothing_filter_.GetFilteredValue()
+                                       : params_);
+  }
+  return res;
 }
 }  // namespace webrtc
