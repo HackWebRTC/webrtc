@@ -11,7 +11,7 @@
 package org.webrtc;
 
 import java.util.Collections;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -334,18 +334,15 @@ public class PeerConnection {
     }
   };
 
-  private final List<MediaStream> localStreams;
+  private final List<MediaStream> localStreams = new ArrayList<>();
   private final long nativePeerConnection;
   private final long nativeObserver;
-  private List<RtpSender> senders;
-  private List<RtpReceiver> receivers;
+  private List<RtpSender> senders = new ArrayList<>();
+  private List<RtpReceiver> receivers = new ArrayList<>();
 
   PeerConnection(long nativePeerConnection, long nativeObserver) {
     this.nativePeerConnection = nativePeerConnection;
     this.nativeObserver = nativeObserver;
-    localStreams = new LinkedList<MediaStream>();
-    senders = new LinkedList<RtpSender>();
-    receivers = new LinkedList<RtpReceiver>();
   }
 
   // JsepInterface.

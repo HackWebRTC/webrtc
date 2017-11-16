@@ -10,20 +10,18 @@
 
 package org.webrtc;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Java wrapper for a C++ MediaStreamInterface. */
 public class MediaStream {
-  public final LinkedList<AudioTrack> audioTracks;
-  public final LinkedList<VideoTrack> videoTracks;
-  public final LinkedList<VideoTrack> preservedVideoTracks;
+  public final List<AudioTrack> audioTracks = new ArrayList<>();
+  public final List<VideoTrack> videoTracks = new ArrayList<>();
+  public final List<VideoTrack> preservedVideoTracks = new ArrayList<>();
   // Package-protected for PeerConnection.
   final long nativeStream;
 
   public MediaStream(long nativeStream) {
-    audioTracks = new LinkedList<AudioTrack>();
-    videoTracks = new LinkedList<VideoTrack>();
-    preservedVideoTracks = new LinkedList<VideoTrack>();
     this.nativeStream = nativeStream;
   }
 
@@ -68,18 +66,18 @@ public class MediaStream {
   public void dispose() {
     // Remove and release previously added audio and video tracks.
     while (!audioTracks.isEmpty()) {
-      AudioTrack track = audioTracks.getFirst();
+      AudioTrack track = audioTracks.get(0 /* index */);
       removeTrack(track);
       track.dispose();
     }
     while (!videoTracks.isEmpty()) {
-      VideoTrack track = videoTracks.getFirst();
+      VideoTrack track = videoTracks.get(0 /* index */);
       removeTrack(track);
       track.dispose();
     }
     // Remove, but do not release preserved video tracks.
     while (!preservedVideoTracks.isEmpty()) {
-      removeTrack(preservedVideoTracks.getFirst());
+      removeTrack(preservedVideoTracks.get(0 /* index */));
     }
     free(nativeStream);
   }

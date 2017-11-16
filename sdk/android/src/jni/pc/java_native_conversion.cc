@@ -544,9 +544,9 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
   RTC_CHECK(parameters != nullptr);
   jclass parameters_class = jni->FindClass("org/webrtc/RtpParameters");
   jfieldID encodings_id =
-      GetFieldID(jni, parameters_class, "encodings", "Ljava/util/LinkedList;");
+      GetFieldID(jni, parameters_class, "encodings", "Ljava/util/List;");
   jfieldID codecs_id =
-      GetFieldID(jni, parameters_class, "codecs", "Ljava/util/LinkedList;");
+      GetFieldID(jni, parameters_class, "codecs", "Ljava/util/List;");
 
   // Convert encodings.
   jobject j_encodings = GetObjectField(jni, j_parameters, encodings_id);
@@ -630,7 +630,7 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni,
   jclass encoding_class = jni->FindClass("org/webrtc/RtpParameters$Encoding");
   jmethodID encoding_ctor = GetMethodID(jni, encoding_class, "<init>", "()V");
   jfieldID encodings_id =
-      GetFieldID(jni, parameters_class, "encodings", "Ljava/util/LinkedList;");
+      GetFieldID(jni, parameters_class, "encodings", "Ljava/util/List;");
   jobject j_encodings = GetObjectField(jni, j_parameters, encodings_id);
   jmethodID encodings_add = GetMethodID(jni, GetObjectClass(jni, j_encodings),
                                         "add", "(Ljava/lang/Object;)Z");
@@ -675,7 +675,7 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni,
   jclass codec_class = jni->FindClass("org/webrtc/RtpParameters$Codec");
   jmethodID codec_ctor = GetMethodID(jni, codec_class, "<init>", "()V");
   jfieldID codecs_id =
-      GetFieldID(jni, parameters_class, "codecs", "Ljava/util/LinkedList;");
+      GetFieldID(jni, parameters_class, "codecs", "Ljava/util/List;");
   jobject j_codecs = GetObjectField(jni, j_parameters, codecs_id);
   jmethodID codecs_add = GetMethodID(jni, GetObjectClass(jni, j_codecs), "add",
                                      "(Ljava/lang/Object;)Z");

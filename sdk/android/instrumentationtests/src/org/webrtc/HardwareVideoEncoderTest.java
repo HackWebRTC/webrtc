@@ -309,16 +309,15 @@ public class HardwareVideoEncoderTest {
         case OK:
           return; // Success
         case NO_OUTPUT:
-          if (numTries < NUM_ENCODE_TRIES) {
-            try {
-              Thread.sleep(ENCODE_RETRY_SLEEP_MS); // Try again.
-            } catch (InterruptedException e) {
-              throw new RuntimeException(e);
-            }
-            break;
-          } else {
+          if (numTries >= NUM_ENCODE_TRIES) {
             fail("encoder.encode keeps returning NO_OUTPUT");
           }
+          try {
+            Thread.sleep(ENCODE_RETRY_SLEEP_MS); // Try again.
+          } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+          break;
         default:
           fail("encoder.encode returned: " + returnValue); // Error
       }

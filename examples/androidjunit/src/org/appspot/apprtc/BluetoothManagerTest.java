@@ -32,7 +32,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.util.Log;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import org.appspot.apprtc.AppRTCBluetoothManager.State;
 import org.chromium.testing.local.LocalRobolectricTestRunner;
@@ -73,7 +73,7 @@ public class BluetoothManagerTest {
     mockedAudioManager = mock(AudioManager.class);
     mockedBluetoothHeadset = mock(BluetoothHeadset.class);
     mockedBluetoothDevice = mock(BluetoothDevice.class);
-    mockedBluetoothDeviceList = new LinkedList<BluetoothDevice>();
+    mockedBluetoothDeviceList = new ArrayList<BluetoothDevice>();
 
     // Simulate that bluetooth SCO audio is available by default.
     when(mockedAudioManager.isBluetoothScoAvailableOffCall()).thenReturn(true);

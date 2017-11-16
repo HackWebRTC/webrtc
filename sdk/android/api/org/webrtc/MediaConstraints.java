@@ -10,7 +10,7 @@
 
 package org.webrtc;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -63,8 +63,8 @@ public class MediaConstraints {
   public final List<KeyValuePair> optional;
 
   public MediaConstraints() {
-    mandatory = new LinkedList<KeyValuePair>();
-    optional = new LinkedList<KeyValuePair>();
+    mandatory = new ArrayList<KeyValuePair>();
+    optional = new ArrayList<KeyValuePair>();
   }
 
   private static String stringifyKeyValuePairList(List<KeyValuePair> list) {

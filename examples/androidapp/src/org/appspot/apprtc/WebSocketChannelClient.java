@@ -17,7 +17,8 @@ import de.tavendo.autobahn.WebSocketConnection;
 import de.tavendo.autobahn.WebSocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 import org.appspot.apprtc.util.AsyncHttpURLConnection;
 import org.appspot.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
 import org.json.JSONException;
@@ -48,7 +49,7 @@ public class WebSocketChannelClient {
   private boolean closeEvent;
   // WebSocket send queue. Messages are added to the queue when WebSocket
   // client is not registered and are consumed in register() call.
-  private final LinkedList<String> wsSendQueue;
+  private final List<String> wsSendQueue = new ArrayList<>();
 
   /**
    * Possible WebSocket connection states.
@@ -70,7 +71,6 @@ public class WebSocketChannelClient {
     this.events = events;
     roomID = null;
     clientID = null;
-    wsSendQueue = new LinkedList<>();
     state = WebSocketConnectionState.NEW;
   }
 

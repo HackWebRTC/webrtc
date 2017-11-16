@@ -26,8 +26,10 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
@@ -66,25 +68,21 @@ public class PeerConnectionTest {
     private int expectedHeight = 0;
     private int expectedFramesDelivered = 0;
     private int expectedTracksAdded = 0;
-    private LinkedList<SignalingState> expectedSignalingChanges = new LinkedList<SignalingState>();
-    private LinkedList<IceConnectionState> expectedIceConnectionChanges =
-        new LinkedList<IceConnectionState>();
-    private LinkedList<IceGatheringState> expectedIceGatheringChanges =
-        new LinkedList<IceGatheringState>();
-    private LinkedList<String> expectedAddStreamLabels = new LinkedList<String>();
-    private LinkedList<String> expectedRemoveStreamLabels = new LinkedList<String>();
-    private final LinkedList<IceCandidate> gotIceCandidates = new LinkedList<IceCandidate>();
-    private Map<MediaStream, WeakReference<VideoRenderer>> renderers =
-        new IdentityHashMap<MediaStream, WeakReference<VideoRenderer>>();
+    private Queue<SignalingState> expectedSignalingChanges = new ArrayDeque<>();
+    private Queue<IceConnectionState> expectedIceConnectionChanges = new ArrayDeque<>();
+    private Queue<IceGatheringState> expectedIceGatheringChanges = new ArrayDeque<>();
+    private Queue<String> expectedAddStreamLabels = new ArrayDeque<>();
+    private Queue<String> expectedRemoveStreamLabels = new ArrayDeque<>();
+    private final List<IceCandidate> gotIceCandidates = new ArrayList<>();
+    private Map<MediaStream, WeakReference<VideoRenderer>> renderers = new IdentityHashMap<>();
     private DataChannel dataChannel;
-    private LinkedList<DataChannel.Buffer> expectedBuffers = new LinkedList<DataChannel.Buffer>();
-    private LinkedList<DataChannel.State> expectedStateChanges =
-        new LinkedList<DataChannel.State>();
-    private LinkedList<String> expectedRemoteDataChannelLabels = new LinkedList<String>();
+    private Queue<DataChannel.Buffer> expectedBuffers = new ArrayDeque<>();
+    private Queue<DataChannel.State> expectedStateChanges = new ArrayDeque<>();
+    private Queue<String> expectedRemoteDataChannelLabels = new ArrayDeque<>();
     private int expectedOldStatsCallbacks = 0;
     private int expectedNewStatsCallbacks = 0;
-    private LinkedList<StatsReport[]> gotStatsReports = new LinkedList<StatsReport[]>();
-    private final HashSet<MediaStream> gotRemoteStreams = new HashSet<MediaStream>();
+    private List<StatsReport[]> gotStatsReports = new ArrayList<>();
+    private final HashSet<MediaStream> gotRemoteStreams = new HashSet<>();
     private int expectedFirstAudioPacket = 0;
     private int expectedFirstVideoPacket = 0;
 
@@ -160,7 +158,7 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onSignalingChange(SignalingState newState) {
-      assertEquals(expectedSignalingChanges.removeFirst(), newState);
+      assertEquals(expectedSignalingChanges.remove(), newState);
     }
 
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
@@ -184,7 +182,7 @@ public class PeerConnectionTest {
         return;
       }
 
-      assertEquals(expectedIceConnectionChanges.removeFirst(), newState);
+      assertEquals(expectedIceConnectionChanges.remove(), newState);
     }
 
     @Override
@@ -213,7 +211,7 @@ public class PeerConnectionTest {
       if (expectedIceGatheringChanges.isEmpty()) {
         System.out.println(name + "Got an unexpected ICE gathering change " + newState);
       }
-      assertEquals(expectedIceGatheringChanges.removeFirst(), newState);
+      assertEquals(expectedIceGatheringChanges.remove(), newState);
     }
 
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
@@ -226,7 +224,7 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onAddStream(MediaStream stream) {
-      assertEquals(expectedAddStreamLabels.removeFirst(), stream.label());
+      assertEquals(expectedAddStreamLabels.remove(), stream.label());
       for (AudioTrack track : stream.audioTracks) {
         assertEquals("audio", track.kind());
       }
@@ -249,7 +247,7 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onRemoveStream(MediaStream stream) {
-      assertEquals(expectedRemoveStreamLabels.removeFirst(), stream.label());
+      assertEquals(expectedRemoveStreamLabels.remove(), stream.label());
       WeakReference<VideoRenderer> renderer = renderers.remove(stream);
       assertNotNull(renderer);
       assertNotNull(renderer.get());
@@ -268,7 +266,7 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onDataChannel(DataChannel remoteDataChannel) {
-      assertEquals(expectedRemoteDataChannelLabels.removeFirst(), remoteDataChannel.label());
+      assertEquals(expectedRemoteDataChannelLabels.remove(), remoteDataChannel.label());
       setDataChannel(remoteDataChannel);
       assertEquals(DataChannel.State.CONNECTING, dataChannel.state());
     }
@@ -309,7 +307,7 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onMessage(DataChannel.Buffer buffer) {
-      DataChannel.Buffer expected = expectedBuffers.removeFirst();
+      DataChannel.Buffer expected = expectedBuffers.remove();
       assertEquals(expected.binary, buffer.binary);
       assertTrue(expected.data.equals(buffer.data));
     }
@@ -325,7 +323,7 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onStateChange() {
-      assertEquals(expectedStateChanges.removeFirst(), dataChannel.state());
+      assertEquals(expectedStateChanges.remove(), dataChannel.state());
     }
 
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
@@ -390,9 +388,9 @@ public class PeerConnectionTest {
 
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
-    public synchronized LinkedList<StatsReport[]> takeStatsReports() {
-      LinkedList<StatsReport[]> got = gotStatsReports;
-      gotStatsReports = new LinkedList<StatsReport[]>();
+    public synchronized List<StatsReport[]> takeStatsReports() {
+      List<StatsReport[]> got = gotStatsReports;
+      gotStatsReports = new ArrayList<StatsReport[]>();
       return got;
     }
 
@@ -504,7 +502,7 @@ public class PeerConnectionTest {
         while (gotIceCandidates.isEmpty()) {
           gotIceCandidates.wait();
         }
-        return new LinkedList<IceCandidate>(gotIceCandidates);
+        return new ArrayList<IceCandidate>(gotIceCandidates);
       }
     }
   }
@@ -683,7 +681,7 @@ public class PeerConnectionTest {
     MediaConstraints pcConstraints = new MediaConstraints();
     pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
-    LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
+    List<PeerConnection.IceServer> iceServers = new ArrayList<>();
     iceServers.add(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
     iceServers.add(PeerConnection.IceServer.builder("turn:fake.example.com")
@@ -923,7 +921,7 @@ public class PeerConnectionTest {
     MediaConstraints pcConstraints = new MediaConstraints();
     pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
-    LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
+    List<PeerConnection.IceServer> iceServers = new ArrayList<>();
     iceServers.add(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
     iceServers.add(PeerConnection.IceServer.builder("turn:fake.example.com")
@@ -1078,7 +1076,7 @@ public class PeerConnectionTest {
     MediaConstraints pcConstraints = new MediaConstraints();
     pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
-    LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
+    List<PeerConnection.IceServer> iceServers = new ArrayList<>();
     iceServers.add(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
 
@@ -1273,7 +1271,7 @@ public class PeerConnectionTest {
 
     // This test is fine with default PC constraints and no ICE servers.
     MediaConstraints pcConstraints = new MediaConstraints();
-    LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
+    List<PeerConnection.IceServer> iceServers = new ArrayList<>();
 
     // Use OfferToReceiveAudio/Video to ensure every offer has an audio and
     // video m= section. Simplifies the test because it means we don't have to

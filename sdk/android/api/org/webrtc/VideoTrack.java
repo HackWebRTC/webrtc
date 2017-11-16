@@ -11,11 +11,12 @@
 package org.webrtc;
 
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Java version of VideoTrackInterface. */
 public class VideoTrack extends MediaStreamTrack {
-  private final LinkedList<VideoRenderer> renderers = new LinkedList<VideoRenderer>();
+  private final List<VideoRenderer> renderers = new ArrayList<>();
   private final IdentityHashMap<VideoSink, Long> sinks = new IdentityHashMap<VideoSink, Long>();
 
   public VideoTrack(long nativeTrack) {
@@ -64,9 +65,11 @@ public class VideoTrack extends MediaStreamTrack {
 
   @Override
   public void dispose() {
-    while (!renderers.isEmpty()) {
-      removeRenderer(renderers.getFirst());
+    for (VideoRenderer renderer : renderers) {
+      nativeRemoveSink(nativeTrack, renderer.nativeVideoRenderer);
+      renderer.dispose();
     }
+    renderers.clear();
     for (long nativeSink : sinks.values()) {
       nativeRemoveSink(nativeTrack, nativeSink);
       nativeFreeSink(nativeSink);

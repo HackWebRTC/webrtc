@@ -179,8 +179,8 @@ void PeerConnectionObserverJni::AddNativeAudioTrackToJavaStream(
   CHECK_EXCEPTION(jni()) << "error during NewObject";
 
   // Now add to the audioTracks linked list.
-  jfieldID audio_tracks_id = GetFieldID(
-      jni(), *j_media_stream_class_, "audioTracks", "Ljava/util/LinkedList;");
+  jfieldID audio_tracks_id = GetFieldID(jni(), *j_media_stream_class_,
+                                        "audioTracks", "Ljava/util/List;");
   jobject audio_tracks = GetObjectField(jni(), j_stream, audio_tracks_id);
   jmethodID add = GetMethodID(jni(), GetObjectClass(jni(), audio_tracks), "add",
                               "(Ljava/lang/Object;)Z");
@@ -201,8 +201,8 @@ void PeerConnectionObserverJni::AddNativeVideoTrackToJavaStream(
   CHECK_EXCEPTION(jni()) << "error during NewObject";
 
   // Now add to the videoTracks linked list.
-  jfieldID video_tracks_id = GetFieldID(
-      jni(), *j_media_stream_class_, "videoTracks", "Ljava/util/LinkedList;");
+  jfieldID video_tracks_id = GetFieldID(jni(), *j_media_stream_class_,
+                                        "videoTracks", "Ljava/util/List;");
   jobject video_tracks = GetObjectField(jni(), j_stream, video_tracks_id);
   jmethodID add = GetMethodID(jni(), GetObjectClass(jni(), video_tracks), "add",
                               "(Ljava/lang/Object;)Z");
@@ -253,8 +253,8 @@ void PeerConnectionObserverJni::OnAudioTrackRemovedFromStream(
     MediaStreamInterface* stream) {
   ScopedLocalRefFrame local_ref_frame(jni());
   jobject j_stream = GetOrCreateJavaStream(stream);
-  jfieldID audio_tracks_id = GetFieldID(
-      jni(), *j_media_stream_class_, "audioTracks", "Ljava/util/LinkedList;");
+  jfieldID audio_tracks_id = GetFieldID(jni(), *j_media_stream_class_,
+                                        "audioTracks", "Ljava/util/List;");
   jobject audio_tracks = GetObjectField(jni(), j_stream, audio_tracks_id);
   RemoveAndDisposeNativeTrackFromJavaTrackList(track, audio_tracks);
 }
@@ -264,8 +264,8 @@ void PeerConnectionObserverJni::OnVideoTrackRemovedFromStream(
     MediaStreamInterface* stream) {
   ScopedLocalRefFrame local_ref_frame(jni());
   jobject j_stream = GetOrCreateJavaStream(stream);
-  jfieldID video_tracks_id = GetFieldID(
-      jni(), *j_media_stream_class_, "videoTracks", "Ljava/util/LinkedList;");
+  jfieldID video_tracks_id = GetFieldID(jni(), *j_media_stream_class_,
+                                        "videoTracks", "Ljava/util/List;");
   jobject video_tracks = GetObjectField(jni(), j_stream, video_tracks_id);
   RemoveAndDisposeNativeTrackFromJavaTrackList(track, video_tracks);
 }

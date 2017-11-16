@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -139,7 +139,7 @@ public class PeerConnectionClient {
   // Queued remote ICE candidates are consumed only after both local and
   // remote descriptions are set. Similarly local ICE candidates are sent to
   // remote peer after both local and remote description are set.
-  private LinkedList<IceCandidate> queuedRemoteCandidates;
+  private List<IceCandidate> queuedRemoteCandidates;
   private PeerConnectionEvents events;
   private boolean isInitiator;
   private SessionDescription localSdp; // either offer or answer SDP
@@ -603,7 +603,7 @@ public class PeerConnectionClient {
     Log.d(TAG, "Create peer connection.");
 
     Log.d(TAG, "PCConstraints: " + pcConstraints.toString());
-    queuedRemoteCandidates = new LinkedList<>();
+    queuedRemoteCandidates = new ArrayList<>();
 
     if (videoCallEnabled) {
       factory.setVideoHwAccelerationOptions(

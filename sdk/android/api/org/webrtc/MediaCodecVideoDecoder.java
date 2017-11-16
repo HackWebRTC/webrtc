@@ -19,9 +19,9 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.view.Surface;
 import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -104,7 +104,7 @@ public class MediaCodecVideoDecoder {
   private int stride;
   private int sliceHeight;
   private boolean hasDecodedFirstFrame;
-  private final Queue<TimeStamps> decodeStartTimeMs = new LinkedList<TimeStamps>();
+  private final Queue<TimeStamps> decodeStartTimeMs = new ArrayDeque<TimeStamps>();
   private boolean useSurface;
 
   // The below variables are only used when decoding to a Surface.
@@ -112,7 +112,7 @@ public class MediaCodecVideoDecoder {
   private int droppedFrames;
   private Surface surface = null;
   private final Queue<DecodedOutputBuffer> dequeuedSurfaceOutputBuffers =
-      new LinkedList<DecodedOutputBuffer>();
+      new ArrayDeque<DecodedOutputBuffer>();
 
   // MediaCodec error handler - invoked when critical error happens which may prevent
   // further use of media codec API. Now it means that one of media codec instances

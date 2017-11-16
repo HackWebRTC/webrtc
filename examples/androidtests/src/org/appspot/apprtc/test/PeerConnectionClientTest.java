@@ -18,7 +18,7 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SmallTest;
 import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -79,7 +79,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   private boolean isClosed;
   private boolean isIceConnected;
   private SessionDescription localSdp;
-  private List<IceCandidate> iceCandidates = new LinkedList<>();
+  private List<IceCandidate> iceCandidates = new ArrayList<>();
   private final Object localSdpEvent = new Object();
   private final Object iceCandidateEvent = new Object();
   private final Object iceConnectedEvent = new Object();
@@ -309,7 +309,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   PeerConnectionClient createPeerConnectionClient(MockSink localRenderer,
       MockRenderer remoteRenderer, PeerConnectionParameters peerConnectionParameters,
       VideoCapturer videoCapturer) {
-    List<PeerConnection.IceServer> iceServers = new LinkedList<>();
+    List<PeerConnection.IceServer> iceServers = new ArrayList<>();
     SignalingParameters signalingParameters =
         new SignalingParameters(iceServers, true, // iceServers, initiator.
             null, null, null, // clientId, wssUrl, wssPostUrl.
