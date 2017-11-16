@@ -499,7 +499,7 @@ TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
 TEST(CallBitrateTest, BiggerMaskMinUsed) {
   CallBitrateHelper call;
   Call::Config::BitrateConfigMask mask;
-  mask.min_bitrate_bps = rtc::Optional<int>(1234);
+  mask.min_bitrate_bps = 1234;
 
   EXPECT_CALL(call.mock_cc(),
               SetBweBitrates(*mask.min_bitrate_bps, testing::_, testing::_));
@@ -509,7 +509,7 @@ TEST(CallBitrateTest, BiggerMaskMinUsed) {
 TEST(CallBitrateTest, BiggerConfigMinUsed) {
   CallBitrateHelper call;
   Call::Config::BitrateConfigMask mask;
-  mask.min_bitrate_bps = rtc::Optional<int>(1000);
+  mask.min_bitrate_bps = 1000;
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(1000, testing::_, testing::_));
   call->SetBitrateConfigMask(mask);
 
@@ -524,7 +524,7 @@ TEST(CallBitrateTest, BiggerConfigMinUsed) {
 TEST(CallBitrateTest, LatestStartMaskPreferred) {
   CallBitrateHelper call;
   Call::Config::BitrateConfigMask mask;
-  mask.start_bitrate_bps = rtc::Optional<int>(1300);
+  mask.start_bitrate_bps = 1300;
 
   EXPECT_CALL(call.mock_cc(),
               SetBweBitrates(testing::_, *mask.start_bitrate_bps, testing::_));
@@ -545,8 +545,7 @@ TEST(CallBitrateTest, SmallerMaskMaxUsed) {
   CallBitrateHelper call(bitrate_config);
 
   Call::Config::BitrateConfigMask mask;
-  mask.max_bitrate_bps =
-      rtc::Optional<int>(bitrate_config.start_bitrate_bps + 1000);
+  mask.max_bitrate_bps = bitrate_config.start_bitrate_bps + 1000;
 
   EXPECT_CALL(call.mock_cc(),
               SetBweBitrates(testing::_, testing::_, *mask.max_bitrate_bps));
@@ -559,8 +558,7 @@ TEST(CallBitrateTest, SmallerConfigMaxUsed) {
   CallBitrateHelper call(bitrate_config);
 
   Call::Config::BitrateConfigMask mask;
-  mask.max_bitrate_bps =
-      rtc::Optional<int>(bitrate_config.start_bitrate_bps + 2000);
+  mask.max_bitrate_bps = bitrate_config.start_bitrate_bps + 2000;
 
   // Expect no calls because nothing changes
   EXPECT_CALL(call.mock_cc(),
@@ -575,7 +573,7 @@ TEST(CallBitrateTest, MaskStartLessThanConfigMinClamped) {
   CallBitrateHelper call(bitrate_config);
 
   Call::Config::BitrateConfigMask mask;
-  mask.start_bitrate_bps = rtc::Optional<int>(1000);
+  mask.start_bitrate_bps = 1000;
 
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(2000, 2000, testing::_));
   call->SetBitrateConfigMask(mask);
@@ -587,7 +585,7 @@ TEST(CallBitrateTest, MaskStartGreaterThanConfigMaxClamped) {
   CallBitrateHelper call(bitrate_config);
 
   Call::Config::BitrateConfigMask mask;
-  mask.max_bitrate_bps = rtc::Optional<int>(1000);
+  mask.max_bitrate_bps = 1000;
 
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(testing::_, -1, 1000));
   call->SetBitrateConfigMask(mask);
@@ -599,7 +597,7 @@ TEST(CallBitrateTest, MaskMinGreaterThanConfigMaxClamped) {
   CallBitrateHelper call(bitrate_config);
 
   Call::Config::BitrateConfigMask mask;
-  mask.max_bitrate_bps = rtc::Optional<int>(1000);
+  mask.max_bitrate_bps = 1000;
 
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(1000, testing::_, 1000));
   call->SetBitrateConfigMask(mask);
@@ -609,7 +607,7 @@ TEST(CallBitrateTest, SettingMaskStartForcesUpdate) {
   CallBitrateHelper call;
 
   Call::Config::BitrateConfigMask mask;
-  mask.start_bitrate_bps = rtc::Optional<int>(1000);
+  mask.start_bitrate_bps = 1000;
 
   // SetBweBitrates should be called twice with the same params since
   // start_bitrate_bps is set.
@@ -654,7 +652,7 @@ TEST(CallBitrateTest, SetBweBitratesNotCalledWhenEffectiveMaxUnchanged) {
 
   // Reduce effective max to 1000 with the mask.
   Call::Config::BitrateConfigMask mask;
-  mask.max_bitrate_bps = rtc::Optional<int>(1000);
+  mask.max_bitrate_bps = 1000;
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(testing::_, testing::_, 1000));
   call->SetBitrateConfigMask(mask);
 
@@ -670,7 +668,7 @@ TEST(CallBitrateTest, SetBweBitratesNotCalledWhenStartMaskRemoved) {
   CallBitrateHelper call;
 
   Call::Config::BitrateConfigMask mask;
-  mask.start_bitrate_bps = rtc::Optional<int>(1000);
+  mask.start_bitrate_bps = 1000;
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(0, 1000, -1));
   call->SetBitrateConfigMask(mask);
 
@@ -685,7 +683,7 @@ TEST(CallBitrateTest, SetBitrateConfigAfterSetBitrateConfigMaskWithStart) {
   CallBitrateHelper call;
 
   Call::Config::BitrateConfigMask mask;
-  mask.start_bitrate_bps = rtc::Optional<int>(1000);
+  mask.start_bitrate_bps = 1000;
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(0, 1000, -1));
   call->SetBitrateConfigMask(mask);
 
@@ -707,12 +705,12 @@ TEST(CallBitrateTest, SetBweBitratesNotCalledWhenClampedMinUnchanged) {
 
   // Set min to 2000; it is clamped to the max (1000).
   Call::Config::BitrateConfigMask mask;
-  mask.min_bitrate_bps = rtc::Optional<int>(2000);
+  mask.min_bitrate_bps = 2000;
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(1000, -1, 1000));
   call->SetBitrateConfigMask(mask);
 
   // Set min to 3000; the clamped value stays the same so nothing happens.
-  mask.min_bitrate_bps = rtc::Optional<int>(3000);
+  mask.min_bitrate_bps = 3000;
   call->SetBitrateConfigMask(mask);
 }
 
