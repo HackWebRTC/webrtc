@@ -204,7 +204,7 @@ RTCError RtpTransportAdapter::SetSrtpSendKey(
         webrtc::RTCErrorType::UNSUPPORTED_OPERATION,
         "The send key and receive key must have the same cipher suite.");
   }
-  send_key_ = rtc::Optional<cricket::CryptoParams>(params);
+  send_key_ = params;
   return RTCError::OK();
 }
 
@@ -220,7 +220,7 @@ RTCError RtpTransportAdapter::SetSrtpReceiveKey(
         webrtc::RTCErrorType::UNSUPPORTED_OPERATION,
         "The send key and receive key must have the same cipher suite.");
   }
-  receive_key_ = rtc::Optional<cricket::CryptoParams>(params);
+  receive_key_ = params;
   return RTCError::OK();
 }
 

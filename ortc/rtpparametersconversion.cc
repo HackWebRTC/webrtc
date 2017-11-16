@@ -234,47 +234,44 @@ rtc::Optional<RtcpFeedback> ToRtcpFeedback(
     const cricket::FeedbackParam& cricket_feedback) {
   if (cricket_feedback.id() == cricket::kRtcpFbParamCcm) {
     if (cricket_feedback.param() == cricket::kRtcpFbCcmParamFir) {
-      return rtc::Optional<RtcpFeedback>(
-          {RtcpFeedbackType::CCM, RtcpFeedbackMessageType::FIR});
+      return RtcpFeedback(RtcpFeedbackType::CCM, RtcpFeedbackMessageType::FIR);
     } else {
       RTC_LOG(LS_WARNING) << "Unsupported parameter for CCM RTCP feedback: "
                           << cricket_feedback.param();
-      return rtc::Optional<RtcpFeedback>();
+      return rtc::nullopt;
     }
   } else if (cricket_feedback.id() == cricket::kRtcpFbParamNack) {
     if (cricket_feedback.param().empty()) {
-      return rtc::Optional<RtcpFeedback>(
-          {RtcpFeedbackType::NACK, RtcpFeedbackMessageType::GENERIC_NACK});
+      return RtcpFeedback(RtcpFeedbackType::NACK,
+                          RtcpFeedbackMessageType::GENERIC_NACK);
     } else if (cricket_feedback.param() == cricket::kRtcpFbNackParamPli) {
-      return rtc::Optional<RtcpFeedback>(
-          {RtcpFeedbackType::NACK, RtcpFeedbackMessageType::PLI});
+      return RtcpFeedback(RtcpFeedbackType::NACK, RtcpFeedbackMessageType::PLI);
     } else {
       RTC_LOG(LS_WARNING) << "Unsupported parameter for NACK RTCP feedback: "
                           << cricket_feedback.param();
-      return rtc::Optional<RtcpFeedback>();
+      return rtc::nullopt;
     }
   } else if (cricket_feedback.id() == cricket::kRtcpFbParamRemb) {
     if (!cricket_feedback.param().empty()) {
       RTC_LOG(LS_WARNING) << "Unsupported parameter for REMB RTCP feedback: "
                           << cricket_feedback.param();
-      return rtc::Optional<RtcpFeedback>();
+      return rtc::nullopt;
     } else {
-      return rtc::Optional<RtcpFeedback>(RtcpFeedback(RtcpFeedbackType::REMB));
+      return RtcpFeedback(RtcpFeedbackType::REMB);
     }
   } else if (cricket_feedback.id() == cricket::kRtcpFbParamTransportCc) {
     if (!cricket_feedback.param().empty()) {
       RTC_LOG(LS_WARNING)
           << "Unsupported parameter for transport-cc RTCP feedback: "
           << cricket_feedback.param();
-      return rtc::Optional<RtcpFeedback>();
+      return rtc::nullopt;
     } else {
-      return rtc::Optional<RtcpFeedback>(
-          RtcpFeedback(RtcpFeedbackType::TRANSPORT_CC));
+      return RtcpFeedback(RtcpFeedbackType::TRANSPORT_CC);
     }
   }
   RTC_LOG(LS_WARNING) << "Unsupported RTCP feedback type: "
                       << cricket_feedback.id();
-  return rtc::Optional<RtcpFeedback>();
+  return rtc::nullopt;
 }
 
 std::vector<RtpEncodingParameters> ToRtpEncodings(
@@ -314,8 +311,7 @@ template <>
 void ToRtpCodecCapabilityTypeSpecific<cricket::AudioCodec>(
     const cricket::AudioCodec& cricket_codec,
     RtpCodecCapability* codec) {
-  codec->num_channels =
-      rtc::Optional<int>(static_cast<int>(cricket_codec.channels));
+  codec->num_channels = static_cast<int>(cricket_codec.channels);
 }
 
 template <>
@@ -355,8 +351,7 @@ template <>
 void ToRtpCodecParametersTypeSpecific<cricket::AudioCodec>(
     const cricket::AudioCodec& cricket_codec,
     RtpCodecParameters* codec) {
-  codec->num_channels =
-      rtc::Optional<int>(static_cast<int>(cricket_codec.channels));
+  codec->num_channels = static_cast<int>(cricket_codec.channels);
 }
 
 template <>
