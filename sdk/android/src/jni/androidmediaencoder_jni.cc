@@ -516,21 +516,11 @@ bool MediaCodecVideoEncoder::EncodeTask::Run() {
   return false;
 }
 
-bool IsFormatSupported(
-    const std::vector<webrtc::SdpVideoFormat>& supported_formats,
-    const std::string& name) {
-  for (const webrtc::SdpVideoFormat& supported_format : supported_formats) {
-    if (cricket::CodecNamesEq(name, supported_format.name))
-      return true;
-  }
-  return false;
-}
-
 bool MediaCodecVideoEncoder::ProcessHWError(
     bool reset_if_fallback_unavailable) {
   ALOGE << "ProcessHWError";
-  if (IsFormatSupported(InternalEncoderFactory().GetSupportedFormats(),
-                        codec_.name)) {
+  if (FindMatchingCodec(cricket::InternalEncoderFactory().supported_codecs(),
+                        codec_)) {
     ALOGE << "Fallback to SW encoder.";
     sw_fallback_required_ = true;
     return false;

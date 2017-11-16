@@ -15,9 +15,10 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
-VP8EncoderSimulcastProxy::VP8EncoderSimulcastProxy(VideoEncoderFactory* factory)
+VP8EncoderSimulcastProxy::VP8EncoderSimulcastProxy(
+    cricket::WebRtcVideoEncoderFactory* factory)
     : factory_(factory), callback_(nullptr) {
-  encoder_ = factory_->CreateVideoEncoder(SdpVideoFormat("VP8"));
+  encoder_ = CreateScopedVideoEncoder(factory_, cricket::VideoCodec("VP8"));
 }
 
 VP8EncoderSimulcastProxy::~VP8EncoderSimulcastProxy() {}

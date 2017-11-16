@@ -11,23 +11,27 @@
 #ifndef MEDIA_ENGINE_INTERNALENCODERFACTORY_H_
 #define MEDIA_ENGINE_INTERNALENCODERFACTORY_H_
 
-#include <memory>
 #include <vector>
 
-#include "api/video_codecs/video_encoder_factory.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
 
-namespace webrtc {
+namespace cricket {
 
-class InternalEncoderFactory : public VideoEncoderFactory {
+class InternalEncoderFactory : public WebRtcVideoEncoderFactory {
  public:
-  std::vector<SdpVideoFormat> GetSupportedFormats() const override;
+  InternalEncoderFactory();
+  virtual ~InternalEncoderFactory();
 
-  CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
+  // WebRtcVideoEncoderFactory implementation.
+  webrtc::VideoEncoder* CreateVideoEncoder(
+      const cricket::VideoCodec& codec) override;
+  const std::vector<cricket::VideoCodec>& supported_codecs() const override;
+  void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override;
 
-  std::unique_ptr<VideoEncoder> CreateVideoEncoder(
-      const SdpVideoFormat& format) override;
+ private:
+  std::vector<cricket::VideoCodec> supported_codecs_;
 };
 
-}  // namespace webrtc
+}  // namespace cricket
 
 #endif  // MEDIA_ENGINE_INTERNALENCODERFACTORY_H_

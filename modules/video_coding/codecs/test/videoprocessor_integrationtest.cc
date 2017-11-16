@@ -80,40 +80,6 @@ bool RunEncodeInRealTime(const TestConfig& config) {
 #endif
 }
 
-// An internal encoder factory in the old WebRtcVideoEncoderFactory format.
-// TODO(magjed): Update these tests to use new webrtc::VideoEncoderFactory
-// instead.
-class LegacyInternalEncoderFactory : public cricket::WebRtcVideoEncoderFactory {
- public:
-  LegacyInternalEncoderFactory() {
-    for (const SdpVideoFormat& format :
-         InternalEncoderFactory().GetSupportedFormats()) {
-      supported_codecs_.push_back(cricket::VideoCodec(format));
-    }
-  }
-
-  // WebRtcVideoEncoderFactory implementation.
-  VideoEncoder* CreateVideoEncoder(const cricket::VideoCodec& codec) override {
-    return InternalEncoderFactory()
-        .CreateVideoEncoder(SdpVideoFormat(codec.name, codec.params))
-        .release();
-  }
-
-  const std::vector<cricket::VideoCodec>& supported_codecs() const override {
-    return supported_codecs_;
-  }
-
-  bool EncoderTypeHasInternalSource(
-      webrtc::VideoCodecType type) const override {
-    return false;
-  }
-
-  void DestroyVideoEncoder(VideoEncoder* encoder) override { delete encoder; }
-
- private:
-  std::vector<cricket::VideoCodec> supported_codecs_;
-};
-
 // An internal decoder factory in the old WebRtcVideoDecoderFactory format.
 // TODO(magjed): Update these tests to use new webrtc::VideoDecoderFactory
 // instead.
@@ -347,7 +313,7 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
     RTC_NOTREACHED() << "Only support HW encoder on Android and iOS.";
 #endif
   } else {
-    encoder_factory.reset(new LegacyInternalEncoderFactory());
+    encoder_factory.reset(new cricket::InternalEncoderFactory());
   }
 
   std::unique_ptr<cricket::WebRtcVideoDecoderFactory> decoder_factory;
@@ -416,8 +382,8 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
 
   if (config_.sw_fallback_encoder) {
     encoder_ = rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
-        InternalEncoderFactory().CreateVideoEncoder(
-            SdpVideoFormat(codec.name, codec.params)),
+        std::unique_ptr<VideoEncoder>(
+            cricket::InternalEncoderFactory().CreateVideoEncoder(codec)),
         std::move(encoder_));
   }
   if (config_.sw_fallback_decoder) {

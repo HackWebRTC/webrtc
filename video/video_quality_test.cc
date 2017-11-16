@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <deque>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -1392,7 +1393,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
       // encoders usually can't natively do simulcast with different frame rates
       // for the different layers.
       video_encoder_.reset(
-          new SimulcastEncoderAdapter(new InternalEncoderFactory()));
+          new SimulcastEncoderAdapter(new cricket::InternalEncoderFactory()));
     } else {
       video_encoder_ = VP8Encoder::Create();
     }

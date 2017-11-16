@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "media/engine/webrtcvideoencoderfactory.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/sequenced_task_checker.h"
@@ -25,7 +26,6 @@
 namespace webrtc {
 
 class SimulcastRateAllocator;
-class VideoEncoderFactory;
 
 // SimulcastEncoderAdapter implements simulcast support by creating multiple
 // webrtc::VideoEncoder instances with the given VideoEncoderFactory.
@@ -33,7 +33,7 @@ class VideoEncoderFactory;
 // interfaces should be called from the encoder task queue.
 class SimulcastEncoderAdapter : public VP8Encoder {
  public:
-  explicit SimulcastEncoderAdapter(VideoEncoderFactory* factory);
+  explicit SimulcastEncoderAdapter(cricket::WebRtcVideoEncoderFactory* factory);
   virtual ~SimulcastEncoderAdapter();
 
   // Implements VideoEncoder.
@@ -96,7 +96,7 @@ class SimulcastEncoderAdapter : public VP8Encoder {
   void DestroyStoredEncoders();
 
   volatile int inited_;  // Accessed atomically.
-  VideoEncoderFactory* const factory_;
+  cricket::WebRtcVideoEncoderFactory* const factory_;
   VideoCodec codec_;
   std::vector<StreamInfo> streaminfos_;
   EncodedImageCallback* encoded_complete_callback_;
