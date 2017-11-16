@@ -133,7 +133,7 @@ int32_t VideoDecoderWrapper::Decode(
       input_image.capture_time_ms_ * rtc::kNumNanosecsPerMillisec;
   frame_extra_info.timestamp_rtp = input_image._timeStamp;
   frame_extra_info.qp =
-      qp_parsing_enabled_ ? ParseQP(input_image) : rtc::Optional<uint8_t>();
+      qp_parsing_enabled_ ? ParseQP(input_image) : rtc::nullopt;
   frame_extra_infos_.push_back(frame_extra_info);
 
   jobject jinput_image =
@@ -191,13 +191,12 @@ void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* jni,
 
   rtc::Optional<int32_t> decoding_time_ms;
   if (jdecode_time_ms != nullptr) {
-    decoding_time_ms = rtc::Optional<int32_t>(
-        jni->CallIntMethod(jdecode_time_ms, int_value_method_));
+    decoding_time_ms = jni->CallIntMethod(jdecode_time_ms, int_value_method_);
   }
 
   rtc::Optional<uint8_t> qp;
   if (jqp != nullptr) {
-    qp = rtc::Optional<uint8_t>(jni->CallIntMethod(jqp, int_value_method_));
+    qp = jni->CallIntMethod(jqp, int_value_method_);
     // The decoder provides QP values itself, no need to parse the bitstream.
     qp_parsing_enabled_ = false;
   } else {
@@ -261,7 +260,7 @@ int32_t VideoDecoderWrapper::HandleReturnCode(JNIEnv* jni, jobject code) {
 rtc::Optional<uint8_t> VideoDecoderWrapper::ParseQP(
     const EncodedImage& input_image) {
   if (input_image.qp_ != -1) {
-    return rtc::Optional<uint8_t>(input_image.qp_);
+    return input_image.qp_;
   }
 
   rtc::Optional<uint8_t> qp;
@@ -269,14 +268,14 @@ rtc::Optional<uint8_t> VideoDecoderWrapper::ParseQP(
     case kVideoCodecVP8: {
       int qp_int;
       if (vp8::GetQp(input_image._buffer, input_image._length, &qp_int)) {
-        qp = rtc::Optional<uint8_t>(qp_int);
+        qp = qp_int;
       }
       break;
     }
     case kVideoCodecVP9: {
       int qp_int;
       if (vp9::GetQp(input_image._buffer, input_image._length, &qp_int)) {
-        qp = rtc::Optional<uint8_t>(qp_int);
+        qp = qp_int;
       }
       break;
     }
@@ -285,7 +284,7 @@ rtc::Optional<uint8_t> VideoDecoderWrapper::ParseQP(
                                             input_image._length);
       int qp_int;
       if (h264_bitstream_parser_.GetLastSliceQp(&qp_int)) {
-        qp = rtc::Optional<uint8_t>(qp_int);
+        qp = qp_int;
       }
       break;
     }

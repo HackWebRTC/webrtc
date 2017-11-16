@@ -651,14 +651,14 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   if (codecType_ == kVideoCodecVP8) {
     int qp_int;
     if (vp8::GetQp(inputImage._buffer, inputImage._length, &qp_int)) {
-      qp = rtc::Optional<uint8_t>(qp_int);
+      qp = qp_int;
     }
   } else if (codecType_ == kVideoCodecH264) {
     h264_bitstream_parser_.ParseBitstream(inputImage._buffer,
                                           inputImage._length);
     int qp_int;
     if (h264_bitstream_parser_.GetLastSliceQp(&qp_int)) {
-      qp = rtc::Optional<uint8_t>(qp_int);
+      qp = qp_int;
     }
   }
   pending_frame_qps_.push_back(qp);
@@ -898,8 +898,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
 
     rtc::Optional<uint8_t> qp = pending_frame_qps_.front();
     pending_frame_qps_.pop_front();
-    callback_->Decoded(decoded_frame, rtc::Optional<int32_t>(decode_time_ms),
-                       qp);
+    callback_->Decoded(decoded_frame, decode_time_ms, qp);
   }
   return true;
 }
