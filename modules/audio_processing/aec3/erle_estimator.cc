@@ -11,6 +11,7 @@
 #include "modules/audio_processing/aec3/erle_estimator.h"
 
 #include <algorithm>
+#include <numeric>
 
 #include "rtc_base/safe_minmax.h"
 
@@ -24,6 +25,8 @@ ErleEstimator::ErleEstimator(float min_erle,
       max_erle_hf_(max_erle_hf) {
   erle_.fill(min_erle_);
   hold_counters_.fill(0);
+  erle_time_domain_ = min_erle_;
+  hold_counter_time_domain_ = 0;
 }
 
 ErleEstimator::~ErleEstimator() = default;
@@ -64,6 +67,24 @@ void ErleEstimator::Update(
 
   erle_[0] = erle_[1];
   erle_[kFftLengthBy2] = erle_[kFftLengthBy2 - 1];
+
+  // Compute ERLE over all frequency bins.
+  const float X2_sum = std::accumulate(X2.begin(), X2.end(), 0.0f);
+  const float E2_sum = std::accumulate(E2.begin(), E2.end(), 0.0f);
+  if (X2_sum > kX2Min * X2.size() && E2_sum > 0.f) {
+    const float Y2_sum = std::accumulate(Y2.begin(), Y2.end(), 0.0f);
+    const float new_erle = Y2_sum / E2_sum;
+    if (new_erle > erle_time_domain_) {
+      hold_counter_time_domain_ = 100;
+      erle_time_domain_ += 0.1f * (new_erle - erle_time_domain_);
+      erle_time_domain_ =
+          rtc::SafeClamp(erle_time_domain_, min_erle_, max_erle_lf_);
+    }
+  }
+  --hold_counter_time_domain_;
+  erle_time_domain_ = (hold_counter_time_domain_ > 0)
+                        ? erle_time_domain_
+                        : std::max(min_erle_, 0.97f * erle_time_domain_);
 }
 
 }  // namespace webrtc
