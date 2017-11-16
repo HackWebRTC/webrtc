@@ -14,7 +14,6 @@
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/mediaconstants.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/videocodecinfo.h"
 
 namespace webrtc {
 namespace jni {
@@ -31,23 +30,13 @@ static bool IsSameH264Profile(const cricket::CodecParameterMap& params1,
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         DefaultVideoEncoderFactory_isSameCodec,
+                         HardwareVideoEncoderFactory_isSameH264Profile,
                          JNIEnv* jni,
                          jclass,
-                         jobject info1,
-                         jobject info2) {
-  cricket::VideoCodec codec1 =
-      cricket::VideoCodec(VideoCodecInfoToSdpVideoFormat(jni, info1));
-  cricket::VideoCodec codec2 =
-      cricket::VideoCodec(VideoCodecInfoToSdpVideoFormat(jni, info2));
-
-  if (!cricket::CodecNamesEq(codec1.name, codec2.name))
-    return false;
-  if (cricket::CodecNamesEq(codec1.name.c_str(), cricket::kH264CodecName) &&
-      !IsSameH264Profile(codec1.params, codec2.params)) {
-    return false;
-  }
-  return true;
+                         jobject params1,
+                         jobject params2) {
+  return IsSameH264Profile(JavaToStdMapStrings(jni, params1),
+                           JavaToStdMapStrings(jni, params2));
 }
 
 }  // namespace jni

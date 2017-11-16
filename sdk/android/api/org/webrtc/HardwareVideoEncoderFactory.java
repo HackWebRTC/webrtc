@@ -93,6 +93,16 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
     Integer yuvColorFormat = MediaCodecUtils.selectColorFormat(
         MediaCodecUtils.ENCODER_COLOR_FORMATS, info.getCapabilitiesForType(mime));
 
+    if (type == VideoCodecType.H264) {
+      boolean isHighProfile = isSameH264Profile(input.params, getCodecProperties(type, true))
+          && isH264HighProfileSupported(info);
+      boolean isBaselineProfile = isSameH264Profile(input.params, getCodecProperties(type, false));
+
+      if (!isHighProfile && !isBaselineProfile) {
+        return null;
+      }
+    }
+
     return new HardwareVideoEncoder(codecName, type, surfaceColorFormat, yuvColorFormat,
         input.params, getKeyFrameIntervalSec(type), getForcedKeyFrameIntervalMs(type, codecName),
         createBitrateAdjuster(type, codecName), sharedContext);
@@ -269,4 +279,7 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
         throw new IllegalArgumentException("Unsupported codec: " + type);
     }
   }
+
+  private static native boolean isSameH264Profile(
+      Map<String, String> params1, Map<String, String> params2);
 }

@@ -126,7 +126,7 @@ rtc_static_library("video_jni") {
     "src/jni/androidvideotracksource.cc",
     "src/jni/androidvideotracksource.h",
     "src/jni/androidvideotracksource_jni.cc",
-    "src/jni/defaultvideoencoderfactory.cc",
+    "src/jni/hardwarevideoencoderfactory.cc",
     "src/jni/jni_generator_helper.h",
     "src/jni/nv12buffer_jni.cc",
     "src/jni/nv21buffer_jni.cc",
