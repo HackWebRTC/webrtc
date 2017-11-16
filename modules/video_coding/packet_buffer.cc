@@ -116,9 +116,9 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
     UpdateMissingPackets(packet->seqNum);
 
     int64_t now_ms = clock_->TimeInMilliseconds();
-    last_received_packet_ms_ = rtc::Optional<int64_t>(now_ms);
+    last_received_packet_ms_ = now_ms;
     if (packet->frameType == kVideoFrameKey)
-      last_received_keyframe_packet_ms_ = rtc::Optional<int64_t>(now_ms);
+      last_received_keyframe_packet_ms_ = now_ms;
 
     found_frames = FindFrames(seq_num);
   }
@@ -458,7 +458,7 @@ int PacketBuffer::Release() const {
 
 void PacketBuffer::UpdateMissingPackets(uint16_t seq_num) {
   if (!newest_inserted_seq_num_)
-    newest_inserted_seq_num_ = rtc::Optional<uint16_t>(seq_num);
+    newest_inserted_seq_num_ = seq_num;
 
   const int kMaxPaddingAge = 1000;
   if (AheadOf(seq_num, *newest_inserted_seq_num_)) {

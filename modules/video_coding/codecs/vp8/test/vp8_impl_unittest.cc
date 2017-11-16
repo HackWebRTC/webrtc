@@ -108,7 +108,7 @@ class DecodedImageCallbackTestImpl : public webrtc::DecodedImageCallback {
     EXPECT_GT(frame.width(), 0);
     EXPECT_GT(frame.height(), 0);
     EXPECT_TRUE(qp);
-    frame_ = rtc::Optional<VideoFrame>(frame);
+    frame_ = frame;
     qp_ = qp;
     complete_ = true;
   }

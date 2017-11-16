@@ -58,8 +58,8 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                                          int64_t decode_time_ms) {
   Decoded(decodedImage,
           decode_time_ms >= 0 ? rtc::Optional<int32_t>(decode_time_ms)
-                              : rtc::Optional<int32_t>(),
-          rtc::Optional<uint8_t>());
+                              : rtc::nullopt,
+          rtc::nullopt);
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -85,8 +85,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
 
   const int64_t now_ms = _clock->TimeInMilliseconds();
   if (!decode_time_ms) {
-    decode_time_ms =
-        rtc::Optional<int32_t>(now_ms - frameInfo->decodeStartTimeMs);
+    decode_time_ms = now_ms - frameInfo->decodeStartTimeMs;
   }
   _timing->StopDecodeTimer(decodedImage.timestamp(), *decode_time_ms, now_ms,
                            frameInfo->renderTimeMs);

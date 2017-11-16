@@ -47,7 +47,7 @@ std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
 rtc::Optional<size_t> GetMaxNaluLength(const EncodedImage& encoded_frame,
                                        const TestConfig& config) {
   if (config.codec_settings.codecType != kVideoCodecH264)
-    return rtc::Optional<size_t>();
+    return rtc::nullopt;
 
   std::vector<webrtc::H264::NaluIndex> nalu_indices =
       webrtc::H264::FindNaluIndices(encoded_frame._buffer,
@@ -59,7 +59,7 @@ rtc::Optional<size_t> GetMaxNaluLength(const EncodedImage& encoded_frame,
   for (const webrtc::H264::NaluIndex& index : nalu_indices)
     max_length = std::max(max_length, index.payload_size);
 
-  return rtc::Optional<size_t>(max_length);
+  return max_length;
 }
 
 int GetElapsedTimeMicroseconds(int64_t start_ns, int64_t stop_ns) {

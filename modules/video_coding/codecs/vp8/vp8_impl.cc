@@ -1234,8 +1234,7 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
 
   VideoFrame decoded_image(buffer, timestamp, 0, kVideoRotation_0);
   decoded_image.set_ntp_time_ms(ntp_time_ms);
-  decode_complete_callback_->Decoded(decoded_image, rtc::Optional<int32_t>(),
-                                     rtc::Optional<uint8_t>(qp));
+  decode_complete_callback_->Decoded(decoded_image, rtc::nullopt, qp);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }

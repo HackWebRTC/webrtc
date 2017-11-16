@@ -167,8 +167,8 @@ rtc::Optional<RTPVideoTypeHeader> RtpFrameObject::GetCodecHeader() const {
   rtc::CritScope lock(&packet_buffer_->crit_);
   VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num_);
   if (!packet)
-    return rtc::Optional<RTPVideoTypeHeader>();
-  return rtc::Optional<RTPVideoTypeHeader>(packet->video_header.codecHeader);
+    return rtc::nullopt;
+  return packet->video_header.codecHeader;
 }
 
 }  // namespace video_coding

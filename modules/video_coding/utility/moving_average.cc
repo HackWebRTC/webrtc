@@ -28,9 +28,9 @@ rtc::Optional<int> MovingAverage::GetAverage() const {
 
 rtc::Optional<int> MovingAverage::GetAverage(size_t num_samples) const {
   if (num_samples > size() || num_samples == 0)
-    return rtc::Optional<int>();
+    return rtc::nullopt;
   int sum = sum_ - sum_history_[(count_ - num_samples) % sum_history_.size()];
-  return rtc::Optional<int>(sum / static_cast<int>(num_samples));
+  return sum / static_cast<int>(num_samples);
 }
 
 void MovingAverage::Reset() {

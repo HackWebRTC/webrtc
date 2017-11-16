@@ -132,7 +132,7 @@ class ScreenshareLayerTest : public ::testing::Test {
   // FrameEncoded() call will be omitted and needs to be done by the caller.
   // Returns the flags for the last frame.
   int SkipUntilTl(int layer) {
-    return SkipUntilTlAndSync(layer, rtc::Optional<bool>());
+    return SkipUntilTlAndSync(layer, rtc::nullopt);
   }
 
   // Same as SkipUntilTl, but also waits until the sync bit condition is met.
@@ -583,7 +583,7 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAtOvershootDrop) {
   EXPECT_TRUE(RunGracePeriod());
 
   // Move ahead until we have a sync frame in TL1.
-  EXPECT_EQ(kTl1SyncFlags, SkipUntilTlAndSync(1, rtc::Optional<bool>(true)));
+  EXPECT_EQ(kTl1SyncFlags, SkipUntilTlAndSync(1, true));
   ASSERT_TRUE(vp8_info_.layerSync);
 
   // Simulate overshoot of this frame.
