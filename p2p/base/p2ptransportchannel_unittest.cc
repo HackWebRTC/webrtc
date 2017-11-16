@@ -1336,9 +1336,9 @@ TEST_F(P2PTransportChannelTest,
 
   // ep1 gathers continually but ep2 does not.
   IceConfig config1 = CreateIceConfig(1000, GATHER_CONTINUALLY);
-  config1.regather_on_failed_networks_interval = rtc::Optional<int>(2000);
+  config1.regather_on_failed_networks_interval = 2000;
   IceConfig config2;
-  config2.regather_on_failed_networks_interval = rtc::Optional<int>(2000);
+  config2.regather_on_failed_networks_interval = 2000;
   CreateChannels(config1, config2);
 
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
@@ -3013,7 +3013,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestRestoreBackupConnection) {
 
   // Create channels and let them go writable, as usual.
   IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
-  config.regather_on_failed_networks_interval = rtc::Optional<int>(2000);
+  config.regather_on_failed_networks_interval = 2000;
   CreateChannels(config, config);
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                                  ep2_ch1()->receiving() &&
@@ -4132,7 +4132,7 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   P2PTransportChannel ch("test channel", 1, &pa);
   PrepareChannel(&ch);
   IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
-  config.receiving_switching_delay = rtc::Optional<int>(800);
+  config.receiving_switching_delay = 800;
   ch.SetIceConfig(config);
   ch.MaybeStartGathering();
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));

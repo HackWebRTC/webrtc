@@ -307,9 +307,9 @@ IceGatheringState P2PTransportChannel::gathering_state() const {
 rtc::Optional<int> P2PTransportChannel::GetRttEstimate() {
   if (selected_connection_ != nullptr
       && selected_connection_->rtt_samples() > 0) {
-    return rtc::Optional<int>(selected_connection_->rtt());
+    return selected_connection_->rtt();
   } else {
-    return rtc::Optional<int>();
+    return rtc::nullopt;
   }
 }
 
@@ -1340,8 +1340,7 @@ void P2PTransportChannel::SortConnectionsAndUpdateState() {
   // TODO(honghaiz): Don't sort;  Just use std::max_element in the right places.
   std::stable_sort(connections_.begin(), connections_.end(),
                    [this](const Connection* a, const Connection* b) {
-                     int cmp = CompareConnections(
-                         a, b, rtc::Optional<int64_t>(), nullptr);
+                     int cmp = CompareConnections(a, b, rtc::nullopt, nullptr);
                      if (cmp != 0) {
                        return cmp > 0;
                      }

@@ -1330,8 +1330,7 @@ void Connection::ReceivedPingResponse(int rtt, const std::string& request_id) {
   }
 
   total_round_trip_time_ms_ += rtt;
-  current_round_trip_time_ms_ = rtc::Optional<uint32_t>(
-      static_cast<uint32_t>(rtt));
+  current_round_trip_time_ms_ = static_cast<uint32_t>(rtt);
 
   pings_since_last_response_.clear();
   last_ping_response_received_ = rtc::TimeMillis();
