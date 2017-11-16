@@ -639,24 +639,23 @@ void RTCStatsCollector::GetStatsReport(
     // |ProducePartialResultsOnNetworkThread|.
     channel_name_pairs_.reset(new ChannelNamePairs());
     if (pc_->voice_channel()) {
-      channel_name_pairs_->voice = rtc::Optional<ChannelNamePair>(
+      channel_name_pairs_->voice =
           ChannelNamePair(pc_->voice_channel()->content_name(),
-                          pc_->voice_channel()->transport_name()));
+                          pc_->voice_channel()->transport_name());
     }
     if (pc_->video_channel()) {
-      channel_name_pairs_->video = rtc::Optional<ChannelNamePair>(
+      channel_name_pairs_->video =
           ChannelNamePair(pc_->video_channel()->content_name(),
-                          pc_->video_channel()->transport_name()));
+                          pc_->video_channel()->transport_name());
     }
     if (pc_->rtp_data_channel()) {
-      channel_name_pairs_->data = rtc::Optional<ChannelNamePair>(
+      channel_name_pairs_->data =
           ChannelNamePair(pc_->rtp_data_channel()->content_name(),
-                          pc_->rtp_data_channel()->transport_name()));
+                          pc_->rtp_data_channel()->transport_name());
     }
     if (pc_->sctp_content_name()) {
-      channel_name_pairs_->data =
-          rtc::Optional<ChannelNamePair>(ChannelNamePair(
-              *pc_->sctp_content_name(), *pc_->sctp_transport_name()));
+      channel_name_pairs_->data = ChannelNamePair(*pc_->sctp_content_name(),
+                                                  *pc_->sctp_transport_name());
     }
     // Prepare |track_media_info_map_| for use in
     // |ProducePartialResultsOnNetworkThread| and
