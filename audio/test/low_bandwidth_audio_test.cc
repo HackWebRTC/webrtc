@@ -77,15 +77,14 @@ class AudioQualityTest : public AudioEndToEndTest {
 class Mobile2GNetworkTest : public AudioQualityTest {
   void ModifyAudioConfigs(AudioSendStream::Config* send_config,
       std::vector<AudioReceiveStream::Config>* receive_configs) override {
-    send_config->send_codec_spec =
-        rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
-            {test::CallTest::kAudioSendPayloadType,
-             {"OPUS",
-              48000,
-              2,
-              {{"maxaveragebitrate", "6000"},
-               {"ptime", "60"},
-               {"stereo", "1"}}}});
+    send_config->send_codec_spec = AudioSendStream::Config::SendCodecSpec(
+        test::CallTest::kAudioSendPayloadType,
+        {"OPUS",
+         48000,
+         2,
+         {{"maxaveragebitrate", "6000"},
+           {"ptime", "60"},
+           {"stereo", "1"}}});
   }
 
   FakeNetworkPipe::Config GetNetworkPipeConfig() const override {

@@ -180,7 +180,7 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   stats.capture_start_ntp_time_ms = call_stats.capture_start_ntp_time_ms_;
   if (codec_inst.pltype != -1) {
     stats.codec_name = codec_inst.plname;
-    stats.codec_payload_type = rtc::Optional<int>(codec_inst.pltype);
+    stats.codec_payload_type = codec_inst.pltype;
   }
   stats.ext_seqnum = call_stats.extendedMax;
   if (codec_inst.plfreq / 1000 > 0) {
@@ -272,18 +272,18 @@ rtc::Optional<Syncable::Info> AudioReceiveStream::GetInfo() const {
   if (!rtp_receiver->GetLatestTimestamps(
           &info.latest_received_capture_timestamp,
           &info.latest_receive_time_ms)) {
-    return rtc::Optional<Syncable::Info>();
+    return rtc::nullopt;
   }
   if (rtp_rtcp->RemoteNTP(&info.capture_time_ntp_secs,
                           &info.capture_time_ntp_frac,
                           nullptr,
                           nullptr,
                           &info.capture_time_source_clock) != 0) {
-    return rtc::Optional<Syncable::Info>();
+    return rtc::nullopt;
   }
 
   info.current_delay_ms = channel_proxy_->GetDelayEstimate();
-  return rtc::Optional<Syncable::Info>(info);
+  return info;
 }
 
 uint32_t AudioReceiveStream::GetPlayoutTimestamp() const {

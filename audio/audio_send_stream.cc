@@ -296,7 +296,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   if (config_.send_codec_spec) {
     const auto& spec = *config_.send_codec_spec;
     stats.codec_name = spec.format.name;
-    stats.codec_payload_type = rtc::Optional<int>(spec.payload_type);
+    stats.codec_payload_type = spec.payload_type;
 
     // Get data from the last remote RTCP report.
     for (const auto& block : channel_proxy_->GetRemoteRTCPReportBlocks()) {

@@ -80,9 +80,8 @@ void AudioEndToEndTest::ModifyAudioConfigs(
   // Large bitrate by default.
   const webrtc::SdpAudioFormat kDefaultFormat("opus", 48000, 2,
                                               {{"stereo", "1"}});
-  send_config->send_codec_spec =
-      rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
-          {test::CallTest::kAudioSendPayloadType, kDefaultFormat});
+  send_config->send_codec_spec = AudioSendStream::Config::SendCodecSpec(
+      test::CallTest::kAudioSendPayloadType, kDefaultFormat);
 }
 
 void AudioEndToEndTest::OnAudioStreamsCreated(

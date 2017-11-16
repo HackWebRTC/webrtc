@@ -92,13 +92,12 @@ class NoBandwidthDropAfterDtx : public AudioBweTest {
   void ModifyAudioConfigs(
       AudioSendStream::Config* send_config,
       std::vector<AudioReceiveStream::Config>* receive_configs) override {
-    send_config->send_codec_spec =
-        rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
-            {test::CallTest::kAudioSendPayloadType,
-             {"OPUS",
-              48000,
-              2,
-              {{"ptime", "60"}, {"usedtx", "1"}, {"stereo", "1"}}}});
+    send_config->send_codec_spec = AudioSendStream::Config::SendCodecSpec(
+        test::CallTest::kAudioSendPayloadType,
+        {"OPUS",
+         48000,
+         2,
+         {{"ptime", "60"}, {"usedtx", "1"}, {"stereo", "1"}}});
 
     send_config->min_bitrate_bps = 6000;
     send_config->max_bitrate_bps = 100000;
