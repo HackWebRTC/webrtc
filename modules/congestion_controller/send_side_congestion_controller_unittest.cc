@@ -94,7 +94,7 @@ class SendSideCongestionControllerTest : public ::testing::Test {
                           uint8_t fraction_loss,  // 0 - 255.
                           int64_t rtt_ms,
                           int64_t probing_interval_ms) override {
-      owner_->target_bitrate_bps_ = rtc::Optional<uint32_t>(bitrate_bps);
+      owner_->target_bitrate_bps_ = bitrate_bps;
     }
 
    private:

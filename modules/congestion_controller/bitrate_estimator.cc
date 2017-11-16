@@ -94,8 +94,8 @@ float BitrateEstimator::UpdateWindow(int64_t now_ms,
 
 rtc::Optional<uint32_t> BitrateEstimator::bitrate_bps() const {
   if (bitrate_estimate_ < 0.f)
-    return rtc::Optional<uint32_t>();
-  return rtc::Optional<uint32_t>(bitrate_estimate_ * 1000);
+    return rtc::nullopt;
+  return bitrate_estimate_ * 1000;
 }
 
 void BitrateEstimator::ExpectFastRateChange() {

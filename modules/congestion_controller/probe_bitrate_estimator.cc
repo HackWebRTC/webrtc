@@ -164,7 +164,7 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
     event_log_->Log(
         rtc::MakeUnique<RtcEventProbeResultSuccess>(cluster_id, res));
   }
-  estimated_bitrate_bps_ = rtc::Optional<int>(res);
+  estimated_bitrate_bps_ = res;
   return *estimated_bitrate_bps_;
 }
 

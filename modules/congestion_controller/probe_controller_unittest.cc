@@ -130,8 +130,7 @@ TEST_F(ProbeControllerTest, RequestProbeInAlr) {
   testing::Mock::VerifyAndClearExpectations(&pacer_);
   EXPECT_CALL(pacer_, CreateProbeCluster(0.85 * 500)).Times(1);
   EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
-      .WillRepeatedly(
-          Return(rtc::Optional<int64_t>(clock_.TimeInMilliseconds())));
+      .WillRepeatedly(Return(clock_.TimeInMilliseconds()));
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(250);
@@ -146,7 +145,7 @@ TEST_F(ProbeControllerTest, RequestProbeWhenAlrEndedRecently) {
   testing::Mock::VerifyAndClearExpectations(&pacer_);
   EXPECT_CALL(pacer_, CreateProbeCluster(0.85 * 500)).Times(1);
   EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
-      .WillRepeatedly(Return(rtc::Optional<int64_t>()));
+      .WillRepeatedly(Return(rtc::nullopt));
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(250);
@@ -163,7 +162,7 @@ TEST_F(ProbeControllerTest, RequestProbeWhenAlrNotEndedRecently) {
   testing::Mock::VerifyAndClearExpectations(&pacer_);
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(0);
   EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
-      .WillRepeatedly(Return(rtc::Optional<int64_t>()));
+      .WillRepeatedly(Return(rtc::nullopt));
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(250);
@@ -180,8 +179,7 @@ TEST_F(ProbeControllerTest, RequestProbeWhenBweDropNotRecent) {
   testing::Mock::VerifyAndClearExpectations(&pacer_);
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(0);
   EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
-      .WillRepeatedly(
-          Return(rtc::Optional<int64_t>(clock_.TimeInMilliseconds())));
+      .WillRepeatedly(Return(clock_.TimeInMilliseconds()));
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(250);
@@ -202,7 +200,7 @@ TEST_F(ProbeControllerTest, PeriodicProbing) {
   // Expect the controller to send a new probe after 5s has passed.
   EXPECT_CALL(pacer_, CreateProbeCluster(1000)).Times(1);
   EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
-      .WillRepeatedly(Return(rtc::Optional<int64_t>(start_time)));
+      .WillRepeatedly(Return(start_time));
   clock_.AdvanceTimeMilliseconds(5000);
   probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(500);
@@ -211,7 +209,7 @@ TEST_F(ProbeControllerTest, PeriodicProbing) {
   // The following probe should be sent at 10s into ALR.
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(0);
   EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
-      .WillRepeatedly(Return(rtc::Optional<int64_t>(start_time)));
+      .WillRepeatedly(Return(start_time));
   clock_.AdvanceTimeMilliseconds(4000);
   probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(500);
@@ -219,7 +217,7 @@ TEST_F(ProbeControllerTest, PeriodicProbing) {
 
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(1);
   EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
-      .WillRepeatedly(Return(rtc::Optional<int64_t>(start_time)));
+      .WillRepeatedly(Return(start_time));
   clock_.AdvanceTimeMilliseconds(1000);
   probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(500);
@@ -231,8 +229,7 @@ TEST_F(ProbeControllerTest, PeriodicProbingAfterReset) {
   probe_controller_.reset(new ProbeController(&local_pacer, &clock_));
   int64_t alr_start_time = clock_.TimeInMilliseconds();
   EXPECT_CALL(local_pacer, GetApplicationLimitedRegionStartTime())
-      .WillRepeatedly(
-          Return(rtc::Optional<int64_t>(alr_start_time)));
+      .WillRepeatedly(Return(alr_start_time));
 
   EXPECT_CALL(local_pacer, CreateProbeCluster(_)).Times(2);
   probe_controller_->EnablePeriodicAlrProbing(true);

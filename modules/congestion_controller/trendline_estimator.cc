@@ -39,8 +39,8 @@ rtc::Optional<double> LinearFitSlope(
     denominator += (point.first - x_avg) * (point.first - x_avg);
   }
   if (denominator == 0)
-    return rtc::Optional<double>();
-  return rtc::Optional<double>(numerator / denominator);
+    return rtc::nullopt;
+  return numerator / denominator;
 }
 }  // namespace
 
