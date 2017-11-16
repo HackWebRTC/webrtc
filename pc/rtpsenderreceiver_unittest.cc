@@ -295,12 +295,11 @@ TEST_F(RtpSenderReceiverTest, AddAndDestroyVideoRtpReceiver) {
 // Test that the AudioRtpSender applies options from the local audio source.
 TEST_F(RtpSenderReceiverTest, LocalAudioSourceOptionsApplied) {
   cricket::AudioOptions options;
-  options.echo_cancellation = rtc::Optional<bool>(true);
+  options.echo_cancellation = true;
   auto source = LocalAudioSource::Create(&options);
   CreateAudioRtpSender(source.get());
 
-  EXPECT_EQ(rtc::Optional<bool>(true),
-            voice_media_channel_->options().echo_cancellation);
+  EXPECT_EQ(true, voice_media_channel_->options().echo_cancellation);
 
   DestroyAudioRtpSender();
 }
@@ -569,18 +568,18 @@ TEST_F(RtpSenderReceiverTest, SetAudioMaxSendBitrate) {
   webrtc::RtpParameters params = audio_rtp_sender_->GetParameters();
   EXPECT_EQ(1, params.encodings.size());
   EXPECT_FALSE(params.encodings[0].max_bitrate_bps);
-  params.encodings[0].max_bitrate_bps = rtc::Optional<int>(1000);
+  params.encodings[0].max_bitrate_bps = 1000;
   EXPECT_TRUE(audio_rtp_sender_->SetParameters(params));
 
   // Read back the parameters and verify they have been changed.
   params = audio_rtp_sender_->GetParameters();
   EXPECT_EQ(1, params.encodings.size());
-  EXPECT_EQ(rtc::Optional<int>(1000), params.encodings[0].max_bitrate_bps);
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
 
   // Verify that the audio channel received the new parameters.
   params = voice_media_channel_->GetRtpSendParameters(kAudioSsrc);
   EXPECT_EQ(1, params.encodings.size());
-  EXPECT_EQ(rtc::Optional<int>(1000), params.encodings[0].max_bitrate_bps);
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
 
   // Verify that the global bitrate limit has not been changed.
   EXPECT_EQ(-1, voice_media_channel_->max_bps());
@@ -605,18 +604,18 @@ TEST_F(RtpSenderReceiverTest, SetVideoMaxSendBitrate) {
   webrtc::RtpParameters params = video_rtp_sender_->GetParameters();
   EXPECT_EQ(1, params.encodings.size());
   EXPECT_FALSE(params.encodings[0].max_bitrate_bps);
-  params.encodings[0].max_bitrate_bps = rtc::Optional<int>(1000);
+  params.encodings[0].max_bitrate_bps = 1000;
   EXPECT_TRUE(video_rtp_sender_->SetParameters(params));
 
   // Read back the parameters and verify they have been changed.
   params = video_rtp_sender_->GetParameters();
   EXPECT_EQ(1, params.encodings.size());
-  EXPECT_EQ(rtc::Optional<int>(1000), params.encodings[0].max_bitrate_bps);
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
 
   // Verify that the video channel received the new parameters.
   params = video_media_channel_->GetRtpSendParameters(kVideoSsrc);
   EXPECT_EQ(1, params.encodings.size());
-  EXPECT_EQ(rtc::Optional<int>(1000), params.encodings[0].max_bitrate_bps);
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
 
   // Verify that the global bitrate limit has not been changed.
   EXPECT_EQ(-1, video_media_channel_->max_bps());
@@ -652,24 +651,20 @@ TEST_F(RtpSenderReceiverTest, PropagatesVideoTrackContentHint) {
   video_track_->set_enabled(true);
 
   // |video_track_| is not screencast by default.
-  EXPECT_EQ(rtc::Optional<bool>(false),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(false, video_media_channel_->options().is_screencast);
   // No content hint should be set by default.
   EXPECT_EQ(VideoTrackInterface::ContentHint::kNone,
             video_track_->content_hint());
   // Setting detailed should turn a non-screencast source into screencast mode.
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
-  EXPECT_EQ(rtc::Optional<bool>(true),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(true, video_media_channel_->options().is_screencast);
   // Removing the content hint should turn the track back into non-screencast
   // mode.
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kNone);
-  EXPECT_EQ(rtc::Optional<bool>(false),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(false, video_media_channel_->options().is_screencast);
   // Setting fluid should remain in non-screencast mode (its default).
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kFluid);
-  EXPECT_EQ(rtc::Optional<bool>(false),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(false, video_media_channel_->options().is_screencast);
 
   DestroyVideoRtpSender();
 }
@@ -683,23 +678,19 @@ TEST_F(RtpSenderReceiverTest,
   video_track_->set_enabled(true);
 
   // |video_track_| with a screencast source should be screencast by default.
-  EXPECT_EQ(rtc::Optional<bool>(true),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(true, video_media_channel_->options().is_screencast);
   // No content hint should be set by default.
   EXPECT_EQ(VideoTrackInterface::ContentHint::kNone,
             video_track_->content_hint());
   // Setting fluid should turn a screencast source into non-screencast mode.
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kFluid);
-  EXPECT_EQ(rtc::Optional<bool>(false),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(false, video_media_channel_->options().is_screencast);
   // Removing the content hint should turn the track back into screencast mode.
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kNone);
-  EXPECT_EQ(rtc::Optional<bool>(true),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(true, video_media_channel_->options().is_screencast);
   // Setting detailed should still remain in screencast mode (its default).
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
-  EXPECT_EQ(rtc::Optional<bool>(true),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(true, video_media_channel_->options().is_screencast);
 
   DestroyVideoRtpSender();
 }
@@ -718,20 +709,17 @@ TEST_F(RtpSenderReceiverTest,
   video_track_->set_enabled(true);
 
   // Sender is not ready to send (no SSRC) so no option should have been set.
-  EXPECT_EQ(rtc::Optional<bool>(),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(rtc::nullopt, video_media_channel_->options().is_screencast);
 
   // Verify that the content hint is accounted for when video_rtp_sender_ does
   // get enabled.
   video_rtp_sender_->SetSsrc(kVideoSsrc);
-  EXPECT_EQ(rtc::Optional<bool>(true),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(true, video_media_channel_->options().is_screencast);
 
   // And removing the hint should go back to false (to verify that false was
   // default correctly).
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kNone);
-  EXPECT_EQ(rtc::Optional<bool>(false),
-            video_media_channel_->options().is_screencast);
+  EXPECT_EQ(false, video_media_channel_->options().is_screencast);
 
   DestroyVideoRtpSender();
 }

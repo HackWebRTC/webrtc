@@ -1667,7 +1667,7 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   RtpSendParametersFromMediaDescription(audio, rtp_header_extensions,
       &send_params);
   if (audio->agc_minus_10db()) {
-    send_params.options.adjust_agc_delta = rtc::Optional<int>(kAgcMinus10db);
+    send_params.options.adjust_agc_delta = kAgcMinus10db;
   }
 
   bool parameters_applied = media_channel()->SetSendParameters(send_params);

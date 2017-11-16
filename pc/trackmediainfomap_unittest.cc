@@ -35,7 +35,7 @@ RtpParameters CreateRtpParametersWithSsrcs(
   RtpParameters params;
   for (uint32_t ssrc : ssrcs) {
     RtpEncodingParameters encoding_params;
-    encoding_params.ssrc = rtc::Optional<uint32_t>(ssrc);
+    encoding_params.ssrc = ssrc;
     params.encodings.push_back(encoding_params);
   }
   return params;

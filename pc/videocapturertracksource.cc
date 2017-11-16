@@ -246,7 +246,7 @@ bool ExtractOption(const MediaConstraintsInterface* all_constraints,
   size_t mandatory = 0;
   bool value;
   if (FindConstraint(all_constraints, key, &value, &mandatory)) {
-    *option = rtc::Optional<bool>(value);
+    *option = value;
     return true;
   }
 

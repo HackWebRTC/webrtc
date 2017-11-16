@@ -512,20 +512,13 @@ void InitVoiceSenderInfo(cricket::VoiceSenderInfo* voice_sender_info) {
   voice_sender_info->echo_delay_std_ms = 111;
   voice_sender_info->aec_quality_min = 112.0f;
   voice_sender_info->typing_noise_detected = false;
-  voice_sender_info->ana_statistics.bitrate_action_counter =
-      rtc::Optional<uint32_t>(113);
-  voice_sender_info->ana_statistics.channel_action_counter =
-      rtc::Optional<uint32_t>(114);
-  voice_sender_info->ana_statistics.dtx_action_counter =
-      rtc::Optional<uint32_t>(115);
-  voice_sender_info->ana_statistics.fec_action_counter =
-      rtc::Optional<uint32_t>(116);
-  voice_sender_info->ana_statistics.frame_length_increase_counter =
-      rtc::Optional<uint32_t>(117);
-  voice_sender_info->ana_statistics.frame_length_decrease_counter =
-      rtc::Optional<uint32_t>(118);
-  voice_sender_info->ana_statistics.uplink_packet_loss_fraction =
-      rtc::Optional<float>(119.0);
+  voice_sender_info->ana_statistics.bitrate_action_counter = 113;
+  voice_sender_info->ana_statistics.channel_action_counter = 114;
+  voice_sender_info->ana_statistics.dtx_action_counter = 115;
+  voice_sender_info->ana_statistics.fec_action_counter = 116;
+  voice_sender_info->ana_statistics.frame_length_increase_counter = 117;
+  voice_sender_info->ana_statistics.frame_length_decrease_counter = 118;
+  voice_sender_info->ana_statistics.uplink_packet_loss_fraction = 119.0;
 }
 
 void UpdateVoiceSenderInfoFromAudioTrack(
@@ -2112,7 +2105,7 @@ TEST_F(StatsCollectorTest, VerifyVideoSendSsrcStats) {
   // Construct a stats value to read.
   video_sender_info.add_ssrc(1234);
   video_sender_info.frames_encoded = 10;
-  video_sender_info.qp_sum = rtc::Optional<uint64_t>(11);
+  video_sender_info.qp_sum = 11;
   stats_read.senders.push_back(video_sender_info);
 
   EXPECT_CALL(pc_, video_channel()).WillRepeatedly(Return(&video_channel));
@@ -2159,7 +2152,7 @@ TEST_F(StatsCollectorTest, VerifyVideoReceiveSsrcStats) {
   // Construct a stats value to read.
   video_receiver_info.add_ssrc(1234);
   video_receiver_info.frames_decoded = 10;
-  video_receiver_info.qp_sum = rtc::Optional<uint64_t>(11);
+  video_receiver_info.qp_sum = 11;
   stats_read.receivers.push_back(video_receiver_info);
 
   EXPECT_CALL(pc_, video_channel()).WillRepeatedly(Return(&video_channel));

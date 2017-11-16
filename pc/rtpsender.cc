@@ -452,17 +452,17 @@ void VideoRtpSender::SetVideoSend() {
   cricket::VideoOptions options;
   VideoTrackSourceInterface* source = track_->GetSource();
   if (source) {
-    options.is_screencast = rtc::Optional<bool>(source->is_screencast());
+    options.is_screencast = source->is_screencast();
     options.video_noise_reduction = source->needs_denoising();
   }
   switch (cached_track_content_hint_) {
     case VideoTrackInterface::ContentHint::kNone:
       break;
     case VideoTrackInterface::ContentHint::kFluid:
-      options.is_screencast = rtc::Optional<bool>(false);
+      options.is_screencast = false;
       break;
     case VideoTrackInterface::ContentHint::kDetailed:
-      options.is_screencast = rtc::Optional<bool>(true);
+      options.is_screencast = true;
       break;
   }
   if (!channel_->SetVideoSend(ssrc_, track_->enabled(), &options, track_)) {
