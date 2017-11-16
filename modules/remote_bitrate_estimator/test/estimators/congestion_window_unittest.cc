@@ -45,18 +45,17 @@ TEST(CongestionWindowTest, DataInflight) {
 TEST(CongestionWindowTest, ZeroBandwidthDelayProduct) {
   CongestionWindow congestion_window;
   int64_t target_congestion_window =
-      congestion_window.GetTargetCongestionWindow(
-          100, rtc::Optional<int64_t>(0), 2.885f);
+      congestion_window.GetTargetCongestionWindow(100, 0, 2.885f);
   EXPECT_EQ(target_congestion_window, 2.885f * kStartingCongestionWindow);
 }
 
 TEST(CongestionWindowTest, CalculateCongestionWindow) {
   CongestionWindow congestion_window;
-  int64_t cwnd = congestion_window.GetCongestionWindow(
-      BbrBweSender::STARTUP, 800000, rtc::Optional<int64_t>(100l), 2.885f);
+  int64_t cwnd = congestion_window.GetCongestionWindow(BbrBweSender::STARTUP,
+                                                       800000, 100l, 2.885f);
   EXPECT_EQ(cwnd, 28850);
-  cwnd = congestion_window.GetCongestionWindow(
-      BbrBweSender::STARTUP, 400000, rtc::Optional<int64_t>(200l), 2.885f);
+  cwnd = congestion_window.GetCongestionWindow(BbrBweSender::STARTUP, 400000,
+                                               200l, 2.885f);
   EXPECT_EQ(cwnd, 28850);
 }
 }  // namespace bwe

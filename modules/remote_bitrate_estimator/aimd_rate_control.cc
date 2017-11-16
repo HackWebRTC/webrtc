@@ -250,10 +250,9 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
           // If bitrate decreases more than a normal back off after overuse, it
           // indicates a real network degradation. We do not let such a decrease
           // to determine the bandwidth estimation period.
-          last_decrease_ = rtc::Optional<int>();
+          last_decrease_ = rtc::nullopt;
         } else {
-          last_decrease_ =
-              rtc::Optional<int>(current_bitrate_bps_ - new_bitrate_bps);
+          last_decrease_ = current_bitrate_bps_ - new_bitrate_bps;
         }
       }
       if (incoming_bitrate_kbps <
