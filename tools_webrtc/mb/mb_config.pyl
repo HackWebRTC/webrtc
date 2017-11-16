@@ -133,9 +133,12 @@
     },
     'internal.client.webrtc': {
       'iOS64 Debug': 'ios',
+      'iOS64 Perf': 'ios',
+      'iOS64 Release': 'ios',
     },
     'internal.tryserver.webrtc': {
-      'ios_arm64': 'ios',
+      'ios_arm64_dbg': 'ios',
+      'ios_arm64_rel': 'ios',
     },
     'tryserver.webrtc': {
       # iOS
