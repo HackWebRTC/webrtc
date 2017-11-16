@@ -164,9 +164,9 @@ rtc::Optional<double> NetworkDelayDiff_AbsSendTime(
     int64_t recv_time_diff = new_packet.timestamp - old_packet.timestamp;
     double delay_change_us =
         recv_time_diff - AbsSendTimeToMicroseconds(send_time_diff);
-    return rtc::Optional<double>(delay_change_us / 1000);
+    return delay_change_us / 1000;
   } else {
-    return rtc::Optional<double>();
+    return rtc::nullopt;
   }
 }
 
@@ -199,7 +199,7 @@ rtc::Optional<double> NetworkDelayDiff_CaptureTime(
                                kVideoSampleRate
                         << "s";
   }
-  return rtc::Optional<double>(delay_change);
+  return delay_change;
 }
 
 // For each element in data, use |get_y()| to extract a y-coordinate and
@@ -477,7 +477,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
           log_segments_.push_back(
             std::make_pair(*last_log_start, last_timestamp));
         }
-        last_log_start = rtc::Optional<uint64_t>(parsed_log_.GetTimestamp(i));
+        last_log_start = parsed_log_.GetTimestamp(i);
         break;
       }
       case ParsedRtcEventLog::LOG_END: {
@@ -624,7 +624,7 @@ rtc::Optional<uint32_t> EventLogAnalyzer::EstimateRtpClockFrequency(
         << "Failed to estimate RTP clock frequency: Stream too short. ("
         << packets.size() << " packets, "
         << last_log_timestamp - first_log_timestamp << " us)";
-    return rtc::Optional<uint32_t>();
+    return rtc::nullopt;
   }
   double duration =
       static_cast<double>(last_log_timestamp - first_log_timestamp) / 1000000;
@@ -632,13 +632,13 @@ rtc::Optional<uint32_t> EventLogAnalyzer::EstimateRtpClockFrequency(
       (last_rtp_timestamp - first_rtp_timestamp) / duration;
   for (uint32_t f : {8000, 16000, 32000, 48000, 90000}) {
     if (std::fabs(estimated_frequency - f) < 0.05 * f) {
-      return rtc::Optional<uint32_t>(f);
+      return f;
     }
   }
   RTC_LOG(LS_WARNING) << "Failed to estimate RTP clock frequency: Estimate "
                       << estimated_frequency
                       << "not close to any stardard RTP frequency.";
-  return rtc::Optional<uint32_t>();
+  return rtc::nullopt;
 }
 
 void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
@@ -654,7 +654,7 @@ void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
 
     TimeSeries time_series(GetStreamName(stream_id), LineStyle::kBar);
     ProcessPoints<LoggedRtpPacket>(
-        [](const LoggedRtpPacket& packet) -> rtc::Optional<float> {
+        [](const LoggedRtpPacket& packet) {
           return rtc::Optional<float>(packet.total_length);
         },
         packet_stream, begin_time_, &time_series);
@@ -805,7 +805,7 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
           int64_t diff =
               WrappingDifference(new_packet.header.sequenceNumber,
                                  old_packet.header.sequenceNumber, 1ul << 16);
-          return rtc::Optional<float>(diff);
+          return diff;
         },
         packet_stream, begin_time_, &time_series);
     plot->AppendTimeSeries(std::move(time_series));
@@ -1146,7 +1146,7 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(
     TimeSeries time_series(GetStreamName(stream_id), LineStyle::kLine);
     MovingAverage<LoggedRtpPacket, double>(
         [](const LoggedRtpPacket& packet) {
-          return rtc::Optional<double>(packet.total_length * 8.0 / 1000.0);
+          return packet.total_length * 8.0 / 1000.0;
         },
         packet_stream, begin_time_, end_time_, window_duration_, step_,
         &time_series);
@@ -1613,9 +1613,8 @@ void EventLogAnalyzer::CreateAudioEncoderTargetBitrateGraph(Plot* plot) {
   ProcessPoints<AudioNetworkAdaptationEvent>(
       [](const AudioNetworkAdaptationEvent& ana_event) -> rtc::Optional<float> {
         if (ana_event.config.bitrate_bps)
-          return rtc::Optional<float>(
-              static_cast<float>(*ana_event.config.bitrate_bps));
-        return rtc::Optional<float>();
+          return static_cast<float>(*ana_event.config.bitrate_bps);
+        return rtc::nullopt;
       },
       audio_network_adaptation_events_, begin_time_, &time_series);
   plot->AppendTimeSeries(std::move(time_series));
@@ -1729,25 +1728,24 @@ class NetEqStreamInput : public test::NetEqInput {
 
   rtc::Optional<int64_t> NextPacketTime() const override {
     if (packet_stream_it_ == packet_stream_.end()) {
-      return rtc::Optional<int64_t>();
+      return rtc::nullopt;
     }
     if (end_time_us_ && packet_stream_it_->timestamp > *end_time_us_) {
-      return rtc::Optional<int64_t>();
+      return rtc::nullopt;
     }
     // Convert from us to ms.
-    return rtc::Optional<int64_t>(packet_stream_it_->timestamp / 1000);
+    return packet_stream_it_->timestamp / 1000;
   }
 
   rtc::Optional<int64_t> NextOutputEventTime() const override {
     if (output_events_us_it_ == output_events_us_end_) {
-      return rtc::Optional<int64_t>();
+      return rtc::nullopt;
     }
     if (end_time_us_ && *output_events_us_it_ > *end_time_us_) {
-      return rtc::Optional<int64_t>();
+      return rtc::nullopt;
     }
     // Convert from us to ms.
-    return rtc::Optional<int64_t>(
-        rtc::checked_cast<int64_t>(*output_events_us_it_ / 1000));
+    return rtc::checked_cast<int64_t>(*output_events_us_it_ / 1000);
   }
 
   std::unique_ptr<PacketData> PopPacket() override {
@@ -1778,9 +1776,9 @@ class NetEqStreamInput : public test::NetEqInput {
 
   rtc::Optional<RTPHeader> NextHeader() const override {
     if (packet_stream_it_ == packet_stream_.end()) {
-      return rtc::Optional<RTPHeader>();
+      return rtc::nullopt;
     }
-    return rtc::Optional<RTPHeader>(packet_stream_it_->header);
+    return packet_stream_it_->header;
   }
 
  private:
@@ -1876,7 +1874,7 @@ void EventLogAnalyzer::CreateAudioJitterBufferGraph(
 
   rtc::Optional<uint64_t> end_time_us =
       log_segments_.empty()
-          ? rtc::Optional<uint64_t>()
+          ? rtc::nullopt
           : rtc::Optional<uint64_t>(log_segments_.front().second);
 
   auto delay_cb = CreateNetEqTestAndRun(
