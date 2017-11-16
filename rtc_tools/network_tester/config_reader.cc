@@ -32,7 +32,7 @@ ConfigReader::~ConfigReader() = default;
 rtc::Optional<ConfigReader::Config> ConfigReader::GetNextConfig() {
 #ifdef WEBRTC_NETWORK_TESTER_PROTO
   if (proto_config_index_ >= proto_all_configs_.configs_size())
-    return rtc::Optional<Config>();
+    return rtc::nullopt;
   auto proto_config = proto_all_configs_.configs(proto_config_index_++);
   RTC_DCHECK(proto_config.has_packet_send_interval_ms());
   RTC_DCHECK(proto_config.has_packet_size());
@@ -41,9 +41,9 @@ rtc::Optional<ConfigReader::Config> ConfigReader::GetNextConfig() {
   config.packet_send_interval_ms = proto_config.packet_send_interval_ms();
   config.packet_size = proto_config.packet_size();
   config.execution_time_ms = proto_config.execution_time_ms();
-  return rtc::Optional<Config>(config);
+  return config;
 #else
-  return rtc::Optional<Config>();
+  return rtc::nullopt;
 #endif  //  WEBRTC_NETWORK_TESTER_PROTO
 }
 
