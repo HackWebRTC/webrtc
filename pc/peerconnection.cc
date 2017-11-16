@@ -971,10 +971,10 @@ bool PeerConnection::Initialize(
       configuration.combined_audio_video_bwe;
 
   audio_options_.audio_jitter_buffer_max_packets =
-      rtc::Optional<int>(configuration.audio_jitter_buffer_max_packets);
+      configuration.audio_jitter_buffer_max_packets;
 
   audio_options_.audio_jitter_buffer_fast_accelerate =
-      rtc::Optional<bool>(configuration.audio_jitter_buffer_fast_accelerate);
+      configuration.audio_jitter_buffer_fast_accelerate;
 
   // Whether the certificate generator/certificate is null or not determines
   // what PeerConnectionDescriptionFactory will do, so make sure that we give it
@@ -2383,24 +2383,21 @@ void PeerConnection::GetOptionsForOffer(
         cricket::MediaDescriptionOptions(
             cricket::MEDIA_TYPE_AUDIO, cricket::CN_AUDIO,
             cricket::RtpTransceiverDirection(send_audio, recv_audio), false));
-    audio_index = rtc::Optional<size_t>(
-        session_options->media_description_options.size() - 1);
+    audio_index = session_options->media_description_options.size() - 1;
   }
   if (!video_index && offer_new_video_description) {
     session_options->media_description_options.push_back(
         cricket::MediaDescriptionOptions(
             cricket::MEDIA_TYPE_VIDEO, cricket::CN_VIDEO,
             cricket::RtpTransceiverDirection(send_video, recv_video), false));
-    video_index = rtc::Optional<size_t>(
-        session_options->media_description_options.size() - 1);
+    video_index = session_options->media_description_options.size() - 1;
   }
   if (!data_index && offer_new_data_description) {
     session_options->media_description_options.push_back(
         cricket::MediaDescriptionOptions(
             cricket::MEDIA_TYPE_DATA, cricket::CN_DATA,
             cricket::RtpTransceiverDirection(true, true), false));
-    data_index = rtc::Optional<size_t>(
-        session_options->media_description_options.size() - 1);
+    data_index = session_options->media_description_options.size() - 1;
   }
 
   cricket::MediaDescriptionOptions* audio_media_description_options =
@@ -2530,8 +2527,7 @@ void PeerConnection::GenerateMediaDescriptionOptions(
             cricket::MediaDescriptionOptions(
                 cricket::MEDIA_TYPE_AUDIO, content.name, audio_direction,
                 !audio_direction.send && !audio_direction.recv));
-        *audio_index = rtc::Optional<size_t>(
-            session_options->media_description_options.size() - 1);
+        *audio_index = session_options->media_description_options.size() - 1;
       }
     } else if (IsVideoContent(&content)) {
       // If we already have an video m= section, reject this extra one.
@@ -2545,8 +2541,7 @@ void PeerConnection::GenerateMediaDescriptionOptions(
             cricket::MediaDescriptionOptions(
                 cricket::MEDIA_TYPE_VIDEO, content.name, video_direction,
                 !video_direction.send && !video_direction.recv));
-        *video_index = rtc::Optional<size_t>(
-            session_options->media_description_options.size() - 1);
+        *video_index = session_options->media_description_options.size() - 1;
       }
     } else {
       RTC_DCHECK(IsDataContent(&content));
@@ -2563,8 +2558,7 @@ void PeerConnection::GenerateMediaDescriptionOptions(
                 // Direction for data sections is meaningless, but legacy
                 // endpoints might expect sendrecv.
                 cricket::RtpTransceiverDirection(true, true), false));
-        *data_index = rtc::Optional<size_t>(
-            session_options->media_description_options.size() - 1);
+        *data_index = session_options->media_description_options.size() - 1;
       }
     }
   }
@@ -3851,23 +3845,23 @@ std::unique_ptr<SessionStats> PeerConnection::GetSessionStats_s() {
   RTC_DCHECK(signaling_thread()->IsCurrent());
   ChannelNamePairs channel_name_pairs;
   if (voice_channel()) {
-    channel_name_pairs.voice = rtc::Optional<ChannelNamePair>(ChannelNamePair(
-        voice_channel()->content_name(), voice_channel()->transport_name()));
+    channel_name_pairs.voice = ChannelNamePair(
+        voice_channel()->content_name(), voice_channel()->transport_name());
   }
   if (video_channel()) {
-    channel_name_pairs.video = rtc::Optional<ChannelNamePair>(ChannelNamePair(
-        video_channel()->content_name(), video_channel()->transport_name()));
+    channel_name_pairs.video = ChannelNamePair(
+        video_channel()->content_name(), video_channel()->transport_name());
   }
   if (rtp_data_channel()) {
-    channel_name_pairs.data = rtc::Optional<ChannelNamePair>(
+    channel_name_pairs.data =
         ChannelNamePair(rtp_data_channel()->content_name(),
-                        rtp_data_channel()->transport_name()));
+                        rtp_data_channel()->transport_name());
   }
   if (sctp_transport_) {
     RTC_DCHECK(sctp_content_name_);
     RTC_DCHECK(sctp_transport_name_);
-    channel_name_pairs.data = rtc::Optional<ChannelNamePair>(
-        ChannelNamePair(*sctp_content_name_, *sctp_transport_name_));
+    channel_name_pairs.data =
+        ChannelNamePair(*sctp_content_name_, *sctp_transport_name_);
   }
   return GetSessionStats(channel_name_pairs);
 }
@@ -4411,8 +4405,8 @@ bool PeerConnection::CreateSctpTransport_n(const std::string& content_name,
       this, &PeerConnection::OnSctpTransportDataReceived_n);
   sctp_transport_->SignalStreamClosedRemotely.connect(
       this, &PeerConnection::OnSctpStreamClosedRemotely_n);
-  sctp_transport_name_ = rtc::Optional<std::string>(transport_name);
-  sctp_content_name_ = rtc::Optional<std::string>(content_name);
+  sctp_transport_name_ = transport_name;
+  sctp_content_name_ = content_name;
   return true;
 }
 
@@ -4421,7 +4415,7 @@ void PeerConnection::ChangeSctpTransport_n(const std::string& transport_name) {
   RTC_DCHECK(sctp_transport_);
   RTC_DCHECK(sctp_transport_name_);
   std::string old_sctp_transport_name = *sctp_transport_name_;
-  sctp_transport_name_ = rtc::Optional<std::string>(transport_name);
+  sctp_transport_name_ = transport_name;
   cricket::DtlsTransportInternal* tc =
       transport_controller_->CreateDtlsTransport_n(
           transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
