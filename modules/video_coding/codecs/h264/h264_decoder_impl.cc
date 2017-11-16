@@ -377,12 +377,10 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
         video_frame->rotation());
     // TODO(nisse): Timestamp and rotation are all zero here. Change decoder
     // interface to pass a VideoFrameBuffer instead of a VideoFrame?
-    decoded_image_callback_->Decoded(cropped_frame, rtc::Optional<int32_t>(),
-                                     qp);
+    decoded_image_callback_->Decoded(cropped_frame, rtc::nullopt, qp);
   } else {
     // Return decoded frame.
-    decoded_image_callback_->Decoded(*video_frame, rtc::Optional<int32_t>(),
-                                     qp);
+    decoded_image_callback_->Decoded(*video_frame, rtc::nullopt, qp);
   }
   // Stop referencing it, possibly freeing |video_frame|.
   av_frame_unref(av_frame_.get());
