@@ -15,9 +15,9 @@ package org.webrtc;
  * what thread it's called from. Such a ClassLoader is needed for the few cases where the JNI
  * mechanism is unable to automatically determine the appropriate ClassLoader instance.
  */
-class ClassLoader {
+class WebRtcClassLoader {
   @CalledByNative
   static Object getClassLoader() {
-    return ClassLoader.class.getClassLoader();
+    return WebRtcClassLoader.class.getClassLoader();
   }
 }

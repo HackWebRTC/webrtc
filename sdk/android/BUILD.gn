@@ -35,7 +35,7 @@ config("libjingle_peerconnection_jni_warnings_config") {
 
 generate_jni("generated_base_jni") {
   sources = [
-    "src/java/org/webrtc/ClassLoader.java",
+    "src/java/org/webrtc/WebRtcClassLoader.java",
   ]
   jni_package = ""
   jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
@@ -510,7 +510,7 @@ rtc_android_library("libjingle_peerconnection_java") {
     "src/java/org/webrtc/Camera2Session.java",
     "src/java/org/webrtc/CameraCapturer.java",
     "src/java/org/webrtc/CameraSession.java",
-    "src/java/org/webrtc/ClassLoader.java",
+    "src/java/org/webrtc/WebRtcClassLoader.java",
     "src/java/org/webrtc/DynamicBitrateAdjuster.java",
     "src/java/org/webrtc/EglBase10.java",
     "src/java/org/webrtc/EglBase14.java",

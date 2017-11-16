@@ -14,7 +14,7 @@
 #include <string>
 
 #include "rtc_base/checks.h"
-#include "sdk/android/generated_base_jni/jni/ClassLoader_jni.h"
+#include "sdk/android/generated_base_jni/jni/WebRtcClassLoader_jni.h"
 
 // Abort the process if |jni| has a Java exception pending. This macros uses the
 // comma operator to execute ExceptionDescribe and ExceptionClear ignoring their
@@ -38,7 +38,8 @@ class ClassLoader {
         env->GetMethodID(class_loader_class_, "loadClass",
                          "(Ljava/lang/String;)Ljava/lang/Class;");
     CHECK_EXCEPTION(env);
-    class_loader_ = env->NewGlobalRef(Java_ClassLoader_getClassLoader(env));
+    class_loader_ =
+        env->NewGlobalRef(Java_WebRtcClassLoader_getClassLoader(env));
     CHECK_EXCEPTION(env);
   }
 
