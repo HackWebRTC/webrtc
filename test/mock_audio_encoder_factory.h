@@ -51,7 +51,7 @@ class MockAudioEncoderFactory : public AudioEncoderFactory {
     ON_CALL(*factory.get(), GetSupportedEncoders())
         .WillByDefault(Return(std::vector<webrtc::AudioCodecSpec>()));
     ON_CALL(*factory.get(), QueryAudioEncoder(_))
-        .WillByDefault(Return(rtc::Optional<AudioCodecInfo>()));
+        .WillByDefault(Return(rtc::nullopt));
 
     EXPECT_CALL(*factory.get(), GetSupportedEncoders()).Times(AnyNumber());
     EXPECT_CALL(*factory.get(), QueryAudioEncoder(_)).Times(AnyNumber());
@@ -74,7 +74,7 @@ class MockAudioEncoderFactory : public AudioEncoderFactory {
     ON_CALL(*factory.get(), GetSupportedEncoders())
         .WillByDefault(Return(std::vector<webrtc::AudioCodecSpec>()));
     ON_CALL(*factory.get(), QueryAudioEncoder(_))
-        .WillByDefault(Return(rtc::Optional<AudioCodecInfo>()));
+        .WillByDefault(Return(rtc::nullopt));
     ON_CALL(*factory.get(), MakeAudioEncoderMock(_, _, _))
         .WillByDefault(SetArgPointee<2>(nullptr));
 

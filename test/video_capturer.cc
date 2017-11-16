@@ -28,7 +28,7 @@ rtc::Optional<VideoFrame> VideoCapturer::AdaptFrame(const VideoFrame& frame) {
           frame.width(), frame.height(), frame.timestamp_us() * 1000,
           &cropped_width, &cropped_height, &out_width, &out_height)) {
     // Drop frame in order to respect frame rate constraint.
-    return rtc::Optional<VideoFrame>();
+    return rtc::nullopt;
   }
 
   rtc::Optional<VideoFrame> out_frame;
