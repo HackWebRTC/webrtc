@@ -291,13 +291,12 @@ BweLossEvent GenerateBweLossEvent(Random* prng) {
 void GenerateAudioNetworkAdaptation(const RtpHeaderExtensionMap& extensions,
                                     AudioEncoderRuntimeConfig* config,
                                     Random* prng) {
-  config->bitrate_bps = rtc::Optional<int>(prng->Rand(0, 3000000));
-  config->enable_fec = rtc::Optional<bool>(prng->Rand<bool>());
-  config->enable_dtx = rtc::Optional<bool>(prng->Rand<bool>());
-  config->frame_length_ms = rtc::Optional<int>(prng->Rand(10, 120));
-  config->num_channels = rtc::Optional<size_t>(prng->Rand(1, 2));
-  config->uplink_packet_loss_fraction =
-      rtc::Optional<float>(prng->Rand<float>());
+  config->bitrate_bps = prng->Rand(0, 3000000);
+  config->enable_fec = prng->Rand<bool>();
+  config->enable_dtx = prng->Rand<bool>();
+  config->frame_length_ms = prng->Rand(10, 120);
+  config->num_channels = prng->Rand(1, 2);
+  config->uplink_packet_loss_fraction = prng->Rand<float>();
 }
 
 class RtcEventLogSession
