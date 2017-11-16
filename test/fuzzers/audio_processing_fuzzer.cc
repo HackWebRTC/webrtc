@@ -125,9 +125,9 @@ void FuzzAudioProcessing(const uint8_t* data,
 
 rtc::Optional<bool> ParseBool(const uint8_t** data, size_t* remaining_size) {
   if (1 > *remaining_size) {
-    return rtc::Optional<bool>();
+    return rtc::nullopt;
   }
-  auto res = rtc::Optional<bool>((**data) % 2);
+  auto res = (**data) % 2;
   *data += 1;
   *remaining_size -= 1;
   return res;
@@ -135,9 +135,9 @@ rtc::Optional<bool> ParseBool(const uint8_t** data, size_t* remaining_size) {
 
 rtc::Optional<uint8_t> ParseByte(const uint8_t** data, size_t* remaining_size) {
   if (1 > *remaining_size) {
-    return rtc::Optional<uint8_t>();
+    return rtc::nullopt;
   }
-  auto res = rtc::Optional<uint8_t>((**data));
+  auto res = **data;
   *data += 1;
   *remaining_size -= 1;
   return res;

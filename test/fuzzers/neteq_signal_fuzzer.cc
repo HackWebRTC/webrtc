@@ -146,11 +146,11 @@ class FuzzSignalInput : public NetEqInput {
   }
 
   rtc::Optional<int64_t> NextPacketTime() const override {
-    return rtc::Optional<int64_t>(packet_->time_ms);
+    return packet_->time_ms;
   }
 
   rtc::Optional<int64_t> NextOutputEventTime() const override {
-    return rtc::Optional<int64_t>(next_output_event_ms_);
+    return next_output_event_ms_;
   }
 
   std::unique_ptr<PacketData> PopPacket() override {
@@ -183,7 +183,7 @@ class FuzzSignalInput : public NetEqInput {
 
   rtc::Optional<RTPHeader> NextHeader() const override {
     RTC_DCHECK(packet_);
-    return rtc::Optional<RTPHeader>(packet_->header);
+    return packet_->header;
   }
 
  private:
