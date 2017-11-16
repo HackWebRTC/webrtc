@@ -394,16 +394,6 @@ int32_t FakeAudioCaptureModule::PlayoutDelay(uint16_t* delay_ms) const {
   return 0;
 }
 
-int32_t FakeAudioCaptureModule::SetLoudspeakerStatus(bool /*enable*/) {
-  RTC_NOTREACHED();
-  return 0;
-}
-
-int32_t FakeAudioCaptureModule::GetLoudspeakerStatus(bool* /*enabled*/) const {
-  RTC_NOTREACHED();
-  return 0;
-}
-
 void FakeAudioCaptureModule::OnMessage(rtc::Message* msg) {
   switch (msg->message_id) {
     case MSG_START_PROCESS:

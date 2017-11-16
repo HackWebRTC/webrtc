@@ -116,10 +116,6 @@ class AudioDeviceGeneric {
   // Delay information and control
   virtual int32_t PlayoutDelay(uint16_t& delayMS) const = 0;
 
-  // Speaker audio routing (for mobile devices)
-  virtual int32_t SetLoudspeakerStatus(bool enable);
-  virtual int32_t GetLoudspeakerStatus(bool& enable) const;
-
   // Android only
   virtual bool BuiltInAECIsAvailable() const;
   virtual bool BuiltInAGCIsAvailable() const;

@@ -823,26 +823,6 @@ int32_t AudioDeviceModuleImpl::PlayoutDelay(uint16_t* delayMS) const {
   return 0;
 }
 
-int32_t AudioDeviceModuleImpl::SetLoudspeakerStatus(bool enable) {
-  RTC_LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
-  CHECKinitialized_();
-  if (audio_device_->SetLoudspeakerStatus(enable) != 0) {
-    return -1;
-  }
-  return 0;
-}
-
-int32_t AudioDeviceModuleImpl::GetLoudspeakerStatus(bool* enabled) const {
-  RTC_LOG(INFO) << __FUNCTION__;
-  CHECKinitialized_();
-  int32_t ok = 0;
-  if (audio_device_->GetLoudspeakerStatus(*enabled) != 0) {
-    ok = -1;
-  }
-  RTC_LOG(INFO) << "output: " << ok;
-  return ok;
-}
-
 bool AudioDeviceModuleImpl::BuiltInAECIsAvailable() const {
   RTC_LOG(INFO) << __FUNCTION__;
   CHECKinitialized__BOOL();

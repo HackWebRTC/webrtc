@@ -132,10 +132,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   // Delay information and control
   int32_t PlayoutDelay(uint16_t* delayMS) const override;
 
-  // Mobile device specific functions
-  int32_t SetLoudspeakerStatus(bool enable) override;
-  int32_t GetLoudspeakerStatus(bool* enabled) const override;
-
   bool BuiltInAECIsAvailable() const override;
   int32_t EnableBuiltInAEC(bool enable) override;
   bool BuiltInAGCIsAvailable() const override;

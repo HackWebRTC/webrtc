@@ -303,42 +303,6 @@ int32_t AudioDeviceIOS::StopRecording() {
   return 0;
 }
 
-// Change the default receiver playout route to speaker.
-int32_t AudioDeviceIOS::SetLoudspeakerStatus(bool enable) {
-  LOGI() << "SetLoudspeakerStatus(" << enable << ")";
-
-  RTCAudioSession* session = [RTCAudioSession sharedInstance];
-  [session lockForConfiguration];
-  NSString* category = session.category;
-  AVAudioSessionCategoryOptions options = session.categoryOptions;
-  // Respect old category options if category is
-  // AVAudioSessionCategoryPlayAndRecord. Otherwise reset it since old options
-  // might not be valid for this category.
-  if ([category isEqualToString:AVAudioSessionCategoryPlayAndRecord]) {
-    if (enable) {
-      options |= AVAudioSessionCategoryOptionDefaultToSpeaker;
-    } else {
-      options &= ~AVAudioSessionCategoryOptionDefaultToSpeaker;
-    }
-  } else {
-    options = AVAudioSessionCategoryOptionDefaultToSpeaker;
-  }
-  NSError* error = nil;
-  BOOL success =
-      [session setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:options error:&error];
-  ios::CheckAndLogError(success, error);
-  [session unlockForConfiguration];
-  return (error == nil) ? 0 : -1;
-}
-
-int32_t AudioDeviceIOS::GetLoudspeakerStatus(bool& enabled) const {
-  LOGI() << "GetLoudspeakerStatus";
-  RTCAudioSession* session = [RTCAudioSession sharedInstance];
-  AVAudioSessionCategoryOptions options = session.categoryOptions;
-  enabled = options & AVAudioSessionCategoryOptionDefaultToSpeaker;
-  return 0;
-}
-
 int32_t AudioDeviceIOS::PlayoutDelay(uint16_t& delayMS) const {
   delayMS = kFixedPlayoutDelayEstimate;
   return 0;

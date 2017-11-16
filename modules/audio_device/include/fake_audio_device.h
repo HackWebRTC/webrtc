@@ -103,8 +103,6 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
     *delayMS = 0;
     return 0;
   }
-  int32_t SetLoudspeakerStatus(bool enable) override { return 0; }
-  int32_t GetLoudspeakerStatus(bool* enabled) const override { return 0; }
   bool BuiltInAECIsAvailable() const override { return false; }
   int32_t EnableBuiltInAEC(bool enable) override { return -1; }
   bool BuiltInAGCIsAvailable() const override { return false; }

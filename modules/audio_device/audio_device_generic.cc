@@ -13,16 +13,6 @@
 
 namespace webrtc {
 
-int32_t AudioDeviceGeneric::SetLoudspeakerStatus(bool enable) {
-  RTC_LOG_F(LS_ERROR) << "Not supported on this platform";
-  return -1;
-}
-
-int32_t AudioDeviceGeneric::GetLoudspeakerStatus(bool& enable) const {
-  RTC_LOG_F(LS_ERROR) << "Not supported on this platform";
-  return -1;
-}
-
 bool AudioDeviceGeneric::BuiltInAECIsAvailable() const {
   RTC_LOG_F(LS_ERROR) << "Not supported on this platform";
   return false;

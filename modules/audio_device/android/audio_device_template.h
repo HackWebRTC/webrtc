@@ -385,16 +385,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     input_.AttachAudioBuffer(audioBuffer);
   }
 
-  int32_t SetLoudspeakerStatus(bool enable) override {
-    FATAL() << "Should never be called";
-    return -1;
-  }
-
-  int32_t GetLoudspeakerStatus(bool& enable) const override {
-    FATAL() << "Should never be called";
-    return -1;
-  }
-
   // Returns true if the device both supports built in AEC and the device
   // is not blacklisted.
   // Currently, if OpenSL ES is used in both directions, this method will still

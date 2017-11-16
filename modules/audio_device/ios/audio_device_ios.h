@@ -70,9 +70,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   int32_t StopRecording() override;
   bool Recording() const override { return recording_; }
 
-  int32_t SetLoudspeakerStatus(bool enable) override;
-  int32_t GetLoudspeakerStatus(bool& enabled) const override;
-
   // These methods returns hard-coded delay values and not dynamic delay
   // estimates. The reason is that iOS supports a built-in AEC and the WebRTC
   // AEC will always be disabled in the Libjingle layer to avoid running two

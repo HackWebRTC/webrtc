@@ -50,10 +50,10 @@ class AudioDeviceModule : public rtc::RefCountInterface {
   };
 
  public:
-  // Create an ADM.
+  // Creates an ADM.
   static rtc::scoped_refptr<AudioDeviceModule> Create(
       const AudioLayer audio_layer);
-  // TODO(bugs.webrtc.org/7306): deprecated.
+  // TODO(bugs.webrtc.org/7306): deprecated (to be removed).
   static rtc::scoped_refptr<AudioDeviceModule> Create(
       const int32_t id,
       const AudioLayer audio_layer);
@@ -149,8 +149,7 @@ class AudioDeviceModule : public rtc::RefCountInterface {
   // Playout delay
   virtual int32_t PlayoutDelay(uint16_t* delayMS) const = 0;
 
-  // Deprecated. Don't use.
-  // TODO(henrika): remove these methods.
+  // TODO(bugs.webrtc.org/7306): deprecated (to be removed).
   virtual int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) {
     return -1;
   }
@@ -164,9 +163,9 @@ class AudioDeviceModule : public rtc::RefCountInterface {
     return -1;
   }
 
-  // Mobile device specific functions
-  virtual int32_t SetLoudspeakerStatus(bool enable) = 0;
-  virtual int32_t GetLoudspeakerStatus(bool* enabled) const = 0;
+  // TODO(bugs.webrtc.org/7306): deprecated (to be removed).
+  virtual int32_t SetLoudspeakerStatus(bool enable) { return -1; }
+  virtual int32_t GetLoudspeakerStatus(bool* enabled) const { return -1; }
 
   // Only supported on Android.
   virtual bool BuiltInAECIsAvailable() const = 0;

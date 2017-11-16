@@ -244,12 +244,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   int32_t PlayoutDelay(uint16_t* delay_ms) const override {
     return impl_->PlayoutDelay(delay_ms);
   }
-  int32_t SetLoudspeakerStatus(bool enable) override {
-    return impl_->SetLoudspeakerStatus(enable);
-  }
-  int32_t GetLoudspeakerStatus(bool* enabled) const override {
-    return impl_->GetLoudspeakerStatus(enabled);
-  }
   bool BuiltInAECIsAvailable() const override {
     return impl_->BuiltInAECIsAvailable();
   }
