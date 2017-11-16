@@ -132,8 +132,7 @@ TEST(SmoothingFilterTest, GetAverageOutputsEmptyBeforeFirstSample) {
   EXPECT_FALSE(states.smoothing_filter.GetAverage());
   constexpr float kFirstSample = 1.2345f;
   states.smoothing_filter.AddSample(kFirstSample);
-  EXPECT_EQ(rtc::Optional<float>(kFirstSample),
-            states.smoothing_filter.GetAverage());
+  EXPECT_EQ(kFirstSample, states.smoothing_filter.GetAverage());
 }
 
 TEST(SmoothingFilterTest, CannotChangeTimeConstantDuringInitialization) {
