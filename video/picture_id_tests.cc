@@ -346,7 +346,7 @@ TEST_P(PictureIdTest, PictureIdIncreasingAfterStreamCountChangeVp8) {
 
 TEST_P(PictureIdTest,
        PictureIdContinuousAfterReconfigureSimulcastEncoderAdapter) {
-  cricket::InternalEncoderFactory internal_encoder_factory;
+  InternalEncoderFactory internal_encoder_factory;
   SimulcastEncoderAdapter simulcast_encoder_adapter(&internal_encoder_factory);
   SetupEncoder(&simulcast_encoder_adapter);
   TestPictureIdContinuousAfterReconfigure({1, 3, 3, 1, 1});
@@ -354,7 +354,7 @@ TEST_P(PictureIdTest,
 
 TEST_P(PictureIdTest,
        PictureIdIncreasingAfterRecreateStreamSimulcastEncoderAdapter) {
-  cricket::InternalEncoderFactory internal_encoder_factory;
+  InternalEncoderFactory internal_encoder_factory;
   SimulcastEncoderAdapter simulcast_encoder_adapter(&internal_encoder_factory);
   SetupEncoder(&simulcast_encoder_adapter);
   TestPictureIdIncreaseAfterRecreateStreams({1, 3, 3, 1, 1});
@@ -368,7 +368,7 @@ TEST_P(PictureIdTest,
   // If forced fallback is enabled, the picture id is set in the PayloadRouter
   // and the sequence should be continuous.
   if (GetParam() == kVp8ForcedFallbackEncoderEnabled) {
-    cricket::InternalEncoderFactory internal_encoder_factory;
+    InternalEncoderFactory internal_encoder_factory;
     SimulcastEncoderAdapter simulcast_encoder_adapter(
         &internal_encoder_factory);
     // Make sure that that the picture id is not reset if the stream count goes

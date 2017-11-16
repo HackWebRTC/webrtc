@@ -16,6 +16,7 @@
 #include "libyuv/scale.h"  // NOLINT
 
 #include "api/video/i420_buffer.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "media/engine/scopedvideoencoder.h"
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
@@ -134,8 +135,7 @@ class TemporalLayersFactoryAdapter : public webrtc::TemporalLayersFactory {
 
 namespace webrtc {
 
-SimulcastEncoderAdapter::SimulcastEncoderAdapter(
-    cricket::WebRtcVideoEncoderFactory* factory)
+SimulcastEncoderAdapter::SimulcastEncoderAdapter(VideoEncoderFactory* factory)
     : inited_(0),
       factory_(factory),
       encoded_complete_callback_(nullptr),
@@ -246,7 +246,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
       encoder = std::move(stored_encoders_.top());
       stored_encoders_.pop();
     } else {
-      encoder = CreateScopedVideoEncoder(factory_, cricket::VideoCodec("VP8"));
+      encoder = factory_->CreateVideoEncoder(SdpVideoFormat("VP8"));
     }
 
     ret = encoder->InitEncode(&stream_codec, number_of_cores, max_payload_size);

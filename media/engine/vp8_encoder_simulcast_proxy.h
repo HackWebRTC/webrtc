@@ -15,7 +15,7 @@
 #include <memory>
 #include <vector>
 
-#include "media/engine/webrtcvideoencoderfactory.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 
 namespace webrtc {
@@ -24,8 +24,7 @@ namespace webrtc {
 // doesn't support simulcast for provided settings.
 class VP8EncoderSimulcastProxy : public VP8Encoder {
  public:
-  explicit VP8EncoderSimulcastProxy(
-      cricket::WebRtcVideoEncoderFactory* factory);
+  explicit VP8EncoderSimulcastProxy(VideoEncoderFactory* factory);
   virtual ~VP8EncoderSimulcastProxy();
 
   // Implements VideoEncoder.
@@ -48,7 +47,7 @@ class VP8EncoderSimulcastProxy : public VP8Encoder {
   const char* ImplementationName() const override;
 
  private:
-  cricket::WebRtcVideoEncoderFactory* const factory_;
+  VideoEncoderFactory* const factory_;
   std::unique_ptr<VideoEncoder> encoder_;
   EncodedImageCallback* callback_;
 };
