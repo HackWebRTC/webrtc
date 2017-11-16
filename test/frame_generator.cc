@@ -213,7 +213,7 @@ class SlideGenerator : public FrameGenerator {
   void GenerateNewFrame() {
     // The squares should have a varying order of magnitude in order
     // to simulate variation in the slides' complexity.
-    const int kSquareNum =  1 << (4 + (random_generator_.Rand(0, 3) * 4));
+    const int kSquareNum =  1 << (4 + (random_generator_.Rand(0, 3) * 2));
 
     buffer_ = I420Buffer::Create(width_, height_);
     memset(buffer_->MutableDataY(), 127, height_ * buffer_->StrideY());
