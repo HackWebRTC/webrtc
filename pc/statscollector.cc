@@ -317,6 +317,9 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
                      (info.adapt_reason & 0x2) > 0);
   report->AddBoolean(StatsReport::kStatsValueNameCpuLimitedResolution,
                      (info.adapt_reason & 0x1) > 0);
+  report->AddBoolean(StatsReport::kStatsValueNameHasEnteredLowResolution,
+                     info.has_entered_low_resolution);
+
   if (info.qp_sum)
     report->AddInt(StatsReport::kStatsValueNameQpSum, *info.qp_sum);
 

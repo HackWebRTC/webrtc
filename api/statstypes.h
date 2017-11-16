@@ -185,6 +185,7 @@ class StatsReport {
     kStatsValueNameFrameWidthInput,
     kStatsValueNameFrameWidthReceived,
     kStatsValueNameFrameWidthSent,
+    kStatsValueNameHasEnteredLowResolution,
     kStatsValueNameInitiator,
     kStatsValueNameInterframeDelayMaxMs,  // Max over last 10 seconds.
     kStatsValueNameIssuerId,

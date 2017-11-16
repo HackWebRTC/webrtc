@@ -1975,6 +1975,7 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
   info.adapt_changes = stats.number_of_cpu_adapt_changes;
   info.adapt_reason =
       stats.cpu_limited_resolution ? ADAPTREASON_CPU : ADAPTREASON_NONE;
+  info.has_entered_low_resolution = stats.has_entered_low_resolution;
 
   // Get bandwidth limitation info from stream_->GetStats().
   // Input resolution (output from video_adapter) can be further scaled down or

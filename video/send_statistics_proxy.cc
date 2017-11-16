@@ -85,28 +85,36 @@ bool IsForcedFallbackPossible(const CodecSpecificInfo* codec_info) {
           codec_info->codecSpecific.VP8.temporalIdx == kNoTemporalIdx);
 }
 
-rtc::Optional<int> GetFallbackMaxPixelsFromFieldTrial() {
-  if (!webrtc::field_trial::IsEnabled(kVp8ForcedFallbackEncoderFieldTrial))
-    return rtc::Optional<int>();
-
-  std::string group =
-      webrtc::field_trial::FindFullName(kVp8ForcedFallbackEncoderFieldTrial);
+rtc::Optional<int> GetFallbackMaxPixels(const std::string& group) {
   if (group.empty())
     return rtc::Optional<int>();
 
   int min_pixels;
   int max_pixels;
   int min_bps;
-  if (sscanf(group.c_str(), "Enabled-%d,%d,%d", &min_pixels, &max_pixels,
-             &min_bps) != 3) {
+  if (sscanf(group.c_str(), "-%d,%d,%d", &min_pixels, &max_pixels, &min_bps) !=
+      3) {
     return rtc::Optional<int>();
   }
 
-  if (min_pixels <= 0 || max_pixels <= 0 || max_pixels < min_pixels ||
-      min_bps <= 0) {
-    return rtc::Optional<int>();  // Do not log stats.
-  }
+  if (min_pixels <= 0 || max_pixels <= 0 || max_pixels < min_pixels)
+    return rtc::Optional<int>();
+
   return rtc::Optional<int>(max_pixels);
+}
+
+rtc::Optional<int> GetFallbackMaxPixelsIfFieldTrialEnabled() {
+  std::string group =
+      webrtc::field_trial::FindFullName(kVp8ForcedFallbackEncoderFieldTrial);
+  return (group.find("Enabled") == 0) ? GetFallbackMaxPixels(group.substr(7))
+                                      : rtc::Optional<int>();
+}
+
+rtc::Optional<int> GetFallbackMaxPixelsIfFieldTrialDisabled() {
+  std::string group =
+      webrtc::field_trial::FindFullName(kVp8ForcedFallbackEncoderFieldTrial);
+  return (group.find("Disabled") == 0) ? GetFallbackMaxPixels(group.substr(8))
+                                       : rtc::Optional<int>();
 }
 }  // namespace
 
@@ -120,7 +128,8 @@ SendStatisticsProxy::SendStatisticsProxy(
     : clock_(clock),
       payload_name_(config.encoder_settings.payload_name),
       rtp_config_(config.rtp),
-      fallback_max_pixels_(GetFallbackMaxPixelsFromFieldTrial()),
+      fallback_max_pixels_(GetFallbackMaxPixelsIfFieldTrialEnabled()),
+      fallback_max_pixels_disabled_(GetFallbackMaxPixelsIfFieldTrialDisabled()),
       content_type_(content_type),
       start_ms_(clock->TimeInMilliseconds()),
       encode_time_(kEncodeTimeWeigthFactor),
@@ -729,6 +738,8 @@ void SendStatisticsProxy::OnSetEncoderTargetRate(uint32_t bitrate_bps) {
 void SendStatisticsProxy::UpdateEncoderFallbackStats(
     const CodecSpecificInfo* codec_info,
     int pixels) {
+  UpdateFallbackDisabledStats(codec_info, pixels);
+
   if (!fallback_max_pixels_ || !uma_container_->fallback_info_.is_possible) {
     return;
   }
@@ -755,6 +766,7 @@ void SendStatisticsProxy::UpdateEncoderFallbackStats(
       fallback_info->is_possible = false;
       return;
     }
+    stats_.has_entered_low_resolution = true;
     ++fallback_info->on_off_events;
   }
 
@@ -770,6 +782,32 @@ void SendStatisticsProxy::UpdateEncoderFallbackStats(
   }
   fallback_info->is_active = is_active;
   fallback_info->last_update_ms.emplace(now_ms);
+}
+
+void SendStatisticsProxy::UpdateFallbackDisabledStats(
+    const CodecSpecificInfo* codec_info,
+    int pixels) {
+  if (!fallback_max_pixels_disabled_ ||
+      !uma_container_->fallback_info_disabled_.is_possible ||
+      stats_.has_entered_low_resolution) {
+    return;
+  }
+
+  if (!IsForcedFallbackPossible(codec_info) ||
+      strcmp(codec_info->codec_name, kVp8SwCodecName) == 0) {
+    uma_container_->fallback_info_disabled_.is_possible = false;
+    return;
+  }
+
+  if (pixels <= *fallback_max_pixels_disabled_ ||
+      uma_container_->fallback_info_disabled_.min_pixel_limit_reached) {
+    stats_.has_entered_low_resolution = true;
+  }
+}
+
+void SendStatisticsProxy::OnMinPixelLimitReached() {
+  rtc::CritScope lock(&crit_);
+  uma_container_->fallback_info_disabled_.min_pixel_limit_reached = true;
 }
 
 void SendStatisticsProxy::OnSendEncodedImage(

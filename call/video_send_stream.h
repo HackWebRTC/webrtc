@@ -85,6 +85,7 @@ class VideoSendStream {
     // CPU/quality adaptation.
     int number_of_cpu_adapt_changes = 0;
     int number_of_quality_adapt_changes = 0;
+    bool has_entered_low_resolution = false;
     std::map<uint32_t, StreamStats> substreams;
     webrtc::VideoContentType content_type =
         webrtc::VideoContentType::UNSPECIFIED;

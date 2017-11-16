@@ -228,7 +228,9 @@ class VideoStreamEncoder::VideoSourceProxy {
       source_->AddOrUpdateSink(video_stream_encoder_, sink_wants_);
   }
 
-  bool RequestResolutionLowerThan(int pixel_count, int min_pixels_per_frame) {
+  bool RequestResolutionLowerThan(int pixel_count,
+                                  int min_pixels_per_frame,
+                                  bool* min_pixels_reached) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
     if (!source_ || !IsResolutionScalingEnabled(degradation_preference_)) {
@@ -239,8 +241,11 @@ class VideoStreamEncoder::VideoSourceProxy {
     // The input video frame size will have a resolution less than or equal to
     // |max_pixel_count| depending on how the source can scale the frame size.
     const int pixels_wanted = (pixel_count * 3) / 5;
-    if (pixels_wanted < min_pixels_per_frame ||
-        pixels_wanted >= sink_wants_.max_pixel_count) {
+    if (pixels_wanted >= sink_wants_.max_pixel_count) {
+      return false;
+    }
+    if (pixels_wanted < min_pixels_per_frame) {
+      *min_pixels_reached = true;
       return false;
     }
     RTC_LOG(LS_INFO) << "Scaling down resolution, max pixels: "
@@ -977,15 +982,20 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
       // Scale down resolution.
       FALLTHROUGH();
     }
-    case VideoSendStream::DegradationPreference::kMaintainFramerate:
+    case VideoSendStream::DegradationPreference::kMaintainFramerate: {
       // Scale down resolution.
+      bool min_pixels_reached = false;
       if (!source_proxy_->RequestResolutionLowerThan(
               adaptation_request.input_pixel_count_,
-              settings_.encoder->GetScalingSettings().min_pixels_per_frame)) {
+              settings_.encoder->GetScalingSettings().min_pixels_per_frame,
+              &min_pixels_reached)) {
+        if (min_pixels_reached)
+          stats_proxy_->OnMinPixelLimitReached();
         return;
       }
       GetAdaptCounter().IncrementResolution(reason);
       break;
+    }
     case VideoSendStream::DegradationPreference::kMaintainResolution: {
       // Scale down framerate.
       const int requested_framerate = source_proxy_->RequestFramerateLowerThan(

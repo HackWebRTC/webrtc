@@ -73,6 +73,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   void OnQualityAdaptationChanged(
       const VideoStreamEncoder::AdaptCounts& cpu_counts,
       const VideoStreamEncoder::AdaptCounts& quality_counts);
+  void OnMinPixelLimitReached();
 
   void OnSuspendChange(bool is_suspended);
   void OnInactiveSsrc(uint32_t ssrc);
@@ -163,6 +164,10 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     rtc::Optional<int64_t> last_update_ms;
     const int max_frame_diff_ms = 2000;
   };
+  struct FallbackEncoderInfoDisabled {
+    bool is_possible = true;
+    bool min_pixel_limit_reached = false;
+  };
   struct StatsTimer {
     void Start(int64_t now_ms);
     void Stop(int64_t now_ms);
@@ -208,11 +213,15 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   void UpdateEncoderFallbackStats(const CodecSpecificInfo* codec_info,
                                   int pixels)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void UpdateFallbackDisabledStats(const CodecSpecificInfo* codec_info,
+                                   int pixels)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   Clock* const clock_;
   const std::string payload_name_;
   const VideoSendStream::Config::Rtp rtp_config_;
   const rtc::Optional<int> fallback_max_pixels_;
+  const rtc::Optional<int> fallback_max_pixels_disabled_;
   rtc::CriticalSection crit_;
   VideoEncoderConfig::ContentType content_type_ RTC_GUARDED_BY(crit_);
   const int64_t start_ms_;
@@ -273,6 +282,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     TargetRateUpdates target_rate_updates_;
     BoolSampleCounter fallback_active_counter_;
     FallbackEncoderInfo fallback_info_;
+    FallbackEncoderInfoDisabled fallback_info_disabled_;
     ReportBlockStats report_block_stats_;
     const VideoSendStream::Stats start_stats_;
     EncodedFrameMap encoded_frames_;
