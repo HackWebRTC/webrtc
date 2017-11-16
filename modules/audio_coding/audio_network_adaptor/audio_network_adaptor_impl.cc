@@ -58,68 +58,61 @@ AudioNetworkAdaptorImpl::AudioNetworkAdaptorImpl(
 AudioNetworkAdaptorImpl::~AudioNetworkAdaptorImpl() = default;
 
 void AudioNetworkAdaptorImpl::SetUplinkBandwidth(int uplink_bandwidth_bps) {
-  last_metrics_.uplink_bandwidth_bps = rtc::Optional<int>(uplink_bandwidth_bps);
+  last_metrics_.uplink_bandwidth_bps = uplink_bandwidth_bps;
   DumpNetworkMetrics();
 
   Controller::NetworkMetrics network_metrics;
-  network_metrics.uplink_bandwidth_bps =
-      rtc::Optional<int>(uplink_bandwidth_bps);
+  network_metrics.uplink_bandwidth_bps = uplink_bandwidth_bps;
   UpdateNetworkMetrics(network_metrics);
 }
 
 void AudioNetworkAdaptorImpl::SetUplinkPacketLossFraction(
     float uplink_packet_loss_fraction) {
-  last_metrics_.uplink_packet_loss_fraction =
-      rtc::Optional<float>(uplink_packet_loss_fraction);
+  last_metrics_.uplink_packet_loss_fraction = uplink_packet_loss_fraction;
   DumpNetworkMetrics();
 
   Controller::NetworkMetrics network_metrics;
-  network_metrics.uplink_packet_loss_fraction =
-      rtc::Optional<float>(uplink_packet_loss_fraction);
+  network_metrics.uplink_packet_loss_fraction = uplink_packet_loss_fraction;
   UpdateNetworkMetrics(network_metrics);
 }
 
 void AudioNetworkAdaptorImpl::SetUplinkRecoverablePacketLossFraction(
     float uplink_recoverable_packet_loss_fraction) {
   last_metrics_.uplink_recoverable_packet_loss_fraction =
-      rtc::Optional<float>(uplink_recoverable_packet_loss_fraction);
+      uplink_recoverable_packet_loss_fraction;
   DumpNetworkMetrics();
 
   Controller::NetworkMetrics network_metrics;
   network_metrics.uplink_recoverable_packet_loss_fraction =
-      rtc::Optional<float>(uplink_recoverable_packet_loss_fraction);
+      uplink_recoverable_packet_loss_fraction;
   UpdateNetworkMetrics(network_metrics);
 }
 
 void AudioNetworkAdaptorImpl::SetRtt(int rtt_ms) {
-  last_metrics_.rtt_ms = rtc::Optional<int>(rtt_ms);
+  last_metrics_.rtt_ms = rtt_ms;
   DumpNetworkMetrics();
 
   Controller::NetworkMetrics network_metrics;
-  network_metrics.rtt_ms = rtc::Optional<int>(rtt_ms);
+  network_metrics.rtt_ms = rtt_ms;
   UpdateNetworkMetrics(network_metrics);
 }
 
 void AudioNetworkAdaptorImpl::SetTargetAudioBitrate(
     int target_audio_bitrate_bps) {
-  last_metrics_.target_audio_bitrate_bps =
-      rtc::Optional<int>(target_audio_bitrate_bps);
+  last_metrics_.target_audio_bitrate_bps = target_audio_bitrate_bps;
   DumpNetworkMetrics();
 
   Controller::NetworkMetrics network_metrics;
-  network_metrics.target_audio_bitrate_bps =
-      rtc::Optional<int>(target_audio_bitrate_bps);
+  network_metrics.target_audio_bitrate_bps = target_audio_bitrate_bps;
   UpdateNetworkMetrics(network_metrics);
 }
 
 void AudioNetworkAdaptorImpl::SetOverhead(size_t overhead_bytes_per_packet) {
-  last_metrics_.overhead_bytes_per_packet =
-      rtc::Optional<size_t>(overhead_bytes_per_packet);
+  last_metrics_.overhead_bytes_per_packet = overhead_bytes_per_packet;
   DumpNetworkMetrics();
 
   Controller::NetworkMetrics network_metrics;
-  network_metrics.overhead_bytes_per_packet =
-      rtc::Optional<size_t>(overhead_bytes_per_packet);
+  network_metrics.overhead_bytes_per_packet = overhead_bytes_per_packet;
   UpdateNetworkMetrics(network_metrics);
 }
 
@@ -131,7 +124,7 @@ AudioEncoderRuntimeConfig AudioNetworkAdaptorImpl::GetEncoderRuntimeConfig() {
 
   // Update ANA stats.
   auto increment_opt = [](rtc::Optional<uint32_t>& a) {
-    a = rtc::Optional<uint32_t>(a.value_or(0) + 1);
+    a = a.value_or(0) + 1;
   };
   if (prev_config_) {
     if (config.bitrate_bps != prev_config_->bitrate_bps) {
@@ -154,11 +147,10 @@ AudioEncoderRuntimeConfig AudioNetworkAdaptorImpl::GetEncoderRuntimeConfig() {
       increment_opt(stats_.channel_action_counter);
     }
     if (config.uplink_packet_loss_fraction) {
-      stats_.uplink_packet_loss_fraction =
-          rtc::Optional<float>(*config.uplink_packet_loss_fraction);
+      stats_.uplink_packet_loss_fraction = *config.uplink_packet_loss_fraction;
     }
   }
-  prev_config_ = rtc::Optional<AudioEncoderRuntimeConfig>(config);
+  prev_config_ = config;
 
   // Prevent certain controllers from taking action (determined by field trials)
   if (!enable_bitrate_adaptation_ && config.bitrate_bps) {

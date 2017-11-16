@@ -69,7 +69,7 @@ void BitrateController::MakeDecision(AudioEncoderRuntimeConfig* config) {
         (*overhead_bytes_per_packet_ + offset) * 8 * 1000 / frame_length_ms_);
     bitrate_bps_ = std::max(0, *target_audio_bitrate_bps_ - overhead_rate_bps);
   }
-  config->bitrate_bps = rtc::Optional<int>(bitrate_bps_);
+  config->bitrate_bps = bitrate_bps_;
 }
 
 }  // namespace audio_network_adaptor

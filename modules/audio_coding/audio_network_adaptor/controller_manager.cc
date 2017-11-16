@@ -327,7 +327,7 @@ ControllerManagerImpl::ControllerManagerImpl(
     const std::map<const Controller*, std::pair<int, float>>& scoring_points)
     : config_(config),
       controllers_(std::move(controllers)),
-      last_reordering_time_ms_(rtc::Optional<int64_t>()),
+      last_reordering_time_ms_(rtc::nullopt),
       last_scoring_point_(0, 0.0) {
   for (auto& controller : controllers_)
     default_sorted_controllers_.push_back(controller.get());
@@ -389,7 +389,7 @@ std::vector<Controller*> ControllerManagerImpl::GetSortedControllers(
 
   if (sorted_controllers_ != sorted_controllers) {
     sorted_controllers_ = sorted_controllers;
-    last_reordering_time_ms_ = rtc::Optional<int64_t>(now_ms);
+    last_reordering_time_ms_ = now_ms;
     last_scoring_point_ = scoring_point;
   }
   return sorted_controllers_;

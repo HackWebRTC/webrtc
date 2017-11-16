@@ -103,7 +103,7 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
       last_audio_decoder_ = ci;
       last_audio_format_ = neteq_->GetDecoderFormat(ci->pltype);
       RTC_DCHECK(last_audio_format_);
-      last_packet_sample_rate_hz_ = rtc::Optional<int>(ci->plfreq);
+      last_packet_sample_rate_hz_ = ci->plfreq;
     }
   }  // |crit_sect_| is released.
 
@@ -272,9 +272,9 @@ void AcmReceiver::FlushBuffers() {
 void AcmReceiver::RemoveAllCodecs() {
   rtc::CritScope lock(&crit_sect_);
   neteq_->RemoveAllPayloadTypes();
-  last_audio_decoder_ = rtc::Optional<CodecInst>();
-  last_audio_format_ = rtc::Optional<SdpAudioFormat>();
-  last_packet_sample_rate_hz_ = rtc::Optional<int>();
+  last_audio_decoder_ = rtc::nullopt;
+  last_audio_format_ = rtc::nullopt;
+  last_packet_sample_rate_hz_ = rtc::nullopt;
 }
 
 int AcmReceiver::RemoveCodec(uint8_t payload_type) {
@@ -285,9 +285,9 @@ int AcmReceiver::RemoveCodec(uint8_t payload_type) {
     return -1;
   }
   if (last_audio_decoder_ && payload_type == last_audio_decoder_->pltype) {
-    last_audio_decoder_ = rtc::Optional<CodecInst>();
-    last_audio_format_ = rtc::Optional<SdpAudioFormat>();
-    last_packet_sample_rate_hz_ = rtc::Optional<int>();
+    last_audio_decoder_ = rtc::nullopt;
+    last_audio_format_ = rtc::nullopt;
+    last_packet_sample_rate_hz_ = rtc::nullopt;
   }
   return 0;
 }

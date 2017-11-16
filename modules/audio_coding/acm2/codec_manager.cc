@@ -106,7 +106,7 @@ bool CodecManager::RegisterEncoder(const CodecInst& send_codec) {
     codec_stack_params_.use_cng = false;
   }
 
-  send_codec_inst_ = rtc::Optional<CodecInst>(send_codec);
+  send_codec_inst_ = send_codec;
   recreate_encoder_ = true;  // Caller must recreate it.
   return true;
 }

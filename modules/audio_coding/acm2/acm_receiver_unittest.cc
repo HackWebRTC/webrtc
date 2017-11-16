@@ -483,8 +483,7 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_LastAudioCodec) {
     // of type "speech."
     ASSERT_TRUE(packet_sent_);
     ASSERT_EQ(kAudioFrameSpeech, last_frame_type_);
-    EXPECT_EQ(rtc::Optional<int>(c.inst.plfreq),
-              receiver_->last_packet_sample_rate_hz());
+    EXPECT_EQ(c.inst.plfreq, receiver_->last_packet_sample_rate_hz());
 
     // Set VAD on to send DTX. Then check if the "Last Audio codec" returns
     // the expected codec.
@@ -496,8 +495,7 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_LastAudioCodec) {
       InsertOnePacketOfSilence(c.id);
       ASSERT_TRUE(packet_sent_);
     }
-    EXPECT_EQ(rtc::Optional<int>(c.inst.plfreq),
-              receiver_->last_packet_sample_rate_hz());
+    EXPECT_EQ(c.inst.plfreq, receiver_->last_packet_sample_rate_hz());
     EXPECT_EQ(0, receiver_->LastAudioCodec(&codec));
     EXPECT_TRUE(CodecsEqual(c.inst, codec));
   }

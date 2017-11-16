@@ -139,12 +139,11 @@ int PacketBuffer::InsertPacketList(
       if (*current_cng_rtp_payload_type &&
           **current_cng_rtp_payload_type != packet.payload_type) {
         // New CNG payload type implies new codec type.
-        *current_rtp_payload_type = rtc::Optional<uint8_t>();
+        *current_rtp_payload_type = rtc::nullopt;
         Flush();
         flushed = true;
       }
-      *current_cng_rtp_payload_type =
-          rtc::Optional<uint8_t>(packet.payload_type);
+      *current_cng_rtp_payload_type = packet.payload_type;
     } else if (!decoder_database.IsDtmf(packet.payload_type)) {
       // This must be speech.
       if ((*current_rtp_payload_type &&
@@ -153,11 +152,11 @@ int PacketBuffer::InsertPacketList(
            !EqualSampleRates(packet.payload_type,
                              **current_cng_rtp_payload_type,
                              decoder_database))) {
-        *current_cng_rtp_payload_type = rtc::Optional<uint8_t>();
+        *current_cng_rtp_payload_type = rtc::nullopt;
         Flush();
         flushed = true;
       }
-      *current_rtp_payload_type = rtc::Optional<uint8_t>(packet.payload_type);
+      *current_rtp_payload_type = packet.payload_type;
     }
     int return_val = InsertPacket(std::move(packet), stats);
     if (return_val == kFlushed) {
@@ -210,7 +209,7 @@ const Packet* PacketBuffer::PeekNextPacket() const {
 rtc::Optional<Packet> PacketBuffer::GetNextPacket() {
   if (Empty()) {
     // Buffer is empty.
-    return rtc::Optional<Packet>();
+    return rtc::nullopt;
   }
 
   rtc::Optional<Packet> packet(std::move(buffer_.front()));

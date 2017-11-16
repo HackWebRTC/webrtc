@@ -59,8 +59,7 @@ int FakeDecodeFromFile::DecodeInternal(const uint8_t* encoded,
     RTC_CHECK(input_->Seek(jump));
   }
 
-  next_timestamp_from_input_ =
-      rtc::Optional<uint32_t>(timestamp_to_decode + samples_to_decode);
+  next_timestamp_from_input_ = timestamp_to_decode + samples_to_decode;
 
   uint32_t original_payload_size_bytes =
       ByteReader<uint32_t>::ReadLittleEndian(&encoded[8]);

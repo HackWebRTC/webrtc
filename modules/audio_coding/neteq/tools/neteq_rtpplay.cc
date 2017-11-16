@@ -209,20 +209,20 @@ rtc::Optional<int> CodecSampleRate(uint8_t payload_type) {
   if (payload_type == FLAG_pcmu || payload_type == FLAG_pcma ||
       payload_type == FLAG_ilbc || payload_type == FLAG_pcm16b ||
       payload_type == FLAG_cn_nb || payload_type == FLAG_avt)
-    return rtc::Optional<int>(8000);
+    return 8000;
   if (payload_type == FLAG_isac || payload_type == FLAG_pcm16b_wb ||
       payload_type == FLAG_g722 || payload_type == FLAG_cn_wb ||
       payload_type == FLAG_avt_16)
-    return rtc::Optional<int>(16000);
+    return 16000;
   if (payload_type == FLAG_isac_swb || payload_type == FLAG_pcm16b_swb32 ||
       payload_type == FLAG_cn_swb32 || payload_type == FLAG_avt_32)
-    return rtc::Optional<int>(32000);
+    return 32000;
   if (payload_type == FLAG_opus || payload_type == FLAG_pcm16b_swb48 ||
       payload_type == FLAG_cn_swb48 || payload_type == FLAG_avt_48)
-    return rtc::Optional<int>(48000);
+    return 48000;
   if (payload_type == FLAG_red)
-    return rtc::Optional<int>(0);
-  return rtc::Optional<int>();
+    return 0;
+  return rtc::nullopt;
 }
 
 // Class to let through only the packets with a given SSRC. Should be used as an
@@ -294,7 +294,7 @@ class SsrcSwitchDetector : public NetEqPostInsertPacket {
                 << static_cast<int>(packet.header.payloadType) << ")"
                 << std::endl;
     }
-    last_ssrc_ = rtc::Optional<uint32_t>(packet.header.ssrc);
+    last_ssrc_ = packet.header.ssrc;
     if (other_callback_) {
       other_callback_->AfterInsertPacket(packet, neteq);
     }

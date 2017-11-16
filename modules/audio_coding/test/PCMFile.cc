@@ -225,7 +225,7 @@ void PCMFile::ReadStereo(bool is_stereo) {
 }
 
 void PCMFile::SetNum10MsBlocksToRead(int value) {
-  num_10ms_blocks_to_read_ = rtc::Optional<int>(value);
+  num_10ms_blocks_to_read_ = value;
 }
 
 }  // namespace webrtc

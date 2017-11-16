@@ -44,7 +44,7 @@ void DtxController::MakeDecision(AudioEncoderRuntimeConfig* config) {
       dtx_enabled_ = true;
     }
   }
-  config->enable_dtx = rtc::Optional<bool>(dtx_enabled_);
+  config->enable_dtx = dtx_enabled_;
 }
 
 }  // namespace webrtc

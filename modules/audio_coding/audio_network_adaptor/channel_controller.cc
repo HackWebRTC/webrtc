@@ -55,7 +55,7 @@ void ChannelController::MakeDecision(AudioEncoderRuntimeConfig* config) {
           std::min(static_cast<size_t>(2), config_.num_encoder_channels);
     }
   }
-  config->num_channels = rtc::Optional<size_t>(channels_to_encode_);
+  config->num_channels = channels_to_encode_;
 }
 
 }  // namespace webrtc

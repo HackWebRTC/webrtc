@@ -38,7 +38,7 @@ AudioEncoderOpusConfig CreateConfig(const CodecInst& codec_inst) {
   AudioEncoderOpusConfig config;
   config.frame_size_ms = rtc::CheckedDivExact(codec_inst.pacsize, 48);
   config.num_channels = codec_inst.channels;
-  config.bitrate_bps = rtc::Optional<int>(codec_inst.rate);
+  config.bitrate_bps = codec_inst.rate;
   config.application = config.num_channels == 1
                            ? AudioEncoderOpusConfig::ApplicationMode::kVoip
                            : AudioEncoderOpusConfig::ApplicationMode::kAudio;
@@ -102,13 +102,12 @@ AudioEncoderRuntimeConfig CreateEncoderRuntimeConfig() {
   constexpr size_t kNumChannels = 1;
   constexpr float kPacketLossFraction = 0.1f;
   AudioEncoderRuntimeConfig config;
-  config.bitrate_bps = rtc::Optional<int>(kBitrate);
-  config.frame_length_ms = rtc::Optional<int>(kFrameLength);
-  config.enable_fec = rtc::Optional<bool>(kEnableFec);
-  config.enable_dtx = rtc::Optional<bool>(kEnableDtx);
-  config.num_channels = rtc::Optional<size_t>(kNumChannels);
-  config.uplink_packet_loss_fraction =
-      rtc::Optional<float>(kPacketLossFraction);
+  config.bitrate_bps = kBitrate;
+  config.frame_length_ms = kFrameLength;
+  config.enable_fec = kEnableFec;
+  config.enable_dtx = kEnableDtx;
+  config.num_channels = kNumChannels;
+  config.uplink_packet_loss_fraction = kPacketLossFraction;
   return config;
 }
 
@@ -201,24 +200,20 @@ TEST(AudioEncoderOpusTest,
   const int kMinBitrateBps = 6000;
   const int kMaxBitrateBps = 510000;
   // Set a too low bitrate.
-  states.encoder->OnReceivedUplinkBandwidth(kMinBitrateBps - 1,
-                                            rtc::Optional<int64_t>());
+  states.encoder->OnReceivedUplinkBandwidth(kMinBitrateBps - 1, rtc::nullopt);
   EXPECT_EQ(kMinBitrateBps, states.encoder->GetTargetBitrate());
   // Set a too high bitrate.
-  states.encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps + 1,
-                                            rtc::Optional<int64_t>());
+  states.encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps + 1, rtc::nullopt);
   EXPECT_EQ(kMaxBitrateBps, states.encoder->GetTargetBitrate());
   // Set the minimum rate.
-  states.encoder->OnReceivedUplinkBandwidth(kMinBitrateBps,
-                                            rtc::Optional<int64_t>());
+  states.encoder->OnReceivedUplinkBandwidth(kMinBitrateBps, rtc::nullopt);
   EXPECT_EQ(kMinBitrateBps, states.encoder->GetTargetBitrate());
   // Set the maximum rate.
-  states.encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps,
-                                            rtc::Optional<int64_t>());
+  states.encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps, rtc::nullopt);
   EXPECT_EQ(kMaxBitrateBps, states.encoder->GetTargetBitrate());
   // Set rates from kMaxBitrateBps up to 32000 bps.
   for (int rate = kMinBitrateBps; rate <= 32000; rate += 1000) {
-    states.encoder->OnReceivedUplinkBandwidth(rate, rtc::Optional<int64_t>());
+    states.encoder->OnReceivedUplinkBandwidth(rate, rtc::nullopt);
     EXPECT_EQ(rate, states.encoder->GetTargetBitrate());
   }
 }
@@ -329,8 +324,8 @@ TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnReceivedUplinkBandwidth) {
   EXPECT_CALL(*states.mock_bitrate_smoother,
               SetTimeConstantMs(kProbingIntervalMs * 4));
   EXPECT_CALL(*states.mock_bitrate_smoother, AddSample(kTargetAudioBitrate));
-  states.encoder->OnReceivedUplinkBandwidth(
-      kTargetAudioBitrate, rtc::Optional<int64_t>(kProbingIntervalMs));
+  states.encoder->OnReceivedUplinkBandwidth(kTargetAudioBitrate,
+                                            kProbingIntervalMs);
 
   CheckEncoderRuntimeConfig(states.encoder.get(), config);
 }
@@ -401,7 +396,7 @@ TEST(AudioEncoderOpusTest, DoNotInvokeSetTargetBitrateIfOverheadUnknown) {
   auto states = CreateCodec(2);
 
   states.encoder->OnReceivedUplinkBandwidth(kDefaultOpusSettings.rate * 2,
-                                            rtc::Optional<int64_t>());
+                                            rtc::nullopt);
 
   // Since |OnReceivedOverhead| has not been called, the codec bitrate should
   // not change.
@@ -418,8 +413,7 @@ TEST(AudioEncoderOpusTest, OverheadRemovedFromTargetAudioBitrate) {
   states.encoder->OnReceivedOverhead(kOverheadBytesPerPacket);
 
   constexpr int kTargetBitrateBps = 40000;
-  states.encoder->OnReceivedUplinkBandwidth(kTargetBitrateBps,
-                                            rtc::Optional<int64_t>());
+  states.encoder->OnReceivedUplinkBandwidth(kTargetBitrateBps, rtc::nullopt);
 
   int packet_rate = rtc::CheckedDivExact(48000, kDefaultOpusSettings.pacsize);
   EXPECT_EQ(kTargetBitrateBps -
@@ -445,16 +439,14 @@ TEST(AudioEncoderOpusTest, BitrateBounded) {
   // subtracted. The eventual codec rate should be bounded by |kMinBitrateBps|.
   int target_bitrate =
       kOverheadBytesPerPacket * 8 * packet_rate + kMinBitrateBps - 1;
-  states.encoder->OnReceivedUplinkBandwidth(target_bitrate,
-                                            rtc::Optional<int64_t>());
+  states.encoder->OnReceivedUplinkBandwidth(target_bitrate, rtc::nullopt);
   EXPECT_EQ(kMinBitrateBps, states.encoder->GetTargetBitrate());
 
   // Set a target rate that is greater than |kMaxBitrateBps| when overhead is
   // subtracted. The eventual codec rate should be bounded by |kMaxBitrateBps|.
   target_bitrate =
       kOverheadBytesPerPacket * 8 * packet_rate + kMaxBitrateBps + 1;
-  states.encoder->OnReceivedUplinkBandwidth(target_bitrate,
-                                            rtc::Optional<int64_t>());
+  states.encoder->OnReceivedUplinkBandwidth(target_bitrate, rtc::nullopt);
   EXPECT_EQ(kMaxBitrateBps, states.encoder->GetTargetBitrate());
 }
 
@@ -465,24 +457,20 @@ TEST(AudioEncoderOpusTest, ConfigComplexityAdaptation) {
   config.complexity = 6;
 
   // Bitrate within hysteresis window. Expect empty output.
-  config.bitrate_bps = rtc::Optional<int>(12500);
-  EXPECT_EQ(rtc::Optional<int>(),
-            AudioEncoderOpusImpl::GetNewComplexity(config));
+  config.bitrate_bps = 12500;
+  EXPECT_EQ(rtc::nullopt, AudioEncoderOpusImpl::GetNewComplexity(config));
 
   // Bitrate below hysteresis window. Expect higher complexity.
-  config.bitrate_bps = rtc::Optional<int>(10999);
-  EXPECT_EQ(rtc::Optional<int>(8),
-            AudioEncoderOpusImpl::GetNewComplexity(config));
+  config.bitrate_bps = 10999;
+  EXPECT_EQ(8, AudioEncoderOpusImpl::GetNewComplexity(config));
 
   // Bitrate within hysteresis window. Expect empty output.
-  config.bitrate_bps = rtc::Optional<int>(12500);
-  EXPECT_EQ(rtc::Optional<int>(),
-            AudioEncoderOpusImpl::GetNewComplexity(config));
+  config.bitrate_bps = 12500;
+  EXPECT_EQ(rtc::nullopt, AudioEncoderOpusImpl::GetNewComplexity(config));
 
   // Bitrate above hysteresis window. Expect lower complexity.
-  config.bitrate_bps = rtc::Optional<int>(14001);
-  EXPECT_EQ(rtc::Optional<int>(6),
-            AudioEncoderOpusImpl::GetNewComplexity(config));
+  config.bitrate_bps = 14001;
+  EXPECT_EQ(6, AudioEncoderOpusImpl::GetNewComplexity(config));
 }
 
 TEST(AudioEncoderOpusTest, EmptyConfigDoesNotAffectEncoderSettings) {
@@ -512,7 +500,7 @@ TEST(AudioEncoderOpusTest, UpdateUplinkBandwidthInAudioNetworkAdaptor) {
   audio.fill(0);
   rtc::Buffer encoded;
   EXPECT_CALL(*states.mock_bitrate_smoother, GetAverage())
-      .WillOnce(Return(rtc::Optional<float>(50000)));
+      .WillOnce(Return(50000));
   EXPECT_CALL(**states.mock_audio_network_adaptor, SetUplinkBandwidth(50000));
   states.encoder->Encode(
       0, rtc::ArrayView<const int16_t>(audio.data(), audio.size()), &encoded);
@@ -527,7 +515,7 @@ TEST(AudioEncoderOpusTest, UpdateUplinkBandwidthInAudioNetworkAdaptor) {
 
     // Update when it is time to update.
     EXPECT_CALL(*states.mock_bitrate_smoother, GetAverage())
-        .WillOnce(Return(rtc::Optional<float>(40000)));
+        .WillOnce(Return(40000));
     EXPECT_CALL(**states.mock_audio_network_adaptor, SetUplinkBandwidth(40000));
     states.fake_clock->AdvanceTime(rtc::TimeDelta::FromMilliseconds(1));
     states.encoder->Encode(
@@ -544,7 +532,7 @@ TEST(AudioEncoderOpusTest, EncodeAtMinBitrate) {
   rtc::Buffer encoded;
   uint32_t rtp_timestamp = 12345;  // Just a number not important to this test.
 
-  states.encoder->OnReceivedUplinkBandwidth(0, rtc::Optional<int64_t>());
+  states.encoder->OnReceivedUplinkBandwidth(0, rtc::nullopt);
   for (int packet_index = 0; packet_index < kNumPacketsToEncode;
        packet_index++) {
     // Make sure we are not encoding before we have enough data for

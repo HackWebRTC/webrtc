@@ -53,12 +53,11 @@ class MockAudioDecoder final : public AudioDecoder {
       if (decoded.size() >= output_size) {
         memset(decoded.data(), 0,
                sizeof(int16_t) * kPacketDuration * num_channels_);
-        return rtc::Optional<DecodeResult>(
-            {kPacketDuration * num_channels_, kSpeech});
+        return DecodeResult{kPacketDuration * num_channels_, kSpeech};
       } else {
         ADD_FAILURE() << "Expected decoded.size() to be >= output_size ("
                       << decoded.size() << " vs. " << output_size << ")";
-        return rtc::Optional<DecodeResult>();
+        return rtc::nullopt;
       }
     }
 

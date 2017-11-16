@@ -606,21 +606,20 @@ rtc::Optional<CodecInst> AudioCodingModuleImpl::SendCodec() const {
   if (encoder_factory_) {
     auto* ci = encoder_factory_->codec_manager.GetCodecInst();
     if (ci) {
-      return rtc::Optional<CodecInst>(*ci);
+      return *ci;
     }
     CreateSpeechEncoderIfNecessary(encoder_factory_.get());
     const std::unique_ptr<AudioEncoder>& enc =
         encoder_factory_->codec_manager.GetStackParams()->speech_encoder;
     if (enc) {
-      return rtc::Optional<CodecInst>(
-          acm2::CodecManager::ForgeCodecInst(enc.get()));
+      return acm2::CodecManager::ForgeCodecInst(enc.get());
     }
-    return rtc::Optional<CodecInst>();
+    return rtc::nullopt;
   } else {
     return encoder_stack_
                ? rtc::Optional<CodecInst>(
                      acm2::CodecManager::ForgeCodecInst(encoder_stack_.get()))
-               : rtc::Optional<CodecInst>();
+               : rtc::nullopt;
   }
 }
 
@@ -639,8 +638,7 @@ int AudioCodingModuleImpl::SendFrequency() const {
 void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
   rtc::CritScope lock(&acm_crit_sect_);
   if (encoder_stack_) {
-    encoder_stack_->OnReceivedUplinkBandwidth(bitrate_bps,
-                                              rtc::Optional<int64_t>());
+    encoder_stack_->OnReceivedUplinkBandwidth(bitrate_bps, rtc::nullopt);
   }
 }
 

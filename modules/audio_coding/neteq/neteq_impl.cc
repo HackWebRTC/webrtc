@@ -423,10 +423,9 @@ rtc::Optional<uint32_t> NetEqImpl::GetPlayoutTimestamp() const {
     // We don't have a valid RTP timestamp until we have decoded our first
     // RTP packet. Also, the RTP timestamp is not accurate while playing CNG,
     // which is indicated by returning an empty value.
-    return rtc::Optional<uint32_t>();
+    return rtc::nullopt;
   }
-  return rtc::Optional<uint32_t>(
-      timestamp_scaler_->ToExternal(playout_timestamp_));
+  return timestamp_scaler_->ToExternal(playout_timestamp_);
 }
 
 int NetEqImpl::last_output_sample_rate_hz() const {
@@ -439,7 +438,7 @@ rtc::Optional<CodecInst> NetEqImpl::GetDecoder(int payload_type) const {
   const DecoderDatabase::DecoderInfo* di =
       decoder_database_->GetDecoderInfo(payload_type);
   if (!di) {
-    return rtc::Optional<CodecInst>();
+    return rtc::nullopt;
   }
 
   // Create a CodecInst with some fields set. The remaining fields are zeroed,
@@ -452,7 +451,7 @@ rtc::Optional<CodecInst> NetEqImpl::GetDecoder(int payload_type) const {
   ci.plfreq = di->IsRed() ? 8000 : di->SampleRateHz();
   AudioDecoder* const decoder = di->GetDecoder();
   ci.channels = decoder ? decoder->Channels() : 1;
-  return rtc::Optional<CodecInst>(ci);
+  return ci;
 }
 
 rtc::Optional<SdpAudioFormat> NetEqImpl::GetDecoderFormat(
@@ -461,9 +460,9 @@ rtc::Optional<SdpAudioFormat> NetEqImpl::GetDecoderFormat(
   const DecoderDatabase::DecoderInfo* const di =
       decoder_database_->GetDecoderInfo(payload_type);
   if (!di) {
-    return rtc::Optional<SdpAudioFormat>();  // Payload type not registered.
+    return rtc::nullopt;  // Payload type not registered.
   }
-  return rtc::Optional<SdpAudioFormat>(di->GetFormat());
+  return di->GetFormat();
 }
 
 int NetEqImpl::SetTargetNumberOfChannels() {
@@ -2004,7 +2003,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     stats_.JitterBufferDelay(extracted_samples, waiting_time_ms);
 
     packet_list->push_back(std::move(*packet));  // Store packet in list.
-    packet = rtc::Optional<Packet>();  // Ensure it's never used after the move.
+    packet = rtc::nullopt;  // Ensure it's never used after the move.
 
     // Check what packet is available next.
     next_packet = packet_buffer_->PeekNextPacket();

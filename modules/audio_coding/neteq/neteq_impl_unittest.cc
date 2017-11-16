@@ -348,9 +348,8 @@ TEST_F(NetEqImplTest, InsertPacket) {
       .Times(1);
   EXPECT_CALL(*mock_packet_buffer_, InsertPacketList(_, _, _, _, _))
       .Times(2)
-      .WillRepeatedly(
-          DoAll(SetArgPointee<2>(rtc::Optional<uint8_t>(kPayloadType)),
-                WithArg<0>(Invoke(DeletePacketsAndReturnOk))));
+      .WillRepeatedly(DoAll(SetArgPointee<2>(kPayloadType),
+                            WithArg<0>(Invoke(DeletePacketsAndReturnOk))));
   // SetArgPointee<2>(kPayloadType) means that the third argument (zero-based
   // index) is a pointer, and the variable pointed to is set to kPayloadType.
   // Also invoke the function DeletePacketsAndReturnOk to properly delete all

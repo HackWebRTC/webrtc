@@ -462,7 +462,7 @@ TEST_F(AudioDecoderPcmUTest, EncodeDecode) {
 
 namespace {
 int SetAndGetTargetBitrate(AudioEncoder* audio_encoder, int rate) {
-  audio_encoder->OnReceivedUplinkBandwidth(rate, rtc::Optional<int64_t>());
+  audio_encoder->OnReceivedUplinkBandwidth(rate, rtc::nullopt);
   return audio_encoder->GetTargetBitrate();
 }
 void TestSetAndGetTargetBitratesWithFixedCodec(AudioEncoder* audio_encoder,

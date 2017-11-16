@@ -184,8 +184,7 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
 
   // Set up L16 codec.
   virtual void SetUpL16Codec() {
-    audio_format_ =
-        rtc::Optional<SdpAudioFormat>(SdpAudioFormat("L16", kSampleRateHz, 1));
+    audio_format_ = SdpAudioFormat("L16", kSampleRateHz, 1);
     ASSERT_EQ(0, AudioCodingModule::Codec("L16", &codec_, kSampleRateHz, 1));
     codec_.pltype = kPayloadType;
   }
@@ -660,8 +659,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
 
   void RegisterCodec() override {
     static_assert(kSampleRateHz == 16000, "test designed for iSAC 16 kHz");
-    audio_format_ =
-        rtc::Optional<SdpAudioFormat>(SdpAudioFormat("isac", kSampleRateHz, 1));
+    audio_format_ = SdpAudioFormat("isac", kSampleRateHz, 1);
     AudioCodingModule::Codec("ISAC", &codec_, kSampleRateHz, 1);
     codec_.pltype = kPayloadType;
 

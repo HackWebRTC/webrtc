@@ -188,9 +188,8 @@ TEST(PacketBuffer, InsertPacketList) {
                                     &current_cng_pt, &mock_stats));
   EXPECT_TRUE(list.empty());  // The PacketBuffer should have depleted the list.
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(rtc::Optional<uint8_t>(0),
-            current_pt);         // Current payload type changed to 0.
-  EXPECT_FALSE(current_cng_pt);  // CNG payload type not changed.
+  EXPECT_EQ(0, current_pt);      // Current payload type changed to 0.
+  EXPECT_EQ(rtc::nullopt, current_cng_pt);  // CNG payload type not changed.
 
   buffer.Flush();  // Clean up.
 
@@ -236,9 +235,8 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
                                     &current_cng_pt, &mock_stats));
   EXPECT_TRUE(list.empty());  // The PacketBuffer should have depleted the list.
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());  // Only the last packet.
-  EXPECT_EQ(rtc::Optional<uint8_t>(1),
-            current_pt);         // Current payload type changed to 1.
-  EXPECT_FALSE(current_cng_pt);  // CNG payload type not changed.
+  EXPECT_EQ(1, current_pt);      // Current payload type changed to 1.
+  EXPECT_EQ(rtc::nullopt, current_cng_pt);  // CNG payload type not changed.
 
   buffer.Flush();  // Clean up.
 
@@ -470,9 +468,8 @@ TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
   ASSERT_TRUE(buffer.PeekNextPacket());
   EXPECT_EQ(kCngPt, buffer.PeekNextPacket()->payload_type);
-  EXPECT_FALSE(current_pt);  // Current payload type not set.
-  EXPECT_EQ(rtc::Optional<uint8_t>(kCngPt),
-            current_cng_pt);  // CNG payload type set.
+  EXPECT_EQ(current_pt, rtc::nullopt);  // Current payload type not set.
+  EXPECT_EQ(kCngPt, current_cng_pt);  // CNG payload type set.
 
   // Insert second packet, which is wide-band speech.
   {
@@ -490,9 +487,8 @@ TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
   ASSERT_TRUE(buffer.PeekNextPacket());
   EXPECT_EQ(kSpeechPt, buffer.PeekNextPacket()->payload_type);
 
-  EXPECT_EQ(rtc::Optional<uint8_t>(kSpeechPt),
-            current_pt);         // Current payload type set.
-  EXPECT_FALSE(current_cng_pt);  // CNG payload type reset.
+  EXPECT_EQ(kSpeechPt, current_pt);  // Current payload type set.
+  EXPECT_EQ(rtc::nullopt, current_cng_pt);  // CNG payload type reset.
 
   buffer.Flush();                        // Clean up.
   EXPECT_CALL(decoder_database, Die());  // Called when object is deleted.

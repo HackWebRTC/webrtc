@@ -48,9 +48,9 @@ void FecControllerRplrBased::MakeDecision(AudioEncoderRuntimeConfig* config) {
 
   fec_enabled_ = fec_enabled_ ? !FecDisablingDecision() : FecEnablingDecision();
 
-  config->enable_fec = rtc::Optional<bool>(fec_enabled_);
-  config->uplink_packet_loss_fraction = rtc::Optional<float>(
-      uplink_recoverable_packet_loss_ ? *uplink_recoverable_packet_loss_ : 0.0);
+  config->enable_fec = fec_enabled_;
+  config->uplink_packet_loss_fraction =
+      uplink_recoverable_packet_loss_ ? *uplink_recoverable_packet_loss_ : 0.0;
 }
 
 bool FecControllerRplrBased::FecEnablingDecision() const {

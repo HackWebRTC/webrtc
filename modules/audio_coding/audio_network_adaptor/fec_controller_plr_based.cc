@@ -21,9 +21,7 @@ namespace webrtc {
 namespace {
 class NullSmoothingFilter final : public SmoothingFilter {
  public:
-  void AddSample(float sample) override {
-    last_sample_ = rtc::Optional<float>(sample);
-  }
+  void AddSample(float sample) override { last_sample_ = sample; }
 
   rtc::Optional<float> GetAverage() override { return last_sample_; }
 
@@ -85,10 +83,9 @@ void FecControllerPlrBased::MakeDecision(AudioEncoderRuntimeConfig* config) {
   fec_enabled_ = fec_enabled_ ? !FecDisablingDecision(packet_loss)
                               : FecEnablingDecision(packet_loss);
 
-  config->enable_fec = rtc::Optional<bool>(fec_enabled_);
+  config->enable_fec = fec_enabled_;
 
-  config->uplink_packet_loss_fraction =
-      rtc::Optional<float>(packet_loss ? *packet_loss : 0.0);
+  config->uplink_packet_loss_fraction = packet_loss ? *packet_loss : 0.0;
 }
 
 bool FecControllerPlrBased::FecEnablingDecision(

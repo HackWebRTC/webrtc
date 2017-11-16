@@ -111,14 +111,14 @@ class RentACodec {
     const int i = static_cast<int>(codec_id);
     return i >= 0 && i < static_cast<int>(NumberOfCodecs())
                ? rtc::Optional<int>(i)
-               : rtc::Optional<int>();
+               : rtc::nullopt;
   }
 
   static inline rtc::Optional<CodecId> CodecIdFromIndex(int codec_index) {
     return static_cast<size_t>(codec_index) < NumberOfCodecs()
                ? rtc::Optional<RentACodec::CodecId>(
                      static_cast<RentACodec::CodecId>(codec_index))
-               : rtc::Optional<RentACodec::CodecId>();
+               : rtc::nullopt;
   }
 
   static rtc::Optional<CodecId> CodecIdByParams(const char* payload_name,

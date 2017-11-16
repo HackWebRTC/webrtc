@@ -82,7 +82,7 @@ void FrameLengthController::MakeDecision(AudioEncoderRuntimeConfig* config) {
     prev_decision_increase_ = false;
   }
   config->last_fl_change_increase = prev_decision_increase_;
-  config->frame_length_ms = rtc::Optional<int>(*frame_length_ms_);
+  config->frame_length_ms = *frame_length_ms_;
 }
 
 FrameLengthController::Config::FrameLengthChange::FrameLengthChange(

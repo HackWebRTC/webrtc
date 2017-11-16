@@ -52,9 +52,9 @@ class NetEqInput {
     const auto b = NextOutputEventTime();
     // Return the minimum of non-empty |a| and |b|, or empty if both are empty.
     if (a) {
-      return b ? rtc::Optional<int64_t>(std::min(*a, *b)) : a;
+      return b ? std::min(*a, *b) : a;
     }
-    return b ? b : rtc::Optional<int64_t>();
+    return b ? b : rtc::nullopt;
   }
 
   // Returns the next packet to be inserted into NetEq. The packet following the

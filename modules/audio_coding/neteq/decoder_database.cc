@@ -104,10 +104,9 @@ DecoderDatabase::DecoderInfo::CngDecoder::Create(const SdpAudioFormat& format) {
     const int sample_rate_hz = format.clockrate_hz;
     RTC_DCHECK(sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
                sample_rate_hz == 32000 || sample_rate_hz == 48000);
-    return rtc::Optional<DecoderDatabase::DecoderInfo::CngDecoder>(
-        {sample_rate_hz});
+    return DecoderDatabase::DecoderInfo::CngDecoder{sample_rate_hz};
   } else {
-    return rtc::Optional<CngDecoder>();
+    return rtc::nullopt;
   }
 }
 

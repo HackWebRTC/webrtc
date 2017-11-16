@@ -43,7 +43,7 @@ class CodecManager final {
     return send_codec_inst_ ? &*send_codec_inst_ : nullptr;
   }
 
-  void UnsetCodecInst() { send_codec_inst_ = rtc::Optional<CodecInst>(); }
+  void UnsetCodecInst() { send_codec_inst_ = rtc::nullopt; }
 
   const RentACodec::StackParameters* GetStackParams() const {
     return &codec_stack_params_;

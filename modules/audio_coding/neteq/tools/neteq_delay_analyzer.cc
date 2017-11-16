@@ -86,12 +86,11 @@ void NetEqDelayAnalyzer::AfterGetAudio(int64_t time_now_ms,
     auto& it_timing = it->second;
     RTC_CHECK(!it_timing.decode_get_audio_count)
         << "Decode time already written";
-    it_timing.decode_get_audio_count = rtc::Optional<int64_t>(get_audio_count_);
+    it_timing.decode_get_audio_count = get_audio_count_;
     RTC_CHECK(!it_timing.sync_delay_ms) << "Decode time already written";
-    it_timing.sync_delay_ms = rtc::Optional<int64_t>(last_sync_buffer_ms_);
-    it_timing.target_delay_ms = rtc::Optional<int>(neteq->TargetDelayMs());
-    it_timing.current_delay_ms =
-        rtc::Optional<int>(neteq->FilteredCurrentDelayMs());
+    it_timing.sync_delay_ms = last_sync_buffer_ms_;
+    it_timing.target_delay_ms = neteq->TargetDelayMs();
+    it_timing.current_delay_ms = neteq->FilteredCurrentDelayMs();
   }
   last_sample_rate_hz_ = audio_frame.sample_rate_hz_;
   ++get_audio_count_;
@@ -159,16 +158,16 @@ void NetEqDelayAnalyzer::CreateGraphs(
       const float playout_ms = *timing.decode_get_audio_count * 10 +
                                get_audio_time_ms_[0] + *timing.sync_delay_ms -
                                offset_send_time_ms;
-      playout_delay_ms->push_back(rtc::Optional<float>(playout_ms));
+      playout_delay_ms->push_back(playout_ms);
       RTC_DCHECK(timing.target_delay_ms);
       RTC_DCHECK(timing.current_delay_ms);
       const float target =
           playout_ms - *timing.current_delay_ms + *timing.target_delay_ms;
-      target_delay_ms->push_back(rtc::Optional<float>(target));
+      target_delay_ms->push_back(target);
     } else {
       // This packet was never decoded. Mark target and playout delays as empty.
-      playout_delay_ms->push_back(rtc::Optional<float>());
-      target_delay_ms->push_back(rtc::Optional<float>());
+      playout_delay_ms->push_back(rtc::nullopt);
+      target_delay_ms->push_back(rtc::nullopt);
     }
   }
   RTC_DCHECK(data_it == data_.end());

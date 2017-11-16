@@ -34,7 +34,7 @@ NetEqReplacementInput::NetEqReplacementInput(
 rtc::Optional<int64_t> NetEqReplacementInput::NextPacketTime() const {
   return packet_
              ? rtc::Optional<int64_t>(static_cast<int64_t>(packet_->time_ms))
-             : rtc::Optional<int64_t>();
+             : rtc::nullopt;
 }
 
 rtc::Optional<int64_t> NetEqReplacementInput::NextOutputEventTime() const {
