@@ -30,10 +30,13 @@ class ErlEstimator {
 
   // Returns the most recent ERL estimate.
   const std::array<float, kFftLengthBy2Plus1>& Erl() const { return erl_; }
+  float ErlTimeDomain() const { return erl_time_domain_; }
 
  private:
   std::array<float, kFftLengthBy2Plus1> erl_;
   std::array<int, kFftLengthBy2Minus1> hold_counters_;
+  float erl_time_domain_;
+  int hold_counter_time_domain_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ErlEstimator);
 };
