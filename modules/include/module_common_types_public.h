@@ -69,7 +69,7 @@ class Unwrapper {
 
   // Only update the internal state to the specified last (unwrapped) value.
   void UpdateLast(int64_t last_value) {
-    last_value_ = rtc::Optional<int64_t>(last_value);
+    last_value_ = last_value;
   }
 
   // Unwrap the value and update the internal state.
