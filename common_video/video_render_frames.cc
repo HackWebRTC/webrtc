@@ -77,8 +77,7 @@ rtc::Optional<VideoFrame> VideoRenderFrames::FrameToRender() {
   rtc::Optional<VideoFrame> render_frame;
   // Get the newest frame that can be released for rendering.
   while (!incoming_frames_.empty() && TimeToNextFrameRelease() <= 0) {
-    render_frame =
-        rtc::Optional<VideoFrame>(std::move(incoming_frames_.front()));
+    render_frame = std::move(incoming_frames_.front());
     incoming_frames_.pop_front();
   }
   return render_frame;

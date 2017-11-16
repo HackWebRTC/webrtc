@@ -17,9 +17,9 @@
 #include "rtc_base/bitbuffer.h"
 #include "rtc_base/logging.h"
 
-#define RETURN_EMPTY_ON_FAIL(x)                  \
-  if (!(x)) {                                    \
-    return rtc::Optional<PpsParser::PpsState>(); \
+#define RETURN_EMPTY_ON_FAIL(x) \
+  if (!(x)) {                   \
+    return rtc::nullopt;        \
   }
 
 namespace {
@@ -65,15 +65,15 @@ rtc::Optional<uint32_t> PpsParser::ParsePpsIdFromSlice(const uint8_t* data,
   uint32_t golomb_tmp;
   // first_mb_in_slice: ue(v)
   if (!slice_reader.ReadExponentialGolomb(&golomb_tmp))
-    return rtc::Optional<uint32_t>();
+    return rtc::nullopt;
   // slice_type: ue(v)
   if (!slice_reader.ReadExponentialGolomb(&golomb_tmp))
-    return rtc::Optional<uint32_t>();
+    return rtc::nullopt;
   // pic_parameter_set_id: ue(v)
   uint32_t slice_pps_id;
   if (!slice_reader.ReadExponentialGolomb(&slice_pps_id))
-    return rtc::Optional<uint32_t>();
-  return rtc::Optional<uint32_t>(slice_pps_id);
+    return rtc::nullopt;
+  return slice_pps_id;
 }
 
 rtc::Optional<PpsParser::PpsState> PpsParser::ParseInternal(
@@ -183,7 +183,7 @@ rtc::Optional<PpsParser::PpsState> PpsParser::ParseInternal(
   RETURN_EMPTY_ON_FAIL(
       bit_buffer->ReadBits(&pps.redundant_pic_cnt_present_flag, 1));
 
-  return rtc::Optional<PpsParser::PpsState>(pps);
+  return pps;
 }
 
 bool PpsParser::ParsePpsIdsInternal(rtc::BitBuffer* bit_buffer,

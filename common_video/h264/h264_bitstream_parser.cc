@@ -44,7 +44,7 @@ H264BitstreamParser::Result H264BitstreamParser::ParseNonParameterSetNalu(
   if (!sps_ || !pps_)
     return kInvalidStream;
 
-  last_slice_qp_delta_ = rtc::Optional<int32_t>();
+  last_slice_qp_delta_ = rtc::nullopt;
   const std::vector<uint8_t> slice_rbsp =
       H264::ParseRbsp(source, source_length);
   if (slice_rbsp.size() < H264::kNaluTypeSize)
@@ -262,7 +262,7 @@ H264BitstreamParser::Result H264BitstreamParser::ParseNonParameterSetNalu(
     return kInvalidStream;
   }
 
-  last_slice_qp_delta_ = rtc::Optional<int32_t>(last_slice_qp_delta);
+  last_slice_qp_delta_ = last_slice_qp_delta;
   return kOk;
 }
 
