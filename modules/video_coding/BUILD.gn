@@ -97,6 +97,7 @@ rtc_static_library("video_coding") {
     ":webrtc_vp8",
     ":webrtc_vp9",
     "..:module_api",
+    "..:module_api_public",
     "../..:webrtc_common",
     "../../api:optional",
     "../../api:video_frame_api_i420",

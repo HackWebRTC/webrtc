@@ -14,6 +14,7 @@
 
 #include "api/optional.h"
 #include "api/video/i420_buffer.h"
+#include "modules/include/module_common_types_public.h"
 #include "modules/pacing/alr_detector.h"
 #include "modules/video_coding/encoded_frame.h"
 #include "modules/video_coding/media_optimization.h"
@@ -24,6 +25,11 @@
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
+
+namespace {
+const int kMessagesThrottlingThreshold = 100;
+const int kThrottleRatio = 1000;
+}  // namespace
 
 VCMGenericEncoder::VCMGenericEncoder(
     VideoEncoder* encoder,
@@ -82,7 +88,8 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& frame,
     RTC_DCHECK(frame_type == kVideoFrameKey || frame_type == kVideoFrameDelta);
 
   for (size_t i = 0; i < streams_or_svc_num_; ++i)
-    vcm_encoded_frame_callback_->OnEncodeStarted(frame.render_time_ms(), i);
+    vcm_encoded_frame_callback_->OnEncodeStarted(frame.timestamp(),
+                                                 frame.render_time_ms(), i);
 
   return encoder_->Encode(frame, codec_specific, &frame_types);
 }
@@ -184,6 +191,7 @@ VCMEncodedFrameCallback::VCMEncodedFrameCallback(
       framerate_(1),
       last_timing_frame_time_ms_(-1),
       timing_frames_thresholds_({-1, 0}),
+      incorrect_capture_time_logged_messages_(0),
       reordered_frames_logged_messages_(0),
       stalled_encoder_logged_messages_(0) {
   rtc::Optional<AlrDetector::AlrExperimentSettings> experiment_settings =
@@ -220,7 +228,8 @@ void VCMEncodedFrameCallback::OnFrameRateChanged(size_t framerate) {
   framerate_ = framerate;
 }
 
-void VCMEncodedFrameCallback::OnEncodeStarted(int64_t capture_time_ms,
+void VCMEncodedFrameCallback::OnEncodeStarted(uint32_t rtp_timestamp,
+                                              int64_t capture_time_ms,
                                               size_t simulcast_svc_idx) {
   if (internal_source_) {
     return;
@@ -240,19 +249,20 @@ void VCMEncodedFrameCallback::OnEncodeStarted(int64_t capture_time_ms,
   if (timing_frames_info_[simulcast_svc_idx].encode_start_list.size() ==
       kMaxEncodeStartTimeListSize) {
     ++stalled_encoder_logged_messages_;
-    if (stalled_encoder_logged_messages_ <= 100) {
+    if (stalled_encoder_logged_messages_ <= kMessagesThrottlingThreshold ||
+        stalled_encoder_logged_messages_ % kThrottleRatio == 0) {
       RTC_LOG(LS_WARNING) << "Too many frames in the encode_start_list."
                              " Did encoder stall?";
-      if (stalled_encoder_logged_messages_ == 100) {
+      if (stalled_encoder_logged_messages_ == kMessagesThrottlingThreshold) {
         RTC_LOG(LS_WARNING) << "Too many log messages. Further stalled encoder"
-                               "warnings will not be printed.";
+                               "warnings will be throttled.";
       }
     }
     post_encode_callback_->OnDroppedFrame(DropReason::kDroppedByEncoder);
     timing_frames_info_[simulcast_svc_idx].encode_start_list.pop_front();
   }
   timing_frames_info_[simulcast_svc_idx].encode_start_list.emplace_back(
-      capture_time_ms, rtc::TimeMillis());
+      rtp_timestamp, capture_time_ms, rtc::TimeMillis());
 }
 
 EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
@@ -273,6 +283,8 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
     // TODO(ilnik): When h264 simulcast is landed, extract simulcast idx here.
   }
 
+  EncodedImage image_copy(encoded_image);
+
   rtc::Optional<size_t> outlier_frame_size;
   rtc::Optional<int64_t> encode_start_ms;
   size_t num_simulcast_svc_streams = 1;
@@ -288,27 +300,49 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
           &timing_frames_info_[simulcast_svc_idx].encode_start_list;
       // Skip frames for which there was OnEncodeStarted but no OnEncodedImage
       // call. These are dropped by encoder internally.
+      // Because some hardware encoders don't preserve capture timestamp we use
+      // RTP timestamps here.
       while (!encode_start_list->empty() &&
-             encode_start_list->front().capture_time_ms <
-                 encoded_image.capture_time_ms_) {
+             IsNewerTimestamp(image_copy._timeStamp,
+                              encode_start_list->front().rtp_timestamp)) {
         post_encode_callback_->OnDroppedFrame(DropReason::kDroppedByEncoder);
         encode_start_list->pop_front();
       }
       if (encode_start_list->size() > 0 &&
-          encode_start_list->front().capture_time_ms ==
-              encoded_image.capture_time_ms_) {
+          encode_start_list->front().rtp_timestamp == image_copy._timeStamp) {
         encode_start_ms.emplace(
             encode_start_list->front().encode_start_time_ms);
+        if (image_copy.capture_time_ms_ !=
+            encode_start_list->front().capture_time_ms) {
+          // Force correct capture timestamp.
+          image_copy.capture_time_ms_ =
+              encode_start_list->front().capture_time_ms;
+          ++incorrect_capture_time_logged_messages_;
+          if (incorrect_capture_time_logged_messages_ <=
+                  kMessagesThrottlingThreshold ||
+              incorrect_capture_time_logged_messages_ % kThrottleRatio == 0) {
+            RTC_LOG(LS_WARNING)
+                << "Encoder is not preserving capture timestamps.";
+            if (incorrect_capture_time_logged_messages_ ==
+                kMessagesThrottlingThreshold) {
+              RTC_LOG(LS_WARNING) << "Too many log messages. Further incorrect "
+                                     "timestamps warnings will be throttled.";
+            }
+          }
+        }
         encode_start_list->pop_front();
       } else {
         ++reordered_frames_logged_messages_;
-        if (reordered_frames_logged_messages_ <= 100) {
+        if (reordered_frames_logged_messages_ <= kMessagesThrottlingThreshold ||
+            reordered_frames_logged_messages_ % kThrottleRatio == 0) {
           RTC_LOG(LS_WARNING)
               << "Frame with no encode started time recordings. "
-                 "Encoder may be reordering frames.";
-          if (reordered_frames_logged_messages_ == 100) {
+                 "Encoder may be reordering frames "
+                 "or not preserving RTP timestamps.";
+          if (reordered_frames_logged_messages_ ==
+              kMessagesThrottlingThreshold) {
             RTC_LOG(LS_WARNING) << "Too many log messages. Further frames "
-                                   "reordering warnings will not be printed.";
+                                   "reordering warnings will be throttled.";
           }
         }
       }
@@ -326,7 +360,7 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
 
     // Check if it's time to send a timing frame.
     int64_t timing_frame_delay_ms =
-        encoded_image.capture_time_ms_ - last_timing_frame_time_ms_;
+        image_copy.capture_time_ms_ - last_timing_frame_time_ms_;
     // Trigger threshold if it's a first frame, too long passed since the last
     // timing frame, or we already sent timing frame on a different simulcast
     // stream with the same capture time.
@@ -334,12 +368,12 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
         timing_frame_delay_ms >= timing_frames_thresholds_.delay_ms ||
         timing_frame_delay_ms == 0) {
       timing_flags = TimingFrameFlags::kTriggeredByTimer;
-      last_timing_frame_time_ms_ = encoded_image.capture_time_ms_;
+      last_timing_frame_time_ms_ = image_copy.capture_time_ms_;
     }
 
     // Outliers trigger timing frames, but do not affect scheduled timing
     // frames.
-    if (outlier_frame_size && encoded_image._length >= *outlier_frame_size) {
+    if (outlier_frame_size && image_copy._length >= *outlier_frame_size) {
       timing_flags |= TimingFrameFlags::kTriggeredBySize;
     }
   }
@@ -350,36 +384,35 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
   // because to being sent in the network capture time required to be less than
   // all the other timestamps.
   if (encode_start_ms) {
-    encoded_image.SetEncodeTime(*encode_start_ms, rtc::TimeMillis());
-    encoded_image.timing_.flags = timing_flags;
+    image_copy.SetEncodeTime(*encode_start_ms, rtc::TimeMillis());
+    image_copy.timing_.flags = timing_flags;
   } else {
-    encoded_image.timing_.flags = TimingFrameFlags::kInvalid;
+    image_copy.timing_.flags = TimingFrameFlags::kInvalid;
   }
 
   // Piggyback ALR experiment group id and simulcast id into the content type.
   uint8_t experiment_id =
       experiment_groups_[videocontenttypehelpers::IsScreenshare(
-          encoded_image.content_type_)];
+          image_copy.content_type_)];
 
   // TODO(ilnik): This will force content type extension to be present even
   // for realtime video. At the expense of miniscule overhead we will get
   // sliced receive statistics.
-  RTC_CHECK(videocontenttypehelpers::SetExperimentId(
-      &encoded_image.content_type_, experiment_id));
+  RTC_CHECK(videocontenttypehelpers::SetExperimentId(&image_copy.content_type_,
+                                                     experiment_id));
   // We count simulcast streams from 1 on the wire. That's why we set simulcast
   // id in content type to +1 of that is actual simulcast index. This is because
   // value 0 on the wire is reserved for 'no simulcast stream specified'.
   RTC_CHECK(videocontenttypehelpers::SetSimulcastId(
-      &encoded_image.content_type_,
-      static_cast<uint8_t>(simulcast_svc_idx + 1)));
+      &image_copy.content_type_, static_cast<uint8_t>(simulcast_svc_idx + 1)));
 
   Result result = post_encode_callback_->OnEncodedImage(
-      encoded_image, codec_specific, fragmentation_header);
+      image_copy, codec_specific, fragmentation_header);
   if (result.error != Result::OK)
     return result;
 
   if (media_opt_) {
-    media_opt_->UpdateWithEncodedData(encoded_image);
+    media_opt_->UpdateWithEncodedData(image_copy);
     if (internal_source_) {
       // Signal to encoder to drop next frame.
       result.drop_next_frame = media_opt_->DropFrame();

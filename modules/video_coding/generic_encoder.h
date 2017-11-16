@@ -57,7 +57,9 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
 
   void OnFrameRateChanged(size_t framerate);
 
-  void OnEncodeStarted(int64_t capture_time_ms, size_t simulcast_svc_idx);
+  void OnEncodeStarted(uint32_t rtp_timestamps,
+                       int64_t capture_time_ms,
+                       size_t simulcast_svc_idx);
 
   void SetTimingFramesThresholds(
       const VideoCodec::TimingFrameTriggerThresholds& thresholds) {
@@ -81,9 +83,13 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
   media_optimization::MediaOptimization* const media_opt_;
 
   struct EncodeStartTimeRecord {
-    EncodeStartTimeRecord(int64_t capture_time, int64_t encode_start_time)
-        : capture_time_ms(capture_time),
+    EncodeStartTimeRecord(uint32_t timestamp,
+                          int64_t capture_time,
+                          int64_t encode_start_time)
+        : rtp_timestamp(timestamp),
+          capture_time_ms(capture_time),
           encode_start_time_ms(encode_start_time) {}
+    uint32_t rtp_timestamp;
     int64_t capture_time_ms;
     int64_t encode_start_time_ms;
   };
@@ -97,6 +103,8 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
   size_t framerate_ RTC_GUARDED_BY(timing_params_lock_);
   int64_t last_timing_frame_time_ms_ RTC_GUARDED_BY(timing_params_lock_);
   VideoCodec::TimingFrameTriggerThresholds timing_frames_thresholds_
+      RTC_GUARDED_BY(timing_params_lock_);
+  size_t incorrect_capture_time_logged_messages_
       RTC_GUARDED_BY(timing_params_lock_);
   size_t reordered_frames_logged_messages_ RTC_GUARDED_BY(timing_params_lock_);
   size_t stalled_encoder_logged_messages_ RTC_GUARDED_BY(timing_params_lock_);
