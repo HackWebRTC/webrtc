@@ -26,6 +26,9 @@ namespace webrtc {
 
 // Allow packets to be transmitted in up to 2 times max video bitrate if the
 // bandwidth estimate allows it.
+// TODO(bugs.webrtc.org/8541): May be worth to refactor to keep this logic in
+// video send stream. Similar logic is implemented in
+// AudioPriorityBitrateAllocationStrategy.
 const int kTransmissionMaxBitrateMultiplier = 2;
 const int kDefaultBitrateBps = 300000;
 
