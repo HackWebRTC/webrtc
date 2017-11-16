@@ -221,10 +221,12 @@ rtc_static_library("rtp_rtcp") {
 
 rtc_source_set("rtcp_transceiver") {
   public = [
+    "source/rtcp_transceiver.h",
     "source/rtcp_transceiver_config.h",
     "source/rtcp_transceiver_impl.h",
   ]
   sources = [
+    "source/rtcp_transceiver.cc",
     "source/rtcp_transceiver_config.cc",
     "source/rtcp_transceiver_impl.cc",
   ]
@@ -349,6 +351,7 @@ if (rtc_include_tests) {
       "source/rtcp_receiver_unittest.cc",
       "source/rtcp_sender_unittest.cc",
       "source/rtcp_transceiver_impl_unittest.cc",
+      "source/rtcp_transceiver_unittest.cc",
       "source/rtp_fec_unittest.cc",
       "source/rtp_format_h264_unittest.cc",
       "source/rtp_format_video_generic_unittest.cc",

@@ -25,6 +25,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/timeutils.h"
 
 namespace webrtc {
 namespace {
@@ -73,18 +74,19 @@ RtcpTransceiverImpl::RtcpTransceiverImpl(const RtcpTransceiverConfig& config)
     : config_(config), ptr_factory_(this) {
   RTC_CHECK(config_.Validate());
   if (config_.schedule_periodic_compound_packets)
-    ReschedulePeriodicCompoundPackets(config_.initial_report_delay_ms);
+    SchedulePeriodicCompoundPackets(config_.initial_report_delay_ms);
 }
 
 RtcpTransceiverImpl::~RtcpTransceiverImpl() = default;
 
-void RtcpTransceiverImpl::ReceivePacket(rtc::ArrayView<const uint8_t> packet) {
+void RtcpTransceiverImpl::ReceivePacket(rtc::ArrayView<const uint8_t> packet,
+                                        int64_t now_us) {
   while (!packet.empty()) {
     rtcp::CommonHeader rtcp_block;
     if (!rtcp_block.Parse(packet.data(), packet.size()))
       return;
 
-    HandleReceivedPacket(rtcp_block);
+    HandleReceivedPacket(rtcp_block, now_us);
 
     // TODO(danilchap): Use packet.remove_prefix() when that function exists.
     packet = packet.subview(rtcp_block.packet_size());
@@ -93,8 +95,11 @@ void RtcpTransceiverImpl::ReceivePacket(rtc::ArrayView<const uint8_t> packet) {
 
 void RtcpTransceiverImpl::SendCompoundPacket() {
   SendPacket();
-  if (config_.schedule_periodic_compound_packets)
-    ReschedulePeriodicCompoundPackets(config_.report_period_ms);
+  if (config_.schedule_periodic_compound_packets) {
+    // Stop existent send task.
+    ptr_factory_.InvalidateWeakPtrs();
+    SchedulePeriodicCompoundPackets(config_.report_period_ms);
+  }
 }
 
 void RtcpTransceiverImpl::SetRemb(int bitrate_bps,
@@ -113,7 +118,8 @@ void RtcpTransceiverImpl::UnsetRemb() {
 }
 
 void RtcpTransceiverImpl::HandleReceivedPacket(
-    const rtcp::CommonHeader& rtcp_packet_header) {
+    const rtcp::CommonHeader& rtcp_packet_header,
+    int64_t now_us) {
   switch (rtcp_packet_header.type()) {
     case rtcp::SenderReport::kPacketType: {
       rtcp::SenderReport sender_report;
@@ -121,14 +127,14 @@ void RtcpTransceiverImpl::HandleReceivedPacket(
         return;
       SenderReportTimes& last =
           last_received_sender_reports_[sender_report.sender_ssrc()];
-      last.local_received_time_us = rtc::TimeMicros();
+      last.local_received_time_us = now_us;
       last.remote_sent_time = sender_report.ntp();
       break;
     }
   }
 }
 
-void RtcpTransceiverImpl::ReschedulePeriodicCompoundPackets(int64_t delay_ms) {
+void RtcpTransceiverImpl::SchedulePeriodicCompoundPackets(int64_t delay_ms) {
   class SendPeriodicCompoundPacket : public rtc::QueuedTask {
    public:
     SendPeriodicCompoundPacket(rtc::TaskQueue* task_queue,
@@ -150,10 +156,7 @@ void RtcpTransceiverImpl::ReschedulePeriodicCompoundPackets(int64_t delay_ms) {
   };
 
   RTC_DCHECK(config_.schedule_periodic_compound_packets);
-  RTC_DCHECK(config_.task_queue->IsCurrent());
 
-  // Stop existent send task if there is one.
-  ptr_factory_.InvalidateWeakPtrs();
   auto task = rtc::MakeUnique<SendPeriodicCompoundPacket>(
       config_.task_queue, ptr_factory_.GetWeakPtr());
   if (delay_ms > 0)

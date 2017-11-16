@@ -374,7 +374,7 @@ TEST(RtcpTransceiverImplTest,
   sr.SetSenderSsrc(kRemoteSsrc2);
   sr.SetNtp(kRemoteNtp);
   auto raw_packet = sr.Build();
-  rtcp_transceiver.ReceivePacket(raw_packet);
+  rtcp_transceiver.ReceivePacket(raw_packet, /*now_us=*/0);
 
   // Trigger sending ReceiverReport.
   RtcpPacketParser rtcp_parser;
@@ -419,7 +419,7 @@ TEST(RtcpTransceiverImplTest,
     SenderReport sr;
     sr.SetSenderSsrc(remote_ssrc);
     auto raw_packet = sr.Build();
-    rtcp_transceiver.ReceivePacket(raw_packet);
+    rtcp_transceiver.ReceivePacket(raw_packet, rtc::TimeMicros());
   };
 
   receive_sender_report(kRemoteSsrc1);

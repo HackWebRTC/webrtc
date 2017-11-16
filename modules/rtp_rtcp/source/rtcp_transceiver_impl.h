@@ -37,7 +37,7 @@ class RtcpTransceiverImpl {
   ~RtcpTransceiverImpl();
 
   // Handles incoming rtcp packets.
-  void ReceivePacket(rtc::ArrayView<const uint8_t> packet);
+  void ReceivePacket(rtc::ArrayView<const uint8_t> packet, int64_t now_us);
 
   // Sends RTCP packets starting with a sender or receiver report.
   void SendCompoundPacket();
@@ -54,9 +54,10 @@ class RtcpTransceiverImpl {
     NtpTime remote_sent_time;
   };
 
-  void HandleReceivedPacket(const rtcp::CommonHeader& rtcp_packet_header);
+  void HandleReceivedPacket(const rtcp::CommonHeader& rtcp_packet_header,
+                            int64_t now_us);
 
-  void ReschedulePeriodicCompoundPackets(int64_t delay_ms);
+  void SchedulePeriodicCompoundPackets(int64_t delay_ms);
   // Sends RTCP packets.
   void SendPacket();
   // Generate Report Blocks to be send in Sender or Receiver Report.
