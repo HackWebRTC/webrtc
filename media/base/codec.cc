@@ -152,7 +152,7 @@ webrtc::RtpCodecParameters Codec::ToCodecParameters() const {
   webrtc::RtpCodecParameters codec_params;
   codec_params.payload_type = id;
   codec_params.name = name;
-  codec_params.clock_rate = rtc::Optional<int>(clockrate);
+  codec_params.clock_rate = clockrate;
   return codec_params;
 }
 
@@ -201,7 +201,7 @@ std::string AudioCodec::ToString() const {
 
 webrtc::RtpCodecParameters AudioCodec::ToCodecParameters() const {
   webrtc::RtpCodecParameters codec_params = Codec::ToCodecParameters();
-  codec_params.num_channels = rtc::Optional<int>(static_cast<int>(channels));
+  codec_params.num_channels = static_cast<int>(channels);
   codec_params.kind = MEDIA_TYPE_AUDIO;
   return codec_params;
 }

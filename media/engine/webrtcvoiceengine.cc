@@ -155,7 +155,7 @@ rtc::Optional<std::string> GetAudioNetworkAdaptorConfig(
     // equals true and |options_.audio_network_adaptor_config| has a value.
     return options.audio_network_adaptor_config;
   }
-  return rtc::Optional<std::string>();
+  return rtc::nullopt;
 }
 
 webrtc::AudioState::Config MakeAudioStateConfig(
@@ -185,7 +185,7 @@ rtc::Optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
           ? webrtc::MinPositive(max_send_bitrate_bps, *rtp_max_bitrate_bps)
           : max_send_bitrate_bps;
   if (bps <= 0) {
-    return rtc::Optional<int>(spec.info.default_bitrate_bps);
+    return spec.info.default_bitrate_bps;
   }
 
   if (bps < spec.info.min_bitrate_bps) {
@@ -196,14 +196,14 @@ rtc::Optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
                       << " to bitrate " << bps << " bps"
                       << ", requires at least " << spec.info.min_bitrate_bps
                       << " bps.";
-    return rtc::Optional<int>();
+    return rtc::nullopt;
   }
 
   if (spec.info.HasFixedBitrate()) {
-    return rtc::Optional<int>(spec.info.default_bitrate_bps);
+    return spec.info.default_bitrate_bps;
   } else {
     // If codec is multi-rate then just set the bitrate.
-    return rtc::Optional<int>(std::min(bps, spec.info.max_bitrate_bps));
+    return std::min(bps, spec.info.max_bitrate_bps);
   }
 }
 
@@ -302,22 +302,22 @@ void WebRtcVoiceEngine::Init() {
   // Set default engine options.
   {
     AudioOptions options;
-    options.echo_cancellation = rtc::Optional<bool>(true);
-    options.auto_gain_control = rtc::Optional<bool>(true);
-    options.noise_suppression = rtc::Optional<bool>(true);
-    options.highpass_filter = rtc::Optional<bool>(true);
-    options.stereo_swapping = rtc::Optional<bool>(false);
-    options.audio_jitter_buffer_max_packets = rtc::Optional<int>(50);
-    options.audio_jitter_buffer_fast_accelerate = rtc::Optional<bool>(false);
-    options.typing_detection = rtc::Optional<bool>(true);
-    options.adjust_agc_delta = rtc::Optional<int>(0);
-    options.experimental_agc = rtc::Optional<bool>(false);
-    options.extended_filter_aec = rtc::Optional<bool>(false);
-    options.delay_agnostic_aec = rtc::Optional<bool>(false);
-    options.experimental_ns = rtc::Optional<bool>(false);
-    options.intelligibility_enhancer = rtc::Optional<bool>(false);
-    options.level_control = rtc::Optional<bool>(false);
-    options.residual_echo_detector = rtc::Optional<bool>(true);
+    options.echo_cancellation = true;
+    options.auto_gain_control = true;
+    options.noise_suppression = true;
+    options.highpass_filter = true;
+    options.stereo_swapping = false;
+    options.audio_jitter_buffer_max_packets = 50;
+    options.audio_jitter_buffer_fast_accelerate = false;
+    options.typing_detection = true;
+    options.adjust_agc_delta = 0;
+    options.experimental_agc = false;
+    options.extended_filter_aec = false;
+    options.delay_agnostic_aec = false;
+    options.experimental_ns = false;
+    options.intelligibility_enhancer = false;
+    options.level_control = false;
+    options.residual_echo_detector = true;
     bool error = ApplyOptions(options);
     RTC_DCHECK(error);
   }
@@ -369,12 +369,12 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
 #if defined(WEBRTC_IOS)
   // On iOS, VPIO provides built-in EC.
-  options.echo_cancellation = rtc::Optional<bool>(false);
-  options.extended_filter_aec = rtc::Optional<bool>(false);
+  options.echo_cancellation = false;
+  options.extended_filter_aec = false;
   RTC_LOG(LS_INFO) << "Always disable AEC on iOS. Use built-in instead.";
 #elif defined(WEBRTC_ANDROID)
   ec_mode = webrtc::kEcAecm;
-  options.extended_filter_aec = rtc::Optional<bool>(false);
+  options.extended_filter_aec = false;
 #endif
 
   // Delay Agnostic AEC automatically turns on EC if not set except on iOS
@@ -384,8 +384,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (options.delay_agnostic_aec) {
     use_delay_agnostic_aec = *options.delay_agnostic_aec;
     if (use_delay_agnostic_aec) {
-      options.echo_cancellation = rtc::Optional<bool>(true);
-      options.extended_filter_aec = rtc::Optional<bool>(true);
+      options.echo_cancellation = true;
+      options.extended_filter_aec = true;
       ec_mode = webrtc::kEcConference;
     }
   }
@@ -394,23 +394,23 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 // Set and adjust noise suppressor options.
 #if defined(WEBRTC_IOS)
   // On iOS, VPIO provides built-in NS.
-  options.noise_suppression = rtc::Optional<bool>(false);
-  options.typing_detection = rtc::Optional<bool>(false);
-  options.experimental_ns = rtc::Optional<bool>(false);
+  options.noise_suppression = false;
+  options.typing_detection = false;
+  options.experimental_ns = false;
   RTC_LOG(LS_INFO) << "Always disable NS on iOS. Use built-in instead.";
 #elif defined(WEBRTC_ANDROID)
-  options.typing_detection = rtc::Optional<bool>(false);
-  options.experimental_ns = rtc::Optional<bool>(false);
+  options.typing_detection = false;
+  options.experimental_ns = false;
 #endif
 
 // Set and adjust gain control options.
 #if defined(WEBRTC_IOS)
   // On iOS, VPIO provides built-in AGC.
-  options.auto_gain_control = rtc::Optional<bool>(false);
-  options.experimental_agc = rtc::Optional<bool>(false);
+  options.auto_gain_control = false;
+  options.experimental_agc = false;
   RTC_LOG(LS_INFO) << "Always disable AGC on iOS. Use built-in instead.";
 #elif defined(WEBRTC_ANDROID)
-  options.experimental_agc = rtc::Optional<bool>(false);
+  options.experimental_agc = false;
 #endif
 
 #if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
@@ -421,21 +421,21 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   // (https://bugs.chromium.org/p/webrtc/issues/detail?id=6181).
   if (webrtc::field_trial::IsEnabled(
           "WebRTC-Audio-MinimizeResamplingOnMobile")) {
-    options.auto_gain_control = rtc::Optional<bool>(false);
+    options.auto_gain_control = false;
     RTC_LOG(LS_INFO) << "Disable AGC according to field trial.";
     if (!(options.noise_suppression.value_or(false) ||
           options.echo_cancellation.value_or(false))) {
       // If possible, turn off the high-pass filter.
       RTC_LOG(LS_INFO)
           << "Disable high-pass filter in response to field trial.";
-      options.highpass_filter = rtc::Optional<bool>(false);
+      options.highpass_filter = false;
     }
   }
 #endif
 
 #if (WEBRTC_INTELLIGIBILITY_ENHANCER == 0)
   // Hardcode the intelligibility enhancer to be off.
-  options.intelligibility_enhancer = rtc::Optional<bool>(false);
+  options.intelligibility_enhancer = false;
 #endif
 
   if (options.echo_cancellation) {
@@ -454,7 +454,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
           enable_built_in_aec) {
         // Disable internal software EC if built-in EC is enabled,
         // i.e., replace the software EC with the built-in EC.
-        options.echo_cancellation = rtc::Optional<bool>(false);
+        options.echo_cancellation = false;
         RTC_LOG(LS_INFO)
             << "Disabling EC since built-in EC will be used instead";
       }
@@ -477,7 +477,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
           *options.auto_gain_control) {
         // Disable internal software AGC if built-in AGC is enabled,
         // i.e., replace the software AGC with the built-in AGC.
-        options.auto_gain_control = rtc::Optional<bool>(false);
+        options.auto_gain_control = false;
         RTC_LOG(LS_INFO)
             << "Disabling AGC since built-in AGC will be used instead";
       }
@@ -529,7 +529,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       if (adm()->EnableBuiltInNS(builtin_ns) == 0 && builtin_ns) {
         // Disable internal software NS if built-in NS is enabled,
         // i.e., replace the software NS with the built-in NS.
-        options.noise_suppression = rtc::Optional<bool>(false);
+        options.noise_suppression = false;
         RTC_LOG(LS_INFO)
             << "Disabling NS since built-in NS will be used instead";
       }
@@ -834,7 +834,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.audio_network_adaptor_config = audio_network_adaptor_config;
     config_.encoder_factory = encoder_factory;
     config_.track_id = track_id;
-    rtp_parameters_.encodings[0].ssrc = rtc::Optional<uint32_t>(ssrc);
+    rtp_parameters_.encodings[0].ssrc = ssrc;
 
     if (send_codec_spec) {
       UpdateSendCodecSpec(*send_codec_spec);
@@ -1096,9 +1096,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     config_.rtp.nack.rtp_history_ms =
         send_codec_spec.nack_enabled ? kNackRtpHistoryMs : 0;
-    config_.send_codec_spec =
-        rtc::Optional<webrtc::AudioSendStream::Config::SendCodecSpec>(
-            send_codec_spec);
+    config_.send_codec_spec = send_codec_spec;
     auto info =
         config_.encoder_factory->QueryAudioEncoder(send_codec_spec.format);
     RTC_DCHECK(info);
@@ -1455,7 +1453,7 @@ webrtc::RtpParameters WebRtcVoiceMediaChannel::GetRtpReceiveParameters(
     }
     rtp_params.encodings.emplace_back();
     // TODO(deadbeef): Return stream-specific parameters.
-    rtp_params.encodings[0].ssrc = rtc::Optional<uint32_t>(ssrc);
+    rtp_params.encodings[0].ssrc = ssrc;
   }
 
   for (const AudioCodec& codec : recv_codecs_) {
@@ -1603,7 +1601,7 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
 bool WebRtcVoiceMediaChannel::SetSendCodecs(
     const std::vector<AudioCodec>& codecs) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  dtmf_payload_type_ = rtc::Optional<int>();
+  dtmf_payload_type_ = rtc::nullopt;
   dtmf_payload_freq_ = -1;
 
   // Validate supplied codecs list.
@@ -1626,7 +1624,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     if (IsCodec(codec, kDtmfCodecName)) {
       dtmf_codecs.push_back(codec);
       if (!dtmf_payload_type_ || codec.clockrate < dtmf_payload_freq_) {
-        dtmf_payload_type_ = rtc::Optional<int>(codec.id);
+        dtmf_payload_type_ = codec.id;
         dtmf_payload_freq_ = codec.clockrate;
       }
     }
@@ -1649,12 +1647,10 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
         continue;
       }
 
-      send_codec_spec =
-          rtc::Optional<webrtc::AudioSendStream::Config::SendCodecSpec>(
-              {voice_codec.id, format});
+      send_codec_spec = webrtc::AudioSendStream::Config::SendCodecSpec(
+          voice_codec.id, format);
       if (voice_codec.bitrate > 0) {
-        send_codec_spec->target_bitrate_bps =
-            rtc::Optional<int>(voice_codec.bitrate);
+        send_codec_spec->target_bitrate_bps = voice_codec.bitrate;
       }
       send_codec_spec->transport_cc_enabled = HasTransportCc(voice_codec);
       send_codec_spec->nack_enabled = HasNack(voice_codec);
@@ -1678,7 +1674,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
           case 8000:
           case 16000:
           case 32000:
-            send_codec_spec->cng_payload_type = rtc::Optional<int>(cn_codec.id);
+            send_codec_spec->cng_payload_type = cn_codec.id;
             break;
           default:
             RTC_LOG(LS_WARNING)
@@ -1692,7 +1688,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     // Find the telephone-event PT exactly matching the preferred send codec.
     for (const AudioCodec& dtmf_codec : dtmf_codecs) {
       if (dtmf_codec.clockrate == send_codec_spec->format.clockrate_hz) {
-        dtmf_payload_type_ = rtc::Optional<int>(dtmf_codec.id);
+        dtmf_payload_type_ = dtmf_codec.id;
         dtmf_payload_freq_ = dtmf_codec.clockrate;
         break;
       }

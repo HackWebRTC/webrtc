@@ -380,25 +380,25 @@ const char kForcedFallbackFieldTrial[] =
 
 rtc::Optional<int> GetFallbackMinBpsFromFieldTrial() {
   if (!webrtc::field_trial::IsEnabled(kForcedFallbackFieldTrial))
-    return rtc::Optional<int>();
+    return rtc::nullopt;
 
   std::string group =
       webrtc::field_trial::FindFullName(kForcedFallbackFieldTrial);
   if (group.empty())
-    return rtc::Optional<int>();
+    return rtc::nullopt;
 
   int min_pixels;
   int max_pixels;
   int min_bps;
   if (sscanf(group.c_str(), "Enabled-%d,%d,%d", &min_pixels, &max_pixels,
              &min_bps) != 3) {
-    return rtc::Optional<int>();
+    return rtc::nullopt;
   }
 
   if (min_bps <= 0)
-    return rtc::Optional<int>();
+    return rtc::nullopt;
 
-  return rtc::Optional<int>(min_bps);
+  return min_bps;
 }
 
 int GetMinVideoBitrateBps() {
@@ -626,10 +626,10 @@ WebRtcVideoChannel::SelectSendVideoCodec(
     // since we should limit the encode level to the lower of local and remote
     // level when level asymmetry is not allowed.
     if (FindMatchingCodec(local_supported_codecs, remote_mapped_codec.codec))
-      return rtc::Optional<VideoCodecSettings>(remote_mapped_codec);
+      return remote_mapped_codec;
   }
   // No remote codec was supported.
-  return rtc::Optional<VideoCodecSettings>();
+  return rtc::nullopt;
 }
 
 bool WebRtcVideoChannel::NonFlexfecReceiveCodecsHaveChanged(
@@ -705,21 +705,20 @@ bool WebRtcVideoChannel::GetChangedSendParameters(
     // 0 or -1 uncaps max bitrate.
     // TODO(pbos): Reconsider how 0 should be treated. It is not mentioned as a
     // special value and might very well be used for stopping sending.
-    changed_params->max_bandwidth_bps = rtc::Optional<int>(
-        params.max_bandwidth_bps == 0 ? -1 : params.max_bandwidth_bps);
+    changed_params->max_bandwidth_bps =
+        params.max_bandwidth_bps == 0 ? -1 : params.max_bandwidth_bps;
   }
 
   // Handle conference mode.
   if (params.conference_mode != send_params_.conference_mode) {
-    changed_params->conference_mode =
-        rtc::Optional<bool>(params.conference_mode);
+    changed_params->conference_mode = params.conference_mode;
   }
 
   // Handle RTCP mode.
   if (params.rtcp.reduced_size != send_params_.rtcp.reduced_size) {
-    changed_params->rtcp_mode = rtc::Optional<webrtc::RtcpMode>(
-        params.rtcp.reduced_size ? webrtc::RtcpMode::kReducedSize
-                                 : webrtc::RtcpMode::kCompound);
+    changed_params->rtcp_mode = params.rtcp.reduced_size
+                                    ? webrtc::RtcpMode::kReducedSize
+                                    : webrtc::RtcpMode::kCompound;
   }
 
   return true;
@@ -739,7 +738,7 @@ bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
 
   if (changed_params.codec) {
     const VideoCodecSettings& codec_settings = *changed_params.codec;
-    send_codec_ = rtc::Optional<VideoCodecSettings>(codec_settings);
+    send_codec_ = codec_settings;
     RTC_LOG(LS_INFO) << "Using codec: " << codec_settings.codec.ToString();
   }
 
@@ -959,8 +958,7 @@ bool WebRtcVideoChannel::GetChangedRecvParameters(
 
   int flexfec_payload_type = mapped_codecs.front().flexfec_payload_type;
   if (flexfec_payload_type != recv_flexfec_payload_type_) {
-    changed_params->flexfec_payload_type =
-        rtc::Optional<int>(flexfec_payload_type);
+    changed_params->flexfec_payload_type = flexfec_payload_type;
   }
 
   return true;
@@ -1577,8 +1575,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
 
   // ValidateStreamParams should prevent this from happening.
   RTC_CHECK(!parameters_.config.rtp.ssrcs.empty());
-  rtp_parameters_.encodings[0].ssrc =
-      rtc::Optional<uint32_t>(parameters_.config.rtp.ssrcs[0]);
+  rtp_parameters_.encodings[0].ssrc = parameters_.config.rtp.ssrcs[0];
 
   // RTX.
   sp.GetFidSsrcs(parameters_.config.rtp.ssrcs,
@@ -1748,8 +1745,7 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetCodec(
   parameters_.config.rtp.nack.rtp_history_ms =
       HasNack(codec_settings.codec) ? kNackHistoryMs : 0;
 
-  parameters_.codec_settings =
-      rtc::Optional<WebRtcVideoChannel::VideoCodecSettings>(codec_settings);
+  parameters_.codec_settings = codec_settings;
 
   RTC_LOG(LS_INFO) << "RecreateWebRtcStream (send) because of SetCodec.";
   RecreateWebRtcStream();
@@ -1975,8 +1971,7 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
 
   if (parameters_.codec_settings) {
     info.codec_name = parameters_.codec_settings->codec.name;
-    info.codec_payload_type = rtc::Optional<int>(
-        parameters_.codec_settings->codec.id);
+    info.codec_payload_type = parameters_.codec_settings->codec.id;
   }
 
   if (stream_ == NULL)
@@ -2146,9 +2141,9 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetFirstPrimarySsrc() const {
   if (primary_ssrcs.empty()) {
     RTC_LOG(LS_WARNING)
         << "Empty primary ssrcs vector, returning empty optional";
-    return rtc::Optional<uint32_t>();
+    return rtc::nullopt;
   } else {
-    return rtc::Optional<uint32_t>(primary_ssrcs[0]);
+    return primary_ssrcs[0];
   }
 }
 
@@ -2395,8 +2390,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   webrtc::VideoReceiveStream::Stats stats = stream_->GetStats();
   info.decoder_implementation_name = stats.decoder_implementation_name;
   if (stats.current_payload_type != -1) {
-    info.codec_payload_type = rtc::Optional<int>(
-        stats.current_payload_type);
+    info.codec_payload_type = stats.current_payload_type;
   }
   info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes +
                     stats.rtp_stats.transmitted.header_bytes +

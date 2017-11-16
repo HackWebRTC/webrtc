@@ -1374,7 +1374,7 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
       cricket::FakeVideoCapturer* capturer,
       bool enabled) {
     cricket::VideoOptions options;
-    options.video_noise_reduction = rtc::Optional<bool>(enabled);
+    options.video_noise_reduction = enabled;
     EXPECT_TRUE(channel_->SetVideoSend(ssrc, true, &options, capturer));
     // Options only take effect on the next frame.
     EXPECT_TRUE(capturer->CaptureFrame());
@@ -1420,13 +1420,12 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
     webrtc::RtpParameters parameters =
         channel_->GetRtpSendParameters(last_ssrc_);
     EXPECT_EQ(1UL, parameters.encodings.size());
-    parameters.encodings[0].max_bitrate_bps = rtc::Optional<int>(stream_max);
+    parameters.encodings[0].max_bitrate_bps = stream_max;
     EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
     // Read back the parameteres and verify they have the correct value
     parameters = channel_->GetRtpSendParameters(last_ssrc_);
     EXPECT_EQ(1UL, parameters.encodings.size());
-    EXPECT_EQ(rtc::Optional<int>(stream_max),
-              parameters.encodings[0].max_bitrate_bps);
+    EXPECT_EQ(stream_max, parameters.encodings[0].max_bitrate_bps);
     // Verify that the new value propagated down to the encoder
     EXPECT_EQ(expected_encoder_bitrate, GetMaxEncoderBitrate());
   }
@@ -1876,8 +1875,7 @@ TEST_F(WebRtcVideoChannelTest, UsesCorrectSettingsForScreencast) {
 
   cricket::FakeVideoCapturer capturer;
   VideoOptions min_bitrate_options;
-  min_bitrate_options.screencast_min_bitrate_kbps =
-      rtc::Optional<int>(kScreenshareMinBitrateKbps);
+  min_bitrate_options.screencast_min_bitrate_kbps = kScreenshareMinBitrateKbps;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &min_bitrate_options,
                                      &capturer));
   cricket::VideoFormat capture_format_hd =
@@ -1908,7 +1906,7 @@ TEST_F(WebRtcVideoChannelTest, UsesCorrectSettingsForScreencast) {
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, nullptr));
   EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
   VideoOptions screencast_options;
-  screencast_options.is_screencast = rtc::Optional<bool>(true);
+  screencast_options.is_screencast = true;
   EXPECT_TRUE(
       channel_->SetVideoSend(last_ssrc_, true, &screencast_options, &capturer));
   EXPECT_TRUE(capturer.CaptureFrame());
@@ -1940,7 +1938,7 @@ TEST_F(WebRtcVideoChannelTest,
 
   AddSendStream();
   VideoOptions options;
-  options.is_screencast = rtc::Optional<bool>(true);
+  options.is_screencast = true;
   cricket::FakeVideoCapturer capturer;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
   cricket::VideoFormat capture_format_hd =
@@ -2057,7 +2055,7 @@ TEST_F(WebRtcVideoChannelTest, VerifyVp8SpecificSettings) {
 
   // In screen-share mode, denoising is forced off and simulcast disabled.
   VideoOptions options;
-  options.is_screencast = rtc::Optional<bool>(true);
+  options.is_screencast = true;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
 
   stream = SetDenoisingOption(last_ssrc_, &capturer, false);
@@ -2104,7 +2102,7 @@ TEST_F(WebRtcVideoChannelTest, SetIdenticalOptionsDoesntReconfigureEncoder) {
   EXPECT_EQ(1, send_stream->num_encoder_reconfigurations());
 
   // Change |options| and expect 2 reconfigurations.
-  options.video_noise_reduction = rtc::Optional<bool>(true);
+  options.video_noise_reduction = true;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
   EXPECT_EQ(2, send_stream->num_encoder_reconfigurations());
 
@@ -2163,7 +2161,7 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
 
   // In screen-share mode, denoising is forced off.
   VideoOptions options;
-  options.is_screencast = rtc::Optional<bool>(true);
+  options.is_screencast = true;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
 
   stream = SetDenoisingOption(last_ssrc_, &capturer, false);
@@ -2351,7 +2349,7 @@ TEST_F(WebRtcVideoChannelTest, AdaptsOnOveruseAndChangeResolution) {
   // of the current stream, so we don't take too large steps.
   wants.max_pixel_count = current_pixel_count * 4;
   // Default step down is 3/5 pixel count, so go up by 5/3.
-  wants.target_pixel_count = rtc::Optional<int>((current_pixel_count * 5) / 3);
+  wants.target_pixel_count = (current_pixel_count * 5 / 3);
   send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
   EXPECT_EQ(5, send_stream->GetNumberOfSwappedFrames());
@@ -2362,7 +2360,7 @@ TEST_F(WebRtcVideoChannelTest, AdaptsOnOveruseAndChangeResolution) {
   current_pixel_count =
       send_stream->GetLastWidth() * send_stream->GetLastHeight();
   wants.max_pixel_count = current_pixel_count * 4;
-  wants.target_pixel_count = rtc::Optional<int>((current_pixel_count * 5) / 3);
+  wants.target_pixel_count = (current_pixel_count * 5 / 3);
   send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
   EXPECT_EQ(6, send_stream->GetNumberOfSwappedFrames());
@@ -2391,7 +2389,7 @@ TEST_F(WebRtcVideoChannelTest, PreviousAdaptationDoesNotApplyToScreenshare) {
             capturer.Start(capturer.GetSupportedFormats()->front()));
   ASSERT_TRUE(channel_->SetSend(true));
   cricket::VideoOptions camera_options;
-  camera_options.is_screencast = rtc::Optional<bool>(false);
+  camera_options.is_screencast = false;
   channel_->SetVideoSend(last_ssrc_, true /* enable */, &camera_options,
                          &capturer);
 
@@ -2418,7 +2416,7 @@ TEST_F(WebRtcVideoChannelTest, PreviousAdaptationDoesNotApplyToScreenshare) {
   ASSERT_EQ(cricket::CS_RUNNING,
             screen_share.Start(screen_share.GetSupportedFormats()->front()));
   cricket::VideoOptions screenshare_options;
-  screenshare_options.is_screencast = rtc::Optional<bool>(true);
+  screenshare_options.is_screencast = true;
   channel_->SetVideoSend(last_ssrc_, true /* enable */, &screenshare_options,
                          &screen_share);
   EXPECT_TRUE(screen_share.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
@@ -2501,7 +2499,7 @@ void WebRtcVideoChannelTest::TestCpuAdaptation(bool enable_overuse,
 
   cricket::FakeVideoCapturer capturer;
   VideoOptions options;
-  options.is_screencast = rtc::Optional<bool>(is_screenshare);
+  options.is_screencast = is_screenshare;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
   cricket::VideoFormat capture_format = capturer.GetSupportedFormats()->front();
   capture_format.interval = rtc::kNumNanosecsPerSec / kDefaultFps;
@@ -3708,7 +3706,7 @@ TEST_F(WebRtcVideoChannelTest, GetStatsReportsFramesEncoded) {
 TEST_F(WebRtcVideoChannelTest, GetStatsReportsQpSum) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Stats stats;
-  stats.qp_sum = rtc::Optional<uint64_t>(13);
+  stats.qp_sum = 13;
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
@@ -3848,7 +3846,7 @@ TEST_F(WebRtcVideoChannelTest, GetStatsTranslatesDecodeStatsCorrectly) {
   stats.frame_counts.delta_frames = 12;
   stats.frames_rendered = 13;
   stats.frames_decoded = 14;
-  stats.qp_sum = rtc::Optional<uint64_t>(15);
+  stats.qp_sum = 15;
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
@@ -4357,7 +4355,7 @@ TEST_F(WebRtcVideoChannelTest,
 TEST_F(WebRtcVideoChannelTest, CannotSetSsrcInRtpSendParameters) {
   AddSendStream();
   webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
-  parameters.encodings[0].ssrc = rtc::Optional<uint32_t>(0xdeadbeef);
+  parameters.encodings[0].ssrc = 0xdeadbeef;
   EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
 }
 
@@ -4449,8 +4447,7 @@ TEST_F(WebRtcVideoChannelTest, GetRtpSendParametersSsrc) {
   webrtc::RtpParameters rtp_parameters =
       channel_->GetRtpSendParameters(last_ssrc_);
   ASSERT_EQ(1u, rtp_parameters.encodings.size());
-  EXPECT_EQ(rtc::Optional<uint32_t>(last_ssrc_),
-            rtp_parameters.encodings[0].ssrc);
+  EXPECT_EQ(last_ssrc_, rtp_parameters.encodings[0].ssrc);
 }
 
 // Test that if we set/get parameters multiple times, we get the same results.
@@ -4532,8 +4529,7 @@ TEST_F(WebRtcVideoChannelTest, GetRtpReceiveParametersSsrc) {
   webrtc::RtpParameters rtp_parameters =
       channel_->GetRtpReceiveParameters(last_ssrc_);
   ASSERT_EQ(1u, rtp_parameters.encodings.size());
-  EXPECT_EQ(rtc::Optional<uint32_t>(last_ssrc_),
-            rtp_parameters.encodings[0].ssrc);
+  EXPECT_EQ(last_ssrc_, rtp_parameters.encodings[0].ssrc);
 }
 
 // Test that if we set/get parameters multiple times, we get the same results.
@@ -4692,7 +4688,7 @@ class WebRtcVideoChannelSimulcastTest : public testing::Test {
     cricket::FakeVideoCapturer capturer;
     VideoOptions options;
     if (screenshare)
-      options.is_screencast = rtc::Optional<bool>(screenshare);
+      options.is_screencast = screenshare;
     EXPECT_TRUE(
         channel_->SetVideoSend(ssrcs.front(), true, &options, &capturer));
     // Fetch the latest stream since SetVideoSend() may recreate it if the

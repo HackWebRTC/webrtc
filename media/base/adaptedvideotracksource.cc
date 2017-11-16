@@ -95,7 +95,7 @@ bool AdaptedVideoTrackSource::AdaptFrame(int width,
                                          int* crop_y) {
   {
     rtc::CritScope lock(&stats_crit_);
-    stats_ = rtc::Optional<Stats>({width, height});
+    stats_ = Stats{width, height};
   }
 
   if (!broadcaster_.frame_wanted()) {

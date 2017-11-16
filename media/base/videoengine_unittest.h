@@ -767,7 +767,7 @@ class VideoMediaChannelTest : public testing::Test,
     // screencast. It's unclear why, I see nothing obvious in this
     // test which is related to screencast logic.
     cricket::VideoOptions video_options;
-    video_options.is_screencast = rtc::Optional<bool>(true);
+    video_options.is_screencast = true;
     channel_->SetVideoSend(kSsrc, true, &video_options, nullptr);
 
     cricket::VideoFormat format(480, 360,

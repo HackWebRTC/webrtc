@@ -391,7 +391,7 @@ TEST_F(VideoAdapterTest, AdaptFramerateOntheFly) {
 // Do not adapt the frame rate or the resolution. Expect no frame drop, no
 // cropping, and no resolution change.
 TEST_F(VideoAdapterTest, OnFramerateRequestMax) {
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(),
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt,
                                         std::numeric_limits<int>::max(),
                                         std::numeric_limits<int>::max());
 
@@ -409,7 +409,7 @@ TEST_F(VideoAdapterTest, OnFramerateRequestMax) {
 }
 
 TEST_F(VideoAdapterTest, OnFramerateRequestZero) {
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(),
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt,
                                         std::numeric_limits<int>::max(), 0);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
   for (int i = 0; i < 10; ++i)
@@ -425,7 +425,7 @@ TEST_F(VideoAdapterTest, OnFramerateRequestZero) {
 // the number of dropped frames to be half of the number the captured frames.
 TEST_F(VideoAdapterTest, OnFramerateRequestHalf) {
   adapter_.OnResolutionFramerateRequest(
-      rtc::Optional<int>(), std::numeric_limits<int>::max(), kDefaultFps / 2);
+      rtc::nullopt, std::numeric_limits<int>::max(), kDefaultFps / 2);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
   for (int i = 0; i < 10; ++i)
     capturer_->CaptureFrame();
@@ -750,7 +750,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(720, out_height_);
 
   // Adapt down one step.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 1280 * 720 - 1,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 1280 * 720 - 1,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
                                             &cropped_width_, &cropped_height_,
@@ -761,7 +761,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(540, out_height_);
 
   // Adapt down one step more.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 960 * 540 - 1,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 960 * 540 - 1,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
                                             &cropped_width_, &cropped_height_,
@@ -772,7 +772,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(360, out_height_);
 
   // Adapt down one step more.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 640 * 360 - 1,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 640 * 360 - 1,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
                                             &cropped_width_, &cropped_height_,
@@ -783,7 +783,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(270, out_height_);
 
   // Adapt up one step.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(640 * 360),
+  adapter_.OnResolutionFramerateRequest(640 * 360,
                                         960 * 540,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
@@ -795,7 +795,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(360, out_height_);
 
   // Adapt up one step more.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(960 * 540),
+  adapter_.OnResolutionFramerateRequest(960 * 540,
                                         1280 * 720,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
@@ -807,7 +807,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(540, out_height_);
 
   // Adapt up one step more.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(1280 * 720),
+  adapter_.OnResolutionFramerateRequest(1280 * 720,
                                         1920 * 1080,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
@@ -828,7 +828,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestMaxZero) {
   EXPECT_EQ(1280, out_width_);
   EXPECT_EQ(720, out_height_);
 
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 0,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 0,
                                         std::numeric_limits<int>::max());
   EXPECT_FALSE(adapter_.AdaptFrameResolution(1280, 720, 0,
                                              &cropped_width_, &cropped_height_,
@@ -837,7 +837,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestMaxZero) {
 
 TEST_F(VideoAdapterTest, TestOnResolutionRequestInLargeSteps) {
   // Large step down.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 640 * 360 - 1,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 640 * 360 - 1,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
                                             &cropped_width_, &cropped_height_,
@@ -848,8 +848,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInLargeSteps) {
   EXPECT_EQ(270, out_height_);
 
   // Large step up.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(1280 * 720),
-                                        1920 * 1080,
+  adapter_.OnResolutionFramerateRequest(1280 * 720, 1920 * 1080,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
                                             &cropped_width_, &cropped_height_,
@@ -861,7 +860,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInLargeSteps) {
 }
 
 TEST_F(VideoAdapterTest, TestOnOutputFormatRequestCapsMaxResolution) {
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 640 * 360 - 1,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 640 * 360 - 1,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
                                             &cropped_width_, &cropped_height_,
@@ -881,7 +880,7 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequestCapsMaxResolution) {
   EXPECT_EQ(480, out_width_);
   EXPECT_EQ(270, out_height_);
 
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 960 * 720,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 960 * 720,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
                                             &cropped_width_, &cropped_height_,
@@ -901,7 +900,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestReset) {
   EXPECT_EQ(1280, out_width_);
   EXPECT_EQ(720, out_height_);
 
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 640 * 360 - 1,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 640 * 360 - 1,
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
                                             &cropped_width_, &cropped_height_,
@@ -911,7 +910,7 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestReset) {
   EXPECT_EQ(480, out_width_);
   EXPECT_EQ(270, out_height_);
 
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(),
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt,
                                         std::numeric_limits<int>::max(),
                                         std::numeric_limits<int>::max());
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
@@ -937,7 +936,7 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   EXPECT_EQ(360, out_height_);
 
   // Adapt down one step.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 640 * 360 - 1,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 640 * 360 - 1,
                                         std::numeric_limits<int>::max());
   // Expect cropping to 16:9 format and 3/4 scaling.
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
@@ -949,7 +948,7 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   EXPECT_EQ(270, out_height_);
 
   // Adapt down one step more.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 480 * 270 - 1,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 480 * 270 - 1,
                                         std::numeric_limits<int>::max());
   // Expect cropping to 16:9 format and 1/2 scaling.
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
@@ -961,8 +960,7 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   EXPECT_EQ(180, out_height_);
 
   // Adapt up one step.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(480 * 270),
-                                        640 * 360,
+  adapter_.OnResolutionFramerateRequest(480 * 270, 640 * 360,
                                         std::numeric_limits<int>::max());
   // Expect cropping to 16:9 format and 3/4 scaling.
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
@@ -974,8 +972,7 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   EXPECT_EQ(270, out_height_);
 
   // Adapt up one step more.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(640 * 360),
-                                        960 * 540,
+  adapter_.OnResolutionFramerateRequest(640 * 360, 960 * 540,
                                         std::numeric_limits<int>::max());
   // Expect cropping to 16:9 format and no scaling.
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
@@ -987,8 +984,7 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   EXPECT_EQ(360, out_height_);
 
   // Try to adapt up one step more.
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(960 * 540),
-                                        1280 * 720,
+  adapter_.OnResolutionFramerateRequest(960 * 540, 1280 * 720,
                                         std::numeric_limits<int>::max());
   // Expect cropping to 16:9 format and no scaling.
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
@@ -1004,7 +1000,7 @@ TEST_F(VideoAdapterTest, TestCroppingOddResolution) {
   // Ask for 640x360 (16:9 aspect), with 3/16 scaling.
   adapter_.OnOutputFormatRequest(
       VideoFormat(640, 360, 0, FOURCC_I420));
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(),
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt,
                                         640 * 360 * 3 / 16 * 3 / 16,
                                         std::numeric_limits<int>::max());
 
@@ -1026,7 +1022,7 @@ TEST_F(VideoAdapterTest, TestAdaptToVerySmallResolution) {
   const int w = 1920;
   const int h = 1080;
   adapter_.OnOutputFormatRequest(VideoFormat(w, h, 0, FOURCC_I420));
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(),
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt,
                                         w * h * 1 / 16 * 1 / 16,
                                         std::numeric_limits<int>::max());
 
@@ -1042,9 +1038,9 @@ TEST_F(VideoAdapterTest, TestAdaptToVerySmallResolution) {
   EXPECT_EQ(67, out_height_);
 
   // Adapt back up one step to 3/32.
-  adapter_.OnResolutionFramerateRequest(
-      rtc::Optional<int>(w * h * 3 / 32 * 3 / 32), w * h * 1 / 8 * 1 / 8,
-      std::numeric_limits<int>::max());
+  adapter_.OnResolutionFramerateRequest(w * h * 3 / 32 * 3 / 32,
+                                        w * h * 1 / 8 * 1 / 8,
+                                        std::numeric_limits<int>::max());
 
   // Send 1920x1080 (16:9 aspect).
   EXPECT_TRUE(adapter_.AdaptFrameResolution(
@@ -1064,7 +1060,7 @@ TEST_F(VideoAdapterTest, AdaptFrameResolutionDropWithResolutionRequest) {
       &cropped_width_, &cropped_height_,
       &out_width_, &out_height_));
 
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(960 * 540),
+  adapter_.OnResolutionFramerateRequest(960 * 540,
                                         std::numeric_limits<int>::max(),
                                         std::numeric_limits<int>::max());
 
@@ -1074,7 +1070,7 @@ TEST_F(VideoAdapterTest, AdaptFrameResolutionDropWithResolutionRequest) {
       &cropped_width_, &cropped_height_,
       &out_width_, &out_height_));
 
-  adapter_.OnResolutionFramerateRequest(rtc::Optional<int>(), 640 * 480 - 1,
+  adapter_.OnResolutionFramerateRequest(rtc::nullopt, 640 * 480 - 1,
                                         std::numeric_limits<int>::max());
 
   // Still expect all frames to be dropped
@@ -1087,9 +1083,9 @@ TEST_F(VideoAdapterTest, AdaptFrameResolutionDropWithResolutionRequest) {
 // Test that we will adapt to max given a target pixel count close to max.
 TEST_F(VideoAdapterTest, TestAdaptToMax) {
   adapter_.OnOutputFormatRequest(VideoFormat(640, 360, 0, FOURCC_I420));
-  adapter_.OnResolutionFramerateRequest(
-      rtc::Optional<int>(640 * 360 - 1) /* target */,
-      std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
+  adapter_.OnResolutionFramerateRequest(640 * 360 - 1 /* target */,
+                                        std::numeric_limits<int>::max(),
+                                        std::numeric_limits<int>::max());
 
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 360, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,

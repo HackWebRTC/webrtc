@@ -151,8 +151,7 @@ bool VideoAdapter::KeepFrame(int64_t in_timestamp_ns) {
   // First timestamp received or timestamp is way outside expected range, so
   // reset. Set first timestamp target to just half the interval to prefer
   // keeping frames in case of jitter.
-  next_frame_timestamp_ns_ =
-      rtc::Optional<int64_t>(in_timestamp_ns + frame_interval_ns / 2);
+  next_frame_timestamp_ns_ = in_timestamp_ns + frame_interval_ns / 2;
   return true;
 }
 
@@ -258,8 +257,8 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
 
 void VideoAdapter::OnOutputFormatRequest(const VideoFormat& format) {
   rtc::CritScope cs(&critical_section_);
-  requested_format_ = rtc::Optional<VideoFormat>(format);
-  next_frame_timestamp_ns_ = rtc::Optional<int64_t>();
+  requested_format_ = format;
+  next_frame_timestamp_ns_ = rtc::nullopt;
 }
 
 void VideoAdapter::OnResolutionFramerateRequest(

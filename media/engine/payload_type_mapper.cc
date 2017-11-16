@@ -89,7 +89,7 @@ rtc::Optional<int> PayloadTypeMapper::GetMappingFor(
     const webrtc::SdpAudioFormat& format) {
   auto iter = mappings_.find(format);
   if (iter != mappings_.end())
-    return rtc::Optional<int>(iter->second);
+    return iter->second;
 
   for (; next_unused_payload_type_ <= max_payload_type_;
        ++next_unused_payload_type_) {
@@ -98,20 +98,20 @@ rtc::Optional<int> PayloadTypeMapper::GetMappingFor(
       used_payload_types_.insert(payload_type);
       mappings_[format] = payload_type;
       ++next_unused_payload_type_;
-      return rtc::Optional<int>(payload_type);
+      return payload_type;
     }
   }
 
-  return rtc::Optional<int>();
+  return rtc::nullopt;
 }
 
 rtc::Optional<int> PayloadTypeMapper::FindMappingFor(
     const webrtc::SdpAudioFormat& format) const {
   auto iter = mappings_.find(format);
   if (iter != mappings_.end())
-    return rtc::Optional<int>(iter->second);
+    return iter->second;
 
-  return rtc::Optional<int>();
+  return rtc::nullopt;
 }
 
 rtc::Optional<AudioCodec> PayloadTypeMapper::ToAudioCodec(
@@ -126,10 +126,10 @@ rtc::Optional<AudioCodec> PayloadTypeMapper::ToAudioCodec(
     AudioCodec codec(*opt_payload_type, format.name, format.clockrate_hz, 0,
                      format.num_channels);
     codec.params = format.parameters;
-    return rtc::Optional<AudioCodec>(std::move(codec));
+    return std::move(codec);
   }
 
-  return rtc::Optional<AudioCodec>();
+  return rtc::nullopt;
 }
 
 bool PayloadTypeMapper::SdpAudioFormatOrdering::operator()(
