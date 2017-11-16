@@ -204,7 +204,7 @@ class LatencyAudioStream : public AudioStream {
       {
         rtc::CritScope lock(&lock_);
         if (!pulse_time_) {
-          pulse_time_ = rtc::Optional<int64_t>(rtc::TimeMillis());
+          pulse_time_ = rtc::TimeMillis();
         }
       }
       constexpr int16_t impulse = std::numeric_limits<int16_t>::max();
