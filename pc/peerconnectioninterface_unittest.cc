@@ -2290,13 +2290,13 @@ TEST_F(PeerConnectionInterfaceTest, SetConfigurationChangesPruneTurnPortsFlag) {
 // require a very complex set of mocks.
 TEST_F(PeerConnectionInterfaceTest, SetConfigurationChangesIceCheckInterval) {
   PeerConnectionInterface::RTCConfiguration config;
-  config.ice_check_min_interval = rtc::Optional<int>();
+  config.ice_check_min_interval = rtc::nullopt;
   CreatePeerConnection(config, nullptr);
-  config.ice_check_min_interval = rtc::Optional<int>(100);
+  config.ice_check_min_interval = 100;
   EXPECT_TRUE(pc_->SetConfiguration(config));
   PeerConnectionInterface::RTCConfiguration new_config =
       pc_->GetConfiguration();
-  EXPECT_EQ(new_config.ice_check_min_interval, rtc::Optional<int>(100));
+  EXPECT_EQ(new_config.ice_check_min_interval, 100);
 }
 
 // Test that when SetConfiguration changes both the pool size and other
@@ -3402,52 +3402,52 @@ TEST_F(PeerConnectionInterfaceTest,
 TEST_F(PeerConnectionInterfaceTest, SetBitrateWithoutMinSucceeds) {
   CreatePeerConnection();
   PeerConnectionInterface::BitrateParameters bitrate;
-  bitrate.current_bitrate_bps = rtc::Optional<int>(100000);
+  bitrate.current_bitrate_bps = 100000;
   EXPECT_TRUE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_F(PeerConnectionInterfaceTest, SetBitrateNegativeMinFails) {
   CreatePeerConnection();
   PeerConnectionInterface::BitrateParameters bitrate;
-  bitrate.min_bitrate_bps = rtc::Optional<int>(-1);
+  bitrate.min_bitrate_bps = -1;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_F(PeerConnectionInterfaceTest, SetBitrateCurrentLessThanMinFails) {
   CreatePeerConnection();
   PeerConnectionInterface::BitrateParameters bitrate;
-  bitrate.min_bitrate_bps = rtc::Optional<int>(5);
-  bitrate.current_bitrate_bps = rtc::Optional<int>(3);
+  bitrate.min_bitrate_bps = 5;
+  bitrate.current_bitrate_bps = 3;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_F(PeerConnectionInterfaceTest, SetBitrateCurrentNegativeFails) {
   CreatePeerConnection();
   PeerConnectionInterface::BitrateParameters bitrate;
-  bitrate.current_bitrate_bps = rtc::Optional<int>(-1);
+  bitrate.current_bitrate_bps = -1;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_F(PeerConnectionInterfaceTest, SetBitrateMaxLessThanCurrentFails) {
   CreatePeerConnection();
   PeerConnectionInterface::BitrateParameters bitrate;
-  bitrate.current_bitrate_bps = rtc::Optional<int>(10);
-  bitrate.max_bitrate_bps = rtc::Optional<int>(8);
+  bitrate.current_bitrate_bps = 10;
+  bitrate.max_bitrate_bps = 8;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_F(PeerConnectionInterfaceTest, SetBitrateMaxLessThanMinFails) {
   CreatePeerConnection();
   PeerConnectionInterface::BitrateParameters bitrate;
-  bitrate.min_bitrate_bps = rtc::Optional<int>(10);
-  bitrate.max_bitrate_bps = rtc::Optional<int>(8);
+  bitrate.min_bitrate_bps = 10;
+  bitrate.max_bitrate_bps = 8;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_F(PeerConnectionInterfaceTest, SetBitrateMaxNegativeFails) {
   CreatePeerConnection();
   PeerConnectionInterface::BitrateParameters bitrate;
-  bitrate.max_bitrate_bps = rtc::Optional<int>(-1);
+  bitrate.max_bitrate_bps = -1;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
@@ -3480,7 +3480,7 @@ TEST_F(PeerConnectionInterfaceTest,
 TEST_F(PeerConnectionInterfaceTest, SetBitrateCurrentLessThanImplicitMin) {
   CreatePeerConnection();
   PeerConnectionInterface::BitrateParameters bitrate;
-  bitrate.current_bitrate_bps = rtc::Optional<int>(1);
+  bitrate.current_bitrate_bps = 1;
   EXPECT_TRUE(pc_->SetBitrate(bitrate).ok());
 }
 
