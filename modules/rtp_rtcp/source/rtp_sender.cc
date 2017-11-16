@@ -1118,7 +1118,7 @@ rtc::Optional<uint32_t> RTPSender::FlexfecSsrc() const {
   if (video_) {
     return video_->FlexfecSsrc();
   }
-  return rtc::Optional<uint32_t>();
+  return rtc::nullopt;
 }
 
 void RTPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {

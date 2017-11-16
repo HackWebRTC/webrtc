@@ -267,7 +267,7 @@ void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type,
 rtc::Optional<uint32_t> ModuleRtpRtcpImpl::FlexfecSsrc() const {
   if (rtp_sender_)
     return rtp_sender_->FlexfecSsrc();
-  return rtc::Optional<uint32_t>();
+  return rtc::nullopt;
 }
 
 void ModuleRtpRtcpImpl::IncomingRtcpPacket(const uint8_t* rtcp_packet,

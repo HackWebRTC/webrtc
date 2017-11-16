@@ -56,7 +56,7 @@ bool ExtendedReports::Parse(const CommonHeader& packet) {
   rrtr_block_.reset();
   dlrr_block_.ClearItems();
   voip_metric_block_.reset();
-  target_bitrate_ = rtc::Optional<TargetBitrate>();
+  target_bitrate_ = rtc::nullopt;
 
   const uint8_t* current_block = packet.payload() + kXrBaseLength;
   const uint8_t* const packet_end =
@@ -118,7 +118,7 @@ void ExtendedReports::SetTargetBitrate(const TargetBitrate& bitrate) {
   if (target_bitrate_)
     RTC_LOG(LS_WARNING) << "TargetBitrate already set, overwriting.";
 
-  target_bitrate_ = rtc::Optional<TargetBitrate>(bitrate);
+  target_bitrate_ = bitrate;
 }
 
 size_t ExtendedReports::BlockLength() const {

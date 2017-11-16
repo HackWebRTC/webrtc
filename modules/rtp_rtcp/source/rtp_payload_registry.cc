@@ -312,7 +312,7 @@ rtc::Optional<RtpUtility::Payload> RTPPayloadRegistry::PayloadTypeToPayload(
   rtc::CritScope cs(&crit_sect_);
   const auto it = payload_type_map_.find(payload_type);
   return it == payload_type_map_.end()
-             ? rtc::Optional<RtpUtility::Payload>()
+             ? rtc::nullopt
              : rtc::Optional<RtpUtility::Payload>(it->second);
 }
 

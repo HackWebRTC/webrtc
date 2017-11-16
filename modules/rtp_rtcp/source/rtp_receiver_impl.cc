@@ -191,7 +191,7 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
   auto audio_level =
       rtp_header.extension.hasAudioLevel
           ? rtc::Optional<uint8_t>(rtp_header.extension.audioLevel)
-          : rtc::Optional<uint8_t>();
+          : rtc::nullopt;
   UpdateSources(audio_level);
 
   int32_t ret_val = rtp_media_receiver_->ParseRtpPacket(
