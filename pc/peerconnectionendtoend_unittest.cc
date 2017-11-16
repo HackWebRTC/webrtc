@@ -277,7 +277,7 @@ struct AudioEncoderUnicornSparklesRainbow {
       format.name = "L16";
       return webrtc::AudioEncoderL16::SdpToConfig(format);
     } else {
-      return rtc::Optional<Config>();
+      return rtc::nullopt;
     }
   }
   static void AppendSupportedEncoders(
@@ -312,7 +312,7 @@ struct AudioDecoderUnicornSparklesRainbow {
       format.name = "L16";
       return webrtc::AudioDecoderL16::SdpToConfig(format);
     } else {
-      return rtc::Optional<Config>();
+      return rtc::nullopt;
     }
   }
   static void AppendSupportedDecoders(
