@@ -900,8 +900,7 @@ int32_t Channel::GetRecCodec(CodecInst& codec) {
 void Channel::SetBitRate(int bitrate_bps, int64_t probing_interval_ms) {
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
     if (*encoder) {
-      (*encoder)->OnReceivedUplinkBandwidth(
-          bitrate_bps, rtc::Optional<int64_t>(probing_interval_ms));
+      (*encoder)->OnReceivedUplinkBandwidth(bitrate_bps, probing_interval_ms);
     }
   });
   retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
