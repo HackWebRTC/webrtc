@@ -35,9 +35,9 @@ rtc::Optional<AudioEncoderIsacFloat::Config> AudioEncoderIsacFloat::SdpToConfig(
         }
       }
     }
-    return rtc::Optional<Config>(config);
+    return config;
   } else {
-    return rtc::Optional<Config>();
+    return rtc::nullopt;
   }
 }
 

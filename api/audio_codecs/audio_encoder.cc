@@ -85,7 +85,7 @@ void AudioEncoder::OnReceivedUplinkRecoverablePacketLossFraction(
     float uplink_recoverable_packet_loss_fraction) {}
 
 void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {
-  OnReceivedUplinkBandwidth(target_audio_bitrate_bps, rtc::Optional<int64_t>());
+  OnReceivedUplinkBandwidth(target_audio_bitrate_bps, rtc::nullopt);
 }
 
 void AudioEncoder::OnReceivedUplinkBandwidth(

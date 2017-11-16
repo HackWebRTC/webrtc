@@ -29,9 +29,9 @@ rtc::Optional<AudioEncoderIsacFix::Config> AudioEncoderIsacFix::SdpToConfig(
         config.frame_size_ms = 60;
       }
     }
-    return rtc::Optional<Config>(config);
+    return config;
   } else {
-    return rtc::Optional<Config>();
+    return rtc::nullopt;
   }
 }
 

@@ -39,7 +39,7 @@ class OldStyleEncodedFrame final : public AudioDecoder::EncodedAudioFrame {
     const int ret = decoder_->Decode(
         payload_.data(), payload_.size(), decoder_->SampleRateHz(),
         decoded.size() * sizeof(int16_t), decoded.data(), &speech_type);
-    return ret < 0 ? rtc::Optional<DecodeResult>()
+    return ret < 0 ? rtc::nullopt
                    : rtc::Optional<DecodeResult>(
                          {static_cast<size_t>(ret), speech_type});
   }

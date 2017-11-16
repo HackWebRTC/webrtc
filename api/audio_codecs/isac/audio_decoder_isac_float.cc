@@ -23,9 +23,9 @@ rtc::Optional<AudioDecoderIsacFloat::Config> AudioDecoderIsacFloat::SdpToConfig(
       format.num_channels == 1) {
     Config config;
     config.sample_rate_hz = format.clockrate_hz;
-    return rtc::Optional<Config>(config);
+    return config;
   } else {
-    return rtc::Optional<Config>();
+    return rtc::nullopt;
   }
 }
 

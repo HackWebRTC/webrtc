@@ -30,9 +30,9 @@ rtc::Optional<AudioDecoderG711::Config> AudioDecoderG711::SdpToConfig(
     config.type = is_pcmu ? Config::Type::kPcmU : Config::Type::kPcmA;
     config.num_channels = rtc::dchecked_cast<int>(format.num_channels);
     RTC_DCHECK(config.IsOk());
-    return rtc::Optional<Config>(config);
+    return config;
   } else {
-    return rtc::Optional<Config>();
+    return rtc::nullopt;
   }
 }
 

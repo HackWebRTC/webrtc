@@ -31,7 +31,7 @@ struct Helper<> {
   static void AppendSupportedEncoders(std::vector<AudioCodecSpec>* specs) {}
   static rtc::Optional<AudioCodecInfo> QueryAudioEncoder(
       const SdpAudioFormat& format) {
-    return rtc::Optional<AudioCodecInfo>();
+    return rtc::nullopt;
   }
   static std::unique_ptr<AudioEncoder> MakeAudioEncoder(
       int payload_type,

@@ -40,9 +40,9 @@ rtc::Optional<AudioEncoderG711::Config> AudioEncoderG711::SdpToConfig(
       }
     }
     RTC_DCHECK(config.IsOk());
-    return rtc::Optional<Config>(config);
+    return config;
   } else {
-    return rtc::Optional<Config>();
+    return rtc::nullopt;
   }
 }
 

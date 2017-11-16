@@ -27,7 +27,7 @@ rtc::Optional<AudioDecoderG722::Config> AudioDecoderG722::SdpToConfig(
                  (format.num_channels == 1 || format.num_channels == 2)
              ? rtc::Optional<Config>(
                    Config{rtc::dchecked_cast<int>(format.num_channels)})
-             : rtc::Optional<Config>();
+             : rtc::nullopt;
 }
 
 void AudioDecoderG722::AppendSupportedDecoders(

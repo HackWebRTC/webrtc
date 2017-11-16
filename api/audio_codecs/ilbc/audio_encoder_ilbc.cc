@@ -42,7 +42,7 @@ rtc::Optional<AudioEncoderIlbcConfig> AudioEncoderIlbc::SdpToConfig(
     const SdpAudioFormat& format) {
   if (STR_CASE_CMP(format.name.c_str(), "ILBC") != 0 ||
       format.clockrate_hz != 8000 || format.num_channels != 1) {
-    return rtc::Optional<AudioEncoderIlbcConfig>();
+    return rtc::nullopt;
   }
 
   AudioEncoderIlbcConfig config;
@@ -55,7 +55,7 @@ rtc::Optional<AudioEncoderIlbcConfig> AudioEncoderIlbc::SdpToConfig(
     }
   }
   return config.IsOk() ? rtc::Optional<AudioEncoderIlbcConfig>(config)
-                       : rtc::Optional<AudioEncoderIlbcConfig>();
+                       : rtc::nullopt;
 }
 
 void AudioEncoderIlbc::AppendSupportedEncoders(

@@ -47,9 +47,9 @@ struct AudioDecoderFakeApi {
       const SdpAudioFormat& audio_format) {
     if (Params::AudioFormat() == audio_format) {
       MyLittleConfig config = {audio_format};
-      return rtc::Optional<MyLittleConfig>(config);
+      return config;
     } else {
-      return rtc::Optional<MyLittleConfig>();
+      return rtc::nullopt;
     }
   }
 

@@ -26,7 +26,7 @@ rtc::Optional<AudioEncoderG722Config> AudioEncoderG722::SdpToConfig(
     const SdpAudioFormat& format) {
   if (STR_CASE_CMP(format.name.c_str(), "g722") != 0 ||
       format.clockrate_hz != 8000) {
-    return rtc::Optional<AudioEncoderG722Config>();
+    return rtc::nullopt;
   }
 
   AudioEncoderG722Config config;
@@ -40,7 +40,7 @@ rtc::Optional<AudioEncoderG722Config> AudioEncoderG722::SdpToConfig(
     }
   }
   return config.IsOk() ? rtc::Optional<AudioEncoderG722Config>(config)
-                       : rtc::Optional<AudioEncoderG722Config>();
+                       : rtc::nullopt;
 }
 
 void AudioEncoderG722::AppendSupportedEncoders(

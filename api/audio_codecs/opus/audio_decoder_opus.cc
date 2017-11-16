@@ -22,25 +22,25 @@ namespace webrtc {
 
 rtc::Optional<AudioDecoderOpus::Config> AudioDecoderOpus::SdpToConfig(
     const SdpAudioFormat& format) {
-  const rtc::Optional<int> num_channels = [&] {
+  const auto num_channels = [&]() -> rtc::Optional<int> {
     auto stereo = format.parameters.find("stereo");
     if (stereo != format.parameters.end()) {
       if (stereo->second == "0") {
-        return rtc::Optional<int>(1);
+        return 1;
       } else if (stereo->second == "1") {
-        return rtc::Optional<int>(2);
+        return 2;
       } else {
-        return rtc::Optional<int>();  // Bad stereo parameter.
+        return rtc::nullopt;  // Bad stereo parameter.
       }
     }
-    return rtc::Optional<int>(1);  // Default to mono.
+    return 1;  // Default to mono.
   }();
   if (STR_CASE_CMP(format.name.c_str(), "opus") == 0 &&
       format.clockrate_hz == 48000 && format.num_channels == 2 &&
       num_channels) {
-    return rtc::Optional<Config>(Config{*num_channels});
+    return Config{*num_channels};
   } else {
-    return rtc::Optional<Config>();
+    return rtc::nullopt;
   }
 }
 

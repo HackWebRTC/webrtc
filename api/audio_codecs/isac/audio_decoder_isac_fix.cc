@@ -21,7 +21,7 @@ rtc::Optional<AudioDecoderIsacFix::Config> AudioDecoderIsacFix::SdpToConfig(
   return STR_CASE_CMP(format.name.c_str(), "ISAC") == 0 &&
                  format.clockrate_hz == 16000 && format.num_channels == 1
              ? rtc::Optional<Config>(Config())
-             : rtc::Optional<Config>();
+             : rtc::nullopt;
 }
 
 void AudioDecoderIsacFix::AppendSupportedDecoders(
