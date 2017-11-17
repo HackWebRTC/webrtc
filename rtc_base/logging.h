@@ -61,6 +61,12 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/thread_annotations.h"
 
+#if !defined(NDEBUG) || defined(DLOG_ALWAYS_ON)
+#define RTC_DLOG_IS_ON 1
+#else
+#define RTC_DLOG_IS_ON 0
+#endif
+
 namespace rtc {
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -295,11 +301,8 @@ class LogMessageVoidify {
 // The _F version prefixes the message with the current function name.
 #if (defined(__GNUC__) && !defined(NDEBUG)) || defined(WANT_PRETTY_LOG_F)
 #define RTC_LOG_F(sev) RTC_LOG(sev) << __PRETTY_FUNCTION__ << ": "
-#define RTC_LOG_T_F(sev) RTC_LOG(sev) << this << ": " \
-  << __PRETTY_FUNCTION__ << ": "
 #else
 #define RTC_LOG_F(sev) RTC_LOG(sev) << __FUNCTION__ << ": "
-#define RTC_LOG_T_F(sev) RTC_LOG(sev) << this << ": " << __FUNCTION__ << ": "
 #endif
 
 #define RTC_LOG_CHECK_LEVEL(sev) \
@@ -360,7 +363,22 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 #define RTC_PLOG(sev, err) \
   RTC_LOG_ERR_EX(sev, err)
 
-// TODO(?): Add an "assert" wrapper that logs in the same manner.
+// The RTC_DLOG macros are equivalent to their RTC_LOG counterparts except that
+// they only generate code in debug builds.
+#if RTC_DLOG_IS_ON
+#define RTC_DLOG(sev) RTC_LOG(sev)
+#define RTC_DLOG_V(sev) RTC_LOG_V(sev)
+#define RTC_DLOG_F(sev) RTC_LOG_F(sev)
+#else
+#define RTC_DLOG_EAT_STREAM_PARAMS(sev) \
+  (true ? true : ((void)(rtc::sev), true)) \
+      ? static_cast<void>(0)          \
+      : rtc::LogMessageVoidify() &    \
+        rtc::LogMessage(__FILE__, __LINE__, rtc::sev).stream()
+#define RTC_DLOG(sev) RTC_DLOG_EAT_STREAM_PARAMS(sev)
+#define RTC_DLOG_V(sev) RTC_DLOG_EAT_STREAM_PARAMS(sev)
+#define RTC_DLOG_F(sev) RTC_DLOG_EAT_STREAM_PARAMS(sev)
+#endif
 
 }  // namespace rtc
 

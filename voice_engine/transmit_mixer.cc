@@ -32,8 +32,8 @@ TransmitMixer::Create(TransmitMixer*& mixer)
     mixer = new TransmitMixer();
     if (mixer == NULL)
     {
-      RTC_LOG(LS_ERROR) << "TransmitMixer::Create() unable to allocate memory "
-                           "for mixer";
+      RTC_DLOG(LS_ERROR) <<
+          "TransmitMixer::Create() unable to allocate memory for mixer";
       return -1;
     }
     return 0;
@@ -187,8 +187,8 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
 
   GainControl* agc = audioproc_->gain_control();
   if (agc->set_stream_analog_level(current_mic_level) != 0) {
-    RTC_LOG(LS_ERROR) << "set_stream_analog_level failed: current_mic_level = "
-                      << current_mic_level;
+    RTC_DLOG(LS_ERROR) << "set_stream_analog_level failed: current_mic_level = "
+                       << current_mic_level;
     assert(false);
   }
 
@@ -201,7 +201,7 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
 
   int err = audioproc_->ProcessStream(&_audioFrame);
   if (err != 0) {
-    RTC_LOG(LS_ERROR) << "ProcessStream() error: " << err;
+    RTC_DLOG(LS_ERROR) << "ProcessStream() error: " << err;
     assert(false);
   }
 
