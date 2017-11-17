@@ -65,8 +65,7 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
  public:
   RtcEventLogProxy() : event_log_(nullptr) {}
 
-  bool StartLogging(std::unique_ptr<RtcEventLogOutput> output,
-                    int64_t output_period_ms) override {
+  bool StartLogging(std::unique_ptr<RtcEventLogOutput> output) override {
     RTC_NOTREACHED();
     return false;
   }

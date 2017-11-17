@@ -828,16 +828,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Start RtcEventLog using an existing output-sink. Takes ownership of
   // |output| and passes it on to Call, which will take the ownership. If the
   // operation fails the output will be closed and deallocated.
-  // TODO(eladalon): Deprecate and remove this.
   virtual bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output) {
-    return false;
-  }
-
-  // Start RtcEventLog using an existing output-sink. Takes ownership of
-  // |output| and passes it on to Call, which will take the ownership. If the
-  // operation fails the output will be closed and deallocated.
-  virtual bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
-                                int64_t output_period_ms) {
     return false;
   }
 

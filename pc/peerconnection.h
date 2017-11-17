@@ -178,10 +178,7 @@ class PeerConnection : public PeerConnectionInterface,
 
   RTC_DEPRECATED bool StartRtcEventLog(rtc::PlatformFile file,
                                        int64_t max_size_bytes) override;
-  RTC_DEPRECATED bool StartRtcEventLog(
-      std::unique_ptr<RtcEventLogOutput> output) override;
-  bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
-                        int64_t output_period_ms) override;
+  bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output) override;
   void StopRtcEventLog() override;
 
   void Close() override;
@@ -494,8 +491,7 @@ class PeerConnection : public PeerConnectionInterface,
 
   // Starts output of an RTC event log to the given output object.
   // This function should only be called from the worker thread.
-  bool StartRtcEventLog_w(std::unique_ptr<RtcEventLogOutput> output,
-                          int64_t output_period_ms);
+  bool StartRtcEventLog_w(std::unique_ptr<RtcEventLogOutput> output);
 
   // Stops recording an RTC event log.
   // This function should only be called from the worker thread.
