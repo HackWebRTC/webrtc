@@ -81,7 +81,7 @@ rtc::Optional<size_t> EchoPathDelayEstimator::EstimateDelay(
   return aggregated_matched_filter_lag
              ? rtc::Optional<size_t>(*aggregated_matched_filter_lag *
                                      down_sampling_factor_)
-             : rtc::Optional<size_t>();
+             : rtc::nullopt;
 }
 
 }  // namespace webrtc

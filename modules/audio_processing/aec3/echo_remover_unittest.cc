@@ -64,7 +64,7 @@ TEST(EchoRemover, BasicApiCalls) {
                                                 k % 5 == 0 ? true : false);
       rtc::Optional<size_t> echo_path_delay_samples =
           (k % 6 == 0 ? rtc::Optional<size_t>(k * 10)
-                      : rtc::Optional<size_t>());
+                      : rtc::nullopt);
       render_buffer->Insert(render);
       render_buffer->UpdateBuffers();
       remover->ProcessCapture(echo_path_delay_samples, echo_path_variability,
@@ -198,8 +198,7 @@ TEST(EchoRemover, BasicEchoRemoval) {
         render_buffer->Insert(x);
         render_buffer->UpdateBuffers();
 
-        remover->ProcessCapture(rtc::Optional<size_t>(delay_samples),
-                                echo_path_variability, false,
+        remover->ProcessCapture(delay_samples, echo_path_variability, false,
                                 render_buffer->GetRenderBuffer(), &y);
 
         if (k > kNumBlocksToProcess / 2) {

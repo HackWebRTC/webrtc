@@ -68,7 +68,7 @@ class GainControlImpl::GainController {
   }
 
   void set_capture_level(int capture_level) {
-    capture_level_ = rtc::Optional<int>(capture_level);
+    capture_level_ = capture_level;
   }
 
   int get_capture_level() {
@@ -394,8 +394,8 @@ void GainControlImpl::Initialize(size_t num_proc_channels, int sample_rate_hz) {
   rtc::CritScope cs_capture(crit_capture_);
   data_dumper_->InitiateNewSetOfRecordings();
 
-  num_proc_channels_ = rtc::Optional<size_t>(num_proc_channels);
-  sample_rate_hz_ = rtc::Optional<int>(sample_rate_hz);
+  num_proc_channels_ = num_proc_channels;
+  sample_rate_hz_ = sample_rate_hz;
 
   if (!enabled_) {
     return;

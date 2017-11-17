@@ -113,12 +113,11 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   force_zero_gain_ = (++force_zero_gain_counter_) < kNumBlocksPerSecond / 5;
 
   // Estimate delays.
-  filter_delay_ = rtc::Optional<size_t>(
-      EstimateFilterDelay(adaptive_filter_frequency_response));
+  filter_delay_ = EstimateFilterDelay(adaptive_filter_frequency_response);
   external_delay_ =
       external_delay_samples
           ? rtc::Optional<size_t>(*external_delay_samples / kBlockSize)
-          : rtc::Optional<size_t>();
+          : rtc::nullopt;
 
   // Update the ERL and ERLE measures.
   if (converged_filter && capture_block_counter_ >= 2 * kNumBlocksPerSecond) {

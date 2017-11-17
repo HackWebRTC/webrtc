@@ -70,10 +70,9 @@ TEST(SuppressionGain, BasicGainComputation) {
   R2.fill(10000000000000.f);
   N2.fill(0.f);
   s.fill(10.f);
-  aec_state.Update(subtractor.FilterFrequencyResponse(),
-                   subtractor.FilterImpulseResponse(),
-                   subtractor.ConvergedFilter(), rtc::Optional<size_t>(10),
-                   render_buffer, E2, Y2, x[0], s, false);
+  aec_state.Update(
+      subtractor.FilterFrequencyResponse(), subtractor.FilterImpulseResponse(),
+      subtractor.ConvergedFilter(), 10, render_buffer, E2, Y2, x[0], s, false);
   suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x, &high_bands_gain,
                            &g);
   std::for_each(g.begin(), g.end(), [](float a) { EXPECT_FLOAT_EQ(0.f, a); });
@@ -88,15 +87,15 @@ TEST(SuppressionGain, BasicGainComputation) {
   for (int k = 0; k <= kNumBlocksPerSecond / 5 + 1; ++k) {
     aec_state.Update(subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
-                     subtractor.ConvergedFilter(), rtc::Optional<size_t>(10),
-                     render_buffer, E2, Y2, x[0], s, false);
+                     subtractor.ConvergedFilter(), 10, render_buffer, E2, Y2,
+                     x[0], s, false);
   }
 
   for (int k = 0; k < 100; ++k) {
     aec_state.Update(subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
-                     subtractor.ConvergedFilter(), rtc::Optional<size_t>(10),
-                     render_buffer, E2, Y2, x[0], s, false);
+                     subtractor.ConvergedFilter(), 10, render_buffer, E2, Y2,
+                     x[0], s, false);
     suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
@@ -111,8 +110,8 @@ TEST(SuppressionGain, BasicGainComputation) {
   for (int k = 0; k < 100; ++k) {
     aec_state.Update(subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
-                     subtractor.ConvergedFilter(), rtc::Optional<size_t>(10),
-                     render_buffer, E2, Y2, x[0], s, false);
+                     subtractor.ConvergedFilter(), 10, render_buffer, E2, Y2,
+                     x[0], s, false);
     suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }

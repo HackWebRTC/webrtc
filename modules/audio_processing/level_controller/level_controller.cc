@@ -202,7 +202,7 @@ void LevelController::Initialize(int sample_rate_hz) {
   metrics_.Initialize(sample_rate_hz);
 
   last_gain_ = 1.0f;
-  sample_rate_hz_ = rtc::Optional<int>(sample_rate_hz);
+  sample_rate_hz_ = sample_rate_hz;
   dc_forgetting_factor_ = 0.01f * sample_rate_hz / 48000.f;
   std::fill(dc_level_, dc_level_ + arraysize(dc_level_), 0.f);
 }

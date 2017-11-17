@@ -96,7 +96,7 @@ void RenderDelayControllerImpl::Reset() {
   blocks_since_last_delay_estimate_ = 300000;
   echo_path_delay_samples_ = delay_ * kBlockSize;
   align_call_counter_ = 0;
-  headroom_samples_ = rtc::Optional<size_t>();
+  headroom_samples_ = rtc::nullopt;
   std::fill(capture_delay_buffer_.begin(), capture_delay_buffer_.end(), 0.f);
   delay_estimator_.Reset();
 }
@@ -150,15 +150,15 @@ size_t RenderDelayControllerImpl::GetDelay(
       if (echo_path_delay_samples_corrected >= 0) {
         const int headroom = echo_path_delay_samples_ - delay_ * kBlockSize;
         RTC_DCHECK_LE(0, headroom);
-        headroom_samples_ = rtc::Optional<size_t>(headroom);
+        headroom_samples_ = headroom;
       } else {
-        headroom_samples_ = rtc::Optional<size_t>();
+        headroom_samples_ = rtc::nullopt;
       }
     }
 
-    metrics_.Update(rtc::Optional<size_t>(echo_path_delay_samples_), delay_);
+    metrics_.Update(echo_path_delay_samples_, delay_);
   } else {
-    metrics_.Update(rtc::Optional<size_t>(), delay_);
+    metrics_.Update(rtc::nullopt, delay_);
   }
 
   data_dumper_->DumpRaw("aec3_render_delay_controller_delay", 1,

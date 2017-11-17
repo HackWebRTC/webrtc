@@ -183,8 +183,7 @@ TEST(MatchedFilter, LagEstimation) {
         if ((alignment_shift_sub_blocks + 3 * kWindowSizeSubBlocks / 4) *
                 sub_block_size >
             delay_samples) {
-          expected_most_accurate_lag_estimate =
-              rtc::Optional<size_t>(k > 0 ? k - 1 : 0);
+          expected_most_accurate_lag_estimate = k > 0 ? k - 1 : 0;
           break;
         }
         alignment_shift_sub_blocks += kAlignmentShiftSubBlocks;

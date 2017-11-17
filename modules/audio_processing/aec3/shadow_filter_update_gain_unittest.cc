@@ -68,8 +68,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     RandomizeSampleVector(&random_generator, x[0]);
     delay_buffer.Delay(x[0], y);
     render_buffer.Insert(x);
-    render_signal_analyzer.Update(
-        render_buffer, rtc::Optional<size_t>(delay_samples / kBlockSize));
+    render_signal_analyzer.Update(render_buffer, delay_samples / kBlockSize);
 
     shadow_filter.Filter(render_buffer, &S);
     fft.Ifft(S, &s);

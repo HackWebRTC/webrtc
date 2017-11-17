@@ -44,51 +44,44 @@ TEST(AecState, NormalUsage) {
   // Verify that linear AEC usability is false when the filter is diverged and
   // there is no external delay reported.
   state.Update(diverged_filter_frequency_response, impulse_response, true,
-               rtc::Optional<size_t>(), render_buffer, E2_main, Y2, x[0], s,
-               false);
+               rtc::nullopt, render_buffer, E2_main, Y2, x[0], s, false);
   EXPECT_FALSE(state.UsableLinearEstimate());
 
   // Verify that linear AEC usability is true when the filter is converged
   std::fill(x[0].begin(), x[0].end(), 101.f);
   for (int k = 0; k < 3000; ++k) {
-    state.Update(converged_filter_frequency_response, impulse_response, true,
-                 rtc::Optional<size_t>(2), render_buffer, E2_main, Y2, x[0], s,
-                 false);
+    state.Update(converged_filter_frequency_response, impulse_response, true, 2,
+                 render_buffer, E2_main, Y2, x[0], s, false);
   }
   EXPECT_TRUE(state.UsableLinearEstimate());
 
   // Verify that linear AEC usability becomes false after an echo path change is
   // reported
   state.HandleEchoPathChange(EchoPathVariability(true, false));
-  state.Update(converged_filter_frequency_response, impulse_response, true,
-               rtc::Optional<size_t>(2), render_buffer, E2_main, Y2, x[0], s,
-               false);
+  state.Update(converged_filter_frequency_response, impulse_response, true, 2,
+               render_buffer, E2_main, Y2, x[0], s, false);
   EXPECT_FALSE(state.UsableLinearEstimate());
 
   // Verify that the active render detection works as intended.
   std::fill(x[0].begin(), x[0].end(), 101.f);
   state.HandleEchoPathChange(EchoPathVariability(true, true));
-  state.Update(converged_filter_frequency_response, impulse_response, true,
-               rtc::Optional<size_t>(2), render_buffer, E2_main, Y2, x[0], s,
-               false);
+  state.Update(converged_filter_frequency_response, impulse_response, true, 2,
+               render_buffer, E2_main, Y2, x[0], s, false);
   EXPECT_FALSE(state.ActiveRender());
 
   for (int k = 0; k < 1000; ++k) {
-    state.Update(converged_filter_frequency_response, impulse_response, true,
-                 rtc::Optional<size_t>(2), render_buffer, E2_main, Y2, x[0], s,
-                 false);
+    state.Update(converged_filter_frequency_response, impulse_response, true, 2,
+                 render_buffer, E2_main, Y2, x[0], s, false);
   }
   EXPECT_TRUE(state.ActiveRender());
 
   // Verify that echo leakage is properly reported.
-  state.Update(converged_filter_frequency_response, impulse_response, true,
-               rtc::Optional<size_t>(2), render_buffer, E2_main, Y2, x[0], s,
-               false);
+  state.Update(converged_filter_frequency_response, impulse_response, true, 2,
+               render_buffer, E2_main, Y2, x[0], s, false);
   EXPECT_FALSE(state.EchoLeakageDetected());
 
-  state.Update(converged_filter_frequency_response, impulse_response, true,
-               rtc::Optional<size_t>(2), render_buffer, E2_main, Y2, x[0], s,
-               true);
+  state.Update(converged_filter_frequency_response, impulse_response, true, 2,
+               render_buffer, E2_main, Y2, x[0], s, true);
   EXPECT_TRUE(state.EchoLeakageDetected());
 
   // Verify that the ERL is properly estimated
@@ -103,9 +96,8 @@ TEST(AecState, NormalUsage) {
 
   Y2.fill(10.f * 10000.f * 10000.f);
   for (size_t k = 0; k < 1000; ++k) {
-    state.Update(converged_filter_frequency_response, impulse_response, true,
-                 rtc::Optional<size_t>(2), render_buffer, E2_main, Y2, x[0], s,
-                 false);
+    state.Update(converged_filter_frequency_response, impulse_response, true, 2,
+                 render_buffer, E2_main, Y2, x[0], s, false);
   }
 
   ASSERT_TRUE(state.UsableLinearEstimate());
@@ -120,9 +112,8 @@ TEST(AecState, NormalUsage) {
   E2_main.fill(1.f * 10000.f * 10000.f);
   Y2.fill(10.f * E2_main[0]);
   for (size_t k = 0; k < 1000; ++k) {
-    state.Update(converged_filter_frequency_response, impulse_response, true,
-                 rtc::Optional<size_t>(2), render_buffer, E2_main, Y2, x[0], s,
-                 false);
+    state.Update(converged_filter_frequency_response, impulse_response, true, 2,
+                 render_buffer, E2_main, Y2, x[0], s, false);
   }
   ASSERT_TRUE(state.UsableLinearEstimate());
   {
@@ -141,9 +132,8 @@ TEST(AecState, NormalUsage) {
   E2_main.fill(1.f * 10000.f * 10000.f);
   Y2.fill(5.f * E2_main[0]);
   for (size_t k = 0; k < 1000; ++k) {
-    state.Update(converged_filter_frequency_response, impulse_response, true,
-                 rtc::Optional<size_t>(2), render_buffer, E2_main, Y2, x[0], s,
-                 false);
+    state.Update(converged_filter_frequency_response, impulse_response, true, 2,
+                 render_buffer, E2_main, Y2, x[0], s, false);
   }
 
   ASSERT_TRUE(state.UsableLinearEstimate());
@@ -189,9 +179,8 @@ TEST(AecState, ConvergedFilterDelay) {
     frequency_response[k].fill(100.f);
     frequency_response[k][0] = 0.f;
     state.HandleEchoPathChange(echo_path_variability);
-    state.Update(frequency_response, impulse_response, true,
-                 rtc::Optional<size_t>(), render_buffer, E2_main, Y2, x, s,
-                 false);
+    state.Update(frequency_response, impulse_response, true, rtc::nullopt,
+                 render_buffer, E2_main, Y2, x, s, false);
     EXPECT_TRUE(k == (kFilterLength - 1) || state.FilterDelay());
     if (k != (kFilterLength - 1)) {
       EXPECT_EQ(k, state.FilterDelay());
@@ -225,9 +214,8 @@ TEST(AecState, ExternalDelay) {
 
   for (size_t k = 0; k < frequency_response.size() - 1; ++k) {
     state.HandleEchoPathChange(EchoPathVariability(false, false));
-    state.Update(frequency_response, impulse_response, true,
-                 rtc::Optional<size_t>(k * kBlockSize + 5), render_buffer,
-                 E2_main, Y2, x, s, false);
+    state.Update(frequency_response, impulse_response, true, k * kBlockSize + 5,
+                 render_buffer, E2_main, Y2, x, s, false);
     EXPECT_TRUE(state.ExternalDelay());
     EXPECT_EQ(k, state.ExternalDelay());
   }
@@ -235,9 +223,8 @@ TEST(AecState, ExternalDelay) {
   // Verify that the externally reported delay is properly unset when it is no
   // longer present.
   state.HandleEchoPathChange(EchoPathVariability(false, false));
-  state.Update(frequency_response, impulse_response, true,
-               rtc::Optional<size_t>(), render_buffer, E2_main, Y2, x, s,
-               false);
+  state.Update(frequency_response, impulse_response, true, rtc::nullopt,
+               render_buffer, E2_main, Y2, x, s, false);
   EXPECT_FALSE(state.ExternalDelay());
 }
 

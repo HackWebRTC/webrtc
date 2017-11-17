@@ -77,11 +77,11 @@ void IdentifyStrongNarrowBandComponent(const RenderBuffer& render_buffer,
   // Detect whether the spectal peak has as strong narrowband nature.
   if (peak_bin > 6 && max_abs > 100 &&
       X2_latest[peak_bin] > 100 * non_peak_power) {
-    *narrow_peak_band = rtc::Optional<int>(peak_bin);
+    *narrow_peak_band = peak_bin;
     *narrow_peak_counter = 0;
   } else {
     if (*narrow_peak_band && ++(*narrow_peak_counter) > 7) {
-      *narrow_peak_band = rtc::Optional<int>();
+      *narrow_peak_band = rtc::nullopt;
     }
   }
 }

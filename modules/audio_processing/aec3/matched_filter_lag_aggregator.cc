@@ -67,10 +67,10 @@ rtc::Optional<size_t> MatchedFilterLagAggregator::Aggregate(
                       std::max_element(histogram_.begin(), histogram_.end()));
 
     if (histogram_[candidate] > 25) {
-      return rtc::Optional<size_t>(candidate);
+      return candidate;
     }
   }
-  return rtc::Optional<size_t>();
+  return rtc::nullopt;
 }
 
 }  // namespace webrtc

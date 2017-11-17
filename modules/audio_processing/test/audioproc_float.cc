@@ -186,39 +186,39 @@ DEFINE_bool(help, false, "Print this message");
 void SetSettingIfSpecified(const std::string& value,
                            rtc::Optional<std::string>* parameter) {
   if (value.compare("") != 0) {
-    *parameter = rtc::Optional<std::string>(value);
+    *parameter = value;
   }
 }
 
 void SetSettingIfSpecified(int value, rtc::Optional<int>* parameter) {
   if (value != kParameterNotSpecifiedValue) {
-    *parameter = rtc::Optional<int>(value);
+    *parameter = value;
   }
 }
 
 void SetSettingIfFlagSet(int32_t flag, rtc::Optional<bool>* parameter) {
   if (flag == 0) {
-    *parameter = rtc::Optional<bool>(false);
+    *parameter = false;
   } else if (flag == 1) {
-    *parameter = rtc::Optional<bool>(true);
+    *parameter = true;
   }
 }
 
 SimulationSettings CreateSettings() {
   SimulationSettings settings;
   if (FLAG_all_default) {
-    settings.use_le = rtc::Optional<bool>(true);
-    settings.use_vad = rtc::Optional<bool>(true);
-    settings.use_ie = rtc::Optional<bool>(false);
-    settings.use_bf = rtc::Optional<bool>(false);
-    settings.use_ts = rtc::Optional<bool>(true);
-    settings.use_ns = rtc::Optional<bool>(true);
-    settings.use_hpf = rtc::Optional<bool>(true);
-    settings.use_agc = rtc::Optional<bool>(true);
-    settings.use_agc2 = rtc::Optional<bool>(false);
-    settings.use_aec = rtc::Optional<bool>(true);
-    settings.use_aecm = rtc::Optional<bool>(false);
-    settings.use_ed = rtc::Optional<bool>(false);
+    settings.use_le = true;
+    settings.use_vad = true;
+    settings.use_ie = false;
+    settings.use_bf = false;
+    settings.use_ts = true;
+    settings.use_ns = true;
+    settings.use_hpf = true;
+    settings.use_agc = true;
+    settings.use_agc2 = false;
+    settings.use_aec = true;
+    settings.use_aecm = false;
+    settings.use_ed = false;
   }
   SetSettingIfSpecified(FLAG_dump_input, &settings.aec_dump_input_filename);
   SetSettingIfSpecified(FLAG_dump_output, &settings.aec_dump_output_filename);

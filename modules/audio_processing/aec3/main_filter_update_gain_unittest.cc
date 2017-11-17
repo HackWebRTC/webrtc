@@ -135,9 +135,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     // Update the delay.
     aec_state.HandleEchoPathChange(EchoPathVariability(false, false));
     aec_state.Update(main_filter.FilterFrequencyResponse(),
-                     main_filter.FilterImpulseResponse(), true,
-                     rtc::Optional<size_t>(), render_buffer, E2_main, Y2, x[0],
-                     s, false);
+                     main_filter.FilterImpulseResponse(), true, rtc::nullopt,
+                     render_buffer, E2_main, Y2, x[0], s, false);
   }
 
   std::copy(e_main.begin(), e_main.end(), e_last_block->begin());

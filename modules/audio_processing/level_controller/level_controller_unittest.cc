@@ -90,20 +90,20 @@ TEST(LevelControllerConfig, ToString) {
 
 TEST(LevelControlBitExactnessTest, Mono8kHz) {
   const float kOutputReference[] = {-0.013939f, -0.012154f, -0.009054f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 1,
-                      rtc::Optional<float>(), kOutputReference);
+  RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 1, rtc::nullopt,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, Mono16kHz) {
   const float kOutputReference[] = {-0.013706f, -0.013215f, -0.013018f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 1,
-                      rtc::Optional<float>(), kOutputReference);
+  RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 1, rtc::nullopt,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, Mono32kHz) {
   const float kOutputReference[] = {-0.014495f, -0.016425f, -0.016085f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 1,
-                      rtc::Optional<float>(), kOutputReference);
+  RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 1, rtc::nullopt,
+                      kOutputReference);
 }
 
 // TODO(peah): Investigate why this particular testcase differ between Android
@@ -115,42 +115,42 @@ TEST(LevelControlBitExactnessTest, Mono48kHz) {
 #else
   const float kOutputReference[] = {-0.014306f, -0.015209f, -0.017466f};
 #endif
-  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 1,
-                      rtc::Optional<float>(), kOutputReference);
+  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 1, rtc::nullopt,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, Stereo8kHz) {
   const float kOutputReference[] = {-0.014063f, -0.008450f, -0.012159f,
                                     -0.051967f, -0.023202f, -0.047858f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 2,
-                      rtc::Optional<float>(), kOutputReference);
+  RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 2, rtc::nullopt,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, Stereo16kHz) {
   const float kOutputReference[] = {-0.012714f, -0.005896f, -0.012220f,
                                     -0.053306f, -0.024549f, -0.051527f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 2,
-                      rtc::Optional<float>(), kOutputReference);
+  RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 2, rtc::nullopt,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, Stereo32kHz) {
   const float kOutputReference[] = {-0.011764f, -0.007044f, -0.013472f,
                                     -0.053537f, -0.026322f, -0.056253f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 2,
-                      rtc::Optional<float>(), kOutputReference);
+  RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 2, rtc::nullopt,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, Stereo48kHz) {
   const float kOutputReference[] = {-0.010643f, -0.006334f, -0.011377f,
                                     -0.049088f, -0.023600f, -0.050465f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 2,
-                      rtc::Optional<float>(), kOutputReference);
+  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 2, rtc::nullopt,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, MonoInitial48kHz) {
   const float kOutputReference[] = {-0.013884f, -0.014761f, -0.016951f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 1,
-                      rtc::Optional<float>(-50), kOutputReference);
+  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 1, -50,
+                      kOutputReference);
 }
 
 }  // namespace webrtc

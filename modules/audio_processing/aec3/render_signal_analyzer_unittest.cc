@@ -69,7 +69,7 @@ TEST(RenderSignalAnalyzer, NoFalseDetectionOfNarrowBands) {
     RandomizeSampleVector(&random_generator, x[0]);
     fft.PaddedFft(x[0], x_old, &X);
     render_buffer.Insert(x);
-    analyzer.Update(render_buffer, rtc::Optional<size_t>(0));
+    analyzer.Update(render_buffer, 0);
   }
 
   mask.fill(1.f);
@@ -99,7 +99,7 @@ TEST(RenderSignalAnalyzer, NarrowBandDetection) {
                       &sample_counter, x[0]);
       render_buffer.Insert(x);
       analyzer.Update(render_buffer, known_delay ? rtc::Optional<size_t>(0)
-                                                 : rtc::Optional<size_t>());
+                                                 : rtc::nullopt);
     }
   };
 

@@ -27,7 +27,7 @@ PerformanceTimer::PerformanceTimer(int num_frames_to_process)
 PerformanceTimer::~PerformanceTimer() = default;
 
 void PerformanceTimer::StartTimer() {
-  start_timestamp_us_ = rtc::Optional<int64_t>(clock_->TimeInMicroseconds());
+  start_timestamp_us_ = clock_->TimeInMicroseconds();
 }
 
 void PerformanceTimer::StopTimer() {
