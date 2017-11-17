@@ -46,7 +46,7 @@ class Unwrapper {
 
  public:
   // Get the unwrapped value, but don't update the internal state.
-  int64_t UnwrapWithoutUpdate(U value) {
+  int64_t UnwrapWithoutUpdate(U value) const {
     if (!last_value_)
       return value;
 
