@@ -145,7 +145,6 @@ class VideoQualityTest : public test::CallTest {
   std::vector<std::unique_ptr<test::VideoCapturer>> thumbnail_capturers_;
   std::unique_ptr<test::FrameGenerator> frame_generator_;
   std::unique_ptr<VideoEncoder> video_encoder_;
-  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> vp8_encoder_factory_;
 
   std::vector<std::unique_ptr<VideoEncoder>> thumbnail_encoders_;
   std::vector<VideoSendStream::Config> thumbnail_send_configs_;
