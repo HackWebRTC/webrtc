@@ -1137,6 +1137,8 @@ class VoiceDetection {
 struct EchoCanceller3Config {
   struct Delay {
     size_t default_delay = 5;
+    size_t down_sampling_factor = 4;
+    size_t num_filters = 4;
   } delay;
 
   struct Erle {

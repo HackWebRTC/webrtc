@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/aec3/decimator_by_4.h"
+#include "modules/audio_processing/aec3/decimator.h"
 
 #include <math.h>
 #include <algorithm>
@@ -31,15 +31,18 @@ std::string ProduceDebugText(int sample_rate_hz) {
   return ss.str();
 }
 
+constexpr size_t kDownSamplingFactors[] = {2, 4, 8};
 constexpr float kPi = 3.141592f;
 constexpr size_t kNumStartupBlocks = 50;
 constexpr size_t kNumBlocks = 1000;
 
 void ProduceDecimatedSinusoidalOutputPower(int sample_rate_hz,
+                                           size_t down_sampling_factor,
                                            float sinusoidal_frequency_hz,
                                            float* input_power,
                                            float* output_power) {
   float input[kBlockSize * kNumBlocks];
+  const size_t sub_block_size = kBlockSize / down_sampling_factor;
 
   // Produce a sinusoid of the specified frequency.
   for (size_t k = 0; k < kBlockSize * kNumBlocks; ++k) {
@@ -47,18 +50,18 @@ void ProduceDecimatedSinusoidalOutputPower(int sample_rate_hz,
         32767.f * sin(2.f * kPi * sinusoidal_frequency_hz * k / sample_rate_hz);
   }
 
-  DecimatorBy4 decimator;
-  std::array<float, kSubBlockSize * kNumBlocks> output;
+  Decimator decimator(down_sampling_factor);
+  std::vector<float> output(sub_block_size * kNumBlocks);
 
   for (size_t k = 0; k < kNumBlocks; ++k) {
-    std::array<float, kSubBlockSize> sub_block;
+    std::vector<float> sub_block(sub_block_size);
 
     decimator.Decimate(
         rtc::ArrayView<const float>(&input[k * kBlockSize], kBlockSize),
         sub_block);
 
     std::copy(sub_block.begin(), sub_block.end(),
-              output.begin() + k * kSubBlockSize);
+              output.begin() + k * sub_block_size);
   }
 
   ASSERT_GT(kNumBlocks, kNumStartupBlocks);
@@ -66,8 +69,8 @@ void ProduceDecimatedSinusoidalOutputPower(int sample_rate_hz,
       &input[kNumStartupBlocks * kBlockSize],
       (kNumBlocks - kNumStartupBlocks) * kBlockSize);
   rtc::ArrayView<const float> output_to_evaluate(
-      &output[kNumStartupBlocks * kSubBlockSize],
-      (kNumBlocks - kNumStartupBlocks) * kSubBlockSize);
+      &output[kNumStartupBlocks * sub_block_size],
+      (kNumBlocks - kNumStartupBlocks) * sub_block_size);
   *input_power =
       std::inner_product(input_to_evaluate.begin(), input_to_evaluate.end(),
                          input_to_evaluate.begin(), 0.f) /
@@ -82,44 +85,62 @@ void ProduceDecimatedSinusoidalOutputPower(int sample_rate_hz,
 
 // Verifies that there is little aliasing from upper frequencies in the
 // downsampling.
-TEST(DecimatorBy4, NoLeakageFromUpperFrequencies) {
+TEST(Decimator, NoLeakageFromUpperFrequencies) {
   float input_power;
   float output_power;
   for (auto rate : {8000, 16000, 32000, 48000}) {
-    ProduceDebugText(rate);
-    ProduceDecimatedSinusoidalOutputPower(rate, 3.f / 8.f * rate, &input_power,
-                                          &output_power);
-    EXPECT_GT(0.0001f * input_power, output_power);
+    for (auto down_sampling_factor : kDownSamplingFactors) {
+      ProduceDebugText(rate);
+      ProduceDecimatedSinusoidalOutputPower(rate, down_sampling_factor,
+                                            3.f / 8.f * rate, &input_power,
+                                            &output_power);
+      EXPECT_GT(0.0001f * input_power, output_power);
+    }
   }
 }
 
 // Verifies that the impact of low-frequency content is small during the
 // downsampling.
-TEST(DecimatorBy4, NoImpactOnLowerFrequencies) {
+TEST(Decimator, NoImpactOnLowerFrequencies) {
   float input_power;
   float output_power;
   for (auto rate : {8000, 16000, 32000, 48000}) {
-    ProduceDebugText(rate);
-    ProduceDecimatedSinusoidalOutputPower(rate, 200.f, &input_power,
-                                          &output_power);
-    EXPECT_LT(0.7f * input_power, output_power);
+    for (auto down_sampling_factor : kDownSamplingFactors) {
+      ProduceDebugText(rate);
+      ProduceDecimatedSinusoidalOutputPower(rate, down_sampling_factor, 200.f,
+                                            &input_power, &output_power);
+      EXPECT_LT(0.7f * input_power, output_power);
+    }
   }
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 // Verifies the check for the input size.
-TEST(DecimatorBy4, WrongInputSize) {
-  DecimatorBy4 decimator;
+TEST(Decimator, WrongInputSize) {
+  Decimator decimator(4);
   std::vector<float> x(std::vector<float>(kBlockSize - 1, 0.f));
-  std::array<float, kSubBlockSize> x_downsampled;
+  std::array<float, kBlockSize / 4> x_downsampled;
   EXPECT_DEATH(decimator.Decimate(x, x_downsampled), "");
 }
 
 // Verifies the check for non-null output parameter.
-TEST(DecimatorBy4, NullOutput) {
-  DecimatorBy4 decimator;
+TEST(Decimator, NullOutput) {
+  Decimator decimator(4);
   std::vector<float> x(std::vector<float>(kBlockSize, 0.f));
   EXPECT_DEATH(decimator.Decimate(x, nullptr), "");
+}
+
+// Verifies the check for the output size.
+TEST(Decimator, WrongOutputSize) {
+  Decimator decimator(4);
+  std::vector<float> x(std::vector<float>(kBlockSize, 0.f));
+  std::array<float, kBlockSize / 4 - 1> x_downsampled;
+  EXPECT_DEATH(decimator.Decimate(x, x_downsampled), "");
+}
+
+// Verifies the check for the correct downsampling factor.
+TEST(Decimator, CorrectDownSamplingFactor) {
+  EXPECT_DEATH(Decimator(3), "");
 }
 
 #endif

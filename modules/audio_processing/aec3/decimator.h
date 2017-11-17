@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_BY_4_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_BY_4_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_H_
 
 #include <array>
 
@@ -20,19 +20,20 @@
 
 namespace webrtc {
 
-// Provides functionality for decimating a signal by 4.
-class DecimatorBy4 {
+// Provides functionality for decimating a signal.
+class Decimator {
  public:
-  DecimatorBy4();
+  explicit Decimator(size_t down_sampling_factor);
 
   // Downsamples the signal.
   void Decimate(rtc::ArrayView<const float> in, rtc::ArrayView<float> out);
 
  private:
+  const size_t down_sampling_factor_;
   CascadedBiQuadFilter low_pass_filter_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(DecimatorBy4);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Decimator);
 };
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_BY_4_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_H_

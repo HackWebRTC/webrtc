@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_DOWNSAMPLED_RENDER_BUFFER_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_DOWNSAMPLED_RENDER_BUFFER_H_
 
-#include <array>
+#include <vector>
 
 #include "modules/audio_processing/aec3/aec3_common.h"
 
@@ -19,9 +19,9 @@ namespace webrtc {
 
 // Holds the circular buffer of the downsampled render data.
 struct DownsampledRenderBuffer {
-  DownsampledRenderBuffer();
+  explicit DownsampledRenderBuffer(size_t downsampled_buffer_size);
   ~DownsampledRenderBuffer();
-  std::array<float, kDownsampledRenderBufferSize> buffer = {};
+  std::vector<float> buffer;
   int position = 0;
 };
 

@@ -27,8 +27,9 @@ class MockRenderDelayBuffer : public RenderDelayBuffer {
   explicit MockRenderDelayBuffer(int sample_rate_hz)
       : render_buffer_(Aec3Optimization::kNone,
                        NumBandsForRate(sample_rate_hz),
-                       kRenderDelayBufferSize,
-                       std::vector<size_t>(1, kAdaptiveFilterLength)) {
+                       GetRenderDelayBufferSize(4, 4),
+                       std::vector<size_t>(1, kAdaptiveFilterLength)),
+        downsampled_render_buffer_(GetDownSampledBufferSize(4, 4)) {
     ON_CALL(*this, GetRenderBuffer())
         .WillByDefault(
             testing::Invoke(this, &MockRenderDelayBuffer::FakeGetRenderBuffer));

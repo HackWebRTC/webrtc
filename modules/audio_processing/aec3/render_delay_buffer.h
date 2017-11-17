@@ -27,7 +27,10 @@ namespace webrtc {
 // extracted with a specified delay.
 class RenderDelayBuffer {
  public:
-  static RenderDelayBuffer* Create(size_t num_bands);
+  static RenderDelayBuffer* Create(size_t num_bands,
+                                   size_t down_sampling_factor,
+                                   size_t downsampled_render_buffer_size,
+                                   size_t render_delay_buffer_size);
   virtual ~RenderDelayBuffer() = default;
 
   // Resets the buffer data.

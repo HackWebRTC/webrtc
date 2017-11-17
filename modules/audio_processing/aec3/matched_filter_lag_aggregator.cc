@@ -14,17 +14,17 @@
 namespace webrtc {
 
 MatchedFilterLagAggregator::MatchedFilterLagAggregator(
-    ApmDataDumper* data_dumper)
-    : data_dumper_(data_dumper) {
+    ApmDataDumper* data_dumper,
+    size_t max_filter_lag)
+    : data_dumper_(data_dumper), histogram_(max_filter_lag + 1, 0) {
   RTC_DCHECK(data_dumper);
-  histogram_.fill(0);
   histogram_data_.fill(0);
 }
 
 MatchedFilterLagAggregator::~MatchedFilterLagAggregator() = default;
 
 void MatchedFilterLagAggregator::Reset() {
-  histogram_.fill(0);
+  std::fill(histogram_.begin(), histogram_.end(), 0);
   histogram_data_.fill(0);
   histogram_data_index_ = 0;
 }

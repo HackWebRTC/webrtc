@@ -39,6 +39,9 @@ std::string ProduceDebugText(int sample_rate_hz, int delay) {
   return ss.str();
 }
 
+constexpr size_t kDownSamplingFactor = 4;
+constexpr size_t kNumMatchedFilters = 4;
+
 }  // namespace
 
 // Verifies the basic API call sequence
@@ -47,8 +50,10 @@ TEST(EchoRemover, BasicApiCalls) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
         EchoRemover::Create(EchoCanceller3Config(), rate));
-    std::unique_ptr<RenderDelayBuffer> render_buffer(
-        RenderDelayBuffer::Create(NumBandsForRate(rate)));
+    std::unique_ptr<RenderDelayBuffer> render_buffer(RenderDelayBuffer::Create(
+        NumBandsForRate(rate), kDownSamplingFactor,
+        GetDownSampledBufferSize(kDownSamplingFactor, kNumMatchedFilters),
+        GetRenderDelayBufferSize(kDownSamplingFactor, kNumMatchedFilters)));
 
     std::vector<std::vector<float>> render(NumBandsForRate(rate),
                                            std::vector<float>(kBlockSize, 0.f));
@@ -86,8 +91,10 @@ TEST(EchoRemover, WrongCaptureBlockSize) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
         EchoRemover::Create(EchoCanceller3Config(), rate));
-    std::unique_ptr<RenderDelayBuffer> render_buffer(
-        RenderDelayBuffer::Create(NumBandsForRate(rate)));
+    std::unique_ptr<RenderDelayBuffer> render_buffer(RenderDelayBuffer::Create(
+        NumBandsForRate(rate), kDownSamplingFactor,
+        GetDownSampledBufferSize(kDownSamplingFactor, kNumMatchedFilters),
+        GetRenderDelayBufferSize(kDownSamplingFactor, kNumMatchedFilters)));
     std::vector<std::vector<float>> capture(
         NumBandsForRate(rate), std::vector<float>(kBlockSize - 1, 0.f));
     EchoPathVariability echo_path_variability(false, false);
@@ -107,8 +114,10 @@ TEST(EchoRemover, DISABLED_WrongCaptureNumBands) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
         EchoRemover::Create(EchoCanceller3Config(), rate));
-    std::unique_ptr<RenderDelayBuffer> render_buffer(
-        RenderDelayBuffer::Create(NumBandsForRate(rate)));
+    std::unique_ptr<RenderDelayBuffer> render_buffer(RenderDelayBuffer::Create(
+        NumBandsForRate(rate), kDownSamplingFactor,
+        GetDownSampledBufferSize(kDownSamplingFactor, kNumMatchedFilters),
+        GetRenderDelayBufferSize(kDownSamplingFactor, kNumMatchedFilters)));
     std::vector<std::vector<float>> capture(
         NumBandsForRate(rate == 48000 ? 16000 : rate + 16000),
         std::vector<float>(kBlockSize, 0.f));
@@ -125,8 +134,10 @@ TEST(EchoRemover, DISABLED_WrongCaptureNumBands) {
 TEST(EchoRemover, NullCapture) {
   std::unique_ptr<EchoRemover> remover(
       EchoRemover::Create(EchoCanceller3Config(), 8000));
-  std::unique_ptr<RenderDelayBuffer> render_buffer(
-      RenderDelayBuffer::Create(3));
+  std::unique_ptr<RenderDelayBuffer> render_buffer(RenderDelayBuffer::Create(
+      3, kDownSamplingFactor,
+      GetDownSampledBufferSize(kDownSamplingFactor, kNumMatchedFilters),
+      GetRenderDelayBufferSize(kDownSamplingFactor, kNumMatchedFilters)));
   EchoPathVariability echo_path_variability(false, false);
   rtc::Optional<size_t> echo_path_delay_samples;
   EXPECT_DEATH(
@@ -153,7 +164,11 @@ TEST(EchoRemover, BasicEchoRemoval) {
       std::unique_ptr<EchoRemover> remover(
           EchoRemover::Create(EchoCanceller3Config(), rate));
       std::unique_ptr<RenderDelayBuffer> render_buffer(
-          RenderDelayBuffer::Create(NumBandsForRate(rate)));
+          RenderDelayBuffer::Create(
+              NumBandsForRate(rate), kDownSamplingFactor,
+              GetDownSampledBufferSize(kDownSamplingFactor, kNumMatchedFilters),
+              GetRenderDelayBufferSize(kDownSamplingFactor,
+                                       kNumMatchedFilters)));
       std::vector<std::unique_ptr<DelayBuffer<float>>> delay_buffers(x.size());
       for (size_t j = 0; j < x.size(); ++j) {
         delay_buffers[j].reset(new DelayBuffer<float>(delay_samples));

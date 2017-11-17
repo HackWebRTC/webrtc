@@ -43,7 +43,6 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const size_t default_delay_;
   size_t delay_;
-  EchoPathDelayEstimator delay_estimator_;
   size_t blocks_since_last_delay_estimate_ = 300000;
   int echo_path_delay_samples_;
   size_t align_call_counter_ = 0;
@@ -51,6 +50,7 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   std::vector<float> capture_delay_buffer_;
   int capture_delay_buffer_index_ = 0;
   RenderDelayControllerMetrics metrics_;
+  EchoPathDelayEstimator delay_estimator_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderDelayControllerImpl);
 };
 
@@ -81,10 +81,12 @@ RenderDelayControllerImpl::RenderDelayControllerImpl(
       default_delay_(
           std::max(config.delay.default_delay, kMinEchoPathDelayBlocks)),
       delay_(default_delay_),
-      delay_estimator_(data_dumper_.get(), config),
       echo_path_delay_samples_(default_delay_ * kBlockSize),
-      capture_delay_buffer_(kBlockSize * (kMaxApiCallsJitterBlocks + 2), 0.f) {
+      capture_delay_buffer_(kBlockSize * (kMaxApiCallsJitterBlocks + 2), 0.f),
+      delay_estimator_(data_dumper_.get(), config) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
+  delay_estimator_.LogDelayEstimationProperties(sample_rate_hz,
+                                                capture_delay_buffer_.size());
 }
 
 RenderDelayControllerImpl::~RenderDelayControllerImpl() = default;

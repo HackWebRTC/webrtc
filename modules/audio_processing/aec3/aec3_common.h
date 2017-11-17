@@ -48,20 +48,9 @@ constexpr size_t kSubFrameLength = 80;
 
 constexpr size_t kBlockSize = kFftLengthBy2;
 constexpr size_t kExtendedBlockSize = 2 * kFftLengthBy2;
-constexpr size_t kSubBlockSize = 16;
-
-constexpr size_t kNumMatchedFilters = 4;
 constexpr size_t kMatchedFilterWindowSizeSubBlocks = 32;
 constexpr size_t kMatchedFilterAlignmentShiftSizeSubBlocks =
     kMatchedFilterWindowSizeSubBlocks * 3 / 4;
-constexpr size_t kDownsampledRenderBufferSize =
-    kSubBlockSize *
-    (kMatchedFilterAlignmentShiftSizeSubBlocks * kNumMatchedFilters +
-     kMatchedFilterWindowSizeSubBlocks +
-     1);
-
-constexpr size_t kRenderDelayBufferSize =
-    (3 * kDownsampledRenderBufferSize) / (4 * kSubBlockSize);
 
 constexpr size_t kMinEchoPathDelayBlocks = 5;
 constexpr size_t kMaxApiCallsJitterBlocks = 26;
@@ -83,6 +72,20 @@ constexpr int LowestBandRate(int sample_rate_hz) {
 constexpr bool ValidFullBandRate(int sample_rate_hz) {
   return sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
          sample_rate_hz == 32000 || sample_rate_hz == 48000;
+}
+
+constexpr size_t GetDownSampledBufferSize(size_t down_sampling_factor,
+                                          size_t num_matched_filters) {
+  return kBlockSize / down_sampling_factor *
+         (kMatchedFilterAlignmentShiftSizeSubBlocks * num_matched_filters +
+          kMatchedFilterWindowSizeSubBlocks + 1);
+}
+
+constexpr size_t GetRenderDelayBufferSize(size_t down_sampling_factor,
+                                          size_t num_matched_filters) {
+  return (3 *
+          GetDownSampledBufferSize(down_sampling_factor, num_matched_filters)) /
+         (4 * kBlockSize / down_sampling_factor);
 }
 
 // Detects what kind of optimizations to use for the code.

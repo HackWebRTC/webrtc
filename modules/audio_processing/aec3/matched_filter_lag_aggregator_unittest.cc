@@ -32,7 +32,7 @@ TEST(MatchedFilterLagAggregator, MostAccurateLagChosen) {
   constexpr size_t kLag2 = 10;
   ApmDataDumper data_dumper(0);
   std::vector<MatchedFilter::LagEstimate> lag_estimates(2);
-  MatchedFilterLagAggregator aggregator(&data_dumper);
+  MatchedFilterLagAggregator aggregator(&data_dumper, std::max(kLag1, kLag2));
   lag_estimates[0] = MatchedFilter::LagEstimate(1.f, true, kLag1, true);
   lag_estimates[1] = MatchedFilter::LagEstimate(0.5f, true, kLag2, true);
 
@@ -65,7 +65,7 @@ TEST(MatchedFilterLagAggregator,
      LagEstimateInvarianceRequiredForAggregatedLag) {
   ApmDataDumper data_dumper(0);
   std::vector<MatchedFilter::LagEstimate> lag_estimates(1);
-  MatchedFilterLagAggregator aggregator(&data_dumper);
+  MatchedFilterLagAggregator aggregator(&data_dumper, 100);
   for (size_t k = 0; k < kNumLagsBeforeDetection * 100; ++k) {
     lag_estimates[0] = MatchedFilter::LagEstimate(1.f, true, k % 100, true);
     rtc::Optional<size_t> aggregated_lag = aggregator.Aggregate(lag_estimates);
@@ -80,7 +80,7 @@ TEST(MatchedFilterLagAggregator,
   constexpr size_t kLag = 5;
   ApmDataDumper data_dumper(0);
   std::vector<MatchedFilter::LagEstimate> lag_estimates(1);
-  MatchedFilterLagAggregator aggregator(&data_dumper);
+  MatchedFilterLagAggregator aggregator(&data_dumper, kLag);
   for (size_t k = 0; k < kNumLagsBeforeDetection * 10; ++k) {
     lag_estimates[0] = MatchedFilter::LagEstimate(1.f, true, kLag, false);
     rtc::Optional<size_t> aggregated_lag = aggregator.Aggregate(lag_estimates);
@@ -97,7 +97,7 @@ TEST(MatchedFilterLagAggregator, DISABLED_PersistentAggregatedLag) {
   constexpr size_t kLag2 = 10;
   ApmDataDumper data_dumper(0);
   std::vector<MatchedFilter::LagEstimate> lag_estimates(1);
-  MatchedFilterLagAggregator aggregator(&data_dumper);
+  MatchedFilterLagAggregator aggregator(&data_dumper, std::max(kLag1, kLag2));
   rtc::Optional<size_t> aggregated_lag;
   for (size_t k = 0; k < kNumLagsBeforeDetection; ++k) {
     lag_estimates[0] = MatchedFilter::LagEstimate(1.f, true, kLag1, true);
@@ -118,7 +118,7 @@ TEST(MatchedFilterLagAggregator, DISABLED_PersistentAggregatedLag) {
 
 // Verifies the check for non-null data dumper.
 TEST(MatchedFilterLagAggregator, NullDataDumper) {
-  EXPECT_DEATH(MatchedFilterLagAggregator(nullptr), "");
+  EXPECT_DEATH(MatchedFilterLagAggregator(nullptr, 10), "");
 }
 
 #endif
