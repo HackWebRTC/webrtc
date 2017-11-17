@@ -655,6 +655,8 @@ int RunTest(int argc, char* argv[]) {
   printf("  median_waiting_time_ms: %f ms\n", stats.median_waiting_time_ms);
   printf("  min_waiting_time_ms: %f ms\n", stats.min_waiting_time_ms);
   printf("  max_waiting_time_ms: %f ms\n", stats.max_waiting_time_ms);
+  printf("  current_buffer_size_ms: %f ms\n", stats.current_buffer_size_ms);
+  printf("  preferred_buffer_size_ms: %f ms\n", stats.preferred_buffer_size_ms);
 
   return 0;
 }
