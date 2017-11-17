@@ -216,6 +216,7 @@ public class YuvConverter {
     if (textureType != shaderTextureType) {
       initShader(textureType);
     }
+    shader.useProgram();
 
     // We draw into a buffer laid out like
     //
