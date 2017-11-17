@@ -37,6 +37,7 @@ const int64_t kNanosecondsPerSecond = 1000000000;
   BOOL _isRunning;
   // Will the session be running once all asynchronous operations have been completed?
   BOOL _willBeRunning;
+  RTCVideoRotation _rotation;
 #if TARGET_OS_IPHONE
   UIDeviceOrientation _orientation;
 #endif
@@ -57,6 +58,7 @@ const int64_t kNanosecondsPerSecond = 1000000000;
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
 #if TARGET_OS_IPHONE
     _orientation = UIDeviceOrientationPortrait;
+    _rotation = RTCVideoRotation_90;
     [center addObserver:self
                selector:@selector(deviceOrientationDidChange:)
                    name:UIDeviceOrientationDidChangeNotification
@@ -191,7 +193,6 @@ const int64_t kNanosecondsPerSecond = 1000000000;
 
 #if TARGET_OS_IPHONE
   // Default to portrait orientation on iPhone.
-  RTCVideoRotation rotation = RTCVideoRotation_90;
   BOOL usingFrontCamera = NO;
   // Check the image's EXIF for the camera the image came from as the image could have been
   // delayed as we set alwaysDiscardsLateVideoFrames to NO.
@@ -206,16 +207,16 @@ const int64_t kNanosecondsPerSecond = 1000000000;
   }
   switch (_orientation) {
     case UIDeviceOrientationPortrait:
-      rotation = RTCVideoRotation_90;
+      _rotation = RTCVideoRotation_90;
       break;
     case UIDeviceOrientationPortraitUpsideDown:
-      rotation = RTCVideoRotation_270;
+      _rotation = RTCVideoRotation_270;
       break;
     case UIDeviceOrientationLandscapeLeft:
-      rotation = usingFrontCamera ? RTCVideoRotation_180 : RTCVideoRotation_0;
+      _rotation = usingFrontCamera ? RTCVideoRotation_180 : RTCVideoRotation_0;
       break;
     case UIDeviceOrientationLandscapeRight:
-      rotation = usingFrontCamera ? RTCVideoRotation_0 : RTCVideoRotation_180;
+      _rotation = usingFrontCamera ? RTCVideoRotation_0 : RTCVideoRotation_180;
       break;
     case UIDeviceOrientationFaceUp:
     case UIDeviceOrientationFaceDown:
@@ -225,14 +226,14 @@ const int64_t kNanosecondsPerSecond = 1000000000;
   }
 #else
   // No rotation on Mac.
-  RTCVideoRotation rotation = RTCVideoRotation_0;
+  _rotation = RTCVideoRotation_0;
 #endif
 
   RTCCVPixelBuffer *rtcPixelBuffer = [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBuffer];
   int64_t timeStampNs = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer)) *
       kNanosecondsPerSecond;
   RTCVideoFrame *videoFrame = [[RTCVideoFrame alloc] initWithBuffer:rtcPixelBuffer
-                                                           rotation:rotation
+                                                           rotation:_rotation
                                                         timeStampNs:timeStampNs];
   [self.delegate capturer:self didCaptureVideoFrame:videoFrame];
 }

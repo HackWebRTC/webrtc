@@ -90,10 +90,11 @@
     } else if (deviceOrientation == UIInterfaceOrientationLandscapeLeft) {
       previewLayer.connection.videoOrientation =
           AVCaptureVideoOrientationLandscapeLeft;
-    } else {
+    } else if (deviceOrientation == UIInterfaceOrientationPortrait) {
       previewLayer.connection.videoOrientation =
           AVCaptureVideoOrientationPortrait;
     }
+    // If device orientation switches to FaceUp or FaceDown, don't change video orientation.
   }
 }
 
