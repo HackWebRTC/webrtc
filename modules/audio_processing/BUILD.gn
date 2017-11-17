@@ -304,6 +304,8 @@ rtc_static_library("audio_processing") {
 
   deps += [
     "../../common_audio",
+    "../../common_audio:fir_filter",
+    "../../common_audio:fir_filter_factory",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
   ]

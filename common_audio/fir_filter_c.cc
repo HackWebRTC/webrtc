@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_audio/fir_filter.h"
+#include "common_audio/fir_filter_c.h"
 
 #include <string.h>
 
@@ -17,55 +17,10 @@
 #include "common_audio/fir_filter_neon.h"
 #include "common_audio/fir_filter_sse.h"
 #include "rtc_base/checks.h"
-#include "system_wrappers/include/cpu_features_wrapper.h"
 
 namespace webrtc {
 
-class FIRFilterC : public FIRFilter {
- public:
-  FIRFilterC(const float* coefficients,
-             size_t coefficients_length);
-
-  void Filter(const float* in, size_t length, float* out) override;
-
- private:
-  size_t coefficients_length_;
-  size_t state_length_;
-  std::unique_ptr<float[]> coefficients_;
-  std::unique_ptr<float[]> state_;
-};
-
-FIRFilter* FIRFilter::Create(const float* coefficients,
-                             size_t coefficients_length,
-                             size_t max_input_length) {
-  if (!coefficients || coefficients_length <= 0 || max_input_length <= 0) {
-    RTC_NOTREACHED();
-    return nullptr;
-  }
-
-  FIRFilter* filter = nullptr;
-// If we know the minimum architecture at compile time, avoid CPU detection.
-#if defined(WEBRTC_ARCH_X86_FAMILY)
-#if defined(__SSE2__)
-  filter =
-      new FIRFilterSSE2(coefficients, coefficients_length, max_input_length);
-#else
-  // x86 CPU detection required.
-  if (WebRtc_GetCPUInfo(kSSE2)) {
-    filter =
-        new FIRFilterSSE2(coefficients, coefficients_length, max_input_length);
-  } else {
-    filter = new FIRFilterC(coefficients, coefficients_length);
-  }
-#endif
-#elif defined(WEBRTC_HAS_NEON)
-  filter =
-      new FIRFilterNEON(coefficients, coefficients_length, max_input_length);
-#else
-  filter = new FIRFilterC(coefficients, coefficients_length);
-#endif
-
-  return filter;
+FIRFilterC::~FIRFilterC() {
 }
 
 FIRFilterC::FIRFilterC(const float* coefficients, size_t coefficients_length)

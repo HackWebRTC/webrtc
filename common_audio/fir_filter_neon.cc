@@ -18,6 +18,9 @@
 
 namespace webrtc {
 
+FIRFilterNEON::~FIRFilterNEON() {
+}
+
 FIRFilterNEON::FIRFilterNEON(const float* coefficients,
                              size_t coefficients_length,
                              size_t max_input_length)

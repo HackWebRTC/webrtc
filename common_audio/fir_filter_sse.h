@@ -23,6 +23,7 @@ class FIRFilterSSE2 : public FIRFilter {
   FIRFilterSSE2(const float* coefficients,
                 size_t coefficients_length,
                 size_t max_input_length);
+  ~FIRFilterSSE2() override;
 
   void Filter(const float* in, size_t length, float* out) override;
 

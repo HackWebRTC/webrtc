@@ -19,6 +19,9 @@
 
 namespace webrtc {
 
+FIRFilterSSE2::~FIRFilterSSE2() {
+}
+
 FIRFilterSSE2::FIRFilterSSE2(const float* coefficients,
                              size_t coefficients_length,
                              size_t max_input_length)

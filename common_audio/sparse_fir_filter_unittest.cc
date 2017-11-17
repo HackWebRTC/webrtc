@@ -13,6 +13,7 @@
 #include "common_audio/sparse_fir_filter.h"
 
 #include "common_audio/fir_filter.h"
+#include "common_audio/fir_filter_factory.h"
 #include "rtc_base/arraysize.h"
 #include "test/gtest.h"
 
@@ -216,7 +217,7 @@ TEST(SparseFIRFilterTest, SameOutputAsFIRFilterWhenSparsityOneAndOffsetZero) {
   float output[arraysize(kInput)];
   float sparse_output[arraysize(kInput)];
   std::unique_ptr<FIRFilter> filter(
-      FIRFilter::Create(kCoeffs, arraysize(kCoeffs), arraysize(kInput)));
+      CreateFirFilter(kCoeffs, arraysize(kCoeffs), arraysize(kInput)));
   SparseFIRFilter sparse_filter(kCoeffs,
                                 arraysize(kCoeffs),
                                 kSparsity,
