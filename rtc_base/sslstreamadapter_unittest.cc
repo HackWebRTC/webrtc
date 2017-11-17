@@ -64,6 +64,71 @@ static const char kCERT_PEM[] =
     "UD0A8qfhfDM+LK6rPAnCsVN0NRDY3jvd6rzix9M=\n"
     "-----END CERTIFICATE-----\n";
 
+static const char kIntCert1[] =
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIIEUjCCAjqgAwIBAgIBAjANBgkqhkiG9w0BAQsFADCBljELMAkGA1UEBhMCVVMx\n"
+    "EzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcMDU1vdW50YWluIFZpZXcxFDAS\n"
+    "BgNVBAoMC0dvb2dsZSwgSW5jMQwwCgYDVQQLDANHVFAxFzAVBgNVBAMMDnRlbGVw\n"
+    "aG9ueS5nb29nMR0wGwYJKoZIhvcNAQkBFg5ndHBAZ29vZ2xlLmNvbTAeFw0xNzA5\n"
+    "MjYwNDA5MDNaFw0yMDA2MjIwNDA5MDNaMGQxCzAJBgNVBAYTAlVTMQswCQYDVQQI\n"
+    "DAJDQTEWMBQGA1UEBwwNTW91bnRhaW4gVmlldzEXMBUGA1UECgwOdGVsZXBob255\n"
+    "Lmdvb2cxFzAVBgNVBAMMDnRlbGVwaG9ueS5nb29nMIGfMA0GCSqGSIb3DQEBAQUA\n"
+    "A4GNADCBiQKBgQDJXWeeU1v1+wlqkVobzI3aN7Uh2iVQA9YCdq5suuabtiD/qoOD\n"
+    "NKpmQqsx7WZGGWSZTDFEBaUpvIK7Hb+nzRqk6iioPCFOFuarm6GxO1xVneImMuE6\n"
+    "tuWb3YZPr+ikChJbl11y5UcSbg0QsbeUc+jHl5umNvrL85Y+z8SP0rxbBwIDAQAB\n"
+    "o2AwXjAdBgNVHQ4EFgQU7tdZobqlN8R8V72FQnRxmqq8tKswHwYDVR0jBBgwFoAU\n"
+    "5GgKMUtcxkQ2dJrtNR5YOlIAPDswDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMC\n"
+    "AQYwDQYJKoZIhvcNAQELBQADggIBADObh9Z+z14FmP9zSenhFtq7hFnmNrSkklk8\n"
+    "eyYWXKfOuIriEQQBZsz76ZcnzStih8Rj+yQ0AXydk4fJ5LOwC2cUqQBar17g6Pd2\n"
+    "8g4SIL4azR9WvtiSvpuGlwp25b+yunaacDne6ebnf/MUiiKT5w61Xo3cEPVfl38e\n"
+    "/Up2l0bioid5enUTmg6LY6RxDO6tnZQkz3XD+nNSwT4ehtkqFpHYWjErj0BbkDM2\n"
+    "hiVc/JsYOZn3DmuOlHVHU6sKwqh3JEyvHO/d7DGzMGWHpHwv2mCTJq6l/sR95Tc2\n"
+    "GaQZgGDVNs9pdEouJCDm9e/PbQWRYhnat82PTkXx/6mDAAwdZlIi/pACzq8K4p7e\n"
+    "6hF0t8uKGnXJubHPXxlnJU6yxZ0yWmivAGjwWK4ur832gKlho4jeMDhiI/T3QPpl\n"
+    "iMNsIvxRhdD+GxJkQP1ezayw8s+Uc9KwKglrkBSRRDLCJUfPOvMmXLUDSTMX7kp4\n"
+    "/Ak1CA8dVLJIlfEjLBUuvAttlP7+7lsKNgxAjCxZkWLXIyGULzNPQwVWkGfCbrQs\n"
+    "XyMvSbFsSIb7blV7eLlmf9a+2RprUUkc2ALXLLCI9YQXmxm2beBfMyNmmebwBJzT\n"
+    "B0OR+5pFFNTJPoNlqpdrDsGrDu7JlUtk0ZLZzYyKXbgy2qXxfd4OWzXXjxpLMszZ\n"
+    "LDIpOAkj\n"
+    "-----END CERTIFICATE-----\n";
+
+static const char kCACert[] =
+    "-----BEGIN CERTIFICATE-----\n"
+    "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\n"
+    "dGaXBy+qbVXVyGXaeEbIRjtJ6m92\n"
+    "-----END CERTIFICATE-----\n";
+
 class SSLStreamAdapterTestBase;
 
 class SSLDummyStreamBase : public rtc::StreamInterface,
@@ -865,12 +930,80 @@ class SSLStreamAdapterTestDTLSFromPEMStrings : public SSLStreamAdapterTestDTLS {
   }
 };
 
+// Test fixture for certificate chaining. Server will push more than one
+// certificate.
+class SSLStreamAdapterTestDTLSCertChain : public SSLStreamAdapterTestDTLS {
+ public:
+  SSLStreamAdapterTestDTLSCertChain() : SSLStreamAdapterTestDTLS("", ""){};
+  void SetUp() override {
+    CreateStreams();
+
+    client_ssl_.reset(rtc::SSLStreamAdapter::Create(client_stream_));
+    server_ssl_.reset(rtc::SSLStreamAdapter::Create(server_stream_));
+
+    // Set up the slots
+    client_ssl_->SignalEvent.connect(
+        reinterpret_cast<SSLStreamAdapterTestBase*>(this),
+        &SSLStreamAdapterTestBase::OnEvent);
+    server_ssl_->SignalEvent.connect(
+        reinterpret_cast<SSLStreamAdapterTestBase*>(this),
+        &SSLStreamAdapterTestBase::OnEvent);
+
+    if (!client_cert_pem_.empty() && !client_private_key_pem_.empty()) {
+      client_identity_ = rtc::SSLIdentity::FromPEMStrings(
+          client_private_key_pem_, client_cert_pem_);
+    } else {
+      client_identity_ = rtc::SSLIdentity::Generate("client", client_key_type_);
+    }
+
+    client_ssl_->SetIdentity(client_identity_);
+  }
+};
+
 // Basic tests: TLS
 
 // Test that we can make a handshake work
 TEST_P(SSLStreamAdapterTestTLS, TestTLSConnect) {
   TestHandshake();
 };
+
+TEST_P(SSLStreamAdapterTestTLS, GetPeerCertChainWithOneCertificate) {
+  TestHandshake();
+  std::unique_ptr<rtc::SSLCertChain> cert_chain =
+      client_ssl_->GetPeerSSLCertChain();
+  std::unique_ptr<rtc::SSLCertificate> certificate =
+      client_ssl_->GetPeerCertificate();
+  ASSERT_NE(nullptr, cert_chain);
+  EXPECT_EQ(1u, cert_chain->GetSize());
+  EXPECT_EQ(cert_chain->Get(0).ToPEMString(), certificate->ToPEMString());
+}
+
+TEST_F(SSLStreamAdapterTestDTLSCertChain, TwoCertHandshake) {
+  server_identity_ = rtc::SSLIdentity::FromPEMChainStrings(
+      kRSA_PRIVATE_KEY_PEM, std::string(kCERT_PEM) + kCACert);
+  server_ssl_->SetIdentity(server_identity_);
+  TestHandshake();
+  std::unique_ptr<rtc::SSLCertChain> peer_cert_chain =
+      client_ssl_->GetPeerSSLCertChain();
+  ASSERT_NE(nullptr, peer_cert_chain);
+  ASSERT_EQ(2u, peer_cert_chain->GetSize());
+  EXPECT_EQ(kCERT_PEM, peer_cert_chain->Get(0).ToPEMString());
+  EXPECT_EQ(kCACert, peer_cert_chain->Get(1).ToPEMString());
+}
+
+TEST_F(SSLStreamAdapterTestDTLSCertChain, ThreeCertHandshake) {
+  server_identity_ = rtc::SSLIdentity::FromPEMChainStrings(
+      kRSA_PRIVATE_KEY_PEM, std::string(kCERT_PEM) + kIntCert1 + kCACert);
+  server_ssl_->SetIdentity(server_identity_);
+  TestHandshake();
+  std::unique_ptr<rtc::SSLCertChain> peer_cert_chain =
+      client_ssl_->GetPeerSSLCertChain();
+  ASSERT_NE(nullptr, peer_cert_chain);
+  ASSERT_EQ(3u, peer_cert_chain->GetSize());
+  EXPECT_EQ(kCERT_PEM, peer_cert_chain->Get(0).ToPEMString());
+  EXPECT_EQ(kIntCert1, peer_cert_chain->Get(1).ToPEMString());
+  EXPECT_EQ(kCACert, peer_cert_chain->Get(2).ToPEMString());
+}
 
 // Test that closing the connection on one side updates the other side.
 TEST_P(SSLStreamAdapterTestTLS, TestTLSClose) {

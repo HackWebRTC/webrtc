@@ -1104,6 +1104,11 @@ bool OpenSSLStreamAdapter::VerifyPeerCertificate() {
   return true;
 }
 
+std::unique_ptr<SSLCertChain> OpenSSLStreamAdapter::GetPeerSSLCertChain()
+    const {
+  return std::unique_ptr<SSLCertChain>(peer_cert_chain_->Copy());
+}
+
 int OpenSSLStreamAdapter::SSLVerifyCallback(X509_STORE_CTX* store, void* arg) {
   // Get our SSL structure and OpenSSLStreamAdapter from the store.
   SSL* ssl = reinterpret_cast<SSL*>(
@@ -1111,10 +1116,23 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(X509_STORE_CTX* store, void* arg) {
   OpenSSLStreamAdapter* stream =
       reinterpret_cast<OpenSSLStreamAdapter*>(SSL_get_app_data(ssl));
 
+#if defined(OPENSSL_IS_BORINGSSL)
+  STACK_OF(X509)* chain = SSL_get_peer_full_cert_chain(ssl);
+  // Creates certificate.
+  stream->peer_certificate_.reset(
+      new OpenSSLCertificate(sk_X509_value(chain, 0)));
+  // Creates certificate chain.
+  std::vector<std::unique_ptr<SSLCertificate>> cert_chain;
+  for (X509* cert : chain) {
+    cert_chain.emplace_back(new OpenSSLCertificate(cert));
+  }
+  stream->peer_cert_chain_.reset(new SSLCertChain(std::move(cert_chain)));
+#else
   // Record the peer's certificate.
   X509* cert = SSL_get_peer_certificate(ssl);
   stream->peer_certificate_.reset(new OpenSSLCertificate(cert));
   X509_free(cert);
+#endif
 
   // If the peer certificate digest isn't known yet, we'll wait to verify
   // until it's known, and for now just return a success status.

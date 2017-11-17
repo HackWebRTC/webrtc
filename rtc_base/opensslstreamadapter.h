@@ -71,6 +71,8 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   std::unique_ptr<SSLCertificate> GetPeerCertificate() const override;
 
+  std::unique_ptr<SSLCertChain> GetPeerSSLCertChain() const override;
+
   // Goes from state SSL_NONE to either SSL_CONNECTING or SSL_WAIT, depending
   // on whether the underlying stream is already open or not.
   int StartSSL() override;
@@ -198,6 +200,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   // The certificate that the peer presented. Initially null, until the
   // connection is established.
   std::unique_ptr<OpenSSLCertificate> peer_certificate_;
+  std::unique_ptr<SSLCertChain> peer_cert_chain_;
   bool peer_certificate_verified_ = false;
   // The digest of the certificate that the peer must present.
   Buffer peer_certificate_digest_value_;
