@@ -99,7 +99,6 @@ void ExtractBufferWithSize(const VideoFrame& image,
 VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                webrtc::VideoDecoder* decoder,
                                FrameReader* analysis_frame_reader,
-                               FrameWriter* analysis_frame_writer,
                                PacketManipulator* packet_manipulator,
                                const TestConfig& config,
                                Stats* stats,
@@ -113,7 +112,6 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
       decode_callback_(this),
       packet_manipulator_(packet_manipulator),
       analysis_frame_reader_(analysis_frame_reader),
-      analysis_frame_writer_(analysis_frame_writer),
       encoded_frame_writer_(encoded_frame_writer),
       decoded_frame_writer_(decoded_frame_writer),
       last_inputed_frame_num_(-1),
@@ -127,7 +125,6 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
   RTC_DCHECK(decoder);
   RTC_DCHECK(packet_manipulator);
   RTC_DCHECK(analysis_frame_reader);
-  RTC_DCHECK(analysis_frame_writer);
   RTC_DCHECK(stats);
 
   // Setup required callbacks for the encoder and decoder.
@@ -158,7 +155,7 @@ VideoProcessor::~VideoProcessor() {
 
 void VideoProcessor::ProcessFrame() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  ++last_inputed_frame_num_;
+  const int frame_number = ++last_inputed_frame_num_;
 
   // Get frame from file.
   rtc::scoped_refptr<I420BufferInterface> buffer(
@@ -167,15 +164,13 @@ void VideoProcessor::ProcessFrame() {
   // Use the frame number as the basis for timestamp to identify frames. Let the
   // first timestamp be non-zero, to not make the IvfFileWriter believe that we
   // want to use capture timestamps in the IVF files.
-  const uint32_t rtp_timestamp = (last_inputed_frame_num_ + 1) *
-                                 kRtpClockRateHz /
+  const uint32_t rtp_timestamp = (frame_number + 1) * kRtpClockRateHz /
                                  config_.codec_settings.maxFramerate;
-  rtp_timestamp_to_frame_num_[rtp_timestamp] = last_inputed_frame_num_;
-  VideoFrame source_frame(buffer, rtp_timestamp, kNoRenderTime,
-                          webrtc::kVideoRotation_0);
+  rtp_timestamp_to_frame_num_[rtp_timestamp] = frame_number;
+  input_frames_[frame_number] = rtc::MakeUnique<VideoFrame>(
+      buffer, rtp_timestamp, kNoRenderTime, webrtc::kVideoRotation_0);
 
-  std::vector<FrameType> frame_types =
-      config_.FrameTypeForFrame(last_inputed_frame_num_);
+  std::vector<FrameType> frame_types = config_.FrameTypeForFrame(frame_number);
 
   // Create frame statistics object used for aggregation at end of test run.
   FrameStatistic* frame_stat = stats_->AddFrame();
@@ -184,7 +179,7 @@ void VideoProcessor::ProcessFrame() {
   // time recordings should wrap the Encode call as tightly as possible.
   frame_stat->encode_start_ns = rtc::TimeNanos();
   frame_stat->encode_return_code =
-      encoder_->Encode(source_frame, nullptr, &frame_types);
+      encoder_->Encode(*input_frames_[frame_number], nullptr, &frame_types);
 }
 
 void VideoProcessor::SetRates(int bitrate_kbps, int framerate_fps) {
@@ -222,30 +217,24 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
     config_.encoded_frame_checker->CheckEncodedFrame(codec, encoded_image);
   }
 
-  // Check for dropped frames.
   const int frame_number =
       rtp_timestamp_to_frame_num_[encoded_image._timeStamp];
+
+  // Ensure strict monotonicity.
+  RTC_CHECK_GT(frame_number, last_encoded_frame_num_);
+
+  // Check for dropped frames.
   bool last_frame_missing = false;
   if (frame_number > 0) {
-    RTC_DCHECK_GE(last_encoded_frame_num_, 0);
     int num_dropped_from_last_encode =
         frame_number - last_encoded_frame_num_ - 1;
     RTC_DCHECK_GE(num_dropped_from_last_encode, 0);
     RTC_CHECK_GE(rate_update_index_, 0);
     num_dropped_frames_[rate_update_index_] += num_dropped_from_last_encode;
-    if (num_dropped_from_last_encode > 0) {
-      // For dropped frames, we write out the last decoded frame to avoid
-      // getting out of sync for the computation of PSNR and SSIM.
-      for (int i = 0; i < num_dropped_from_last_encode; i++) {
-        WriteDecodedFrameToFile(&last_decoded_frame_buffer_);
-      }
-    }
     const FrameStatistic* last_encoded_frame_stat =
         stats_->GetFrame(last_encoded_frame_num_);
     last_frame_missing = (last_encoded_frame_stat->manipulated_length == 0);
   }
-  // Ensure strict monotonicity.
-  RTC_CHECK_GT(frame_number, last_encoded_frame_num_);
   last_encoded_frame_num_ = frame_number;
 
   // Update frame statistics.
@@ -285,18 +274,12 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
   frame_stat->decode_return_code =
       decoder_->Decode(copied_image, last_frame_missing, nullptr);
 
-  if (frame_stat->decode_return_code != WEBRTC_VIDEO_CODEC_OK) {
-    // Write the last successful frame the output file to avoid getting it out
-    // of sync with the source file for SSIM and PSNR comparisons.
-    WriteDecodedFrameToFile(&last_decoded_frame_buffer_);
-  }
-
   if (encoded_frame_writer_) {
     RTC_CHECK(encoded_frame_writer_->WriteFrame(encoded_image, codec));
   }
 }
 
-void VideoProcessor::FrameDecoded(const VideoFrame& image) {
+void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   // For the highest measurement accuracy of the decode time, the start/stop
@@ -304,46 +287,67 @@ void VideoProcessor::FrameDecoded(const VideoFrame& image) {
   int64_t decode_stop_ns = rtc::TimeNanos();
 
   // Update frame statistics.
-  const int frame_number = rtp_timestamp_to_frame_num_[image.timestamp()];
+  const int frame_number =
+      rtp_timestamp_to_frame_num_[decoded_frame.timestamp()];
   FrameStatistic* frame_stat = stats_->GetFrame(frame_number);
-  frame_stat->decoded_width = image.width();
-  frame_stat->decoded_height = image.height();
+  frame_stat->decoded_width = decoded_frame.width();
+  frame_stat->decoded_height = decoded_frame.height();
   frame_stat->decode_time_us =
       GetElapsedTimeMicroseconds(frame_stat->decode_start_ns, decode_stop_ns);
   frame_stat->decoding_successful = true;
 
+  // Ensure strict monotonicity.
+  RTC_CHECK_GT(frame_number, last_decoded_frame_num_);
+
   // Check if the codecs have resized the frame since previously decoded frame.
   if (frame_number > 0) {
-    RTC_CHECK_GE(last_decoded_frame_num_, 0);
+    if (decoded_frame_writer_ && last_decoded_frame_num_ >= 0) {
+      // For dropped/lost frames, write out the last decoded frame to make it
+      // look like a freeze at playback.
+      const int num_dropped_frames = frame_number - last_decoded_frame_num_;
+      for (int i = 0; i < num_dropped_frames; i++) {
+        WriteDecodedFrameToFile(&last_decoded_frame_buffer_);
+      }
+    }
+    // TODO(ssilkin): move to FrameEncoded when webm:1474 is implemented.
     const FrameStatistic* last_decoded_frame_stat =
         stats_->GetFrame(last_decoded_frame_num_);
-    if (image.width() != last_decoded_frame_stat->decoded_width ||
-        image.height() != last_decoded_frame_stat->decoded_height) {
+    if (decoded_frame.width() != last_decoded_frame_stat->decoded_width ||
+        decoded_frame.height() != last_decoded_frame_stat->decoded_height) {
       RTC_CHECK_GE(rate_update_index_, 0);
       ++num_spatial_resizes_[rate_update_index_];
     }
   }
-  // Ensure strict monotonicity.
-  RTC_CHECK_GT(frame_number, last_decoded_frame_num_);
   last_decoded_frame_num_ = frame_number;
 
-  // If the frame size is different from the original size, scale back to the
-  // original size. This is needed for the PSNR and SSIM calculations.
-  rtc::Buffer buffer;
-  ExtractBufferWithSize(image, config_.codec_settings.width,
-                        config_.codec_settings.height, &buffer);
-  WriteDecodedFrameToFile(&buffer);
+  // Skip quality metrics calculation to not affect CPU usage.
+  if (!config_.measure_cpu) {
+    frame_stat->psnr =
+        I420PSNR(input_frames_[frame_number].get(), &decoded_frame);
+    frame_stat->ssim =
+        I420SSIM(input_frames_[frame_number].get(), &decoded_frame);
+  }
 
-  last_decoded_frame_buffer_ = std::move(buffer);
+  // Delay erasing of input frames by one frame. The current frame might
+  // still be needed for other simulcast stream or spatial layer.
+  const int frame_number_to_erase = frame_number - 1;
+  if (frame_number_to_erase >= 0) {
+    auto input_frame_erase_to =
+        input_frames_.lower_bound(frame_number_to_erase);
+    input_frames_.erase(input_frames_.begin(), input_frame_erase_to);
+  }
+
+  if (decoded_frame_writer_) {
+    ExtractBufferWithSize(decoded_frame, config_.codec_settings.width,
+                          config_.codec_settings.height,
+                          &last_decoded_frame_buffer_);
+    WriteDecodedFrameToFile(&last_decoded_frame_buffer_);
+  }
 }
 
 void VideoProcessor::WriteDecodedFrameToFile(rtc::Buffer* buffer) {
-  RTC_DCHECK_EQ(buffer->size(), analysis_frame_writer_->FrameLength());
-  RTC_CHECK(analysis_frame_writer_->WriteFrame(buffer->data()));
-  if (decoded_frame_writer_) {
-    RTC_DCHECK_EQ(buffer->size(), decoded_frame_writer_->FrameLength());
-    RTC_CHECK(decoded_frame_writer_->WriteFrame(buffer->data()));
-  }
+  RTC_DCHECK_EQ(buffer->size(), decoded_frame_writer_->FrameLength());
+  RTC_CHECK(decoded_frame_writer_->WriteFrame(buffer->data()));
 }
 
 bool VideoProcessor::ExcludeFrame(const EncodedImage& encoded_image) {

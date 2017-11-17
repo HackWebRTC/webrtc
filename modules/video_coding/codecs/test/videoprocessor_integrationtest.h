@@ -12,6 +12,7 @@
 #define MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_INTEGRATIONTEST_H_
 
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -159,6 +160,14 @@ class VideoProcessorIntegrationTest : public testing::Test {
     float key_framesize_kbits;
   };
 
+  struct QualityMetrics {
+    int num_decoded_frames = 0;
+    double total_psnr = 0.0;
+    double total_ssim = 0.0;
+    double min_psnr = std::numeric_limits<double>::max();
+    double min_ssim = std::numeric_limits<double>::max();
+  };
+
   void CreateEncoderAndDecoder();
   void DestroyEncoderAndDecoder();
   void SetUpAndInitObjects(rtc::TaskQueue* task_queue,
@@ -185,6 +194,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
   void VerifyBitstream(int frame_number,
                        const BitstreamThresholds& bs_thresholds);
 
+  void UpdateQualityMetrics(int frame_number);
+  void VerifyQualityMetrics(const QualityThresholds& quality_thresholds);
+
   void PrintSettings() const;
 
   // Codecs.
@@ -207,6 +219,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   // Rates set for every encoder rate update.
   TargetRates target_;
+
+  QualityMetrics quality_;
 };
 
 }  // namespace test

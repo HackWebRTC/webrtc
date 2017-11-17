@@ -202,7 +202,6 @@ if (rtc_include_tests) {
       "testsupport/metrics/video_metrics.cc",
       "testsupport/metrics/video_metrics.h",
       "testsupport/mock/mock_frame_reader.h",
-      "testsupport/mock/mock_frame_writer.h",
       "testsupport/y4m_frame_writer.cc",
       "testsupport/yuv_frame_reader.cc",
       "testsupport/yuv_frame_writer.cc",

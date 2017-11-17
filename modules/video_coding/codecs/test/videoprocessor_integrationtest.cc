@@ -51,23 +51,6 @@ const float kInitialBufferSize = 0.5f;
 const float kOptimalBufferSize = 0.6f;
 const float kScaleKeyFrameSize = 0.5f;
 
-void VerifyQuality(const QualityMetricsResult& psnr_result,
-                   const QualityMetricsResult& ssim_result,
-                   const QualityThresholds& quality_thresholds) {
-  EXPECT_GT(psnr_result.average, quality_thresholds.min_avg_psnr);
-  EXPECT_GT(psnr_result.min, quality_thresholds.min_min_psnr);
-  EXPECT_GT(ssim_result.average, quality_thresholds.min_avg_ssim);
-  EXPECT_GT(ssim_result.min, quality_thresholds.min_min_ssim);
-}
-
-void PrintQualityMetrics(const QualityMetricsResult& psnr_result,
-                         const QualityMetricsResult& ssim_result) {
-  printf("Quality statistics\n==\n");
-  printf("PSNR avg: %f, min: %f\n", psnr_result.average, psnr_result.min);
-  printf("SSIM avg: %f, min: %f\n", ssim_result.average, ssim_result.min);
-  printf("\n");
-}
-
 bool RunEncodeInRealTime(const TestConfig& config) {
   if (config.measure_cpu) {
     return true;
@@ -284,9 +267,14 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
   // Calculate and print rate control statistics.
   rate_update_index = 0;
   frame_number = 0;
+  quality_ = QualityMetrics();
   ResetRateControlMetrics(rate_update_index, rate_profiles);
   while (frame_number < num_frames) {
     UpdateRateControlMetrics(frame_number);
+
+    if (quality_thresholds) {
+      UpdateQualityMetrics(frame_number);
+    }
 
     if (bs_thresholds) {
       VerifyBitstream(frame_number, *bs_thresholds);
@@ -310,28 +298,14 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
   VerifyRateControlMetrics(rate_update_index, rc_thresholds, num_dropped_frames,
                            num_spatial_resizes);
 
+  if (quality_thresholds) {
+    VerifyQualityMetrics(*quality_thresholds);
+  }
+
   // Calculate and print other statistics.
   EXPECT_EQ(num_frames, static_cast<int>(stats_.size()));
   stats_.PrintSummary();
   cpu_process_time_->Print();
-
-  // Calculate and print image quality statistics.
-  // TODO(marpan): Should compute these quality metrics per SetRates update.
-  QualityMetricsResult psnr_result, ssim_result;
-  EXPECT_EQ(0, I420MetricsFromFiles(config_.input_filename.c_str(),
-                                    config_.output_filename.c_str(),
-                                    config_.codec_settings.width,
-                                    config_.codec_settings.height, &psnr_result,
-                                    &ssim_result));
-  if (quality_thresholds) {
-    VerifyQuality(psnr_result, ssim_result, *quality_thresholds);
-  }
-  PrintQualityMetrics(psnr_result, ssim_result);
-
-  // Remove analysis file.
-  if (remove(config_.output_filename.c_str()) < 0) {
-    fprintf(stderr, "Failed to remove temporary file!\n");
-  }
 }
 
 void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
@@ -482,8 +456,8 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
   task_queue->PostTask([this, &sync_event]() {
     processor_ = rtc::MakeUnique<VideoProcessor>(
         encoder_.get(), decoder_.get(), analysis_frame_reader_.get(),
-        analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
-        &stats_, encoded_frame_writer_.get(), decoded_frame_writer_.get());
+        packet_manipulator_.get(), config_, &stats_,
+        encoded_frame_writer_.get(), decoded_frame_writer_.get());
     sync_event.Set();
   });
   sync_event.Wait(rtc::Event::kForever);
@@ -501,9 +475,7 @@ void VideoProcessorIntegrationTest::ReleaseAndCloseObjects(
   // The VideoProcessor must be destroyed before the codecs.
   DestroyEncoderAndDecoder();
 
-  // Close the analysis files before we use them for SSIM/PSNR calculations.
   analysis_frame_reader_->Close();
-  analysis_frame_writer_->Close();
 
   // Close visualization files.
   if (encoded_frame_writer_) {
@@ -591,6 +563,19 @@ void VideoProcessorIntegrationTest::VerifyRateControlMetrics(
   }
 }
 
+void VideoProcessorIntegrationTest::UpdateQualityMetrics(int frame_number) {
+  FrameStatistic* frame_stat = stats_.GetFrame(frame_number);
+  if (frame_stat->decoding_successful) {
+    ++quality_.num_decoded_frames;
+    quality_.total_psnr += frame_stat->psnr;
+    quality_.total_ssim += frame_stat->ssim;
+    if (frame_stat->psnr < quality_.min_psnr)
+      quality_.min_psnr = frame_stat->psnr;
+    if (frame_stat->ssim < quality_.min_ssim)
+      quality_.min_ssim = frame_stat->ssim;
+  }
+}
+
 void VideoProcessorIntegrationTest::PrintRateControlMetrics(
     int rate_update_index,
     const std::vector<int>& num_dropped_frames,
@@ -654,6 +639,17 @@ void VideoProcessorIntegrationTest::VerifyBitstream(
   RTC_CHECK_GE(frame_number, 0);
   const FrameStatistic* frame_stat = stats_.GetFrame(frame_number);
   EXPECT_LE(*(frame_stat->max_nalu_length), bs_thresholds.max_nalu_length);
+}
+
+void VideoProcessorIntegrationTest::VerifyQualityMetrics(
+    const QualityThresholds& quality_thresholds) {
+  EXPECT_GT(quality_.num_decoded_frames, 0);
+  EXPECT_GT(quality_.total_psnr / quality_.num_decoded_frames,
+            quality_thresholds.min_avg_psnr);
+  EXPECT_GT(quality_.min_psnr, quality_thresholds.min_min_psnr);
+  EXPECT_GT(quality_.total_ssim / quality_.num_decoded_frames,
+            quality_thresholds.min_avg_ssim);
+  EXPECT_GT(quality_.min_ssim, quality_thresholds.min_min_ssim);
 }
 
 // Reset quantities before each encoder rate update.

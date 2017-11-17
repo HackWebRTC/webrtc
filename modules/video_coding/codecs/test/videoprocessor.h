@@ -62,7 +62,6 @@ class VideoProcessor {
   VideoProcessor(webrtc::VideoEncoder* encoder,
                  webrtc::VideoDecoder* decoder,
                  FrameReader* analysis_frame_reader,
-                 FrameWriter* analysis_frame_writer,
                  PacketManipulator* packet_manipulator,
                  const TestConfig& config,
                  Stats* stats,
@@ -199,10 +198,16 @@ class VideoProcessor {
   // Fake network.
   PacketManipulator* const packet_manipulator_;
 
+  // Input frames. Used as reference at frame quality evaluation.
+  // Async codecs might queue frames. To handle that we keep input frame
+  // and release it after corresponding coded frame is decoded and quality
+  // measurement is done.
+  std::map<int, std::unique_ptr<VideoFrame>> input_frames_
+      RTC_GUARDED_BY(sequence_checker_);
+
   // These (mandatory) file manipulators are used for, e.g., objective PSNR and
   // SSIM calculations at the end of a test run.
   FrameReader* const analysis_frame_reader_;
-  FrameWriter* const analysis_frame_writer_;
 
   // These (optional) file writers are used to persistently store the encoded
   // and decoded bitstreams. The purpose is to give the experimenter an option

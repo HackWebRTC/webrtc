@@ -42,6 +42,16 @@ bool LessForBitRate(const FrameStatistic& s1, const FrameStatistic& s2) {
   return s1.bitrate_kbps < s2.bitrate_kbps;
 }
 
+bool LessForPsnr(const FrameStatistic& s1, const FrameStatistic& s2) {
+  RTC_DCHECK_NE(s1.frame_number, s2.frame_number);
+  return s1.psnr < s2.psnr;
+}
+
+bool LessForSsim(const FrameStatistic& s1, const FrameStatistic& s2) {
+  RTC_DCHECK_NE(s1.frame_number, s2.frame_number);
+  return s1.ssim < s2.ssim;
+}
+
 }  // namespace
 
 FrameStatistic* Stats::AddFrame() {
@@ -77,6 +87,8 @@ void Stats::PrintSummary() const {
   size_t num_key_frames = 0;
   size_t num_delta_frames = 0;
   int num_encode_failures = 0;
+  double total_psnr = 0.0;
+  double total_ssim = 0.0;
 
   for (const FrameStatistic& stat : stats_) {
     total_encoding_time_us += stat.encode_time_us;
@@ -91,6 +103,10 @@ void Stats::PrintSummary() const {
     }
     if (stat.encode_return_code != 0) {
       ++num_encode_failures;
+    }
+    if (stat.decoding_successful) {
+      total_psnr += stat.psnr;
+      total_ssim += stat.ssim;
     }
   }
 
@@ -163,6 +179,24 @@ void Stats::PrintSummary() const {
   frame_it = std::max_element(stats_.begin(), stats_.end(), LessForBitRate);
   printf("  Max bitrate: %7d kbps (frame %d)\n", frame_it->bitrate_kbps,
          frame_it->frame_number);
+
+  // Quality.
+  printf("Quality:\n");
+  if (decoded_frames.empty()) {
+    printf("No successfully decoded frames exist in this statistics.\n");
+  } else {
+    frame_it = std::min_element(decoded_frames.begin(), decoded_frames.end(),
+                                LessForPsnr);
+    printf("  PSNR min: %f (frame %d)\n", frame_it->psnr,
+           frame_it->frame_number);
+    printf("  PSNR avg: %f\n", total_psnr / decoded_frames.size());
+
+    frame_it = std::min_element(decoded_frames.begin(), decoded_frames.end(),
+                                LessForSsim);
+    printf("  SSIM min: %f (frame %d)\n", frame_it->ssim,
+           frame_it->frame_number);
+    printf("  SSIM avg: %f\n", total_ssim / decoded_frames.size());
+  }
 
   printf("\n");
   printf("Total encoding time  : %7d ms.\n", total_encoding_time_us / 1000);

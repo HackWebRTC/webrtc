@@ -20,7 +20,6 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/testsupport/mock/mock_frame_reader.h"
-#include "test/testsupport/mock/mock_frame_writer.h"
 #include "test/testsupport/packet_reader.h"
 #include "test/testsupport/unittest_utils.h"
 #include "test/video_codec_settings.h"
@@ -55,7 +54,7 @@ class VideoProcessorTest : public testing::Test {
         .WillRepeatedly(Return(kFrameSize));
     video_processor_ = rtc::MakeUnique<VideoProcessor>(
         &encoder_mock_, &decoder_mock_, &frame_reader_mock_,
-        &frame_writer_mock_, &packet_manipulator_mock_, config_, &stats_,
+        &packet_manipulator_mock_, config_, &stats_,
         nullptr /* encoded_frame_writer */, nullptr /* decoded_frame_writer */);
   }
 
@@ -78,7 +77,6 @@ class VideoProcessorTest : public testing::Test {
   MockVideoEncoder encoder_mock_;
   MockVideoDecoder decoder_mock_;
   MockFrameReader frame_reader_mock_;
-  MockFrameWriter frame_writer_mock_;
   MockPacketManipulator packet_manipulator_mock_;
   Stats stats_;
   std::unique_ptr<VideoProcessor> video_processor_;

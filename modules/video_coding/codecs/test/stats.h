@@ -50,6 +50,10 @@ struct FrameStatistic {
   int packets_dropped = 0;
   size_t total_packets = 0;
   size_t manipulated_length = 0;
+
+  // Quality.
+  float psnr = 0.0;
+  float ssim = 0.0;
 };
 
 // Statistics for a sequence of processed frames. This class is not thread safe.
