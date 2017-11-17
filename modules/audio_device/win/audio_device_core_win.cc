@@ -397,8 +397,7 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore()
       _builtInAecEnabled(false),
       _playAudioFrameSize(0),
       _playSampleRate(0),
-      _playBlockSizeInFrames(0),
-      _playBlockSizeInSamples(0),
+      _playBlockSize(0),
       _playChannels(2),
       _sndCardPlayDelay(0),
       _sndCardRecDelay(0),
@@ -1969,11 +1968,8 @@ int32_t AudioDeviceWindowsCore::InitPlayout() {
   //   Same in InitRecording().
   if (hr == S_OK) {
     _playAudioFrameSize = Wfx.nBlockAlign;
-    // Block size in frames is the number of samples each channel in 10ms.
-    _playBlockSizeInFrames = Wfx.nSamplesPerSec / 100;
-    // Block size in samples is block size in frames times number of
-    // channels.
-    _playBlockSizeInSamples = _playBlockSizeInFrames * Wfx.nChannels;
+    // Block size is the number of samples each channel in 10ms.
+    _playBlockSize = Wfx.nSamplesPerSec / 100;
     _playSampleRate = Wfx.nSamplesPerSec;
     _devicePlaySampleRate =
         Wfx.nSamplesPerSec;  // The device itself continues to run at 44.1 kHz.
@@ -1992,8 +1988,8 @@ int32_t AudioDeviceWindowsCore::InitPlayout() {
     RTC_LOG(LS_VERBOSE) << "cbSize             : " << Wfx.cbSize;
     RTC_LOG(LS_VERBOSE) << "Additional settings:";
     RTC_LOG(LS_VERBOSE) << "_playAudioFrameSize: " << _playAudioFrameSize;
-    RTC_LOG(LS_VERBOSE) << "_playBlockSizeInFrames     : "
-                        << _playBlockSizeInFrames;
+    RTC_LOG(LS_VERBOSE) << "_playBlockSize     : "
+                        << _playBlockSize;
     RTC_LOG(LS_VERBOSE) << "_playChannels      : " << _playChannels;
   }
 
@@ -2885,7 +2881,7 @@ DWORD AudioDeviceWindowsCore::DoRenderThread() {
   // Derive initial rendering delay.
   // Example: 10*(960/480) + 15 = 20 + 15 = 35ms
   //
-  int playout_delay = 10 * (bufferLength / _playBlockSizeInFrames) +
+  int playout_delay = 10 * (bufferLength / _playBlockSize) +
                       (int)((latency + devPeriod) / 10000);
   _sndCardPlayDelay = playout_delay;
   _writtenSamples = 0;
@@ -2966,26 +2962,26 @@ DWORD AudioDeviceWindowsCore::DoRenderThread() {
       uint32_t framesAvailable = bufferLength - padding;
 
       // Do we have 10 ms available in the render buffer?
-      if (framesAvailable < _playBlockSizeInFrames) {
+      if (framesAvailable < _playBlockSize) {
         // Not enough space in render buffer to store next render packet.
         _UnLock();
         break;
       }
 
       // Write n*10ms buffers to the render buffer
-      const uint32_t n10msBuffers = (framesAvailable / _playBlockSizeInFrames);
+      const uint32_t n10msBuffers = (framesAvailable / _playBlockSize);
       for (uint32_t n = 0; n < n10msBuffers; n++) {
         // Get pointer (i.e., grab the buffer) to next space in the shared
         // render buffer.
-        hr = _ptrRenderClient->GetBuffer(_playBlockSizeInFrames, &pData);
+        hr = _ptrRenderClient->GetBuffer(_playBlockSize, &pData);
         EXIT_ON_ERROR(hr);
 
         if (_ptrAudioBuffer) {
           // Request data to be played out (#bytes =
-          // _playBlockSizeInFrames*_audioFrameSize)
+          // _playBlockSize*_audioFrameSize)
           _UnLock();
           int32_t nSamples =
-              _ptrAudioBuffer->RequestPlayoutData(_playBlockSizeInFrames);
+              _ptrAudioBuffer->RequestPlayoutData(_playBlockSize);
           _Lock();
 
           if (nSamples == -1) {
@@ -3003,10 +2999,10 @@ DWORD AudioDeviceWindowsCore::DoRenderThread() {
                 << " period";
             goto Exit;
           }
-          if (nSamples != static_cast<int32_t>(_playBlockSizeInSamples)) {
+          if (nSamples != static_cast<int32_t>(_playBlockSize)) {
             RTC_LOG(LS_WARNING)
-                << "nSamples(" << nSamples << ") != _playBlockSizeInSamples("
-                << _playBlockSizeInSamples << ")";
+                << "nSamples(" << nSamples << ") != _playBlockSize"
+                << _playBlockSize << ")";
           }
 
           // Get the actual (stored) data
@@ -3014,12 +3010,12 @@ DWORD AudioDeviceWindowsCore::DoRenderThread() {
         }
 
         DWORD dwFlags(0);
-        hr = _ptrRenderClient->ReleaseBuffer(_playBlockSizeInFrames, dwFlags);
+        hr = _ptrRenderClient->ReleaseBuffer(_playBlockSize, dwFlags);
         // See http://msdn.microsoft.com/en-us/library/dd316605(VS.85).aspx
         // for more details regarding AUDCLNT_E_DEVICE_INVALIDATED.
         EXIT_ON_ERROR(hr);
 
-        _writtenSamples += _playBlockSizeInFrames;
+        _writtenSamples += _playBlockSize;
       }
 
       // Check the current delay on the playout side.
