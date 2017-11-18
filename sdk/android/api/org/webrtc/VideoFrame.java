@@ -51,6 +51,7 @@ public class VideoFrame {
      * Crops a region defined by |cropx|, |cropY|, |cropWidth| and |cropHeight|. Scales it to size
      * |scaleWidth| x |scaleHeight|.
      */
+    @CalledByNative("Buffer")
     Buffer cropAndScale(
         int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight);
   }

@@ -36,12 +36,6 @@ AndroidVideoTrackSource::AndroidVideoTrackSource(
       is_screencast_(is_screencast) {
   RTC_LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
   camera_thread_checker_.DetachFromThread();
-
-  jclass j_video_frame_buffer_class =
-      FindClass(jni, "org/webrtc/VideoFrame$Buffer");
-  j_crop_and_scale_id_ =
-      jni->GetMethodID(j_video_frame_buffer_class, "cropAndScale",
-                       "(IIIIII)Lorg/webrtc/VideoFrame$Buffer;");
 }
 
 void AndroidVideoTrackSource::SetState(SourceState state) {
@@ -183,12 +177,10 @@ void AndroidVideoTrackSource::OnFrameCaptured(JNIEnv* jni,
     return;
   }
 
-  jobject j_adapted_video_frame_buffer = jni->CallObjectMethod(
-      j_video_frame_buffer, j_crop_and_scale_id_, crop_x, crop_y, crop_width,
-      crop_height, adapted_width, adapted_height);
-
   rtc::scoped_refptr<VideoFrameBuffer> buffer =
-      AndroidVideoBuffer::Adopt(jni, j_adapted_video_frame_buffer);
+      AndroidVideoBuffer::Create(jni, j_video_frame_buffer)
+          ->CropAndScale(jni, crop_x, crop_y, crop_width, crop_height,
+                         adapted_width, adapted_height);
 
   // AdaptedVideoTrackSource handles applying rotation for I420 frames.
   if (apply_rotation() && rotation != kVideoRotation_0) {

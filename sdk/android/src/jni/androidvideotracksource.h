@@ -85,8 +85,6 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   I420BufferPool buffer_pool_;
   rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper_;
   const bool is_screencast_;
-
-  jmethodID j_crop_and_scale_id_;
 };
 
 }  // namespace jni
