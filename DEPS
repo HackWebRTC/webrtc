@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': '574a4c17200cbc94e2d38bed2640956f5da1372a',
+  'chromium_revision': 'e0ff6ea330775c7d984c45007ad2ffa05c024b02',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -56,7 +56,7 @@ deps = {
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + '14acaa118cfb712cd3ffc6de40646fb3498d631f',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'ccd16a76cabc17cc1f3efb06261475a288efbe97',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '1447ceaaf2d0ed68b9c6f9c1974324b18abc87bd',
   'src/third_party/android_tools': {
     'url': Var('chromium_git') + '/android_tools.git' + '@' + '9914c5704717424998c69e837be3631914d787cc',
     'condition': 'checkout_android',
@@ -82,7 +82,7 @@ deps = {
       'condition': 'checkout_android',
   },
   'src/third_party/ffmpeg':
-    Var('chromium_git') + '/chromium/third_party/ffmpeg.git' + '@' + '1e816bccb5ff0b778ab2765b4fa8b888a121a200',
+    Var('chromium_git') + '/chromium/third_party/ffmpeg.git' + '@' + '252244150ad759fe86470f40642514bf2a7aec98',
   'src/third_party/findbugs': {
     'url': Var('chromium_git') + '/chromium/deps/findbugs.git' + '@' + '4275d9ac8610db6b1bc9a5e887f97e41b33fac67',
     'condition': 'checkout_android',
