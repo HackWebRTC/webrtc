@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <vector>
 
-#include "sdk/android/generated_base_jni/jni/IntegerWrapper_jni.h"
+#include "sdk/android/generated_external_classes_jni/jni/Integer_jni.h"
 #include "sdk/android/src/jni/class_loader.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 
@@ -278,7 +278,7 @@ std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni, jobject list) {
 rtc::Optional<int32_t> JavaIntegerToOptionalInt(JNIEnv* jni, jobject integer) {
   if (IsNull(jni, integer))
     return rtc::nullopt;
-  return Java_IntegerWrapper_getIntValue(jni, integer);
+  return JNI_Integer::Java_Integer_intValue(jni, integer);
 }
 
 jobject JavaIntegerFromOptionalInt(JNIEnv* jni,
@@ -287,7 +287,7 @@ jobject JavaIntegerFromOptionalInt(JNIEnv* jni,
 }
 
 jobject JavaIntegerFromInt(JNIEnv* jni, int32_t i) {
-  return Java_IntegerWrapper_create(jni, i);
+  return JNI_Integer::Java_Integer_ConstructorJLI_I(jni, i);
 }
 
 // Return the (singleton) Java Enum object corresponding to |index|;
