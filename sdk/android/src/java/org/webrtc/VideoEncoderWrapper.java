@@ -62,11 +62,6 @@ class VideoEncoderWrapper {
   }
 
   @CalledByNative
-  static int getIntValue(Integer i) {
-    return i.intValue();
-  }
-
-  @CalledByNative
   static VideoEncoder.Callback createEncoderCallback(final long nativeEncoder) {
     return (EncodedImage frame, VideoEncoder.CodecSpecificInfo info)
                -> nativeOnEncodedFrame(nativeEncoder, frame.buffer, frame.encodedWidth,

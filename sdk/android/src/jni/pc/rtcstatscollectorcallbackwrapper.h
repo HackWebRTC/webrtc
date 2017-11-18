@@ -48,7 +48,6 @@ class RTCStatsCollectorCallbackWrapper : public RTCStatsCollectorCallback {
   const jclass j_boolean_class_;
   const jmethodID j_boolean_ctor_;
   const jclass j_integer_class_;
-  const jmethodID j_integer_ctor_;
   const jclass j_long_class_;
   const jmethodID j_long_ctor_;
   const jclass j_big_integer_class_;

@@ -110,9 +110,6 @@ class VideoDecoderWrapper : public VideoDecoder {
 
   jmethodID get_number_method_;
 
-  jmethodID integer_constructor_;
-  jmethodID int_value_method_;
-
   jobject ConvertEncodedImageToJavaEncodedImage(JNIEnv* jni,
                                                 const EncodedImage& image);
 };

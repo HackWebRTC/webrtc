@@ -35,6 +35,7 @@ config("libjingle_peerconnection_jni_warnings_config") {
 
 generate_jni("generated_base_jni") {
   sources = [
+    "src/java/org/webrtc/IntegerWrapper.java",
     "src/java/org/webrtc/WebRtcClassLoader.java",
   ]
   jni_package = ""
@@ -61,6 +62,7 @@ rtc_source_set("base_jni") {
   deps = [
     ":generated_base_jni",
     "../../api:libjingle_peerconnection_api",
+    "../../api:optional",
     "../../rtc_base:rtc_base",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:metrics_api",
@@ -518,6 +520,7 @@ rtc_android_library("libjingle_peerconnection_java") {
     "src/java/org/webrtc/HardwareVideoDecoder.java",
     "src/java/org/webrtc/HardwareVideoEncoder.java",
     "src/java/org/webrtc/Histogram.java",
+    "src/java/org/webrtc/IntegerWrapper.java",
     "src/java/org/webrtc/JniCommon.java",
     "src/java/org/webrtc/MediaCodecUtils.java",
     "src/java/org/webrtc/NativeClassQualifiedName.java",

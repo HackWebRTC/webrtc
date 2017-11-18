@@ -459,8 +459,6 @@ void JavaToNativeRTCConfiguration(
 
   jfieldID j_ice_check_min_interval_id = GetFieldID(
       jni, j_rtc_config_class, "iceCheckMinInterval", "Ljava/lang/Integer;");
-  jclass j_integer_class = jni->FindClass("java/lang/Integer");
-  jmethodID int_value_id = GetMethodID(jni, j_integer_class, "intValue", "()I");
 
   jfieldID j_disable_ipv6_on_wifi_id =
       GetFieldID(jni, j_rtc_config_class, "disableIPv6OnWifi", "Z");
@@ -514,12 +512,8 @@ void JavaToNativeRTCConfiguration(
       jni, j_rtc_config, j_presume_writable_when_fully_relayed_id);
   jobject j_ice_check_min_interval =
       GetNullableObjectField(jni, j_rtc_config, j_ice_check_min_interval_id);
-  if (!IsNull(jni, j_ice_check_min_interval)) {
-    int ice_check_min_interval_value =
-        jni->CallIntMethod(j_ice_check_min_interval, int_value_id);
-    rtc_config->ice_check_min_interval =
-        rtc::Optional<int>(ice_check_min_interval_value);
-  }
+  rtc_config->ice_check_min_interval =
+      JavaIntegerToOptionalInt(jni, j_ice_check_min_interval);
   rtc_config->disable_ipv6_on_wifi =
       GetBooleanField(jni, j_rtc_config, j_disable_ipv6_on_wifi_id);
   rtc_config->max_ipv6_networks =
@@ -558,9 +552,7 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
                                    "maxBitrateBps", "Ljava/lang/Integer;");
   jfieldID ssrc_id =
       GetFieldID(jni, j_encoding_parameters_class, "ssrc", "Ljava/lang/Long;");
-  jclass j_integer_class = jni->FindClass("java/lang/Integer");
   jclass j_long_class = jni->FindClass("java/lang/Long");
-  jmethodID int_value_id = GetMethodID(jni, j_integer_class, "intValue", "()I");
   jmethodID long_value_id = GetMethodID(jni, j_long_class, "longValue", "()J");
 
   for (jobject j_encoding_parameters : Iterable(jni, j_encodings)) {
@@ -568,11 +560,7 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
     encoding.active = GetBooleanField(jni, j_encoding_parameters, active_id);
     jobject j_bitrate =
         GetNullableObjectField(jni, j_encoding_parameters, bitrate_id);
-    if (!IsNull(jni, j_bitrate)) {
-      int bitrate_value = jni->CallIntMethod(j_bitrate, int_value_id);
-      CHECK_EXCEPTION(jni) << "error during CallIntMethod";
-      encoding.max_bitrate_bps = rtc::Optional<int>(bitrate_value);
-    }
+    encoding.max_bitrate_bps = JavaIntegerToOptionalInt(jni, j_bitrate);
     jobject j_ssrc =
         GetNullableObjectField(jni, j_encoding_parameters, ssrc_id);
     if (!IsNull(jni, j_ssrc)) {
@@ -602,18 +590,10 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
     codec.kind =
         JavaToNativeMediaType(jni, GetObjectField(jni, j_codec, kind_id));
     jobject j_clock_rate = GetNullableObjectField(jni, j_codec, clock_rate_id);
-    if (!IsNull(jni, j_clock_rate)) {
-      int clock_rate_value = jni->CallIntMethod(j_clock_rate, int_value_id);
-      CHECK_EXCEPTION(jni) << "error during CallIntMethod";
-      codec.clock_rate = rtc::Optional<int>(clock_rate_value);
-    }
+    codec.clock_rate = JavaIntegerToOptionalInt(jni, j_clock_rate);
     jobject j_num_channels =
         GetNullableObjectField(jni, j_codec, num_channels_id);
-    if (!IsNull(jni, j_num_channels)) {
-      int num_channels_value = jni->CallIntMethod(j_num_channels, int_value_id);
-      CHECK_EXCEPTION(jni) << "error during CallIntMethod";
-      codec.num_channels = rtc::Optional<int>(num_channels_value);
-    }
+    codec.num_channels = JavaIntegerToOptionalInt(jni, j_num_channels);
     parameters->codecs.push_back(codec);
   }
 }
@@ -640,9 +620,7 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni,
   jfieldID ssrc_id =
       GetFieldID(jni, encoding_class, "ssrc", "Ljava/lang/Long;");
 
-  jclass integer_class = jni->FindClass("java/lang/Integer");
   jclass long_class = jni->FindClass("java/lang/Long");
-  jmethodID integer_ctor = GetMethodID(jni, integer_class, "<init>", "(I)V");
   jmethodID long_ctor = GetMethodID(jni, long_class, "<init>", "(J)V");
 
   for (const RtpEncodingParameters& encoding : parameters.encodings) {
@@ -651,13 +629,9 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni,
     CHECK_EXCEPTION(jni) << "error during NewObject";
     jni->SetBooleanField(j_encoding_parameters, active_id, encoding.active);
     CHECK_EXCEPTION(jni) << "error during SetBooleanField";
-    if (encoding.max_bitrate_bps) {
-      jobject j_bitrate_value = jni->NewObject(integer_class, integer_ctor,
-                                               *(encoding.max_bitrate_bps));
-      CHECK_EXCEPTION(jni) << "error during NewObject";
-      jni->SetObjectField(j_encoding_parameters, bitrate_id, j_bitrate_value);
-      CHECK_EXCEPTION(jni) << "error during SetObjectField";
-    }
+    jni->SetObjectField(
+        j_encoding_parameters, bitrate_id,
+        JavaIntegerFromOptionalInt(jni, encoding.max_bitrate_bps));
     if (encoding.ssrc) {
       jobject j_ssrc_value = jni->NewObject(long_class, long_ctor,
                                             static_cast<jlong>(*encoding.ssrc));
@@ -699,20 +673,10 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni,
     jni->SetObjectField(j_codec, kind_id,
                         NativeToJavaMediaType(jni, codec.kind));
     CHECK_EXCEPTION(jni) << "error during SetObjectField";
-    if (codec.clock_rate) {
-      jobject j_clock_rate_value =
-          jni->NewObject(integer_class, integer_ctor, *(codec.clock_rate));
-      CHECK_EXCEPTION(jni) << "error during NewObject";
-      jni->SetObjectField(j_codec, clock_rate_id, j_clock_rate_value);
-      CHECK_EXCEPTION(jni) << "error during SetObjectField";
-    }
-    if (codec.num_channels) {
-      jobject j_num_channels_value =
-          jni->NewObject(integer_class, integer_ctor, *(codec.num_channels));
-      CHECK_EXCEPTION(jni) << "error during NewObject";
-      jni->SetObjectField(j_codec, num_channels_id, j_num_channels_value);
-      CHECK_EXCEPTION(jni) << "error during SetObjectField";
-    }
+    jni->SetObjectField(j_codec, clock_rate_id,
+                        JavaIntegerFromOptionalInt(jni, codec.clock_rate));
+    jni->SetObjectField(j_codec, num_channels_id,
+                        JavaIntegerFromOptionalInt(jni, codec.num_channels));
     jboolean added = jni->CallBooleanMethod(j_codecs, codecs_add, j_codec);
     CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
     RTC_CHECK(added);

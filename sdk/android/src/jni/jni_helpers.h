@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "api/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/refcount.h"
@@ -106,6 +107,13 @@ std::string JavaToStdString(JNIEnv* jni, const jstring& j_string);
 // Given a List of (UTF-16) jstrings
 // return a new vector of UTF-8 native strings.
 std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni, jobject list);
+
+rtc::Optional<int32_t> JavaIntegerToOptionalInt(JNIEnv* jni, jobject integer);
+
+jobject JavaIntegerFromOptionalInt(JNIEnv* jni,
+                                   const rtc::Optional<int32_t>& optional_int);
+
+jobject JavaIntegerFromInt(JNIEnv* jni, int32_t i);
 
 // Return the (singleton) Java Enum object corresponding to |index|;
 jobject JavaEnumFromIndex(JNIEnv* jni, jclass state_class,

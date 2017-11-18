@@ -44,8 +44,7 @@ RTCStatsCollectorCallbackWrapper::RTCStatsCollectorCallbackWrapper(
           "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;")),
       j_boolean_class_(FindClass(jni, "java/lang/Boolean")),
       j_boolean_ctor_(GetMethodID(jni, j_boolean_class_, "<init>", "(Z)V")),
-      j_integer_class_(FindClass(jni, "java/lang/Integer")),
-      j_integer_ctor_(GetMethodID(jni, j_integer_class_, "<init>", "(I)V")),
+      j_integer_class_(jni->FindClass("java/lang/Integer")),
       j_long_class_(FindClass(jni, "java/lang/Long")),
       j_long_ctor_(GetMethodID(jni, j_long_class_, "<init>", "(J)V")),
       j_big_integer_class_(FindClass(jni, "java/math/BigInteger")),
@@ -124,11 +123,8 @@ jobject RTCStatsCollectorCallbackWrapper::MemberToJava(
       return value;
     }
     case RTCStatsMemberInterface::kInt32: {
-      jobject value =
-          jni->NewObject(j_integer_class_, j_integer_ctor_,
-                         *member->cast_to<RTCStatsMember<int32_t>>());
-      CHECK_EXCEPTION(jni) << "error during NewObject";
-      return value;
+      return JavaIntegerFromInt(jni,
+                                *member->cast_to<RTCStatsMember<int32_t>>());
     }
     case RTCStatsMemberInterface::kUint32: {
       jobject value =
@@ -183,9 +179,8 @@ jobject RTCStatsCollectorCallbackWrapper::MemberToJava(
           jni->NewObjectArray(values.size(), j_integer_class_, nullptr);
       CHECK_EXCEPTION(jni) << "error during NewObjectArray";
       for (size_t i = 0; i < values.size(); ++i) {
-        jobject value =
-            jni->NewObject(j_integer_class_, j_integer_ctor_, values[i]);
-        jni->SetObjectArrayElement(j_values, i, value);
+        jni->SetObjectArrayElement(j_values, i,
+                                   JavaIntegerFromInt(jni, values[i]));
         CHECK_EXCEPTION(jni) << "error during SetObjectArrayElement";
       }
       return j_values;

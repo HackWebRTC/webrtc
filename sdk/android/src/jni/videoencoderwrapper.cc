@@ -167,22 +167,18 @@ VideoEncoderWrapper::ScalingSettings VideoEncoderWrapper::GetScalingSettings()
   ScopedLocalRefFrame local_ref_frame(jni);
   jobject j_scaling_settings =
       Java_VideoEncoder_getScalingSettings(jni, *encoder_);
-  bool on =
+  bool isOn =
       Java_VideoEncoderWrapper_getScalingSettingsOn(jni, j_scaling_settings);
-  jobject j_low =
-      Java_VideoEncoderWrapper_getScalingSettingsLow(jni, j_scaling_settings);
-  jobject j_high =
-      Java_VideoEncoderWrapper_getScalingSettingsHigh(jni, j_scaling_settings);
 
-  if (j_low != nullptr || j_high != nullptr) {
-    RTC_DCHECK(j_low != nullptr);
-    RTC_DCHECK(j_high != nullptr);
-    int low = Java_VideoEncoderWrapper_getIntValue(jni, j_low);
-    int high = Java_VideoEncoderWrapper_getIntValue(jni, j_high);
-    return ScalingSettings(on, low, high);
-  } else {
-    return ScalingSettings(on);
-  }
+  rtc::Optional<int> low = JavaIntegerToOptionalInt(
+      jni,
+      Java_VideoEncoderWrapper_getScalingSettingsLow(jni, j_scaling_settings));
+  rtc::Optional<int> high = JavaIntegerToOptionalInt(
+      jni,
+      Java_VideoEncoderWrapper_getScalingSettingsHigh(jni, j_scaling_settings));
+
+  return (low && high) ? ScalingSettings(isOn, *low, *high)
+                       : ScalingSettings(isOn);
 }
 
 const char* VideoEncoderWrapper::ImplementationName() const {
@@ -205,10 +201,7 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
 
   std::vector<uint8_t> buffer_copy(buffer_size);
   memcpy(buffer_copy.data(), buffer, buffer_size);
-  int qp = -1;
-  if (j_qp != nullptr) {
-    qp = Java_VideoEncoderWrapper_getIntValue(jni, j_qp);
-  }
+  const int qp = JavaIntegerToOptionalInt(jni, j_qp).value_or(-1);
 
   encoder_queue_->PostTask(
       [

@@ -15,11 +15,20 @@
 #include "modules/video_coding/utility/vp8_header_parser.h"
 #include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/safe_conversions.h"
 #include "rtc_base/timeutils.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
 namespace jni {
+
+namespace {
+template <typename Dst, typename Src>
+inline rtc::Optional<Dst> cast_optional(const rtc::Optional<Src>& value) {
+  return value ? rtc::Optional<Dst>(rtc::dchecked_cast<Dst, Src>(*value))
+               : rtc::nullopt;
+}
+}  // namespace
 
 VideoDecoderWrapper::VideoDecoderWrapper(JNIEnv* jni, jobject decoder)
     : decoder_(jni, decoder),
@@ -68,9 +77,6 @@ VideoDecoderWrapper::VideoDecoderWrapper(JNIEnv* jni, jobject decoder)
 
   get_number_method_ =
       jni->GetMethodID(*video_codec_status_class_, "getNumber", "()I");
-
-  integer_constructor_ = jni->GetMethodID(*integer_class_, "<init>", "(I)V");
-  int_value_method_ = jni->GetMethodID(*integer_class_, "intValue", "()I");
 
   initialized_ = false;
   // QP parsing starts enabled and we disable it if the decoder provides frames.
@@ -189,24 +195,16 @@ void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* jni,
   VideoFrame frame =
       JavaToNativeFrame(jni, jframe, frame_extra_info.timestamp_rtp);
 
-  rtc::Optional<int32_t> decoding_time_ms;
-  if (jdecode_time_ms != nullptr) {
-    decoding_time_ms = jni->CallIntMethod(jdecode_time_ms, int_value_method_);
-  }
+  rtc::Optional<int32_t> decoding_time_ms =
+      JavaIntegerToOptionalInt(jni, jdecode_time_ms);
 
-  rtc::Optional<uint8_t> qp;
-  if (jqp != nullptr) {
-    qp = jni->CallIntMethod(jqp, int_value_method_);
-    // The decoder provides QP values itself, no need to parse the bitstream.
-    qp_parsing_enabled_ = false;
-  } else {
-    qp = frame_extra_info.qp;
-    // The decoder doesn't provide QP values, ensure bitstream parsing is
-    // enabled.
-    qp_parsing_enabled_ = true;
-  }
-
-  callback_->Decoded(frame, decoding_time_ms, qp);
+  rtc::Optional<uint8_t> decoder_qp =
+      cast_optional<uint8_t, int32_t>(JavaIntegerToOptionalInt(jni, jqp));
+  // If the decoder provides QP values itself, no need to parse the bitstream.
+  // Enable QP parsing if decoder does not provide QP values itself.
+  qp_parsing_enabled_ = !decoder_qp.has_value();
+  callback_->Decoded(frame, decoding_time_ms,
+                     decoder_qp ? decoder_qp : frame_extra_info.qp);
 }
 
 jobject VideoDecoderWrapper::ConvertEncodedImageToJavaEncodedImage(
@@ -232,7 +230,7 @@ jobject VideoDecoderWrapper::ConvertEncodedImageToJavaEncodedImage(
       jni->GetStaticObjectField(*frame_type_class_, frame_type_field);
   jobject qp = nullptr;
   if (image.qp_ != -1) {
-    qp = jni->NewObject(*integer_class_, integer_constructor_, image.qp_);
+    qp = JavaIntegerFromInt(jni, image.qp_);
   }
   return jni->NewObject(
       *encoded_image_class_, encoded_image_constructor_, buffer,
