@@ -353,6 +353,14 @@ rtc_static_library("libjingle_peerconnection_jni") {
   ]
 }
 
+generate_jni("generated_metrics_jni") {
+  sources = [
+    "api/org/webrtc/Metrics.java",
+  ]
+  jni_package = ""
+  jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
+}
+
 rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
   sources = [
     "src/jni/androidmetrics_jni.cc",
@@ -362,6 +370,7 @@ rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
 
   deps = [
     ":base_jni",
+    ":generated_metrics_jni",
     ":peerconnection_jni",
     "../../pc:peerconnection",
     "../../system_wrappers",
@@ -550,6 +559,7 @@ rtc_android_library("libjingle_peerconnection_metrics_default_java") {
   java_files = [ "api/org/webrtc/Metrics.java" ]
 
   deps = [
+    ":libjingle_peerconnection_java",
     "../../rtc_base:base_java",
   ]
 }
