@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': '1b71954ff98703432f3fae1b4d439b8710577612',
+  'chromium_revision': 'c58b56d6408886513e9f87a2bff2ea276d0c058d',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -38,7 +38,7 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + '2103b5a0387fcc78e981e291efacf6a8a46311a3',
+    Var('chromium_git') + '/chromium/src/base' + '@' + 'b6380595579b3d75ea45df6d7033823bceb44514',
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + '571871636f333d4ecf5583eb6cd205fedf3bfdf7',
   'src/buildtools':
@@ -76,7 +76,7 @@ deps = {
   'src/third_party/colorama/src':
     Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '8762632eb7250063ebc4f4d8b3acd4ff16780abd',
+    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + 'ddfead3483f2c1b49419de2b9f561cb32763f2b3',
   'src/third_party/errorprone/lib': {
       'url': Var('chromium_git') + '/chromium/third_party/errorprone.git' + '@' + '635c410fc42614b48518ae6818105bc83af88497',
       'condition': 'checkout_android',
