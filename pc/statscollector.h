@@ -120,9 +120,10 @@ class StatsCollector {
                                  StatsReport::Direction direction);
 
   // Helper method to get stats from the local audio tracks.
-  void UpdateStatsFromExistingLocalAudioTracks();
+  void UpdateStatsFromExistingLocalAudioTracks(bool has_remote_tracks);
   void UpdateReportFromAudioTrack(AudioTrackInterface* track,
-                                  StatsReport* report);
+                                  StatsReport* report,
+                                  bool has_remote_tracks);
 
   // Helper method to get the id for the track identified by ssrc.
   // |direction| tells if the track is for sending or receiving.

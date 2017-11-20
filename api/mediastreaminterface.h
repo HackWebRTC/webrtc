@@ -225,6 +225,9 @@ class AudioSourceInterface : public MediaSourceInterface {
 // statistics.
 class AudioProcessorInterface : public rtc::RefCountInterface {
  public:
+  // Deprecated, use AudioProcessorStatistics instead.
+  // TODO(ivoc): Remove this when all implementations have switched to the new
+  //             GetStats function. See b/67926135.
   struct AudioProcessorStats {
     AudioProcessorStats()
         : typing_noise_detected(false),
@@ -248,9 +251,30 @@ class AudioProcessorInterface : public rtc::RefCountInterface {
     float residual_echo_likelihood_recent_max;
     float aec_divergent_filter_fraction;
   };
+  // This struct maintains the optionality of the stats, and will replace the
+  // regular stats struct when all users have been updated.
+  struct AudioProcessorStatistics {
+    bool typing_noise_detected = false;
+    rtc::Optional<double> echo_return_loss;
+    rtc::Optional<double> echo_return_loss_enhancement;
+    rtc::Optional<int32_t> echo_delay_median_ms;
+    rtc::Optional<int32_t> echo_delay_std_ms;
+    rtc::Optional<double> aec_quality_min;
+    rtc::Optional<double> residual_echo_likelihood;
+    rtc::Optional<double> residual_echo_likelihood_recent_max;
+    rtc::Optional<double> aec_divergent_filter_fraction;
+  };
 
   // Get audio processor statistics.
   virtual void GetStats(AudioProcessorStats* stats) = 0;
+
+  // Get audio processor statistics. The |has_remote_tracks| argument should be
+  // set if there are active remote tracks (this would usually be true during
+  // a call). If there are no remote tracks some of the stats will not be set by
+  // the AudioProcessor, because they only make sense if there is at least one
+  // remote track.
+  // TODO(ivoc): Make pure virtual when all implementions are updated.
+  virtual AudioProcessorStatistics GetStats(bool has_remote_tracks);
 
  protected:
   virtual ~AudioProcessorInterface() {}

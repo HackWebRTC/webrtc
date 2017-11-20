@@ -1557,18 +1557,31 @@ AudioProcessing::AudioProcessingStatistics::AudioProcessingStatistics(
 AudioProcessing::AudioProcessingStatistics::~AudioProcessingStatistics() =
     default;
 
+AudioProcessing::AudioProcessingStats::AudioProcessingStats() = default;
+
+AudioProcessing::AudioProcessingStats::AudioProcessingStats(
+    const AudioProcessingStats& other) = default;
+
+AudioProcessing::AudioProcessingStats::~AudioProcessingStats() = default;
+
 // TODO(ivoc): Remove this when GetStatistics() becomes pure virtual.
 AudioProcessing::AudioProcessingStatistics AudioProcessing::GetStatistics()
     const {
   return AudioProcessingStatistics();
 }
 
+// TODO(ivoc): Remove this when GetStatistics() becomes pure virtual.
+AudioProcessing::AudioProcessingStats AudioProcessing::GetStatistics(
+    bool has_remote_tracks) const {
+  return AudioProcessingStats();
+}
+
 AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
     const {
   AudioProcessingStatistics stats;
   EchoCancellation::Metrics metrics;
-  int success = public_submodules_->echo_cancellation->GetMetrics(&metrics);
-  if (success == Error::kNoError) {
+  if (public_submodules_->echo_cancellation->GetMetrics(&metrics) ==
+      Error::kNoError) {
     stats.a_nlp.Set(metrics.a_nlp);
     stats.divergent_filter_fraction = metrics.divergent_filter_fraction;
     stats.echo_return_loss.Set(metrics.echo_return_loss);
@@ -1587,6 +1600,50 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
   public_submodules_->echo_cancellation->GetDelayMetrics(
       &stats.delay_median, &stats.delay_standard_deviation,
       &stats.fraction_poor_delays);
+  return stats;
+}
+
+AudioProcessing::AudioProcessingStats AudioProcessingImpl::GetStatistics(
+    bool has_remote_tracks) const {
+  AudioProcessingStats stats;
+  if (has_remote_tracks) {
+    EchoCancellation::Metrics metrics;
+    if (public_submodules_->echo_cancellation->GetMetrics(&metrics) ==
+        Error::kNoError) {
+      if (metrics.divergent_filter_fraction != -1.0f) {
+        stats.divergent_filter_fraction =
+            rtc::Optional<double>(metrics.divergent_filter_fraction);
+      }
+      if (metrics.echo_return_loss.instant != -100) {
+        stats.echo_return_loss =
+            rtc::Optional<double>(metrics.echo_return_loss.instant);
+      }
+      if (metrics.echo_return_loss_enhancement.instant != -100) {
+        stats.echo_return_loss_enhancement =
+            rtc::Optional<double>(metrics.echo_return_loss_enhancement.instant);
+      }
+    }
+    if (config_.residual_echo_detector.enabled) {
+      rtc::CritScope cs_capture(&crit_capture_);
+      stats.residual_echo_likelihood = rtc::Optional<double>(
+          private_submodules_->residual_echo_detector->echo_likelihood());
+      stats.residual_echo_likelihood_recent_max =
+          rtc::Optional<double>(private_submodules_->residual_echo_detector
+                                    ->echo_likelihood_recent_max());
+    }
+    int delay_median, delay_std;
+    float fraction_poor_delays;
+    if (public_submodules_->echo_cancellation->GetDelayMetrics(
+            &delay_median, &delay_std, &fraction_poor_delays) ==
+        Error::kNoError) {
+      if (delay_median >= 0) {
+        stats.delay_median_ms = rtc::Optional<int32_t>(delay_median);
+      }
+      if (delay_std >= 0) {
+        stats.delay_standard_deviation_ms = rtc::Optional<int32_t>(delay_std);
+      }
+    }
+  }
   return stats;
 }
 

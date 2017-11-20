@@ -106,6 +106,7 @@ class AudioProcessingImpl : public AudioProcessing {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   AudioProcessingStatistics GetStatistics() const override;
+  AudioProcessingStats GetStatistics(bool has_remote_tracks) const override;
 
   // Methods returning pointers to APM submodules.
   // No locks are aquired in those, as those locks

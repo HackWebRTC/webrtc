@@ -2952,4 +2952,166 @@ TEST(ApmConfiguration, EchoControlInjection) {
   apm->ProcessReverseStream(&audio);
   apm->ProcessStream(&audio);
 }
+
+std::unique_ptr<AudioProcessing> CreateApm(bool use_AEC2) {
+  Config old_config;
+  if (use_AEC2) {
+    old_config.Set<ExtendedFilter>(new ExtendedFilter(true));
+    old_config.Set<DelayAgnostic>(new DelayAgnostic(true));
+  }
+  std::unique_ptr<AudioProcessing> apm(AudioProcessing::Create(old_config));
+  if (!apm) {
+    return apm;
+  }
+
+  ProcessingConfig processing_config = {
+      {{32000, 1}, {32000, 1}, {32000, 1}, {32000, 1}}};
+
+  if (apm->Initialize(processing_config) != 0) {
+    return nullptr;
+  }
+
+  // Disable all components except for an AEC and the residual echo detector.
+  AudioProcessing::Config config;
+  config.residual_echo_detector.enabled = true;
+  config.echo_canceller3.enabled = false;
+  config.high_pass_filter.enabled = false;
+  config.gain_controller2.enabled = false;
+  config.level_controller.enabled = false;
+  apm->ApplyConfig(config);
+  EXPECT_EQ(apm->gain_control()->Enable(false), 0);
+  EXPECT_EQ(apm->level_estimator()->Enable(false), 0);
+  EXPECT_EQ(apm->noise_suppression()->Enable(false), 0);
+  EXPECT_EQ(apm->voice_detection()->Enable(false), 0);
+
+  if (use_AEC2) {
+    EXPECT_EQ(apm->echo_control_mobile()->Enable(false), 0);
+    EXPECT_EQ(apm->echo_cancellation()->enable_metrics(true), 0);
+    EXPECT_EQ(apm->echo_cancellation()->enable_delay_logging(true), 0);
+    EXPECT_EQ(apm->echo_cancellation()->Enable(true), 0);
+  } else {
+    EXPECT_EQ(apm->echo_cancellation()->Enable(false), 0);
+    EXPECT_EQ(apm->echo_control_mobile()->Enable(true), 0);
+  }
+  return apm;
+}
+
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_MAC)
+#define MAYBE_ApmStatistics DISABLED_ApmStatistics
+#else
+#define MAYBE_ApmStatistics ApmStatistics
+#endif
+
+TEST(MAYBE_ApmStatistics, AEC2EnabledTest) {
+  // Set up APM with AEC2 and process some audio.
+  std::unique_ptr<AudioProcessing> apm = CreateApm(true);
+  ASSERT_TRUE(apm);
+
+  // Set up an audioframe.
+  AudioFrame frame;
+  frame.num_channels_ = 1;
+  SetFrameSampleRate(&frame, AudioProcessing::NativeRate::kSampleRate48kHz);
+
+  // Fill the audio frame with a sawtooth pattern.
+  int16_t* ptr = frame.mutable_data();
+  for (size_t i = 0; i < frame.kMaxDataSizeSamples; i++) {
+    ptr[i] = 10000 * ((i % 3) - 1);
+  }
+
+  // Do some processing.
+  for (int i = 0; i < 200; i++) {
+    EXPECT_EQ(apm->ProcessReverseStream(&frame), 0);
+    EXPECT_EQ(apm->set_stream_delay_ms(0), 0);
+    EXPECT_EQ(apm->ProcessStream(&frame), 0);
+  }
+
+  // Test statistics interface.
+  AudioProcessing::AudioProcessingStats stats = apm->GetStatistics(true);
+  // We expect all statistics to be set and have a sensible value.
+  ASSERT_TRUE(stats.residual_echo_likelihood);
+  EXPECT_GE(*stats.residual_echo_likelihood, 0.0);
+  EXPECT_LE(*stats.residual_echo_likelihood, 1.0);
+  ASSERT_TRUE(stats.residual_echo_likelihood_recent_max);
+  EXPECT_GE(*stats.residual_echo_likelihood_recent_max, 0.0);
+  EXPECT_LE(*stats.residual_echo_likelihood_recent_max, 1.0);
+  ASSERT_TRUE(stats.echo_return_loss);
+  EXPECT_NE(*stats.echo_return_loss, -100.0);
+  ASSERT_TRUE(stats.echo_return_loss_enhancement);
+  EXPECT_NE(*stats.echo_return_loss_enhancement, -100.0);
+  ASSERT_TRUE(stats.divergent_filter_fraction);
+  EXPECT_NE(*stats.divergent_filter_fraction, -1.0);
+  ASSERT_TRUE(stats.delay_standard_deviation_ms);
+  EXPECT_GE(*stats.delay_standard_deviation_ms, 0);
+  // We don't check stats.delay_median_ms since it takes too long to settle to a
+  // value. At least 20 seconds of data need to be processed before it will get
+  // a value, which would make this test take too much time.
+
+  // If there are no receive streams, we expect the stats not to be set. The
+  // 'false' argument signals to APM that no receive streams are currently
+  // active. In that situation the statistics would get stuck at their last
+  // calculated value (AEC and echo detection need at least one stream in each
+  // direction), so to avoid that, they should not be set by APM.
+  stats = apm->GetStatistics(false);
+  EXPECT_FALSE(stats.residual_echo_likelihood);
+  EXPECT_FALSE(stats.residual_echo_likelihood_recent_max);
+  EXPECT_FALSE(stats.echo_return_loss);
+  EXPECT_FALSE(stats.echo_return_loss_enhancement);
+  EXPECT_FALSE(stats.divergent_filter_fraction);
+  EXPECT_FALSE(stats.delay_median_ms);
+  EXPECT_FALSE(stats.delay_standard_deviation_ms);
+}
+
+TEST(MAYBE_ApmStatistics, AECMEnabledTest) {
+  // Set up APM with AECM and process some audio.
+  std::unique_ptr<AudioProcessing> apm = CreateApm(false);
+  ASSERT_TRUE(apm);
+
+  // Set up an audioframe.
+  AudioFrame frame;
+  frame.num_channels_ = 1;
+  SetFrameSampleRate(&frame, AudioProcessing::NativeRate::kSampleRate48kHz);
+
+  // Fill the audio frame with a sawtooth pattern.
+  int16_t* ptr = frame.mutable_data();
+  for (size_t i = 0; i < frame.kMaxDataSizeSamples; i++) {
+    ptr[i] = 10000 * ((i % 3) - 1);
+  }
+
+  // Do some processing.
+  for (int i = 0; i < 200; i++) {
+    EXPECT_EQ(apm->ProcessReverseStream(&frame), 0);
+    EXPECT_EQ(apm->set_stream_delay_ms(0), 0);
+    EXPECT_EQ(apm->ProcessStream(&frame), 0);
+  }
+
+  // Test statistics interface.
+  AudioProcessing::AudioProcessingStats stats = apm->GetStatistics(true);
+  // We expect only the residual echo detector statistics to be set and have a
+  // sensible value.
+  EXPECT_TRUE(stats.residual_echo_likelihood);
+  if (stats.residual_echo_likelihood) {
+    EXPECT_GE(*stats.residual_echo_likelihood, 0.0);
+    EXPECT_LE(*stats.residual_echo_likelihood, 1.0);
+  }
+  EXPECT_TRUE(stats.residual_echo_likelihood_recent_max);
+  if (stats.residual_echo_likelihood_recent_max) {
+    EXPECT_GE(*stats.residual_echo_likelihood_recent_max, 0.0);
+    EXPECT_LE(*stats.residual_echo_likelihood_recent_max, 1.0);
+  }
+  EXPECT_FALSE(stats.echo_return_loss);
+  EXPECT_FALSE(stats.echo_return_loss_enhancement);
+  EXPECT_FALSE(stats.divergent_filter_fraction);
+  EXPECT_FALSE(stats.delay_median_ms);
+  EXPECT_FALSE(stats.delay_standard_deviation_ms);
+
+  // If there are no receive streams, we expect the stats not to be set.
+  stats = apm->GetStatistics(false);
+  EXPECT_FALSE(stats.residual_echo_likelihood);
+  EXPECT_FALSE(stats.residual_echo_likelihood_recent_max);
+  EXPECT_FALSE(stats.echo_return_loss);
+  EXPECT_FALSE(stats.echo_return_loss_enhancement);
+  EXPECT_FALSE(stats.divergent_filter_fraction);
+  EXPECT_FALSE(stats.delay_median_ms);
+  EXPECT_FALSE(stats.delay_standard_deviation_ms);
+}
 }  // namespace webrtc

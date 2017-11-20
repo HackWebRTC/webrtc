@@ -87,6 +87,18 @@ class FakeAudioProcessor : public webrtc::AudioProcessorInterface {
     stats->aec_quality_min = 5.1f;
     stats->echo_delay_std_ms = 6;
   }
+
+  AudioProcessorInterface::AudioProcessorStatistics GetStats(
+      bool /*has_recv_streams*/) override {
+    AudioProcessorStatistics stats;
+    stats.typing_noise_detected = true;
+    stats.echo_return_loss = rtc::Optional<double>(2.0);
+    stats.echo_return_loss_enhancement = rtc::Optional<double>(3.0);
+    stats.echo_delay_median_ms = rtc::Optional<int32_t>(4);
+    stats.aec_quality_min = rtc::Optional<double>(5.1);
+    stats.echo_delay_std_ms = rtc::Optional<int32_t>(6);
+    return stats;
+  }
 };
 
 class FakeAudioTrack
@@ -127,6 +139,13 @@ class FakeAudioProcessorWithInitValue : public webrtc::AudioProcessorInterface {
     stats->echo_delay_median_ms = -1;
     stats->aec_quality_min = -1.0f;
     stats->echo_delay_std_ms = -1;
+  }
+
+  AudioProcessorInterface::AudioProcessorStatistics GetStats(
+      bool /*has_recv_streams*/) override {
+    AudioProcessorStatistics stats;
+    stats.typing_noise_detected = false;
+    return stats;
   }
 };
 
