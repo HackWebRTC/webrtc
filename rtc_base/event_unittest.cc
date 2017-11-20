@@ -10,6 +10,7 @@
 
 #include "rtc_base/event.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/platform_thread.h"
 
 namespace rtc {
 
@@ -37,6 +38,57 @@ TEST(EventTest, AutoReset) {
   event.Set();
   ASSERT_TRUE(event.Wait(0));
   ASSERT_FALSE(event.Wait(0));
+}
+
+class SignalerThread {
+public:
+  SignalerThread() : thread_(&ThreadFn, this, "EventPerf") {}
+  void Start(Event* writer, Event* reader) {
+    writer_ = writer;
+    reader_ = reader;
+    thread_.Start();
+  }
+  void Stop() {
+    stop_event_.Set();
+    thread_.Stop();
+  }
+  static void ThreadFn(void *param) {
+    auto* me = static_cast<SignalerThread*>(param);
+    while(!me->stop_event_.Wait(0)) {
+      me->writer_->Set();
+      me->reader_->Wait(Event::kForever);
+    }
+  }
+  Event stop_event_{false, false};
+  Event* writer_;
+  Event* reader_;
+  PlatformThread thread_;
+};
+
+// These tests are disabled by default and only intended to be run manually.
+TEST(EventTest, PerformanceSingleThread) {
+  static const int kNumIterations = 10000000;
+  Event event(false, false);
+  for (int i = 0; i < kNumIterations; ++i) {
+    event.Set();
+    event.Wait(0);
+  }
+}
+
+TEST(EventTest, PerformanceMultiThread) {
+  static const int kNumIterations = 10000;
+  Event read(false, false);
+  Event write(false, false);
+  SignalerThread thread;
+  thread.Start(&read, &write);
+
+  for (int i = 0; i < kNumIterations; ++i) {
+    write.Set();
+    read.Wait(Event::kForever);
+  }
+  write.Set();
+
+  thread.Stop();
 }
 
 }  // namespace rtc
