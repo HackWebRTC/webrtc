@@ -62,6 +62,11 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     public IPAddress(byte[] address) {
       this.address = address;
     }
+
+    @CalledByNative("IPAddress")
+    private byte[] getAddress() {
+      return address;
+    }
   }
 
   /** Java version of NetworkMonitor.NetworkInformation */
@@ -76,6 +81,26 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       this.type = type;
       this.handle = handle;
       this.ipAddresses = addresses;
+    }
+
+    @CalledByNative("NetworkInformation")
+    private IPAddress[] getIpAddresses() {
+      return ipAddresses;
+    }
+
+    @CalledByNative("NetworkInformation")
+    private ConnectionType getConnectionType() {
+      return type;
+    }
+
+    @CalledByNative("NetworkInformation")
+    private long getHandle() {
+      return handle;
+    }
+
+    @CalledByNative("NetworkInformation")
+    private String getName() {
+      return name;
     }
   };
 
