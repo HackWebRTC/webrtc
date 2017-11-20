@@ -143,6 +143,7 @@ rtc_static_library("rtc_audio_video") {
     "engine/adm_helpers.h",
     "engine/apm_helpers.cc",
     "engine/apm_helpers.h",
+    "engine/constants.cc",
     "engine/constants.h",
     "engine/convert_legacy_video_factory.cc",
     "engine/convert_legacy_video_factory.h",

@@ -406,13 +406,6 @@ int GetMinVideoBitrateBps() {
 }
 }  // namespace
 
-// Constants defined in webrtc/media/engine/constants.h
-// TODO(pbos): Move these to a separate constants.cc file.
-const int kMinVideoBitrateBps = 30000;
-
-const int kVideoMtu = 1200;
-const int kVideoRtpBufferSize = 65536;
-
 // This constant is really an on/off, lower-level configurable NACK history
 // duration hasn't been implemented.
 static const int kNackHistoryMs = 1000;
