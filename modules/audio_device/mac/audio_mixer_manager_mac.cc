@@ -105,21 +105,25 @@ int32_t AudioMixerManagerMac::OpenSpeaker(AudioDeviceID deviceID) {
   AudioObjectPropertyAddress propertyAddress = {
       kAudioDevicePropertyHogMode, kAudioDevicePropertyScopeOutput, 0};
 
-  size = sizeof(hogPid);
-  WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(
-      _outputDeviceID, &propertyAddress, 0, NULL, &size, &hogPid));
+  // First, does it have the property? Aggregate devices don't.
+  if (AudioObjectHasProperty(_outputDeviceID, &propertyAddress)) {
+    size = sizeof(hogPid);
+    WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(
+        _outputDeviceID, &propertyAddress, 0, NULL, &size, &hogPid));
 
-  if (hogPid == -1) {
-    RTC_LOG(LS_VERBOSE) << "No process has hogged the input device";
-  }
-  // getpid() is apparently "always successful"
-  else if (hogPid == getpid()) {
-    RTC_LOG(LS_VERBOSE) << "Our process has hogged the input device";
-  } else {
-    RTC_LOG(LS_WARNING) << "Another process (pid = " << static_cast<int>(hogPid)
-                        << ") has hogged the input device";
+    if (hogPid == -1) {
+      RTC_LOG(LS_VERBOSE) << "No process has hogged the output device";
+    }
+    // getpid() is apparently "always successful"
+    else if (hogPid == getpid()) {
+      RTC_LOG(LS_VERBOSE) << "Our process has hogged the output device";
+    } else {
+      RTC_LOG(LS_WARNING) << "Another process (pid = "
+                          << static_cast<int>(hogPid)
+                          << ") has hogged the output device";
 
-    return -1;
+      return -1;
+    }
   }
 
   // get number of channels from stream format
