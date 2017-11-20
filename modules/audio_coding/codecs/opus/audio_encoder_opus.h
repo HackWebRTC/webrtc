@@ -161,6 +161,7 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
   rtc::Optional<size_t> overhead_bytes_per_packet_;
   const std::unique_ptr<SmoothingFilter> bitrate_smoother_;
   rtc::Optional<int64_t> bitrate_smoother_last_update_time_;
+  int consecutive_dtx_frames_;
 
   friend struct AudioEncoderOpus;
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderOpusImpl);

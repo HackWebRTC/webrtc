@@ -753,4 +753,66 @@ TEST(AudioEncoderOpusTest, SetMaxPlaybackRateFb) {
   EXPECT_EQ(64000, config.bitrate_bps);
 }
 
+TEST(AudioEncoderOpusTest, OpusFlagDtxAsNonSpeech) {
+  // Create encoder with DTX enabled.
+  AudioEncoderOpusConfig config;
+  config.dtx_enabled = true;
+  constexpr int payload_type = 17;
+  const auto encoder = AudioEncoderOpus::MakeAudioEncoder(config, payload_type);
+
+  // Open file containing speech and silence.
+  const std::string kInputFileName =
+      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+  test::AudioLoop audio_loop;
+  // Use the file as if it were sampled at 48 kHz.
+  constexpr int kSampleRateHz = 48000;
+  EXPECT_EQ(kSampleRateHz, encoder->SampleRateHz());
+  constexpr size_t kMaxLoopLengthSamples =
+      kSampleRateHz * 10;  // Max 10 second loop.
+  constexpr size_t kInputBlockSizeSamples =
+      10 * kSampleRateHz / 1000;  // 10 ms.
+  EXPECT_TRUE(audio_loop.Init(kInputFileName, kMaxLoopLengthSamples,
+                              kInputBlockSizeSamples));
+
+  // Encode.
+  AudioEncoder::EncodedInfo info;
+  rtc::Buffer encoded(500);
+  int nonspeech_frames = 0;
+  int max_nonspeech_frames = 0;
+  int dtx_frames = 0;
+  int max_dtx_frames = 0;
+  uint32_t rtp_timestamp = 0u;
+  for (size_t i = 0; i < 500; ++i) {
+    encoded.Clear();
+
+    // Every second call to the encoder will generate an Opus packet.
+    for (int j = 0; j < 2; j++) {
+      info =
+          encoder->Encode(rtp_timestamp, audio_loop.GetNextBlock(), &encoded);
+      rtp_timestamp += kInputBlockSizeSamples;
+    }
+
+    // Bookkeeping of number of DTX frames.
+    if (info.encoded_bytes <= 2) {
+      ++dtx_frames;
+    } else {
+      if (dtx_frames > max_dtx_frames)
+        max_dtx_frames = dtx_frames;
+      dtx_frames = 0;
+    }
+
+    // Bookkeeping of number of non-speech frames.
+    if (info.speech == 0) {
+      ++nonspeech_frames;
+    } else {
+      if (nonspeech_frames > max_nonspeech_frames)
+        max_nonspeech_frames = nonspeech_frames;
+      nonspeech_frames = 0;
+    }
+  }
+
+  // Maximum number of consecutive non-speech packets should exceed 20.
+  EXPECT_GT(max_nonspeech_frames, 20);
+}
+
 }  // namespace webrtc
