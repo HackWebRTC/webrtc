@@ -37,16 +37,6 @@ class VideoEncoderWrapper {
   }
 
   @CalledByNative
-  static EncodedImage.FrameType createFrameType(int nativeIndex) {
-    for (EncodedImage.FrameType type : EncodedImage.FrameType.values()) {
-      if (type.getNative() == nativeIndex) {
-        return type;
-      }
-    }
-    throw new IllegalArgumentException("Unknown native frame type: " + nativeIndex);
-  }
-
-  @CalledByNative
   static boolean getScalingSettingsOn(VideoEncoder.ScalingSettings scalingSettings) {
     return scalingSettings.on;
   }

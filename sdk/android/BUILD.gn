@@ -105,11 +105,14 @@ rtc_static_library("null_audio_jni") {
 
 generate_jni("generated_video_jni") {
   sources = [
+    "api/org/webrtc/EncodedImage.java",
     "api/org/webrtc/SurfaceTextureHelper.java",
     "api/org/webrtc/VideoCodecStatus.java",
+    "api/org/webrtc/VideoDecoder.java",
     "api/org/webrtc/VideoEncoder.java",
     "api/org/webrtc/VideoFrame.java",
     "api/org/webrtc/VideoSink.java",
+    "src/java/org/webrtc/VideoDecoderWrapper.java",
     "src/java/org/webrtc/VideoEncoderWrapper.java",
     "src/java/org/webrtc/WrappedNativeVideoDecoder.java",
     "src/java/org/webrtc/WrappedNativeVideoEncoder.java",
@@ -128,6 +131,8 @@ rtc_static_library("video_jni") {
     "src/jni/androidvideotracksource.cc",
     "src/jni/androidvideotracksource.h",
     "src/jni/androidvideotracksource_jni.cc",
+    "src/jni/encodedimage.cc",
+    "src/jni/encodedimage.h",
     "src/jni/hardwarevideoencoderfactory.cc",
     "src/jni/jni_generator_helper.h",
     "src/jni/nv12buffer_jni.cc",
@@ -138,6 +143,8 @@ rtc_static_library("video_jni") {
     "src/jni/video_renderer_jni.cc",
     "src/jni/videocodecinfo.cc",
     "src/jni/videocodecinfo.h",
+    "src/jni/videocodecstatus.cc",
+    "src/jni/videocodecstatus.h",
     "src/jni/videodecoderfactorywrapper.cc",
     "src/jni/videodecoderfactorywrapper.h",
     "src/jni/videodecoderfallback.cc",
@@ -447,6 +454,7 @@ dist_jar("libwebrtc") {
 
 rtc_android_library("libjingle_peerconnection_java") {
   java_files = [
+    "src/java/org/webrtc/VideoDecoderWrapper.java",
     "api/org/webrtc/AudioProcessingFactory.java",
     "api/org/webrtc/AudioSource.java",
     "api/org/webrtc/AudioTrack.java",
@@ -548,7 +556,6 @@ rtc_android_library("libjingle_peerconnection_java") {
     "src/java/org/webrtc/NV21Buffer.java",
     "src/java/org/webrtc/TextureBufferImpl.java",
     "src/java/org/webrtc/VideoCodecType.java",
-    "src/java/org/webrtc/VideoDecoderWrapperCallback.java",
     "src/java/org/webrtc/VideoEncoderWrapper.java",
     "src/java/org/webrtc/WrappedNativeI420Buffer.java",
     "src/java/org/webrtc/WrappedNativeVideoEncoder.java",

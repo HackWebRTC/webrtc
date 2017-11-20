@@ -21,10 +21,11 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/random.h"
 #include "rtc_base/timeutils.h"
-#include "sdk/android/generated_video_jni/jni/VideoCodecStatus_jni.h"
 #include "sdk/android/generated_video_jni/jni/VideoEncoderWrapper_jni.h"
 #include "sdk/android/generated_video_jni/jni/VideoEncoder_jni.h"
 #include "sdk/android/src/jni/class_loader.h"
+#include "sdk/android/src/jni/encodedimage.h"
+#include "sdk/android/src/jni/videocodecstatus.h"
 
 namespace webrtc {
 namespace jni {
@@ -84,7 +85,7 @@ int32_t VideoEncoderWrapper::InitEncodeInternal(JNIEnv* jni) {
   jobject ret =
       Java_VideoEncoder_initEncode(jni, *encoder_, settings, callback);
 
-  if (Java_VideoCodecStatus_getNumber(jni, ret) == WEBRTC_VIDEO_CODEC_OK) {
+  if (JavaToNativeVideoCodecStatus(jni, ret) == WEBRTC_VIDEO_CODEC_OK) {
     initialized_ = true;
   }
 
@@ -123,8 +124,7 @@ int32_t VideoEncoderWrapper::Encode(
   jobjectArray j_frame_types =
       jni->NewObjectArray(frame_types->size(), *frame_type_class_, nullptr);
   for (size_t i = 0; i < frame_types->size(); ++i) {
-    jobject j_frame_type = Java_VideoEncoderWrapper_createFrameType(
-        jni, static_cast<jint>((*frame_types)[i]));
+    jobject j_frame_type = NativeToJavaFrameType(jni, (*frame_types)[i]);
     jni->SetObjectArrayElement(j_frame_types, i, j_frame_type);
   }
   jobject encode_info =
@@ -245,7 +245,7 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
 }
 
 int32_t VideoEncoderWrapper::HandleReturnCode(JNIEnv* jni, jobject code) {
-  int32_t value = Java_VideoCodecStatus_getNumber(jni, code);
+  int32_t value = JavaToNativeVideoCodecStatus(jni, code);
   if (value < 0) {  // Any errors are represented by negative values.
     // Try resetting the codec.
     if (++num_resets_ <= kMaxJavaEncoderResets &&

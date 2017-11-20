@@ -109,6 +109,10 @@ AndroidVideoI420Buffer::~AndroidVideoI420Buffer() {
 
 }  // namespace
 
+int64_t GetJavaVideoFrameTimestampNs(JNIEnv* jni, jobject j_video_frame) {
+  return Java_VideoFrame_getTimestampNs(jni, j_video_frame);
+}
+
 Matrix::Matrix(JNIEnv* jni, jfloatArray a) {
   RTC_CHECK_EQ(16, jni->GetArrayLength(a));
   jfloat* ptr = jni->GetFloatArrayElements(a, nullptr);
@@ -366,7 +370,7 @@ VideoFrame JavaToNativeFrame(JNIEnv* jni,
                              uint32_t timestamp_rtp) {
   jobject j_video_frame_buffer = Java_VideoFrame_getBuffer(jni, j_video_frame);
   int rotation = Java_VideoFrame_getRotation(jni, j_video_frame);
-  uint32_t timestamp_ns = Java_VideoFrame_getTimestampNs(jni, j_video_frame);
+  int64_t timestamp_ns = Java_VideoFrame_getTimestampNs(jni, j_video_frame);
   rtc::scoped_refptr<AndroidVideoBuffer> buffer =
       AndroidVideoBuffer::Create(jni, j_video_frame_buffer);
   return VideoFrame(buffer, timestamp_rtp,

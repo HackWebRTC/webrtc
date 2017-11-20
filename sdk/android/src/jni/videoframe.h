@@ -159,6 +159,8 @@ VideoFrame JavaToNativeFrame(JNIEnv* jni,
 
 jobject NativeToJavaFrame(JNIEnv* jni, const VideoFrame& frame);
 
+int64_t GetJavaVideoFrameTimestampNs(JNIEnv* jni, jobject j_video_frame);
+
 }  // namespace jni
 }  // namespace webrtc
 
