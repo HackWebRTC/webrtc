@@ -53,10 +53,18 @@ namespace webrtc {
 class RtpTransceiver final
     : public rtc::RefCountedObject<RtpTransceiverInterface> {
  public:
-  // Construct an RtpTransceiver with no senders, receivers, or channel set.
+  // Construct a Plan B-style RtpTransceiver with no senders, receivers, or
+  // channel set.
   // |media_type| specifies the type of RtpTransceiver (and, by transitivity,
   // the type of senders, receivers, and channel). Can either by audio or video.
   explicit RtpTransceiver(cricket::MediaType media_type);
+  // Construct a Unified Plan-style RtpTransceiver with the given sender and
+  // receiver. The media type will be derived from the media types of the sender
+  // and receiver. The sender and receiver should have the same media type.
+  RtpTransceiver(
+      rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
+      rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
+          receiver);
   ~RtpTransceiver() override;
 
   cricket::MediaType media_type() const { return media_type_; }

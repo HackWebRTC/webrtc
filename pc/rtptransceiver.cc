@@ -20,6 +20,18 @@ RtpTransceiver::RtpTransceiver(cricket::MediaType media_type)
              media_type == cricket::MEDIA_TYPE_VIDEO);
 }
 
+RtpTransceiver::RtpTransceiver(
+    rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
+    rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
+        receiver)
+    : unified_plan_(true), media_type_(sender->media_type()) {
+  RTC_DCHECK(media_type_ == cricket::MEDIA_TYPE_AUDIO ||
+             media_type_ == cricket::MEDIA_TYPE_VIDEO);
+  RTC_DCHECK_EQ(sender->media_type(), receiver->media_type());
+  senders_.push_back(sender);
+  receivers_.push_back(receiver);
+}
+
 RtpTransceiver::~RtpTransceiver() {
   Stop();
 }

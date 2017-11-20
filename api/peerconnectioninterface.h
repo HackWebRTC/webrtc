@@ -141,6 +141,10 @@ class StatsObserver : public rtc::RefCountInterface {
   virtual ~StatsObserver() {}
 };
 
+// For now, kDefault is interpreted as kPlanB.
+// TODO(bugs.webrtc.org/8530): Switch default to kUnifiedPlan.
+enum class SdpSemantics { kDefault, kPlanB, kUnifiedPlan };
+
 class PeerConnectionInterface : public rtc::RefCountInterface {
  public:
   // See http://dev.w3.org/2011/webrtc/editor/webrtc.html#state-definitions .
@@ -475,6 +479,34 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // The object passed in must remain valid until PeerConnection::Close() is
     // called.
     webrtc::TurnCustomizer* turn_customizer = nullptr;
+
+    // Configure the SDP semantics used by this PeerConnection. Note that the
+    // WebRTC 1.0 specification requires kUnifiedPlan semantics. The
+    // RtpTransceiver API is only available with kUnifiedPlan semantics.
+    //
+    // kPlanB will cause PeerConnection to create offers and answers with at
+    // most one audio and one video m= section with multiple RtpSenders and
+    // RtpReceivers specified as multiple a=ssrc lines within the section. This
+    // will also cause PeerConnection to reject offers/answers with multiple m=
+    // sections of the same media type.
+    //
+    // kUnifiedPlan will cause PeerConnection to create offers and answers with
+    // multiple m= sections where each m= section maps to one RtpSender and one
+    // RtpReceiver (an RtpTransceiver), either both audio or both video. Plan B
+    // style offers or answers will be rejected in calls to SetLocalDescription
+    // or SetRemoteDescription.
+    //
+    // For users who only send at most one audio and one video track, this
+    // choice does not matter and should be left as kDefault.
+    //
+    // For users who wish to send multiple audio/video streams and need to stay
+    // interoperable with legacy WebRTC implementations, specify kPlanB.
+    //
+    // For users who wish to send multiple audio/video streams and/or wish to
+    // use the new RtpTransceiver API, specify kUnifiedPlan.
+    //
+    // TODO(steveanton): Implement support for kUnifiedPlan.
+    SdpSemantics sdp_semantics = SdpSemantics::kDefault;
 
     //
     // Don't forget to update operator== if adding something.

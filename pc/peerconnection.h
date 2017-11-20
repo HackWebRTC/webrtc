@@ -458,9 +458,11 @@ class PeerConnection : public PeerConnectionInterface,
   // semantics for creating offers/answers and setting local/remote
   // descriptions. If this is true the RtpTransceiver API will also be available
   // to the user. If this is false, Plan B semantics are assumed.
-  // TODO(steveanton): Flip the default to be Unified Plan once sufficient time
-  // has passed.
-  bool IsUnifiedPlan() const { return false; }
+  // TODO(bugs.webrtc.org/8530): Flip the default to be Unified Plan once
+  // sufficient time has passed.
+  bool IsUnifiedPlan() const {
+    return configuration_.sdp_semantics == SdpSemantics::kUnifiedPlan;
+  }
 
   // Is there an RtpSender of the given type?
   bool HasRtpSender(cricket::MediaType type) const;

@@ -675,6 +675,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     rtc::Optional<int> ice_check_min_interval;
     rtc::Optional<rtc::IntervalRange> ice_regather_interval_range;
     webrtc::TurnCustomizer* turn_customizer;
+    SdpSemantics sdp_semantics;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
                 "Did you add something to RTCConfiguration and forget to "
@@ -710,7 +711,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          redetermine_role_on_ice_restart == o.redetermine_role_on_ice_restart &&
          ice_check_min_interval == o.ice_check_min_interval &&
          ice_regather_interval_range == o.ice_regather_interval_range &&
-         turn_customizer == o.turn_customizer;
+         turn_customizer == o.turn_customizer &&
+         sdp_semantics == o.sdp_semantics;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(
