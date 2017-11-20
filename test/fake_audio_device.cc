@@ -303,9 +303,13 @@ int32_t FakeAudioDevice::StopRecording() {
 }
 
 int32_t FakeAudioDevice::Init() {
-  RTC_CHECK(tick_->StartTimer(true, kFrameLengthMs / speed_));
-  thread_.Start();
-  thread_.SetPriority(rtc::kHighPriority);
+  // TODO(solenberg): Temporarily allow multiple init calls.
+  if (!inited_) {
+    RTC_CHECK(tick_->StartTimer(true, kFrameLengthMs / speed_));
+    thread_.Start();
+    thread_.SetPriority(rtc::kHighPriority);
+    inited_ = true;
+  }
   return 0;
 }
 
