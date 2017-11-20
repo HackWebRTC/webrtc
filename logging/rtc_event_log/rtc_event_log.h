@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "api/rtceventlogoutput.h"
 #include "logging/rtc_event_log/events/rtc_event.h"
@@ -26,6 +27,7 @@ enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
 class RtcEventLog {
  public:
   enum : size_t { kUnlimitedOutput = 0 };
+  enum : int64_t { kImmediateOutput = 0 };
 
   // TODO(eladalon): Two stages are upcoming.
   // 1. Extend this to actually support the new encoding.
@@ -49,7 +51,8 @@ class RtcEventLog {
 
   // Starts logging to a given output. The output might be limited in size,
   // and may close itself once it has reached the maximum size.
-  virtual bool StartLogging(std::unique_ptr<RtcEventLogOutput> output) = 0;
+  virtual bool StartLogging(std::unique_ptr<RtcEventLogOutput> output,
+                            int64_t output_period_ms) = 0;
 
   // Stops logging to file and waits until the file has been closed, after
   // which it would be permissible to read and/or modify it.
@@ -62,7 +65,8 @@ class RtcEventLog {
 // No-op implementation is used if flag is not set, or in tests.
 class RtcEventLogNullImpl : public RtcEventLog {
  public:
-  bool StartLogging(std::unique_ptr<RtcEventLogOutput> output) override {
+  bool StartLogging(std::unique_ptr<RtcEventLogOutput> output,
+                    int64_t output_period_ms) override {
     return false;
   }
   void StopLogging() override {}

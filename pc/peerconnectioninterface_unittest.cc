@@ -3246,7 +3246,8 @@ TEST_F(PeerConnectionInterfaceTest,
   rtc::PlatformFile file = 0;
   int64_t max_size_bytes = 1024;
   EXPECT_FALSE(pc_->StartRtcEventLog(
-      rtc::MakeUnique<webrtc::RtcEventLogOutputFile>(file, max_size_bytes)));
+      rtc::MakeUnique<webrtc::RtcEventLogOutputFile>(file, max_size_bytes),
+      webrtc::RtcEventLog::kImmediateOutput));
   pc_->StopRtcEventLog();
 }
 

@@ -1956,19 +1956,23 @@ bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
                               ? RtcEventLog::kUnlimitedOutput
                               : rtc::saturated_cast<size_t>(max_size_bytes);
   return StartRtcEventLog(
-      rtc::MakeUnique<RtcEventLogOutputFile>(file, max_size));
+      rtc::MakeUnique<RtcEventLogOutputFile>(file, max_size),
+      webrtc::RtcEventLog::kImmediateOutput);
 }
 
-bool PeerConnection::StartRtcEventLog(
-    std::unique_ptr<RtcEventLogOutput> output) {
+bool PeerConnection::StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
+                                      int64_t output_period_ms) {
   // TODO(eladalon): In C++14, this can be done with a lambda.
   struct Functor {
-    bool operator()() { return pc->StartRtcEventLog_w(std::move(output)); }
+    bool operator()() {
+      return pc->StartRtcEventLog_w(std::move(output), output_period_ms);
+    }
     PeerConnection* const pc;
     std::unique_ptr<RtcEventLogOutput> output;
+    const int64_t output_period_ms;
   };
-  return worker_thread()->Invoke<bool>(RTC_FROM_HERE,
-                                       Functor{this, std::move(output)});
+  return worker_thread()->Invoke<bool>(
+      RTC_FROM_HERE, Functor{this, std::move(output), output_period_ms});
 }
 
 void PeerConnection::StopRtcEventLog() {
@@ -3203,11 +3207,12 @@ MetricsObserverInterface* PeerConnection::metrics_observer() const {
 }
 
 bool PeerConnection::StartRtcEventLog_w(
-    std::unique_ptr<RtcEventLogOutput> output) {
+    std::unique_ptr<RtcEventLogOutput> output,
+    int64_t output_period_ms) {
   if (!event_log_) {
     return false;
   }
-  return event_log_->StartLogging(std::move(output));
+  return event_log_->StartLogging(std::move(output), output_period_ms);
 }
 
 void PeerConnection::StopRtcEventLog_w() {

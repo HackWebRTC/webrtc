@@ -3521,7 +3521,8 @@ TEST_F(PeerConnectionIntegrationTest, RtcEventLogOutputWriteCalled) {
   ON_CALL(*output, IsActive()).WillByDefault(testing::Return(true));
   ON_CALL(*output, Write(::testing::_)).WillByDefault(testing::Return(true));
   EXPECT_CALL(*output, Write(::testing::_)).Times(::testing::AtLeast(1));
-  EXPECT_TRUE(caller()->pc()->StartRtcEventLog(std::move(output)));
+  EXPECT_TRUE(caller()->pc()->StartRtcEventLog(
+      std::move(output), webrtc::RtcEventLog::kImmediateOutput));
 
   caller()->AddAudioVideoMediaStream();
   caller()->CreateAndSetAndSignalOffer();
