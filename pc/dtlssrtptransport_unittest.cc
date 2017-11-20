@@ -436,7 +436,6 @@ TEST_F(DtlsSrtpTransportTest, EncryptedHeaderExtensionIdUpdated) {
   std::vector<int> encrypted_headers;
   encrypted_headers.push_back(kHeaderExtensionIDs[0]);
   encrypted_headers.push_back(kHeaderExtensionIDs[1]);
-  RTC_LOG(INFO) << "here";
 
   dtls_srtp_transport1_->SetSendEncryptedHeaderExtensionIds(encrypted_headers);
   dtls_srtp_transport1_->SetRecvEncryptedHeaderExtensionIds(encrypted_headers);
