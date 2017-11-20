@@ -97,6 +97,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
         dest->SetDestination(this, true);
       }
       dtls_state_ = DTLS_TRANSPORT_CONNECTED;
+      SignalDtlsState(this, dtls_state_);
       ice_transport_->SetDestination(
           static_cast<FakeIceTransport*>(dest->ice_transport()), asymmetric);
     } else {

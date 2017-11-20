@@ -36,7 +36,7 @@ class RtpTransport : public RtpTransportInternal {
   explicit RtpTransport(bool rtcp_mux_enabled)
       : rtcp_mux_enabled_(rtcp_mux_enabled) {}
 
-  bool rtcp_mux_enabled() const { return rtcp_mux_enabled_; }
+  bool rtcp_mux_enabled() const override { return rtcp_mux_enabled_; }
   void SetRtcpMuxEnabled(bool enable) override;
 
   rtc::PacketTransportInternal* rtp_packet_transport() const override {

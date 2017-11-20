@@ -207,6 +207,8 @@ class FakeIceTransport : public IceTransportInternal {
 
   int GetError() override { return 0; }
 
+  rtc::CopyOnWriteBuffer last_sent_packet() { return last_sent_packet_; }
+
   rtc::Optional<rtc::NetworkRoute> network_route() const override {
     return network_route_;
   }
@@ -237,6 +239,7 @@ class FakeIceTransport : public IceTransportInternal {
 
   void SendPacketInternal(const rtc::CopyOnWriteBuffer& packet) {
     if (dest_) {
+      last_sent_packet_ = packet;
       dest_->SignalReadPacket(dest_, packet.data<char>(), packet.size(),
                               rtc::CreatePacketTime(0), 0);
     }
@@ -266,6 +269,7 @@ class FakeIceTransport : public IceTransportInternal {
   rtc::CopyOnWriteBuffer send_packet_;
   rtc::Optional<rtc::NetworkRoute> network_route_;
   std::map<rtc::Socket::Option, int> socket_options_;
+  rtc::CopyOnWriteBuffer last_sent_packet_;
 };
 
 }  // namespace cricket

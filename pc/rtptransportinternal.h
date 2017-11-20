@@ -38,6 +38,7 @@ class RtpTransportInternal : public RtpTransportInterface,
   // TODO(zstein): Remove PacketTransport setters. Clients should pass these
   // in to constructors instead and construct a new RtpTransportInternal instead
   // of updating them.
+  virtual bool rtcp_mux_enabled() const = 0;
 
   virtual rtc::PacketTransportInternal* rtp_packet_transport() const = 0;
   virtual void SetRtpPacketTransport(rtc::PacketTransportInternal* rtp) = 0;
@@ -56,12 +57,18 @@ class RtpTransportInternal : public RtpTransportInterface,
   sigslot::signal3<bool, rtc::CopyOnWriteBuffer*, const rtc::PacketTime&>
       SignalPacketReceived;
 
+  // Called whenever a transport's writable state might change. The argument is
+  // true if the transport is writable, otherwise it is false.
+  sigslot::signal1<bool> SignalWritableState;
+
   // Called whenever the network route of the P2P layer transport changes.
   // The argument is an optional network route.
   sigslot::signal1<rtc::Optional<rtc::NetworkRoute>> SignalNetworkRouteChanged;
 
   virtual bool IsWritable(bool rtcp) const = 0;
 
+  // TODO(zhihuang): Pass the |packet| by copy so that the original data
+  // wouldn't be modified.
   virtual bool SendRtpPacket(rtc::CopyOnWriteBuffer* packet,
                              const rtc::PacketOptions& options,
                              int flags) = 0;

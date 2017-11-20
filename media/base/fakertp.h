@@ -42,6 +42,8 @@ static const unsigned char kPcmuFrame[] = {
   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 };
 
+static const int kHeaderExtensionIDs[] = {1, 4};
+
 // A typical PCMU RTP packet with header extensions.
 // PT=0, SN=1, TS=0, SSRC=1
 // all data FF
