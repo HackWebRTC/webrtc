@@ -311,16 +311,13 @@ jobject JavaEnumFromIndexAndClassName(JNIEnv* jni,
                            state_class, index);
 }
 
-std::string GetJavaEnumName(JNIEnv* jni,
-                            const std::string& className,
-                            jobject j_enum) {
-  jclass enumClass = FindClass(jni, className.c_str());
+std::string GetJavaEnumName(JNIEnv* jni, jobject j_enum) {
+  jclass enum_class = GetClass(jni, "java/lang/Enum");
   jmethodID nameMethod =
-      GetMethodID(jni, enumClass, "name", "()Ljava/lang/String;");
+      GetMethodID(jni, enum_class, "name", "()Ljava/lang/String;");
   jstring name =
       reinterpret_cast<jstring>(jni->CallObjectMethod(j_enum, nameMethod));
-  CHECK_EXCEPTION(jni) << "error during CallObjectMethod for " << className
-                       << ".name";
+  CHECK_EXCEPTION(jni);
   return JavaToStdString(jni, name);
 }
 

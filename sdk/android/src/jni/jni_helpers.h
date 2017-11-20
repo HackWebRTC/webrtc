@@ -130,9 +130,7 @@ std::map<std::string, std::string> JavaToStdMapStrings(JNIEnv* jni,
                                                        jobject j_map);
 
 // Returns the name of a Java enum.
-std::string GetJavaEnumName(JNIEnv* jni,
-                            const std::string& className,
-                            jobject j_enum);
+std::string GetJavaEnumName(JNIEnv* jni, jobject j_enum);
 
 jobject NewGlobalRef(JNIEnv* jni, jobject o);
 

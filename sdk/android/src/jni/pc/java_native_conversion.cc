@@ -208,9 +208,7 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni, jobject options) {
 PeerConnectionInterface::IceTransportsType JavaToNativeIceTransportsType(
     JNIEnv* jni,
     jobject j_ice_transports_type) {
-  std::string enum_name =
-      GetJavaEnumName(jni, "org/webrtc/PeerConnection$IceTransportsType",
-                      j_ice_transports_type);
+  std::string enum_name = GetJavaEnumName(jni, j_ice_transports_type);
 
   if (enum_name == "ALL")
     return PeerConnectionInterface::kAll;
@@ -231,8 +229,7 @@ PeerConnectionInterface::IceTransportsType JavaToNativeIceTransportsType(
 PeerConnectionInterface::BundlePolicy JavaToNativeBundlePolicy(
     JNIEnv* jni,
     jobject j_bundle_policy) {
-  std::string enum_name = GetJavaEnumName(
-      jni, "org/webrtc/PeerConnection$BundlePolicy", j_bundle_policy);
+  std::string enum_name = GetJavaEnumName(jni, j_bundle_policy);
 
   if (enum_name == "BALANCED")
     return PeerConnectionInterface::kBundlePolicyBalanced;
@@ -250,8 +247,7 @@ PeerConnectionInterface::BundlePolicy JavaToNativeBundlePolicy(
 PeerConnectionInterface::RtcpMuxPolicy JavaToNativeRtcpMuxPolicy(
     JNIEnv* jni,
     jobject j_rtcp_mux_policy) {
-  std::string enum_name = GetJavaEnumName(
-      jni, "org/webrtc/PeerConnection$RtcpMuxPolicy", j_rtcp_mux_policy);
+  std::string enum_name = GetJavaEnumName(jni, j_rtcp_mux_policy);
 
   if (enum_name == "NEGOTIATE")
     return PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
@@ -266,9 +262,7 @@ PeerConnectionInterface::RtcpMuxPolicy JavaToNativeRtcpMuxPolicy(
 PeerConnectionInterface::TcpCandidatePolicy JavaToNativeTcpCandidatePolicy(
     JNIEnv* jni,
     jobject j_tcp_candidate_policy) {
-  std::string enum_name =
-      GetJavaEnumName(jni, "org/webrtc/PeerConnection$TcpCandidatePolicy",
-                      j_tcp_candidate_policy);
+  std::string enum_name = GetJavaEnumName(jni, j_tcp_candidate_policy);
 
   if (enum_name == "ENABLED")
     return PeerConnectionInterface::kTcpCandidatePolicyEnabled;
@@ -283,9 +277,7 @@ PeerConnectionInterface::TcpCandidatePolicy JavaToNativeTcpCandidatePolicy(
 PeerConnectionInterface::CandidateNetworkPolicy
 JavaToNativeCandidateNetworkPolicy(JNIEnv* jni,
                                    jobject j_candidate_network_policy) {
-  std::string enum_name =
-      GetJavaEnumName(jni, "org/webrtc/PeerConnection$CandidateNetworkPolicy",
-                      j_candidate_network_policy);
+  std::string enum_name = GetJavaEnumName(jni, j_candidate_network_policy);
 
   if (enum_name == "ALL")
     return PeerConnectionInterface::kCandidateNetworkPolicyAll;
@@ -299,8 +291,7 @@ JavaToNativeCandidateNetworkPolicy(JNIEnv* jni,
 }
 
 rtc::KeyType JavaToNativeKeyType(JNIEnv* jni, jobject j_key_type) {
-  std::string enum_name =
-      GetJavaEnumName(jni, "org/webrtc/PeerConnection$KeyType", j_key_type);
+  std::string enum_name = GetJavaEnumName(jni, j_key_type);
 
   if (enum_name == "RSA")
     return rtc::KT_RSA;
@@ -313,9 +304,7 @@ rtc::KeyType JavaToNativeKeyType(JNIEnv* jni, jobject j_key_type) {
 
 PeerConnectionInterface::ContinualGatheringPolicy
 JavaToNativeContinualGatheringPolicy(JNIEnv* jni, jobject j_gathering_policy) {
-  std::string enum_name =
-      GetJavaEnumName(jni, "org/webrtc/PeerConnection$ContinualGatheringPolicy",
-                      j_gathering_policy);
+  std::string enum_name = GetJavaEnumName(jni, j_gathering_policy);
   if (enum_name == "GATHER_ONCE")
     return PeerConnectionInterface::GATHER_ONCE;
 
@@ -330,9 +319,7 @@ JavaToNativeContinualGatheringPolicy(JNIEnv* jni, jobject j_gathering_policy) {
 PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
     JNIEnv* jni,
     jobject j_ice_server_tls_cert_policy) {
-  std::string enum_name =
-      GetJavaEnumName(jni, "org/webrtc/PeerConnection$TlsCertPolicy",
-                      j_ice_server_tls_cert_policy);
+  std::string enum_name = GetJavaEnumName(jni, j_ice_server_tls_cert_policy);
 
   if (enum_name == "TLS_CERT_POLICY_SECURE")
     return PeerConnectionInterface::kTlsCertPolicySecure;

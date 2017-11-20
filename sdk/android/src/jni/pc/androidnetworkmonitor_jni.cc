@@ -31,9 +31,7 @@ enum AndroidSdkVersion {
 int AndroidNetworkMonitor::android_sdk_int_ = 0;
 
 static NetworkType GetNetworkTypeFromJava(JNIEnv* jni, jobject j_network_type) {
-  std::string enum_name =
-      GetJavaEnumName(jni, "org/webrtc/NetworkMonitorAutoDetect$ConnectionType",
-                      j_network_type);
+  std::string enum_name = GetJavaEnumName(jni, j_network_type);
   if (enum_name == "CONNECTION_UNKNOWN") {
     return NetworkType::NETWORK_UNKNOWN;
   }
