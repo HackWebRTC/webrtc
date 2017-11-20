@@ -52,7 +52,7 @@ struct NetworkInformation {
 class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
                               public rtc::NetworkBinderInterface {
  public:
-  explicit AndroidNetworkMonitor(JNIEnv* env);
+  AndroidNetworkMonitor();
 
   // TODO(sakal): Remove once down stream dependencies have been updated.
   static void SetAndroidContext(JNIEnv* jni, jobject context) {}
@@ -69,22 +69,15 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
   // Always expected to be called on the network thread.
   void SetNetworkInfos(const std::vector<NetworkInformation>& network_infos);
 
-  void NotifyConnectionTypeChanged(JNIEnv* env, jobject j_caller);
-  void NotifyOfNetworkConnect(JNIEnv* env,
-                              jobject j_caller,
-                              jobject j_network_info);
-  void NotifyOfNetworkDisconnect(JNIEnv* env,
-                                 jobject j_caller,
-                                 jlong network_handle);
-  void NotifyOfActiveNetworkList(JNIEnv* env,
-                                 jobject j_caller,
-                                 jobjectArray j_network_infos);
-
  private:
+  static jobject application_context_;
+  static int android_sdk_int_;
+  JNIEnv* jni() { return AttachCurrentThreadIfNeeded(); }
+
   void OnNetworkConnected_w(const NetworkInformation& network_info);
   void OnNetworkDisconnected_w(NetworkHandle network_handle);
 
-  const int android_sdk_int_;
+  ScopedGlobalRef<jclass> j_network_monitor_class_;
   ScopedGlobalRef<jobject> j_network_monitor_;
   rtc::ThreadChecker thread_checker_;
   bool started_ = false;

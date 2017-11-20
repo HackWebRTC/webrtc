@@ -63,7 +63,6 @@ public class NetworkMonitor {
   /**
    * Returns the singleton instance.
    */
-  @CalledByNative
   public static NetworkMonitor getInstance() {
     if (instance == null) {
       instance = new NetworkMonitor();
@@ -78,11 +77,12 @@ public class NetworkMonitor {
   }
 
   /**
+   * Called by the native code.
+   *
    * Enables auto detection of the current network state based on notifications
    * from the system. Note that this requires the embedding app have the
    * platform ACCESS_NETWORK_STATE permission.
    */
-  @CalledByNative
   private void startMonitoring(long nativeObserver) {
     Logging.d(TAG, "Start monitoring from native observer " + nativeObserver);
     nativeNetworkObservers.add(nativeObserver);
@@ -96,7 +96,7 @@ public class NetworkMonitor {
     updateObserverActiveNetworkList(nativeObserver);
   }
 
-  @CalledByNative
+  // Called by the native code.
   private void stopMonitoring(long nativeObserver) {
     Logging.d(TAG, "Stop monitoring from native observer " + nativeObserver);
     nativeNetworkObservers.remove(nativeObserver);
@@ -106,13 +106,13 @@ public class NetworkMonitor {
     }
   }
 
-  // Returns true if network binding is supported on this platform.
-  @CalledByNative
+  // Called by the native code to determine if network binding is supported
+  // on this platform.
   private boolean networkBindingSupported() {
     return autoDetector != null && autoDetector.supportNetworkCallback();
   }
 
-  @CalledByNative
+  // Called by the native code to get the Android SDK version.
   private static int androidSdkInt() {
     return Build.VERSION.SDK_INT;
   }
@@ -215,16 +215,9 @@ public class NetworkMonitor {
     return connectionType != ConnectionType.CONNECTION_NONE;
   }
 
-  @NativeClassQualifiedName("webrtc::jni::AndroidNetworkMonitor")
   private native void nativeNotifyConnectionTypeChanged(long nativePtr);
-
-  @NativeClassQualifiedName("webrtc::jni::AndroidNetworkMonitor")
   private native void nativeNotifyOfNetworkConnect(long nativePtr, NetworkInformation networkInfo);
-
-  @NativeClassQualifiedName("webrtc::jni::AndroidNetworkMonitor")
   private native void nativeNotifyOfNetworkDisconnect(long nativePtr, long networkHandle);
-
-  @NativeClassQualifiedName("webrtc::jni::AndroidNetworkMonitor")
   private native void nativeNotifyOfActiveNetworkList(
       long nativePtr, NetworkInformation[] networkInfos);
 
