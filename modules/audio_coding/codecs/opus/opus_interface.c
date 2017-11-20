@@ -11,7 +11,6 @@
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
 
 #include "rtc_base/checks.h"
-#include "modules/audio_coding/codecs/opus/opus_inst.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -224,6 +223,27 @@ int16_t WebRtcOpus_DisableCbr(OpusEncInst* inst) {
 int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
   if (inst) {
     return opus_encoder_ctl(inst->encoder, OPUS_SET_COMPLEXITY(complexity));
+  } else {
+    return -1;
+  }
+}
+
+int32_t WebRtcOpus_GetBandwidth(OpusEncInst* inst) {
+  if (!inst) {
+    return -1;
+  }
+  int32_t bandwidth;
+  if (opus_encoder_ctl(inst->encoder, OPUS_GET_BANDWIDTH(&bandwidth)) == 0) {
+    return bandwidth;
+  } else {
+    return -1;
+  }
+
+}
+
+int16_t WebRtcOpus_SetBandwidth(OpusEncInst* inst, int32_t bandwidth) {
+  if (inst) {
+    return opus_encoder_ctl(inst->encoder, OPUS_SET_BANDWIDTH(bandwidth));
   } else {
     return -1;
   }

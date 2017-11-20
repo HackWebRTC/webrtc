@@ -458,6 +458,45 @@ TEST_P(OpusTest, OpusSetComplexity) {
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
 }
 
+TEST_P(OpusTest, OpusSetBandwidth) {
+  PrepareSpeechData(channels_, 20, 20);
+
+  int16_t audio_type;
+  std::unique_ptr<int16_t[]> output_data_decode(
+      new int16_t[kOpus20msFrameSamples * channels_]());
+
+  // Test without creating encoder memory.
+  EXPECT_EQ(-1,
+            WebRtcOpus_SetBandwidth(opus_encoder_, OPUS_BANDWIDTH_NARROWBAND));
+  EXPECT_EQ(-1, WebRtcOpus_GetBandwidth(opus_encoder_));
+
+  // Create encoder memory, try with different bandwidths.
+  EXPECT_EQ(0,
+            WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, application_));
+  EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_decoder_, channels_));
+
+  EXPECT_EQ(-1, WebRtcOpus_SetBandwidth(opus_encoder_,
+                                        OPUS_BANDWIDTH_NARROWBAND - 1));
+  EXPECT_EQ(0,
+            WebRtcOpus_SetBandwidth(opus_encoder_, OPUS_BANDWIDTH_NARROWBAND));
+  EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(), opus_decoder_,
+               output_data_decode.get(), &audio_type);
+  EXPECT_EQ(OPUS_BANDWIDTH_NARROWBAND, WebRtcOpus_GetBandwidth(opus_encoder_));
+  EXPECT_EQ(0, WebRtcOpus_SetBandwidth(opus_encoder_, OPUS_BANDWIDTH_FULLBAND));
+  EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(), opus_decoder_,
+               output_data_decode.get(), &audio_type);
+  EXPECT_EQ(OPUS_BANDWIDTH_FULLBAND, WebRtcOpus_GetBandwidth(opus_encoder_));
+  EXPECT_EQ(
+      -1, WebRtcOpus_SetBandwidth(opus_encoder_, OPUS_BANDWIDTH_FULLBAND + 1));
+  EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(), opus_decoder_,
+               output_data_decode.get(), &audio_type);
+  EXPECT_EQ(OPUS_BANDWIDTH_FULLBAND, WebRtcOpus_GetBandwidth(opus_encoder_));
+
+  // Free memory.
+  EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
+  EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_decoder_));
+}
+
 TEST_P(OpusTest, OpusForceChannels) {
   // Test without creating encoder memory.
   EXPECT_EQ(-1, WebRtcOpus_SetForceChannels(opus_encoder_, 1));

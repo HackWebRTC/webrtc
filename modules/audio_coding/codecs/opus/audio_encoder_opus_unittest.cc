@@ -17,6 +17,7 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
+#include "modules/audio_coding/codecs/opus/opus_interface.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/fakeclock.h"
@@ -471,6 +472,64 @@ TEST(AudioEncoderOpusTest, ConfigComplexityAdaptation) {
   // Bitrate above hysteresis window. Expect lower complexity.
   config.bitrate_bps = 14001;
   EXPECT_EQ(6, AudioEncoderOpusImpl::GetNewComplexity(config));
+}
+
+// Verifies that the bandwidth adaptation in the config works as intended.
+TEST(AudioEncoderOpusTest, ConfigBandwidthAdaptation) {
+  AudioEncoderOpusConfig config;
+  // Sample rate of Opus.
+  constexpr size_t kOpusRateKhz = 48;
+  std::vector<int16_t> silence(
+      kOpusRateKhz * config.frame_size_ms * config.num_channels, 0);
+  constexpr size_t kMaxBytes = 1000;
+  uint8_t bitstream[kMaxBytes];
+
+  OpusEncInst* inst;
+  EXPECT_EQ(0, WebRtcOpus_EncoderCreate(
+                   &inst, config.num_channels,
+                   config.application ==
+                           AudioEncoderOpusConfig::ApplicationMode::kVoip
+                       ? 0
+                       : 1));
+
+  // Bitrate below minmum wideband. Expect narrowband.
+  config.bitrate_bps = rtc::Optional<int>(7999);
+  auto bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
+  EXPECT_EQ(rtc::Optional<int>(OPUS_BANDWIDTH_NARROWBAND), bandwidth);
+  WebRtcOpus_SetBandwidth(inst, *bandwidth);
+  // It is necessary to encode here because Opus has some logic in the encoder
+  // that goes from the user-set bandwidth to the used and returned one.
+  WebRtcOpus_Encode(inst, silence.data(),
+                    rtc::CheckedDivExact(silence.size(), config.num_channels),
+                    kMaxBytes, bitstream);
+
+  // Bitrate not yet above maximum narrowband. Expect empty.
+  config.bitrate_bps = rtc::Optional<int>(9000);
+  bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
+  EXPECT_EQ(rtc::Optional<int>(), bandwidth);
+
+  // Bitrate above maximum narrowband. Expect wideband.
+  config.bitrate_bps = rtc::Optional<int>(9001);
+  bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
+  EXPECT_EQ(rtc::Optional<int>(OPUS_BANDWIDTH_WIDEBAND), bandwidth);
+  WebRtcOpus_SetBandwidth(inst, *bandwidth);
+  // It is necessary to encode here because Opus has some logic in the encoder
+  // that goes from the user-set bandwidth to the used and returned one.
+  WebRtcOpus_Encode(inst, silence.data(),
+                    rtc::CheckedDivExact(silence.size(), config.num_channels),
+                    kMaxBytes, bitstream);
+
+  // Bitrate not yet below minimum wideband. Expect empty.
+  config.bitrate_bps = rtc::Optional<int>(8000);
+  bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
+  EXPECT_EQ(rtc::Optional<int>(), bandwidth);
+
+  // Bitrate above automatic threshold. Expect automatic.
+  config.bitrate_bps = rtc::Optional<int>(12001);
+  bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
+  EXPECT_EQ(rtc::Optional<int>(OPUS_AUTO), bandwidth);
+
+  EXPECT_EQ(0, WebRtcOpus_EncoderFree(inst));
 }
 
 TEST(AudioEncoderOpusTest, EmptyConfigDoesNotAffectEncoderSettings) {
