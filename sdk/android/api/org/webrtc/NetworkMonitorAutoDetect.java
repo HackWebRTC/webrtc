@@ -35,6 +35,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.webrtc.NetworkMonitorAutoDetect;
 
 /**
  * Borrowed from Chromium's
@@ -62,6 +63,11 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     public IPAddress(byte[] address) {
       this.address = address;
     }
+
+    @CalledByNative("IPAddress")
+    private byte[] getAddress() {
+      return address;
+    }
   }
 
   /** Java version of NetworkMonitor.NetworkInformation */
@@ -76,6 +82,26 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       this.type = type;
       this.handle = handle;
       this.ipAddresses = addresses;
+    }
+
+    @CalledByNative("NetworkInformation")
+    private IPAddress[] getIpAddresses() {
+      return ipAddresses;
+    }
+
+    @CalledByNative("NetworkInformation")
+    private NetworkMonitorAutoDetect.ConnectionType getConnectionType() {
+      return type;
+    }
+
+    @CalledByNative("NetworkInformation")
+    private long getHandle() {
+      return handle;
+    }
+
+    @CalledByNative("NetworkInformation")
+    private String getName() {
+      return name;
     }
   };
 
