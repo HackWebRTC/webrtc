@@ -35,6 +35,9 @@ class AudioState final : public webrtc::AudioState {
     RTC_DCHECK(config_.audio_processing);
     return config_.audio_processing.get();
   }
+  AudioTransport* audio_transport() override {
+    return &audio_transport_proxy_;
+  }
 
   void SetPlayout(bool enabled) override;
   void SetRecording(bool enabled) override;

@@ -17,6 +17,7 @@
 namespace webrtc {
 
 class AudioProcessing;
+class AudioTransport;
 class VoiceEngine;
 
 // WORK IN PROGRESS
@@ -43,6 +44,7 @@ class AudioState : public rtc::RefCountInterface {
   };
 
   virtual AudioProcessing* audio_processing() = 0;
+  virtual AudioTransport* audio_transport() = 0;
 
   // Enable/disable playout of the audio channels. Enabled by default.
   // This will stop playout of the underlying audio device but start a task
