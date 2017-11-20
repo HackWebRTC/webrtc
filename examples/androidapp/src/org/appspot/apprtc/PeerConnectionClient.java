@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -427,6 +426,7 @@ public class PeerConnectionClient {
         PeerConnectionFactory.InitializationOptions.builder(context)
             .setFieldTrials(fieldTrials)
             .setEnableVideoHwAcceleration(peerConnectionParameters.videoCodecHwAcceleration)
+            .setEnableInternalTracer(true)
             .createInitializationOptions());
     if (peerConnectionParameters.tracing) {
       PeerConnectionFactory.startInternalTracingCapture(

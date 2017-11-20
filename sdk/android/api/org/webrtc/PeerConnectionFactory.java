@@ -63,7 +63,7 @@ public class PeerConnectionFactory {
     public static class Builder {
       private final Context applicationContext;
       private String fieldTrials = "";
-      private boolean enableInternalTracer = true;
+      private boolean enableInternalTracer = false;
       private boolean enableVideoHwAcceleration = true;
       private NativeLibraryLoader nativeLibraryLoader = new NativeLibrary.DefaultLoader();
 
