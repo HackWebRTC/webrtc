@@ -653,8 +653,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
     CreatePeerConnection(config, nullptr);
   }
 
-  void CreatePeerConnection(PeerConnectionInterface::RTCConfiguration config,
-                            webrtc::MediaConstraintsInterface* constraints) {
+  void CreatePeerConnection(
+      const PeerConnectionInterface::RTCConfiguration& config,
+      webrtc::MediaConstraintsInterface* constraints) {
     std::unique_ptr<cricket::FakePortAllocator> port_allocator(
         new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
     port_allocator_ = port_allocator.get();

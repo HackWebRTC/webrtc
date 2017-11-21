@@ -73,10 +73,11 @@ class PeerConnectionEndToEndTest
 #endif
   }
 
-  void CreatePcs(
-      const MediaConstraintsInterface* pc_constraints,
-      rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
-      rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory) {
+  void CreatePcs(const MediaConstraintsInterface* pc_constraints,
+                 const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
+                     audio_encoder_factory,
+                 const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+                     audio_decoder_factory) {
     EXPECT_TRUE(caller_->CreatePc(
         pc_constraints, config_, audio_encoder_factory, audio_decoder_factory));
     EXPECT_TRUE(callee_->CreatePc(
@@ -95,8 +96,10 @@ class PeerConnectionEndToEndTest
     GetAndAddUserMedia(true, audio_constraints, true, video_constraints);
   }
 
-  void GetAndAddUserMedia(bool audio, FakeConstraints audio_constraints,
-                          bool video, FakeConstraints video_constraints) {
+  void GetAndAddUserMedia(bool audio,
+                          const FakeConstraints& audio_constraints,
+                          bool video,
+                          const FakeConstraints& video_constraints) {
     caller_->GetAndAddUserMedia(audio, audio_constraints,
                                 video, video_constraints);
     callee_->GetAndAddUserMedia(audio, audio_constraints,

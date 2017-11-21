@@ -22,7 +22,7 @@ using cricket::kCodecParamMinBitrate;
 
 class TestCodec : public Codec {
  public:
-  TestCodec(int id, const std::string name, int clockrate)
+  TestCodec(int id, const std::string& name, int clockrate)
       : Codec(id, name, clockrate) {}
   TestCodec() : Codec() {}
   TestCodec(const TestCodec& c) : Codec(c) {}

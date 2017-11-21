@@ -129,7 +129,8 @@ class RtpSenderReceiverTest : public testing::Test,
 
   void CreateAudioRtpSender() { CreateAudioRtpSender(nullptr); }
 
-  void CreateAudioRtpSender(rtc::scoped_refptr<LocalAudioSource> source) {
+  void CreateAudioRtpSender(
+      const rtc::scoped_refptr<LocalAudioSource>& source) {
     audio_track_ = AudioTrack::Create(kAudioTrackId, source);
     EXPECT_TRUE(local_stream_->AddTrack(audio_track_));
     audio_rtp_sender_ =

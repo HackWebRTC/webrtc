@@ -53,7 +53,8 @@ rtc::scoped_refptr<MockRtpSender> CreateMockRtpSender(
   }
   rtc::scoped_refptr<MockRtpSender> sender(
       new rtc::RefCountedObject<MockRtpSender>());
-  EXPECT_CALL(*sender, track()).WillRepeatedly(testing::Return(track));
+  EXPECT_CALL(*sender, track())
+      .WillRepeatedly(testing::Return(std::move(track)));
   EXPECT_CALL(*sender, ssrc()).WillRepeatedly(testing::Return(first_ssrc));
   EXPECT_CALL(*sender, media_type())
       .WillRepeatedly(testing::Return(media_type));
@@ -68,7 +69,8 @@ rtc::scoped_refptr<MockRtpReceiver> CreateMockRtpReceiver(
     rtc::scoped_refptr<MediaStreamTrackInterface> track) {
   rtc::scoped_refptr<MockRtpReceiver> receiver(
       new rtc::RefCountedObject<MockRtpReceiver>());
-  EXPECT_CALL(*receiver, track()).WillRepeatedly(testing::Return(track));
+  EXPECT_CALL(*receiver, track())
+      .WillRepeatedly(testing::Return(std::move(track)));
   EXPECT_CALL(*receiver, media_type())
       .WillRepeatedly(testing::Return(media_type));
   EXPECT_CALL(*receiver, GetParameters())

@@ -267,7 +267,7 @@ class RTCStatsVerifier {
         valid_reference = true;
         const RTCStatsMember<std::vector<std::string>>& ids =
             member.cast_to<RTCStatsMember<std::vector<std::string>>>();
-        for (const std::string id : *ids) {
+        for (const std::string& id : *ids) {
           const RTCStats* referenced_stats = report_->Get(id);
           if (!referenced_stats || referenced_stats->type() != expected_type) {
             valid_reference = false;

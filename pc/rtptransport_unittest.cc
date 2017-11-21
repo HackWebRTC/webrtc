@@ -9,6 +9,7 @@
  */
 
 #include <string>
+#include <utility>
 
 #include "p2p/base/fakepackettransport.h"
 #include "pc/rtptransport.h"
@@ -69,7 +70,7 @@ class SignalObserver : public sigslot::has_slots<> {
 
   rtc::Optional<rtc::NetworkRoute> network_route() { return network_route_; }
   void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route) {
-    network_route_ = network_route;
+    network_route_ = std::move(network_route);
   }
 
  private:

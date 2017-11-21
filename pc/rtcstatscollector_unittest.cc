@@ -235,7 +235,8 @@ rtc::scoped_refptr<MediaStreamTrackInterface> CreateFakeTrack(
 }
 
 rtc::scoped_refptr<MockRtpSender> CreateMockSender(
-    rtc::scoped_refptr<MediaStreamTrackInterface> track, uint32_t ssrc) {
+    const rtc::scoped_refptr<MediaStreamTrackInterface>& track,
+    uint32_t ssrc) {
   rtc::scoped_refptr<MockRtpSender> sender(
       new rtc::RefCountedObject<MockRtpSender>());
   EXPECT_CALL(*sender, track()).WillRepeatedly(Return(track));
@@ -254,7 +255,8 @@ rtc::scoped_refptr<MockRtpSender> CreateMockSender(
 }
 
 rtc::scoped_refptr<MockRtpReceiver> CreateMockReceiver(
-    rtc::scoped_refptr<MediaStreamTrackInterface> track, uint32_t ssrc) {
+    const rtc::scoped_refptr<MediaStreamTrackInterface>& track,
+    uint32_t ssrc) {
   rtc::scoped_refptr<MockRtpReceiver> receiver(
       new rtc::RefCountedObject<MockRtpReceiver>());
   EXPECT_CALL(*receiver, track()).WillRepeatedly(Return(track));

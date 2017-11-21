@@ -28,6 +28,7 @@
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
 #include "api/peerconnectionproxy.h"
+#include "api/rtpreceiverinterface.h"
 #include "api/test/fakeconstraints.h"
 #include "media/engine/fakewebrtcvideoengine.h"
 #include "p2p/base/p2pconstants.h"
@@ -80,6 +81,7 @@ using webrtc::PeerConnection;
 using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionFactory;
 using webrtc::PeerConnectionProxy;
+using webrtc::RtpReceiverInterface;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollectionInterface;
 
@@ -276,14 +278,14 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   // generate, but a non-JSEP endpoint might.
   void SetReceivedSdpMunger(
       std::function<void(cricket::SessionDescription*)> munger) {
-    received_sdp_munger_ = munger;
+    received_sdp_munger_ = std::move(munger);
   }
 
   // Similar to the above, but this is run on SDP immediately after it's
   // generated.
   void SetGeneratedSdpMunger(
       std::function<void(cricket::SessionDescription*)> munger) {
-    generated_sdp_munger_ = munger;
+    generated_sdp_munger_ = std::move(munger);
   }
 
   // Every ICE connection state in order that has been seen by the observer.
@@ -343,8 +345,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   }
 
   void AddMediaStreamFromTracks(
-      rtc::scoped_refptr<webrtc::AudioTrackInterface> audio,
-      rtc::scoped_refptr<webrtc::VideoTrackInterface> video) {
+      const rtc::scoped_refptr<webrtc::AudioTrackInterface>& audio,
+      const rtc::scoped_refptr<webrtc::VideoTrackInterface>& video) {
     rtc::scoped_refptr<MediaStreamInterface> stream =
         peer_connection_factory_->CreateLocalMediaStream(
             rtc::CreateRandomUuid());
@@ -553,7 +555,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   void ResetRtpReceiverObservers() {
     rtp_receiver_observers_.clear();
-    for (auto receiver : pc()->GetReceivers()) {
+    for (const rtc::scoped_refptr<RtpReceiverInterface>& receiver :
+         pc()->GetReceivers()) {
       std::unique_ptr<MockRtpReceiverObserver> observer(
           new MockRtpReceiverObserver(receiver->media_type()));
       receiver->SetObserver(observer.get());
@@ -723,7 +726,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   }
 
   std::unique_ptr<SessionDescriptionInterface> WaitForDescriptionFromObserver(
-      rtc::scoped_refptr<MockCreateSessionDescriptionObserver> observer) {
+      MockCreateSessionDescriptionObserver* observer) {
     EXPECT_EQ_WAIT(true, observer->called(), kDefaultTimeout);
     if (!observer->result()) {
       return nullptr;

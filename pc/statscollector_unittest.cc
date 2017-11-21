@@ -242,12 +242,12 @@ const StatsReport* FindReportById(const StatsReports& reports,
   return nullptr;
 }
 
-std::string ExtractSsrcStatsValue(StatsReports reports,
+std::string ExtractSsrcStatsValue(const StatsReports& reports,
                                   StatsReport::StatsValueName name) {
   return ExtractStatsValue(StatsReport::kStatsReportTypeSsrc, reports, name);
 }
 
-std::string ExtractBweStatsValue(StatsReports reports,
+std::string ExtractBweStatsValue(const StatsReports& reports,
                                  StatsReport::StatsValueName name) {
   return ExtractStatsValue(
       StatsReport::kStatsReportTypeBwe, reports, name);
