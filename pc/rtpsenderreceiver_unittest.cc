@@ -165,16 +165,19 @@ class RtpSenderReceiverTest : public testing::Test,
     VerifyVideoChannelNoInput();
   }
 
-  void CreateAudioRtpReceiver() {
-    audio_rtp_receiver_ =
-        new AudioRtpReceiver(kAudioTrackId, kAudioSsrc, voice_channel_);
+  void CreateAudioRtpReceiver(
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams = {}) {
+    audio_rtp_receiver_ = new AudioRtpReceiver(
+        kAudioTrackId, std::move(streams), kAudioSsrc, voice_channel_);
     audio_track_ = audio_rtp_receiver_->audio_track();
     VerifyVoiceChannelOutput();
   }
 
-  void CreateVideoRtpReceiver() {
+  void CreateVideoRtpReceiver(
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams = {}) {
     video_rtp_receiver_ = new VideoRtpReceiver(
-        kVideoTrackId, rtc::Thread::Current(), kVideoSsrc, video_channel_);
+        kVideoTrackId, std::move(streams), rtc::Thread::Current(), kVideoSsrc,
+        video_channel_);
     video_track_ = video_rtp_receiver_->video_track();
     VerifyVideoChannelOutput();
   }
@@ -289,6 +292,16 @@ TEST_F(RtpSenderReceiverTest, AddAndDestroyAudioRtpReceiver) {
 // associated and disassociated with a VideoRtpReceiver.
 TEST_F(RtpSenderReceiverTest, AddAndDestroyVideoRtpReceiver) {
   CreateVideoRtpReceiver();
+  DestroyVideoRtpReceiver();
+}
+
+TEST_F(RtpSenderReceiverTest, AddAndDestroyAudioRtpReceiverWithStreams) {
+  CreateAudioRtpReceiver({local_stream_});
+  DestroyAudioRtpReceiver();
+}
+
+TEST_F(RtpSenderReceiverTest, AddAndDestroyVideoRtpReceiverWithStreams) {
+  CreateVideoRtpReceiver({local_stream_});
   DestroyVideoRtpReceiver();
 }
 

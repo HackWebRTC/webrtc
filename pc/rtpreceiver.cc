@@ -10,6 +10,7 @@
 
 #include "pc/rtpreceiver.h"
 
+#include <utility>
 #include <vector>
 
 #include "api/mediastreamtrackproxy.h"
@@ -20,9 +21,11 @@
 
 namespace webrtc {
 
-AudioRtpReceiver::AudioRtpReceiver(const std::string& track_id,
-                                   uint32_t ssrc,
-                                   cricket::VoiceChannel* channel)
+AudioRtpReceiver::AudioRtpReceiver(
+    const std::string& track_id,
+    std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams,
+    uint32_t ssrc,
+    cricket::VoiceChannel* channel)
     : id_(track_id),
       ssrc_(ssrc),
       channel_(channel),
@@ -30,6 +33,7 @@ AudioRtpReceiver::AudioRtpReceiver(const std::string& track_id,
           rtc::Thread::Current(),
           AudioTrack::Create(track_id,
                              RemoteAudioSource::Create(ssrc, channel)))),
+      streams_(std::move(streams)),
       cached_track_enabled_(track_->enabled()) {
   RTC_DCHECK(track_->GetSource()->remote());
   track_->RegisterObserver(this);
@@ -144,10 +148,12 @@ void AudioRtpReceiver::OnFirstPacketReceived(cricket::BaseChannel* channel) {
   received_first_packet_ = true;
 }
 
-VideoRtpReceiver::VideoRtpReceiver(const std::string& track_id,
-                                   rtc::Thread* worker_thread,
-                                   uint32_t ssrc,
-                                   cricket::VideoChannel* channel)
+VideoRtpReceiver::VideoRtpReceiver(
+    const std::string& track_id,
+    std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams,
+    rtc::Thread* worker_thread,
+    uint32_t ssrc,
+    cricket::VideoChannel* channel)
     : id_(track_id),
       ssrc_(ssrc),
       channel_(channel),
@@ -161,7 +167,8 @@ VideoRtpReceiver::VideoRtpReceiver(const std::string& track_id,
               VideoTrackSourceProxy::Create(rtc::Thread::Current(),
                                             worker_thread,
                                             source_),
-              worker_thread))) {
+              worker_thread))),
+      streams_(std::move(streams)) {
   source_->SetState(MediaSourceInterface::kLive);
   if (!channel_) {
     RTC_LOG(LS_ERROR)

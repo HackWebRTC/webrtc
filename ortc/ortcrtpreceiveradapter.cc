@@ -152,13 +152,14 @@ void OrtcRtpReceiverAdapter::MaybeRecreateInternalReceiver() {
   switch (kind_) {
     case cricket::MEDIA_TYPE_AUDIO:
       internal_receiver_ =
-          new AudioRtpReceiver(rtc::CreateRandomUuid(), ssrc,
+          new AudioRtpReceiver(rtc::CreateRandomUuid(), {}, ssrc,
                                rtp_transport_controller_->voice_channel());
       break;
     case cricket::MEDIA_TYPE_VIDEO:
-      internal_receiver_ = new VideoRtpReceiver(
-          rtc::CreateRandomUuid(), rtp_transport_controller_->worker_thread(),
-          ssrc, rtp_transport_controller_->video_channel());
+      internal_receiver_ =
+          new VideoRtpReceiver(rtc::CreateRandomUuid(), {},
+                               rtp_transport_controller_->worker_thread(), ssrc,
+                               rtp_transport_controller_->video_channel());
       break;
     case cricket::MEDIA_TYPE_DATA:
       RTC_NOTREACHED();

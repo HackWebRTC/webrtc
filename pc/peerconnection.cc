@@ -2079,33 +2079,34 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
 void PeerConnection::CreateAudioReceiver(
     MediaStreamInterface* stream,
     const RtpSenderInfo& remote_sender_info) {
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
+  streams.push_back(rtc::scoped_refptr<MediaStreamInterface>(stream));
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
       receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
           signaling_thread(),
-          new AudioRtpReceiver(remote_sender_info.sender_id,
+          new AudioRtpReceiver(remote_sender_info.sender_id, streams,
                                remote_sender_info.first_ssrc, voice_channel()));
   stream->AddTrack(
       static_cast<AudioTrackInterface*>(receiver->internal()->track().get()));
   GetAudioTransceiver()->internal()->AddReceiver(receiver);
-  std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
-  streams.push_back(rtc::scoped_refptr<MediaStreamInterface>(stream));
-  observer_->OnAddTrack(receiver, streams);
+  observer_->OnAddTrack(receiver, std::move(streams));
 }
 
 void PeerConnection::CreateVideoReceiver(
     MediaStreamInterface* stream,
     const RtpSenderInfo& remote_sender_info) {
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
+  streams.push_back(rtc::scoped_refptr<MediaStreamInterface>(stream));
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
       receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
           signaling_thread(),
-          new VideoRtpReceiver(remote_sender_info.sender_id, worker_thread(),
-                               remote_sender_info.first_ssrc, video_channel()));
+          new VideoRtpReceiver(remote_sender_info.sender_id, streams,
+                               worker_thread(), remote_sender_info.first_ssrc,
+                               video_channel()));
   stream->AddTrack(
       static_cast<VideoTrackInterface*>(receiver->internal()->track().get()));
   GetVideoTransceiver()->internal()->AddReceiver(receiver);
-  std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
-  streams.push_back(rtc::scoped_refptr<MediaStreamInterface>(stream));
-  observer_->OnAddTrack(receiver, streams);
+  observer_->OnAddTrack(receiver, std::move(streams));
 }
 
 // TODO(deadbeef): Keep RtpReceivers around even if track goes away in remote

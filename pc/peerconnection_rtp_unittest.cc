@@ -72,10 +72,10 @@ TEST_F(PeerConnectionRtpTest, AddTrackWithoutStreamFiresOnAddTrack) {
   ASSERT_EQ(1u, callee->observer()->add_track_events_.size());
   // TODO(deadbeef): When no stream is handled correctly we would expect
   // |add_track_events_[0].streams| to be empty. https://crbug.com/webrtc/7933
-  ASSERT_EQ(1u, callee->observer()->add_track_events_[0].streams.size());
-  EXPECT_TRUE(
-      callee->observer()->add_track_events_[0].streams[0]->FindAudioTrack(
-          "audio_track"));
+  auto& add_track_event = callee->observer()->add_track_events_[0];
+  ASSERT_EQ(1u, add_track_event.streams.size());
+  EXPECT_TRUE(add_track_event.streams[0]->FindAudioTrack("audio_track"));
+  EXPECT_EQ(add_track_event.streams, add_track_event.receiver->streams());
 }
 
 TEST_F(PeerConnectionRtpTest, AddTrackWithStreamFiresOnAddTrack) {
@@ -89,12 +89,11 @@ TEST_F(PeerConnectionRtpTest, AddTrackWithStreamFiresOnAddTrack) {
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 
   ASSERT_EQ(1u, callee->observer()->add_track_events_.size());
-  ASSERT_EQ(1u, callee->observer()->add_track_events_[0].streams.size());
-  EXPECT_EQ("audio_stream",
-            callee->observer()->add_track_events_[0].streams[0]->label());
-  EXPECT_TRUE(
-      callee->observer()->add_track_events_[0].streams[0]->FindAudioTrack(
-          "audio_track"));
+  auto& add_track_event = callee->observer()->add_track_events_[0];
+  ASSERT_EQ(1u, add_track_event.streams.size());
+  EXPECT_EQ("audio_stream", add_track_event.streams[0]->label());
+  EXPECT_TRUE(add_track_event.streams[0]->FindAudioTrack("audio_track"));
+  EXPECT_EQ(add_track_event.streams, add_track_event.receiver->streams());
 }
 
 TEST_F(PeerConnectionRtpTest, RemoveTrackWithoutStreamFiresOnRemoveTrack) {

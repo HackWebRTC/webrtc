@@ -64,7 +64,7 @@ JNI_FUNCTION_DECLARATION(jstring,
 }
 
 JNI_FUNCTION_DECLARATION(void, MediaStream_free, JNIEnv*, jclass, jlong j_p) {
-  CHECK_RELEASE(reinterpret_cast<MediaStreamInterface*>(j_p));
+  reinterpret_cast<MediaStreamInterface*>(j_p)->Release();
 }
 
 }  // namespace jni
