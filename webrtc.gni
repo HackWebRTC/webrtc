@@ -266,7 +266,10 @@ template("rtc_test") {
                              "suppressed_configs",
                              "visibility",
                            ])
-    forward_variables_from(invoker, [ "visibility" ])
+    assert(
+        !defined(invoker.visibility),
+        "rtc_test always has visibility `*`; please don't specify it manually")
+    visibility = [ "*" ]
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
