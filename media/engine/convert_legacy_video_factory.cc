@@ -72,6 +72,8 @@ class CricketToWebRtcEncoderFactory : public webrtc::VideoEncoderFactory {
   webrtc::VideoEncoderFactory::CodecInfo QueryVideoEncoder(
       const webrtc::SdpVideoFormat& format) const override {
     CodecInfo info;
+    info.has_internal_source = false;
+    info.is_hardware_accelerated = false;
     if (!external_encoder_factory_)
       return info;
 
