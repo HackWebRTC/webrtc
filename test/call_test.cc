@@ -75,6 +75,8 @@ void CallTest::RunBaseTest(BaseTest* test) {
       audio_state_config.audio_mixer = AudioMixerImpl::Create();
       audio_state_config.audio_processing = apm_send_;
       send_config.audio_state = AudioState::Create(audio_state_config);
+      fake_send_audio_device_->RegisterAudioCallback(
+          send_config.audio_state->audio_transport());
     }
     CreateSenderCall(send_config);
     if (sender_call_transport_controller_ != nullptr) {
@@ -89,7 +91,8 @@ void CallTest::RunBaseTest(BaseTest* test) {
         audio_state_config.audio_mixer = AudioMixerImpl::Create();
         audio_state_config.audio_processing = apm_recv_;
         recv_config.audio_state = AudioState::Create(audio_state_config);
-      }
+        fake_recv_audio_device_->RegisterAudioCallback(
+            recv_config.audio_state->audio_transport());      }
       CreateReceiverCall(recv_config);
     }
     test->OnCallsCreated(sender_call_.get(), receiver_call_.get());
@@ -427,6 +430,7 @@ void CallTest::SetFakeVideoCaptureRotation(VideoRotation rotation) {
 void CallTest::CreateVoiceEngines() {
   voe_send_.voice_engine = VoiceEngine::Create();
   voe_send_.base = VoEBase::GetInterface(voe_send_.voice_engine);
+  EXPECT_EQ(0, fake_send_audio_device_->Init());
   EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(),
                                     apm_send_.get(), decoder_factory_));
   VoEBase::ChannelConfig config;
@@ -436,6 +440,7 @@ void CallTest::CreateVoiceEngines() {
 
   voe_recv_.voice_engine = VoiceEngine::Create();
   voe_recv_.base = VoEBase::GetInterface(voe_recv_.voice_engine);
+  EXPECT_EQ(0, fake_recv_audio_device_->Init());
   EXPECT_EQ(0, voe_recv_.base->Init(fake_recv_audio_device_.get(),
                                     apm_recv_.get(), decoder_factory_));
   voe_recv_.channel_id = voe_recv_.base->CreateChannel();

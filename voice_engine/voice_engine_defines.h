@@ -47,23 +47,4 @@ enum { kVoiceEngineMaxMinPlayoutDelayMs = 10000 };
 
 }  // namespace webrtc
 
-namespace webrtc {
-
-inline int VoEId(int veId, int chId) {
-  if (chId == -1) {
-    const int dummyChannel(99);
-    return (int)((veId << 16) + dummyChannel);
-  }
-  return (int)((veId << 16) + chId);
-}
-
-}  // namespace webrtc
-
-#if defined(_WIN32)
-#define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE \
-  AudioDeviceModule::kDefaultCommunicationDevice
-#else
-#define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE 0
-#endif  // #if (defined(_WIN32)
-
 #endif  // VOICE_ENGINE_VOICE_ENGINE_DEFINES_H_

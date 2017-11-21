@@ -142,91 +142,17 @@ void VoEBaseImpl::PullRenderData(int bits_per_sample,
 }
 
 int VoEBaseImpl::Init(
-    AudioDeviceModule* external_adm,
+    AudioDeviceModule* audio_device,
     AudioProcessing* audio_processing,
     const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
+  RTC_DCHECK(audio_device);
   RTC_DCHECK(audio_processing);
   rtc::CritScope cs(shared_->crit_sec());
-  WebRtcSpl_Init();
   if (shared_->process_thread()) {
     shared_->process_thread()->Start();
   }
 
-  // Create an internal ADM if the user has not added an external
-  // ADM implementation as input to Init().
-  if (external_adm == nullptr) {
-#if !defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
-    return -1;
-#else
-    // Create the internal ADM implementation.
-    shared_->set_audio_device(AudioDeviceModule::Create(
-        AudioDeviceModule::kPlatformDefaultAudio));
-    if (shared_->audio_device() == nullptr) {
-      RTC_LOG(LS_ERROR) << "Init() failed to create the ADM";
-      return -1;
-    }
-#endif  // WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE
-  } else {
-    // Use the already existing external ADM implementation.
-    shared_->set_audio_device(external_adm);
-    RTC_LOG_F(LS_INFO)
-        << "An external ADM implementation will be used in VoiceEngine";
-  }
-
-  bool available = false;
-
-  // --------------------
-  // Reinitialize the ADM
-
-  // Register the AudioTransport implementation
-  if (shared_->audio_device()->RegisterAudioCallback(this) != 0) {
-    RTC_LOG(LS_ERROR) << "Init() failed to register audio callback for the ADM";
-  }
-
-  // ADM initialization
-  if (shared_->audio_device()->Init() != 0) {
-    RTC_LOG(LS_ERROR) << "Init() failed to initialize the ADM";
-    return -1;
-  }
-
-  // Initialize the default speaker
-  if (shared_->audio_device()->SetPlayoutDevice(
-          WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE) != 0) {
-    RTC_LOG(LS_ERROR) << "Init() failed to set the default output device";
-  }
-  if (shared_->audio_device()->InitSpeaker() != 0) {
-    RTC_LOG(LS_ERROR) << "Init() failed to initialize the speaker";
-  }
-
-  // Initialize the default microphone
-  if (shared_->audio_device()->SetRecordingDevice(
-          WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE) != 0) {
-    RTC_LOG(LS_ERROR) << "Init() failed to set the default input device";
-  }
-  if (shared_->audio_device()->InitMicrophone() != 0) {
-    RTC_LOG(LS_ERROR) << "Init() failed to initialize the microphone";
-  }
-
-  // Set number of channels
-  if (shared_->audio_device()->StereoPlayoutIsAvailable(&available) != 0) {
-    RTC_LOG(LS_ERROR) << "Init() failed to query stereo playout mode";
-  }
-  if (shared_->audio_device()->SetStereoPlayout(available) != 0) {
-    RTC_LOG(LS_ERROR) << "Init() failed to set mono/stereo playout mode";
-  }
-
-  // TODO(andrew): These functions don't tell us whether stereo recording
-  // is truly available. We simply set the AudioProcessing input to stereo
-  // here, because we have to wait until receiving the first frame to
-  // determine the actual number of channels anyway.
-  //
-  // These functions may be changed; tracked here:
-  // http://code.google.com/p/webrtc/issues/detail?id=204
-  shared_->audio_device()->StereoRecordingIsAvailable(&available);
-  if (shared_->audio_device()->SetStereoRecording(available) != 0) {
-    RTC_LOG(LS_ERROR) << "Init() failed to set mono/stereo recording mode";
-  }
-
+  shared_->set_audio_device(audio_device);
   shared_->set_audio_processing(audio_processing);
 
   // Configure AudioProcessing components.
@@ -518,23 +444,7 @@ int32_t VoEBaseImpl::TerminateInternal() {
     shared_->process_thread()->Stop();
   }
 
-  if (shared_->audio_device()) {
-    if (shared_->audio_device()->StopPlayout() != 0) {
-      RTC_LOG(LS_ERROR) << "TerminateInternal() failed to stop playout";
-    }
-    if (shared_->audio_device()->StopRecording() != 0) {
-      RTC_LOG(LS_ERROR) << "TerminateInternal() failed to stop recording";
-    }
-    if (shared_->audio_device()->RegisterAudioCallback(nullptr) != 0) {
-      RTC_LOG(LS_ERROR) << "TerminateInternal() failed to de-register audio "
-                           "callback for the ADM";
-    }
-    if (shared_->audio_device()->Terminate() != 0) {
-      RTC_LOG(LS_ERROR) << "TerminateInternal() failed to terminate the ADM";
-    }
-    shared_->set_audio_device(nullptr);
-  }
-
+  shared_->set_audio_device(nullptr);
   shared_->set_audio_processing(nullptr);
 
   return 0;

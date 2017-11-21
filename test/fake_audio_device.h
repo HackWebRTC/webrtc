@@ -137,7 +137,6 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
 
   std::unique_ptr<EventTimerWrapper> tick_;
   rtc::PlatformThread thread_;
-  bool inited_ = false;
 };
 }  // namespace test
 }  // namespace webrtc

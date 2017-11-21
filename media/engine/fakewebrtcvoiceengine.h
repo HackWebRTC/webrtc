@@ -69,9 +69,6 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
     inited_ = false;
     return 0;
   }
-  webrtc::AudioDeviceModule* audio_device_module() override {
-    return nullptr;
-  }
   webrtc::voe::TransmitMixer* transmit_mixer() override {
     return transmit_mixer_;
   }

@@ -176,6 +176,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     fake_audio_device = rtc::MakeUnique<FakeAudioDevice>(
         FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000),
         FakeAudioDevice::CreateDiscardRenderer(48000), audio_rtp_speed);
+    EXPECT_EQ(0, fake_audio_device->Init());
     EXPECT_EQ(0, voe_base->Init(fake_audio_device.get(), audio_processing.get(),
                                 decoder_factory_));
     VoEBase::ChannelConfig config;
@@ -189,9 +190,11 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     send_audio_state_config.audio_processing = audio_processing;
     Call::Config sender_config(event_log_.get());
 
-    sender_config.audio_state = AudioState::Create(send_audio_state_config);
+    auto audio_state = AudioState::Create(send_audio_state_config);
+    fake_audio_device->RegisterAudioCallback(audio_state->audio_transport());
+    sender_config.audio_state = audio_state;
     Call::Config receiver_config(event_log_.get());
-    receiver_config.audio_state = sender_config.audio_state;
+    receiver_config.audio_state = audio_state;
     CreateCalls(sender_config, receiver_config);
 
     std::copy_if(std::begin(payload_type_map_), std::end(payload_type_map_),

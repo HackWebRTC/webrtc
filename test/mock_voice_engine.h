@@ -13,7 +13,6 @@
 
 #include <memory>
 
-#include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_device/include/mock_audio_transport.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "test/gmock.h"
@@ -63,8 +62,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
           return proxy;
         }));
 
-    ON_CALL(*this, audio_device_module())
-        .WillByDefault(testing::Return(&mock_audio_device_));
     ON_CALL(*this, audio_transport())
         .WillByDefault(testing::Return(&mock_audio_transport_));
   }
@@ -97,7 +94,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
       int(AudioDeviceModule* external_adm,
           AudioProcessing* external_apm,
           const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory));
-  MOCK_METHOD0(audio_device_module, AudioDeviceModule*());
   MOCK_METHOD0(transmit_mixer, voe::TransmitMixer*());
   MOCK_METHOD0(Terminate, int());
   MOCK_METHOD0(CreateChannel, int());
@@ -120,7 +116,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
 
   std::map<int, std::unique_ptr<MockRtpRtcp>> mock_rtp_rtcps_;
 
-  MockAudioDeviceModule mock_audio_device_;
   MockAudioTransport mock_audio_transport_;
 };
 }  // namespace test

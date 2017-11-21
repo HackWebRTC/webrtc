@@ -85,23 +85,10 @@ class MockTransmitMixer : public webrtc::voe::TransmitMixer {
 
 void AdmSetupExpectations(webrtc::test::MockAudioDeviceModule* adm) {
   RTC_DCHECK(adm);
+
+  // Setup.
   EXPECT_CALL(*adm, AddRef()).Times(1);
-  EXPECT_CALL(*adm, Release())
-      .WillOnce(Return(rtc::RefCountReleaseStatus::kDroppedLastRef));
-#if !defined(WEBRTC_IOS)
-  EXPECT_CALL(*adm, Recording()).WillOnce(Return(false));
-#if defined(WEBRTC_WIN)
-  EXPECT_CALL(*adm, SetRecordingDevice(
-      testing::Matcher<webrtc::AudioDeviceModule::WindowsDeviceType>(
-          webrtc::AudioDeviceModule::kDefaultCommunicationDevice)))
-              .WillOnce(Return(0));
-#else
-  EXPECT_CALL(*adm, SetRecordingDevice(0)).WillOnce(Return(0));
-#endif  // #if defined(WEBRTC_WIN)
-  EXPECT_CALL(*adm, InitMicrophone()).WillOnce(Return(0));
-  EXPECT_CALL(*adm, StereoRecordingIsAvailable(testing::_)).WillOnce(Return(0));
-  EXPECT_CALL(*adm, SetStereoRecording(false)).WillOnce(Return(0));
-  EXPECT_CALL(*adm, Playing()).WillOnce(Return(false));
+  EXPECT_CALL(*adm, Init()).WillOnce(Return(0));
 #if defined(WEBRTC_WIN)
   EXPECT_CALL(*adm, SetPlayoutDevice(
       testing::Matcher<webrtc::AudioDeviceModule::WindowsDeviceType>(
@@ -113,11 +100,29 @@ void AdmSetupExpectations(webrtc::test::MockAudioDeviceModule* adm) {
   EXPECT_CALL(*adm, InitSpeaker()).WillOnce(Return(0));
   EXPECT_CALL(*adm, StereoPlayoutIsAvailable(testing::_)).WillOnce(Return(0));
   EXPECT_CALL(*adm, SetStereoPlayout(false)).WillOnce(Return(0));
-#endif  // #if !defined(WEBRTC_IOS)
+#if defined(WEBRTC_WIN)
+  EXPECT_CALL(*adm, SetRecordingDevice(
+      testing::Matcher<webrtc::AudioDeviceModule::WindowsDeviceType>(
+          webrtc::AudioDeviceModule::kDefaultCommunicationDevice)))
+              .WillOnce(Return(0));
+#else
+  EXPECT_CALL(*adm, SetRecordingDevice(0)).WillOnce(Return(0));
+#endif  // #if defined(WEBRTC_WIN)
+  EXPECT_CALL(*adm, InitMicrophone()).WillOnce(Return(0));
+  EXPECT_CALL(*adm, StereoRecordingIsAvailable(testing::_)).WillOnce(Return(0));
+  EXPECT_CALL(*adm, SetStereoRecording(false)).WillOnce(Return(0));
   EXPECT_CALL(*adm, BuiltInAECIsAvailable()).WillOnce(Return(false));
   EXPECT_CALL(*adm, BuiltInAGCIsAvailable()).WillOnce(Return(false));
   EXPECT_CALL(*adm, BuiltInNSIsAvailable()).WillOnce(Return(false));
   EXPECT_CALL(*adm, SetAGC(true)).WillOnce(Return(0));
+
+  // Teardown.
+  EXPECT_CALL(*adm, StopPlayout()).WillOnce(Return(0));
+  EXPECT_CALL(*adm, StopRecording()).WillOnce(Return(0));
+  EXPECT_CALL(*adm, RegisterAudioCallback(nullptr)).WillOnce(Return(0));
+  EXPECT_CALL(*adm, Terminate()).WillOnce(Return(0));
+  EXPECT_CALL(*adm, Release())
+      .WillOnce(Return(rtc::RefCountReleaseStatus::kDroppedLastRef));
 }
 }  // namespace
 

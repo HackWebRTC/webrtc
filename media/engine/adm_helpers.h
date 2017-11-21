@@ -19,8 +19,7 @@ class AudioDeviceModule;
 
 namespace adm_helpers {
 
-void SetRecordingDevice(AudioDeviceModule* adm);
-void SetPlayoutDevice(AudioDeviceModule* adm);
+void Init(AudioDeviceModule* adm);
 
 }  // namespace adm_helpers
 }  // namespace webrtc

@@ -25,12 +25,9 @@ class VoEBaseImpl : public VoEBase,
                     public AudioTransport {
  public:
   int Init(
-      AudioDeviceModule* external_adm,
+      AudioDeviceModule* audio_device,
       AudioProcessing* audio_processing,
       const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) override;
-  AudioDeviceModule* audio_device_module() override {
-    return shared_->audio_device();
-  }
   voe::TransmitMixer* transmit_mixer() override {
     return shared_->transmit_mixer();
   }

@@ -29,13 +29,6 @@ AudioState::AudioState(const AudioState::Config& config)
                              config_.audio_mixer) {
   process_thread_checker_.DetachFromThread();
   RTC_DCHECK(config_.audio_mixer);
-
-  auto* const device = voe_base_->audio_device_module();
-  RTC_DCHECK(device);
-
-  // This is needed for the Chrome implementation of RegisterAudioCallback.
-  device->RegisterAudioCallback(nullptr);
-  device->RegisterAudioCallback(&audio_transport_proxy_);
 }
 
 AudioState::~AudioState() {

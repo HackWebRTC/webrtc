@@ -92,11 +92,13 @@ struct VoiceEngineState {
 
 void CreateVoiceEngine(
     VoiceEngineState* voe,
+    webrtc::AudioDeviceModule* adm,
     webrtc::AudioProcessing* apm,
     rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory) {
   voe->voice_engine = webrtc::VoiceEngine::Create();
   voe->base = webrtc::VoEBase::GetInterface(voe->voice_engine);
-  EXPECT_EQ(0, voe->base->Init(nullptr, apm, decoder_factory));
+  EXPECT_EQ(0, adm->Init());
+  EXPECT_EQ(0, voe->base->Init(adm, apm, decoder_factory));
   webrtc::VoEBase::ChannelConfig config;
   config.enable_voice_pacing = true;
   voe->send_channel_id = voe->base->CreateChannel(config);
@@ -1968,6 +1970,7 @@ void VideoQualityTest::SetupAudio(int send_channel_id,
 void VideoQualityTest::RunWithRenderers(const Params& params) {
   std::unique_ptr<test::LayerFilteringTransport> send_transport;
   std::unique_ptr<test::DirectTransport> recv_transport;
+  std::unique_ptr<test::FakeAudioDevice> fake_audio_device;
   ::VoiceEngineState voe;
   std::unique_ptr<test::VideoRenderer> local_preview;
   std::vector<std::unique_ptr<test::VideoRenderer>> loopback_renderers;
@@ -1982,16 +1985,24 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     Call::Config call_config(event_log_.get());
     call_config.bitrate_config = params_.call.call_bitrate_config;
 
+    fake_audio_device.reset(new test::FakeAudioDevice(
+        test::FakeAudioDevice::CreatePulsedNoiseCapturer(32000, 48000),
+        test::FakeAudioDevice::CreateDiscardRenderer(48000),
+        1.f));
+
     rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing(
         webrtc::AudioProcessing::Create());
 
     if (params_.audio.enabled) {
-      CreateVoiceEngine(&voe, audio_processing.get(), decoder_factory_);
+      CreateVoiceEngine(&voe, fake_audio_device.get(), audio_processing.get(),
+                        decoder_factory_);
       AudioState::Config audio_state_config;
       audio_state_config.voice_engine = voe.voice_engine;
       audio_state_config.audio_mixer = AudioMixerImpl::Create();
       audio_state_config.audio_processing = audio_processing;
       call_config.audio_state = AudioState::Create(audio_state_config);
+      fake_audio_device->RegisterAudioCallback(
+          call_config.audio_state->audio_transport());
     }
 
     CreateCalls(call_config, call_config);
