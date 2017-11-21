@@ -41,7 +41,9 @@ class ApmModuleSimulator(object):
   _PREFIX_SCORE = 'score-'
 
   def __init__(self, test_data_generator_factory, evaluation_score_factory,
-               ap_wrapper, evaluator):
+               ap_wrapper, evaluator, external_vads=None):
+    if external_vads is None:
+      external_vads = {}
     self._test_data_generator_factory = test_data_generator_factory
     self._evaluation_score_factory = evaluation_score_factory
     self._audioproc_wrapper = ap_wrapper
@@ -49,7 +51,9 @@ class ApmModuleSimulator(object):
     self._annotator = annotations.AudioAnnotationsExtractor(
         annotations.AudioAnnotationsExtractor.VadType.ENERGY_THRESHOLD |
         annotations.AudioAnnotationsExtractor.VadType.WEBRTC_COMMON_AUDIO |
-        annotations.AudioAnnotationsExtractor.VadType.WEBRTC_APM)
+        annotations.AudioAnnotationsExtractor.VadType.WEBRTC_APM,
+        external_vads
+    )
 
     # Init.
     self._test_data_generator_factory.SetOutputDirectoryPrefix(

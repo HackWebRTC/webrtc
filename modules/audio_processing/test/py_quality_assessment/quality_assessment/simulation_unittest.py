@@ -26,6 +26,7 @@ import pydub
 from . import audioproc_wrapper
 from . import eval_scores_factory
 from . import evaluation
+from . import external_vad
 from . import signal_processing
 from . import simulation
 from . import test_data_generation_factory
@@ -75,7 +76,10 @@ class TestApmModuleSimulator(unittest.TestCase):
         test_data_generator_factory=test_data_generator_factory,
         evaluation_score_factory=evaluation_score_factory,
         ap_wrapper=ap_wrapper,
-        evaluator=evaluator)
+        evaluator=evaluator,
+        external_vads={'fake': external_vad.ExternalVad(os.path.join(
+            os.path.dirname(__file__), 'fake_external_vad.py'), 'fake')}
+    )
 
     # What to simulate.
     config_files = ['apm_configs/default.json']

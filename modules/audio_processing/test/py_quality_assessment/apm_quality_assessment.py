@@ -27,6 +27,7 @@ import quality_assessment.echo_path_simulation as echo_path_simulation
 import quality_assessment.eval_scores as eval_scores
 import quality_assessment.evaluation as evaluation
 import quality_assessment.eval_scores_factory as eval_scores_factory
+import quality_assessment.external_vad as external_vad
 import quality_assessment.test_data_generation as test_data_generation
 import quality_assessment.test_data_generation_factory as  \
     test_data_generation_factory
@@ -113,6 +114,14 @@ def _InstanceArgumentsParser():
                             'copy of the clean speech input file.'),
                       default=False)
 
+  parser.add_argument('--external_vad_paths', nargs='+', required=False,
+                      help=('Paths to external VAD programs. Each must take'
+                            '\'-i <wav file> -o <output>\' inputs'), default=[])
+
+  parser.add_argument('--external_vad_names', nargs='+', required=False,
+                      help=('Keys to the vad paths. Must be different and '
+                            'as many as the paths.'), default=[])
+
   return parser
 
 
@@ -126,6 +135,12 @@ def _ValidateArguments(args, parser):
   if args.render_input_files and not args.echo_path_simulator:
     parser.error('when --render_input_files is set, --echo_path_simulator is '
                  'also required')
+    sys.exit(1)
+
+  if len(args.external_vad_names) != len(args.external_vad_paths):
+    parser.error('If provided, --external_vad_paths and '
+                 '--external_vad_names must '
+                 'have the same number of arguments.')
     sys.exit(1)
 
 
@@ -145,7 +160,9 @@ def main():
       evaluation_score_factory=eval_scores_factory.EvaluationScoreWorkerFactory(
           polqa_tool_bin_path=os.path.join(args.polqa_path, _POLQA_BIN_NAME)),
       ap_wrapper=audioproc_wrapper.AudioProcWrapper(args.apm_sim_path),
-      evaluator=evaluation.ApmModuleEvaluator())
+      evaluator=evaluation.ApmModuleEvaluator(),
+      external_vads=external_vad.ExternalVad.ConstructVadDict(
+          args.external_vad_paths, args.external_vad_names))
   simulator.Run(
       config_filepaths=args.config_files,
       capture_input_filepaths=args.capture_input_files,

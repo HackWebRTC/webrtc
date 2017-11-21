@@ -24,6 +24,7 @@ except ImportError:
   logging.critical('Cannot import the third-party Python package numpy')
   sys.exit(1)
 
+from . import external_vad
 from . import exceptions
 from . import signal_processing
 
@@ -76,7 +77,7 @@ class AudioAnnotationsExtractor(object):
   _VAD_WEBRTC_APM_PATH = os.path.join(
       _VAD_WEBRTC_PATH, 'apm_vad')
 
-  def __init__(self, vad_type):
+  def __init__(self, vad_type, external_vads=None):
     self._signal = None
     self._level = None
     self._level_frame_size = None
@@ -91,6 +92,19 @@ class AudioAnnotationsExtractor(object):
 
     self._vad_type = self.VadType(vad_type)
     logging.info('VADs used for annotations: ' + str(self._vad_type))
+
+    if external_vads is None:
+      external_vads = {}
+    self._external_vads = external_vads
+
+    assert len(self._external_vads) == len(external_vads), (
+        'The external VAD names must be unique.')
+    for vad in external_vads.values():
+      if not isinstance(vad, external_vad.ExternalVad):
+        raise exceptions.InitializationException(
+            'Invalid vad type: ' + str(type(vad)))
+      logging.info('External VAD used for annotation: ' +
+                   str(vad.name))
 
     assert os.path.exists(self._VAD_WEBRTC_COMMON_AUDIO_PATH), \
       self._VAD_WEBRTC_COMMON_AUDIO_PATH
@@ -113,9 +127,9 @@ class AudioAnnotationsExtractor(object):
 
   def GetVadOutput(self, vad_type):
     if vad_type == self.VadType.ENERGY_THRESHOLD:
-      return (self._energy_vad, )
+      return self._energy_vad
     elif vad_type == self.VadType.WEBRTC_COMMON_AUDIO:
-      return (self._common_audio_vad, )
+      return self._common_audio_vad
     elif vad_type == self.VadType.WEBRTC_APM:
       return (self._apm_vad_probs, self._apm_vad_rms)
     else:
@@ -132,7 +146,7 @@ class AudioAnnotationsExtractor(object):
     # Load signal.
     self._signal = signal_processing.SignalProcessingUtils.LoadWav(filepath)
     if self._signal.channels != 1:
-      raise NotImplementedError('multiple-channel annotations not implemented')
+      raise NotImplementedError('Multiple-channel annotations not implemented')
 
     # Level estimation params.
     self._level_frame_size = int(self._signal.frame_rate / 1000 * (
@@ -160,8 +174,14 @@ class AudioAnnotationsExtractor(object):
     if self._vad_type.Contains(self.VadType.WEBRTC_APM):
       # WebRTC modules/audio_processing/ VAD.
       self._RunWebRtcApmVad(filepath)
+    for extvad_name in self._external_vads:
+      self._external_vads[extvad_name].Run(filepath)
 
   def Save(self, output_path):
+    ext_kwargs = {'extvad_conf-' + ext_vad:
+                  self._external_vads[ext_vad].GetVadOutput()
+                  for ext_vad in self._external_vads}
+    # pylint: disable=star-args
     np.savez_compressed(
         file=os.path.join(output_path, self._OUTPUT_FILENAME),
         level=self._level,
@@ -172,7 +192,8 @@ class AudioAnnotationsExtractor(object):
         vad_frame_size=self._vad_frame_size,
         vad_frame_size_ms=self._vad_frame_size_ms,
         vad_probs=self._apm_vad_probs,
-        vad_rms=self._apm_vad_rms
+        vad_rms=self._apm_vad_rms,
+        **ext_kwargs
     )
 
   def _LevelEstimation(self):

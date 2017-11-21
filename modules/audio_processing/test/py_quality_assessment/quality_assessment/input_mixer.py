@@ -65,8 +65,10 @@ class ApmInputMixer(object):
     # This ensures that if the internal parameters of the echo path simulator
     # change, no erroneous cache hit occurs.
     echo_file_name, _ = os.path.splitext(os.path.split(echo_filepath)[1])
-    mix_filepath = os.path.join(output_path, 'mix_capture_{}.wav'.format(
-        echo_file_name))
+    capture_input_file_name, _ = os.path.splitext(
+        os.path.split(capture_input_filepath)[1])
+    mix_filepath = os.path.join(output_path, 'mix_capture_{}_{}.wav'.format(
+        capture_input_file_name, echo_file_name))
 
     # Create the mix if not done yet.
     mix = None

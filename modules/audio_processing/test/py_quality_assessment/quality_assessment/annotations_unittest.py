@@ -19,6 +19,7 @@ import unittest
 import numpy as np
 
 from . import annotations
+from . import external_vad
 from . import input_signal_creator
 from . import signal_processing
 
@@ -29,6 +30,11 @@ class TestAnnotationsExtraction(unittest.TestCase):
 
   _CLEAN_TMP_OUTPUT = True
   _DEBUG_PLOT_VAD = False
+  _VAD_TYPE_CLASS = annotations.AudioAnnotationsExtractor.VadType
+  _ALL_VAD_TYPES = (_VAD_TYPE_CLASS.ENERGY_THRESHOLD |
+                   _VAD_TYPE_CLASS.WEBRTC_COMMON_AUDIO |
+                   _VAD_TYPE_CLASS.WEBRTC_APM)
+
 
   def setUp(self):
     """Create temporary folder."""
@@ -49,11 +55,7 @@ class TestAnnotationsExtraction(unittest.TestCase):
           self._tmp_path))
 
   def testFrameSizes(self):
-    vad_type_class = annotations.AudioAnnotationsExtractor.VadType
-    vad_type = (vad_type_class.ENERGY_THRESHOLD |
-                vad_type_class.WEBRTC_COMMON_AUDIO |
-                vad_type_class.WEBRTC_APM)
-    e = annotations.AudioAnnotationsExtractor(vad_type=vad_type)
+    e = annotations.AudioAnnotationsExtractor(self._ALL_VAD_TYPES)
     e.Extract(self._wav_file_path)
     samples_to_ms = lambda n, sr: 1000 * n // sr
     self.assertEqual(samples_to_ms(e.GetLevelFrameSize(), self._sample_rate),
@@ -62,35 +64,31 @@ class TestAnnotationsExtraction(unittest.TestCase):
                      e.GetVadFrameSizeMs())
 
   def testVoiceActivityDetectors(self):
-    vad_type_class = annotations.AudioAnnotationsExtractor.VadType
-    max_vad_type = (vad_type_class.ENERGY_THRESHOLD |
-                vad_type_class.WEBRTC_COMMON_AUDIO |
-                vad_type_class.WEBRTC_APM)
-    for vad_type_value in range(0, max_vad_type+1):
-      vad_type = vad_type_class(vad_type_value)
+    for vad_type_value in range(0, self._ALL_VAD_TYPES+1):
+      vad_type = self._VAD_TYPE_CLASS(vad_type_value)
       e = annotations.AudioAnnotationsExtractor(vad_type=vad_type_value)
       e.Extract(self._wav_file_path)
-      if vad_type.Contains(vad_type_class.ENERGY_THRESHOLD):
-        # pylint: disable=unbalanced-tuple-unpacking
-        (vad_output, ) = e.GetVadOutput(vad_type_class.ENERGY_THRESHOLD)
+      if vad_type.Contains(self._VAD_TYPE_CLASS.ENERGY_THRESHOLD):
+        # pylint: disable=unpacking-non-sequence
+        vad_output = e.GetVadOutput(self._VAD_TYPE_CLASS.ENERGY_THRESHOLD)
         self.assertGreater(len(vad_output), 0)
         self.assertGreaterEqual(float(np.sum(vad_output)) / len(vad_output),
                                 0.95)
 
-      if vad_type.Contains(vad_type_class.WEBRTC_COMMON_AUDIO):
-        # pylint: disable=unbalanced-tuple-unpacking
-        (vad_output,) = e.GetVadOutput(vad_type_class.WEBRTC_COMMON_AUDIO)
+      if vad_type.Contains(self._VAD_TYPE_CLASS.WEBRTC_COMMON_AUDIO):
+        # pylint: disable=unpacking-non-sequence
+        vad_output = e.GetVadOutput(self._VAD_TYPE_CLASS.WEBRTC_COMMON_AUDIO)
         self.assertGreater(len(vad_output), 0)
         self.assertGreaterEqual(float(np.sum(vad_output)) / len(vad_output),
                                 0.95)
 
-      if vad_type.Contains(vad_type_class.WEBRTC_APM):
-        # pylint: disable=unbalanced-tuple-unpacking
-        (vad_probs, vad_rms) = e.GetVadOutput(vad_type_class.WEBRTC_APM)
+      if vad_type.Contains(self._VAD_TYPE_CLASS.WEBRTC_APM):
+        # pylint: disable=unpacking-non-sequence
+        (vad_probs, vad_rms) = e.GetVadOutput(self._VAD_TYPE_CLASS.WEBRTC_APM)
         self.assertGreater(len(vad_probs), 0)
         self.assertGreater(len(vad_rms), 0)
         self.assertGreaterEqual(float(np.sum(vad_probs)) / len(vad_probs),
-                                0.95)
+                                0.5)
         self.assertGreaterEqual(float(np.sum(vad_rms)) / len(vad_rms), 20000)
 
       if self._DEBUG_PLOT_VAD:
@@ -111,11 +109,7 @@ class TestAnnotationsExtraction(unittest.TestCase):
         plt.show()
 
   def testSaveLoad(self):
-    vad_type_class = annotations.AudioAnnotationsExtractor.VadType
-    vad_type = (vad_type_class.ENERGY_THRESHOLD |
-                vad_type_class.WEBRTC_COMMON_AUDIO |
-                vad_type_class.WEBRTC_APM)
-    e = annotations.AudioAnnotationsExtractor(vad_type)
+    e = annotations.AudioAnnotationsExtractor(self._ALL_VAD_TYPES)
     e.Extract(self._wav_file_path)
     e.Save(self._tmp_path)
 
@@ -123,14 +117,37 @@ class TestAnnotationsExtraction(unittest.TestCase):
     np.testing.assert_array_equal(e.GetLevel(), data['level'])
     self.assertEqual(np.float32, data['level'].dtype)
     np.testing.assert_array_equal(
-        e.GetVadOutput(vad_type_class.ENERGY_THRESHOLD),
+        e.GetVadOutput(self._VAD_TYPE_CLASS.ENERGY_THRESHOLD),
         data['vad_energy_output'])
     np.testing.assert_array_equal(
-        e.GetVadOutput(vad_type_class.WEBRTC_COMMON_AUDIO), data['vad_output'])
+        e.GetVadOutput(self._VAD_TYPE_CLASS.WEBRTC_COMMON_AUDIO),
+        data['vad_output'])
     np.testing.assert_array_equal(
-        e.GetVadOutput(vad_type_class.WEBRTC_APM)[0], data['vad_probs'])
+        e.GetVadOutput(self._VAD_TYPE_CLASS.WEBRTC_APM)[0], data['vad_probs'])
     np.testing.assert_array_equal(
-        e.GetVadOutput(vad_type_class.WEBRTC_APM)[1], data['vad_rms'])
+        e.GetVadOutput(self._VAD_TYPE_CLASS.WEBRTC_APM)[1], data['vad_rms'])
     self.assertEqual(np.uint8, data['vad_energy_output'].dtype)
     self.assertEqual(np.float64, data['vad_probs'].dtype)
     self.assertEqual(np.float64, data['vad_rms'].dtype)
+
+  def testEmptyExternalShouldNotCrash(self):
+    for vad_type_value in range(0, self._ALL_VAD_TYPES+1):
+      annotations.AudioAnnotationsExtractor(vad_type_value, {})
+
+  def testFakeExternalSaveLoad(self):
+    def FakeExternalFactory():
+      return external_vad.ExternalVad(
+        os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'fake_external_vad.py'),
+        'fake'
+      )
+    for vad_type_value in range(0, self._ALL_VAD_TYPES+1):
+      e = annotations.AudioAnnotationsExtractor(
+          vad_type_value,
+          {'fake': FakeExternalFactory()})
+      e.Extract(self._wav_file_path)
+      e.Save(self._tmp_path)
+      data = np.load(os.path.join(self._tmp_path, e.GetOutputFileName()))
+      self.assertEqual(np.float32, data['extvad_conf-fake'].dtype)
+      np.testing.assert_almost_equal(np.arange(100, dtype=np.float32),
+                                     data['extvad_conf-fake'])
