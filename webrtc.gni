@@ -266,9 +266,10 @@ template("rtc_test") {
                              "suppressed_configs",
                              "visibility",
                            ])
-    assert(
-        !defined(invoker.visibility),
-        "rtc_test always has visibility `*`; please don't specify it manually")
+
+    # Always override to public because when target_os is Android the `test`
+    # template can override it to [ "*" ] and we want to avoid conditional
+    # visibility.
     visibility = [ "*" ]
     configs += invoker.configs
     configs -= rtc_remove_configs
