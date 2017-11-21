@@ -463,6 +463,11 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsIDReference(
         candidate.transport_id, RTCTransportStats::kType);
     verifier.TestMemberIsDefined(candidate.is_remote);
+    if (*candidate.is_remote) {
+      verifier.TestMemberIsUndefined(candidate.network_type);
+    } else {
+      verifier.TestMemberIsDefined(candidate.network_type);
+    }
     verifier.TestMemberIsDefined(candidate.ip);
     verifier.TestMemberIsNonNegative<int32_t>(candidate.port);
     verifier.TestMemberIsDefined(candidate.protocol);

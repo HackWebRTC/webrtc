@@ -162,6 +162,24 @@ const char* DtlsTransportStateToRTCDtlsTransportState(
   }
 }
 
+const char* NetworkAdapterTypeToStatsType(rtc::AdapterType type) {
+  switch (type) {
+    case rtc::ADAPTER_TYPE_CELLULAR:
+      return RTCNetworkType::kCellular;
+    case rtc::ADAPTER_TYPE_ETHERNET:
+      return RTCNetworkType::kEthernet;
+    case rtc::ADAPTER_TYPE_WIFI:
+      return RTCNetworkType::kWifi;
+    case rtc::ADAPTER_TYPE_VPN:
+      return RTCNetworkType::kVpn;
+    case rtc::ADAPTER_TYPE_UNKNOWN:
+    case rtc::ADAPTER_TYPE_LOOPBACK:
+      return RTCNetworkType::kUnknown;
+  }
+  RTC_NOTREACHED();
+  return nullptr;
+}
+
 double DoubleAudioLevelFromIntAudioLevel(int audio_level) {
   RTC_DCHECK_GE(audio_level, 0);
   RTC_DCHECK_LE(audio_level, 32767);
@@ -341,6 +359,13 @@ const std::string& ProduceIceCandidateStats(
     else
       candidate_stats.reset(new RTCRemoteIceCandidateStats(id, timestamp_us));
     candidate_stats->transport_id = transport_id;
+    if (is_local) {
+      candidate_stats->network_type =
+          NetworkAdapterTypeToStatsType(candidate.network_type());
+    } else {
+      // We don't expect to know the adapter type of remote candidates.
+      RTC_DCHECK_EQ(rtc::ADAPTER_TYPE_UNKNOWN, candidate.network_type());
+    }
     candidate_stats->ip = candidate.address().ipaddr().ToString();
     candidate_stats->port = static_cast<int32_t>(candidate.address().port());
     candidate_stats->protocol = candidate.protocol();

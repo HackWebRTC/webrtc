@@ -60,6 +60,17 @@ struct RTCMediaStreamTrackKind {
   static const char* const kVideo;
 };
 
+// https://w3c.github.io/webrtc-stats/#dom-rtcnetworktype
+struct RTCNetworkType {
+  static const char* const kBluetooth;
+  static const char* const kCellular;
+  static const char* const kEthernet;
+  static const char* const kWifi;
+  static const char* const kWimax;
+  static const char* const kVpn;
+  static const char* const kUnknown;
+};
+
 // https://w3c.github.io/webrtc-stats/#certificatestats-dict*
 class RTCCertificateStats final : public RTCStats {
  public:
@@ -181,6 +192,7 @@ class RTCIceCandidateStats : public RTCStats {
 
   RTCStatsMember<std::string> transport_id;
   RTCStatsMember<bool> is_remote;
+  RTCStatsMember<std::string> network_type;
   RTCStatsMember<std::string> ip;
   RTCStatsMember<int32_t> port;
   RTCStatsMember<std::string> protocol;

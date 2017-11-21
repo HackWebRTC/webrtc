@@ -38,6 +38,15 @@ const char* const RTCDtlsTransportState::kFailed = "failed";
 const char* const RTCMediaStreamTrackKind::kAudio = "audio";
 const char* const RTCMediaStreamTrackKind::kVideo = "video";
 
+// https://w3c.github.io/webrtc-stats/#dom-rtcnetworktype
+const char* const RTCNetworkType::kBluetooth = "bluetooth";
+const char* const RTCNetworkType::kCellular = "cellular";
+const char* const RTCNetworkType::kEthernet = "ethernet";
+const char* const RTCNetworkType::kWifi = "wifi";
+const char* const RTCNetworkType::kWimax = "wimax";
+const char* const RTCNetworkType::kVpn = "vpn";
+const char* const RTCNetworkType::kUnknown = "unknown";
+
 // clang-format off
 WEBRTC_RTCSTATS_IMPL(RTCCertificateStats, RTCStats, "certificate",
     &fingerprint,
@@ -256,6 +265,7 @@ RTCIceCandidatePairStats::~RTCIceCandidatePairStats() {
 WEBRTC_RTCSTATS_IMPL(RTCIceCandidateStats, RTCStats, "ice-candidate",
     &transport_id,
     &is_remote,
+    &network_type,
     &ip,
     &port,
     &protocol,
@@ -270,32 +280,33 @@ RTCIceCandidateStats::RTCIceCandidateStats(
     : RTCIceCandidateStats(std::string(id), timestamp_us, is_remote) {
 }
 
-RTCIceCandidateStats::RTCIceCandidateStats(
-    std::string&& id, int64_t timestamp_us, bool is_remote)
+RTCIceCandidateStats::RTCIceCandidateStats(std::string&& id,
+                                           int64_t timestamp_us,
+                                           bool is_remote)
     : RTCStats(std::move(id), timestamp_us),
       transport_id("transportId"),
       is_remote("isRemote", is_remote),
+      network_type("networkType"),
       ip("ip"),
       port("port"),
       protocol("protocol"),
       candidate_type("candidateType"),
       priority("priority"),
       url("url"),
-      deleted("deleted", false) {
-}
+      deleted("deleted", false) {}
 
 RTCIceCandidateStats::RTCIceCandidateStats(const RTCIceCandidateStats& other)
     : RTCStats(other.id(), other.timestamp_us()),
       transport_id(other.transport_id),
       is_remote(other.is_remote),
+      network_type(other.network_type),
       ip(other.ip),
       port(other.port),
       protocol(other.protocol),
       candidate_type(other.candidate_type),
       priority(other.priority),
       url(other.url),
-      deleted(other.deleted) {
-}
+      deleted(other.deleted) {}
 
 RTCIceCandidateStats::~RTCIceCandidateStats() {
 }

@@ -159,11 +159,13 @@ std::unique_ptr<cricket::Candidate> CreateFakeCandidate(
     const std::string& hostname,
     int port,
     const std::string& protocol,
+    const rtc::AdapterType adapter_type,
     const std::string& candidate_type,
     uint32_t priority) {
   std::unique_ptr<cricket::Candidate> candidate(new cricket::Candidate());
   candidate->set_address(rtc::SocketAddress(hostname, port));
   candidate->set_protocol(protocol);
+  candidate->set_network_type(adapter_type);
   candidate->set_type(candidate_type);
   candidate->set_priority(priority);
   return candidate;
@@ -1051,14 +1053,13 @@ TEST_F(RTCStatsCollectorTest, CollectRTCDataChannelStats) {
 
 TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   // Candidates in the first transport stats.
-  std::unique_ptr<cricket::Candidate> a_local_host = CreateFakeCandidate(
-      "1.2.3.4", 5,
-      "a_local_host's protocol",
-      cricket::LOCAL_PORT_TYPE,
-      0);
+  std::unique_ptr<cricket::Candidate> a_local_host =
+      CreateFakeCandidate("1.2.3.4", 5, "a_local_host's protocol",
+                          rtc::ADAPTER_TYPE_VPN, cricket::LOCAL_PORT_TYPE, 0);
   RTCLocalIceCandidateStats expected_a_local_host(
       "RTCIceCandidate_" + a_local_host->id(), 0);
   expected_a_local_host.transport_id = "RTCTransport_a_0";
+  expected_a_local_host.network_type = "vpn";
   expected_a_local_host.ip = "1.2.3.4";
   expected_a_local_host.port = 5;
   expected_a_local_host.protocol = "a_local_host's protocol";
@@ -1067,10 +1068,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   EXPECT_FALSE(*expected_a_local_host.is_remote);
 
   std::unique_ptr<cricket::Candidate> a_remote_srflx = CreateFakeCandidate(
-      "6.7.8.9", 10,
-      "remote_srflx's protocol",
-      cricket::STUN_PORT_TYPE,
-      1);
+      "6.7.8.9", 10, "remote_srflx's protocol", rtc::ADAPTER_TYPE_UNKNOWN,
+      cricket::STUN_PORT_TYPE, 1);
   RTCRemoteIceCandidateStats expected_a_remote_srflx(
       "RTCIceCandidate_" + a_remote_srflx->id(), 0);
   expected_a_remote_srflx.transport_id = "RTCTransport_a_0";
@@ -1083,13 +1082,12 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   EXPECT_TRUE(*expected_a_remote_srflx.is_remote);
 
   std::unique_ptr<cricket::Candidate> a_local_prflx = CreateFakeCandidate(
-      "11.12.13.14", 15,
-      "a_local_prflx's protocol",
-      cricket::PRFLX_PORT_TYPE,
-      2);
+      "11.12.13.14", 15, "a_local_prflx's protocol", rtc::ADAPTER_TYPE_CELLULAR,
+      cricket::PRFLX_PORT_TYPE, 2);
   RTCLocalIceCandidateStats expected_a_local_prflx(
       "RTCIceCandidate_" + a_local_prflx->id(), 0);
   expected_a_local_prflx.transport_id = "RTCTransport_a_0";
+  expected_a_local_prflx.network_type = "cellular";
   expected_a_local_prflx.ip = "11.12.13.14";
   expected_a_local_prflx.port = 15;
   expected_a_local_prflx.protocol = "a_local_prflx's protocol";
@@ -1099,10 +1097,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   EXPECT_FALSE(*expected_a_local_prflx.is_remote);
 
   std::unique_ptr<cricket::Candidate> a_remote_relay = CreateFakeCandidate(
-      "16.17.18.19", 20,
-      "a_remote_relay's protocol",
-      cricket::RELAY_PORT_TYPE,
-      3);
+      "16.17.18.19", 20, "a_remote_relay's protocol", rtc::ADAPTER_TYPE_UNKNOWN,
+      cricket::RELAY_PORT_TYPE, 3);
   RTCRemoteIceCandidateStats expected_a_remote_relay(
       "RTCIceCandidate_" + a_remote_relay->id(), 0);
   expected_a_remote_relay.transport_id = "RTCTransport_a_0";
@@ -1115,14 +1111,13 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   EXPECT_TRUE(*expected_a_remote_relay.is_remote);
 
   // Candidates in the second transport stats.
-  std::unique_ptr<cricket::Candidate> b_local = CreateFakeCandidate(
-      "42.42.42.42", 42,
-      "b_local's protocol",
-      cricket::LOCAL_PORT_TYPE,
-      42);
+  std::unique_ptr<cricket::Candidate> b_local =
+      CreateFakeCandidate("42.42.42.42", 42, "b_local's protocol",
+                          rtc::ADAPTER_TYPE_WIFI, cricket::LOCAL_PORT_TYPE, 42);
   RTCLocalIceCandidateStats expected_b_local(
       "RTCIceCandidate_" + b_local->id(), 0);
   expected_b_local.transport_id = "RTCTransport_b_0";
+  expected_b_local.network_type = "wifi";
   expected_b_local.ip = "42.42.42.42";
   expected_b_local.port = 42;
   expected_b_local.protocol = "b_local's protocol";
@@ -1132,10 +1127,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   EXPECT_FALSE(*expected_b_local.is_remote);
 
   std::unique_ptr<cricket::Candidate> b_remote = CreateFakeCandidate(
-      "42.42.42.42", 42,
-      "b_remote's protocol",
-      cricket::LOCAL_PORT_TYPE,
-      42);
+      "42.42.42.42", 42, "b_remote's protocol", rtc::ADAPTER_TYPE_UNKNOWN,
+      cricket::LOCAL_PORT_TYPE, 42);
   RTCRemoteIceCandidateStats expected_b_remote(
       "RTCIceCandidate_" + b_remote->id(), 0);
   expected_b_remote.transport_id = "RTCTransport_b_0";
@@ -1220,10 +1213,12 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
       test_->signaling_thread(), rtc::WrapUnique(video_media_channel),
       "VideoContentName", kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
 
-  std::unique_ptr<cricket::Candidate> local_candidate = CreateFakeCandidate(
-      "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42);
+  std::unique_ptr<cricket::Candidate> local_candidate =
+      CreateFakeCandidate("42.42.42.42", 42, "protocol", rtc::ADAPTER_TYPE_WIFI,
+                          cricket::LOCAL_PORT_TYPE, 42);
   std::unique_ptr<cricket::Candidate> remote_candidate = CreateFakeCandidate(
-      "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42);
+      "42.42.42.42", 42, "protocol", rtc::ADAPTER_TYPE_UNKNOWN,
+      cricket::LOCAL_PORT_TYPE, 42);
 
   SessionStats session_stats;
 
@@ -1374,6 +1369,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   RTCLocalIceCandidateStats expected_local_candidate(
       *expected_pair.local_candidate_id, report->timestamp_us());
   expected_local_candidate.transport_id = *expected_pair.transport_id;
+  expected_local_candidate.network_type = "wifi";
   expected_local_candidate.ip = "42.42.42.42";
   expected_local_candidate.port = 42;
   expected_local_candidate.protocol = "protocol";
@@ -2162,17 +2158,20 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
-  std::unique_ptr<cricket::Candidate> rtp_local_candidate = CreateFakeCandidate(
-      "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42);
+  std::unique_ptr<cricket::Candidate> rtp_local_candidate =
+      CreateFakeCandidate("42.42.42.42", 42, "protocol", rtc::ADAPTER_TYPE_WIFI,
+                          cricket::LOCAL_PORT_TYPE, 42);
   std::unique_ptr<cricket::Candidate> rtp_remote_candidate =
       CreateFakeCandidate("42.42.42.42", 42, "protocol",
-                          cricket::LOCAL_PORT_TYPE, 42);
+                          rtc::ADAPTER_TYPE_UNKNOWN, cricket::LOCAL_PORT_TYPE,
+                          42);
   std::unique_ptr<cricket::Candidate> rtcp_local_candidate =
-      CreateFakeCandidate("42.42.42.42", 42, "protocol",
+      CreateFakeCandidate("42.42.42.42", 42, "protocol", rtc::ADAPTER_TYPE_WIFI,
                           cricket::LOCAL_PORT_TYPE, 42);
   std::unique_ptr<cricket::Candidate> rtcp_remote_candidate =
       CreateFakeCandidate("42.42.42.42", 42, "protocol",
-                          cricket::LOCAL_PORT_TYPE, 42);
+                          rtc::ADAPTER_TYPE_UNKNOWN, cricket::LOCAL_PORT_TYPE,
+                          42);
 
   SessionStats session_stats;
   session_stats.transport_stats["transport"].transport_name = "transport";
