@@ -48,7 +48,10 @@ class RtcpTransceiverImpl {
   // Stops sending REMB in following compound packets.
   void UnsetRemb();
 
+  void RequestKeyFrame(rtc::ArrayView<const uint32_t> ssrcs);
+
  private:
+  class PacketSender;
   struct SenderReportTimes {
     int64_t local_received_time_us;
     NtpTime remote_sent_time;
@@ -57,9 +60,13 @@ class RtcpTransceiverImpl {
   void HandleReceivedPacket(const rtcp::CommonHeader& rtcp_packet_header,
                             int64_t now_us);
 
+  void ReschedulePeriodicCompoundPackets();
   void SchedulePeriodicCompoundPackets(int64_t delay_ms);
+  // Creates compound RTCP packet, as defined in
+  // https://tools.ietf.org/html/rfc5506#section-2
+  void CreateCompoundPacket(PacketSender* sender);
   // Sends RTCP packets.
-  void SendPacket();
+  void SendPeriodicCompoundPacket();
   // Generate Report Blocks to be send in Sender or Receiver Report.
   std::vector<rtcp::ReportBlock> CreateReportBlocks();
 

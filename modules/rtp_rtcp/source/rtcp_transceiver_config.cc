@@ -48,6 +48,11 @@ bool RtcpTransceiverConfig::Validate() const {
     RTC_LOG(LS_ERROR) << debug_id << "outgoing transport must be set";
     return false;
   }
+  if (initial_report_delay_ms < 0) {
+    RTC_LOG(LS_ERROR) << debug_id << "delay " << initial_report_delay_ms
+                      << "ms before first report shouldn't be negative.";
+    return false;
+  }
   if (report_period_ms <= 0) {
     RTC_LOG(LS_ERROR) << debug_id << "period " << report_period_ms
                       << "ms between reports should be positive.";
@@ -56,6 +61,10 @@ bool RtcpTransceiverConfig::Validate() const {
   if (schedule_periodic_compound_packets && !task_queue) {
     RTC_LOG(LS_ERROR) << debug_id
                       << "missing task queue for periodic compound packets";
+    return false;
+  }
+  if (rtcp_mode != RtcpMode::kCompound && rtcp_mode != RtcpMode::kReducedSize) {
+    RTC_LOG(LS_ERROR) << debug_id << "unsupported rtcp mode";
     return false;
   }
   // TODO(danilchap): Remove or update the warning when RtcpTransceiver supports

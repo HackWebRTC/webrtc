@@ -447,4 +447,69 @@ TEST(RtcpTransceiverImplTest,
   EXPECT_EQ(CompactNtpRttToMs(report_blocks[1].delay_since_last_sr()), 100);
 }
 
+TEST(RtcpTransceiverImplTest, RequestKeyFrameWithPictureLossIndication) {
+  const uint32_t kSenderSsrc = 1234;
+  const uint32_t kRemoteSsrcs[] = {4321, 5321};
+  MockTransport outgoing_transport;
+  RtcpTransceiverConfig config;
+  config.feedback_ssrc = kSenderSsrc;
+  config.schedule_periodic_compound_packets = false;
+  config.outgoing_transport = &outgoing_transport;
+  RtcpTransceiverImpl rtcp_transceiver(config);
+  RtcpPacketParser rtcp_parser;
+  EXPECT_CALL(outgoing_transport, SendRtcp(_, _))
+      .WillOnce(Invoke(&rtcp_parser, &RtcpPacketParser::Parse));
+
+  rtcp_transceiver.RequestKeyFrame(kRemoteSsrcs);
+
+  // Expect a pli packet per ssrc in the sent single compound packet.
+  EXPECT_EQ(rtcp_parser.pli()->num_packets(), 2);
+  EXPECT_EQ(rtcp_parser.pli()->sender_ssrc(), kSenderSsrc);
+  // test::RtcpPacketParser overwrites first pli packet with second one.
+  EXPECT_EQ(rtcp_parser.pli()->media_ssrc(), kRemoteSsrcs[1]);
+}
+
+TEST(RtcpTransceiverImplTest, KeyFrameRequestCreatesCompoundPacket) {
+  const uint32_t kRemoteSsrcs[] = {4321};
+  MockTransport outgoing_transport;
+  RtcpTransceiverConfig config;
+  // Turn periodic off to ensure sent rtcp packet is explicitly requested.
+  config.schedule_periodic_compound_packets = false;
+  config.outgoing_transport = &outgoing_transport;
+
+  config.rtcp_mode = webrtc::RtcpMode::kCompound;
+
+  RtcpTransceiverImpl rtcp_transceiver(config);
+  RtcpPacketParser rtcp_parser;
+  EXPECT_CALL(outgoing_transport, SendRtcp(_, _))
+      .WillOnce(Invoke(&rtcp_parser, &RtcpPacketParser::Parse));
+
+  rtcp_transceiver.RequestKeyFrame(kRemoteSsrcs);
+
+  // Test sent packet is compound by expecting presense of receiver report.
+  EXPECT_EQ(rtcp_parser.receiver_report()->num_packets(), 1);
+}
+
+TEST(RtcpTransceiverImplTest, KeyFrameRequestCreatesReducedSizePacket) {
+  const uint32_t kRemoteSsrcs[] = {4321};
+  MockTransport outgoing_transport;
+  RtcpTransceiverConfig config;
+  // Turn periodic off to ensure sent rtcp packet is explicitly requested.
+  config.schedule_periodic_compound_packets = false;
+  config.outgoing_transport = &outgoing_transport;
+
+  config.rtcp_mode = webrtc::RtcpMode::kReducedSize;
+
+  RtcpTransceiverImpl rtcp_transceiver(config);
+  RtcpPacketParser rtcp_parser;
+  // Expect some rtcp packet is triggered by the RequestKeyFrame.
+  EXPECT_CALL(outgoing_transport, SendRtcp(_, _))
+      .WillOnce(Invoke(&rtcp_parser, &RtcpPacketParser::Parse));
+
+  rtcp_transceiver.RequestKeyFrame(kRemoteSsrcs);
+
+  // Test sent packet is reduced size by expecting absense of receiver report.
+  EXPECT_EQ(rtcp_parser.receiver_report()->num_packets(), 0);
+}
+
 }  // namespace

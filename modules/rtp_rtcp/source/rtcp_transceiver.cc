@@ -90,4 +90,18 @@ void RtcpTransceiver::UnsetRemb() {
   });
 }
 
+void RtcpTransceiver::RequestKeyFrame(std::vector<uint32_t> ssrcs) {
+  // TODO(danilchap): Replace with lambda with move capture when available.
+  struct RequestKeyFrameClosure {
+    void operator()() {
+      if (ptr)
+        ptr->RequestKeyFrame(ssrcs);
+    }
+
+    rtc::WeakPtr<RtcpTransceiverImpl> ptr;
+    std::vector<uint32_t> ssrcs;
+  };
+  task_queue_->PostTask(RequestKeyFrameClosure{ptr_, std::move(ssrcs)});
+}
+
 }  // namespace webrtc

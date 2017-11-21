@@ -44,6 +44,8 @@ class RtcpTransceiver {
   // Stops sending REMB in following compound packets.
   void UnsetRemb();
 
+  void RequestKeyFrame(std::vector<uint32_t> ssrcs);
+
  private:
   rtc::TaskQueue* const task_queue_;
   std::unique_ptr<RtcpTransceiverImpl> rtcp_transceiver_;

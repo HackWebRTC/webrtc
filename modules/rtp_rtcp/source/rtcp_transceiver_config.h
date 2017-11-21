@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/task_queue.h"
 
 namespace webrtc {
@@ -51,6 +52,11 @@ struct RtcpTransceiverConfig {
   // Rtcp report block generator for outgoing receiver reports.
   ReceiveStatisticsProvider* receive_statistics = nullptr;
 
+  // Configures if sending should
+  //  enforce compound packets: https://tools.ietf.org/html/rfc4585#section-3.1
+  //  or allow reduced size packets: https://tools.ietf.org/html/rfc5506
+  // Receiving accepts both compound and reduced-size packets.
+  RtcpMode rtcp_mode = RtcpMode::kCompound;
   //
   // Tuning parameters.
   //
