@@ -48,11 +48,6 @@ class UlpfecGenerator {
   UlpfecGenerator();
   ~UlpfecGenerator();
 
-  static std::unique_ptr<RedPacket> BuildRedPacket(const uint8_t* data_buffer,
-                                                   size_t payload_length,
-                                                   size_t rtp_header_length,
-                                                   int red_payload_type);
-
   void SetFecParameters(const FecProtectionParams& params);
 
   // Adds a media packet to the internal buffer. When enough media packets

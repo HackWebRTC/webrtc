@@ -43,8 +43,6 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     ByteWriter<uint16_t>::WriteBigEndian(&packet[2], seq_num++);
     i += payload_size + rtp_header_length;
     // Make sure sequence numbers are increasing.
-    std::unique_ptr<RedPacket> red_packet = UlpfecGenerator::BuildRedPacket(
-        packet.get(), payload_size, rtp_header_length, kRedPayloadType);
     const bool protect = data[i++] % 2 == 1;
     if (protect) {
       generator.AddRtpPacketAndGenerateFec(packet.get(), payload_size,

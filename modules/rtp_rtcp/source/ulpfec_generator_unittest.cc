@@ -167,38 +167,4 @@ TEST_F(UlpfecGeneratorTest, TwoFrameFec) {
                red_packets.front().get(), false);
 }
 
-TEST_F(UlpfecGeneratorTest, BuildRedPacket) {
-  packet_generator_.NewFrame(1);
-  std::unique_ptr<AugmentedPacket> packet = packet_generator_.NextPacket(0, 10);
-  std::unique_ptr<RedPacket> red_packet = UlpfecGenerator::BuildRedPacket(
-      packet->data, packet->length - kRtpHeaderSize, kRtpHeaderSize,
-      kRedPayloadType);
-  EXPECT_EQ(packet->length + 1, red_packet->length());
-  VerifyHeader(packet->header.header.sequenceNumber,
-               packet->header.header.timestamp, kRedPayloadType,
-               packet->header.header.payloadType, red_packet.get(),
-               true);  // Marker bit set.
-  for (int i = 0; i < 10; ++i) {
-    EXPECT_EQ(i, red_packet->data()[kRtpHeaderSize + 1 + i]);
-  }
-}
-
-TEST_F(UlpfecGeneratorTest, BuildRedPacketWithEmptyPayload) {
-  constexpr size_t kNumFrames = 1;
-  constexpr size_t kPayloadLength = 0;
-  constexpr size_t kRedForFecHeaderLength = 1;
-
-  packet_generator_.NewFrame(kNumFrames);
-  std::unique_ptr<AugmentedPacket> packet(
-      packet_generator_.NextPacket(0, kPayloadLength));
-  std::unique_ptr<RedPacket> red_packet = UlpfecGenerator::BuildRedPacket(
-      packet->data, packet->length - kRtpHeaderSize, kRtpHeaderSize,
-      kRedPayloadType);
-  EXPECT_EQ(packet->length + kRedForFecHeaderLength, red_packet->length());
-  VerifyHeader(packet->header.header.sequenceNumber,
-               packet->header.header.timestamp, kRedPayloadType,
-               packet->header.header.payloadType, red_packet.get(),
-               true);  // Marker bit set.
-}
-
 }  // namespace webrtc

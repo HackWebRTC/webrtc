@@ -113,20 +113,6 @@ UlpfecGenerator::UlpfecGenerator(std::unique_ptr<ForwardErrorCorrection> fec)
 
 UlpfecGenerator::~UlpfecGenerator() = default;
 
-std::unique_ptr<RedPacket> UlpfecGenerator::BuildRedPacket(
-    const uint8_t* data_buffer,
-    size_t payload_length,
-    size_t rtp_header_length,
-    int red_payload_type) {
-  std::unique_ptr<RedPacket> red_packet(new RedPacket(
-      payload_length + kRedForFecHeaderLength + rtp_header_length));
-  int payload_type = data_buffer[1] & 0x7f;
-  red_packet->CreateHeader(data_buffer, rtp_header_length, red_payload_type,
-                           payload_type);
-  red_packet->AssignPayload(data_buffer + rtp_header_length, payload_length);
-  return red_packet;
-}
-
 void UlpfecGenerator::SetFecParameters(const FecProtectionParams& params) {
   RTC_DCHECK_GE(params.fec_rate, 0);
   RTC_DCHECK_LE(params.fec_rate, 255);
