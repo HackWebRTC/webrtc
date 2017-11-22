@@ -16,7 +16,7 @@
 
 #include "modules/audio_coding/neteq/delay_manager.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {

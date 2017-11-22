@@ -14,7 +14,7 @@
 #include "modules/audio_coding/neteq/tools/neteq_quality_test.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "test/testsupport/fileutils.h"
 
 using testing::InitGoogleTest;

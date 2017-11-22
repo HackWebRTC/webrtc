@@ -28,8 +28,8 @@
 // zero; in the remaining cases, it is just a few machine instructions (no
 // branches).
 
-#ifndef RTC_BASE_SAFE_COMPARE_H_
-#define RTC_BASE_SAFE_COMPARE_H_
+#ifndef RTC_BASE_NUMERICS_SAFE_COMPARE_H_
+#define RTC_BASE_NUMERICS_SAFE_COMPARE_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -173,4 +173,4 @@ RTC_SAFECMP_MAKE_FUN(Ge)
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_SAFE_COMPARE_H_
+#endif  // RTC_BASE_NUMERICS_SAFE_COMPARE_H_

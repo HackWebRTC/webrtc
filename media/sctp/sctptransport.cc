@@ -26,7 +26,6 @@ enum PreservedErrno {
 #include <memory>
 #include <sstream>
 
-#include "usrsctplib/usrsctp.h"
 #include "media/base/codec.h"
 #include "media/base/mediaconstants.h"
 #include "media/base/streamparams.h"
@@ -36,9 +35,10 @@ enum PreservedErrno {
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/trace_event.h"
+#include "usrsctplib/usrsctp.h"
 
 namespace {
 

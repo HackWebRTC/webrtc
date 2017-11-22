@@ -21,7 +21,7 @@
 #include "modules/include/module_common_types.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/safe_minmax.h"
+#include "rtc_base/numerics/safe_minmax.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {

@@ -23,8 +23,8 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/basictypes.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/ptr_util.h"
-#include "rtc_base/safe_conversions.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

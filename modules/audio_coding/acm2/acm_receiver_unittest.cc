@@ -18,7 +18,7 @@
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"

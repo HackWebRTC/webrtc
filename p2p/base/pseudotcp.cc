@@ -23,7 +23,7 @@
 #include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/safe_minmax.h"
+#include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/timeutils.h"

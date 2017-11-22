@@ -18,7 +18,7 @@
 #include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "modules/audio_coding/neteq/sync_buffer.h"
 #include "modules/audio_coding/neteq/tools/resample_input_audio_file.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 

@@ -22,8 +22,8 @@
 #include "modules/audio_coding/neteq/dsp_helper.h"
 #include "modules/audio_coding/neteq/expand.h"
 #include "modules/audio_coding/neteq/sync_buffer.h"
-#include "rtc_base/safe_conversions.h"
-#include "rtc_base/safe_minmax.h"
+#include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/numerics/safe_minmax.h"
 
 namespace webrtc {
 

@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_coding/acm2/rent_a_codec.h"
 #include "modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
-#include "rtc_base/safe_conversions.h"
+
+#include "modules/audio_coding/acm2/rent_a_codec.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"
 
 namespace webrtc {

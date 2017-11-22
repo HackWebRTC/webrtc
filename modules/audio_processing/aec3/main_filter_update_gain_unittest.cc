@@ -22,8 +22,8 @@
 #include "modules/audio_processing/aec3/subtractor_output.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "modules/audio_processing/test/echo_canceller_test_tools.h"
+#include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/random.h"
-#include "rtc_base/safe_minmax.h"
 #include "test/gtest.h"
 
 namespace webrtc {

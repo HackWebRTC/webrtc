@@ -9,7 +9,7 @@
  */
 
 #include "audio/test/audio_end_to_end_test.h"
-#include "rtc_base/safe_compare.h"
+#include "rtc_base/numerics/safe_compare.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
 

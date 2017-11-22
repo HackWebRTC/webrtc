@@ -24,8 +24,8 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/network.h"
+#include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/ptr_util.h"
-#include "rtc_base/safe_minmax.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
 

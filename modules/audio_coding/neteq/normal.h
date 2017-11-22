@@ -19,7 +19,7 @@
 #include "modules/audio_coding/neteq/defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {

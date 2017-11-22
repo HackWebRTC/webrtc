@@ -26,7 +26,7 @@
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/deprecation.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/timeutils.h"
 #include "typedefs.h"  // NOLINT(build/include)
 

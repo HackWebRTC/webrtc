@@ -27,7 +27,7 @@
 #include "pc/channel.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/byteorder.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"

@@ -15,9 +15,9 @@
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
+#include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/ptr_util.h"
-#include "rtc_base/safe_conversions.h"
-#include "rtc_base/safe_minmax.h"
 #include "rtc_base/string_to_number.h"
 
 namespace webrtc {

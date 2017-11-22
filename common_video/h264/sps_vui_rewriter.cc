@@ -18,7 +18,7 @@
 #include "rtc_base/bitbuffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/safe_minmax.h"
+#include "rtc_base/numerics/safe_minmax.h"
 
 #include "common_video/h264/h264_common.h"
 #include "common_video/h264/sps_parser.h"

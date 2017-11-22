@@ -9,13 +9,13 @@
  */
 
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
-#include "rtc_base/safe_conversions.h"
 
 #include <assert.h>
 #include <stdlib.h>
 
 #include <string>
 
+#include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"
 #include "typedefs.h"  // NOLINT(build/include)
 

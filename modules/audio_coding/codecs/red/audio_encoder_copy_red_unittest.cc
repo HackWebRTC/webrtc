@@ -13,7 +13,7 @@
 
 #include "modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"
 #include "test/mock_audio_encoder.h"
 

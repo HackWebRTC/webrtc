@@ -10,7 +10,7 @@
 
 #include <limits>
 
-#include "rtc_base/safe_compare.h"
+#include "rtc_base/numerics/safe_compare.h"
 #include "test/gtest.h"
 
 namespace rtc {

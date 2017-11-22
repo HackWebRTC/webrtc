@@ -19,8 +19,8 @@
 #include "modules/audio_coding/neteq/tools/encode_neteq_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/random.h"
-#include "rtc_base/safe_conversions.h"
 
 namespace webrtc {
 namespace test {

@@ -17,7 +17,7 @@
 #include "modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 

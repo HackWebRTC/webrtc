@@ -20,7 +20,7 @@
 #include "modules/audio_coding/neteq/delay_peak_detector.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {

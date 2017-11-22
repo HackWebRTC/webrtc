@@ -16,7 +16,7 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/g722/g722_interface.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 namespace webrtc {
 

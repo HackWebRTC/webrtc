@@ -11,7 +11,7 @@
 // Unit tests for test InputAudioFile class.
 
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 #include "test/gtest.h"
 

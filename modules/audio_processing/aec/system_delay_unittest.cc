@@ -10,7 +10,7 @@
 
 #include "modules/audio_processing/aec/aec_core.h"
 #include "modules/audio_processing/aec/echo_cancellation.h"
-#include "rtc_base/safe_conversions.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"
 #include "typedefs.h"  // NOLINT(build/include)
 namespace webrtc {
