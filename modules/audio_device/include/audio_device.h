@@ -142,9 +142,30 @@ class AudioDeviceModule : public rtc::RefCountInterface {
   virtual int32_t StereoRecordingIsAvailable(bool* available) const = 0;
   virtual int32_t SetStereoRecording(bool enable) = 0;
   virtual int32_t StereoRecording(bool* enabled) const = 0;
+  // TODO(bugs.webrtc.org/7306): deprecated.
+  virtual int32_t SetRecordingChannel(const ChannelType channel) { return -1; }
+  virtual int32_t RecordingChannel(ChannelType* channel) const { return -1; }
 
   // Playout delay
   virtual int32_t PlayoutDelay(uint16_t* delayMS) const = 0;
+
+  // TODO(bugs.webrtc.org/7306): deprecated (to be removed).
+  virtual int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) {
+    return -1;
+  }
+  virtual int32_t RecordingSampleRate(uint32_t* samplesPerSec) const {
+    return -1;
+  }
+  virtual int32_t SetPlayoutSampleRate(const uint32_t samplesPerSec) {
+    return -1;
+  }
+  virtual int32_t PlayoutSampleRate(uint32_t* samplesPerSec) const {
+    return -1;
+  }
+
+  // TODO(bugs.webrtc.org/7306): deprecated (to be removed).
+  virtual int32_t SetLoudspeakerStatus(bool enable) { return -1; }
+  virtual int32_t GetLoudspeakerStatus(bool* enabled) const { return -1; }
 
   // Only supported on Android.
   virtual bool BuiltInAECIsAvailable() const = 0;
