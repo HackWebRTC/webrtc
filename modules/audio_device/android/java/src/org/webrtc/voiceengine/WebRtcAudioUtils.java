@@ -207,10 +207,4 @@ public final class WebRtcAudioUtils {
             + "Model: " + Build.MODEL + ", "
             + "Product: " + Build.PRODUCT);
   }
-
-  // Checks if the process has as specified permission or not.
-  public static boolean hasPermission(Context context, String permission) {
-    return context.checkPermission(permission, Process.myPid(), Process.myUid())
-        == PackageManager.PERMISSION_GRANTED;
-  }
 }
