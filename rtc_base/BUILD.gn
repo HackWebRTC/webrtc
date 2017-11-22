@@ -860,6 +860,7 @@ if (rtc_include_tests) {
       "basictypes_unittest.cc",
       "bind_unittest.cc",
       "bitbuffer_unittest.cc",
+      "bitrateallocationstrategy_unittest.cc",
       "buffer_unittest.cc",
       "bufferqueue_unittest.cc",
       "bytebuffer_unittest.cc",
