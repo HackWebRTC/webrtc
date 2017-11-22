@@ -27,14 +27,6 @@ char kTSanDefaultSuppressions[] =
 "race:vp8cx_remove_encoder_threads\n"
 "race:third_party/libvpx/source/libvpx/vp9/common/vp9_scan.h\n"
 
-// Usage of trace callback and trace level is racy in rtc_media_unittests.
-// https://code.google.com/p/webrtc/issues/detail?id=3372
-"race:webrtc::TraceImpl::WriteToFile\n"
-"race:webrtc::VideoEngine::SetTraceFilter\n"
-"race:webrtc::VoiceEngine::SetTraceFilter\n"
-"race:webrtc::Trace::set_level_filter\n"
-"race:webrtc::GetStaticInstance<webrtc::TraceImpl>\n"
-
 // Race in pulse initialization.
 // https://code.google.com/p/webrtc/issues/detail?id=5152
 "race:webrtc::AudioDeviceLinuxPulse::Init\n"
