@@ -675,6 +675,17 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
     RTC_LOG(LS_WARNING) << "Unable to set the preferred sample rate";
   }
 
+  // Crash reports indicates that it can happen in rare cases that the reported
+  // sample rate is less than or equal to zero. If that happens and if a valid
+  // sample rate has already been set during initialization, the best guess we
+  // can do is to reuse the current sample rate.
+  if (sample_rate <= DBL_EPSILON && playout_parameters_.sample_rate() > 0) {
+    RTCLogError(@"Reported rate is invalid: %f. "
+                 "Using %d as sample rate instead.",
+                sample_rate, playout_parameters_.sample_rate());
+    sample_rate = playout_parameters_.sample_rate();
+  }
+
   // At this stage, we also know the exact IO buffer duration and can add
   // that info to the existing audio parameters where it is converted into
   // number of audio frames.
