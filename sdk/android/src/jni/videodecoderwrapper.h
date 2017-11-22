@@ -56,9 +56,10 @@ class VideoDecoderWrapper : public VideoDecoder {
 
  private:
   struct FrameExtraInfo {
-    uint64_t capture_time_ns;  // Used as an identifier of the frame.
+    int64_t timestamp_ns;  // Used as an identifier of the frame.
 
     uint32_t timestamp_rtp;
+    int64_t timestamp_ntp;
     rtc::Optional<uint8_t> qp;
   };
 

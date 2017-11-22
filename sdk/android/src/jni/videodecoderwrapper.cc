@@ -26,6 +26,9 @@ namespace webrtc {
 namespace jni {
 
 namespace {
+// RTP timestamps are 90 kHz.
+const int64_t kNumRtpTicksPerMillisec = 90000 / rtc::kNumMillisecsPerSec;
+
 template <typename Dst, typename Src>
 inline rtc::Optional<Dst> cast_optional(const rtc::Optional<Src>& value) {
   return value ? rtc::Optional<Dst>(rtc::dchecked_cast<Dst, Src>(*value))
@@ -74,7 +77,7 @@ int32_t VideoDecoderWrapper::InitDecodeInternal(JNIEnv* jni) {
 }
 
 int32_t VideoDecoderWrapper::Decode(
-    const EncodedImage& input_image,
+    const EncodedImage& image_param,
     bool missing_frames,
     const RTPFragmentationHeader* fragmentation,
     const CodecSpecificInfo* codec_specific_info,
@@ -87,10 +90,17 @@ int32_t VideoDecoderWrapper::Decode(
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
+  // Make a mutable copy so we can modify the timestamp.
+  EncodedImage input_image(image_param);
+  // We use RTP timestamp for capture time because capture_time_ms_ is always 0.
+  input_image.capture_time_ms_ =
+      input_image._timeStamp / kNumRtpTicksPerMillisec;
+
   FrameExtraInfo frame_extra_info;
-  frame_extra_info.capture_time_ns =
+  frame_extra_info.timestamp_ns =
       input_image.capture_time_ms_ * rtc::kNumNanosecsPerMillisec;
   frame_extra_info.timestamp_rtp = input_image._timeStamp;
+  frame_extra_info.timestamp_ntp = input_image.ntp_time_ms_;
   frame_extra_info.qp =
       qp_parsing_enabled_ ? ParseQP(input_image) : rtc::nullopt;
   frame_extra_infos_.push_back(frame_extra_info);
@@ -129,12 +139,13 @@ void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* env,
                                          jobject j_frame,
                                          jobject j_decode_time_ms,
                                          jobject j_qp) {
-  const uint64_t capture_time_ns = GetJavaVideoFrameTimestampNs(env, j_frame);
+  const uint64_t timestamp_ns = GetJavaVideoFrameTimestampNs(env, j_frame);
 
   FrameExtraInfo frame_extra_info;
   do {
     if (frame_extra_infos_.empty()) {
-      RTC_LOG(LS_WARNING) << "Java decoder produced an unexpected frame.";
+      RTC_LOG(LS_WARNING) << "Java decoder produced an unexpected frame: "
+                          << timestamp_ns;
       return;
     }
 
@@ -142,10 +153,11 @@ void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* env,
     frame_extra_infos_.pop_front();
     // If the decoder might drop frames so iterate through the queue until we
     // find a matching timestamp.
-  } while (frame_extra_info.capture_time_ns != capture_time_ns);
+  } while (frame_extra_info.timestamp_ns != timestamp_ns);
 
   VideoFrame frame =
       JavaToNativeFrame(env, j_frame, frame_extra_info.timestamp_rtp);
+  frame.set_ntp_time_ms(frame_extra_info.timestamp_ntp);
 
   rtc::Optional<int32_t> decoding_time_ms =
       JavaIntegerToOptionalInt(env, j_decode_time_ms);
