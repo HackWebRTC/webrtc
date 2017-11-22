@@ -2119,15 +2119,14 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     }
   }
   // Add other supported audio codecs.
-  AudioCodec found_codec;
   for (const AudioCodec& codec : supported_audio_codecs) {
     if (FindMatchingCodec<AudioCodec>(supported_audio_codecs, audio_codecs,
-                                      codec, &found_codec) &&
+                                      codec, nullptr) &&
         !FindMatchingCodec<AudioCodec>(supported_audio_codecs, filtered_codecs,
                                        codec, nullptr)) {
-      // Use the |found_codec| from |audio_codecs| because it has the correctly
-      // mapped payload type.
-      filtered_codecs.push_back(found_codec);
+      // We should use the local codec with local parameters and the codec id
+      // would be correctly mapped in |NegotiateCodecs|.
+      filtered_codecs.push_back(codec);
     }
   }
 
@@ -2203,15 +2202,14 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     }
   }
   // Add other supported video codecs.
-  VideoCodec found_codec;
   for (const VideoCodec& codec : video_codecs_) {
     if (FindMatchingCodec<VideoCodec>(video_codecs_, video_codecs, codec,
-                                      &found_codec) &&
+                                      nullptr) &&
         !FindMatchingCodec<VideoCodec>(video_codecs_, filtered_codecs, codec,
                                        nullptr)) {
-      // Use the |found_codec| from |video_codecs| because it has the correctly
-      // mapped payload type.
-      filtered_codecs.push_back(found_codec);
+      // We should use the local codec with local parameters and the codec id
+      // would be correctly mapped in |NegotiateCodecs|.
+      filtered_codecs.push_back(codec);
     }
   }
 

@@ -3408,6 +3408,64 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_EQ(video_codecs, vcd2->codecs());
 }
 
+// Test that when creating an answer, the codecs use local parameters instead of
+// the remote ones.
+TEST_F(MediaSessionDescriptionFactoryTest, CreateAnswerWithLocalCodecParams) {
+  const std::string audio_param_name = "audio_param";
+  const std::string audio_value1 = "audio_v1";
+  const std::string audio_value2 = "audio_v2";
+  const std::string video_param_name = "video_param";
+  const std::string video_value1 = "video_v1";
+  const std::string video_value2 = "video_v2";
+
+  auto audio_codecs1 = MAKE_VECTOR(kAudioCodecs1);
+  auto audio_codecs2 = MAKE_VECTOR(kAudioCodecs1);
+  auto video_codecs1 = MAKE_VECTOR(kVideoCodecs1);
+  auto video_codecs2 = MAKE_VECTOR(kVideoCodecs1);
+
+  // Set the parameters for codecs.
+  audio_codecs1[0].SetParam(audio_param_name, audio_value1);
+  video_codecs1[0].SetParam(video_param_name, video_value1);
+  audio_codecs2[0].SetParam(audio_param_name, audio_value2);
+  video_codecs2[0].SetParam(video_param_name, video_value2);
+
+  f1_.set_audio_codecs(audio_codecs1, audio_codecs1);
+  f1_.set_video_codecs(video_codecs1);
+  f2_.set_audio_codecs(audio_codecs2, audio_codecs2);
+  f2_.set_video_codecs(video_codecs2);
+
+  MediaSessionOptions opts;
+  AddMediaSection(MEDIA_TYPE_AUDIO, "audio", cricket::MD_SENDRECV, kActive,
+                  &opts);
+  AddMediaSection(MEDIA_TYPE_VIDEO, "video", cricket::MD_SENDRECV, kActive,
+                  &opts);
+
+  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, nullptr));
+  ASSERT_TRUE(offer);
+  auto offer_acd =
+      static_cast<AudioContentDescription*>(offer->contents()[0].description);
+  auto offer_vcd =
+      static_cast<VideoContentDescription*>(offer->contents()[1].description);
+  std::string value;
+  EXPECT_TRUE(offer_acd->codecs()[0].GetParam(audio_param_name, &value));
+  EXPECT_EQ(audio_value1, value);
+  EXPECT_TRUE(offer_vcd->codecs()[0].GetParam(video_param_name, &value));
+  EXPECT_EQ(video_value1, value);
+
+  std::unique_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), opts, nullptr));
+  ASSERT_TRUE(answer);
+  auto answer_acd =
+      static_cast<AudioContentDescription*>(answer->contents()[0].description);
+  auto answer_vcd =
+      static_cast<VideoContentDescription*>(answer->contents()[1].description);
+  // Use the parameters from the local codecs.
+  EXPECT_TRUE(answer_acd->codecs()[0].GetParam(audio_param_name, &value));
+  EXPECT_EQ(audio_value2, value);
+  EXPECT_TRUE(answer_vcd->codecs()[0].GetParam(video_param_name, &value));
+  EXPECT_EQ(video_value2, value);
+}
+
 class MediaProtocolTest : public ::testing::TestWithParam<const char*> {
  public:
   MediaProtocolTest() : f1_(&tdf1_), f2_(&tdf2_) {
