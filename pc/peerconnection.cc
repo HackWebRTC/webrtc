@@ -1463,7 +1463,7 @@ void PeerConnection::SetLocalDescription(
   std::string error;
   // Takes the ownership of |desc_temp|. On success, local_description() is
   // updated to reflect the description that was passed in.
-  if (!SetLocalDescription(std::move(desc_temp), &error)) {
+  if (!SetCurrentOrPendingLocalDescription(std::move(desc_temp), &error)) {
     PostSetSessionDescriptionFailure(observer, error);
     return;
   }
@@ -1541,26 +1541,25 @@ void PeerConnection::SetLocalDescription(
 }
 
 void PeerConnection::SetRemoteDescription(
-    SetSessionDescriptionObserver* observer,
-    SessionDescriptionInterface* desc) {
+    std::unique_ptr<SessionDescriptionInterface> desc,
+    rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetRemoteDescription");
   if (!observer) {
     RTC_LOG(LS_ERROR) << "SetRemoteDescription - observer is NULL.";
     return;
   }
   if (!desc) {
-    PostSetSessionDescriptionFailure(observer, "SessionDescription is NULL.");
+    observer->OnSetRemoteDescriptionComplete(RTCError(
+        RTCErrorType::UNSUPPORTED_PARAMETER, "SessionDescription is NULL."));
     return;
   }
 
-  // Takes the ownership of |desc| regardless of the result.
-  std::unique_ptr<SessionDescriptionInterface> desc_temp(desc);
-
   if (IsClosed()) {
-    std::string error = "Failed to set remote " + desc_temp->type() +
+    std::string error = "Failed to set remote " + desc->type() +
                         " sdp: Called in wrong state: STATE_CLOSED";
     RTC_LOG(LS_ERROR) << error;
-    PostSetSessionDescriptionFailure(observer, error);
+    observer->OnSetRemoteDescriptionComplete(
+        RTCError(RTCErrorType::INVALID_STATE, std::move(error)));
     return;
   }
 
@@ -1568,10 +1567,11 @@ void PeerConnection::SetRemoteDescription(
   // streams that might be removed by updating the session description.
   stats_->UpdateStats(kStatsOutputLevelStandard);
   std::string error;
-  // Takes the ownership of |desc_temp|. On success, remote_description() is
-  // updated to reflect the description that was passed in.
-  if (!SetRemoteDescription(std::move(desc_temp), &error)) {
-    PostSetSessionDescriptionFailure(observer, error);
+  // Takes the ownership of |desc|. On success, remote_description() is updated
+  // to reflect the description that was passed in.
+  if (!SetCurrentOrPendingRemoteDescription(std::move(desc), &error)) {
+    observer->OnSetRemoteDescriptionComplete(
+        RTCError(RTCErrorType::UNSUPPORTED_PARAMETER, std::move(error)));
     return;
   }
   RTC_DCHECK(remote_description());
@@ -1661,9 +1661,7 @@ void PeerConnection::SetRemoteDescription(
 
   UpdateEndedRemoteMediaStreams();
 
-  SetSessionDescriptionMsg* msg = new SetSessionDescriptionMsg(observer);
-  signaling_thread()->Post(RTC_FROM_HERE, this,
-                           MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
+  observer->OnSetRemoteDescriptionComplete(RTCError::OK());
 
   if (remote_description()->type() == SessionDescriptionInterface::kAnswer) {
     // TODO(deadbeef): We already had to hop to the network thread for
@@ -3260,7 +3258,7 @@ bool PeerConnection::GetSslRole(const std::string& content_name,
                                            role);
 }
 
-bool PeerConnection::SetLocalDescription(
+bool PeerConnection::SetCurrentOrPendingLocalDescription(
     std::unique_ptr<SessionDescriptionInterface> desc,
     std::string* err_desc) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
@@ -3316,7 +3314,7 @@ bool PeerConnection::SetLocalDescription(
   return true;
 }
 
-bool PeerConnection::SetRemoteDescription(
+bool PeerConnection::SetCurrentOrPendingRemoteDescription(
     std::unique_ptr<SessionDescriptionInterface> desc,
     std::string* err_desc) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
