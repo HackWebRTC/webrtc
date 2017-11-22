@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_MOVING_MAX_COUNTER_H_
-#define RTC_BASE_MOVING_MAX_COUNTER_H_
+#ifndef RTC_BASE_NUMERICS_MOVING_MAX_COUNTER_H_
+#define RTC_BASE_NUMERICS_MOVING_MAX_COUNTER_H_
 
 #include <stdint.h>
 
@@ -113,4 +113,4 @@ void MovingMaxCounter<T>::RollWindow(int64_t new_time_ms) {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_MOVING_MAX_COUNTER_H_
+#endif  // RTC_BASE_NUMERICS_MOVING_MAX_COUNTER_H_

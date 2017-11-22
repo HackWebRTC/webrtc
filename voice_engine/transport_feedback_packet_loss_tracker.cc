@@ -16,7 +16,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/mod_ops.h"
+#include "rtc_base/numerics/mod_ops.h"
 
 namespace {
 constexpr uint16_t kSeqNumHalf = 0x8000u;

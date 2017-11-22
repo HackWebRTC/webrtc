@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_MATHUTILS_H_
-#define RTC_BASE_MATHUTILS_H_
+#ifndef RTC_BASE_NUMERICS_MATHUTILS_H_
+#define RTC_BASE_NUMERICS_MATHUTILS_H_
 
 #include <math.h>
 #include <type_traits>
@@ -36,4 +36,4 @@ typename std::make_unsigned<T>::type unsigned_difference(T x, T y) {
   return static_cast<unsigned_type>(x) - static_cast<unsigned_type>(y);
 }
 
-#endif  // RTC_BASE_MATHUTILS_H_
+#endif  // RTC_BASE_NUMERICS_MATHUTILS_H_

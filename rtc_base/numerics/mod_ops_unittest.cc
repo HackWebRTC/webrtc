@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/mod_ops.h"
+#include "rtc_base/numerics/mod_ops.h"
 #include "test/gtest.h"
 
 namespace webrtc {

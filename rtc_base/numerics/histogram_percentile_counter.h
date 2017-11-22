@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_HISTOGRAM_PERCENTILE_COUNTER_H_
-#define RTC_BASE_HISTOGRAM_PERCENTILE_COUNTER_H_
+#ifndef RTC_BASE_NUMERICS_HISTOGRAM_PERCENTILE_COUNTER_H_
+#define RTC_BASE_NUMERICS_HISTOGRAM_PERCENTILE_COUNTER_H_
 
 #include <stdint.h>
 #include <map>
@@ -40,4 +40,4 @@ class HistogramPercentileCounter {
   size_t total_elements_low_;
 };
 }  // namespace rtc
-#endif  // RTC_BASE_HISTOGRAM_PERCENTILE_COUNTER_H_
+#endif  // RTC_BASE_NUMERICS_HISTOGRAM_PERCENTILE_COUNTER_H_

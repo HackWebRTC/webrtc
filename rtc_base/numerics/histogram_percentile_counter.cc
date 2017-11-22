@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/histogram_percentile_counter.h"
+#include "rtc_base/numerics/histogram_percentile_counter.h"
 
 #include <algorithm>
 #include <cmath>

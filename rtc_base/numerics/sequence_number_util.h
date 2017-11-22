@@ -15,7 +15,7 @@
 #include <type_traits>
 
 #include "api/optional.h"
-#include "rtc_base/mod_ops.h"
+#include "rtc_base/numerics/mod_ops.h"
 #include "rtc_base/numerics/safe_compare.h"
 
 namespace webrtc {

@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_MOD_OPS_H_
-#define RTC_BASE_MOD_OPS_H_
+#ifndef RTC_BASE_NUMERICS_MOD_OPS_H_
+#define RTC_BASE_NUMERICS_MOD_OPS_H_
 
+#include <algorithm>
 #include <limits>
 #include <type_traits>
 
@@ -139,4 +140,4 @@ inline T MinDiff(T a, T b) {
 
 }  // namespace webrtc
 
-#endif  // RTC_BASE_MOD_OPS_H_
+#endif  // RTC_BASE_NUMERICS_MOD_OPS_H_

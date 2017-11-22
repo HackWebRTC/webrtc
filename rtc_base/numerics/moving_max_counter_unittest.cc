@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/moving_max_counter.h"
+#include "rtc_base/numerics/moving_max_counter.h"
 #include "test/gtest.h"
 
 TEST(MovingMaxCounter, ReportsMaximumInTheWindow) {

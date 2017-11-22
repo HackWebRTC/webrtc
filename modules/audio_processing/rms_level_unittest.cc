@@ -14,7 +14,7 @@
 #include "api/array_view.h"
 #include "modules/audio_processing/rms_level.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/mathutils.h"
+#include "rtc_base/numerics/mathutils.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"
 

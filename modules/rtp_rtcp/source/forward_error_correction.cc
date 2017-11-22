@@ -23,7 +23,7 @@
 #include "modules/rtp_rtcp/source/ulpfec_header_reader_writer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/mod_ops.h"
+#include "rtc_base/numerics/mod_ops.h"
 
 namespace webrtc {
 
