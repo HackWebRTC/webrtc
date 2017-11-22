@@ -37,16 +37,7 @@ namespace test {
 void PrintResult(const std::string& measurement,
                  const std::string& modifier,
                  const std::string& trace,
-                 size_t value,
-                 const std::string& units,
-                 bool important);
-
-// Like the above version of PrintResult(), but takes a std::string value
-// instead of a size_t.
-void PrintResult(const std::string& measurement,
-                 const std::string& modifier,
-                 const std::string& trace,
-                 const std::string& value,
+                 const double value,
                  const std::string& units,
                  bool important);
 

@@ -217,10 +217,10 @@ void BweTest::PrintResults(double max_throughput_kbps,
   double utilization = throughput_kbps.GetMean() / max_throughput_kbps;
   webrtc::test::PrintResult("BwePerformance", GetTestName(), "Utilization",
                             utilization * 100.0, "%", false);
+  webrtc::test::PrintResult(
+      "BwePerformance", GetTestName(), "Utilization var coeff",
+      throughput_kbps.GetStdDev() / throughput_kbps.GetMean(), "", false);
   std::stringstream ss;
-  ss << throughput_kbps.GetStdDev() / throughput_kbps.GetMean();
-  webrtc::test::PrintResult("BwePerformance", GetTestName(),
-                            "Utilization var coeff", ss.str(), "", false);
   for (auto& kv : flow_throughput_kbps) {
     ss.str("");
     ss << "Throughput flow " << kv.first;
