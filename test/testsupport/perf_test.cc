@@ -72,20 +72,6 @@ void PrintResult(const std::string& measurement,
                    units, important);
 }
 
-void AppendResult(std::string& output,
-                  const std::string& measurement,
-                  const std::string& modifier,
-                  const std::string& trace,
-                  size_t value,
-                  const std::string& units,
-                  bool important) {
-  std::ostringstream value_stream;
-  value_stream << value;
-  output += ResultsToString(measurement, modifier, trace,
-                            value_stream.str(),
-                            "", "", units, important);
-}
-
 void PrintResult(const std::string& measurement,
                  const std::string& modifier,
                  const std::string& trace,
@@ -94,17 +80,6 @@ void PrintResult(const std::string& measurement,
                  bool important) {
   PrintResultsImpl(measurement, modifier, trace, value, "", "", units,
                    important);
-}
-
-void AppendResult(std::string& output,
-                  const std::string& measurement,
-                  const std::string& modifier,
-                  const std::string& trace,
-                  const std::string& value,
-                  const std::string& units,
-                  bool important) {
-  output += ResultsToString(measurement, modifier, trace, value, "", "", units,
-                            important);
 }
 
 void PrintResultMeanAndError(const std::string& measurement,
@@ -117,17 +92,6 @@ void PrintResultMeanAndError(const std::string& measurement,
                    "{", "}", units, important);
 }
 
-void AppendResultMeanAndError(std::string& output,
-                              const std::string& measurement,
-                              const std::string& modifier,
-                              const std::string& trace,
-                              const std::string& mean_and_error,
-                              const std::string& units,
-                              bool important) {
-  output += ResultsToString(measurement, modifier, trace, mean_and_error,
-                            "{", "}", units, important);
-}
-
 void PrintResultList(const std::string& measurement,
                      const std::string& modifier,
                      const std::string& trace,
@@ -136,41 +100,6 @@ void PrintResultList(const std::string& measurement,
                      bool important) {
   PrintResultsImpl(measurement, modifier, trace, values,
                    "[", "]", units, important);
-}
-
-void AppendResultList(std::string& output,
-                      const std::string& measurement,
-                      const std::string& modifier,
-                      const std::string& trace,
-                      const std::string& values,
-                      const std::string& units,
-                      bool important) {
-  output += ResultsToString(measurement, modifier, trace, values,
-                            "[", "]", units, important);
-}
-
-void PrintSystemCommitCharge(const std::string& test_name,
-                             size_t charge,
-                             bool important) {
-  PrintSystemCommitCharge(stdout, test_name, charge, important);
-}
-
-void PrintSystemCommitCharge(FILE* target,
-                             const std::string& test_name,
-                             size_t charge,
-                             bool important) {
-  fprintf(target, "%s", SystemCommitChargeToString(test_name, charge,
-                                                   important).c_str());
-}
-
-std::string SystemCommitChargeToString(const std::string& test_name,
-                                       size_t charge,
-                                       bool important) {
-  std::string trace_name(test_name);
-  std::string output;
-  AppendResult(output, "commit_charge", "", "cc" + trace_name, charge, "kb",
-               important);
-  return output;
 }
 
 }  // namespace test
