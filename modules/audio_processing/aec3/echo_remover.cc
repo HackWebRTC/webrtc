@@ -53,6 +53,8 @@ class EchoRemoverImpl final : public EchoRemover {
                            int sample_rate_hz);
   ~EchoRemoverImpl() override;
 
+  void GetMetrics(EchoControl::Metrics* metrics) const override;
+
   // Removes the echo from a block of samples from the capture signal. The
   // supplied render signal is assumed to be pre-aligned with the capture
   // signal.
@@ -109,6 +111,13 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
 }
 
 EchoRemoverImpl::~EchoRemoverImpl() = default;
+
+void EchoRemoverImpl::GetMetrics(EchoControl::Metrics* metrics) const {
+  // Echo return loss (ERL) is inverted to go from gain to attenuation.
+  metrics->echo_return_loss = -10.0 * log10(aec_state_.ErlTimeDomain());
+  metrics->echo_return_loss_enhancement =
+      10.0 * log10(aec_state_.ErleTimeDomain());
+}
 
 void EchoRemoverImpl::ProcessCapture(
     const rtc::Optional<size_t>& echo_path_delay_samples,

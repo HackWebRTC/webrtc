@@ -39,6 +39,9 @@ class BlockProcessor {
 
   virtual ~BlockProcessor() = default;
 
+  // Get current metrics.
+  virtual void GetMetrics(EchoControl::Metrics* metrics) const = 0;
+
   // Processes a block of capture data.
   virtual void ProcessCapture(
       bool echo_path_gain_change,

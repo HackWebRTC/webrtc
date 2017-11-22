@@ -40,6 +40,8 @@ class BlockProcessorImpl final : public BlockProcessor {
 
   void UpdateEchoLeakageStatus(bool leakage_detected) override;
 
+  void GetMetrics(EchoControl::Metrics* metrics) const override;
+
  private:
   static int instance_count_;
   bool no_capture_data_received_ = true;
@@ -177,6 +179,10 @@ void BlockProcessorImpl::BufferRender(
 
 void BlockProcessorImpl::UpdateEchoLeakageStatus(bool leakage_detected) {
   echo_remover_->UpdateEchoLeakageStatus(leakage_detected);
+}
+
+void BlockProcessorImpl::GetMetrics(EchoControl::Metrics* metrics) const {
+  echo_remover_->GetMetrics(metrics);
 }
 
 }  // namespace

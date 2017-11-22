@@ -119,6 +119,7 @@ class MockEchoControl : public EchoControl {
   MOCK_METHOD1(AnalyzeCapture, void(AudioBuffer* capture));
   MOCK_METHOD2(ProcessCapture,
                void(AudioBuffer* capture, bool echo_path_change));
+  MOCK_CONST_METHOD0(GetMetrics, Metrics());
 };
 
 class MockVoiceDetection : public VoiceDetection {

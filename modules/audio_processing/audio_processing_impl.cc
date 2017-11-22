@@ -1608,8 +1608,16 @@ AudioProcessing::AudioProcessingStats AudioProcessingImpl::GetStatistics(
   AudioProcessingStats stats;
   if (has_remote_tracks) {
     EchoCancellation::Metrics metrics;
-    if (public_submodules_->echo_cancellation->GetMetrics(&metrics) ==
-        Error::kNoError) {
+    if (private_submodules_->echo_controller) {
+      rtc::CritScope cs_capture(&crit_capture_);
+      EchoControl::Metrics ec_metrics =
+          private_submodules_->echo_controller->GetMetrics();
+      stats.echo_return_loss =
+          rtc::Optional<double>(ec_metrics.echo_return_loss);
+      stats.echo_return_loss_enhancement =
+          rtc::Optional<double>(ec_metrics.echo_return_loss_enhancement);
+    } else if (public_submodules_->echo_cancellation->GetMetrics(&metrics) ==
+               Error::kNoError) {
       if (metrics.divergent_filter_fraction != -1.0f) {
         stats.divergent_filter_fraction =
             rtc::Optional<double>(metrics.divergent_filter_fraction);

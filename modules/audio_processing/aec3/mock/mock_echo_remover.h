@@ -34,6 +34,7 @@ class MockEchoRemover : public EchoRemover {
                     std::vector<std::vector<float>>* capture));
 
   MOCK_METHOD1(UpdateEchoLeakageStatus, void(bool leakage_detected));
+  MOCK_CONST_METHOD1(GetMetrics, void(EchoControl::Metrics* metrics));
 };
 
 }  // namespace test

@@ -31,7 +31,7 @@ class ErleEstimator {
 
   // Returns the most recent ERLE estimate.
   const std::array<float, kFftLengthBy2Plus1>& Erle() const { return erle_; }
-  float ErleTimeDomain() { return erle_time_domain_; }
+  float ErleTimeDomain() const { return erle_time_domain_; }
 
  private:
   std::array<float, kFftLengthBy2Plus1> erle_;

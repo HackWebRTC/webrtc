@@ -30,6 +30,7 @@ class MockBlockProcessor : public BlockProcessor {
   MOCK_METHOD1(BufferRender,
                void(const std::vector<std::vector<float>>& block));
   MOCK_METHOD1(UpdateEchoLeakageStatus, void(bool leakage_detected));
+  MOCK_CONST_METHOD1(GetMetrics, void(EchoControl::Metrics* metrics));
 };
 
 }  // namespace test

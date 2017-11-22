@@ -940,6 +940,14 @@ class EchoControl {
   // Processes the capture signal in order to remove the echo.
   virtual void ProcessCapture(AudioBuffer* capture, bool echo_path_change) = 0;
 
+  struct Metrics {
+    double echo_return_loss;
+    double echo_return_loss_enhancement;
+  };
+
+  // Collect current metrics from the echo controller.
+  virtual Metrics GetMetrics() const = 0;
+
   virtual ~EchoControl() {}
 };
 

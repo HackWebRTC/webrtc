@@ -50,10 +50,16 @@ class AecState {
     return erle_estimator_.Erle();
   }
 
+  // Returns the time-domain ERLE.
+  float ErleTimeDomain() const { return erle_estimator_.ErleTimeDomain(); }
+
   // Returns the ERL.
   const std::array<float, kFftLengthBy2Plus1>& Erl() const {
     return erl_estimator_.Erl();
   }
+
+  // Returns the time-domain ERL.
+  float ErlTimeDomain() const { return erl_estimator_.ErlTimeDomain(); }
 
   // Returns the delay estimate based on the linear filter.
   rtc::Optional<size_t> FilterDelay() const { return filter_delay_; }
