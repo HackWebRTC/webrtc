@@ -23,6 +23,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtcp_transceiver_config.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/function_view.h"
 #include "rtc_base/weak_ptr.h"
 #include "system_wrappers/include/ntp_time.h"
 
@@ -36,26 +37,19 @@ class RtcpTransceiverImpl {
   explicit RtcpTransceiverImpl(const RtcpTransceiverConfig& config);
   ~RtcpTransceiverImpl();
 
-  // Handles incoming rtcp packets.
   void ReceivePacket(rtc::ArrayView<const uint8_t> packet, int64_t now_us);
 
-  // Sends RTCP packets starting with a sender or receiver report.
   void SendCompoundPacket();
 
-  // (REMB) Receiver Estimated Max Bitrate.
-  // Includes REMB in following compound packets.
   void SetRemb(int bitrate_bps, std::vector<uint32_t> ssrcs);
-  // Stops sending REMB in following compound packets.
   void UnsetRemb();
 
-  void RequestKeyFrame(rtc::ArrayView<const uint32_t> ssrcs);
+  void SendPictureLossIndication(rtc::ArrayView<const uint32_t> ssrcs);
+  void SendFullIntraRequest(rtc::ArrayView<const uint32_t> ssrcs);
 
  private:
   class PacketSender;
-  struct SenderReportTimes {
-    int64_t local_received_time_us;
-    NtpTime remote_sent_time;
-  };
+  struct RemoteSenderState;
 
   void HandleReceivedPacket(const rtcp::CommonHeader& rtcp_packet_header,
                             int64_t now_us);
@@ -67,13 +61,15 @@ class RtcpTransceiverImpl {
   void CreateCompoundPacket(PacketSender* sender);
   // Sends RTCP packets.
   void SendPeriodicCompoundPacket();
+  void SendImmediateFeedback(
+      rtc::FunctionView<void(PacketSender*)> append_feedback);
   // Generate Report Blocks to be send in Sender or Receiver Report.
   std::vector<rtcp::ReportBlock> CreateReportBlocks();
 
   const RtcpTransceiverConfig config_;
 
   rtc::Optional<rtcp::Remb> remb_;
-  std::map<uint32_t, SenderReportTimes> last_received_sender_reports_;
+  std::map<uint32_t, RemoteSenderState> remote_senders_;
   rtc::WeakPtrFactory<RtcpTransceiverImpl> ptr_factory_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtcpTransceiverImpl);

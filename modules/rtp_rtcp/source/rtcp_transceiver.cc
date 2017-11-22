@@ -90,18 +90,32 @@ void RtcpTransceiver::UnsetRemb() {
   });
 }
 
-void RtcpTransceiver::RequestKeyFrame(std::vector<uint32_t> ssrcs) {
+void RtcpTransceiver::SendPictureLossIndication(std::vector<uint32_t> ssrcs) {
   // TODO(danilchap): Replace with lambda with move capture when available.
-  struct RequestKeyFrameClosure {
+  struct Closure {
     void operator()() {
       if (ptr)
-        ptr->RequestKeyFrame(ssrcs);
+        ptr->SendPictureLossIndication(ssrcs);
     }
 
     rtc::WeakPtr<RtcpTransceiverImpl> ptr;
     std::vector<uint32_t> ssrcs;
   };
-  task_queue_->PostTask(RequestKeyFrameClosure{ptr_, std::move(ssrcs)});
+  task_queue_->PostTask(Closure{ptr_, std::move(ssrcs)});
+}
+
+void RtcpTransceiver::SendFullIntraRequest(std::vector<uint32_t> ssrcs) {
+  // TODO(danilchap): Replace with lambda with move capture when available.
+  struct Closure {
+    void operator()() {
+      if (ptr)
+        ptr->SendFullIntraRequest(ssrcs);
+    }
+
+    rtc::WeakPtr<RtcpTransceiverImpl> ptr;
+    std::vector<uint32_t> ssrcs;
+  };
+  task_queue_->PostTask(Closure{ptr_, std::move(ssrcs)});
 }
 
 }  // namespace webrtc
