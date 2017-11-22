@@ -212,6 +212,11 @@ BitrateController* SendSideCongestionController::GetBitrateController() const {
   return bitrate_controller_.get();
 }
 
+bool SendSideCongestionController::AvailableBandwidth(
+    uint32_t* bandwidth) const {
+  return bitrate_controller_->AvailableBandwidth(bandwidth);
+}
+
 RtcpBandwidthObserver* SendSideCongestionController::GetBandwidthObserver()
     const {
   return bitrate_controller_.get();

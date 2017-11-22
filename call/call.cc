@@ -912,8 +912,7 @@ Call::Stats Call::GetStats() const {
   Stats stats;
   // Fetch available send/receive bitrates.
   uint32_t send_bandwidth = 0;
-  transport_send_->send_side_cc()->GetBitrateController()->AvailableBandwidth(
-      &send_bandwidth);
+  transport_send_->send_side_cc()->AvailableBandwidth(&send_bandwidth);
   std::vector<unsigned int> ssrcs;
   uint32_t recv_bandwidth = 0;
   receive_side_cc_.GetRemoteBitrateEstimator(false)->LatestEstimate(
