@@ -111,9 +111,11 @@ class TestAnnotationsExtraction(unittest.TestCase):
   def testSaveLoad(self):
     e = annotations.AudioAnnotationsExtractor(self._ALL_VAD_TYPES)
     e.Extract(self._wav_file_path)
-    e.Save(self._tmp_path)
+    e.Save(self._tmp_path, "fake-annotation")
 
-    data = np.load(os.path.join(self._tmp_path, e.GetOutputFileName()))
+    data = np.load(os.path.join(
+        self._tmp_path,
+        e.GetOutputFileNameTemplate().format("fake-annotation")))
     np.testing.assert_array_equal(e.GetLevel(), data['level'])
     self.assertEqual(np.float32, data['level'].dtype)
     np.testing.assert_array_equal(
@@ -146,8 +148,10 @@ class TestAnnotationsExtraction(unittest.TestCase):
           vad_type_value,
           {'fake': FakeExternalFactory()})
       e.Extract(self._wav_file_path)
-      e.Save(self._tmp_path)
-      data = np.load(os.path.join(self._tmp_path, e.GetOutputFileName()))
+      e.Save(self._tmp_path, annotation_name="fake-annotation")
+      data = np.load(os.path.join(
+          self._tmp_path,
+          e.GetOutputFileNameTemplate().format("fake-annotation")))
       self.assertEqual(np.float32, data['extvad_conf-fake'].dtype)
       np.testing.assert_almost_equal(np.arange(100, dtype=np.float32),
                                      data['extvad_conf-fake'])

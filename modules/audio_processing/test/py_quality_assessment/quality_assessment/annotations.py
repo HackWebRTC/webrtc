@@ -58,7 +58,7 @@ class AudioAnnotationsExtractor(object):
         vads.append("apm")
       return "VadType({})".format(", ".join(vads))
 
-  _OUTPUT_FILENAME = 'annotations.npz'
+  _OUTPUT_FILENAME_TEMPLATE = '{}annotations.npz'
 
   # Level estimation params.
   _ONE_DB_REDUCTION = np.power(10.0, -1.0 / 20.0)
@@ -112,8 +112,8 @@ class AudioAnnotationsExtractor(object):
       self._VAD_WEBRTC_APM_PATH
 
   @classmethod
-  def GetOutputFileName(cls):
-    return cls._OUTPUT_FILENAME
+  def GetOutputFileNameTemplate(cls):
+    return cls._OUTPUT_FILENAME_TEMPLATE
 
   def GetLevel(self):
     return self._level
@@ -177,13 +177,15 @@ class AudioAnnotationsExtractor(object):
     for extvad_name in self._external_vads:
       self._external_vads[extvad_name].Run(filepath)
 
-  def Save(self, output_path):
+  def Save(self, output_path, annotation_name=""):
     ext_kwargs = {'extvad_conf-' + ext_vad:
                   self._external_vads[ext_vad].GetVadOutput()
                   for ext_vad in self._external_vads}
     # pylint: disable=star-args
     np.savez_compressed(
-        file=os.path.join(output_path, self._OUTPUT_FILENAME),
+        file=os.path.join(
+            output_path,
+            self.GetOutputFileNameTemplate().format(annotation_name)),
         level=self._level,
         level_frame_size=self._level_frame_size,
         level_frame_size_ms=self._LEVEL_FRAME_SIZE_MS,
