@@ -260,22 +260,12 @@ class TimedThreadApiProcessor {
   void print_processor_statistics(const std::string& processor_name) const {
     const std::string modifier = "_api_call_duration";
 
-    // Lambda function for creating a test printout string.
-    auto create_mean_and_std_string = [](int64_t average,
-                                         int64_t standard_dev) {
-      std::string s = std::to_string(average);
-      s += ", ";
-      s += std::to_string(standard_dev);
-      return s;
-    };
-
     const std::string sample_rate_name =
         "_" + std::to_string(simulation_config_->sample_rate_hz) + "Hz";
 
     webrtc::test::PrintResultMeanAndError(
         "apm_timing", sample_rate_name, processor_name,
-        create_mean_and_std_string(GetDurationAverage(),
-                                   GetDurationStandardDeviation()),
+        GetDurationAverage(), GetDurationStandardDeviation(),
         "us", false);
 
     if (kPrintAllDurations) {

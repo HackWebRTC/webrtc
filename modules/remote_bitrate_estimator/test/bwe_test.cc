@@ -225,15 +225,15 @@ void BweTest::PrintResults(double max_throughput_kbps,
     ss.str("");
     ss << "Throughput flow " << kv.first;
     webrtc::test::PrintResultMeanAndError("BwePerformance", GetTestName(),
-                                          ss.str(), kv.second.AsString(),
-                                          "kbps", false);
+                                          ss.str(), kv.second.GetMean(),
+                                          kv.second.GetStdDev(), "kbps", false);
   }
   for (auto& kv : flow_delay_ms) {
     ss.str("");
     ss << "Delay flow " << kv.first;
     webrtc::test::PrintResultMeanAndError("BwePerformance", GetTestName(),
-                                          ss.str(), kv.second.AsString(), "ms",
-                                          false);
+                                          ss.str(), kv.second.GetMean(),
+                                          kv.second.GetStdDev(), "ms", false);
   }
   double fairness_index = 1.0;
   if (!flow_throughput_kbps.empty()) {

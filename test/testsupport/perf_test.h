@@ -47,7 +47,8 @@ void PrintResult(const std::string& measurement,
 void PrintResultMeanAndError(const std::string& measurement,
                              const std::string& modifier,
                              const std::string& trace,
-                             const std::string& mean_and_error,
+                             const double mean,
+                             const double error,
                              const std::string& units,
                              bool important);
 

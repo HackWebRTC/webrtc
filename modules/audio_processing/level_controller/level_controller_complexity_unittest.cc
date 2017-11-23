@@ -32,13 +32,6 @@ const size_t kNumFramesToProcessAtWarmup = 300;
 const size_t kToTalNumFrames =
     kNumFramesToProcess + kNumFramesToProcessAtWarmup;
 
-std::string FormPerformanceMeasureString(const test::PerformanceTimer& timer) {
-  std::string s = std::to_string(timer.GetDurationAverage());
-  s += ", ";
-  s += std::to_string(timer.GetDurationStandardDeviation());
-  return s;
-}
-
 void RunStandaloneSubmodule(int sample_rate_hz, size_t num_channels) {
   test::SimulatorBuffers buffers(sample_rate_hz, sample_rate_hz, sample_rate_hz,
                                  sample_rate_hz, num_channels, num_channels,
@@ -63,8 +56,8 @@ void RunStandaloneSubmodule(int sample_rate_hz, size_t num_channels) {
       "level_controller_call_durations",
       "_" + std::to_string(sample_rate_hz) + "Hz_" +
           std::to_string(num_channels) + "_channels",
-      "StandaloneLevelControl", FormPerformanceMeasureString(timer), "us",
-      false);
+      "StandaloneLevelControl", timer.GetDurationAverage(),
+      timer.GetDurationStandardDeviation(), "us", false);
 }
 
 void RunTogetherWithApm(const std::string& test_description,
@@ -164,8 +157,8 @@ void RunTogetherWithApm(const std::string& test_description,
           std::to_string(capture_input_sample_rate_hz) + "_" +
           std::to_string(capture_output_sample_rate_hz) + "Hz_" +
           std::to_string(num_channels) + "_channels" + "_render",
-      test_description, FormPerformanceMeasureString(render_timer), "us",
-      false);
+      test_description, render_timer.GetDurationAverage(),
+      render_timer.GetDurationStandardDeviation(), "us", false);
   webrtc::test::PrintResultMeanAndError(
       "level_controller_call_durations",
       "_" + std::to_string(render_input_sample_rate_hz) + "_" +
@@ -173,8 +166,8 @@ void RunTogetherWithApm(const std::string& test_description,
           std::to_string(capture_input_sample_rate_hz) + "_" +
           std::to_string(capture_output_sample_rate_hz) + "Hz_" +
           std::to_string(num_channels) + "_channels" + "_capture",
-      test_description, FormPerformanceMeasureString(capture_timer), "us",
-      false);
+      test_description, capture_timer.GetDurationAverage(),
+      capture_timer.GetDurationStandardDeviation(), "us", false);
   webrtc::test::PrintResultMeanAndError(
       "level_controller_call_durations",
       "_" + std::to_string(render_input_sample_rate_hz) + "_" +
@@ -182,7 +175,8 @@ void RunTogetherWithApm(const std::string& test_description,
           std::to_string(capture_input_sample_rate_hz) + "_" +
           std::to_string(capture_output_sample_rate_hz) + "Hz_" +
           std::to_string(num_channels) + "_channels" + "_total",
-      test_description, FormPerformanceMeasureString(total_timer), "us", false);
+      test_description, total_timer.GetDurationAverage(),
+      total_timer.GetDurationStandardDeviation(), "us", false);
 }
 
 }  // namespace

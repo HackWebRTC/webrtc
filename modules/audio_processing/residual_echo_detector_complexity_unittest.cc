@@ -37,16 +37,6 @@ constexpr size_t kNumberOfWarmupMeasurementsStandalone =
 constexpr int kSampleRate = AudioProcessing::kSampleRate48kHz;
 constexpr int kNumberOfChannels = 1;
 
-std::string FormPerformanceMeasureString(const test::PerformanceTimer& timer,
-                                         int number_of_warmup_samples) {
-  std::string s =
-      std::to_string(timer.GetDurationAverage(number_of_warmup_samples));
-  s += ", ";
-  s += std::to_string(
-      timer.GetDurationStandardDeviation(number_of_warmup_samples));
-  return s;
-}
-
 void RunStandaloneSubmodule() {
   test::SimulatorBuffers buffers(
       kSampleRate, kSampleRate, kSampleRate, kSampleRate, kNumberOfChannels,
@@ -84,8 +74,8 @@ void RunStandaloneSubmodule() {
   EXPECT_EQ(0.0f, sum);
   webrtc::test::PrintResultMeanAndError(
       "echo_detector_call_durations", "", "StandaloneEchoDetector",
-      FormPerformanceMeasureString(timer,
-                                   kNumberOfWarmupMeasurementsStandalone),
+      timer.GetDurationAverage(kNumberOfWarmupMeasurementsStandalone),
+      timer.GetDurationStandardDeviation(kNumberOfWarmupMeasurementsStandalone),
       "us", false);
 }
 
@@ -168,7 +158,8 @@ void RunTogetherWithApm(const std::string& test_description,
 
   webrtc::test::PrintResultMeanAndError(
       "echo_detector_call_durations", "_total", test_description,
-      FormPerformanceMeasureString(timer, kNumberOfWarmupMeasurements), "us",
+      timer.GetDurationAverage(kNumberOfWarmupMeasurements),
+      timer.GetDurationStandardDeviation(kNumberOfWarmupMeasurements), "us",
       false);
 }
 

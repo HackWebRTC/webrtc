@@ -75,11 +75,14 @@ void PrintResult(const std::string& measurement,
 void PrintResultMeanAndError(const std::string& measurement,
                              const std::string& modifier,
                              const std::string& trace,
-                             const std::string& mean_and_error,
+                             const double mean,
+                             const double error,
                              const std::string& units,
                              bool important) {
-  PrintResultsImpl(measurement, modifier, trace, mean_and_error,
-                   "{", "}", units, important);
+  std::ostringstream value_stream;
+  value_stream << '{' << mean << ',' << error << '}';
+  PrintResultsImpl(measurement, modifier, trace, value_stream.str(), "", "",
+                   units, important);
 }
 
 void PrintResultList(const std::string& measurement,
