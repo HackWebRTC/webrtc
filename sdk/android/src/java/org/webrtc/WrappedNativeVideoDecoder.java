@@ -13,17 +13,8 @@ package org.webrtc;
 /**
  * Wraps a native webrtc::VideoDecoder.
  */
-class WrappedNativeVideoDecoder implements VideoDecoder {
-  private final long nativeDecoder;
-
-  WrappedNativeVideoDecoder(long nativeDecoder) {
-    this.nativeDecoder = nativeDecoder;
-  }
-
-  @CalledByNative
-  public long getNativeDecoder() {
-    return this.nativeDecoder;
-  }
+abstract class WrappedNativeVideoDecoder implements VideoDecoder {
+  @CalledByNative abstract long createNativeDecoder();
 
   @Override
   public VideoCodecStatus initDecode(Settings settings, Callback decodeCallback) {

@@ -19,7 +19,7 @@ namespace jni {
 JNI_FUNCTION_DECLARATION(jlong,
                          VP9Encoder_createNativeEncoder,
                          JNIEnv* jni,
-                         jclass) {
+                         jobject) {
   return jlongFromPointer(VP9Encoder::Create().release());
 }
 
@@ -33,7 +33,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 JNI_FUNCTION_DECLARATION(jlong,
                          VP9Decoder_createNativeDecoder,
                          JNIEnv* jni,
-                         jclass) {
+                         jobject) {
   return jlongFromPointer(VP9Decoder::Create().release());
 }
 

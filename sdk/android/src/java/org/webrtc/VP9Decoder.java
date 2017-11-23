@@ -11,11 +11,7 @@
 package org.webrtc;
 
 class VP9Decoder extends WrappedNativeVideoDecoder {
-  VP9Decoder() {
-    super(createNativeDecoder());
-  }
+  @Override native long createNativeDecoder();
 
   static native boolean isSupported();
-
-  private static native long createNativeDecoder();
 }

@@ -14,8 +14,17 @@ package org.webrtc;
  * A combined video encoder that falls back on a secondary encoder if the primary encoder fails.
  */
 public class VideoEncoderFallback extends WrappedNativeVideoEncoder {
+  private final VideoEncoder fallback;
+  private final VideoEncoder primary;
+
   public VideoEncoderFallback(VideoEncoder fallback, VideoEncoder primary) {
-    super(createNativeEncoder(fallback, primary));
+    this.fallback = fallback;
+    this.primary = primary;
+  }
+
+  @Override
+  long createNativeEncoder() {
+    return createNativeEncoder(fallback, primary);
   }
 
   private static native long createNativeEncoder(VideoEncoder fallback, VideoEncoder primary);

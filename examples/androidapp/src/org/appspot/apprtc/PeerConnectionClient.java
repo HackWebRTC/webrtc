@@ -49,9 +49,13 @@ import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
+import org.webrtc.SoftwareVideoDecoderFactory;
+import org.webrtc.SoftwareVideoEncoderFactory;
 import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoCapturer;
+import org.webrtc.VideoDecoderFactory;
+import org.webrtc.VideoEncoderFactory;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSink;
 import org.webrtc.VideoSource;
@@ -520,10 +524,19 @@ public class PeerConnectionClient {
     }
     final boolean enableH264HighProfile =
         VIDEO_CODEC_H264_HIGH.equals(peerConnectionParameters.videoCodec);
-    factory = new PeerConnectionFactory(options,
-        new DefaultVideoEncoderFactory(rootEglBase.getEglBaseContext(),
-            true /* enableIntelVp8Encoder */, enableH264HighProfile),
-        new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext()));
+    final VideoEncoderFactory encoderFactory;
+    final VideoDecoderFactory decoderFactory;
+
+    if (peerConnectionParameters.videoCodecHwAcceleration) {
+      encoderFactory = new DefaultVideoEncoderFactory(
+          rootEglBase.getEglBaseContext(), true /* enableIntelVp8Encoder */, enableH264HighProfile);
+      decoderFactory = new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext());
+    } else {
+      encoderFactory = new SoftwareVideoEncoderFactory();
+      decoderFactory = new SoftwareVideoDecoderFactory();
+    }
+
+    factory = new PeerConnectionFactory(options, encoderFactory, decoderFactory);
     Log.d(TAG, "Peer connection factory created.");
   }
 

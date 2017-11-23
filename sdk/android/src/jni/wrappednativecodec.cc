@@ -28,7 +28,7 @@ std::unique_ptr<VideoDecoder> JavaToNativeVideoDecoder(JNIEnv* jni,
   VideoDecoder* decoder;
   if (jni->IsInstanceOf(j_decoder, wrapped_native_decoder_class)) {
     jlong native_decoder =
-        Java_WrappedNativeVideoDecoder_getNativeDecoder(jni, j_decoder);
+        Java_WrappedNativeVideoDecoder_createNativeDecoder(jni, j_decoder);
     decoder = reinterpret_cast<VideoDecoder*>(native_decoder);
   } else {
     decoder = new VideoDecoderWrapper(jni, j_decoder);
@@ -39,13 +39,10 @@ std::unique_ptr<VideoDecoder> JavaToNativeVideoDecoder(JNIEnv* jni,
 
 std::unique_ptr<VideoEncoder> JavaToNativeVideoEncoder(JNIEnv* jni,
                                                        jobject j_encoder) {
-  jclass wrapped_native_encoder_class =
-      GetClass(jni, "org/webrtc/WrappedNativeVideoEncoder");
-
   VideoEncoder* encoder;
-  if (jni->IsInstanceOf(j_encoder, wrapped_native_encoder_class)) {
+  if (Java_WrappedNativeVideoEncoder_isInstanceOf(jni, j_encoder)) {
     jlong native_encoder =
-        Java_WrappedNativeVideoEncoder_getNativeEncoder(jni, j_encoder);
+        Java_WrappedNativeVideoEncoder_createNativeEncoder(jni, j_encoder);
     encoder = reinterpret_cast<VideoEncoder*>(native_encoder);
   } else {
     encoder = new VideoEncoderWrapper(jni, j_encoder);

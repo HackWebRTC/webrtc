@@ -13,17 +13,8 @@ package org.webrtc;
 /**
  * Wraps a native webrtc::VideoEncoder.
  */
-class WrappedNativeVideoEncoder implements VideoEncoder {
-  private final long nativeEncoder;
-
-  WrappedNativeVideoEncoder(long nativeEncoder) {
-    this.nativeEncoder = nativeEncoder;
-  }
-
-  @CalledByNative
-  public long getNativeEncoder() {
-    return this.nativeEncoder;
-  }
+abstract class WrappedNativeVideoEncoder implements VideoEncoder {
+  @CalledByNative abstract long createNativeEncoder();
 
   @Override
   public VideoCodecStatus initEncode(Settings settings, Callback encodeCallback) {
@@ -58,5 +49,10 @@ class WrappedNativeVideoEncoder implements VideoEncoder {
   @Override
   public String getImplementationName() {
     throw new UnsupportedOperationException("Not implemented.");
+  }
+
+  @CalledByNative
+  static boolean isInstanceOf(VideoEncoder encoder) {
+    return encoder instanceof WrappedNativeVideoEncoder;
   }
 }
