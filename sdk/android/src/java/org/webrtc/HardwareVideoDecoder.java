@@ -299,7 +299,7 @@ class HardwareVideoDecoder
 
   @Override
   public String getImplementationName() {
-    return "HardwareVideoDecoder: " + codecName;
+    return "HWDecoder";
   }
 
   @Override
