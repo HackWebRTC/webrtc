@@ -110,6 +110,20 @@ TEST(DbMetric, Update) {
   EXPECT_FLOAT_EQ(kValue, metric.floor_value);
 }
 
+// Verify the Update functionality of DbMetric.
+TEST(DbMetric, UpdateInstant) {
+  EchoRemoverMetrics::DbMetric metric(0.f, 20.f, -20.f);
+  constexpr float kMinValue = -77.f;
+  constexpr float kMaxValue = 33.f;
+  constexpr float kLastValue = (kMinValue + kMaxValue) / 2.0f;
+  for (float value = kMinValue; value <= kMaxValue; value++)
+    metric.UpdateInstant(value);
+  metric.UpdateInstant(kLastValue);
+  EXPECT_FLOAT_EQ(kLastValue, metric.sum_value);
+  EXPECT_FLOAT_EQ(kMaxValue, metric.ceil_value);
+  EXPECT_FLOAT_EQ(kMinValue, metric.floor_value);
+}
+
 // Verify the constructor functionality of DbMetric.
 TEST(DbMetric, Constructor) {
   EchoRemoverMetrics::DbMetric metric;
