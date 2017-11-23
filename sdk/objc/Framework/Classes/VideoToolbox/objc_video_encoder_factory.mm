@@ -80,7 +80,7 @@ class ObjCVideoEncoder : public VideoEncoder {
     // CodecSpecificInfo only handles a hard coded list of codecs
     id<RTCCodecSpecificInfo> rtcCodecSpecificInfo = nil;
     if (codec_specific_info) {
-      if (strcmp(codec_specific_info->codec_name, "H264") == 0) {
+      if (strcmp(codec_specific_info->codec_name, cricket::kH264CodecName) == 0) {
         RTCCodecSpecificInfoH264 *h264Info = [[RTCCodecSpecificInfoH264 alloc] init];
         h264Info.packetizationMode =
             (RTCH264PacketizationMode)codec_specific_info->codecSpecific.H264.packetization_mode;
