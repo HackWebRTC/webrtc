@@ -57,6 +57,10 @@ constexpr double kAudioSampleDurationSeconds = 0.01;
 constexpr int64_t kMaxRetransmissionWindowMs = 1000;
 constexpr int64_t kMinRetransmissionWindowMs = 30;
 
+// Video Sync.
+constexpr int kVoiceEngineMinMinPlayoutDelayMs = 0;
+constexpr int kVoiceEngineMaxMinPlayoutDelayMs = 10000;
+
 }  // namespace
 
 const int kTelephoneEventAttenuationdB = 10;

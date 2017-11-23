@@ -20,7 +20,6 @@
 #include "rtc_base/criticalsection.h"
 #include "voice_engine/audio_level.h"
 #include "voice_engine/include/voe_base.h"
-#include "voice_engine/voice_engine_defines.h"
 
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
 #define WEBRTC_VOICE_ENGINE_TYPING_DETECTION 1

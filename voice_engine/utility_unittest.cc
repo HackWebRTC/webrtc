@@ -16,7 +16,6 @@
 #include "rtc_base/format_macros.h"
 #include "test/gtest.h"
 #include "voice_engine/utility.h"
-#include "voice_engine/voice_engine_defines.h"
 
 namespace webrtc {
 namespace voe {

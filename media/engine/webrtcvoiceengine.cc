@@ -70,7 +70,6 @@ const int kOpusBitrateFbBps = 32000;
 // See also http://tools.ietf.org/html/draft-jennings-rtcweb-qos-00
 const rtc::DiffServCodePoint kAudioDscpValue = rtc::DSCP_EF;
 
-// Constants from voice_engine_defines.h.
 const int kMinTelephoneEventCode = 0;           // RFC4733 (Section 2.3.1)
 const int kMaxTelephoneEventCode = 255;
 
@@ -299,7 +298,7 @@ void WebRtcVoiceEngine::Init() {
 #endif  // WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE
   RTC_CHECK(adm());
   webrtc::adm_helpers::Init(adm());
-
+  webrtc::apm_helpers::Init(apm());
   RTC_CHECK_EQ(0, voe_wrapper_->base()->Init(adm(), apm(), decoder_factory_));
   transmit_mixer_ = voe_wrapper_->base()->transmit_mixer();
   RTC_DCHECK(transmit_mixer_);
@@ -330,11 +329,6 @@ void WebRtcVoiceEngine::Init() {
     bool error = ApplyOptions(options);
     RTC_DCHECK(error);
   }
-
-  // Set default audio devices.
-#if !defined(WEBRTC_IOS)
-  apm()->Initialize();
-#endif  // !WEBRTC_IOS
 
   // May be null for VoE injected for testing.
   if (voe()->engine()) {
@@ -723,6 +717,7 @@ webrtc::AudioDeviceModule* WebRtcVoiceEngine::adm() {
 
 webrtc::AudioProcessing* WebRtcVoiceEngine::apm() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(apm_);
   return apm_.get();
 }
 

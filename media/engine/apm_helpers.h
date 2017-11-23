@@ -31,6 +31,7 @@ struct AgcConfig {
 
 namespace apm_helpers {
 
+void Init(AudioProcessing* apm);
 AgcConfig GetAgcConfig(AudioProcessing* apm);
 void SetAgcConfig(AudioProcessing* apm,
                   const AgcConfig& config);

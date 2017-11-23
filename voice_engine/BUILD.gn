@@ -28,7 +28,6 @@ rtc_static_library("voice_engine") {
     "utility.h",
     "voe_base_impl.cc",
     "voe_base_impl.h",
-    "voice_engine_defines.h",
     "voice_engine_impl.cc",
     "voice_engine_impl.h",
   ]

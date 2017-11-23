@@ -29,6 +29,7 @@ struct TestHelper {
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
     apm_ = rtc::scoped_refptr<AudioProcessing>(AudioProcessing::Create(config));
+    apm_helpers::Init(apm());
     EXPECT_EQ(0, voe_wrapper_.base()->Init(
                      &mock_audio_device_, apm_,
                      MockAudioDecoderFactory::CreateEmptyFactory()));
@@ -102,14 +103,12 @@ TEST(ApmHelpersTest, AgcConfig_GetAndSet) {
 TEST(ApmHelpersTest, AgcStatus_DefaultMode) {
   TestHelper helper;
   GainControl* gc = helper.apm()->gain_control();
+  EXPECT_FALSE(gc->is_enabled());
 #if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
-  EXPECT_FALSE(gc->is_enabled());
-  EXPECT_EQ(GainControl::kAdaptiveDigital, gc->mode());
+  EXPECT_EQ(GainControl::kAdaptiveAnalog, gc->mode());
 #elif defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
-  EXPECT_FALSE(gc->is_enabled());
   EXPECT_EQ(GainControl::kFixedDigital, gc->mode());
 #else
-  EXPECT_TRUE(gc->is_enabled());
   EXPECT_EQ(GainControl::kAdaptiveAnalog, gc->mode());
 #endif
 }
@@ -266,7 +265,7 @@ TEST(ApmHelpersTest, MAYBE_TypingDetectionStatus_EnableDisable) {
 // of duplicating all relevant tests from audio_processing_test.cc.
 TEST(ApmHelpersTest, HighPassFilter_DefaultMode) {
   TestHelper helper;
-  EXPECT_TRUE(helper.apm()->high_pass_filter()->is_enabled());
+  EXPECT_FALSE(helper.apm()->high_pass_filter()->is_enabled());
 }
 
 // TODO(solenberg): Move this test to a better place - added here for the sake

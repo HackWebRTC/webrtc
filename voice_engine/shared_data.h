@@ -22,7 +22,6 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "voice_engine/channel_manager.h"
-#include "voice_engine/voice_engine_defines.h"
 
 class ProcessThread;
 

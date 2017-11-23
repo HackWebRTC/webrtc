@@ -28,7 +28,7 @@ class VoEBaseTest : public ::testing::Test {
   }
 
   ~VoEBaseTest() {
-    EXPECT_EQ(0, base_->Terminate());
+    base_->Terminate();
     EXPECT_EQ(1, base_->Release());
     EXPECT_TRUE(VoiceEngine::Delete(voe_));
   }

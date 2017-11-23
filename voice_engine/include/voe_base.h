@@ -102,8 +102,7 @@ class WEBRTC_DLLEXPORT VoEBase {
   virtual voe::TransmitMixer* transmit_mixer() = 0;
 
   // Terminates all VoiceEngine functions and releases allocated resources.
-  // Returns 0.
-  virtual int Terminate() = 0;
+  virtual void Terminate() = 0;
 
   // Creates a new channel and allocates the required resources for it.
   // The second version accepts a |config| struct which includes an Audio Coding

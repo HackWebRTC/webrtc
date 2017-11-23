@@ -65,9 +65,8 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
     inited_ = true;
     return 0;
   }
-  WEBRTC_FUNC(Terminate, ()) {
+  void Terminate() override {
     inited_ = false;
-    return 0;
   }
   webrtc::voe::TransmitMixer* transmit_mixer() override {
     return transmit_mixer_;

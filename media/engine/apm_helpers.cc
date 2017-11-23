@@ -18,6 +18,24 @@
 namespace webrtc {
 namespace apm_helpers {
 
+void Init(AudioProcessing* apm) {
+  RTC_DCHECK(apm);
+
+  constexpr int kMinVolumeLevel = 0;
+  constexpr int kMaxVolumeLevel = 255;
+
+  // This is the initialization which used to happen in VoEBase::Init(), but
+  // which is not covered by the WVoE::ApplyOptions().
+  if (apm->echo_cancellation()->enable_drift_compensation(false) != 0) {
+    RTC_DLOG(LS_ERROR) << "Failed to disable drift compensation.";
+  }
+  GainControl* gc = apm->gain_control();
+  if (gc->set_analog_level_limits(kMinVolumeLevel, kMaxVolumeLevel) != 0) {
+    RTC_DLOG(LS_ERROR) << "Failed to set analog level limits with minimum: "
+        << kMinVolumeLevel << " and maximum: " << kMaxVolumeLevel;
+  }
+}
+
 AgcConfig GetAgcConfig(AudioProcessing* apm) {
   RTC_DCHECK(apm);
   AgcConfig result;

@@ -32,7 +32,6 @@
 #include "voice_engine/audio_level.h"
 #include "voice_engine/include/voe_base.h"
 #include "voice_engine/shared_data.h"
-#include "voice_engine/voice_engine_defines.h"
 
 namespace rtc {
 class TimestampWrapAroundHandler;

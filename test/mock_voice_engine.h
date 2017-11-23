@@ -95,7 +95,7 @@ class MockVoiceEngine : public VoiceEngineImpl {
           AudioProcessing* external_apm,
           const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory));
   MOCK_METHOD0(transmit_mixer, voe::TransmitMixer*());
-  MOCK_METHOD0(Terminate, int());
+  MOCK_METHOD0(Terminate, void());
   MOCK_METHOD0(CreateChannel, int());
   MOCK_METHOD1(CreateChannel, int(const ChannelConfig& config));
   MOCK_METHOD1(DeleteChannel, int(int channel));

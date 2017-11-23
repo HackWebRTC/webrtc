@@ -68,6 +68,16 @@ const uint32_t kSsrcs4[] = { 11, 200, 30, 44 };
 
 constexpr int kRtpHistoryMs = 5000;
 
+constexpr webrtc::GainControl::Mode kDefaultAgcMode =
+#if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
+    webrtc::GainControl::kFixedDigital;
+#else
+    webrtc::GainControl::kAdaptiveAnalog;
+#endif
+
+constexpr webrtc::NoiseSuppression::Level kDefaultNsLevel =
+    webrtc::NoiseSuppression::kHigh;
+
 class FakeVoEWrapper : public cricket::VoEWrapper {
  public:
   explicit FakeVoEWrapper(cricket::FakeWebRtcVoiceEngine* engine)
@@ -137,7 +147,6 @@ TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
   EXPECT_CALL(*apm, GetConfig()).WillRepeatedly(ReturnPointee(&apm_config));
   EXPECT_CALL(*apm, ApplyConfig(_)).WillRepeatedly(SaveArg<0>(&apm_config));
   EXPECT_CALL(*apm, SetExtraOptions(testing::_));
-  EXPECT_CALL(*apm, Initialize()).WillOnce(Return(0));
   EXPECT_CALL(*apm, DetachAecDump());
   StrictMock<MockTransmitMixer> transmit_mixer;
   EXPECT_CALL(transmit_mixer, EnableStereoChannelSwapping(false));
@@ -183,12 +192,15 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_CALL(*apm_, GetConfig()).WillRepeatedly(ReturnPointee(&apm_config_));
     EXPECT_CALL(*apm_, ApplyConfig(_)).WillRepeatedly(SaveArg<0>(&apm_config_));
     EXPECT_CALL(*apm_, SetExtraOptions(testing::_));
-    EXPECT_CALL(*apm_, Initialize()).WillOnce(Return(0));
     EXPECT_CALL(*apm_, DetachAecDump());
     // Default Options.
     EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
     EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+    EXPECT_CALL(apm_ec_, enable_drift_compensation(false)).WillOnce(Return(0));
+    EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
     EXPECT_CALL(apm_gc_, Enable(true)).WillOnce(Return(0));
+    EXPECT_CALL(apm_gc_, set_analog_level_limits(0, 255)).WillOnce(Return(0));
+    EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
     EXPECT_CALL(apm_ns_, Enable(true)).WillOnce(Return(0));
     EXPECT_CALL(apm_vd_, Enable(true)).WillOnce(Return(0));
     EXPECT_CALL(transmit_mixer_, EnableStereoChannelSwapping(false));
@@ -210,6 +222,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     engine_->Init();
     send_parameters_.codecs.push_back(kPcmuCodec);
     recv_parameters_.codecs.push_back(kPcmuCodec);
+
     // Default Options.
     EXPECT_TRUE(IsHighPassFilterEnabled());
   }
@@ -2221,6 +2234,7 @@ TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
   EXPECT_CALL(adm_,
               BuiltInAGCIsAvailable()).Times(2).WillRepeatedly(Return(false));
   EXPECT_CALL(adm_, SetAGC(true)).Times(2).WillRepeatedly(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).Times(2).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(true)).Times(2).WillOnce(Return(0));
   send_parameters_.options.tx_agc_target_dbov = 3;
   send_parameters_.options.tx_agc_digital_compression_gain = 9;
@@ -2775,6 +2789,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_CALL(adm_, SetAGC(false)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(false)).WillOnce(Return(0));
   send_parameters_.options.auto_gain_control = false;
   SetSendParameters(send_parameters_);
@@ -2783,6 +2798,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_CALL(adm_, SetAGC(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(true)).WillOnce(Return(0));
   send_parameters_.options.auto_gain_control = true;
   send_parameters_.options.adjust_agc_delta = rtc::nullopt;
@@ -2792,7 +2808,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_CALL(adm_, SetAGC(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   EXPECT_CALL(apm_vd_, Enable(false)).WillOnce(Return(0));
   EXPECT_CALL(transmit_mixer_, EnableStereoChannelSwapping(true));
@@ -2807,7 +2825,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_CALL(adm_, SetAGC(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   EXPECT_CALL(apm_vd_, Enable(false)).WillOnce(Return(0));
   EXPECT_CALL(transmit_mixer_, EnableStereoChannelSwapping(true));
@@ -2858,7 +2878,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_CALL(adm_, SetAGC(true)).Times(2).WillRepeatedly(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).Times(2).WillRepeatedly(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).Times(2).WillRepeatedly(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).Times(2).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(true)).Times(2).WillRepeatedly(Return(0));
+  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).Times(2).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(true)).Times(2).WillRepeatedly(Return(0));
   EXPECT_TRUE(channel1->SetSendParameters(parameters_options_all));
   EXPECT_EQ(parameters_options_all.options, channel1->options());
@@ -2871,7 +2893,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_CALL(adm_, SetAGC(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   EXPECT_TRUE(channel1->SetSendParameters(parameters_options_no_ns));
   cricket::AudioOptions expected_options = parameters_options_all.options;
@@ -2886,7 +2910,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_CALL(adm_, SetAGC(false)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(false)).WillOnce(Return(0));
+  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(true)).WillOnce(Return(0));
   EXPECT_TRUE(channel2->SetSendParameters(parameters_options_no_agc));
   expected_options.echo_cancellation = true;
@@ -2897,21 +2923,27 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_CALL(adm_, SetAGC(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(true)).WillOnce(Return(0));
   EXPECT_TRUE(channel_->SetSendParameters(parameters_options_all));
 
   EXPECT_CALL(adm_, SetAGC(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   channel1->SetSend(true);
 
   EXPECT_CALL(adm_, SetAGC(false)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(false)).WillOnce(Return(0));
+  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(true)).WillOnce(Return(0));
   channel2->SetSend(true);
 
@@ -2923,7 +2955,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_CALL(adm_, SetAGC(false)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(false)).WillOnce(Return(0));
+  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   EXPECT_TRUE(channel2->SetSendParameters(parameters_options_no_agc_nor_ns));
   expected_options.echo_cancellation = true;

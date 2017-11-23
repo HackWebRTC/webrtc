@@ -55,6 +55,8 @@ int32_t VoEBaseImpl::RecordedDataIsAvailable(
   RTC_DCHECK(shared_->transmit_mixer() != nullptr);
   RTC_DCHECK(shared_->audio_device() != nullptr);
 
+  constexpr uint32_t kMaxVolumeLevel = 255;
+
   uint32_t max_volume = 0;
   uint16_t voe_mic_level = 0;
   // Check for zero to skip this calculation; the consumer may use this to
@@ -155,57 +157,15 @@ int VoEBaseImpl::Init(
   shared_->set_audio_device(audio_device);
   shared_->set_audio_processing(audio_processing);
 
-  // Configure AudioProcessing components.
-  // TODO(peah): Move this initialization to webrtcvoiceengine.cc.
-  if (audio_processing->high_pass_filter()->Enable(true) != 0) {
-    RTC_LOG_F(LS_ERROR) << "Failed to enable high pass filter.";
-    return -1;
-  }
-  if (audio_processing->echo_cancellation()->enable_drift_compensation(false) !=
-      0) {
-    RTC_LOG_F(LS_ERROR) << "Failed to disable drift compensation.";
-    return -1;
-  }
-  if (audio_processing->noise_suppression()->set_level(kDefaultNsMode) != 0) {
-    RTC_LOG_F(LS_ERROR) << "Failed to set noise suppression level: "
-                        << kDefaultNsMode;
-    return -1;
-  }
-  GainControl* agc = audio_processing->gain_control();
-  if (agc->set_analog_level_limits(kMinVolumeLevel, kMaxVolumeLevel) != 0) {
-    RTC_LOG_F(LS_ERROR) << "Failed to set analog level limits with minimum: "
-                        << kMinVolumeLevel
-                        << " and maximum: " << kMaxVolumeLevel;
-    return -1;
-  }
-  if (agc->set_mode(kDefaultAgcMode) != 0) {
-    RTC_LOG_F(LS_ERROR) << "Failed to set mode: " << kDefaultAgcMode;
-    return -1;
-  }
-  if (agc->Enable(kDefaultAgcState) != 0) {
-    RTC_LOG_F(LS_ERROR) << "Failed to set agc state: " << kDefaultAgcState;
-    return -1;
-  }
-
-#ifdef WEBRTC_VOICE_ENGINE_AGC
-  bool agc_enabled =
-      agc->mode() == GainControl::kAdaptiveAnalog && agc->is_enabled();
-  if (shared_->audio_device()->SetAGC(agc_enabled) != 0) {
-    RTC_LOG_F(LS_ERROR) << "Failed to set agc to enabled: " << agc_enabled;
-    // TODO(ajm): No error return here due to
-    // https://code.google.com/p/webrtc/issues/detail?id=1464
-  }
-#endif
-
   RTC_DCHECK(decoder_factory);
   decoder_factory_ = decoder_factory;
 
   return 0;
 }
 
-int VoEBaseImpl::Terminate() {
+void VoEBaseImpl::Terminate() {
   rtc::CritScope cs(shared_->crit_sec());
-  return TerminateInternal();
+  TerminateInternal();
 }
 
 int VoEBaseImpl::CreateChannel() {
@@ -436,7 +396,7 @@ int32_t VoEBaseImpl::SetRecording(bool enabled) {
   return ret;
 }
 
-int32_t VoEBaseImpl::TerminateInternal() {
+void VoEBaseImpl::TerminateInternal() {
   // Delete any remaining channel objects
   shared_->channel_manager().DestroyAllChannels();
 
@@ -446,7 +406,5 @@ int32_t VoEBaseImpl::TerminateInternal() {
 
   shared_->set_audio_device(nullptr);
   shared_->set_audio_processing(nullptr);
-
-  return 0;
 }
 }  // namespace webrtc
