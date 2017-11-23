@@ -33,30 +33,14 @@ namespace cricket {
 
 namespace {
 
-bool IsSameFormat(const webrtc::SdpVideoFormat& format1,
-                  const webrtc::SdpVideoFormat& format2) {
-  // If different names (case insensitive), then not same formats.
-  if (!CodecNamesEq(format1.name, format2.name))
-    return false;
-  // For every format besides H264, comparing names is enough.
-  if (!CodecNamesEq(format1.name.c_str(), kH264CodecName))
-    return true;
-  // Compare H264 profiles.
-  const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
-      webrtc::H264::ParseSdpProfileLevelId(format1.parameters);
-  const rtc::Optional<webrtc::H264::ProfileLevelId> other_profile_level_id =
-      webrtc::H264::ParseSdpProfileLevelId(format2.parameters);
-  // Compare H264 profiles, but not levels.
-  return profile_level_id && other_profile_level_id &&
-         profile_level_id->profile == other_profile_level_id->profile;
-}
-
 bool IsFormatSupported(
     const std::vector<webrtc::SdpVideoFormat>& supported_formats,
     const webrtc::SdpVideoFormat& format) {
   for (const webrtc::SdpVideoFormat& supported_format : supported_formats) {
-    if (IsSameFormat(format, supported_format))
+    if (IsSameCodec(format.name, format.parameters, supported_format.name,
+                    supported_format.parameters)) {
       return true;
+    }
   }
   return false;
 }

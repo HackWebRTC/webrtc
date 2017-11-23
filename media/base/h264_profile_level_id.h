@@ -96,6 +96,11 @@ void GenerateProfileLevelIdForAnswer(
     const CodecParameterMap& remote_offered_params,
     CodecParameterMap* answer_params);
 
+// Returns true if the parameters have the same H264 profile, i.e. the same
+// H264::Profile (Baseline, High, etc).
+bool IsSameH264Profile(const CodecParameterMap& params1,
+                       const CodecParameterMap& params2);
+
 }  // namespace H264
 }  // namespace webrtc
 

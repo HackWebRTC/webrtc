@@ -254,6 +254,10 @@ bool HasTransportCc(const Codec& codec);
 const VideoCodec* FindMatchingCodec(
     const std::vector<VideoCodec>& supported_codecs,
     const VideoCodec& codec);
+bool IsSameCodec(const std::string& name1,
+                 const CodecParameterMap& params1,
+                 const std::string& name2,
+                 const CodecParameterMap& params2);
 
 }  // namespace cricket
 

@@ -295,5 +295,16 @@ void GenerateProfileLevelIdForAnswer(
       ProfileLevelId(local_profile_level_id->profile, answer_level));
 }
 
+bool IsSameH264Profile(const CodecParameterMap& params1,
+                       const CodecParameterMap& params2) {
+  const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
+      webrtc::H264::ParseSdpProfileLevelId(params1);
+  const rtc::Optional<webrtc::H264::ProfileLevelId> other_profile_level_id =
+      webrtc::H264::ParseSdpProfileLevelId(params2);
+  // Compare H264 profiles, but not levels.
+  return profile_level_id && other_profile_level_id &&
+         profile_level_id->profile == other_profile_level_id->profile;
+}
+
 }  // namespace H264
 }  // namespace webrtc

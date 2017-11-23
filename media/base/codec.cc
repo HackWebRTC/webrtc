@@ -21,17 +21,6 @@
 
 namespace cricket {
 
-static bool IsSameH264Profile(const CodecParameterMap& params1,
-                              const CodecParameterMap& params2) {
-  const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
-      webrtc::H264::ParseSdpProfileLevelId(params1);
-  const rtc::Optional<webrtc::H264::ProfileLevelId> other_profile_level_id =
-      webrtc::H264::ParseSdpProfileLevelId(params2);
-  // Compare H264 profiles, but not levels.
-  return profile_level_id && other_profile_level_id &&
-         profile_level_id->profile == other_profile_level_id->profile;
-}
-
 FeedbackParams::FeedbackParams() = default;
 
 bool FeedbackParam::operator==(const FeedbackParam& other) const {
@@ -259,7 +248,7 @@ bool VideoCodec::Matches(const VideoCodec& other) const {
   if (!Codec::Matches(other))
     return false;
   if (CodecNamesEq(name.c_str(), kH264CodecName))
-    return IsSameH264Profile(params, other.params);
+    return webrtc::H264::IsSameH264Profile(params, other.params);
   return true;
 }
 
@@ -355,15 +344,24 @@ const VideoCodec* FindMatchingCodec(
     const std::vector<VideoCodec>& supported_codecs,
     const VideoCodec& codec) {
   for (const VideoCodec& supported_codec : supported_codecs) {
-    if (!CodecNamesEq(codec.name, supported_codec.name))
-      continue;
-    if (CodecNamesEq(codec.name.c_str(), kH264CodecName) &&
-        !IsSameH264Profile(codec.params, supported_codec.params)) {
-      continue;
+    if (IsSameCodec(codec.name, codec.params, supported_codec.name,
+                    supported_codec.params)) {
+      return &supported_codec;
     }
-    return &supported_codec;
   }
   return nullptr;
+}
+
+bool IsSameCodec(const std::string& name1,
+                 const CodecParameterMap& params1,
+                 const std::string& name2,
+                 const CodecParameterMap& params2) {
+  // If different names (case insensitive), then not same formats.
+  if (!CodecNamesEq(name1, name2))
+    return false;
+  // For every format besides H264, comparing names is enough.
+  return !CodecNamesEq(name1.c_str(), kH264CodecName) ||
+         webrtc::H264::IsSameH264Profile(params1, params2);
 }
 
 }  // namespace cricket
