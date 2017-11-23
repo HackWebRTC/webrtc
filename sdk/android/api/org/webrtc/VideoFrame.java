@@ -121,6 +121,7 @@ public class VideoFrame {
   private final int rotation;
   private final long timestampNs;
 
+  @CalledByNative
   public VideoFrame(Buffer buffer, int rotation, long timestampNs) {
     if (buffer == null) {
       throw new IllegalArgumentException("buffer not allowed to be null");
@@ -204,12 +205,6 @@ public class VideoFrame {
         newBuffer.getStrideU(), newBuffer.getDataV(), newBuffer.getStrideV(), scaleWidth,
         scaleHeight);
     return newBuffer;
-  }
-
-  // TODO(bugs.webrtc.org/8278): Add a way to generate JNI code for constructors directly.
-  @CalledByNative
-  static VideoFrame create(Buffer buffer, int rotation, long timestampNs) {
-    return new VideoFrame(buffer, rotation, timestampNs);
   }
 
   private static native void cropAndScaleI420Native(ByteBuffer srcY, int srcStrideY,

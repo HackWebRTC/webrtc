@@ -403,7 +403,7 @@ jobject NativeToJavaFrame(JNIEnv* jni, const VideoFrame& frame) {
   } else {
     j_buffer = WrapI420Buffer(jni, buffer->ToI420());
   }
-  return Java_VideoFrame_create(
+  return Java_VideoFrame_Constructor(
       jni, j_buffer, static_cast<jint>(frame.rotation()),
       static_cast<jlong>(frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec));
 }

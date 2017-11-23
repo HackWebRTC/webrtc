@@ -12,8 +12,6 @@ package org.webrtc;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
-// TODO(bugs.webrtc.org/8556): Remove unnecessary import.
-import org.webrtc.EncodedImage;
 
 /**
  * An encoded frame from a video stream. Used as an input for decoders and as an output for
@@ -36,9 +34,8 @@ public class EncodedImage {
       return nativeIndex;
     }
 
-    // TODO(bugs.webrtc.org/8556): Remove unnecessary 'EncodedImage.'.
     @CalledByNative("FrameType")
-    static EncodedImage.FrameType fromNativeIndex(int nativeIndex) {
+    static FrameType fromNativeIndex(int nativeIndex) {
       for (FrameType type : FrameType.values()) {
         if (type.getNative() == nativeIndex) {
           return type;
@@ -58,6 +55,7 @@ public class EncodedImage {
   public final boolean completeFrame;
   public final Integer qp;
 
+  @CalledByNative
   private EncodedImage(ByteBuffer buffer, int encodedWidth, int encodedHeight, long captureTimeNs,
       FrameType frameType, int rotation, boolean completeFrame, Integer qp) {
     this.buffer = buffer;
@@ -137,14 +135,5 @@ public class EncodedImage {
       return new EncodedImage(buffer, encodedWidth, encodedHeight, captureTimeNs, frameType,
           rotation, completeFrame, qp);
     }
-  }
-
-  // TODO(bugs.webrtc.org/8551) Remove.
-  @CalledByNative
-  static EncodedImage create(ByteBuffer buffer, int encodedWidth, int encodedHeight,
-      long captureTimeNs, EncodedImage.FrameType frameType, int rotation, boolean completeFrame,
-      Integer qp) {
-    return new EncodedImage(
-        buffer, encodedWidth, encodedHeight, captureTimeNs, frameType, rotation, completeFrame, qp);
   }
 }

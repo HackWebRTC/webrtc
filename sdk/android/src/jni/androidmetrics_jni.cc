@@ -30,13 +30,13 @@ JNI_FUNCTION_DECLARATION(jobject,
                          Metrics_getAndResetNative,
                          JNIEnv* jni,
                          jclass) {
-  jobject j_metrics = Java_Metrics_createMetrics(jni);
+  jobject j_metrics = Java_Metrics_Constructor(jni);
 
   std::map<std::string, std::unique_ptr<metrics::SampleInfo>> histograms;
   metrics::GetAndReset(&histograms);
   for (const auto& kv : histograms) {
     // Create and add samples to |HistogramInfo|.
-    jobject j_info = Java_Metrics_createHistogramInfo(
+    jobject j_info = Java_HistogramInfo_Constructor(
         jni, kv.second->min, kv.second->max,
         static_cast<int>(kv.second->bucket_count));
     for (const auto& sample : kv.second->samples) {

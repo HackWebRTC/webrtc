@@ -57,7 +57,7 @@ int32_t VideoDecoderWrapper::InitDecode(const VideoCodec* codec_settings,
 }
 
 int32_t VideoDecoderWrapper::InitDecodeInternal(JNIEnv* jni) {
-  jobject settings = Java_VideoDecoderWrapper_createSettings(
+  jobject settings = Java_Settings_Constructor(
       jni, number_of_cores_, codec_settings_.width, codec_settings_.height);
 
   jobject callback = Java_VideoDecoderWrapper_createDecoderCallback(

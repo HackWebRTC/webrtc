@@ -38,6 +38,9 @@ public class Metrics {
   public final Map<String, HistogramInfo> map =
       new HashMap<String, HistogramInfo>(); // <name, HistogramInfo>
 
+  @CalledByNative
+  Metrics() {}
+
   /**
    * Class holding histogram information.
    */
@@ -48,6 +51,7 @@ public class Metrics {
     public final Map<Integer, Integer> samples =
         new HashMap<Integer, Integer>(); // <value, # of events>
 
+    @CalledByNative("HistogramInfo")
     public HistogramInfo(int min, int max, int bucketCount) {
       this.min = min;
       this.max = max;
@@ -74,18 +78,6 @@ public class Metrics {
   // Gets and clears native histograms.
   public static Metrics getAndReset() {
     return getAndResetNative();
-  }
-
-  // TODO(bugs.webrtc.org/8551) Remove.
-  @CalledByNative
-  static Metrics createMetrics() {
-    return new Metrics();
-  }
-
-  // TODO(bugs.webrtc.org/8551) Remove.
-  @CalledByNative
-  static HistogramInfo createHistogramInfo(int min, int max, int bucketCount) {
-    return new HistogramInfo(min, max, bucketCount);
   }
 
   private static native void enableNative();

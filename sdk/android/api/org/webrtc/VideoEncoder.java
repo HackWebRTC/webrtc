@@ -10,6 +10,8 @@
 
 package org.webrtc;
 
+import org.webrtc.EncodedImage;
+
 /**
  * Interface for a video encoder that can be used with WebRTC. All calls will be made on the
  * encoding thread. The encoder may be constructed on a different thread and changing thread after
@@ -25,6 +27,7 @@ public interface VideoEncoder {
     public final int maxFramerate;
     public final boolean automaticResizeOn;
 
+    @CalledByNative("Settings")
     public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate,
         boolean automaticResizeOn) {
       this.numberOfCores = numberOfCores;
@@ -40,6 +43,7 @@ public interface VideoEncoder {
   public class EncodeInfo {
     public final EncodedImage.FrameType[] frameTypes;
 
+    @CalledByNative("EncodeInfo")
     public EncodeInfo(EncodedImage.FrameType[] frameTypes) {
       this.frameTypes = frameTypes;
     }
@@ -67,6 +71,7 @@ public interface VideoEncoder {
      * Initializes the allocation with a two dimensional array of bitrates. The first index of the
      * array is the spatial layer and the second index in the temporal layer.
      */
+    @CalledByNative("BitrateAllocation")
     public BitrateAllocation(int[][] bitratesBbs) {
       this.bitratesBbs = bitratesBbs;
     }

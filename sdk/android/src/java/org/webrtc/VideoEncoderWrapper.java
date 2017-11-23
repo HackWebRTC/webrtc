@@ -11,7 +11,6 @@
 package org.webrtc;
 
 // Explicit imports necessary for JNI generation.
-import org.webrtc.EncodedImage;
 import org.webrtc.VideoEncoder;
 import java.nio.ByteBuffer;
 
@@ -19,23 +18,6 @@ import java.nio.ByteBuffer;
  * This class contains the Java glue code for JNI generation of VideoEncoder.
  */
 class VideoEncoderWrapper {
-  @CalledByNative
-  static VideoEncoder.Settings createSettings(int numberOfCores, int width, int height,
-      int startBitrate, int maxFramerate, boolean automaticResizeOn) {
-    return new VideoEncoder.Settings(
-        numberOfCores, width, height, startBitrate, maxFramerate, automaticResizeOn);
-  }
-
-  @CalledByNative
-  static VideoEncoder.EncodeInfo createEncodeInfo(EncodedImage.FrameType[] frameTypes) {
-    return new VideoEncoder.EncodeInfo(frameTypes);
-  }
-
-  @CalledByNative
-  static VideoEncoder.BitrateAllocation createBitrateAllocation(int[][] bitratesBbs) {
-    return new VideoEncoder.BitrateAllocation(bitratesBbs);
-  }
-
   @CalledByNative
   static boolean getScalingSettingsOn(VideoEncoder.ScalingSettings scalingSettings) {
     return scalingSettings.on;

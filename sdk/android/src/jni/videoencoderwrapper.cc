@@ -74,7 +74,7 @@ int32_t VideoEncoderWrapper::InitEncodeInternal(JNIEnv* jni) {
       automatic_resize_on = true;
   }
 
-  jobject settings = Java_VideoEncoderWrapper_createSettings(
+  jobject settings = Java_Settings_Constructor(
       jni, number_of_cores_, codec_settings_.width, codec_settings_.height,
       codec_settings_.startBitrate, codec_settings_.maxFramerate,
       automatic_resize_on);
@@ -127,8 +127,7 @@ int32_t VideoEncoderWrapper::Encode(
     jobject j_frame_type = NativeToJavaFrameType(jni, (*frame_types)[i]);
     jni->SetObjectArrayElement(j_frame_types, i, j_frame_type);
   }
-  jobject encode_info =
-      Java_VideoEncoderWrapper_createEncodeInfo(jni, j_frame_types);
+  jobject encode_info = Java_EncodeInfo_Constructor(jni, j_frame_types);
 
   FrameExtraInfo info;
   info.capture_time_ns = frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec;
@@ -385,8 +384,7 @@ jobject VideoEncoderWrapper::ToJavaBitrateAllocation(
     jni->SetObjectArrayElement(j_allocation_array, spatial_i,
                                j_array_spatial_layer);
   }
-  return Java_VideoEncoderWrapper_createBitrateAllocation(jni,
-                                                          j_allocation_array);
+  return Java_BitrateAllocation_Constructor(jni, j_allocation_array);
 }
 
 std::string VideoEncoderWrapper::GetImplementationName(JNIEnv* jni) const {

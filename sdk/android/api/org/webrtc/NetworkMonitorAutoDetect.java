@@ -35,7 +35,6 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.webrtc.NetworkMonitorAutoDetect;
 
 /**
  * Borrowed from Chromium's
@@ -90,7 +89,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     }
 
     @CalledByNative("NetworkInformation")
-    private NetworkMonitorAutoDetect.ConnectionType getConnectionType() {
+    private ConnectionType getConnectionType() {
       return type;
     }
 
