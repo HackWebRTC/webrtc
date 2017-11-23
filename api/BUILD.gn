@@ -63,6 +63,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "rtpreceiverinterface.h",
     "rtpsenderinterface.h",
     "rtptransceiverinterface.h",
+    "setremotedescriptionobserverinterface.h",
     "statstypes.cc",
     "statstypes.h",
     "turncustomizer.h",
@@ -379,6 +380,7 @@ if (rtc_include_tests) {
     deps = [
       ":array_view",
       ":libjingle_peerconnection_api",
+      ":libjingle_peerconnection_test_api",
       ":optional",
       ":ortc_api",
       "../rtc_base:rtc_base_approved",

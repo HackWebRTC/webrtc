@@ -152,6 +152,10 @@ class PeerConnection : public PeerConnectionInterface,
                            SessionDescriptionInterface* desc) override;
   void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                             SessionDescriptionInterface* desc) override;
+  void SetRemoteDescription(
+      std::unique_ptr<SessionDescriptionInterface> desc,
+      rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer)
+      override;
   PeerConnectionInterface::RTCConfiguration GetConfiguration() override;
   bool SetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& configuration,
@@ -271,6 +275,9 @@ class PeerConnection : public PeerConnectionInterface,
   ~PeerConnection() override;
 
  private:
+  class SetRemoteDescriptionObserverAdapter;
+  friend class SetRemoteDescriptionObserverAdapter;
+
   struct RtpSenderInfo {
     RtpSenderInfo() : first_ssrc(0) {}
     RtpSenderInfo(const std::string& stream_label,
@@ -342,6 +349,8 @@ class PeerConnection : public PeerConnectionInterface,
   void OnVideoTrackRemoved(VideoTrackInterface* track,
                            MediaStreamInterface* stream);
 
+  void PostSetSessionDescriptionSuccess(
+      SetSessionDescriptionObserver* observer);
   void PostSetSessionDescriptionFailure(SetSessionDescriptionObserver* observer,
                                         const std::string& error);
   void PostCreateSessionDescriptionFailure(
@@ -539,10 +548,15 @@ class PeerConnection : public PeerConnectionInterface,
   // Get current SSL role used by SCTP's underlying transport.
   bool GetSctpSslRole(rtc::SSLRole* role);
 
-  bool SetLocalDescription(std::unique_ptr<SessionDescriptionInterface> desc,
-                           std::string* err_desc);
-  bool SetRemoteDescription(std::unique_ptr<SessionDescriptionInterface> desc,
-                            std::string* err_desc);
+  // Validates and takes ownership of the description, setting it as the current
+  // or pending description (depending on the description's action) if it is
+  // valid. Also updates ice role, candidates, creates and destroys channels.
+  bool SetCurrentOrPendingLocalDescription(
+      std::unique_ptr<SessionDescriptionInterface> desc,
+      std::string* err_desc);
+  bool SetCurrentOrPendingRemoteDescription(
+      std::unique_ptr<SessionDescriptionInterface> desc,
+      std::string* err_desc);
 
   cricket::IceConfig ParseIceConfig(
       const PeerConnectionInterface::RTCConfiguration& config) const;

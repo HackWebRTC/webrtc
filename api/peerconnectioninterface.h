@@ -82,6 +82,7 @@
 #include "api/rtceventlogoutput.h"
 #include "api/rtpreceiverinterface.h"
 #include "api/rtpsenderinterface.h"
+#include "api/setremotedescriptionobserverinterface.h"
 #include "api/stats/rtcstatscollectorcallback.h"
 #include "api/statstypes.h"
 #include "api/turncustomizer.h"
@@ -726,8 +727,13 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Sets the remote session description.
   // The PeerConnection takes the ownership of |desc| even if it fails.
   // The |observer| callback will be called when done.
+  // TODO(hbos): Remove when Chrome implements the new signature.
   virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                                     SessionDescriptionInterface* desc) = 0;
+  // TODO(hbos): Make pure virtual when Chrome has updated its signature.
+  virtual void SetRemoteDescription(
+      std::unique_ptr<SessionDescriptionInterface> desc,
+      rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer) {}
   // Deprecated; Replaced by SetConfiguration.
   // TODO(deadbeef): Remove once Chrome is moved over to SetConfiguration.
   virtual bool UpdateIce(const IceServers& configuration,

@@ -443,6 +443,7 @@ if (rtc_include_tests) {
       "..:webrtc_common",
       "../api:fakemetricsobserver",
       "../api:libjingle_peerconnection_test_api",
+      "../api:optional",
       "../api:rtc_stats_api",
       "../api/audio_codecs:audio_codecs_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",

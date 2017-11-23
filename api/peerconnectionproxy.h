@@ -88,6 +88,10 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
                 SetRemoteDescription,
                 SetSessionDescriptionObserver*,
                 SessionDescriptionInterface*)
+  PROXY_METHOD2(void,
+                SetRemoteDescription,
+                std::unique_ptr<SessionDescriptionInterface>,
+                rtc::scoped_refptr<SetRemoteDescriptionObserverInterface>);
   PROXY_METHOD0(PeerConnectionInterface::RTCConfiguration, GetConfiguration);
   PROXY_METHOD2(bool,
                 SetConfiguration,
