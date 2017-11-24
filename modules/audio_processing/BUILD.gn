@@ -686,13 +686,16 @@ if (rtc_include_tests) {
     sources = [
       "audio_processing_performance_unittest.cc",
       "level_controller/level_controller_complexity_unittest.cc",
-      "residual_echo_detector_complexity_unittest.cc",
     ]
     deps = [
       ":audio_processing",
       ":audioproc_test_utils",
+      "../../api:array_view",
+      "../../modules:module_api",
       "../../rtc_base:protobuf_utils",
-      "//testing/gtest",
+      "../../rtc_base:rtc_base_approved",
+      "../../system_wrappers:system_wrappers",
+      "../../test:test_support",
     ]
 
     if (rtc_enable_intelligibility_enhancer) {
