@@ -85,6 +85,16 @@ void PrintResultMeanAndError(const std::string& measurement,
                    units, important);
 }
 
+void PrintResultMeanAndError(const std::string& measurement,
+                             const std::string& modifier,
+                             const std::string& trace,
+                             const std::string& mean_and_error,
+                             const std::string& units,
+                             bool important) {
+  PrintResultsImpl(measurement, modifier, trace, mean_and_error, "{", "}",
+                   units, important);
+}
+
 void PrintResultList(const std::string& measurement,
                      const std::string& modifier,
                      const std::string& trace,
