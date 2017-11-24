@@ -10,18 +10,82 @@
 
 #include <memory>
 
+#include <limits>
+
 #include "api/datachannelinterface.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
+#include "sdk/android/generated_peerconnection_jni/jni/DataChannel_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/pc/datachannelobserver_jni.h"
+#include "sdk/android/src/jni/pc/datachannel.h"
 
 namespace webrtc {
 namespace jni {
 
-static DataChannelInterface* ExtractNativeDC(JNIEnv* jni, jobject j_dc) {
-  jfieldID native_dc_id =
-      GetFieldID(jni, GetObjectClass(jni, j_dc), "nativeDataChannel", "J");
-  jlong j_d = GetLongField(jni, j_dc, native_dc_id);
+namespace {
+// Adapter for a Java DataChannel$Observer presenting a C++ DataChannelObserver
+// and dispatching the callback from C++ back to Java.
+class DataChannelObserverJni : public DataChannelObserver {
+ public:
+  DataChannelObserverJni(JNIEnv* jni, jobject j_observer);
+  virtual ~DataChannelObserverJni() {}
+
+  void OnBufferedAmountChange(uint64_t previous_amount) override;
+  void OnStateChange() override;
+  void OnMessage(const DataBuffer& buffer) override;
+
+ private:
+  const ScopedGlobalRef<jobject> j_observer_global_;
+};
+
+DataChannelObserverJni::DataChannelObserverJni(JNIEnv* jni, jobject j_observer)
+    : j_observer_global_(jni, j_observer) {}
+
+void DataChannelObserverJni::OnBufferedAmountChange(uint64_t previous_amount) {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  Java_Observer_onBufferedAmountChange(env, *j_observer_global_,
+                                       previous_amount);
+}
+
+void DataChannelObserverJni::OnStateChange() {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  Java_Observer_onStateChange(env, *j_observer_global_);
+}
+
+void DataChannelObserverJni::OnMessage(const DataBuffer& buffer) {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  jobject byte_buffer = env->NewDirectByteBuffer(
+      const_cast<char*>(buffer.data.data<char>()), buffer.data.size());
+  jobject j_buffer = Java_Buffer_Constructor(env, byte_buffer, buffer.binary);
+  Java_Observer_onMessage(env, *j_observer_global_, j_buffer);
+}
+
+DataChannelInterface* ExtractNativeDC(JNIEnv* jni, jobject j_dc) {
+  jlong j_d = Java_DataChannel_getNativeDataChannel(jni, j_dc);
   return reinterpret_cast<DataChannelInterface*>(j_d);
+}
+
+}  // namespace
+
+DataChannelInit JavaToNativeDataChannelInit(JNIEnv* env, jobject j_init) {
+  DataChannelInit init;
+  init.ordered = Java_Init_getOrdered(env, j_init);
+  init.maxRetransmitTime = Java_Init_getMaxRetransmitTimeMs(env, j_init);
+  init.maxRetransmits = Java_Init_getMaxRetransmits(env, j_init);
+  init.protocol = JavaToStdString(env, Java_Init_getProtocol(env, j_init));
+  init.negotiated = Java_Init_getNegotiated(env, j_init);
+  init.id = Java_Init_getId(env, j_init);
+  return init;
+}
+
+jobject WrapNativeDataChannel(
+    JNIEnv* env,
+    rtc::scoped_refptr<DataChannelInterface> channel) {
+  // Channel is now owned by Java object, and will be freed from there.
+  return channel ? Java_DataChannel_Constructor(
+                       env, jlongFromPointer(channel.release()))
+                 : nullptr;
 }
 
 JNI_FUNCTION_DECLARATION(jlong,
@@ -29,8 +93,7 @@ JNI_FUNCTION_DECLARATION(jlong,
                          JNIEnv* jni,
                          jobject j_dc,
                          jobject j_observer) {
-  std::unique_ptr<DataChannelObserverJni> observer(
-      new DataChannelObserverJni(jni, j_observer));
+  auto observer = rtc::MakeUnique<DataChannelObserverJni>(jni, j_observer);
   ExtractNativeDC(jni, j_dc)->RegisterObserver(observer.get());
   return jlongFromPointer(observer.release());
 }
@@ -62,8 +125,7 @@ JNI_FUNCTION_DECLARATION(jobject,
                          DataChannel_state,
                          JNIEnv* jni,
                          jobject j_dc) {
-  return JavaEnumFromIndexAndClassName(jni, "DataChannel$State",
-                                       ExtractNativeDC(jni, j_dc)->state());
+  return Java_State_fromNativeIndex(jni, ExtractNativeDC(jni, j_dc)->state());
 }
 
 JNI_FUNCTION_DECLARATION(jlong,
@@ -86,15 +148,11 @@ JNI_FUNCTION_DECLARATION(jboolean,
                          jobject j_dc,
                          jbyteArray data,
                          jboolean binary) {
-  jbyte* bytes = jni->GetByteArrayElements(data, NULL);
+  jbyte* bytes = jni->GetByteArrayElements(data, nullptr);
   bool ret = ExtractNativeDC(jni, j_dc)->Send(DataBuffer(
       rtc::CopyOnWriteBuffer(bytes, jni->GetArrayLength(data)), binary));
   jni->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
   return ret;
-}
-
-JNI_FUNCTION_DECLARATION(void, DataChannel_dispose, JNIEnv* jni, jobject j_dc) {
-  CHECK_RELEASE(ExtractNativeDC(jni, j_dc));
 }
 
 }  // namespace jni

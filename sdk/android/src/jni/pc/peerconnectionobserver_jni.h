@@ -118,8 +118,6 @@ class PeerConnectionObserverJni : public PeerConnectionObserver,
   const jmethodID j_audio_track_ctor_;
   const ScopedGlobalRef<jclass> j_video_track_class_;
   const jmethodID j_video_track_ctor_;
-  const ScopedGlobalRef<jclass> j_data_channel_class_;
-  const jmethodID j_data_channel_ctor_;
   const ScopedGlobalRef<jclass> j_rtp_receiver_class_;
   const jmethodID j_rtp_receiver_ctor_;
 

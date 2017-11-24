@@ -30,8 +30,6 @@
 namespace webrtc {
 namespace jni {
 
-DataChannelInit JavaToNativeDataChannelInit(JNIEnv* jni, jobject j_init);
-
 cricket::MediaType JavaToNativeMediaType(JNIEnv* jni, jobject j_media_type);
 
 jobject NativeToJavaMediaType(JNIEnv* jni, cricket::MediaType media_type);

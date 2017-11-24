@@ -15,6 +15,7 @@
 
 #include "rtc_base/ptr_util.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/pc/datachannel.h"
 #include "sdk/android/src/jni/pc/java_native_conversion.h"
 
 namespace webrtc {
@@ -46,9 +47,6 @@ PeerConnectionObserverJni::PeerConnectionObserverJni(JNIEnv* jni,
       j_video_track_class_(jni, FindClass(jni, "org/webrtc/VideoTrack")),
       j_video_track_ctor_(
           GetMethodID(jni, *j_video_track_class_, "<init>", "(J)V")),
-      j_data_channel_class_(jni, FindClass(jni, "org/webrtc/DataChannel")),
-      j_data_channel_ctor_(
-          GetMethodID(jni, *j_data_channel_class_, "<init>", "(J)V")),
       j_rtp_receiver_class_(jni, FindClass(jni, "org/webrtc/RtpReceiver")),
       j_rtp_receiver_ctor_(
           GetMethodID(jni, *j_rtp_receiver_class_, "<init>", "(J)V")) {}
@@ -290,23 +288,13 @@ void PeerConnectionObserverJni::OnRemoveStream(
 
 void PeerConnectionObserverJni::OnDataChannel(
     rtc::scoped_refptr<DataChannelInterface> channel) {
-  ScopedLocalRefFrame local_ref_frame(jni());
-  jobject j_channel =
-      jni()->NewObject(*j_data_channel_class_, j_data_channel_ctor_,
-                       jlongFromPointer(channel.get()));
-  CHECK_EXCEPTION(jni()) << "error during NewObject";
-
-  jmethodID m = GetMethodID(jni(), *j_observer_class_, "onDataChannel",
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  jobject j_channel = WrapNativeDataChannel(env, channel);
+  jmethodID m = GetMethodID(env, *j_observer_class_, "onDataChannel",
                             "(Lorg/webrtc/DataChannel;)V");
-  jni()->CallVoidMethod(*j_observer_global_, m, j_channel);
-
-  // Channel is now owned by Java object, and will be freed from
-  // DataChannel.dispose().  Important that this be done _after_ the
-  // CallVoidMethod above as Java code might call back into native code and be
-  // surprised to see a refcount of 2.
-  channel->AddRef();
-
-  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  env->CallVoidMethod(*j_observer_global_, m, j_channel);
+  CHECK_EXCEPTION(env) << "error during CallVoidMethod";
 }
 
 void PeerConnectionObserverJni::OnRenegotiationNeeded() {

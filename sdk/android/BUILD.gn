@@ -278,6 +278,7 @@ rtc_static_library("null_media_jni") {
 
 generate_jni("generated_peerconnection_jni") {
   sources = [
+    "api/org/webrtc/DataChannel.java",
     "api/org/webrtc/MediaConstraints.java",
     "api/org/webrtc/NetworkMonitor.java",
     "api/org/webrtc/NetworkMonitorAutoDetect.java",
@@ -293,9 +294,8 @@ rtc_static_library("peerconnection_jni") {
     "src/jni/pc/androidnetworkmonitor_jni.h",
     "src/jni/pc/audiotrack_jni.cc",
     "src/jni/pc/callsessionfilerotatinglogsink_jni.cc",
-    "src/jni/pc/datachannel_jni.cc",
-    "src/jni/pc/datachannelobserver_jni.cc",
-    "src/jni/pc/datachannelobserver_jni.h",
+    "src/jni/pc/datachannel.cc",
+    "src/jni/pc/datachannel.h",
     "src/jni/pc/dtmfsender_jni.cc",
     "src/jni/pc/java_native_conversion.cc",
     "src/jni/pc/java_native_conversion.h",

@@ -63,10 +63,6 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/Camera1Enumerator");
   LoadClass(jni, "org/webrtc/Camera2Enumerator");
   LoadClass(jni, "org/webrtc/CameraEnumerationAndroid");
-  LoadClass(jni, "org/webrtc/DataChannel");
-  LoadClass(jni, "org/webrtc/DataChannel$Buffer");
-  LoadClass(jni, "org/webrtc/DataChannel$Init");
-  LoadClass(jni, "org/webrtc/DataChannel$State");
   LoadClass(jni, "org/webrtc/EglBase");
   LoadClass(jni, "org/webrtc/EglBase$Context");
   LoadClass(jni, "org/webrtc/EglBase14$Context");

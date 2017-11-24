@@ -18,31 +18,6 @@
 namespace webrtc {
 namespace jni {
 
-DataChannelInit JavaToNativeDataChannelInit(JNIEnv* jni, jobject j_init) {
-  DataChannelInit init;
-
-  jclass j_init_class = FindClass(jni, "org/webrtc/DataChannel$Init");
-  jfieldID ordered_id = GetFieldID(jni, j_init_class, "ordered", "Z");
-  jfieldID max_retransmit_time_id =
-      GetFieldID(jni, j_init_class, "maxRetransmitTimeMs", "I");
-  jfieldID max_retransmits_id =
-      GetFieldID(jni, j_init_class, "maxRetransmits", "I");
-  jfieldID protocol_id =
-      GetFieldID(jni, j_init_class, "protocol", "Ljava/lang/String;");
-  jfieldID negotiated_id = GetFieldID(jni, j_init_class, "negotiated", "Z");
-  jfieldID id_id = GetFieldID(jni, j_init_class, "id", "I");
-
-  init.ordered = GetBooleanField(jni, j_init, ordered_id);
-  init.maxRetransmitTime = GetIntField(jni, j_init, max_retransmit_time_id);
-  init.maxRetransmits = GetIntField(jni, j_init, max_retransmits_id);
-  init.protocol =
-      JavaToStdString(jni, GetStringField(jni, j_init, protocol_id));
-  init.negotiated = GetBooleanField(jni, j_init, negotiated_id);
-  init.id = GetIntField(jni, j_init, id_id);
-
-  return init;
-}
-
 jobject NativeToJavaMediaType(JNIEnv* jni, cricket::MediaType media_type) {
   jclass j_media_type_class =
       FindClass(jni, "org/webrtc/MediaStreamTrack$MediaType");

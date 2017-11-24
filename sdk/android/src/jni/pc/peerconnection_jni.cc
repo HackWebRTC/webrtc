@@ -37,6 +37,7 @@
 #include "rtc_base/logging.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/pc/datachannel.h"
 #include "sdk/android/src/jni/pc/java_native_conversion.h"
 #include "sdk/android/src/jni/pc/mediaconstraints_jni.h"
 #include "sdk/android/src/jni/pc/peerconnectionobserver_jni.h"
@@ -95,23 +96,7 @@ JNI_FUNCTION_DECLARATION(jobject,
   rtc::scoped_refptr<DataChannelInterface> channel(
       ExtractNativePC(jni, j_pc)->CreateDataChannel(
           JavaToStdString(jni, j_label), &init));
-  // Mustn't pass channel.get() directly through NewObject to avoid reading its
-  // vararg parameter as 64-bit and reading memory that doesn't belong to the
-  // 32-bit parameter.
-  jlong nativeChannelPtr = jlongFromPointer(channel.get());
-  if (!nativeChannelPtr) {
-    RTC_LOG(LS_ERROR) << "Failed to create DataChannel";
-    return nullptr;
-  }
-  jclass j_data_channel_class = FindClass(jni, "org/webrtc/DataChannel");
-  jmethodID j_data_channel_ctor =
-      GetMethodID(jni, j_data_channel_class, "<init>", "(J)V");
-  jobject j_channel = jni->NewObject(j_data_channel_class, j_data_channel_ctor,
-                                     nativeChannelPtr);
-  CHECK_EXCEPTION(jni) << "error during NewObject";
-  // Channel is now owned by Java object, and will be freed from there.
-  channel->AddRef();
-  return j_channel;
+  return WrapNativeDataChannel(jni, channel);
 }
 
 JNI_FUNCTION_DECLARATION(void,
