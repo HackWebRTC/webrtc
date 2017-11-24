@@ -89,6 +89,9 @@ if (!build_with_chromium) {
 
   if (is_ios || is_mac) {
     rtc_source_set("video_capture_internal_impl_objc") {
+      # TODO(bugs.webrtc.org/8570): Remove -Wno-deprecated-declarations flag
+      # when the code will be updated.
+      cflags_objcc = [ "-Wno-deprecated-declarations" ]
       visibility = [ ":video_capture_internal_impl" ]
       configs += [ ":video_capture_internal_impl_warnings_config" ]
 

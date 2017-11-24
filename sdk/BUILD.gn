@@ -148,6 +148,9 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("video_objc") {
+      # TODO(bugs.webrtc.org/8570): Remove -Wno-deprecated-declarations flag
+      # when the code will be updated.
+      cflags_objcc = [ "-Wno-deprecated-declarations" ]
       sources = [
         "objc/Framework/Classes/Video/AVCaptureSession+DevicePosition.h",
         "objc/Framework/Classes/Video/AVCaptureSession+DevicePosition.mm",
@@ -206,6 +209,9 @@ if (is_ios || is_mac) {
 
     rtc_static_library("ui_objc") {
       if (is_ios) {
+        # TODO(bugs.webrtc.org/8570): Remove -Wno-deprecated-declarations flag
+        # when the code will be updated.
+        cflags_objc = [ "-Wno-deprecated-declarations" ]
         sources = [
           "objc/Framework/Classes/UI/RTCCameraPreviewView.m",
           "objc/Framework/Classes/UI/RTCEAGLVideoView.m",
@@ -265,6 +271,9 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("peerconnection_objc") {
+      # TODO(bugs.webrtc.org/8570): Remove -Wno-deprecated-declarations flag
+      # when the code will be updated.
+      cflags_objc = [ "-Wno-deprecated-declarations" ]
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCAVFoundationVideoSource+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCAVFoundationVideoSource.mm",
@@ -596,6 +605,9 @@ if (is_ios || is_mac) {
             !(use_ios_simulator &&
               # The tests crash on these simulator versions:
               (ios_sdk_version == "10.0" || ios_sdk_version == "10.1"))) {
+          # TODO(bugs.webrtc.org/8570): Remove -Wno-deprecated-declarations flag
+          # when the code will be updated.
+          cflags_objcc = [ "-Wno-deprecated-declarations" ]
           sources +=
               [ "objc/Framework/UnitTests/RTCCameraVideoCapturerTests.mm" ]
         }
