@@ -38,10 +38,6 @@ class RTCStatsCollectorCallbackWrapper : public RTCStatsCollectorCallback {
 
   const ScopedGlobalRef<jobject> j_callback_global_;
   const ScopedGlobalRef<jclass> j_callback_class_;
-  const jclass j_stats_report_class_;
-  const jmethodID j_stats_report_ctor_;
-  const jclass j_stats_class_;
-  const jmethodID j_stats_ctor_;
   const jclass j_linked_hash_map_class_;
   const jmethodID j_linked_hash_map_ctor_;
   const jmethodID j_linked_hash_map_put_;
