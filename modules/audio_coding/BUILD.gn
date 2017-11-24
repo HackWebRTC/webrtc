@@ -1161,10 +1161,6 @@ if (rtc_enable_protobuf) {
   rtc_static_library("rtc_event_log_source") {
     testonly = true
 
-    # TODO(kjellander): Remove (bugs.webrtc.org/6828)
-    # Needs call.h to be moved to webrtc/api first.
-    check_includes = false
-
     sources = [
       "neteq/tools/rtc_event_log_source.cc",
       "neteq/tools/rtc_event_log_source.h",
@@ -1176,6 +1172,7 @@ if (rtc_enable_protobuf) {
     }
 
     deps = [
+      ":neteq_tools_minimal",
       "../../logging:rtc_event_log_parser",
       "../../rtc_base:rtc_base_approved",
     ]
