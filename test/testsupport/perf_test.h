@@ -52,13 +52,6 @@ void PrintResultMeanAndError(const std::string& measurement,
                              const std::string& units,
                              bool important);
 
-void PrintResultMeanAndError(const std::string& measurement,
-                             const std::string& modifier,
-                             const std::string& trace,
-                             const std::string& mean_and_error,
-                             const std::string& units,
-                             bool important);
-
 // Like PrintResult(), but prints an entire list of results. The |values|
 // will generally be a list of comma-separated numbers. A typical
 // post-processing step might produce plots of their mean and standard
