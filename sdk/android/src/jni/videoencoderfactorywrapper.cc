@@ -53,13 +53,9 @@ VideoEncoderFactory::CodecInfo VideoEncoderFactoryWrapper::QueryVideoEncoder(
   jobject encoder = jni->CallObjectMethod(*encoder_factory_,
                                           create_encoder_method_, j_codec_info);
 
-  jclass wrapped_native_encoder_class =
-      GetClass(jni, "org/webrtc/WrappedNativeVideoEncoder");
-
   CodecInfo codec_info;
   // Check if this is a wrapped native software encoder implementation.
-  codec_info.is_hardware_accelerated =
-      !jni->IsInstanceOf(encoder, wrapped_native_encoder_class);
+  codec_info.is_hardware_accelerated = !IsWrappedSoftwareEncoder(jni, encoder);
   codec_info.has_internal_source = false;
   return codec_info;
 }

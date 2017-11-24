@@ -51,5 +51,10 @@ std::unique_ptr<VideoEncoder> JavaToNativeVideoEncoder(JNIEnv* jni,
   return std::unique_ptr<VideoEncoder>(encoder);
 }
 
+bool IsWrappedSoftwareEncoder(JNIEnv* jni, jobject j_encoder) {
+  return Java_WrappedNativeVideoEncoder_isWrappedSoftwareEncoder(jni,
+                                                                 j_encoder);
+}
+
 }  // namespace jni
 }  // namespace webrtc
