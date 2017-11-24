@@ -1189,9 +1189,6 @@ if (rtc_include_tests) {
   group("audio_coding_tests") {
     testonly = true
     public_deps = [
-      ":RTPchange",
-      ":RTPjitter",
-      ":RTPtimeshift",
       ":acm_receive_test",
       ":acm_send_test",
       ":audio_codec_speed_tests",
@@ -1213,6 +1210,7 @@ if (rtc_include_tests) {
       ":neteq_speed_test",
       ":rtp_analyze",
       ":rtp_encode",
+      ":rtp_jitter",
       ":rtpcat",
       ":webrtc_opus_fec_test",
     ]
@@ -1611,40 +1609,6 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("neteq_test_tools_deprecated") {
-    testonly = true
-    sources = [
-      "neteq/test/NETEQTEST_DummyRTPpacket.cc",
-      "neteq/test/NETEQTEST_DummyRTPpacket.h",
-      "neteq/test/NETEQTEST_RTPpacket.cc",
-      "neteq/test/NETEQTEST_RTPpacket.h",
-    ]
-
-    deps = [
-      ":cng",
-      ":g711",
-      ":g722",
-      ":ilbc",
-      ":isac",
-      ":pcm16b",
-      "..:module_api",
-      "../..:webrtc_common",
-      "//testing/gtest",
-    ]
-
-    include_dirs = [
-      "neteq/include",
-      "neteq/test",
-    ]
-
-    if (is_win) {
-      cflags = [
-        # Disable warnings to enable Win64 build, issue 1323.
-        "/wd4267",  # size_t to int truncation
-      ]
-    }
-  }
-
   rtc_executable("rtp_encode") {
     testonly = true
 
@@ -1668,16 +1632,21 @@ if (rtc_include_tests) {
     defines = audio_coding_defines
   }
 
-  rtc_executable("RTPchange") {
+  rtc_executable("rtp_jitter") {
     testonly = true
 
+    deps = audio_coding_deps + [
+             "../rtp_rtcp:rtp_rtcp_format",
+             "../../api:array_view",
+             "../../rtc_base:rtc_base_approved",
+             "../../system_wrappers:system_wrappers_default",
+           ]
+
     sources = [
-      "neteq/test/RTPchange.cc",
+      "neteq/tools/rtp_jitter.cc",
     ]
 
-    deps = [
-      ":neteq_test_tools_deprecated",
-    ]
+    defines = audio_coding_defines
   }
 
   rtc_executable("rtpcat") {
@@ -1692,33 +1661,6 @@ if (rtc_include_tests) {
       "../../system_wrappers:system_wrappers_default",
       "../../test:rtp_test_utils",
       "//testing/gtest",
-    ]
-  }
-
-  rtc_executable("RTPtimeshift") {
-    testonly = true
-
-    sources = [
-      "neteq/test/RTPtimeshift.cc",
-    ]
-
-    deps = [
-      ":neteq_test_tools_deprecated",
-      "../../test:test_support",
-      "//testing/gtest",
-    ]
-  }
-
-  rtc_executable("RTPjitter") {
-    testonly = true
-    deps = [
-      "../..:webrtc_common",
-      "../../rtc_base:rtc_base_approved",
-      "../../test:test_support",
-      "//testing/gtest",
-    ]
-    sources = [
-      "neteq/test/RTPjitter.cc",
     ]
   }
 
