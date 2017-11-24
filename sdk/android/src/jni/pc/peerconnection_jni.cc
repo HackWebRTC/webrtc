@@ -120,12 +120,12 @@ JNI_FUNCTION_DECLARATION(void,
                          jobject j_pc,
                          jobject j_observer,
                          jobject j_constraints) {
-  MediaConstraintsJni* constraints =
-      new MediaConstraintsJni(jni, j_constraints);
+  std::unique_ptr<MediaConstraintsInterface> constraints =
+      JavaToNativeMediaConstraints(jni, j_constraints);
   rtc::scoped_refptr<CreateSdpObserverJni> observer(
       new rtc::RefCountedObject<CreateSdpObserverJni>(jni, j_observer,
-                                                      constraints));
-  ExtractNativePC(jni, j_pc)->CreateOffer(observer, constraints);
+                                                      std::move(constraints)));
+  ExtractNativePC(jni, j_pc)->CreateOffer(observer, observer->constraints());
 }
 
 JNI_FUNCTION_DECLARATION(void,
@@ -134,12 +134,12 @@ JNI_FUNCTION_DECLARATION(void,
                          jobject j_pc,
                          jobject j_observer,
                          jobject j_constraints) {
-  MediaConstraintsJni* constraints =
-      new MediaConstraintsJni(jni, j_constraints);
+  std::unique_ptr<MediaConstraintsInterface> constraints =
+      JavaToNativeMediaConstraints(jni, j_constraints);
   rtc::scoped_refptr<CreateSdpObserverJni> observer(
       new rtc::RefCountedObject<CreateSdpObserverJni>(jni, j_observer,
-                                                      constraints));
-  ExtractNativePC(jni, j_pc)->CreateAnswer(observer, constraints);
+                                                      std::move(constraints)));
+  ExtractNativePC(jni, j_pc)->CreateAnswer(observer, observer->constraints());
 }
 
 JNI_FUNCTION_DECLARATION(void,

@@ -337,9 +337,9 @@ void PeerConnectionObserverJni::OnAddTrack(
 }
 
 void PeerConnectionObserverJni::SetConstraints(
-    MediaConstraintsJni* constraints) {
+    std::unique_ptr<MediaConstraintsInterface> constraints) {
   RTC_CHECK(!constraints_.get()) << "constraints already set!";
-  constraints_.reset(constraints);
+  constraints_ = std::move(constraints);
 }
 
 void PeerConnectionObserverJni::DisposeRemoteStream(

@@ -11,33 +11,16 @@
 #ifndef SDK_ANDROID_SRC_JNI_PC_MEDIACONSTRAINTS_JNI_H_
 #define SDK_ANDROID_SRC_JNI_PC_MEDIACONSTRAINTS_JNI_H_
 
+#include <jni.h>
+
 #include "api/mediaconstraintsinterface.h"
-#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
 
-// Wrapper for a Java MediaConstraints object.  Copies all needed data so when
-// the constructor returns the Java object is no longer needed.
-class MediaConstraintsJni : public MediaConstraintsInterface {
- public:
-  MediaConstraintsJni(JNIEnv* jni, jobject j_constraints);
-  virtual ~MediaConstraintsJni() {}
-
-  // MediaConstraintsInterface.
-  const Constraints& GetMandatory() const override { return mandatory_; }
-  const Constraints& GetOptional() const override { return optional_; }
-
- private:
-  // Helper for translating a List<Pair<String, String>> to a Constraints.
-  static void PopulateConstraintsFromJavaPairList(JNIEnv* jni,
-                                                  jobject j_constraints,
-                                                  const char* field_name,
-                                                  Constraints* field);
-
-  Constraints mandatory_;
-  Constraints optional_;
-};
+std::unique_ptr<MediaConstraintsInterface> JavaToNativeMediaConstraints(
+    JNIEnv* env,
+    jobject j_constraints);
 
 }  // namespace jni
 }  // namespace webrtc

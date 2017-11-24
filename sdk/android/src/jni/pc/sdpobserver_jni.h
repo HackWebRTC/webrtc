@@ -16,7 +16,6 @@
 
 #include "api/peerconnectioninterface.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/pc/mediaconstraints_jni.h"
 
 namespace webrtc {
 namespace jni {
@@ -29,8 +28,8 @@ class SdpObserverJni : public T {
  public:
   SdpObserverJni(JNIEnv* jni,
                  jobject j_observer,
-                 MediaConstraintsJni* constraints)
-      : constraints_(constraints),
+                 std::unique_ptr<MediaConstraintsInterface> constraints)
+      : constraints_(std::move(constraints)),
         j_observer_global_(jni, j_observer),
         j_observer_class_(jni, GetObjectClass(jni, j_observer)) {}
 
@@ -57,6 +56,8 @@ class SdpObserverJni : public T {
     delete desc;
   }
 
+  MediaConstraintsInterface* constraints() { return constraints_.get(); }
+
  protected:
   // Common implementation for failure of Set & Create types, distinguished by
   // |op| being "Set" or "Create".
@@ -71,7 +72,7 @@ class SdpObserverJni : public T {
   JNIEnv* jni() { return AttachCurrentThreadIfNeeded(); }
 
  private:
-  std::unique_ptr<MediaConstraintsJni> constraints_;
+  std::unique_ptr<MediaConstraintsInterface> constraints_;
   const ScopedGlobalRef<jobject> j_observer_global_;
   const ScopedGlobalRef<jclass> j_observer_class_;
 };
@@ -81,8 +82,8 @@ class CreateSdpObserverJni
  public:
   CreateSdpObserverJni(JNIEnv* jni,
                        jobject j_observer,
-                       MediaConstraintsJni* constraints)
-      : SdpObserverJni(jni, j_observer, constraints) {}
+                       std::unique_ptr<MediaConstraintsInterface> constraints)
+      : SdpObserverJni(jni, j_observer, std::move(constraints)) {}
 
   void OnFailure(const std::string& error) override {
     ScopedLocalRefFrame local_ref_frame(jni());
@@ -94,8 +95,8 @@ class SetSdpObserverJni : public SdpObserverJni<SetSessionDescriptionObserver> {
  public:
   SetSdpObserverJni(JNIEnv* jni,
                     jobject j_observer,
-                    MediaConstraintsJni* constraints)
-      : SdpObserverJni(jni, j_observer, constraints) {}
+                    std::unique_ptr<MediaConstraintsInterface> constraints)
+      : SdpObserverJni(jni, j_observer, std::move(constraints)) {}
 
   void OnFailure(const std::string& error) override {
     ScopedLocalRefFrame local_ref_frame(jni());

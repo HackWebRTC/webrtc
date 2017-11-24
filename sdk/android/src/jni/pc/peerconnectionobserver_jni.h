@@ -52,8 +52,8 @@ class PeerConnectionObserverJni : public PeerConnectionObserver,
                   const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
                       streams) override;
 
-  void SetConstraints(MediaConstraintsJni* constraints);
-  const MediaConstraintsJni* constraints() { return constraints_.get(); }
+  void SetConstraints(std::unique_ptr<MediaConstraintsInterface> constraints);
+  const MediaConstraintsInterface* constraints() { return constraints_.get(); }
 
  private:
   typedef std::map<MediaStreamInterface*, jobject> NativeToJavaStreamsMap;
@@ -127,7 +127,7 @@ class PeerConnectionObserverJni : public PeerConnectionObserver,
   // manually deleted upon removal. Use DisposeRemoteStream().
   NativeToJavaStreamsMap remote_streams_;
   NativeToJavaRtpReceiverMap rtp_receivers_;
-  std::unique_ptr<MediaConstraintsJni> constraints_;
+  std::unique_ptr<MediaConstraintsInterface> constraints_;
   std::vector<std::unique_ptr<webrtc::MediaStreamObserver>> stream_observers_;
 };
 

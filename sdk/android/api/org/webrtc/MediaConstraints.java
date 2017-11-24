@@ -28,10 +28,12 @@ public class MediaConstraints {
       this.value = value;
     }
 
+    @CalledByNative("KeyValuePair")
     public String getKey() {
       return key;
     }
 
+    @CalledByNative("KeyValuePair")
     public String getValue() {
       return value;
     }
@@ -82,5 +84,15 @@ public class MediaConstraints {
   public String toString() {
     return "mandatory: " + stringifyKeyValuePairList(mandatory) + ", optional: "
         + stringifyKeyValuePairList(optional);
+  }
+
+  @CalledByNative
+  List<KeyValuePair> getMandatory() {
+    return mandatory;
+  }
+
+  @CalledByNative
+  List<KeyValuePair> getOptional() {
+    return optional;
   }
 }

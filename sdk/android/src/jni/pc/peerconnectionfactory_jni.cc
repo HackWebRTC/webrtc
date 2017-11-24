@@ -321,8 +321,8 @@ JNI_FUNCTION_DECLARATION(jlong,
                          jclass,
                          jlong native_factory,
                          jobject j_constraints) {
-  std::unique_ptr<MediaConstraintsJni> constraints(
-      new MediaConstraintsJni(jni, j_constraints));
+  std::unique_ptr<MediaConstraintsInterface> constraints =
+      JavaToNativeMediaConstraints(jni, j_constraints);
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
   cricket::AudioOptions options;
@@ -429,7 +429,7 @@ JNI_FUNCTION_DECLARATION(jlong,
 
   PeerConnectionObserverJni* observer =
       reinterpret_cast<PeerConnectionObserverJni*>(observer_p);
-  observer->SetConstraints(new MediaConstraintsJni(jni, j_constraints));
+  observer->SetConstraints(JavaToNativeMediaConstraints(jni, j_constraints));
   CopyConstraintsIntoRtcConfiguration(observer->constraints(), &rtc_config);
   rtc::scoped_refptr<PeerConnectionInterface> pc(
       f->CreatePeerConnection(rtc_config, nullptr, nullptr, observer));

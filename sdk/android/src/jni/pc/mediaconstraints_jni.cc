@@ -10,39 +10,57 @@
 
 #include "sdk/android/src/jni/pc/mediaconstraints_jni.h"
 
+#include "rtc_base/ptr_util.h"
+#include "sdk/android/generated_peerconnection_jni/jni/MediaConstraints_jni.h"
+#include "sdk/android/src/jni/jni_helpers.h"
+
 namespace webrtc {
 namespace jni {
 
-MediaConstraintsJni::MediaConstraintsJni(JNIEnv* jni, jobject j_constraints) {
-  PopulateConstraintsFromJavaPairList(jni, j_constraints, "mandatory",
-                                      &mandatory_);
-  PopulateConstraintsFromJavaPairList(jni, j_constraints, "optional",
-                                      &optional_);
+namespace {
+
+// Helper for translating a List<Pair<String, String>> to a Constraints.
+MediaConstraintsInterface::Constraints PopulateConstraintsFromJavaPairList(
+    JNIEnv* env,
+    jobject j_list) {
+  MediaConstraintsInterface::Constraints constraints;
+  for (jobject entry : Iterable(env, j_list)) {
+    jstring j_key = Java_KeyValuePair_getKey(env, entry);
+    jstring j_value = Java_KeyValuePair_getValue(env, entry);
+    constraints.emplace_back(JavaToStdString(env, j_key),
+                             JavaToStdString(env, j_value));
+  }
+  return constraints;
 }
 
-// static
-void MediaConstraintsJni::PopulateConstraintsFromJavaPairList(
-    JNIEnv* jni,
-    jobject j_constraints,
-    const char* field_name,
-    Constraints* field) {
-  jfieldID j_id = GetFieldID(jni, GetObjectClass(jni, j_constraints),
-                             field_name, "Ljava/util/List;");
-  jobject j_list = GetObjectField(jni, j_constraints, j_id);
-  for (jobject entry : Iterable(jni, j_list)) {
-    jmethodID get_key = GetMethodID(jni, GetObjectClass(jni, entry), "getKey",
-                                    "()Ljava/lang/String;");
-    jstring j_key =
-        reinterpret_cast<jstring>(jni->CallObjectMethod(entry, get_key));
-    CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
-    jmethodID get_value = GetMethodID(jni, GetObjectClass(jni, entry),
-                                      "getValue", "()Ljava/lang/String;");
-    jstring j_value =
-        reinterpret_cast<jstring>(jni->CallObjectMethod(entry, get_value));
-    CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
-    field->push_back(
-        Constraint(JavaToStdString(jni, j_key), JavaToStdString(jni, j_value)));
-  }
+// Wrapper for a Java MediaConstraints object.  Copies all needed data so when
+// the constructor returns the Java object is no longer needed.
+class MediaConstraintsJni : public MediaConstraintsInterface {
+ public:
+  MediaConstraintsJni(JNIEnv* env, jobject j_constraints)
+      : mandatory_(PopulateConstraintsFromJavaPairList(
+            env,
+            Java_MediaConstraints_getMandatory(env, j_constraints))),
+        optional_(PopulateConstraintsFromJavaPairList(
+            env,
+            Java_MediaConstraints_getOptional(env, j_constraints))) {}
+  virtual ~MediaConstraintsJni() = default;
+
+  // MediaConstraintsInterface.
+  const Constraints& GetMandatory() const override { return mandatory_; }
+  const Constraints& GetOptional() const override { return optional_; }
+
+ private:
+  const Constraints mandatory_;
+  const Constraints optional_;
+};
+
+}  // namespace
+
+std::unique_ptr<MediaConstraintsInterface> JavaToNativeMediaConstraints(
+    JNIEnv* env,
+    jobject j_constraints) {
+  return rtc::MakeUnique<MediaConstraintsJni>(env, j_constraints);
 }
 
 }  // namespace jni

@@ -50,9 +50,6 @@ class MediaConstraintsInterface {
     bool FindFirst(const std::string& key, std::string* value) const;
   };
 
-  virtual const Constraints& GetMandatory() const = 0;
-  virtual const Constraints& GetOptional() const = 0;
-
   // Constraint keys used by a local video source.
   // Specified by draft-alvestrand-constraints-resolution-00b
   static const char kMinAspectRatio[];  // minAspectRatio
@@ -125,9 +122,10 @@ class MediaConstraintsInterface {
   // stripped by Chrome before passed down to Libjingle.
   static const char kInternalConstraintPrefix[];
 
- protected:
-  // Dtor protected as objects shouldn't be deleted via this interface
-  virtual ~MediaConstraintsInterface() {}
+  virtual ~MediaConstraintsInterface() = default;
+
+  virtual const Constraints& GetMandatory() const = 0;
+  virtual const Constraints& GetOptional() const = 0;
 };
 
 bool FindConstraint(const MediaConstraintsInterface* constraints,
