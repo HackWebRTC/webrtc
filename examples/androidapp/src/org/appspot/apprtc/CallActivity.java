@@ -69,18 +69,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
                                                       CallFragment.OnCallEvents {
   private static final String TAG = "CallRTCClient";
 
-  // Fix for devices running old Android versions not finding the libraries.
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=6751
-  static {
-    try {
-      System.loadLibrary("c++_shared");
-      System.loadLibrary("boringssl.cr");
-      System.loadLibrary("protobuf_lite.cr");
-    } catch (UnsatisfiedLinkError e) {
-      Logging.w(TAG, "Failed to load native dependencies: ", e);
-    }
-  }
-
   public static final String EXTRA_ROOMID = "org.appspot.apprtc.ROOMID";
   public static final String EXTRA_URLPARAMETERS = "org.appspot.apprtc.URLPARAMETERS";
   public static final String EXTRA_LOOPBACK = "org.appspot.apprtc.LOOPBACK";

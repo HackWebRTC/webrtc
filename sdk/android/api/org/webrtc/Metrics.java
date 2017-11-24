@@ -32,9 +32,6 @@ import java.util.Map;
 public class Metrics {
   private static final String TAG = "Metrics";
 
-  static {
-    System.loadLibrary("jingle_peerconnection_so");
-  }
   public final Map<String, HistogramInfo> map =
       new HashMap<String, HistogramInfo>(); // <name, HistogramInfo>
 

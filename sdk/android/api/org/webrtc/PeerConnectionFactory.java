@@ -18,12 +18,6 @@ import java.util.List;
  * the PeerConnection API for clients.
  */
 public class PeerConnectionFactory {
-  static {
-    // TODO(sakal): Remove once all dependencies have started using
-    // PeerConnectionFactory.initialize.
-    NativeLibrary.initialize(new NativeLibrary.DefaultLoader());
-  }
-
   public static final String TRIAL_ENABLED = "Enabled";
   public static final String VIDEO_FRAME_EMIT_TRIAL = "VideoFrameEmit";
 
@@ -140,24 +134,7 @@ public class PeerConnectionFactory {
   private static native void nativeInitializeAndroidGlobals(
       Context context, boolean videoHwAcceleration);
 
-  // Deprecated, use PeerConnectionFactory.initialize instead.
-  @Deprecated
-  public static void initializeAndroidGlobals(Context context, boolean videoHwAcceleration) {
-    ContextUtils.initialize(context);
-    nativeInitializeAndroidGlobals(context, videoHwAcceleration);
-  }
-
-  // Older signature of initializeAndroidGlobals. The extra parameters are now meaningless.
-  // Deprecated, use PeerConnectionFactory.initialize instead.
-  @Deprecated
-  public static boolean initializeAndroidGlobals(Object context, boolean initializeAudio,
-      boolean initializeVideo, boolean videoHwAcceleration) {
-    initializeAndroidGlobals((Context) context, videoHwAcceleration);
-    return true;
-  }
-
-  @Deprecated
-  public static void initializeInternalTracer() {
+  private static void initializeInternalTracer() {
     internalTracerInitialized = true;
     nativeInitializeInternalTracer();
   }

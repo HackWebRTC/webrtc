@@ -21,10 +21,6 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 public class FileVideoCapturer implements VideoCapturer {
-  static {
-    System.loadLibrary("jingle_peerconnection_so");
-  }
-
   private interface VideoReader {
     VideoFrame getNextFrame();
     void close();

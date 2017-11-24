@@ -10,8 +10,8 @@
 
 package org.webrtc;
 
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -21,10 +21,6 @@ import java.util.List;
  * http://www.w3.org/TR/mediacapture-streams/
  */
 public class PeerConnection {
-  static {
-    System.loadLibrary("jingle_peerconnection_so");
-  }
-
   /** Tracks PeerConnectionInterface::IceGatheringState */
   public enum IceGatheringState { NEW, GATHERING, COMPLETE }
 

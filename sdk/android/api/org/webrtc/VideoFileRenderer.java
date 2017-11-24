@@ -23,10 +23,6 @@ import java.util.concurrent.CountDownLatch;
  * Can be used to save the video frames to file.
  */
 public class VideoFileRenderer implements VideoRenderer.Callbacks {
-  static {
-    System.loadLibrary("jingle_peerconnection_so");
-  }
-
   private static final String TAG = "VideoFileRenderer";
 
   private final HandlerThread renderThread;
