@@ -1190,7 +1190,6 @@ if (rtc_include_tests) {
     testonly = true
     public_deps = [
       ":RTPchange",
-      ":RTPencode",
       ":RTPjitter",
       ":RTPtimeshift",
       ":acm_receive_test",
@@ -1213,6 +1212,7 @@ if (rtc_include_tests) {
       ":neteq_pcmu_quality_test",
       ":neteq_speed_test",
       ":rtp_analyze",
+      ":rtp_encode",
       ":rtpcat",
       ":webrtc_opus_fec_test",
     ]
@@ -1645,65 +1645,27 @@ if (rtc_include_tests) {
     }
   }
 
-  config("RTPencode_config") {
-    defines = [
-      "CODEC_ILBC",
-      "CODEC_PCM16B",
-      "CODEC_G711",
-      "CODEC_G722",
-      "CODEC_ISAC",
-      "CODEC_PCM16B_WB",
-      "CODEC_ISAC_SWB",
-      "CODEC_PCM16B_32KHZ",
-      "CODEC_PCM16B_48KHZ",
-      "CODEC_CNGCODEC8",
-      "CODEC_CNGCODEC16",
-      "CODEC_CNGCODEC32",
-      "CODEC_ATEVENT_DECODE",
-      "CODEC_RED",
-      "CODEC_OPUS",
-    ]
-  }
-
-  rtc_executable("RTPencode") {
+  rtc_executable("rtp_encode") {
     testonly = true
 
-    deps = [
-      # TODO(hlundin): Make RTPencode use ACM to encode files.
-      ":cng",
-      ":g711",
-      ":g722",
-      ":ilbc",
-      ":isac",
-      ":neteq",
-      ":neteq_test_tools_deprecated",
-      ":pcm16b",
-      ":webrtc_opus",
-      "../..:webrtc_common",
-      "../../common_audio",
-      "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:metrics_default",
-      "../../test:field_trial",
-    ]
-
-    configs += [ ":RTPencode_config" ]
+    deps = audio_coding_deps + [
+             ":audio_coding",
+             ":neteq_input_audio_tools",
+             "../../api/audio_codecs/g711:audio_encoder_g711",
+             "../../api/audio_codecs/L16:audio_encoder_L16",
+             "../../api/audio_codecs/g722:audio_encoder_g722",
+             "../../api/audio_codecs/ilbc:audio_encoder_ilbc",
+             "../../api/audio_codecs/isac:audio_encoder_isac",
+             "../../api/audio_codecs/opus:audio_encoder_opus",
+             "../../rtc_base:rtc_base_approved",
+             "../../system_wrappers:system_wrappers_default",
+           ]
 
     sources = [
-      "neteq/test/PayloadTypes.h",
-      "neteq/test/RTPencode.cc",
+      "neteq/tools/rtp_encode.cc",
     ]
 
-    include_dirs = [
-      "neteq/include",
-      "neteq/test",
-    ]
-
-    if (is_win) {
-      cflags = [
-        # Disable warnings to enable Win64 build, issue 1323.
-        "/wd4267",  # size_t to int truncation
-      ]
-    }
+    defines = audio_coding_defines
   }
 
   rtc_executable("RTPchange") {
