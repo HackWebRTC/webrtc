@@ -1516,8 +1516,8 @@ TEST_F(RTCStatsCollectorTest,
   voice_sender_info_ssrc1.audio_level = 32767;
   voice_sender_info_ssrc1.total_input_energy = 0.25;
   voice_sender_info_ssrc1.total_input_duration = 0.5;
-  voice_sender_info_ssrc1.echo_return_loss = 42;
-  voice_sender_info_ssrc1.echo_return_loss_enhancement = 52;
+  voice_sender_info_ssrc1.apm_statistics.echo_return_loss = 42.0;
+  voice_sender_info_ssrc1.apm_statistics.echo_return_loss_enhancement = 52.0;
 
   // Uses default values, the corresponding stats object should contain
   // undefined members.
@@ -1527,8 +1527,6 @@ TEST_F(RTCStatsCollectorTest,
   voice_sender_info_ssrc2.audio_level = 0;
   voice_sender_info_ssrc2.total_input_energy = 0.0;
   voice_sender_info_ssrc2.total_input_duration = 0.0;
-  voice_sender_info_ssrc2.echo_return_loss = -100;
-  voice_sender_info_ssrc2.echo_return_loss_enhancement = -100;
 
   // Remote audio track
   rtc::scoped_refptr<MediaStreamTrackInterface> remote_audio_track =

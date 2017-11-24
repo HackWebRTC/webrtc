@@ -57,13 +57,12 @@ class NoLossTest : public AudioEndToEndTest {
     EXPECT_EQ(0, send_stats.audio_level);
     // send_stats.total_input_energy
     // send_stats.total_input_duration
-    EXPECT_EQ(-1.0f, send_stats.aec_quality_min);
-    EXPECT_EQ(-1, send_stats.echo_delay_median_ms);
-    EXPECT_EQ(-1, send_stats.echo_delay_std_ms);
-    EXPECT_EQ(-100, send_stats.echo_return_loss);
-    EXPECT_EQ(-100, send_stats.echo_return_loss_enhancement);
-    EXPECT_EQ(0.0f, send_stats.residual_echo_likelihood);
-    EXPECT_EQ(0.0f, send_stats.residual_echo_likelihood_recent_max);
+    EXPECT_FALSE(send_stats.apm_statistics.delay_median_ms);
+    EXPECT_FALSE(send_stats.apm_statistics.delay_standard_deviation_ms);
+    EXPECT_FALSE(send_stats.apm_statistics.echo_return_loss);
+    EXPECT_FALSE(send_stats.apm_statistics.echo_return_loss_enhancement);
+    EXPECT_FALSE(send_stats.apm_statistics.residual_echo_likelihood);
+    EXPECT_FALSE(send_stats.apm_statistics.residual_echo_likelihood_recent_max);
     EXPECT_EQ(false, send_stats.typing_noise_detected);
 
     AudioReceiveStream::Stats recv_stats = receive_stream()->GetStats();

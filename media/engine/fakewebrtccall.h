@@ -65,6 +65,8 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
                           int duration_ms) override;
   void SetMuted(bool muted) override;
   webrtc::AudioSendStream::Stats GetStats() const override;
+  webrtc::AudioSendStream::Stats GetStats(
+      bool has_remote_tracks) const override;
 
   int id_ = -1;
   TelephoneEvent latest_telephone_event_;

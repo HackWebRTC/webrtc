@@ -233,6 +233,7 @@ rtc_static_library("audio_processing") {
   defines = []
   deps = [
     ":aec_dump_interface",
+    ":audio_processing_statistics",
     "..:module_api",
     "../..:webrtc_common",
     "../../api:array_view",
@@ -308,6 +309,16 @@ rtc_static_library("audio_processing") {
     "../../common_audio:fir_filter_factory",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
+  ]
+}
+
+rtc_source_set("audio_processing_statistics") {
+  sources = [
+    "include/audio_processing_statistics.cc",
+    "include/audio_processing_statistics.h",
+  ]
+  deps = [
+    "../../api:optional",
   ]
 }
 

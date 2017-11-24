@@ -38,4 +38,9 @@ specific_include_rules = {
   ".*i420_buffer\.h": [
     "+system_wrappers/include/aligned_malloc.h",
   ],
+
+  # Needed to use the APM statistics.
+  "mediastreaminterface.h": [
+    "+modules/audio_processing/include/audio_processing_statistics.h",
+  ],
 }

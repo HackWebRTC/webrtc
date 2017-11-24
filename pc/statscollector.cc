@@ -99,50 +99,39 @@ void ExtractCommonReceiveProperties(const cricket::MediaReceiverInfo& info,
   report->AddString(StatsReport::kStatsValueNameCodecName, info.codec_name);
 }
 
-void SetAudioProcessingStats(
-    StatsReport* report,
-    bool typing_noise_detected,
-    rtc::Optional<double> echo_return_loss,
-    rtc::Optional<double> echo_return_loss_enhancement,
-    rtc::Optional<int32_t> echo_delay_median_ms,
-    rtc::Optional<double> aec_quality_min,
-    rtc::Optional<int32_t> echo_delay_std_ms,
-    rtc::Optional<double> residual_echo_likelihood,
-    rtc::Optional<double> residual_echo_likelihood_recent_max) {
+void SetAudioProcessingStats(StatsReport* report,
+                             bool typing_noise_detected,
+                             const AudioProcessingStats& apm_stats) {
   report->AddBoolean(StatsReport::kStatsValueNameTypingNoiseState,
                      typing_noise_detected);
-  // TODO(ivoc): Remove the checks for default values once the whole stat
-  //             chain uses optionals.
-  if (aec_quality_min && *aec_quality_min >= 0.0) {
-    report->AddFloat(StatsReport::kStatsValueNameEchoCancellationQualityMin,
-                     *aec_quality_min);
-  }
-  if (echo_delay_median_ms && *echo_delay_median_ms >= 0) {
+  if (apm_stats.delay_median_ms) {
     report->AddInt(StatsReport::kStatsValueNameEchoDelayMedian,
-                   *echo_delay_median_ms);
+                   *apm_stats.delay_median_ms);
   }
-  if (echo_delay_std_ms && *echo_delay_std_ms >= 0) {
+  if (apm_stats.delay_standard_deviation_ms) {
     report->AddInt(StatsReport::kStatsValueNameEchoDelayStdDev,
-                   *echo_delay_std_ms);
+                   *apm_stats.delay_standard_deviation_ms);
   }
-  // These can take on valid negative values.
-  if (echo_return_loss) {
+  if (apm_stats.echo_return_loss) {
     report->AddInt(StatsReport::kStatsValueNameEchoReturnLoss,
-                   static_cast<int32_t>(*echo_return_loss));
+                   *apm_stats.echo_return_loss);
   }
-  if (echo_return_loss_enhancement) {
+  if (apm_stats.echo_return_loss_enhancement) {
     report->AddInt(StatsReport::kStatsValueNameEchoReturnLossEnhancement,
-                   static_cast<int32_t>(*echo_return_loss_enhancement));
+                   *apm_stats.echo_return_loss_enhancement);
   }
-  if (residual_echo_likelihood && *residual_echo_likelihood >= 0.0) {
+  if (apm_stats.residual_echo_likelihood) {
     report->AddFloat(StatsReport::kStatsValueNameResidualEchoLikelihood,
-                     *residual_echo_likelihood);
+                     static_cast<float>(*apm_stats.residual_echo_likelihood));
   }
-  if (residual_echo_likelihood_recent_max &&
-      *residual_echo_likelihood_recent_max >= 0.0) {
+  if (apm_stats.residual_echo_likelihood_recent_max) {
     report->AddFloat(
         StatsReport::kStatsValueNameResidualEchoLikelihoodRecentMax,
-        *residual_echo_likelihood_recent_max);
+        static_cast<float>(*apm_stats.residual_echo_likelihood_recent_max));
+  }
+  if (apm_stats.divergent_filter_fraction) {
+    report->AddFloat(StatsReport::kStatsValueNameAecDivergentFilterFraction,
+                     static_cast<float>(*apm_stats.divergent_filter_fraction));
   }
 }
 
@@ -204,16 +193,8 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
 void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
   ExtractCommonSendProperties(info, report);
 
-  // TODO(ivoc): Update VoiceSenderInfo to pass Optionals all the way from APM.
-  SetAudioProcessingStats(
-      report, info.typing_noise_detected,
-      rtc::Optional<double>(info.echo_return_loss),
-      rtc::Optional<double>(info.echo_return_loss_enhancement),
-      rtc::Optional<int32_t>(info.echo_delay_median_ms),
-      rtc::Optional<double>(info.aec_quality_min),
-      rtc::Optional<int32_t>(info.echo_delay_std_ms),
-      rtc::Optional<double>(info.residual_echo_likelihood),
-      rtc::Optional<double>(info.residual_echo_likelihood_recent_max));
+  SetAudioProcessingStats(report, info.typing_noise_detected,
+                          info.apm_statistics);
 
   const FloatForAdd floats[] = {
     { StatsReport::kStatsValueNameTotalAudioEnergy, info.total_input_energy },
@@ -1033,17 +1014,8 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
     AudioProcessorInterface::AudioProcessorStatistics stats =
         audio_processor->GetStats(has_remote_tracks);
 
-    SetAudioProcessingStats(
-        report, stats.typing_noise_detected, stats.echo_return_loss,
-        stats.echo_return_loss_enhancement, stats.echo_delay_median_ms,
-        stats.aec_quality_min, stats.echo_delay_std_ms,
-        stats.residual_echo_likelihood,
-        stats.residual_echo_likelihood_recent_max);
-
-    if (stats.aec_divergent_filter_fraction) {
-      report->AddFloat(StatsReport::kStatsValueNameAecDivergentFilterFraction,
-                       *stats.aec_divergent_filter_fraction);
-    }
+    SetAudioProcessingStats(report, stats.typing_noise_detected,
+                            stats.apm_statistics);
   }
 }
 

@@ -27,6 +27,7 @@
 #include "media/base/streamparams.h"
 #include "media/base/videosinkinterface.h"
 #include "media/base/videosourceinterface.h"
+#include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "rtc_base/basictypes.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/copyonwritebuffer.h"
@@ -624,6 +625,8 @@ struct VoiceSenderInfo : public MediaSenderInfo {
   // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
   double total_input_energy;
   double total_input_duration;
+  // TODO(bugs.webrtc.org/8572): Remove APM stats from this struct, since they
+  // are no longer needed now that we have apm_statistics.
   float aec_quality_min;
   int echo_delay_median_ms;
   int echo_delay_std_ms;
@@ -633,6 +636,7 @@ struct VoiceSenderInfo : public MediaSenderInfo {
   float residual_echo_likelihood_recent_max;
   bool typing_noise_detected;
   webrtc::ANAStats ana_statistics;
+  webrtc::AudioProcessingStats apm_statistics;
 };
 
 struct VoiceReceiverInfo : public MediaReceiverInfo {

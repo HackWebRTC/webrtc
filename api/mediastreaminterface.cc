@@ -21,19 +21,18 @@ AudioProcessorInterface::GetStats(bool /*has_remote_tracks*/) {
   AudioProcessorStats stats;
   GetStats(&stats);
   AudioProcessorStatistics new_stats;
-  new_stats.aec_divergent_filter_fraction =
-      rtc::Optional<double>(stats.aec_divergent_filter_fraction);
-  new_stats.aec_quality_min = rtc::Optional<double>(stats.aec_quality_min);
-  new_stats.echo_delay_median_ms =
-      rtc::Optional<int32_t>(stats.echo_delay_median_ms);
-  new_stats.echo_delay_std_ms = rtc::Optional<int32_t>(stats.echo_delay_std_ms);
-  new_stats.echo_return_loss = rtc::Optional<double>(stats.echo_return_loss);
-  new_stats.echo_return_loss_enhancement =
-      rtc::Optional<double>(stats.echo_return_loss_enhancement);
-  new_stats.residual_echo_likelihood =
-      rtc::Optional<double>(stats.residual_echo_likelihood);
-  new_stats.residual_echo_likelihood_recent_max =
-      rtc::Optional<double>(stats.residual_echo_likelihood_recent_max);
+  new_stats.apm_statistics.divergent_filter_fraction =
+      stats.aec_divergent_filter_fraction;
+  new_stats.apm_statistics.delay_median_ms = stats.echo_delay_median_ms;
+  new_stats.apm_statistics.delay_standard_deviation_ms =
+      stats.echo_delay_std_ms;
+  new_stats.apm_statistics.echo_return_loss = stats.echo_return_loss;
+  new_stats.apm_statistics.echo_return_loss_enhancement =
+      stats.echo_return_loss_enhancement;
+  new_stats.apm_statistics.residual_echo_likelihood =
+      stats.residual_echo_likelihood;
+  new_stats.apm_statistics.residual_echo_likelihood_recent_max =
+      stats.residual_echo_likelihood_recent_max;
   return new_stats;
 }
 

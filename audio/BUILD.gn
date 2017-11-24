@@ -102,6 +102,7 @@ if (rtc_include_tests) {
       "../call:rtp_receiver",
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer:audio_mixer_impl",
+      "../modules/audio_processing:audio_processing_statistics",
       "../modules/congestion_controller:congestion_controller",
       "../modules/congestion_controller:mock_congestion_controller",
       "../modules/pacing:mock_paced_sender",

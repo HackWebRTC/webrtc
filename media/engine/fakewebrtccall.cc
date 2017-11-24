@@ -64,6 +64,11 @@ webrtc::AudioSendStream::Stats FakeAudioSendStream::GetStats() const {
   return stats_;
 }
 
+webrtc::AudioSendStream::Stats FakeAudioSendStream::GetStats(
+    bool /*has_remote_tracks*/) const {
+  return stats_;
+}
+
 FakeAudioReceiveStream::FakeAudioReceiveStream(
     int id, const webrtc::AudioReceiveStream::Config& config)
     : id_(id), config_(config) {

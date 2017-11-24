@@ -19,6 +19,7 @@
 #include "call/rtp_transport_controller_send_interface.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
+#include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "modules/congestion_controller/include/mock/mock_congestion_observer.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
@@ -50,11 +51,13 @@ const uint32_t kSsrc = 1234;
 const char* kCName = "foo_name";
 const int kAudioLevelId = 2;
 const int kTransportSequenceNumberId = 4;
-const int kEchoDelayMedian = 254;
-const int kEchoDelayStdDev = -3;
-const int kEchoReturnLoss = -65;
-const int kEchoReturnLossEnhancement = 101;
-const float kResidualEchoLikelihood = -1.0f;
+const int32_t kEchoDelayMedian = 254;
+const int32_t kEchoDelayStdDev = -3;
+const double kDivergentFilterFraction = 0.2f;
+const double kEchoReturnLoss = -65;
+const double kEchoReturnLossEnhancement = 101;
+const double kResidualEchoLikelihood = -1.0f;
+const double kResidualEchoLikelihoodMax = 23.0f;
 const int32_t kSpeechInputLevel = 96;
 const double kTotalInputEnergy = 0.25;
 const double kTotalInputDuration = 0.5;
@@ -310,17 +313,18 @@ struct ConfigHelper {
     EXPECT_CALL(transmit_mixer_, typing_noise_detected())
         .WillRepeatedly(Return(true));
 
-    // We have to set the instantaneous value, the average, min and max. We only
-    // care about the instantaneous value, so we set all to the same value.
-    audio_processing_stats_.echo_return_loss.Set(
-        kEchoReturnLoss, kEchoReturnLoss, kEchoReturnLoss, kEchoReturnLoss);
-    audio_processing_stats_.echo_return_loss_enhancement.Set(
-        kEchoReturnLossEnhancement, kEchoReturnLossEnhancement,
-        kEchoReturnLossEnhancement, kEchoReturnLossEnhancement);
-    audio_processing_stats_.delay_median = kEchoDelayMedian;
-    audio_processing_stats_.delay_standard_deviation = kEchoDelayStdDev;
+    audio_processing_stats_.echo_return_loss = kEchoReturnLoss;
+    audio_processing_stats_.echo_return_loss_enhancement =
+        kEchoReturnLossEnhancement;
+    audio_processing_stats_.delay_median_ms = kEchoDelayMedian;
+    audio_processing_stats_.delay_standard_deviation_ms = kEchoDelayStdDev;
+    audio_processing_stats_.divergent_filter_fraction =
+        kDivergentFilterFraction;
+    audio_processing_stats_.residual_echo_likelihood = kResidualEchoLikelihood;
+    audio_processing_stats_.residual_echo_likelihood_recent_max =
+        kResidualEchoLikelihoodMax;
 
-    EXPECT_CALL(*audio_processing_, GetStatistics())
+    EXPECT_CALL(*audio_processing_, GetStatistics(true))
         .WillRepeatedly(Return(audio_processing_stats_));
   }
 
@@ -331,7 +335,7 @@ struct ConfigHelper {
   testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
   rtc::scoped_refptr<MockAudioProcessing> audio_processing_;
   MockTransmitMixer transmit_mixer_;
-  AudioProcessing::AudioProcessingStatistics audio_processing_stats_;
+  AudioProcessingStats audio_processing_stats_;
   SimulatedClock simulated_clock_;
   PacketRouter packet_router_;
   testing::NiceMock<MockPacedSender> pacer_;
@@ -429,7 +433,7 @@ TEST(AudioSendStreamTest, GetStats) {
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
       helper.rtcp_rtt_stats(), rtc::nullopt);
   helper.SetupMockForGetStats();
-  AudioSendStream::Stats stats = send_stream.GetStats();
+  AudioSendStream::Stats stats = send_stream.GetStats(true);
   EXPECT_EQ(kSsrc, stats.local_ssrc);
   EXPECT_EQ(static_cast<int64_t>(kCallStats.bytesSent), stats.bytes_sent);
   EXPECT_EQ(kCallStats.packetsSent, stats.packets_sent);
@@ -446,12 +450,17 @@ TEST(AudioSendStreamTest, GetStats) {
   EXPECT_EQ(static_cast<int32_t>(kSpeechInputLevel), stats.audio_level);
   EXPECT_EQ(kTotalInputEnergy, stats.total_input_energy);
   EXPECT_EQ(kTotalInputDuration, stats.total_input_duration);
-  EXPECT_EQ(-1, stats.aec_quality_min);
-  EXPECT_EQ(kEchoDelayMedian, stats.echo_delay_median_ms);
-  EXPECT_EQ(kEchoDelayStdDev, stats.echo_delay_std_ms);
-  EXPECT_EQ(kEchoReturnLoss, stats.echo_return_loss);
-  EXPECT_EQ(kEchoReturnLossEnhancement, stats.echo_return_loss_enhancement);
-  EXPECT_EQ(kResidualEchoLikelihood, stats.residual_echo_likelihood);
+  EXPECT_EQ(kEchoDelayMedian, stats.apm_statistics.delay_median_ms);
+  EXPECT_EQ(kEchoDelayStdDev, stats.apm_statistics.delay_standard_deviation_ms);
+  EXPECT_EQ(kEchoReturnLoss, stats.apm_statistics.echo_return_loss);
+  EXPECT_EQ(kEchoReturnLossEnhancement,
+            stats.apm_statistics.echo_return_loss_enhancement);
+  EXPECT_EQ(kDivergentFilterFraction,
+            stats.apm_statistics.divergent_filter_fraction);
+  EXPECT_EQ(kResidualEchoLikelihood,
+            stats.apm_statistics.residual_echo_likelihood);
+  EXPECT_EQ(kResidualEchoLikelihoodMax,
+            stats.apm_statistics.residual_echo_likelihood_recent_max);
   EXPECT_TRUE(stats.typing_noise_detected);
 }
 

@@ -29,6 +29,7 @@ rtc_source_set("call_interfaces") {
     "../api:optional",
     "../api:transport_api",
     "../api/audio_codecs:audio_codecs_api",
+    "../modules/audio_processing:audio_processing_statistics",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
   ]

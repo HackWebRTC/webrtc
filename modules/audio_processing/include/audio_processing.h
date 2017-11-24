@@ -22,6 +22,7 @@
 
 #include "api/optional.h"
 #include "modules/audio_processing/beamformer/array_util.h"
+#include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/include/config.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/deprecation.h"
@@ -562,38 +563,6 @@ class AudioProcessing : public rtc::RefCountInterface {
     float residual_echo_likelihood = -1.0f;
     // Maximum residual echo likelihood from the last time period.
     float residual_echo_likelihood_recent_max = -1.0f;
-  };
-
-  // This version of the stats uses Optionals, it will replace the regular
-  // AudioProcessingStatistics struct.
-  struct AudioProcessingStats {
-    AudioProcessingStats();
-    AudioProcessingStats(const AudioProcessingStats& other);
-    ~AudioProcessingStats();
-
-    // AEC Statistics.
-    // ERL = 10log_10(P_far / P_echo)
-    rtc::Optional<double> echo_return_loss;
-    // ERLE = 10log_10(P_echo / P_out)
-    rtc::Optional<double> echo_return_loss_enhancement;
-    // Fraction of time that the AEC linear filter is divergent, in a 1-second
-    // non-overlapped aggregation window.
-    rtc::Optional<double> divergent_filter_fraction;
-
-    // The delay metrics consists of the delay median and standard deviation. It
-    // also consists of the fraction of delay estimates that can make the echo
-    // cancellation perform poorly. The values are aggregated until the first
-    // call to |GetStatistics()| and afterwards aggregated and updated every
-    // second. Note that if there are several clients pulling metrics from
-    // |GetStatistics()| during a session the first call from any of them will
-    // change to one second aggregation window for all.
-    rtc::Optional<int32_t> delay_median_ms;
-    rtc::Optional<int32_t> delay_standard_deviation_ms;
-
-    // Residual echo detector likelihood.
-    rtc::Optional<double> residual_echo_likelihood;
-    // Maximum residual echo likelihood from the last time period.
-    rtc::Optional<double> residual_echo_likelihood_recent_max;
   };
 
   // TODO(ivoc): Make this pure virtual when all subclasses have been updated.

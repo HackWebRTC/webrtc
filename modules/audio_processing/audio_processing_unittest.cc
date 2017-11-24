@@ -3026,7 +3026,7 @@ TEST(MAYBE_ApmStatistics, AEC2EnabledTest) {
   }
 
   // Test statistics interface.
-  AudioProcessing::AudioProcessingStats stats = apm->GetStatistics(true);
+  AudioProcessingStats stats = apm->GetStatistics(true);
   // We expect all statistics to be set and have a sensible value.
   ASSERT_TRUE(stats.residual_echo_likelihood);
   EXPECT_GE(*stats.residual_echo_likelihood, 0.0);
@@ -3085,7 +3085,7 @@ TEST(MAYBE_ApmStatistics, AECMEnabledTest) {
   }
 
   // Test statistics interface.
-  AudioProcessing::AudioProcessingStats stats = apm->GetStatistics(true);
+  AudioProcessingStats stats = apm->GetStatistics(true);
   // We expect only the residual echo detector statistics to be set and have a
   // sensible value.
   EXPECT_TRUE(stats.residual_echo_likelihood);

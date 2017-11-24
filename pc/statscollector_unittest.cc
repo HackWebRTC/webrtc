@@ -84,19 +84,19 @@ class FakeAudioProcessor : public webrtc::AudioProcessorInterface {
     stats->echo_return_loss = 2;
     stats->echo_return_loss_enhancement = 3;
     stats->echo_delay_median_ms = 4;
-    stats->aec_quality_min = 5.1f;
     stats->echo_delay_std_ms = 6;
   }
 
   AudioProcessorInterface::AudioProcessorStatistics GetStats(
-      bool /*has_recv_streams*/) override {
+      bool has_recv_streams) override {
     AudioProcessorStatistics stats;
     stats.typing_noise_detected = true;
-    stats.echo_return_loss = rtc::Optional<double>(2.0);
-    stats.echo_return_loss_enhancement = rtc::Optional<double>(3.0);
-    stats.echo_delay_median_ms = rtc::Optional<int32_t>(4);
-    stats.aec_quality_min = rtc::Optional<double>(5.1);
-    stats.echo_delay_std_ms = rtc::Optional<int32_t>(6);
+    if (has_recv_streams) {
+      stats.apm_statistics.echo_return_loss = 2.0;
+      stats.apm_statistics.echo_return_loss_enhancement = 3.0;
+      stats.apm_statistics.delay_median_ms = 4;
+      stats.apm_statistics.delay_standard_deviation_ms = 5;
+    }
     return stats;
   }
 };
@@ -137,7 +137,6 @@ class FakeAudioProcessorWithInitValue : public webrtc::AudioProcessorInterface {
     stats->echo_return_loss = -100;
     stats->echo_return_loss_enhancement = -100;
     stats->echo_delay_median_ms = -1;
-    stats->aec_quality_min = -1.0f;
     stats->echo_delay_std_ms = -1;
   }
 
@@ -409,37 +408,70 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameJitterReceived, &value_in_report));
   EXPECT_EQ(rtc::ToString<int>(sinfo.jitter_ms), value_in_report);
-  EXPECT_TRUE(GetValue(
-      report, StatsReport::kStatsValueNameEchoCancellationQualityMin,
-      &value_in_report));
-  EXPECT_EQ(rtc::ToString<float>(sinfo.aec_quality_min), value_in_report);
-  EXPECT_TRUE(GetValue(
-      report, StatsReport::kStatsValueNameEchoDelayMedian, &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(sinfo.echo_delay_median_ms),
-            value_in_report);
-  EXPECT_TRUE(GetValue(
-      report, StatsReport::kStatsValueNameEchoDelayStdDev, &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(sinfo.echo_delay_std_ms),
-            value_in_report);
-  EXPECT_TRUE(GetValue(
-      report, StatsReport::kStatsValueNameEchoReturnLoss, &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(sinfo.echo_return_loss),
-            value_in_report);
-  EXPECT_TRUE(GetValue(
-      report, StatsReport::kStatsValueNameEchoReturnLossEnhancement,
-      &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(sinfo.echo_return_loss_enhancement),
-            value_in_report);
-  EXPECT_TRUE(GetValue(report,
-                       StatsReport::kStatsValueNameResidualEchoLikelihood,
-                       &value_in_report));
-  EXPECT_EQ(rtc::ToString<float>(sinfo.residual_echo_likelihood),
-            value_in_report);
-  EXPECT_TRUE(GetValue(
-      report, StatsReport::kStatsValueNameResidualEchoLikelihoodRecentMax,
-      &value_in_report));
-  EXPECT_EQ(rtc::ToString<float>(sinfo.residual_echo_likelihood_recent_max),
-            value_in_report);
+  if (sinfo.apm_statistics.delay_median_ms) {
+    EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameEchoDelayMedian,
+                         &value_in_report));
+    EXPECT_EQ(rtc::ToString<int>(*sinfo.apm_statistics.delay_median_ms),
+              value_in_report);
+  } else {
+    EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameEchoDelayMedian,
+                          &value_in_report));
+  }
+  if (sinfo.apm_statistics.delay_standard_deviation_ms) {
+    EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameEchoDelayStdDev,
+                         &value_in_report));
+    EXPECT_EQ(
+        rtc::ToString<int>(*sinfo.apm_statistics.delay_standard_deviation_ms),
+        value_in_report);
+  } else {
+    EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameEchoDelayStdDev,
+                          &value_in_report));
+  }
+  if (sinfo.apm_statistics.echo_return_loss) {
+    EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameEchoReturnLoss,
+                         &value_in_report));
+    EXPECT_EQ(rtc::ToString<int>(*sinfo.apm_statistics.echo_return_loss),
+              value_in_report);
+  } else {
+    EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameEchoReturnLoss,
+                          &value_in_report));
+  }
+  if (sinfo.apm_statistics.echo_return_loss_enhancement) {
+    EXPECT_TRUE(GetValue(report,
+                         StatsReport::kStatsValueNameEchoReturnLossEnhancement,
+                         &value_in_report));
+    EXPECT_EQ(
+        rtc::ToString<int>(*sinfo.apm_statistics.echo_return_loss_enhancement),
+        value_in_report);
+  } else {
+    EXPECT_FALSE(GetValue(report,
+                          StatsReport::kStatsValueNameEchoReturnLossEnhancement,
+                          &value_in_report));
+  }
+  if (sinfo.apm_statistics.residual_echo_likelihood) {
+    EXPECT_TRUE(GetValue(report,
+                         StatsReport::kStatsValueNameResidualEchoLikelihood,
+                         &value_in_report));
+    EXPECT_EQ(
+        rtc::ToString<float>(*sinfo.apm_statistics.residual_echo_likelihood),
+        value_in_report);
+  } else {
+    EXPECT_FALSE(GetValue(report,
+                          StatsReport::kStatsValueNameResidualEchoLikelihood,
+                          &value_in_report));
+  }
+  if (sinfo.apm_statistics.residual_echo_likelihood_recent_max) {
+    EXPECT_TRUE(GetValue(
+        report, StatsReport::kStatsValueNameResidualEchoLikelihoodRecentMax,
+        &value_in_report));
+    EXPECT_EQ(rtc::ToString<float>(
+                  *sinfo.apm_statistics.residual_echo_likelihood_recent_max),
+              value_in_report);
+  } else {
+    EXPECT_FALSE(GetValue(
+        report, StatsReport::kStatsValueNameResidualEchoLikelihoodRecentMax,
+        &value_in_report));
+  }
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAudioInputLevel,
                        &value_in_report));
   EXPECT_EQ(rtc::ToString<int>(sinfo.audio_level), value_in_report);
@@ -510,33 +542,27 @@ void InitVoiceSenderInfo(cricket::VoiceSenderInfo* voice_sender_info) {
   voice_sender_info->echo_return_loss_enhancement = 109;
   voice_sender_info->echo_delay_median_ms = 110;
   voice_sender_info->echo_delay_std_ms = 111;
-  voice_sender_info->aec_quality_min = 112.0f;
   voice_sender_info->typing_noise_detected = false;
-  voice_sender_info->ana_statistics.bitrate_action_counter = 113;
-  voice_sender_info->ana_statistics.channel_action_counter = 114;
-  voice_sender_info->ana_statistics.dtx_action_counter = 115;
-  voice_sender_info->ana_statistics.fec_action_counter = 116;
-  voice_sender_info->ana_statistics.frame_length_increase_counter = 117;
-  voice_sender_info->ana_statistics.frame_length_decrease_counter = 118;
-  voice_sender_info->ana_statistics.uplink_packet_loss_fraction = 119.0;
+  voice_sender_info->ana_statistics.bitrate_action_counter = 112;
+  voice_sender_info->ana_statistics.channel_action_counter = 113;
+  voice_sender_info->ana_statistics.dtx_action_counter = 114;
+  voice_sender_info->ana_statistics.fec_action_counter = 115;
+  voice_sender_info->ana_statistics.frame_length_increase_counter = 116;
+  voice_sender_info->ana_statistics.frame_length_decrease_counter = 117;
+  voice_sender_info->ana_statistics.uplink_packet_loss_fraction = 118.0;
 }
 
 void UpdateVoiceSenderInfoFromAudioTrack(
     AudioTrackInterface* audio_track,
-    cricket::VoiceSenderInfo* voice_sender_info) {
+    cricket::VoiceSenderInfo* voice_sender_info,
+    bool has_remote_tracks) {
   audio_track->GetSignalLevel(&voice_sender_info->audio_level);
-  webrtc::AudioProcessorInterface::AudioProcessorStats audio_processor_stats;
-  audio_track->GetAudioProcessor()->GetStats(&audio_processor_stats);
+  webrtc::AudioProcessorInterface::AudioProcessorStatistics
+      audio_processor_stats =
+          audio_track->GetAudioProcessor()->GetStats(has_remote_tracks);
   voice_sender_info->typing_noise_detected =
       audio_processor_stats.typing_noise_detected;
-  voice_sender_info->echo_return_loss = audio_processor_stats.echo_return_loss;
-  voice_sender_info->echo_return_loss_enhancement =
-      audio_processor_stats.echo_return_loss_enhancement;
-  voice_sender_info->echo_delay_median_ms =
-      audio_processor_stats.echo_delay_median_ms;
-  voice_sender_info->aec_quality_min = audio_processor_stats.aec_quality_min;
-  voice_sender_info->echo_delay_std_ms =
-      audio_processor_stats.echo_delay_std_ms;
+  voice_sender_info->apm_statistics = audio_processor_stats.apm_statistics;
 }
 
 void InitVoiceReceiverInfo(cricket::VoiceReceiverInfo* voice_receiver_info) {
@@ -730,7 +756,8 @@ class StatsCollectorTest : public testing::Test {
 
     // Verifies the values in the track report.
     if (voice_sender_info) {
-      UpdateVoiceSenderInfoFromAudioTrack(audio_track, voice_sender_info);
+      UpdateVoiceSenderInfoFromAudioTrack(audio_track, voice_sender_info,
+                                          stats_read->receivers.size() > 0);
       VerifyVoiceSenderInfoReport(report, *voice_sender_info);
     }
     if (voice_receiver_info) {
@@ -1746,7 +1773,8 @@ TEST_F(StatsCollectorTest, FilterOutNegativeInitialValues) {
 
   // Some of the contents in |voice_sender_info| needs to be updated from the
   // |audio_track_|.
-  UpdateVoiceSenderInfoFromAudioTrack(local_track.get(), &voice_sender_info);
+  UpdateVoiceSenderInfoFromAudioTrack(local_track.get(), &voice_sender_info,
+                                      true);
 
   cricket::VoiceReceiverInfo voice_receiver_info;
   voice_receiver_info.add_ssrc(kSsrcOfTrack);
@@ -1974,7 +2002,8 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
 
   // Some of the contents in |voice_sender_info| needs to be updated from the
   // |audio_track_|.
-  UpdateVoiceSenderInfoFromAudioTrack(audio_track_.get(), &voice_sender_info);
+  UpdateVoiceSenderInfoFromAudioTrack(audio_track_.get(), &voice_sender_info,
+                                      true);
 
   cricket::VoiceReceiverInfo voice_receiver_info;
   InitVoiceReceiverInfo(&voice_receiver_info);

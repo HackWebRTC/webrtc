@@ -29,6 +29,7 @@
 // mediachannel.h, which is no longer a dependency of this file.
 #include "media/base/videosinkinterface.h"
 #include "media/base/videosourceinterface.h"
+#include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "rtc_base/ratetracker.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
@@ -255,14 +256,7 @@ class AudioProcessorInterface : public rtc::RefCountInterface {
   // regular stats struct when all users have been updated.
   struct AudioProcessorStatistics {
     bool typing_noise_detected = false;
-    rtc::Optional<double> echo_return_loss;
-    rtc::Optional<double> echo_return_loss_enhancement;
-    rtc::Optional<int32_t> echo_delay_median_ms;
-    rtc::Optional<int32_t> echo_delay_std_ms;
-    rtc::Optional<double> aec_quality_min;
-    rtc::Optional<double> residual_echo_likelihood;
-    rtc::Optional<double> residual_echo_likelihood_recent_max;
-    rtc::Optional<double> aec_divergent_filter_fraction;
+    AudioProcessingStats apm_statistics;
   };
 
   // Get audio processor statistics.

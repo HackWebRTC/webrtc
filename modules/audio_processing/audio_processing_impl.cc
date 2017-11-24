@@ -1557,13 +1557,6 @@ AudioProcessing::AudioProcessingStatistics::AudioProcessingStatistics(
 AudioProcessing::AudioProcessingStatistics::~AudioProcessingStatistics() =
     default;
 
-AudioProcessing::AudioProcessingStats::AudioProcessingStats() = default;
-
-AudioProcessing::AudioProcessingStats::AudioProcessingStats(
-    const AudioProcessingStats& other) = default;
-
-AudioProcessing::AudioProcessingStats::~AudioProcessingStats() = default;
-
 // TODO(ivoc): Remove this when GetStatistics() becomes pure virtual.
 AudioProcessing::AudioProcessingStatistics AudioProcessing::GetStatistics()
     const {
@@ -1571,7 +1564,7 @@ AudioProcessing::AudioProcessingStatistics AudioProcessing::GetStatistics()
 }
 
 // TODO(ivoc): Remove this when GetStatistics() becomes pure virtual.
-AudioProcessing::AudioProcessingStats AudioProcessing::GetStatistics(
+AudioProcessingStats AudioProcessing::GetStatistics(
     bool has_remote_tracks) const {
   return AudioProcessingStats();
 }
@@ -1611,7 +1604,7 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
   return stats;
 }
 
-AudioProcessing::AudioProcessingStats AudioProcessingImpl::GetStatistics(
+AudioProcessingStats AudioProcessingImpl::GetStatistics(
     bool has_remote_tracks) const {
   AudioProcessingStats stats;
   if (has_remote_tracks) {

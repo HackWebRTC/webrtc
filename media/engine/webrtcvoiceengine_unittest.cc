@@ -557,13 +557,12 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     stats.jitter_ms = 12;
     stats.rtt_ms = 345;
     stats.audio_level = 678;
-    stats.aec_quality_min = 9.01f;
-    stats.echo_delay_median_ms = 234;
-    stats.echo_delay_std_ms = 567;
-    stats.echo_return_loss = 890;
-    stats.echo_return_loss_enhancement = 1234;
-    stats.residual_echo_likelihood = 0.432f;
-    stats.residual_echo_likelihood_recent_max = 0.6f;
+    stats.apm_statistics.delay_median_ms = 234;
+    stats.apm_statistics.delay_standard_deviation_ms = 567;
+    stats.apm_statistics.echo_return_loss = 890;
+    stats.apm_statistics.echo_return_loss_enhancement = 1234;
+    stats.apm_statistics.residual_echo_likelihood = 0.432f;
+    stats.apm_statistics.residual_echo_likelihood_recent_max = 0.6f;
     stats.ana_statistics.bitrate_action_counter = 321;
     stats.ana_statistics.channel_action_counter = 432;
     stats.ana_statistics.dtx_action_counter = 543;
@@ -593,15 +592,18 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(info.jitter_ms, stats.jitter_ms);
     EXPECT_EQ(info.rtt_ms, stats.rtt_ms);
     EXPECT_EQ(info.audio_level, stats.audio_level);
-    EXPECT_EQ(info.aec_quality_min, stats.aec_quality_min);
-    EXPECT_EQ(info.echo_delay_median_ms, stats.echo_delay_median_ms);
-    EXPECT_EQ(info.echo_delay_std_ms, stats.echo_delay_std_ms);
-    EXPECT_EQ(info.echo_return_loss, stats.echo_return_loss);
-    EXPECT_EQ(info.echo_return_loss_enhancement,
-              stats.echo_return_loss_enhancement);
-    EXPECT_EQ(info.residual_echo_likelihood, stats.residual_echo_likelihood);
-    EXPECT_EQ(info.residual_echo_likelihood_recent_max,
-              stats.residual_echo_likelihood_recent_max);
+    EXPECT_EQ(info.apm_statistics.delay_median_ms,
+              stats.apm_statistics.delay_median_ms);
+    EXPECT_EQ(info.apm_statistics.delay_standard_deviation_ms,
+              stats.apm_statistics.delay_standard_deviation_ms);
+    EXPECT_EQ(info.apm_statistics.echo_return_loss,
+              stats.apm_statistics.echo_return_loss);
+    EXPECT_EQ(info.apm_statistics.echo_return_loss_enhancement,
+              stats.apm_statistics.echo_return_loss_enhancement);
+    EXPECT_EQ(info.apm_statistics.residual_echo_likelihood,
+              stats.apm_statistics.residual_echo_likelihood);
+    EXPECT_EQ(info.apm_statistics.residual_echo_likelihood_recent_max,
+              stats.apm_statistics.residual_echo_likelihood_recent_max);
     EXPECT_EQ(info.ana_statistics.bitrate_action_counter,
               stats.ana_statistics.bitrate_action_counter);
     EXPECT_EQ(info.ana_statistics.channel_action_counter,

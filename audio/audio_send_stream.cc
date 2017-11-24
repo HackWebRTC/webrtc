@@ -277,6 +277,11 @@ void AudioSendStream::SetMuted(bool muted) {
 }
 
 webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
+  return GetStats(true);
+}
+
+webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
+    bool has_remote_tracks) const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   webrtc::AudioSendStream::Stats stats;
   stats.local_ssrc = config_.rtp.ssrc;
@@ -289,10 +294,6 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   if (call_stats.rttMs > 0) {
     stats.rtt_ms = call_stats.rttMs;
   }
-  // TODO(solenberg): [was ajm]: Re-enable this metric once we have a reliable
-  //                  implementation.
-  stats.aec_quality_min = -1;
-
   if (config_.send_codec_spec) {
     const auto& spec = *config_.send_codec_spec;
     stats.codec_name = spec.format.name;
@@ -323,23 +324,13 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   stats.total_input_energy = base->transmit_mixer()->GetTotalInputEnergy();
   stats.total_input_duration = base->transmit_mixer()->GetTotalInputDuration();
 
-  RTC_DCHECK(audio_state_->audio_processing());
-  auto audio_processing_stats =
-      audio_state_->audio_processing()->GetStatistics();
-  stats.echo_delay_median_ms = audio_processing_stats.delay_median;
-  stats.echo_delay_std_ms = audio_processing_stats.delay_standard_deviation;
-  stats.echo_return_loss = audio_processing_stats.echo_return_loss.instant();
-  stats.echo_return_loss_enhancement =
-      audio_processing_stats.echo_return_loss_enhancement.instant();
-  stats.residual_echo_likelihood =
-      audio_processing_stats.residual_echo_likelihood;
-  stats.residual_echo_likelihood_recent_max =
-      audio_processing_stats.residual_echo_likelihood_recent_max;
-
   internal::AudioState* audio_state =
       static_cast<internal::AudioState*>(audio_state_.get());
   stats.typing_noise_detected = audio_state->typing_noise_detected();
   stats.ana_statistics = channel_proxy_->GetANAStatistics();
+  RTC_DCHECK(audio_state_->audio_processing());
+  stats.apm_statistics =
+      audio_state_->audio_processing()->GetStatistics(has_remote_tracks);
 
   return stats;
 }

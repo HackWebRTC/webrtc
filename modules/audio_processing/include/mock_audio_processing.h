@@ -15,6 +15,7 @@
 
 #include "modules/audio_processing/include/aec_dump.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "test/gmock.h"
 
 namespace webrtc {
@@ -199,6 +200,7 @@ class MockAudioProcessing : public AudioProcessing {
 
   MOCK_METHOD0(UpdateHistogramsOnCallEnd, void());
   MOCK_CONST_METHOD0(GetStatistics, AudioProcessingStatistics());
+  MOCK_CONST_METHOD1(GetStatistics, AudioProcessingStats(bool));
   virtual MockEchoCancellation* echo_cancellation() const {
     return echo_cancellation_.get();
   }
