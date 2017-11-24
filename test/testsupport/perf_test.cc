@@ -16,43 +16,24 @@
 
 #include <sstream>
 #include <stdio.h>
+#include <vector>
 
 namespace {
 
-std::string ResultsToString(const std::string& measurement,
-                            const std::string& modifier,
-                            const std::string& trace,
-                            const std::string& values,
-                            const std::string& prefix,
-                            const std::string& suffix,
-                            const std::string& units,
-                            bool important) {
+void PrintResultsImpl(const std::string& graph_name,
+                      const std::string& trace,
+                      const std::string& values,
+                      const std::string& units,
+                      bool important) {
   // <*>RESULT <graph_name>: <trace_name>= <value> <units>
   // <*>RESULT <graph_name>: <trace_name>= {<mean>, <std deviation>} <units>
   // <*>RESULT <graph_name>: <trace_name>= [<value>,value,value,...,] <units>
 
-  // TODO(ajm): Use of a stream here may violate the style guide (depending on
-  // one's definition of "logging"). Consider adding StringPrintf-like
-  // functionality as in the original Chromium implementation.
-  std::ostringstream stream;
   if (important) {
-    stream << "*";
+    printf("*");
   }
-  stream << "RESULT " << measurement << modifier << ": " << trace << "= "
-         << prefix << values << suffix << " " << units << std::endl;
-  return stream.str();
-}
-
-void PrintResultsImpl(const std::string& measurement,
-                      const std::string& modifier,
-                      const std::string& trace,
-                      const std::string& values,
-                      const std::string& prefix,
-                      const std::string& suffix,
-                      const std::string& units,
-                      bool important) {
-  printf("%s", ResultsToString(measurement, modifier, trace, values,
-                               prefix, suffix, units, important).c_str());
+  printf("RESULT %s: %s= %s %s\n", graph_name.c_str(), trace.c_str(),
+         values.c_str(), units.c_str());
 }
 
 }  // namespace
@@ -68,8 +49,8 @@ void PrintResult(const std::string& measurement,
                  bool important) {
   std::ostringstream value_stream;
   value_stream << value;
-  PrintResultsImpl(measurement, modifier, trace, value_stream.str(), "", "",
-                   units, important);
+  PrintResultsImpl(measurement + modifier, trace, value_stream.str(), units,
+                   important);
 }
 
 void PrintResultMeanAndError(const std::string& measurement,
@@ -81,18 +62,30 @@ void PrintResultMeanAndError(const std::string& measurement,
                              bool important) {
   std::ostringstream value_stream;
   value_stream << '{' << mean << ',' << error << '}';
-  PrintResultsImpl(measurement, modifier, trace, value_stream.str(), "", "",
-                   units, important);
+  PrintResultsImpl(measurement + modifier, trace, value_stream.str(), units,
+                   important);
 }
 
 void PrintResultList(const std::string& measurement,
                      const std::string& modifier,
                      const std::string& trace,
-                     const std::string& values,
+                     const std::vector<double>& values,
                      const std::string& units,
                      bool important) {
-  PrintResultsImpl(measurement, modifier, trace, values,
-                   "[", "]", units, important);
+  std::ostringstream value_stream;
+  value_stream << '[';
+  if (!values.empty()) {
+    auto it = values.begin();
+    while (true) {
+      value_stream << *it;
+      if (++it == values.end())
+        break;
+      value_stream << ',';
+    }
+  }
+  value_stream << ']';
+  PrintResultsImpl(measurement + modifier, trace, value_stream.str(), units,
+                   important);
 }
 
 }  // namespace test

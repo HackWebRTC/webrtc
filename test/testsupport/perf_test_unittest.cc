@@ -23,7 +23,13 @@ TEST(PerfTest, AppendResult) {
   PrintResult("measurement", "modifier", "trace", 42, "units", false);
 
   expected += "*RESULT foobar: baz= 7 widgets\n";
-  PrintResult( "foo", "bar", "baz", 7, "widgets", true);
+  PrintResult("foo", "bar", "baz", 7, "widgets", true);
+
+  expected += "RESULT foobar: baz= {1,2} lemurs\n";
+  PrintResultMeanAndError("foo", "bar", "baz", 1, 2, "lemurs", false);
+
+  expected += "RESULT foobar: baz= [1,2,3] units\n";
+  PrintResultList("foo", "bar", "baz", {1, 2, 3}, "units", false);
 
   std::string output = testing::internal::GetCapturedStdout();
   EXPECT_EQ(expected, output);

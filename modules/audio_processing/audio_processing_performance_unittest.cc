@@ -269,12 +269,9 @@ class TimedThreadApiProcessor {
         "us", false);
 
     if (kPrintAllDurations) {
-      std::string value_string = "";
-      for (int64_t duration : api_call_durations_) {
-        value_string += std::to_string(duration) + ",";
-      }
       webrtc::test::PrintResultList("apm_call_durations", sample_rate_name,
-                                    processor_name, value_string, "us", false);
+                                    processor_name, api_call_durations_, "us",
+                                    false);
     }
   }
 
@@ -432,7 +429,7 @@ class TimedThreadApiProcessor {
   AudioFrameData frame_data_;
   webrtc::Clock* clock_;
   const size_t num_durations_to_store_;
-  std::vector<int64_t> api_call_durations_;
+  std::vector<double> api_call_durations_;
   const float input_level_;
   bool first_process_call_ = true;
   const ProcessorType processor_type_;
