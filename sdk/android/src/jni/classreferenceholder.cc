@@ -68,7 +68,6 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/EglBase14$Context");
   LoadClass(jni, "org/webrtc/EncodedImage");
   LoadClass(jni, "org/webrtc/EncodedImage$FrameType");
-  LoadClass(jni, "org/webrtc/IceCandidate");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecodedOutputBuffer");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecodedTextureBuffer");

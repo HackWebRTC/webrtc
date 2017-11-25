@@ -13,10 +13,26 @@
 #include <string>
 
 #include "pc/webrtcsdp.h"
+#include "sdk/android/generated_peerconnection_jni/jni/IceCandidate_jni.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
 namespace jni {
+
+namespace {
+
+jobject NativeToJavaCandidate(JNIEnv* env,
+                              const std::string& sdp_mid,
+                              int sdp_mline_index,
+                              const std::string& sdp,
+                              const std::string server_url) {
+  return Java_IceCandidate_Constructor(
+      env, JavaStringFromStdString(env, sdp_mid), sdp_mline_index,
+      JavaStringFromStdString(env, sdp),
+      JavaStringFromStdString(env, server_url));
+}
+
+}  // namespace
 
 jobject NativeToJavaMediaType(JNIEnv* jni, cricket::MediaType media_type) {
   jclass j_media_type_class =
@@ -58,15 +74,10 @@ cricket::MediaType JavaToNativeMediaType(JNIEnv* jni, jobject j_media_type) {
 }
 
 cricket::Candidate JavaToNativeCandidate(JNIEnv* jni, jobject j_candidate) {
-  jclass j_candidate_class = GetObjectClass(jni, j_candidate);
-  jfieldID j_sdp_mid_id =
-      GetFieldID(jni, j_candidate_class, "sdpMid", "Ljava/lang/String;");
   std::string sdp_mid =
-      JavaToStdString(jni, GetStringField(jni, j_candidate, j_sdp_mid_id));
-  jfieldID j_sdp_id =
-      GetFieldID(jni, j_candidate_class, "sdp", "Ljava/lang/String;");
+      JavaToStdString(jni, Java_IceCandidate_getSdpMid(jni, j_candidate));
   std::string sdp =
-      JavaToStdString(jni, GetStringField(jni, j_candidate, j_sdp_id));
+      JavaToStdString(jni, Java_IceCandidate_getSdp(jni, j_candidate));
   cricket::Candidate candidate;
   if (!SdpDeserializeCandidate(sdp_mid, sdp, &candidate, NULL)) {
     RTC_LOG(LS_ERROR) << "SdpDescrializeCandidate failed with sdp " << sdp;
@@ -74,32 +85,33 @@ cricket::Candidate JavaToNativeCandidate(JNIEnv* jni, jobject j_candidate) {
   return candidate;
 }
 
-jobject NativeToJavaCandidate(JNIEnv* jni,
-                              jclass* candidate_class,
+jobject NativeToJavaCandidate(JNIEnv* env,
                               const cricket::Candidate& candidate) {
   std::string sdp = SdpSerializeCandidate(candidate);
   RTC_CHECK(!sdp.empty()) << "got an empty ICE candidate";
-  jmethodID ctor = GetMethodID(jni, *candidate_class, "<init>",
-                               "(Ljava/lang/String;ILjava/lang/String;)V");
-  jstring j_mid = JavaStringFromStdString(jni, candidate.transport_name());
-  jstring j_sdp = JavaStringFromStdString(jni, sdp);
   // sdp_mline_index is not used, pass an invalid value -1.
-  jobject j_candidate =
-      jni->NewObject(*candidate_class, ctor, j_mid, -1, j_sdp);
-  CHECK_EXCEPTION(jni) << "error during Java Candidate NewObject";
-  return j_candidate;
+  return NativeToJavaCandidate(env, candidate.transport_name(),
+                               -1 /* sdp_mline_index */, sdp,
+                               "" /* server_url */);
+}
+
+jobject NativeToJavaCandidate(JNIEnv* env,
+                              const IceCandidateInterface& candidate) {
+  std::string sdp;
+  RTC_CHECK(candidate.ToString(&sdp)) << "got so far: " << sdp;
+  return NativeToJavaCandidate(env, candidate.sdp_mid(),
+                               candidate.sdp_mline_index(), sdp,
+                               candidate.candidate().url());
 }
 
 jobjectArray NativeToJavaCandidateArray(
     JNIEnv* jni,
     const std::vector<cricket::Candidate>& candidates) {
-  jclass candidate_class = FindClass(jni, "org/webrtc/IceCandidate");
   jobjectArray java_candidates =
-      jni->NewObjectArray(candidates.size(), candidate_class, NULL);
+      Java_IceCandidate_createArray(jni, candidates.size());
   int i = 0;
   for (const cricket::Candidate& candidate : candidates) {
-    jobject j_candidate =
-        NativeToJavaCandidate(jni, &candidate_class, candidate);
+    jobject j_candidate = NativeToJavaCandidate(jni, candidate);
     jni->SetObjectArrayElement(java_candidates, i++, j_candidate);
   }
   return java_candidates;

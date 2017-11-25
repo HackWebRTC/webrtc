@@ -61,23 +61,14 @@ PeerConnectionObserverJni::~PeerConnectionObserverJni() {
 
 void PeerConnectionObserverJni::OnIceCandidate(
     const IceCandidateInterface* candidate) {
-  ScopedLocalRefFrame local_ref_frame(jni());
-  std::string sdp;
-  RTC_CHECK(candidate->ToString(&sdp)) << "got so far: " << sdp;
-  jclass candidate_class = FindClass(jni(), "org/webrtc/IceCandidate");
-  jmethodID ctor =
-      GetMethodID(jni(), candidate_class, "<init>",
-                  "(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)V");
-  jstring j_mid = JavaStringFromStdString(jni(), candidate->sdp_mid());
-  jstring j_sdp = JavaStringFromStdString(jni(), sdp);
-  jstring j_url = JavaStringFromStdString(jni(), candidate->candidate().url());
-  jobject j_candidate = jni()->NewObject(
-      candidate_class, ctor, j_mid, candidate->sdp_mline_index(), j_sdp, j_url);
-  CHECK_EXCEPTION(jni()) << "error during NewObject";
-  jmethodID m = GetMethodID(jni(), *j_observer_class_, "onIceCandidate",
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  jobject j_candidate = NativeToJavaCandidate(env, *candidate);
+
+  jmethodID m = GetMethodID(env, *j_observer_class_, "onIceCandidate",
                             "(Lorg/webrtc/IceCandidate;)V");
-  jni()->CallVoidMethod(*j_observer_global_, m, j_candidate);
-  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  env->CallVoidMethod(*j_observer_global_, m, j_candidate);
+  CHECK_EXCEPTION(env) << "error during CallVoidMethod";
 }
 
 void PeerConnectionObserverJni::OnIceCandidatesRemoved(
