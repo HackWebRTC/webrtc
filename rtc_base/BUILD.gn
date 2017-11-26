@@ -129,8 +129,6 @@ rtc_source_set("rtc_base_approved_generic") {
     "criticalsection.cc",
     "criticalsection.h",
     "deprecation.h",
-    "event.cc",
-    "event.h",
     "event_tracer.cc",
     "event_tracer.h",
     "file.cc",
@@ -213,11 +211,15 @@ rtc_source_set("rtc_base_approved_generic") {
     # Dependency on chromium's logging (in //base).
     deps += [ "//base:base" ]
     sources += [
+      "../../webrtc_overrides/rtc_base/event.cc",
+      "../../webrtc_overrides/rtc_base/event.h",
       "../../webrtc_overrides/rtc_base/logging.cc",
       "../../webrtc_overrides/rtc_base/logging.h",
     ]
   } else {
     sources += [
+      "event.cc",
+      "event.h",
       "logging.cc",
       "logging.h",
     ]
