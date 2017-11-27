@@ -79,19 +79,20 @@ rtc_static_library("libjingle_peerconnection_api") {
 
   public_deps = [
     ":libjingle_api_deprecated_headers",
-    ":mediastream_interface_and_implicit_video_frame_api",
     ":peerconnection_and_implicit_call_api",
   ]
 
   deps = [
     ":optional",
     ":rtc_stats_api",
+    ":video_frame_api",
     "audio_codecs:audio_codecs_api",
 
     # Basically, don't add stuff here. You might break sensitive downstream
     # targets like pnacl. API should not depend on anything outside of this
     # file, really. All these should arguably go away in time.
     "..:webrtc_common",
+    "../modules/audio_processing:audio_processing_statistics",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
   ]
@@ -113,19 +114,6 @@ rtc_source_set("peerconnection_and_implicit_call_api") {
   check_includes = false
   sources = [
     "peerconnectioninterface.h",
-  ]
-}
-
-rtc_source_set("mediastream_interface_and_implicit_video_frame_api") {
-  # The mediastreaminterface.h file pulls in in video_frame.h, but the
-  # system_wrappers dependency that comes with that breaks pnacl downstream.
-  # TODO(phoglund): solve this (see bugs.webrtc.org/7504).
-  check_includes = false
-  sources = [
-    "mediastreaminterface.h",
-  ]
-  deps = [
-    "../modules/audio_processing:audio_processing_statistics",
   ]
 }
 
@@ -223,10 +211,6 @@ rtc_source_set("transport_api") {
 
 rtc_source_set("video_frame_api") {
   sources = [
-    # TODO(phoglund): move i420 files to video_frame_api_i420 after updating
-    # downstream. See bugs.webrtc.org/7504.
-    "video/i420_buffer.cc",
-    "video/i420_buffer.h",
     "video/video_content_type.cc",
     "video/video_content_type.h",
     "video/video_frame.cc",
@@ -240,7 +224,6 @@ rtc_source_set("video_frame_api") {
 
   deps = [
     "../rtc_base:rtc_base_approved",
-    "../system_wrappers",
   ]
 
   # TODO(nisse): This logic is duplicated in multiple places.
@@ -258,6 +241,7 @@ rtc_source_set("video_frame_api") {
 
 rtc_source_set("video_frame_api_i420") {
   sources = [
+    "video/i420_buffer.cc",
     "video/i420_buffer.h",
   ]
   deps = [
