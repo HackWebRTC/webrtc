@@ -729,7 +729,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // The |observer| callback will be called when done.
   // TODO(hbos): Remove when Chrome implements the new signature.
   virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
-                                    SessionDescriptionInterface* desc) = 0;
+                                    SessionDescriptionInterface* desc) {}
   // TODO(hbos): Make pure virtual when Chrome has updated its signature.
   virtual void SetRemoteDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
