@@ -14,6 +14,7 @@
 
 #include "pc/webrtcsdp.h"
 #include "sdk/android/generated_peerconnection_jni/jni/IceCandidate_jni.h"
+#include "sdk/android/generated_peerconnection_jni/jni/MediaStreamTrack_jni.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
@@ -35,42 +36,12 @@ jobject NativeToJavaCandidate(JNIEnv* env,
 }  // namespace
 
 jobject NativeToJavaMediaType(JNIEnv* jni, cricket::MediaType media_type) {
-  jclass j_media_type_class =
-      FindClass(jni, "org/webrtc/MediaStreamTrack$MediaType");
-
-  const char* media_type_str = nullptr;
-  switch (media_type) {
-    case cricket::MEDIA_TYPE_AUDIO:
-      media_type_str = "MEDIA_TYPE_AUDIO";
-      break;
-    case cricket::MEDIA_TYPE_VIDEO:
-      media_type_str = "MEDIA_TYPE_VIDEO";
-      break;
-    case cricket::MEDIA_TYPE_DATA:
-      RTC_NOTREACHED();
-      break;
-  }
-  jfieldID j_media_type_fid =
-      GetStaticFieldID(jni, j_media_type_class, media_type_str,
-                       "Lorg/webrtc/MediaStreamTrack$MediaType;");
-  return GetStaticObjectField(jni, j_media_type_class, j_media_type_fid);
+  return Java_MediaType_fromNativeIndex(jni, media_type);
 }
 
 cricket::MediaType JavaToNativeMediaType(JNIEnv* jni, jobject j_media_type) {
-  jclass j_media_type_class =
-      FindClass(jni, "org/webrtc/MediaStreamTrack$MediaType");
-  jmethodID j_name_id =
-      GetMethodID(jni, j_media_type_class, "name", "()Ljava/lang/String;");
-  jstring j_type_string =
-      (jstring)jni->CallObjectMethod(j_media_type, j_name_id);
-  CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
-  std::string type_string = JavaToStdString(jni, j_type_string);
-
-  RTC_DCHECK(type_string == "MEDIA_TYPE_AUDIO" ||
-             type_string == "MEDIA_TYPE_VIDEO")
-      << "Media type: " << type_string;
-  return type_string == "MEDIA_TYPE_AUDIO" ? cricket::MEDIA_TYPE_AUDIO
-                                           : cricket::MEDIA_TYPE_VIDEO;
+  return static_cast<cricket::MediaType>(
+      Java_MediaType_getNative(jni, j_media_type));
 }
 
 cricket::Candidate JavaToNativeCandidate(JNIEnv* jni, jobject j_candidate) {

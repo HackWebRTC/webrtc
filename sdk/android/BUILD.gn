@@ -288,6 +288,7 @@ generate_jni("generated_peerconnection_jni") {
     "api/org/webrtc/IceCandidate.java",
     "api/org/webrtc/MediaConstraints.java",
     "api/org/webrtc/MediaStream.java",
+    "api/org/webrtc/MediaStreamTrack.java",
     "api/org/webrtc/NetworkMonitor.java",
     "api/org/webrtc/NetworkMonitorAutoDetect.java",
     "api/org/webrtc/RTCStats.java",
